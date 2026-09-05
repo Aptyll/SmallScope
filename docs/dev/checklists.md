@@ -479,8 +479,9 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
 - `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the worker bot
   got its own grids — kept in case the imp returns.
 - A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
-  pine in sixteen wind frames, and `treeFrame` reads the tile's own `hash2` for the frame it rests
-  on. **The roll has to stay** — removing an `rng()` call inside `genWorld` reshuffles every
+  pine in twenty-four bend frames, `treeFrame` reads the wind for the lean it wears, and the tile's
+  own `hash2` only mirrors it and gives it a standing lean.
+  **The roll has to stay** — removing an `rng()` call inside `genWorld` reshuffles every
   existing seed. `deadTree` still uses its `variant` for real.
 - The flat `SPRITES.spawner` (the old 16×16 hut grid in the three tier palettes) is baked but
   unreferenced since the bot bay; the live sprite is `teamBuild[team].spawner[0]`.

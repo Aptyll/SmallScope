@@ -124,17 +124,36 @@ function repaintGround(tx, ty) {
 }
 
 // ------------------------------------------------------------ entity draw
-// Which of a pine's sixteen sway frames it is wearing this frame. A tree does
-// not animate on a clock of its own: the wind wave (the `wind` banner,
-// js/sim.js) is sampled at the tree's own tile, so a gust crossing the field
-// walks one band of trees through their cycle at a time and the treeline
-// rustles in order. The tile's hash picks the frame it RESTS on, which is
-// what keeps a dead-calm forest from reading as one stamp repeated - and at
-// full dark windSway() returns 0 and every tree simply holds that frame.
-const TREE_FRAMES = 16;
+// Which of a pine's twenty-four bend frames it is wearing - and which half of
+// the atlas it takes it from. A tree does not animate on a clock of its own:
+// the wind field (the `wind` banner, js/sim.js) is sampled at the tree's own
+// tile, so a gust crossing the field lays one band of trees over at a time and
+// the treeline works in order.
+//
+// The frames are a LADDER of leans, not a cycle of phases (js/sprites.js), so
+// the map is direct: sway -1 is frame 0 thrown fully left, +1 is frame 23
+// thrown fully right, and the middle of the ladder is a tree standing up. That
+// is what makes a gust read as one body of moving air - every tree inside it
+// leaning the same way, instead of each wandering off around a rest pose of
+// its own - and it is why the index CLAMPS rather than wraps: at the end of
+// its travel a crown stops, it does not snap back the other way.
+//
+// Every frame being the same tree, two things off the tile's hash keep a stand
+// from reading as one stamp repeated. Half the forest is mirrored - the atlas
+// holds the 24 frames again flipped, and a mirrored tree's ladder runs
+// backwards, hence the reversed index - and each tree keeps a standing lean of
+// up to TREE_REST frames, which is what it is still wearing after dark when
+// windSway() returns 0.
+const TREE_FRAMES = 24;
+const TREE_REST = 2.5; // frames of standing lean a tile keeps through the calm
 function treeFrame(tx, ty) {
-  const rest = (hash2(tx * 3 + 1, ty * 3 + 2) * TREE_FRAMES) | 0;
-  return (rest + Math.round(windSway(tx, ty) * (TREE_FRAMES / 2)) + TREE_FRAMES) % TREE_FRAMES;
+  const h = hash2(tx * 3 + 1, ty * 3 + 2) * 2;
+  const flip = h >= 1;                        // the mirrored half of the atlas
+  const mid = (TREE_FRAMES - 1) / 2;
+  const rest = TREE_REST * ((flip ? h - 1 : h) * 2 - 1);
+  let i = Math.round(mid + rest + windSway(tx, ty) * mid);
+  if (i < 0) i = 0; else if (i > TREE_FRAMES - 1) i = TREE_FRAMES - 1;
+  return flip ? TREE_FRAMES * 2 - 1 - i : i;
 }
 
 // The treasure chest's sprite bakes HERE, from its own grid - js/sprites.js

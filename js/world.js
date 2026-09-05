@@ -270,9 +270,10 @@ function genWorld() {
   for (let ty = 0; ty < WORLD; ty++) {
     for (let tx = 0; tx < WORLD; tx++) {
       const d = Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty);
-      // `variant` picks no art any more - there is one pine in sixteen wind
-      // frames and treeFrame() reads the tile's own hash for the one it rests
-      // on - but the ROLL stays: dropping an rng() call here reshuffles every
+      // `variant` picks no art any more - there is one pine in twenty-four bend
+      // frames and treeFrame() reads the wind for the lean it wears (the tile's
+      // own hash only mirrors it and gives it a standing lean) - but the ROLL
+      // stays: dropping an rng() call here reshuffles every
       // existing seed (the hard rule in CLAUDE.md). It is rolled exactly where
       // the seed's own border (borderNoise) plants a pine; the roost discs'
       // extra pines (borderDepth) take variant 0 and roll nothing, so the

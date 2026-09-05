@@ -327,9 +327,10 @@ function render() {
     if (o.type === 'tree') {
       // 27x37, bottom-aligned on its own tile: (px - 5, py - 21) puts the
       // trunk on the tile's centre line and hangs the canopy over the tile
-      // above. Which of the sixteen frames it wears is the WIND's business,
-      // not the tree's - see treeFrame() in js/draw-world.js - and it comes
-      // off the one atlas texture, never a per-frame canvas. The handful
+      // above. How far over it is leaning - and whether it draws mirrored - is
+      // the WIND's business, not the tree's: see treeFrame() in
+      // js/draw-world.js, which hands back an index into the one 48-frame
+      // atlas texture, never a per-frame canvas. The handful
       // surrounding the viewed hero take the occluder fade (consts above
       // render()); the globalAlpha flip only ever touches those few, so the
       // thousand-pine atlas batch stays whole.

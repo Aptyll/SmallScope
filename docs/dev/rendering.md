@@ -183,8 +183,8 @@ with a sort key; anything flat goes in the pre-pass.
 
 A **tree** is 27×37 and draws at `(px - 5, py - 21)` — bottom-aligned on its own tile, trunk on
 the tile's centre line, canopy overhanging the tile above (which the `draws`
-loop's existing 1-tile top margin and 2-tile bottom margin already cover). Which of its sixteen
-sway frames it wears comes from `treeFrame(tx, ty)` off the [wind field](#the-wind-field), never
+loop's existing 1-tile top margin and 2-tile bottom margin already cover). How far over it is
+leaning comes from `treeFrame(tx, ty)` off the [wind field](#the-wind-field), never
 from a clock of its own, and it is blitted out of **one atlas texture** rather than a per-frame
 canvas — see [Drawing a thousand of something](#drawing-a-thousand-of-something), which is the
 largest performance fact in this file. The pines **surrounding the viewed hero** take the
@@ -1731,8 +1731,10 @@ count:
 | no trees at all | 205 |
 
 Sprite **area is irrelevant** (155 against 152 for a sprite two and a half times the size). What
-costs is the state change. So `SPRITES.treeAtlas` lays all sixteen sway frames side by side in one
-canvas with `fw`/`fh` riding on it, and `drawFrameFlash(atlas, frame, x, y, flash)` — the
+costs is the state change. So `SPRITES.treeAtlas` lays all twenty-four bend frames side by side in
+one canvas — and then all twenty-four again mirrored, forty-eight in all, because half the forest
+draws flipped and a wider atlas is still **one** texture —
+with `fw`/`fh` riding on it, and `drawFrameFlash(atlas, frame, x, y, flash)` — the
 atlas-aware twin of `drawSpriteFlash` — blits a source rect out of it. `SPRITES.tree` still exists
 because the atlas is baked from it, but nothing draws through it.
 
@@ -1783,46 +1785,76 @@ weather moves reads it rather than keeping a clock of its own:
 - `state.wind` is the field's strength, 0..1: `windAmp()` **squares the daylight**, so the air
   goes still across dusk and is dead calm by full dark. Two swells on coprime periods
   (`WIND_SWELL`, `WIND_SWELL2`) ride under that, so the day's weather never settles into a rhythm.
-- `windSway(tx, ty)` is the signed sway at a tile, −1..1, and it is a **sum of waves on crossing
-  bearings**, not one wave. A single travelling sine over a grid is a marching corduroy — straight,
-  evenly spaced, every tree at full lean — which is the one thing air does not look like. What
-  crosses the field instead:
+- `state.windDir` is which way the air is running, −1..1 — one answer for the whole map, because a
+  prevailing wind is a property of the day and not of a tile. `windVeer()` steps it beside the
+  strength: a sine on `WIND_VEER` (47 s) overdriven into its clamp by `WIND_VEER_HOLD`, so the air
+  holds a steady quarter for most of a swing and crosses the still middle in about nine seconds.
+  That is what puts a stand of pines over to the left for a while, stands them up, then lays them
+  to the right.
+- `windSway(tx, ty)` is the signed **lean** at a tile, −1..1, where +1 is a crown thrown fully to
+  the right — a lean, not a phase, which is what lets a gust lay every tree inside it the same way.
+  It is a **sum of waves on crossing bearings**, not one wave: a single travelling sine over a grid
+  is a marching corduroy — straight, evenly spaced, every tree at full lean — which is the one thing
+  air does not look like. Its three terms are the lean, the rustle and the arrival:
+
+  ```
+  s = wind * gust * (WIND_LEAN * windDir + WIND_RUSTLE * ripples)
+  ```
+
+  The **lean** is the DC push: a stand inside a gust bends downwind and is *held* there while the
+  gust is on it, then eases upright in the lull behind, which is the part you actually watch cross
+  the treeline. The **rustle** is the crowns working about that lean, multiplied by the same gust,
+  so a tree in a lull barely stirs while one in the front is thrashing — and it is small enough
+  against the lean that a gusted tree stays downwind of vertical the way a real one does. What
+  crosses the field:
   - **three ripples** (`WIND_R1*`…`WIND_R3*`), each its own bearing as a `(kx, ky)` in rad per
     tile, its own speed and its own share of the amplitude. Two run with the prevailing down-right
     air and the third cuts across it. Their amplitudes sum to **1.44**, deliberately past 1: three
     waves at random phase mostly cancel, so a set summing to exactly 1 leaves the forest
-    permanently half-hearted. The result is clamped to ±1 — at sixteen quantised frames a flat top
-    is invisible, and a wrap past +1 would jerk a tree the wrong way.
+    permanently half-hearted. The result runs through a **soft knee** at `WIND_SOFT` — under it the
+    lean is linear, over it a rational curve eases toward ±1 without reaching it. A hard clamp
+    there would *freeze* the worst-hit trees at full lean, which is the one moment they should look
+    busiest.
   - **one bend** (`WIND_W*`), a long slow wave folded into the *spatial phase* of all three
     ripples at once — phase modulation, the trick FM synthesis is. It meanders the whole rustle
     together, which is what turns the plaid a plain sum of sines gives into wandering fronts.
-  - **a gust envelope**: two waves an order of magnitude longer than the ripples (~85 and ~100
+  - **a gust envelope**: two waves an order of magnitude longer than the ripples (~56 and ~66
     tiles against ~18) on crossing bearings, summed and smoothstepped, running between `WIND_LULL`
     and `WIND_GUST_PEAK`. The sum is what makes a gust a *patch* of field rather than a stripe of
     it; the smoothstep widens the calm between gusts and squares up their shoulders. Both ends are
     set against the **view**, not the world: a screen is barely wider than one gust, so the floor
     cannot sit near zero (a player parked in a lull would be watching a dead forest) and the peak
-    deliberately overshoots 1 so the heart of a gust runs into the clamp and throws those trees
-    fully over.
+    deliberately overshoots 1 so the heart of a gust runs into the soft knee and lays those trees
+    right over. Their wavelength is set against the view too — about two screens each, so the near
+    trees are already over while the far ones are still standing and you *see* the front travel.
+  - **the arrival**: those two envelope waves are not sines. They run through `wskew`, which folds
+    a wave's own value into its phase and leans it forward, so at `WIND_SKEW` = 0.7 a gust spends
+    ~32 % of its cycle arriving and ~68 % dying away. A wind gauge draws that shape and a sine does
+    not, and the asymmetry is most of what separates *a front hit* from *the forest is breathing in
+    and out*.
 
-  Sampled over a view for a minute of sim, the field carries the same amount of motion as the
-  single wave it replaced — mean **1.64** frames off rest against 1.66, and **7.6 %** of tiles
-  hard over (≥5 frames) against 7.4 % — but distributed as gusts and lulls rather than evenly:
-  **26.6 %** of tiles are perfectly still at any moment, against 20.5 %. Under `WIND_STILL` it
-  returns a flat 0 and every pine simply holds its rest frame.
-- `treeFrame(tx, ty)` (js/draw-world.js) turns that into one of the sixteen sway frames:
-  `hash2` picks the frame the tree *rests* on — which is what keeps a dead-calm forest from
-  reading as one stamp repeated — and the sway walks it ±8 around that. The frames are laid out in
-  [js/sprites.js](../../js/sprites.js) as a **cycle** ordered so consecutive frames differ least,
-  so ±8 in either direction is smooth and so is the wrap.
+  Sampled over a view for a minute of sim, a tile averages **2.34 frames** off upright, **3.4 %**
+  are thrown 8 frames or more over (the heart of a gust) and **36.8 %** are within a frame of
+  standing straight up — the motion distributed as gusts and lulls rather than evenly. Under
+  `WIND_STILL` it returns a flat 0 and every pine simply stands up.
+- `treeFrame(tx, ty)` (js/draw-world.js) turns that into an atlas frame. The pine's frames are a
+  **ladder** of leans, not a cycle of phases ([sprites.md](sprites.md)) — 0 thrown fully left, 23
+  fully right, the middle upright — so the map is direct: `round(11.5 + sway * 11.5)`, **clamped**
+  rather than wrapped, because at the end of its travel a crown stops rather than snapping back the
+  other way. Every frame being the same tree now, two things off the tile's `hash2` keep a stand
+  from reading as one stamp repeated: half the forest draws **mirrored** (the second 24 frames of
+  the atlas — a mirrored tree's ladder runs backwards, hence the reversed index), and each tree
+  keeps a **standing lean** of up to `TREE_REST` frames, which is what it is still wearing after
+  dark.
 - `wsin` is a 256-entry sine table, and it is why the field can afford to be six waves: `windSway`
-  is read once per visible pine per frame and does six lookups, not six `Math.sin` calls, and its
-  answer is quantised to sixteen frames, so a table is exact enough. The cost stays flat when a
-  zoomed-out view is holding a thousand trees. Negative phases are fine — `|0` then `& 255` wraps
-  them, at the price of a truncation a 256th of a cycle wide. Measured over 2000 tiles (about what
-  the widest view holds), the six-wave field costs **0.077 ms a frame against 0.030** for the
-  single wave — 0.3 % of a 60 fps budget, and this is the one number here that *is* safe to take
-  from a headless run, because it is V8 arithmetic rather than the rasteriser.
+  is read once per visible pine per frame and does eight lookups (the two skewed envelope waves
+  cost two each), not eight `Math.sin` calls, and its answer is quantised to twenty-four frames, so
+  a table is exact enough. The cost stays flat when a zoomed-out view is holding a thousand trees.
+  Negative phases are fine — `|0` then `& 255` wraps them, at the price of a truncation a 256th of
+  a cycle wide. Measured over 2000 tiles (about what the widest view holds), the field costs
+  **0.084 ms a frame against 0.050** for the zero-mean version before the lean and the skew — 0.2 %
+  of a 60 fps budget, and this is the one number here that *is* safe to take from a headless run,
+  because it is V8 arithmetic rather than the rasteriser.
 
 On a GTX 1060 at 886×498 over the treeline the whole pass is inside measurement noise of not
 running at all — see [What this pass costs](#what-this-pass-costs). Do not profile this in a
