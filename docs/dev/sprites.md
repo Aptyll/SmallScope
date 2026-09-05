@@ -96,21 +96,30 @@ White/Green/Blue/Purple/Gold — where the rarity itself is the only colour that
 `itemCardWhite`…`itemCardGold` are five palette swaps of one grid, the same relationship `GEAR_MATS`
 has to a single gear icon.
 
-**The pine is sixteen frames of one tree**, and one of two sprites here not drawn by hand (the
-gold sack below is the other):
-`treeSway` is `docs/media/new_media/*.png` cropped to **27×37** and snapped onto
-`TSPAL` (fourteen colours, `bake`d like everything else). It draws at
+**The pine is twenty-four bend frames of one tree**, and one of two sprites here not drawn by hand
+(the gold sack below is the other):
+`treeSway` is `docs/media/new_media/001.png` cropped to **27×37**, snapped onto
+`TSPAL` (fourteen colours, `bake`d like everything else), and then **sheared** into its other
+frames. It draws at
 `(px - 5, py - 21)` with its trunk on the tile's centre line, and **through `SPRITES.treeAtlas`,
-never through `SPRITES.tree`** — all sixteen frames in one canvas, because a `drawImage` that
+never through `SPRITES.tree`** — because a `drawImage` that
 changes source texture cannot be batched and a wide view holds a thousand pines
-([rendering.md](rendering.md#drawing-a-thousand-of-something)). The **source file order is
-not the animation order**: the sixteen files are variants of one tree rather than a hand-animated
-sway, so they are laid out here as a **cycle**, ordered so consecutive frames differ least (a
-2-opt tour of the pixel distance between them) - which also sorted the 1-2px vertical bob baked
-into them into one smooth rise and fall. That ordering is what makes `treeFrame`'s ±8 walk either
-side of a rest frame smooth, and smooth across the wrap. `TPAL` above it stays: it still dresses
-the `stump` a felled pine leaves. Which frame a tree is wearing is decided by the wind, not here -
-[rendering.md](rendering.md#the-wind-field).
+([rendering.md](rendering.md#drawing-a-thousand-of-something)).
+
+The array is a **ladder, not a cycle**: index 0 is the tree thrown fully left, 23 fully right, 11
+and 12 are it standing up. A frame here is a *lean*, so `treeFrame` maps the wind's signed sway
+onto an index directly and a gust lays every tree inside it over the same way — where the sixteen
+variant crops this replaced could only morph one tree's branches into another's, which no ordering
+makes into a forest bending. The shear is a **tip-loaded cantilever** rounded per row: a row `h` of
+the way up from the base moves `2.6 * (3h² - h³) / 2` px, which is zero slope where the trunk meets
+the snow, all of the curve in the crown, and 6 px of travel at the tip end to end. Rows cross their
+rounding thresholds at different heights, so 21 of the 24 frames are distinct pixels.
+
+Every frame being the same tree, the atlas holds **forty-eight**: the 24 again, mirrored, with the
+tile's `hash2` sending half the forest into them — which, together with the small standing lean that
+hash also gives, is what keeps a stand from reading as one stamp repeated. `TPAL` above it stays: it
+still dresses the `stump` a felled pine leaves. Which frame a tree is wearing is decided by the
+wind, not here - [rendering.md](rendering.md#the-wind-field).
 
 **The gold sack is the merchant's mark, and the second imported sprite.** `SPRITES.goldSack` is
 `docs/media/new_media/bag_of_gold_spritesheet.png` — a 192×32 strip — split at 32 px into the six

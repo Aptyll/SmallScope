@@ -212,6 +212,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the disc an arrow lands in round a body | `ARROW_HIT_R` (above `updatePlay`) | `update` |
 | the clock paying every player on the ground a coin, silently | `TRICKLE_GOLD`/`TRICKLE_T` (the tick is in `updatePlay`'s player loop) | `passive income` |
 | the zoom ease itself (runs first thing in `update`) | `applyZoom` | `update` |
+| the one wind field: its strength, which way it is running, and the signed lean at a tile | `windAmp`, `windVeer`, `windSway`, `wsin`/`wskew`, `WIND_*` | `wind` |
 | particles, floaters, footprints, drops, world-space snow flakes | `updateFx`, `makeFlake`, `fitFlakes` | `fx updates` |
 | the belly-crawl drag furrow: emitted in `updatePlayer`, drawn as the `f.k === 3` branch | `footprints`, `p.trailD` | `update` (the draw branch: `render`, render.js) |
 
@@ -233,7 +234,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the stun tell: orbiting sparks, and the plate that carries them on a player's frame while it lasts | `drawStunStars`, the overhead block inside `drawPlayer` | `entity draw` |
 | the overhead frame and the name over it: where the stack sits, the three bars' palette (health by side, stamina white, the draw meter's two golds), and centring odd-width text on a model | `FRAME_DX`, `BAR_NEUTRAL`/`barCol`, `STAM_COL`/`STAM_GHOST`, `DRAW_COL`/`DRAW_FULL_COL`/`DRAW_FULL_FLASH`, `NOCK_COL`/`EAT_COL`, `THREAT_COL` (a wolf's threat bar; a deer's sprint bar and a rabbit's dodge bar reuse `STAM_COL`), `drawHealthBar`, `centreTextX` | `entity draw` |
 | the turret's rotating gun, its bolts, its aim line and muzzle flash | `drawTurretHead`, `drawBolt`, `drawTurretFx`, `paintRimmed` | `entity draw` |
-| which sway frame a pine is wearing (off the wind field) | `treeFrame` | `entity draw` |
+| which bend frame a pine is wearing, and whether it draws mirrored (off the wind field) | `treeFrame`, `TREE_FRAMES`/`TREE_REST` | `entity draw` |
 | one baked speck (mote, star, flake) at a quantised brightness, and the atlas behind it | `bakeSpecks`, `drawSpeck` | `light & weather` |
 | whether the sun shafts are up at all (the drop window, and noon) | `rayLight` | `light & weather` |
 | sun shafts, drifting cloud shadows, the tileable noise they are baked from | `godRays`, `cloudShade`, `cloudLayer`, `bakeCloud`, `pnoise` | `light & weather` |
