@@ -103,16 +103,30 @@ function fitCanvas() {
   const dpr = window.devicePixelRatio || 1;
   const devW = Math.max(1, Math.round(window.innerWidth * dpr));
   const devH = Math.max(1, Math.round(window.innerHeight * dpr));
-  let dev = Math.max(1, Math.round(devH / TARGET_ROWS));
-  // never shrink the view below the UI panels' footprint
-  while (dev > 1 && (devW / dev < 320 || devH / dev < 240)) dev--;
+  // phone mode may have just flipped (the TOUCH MODE row, a resize onto a
+  // different screen, the setting arriving at boot); a flip also resets the
+  // camera below
+  const mobileFlip = mobileRefresh();
+  let dev;
+  if (MOBILE) {
+    // a phone takes the BIGGEST game pixel the overlays still fit under
+    // (MOBILE_MIN_*, js/mobile.js): fewer rows than a monitor's 270, so a
+    // sprite is thumb-sized and the HUD is legible on six inches of glass
+    dev = Math.max(1, Math.floor(Math.min(devH / MOBILE_MIN_H, devW / MOBILE_MIN_W)));
+  } else {
+    dev = Math.max(1, Math.round(devH / TARGET_ROWS));
+    // never shrink the view below the UI panels' footprint
+    while (dev > 1 && (devW / dev < 320 || devH / dev < 240)) dev--;
+  }
   scale = dev / dpr; // CSS px per game px; mouse mapping divides by this
   devScale = dev;    // the replay window captures at this resolution
   // cover the window exactly: ceil leaves at most one game px of overflow,
   // which the body's flex centering splits and overflow:hidden clips
   VIEW_H = Math.ceil(devH / dev);
   FULL_W = Math.ceil(devW / dev);
-  VIEW_W = Math.min(FULL_W, Math.ceil(VIEW_H * 16 / 9));
+  // a phone is 19.5:9 or wider and gets all of it - no frost bars on a
+  // screen this small, the width is the thumbs' room
+  VIEW_W = MOBILE ? FULL_W : Math.min(FULL_W, Math.ceil(VIEW_H * 16 / 9));
   // The backing store is in DEVICE pixels, not game pixels: the world blit
   // needs that resolution to land a whole number of device pixels on every
   // world pixel at the in-between zoom rungs (see the world zoom block). The
@@ -123,6 +137,8 @@ function fitCanvas() {
   uictx.imageSmoothingEnabled = false; // resizing the canvas resets ctx state
   // devScale may have just changed (resize, fullscreen, a different monitor):
   // re-rung the zoom onto the new ladder at the nearest scale to what it was
+  // - or, the moment phone mode comes on, at the camera a phone opens at
+  if (mobileFlip && MOBILE) zoomCur = MOBILE_ZOOM;
   kWant = Math.max(kMin(), Math.min(kMax(), Math.round(zoomCur * dev)));
   // world buffer at the most zoomed-out size we can ever ask for, so it is
   // never reallocated mid-play; each frame uses the WV_W x WV_H corner.

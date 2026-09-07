@@ -32,7 +32,8 @@ Read the relevant one **before** working in that area — they carry the detail 
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
 | worldgen, tiles, ground, determinism/RNG, day/night, ice holes and fish, landmarks | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |
-| players, classes and kits, the input struct, teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
+| players, classes and kits, the input struct, **the three controllers** (keyboard, gamepad, touch), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
+| **phones**: the fit a phone gets, the rotate prompt, the touch plates' pixels | [docs/dev/rendering.md](docs/dev/rendering.md#phones) |
 | sprite grids and palettes | [docs/dev/sprites.md](docs/dev/sprites.md) |
 | a **new look** for anything drawn — concept sheets Noah picks from before a grid ships | the `concept-art` skill ([.claude/skills/concept-art/SKILL.md](.claude/skills/concept-art/SKILL.md)); past sheets in `docs/media/concepts/` |
 | adding an object/tool/structure/ground type/landmark, tuning balance, intentional dead code | [docs/dev/checklists.md](docs/dev/checklists.md) |
@@ -43,7 +44,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 
 Five legacy files — `profile.js`, `font.js`, `sprites.js`, the generated `sfxdata.js`,
 `audio.js` — keep their IIFEs and expose fixed `window` globals; after them the game code is
-**flat top-level classic scripts sharing one global scope** — twenty-two files, `core.js` through
+**flat top-level classic scripts sharing one global scope** — twenty-five files, `core.js` through
 `boot.js` (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
 globals**, so each file's globals must exist before the next loads. The file table and the
@@ -65,7 +66,7 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs).
 
-The game code is organized only by `// ------ name` banners inside its twenty-two files.
+The game code is organized only by `// ------ name` banners inside its twenty-five files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 
@@ -159,6 +160,9 @@ lives in `docs/dev/*.md` beside the code it protects.
   `SPRITES.champ[c][skin(t)]`, every per-team sprite set — never by the bare index: your side is
   always BLUE on your screen (`settings.teamBlue`), and a bare `TEAMS[p.team]` is the one thing
   on it painted the wrong colour. Rules (`p.team`, `enemyOf`) never call it.
+- **What a key does lives in `keyPress`/`keyRelease`, what a button does in `pointerPress`/
+  `pointerRelease`** (input.js), never in a listener: a gamepad and a finger press the same keys
+  and buttons through those four, so a key handled in the listener alone is dead on a pad.
 - **Anything a player does takes a `p` and reads `p.input`**, never `keys`/`mouse` (local player only),
   and anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).

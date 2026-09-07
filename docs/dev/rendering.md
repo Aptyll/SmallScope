@@ -26,7 +26,8 @@ resolution setting**; camera zoom is a gameplay feature (below), not a display o
   than letterbox or blur — the Terraria/Stardew trade. 16:9 screens always fill edge-to-edge.
 - `VIEW_W` is **capped at 16:9** (`ceil(VIEW_H * 16/9)`): wider-than-16:9 monitors get pillarbox
   bars instead of extra vision — the SC2 rule. Narrower screens simply see less width. A guard
-  keeps the view at least 320×240 so the UI panels always fit.
+  keeps the view at least 320×240 so the UI panels always fit. **A phone takes neither the
+  target rows nor the cap** — see [Phones](#phones).
 - A third canvas, `#replay`, sits *above* `#game` and carries the replay window at device
   resolution; see [Replay](#replay-the-last-four-seconds). It is the only thing drawn outside
   `#game`'s pixel grid, and the only reason is that the grid has too few pixels there.
@@ -38,6 +39,45 @@ resolution setting**; camera zoom is a gameplay feature (below), not a display o
   and is deliberately darker than the world so the eye stays on the game; on ≤16:9 screens it
   is cleared and fully covered. It uses `hash2`, so it must never run before boot — it is baked
   once per canvas size by `relayout()`, never per frame, and the game never draws into it.
+
+## Phones
+
+`MOBILE` (js/mobile.js) is the one flag: `mobileRefresh()` sets it from the TOUCH MODE setting
+(`settings.mobile`: `'auto'` reads the device — a coarse primary pointer, touch events and a
+screen whose short side is under `MOBILE_SHORT` CSS px, so a tablet stays on the desktop fit —
+`'on'`/`'off'` force it), and `fitCanvas()` calls it first, so a flip anywhere (the setting,
+boot reading the saved one, a resize onto another screen) re-fits the view. What a phone gets:
+
+- **The biggest game pixel the overlays allow.** The world map slab is 308×226 and the settings
+  slab 240×218, so a phone takes the largest whole device-pixel scale that keeps the view above
+  `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — fewer rows than a monitor's 270 wherever the
+  arithmetic permits (a 1170-px-tall phone lands on 234 rows at 5×; a 1080-px one cannot, 5×
+  would be 216, so it stays at 270 rows at 4×), and the 3×5 font and the HUD grow with the pixel.
+  It is the same rule as the desktop's 320×240 guard with the target rows removed; the `TARGET_ROWS`
+  nearest-scale pick is the desktop branch only.
+- **No 16:9 cap and no frost bars**: `VIEW_W = FULL_W`. A phone is 19.5:9 or wider and the
+  width is the thumbs' room, so `renderBars()` clears itself (its bars are under 2 px).
+- **The camera opens at `MOBILE_ZOOM`** (1.5): the moment phone mode comes on, `fitCanvas` sets
+  `zoomCur` to it before re-runging `kWant`, so a sprite is thumb-sized. The wheel's rungs are
+  unchanged; the touch zoom pair steps the same `kWant`.
+- **Its own HUD SIZE**: `settings.hudScaleM` (default 1.25) — `hudSc()` reads
+  `hudScaleKey()`'s field, and the one GAME slider edits whichever is live, so a profile that
+  plays on both keeps both.
+- **The touch controls** draw above everything but the fade and the cursor
+  (`drawTouchControls`, the `touch controls` banner, ui.js): plates from `touchLayout()`
+  (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
+  draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
+  presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
+- **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
+  finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
+  says who moved the pointer last (input.js).
+- **Held upright**, `mobilePortrait()` is true: `drawRotatePrompt` covers the frame with a
+  night slab and a phone snapping between upright and sideways under an arrow, and
+  `touchDown` swallows every finger. `mobileGesture()` asks for fullscreen and a landscape
+  lock on every press until one lands (a phone Safari grants neither; the refusals are silent).
+
+`DBG.setMobile('on')` forces the phone fit on any window;
+[checklists](checklists.md#verifying-a-change) has the emulation recipe.
 
 ## World zoom, and the two pixel spaces
 

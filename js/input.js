@@ -3,13 +3,27 @@
 // input struct an AI fills, sampled once per sim step by sampleHumanInput().
 // ------------------------------------------------------------ input
 const keys = {};
-const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false }; // inside: pointer over the canvas
+// inside: pointer over the canvas. src: who moved it last - 'mouse', 'pad'
+// (js/gamepad.js) or 'touch' (js/touch.js); in play the pad and a finger
+// keep writing the aim through it every frame, and stop the moment the mouse
+// itself moves, so the three never fight over one reticle
+const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, src: 'mouse' };
 
+// EVERY CONTROLLER IS A KEYBOARD AND A MOUSE IN DISGUISE. The listeners here
+// only translate the browser's events; what a key does lives in keyPress /
+// keyRelease and what a button does in pointerPress / pointerRelease, so a
+// gamepad and a finger press the same keys and the same buttons instead of
+// each keeping a copy of this file - a key handled in a listener alone is
+// dead on a pad. `e` is {key, repeat}: a real KeyboardEvent, or the object a
+// pad or a plate builds.
 window.addEventListener('keydown', (e) => {
   // Tab is held to read the scoreboard (scoreboardOpen()), so it must never
   // reach the browser's focus traversal
   if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3'].includes(e.key)) e.preventDefault();
   keys[e.key.toLowerCase()] = true;
+  keyPress(e);
+});
+function keyPress(e) {
   // the name editor owns the keyboard while it is up: its letters are text,
   // not shortcuts, and F3 / '.' below would fire on keys the field ignores
   if (state.mode === 'title' && state.menu.panel === 'name') { nameKey(e); return; }
@@ -99,9 +113,12 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.key.toLowerCase() === 'n') { settings.muted = SFX.toggleMute(); saveSettings(); }
   if (e.key.toLowerCase() === 'p') state.paused = !state.paused;
-});
+}
 window.addEventListener('keyup', (e) => {
   keys[e.key.toLowerCase()] = false;
+  keyRelease(e);
+});
+function keyRelease(e) {
   // letting go of E with an E-held wheel up (armory, roll die or range
   // bell) takes what the pointer is on (or cancels from the hub), exactly
   // as releasing the right button does
@@ -110,7 +127,7 @@ window.addEventListener('keyup', (e) => {
     resolveWheel();
     state.wheel = null;
   }
-});
+}
 // a key - or the middle button - held while the window loses focus never sends
 // its keyup/mouseup: alt-tabbing out would otherwise leave the scoreboard (or
 // a walk direction, or the flag preview) stuck on
@@ -129,14 +146,19 @@ window.addEventListener('blur', () => {
 
 canvas.addEventListener('mousemove', (e) => {
   const r = canvas.getBoundingClientRect();
-  mouse.x = (e.clientX - r.left) / scale;
-  mouse.y = (e.clientY - r.top) / scale;
+  pointerMove((e.clientX - r.left) / scale, (e.clientY - r.top) / scale, 'mouse');
+});
+// the pointer is at x, y (game px), moved by `src` (see `mouse`)
+function pointerMove(x, y, src) {
+  mouse.x = x;
+  mouse.y = y;
   mouse.inside = true;
+  mouse.src = src || 'mouse';
   state.menu.moved = true; // the menu only lets the mouse steal the selection when it actually moves
   // a press on a bag/slot/bit cell only becomes a DRAG once it travels: that
   // is what lets one gesture both use an item and move it (see hudMove, ui.js)
   if (state.dragPend) hudMove(mouse.x, mouse.y);
-});
+}
 // the in-canvas cursor must vanish when the pointer leaves the page
 canvas.addEventListener('mouseleave', () => { mouse.inside = false; });
 document.addEventListener('mouseleave', () => { mouse.inside = false; });
@@ -147,7 +169,15 @@ canvas.addEventListener('mousedown', (e) => {
   mouse.x = (e.clientX - r.left) / scale;
   mouse.y = (e.clientY - r.top) / scale;
   mouse.inside = true;
-  if (e.button === 2) {
+  mouse.src = 'mouse';
+  // Middle click is also the browser's autoscroll, which only a
+  // preventDefault on the PRESS suppresses.
+  if (e.button === 1) e.preventDefault();
+  pointerPress(e.button);
+});
+// a button went down at the pointer: 0 left, 1 middle, 2 right
+function pointerPress(button) {
+  if (button === 2) {
     if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.draft) return;
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || bitColHit(mouse.x, mouse.y) >= 0) return; // no build wheel through the HUD
@@ -163,22 +193,8 @@ canvas.addEventListener('mousedown', (e) => {
     else if (STRUCTS[o.type]) SFX.deny(); // someone else's building
     return;
   }
-  if (e.button === 1) {
-    // The worker flag is press-and-HOLD, the build wheel's grammar one button
-    // over: the press raises the preview, the release plants where it landed.
-    // Nothing about the flag is drawn until this press, which is the whole
-    // point - a preview for an order you have not started is clutter.
-    // Middle click is also the browser's autoscroll, which only a
-    // preventDefault on the PRESS suppresses.
-    e.preventDefault();
-    if (state.mode !== 'play' || state.settingsOpen || state.wheel || state.draft) return;
-    if (!hasWorkers(player)) return;                       // nobody to order: the button is dead
-    if (!state.mapOpen && overHud(mouse.x, mouse.y)) return; // the HUD swallows its own presses
-    SFX.unlock();
-    state.flagAim = true;
-    return;
-  }
-  if (e.button !== 0) return;
+  if (button === 1) { flagDown(); return; }
+  if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
   if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropJump(player); return; }
   if (state.mode === 'dead') { SFX.unlock(); deadClick(); return; }
@@ -201,29 +217,16 @@ canvas.addEventListener('mousedown', (e) => {
   if (state.drag) return;
   mouse.down = true;
   clickAction(player);
-});
-window.addEventListener('mouseup', (e) => {
-  if (e.button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
-  if (e.button === 1) {
-    // the release is the order. Escape (or losing focus) drops flagAim first,
-    // which is what makes this cancellable without a hub to release into
-    if (!state.flagAim) return;
-    state.flagAim = false;
-    if (state.mode !== 'play' || state.settingsOpen || state.wheel || state.draft) return;
-    if (state.mapOpen) {
-      // the chart commands too: it is the only way to flag a tile off-screen
-      const mt = mapTileAt(mouse.x, mouse.y);
-      if (mt) plantFlag(player, mt.tx, mt.ty); else SFX.deny();
-      return;
-    }
-    if (overHud(mouse.x, mouse.y)) return; // dragged onto the HUD to think better of it
-    plantFlag(player, Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE));
-    return;
-  }
+}
+window.addEventListener('mouseup', (e) => { pointerRelease(e.button); });
+// ...and came back up
+function pointerRelease(button) {
+  if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
+  if (button === 1) { flagUp(); return; }
   // a carried item is put down (or thrown), and an armed press that never
   // travelled resolves as the plain click it was - both before the tool's own
   // release, so a drag never also looses a shot
-  if (e.button === 0 && state.mode === 'play' && (state.drag || state.dragPend)) {
+  if (button === 0 && state.mode === 'play' && (state.drag || state.dragPend)) {
     hudRelease(mouse.x, mouse.y);
     player.input.fire = false;
     mouse.down = false;
@@ -232,14 +235,96 @@ window.addEventListener('mouseup', (e) => {
   }
   // releasing the button just drops the held intent; updatePlayer fires the
   // tool on that falling edge, the same way an AI's shot is timed
-  if (e.button === 0) player.input.fire = false;
+  if (button === 0) player.input.fire = false;
   // letting go of a dial: the two sound tracks answer with a real sampled cue
   // at the level just set, so the slider demonstrates itself instead of
   // labelling itself - and a dead sample layer is audible the moment you drag
   if (dragSlider) { saveSettings(); if (dragSlider === 'sfx' || dragSlider === 'vol') SFX.coin(); else SFX.pickup(); }
   mouse.down = false;
   dragSlider = null;
-});
+}
+
+// The tool's own press and release, BARE: what a pad's trigger and a finger's
+// aim stick send. The mouse arrives through pointerPress instead because a
+// press has the HUD to get past first; a trigger is never over a well.
+function fireDown() {
+  if (state.mode !== 'play' || state.wheel || state.draft || state.settingsOpen || state.mapOpen ||
+      state.drag || state.dragPend || state.shop || player.dead) return false;
+  mouse.down = true;
+  clickAction(player);
+  return true;
+}
+function fireUp() {
+  player.input.fire = false;
+  mouse.down = false;
+}
+
+// The worker flag is press-and-HOLD, the build wheel's grammar one button
+// over: the press raises the preview, the release plants where it landed.
+// Nothing about the flag is drawn until this press, which is the whole point
+// - a preview for an order you have not started is clutter. The middle
+// button, R3 on a pad and the touch FLAG plate all hold it.
+function flagDown() {
+  if (state.mode !== 'play' || state.settingsOpen || state.wheel || state.draft) return false;
+  if (!hasWorkers(player)) return false;                      // nobody to order: the button is dead
+  if (!state.mapOpen && overHud(mouse.x, mouse.y)) return false; // the HUD swallows its own presses
+  SFX.unlock();
+  state.flagAim = true;
+  return true;
+}
+function flagUp() {
+  // the release is the order. Escape (or losing focus) drops flagAim first,
+  // which is what makes this cancellable without a hub to release into
+  if (!state.flagAim) return;
+  state.flagAim = false;
+  if (state.mode !== 'play' || state.settingsOpen || state.wheel || state.draft) return;
+  if (state.mapOpen) {
+    // the chart commands too: it is the only way to flag a tile off-screen
+    const mt = mapTileAt(mouse.x, mouse.y);
+    if (mt) plantFlag(player, mt.tx, mt.ty); else SFX.deny();
+    return;
+  }
+  if (overHud(mouse.x, mouse.y)) return; // dragged onto the HUD to think better of it
+  plantFlag(player, Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE));
+}
+
+// A build or manage wheel with no tile under a pointer: the nearest thing in
+// reach the right button would open on - a stump or an open hole to net, or
+// one of your own buildings - for a pad's dpad and the touch BUILD plate.
+// ax/ay is the press point the pick travels from (wheelLayout, ui.js); the
+// caller resolves the wheel on its own release, as the right button does.
+function openWheelNear(p, ax, ay) {
+  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.draft || p.dead) return false;
+  const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
+  let best = null, bd = 60; // the right button's own reach
+  for (let ty = pty - 4; ty <= pty + 4; ty++) for (let tx = ptx - 4; tx <= ptx + 4; tx++) {
+    if (tx < 0 || ty < 0 || tx >= WORLD || ty >= WORLD) continue;
+    const d = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y);
+    if (d >= bd) continue;
+    if (buildSiteAt(tx, ty)) { best = { kind: 'build', tx, ty }; bd = d; continue; }
+    const o = structOf(objAt(tx, ty));
+    if (o && STRUCTS[o.type] && !o.building && o.team === p.team) { best = { kind: 'manage', tx, ty }; bd = d; }
+  }
+  if (!best) { SFX.deny(); return false; }
+  SFX.unlock();
+  state.wheel = { kind: best.kind, tx: best.tx, ty: best.ty, seg: -1, ax, ay };
+  return true;
+}
+
+// whichever scrolling page is up walks by d px - the wheel listener below,
+// a finger's drag and a pad's right stick all arrive here. False when
+// nothing on screen scrolls.
+function panelScrollBy(d) {
+  if (state.mode === 'title') {
+    if (state.menu.panel === 'patch') patchScrollBy(d);
+    else if (state.menu.panel === 'settings') settingsScrollBy(d);
+    else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) wikiScrollBy(d);
+    else return false;
+    return true;
+  }
+  if (state.mode === 'play' && state.settingsOpen) { settingsScrollBy(d); return true; }
+  return false;
+}
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 // middle click plants the flag; nothing about it should reach the page
 canvas.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
@@ -280,6 +365,10 @@ function sampleHumanInput(p) {
   if (keys['s'] || keys['arrowdown']) my += 1;
   if (keys['a'] || keys['arrowleft']) mx -= 1;
   if (keys['d'] || keys['arrowright']) mx += 1;
+  // ...and the two sticks, a pad's left one and the touch move stick, at
+  // their tilt (both files load after this one; this is a run-time read)
+  mx = Math.max(-1, Math.min(1, mx + pad.mx + touch.mx));
+  my = Math.max(-1, Math.min(1, my + pad.my + touch.my));
   // The chart does not stop the world, so it does not stop the player: you
   // keep walking, sliding, rolling and burrowing with it up, and watch your
   // own marker move across it. Everything that acts on the world is dropped -

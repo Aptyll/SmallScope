@@ -2176,6 +2176,9 @@ your own marker cross it. Consequences worth knowing:
 `settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `aiLevel` — the rival bots' difficulty notch on class select, an index into `AI_LEVELS` (js/ai.js) —
+`mobile` — the TOUCH MODE row, `'auto'` / `'on'` / `'off'` over the device's own answer
+([phones](rendering.md#phones)) — `hudScaleM` — the HUD SIZE a phone plays at, the one
+slider editing whichever of the two is live —
 and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) persists
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
@@ -2188,12 +2191,13 @@ call: the hud strip reads it live every frame
 not a setting: it is per-match HUD, and `endMatch` closes it. (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 
-There is no fullscreen control in the ESC menu (players use F11); a `fullscreenchange` listener
-still refits the canvas when the browser toggles it.
+There is no fullscreen control in the ESC menu (players use F11; a phone asks for it on the
+first finger, `mobileGesture`); a `fullscreenchange` listener still refits the canvas when the
+browser toggles it.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(minimap size, hud size, screen shake, info display, cursor), VIDEO (below), AUDIO (the three sound dials
-and the speaker), CONTROLS (the baked hotkey listing) — and each page scrolls independently
+(minimap size, hud size, screen shake, info display, cursor, my team, touch mode), VIDEO (below),
+AUDIO (the three sound dials and the speaker), CONTROLS (three baked listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: 218 is already close
 to the 240-row floor `fitCanvas()` guarantees, so it can never get taller. The wheel over the
@@ -2204,8 +2208,11 @@ until hovered. Everything inside the panel is laid out by **`settingsLayout()`**
 the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` anchors all read the
 same function, so a click can never disagree with a pixel. Rows keep the **14 px pitch**;
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can
-never land on two rows. It answers a row id, `'mute'`, `'leave'`, `'tab:<id>'` or
-`'q:<preset>'`.
+never land on two rows. It answers a row id, `'mute'`, `'leave'`, `'tab:<id>'`, `'ctab:<id>'`
+(a CONTROLS sub-tab) or `'c:<row>:<opt>'` (a choice row's word). A **choice row** carries its
+own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro, TOUCH MODE's set
+`settings.mobile` and re-fit the view — so the draw (the word in force wears gold), the hit and
+the click all read one table.
 
 **The VIDEO page** holds one QUALITY row and five toggles, every one a cosmetic-only render
 pass a weak GPU can shed (they read at draw time; nothing the sim computes changes):
@@ -2232,11 +2239,20 @@ red × when it is off. While muted all three sound dials draw grey rather than g
 (`drawSliderRow`'s `dim`), so what the speaker silences reads off the page without a word of
 text. **N** still toggles the same flag from anywhere.
 
-The CONTROLS page is the hotkey listing in two columns and, under a rule, **THE WEAPON** — the
-one thing about the left button a new player cannot work out by pressing it, drawn rather than
-explained (`drawToolPrimer`). Both are baked once into `controlsCv` (`bakeControls`, panels.js)
-and blitted into the content window at the page's scroll, which is now long enough that the
-page's scroll track appears.
+**The CONTROLS page is itself tabbed** — KEYBOARD, GAMEPAD, TOUCH (`CTRL_TABS`), one listing per
+controller, since a phone and a pad each put the same verbs somewhere else. Its sub-navbar is
+pinned at the top of the content window (`CTRL_TAB_H`) and only the listing under it scrolls;
+it opens on the controller in hand (`ctrlTabNow`: TOUCH on a phone, GAMEPAD while a pad is
+active — a green pip beside that word says one is — KEYBOARD otherwise) until a click picks
+one. Each listing is baked once (`bakeCtrlKeys`/`bakeCtrlPad`/`bakeCtrlTouch` into `ctrlCvs`,
+panels.js). KEYBOARD is the hotkey listing in two columns and, under a rule, **THE WEAPON** —
+the one thing about the left button a new player cannot work out by pressing it, drawn rather
+than explained (`drawToolPrimer`); it is long enough that the page's scroll track appears.
+GAMEPAD draws each button as a picture (`drawPadGlyph`: a face button is a disc with its
+letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a cross with its
+pressed arm lit) beside its verb, the play set on the left and the held gestures and the menu
+set on the right. TOUCH draws each plate with the plate's own glyph (`drawTouchIcon`, ui.js) and
+the two sticks. The bindings themselves: [the three controllers](multiplayer.md#the-three-controllers).
 
 The primer is a **real HORN BOW carrying a real overload** — ARROW 2, FLAME 4, ARROW 2, THROWING
 LOG 8 against a tensile of 15 — run through `toolPlan` at bake time, so every number on it is the

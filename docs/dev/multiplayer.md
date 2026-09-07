@@ -67,7 +67,8 @@ cmd           one-shot order {kind:'build'|'upgrade'|'demolish', tx, ty, id}
               not a queue), but it re-checks its own reach (shopCmd, js/shop.js)
 ```
 
-`sampleHumanInput(player)` (input banner) folds `keys`/`mouse` into player 0's struct once per step,
+`sampleHumanInput(player)` (input banner) folds `keys`/`mouse` — and the two sticks, `pad.mx/my`
+and `touch.mx/my`, clamped in beside WASD — into player 0's struct once per step,
 and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
 [map](gameplay.md#the-m-map-does-not-pause) don't stop the sim and so don't zero the whole struct:
 each drops only the intents it swallows (the map keeps movement, the wheel keeps movement minus
@@ -78,6 +79,60 @@ bots and future network peers can't use it.
 
 `workTarget(p)` reads `p.input.aimX/aimY`, not the mouse, which is why the cursor's lock ring and a
 bot's chop resolve through exactly the same function.
+
+## The three controllers
+
+The local human has three: keyboard and mouse (js/input.js), a gamepad (js/gamepad.js) and
+fingers (js/touch.js). **The other two are the first in disguise.** The browser listeners in
+input.js only translate events; what a key *does* lives in `keyPress(e)`/`keyRelease(e)` (`e` is
+`{key, repeat}` — a real KeyboardEvent or an object a pad builds) and what a button does in
+`pointerPress(button)`/`pointerRelease(button)`, with `pointerMove(x, y, src)` carrying the
+pointer. A pad button and a touch plate press a *key* through those, so neither can drift from
+the keyboard and a new key handled in a listener alone is dead on both (the rule in
+[CLAUDE.md](../../CLAUDE.md#hard-rules)). Four gestures have no key and are exposed bare for a
+trigger or a plate: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
+because a press has the HUD to get past first, a trigger is never over a well),
+`flagDown`/`flagUp` (the worker order), `openWheelNear(p, ax, ay)` (a build/manage wheel on the
+nearest site or own building in the right button's reach, for a controller with no tile under
+its pointer) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
+last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep rewriting the aim
+through it every frame so the reticle rides the body, until the mouse itself moves.
+
+**The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events; standard
+mapping, the first connected pad). In play every button is a key (`PAD_PLAY`): A rolls, X works,
+Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
+L3 the pack, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
+(held, released fires — the same falling edge as the button), LT the slide, R3 holds the worker
+flag, dpad down holds the build wheel (the right stick picks the wedge from the press point,
+`PAD_WHEEL_R`), and BACK is the standings while held and the map on a tap under `PAD_TAP`. The
+left stick is the walk; the right stick is the aim, a bearing off the body at
+`PAD_AIM_R0`..`PAD_AIM_R1` world px by tilt, remembered while the stick rests. Over a menu or a
+panel (`padMenuMode`: any mode but play and the drop, or play with a panel up) the set flips
+(`PAD_MENU`): A *takes* — the thing under the pointer if the hand cursor is showing, otherwise
+Enter, which every key-driven menu answers (`padTake`) — B / BACK / START are Escape, the dpad
+and bumpers the arrow keys, the right stick scrolls the page, and the left stick is a pointer
+over pointer-only surfaces (a panel, the shop, the sheet, the wiki, class select) and the arrow
+keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
+`padRepeat`). A mode flip under held buttons releases them in the mode they were pressed in and
+keeps them marked down, so the START that opened the slab does not close it (`padReleaseAll`).
+`padActive()` — plugged in and touched within `PAD_IDLE` — is what the CONTROLS page reads.
+
+**Touch** (phone mode only — a finger on a desktop is a mouse). In free play the two halves of
+the world are the two sticks, each appearing under the thumb that lands: the left walks
+(`TOUCH_STICK_R` of travel); the right aims — a bearing off the body, `TOUCH_AIM_R0`..`R1` by
+travel — and **draws while it is down and looses when it lifts**, the mouse button's grammar
+(`fireDown` on landing, `fireUp` on the lift). A finger on the minimap is M; a finger on the
+HUD (the strip's wells, the pack, the sheet, the counter) is the mouse — `pointerMove` +
+`pointerPress(0)`, then the release — so drags, buys and casts already work. The plates
+(`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing from the pack's corner —
+DODGE (big), WORK (E held for the finger's life), SLIDE (a latch on shift: one tap on, one off),
+CHARACTER — a left column of BUILD (opens `openWheelNear` and the same finger drags to the
+wedge) and, once there is a crew, FLAG (raises the order, the lift plants it where the finger
+is), and a top-left row of the menu cog and the zoom pair. Over any panel or screen
+(`touchOverlay`) every finger is the mouse, a drag that grabbed nothing scrolls the page, and the
+one plate left is the cog turned cross: Escape. `touchPoll` reads the sticks once per frame and
+rewrites the aim through the pointer as the pad does; the plates' pixels are
+[the touch controls banner](rendering.md#phones).
 
 ## Classes
 

@@ -62,6 +62,19 @@ declare victory. The three affordances:
   boundary and being three pixels out is invisible without it.
   It draws in every mode, `settings.hitbox` sets it from `DBG` without the keypress, and
   `DBG.showPaths` still forces the routes on by itself.
+- **A phone without a phone**: Chrome's device emulation (or the desktop app's Browser pane at
+  a width under 768, which also turns clicks into touches) plus `DBG.setMobile('on')` — the
+  emulated screen has `devicePixelRatio` 1, so fake it first
+  (`Object.defineProperty(window, 'devicePixelRatio', { value: 3 })`, then `setMobile`) or the
+  fit picks a 1× pixel and 360 rows. `DBG.layout()` and `DBG.getZoom()` read the fit back,
+  `DBG.touchLayout()` where every plate is, and `DBG.touchDown(id, x, y)` / `touchMove` /
+  `touchUp(id)` stage fingers by hand (game px; `touchPoll()` then `update()` step a stick).
+  **A pad without a pad**: replace `navigator.getGamepads` with a function returning one
+  `{ connected: true, mapping: 'standard', axes: [..4], buttons: [{pressed, value}..17] }`,
+  set axes and buttons, and call `padPoll(1/60)` before each `update` — the [three
+  controllers](multiplayer.md#the-three-controllers) list what each does. Then the real thing:
+  `node app/server.js` and the phone on the same network at `http://<this machine's LAN
+  ip>:8471`.
 - **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: the fresh profile
   rolls a random display name at load (there is no first-launch prompt) and its `dropped` flag
   comes back false, so the next ride runs the scripted first flight and its

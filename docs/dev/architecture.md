@@ -20,9 +20,12 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sfxdata.js](../../js/sfxdata.js) | ~40 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/audio.js](../../js/audio.js) | ~570 | `SFX` | synth, samples and music under one master dial |
 | [js/core.js](../../js/core.js) | ~250 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
-| [js/canvas.js](../../js/canvas.js) | ~250 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
+| [js/mobile.js](../../js/mobile.js) | ~70 | shared scope, no `window.*` export | phones: whether this is one (`MOBILE`, the TOUCH MODE setting over the device's answer), the overlays' footprint a phone's fit keeps, the portrait test, the fullscreen ask. Before canvas.js because `fitCanvas` asks it at load |
+| [js/canvas.js](../../js/canvas.js) | ~260 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas` (a phone branch: the biggest game pixel the overlays allow, no 16:9 cap), pixel-exact zoom, the panel layout anchors |
 | [js/player.js](../../js/player.js) | ~880 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
-| [js/input.js](../../js/input.js) | ~230 | shared scope, no `window.*` export | `keys`/`mouse` and the listeners; `sampleHumanInput` folds them into the input struct |
+| [js/input.js](../../js/input.js) | ~330 | shared scope, no `window.*` export | `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `flagDown`/`flagUp`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
+| [js/gamepad.js](../../js/gamepad.js) | ~200 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
+| [js/touch.js](../../js/touch.js) | ~230 | shared scope, no `window.*` export | fingers: the two floating sticks, the plates' table and layout, a finger as the mouse everywhere else; `touchPoll` (from `loop()`) |
 | [js/world.js](../../js/world.js) | ~730 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the landmarks with their own `lmRng` stream, and the practice training grounds |
 | [js/nav.js](../../js/nav.js) | ~310 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
 | [js/wildlife.js](../../js/wildlife.js) | ~600 | shared scope, no `window.*` export | prey, the fish shoal, the wolf pack and the rookery flock |
@@ -151,15 +154,17 @@ list, the mixing targets and the track table: [gameplay.md](gameplay.md#audio).
 
 ### The game files (core.js … boot.js)
 
-Twenty files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
+Twenty-three files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
 organized only by `// ------ name` banners.
 **Keep every banner honest.** Find any function by its banner in [code-map.md](code-map.md)
 rather than grepping blind.
 
-**A file that decides things does not also draw them.** Every one of the sim files - core, player,
-input, world, nav, wildlife, structures, robots, actions, ai, sim - contains zero canvas calls;
-the pixels for what they own live in draw-world.js, render.js, ui.js and panels.js. canvas.js is
-the exception that proves it: it owns the buffers themselves.
+**A file that decides things does not also draw them.** Every one of the sim files - core, mobile,
+player, input, gamepad, touch, world, nav, wildlife, structures, robots, actions, ai, sim -
+contains zero canvas calls; the pixels for what they own live in draw-world.js, render.js, ui.js
+and panels.js (the touch plates and sticks: the `touch controls` banner, ui.js; the pad glyphs:
+`drawPadGlyph`, panels.js). canvas.js is the exception that proves it: it owns the buffers
+themselves.
 
 **A feature's tuning constants live in the file that owns the feature**, directly above the code
 that reads them — `WOLF_*` in wildlife.js, `TUR_*` in structures.js, `PRONE_*` in actions.js. Only
