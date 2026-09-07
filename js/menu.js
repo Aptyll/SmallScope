@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.11'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.12'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.12', 'AN UNMAPPED PAD IS READ BY WHERE ITS AXES REST, AND THE GAMEPAD PAGE ENDS IN A LIVE READOUT OF WHAT THE BROWSER SEES.'],
   ['3.11', 'A GAMEPAD HOPS OFF THE EAGLE ON A, EVERY KEY INDICATOR WEARS THE PAD BUTTON WHILE ONE IS IN HAND, AND THE BUMPERS PAGE THE SETTINGS TABS.'],
   ['3.10', 'THE GAME PLAYS ON A PHONE - TWIN-STICK TOUCH, A FIT WITH NO FROST BARS - AND ON A GAMEPAD; THE CONTROLS PAGE LISTS ALL THREE.'],
   ['3.09', 'THE PRE-PUSH HOOK LETS A BRANCH BE DELETED ON GITHUB INSTEAD OF BLOCKING IT.'],

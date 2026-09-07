@@ -49,6 +49,9 @@ const pad = {
   flag: false,                  // R3 is holding the worker flag
   click: false,                 // A is holding the pointer's button down over a panel
   menu: false,                  // last poll's mode, so a flip mid-hold releases cleanly
+  std: true,                    // the browser gave the pad the STANDARD layout
+  rest: null,                   // an unmapped pad's axes as first seen (padCalibrate): its layout
+  raw: { lx: 0, ly: 0, rx: 0, ry: 0, lt: 0, rt: 0 }, // this frame's sticks and triggers, for the CONTROLS page's readout
 };
 // a pad is in hand: one is plugged in and was touched lately. The CONTROLS
 // page opens on its tab when this reads true.
@@ -76,11 +79,23 @@ function padPoll(dt) {
   if (gps) for (const c of gps) if (c && c.connected && c.mapping === 'standard') { g = c; break; }
   if (!g && gps) for (const c of gps) if (c && c.connected) { g = c; break; } // an unmapped pad beats none
   if (!g) { if (pad.id) padDrop(); return; }
-  pad.id = g.id;
+  if (g.id !== pad.id) { pad.id = g.id; pad.std = g.mapping === 'standard'; pad.rest = pad.std ? null : padCalibrate(g); }
   const now = performance.now() / 1000;
-  const ax = (i) => { const v = g.axes[i] || 0; return Math.abs(v) < PAD_DEAD ? 0 : (v - Math.sign(v) * PAD_DEAD) / (1 - PAD_DEAD); };
-  const lx = ax(0), ly = ax(1), rx = ax(2), ry = ax(3);
+  const dz = (v) => Math.abs(v) < PAD_DEAD ? 0 : (v - Math.sign(v) * PAD_DEAD) / (1 - PAD_DEAD);
+  const ax = (i) => dz(g.axes[i] || 0);
   const tv = (i) => { const b = g.buttons[i]; return b ? Math.max(b.value || 0, b.pressed ? 1 : 0) : 0; };
+  // the sticks and the triggers: by the standard layout, or by the one an
+  // unmapped pad was read to have (padCalibrate)
+  let lx, ly, rx, ry, ltv, rtv;
+  if (pad.std || !pad.rest) { lx = ax(0); ly = ax(1); rx = ax(2); ry = ax(3); ltv = tv(6); rtv = tv(7); }
+  else {
+    const R = pad.rest, s = R.sticks;
+    lx = ax(s[0]); ly = ax(s[1]); rx = ax(s[2]); ry = ax(s[3]);
+    const trig = (i) => Math.max(0, Math.min(1, ((g.axes[i] || 0) - R.at[i]) / (0 - R.at[i]))); // parked at -1 (or +1): 0 at rest, 1 squeezed to the far end
+    ltv = R.trig[0] >= 0 ? trig(R.trig[0]) : tv(6);
+    rtv = R.trig[1] >= 0 ? trig(R.trig[1]) : tv(7);
+  }
+  pad.raw.lx = lx; pad.raw.ly = ly; pad.raw.rx = rx; pad.raw.ry = ry; pad.raw.lt = ltv; pad.raw.rt = rtv;
   const menu = padMenuMode();
   if (menu !== pad.menu) { padReleaseAll(); pad.menu = menu; }
   // the buttons' edges; the triggers are read as values below
@@ -92,8 +107,8 @@ function padPoll(dt) {
     pad.lastT = now;
     if (on) padPress(i, menu); else padRelease(i, menu);
   }
-  const lt = tv(6) > (pad.lt ? PAD_TRIG * 0.5 : PAD_TRIG);
-  const rt = tv(7) > (pad.rt ? PAD_TRIG * 0.5 : PAD_TRIG);
+  const lt = ltv > (pad.lt ? PAD_TRIG * 0.5 : PAD_TRIG);
+  const rt = rtv > (pad.rt ? PAD_TRIG * 0.5 : PAD_TRIG);
   if (lt !== pad.lt) { pad.lt = lt; pad.lastT = now; if (!menu) keys['shift'] = lt; }
   if (rt !== pad.rt) {
     pad.rt = rt; pad.lastT = now;
@@ -126,6 +141,19 @@ function padPoll(dt) {
   // every frame, so the reticle keeps its bearing while you walk. A tilt
   // takes the pointer back from the mouse; the mouse takes it back by moving.
   if (mouse.src === 'pad' || k > 0) padAim(rx, ry);
+}
+
+// A pad the browser could not lay out (mapping '' - Firefox on Linux gives an
+// Xbox pad axes 0,1 L / 2 LT / 3,4 R / 5 RT) is read by where its axes REST
+// the first time it is seen: an axis parked near +-1 is a trigger (it rides
+// to the other end when squeezed), the ones resting near 0 are the sticks in
+// index order, left pair then right pair. Read once, on the press that made
+// the browser show the pad, so the sticks are at rest when it is taken.
+function padCalibrate(g) {
+  const at = Array.from(g.axes, (v) => v || 0), sticks = [], trig = [];
+  at.forEach((v, i) => { if (Math.abs(v) > 0.8) trig.push(i); else sticks.push(i); });
+  while (sticks.length < 4) sticks.push(sticks.length); // fewer than four: fall back to index order
+  return { at, sticks, trig: [trig.length > 0 ? trig[0] : -1, trig.length > 1 ? trig[1] : -1] };
 }
 
 // the pointer, from the right stick: over an open wheel - the dpad's build
@@ -215,5 +243,7 @@ function padDrop() {
   padReleaseAll();
   pad.down = {};
   pad.id = '';
+  pad.rest = null;
+  pad.raw.lx = pad.raw.ly = pad.raw.rx = pad.raw.ry = pad.raw.lt = pad.raw.rt = 0;
   pad.mx = pad.my = 0;
 }
