@@ -184,13 +184,68 @@ function drawWorkHint(ox, oy) {
   drawKeyPrompt(x, y, verb, pressed);
 }
 
+// Every keybind indicator - a cap beside a verb, a number in a well's
+// corner, the ESC hint under a slab - names the KEYBOARD's key. With a pad
+// in hand (padActive, js/gamepad.js) the same indicator wears the pad's
+// button instead, so what the player is holding is what the screen points
+// at: this table is the keyboard name -> pad glyph map, one row per key the
+// HUD ever prints, and it mirrors PAD_PLAY / PAD_MENU (js/gamepad.js) - a
+// rebind there is a row here. The glyph kinds are drawPadGlyph's (panels.js),
+// the same pictures the CONTROLS page lists.
+const PAD_BIND = {
+  E: ['face', 'X'], SPACE: ['face', 'A'], SHIFT: ['trig', 'LT'], CLICK: ['trig', 'RT'],
+  1: ['face', 'Y'], 2: ['face', 'B'], 3: ['bump', 'LB'], 4: ['bump', 'RB'],
+  Q: ['dpad', 'L'], F: ['dpad', 'R'], G: ['dpad', 'U'], M: ['pill', 'BACK'], TAB: ['pill', 'BACK'],
+  ESC: ['face', 'B'], ENTER: ['face', 'A'], WASD: ['stick', 'L'],
+};
+// the glyph's footprint, so a caller can lay a verb beside it
+function padBindW(key) { const b = PAD_BIND[key]; return !b ? 0 : b[0] === 'bump' || b[0] === 'trig' ? 13 : b[0] === 'pill' ? 11 : b[0] === 'stick' ? 17 : 9; }
+// the pad's button for a key, drawn at x, y (top-left) at `s` px per px;
+// `pressed` dims it the way a held cap drops its face
+function drawPadBind(g, x, y, key, s, pressed) {
+  const b = PAD_BIND[key];
+  if (!b) return;
+  s = s || 1;
+  g.save();
+  g.translate(x, y);
+  if (s !== 1) g.scale(s, s);
+  if (pressed) g.globalAlpha *= 0.55;
+  // a dark rim under the disc so it reads on snow as the cap's navy did
+  const w = padBindW(key);
+  g.fillStyle = '#0f1632';
+  if (b[0] === 'face' || b[0] === 'stick') { touchDisc(g, 4, 4, 5, '#0f1632'); }
+  else g.fillRect(-1, -1, w + 2, 11);
+  drawPadGlyph(g, 0, 0, b[0], b[1]);
+  g.restore();
+}
+// the ESC BACK / ESC CLOSE line under a slab, centred on cx: the keyboard's
+// word, or the pad's B disc beside the verb
+function drawBackHint(g, cx, y, verb) {
+  verb = verb || 'BACK';
+  if (padActive()) {
+    const w = 9 + 3 + pixelTextWidth(verb), x = Math.round(cx - w / 2);
+    drawPadBind(g, x, y - 2, 'ESC');
+    drawPixelText(g, verb, x + 12, y, '#5a6690');
+  } else {
+    const t = 'ESC ' + verb;
+    drawPixelText(g, t, Math.round(cx - pixelTextWidth(t) / 2), y, '#5a6690');
+  }
+}
+
 // the key-cap + verb pair itself, shared by the work prompt, the rack's and
 // the pack's SHIFT plate: navy rim, icy face, top highlight; pressed = the
 // face drops a pixel and the verb goes gold. `key` is the letter on the cap
 // (E unless said otherwise) and the cap grows to fit it, so a modifier's name
-// wears the same indicator a one-letter binding does.
+// wears the same indicator a one-letter binding does. With a pad in hand the
+// cap is the pad's button (PAD_BIND) and the verb sits beside that instead.
 function drawKeyPrompt(x, y, verb, pressed, key) {
   key = key || 'E';
+  if (padActive() && PAD_BIND[key]) {
+    const gw = padBindW(key);
+    drawPadBind(ctx, x, y, key, 1, pressed);
+    drawPixelTextOutline(ctx, verb, x + gw + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#0f1632');
+    return;
+  }
   const capW = pixelTextWidth(key) + 6; // the cap's own padding: the key sits at x + 3 at any width
   const cy = y + (pressed ? 1 : 0);
   ctx.fillStyle = '#0a0e23';
@@ -1255,7 +1310,7 @@ function drawShiftHint() {
   if (!verb) return;
   // over the pack's top-right corner, whether it is the open frame or the
   // shut button - clear of the grid it is about, and of the bit column
-  const totalW = pixelTextWidth('SHIFT') + 9 + pixelTextWidth(verb);
+  const totalW = (padActive() ? padBindW('SHIFT') : pixelTextWidth('SHIFT') + 6) + 3 + pixelTextWidth(verb);
   const top = bagOpenNow() ? bagFrameRect().y : bagBtnRect().y;
   drawKeyPrompt(VIEW_W - 2 - totalW, top - 12, verb, !!keys['shift'], 'SHIFT');
 }
@@ -2124,8 +2179,9 @@ function drawClassAbCell(i, now, on) {
     ctx.globalAlpha = 1;
   }
   const key = String(i + 1);
-  drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13,
-    lock || (cd > 0 && !casting && act <= 0) ? '#7a8bb8' : '#f4f7ff', '#0f1632', 2);
+  const dimKey = lock || (cd > 0 && !casting && act <= 0);
+  if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, key, 2, dimKey); // the pad's button, at the number's size
+  else drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#7a8bb8' : '#f4f7ff', '#0f1632', 2);
   if (red) ctx.restore();
 }
 // The floating buy plate over ability i - gear's bobbing chevron made a real
@@ -2179,7 +2235,8 @@ function drawFoodCell(i, now, on) {
     const t = String(n);
     drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), r.y + r.h - 8, '#f4f7ff', '#0f1632');
   }
-  drawPixelTextOutline(ctx, FOOD_BTNS[i].key, r.x + 2, r.y + r.h - 8,
+  if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 10, FOOD_BTNS[i].key, 1, !(n > 0 && p.foodCd <= 0)); // the dpad arm the meal is on
+  else drawPixelTextOutline(ctx, FOOD_BTNS[i].key, r.x + 2, r.y + r.h - 8,
     n > 0 && p.foodCd <= 0 ? '#f4f7ff' : '#7a8bb8', '#0f1632');
   if (red) ctx.restore();
 }

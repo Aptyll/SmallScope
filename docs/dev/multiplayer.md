@@ -99,23 +99,36 @@ last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep
 through it every frame so the reticle rides the body, until the mouse itself moves.
 
 **The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events; standard
-mapping, the first connected pad). In play every button is a key (`PAD_PLAY`): A rolls, X works,
+mapping, the first connected pad). In play every button is a key (`PAD_PLAY`): A rolls (and hops
+off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
+way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
 L3 the pack, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 holds the worker
-flag, dpad down holds the build wheel (the right stick picks the wedge from the press point,
-`PAD_WHEEL_R`), and BACK is the standings while held and the map on a tap under `PAD_TAP`. The
+flag, dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
+wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
+armory, the roll die, the range bell), and BACK is the standings while held and the map on a
+tap under `PAD_TAP`. The
 left stick is the walk; the right stick is the aim, a bearing off the body at
 `PAD_AIM_R0`..`PAD_AIM_R1` world px by tilt, remembered while the stick rests. Over a menu or a
 panel (`padMenuMode`: any mode but play and the drop, or play with a panel up) the set flips
-(`PAD_MENU`): A *takes* — the thing under the pointer if the hand cursor is showing, otherwise
-Enter, which every key-driven menu answers (`padTake`) — B / BACK / START are Escape, the dpad
-and bumpers the arrow keys, the right stick scrolls the page, and the left stick is a pointer
+(`PAD_MENU`): A *takes* — the thing under the pointer if the hand cursor is showing over a
+pointer surface, and always Enter over a key-driven menu (the idle mouse may be resting on
+another plank than the dpad picked), which every such menu answers (`padTake`) — B / BACK /
+START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
+`settingsKey`, panels.js, reached from both the title's slide-in and the in-match slab), the
+right stick scrolls the page, and the left stick is a pointer
 over pointer-only surfaces (a panel, the shop, the sheet, the wiki, class select) and the arrow
 keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
 `padRepeat`). A mode flip under held buttons releases them in the mode they were pressed in and
 keeps them marked down, so the START that opened the slab does not close it (`padReleaseAll`).
-`padActive()` — plugged in and touched within `PAD_IDLE` — is what the CONTROLS page reads.
+While the pad owns the pointer `mouse.inside` is held true, so a mouse parked off the window
+never hides the pad's hand. `padActive()` — plugged in and touched within `PAD_IDLE` — is what
+the CONTROLS page reads, and what every **keybind indicator** reads: while it is true the HOP
+OFF cap, the work prompts, the strip's 1-4 and Q/F, the SHIFT plate, the flight HUD's two and
+the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
+(`PAD_BIND` → `drawPadBind` / `drawBackHint`, ui.js; `drawDropBind`, boot.js) — a rebind in
+`PAD_PLAY` is a row there.
 
 **Touch** (phone mode only — a finger on a desktop is a mouse). In free play the two halves of
 the world are the two sticks, each appearing under the thumb that lands: the left walks

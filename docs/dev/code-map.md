@@ -82,7 +82,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | which button is which key, in play and over a menu | `PAD_PLAY`, `PAD_MENU` | `gamepad` |
-| the poll, the sticks, the aim off the body, the pointer over a panel, the stick-as-arrows repeat | `padPoll`, `padAim`, `padRepeat`, `padTake`, `padMenuMode`/`padPointerMode` | `gamepad` |
+| the poll, the sticks, the aim off the body (and a wedge off a wheel's hub), the pointer over a panel, the stick-as-arrows repeat, A as the click or the selection | `padPoll`, `padAim`, `padRepeat`, `padTake`, `padMenuMode`/`padPointerMode` | `gamepad` |
 | a pad in hand (the CONTROLS page opens on its tab) | `padActive`, `pad` | `gamepad` |
 
 ## js/touch.js
@@ -299,6 +299,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | where the item a drop DISPLACES goes - home, which makes the drop a swap | `dragHome` (its three callers are the three `dragDrop*`; false = the ousted item rides the cursor as before) | `UI` › `carrying an item on the cursor` |
 | a click or SHIFT-click SENDING an item to its one other side (bag <-> weapon, bag <-> bit column) | `sendBagCell`, `sendBitCell`, `sendSlot` (each returns whether it handled the click), `sendAt` (the shift-while-carrying hit test), `tipSend` | `UI` › `one click sends it to the other side` (resolved in `hudRelease`, refused by `bagDenied`/`toolDenied`) |
 | the SHIFT key cap over the pack: where the hovered well would send what it holds | `shiftVerb` (LOAD / STOW / HOLD / null, asking `sendAt`'s wells in `sendAt`'s order), `drawShiftHint` | `UI` › `the pack's SHIFT plate` (the cap itself: `drawKeyPrompt`, `selection, hints & wheel`) |
+| a keybind indicator wearing the pad's button while one is in hand: the key -> glyph table, its footprint, the glyph, and the ESC BACK / CLOSE line under a slab | `PAD_BIND`, `padBindW`, `drawPadBind`, `drawBackHint` (the flight HUD's two: `drawDropBind`, boot.js; the glyph pictures: `drawPadGlyph`, panels.js) | `selection, hints & wheel` |
 | the pick-1-of-3 card draft: opening it, hit-testing a card, applying a pick, drawing it | `openDraft`, `draftLayout`, `draftHit`, `draftClick`, `renderDraft`, `state.draft` | `UI` › `the backpack` |
 | what the pointer is on, said in words, bottom left | `tipAt`, `tipResolve`, `tipNow`, `tipLift`, `tipSize`, `drawTooltip`, `TIP_*` | `tooltips` (resolved once per frame in `render`, render.js; the feed steps up by `tipLift`, panels.js) |
 | the per-kind descriptions that panel is built from | `tipBase`, `tipTool`, `tipBit`, `tipStack`, `tipCell`, `tipGear`, `tipClassAb`, `tipKind` (a wiki ARSENAL row), `TIP_PATH` | `tooltips` |
@@ -311,7 +312,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the plate a tier is stated on, wherever an item sits, and the shine on the top one | `tierPlate`, `tierShine`, `drawItemIcon` | `UI` › `hud strip` (the tiers themselves: `TOOL_TIERS`, tools.js) |
 | the hatch and cut corners that mark a MODIFIER bit apart from a projectile, in every well either sits in | `modPlate` (its callers: `drawBag`, `drawBitColumn`, `drawDragGhost`, `drawTooltip` ui.js, `drawShopWell` shop.js, `drawTechNode` menu.js, `drawToolPrimer` panels.js) | `UI` › `hud strip` (the `proj` flag it reads: `BITS`, tools.js) |
 | the "!" a tool wears when its column weighs more than one press can swing | `drawOverWarn` (from `drawToolCell` and the CONTROLS page's `drawToolPrimer`, panels.js; the answer it draws: `toolOver`, tools.js) | `UI` › `hud strip` |
-| a phone's plates and sticks (js/touch.js decides), the glyph set the CONTROLS page borrows, the rotate prompt | `drawTouchControls`, `drawTouchPlate`, `drawTouchStick`, `drawTouchIcon`, `touchDisc`/`touchRing`, `drawRotatePrompt`, `TOUCH_PLATE`/`TOUCH_RIM`/`TOUCH_INK`/`TOUCH_HOT` | `touch controls` |
+
+| a phone's plates and sticks (js/touch.js decides), the glyph set the CONTROLS page borrows, the rotate prompt | `drawTouchControls`, `drawTouchPlate`, `drawTouchStick`, `drawTouchIcon`, `touchDisc`/`touchRing`, `drawRotatePrompt`, `TOUCH_PLATE`/`TOUCH_RIM`/`TOUCH_INK`/`TOUCH_HOT` | `touch controls` |
 
 ## js/shop.js
 
@@ -340,7 +342,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the TAB standings, the event feed | `logEvent`, `renderEventLog`, `scoreGroups`, `renderScoreboard` | `scoreboard & log` |
 | the M map, and the chart point -> world tile inverse a map order needs | `buildMapPanel`, `buildWorldMapImg`, `renderWorldMap`, `mapTileAt` | `world map (M)` (the parchment's per-tile colour comes from `objMapColor(o, 'map', i, h)`: `world`, world.js) |
-| the ESC menu: its tabbed pages, their rows (a choice row's `val`/`pick`), the scroll, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `setTab`/`setScroll`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
+| the ESC menu: its tabbed pages, their rows (a choice row's `val`/`pick`), the scroll, the keys that page and scroll it, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `settingsTabBy`, `settingsKey`, `setTab`/`setScroll`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
 | the CONTROLS page's three listings (keyboard / gamepad / touch), its pinned sub-navbar, which opens by default, the pad glyphs | `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`/`bakeCtrlTouch`, `drawPadGlyph` (the touch icons: `drawTouchIcon`, ui.js) | `settings menu (ESC)` |
 | the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `ctrlCvs.keys`) | `settings menu (ESC)` › beside `bakeCtrlKeys` |
 | the VIDEO page's quality macro over the render-pass toggles | `VID_PRESETS`, `vidPreset` (the flags themselves: `settings.vid*`, core.js; their gates sit at each pass's call site) | `settings menu (ESC)` |

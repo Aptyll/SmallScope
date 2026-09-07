@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.10'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.11'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.11', 'A GAMEPAD HOPS OFF THE EAGLE ON A, EVERY KEY INDICATOR WEARS THE PAD BUTTON WHILE ONE IS IN HAND, AND THE BUMPERS PAGE THE SETTINGS TABS.'],
   ['3.10', 'THE GAME PLAYS ON A PHONE - TWIN-STICK TOUCH, A FIT WITH NO FROST BARS - AND ON A GAMEPAD; THE CONTROLS PAGE LISTS ALL THREE.'],
   ['3.09', 'THE PRE-PUSH HOOK LETS A BRANCH BE DELETED ON GITHUB INSTEAD OF BLOCKING IT.'],
   ['3.08', 'THE REPO MOVES TO BRANCHES, A SYNC COMMAND AND PULL REQUESTS; NOBODY COMMITS TO MAIN.'],
@@ -431,8 +432,7 @@ function menuKey(e) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
     else if (m.panel === 'patch' && (k === 'arrowup' || k === 'w')) patchScrollBy(-8);
     else if (m.panel === 'patch' && (k === 'arrowdown' || k === 's')) patchScrollBy(8);
-    else if (m.panel === 'settings' && (k === 'arrowup' || k === 'w')) settingsScrollBy(-8);
-    else if (m.panel === 'settings' && (k === 'arrowdown' || k === 's')) settingsScrollBy(8);
+    else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
     return;
   }
   if (k === 'arrowup' || k === 'w') menuSelect(m.sel - 1);
@@ -943,8 +943,7 @@ const patchNotesCv = document.createElement('canvas');
 function buildPatchPanel() {
   const g = patchPanelCv.getContext('2d');
   bakeFrostSlab(g, SET_W, SET_H, 'PATCH NOTES');
-  const hint = 'ESC BACK';
-  drawPixelText(g, hint, Math.round((SET_W - pixelTextWidth(hint)) / 2), 190, '#5a6690');
+  // the back hint is drawn live under the notes (renderTitle): it names the controller in hand
   // lay the entries out once to learn the height, then paint them
   const x0 = 14, x1 = 40, maxW = PN_BAR_X - 6 - x1;
   const rows = [];
@@ -2713,8 +2712,7 @@ function renderWiki(now, a) {
   ctx.restore();
   ctx.globalAlpha = a;
   drawWikiRail(L);
-  const t3 = 'ESC BACK';
-  drawPixelTextShadow(ctx, t3, Math.round((VIEW_W - pixelTextWidth(t3)) / 2), L.toy + 254, '#5a6690', 'rgba(15,22,50,0.9)');
+  drawBackHint(ctx, VIEW_W / 2, L.toy + 254);
   ctx.globalAlpha = 1;
 }
 
@@ -2834,6 +2832,7 @@ function renderTitle(now) {
       ctx.drawImage(patchPanelCv, SET_X, SET_Y + slide);
       ctx.drawImage(patchNotesCv, 0, m.patchScroll, SET_W, PN_H, SET_X, SET_Y + slide + PN_Y, SET_W, PN_H);
       drawPatchBar(SET_X, SET_Y + slide);
+      drawBackHint(ctx, SET_X + SET_W / 2, SET_Y + slide + 190);
     } else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
   }
 }
