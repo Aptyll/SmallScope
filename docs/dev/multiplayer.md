@@ -99,7 +99,17 @@ last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep
 through it every frame so the reticle rides the body, until the mouse itself moves.
 
 **The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events; standard
-mapping, the first connected pad). In play every button is a key (`PAD_PLAY`): A rolls (and hops
+mapping, the first connected pad; a pad the browser could not lay out — `mapping ''`, Firefox on
+Linux — is read by where its axes rest the first time it is seen, `padCalibrate`: an axis parked
+near ±1 is a trigger, the rest are the sticks in index order). The CONTROLS page's GAMEPAD
+listing ends in a live **readout** (`drawPadReadout`, panels.js: the pad's name, the sticks'
+knobs, the triggers' bars, the sixteen buttons as pips off `pad.raw`/`pad.down`) — a stick that
+walks the knob but not the player, or a pad that moves the mouse but leaves the knob still, says
+where the fault is. The one thing it cannot fix: a driver that turns the pad into a mouse and a
+scroll wheel (Steam Input's desktop layout, DS4Windows and the like) reaches the page as pointer
+motion, clicks and wheel ticks — aim, shots and zoom — while the Gamepad API may see nothing;
+the readout shows exactly that (the name row stays dim), and the cure is the driver's setting,
+not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
 off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,

@@ -83,7 +83,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | which button is which key, in play and over a menu | `PAD_PLAY`, `PAD_MENU` | `gamepad` |
 | the poll, the sticks, the aim off the body (and a wedge off a wheel's hub), the pointer over a panel, the stick-as-arrows repeat, A as the click or the selection | `padPoll`, `padAim`, `padRepeat`, `padTake`, `padMenuMode`/`padPointerMode` | `gamepad` |
-| a pad in hand (the CONTROLS page opens on its tab) | `padActive`, `pad` | `gamepad` |
+| a pad in hand (the CONTROLS page opens on its tab); an unmapped pad's layout read off its rest values; the live sticks and triggers the readout draws | `padActive`, `pad`, `padCalibrate` (`pad.rest`), `pad.raw` | `gamepad` |
 
 ## js/touch.js
 
@@ -343,7 +343,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the TAB standings, the event feed | `logEvent`, `renderEventLog`, `scoreGroups`, `renderScoreboard` | `scoreboard & log` |
 | the M map, and the chart point -> world tile inverse a map order needs | `buildMapPanel`, `buildWorldMapImg`, `renderWorldMap`, `mapTileAt` | `world map (M)` (the parchment's per-tile colour comes from `objMapColor(o, 'map', i, h)`: `world`, world.js) |
 | the ESC menu: its tabbed pages, their rows (a choice row's `val`/`pick`), the scroll, the keys that page and scroll it, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `settingsTabBy`, `settingsKey`, `setTab`/`setScroll`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
-| the CONTROLS page's three listings (keyboard / gamepad / touch), its pinned sub-navbar, which opens by default, the pad glyphs | `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`/`bakeCtrlTouch`, `drawPadGlyph` (the touch icons: `drawTouchIcon`, ui.js) | `settings menu (ESC)` |
+| the CONTROLS page's three listings (keyboard / gamepad / touch), its pinned sub-navbar, which opens by default, the pad glyphs, the live pad readout under the GAMEPAD listing | `PAD_READ_Y`/`PAD_READ_H`, `drawPadReadout`, `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`/`bakeCtrlTouch`, `drawPadGlyph` (the touch icons: `drawTouchIcon`, ui.js) | `settings menu (ESC)` |
 | the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `ctrlCvs.keys`) | `settings menu (ESC)` › beside `bakeCtrlKeys` |
 | the VIDEO page's quality macro over the render-pass toggles | `VID_PRESETS`, `vidPreset` (the flags themselves: `settings.vid*`, core.js; their gates sit at each pass's call site) | `settings menu (ESC)` |
 | the three sound dials, the speaker that mutes them, the grey-when-muted fill, the minimap and HUD size knobs (HUD SIZE edits `hudScaleKey()`'s field - the phone's own on a phone) | `applySliderDrag`, `muteBtnRect`, `drawMuteBtn`, `drawSliderRow`, `drawSliderById`, `toggleVal` | `settings menu (ESC)` |

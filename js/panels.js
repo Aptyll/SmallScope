@@ -599,9 +599,10 @@ function buildSettingsPanel() {
 // The CONTROLS page: three listings, one per controller, each baked once
 // (none changes) and blitted into the content window at the page's scroll
 // like any other page. The keyboard's carries the weapon primer under it.
+const PAD_READ_Y = 148, PAD_READ_H = 44; // the pad listing's live readout: where it starts, and the band it takes (drawPadReadout)
 const ctrlCvs = { keys: document.createElement('canvas'), pad: document.createElement('canvas'), touch: document.createElement('canvas') };
 ctrlCvs.keys.width = SET_W; ctrlCvs.keys.height = 244;
-ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = 148;
+ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = 148 + PAD_READ_H;
 ctrlCvs.touch.width = SET_W; ctrlCvs.touch.height = 96;
 
 // THE WEAPON PRIMER: the one thing about the left button a new player cannot
@@ -744,6 +745,48 @@ function drawPadGlyph(g, x, y, kind, label) {
     g.fillStyle = ink;
     if (label === 'START') { g.fillRect(x + 3, y + 3, 5, 1); g.fillRect(x + 3, y + 5, 5, 1); }
     else { g.fillRect(x + 3, y + 3, 2, 3); g.fillRect(x + 6, y + 3, 2, 3); }
+  }
+}
+// The pad READOUT under the GAMEPAD listing: the name the browser gives the
+// pad in hand (none: the row stays dim - the browser sees no pad, whatever is
+// plugged in), then the two sticks as rings with a knob riding the live tilt,
+// the triggers as bars, and the sixteen buttons as pips that light while
+// held. An instrument, drawn live over the baked listing (renderSettings):
+// what it moves is what the game reads, so a stick that walks the knob but
+// not the player, or a pad that moves the mouse but not the knob, says where
+// the fault is without a word. A pad the browser could not lay out wears an
+// UNMAPPED tag (padCalibrate, gamepad.js, is reading it by its rest values).
+function drawPadReadout(x0, y0) {
+  const gold = '#ffd95c', dim = '#4a5480', ink = '#7a8bb8';
+  ctx.fillStyle = '#2c3a68'; ctx.fillRect(x0 + 14, y0, SET_W - 28, 1);
+  const y = y0 + 6;
+  drawPixelText(ctx, 'GAMEPAD', x0 + 14, y, '#cfe0ff');
+  let name = pad.id ? pad.id.replace(/\s*\(.*$/, '').toUpperCase() : '-';
+  const maxW = SET_W - 14 - 60 - 8 - (pad.std ? 0 : pixelTextWidth('UNMAPPED') + 6);
+  while (name.length > 1 && pixelTextWidth(name) > maxW) name = name.slice(0, -1);
+  drawPixelText(ctx, name, x0 + 60, y, pad.id ? gold : dim);
+  if (!pad.std && pad.id) drawPixelText(ctx, 'UNMAPPED', x0 + SET_W - 14 - pixelTextWidth('UNMAPPED'), y, '#ff9a8a');
+  // the sticks: a ring each, the knob at the live tilt
+  const sy = y + 20, live = !!pad.id;
+  const stick = (cx, tx, ty, lbl) => {
+    touchRing(ctx, cx, sy, 8, live ? ink : dim);
+    touchDisc(ctx, cx + Math.round(tx * 5), sy + Math.round(ty * 5), 2, live ? gold : dim);
+    drawPixelText(ctx, lbl, cx - 2, sy + 11, ink);
+  };
+  stick(x0 + 30, pad.raw.lx, pad.raw.ly, 'L');
+  stick(x0 + 58, pad.raw.rx, pad.raw.ry, 'R');
+  // the triggers: two bars filling with the squeeze
+  const bar = (bx, v, lbl) => {
+    ctx.fillStyle = '#0a0e23'; ctx.fillRect(bx, sy - 8, 6, 16);
+    ctx.fillStyle = live ? gold : dim; const h = Math.round(v * 14); ctx.fillRect(bx + 1, sy + 7 - h, 4, h);
+    drawPixelText(ctx, lbl, bx - 2, sy + 11, ink);
+  };
+  bar(x0 + 80, pad.raw.lt, 'LT'); bar(x0 + 96, pad.raw.rt, 'RT');
+  // the sixteen buttons, in the standard order, lit while held
+  for (let i = 0; i < 16; i++) {
+    const bx = x0 + 118 + (i % 8) * 8, by = sy - 6 + Math.floor(i / 8) * 8;
+    ctx.fillStyle = pad.down[i] || (i === 6 && pad.lt) || (i === 7 && pad.rt) ? gold : live ? '#2c3a68' : '#1a2245';
+    ctx.fillRect(bx, by, 5, 5);
   }
 }
 (function bakeCtrlPad() {
@@ -972,6 +1015,7 @@ function renderSettings(now, opts) {
     ctx.save();
     ctx.beginPath(); ctx.rect(SET_X + 2, L.clipY0 + CTRL_TAB_H, SET_W - 4, L.clipY1 - L.clipY0 - CTRL_TAB_H); ctx.clip();
     ctx.drawImage(ctrlCvs[L.ctrl], SET_X, L.clipY0 + CTRL_TAB_H - L.scroll);
+    if (L.ctrl === 'pad') drawPadReadout(SET_X, L.clipY0 + CTRL_TAB_H - L.scroll + PAD_READ_Y);
     ctx.restore();
     // the navbar: the open listing's name in gold over a gold underline,
     // the rest dim until hovered; a green pip on GAMEPAD while one is in hand
