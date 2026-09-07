@@ -57,6 +57,25 @@ let padSlot = -1; // navigator.getGamepads() slot from the last gamepadconnected
 // a pad is in hand: one is plugged in and was touched lately. The CONTROLS
 // page opens on its tab when this reads true.
 function padActive() { return !!pad.id && performance.now() / 1000 - pad.lastT < PAD_IDLE; }
+// the pad took over from the mouse: the HUD and the settings CONTROLS tab
+// follow it (padPreferTab, panels.js, is defined after this file loads)
+function padClaim() {
+  pad.lastT = performance.now() / 1000;
+  mouse.src = 'pad';
+  mouse.inside = true;
+  if (typeof padPreferTab === 'function') padPreferTab('pad');
+}
+function padAttach(g, claim) {
+  if (!g || !g.connected) return;
+  padSlot = g.index;
+  const fresh = g.id !== pad.id;
+  if (fresh) {
+    pad.id = g.id;
+    pad.std = g.mapping === 'standard';
+    pad.rest = pad.std ? null : padCalibrate(g);
+  }
+  if (claim || fresh) padClaim();
+}
 
 // where the buttons are the menu set: any mode but play (the drop's jump and
 // map are play keys), and play with settings or pause over it
@@ -88,8 +107,8 @@ function padPoll(dt) {
     if (!g) for (const c of gps) if (c && c.connected && c.mapping === 'standard') { g = c; padSlot = c.index; break; }
     if (!g) for (const c of gps) if (c && c.connected) { g = c; padSlot = c.index; break; } // an unmapped pad beats none
   }
-  if (!g) { if (pad.id) padDrop(); return; }
-  if (g.id !== pad.id) { pad.id = g.id; pad.std = g.mapping === 'standard'; pad.rest = pad.std ? null : padCalibrate(g); }
+  if (!g) { pad.mx = pad.my = 0; return; } // Chrome may return no slots between polls while still connected; gamepaddisconnected clears pad.id
+  padAttach(g, false);
   const now = performance.now() / 1000;
   const dz = (v) => Math.abs(v) < PAD_DEAD ? 0 : (v - Math.sign(v) * PAD_DEAD) / (1 - PAD_DEAD);
   const ax = (i, off = 0) => dz((g.axes[i] || 0) - off);
@@ -114,18 +133,19 @@ function padPoll(dt) {
     const on = tv(i) > PAD_TRIG, was = !!pad.down[i];
     if (on === was) continue;
     pad.down[i] = on;
-    pad.lastT = now;
+    if (on) padClaim();
+    else pad.lastT = now;
     if (on) padPress(i, menu); else padRelease(i, menu);
   }
   const lt = ltv > (pad.lt ? PAD_TRIG * 0.5 : PAD_TRIG);
   const rt = rtv > (pad.rt ? PAD_TRIG * 0.5 : PAD_TRIG);
-  if (lt !== pad.lt) { pad.lt = lt; pad.lastT = now; if (!menu) keys['shift'] = lt; }
+  if (lt !== pad.lt) { pad.lt = lt; padClaim(); if (!menu) keys['shift'] = lt; }
   if (rt !== pad.rt) {
-    pad.rt = rt; pad.lastT = now;
+    pad.rt = rt; padClaim();
     if (!menu) { if (rt) fireDown(); else fireUp(); }
     else if (rt) padTake(); else if (pad.click) { pointerRelease(0); pad.click = false; }
   }
-  if (lx || ly || rx || ry) pad.lastT = now;
+  if (lx || ly || rx || ry) padClaim();
   if (pad.backT >= 0) pad.backT += dt;
   // while the pad owns the pointer it is on the page, wherever the mouse
   // itself went: a mouse parked off the window must not hide the pad's hand
@@ -272,14 +292,19 @@ function padDrop() {
 // pressed; the connected event is the wake-up call and pins which slot to read
 function padInit() {
   window.addEventListener('gamepadconnected', (e) => {
-    padSlot = e.gamepad.index;
-    pad.lastT = performance.now() / 1000;
+    padAttach(e.gamepad, true);
     if (navigator.getGamepads) navigator.getGamepads();
   });
   window.addEventListener('gamepaddisconnected', (e) => {
     if (e.gamepad.index === padSlot) padSlot = -1;
     const gps = navigator.getGamepads ? navigator.getGamepads() : null;
     if (!gps || !gps.some((c) => c && c.connected)) padDrop();
+  });
+  // a tab coming back to the front may be the first moment Chrome exposes the pad
+  window.addEventListener('focus', () => {
+    const gps = navigator.getGamepads ? navigator.getGamepads() : null;
+    if (!gps) return;
+    for (const c of gps) if (c && c.connected) { padAttach(c, false); break; }
   });
 }
 padInit();

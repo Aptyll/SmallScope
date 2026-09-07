@@ -534,6 +534,11 @@ const CTRL_TABS = [{ id: 'keys', label: 'KEYBOARD' }, { id: 'pad', label: 'GAMEP
 const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
 let ctrlTab = null;
 function ctrlTabNow() { return ctrlTab || (MOBILE ? 'touch' : padActive() ? 'pad' : 'keys'); }
+// a pad press or tilt claims the CONTROLS page and the HUD off keyboard/mouse
+function padPreferTab(id) {
+  ctrlTab = id;
+  if (id === 'pad' && state.settingsOpen) setTab = 'controls';
+}
 
 // Everything positioned inside the panel comes from here: the navbar cells,
 // the open page's rows (each carrying its y in view space, pre-scroll), the
