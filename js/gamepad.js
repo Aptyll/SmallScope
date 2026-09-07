@@ -49,10 +49,35 @@ const pad = {
   flag: false,                  // R3 is holding the worker flag
   click: false,                 // A is holding the pointer's button down over a panel
   menu: false,                  // last poll's mode, so a flip mid-hold releases cleanly
+  slot: -1,                     // its navigator.getGamepads() index
   std: true,                    // the browser gave the pad the STANDARD layout
   rest: null,                   // an unmapped pad's axes as first seen (padCalibrate): its layout
   raw: { lx: 0, ly: 0, rx: 0, ry: 0, lt: 0, rt: 0 }, // this frame's sticks and triggers, for the CONTROLS page's readout
 };
+let padConnSlot = -1; // the slot the last gamepadconnected event named (listeners at the end)
+// a pad with a hand on it: a button down, or the left stick off its rest -
+// axes 0 and 1 on every layout, so an unmapped pad's trigger axes parked at
+// -1 never read as a tilt
+function padLive(g) {
+  if (Math.abs(g.axes[0] || 0) > PAD_DEAD || Math.abs(g.axes[1] || 0) > PAD_DEAD) return true;
+  for (const b of g.buttons) if (b && (b.pressed || (b.value || 0) > PAD_TRIG)) return true;
+  return false;
+}
+// the pad in hand, out of everything the browser lists: a live one beats an
+// idle one - Steam and the driver shims park a silent virtual "Xbox 360" pad
+// in slot 0 beside the real controller, and Chrome lists a pad only once a
+// button on it is pressed - then the one already held, then the slot the last
+// connect event named, then a standard layout over an unmapped one
+function padFind(gps) {
+  let best = null, top = -1;
+  for (const g of gps) {
+    if (!g || !g.connected) continue;
+    const s = (padLive(g) ? 8 : 0) + (g.id === pad.id && g.index === pad.slot ? 4 : 0)
+      + (g.index === padConnSlot ? 2 : 0) + (g.mapping === 'standard' ? 1 : 0);
+    if (s > top) { top = s; best = g; }
+  }
+  return best;
+}
 // a pad is in hand: one is plugged in and was touched lately. The CONTROLS
 // page opens on its tab when this reads true.
 function padActive() { return !!pad.id && performance.now() / 1000 - pad.lastT < PAD_IDLE; }
@@ -62,6 +87,14 @@ function padActive() { return !!pad.id && performance.now() / 1000 - pad.lastT <
 function padMenuMode() {
   if (state.mode !== 'play' && state.mode !== 'drop') return true;
   return state.settingsOpen || state.mapOpen || !!state.shop || state.charOpen || !!state.draft || state.paused;
+}
+// ...the panels among those that keep the world running under them: WASD
+// still walks there (sampleHumanInput), so the left stick does too, and the
+// right stick is the hand over the panel. The slab and pause stop the feet.
+function padPanelMode() {
+  if (state.mode !== 'play' && state.mode !== 'drop') return false;
+  if (state.settingsOpen || state.paused) return false;
+  return state.mapOpen || !!state.shop || state.charOpen || !!state.draft;
 }
 // ...and where, within that, the left stick is a pointer rather than the
 // arrow keys: the surfaces only a pointer can work (a panel's rows, the
@@ -75,11 +108,18 @@ function padPointerMode() {
 
 function padPoll(dt) {
   const gps = navigator.getGamepads ? navigator.getGamepads() : null;
-  let g = null;
-  if (gps) for (const c of gps) if (c && c.connected && c.mapping === 'standard') { g = c; break; }
-  if (!g && gps) for (const c of gps) if (c && c.connected) { g = c; break; } // an unmapped pad beats none
+  const g = gps ? padFind(gps) : null;
   if (!g) { if (pad.id) padDrop(); return; }
-  if (g.id !== pad.id) { pad.id = g.id; pad.std = g.mapping === 'standard'; pad.rest = pad.std ? null : padCalibrate(g); }
+  if (g.id !== pad.id || g.index !== pad.slot) {
+    padReleaseAll(); // whatever the last pad held, it is not holding it on this one
+    pad.down = {};
+    pad.id = g.id; pad.slot = g.index;
+    pad.std = g.mapping === 'standard';
+    pad.rest = null;
+  }
+  // an unmapped pad is laid out the first frame its left stick rests - it may
+  // have been picked BY a tilt - and read in index order until then
+  if (!pad.std && !pad.rest && Math.abs(g.axes[0] || 0) < PAD_DEAD && Math.abs(g.axes[1] || 0) < PAD_DEAD) pad.rest = padCalibrate(g);
   const now = performance.now() / 1000;
   const dz = (v) => Math.abs(v) < PAD_DEAD ? 0 : (v - Math.sign(v) * PAD_DEAD) / (1 - PAD_DEAD);
   const ax = (i) => dz(g.axes[i] || 0);
@@ -96,7 +136,7 @@ function padPoll(dt) {
     rtv = R.trig[1] >= 0 ? trig(R.trig[1]) : tv(7);
   }
   pad.raw.lx = lx; pad.raw.ly = ly; pad.raw.rx = rx; pad.raw.ry = ry; pad.raw.lt = ltv; pad.raw.rt = rtv;
-  const menu = padMenuMode();
+  const menu = padMenuMode(), panel = padPanelMode();
   if (menu !== pad.menu) { padReleaseAll(); pad.menu = menu; }
   // the buttons' edges; the triggers are read as values below
   for (let i = 0; i < 16; i++) {
@@ -122,6 +162,15 @@ function padPoll(dt) {
   if (mouse.src === 'pad') mouse.inside = true;
 
   if (menu) {
+    if (panel) {
+      // the chart, the counter, the sheet and the draft: walk on the left
+      // stick as on WASD, point on the right (which has nothing to aim here)
+      pad.mx = lx; pad.my = ly;
+      if (rx || ry) pointerMove(
+        Math.max(0, Math.min(VIEW_W - 1, mouse.x + rx * PAD_CUR_SPD * dt)),
+        Math.max(0, Math.min(VIEW_H - 1, mouse.y + ry * PAD_CUR_SPD * dt)), 'pad');
+      return;
+    }
     pad.mx = pad.my = 0;
     if (padPointerMode()) {
       if (lx || ly) pointerMove(
@@ -147,8 +196,8 @@ function padPoll(dt) {
 // Xbox pad axes 0,1 L / 2 LT / 3,4 R / 5 RT) is read by where its axes REST
 // the first time it is seen: an axis parked near +-1 is a trigger (it rides
 // to the other end when squeezed), the ones resting near 0 are the sticks in
-// index order, left pair then right pair. Read once, on the press that made
-// the browser show the pad, so the sticks are at rest when it is taken.
+// index order, left pair then right pair. Read once, the first frame the
+// left stick rests (padPoll), so a tilt is never sorted as a trigger.
 function padCalibrate(g) {
   const at = Array.from(g.axes, (v) => v || 0), sticks = [], trig = [];
   at.forEach((v, i) => { if (Math.abs(v) > 0.8) trig.push(i); else sticks.push(i); });
@@ -243,7 +292,12 @@ function padDrop() {
   padReleaseAll();
   pad.down = {};
   pad.id = '';
+  pad.slot = -1;
   pad.rest = null;
   pad.raw.lx = pad.raw.ly = pad.raw.rx = pad.raw.ry = pad.raw.lt = pad.raw.rt = 0;
   pad.mx = pad.my = 0;
 }
+// the slot a pad just appeared in - on Chrome, the one whose button was just
+// pressed - so padFind can tell it from an idle ghost before it is touched again
+window.addEventListener('gamepadconnected', (e) => { padConnSlot = e.gamepad.index; });
+window.addEventListener('gamepaddisconnected', (e) => { if (e.gamepad.index === padConnSlot) padConnSlot = -1; });
