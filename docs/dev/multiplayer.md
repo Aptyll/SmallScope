@@ -98,10 +98,15 @@ its pointer) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who m
 last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep rewriting the aim
 through it every frame so the reticle rides the body, until the mouse itself moves.
 
-**The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events; standard
-mapping, the first connected pad; a pad the browser could not lay out — `mapping ''`, Firefox on
-Linux — is read by where its axes rest the first time it is seen, `padCalibrate`: an axis parked
-near ±1 is a trigger, the rest are the sticks in index order). The CONTROLS page's GAMEPAD
+**The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events. Which
+pad, out of everything the browser lists, is `padFind`: one with a button down or its left stick
+tilted beats an idle one — Steam and the driver shims park a silent virtual "Xbox 360" pad in
+slot 0 beside the real controller, and Chrome lists a pad only once a button on it is pressed, so
+the first pad by index is often the wrong one — then the one already held, then the slot the last
+`gamepadconnected` event named, then a standard layout; switching pads releases whatever the
+last one held. A pad the browser could not lay out — `mapping ''`, Firefox on Linux — is read by
+where its axes rest the first frame its left stick does, `padCalibrate`: an axis parked near ±1
+is a trigger, the rest are the sticks in index order). The CONTROLS page's GAMEPAD
 listing ends in a live **readout** (`drawPadReadout`, panels.js: the pad's name, the sticks'
 knobs, the triggers' bars, the sixteen buttons as pips off `pad.raw`/`pad.down`) — a stick that
 walks the knob but not the player, or a pad that moves the mouse but leaves the knob still, says
@@ -128,9 +133,11 @@ another plank than the dpad picked), which every such menu answers (`padTake`) �
 START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
 `settingsKey`, panels.js, reached from both the title's slide-in and the in-match slab), the
 right stick scrolls the page, and the left stick is a pointer
-over pointer-only surfaces (a panel, the shop, the sheet, the wiki, class select) and the arrow
+over pointer-only surfaces (a panel, the wiki, class select) and the arrow
 keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
-`padRepeat`). A mode flip under held buttons releases them in the mode they were pressed in and
+`padRepeat`). The panels that keep the world running under them — the chart, the counter, the
+sheet, the draft (`padPanelMode`) — keep the feet too: WASD walks under them
+(`sampleHumanInput`), so there the left stick walks and the right stick is the hand. A mode flip under held buttons releases them in the mode they were pressed in and
 keeps them marked down, so the START that opened the slab does not close it (`padReleaseAll`).
 While the pad owns the pointer `mouse.inside` is held true, so a mouse parked off the window
 never hides the pad's hand. `padActive()` — plugged in and touched within `PAD_IDLE` — is what
