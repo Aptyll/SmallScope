@@ -56,15 +56,25 @@ const pad = {
 };
 let padSlot = -1; // navigator.getGamepads() slot from the last gamepadconnected event
 let padPageReady = false; // Chrome: a click on the page before the pad can wake
+let padBound = false;     // Chrome saw a gamepad user gesture (button or stick)
 const padSeen = new Set();    // ids that have ever shown stick or button input
+// Chrome maps Switch / Pro / Joy-Con to the standard layout but sometimes
+// leaves mapping '' until init finishes; treat them as standard either way.
+function padProfile(g) {
+  const id = (g.id || '').toLowerCase();
+  if (/nintendo|switch|joy-con|pro controller|057e-2009|wireless gamepad/i.test(id))
+    return { sticks: [0, 1, 2, 3], std: true };
+  return null;
+}
+function padLooksStd(g) { return g.mapping === 'standard' || !!(padProfile(g)?.std); }
 function padHasActivity(c) {
-  for (const b of c.buttons) if (b && (b.pressed || (b.value || 0) > 0.05)) return true;
-  for (const a of c.axes) if (Math.abs(a || 0) > 0.08) return true;
+  for (const b of c.buttons) if (b && (b.pressed || (b.value || 0) > 0.03)) return true;
+  for (const a of c.axes) if (Math.abs(a || 0) > 0.04) return true;
   return false;
 }
 function padIsPhantom(c) {
   const id = (c.id || '').toLowerCase();
-  return /virtual|vjoy|nefarius|emulated|composite gamepad/i.test(id);
+  return /virtual|vjoy|nefarius|emulated|composite gamepad|steam virtual|steam controller \(virtual\)|nvidia|geforce/i.test(id);
 }
 // the best connected pad: live input beats an idle ghost, then the last slot,
 // then a pad we have seen before - never let a silent "standard" virtual pad
@@ -85,8 +95,10 @@ function padFind(gps) {
     let score = 0;
     if (i === padSlot) score += 3;
     if (pad.id && c.id === pad.id) score += 8;
+    if (pad.id && c.id === pad.id && i === padSlot) score += 4; // same name, two slots: keep the one we know
     if (padSeen.has(c.id)) score += 2;
     if (active) score += 20;
+    else if (!anyActive && padProfile(c)) score += 6; // prefer a real Switch over an idle ghost
     else if (!anyActive && c.mapping === 'standard') score += 1;
     if (score > bestScore) { bestScore = score; best = c; }
   }
@@ -97,14 +109,31 @@ function padFind(gps) {
   return null;
 }
 function padWake() {
-  if (!navigator.getGamepads) return;
-  const g = padFind(navigator.getGamepads());
-  if (g) padAttach(g, true);
+  if (!navigator.getGamepads || !padPageReady) return;
+  const gps = navigator.getGamepads();
+  for (const c of gps) if (c && c.connected && padHasActivity(c)) padBound = true;
+  const g = padFind(gps);
+  if (!g || (!pad.id && !padBound && !padHasActivity(g))) return;
+  padAttach(g, !pad.id);
 }
 function padPageGesture() {
   padPageReady = true;
   if (typeof canvas !== 'undefined') canvas.focus({ preventScroll: true });
+  // Chrome: read getGamepads in the same turn as the click - do not wait for rAF
+  if (navigator.getGamepads) {
+    const gps = navigator.getGamepads();
+    for (const c of gps) if (c && c.connected && padHasActivity(c)) padBound = true;
+    const g = padFind(gps);
+    if (g && padHasActivity(g)) padAttach(g, true);
+  }
   padWake();
+  padStartUpdate();
+}
+function padStartUpdate() {
+  const el = document.getElementById('padStart');
+  if (!el) return;
+  const show = !MOBILE && 'getGamepads' in navigator && window.isSecureContext && !pad.id;
+  el.hidden = !show;
 }
 // a pad is in hand: one is plugged in and was touched lately. The CONTROLS
 // page opens on its tab when this reads true.
@@ -119,13 +148,14 @@ function padClaim() {
 }
 function padAttach(g, claim) {
   if (!g || !g.connected) return;
+  const fresh = g.id !== pad.id || g.index !== padSlot;
   padSlot = g.index;
-  const fresh = g.id !== pad.id;
-  if (fresh) {
+  if (fresh || !pad.id) {
     pad.id = g.id;
-    pad.std = g.mapping === 'standard';
-    pad.rest = pad.std ? null : padCalibrate(g);
-  }
+    pad.std = padLooksStd(g);
+    if (pad.std) pad.rest = null;
+    else if (!pad.rest || fresh) pad.rest = padCalibrate(g);
+  } else if (!pad.std && !pad.rest) pad.rest = padCalibrate(g);
   if (claim || fresh) padClaim();
 }
 function padTrigRead(g, btn, tv, R) {
@@ -146,8 +176,10 @@ function padRead(g, dz, tv) {
   const ax = (i, off = 0) => dz((g.axes[i] || 0) - off);
   let lx, ly, rx, ry, ltv, rtv;
   const R = pad.rest;
-  if (pad.std) {
-    lx = ax(0); ly = ax(1); rx = ax(2); ry = ax(3);
+  const P = padProfile(g);
+  if (pad.std || P?.std) {
+    const s = P ? P.sticks : [0, 1, 2, 3];
+    lx = ax(s[0]); ly = ax(s[1]); rx = ax(s[2]); ry = ax(s[3]);
     ltv = padTrigRead(g, 6, tv, null); rtv = padTrigRead(g, 7, tv, null);
   } else if (R) {
     const s = R.sticks;
@@ -187,14 +219,16 @@ function padPointerMode() {
 function padPoll(dt) {
   const gps = navigator.getGamepads ? navigator.getGamepads() : null;
   pad.slots = gps ? gps.reduce((n, c) => n + (c && c.connected ? 1 : 0), 0) : 0;
+  for (const c of gps || []) if (c && c.connected && padHasActivity(c)) padBound = true;
   const g = padFind(gps);
-  if (!g) { pad.mx = pad.my = 0; return; } // Chrome may return no slots between polls while still connected; gamepaddisconnected clears pad.id
+  if (!g) { pad.mx = pad.my = 0; padStartUpdate(); return; }
+  if (!pad.id && !padBound && !padHasActivity(g)) { pad.mx = pad.my = 0; padStartUpdate(); return; }
   padAttach(g, false);
   const now = performance.now() / 1000;
   const dz = (v) => Math.abs(v) < PAD_DEAD ? 0 : (v - Math.sign(v) * PAD_DEAD) / (1 - PAD_DEAD);
   const tv = (i) => { const b = g.buttons[i]; return b ? Math.max(b.value || 0, b.pressed ? 1 : 0) : 0; };
   const { lx, ly, rx, ry, ltv, rtv } = padRead(g, dz, tv);
-  if (padHasActivity(g)) padSeen.add(g.id);
+  if (padHasActivity(g)) { padSeen.add(g.id); padBound = true; padStartUpdate(); }
   pad.raw.lx = lx; pad.raw.ly = ly; pad.raw.rx = rx; pad.raw.ry = ry; pad.raw.lt = ltv; pad.raw.rt = rtv;
   const menu = padMenuMode(), panel = padPanelOpen();
   if (menu !== pad.menu) { padReleaseAll(); pad.menu = menu; }
@@ -262,6 +296,8 @@ function padPoll(dt) {
 // the browser show the pad, so the sticks are at rest when it is taken.
 function padCalibrate(g) {
   const at = Array.from(g.axes, (v) => v || 0), sticks = [], trig = [];
+  const centred = at.filter((v) => Math.abs(v) <= 0.8);
+  if (centred.length && Math.max(...centred.map((v) => Math.abs(v))) > 0.35) return null; // connect-while-moving: wait for rest
   at.forEach((v, i) => { if (Math.abs(v) > 0.8) trig.push(i); else sticks.push(i); });
   while (sticks.length < 4) sticks.push(sticks.length); // fewer than four: fall back to index order
   // a stick read at rest far from zero was probably a trigger mis-sorted: trust 0..3
@@ -367,9 +403,12 @@ function padInit() {
   const wake = () => padPageGesture();
   window.addEventListener('gamepadconnected', (e) => {
     padPageReady = true;
-    padAttach(e.gamepad, true);
-    if (navigator.getGamepads) navigator.getGamepads();
+    padBound = true;
+    padSlot = e.gamepad.index;
+    const gps = navigator.getGamepads ? navigator.getGamepads() : null;
+    padAttach((gps && gps[padSlot]) || e.gamepad, true);
     padPoll(1 / 60); // read the press that exposed the pad, in the same turn
+    padStartUpdate();
   }, true);
   window.addEventListener('gamepaddisconnected', (e) => {
     if (e.gamepad.index === padSlot) padSlot = -1;
@@ -378,9 +417,17 @@ function padInit() {
   });
   // Chrome hides every pad until the page has focus and the player has clicked
   // the game at least once; only then does a face-button press expose the pad
-  for (const ev of ['pointerdown', 'mousedown', 'keydown', 'touchstart']) {
+  for (const ev of ['pointerdown', 'mousedown', 'click', 'keydown', 'touchstart']) {
     window.addEventListener(ev, wake, { capture: true, passive: true });
   }
+  if (typeof canvas !== 'undefined') {
+    for (const ev of ['pointerdown', 'mousedown', 'click', 'touchstart']) {
+      canvas.addEventListener(ev, wake, { capture: true, passive: true });
+    }
+  }
+  const padStart = document.getElementById('padStart');
+  if (padStart) padStart.addEventListener('click', wake);
+  padStartUpdate();
   window.addEventListener('focus', padWake);
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') padWake();

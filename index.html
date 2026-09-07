@@ -24,6 +24,16 @@
   #game { position: relative; z-index: 1; background: #0d1524; touch-action: none;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   #game:focus { outline: none; }
+  /* Chrome will not expose a pad until the page gets a real click; a canvas
+     tap is not always enough, so this button is the reliable wake gesture */
+  #padStart {
+    position: fixed; z-index: 10; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    padding: 14px 22px; border: 1px solid #4a5480; border-radius: 6px;
+    background: #1a2245; color: #cfe0ff; font: 15px/1.3 system-ui, sans-serif;
+    cursor: pointer; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+  }
+  #padStart:hover { background: #243060; border-color: #7a8bb8; }
+  #padStart[hidden] { display: none; }
   /* the replay window's frame, at device resolution over the game canvas's
      bottom-left corner: the game canvas has too few pixels there to hold it */
   #replay { position: fixed; z-index: 2; display: none; pointer-events: none; }
@@ -35,6 +45,7 @@
 <canvas id="bars"></canvas>
 <canvas id="game" width="480" height="270" tabindex="0"></canvas>
 <canvas id="replay"></canvas>
+<button id="padStart" type="button" hidden>Click here, then press any button on your controller</button>
 <!-- the local player profile (name, stats, settings) and the only file that touches
      localStorage: it has no dependencies, so it goes first. -->
 <script src="js/profile.js"></script>

@@ -775,7 +775,8 @@ function drawPadReadout(x0, y0) {
     let hint;
     if (!('getGamepads' in navigator)) hint = 'NO API';
     else if (!window.isSecureContext) hint = 'USE LOCALHOST';
-    else if (!padPageReady) hint = 'CLICK GAME FIRST';
+    else if (!padPageReady) hint = 'CLICK ENABLE CONTROLLER';
+    else if (!padBound) hint = 'PRESS A OR B ON CONTROLLER';
     else if (pad.slots > 0) hint = 'PRESS A BUTTON (' + pad.slots + ' PADS)';
     else hint = 'PRESS ANY BUTTON';
     drawPixelText(ctx, hint, x0 + 14, y + 10, '#ff9a8a');
