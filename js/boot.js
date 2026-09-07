@@ -18,8 +18,9 @@
 // human's landing snaps the view back to the player's own zoom and runs the
 // HUD slide-in. A rider who never jumps RIDES THE LANDING: the bird dives
 // with them on its back, the crash hands the mode over (landAboard), the drop
-// brief tours both roosts with them still seated, and then E hops them off
-// (hopOff, under the E - HOP OFF indicator drawHopPrompt raises). A profile's
+// brief tours both roosts with them still seated, and then E (or the roll
+// button - a pad's A) hops them off (hopOff, under the HOP OFF indicator
+// drawHopPrompt raises, which wears the button of the controller in hand). A profile's
 // very first flight is exactly that ride - its manual jump is refused - so a
 // new player's first ground is the roost, beside the merchant and the gate.
 // state.drop outlives mode 'drop' - and the whole match: past the
@@ -416,7 +417,8 @@ function updateDrop(dt) {
       const sp = seatPos(e, p.seat);
       p.x = sp.x; p.y = sp.y;
       if (e.prog >= p.dropU) dropJump(p, true); // the window's end drops a bot still riding
-      else if (e.state === 'down' && state.mode === 'play' && !state.dropBrief && p.input.work) hopOff(p); // E off the roost
+      else if (e.state === 'down' && state.mode === 'play' && !state.dropBrief && (p.input.work || p.input.dodge)) hopOff(p); // E (or the roll button: a pad's A, the jump) off the roost
+      p.input.dodge = false; // a seated roll is spent here, never carried into the landing
     } else if (p.dropT > 0) {
       p.dropT -= dt;
       // steer the fall: the input axis drifts the landing point
@@ -1115,14 +1117,23 @@ function renderDropUI(now) {
     drawPixelTextOutline(ctx, t2, bxx + bw + 6 * ts, byy + Math.round(bh / 2) - 3 * ts,
       open ? '#ffd95c' : '#cfe0ff', '#0f1632', ts);
   } else {
-    const t1 = 'WASD - DRIFT';
-    drawPixelTextOutline(ctx, t1, Math.round(cxm - pixelTextWidth(t1, ts) / 2), 10 * ts, '#f4f7ff', '#0f1632', ts);
+    drawDropBind('WASD', 'DRIFT', cxm, 10 * ts, '#f4f7ff', ts, true);
   }
   // keybind indicator, bottom right: the map itself is the affordance
-  if (!state.mapOpen) {
-    const tm = 'M - MAP';
-    drawPixelTextOutline(ctx, tm, VIEW_W - pixelTextWidth(tm, ts) - 6 * ts, VIEW_H - 12 * ts,
-      '#9fb6d8', '#0f1632', ts);
+  if (!state.mapOpen) drawDropBind('M', 'MAP', VIEW_W - 6 * ts, VIEW_H - 12 * ts, '#9fb6d8', ts, false);
+}
+// one of the flight HUD's two keybind indicators: `KEY - VERB` as text for
+// the keyboard, the pad's glyph beside the verb while a pad is in hand
+// (PAD_BIND, ui.js). Centred on x, or ending at x when `centre` is false.
+function drawDropBind(key, verb, x, y, col, ts, centre) {
+  if (padActive()) {
+    const gw = padBindW(key) * ts, w = gw + 3 * ts + pixelTextWidth(verb, ts);
+    const x0 = Math.round(centre ? x - w / 2 : x - w);
+    drawPadBind(ctx, x0, y - 2 * ts, key, ts);
+    drawPixelTextOutline(ctx, verb, x0 + gw + 3 * ts, y, col, '#0f1632', ts);
+  } else {
+    const t = key + ' - ' + verb, w = pixelTextWidth(t, ts);
+    drawPixelTextOutline(ctx, t, Math.round(centre ? x - w / 2 : x - w), y, col, '#0f1632', ts);
   }
 }
 
@@ -1141,10 +1152,15 @@ function drawHopPrompt(now) {
   const bob = Math.round(Math.sin(now * 4) * 2);
   const w = 11 * ts, h = 11 * ts;
   const cx = Math.round(wToSX(player.x)) + 20 * ts, cy = Math.round(wToSY(player.y)) - 14 * ts + bob;
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(cx - ts, cy - ts, w + 2 * ts, h + 2 * ts);
-  ctx.fillStyle = '#f4f7ff'; ctx.fillRect(cx, cy, w, h);
-  ctx.fillStyle = '#c9d0e2'; ctx.fillRect(cx, cy + h - 2 * ts, w, 2 * ts); // the cap's lower face
-  drawPixelText(ctx, 'E', cx + 3 * ts, cy + 2 * ts, '#0f1632', ts);
+  if (padActive()) {
+    // a pad in hand: the A disc (the jump; X, the work button, hops too)
+    drawPadBind(ctx, cx, cy + ts, 'SPACE', ts);
+  } else {
+    ctx.fillStyle = '#0f1632'; ctx.fillRect(cx - ts, cy - ts, w + 2 * ts, h + 2 * ts);
+    ctx.fillStyle = '#f4f7ff'; ctx.fillRect(cx, cy, w, h);
+    ctx.fillStyle = '#c9d0e2'; ctx.fillRect(cx, cy + h - 2 * ts, w, 2 * ts); // the cap's lower face
+    drawPixelText(ctx, 'E', cx + 3 * ts, cy + 2 * ts, '#0f1632', ts);
+  }
   drawPixelTextOutline(ctx, 'HOP OFF', cx + w + 4 * ts, cy + 2 * ts, '#ffd95c', '#0f1632', ts);
 }
 
@@ -1541,6 +1557,7 @@ window.DBG = {
   // a 240px page; setCtrlTab picks which listing the page shows.
   settingsHit, muteBtnRect, settingsScrollBy, ctrlCvs,
   setSettingsTab: (id) => { setTab = id; },
+  get settingsTab() { return setTab; }, // the open page (a let, so a getter)
   setCtrlTab: (id) => { ctrlTab = id; },
   get settingsRows() {
     const L = settingsLayout();

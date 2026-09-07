@@ -208,7 +208,7 @@ sits here, not at the end of `render()`, so the strip holds no HUD, no dim and n
 itself) → `renderUI` (skipped in `title` and `drop`) → `renderDropUI` (mode `drop` only:
 the flight bar, keybind indicators) → `drawDropBrief` (mode `play`,
 only while [the drop brief](#the-drop-brief) holds a roost) or `drawHopPrompt` (mode `play`, the
-local player still seated on its roost: the E - HOP OFF key cap) → `renderWheel` (radial menu, above the UI) →
+local player still seated on its roost: the HOP OFF key cap — E, or the pad's A disc while one is in hand) → `renderWheel` (radial menu, above the UI) →
 map/settings overlays (the M map also in mode `drop`) → `renderTitle` (the main menu, also during the play intro) → the end-of-match
 overlay (`renderDead`: the death dim and its planks, or `renderVictory` / `renderDefeat` — see
 [The end screens](#the-end-screens)) →
@@ -1464,9 +1464,11 @@ the fall starts **from the seat**, so the leap visibly leaves the wing); never p
 `landAboard`: `handOver` flips mode `drop` → `play` (the zoom, the camera, the HUD slide-in a
 jump's `landPlayer` does), the ride's song is interrupted the way a jump interrupts it, and the
 [drop brief](#the-drop-brief) opens with you still seated. When it hands back, the bird wears
-the flight's gold landing ring again and `drawHopPrompt` raises the **E - HOP OFF** keybind
-indicator (a key cap bobbing over the bird, one word under it); `p.input.work` while seated on a
-`down` bird calls `hopOff` — a short low step off the wing (`HOP_FALL_T`, `HOP_ALT` — every
+the flight's gold landing ring again and `drawHopPrompt` raises the **HOP OFF** keybind
+indicator (an E key cap — the pad's A disc while one is in hand — bobbing over the bird, one word
+beside it); `p.input.work` or `p.input.dodge` (E, or the roll button: a pad's A) while seated on a
+`down` bird calls `hopOff` (while seated, E is only that: the merchant standing beside the roost
+never opens its counter over the hop, `keyPress`'s aboard guard in input.js) — a short low step off the wing (`HOP_FALL_T`, `HOP_ALT` — every
 faller's arc reads `p.dropAlt`), steerable like any fall, landing on the nearest open tile beside
 the roost. A profile that has **never jumped**
 (`PROFILE.hasDropped()`, the drop-side gate of the `state.drop.firstFlight` flag) gets exactly
@@ -1623,7 +1625,7 @@ last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) 
 **flight bar**, top centre: the whole line as one track, the flown part filled in team colour
 under the chart-style bird diamond, the **jump window as a gold stretch** (dim while locked,
 pulsing bright once open — the lock is taught by the bar's shape, no sentence), seconds left as a
-number beside it (gold once open); `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right —
+number beside it (gold once open); `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
 the ride's wider read is the **M map** now (`renderWorldMap` also runs in mode `drop`, where it
 draws each flying bird's line dashed in team colour with the bird diamond riding it; M/Esc are
 handled in input.js's drop branch, the map swallows the jump click, and the sim keeps running

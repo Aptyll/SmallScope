@@ -102,6 +102,9 @@ function padPoll(dt) {
   }
   if (lx || ly || rx || ry) pad.lastT = now;
   if (pad.backT >= 0) pad.backT += dt;
+  // while the pad owns the pointer it is on the page, wherever the mouse
+  // itself went: a mouse parked off the window must not hide the pad's hand
+  if (mouse.src === 'pad') mouse.inside = true;
 
   if (menu) {
     pad.mx = pad.my = 0;
@@ -125,11 +128,14 @@ function padPoll(dt) {
   if (mouse.src === 'pad' || k > 0) padAim(rx, ry);
 }
 
-// the pointer, from the right stick: over an open wheel it is the pick's
-// travel from the press point; otherwise the aim, a bearing off the body
+// the pointer, from the right stick: over an open wheel - the dpad's build
+// wheel or one X holds open (the armory, the roll die, the range bell) - it
+// is the stick's tilt from the wheel's own hub (wheelLayout, ui.js: the
+// press point may sit a body's aim away from it), so a tilt is a wedge and
+// rest is the hub, the cancel; otherwise the aim, a bearing off the body
 function padAim(rx, ry) {
   if (state.mode !== 'play') return;
-  if (state.wheel && pad.wheel) { pointerMove(state.wheel.ax + rx * PAD_WHEEL_R, state.wheel.ay + ry * PAD_WHEEL_R, 'pad'); return; }
+  if (state.wheel) { const L = wheelLayout(); pointerMove(L.cx + rx * PAD_WHEEL_R, L.cy + ry * PAD_WHEEL_R, 'pad'); return; }
   const r = PAD_AIM_R0 + (PAD_AIM_R1 - PAD_AIM_R0) * pad.aimK;
   pointerMove(wToSX(player.x + pad.aimDx * r), wToSY(player.y + pad.aimDy * r), 'pad');
 }
@@ -149,10 +155,12 @@ function padRepeat(lx, ly, dt) {
 
 // A over a menu: the thing under the pointer if there is one (the hand
 // cursor already knows), otherwise the selection - Enter, which every
-// key-driven menu answers
+// key-driven menu answers. Over a key-driven menu (the title's planks, the
+// death planks) it is ALWAYS the selection: the idle mouse may be resting on
+// a different plank, and the dpad is what the player has been steering.
 function padTake() {
   const c = cursorInfo();
-  if (c.kind === 'hand' || c.kind === 'grab') { pointerPress(0); pad.click = true; }
+  if (padPointerMode() && (c.kind === 'hand' || c.kind === 'grab')) { pointerPress(0); pad.click = true; }
   else keyPress({ key: 'Enter', repeat: false });
 }
 

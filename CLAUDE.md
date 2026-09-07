@@ -85,7 +85,8 @@ team, a plank that lifts on hover — not "CLICK OR ARROWS TO SWAP", not "PLAYER
 control must read as what it does by its shape and its hover state alone, and if you catch
 yourself writing a hint sentence, build the affordance instead. Text is for names, numbers,
 headlines (a death, a landmark) and five deliberate carve-outs: **keybind indicators** (`'ESC
-BACK'`, a "1" in a slot's corner), the **settings, PLAYER, gear, character and shop panels**'
+BACK'`, a "1" in a slot's corner — which wear the pad's button while one is in hand, `PAD_BIND`
+in ui.js, so a new one goes through `drawKeyPrompt`/`drawPadBind`), the **settings, PLAYER, gear, character and shop panels**'
 labelled rows, the **instruments** — the practice room's (the dummy meter, the parkour's lap
 clock and the archery round's readouts, with their BEST / LAST plates) and the merchant's
 (the two price graphs and their high/low) — because an instrument's whole job is comparing

@@ -571,13 +571,29 @@ function settingsScrollBy(d) {
   const L = settingsLayout();
   setScroll[setTab] = Math.max(0, Math.min(L.maxScroll, setScroll[setTab] + d));
 }
+// the navbar walked by key: left/right steps the page, the way a click on a
+// tab does - what a pad's bumpers and dpad reach the tabs through
+function settingsTabBy(d) {
+  const i = SET_TABS.findIndex(t => t.id === setTab);
+  setTab = SET_TABS[(i + d + SET_TABS.length) % SET_TABS.length].id;
+  SFX.pickup();
+}
+// the keys the open slab answers wherever it is up (the title's slide-in
+// and the in-match ESC slab both route here): the arrows page and scroll.
+// True when the key was the panel's, so the caller drops it.
+function settingsKey(k) {
+  if (k === 'arrowleft' || k === 'a') settingsTabBy(-1);
+  else if (k === 'arrowright' || k === 'd') settingsTabBy(1);
+  else if (k === 'arrowup' || k === 'w') settingsScrollBy(-8);
+  else if (k === 'arrowdown' || k === 's') settingsScrollBy(8);
+  else return false;
+  return true;
+}
 
 function buildSettingsPanel() {
   const g = setPanelCv.getContext('2d');
   bakeFrostSlab(g, SET_W, SET_H, 'SETTINGS');
-  // close hint
-  const hint = 'ESC CLOSE';
-  drawPixelText(g, hint, Math.round((SET_W - pixelTextWidth(hint)) / 2), 208, '#5a6690');
+  // the close hint is drawn live (renderSettings): it names the controller in hand
 }
 
 // The CONTROLS page: three listings, one per controller, each baked once
@@ -585,7 +601,7 @@ function buildSettingsPanel() {
 // like any other page. The keyboard's carries the weapon primer under it.
 const ctrlCvs = { keys: document.createElement('canvas'), pad: document.createElement('canvas'), touch: document.createElement('canvas') };
 ctrlCvs.keys.width = SET_W; ctrlCvs.keys.height = 244;
-ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = 128;
+ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = 148;
 ctrlCvs.touch.width = SET_W; ctrlCvs.touch.height = 96;
 
 // THE WEAPON PRIMER: the one thing about the left button a new player cannot
@@ -735,10 +751,10 @@ function drawPadGlyph(g, x, y, kind, label) {
   // the play set on the left, the hold-and-drag gestures and the menu set on
   // the right; every row is [glyph kind, its label, the verb]
   const cols = [
-    [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE'], ['face', 'X', 'HARVEST'],
+    [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
       ['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH']],
     [['stick', 'L3', 'BACKPACK'], ['dpad', 'U', 'CHARACTER'], ['dpad', 'D', 'HOLD: BUILD WHEEL'], ['stick', 'R3', 'HOLD: ORDER CREW'], ['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'],
-      ['pill', 'START', 'SETTINGS'], null, ['face', 'A', 'TAKE'], ['face', 'B', 'BACK'], ['stick', 'L', 'POINTER'], ['stick', 'R', 'SCROLL']],
+      ['pill', 'START', 'SETTINGS'], null, ['face', 'A', 'TAKE'], ['face', 'B', 'BACK'], ['bump', 'LB', 'PAGE TABS'], ['dpad', 'L', 'SELECT'], ['stick', 'L', 'POINTER'], ['stick', 'R', 'SCROLL']],
   ];
   for (let c = 0; c < 2; c++) {
     let y = 4;
@@ -934,6 +950,7 @@ function renderSettings(now, opts) {
   }
   if (slide) { ctx.save(); ctx.translate(0, slide); }
   ctx.drawImage(setPanelCv, SET_X, SET_Y);
+  drawBackHint(ctx, SET_X + SET_W / 2, SET_Y + 208, 'CLOSE');
   const off = SFX.isMuted();
   const hit = slide ? null : settingsHit(); // the menu's slide-in is not hoverable mid-flight
   const L = settingsLayout();

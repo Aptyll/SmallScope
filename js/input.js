@@ -47,6 +47,9 @@ function keyPress(e) {
   }
   if (state.mode === 'dead') { deadKey(e.key.toLowerCase()); return; }
   if (state.mode !== 'play') return;
+  // the ESC slab has the arrows while it is up: they page and scroll it
+  // (settingsKey, js/panels.js) - what a pad's bumpers and dpad reach it by
+  if (state.settingsOpen && settingsKey(e.key.toLowerCase())) return;
   // edge-triggered intents go into the local player's input struct; the sim
   // reads and clears them, exactly as it does for an bot
   if (e.key === ' ') player.input.dodge = true;
@@ -57,8 +60,11 @@ function keyPress(e) {
   // hold-and-release grammar, moved onto the key. A real work target in reach
   // keeps E's day job (the same rule that decides which prompt is showing),
   // and ordinary work is suppressed while any wheel is up (sampleHumanInput).
+  // Seated on the roost, E is the hop (updateDrop reads the held work
+  // intent) and nothing else: the merchant stands beside the roost, and the
+  // counter opening instead would swallow the very key that gets you down.
   if (e.key.toLowerCase() === 'e' && !e.repeat && !state.wheel && !state.mapOpen &&
-      !state.settingsOpen && !state.draft && !state.drag && !player.dead) {
+      !state.settingsOpen && !state.draft && !state.drag && !player.dead && !player.aboard) {
     // The merchant's counter is a PANEL, not a held wheel, so the key that
     // opened it shuts it - whatever else has come into reach meanwhile.
     if (state.shop) { closeShop(); return; }
