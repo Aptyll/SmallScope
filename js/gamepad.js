@@ -53,15 +53,21 @@ const pad = {
   rest: null,                   // an unmapped pad's axes as first seen (padCalibrate): its layout
   raw: { lx: 0, ly: 0, rx: 0, ry: 0, lt: 0, rt: 0 }, // this frame's sticks and triggers, for the CONTROLS page's readout
 };
+let padSlot = -1; // navigator.getGamepads() slot from the last gamepadconnected event
 // a pad is in hand: one is plugged in and was touched lately. The CONTROLS
 // page opens on its tab when this reads true.
 function padActive() { return !!pad.id && performance.now() / 1000 - pad.lastT < PAD_IDLE; }
 
 // where the buttons are the menu set: any mode but play (the drop's jump and
-// map are play keys), and play with something over it
+// map are play keys), and play with settings or pause over it
 function padMenuMode() {
   if (state.mode !== 'play' && state.mode !== 'drop') return true;
-  return state.settingsOpen || state.mapOpen || !!state.shop || state.charOpen || !!state.draft || state.paused;
+  return state.settingsOpen || state.paused;
+}
+// HUD panels that keep the sim running: the keyboard still walks under them,
+// so the left stick does too; the right stick carries the pointer instead
+function padPanelOpen() {
+  return state.mapOpen || !!state.shop || state.charOpen || !!state.draft;
 }
 // ...and where, within that, the left stick is a pointer rather than the
 // arrow keys: the surfaces only a pointer can work (a panel's rows, the
@@ -76,13 +82,17 @@ function padPointerMode() {
 function padPoll(dt) {
   const gps = navigator.getGamepads ? navigator.getGamepads() : null;
   let g = null;
-  if (gps) for (const c of gps) if (c && c.connected && c.mapping === 'standard') { g = c; break; }
-  if (!g && gps) for (const c of gps) if (c && c.connected) { g = c; break; } // an unmapped pad beats none
+  if (gps) {
+    const prefer = padSlot >= 0 ? gps[padSlot] : null;
+    if (prefer && prefer.connected) g = prefer;
+    if (!g) for (const c of gps) if (c && c.connected && c.mapping === 'standard') { g = c; padSlot = c.index; break; }
+    if (!g) for (const c of gps) if (c && c.connected) { g = c; padSlot = c.index; break; } // an unmapped pad beats none
+  }
   if (!g) { if (pad.id) padDrop(); return; }
   if (g.id !== pad.id) { pad.id = g.id; pad.std = g.mapping === 'standard'; pad.rest = pad.std ? null : padCalibrate(g); }
   const now = performance.now() / 1000;
   const dz = (v) => Math.abs(v) < PAD_DEAD ? 0 : (v - Math.sign(v) * PAD_DEAD) / (1 - PAD_DEAD);
-  const ax = (i) => dz(g.axes[i] || 0);
+  const ax = (i, off = 0) => dz((g.axes[i] || 0) - off);
   const tv = (i) => { const b = g.buttons[i]; return b ? Math.max(b.value || 0, b.pressed ? 1 : 0) : 0; };
   // the sticks and the triggers: by the standard layout, or by the one an
   // unmapped pad was read to have (padCalibrate)
@@ -90,13 +100,13 @@ function padPoll(dt) {
   if (pad.std || !pad.rest) { lx = ax(0); ly = ax(1); rx = ax(2); ry = ax(3); ltv = tv(6); rtv = tv(7); }
   else {
     const R = pad.rest, s = R.sticks;
-    lx = ax(s[0]); ly = ax(s[1]); rx = ax(s[2]); ry = ax(s[3]);
+    lx = ax(s[0], R.at[s[0]]); ly = ax(s[1], R.at[s[1]]); rx = ax(s[2], R.at[s[2]]); ry = ax(s[3], R.at[s[3]]);
     const trig = (i) => Math.max(0, Math.min(1, ((g.axes[i] || 0) - R.at[i]) / (0 - R.at[i]))); // parked at -1 (or +1): 0 at rest, 1 squeezed to the far end
     ltv = R.trig[0] >= 0 ? trig(R.trig[0]) : tv(6);
     rtv = R.trig[1] >= 0 ? trig(R.trig[1]) : tv(7);
   }
   pad.raw.lx = lx; pad.raw.ly = ly; pad.raw.rx = rx; pad.raw.ry = ry; pad.raw.lt = ltv; pad.raw.rt = rtv;
-  const menu = padMenuMode();
+  const menu = padMenuMode(), panel = padPanelOpen();
   if (menu !== pad.menu) { padReleaseAll(); pad.menu = menu; }
   // the buttons' edges; the triggers are read as values below
   for (let i = 0; i < 16; i++) {
@@ -137,6 +147,15 @@ function padPoll(dt) {
   pad.mx = lx; pad.my = ly;
   const k = Math.hypot(rx, ry);
   if (k > 0) { pad.aimDx = rx / k; pad.aimDy = ry / k; pad.aimK = Math.min(1, k); }
+  if (panel) {
+    // the map, the sheet, the shop and the draft keep the world running: walk
+    // on the left stick like WASD, point on the right (the settings slab is
+    // different - it stops the feet and takes the left stick for itself)
+    if (padPointerMode() && (rx || ry)) pointerMove(
+      Math.max(0, Math.min(VIEW_W - 1, mouse.x + rx * PAD_CUR_SPD * dt)),
+      Math.max(0, Math.min(VIEW_H - 1, mouse.y + ry * PAD_CUR_SPD * dt)), 'pad');
+    return;
+  }
   // the aim rides the body: once the pad owns the pointer it is rewritten
   // every frame, so the reticle keeps its bearing while you walk. A tilt
   // takes the pointer back from the mouse; the mouse takes it back by moving.
@@ -153,6 +172,8 @@ function padCalibrate(g) {
   const at = Array.from(g.axes, (v) => v || 0), sticks = [], trig = [];
   at.forEach((v, i) => { if (Math.abs(v) > 0.8) trig.push(i); else sticks.push(i); });
   while (sticks.length < 4) sticks.push(sticks.length); // fewer than four: fall back to index order
+  // a stick read at rest far from zero was probably a trigger mis-sorted: trust 0..3
+  if (sticks.length >= 2 && (Math.abs(at[sticks[0]]) > 0.5 || Math.abs(at[sticks[1]]) > 0.5)) sticks = [0, 1, 2, 3];
   return { at, sticks, trig: [trig.length > 0 ? trig[0] : -1, trig.length > 1 ? trig[1] : -1] };
 }
 
@@ -247,3 +268,18 @@ function padDrop() {
   pad.raw.lx = pad.raw.ly = pad.raw.rx = pad.raw.ry = pad.raw.lt = pad.raw.rt = 0;
   pad.mx = pad.my = 0;
 }
+// Chrome and Edge often hide a pad from getGamepads() until a button is
+// pressed; the connected event is the wake-up call and pins which slot to read
+function padInit() {
+  window.addEventListener('gamepadconnected', (e) => {
+    padSlot = e.gamepad.index;
+    pad.lastT = performance.now() / 1000;
+    if (navigator.getGamepads) navigator.getGamepads();
+  });
+  window.addEventListener('gamepaddisconnected', (e) => {
+    if (e.gamepad.index === padSlot) padSlot = -1;
+    const gps = navigator.getGamepads ? navigator.getGamepads() : null;
+    if (!gps || !gps.some((c) => c && c.connected)) padDrop();
+  });
+}
+padInit();
