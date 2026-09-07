@@ -23,6 +23,7 @@
      a finger on the game - every touch is a pointer event js/touch.js reads */
   #game { position: relative; z-index: 1; background: #0d1524; touch-action: none;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+  #game:focus { outline: none; }
   /* the replay window's frame, at device resolution over the game canvas's
      bottom-left corner: the game canvas has too few pixels there to hold it */
   #replay { position: fixed; z-index: 2; display: none; pointer-events: none; }
@@ -32,7 +33,7 @@
 </head>
 <body>
 <canvas id="bars"></canvas>
-<canvas id="game" width="480" height="270"></canvas>
+<canvas id="game" width="480" height="270" tabindex="0"></canvas>
 <canvas id="replay"></canvas>
 <!-- the local player profile (name, stats, settings) and the only file that touches
      localStorage: it has no dependencies, so it goes first. -->

@@ -771,6 +771,12 @@ function drawPadReadout(x0, y0) {
   while (name.length > 1 && pixelTextWidth(name) > maxW) name = name.slice(0, -1);
   drawPixelText(ctx, name, x0 + 60, y, pad.id ? gold : dim);
   if (!pad.std && pad.id) drawPixelText(ctx, 'UNMAPPED', x0 + SET_W - 14 - pixelTextWidth('UNMAPPED'), y, '#ff9a8a');
+  if (!pad.id) {
+    const hint = !('getGamepads' in navigator) ? 'NO API'
+      : !padPageReady ? 'CLICK GAME FIRST'
+      : 'PRESS ANY BUTTON';
+    drawPixelText(ctx, hint, x0 + 14, y + 10, '#ff9a8a');
+  }
   // the sticks: a ring each, the knob at the live tilt
   const sy = y + 20, live = !!pad.id;
   const stick = (cx, tx, ty, lbl) => {
