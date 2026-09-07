@@ -52,29 +52,48 @@ const pad = {
   std: true,                    // the browser gave the pad the STANDARD layout
   rest: null,                   // an unmapped pad's axes as first seen (padCalibrate): its layout
   raw: { lx: 0, ly: 0, rx: 0, ry: 0, lt: 0, rt: 0 }, // this frame's sticks and triggers, for the CONTROLS page's readout
+  slots: 0,                     // how many pads getGamepads reported connected this frame
 };
 let padSlot = -1; // navigator.getGamepads() slot from the last gamepadconnected event
 let padPageReady = false; // Chrome: a click on the page before the pad can wake
-// the best connected pad: prefer the last slot, then any with live input, then standard
+const padSeen = new Set();    // ids that have ever shown stick or button input
+function padHasActivity(c) {
+  for (const b of c.buttons) if (b && (b.pressed || (b.value || 0) > 0.05)) return true;
+  for (const a of c.axes) if (Math.abs(a || 0) > 0.08) return true;
+  return false;
+}
+function padIsPhantom(c) {
+  const id = (c.id || '').toLowerCase();
+  return /virtual|vjoy|nefarius|emulated|composite gamepad/i.test(id);
+}
+// the best connected pad: live input beats an idle ghost, then the last slot,
+// then a pad we have seen before - never let a silent "standard" virtual pad
+// steal a real controller (common on Windows with Steam / driver shims)
 function padFind(gps) {
   if (!gps) return null;
+  let anyActive = false;
+  for (let i = 0; i < gps.length; i++) {
+    const c = gps[i];
+    if (c && c.connected && padHasActivity(c)) { anyActive = true; break; }
+  }
   let best = null, bestScore = -1;
   for (let i = 0; i < gps.length; i++) {
     const c = gps[i];
     if (!c || !c.connected) continue;
+    const active = padHasActivity(c);
+    if (padIsPhantom(c) && !active && c.id !== pad.id) continue;
     let score = 0;
-    if (c.mapping === 'standard') score += 2;
-    if (i === padSlot) score += 4;
-    for (const b of c.buttons) {
-      if (b && (b.pressed || (b.value || 0) > 0.05)) score += 10;
-    }
-    for (const a of c.axes) {
-      if (Math.abs(a || 0) > 0.05) score += 2;
-    }
+    if (i === padSlot) score += 3;
+    if (pad.id && c.id === pad.id) score += 8;
+    if (padSeen.has(c.id)) score += 2;
+    if (active) score += 20;
+    else if (!anyActive && c.mapping === 'standard') score += 1;
     if (score > bestScore) { bestScore = score; best = c; }
   }
   if (best) return best;
-  for (const c of gps) if (c && c.connected) return c;
+  if (padSlot >= 0 && gps[padSlot]?.connected) return gps[padSlot];
+  for (const c of gps) if (c?.connected && !padIsPhantom(c)) return c;
+  for (const c of gps) if (c?.connected) return c;
   return null;
 }
 function padWake() {
@@ -109,6 +128,40 @@ function padAttach(g, claim) {
   }
   if (claim || fresh) padClaim();
 }
+function padTrigRead(g, btn, tv, R) {
+  let v = tv(btn);
+  if (v > 0.05) return v;
+  if (R && R.trig) {
+    const ti = btn === 6 ? R.trig[0] : R.trig[1];
+    if (ti >= 0) {
+      const raw = g.axes[ti] || 0, rest = R.at[ti] || 0;
+      const span = Math.abs(rest) > 0.5 ? (0 - rest) : 1;
+      v = Math.max(0, Math.min(1, (raw - rest) / span));
+      if (v > 0.05) return v;
+    }
+  }
+  return v;
+}
+function padRead(g, dz, tv) {
+  const ax = (i, off = 0) => dz((g.axes[i] || 0) - off);
+  let lx, ly, rx, ry, ltv, rtv;
+  const R = pad.rest;
+  if (pad.std) {
+    lx = ax(0); ly = ax(1); rx = ax(2); ry = ax(3);
+    ltv = padTrigRead(g, 6, tv, null); rtv = padTrigRead(g, 7, tv, null);
+  } else if (R) {
+    const s = R.sticks;
+    lx = ax(s[0], R.at[s[0]]); ly = ax(s[1], R.at[s[1]]);
+    rx = ax(s[2], R.at[s[2]]); ry = ax(s[3], R.at[s[3]]);
+    const trig = (i) => i < 0 ? 0 : Math.max(0, Math.min(1, ((g.axes[i] || 0) - R.at[i]) / (0 - R.at[i] || 1)));
+    ltv = R.trig[0] >= 0 ? trig(R.trig[0]) : padTrigRead(g, 6, tv, R);
+    rtv = R.trig[1] >= 0 ? trig(R.trig[1]) : padTrigRead(g, 7, tv, R);
+  } else {
+    lx = ax(0); ly = ax(1); rx = ax(2); ry = ax(3);
+    ltv = padTrigRead(g, 6, tv, null); rtv = padTrigRead(g, 7, tv, null);
+  }
+  return { lx, ly, rx, ry, ltv, rtv };
+}
 
 // where the buttons are the menu set: any mode but play (the drop's jump and
 // map are play keys), and play with settings or pause over it
@@ -133,29 +186,21 @@ function padPointerMode() {
 
 function padPoll(dt) {
   const gps = navigator.getGamepads ? navigator.getGamepads() : null;
+  pad.slots = gps ? gps.reduce((n, c) => n + (c && c.connected ? 1 : 0), 0) : 0;
   const g = padFind(gps);
   if (!g) { pad.mx = pad.my = 0; return; } // Chrome may return no slots between polls while still connected; gamepaddisconnected clears pad.id
   padAttach(g, false);
   const now = performance.now() / 1000;
   const dz = (v) => Math.abs(v) < PAD_DEAD ? 0 : (v - Math.sign(v) * PAD_DEAD) / (1 - PAD_DEAD);
-  const ax = (i, off = 0) => dz((g.axes[i] || 0) - off);
   const tv = (i) => { const b = g.buttons[i]; return b ? Math.max(b.value || 0, b.pressed ? 1 : 0) : 0; };
-  // the sticks and the triggers: by the standard layout, or by the one an
-  // unmapped pad was read to have (padCalibrate)
-  let lx, ly, rx, ry, ltv, rtv;
-  if (pad.std || !pad.rest) { lx = ax(0); ly = ax(1); rx = ax(2); ry = ax(3); ltv = tv(6); rtv = tv(7); }
-  else {
-    const R = pad.rest, s = R.sticks;
-    lx = ax(s[0], R.at[s[0]]); ly = ax(s[1], R.at[s[1]]); rx = ax(s[2], R.at[s[2]]); ry = ax(s[3], R.at[s[3]]);
-    const trig = (i) => Math.max(0, Math.min(1, ((g.axes[i] || 0) - R.at[i]) / (0 - R.at[i]))); // parked at -1 (or +1): 0 at rest, 1 squeezed to the far end
-    ltv = R.trig[0] >= 0 ? trig(R.trig[0]) : tv(6);
-    rtv = R.trig[1] >= 0 ? trig(R.trig[1]) : tv(7);
-  }
+  const { lx, ly, rx, ry, ltv, rtv } = padRead(g, dz, tv);
+  if (padHasActivity(g)) padSeen.add(g.id);
   pad.raw.lx = lx; pad.raw.ly = ly; pad.raw.rx = rx; pad.raw.ry = ry; pad.raw.lt = ltv; pad.raw.rt = rtv;
   const menu = padMenuMode(), panel = padPanelOpen();
   if (menu !== pad.menu) { padReleaseAll(); pad.menu = menu; }
   // the buttons' edges; the triggers are read as values below
-  for (let i = 0; i < 16; i++) {
+  const btnN = Math.min(16, g.buttons.length);
+  for (let i = 0; i < btnN; i++) {
     if (i === 6 || i === 7) continue;
     const on = tv(i) > PAD_TRIG, was = !!pad.down[i];
     if (on === was) continue;
@@ -309,6 +354,7 @@ function padReleaseAll() {
 }
 function padDrop() {
   padReleaseAll();
+  if (pad.id) padSeen.delete(pad.id);
   pad.down = {};
   pad.id = '';
   pad.rest = null;
@@ -324,7 +370,7 @@ function padInit() {
     padAttach(e.gamepad, true);
     if (navigator.getGamepads) navigator.getGamepads();
     padPoll(1 / 60); // read the press that exposed the pad, in the same turn
-  });
+  }, true);
   window.addEventListener('gamepaddisconnected', (e) => {
     if (e.gamepad.index === padSlot) padSlot = -1;
     const gps = navigator.getGamepads ? navigator.getGamepads() : null;

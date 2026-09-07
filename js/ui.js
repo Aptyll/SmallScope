@@ -3039,3 +3039,17 @@ function drawRotatePrompt(now) {
   const ax = Math.round(cx + Math.cos(-Math.PI * 0.45) * r), ay = Math.round(cy + Math.sin(-Math.PI * 0.45) * r);
   ctx.fillRect(ax - 2, ay - 5, 5, 2); ctx.fillRect(ax + 1, ay - 3, 2, 3); ctx.fillRect(ax + 3, ay - 1, 2, 5);
 }
+
+// Chrome will not expose a pad until the page is clicked and a face button is
+// pressed; this banner says so until the first click (padPageReady, gamepad.js)
+function drawPadWakeHint() {
+  if (MOBILE || pad.id || window.DBG.hideUI) return;
+  const msg = !window.isSecureContext ? 'CONTROLLER NEEDS LOCALHOST'
+    : !padPageReady ? 'CLICK GAME, THEN PRESS A BUTTON ON YOUR CONTROLLER'
+    : 'PRESS A BUTTON ON YOUR CONTROLLER';
+  const w = pixelTextWidth(msg);
+  const x = (VIEW_W - w) >> 1, y = VIEW_H - 16;
+  ctx.fillStyle = 'rgba(8,12,32,0.88)';
+  ctx.fillRect(x - 4, y - 2, w + 8, 11);
+  drawPixelText(ctx, msg, x, y, '#ff9a8a');
+}

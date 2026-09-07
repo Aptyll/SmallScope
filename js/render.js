@@ -649,6 +649,7 @@ function render() {
   // window, so this cannot come after the feed (see the tooltips banner, ui.js)
   tipResolve();
   renderUI(now);
+  drawPadWakeHint();
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (PRACTICE && state.mode === 'play') drawAgameUI(now);
