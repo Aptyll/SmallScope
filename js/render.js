@@ -679,16 +679,23 @@ function render() {
   if (!window.DBG.hideUI && !endScreen()) drawTooltip();
   if (scoreboardOpen()) renderScoreboard();
   if (!window.DBG.hideUI) drawTags();
+  // a phone's sticks and plates, over everything they act on (the one plate
+  // that stays up over a panel is the way back out of it)
+  if (MOBILE && !window.DBG.hideUI) drawTouchControls(now);
   if (state.fade && state.fade.a > 0) {
     ctx.globalAlpha = Math.min(1, state.fade.a);
     ctx.fillStyle = state.fade.color;
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     ctx.globalAlpha = 1;
   }
-  // pointer, last of all so it sits above every overlay
+  // a phone held upright: the prompt covers the lot (touch.js swallows the fingers)
+  if (mobilePortrait()) drawRotatePrompt(now);
+  // pointer, last of all so it sits above every overlay. A finger draws only
+  // the reticle - the aim it is steering - never an arrow under a thumb.
   const cur = cursorInfo();
   applyCursorStyle(cur);
-  if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI) drawCursor(cur, now);
+  if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI &&
+      (mouse.src !== 'touch' || cur.kind === 'reticle')) drawCursor(cur, now);
 }
 
 // the info stack (settings.info - the INFO row in the ESC menu, or F3, the

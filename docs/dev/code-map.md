@@ -1,6 +1,6 @@
 # Where things live in the game code
 
-The game code is ~14000 lines of flat top-level code across twenty-two files sharing one global
+The game code is ~15000 lines of flat top-level code across twenty-five files sharing one global
 scope ([architecture.md](architecture.md) has the file table and the load order), organized
 inside each file only by banner comments of the form `// ------ name`. **Keep every banner
 honest** — one that has drifted from what sits under it is worse than no banner, because it sends
@@ -59,11 +59,39 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | death, the wait for the bird and the return at it, the one permanent path (a driven-off eagle), the team-level win check | `die`, `RESPAWN_BASE`/`RESPAWN_LV`, `respawnTime`, `updateRespawns`, `RESPAWN_OUT`, `respawnPlayer`, `teamInMatch`, `rivalTeamsInMatch`, `checkLastStanding`, `endMatch`, `endSnapshot` | `damage & death` (`teamEagleDown`: `eagle drop`, boot.js) |
 | practice undoing a death on the spot | `practiceRevive` (die()'s first branch under `PRACTICE`) | `damage & death` |
 
+## js/mobile.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| is this a phone: the device's answer, the setting over it, the live flag | `mobileAuto`, `mobileRefresh`, `MOBILE`, `settings.mobile` (core.js) | `mobile` |
+| the footprint a phone's fit keeps, and the camera it opens at | `MOBILE_MIN_W`/`MOBILE_MIN_H`, `MOBILE_ZOOM`, `MOBILE_SHORT` (read by `fitCanvas`, canvas.js) | `mobile` |
+| held upright, and the first finger's fullscreen ask | `mobilePortrait`, `mobileGesture` | `mobile` (the prompt's pixels: `drawRotatePrompt`, `touch controls`, ui.js) |
+
 ## js/input.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| key/mouse handlers, the zoom wheel | `keys`, `mouse`, the `addEventListener` block, `sampleHumanInput` | `input` |
+| the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad / touch) | `input` |
+| what a key does, what a button does - the four entry points every controller presses through | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease` | `input` |
+| the bare gestures a trigger or a plate sends: the draw, the worker flag, a wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `flagDown`/`flagUp`, `openWheelNear`, `panelScrollBy` | `input` |
+| the zoom wheel, the listeners | the `addEventListener` block | `input` |
+| folding keys, mouse and both sticks into player 0's struct | `sampleHumanInput` | `input` |
+
+## js/gamepad.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| which button is which key, in play and over a menu | `PAD_PLAY`, `PAD_MENU` | `gamepad` |
+| the poll, the sticks, the aim off the body, the pointer over a panel, the stick-as-arrows repeat | `padPoll`, `padAim`, `padRepeat`, `padTake`, `padMenuMode`/`padPointerMode` | `gamepad` |
+| a pad in hand (the CONTROLS page opens on its tab) | `padActive`, `pad` | `gamepad` |
+
+## js/touch.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what each plate does, and where the plates sit | `TOUCH_BTNS`, `touchLayout`, `touchBtnAt` | `touch` (their pixels: `drawTouchControls`, ui.js) |
+| a finger landing: plate, minimap, HUD, or one of the two sticks | `touchDown`, `touchPtr`, `touchOverlay`, `touchMenuGlyph` | `touch` |
+| the sticks read once per frame, and the aim riding the body | `touchPoll`, `touch` | `touch` |
 
 ## js/world.js
 
@@ -283,6 +311,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the plate a tier is stated on, wherever an item sits, and the shine on the top one | `tierPlate`, `tierShine`, `drawItemIcon` | `UI` › `hud strip` (the tiers themselves: `TOOL_TIERS`, tools.js) |
 | the hatch and cut corners that mark a MODIFIER bit apart from a projectile, in every well either sits in | `modPlate` (its callers: `drawBag`, `drawBitColumn`, `drawDragGhost`, `drawTooltip` ui.js, `drawShopWell` shop.js, `drawTechNode` menu.js, `drawToolPrimer` panels.js) | `UI` › `hud strip` (the `proj` flag it reads: `BITS`, tools.js) |
 | the "!" a tool wears when its column weighs more than one press can swing | `drawOverWarn` (from `drawToolCell` and the CONTROLS page's `drawToolPrimer`, panels.js; the answer it draws: `toolOver`, tools.js) | `UI` › `hud strip` |
+| a phone's plates and sticks (js/touch.js decides), the glyph set the CONTROLS page borrows, the rotate prompt | `drawTouchControls`, `drawTouchPlate`, `drawTouchStick`, `drawTouchIcon`, `touchDisc`/`touchRing`, `drawRotatePrompt`, `TOUCH_PLATE`/`TOUCH_RIM`/`TOUCH_INK`/`TOUCH_HOT` | `touch controls` |
 
 ## js/shop.js
 
@@ -311,10 +340,11 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the TAB standings, the event feed | `logEvent`, `renderEventLog`, `scoreGroups`, `renderScoreboard` | `scoreboard & log` |
 | the M map, and the chart point -> world tile inverse a map order needs | `buildMapPanel`, `buildWorldMapImg`, `renderWorldMap`, `mapTileAt` | `world map (M)` (the parchment's per-tile colour comes from `objMapColor(o, 'map', i, h)`: `world`, world.js) |
-| the ESC menu: its tabbed pages, their rows, the scroll, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `setTab`/`setScroll`, `buildSettingsPanel`, `bakeControls`/`controlsCv`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
-| the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `controlsCv`) | `settings menu (ESC)` › beside `bakeControls` |
+| the ESC menu: its tabbed pages, their rows (a choice row's `val`/`pick`), the scroll, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `setTab`/`setScroll`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
+| the CONTROLS page's three listings (keyboard / gamepad / touch), its pinned sub-navbar, which opens by default, the pad glyphs | `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`/`bakeCtrlTouch`, `drawPadGlyph` (the touch icons: `drawTouchIcon`, ui.js) | `settings menu (ESC)` |
+| the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `ctrlCvs.keys`) | `settings menu (ESC)` › beside `bakeCtrlKeys` |
 | the VIDEO page's quality macro over the render-pass toggles | `VID_PRESETS`, `vidPreset` (the flags themselves: `settings.vid*`, core.js; their gates sit at each pass's call site) | `settings menu (ESC)` |
-| the three sound dials, the speaker that mutes them, the grey-when-muted fill, the minimap and HUD size knobs | `applySliderDrag`, `muteBtnRect`, `drawMuteBtn`, `drawSliderRow`, `drawSliderById`, `toggleVal` | `settings menu (ESC)` |
+| the three sound dials, the speaker that mutes them, the grey-when-muted fill, the minimap and HUD size knobs (HUD SIZE edits `hudScaleKey()`'s field - the phone's own on a phone) | `applySliderDrag`, `muteBtnRect`, `drawMuteBtn`, `drawSliderRow`, `drawSliderById`, `toggleVal` | `settings menu (ESC)` |
 | practice's exit plank under the slab | `leavePlankRect` (the click: `leavePractice`, menu.js) | `settings menu (ESC)` |
 | the PLAYER panel: the name field, its validation, the two planks | `openNamePanel`, `nameKey`, `nameOk`, `nameCommit`, `nameDismiss`, `namePanelHit`, `renderNamePanel`, `buildNamePanel` | `player profile` |
 | the profile name bottom-left of the title screen, and the player that wears it | `nameTagRect`, `overNameTag`, `drawNameTag`, `applyProfileName` | `player profile` |
@@ -349,4 +379,4 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the twin eagle rides down the fixed corner-to-corner diagonal, the wing seats and the merchant's neck seat, the jump window and its lock, a bot's treeline-safe forced drop, riding the landing and the E hop off the roost, free fall, landing, the flight bar, the dotted path, the wind trail, the zoomed-out view | `diagEnd` (and the corner's `mouth` it returns - `e.mouth`), `makeEagleRoute`, `forestDepth`, `lastOpenU`, `makeEagles`, `eagleScale`, `riderScale`, `riderDir`, `drawSeated`, `seatPos`, `MERCH_SEAT`, `beginDrop`, `dropJump`, `landPlayer`, `handOver`, `landAboard`, `hopOff`, `HOP_FALL_T`/`HOP_ALT`, `drawHopPrompt`, `updateDrop`, `updateEagle`, `drawDropAir`, `TRAIL_T`/`TRAIL_STEP`/`TRAIL_RIM`/`TRAIL_TIP`/`TRAIL_TIP_AMP`/`TRAIL_BACK`/`TRAIL_BACK_AMP`, `drawEagleTrail`, `drawEagle`, `renderDropUI` | `eagle drop` |
 | the drop brief: the roost tour a landing ridden to the crash opens on - the phase machine (a beat, the rival roost, then your own to finish), the camera's aim, the two headlines, the DAY 1 it hands back to | `state.dropBrief` (core.js), `BRIEF_WAIT`/`BRIEF_HOLD`/`BRIEF_HOLD_OURS`/`BRIEF_GO_MIN`/`BRIEF_MAX_T`, `endBrief`, `dropBriefTarget`, `drawDropBrief` (the glide: the camera banner, sim.js; the control zeroing: `sampleHumanInput`, input.js) | `eagle drop` |
 | the dive past the line's end, the tree-shattering impact, the LANE it fells back to the snow pine by pine, and the roosting objective: its wing-gust defense, its preen regen, and the driven-off ceremony that ends the match | `beginDive`, `CRASH_DEPTH`/`MIN_CRASH_TREES`, `findCrashPoint`, `eagleCrash` (sets `e.laneDir`, the road's direction toward `e.mouth`), `LANE_R`/`LANE_SPD`/`LANE_WARN`/`LANE_DELAY`/`LANE_MAX`/`LANE_CLEAR`, `laneFells`, `planLane`, `laneStep`, `eagleBoomFx`, `eagleGust`, `eagleGustFx`, `hurtEagle`, `eagleFlee`, `eagleFleeResolve`, `teamEagleDown` (the driver it drops off: `spawnMerchant`, robots.js) | `eagle drop` |
-| boot order, `DBG`, the rAF loop | `startGame`, `loop`, `window.DBG` | `boot` |
+| boot order (the saved TOUCH MODE re-fits the view), `DBG`, the rAF loop (which polls the pad and the fingers before each step) | `startGame`, `loop` (`padPoll`, `touchPoll`), `window.DBG` | `boot` |

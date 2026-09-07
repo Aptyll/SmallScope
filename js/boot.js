@@ -1222,6 +1222,9 @@ function startGame() {
 
 PROFILE.load();   // the profile carries the settings, so it is read first
 loadSettings();
+// the saved TOUCH MODE is only now known: if it flips phone mode, the view
+// fitted at load is the wrong one (relayout() below places the UI for it)
+if (mobileRefresh()) fitCanvas();
 // ...and the tech tree, which decides what this profile's world may drop.
 // Must run after PROFILE.load() and before initPlayers()/any swing.
 rebuildLootPool();
@@ -1317,6 +1320,12 @@ window.DBG = {
   // drop a player (default the local one) on a tile - how to stage a landmark
   warp: (tx, ty, p) => { const q = p || player; q.x = (tx + 0.5) * TILE; q.y = (ty + 0.5) * TILE; q.vx = q.vy = 0; return q; },
   settings, perf, treeRare, cursorInfo,
+  // the other two controllers (js/gamepad.js, js/touch.js) and phone mode
+  // (js/mobile.js): the live state of each, the plates' layout, and a way
+  // to force a phone's fit on a desktop window without a phone
+  pad, padActive, touch, touchLayout, touchDown, touchMove, touchUp,
+  mobile: () => MOBILE, mobilePortrait,
+  setMobile: (v) => { settings.mobile = v; fitCanvas(); relayout(); },
   // the local profile: the store itself, the PLAYER panel and the two hit
   // rects, so a driver can open the name editor and read back what it accepts
   PROFILE, openNamePanel, nameKey, nameCommit, nameDismiss, nameOk,
@@ -1527,10 +1536,12 @@ window.DBG = {
   // page's row anchors (already scrolled - a row's y is where it is on
   // screen) and the navbar cells - so a driver can click a dial without
   // guessing at the pitch. setSettingsTab flips the page directly, and
-  // controlsCv is the CONTROLS page bake - blit it scaled to read the
-  // weapon primer's pixels without squinting at a 240px page.
-  settingsHit, muteBtnRect, settingsScrollBy, controlsCv,
+  // ctrlCvs holds the CONTROLS page's three bakes (keys / pad / touch) -
+  // blit one scaled to read the weapon primer's pixels without squinting at
+  // a 240px page; setCtrlTab picks which listing the page shows.
+  settingsHit, muteBtnRect, settingsScrollBy, ctrlCvs,
   setSettingsTab: (id) => { setTab = id; },
+  setCtrlTab: (id) => { ctrlTab = id; },
   get settingsRows() {
     const L = settingsLayout();
     const rows = {};
@@ -1556,6 +1567,8 @@ function loop(nowMs) {
     perf.acc = 0;
   }
   if (!window.DBG.freeze) {
+    padPoll(dt);   // the sticks have no events: read them before the step
+    touchPoll();
     update(dt);
     render();
   }

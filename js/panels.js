@@ -477,10 +477,16 @@ const SET_TABS = [
     { id: 'info', label: 'INFO DISPLAY', kind: 'toggle' },
     { id: 'cursor', label: 'CURSOR', kind: 'toggle' },
     { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle' }, // BLUE always, or the roster's colour (skin, player.js)
+    // phone mode (js/mobile.js): the device's own answer, or forced either
+    // way - the fit, the camera and the touch controls all follow it
+    { id: 'mobile', label: 'TOUCH MODE', kind: 'choice',
+      opts: [{ id: 'auto', label: 'AUTO' }, { id: 'on', label: 'ON' }, { id: 'off', label: 'OFF' }],
+      val: () => settings.mobile || 'auto', pick: (v) => { settings.mobile = v; fitCanvas(); relayout(); } },
   ] },
   { id: 'video', label: 'VIDEO', rows: [
     { id: 'quality', label: 'QUALITY', kind: 'choice',
-      opts: [{ id: 'low', label: 'LOW' }, { id: 'medium', label: 'MEDIUM' }, { id: 'high', label: 'HIGH' }] },
+      opts: [{ id: 'low', label: 'LOW' }, { id: 'medium', label: 'MEDIUM' }, { id: 'high', label: 'HIGH' }],
+      val: () => vidPreset(), pick: (v) => Object.assign(settings, VID_PRESETS[v]) },
     { id: 'vidClouds', label: 'CLOUD SHADOWS', kind: 'toggle' },
     { id: 'vidRays', label: 'SUN SHAFTS', kind: 'toggle' },
     { id: 'vidStars', label: 'ICE STARS', kind: 'toggle' },
@@ -520,6 +526,15 @@ const SET_TAB_Y = 20;      // navbar baseline, panel-local
 const SET_CONTENT_Y = 36;  // content window top
 const SET_CONTENT_B = 202; // ... and bottom (the ESC CLOSE hint sits below)
 
+// The CONTROLS page is itself tabbed - one listing per controller, since a
+// phone and a pad each put the same verbs somewhere else. Its navbar sits
+// pinned at the top of the content window and only the listing scrolls. The
+// tab opens on the controller in hand (ctrlTabNow) until a click picks one.
+const CTRL_TABS = [{ id: 'keys', label: 'KEYBOARD' }, { id: 'pad', label: 'GAMEPAD' }, { id: 'touch', label: 'TOUCH' }];
+const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
+let ctrlTab = null;
+function ctrlTabNow() { return ctrlTab || (MOBILE ? 'touch' : padActive() ? 'pad' : 'keys'); }
+
 // Everything positioned inside the panel comes from here: the navbar cells,
 // the open page's rows (each carrying its y in view space, pre-scroll), the
 // content window, and how far this page can scroll. Draw, hit test and the
@@ -533,17 +548,21 @@ function settingsLayout() {
   const rows = [];
   let y = clipY0 + 6;
   for (const r of tab.rows) {
-    const row = { id: r.id, label: r.label, kind: r.kind, y };
+    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick };
     if (r.kind === 'choice') {
       let x = SL_X;
       row.opts = r.opts.map(o => { const w = pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
     }
     rows.push(row); y += 14;
   }
-  const contentH = setTab === 'controls' ? controlsCv.height : (y + 2 - clipY0);
+  // the controls page: its own navbar's cells, and the open listing under them
+  const cn = CTRL_TABS.length, ccw = Math.floor((SET_W - 24) / cn);
+  const ctabs = CTRL_TABS.map((t, i) => ({ id: t.id, label: t.label, x: SET_X + 12 + i * ccw, y: clipY0 + 2, w: ccw, h: 9 }));
+  const ctrl = ctrlTabNow();
+  const contentH = setTab === 'controls' ? ctrlCvs[ctrl].height + CTRL_TAB_H : (y + 2 - clipY0);
   const maxScroll = Math.max(0, contentH - (clipY1 - clipY0));
   setScroll[setTab] = Math.max(0, Math.min(setScroll[setTab] || 0, maxScroll));
-  return { tabs, rows, clipY0, clipY1, scroll: setScroll[setTab], maxScroll };
+  return { tabs, rows, clipY0, clipY1, scroll: setScroll[setTab], maxScroll, ctabs, ctrl };
 }
 
 // the wheel over the open panel walks the open page (input.js, both the
@@ -561,11 +580,13 @@ function buildSettingsPanel() {
   drawPixelText(g, hint, Math.round((SET_W - pixelTextWidth(hint)) / 2), 208, '#5a6690');
 }
 
-// The CONTROLS page: the hotkey listing and, under it, the weapon primer -
-// both baked once (neither changes) and blitted into the content window at the
-// page's scroll like any other page.
-const controlsCv = document.createElement('canvas');
-controlsCv.width = SET_W; controlsCv.height = 236;
+// The CONTROLS page: three listings, one per controller, each baked once
+// (none changes) and blitted into the content window at the page's scroll
+// like any other page. The keyboard's carries the weapon primer under it.
+const ctrlCvs = { keys: document.createElement('canvas'), pad: document.createElement('canvas'), touch: document.createElement('canvas') };
+ctrlCvs.keys.width = SET_W; ctrlCvs.keys.height = 244;
+ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = 128;
+ctrlCvs.touch.width = SET_W; ctrlCvs.touch.height = 96;
 
 // THE WEAPON PRIMER: the one thing about the left button a new player cannot
 // work out by pressing it, drawn rather than explained. It is a real HORN BOW
@@ -656,11 +677,11 @@ function drawToolPrimer(g, y0) {
   drawPixelText(g, 'TWO OF ONE MODIFIER COMPOUND - 2X AND 2X IS 4X', 16, foot + 8, '#8fe08a');
 }
 
-(function bakeControls() {
-  const g = controlsCv.getContext('2d');
+(function bakeCtrlKeys() {
+  const g = ctrlCvs.keys.getContext('2d');
   const cols = [
-    [['WASD', 'MOVE'], ['SPACE', 'DODGE'], ['SHIFT', 'SLIDE'], ['CLICK', 'FIRE'], ['1-4', 'ABILITIES'], ['E', 'HARVEST'], ['Q', 'EAT BERRY'], ['F', 'EAT FISH'], ['B', 'BACKPACK']],
-    [['G', 'CHARACTER'], ['M', 'WORLD MAP'], ['MMB', 'ORDER CREW'], ['N', 'MUTE'], ['P', 'PAUSE'], ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+    [['WASD', 'MOVE'], ['SPACE', 'DODGE'], ['SHIFT', 'SLIDE'], ['CLICK', 'FIRE'], ['1-4', 'ABILITIES'], ['E', 'HARVEST'], ['Q', 'EAT BERRY'], ['F', 'EAT FISH'], ['B', 'BACKPACK'], ['G', 'CHARACTER']],
+    [['M', 'WORLD MAP'], ['RMB', 'BUILD WHEEL'], ['MMB', 'ORDER CREW'], ['TAB', 'STANDINGS'], ['N', 'MUTE'], ['P', 'PAUSE'], ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ];
   for (let c = 0; c < 2; c++) {
     let y = 6;
@@ -671,7 +692,91 @@ function drawToolPrimer(g, y0) {
       y += 8;
     }
   }
-  drawToolPrimer(g, 87);
+  drawToolPrimer(g, 95);
+})();
+
+// A pad button as a picture, ~9px, at x, y (its top-left): a face button is a
+// disc with its letter, a bumper a flat pill, a trigger a tall one, a stick
+// a ring with a knob, the dpad a cross with the pressed arm lit, and START /
+// BACK the two small pills. Gold, like the key names beside the keyboard list.
+function drawPadGlyph(g, x, y, kind, label) {
+  const gold = '#ffd95c', ink = '#141c3c';
+  g.fillStyle = gold;
+  if (kind === 'face') {
+    touchDisc(g, x + 4, y + 4, 4, gold);
+    drawPixelText(g, label, x + 3, y + 2, ink);
+  } else if (kind === 'bump') {
+    g.fillRect(x, y + 2, 13, 5); g.fillRect(x + 1, y + 1, 11, 7);
+    drawPixelText(g, label, x + 3, y + 2, ink);
+  } else if (kind === 'trig') {
+    g.fillRect(x + 2, y, 9, 9); g.fillRect(x + 1, y + 1, 11, 7);
+    drawPixelText(g, label, x + 3, y + 2, ink);
+  } else if (kind === 'stick') {
+    touchRing(g, x + 4, y + 4, 4, gold);
+    touchDisc(g, x + 4, y + 4, 2, gold);
+    drawPixelText(g, label, x + 11, y + 2, gold);
+  } else if (kind === 'dpad') {
+    g.fillStyle = '#7a8bb8';
+    g.fillRect(x + 3, y, 3, 9); g.fillRect(x, y + 3, 9, 3);
+    g.fillStyle = gold;
+    if (label === 'U') g.fillRect(x + 3, y, 3, 3);
+    else if (label === 'D') g.fillRect(x + 3, y + 6, 3, 3);
+    else if (label === 'L') g.fillRect(x, y + 3, 3, 3);
+    else if (label === 'R') g.fillRect(x + 6, y + 3, 3, 3);
+  } else if (kind === 'pill') {
+    g.fillRect(x + 1, y + 2, 9, 5); g.fillRect(x, y + 3, 11, 3);
+    g.fillStyle = ink;
+    if (label === 'START') { g.fillRect(x + 3, y + 3, 5, 1); g.fillRect(x + 3, y + 5, 5, 1); }
+    else { g.fillRect(x + 3, y + 3, 2, 3); g.fillRect(x + 6, y + 3, 2, 3); }
+  }
+}
+(function bakeCtrlPad() {
+  const g = ctrlCvs.pad.getContext('2d');
+  // the play set on the left, the hold-and-drag gestures and the menu set on
+  // the right; every row is [glyph kind, its label, the verb]
+  const cols = [
+    [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE'], ['face', 'X', 'HARVEST'],
+      ['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH']],
+    [['stick', 'L3', 'BACKPACK'], ['dpad', 'U', 'CHARACTER'], ['dpad', 'D', 'HOLD: BUILD WHEEL'], ['stick', 'R3', 'HOLD: ORDER CREW'], ['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'],
+      ['pill', 'START', 'SETTINGS'], null, ['face', 'A', 'TAKE'], ['face', 'B', 'BACK'], ['stick', 'L', 'POINTER'], ['stick', 'R', 'SCROLL']],
+  ];
+  for (let c = 0; c < 2; c++) {
+    let y = 4;
+    const x0 = c === 0 ? 14 : 124;
+    for (const row of cols[c]) {
+      if (row) {
+        drawPadGlyph(g, x0, y, row[0], row[1]);
+        drawPixelText(g, row[2], x0 + (row[0] === 'stick' ? 22 : 16), y + 2, '#7a8bb8');
+      } else { // the rule between the play set and the menu set
+        g.fillStyle = '#2c3a68'; g.fillRect(x0, y + 4, 100, 1);
+      }
+      y += 10;
+    }
+  }
+})();
+(function bakeCtrlTouch() {
+  const g = ctrlCvs.touch.getContext('2d');
+  // the two sticks and the pack's own button first, then the plates in the
+  // order they climb the right column and sit on the left; the icons are the
+  // plates' own (drawTouchIcon, ui.js)
+  const cols = [
+    [['stick', 'MOVE', TOUCH_INK], ['stick', 'AIM - LIFT TO FIRE', TOUCH_HOT], ['dodge', 'DODGE'], ['work', 'HARVEST'], ['slide', 'SLIDE'], ['char', 'CHARACTER'], ['pack', 'BACKPACK']],
+    [['build', 'HOLD: BUILD WHEEL'], ['flag', 'HOLD: ORDER CREW'], ['map', 'WORLD MAP'], ['cog', 'SETTINGS'], ['x', 'BACK'], ['zoomOut', 'ZOOM']],
+  ];
+  for (let c = 0; c < 2; c++) {
+    let y = 6;
+    const x0 = c === 0 ? 14 : 124;
+    for (const [id, desc, col] of cols[c]) {
+      const ink = col || '#ffd95c';
+      touchDisc(g, x0 + 5, y + 3, 7, TOUCH_PLATE);
+      touchRing(g, x0 + 5, y + 3, 7, col === TOUCH_HOT ? TOUCH_HOT : TOUCH_RIM);
+      if (id === 'stick') touchRing(g, x0 + 5, y + 3, 3, ink), touchDisc(g, x0 + 6, y + 4, 1, ink);
+      else drawTouchIcon(g, id, x0 + 5, y + 3, ink);
+      if (id === 'zoomOut') { touchDisc(g, x0 + 21, y + 3, 7, TOUCH_PLATE); touchRing(g, x0 + 21, y + 3, 7, TOUCH_RIM); drawTouchIcon(g, 'zoomIn', x0 + 21, y + 3, ink); }
+      drawPixelText(g, desc, x0 + (id === 'zoomOut' ? 34 : 18), y + 1, '#7a8bb8');
+      y += 13;
+    }
+  }
 })();
 
 function applySliderDrag() {
@@ -689,8 +794,9 @@ function applySliderDrag() {
     settings.mmR = Math.round(16 + t * 18);
     applyMinimapSize();
   } else if (dragSlider === 'hud') {
-    // 0.75x-1.5x in 0.05 steps; the strip reads it live (hudSc, ui.js)
-    settings.hudScale = Math.round((0.75 + t * 0.75) * 20) / 20;
+    // 0.75x-1.5x in 0.05 steps; the strip reads it live (hudSc, ui.js) -
+    // the phone's own dial or the desktop's, whichever is playing
+    settings[hudScaleKey()] = Math.round((0.75 + t * 0.75) * 20) / 20;
   }
 }
 
@@ -713,12 +819,15 @@ function leavePlankRect() { return { x: Math.round((VIEW_W - 132) / 2), y: SET_Y
 // which settings widget is under the pointer (null for none); shared by the
 // click handler and the cursor so the hand cursor can never disagree with a click
 // Answers: a row id ('vol', 'shake', 'vidClouds', ...), 'mute', 'leave',
-// 'tab:<id>' for a navbar cell, or 'q:<preset>' for a QUALITY word.
+// 'tab:<id>' for a navbar cell, 'ctab:<id>' for a controls-page cell, or
+// 'c:<row>:<opt>' for a choice row's word (QUALITY, TOUCH MODE).
 function settingsHit() {
   const mx = mouse.x, my = mouse.y;
   const L = settingsLayout();
   for (const t of L.tabs)
     if (t.id !== setTab && mx >= t.x && mx < t.x + t.w && my >= t.y - 3 && my < t.y + t.h + 3) return 'tab:' + t.id;
+  if (setTab === 'controls') for (const t of L.ctabs)
+    if (t.id !== L.ctrl && mx >= t.x && mx < t.x + t.w && my >= t.y - 2 && my < t.y + t.h + 2) return 'ctab:' + t.id;
   const b = muteBtnRect();
   if (b && mx >= b.x - 2 && mx < b.x + b.w + 2 && my >= b.y - 2 && my < b.y + b.h + 2) return 'mute';
   if (PRACTICE && state.settingsOpen) {
@@ -731,7 +840,7 @@ function settingsHit() {
     // 14px pitch, so the bands must not overlap or a click lands on two rows
     if (my < y - 3 || my > y + 10) continue;
     if (r.kind === 'choice') {
-      for (const o of r.opts) if (mx >= o.x - 2 && mx < o.x + o.w + 4) return 'q:' + o.id;
+      for (const o of r.opts) if (mx >= o.x - 2 && mx < o.x + o.w + 4) return 'c:' + r.id + ':' + o.id;
       return null;
     }
     if (mx < SL_X - 4 || mx > SL_X + SL_W + 6) return null;
@@ -745,9 +854,14 @@ function settingsMouseDown() {
   const hit = settingsHit();
   if (!hit) return;
   if (hit.startsWith('tab:')) { setTab = hit.slice(4); SFX.pickup(); return; }
+  if (hit.startsWith('ctab:')) { ctrlTab = hit.slice(5); SFX.pickup(); return; }
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || hit === 'hud') { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'leave') { leavePractice(); return; }
-  if (hit.startsWith('q:')) Object.assign(settings, VID_PRESETS[hit.slice(2)]);
+  if (hit.startsWith('c:')) {
+    const [, rid, oid] = hit.split(':');
+    const row = settingsLayout().rows.find(r => r.id === rid);
+    if (row && row.pick) row.pick(oid);
+  }
   else if (hit === 'mute') settings.muted = SFX.toggleMute();
   else if (hit === 'cursor') settings.pixelCursor = !settings.pixelCursor;
   else settings[hit] = !settings[hit]; // every plain toggle row's id IS its settings key
@@ -801,7 +915,7 @@ function drawSliderById(id, y, off) {
   else if (id === 'music') drawSliderRow(y, settings.musicVol, String(Math.round(settings.musicVol * 100)), off);
   else if (id === 'sfx') drawSliderRow(y, settings.sfxVol, String(Math.round(settings.sfxVol * 100)), off);
   else if (id === 'map') drawSliderRow(y, (settings.mmR - 16) / 18, 'R' + settings.mmR);
-  else if (id === 'hud') drawSliderRow(y, ((settings.hudScale || 0.8) - 0.75) / 0.75, String(Math.round((settings.hudScale || 0.8) * 100)));
+  else if (id === 'hud') drawSliderRow(y, (hudSc() - 0.75) / 0.75, String(Math.round(hudSc() * 100)));
 }
 
 // one toggle row's state, by row id
@@ -837,9 +951,22 @@ function renderSettings(now, opts) {
   ctx.save();
   ctx.beginPath(); ctx.rect(SET_X + 2, L.clipY0, SET_W - 4, L.clipY1 - L.clipY0); ctx.clip();
   if (setTab === 'controls') {
-    ctx.drawImage(controlsCv, SET_X, L.clipY0 - L.scroll);
+    // the listing, under a second clip so it scrolls beneath the pinned navbar
+    ctx.save();
+    ctx.beginPath(); ctx.rect(SET_X + 2, L.clipY0 + CTRL_TAB_H, SET_W - 4, L.clipY1 - L.clipY0 - CTRL_TAB_H); ctx.clip();
+    ctx.drawImage(ctrlCvs[L.ctrl], SET_X, L.clipY0 + CTRL_TAB_H - L.scroll);
+    ctx.restore();
+    // the navbar: the open listing's name in gold over a gold underline,
+    // the rest dim until hovered; a green pip on GAMEPAD while one is in hand
+    for (const t of L.ctabs) {
+      const active = t.id === L.ctrl;
+      const col = active ? '#ffd95c' : hit === 'ctab:' + t.id ? '#cfe0ff' : '#7a8bb8';
+      const tw = pixelTextWidth(t.label), tx = Math.round(t.x + (t.w - tw) / 2);
+      drawPixelTextShadow(ctx, t.label, tx, t.y, col, 'rgba(8,12,28,0.9)');
+      if (active) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(t.x + 4, t.y + 8, t.w - 8, 1); }
+      if (t.id === 'pad' && padActive()) { ctx.fillStyle = '#8fe08a'; ctx.fillRect(tx + tw + 3, t.y + 1, 2, 2); }
+    }
   } else {
-    const preset = setTab === 'video' ? vidPreset() : null;
     for (const r of L.rows) {
       const y = r.y - L.scroll;
       if (y < L.clipY0 - 12 || y > L.clipY1 + 4) continue;
@@ -848,9 +975,12 @@ function renderSettings(now, opts) {
       else if (r.kind === 'toggle') drawToggleRow(y, toggleVal(r.id),
         r.id === 'cursor' ? 'PIXEL' : r.id === 'teamBlue' ? 'ALWAYS BLUE' : undefined,
         r.id === 'cursor' ? 'BROWSER' : r.id === 'teamBlue' ? 'AS DEALT' : undefined);
-      else if (r.kind === 'choice') for (const o of r.opts) {
-        const col = preset === o.id ? '#ffd95c' : hit === 'q:' + o.id ? '#f4f7ff' : '#7a8bb8';
-        drawPixelTextShadow(ctx, o.label, o.x, y, col, 'rgba(8,12,28,0.9)');
+      else if (r.kind === 'choice') {
+        const cur = r.val ? r.val() : null; // the word in force wears gold; a hand-picked mix golds none
+        for (const o of r.opts) {
+          const col = cur === o.id ? '#ffd95c' : hit === 'c:' + r.id + ':' + o.id ? '#f4f7ff' : '#7a8bb8';
+          drawPixelTextShadow(ctx, o.label, o.x, y, col, 'rgba(8,12,28,0.9)');
+        }
       }
     }
     if (setTab === 'audio') drawMuteBtn(hit === 'mute');

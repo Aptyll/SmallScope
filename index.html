@@ -3,19 +3,26 @@
 <head>
 <meta charset="utf-8">
 <title>Softfall</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- viewport-fit=cover: a phone's notch and home bar are inside the window, so
+     the canvas reaches the glass edge to edge; user-scalable=no: a double-tap must
+     never zoom the page (js/touch.js owns every finger) -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <style>
   html, body {
     margin: 0; padding: 0; height: 100%;
     background: #000; /* pillarbox bars on wider-than-16:9 screens */
     overflow: hidden;
+    overscroll-behavior: none; /* no pull-to-refresh or rubber-band under a stick */
   }
   body { display: flex; align-items: center; justify-content: center; }
   canvas {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
   }
-  #game { position: relative; z-index: 1; background: #0d1524; }
+  /* touch-action none: the browser gets no pan, pinch or double-tap zoom out of
+     a finger on the game - every touch is a pointer event js/touch.js reads */
+  #game { position: relative; z-index: 1; background: #0d1524; touch-action: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
   /* the replay window's frame, at device resolution over the game canvas's
      bottom-left corner: the game canvas has too few pixels there to hold it */
   #replay { position: fixed; z-index: 2; display: none; pointer-events: none; }
@@ -41,9 +48,15 @@
      (docs/dev/architecture.md). A file may reference names from any file at runtime, but its
      top-level (load-time) statements may only reference names from files loaded above it. -->
 <script src="js/core.js"></script>
+<!-- mobile.js before canvas.js: fitCanvas() asks MOBILE at load -->
+<script src="js/mobile.js"></script>
 <script src="js/canvas.js"></script>
 <script src="js/player.js"></script>
 <script src="js/input.js"></script>
+<!-- the two other controllers, each a keyboard-and-mouse in disguise: they call
+     input.js's keyPress/pointerPress and fold their sticks into sampleHumanInput -->
+<script src="js/gamepad.js"></script>
+<script src="js/touch.js"></script>
 <script src="js/world.js"></script>
 <script src="js/nav.js"></script>
 <script src="js/wildlife.js"></script>

@@ -183,7 +183,11 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   aiLevel: 0,
   // the VIDEO page's dressing toggles, all cosmetic-only passes a weak GPU
   // can shed (the ESC panel's QUALITY row presets them; panels.js)
-  vidClouds: true, vidRays: true, vidStars: true, vidSnow: true, vidVig: true };
+  vidClouds: true, vidRays: true, vidStars: true, vidSnow: true, vidVig: true,
+  // phone mode (js/mobile.js): 'auto' reads the device, 'on'/'off' force it -
+  // the TOUCH MODE row. hudScaleM is the HUD SIZE a phone plays at; the same
+  // slider edits whichever of the two is live (hudSc, ui.js)
+  mobile: 'auto', hudScaleM: 1.25 };
 // Minimap zoom ladder, px per world tile: index settings.mmZoom (5 = the 1:1
 // baseline). Twice the rungs and twice the reach of the old six, and like the
 // camera it eases between them rather than snapping - mmCur is what anything
