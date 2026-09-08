@@ -1,101 +1,90 @@
 # Softfall
 
-**Genre:** Action, Indie
-
-**Short description:** Softfall is a cozy pixel-art survival team battle on a snowbound map. Ten scouts drop in by eagle, two teams of five, then hunt, chop, bury themselves in the drift and fight for the birds that carried them in: drive off the rival eagle and the match is won. Go down and you come back at your own.
-
-**Tags:** Survival, Pixel Art, Cozy, Team-Based, Top-Down, PvP, Multiplayer, Base Building, Hunting, Winter, Roguelike, Action, 2D, Indie
-
----
+**A cozy pixel-art survival team battle in the browser.** Ten scouts drop in by eagle onto a winter map. Two teams of five. Drive off the rival bird and the match is won.
 
 <p align="center">
-  <img src="docs/media/capsule/01-pass.png" alt="The two team eagles crossing mid-flight over the frozen lakes, riders on their wings, wolves on the snow below" width="920">
+  <img src="docs/media/github-preview.png" alt="Softfall: two team eagles crossing mid-flight over the snow, riders on their wings" width="1280">
 </p>
 
+**Play it now.** No install, no account, no build, no package manager. Double-click [`index.html`](index.html), or run `node app/server.js` and open [http://localhost:8471](http://localhost:8471). Vanilla JavaScript on an HTML5 canvas, and a `file://` page is a first-class way to play.
+
 <p align="center">
-  <img src="docs/media/capsule/02-roost.png" alt="Seated on the roosting blue eagle in its crater, the merchant, turrets and gate around it, ready to hop off" width="920">
+  <img src="docs/media/github-pass.png" alt="The two armoured eagles flying the map's diagonal in opposite directions" width="920">
 </p>
+
+## A match
+
+Ten players — **you, and nine AI** — across two teams. Everyone is carried in by their team's armoured eagle. The birds fly the map's one diagonal in opposite directions, pass in the middle, and dive into opposite corners of the treeline. Where yours lands is your roost, your merchant, your way back from a death, and the only thing that ends the match.
+
+<p align="center">
+  <img src="docs/media/github-roost.png" alt="On the snow beside the roosting blue eagle in its crater, Day 1, the merchant in the trees" width="920">
+</p>
+
+Go down and you wait, then land back at your own bird. Kills never win a match. **The eagle does.**
+
+## The loops
+
+<p align="center">
+  <img src="docs/media/github-hunt.png" alt="Drawing a bow on a deer at night on the frozen snowfield" width="920">
+</p>
+
+**The draw is the ammunition.** There is no quiver. How long you hold the string is how far, how fast and how hard the shot lands. Deer wander the clearings, rabbits are white on white until they bolt, and the wolves come from one den marked on your map.
+
+**Your weapon is something you build.** A tool is a body with a rate of fire and a few cells. What comes out of it is the bits you load: a plain arrow, a log that arcs down, a wisp that lights the dark, or a modifier that rewrites every shot. All of it is found in rocks, pines and treeline chests, or bought off the merchant's rotating counter — never a loadout you picked in a menu.
 
 <p align="center">
   <img src="docs/media/capsule/03-catch.png" alt="Hoisting a freshly speared fish overhead on the lake ice" width="920">
 </p>
 
-<p align="center">
-  <img src="docs/media/capsule/04-night-hunt.png" alt="Drawing on a deer among the dead trees of a rookery at night" width="920">
-</p>
+**Gold is the only currency, and gold is also XP.** Fish and berries have a price that moves all day. One backpack, four class keys, gear bought from anywhere, worker bots on a planted flag, and a roll that is a hit.
+
+**Every scout is a HUNTER or a WARRIOR.** Piercing shot, net, grapple, snow cover. Shield, rush, stomp, juggernaut. Four keys, each with a cast the body visibly performs.
 
 <p align="center">
-  <img src="docs/media/capsule/05-practice.png" alt="The practice field: the dummy, the bell and the target track, with a shot lined up on a target" width="920">
+  <img src="docs/media/github-practice.png" alt="The practice field: bow drawn on the mending dummy, the bell and the target track in the snow" width="920">
 </p>
 
----
-
-## Coming soon
+**Learn the string before the match.** Knock the ice off the practice plank on the title screen. A dummy, a scored archery round, a timed ice-parkour loop. Nothing in it counts.
 
 <p align="center">
-  <strong>COMING SOON TO STEAM</strong><br>
-  Wishlist Softfall and you will hear the day the eagles fly.
+  <img src="docs/media/github-title.png" alt="Softfall title screen: Singleplayer, Practice Tool, Wiki and Settings on a snowy night" width="920">
 </p>
+
+## Why it is on GitHub
+
+- **Runs from a double-click.** `index.html` loads a handful of classic scripts. There is no bundler, no `node_modules`, and nothing that has to be served — a `file://` page is how the game is meant to be played.
+- **HTML5 canvas pixel art**, 2D top-down, one winter world per seed. Share a seed number, get the same map.
+- **Single-player today:** two teams of five, your four team-mates and the five rivals played by AI at Normal, Hard or Impossible. Keyboard, gamepad, or a phone's twin-stick touch.
+- **The whole arsenal is unlocked from the first match.** A wiki on the menu writes every tool and bit down with its numbers.
+
+```
+git clone https://github.com/Aptyll/SmallScope.git
+# then double-click index.html
+# or:
+node app/server.js
+```
+
+## Key features
+
+- Ten-player team battles, five a side, on a seeded winter map
+- One objective: drive off the rival eagle
+- A bow with no ammo — the draw is the throttle
+- Tools and bits found on the map: a weapon you assemble mid-fight
+- Two classes, four abilities, gear in four pieces
+- Worker bots, walls, turrets, fish nets, roguelike cards from chests
+- Momentum movement: slippery ice, chained dodges, a roll that hits
+- Day and night, wind in every pine, cozy and a war at once
+
+## Coming soon on Steam
+
+Wishlist when the store page lands. Windows release, price to be announced. The game you clone here is the game that will ship.
 
 | | |
 | --- | --- |
 | **Release** | Coming soon |
-| **Platform** | Windows |
-| **Players** | Single-player: two teams of five, your four team-mates and the five rivals played by AI at NORMAL, HARD or IMPOSSIBLE |
-| **Price** | To be announced |
-
----
-
-## About this game
-
-Softfall is a cozy survival game and a war at the same time. The snowfield is quiet, the pines are pretty, and nine other scouts are out there on it with you.
-
-<p align="center">
-  <img src="docs/media/eagles.webp" alt="Team eagles flying past, then riders dropping onto the snow" width="920">
-</p>
-
-**Two birds, one diagonal.** Both teams fly in on armoured eagles that cross mid-route, and nobody starts at a spawn camp: jump when the door opens, or ride the bird down into its corner of the treeline. Where it lands is your base. The crater it blows, the gate its merchant raises and the lane that falls open to the snow are yours to fortify before you walk out. That bird is also the only objective. Spook the rival eagle until its nerve breaks and it flies away with the match. Go down yourself and you wait out a timer and land back at your own.
-
-<p align="center">
-  <img src="docs/media/hunt-deer.webp" alt="Bow hunt dropping a deer in a clearing" width="920">
-</p>
-
-**The draw is the ammunition.** There is no quiver. How long you hold the string is how far, how fast and how hard the shot lands, and spamming the button is punished by the shots themselves, never by a counter. Deer wander the clearings, rabbits are white on white until they bolt, and the wolves come from one den that is marked on your map. Everything pays the same coin: one currency, earned by the swing, the shot and the clock, and every coin levels you on its way into your pocket.
-
-<p align="center">
-  <img src="docs/media/robots.webp" alt="Worker bots chopping snow-loaded pines" width="920">
-</p>
-
-**Your weapon is something you build.** A tool is a body with a rate of fire and a few cells. What comes out of it is the bits you load: a plain arrow, a log that arcs down and flattens whoever it lands on, a wisp that circles you lighting the dark, or a modifier that rewrites every shot on that tool at once. None of it is bought. All of it is found, in broken rocks, felled pines and the treeline's chests, so the weapon you finish a match with is one the map handed you a piece at a time. Plant a flag and worker bots chop, clear a lane or guard a wall. Buy gear from anywhere with no trip home. Spring a chest and the card it drops is baked into your kit for the rest of the match.
-
-<p align="center">
-  <img src="docs/media/practice-tool.webp" alt="Knocking open the Practice Tool plank onto the training field" width="920">
-</p>
-
-**Learn the string before the match.** Knock the ice off the practice plank and step onto a training field cut to pure combat: a mending dummy, a bell-rung archery round on a target track, and a timed ice-parkour loop through the pines. Nothing in it counts and nothing in it is at stake.
-
-**Every scout carries a class.** The HUNTER's piercing shot, net, grapple and snow cover. The WARRIOR's shield, rush, stomp and juggernaut. Four keys, each with a cast the body visibly performs and effects drawn plainly for both sides: readable first, sneaky second.
-
-### Key features
-
-- Ten-slot team battles, five a side, on a seeded winter map you can share by number
-- One objective: drive off the rival eagle. Kills never end a match
-- A bow with no ammo. The draw is the throttle
-- Tools and bits found on the map and never bought: a weapon you assemble mid-fight
-- Two classes with four abilities each, and gear in four pieces and three variants bought from anywhere
-- Worker bots, walls, turrets, fish nets on ice holes, and roguelike cards from treeline chests
-- Momentum movement: slippery ice, chained dodges, and a roll that is a hit
-- Day and night, wind that moves every pine, and a whole arsenal unlocked from the first match
-- Runs from a double-click: no install, no account, no sign-in
-
----
-
-## Details
-
-| | |
-| --- | --- |
+| **Platform** | Windows, and this browser build |
+| **Players** | Single-player vs AI, two teams of five |
 | **Developer** | Softfall |
-| **Publisher** | Softfall |
 | **Support** | softfallbusiness@gmail.com |
 | **Languages** | English |
 

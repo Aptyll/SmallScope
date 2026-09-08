@@ -479,21 +479,20 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   20-minute run, from bots that hoard once their gear is bought) — a level and a half late. It is
   the stake pillar, not a bug, but it is the next snowball to weigh: a bounty cap, or a hoarder's
   sink.
-- [README.md](../../README.md) is a Steam page mock-up (`PATCH 2.45`, brought level with the
-  bird-only objective in `PATCH 2.65`, the page shape in `PATCH 2.66`): genre, a short description
-  under 300 characters, tags with the five that matter first, five 1920×1080 capsule stills in
-  `docs/media/capsule/` (`01-pass`, `02-roost`, `03-catch`, `04-night-hunt`, `05-practice` - Noah's
-  own played captures with the HUD on, 1919x1079, replacing the 2.45/2.65 set in 2.70), a Coming soon
-  block (release, platform, players, price), About this game with a paragraph between each of the
-  four loops (`eagles`, `hunt-deer`, `robots`, `practice-tool`) and a Key features list, then a
-  Details table (developer, publisher, support contact, languages). The About copy is the pillars
-  of [game.md](game.md) in store voice - when a pillar changes, both change. No docs links and no
-  controls list - those stay in the root [CLAUDE.md](../../CLAUDE.md) and these dev docs.
-  A still can also be staged through `DBG` (2.65's roost was: `PROFILE.markDropped()`, `beginDrop()`,
-  both eagles' `t` set to `dur`, `endBrief()`, `laneStep` until the lanes are open, `hopOff()`,
-  rivals warped away, `hideUI`, `state.time` reset, `freeze` and one `render()` before
-  `POST /shot?f=`). The older gallery pngs in `docs/media/` (`hero`, `player`, `bow`,
-  `axe`, `deer`, `rabbits`) have been unreferenced since 2.45.
+- [README.md](../../README.md) is the GitHub page (`PATCH 3.16`; it was a Steam mock-up from
+  `PATCH 2.45` through `2.70`). It leads with a one-line hook, the **1280×640 GitHub social
+  preview** (`docs/media/github-preview.png` — the two eagles crossing, no HUD, cropped 2:1 from
+  a DROP_ZOOM pass on seed 7), then "play it now" (`index.html` / `node app/server.js`) before
+  the match copy. Gallery stills in `docs/media/` (`github-pass`, `github-title`, `github-roost`,
+  `github-hunt`, `github-practice`, plus the fishing capsule `capsule/03-catch`) are 1920×1080
+  canvas dumps except the preview. Steam coming-soon sits at the bottom. The About copy is still
+  the pillars of [game.md](game.md) — when a pillar changes, both change. No docs links and no
+  controls list. The older capsule set (`docs/media/capsule/01-pass` … `05-practice`, Noah's
+  played captures) and the gallery pngs (`hero`, `player`, `bow`, `axe`, `deer`, `rabbits`) stay
+  in the tree unreferenced by the README. Set the repo **Social preview** in GitHub settings to
+  `github-preview.png` (1280×640, under 1 MB); GitHub does not pick the README's first image on
+  its own. A still can also be staged through `DBG` (`PROFILE.markDropped()`, `beginDrop()`,
+  `hideUI`, `step` to `e.t ≈ dur/2` for the pass, `freeze` and `POST /shot?f=`).
 - `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the worker bot
   got its own grids — kept in case the imp returns.
 - A tree's `variant` (rolled by `randi(0, 1)` in `genWorld`) picks no art any more: there is one
