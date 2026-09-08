@@ -1,6 +1,10 @@
 # Softfall
 
-**A cozy pixel-art survival team battle in the browser.** Ten scouts drop in by eagle onto a winter map. Two teams of five. Drive off the rival bird and the match is won.
+**Genre:** Action, Indie
+
+**Short description:** Softfall is a cozy pixel-art survival team battle on a snowbound map. Ten scouts drop in by eagle, two teams of five, then hunt, chop, bury themselves in the drift and fight for the birds that carried them in: drive off the rival eagle and the match is won. Go down and you come back at your own.
+
+**Tags:** Survival, Pixel Art, Cozy, Team-Based, Top-Down, PvP, Multiplayer, Base Building, Hunting, Winter, Roguelike, Action, 2D, Indie
 
 <p align="center">
   <a href="https://discord.gg/xE5wzvz9zK">Discord</a>
@@ -12,12 +16,6 @@
 
 <p align="center">
   <img src="docs/media/github-preview.png" alt="Softfall: two team eagles crossing mid-flight over the snow, riders on their wings" width="1280">
-</p>
-
-**Play it now.** No install, no account, no build, no package manager. Double-click [`index.html`](index.html), or run `node app/server.js` and open [http://localhost:8471](http://localhost:8471). Vanilla JavaScript on an HTML5 canvas, and a `file://` page is a first-class way to play.
-
-<p align="center">
-  <img src="docs/media/github-pass.png" alt="The two armoured eagles flying the map's diagonal in opposite directions" width="920">
 </p>
 
 ## A match

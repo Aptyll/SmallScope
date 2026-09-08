@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.16'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.17'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.17', 'THE README RESTORES GENRE, TAGS AND THE STORE PITCH, AND THE EAGLE PREVIEW SHOWS THE BIRDS FLYING PAST INSTEAD OF STACKED.'],
   ['3.16', 'THE GITHUB PAGE OPENS ON THE TWO EAGLES CROSSING, THE SOURCE IS MIT, AND THE ART, AUDIO AND THE SOFTFALL NAME STAY ALL RIGHTS RESERVED.'],
   ['3.15', 'BERRIES AND FISH LEAVE THE BACKPACK FOR AN ENDLESS POUCH ON THE Q AND F KEYS, YOUR GOLD SITS BESIDE THEM ON THE STRIP ALL MATCH, AND THE PACK STARTS OPEN.'],
   ['3.14', 'THE HANDS WORK ON THEIR OWN: A TREE, A BUSH, A ROCK, A CHEST, A FISH, A RIVAL WALL OR THEIR ROOSTING BIRD IN REACH IS STRUCK WITH NO KEY, UNDER A DRAW OR MID-STRIDE, AND E KEEPS ONLY THE ICE AND THE DUMMY.'],
