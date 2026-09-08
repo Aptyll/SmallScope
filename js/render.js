@@ -394,6 +394,12 @@ function render() {
       if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20);
       // the combo readout, above the bar's slot so neither ever covers the other
       drawDummyMeter(o, px + 8, dy - 10);
+    } else if (o.type === 'post') {
+      // the road's mile post (placeRoad, world.js): a stake at the shoulder
+      drawSpriteFlash(POST_SPR, px + sh + 5, py + TILE - POST_SPR.height, o.flash);
+    } else if (o.type === 'cairn') {
+      ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
+      drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
     } else if (o.type === 'banner') {
       drawBanner(o, px + sh, py, now);
     } else if (o.type === 'rack') {
@@ -487,6 +493,7 @@ function render() {
       } else {
         drawSpriteFlash(spr, sx + sh, sy, o.flash);
         if (o.type === 'spawner') drawBayOverlay(o, sx + sh, sy, now);
+        if (o.type === 'barracks') drawBarracksOverlay(o, sx + sh, sy, now);
         // the gun is not in the grid: rasterise it at the live bearing, on the collar
         if (o.type === 'turret') drawTurretHead(o, sx + sh + 16, sy + 12);
         if (o.hp < o.maxHp * 0.6) {
@@ -502,7 +509,7 @@ function render() {
         // belongs to: it only ever appears while the thing is being hit, and a
         // bar holding still over a wall that is rocking is a bar centred on
         // nothing. drawBayOverlay is handed `sx + sh` and has always done this.
-        if (o.type !== 'spawner' && o.hp < o.maxHp) {
+        if (o.type !== 'spawner' && o.type !== 'barracks' && o.hp < o.maxHp) {
           drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, Math.max(12, Math.min(24, spr.width - 4)), o.team);
         }
       }

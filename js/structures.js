@@ -35,6 +35,20 @@ const STRUCTS = {
   spawner: { name: 'BOT BAY', w: 3, h: 2, mm: [170, 140, 220], map: [128, 104, 160], tiers: [
     { cost: { gold: 45 }, hp: 220, buildT: 16, bots: 3, botHp: 24 },
   ]},
+  // THE BARRACKS: the wave bay each merchant raises in the woods behind its
+  // roost MERCH_BAY_T after the landing (the `merchant` banner, robots.js).
+  // Never on the wheel (not in STRUCT_ORDER), nobody's to upgrade or pull
+  // down (`fixed`), and it wears the bay's own 3x2 grid (`art`). Every
+  // `waveT` seconds it queues a WAVE of soldiers (the `soldiers` banner,
+  // robots.js) that march the road to the rival bird: `wave` of them at
+  // first, one more for every `grow` seconds it has stood. Its cost is what a
+  // wrecker is paid half of - breaking one stalls the waves until the
+  // merchant walks back and raises it again. `cap` is the most of its
+  // soldiers alive at once: a side nobody fights back against does not
+  // fill the map, it waits for its column to spend itself.
+  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: [222, 128, 96], map: [160, 92, 64], tiers: [
+    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 5, waveT: 30, grow: 180, botHp: 30, cap: 24 },
+  ]},
   // The fish net: the one building that goes on water instead of a stump.
   // `water: true` is the whole difference, and every site reads that flag
   // rather than the type name - it builds on an open hole (placeStruct),
@@ -45,7 +59,8 @@ const STRUCTS = {
     { cost: { gold: 8 }, hp: 45, buildT: 5 },
   ]},
 };
-const STRUCT_ORDER = ['wall', 'turret', 'generator', 'spawner']; // stump wheel: 4 even wedges
+const STRUCT_ORDER = ['wall', 'turret', 'generator', 'spawner']; // stump wheel: 4 even wedges (the barracks is the merchant's alone)
+const BARRACKS_ROLL = 0.5; // s between the soldiers of one wave leaving the door
 const WATER_STRUCT_ORDER = ['net']; // open-hole wheel: one wedge, the whole circle
 
 // fish nets: a building laid over an open hole that fishes it on its own
@@ -122,6 +137,9 @@ function createStruct(tx, ty, type, tier, p, building) {
   if (type === 'turret') { o.cd = 0; o.ang = -Math.PI / 2; o.tgt = null; o.chg = 0; o.rec = 0; o.mz = 0; o.scan = 0; }
   if (type === 'generator') o.payT = 0;
   if (type === 'spawner') { o.bots = []; o.respawnT = o.respawnTotal = 1; o.door = 1; }
+  // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
+  // the door, and the gap to the next. born: when it stood, for the growth.
+  if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
   // fish: what the net is holding. catchT/takeT are the two clocks that let
   // it fill and empty a fish at a time instead of all at once
   if (type === 'net') { o.fish = 0; o.catchT = NET_CATCH_T; o.takeT = 0; }
@@ -149,7 +167,7 @@ function rollCardRarity(odds) {
 function startUpgrade(o, p) {
   p = p || player;
   const deny = (msg, t) => { if (p === player) { SFX.deny(); if (msg) showMsg(msg, t); } };
-  if (o.building || !ownsStruct(o, p)) { deny(); return; }
+  if (o.building || !ownsStruct(o, p) || STRUCTS[o.type].fixed) { deny(); return; }
   if (o.tier >= STRUCTS[o.type].tiers.length - 1) { deny('MAX TIER', 1.4); return; }
   const t = STRUCTS[o.type].tiers[o.tier + 1];
   if (!canAfford(t.cost, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return; }
@@ -165,7 +183,8 @@ function startUpgrade(o, p) {
 }
 
 function demolishStruct(o, p) {
-  if (!ownsStruct(o, p || player)) { if ((p || player) === player) SFX.deny(); return; }
+  // a `fixed` building (the barracks) is the eagle's, not the wallet's: nobody pulls it down for the refund
+  if (!ownsStruct(o, p || player) || STRUCTS[o.type].fixed) { if ((p || player) === player) SFX.deny(); return; }
   destroyStructure(o, true, p || player);
 }
 
@@ -317,6 +336,7 @@ function updateStructures(dt) {
         if (o.type === 'turret') o.cd = 0;
         if (o.type === 'generator') o.payT = STRUCTS.generator.tiers[o.tier].period;
         if (o.type === 'spawner') { o.respawnT = o.respawnTotal = 1; }
+        if (o.type === 'barracks') { o.waveT = STRUCTS.barracks.tiers[o.tier].waveT; o.born = state.elapsed; }
       }
       continue;
     }
@@ -384,6 +404,28 @@ function updateStructures(dt) {
       const mo = structMouth(o);
       const out = o.bots.some((b) => !b.dead && Math.hypot(b.x - mo.x, b.y - mo.y) > 20);
       const want = (out || (due && o.respawnT < 1.4)) ? 1 : 0;
+      o.door += Math.sign(want - o.door) * Math.min(Math.abs(want - o.door), dt * 2.2);
+    } else if (o.type === 'barracks') {
+      // the wave clock: every waveT a wave is queued - `wave` soldiers, one
+      // more per `grow` seconds stood - and the queue leaves the door one
+      // soldier every BARRACKS_ROLL, so a wave reads as a column, not a heap
+      o.waveT -= dt;
+      if (o.waveT <= 0) {
+        o.waveT = t.waveT;
+        let alive = o.queue;
+        for (const b of robots) if (b.kind === 'soldier' && b.home === o && !b.dead) alive++;
+        o.queue += Math.max(0, Math.min(t.cap - alive, t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
+      }
+      o.rollT -= dt;
+      if (o.queue > 0 && o.rollT <= 0) {
+        o.rollT = BARRACKS_ROLL;
+        o.queue--;
+        const b = makeSoldier(o);
+        robots.push(b);
+        burst(b.x, b.y - 4, '#c3c9d3', 6, 35, 0.4, true);
+        burst(b.x, b.y + 2, '#e4e8ee', 5, 30, 0.45, true);
+      }
+      const want = o.queue > 0 ? 1 : 0; // the shutter is up only while a column is leaving
       o.door += Math.sign(want - o.door) * Math.min(Math.abs(want - o.door), dt * 2.2);
     } else if (o.type === 'net') {
       // The net fishes on its own: any born fish that swims over the rope is

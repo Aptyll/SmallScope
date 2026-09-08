@@ -499,6 +499,11 @@ function updateEagle(e, dt) {
         if (!q.active || q.dead || inAir(q) || q.team === e.team) continue;
         if (Math.hypot(q.x - e.x, q.y - e.y) < seenAt(q, GUST_R)) { e.windT = GUST_WIND_T; break; }
       }
+      // a rival wave's soldier at its feet rears it the same (robots.js)
+      if (e.windT <= 0) for (const b of robots) {
+        if (!unitAlive(b) || b.team === e.team) continue;
+        if (Math.hypot(b.x - e.x, b.y - e.y) < GUST_R) { e.windT = GUST_WIND_T; break; }
+      }
     }
   } else if (e.state === 'flee') {
     e.fleeT += dt;
@@ -542,6 +547,18 @@ function eagleGust(e) {
     stunUnit(q, GUST_STUN);
     risePlayer(q); // wind strips the snow off a buried body
     burst(q.x, q.y - 6, '#eef4fb', 6, 50, 0.4, true);
+  }
+  // a wave's soldiers at its feet take the same buffet (the `soldiers`
+  // banner, robots.js): the bird defends its ground against every body alike
+  for (const b of robots) {
+    if (!unitAlive(b) || b.team === e.team) continue;
+    const dx = b.x - e.x, dy = b.y - e.y;
+    const d = Math.hypot(dx, dy);
+    if (d > GUST_BLAST_R) continue;
+    const nx = d > 0 ? dx / d : 1, ny = d > 0 ? dy / d : 0;
+    b.kbx = nx * GUST_KB; b.kby = ny * GUST_KB;
+    stunUnit(b, GUST_STUN);
+    burst(b.x, b.y - 4, '#eef4fb', 5, 45, 0.4, true);
   }
 }
 
@@ -1263,6 +1280,7 @@ if (PRACTICE) {
   genPracticeWorld();
 } else {
   genWorld();
+  placeRoad();       // the diagonal lane, before the landmarks keep off it (world.js)
   placeLandmarks();  // worldgen's last pass, before the ground is baked
   placeChests();     // ...then the caches take their trees (objects only, no ground)
   spawnAnimals();

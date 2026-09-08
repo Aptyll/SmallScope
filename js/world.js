@@ -2,7 +2,7 @@
 // The frozen world: the tile grid and its objects, worldgen (rivers, ponds,
 // rocks), and the named landmarks with their own seeded stream (lmRng).
 // ------------------------------------------------------------ world
-const ground = new Uint8Array(WORLD * WORLD); // 0 snow, 1 ice, 2 hole (open water)
+const ground = new Uint8Array(WORLD * WORLD); // 0 snow, 1 ice, 2 hole (open water), 3 the road (placeRoad)
 const objects = new Array(WORLD * WORLD).fill(null);
 
 function idx(tx, ty) { return ty * WORLD + tx; }
@@ -49,8 +49,20 @@ const OBJECTS = {
   // The banner is the parkour gate's flag; the rack spans TWO tiles - the
   // left one carries `lead` and draws the whole sprite, the right tile is a
   // plain solid follower the draw pass skips.
-  banner:   { solid: true,  mm: [214, 88, 76],   map: [186, 74, 62] },
+  // the parkour gate's flag - and, carrying a `team`, the two pennant poles
+  // at each of the road's mouths (placeRoad), which paint the maps in that
+  // side's ink the way a roosting eagle does
+  banner:   { solid: true,
+              mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
+              map: (o) => o.team === undefined ? MAP_BANNER : skin(o.team) ? MAP_EAGLE_BLUE : MAP_EAGLE_RED },
   rack:     { solid: true,  mm: [168, 132, 92],  map: [150, 116, 80] },
+  // the road's furniture (the `the road` group below): a mile post at each
+  // shoulder, walked and shot THROUGH - a lane's edge must never snag a
+  // column or eat an arrow - and the cairn at the map's centre, solid cover
+  // where the two waves meet. Both inert to E (no `tool`); their pixels are
+  // POST_SPR / CAIRN_SPR in render()'s object pass (draw-world.js).
+  post:     { solid: false, mm: [158, 126, 88],  map: [124, 94, 62] },
+  cairn:    { solid: true,  mm: [150, 156, 170], map: [116, 120, 132] },
   // the parkour roll station (practice arena only): the die that rerolls the
   // track. Inert to E's work verbs like the rack - holding E beside it opens
   // the roll wheel (pkDieNear, the practice arena banner below).
@@ -86,6 +98,7 @@ const BUSH_REGROW = 70;   // s from a pick to the next two berries
 const BUSH_BUD_T = 35;    // s left when the buds show
 const BUSH_RIPEN_T = 12;  // s left when the berries come in dull
 const MM_EAGLE_RED = [224, 85, 72], MM_EAGLE_BLUE = [106, 168, 232];
+const MM_BANNER = [214, 88, 76], MAP_BANNER = [186, 74, 62]; // the practice gate's own red
 const MAP_EAGLE_RED = [196, 74, 64], MAP_EAGLE_BLUE = [92, 140, 200];
 const MAP_TREE_RIM = [116, 144, 104], MAP_TREE_DEEP = [44, 66, 50],
       MAP_TREE_MID = [60, 88, 64], MAP_TREE_LIT = [74, 102, 74];
@@ -307,7 +320,8 @@ function genWorld() {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         const tx = wx + dx, ty = wy + dy;
         if (inWorld(tx, ty) && !objects[idx(tx, ty)] && ground[idx(tx, ty)] === 0 &&
-          Math.hypot(tx - cx, ty - cy) > CENTER_R + 3 && !nearAnySpawn(tx, ty, 10)) ground[idx(tx, ty)] = 1;
+          Math.hypot(tx - cx, ty - cy) > CENTER_R + 3 && !nearAnySpawn(tx, ty, 10) &&
+          roadDist(tx, ty) >= ROAD_ICE_KEEP) ground[idx(tx, ty)] = 1; // never near the road (the `the road` group below)
       }
       wx += randi(-1, 1); wy += randi(-1, 1);
       wx = Math.max(4, Math.min(WORLD - 5, wx));
@@ -318,10 +332,15 @@ function genWorld() {
   // frozen rivers: winding ~5-tile-wide ribbons that link each ring point to
   // the central clearing plus a ring around it — ice is the map's travel network.
   // Same carve rules as the ponds, so rivers gap politely around the ring points,
-  // the clearing, and anything already standing (border trees leave natural gaps).
+  // the clearing, and anything already standing (border trees leave natural gaps)
+  // - and around THE ROAD: no ice inside ROAD_ICE_KEEP of its edge, so the lane
+  // never meets ice, and a river running at it narrows to nothing over
+  // ROAD_ICE_TAPER tiles first (the disc below) rather than ending in a cut.
+  // Neither test rolls anything: the rng stream a seed draws is untouched.
   const carveIce = (tx, ty) => {
     if (inWorld(tx, ty) && !objects[idx(tx, ty)] && ground[idx(tx, ty)] === 0 &&
-      Math.hypot(tx - cx, ty - cy) > CENTER_R + 3 && !nearAnySpawn(tx, ty, 9)) ground[idx(tx, ty)] = 1;
+      Math.hypot(tx - cx, ty - cy) > CENTER_R + 3 && !nearAnySpawn(tx, ty, 9) &&
+      roadDist(tx, ty) >= ROAD_ICE_KEEP) ground[idx(tx, ty)] = 1;
   };
   const carveRiver = (x0, y0, x1, y1) => {
     let wx = x0, wy = y0;
@@ -336,8 +355,9 @@ function genWorld() {
       a += Math.max(-0.15, Math.min(0.15, da * 0.08)) + Math.sin(s * 0.09 + phase) * wig;
       wx += Math.cos(a); wy += Math.sin(a);
       const rx = Math.round(wx), ry = Math.round(wy);
-      for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-        if (dx * dx + dy * dy <= 4.5) carveIce(rx + dx, ry + dy);
+      const taper = Math.max(0, Math.min(1, (roadDist(rx, ry) - ROAD_ICE_KEEP) / ROAD_ICE_TAPER)); // 1 in the open, 0 at the road's keep-out
+      if (taper > 0) for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+        if (dx * dx + dy * dy <= 4.5 * taper * taper) carveIce(rx + dx, ry + dy);
       }
       if (Math.hypot(wx - x1, wy - y1) < 3) break;
     }
@@ -407,6 +427,122 @@ function placeChests() {
   }
 }
 
+// ---- the road -------------------------------------------------------------
+// THE ROAD: one straight lane down the map's diagonal, from the mouth of one
+// roost corner's treeline to the other's, about ROAD_HW tiles either side of
+// the centreline - room for a whole side and a wave to fight in. Ground 3,
+// packed earth showing through the snow, two ruts down its length. It walks
+// like snow (only ice and holes are special-cased in updatePlayer's momentum
+// block) but it is not snow: nothing digs into it (tryProne, the hunter's
+// burrow), nothing grows or is built on it (every `ground === 0` site test
+// refuses it), and a fish never counts it as water (fishWater). Laid by
+// placeRoad AFTER genWorld and BEFORE the landmarks, on pure reads of the
+// same treeline rule diagEnd (boot.js) flies the eagles by, so it neither
+// moves the shared rng stream nor differs run to run. Its EDGE is ragged, not
+// a tile staircase: roadEdgeAt wanders the half-width along the lane on the
+// position noise, per side, and roadDist measures any point - a tile centre
+// for the ground array, a pixel for the ground bake (paintRoadOverlay,
+// draw-world.js) - against that wandering edge, so the two agree. It never
+// meets ice: genWorld's carve rules keep every pond and river ROAD_ICE_KEEP
+// tiles off its edge (a river running at it peters out over ROAD_ICE_TAPER
+// first), so the lane is dry from mouth to mouth and the ice network lives
+// further out. A rock or a bush on it is gone. Every landmark keeps
+// ROAD_KEEP tiles off its centreline, so the wolves are never on it. Its furniture is placed
+// with it: a mile post on each shoulder every ROAD_POST_STEP, two pennant
+// poles in the side's colour at each mouth, and one cairn at the centre.
+// The waves (the `soldiers` banner, robots.js) march its waypoints.
+const ROAD_HW = 3.5;        // tiles either side of the centreline: a seven-tile lane
+const ROAD_RAG = 0.8;       // tiles the edge wanders either way - the organic verge
+const ROAD_RUT = 1.0;       // tiles off the centreline the two ruts run
+const ROAD_SHOULDER = 1.4;  // tiles of dirty snow past the edge (the bake only)
+const ROAD_KEEP = 18;       // tiles a landmark's centre stays off the centreline: a den's pack roams ~13 tiles clear of the road's edge
+const ROAD_ICE_KEEP = 6;    // tiles past the edge no pond or river reaches (genWorld's carve rules)
+const ROAD_ICE_TAPER = 7;   // ...and the tiles over which a river narrows to nothing on its way in
+const ROAD_STEP = 20;       // tiles between a wave's waypoints along it
+const ROAD_POST_STEP = 12;  // tiles between the mile posts
+const ROAD_POST_OUT = 0.9;  // tiles past the edge a post (or a pennant pole) stands
+// the diagonal in tile space: tx + ty = WORLD - 1, `u` running 0 at the
+// bottom-left corner to WORLD - 1 at the top-right. All three take a tile
+// index (the tile's centre) or a continuous tile coordinate alike.
+// roadOffS is signed (+ toward the bottom-right side), roadOff its size.
+function roadAlong(fx, fy) { return (fx - fy + WORLD - 1) / 2; }
+function roadOffS(fx, fy) { return (fx + fy - (WORLD - 1)) / Math.SQRT2; }
+function roadOff(fx, fy) { return Math.abs(roadOffS(fx, fy)); }
+function roadPoint(u) { return { x: (u + 0.5) * TILE, y: (WORLD - 1 - u + 0.5) * TILE }; }
+// the half-width at u along, on one side: a slow wander of +-ROAD_RAG and a
+// fine ripple, each side its own - pure position noise, the same every run
+function roadEdgeAt(u, side) {
+  const n = vnoise(u * 0.16 + side * 37.7, 11.5) - 0.5;
+  const r = vnoise(u * 0.75 + side * 90.2, 4.2) - 0.5;
+  return ROAD_HW + n * 2 * ROAD_RAG + r * 0.5;
+}
+// signed distance (tiles) from the road's ragged edge: negative inside it,
+// past a mouth the distance past the end (the road stops where the road
+// stops; the treeline is ragged on its own account)
+function roadDist(fx, fy) {
+  if (PRACTICE) return 99;
+  const u = roadAlong(fx, fy), s = roadSpan();
+  const o = roadOffS(fx, fy);
+  let d = Math.abs(o) - roadEdgeAt(u, o < 0 ? -1 : 1);
+  if (u < s.u0) d = Math.max(d, s.u0 - u);
+  else if (u > s.u1) d = Math.max(d, u - s.u1);
+  return d;
+}
+// where the road runs: from each corner's mouth - the first open tile past
+// the last wooded one on the diagonal, diagEnd's own rule - to the other's
+let roadSpanC = null;
+function roadSpan() {
+  if (roadSpanC) return roadSpanC;
+  const last = (fromLeft) => {
+    let k = 0;
+    for (let i = 0; i < WORLD / 2 - 3; i++) {
+      const x = fromLeft ? i : WORLD - 1 - i, y = fromLeft ? WORLD - 1 - i : i;
+      if (i < borderDepth(x, y)) k = i;
+    }
+    return k + 1;
+  };
+  roadSpanC = { u0: last(true), u1: WORLD - 1 - last(false) };
+  return roadSpanC;
+}
+function onRoad(tx, ty) { return roadDist(tx, ty) < 0; }
+function placeRoad() {
+  if (PRACTICE) return;
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    if (!onRoad(tx, ty)) continue;
+    const i = idx(tx, ty);
+    ground[i] = 3; // never ice here: genWorld keeps it ROAD_ICE_KEEP away
+
+    objects[i] = null; // only worldgen's scenery stands here yet: a pine at the flare, a rock, a bush
+  }
+  // the furniture: a point `out` tiles past the ragged edge on one side of u,
+  // if that tile is standing empty on dry ground (a post is skipped where a
+  // pine, a rock or a bush already stands - the road keeps what it found)
+  const s = roadSpan();
+  const mark = (u, side, out, type, extra, fell) => {
+    const e = roadEdgeAt(u, side) + out;
+    const tx = Math.round(u + side * e / Math.SQRT2), ty = Math.round(WORLD - 1 - u + side * e / Math.SQRT2);
+    if (!inWorld(tx, ty) || ground[idx(tx, ty)] === 2) return null;
+    const o = objects[idx(tx, ty)];
+    if (o && !(fell && laneFells(o))) return null; // a pennant pole takes the pine on its spot (the mouth flares into the woods); a post gives way
+    return placeObj(tx, ty, type, extra);
+  };
+  for (const side of [-1, 1]) {
+    mark(s.u0 + 2, side, ROAD_POST_OUT, 'banner', { team: 0 }, true); // RED roosts bottom-left (game.md)
+    mark(s.u1 - 2, side, ROAD_POST_OUT, 'banner', { team: 1 }, true);
+    for (let u = s.u0 + 6; u < s.u1 - 5; u += ROAD_POST_STEP) mark(u, side, ROAD_POST_OUT, 'post');
+  }
+  const um = Math.round((s.u0 + s.u1) / 2); // the centre: one cairn on the centreline
+  if (!objects[idx(um, WORLD - 1 - um)]) placeObj(um, WORLD - 1 - um, 'cairn');
+}
+// the march: the centreline every ROAD_STEP tiles from a side's own mouth
+// to the rival's (team 0 roosts bottom-left, team 1 top-right - game.md)
+function roadWaypoints(team) {
+  const s = roadSpan(), pts = [];
+  for (let u = s.u0; u < s.u1; u += ROAD_STEP) pts.push(roadPoint(u));
+  pts.push(roadPoint(s.u1));
+  return team === 0 ? pts : pts.reverse();
+}
+
 // ------------------------------------------------------------ landmarks
 // Named points of interest: the places worth deciding between while the eagle
 // is still in the air. One entry in LANDMARKS is one kind of place - its name,
@@ -425,7 +561,7 @@ function placeChests() {
 //
 // Placement and everything it rolls run on their own seeded stream (lmRng),
 // never the shared rng, so landmarks can never reshuffle the terrain a seed
-// already produces.
+// already produces. Every site keeps ROAD_KEEP tiles off the road (above).
 const lmRng = mulberry32((SEED ^ 0x4c414e44) >>> 0);
 function lmRand(a, b) { return a + lmRng() * (b - a); }
 function lmRandi(a, b) { return Math.floor(lmRand(a, b + 1)); }
@@ -526,6 +662,7 @@ function landmarkSite(spec) {
     const edge = Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty);
     if (edge < borderDepth(tx, ty) + spec.r + 4) continue;
     if (Math.hypot(tx - cx, ty - cy) < 20) continue;                    // the middle stays open
+    if (roadOff(tx, ty) < ROAD_KEEP) continue;                          // ...and the road: a den is never on the lane
     if (ringPts.some((p) => Math.hypot(tx - p.tx, ty - p.ty) < 12)) continue;
     if (landmarks.some((L) => Math.hypot(tx - L.tx, ty - L.ty) < spec.r + L.r + 8)) continue;
     // most of the footprint has to be the right surface and standing empty

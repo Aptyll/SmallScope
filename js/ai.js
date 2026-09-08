@@ -120,6 +120,12 @@ function aiSituation() {
       if (q.team === team) s.defenders++;
       else if (d < seenAt(q, AI_ROOST_R)) { s.attackers++; if (q === player) s.human = true; }
     }
+    // a rival WAVE at the roost is an attack too (the `soldiers` banner,
+    // robots.js) - counted at half strength, so a five-column calls three
+    // defenders home rather than the whole side
+    let wave = 0;
+    for (const b of robots) if (b.kind === 'soldier' && unitAlive(b) && b.team !== team && Math.hypot(b.x - e.x, b.y - e.y) < AI_ROOST_R) wave++;
+    s.attackers += Math.ceil(wave / 2);
     s.threat = s.hitT < AI_DEFEND_T || s.attackers > 0;
     return s;
   });
@@ -229,6 +235,34 @@ function aiNearestEnemy(p, prof, anchors) {
     if (d >= range || d >= seenAt(q, range)) continue;
     const s = prof.pick === 'weak' ? q.hp + d * 0.05 : d;
     if (s < bs) { bs = s; best = q; }
+  }
+  // a rival wave's soldiers are rivals too (the `soldiers` banner, robots.js):
+  // the same sight and the same anchors, with no cover to see through
+  for (const b of robots) {
+    if (b.kind !== 'soldier' || !unitAlive(b) || b.team === p.team) continue;
+    const d = Math.hypot(b.x - p.x, b.y - p.y);
+    let range = prof.sight;
+    for (const an of anchors) {
+      if (an && Math.hypot(b.x - an.x, b.y - an.y) < AI_ANCHOR_R) range = AI_ANCHOR_D;
+    }
+    if (d >= range) continue;
+    const s = (prof.pick === 'weak' ? b.hp + d * 0.05 : d) + 20; // a player in the same sight is the better target
+    if (s < bs) { bs = s; best = b; }
+  }
+  return best;
+}
+// the head of its side's wave on the road: the own soldier nearest the
+// rival bird that is still on the march (outside AI_ROOST_R of it) and near
+// enough to be worth walking with - a push rides its wave (rung 5c)
+const AI_WAVE_R = 80;    // px a pusher keeps to the column's head
+const AI_WAVE_D = 640;   // px past which the column is too far behind to wait for
+function aiWaveHead(p, e) {
+  let best = null, bd = 1e9;
+  for (const b of robots) {
+    if (b.kind !== 'soldier' || !unitAlive(b) || b.team !== p.team) continue;
+    const d = Math.hypot(b.x - e.x, b.y - e.y);
+    if (d < AI_ROOST_R || d >= bd || Math.hypot(b.x - p.x, b.y - p.y) > AI_WAVE_D) continue;
+    bd = d; best = b;
   }
   return best;
 }
@@ -521,6 +555,12 @@ function updateAI(p, dt) {
     // first with E (STRUCT_HIT_DMG a swing), exactly as a hand would, since
     // a bot standing off the bird under bolt fire never gets a draw finished
     const tur = aiInLane(p, e) ? nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; }) : null;
+    // the wave is the push: off the rival's lane, a pusher walks with the
+    // head of its side's column rather than ahead of it alone
+    const head = aiInLane(p, e) ? null : aiWaveHead(p, e);
+    if (head && Math.hypot(head.x - p.x, head.y - p.y) > AI_WAVE_R) {
+      if (steerTo(head.x, head.y, 2) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; }
+    }
     if (!aiInLane(p, e)) {
       if (aiToRoost(p, e, steerTo, 5) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; }
       ai.pushCd = 10;
