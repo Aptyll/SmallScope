@@ -480,7 +480,8 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   the stake pillar, not a bug, but it is the next snowball to weigh: a bounty cap, or a hoarder's
   sink.
 - [README.md](../../README.md) is the GitHub page (`PATCH 3.16`; it was a Steam mock-up from
-  `PATCH 2.45` through `2.70`). It leads with a one-line hook, the **1280×640 GitHub social
+  `PATCH 2.45` through `2.70`). It leads with a one-line hook, a links row (Discord, YouTube,
+  mail), the **1280×640 GitHub social
   preview** (`docs/media/github-preview.png` — the two eagles crossing, no HUD, cropped 2:1 from
   a DROP_ZOOM pass on seed 7), then "play it now" (`index.html` / `node app/server.js`) before
   the match copy. Gallery stills in `docs/media/` (`github-pass`, `github-title`, `github-roost`,

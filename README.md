@@ -3,6 +3,14 @@
 **A cozy pixel-art survival team battle in the browser.** Ten scouts drop in by eagle onto a winter map. Two teams of five. Drive off the rival bird and the match is won.
 
 <p align="center">
+  <a href="https://discord.gg/xE5wzvz9zK">Discord</a>
+  &nbsp;·&nbsp;
+  <a href="https://www.youtube.com/@SoftfallYT">YouTube</a>
+  &nbsp;·&nbsp;
+  <a href="mailto:softfallbusiness@gmail.com">softfallbusiness@gmail.com</a>
+</p>
+
+<p align="center">
   <img src="docs/media/github-preview.png" alt="Softfall: two team eagles crossing mid-flight over the snow, riders on their wings" width="1280">
 </p>
 
