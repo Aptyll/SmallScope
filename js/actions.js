@@ -177,23 +177,41 @@ function startSwing(p, t) {
 }
 
 // The hands work on their own. Whatever an OBJECTS entry marks `auto` (a
-// tree, a dead tree, a berried bush) is chopped or picked the moment it is
-// in WORK_REACH, with no key held: the closest such tile in the ring around
-// the player, nearest tile centre first. Fish are the same idea on ice
-// (autoFish, js/tools.js). E keeps its day job for everything else - a rock,
-// bare ice, a rival's building or eagle - and a held E always wins the hands.
+// tree, a dead tree, a berried bush, a rock, a chest, a rival's roosting
+// eagle) and any building on the other team is swung at the moment it is in
+// WORK_REACH, with no key held: the closest such tile in the ring around the
+// player, nearest tile centre first. Fish are the same idea on ice (autoFish,
+// js/tools.js). E keeps its day job for what is left - bare ice and the
+// practice dummy - and a held E always wins the hands.
+// Whether a tile is the hands' business, and with which tool (-1 = not). A
+// rival's building or roosting eagle answers with AUTO_PRIO_FOE, a chest with
+// AUTO_PRIO_PRIZE, scenery with 0: at equal distance the fight and the prize
+// beat the pine beside them (autoTarget ranks by prio first, then distance).
+const AUTO_PRIO_FOE = 2, AUTO_PRIO_PRIZE = 1;
+function autoToolFor(o, p) {
+  const st = structOf(o); // a `part` tile answers for the building it belongs to
+  if (STRUCTS[st.type]) return ownsStruct(st, p) ? -1 : SWING_AXE; // yours stay wheel-only
+  const d = OBJECTS[o.type];
+  // an object carrying a team (the eagles' hitbox tiles) is a rival-only target, as in workTarget
+  if (!d || !d.auto || (d.ready && !d.ready(o)) || (o.team !== undefined && o.team === p.team)) return -1;
+  return d.tool === 'pick' ? SWING_PICK : SWING_AXE;
+}
+function autoPrio(o) {
+  if (STRUCTS[structOf(o).type] || o.team !== undefined) return AUTO_PRIO_FOE;
+  return o.type === 'chest' ? AUTO_PRIO_PRIZE : 0;
+}
 function autoTarget(p) {
   const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
-  let best = null, bd = 1e9;
+  let best = null, bd = 1e9, bp = -1;
   for (let dy = -WORK_REACH; dy <= WORK_REACH; dy++) for (let dx = -WORK_REACH; dx <= WORK_REACH; dx++) {
     const tx = ptx + dx, ty = pty + dy;
     if (!inWorld(tx, ty)) continue;
     const o = objects[idx(tx, ty)];
     if (!o) continue;
-    const d = OBJECTS[o.type];
-    if (!d || !d.auto || (d.ready && !d.ready(o)) || (o.team !== undefined && o.team !== p.team)) continue;
-    const dist = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y);
-    if (dist < bd) { bd = dist; best = { o, tx, ty, tool: d.tool === 'pick' ? SWING_PICK : SWING_AXE, near: true }; }
+    const tool = autoToolFor(o, p);
+    if (tool < 0) continue;
+    const dist = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y), pr = autoPrio(o);
+    if (pr > bp || (pr === bp && dist < bd)) { bp = pr; bd = dist; best = { o, tx, ty, tool, near: true }; }
   }
   return best;
 }

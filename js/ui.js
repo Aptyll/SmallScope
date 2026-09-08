@@ -150,9 +150,9 @@ function drawWorkHint(ox, oy) {
   if (player.charging || player.fallT > 0 || player.dodgeT > 0) return;
   if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
   let t = workTarget(player);
-  // what the hands take on their own (OBJECTS `auto`: a tree, a berried bush)
-  // asks for no key - the swing itself is the whole signal
-  if (t && t.o && OBJECTS[t.o.type] && OBJECTS[t.o.type].auto) t = null;
+  // what the hands take on their own (autoToolFor: a tree, a rock, a chest, a
+  // rival's building or eagle) asks for no key - the swing itself is the whole signal
+  if (t && t.o && autoToolFor(t.o, player) >= 0) t = null;
   
   // no work target: the armory, the roll station, the range bell or a
   // MERCHANT may still be in reach

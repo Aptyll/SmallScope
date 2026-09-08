@@ -644,9 +644,11 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
 - **The hands work on their own** (`autoWork(p)`, js/actions.js — `updatePlayer` calls it every
   step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
-  tree, a berried bush — is swung at the moment it is inside `WORK_REACH`, no key held:
-  `autoTarget(p)` takes the nearest such tile in the ring around the player (tile centre to
-  body, ties by scan order) and `startSwing` runs the same swing E's would. What makes it
+  tree, a berried bush, a rock, a chest, a rival's roosting eagle — and **any building on the
+  other team** (`autoToolFor`, resolving a footprint tile through `structOf` and refusing your
+  own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
+  `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
+  the player — a rival's building or eagle first (`AUTO_PRIO_FOE`), then a chest (`AUTO_PRIO_PRIZE`), then scenery, and by tile centre to body within a rank (`autoPrio`) — and `startSwing` runs the same swing E's would. What makes it
   automatic and not a cancel: it never drops a draw or the held button (`p.autoSwing` lets the
   draw begin under it, and `drawHeldTool` shows the drawn weapon over the axe while one runs),
   never stands a crawler up (`p.prone` waits, unlike E), and never touches the aim — you keep
@@ -662,8 +664,8 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   no verb (bright inside catch reach, dim outside).
 - **E = work** (`tryWork(p)`, auto-repeating every swing cooldown while held — `updatePlayer`
   calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
-  It is what reaches a **rock, bare ice, a rival's building or eagle, a chest, the dummy** —
-  everything not marked `auto` — and it still works a tree if you insist. It resolves `workTarget(p)`: the tile that player is
+  It is what reaches **bare ice** (cracking toward a hole) and **the practice dummy** —
+  the two things not marked `auto` — and it still works anything else if you insist. It resolves `workTarget(p)`: the tile that player is
   aiming at, if it holds a tree or a dead tree (→ axe), rock (→ pick), a berried bush (→ axe), or
   is bare ice with no object (→ pick, cracking toward a fishing hole); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
