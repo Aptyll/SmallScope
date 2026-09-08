@@ -85,11 +85,49 @@ bot's chop resolve through exactly the same function.
 The local human has three: keyboard and mouse (js/input.js), a gamepad (js/gamepad.js) and
 fingers (js/touch.js). **The other two are the first in disguise.** The browser listeners in
 input.js only translate events; what a key *does* lives in `keyPress(e)`/`keyRelease(e)` (`e` is
-`{key, repeat}` — a real KeyboardEvent or an object a pad builds) and what a button does in
-`pointerPress(button)`/`pointerRelease(button)`, with `pointerMove(x, y, src)` carrying the
-pointer. A pad button and a touch plate press a *key* through those, so neither can drift from
-the keyboard and a new key handled in a listener alone is dead on both (the rule in
-[CLAUDE.md](../../CLAUDE.md#hard-rules)). Four gestures have no key and are exposed bare for a
+`{key, repeat, char}` — a real KeyboardEvent translated, or an object a pad builds) and what a
+button does in `pointerPress(button)`/`pointerRelease(button)`, with `pointerMove(x, y, src)`
+carrying the pointer. A pad button and a touch plate press a *key* through those, so neither can
+drift from the keyboard and a new key handled in a listener alone is dead on both (the rule in
+[CLAUDE.md](../../CLAUDE.md#hard-rules)).
+
+**The keyboard is read by where a key sits, not by what it prints** (the `keys and binds`
+banner, input.js; issue #43). The listeners translate `e.code` — the physical key — into the
+game's key *name*, the face that key wears on a US board, lowercase for a letter (`keyName`:
+`KeyW` → `'w'`, `Space` → `' '`, `ShiftLeft` → `'Shift'`, `Period` → `'.'`; a code the table
+does not know falls back to `e.key`, so an on-screen keyboard is not dead). `keys`, the binds and
+every comparison are written in those names, so an AZERTY board walks on its Z Q S D without
+knowing it. `e.char` is what the key *typed*, which only the name editor reads (`nameKey`). What
+the player *sees* runs the other way: `keyLabel` prints the face the key has on the board in hand
+where the browser can say (Chrome's `navigator.keyboard.getLayoutMap()`, cached in `kbLayout` and
+refreshed on `layoutchange` — `KeyW` reads Z on AZERTY), else the US face; anything the pixel
+font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a word (`KEY_LABEL`:
+SPACE, SHIFT, UP, SEMI …).
+
+**What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
+verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the pack,
+the sheet, the map, the standings, mute, pause — with the key each starts on, in the order the
+CONTROLS page lists them; `settings.binds` (action id → key name) is the live map, saved with
+the profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
+reserved key or a key two actions share falls back to its default). **Nothing compares a key
+event against a literal**: `keyIs(e, 'work')`, `keyHeld('slide')`, `moveDir(k)` (the four walk
+binds and the arrows, which every key-driven menu steps on — the title's planks, the death
+planks, the wiki, gear, class select, the settings slab) and `keyBound(k)` ask the binds, and
+every keybind indicator names an action and prints `keyCap(action)` (`keyCapShort` for a well's
+corner, where SPACE is SPC). What is *not* an action is fixed: Escape backs out of everything,
+Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
+debug flips, the mouse buttons are the mouse's, and `keyReserved` refuses those and the
+browser's F row to a bind. A pad button and a touch plate name an *action* (`PAD_PLAY`,
+`TOUCH_BTNS`' `act`/`latch`) and resolve it through `actKey`, so a rebind moves all three
+controllers at once.
+
+**Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
+([the panel](gameplay.md#settings)): a click sets it listening (`state.rebind` is the action,
+`rebindStart`), the next key down is its key (`rebindKey`, first thing in `keyPress`), Escape calls
+it off, a reserved key is refused with the deny cue, and a key another action holds **swaps** —
+that action takes the old key (`setBind`) — so every action always has one key of its own and no
+two share one. Every held key lets go on a rebind, the listen dies with the slab (`rebindLive`),
+on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Four gestures have no key and are exposed bare for a
 trigger or a plate: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
 because a press has the HUD to get past first, a trigger is never over a well),
 `flagDown`/`flagUp` (the worker order), `openWheelNear(p, ax, ay)` (a build/manage wheel on the
@@ -144,8 +182,8 @@ never hides the pad's hand. `padActive()` — plugged in and touched within `PAD
 the CONTROLS page reads, and what every **keybind indicator** reads: while it is true the HOP
 OFF cap, the work prompts, the strip's 1-4 and Q/F, the SHIFT plate, the flight HUD's two and
 the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
-(`PAD_BIND` → `drawPadBind` / `drawBackHint`, ui.js; `drawDropBind`, boot.js) — a rebind in
-`PAD_PLAY` is a row there.
+(`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, ui.js; `drawDropBind`, boot.js) —
+a change in `PAD_PLAY` is a row there.
 
 **Touch** (phone mode only — a finger on a desktop is a mouse). In free play the two halves of
 the world are the two sticks, each appearing under the thumb that lands: the left walks

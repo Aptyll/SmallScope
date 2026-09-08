@@ -127,6 +127,7 @@ const state = {
   dragPend: null,
   draft: null,         // the pick-1-of-3 card draft: { rarity, options: [id,id,id] } - HUD, does NOT stop the sim
   settingsOpen: false,
+  rebind: null,        // a cap on the CONTROLS page listening for its key: the action's id (input.js), or null
   wheel: null, // radial menu: { kind: 'build'|'manage', tx, ty, seg, ax, ay } - ax/ay is the press point
   // middle button HELD: the worker-flag preview is up and the release plants
   // it. Nothing about the flag is on screen unless this is true - see the

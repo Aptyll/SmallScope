@@ -86,8 +86,9 @@ team, a plank that lifts on hover — not "CLICK OR ARROWS TO SWAP", not "PLAYER
 control must read as what it does by its shape and its hover state alone, and if you catch
 yourself writing a hint sentence, build the affordance instead. Text is for names, numbers,
 headlines (a death, a landmark) and five deliberate carve-outs: **keybind indicators** (`'ESC
-BACK'`, a "1" in a slot's corner — which wear the pad's button while one is in hand, `PAD_BIND`
-in ui.js, so a new one goes through `drawKeyPrompt`/`drawPadBind`), the **settings, PLAYER, gear, character and shop panels**'
+BACK'`, a "1" in a slot's corner — which name an *action*, print whatever key it is bound to
+(`keyCap`, input.js) and wear the pad's button while one is in hand (`PAD_BIND`, ui.js), so a new
+one goes through `drawKeyPrompt`/`drawPadBind`), the **settings, PLAYER, gear, character and shop panels**'
 labelled rows, the **instruments** — the practice room's (the dummy meter, the parkour's lap
 clock and the archery round's readouts, with their BEST / LAST plates) and the merchant's
 (the two price graphs and their high/low) — because an instrument's whole job is comparing
@@ -164,7 +165,10 @@ lives in `docs/dev/*.md` beside the code it protects.
   on it painted the wrong colour. Rules (`p.team`, `enemyOf`) never call it.
 - **What a key does lives in `keyPress`/`keyRelease`, what a button does in `pointerPress`/
   `pointerRelease`** (input.js), never in a listener: a gamepad and a finger press the same keys
-  and buttons through those four, so a key handled in the listener alone is dead on a pad.
+  and buttons through those four, so a key handled in the listener alone is dead on a pad. And
+  **a key is asked for through its action** — `keyIs(e, 'work')`/`keyHeld('slide')`, never a
+  literal `'e'` — because the player rebinds (`settings.binds`) and the listener names keys by
+  where they sit (`e.code`), so a literal is dead on a rebind and on an AZERTY board.
 - **Anything a player does takes a `p` and reads `p.input`**, never `keys`/`mouse` (local player only),
   and anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).

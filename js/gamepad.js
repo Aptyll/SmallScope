@@ -21,14 +21,16 @@ const PAD_IDLE = 30;                      // s since its last input before a pad
 
 // STANDARD mapping (w3c): 0 A, 1 B, 2 X, 3 Y, 4 LB, 5 RB, 6 LT, 7 RT, 8 BACK,
 // 9 START, 10 L3, 11 R3, 12 up, 13 down, 14 left, 15 right.
-// In PLAY every button is a key - the names keyPress reads: A rolls, X works,
-// Y / B / LB / RB are the four abilities in strip order (LB held is the
-// grapple, the one held ability), START is the ESC slab, L3 the pack, up the
+// In PLAY every button is an ACTION - the binds' ids (KEY_ACTIONS, input.js),
+// resolved to whatever key the action holds by actKey, so a rebind moves the
+// pad with the keyboard: A rolls, X works, Y / B / LB / RB are the four
+// abilities in strip order (LB held is the grapple, the one held ability),
+// START is the ESC slab (Escape, the one fixed key), L3 the pack, up the
 // character sheet, left and right the two meals. Four are gestures rather
 // than keys and are handled by hand in padPress/padRelease: RT is the draw
 // (held) and LT the slide, R3 holds the worker flag, down holds the build
 // wheel, and BACK is the standings while held and the map on a tap.
-const PAD_PLAY = { 0: ' ', 1: '2', 2: 'e', 3: '1', 4: '3', 5: '4', 9: 'Escape', 10: 'b', 12: 'g', 14: 'q', 15: 'f' };
+const PAD_PLAY = { 0: 'dodge', 1: 'ab2', 2: 'work', 3: 'ab1', 4: 'ab3', 5: 'ab4', 9: 'Escape', 10: 'bag', 12: 'char', 14: 'berry', 15: 'fish' };
 // Over a menu or a panel: A takes (whatever the pointer is on, or the
 // selection where a menu is key-driven - padTake), B, BACK and START back
 // out, the dpad and the bumpers are the arrow keys every menu already answers.
@@ -149,7 +151,7 @@ function padPoll(dt) {
   }
   const lt = ltv > (pad.lt ? PAD_TRIG * 0.5 : PAD_TRIG);
   const rt = rtv > (pad.rt ? PAD_TRIG * 0.5 : PAD_TRIG);
-  if (lt !== pad.lt) { pad.lt = lt; pad.lastT = now; if (!menu) keys['shift'] = lt; }
+  if (lt !== pad.lt) { pad.lt = lt; pad.lastT = now; if (!menu) keys[actKey('slide').toLowerCase()] = lt; }
   if (rt !== pad.rt) {
     pad.rt = rt; pad.lastT = now;
     if (!menu) { if (rt) fireDown(); else fireUp(); }
@@ -248,10 +250,10 @@ function padPress(i, menu) {
     if (k) keyPress({ key: k, repeat: false });
     return;
   }
-  if (i === 8) { keys['tab'] = true; pad.backT = 0; return; }
+  if (i === 8) { keys[actKey('board').toLowerCase()] = true; pad.backT = 0; return; }
   if (i === 11) { pad.flag = flagDown(); return; }
   if (i === 13) { pad.wheel = openWheelNear(player, mouse.x, mouse.y); return; }
-  const k = PAD_PLAY[i];
+  const k = PAD_PLAY[i] && actKey(PAD_PLAY[i]);
   if (!k) return;
   keys[k.toLowerCase()] = true;
   keyPress({ key: k, repeat: false });
@@ -264,14 +266,14 @@ function padRelease(i, menu) {
     return;
   }
   if (i === 8) {
-    keys['tab'] = false;
-    if (pad.backT >= 0 && pad.backT < PAD_TAP) keyPress({ key: 'm', repeat: false });
+    keys[actKey('board').toLowerCase()] = false;
+    if (pad.backT >= 0 && pad.backT < PAD_TAP) keyPress({ key: actKey('map'), repeat: false });
     pad.backT = -1;
     return;
   }
   if (i === 11) { if (pad.flag) flagUp(); pad.flag = false; return; }
   if (i === 13) { if (pad.wheel && state.wheel) { resolveWheel(); state.wheel = null; } pad.wheel = false; return; }
-  const k = PAD_PLAY[i];
+  const k = PAD_PLAY[i] && actKey(PAD_PLAY[i]);
   if (!k) return;
   keys[k.toLowerCase()] = false;
   keyRelease({ key: k });
@@ -281,7 +283,7 @@ function padRelease(i, menu) {
 // marked down so the same hold does not press again in the new one
 function padReleaseAll() {
   for (const i in pad.down) if (pad.down[i]) padRelease(+i, pad.menu);
-  if (pad.lt) { keys['shift'] = false; }
+  if (pad.lt) { keys[actKey('slide').toLowerCase()] = false; }
   if (pad.rt) { if (pad.menu) { if (pad.click) pointerRelease(0); } else fireUp(); }
   pad.lt = pad.rt = false;
   pad.click = pad.flag = pad.wheel = false;

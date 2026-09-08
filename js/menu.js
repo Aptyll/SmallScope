@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.18'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.19'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.19', 'EVERY KEY CAN BE REBOUND - CLICK A CAP ON THE CONTROLS PAGE AND PRESS THE KEY YOU WANT, THE KEYBOARD IS READ BY WHERE A KEY SITS SO AN AZERTY BOARD WALKS ON Z Q S D, EVERY PROMPT AND WELL WEARS THE KEY YOU CHOSE, AND A MATCH CAN BE LEFT FROM THE ESC MENU.'],
   ['3.18', 'A STRAIGHT ROAD RUNS THE DIAGONAL FROM ROOST TO ROOST, THE WOLVES KEEP OFF IT, AND HALF A MINUTE AFTER LANDING EACH MERCHANT RAISES A BARRACKS BEHIND ITS BIRD THAT MARCHES A WAVE OF SOLDIERS DOWN THE LANE EVERY THIRTY SECONDS - THEY FIGHT WHAT THEY MEET, STRIKE THE RIVAL BIRD, AND PAY GOLD TO WHOEVER SCRAPS THEM.'],
   ['3.17', 'THE README RESTORES GENRE, TAGS AND THE STORE PITCH, AND THE EAGLE PREVIEW SHOWS THE BIRDS FLYING PAST INSTEAD OF STACKED.'],
   ['3.16', 'THE GITHUB PAGE OPENS ON THE TWO EAGLES CROSSING, THE SOURCE IS MIT, AND THE ART, AUDIO AND THE SOFTFALL NAME STAY ALL RIGHTS RESERVED.'],
@@ -417,6 +418,7 @@ function closeMenuPanel() {
   if (!m.panel || m.closing) return;
   m.closing = true;
   dragSlider = null;
+  state.rebind = null; // a cap left listening goes quiet with its slab
   saveSettings();
   SFX.pickup();
 }
@@ -437,13 +439,13 @@ function menuKey(e) {
   if (m.screen === 'select') { if (m.screenT >= 1 && m.gearT <= 0) selectKey(k); return; }
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
-    else if (m.panel === 'patch' && (k === 'arrowup' || k === 'w')) patchScrollBy(-8);
-    else if (m.panel === 'patch' && (k === 'arrowdown' || k === 's')) patchScrollBy(8);
+    else if (m.panel === 'patch' && moveDir(k) === 'up') patchScrollBy(-8);
+    else if (m.panel === 'patch' && moveDir(k) === 'down') patchScrollBy(8);
     else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
     return;
   }
-  if (k === 'arrowup' || k === 'w') menuSelect(m.sel - 1);
-  else if (k === 'arrowdown' || k === 's') menuSelect(m.sel + 1);
+  if (moveDir(k) === 'up') menuSelect(m.sel - 1);
+  else if (moveDir(k) === 'down') menuSelect(m.sel + 1);
   else if (k === 'enter' || k === ' ') { m.pressT = 0.12; menuActivate(m.sel); }
 }
 
@@ -1725,10 +1727,10 @@ function gearKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
   if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') leaveGear();
-  else if (k === 'arrowup' || k === 'w') { m.grow = (m.grow + 3) % 4; SFX.pickup(); }
-  else if (k === 'arrowdown' || k === 's') { m.grow = (m.grow + 1) % 4; SFX.pickup(); }
-  else if (k === 'arrowleft' || k === 'a') pickGear(m.grow, (player.gear[m.grow] + 2) % 3);
-  else if (k === 'arrowright' || k === 'd') pickGear(m.grow, (player.gear[m.grow] + 1) % 3);
+  else if (moveDir(k) === 'up') { m.grow = (m.grow + 3) % 4; SFX.pickup(); }
+  else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % 4; SFX.pickup(); }
+  else if (moveDir(k) === 'left') pickGear(m.grow, (player.gear[m.grow] + 2) % 3);
+  else if (moveDir(k) === 'right') pickGear(m.grow, (player.gear[m.grow] + 1) % 3);
 }
 
 function gearClick() {
@@ -1830,8 +1832,8 @@ function selectKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
   if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveSelect(); }
-  else if (k === 'arrowleft' || k === 'a' || k === 'arrowup' || k === 'w') selectClass(m.csel - 1);
-  else if (k === 'arrowright' || k === 'd' || k === 'arrowdown' || k === 's') selectClass(m.csel + 1);
+  else if (moveDir(k) === 'left' || moveDir(k) === 'up') selectClass(m.csel - 1);
+  else if (moveDir(k) === 'right' || moveDir(k) === 'down') selectClass(m.csel + 1);
   else if (k === 'enter' || k === ' ') pressPlay();
 }
 
@@ -2494,10 +2496,10 @@ function wikiSetTab(i) {
 function wikiKey(k) {
   const m = state.menu;
   if (k === 'escape' || k === 'backspace') { leaveWiki(); return; }
-  if (k === 'arrowleft' || k === 'a') wikiSetTab(m.wikiTab - 1);
-  else if (k === 'arrowright' || k === 'd') wikiSetTab(m.wikiTab + 1);
-  else if (k === 'arrowup' || k === 'w') wikiScrollBy(-12);
-  else if (k === 'arrowdown' || k === 's') wikiScrollBy(12);
+  if (moveDir(k) === 'left') wikiSetTab(m.wikiTab - 1);
+  else if (moveDir(k) === 'right') wikiSetTab(m.wikiTab + 1);
+  else if (moveDir(k) === 'up') wikiScrollBy(-12);
+  else if (moveDir(k) === 'down') wikiScrollBy(12);
 }
 // a click: a tab opens its page, the rail pages the window; a row is read,
 // not pressed - the tooltip is already up over it

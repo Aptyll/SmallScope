@@ -69,6 +69,12 @@ declare victory. The three affordances:
   fit picks a 1× pixel and 360 rows. `DBG.layout()` and `DBG.getZoom()` read the fit back,
   `DBG.touchLayout()` where every plate is, and `DBG.touchDown(id, x, y)` / `touchMove` /
   `touchUp(id)` stage fingers by hand (game px; `touchPoll()` then `update()` step a stick).
+  **A keyboard you do not have**: dispatch a `KeyboardEvent` on `window` with the physical
+  `code` and the layout's `key` (`{ code: 'KeyA', key: 'q' }` is AZERTY's Q, which must walk
+  left) — `DBG.keyName(e)` reads it back the way the listener does, `DBG.binds` is the live
+  map, `DBG.setBind(action, key)` swaps as a click-and-press would, `DBG.rebindStart(action)`
+  sets a cap listening for a real press, and `DBG.keyRows()` is where every cap sits on the
+  CONTROLS page (listing-local; add `SET_X` and the content window's top less the scroll).
   **A pad without a pad**: replace `navigator.getGamepads` with a function returning one
   `{ connected: true, mapping: 'standard', axes: [..4], buttons: [{pressed, value}..17] }`,
   set axes and buttons, and call `padPoll(1/60)` before each `update` — the [three

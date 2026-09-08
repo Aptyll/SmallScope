@@ -74,7 +74,7 @@ const SB_W = 168;
 const SB_ROW = 9;
 const SB_COL = [96, 128, 160]; // right edges of LVL / GOLD / KILLS, panel-relative
 
-function scoreboardOpen() { return !!keys['tab'] && state.mode !== 'title' && !window.DBG.hideUI; }
+function scoreboardOpen() { return keyHeld('board') && state.mode !== 'title' && !window.DBG.hideUI; }
 
 // "winning" is lifetime gold earned, not the purse: gold spent on a building
 // is progress, and it is the same number the hero levels run on
@@ -501,7 +501,7 @@ const SET_TABS = [
     { id: 'music', label: 'MUSIC', kind: 'slider' },
     { id: 'sfx', label: 'SOUNDS', kind: 'slider' },
   ] },
-  { id: 'controls', label: 'CONTROLS', rows: [] }, // the baked hotkey listing
+  { id: 'controls', label: 'CONTROLS', rows: [] }, // the three listings below: the keyboard's live, the pad's and the touch baked
 ];
 // The QUALITY row is a macro over the video toggles, one click for a weak
 // machine: LOW turns the whole weather-and-light dressing off, MEDIUM keeps
@@ -585,10 +585,11 @@ function settingsTabBy(d) {
 // and the in-match ESC slab both route here): the arrows page and scroll.
 // True when the key was the panel's, so the caller drops it.
 function settingsKey(k) {
-  if (k === 'arrowleft' || k === 'a') settingsTabBy(-1);
-  else if (k === 'arrowright' || k === 'd') settingsTabBy(1);
-  else if (k === 'arrowup' || k === 'w') settingsScrollBy(-8);
-  else if (k === 'arrowdown' || k === 's') settingsScrollBy(8);
+  const d = moveDir(k);
+  if (d === 'left') settingsTabBy(-1);
+  else if (d === 'right') settingsTabBy(1);
+  else if (d === 'up') settingsScrollBy(-8);
+  else if (d === 'down') settingsScrollBy(8);
   else return false;
   return true;
 }
@@ -599,12 +600,13 @@ function buildSettingsPanel() {
   // the close hint is drawn live (renderSettings): it names the controller in hand
 }
 
-// The CONTROLS page: three listings, one per controller, each baked once
-// (none changes) and blitted into the content window at the page's scroll
-// like any other page. The keyboard's carries the weapon primer under it.
+// The CONTROLS page: three listings, one per controller, blitted into the
+// content window at the page's scroll like any other page. The pad's and
+// the touch listing bake once (neither changes); the keyboard's is LIVE
+// (drawKeyRows, below) over a bake that holds only the weapon primer.
 const PAD_READ_Y = 148, PAD_READ_H = 44; // the pad listing's live readout: where it starts, and the band it takes (drawPadReadout)
 const ctrlCvs = { keys: document.createElement('canvas'), pad: document.createElement('canvas'), touch: document.createElement('canvas') };
-ctrlCvs.keys.width = SET_W; ctrlCvs.keys.height = 244;
+ctrlCvs.keys.width = SET_W; // its height is set by bakeCtrlKeys, under the listing
 ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = 148 + PAD_READ_H;
 ctrlCvs.touch.width = SET_W; ctrlCvs.touch.height = 96;
 
@@ -697,22 +699,59 @@ function drawToolPrimer(g, y0) {
   drawPixelText(g, 'TWO OF ONE MODIFIER COMPOUND - 2X AND 2X IS 4X', 16, foot + 8, '#8fe08a');
 }
 
-(function bakeCtrlKeys() {
-  const g = ctrlCvs.keys.getContext('2d');
-  const cols = [
-    [['WASD', 'MOVE'], ['SPACE', 'DODGE'], ['SHIFT', 'SLIDE'], ['CLICK', 'FIRE'], ['1-4', 'ABILITIES'], ['E', 'HARVEST'], ['Q', 'EAT BERRY'], ['F', 'EAT FISH'], ['B', 'BACKPACK'], ['G', 'CHARACTER']],
-    [['M', 'WORLD MAP'], ['RMB', 'BUILD WHEEL'], ['MMB', 'ORDER CREW'], ['TAB', 'STANDINGS'], ['N', 'MUTE'], ['P', 'PAUSE'], ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
-  ];
+// THE KEYBOARD LISTING IS LIVE, NOT BAKED: every rebindable verb sits beside
+// its key drawn as a cap - the same cap the work prompt wears in the world
+// (drawKeyCap, ui.js), so what is learned here is recognised there - and a
+// cap is a button: it lifts on hover, a click sets it LISTENING (the face
+// pulses gold; state.rebind, input.js) and the next key down is its key. The
+// fixed keys - the mouse's buttons, ESC, the debug pair - are plain gold
+// text, because nothing about them can be pressed. RESET at the foot of the
+// right column puts the defaults back, and sits dim while they already are.
+// Two columns; a row is an action id, {acts, verb} for a run of caps on one
+// verb (the four walk keys, the four abilities), or [key, verb] for a fixed
+// one. keyRowsLayout lays it out listing-local (the blit origin is the
+// content window's top less the scroll); the draw, the hit test and
+// DBG.keyRows all read it, so a click can never disagree with a pixel.
+const KEY_ROWS = [
+  [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
+    'dodge', 'slide', 'work', 'berry', 'fish', 'bag', 'char'],
+  ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'BUILD WHEEL'], ['MMB', 'ORDER CREW'],
+    ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+];
+const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
+const KEYS_PRIMER_Y = KEY_ROWS_Y + 12 * KEY_ROW_H + 12; // the primer bakes under the listing and its RESET
+function keyRowsLayout() {
+  const caps = [], words = [];
   for (let c = 0; c < 2; c++) {
-    let y = 6;
-    const x0 = c === 0 ? 16 : 128;
-    for (const [k, desc] of cols[c]) {
-      drawPixelText(g, k, x0, y, '#ffd95c');
-      drawPixelText(g, desc, x0 + (c === 0 ? 36 : 26), y, '#7a8bb8');
-      y += 8;
+    const x0 = c === 0 ? 14 : 124;
+    const rows = KEY_ROWS[c].map((row) => {
+      if (Array.isArray(row)) return { fixed: row[0], verb: row[1], w: pixelTextWidth(row[0]) };
+      const acts = row.acts || [row];
+      const runs = acts.map((a) => { const lab = keyCap(a); return { act: a, lab, w: pixelTextWidth(lab) + 6 }; });
+      return { runs, verb: row.verb || KEY_ACT[row].verb, w: runs.reduce((s, r) => s + r.w + 2, -2) };
+    });
+    const dx = Math.max(30, rows.reduce((m, r) => Math.max(m, r.w), 0) + 4); // the verbs line up past the widest run
+    let y = KEY_ROWS_Y;
+    for (const r of rows) {
+      if (r.fixed) words.push({ x: x0, y: y + 3, t: r.fixed, col: '#ffd95c' });
+      else { let x = x0; for (const q of r.runs) { caps.push({ act: q.act, x, y, w: q.w, h: 10, lab: q.lab }); x += q.w + 2; } }
+      words.push({ x: x0 + dx, y: y + 3, t: r.verb, col: '#7a8bb8' });
+      y += KEY_ROW_H;
     }
   }
-  drawToolPrimer(g, 95);
+  const rw = pixelTextWidth('RESET');
+  return { caps, words, reset: { x: SET_W - 16 - rw, y: KEY_ROWS_Y + 11 * KEY_ROW_H + 3, w: rw, h: 7 } };
+}
+// the listing at ox, oy (the blit origin); hit is settingsHit's answer
+function drawKeyRows(ox, oy, hit, now) {
+  const K = keyRowsLayout();
+  for (const w of K.words) drawPixelText(ctx, w.t, ox + w.x, oy + w.y, w.col);
+  for (const c of K.caps) drawKeyCap(ctx, ox + c.x, oy + c.y, c.lab, false, state.rebind === c.act ? 2 : hit === 'key:' + c.act ? 1 : 0, now);
+  drawPixelText(ctx, 'RESET', ox + K.reset.x, oy + K.reset.y, bindsDefault() ? '#2c3a68' : hit === 'keyreset' ? '#cfe0ff' : '#7a8bb8');
+}
+(function bakeCtrlKeys() {
+  ctrlCvs.keys.height = KEYS_PRIMER_Y + 149; // the primer's own height
+  drawToolPrimer(ctrlCvs.keys.getContext('2d'), KEYS_PRIMER_Y);
 })();
 
 // A pad button as a picture, ~9px, at x, y (its top-left): a face button is a
@@ -872,17 +911,21 @@ function muteBtnRect() {
   return r ? { x: SET_MUTE_X, y: r.y - L.scroll - 1, w: 9, h: 9 } : null;
 }
 
-// Practice only: the way back out of the training arena - a frost plank
-// hanging under the settings slab (the ESC panel is the room's one menu).
-// Clicking it is leavePractice() (js/menu.js): the reroll's whiteout onto a
-// bare URL, so leaving lands on a fresh title world.
+// The way out: a frost plank hanging under the in-match settings slab (the
+// ESC panel is the one menu a match or the arena has). In practice it is
+// LEAVE PRACTICE - leavePractice() (js/menu.js), the reroll's whiteout onto
+// a bare URL, so leaving lands on a fresh title world; in a match LEAVE
+// MATCH - toLobby() (js/screens.js), the death screen's own way back to the
+// title. Only the in-match slab hangs it: the title's slide-in has nothing
+// to leave.
 function leavePlankRect() { return { x: Math.round((VIEW_W - 132) / 2), y: SET_Y + SET_H + 8, w: 132, h: 20 }; }
 
 // which settings widget is under the pointer (null for none); shared by the
 // click handler and the cursor so the hand cursor can never disagree with a click
 // Answers: a row id ('vol', 'shake', 'vidClouds', ...), 'mute', 'leave',
-// 'tab:<id>' for a navbar cell, 'ctab:<id>' for a controls-page cell, or
-// 'c:<row>:<opt>' for a choice row's word (QUALITY, TOUCH MODE).
+// 'tab:<id>' for a navbar cell, 'ctab:<id>' for a controls-page cell,
+// 'c:<row>:<opt>' for a choice row's word (QUALITY, TOUCH MODE), or
+// 'key:<action>' for a keyboard cap and 'keyreset' for the word under them.
 function settingsHit() {
   const mx = mouse.x, my = mouse.y;
   const L = settingsLayout();
@@ -892,11 +935,21 @@ function settingsHit() {
     if (t.id !== L.ctrl && mx >= t.x && mx < t.x + t.w && my >= t.y - 2 && my < t.y + t.h + 2) return 'ctab:' + t.id;
   const b = muteBtnRect();
   if (b && mx >= b.x - 2 && mx < b.x + b.w + 2 && my >= b.y - 2 && my < b.y + b.h + 2) return 'mute';
-  if (PRACTICE && state.settingsOpen) {
+  if (state.settingsOpen) {
     const l = leavePlankRect();
     if (mx >= l.x - 2 && mx < l.x + l.w + 2 && my >= l.y - 3 && my < l.y + l.h + 3) return 'leave';
   }
   if (my < L.clipY0 || my >= L.clipY1) return null; // the content window scrolls; nothing outside it is live
+  // the CONTROLS page: the keyboard listing's caps and its RESET are live,
+  // the other two listings are pictures
+  if (setTab === 'controls') {
+    if (L.ctrl !== 'keys' || my < L.clipY0 + CTRL_TAB_H) return null;
+    const K = keyRowsLayout(), ox = SET_X, oy = L.clipY0 + CTRL_TAB_H - L.scroll;
+    for (const c of K.caps) if (mx >= ox + c.x - 1 && mx < ox + c.x + c.w + 1 && my >= oy + c.y - 1 && my < oy + c.y + c.h + 1) return 'key:' + c.act;
+    const r = K.reset;
+    if (!bindsDefault() && mx >= ox + r.x - 3 && mx < ox + r.x + r.w + 3 && my >= oy + r.y - 3 && my < oy + r.y + r.h + 3) return 'keyreset';
+    return null;
+  }
   for (const r of L.rows) {
     const y = r.y - L.scroll;
     // 14px pitch, so the bands must not overlap or a click lands on two rows
@@ -914,11 +967,15 @@ function settingsHit() {
 function settingsMouseDown() {
   SFX.unlock();
   const hit = settingsHit();
+  // a listening cap: any press but its own calls it off first
+  if (state.rebind && hit !== 'key:' + state.rebind) state.rebind = null;
   if (!hit) return;
+  if (hit.startsWith('key:')) { const a = hit.slice(4); if (state.rebind === a) { state.rebind = null; SFX.pickup(); } else rebindStart(a); return; }
+  if (hit === 'keyreset') { resetBinds(); SFX.place(); return; }
   if (hit.startsWith('tab:')) { setTab = hit.slice(4); SFX.pickup(); return; }
   if (hit.startsWith('ctab:')) { ctrlTab = hit.slice(5); SFX.pickup(); return; }
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || hit === 'hud') { dragSlider = hit; applySliderDrag(); return; }
-  if (hit === 'leave') { leavePractice(); return; }
+  if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');
     const row = settingsLayout().rows.find(r => r.id === rid);
@@ -1018,6 +1075,7 @@ function renderSettings(now, opts) {
     ctx.save();
     ctx.beginPath(); ctx.rect(SET_X + 2, L.clipY0 + CTRL_TAB_H, SET_W - 4, L.clipY1 - L.clipY0 - CTRL_TAB_H); ctx.clip();
     ctx.drawImage(ctrlCvs[L.ctrl], SET_X, L.clipY0 + CTRL_TAB_H - L.scroll);
+    if (L.ctrl === 'keys') drawKeyRows(SET_X, L.clipY0 + CTRL_TAB_H - L.scroll, hit, now);
     if (L.ctrl === 'pad') drawPadReadout(SET_X, L.clipY0 + CTRL_TAB_H - L.scroll + PAD_READ_Y);
     ctx.restore();
     // the navbar: the open listing's name in gold over a gold underline,
@@ -1059,10 +1117,9 @@ function renderSettings(now, opts) {
     const ty = L.clipY0 + Math.round((h - th) * (L.scroll / L.maxScroll));
     ctx.fillStyle = '#4a5480'; ctx.fillRect(x + 1, ty, 1, th);
   }
-  // the arena's one exit, on the same frost plank the title menu is made of
-  // (drawMenuButton, js/menu.js). Practice never opens this panel from the
-  // title, so it only ever appears on the in-match ESC slab.
-  if (PRACTICE && !slide) drawMenuButton(leavePlankRect(), 'LEAVE PRACTICE', hit === 'leave' ? 1 : 0, now, false, false);
+  // the one exit, on the same frost plank the title menu is made of
+  // (drawMenuButton, js/menu.js) - the in-match slab only, never the title's
+  if (state.settingsOpen && !slide) drawMenuButton(leavePlankRect(), PRACTICE ? 'LEAVE PRACTICE' : 'LEAVE MATCH', hit === 'leave' ? 1 : 0, now, false, false);
   if (slide) ctx.restore();
   // live strip preview while the HUD SIZE knob is in hand - the minimap
   // slider's grammar. Only during the drag, and drawn last: the strip's home
@@ -1169,8 +1226,8 @@ function nameKey(e) {
     if (m.nameBuf) { m.nameBuf = m.nameBuf.slice(0, -1); SFX.tally(); }
     return;
   }
-  if (e.key.length !== 1) return;
-  const ch = e.key.toUpperCase();
+  const ch = String(e.char != null ? e.char : e.key).toUpperCase(); // what the key TYPED, not where it sits: a Z on AZERTY is a Z
+  if (ch.length !== 1) return;
   if (!/^[A-Z0-9]$/.test(ch)) return;
   if (m.nameBuf.length >= PROFILE.NAME_MAX) { m.nameShake = NAME_SHAKE_T; SFX.iceKnock(); return; }
   m.nameBuf += ch;
