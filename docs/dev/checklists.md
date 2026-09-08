@@ -479,14 +479,14 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   20-minute run, from bots that hoard once their gear is bought) — a level and a half late. It is
   the stake pillar, not a bug, but it is the next snowball to weigh: a bounty cap, or a hoarder's
   sink.
-- [README.md](../../README.md) is the GitHub page (`PATCH 3.16`; it was a Steam mock-up from
-  `PATCH 2.45` through `2.70`). It leads with a one-line hook, a links row (Discord, YouTube,
-  mail), the **1280×640 GitHub social
+- [README.md](../../README.md) is the GitHub page (`PATCH 3.17`; it was a Steam mock-up from
+  `PATCH 2.45` through `2.70`). It leads with **Genre**, a short description under 300
+  characters, **Tags**, a links row (Discord, YouTube, mail), the **1280×640 GitHub social
   preview** (`docs/media/github-preview.png` — the two eagles crossing, no HUD, cropped 2:1 from
-  a DROP_ZOOM pass on seed 7), then "play it now" (`index.html` / `node app/server.js`) before
-  the match copy. Gallery stills in `docs/media/` (`github-pass`, `github-title`, `github-roost`,
-  `github-hunt`, `github-practice`, plus the fishing capsule `capsule/03-catch`) are 1920×1080
-  canvas dumps except the preview. Steam coming-soon sits at the bottom. [LICENSE](../../LICENSE)
+  a DROP_ZOOM pass on seed 7), then the match copy. Gallery stills in `docs/media/` (`github-title`,
+  `github-roost`, `github-hunt`, `github-practice`, plus the fishing capsule `capsule/03-catch`)
+  are 1920×1080 canvas dumps except the preview. `github-pass` stays in the tree unreferenced
+  (it duplicated the 1280×640 hero). Steam coming-soon sits at the bottom. [LICENSE](../../LICENSE)
   is MIT for the source code only; art, audio and the Softfall name are all rights reserved,
   including the sprite grids in `js/sprites.js`, baked sound in `js/sfxdata.js`, and files under
   `audio/` and `docs/media/`. The About copy is still
