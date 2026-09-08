@@ -25,15 +25,20 @@ anything that must stay stable per tile.
   spokes and the keep-clear rules still hang off them — which is exactly why `RING_N` is frozen at
   six instead of tracking `MAX_PLAYERS`: the roster growing to ten must not reshape terrain.
 - `ground` — `Uint8Array(WORLD²)`: `0` snow, `1` ice, `2` open-water hole (runtime-only, see
-  [Ice holes and fishing](#ice-holes-and-fishing)). Ice is **mechanically slippery** (see
+  [Ice holes and fishing](#ice-holes-and-fishing)), `3` the road ([The road](#the-road)). Ice is **mechanically slippery** (see
   [Momentum movement](gameplay.md#momentum-movement-players-only)), and worldgen carves it as a travel
   network: 14 frozen lakes plus winding ~5-tile-wide rivers (`carveRiver` in `genWorld()`) —
   a spoke from each ring point to the central clearing and a ring linking each point to its
-  neighbour. The shared `carveIce` rule skips existing objects, the ring points, and the clearing,
-  so rivers gap naturally around them.
+  neighbour. The shared `carveIce` rule skips existing objects, the ring points, the clearing and
+  everything within `ROAD_ICE_KEEP` (6) tiles of [the road](#the-road)'s edge, so rivers gap
+  naturally around them — and a river running at the road narrows to nothing over
+  `ROAD_ICE_TAPER` (7) tiles first (`carveRiver`'s disc shrinks with `roadDist`), so it peters out
+  instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. Types: `tree`, `deadTree`, `stump`, `rock`,
-  `bush`, `chest`, `den`, `wall`, `turret`, `generator`, `spawner`, `part`. `deadTree` (a 3 hp snag, chopped like a
+  `bush`, `chest`, `den`, `post`, `cairn`, `banner`, `wall`, `turret`, `generator`, `spawner`,
+  `barracks`, `part`. `post`/`cairn`/`banner` are [the road](#the-road)'s furniture (`banner` is
+  also the practice gate's flag). `deadTree` (a 3 hp snag, chopped like a
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
   that carries its `site` — the landmark record — so a hover can wear the pack's clock)
   exist only inside [landmarks](#landmarks); `chest` is a
@@ -97,6 +102,66 @@ ground change must call `repaintGround(tx, ty)` — it repaints the tile plus it
 (edge rims depend on neighbors) into the prerendered canvas. Ice holes are currently the only
 runtime ground change.
 
+## The road
+
+One straight lane down the map's diagonal, from the mouth of one roost corner's treeline to the
+other's — about `ROAD_HW` (3.5) tiles either side of the centreline, a seven-tile lane with room
+for a whole side and a wave to fight in (the `the road` group of the `world` banner, js/world.js).
+Ground `3`, packed earth showing through the snow with two ruts down its length: it **walks like
+snow** (only ice and holes are special-cased in `updatePlayer`'s momentum block) but it is **not
+snow** — nothing digs into it (`tryProne`, the hunter's burrow), nothing grows or is built on it
+(every `ground === 0` site test refuses it: a stump cannot be on it, `findSite` will not put a bay
+on it), a fish never counts it as water (`fishWater`), and the footprint emitter leaves no prints
+on it.
+
+**Its edge is ragged, never a tile staircase.** `roadEdgeAt(u, side)` wanders the half-width
+along the lane on the position noise — a slow drift of ±`ROAD_RAG` (0.8) and a fine ripple, each
+side its own — and `roadDist(fx, fy)` measures any point against that wandering edge (negative
+inside; past a mouth, the distance past the end). Both the ground array (`onRoad`, a tile's centre)
+and the ground bake (a pixel) ask the same function, so what a tile *is* and what it *looks like*
+agree to within the verge. **It never meets ice**: `genWorld`'s carve rules keep every pond and
+river `ROAD_ICE_KEEP` tiles off its edge and taper a river to nothing on its way in (the tile
+world, above), so the lane is dry from mouth to mouth and the ice network lives further out on
+the map.
+
+**Its furniture** is placed with it, off the same ragged edge (`mark` in `placeRoad`,
+`ROAD_POST_OUT` (0.9) tiles past it): a mile **`post`** on each shoulder every `ROAD_POST_STEP`
+(12) tiles — `solid: false`, walked and shot *through*, since a lane's edge must never snag a
+column or eat an arrow, and skipped where a pine, rock or bush already stands; two **`banner`**
+poles at each mouth carrying a `team` (0 at the bottom-left mouth, 1 at the top-right — the
+practice gate's own flag object, which now paints its cloth in `TEAMS[skin(team)]`'s coat and
+both maps in that side's ink, and *fells* what stands on its spot, since a mouth flares into the
+woods); and one **`cairn`** on the centreline at the map's centre, solid cover where the two waves
+meet. All three are inert to E (no `tool`). Their pixels: `POST_SPR`/`CAIRN_SPR` baked beside
+`CHEST_SPR` in draw-world.js and drawn in `render()`'s object pass; the pole is `drawBanner`.
+
+`placeRoad()` runs at boot **after `genWorld()` and before `placeLandmarks()`**, on pure reads —
+`roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
+exactly the rule `diagEnd` (boot.js) flies the eagles by, so the road ends where each lane's
+mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
+run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone, a
+pine at the treeline's flare is felled (there is no ice to meet - see above). (An existing seed's
+*terrain* is therefore no longer bit-identical to its pre-road self along that band; everything
+off the band is.) `roadAlong`/`roadOffS`/`roadOff`/`roadPoint` are the geometry — the diagonal is
+`tx + ty = WORLD - 1`, `u` running from the bottom-left corner, `roadOffS` signed toward the
+bottom-right side — taking a tile index or a continuous tile coordinate alike; `onRoad(tx, ty)`
+is the membership test, and `roadWaypoints(team)` the centreline every `ROAD_STEP` (20) tiles from
+a side's own mouth to the rival's, which is the march the waves walk
+([Soldiers](gameplay.md#soldiers-the-waves)). Not under `PRACTICE` (`roadDist` answers 99).
+
+Both maps paint it: a tan stroke on the minimap, a brown ink line down the parchment
+(`updateMinimap`, `buildWorldMapImg`). In the world it is **painted over the snow per pixel**,
+not per tile: `paintGroundTile` paints every road tile, and every snow tile within
+`ROAD_SHOULDER` (1.4) + 1.2 tiles of the edge, as snow first and then hands it to
+`paintRoadOverlay` (the `the road's pixels` group, draw-world.js), which asks `roadDist` per
+pixel — inside, packed earth in two tones by 8 px quad, the two ruts at `ROAD_RUT` (1.0) tiles
+off the centreline (broken, wandering a little along the lane on a per-quarter-tile cached
+noise), the odd stone and hoof-dark spot, and drifts of snow lying over the last 0.7 tiles of the
+verge; outside, mud spread off the road in patches thinning to greyed snow and then the field.
+The drifts and the mud are placed on a low-frequency `clump` noise read per pixel, not on a
+per-pixel roll, so the melt reads as patches rather than sand. The whole bake costs ~0.2 s at
+boot on top of the ground's own.
+
 ## Landmarks
 
 Named points of interest scattered through the open interior, each with its own personality — the
@@ -129,7 +194,9 @@ feature — no map, chart or HUD code knows any landmark by name:
 `placeLandmarks()` runs as worldgen's last pass (boot, right after `genWorld()`), then
 `stockLandmarks()` fills every site once `spawnAnimals`/`spawnFish` are done. `landmarkSite()`
 rejects a candidate that is on the wrong surface, inside 20 tiles of the world centre, within 12
-tiles of a `ringPts` point, too close to a landmark already placed, closer to the treeline than
+tiles of a `ringPts` point, within `ROAD_KEEP` (18) tiles of [the road](#the-road)'s centreline
+(so a den is never on the lane and the wolves stay well off it), too close to a landmark already
+placed, closer to the treeline than
 `borderDepth(tx, ty) + r + 4` (measured, not worst-case — assuming `BORDER_MAX` bunches every
 landmark into one narrow ring), or whose footprint is less than 72 % free of the right surface.
 

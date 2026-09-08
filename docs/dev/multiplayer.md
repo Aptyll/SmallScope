@@ -465,7 +465,9 @@ The ladder:
    so a buried one is simply not there — plus anyone within `AI_ANCHOR_R` of an **anchor** the bot
    is minding, noticed from up to `AI_ANCHOR_D`: its own bird under attack, the rival bird it is
    pushing, the human it escorts — so a defender finds the archer standing off its roost and an
-   ally joins the fight you are in) and **reacted to** (`ai.seeT` past `react`): circle at ~70 px,
+   ally joins the fight you are in; and a rival **wave's soldiers** in the same sight, with no cover
+   to see through, a player in the same sight preferred by a small margin —
+   [the waves](gameplay.md#soldiers-the-waves)) and **reacted to** (`ai.seeT` past `react`): circle at ~70 px,
    draw and loose at the profile's `draw`, dodge at its rate, stand for the profile's share of
    every strafe. The aim point carries the scatter and the lead. Only shoots
    when `aiLineClear()` says the flight path is open — and with **no** line it never walks into
@@ -503,7 +505,10 @@ The ladder:
    **the human is already on it** (inside `AI_ROOST_R`), so a push you start is a push your side
    joins — and **any** bot joins a siege its side has going once the rival bird is under
    `AI_JOIN_HP` (0.6) with friends at it, unless its own bird is under threat, which is where it
-   is wanted.
+   is wanted. **The wave is the push**: off the rival's lane, a pusher walks with the head of its
+   own side's column on the road (`aiWaveHead` — the own soldier nearest the rival bird that is
+   still on the march, within `AI_WAVE_D`) rather than ahead of it alone, closing to `AI_WAVE_R`
+   of it and going on from there; with no column out it walks as it always did.
    The walk is `aiToRoost`: the roost sits in its corner's forest at the end of its lane and the
    lane is the only way in, so off it the route is field → `aiLaneGate` (`AI_GATE` px past the
    mouth on open snow) → mouth → lane → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
@@ -546,8 +551,9 @@ about the objective, both sides of it, all match — read once per sim step (cac
 `state.tick`) and shared by all ten players: for each roosting bird its position, its nerve as a
 fraction of `EAGLE_HP`, how long since it was last hit, and who is **at** it inside `AI_ROOST_R`
 (240 px) — `defenders` (its own side) and `attackers` (rivals, each resolved through `seenAt`, so
-a buried archer is buried for the whole side) — with `human` set when the local player is among the
-attackers. `threat` is the one word the ladder asks — hit inside `AI_DEFEND_T` (8 s) or an
+a buried archer is buried for the whole side — plus a rival **wave** at the roost counted at half
+strength, so a five-column calls three defenders home rather than the whole side) — with `human`
+set when the local player is among the attackers. `threat` is the one word the ladder asks — hit inside `AI_DEFEND_T` (8 s) or an
 attacker seen — and `aiDefendersWanted` is how many it calls home (one more than the attackers,
 at least two, everyone under `AI_ALARM_HP`). A hit on a roost is therefore news on the far side of the map the same tick,
 which is what lets rung 6 answer from anywhere and rungs 6 and 8 weigh one bird against the

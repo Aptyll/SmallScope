@@ -385,7 +385,8 @@ can hurt a player — a `DEATH_CAUSE` key), and rolling **only** through `lmRng`
 **Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `buildWorldMapImg()`,
 give it a surface branch in `updatePlayer()`'s momentum block (steer/decay/target rates — ice is
 the template; a ground that should walk like snow needs none, because only ice and holes are
-special-cased — the practice pad's packed earth walked that way until 2.27 retired it), and
+special-cased — [the road](world.md#the-road), `3`, is the live example of one that walks like
+snow and is not snow), and
 remember `genWorld()`'s `free()` helper treats "ground must be 0" as the placement rule — as do
 `tryProne` (snow to dig into) and the footprint emitter. Check `fishWater()` too: it names the
 swimmable grounds outright.
@@ -422,7 +423,12 @@ draw-3 rule, the `YIELD` table (every gold payout, the one table still in core.j
 (`TRICKLE_GOLD`/`TRICKLE_T`, js/sim.js) and `TREE_HP` (js/world.js) beside it, the hero-level table
 (`LEVEL_XP`/`LVL_HP`/`LVL_DMG`, js/player.js — sized against the harness, see
 [multiplayer.md](multiplayer.md#bots)), the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/
-`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`, js/boot.js) and the bots' objective clocks (`AI_LEVELS`'
+`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`, js/boot.js), the waves (`STRUCTS.barracks`'s
+`wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`, js/structures.js; `SOLDIER_*` —
+speed, aggro, siege reach, the bird damage, the bounty — and `MERCH_BAY_*` — when the barracks
+is due, how far behind the roost, the rebuild wait — js/robots.js; `ROAD_HW`/`ROAD_RAG`/`ROAD_KEEP`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/
+`ROAD_STEP`/`ROAD_POST_STEP`, js/world.js, which reshape the map, and the road's colours
+`ROAD_COL_*` beside `paintRoadOverlay` (draw-world.js); `AI_WAVE_R`/`AI_WAVE_D`, js/ai.js) and the bots' objective clocks (`AI_LEVELS`'
 `push`/`guard`, `AI_ALLY_PUSH`, `AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`,
 js/ai.js), the chest
 count/spacing/payout (`CHEST_*` above `placeChests()` in js/world.js),

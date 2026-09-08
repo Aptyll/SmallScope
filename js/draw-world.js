@@ -102,7 +102,65 @@ function paintGroundTile(g, tx, ty) {
           g.fillStyle = '#b6c2d4';
           g.fillRect(px + ((h * 700) | 0) % 12 + 2, py + ((h * 900) | 0) % 12 + 2, 2, 1);
         }
+        // the road (ground 3, and the snow beside it) is painted OVER the
+        // snow per pixel, against its ragged edge - never per tile
+        if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py);
       }
+}
+
+// ---- the road's pixels ----------------------------------------------------
+// The road (placeRoad, world.js) is not a kind of tile but a BAND laid over
+// the snow at pixel precision: every pixel of a tile near it asks roadDist
+// for its distance to the ragged edge and is painted by that - inside, packed
+// earth in two tones by 8 px quad, the two ruts (broken, wandering a little
+// along the lane), the odd stone, a hoof-dark spot, and snow melting in over
+// the last half tile of the verge; outside, ROAD_SHOULDER tiles of dirtied
+// snow, mud dithered in at the edge and thinning to grey and then to the
+// field. So the edge is one wandering line and never a tile staircase, and
+// a 16 px tile can be half road and half snow. A ford is skipped whole: ice
+// tiles never come here (paintGroundTile's ice branch), so the ruts stop at
+// the bank. The per-u noise (the edge, the ruts' wander) is cached by
+// quarter-tile, since a tile's 256 pixels share a handful of u values.
+const ROAD_COL_A = '#cdbfa8', ROAD_COL_B = '#c5b7a0'; // the two tones of packed earth
+const ROAD_COL_RUT = '#a08d70';                        // the ruts
+const ROAD_COL_STONE = '#9c8d74', ROAD_COL_DARK = '#b5a68c', ROAD_COL_LIGHT = '#dbcfba';
+const ROAD_COL_MUD = '#ded8cc', ROAD_COL_GREY = '#dde3ec'; // the shoulder's dirty snow, then grey snow
+const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
+const roadRutCache = new Map();
+function roadRutAt(u) {
+  const k = Math.round(u * 4);
+  let r = roadRutCache.get(k);
+  if (r === undefined) { r = ROAD_RUT + (vnoise(k / 4 * 0.45, 8.8) - 0.5) * 0.35; roadRutCache.set(k, r); }
+  return r;
+}
+function paintRoadOverlay(g, tx, ty, px, py) {
+  for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+    const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
+    const d = roadDist(fx, fy);
+    if (d >= ROAD_SHOULDER) continue;
+    const hp = hash2(px + i, py + j); // this pixel's own roll
+    // the drift field: snow lies on the verge and mud spreads off it in
+    // CLUMPS, not as per-pixel static - a low-frequency noise read per pixel,
+    // so the melt reads as patches of snow and mud rather than sand
+    const clump = vnoise((px + i) / 6 + 3.1, (py + j) / 6 + 7.7);
+    let c = null;
+    if (d < 0) {
+      c = vnoise(((px + i) >> 3) / 13, ((py + j) >> 3) / 13) > 0.5 ? ROAD_COL_A : ROAD_COL_B;
+      const o = roadOff(fx, fy);
+      if (Math.abs(o - roadRutAt(roadAlong(fx, fy))) < 0.08 && hp > 0.12) c = ROAD_COL_RUT; // a rut: ~2 px, broken
+      else if (hp > 0.992) c = ROAD_COL_STONE;
+      else if (hp > 0.975) c = ROAD_COL_DARK;
+      else if (hp < 0.006) c = ROAD_COL_LIGHT;
+      // the verge: drifts of snow lying over the earth, more of them toward the edge
+      if (d > -0.7 && clump + hp * 0.25 > 1.02 - (d + 0.7) / 0.7 * 0.55) c = ROAD_COL_SNOW;
+    } else {
+      // the shoulder: mud spread off the road in patches, thinning to greyed snow, then the field
+      const k = 1 - d / ROAD_SHOULDER;
+      if (clump - hp * 0.2 < k * k * 0.55 - 0.05) c = d < 0.45 ? ROAD_COL_B : ROAD_COL_MUD;
+      else if (clump < 0.45 + k * 0.3 && hp > 0.35) c = ROAD_COL_GREY;
+    }
+    if (c) { g.fillStyle = c; g.fillRect(px + i, py + j, 1, 1); }
+  }
 }
 
 function renderGround() {
@@ -179,6 +237,63 @@ const CHEST_SPR = (() => {
   const g = c.getContext('2d');
   rows.forEach((r, y) => {
     for (let x = 0; x < 16; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); }
+  });
+  return c;
+})();
+// The road's mile post and its centre cairn (placeRoad, world.js), baked
+// here like the chest. The post is a plain tarred stake under a snow cap -
+// quiet on purpose, it is the lane's edge and not a thing to look at; the
+// cairn is a heap of river stones under snow, the one solid thing on the
+// road, where the two waves meet.
+const POST_SPR = (() => {
+  const pal = { o: '#241a12', W: '#8a6142', w: '#5c4226', d: '#3a2a1c', s: '#f4f7ff' };
+  const rows = [
+    '.ssss.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oddo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    '.oWwo.',
+    'oowwoo',
+    'ssssss',
+  ];
+  const c = document.createElement('canvas');
+  c.width = 6; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((r, y) => {
+    for (let x = 0; x < 6; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); }
+  });
+  return c;
+})();
+const CAIRN_SPR = (() => {
+  const pal = { o: '#2a2e3a', G: '#9aa2b2', g: '#737b8c', d: '#596072', s: '#f4f7ff', S: '#d8e4f2' };
+  const rows = [
+    '.....sssss....',
+    '....oGGGGSo...',
+    '...oGggggGdo..',
+    '...oGgggggdo..',
+    '..ossoooooosss',
+    '..oGGGGGGGGgo.',
+    '.oGggggGGgggdo',
+    '.oGgggggggggdo',
+    '.oggggGGGggddo',
+    'oooooooooooooo',
+    'oGGgggGGgggGdo',
+    '.oooooooooooo.',
+  ];
+  const c = document.createElement('canvas');
+  c.width = 14; c.height = rows.length;
+  const g = c.getContext('2d');
+  rows.forEach((r, y) => {
+    for (let x = 0; x < 14; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); }
   });
   return c;
 })();
@@ -873,8 +988,17 @@ function drawAgameUI(now) {
 // red. The cloth is a full rectangle (18 wide, 11 deep) with a swallowtail
 // cut at the fly end, waving column by column with folds shaded where the
 // wave crests, so it reads as heavy cloth rather than a pennant.
+// the cloth: the practice gate's red, or - for the road's pennant poles,
+// which carry a `team` (placeRoad, world.js) - that side's coat
+const BANNER_RED = { dark: '#a83232', lit: '#d0453a', mid: '#c0392b', hem: '#e05548', seam: '#8f2a24' };
+function bannerCloth(o) {
+  if (o.team === undefined) return BANNER_RED;
+  const t = TEAMS[skin(o.team)];
+  return { dark: t.coatD, lit: t.coatL, mid: t.coat, hem: t.mark, seam: t.coatD };
+}
 function drawBanner(o, px, py, now) {
   const bx = px + 4, top = py - 18;
+  const cl = bannerCloth(o);
   ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(bx - 1, py + 14, 6, 2);
   // the pole, snow at its foot
   ctx.fillStyle = '#241a12'; ctx.fillRect(bx - 1, top - 2, 4, 36);
@@ -897,17 +1021,17 @@ function drawBanner(o, px, py, now) {
     const x = bx + 3 + i;
     // fold shading rides the wave's slope: leaning columns catch the dark
     const slope = Math.cos(now * 4.5 + i * 0.55 + o.ty) * u;
-    const cloth = slope < -0.35 ? '#a83232' : slope > 0.45 ? '#d0453a' : '#c0392b';
+    const cloth = slope < -0.35 ? cl.dark : slope > 0.45 ? cl.lit : cl.mid;
     if (gap === 0) {
       ctx.fillStyle = '#241a12'; ctx.fillRect(x, y0 - 1, 1, H + 2);
       ctx.fillStyle = cloth; ctx.fillRect(x, y0, 1, H);
-      ctx.fillStyle = '#e05548'; ctx.fillRect(x, y0, 1, 1); // the lit top hem
-      if (i === 0 || i === 7) { ctx.fillStyle = '#8f2a24'; ctx.fillRect(x, y0 + 1, 1, H - 1); } // seam shadows
+      ctx.fillStyle = cl.hem; ctx.fillRect(x, y0, 1, 1); // the lit top hem
+      if (i === 0 || i === 7) { ctx.fillStyle = cl.seam; ctx.fillRect(x, y0 + 1, 1, H - 1); } // seam shadows
     } else {
       const arm = ((H - gap) >> 1) + 1;
       ctx.fillStyle = '#241a12'; ctx.fillRect(x, y0 - 1, 1, arm + 1); ctx.fillRect(x, y0 + H - arm, 1, arm + 1);
       ctx.fillStyle = cloth; ctx.fillRect(x, y0, 1, arm); ctx.fillRect(x, y0 + H - arm, 1, arm);
-      ctx.fillStyle = '#e05548'; ctx.fillRect(x, y0, 1, 1);
+      ctx.fillStyle = cl.hem; ctx.fillRect(x, y0, 1, 1);
     }
   }
   ctx.fillStyle = '#ffd95c'; ctx.fillRect(bx + 2, top, 1, H); // the gilt hoist stripe
@@ -1064,6 +1188,41 @@ function bigBuildReveal(o) {
   const p = o.buildT / o.buildTotal;
   const rows = p < 0.12 ? 0 : Math.min(h, Math.max(1, Math.round(h * (p - 0.12) / 0.86)));
   return { rows, h, edgeY: (o.ty + structH(o.type)) * TILE - rows };
+}
+
+// The barracks (STRUCTS.barracks, structures.js) wears the bay's sprite, so
+// its overlay is the bay's geometry: the shutter over the doorway while no
+// wave is rolling, the next soldier sliding down it as one does, the wave
+// clock on the flank's plate filling toward the next roll-out in the side's
+// paint, the beacon amber while a column is leaving, and the hp bar once hurt.
+function drawBarracksOverlay(o, px, sy, now) {
+  const t = STRUCTS.barracks.tiers[o.tier];
+  if (o.queue > 0 && o.rollT <= 0.4) {
+    const set = SPRITES.robotTeam[skin(o.team === undefined ? 0 : o.team)] || SPRITES.robot;
+    const spr = set[Math.floor(now * 8) % 2];
+    const k = 1 - o.rollT / 0.4;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(px + 14, sy + 13, 20, 24); ctx.clip();
+    ctx.drawImage(spr, px + 18, sy + 26 - Math.round(12 * (1 - k)));
+    ctx.restore();
+  }
+  const shut = Math.round(23 * (1 - o.door));
+  for (let i = 0; i < shut; i++) {
+    ctx.fillStyle = i === shut - 1 ? '#1c2130' : (i % 3 === 2 ? '#5b6473' : '#98a1b0');
+    ctx.fillRect(px + 14, sy + 13 + i, 20, 1);
+  }
+  ctx.fillStyle = '#1c2130'; ctx.fillRect(px + 35, sy + 23, 10, 9);
+  ctx.fillStyle = '#3b4150'; ctx.fillRect(px + 36, sy + 24, 8, 2); ctx.fillRect(px + 36, sy + 28, 8, 2);
+  ctx.fillStyle = TEAMS[skin(o.team === undefined ? 0 : o.team)].mark;
+  ctx.fillRect(px + 36, sy + 24, Math.max(1, Math.round(8 * (1 - o.waveT / t.waveT))), 2);
+  if (o.queue > 0) ctx.fillRect(px + 36, sy + 28, Math.min(8, o.queue), 2);
+  const slat = sy + 17 + (Math.floor(now * 5) % 3) * 2;
+  ctx.fillStyle = '#6c7486';
+  ctx.fillRect(px + 5, slat, 6, 1); ctx.fillRect(px + 37, slat, 6, 1);
+  ctx.fillStyle = '#1c2130'; ctx.fillRect(px + 44, sy - 4, 2, 5); ctx.fillRect(px + 42, sy - 7, 6, 4);
+  ctx.fillStyle = o.queue > 0 ? (Math.floor(now * 4) % 2 ? '#ff9a3c' : '#7a3a1c') : '#6c7486';
+  ctx.fillRect(px + 43, sy - 6, 4, 2);
+  if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team);
 }
 
 // Everything the bay animates or reports, drawn over the baked sprite. Bay
@@ -1282,7 +1441,8 @@ const NET_FISH_AT = [[3, 4], [8, 8], [4, 11]]; // where a held fish lies in the 
 // a building wears its owner's team palette over its tier material
 function structSprite(o) {
   const set = SPRITES.teamBuild[skin(o.team === undefined ? 0 : o.team)];
-  return set ? set[o.type][o.tier] : SPRITES[o.type][o.tier];
+  const art = (STRUCTS[o.type] && STRUCTS[o.type].art) || o.type; // a type wearing another's grid (the barracks)
+  return set ? set[art][o.tier] : SPRITES[art][o.tier];
 }
 
 function drawAnimal(a, ex, ey, now) {
@@ -1366,6 +1526,9 @@ function drawRobot(b, ex, ey, now) {
   }
 
   drawSpriteFlash(spr, bx, by, b.flash);
+  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant
+  // off the chassis: the one thing that says this bot is not here to chop
+  if (b.kind === 'soldier') drawFlagPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
 
   // carried gold: a nugget held up in front of the body
   if (b.carry > 0 && !working) {

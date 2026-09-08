@@ -1909,7 +1909,17 @@ Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js
   keeps `tiers[0].bots` (3) robots alive, rolling them out **one at a time** — the first 1 s after
   completion, then 4 s apart; a lost bot takes 12 s to replace (`respawnT`/`respawnTotal`).
   `makeRobot` spawns at `structMouth()` (the ring around the footprint if that is blocked) with an
-  exhaust puff. `drawBayOverlay()` draws everything live on top of the baked sprite: the next bot
+  exhaust puff. **Barracks** (`barracks`): the wave bay, **never on the wheel** — not in
+  `STRUCT_ORDER`; each [merchant](#the-merchant) raises one in the woods behind its roost, and
+  `fixed: true` refuses the manage wheel's upgrade and demolish, so nobody pulls it down for the
+  refund. It wears the bay's 3×2 grid (`art: 'spawner'`, read by `structSprite`) under its own
+  overlay (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave
+  clock on the flank in the side's paint, the beacon amber while a column is leaving). Every
+  `waveT` (30 s) it queues a **wave** — `wave` (5) soldiers, one more per `grow` (180 s) it has
+  stood, never more than `cap` (24) of its soldiers alive at once — and the queue leaves the door
+  one every `BARRACKS_ROLL` (0.5 s), so a wave reads as a column. Its `cost` (40) is only what a
+  wrecker is paid half of: breaking one stalls the waves until the merchant rebuilds it
+  ([Soldiers](#soldiers-the-waves)). `drawBayOverlay()` draws everything live on top of the baked sprite: the next bot
   sliding down the doorway over the last 0.8 s of its timer; a roll-up **shutter** over the doorway
   (`o.door`, lerped in the tick — open while any of its workers is out of the yard or one is
   rolling out, shut when the whole crew is home, so the door reports the bay's state rather than
@@ -2000,6 +2010,40 @@ the worker is under a flag**: it fights back for `ROBOT_MAD` (6 s) from where it
 never follows past `ROBOT_LEASH` (90 px) of that spot. An unflagged worker is the same defenceless
 hauler it always was — see [Worker flags](#worker-flags) for why the anger is gated on the flag.
 
+### Soldiers: the waves
+
+The `soldiers` banner (js/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
+[barracks](#base-building) rolls out a column of **soldiers** — the worker's chassis under its
+side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
+that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
+bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
+cargo, no payout but the bounty) and a **route**: its own eagle's mouth (out of the roost's lane),
+`roadWaypoints(team)`, the rival's mouth; the rival roost itself is read live each frame, since
+it may have flown. `updateSoldier` is four rungs, first hit wins:
+
+1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
+   column walk past): close and swing (`robotStrike`, the worker's own `ROBOT_DMG` every
+   `ROBOT_ATK_CD`, `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line);
+2. the rival **bird** inside six tiles: the nearest roost tile (`aiEagleTile`), and
+   `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtEagle` — ahead of any
+   building, since the gate's whole stump ring stands within a step of the roost;
+3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a gate turret, a
+   wall across the gap, the rival barracks): `hurtStruct` through the same `robotStrike`;
+4. the **march**: the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
+   route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
+   roost through its lane.
+
+It is allowed to fight and nothing else — no tree tempts it, no flag recalls it. Two waves
+meeting on the road therefore grind each other down (they are rival units to each other), which
+is the stalemate a player breaks by walking out. It takes every hit, state and sweep like any
+other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the robot path rather
+than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
+and buffets it like a player (`updateEagle`/`eagleGust`), a turret marks it, and it dies through
+`robotDies` carrying a `SOLDIER_BOUNTY` (4 gold, through `awardGold`, so the kill levels too) for
+whoever scraps it — no feed line, five a wave. The cap on a barracks' live soldiers is
+`STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
+sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#bots)).
+
 ### The merchant
 
 Each eagle is **driven** by its team's merchant — the old trader in the wide fur hat with the
@@ -2008,7 +2052,17 @@ team-cloth crown and the white beard, seated on the bird's neck in flight (`MERC
 with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; the bird wears `PERCH`) — who climbs
 down the moment it roosts (`spawnMerchant`, called
 from `eagleCrash`, the `merchant` banner in js/robots.js) and works the roost for its side, in
-order: a **gate** at the mouth of the lane the crash cut — `createStruct` a turret on the crash's
+order — with one job that jumps the queue the moment it is due: `MERCH_BAY_T` (30 s) after the
+landing it raises the **barracks** ([base building](#base-building)) in the woods `MERCH_BAY_BACK`
+(6) tiles *behind* the roost, against the lane: `merchBaySite` picks the nearest 3×2 placement to
+that point whose footprint is dry land holding nothing the axe cannot take, `merchBayBlocker`
+hands it every pine, snag, rock and stump on the footprint and a `MERCH_BAY_RING` (1) ring round
+it, felled at `MERCH_BAY_SWING` (0.34 s — the lane's pace, so the bay is up before the second
+minute) through `merchFell` (the rim's swing, factored out — it leaves the tile empty; the rim
+puts a stump back), and then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the
+door sets the site (`createStruct`, nobody pays). Wrecked, `b.bay` no longer resolves and the
+clock restarts at `MERCH_BAY_REBUILD` (45 s); the clearing is already made, so the second build
+is the hammering alone. Otherwise: a **gate** at the mouth of the lane the crash cut — `createStruct` a turret on the crash's
 ring stump flanking the lane each side (the nearest stump outside `MERCH_GATE_GAP` of the lane's
 centreline — `e.laneDir`, the road's own direction toward the middle of the corner's tree edge,
 [the lane](rendering.md#eagle-drop-mode-drop) — on the field side), then walls on the ring stumps out to `MERCH_GATE_W` (`b.plan`,

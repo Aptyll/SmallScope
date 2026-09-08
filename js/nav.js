@@ -52,7 +52,7 @@ function moveEntity(e, dx, dy, r, strict) {
 // that component is handed to the other unit as knockback, and a lighter
 // unit gets a small bounce off a heavier one. Two relaxation passes settle
 // piles. Deterministic: fixed iteration order, no rng.
-const UNIT_MASS = { player: 3, deer: 2.2, wolf: 2, rabbit: 0.5, robot: 0.7, merchant: 3 };
+const UNIT_MASS = { player: 3, deer: 2.2, wolf: 2, rabbit: 0.5, robot: 0.7, soldier: 1, merchant: 3 };
 const UNIT_BOUNCE = 0.3; // restitution for the lighter side of a contact
 // the merchant (robots.js) is a player-sized body in the robots list, so it takes a player's radius
 function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 5 : e.kind === 'wolf' ? 4.5 : e.kind === 'merchant' ? PLAYER_R : 3; }

@@ -264,6 +264,9 @@ function buildWorldMapImg() {
       const c = o && objMapColor(o, 'map', i, h);
       if (c) { r = c[0]; g = c[1]; b = c[2]; }
       else if (ground[i] === 2) { r = 44; g = 74; b = 104; } // carved water hole
+      else if (ground[i] === 3) { // the road: a brown ink stroke down the parchment
+        if (h > 0.8) { r = 150; g = 118; b = 78; } else { r = 138; g = 106; b = 68; }
+      }
       else if (ground[i] === 1) {
         // inked pond with darker shoreline
         const edge =

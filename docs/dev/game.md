@@ -17,7 +17,17 @@ diagonal in opposite directions and pass mid-route; nobody starts at a spawn cam
 its line each eagle dives into its **corner's** treeline — RED always bottom-left, BLUE always
 top-right — and becomes its team's **objective**; its **merchant** climbs down to raise a gate,
 clear the rim and then keep shop at the lane mouth for anybody at all who walks up to it, and a
-**lane** of pines falls open back to the snow. **Drive off the rival eagle
+**lane** of pines falls open back to the snow. Between the two lane mouths runs **the road** — one
+straight packed-earth lane down the map's diagonal, seven tiles wide with ragged snowy verges,
+mile posts on its shoulders, a pennant pole in each side's colour at its mouths and a marker at its
+middle, dry from end to end because the ice keeps clear of it, there from worldgen and readable
+from anywhere —
+and half a minute after landing each merchant clears the woods *behind*
+its bird and raises a **barracks** there: every thirty seconds it marches a **wave** of soldier bots
+down the road toward the rival bird, fighting whatever it meets and swinging at the roost when it
+arrives, the waves growing by one every three minutes. Both sides get the same waves, so with
+nobody on the road the two columns meet in the middle and grind — which side's wave gets through
+is decided by who walks out to it. **Drive off the rival eagle
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
 down at their own bird.
 
@@ -135,7 +145,15 @@ clear a lane, your own building means guard it, anything another team owns means
 [Worker flags](gameplay.md#worker-flags), [Robots](gameplay.md#robots).
 
 **Landmarks are named places, not decoration.** Two exist: a **WOLF DEN** (the only hostile
-wildlife in the game) and a **ROOKERY**. [Landmarks](world.md#landmarks).
+wildlife in the game) and a **ROOKERY** — both placed well off the road, so the lane is never a
+wolf's. [Landmarks](world.md#landmarks).
+
+**The road is where the match is fought.** The waves are the match's clock: a column that is not
+met on the road reaches the rival bird, and a scrapped soldier pays its killer gold (and so XP)
+on the spot — so the lane is where the fighting, the pushing and the paying are, and a base is
+something to walk *out* of. A raid that wrecks the barracks stalls a side's waves until its
+merchant rebuilds it. [The road](world.md#the-road), [the waves](gameplay.md#soldiers-the-waves),
+[the barracks](gameplay.md#base-building).
 
 ## What the design is not
 

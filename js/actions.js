@@ -690,7 +690,10 @@ const DMG_TYPES = {
 // A player is a Player, an animal has a `kind`, a worker bot is what is left.
 // Asked here rather than duck-typed at each site (`e.input`, `e.tx`), so a new
 // kind of walker is one line rather than a hunt through every hit in the game.
-function isAnimalUnit(e) { return !(e instanceof Player) && e.kind !== undefined; }
+// a body that is neither a player nor one of the bay's (or the eagle's)
+// machines is wildlife - the machines say so themselves (`bot`, makeRobot /
+// spawnMerchant, js/robots.js), because a soldier carries a `kind` too
+function isAnimalUnit(e) { return !(e instanceof Player) && !e.bot; }
 // where a blow lands on a body: a bird rides its altitude, everything else
 // stands on its own feet
 function unitMidY(e) { return e.y - (e.alt || 0) - 6; }

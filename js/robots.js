@@ -5,7 +5,7 @@
 // pixels are the `what a flag looks like` group in js/draw-world.js.
 // ------------------------------------------------------------ workers
 function makeRobot(sp) {
-  const t = STRUCTS.spawner.tiers[sp.tier];
+  const t = STRUCTS[sp.type].tiers[sp.tier]; // the bay's worker, or the barracks' soldier (makeSoldier): both carry botHp
   const m = structMouth(sp);
   let sx = m.x, sy = m.y;
   if (isSolidTile(Math.floor(sx / TILE), Math.floor(sy / TILE))) {
@@ -19,7 +19,8 @@ function makeRobot(sp) {
     }
   }
   const b = {
-    x: sx, y: sy, hp: t.botHp, maxHp: t.botHp,
+    bot: true, // a machine, not wildlife: what isAnimalUnit (js/actions.js) reads
+    x: sx, y: sy, hp: t.botHp, maxHp: t.botHp, vx: 0, vy: 0, // vx/vy: a bot never drifts, but a rival's aim leads by them (updateAI)
     home: sp, team: sp.team === undefined ? 0 : sp.team, owner: sp.owner === undefined ? 0 : sp.owner,
     tgt: null, workT: 0, atkCd: 0, avoid: null, avoidT: 0, nav: null,
     // the fight, all of it: what it is swinging at right now (drawRobot reads
@@ -80,6 +81,14 @@ function robotDies(b, src) {
     if (src && src.inv) awardGold(src, b.carry, b.x, b.y);
     b.carry = 0;
   }
+  // a soldier carries a bounty instead of cargo: whoever scraps one is paid
+  // it on the spot (through awardGold, so the kill levels too) - the road
+  // pays, which is what makes walking out to meet a wave worth the walk.
+  // Five a wave, so no feed line: the fight is the news, not each wreck.
+  if (b.kind === 'soldier') {
+    if (src && src.inv && src.team !== b.team) awardGold(src, SOLDIER_BOUNTY, b.x, b.y);
+    return;
+  }
   // a downed worker is not a downed player: it makes the feed, never the kill
   // count. There is no merchant line any more: a merchant cannot be downed
   // (unitAlive, js/actions.js), so nothing reaches here carrying one.
@@ -105,6 +114,7 @@ function updateRobot(b, dt) {
     return;
   }
   if (b.merchant) { updateMerchant(b, dt); return; } // the eagle's driver: its own brain, the shared body above
+  if (b.kind === 'soldier') { updateSoldier(b, dt); return; } // a wave's soldier: the march (the `soldiers` banner below)
   const home = b.home;
   const hm = structMouth(home), hx = hm.x, hy = hm.y;
   let moving = false;
@@ -328,6 +338,19 @@ const MERCH_GATE_GAP = 1.3;  // tiles either side of the lane's centreline the g
 const MERCH_GATE_W = 4.2;    // ...and how far out from the centreline its walls reach
 const MERCH_HOP_T = 0.55;    // s of the hop off the bird
 const MERCH_THINK = 0.35;    // s between job picks
+// the barracks (STRUCTS.barracks): MERCH_BAY_T after the landing the merchant
+// clears the woods MERCH_BAY_BACK tiles behind the roost - the footprint and
+// a MERCH_BAY_RING ring round it, so the door opens onto walkable ground and
+// there is room to fight at it - and raises the wave bay there, in the corner
+// behind the bird where the lane is not. Wrecked, it goes up again
+// MERCH_BAY_REBUILD later; the clearing is already made, so the second
+// build is the hammering alone.
+const MERCH_BAY_T = 30;       // s after the landing the barracks is due
+const MERCH_BAY_BACK = 6;     // tiles behind the roost (against e.laneDir) its centre sits
+const MERCH_BAY_RING = 1;     // tiles of woods cleared round the footprint
+const MERCH_BAY_SWING = 0.34; // s per axe swing on the clearing - the lane's pace, not the rim's, so the bay is up before the second minute
+const MERCH_BAY_REBUILD = 45; // s after a wreck before it is raised again
+const MERCH_BAY_HAMMER = 2.6; // s of hammering that sets the site
 
 // the nearest tile to (tx, ty) nothing stands on, spiralling out
 function freeTileNear(tx, ty, rMax) {
@@ -348,9 +371,10 @@ function spawnMerchant(e) {
   const wx = e.x + lx * (EAGLE_TILE_R + 1.4) * TILE, wy = e.y + ly * (EAGLE_TILE_R + 1.4) * TILE;
   const at = freeTileNear(Math.floor(wx / TILE), Math.floor(wy / TILE), 6) || { tx: Math.floor(e.x / TILE), ty: Math.floor(e.y / TILE) };
   const b = {
-    merchant: true, kind: 'merchant', team: e.team, owner: -1, home: null,
+    merchant: true, bot: true, kind: 'merchant', team: e.team, owner: -1, home: null,
     x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE, // no hp: nothing can hurt it (unitAlive)
     roost: e, plan: [], tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
+    bay: null, bayT: MERCH_BAY_T, baySite: null, // the barracks: the building once it stands, the clock to raising it, where
     hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
     atkAim: null, atkCd: 0, mad: null, madT: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
@@ -381,8 +405,58 @@ function spawnMerchant(e) {
   return b;
 }
 
-// the merchant's frame: hop, then gate, then the rim, then keep to the roost.
-// Every walk routes (navStep) and drops its goal when the route fails.
+// one axe swing on a pine, a snag or a rock; true when it came down (the
+// tile is emptied - the rim puts a stump back, the barracks' clearing does
+// not). Pays nothing, like the crater and the lane.
+function merchFell(b, t) {
+  const px = t.tx * TILE + 8, py = t.ty * TILE + 8;
+  t.hp--; t.flash = 0.1; t.shake = 0.22;
+  if (nearPlayer(px, py)) SFX[t.type === 'rock' ? 'mine' : 'chop']();
+  burst(px, py - 10, '#eef4fb', 3, 35, 0.4, true);
+  if (t.hp > 0) return false;
+  objects[idx(t.tx, t.ty)] = null;
+  burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
+  burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : t.type === 'rock' ? '#9aa4b4' : '#6b5a48', 5, 45, 0.5, true);
+  if (nearPlayer(px, py)) SFX[t.type === 'rock' ? 'break_' : 'treeFall']();
+  if (t.type === 'deadTree') flushBirds(landmarkAt(px, py), { x: px, y: py });
+  b.tgt = null;
+  return true;
+}
+// where the barracks goes: its 3x2 anchor about MERCH_BAY_BACK tiles behind
+// the roost, against the lane - the nearest placement to that point whose
+// footprint is dry land holding nothing the axe cannot take (a pine, a snag,
+// a rock, a stump: never the bird's own tiles or a building)
+function merchBaySite(e) {
+  const cx = (e.x - e.laneDir.x * MERCH_BAY_BACK * TILE) / TILE - 1.5, cy = (e.y - e.laneDir.y * MERCH_BAY_BACK * TILE) / TILE - 1;
+  const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
+    if (!inWorld(x, y) || ground[idx(x, y)] !== 0) return false;
+    const o = objAt(x, y);
+    return !o || laneFells(o) || o.type === 'stump';
+  });
+  let best = null, bd = 1e9;
+  for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+    const tx = Math.round(cx) + dx, ty = Math.round(cy) + dy;
+    const d = Math.hypot(tx - cx, ty - cy);
+    if (d < bd && fits(tx, ty)) { bd = d; best = { tx, ty }; }
+  }
+  return best;
+}
+// the first thing still standing on the site or in the ring round it,
+// nearest the merchant, that its swing will not reach this frame anyway
+function merchBayBlocker(b, s) {
+  let best = null, bd = 1e9;
+  for (let y = s.ty - MERCH_BAY_RING; y < s.ty + 2 + MERCH_BAY_RING; y++) for (let x = s.tx - MERCH_BAY_RING; x < s.tx + 3 + MERCH_BAY_RING; x++) {
+    const o = objAt(x, y);
+    if (!o || !(laneFells(o) || o.type === 'stump') || b.avoids.some((a) => a.o === o)) continue;
+    const d = Math.hypot(x * TILE + 8 - b.x, y * TILE + 8 - b.y);
+    if (d < bd) { bd = d; best = o; }
+  }
+  return best;
+}
+
+// the merchant's frame: hop, then the barracks once it is due, then gate,
+// then the rim, then keep to the roost. Every walk routes (navStep) and
+// drops its goal when the route fails.
 function updateMerchant(b, dt) {
   const e = b.roost;
   if (b.hopT > 0) { b.hopT -= dt; if (b.hopT <= 0) { burst(b.x, b.y + 2, '#eef4fb', 8, 45, 0.45, true); if (nearPlayer(b.x, b.y)) SFX.land(); } b.moving = false; return; }
@@ -417,6 +491,56 @@ function updateMerchant(b, dt) {
     for (const r of robots) if (!r.dead && r !== b && Math.abs(r.x - cx) < 8 + PLAYER_R && Math.abs(r.y - cy) < 8 + PLAYER_R) return true;
     return false;
   };
+  // ---- the barracks: due MERCH_BAY_T after the landing, ahead of the gate
+  // and the rim once it is - the waves are the match's clock, the gate is
+  // furniture. The woods on the site are felled (no gold, like the rim), a
+  // stump on it kicked out, then the site is hammered up from its doorstep.
+  // Wrecked, the clock restarts at MERCH_BAY_REBUILD.
+  if (b.bay && structOf(objAt(b.bay.tx, b.bay.ty)) !== b.bay) { b.bay = null; b.bayT = MERCH_BAY_REBUILD; }
+  if (!b.bay) b.bayT -= dt;
+  if (!b.bay && b.bayT <= 0) {
+    for (let i = b.avoids.length - 1; i >= 0; i--) if ((b.avoids[i].t -= dt) <= 0) b.avoids.splice(i, 1); // the rim's list, aged here too since this returns early
+    if (!b.baySite) b.baySite = merchBaySite(e);
+    const s = b.baySite;
+    if (!s) b.bayT = 8; // nowhere to stand it right now: ask again
+    else {
+      const o = merchBayBlocker(b, s);
+      if (o) {
+        const px = o.tx * TILE + 8, py = o.ty * TILE + 8;
+        if (Math.hypot(px - b.x, py - b.y) > 20) {
+          if (walkToward(px, py, 1) < 0) { b.avoids.push({ o, t: 12 }); b.bayT = 3; } // walled off: try again shortly
+          b.workT = 0;
+        } else {
+          b.tgt = o;
+          b.workT += dt;
+          if (b.workT >= MERCH_BAY_SWING) {
+            b.workT = 0;
+            if (o.type === 'stump') { objects[idx(o.tx, o.ty)] = null; burst(px, py, '#eef4fb', 6, 40, 0.4, true); b.tgt = null; }
+            else merchFell(b, o);
+          }
+        }
+        return finish();
+      }
+      // the site is clear: hammer it up from the tile below the door
+      const mx = (s.tx + 1.5) * TILE, my = (s.ty + 2) * TILE + 3;
+      if (Math.hypot(mx - b.x, my - b.y) > 14) {
+        if (walkToward(mx, my, 0) < 0) { b.baySite = null; b.bayT = 6; }
+        b.workT = 0;
+      } else if (footprint('barracks', s.tx, s.ty).some(([x, y]) => unitOn(x, y))) {
+        b.workT = 0; // somebody standing on the site: wait for them to step off
+      } else {
+        b.tgt = { type: 'stump', tx: s.tx + 1, ty: s.ty + 1 }; // the hammer's aim (drawMerchant reads the type for its timing)
+        b.workT += dt;
+        if (b.workT >= MERCH_BAY_HAMMER) {
+          b.workT = 0; b.tgt = null;
+          b.bay = createStruct(s.tx, s.ty, 'barracks', 0, owner, true); // the eagle's own: nobody pays
+          burst(mx, my - 8, '#eef4fb', 10, 45, 0.45, true);
+          if (nearPlayer(mx, my)) SFX.hammer();
+        }
+      }
+      return finish();
+    }
+  }
   // ---- the gate: walk to each planned stump and set the site ----------
   while (b.plan.length) {
     const s = b.plan[0], o = objAt(s.tx, s.ty);
@@ -466,17 +590,7 @@ function updateMerchant(b, dt) {
       b.workT += dt;
       if (b.workT >= MERCH_SWING_T) {
         b.workT = 0;
-        t.hp--; t.flash = 0.1; t.shake = 0.22;
-        if (nearPlayer(px, py)) SFX.chop();
-        burst(px, py - 10, '#eef4fb', 3, 35, 0.4, true);
-        if (t.hp <= 0) {
-          objects[idx(t.tx, t.ty)] = { type: 'stump', tx: t.tx, ty: t.ty, flash: 0, shake: 0 };
-          burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
-          burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : '#6b5a48', 5, 45, 0.5, true);
-          if (nearPlayer(px, py)) SFX.treeFall();
-          if (t.type === 'deadTree') flushBirds(landmarkAt(px, py), { x: px, y: py });
-          b.tgt = null;
-        }
+        if (merchFell(b, t)) objects[idx(t.tx, t.ty)] = { type: 'stump', tx: t.tx, ty: t.ty, flash: 0, shake: 0 }; // the rim leaves build sites
       }
     }
     return finish();
@@ -514,6 +628,106 @@ function updateMerchant(b, dt) {
     b.x = Math.max(8, Math.min(WORLD * TILE - 8, b.x));
     b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
   }
+}
+
+// ------------------------------------------------------------ soldiers
+// The WAVES. Every STRUCTS.barracks.waveT seconds each merchant's barracks
+// (the `merchant` banner above) rolls out a column of soldiers - the worker's
+// chassis under its side's pennant (drawRobot) - that marches the ROAD
+// (placeRoad, world.js) to the rival bird and strikes it. A soldier is
+// allowed to FIGHT and nothing else: no flag reads it (owner -1), no tree
+// tempts it, and it swings the worker's own axe (robotStrike) at any rival
+// unit inside SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE (the
+// gate's turrets and walls, their barracks), and then the bird itself,
+// SOLDIER_EAGLE_DMG a swing through hurtEagle - which is why two waves
+// meeting on the road grind each other down until somebody breaks the tie.
+// It carries a SOLDIER_BOUNTY paid to whoever scraps it (robotDies), and it
+// takes every hit, state and gust like any other body. Its route is the
+// road's waypoints from its own mouth to the rival's (roadWaypoints), then
+// the rival's lane to the roost: a waypoint it cannot reach is skipped, not
+// waited on, so a wave never stands still on a blocked tile.
+const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
+const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
+const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
+const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
+const SOLDIER_BOUNTY = 4;      // gold (and so xp) a scrapped soldier pays its killer
+const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
+
+function makeSoldier(o) {
+  const b = makeRobot(o); // the bay's roll-out geometry, the barracks' botHp
+  b.kind = 'soldier';
+  b.owner = -1; // nobody's: no flag, no cargo, no payout but the bounty
+  // the march: own mouth first (out of the roost's lane), the road, the
+  // rival mouth; the rival roost itself is read live (it may have flown)
+  const own = state.drop && state.drop.eagles[b.team], rival = state.drop && state.drop.eagles[1 - b.team];
+  b.way = [];
+  if (own && own.mouth) b.way.push({ x: own.mouth.x, y: own.mouth.y });
+  for (const w of roadWaypoints(b.team)) b.way.push(w);
+  if (rival && rival.mouth) b.way.push({ x: rival.mouth.x, y: rival.mouth.y });
+  b.wayI = 0;
+  return b;
+}
+
+function updateSoldier(b, dt) {
+  let moving = false;
+  const walkToward = (px, py, reach) => {
+    const n = navStep(b, px, py, 3, SOLDIER_SPD, dt, reach);
+    if (!n.ok) return -1;
+    moving = true;
+    return n.d;
+  };
+  b.atkAim = null;
+  const swing = (pt, hit) => { b.atkAim = pt; if (b.atkCd <= 0) { b.atkCd = ROBOT_ATK_CD; hit(); } };
+  const rival = state.drop && state.drop.eagles[1 - b.team];
+  const roost = rival && rival.state === 'down' ? rival : null;
+  let busy = false;
+  // 1. a rival unit in reach: close and swing (players through seenAt, so a
+  //    buried hunter lets a column walk past)
+  const foe = robotFoeUnit(b, SOLDIER_AGGRO);
+  if (foe) {
+    const pt = foePoint(foe, b.x, b.y - 1);
+    if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) busy = walkToward(pt.x, pt.y, 0) >= 0;
+    else { swing(pt, () => robotStrike(b, foe, pt)); busy = true; }
+  }
+  // 2. the rival bird, once the road has brought it close: a swing on the
+  //    nearest roost tile (hurtEagle) - ahead of any building, since the
+  //    gate's whole ring stands within a step of the roost
+  if (!busy && roost && Math.hypot(roost.x - b.x, roost.y - b.y) < 6 * TILE) {
+    const t = aiEagleTile(roost, b);
+    if (t) {
+      const pt = { x: t.tx * TILE + 8, y: t.ty * TILE + 8 };
+      if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH + 6) busy = walkToward(pt.x, pt.y, 1) >= 0;
+      else {
+        swing(pt, () => { if (nearPlayer(b.x, b.y)) SFX.swing(); hurtEagle(roost, SOLDIER_EAGLE_DMG, null, pt.x, pt.y); });
+        busy = true;
+      }
+    }
+  }
+  // 3. a rival building in its way: the gate's turrets, a wall across the
+  //    gap, their barracks
+  if (!busy) {
+    const st = enemyStructNear(b.team, b.x, b.y - 1, SOLDIER_SIEGE);
+    if (st) {
+      const pt = foePoint(st, b.x, b.y - 1);
+      if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) busy = walkToward(pt.x, pt.y, 1) >= 0;
+      else { swing(pt, () => robotStrike(b, st, pt)); busy = true; }
+    }
+  }
+  // 4. the march: the next waypoint, then the roost through its lane
+  if (!busy) {
+    if (b.wayI < b.way.length) {
+      const w = b.way[b.wayI];
+      const d = walkToward(w.x, w.y, 2);
+      if (d < 0 || d < SOLDIER_WP_R) b.wayI++; // reached, or unreachable: the next one
+    } else if (roost) {
+      if (walkToward(roost.x, roost.y, 3) < 0) navClear(b); // pinned in the lane: try afresh next frame
+    }
+  }
+  b.animT += dt * (moving ? 8 : 0);
+  b.moving = moving;
+  b.x = Math.max(8, Math.min(WORLD * TILE - 8, b.x));
+  b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
+  if (b.hp <= 0 && !b.dead) robotDies(b, null);
 }
 
 // ------------------------------------------------------------ worker flags
@@ -727,7 +941,7 @@ function robotStrike(b, e, pt) {
   const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
   if (nearPlayer(b.x, b.y)) SFX.swing();
   if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src);
-  else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: 'worker' });
+  else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: b.kind === 'soldier' ? 'soldier' : 'worker' });
 }
 
 // ---- who can be ordered, and what the held press is aiming at -----------
