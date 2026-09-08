@@ -644,16 +644,15 @@ function emitBit(p, b, id, m, amb, seq) {
 // takes it through the sheet with no press - once every FISH_AUTO_CD, so a
 // walk along a shoal is a stride per fish, not a vacuum. It never touches
 // the tool: no cycle is spent, a draw runs on under it, and the press that
-// used to spear now flies like any other. A full bag simply leaves the fish
-// under the ice, silently - there is no motion to refuse. Two players can
-// reach one fish in a step, so the catch is contested rather than first-come.
+// used to spear now flies like any other. Nothing can refuse the catch: fish
+// are a POUCH kind and take no bag cell (the `inventory` banner, js/player.js).
+// Two players can reach one fish in a step, so it is contested, not first-come.
 const FISH_AUTO_CD = 1.2;
 function autoFish(p, dt) {
   p.fishCd = Math.max(0, p.fishCd - dt);
   if (p.fishCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 || inAir(p)) return;
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
   if (!inWorld(ftx, fty) || ground[idx(ftx, fty)] !== 1) return;
-  if (bagRoom(p, 'fish') <= 0) return;
   let bi = -1, bd = FISH_CATCH_R;
   for (let i = 0; i < fish.length; i++) {
     if (!fish[i].born) continue; // still swimming in from under the shore

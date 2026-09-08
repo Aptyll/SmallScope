@@ -105,7 +105,13 @@ const state = {
   dayPop: null,  // the dawn headline, top centre: { day, t } - set by each dawn and the landing (js/sim.js), drawn by renderUI
   paused: false,
   mapOpen: false,
-  bagOpen: false,      // the backpack grid (B, or the pack button): HUD, it does NOT stop the sim
+  // The backpack grid (B, or the pack button): HUD, it does NOT stop the sim.
+  // It starts OPEN - the grid is where a find is read and a build is laid
+  // out, and a pack that has to be asked for hides the one surface a match
+  // spends its whole time in. B still shuts it. A PHONE starts it shut
+  // instead, because the touch column owns that corner: mobileRefresh
+  // (js/mobile.js) is the one place that knows which we are.
+  bagOpen: true,
   charOpen: false,     // the character panel (G): HUD, it does NOT stop the sim either
   // the MERCHANT whose counter is open (js/shop.js), or null. HUD like the two
   // above - the sim runs on underneath - and it holds the merchant itself
@@ -307,6 +313,25 @@ function spawnDrop(x, y, type, n, it) {
 // wallets are per player: every cost check and payment names whose it is
 function canAfford(cost, p) { const w = (p || player).inv; for (const k in cost) if ((w[k] || 0) < cost[k]) return false; return true; }
 function pay(cost, p) { const w = (p || player).inv; for (const k in cost) w[k] -= cost[k]; }
+// A COUNT ON THE HUD, cut to four characters. Gold and the two meals have no
+// ceiling any more - a purse and a pouch both climb all match - so past a
+// thousand the number carries its MAGNITUDE instead of its digits: 999, then
+// 1.2K, 12K, 340K, 1.2M. What a HUD number is being read for is "about how
+// much", and a fifth digit only pushes its neighbour along the strip; the
+// exact figure still lives in the tooltip, the one surface whose job is
+// comparing numbers (CLAUDE.md's instrument carve-out).
+const NUM_SUFFIX = ['', 'K', 'M', 'B', 'T'];
+function shortNum(n) {
+  n = Math.floor(n);
+  if (n < 1000) return String(n);
+  let i = 0;
+  while (n >= 1000 && i < NUM_SUFFIX.length - 1) { n /= 1000; i++; }
+  // the decimal is only worth a character while it says something: 1.2K, but
+  // 12K - and it is TRUNCATED, so a number never rounds up past a threshold
+  // it has not reached
+  const t = n < 10 ? (Math.floor(n * 10) / 10).toFixed(1).replace('.0', '') : String(Math.floor(n));
+  return t + NUM_SUFFIX[i];
+}
 function costText(cost) {
   const parts = [];
   for (const k in cost) if (cost[k] > 0) parts.push(cost[k] + ' ' + k.toUpperCase());

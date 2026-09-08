@@ -27,8 +27,8 @@ dodge charges, slide state, swing state, held tool, i-frames, footprint cadence 
 wears the profile's display name, set in the constructor and refreshed by `applyProfileName()`
 when it is edited — see [architecture.md](architecture.md#profilejs)), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
-(the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet and
-`bag` (see [the backpack](gameplay.md#inventory-and-the-backpack)),
+(the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
+and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
 `level`/`xp` (see [Hero levels](#hero-levels)), `kills`, an `input` struct and an `ai` brain.
 `reset(first)` places it at `spawn` and clears every transient; it is the single definition of
 "a fresh player". Boot calls it with `first` true, and `respawnPlayer` — the team's bird setting a
@@ -336,7 +336,7 @@ swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes
 `seenAt`, like every other watcher — and after `PREEN_DELAY` unhit it preens `PREEN_RATE`
 hp/s back.
 
-`die(p, src, cause)` empties the wallet **and the bag** the same way regardless of what happens
+`die(p, src, cause)` empties the wallet, the pouch **and the bag** the same way regardless of what happens
 next: the killer pockets the gold via `awardGold`, an uncredited death's gold goes down with the
 body (gold is never a physical drop), and every carried
 stack always spills, one drop each (the standings rank lifetime `xp`, so they still show what the
@@ -383,7 +383,7 @@ shot in the seconds between its own landing and the bird's) has nowhere to set a
 the timer holds at zero until it roosts; a bird that has fled mid-timer is left to
 `eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `p.cards` (picked
 roguelike cards), gear, skill ranks, level and xp are never touched by `reset()`, so a build
-survives every respawn within a match; the wallet, the bag and the weapon do not.
+survives every respawn within a match; the wallet, the pouch, the bag and the weapon do not.
 
 ### Kills and the event feed
 
@@ -416,11 +416,11 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 resolution, so a loser keeps its gold.
 
 Currently contested: work swings (`swingHit`, keyed by tile), build orders (`placeStruct`, keyed by
-tile), fish catches (`autoFish`, keyed by fish index — a full bag refuses the catch before the
-contest is even entered), drop pickups (keyed by drop index — every player standing on a drop
+tile), fish catches (`autoFish`, keyed by fish index — nothing refuses one, since fish go in the
+pouch), drop pickups (keyed by drop index — every player standing on a drop
 claims it *if they have room for it*, and the magnet pulls it toward the nearest such player,
-so a full bag hands the pickup on rather than sitting on it — a dropped card is a neutral pickup
-the same way, first-come whichever team gets there).
+so a full bag hands the pickup on rather than sitting on it, and only food is never refused — a
+dropped card is a neutral pickup the same way, first-come whichever team gets there).
 
 ## Bots
 

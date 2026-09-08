@@ -96,9 +96,11 @@ sells them for, so what a bag of fish is worth is a question of *when*.
 [Economy](gameplay.md#economy-one-currency), [the counter](gameplay.md#the-merchants-counter),
 [Hero levels](multiplayer.md#hero-levels).
 
-**You carry a 10-cell backpack.** The wallet (`p.inv`) is gold and nothing else; everything you
-*carry* is `p.bag`. Berries and fish are food, never spent; tools and bits are the build being laid
-out. [Inventory and the backpack](gameplay.md#inventory-and-the-backpack).
+**You carry a 10-cell backpack, and it is the build.** The wallet (`p.inv`) is gold and nothing
+else, and the ten cells are for the tools, bits and cards a match hands you — the things worth
+laying out and choosing between. Berries and fish are not in it: food is an uncapped **pouch**
+(`p.food`) pressed on Q and F from the HUD, because a meal is never arranged, only eaten.
+[Inventory and the backpack](gameplay.md#inventory-and-the-backpack).
 
 **Gear is 4 pieces × 3 variants, bought from anywhere.** No trip home for *armour* — the gear
 pop-up is a menu, and a piece levels through four materials. The counter is the opposite bargain

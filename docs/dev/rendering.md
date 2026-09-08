@@ -68,6 +68,9 @@ boot reading the saved one, a resize onto another screen) re-fits the view. What
   (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
   draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
   presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
+- **The pack starts shut**, alone among the fits: the right-hand touch column climbs out of the
+  bottom-right corner the open frame fills, so `mobileRefresh()` writes `state.bagOpen = !MOBILE`
+  whenever the answer changes. See [the backpack](#the-backpack).
 - **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
   finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
   says who moved the pointer last (input.js).
@@ -367,8 +370,8 @@ at one map pixel per tile, a build or a cut ice hole arriving half a second late
 
 `renderUI()` owns three corners and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
-deliberately empty**, and the berry/fish/gold counts live inside the open backpack rather than on
-any always-on bar — which is why nothing slides in from the left during the landing intro. The
+deliberately empty** — every number you own (berries, fish, gold) is on the **hud strip's right
+end**, which is why nothing slides in from the left during the landing intro. The
 pack button sits on the view's last pixel — no margin, the 1 px rim is the edge — so a resize
 keeps it flush on every size.
 
@@ -378,8 +381,14 @@ keeps it flush on every size.
 | top right | the minimap and its day/night ring, alive count, clock, and the market's plates under them | `renderMinimap`, `renderNotices` |
 | bottom left | the hover tooltip, with the event feed stacked above it | `drawTooltip`, `renderEventLog` |
 | bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom; hovering the weapon well raises its bit column out of it | `drawHudStrip`, `drawBitColumn` |
-| bottom right | the pack button alone when shut; the backpack frame (ten-cell grid, gold strip) rising off it when open | `drawBag` |
+| bottom centre, right end | the two meal buttons (berry over fish) with the **purse** tab standing on the rim above them — the three numbers you own, always on | `drawFoodCell`, `drawPurse` |
+| bottom right | the backpack: the ten-cell grid, **open by default**, on the pack button it rises off | `drawBag` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
+
+Both bottom-right widgets slide **their own size** away for the landing intro — the strip
+`HUD_SLIDE` (`AB_H` + `PURSE_H`), the pack `BAG_W` when open and `BAG_BTN` when shut — because a
+fixed shove that cleared the old shut button would leave most of an open frame parked over the
+cinematic.
 
 ### Market notices: the plates under the minimap
 
@@ -609,13 +618,12 @@ same question asked of different clocks, so only the speed of the hand tells a 0
 20 s fury.
 
 The **meal clock** turns it too (`drawFoodClock`, and with it the last top-down wipe in the game
-left): both buttons, the bag's food cells and the pack's tally row, all off the one shared
-`p.foodCd`, so the two buttons turn **together** — which is the thing that says it is one clock and
-not two. It scales down further than it looks like it should: a meal button is 14px of inside and
-reads fine, but the tally row's icons are **8px** — about sixty pixels for a wedge — and there the
-hand is four pixels that land ACROSS the berry and read as a scratch on the fruit rather than a
-clock over it. So `drawFoodClock` passes `CD_EDGE` only at `w >= 12`: below that the cell turns
-the **bare veil**, the same wedge sweeping the same way, minus the stroke that would own the icon.
+left): both meal buttons off the one shared `p.foodCd`, so the two turn **together** — which is the
+thing that says it is one clock and not two. It scales further down than it looks like it should,
+which is why the gate stayed after the 8px surfaces it was written for went away: `drawFoodClock`
+passes `CD_EDGE` only at `w >= 12`, and below that a cell turns the **bare veil** — the same wedge
+sweeping the same way, minus a stroke that at that size lands ACROSS the berry and reads as a
+scratch on the fruit rather than as a clock over it.
 
 Two things it does not do the obvious way. It is **rasterised a pixel at a time**, for the reason
 `mmRing` rasterises every curve of the minimap ([UI panels are baked once](#ui-panels-are-baked-once)):
@@ -635,21 +643,32 @@ that never dims. The slate drags an icon's lit pixels down and lifts its dark on
 so the waiting wedge is a different **material** rather than merely a darker one — which is what
 League's grey veil is actually doing. `CD_EDGE` draws the hand itself, centre to rim, in the 1px
 bright line the old wipes carried at the front of their cover; pass `null` instead and the cell
-turns the veil alone (the tally row, above). The pips and the key digit are
+turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
-A **meal button** (`drawFoodCell`) is the same grammar pointed at food: the item icon sits high,
-the count bottom-right, the key letter (Q/F) bottom-left — the keybind-indicator carve-out — and
-the shared food clock (`drawFoodClock`, the very function the bag's cells wear) sweeps both
-buttons together and lifts the one being chewed white. A meal you have none of keeps its seat
-but dims to 0.35 with no count, so the column never rearranges; the click sets the same
+A **meal button** (`drawFoodCell`) is the same grammar pointed at food, and it is now the *only*
+place a meal is read or pressed — food is a [pouch](gameplay.md#inventory-and-the-backpack) and
+never a bag cell. `FOOD_W`×`FOOD_CELL` (40×16), read left to right: the key letter (Q/F — the
+keybind-indicator carve-out, wearing the pad's own dpad glyph while one is in hand), the 8px item
+icon pinned at `FOOD_ICON_X` so a count that grows never shifts it, and the count right-aligned on
+the button's own edge — `shortNum`, because the pouch has no ceiling. The shared food clock
+(`drawFoodClock`) sweeps both buttons together and lifts the one being chewed white. A meal you
+have none of keeps its seat but dims to 0.35, so the column never rearranges; the click sets the same
 `eatBerry`/`eatFish` edge-trigger the key does, so `startEat` speaks every refusal and the
 button can never disagree with Q or F. And it *shows* the refusal: whatever the reason (none in
 the bag, the clock still up, full health, a busy body), the button that was asked takes the
 well's red band and the pack's 1px shake for `foodFlash` seconds — `foodDenied(type)`, the third
 of `bagDenied()`/`toolDenied()`, fired only from `startEat` and aged in `updateFx` beside them —
-so a Q with no berry reads as denied rather than dead. Hover raises the bag cell's own food
-descriptor (`tipStack`).
+so a Q with no berry reads as denied rather than dead. Hover raises the food descriptor
+(`tipStack`), which is where the **exact** count lives — the button itself is rounded.
+
+Flush on the strip's top rim over that column sits the **purse** (`drawPurse` /
+`pursePlateRect`, `PURSE_H` 11): the coin and your gold, `shortNum`-cut and inked `#f5c542`, on
+screen for the whole match. It wears the strip's own plate and rim so it reads as a *tab* of the
+widget rather than a bar parked over the world — which is what lets it slide in with the HUD and
+scale with it — and its coin lines up over the two item icons below, so purse, berries and fish
+read as one right-aligned tally. It is a readout, not a button: `stripHit` answers `frame` over
+it, so it swallows its own clicks without doing anything with them.
 
 The whole widget — plate, wells, buy plates and the risen bit column — draws at the **HUD SIZE**
 the ESC panel's GAME slider holds (`settings.hudScale`, 0.75×–1.5×, default 0.8×). All geometry stays in 1×
@@ -697,26 +716,28 @@ budget reaches, and the budget bar is where you go to see exactly where it stops
 
 ### The backpack
 
+**It starts open** (`state.bagOpen`, js/core.js, and put back by `respawnPlayer` after a
+death shut it): the grid is what a match is spent looking at, and a pack that has to be asked for
+hides the build. B or the button shuts it. **A phone starts it shut** — the
+[touch column](#phones) runs up the very corner the open frame fills, so there the grid is
+something you open, read and shut again. `mobileRefresh()` (js/mobile.js) is the one place that
+knows which we are, and it only writes the default when the answer *changes*, so a resize never
+shuts a pack the player opened.
+
 Shut, the pack is **one button flush in the corner** — a 26 px plate (`BAG_BTN`, `bagBtnRect()`)
 wearing the 20 px `BAG_ICON` rucksack (a proper leather pack at the strip icons' detail level:
 rolled flap, gold buckle, stitched hem, side pockets — baked once to `bagIconCv`) and nothing
-else. No frame, no strip, no numbers: the corner is world until the pack is opened. The button
-carries every state the old frame carried — hover and open light its rim, amber means no cell is
+else. No frame, no numbers: the corner is world while the pack is shut. The button
+carries every state the frame carries — hover and open light its rim, amber means no cell is
 free, and it reddens and shakes for `bagFlash` seconds when something could not be carried
 (`bagDenied()`, aged in `updateFx`).
 
-Open (B, or clicking the button), the **frame rises off the button's top edge**
+Open, the **frame rises off the button's top edge**
 (`bagFrameRect()`, pinned bottom-right over the button so the toggle never moves under the
-pointer that just used it), and top to bottom it is:
-
-1. the **inventory grid** (`BAG_CAP` 10 — two rows of five) — a simple inventory, nothing else;
-2. a single 1 px rule, the only line inside the widget;
-3. the **gold row** (`bagStripRect()`), full inner width, hard against the bottom rim — berries
-   and fish from the left, each an icon and a count wearing the shared food clock's bare veil
-   (8px: no room for a hand), then the
-   gold hard against the right edge with its coin ahead of it, inked `#f5c542`. The strip lives
-   **inside the open pack**: your purse is read by opening the bag, not off a bar that sits on
-   screen all match.
+pointer that just used it), and it is **nothing but the inventory grid** (`BAG_CAP` 10 — two rows
+of five): the tools, bits and unopened cards a build is made of. There is no numbers row in it any
+more — the two meals are a pouch on [the hud strip's meal buttons](#the-hud-strip) and the gold is
+the purse tab over them, both on screen whether the pack is open or shut.
 
 Gear is not in this widget at all any more — the four pieces live on
 [the character panel](#the-character-panel-g).
@@ -729,22 +750,19 @@ A grid cell holding a tool or a bit wears that item's **tier plate** rather than
 so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
 as pips along the bottom, in the corner a stack number would have used.
 
-- **One background, one border, one internal line.** Every part of the frame is the same opaque
-  `BAG_BG`; the border is a single 1 px rim; the one line that stays is the rule over the gold
-  row, because money is a different *kind* of thing from the slots above it.
+- **One background, one border, no internal line.** Every part of the frame is the same opaque
+  `BAG_BG` and the border is a single 1 px rim; the rule that used to mark off the numbers row
+  went with the row.
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
   cell recesses to `BAG_WELL` *below* the frame's ground, an empty one sits *above* it at
   `#171f45`, and the ground itself is between — occupied / free / frame.
-- **The eat keys are not printed on the strip.** The pack's gold row is counts only; the key
-  letters live on [the hud strip's meal buttons](#the-hud-strip), the surface whose whole job is
-  the press.
 - **An empty cell is the *lighter* one**: it has no icon to show off, and free space is what the
   grid is being read for, while a full cell goes dark behind its item. A stack of one prints no
   number — an empty corner says it.
-- **A click on a cell uses what is in it** — a berry by eating it, a card by drawing from it, and
-  a bit or a tool by [sending it to the weapon](gameplay.md#the-bit-column) — resolved on the
+- **A click on a cell uses what is in it** — a card by drawing from it, and a bit or a tool by
+  [sending it to the weapon](gameplay.md#the-bit-column) — resolved on the
   release so that a press which travels is still a drag.
-- **The open frame swallows every click over itself.** `bagHit` reports `btn` (the button), `ab`,
+- **The open frame swallows every click over itself.** `bagHit` reports `btn` (the button),
   `cell` or `frame` (anywhere else inside, inert but eaten); shut, only the button answers.
 - **The grid does not stop the sim.** It is HUD, not an overlay — the same deal the
   [M map](gameplay.md#the-m-map-does-not-pause) takes, only smaller.
@@ -1231,7 +1249,7 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
   so hover and click can never disagree), a live wheel segment, or a control inside the backpack
   widget (`gearHit()` / `bagHit()`), a weapon or ability well (`stripHit()`) or a cell of a raised bit column
-  (`bitColHit()` — the gold strip of the bag stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
+  (`bitColHit()` — the strip's purse tab is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over a stump or finished structure
   (right-clickable; `dim` beyond the 60 px reach); **reticle** — everywhere else in play.

@@ -660,7 +660,7 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   **Fish are the same idea on ice** (`autoFish(p, dt)`, js/tools.js, called right after it):
   standing on an ice tile with a fish inside `FISH_CATCH_R` catches it with no press, once
   every `FISH_AUTO_CD` (1.2 s, `p.fishCd`) so a walk along a shoal is a stride per fish, and
-  a full bag just leaves the fish under the ice, silently. It spends no tool cycle and runs
+  and nothing can refuse the catch, because fish go in the pouch. It spends no tool cycle and runs
   under a draw. **The press no longer spears**: `fireTool` fires whatever is loaded, fish or no
   fish. Nothing in this is a key: the swing itself, the catch pose and the rim are the whole
   signal, so `drawWorkHint` shows no prompt over an `auto` target and the fish brackets carry
@@ -1329,20 +1329,21 @@ chest constants in js/world.js). The chest's tile opens with it.
 Physical drops still exist for everything **carried**: `spawnDrop(x, y, type, n)` takes the
 value of the drop (`d.n`, default 1) and the pickup adds what fits through `bagAdd`, floating
 that number in `RES_COLORS[type]`. **Whatever was taken comes off `d.n`, and the drop is only
-removed when `d.n` hits zero** — that is what lets a stack of 5 berries half-fill a bag and
+removed when `d.n` hits zero** — that is what lets a stack of 5 bits half-fill a bag and
 leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key now: sources pay `berry` and
-the card rarities, a caught fish goes straight into the bag (taken by `autoFish`, or handed over by a
+the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
 [fish net](world.md#fish-nets) you are standing on), and death spills — and a wrecked net's
 contents — carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
-the **strip along the bottom of the open backpack frame** (bottom right, B to open) — food from
-the left as icon + count, gold right-aligned; the food totals the whole bag across its stacks. Death empties
-wallet and bag both —
+the **hud strip's right end** (bottom centre) — the two meal buttons and the purse tab standing
+on the rim over them, on screen whether the pack is open or not. Death empties
+wallet, pouch and bag alike —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
 toward the nearest player, and everyone standing on one contests it
 (`canAfford`/`pay` also take the player whose wallet is meant) — except that a player with **no
 room** for a drop is neither magnetised by it nor a claimant, so a full bag hands the pickup to
 whoever else is standing there instead of sitting on it, and standing alone on something you
-cannot carry fires the [refusal tell](#inventory-and-the-backpack) rather than eating it.
+cannot carry fires the [refusal tell](#inventory-and-the-backpack) rather than eating it. Food is
+outside all of that: the pouch has no ceiling, so a berry is never left in the snow.
 
 ## The merchant's counter
 
@@ -1448,7 +1449,7 @@ the chance a step is a **lurch** instead — straight to `lo` or `hi` of where i
 | BERRIES | 4 | 1–15 | ±11% | 4% of steps, ×0.66 or ×1.6 |
 
 Fish are the money good and berries the small change — a fish is worth four or five berries at
-rest and the gap widens on a spike, so a full bag of fish is a real decision about *when* to sell
+rest and the gap widens on a spike, so a pouch of fish is a real decision about *when* to sell
 it. Every `MKT_STEP` (5 s) each good takes one step: a pull `MKT_REVERT` of the way back to its
 base, the drift, then the lurch. `price` is a float and the walk runs on it; what is ever **paid**
 is `marketPrice()`, the rounded coin, so the graph can wander between two whole numbers without
@@ -1579,18 +1580,30 @@ row.
 
 ## Inventory and the backpack
 
-Everything a player carries is in **`p.bag`**: a fixed array of `p.bagCap` cells, each one `null`
+A player carries in two places, and which one a kind lives in is **one flag on its `ITEMS` row**.
+
+**The bag** (`p.bag`) is a fixed array of `p.bagCap` cells, each one `null`
 or a `{ type, n }` stack of at most `ITEMS[type].stack`. Everyone starts with **one bag of 10**
 (`BAG_CAP`, two rows of `BAG_COLS` — a simple inventory); a second bag is a bigger `bagCap` and a longer array,
-nothing else. The table:
+nothing else. It holds the **build**: the tools, bits and unopened cards a player lays out,
+compares and chooses between.
 
-| Item | Icon | Stack | Used by |
+**The pouch** (`p.food`) is a pair of uncapped counters beside the wallet, and it holds the two
+**meals** — everything with `pouch: true`. Food takes no cell, cannot be dragged, cannot be
+arranged and cannot be refused: it is pressed on Q and F from
+[the hud strip's meal buttons](rendering.md#the-hud-strip) and nowhere else, so every cell one of
+them used to take was a cell taken off the build. Being uncapped is why every count that shows
+one goes through **`shortNum`** (js/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
+characters at most. The exact figure stays in the tooltip, the surface whose job is comparing
+numbers.
+
+| Item | Icon | Where | Used by |
 | --- | --- | --- | --- |
-| `berry` | `itemBerry` | 3 | Q, or clicking its cell or the strip's meal button — eats it (see [Food](#food-the-meal-is-a-channel)) |
-| `fish` | `itemFish` | 2 | F, or clicking its cell or its meal button — eats it (same) |
-| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | 5 each | clicking its cell — opens the pick-1-of-3 draft (see [Roguelike cards](#roguelike-cards)) instead of eating |
-| `tool:<id>` | `toolArt_<shape>_<tier>` | 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
-| `bit:<id>` | `bitArt_<id>` | 4 each | dragged into a cell of a tool's bit column |
+| `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal button — eats it (see [Food](#food-the-meal-is-a-channel)) |
+| `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
+| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | bag, stack 5 | clicking its cell — opens the pick-1-of-3 draft (see [Roguelike cards](#roguelike-cards)) |
+| `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
+| `bit:<id>` | `bitArt_<id>` | bag, stack 4 | dragged into a cell of a tool's bit column |
 
 An unopened card is a completely ordinary `ITEMS` entry — one per rarity, since a stack has to be
 homogeneous and a white card and a gold card are not interchangeable — which is what makes bag
@@ -1604,9 +1617,10 @@ and moves as a whole object (`bagPut(p, cell)`, and `spawnDrop`'s `it` payload) 
 rebuilt from `s.type`. `bagAdd` cannot make one and must not be asked to — the drop pickup
 branches on `d.it` for exactly this reason. Everything else in the bag is stateless.
 
-**The slot is the unit of capacity**, which is the whole reason this is an array and not a pair of
-counters: two half stacks cost two cells, so a bag genuinely fills and the pickup path can
-genuinely refuse. Six helpers in the `players` banner are the entire API — `bagCount(p, type)`,
+**The slot is the unit of capacity for what the bag holds**, which is the whole reason it is an
+array and not a row of counters: two half stacks cost two cells, so a bag genuinely fills and the
+pickup path can genuinely refuse. Six helpers in the `players` banner are the entire API —
+`bagCount(p, type)`,
 `bagUsed(p)`, `bagRoom(p, type)` (room in partial stacks + a full stack per empty cell),
 `bagAdd(p, type, n)` (tops up partial stacks before opening a cell, returns how many went in),
 `bagTake(p, type, n)` (spends from the **last** stack backwards, so partials empty and free their
@@ -1616,11 +1630,18 @@ and `spillInventory` all go through the six. The one deliberate exception is the
 ([UI banner](../../js/ui.js)), which is moving cells between wells rather than storing items, and
 owns `p.bag[i]` directly for exactly the length of one gesture.
 
-**Refusing is a real outcome**, and every path that cannot store something says so the same way:
+**The four counting helpers are also where the pouch lives** (`isPouch(type)`): for a `pouch` kind
+`bagCount` reads `p.food[type]`, `bagRoom` answers `Infinity`, `bagAdd` always takes it all and
+`bagTake` spends it. That one branch is what keeps every caller generic over where a kind actually
+sits — the drop pickup, the catch, a market trade, the AI's food check and the death spill are
+written once and neither know nor care.
+
+**Refusing is a real outcome** for what the *bag* holds, and every path that cannot store
+something says so the same way:
 `bagDenied()` reddens and shakes the whole backpack frame for 0.6 s with one `SFX.deny()`, and re-firing while
 it is already up does nothing, so standing on a drop you cannot carry is one flash and not sixty a
-second. A bow-fishing press with a full bag denies **and returns** (the tool still cycles) rather
-than falling through and firing at the floor. The **weapon** refuses in the same language:
+second. Food is the one thing that can never fire it: a berry, a catch and a bought fish go into
+the pouch whatever the bag is holding. The **weapon** refuses in the same language:
 `toolDenied()` / `toolFlash` (UI › `hud strip`) bands the weapon well in that red and shakes it
 for the same 0.6 s when a bit has nowhere to go in it, so the container that is full is always
 the one that answers.
@@ -1642,13 +1663,13 @@ this fight* — so the whole thing is **one clock and one channel**, in the `foo
 | `ITEMS[type].heal` | what the meal is worth before `foodMul`: berry **20**, fish **50** |
 
 **Nothing is spent up front.** `startEat(p, type)` only arms `p.eatT`/`p.eatType`; the food leaves
-the bag and `p.foodCd` starts when `updateEat` lands the channel — exactly the way an ability's
+the pouch and `p.foodCd` starts when `updateEat` lands the channel — exactly the way an ability's
 cooldown starts when its *cast* lands, not when the key is pressed
 ([Class abilities](#class-abilities-keys-1-4)). So a meal knocked out of your hands costs the time
-and the tempo and **nothing out of the bag**, and can be restarted on the spot.
+and the tempo and **nothing out of the pouch**, and can be restarted on the spot.
 
 `eatBerry(p)` / `eatFish(p)` are still the two edge-triggered intents Q and F set (two keys, two
-meals — the hud strip's meal buttons and the bag cells click the same intents); both are one
+meals — the hud strip's meal buttons click the same intents a key sets); both are one
 line into `startEat`. It refuses — with the `SFX.deny()` an ability well
 speaks — while the clock is up, the body is busy (stunned, falling, rolling, mid-cast, mid-rush,
 airborne), or there is nothing a meal could do (no food, or already at full hp).
@@ -1756,8 +1777,7 @@ vocabulary (`dmgBase`, `dr`, `maxHp`, `walkMul`, `stealth`, `ambushMul`, `iceMax
 genuinely new field, `killHeal` — a flat heal on a confirmed kill, hooked at `die()`'s existing
 kill-credit line the same way `updateEat` applies a meal's.
 
-**The draft**: clicking an unopened card's bag cell (`bagClick`, instead of the eat branch berry/fish
-take) calls `openDraft(rarity)`, which sets `state.draft = { rarity, options }` — three distinct
+**The draft**: clicking an unopened card's bag cell (`bagClick`) calls `openDraft(rarity)`, which sets `state.draft = { rarity, options }` — three distinct
 entries drawn at random from `CARDS[rarity]` (`pick3Distinct`). `renderDraft`/`draftLayout`/
 `draftHit` draw and hit-test three cards centred on screen, but as an in-match overlay like
 the bag or the map — **it does not pause the sim**, same as every other HUD overlay here, so a

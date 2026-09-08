@@ -1452,9 +1452,12 @@ window.DBG = {
   get player() { return player; },
   get inv() { return player.inv; },
   // the backpack: the item table, the slot array, and add/take/count without
-  // walking onto a drop. bagHit is what the pointer tests against.
-  ITEMS, BAG_CAP, bagFrameRect, bagBtnRect, bagCellRect, bagStripRect, bagHit,
+  // walking onto a drop. bagHit is what the pointer tests against; food is a
+  // POUCH and takes no cell, so `food` is where a berry actually sits, and
+  // pursePlateRect is the always-on gold readout on the hud strip.
+  ITEMS, BAG_CAP, bagFrameRect, bagBtnRect, bagCellRect, bagHit, pursePlateRect, foodCellRect, shortNum,
   get bag() { return player.bag; },
+  get food() { return player.food; },
   bagAdd: (type, n, p) => bagAdd(p || player, type, n || 1),
   bagTake: (type, n, p) => bagTake(p || player, type, n || 1),
   bagCount: (type, p) => bagCount(p || player, type),

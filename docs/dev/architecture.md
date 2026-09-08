@@ -197,7 +197,8 @@ All game state lives in top-level singletons shared across the game files — `s
 - **`state`** — the match: tick, day/time, darkness, mode, overlays (`state.draft`, `state.msg`).
 - **`settings`** — the player's dials, persisted **under the profile** (`PROFILE.putSettings`).
 - **`players`** — the ten players. `player` and `inv` are aliases for **the local player only**
-  (player 0) and its gold-only wallet; carried goods are `player.bag`. See
+  (player 0) and its gold-only wallet; carried goods are `player.bag` and the two meals the
+  uncapped `player.food` pouch. See
   [multiplayer.md](multiplayer.md#the-ten-players).
 
 Plus the flat arrays every pass iterates: `animals`, `arrows`, `drops`, `particles`, `floaters`,

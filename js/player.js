@@ -154,20 +154,30 @@ function playerTint(p) {
 // that could run out of room would make a kill refuse its own bounty. What
 // you CARRY lives in slots instead: `p.bag` is a fixed array of `p.bagCap`
 // cells, each one null or a { type, n } stack of at most ITEMS[type].stack.
-// The slot is the unit of capacity, so two half stacks cost two cells the way
-// they do in any RPG bag, and the pickup path can genuinely refuse a berry
-// when there is nowhere to put it - which is the whole reason the system is
-// slots and not a pair of counters.
+// The slot is the unit of capacity for everything the bag holds, so two half
+// stacks cost two cells the way they do in any RPG bag, and the pickup path
+// can genuinely refuse a find when there is nowhere to put it - which is the
+// whole reason the bag is slots and not a row of counters. What that
+// capacity is FOR is the build: tools, bits and unopened cards, the things a
+// player lays out, compares and chooses between.
 //
 // A cell may also be INSTANCED: a tool's cell carries the bits loaded into it
 // (`bits`, `idx` - see js/tools.js), which is why a tool stacks to 1 and is
 // moved with bagPut() rather than rebuilt from a type name. Nothing else in
 // the bag has state of its own.
+//
+// FOOD IS NOT IN THE BAG AT ALL. An item marked `pouch` lives in `p.food`, a
+// pair of uncapped counters beside the wallet, and takes no cell: the two
+// meals are pressed on Q and F from the hud strip's own buttons and are never
+// laid out, compared or dragged, so every cell one of them took was a cell
+// taken off the build. The six helpers below route them there, which is what
+// keeps the pickup, the catch, the sale, the AI's food check and the death
+// spill generic over "a berry" and "a bit" alike.
 // `heal` is what a meal is worth before HEARTHWEAVE - the ONE place the number
 // lives, so the tooltip and the meal that lands can never disagree (js/core.js).
 const ITEMS = {
-  berry: { icon: 'itemBerry', stack: 3, heal: 20 },
-  fish: { icon: 'itemFish', stack: 2, heal: 50 },
+  berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
+  fish: { icon: 'itemFish', stack: Infinity, pouch: true, heal: 50 },
   // unopened roguelike cards - one ITEMS entry per rarity, so bag storage,
   // the drop pickup, the refusal flash and death-spill are all free (see
   // checklists.md "adding a carried item"). Opening one (bagClick) starts
@@ -194,15 +204,22 @@ for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
 // spare tool or bits a fight turns up, with every cell earned by choosing
 // what to keep.
 const BAG_CAP = 10;
+// Is this kind carried in the POUCH (p.food) rather than in a cell? One test,
+// asked by all four counting helpers, so a pouch kind can never be half in
+// one store and half in the other.
+function isPouch(type) { return !!(ITEMS[type] && ITEMS[type].pouch); }
 function bagCount(p, type) {
+  if (isPouch(type)) return p.food[type] || 0;
   let n = 0;
   for (const s of p.bag) if (s && s.type === type) n += s.n;
   return n;
 }
 function bagUsed(p) { let n = 0; for (const s of p.bag) if (s) n++; return n; }
 // how many more of `type` fit: the room left in its partial stacks plus a
-// whole stack for every empty cell
+// whole stack for every empty cell - and Infinity for a pouch kind, which is
+// what makes a berry pickup, a catch and a market buy incapable of refusing
 function bagRoom(p, type) {
+  if (isPouch(type)) return Infinity;
   const max = ITEMS[type] ? ITEMS[type].stack : 0;
   let n = 0;
   for (const s of p.bag) n += !s ? max : s.type === type ? max - s.n : 0;
@@ -212,6 +229,7 @@ function bagRoom(p, type) {
 // returns how many went in; the caller decides what happens to the remainder
 function bagAdd(p, type, n) {
   if (!ITEMS[type]) return 0;
+  if (isPouch(type)) { p.food[type] += n; return n; } // the pouch always takes it
   const max = ITEMS[type].stack;
   let left = n;
   for (const s of p.bag) {
@@ -238,6 +256,11 @@ function bagPut(p, cell) {
 // spends from the LAST stack backwards, so partial stacks empty and free
 // their cell instead of leaving a trail of ones across the bag
 function bagTake(p, type, n) {
+  if (isPouch(type)) {
+    const took = Math.min(n, p.food[type] || 0);
+    p.food[type] -= took;
+    return took;
+  }
   let left = n;
   for (let i = p.bag.length - 1; i >= 0 && left > 0; i--) {
     const s = p.bag[i];
@@ -409,6 +432,10 @@ class Player {
     this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag
     this.bagCap = BAG_CAP;              // slots; one starting backpack
     this.bag = new Array(this.bagCap).fill(null); // each cell null or { type, n }
+    // the POUCH: the two meals, uncapped and cell-free (the ITEMS `pouch`
+    // flag above). Read and written only through the bag helpers, so every
+    // caller stays generic over where a kind actually lives.
+    this.food = { berry: 0, fish: 0 };
     this.cls = 0;                       // CLASSES index; the select screen sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
@@ -678,6 +705,13 @@ function spillInventory(p, killer) {
     const base = Math.floor(n / parts), rem = n % parts;
     for (let i = 0; i < parts; i++) spawnDrop(p.x, p.y - 4, k, base + (i < rem ? 1 : 0));
   }
+  // the pouch: a hoard of meals is worth as much as a bag of them was, so it
+  // goes down with the body too - one drop per kind, carrying the whole count
+  for (const k in p.food) {
+    const n = p.food[k];
+    p.food[k] = 0;
+    if (n > 0) spawnDrop(p.x, p.y - 4, k, n);
+  }
   // the bag, and then the weapon slot: a build goes down with the body and
   // lies where it fell, loaded, for whoever walks over it. reset() hands
   // the player its class's starting loadout back, so a respawn is armed but
@@ -807,6 +841,7 @@ function respawnPlayer(p) {
   if (p === player) {
     state.over = null;
     state.mode = 'play';
+    state.bagOpen = !MOBILE; // the pack comes back the way a match starts it (endMatch shut it)
     state.spec = -1; // the camera returns to the local player, not whoever it was watching
     camX = Math.max(0, Math.min(WORLD * TILE - WV_W, p.x - WV_W / 2));
     camY = Math.max(0, Math.min(WORLD * TILE - WV_H, p.y - WV_H / 2));
