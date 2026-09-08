@@ -144,9 +144,12 @@ One flag per player, and the target tile decides the job: a tree means cut there
 clear a lane, your own building means guard it, anything another team owns means go break it.
 [Worker flags](gameplay.md#worker-flags), [Robots](gameplay.md#robots).
 
-**Landmarks are named places, not decoration.** Two exist: a **WOLF DEN** (the only hostile
-wildlife in the game) and a **ROOKERY** — both placed well off the road, so the lane is never a
-wolf's. [Landmarks](world.md#landmarks).
+**The camps are the jungle, and the jungle is symmetric.** Seven fixed sites mirrored across the
+road so both teams walk the same distance: four **WOLF DENS** that pay gold, two **ALPHA STONES**
+whose kill wears a buff, and one **DIRE HOLLOW** whose dire wolf pays and bloods the whole team.
+Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
+they leave its ground and heals — and every site sits well off the road, so the lane is never a
+wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutral-until-hit).
 
 **The road is where the match is fought.** The waves are the match's clock: a column that is not
 met on the road reaches the rival bird, and a scrapped soldier pays its killer gold (and so XP)

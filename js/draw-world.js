@@ -1448,13 +1448,14 @@ function structSprite(o) {
 function drawAnimal(a, ex, ey, now) {
   if (a.kind === 'bird') { drawBird(a, ex, ey, now); return; }
   const rabbit = a.kind === 'rabbit';
-  const wolf = a.kind === 'wolf';
+  const wolf = isCampKind(a.kind); // a camp monster: wears the leash bar in threat red
+  const big = a.kind === 'dire';   // the 2x sprite: everything about its frame is wider
   const set = SPRITES[a.kind][a.dir];
   const frame = a.moving ? 1 + (Math.floor(a.animT) % 2) : 0;
   const spr = set[frame];
   const px = Math.round(a.x - spr.width / 2 - ex);
   const py = Math.round(a.y + 4 - spr.height - ey);
-  const sw = rabbit ? 4 : wolf ? 6 : 7;
+  const sw = rabbit ? 4 : big ? 12 : wolf ? 6 : 7;
   ctx.fillStyle = 'rgba(110,130,170,0.35)';
   ctx.fillRect(Math.round(a.x - ex) - sw, Math.round(a.y + 2 - ey), sw * 2, 2);
   drawSpriteFlash(spr, px, py, a.flash);
@@ -1471,7 +1472,7 @@ function drawAnimal(a, ex, ey, now) {
   // deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
   // each is one, spent on the run and on the dash. Over the frame, the stun
   // stars or the noticed mark, never both.
-  const bw = rabbit ? 8 : wolf ? 12 : 16;
+  const bw = rabbit ? 8 : big ? 24 : wolf ? 12 : 16;
   const bx = Math.round(a.x - ex - bw / 2); // the bars' own left column (drawHealthBar's x)
   drawHealthBar(a.x - ex, py - 8, a.hp, a.maxHp, bw);
   if (wolf) drawHealthBar(a.x - ex, py - 5, a.threat, 1, bw, undefined, THREAT_COL);
@@ -1598,19 +1599,29 @@ function drawMerchant(b, ex, ey, now) {
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
 }
 
-// ---- the landmark glyph both maps and the drop chart stamp ----------------
-// a landmark's glyph, centred on x,y: a rim pass so it reads on parchment,
+// ---- the camp glyph both maps and the drop chart stamp -------------------
+// a camp's glyph, centred on x,y: a rim pass so it reads on parchment,
 // snow and forest alike, then the ink
-function drawLandmarkIcon(g, L, x, y, col, rim) {
+function drawCampIcon(g, C, x, y, col, rim) {
   const x0 = Math.round(x) - 3, y0 = Math.round(y) - 3;
   g.fillStyle = rim || '#241a10';
-  for (const [rx, ry, rw, rh] of L.spec.icon) g.fillRect(x0 + rx - 1, y0 + ry - 1, rw + 2, rh + 2);
-  g.fillStyle = col || L.spec.mark;
-  for (const [rx, ry, rw, rh] of L.spec.icon) g.fillRect(x0 + rx, y0 + ry, rw, rh);
+  for (const [rx, ry, rw, rh] of C.spec.icon) g.fillRect(x0 + rx - 1, y0 + ry - 1, rw + 2, rh + 2);
+  g.fillStyle = col || C.spec.mark;
+  for (const [rx, ry, rw, rh] of C.spec.icon) g.fillRect(x0 + rx, y0 + ry, rw, rh);
+}
+// A cleared camp's respawn clock, worn by its anchor prop (the den's mouth,
+// the alpha stone - the one carrying `site`) under the pointer: the same
+// neutral bar a picked bush wears, filling toward the camp coming back
+// (updateCamps, world.js) - full and holding is a camp that is due and
+// waiting for you to leave. A camp with anything alive in it wears none.
+function drawCampClock(o, cx, topY) {
+  const C = o.site;
+  if (!C || campPop(C) > 0) return;
+  drawHealthBar(cx, topY, C.spec.repop - C.repopT, C.spec.repop, 12);
 }
 
 // ---- what a flag looks like ---------------------------------------------
-// the job glyph, 7x7 about (x, y), stamped with the 1px dark rim a landmark's
+// the job glyph, 7x7 about (x, y), stamped with the 1px dark rim a camp's
 // icon uses so it reads on snow, on parchment and on team cloth alike
 function drawFlagIcon(g, job, x, y, col, rim) {
   const spec = FLAG_JOBS[job];
@@ -1732,6 +1743,23 @@ function centreTextX(sx, txt, scale) { return Math.round(sx) - (pixelTextWidth(t
 // something that is usually absent is what made the plate lopsided before.
 const FRAME_DX = 3;
 
+// ALPHA'S BLOOD, worn: an amber ring of pips around the feet, rimmed dark
+// so it reads on snow, that loses a pip at a time as the buff runs out -
+// the ring IS the timer, and a full ring on a rival is the warning. The
+// longest buff (the dire wolf's) fills every pip; the alpha's starts short.
+const BUFF_RING = 12;                // pips round the ring
+const BUFF_COL = '#ffb04a';          // the epic camp's own map ink
+function drawBuffRing(p, cx, cy, now) {
+  const n = Math.ceil(BUFF_RING * Math.min(1, p.buffT / CAMP_BUFF_EPIC_T));
+  const pulse = 7 + ((now * 3) & 1); // breathes a pixel
+  for (let i = 0; i < n; i++) {
+    const a = -Math.PI / 2 + (i / BUFF_RING) * Math.PI * 2;
+    const x = Math.round(cx + Math.cos(a) * pulse), y = Math.round(cy + Math.sin(a) * pulse * 0.6);
+    ctx.fillStyle = '#0f1632'; ctx.fillRect(x - 1, y - 1, 3, 3);
+    ctx.fillStyle = BUFF_COL; ctx.fillRect(x, y, 1, 1);
+  }
+}
+
 function drawPlayer(p, ex, ey, now) {
   const local = p === player;
   const lying = p.prone;
@@ -1760,6 +1788,7 @@ function drawPlayer(p, ex, ey, now) {
     ctx.fillStyle = 'rgba(110,130,170,0.4)';
     ctx.fillRect(px + 5, py + 15, 6, 2);
   }
+  if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (lying && local) drawBuryRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3);
 
   if (p.fallT > 0) {

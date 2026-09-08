@@ -17,7 +17,7 @@ anything that must stay stable per tile.
   there the corner holds one solid block of woods and the treeline the lane cuts to is at least
   the arc. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
   `borderNoise`, so a seed's interior is exactly what it was before the corners were guaranteed
-  (the seed-42 ground hash and landmarks are unchanged); not under `PRACTICE`. Interior feature counts
+  (the discs move no seed's ground hash; the [camps](#camps)' clearings do); not under `PRACTICE`. Interior feature counts
   (ponds, rock clusters, bushes, wildlife) were doubled to hold density. `ringPts` is `RING_N`
   (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles from the centre at
   the treeline — the old spawn camps. Nobody starts there any more (players land from the eagles,
@@ -40,8 +40,8 @@ anything that must stay stable per tile.
   `barracks`, `part`. `post`/`cairn`/`banner` are [the road](#the-road)'s furniture (`banner` is
   also the practice gate's flag). `deadTree` (a 3 hp snag, chopped like a
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
-  that carries its `site` — the landmark record — so a hover can wear the pack's clock)
-  exist only inside [landmarks](#landmarks); `chest` is a
+  that carries its `site` — the camp record — so a hover can wear the camp's clock)
+  exist only inside [camps](#camps) (`cairn` is a camp's anchor too); `chest` is a
   [treasure chest](#treasure-chests) standing where a border tree stood. `part` is the filler a multi-tile building leaves on
   every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
   building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
@@ -81,13 +81,13 @@ anything that must stay stable per tile.
 
 ## Treasure chests
 
-`placeChests()` (the `world` banner, right above the landmarks) runs at boot after
-`placeLandmarks()`: it scans for **border trees on the forest's inner edge** (a `tree` with at
+`placeChests()` (the `world` banner, right above the camps) runs at boot after
+`placeCamps()`: it scans for **border trees on the forest's inner edge** (a `tree` with at
 least one cardinal neighbour of open snow — reachable with E from open ground) and swaps
 `CHEST_COUNT` (14) of them for `chest` objects, at least `CHEST_SPACING` (22) tiles apart.
-Selection rolls on its own `mulberry32(SEED ^ 0x43484553)` stream — the `lmRng` pattern — so it
+Selection rolls on its own `mulberry32(SEED ^ 0x43484553)` stream (`chRng`) so it
 can never perturb the shared `rng` stream and terrain stays bit-identical for an existing seed
-(chests place after landmarks and touch only `objects`, never `ground`). A chest is solid, gold
+(chests place after the camps and touch only `objects`, never `ground`). A chest is solid, gold
 on both maps (its `mm`/`map` entry), and one free E press (`OPEN`, `needs: null`) springs it —
 `hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` gold on the spot and drops one
 card rolled from `CHEST_ODDS` (all four constants beside `placeChests`). The tile empties with
@@ -135,7 +135,7 @@ woods); and one **`cairn`** on the centreline at the map's centre, solid cover w
 meet. All three are inert to E (no `tool`). Their pixels: `POST_SPR`/`CAIRN_SPR` baked beside
 `CHEST_SPR` in draw-world.js and drawn in `render()`'s object pass; the pole is `drawBanner`.
 
-`placeRoad()` runs at boot **after `genWorld()` and before `placeLandmarks()`**, on pure reads —
+`placeRoad()` runs at boot **after `genWorld()` and before `placeCamps()`**, on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
 exactly the rule `diagEnd` (boot.js) flies the eagles by, so the road ends where each lane's
 mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
@@ -162,92 +162,112 @@ The drifts and the mud are placed on a low-frequency `clump` noise read per pixe
 per-pixel roll, so the melt reads as patches rather than sand. The whole bake costs ~0.2 s at
 boot on top of the ground's own.
 
-## Landmarks
+## Camps
 
-Named points of interest scattered through the open interior, each with its own personality — the
-thing a player is choosing between while the eagle is still in the air. They live in the
-`landmarks` banner of [world.js](../../js/world.js) and in the module-scope `landmarks` array
-(`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
+The jungle: named places at **fixed, mirrored sites** where neutral monsters stand — the things
+a team is choosing between while the eagle is still in the air, and the places it walks out of
+its base for. They live in the `camps` banner of [world.js](../../js/world.js) and in the
+module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
+Three kinds, one reward each:
 
-**One entry in `LANDMARKS` is one kind of place**, and that entry plus its generator is the whole
-feature — no map, chart or HUD code knows any landmark by name:
+- **WOLF DEN** (`resource`, r 5, ×4) — a `den` mouth ringed by six boulders and a pack of 4
+  wolves. Gold per head (`YIELD.wolf`), the biggest steady payout on the map. Back 60 s after
+  the last one dies.
+- **ALPHA STONE** (`buff`, r 4, ×2) — a `cairn` with four boulders and one **alpha**. The kill
+  wears **ALPHA'S BLOOD** for 90 s ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)).
+  Back in 120 s.
+- **DIRE HOLLOW** (`epic`, r 6, ×1) — a `den` in a ring of seven `deadTree` snags and four
+  boulders, and the **dire wolf**: a 2× body with a wall of hp. The kill pays the killer
+  `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, bloods the whole team for 120 s, and
+  writes the feed. Back in 300 s.
+
+**One entry in `CAMPS` is one kind of camp**, and that entry plus its site is the whole feature —
+no map, chart or HUD code knows a camp by name:
 
 | Field | Meaning |
 | --- | --- |
 | `name` | printed by the minimap (glyph only), the M map and the arrival toast |
-| `tag` | the one-line personality under the name on the toast (`THE PACK HUNTS HERE`) |
-| `count` | how many worldgen scatters |
-| `r` | footprint radius in tiles: the keep-clear ring, the canvas `gen` draws in, and the radius `landmarkAt()` calls "here" |
-| `surface` | the ground its site must sit on — `'snow'` or `'ice'` (a shipwreck wants ice) |
+| `tag` | the one-line personality under the name on the toast (`THE PACK PAYS IN GOLD`) |
+| `r` | footprint radius in tiles: the clearing, the props, and the radius `campAt()` calls "here" |
 | `mark` | map ink for its glyph and its toast rule |
-| `icon` | the glyph itself: `[x, y, w, h]` rects inside a 7×7 box, stamped by `drawLandmarkIcon()` with a dark rim pass so it reads on parchment, snow and forest alike |
-| `pop` | how many inhabitants the site keeps alive (`a.home === L` is the backref) |
-| `repop` | seconds between top-ups; `0` never restocks |
-| `gen(L)` | stamps the objects/ground, inside worldgen and **before** `renderGround()` bakes |
-| `spawnOne(L)` | adds one inhabitant, after the world (and the ordinary wildlife) is standing |
-
-`LANDMARK_ORDER` is the placement order — the pickiest site first, since each one reserves
-`r + other.r + 8` tiles around itself.
+| `icon` | the glyph itself: `[x, y, w, h]` rects inside a 7×7 box, stamped by `drawCampIcon()` with a dark rim pass so it reads on parchment, snow and forest alike |
+| `kind` / `pop` | the monster kind (`MONSTER`, wildlife.js) and how many the camp holds (`a.home === C` is the backref) |
+| `repop` | seconds after the **last** one dies before the whole camp is back — a camp is cleared or it is not; nothing trickles |
+| `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** `renderGround()` bakes; the prop at `0, 0` is the anchor and carries `site` |
+| `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
 
 ### Placement
 
-`placeLandmarks()` runs as worldgen's last pass (boot, right after `genWorld()`), then
-`stockLandmarks()` fills every site once `spawnAnimals`/`spawnFish` are done. `landmarkSite()`
-rejects a candidate that is on the wrong surface, inside 20 tiles of the world centre, within 12
-tiles of a `ringPts` point, within `ROAD_KEEP` (18) tiles of [the road](#the-road)'s centreline
-(so a den is never on the lane and the wolves stay well off it), too close to a landmark already
-placed, closer to the treeline than
-`borderDepth(tx, ty) + r + 4` (measured, not worst-case — assuming `BORDER_MAX` bunches every
-landmark into one narrow ring), or whose footprint is less than 72 % free of the right surface.
+**Nothing rolls.** `CAMP_SITES` writes each site once, for the RED half of the map, in
+[the road](#the-road)'s own coordinates — `u` tiles along the diagonal from RED's corner, `s`
+tiles off the centreline (+ toward the bottom-right half) — and `campSites()` mirrors every
+entry across the map's middle (`u → WORLD − 1 − u`, same `s`) for BLUE, so **both teams walk the
+same distance to the same camp**. A site *on* the middle (`u = (WORLD − 1) / 2`) is its own
+mirror and is placed once: the epic is contested at equal reach from either roost. `campTile(u,
+s)` is the conversion back to a tile. The layout as shipped:
 
-**Everything a landmark rolls comes from `lmRng`**, a second `mulberry32` seeded from
-`SEED ^ 0x4c414e44` — the same trick `fxRng` uses. Placement, `gen` and `spawnOne` therefore
-cannot perturb the shared `rng` stream, so terrain is bit-identical for an existing seed. (The
-objects they stamp *do* displace what `spawnAnimals`/`spawnFish` can land on, so a replayed seed
-keeps its terrain but not its exact rabbit positions.)
+| Camp | RED-half site (u, s) | Tiles | Mirror |
+| --- | --- | --- | --- |
+| WOLF DEN | 90, −25 | 72, 123 | 123, 72 |
+| WOLF DEN | 90, +25 | 108, 159 | 159, 108 |
+| ALPHA STONE | 104, +44 | 135, 158 | 158, 135 |
+| DIRE HOLLOW | 115.5, −40 | 87, 87 | — |
 
-### The two that exist
+`placeCamps()` runs as worldgen's last pass (boot, right after `placeRoad()`), then
+`stockCamps()` fills every camp once `spawnAnimals`/`spawnFish` are done (and tops one up to
+strength, never past it, when `DBG` calls it by hand). Every site sits at least `CAMP_EDGE`
+(72) tiles from the world's edge — past the deepest treeline the border noise grows
+(`BORDER_MAX`, 70) — and `placeCamps` throws if one does not, so a site can never be moved into
+the woods by accident. Terrain still comes from the seed: **`clearCamp()` clears everything
+inside `r + 2` of the centre** — a pine, a rock, a bush goes, ice becomes snow — so a camp is the
+same clearing on every seed, and the props then stamp the same on every seed. (A camp on a
+seed's forest bay is therefore a clearing cut into its edge, and a river running under one
+gets a snow bridge; measured over six seeds the worst approach ring was one den with a seventh
+of its `r + 2 .. r + 8` ring in pines.) Because the clearing writes `ground`, **a seed's ground
+hash is not what it was before the camps** — the one deliberate break with the
+[determinism](#determinism-and-noise) rule, and the reason nothing else in the camp draws a
+random number: with the sites fixed there is no stream left to protect.
 
-- **WOLF DEN** (3, r 5) — a `den` mouth ringed by boulders, with a pack of 4 wolves. The only
-  hostile thing in the world; see [Wolves](gameplay.md#wolves-the-first-enemy).
-- **ROOKERY** (3, r 6) — 6–9 `deadTree` snags and a few rocks, with a flock of 9 birds. No danger
-  at all, just the hardest shooting in the game; see [Birds](gameplay.md#birds-the-flock).
+### Runtime
+
+**A camp is neutral until hit.** No sight, no bar filling while you linger: you can walk
+through a den and nothing happens. A hit wakes the whole camp on the hitter, the camp leashes
+when the hitter leaves its ground and heals — the rules are in
+[gameplay.md](gameplay.md#camp-monsters-neutral-until-hit). `campAt(x, y)` returns the camp a
+world position stands in; `updatePlay` feeds it `state.loc` (`{ L, t }`), which drives the
+arrival toast in [rendering.md](rendering.md#camps-on-the-maps).
+
+`updateCamps(dt)` (from `updatePlay`) runs each camp's respawn clock (`C.repopT`), kept honest
+enough to be shown: a camp with anything alive in it holds the clock at `repop` — a half-killed
+pack never trickles back; cleared, it counts down; and due, it **holds at zero** for as long as
+any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward for a while and it
+still grows back, the moment the intruder leaves — then every slot is refilled at once. **The
+anchor prop wears the clock**: `drawCampClock` (draw-world.js) draws the neutral unit bar over
+a hovered den mouth or alpha stone, the picked bush's own read
+([rendering.md](rendering.md#the-tree-fade)), filling toward the camp's return while it is
+empty and nothing at all while anything in it lives; a full bar holding is a camp that is due
+and waiting for you to go.
+
+`DBG` exposes `camps`, `CAMPS`, `CAMP_SITES`, `campSites`, `campTile`, `campAt`, `stockCamps`,
+`campBuff` and `warp(tx, ty, p?)` — warping a player beside a site is how to stage one (never
+onto the anchor's tile: it is solid).
 
 ### Saved for later
 
 The **abandoned mine**, **frozen fort**, **shipwreck** and **shop** are meant to be table entries
-here, not new systems. The format already holds them: `surface: 'ice'` puts a shipwreck out on a
-frozen lake, `gen` may write `ground` as well as objects (it runs before the ground bake, so no
-`repaintGround` is needed) and may stand up structures through `placeStruct` for a fort,
-`pop`/`repop` stock a mine with whatever lives down it, and a site with `pop: 0` and no
-`spawnOne` is simply a place made of scenery. What a new landmark *does* cost is any **new object
-type** it stamps — that is the checklist in
-[checklists.md](checklists.md#common-changes).
-
-### Runtime
-
-`updateLandmarks(dt)` (from `updatePlay`) runs each site's top-up clock (`L.repopT`), kept
-honest enough to be shown: a site at strength holds the clock at `repop`, so a loss starts the
-whole count; short, it counts down; and due, it **holds at zero** for as long as any player is
-within 96 px — clearing a den is a real reward for a while and the site still grows back, the
-moment the intruder leaves — then `spawnOne` and the clock resets. **A hovered den wears the
-clock**: `render()`'s den branch draws the neutral unit bar over the mouth, the picked bush's
-own read ([rendering.md](rendering.md#the-tree-fade)), filling toward the next wolf while the
-pack is short (`landmarkPop(o.site) < pop`) and nothing at all while it is whole; a full bar
-holding is a wolf that is due and waiting for you to go. `landmarkAt(x, y)`
-returns the landmark a world position stands in; `updatePlay` feeds it `state.loc`
-(`{ L, t }`), which drives the arrival toast in
-[rendering.md](rendering.md#landmarks-on-the-maps).
-
-`DBG` exposes `landmarks`, `LANDMARKS`, `landmarkAt`, `stockLandmarks`, `flushBirds` and
-`warp(tx, ty, p?)` — warping a player onto a site is how to stage one.
+here, not new systems, and so is the old **rookery** — the bird kind's code is dormant, not gone
+([checklists.md](checklists.md#known-drift)). The format already holds them: `props` may stand
+up anything `placeObj` takes, `clearCamp` makes the ground under it snow, and a `kind` that is
+not a camp monster is simply whatever `updateAnimal` dispatches it to. What a new camp *does*
+cost is a site in `CAMP_SITES` inside `CAMP_EDGE` and any **new object type** it stamps — that is
+the checklist in [checklists.md](checklists.md#common-changes).
 
 ## The practice arena
 
 The TRAINING FIELD behind the title's PRACTICE TOOL plank (three knocks break its ice —
 [rendering.md](rendering.md#main-menu-title)): `?practice=1` boots `genPracticeWorld()` (the
 `practice arena` banner, js/world.js) **instead of** `genWorld()`, and js/boot.js skips
-landmarks, chests, wildlife spawns and the eagle drop entirely. **The practice world itself is
+camps, chests, wildlife spawns and the eagle drop entirely. **The practice world itself is
 small — `WORLD` is 76 under `PRACTICE`, against the match's 232** (the conditional above the
 `WORLD` const, js/core.js; everything downstream sizes itself off `WORLD`, so the match world is
 untouched). The **clock never runs**: js/boot.js pins `state.time` to early morning and sim.js
@@ -458,8 +478,10 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
 - Two exceptions to the single stream, both for the same reason — nothing outside worldgen may
   perturb the main `rng`'s worldgen prefix. `fxRng` (`SEED ^ 0x9e3779b9`) feeds resize-driven
   snowflake top-ups in `fitFlakes()`, so window size / resolution changes cannot move the world
-  (the boot-time 70 flakes still draw from `rng`, unchanged). `lmRng` (`SEED ^ 0x4c414e44`) feeds
-  everything [landmarks](#landmarks) roll, at boot and at runtime.
+  (the boot-time 70 flakes still draw from `rng`, unchanged). `chRng` (`SEED ^ 0x43484553`) feeds
+  the [treasure chests](#treasure-chests)' placement. The [camps](#camps) roll nothing at all -
+  their sites are written down - and their clearings are the one pass that writes `ground`
+  after `genWorld`, which is why a seed's ground hash moved when they arrived.
 - `SEED` is a `const` in the rng banner and `hash2` closes over it, so nothing may call `hash2`
   before that line runs. Everything that does — `genWorld`, `renderGround`, the panel bakes — is
   further down in boot order.
@@ -497,7 +519,7 @@ stars reflected in the ice under it, and nothing to carry a lamp for
 
 `state.day` no longer drives any difficulty. What damages a player: another player's arrows, a
 plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
-[wolf den](#landmarks).
+[wolf den](#camps).
 
 ## Ice holes and fishing
 

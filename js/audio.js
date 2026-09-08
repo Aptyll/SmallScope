@@ -573,9 +573,9 @@
     // knocking on solid ice: a glassy crack over a dull refusal
     iceKnock() { noise(0.06, 0.3, 3200); tone(1400, 0.08, 'triangle', 0.06, -700); tone(130, 0.12, 'square', 0.07, -25); },
     break_() { if (smp('timber', { vol: 0.6, rate: 1.4, jitter: 0.1, hp: 180, dur: 0.6 })) return; noise(0.2, 0.3, 700); tone(120, 0.15, 'triangle', 0.12, -60); },
-    // an animal going down; a wolf yelps where everything else squeals
+    // an animal going down; a wolf of any size yelps where everything else squeals
     monsterDie(kind) {
-      if (smp(kind === 'wolf' ? 'yelp' : 'beastDie', { vol: 0.7, jitter: 0.08 })) return;
+      if (smp(kind === 'wolf' || kind === 'alpha' || kind === 'dire' ? 'yelp' : 'beastDie', { vol: 0.7, jitter: 0.08 })) return;
       tone(500, 0.2, 'triangle', 0.12, -350); noise(0.15, 0.15, 3000);
     },
     eat() { if (smp('chew', { vol: 0.65, jitter: 0.1 })) return; tone(300, 0.05, 'triangle', 0.1); tone(260, 0.05, 'triangle', 0.1, 0, 0.07); },
@@ -648,7 +648,7 @@
     },
     heal() { if (smp('warm', { vol: 0.6, rate: 1.3, jitter: 0.06 })) return; tone(440, 0.1, 'triangle', 0.08); tone(554, 0.12, 'triangle', 0.08, 0, 0.08); },
     splash() { noise(0.28, 0.28, 750); tone(300, 0.22, 'sine', 0.1, -190); noise(0.14, 0.12, 1500, 0.06); },
-    // the wolf den: the pack answering, or a rising synth howl that sags at the end
+    // a camp waking: the pack answering, or a rising synth howl that sags at the end
     howl() {
       if (smp('wolf', { vol: 0.7, jitter: 0.08 })) return;
       tone(280, 0.55, 'sawtooth', 0.05, 150); tone(430, 0.75, 'triangle', 0.06, -140, 0.1); tone(360, 0.5, 'triangle', 0.035, -110, 0.34);

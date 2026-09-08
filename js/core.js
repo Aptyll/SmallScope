@@ -36,8 +36,10 @@ const YIELD = {
   deadTreeHit: 0, deadTreeFall: 1,      // 3 hp snag  -> 1 gold, the rookery's cover; leaves a stump
   rabbit: { coins: 2, each: 5 },        // 10 gold + a berry, but it bolts
   deer:   { coins: 3, each: 6 },        // 18 gold, the big mobile target
-  wolf:   { coins: 3, each: 8 },        // 24 gold, the biggest kill in the game - and it bites back
-  bird:   { coins: 2, each: 4 },        // 8 gold, and the hardest shot in the game
+  wolf:   { coins: 3, each: 8 },        // 24 gold, a den's four: the resource camp, and it bites back once woken
+  alpha:  { coins: 4, each: 10 },       // 40 gold, the buff camp's one - and the kill wears its blood (campBuff, js/wildlife.js)
+  dire:   { coins: 6, each: 15 },       // 90 gold to the killer, the epic camp's one - and EPIC_TEAM_GOLD to every teammate besides
+  bird:   { coins: 2, each: 4 },        // 8 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
 };
 
 // ------------------------------------------------------------ rng

@@ -731,7 +731,7 @@ function laneStep(e, dt) {
     }
     burst(px, py - 8, o.type === 'tree' ? '#88b090' : '#6b5a48', 5, 45, 0.45, true); // needles off the falling pine
     burst(px, py - 4, '#f4f7ff', 4, 40, 0.4, true);
-    if (o.type === 'deadTree') flushBirds(landmarkAt(px, py), { x: px, y: py });
+    if (o.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
     if (L.sfxT > 0.3 && nearPlayer(px, py, 320)) { L.sfxT = 0; SFX.treeFall(); }
   }
   if (L.next >= L.ev.length) e.lane = null;
@@ -1277,17 +1277,17 @@ SFX.music.play('intro', { in: 1.5 });
 if (PRACTICE) {
   // the training field (the `practice arena` banner, js/world.js): a fixed
   // room instead of a match world - one dummy, open targets, the ice parkour,
-  // and nothing that spawns or restocks: no landmarks, chests, wildlife or
+  // and nothing that spawns or restocks: no camps, chests, wildlife or
   // eagles at all
   genPracticeWorld();
 } else {
   genWorld();
-  placeRoad();       // the diagonal lane, before the landmarks keep off it (world.js)
-  placeLandmarks();  // worldgen's last pass, before the ground is baked
+  placeRoad();       // the diagonal lane (world.js)
+  placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeChests();     // ...then the caches take their trees (objects only, no ground)
   spawnAnimals();
   spawnFish();
-  stockLandmarks();  // wolves and birds go in once the world is standing
+  stockCamps();      // the monsters go in once the world is standing
 }
 initPlayers();
 renderGround();
@@ -1335,8 +1335,9 @@ try {
 window.DBG = {
   SEED, state, animals, objects, ground, mouse, keys, drops, footprints, flakes,
   fish, iceCracks, holes, crackIce, addFish, spawnEmerger, netAt, buildSiteAt,
-  // named places: the live registry, the table behind it, and what is where
-  landmarks, LANDMARKS, landmarkAt, stockLandmarks, flushBirds,
+  // the camps: the live registry, the table behind it, where each site is,
+  // what is where, restock by hand, and blood a player by hand
+  camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff, flushBirds,
   // the practice arena: whether this boot is one, the dummy's live record,
   // the spawn tile, the shared hit paths, the archery targets, the parkour
   // clock and the ESC slab's exit plank
@@ -1353,7 +1354,7 @@ window.DBG = {
   // open the wheel on, and watch the sweep (pkAnim rebinds, so a getter;
   // pkAnimStep lets a driver fast-forward the front)
   pkRoll, pkDieNear, pkWheelPick, PK_DIFFS, pkAnimState: () => pkAnim, pkAnimStep,
-  // drop a player (default the local one) on a tile - how to stage a landmark
+  // drop a player (default the local one) on a tile - how to stage a camp
   warp: (tx, ty, p) => { const q = p || player; q.x = (tx + 0.5) * TILE; q.y = (ty + 0.5) * TILE; q.vx = q.vy = 0; return q; },
   settings, perf, treeRare, cursorInfo,
   // the other two controllers (js/gamepad.js, js/touch.js) and phone mode

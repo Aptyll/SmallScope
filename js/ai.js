@@ -267,13 +267,16 @@ function aiWaveHead(p, e) {
   return best;
 }
 
-// wolves that are already on this bot, or close enough to be about to be
+// the camp monster nearest of those already hunting this bot. A camp is
+// neutral until hit (updateCampMonster, wildlife.js), so one standing by
+// is nothing to a bot - only a quarry's monsters are, and any of them in
+// AI_SIGHT is the fight it is in
 function aiNearestWolf(p) {
-  let best = null, bd = 92;
+  let best = null, bd = AI_SIGHT;
   for (const a of animals) {
-    if (a.dead || a.kind !== 'wolf') continue;
+    if (a.dead || !isCampKind(a.kind) || a.target !== p) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
-    if (d < bd || (a.target === p && d < AI_SIGHT)) { bd = Math.min(bd, d); best = a; }
+    if (d < bd) { bd = d; best = a; }
   }
   return best;
 }
@@ -281,8 +284,11 @@ function aiNearestWolf(p) {
 function aiNearestAnimal(p) {
   let best = null, bd = AI_HUNT;
   for (const a of animals) {
-    // birds fly: no route on the ground catches a flushed flock
+    // birds fly: no route on the ground catches a flushed flock. The two
+    // big camp kinds are never a hunt: a lone bot pulling the dire wolf
+    // dies to it, and the alpha is a fight for a bot with some levels
     if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid) continue;
+    if (a.kind === 'dire' || (a.kind === 'alpha' && p.level < 6)) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }
   }
@@ -504,8 +510,8 @@ function updateAI(p, dt) {
     return;
   }
 
-  // 4. wolves hunt back: a bot that wanders into a den has to fight its way
-  //    out, so it shoots the nearest one and gives ground while it does
+  // 4. a camp it has woken hunts back: a bot with a monster on it fights
+  //    its way out, shooting the nearest one and giving ground while it does
   if (wolf) {
     const d = Math.hypot(wolf.x - p.x, wolf.y - p.y);
     const clear = aiLineClear(p, wolf.x, wolf.y - 4);

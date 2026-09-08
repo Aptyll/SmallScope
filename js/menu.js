@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.19'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.20'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.20', 'THE LANDMARKS ARE CAMPS NOW: SEVEN FIXED SITES MIRRORED ACROSS THE ROAD SO BOTH TEAMS WALK THE SAME DISTANCE - FOUR WOLF DENS THAT PAY GOLD, TWO ALPHA STONES WHOSE KILL WEARS ALPHA\'S BLOOD, AND ONE DIRE HOLLOW WHOSE DIRE WOLF PAYS AND BLOODS THE WHOLE TEAM - AND EVERY CAMP IS NEUTRAL UNTIL YOU HIT IT, THEN LEASHES AND HEALS IF YOU LEAVE ITS GROUND.'],
   ['3.19', 'EVERY KEY CAN BE REBOUND - CLICK A CAP ON THE CONTROLS PAGE AND PRESS THE KEY YOU WANT, THE KEYBOARD IS READ BY WHERE A KEY SITS SO AN AZERTY BOARD WALKS ON Z Q S D, EVERY PROMPT AND WELL WEARS THE KEY YOU CHOSE, AND A MATCH CAN BE LEFT FROM THE ESC MENU.'],
   ['3.18', 'A STRAIGHT ROAD RUNS THE DIAGONAL FROM ROOST TO ROOST, THE WOLVES KEEP OFF IT, AND HALF A MINUTE AFTER LANDING EACH MERCHANT RAISES A BARRACKS BEHIND ITS BIRD THAT MARCHES A WAVE OF SOLDIERS DOWN THE LANE EVERY THIRTY SECONDS - THEY FIGHT WHAT THEY MEET, STRIKE THE RIVAL BIRD, AND PAY GOLD TO WHOEVER SCRAPS THEM.'],
   ['3.17', 'THE README RESTORES GENRE, TAGS AND THE STORE PITCH, AND THE EAGLE PREVIEW SHOWS THE BIRDS FLYING PAST INSTEAD OF STACKED.'],
@@ -2316,7 +2317,7 @@ function renderGear(now, a) {
 // in a table with its numbers written down, tools then bits then modifiers,
 // worn to gilded, every one of them droppable from the first match (LOOT_POOL
 // is built off the tier alone); a hover still raises the full card in the
-// tooltip. The BEASTS page is the meadow's four kinds - each drawn wearing
+// tooltip. The BEASTS page is the meadow's two kinds and the camps' three - each drawn wearing
 // the frame it wears in the snow - and what a level does to their health
 // and to the gold a kill pays, at levels 1, 6 and 12, read off the same
 // constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD,
@@ -2337,9 +2338,11 @@ const WIKI_BEASTS = [
   { kind: 'deer', name: 'DEER', bw: 16,
     line: () => 'BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
   { kind: 'wolf', name: 'WOLF', bw: 12,
-    line: () => 'A PACK OF 4. BITES ' + WOLF_BITE_DMG + ' +' + WOLF_LV_DMG + ' A LEVEL. SEES ' + WOLF_SIGHT + ' PX, ' + Math.round(WOLF_SIGHT * 1.75) + ' AT NIGHT.' },
-  { kind: 'bird', name: 'BIRD', bw: 0,
-    line: () => 'A FLOCK OF 9. UP AT ' + BIRD_FLUSH + ' PX. NO BARS - EVERY HIT IS A KILL.' },
+    line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
+  { kind: 'alpha', name: 'ALPHA', bw: 12,
+    line: () => 'ONE A STONE. BITES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE KILL WEARS X' + CAMP_BUFF_DMG + ' DMG, X' + CAMP_BUFF_SPD + ' WALK ' + CAMP_BUFF_T + ' S.' },
+  { kind: 'dire', name: 'DIRE WOLF', bw: 24,
+    line: () => 'ONE HOLLOW. BITES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (lv - 1); }
@@ -2518,17 +2521,16 @@ function wikiClick() {
 // One beast standing on its snow, wearing exactly the frame drawAnimal hangs
 // over it in the world - health, the second bar, the level plate, the
 // noticed mark - so the page teaches the frame by showing it, not naming it.
-// A wolf shows its threat bar part-filled, since bare track says nothing.
+// A camp monster shows its leash bar part-filled, since bare track says nothing.
 function drawWikiBeast(bs, cx, baseY, level, now) {
   const spr = SPRITES[bs.kind].right[0];
   // the snow it stands on: a low pale mound with a shaded rim
   ctx.fillStyle = '#c9dcee'; ctx.fillRect(cx - 13, baseY - 1, 26, 3);
   ctx.fillStyle = '#eef4fb'; ctx.fillRect(cx - 11, baseY - 2, 22, 3);
   ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bs.bw ? bs.bw >> 1 : 3), baseY, bs.bw || 6, 2);
-  const px = cx - (spr.width >> 1), py = baseY + 2 - spr.height - (bs.kind === 'bird' ? BIRD_ALT >> 1 : 0);
+  const px = cx - (spr.width >> 1), py = baseY + 2 - spr.height;
   ctx.drawImage(spr, px, py);
-  if (!bs.bw) return; // a bird wears nothing
-  const wolf = bs.kind === 'wolf';
+  const wolf = isCampKind(bs.kind); // a camp monster's second bar is its leash
   const bx = Math.round(cx - bs.bw / 2);
   drawHealthBar(cx, py - 8, 1, 1, bs.bw);
   if (wolf) drawHealthBar(cx, py - 5, 0.6, 1, bs.bw, undefined, THREAT_COL);
@@ -2689,7 +2691,7 @@ function renderWiki(now, a) {
       wikiLeader(fx - 17, py - 6, fx - 27, py - 6, 'LEVEL', '#f2cc6a');
       wikiLeader(fx + 4, py - 14, fx + 26, py - 22, 'SEES YOU', '#f4f7ff');
       wikiLeader(fx + 11, py - 7, fx + 34, py - 12, 'HEALTH', BAR_NEUTRAL);
-      wikiLeader(fx + 11, py - 4, fx + 42, py - 2, 'STAMINA - A WOLF\'S THREAT', STAM_COL);
+      wikiLeader(fx + 11, py - 4, fx + 42, py - 2, 'STAMINA - A WOLF\'S LEASH', STAM_COL);
     } else if (bl.kind === 'beast') {
       const bs = bl.beast;
       drawWikiBeast(bs, L.left + 26, y + 40, level, now);

@@ -157,7 +157,11 @@ Wildlife is
 side-view only — rabbits are 12×11 (sit) / 14×9 (hop), deer are 26×22 (stand + two walk frames
 sharing a `deerHead` upper body), wolves are 16×13 (a shared `wolfBody` plus three leg rows per
 frame, the deer's trick), birds are 9×6 (perched) / 9×5 (two wing frames) — and left variants are
-`flipH` of the right-facing grids. The two [landmark](world.md#landmarks) props are
+`flipH` of the right-facing grids. The camps' two [alpha and dire wolf](world.md#camps) are
+**placeholder looks derived from the wolf, not grids**: `wash` washes the wolf's frames toward
+silver (alpha) or a dark red (dire) and `double` blows the dire up to 32�26 nearest-neighbour
+(the tail of js/sprites.js) — each wants its own grid through the concept-art skill one day.
+The two camp props are
 `deadTree` (two 16×24 snags on `DTPAL`, the footprint the pine used to share so they draw in the same
 band) and `den` (one 16×12 mound on `DNPAL`, drawn at `py + 4` like a rock). The berry bush is
 four frames on `BPAL` — `bush`, `bushEmpty`, `bushBud`, `bushRipen` — one silhouette in which only
