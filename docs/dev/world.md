@@ -473,26 +473,26 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   snowdrift. They render as translucent silhouettes
   through the ice — brighter and surfaced inside an open hole — in a pass right after the
   ground blit (using `ex`/`ey`). Cracking ice spooks nearby fish into a fast dart.
-- **Bow-fishing**: `spearFish(p)`, the first thing `fireTool(p)` tries, checks whether that player stands on an ice tile with a
-  fish within `FISH_CATCH_R` (16 px); if so the shot becomes the catch (any charge level):
-  `p.inv.fish++`, splash, no arrow — and the catch is
+- **Fishing is automatic**: `autoFish(p, dt)` (js/tools.js, called from `updatePlayer` every
+  step) checks whether that player stands on an ice tile with a fish within `FISH_CATCH_R`
+  (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), never into
+  a full bag, spending no tool cycle — into `p.bag`, splash, no arrow, and the press on the ice
+  flies like any other ([the swing tools](gameplay.md#the-swing-tools-e)). The catch is
   [contested](multiplayer.md#contested-orders), so two players can't land the same fish. **The catch is a pose**: the contest's
-  callback calls `startCatch(p)` (below `spearFish` in js/tools.js), `CATCH_T` (2 s) of three
+  callback calls `startCatch(p)` (below `autoFish` in js/tools.js), `CATCH_T` (2 s) of three
   down-facing frames whatever the body faced - `CATCH_STOOP` (0.16 s) bent to the hole,
   `CATCH_HAUL` (0.22 s) with the fish coming up, then the trophy hoist over the head
   (`catchFrame(p)` says which; `drawPlayer` draws it, the held tool and gear marks off, the
-  overhead stack lifted 4 px for the hoist). The body holds still for its first `CATCH_WALK` (1 s) -
-  `updatePlayer` swallows WASD, as a stun does - and a step walks out of it after that; it is no
-  channel, because any other intent (a fresh press, a roll, a cast, a swing, a meal) and a hit
-  through `damagePlayer` end it at any moment via `cancelCatch`. A net's first fish is hoisted
+  overhead stack lifted 4 px for the hoist). It is shown only by a body standing still anyway:
+  a step, any other intent (a fresh press, a roll, a cast, a swing, a meal) and a hit
+  through `damagePlayer` end it at once via `cancelCatch` — an automatic catch may never cost
+  the player a frame of control. A net's first fish is hoisted
   the same way from `updateStructures`. The frames:
   [sprites](sprites.md). `DBG.startCatch`/`cancelCatch`/`catchFrame` stage it. Hovering a fish (`hoverFish()`, a 7 px disc) switches the
   cursor to the water-blue **fish** reticle and `drawFishHint()` (overlay pass, after the E
-  prompt) frames it with the same pulsing white brackets stumps get plus a click prompt — a
-  pixel mouse icon (`drawMouseIcon`: only the left button is coloured — gold, pale gold while
-  pressed/charging — so nothing hints at right-click) reading
-  **SPEAR** when `fishInRange()` holds, or a dimmed **GET CLOSE** otherwise, because the
-  mechanic is proximity, not aim. Fish are food: **F** eats one for +50 HP over a 1.5 s channel a
+  prompt) frames it with the same pulsing brackets stumps get — white when `fishInRange()`
+  holds, dimmed blue-grey outside it, and no verb: the mechanic is proximity, not aim, and the
+  brackets' brightness is the whole of that hint. Fish are food: **F** eats one for +50 HP over a 1.5 s channel a
   hit can break (`eatFish`, mirroring the berry's Q/+20; both meals share one 3 s clock - see
   [Food](gameplay.md#food-the-meal-is-a-channel)), counted beside the berries on the backpack strip
   (`SPRITES.itemFish`, 8×8, own `FIPAL`). `SFX.splash()` was added for the water sounds. `DBG`
@@ -521,7 +521,7 @@ clamp keeps `vis` at 1 forever). The **draw alpha ramps off the back half of it*
 under the ice, and by the time anything is drawn the only part still outside is a pixel or two of
 tail at a fraction of 0.4 (worst case measured: **0.24**). An emerger that has not made it in
 `FISH_EMERGE_MAX` (14 s) is dropped, unseen. Everything that selects a fish — `hoverFish`,
-`fishInRange`, `spearFish`, `drawAimLine`'s marker, the net, the `crackIce` spook — tests
+`fishInRange`, `autoFish`, the net, the `crackIce` spook — tests
 `born` first.
 
 **The emerge sites are found once and cached** (`emergeSites`/`buildEmergeSites`, a lazy one-time

@@ -1954,9 +1954,12 @@ function drawHeldTool(p, px, py) {
   // At rest the hands hold the WEAPON on the selected slot, whose art carries
   // its own tier colour - so what somebody is carrying reads off their sprite
   // from across the snow, and an empty slot reads as empty hands. Mid-swing
-  // (axe, pick) the swing tool's own 8x8 icon takes over.
-  const weapon = t.key === 'bow' ? heldTool(p) : null;
-  const icon = t.key === 'bow'
+  // (axe, pick) the swing tool's own 8x8 icon takes over - unless a draw is
+  // running: an auto swing (autoWork) chops under a draw, and the drawn
+  // weapon is what the hands show, since that is the thing about to fire.
+  const weapon = heldTool(p);
+  const drawing = p.charging && !!weapon;
+  const icon = t.key === 'bow' || drawing
     ? (weapon ? SPRITES[ITEMS[weapon.type].icon] : null)
     : SPRITES[t.icon];
   if (!icon) return;
@@ -1965,7 +1968,7 @@ function drawHeldTool(p, px, py) {
 
   // drawn bow tracks the aim; base sprite fires -x (arc on the left), so
   // rotating by a + PI points the arc at the target
-  if (t.key === 'bow' && p.charging) {
+  if (drawing) {
     const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
     ctx.save();
     ctx.translate(Math.round(cxp + Math.cos(a) * 8), Math.round(cyp - 2 + Math.sin(a) * 8));

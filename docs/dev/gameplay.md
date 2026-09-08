@@ -278,12 +278,11 @@ whose budget covers all of it fires all of it at once.
 `fireTool(p)` is the one entry point — the falling edge of `input.fire`, for every player alike:
 
 1. Read the cover first (`ambushReady`), before anything below can break it.
-2. `spearFish(p)` — bow-fishing survived the new weapon: **any** tool, standing on ice with a fish
-   in `FISH_CATCH_R`, spears through the sheet instead of loosing. It takes the press and the
-   cycle.
-3. No tool on the selected slot → `dryFire(p)` and stop.
-4. `toolPlan(cell)` — the one function the whole weapon runs on, below.
-5. No shots in the plan → `dryFire`. Otherwise `emitBit` for each, then `p.nockT = toolRof(...)`,
+2. No tool on the selected slot → `dryFire(p)` and stop. (A fish underfoot no longer takes the
+   press: the catch is automatic — `autoFish`, [the swing tools](#the-swing-tools-e) — and a press
+   on the ice flies like any other.)
+3. `toolPlan(cell)` — the one function the whole weapon runs on, below.
+4. No shots in the plan → `dryFire`. Otherwise `emitBit` for each, then `p.nockT = toolRof(...)`,
    one `SFX.arrow`, and `risePlayer` (the shot is what breaks cover).
 
 #### `toolPlan`: one activation, in one pass
@@ -643,8 +642,28 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
 
 - **Left click = the selected tool slot.** The press only records intent (`clickAction` sets
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
+- **The hands work on their own** (`autoWork(p)`, js/actions.js — `updatePlayer` calls it every
+  step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
+  tree, a berried bush — is swung at the moment it is inside `WORK_REACH`, no key held:
+  `autoTarget(p)` takes the nearest such tile in the ring around the player (tile centre to
+  body, ties by scan order) and `startSwing` runs the same swing E's would. What makes it
+  automatic and not a cancel: it never drops a draw or the held button (`p.autoSwing` lets the
+  draw begin under it, and `drawHeldTool` shows the drawn weapon over the axe while one runs),
+  never stands a crawler up (`p.prone` waits, unlike E), and never touches the aim — you keep
+  shooting, walking or drawing through it, and the tree comes down beside you. It obeys the
+  same busy gates as E (a fall, a roll, a stun, an ability, a meal, the swing cooldown).
+  **Fish are the same idea on ice** (`autoFish(p, dt)`, js/tools.js, called right after it):
+  standing on an ice tile with a fish inside `FISH_CATCH_R` catches it with no press, once
+  every `FISH_AUTO_CD` (1.2 s, `p.fishCd`) so a walk along a shoal is a stride per fish, and
+  a full bag just leaves the fish under the ice, silently. It spends no tool cycle and runs
+  under a draw. **The press no longer spears**: `fireTool` fires whatever is loaded, fish or no
+  fish. Nothing in this is a key: the swing itself, the catch pose and the rim are the whole
+  signal, so `drawWorkHint` shows no prompt over an `auto` target and the fish brackets carry
+  no verb (bright inside catch reach, dim outside).
 - **E = work** (`tryWork(p)`, auto-repeating every swing cooldown while held — `updatePlayer`
-  calls it whenever `p.input.work` is set). It resolves `workTarget(p)`: the tile that player is
+  calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
+  It is what reaches a **rock, bare ice, a rival's building or eagle, a chest, the dummy** —
+  everything not marked `auto` — and it still works a tree if you insist. It resolves `workTarget(p)`: the tile that player is
   aiming at, if it holds a tree or a dead tree (→ axe), rock (→ pick), a berried bush (→ axe), or
   is bare ice with no object (→ pick, cracking toward a fishing hole); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
@@ -709,7 +728,7 @@ peak needs to see the hold run past the full draw.
 There is no ammunition. What sits between one press and the next is **the tool's own cycle**:
 `fireTool` sets `p.nockT = toolCycle(p)` — the held tool's `rof` in game steps, scaled by the
 same `kit.nock` factor QUICKDRAW, QUICK HANDS, FLETCHER'S TOUCH and RELENTLESS shorten
-(`toolRof`); bare hands' `kit.nock` when no tool is up, which is what a fish spear costs — and no
+(`toolRof`); bare hands' `kit.nock` when no tool is up — and no
 draw can begin while that runs. Its end is the **one** gate: the frame the wipe clears, a held
 button starts the draw. `toolCycle` is also the one number every readout divides `nockT` by —
 the well's wipe, the reticle's corner marks and the overhead slate bar — so no meter can show a
@@ -815,9 +834,7 @@ otherwise ends in a short perpendicular range-cap bar. A `lob` gets only the fir
 flight, where it is still on the bearing; a `boomer` or an `orbit` gets **no line at all**, since
 the only honest straight line for those is none — what they do is shown by the shot itself the
 moment it leaves. Colour follows the draw meter: gold charging, pale gold at full (`DRAW_COL` / `DRAW_FULL_COL`,
-draw-world.js). If the
-player stands on ice with a fish inside `FISH_CATCH_R` the line is replaced by four ticks closing
-over that fish, because that press becomes the catch and never flies.
+draw-world.js).
 
 The weapon is also drawn **on the player** by `drawHeldTool()` (called from `drawPlayer()`): at
 rest the hands hold the tool on the *selected slot*, in its own tier colour, so what someone is
@@ -1306,7 +1323,7 @@ value of the drop (`d.n`, default 1) and the pickup adds what fits through `bagA
 that number in `RES_COLORS[type]`. **Whatever was taken comes off `d.n`, and the drop is only
 removed when `d.n` hits zero** — that is what lets a stack of 5 berries half-fill a bag and
 leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key now: sources pay `berry` and
-the card rarities, a caught fish goes straight into the bag (speared, or handed over by a
+the card rarities, a caught fish goes straight into the bag (taken by `autoFish`, or handed over by a
 [fish net](world.md#fish-nets) you are standing on), and death spills — and a wrecked net's
 contents — carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
 the **strip along the bottom of the open backpack frame** (bottom right, B to open) — food from

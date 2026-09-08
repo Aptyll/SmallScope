@@ -1318,24 +1318,6 @@ function drawAimLine(ex, ey, now) {
   if (!player.charging || state.mode !== 'play') return;
   const full = drawPow(player) >= 1;
   const col = full ? DRAW_FULL_COL : DRAW_COL; // the meter's own two golds (draw-world.js)
-  const ftx = Math.floor(player.x / TILE), fty = Math.floor((player.y + 4) / TILE);
-  if (inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1) {
-    let best = null, bd = FISH_CATCH_R;
-    for (const f of fish) {
-      if (!f.born) continue;
-      const d = Math.hypot(f.x - player.x, f.y - player.y);
-      if (d < bd) { bd = d; best = f; }
-    }
-    if (best) {
-      // four ticks closing in over the fish
-      const fx = Math.round(best.x - ex), fy = Math.round(best.y - ey);
-      const g = 4 + Math.round(Math.abs(Math.sin(now * 4)) * 2);
-      drawOutlinedRects([
-        [fx - g - 2, fy, 3, 1], [fx + g, fy, 3, 1], [fx, fy - g - 2, 1, 3], [fx, fy + g, 1, 3],
-      ], col, 0.95);
-      return;
-    }
-  }
   // The LEAD shot of the next press, and the envelope the modifiers under it
   // will fire it through - both straight off toolPlan, the same pass the press
   // itself runs, so the line and the loose can never be measuring two

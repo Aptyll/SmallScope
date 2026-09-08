@@ -48,7 +48,7 @@ aimX, aimY    world-space aim point — cursor for a human, target for a bot
 fire          bow held: rising edge draws, falling edge looses. The rising edge
               also CANCELS a meal in progress (see Food in gameplay.md), so the
               button a player reaches for in a fight is never refused
-work          E held
+work          E held (with it clear, the hands still take a tree, a bush or a fish in reach: autoWork/autoFish)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
 grapple       held (key 3): the hunter's grapple reels only while this is down -
@@ -416,7 +416,7 @@ contest('work:' + idx(tx, ty), p, () => { /* runs only if p wins */ });
 resolution, so a loser keeps its gold.
 
 Currently contested: work swings (`swingHit`, keyed by tile), build orders (`placeStruct`, keyed by
-tile), fish spears (`spearFish`, keyed by fish index — a full bag refuses the catch before the
+tile), fish catches (`autoFish`, keyed by fish index — a full bag refuses the catch before the
 contest is even entered), drop pickups (keyed by drop index — every player standing on a drop
 claims it *if they have room for it*, and the magnet pulls it toward the nearest such player,
 so a full bag hands the pickup on rather than sitting on it — a dropped card is a neutral pickup

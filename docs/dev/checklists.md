@@ -155,10 +155,11 @@ that preserve the described structure.
 
 **Adding an object type** — one `OBJECTS` entry in [js/world.js](../../js/world.js) is most of
 it: `solid` (does it block a walker), `tool` (what E reaches for) and `ready` (whether it is worth
-reaching *right now* — the bush's berries), `needs` (the tool a swing must already be holding,
-null = any), `verb` and `lift` (the E key prompt), and `mm`/`map` (the colour each of the two maps
+reaching *right now* — the bush's berries), `auto` (the hands go to it on their own the moment it
+is in reach — `autoWork`; without it the thing waits for E), `needs` (the tool a swing must already be holding,
+null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (the colour each of the two maps
 paints it — an `[r, g, b]`, or a `(o, i, h)` function when it is not a constant, as the tree's
-canopy and the bush's berries are not). `isSolidTile()`, `workTarget()`, `hitObject()`'s tool
+canopy and the bush's berries are not). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
 gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
 need no edit — none of them names a type any more. An object *instance* carrying a `team` field
 (the roosting eagles' hitbox tiles) is a rival-only E target — `workTarget()` applies that

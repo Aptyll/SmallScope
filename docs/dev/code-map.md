@@ -166,7 +166,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what a click / E / space actually does | `clickAction`, `tryWork`, `workTarget`, `tryDodge`, `hitObject`, `crackIce` (what a click FIRES: `fireTool`, tools.js) | `actions` |
+| what a click / E / space actually does, and the work the hands take with no key (a tree, a berried bush in reach) | `clickAction`, `tryWork`, `workTarget`, `startSwing`, `autoTarget`, `autoWork`, `tryDodge`, `hitObject`, `crackIce` (what a click FIRES: `fireTool`, tools.js; the fish half: `autoFish`, tools.js) | `actions` |
 | one chop into a standing tree - gold, stump, fell payout, loot roll, jackpot - whatever landed it | `chopTree` | `actions` (above `hitObject`; its other caller is `BIT_IMPACT.chop`, tools.js) |
 | the tuning for everything a player does: the three SWING tools, the shot trail, E's reach, the roll, prone | `SWING_TOOLS`/`SWING_*`, `BOW_Y`, `ARROW_*`, `WORK_REACH`, `STRUCT_HIT_DMG`, `ROLL_*`/`TACKLE_*`, `PRONE_*`, `AMBUSH_MUL` | `actions` (its head; the two kit baselines `BOW_CHARGE`/`BOW_NOCK`: `players`, player.js; the weapon's own tuning: `TOOLS`/`BITS`, tools.js) |
 | the roll as a hit: the sweep and the tackle | `rollSweep`, `rollTackle`, `tackleObject`, `tackleObjAhead`, `rollPow`, `rollDmg` | `actions` › `the roll as a hit` |
@@ -193,8 +193,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the draw curve: what a hold buys a shot, and the one flight envelope the sim fires and the aim line measures | `DRAW_RANGE_MIN`/`DRAW_SPEED_MIN`/`DRAW_DMG_MIN`, `drawPow`, `drawSpeedMul`/`drawRangeMul`/`drawDmgMul`, `shotFlight` | `tools & bits` › `the draw` |
 | the fire a shot carries, and the three modifier bits that put it there | `BITS.flame`/`pyre`/`cinder`, `PYRE_T`/`PYRE_DPS`/`CINDER_R`, `m.type`/`m.burn`/`m.burnDps`/`m.cinder` in `newMods` | `tools & bits` (beside `BITS`; what a burn then DOES: `status effects`, actions.js) |
 | moving a tool onto a key or a bit into a cell (the two the drag goes through) | `slotPut`, `bitPut` | `tools & bits` › `equipping` |
-| what a press actually fires, and the shot it puts in the air | `fireTool`, `emitBit`, `offBy`/`SHOT_SKEW`/`DUP_SKEW` (the volley's spread), `spearFish` | `tools & bits` › `what a tool fires` |
-| the catch pose: its clock, the cancel every press and hit call (WASD is held for its first second, then a cancel), which of its three frames is up | `CATCH_T`, `CATCH_WALK`, `startCatch`, `cancelCatch`, `catchFrame` | `tools & bits` - after `spearFish` (ticked in `updatePlayer`, sim.js; drawn by `drawPlayer`, draw-world.js; the net take in `updateStructures`, structures.js) |
+| what a press actually fires, and the shot it puts in the air; the fish taken with no press at all | `fireTool`, `emitBit`, `offBy`/`SHOT_SKEW`/`DUP_SKEW` (the volley's spread), `autoFish`, `FISH_AUTO_CD` | `tools & bits` › `what a tool fires` |
+| the catch pose: its clock, the cancel every step, press and hit call, which of its three frames is up | `CATCH_T`, `startCatch`, `cancelCatch`, `catchFrame` | `tools & bits` - after `autoFish` (ticked in `updatePlayer`, sim.js; drawn by `drawPlayer`, draw-world.js; the net take in `updateStructures`, structures.js) |
 | how each bit flies, and the numbers behind the five non-straight paths | `steerBit`, `ZIG_*`, `ORBIT_R`, `LOB_DRAG`/`LOB_FALL`, `CURVE_TURN` | `tools & bits` › `how a bit flies` |
 | what a shot does where it LANDS, and the two that do anything | `BIT_IMPACT`, `bitImpact`, `AXE_CHOP_R`, `WARP_BACK` | `tools & bits` › `what a bit does where it lands` (called from the arrow update: `update`, sim.js) |
 | the teleport itself: the jump, and the silhouettes it strings across it | `warpPlayer`, `updateWarps`, `warps`, `WARP_FLASH_T`/`WARP_STEP`/`WARP_MAX` | `tools & bits` › `the teleport` (drawn by `drawWarps`, render.js; aged in `updateFx`, sim.js) |
@@ -288,7 +288,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | radial menu geometry and hit math | `wheelSpan`, `wheelAng`, `wheelOptions`, `wheelLayout`, `resolveWheel` | `radial wheel` |
-| brackets, the E prompt, the fish prompt, wheel pixels | `drawSelection`, `drawWorkHint`, `drawFishHint`, `renderWheel`, `drawWheelHub`, `drawWheelStick` | `selection, hints & wheel` |
+| brackets, the E prompt (never over what the hands take on their own), the fish brackets, wheel pixels | `drawSelection`, `drawWorkHint`, `drawFishHint`, `renderWheel`, `drawWheelHub`, `drawWheelStick` | `selection, hints & wheel` |
 | HUD and minimap | `renderUI`, `renderMinimap`, `updateMinimap` (throttled to `MM_REBUILD` ticks), `mmChrome`/`mmArcBand` (the disc's baked chrome and cached day/night arc band) | `UI` (the disc's per-tile colour comes from `objMapColor(o, 'mm')`: `world`, world.js) |
 | is the pointer over HUD that owns its own clicks, rather than over the world | `overHud` | `UI` (its callers are input.js's middle-button handlers and `flagTarget`, robots.js) |
 | the `E SHOP` cap over a merchant in reach | `drawShopHint` | `selection, hints & wheel` (the resolver and everything behind it: `merchNear`, shop.js) |
