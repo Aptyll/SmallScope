@@ -90,7 +90,7 @@ Wishlist when the store page lands. Windows release, price to be announced. The 
 
 ## License
 
-The **source code** is [MIT](LICENSE). **Art, audio, and the Softfall name** are all rights reserved — they are not covered by that license.
+The **source code** is [MIT](LICENSE). **Art, audio, and the Softfall name** are all rights reserved. That includes the pixel art in `js/sprites.js`, the baked clips in `js/sfxdata.js`, and the files under `audio/` and `docs/media/` — even though some of that lives in `.js` files.
 
 ## Contributing
 
