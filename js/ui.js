@@ -172,8 +172,7 @@ function drawWorkHint(ox, oy) {
   const hty = isStruct ? st.ty * TILE : t.ty * TILE;
   const hby = isStruct ? (st.ty + structH(st.type)) * TILE : t.ty * TILE + TILE;
   const pressed = !!player.input.work;
-  const capW = 9, gapW = 3;
-  const totalW = capW + gapW + pixelTextWidth(verb);
+  const totalW = promptW(verb, 'work');
   const x = Math.round(hx - ox - totalW / 2);
   let y = Math.round(hty - oy - lift);
   // an adjacent target puts the prompt over the player's head: flip it under the tile instead
@@ -189,22 +188,24 @@ function drawWorkHint(ox, oy) {
 }
 
 // Every keybind indicator - a cap beside a verb, a number in a well's
-// corner, the ESC hint under a slab - names the KEYBOARD's key. With a pad
-// in hand (padActive, js/gamepad.js) the same indicator wears the pad's
-// button instead, so what the player is holding is what the screen points
-// at: this table is the keyboard name -> pad glyph map, one row per key the
-// HUD ever prints, and it mirrors PAD_PLAY / PAD_MENU (js/gamepad.js) - a
-// rebind there is a row here. The glyph kinds are drawPadGlyph's (panels.js),
-// the same pictures the CONTROLS page lists.
+// corner, the ESC hint under a slab - names an ACTION (KEY_ACTIONS,
+// input.js), never a key: on the keyboard it prints whatever key the action
+// is bound to (keyCap), and with a pad in hand (padActive, js/gamepad.js)
+// the same indicator wears the pad's button instead, so what the player is
+// holding is what the screen points at. This table is the action -> pad
+// glyph map, one row per action the HUD ever prints, and it mirrors
+// PAD_PLAY / PAD_MENU (js/gamepad.js) - a change there is a row here; esc,
+// enter, click and move are the fixed few. The glyph kinds are
+// drawPadGlyph's (panels.js), the same pictures the CONTROLS page lists.
 const PAD_BIND = {
-  E: ['face', 'X'], SPACE: ['face', 'A'], SHIFT: ['trig', 'LT'], CLICK: ['trig', 'RT'],
-  1: ['face', 'Y'], 2: ['face', 'B'], 3: ['bump', 'LB'], 4: ['bump', 'RB'],
-  Q: ['dpad', 'L'], F: ['dpad', 'R'], G: ['dpad', 'U'], M: ['pill', 'BACK'], TAB: ['pill', 'BACK'],
-  ESC: ['face', 'B'], ENTER: ['face', 'A'], WASD: ['stick', 'L'],
+  work: ['face', 'X'], dodge: ['face', 'A'], slide: ['trig', 'LT'], click: ['trig', 'RT'],
+  ab1: ['face', 'Y'], ab2: ['face', 'B'], ab3: ['bump', 'LB'], ab4: ['bump', 'RB'],
+  berry: ['dpad', 'L'], fish: ['dpad', 'R'], char: ['dpad', 'U'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
+  esc: ['face', 'B'], enter: ['face', 'A'], move: ['stick', 'L'],
 };
 // the glyph's footprint, so a caller can lay a verb beside it
 function padBindW(key) { const b = PAD_BIND[key]; return !b ? 0 : b[0] === 'bump' || b[0] === 'trig' ? 13 : b[0] === 'pill' ? 11 : b[0] === 'stick' ? 17 : 9; }
-// the pad's button for a key, drawn at x, y (top-left) at `s` px per px;
+// the pad's button for an action, drawn at x, y (top-left) at `s` px per px;
 // `pressed` dims it the way a held cap drops its face
 function drawPadBind(g, x, y, key, s, pressed) {
   const b = PAD_BIND[key];
@@ -228,7 +229,7 @@ function drawBackHint(g, cx, y, verb) {
   verb = verb || 'BACK';
   if (padActive()) {
     const w = 9 + 3 + pixelTextWidth(verb), x = Math.round(cx - w / 2);
-    drawPadBind(g, x, y - 2, 'ESC');
+    drawPadBind(g, x, y - 2, 'esc');
     drawPixelText(g, verb, x + 12, y, '#5a6690');
   } else {
     const t = 'ESC ' + verb;
@@ -236,32 +237,47 @@ function drawBackHint(g, cx, y, verb) {
   }
 }
 
+// The key cap alone, on any context: navy rim, icy face, top highlight, the
+// key's face in navy. It grows to fit its label (the label sits at x + 3 at
+// any width), so SHIFT wears the same cap E does. pressed drops the face a
+// pixel; hot 1 is the hover lift (the face goes white), hot 2 a cap
+// LISTENING for its key on the CONTROLS page (the face pulses gold on
+// `now`). Returns its width.
+function drawKeyCap(g, x, y, label, pressed, hot, now) {
+  const w = pixelTextWidth(label) + 6;
+  const cy = y + (pressed ? 1 : 0);
+  g.fillStyle = '#0a0e23';
+  g.fillRect(x, y, w, 10);
+  g.fillStyle = hot === 2 ? (Math.sin((now || 0) * 9) > 0 ? '#ffd95c' : '#f4f7ff') : hot ? '#f4f7ff' : pressed ? '#8fb3d6' : '#c2d8ee';
+  g.fillRect(x + 1, cy + 1, w - 2, 8 - (pressed ? 1 : 0));
+  if (!pressed) {
+    g.fillStyle = '#f4f7ff'; g.fillRect(x + 1, y + 1, w - 2, 1);
+    g.fillStyle = hot === 2 ? '#c9a227' : '#8fb3d6'; g.fillRect(x + 1, y + 8, w - 2, 1); // bottom shade = depth
+  }
+  drawPixelText(g, label, x + 3, cy + 3, '#0a0e23');
+  return w;
+}
 // the key-cap + verb pair itself, shared by the work prompt, the rack's and
-// the pack's SHIFT plate: navy rim, icy face, top highlight; pressed = the
-// face drops a pixel and the verb goes gold. `key` is the letter on the cap
-// (E unless said otherwise) and the cap grows to fit it, so a modifier's name
-// wears the same indicator a one-letter binding does. With a pad in hand the
-// cap is the pad's button (PAD_BIND) and the verb sits beside that instead.
-function drawKeyPrompt(x, y, verb, pressed, key) {
-  key = key || 'E';
-  if (padActive() && PAD_BIND[key]) {
-    const gw = padBindW(key);
-    drawPadBind(ctx, x, y, key, 1, pressed);
+// the pack's SHIFT plate: pressed = the face drops a pixel and the verb goes
+// gold. `action` is what the cap is FOR (the work key unless said otherwise),
+// and the cap prints whatever key that action is bound to (keyCap,
+// input.js). With a pad in hand the cap is the pad's button (PAD_BIND) and
+// the verb sits beside that instead. promptW is its footprint, for a caller
+// centring it.
+function drawKeyPrompt(x, y, verb, pressed, action) {
+  action = action || 'work';
+  if (padActive() && PAD_BIND[action]) {
+    const gw = padBindW(action);
+    drawPadBind(ctx, x, y, action, 1, pressed);
     drawPixelTextOutline(ctx, verb, x + gw + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#0f1632');
     return;
   }
-  const capW = pixelTextWidth(key) + 6; // the cap's own padding: the key sits at x + 3 at any width
-  const cy = y + (pressed ? 1 : 0);
-  ctx.fillStyle = '#0a0e23';
-  ctx.fillRect(x, y, capW, 10);
-  ctx.fillStyle = pressed ? '#8fb3d6' : '#c2d8ee';
-  ctx.fillRect(x + 1, cy + 1, capW - 2, 8 - (pressed ? 1 : 0));
-  if (!pressed) {
-    ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x + 1, y + 1, capW - 2, 1);
-    ctx.fillStyle = '#8fb3d6'; ctx.fillRect(x + 1, y + 8, capW - 2, 1); // bottom shade = depth
-  }
-  drawPixelText(ctx, key, x + 3, cy + 3, '#0a0e23');
+  const capW = drawKeyCap(ctx, x, y, keyCap(action), pressed, 0);
   drawPixelTextOutline(ctx, verb, x + capW + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#0f1632');
+}
+function promptW(verb, action) {
+  action = action || 'work';
+  return (padActive() && PAD_BIND[action] ? padBindW(action) : pixelTextWidth(keyCap(action)) + 6) + 3 + pixelTextWidth(verb);
 }
 
 // The practice armory's prompt: PROXIMITY, not hover - standing beside the
@@ -272,9 +288,9 @@ function drawRackHint(ox, oy) {
   const rk = rackNear(player);
   if (!rk) return;
   const verb = 'ARM';
-  const totalW = 9 + 3 + pixelTextWidth(verb);
+  const totalW = promptW(verb, 'work');
   const hx = (rk.tx + 1) * TILE + (rk.dx || 0); // the pair's centre, nudged with the sprite
-  drawKeyPrompt(Math.round(hx - ox - totalW / 2), Math.round(rk.ty * TILE - oy - 24), verb, !!keys['e']);
+  drawKeyPrompt(Math.round(hx - ox - totalW / 2), Math.round(rk.ty * TILE - oy - 24), verb, keyHeld('work'));
 }
 
 // The parkour die's prompt, the rack's own proximity grammar: an E ROLL cap
@@ -286,8 +302,8 @@ function drawPkHint(ox, oy) {
   const pk = pkDieNear(player);
   if (!pk) return;
   const verb = 'ROLL';
-  const totalW = 9 + 3 + pixelTextWidth(verb);
-  drawKeyPrompt(Math.round((pk.tx + 0.5) * TILE - ox - totalW / 2), Math.round(pk.ty * TILE - oy - 28), verb, !!keys['e']);
+  const totalW = promptW(verb, 'work');
+  drawKeyPrompt(Math.round((pk.tx + 0.5) * TILE - ox - totalW / 2), Math.round(pk.ty * TILE - oy - 28), verb, keyHeld('work'));
 }
 
 // The range bell's prompt, the die's own proximity grammar: an E RING cap
@@ -300,8 +316,8 @@ function drawBellHint(ox, oy) {
   const bl = agBellNear(player);
   if (!bl) return;
   const verb = 'RING';
-  const totalW = 9 + 3 + pixelTextWidth(verb);
-  drawKeyPrompt(Math.round((bl.tx + 0.5) * TILE - ox - totalW / 2), Math.round(bl.ty * TILE - oy - 30), verb, !!keys['e']);
+  const totalW = promptW(verb, 'work');
+  drawKeyPrompt(Math.round((bl.tx + 0.5) * TILE - ox - totalW / 2), Math.round(bl.ty * TILE - oy - 30), verb, keyHeld('work'));
 }
 
 // 9x11 pixel mouse, the "click" key-cap. Only the LEFT button carries colour
@@ -316,8 +332,8 @@ function drawShopHint(ox, oy) {
   const b = merchNear(player);
   if (!b) return;
   const verb = 'SHOP';
-  const totalW = 9 + 3 + pixelTextWidth(verb);
-  drawKeyPrompt(Math.round(b.x - ox - totalW / 2), Math.round(b.y - 44 - oy), verb, !!keys['e']);
+  const totalW = promptW(verb, 'work');
+  drawKeyPrompt(Math.round(b.x - ox - totalW / 2), Math.round(b.y - 44 - oy), verb, keyHeld('work'));
 }
 
 
@@ -1287,9 +1303,9 @@ function drawShiftHint() {
   if (!verb) return;
   // over the pack's top-right corner, whether it is the open frame or the
   // shut button - clear of the grid it is about, and of the bit column
-  const totalW = (padActive() ? padBindW('SHIFT') : pixelTextWidth('SHIFT') + 6) + 3 + pixelTextWidth(verb);
+  const totalW = promptW(verb, 'slide');
   const top = bagOpenNow() ? bagFrameRect().y : bagBtnRect().y;
-  drawKeyPrompt(VIEW_W - 2 - totalW, top - 12, verb, !!keys['shift'], 'SHIFT');
+  drawKeyPrompt(VIEW_W - 2 - totalW, top - 12, verb, keyHeld('slide'), 'slide');
 }
 
 function drawBag(now) {
@@ -1459,7 +1475,7 @@ function toolCellRect(i) { return stripCellRect(i); }
 // ability i's well: keys 1-4, in order to the weapon's right
 function abCellRect(i) { return stripCellRect(1 + i); }
 // meal button i (0 the berry over 1 the fish), the strip's right end
-const FOOD_BTNS = [{ type: 'berry', key: 'Q' }, { type: 'fish', key: 'F' }];
+const FOOD_BTNS = [{ type: 'berry', act: 'berry' }, { type: 'fish', act: 'fish' }]; // the meal, and the action whose key its cap prints
 function foodCellRect(i) {
   const R = hudStripRect();
   return { x: R.x + AB_W - FOOD_W, y: R.y + AB_PAD + i * (FOOD_CELL + AB_GAP), w: FOOD_W, h: FOOD_CELL };
@@ -1733,7 +1749,7 @@ function hudPress(mx, my) {
   // (dragDrop), while a press begun with SHIFT is held for the release, which
   // acts on the well under the pointer and leaves the item in hand.
   if (state.drag) {
-    if (keys['shift']) state.dragPend = { keep: true };
+    if (keyHeld('slide')) state.dragPend = { keep: true };
     else dragDrop(mx, my);
     return true;
   }
@@ -2143,9 +2159,9 @@ function drawClassAbCell(i, now, on) {
     ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
     ctx.globalAlpha = 1;
   }
-  const key = String(i + 1);
+  const abAct = 'ab' + (i + 1), key = keyCapShort(abAct); // the corner prints the key the ability is bound to
   const dimKey = lock || (cd > 0 && !casting && act <= 0);
-  if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, key, 2, dimKey); // the pad's button, at the number's size
+  if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, abAct, 2, dimKey); // the pad's button, at the number's size
   else drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#7a8bb8' : '#f4f7ff', '#0f1632', 2);
   if (red) ctx.restore();
 }
@@ -2194,8 +2210,9 @@ function drawFoodCell(i, now, on) {
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   const live = n > 0 && p.foodCd <= 0;
-  if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 3, FOOD_BTNS[i].key, 1, !live); // the dpad arm the meal is on
-  else drawPixelTextOutline(ctx, FOOD_BTNS[i].key, r.x + 4, r.y + 6, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+  const lab = keyCapShort(FOOD_BTNS[i].act); // the meal's key, cut to the seat before the icon
+  if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 3, FOOD_BTNS[i].act, 1, !live); // the dpad arm the meal is on
+  else drawPixelTextOutline(ctx, lab, r.x + (lab.length > 2 ? 2 : 4), r.y + 6, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
   if (n <= 0) ctx.globalAlpha = 0.35;
   ctx.drawImage(SPRITES[ITEMS[type].icon], r.x + FOOD_ICON_X, r.y + 4);
   ctx.globalAlpha = 1;
@@ -2978,7 +2995,7 @@ function drawTouchIcon(g, id, cx, cy, col, bg) {
 }
 
 function drawTouchPlate(b, now) {
-  const on = !!touch.held[b.id] || (b.id === 'slide' && !!keys['shift']);
+  const on = !!touch.held[b.id] || (b.id === 'slide' && keyHeld('slide'));
   touchDisc(ctx, b.x, b.y, b.r, TOUCH_PLATE);
   touchRing(ctx, b.x, b.y, b.r, on ? TOUCH_HOT : TOUCH_RIM);
   if (on) { ctx.globalAlpha = 0.25; touchDisc(ctx, b.x, b.y, b.r - 1, TOUCH_HOT); ctx.globalAlpha = 1; }

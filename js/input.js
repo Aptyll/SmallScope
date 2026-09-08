@@ -1,8 +1,168 @@
 'use strict';
 // The local human's controller: keyboard + mouse listeners writing the same
 // input struct an AI fills, sampled once per sim step by sampleHumanInput().
+// ------------------------------------------------------------ keys and binds
+// THE KEYBOARD IS READ BY WHERE A KEY SITS, NOT BY WHAT IT PRINTS. An AZERTY
+// board's walk keys are Z Q S D by name but sit exactly where W A S D do, so
+// the listeners translate the browser's e.code - the physical key, blind to
+// the layout - into the game's key NAME: the face that key wears on a US
+// board, lowercase for a letter (keyName). `keys`, the binds and every
+// keyPress comparison are written in those names; a code the table does not
+// know (an on-screen keyboard sends none) falls back to e.key, so nothing is
+// dead. What the player SEES runs the other way: keyLabel prints the face the
+// key has on the board in hand where the browser can say (Chrome's layout
+// map - KeyW is Z on AZERTY), else the US face.
+const CODE_KEY = { Space: ' ', Period: '.', Comma: ',', Slash: '/', Semicolon: ';', Quote: "'", BracketLeft: '[', BracketRight: ']',
+  Backslash: '\\', Minus: '-', Equal: '=', Backquote: '`', ShiftLeft: 'Shift', ShiftRight: 'Shift', ControlLeft: 'Control',
+  ControlRight: 'Control', AltLeft: 'Alt', AltRight: 'Alt', MetaLeft: 'Meta', MetaRight: 'Meta', NumpadEnter: 'Enter',
+  NumpadAdd: 'Numpad+', NumpadSubtract: 'Numpad-', NumpadMultiply: 'Numpad*', NumpadDivide: 'Numpad/', NumpadDecimal: 'Numpad.' };
+const CODE_PLAIN = /^(Arrow(Up|Down|Left|Right)|F\d\d?|Numpad\d|Tab|Escape|Enter|Backspace|CapsLock|Delete|Insert|Home|End|PageUp|PageDown)$/;
+function keyName(e) {
+  const c = e.code || '';
+  if (c.length === 4 && c.slice(0, 3) === 'Key') return c[3].toLowerCase();
+  if (c.length === 6 && c.slice(0, 5) === 'Digit') return c[5];
+  if (CODE_KEY[c]) return CODE_KEY[c];
+  if (CODE_PLAIN.test(c)) return c;
+  const k = e.key || '';
+  return k.length === 1 ? k.toLowerCase() : k;
+}
+// the name a key prints on screen - a cap, the listing, a well's corner. The
+// font has A-Z, 0-9 and a few marks (js/font.js), so anything else is a word.
+const KEY_LABEL = { ' ': 'SPACE', Shift: 'SHIFT', Control: 'CTRL', Alt: 'ALT', Meta: 'META', Tab: 'TAB', Escape: 'ESC', Enter: 'ENTER',
+  Backspace: 'BKSP', CapsLock: 'CAPS', Delete: 'DEL', Insert: 'INS', Home: 'HOME', End: 'END', PageUp: 'PGUP', PageDown: 'PGDN',
+  ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', ';': 'SEMI', "'": 'QUOTE', '[': 'LBRKT', ']': 'RBRKT',
+  '\\': 'BSLSH', '=': 'EQUAL', '`': 'TILDE', '*': 'STAR' };
+const GLYPH_OK = /^[A-Z0-9\-+.,:!?\/%()<>]$/;
+let kbLayout = null; // navigator.keyboard's code -> printed-face map, where the browser has one
+function readKbLayout() {
+  if (!navigator.keyboard || !navigator.keyboard.getLayoutMap) return;
+  navigator.keyboard.getLayoutMap().then((m) => { kbLayout = m; }).catch(() => { });
+}
+readKbLayout();
+if (navigator.keyboard && navigator.keyboard.addEventListener) navigator.keyboard.addEventListener('layoutchange', readKbLayout);
+// a name back to its physical code, for the layout map
+function keyCode(k) {
+  if (/^[a-z]$/.test(k)) return 'Key' + k.toUpperCase();
+  if (/^[0-9]$/.test(k)) return 'Digit' + k;
+  if (k.length === 1) for (const c in CODE_KEY) if (CODE_KEY[c] === k) return c;
+  return null;
+}
+function keyLabel(k) {
+  const code = keyCode(k);
+  const face = code && kbLayout && kbLayout.get(code);
+  if (face && face.length === 1 && GLYPH_OK.test(face.toUpperCase())) return face.toUpperCase();
+  if (k.slice(0, 6) === 'Numpad') return 'NUM ' + (KEY_LABEL[k.slice(6)] || k.slice(6));
+  return KEY_LABEL[k] || k.toUpperCase();
+}
+
+// WHAT A KEY DOES IS AN ACTION, AND AN ACTION HAS A KEY: the binds, one key
+// each, saved with the profile (settings.binds). This is every rebindable
+// verb, in the order the CONTROLS page lists them, with the key each starts
+// on. What is NOT here is fixed - Escape backs out of everything, Enter and
+// the arrows walk the menus (and the arrows always walk the body too), F3 and
+// '.' are the two debug flips, the mouse buttons are the mouse's. Nothing
+// compares a key event against a literal: keyIs / keyHeld ask the binds, and
+// a pad button or a touch plate names an ACTION (PAD_PLAY, TOUCH_BTNS) and
+// presses whatever key it holds, so a rebind moves all three controllers.
+const KEY_ACTIONS = [
+  { id: 'up', verb: 'MOVE UP', key: 'w' }, { id: 'left', verb: 'MOVE LEFT', key: 'a' },
+  { id: 'down', verb: 'MOVE DOWN', key: 's' }, { id: 'right', verb: 'MOVE RIGHT', key: 'd' },
+  { id: 'ab1', verb: 'ABILITY 1', key: '1' }, { id: 'ab2', verb: 'ABILITY 2', key: '2' },
+  { id: 'ab3', verb: 'ABILITY 3', key: '3' }, { id: 'ab4', verb: 'ABILITY 4', key: '4' },
+  { id: 'dodge', verb: 'DODGE', key: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift' }, { id: 'work', verb: 'HARVEST', key: 'e' },
+  { id: 'berry', verb: 'EAT BERRY', key: 'q' }, { id: 'fish', verb: 'EAT FISH', key: 'f' },
+  { id: 'bag', verb: 'BACKPACK', key: 'b' }, { id: 'char', verb: 'CHARACTER', key: 'g' },
+  { id: 'map', verb: 'WORLD MAP', key: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab' },
+  { id: 'mute', verb: 'MUTE', key: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p' },
+];
+const KEY_ACT = {};
+for (const a of KEY_ACTIONS) KEY_ACT[a.id] = a;
+// keys no bind may take: the fixed jobs above, and the browser's F row
+function keyReserved(k) { return k === 'Escape' || k === 'Enter' || k === 'Backspace' || k === '.' || k === 'Meta' || /^(Arrow|F\d)/.test(k); }
+settings.binds = {};
+for (const a of KEY_ACTIONS) settings.binds[a.id] = a.key;
+// a loaded profile's binds made whole (boot.js, after loadSettings): a bind an
+// action never had, a reserved key or a key two actions share falls back to
+// the default
+function mendBinds() {
+  const s = settings.binds && typeof settings.binds === 'object' ? settings.binds : {};
+  const out = {}, used = {};
+  for (const a of KEY_ACTIONS) {
+    const k = s[a.id];
+    out[a.id] = typeof k === 'string' && k && !keyReserved(k) && !used[k] ? k : a.key;
+    used[out[a.id]] = true;
+  }
+  settings.binds = out;
+}
+// an action's key ('work' -> 'e'), or the bare name of a key that is no
+// action's (Escape) - what a pad button and a plate resolve through
+function actKey(a) { return settings.binds[a] || a; }
+function keyIs(e, a) { return e.key === settings.binds[a]; }           // is this key event the action's key?
+function keyHeld(a) { return !!keys[settings.binds[a].toLowerCase()]; } // is the action's key down right now?
+function keyBound(k) { for (const a of KEY_ACTIONS) if (settings.binds[a.id] === k) return true; return false; }
+// a lowercase key as a menu direction: the four walk binds and the arrows,
+// which every key-driven menu steps on (menuKey, deadKey, settingsKey ...)
+function moveDir(k) {
+  if (k === 'arrowup' || k === settings.binds.up.toLowerCase()) return 'up';
+  if (k === 'arrowdown' || k === settings.binds.down.toLowerCase()) return 'down';
+  if (k === 'arrowleft' || k === settings.binds.left.toLowerCase()) return 'left';
+  if (k === 'arrowright' || k === settings.binds.right.toLowerCase()) return 'right';
+  return null;
+}
+// what a keybind indicator prints for an action: the bound key's face, or
+// the fixed word for the few that are no bind - esc, enter, click, and move
+// (the four walk keys run together: WASD, or ZQSD on the board that has them)
+function keyCap(a) {
+  if (a === 'esc') return 'ESC';
+  if (a === 'enter') return 'ENTER';
+  if (a === 'click') return 'CLICK';
+  if (a === 'move') {
+    const l = ['up', 'left', 'down', 'right'].map((d) => keyLabel(settings.binds[d]));
+    return l.every((s) => s.length === 1) ? l.join('') : l.join('/');
+  }
+  return keyLabel(settings.binds[a]);
+}
+// ...and its short form for a well's corner, where two or three characters fit
+const KEY_SHORT = { SPACE: 'SPC', SHIFT: 'SHF', CTRL: 'CTL', ENTER: 'ENT', CAPS: 'CAP', DOWN: 'DN', LEFT: '<', RIGHT: '>', BKSP: 'BK' };
+function keyCapShort(a) { const l = keyCap(a); return l.length <= 2 ? l : KEY_SHORT[l] || l.slice(0, 3); }
+
+// REBINDING: a cap on the CONTROLS page is clicked and LISTENS (state.rebind
+// is the action), and the next key down is its key. Escape calls it off, a
+// reserved key is refused, and a key another action holds SWAPS - that
+// action takes the old key - so every action always has one key of its own
+// and no two share one. Whatever was held under the old names lets go, so a
+// rebind mid-walk cannot leave a foot down.
+function rebindStart(a) { state.rebind = a; SFX.pickup(); }
+function rebindKey(e) {
+  if (e.repeat) return;
+  if (e.key === 'Escape') { state.rebind = null; SFX.pickup(); return; }
+  if (keyReserved(e.key)) { SFX.deny(); return; }
+  setBind(state.rebind, e.key);
+  state.rebind = null;
+  saveSettings();
+  SFX.place();
+}
+function setBind(a, k) {
+  const old = settings.binds[a];
+  for (const b of KEY_ACTIONS) if (b.id !== a && settings.binds[b.id] === k) settings.binds[b.id] = old;
+  settings.binds[a] = k;
+  for (const n in keys) keys[n] = false;
+}
+function bindsDefault() { return KEY_ACTIONS.every((a) => settings.binds[a.id] === a.key); }
+function resetBinds() {
+  for (const a of KEY_ACTIONS) settings.binds[a.id] = a.key;
+  for (const n in keys) keys[n] = false;
+  saveSettings();
+}
+// the slab a listening cap lives on is showing: the in-match ESC slab, or
+// the title's slide-in. Off it, a stale listen is dropped rather than eating
+// the next key.
+function rebindLive() {
+  return (state.mode === 'play' && state.settingsOpen) || (state.mode === 'title' && state.menu.panel === 'settings');
+}
+
 // ------------------------------------------------------------ input
-const keys = {};
+const keys = {}; // key name (lowercase) -> held; written by the listeners, a pad and a plate alike
 // inside: pointer over the canvas. src: who moved it last - 'mouse', 'pad'
 // (js/gamepad.js) or 'touch' (js/touch.js); in play the pad and a finger
 // keep writing the aim through it every frame, and stop the moment the mouse
@@ -14,16 +174,24 @@ const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, src: '
 // keyRelease and what a button does in pointerPress / pointerRelease, so a
 // gamepad and a finger press the same keys and the same buttons instead of
 // each keeping a copy of this file - a key handled in a listener alone is
-// dead on a pad. `e` is {key, repeat}: a real KeyboardEvent, or the object a
-// pad or a plate builds.
+// dead on a pad. `e` is {key, repeat, char}: key the game's NAME for the key
+// (keyName above), char what it typed (the name editor's letters) - a real
+// KeyboardEvent translated, or the object a pad or a plate builds.
+const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3']);
 window.addEventListener('keydown', (e) => {
+  const k = keyName(e);
   // Tab is held to read the scoreboard (scoreboardOpen()), so it must never
-  // reach the browser's focus traversal
-  if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3'].includes(e.key)) e.preventDefault();
-  keys[e.key.toLowerCase()] = true;
-  keyPress(e);
+  // reach the browser's focus traversal - nor may a bound key in a match, or
+  // any key while a cap is listening. A chord on ctrl / alt / meta is the
+  // browser's own (reload, find) and passes.
+  if (!e.ctrlKey && !e.altKey && !e.metaKey &&
+      (state.rebind || KEY_PREVENT.has(k) || (state.mode !== 'title' && keyBound(k)))) e.preventDefault();
+  keys[k.toLowerCase()] = true;
+  keyPress({ key: k, repeat: e.repeat, char: e.key });
 });
 function keyPress(e) {
+  // a cap on the CONTROLS page is listening: this key is its answer
+  if (state.rebind) { if (rebindLive()) { rebindKey(e); return; } state.rebind = null; }
   // the name editor owns the keyboard while it is up: its letters are text,
   // not shortcuts, and F3 / '.' below would fire on keys the field ignores
   if (state.mode === 'title' && state.menu.panel === 'name') { nameKey(e); return; }
@@ -36,13 +204,13 @@ function keyPress(e) {
   if (e.key === '.') { settings.hitbox = settings.hitbox ? 0 : 2; saveSettings(); return; }
   if (state.mode === 'title') { menuKey(e); return; }
   if (state.mode === 'drop') {
-    // M raises the world map mid-flight, Esc puts it away; the map does not
-    // stop the sim, so the jump keys stay live under it. The lock inside
-    // dropJump refuses (and denies) a jump before the window - the repeat
-    // guard keeps a held Space from machine-gunning that deny.
-    if (e.key.toLowerCase() === 'm') { state.mapOpen = !state.mapOpen; return; }
-    if (e.key.toLowerCase() === 'escape') { state.mapOpen = false; return; }
-    if ((e.key === ' ' || e.key === 'Enter' || e.key.toLowerCase() === 'e') && !e.repeat) dropJump(player);
+    // the map key raises the world map mid-flight, Esc puts it away; the map
+    // does not stop the sim, so the jump keys stay live under it. The lock
+    // inside dropJump refuses (and denies) a jump before the window - the
+    // repeat guard keeps a held key from machine-gunning that deny.
+    if (keyIs(e, 'map')) { state.mapOpen = !state.mapOpen; return; }
+    if (e.key === 'Escape') { state.mapOpen = false; return; }
+    if ((keyIs(e, 'dodge') || e.key === 'Enter' || keyIs(e, 'work')) && !e.repeat) dropJump(player);
     return;
   }
   if (state.mode === 'dead') { deadKey(e.key.toLowerCase()); return; }
@@ -52,18 +220,19 @@ function keyPress(e) {
   if (state.settingsOpen && settingsKey(e.key.toLowerCase())) return;
   // edge-triggered intents go into the local player's input struct; the sim
   // reads and clears them, exactly as it does for an bot
-  if (e.key === ' ') player.input.dodge = true;
-  if (e.key.toLowerCase() === 'q') player.input.eatBerry = true;
-  if (e.key.toLowerCase() === 'f') player.input.eatFish = true;
-  // E at the practice rack: the press opens the armory wheel over it, the
-  // pointer picks, and RELEASING E takes - the right-click wheel's own
-  // hold-and-release grammar, moved onto the key. A real work target in reach
-  // keeps E's day job (the same rule that decides which prompt is showing),
-  // and ordinary work is suppressed while any wheel is up (sampleHumanInput).
-  // Seated on the roost, E is the hop (updateDrop reads the held work
-  // intent) and nothing else: the merchant stands beside the roost, and the
-  // counter opening instead would swallow the very key that gets you down.
-  if (e.key.toLowerCase() === 'e' && !e.repeat && !state.wheel && !state.mapOpen &&
+  if (keyIs(e, 'dodge')) player.input.dodge = true;
+  if (keyIs(e, 'berry')) player.input.eatBerry = true;
+  if (keyIs(e, 'fish')) player.input.eatFish = true;
+  // The work key at the practice rack: the press opens the armory wheel over
+  // it, the pointer picks, and RELEASING it takes - the right-click wheel's
+  // own hold-and-release grammar, moved onto the key. A real work target in
+  // reach keeps the key's day job (the same rule that decides which prompt
+  // is showing), and ordinary work is suppressed while any wheel is up
+  // (sampleHumanInput). Seated on the roost, it is the hop (updateDrop reads
+  // the held work intent) and nothing else: the merchant stands beside the
+  // roost, and the counter opening instead would swallow the very key that
+  // gets you down.
+  if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen &&
       !state.settingsOpen && !state.draft && !state.drag && !player.dead && !player.aboard) {
     // The merchant's counter is a PANEL, not a held wheel, so the key that
     // opened it shuts it - whatever else has come into reach meanwhile.
@@ -73,16 +242,17 @@ function keyPress(e) {
       const rk = rackNear(player);
       if (rk) { SFX.unlock(); state.wheel = { kind: 'rack', tx: rk.tx, ty: rk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
       else {
-        // the parkour die: holding E beside it opens the roll wheel - ROLL
-        // plus the three difficulties - on the rack wheel's own grammar
+        // the parkour die: holding the key beside it opens the roll wheel -
+        // ROLL plus the three difficulties - on the rack wheel's own grammar
         const pk = pkDieNear(player);
         if (pk) { SFX.unlock(); state.wheel = { kind: 'pkdie', tx: pk.tx, ty: pk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
         else {
-          // the range bell: holding E beside it opens the difficulty wheel -
-          // easy, medium, hard - and releasing on a wedge rings the round in
-          // at that difficulty (the roll die's own grammar). Only while the
-          // range is idle: mid-round the bell is under the snow with the
-          // rest of the furniture, and the sink and rise are mid-ceremony.
+          // the range bell: holding the key beside it opens the difficulty
+          // wheel - easy, medium, hard - and releasing on a wedge rings the
+          // round in at that difficulty (the roll die's own grammar). Only
+          // while the range is idle: mid-round the bell is under the snow
+          // with the rest of the furniture, and the sink and rise are
+          // mid-ceremony.
           const bl = agBellNear(player);
           if (bl && agame.phase === 'off') { SFX.unlock(); state.wheel = { kind: 'agbell', tx: bl.tx, ty: bl.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
           // ...and a MERCHANT: the press opens its counter (js/shop.js). Last
@@ -93,19 +263,22 @@ function keyPress(e) {
       }
     }
   }
-  // B opens the backpack grid. It is HUD and not an overlay, so unlike M and
-  // ESC it neither stops the sim nor swallows anything but its own clicks.
-  if (e.key.toLowerCase() === 'b') state.bagOpen = !state.bagOpen;
-  // G raises the character panel - the body, the live stat ledger and the
-  // four gear pieces. HUD like the bag: the sim runs on underneath.
-  if (e.key.toLowerCase() === 'g' && !state.settingsOpen && !state.draft) state.charOpen = !state.charOpen;
-  // 1-4 cast the class abilities, left to right exactly as the strip shows
+  // the pack key opens the backpack grid. It is HUD and not an overlay, so
+  // unlike the map and ESC it neither stops the sim nor swallows anything
+  // but its own clicks.
+  if (keyIs(e, 'bag')) state.bagOpen = !state.bagOpen;
+  // the sheet key raises the character panel - the body, the live stat
+  // ledger and the four gear pieces. HUD like the bag: the sim runs on
+  // underneath.
+  if (keyIs(e, 'char') && !state.settingsOpen && !state.draft) state.charOpen = !state.charOpen;
+  // the four ability binds cast, left to right exactly as the strip shows
   // them (a click on the well sets the same field - hudPress, js/ui.js).
   // Edge-triggered like the dodge; the sim consumes it (tryAbility,
   // js/abilities.js). The bit column rises on HOVER over the weapon well.
-  if (e.key >= '1' && e.key <= '4' && !e.repeat) { SFX.unlock(); player.input.ability = e.key.charCodeAt(0) - 49; }
-  if (e.key.toLowerCase() === 'm' && !state.settingsOpen && !state.draft && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; }
-  if (e.key.toLowerCase() === 'escape') {
+  const ab = e.repeat ? -1 : ['ab1', 'ab2', 'ab3', 'ab4'].findIndex((a) => keyIs(e, a));
+  if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
+  if (keyIs(e, 'map') && !state.settingsOpen && !state.draft && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; }
+  if (e.key === 'Escape') {
     // a carried item goes back first, then the flag aim: both are gestures
     // half-finished, and Escape is how either is thought better of
     if (state.drag) { dragReturn(); state.dragPend = null; }
@@ -117,18 +290,19 @@ function keyPress(e) {
     else if (state.charOpen) state.charOpen = false;
     else { state.settingsOpen = !state.settingsOpen; dragSlider = null; state.wheel = null; }
   }
-  if (e.key.toLowerCase() === 'n') { settings.muted = SFX.toggleMute(); saveSettings(); }
-  if (e.key.toLowerCase() === 'p') state.paused = !state.paused;
+  if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
+  if (keyIs(e, 'pause')) state.paused = !state.paused;
 }
 window.addEventListener('keyup', (e) => {
-  keys[e.key.toLowerCase()] = false;
-  keyRelease(e);
+  const k = keyName(e);
+  keys[k.toLowerCase()] = false;
+  keyRelease({ key: k, char: e.key });
 });
 function keyRelease(e) {
-  // letting go of E with an E-held wheel up (armory, roll die or range
-  // bell) takes what the pointer is on (or cancels from the hub), exactly
-  // as releasing the right button does
-  if (e.key.toLowerCase() === 'e' && state.wheel &&
+  // letting go of the work key with a wheel it held up (armory, roll die or
+  // range bell) takes what the pointer is on (or cancels from the hub),
+  // exactly as releasing the right button does
+  if (keyIs(e, 'work') && state.wheel &&
       (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell')) {
     resolveWheel();
     state.wheel = null;
@@ -141,6 +315,7 @@ function keyRelease(e) {
 // hanging there over a game that has stopped listening
 window.addEventListener('blur', () => {
   for (const k in keys) keys[k] = false;
+  state.rebind = null; // a cap left listening would eat the first key back
   state.flagAim = false;
   state.dragPend = null;
   if (state.drag) dragReturn();
@@ -367,10 +542,10 @@ function sampleHumanInput(p) {
   inp.aimY = mouseWY();
   // read the walk keys once - each branch below decides who gets them
   let mx = 0, my = 0;
-  if (keys['w'] || keys['arrowup']) my -= 1;
-  if (keys['s'] || keys['arrowdown']) my += 1;
-  if (keys['a'] || keys['arrowleft']) mx -= 1;
-  if (keys['d'] || keys['arrowright']) mx += 1;
+  if (keyHeld('up') || keys['arrowup']) my -= 1;
+  if (keyHeld('down') || keys['arrowdown']) my += 1;
+  if (keyHeld('left') || keys['arrowleft']) mx -= 1;
+  if (keyHeld('right') || keys['arrowright']) mx += 1;
   // ...and the two sticks, a pad's left one and the touch move stick, at
   // their tilt (both files load after this one; this is a run-time read)
   mx = Math.max(-1, Math.min(1, mx + pad.mx + touch.mx));
@@ -382,8 +557,8 @@ function sampleHumanInput(p) {
   // and a gear plate bought blind under the dim would be bought by accident.
   if (state.mode === 'play' && state.mapOpen && !state.paused && !state.settingsOpen) {
     inp.mx = mx; inp.my = my;
-    inp.slide = !!keys['shift'];
-    inp.grapple = !!keys['3']; // a reel in progress keeps answering the held key
+    inp.slide = keyHeld('slide');
+    inp.grapple = keyHeld('ab3'); // a reel in progress keeps answering the held key
     inp.fire = inp.work = false;
     inp.eatBerry = inp.eatFish = false;
     inp.ability = -1;
@@ -409,11 +584,12 @@ function sampleHumanInput(p) {
     return;
   }
   inp.mx = mx; inp.my = my;
-  inp.slide = !!keys['shift'];
-  // the grapple reels only while its own key is held - the one HELD ability
-  // input, read by updatePlayer's grapple branch; releasing it lets go early
-  inp.grapple = !!keys['3'];
-  inp.work = !!keys['e'] && !state.wheel && !state.shop; // the counter swallows E the way a wheel does
+  inp.slide = keyHeld('slide');
+  // the grapple reels only while its own key - ability 3's - is held: the one
+  // HELD ability input, read by updatePlayer's grapple branch; releasing it
+  // lets go early
+  inp.grapple = keyHeld('ab3');
+  inp.work = keyHeld('work') && !state.wheel && !state.shop; // the counter swallows the work key the way a wheel does
   if (state.wheel) { inp.fire = false; inp.dodge = false; inp.ability = -1; } // the wheel swallows the shot
 }
 

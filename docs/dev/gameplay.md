@@ -683,7 +683,7 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
 
 Whenever `workTarget()` is non-null and `near` (and tools aren't blocked or the bow drawn),
 `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
-Fortnite-style key prompt over the target: a 9×10 pixel key-cap with an **E** plus the verb
+Fortnite-style key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the verb
 (CHOP / MINE / PICK / BREAK / CRACK ICE), lifted above trees by 20 px and short objects by 10 —
 a building instead clears its own sprite (which is drawn up from the footprint's bottom edge and
 can be taller than its tiles) and centres the prompt on the footprint, not the tile aimed at. The cap
@@ -2277,7 +2277,8 @@ your own marker cross it. Consequences worth knowing:
 `aiLevel` — the rival bots' difficulty notch on class select, an index into `AI_LEVELS` (js/ai.js) —
 `mobile` — the TOUCH MODE row, `'auto'` / `'on'` / `'off'` over the device's own answer
 ([phones](rendering.md#phones)) — `hudScaleM` — the HUD SIZE a phone plays at, the one
-slider editing whichever of the two is live —
+slider editing whichever of the two is live — `binds` — the key each action is bound to
+([the three controllers](multiplayer.md#the-three-controllers)) —
 and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) persists
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
@@ -2325,11 +2326,14 @@ everything but the cloud shadows, HIGH is everything, and the word matching the 
 wears gold — a hand-picked mix golds none of them. SNOWFALL is deliberately in no preset:
 falling snow is the game's identity and nearly free, so only a deliberate hand turns it off.
 
-**In [practice](world.md#the-practice-arena) the slab grows one hanger.** A LEAVE PRACTICE frost
-plank (`leavePlankRect`, drawn by the title's own `drawMenuButton`) hangs under the panel — the
-ESC slab is the arena's only menu, so its exit lives there. `settingsHit()` answers `'leave'`
-for it (PRACTICE only) and the click is `leavePractice()` (js/menu.js): the reroll's whiteout
-onto a bare URL, landing on a fresh title world.
+**The in-match slab hangs one plank under itself: the way out.** A frost plank
+(`leavePlankRect`, drawn by the title's own `drawMenuButton`) reads LEAVE MATCH in a match and
+LEAVE PRACTICE in [practice](world.md#the-practice-arena) — the ESC slab is the one menu either
+has, so its exit lives there. `settingsHit()` answers `'leave'` for it (only while
+`state.settingsOpen`, so the title's slide-in never grows it) and the click is `toLobby()`
+(js/screens.js, the death screen's own fade back to the title on this seed) or
+`leavePractice()` (js/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh title
+world).
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
 left end of the MASTER track on the AUDIO page — `muteBtnRect()` returns `null` on any other
@@ -2343,10 +2347,22 @@ controller, since a phone and a pad each put the same verbs somewhere else. Its 
 pinned at the top of the content window (`CTRL_TAB_H`) and only the listing under it scrolls;
 it opens on the controller in hand (`ctrlTabNow`: TOUCH on a phone, GAMEPAD while a pad is
 active — a green pip beside that word says one is — KEYBOARD otherwise) until a click picks
-one. Each listing is baked once (`bakeCtrlKeys`/`bakeCtrlPad`/`bakeCtrlTouch` into `ctrlCvs`,
-panels.js). KEYBOARD is the hotkey listing in two columns and, under a rule, **THE WEAPON** —
-the one thing about the left button a new player cannot work out by pressing it, drawn rather
-than explained (`drawToolPrimer`); it is long enough that the page's scroll track appears.
+one. The pad's and the touch listing are baked once (`bakeCtrlPad`/`bakeCtrlTouch` into
+`ctrlCvs`, panels.js); **KEYBOARD is live**: two columns of verbs, each rebindable one beside
+its key drawn as a **cap** — the same cap the work prompt wears in the world (`drawKeyCap`,
+ui.js), printing whatever key the action is bound to — and the fixed ones (the mouse's
+buttons, ESC, SCROLL, F3, `.`) as plain gold text, since nothing about them can be pressed. A
+cap is a button: it lifts white on hover, a click sets it **listening** (the face pulses gold)
+and the next key down is its key; a key another cap holds swaps the two, a reserved key is
+refused, Escape or a click elsewhere calls it off
+([rebinding](multiplayer.md#the-three-controllers)). RESET at the foot of the right column puts
+the defaults back and sits dim while they already are. `KEY_ROWS` is the two columns (an
+action id, a run of caps on one verb — MOVE, ABILITIES — or a fixed pair), `keyRowsLayout`
+places every cap and word listing-local, and the draw (`drawKeyRows`), `settingsHit`
+(`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read it. Under a rule at
+`KEYS_PRIMER_Y`, baked (`bakeCtrlKeys`), **THE WEAPON** — the one thing about the left button a
+new player cannot work out by pressing it, drawn rather than explained (`drawToolPrimer`); the
+page is long enough that its scroll track appears.
 GAMEPAD draws each button as a picture (`drawPadGlyph`: a face button is a disc with its
 letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a cross with its
 pressed arm lit) beside its verb, the play set on the left and the held gestures and the menu

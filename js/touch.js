@@ -19,19 +19,21 @@ const TOUCH_R_BIG = 17;
 const TOUCH_R_SMALL = 10;
 const TOUCH_COL_X = 22;                       // the two columns' centres, in from either edge
 
-// What a plate does. `key` presses that key (held for as long as the finger
-// is down, so WORK is E held); `latch` flips a held key on each tap (SLIDE is
-// shift, a toggle under a thumb); `zoom` steps the camera a rung; a
+// What a plate does. `act` presses that action's key (KEY_ACTIONS, input.js:
+// whatever it is bound to, held for as long as the finger is down, so WORK
+// is the work key held); `key` a fixed key (the menu plate's Escape);
+// `latch` flips an action's key on each tap (SLIDE is the slide key, a
+// toggle under a thumb); `zoom` steps the camera a rung; a
 // `gesture` plate is held and dragged - BUILD opens the wheel and the finger
 // picks the wedge, FLAG raises the order and the finger's lift plants it.
 // `when` hides a plate that has nothing to do; `menu` is the one plate that
 // stays up over every panel and screen, where its glyph is a cross and its
 // key backs out (Escape).
 const TOUCH_BTNS = {
-  dodge: { r: TOUCH_R_BIG, key: ' ' },
-  work: { r: TOUCH_R, key: 'e' },
-  slide: { r: TOUCH_R, latch: 'shift' },
-  char: { r: TOUCH_R - 2, key: 'g' },
+  dodge: { r: TOUCH_R_BIG, act: 'dodge' },
+  work: { r: TOUCH_R, act: 'work' },
+  slide: { r: TOUCH_R, latch: 'slide' },
+  char: { r: TOUCH_R - 2, act: 'char' },
   build: { r: TOUCH_R, gesture: 'wheel' },
   flag: { r: TOUCH_R, gesture: 'flag', when: () => hasWorkers(player) },
   menu: { r: TOUCH_R_SMALL, key: 'Escape' },
@@ -137,7 +139,7 @@ function touchDown(id, x, y) {
   if (touchOverlay()) { touch.fingers.set(id, touchPtr(id, x, y)); return; }
   // free play: the minimap is the map key, the HUD is the mouse, the two
   // halves of the world are the two sticks
-  if (Math.hypot(x - MM_CX, y - MM_CY) <= MM_R + 7) { SFX.unlock(); keyPress({ key: 'm', repeat: false }); touch.fingers.set(id, f); return; }
+  if (Math.hypot(x - MM_CX, y - MM_CY) <= MM_R + 7) { SFX.unlock(); keyPress({ key: actKey('map'), repeat: false }); touch.fingers.set(id, f); return; }
   if (overHud(x, y)) { touch.fingers.set(id, touchPtr(id, x, y)); return; }
   if (x < VIEW_W / 2) { if (!touchFinger('move')) f.kind = 'move'; }
   else if (!touchFinger('aim')) { f.kind = 'aim'; fireDown(); }
@@ -180,8 +182,8 @@ function touchBtnPress(f, id) {
   const b = TOUCH_BTNS[id];
   touch.held[id] = true;
   SFX.unlock();
-  if (b.key) { keys[b.key.toLowerCase()] = true; keyPress({ key: b.key, repeat: false }); }
-  else if (b.latch) keys[b.latch] = !keys[b.latch];
+  if (b.act || b.key) { const k = b.act ? actKey(b.act) : b.key; keys[k.toLowerCase()] = true; keyPress({ key: k, repeat: false }); }
+  else if (b.latch) { const k = actKey(b.latch).toLowerCase(); keys[k] = !keys[k]; }
   else if (b.zoom) kWant = Math.max(kMin(), Math.min(kMax(), kWant + b.zoom));
   else if (b.gesture === 'wheel') { pointerMove(f.x, f.y, 'touch'); f.gesture = openWheelNear(player, f.x, f.y); }
   else if (b.gesture === 'flag') { pointerMove(f.x, f.y, 'touch'); f.gesture = flagDown(); }
@@ -189,7 +191,7 @@ function touchBtnPress(f, id) {
 function touchBtnRelease(f, id) {
   const b = TOUCH_BTNS[id];
   touch.held[id] = false;
-  if (b.key) { keys[b.key.toLowerCase()] = false; keyRelease({ key: b.key }); }
+  if (b.act || b.key) { const k = b.act ? actKey(b.act) : b.key; keys[k.toLowerCase()] = false; keyRelease({ key: k }); }
   else if (b.gesture === 'wheel' && f.gesture) { if (state.wheel) { resolveWheel(); state.wheel = null; } }
   else if (b.gesture === 'flag' && f.gesture) flagUp();
 }

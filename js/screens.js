@@ -411,15 +411,15 @@ function deadKey(k) {
       if (state.over === 'respawning') { if (replayShowing()) { state.rpClosed = true; SFX.pickup(); } }
       else { state.deadView = 'menu'; SFX.pickup(); }
     }
-    else if (k === 'arrowright' || k === 'd') { specNext(1); SFX.pickup(); }
-    else if (k === 'arrowleft' || k === 'a') { specNext(-1); SFX.pickup(); }
+    else if (moveDir(k) === 'right') { specNext(1); SFX.pickup(); }
+    else if (moveDir(k) === 'left') { specNext(-1); SFX.pickup(); }
     return;
   }
   if (endSkip()) return;
   if (!deadReady()) return;
   const n = deadLayout().length;
-  if (k === 'arrowleft' || k === 'a') { state.deadSel = (state.deadSel + n - 1) % n; SFX.pickup(); }
-  else if (k === 'arrowright' || k === 'd') { state.deadSel = (state.deadSel + 1) % n; SFX.pickup(); }
+  if (moveDir(k) === 'left') { state.deadSel = (state.deadSel + n - 1) % n; SFX.pickup(); }
+  else if (moveDir(k) === 'right') { state.deadSel = (state.deadSel + 1) % n; SFX.pickup(); }
   else if (k === 'enter' || k === ' ') deadActivate(state.deadSel);
 }
 

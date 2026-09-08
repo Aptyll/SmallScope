@@ -1134,28 +1134,29 @@ function renderDropUI(now) {
     drawPixelTextOutline(ctx, t2, bxx + bw + 6 * ts, byy + Math.round(bh / 2) - 3 * ts,
       open ? '#ffd95c' : '#cfe0ff', '#0f1632', ts);
   } else {
-    drawDropBind('WASD', 'DRIFT', cxm, 10 * ts, '#f4f7ff', ts, true);
+    drawDropBind('move', 'DRIFT', cxm, 10 * ts, '#f4f7ff', ts, true);
   }
   // keybind indicator, bottom right: the map itself is the affordance
-  if (!state.mapOpen) drawDropBind('M', 'MAP', VIEW_W - 6 * ts, VIEW_H - 12 * ts, '#9fb6d8', ts, false);
+  if (!state.mapOpen) drawDropBind('map', 'MAP', VIEW_W - 6 * ts, VIEW_H - 12 * ts, '#9fb6d8', ts, false);
 }
 // one of the flight HUD's two keybind indicators: `KEY - VERB` as text for
-// the keyboard, the pad's glyph beside the verb while a pad is in hand
-// (PAD_BIND, ui.js). Centred on x, or ending at x when `centre` is false.
-function drawDropBind(key, verb, x, y, col, ts, centre) {
+// the keyboard - the key the action is bound to (keyCap, input.js) - the
+// pad's glyph beside the verb while a pad is in hand (PAD_BIND, ui.js).
+// Centred on x, or ending at x when `centre` is false.
+function drawDropBind(act, verb, x, y, col, ts, centre) {
   if (padActive()) {
-    const gw = padBindW(key) * ts, w = gw + 3 * ts + pixelTextWidth(verb, ts);
+    const gw = padBindW(act) * ts, w = gw + 3 * ts + pixelTextWidth(verb, ts);
     const x0 = Math.round(centre ? x - w / 2 : x - w);
-    drawPadBind(ctx, x0, y - 2 * ts, key, ts);
+    drawPadBind(ctx, x0, y - 2 * ts, act, ts);
     drawPixelTextOutline(ctx, verb, x0 + gw + 3 * ts, y, col, '#0f1632', ts);
   } else {
-    const t = key + ' - ' + verb, w = pixelTextWidth(t, ts);
+    const t = keyCap(act) + ' - ' + verb, w = pixelTextWidth(t, ts);
     drawPixelTextOutline(ctx, t, Math.round(centre ? x - w / 2 : x - w), y, col, '#0f1632', ts);
   }
 }
 
 // The way off the roost, for a rider still seated after the brief: a keybind
-// indicator - an E key cap with the one word beside it, bobbing at the seated
+// indicator - the work key's cap with the one word beside it, bobbing at the seated
 // player's shoulder (beside, not above: above is the bird's own bar and
 // whoever is standing on the far side of it) - and the gold landing ring
 // pulsing under the bird (drawEagle), the same ring that marked the open jump
@@ -1167,16 +1168,16 @@ function drawHopPrompt(now) {
   if (e.state !== 'down') return;
   const ts = VIEW_H >= 500 ? 2 : 1;
   const bob = Math.round(Math.sin(now * 4) * 2);
-  const w = 11 * ts, h = 11 * ts;
+  const lab = keyCap('work'), w = (pixelTextWidth(lab) + 8) * ts, h = 11 * ts;
   const cx = Math.round(wToSX(player.x)) + 20 * ts, cy = Math.round(wToSY(player.y)) - 14 * ts + bob;
   if (padActive()) {
     // a pad in hand: the A disc (the jump; X, the work button, hops too)
-    drawPadBind(ctx, cx, cy + ts, 'SPACE', ts);
+    drawPadBind(ctx, cx, cy + ts, 'dodge', ts);
   } else {
     ctx.fillStyle = '#0f1632'; ctx.fillRect(cx - ts, cy - ts, w + 2 * ts, h + 2 * ts);
     ctx.fillStyle = '#f4f7ff'; ctx.fillRect(cx, cy, w, h);
     ctx.fillStyle = '#c9d0e2'; ctx.fillRect(cx, cy + h - 2 * ts, w, 2 * ts); // the cap's lower face
-    drawPixelText(ctx, 'E', cx + 3 * ts, cy + 2 * ts, '#0f1632', ts);
+    drawPixelText(ctx, lab, cx + 3 * ts, cy + 2 * ts, '#0f1632', ts);
   }
   drawPixelTextOutline(ctx, 'HOP OFF', cx + w + 4 * ts, cy + 2 * ts, '#ffd95c', '#0f1632', ts);
 }
@@ -1255,6 +1256,7 @@ function startGame() {
 
 PROFILE.load();   // the profile carries the settings, so it is read first
 loadSettings();
+mendBinds(); // the profile's key binds made whole (input.js)
 // the saved TOUCH MODE is only now known: if it flips phone mode, the view
 // fitted at load is the wrong one (relayout() below places the UI for it)
 if (mobileRefresh()) fitCanvas();
@@ -1580,6 +1582,14 @@ window.DBG = {
   setSettingsTab: (id) => { setTab = id; },
   get settingsTab() { return setTab; }, // the open page (a let, so a getter)
   setCtrlTab: (id) => { ctrlTab = id; },
+  // the key binds: the action table, the live map, the rebind by hand
+  // (setBind swaps exactly as a listening cap would), and keyName - which
+  // reads a KeyboardEvent, or a bare {code, key}, the way the listener does,
+  // so an AZERTY board can be staged without one. keyRows is where every
+  // cap on the CONTROLS page sits, listing-local.
+  KEY_ACTIONS, setBind, resetBinds, rebindStart, keyName, keyLabel, keyCap, mendBinds,
+  get binds() { return settings.binds; },
+  keyRows: () => keyRowsLayout(),
   get settingsRows() {
     const L = settingsLayout();
     const rows = {};
