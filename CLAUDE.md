@@ -58,7 +58,8 @@ unlocked for everybody, so `LOOT_POOL` is the same on a first flight as on a fiv
 ([the wiki](docs/dev/gameplay.md#the-wiki)).
 
 All game state lives in module-scope singletons (`state`, `settings`, `players`) and the entity
-arrays beside them; `player`/`inv` are the **local player only**, and carried goods are `player.bag`.
+arrays beside them; `player`/`inv` are the **local player only**, carried goods are `player.bag` and
+the two meals are the uncapped `player.food` pouch — both reached only through the `bag*` helpers.
 The full list: [code-map](docs/dev/code-map.md#jsplayerjs).
 
 A feature's **tuning constants live in the file that owns the feature**, above the code that reads

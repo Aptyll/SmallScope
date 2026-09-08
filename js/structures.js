@@ -412,7 +412,6 @@ function updateStructures(dt) {
         for (const p of players) {
           if (!p.active || p.dead || inAir(p)) continue;
           if (Math.floor(p.x / TILE) !== o.tx || Math.floor((p.y + 4) / TILE) !== o.ty) continue;
-          if (bagRoom(p, 'fish') <= 0) { if (p === player) bagDenied(); continue; }
           contest('net:' + idx(o.tx, o.ty), p, () => {
             if (o.fish <= 0 || bagAdd(p, 'fish', 1) < 1) return;
             o.fish--;

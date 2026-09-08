@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.14'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.15'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.15', 'BERRIES AND FISH LEAVE THE BACKPACK FOR AN ENDLESS POUCH ON THE Q AND F KEYS, YOUR GOLD SITS BESIDE THEM ON THE STRIP ALL MATCH, AND THE PACK STARTS OPEN.'],
   ['3.14', 'THE HANDS WORK ON THEIR OWN: A TREE, A BUSH, A ROCK, A CHEST, A FISH, A RIVAL WALL OR THEIR ROOSTING BIRD IN REACH IS STRUCK WITH NO KEY, UNDER A DRAW OR MID-STRIDE, AND E KEEPS ONLY THE ICE AND THE DUMMY.'],
   ['3.13', 'A PAD WITH A HAND ON IT BEATS AN IDLE VIRTUAL ONE, AND THE LEFT STICK WALKS UNDER THE CHART, THE COUNTER AND THE SHEET.'],
   ['3.12', 'AN UNMAPPED PAD IS READ BY WHERE ITS AXES REST, AND THE GAMEPAD PAGE ENDS IN A LIVE READOUT OF WHAT THE BROWSER SEES.'],

@@ -475,8 +475,8 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   ground blit (using `ex`/`ey`). Cracking ice spooks nearby fish into a fast dart.
 - **Fishing is automatic**: `autoFish(p, dt)` (js/tools.js, called from `updatePlayer` every
   step) checks whether that player stands on an ice tile with a fish within `FISH_CATCH_R`
-  (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), never into
-  a full bag, spending no tool cycle — into `p.bag`, splash, no arrow, and the press on the ice
+  (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), spending no
+  tool cycle — into the `p.food` pouch, splash, no arrow, and the press on the ice
   flies like any other ([the swing tools](gameplay.md#the-swing-tools-e)). The catch is
   [contested](multiplayer.md#contested-orders), so two players can't land the same fish. **The catch is a pose**: the contest's
   callback calls `startCatch(p)` (below `autoFish` in js/tools.js), `CATCH_T` (2 s) of three
@@ -557,10 +557,10 @@ A finished net runs two clocks in `updateStructures`' `net` branch:
   fish a gentle lean toward any net inside `NET_LURE` (44 px) that still has room — that lure is
   what makes a net read as working rather than waiting on luck.
 - **Emptying.** Any living player whose feet are on the tile takes one fish every `NET_TAKE_T`
-  (0.3 s) straight into their bag — **team is never checked**. A net is a thing lying on the ice,
+  (0.3 s) straight into their pouch — **team is never checked**. A net is a thing lying on the ice,
   not a locked chest, so an enemy standing on yours walks off with the catch. It is
   [contested](multiplayer.md#contested-orders) (`net:<idx>`) so two players over one rope cannot
-  take the same fish, and a full bag flashes the refusal (`bagDenied`) and leaves the fish in.
+  take the same fish. Nothing can refuse a catch: fish are a pouch kind and take no bag cell.
 
 Enemies break a net with **E** like any other building (`workTarget` finds the object on the tile
 and gates on `ownsStruct`); the owner demolishes it from the manage wheel. Either way

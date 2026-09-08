@@ -1288,9 +1288,11 @@ function drawMarketCard(c, h, now) {
     !!h && h.kind === 'trade' && h.id === c.id && h.dir > 0, now, dear);
   drawTradePlate(c.sell, -1, c.id, held > 0, !!h && h.kind === 'trade' && h.id === c.id && h.dir < 0, now, false);
   // what you are carrying, on the sale plate's own edge: the number that
-  // decides whether the plate is even worth pressing
+  // decides whether the plate is even worth pressing. The pouch has no
+  // ceiling (js/player.js), so it wears the HUD's shortNum rather than a
+  // fifth digit through the plate's rim.
   if (held > 0) {
-    const ht = String(held);
+    const ht = shortNum(held);
     drawPixelTextShadow(ctx, ht, c.sell.x + c.sell.w - 3 - pixelTextWidth(ht), c.sell.y + 3, col, SHOP_BG);
   }
 }
