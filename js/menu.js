@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.13'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.14'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.14', 'THE HANDS WORK ON THEIR OWN: A TREE, A BUSH, A ROCK, A CHEST, A FISH, A RIVAL WALL OR THEIR ROOSTING BIRD IN REACH IS STRUCK WITH NO KEY, UNDER A DRAW OR MID-STRIDE, AND E KEEPS ONLY THE ICE AND THE DUMMY.'],
   ['3.13', 'A PAD WITH A HAND ON IT BEATS AN IDLE VIRTUAL ONE, AND THE LEFT STICK WALKS UNDER THE CHART, THE COUNTER AND THE SHEET.'],
   ['3.12', 'AN UNMAPPED PAD IS READ BY WHERE ITS AXES REST, AND THE GAMEPAD PAGE ENDS IN A LIVE READOUT OF WHAT THE BROWSER SEES.'],
   ['3.11', 'A GAMEPAD HOPS OFF THE EAGLE ON A, EVERY KEY INDICATOR WEARS THE PAD BUTTON WHILE ONE IS IN HAND, AND THE BUMPERS PAGE THE SETTINGS TABS.'],
@@ -917,7 +918,7 @@ function buildHelpPanel() {
     ['GOLD IS THE ONLY CURRENCY', '#cfe0ff'],
     ['TREES ROCKS AND GAME ALL PAY IT', '#9fb6d8'],
     ['RIGHT CLICK A STUMP TO RAISE A BASE', '#9fb6d8'],
-    ['CRACK THE ICE TO SPEAR FISH BELOW', '#9fb6d8'],
+    ['WALK THE ICE AND THE FISH COME UP', '#9fb6d8'],
     ['RIVERS ARE FAST - CHAIN DODGES TO FLY', '#9fb6d8'],
     ['NAMED PLACES ARE ON THE MAP - WOLVES DEN UP', '#ff9a8a'],
     ['RIVALS SHARE THE MAP - ARROWS HURT THEM', '#ff9a8a'],

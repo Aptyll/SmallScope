@@ -559,9 +559,6 @@ function fireTool(p) {
   // the cover is read before anything below can break it - the ambush shot is
   // what the crawl in was for, whatever bit is loaded
   const amb = ambushReady(p);
-  // bow-fishing survives the new weapon: any tool, standing on ice with a
-  // fish underfoot, spears it through the sheet instead of loosing
-  if (spearFish(p)) return;
   const cell = heldTool(p);
   if (!cell) { dryFire(p); return; }          // an empty slot has nothing to press
   const plan = toolPlan(cell);
@@ -642,28 +639,30 @@ function emitBit(p, b, id, m, amb, seq) {
   else p.dir = dy > 0 ? 'down' : 'up';
 }
 
-// Bow-fishing, lifted out of the old fireArrow so every tool keeps it: on ice
-// with a fish in reach, the press spears through the sheet instead. Returns
-// true when it took the press. Two players can reach one fish in a step, so
-// the catch is contested rather than first-come.
-function spearFish(p) {
+// Fishing is the hands working on their own, like a tree in reach
+// (autoWork, js/actions.js): standing on ice with a fish inside FISH_CATCH_R
+// takes it through the sheet with no press - once every FISH_AUTO_CD, so a
+// walk along a shoal is a stride per fish, not a vacuum. It never touches
+// the tool: no cycle is spent, a draw runs on under it, and the press that
+// used to spear now flies like any other. A full bag simply leaves the fish
+// under the ice, silently - there is no motion to refuse. Two players can
+// reach one fish in a step, so the catch is contested rather than first-come.
+const FISH_AUTO_CD = 1.2;
+function autoFish(p, dt) {
+  p.fishCd = Math.max(0, p.fishCd - dt);
+  if (p.fishCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 || inAir(p)) return;
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  if (!inWorld(ftx, fty) || ground[idx(ftx, fty)] !== 1) return false;
+  if (!inWorld(ftx, fty) || ground[idx(ftx, fty)] !== 1) return;
+  if (bagRoom(p, 'fish') <= 0) return;
   let bi = -1, bd = FISH_CATCH_R;
   for (let i = 0; i < fish.length; i++) {
     if (!fish[i].born) continue; // still swimming in from under the shore
     const d = Math.hypot(fish[i].x - p.x, fish[i].y - p.y);
     if (d < bd) { bd = d; bi = i; }
   }
-  if (bi < 0) return false;
-  // a full bag refuses the catch rather than spearing a fish into nowhere:
-  // the motion is spent, and the fish stays under the ice
-  if (bagRoom(p, 'fish') <= 0) {
-    if (p === player) bagDenied();
-    p.nockT = toolCycle(p);
-    return true;
-  }
+  if (bi < 0) return;
   const f = fish[bi];
+  p.fishCd = FISH_AUTO_CD;
   contest('fish:' + bi, p, () => {
     const j = fish.indexOf(f);
     if (j < 0) return;
@@ -675,20 +674,17 @@ function spearFish(p) {
     burst(f.x, f.y, '#ddf1f8', 5, 35, 0.4, true);
     if (nearPlayer(f.x, f.y)) { SFX.splash(); SFX.stash(); }
   });
-  p.nockT = toolCycle(p);
-  return true;
 }
 
 // The catch is a pose the body performs - CATCH_STOOP s bent to the hole,
 // CATCH_HAUL s with the fish coming up, then the trophy hoist for the rest of
 // CATCH_T - three DOWN-facing frames whatever the body was facing
-// (classSet(p).catch, drawn by drawPlayer). WASD is swallowed for the first
-// CATCH_WALK s - you stand and show it - and walks out of it after that; it is
-// never a channel you are stuck in, because a fresh press, a roll, a cast, a
-// swing, a meal or a hit drops it at any moment (cancelCatch, from
-// updatePlayer and damagePlayer). A net hands its first fish up the same way
-// (updateStructures, js/structures.js).
-const CATCH_T = 2, CATCH_STOOP = 0.16, CATCH_HAUL = 0.22, CATCH_WALK = 1;
+// (classSet(p).catch, drawn by drawPlayer). It is shown only by a body that
+// is standing still anyway: a step, a fresh press, a roll, a cast, a swing,
+// a meal or a hit drops it at once (cancelCatch, from updatePlayer and
+// damagePlayer), because an automatic catch may never hold the player.
+// A net hands its first fish up the same way (updateStructures, js/structures.js).
+const CATCH_T = 2, CATCH_STOOP = 0.16, CATCH_HAUL = 0.22;
 function startCatch(p) { p.catchT = CATCH_T; }
 function cancelCatch(p) { p.catchT = 0; }
 // which catch frame the body is on: 0 stoop, 1 haul, 2 hoist, -1 not catching

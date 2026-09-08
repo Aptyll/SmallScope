@@ -557,19 +557,14 @@ function updatePlayer(p, dt) {
     inp.mx = inp.my = 0;
   }
 
-  // the fish hoist (startCatch, js/tools.js) holds the body still for its
-  // first CATCH_WALK second - WASD is dropped here, the way a stun drops it -
-  // and a step ends it after that; any other intent (a fresh press, a roll, a
-  // cast, a swing, a meal) ends it at once. It never holds up the intent that
-  // ends it.
+  // the fish hoist (startCatch, js/tools.js) is a pose the body holds only
+  // while it is idle: a step, or any other intent (a fresh press, a roll, a
+  // cast, a swing, a meal), ends it at once. The catch is automatic
+  // (autoFish), so it must never cost the player a single frame of control.
   if (p.catchT > 0) {
     p.catchT = Math.max(0, p.catchT - dt);
-    if (inp.dodge || inp.ability >= 0 || inp.work || inp.slide ||
+    if (inp.dodge || inp.ability >= 0 || inp.work || inp.slide || inp.mx || inp.my ||
         inp.eatBerry || inp.eatFish || inp.cmd || (inp.fire && !p.firePrev)) cancelCatch(p);
-    else if (inp.mx || inp.my) {
-      if (CATCH_T - p.catchT >= CATCH_WALK) cancelCatch(p);
-      else inp.mx = inp.my = 0;
-    }
   }
 
   // edge-triggered intents, consumed here so a controller only has to set them
@@ -914,9 +909,12 @@ function updatePlayer(p, dt) {
       swingHit(p);
     }
   }
-  // the work tool goes away with the swing cooldown; held E brings it right back
+  // the work tool goes away with the swing cooldown; held E brings it right
+  // back, and with no E the hands find their own work (autoWork, js/actions.js:
+  // a tree or a berried bush in reach) - and their own fish (autoFish, js/tools.js)
   if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
-  if (inp.work) tryWork(p);
+  if (inp.work) tryWork(p); else autoWork(p);
+  autoFish(p, dt);
 
   // the cycle: the cooldown a shot starts (toolCycle, js/tools.js) counts
   // down, and its end is the ONE gate between presses. It runs for every
@@ -950,8 +948,8 @@ function updatePlayer(p, dt) {
     if (!armed && p.dryT <= 0) dryFire(p);
   }
   if (!inp.fire) p.fireArmed = false;
-  if (p.fireArmed && !p.charging && p.nockT <= 0 && armed && p.fallT <= 0 && p.swingT <= 0 &&
-    p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.eatT <= 0) { // a body mid-ability has no hand free for the draw (a meal is already cancelled by the press above)
+  if (p.fireArmed && !p.charging && p.nockT <= 0 && armed && p.fallT <= 0 && (p.swingT <= 0 || p.autoSwing) &&
+    p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.eatT <= 0) { // a body mid-ability has no hand free for the draw (a meal is already cancelled by the press above); an auto swing is never in the way
     p.charging = true;
     p.chargeT = 0;
     if (nearPlayer(p.x, p.y)) SFX.bowDraw();

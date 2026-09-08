@@ -477,6 +477,8 @@ class Player {
     this.crawlT = 0; this.puffT = 0; this.hideFlash = 0;
     this.swingT = 0; this.swingCd = 0; this.swingDir = 0; this.swingHitDone = false;
     this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
+    this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
+    this.fishCd = 0;                               // the automatic catch's clock (autoFish, js/tools.js)
     // the class abilities (keys 1-4, js/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -
     // slowed under a net or a crater, mid-reel on the grapple, shielded,

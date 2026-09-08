@@ -12,7 +12,9 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // Every scenery object that can stand on a tile, and everything generic code
 // needs to know about one without naming its type: whether it blocks a walker,
 // which tool E reaches for (`tool`) and which one a swing must already be
-// holding (`needs`, null = any), the verb the key prompt prints and how far
+// holding (`needs`, null = any), whether the hands go to it on their own the
+// moment it is in reach (`auto` - a tree, a rock, a chest, a rival's eagle:
+// autoWork, js/actions.js - bare ice and the dummy wait for E), the verb the key prompt prints and how far
 // above the tile it sits, and the colour each of the two maps paints it.
 // Buildings are NOT in here - they are STRUCTS entries carrying the same
 // mm/map fields, and every site below asks that table first. Adding a scenery
@@ -21,20 +23,20 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 const OBJECTS = {
   // lift 33: the pine's canopy reaches 21 px above its own tile (drawn at
   // py - 21), and the prompt clears it by the same 12 px everything else gets
-  tree:     { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 33,
+  tree:     { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 33, auto: true,
               mm: [52, 100, 82],   map: treeMapPx },
-  deadTree: { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 20,
+  deadTree: { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 20, auto: true,
               mm: [138, 128, 116], map: [150, 132, 108] },
-  rock:     { solid: true,  tool: 'pick', needs: 'pick', verb: 'MINE', lift: 10,
+  rock:     { solid: true,  tool: 'pick', needs: 'pick', verb: 'MINE', lift: 10, auto: true,
               mm: [122, 131, 153], map: [104, 108, 118] },
   // a picked bush is still a bush: `ready` is what decides whether E offers it
-  bush:     { solid: false, tool: 'axe',  needs: null,   verb: 'PICK', lift: 10,
+  bush:     { solid: false, tool: 'axe',  needs: null,   verb: 'PICK', lift: 10, auto: true,
               ready: (o) => o.berries > 0,
               mm: [88, 148, 108],  map: (o) => o.berries > 0 ? MAP_BUSH_RIPE : MAP_BUSH_BARE },
   // a buried cache swapped in for an inner-edge border tree (placeChests):
   // one free E press springs it - hitObject's chest branch pays the gold and
   // rolls the card. Any tool opens it, so `needs` stays null.
-  chest:    { solid: true,  tool: 'axe',  needs: null,   verb: 'OPEN', lift: 12,
+  chest:    { solid: true,  tool: 'axe',  needs: null,   verb: 'OPEN', lift: 12, auto: true,
               mm: [242, 204, 100], map: [206, 160, 70] },
   den:      { solid: true,  mm: [92, 86, 100],   map: [86, 80, 92] },
   // the practice arena's target (the `practice arena` banner below): any tool
@@ -62,7 +64,7 @@ const OBJECTS = {
   // solid to walkers and a work target for RIVAL E swings only - workTarget
   // reads the `team` an object carries. Drawn by drawEagle, never the object
   // pass; the swing itself lands in hitObject's eagle branch (hurtEagle).
-  eagle:    { solid: true,  tool: 'axe',  needs: null,   verb: 'STRIKE', lift: 16,
+  eagle:    { solid: true,  tool: 'axe',  needs: null,   verb: 'STRIKE', lift: 16, auto: true,
               mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
               map: (o) => skin(o.team) ? MAP_EAGLE_BLUE : MAP_EAGLE_RED },
   // a multi-tile building's filler tiles: solid, and structOf() has resolved

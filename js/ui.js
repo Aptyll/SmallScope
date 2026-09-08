@@ -148,8 +148,12 @@ function drawSelection(ox, oy, now) {
 function drawWorkHint(ox, oy) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
   if (player.charging || player.fallT > 0 || player.dodgeT > 0) return;
-  if (hoverFish()) return; // the fish prompt wins over CRACK ICE on the same tile
-  const t = workTarget(player);
+  if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
+  let t = workTarget(player);
+  // what the hands take on their own (autoToolFor: a tree, a rock, a chest, a
+  // rival's building or eagle) asks for no key - the swing itself is the whole signal
+  if (t && t.o && autoToolFor(t.o, player) >= 0) t = null;
+  
   // no work target: the armory, the roll station, the range bell or a
   // MERCHANT may still be in reach
   if (!t || !t.near) { drawRackHint(ox, oy); drawPkHint(ox, oy); drawBellHint(ox, oy); drawShopHint(ox, oy); return; }
@@ -316,20 +320,11 @@ function drawShopHint(ox, oy) {
   drawKeyPrompt(Math.round(b.x - ox - totalW / 2), Math.round(b.y - 44 - oy), verb, !!keys['e']);
 }
 
-function drawMouseIcon(x, y, pressed) {
-  ctx.fillStyle = '#0a0e23';
-  ctx.fillRect(x + 1, y, 7, 1); ctx.fillRect(x, y + 1, 9, 8); ctx.fillRect(x + 1, y + 9, 7, 1); ctx.fillRect(x + 2, y + 10, 5, 1);
-  ctx.fillStyle = '#c2d8ee';
-  ctx.fillRect(x + 1, y + 5, 7, 4); ctx.fillRect(x + 2, y + 9, 5, 1); // body
-  ctx.fillRect(x + 5, y + 1, 3, 3); // right button: body colour, nothing to notice
-  ctx.fillStyle = '#dce9f5'; ctx.fillRect(x + 1, y + 5, 7, 1); // body highlight under the seam
-  ctx.fillStyle = pressed ? DRAW_FULL_COL : DRAW_COL; ctx.fillRect(x + 1, y + 1, 3, 3); // left button: the draw meter's golds
-  ctx.fillStyle = '#fff3b0'; ctx.fillRect(x + 1, y + 1, 1, 1); // button glint
-}
 
 // hovering a fish: white brackets on the fish (the same "this reacts" cue as
-// stumps) and a click prompt - SPEAR in catch range, GET CLOSE otherwise,
-// since the mechanic is standing on the ice beside it, not aiming at it
+// stumps), full-bright once it is inside the automatic catch's reach (autoFish,
+// js/tools.js) and dimmed until then - the mechanic is standing on the ice
+// beside it, and the brackets' brightness is the whole of that hint
 function drawFishHint(ex, ey, now) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
   if (player.fallT > 0 || player.dodgeT > 0) return;
@@ -338,7 +333,7 @@ function drawFishHint(ex, ey, now) {
   const fx = Math.round(f.x - ex), fy = Math.round(f.y - ey);
   const near = fishInRange(f);
   // brackets: 16x12 box, pulsing like the stump selection
-  ctx.globalAlpha = 0.6 + 0.3 * Math.sin(now * 6);
+  ctx.globalAlpha = (near ? 0.6 : 0.4) + 0.3 * Math.sin(now * 6);
   const corners = (c, px, py) => {
     ctx.fillStyle = c;
     ctx.fillRect(px, py, 3, 1); ctx.fillRect(px, py, 1, 3);
@@ -347,13 +342,7 @@ function drawFishHint(ex, ey, now) {
     ctx.fillRect(px + 13, py + 11, 3, 1); ctx.fillRect(px + 15, py + 9, 1, 3);
   };
   corners('rgba(15,22,50,0.9)', fx - 7, fy - 5);
-  corners('#ffffff', fx - 8, fy - 6);
-  ctx.globalAlpha = near ? 1 : 0.6;
-  const verb = near ? 'SPEAR' : 'GET CLOSE';
-  const totalW = 9 + 3 + pixelTextWidth(verb);
-  const x = Math.round(fx - totalW / 2), y = fy - 26; // clear of an adjacent player's bars
-  drawMouseIcon(x, y, near && (mouse.down || player.charging));
-  drawPixelTextOutline(ctx, verb, x + 12, y + 3, near ? '#f4f7ff' : '#9fb6d8', '#0f1632');
+  corners(near ? '#ffffff' : '#9fb6d8', fx - 8, fy - 6);
   ctx.globalAlpha = 1;
 }
 

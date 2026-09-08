@@ -61,7 +61,7 @@ const ARROW_BODY = [];    // flat [i, j, key] triples parsed from the map once,
   px.sort((a, b) => pri[a[2]] - pri[b[2]]);
   for (const p of px) ARROW_BODY.push(p[0], p[1], p[2]);
 }
-const WORK_REACH = 1;     // E works tiles within this many tiles (Chebyshev) of the player's tile
+const WORK_REACH = 1;     // E (and the hands on their own: autoWork) work tiles within this many tiles (Chebyshev) of the player's tile
 const STRUCT_HIT_DMG = 10; // axe damage per E swing against an ENEMY building (own ones are demolished from the wheel)
 
 // The roll as a weapon. A dash goes *through* anything small - rabbits,
@@ -157,16 +157,82 @@ function tryWork(p) {
   if (!t || !t.near) return;
   if (p.charging) { p.charging = false; p.chargeT = 0; } // work drops the draw
   p.fireArmed = false;                                     // ...and the held button has to be pressed again
+  p.autoSwing = false;
+  startSwing(p, t);
+}
+
+// the swing itself, once a target is picked: the tool comes up, the body
+// faces the tile, and swingHit lands on it SWING_HIT_AT into the arc
+function startSwing(p, t) {
   p.swing = t.tool;
   p.workTx = t.tx; p.workTy = t.ty;
   const dx = t.tx * TILE + 8 - p.x, dy = t.ty * TILE + 8 - p.y;
   p.swingDir = Math.atan2(dy, dx);
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else p.dir = dy > 0 ? 'down' : 'up';
+  // the body faces the tile - unless a draw is running, which owns the facing
+  // (updatePlayer turns it to the aim every step): an auto swing under a draw
+  // is the arm, not the body, so the aim never flicks
+  if (!p.charging) {
+    if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
+    else p.dir = dy > 0 ? 'down' : 'up';
+  }
   p.swingT = 0.18;
   p.swingCd = 0.34;
   p.swingHitDone = false;
   if (nearPlayer(p.x, p.y)) SFX.swing();
+}
+
+// The hands work on their own. Whatever an OBJECTS entry marks `auto` (a
+// tree, a dead tree, a berried bush, a rock, a chest, a rival's roosting
+// eagle) and any building on the other team is swung at the moment it is in
+// WORK_REACH, with no key held: the closest such tile in the ring around the
+// player, nearest tile centre first. Fish are the same idea on ice (autoFish,
+// js/tools.js). E keeps its day job for what is left - bare ice and the
+// practice dummy - and a held E always wins the hands.
+// Whether a tile is the hands' business, and with which tool (-1 = not). A
+// rival's building or roosting eagle answers with AUTO_PRIO_FOE, a chest with
+// AUTO_PRIO_PRIZE, scenery with 0: at equal distance the fight and the prize
+// beat the pine beside them (autoTarget ranks by prio first, then distance).
+const AUTO_PRIO_FOE = 2, AUTO_PRIO_PRIZE = 1;
+function autoToolFor(o, p) {
+  const st = structOf(o); // a `part` tile answers for the building it belongs to
+  if (STRUCTS[st.type]) return ownsStruct(st, p) ? -1 : SWING_AXE; // yours stay wheel-only
+  const d = OBJECTS[o.type];
+  // an object carrying a team (the eagles' hitbox tiles) is a rival-only target, as in workTarget
+  if (!d || !d.auto || (d.ready && !d.ready(o)) || (o.team !== undefined && o.team === p.team)) return -1;
+  return d.tool === 'pick' ? SWING_PICK : SWING_AXE;
+}
+function autoPrio(o) {
+  if (STRUCTS[structOf(o).type] || o.team !== undefined) return AUTO_PRIO_FOE;
+  return o.type === 'chest' ? AUTO_PRIO_PRIZE : 0;
+}
+function autoTarget(p) {
+  const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
+  let best = null, bd = 1e9, bp = -1;
+  for (let dy = -WORK_REACH; dy <= WORK_REACH; dy++) for (let dx = -WORK_REACH; dx <= WORK_REACH; dx++) {
+    const tx = ptx + dx, ty = pty + dy;
+    if (!inWorld(tx, ty)) continue;
+    const o = objects[idx(tx, ty)];
+    if (!o) continue;
+    const tool = autoToolFor(o, p);
+    if (tool < 0) continue;
+    const dist = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y), pr = autoPrio(o);
+    if (pr > bp || (pr === bp && dist < bd)) { bp = pr; bd = dist; best = { o, tx, ty, tool, near: true }; }
+  }
+  return best;
+}
+// An auto swing never takes anything away from the player: it does not drop
+// a draw or a held button (updatePlayer lets the draw begin under it,
+// p.autoSwing), does not stand a crawler up, and does not touch the aim.
+// The same gates as tryWork otherwise: a swing on cooldown, or a body busy
+// with a fall, a roll, a stun, an ability or a meal, waits.
+function autoWork(p) {
+  if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.prone || inAir(p)) return;
+  const t = autoTarget(p);
+  if (!t) return;
+  cancelCatch(p); // a swing is a swing: the hoist gives way to it
+  p.autoSwing = true;
+  startSwing(p, t);
 }
 
 // dodge roll: dash with i-frames in the held movement direction (8-way),

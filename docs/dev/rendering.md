@@ -193,7 +193,7 @@ branching on `f.k`) → flat objects
 players draw as team-tinted silhouettes via `drawGhost`) →
 selection brackets (`drawSelection`: white pulsing corners with a dark shadow over the hovered
 stump / open ice hole / finished structure, or the wheel's target) → the E work prompt (`drawWorkHint`) → the
-fish brackets + click prompt (`drawFishHint`) → the parkour's lap clock and BEST/LAST plate
+fish brackets (`drawFishHint`) → the parkour's lap clock and BEST/LAST plate
 (`drawParkour`, `PRACTICE` only) → construction progress bars → particles →
 arrows (bolts branch to `drawBolt`) → `drawTurretFx` (each turret's charging aim line and its
 muzzle flash) → turret tracers → swing arcs (one per swinging player) → floaters → `drawDropAir` (the

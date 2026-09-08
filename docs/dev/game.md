@@ -125,7 +125,7 @@ baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#rogu
 
 **An ice hole is a build site.** Break the ice twice and the hole it leaves takes the one `water`
 building — a **fish net**, laid flat and walked *on* rather than into — over a live fish population
-that spears and nets draw down and a trickle refills. [Ice holes and fishing](world.md#ice-holes-and-fishing).
+that walkers on the ice and nets draw down and a trickle refills. [Ice holes and fishing](world.md#ice-holes-and-fishing).
 
 **Hold middle mouse to aim your one worker flag, release to plant — what it sits on is the order.**
 One flag per player, and the target tile decides the job: a tree means cut there, open ground means
