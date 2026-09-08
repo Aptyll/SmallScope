@@ -361,12 +361,7 @@ function render() {
       drawSpriteFlash(spr, px + sh, py - 8, o.flash);
     } else if (o.type === 'den') {
       drawSpriteFlash(SPRITES.den, px + sh, py + 4, o.flash);
-      // hovered while the pack is short: the den's clock, the same neutral
-      // bar a picked bush wears, filling toward the next wolf out of the
-      // mouth (updateLandmarks, world.js) - full and holding is one that is
-      // due and waiting for the site to empty. A pack at strength wears none.
-      if (o === hovO && o.site && landmarkPop(o.site) < o.site.spec.pop)
-        drawHealthBar(px + 8, py + 1, o.site.spec.repop - o.site.repopT, o.site.spec.repop, 12);
+      if (o === hovO) drawCampClock(o, px + 8, py + 1); // a cleared camp's respawn clock, under the pointer
     } else if (o.type === 'rock') {
       const spr = SPRITES.rock[o.variant];
       if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);
@@ -400,6 +395,7 @@ function render() {
     } else if (o.type === 'cairn') {
       ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
+      if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the alpha stone's clock
     } else if (o.type === 'banner') {
       drawBanner(o, px + sh, py, now);
     } else if (o.type === 'rack') {
@@ -1025,7 +1021,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   for (const a of animals) {
     if (a.dead) continue;
     if (a.kind !== 'bird') hbRing(a.x - ex, a.y - ey, unitRadius(a), HB_BODY);
-    hbRing(a.x - ex, a.y - (a.alt || 0) - 3 - ey, a.kind === 'bird' ? 5 : 8, HB_HURT);
+    hbRing(a.x - ex, a.y - (a.alt || 0) - 3 - ey, a.kind === 'bird' ? 5 : a.kind === 'dire' ? 14 : 8, HB_HURT);
     hbDot(a.x - ex, a.y - ey, HB_BODY);
     hbMid(a.x - ex, a.y - (a.alt || 0) - 26 - ey, a.y + 4 - ey);
   }
@@ -1098,7 +1094,7 @@ function drawNavPaths(ox, oy, ex, ey) {
   for (const a of animals) {
     if (a.dead) continue;
     if (a.kind === 'bird') perchLine(a, '#8ef0a0');
-    else one(a, a.kind === 'wolf' ? '#ff6a6a' : '#8ef0a0');
+    else one(a, isCampKind(a.kind) ? '#ff6a6a' : '#8ef0a0');
   }
   for (const b of robots) if (!b.dead) one(b, '#7fc8ff');
   // fish steer and never route - there is no goal tile under a fish to box -
@@ -1194,8 +1190,8 @@ function cursorInfo() {
     }
   }
   for (const a of animals) {
-    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : a.kind === 'wolf' ? 9 : 13;
-    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : a.kind === 'wolf' ? 14 : 22;
+    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : a.kind === 'dire' ? 17 : a.kind === 'wolf' || a.kind === 'alpha' ? 9 : 13;
+    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : a.kind === 'dire' ? 28 : a.kind === 'wolf' || a.kind === 'alpha' ? 14 : 22;
     const by = a.y + 4 - (a.alt || 0); // birds ride their alt
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) {
       return ret('hunt', busy);

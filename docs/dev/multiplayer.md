@@ -346,7 +346,7 @@ line is hit once each (`a.pierceHit`), and only a raised shield or the world sto
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
-game — the bot brain, the wolf pack, both turret checks — resolves through it. See
+game — the bot brain, both turret checks — resolves through it (a camp monster has no sight: a hit is its only trigger). See
 [Prone](gameplay.md#prone-under-the-snow).
 
 **A rival's worker bots are targets too** — they are tested straight after the players, on the same
@@ -427,7 +427,7 @@ survives every respawn within a match; the wallet, the pouch, the bag and the we
 
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
-there is no `src` (`DEATH_CAUSE`: `'ice'` for a hole, `'wolf'` for a den's pack). A death with an `src` other than
+there is no `src` (`DEATH_CAUSE`: `'ice'` for a hole, `'wolf'` for a den's pack or the alpha, `'dire'` for the dire wolf). A death with an `src` other than
 the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the feed in the killer's colours;
 without one it writes `"<victim> FELL THROUGH THE ICE"` in the victim's. **Any new way to hurt a
 player must pass its `src`**, or the kill goes uncredited and the feed line reads as an accident.
@@ -491,10 +491,10 @@ The ladder:
 1. **eat** — fish below 50% hp, berry below 80%.
 2. **burrow** — a hunter bot only, and decided up front, because two rungs below read the answer.
    A bot that has come off
-   worse (under the profile's `flee`) with no rival and no wolf in sight goes [prone](gameplay.md#prone-under-the-snow)
+   worse (under the profile's `flee`) with no rival and no camp monster on it goes [prone](gameplay.md#prone-under-the-snow)
    and waits the fight out for `ai.hideT` (7–12 s); it only ever tries where a player could — on
    snow, on its own feet, and with SNOW COVER's 60 s cooldown in hand. It gets
-   straight back up for a wolf, for a rival inside 48 px, or when the spell runs out, and rising
+   straight back up for a monster hunting it, for a rival inside 48 px, or when the spell runs out, and rising
    starts an 18 s lockout so no bot spends the match flopping up and down. `hideT` doubles as the
    give-up: a spot that will not take burns it four times as fast and ends in the lockout.
    Both directions go through `inp.ability = 3`, exactly the cast key a human presses (rising is
@@ -522,8 +522,10 @@ The ladder:
    and shoots from where it lies** — which earns it the ambush multiplier off the same
    `ambushReady()` check a human gets, since `concealOf` discounts a moving mound and
    `ambushReady` refuses a moving shot outright.
-4. **wolves** — a wolf within 92 px (or any wolf already hunting this bot): shoot it and give
-   ground under 64 px, dodge under 30. A bot that wanders into a den has to fight its way out.
+4. **a camp on it** — the nearest camp monster already hunting this bot, inside `AI_SIGHT`: shoot it and give
+   ground under 64 px, dodge under 30. A camp is neutral until hit, so a bot only ever fights one it woke
+   itself - through the hunt rung, which takes a den's wolves like any animal but never the dire wolf
+   (nor the alpha under level 6).
 5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
    this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.
 6. **defend** — its own bird under `threat` on the shared read (**the two birds**, below): as

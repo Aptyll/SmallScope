@@ -1,31 +1,33 @@
 'use strict';
 // Everything wild: prey and the shared animal lifecycle, the fish under the
-// ice and the holes cut down to them, the wolf pack and the rookery's flock -
-// each with its own tuning above it.
+// ice and the holes cut down to them, the camps' monsters and the dormant
+// flock - each with its own tuning above it.
 // ------------------------------------------------------------ animals
-// Rabbits and deer are the passive half (updatePrey); wolves and birds are
-// the inhabitants of the two landmarks (updateWolf / updateBird), and go in
-// this same array so arrows, the draw list, the kill payouts and the cursor
-// all treat them as what they are: things you shoot.
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, bird: 3 };
+// Rabbits and deer are the passive half (updatePrey); the three wolves are
+// the camps' monsters (updateCampMonster), and go in this same array so
+// arrows, the draw list, the kill payouts and the cursor all treat them as
+// what they are: things you shoot. (Birds - updateBird - are DORMANT: the
+// rookery went with the landmarks, and nothing spawns one; the kind's code
+// stays for a camp that wants a flock - checklists.md, Known drift.)
+const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 70, dire: 320, bird: 3 };
 // Every animal wears a hero-style level, dealt ONCE at spawn (makeAnimal) from
 // the table's average hero level (animalLevel) and never raised after: what
-// grows with it is hp, ANIMAL_LV_HP a level over ANIMAL_HP, and a wolf's bite
-// (WOLF_LV_DMG, the wolves banner) - so the number on a body is what it costs
+// grows with it is hp, ANIMAL_LV_HP a level over ANIMAL_HP, and a monster's
+// bite (MONSTER.lvBite, above the camp monsters banner) - so the number on a body is what it costs
 // to take, the way a hero's is, and a meadow restocked late in a match is a
 // harder one than the one the eagle dropped you into. The kill pays for it:
 // ANIMAL_LV_GOLD of the YIELD payout more a level (animalDies), a tenth, so
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Gold is XP, so the loop feeds itself, but at a tenth a
 // level it is a slope, not a farm.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, bird: 0 };
+const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 8, dire: 25, bird: 0 };
 const ANIMAL_LV_GOLD = 0.1;
 function animalLevel() {
   let n = 0, s = 0;
   for (const p of players) if (p.active) { n++; s += p.level; }
   return n ? Math.max(1, Math.min(LEVEL_MAX, Math.round(s / n))) : 1;
 }
-const HIT_PUFF = { rabbit: '#eef2fa', deer: '#a5825a', wolf: '#6f778c', bird: '#cfd6e4' };
+const HIT_PUFF = { rabbit: '#eef2fa', deer: '#a5825a', wolf: '#6f778c', alpha: '#c9d2e4', dire: '#4a3040', bird: '#cfd6e4' };
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
@@ -68,8 +70,8 @@ function makeAnimal(kind, x, y) {
     fleeT: 0, fleeGoal: null, nav: null,  // prey: its flight; any walker: its route (see pathfinding)
     sprint: 1,                           // deer: the stamina bar its sprint runs off (0..1)
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
-    home: null,                          // the landmark it belongs to, if any
-    target: null, biteCd: 0, threat: 0, // wolf: its quarry, its bite rhythm, and how close it is to charging (0..1)
+    home: null,                          // the camp it belongs to, if any
+    target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     perch: null, flyT: 0, fa: 0, alt: 0, // bird: its tree, its flight, its height
     dead: false,
   };
@@ -85,7 +87,7 @@ function makeAnimal(kind, x, y) {
 // `pad` is a shot's own `reach`: extra px for a bit with a BODY rather than a
 // shaft's tip (the fist, the axe; js/tools.js). Absent for everything else.
 function animalHit(a, x, y, pad) {
-  const r = (a.kind === 'bird' ? 5 : 8) + (pad || 0);
+  const r = (a.kind === 'bird' ? 5 : a.kind === 'dire' ? 14 : 8) + (pad || 0);
   return Math.hypot(a.x - x, a.y - (a.alt || 0) - 3 - y) < r;
 }
 
@@ -97,8 +99,9 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   a.hp -= dmg;
   a.flash = 0.12;
   a.lastHit = owner;
-  // a wolf does not run from a hit - the whole den comes for you
-  if (a.kind === 'wolf') wakePack(a, players[owner]);
+  // a camp monster does not run from a hit - the whole camp comes for you,
+  // and a hit is the ONLY thing that wakes one
+  if (isCampKind(a.kind)) wakeCamp(a, players[owner]);
   else if (a.kind === 'bird') flushBirds(a.home, a);
   else a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2;
   addDmgFloater(a.x, a.y - (a.alt || 0) - 12, dmg, false, ambush);
@@ -386,7 +389,7 @@ function updateAnimal(a, dt) {
     a.moving = false;
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, unitRadius(a));
     if (a.stunT <= 0) { a.goal = null; a.fleeGoal = null; a.dashT = 0; navClear(a); a.idleT = 0.3; }
-  } else if (a.kind === 'wolf') updateWolf(a, dt);
+  } else if (isCampKind(a.kind)) updateCampMonster(a, dt);
   else if (a.kind === 'bird') updateBird(a, dt);
   else updatePrey(a, dt);
   a.x = Math.max(8, Math.min(WORLD * TILE - 8, a.x));
@@ -596,129 +599,150 @@ function animalDies(a) {
     burst(a.x, a.y - 5, '#6f778c', 12, 50, 0.55);
     burst(a.x, a.y - 5, '#e04a54', 8, 45, 0.5);
     addFloater(a.x, a.y - 26, 'WOLF DOWN', '#f2cc6a');
+  } else if (a.kind === 'alpha') {
+    // the buff camp's kill: the killer wears ALPHA'S BLOOD (the constants
+    // above the camp monsters banner)
+    burst(a.x, a.y - 5, '#c9d2e4', 14, 55, 0.6);
+    burst(a.x, a.y - 5, '#ffb04a', 10, 45, 0.5);
+    addFloater(a.x, a.y - 26, 'ALPHA DOWN', '#ffb04a');
+    if (hunter && !hunter.dead) campBuff(hunter, CAMP_BUFF_T);
+  } else if (a.kind === 'dire') {
+    // the epic kill: the whole team is paid and blooded, wherever they are,
+    // and the feed says who did it - the one kill that is news to both sides
+    burst(a.x, a.y - 8, '#4a3040', 20, 60, 0.7);
+    burst(a.x, a.y - 8, '#ffb04a', 14, 55, 0.6);
+    addFloater(a.x, a.y - 34, 'DIRE WOLF DOWN', '#ffb04a');
+    if (hunter) {
+      for (const q of players) {
+        if (!q.active || q.team !== hunter.team) continue;
+        if (q !== hunter && !q.dead && !inAir(q)) awardGold(q, EPIC_TEAM_GOLD, q.x, q.y);
+        campBuff(q, CAMP_BUFF_EPIC_T);
+      }
+      logEvent(hunter.name + ' SLEW THE DIRE WOLF', hunter);
+    }
   } else if (a.kind === 'bird') {
     burst(a.x, a.y - a.alt, '#cfd6e4', 9, 40, 0.5, true);
     flushBirds(a.home, a); // the rest of the flock does not stay to watch
   }
 }
 
-// landmark inhabitants (the places themselves are the LANDMARKS table in
-// the landmarks banner). Wolves are the only thing in the world that hunts
-// a player; birds are the only thing that flies.
-const WOLF_SIGHT = 96;     // px a wolf notices a player at, and fills its threat bar on (x1.75 at full dark)
-const WOLF_GROUND = 190;   // px from its den: the pack's ground - the threat bar fills and holds on it, drains anywhere off it
-const WOLF_SPD = 96;       // px/s hunting: faster than a walk, slower than a slide
-const WOLF_BITE_R = 13;    // px reach of a bite
-const WOLF_BITE_DMG = 9;
-const WOLF_LV_DMG = 1;     // bite dmg a level over WOLF_BITE_DMG (the level: animalLevel, the animals banner)
-// s between ONE wolf's bites. Nothing caps the PACK any more - a hit grants no
-// i-frames (damagePlayer), so four wolves on you is four bites a second.
-const WOLF_BITE_CD = 1;
-const WOLF_THREAT_T = 2.5;   // s lingering at the edge of its sight before a wolf charges; three times as fast at its nose
-const WOLF_THREAT_DECAY = 3; // s for a full threat bar to drain off the ground - then the wolf goes home
+// The camps' monsters (the places themselves are the CAMPS table in the
+// camps banner, world.js): three kinds of wolf, one per camp type, and all
+// of them NEUTRAL - nothing in the world hunts a player who has not hit it.
+// What each is, in one row: the bite and what it grows a level (the level:
+// animalLevel, the animals banner), the reach of a bite, the seconds between
+// ONE monster's bites (nothing caps a PACK - a hit grants no i-frames, so
+// four wolves on you is four bites a second), the hunting speed, and the
+// body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - the
+// dire wolf is a 2x sprite and a body a roll does NOT pass through.
+const MONSTER = {
+  wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false }, // the pack: faster than a walk, slower than a slide
+  alpha: { bite: 12, lvBite: 2, reach: 15, cd: 1.2, spd: 90, r: 4.5, mass: 2.5, big: false }, // the buff camp's one: hits harder, can be outrun on a slide
+  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   mass: 5,   big: true },  // the epic: a wall of hp, and a bite that takes a quarter of you
+};
+function isCampKind(k) { return !!MONSTER[k]; }
+const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
+const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
+const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
+// The kills' rewards past the gold (YIELD, core.js). ALPHA'S BLOOD is what
+// the buff camp's kill wears: CAMP_BUFF_DMG on every blow the player lands
+// (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
+// abilities.js) for CAMP_BUFF_T seconds, worn as the amber ring under the
+// feet that empties as it runs out (drawPlayer, draw-world.js). The dire
+// wolf pays EVERY player on the killer's team EPIC_TEAM_GOLD and bloods the
+// whole team for CAMP_BUFF_EPIC_T - the one kill in the game that pays
+// people who were not there, which is what makes it worth walking to as five.
+const CAMP_BUFF_T = 90;
+const CAMP_BUFF_EPIC_T = 120;
+const CAMP_BUFF_DMG = 1.25;
+const CAMP_BUFF_SPD = 1.15;
+const EPIC_TEAM_GOLD = 40;
+function campBuff(p, t) { if (p && p.active) p.buffT = Math.max(p.buffT || 0, t); }
 const BIRD_FLUSH = 34;     // px: a player this close puts the whole rookery up
 const BIRD_SPD = 112;      // px/s in flight
 const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight climbs past it
 
-// ------------------------------------------------------------ wolves
-// A wolf holds station at its den and watches anyone who comes inside its
-// sight (much further after dark) on the pack's ground, WOLF_GROUND around
-// the den: its threat bar fills while they linger - faster the closer they
-// stand - and full, the wolf charges and runs them down at WOLF_SPD - faster
-// than a walk, slower than a slide, so the answer is momentum, not distance -
-// biting on its own cooldown. The bar holds while the quarry is on the ground
-// and drains anywhere off it, whether or not the wolf is at its heels, and it
-// keeps coming while the bar drains; the hunt ends when the bar is empty, and
-// then it goes home. There is no leash on the chase itself: the ground is
-// where the bar drains, not where the wolf stops.
-// A hit skips the bar: the den comes for a shooter at once. damagePlayer's
-// i-frames are what stops four wolves shredding anyone instantly: the pack is
-// pressure, not burst. Waking one wakes the den, which is what makes it a
-// place instead of four animals.
-function wakePack(w, t) {
+// ------------------------------------------------------------ camp monsters
+// A camp monster holds station at its camp and minds its own business: no
+// sight, no threat bar filling while you linger - you can walk through a den
+// and nothing happens. A HIT is the whole trigger: it wakes the camp
+// (wakeCamp), every monster in it takes the hitter as its quarry at a full
+// leash bar, and they run them down at the kind's speed, biting on the
+// kind's own cooldown. The bar holds while the quarry is on the camp's
+// ground (CAMP_GROUND past its r) and drains anywhere off it, whether or not
+// the monster is at its heels, and it keeps coming while the bar drains;
+// the hunt ends when the bar is empty, and then it goes home and HEALS
+// (CAMP_REGEN_T) - so a fight you break off is a fight reset, never a
+// chip-away. Every hit re-aims the camp at the latest hitter, which is how a
+// team takes turns tanking it. Waking one wakes the camp, which is what
+// makes it a place instead of four animals.
+function wakeCamp(w, t) {
   if (!t) return;
   if (!w.home) { w.target = t; w.threat = 1; return; }
   let howl = false;
   for (const o of animals) {
-    if (o.dead || o.kind !== 'wolf' || o.home !== w.home) continue;
+    if (o.dead || !isCampKind(o.kind) || o.home !== w.home) continue;
     if (!o.target) howl = true;
     o.target = t; o.threat = 1;
   }
   if (howl && nearPlayer(w.x, w.y, 260)) SFX.howl();
 }
 
-function updateWolf(a, dt) {
-  const L = a.home;
-  const hx = L ? (L.tx + 0.5) * TILE : a.x, hy = L ? (L.ty + 0.5) * TILE : a.y;
+function updateCampMonster(a, dt) {
+  const M = MONSTER[a.kind], C = a.home;
+  const hx = C ? (C.tx + 0.5) * TILE : a.x, hy = C ? (C.ty + 0.5) * TILE : a.y;
+  const groundR = ((C ? C.r : 5) + CAMP_GROUND) * TILE;
   a.biteCd = Math.max(0, a.biteCd - dt);
-
-  const sight = WOLF_SIGHT * (1 + state.darkness * 0.75); // night gives the pack its teeth
-  const onGround = (p) => Math.hypot(p.x - hx, p.y - hy) < WOLF_GROUND;
-  // the nearest player in sight on the pack's ground. GHOSTSTEP - and lying
-  // buried in the snow - shorten the sight for that one player
-  let near = null, nd = sight;
-  for (const p of players) {
-    if (!p.active || p.dead || inAir(p) || !onGround(p)) continue;
-    const d = Math.hypot(p.x - a.x, p.y - a.y);
-    if (d < nd && d < seenAt(p, sight)) { nd = d; near = p; }
-  }
+  const onGround = (p) => Math.hypot(p.x - hx, p.y - hy) < groundR;
 
   let t = a.target;
   if (t && (!t.active || t.dead || inAir(t))) { t = null; a.threat = 0; navClear(a); }
   if (t) {
     // hunting: the bar holds while the quarry is on the ground and drains
-    // once it is off - the wolf at its heels or not; the chase goes on either
-    // way until the bar is empty
+    // once it is off - the monster at its heels or not; the chase goes on
+    // either way until the bar is empty
     if (onGround(t)) a.threat = 1;
     else {
-      a.threat = Math.max(0, a.threat - dt / WOLF_THREAT_DECAY);
+      a.threat = Math.max(0, a.threat - dt / CAMP_LEASH_T);
       if (a.threat <= 0) { t = null; navClear(a); } // the quarry got away; home
     }
-  } else if (near) {
-    // lingering in the circle fills the bar, three times as fast at the
-    // wolf's nose as at the edge; full, the whole den charges
-    a.threat = Math.min(1, a.threat + dt / WOLF_THREAT_T * (1 + 2 * (1 - nd / sight)));
-    if (a.threat >= 1) { wakePack(a, near); t = near; }
-  } else a.threat = Math.max(0, a.threat - dt / WOLF_THREAT_DECAY);
+  } else {
+    a.threat = 0;
+    // nobody to hunt: the camp mends. The bar is the kind's own hp, so a
+    // level's extra health heals at the same pace
+    if (a.hp < a.maxHp && a.burnT <= 0) a.hp = Math.min(a.maxHp, a.hp + a.maxHp * dt / CAMP_REGEN_T);
+  }
   a.target = t;
-  // the mark over its head (drawAnimal): a wolf with a player in sight on its
-  // ground, or one on a hunt - never one whose bar is draining with nobody in
-  // view, which is a wolf that has LOST you
-  a.senseT = near || t ? a.senseT + dt : 0;
+  // the mark over its head (drawAnimal): a monster on a hunt, and nothing else
+  a.senseT = t ? a.senseT + dt : 0;
 
   let moving = false;
   if (t) {
     if (a.goal) { a.goal = null; navClear(a); } // the patrol is off; the quarry is the route now
     // run the route to the quarry; with no route (it is out over water, or
-    // the pack has it pinned) hold and face it
-    const n = navStep(a, t.x, t.y, 4.5, WOLF_SPD, dt);
+    // the camp has it pinned) hold and face it
+    const n = navStep(a, t.x, t.y, M.r, M.spd, dt);
     const d = n.d || 1;
     if (!n.ok) { a.mvx = (t.x - a.x) / d; a.mvy = (t.y - a.y) / d; }
     moving = n.ok;
-    if (d < WOLF_BITE_R && a.biteCd <= 0) {
-      a.biteCd = WOLF_BITE_CD;
-      damagePlayer(t, WOLF_BITE_DMG + WOLF_LV_DMG * (a.level - 1), a.mvx, a.mvy, null, 'wolf');
-      burst(a.x + a.mvx * 6, a.y - 4, '#e04a54', 5, 40, 0.35);
+    if (d < M.reach && a.biteCd <= 0) {
+      a.biteCd = M.cd;
+      damagePlayer(t, M.bite + M.lvBite * (a.level - 1), a.mvx, a.mvy, null, a.kind === 'dire' ? 'dire' : 'wolf');
+      burst(a.x + a.mvx * 6, a.y - 4, '#e04a54', M.big ? 9 : 5, 40, 0.35);
       if (nearPlayer(a.x, a.y)) SFX.bite();
     }
-  } else if (near && a.threat > 0) {
-    // squared up: a wolf whose bar is filling stands and faces them - the
-    // warning before the charge
-    if (a.goal) { a.goal = null; navClear(a); }
-    a.mvx = (near.x - a.x) / (nd || 1); a.mvy = (near.y - a.y) / (nd || 1);
-    if (Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
   } else if (a.goal) {
-    // patrolling its den, on a route like any other walk
-    const n = navStep(a, a.goal.x, a.goal.y, 4.5, 34, dt);
+    // patrolling its camp, on a route like any other walk
+    const n = navStep(a, a.goal.x, a.goal.y, M.r, 34, dt);
     if (!n.ok || n.d < 6) { a.goal = null; navClear(a); a.idleT = rand(0.8, 2.6); }
     else moving = true;
   } else {
     a.idleT -= dt;
-    if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, 4.5);
+    if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, M.r);
     if (a.idleT <= 0) {
-      // pick the next patrol leg, but never far from the den it belongs to:
+      // pick the next patrol leg, but never far from the camp it belongs to:
       // out past the ring and the only way it will walk is back toward home
-      const ring = (L ? L.r : 4) * TILE * 0.8;
+      const ring = (C ? C.r : 4) * TILE * 0.8;
       const out = Math.hypot(a.x - hx, a.y - hy) > ring;
       a.goal = wanderGoal(a, out ? Math.atan2(hy - a.y, hx - a.x) : rng() * Math.PI * 2,
         out ? 0.5 : Math.PI, 2, 5);
@@ -732,11 +756,25 @@ function updateWolf(a, dt) {
 }
 
 // ------------------------------------------------------------ birds
-// Perched in the rookery's snags until a player gets inside BIRD_FLUSH, and
-// then the whole stand goes up at once - the flock is the point, one bird
-// leaving alone would read as a bug. In the air they are the hardest shot in
-// the game: small body, no straight line, and they come down again on their
-// own perch when they have settled.
+// DORMANT since the camps replaced the landmarks (nothing spawns a bird;
+// the wildlife header says why the code stays). A flock perched in a
+// stand's snags until a player gets inside BIRD_FLUSH, and then the whole
+// stand goes up at once - the flock is the point, one bird leaving alone
+// would read as a bug. In the air they are the hardest shot in the game:
+// small body, no straight line, and they come down again on their own perch
+// when they have settled. `L` is the home record (a camp, or whatever
+// stands one up again) - its tx/ty/r are all a bird reads off it.
+// one of the stand's snags, for a bird to sit in
+function rookeryPerch(L) {
+  const trees = [];
+  for (let dy = -L.r; dy <= L.r; dy++) for (let dx = -L.r; dx <= L.r; dx++) {
+    const o = objAt(L.tx + dx, L.ty + dy);
+    if (o && o.type === 'deadTree') trees.push(o);
+  }
+  if (!trees.length) return null;
+  const t = trees[randi(0, trees.length - 1)];
+  return { tx: t.tx, ty: t.ty };
+}
 function flushBirds(L, from) {
   if (!L) return;
   let woke = false;

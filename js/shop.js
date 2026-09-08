@@ -24,7 +24,7 @@
 // it is HUD like the backpack and the character sheet, and walking out of
 // reach shuts it.
 // ------------------------------------------------------------ market
-// The market's own rng, seeded off SEED the way the landmarks' is (lmRng,
+// The market's own rng, seeded off SEED the way the chests' is (chRng,
 // js/world.js): prices are the same on every machine playing the same seed,
 // and a busy market can never shift the loot rolls by consuming draws out of
 // the shared stream.

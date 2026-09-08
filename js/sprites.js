@@ -3958,4 +3958,34 @@
       grab: bake(cursorGrab, CUSHADOW), hammer: bake(cursorHammer, CUSHADOW),
     },
   };
+
+  // ---------------------------------------------------------------- the camps' wolves
+  // PLACEHOLDER LOOKS, derived from the wolf rather than drawn: the buff
+  // camp's ALPHA is the same grids washed toward silver, the epic camp's
+  // DIRE WOLF is them washed toward a dark red and doubled to 32x26 with
+  // nearest-neighbour, so it reads as twice the animal at any zoom. Each
+  // wants its own grid one day (the concept-art skill); until then
+  // drawAnimal (draw-world.js) treats them as a wolf with a bigger frame.
+  function wash(src, col, amt) {
+    const c = document.createElement('canvas');
+    c.width = src.width; c.height = src.height;
+    const g = c.getContext('2d');
+    g.drawImage(src, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.globalAlpha = amt;
+    g.fillStyle = col;
+    g.fillRect(0, 0, c.width, c.height);
+    return c;
+  }
+  function double(src) {
+    const c = document.createElement('canvas');
+    c.width = src.width * 2; c.height = src.height * 2;
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.drawImage(src, 0, 0, c.width, c.height);
+    return c;
+  }
+  const W = window.SPRITES.wolf;
+  window.SPRITES.alpha = { right: W.right.map((s) => wash(s, '#dfe6f4', 0.45)), left: W.left.map((s) => wash(s, '#dfe6f4', 0.45)) };
+  window.SPRITES.dire = { right: W.right.map((s) => double(wash(s, '#5a1e2c', 0.5))), left: W.left.map((s) => double(wash(s, '#5a1e2c', 0.5))) };
 })();

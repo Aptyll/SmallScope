@@ -1,6 +1,6 @@
 'use strict';
 // The frozen world: the tile grid and its objects, worldgen (rivers, ponds,
-// rocks), and the named landmarks with their own seeded stream (lmRng).
+// rocks), the road, and the camps at their fixed, mirrored sites.
 // ------------------------------------------------------------ world
 const ground = new Uint8Array(WORLD * WORLD); // 0 snow, 1 ice, 2 hole (open water), 3 the road (placeRoad)
 const objects = new Array(WORLD * WORLD).fill(null);
@@ -247,8 +247,8 @@ const ROOST_WOBBLE = 3;  // +- tiles the arc wanders
 // depth of the forest boundary at a given tile: smooth irregular inner edge,
 // always solid from the world edge inward (variation eats into the interior).
 // borderNoise is the seed's own border alone; borderDepth is that OR the roost
-// disc, and is what everything reads - genWorld's tree rule, the landmarks'
-// edge scan, the eagles' line, the lane. genWorld spends its per-tree rng()
+// disc, and is what everything reads - genWorld's tree rule, the eagles'
+// line, the lane. genWorld spends its per-tree rng()
 // only under borderNoise (the disc's extra pines roll nothing), so a seed's
 // interior is exactly what it was before the corners were guaranteed.
 function borderNoise(tx, ty) {
@@ -400,9 +400,9 @@ function genWorld() {
 // Treasure chests: a handful of border trees swapped for buried caches,
 // always on the forest's inner edge so E can reach one from open ground.
 // Opening is hitObject's chest branch (js/actions.js); what one pays is the
-// three constants here. Placement rolls on its own seeded stream (the lmRng
-// pattern) AFTER genWorld and placeLandmarks have finished, so it can never
-// reshuffle the terrain or the landmarks a seed already produces.
+// three constants here. Placement rolls on its own seeded stream (chRng)
+// AFTER genWorld and placeCamps have finished, so it can never reshuffle
+// the terrain a seed already produces.
 const CHEST_COUNT = 14;
 const CHEST_SPACING = 22;                       // min tiles between two chests
 const CHEST_GOLD_MIN = 8, CHEST_GOLD_MAX = 20;  // the free gold inside
@@ -436,7 +436,7 @@ function placeChests() {
 // block) but it is not snow: nothing digs into it (tryProne, the hunter's
 // burrow), nothing grows or is built on it (every `ground === 0` site test
 // refuses it), and a fish never counts it as water (fishWater). Laid by
-// placeRoad AFTER genWorld and BEFORE the landmarks, on pure reads of the
+// placeRoad AFTER genWorld and BEFORE the camps, on pure reads of the
 // same treeline rule diagEnd (boot.js) flies the eagles by, so it neither
 // moves the shared rng stream nor differs run to run. Its EDGE is ragged, not
 // a tile staircase: roadEdgeAt wanders the half-width along the lane on the
@@ -446,8 +446,8 @@ function placeChests() {
 // meets ice: genWorld's carve rules keep every pond and river ROAD_ICE_KEEP
 // tiles off its edge (a river running at it peters out over ROAD_ICE_TAPER
 // first), so the lane is dry from mouth to mouth and the ice network lives
-// further out. A rock or a bush on it is gone. Every landmark keeps
-// ROAD_KEEP tiles off its centreline, so the wolves are never on it. Its furniture is placed
+// further out. A rock or a bush on it is gone. Every camp site (CAMP_SITES)
+// is written well off its centreline, so the wolves are never on it. Its furniture is placed
 // with it: a mile post on each shoulder every ROAD_POST_STEP, two pennant
 // poles in the side's colour at each mouth, and one cairn at the centre.
 // The waves (the `soldiers` banner, robots.js) march its waypoints.
@@ -455,7 +455,6 @@ const ROAD_HW = 3.5;        // tiles either side of the centreline: a seven-tile
 const ROAD_RAG = 0.8;       // tiles the edge wanders either way - the organic verge
 const ROAD_RUT = 1.0;       // tiles off the centreline the two ruts run
 const ROAD_SHOULDER = 1.4;  // tiles of dirty snow past the edge (the bake only)
-const ROAD_KEEP = 18;       // tiles a landmark's centre stays off the centreline: a den's pack roams ~13 tiles clear of the road's edge
 const ROAD_ICE_KEEP = 6;    // tiles past the edge no pond or river reaches (genWorld's carve rules)
 const ROAD_ICE_TAPER = 7;   // ...and the tiles over which a river narrows to nothing on its way in
 const ROAD_STEP = 20;       // tiles between a wave's waypoints along it
@@ -543,174 +542,176 @@ function roadWaypoints(team) {
   return team === 0 ? pts : pts.reverse();
 }
 
-// ------------------------------------------------------------ landmarks
-// Named points of interest: the places worth deciding between while the eagle
-// is still in the air. One entry in LANDMARKS is one kind of place - its name,
-// its footprint, what stands there, what lives there and the glyph the maps
-// mark it with - and adding a new kind is that entry plus its generator.
+// ------------------------------------------------------------ camps
+// The jungle: named places at FIXED spots where neutral monsters stand - a
+// camp minds its own business until somebody hits it, and then the whole
+// camp comes for whoever did (updateCampMonster, wildlife.js). One entry in
+// CAMPS is one kind of camp - what stands there, what lives there, what the
+// kill is worth and the glyph the maps mark it with - and CAMP_SITES is
+// where each one goes, in the road's own coordinates, so the layout is
+// symmetric by construction: every site is written once for the RED half
+// and mirrored for BLUE (campSites), and nothing rolls. Terrain still comes
+// from the seed; a camp's footprint is cleared out of whatever grew there.
 //
 //   name/tag    what the maps and the arrival toast print
-//   count       how many of them worldgen scatters
-//   r           footprint radius in tiles: the keep-clear ring, the canvas gen
-//               draws in, and how close you must be to be "here"
-//   surface     the ground its site must sit on ('snow' | 'ice')
-//   mark/icon   map ink, and a glyph as rects in a 7x7 box (drawLandmarkIcon)
-//   pop/repop   how many inhabitants it keeps, and seconds between top-ups
-//   gen(L)      stamp the objects (runs inside worldgen, before renderGround)
-//   spawnOne(L) put one inhabitant in it (runs after the world is stamped)
+//   r           footprint radius in tiles: the clearing, the props, and how
+//               close you must be to be "here" (campAt)
+//   mark/icon   map ink, and a glyph as rects in a 7x7 box (drawCampIcon)
+//   kind/pop    the monster kind (ANIMAL_HP etc., wildlife.js) and how many
+//   repop       seconds after the LAST one dies before the whole camp is
+//               back - a camp is cleared or it is not; nothing trickles
+//   props       what stands in it: [dx, dy, type, extra] off the centre
+//   spots       where each monster stands, [dx, dy] off the centre
 //
-// Placement and everything it rolls run on their own seeded stream (lmRng),
-// never the shared rng, so landmarks can never reshuffle the terrain a seed
-// already produces. Every site keeps ROAD_KEEP tiles off the road (above).
-const lmRng = mulberry32((SEED ^ 0x4c414e44) >>> 0);
-function lmRand(a, b) { return a + lmRng() * (b - a); }
-function lmRandi(a, b) { return Math.floor(lmRand(a, b + 1)); }
-
-const LANDMARKS = {
-  // The first thing in the frostlands that hunts back. Rich - a wolf is the
-  // biggest single payout in the game - and lethal in a pack (see updateWolf).
-  wolfDen: {
-    name: 'WOLF DEN', tag: 'THE PACK HUNTS HERE',
-    count: 3, r: 5, surface: 'snow',
-    mark: '#d8c0c4',
+// resource: the pack - gold per head, the biggest steady payout on the map
+// buff:     one alpha - the kill wears ALPHA'S BLOOD (campBuff, wildlife.js)
+// epic:     the dire wolf - the whole team is paid and blooded for the kill
+const CAMPS = {
+  resource: {
+    name: 'WOLF DEN', tag: 'THE PACK PAYS IN GOLD',
+    r: 5, mark: '#d8c0c4',
     icon: [[2, 3, 3, 3], [1, 4, 5, 2], [0, 1, 1, 2], [2, 0, 1, 2], [4, 0, 1, 2], [6, 1, 1, 2]], // paw print
-    pop: 4, repop: 40,
-    gen(L) {
-      placeObj(L.tx, L.ty, 'den', { site: L }); // the mouth knows its site: a hover reads the pack's clock off it (render.js)
-      const n = lmRandi(5, 8); // a broken ring of boulders around the mouth
-      for (let i = 0; i < n; i++) {
-        const s = lmSpot(L, 2, L.r);
-        if (s) placeObj(s.tx, s.ty, 'rock', { hp: 5, variant: lmRandi(0, 1) });
-      }
-    },
-    spawnOne(L) {
-      const s = lmSpot(L, 1, 3);
-      if (!s) return null;
-      const a = makeAnimal('wolf', (s.tx + 0.5) * TILE, (s.ty + 0.5) * TILE);
-      a.home = L;
-      animals.push(a);
-      return a;
-    },
+    kind: 'wolf', pop: 4, repop: 60,
+    props: [[0, 0, 'den'],
+      [-3, -2, 'rock', 0], [3, -2, 'rock', 1], [-4, 1, 'rock', 1], [4, 1, 'rock', 0], [-2, 3, 'rock', 0], [2, 3, 'rock', 1]],
+    spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
   },
-  // A stand of dead trees full of birds: no danger at all, just the hardest
-  // shooting in the game. Walk in and the whole flock goes up (see updateBird).
-  rookery: {
-    name: 'ROOKERY', tag: 'THE FLOCK IS SKITTISH',
-    count: 3, r: 6, surface: 'snow',
-    mark: '#b8c6dc',
-    icon: [[0, 2, 2, 2], [2, 3, 1, 1], [3, 4, 1, 1], [4, 3, 1, 1], [5, 2, 2, 2]], // bird in flight
-    pop: 9, repop: 30,
-    gen(L) {
-      const n = lmRandi(6, 9);
-      for (let i = 0; i < n; i++) {
-        const s = lmSpot(L, 0, L.r - 1);
-        if (s) placeObj(s.tx, s.ty, 'deadTree', { hp: 3, variant: lmRandi(0, 1) });
-      }
-      for (let i = 0; i < 3; i++) {
-        const s = lmSpot(L, 2, L.r);
-        if (s) placeObj(s.tx, s.ty, 'rock', { hp: 5, variant: lmRandi(0, 1) });
-      }
-    },
-    spawnOne(L) {
-      const t = rookeryPerch(L);
-      if (!t) return null;
-      const a = makeAnimal('bird', (t.tx + 0.5) * TILE + lmRand(-3, 3), (t.ty + 0.5) * TILE);
-      a.home = L; a.perch = t; a.alt = BIRD_ALT;
-      animals.push(a);
-      return a;
-    },
+  buff: {
+    name: 'ALPHA STONE', tag: 'ITS BLOOD RUNS HOT',
+    r: 4, mark: '#c2a6ff',
+    icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
+    kind: 'alpha', pop: 1, repop: 120,
+    props: [[0, 0, 'cairn'], [-3, -2, 'rock', 0], [3, -2, 'rock', 1], [-2, 3, 'rock', 1], [2, 3, 'rock', 0]],
+    spots: [[0, 2]],
+  },
+  epic: {
+    name: 'DIRE HOLLOW', tag: 'THE DIRE WOLF SLEEPS HERE',
+    r: 6, mark: '#ffb04a',
+    icon: [[3, 0, 1, 7], [0, 3, 7, 1], [1, 1, 1, 1], [5, 1, 1, 1], [1, 5, 1, 1], [5, 5, 1, 1]], // a star
+    kind: 'dire', pop: 1, repop: 300,
+    props: [[0, 0, 'den'],
+      [-4, -3, 'deadTree', 0], [4, -3, 'deadTree', 1], [-5, 1, 'deadTree', 1], [5, 1, 'deadTree', 0],
+      [-3, 4, 'deadTree', 0], [3, 4, 'deadTree', 1], [0, -5, 'deadTree', 1],
+      [-2, -3, 'rock', 1], [2, -3, 'rock', 0], [-4, 2, 'rock', 0], [4, 2, 'rock', 1]],
+    spots: [[0, 3]],
   },
 };
-// placement order. NOT the pickiest site first - the rookery (r 6, ~113 tiles) is pickier than
-// the den (r 5) and is placed second. Do NOT reorder to "fix" that: placeLandmarks draws from
-// lmRng in this sequence, so the order is a seed-stability contract - changing it relocates
-// every landmark in every existing seed.
-const LANDMARK_ORDER = ['wolfDen', 'rookery'];
-
-// a free tile in a landmark's footprint, rMin..rMax tiles out from its centre
-function lmSpot(L, rMin, rMax) {
-  for (let i = 0; i < 40; i++) {
-    const a = lmRng() * Math.PI * 2, d = lmRand(rMin, rMax);
-    const tx = Math.round(L.tx + Math.cos(a) * d), ty = Math.round(L.ty + Math.sin(a) * d);
-    if (inWorld(tx, ty) && !objects[idx(tx, ty)] && ground[idx(tx, ty)] === 0) return { tx, ty };
+// Where the camps are, for the RED half of the map (u < WORLD / 2), in the
+// road's coordinates (roadAlong / roadOffS): `u` tiles along the diagonal
+// from RED's corner, `s` tiles off the centreline, + toward the bottom-right
+// half. campSites() mirrors each across the map's middle (u -> WORLD-1-u,
+// same s) for BLUE, so both teams walk the same distance to the same camp -
+// and a site ON the middle (u = (WORLD-1)/2) is its own mirror and placed
+// once: the epic is contested at equal reach from either roost. Every site
+// sits at least CAMP_EDGE tiles from the world's edge, past the deepest
+// treeline the border noise grows (BORDER_MAX, 70), and clear of the road by
+// more than the pack's ground.
+const CAMP_EDGE = 72;
+const CAMP_SITES = [
+  { key: 'resource', u: 90, s: -25 },  // one den each side of the road, out from the lane mouth
+  { key: 'resource', u: 90, s: 25 },
+  { key: 'buff', u: 104, s: 44 },      // the alpha, on the bottom-right side, nearer the middle and further out
+  { key: 'epic', u: (WORLD - 1) / 2, s: -40 }, // the dire wolf, top-left of the middle, on the mirror line
+];
+function campTile(u, s) {
+  return { tx: Math.round(u + s / Math.SQRT2), ty: Math.round(WORLD - 1 - u + s / Math.SQRT2) };
+}
+function campSites() {
+  const out = [];
+  for (const c of CAMP_SITES) {
+    out.push({ key: c.key, u: c.u, s: c.s });
+    if (Math.abs(c.u - (WORLD - 1) / 2) > 0.01) out.push({ key: c.key, u: WORLD - 1 - c.u, s: c.s });
   }
-  return null;
+  return out;
 }
 
-// one of the rookery's snags, for a bird to sit in
-function rookeryPerch(L) {
-  const trees = [];
-  for (let dy = -L.r; dy <= L.r; dy++) for (let dx = -L.r; dx <= L.r; dx++) {
-    const o = objAt(L.tx + dx, L.ty + dy);
-    if (o && o.type === 'deadTree') trees.push(o);
+// the ground a camp stands on: everything inside r + 2 of the centre is
+// cleared - a pine, a rock, a bush goes, ice becomes snow - so a camp is the
+// same clearing on every seed, and what the props then stamp is the same too
+function clearCamp(C) {
+  const R = C.r + 2;
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    if (dx * dx + dy * dy > R * R) continue;
+    const x = C.tx + dx, y = C.ty + dy;
+    if (!inWorld(x, y)) continue;
+    const i = idx(x, y);
+    objects[i] = null;               // only worldgen's scenery stands here yet
+    if (ground[i] === 1) ground[i] = 0;
   }
-  if (!trees.length) return null;
-  const t = trees[lmRandi(0, trees.length - 1)];
-  return { tx: t.tx, ty: t.ty };
 }
 
-// a site for one landmark: open interior, clear of the middle, the ring
-// points, the treeline and every landmark already placed
-function landmarkSite(spec) {
-  const m = BORDER_MIN + spec.r + 3;
-  const want = spec.surface === 'ice' ? 1 : 0;
-  for (let tries = 0; tries < 400; tries++) {
-    const tx = lmRandi(m, WORLD - 1 - m), ty = lmRandi(m, WORLD - 1 - m);
-    if (objects[idx(tx, ty)] || ground[idx(tx, ty)] !== want) continue;
-    // the treeline wanders, so measure it here rather than assuming the worst
-    // case - otherwise every landmark bunches into one narrow ring
-    const edge = Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty);
-    if (edge < borderDepth(tx, ty) + spec.r + 4) continue;
-    if (Math.hypot(tx - cx, ty - cy) < 20) continue;                    // the middle stays open
-    if (roadOff(tx, ty) < ROAD_KEEP) continue;                          // ...and the road: a den is never on the lane
-    if (ringPts.some((p) => Math.hypot(tx - p.tx, ty - p.ty) < 12)) continue;
-    if (landmarks.some((L) => Math.hypot(tx - L.tx, ty - L.ty) < spec.r + L.r + 8)) continue;
-    // most of the footprint has to be the right surface and standing empty
-    let good = 0, total = 0;
-    for (let dy = -spec.r; dy <= spec.r; dy++) for (let dx = -spec.r; dx <= spec.r; dx++) {
-      if (dx * dx + dy * dy > spec.r * spec.r) continue;
-      total++;
-      const x = tx + dx, y = ty + dy;
-      if (inWorld(x, y) && !objects[idx(x, y)] && ground[idx(x, y)] === want) good++;
-    }
-    if (good < total * 0.72) continue;
-    return { tx, ty };
-  }
-  return null;
-}
-
-// worldgen's last pass: scatter the named places and stamp their footprints
-function placeLandmarks() {
-  for (const key of LANDMARK_ORDER) {
-    const spec = LANDMARKS[key];
-    for (let n = 0; n < spec.count; n++) {
-      const s = landmarkSite(spec);
-      if (!s) continue;
-      const L = { key, spec, name: spec.name, tag: spec.tag, tx: s.tx, ty: s.ty, r: spec.r, repopT: spec.repop };
-      landmarks.push(L);
-      spec.gen(L);
+// worldgen's last pass: stand every camp up at its site and stamp its props
+function placeCamps() {
+  for (const site of campSites()) {
+    const spec = CAMPS[site.key];
+    const t = campTile(site.u, site.s);
+    if (Math.min(t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty) < CAMP_EDGE) throw new Error('camp ' + site.key + ' too near the edge');
+    const C = { key: site.key, spec, name: spec.name, tag: spec.tag, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
+    camps.push(C);
+    clearCamp(C);
+    for (const [dx, dy, type, variant] of spec.props) {
+      const extra = type === 'rock' ? { hp: 5, variant } : type === 'deadTree' ? { hp: 3, variant } : {};
+      if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
+      placeObj(C.tx + dx, C.ty + dy, type, extra);
     }
   }
 }
 
-// stock every site, once the world (and the ordinary wildlife) is down
-function stockLandmarks() {
-  for (const L of landmarks) {
-    for (let i = 0; i < L.spec.pop && landmarkPop(L) < L.spec.pop; i++) L.spec.spawnOne(L);
+// one monster into its slot - the slot's own tile, or the nearest free one
+function spawnCampMonster(C, i) {
+  const [dx, dy] = C.spec.spots[i % C.spec.spots.length];
+  let tx = C.tx + dx, ty = C.ty + dy;
+  if (objAt(tx, ty)) {
+    let found = null;
+    for (let r = 1; r <= C.r && !found; r++) for (let oy = -r; oy <= r && !found; oy++) for (let ox = -r; ox <= r && !found; ox++) {
+      if (Math.abs(ox) !== r && Math.abs(oy) !== r) continue;
+      if (inWorld(tx + ox, ty + oy) && !objAt(tx + ox, ty + oy)) found = { tx: tx + ox, ty: ty + oy };
+    }
+    if (!found) return null;
+    tx = found.tx; ty = found.ty;
   }
+  const a = makeAnimal(C.spec.kind, (tx + 0.5) * TILE, (ty + 0.5) * TILE);
+  a.home = C;
+  animals.push(a);
+  return a;
 }
 
-function landmarkPop(L) {
+// stock every camp, once the world (and the ordinary wildlife) is down -
+// and by hand from DBG: it tops each camp up to strength, never past it
+function stockCamps() {
+  for (const C of camps) for (let i = campPop(C); i < C.spec.pop; i++) spawnCampMonster(C, i);
+}
+
+function campPop(C) {
   let n = 0;
-  for (const a of animals) if (!a.dead && a.home === L) n++;
+  for (const a of animals) if (!a.dead && a.home === C) n++;
   return n;
 }
 
-// the named place a world position is standing in, if any
-function landmarkAt(x, y) {
+// the camp a world position is standing in, if any
+function campAt(x, y) {
   const tx = x / TILE - 0.5, ty = y / TILE - 0.5;
-  for (const L of landmarks) if (Math.hypot(tx - L.tx, ty - L.ty) <= L.r) return L;
+  for (const C of camps) if (Math.hypot(tx - C.tx, ty - C.ty) <= C.r) return C;
   return null;
+}
+
+// The respawn clock, honest enough to be worn: a camp with anything alive in
+// it holds the clock at the top - a camp is cleared or it is not, and a
+// half-killed pack never trickles back; cleared, it counts down; and due, it
+// holds at zero for as long as someone is standing in the site (CAMP_HOLD
+// px), then the whole camp is back at once. The anchor prop wears the count
+// under the pointer (drawCampClock, draw-world.js).
+const CAMP_HOLD = 96;
+function updateCamps(dt) {
+  for (const C of camps) {
+    if (campPop(C) > 0) { C.repopT = C.spec.repop; continue; }
+    C.repopT = Math.max(0, C.repopT - dt);
+    if (C.repopT > 0) continue;
+    const px = (C.tx + 0.5) * TILE, py = (C.ty + 0.5) * TILE;
+    if (players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - px, p.y - py) < CAMP_HOLD)) continue;
+    for (let i = 0; i < C.spec.pop; i++) spawnCampMonster(C, i);
+    C.repopT = C.spec.repop;
+  }
 }
 
 // ------------------------------------------------------------ practice arena
@@ -737,7 +738,7 @@ function landmarkAt(x, y) {
 // ice for more than PK_OFF_T abandons the run.
 //
 // Boots only under PRACTICE (js/core.js pins the seed to PRACTICE_SEED, so
-// ?seed can never reshape it) and replaces genWorld outright: no landmarks,
+// ?seed can never reshape it) and replaces genWorld outright: no camps,
 // no eagles, no other players (js/boot.js), and the clock is pinned to early
 // morning forever (sim.js). One player, nothing at stake - die() revives on
 // the spot and the profile is never written (js/player.js), with ONE
@@ -1691,24 +1692,5 @@ function updatePractice(dt) {
     else parkour.offT = 0;
   }
   parkour.wasLine = onLine;
-}
-
-// The top-up clock, honest enough to be worn: a site at strength holds its
-// clock at the top, so a loss starts the whole `repop` count; short, it
-// counts down; and due, it holds at zero for as long as someone is standing
-// in the site (96 px) - clearing a landmark is a real reward for a while, but
-// it always grows back into one, and the moment they leave it does. A den's
-// mouth wears the count under the pointer (render.js's den branch).
-function updateLandmarks(dt) {
-  for (const L of landmarks) {
-    if (!L.spec.repop) continue;
-    if (landmarkPop(L) >= L.spec.pop) { L.repopT = L.spec.repop; continue; }
-    L.repopT = Math.max(0, L.repopT - dt);
-    if (L.repopT > 0) continue;
-    const px = (L.tx + 0.5) * TILE, py = (L.ty + 0.5) * TILE;
-    if (players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - px, p.y - py) < 96)) continue;
-    L.spec.spawnOne(L);
-    L.repopT = L.spec.repop;
-  }
 }
 

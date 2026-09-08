@@ -322,14 +322,22 @@ function renderWorldMap(now) {
   ctx.strokeRect(MAP_X + (camX / TILE) * MAP_S + 0.5, MAP_Y + (camY / TILE) * MAP_S + 0.5,
     (WV_W / TILE) * MAP_S - 1, (WV_H / TILE) * MAP_S - 1);
 
-  // named places: glyph plus the name, inked like the rest of the chart
-  for (const L of landmarks) {
+  // the camps: glyph plus the name, inked like the rest of the chart. A name
+  // hangs under its glyph unless one already inked would run into it - the
+  // sites are fixed (CAMP_SITES, world.js) and two of them sit a label's
+  // width apart - and then it goes over the glyph instead, so every name
+  // stays whole
+  const inked = [];
+  for (const L of camps) {
     const lx = MAP_X + Math.round((L.tx + 0.5) * MAP_S);
     const ly = MAP_Y + Math.round((L.ty + 0.5) * MAP_S);
-    drawLandmarkIcon(ctx, L, lx, ly - 3, '#3a2c1c', 'rgba(228,216,186,0.85)');
+    drawCampIcon(ctx, L, lx, ly - 3, '#3a2c1c', 'rgba(228,216,186,0.85)');
     const w = pixelTextWidth(L.name);
     const nx = Math.max(MAP_X + 1, Math.min(MAP_X + MAP_W - w - 1, Math.round(lx - w / 2)));
-    drawPixelTextShadow(ctx, L.name, nx, ly + 3, '#3a2c1c', 'rgba(228,216,186,0.85)');
+    let ny = ly + 3;
+    if (inked.some((r) => nx < r.x + r.w + 2 && nx + w + 2 > r.x && ny < r.y + 7 && ny + 7 > r.y)) ny = ly - 12;
+    inked.push({ x: nx, y: ny, w });
+    drawPixelTextShadow(ctx, L.name, nx, ny, '#3a2c1c', 'rgba(228,216,186,0.85)');
   }
 
   // the eagles as bird diamonds in team colour: the two roosted objectives,

@@ -242,10 +242,10 @@ visible state everywhere the cursor lands, not a faded pine quietly borrowing th
 a bare bush never rims because `workTarget`'s `ready` gate already refuses it — a *hovered* bare
 bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
 filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
-beside `fadeWkO` at any reach, since a look asks nothing of the legs). A hovered **wolf den**
-wears the same bar the same way — over the mouth, filling toward its next wolf off the site's
-top-up clock (`o.site.repopT`, [world.md](world.md#runtime)) while the pack is short, nothing
-while it is whole. A hovered tree
+beside `fadeWkO` at any reach, since a look asks nothing of the legs). A hovered **camp anchor**
+(a den's mouth, the alpha stone) wears the same bar the same way — over the prop, filling toward the camp's return off its
+respawn clock (`o.site.repopT`, `drawCampClock`, [world.md](world.md#runtime)) while the camp is cleared, nothing
+while anything in it lives. A hovered tree
 also holds full ink against the fade, and a mid-shake chop lifts a faded neighbour back to
 opaque. While any pine
 is inside the ramp the hero also wears a **black 1px silhouette rim** — `treeFadeSil`, the
@@ -254,7 +254,7 @@ nearest pine's position on the same ramp, computed beside the y-sort and stamped
 rim grammar as `drawPixelTextOutline`) — so the body pops off the canopy over it and the rim
 dissolves as the hero steps into the open; a lying body keeps its stealth read bare. Only that
 handful of pines ever flips `globalAlpha`, so the atlas batch below stays whole. A **dead tree** is still the old 16×24 snag at `py - 8`. Short ground sprites (rock, bush,
-stump, the wolf den's mouth) all draw at `py + 4` to stay clear of that band — drop one lower and
+stump, a den's mouth) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely.
 
 The **fish net** is the one building that is not in `draws` at all. It lies flat on its hole and
@@ -348,7 +348,7 @@ hand feel like one control. A save written before `settings.v` indexes the old s
 and is carried across by `MM_MIGRATE` on load. Stepped by the
 scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-empts the camera
 zoom in the wheel handler and is saved with the settings. Every marker drawn over it (players,
-landmark glyphs, your side's [worker flags](gameplay.md#worker-flags)) multiplies its tile
+camp glyphs, your side's [worker flags](gameplay.md#worker-flags)) multiplies its tile
 offset by `s`. The disc sits on an opaque `#0f1632`
 backing with a pale 1 px outer rim that brightens while hovered — the hover state is the whole
 affordance, there is no hint. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
@@ -521,8 +521,8 @@ the open page is `menu.wikiTab`. A new page is one table entry and one builder.
 `drawWikiBeast` draws a kind exactly as `drawAnimal` hangs its frame in the world — the same
 `drawHealthBar`, `drawLevelBadge` and `drawSenseMark` calls at the same offsets over the same
 sprite, on a low snow mound — so the page teaches the frame by showing it, and a change to the
-frame in the world changes it on the page. A wolf's threat bar is shown part-filled, since bare
-track says nothing; a bird wears nothing, as in the world. An ARSENAL row is the kind's icon on
+frame in the world changes it on the page. A camp monster's leash bar is shown part-filled, since bare
+track says nothing. An ARSENAL row is the kind's icon on
 the tier plate a bag cell wears (`tierPlate`, `modPlate`, `tierShine`), rimmed and lifted a pixel
 under the pointer, the blue pip for `PROFILE.techSeen`, its name in the tier's ink, a dotted
 leader to its numbers. Nothing here is bought or pressed: a click only opens a tab or pages the
@@ -816,8 +816,8 @@ you and your allies and red over rivals on your screen, and neutral gold (`BAR_N
 grammar) over wildlife, the practice dummy and anything handed no team; `col` overrides the side
 for the bars that are not health, every one hung under the health bar the way a player's stamina is
 (3 rows down, sharing a frame wall; **health is always the top bar**, at the same height on every
-animal): a wolf's threat (`THREAT_COL` red, bare track at rest:
-[gameplay.md](gameplay.md#wolves-the-first-enemy)), a deer's sprint and a
+animal): a camp monster's leash (`THREAT_COL` red, bare track at rest:
+[gameplay.md](gameplay.md#camp-monsters-neutral-until-hit)), a deer's sprint and a
 rabbit's dodge charge (both `STAM_COL` white, at the health bar's own width:
 [gameplay.md](gameplay.md#wildlife)) — every second bar always worn, since **the level plate
 spans both**: `drawLevelBadge(rx, topY, level)` is the one 7-tall badge a hero and a beast
@@ -825,7 +825,7 @@ share, hard against the bar backing's left column and growing left with the digi
 rabbit's frame is the player's frame at 8 px. An empty bar is bare track (`drawHealthBar`
 paints no fill at zero; a living thing's last sliver of hp is still a pixel). Over the frame,
 where the stun stars turn, an animal that has a player in sight wears the **noticed mark** —
-`drawSenseMark`, the font's `!` under a dark rim, white on prey and threat red on a wolf,
+`drawSenseMark`, the font's `!` under a dark rim, white on prey and threat red on a camp monster,
 rising out of the head over its first tenth of a second and gone the frame the sight is
 ([gameplay.md](gameplay.md#wildlife)); the stars win while a stun runs. How full a bar is carries the
 health. The old green → amber → red drain spent the rival's colour on "hurt", so a hurt ally
@@ -969,7 +969,7 @@ at `round(centre)` — the column just right of that seam — which turns the te
 frame that is genuinely centred has as many columns strictly left of the line as it has from the
 line rightwards. It is dotted so the frame it is measuring reads through it.
 
-**Reaches and sight ranges are deliberately not drawn.** `WORK_REACH`, a wolf's bite and sight, a
+**Reaches and sight ranges are deliberately not drawn.** `WORK_REACH`, a wolf's bite and a camp's ground, a
 turret's acquisition ring, the bird flush, the fish catch: they were in an earlier version of the
 pass and are out again, because they are wide enough to bury the 7 px circle the overlay exists to
 show, and because a sight range is per-target (`seenAt`) and so needs a design of its own rather
@@ -990,7 +990,7 @@ runs through the waypoints it has left (`nav.i` onward), and ends in a box on `n
 the tile the unit decided to go to, which is the answer to *why is it walking over there*. The leg
 it is on now is solid and the legs beyond it are dotted, so a route being followed reads
 differently from one being replanned. One colour per kind of walker, as on the minimap: players
-gold, a wolf red, the rest of the wildlife green, a worker bot blue.
+gold, a camp monster red, the rest of the wildlife green, a worker bot blue.
 
 Most routes are one leg: `navTo` takes the straight line whenever `navLineClear` allows it and
 `navSmooth` collapses the rest, so a chain of waypoints means the unit is genuinely going around
@@ -1014,20 +1014,22 @@ The arrowhead is the whole tell: **a barbed stub is a heading, a line ending in 
 a decided place.** Keep that split if you add another mover — draw the box only when there is a
 goal tile to put it on.
 
-## Landmarks on the maps
+## Camps on the maps
 
-A [landmark](world.md#landmarks) is a *named* place, so it has to be legible on every surface
-that shows the world. `drawLandmarkIcon(g, L, x, y, col, rim)` is the shared stamp: the spec's
+A [camp](world.md#camps) is a *named* place, so it has to be legible on every surface
+that shows the world. `drawCampIcon(g, C, x, y, col, rim)` is the shared stamp: the spec's
 `icon` rects inside a 7×7 box, drawn once inflated by 1 px in a rim colour and once in the ink,
 so the same glyph reads on parchment, on snow and over forest.
 
-- **The minimap** (`renderMinimap`) draws the glyph for any landmark inside the disc, in the
+- **The minimap** (`renderMinimap`) draws the glyph for any camp inside the disc, in the
   spec's `mark` over a dark rim. No name — `WOLF DEN` is wider than the whole 48 px disc.
-- **The M map** (`renderWorldMap`) draws the glyph plus the name in map ink under it, clamped
-  to the map rect so a landmark near the edge keeps its label. It opens mid-flight too (M in
-  mode `drop`), where choosing between landmarks is the whole jump decision.
+- **The M map** (`renderWorldMap`) draws the glyph plus the name in map ink under it — over it
+  instead when a name already inked would run into it, since two sites sit a label's width
+  apart — clamped
+  to the map rect so a camp near the edge keeps its label. It opens mid-flight too (M in
+  mode `drop`), where choosing between camps is the whole jump decision.
 - **Arrival** — `updatePlay` keeps `state.loc` (`{ L, t }`) for the local player from
-  `landmarkAt(player.x, player.y)`, and `renderUI` shows a toast top centre for ~3.5 s whenever it
+  `campAt(player.x, player.y)`, and `renderUI` shows a toast top centre for ~3.5 s whenever it
   changes: a dark plate ruled in the spec's `mark`, the glyph, the name at 2× and the `tag` under
   it. It fades in and out, so it uses `drawPixelTextShadow` (see
   [Text over the world](#text-over-the-world) — an outline stamped under `globalAlpha` goes

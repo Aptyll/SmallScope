@@ -26,9 +26,9 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/input.js](../../js/input.js) | ~560 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `settings.binds`, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `flagDown`/`flagUp`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
 | [js/gamepad.js](../../js/gamepad.js) | ~200 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
 | [js/touch.js](../../js/touch.js) | ~230 | shared scope, no `window.*` export | fingers: the two floating sticks, the plates' table and layout, a finger as the mouse everywhere else; `touchPoll` (from `loop()`) |
-| [js/world.js](../../js/world.js) | ~1650 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the landmarks with their own `lmRng` stream, and the practice training grounds |
+| [js/world.js](../../js/world.js) | ~1650 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the camps at their fixed mirrored sites, and the practice training grounds |
 | [js/nav.js](../../js/nav.js) | ~310 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
-| [js/wildlife.js](../../js/wildlife.js) | ~600 | shared scope, no `window.*` export | prey, the fish shoal, the wolf pack and the rookery flock |
+| [js/wildlife.js](../../js/wildlife.js) | ~600 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters (and the dormant flock) |
 | [js/structures.js](../../js/structures.js) | ~500 | shared scope, no `window.*` export | the `STRUCTS` table, building/upgrading/wrecking, and the per-type building sim |
 | [js/robots.js](../../js/robots.js) | ~900 | shared scope, no `window.*` export | the worker bots a bay rolls out, the eagle's merchant and the barracks it raises, the soldiers a barracks marches down the road, and the one flag per player whose tile is their standing order |
 | [js/actions.js](../../js/actions.js) | ~830 | shared scope, no `window.*` export | what a player does: the swing tools and harvesting, the roll as a hit, prone — and, under its own banner, the damage types and status effects **every** kind of unit shares |
@@ -36,7 +36,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/abilities.js](../../js/abilities.js) | ~640 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield/rush/crater/juggernaut sim, and their draw passes |
 | [js/ai.js](../../js/ai.js) | ~380 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
 | [js/sim.js](../../js/sim.js) | ~810 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
-| [js/draw-world.js](../../js/draw-world.js) | ~1160 | shared scope, no `window.*` export | the world's pixels: the prerendered ground, every entity's sprite pass, the flag and landmark glyphs, lighting/weather/vignettes |
+| [js/draw-world.js](../../js/draw-world.js) | ~1160 | shared scope, no `window.*` export | the world's pixels: the prerendered ground, every entity's sprite pass, the flag and camp glyphs, lighting/weather/vignettes |
 | [js/render.js](../../js/render.js) | ~980 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
 | [js/ui.js](../../js/ui.js) | ~1950 | shared scope, no `window.*` export | the in-match HUD: radial wheel, brackets and prompts, minimap, the backpack, the character panel, the weapon strip and bit column, the drag, card draft, the hover tooltip |
 | [js/shop.js](../../js/shop.js) | ~700 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
@@ -167,7 +167,7 @@ and panels.js (the touch plates and sticks: the `touch controls` banner, ui.js; 
 themselves.
 
 **A feature's tuning constants live in the file that owns the feature**, directly above the code
-that reads them — `WOLF_*` in wildlife.js, `TUR_*` in structures.js, `PRONE_*` in actions.js. Only
+that reads them — `MONSTER`/`CAMP_*` in wildlife.js, `TUR_*` in structures.js, `PRONE_*` in actions.js. Only
 the numbers with no one owner stay in core.js: `TILE`/`WORLD`, the view size, the day cycle, and
 the `YIELD` economy table that three files read. Adding a number for a feature means adding it
 beside that feature, never here.
@@ -202,7 +202,7 @@ All game state lives in top-level singletons shared across the game files — `s
   [multiplayer.md](multiplayer.md#the-ten-players).
 
 Plus the flat arrays every pass iterates: `animals`, `arrows`, `drops`, `particles`, `floaters`,
-`footprints`, `structures`, `robots`, `fish`, `landmarks`.
+`footprints`, `structures`, `robots`, `fish`, `camps`.
 
 ## app/
 

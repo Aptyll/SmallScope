@@ -62,13 +62,13 @@ underfoot sets friction and speed caps. All the tuning constants live in the `pl
 
 ## Unit collisions
 
-Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5, deer 5, wolf 4.5,
+Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5, deer 5, wolf and alpha 4.5, the dire wolf 9,
 rabbit 2.5, robot 3 — `unitRadius`). **Birds are the exception**: they fly, so `separateUnits()`
 skips them entirely and they have no `UNIT_MASS` entry. Tile collision stays per-mover in
 `moveEntity`; unit-vs-unit is a separate relaxation pass, `separateUnits()` in the
 `movement & collision` banner, that `updatePlay` runs once after every player, animal and robot
 has stepped. For each overlapping pair it splits the overlap by inverse mass (`UNIT_MASS`:
-player 3, deer 2.2, wolf 2, robot 0.7, rabbit 0.5 — a player shoves a rabbit aside and barely
+player 3, deer 2.2, wolf 2, alpha 2.5, dire wolf 5, robot 0.7, rabbit 0.5; a camp monster's radius and mass are its `MONSTER` row, read through `unitRadius`/`unitMass` — a player shoves a rabbit aside and barely
 notices, two players split it evenly). Every
 push goes through `moveEntity(…, strict)`, which treats open water as a wall even for players
 (a shove never dunks anyone), and **any push a wall refuses is handed to the other unit** — the
@@ -594,9 +594,9 @@ typed twice, so a retune can never leave the wiki lying.
   and the blurb wrapped beneath. A hover raises class select's ability card (`tipClassAb` with
   the class passed, so the base cooldown). The intro names what a skill point does
   (`AB_LV_CD`, `AB_LV_MAX`, [Hero levels](multiplayer.md#hero-levels)).
-- **BEASTS** — the meadow's four kinds, each drawn wearing the frame it wears in the snow; a
+- **BEASTS** — the meadow's two kinds and the camps' three, each drawn wearing the frame it wears in the snow; a
   legend naming the frame's parts once (the level plate, health, the stamina bar that is a
-  wolf's threat bar, the `!` noticed mark); and per kind a line of what it does and a growth
+  camp monster's leash bar, the `!` noticed mark); and per kind a line of what it does and a growth
   table — HEALTH and KILL GOLD at levels 1, 6 and 12 (`WIKI_LEVELS`) — from `ANIMAL_HP` /
   `ANIMAL_LV_HP` and `YIELD` / `ANIMAL_LV_GOLD` through the same arithmetic `makeAnimal` and
   `animalDies` use ([Wildlife](#wildlife)). The frames on the page wear the level a spawn would
@@ -954,7 +954,7 @@ shots arriving in the same step was silently thrown away — and since **PATCH 3
 a whole volley in the air ([tools and bits](#tools-and-bits)), so a close-range column landing two
 or three bits on one body was paying for one. Now each lands its own damage, its own shove and its
 own fire. Two consequences worth knowing: the **wolf pack** lost its cap
-([Wolves](#wolves-the-first-enemy)), and
+([Camp monsters](#camp-monsters-neutral-until-hit)), and
 a body can take several hits in one frame — `SFX.hurt()`’s 0.03 s `gap` collapses the oofs into
 one so they do not phase, while the damage floaters, the red flash, the shove and the shake are
 per hit. Knockback does not accumulate: the last blow of a step writes `kbx`/`kby` outright.
@@ -1044,11 +1044,12 @@ those, never `p.hide` directly**:
 - `seenAt(p, range)` = the distance a watcher with plain sight `range` actually notices p from:
   `range × kit.stealth × (1 − PRONE_CUT × conceal)`, floored at `PRONE_SNIFF` (22 px) whenever
   there is any cover at all — **nothing hides at arm's length**. Full cover takes a bot's 150 px
-  down to 22, a wolf's 96 down to 22, and a tier-3 turret's 92 down to 22.
+  down to 22 and a tier-3 turret's 92 down to 22.
 
-Four watchers resolve through `seenAt` and there must never be a fifth that doesn't:
+Three watchers resolve through `seenAt` and there must never be a fourth that doesn't:
 `aiNearestEnemy` (which **ignored `kit.stealth` entirely** before this — GHOSTSTEP did nothing
-against another player until now), `updateWolf`'s target pick, and `turretMark`/`turretHolds`.
+against another player until now) and `turretMark`/`turretHolds` — a camp monster has no sight
+to resolve, since a hit is its only trigger ([Camp monsters](#camp-monsters-neutral-until-hit)).
 Both maps gate separately on `concealOf(p) >= PRONE_MAP` (0.55): a rival buried and still drops off
 the minimap and the M map, and a rival *crawling* tops out at 0.5 and stays on both — moving puts
 you back on their map before it puts you back in their sights.
@@ -1114,16 +1115,16 @@ the answer; a warrior bot has no burrow to decide.
 
 ## Wildlife
 
-`animals` holds **everything that is shot rather than swung at** — four kinds, keyed by
+`animals` holds **everything that is shot rather than swung at** — two kinds of prey, the camps' three wolves and the dormant bird, keyed by
 `a.kind` with hp from `ANIMAL_HP`. The passive pair is spawned at boot by `spawnAnimals()`
 (called right after `genWorld()`, so its `rng()` draws don't reshuffle the world layout) at
 `PREY_POP` strength: 16 rabbits (8 HP, biased to spawn near berry bushes) and 10 deer (24 HP).
 Neither reproduces, but **the meadow is restocked**: `updatePreyStock` (from `updatePlay`, never
 under `PRACTICE`) puts one animal of the kind furthest under strength back every `PREY_REPOP`
 (15 s) through `spawnPrey`, on a free tile no live player is within `PREY_CLEAR` (280 px — past
-the edge of any screen at zoom 1) of, so nothing is ever seen to appear. **Wolves** (30 HP) and
-**birds** (3 HP) belong to a [landmark](world.md#landmarks) instead — `a.home` points at it,
-and the site restocks them.
+the edge of any screen at zoom 1) of, so nothing is ever seen to appear. **Wolves** (30 HP), the
+**alpha** (70) and the **dire wolf** (320) belong to a [camp](world.md#camps) instead — `a.home` points at it,
+and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, are dormant: nothing spawns one.)
 
 **Every animal wears a level** (`a.level`), the hero's plate on the left of its frame
 ([rendering.md](rendering.md#overhead-health-bars)), dealt once by `makeAnimal` from
@@ -1131,7 +1132,7 @@ and the site restocks them.
 `LEVEL_MAX` — and never raised after: an animal does not level, the meadow does, as the ones
 the eagle dropped you into (all level 1) are shot and restocked at whatever the table has
 reached. What grows with it is hp, `ANIMAL_LV_HP` a level over `ANIMAL_HP` (rabbit +1, deer
-+2, wolf +3; a level-6 pack is 45 hp a wolf), and a wolf's bite, `WOLF_LV_DMG` (+1 a level).
++2, wolf +3, alpha +8, dire +25; a level-6 pack is 45 hp a wolf), and a camp monster's bite (`MONSTER.lvBite`: +1, +2, +3 a level).
 **The kill pays for it**: `animalDies` grows the `YIELD` payout by `ANIMAL_LV_GOLD` (a tenth)
 a level, rounded, before the HUNTSMAN bonus is taken off it — a level-6 rabbit is 15 gold, a
 level-6 wolf 36, and a level-12 beast a little over twice its level-1 self, about what its hp
@@ -1144,12 +1145,12 @@ prey and threat red on a wolf — for as long as it does: `a.senseT` counts the 
 first did and is 0 whenever it does not. For prey, "in sight" is a player inside the
 `FLEE_SIGHT` ring (through `seenAt`, so cover keeps it down) **or a flight already under way**,
 so a deer running wears the reason it is running and a deer that grazes on has not seen you; for
-a wolf it is a player in sight on its ground or a hunt in progress, and **not** a bar draining
-with nobody in view — that wolf has lost you, and the mark going out is how it says so.
+a camp monster it is a hunt in progress and nothing else — a leash bar still draining is still
+a hunt — and the mark going out is the monster giving you up.
 
 `updateAnimal()` is the shared shell: it ages the flash and knockback, runs
 `updateUnitStatus` (the shared clock — root, slow, net, mark, fire), dispatches to
-`updatePrey` / `updateWolf` / `updateBird`, clamps to the world, and calls `animalDies(a)` — the
+`updatePrey` / `updateCampMonster` / `updateBird`, clamps to the world, and calls `animalDies(a)` — the
 one place a kill pays out, straight from the `YIELD` table. Everything in `animals` is a target
 for arrows (`animalHit(a, x, y)`, shared by the arrow update and the aim line), gets the amber
 hunt reticle, and joins the y-sorted draws.
@@ -1213,67 +1214,79 @@ to players, robots and each other except birds, which fly (see
 [Unit collisions](#unit-collisions)), and sprites are side-view only (`dir` is `left|right`).
 They are not shown on the minimap or world map.
 
-### Wolves: the first enemy
+### Camp monsters: neutral until hit
 
-A **wolf den** ([world.md](world.md#landmarks)) keeps 4 wolves. `updateWolf()`:
+The [camps](world.md#camps) keep three kinds of wolf — the **wolf** (a den's 4), the **alpha**
+(the stone's 1) and the **dire wolf** (the hollow's 1) — one `MONSTER` row each (wildlife.js:
+the bite and what it grows a level, the reach, the seconds between one body's bites, the
+hunting speed, the body's radius and mass, and `big` for the dire's 2× sprite). All three run
+`updateCampMonster()`:
 
-- **Sight, and the ground.** A wolf notices a player inside `WOLF_SIGHT` (96 px — scaled by
-  `1 + darkness * 0.75`, so at full night it is ~168 px and the den is a different proposition
-  after sunset; `seenAt` shrinks it for a GHOSTSTEP or a buried body) who is on the **pack's
-  ground**, `WOLF_GROUND` (190 px) around the den. The ground is where the threat bar fills and
-  holds; anywhere off it the bar drains — and that is the whole escape rule, because the wolf
-  itself has **no leash**: it chases as far as the bar lasts.
-- **The threat bar.** Nothing charges on sight. A wolf with someone inside its circle stops its
-  patrol, squares up (faces them, stands) and fills `a.threat` (0..1) — the red bar hung under
-  its health bar the way a player's stamina is (`THREAT_COL`, `drawAnimal`; 3 rows down, sharing
-  a frame wall), always worn and bare track at rest — at `1 / WOLF_THREAT_T` per second (2.5 s
-  to fill) at the edge of the circle and three times that at its nose, so a walk past the edge
-  shows a flicker and a walk up to the den is a charge in under a second. Step out before it
-  fills and the bar drains over `WOLF_THREAT_DECAY` (3 s), and the wolf goes back to its
-  patrol. Full, the den charges: `wakePack(w, target)` hands the find to every wolf of the same
-  den at threat 1 and plays `SFX.howl()`. An arrow skips the bar — a hit is `wakePack` at once
-  (a wolf shot from cover does **not** flee like a deer; the den comes for the shooter). A
-  chasing wolf's bar holds full while you are on the ground and drains once you are off it —
-  with the wolf at your heels or not, so a chase that keeps up still ends — and **it keeps coming
-  while the bar drains**: the hunt ends only when the bar is empty, and then it walks home. Off
-  the ground you have 3 s of a wolf on you, and it outruns a walk, so the momentum system is how
-  you take no bites on the way out; a pack-mate that never saw you gets threat 1 from the howl
-  and runs in with the rest.
-- **The chase.** `WOLF_SPD` (96 px/s) is faster than the 72 px/s walk and slower than a slide or
-  the ice cap, so the answer is the momentum system, not distance — and the wolf routes around
-  trees and water ([Pathfinding](#pathfinding)), so a treeline is not cover; a quarry it cannot
-  route to (out on a hole) it holds and faces. Bites do `WOLF_BITE_DMG` (9, plus
-  `WOLF_LV_DMG` — 1 — for every level past the wolf's first)
-  inside `WOLF_BITE_R` (13 px) every `WOLF_BITE_CD` (1 s) per wolf, through
-  `damagePlayer(t, dmg, dx, dy, null, 'wolf')`. **Nothing caps the pack.** Until **PATCH 3.01**
-  the 0.7 s of i-frames a hit granted did — standing in a den measured ~9 hp/s, about 10 s for a
-  level-1 player — but a hit grants none now
-  ([i-frames](#i-frames-only-something-deliberate-grants-them)), so all four bites land and a den
-  costs up to ~36 hp/s: under three seconds for a 92 hp hunter. `WOLF_BITE_CD` is the only dial
-  left on it. Death reads `WENT TO THE WOLVES` in the feed
-  ([multiplayer.md](multiplayer.md#kills-and-the-event-feed)).
-- **Off duty** it patrols its den on routed legs from the same `wanderGoal` the prey graze with
-  (2–5 tiles); once it drifts past `r * 0.8` the arc narrows to 0.5 rad straight back at the den,
-  so the only way it will walk out there is home. Taking a quarry drops the patrol goal.
-- **The payout** is `YIELD.wolf` — 24 gold at level 1 (a tenth more a level, see
-  [Wildlife](#wildlife)), the biggest single kill in the game, for 30 hp of
-  arrows (three full draws at level 1). Dangerous, rewarding.
+- **Neutral.** There is no sight and no threat bar filling on a linger: a player can stand at
+  the mouth of a den and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
+  stomp, anything through `hurtUnit` — and it wakes the *camp*: `wakeCamp(w, hitter)` hands the
+  hitter to every monster of the same camp at a full leash bar and plays `SFX.howl()`. Every
+  further hit re-aims the camp at the latest hitter, which is how a team takes turns tanking
+  it.
+- **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
+  player's stamina is (`THREAT_COL`, `drawAnimal`; bare track at rest). It holds full while
+  the quarry is on the camp's **ground** — `CAMP_GROUND` (7) tiles past the camp's `r` — and
+  drains over `CAMP_LEASH_T` (3 s) anywhere off it, with the monster at your heels or not; it
+  keeps coming while the bar drains and the hunt ends only when the bar is empty. Then it walks
+  home and **heals**: a monster with nobody to hunt mends from nothing to full over
+  `CAMP_REGEN_T` (6 s), so a fight you break off is a fight reset, never a chip-away. A quarry
+  that dies or boards its eagle ends the hunt at once.
+- **The chase.** The kind's `spd` — 96 px/s for a wolf, faster than the 72 px/s walk and slower
+  than a slide, 90 for the alpha, 80 for the dire — so the answer is the momentum system, not
+  distance; every one routes around trees and water ([Pathfinding](#pathfinding)), and a quarry
+  it cannot route to (out on a hole) it holds and faces. Bites do the row's `bite` plus `lvBite`
+  for every level past the monster's first, inside `reach`, every `cd` seconds *per body*,
+  through `damagePlayer(t, dmg, dx, dy, null, cause)` — `'wolf'` (`WENT TO THE WOLVES`) for the
+  pack and the alpha, `'dire'` (`FED THE DIRE WOLF`) for the hollow's. **Nothing caps the
+  pack**: a hit grants no i-frames ([i-frames](#i-frames-only-something-deliberate-grants-them)),
+  so four wolves on you is four bites a second, ~36 hp/s at level 1. `cd` is the only dial on it.
+- **Off duty** it patrols its camp on routed legs from the same `wanderGoal` the prey graze with
+  (2–5 tiles); once it drifts past `r * 0.8` the arc narrows to 0.5 rad straight back at the
+  camp, so the only way it will walk out there is home. Taking a quarry drops the patrol goal.
+  The noticed mark (`a.senseT`) is worn on a hunt and nothing else.
 
-### Birds: the flock
+| Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
+| --- | --- | --- | --- | --- | --- |
+| wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
+| alpha | 70 (+8) | 12 (+2) | 15 px / 1.2 s / 90 | r 4.5, mass 2.5 | `YIELD.alpha` 40, and the killer wears ALPHA'S BLOOD |
+| dire | 320 (+25) | 22 (+3) | 22 px / 1.4 s / 80 | r 9, mass 5, a 2× sprite a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
 
-A **rookery** keeps 9 birds perched in its dead trees. `updateBird()`:
+Every payout grows `ANIMAL_LV_GOLD` a level like any kill ([Wildlife](#wildlife)). The dire's
+teammate share goes through `awardGold` at each teammate's own feet (so a bot's gear purchase can
+eat it the same tick — the XP is what is guaranteed), to every active teammate who is not dead
+or in the air; the blood goes to every active teammate regardless.
 
-- **Flighty.** Any player inside `BIRD_FLUSH` (34 px) — or an arrow hitting one, or a snag being
-  chopped — calls `flushBirds(L, from)`, which puts **the whole rookery** up at once with
-  `SFX.wings()`. One bird leaving alone would read as a bug; the flock is the personality.
-- **In the air** for 2.4–4.2 s at `BIRD_SPD` (112 px/s): a wandering circuit that never leaves
-  the stand, then a run back to a perch (`rookeryPerch(L)`, re-picked on every flush).
-- **Height** is `a.alt` — `BIRD_ALT` (15 px) perched, easing to 26 in flight. It is the only
-  thing in the world off the ground: `animalHit` and the cursor both subtract it, birds are
-  skipped by `separateUnits`, and `drawBird` lifts the sprite off its own shadow.
-- **The shot.** 3 hp (any arrow kills) but a 5 px body instead of 8, moving, at altitude, with
-  the flock scattering — `YIELD.bird` pays 8 gold and there are nine of them. It is the archery
-  range of the map, and bots deliberately don't hunt them (they fly; no ground route catches a flock).
+**ALPHA'S BLOOD** (`campBuff(p, t)`, the constants above the `camp monsters` banner): `p.buffT`
+seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, applied in
+`hurtUnit` — a shot, a roll and a stomp alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
+`abilityMoveMul`). The alpha's kill wears it `CAMP_BUFF_T` (90 s), the dire's bloods the team
+`CAMP_BUFF_EPIC_T` (120 s), and a fresh grant only ever extends what is left. It is worn as an
+**amber ring of twelve pips around the feet** (`drawBuffRing`, draw-world.js) that loses a pip
+at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
+goes out with the body on death. There is no HUD element for it: the ring is the read.
+
+**Bots and camps.** A bot fights only a camp that is already hunting it (`aiNearestWolf` answers
+a monster whose `target` is that bot, inside `AI_SIGHT`); it will pull a den on its own through
+the hunt rung like any other animal, and never the dire wolf (or the alpha below level 6), which
+a lone bot would die to. No bot walks *to* a camp deliberately yet — see
+[checklists.md](checklists.md#known-drift).
+
+### Birds: the flock (dormant)
+
+The bird kind — `updateBird()`, `flushBirds(L, from)`, `rookeryPerch(L)`, `drawBird`, the
+`BIRD_*` constants, `YIELD.bird` — is intact but **nothing spawns one** since the rookery went
+with the landmarks ([Known drift](checklists.md#known-drift)). What it was: a flock perched in a
+stand's snags, put up all at once by any player inside `BIRD_FLUSH` (34 px), an arrow, or a snag
+being chopped; 2.4–4.2 s in the air at `BIRD_SPD` (112 px/s) on a circuit that never leaves the
+stand, then back to a perch; `a.alt` (`BIRD_ALT` 15 perched, easing to 26 in flight) the only
+height in the game, subtracted by `animalHit` and the cursor, skipped by `separateUnits`; 3 hp on
+a 5 px body — the archery range of the map. A camp that wants a flock stands one up with
+`props` of `deadTree` and a `spawnOne` that perches birds.
 
 ## Economy (one currency)
 
@@ -1290,13 +1303,15 @@ rather than a different resource (the League model: one number, many ways to ear
 | --- | --- | --- |
 | the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse and the pace a level comes at for a player who never farms |
 | tree (`TREE_HP` 3, js/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
-| dead tree (3 hp) | `deadTreeFall` 1 | a tree, but only at a rookery |
+| dead tree (3 hp) | `deadTreeFall` 1 | a tree, but only in the dire hollow's ring |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
 | rock (5 hp) | `rockBreak` 3 | better per swing than a pine, back-loaded, and 1 in 5 hides a tier-0 tool or bit |
 | rabbit | `rabbit` 2 coins × 5 → 10 (+1 berry) | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target |
-| wolf | `wolf` 3 coins × 8 → 24 | the biggest kill, and it bites back |
-| bird | `bird` 2 coins × 4 → 8 | tiny, airborne, nine per rookery |
+| wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
+| alpha | `alpha` 4 coins × 10 → 40 | the stone's one; the kill wears ALPHA'S BLOOD |
+| dire wolf | `dire` 6 coins × 15 → 90 | the hollow's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
+| bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | generator | `tiers[tier].pay` every `period` s: 1/15, 1/10, 2/12 — 4 / 6 / 10 a minute | passive income, deposited to its owner; sized under the clock's own 15 so a farm of them never out-trickles the trickle |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a **top-tier** tool or bit | ~14 caches along the treeline, one free E press — the only source of the best weapons |
 | a sale at [the counter](#the-merchants-counter) | half a made thing's price, or the live market price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
@@ -1415,7 +1430,7 @@ header. That is what makes the clock matter — what is on the counter
 is a *window*, not a queue — and it is also why nothing here is [contested](multiplayer.md#contested-orders):
 two players at one counter cannot take the same thing from each other.
 
-Everything rolls on `mktRng`, the market's **own** stream seeded off `SEED` (the landmarks' `lmRng`
+Everything rolls on `mktRng`, the market's **own** stream seeded off `SEED` (the chests' `chRng`
 pattern): the same seed is the same market on every machine, and a busy shop can never shift a loot
 roll by consuming draws out of the shared stream.
 
@@ -1964,7 +1979,7 @@ nearest tree/rock within 8 tiles of the bay's mouth (`structMouth`, also where t
 (`nearestObj`, the predicate generalisation of `nearestBerryBush`), work it in 0.9 s ticks into a
 `carry` gold count (same `YIELD` numbers as `hitObject`, tree-fall leaves a stump and pays the
 jackpot — banked in the carry rather than paid on the spot), and walk home to deposit into their
-owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (rookery perches: quicker,
+owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (the dire hollow's ring: quicker,
 `YIELD.deadTree*`, and felling one calls `flushBirds`), because a flag can be planted on one.
 Robots drive on `navStep` ([Pathfinding](#pathfinding): reach 1 to a tree, rock or building,
 reach 0 to a body or home) and are solid to players and animals (see
@@ -2150,7 +2165,7 @@ mark dies falls back to holding the flag's ground.
   bots never plant one, which is why a bot's bay still gathers exactly as it always did.
 
 **What it looks like** (the `what a flag looks like` group in [draw-world.js](../../js/draw-world.js)
-draws all three; `FLAG_JOBS`, in robots.js, holds the 7×7 icon grids as landmark-style rect lists):
+draws all three; `FLAG_JOBS`, in robots.js, holds the 7×7 icon grids as camp-glyph-style rect lists):
 
 - **The preview**, up only while the press is held, in two halves because they live in two spaces.
   Both read `flagTarget()`, which resolves the tile once and returns `null` for every reason

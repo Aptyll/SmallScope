@@ -512,7 +512,7 @@ function chopTree(o, p) {
   burst(ox, oy - 8, '#eef4fb', dead ? 12 : 14, 55, 0.7, true);
   burst(ox, oy - 8, dead ? '#6b5a48' : '#2f5c4b', dead ? 6 : 8, 45, 0.6, true);
   if (dead) {
-    flushBirds(landmarkAt(ox, oy), { x: ox, y: oy }); // felling a perch scatters the flock in it
+    flushBirds(campAt(ox, oy), { x: ox, y: oy }); // felling a perch scatters the flock in it (dormant: see the birds banner, wildlife.js)
     return;
   }
   dropLoot(ox, oy - 6, 0, TREE_DROP); // the rare one: something was living in it
@@ -767,6 +767,9 @@ function unitsHit(src, x, y, r) {
 function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
   o = o || {};
+  // ALPHA'S BLOOD (campBuff, wildlife.js): every blow a blooded player lands
+  // is worth more, whatever landed it - a shot, a roll, a stomp alike
+  if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * CAMP_BUFF_DMG);
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;
   const km = o.kbMul === undefined ? 1 : o.kbMul;
   if (e instanceof Player) {

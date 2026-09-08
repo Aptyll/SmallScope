@@ -521,6 +521,7 @@ class Player {
     this.shieldT = 0; this.shieldA = 0;            // the tower shield, and where it faces
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0; this.rushVictim = null;
     this.jugT = 0; this.jugHit = []; this.jugFxT = 0;
+    this.buffT = 0;                                // s of ALPHA'S BLOOD left (campBuff, wildlife.js): harder blows, a quicker walk
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     // The one weapon slot the button fires. It holds a tool CELL - the same
@@ -625,7 +626,7 @@ const footprints = [];
 const fish = []; // swimmers under the ice: {x,y,a,spd,t,turnT,spook}
 const iceCracks = new Map(); // tile idx -> pickaxe hits taken (cracked, not yet open)
 const holes = []; // tile idx of open water holes; they refreeze each dawn
-const landmarks = []; // named points of interest, placed by worldgen (see the landmarks banner)
+const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, world.js)
 
 // ------------------------------------------------------------ damage & death
 // Nothing to do with the wheel above: a hit, what a hit spills, the split
@@ -679,7 +680,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
 }
 
 // what the log says when nobody gets the credit
-const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', wolf: 'WENT TO THE WOLVES', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE' };
+const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', wolf: 'WENT TO THE WOLVES', dire: 'FED THE DIRE WOLF', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE' };
 // ...and what the line says when there IS credit but no arrow: `cause` is
 // read for the verb too, so a worker's axe doesn't get written up as a shot
 const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
@@ -767,6 +768,7 @@ function die(p, src, cause) {
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
   p.jugT = 0; p.hopT = 0; p.grapT = 0;
+  p.buffT = 0; // the blood goes with the body too
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
   burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);
   // kill credit and the feed line: the killer's colours if there is one,

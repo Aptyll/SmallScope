@@ -446,14 +446,14 @@ function updatePlay(dt) {
   for (const a of animals) updateAnimal(a, dt);
   for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
   updateFish(dt);
-  updateLandmarks(dt); // named sites restock their inhabitants
+  updateCamps(dt); // a cleared camp counts down and comes back whole
   if (!PRACTICE) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
   if (PRACTICE) updatePractice(dt); // the dummy mends itself between combos
 
   // the named place the local player is standing in drives the arrival toast
   if (player.dead || inAir(player)) state.loc = null;
   else {
-    const here = landmarkAt(player.x, player.y);
+    const here = campAt(player.x, player.y);
     if (!here) state.loc = null;
     else if (!state.loc || state.loc.L !== here) state.loc = { L: here, t: 0 };
     else state.loc.t += dt;

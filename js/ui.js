@@ -681,12 +681,12 @@ function renderMinimap(now) {
     ctx.fillStyle = TEAMS[skin(e.team)].mark;
     ctx.fillRect(gx - 2, gy, 5, 1); ctx.fillRect(gx, gy - 2, 1, 5);
   }
-  // named places, glyph only - a name would not fit inside the disc (the
+  // the camps, glyph only - a name would not fit inside the disc (the
   // world map and the arrival toast are where they are read by name)
-  for (const L of landmarks) {
+  for (const L of camps) {
     const dx = (L.tx + 0.5 - ptx) * s, dy = (L.ty + 0.5 - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawLandmarkIcon(ctx, L, MM_CX + dx, MM_CY + dy, L.spec.mark, '#0f1632');
+    drawCampIcon(ctx, L, MM_CX + dx, MM_CY + dy, L.spec.mark, '#0f1632');
   }
   // the centre dot: white for you, the team colour for a player you are watching
   ctx.fillStyle = '#0f1632';
@@ -2842,7 +2842,7 @@ function renderUI(now) {
   // down, like the feed - the market does not stop for a death.
   renderNotices();
 
-  // arriving at a named place announces it, top centre: the name big, its
+  // arriving at a camp announces it, top centre: the name big, its
   // personality under it. Fades on the plate, so it uses the shadow font.
   if (state.loc) {
     const L = state.loc.L, t = state.loc.t;
@@ -2856,7 +2856,7 @@ function renderUI(now) {
       ctx.fillRect(bx, by, w, 24);
       ctx.fillStyle = L.spec.mark;
       ctx.fillRect(bx, by, w, 1); ctx.fillRect(bx, by + 23, w, 1);
-      drawLandmarkIcon(ctx, L, bx + 10, by + 12, L.spec.mark, '#0a0e23');
+      drawCampIcon(ctx, L, bx + 10, by + 12, L.spec.mark, '#0a0e23');
       drawPixelTextShadow(ctx, L.name, Math.round((VIEW_W - nw) / 2) + 7, by + 4, '#f4f7ff', '#0a0e23', 2);
       drawPixelTextShadow(ctx, L.tag, Math.round((VIEW_W - tw) / 2) + 7, by + 15, L.spec.mark, '#0a0e23');
       ctx.globalAlpha = 1;

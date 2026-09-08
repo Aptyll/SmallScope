@@ -183,7 +183,7 @@ function updateRobot(b, dt) {
         if (t.rare) b.carry += YIELD.treeRare;
         burst(ox, oy - 8, '#eef4fb', 8, 45, 0.5, true);
         if (nearPlayer(ox, oy)) SFX.treeFall();
-        if (dry) flushBirds(landmarkAt(ox, oy), { x: ox, y: oy }); // the flock loses its perch
+        if (dry) flushBirds(campAt(ox, oy), { x: ox, y: oy }); // the flock loses its perch (dormant: see the birds banner, wildlife.js)
         b.tgt = null;
       }
     } else {
@@ -418,7 +418,7 @@ function merchFell(b, t) {
   burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
   burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : t.type === 'rock' ? '#9aa4b4' : '#6b5a48', 5, 45, 0.5, true);
   if (nearPlayer(px, py)) SFX[t.type === 'rock' ? 'break_' : 'treeFall']();
-  if (t.type === 'deadTree') flushBirds(landmarkAt(px, py), { x: px, y: py });
+  if (t.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
   b.tgt = null;
   return true;
 }
@@ -769,7 +769,7 @@ const ROBOT_MAD = 6;       // seconds a struck worker stays angry at whoever hit
 // for the same reason drawSelection's brackets do - a dark rim under white.
 const FLAG_MINE = '#f4f7ff', FLAG_FOE = '#ff8a7a';
 const FLAG_JOBS = {
-  // icon: rects on a 7x7 grid, stamped by drawFlagIcon (the landmark idiom)
+  // icon: rects on a 7x7 grid, stamped by drawFlagIcon (the camp glyph's idiom)
   harvest: { col: FLAG_MINE, icon: [[0, 0, 5, 1], [0, 1, 6, 1], [1, 2, 5, 1], [3, 3, 1, 4]] }, // an axe
   path:    { col: FLAG_MINE, icon: [[1, 1, 5, 1], [2, 3, 3, 1], [3, 5, 1, 1]] },               // a lane running away
   guard:   { col: FLAG_MINE, icon: [[0, 0, 7, 2], [1, 2, 5, 2], [2, 4, 3, 1], [3, 5, 1, 1]] }, // a shield

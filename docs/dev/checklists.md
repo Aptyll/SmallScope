@@ -28,7 +28,7 @@ declare victory. The three affordances:
   `setControl(id, mode)` hands a player to an AI, a human or nobody. `setHide(h, p?)` stages a
   buried body without lying in the snow for `PRONE_BURY`, and `concealOf` / `seenAt(range, p?)` /
   `ambushReady` read back what the world makes of it. **Stage the scene** (place
-  structures, warp to a landmark, jump `state.day`/`state.time`) instead of playing to reach it.
+  structures, warp beside a camp, jump `state.day`/`state.time`) instead of playing to reach it.
   Two things a staged scene walks into: `warp` moves a player but **not the camera**, which lerps
   after it over about a second of stepped frames — step ~120 frames of `1/60` after warping before
   cropping anything, or the crop lands on empty world; and a live bot parked beside the staged
@@ -148,7 +148,7 @@ you are done) so `index.html` stays the only entry point.
 [CLAUDE.md](../../CLAUDE.md) carries the rule (docs are part of the deliverable, fixed in the same
 turn as the code); this is the inventory.
 
-**Worth recording:** a new object type, buildable, ground type, resource, landmark, or enemy; new
+**Worth recording:** a new object type, buildable, ground type, resource, camp, or enemy; new
 or rebound keys; new state on `state`/`settings`/`player`; a new render pass, overlay, or
 offscreen canvas; a change to the day/night, lighting, tool, or difficulty formulas; anything that
 adds a cross-file invariant; any change to how the game is run or verified; and durable
@@ -370,23 +370,27 @@ ever returns `[upgrade, demolish]`, so a structure with its own extra manage-whe
 line there, between the two (and a matching `runCmd()` branch), regardless of how automatic the
 *build* wheel's sizing is.
 
-**Adding a landmark** — a `LANDMARKS` entry plus its `gen`, and its key in `LANDMARK_ORDER`; that
-is the whole feature (see [world.md](world.md#landmarks) for the fields). The entry's shape:
+**Adding a camp** — a `CAMPS` entry plus a site in `CAMP_SITES`; that is the whole feature (see
+[world.md](world.md#camps) for the fields). The entry's shape:
 
 ```js
 shipwreck: { name, tag,           // what both maps and the arrival toast print
-             count, r, surface,   // how many, footprint radius in tiles, 'snow' | 'ice'
-             mark, icon,          // map ink; the glyph is [x,y,w,h] rects in a 7x7 box
-             pop, repop,          // inhabitants kept alive, seconds between top-ups
-             gen(L), spawnOne(L) } // stamp the objects (in worldgen); add one inhabitant (after)
+             r, mark, icon,       // footprint radius in tiles; map ink; the glyph as [x,y,w,h] rects in a 7x7 box
+             kind, pop, repop,    // the monster kind and how many; seconds after the last dies before all are back
+             props, spots }       // [dx, dy, type, variant] to stamp (the 0,0 one is the anchor); [dx, dy] a monster stands on
 ```
 
-The abandoned mine, frozen fort, shipwreck and shop are meant to land here. Nothing in the maps
-or the HUD needs to learn about it. What *does* cost work: any **new object type** its
-`gen` stamps (the checklist above), any **new kind of inhabitant** its `spawnOne` pushes into
-`animals` (a `kind` branch in `updateAnimal`, hp in `ANIMAL_HP`, a `HIT_PUFF` colour, a payout in
-`animalDies`, `UNIT_MASS` + `unitRadius` if it is solid, a hover box in `cursorInfo`, and — if it
-can hurt a player — a `DEATH_CAUSE` key), and rolling **only** through `lmRng`, never `rng`.
+The site is written **once, for the RED half**, in road coordinates (`u` along the diagonal, `s`
+off it) and mirrored for BLUE by `campSites()` — never write both halves by hand, and never a
+site under `CAMP_EDGE` tiles from the world's edge (`placeCamps` throws). Nothing rolls: a camp
+that wants variety takes it from `props`, not from `rng`. The abandoned mine, frozen fort,
+shipwreck and shop are meant to land here, and so is a rookery. Nothing in the maps or the HUD
+needs to learn about it. What *does* cost work: any **new object type** its `props` stamp (the
+checklist above), and any **new kind of monster** (a `MONSTER` row if it fights like the three
+wolves — hp in `ANIMAL_HP`/`ANIMAL_LV_HP`, a `HIT_PUFF` colour, a `YIELD` payout, a `WIKI_BEASTS`
+card, its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
+overlay's sizes in render.js, `animalHit`'s radius if it is not 8, and — if it can hurt a player
+— a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
 
 **Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `buildWorldMapImg()`,
 give it a surface branch in `updatePlayer()`'s momentum block (steer/decay/target rates — ice is
@@ -432,7 +436,7 @@ draw-3 rule, the `YIELD` table (every gold payout, the one table still in core.j
 `EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`, js/boot.js), the waves (`STRUCTS.barracks`'s
 `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`, js/structures.js; `SOLDIER_*` —
 speed, aggro, siege reach, the bird damage, the bounty — and `MERCH_BAY_*` — when the barracks
-is due, how far behind the roost, the rebuild wait — js/robots.js; `ROAD_HW`/`ROAD_RAG`/`ROAD_KEEP`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/
+is due, how far behind the roost, the rebuild wait — js/robots.js; `ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/
 `ROAD_STEP`/`ROAD_POST_STEP`, js/world.js, which reshape the map, and the road's colours
 `ROAD_COL_*` beside `paintRoadOverlay` (draw-world.js); `AI_WAVE_R`/`AI_WAVE_D`, js/ai.js) and the bots' objective clocks (`AI_LEVELS`'
 `push`/`guard`, `AI_ALLY_PUSH`, `AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`,
@@ -478,6 +482,18 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   tells (the sprung jaws, the gold chevrons) and mark's `seenAt` bypass all stay, because they are
   part of the [universal status set](gameplay.md#status-effects-one-set-for-every-unit) a future
   ability or bit lands on for free.
+- **The bird kind is dormant** (3.20, when the camps replaced the landmarks and the rookery went
+  with them): `updateBird`/`flushBirds`/`rookeryPerch`/`drawBird`, the `BIRD_*` constants,
+  `YIELD.bird`, `ANIMAL_HP.bird` and every `kind === 'bird'` branch stay, and nothing spawns
+  one — a camp that wants a flock stands it up again with `deadTree` props and a perching
+  `spawnOne` ([Birds](gameplay.md#birds-the-flock-dormant)). The `flushBirds(campAt(...))` calls
+  on a felled snag are the live hooks it would wake through.
+- **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
+  one is within `AI_HUNT`, never the alpha under level 6 or the dire wolf at all, and nothing in
+  `aiSituation` weighs a camp against the road — so the alpha stones and the dire hollow are the
+  human's until an objective rung learns them ([Bots](multiplayer.md#bots)).
+- **The alpha and the dire wolf wear placeholder sprites** (3.20): the wolf's grids washed and,
+  for the dire, doubled ([sprites.md](sprites.md)). Each wants its own concept sheet.
 - **A bot push could stall mid-map with nothing in its way** (2.63, seed 2 on NORMAL, twice in
   five runs): from `AI_ALLY_PUSH` on, every ally read `aiWantsPush` true, `pushCd` 0, and stood
   at one spot ~2700 px from the rival roost for eight minutes, hp bleeding a few points a

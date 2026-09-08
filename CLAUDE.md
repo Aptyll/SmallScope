@@ -30,13 +30,13 @@ Read the relevant one **before** working in that area — they carry the detail 
 | --- | --- |
 | what the game *is* — the pillars, and what it deliberately is not | [docs/dev/game.md](docs/dev/game.md) |
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
-| worldgen, tiles, ground, determinism/RNG, day/night, ice holes and fish, landmarks | [docs/dev/world.md](docs/dev/world.md) |
+| worldgen, tiles, ground, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |
 | players, classes and kits, the input struct, **the three controllers** (keyboard, gamepad, touch), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
 | **phones**: the fit a phone gets, the rotate prompt, the touch plates' pixels | [docs/dev/rendering.md](docs/dev/rendering.md#phones) |
 | sprite grids and palettes | [docs/dev/sprites.md](docs/dev/sprites.md) |
 | a **new look** for anything drawn — concept sheets Noah picks from before a grid ships | the `concept-art` skill ([.claude/skills/concept-art/SKILL.md](.claude/skills/concept-art/SKILL.md)); past sheets in `docs/media/concepts/` |
-| adding an object/tool/structure/ground type/landmark, tuning balance, intentional dead code | [docs/dev/checklists.md](docs/dev/checklists.md) |
+| adding an object/tool/structure/ground type/camp, tuning balance, intentional dead code | [docs/dev/checklists.md](docs/dev/checklists.md) |
 | the file layout, load order, what each file exposes, `app/` | [docs/dev/architecture.md](docs/dev/architecture.md) |
 | which banner / function in which js file owns a thing | [docs/dev/code-map.md](docs/dev/code-map.md) |
 
@@ -85,7 +85,7 @@ explanations.** An icon beside a number, an arrow that is clickable, a colour th
 team, a plank that lifts on hover — not "CLICK OR ARROWS TO SWAP", not "PLAYERS LEFT: 5". A
 control must read as what it does by its shape and its hover state alone, and if you catch
 yourself writing a hint sentence, build the affordance instead. Text is for names, numbers,
-headlines (a death, a landmark) and five deliberate carve-outs: **keybind indicators** (`'ESC
+headlines (a death, a camp) and five deliberate carve-outs: **keybind indicators** (`'ESC
 BACK'`, a "1" in a slot's corner — which name an *action*, print whatever key it is bound to
 (`keyCap`, input.js) and wear the pad's button while one is in hand (`PAD_BIND`, ui.js), so a new
 one goes through `drawKeyPrompt`/`drawPadBind`), the **settings, PLAYER, gear, character and shop panels**'
@@ -173,7 +173,7 @@ lives in `docs/dev/*.md` beside the code it protects.
   and anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).
 - **Never add or remove an `rng()` call inside `genWorld()`** — it reshuffles every existing seed
-  (hence landmarks' own `lmRng`). Use `hash2`/`vnoise` per tile, never before the `SEED` const.
+  (the chests roll on their own `chRng`; the camps roll nothing). Use `hash2`/`vnoise` per tile, never before the `SEED` const.
 - **At most one object per tile.** Create with `placeObj`, read with `objAt`, and route structures
   through `placeStruct`/`destroyStructure` so the `structures` registry stays in sync. A building with
   `w`/`h` in `STRUCTS` (the bot bay, 3×2) fills its other tiles with `part` objects pointing at the

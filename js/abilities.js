@@ -192,6 +192,7 @@ function updateAbilities(p, dt) {
   updateUnitStatus(p, dt);
   if (p.dead) return; // a burn can finish a player mid-tick
   if (p.rootT > 0) p.sliding = false;
+  if (p.buffT > 0) p.buffT = Math.max(0, p.buffT - dt); // ALPHA'S BLOOD running out (campBuff, wildlife.js)
   // juggernaut: the body is the weapon while it moves. One bowl-over per
   // rival per activation, scaled by the speed actually carried into them.
   if (p.jugT > 0) {
@@ -272,6 +273,7 @@ function abilityMoveMul(p) {
   if (p.shieldT > 0) m *= 0.4;
   if (p.slowT > 0) m *= p.slowMul;
   if (p.jugT > 0) m *= 1 + JUG_SPD * (1 - p.jugT / JUG_T);
+  if (p.buffT > 0) m *= CAMP_BUFF_SPD; // ALPHA'S BLOOD (campBuff, wildlife.js)
   return m;
 }
 
