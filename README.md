@@ -88,6 +88,10 @@ Wishlist when the store page lands. Windows release, price to be announced. The 
 | **Support** | softfallbusiness@gmail.com |
 | **Languages** | English |
 
+## License
+
+The **source code** is [MIT](LICENSE). **Art, audio, and the Softfall name** are all rights reserved — they are not covered by that license.
+
 ## Contributing
 
 Run `sh scripts/setup-hooks.sh` once after cloning.

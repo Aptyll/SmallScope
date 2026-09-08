@@ -485,7 +485,9 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   a DROP_ZOOM pass on seed 7), then "play it now" (`index.html` / `node app/server.js`) before
   the match copy. Gallery stills in `docs/media/` (`github-pass`, `github-title`, `github-roost`,
   `github-hunt`, `github-practice`, plus the fishing capsule `capsule/03-catch`) are 1920×1080
-  canvas dumps except the preview. Steam coming-soon sits at the bottom. The About copy is still
+  canvas dumps except the preview. Steam coming-soon sits at the bottom. [LICENSE](../../LICENSE)
+  is MIT for the source code only; the README states that art, audio and the Softfall name are
+  all rights reserved. The About copy is still
   the pillars of [game.md](game.md) — when a pillar changes, both change. No docs links and no
   controls list. The older capsule set (`docs/media/capsule/01-pass` … `05-practice`, Noah's
   played captures) and the gallery pngs (`hero`, `player`, `bow`, `axe`, `deer`, `rabbits`) stay
