@@ -1954,33 +1954,19 @@ function drawHeldTool(p, px, py) {
   // At rest the hands hold the WEAPON on the selected slot, whose art carries
   // its own tier colour - so what somebody is carrying reads off their sprite
   // from across the snow, and an empty slot reads as empty hands. Mid-swing
-  // (axe, pick) the swing tool's own 8x8 icon takes over - unless a draw is
-  // running: an auto swing (autoWork) chops under a draw, and the drawn
-  // weapon is what the hands show, since that is the thing about to fire.
+  // (axe, pick) the swing tool's own 8x8 icon sweeps - and a draw running at
+  // the same time (an auto swing, autoWork, chops under a draw) puts BOTH up:
+  // one hand sweeps the axe, the other holds the drawn weapon on the aim.
   const weapon = heldTool(p);
-  const drawing = p.charging && !!weapon;
-  const icon = t.key === 'bow' || drawing
-    ? (weapon ? SPRITES[ITEMS[weapon.type].icon] : null)
-    : SPRITES[t.icon];
-  if (!icon) return;
-  const half = icon.width >> 1;
+  const wIcon = weapon ? SPRITES[ITEMS[weapon.type].icon] : null;
+  const drawing = p.charging && !!wIcon;
+  const swinging = t.key !== 'bow' && p.swingT > 0;
   const cxp = px + 8, cyp = py + 10; // roughly the hands
-
-  // drawn bow tracks the aim; base sprite fires -x (arc on the left), so
-  // rotating by a + PI points the arc at the target
-  if (drawing) {
-    const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-    ctx.save();
-    ctx.translate(Math.round(cxp + Math.cos(a) * 8), Math.round(cyp - 2 + Math.sin(a) * 8));
-    ctx.rotate(a + Math.PI);
-    ctx.drawImage(icon, -half, -half);
-    ctx.restore();
-    return;
-  }
 
   // melee swing: sweep with the same arc the swing effect uses; the icons
   // point up, so + PI/2 aligns the head with the sweep direction
-  if (t.key !== 'bow' && p.swingT > 0) {
+  if (swinging) {
+    const icon = SPRITES[t.icon], half = icon.width >> 1;
     const prog = 1 - p.swingT / 0.18;
     const a = p.swingDir - 1.1 + prog * 2.2;
     ctx.save();
@@ -1988,10 +1974,27 @@ function drawHeldTool(p, px, py) {
     ctx.rotate(a + Math.PI / 2);
     ctx.drawImage(icon, -half, -half);
     ctx.restore();
-    return;
   }
 
-  // carried: sits in the leading hand, with a 1px walk bob
+  // drawn bow tracks the aim; base sprite fires -x (arc on the left), so
+  // rotating by a + PI points the arc at the target. Drawn over the sweep:
+  // the shot about to leave is the thing to read.
+  if (drawing) {
+    const half = wIcon.width >> 1;
+    const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+    ctx.save();
+    ctx.translate(Math.round(cxp + Math.cos(a) * 8), Math.round(cyp - 2 + Math.sin(a) * 8));
+    ctx.rotate(a + Math.PI);
+    ctx.drawImage(wIcon, -half, -half);
+    ctx.restore();
+  }
+  if (drawing || swinging) return;
+
+  // carried: the weapon (or, through the swing cooldown, the work tool) sits
+  // in the leading hand, with a 1px walk bob
+  const icon = t.key === 'bow' ? wIcon : SPRITES[t.icon];
+  if (!icon) return;
+  const half = icon.width >> 1;
   const bob = p.moving ? Math.floor(p.animT) % 2 : 0;
   if (p.dir === 'left') {
     ctx.save();

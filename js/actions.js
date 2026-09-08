@@ -168,8 +168,13 @@ function startSwing(p, t) {
   p.workTx = t.tx; p.workTy = t.ty;
   const dx = t.tx * TILE + 8 - p.x, dy = t.ty * TILE + 8 - p.y;
   p.swingDir = Math.atan2(dy, dx);
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else p.dir = dy > 0 ? 'down' : 'up';
+  // the body faces the tile - unless a draw is running, which owns the facing
+  // (updatePlayer turns it to the aim every step): an auto swing under a draw
+  // is the arm, not the body, so the aim never flicks
+  if (!p.charging) {
+    if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
+    else p.dir = dy > 0 ? 'down' : 'up';
+  }
   p.swingT = 0.18;
   p.swingCd = 0.34;
   p.swingHitDone = false;

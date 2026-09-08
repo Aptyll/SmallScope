@@ -650,9 +650,12 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
   the player — a rival's building or eagle first (`AUTO_PRIO_FOE`), then a chest (`AUTO_PRIO_PRIZE`), then scenery, and by tile centre to body within a rank (`autoPrio`) — and `startSwing` runs the same swing E's would. What makes it
   automatic and not a cancel: it never drops a draw or the held button (`p.autoSwing` lets the
-  draw begin under it, and `drawHeldTool` shows the drawn weapon over the axe while one runs),
-  never stands a crawler up (`p.prone` waits, unlike E), and never touches the aim — you keep
-  shooting, walking or drawing through it, and the tree comes down beside you. It obeys the
+  draw begin under it, and the release fires on the frame the button lifts, swing or no swing),
+  never stands a crawler up (`p.prone` waits, unlike E), and never touches the aim (`startSwing`
+  leaves the facing alone while a draw is running, so the aim never flicks toward the tile) — you
+  keep shooting, walking or drawing through it, and the tree comes down beside you, with
+  **both tools on the sprite**: the axe or pick sweeping in one hand, the drawn weapon on the aim
+  in the other (`drawHeldTool`, [below](#the-draw)). It obeys the
   same busy gates as E (a fall, a roll, a stun, an ability, a meal, the swing cooldown).
   **Fish are the same idea on ice** (`autoFish(p, dt)`, js/tools.js, called right after it):
   standing on an ice tile with a fish inside `FISH_CATCH_R` catches it with no press, once
@@ -844,6 +847,9 @@ carrying reads off their sprite from across the snow — and an empty slot reads
 It is carried at the hand while idle/walking (mirrored via a `scale(-1,1)` transform for `left`,
 drawn *before* the body sprite for `up` so it's occluded, 1px walk bob), and rotated toward the
 mouse while drawn — the bow art fires along −x (arc on the left), so aim rotation is `a + PI`.
+A melee swing sweeps the axe or pick's icon along the swing arc instead, and a swing running
+under a draw (an automatic one — `autoWork`) draws **both**: the sweep first, the drawn weapon
+on top, since the shot about to leave is the thing to read.
 Mid-swing the axe or pick takes over, swept along the same arc as the swing effect. Both sizes go
 through the same code: the icon is centred on its own half-width, 8×8 for a swing tool and 12×12
 for a weapon.
