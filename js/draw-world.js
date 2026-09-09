@@ -2175,39 +2175,40 @@ function drawHeldTool(p, px, py) {
     ctx.restore();
   }
 
-  // drawn bow tracks the aim; base sprite fires -x (arc on the left), so
-  // rotating by a + PI points the arc at the target. Drawn over the sweep:
-  // the shot about to leave is the thing to read.
+  // the weapon's art points its business end along TOOL_FWD (js/tools.js);
+  // rotating by the aim (or the facing) minus that puts the arrowhead, the
+  // sword's point or the sling's stone toward where its owner is looking
+  const fwd = weapon ? TOOL_FWD[TOOLS[toolIdOf(weapon.type)].art] || 0 : 0;
+
+  // the drawn weapon tracks the aim. Drawn over the sweep: the shot about to
+  // leave is the thing to read.
   if (drawing) {
     const half = wIcon.width >> 1;
     const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
     ctx.save();
     ctx.translate(Math.round(cxp + Math.cos(a) * 8), Math.round(cyp - 2 + Math.sin(a) * 8));
-    ctx.rotate(a + Math.PI);
+    ctx.rotate(a - fwd);
     ctx.drawImage(wIcon, -half, -half);
     ctx.restore();
   }
   if (drawing || swinging) return;
 
   // carried: the weapon (or, through the swing cooldown, the work tool) sits
-  // in the leading hand, with a 1px walk bob
+  // in the leading hand, with a 1px walk bob, turned to the facing - a work
+  // tool's icon points up and is left as drawn, the way it always was
   const icon = t.key === 'bow' ? wIcon : SPRITES[t.icon];
   if (!icon) return;
   const half = icon.width >> 1;
   const bob = p.moving ? Math.floor(p.animT) % 2 : 0;
-  if (p.dir === 'left') {
-    ctx.save();
-    ctx.translate(px + 2, cyp - 2 + bob);
-    ctx.scale(-1, 1);
-    ctx.drawImage(icon, -half, -half);
-    ctx.restore();
-  } else if (p.dir === 'right') {
-    ctx.drawImage(icon, px + 14 - half, cyp - 2 - half + bob);
-  } else if (p.dir === 'down') {
-    ctx.drawImage(icon, px + 14 - half, cyp - 1 - half + bob);
-  } else { // up: far hand, occluded by the body (caller draws us first)
-    ctx.drawImage(icon, px + 2 - half, cyp - 1 - half + bob);
-  }
+  const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body - the caller draws us first)
+  const hy = cyp - (p.dir === 'left' || p.dir === 'right' ? 2 : 1) + bob;
+  if (t.key !== 'bow') { ctx.drawImage(icon, hx - half, hy - half); return; }
+  const face = p.dir === 'right' ? 0 : p.dir === 'down' ? Math.PI / 2 : p.dir === 'left' ? Math.PI : -Math.PI / 2;
+  ctx.save();
+  ctx.translate(hx, hy);
+  ctx.rotate(face - fwd);
+  ctx.drawImage(icon, -half, -half);
+  ctx.restore();
 }
 
 // ------------------------------------------------------------ light & weather

@@ -1279,6 +1279,12 @@ const TOOL_ART_PAL = [
   { m: '#3f7aa0', M: '#bfe6ff' }, // KEEN: frost steel
   { m: '#b98a2e', M: '#ffe08a' }, // GILDED: gold
 ];
+// which way each art's BUSINESS END points as drawn (radians, 0 = +x): the
+// bows' arrowhead is on the right, the sword's point on the left, the sling's
+// stone at the top. drawHeldTool (js/draw-world.js) rotates the icon by the
+// difference between this and the hand's facing (or the aim, mid-draw), so a
+// weapon always points where its owner does and never into them.
+const TOOL_FWD = { bow: 0, recurve: 0, sword: Math.PI, sling: -Math.PI / 2 };
 const TOOL_ART = {
   bow: [ // a plain D-bow: limbs bowing left, string taut, arrow nocked right
     '........mM..',
