@@ -1400,6 +1400,9 @@ window.DBG = {
   // the risen icons it leaves for drawSwaps.
   spawnDrop, throwCell, flingDrop, lockDrop, dropLocked, TOSS_SPEED, TOSS_LOCK_T,
   shedBits, SHED_KICK, BIT_STACK, swaps, SWAP_T,
+  // ...and a thing that goes: starting kit off a body evaporates instead of
+  // lying there, so a driver can stage the puff without staging a death
+  vanishDrop, dropGone, evaporateTool, isStarterTool, VANISH_T, STARTER_CAP,
   toolUpgrade: (cell, p) => toolUpgrade(p || player, cell),
   takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit

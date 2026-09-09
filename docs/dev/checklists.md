@@ -228,6 +228,12 @@ slab, which is pinned off the claim ([the panel](gameplay.md#the-panel)). Widen 
 exist, `throwCell` (ui.js) and `spillInventory` (player.js), both do. Skip it and that one path is
 the only one in the game handing the next person to walk over it a finished weapon.
 
+**A new way to take a drop must ask `dropGone(d)` first** (js/core.js) — the three that exist, the
+pickup loop in `updatePlay` (sim.js), the bot's loot scan (ai.js) and the drop draw pass
+(render.js), all do. A drop with a `fade` is evaporating and belongs to nobody
+([a starting tool does not litter](gameplay.md#a-starting-tool-does-not-litter)); skip the question
+and starting kit becomes lootable again from that one path alone.
+
 **Every bit needs a `weight`**, both kinds, because weight is what the press spends. A
 **projectile bit** also needs `path`/`solid`/`ff`/`kb`/`life`/`speed`/`dmg`/`col` and an
 8×8 grid in `BIT_ART` — `kb` being KNOCKBACK, a *multiplier* on the shove that kind of body

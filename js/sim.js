@@ -478,6 +478,14 @@ function updatePlay(dt) {
     if (d.z < 0) { d.z = 0; d.vz = -d.vz * 0.4; if (Math.abs(d.vz) < 15) d.vz = 0; }
     d.x += d.vx * dt; d.y += d.vy * dt;
     d.vx *= Math.pow(0.05, dt); d.vy *= Math.pow(0.05, dt);
+    // WHAT IS EVAPORATING IS NOT LOOT. It has already fallen and hopped like
+    // anything else; from here it only thins out and goes, in a small pale
+    // puff (vanishDrop, js/core.js) - no magnet, no claim, no pickup.
+    if (dropGone(d)) {
+      d.fade -= dt;
+      if (d.fade <= 0) { burst(d.x, d.y - d.z - VANISH_LIFT, VANISH_COL, 4, 18, 0.5); drops.splice(i, 1); }
+      continue;
+    }
     // drops are neutral: they drift toward whoever is closest, and everyone
     // standing on one claims it - the contest decides who actually gets it.
     // A player with no room for it is neither magnetised nor a claimant, so a

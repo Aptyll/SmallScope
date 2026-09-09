@@ -269,19 +269,28 @@ function render() {
     // goes half-lit until the three seconds are up and it comes back to life.
     // Everyone else sees it whole: the lock is one hand's, not the world's.
     const held = dropLocked(d, viewPlayer());
+    // ...AND WHAT IS EVAPORATING LIFTS AND THINS, shadow and all: a drop on
+    // its way out (vanishDrop, js/core.js) rises out of the snow over its
+    // last VANISH_T and is gone. `fade` runs VANISH_T -> 0, so `gone` is the
+    // opacity left and 1 for every ordinary drop.
+    const gone = dropGone(d) ? d.fade / VANISH_T : 1;
+    const lift = (1 - gone) * VANISH_LIFT;
+    ctx.globalAlpha = gone;
     ctx.fillStyle = 'rgba(120,140,175,0.35)';
     ctx.fillRect(Math.round(d.x - ex) - 2, Math.round(d.y - ey) + 2, 4, 2);
+    ctx.globalAlpha = 1;
     // a find glints in the colour of its own tier, so something worth walking
-    // to is told from a berry at a distance
+    // to is told from a berry at a distance - and a glint says "walk to
+    // this", so the one thing nobody can have never wears one
     const tier = itemTier(d.type);
-    if (tier >= 0 && !held) {
+    if (tier >= 0 && !held && !dropGone(d)) {
       ctx.globalAlpha = 0.35 + 0.25 * Math.sin(now * 5 + d.x);
       ctx.fillStyle = TOOL_TIERS[tier].rim;
       ctx.fillRect(Math.round(d.x - ex) - h - 1, Math.round(d.y - d.z - ey) - h - 1, h * 2 + 2, h * 2 + 2);
       ctx.globalAlpha = 1;
     }
-    if (held) ctx.globalAlpha = 0.5;
-    ctx.drawImage(spr, Math.round(d.x - ex) - h, Math.round(d.y - d.z - ey) - h);
+    ctx.globalAlpha = held ? 0.5 : gone;
+    ctx.drawImage(spr, Math.round(d.x - ex) - h, Math.round(d.y - d.z - lift - ey) - h);
     ctx.globalAlpha = 1;
   }
 
@@ -1119,7 +1128,7 @@ function drawHitboxes(ox, oy, ex, ey) {
 
   // walk-over and click targets, claimed from their own centres - what the
   // sim measures to
-  for (const d of drops) hbRing(d.x - ex, d.y - ey, 7, HB_PICK);
+  for (const d of drops) if (!dropGone(d)) hbRing(d.x - ex, d.y - ey, 7, HB_PICK); // one on its way out has no reach
   for (const f of fish) hbRing(f.x - ex, f.y - ey, 7, HB_PICK); // hoverFish
 }
 
