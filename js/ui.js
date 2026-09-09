@@ -791,7 +791,7 @@ let bagFlash = 0;      // seconds left of the "it does not fit" red; updateFx ag
 function bagDenied() {
   if (bagFlash > 0) return;
   bagFlash = 0.6;
-  SFX.deny();
+  hudFx("deny"); // the ear and the hand, beside the red the flash paints
 }
 function bagGridH() {
   const rows = Math.ceil(player.bagCap / BAG_COLS);
@@ -868,10 +868,115 @@ function bagClick(h) {
 // the only way to get rid of one. Releasing anywhere on the HUD that is not a
 // valid target returns it home instead, so the frame is a safe place to think
 // better of a drag.
+// ---- what a gesture answers with ----------------------------------------
+// EVERY MOVE OF AN ITEM ANSWERS IN THREE PLACES AT ONCE: the ear (its own
+// cue), the hand (a rumble on a pad, a buzz on a phone - `haptic`, input.js)
+// and the eye (the well it landed in, pulsing). One function raises all three,
+// so a new well or a new gesture cannot end up with two of the three and no
+// one noticing; before this the drag rang a bare SFX at eleven call sites and
+// a swap was inaudible against a plain put-down.
+//
+// FIVE KINDS, and they are a language rather than a volume: `grab` lifting
+// something onto the cursor, `place` setting it into an empty well, `seat` the
+// weapon well's heavier version of that, `swap` an exchange - the one move
+// that hands you something BACK, so it is the longest cue, the hardest rumble
+// and the only one that also pulses the cursor - and `deny` a refusal.
+const WELL_LIT_T = 0.3;   // s a well glows after something landed in it
+const DRAG_LIT_T = 0.36;  // ...and the cursor, when the hand's contents changed
+let wellLit = null;       // { k, i, slot, t, col } - k is 'bag' | 'slot' | 'bit'
+let dragLit = 0;
+// the colours are the same four the hovered well uses to say what a release
+// WILL do (dropKindAt), so the promise and the answer are one language
+const FX_PLACE = '#9fe0ff', FX_MERGE = '#8fe08a', FX_SWAP = '#ffd95c', FX_DENY = '#c2465a';
+const HUD_FX = {
+  grab:  { sfx: () => SFX.pickup(), col: '#8fa0c8' },
+  place: { sfx: () => SFX.stash(),  col: FX_PLACE },
+  merge: { sfx: () => SFX.stash(),  col: FX_MERGE },
+  seat:  { sfx: () => SFX.place(),  col: FX_PLACE },
+  swap:  { sfx: () => SFX.swap(),   col: FX_SWAP, hand: true },
+  deny:  { sfx: () => SFX.deny(),   col: FX_DENY },
+};
+// `k`/`i`/`slot` name the well that answered, or nothing at all for a gesture
+// with no well behind it (a throw out onto the snow)
+function hudFx(kind, k, i, slot) {
+  const f = HUD_FX[kind];
+  if (!f) return;
+  f.sfx();
+  haptic(kind);
+  if (k) wellLit = { k, i: i | 0, slot: slot | 0, t: WELL_LIT_T, col: f.col };
+  if (f.hand) dragLit = DRAG_LIT_T;
+}
+// how lit a well is, 1 the moment something landed and 0 by the end of it
+function wellLitAt(k, i, slot) {
+  if (!wellLit || wellLit.k !== k || wellLit.i !== i) return 0;
+  if (k === 'bit' && wellLit.slot !== (slot | 0)) return 0;
+  return Math.min(1, wellLit.t / WELL_LIT_T);
+}
+// the wash itself, over a well that has just taken something
+function drawWellLit(r, k, i, slot) {
+  const lit = wellLitAt(k, i, slot);
+  if (lit <= 0) return;
+  ctx.globalAlpha = 0.5 * lit;
+  ctx.fillStyle = wellLit.col;
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.globalAlpha = 1;
+}
+
+// WHAT LETTING GO HERE WOULD DO, asked of the well under the pointer while
+// something is on the cursor, and answered in colour alone on that well's rim
+// (drawBag / drawShelf). It is the other half of the press arming rather than
+// acting: a gesture you can call off is only worth having if you can see what
+// you are about to do before you commit to it - and a bit held over the weapon
+// KEY reddening before the release is the refusal said in advance rather than
+// after the fact.
+//
+// It reads the same branches the three dragDrop* functions take, so the
+// promise and the move can never disagree.
+function dropKindBag(i) {
+  const d = state.drag;
+  if (!d) return null;
+  const s = player.bag[i];
+  if (!s) return 'place';
+  const max = ITEMS[d.cell.type] ? ITEMS[d.cell.type].stack : 1;
+  if (s.type === d.cell.type && !s.bits && s.n < max) return 'merge';
+  return 'swap';
+}
+function dropKindSlot(i) {
+  const d = state.drag;
+  if (!d) return null;
+  if (!isToolCell(d.cell)) return 'deny'; // a bit belongs in a tool, not on a key
+  return player.tools[i] ? 'swap' : 'place';
+}
+function dropKindBit(s, i) {
+  const d = state.drag;
+  if (!d) return null;
+  if (!bitIdOf(d.cell.type)) return 'deny'; // a tool does not go inside a tool
+  const cell = player.tools[s];
+  if (!cell) return 'deny';
+  return cell.bits[i] ? 'swap' : 'place';
+}
+const DROP_RIM = { place: FX_PLACE, merge: FX_MERGE, swap: FX_SWAP, deny: FX_DENY };
+function dropRim(kind) { return kind ? DROP_RIM[kind] : null; }
+// ...and it is drawn as a ring OUTSIDE the well and LAST, over the carried
+// ghost rather than under it (drawDropPromise, called after drawDragGhost).
+// The thing asking the question is an 18px ghost sitting on an 18px cell, so
+// a rim inside the well - or a ring drawn with the well - is a ring nobody
+// ever sees. Every gap here is 2px and the frame's pad 3, so it never touches
+// a neighbour.
+function drawDropRing(r, kind) {
+  const col = dropRim(kind);
+  if (!col) return;
+  ctx.fillStyle = col;
+  ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, 1);
+  ctx.fillRect(r.x - 2, r.y + r.h + 1, r.w + 4, 1);
+  ctx.fillRect(r.x - 2, r.y - 2, 1, r.h + 4);
+  ctx.fillRect(r.x + r.w + 1, r.y - 2, 1, r.h + 4);
+}
+
 function dragTake(cell, from) {
   if (!cell) return false;
   state.drag = { cell, from };
-  SFX.pickup();
+  hudFx('grab');
   return true;
 }
 // Lifting what a well is holding onto the cursor: the move a press that
@@ -913,10 +1018,30 @@ function dragReturn() {
   if (!home && !bagPut(player, d.cell)) throwCell(d.cell);
   state.drag = null;
 }
-// the world takes it: dropped at the player's feet, instanced items whole
+// THE WORLD TAKES IT, AND IT GOES WHERE IT WAS AIMED. A release out on the
+// snow throws the item along the cursor's heading off the body rather than
+// tipping it out at the feet, so "put this over there" is a gesture and not a
+// wish - and for TOSS_LOCK_T seconds it is deaf to the hand that threw it
+// (lockDrop, js/core.js), because the pickup magnet would otherwise reel
+// straight back in what you just dragged out.
+//
+// A TOOL LEAVES ITS BUILD BEHIND ON THE WAY OUT (shedBits, js/tools.js): the
+// bits scatter around the body, each its own drop, carrying the throw's own
+// heading plus a kick. What lands is a bare weapon in a spray of fittings.
 function throwCell(cell) {
-  spawnDrop(player.x, player.y - 4, cell.type, cell.n, cell.bits ? cell : null);
-  SFX.stash();
+  const p = player;
+  let hx = p.input.aimX - p.x, hy = p.input.aimY - p.y;
+  // the cursor sitting on the body is no heading at all: fall back to the
+  // way the body is facing, so a throw is never a drop straight down
+  if (Math.hypot(hx, hy) < 1) {
+    hx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0;
+    hy = p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0;
+  }
+  const m = Math.hypot(hx, hy) || 1;
+  shedBits(cell, p.x, p.y - 4, hx, hy, p);
+  lockDrop(flingDrop(spawnDrop(p.x, p.y - 4, cell.type, cell.n, cell.bits ? cell : null),
+    hx / m * TOSS_SPEED, hy / m * TOSS_SPEED), p);
+  hudFx('place'); // no well behind this one: it went out onto the snow
 }
 // Where the item a drop DISPLACES goes: HOME, the well this drag started
 // from. That well is the one place already known to be free - it is where
@@ -955,19 +1080,23 @@ function dragHome(out, from) {
 // going back where the carried item came from (dragHome)
 function dragDropBag(i) {
   const d = state.drag, s = player.bag[i];
-  if (!s) { player.bag[i] = d.cell; state.drag = null; SFX.stash(); return true; }
+  if (!s) { player.bag[i] = d.cell; state.drag = null; hudFx('place', 'bag', i); return true; }
   const max = ITEMS[d.cell.type] ? ITEMS[d.cell.type].stack : 1;
   if (s.type === d.cell.type && !s.bits && s.n < max) {
     const take = Math.min(d.cell.n, max - s.n);
     s.n += take; d.cell.n -= take;
     if (d.cell.n <= 0) state.drag = null;
-    SFX.stash();
+    hudFx('merge', 'bag', i);
     return true;
   }
   player.bag[i] = d.cell;                 // the swap...
   state.drag = null;
-  if (dragHome(s, d.from)) SFX.stash();
-  else { state.drag = { cell: s, from: { k: 'bag', i } }; SFX.pickup(); } // ...or the cursor keeps it
+  // ...and either the ousted item found its way home, or it is now in your
+  // hand - which is the one outcome a gesture can hand you without asking, so
+  // it is the one that rings the swap cue, rumbles hardest and pulses the
+  // cursor itself (hudFx's `hand`)
+  if (dragHome(s, d.from)) hudFx('place', 'bag', i);
+  else { state.drag = { cell: s, from: { k: 'bag', i } }; hudFx('swap', 'bag', i); }
   return true;
 }
 // opens the pick-1-of-3 draft for a rarity - a pure local UI state change,
@@ -1349,7 +1478,8 @@ function drawBag(now) {
       const tp = s ? tierPlate(s.type, on) : null;
       const y = bagCellPlate(r, on ? '#8fa0c8' : s ? tp.rim : '#2c3560',
         s ? tp.plate : '#171f45', on && s);
-      if (!s) continue;
+      const wl = { x: r.x, y, w: r.w, h: r.h }; // the plate's own rect, which a lift raises a pixel
+      if (!s) { drawWellLit(wl, 'bag', i); continue; }
       modPlate(s.type, r, y);
       tierShine(r, y, s.type, now);
       // the icon sits high in the cell so the count can have the bottom
@@ -1367,6 +1497,9 @@ function drawBag(now) {
           ctx.fillRect(r.x + 3 + k * 3, y + r.h - 4, 2, 2);
         }
       }
+      // ...and last, over everything in it: the pulse a cell wears for a
+      // beat after something landed there, in the colour of what happened
+      drawWellLit(wl, 'bag', i);
       // Food answers to one shared clock (FOOD_CD, js/core.js), so it wipes
     }
   }
@@ -1430,7 +1563,7 @@ let toolFlash = 0;
 function toolDenied() {
   if (toolFlash > 0) return;
   toolFlash = 0.6;
-  SFX.deny();
+  hudFx("deny");
 }
 function hudStripRect() {
   return { x: Math.round((VIEW_W - AB_W) / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
@@ -1684,18 +1817,21 @@ function shelfTopY() {
 function dragDropBit(s, i) {
   const cell = player.tools[s], d = state.drag, from = d.from;
   const id = bitIdOf(d.cell.type);
-  if (!id) { SFX.deny(); return; }        // a tool does not go inside a tool
+  if (!id) { hudFx('deny', 'bit', i, s); return; }  // a tool does not go inside a tool
   const was = bitPut(cell, i, id);
   d.cell.n--;
   if (d.cell.n <= 0) state.drag = null;
+  let hand = false;
   if (was) {
     const out = { type: bitType(was), n: 1 };
     if (!dragHome(out, from)) {
-      if (!state.drag) state.drag = { cell: out, from: { k: 'bit', slot: s, i } };
+      if (!state.drag) { state.drag = { cell: out, from: { k: 'bit', slot: s, i } }; hand = true; }
       else if (!bagPut(player, out)) throwCell(out);
     }
   }
-  SFX.stash();
+  // the ousted bit rode back onto the cursor: the hand changed without being
+  // asked, so this is a swap and says so - otherwise it is a plain seating
+  hudFx(hand ? 'swap' : 'place', 'bit', i, s);
 }
 // A carried tool landing on weapon slot i. Only a tool goes here - a bit
 // dropped on a slot is refused rather than quietly swallowed, because a bit
@@ -1703,11 +1839,12 @@ function dragDropBit(s, i) {
 // this one came out of (dragHome), which is the swap the CLICK already makes.
 function dragDropSlot(i) {
   const d = state.drag, from = d.from;
-  if (!isToolCell(d.cell)) { SFX.deny(); return; }
+  if (!isToolCell(d.cell)) { hudFx('deny', 'slot', i); return; }
   const was = slotPut(player, i, d.cell);
   state.drag = null;
-  if (was && !dragHome(was, from)) state.drag = { cell: was, from: { k: 'slot', i } };
-  SFX.place();
+  let hand = false;
+  if (was && !dragHome(was, from)) { state.drag = { cell: was, from: { k: 'slot', i } }; hand = true; }
+  hudFx(hand ? 'swap' : 'seat', 'slot', i);
 }
 // Where the carried item is being let go. Every well that can hold one is
 // tried, then the rest of the HUD sends it home, and only the WORLD throws it
@@ -1760,8 +1897,10 @@ function sendBagCell(i) {
   if (isToolCell(s)) {
     // the swap is one move each way: what was in hand lands in the cell the
     // tool just left, so the grid never grows or loses a row
-    player.bag[i] = slotPut(player, player.toolSel, s) || null;
-    SFX.place();
+    const was = slotPut(player, player.toolSel, s);
+    player.bag[i] = was || null;
+    // one move each way IS a swap when the hand was full, and the cue says so
+    hudFx(was ? 'swap' : 'seat', 'slot', player.toolSel);
     return true;
   }
   const id = bitIdOf(s.type);
@@ -1771,7 +1910,7 @@ function sendBagCell(i) {
   if (free < 0) { toolDenied(); return true; } // no weapon, or every cell loaded
   bitPut(cell, free, id);
   if (--s.n <= 0) player.bag[i] = null;
-  SFX.stash();
+  hudFx('place', 'bit', free, player.toolSel); // the cell it landed in lights, not the one it left
   return true;
 }
 // a bit cell of the shelf: back into the pack, topping up a stack of
@@ -1782,7 +1921,7 @@ function sendBitCell(s, i) {
   if (!id) return false;
   if (!bagAdd(player, bitType(id), 1)) { bagDenied(); return true; }
   bitPut(cell, i, null);
-  SFX.stash();
+  hudFx('place', 'bit', i, s);
   return true;
 }
 // the weapon well: the tool stows in the pack, bits and all, exactly as a bit
@@ -1792,7 +1931,7 @@ function sendSlot(i) {
   if (!cell) return false;
   if (!bagPut(player, cell)) { bagDenied(); return true; } // put it down before lifting it
   slotPut(player, i, null);
-  SFX.place();
+  hudFx('place', 'slot', i);
   return true;
 }
 // Where a SHIFT-held release lands while something is riding the cursor: the
@@ -1821,12 +1960,22 @@ function sendAt(mx, my) {
 // its mind halfway through.
 const DRAG_SLOP = 3; // px of travel before a press becomes a drag
 function hudPress(mx, my) {
-  // Already carrying something: a plain press puts it down where it lands
-  // (dragDrop), while a press begun with SHIFT is held for the release, which
-  // acts on the well under the pointer and leaves the item in hand.
+  // ALREADY CARRYING SOMETHING: the press ARMS, exactly as every branch below
+  // does, and the RELEASE is what puts the item down. It used to resolve here,
+  // on the press, and that was a real bug rather than an inconsistency: a drop
+  // onto a loaded well swaps, and a swap whose displaced item cannot go home
+  // puts that item back on the cursor - so `state.drag` was full again by the
+  // time the mouseup arrived, hudRelease ran the very same dragDrop at the very
+  // same pixel, and one physical click swapped TWICE. The two items flipped
+  // back and forth, one flip per click, and the well ended up exactly where it
+  // started.
+  //
+  // Arming also buys the gesture what every other well already had: a press
+  // you can think better of. The pointer may still travel after it, the
+  // hovered well says what letting go will do (dropKindAt), and moving off
+  // before the release is how a mis-aimed drop is called off.
   if (state.drag) {
-    if (keyHeld('slide')) state.dragPend = { keep: true };
-    else dragDrop(mx, my);
+    state.dragPend = keyHeld('slide') ? { keep: true } : { hold: true };
     return true;
   }
   const fh = shelfHit(mx, my);
@@ -1866,7 +2015,10 @@ function hudPress(mx, my) {
 // drag itself, lifting the item out of wherever it was sitting
 function hudMove(mx, my) {
   const q = state.dragPend;
-  if (!q || q.empty || q.keep) return; // neither an empty well nor a shift-hold picks anything up
+  // an empty well has nothing to lift, and neither a shift-hold nor a press
+  // made with something ALREADY in hand is a pick-up at all - both are aimed
+  // at the well under the pointer when the button comes back up
+  if (!q || q.empty || q.keep || q.hold) return;
   if (Math.abs(mx - q.x) < DRAG_SLOP && Math.abs(my - q.y) < DRAG_SLOP) return;
   state.dragPend = null;
   dragLift(q.src);
@@ -2436,7 +2588,18 @@ function drawShelf(now) {
     // the same "!" the strip's well and the pack's grid wear, in the one place
     // the budget track below can say exactly where the press runs out
     if (toolOver(cell)) drawOverWarn(t, t.y, now);
+    // ...and the tool's own share of the row flash: a press never lights this
+    // cell, so a lit TOOL means one thing only - the body itself just changed
+    // under you (swapFx, js/tools.js)
+    const tlit = bitLitAt(cell, -1);
+    if (tlit > 0) {
+      ctx.globalAlpha = 0.6 * tlit;
+      ctx.fillStyle = bitLitCol();
+      ctx.fillRect(t.x, t.y, t.w, t.h);
+      ctx.globalAlpha = 1;
+    }
   }
+  drawWellLit(t, 'slot', SHELF_SLOT); // ...and the pulse a weapon landing here wears
   ctx.restore();
   if (!cell) return;
   const T = TOOLS[toolIdOf(cell.type)], plan = toolPlan(cell);
@@ -2463,7 +2626,7 @@ function drawShelf(now) {
     ctx.fillRect(cx - 1, y, 3, from.y - y);
     for (const j of rail.hits) blip(j, -2, -1, 5, 3);
     ctx.globalAlpha = hot ? 1 : 0.8 + 0.2 * lit;
-    ctx.fillStyle = lit > 0.4 ? '#f4f7ff' : rail.col;
+    ctx.fillStyle = lit > 0.4 ? bitLitCol() : rail.col;
     ctx.fillRect(cx, y, w, 1);          // the run
     ctx.fillRect(cx, y, 1, from.y - y); // ...and the stem down to its own cell
     // a blip over every shot the fitting is riding, and nothing at all over
@@ -2495,12 +2658,13 @@ function drawShelf(now) {
       ctx.globalAlpha = 1;
     }
     const lit = bitLitAt(cell, i);
-    if (lit > 0) { // what the last press spent, still glowing
+    if (lit > 0) { // what the last press spent, still glowing - or the whole row, on a swap
       ctx.globalAlpha = 0.6 * lit;
-      ctx.fillStyle = '#f4f7ff';
+      ctx.fillStyle = bitLitCol();
       ctx.fillRect(r.x, r.y, r.w, r.h);
       ctx.globalAlpha = 1;
     }
+    drawWellLit(r, 'bit', i, SHELF_SLOT); // ...and a bit that just landed here
   }
 
   // THE LEAD SHOT, a gold bar standing in the gap to its left: the press
@@ -2536,6 +2700,27 @@ function drawShelf(now) {
 // Whatever is riding the pointer, drawn last so it is over every well it
 // might be dropped into. It wears its own tier plate, so the thing in your
 // hand is read exactly the way it is read in a cell.
+// The promise, on top of everything: which well the release would land in and
+// what it would do there. It asks the wells in the SAME order dragDrop
+// resolves in, so the ring can never point at a well the release would not
+// take. The strip's own weapon slot is left out on purpose - it is drawn under
+// the HUD SIZE transform (drawHudScaled) while this pass is in plain view
+// space, and the shelf's tool well, which dragDrop tries first, is the one a
+// drag actually aims at.
+function drawDropPromise() {
+  if (!state.drag || !mouse.inside || shopHit(mouse.x, mouse.y)) return;
+  const fh = shelfHit(mouse.x, mouse.y);
+  if (fh) {
+    if (fh.kind === 'bit') drawDropRing(shelfCellRect(fh.i), dropKindBit(SHELF_SLOT, fh.i));
+    else drawDropRing(shelfCellRect(-1), dropKindSlot(SHELF_SLOT));
+    return;
+  }
+  const bh = bagHit(mouse.x, mouse.y);
+  if (!bh || bh.kind !== 'cell') return;
+  const r = bagCellRect(bh.i);
+  if (player.bag[bh.i]) r.y -= 1; // a hovered FULL cell's plate lifts a pixel; the ring rides with it
+  drawDropRing(r, dropKindBag(bh.i));
+}
 function drawDragGhost(now) {
   const d = state.drag;
   if (!d || !mouse.inside) return;
@@ -2553,6 +2738,24 @@ function drawDragGhost(now) {
   if (d.cell.n > 1) {
     const t = String(d.cell.n);
     drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + r.h - 7, '#f4f7ff', '#0f1632');
+  }
+  // THE HAND ITSELF, WHEN A SWAP CHANGED WHAT IS IN IT. A trade hands you the
+  // ousted item back, which is the one thing a release can do that you did not
+  // ask for by name - so the ghost flares gold for a beat and grows a ring,
+  // and the item you are now carrying is impossible to mistake for the one you
+  // let go of. Aged in updateFx beside the wells' own pulse.
+  if (dragLit > 0) {
+    const k = Math.min(1, dragLit / DRAG_LIT_T);
+    const g = Math.round(2 + 4 * (1 - k)); // a ring opening off the ghost as it fades
+    ctx.globalAlpha = 0.85 * k;
+    ctx.fillStyle = FX_SWAP;
+    ctx.fillRect(r.x - g, r.y - g, r.w + g * 2, 1);
+    ctx.fillRect(r.x - g, r.y + r.h + g - 1, r.w + g * 2, 1);
+    ctx.fillRect(r.x - g, r.y - g, 1, r.h + g * 2);
+    ctx.fillRect(r.x + r.w + g - 1, r.y - g, 1, r.h + g * 2);
+    ctx.globalAlpha = 0.4 * k;
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.globalAlpha = 1;
   }
   // over the world rather than over any well: the release throws it, and the
   // ghost says so by growing a fall shadow under itself
@@ -2980,7 +3183,7 @@ function renderUI(now) {
   // pointer over everything, so it stays outside the scale and the slide.
   if (!out) {
     drawHudScaled(now, Math.round(slide * HUD_SLIDE));
-    if (hudIn >= 1) drawDragGhost(now);
+    if (hudIn >= 1) { drawDragGhost(now); drawDropPromise(); }
   }
 
   // the merchant's counter (js/shop.js): over the HUD like the character

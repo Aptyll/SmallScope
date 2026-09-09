@@ -155,9 +155,10 @@ lives in `docs/dev/*.md` beside the code it protects.
   otherwise be a level farm ([the counter](docs/dev/gameplay.md#the-merchants-counter)).
 - **A tool is an instance, not a type name.** Its bag cell carries the bits loaded into it, so a
   tool is **moved** between bag, slot, drop and back (`bagPut`, `slotPut`, `spawnDrop`'s `it`) and
-  never rebuilt from `s.type` — rebuilding it silently empties somebody's build. What the button
-  fires goes through `fireTool` → `emitBit` for every player alike: [tools and
-  bits](docs/dev/gameplay.md#tools-and-bits).
+  never rebuilt from `s.type` — rebuilding it silently empties somebody's build. But a tool that
+  lands in the **snow** arrives bare: every ground-drop path calls `shedBits` first, so the
+  fittings lie beside the body. What the button fires goes through `fireTool` → `emitBit` for
+  every player alike: [tools and bits](docs/dev/gameplay.md#tools-and-bits).
 - **Anything deciding it can see a player asks `seenAt(p, range)`**, never a bare range — that one
   function is where GHOSTSTEP and burial live (both maps gate on `concealOf(p)`).
 - **Anything painting a team's colour indexes by `skin(team)`** — `TEAMS[skin(p.team)]`,

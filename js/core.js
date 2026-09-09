@@ -203,7 +203,10 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // phone mode (js/mobile.js): 'auto' reads the device, 'on'/'off' force it -
   // the TOUCH MODE row. hudScaleM is the HUD SIZE a phone plays at; the same
   // slider edits whichever of the two is live (hudSc, ui.js)
-  mobile: 'auto', hudScaleM: 1.25 };
+  mobile: 'auto', hudScaleM: 1.25,
+  // the pad's rumble and a phone's buzz on a gesture that moves an item
+  // (haptic, js/input.js). A mouse has no motor and never notices this row.
+  haptics: true };
 // Minimap zoom ladder, px per world tile: index settings.mmZoom (5 = the 1:1
 // baseline). Twice the rungs and twice the reach of the old six, and like the
 // camera it eases between them rather than snapping - mmCur is what anything
@@ -317,8 +320,26 @@ function burst(x, y, color, n, spd, life, grav) {
 // death or a hand-off. Plain stacking items leave it undefined.
 function spawnDrop(x, y, type, n, it) {
   const a = rng() * Math.PI * 2;
-  drops.push({ x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0, it: it || null });
+  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0, it: it || null, lock: -1, lockT: 0 };
+  drops.push(d);
+  return d;
 }
+// A THROW IS NOT A SPILL. Something let go on purpose - dragged out of the
+// pack onto the snow, or shaken off a discarded tool - leaves along a heading
+// with real speed behind it, and is DEAF TO THE HAND THAT THREW IT for
+// TOSS_LOCK_T seconds. Without that second half the pickup magnet simply
+// hands back what you just decided to be rid of, and a bag you cannot empty
+// standing still is a bag with no throw in it at all. The lock is ONE
+// player's (`lock`, a player id): everyone else may take it the instant it
+// lands, which is what keeps a hand-off across a fight working.
+const TOSS_SPEED = 130;  // px/s a thrown item leaves the body at
+const TOSS_LOCK_T = 3;   // s it refuses the hand that threw it
+// on top of the little hop spawnDrop already gave it: the heading a throw
+// carries, plus a touch more height so a fling reads as a fling
+function flingDrop(d, vx, vy) { d.vx += vx; d.vy += vy; d.vz += 26; return d; }
+function lockDrop(d, p) { d.lock = p ? p.id : -1; d.lockT = TOSS_LOCK_T; return d; }
+// the question the pickup asks before magnetising or claiming anything
+function dropLocked(d, p) { return d.lockT > 0 && d.lock === p.id; }
 
 // wallets are per player: every cost check and payment names whose it is
 function canAfford(cost, p) { const w = (p || player).inv; for (const k in cost) if ((w[k] || 0) < cost[k]) return false; return true; }

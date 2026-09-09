@@ -214,6 +214,15 @@ and an `art` key — reuse one of
 the three 12×12 silhouettes in `TOOL_ART` (it is baked once per tier) or add a fourth. `tensile`
 is the **weight budget one press spends**, not a ceiling on one bit: price it against `cap` at
 roughly four weight a cell, or the tool either cannot fire what it holds or never has to choose.
+`tier` and `cap` together also decide what a find does when it is walked over: a higher tier with
+a `cap` at least as big **swaps itself into the hand** and takes the build with it
+([the swap](gameplay.md#where-tools-and-bits-come-from)), so a new tool that is a straight upgrade
+of an existing one needs no pickup code — and one that is better but *narrower* is deliberately
+left an ordinary pickup rather than being made to drop somebody's bits.
+
+**A new way to put a tool on the ground must call `shedBits` first** (js/tools.js) — the two that
+exist, `throwCell` (ui.js) and `spillInventory` (player.js), both do. Skip it and that one path is
+the only one in the game handing the next person to walk over it a finished weapon.
 
 **Every bit needs a `weight`**, both kinds, because weight is what the press spends. A
 **projectile bit** also needs `path`/`solid`/`ff`/`kb`/`life`/`speed`/`dmg`/`col` and an

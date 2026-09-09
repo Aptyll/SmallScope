@@ -524,6 +524,11 @@
     coin() { if (smp('coin', { vol: 0.7, jitter: 0.12, dur: 0.55 })) return; tone(880, 0.06, 'square', 0.07); tone(1320, 0.09, 'triangle', 0.06, 0, 0.05); },
     // something going into the backpack
     stash() { if (smp('stash', { vol: 0.7, jitter: 0.12 })) return; tone(520, 0.06, 'triangle', 0.08); tone(760, 0.08, 'triangle', 0.07, 0, 0.05); },
+    // ...and a SWAP: one item out as another comes in. Two notes CROSSING -
+    // the first falling, the second rising under it - so an exchange is told
+    // from a plain put-down by ear alone, which is the whole point of it
+    // having its own cue: a swap is the one move that hands you something back.
+    swap() { tone(780, 0.07, 'triangle', 0.09, -260); tone(430, 0.09, 'triangle', 0.08, 240, 0.05); },
     swing() { if (smp('whoosh', { vol: 0.6, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
     bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
     dodge() { if (smp('whoosh', { vol: 0.65, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },

@@ -714,18 +714,28 @@ function spillInventory(p, killer) {
     if (n > 0) spawnDrop(p.x, p.y - 4, k, n);
   }
   // the bag, and then the weapon slot: a build goes down with the body and
-  // lies where it fell, loaded, for whoever walks over it. reset() hands
-  // the player its class's starting loadout back, so a respawn is armed but
-  // not the same player it was.
+  // lies where it fell for whoever walks over it. reset() hands the player
+  // its class's starting loadout back, so a respawn is armed but not the same
+  // player it was.
+  //
+  // A TOOL COMES APART AS IT LANDS, exactly as a thrown one does (shedBits,
+  // js/tools.js): the body drops bare and its fittings scatter around it, no
+  // heading to carry since nobody threw this. So a kill spills a weapon and
+  // its build across the snow as separate things to walk over - the looter
+  // gets what they can carry rather than one cell holding a finished weapon.
   for (let i = 0; i < p.bag.length; i++) {
     const s = p.bag[i];
     p.bag[i] = null;
-    if (s && s.n > 0) spawnDrop(p.x, p.y - 4, s.type, s.n, s.bits ? s : null);
+    if (!s || s.n <= 0) continue;
+    shedBits(s, p.x, p.y - 4, 0, 0, null);
+    spawnDrop(p.x, p.y - 4, s.type, s.n, s.bits ? s : null);
   }
   for (let i = 0; i < p.tools.length; i++) {
     const s = p.tools[i];
     p.tools[i] = null;
-    if (s) spawnDrop(p.x, p.y - 4, s.type, 1, s);
+    if (!s) continue;
+    shedBits(s, p.x, p.y - 4, 0, 0, null);
+    spawnDrop(p.x, p.y - 4, s.type, 1, s);
   }
 }
 

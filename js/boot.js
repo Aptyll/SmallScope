@@ -1393,6 +1393,15 @@ window.DBG = {
   // reaches, through which envelope, and where it runs out (`cut`)
   toolPlan, toolLoad, toolOver,
   toolRof, toolCycle, peekBit, toolReady, dropLoot, giveLoadout, CLASS_LOADOUT,
+  // a thing put down on purpose: the throw (out of the pack, along the
+  // cursor), the lock that keeps it out of the thrower's own hands, and the
+  // bits a tool sheds as it lands - so a driver can stage a discard without
+  // a drag. And the swap: whether a find would take the hand, doing it, and
+  // the risen icons it leaves for drawSwaps.
+  spawnDrop, throwCell, flingDrop, lockDrop, dropLocked, TOSS_SPEED, TOSS_LOCK_T,
+  shedBits, SHED_KICK, BIT_STACK, swaps, SWAP_T,
+  toolUpgrade: (cell, p) => toolUpgrade(p || player, cell),
+  takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit
   drawPow, shotFlight, drawDmgMul, DRAW_RANGE_MIN, DRAW_SPEED_MIN, DRAW_DMG_MIN,
   toolCellRect, shelfCellRect, shelfHit, shelfRails, tierPlate,
@@ -1478,6 +1487,12 @@ window.DBG = {
   // POUCH and takes no cell, so `food` is where a berry actually sits, and
   // pursePlateRect is the always-on gold readout on the hud strip.
   ITEMS, BAG_CAP, bagFrameRect, bagBtnRect, bagCellRect, bagHit, pursePlateRect, foodCellRect, shortNum,
+  // the drag, and what it answers with: the armed press, the three moves, the
+  // cue/rumble/pulse raiser, and what a release on a given well WOULD do -
+  // so a driver can prove the promise and the move agree without a mouse
+  dragLift, dragDrop, dragReturn, hudPress, hudRelease, hudFx, haptic,
+  dropKindBag, dropKindSlot: (i) => dropKindSlot(i || 0), dropKindBit,
+  get wellLit() { return wellLit; }, get dragLit() { return dragLit; },
   get bag() { return player.bag; },
   get food() { return player.food; },
   bagAdd: (type, n, p) => bagAdd(p || player, type, n || 1),

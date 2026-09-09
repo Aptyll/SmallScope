@@ -264,19 +264,25 @@ function render() {
   for (const d of drops) {
     const spr = SPRITES[ITEMS[d.type] ? ITEMS[d.type].icon : 'itemGold'];
     const h = spr.width >> 1; // a tool's icon is 12x12, everything else 8x8
-    // shadow
+    // WHAT YOU JUST THREW AWAY LIES DIM. A drop inside its lock is not yours
+    // to walk back over (dropLocked, js/core.js) - no glint, no magnet - so it
+    // goes half-lit until the three seconds are up and it comes back to life.
+    // Everyone else sees it whole: the lock is one hand's, not the world's.
+    const held = dropLocked(d, viewPlayer());
     ctx.fillStyle = 'rgba(120,140,175,0.35)';
     ctx.fillRect(Math.round(d.x - ex) - 2, Math.round(d.y - ey) + 2, 4, 2);
     // a find glints in the colour of its own tier, so something worth walking
     // to is told from a berry at a distance
     const tier = itemTier(d.type);
-    if (tier >= 0) {
+    if (tier >= 0 && !held) {
       ctx.globalAlpha = 0.35 + 0.25 * Math.sin(now * 5 + d.x);
       ctx.fillStyle = TOOL_TIERS[tier].rim;
       ctx.fillRect(Math.round(d.x - ex) - h - 1, Math.round(d.y - d.z - ey) - h - 1, h * 2 + 2, h * 2 + 2);
       ctx.globalAlpha = 1;
     }
+    if (held) ctx.globalAlpha = 0.5;
     ctx.drawImage(spr, Math.round(d.x - ex) - h, Math.round(d.y - d.z - ey) - h);
+    ctx.globalAlpha = 1;
   }
 
   // y-sorted entities. A building sorts by the bottom of its footprint; a
@@ -603,6 +609,7 @@ function render() {
   }
 
   drawWarps(ex, ey); // the silhouettes a teleport request strung across its jump
+  drawSwaps(ex, ey); // ...and the body a player just traded up into, rising
 
   // airborne ability bodies: the spinning net, and the grapple's rope
   // between a reeling body and its anchor - with the arrows, over the entities
@@ -880,6 +887,48 @@ function drawWarps(ex, ey) {
       ctx.globalAlpha = Math.max(0, k * (0.2 + 0.5 * f));
       ctx.drawImage(scratch, 0, 0, w.spr.width, w.spr.height, px, py, w.spr.width, w.spr.height);
     }
+  }
+  ctx.globalAlpha = 1;
+}
+
+// A WEAPON THAT CHANGED HANDS WITH NOBODY'S HAND ON IT. The tool swap
+// (swapFx, js/tools.js owns the event) is the one thing that rearms a player
+// without them asking, so it says so in the world and not only on the local
+// shelf: a ring in the new tier's colour opens out of the body, and the new
+// body's own 12x12 icon climbs out of it on its tier plate - the same plate it
+// wears in every well it will ever sit in - then fades at the top of the rise.
+// It is drawn for EVERY player: a rival trading up mid-fight is news to
+// whoever is shooting at them, and the ring's colour is the whole of the news.
+function drawSwaps(ex, ey) {
+  for (const s of swaps) {
+    const k = Math.min(1, s.t / SWAP_T);
+    const spr = SPRITES[ITEMS[s.type] ? ITEMS[s.type].icon : 'itemGold'];
+    const T = TOOL_TIERS[s.tier];
+    const cx = Math.round(s.x - ex), cy = Math.round(s.y - ey);
+    // the ring is the FIRST third of the beat: out of the chest and gone,
+    // so the icon is what is left to read
+    const g = Math.min(1, k * 3);
+    if (g < 1) {
+      const r = Math.round(4 + 14 * g);
+      ctx.globalAlpha = 0.8 * (1 - g);
+      ctx.fillStyle = T.rim;
+      ctx.fillRect(cx - r, cy - r, r * 2, 1);
+      ctx.fillRect(cx - r, cy + r - 1, r * 2, 1);
+      ctx.fillRect(cx - r, cy - r, 1, r * 2);
+      ctx.fillRect(cx + r - 1, cy - r, 1, r * 2);
+    }
+    // ...and the body climbing on an ease-out, fading only over the last third
+    const y = cy - Math.round(SWAP_RISE * (1 - (1 - k) * (1 - k))) - (spr.height >> 1);
+    const x = cx - (spr.width >> 1);
+    ctx.globalAlpha = k > 0.66 ? Math.max(0, (1 - k) * 3) : 1;
+    ctx.fillStyle = T.plate;
+    ctx.fillRect(x - 1, y - 1, spr.width + 2, spr.height + 2);
+    ctx.fillStyle = T.rim;
+    ctx.fillRect(x - 2, y - 2, spr.width + 4, 1);
+    ctx.fillRect(x - 2, y + spr.height + 1, spr.width + 4, 1);
+    ctx.fillRect(x - 2, y - 2, 1, spr.height + 4);
+    ctx.fillRect(x + spr.width + 1, y - 2, 1, spr.height + 4);
+    ctx.drawImage(spr, x, y);
   }
   ctx.globalAlpha = 1;
 }

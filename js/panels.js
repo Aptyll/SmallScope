@@ -485,6 +485,9 @@ const SET_TABS = [
     { id: 'map', label: 'MINIMAP SIZE', kind: 'slider' },
     { id: 'hud', label: 'HUD SIZE', kind: 'slider' },
     { id: 'shake', label: 'SCREEN SHAKE', kind: 'toggle' },
+    // the pad's rumble / a phone's buzz when an item is grabbed, placed or
+    // swapped (haptic, js/input.js) - dead on a mouse, which has no motor
+    { id: 'haptics', label: 'RUMBLE', kind: 'toggle' },
     { id: 'info', label: 'INFO DISPLAY', kind: 'toggle' },
     { id: 'cursor', label: 'CURSOR', kind: 'toggle' },
     { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle' }, // BLUE always, or the roster's colour (skin, player.js)

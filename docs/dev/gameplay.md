@@ -160,9 +160,13 @@ its cap and busts its budget is not refused, it is *truncated*, and the weapon w
 
 A tool is **instanced**: its bag cell *is* the tool, `bits` array and all (`makeTool`), so it is
 moved between bag, slot and drop rather than rebuilt from its type name — see the hard rule in
-[CLAUDE.md](../../CLAUDE.md#hard-rules). That is what makes "throw a loaded tool away and pick it
-up later" work with no code: `spawnDrop`'s `it` payload is the same object the bag had, and
-`bagPut` puts that same object back.
+[CLAUDE.md](../../CLAUDE.md#hard-rules). `spawnDrop`'s `it` payload is the same object the bag had,
+and `bagPut` puts that same object back, so nothing about a build is ever reconstructed.
+
+**A tool that lands in the snow arrives bare**, though (3.22): every ground-drop path calls
+`shedBits` first ([a discarded weapon](#a-discarded-weapon-sheds-its-build)), so the body and its
+fittings part company where they fall. Emptying the instance at that one moment is not the same
+thing as rebuilding it later, which is what the hard rule forbids.
 
 ### A bit
 
@@ -371,16 +375,28 @@ Five marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labe
 the press left to right; a cell **past the cut** is red-rimmed and washed out; **weight** is pips
 along a cell's bottom edge; a **rail** over the row runs from each fitting to the last shot it
 reaches, blipping over every shot it is really in the envelope of; and the **gold bar** in the gap
-left of a cell is the lead shot. And one event: every cell the last press SPENT flashes white and
-fades (`bitLit`/`bitLitAt`, js/tools.js — `BIT_LIT_T` 0.3 s, aged in `updateFx`), its rails with
-it, so the left button teaches the row it is firing.
+left of a cell is the lead shot. And two events on the one flash (`bitLit`/`bitLitAt`/`bitLitCol`,
+js/tools.js, aged in `updateFx`): every cell the last press SPENT flashes white and fades over
+`BIT_LIT_T` (0.3 s), its rails with it, so the left button teaches the row it is firing — and a
+[tool swap](#where-tools-and-bits-come-from) lights the **whole** row, the tool well included, in
+the new tier's ink for `SWAP_T` (1.1 s).
 
 The drag is one mechanism shared by the grid, the weapon slot and the shelf
 ([UI banner](../../js/ui.js), `state.drag`): a press **arms** a pick-up and only travel past
 `DRAG_SLOP` promotes it, so a tap on a berry still eats it
 while a drag off either one picks it up. A release over any well that will take it puts it there;
 over the rest of the HUD it goes home; **over the world it is thrown**, which is the only way to
-get rid of a tool — and it goes with its bits.
+get rid of a tool.
+
+**A throw goes where it was aimed, and stays thrown.** `throwCell` sends the item off the body
+along the **cursor's heading** at `TOSS_SPEED` (130 px/s — the facing stands in when the pointer
+is on the body), rather than tipping it out at the feet, so "put this over there" is a gesture and
+not a wish; and for `TOSS_LOCK_T` (3 s) the drop is **deaf to the hand that threw it**
+(`lockDrop`/`dropLocked`, js/core.js — the drop carries one player id), because the pickup magnet
+would otherwise reel straight back in what was just dragged out. The lock is one player's:
+everybody else may take it the instant it lands, which is what makes a hand-off across a fight
+work. A thrown **tool** sheds its bits on the way ([above](#a-discarded-weapon-sheds-its-build)),
+and they carry the same heading and the same lock.
 
 **A drop onto a loaded well SWAPS.** Whatever the drop displaces goes back to *home* — the well
 this drag started from (`dragHome`) — because home is the one place already known to be free: it
@@ -402,13 +418,55 @@ stows what it holds in the pack the way a bit does. That completes the grammar t
 already had — clicking a cell *uses* what is in it, a berry by eating it and a card by drawing
 from it — for the two kinds that had no use and could only deny.
 
-It is resolved on the **release** (`hudRelease`), never on the press, which is what keeps the
-drag: a press that travels past `DRAG_SLOP` is still a pick-up and arranging the pack by hand is
-untouched. Each helper returns whether it *handled* the click, so a berry, a card and an empty
+**Every press in this widget ARMS; the release is what resolves it** — `hudPress` writes
+`state.dragPend` and nothing else, `hudRelease` acts. That is what keeps the drag (a press that
+travels past `DRAG_SLOP` is still a pick-up, and arranging the pack by hand is untouched) and, as
+of **3.22**, it is true of putting a carried item down as well. It used to resolve on the press,
+and that was a bug and not merely an inconsistency: a drop onto a loaded well swaps, a swap whose
+displaced item cannot go home puts that item back on the cursor, so `state.drag` was full again
+when the mouseup arrived and `hudRelease` ran the very same `dragDrop` at the very same pixel.
+**One click swapped twice** and the pair flipped back and forth, one flip per click, leaving the
+well exactly where it started. Arming also buys the gesture what every other well already had: a
+press you can think better of by moving off before letting go — and the item now lands where the
+button came *up*, not where it went down. Each helper returns whether it *handled* the click, so a berry, a card and an empty
 cell fall through to the click they always were. Nothing can be destroyed: when the destination
 has no room the item does not move at all, and the container that is full is the one that
 refuses — the pack through `bagDenied()`, the weapon through its twin `toolDenied()`, which bands
-the weapon well in the same red for the same 0.6 s. The hover tooltip names what the click will
+the weapon well in the same red for the same 0.6 s.
+
+### What a gesture answers with
+
+**Every move of an item answers in three places at once** — the ear, the hand and the well it
+landed in — and one function raises all three (`hudFx(kind, k, i, slot)`, the `what a gesture
+answers with` banner, js/ui.js). Before 3.22 the drag rang a bare `SFX` at eleven call sites and a
+*swap* was inaudible against a plain put-down; now a new well or a new gesture cannot end up with
+two of the three and nobody noticing.
+
+Five kinds, and they are a language rather than a volume: **`grab`** lifting something onto the
+cursor, **`place`** setting it into an empty well, **`seat`** the weapon well's heavier version of
+that, **`swap`** an exchange, and **`deny`** a refusal. The swap is the loudest of them on purpose
+— it is the one move that hands you something *back* — so it gets a cue of its own (`SFX.swap`,
+two notes crossing, told from `stash`'s rising pair by ear alone), the hardest rumble, and the
+only pulse on the cursor itself.
+
+- the **ear**: the cue above.
+- the **hand**: `haptic(kind)` ([the three controllers](multiplayer.md#the-three-controllers)) —
+  a pad rumbles, a phone buzzes, a mouse does neither.
+- the **eye**: the well pulses for `WELL_LIT_T` (0.3 s) in the colour of what happened
+  (`wellLit`/`drawWellLit`), and on a swap the carried ghost flares gold and grows a ring for
+  `DRAG_LIT_T` (0.36 s) — so the hand visibly changes contents rather than quietly doing it. Both
+  age in `updateFx` beside the refusal reds.
+
+**And the well says what will happen before it happens.** While something rides the cursor, the
+well under the pointer wears a **ring** in one of four colours — blue *drops it in*, green *tops
+the stack up*, gold *trades with what is there*, red *refuses* — from `dropKindBag` /
+`dropKindSlot` / `dropKindBit`, which read the same branches the three `dragDrop*` functions take,
+so the promise and the move can never disagree. It is the other half of the press arming rather
+than acting: a gesture you can call off is only worth having if you can see what you are about to
+do, and a bit held over the weapon **key** now reddens *before* the release instead of buzzing
+after it. The ring is drawn last of all (`drawDropPromise`, after `drawDragGhost`) and outside the
+well's own footprint, because the thing asking the question is an 18 px ghost sitting on an 18 px
+cell — a rim inside the well is a rim nobody ever sees. The hover tooltip names what the click will
 do where the item actually sits (`tipSend`), which is why a tool reads TAKE IT IN HAND in the
 grid and STOW IT IN THE PACK in the well.
 
@@ -461,6 +519,37 @@ about it, so a pickup that shoved a bit into a bot's tool would only make it a w
 So the bottom tier lies around loose and the good stuff is in the treeline's chests. A found tool
 comes out **empty** — its bits are the next thing to find.
 
+**And a strictly better body takes the build with it.** A tool walked over swaps itself straight
+into the hand when two things are true at once: its **tier is higher** than the one held, and its
+`cap` is **at least as big**, so nothing already loaded is left with nowhere to sit
+(`toolUpgrade`). Then `takeUpgrade` moves the bits across **cell for cell** — the row's order *is*
+the build, and a modifier that landed behind the shots it used to sit in front of would be worth
+nothing — and the old body is treated exactly as the find was a moment earlier: into the pack, or
+into the snow it was lying in if the pack is full. That last part is why a **full pack is still
+room** for an upgrade (`roomFor`, the drop loop): the pickup is an exchange, not an addition.
+
+It runs for **every** player, bot included, off the same two functions, and it is the one thing in
+the game that rearms somebody with no hand on the weapon — which is why it carries a tell of its
+own, drawn rather than announced: a ring in the new tier's colour opens out of the body and the
+new tool's own icon rises out of it (`swapFx` → [`drawSwaps`](rendering.md#the-tool-swap)), for
+everyone on screen, while the local player's whole [shelf](#the-weapon-shelf) row flashes in that
+same tier ink. Nothing is refused and nothing is lost: a same-tier find, or a higher-tier body
+with fewer cells than the build needs, is an ordinary pickup into the pack.
+
+### A discarded weapon sheds its build
+
+The counterweight to the pack being the overflow: **a tool that lands in the snow arrives bare.**
+`shedBits(cell, x, y, hx, hy, p)` (js/tools.js) empties the row as the tool goes down, spawning
+every loaded bit as its own drop flung along `hx`/`hy` — whatever threw the tool — plus a
+`SHED_KICK` of its own, so what lies there is a body in a scatter of fittings. Both ground-drop
+paths call it: the [drag out onto the world](#the-weapon-shelf) (`throwCell`, js/ui.js) and the
+[death spill](#death-and-respawn) (`spillInventory`, js/player.js), which passes no heading at all
+because nobody threw that one.
+
+Without it, getting rid of a tool had become the way to move a whole build in one gesture, and a
+body picked off the snow arrived already built — the one pickup nobody had to think about. The
+bits are all still there, in reach, one walk apart: it costs a moment, not the build.
+
 The pool a roll draws from is the **whole table** at or under that tier: every kind is unlocked for
 every profile alike, so any match can roll any of them. See [the wiki](#the-wiki).
 
@@ -505,8 +594,9 @@ BARBED SHOT (7 of its 9 strength, both firing); the WARRIOR with a SLING loaded 
 ARROW** — the fitting before the shot, filling the sling's 7 exactly. The order in `bits` is the
 firing order, and a starting kit that fitted a modifier *above* its only shot would teach the
 forward-only rule backwards on the first press of the match. Death **spills the equipped tool** with
-the bag (`spillInventory`), so a build lies where its owner fell and the bird hands back the
-starting one — you come back armed, but not as the player you were. The gear pop-up's preview
+the bag (`spillInventory`) — bare, its bits scattered beside it
+([shedBits](#a-discarded-weapon-sheds-its-build)) — so a build lies where its owner fell and the
+bird hands back the starting one: you come back armed, but not as the player you were. The gear pop-up's preview
 shows the weapon at the body's side (`drawGearPreview`, js/menu.js) — the other half of what a
 class flies out with.
 
@@ -1412,7 +1502,8 @@ chest constants in js/world.js). The chest's tile opens with it.
 
 Physical drops still exist for everything **carried**: `spawnDrop(x, y, type, n)` takes the
 value of the drop (`d.n`, default 1) and the pickup adds what fits through `bagAdd`, floating
-that number in `RES_COLORS[type]`. **Whatever was taken comes off `d.n`, and the drop is only
+that number in `RES_COLORS[type]`. It **returns the drop** it made, which is what lets a
+deliberate throw give it a heading and a lock on top (`flingDrop`/`lockDrop`, js/core.js). **Whatever was taken comes off `d.n`, and the drop is only
 removed when `d.n` hits zero** — that is what lets a stack of 5 bits half-fill a bag and
 leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key now: sources pay `berry` and
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
@@ -1428,6 +1519,14 @@ room** for a drop is neither magnetised by it nor a claimant, so a full bag hand
 whoever else is standing there instead of sitting on it, and standing alone on something you
 cannot carry fires the [refusal tell](#inventory-and-the-backpack) rather than eating it. Food is
 outside all of that: the pouch has no ceiling, so a berry is never left in the snow.
+
+Two things bend "no room" and "everyone standing on one". A drop inside its
+[throw lock](#the-weapon-shelf) is neither magnetised by nor claimable by **the one player who
+threw it** — and raises no refusal for them either, since standing on something you meant to put
+down is not a denial; it draws at half alpha with its tier glint off for that player alone, and
+comes back to life when the three seconds are up. And a body that would
+[swap for the tool in hand](#where-tools-and-bits-come-from) counts as room whatever the pack
+holds, because that pickup is an exchange.
 
 ## The merchant's counter
 
@@ -1687,7 +1786,7 @@ numbers.
 | `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | bag, stack 5 | clicking its cell — opens the pick-1-of-3 draft (see [Roguelike cards](#roguelike-cards)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
-| `bit:<id>` | `bitArt_<id>` | bag, stack 4 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
+| `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
 
 An unopened card is a completely ordinary `ITEMS` entry — one per rarity, since a stack has to be
 homogeneous and a white card and a gold card are not interchangeable — which is what makes bag
@@ -1700,6 +1799,13 @@ A tool is the **one instanced** item: its cell carries the bits loaded into it, 
 and moves as a whole object (`bagPut(p, cell)`, and `spawnDrop`'s `it` payload) rather than being
 rebuilt from `s.type`. `bagAdd` cannot make one and must not be asked to — the drop pickup
 branches on `d.it` for exactly this reason. Everything else in the bag is stateless.
+
+**A bit stacks to `BIT_STACK` (255)**, which is a deliberate "as many as you will ever find". A
+bit is ammunition for the build rather than a thing to ration: the ten cells are for the *choice*
+between kinds, and a cell that filled at four made a run of arrows cost cells a second kind of
+arrow wanted. 255 is the ceiling because the count still reads in three characters inside an 18 px
+well — past that the number would need `shortNum` and a cell would stop saying exactly what is in
+it. Cards stay at 5 and a tool at 1.
 
 **The slot is the unit of capacity for what the bag holds**, which is the whole reason it is an
 array and not a row of counters: two half stacks cost two cells, so a bag genuinely fills and the
@@ -2278,9 +2384,13 @@ backpack empties too**, one drop per stack — a stack is already the unit the b
 killer whose own bag is full simply leaves them lying; this is also, for free, how an **unopened
 roguelike card drops on death** (see [Roguelike cards](#roguelike-cards)) — a picked card is
 already baked into the kit, not an item, so only what's still sitting unopened in the bag spills.
-**And the four weapon slots empty with it**, each tool going down *loaded*: a build lies where its
-owner fell, for whoever walks over it, and `reset()` hands the dead player its class's starting
-loadout back — so a respawn is armed but is not the player it was. (An item riding the cursor
+**And the weapon slot empties with it** — but a tool that lands in the snow *comes apart* as it
+lands (`shedBits`, [a discarded weapon](#a-discarded-weapon-sheds-its-build)): the bare body and
+every bit that was in it scatter around the corpse as separate pickups, with no heading, since
+nobody threw this one. A kill spills a weapon and its build as things to walk over one at a time,
+so the looter gets what they can carry rather than one cell holding a finished weapon; and
+`reset()` hands the dead player its class's starting loadout back, so a respawn is armed but is
+not the player it was. (An item riding the cursor
 mid-drag goes back in the bag first, so it spills with the rest instead of vanishing with the hand
 holding it.) All three loops are generic per type, so a future resource spills without touching
 death code, and an instanced tool travels as the same object it always was
@@ -2380,7 +2490,7 @@ first finger, `mobileGesture`); a `fullscreenchange` listener still refits the c
 browser toggles it.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(minimap size, hud size, screen shake, info display, cursor, my team, touch mode), VIDEO (below),
+(minimap size, hud size, screen shake, rumble, info display, cursor, my team, touch mode), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (three baked listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: 218 is already close

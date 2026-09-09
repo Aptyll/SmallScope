@@ -205,7 +205,8 @@ selection brackets (`drawSelection`: white pulsing corners with a dark shadow ov
 stump / open ice hole / finished structure, or the wheel's target) → the E work prompt (`drawWorkHint`) → the
 fish brackets (`drawFishHint`) → the parkour's lap clock and BEST/LAST plate
 (`drawParkour`, `PRACTICE` only) → construction progress bars → particles →
-arrows (bolts branch to `drawBolt`) → `drawTurretFx` (each turret's charging aim line and its
+arrows (bolts branch to `drawBolt`) → `drawWarps` (the silhouettes a teleport strung across its
+jump) → **`drawSwaps`** ([the tool swap](#the-tool-swap)) → `drawTurretFx` (each turret's charging aim line and its
 muzzle flash) → turret tracers → swing arcs (one per swinging player) → floaters → `drawDropAir` (the
 eagle, its shadow, the rider and every faller, while `state.drop` exists) → `renderLighting` →
 `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately **above** the lighting,
@@ -275,6 +276,29 @@ like every other building's.
 
 Sprite hit-flash goes through `drawSpriteFlash()`, which recolours via a shared 64×64 `scratch`
 canvas with `source-in` — sprites larger than 64×64 will clip (the 48×38 bot bay is the biggest).
+
+An **item drop** wears its icon centred on its own width (a tool's is 12×12, everything else 8×8)
+over a flat shadow, and a find — anything with a tier — pulses a plate of that tier's rim behind
+it, so something worth walking to is told from a berry at a distance. One exception: a drop inside
+its [throw lock](gameplay.md#the-weapon-shelf) draws at half alpha with the glint **off**, and only
+for the one player it is locked against (`dropLocked(d, viewPlayer())`) — what you just threw away
+lies dim until it is yours again, and everyone else sees it whole.
+
+### The tool swap
+
+`drawSwaps(ex, ey)` is the world half of the tell a
+[tool trading itself up](gameplay.md#where-tools-and-bits-come-from) raises, over one entry per
+swap in `swaps` (js/tools.js, pushed by `swapFx`, aged by `updateSwaps` in `updateFx`). It is
+drawn for **every** player, not only the local one: a rival rearming mid-fight is news to whoever
+is shooting at them, and the ring's colour is the whole of the news.
+
+The beat is `SWAP_T` (1.1 s) in two parts. The **ring** — a hollow square in the new tier's `rim`,
+opening from 4 to 18 px out of the chest — is the first third and then gone, so the icon is what
+is left to read. The **icon** is the new body's own 12×12, on the tier `plate` inside a `rim`
+frame it wears in every well it will ever sit in, climbing `SWAP_RISE` (26 px) on an ease-out and
+fading only over the last third. `swapFx` also fires two `burst`s in the tier's ink and rim at the
+body, `SFX.levelUp` for the local player (`SFX.pickup` for anyone else in earshot), and the
+[shelf's row flash](#the-weapon-shelf).
 
 ### Snow
 
@@ -729,11 +753,19 @@ Five marks, no words, all off `toolPlan`:
 
 That, and nothing written down, is the whole of "bow tensile strength".
 
-And one **event**: every cell the last press SPENT flashes white and fades over `BIT_LIT_T`
-(0.3 s), its rails with it — `bitLit`/`bitLitAt` (js/tools.js), set in `fireTool` for the local
-player alone, held by reference to the tool that fired so a swap cannot leave a flash on somebody
-else's cells, and aged in `updateFx` beside the refusal reds. A build is fired far more often than
-it is edited, so the press itself is where the row is learned.
+And **two events**, both on the one flash: `bitLit` is `{ cell, cells, t, col }` — the tool the
+flash belongs to (held by *reference*, so changing weapons cannot leave a flash on somebody else's
+cells), which of its cells are lit, how long is left and in what colour. `bitLitAt` ramps it, and
+clamps, so a flash may outlive `BIT_LIT_T`; `bitLitCol` answers the colour. Both live in
+js/tools.js, aged in `updateFx` beside the refusal reds, and both are the **local player's alone**.
+
+- **A press** lights every cell it SPENT — the shots and the fittings that shaped them — white,
+  fading over `BIT_LIT_T` (0.3 s), rails included (`fireTool`). A build is fired far more often
+  than it is edited, so the press itself is where the row is learned.
+- **A [tool swap](gameplay.md#where-tools-and-bits-come-from)** lights the WHOLE row — cell **-1**,
+  the tool well, and every loaded bit — in the new tier's own ink for `SWAP_T` (1.1 s)
+  (`swapFx`). The tool cell is the tell: a press never lights it, so a lit tool means one thing
+  only, which is that the body itself just changed under you.
 
 **A tool carrying more than one press can swing wears a "!"** (`drawOverWarn`, ui.js) in the
 top-right corner of every well it sits in — the strip's, the pack's grid and the shelf's — a gold
@@ -789,7 +821,14 @@ as pips along the bottom, in the corner a stack number would have used.
   number — an empty corner says it.
 - **A click on a cell uses what is in it** — a card by drawing from it, and a bit or a tool by
   [sending it to the weapon](gameplay.md#the-bit-column) — resolved on the
-  release so that a press which travels is still a drag.
+  release so that a press which travels is still a drag. Putting a *carried* item down is on the
+  release too, since 3.22.
+- **A well answers when something lands in it**: a `WELL_LIT_T` (0.3 s) wash in the colour of what
+  happened — blue placed, green merged, gold swapped, red refused (`drawWellLit`) — drawn last,
+  over the item. The same four colours come back as a **ring** around the well under the pointer
+  while something is on the cursor, saying what letting go there *would* do before it does it
+  ([what a gesture answers with](gameplay.md#what-a-gesture-answers-with)); that ring is painted
+  after the drag ghost and outside the well, because the ghost is exactly as big as the cell.
 - **The open frame swallows every click over itself.** `bagHit` reports `btn` (the button),
   `cell` or `frame` (anywhere else inside, inert but eaten); shut, only the button answers.
 - **The grid does not stop the sim.** It is HUD, not an overlay — the same deal the
