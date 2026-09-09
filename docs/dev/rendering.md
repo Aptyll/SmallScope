@@ -7,10 +7,12 @@ Read this before touching `render()`, adding a draw pass, or changing anything p
 ## One-camera fullscreen pixel rendering
 
 Every player gets the **same camera** (the SC2/League model): the view always shows
-`TARGET_ROWS` (270) rows of world — a 1920×1080 fullscreen is exactly 480×270 at 4×, and other
-monitors buy sharpness with their extra pixels, never zoom. There is deliberately **no
-resolution setting**; camera zoom is a gameplay feature (below), not a display one.
-`VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas()`:
+`TARGET_ROWS` (360) rows of world — a 1920×1080 fullscreen is exactly 640×360 at 3×, 1440p is
+the same frame at 4× and 4K at 6×, and other monitors buy sharpness with their extra pixels,
+never zoom. There is deliberately **no resolution setting**; camera zoom is a gameplay feature
+(below), not a display one. (The frame was 480×270 until 3.22; the menus, panels and end screens
+are still authored in that 270-row frame and centred in the taller view through `frameTop()`,
+core.js — `FRAME_H` names it.) `VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas()`:
 
 - It picks an integer **device**-pixel scale (via `devicePixelRatio`, so game pixels land
   exactly on device pixels even under fractional 125%/150% OS scaling) closest to
@@ -50,9 +52,9 @@ boot reading the saved one, a resize onto another screen) re-fits the view. What
 
 - **The biggest game pixel the overlays allow.** The world map slab is 308×226 and the settings
   slab 240×218, so a phone takes the largest whole device-pixel scale that keeps the view above
-  `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — fewer rows than a monitor's 270 wherever the
-  arithmetic permits (a 1170-px-tall phone lands on 234 rows at 5×; a 1080-px one cannot, 5×
-  would be 216, so it stays at 270 rows at 4×), and the 3×5 font and the HUD grow with the pixel.
+  `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — far fewer rows than a monitor's 360 (a 1170-px-tall
+  phone lands on 234 rows at 5×; a 1080-px one cannot, 5× would be 216, so it takes 270 rows
+  at 4×), and the 3×5 font and the HUD grow with the pixel.
   It is the same rule as the desktop's 320×240 guard with the target rows removed; the `TARGET_ROWS`
   nearest-scale pick is the desktop branch only.
 - **No 16:9 cap and no frost bars**: `VIEW_W = FULL_W`. A phone is 19.5:9 or wider and the
@@ -128,11 +130,16 @@ on a 16×16 sprite is exactly what "stretched" looks like. So the zoom the playe
 not stored as a float at all:
 
 - **`kWant` is that whole number** — device px per world px — and the wheel steps it by **±1**,
-  clamped to `kMin()`…`kMax()` (`ZOOM_MIN` 0.5 … `ZOOM_MAX` 3.6 × `devScale`). `zoomWantOf()`
+  clamped to `kMin()`…`kMax()` (`ZOOM_MIN` … `ZOOM_MAX` × `devScale`). `zoomWantOf()`
   derives the float scale as `kWant / devScale`.
-- The rungs are therefore `k / devScale`. At `devScale` 4 that is **quarter steps** — 0.5, 0.75,
-  1, 1.25, 1.5 … 3.5, thirteen of them; at 3 it is thirds, ten of them. A display with fewer
-  pixels to spend gets fewer, coarser rungs, which is the honest answer rather than a lie.
+- **The range is authored in rows of world on screen**, not in scale: `ZOOM_OUT_ROWS` (540, the
+  whole clearing) and `ZOOM_IN_ROWS` (75, a face), and `ZOOM_MIN`/`ZOOM_MAX` are
+  `TARGET_ROWS` over each (0.67 … 4.8 at 360 rows), so a taller frame neither hands out more
+  vision at max-out nor loses the face at max-in. `DROP_ZOOM` is `ZOOM_MIN`.
+- The rungs are therefore `k / devScale`. At `devScale` 3 (a 1080p fullscreen) that is **third
+  steps** — 0.67, 1, 1.33, 1.67 … 4.67, thirteen of them; at 4 (1440p) it is quarters, seventeen.
+  A display with fewer pixels to spend gets fewer, coarser rungs, which is the honest answer
+  rather than a lie.
 - `sizeWorldView()` **ceils** (never rounds): `WV × k` must *cover* the canvas or a sliver of
   stale pixels survives down the right edge.
 - `fitCanvas()` re-rungs `kWant` onto the new ladder (`round(zoomCur * dev)`) whenever `devScale`
@@ -153,8 +160,8 @@ every rung, on both a `devScale` 3 and a `devScale` 4 display; 12.3% mid-glide.*
 Nothing in that path touches the canvas, so unlike the old `applyView()` it never calls
 `fitCanvas()`/`relayout()` **and the overlays no longer force the zoom back to base** — the
 fixed-size panels fit at any zoom now. `applyZoom(0, true)` snaps instead of easing, which is
-what `beginDrop`/`landPlayer` use. The eagle ride forces `DROP_ZOOM` 0.5 (twice the world) for
-as long as mode is `drop`; landing returns to whatever the player had set.
+what `beginDrop`/`landPlayer` use. The eagle ride forces `DROP_ZOOM` (the max-out view, `ZOOM_OUT_ROWS`
+of world) for as long as mode is `drop`; landing returns to whatever the player had set.
 `DBG.setK(k, snap)` sets the rung directly, `DBG.setZoom(z, snap)` lands on the nearest rung,
 and `DBG.getZoom()` reports `k`, `devScale`, `exact` and the whole `rungs` ladder. The scroll
 wheel is zoom only — there is no tool selection to cycle.
@@ -173,8 +180,8 @@ beside `relayout()`**, not down in their own sections, so `relayout()` never rea
 into a temporal dead zone; the offsets *within* each baked panel stay fixed in their own
 sections), `fitFlakes()`, which keeps snow density constant by topping up/trimming
 the `flakes` array (see [Snow](#snow)), and `renderBars()`, which re-bakes the pillarbox frame. Never write layout
-code against a literal 480/270; `menuLayout()` shows the pattern for recentering a 270-authored
-layout (`toy` offset).
+code against a literal 640/360 (or the old 480/270); a screen authored in the 270-row frame
+starts at `frameTop()` (`FRAME_H`, core.js) — `menuLayout()` shows the pattern (`toy` offset).
 
 `render()` keeps two camera offsets: tiles and other statics subtract the rounded `ox`/`oy`,
 while moving entities (player, animals, robots, drops, particles, floaters, swing arc) subtract
@@ -280,10 +287,11 @@ down once the air stills at night.
 The field is **one world view** in size, not one screen, and that is what makes the zoom read:
 
 - **Count follows the world area on screen.** `fitFlakes()` targets `FLAKE_BASE` (70) per
-  480×270 **world** px, so zooming out — looking at more sky — puts more snow in frame, clamped
-  to `FLAKE_MIN`…`FLAKE_MAX` (26…240) because physics alone leaves six flakes on screen at the
-  closest rung and a blizzard of specks at the widest, and neither reads as snow. At zoom 1 the
-  target is exactly what it was before, so the baseline look is unchanged.
+  `FLAKE_AREA` (480×270) of **world** px — 124 on a 640×360 view at zoom 1 — so zooming out —
+  looking at more sky — puts more snow in frame, clamped to `FLAKE_MIN`…`FLAKE_MAX` (26…240)
+  because physics alone leaves six flakes on screen at the closest rung and a blizzard of specks
+  at the widest, and neither reads as snow. The density per world px is what was tuned, so the
+  look at any one spot is unchanged by the wider frame.
 - **Grain follows the zoom.** `renderWeather` draws each flake `round(f.size × zoomCur)` px
   across, so up close a flake is a fat crumb rather than a pixel. Between the two the amount of
   white in frame stays about constant while its grain changes, which is what "further away"
@@ -1062,8 +1070,8 @@ so the same glyph reads on parchment, on snow and over forest.
 
 A match ends on one of two full-frame ceremonies — `renderVictory` in the `victory` banner,
 `renderDefeat` in the `defeat` one — and they are deliberately **one composition drawn twice**:
-both read their anchors from `winLayout()` (in the same 270-tall authored frame every other screen
-uses), so DEFEAT sits exactly where VICTORY sat, the side stands on the same stands
+both read their anchors from `winLayout()` (in the same `FRAME_H`-tall authored frame every other
+screen uses, from `frameTop()`), so DEFEAT sits exactly where VICTORY sat, the side stands on the same stands
 (`winStands`), and the rule and the tally land in the same bands. `deadLayout()` reads the same
 `plankY`, so the planks sit under the tally on both. The stage (`stageY`, `bannerY`, `brazierX`,
 `bannerX`, `gap`) is set **from the outside in** — the braziers as far out as the view allows, the
@@ -1076,8 +1084,8 @@ and you can sit and watch it, so a lost match ends when you stop watching — **
 overlay opens the defeat screen (`openDefeat()`, `state.deadView = 'defeat'`) and that screen's own
 single **LOBBY** plank is the door out. A respawn-pending death's LOBBY still leaves directly:
 nothing has been lost yet. `endScreen()` is the one test for "a ceremony owns the frame" —
-`renderUI`, `renderEventLog` and `replayShowing` all bow out under it (the replay window sits
-exactly where the tally does); the held-TAB scoreboard and the info stack still draw over both.
+`renderUI`, `renderEventLog` and `replayShowing` all bow out under it (the recap would cover the
+whole ceremony); the held-TAB scoreboard and the info stack still draw over both.
 
 **The two timelines.** `WIN_T` and `DEF_T` name every beat, and the render pass and the sound cues
 (`winCues` / `defCues`, called from `update`) read one table each so they cannot drift apart. The
@@ -1146,34 +1154,48 @@ to read and the match is still playing behind it, so it goes where an eye lands 
 the body that fell — a second line saying the match is over for you, and two planks. That is the
 **elimination** only. **The respawn wait** is the fourth state and the lightest: no wash, no
 planks, the camera already on an ally through the spectate strip, one line — **RESPAWNING IN Ns**
-at the same 3× in the same band, the number live — and [the replay](#replay-the-last-four-seconds)
-open large under it until its close box or ESC puts it away.
+at the same 3× in the same band, the number live. Both open under
+[the recap](#replay-the-last-four-seconds): the last four seconds fill the frame first (the
+countdown reads over it; the dim, the headline, the planks and the spectate strip wait), and its
+close box or ESC hands the frame to whichever of the two is underneath.
 
 ## Replay: the last four seconds
 
 The `replay` banner keeps a rolling four seconds of what was on screen and plays it back while you
-are **dead** or **paused**. Where depends on why (`rpRect()`): on a **respawn wait** it opens
-**large and centred** under the countdown (`RP_BIG_W`×`RP_BIG_H`, 288×162 — three fifths of the
-view), over the ally the camera is on, and stays until it is closed — a close box rides its
-top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights gold under the
-pointer; ESC does the same) and `state.rpClosed` remembers, reset by every `endMatch`; on an
-elimination's planks and on pause it sits in the **bottom-left corner** at `RP_W`×`RP_H` (160×90).
+are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
+
+- **The recap**, on a **death** (a respawn wait or an elimination, once `deadReady()` — half a
+  second of dim — has landed): the **whole frame**, the way a goal replays. The countdown reads
+  over it on a wait; the spectate strip, the death dim, its headline and its planks wait
+  underneath (`renderDead` returns early while `replayFull()`), and the event feed still lands
+  over it, so who put you down is read while you watch it happen. A close box sits inside the
+  frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
+  gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
+  action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
+  `replayClose()` — a pad's B and a finger's menu plate arrive as escape. `state.rpClosed`
+  remembers, reset by every `endMatch`, so it opens once per death.
+- **The window**, on **pause**: the **bottom-left corner** at `RP_W`×`RP_H` (160×90), under the
+  pause planks.
+
 Never over [the end screens](#the-end-screens).
 It records pixels, not state, so it costs nothing to keep and re-renders nothing to play.
 
-**Why it is not drawn in the game canvas.** The corner window is 160×90 *game* px, and a
-480×270 view does not fit in a ninth of itself — eight of every nine pixels are gone before
-anything is drawn, and no amount of stored resolution brings them back. The same corner of the
-*screen* is `RP_W * devScale` px across (640 device px at a 1080p fullscreen's 4× scale), which is
-**more** pixels than the view itself has. So the frame goes to its own canvas, `#replay`
-(z-order above `#game`, `pointer-events: none`), positioned over the window's rect by
-`layoutReplay()` — which `relayout()` calls, so it follows every resize and fullscreen toggle
-(camera zoom no longer resizes anything), and which `renderReplay` calls again whenever the rect
-it laid out (`rpKey`) is not the one `rpRect()` now returns. The game
-canvas draws only the plate, the frost rim, the playhead, the close box and a low-res copy
-underneath, which keeps the feature legible in a plain `canvas.toDataURL()` capture (`POST /shot`)
-and is covered exactly by the overlay on screen — which is why the close box sits **outside** the
-frame, on the rim's corner: a DOM layer covers whatever the canvas draws under it.
+**Where each draws.** The recap draws in the game canvas: the capture is **one sample per game
+px** (`RP_CAP_W`×`RP_CAP_H`, 640×360, is the frame itself), and drawn back at the frame's size
+under the `devScale` transform, nearest-neighbour, every capture px lands on one game px — at a
+1080p or 1440p fullscreen the UI layer and a zoom-1 world come back pixel for pixel. A window
+whose view outgrows the cap gets the clipped capture scaled by one fraction on both axes and a
+dark sliver. The corner window cannot do that: 160×90 *game* px hold a sixteenth of the view,
+and the detail is gone before anything is drawn. The same corner of the *screen* is
+`RP_W * devScale` px across (480 device px at a 1080p fullscreen's 3×), so its frame goes to its
+own canvas, `#replay` (z-order above `#game`, `pointer-events: none`), positioned over the
+window's rect by `layoutReplay()` — which `relayout()` calls, so it follows every resize and
+fullscreen toggle, and which `renderReplay` calls again whenever the rect it laid out (`rpKey`)
+is not the one `rpRect()` now returns. The game canvas draws only the plate, the frost rim, the
+playhead and a low-res copy underneath, which keeps the window legible in a plain
+`canvas.toDataURL()` capture (`POST /shot`) and is covered exactly by the overlay on screen. The
+recap hides the overlay outright (`rpOverlay(false)`), which is why its close box and prompt can
+sit *inside* the frame.
 
 Fullscreen here is the browser's (F11), which fullscreens the document, so a `position: fixed`
 sibling still renders. Calling `requestFullscreen()` on `#game` itself would render *only* that
@@ -1187,13 +1209,14 @@ the condition `update()` steps on — it blits the finished canvas into slot `rp
 canvas every `1/RP_FPS` s and wraps. `RP_SECS` 4 × `RP_FPS` 30 = `RP_N` 120 slots, `RP_COLS` 12
 across; `RP_RATE` 0.5 is the playback speed.
 
-**Capture resolution rides on `devScale`** (device px per game px, the integer `fitCanvas()`
-picks). `rpTarget()` fits the view inside three ceilings — what the biggest window can show
-(`RP_BIG_W * devScale`), the memory cap (`RP_CAP_W`×`RP_CAP_H`, 480×270), and 1:1, since upscaling the
-view would cost memory and add no detail. At a 1080p or 4K fullscreen all three land on the view
-itself, so the capture is **1:1 and nothing is resampled anywhere** — the atlas slot, the overlay
-backing store and the blit out are all the same pixels. A window wide enough to render more than
-the cap loses the excess, which the corner could not have shown anyway.
+**Capture resolution is the frame's.** `rpTarget()` is the view in game px, clipped by the memory
+cap (`RP_CAP_W`×`RP_CAP_H`, 640×360) and never an upscale. The canvas holds `devScale` device px
+per game px, so every capture is a reduction by exactly that whole number (`rpAtx` keeps
+smoothing on: nearest would sample one device px in nine and strobe an arrow in flight), and a
+UI pixel or a zoom-1 world pixel — one uniform block of device px — comes back as itself. At a
+1080p or 1440p fullscreen the capture is the whole frame, so the recap is **pixel for pixel**
+and the corner window's overlay shows it at device resolution with nothing resampled. A window
+that renders more rows than the cap loses the excess.
 
 **A resize does not cost frames.** Each slot records the size it was captured at (`rpFW`/`rpFH`),
 so a change in view or zoom changes what the *next* frames look like and leaves the banked ones
@@ -1203,16 +1226,16 @@ does not reallocate on every step. Playback resizes the overlay's backing store 
 current frame was captured at (the CSS size stays put), which is why a replay spanning a resize
 changes sharpness mid-loop instead of jumping size or losing its history.
 
-**Memory** is `RP_CAP_W * RP_CAP_H * 4 * RP_N` at the ceiling — 62 MB, and the ring only grows to
-what a given window actually captures (a small window with `devScale` 1 stays near 7 MB). This is
-the price of the resolution: it is the biggest allocation in the game, ahead of the 55 MB baked
-ground. `RP_CAP_*`, `RP_FPS` and `RP_SECS` are the knobs.
+**Memory** is `RP_CAP_W * RP_CAP_H * 4 * RP_N` at the ceiling — 110 MB, and the ring only grows to
+what a given window actually captures (a small window stays near 12 MB). This is the price of a
+recap that comes back pixel for pixel: it is the biggest allocation in the game, twice the 55 MB
+baked ground. `RP_CAP_*`, `RP_FPS` and `RP_SECS` are the knobs.
 
 **Per-frame cost while alive** is one `drawImage` at `RP_FPS`, straight off the finished world
 pass. Canvas-to-canvas stays on the GPU; `getImageData`/`toDataURL` would stall the pipeline every
-capture, so neither is used, and nothing is allocated per frame. The one downscale path (a view
-bigger than the corner) runs with `imageSmoothingEnabled` on `rpAtx` — nearest there would sample
-1 px in 9 and strobe an arrow in flight in and out of the recording.
+capture, so neither is used, and nothing is allocated per frame. The capture is always a
+reduction (device px to game px) and runs with `imageSmoothingEnabled` on `rpAtx` — nearest
+there would sample 1 device px in 9 and strobe an arrow in flight in and out of the recording.
 
 **Playback.** `replayShowing()` decides; every fresh open restarts at the oldest frame. The
 playhead advances `RP_FPS * RP_RATE` frames a second, so the four seconds take eight to watch and
@@ -1223,9 +1246,10 @@ by anything the game canvas draws, so `renderReplay()` hides it outright when th
 and mirrors `state.fade` onto its `opacity` — otherwise the replay would sit there through the
 LOBBY fade-out.
 
-`DBG.replay` exposes `{ cv, frames, showing(), shot, slot, bytes, W, H, fps, rate, ov }` — `cv` is
-the whole filmstrip and `shot`/`slot`/`bytes` report the live capture size, slot size and atlas
-cost, so a headless driver can check the resolution without playing to a death.
+`DBG.replay` exposes `{ cv, frames, showing(), full(), shot, slot, bytes, W, H, fps, rate, ov }` —
+`cv` is the whole filmstrip, `full()` says the recap owns the frame, and `shot`/`slot`/`bytes`
+report the live capture size, slot size and atlas cost, so a headless driver can check the
+resolution without playing to a death; `DBG.replayClose()` puts the recap away.
 
 ## Scoreboard and event feed
 

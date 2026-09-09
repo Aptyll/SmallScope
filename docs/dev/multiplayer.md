@@ -470,7 +470,7 @@ with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch 
 top) plus the support fields, so your side is always the more competent one and the difficulty
 is how good the *other* side is. `aiProfile(p)` is the one place that choice is made
 (`p.ai.prof` overrides it for a staged bot — `DBG`, the calibration harness). Every field is a
-worse or better use of the same input struct: `sight` (110 / 150 / 200 px, through `seenAt` so
+worse or better use of the same input struct: `sight` (147 / 200 / 267 px — scaled 4/3 with the 640×360 frame in 3.22, so a bot keeps the same share of what a screen shows a hand — through `seenAt` so
 cover still works), `react` (0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
 `aim` (22 / 8 / 0 px of scatter, re-rolled every `AI_AIM_T`), `lead` (0 / 0.5 / 1 of the
 target's motion), `draw` (0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a

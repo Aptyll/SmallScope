@@ -601,7 +601,7 @@ function shopCmd(p, c) {
 // puts its own bottom-left corner exactly where a tall tooltip lands - so
 // hovering the last row of offers would hide the last row of offers. Its
 // HEIGHT is spent against the same rule. The deepest tooltip a well here can
-// raise tops out around 192 on the 480x270 view a full screen gives, and the
+// raise tops out around 192 on the 270-row frame the slab is authored in, and the
 // order along the bottom is chosen against that line: the SELL strip ends at
 // 190, clear of it, and only the restock road below runs under it - the road,
 // whose countdown is deliberately at its RIGHT end where no tooltip reaches.

@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.21'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.22'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.22', 'THE FRAME IS 640X360: A 1080P SCREEN IS THREE PIXELS TO THE PIXEL AND SHOWS A THIRD MORE WORLD, THE CAMERA STILL REACHES THE SAME CLEARING AT MAX-OUT AND THE SAME FACE AT MAX-IN, THE BOTS SEE THE SAME SHARE OF IT YOU DO, AND A DEATH REPLAYS ITS LAST FOUR SECONDS ACROSS THE WHOLE SCREEN BEFORE ESC HANDS YOU BACK TO YOUR ALLIES.'],
   ['3.21', 'YOUR WEAPON SITS ON A SHELF OVER THE BACKPACK AT ALL TIMES - A FOUND BIT LOADS ITSELF INTO THE TOOL WHILE A CELL IS FREE AND ONLY OVERFLOWS INTO THE PACK, EVERY BIT A PRESS SPENDS FLASHES WHEN YOU FIRE, AND A COLOURED RAIL RUNS FROM EACH MODIFIER TO THE SHOTS IT ACTUALLY REACHES.'],
   ['3.20', 'THE LANDMARKS ARE CAMPS NOW: SEVEN FIXED SITES MIRRORED ACROSS THE ROAD SO BOTH TEAMS WALK THE SAME DISTANCE - FOUR WOLF DENS THAT PAY GOLD, TWO ALPHA STONES WHOSE KILL WEARS ALPHA\'S BLOOD, AND ONE DIRE HOLLOW WHOSE DIRE WOLF PAYS AND BLOODS THE WHOLE TEAM - AND EVERY CAMP IS NEUTRAL UNTIL YOU HIT IT, THEN LEASHES AND HEALS IF YOU LEAVE ITS GROUND.'],
   ['3.19', 'EVERY KEY CAN BE REBOUND - CLICK A CAP ON THE CONTROLS PAGE AND PRESS THE KEY YOU WANT, THE KEYBOARD IS READ BY WHERE A KEY SITS SO AN AZERTY BOARD WALKS ON Z Q S D, EVERY PROMPT AND WELL WEARS THE KEY YOU CHOSE, AND A MATCH CAN BE LEFT FROM THE ESC MENU.'],
@@ -275,9 +276,9 @@ function overPatchTag() {
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 
-// layout was authored for a 270px-tall view; recenter it vertically
+// layout was authored for the FRAME_H-tall frame (core.js); recenter it vertically
 function menuLayout() {
-  const toy = Math.round((VIEW_H - 270) / 2);
+  const toy = frameTop();
   const bx = Math.round((VIEW_W - MENU_BW) / 2);
   const rects = MENU_ITEMS.map((_, i) => ({ x: bx, y: toy + MENU_Y0 + i * MENU_PITCH, w: MENU_BW, h: MENU_BH }));
   // the seed row: text + die, one selectable item
@@ -1060,7 +1061,7 @@ const SEL_ROST_X = 200;                // px from centre to a roster column's ou
 const SEL_ROST_W = 64;                 // the column head rule's width
 const COUNT_T = 5;                     // s: PLAY's countdown to the eagle
 function selectLayout() {
-  const toy = Math.round((VIEW_H - 270) / 2);
+  const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
   // PLAY wears the title's first plank, in its place
   const play = { x: Math.round((VIEW_W - MENU_BW) / 2), y: toy + MENU_Y0, w: MENU_BW, h: MENU_BH };
@@ -1108,7 +1109,7 @@ function selectAbilHit(mx, my) {
 // the cinematic band. All procedural - hash2/vnoise for the stillness, now
 // for the drift - and everything takes the caller's fade.
 function drawSelectBackdrop(now, a) {
-  const toy = Math.round((VIEW_H - 270) / 2);
+  const toy = frameTop();
   const hz = toy + 150; // the horizon the figures stand against
   ctx.globalAlpha = a;
   const sky = ctx.createLinearGradient(0, 0, 0, hz);
@@ -2438,7 +2439,7 @@ function wikiPage() { return WIKI_PAGES[Math.max(0, Math.min(WIKI_PAGES.length -
 // cells, the content window, the rail, and the open page's blocks each
 // carrying the y it draws at (pre-scroll). Draw and hit test both read it.
 function wikiLayout() {
-  const toy = Math.round((VIEW_H - 270) / 2);
+  const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
   const w = Math.min(WIKI_W_MAX, VIEW_W - 24), x = cx - (w >> 1);
   const y = toy + 46, h = WIKI_H;
