@@ -1507,9 +1507,9 @@ window.DBG = {
   // the match readouts: stage feed lines without staging the kills behind
   // them, and check the standings (hold TAB in game, or set keys.tab here)
   events, logEvent, scoreGroups, scoreboardOpen,
-  // the four-second replay: the filmstrip itself, how much is banked, and whether it is up
+  // the four-second replay: the filmstrip itself, how much is banked, whether it is up, and whether it fills the frame
   replay: {
-    get cv() { return rpAt; }, get frames() { return rpCount; }, showing: replayShowing,
+    get cv() { return rpAt; }, get frames() { return rpCount; }, showing: replayShowing, full: replayFull,
     get shot() { return [rpFW[(rpHead - 1 + RP_N) % RP_N], rpFH[(rpHead - 1 + RP_N) % RP_N]]; },
     get slot() { return [rpSW, rpSH]; }, get bytes() { return rpAt ? rpAt.width * rpAt.height * 4 : 0; },
     W: RP_W, H: RP_H, fps: RP_FPS, rate: RP_RATE, ov: rpOv,

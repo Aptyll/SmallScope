@@ -13,8 +13,15 @@ const TILE = 16;
 // camera clamps), so the match world is untouched.
 const PRACTICE = /[?&]practice=1/.test(location.search);
 const WORLD = PRACTICE ? 76 : 232; // tiles per side (match: ~132-tile open interior, 2x the old 92's area; treeline depth unchanged); practice: field + a collar deep enough that the parkour runs INSIDE the forest, not along its hem
-let VIEW_W = 480, VIEW_H = 270; // internal resolution; fitCanvas() sizes it to the window
-let FULL_W = 480; // window width in game px BEFORE the 16:9 cap (bars canvas span)
+let VIEW_W = 640, VIEW_H = 360; // internal resolution; fitCanvas() sizes it to the window
+let FULL_W = 640; // window width in game px BEFORE the 16:9 cap (bars canvas span)
+// The frame the menus, the panels and the end screens were authored in: 270
+// rows, the view's height before 3.22 widened it to 360. They stay centred
+// in the taller view rather than stretched, so a screen lays itself out from
+// frameTop() down - never against VIEW_H / 2, which would drift its planks
+// off the art authored around them (menuLayout, js/menu.js is the pattern).
+const FRAME_H = 270;
+function frameTop() { return Math.round((VIEW_H - FRAME_H) / 2); }
 const DAY_LEN = 110, NIGHT_LEN = 55;
 const CYCLE = DAY_LEN + NIGHT_LEN;
 

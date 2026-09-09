@@ -1166,7 +1166,8 @@ const FLAKE_REST = 0.7;
 // what "further away" looks like. Both are clamped: physics alone would leave
 // six flakes on screen at the closest rung and a blizzard of specks at the
 // widest, and neither reads as snow.
-const FLAKE_BASE = 70;       // flakes per 480x270 world px
+const FLAKE_AREA = 480 * 270; // the world view the density was tuned on, in world px
+const FLAKE_BASE = 70;       // flakes per FLAKE_AREA of world in frame (a 640x360 view at zoom 1 gets 124)
 const FLAKE_MIN = 26, FLAKE_MAX = 240;
 const flakes = [];
 // a fresh flake somewhere in the field, from the given random stream
@@ -1193,7 +1194,7 @@ for (let i = 0; i < 70; i++) flakes.push(makeFlake(rng));
 const fxRng = mulberry32((SEED ^ 0x9e3779b9) >>> 0);
 function fitFlakes() {
   const target = Math.max(FLAKE_MIN, Math.min(FLAKE_MAX,
-    Math.round(FLAKE_BASE * (WV_W * WV_H) / (480 * 270))));
+    Math.round(FLAKE_BASE * (WV_W * WV_H) / FLAKE_AREA)));
   while (flakes.length > target) flakes.pop();
   while (flakes.length < target) flakes.push(makeFlake(fxRng));
 }

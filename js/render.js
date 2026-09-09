@@ -696,8 +696,11 @@ function render() {
   if (state.mode === 'play' && state.settingsOpen) renderSettings(now);
   if (state.mode === 'play' && state.draft) renderDraft(now);
   if (state.mode === 'title' || state.intro > 0) renderTitle(now);
+  // the last four seconds: the whole frame on a death (the recap - the
+  // countdown and its ESC prompt draw over it, so it goes first), the
+  // bottom-left corner on pause
+  renderReplay();
   if (state.mode === 'dead') renderDead(now);
-  renderReplay(); // the last four seconds, looping in the bottom-left corner
   // both sit above the death dim: the feed and the standings are exactly what
   // you read while you are down. They duck under the map/settings panels.
   if (!state.mapOpen && !state.settingsOpen && !window.DBG.hideUI &&

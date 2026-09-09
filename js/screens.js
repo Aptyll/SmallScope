@@ -4,28 +4,31 @@
 // one composition.
 // ------------------------------------------------------------ replay
 // A rolling four seconds of what was on screen, kept as pixels rather than as
-// state, played back while you are dead or paused: large and centred over the
-// ally view on a respawn wait (until its close box or ESC puts it away), in
-// the bottom-left corner on pause and on an elimination's planks.
+// state, played back while you are dead or paused. A DEATH gets the RECAP:
+// the whole frame, the way a goal replays - the ally view (a respawn wait)
+// or the elimination's planks wait underneath until its close box, ESC, a
+// pad's B or a finger's menu plate puts it away, and the RESPAWNING IN Ns
+// line and the ESC BACK prompt draw over it. PAUSE gets the WINDOW: the
+// bottom-left corner at RP_W x RP_H, under the pause planks.
 //
-// The window is RP_W x RP_H GAME px in the corner (RP_BIG_W x RP_BIG_H over a
-// wait), but the frame inside it is NOT drawn into the game canvas: those
-// 160x90 canvas pixels can only hold a ninth of a 480x270 view, and no amount
-// of storage fixes that - the detail is gone before it is drawn. The same
-// corner of the SCREEN is RP_W*devScale wide (640 device px at a 1080p
-// fullscreen's 4x), which is more pixels than the view itself has, so the
-// frame goes to its own device-resolution canvas (#replay) laid over that
-// rect, and the game canvas draws only the plate, the rim, the playhead and
-// a low-res copy underneath (which keeps the feature legible in a plain
-// canvas.toDataURL() capture). At a fullscreen zoom the capture is 1:1 with
-// the view and nothing is resampled at all.
+// The recap draws in the game canvas: the capture is one sample per GAME
+// px (RP_CAP_W x RP_CAP_H is the frame itself), and blown back up under the
+// devScale transform it lands one capture px on one game px - at a 1080p or
+// 1440p fullscreen the UI layer and a zoom-1 world come back pixel for
+// pixel, nothing resampled. The corner window cannot do that: its 160x90
+// canvas px hold a sixteenth of the view, and the detail is gone before it
+// is drawn. The same corner of the SCREEN is RP_W*devScale wide (480 device
+// px at a 1080p fullscreen's 3x), so the window's frame goes to its own
+// device-resolution canvas (#replay) laid over that rect, and the game
+// canvas draws only the plate, the rim, the playhead and a low-res copy
+// underneath (which keeps the feature legible in a plain canvas.toDataURL()
+// capture).
 //
 // Capture is one drawImage every 1/RP_FPS s while you are alive, straight off
 // the finished world pass - never a getImageData / toDataURL readback, and
 // nothing allocated per frame.
-const RP_W = 160, RP_H = 90;    // the window in the corner, in GAME px: 16:9, a third of the view
-const RP_BIG_W = 288, RP_BIG_H = 162; // the window over a respawn wait: 16:9, three fifths of it
-const RP_CLOSE = 12;            // the close box on the big window's top-right corner
+const RP_W = 160, RP_H = 90;    // the pause window in the corner, in GAME px: 16:9, a quarter of the view
+const RP_CLOSE = 12;            // the recap's close box, on the frame's top-right corner
 const RP_SECS = 4;              // seconds held
 const RP_FPS = 30;              // frames captured per second -> 15fps on screen at RP_RATE
 const RP_RATE = 0.5;            // playback speed
@@ -33,11 +36,11 @@ const RP_N = RP_SECS * RP_FPS;  // slots in the ring
 const RP_COLS = 12;             // atlas grid; RP_N / RP_COLS rows
 const RP_PAD = 4;               // inset from the bottom-left corner
 // the biggest slot the ring will ever allocate, and so the memory ceiling:
-// RP_CAP_W * RP_CAP_H * 4 * RP_N bytes (480x270 -> 62 MB). It is exactly the
-// view a 1080p or 4K fullscreen renders, so those capture 1:1; a window wide
-// enough to render more than this loses the excess, which the corner could
-// not have shown anyway.
-const RP_CAP_W = 480, RP_CAP_H = 270;
+// RP_CAP_W * RP_CAP_H * 4 * RP_N bytes (640x360 -> 110 MB). It is the frame
+// at one sample per game px - what the recap draws back at exactly - so a
+// 1080p or 1440p fullscreen captures every game px it shows; a window that
+// renders more rows than the frame loses the excess.
+const RP_CAP_W = 640, RP_CAP_H = 360;
 
 // the device-resolution layer: sized and placed over the window's rect by
 // layoutReplay(), which relayout() calls on every canvas-size change
@@ -61,12 +64,12 @@ let rpLast = 0;     // previous render's clock; the delta for both timers
 let rpOpen = false; // was the window up last frame (a fresh open restarts the loop)
 let rpVis = false, rpAlpha = -1, rpOvW = 0, rpOvH = 0; // last state pushed to the overlay
 
-// What to capture at, this frame: the view itself, clipped by what the biggest
-// window can actually show (its device-pixel size) and by the memory ceiling.
-// Never an upscale - blowing the view up would cost memory and add no detail.
+// What to capture at, this frame: the view at one sample per game px,
+// clipped by the memory ceiling. The canvas holds devScale device px per
+// game px, so this is always a reduction, never an upscale - blowing the
+// view up would cost memory and add no detail the recap could show.
 function rpTarget() {
-  const s = Math.min(1, (RP_BIG_W * devScale) / VIEW_W, (RP_BIG_H * devScale) / VIEW_H,
-    RP_CAP_W / VIEW_W, RP_CAP_H / VIEW_H);
+  const s = Math.min(1, RP_CAP_W / VIEW_W, RP_CAP_H / VIEW_H);
   return [Math.max(1, Math.round(VIEW_W * s)), Math.max(1, Math.round(VIEW_H * s))];
 }
 
@@ -110,41 +113,40 @@ function replayLive() {
     player.active && !player.dead;
 }
 
-// up over a respawn wait until it is closed, on an elimination's planks and
-// on pause; never under a full-screen panel
+// up on a death until it is closed (a respawn wait or an elimination, once
+// its half second of dim has landed - the recap) and on pause (the corner
+// window); never under a full-screen panel
 function replayShowing() {
   if (!rpCount || window.DBG.hideUI || state.mapOpen || state.settingsOpen) return false;
   if (state.paused) return true;
-  // not over an end screen: both are compositions, and the window sits
-  // exactly where their tally does
+  // not over an end screen: both are compositions, and the frame is theirs
   if (state.mode !== 'dead' || endScreen() || !deadReady()) return false;
-  return state.over === 'respawning' ? !state.rpClosed : state.deadView === 'menu';
+  return !state.rpClosed && (state.over === 'respawning' || state.deadView === 'menu');
 }
 
-// Where the window is this frame: large and centred under the countdown on a
-// respawn wait - it is the thing to watch while the ally view settles in
-// behind it - and the bottom-left corner otherwise
-function rpBig() { return state.mode === 'dead' && state.over === 'respawning'; }
+// Which of the two it is this frame: the recap fills the view on a death,
+// the window sits in the bottom-left corner on pause
+function rpFull() { return state.mode === 'dead'; }
 function rpRect() {
-  if (rpBig()) {
-    return { x: Math.round((VIEW_W - RP_BIG_W) / 2), y: Math.round((VIEW_H - 270) / 2) + 62, w: RP_BIG_W, h: RP_BIG_H };
-  }
+  if (rpFull()) return { x: 0, y: 0, w: VIEW_W, h: VIEW_H };
   return { x: RP_PAD, y: VIEW_H - RP_H - RP_PAD, w: RP_W, h: RP_H };
 }
-// the close box: a small plank on the big window's top-right corner, OUTSIDE
-// the overlay's rect - a DOM layer covers whatever the canvas draws under it
+// the recap's close box: a small plank inside the frame's top-right corner
 function rpCloseRect() {
-  const r = rpRect();
-  return { x: r.x + r.w - RP_CLOSE, y: r.y - RP_CLOSE - 2, w: RP_CLOSE, h: RP_CLOSE };
+  return { x: VIEW_W - RP_CLOSE - 4, y: 4, w: RP_CLOSE, h: RP_CLOSE };
 }
 function rpCloseHit() {
-  if (!rpBig() || !replayShowing()) return false;
+  if (!rpFull() || !replayShowing()) return false;
   const c = rpCloseRect();
   return mouse.x >= c.x - 2 && mouse.x < c.x + c.w + 2 && mouse.y >= c.y - 2 && mouse.y < c.y + c.h + 2;
 }
+// the recap is up: what draws under it (the ally view's strip, the death dim
+// and its planks) waits, and a press puts it away
+function replayFull() { return rpFull() && replayShowing(); }
+function replayClose() { state.rpClosed = true; SFX.pickup(); }
 
 // px the event feed lifts to clear the window - only when it shares the corner
-function replayLift() { return replayShowing() && !rpBig() ? RP_H + 4 : 0; }
+function replayLift() { return replayShowing() && !rpFull() ? RP_H + 4 : 0; }
 
 // the overlay tracks the game canvas: the window's rect, at the canvas's
 // scale, in device pixels
@@ -200,10 +202,12 @@ function rpOverlay(on, a) {
   if (on && a !== rpAlpha) { rpAlpha = a; rpOv.style.opacity = a; }
 }
 
-// The strip on a frost plate, a playhead sweeping the bottom rim, and on the
-// big window a close box riding its top-right corner. No label - a looping
-// window under a sweeping playhead is what a recording looks like, the half
-// speed reads itself, and a box with a cross in it is how a window closes.
+// The recap: the frame itself, the playhead sweeping its bottom edge, a
+// close box in its top-right corner and the ESC prompt at its foot. The
+// window: the strip on a frost plate with the playhead on the bottom rim.
+// No label either way - a looping picture under a sweeping playhead is what
+// a recording looks like, the half speed reads itself, and a box with a
+// cross in it is how a picture closes.
 function renderReplay() {
   if (!replayShowing()) { rpOverlay(false, 1); return; }
   const r = rpRect(), x = r.x, y = r.y, w = r.w, h = r.h;
@@ -211,6 +215,38 @@ function renderReplay() {
   const slot = (rpHead - rpCount + i + RP_N) % RP_N;
   const [sx, sy] = rpSlotAt(slot, rpSW, rpSH);
   const fw = rpFW[slot], fh = rpFH[slot];
+  if (rpFull()) {
+    rpOverlay(false, 1); // the recap is the canvas's own
+    ctx.fillStyle = '#06091a';
+    ctx.fillRect(0, 0, w, h);
+    // one capture px per game px wherever the frame fits the cap (nearest,
+    // so it comes back pixel for pixel); a frame the cap clipped is scaled
+    // up by the same fraction on both axes and the sliver it leaves is dark
+    if (fw) {
+      const s = Math.min(w / fw, h / fh);
+      const dw = Math.round(fw * s), dh = Math.round(fh * s);
+      ctx.drawImage(rpAt, sx, sy, fw, fh, Math.round((w - dw) / 2), Math.round((h - dh) / 2), dw, dh);
+    }
+    // the playhead, two px along the bottom edge
+    ctx.fillStyle = '#0a0e23';
+    ctx.fillRect(0, h - 3, w, 3);
+    ctx.fillStyle = '#c89a3c';
+    ctx.fillRect(0, h - 2, Math.round(w * Math.min(1, rpPlay / rpCount)), 2);
+    // the close box, lit gold under the pointer
+    const c = rpCloseRect(), hot = rpCloseHit();
+    ctx.fillStyle = '#0a0e23'; ctx.fillRect(c.x - 1, c.y - 1, c.w + 2, c.h + 2);
+    ctx.fillStyle = hot ? '#1f2b5c' : '#141c3c'; ctx.fillRect(c.x, c.y, c.w, c.h);
+    ctx.fillStyle = hot ? '#c89a3c' : '#35426e';
+    ctx.fillRect(c.x, c.y, c.w, 1); ctx.fillRect(c.x, c.y + c.h - 1, c.w, 1);
+    ctx.fillRect(c.x, c.y, 1, c.h); ctx.fillRect(c.x + c.w - 1, c.y, 1, c.h);
+    ctx.fillStyle = hot ? '#ffd95c' : '#cfe0ff';
+    for (let k = 0; k < 6; k++) { ctx.fillRect(c.x + 3 + k, c.y + 3 + k, 1, 1); ctx.fillRect(c.x + 8 - k, c.y + 3 + k, 1, 1); }
+    // the way back to the allies: the key cap (or the pad's button) with its
+    // verb, over the world, so it wears the outline the world demands
+    const verb = 'BACK';
+    drawKeyPrompt(Math.round((w - promptW(verb, 'esc')) / 2), h - 18, verb, false, 'esc');
+    return;
+  }
   ctx.fillStyle = '#0a0e23';
   ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
   // the low-res copy in the game canvas: the overlay covers it exactly, so
@@ -230,16 +266,6 @@ function renderReplay() {
   // says this window is a recording rather than a second camera
   ctx.fillStyle = '#c89a3c';
   ctx.fillRect(x - 1, y + h, Math.round((w + 2) * Math.min(1, rpPlay / rpCount)), 1);
-  if (rpBig()) { // the close box, lit gold under the pointer
-    const c = rpCloseRect(), hot = rpCloseHit();
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(c.x - 1, c.y - 1, c.w + 2, c.h + 2);
-    ctx.fillStyle = hot ? '#1f2b5c' : '#141c3c'; ctx.fillRect(c.x, c.y, c.w, c.h);
-    ctx.fillStyle = hot ? '#c89a3c' : '#35426e';
-    ctx.fillRect(c.x, c.y, c.w, 1); ctx.fillRect(c.x, c.y + c.h - 1, c.w, 1);
-    ctx.fillRect(c.x, c.y, 1, c.h); ctx.fillRect(c.x + c.w - 1, c.y, 1, c.h);
-    ctx.fillStyle = hot ? '#ffd95c' : '#cfe0ff';
-    for (let k = 0; k < 6; k++) { ctx.fillRect(c.x + 3 + k, c.y + 3 + k, 1, 1); ctx.fillRect(c.x + 8 - k, c.y + 3 + k, 1, 1); }
-  }
 
   // and the real thing, at device resolution, over the top
   if (!fw) { rpOverlay(false, 1); return; }
@@ -405,11 +431,16 @@ function toLobby() {
 
 function deadKey(k) {
   if (state.fade) return;
+  // the recap takes every back key (a pad's B and a finger's menu plate
+  // arrive as escape) and puts itself away: the allies are underneath
+  if (replayFull()) {
+    if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') replayClose();
+    return;
+  }
   if (state.deadView === 'spec') {
     if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') {
-      // a respawn wait has no planks to go back to: the key closes the replay
-      if (state.over === 'respawning') { if (replayShowing()) { state.rpClosed = true; SFX.pickup(); } }
-      else { state.deadView = 'menu'; SFX.pickup(); }
+      // a respawn wait has no planks to go back to: the key does nothing
+      if (state.over !== 'respawning') { state.deadView = 'menu'; SFX.pickup(); }
     }
     else if (moveDir(k) === 'right') { specNext(1); SFX.pickup(); }
     else if (moveDir(k) === 'left') { specNext(-1); SFX.pickup(); }
@@ -425,8 +456,8 @@ function deadKey(k) {
 
 function deadClick() {
   if (state.fade) return;
+  if (replayFull()) { if (rpCloseHit()) replayClose(); return; } // the recap's box is its only target
   if (state.deadView === 'spec') {
-    if (rpCloseHit()) { state.rpClosed = true; SFX.pickup(); return; }
     const d = specHit(); if (d) { specNext(d); SFX.pickup(); }
     return;
   }
@@ -435,7 +466,19 @@ function deadClick() {
   if (h >= 0) { state.deadSel = h; deadActivate(h); }
 }
 
+// the wait, and not a word more: the recap, then the ally the camera is on,
+// is the screen, and the number is the only thing to read. 3x in the upper
+// band where an eye lands, 2x on a view too narrow to hold it.
+function drawRespawnLine() {
+  const t = 'RESPAWNING IN ' + Math.max(0, Math.ceil(player.respawnT)) + 'S';
+  const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
+  drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2),
+    frameTop() + 30, '#cfe4f2', '#0a0e23', ts);
+}
+
 function renderDead(now) {
+  // the recap owns the frame: only a respawn wait's countdown reads over it
+  if (replayFull()) { if (state.over === 'respawning') drawRespawnLine(); return; }
   if (state.deadView === 'spec') {
     // top centre: [<] NAME [>]. The name sits on a plate in the target's
     // team colour; each arrow is its own box that lights gold under the
@@ -472,16 +515,7 @@ function renderDead(now) {
       ctx.fillStyle = '#5a6690';
       ctx.fillRect(Math.round(L.x + L.w / 2) - 3, L.y + 6, 6, 1);
     }
-    if (state.over === 'respawning') {
-      // the wait, and not a word more: the ally the camera is on is the
-      // screen, the replay sits over it until it is closed, and the number
-      // is the only thing to read. 3x in the upper band where an eye lands,
-      // 2x on a view too narrow to hold it.
-      const t = 'RESPAWNING IN ' + Math.max(0, Math.ceil(player.respawnT)) + 'S';
-      const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
-      drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2),
-        Math.round((VIEW_H - 270) / 2) + 30, '#cfe4f2', '#0a0e23', ts);
-    }
+    if (state.over === 'respawning') drawRespawnLine();
     return;
   }
   if (state.deadView === 'defeat') { renderDefeat(now); return; } // the loss's own summary
@@ -497,7 +531,7 @@ function renderDead(now) {
   // glyphs - 297px at 3x).
   const t = 'YOU COLLAPSED IN THE SNOW';
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
-  const toy = Math.round((VIEW_H - 270) / 2);
+  const toy = frameTop();
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), toy + 34, '#cfe4f2', '#0a0e23', ts);
   const t2 = 'YOU ARE OUT OF THE MATCH';
   drawPixelTextOutline(ctx, t2, Math.round((VIEW_W - pixelTextWidth(t2, 2)) / 2), toy + 34 + ts * 5 + 8, '#8f9cc4', '#0a0e23', 2);
@@ -547,7 +581,7 @@ const WIN_BANNER_W = 36, WIN_BANNER_H = 96; // the cloth; the rail hangs above i
 
 // the composition, in the 270-tall frame everything else is authored in
 function winLayout() {
-  const toy = Math.round((VIEW_H - 270) / 2);
+  const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
   // the stage is set from the outside in, so it breathes with the view: the
   // braziers stand as far out as the frame allows, the banners hang just

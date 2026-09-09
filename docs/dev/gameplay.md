@@ -1582,7 +1582,7 @@ piece of the layout that is not taste: the [tooltip](rendering.md#the-hover-tool
 upward off the bottom rim, so a tall centred slab would put its own bottom-left corner exactly
 where a tall tooltip lands — hovering the last row of offers would hide the last row of offers.
 Its **height** is spent against that same rule. The deepest tooltip an offer here can raise tops
-out around 192 px on the 480×270 view a full screen gives, and the order along the bottom of the
+out around 192 px on the 270-row frame the slab is authored in (it centres in the 640×360 view), and the order along the bottom of the
 336×216 slab is chosen against that line: the **sell strip ends at 190**, clear of it, and only
 the restock road below runs under it — the road, whose countdown sits at its **right** end where
 no tooltip reaches. So all a tooltip can ever cover is the wagon, briefly, while you are reading a

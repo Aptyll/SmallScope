@@ -104,7 +104,8 @@ belonging here: **would you break it without ever having reason to open the deep
 lives in `docs/dev/*.md` beside the code it protects.
 
 - **Canvas size changed?** Call `fitCanvas()` **then** `relayout()` — both paths (window resize,
-  `fullscreenchange`) do. Never write layout against a literal 480/270; the view is `VIEW_W`×`VIEW_H`.
+  `fullscreenchange`) do. Never write layout against a literal 640/360; the view is `VIEW_W`×`VIEW_H`,
+  and a screen authored in the old 270-row frame starts at `frameTop()` (`FRAME_H`, core.js).
 - **Zoom scales the world, never the UI.** `render()` draws the world into `worldCv` at
   `WV_W`×`WV_H`, blits it in device px, then draws the UI in `VIEW_W`×`VIEW_H` under a `devScale`
   transform, so the HUD is one size at every zoom. A **world** pass bounds itself against `WV_*`;

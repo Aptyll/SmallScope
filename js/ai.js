@@ -11,7 +11,7 @@
 // played. Every walk goes through steerTo(), which routes
 // around obstacles (see pathfinding) and reports an unreachable goal as -1 -
 // that, not a timer, is what makes a bot drop a target.
-const AI_SIGHT = 150;   // px: how far a wolf on a bot is still tracked (a rival's reach is the profile's sight)
+const AI_SIGHT = 200;   // px: how far a wolf on a bot is still tracked (a rival's reach is the profile's sight)
 const AI_EAT_R = 110;   // px: a rival closer than this will knock the meal out of its hands, so it waits
 const AI_HUNT = 120;    // px: how far it will go after an animal
 const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
@@ -23,7 +23,9 @@ const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 // and the difficulty is how good the other side is. Nothing in a profile
 // lets a bot do what a hand cannot - every field is a worse or better use
 // of the same input struct:
-//   sight   px it notices a rival from (through seenAt, so cover still works)
+//   sight   px it notices a rival from (through seenAt, so cover still works);
+//           scaled 4/3 with the 640x360 frame (3.22) so a bot keeps the same
+//           share of what a screen shows a hand
 //   react   s a rival stays noticed before the bot turns on it
 //   aim     px of scatter on the aim point, re-rolled every AI_AIM_T
 //   lead    0..1 of the target's motion it aims ahead by (flight time)
@@ -49,9 +51,9 @@ const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 // - the difficulty is how well they fight when they get there, never
 // whether they come.
 const AI_LEVELS = [
-  { name: 'NORMAL', sight: 110, react: 0.7, aim: 30, lead: 0, draw: 0.7, dodge: 0.5, abil: 0.35, flee: 0.5, work: 0.5, strafe: 0.45, pick: 'near', push: { t: 360, n: 2 }, guard: 1 },
-  { name: 'HARD', sight: 150, react: 0.3, aim: 8, lead: 0.5, draw: 0.9, dodge: 1, abil: 0.8, flee: 0.35, work: 0.8, strafe: 0.8, pick: 'near', push: { t: 360, n: 3 }, guard: 2 },
-  { name: 'IMPOSSIBLE', sight: 200, react: 0, aim: 0, lead: 1, draw: 0.95, dodge: 2, abil: 1, flee: 0.2, work: 1, strafe: 1, pick: 'weak', push: { t: 300, n: 3 }, guard: 2 },
+  { name: 'NORMAL', sight: 147, react: 0.7, aim: 30, lead: 0, draw: 0.7, dodge: 0.5, abil: 0.35, flee: 0.5, work: 0.5, strafe: 0.45, pick: 'near', push: { t: 360, n: 2 }, guard: 1 },
+  { name: 'HARD', sight: 200, react: 0.3, aim: 8, lead: 0.5, draw: 0.9, dodge: 1, abil: 0.8, flee: 0.35, work: 0.8, strafe: 0.8, pick: 'near', push: { t: 360, n: 3 }, guard: 2 },
+  { name: 'IMPOSSIBLE', sight: 267, react: 0, aim: 0, lead: 1, draw: 0.95, dodge: 2, abil: 1, flee: 0.2, work: 1, strafe: 1, pick: 'weak', push: { t: 300, n: 3 }, guard: 2 },
 ];
 // your allies at each rival level: the next notch up, supportive, one of
 // them on guard, and on the objective on their own clock - late on NORMAL,

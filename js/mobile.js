@@ -8,7 +8,7 @@
 // The overlays' footprint, in game px: the world map slab is 308x226 and the
 // settings slab 240x218, so a view shorter than this cannot show them. A
 // phone takes the LARGEST whole device-pixel scale that keeps the view above
-// it - fewer rows than a monitor's 270, so a sprite is thumb-sized and the
+// it - far fewer rows than a monitor's 360, so a sprite is thumb-sized and the
 // HUD's 3x5 font is legible on six inches of glass. Both halves of the pair
 // are read by fitCanvas().
 const MOBILE_MIN_W = 320;

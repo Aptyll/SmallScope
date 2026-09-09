@@ -35,7 +35,9 @@ const bctx = barsCv.getContext('2d');
 // Heights that don't divide cleanly "breathe" a few percent rather than
 // letterbox or blur (the Terraria/Stardew trade), and width is capped at
 // 16:9 so ultrawides get slim pillarbox bars instead of extra vision.
-const TARGET_ROWS = 270;
+// 360 rows is 640x360 at 16:9: 720p at 2x, 1080p at 3x, 1440p at exactly 4x
+// and 4K at 6x - every common monitor lands on a whole pixel with no breathe.
+const TARGET_ROWS = 360;
 
 // ---- world zoom ----
 // Zoom scales the WORLD LAYER ONLY. The canvas keeps its VIEW_W x VIEW_H
@@ -52,22 +54,30 @@ const TARGET_ROWS = 270;
 // is derived from it. The canvas backing store is therefore sized in DEVICE
 // pixels (VIEW * devScale) and the UI draws through a devScale transform:
 // that is what buys the fine steps, because k only has to be whole in device
-// pixels, not in canvas pixels. At devScale 4 the rungs are quarter-scale
-// (0.75, 1, 1.25, 1.5 ...); a smaller devScale has fewer, coarser rungs,
-// which is the honest answer on a display that has fewer pixels to spend.
+// pixels, not in canvas pixels. At devScale 3 (a 1080p fullscreen) the rungs
+// are thirds (0.67, 1, 1.33, 1.67 ...), at 4 (1440p) quarters; a smaller
+// devScale has fewer, coarser rungs, which is the honest answer on a display
+// that has fewer pixels to spend.
 //
 // zoomCur eases toward kWant/devScale, so a notch is a glide rather than a
 // jump. In motion the blit is briefly fractional (nobody reads pixel edges
 // mid-zoom); it lands exact. ZOOM_EASE is deliberately steep - with steps
 // this fine a slow ease reads as lag, and a spun wheel must keep up.
-const ZOOM_MIN = 0.5;     // ~540 rows: the whole clearing and then some
-const ZOOM_MAX = 3.6;     // ~75 rows: close enough to read a face
+//
+// The range is authored in ROWS OF WORLD on screen, not in scale: what the
+// camera shows at either end is the design, and the scale that shows it
+// follows the frame (TARGET_ROWS), so a taller frame does not quietly hand
+// out more vision at max-out or lose the face at max-in.
+const ZOOM_OUT_ROWS = 540;  // the whole clearing and then some
+const ZOOM_IN_ROWS = 75;    // close enough to read a face
+const ZOOM_MIN = TARGET_ROWS / ZOOM_OUT_ROWS; // 0.67 at 360 rows
+const ZOOM_MAX = TARGET_ROWS / ZOOM_IN_ROWS;  // 4.8 at 360 rows
 const ZOOM_EASE = 16;     // per second, frame-rate independent
-const DROP_ZOOM = 0.5;    // the eagle ride's fixed framing (see the eagle drop banner)
+const DROP_ZOOM = ZOOM_MIN; // the eagle ride's fixed framing: the max-out view (see the eagle drop banner)
 const ZOOM_FLOOR = Math.min(ZOOM_MIN, DROP_ZOOM); // widest world buffer we ever need
-let kWant = 4;            // device px per world px - a WHOLE number, the wheel steps it by 1
+let kWant = 3;            // device px per world px - a WHOLE number, the wheel steps it by 1
 let zoomCur = 1;          // applied scale, eased toward kWant / devScale every update
-let WV_W = 480, WV_H = 270; // the world view in world px
+let WV_W = 640, WV_H = 360; // the world view in world px
 
 // the rungs kWant may sit on, clamped so the ends of the range are reachable
 // on any display (a devScale of 1 or 2 has very few whole numbers to offer)
@@ -110,7 +120,7 @@ function fitCanvas() {
   let dev;
   if (MOBILE) {
     // a phone takes the BIGGEST game pixel the overlays still fit under
-    // (MOBILE_MIN_*, js/mobile.js): fewer rows than a monitor's 270, so a
+    // (MOBILE_MIN_*, js/mobile.js): far fewer rows than a monitor's 360, so a
     // sprite is thumb-sized and the HUD is legible on six inches of glass
     dev = Math.max(1, Math.floor(Math.min(devH / MOBILE_MIN_H, devW / MOBILE_MIN_W)));
   } else {
