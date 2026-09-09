@@ -713,14 +713,14 @@ function renderMinimap(now) {
 
   // beneath the minimap, the elapsed play-time alone, centred on the disc's
   // axis so the two read as one column. (The alive count that used to share the row
-  // went in 3.24: a match no longer ends on bodies, so it was a number that
+  // went in 3.23: a match no longer ends on bodies, so it was a number that
   // decided nothing.)
   const clock = clockTxt(state.elapsed);
   drawPixelTextOutline(ctx, clock, Math.round(MM_CX - pixelTextWidth(clock) / 2), MM_CY + MM_R + 9, '#f4f7ff', '#0f1632');
 }
 
 // ---- the backpack: a DRAWER under the weapon shelf, top-left ------------
-// THE HUD SHOWS ONE WEAPON (3.27): the shelf in the top-left corner is the
+// THE HUD SHOWS ONE WEAPON (3.23): the shelf in the top-left corner is the
 // tool in hand and the bits loaded into it, and everything else a player
 // carries - the spare tools a walk turns up, the bits no cell had room for -
 // is in a drawer that is INVISIBLE UNTIL ASKED FOR. The pack key (B, L3 on a
@@ -745,7 +745,7 @@ function renderMinimap(now) {
 // amber when no cell is left free, and arrow and drawer alike redden when
 // something could not be carried (bagDenied) - the drawer shaking with it.
 //
-// ONE WELL SIZE FOR THE HUD (3.25): the strip's ability wells and the
+// ONE WELL SIZE FOR THE HUD (3.23): the strip's ability wells and the
 // shelf's cells are HUD_CELL square with their item art doubled
 // (drawItemIcon's k), so a tool reads at the same size on the shelf as an
 // ability does on the strip. The HUD SIZE dial scales both widgets: the
@@ -1391,7 +1391,7 @@ function drawBag(now) {
 
 // ---- hud strip: the ability wells over the xp bar, bottom-centre --------
 // One opaque plate. Four wells on top - the class abilities in key order
-// 1-4 (the WEAPON left the strip for the shelf, top-left, in 3.27: one tool,
+// 1-4 (the WEAPON left the strip for the shelf, top-left, in 3.23: one tool,
 // read in one place); under them the plum xp bar (xp IS lifetime gold), notched into
 // AB_SEGS segments so progress through a level is countable at a glance. The
 // bar sits at the BOTTOM so the strip's top edge is open screen: that is
@@ -1430,7 +1430,7 @@ function drawBag(now) {
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
 // THE POUCH BLOCK, the strip's right end: the four numbers you own in a 2x2
 // of SQUARES - berry over fish on the left, gold over cards on the right
-// (3.26). Every cell is the ability wells' own grammar at two thirds the
+// (3.23). Every cell is the ability wells' own grammar at two thirds the
 // size: the doubled icon in the middle, the key cap in the bottom-left corner
 // (the carve-out; the gold has none) and the count in the top-right, so
 // the block reads as four stamps and not as four bars. It is TALLER than a
@@ -1683,7 +1683,7 @@ function stripHit(mx, my) {
 }
 
 // ---- the weapon shelf ----------------------------------------------------
-// THE ONE WEAPON, TOP-LEFT, ON SCREEN AT ALL TIMES (3.27): the tool in hand
+// THE ONE WEAPON, TOP-LEFT, ON SCREEN AT ALL TIMES (3.23): the tool in hand
 // at the left end and its bit cells running right in FIRING ORDER - which is
 // also the direction a fitting reaches along, so the row reads the way the
 // press resolves. It is the whole of what the HUD says about the arsenal -

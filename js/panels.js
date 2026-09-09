@@ -11,7 +11,7 @@
 
 // ---- event log ----
 // Everything significant that happens to a player leaves a line here. It is
-// NOT drawn any more (3.24 took the bottom-left feed off the screen - a
+// NOT drawn any more (3.23 took the bottom-left feed off the screen - a
 // scrolling column of sentences on the play surface was the one thing there
 // the UI rule forbids); the ring is the match's record, read through
 // DBG.events, and the one interface every caller already speaks (logEvent) so

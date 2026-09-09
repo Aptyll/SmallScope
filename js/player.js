@@ -169,7 +169,7 @@ function playerTint(p) {
 // FOOD AND CARDS ARE NOT IN THE BAG AT ALL. An item marked `pouch` lives in
 // `p.food`, a set of uncapped counters beside the wallet, and takes no cell:
 // the two meals are pressed on Q and F from the hud strip's own buttons, and
-// an unopened card (3.26) is DRAWN on the card key from the strip's card
+// an unopened card (3.23) is DRAWN on the card key from the strip's card
 // button - one at random from everything held, its buff picked at random
 // (useCard, js/core.js) - so none of them is ever laid out, compared or
 // dragged, and every cell one of them took was a cell taken off the build.
@@ -203,7 +203,7 @@ function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slic
 const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
 for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
 // The one bag everyone starts with; a second one raises p.bagCap. Two rows
-// of BAG_COLS small cells in the drawer under the weapon shelf (3.27, the
+// of BAG_COLS small cells in the drawer under the weapon shelf (3.23, the
 // backpack banner in js/ui.js): the spare tools a walk turns up and the bits
 // no tool had a cell for, with every cell earned by choosing what to keep.
 // Nothing that is merely COUNTED lives in it (meals and cards are the
@@ -318,7 +318,7 @@ const GEAR = [
 // Dropped by a sprung chest in the treeline (hitObject's chest branch,
 // js/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
 // on the card key: one card at random from everything held, one entry at
-// random from its rarity (useCard, js/core.js) - no draft screen (3.26).
+// random from its rarity (useCard, js/core.js) - no draft screen (3.23).
 // Same shape as a GEAR variant's mod(k, L) minus the level - a card is a
 // one-shot pick, not a leveled buy - folded into the kit cumulatively by
 // refreshKit below, so every kit-reading site in the sim picks them up for

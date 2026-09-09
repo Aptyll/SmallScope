@@ -360,7 +360,7 @@ what keeps the left button honest across the whole roster.
 a row and its bit cells running right in **firing order**, which is also the direction a fitting
 reaches along, so the row reads the way the press resolves. Until **PATCH 3.21** it was a column
 that rose out of the strip's weapon well on hover, and a build you had to hold the pointer still
-to look at was a build nobody looked at; since **3.27** it is the top-left corner and the whole of
+to look at was a build nobody looked at; since **3.23** it is the top-left corner and the whole of
 what the HUD says about the arsenal — one tool, read in one place, the strip's weapon well gone
 — with the [inventory drawer](rendering.md#the-backpack) shut under it.
 
@@ -1970,7 +1970,7 @@ vocabulary (`dmgBase`, `dr`, `maxHp`, `walkMul`, `stealth`, `ambushMul`, `iceMax
 genuinely new field, `killHeal` — a flat heal on a confirmed kill, hooked at `die()`'s existing
 kill-credit line the same way `updateEat` applies a meal's.
 
-**The draw** (3.26; the pick-1-of-3 draft screen is gone): an unopened card is a pouch kind, and
+**The draw** (3.23; the pick-1-of-3 draft screen is gone): an unopened card is a pouch kind, and
 the card key (`'card'`, C; L3 on a pad) or a click on the strip's card button sets the
 `useCard` intent, which `useCard(p)` (js/core.js, beside `startEat`) resolves on the spot —
 one card taken at random from everything held (so a rarity is as likely as it is common in the
@@ -2602,7 +2602,7 @@ has no ESC-menu row, only the `. HITBOX` line in the CONTROLS block; the rest is
 [Debug overlays](rendering.md#debug-overlays-hitboxes-and-routes).
 
 Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. (The
-alive count that shared the row went in 3.24 — a match no longer ends on bodies, so it decided
+alive count that shared the row went in 3.23 — a match no longer ends on bodies, so it decided
 nothing; `aliveCount()` still serves the rules.)
 
 ## Audio

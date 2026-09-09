@@ -560,7 +560,7 @@ function bitPut(cell, i, id) {
 // it builds INSIDE the budget - so a pickup that shoved a bit into a bot's
 // tool would only make it a worse shot.
 //
-// EVERY TOOL YOU CARRY IS A DESTINATION (3.26): the one in hand first, then
+// EVERY TOOL YOU CARRY IS A DESTINATION (3.23): the one in hand first, then
 // each tool lying in the pack in cell order, so a bit only ever takes a cell
 // of its own once every weapon you own is full - the pack is one row now,
 // and a row of loose bits beside tools with empty cells was the row wasted.

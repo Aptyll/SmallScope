@@ -386,7 +386,7 @@ offset by `s`. The disc sits on an opaque `#0f1632`
 backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no
 hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;
 there is no halo or second ring outside it (the pale outer rim and the hover brightening went
-in 3.24). `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
+in 3.23). `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
 game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
 backing, rims and the day/night band one pixel at a time (pixel-centre distance test, optional
 clockwise angle span), and the map view is clipped by `mmMask(r)` — a cached pixel disc
@@ -405,7 +405,7 @@ at one map pixel per tile, a build or a cut ice hole arriving half a second late
 
 `renderUI()` owns three corners and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
-the weapon** (3.27): the one tool in hand and the bits loaded into it, with the inventory drawer
+the weapon** (3.23): the one tool in hand and the bits loaded into it, with the inventory drawer
 shut under it — the corner a Noita wand or a Terraria held item lives in — while every number
 you own (berries, fish, gold, cards) is on the **hud strip's right end**. The bottom right is
 empty world.
@@ -565,7 +565,7 @@ rail.
 
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **four 34px wells** —
 `[1][2][3][4]`, the class abilities in key order (`stripCellRect`; `abCellRect(i)` is well `i`;
-the weapon left the strip for [the shelf](#the-weapon-shelf) in 3.27) — then, on the
+the weapon left the strip for [the shelf](#the-weapon-shelf) in 3.23) — then, on the
 right end, the **pouch block** (`pouchCellRect(col, row)`: a 2×2 of 24px squares, berry over
 fish, gold over cards, its bottom flush with the wells' and its top `POUCH_RISE` (14) px above
 the strip on a tab of the plate, `pouchTabRect`) — all over the
@@ -578,7 +578,7 @@ It sits at the *bottom* so the strip's top edge stays open screen for the abilit
 no rail: the dodge pips it once carried are said by the overhead stamina bar.
 
 The weapon's well is [the shelf's tool cell](#the-weapon-shelf) now (`drawShelf`, top-left; the strip's
-own well went in 3.27), and it says three things and carries no words. The **plate** behind the icon
+own well went in 3.23), and it says three things and carries no words. The **plate** behind the icon
 is the tool's tier colour — the same colour it wears in every other well it ever sits in, so a
 tier is stated once and stated the same way everywhere (`tierPlate`, and `tierShine` sweeps a
 highlight across the top tier's plate); the 12px tool art is drawn doubled, so the tool
@@ -681,7 +681,7 @@ bright line the old wipes carried at the front of their cover; pass `null` inste
 turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
-The **pouch block** (3.26) is the strip's right end: a 2×2 of `FOOD_SQ` (24 px) **squares** —
+The **pouch block** (3.23) is the strip's right end: a 2×2 of `FOOD_SQ` (24 px) **squares** —
 **berry** over **fish** on the left, **gold** over **cards** on the right — standing on a tab of
 the strip's own plate (`pouchTabRect`: rimmed on top and sides, open onto the strip) whose
 bottom row is flush with the wells and whose top rises `POUCH_RISE` (14) px above the strip's
@@ -735,7 +735,7 @@ ground — which is what `AB_PAD` and `BAG_PAD` are, so a well sits the same dis
 edge on every side of both widgets. The [drawer](#the-backpack) wears it with every corner cut
 and no cap: it lives under the shelf, not under the sky.
 
-**One well size for the HUD** (3.25): the strip's wells and the shelf's cells are `HUD_CELL` (34)
+**One well size for the HUD** (3.23): the strip's wells and the shelf's cells are `HUD_CELL` (34)
 square, and every item icon in them is drawn doubled (`drawItemIcon`'s `k`), so a tool reads at
 one size on the shelf as an ability does on the strip. The drawer's cells are the exception on
 purpose — `BAG_CELL` (18) with the art at 1× — because a spare is glanced at and dragged, not
@@ -761,7 +761,7 @@ point is spent nowhere else, and nothing else on the strip is ever bought.
 
 ### The weapon shelf
 
-**The one weapon, top-left, on screen at all times** (3.27): the tool in hand at the left end of a
+**The one weapon, top-left, on screen at all times** (3.23): the tool in hand at the left end of a
 row (`shelfCellRect(-1)`, at `SHELF_X`/`shelfRowY()`) and its bit cells running right in firing
 order, which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
 is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
@@ -825,7 +825,7 @@ budget reaches, and the shelf's budget track is where you go to see exactly wher
 
 ### The backpack
 
-**A drawer under the weapon shelf, shut until asked for** (3.27). The HUD shows one weapon —
+**A drawer under the weapon shelf, shut until asked for** (3.23). The HUD shows one weapon —
 [the shelf](#the-weapon-shelf) — and everything else a player carries is in here: the spare
 tools a walk turns up and the bits no tool had a cell for. It is **invisible by default**: the
 pack key (B; L3 on a pad) or a click on the **arrow** under the tool cell (`bagTabRect` is the
@@ -1340,7 +1340,7 @@ Two readouts of the **match** rather than of the world, in the `scoreboard & log
 **The log is not drawn.** `events` is the last `EVENT_MAX` (12) lines the match wrote, newest
 last, and `logEvent(txt, p, o?)` is the one interface every caller speaks — `p` is the player the
 line is *about* and supplies its colours (plate `coatD`, edge `mark`, ink `playerTint(p)`), `o`
-overrides them for a line nobody owns. The bottom-left feed that used to draw them went in 3.24:
+overrides them for a line nobody owns. The bottom-left feed that used to draw them went in 3.23:
 a scrolling column of sentences on the play surface was the one thing there the
 [UI rule](../../CLAUDE.md#ui-rule-show-dont-label) forbids, and the bottom-left corner is the
 tooltip's alone now. The ring stays as the match's record (`DBG.events`) so a future readout — a
