@@ -35,6 +35,32 @@ function drawFrameFlash(atlas, fi, x, y, flash) {
   }
 }
 
+// THE ANIMATED GOODS. Three item icons are loops rather than stamps - the
+// gold piece, the berry cluster and the fish (`SPRITES.itemAnim`,
+// js/sprites.js) - and this stamps each one's current frame into the LIVE
+// canvas the game holds for it, once a frame, before anything draws.
+//
+// Doing it here rather than at the call sites is what keeps an item icon one
+// generic read: `SPRITES[ITEMS[type].icon]` is how the bag, a shop price, a
+// sale row, a drop on the snow, a tooltip and the wiki all reach one, and
+// none of them has to know which three goods move. They share ONE clock, so
+// every berry on the screen is on the same beat - a dozen icons each looping
+// to their own is a fruit machine, not a HUD. A frame that has not changed
+// is not redrawn, so a still HUD costs nothing.
+const ITEM_FR = 100; // ms a frame
+function stepItemIcons(nowMs) {
+  const t = Math.floor(nowMs / ITEM_FR);
+  for (const key in SPRITES.itemAnim) {
+    const frames = SPRITES.itemAnim[key], live = SPRITES[key];
+    const i = t % frames.length;
+    if (live.frame === i) continue;
+    live.frame = i;
+    const g = live.getContext('2d');
+    g.clearRect(0, 0, live.width, live.height);
+    g.drawImage(frames[i], 0, 0);
+  }
+}
+
 // The work-target rim: the hero's hovered workable object (tree, dead tree,
 // rock, berried bush, chest) draws under a 1px pulsing gold outline - the
 // buy plates' two golds on the same beat, so "you can act on this" reads in
@@ -75,6 +101,7 @@ let treeFadeSil = 0; // this frame's silhouette-rim strength, set beside the y-s
 
 function render() {
   const now = performance.now() / 1000;
+  stepItemIcons(now * 1000); // the animated item icons, before anything reads one
   const shx = settings.shake && state.shake > 0.2 ? Math.round(rand(-state.shake, state.shake)) : 0;
   const shy = settings.shake && state.shake > 0.2 ? Math.round(rand(-state.shake, state.shake)) : 0;
   const ox = Math.round(camX) + shx;

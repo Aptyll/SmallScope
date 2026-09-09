@@ -1607,7 +1607,13 @@ window.DBG = {
 let last = performance.now();
 function loop(nowMs) {
   const rawDt = (nowMs - last) / 1000;
-  const dt = Math.min(0.05, rawDt);
+  // clamped at BOTH ends: rAF can hand back a stamp behind the clock `last`
+  // was taken off (a headless first frame, a tab restored from the bfcache),
+  // and a negative dt runs every timer in the game backwards for one frame -
+  // cooldowns, status, the market clock, an animation's own position in its
+  // clip. Capped above for the opposite reason: a long stall must not
+  // teleport anything through a wall.
+  const dt = Math.max(0, Math.min(0.05, rawDt));
   last = nowMs;
   perf.frames++;
   perf.acc += rawDt;

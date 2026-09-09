@@ -1173,7 +1173,46 @@ first did and is 0 whenever it does not. For prey, "in sight" is a player inside
 `FLEE_SIGHT` ring (through `seenAt`, so cover keeps it down) **or a flight already under way**,
 so a deer running wears the reason it is running and a deer that grazes on has not seen you; for
 a camp monster it is a hunt in progress and nothing else — a leash bar still draining is still
-a hunt — and the mark going out is the monster giving you up.
+a hunt — and the mark going out is the monster giving you up. The **body** says the same thing
+at a distance where a `!` is a speck — see the clips below.
+
+### What a beast is doing: the clips
+
+The bunny and the stag arrived as *behaviours* rather than as poses — a graze, a gallop, a
+sit-up ([sprites.md](sprites.md)) — so a beast's animation is not a walk flag any more but a
+name. `ANIM_CLIPS` (js/wildlife.js) is the whole of it: a row per kind naming the clips that
+kind's `SPRITES` entry carries and the frames a second each runs at. `setClip(a, name)` puts a
+beast in one and **restarts the loop**, so a sit-up always begins on the frame it was drawn to
+begin on; `stepClip(a, dt, rate)` advances it, `rate` being the caller's own gait multiplier —
+a wander is the same gallop run slower, not a second animation; and `clipFrame`
+(js/draw-world.js) is the one thing that turns `a.clip` + `a.animT` into a canvas.
+
+| kind | its clips | set by |
+| --- | --- | --- |
+| `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
+| `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
+| `wolf` / `alpha` / `dire` | `idle`, `run` | `updateCampMonster` |
+| `bird` | `idle` perched, `fly` | `updateBird` |
+
+**The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
+rabbit is low over its paws; standing still and *wary*, the deer's head is up and turning and
+the rabbit is rocked back on its haunches. So **a grazing deer is a deer that has not seen
+you** — the fact the `!` carries, said by the body, at a range where the mark is a speck. It is
+what makes closing on one under GHOSTSTEP or buried in the snow visibly worth doing.
+
+Wary is `a.wary`, held at `PREY_WARY_T` (3 s) whenever a player is in sight or a flight is
+under way and decaying otherwise. It is deliberately softer than `a.senseT`, which snaps to 0:
+the mark goes out the instant the animal loses you, the head stays up a moment longer, and a
+deer that has just been run **stands and watches before it grazes again**. It costs nothing —
+no speed, no sight, no bolt of its own.
+
+**A rabbit sits up before it goes.** `RABBIT_ALERT` (0.3 s): the first time a rabbit notices a
+player it rocks onto its haunches and **holds** — no walk, no flight — and only then bolts. It
+is what this page's own line ("a rabbit sits tight and then goes off like a spring") looks
+like, and it is the one still shot a hunter is ever offered at one. A **hit** skips it
+(`hurtAnimal` clears `alertT`), so a rabbit already running never stops to pose; a stun clears
+it with everything else; and the jink still fires out of it, because `arrowAtRabbit` is read
+before the beat is.
 
 `updateAnimal()` is the shared shell: it ages the flash and knockback, runs
 `updateUnitStatus` (the shared clock — root, slow, net, mark, fire), dispatches to
@@ -1201,13 +1240,16 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
   chooser: a rabbit with a berried bush inside 7 tiles (`nearestBerryBush`) aims at it and
   returns `null` — idling, i.e. "nibbling" — once within 22 px, which is what makes a bush patch
   read as a warren; everyone else takes an open direction, 3–6 tiles. `navStep` walks it at
-  `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles.
+  `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles. The walk wears the
+  `hop` / `run` clip at 0.6 rate — the same gait as a flight, taken lazily — and the idle at
+  the end of it is where a settled deer's head actually goes down.
 - **Bolting.** Both species now flee, on `FLEE_SIGHT` / `FLEE_TIME`: a rabbit sits tight and goes
   at 26 px, a deer watches wider and runs longer at 46 px. The trigger asks
   **`seenAt(p, FLEE_SIGHT[kind])`**, not raw distance, so GHOSTSTEP and lying buried in the snow
   are how a hunter closes on a deer at all — measured, full cover collapses a deer's ring from 46
   to `PRONE_SNIFF` (22), and inside *that* it bolts no matter what you are lying under. A hit
-  also sends either species running from the nearest player (`fleeT`).
+  also sends either species running from the nearest player (`fleeT`) — and skips the rabbit's
+  `RABBIT_ALERT` sit-up, which only a first *sighting* buys.
 - **The flight** is a chain of routed legs at `PREY_RUN`: `fleeGoal(a, from)` picks a tile ~6
   tiles off, as straight away from the threat as the ground allows (fanning out, then sideways,
   then past it), the first it can route to; a leg that arrives or fails hands over to the next,

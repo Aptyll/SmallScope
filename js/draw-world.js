@@ -1445,14 +1445,21 @@ function structSprite(o) {
   return set ? set[art][o.tier] : SPRITES[art][o.tier];
 }
 
+// The frame a beast is on: the clip it put itself in (ANIM_CLIPS,
+// js/wildlife.js - a graze, a gallop, a sit-up) and how far into it, wrapped
+// the long way round so any animT lands on a frame rather than off the end.
+function clipFrame(set, a) {
+  const clip = set[a.clip] || set.idle;
+  const i = Math.floor(a.animT || 0) % clip.length;
+  return clip[i < 0 ? i + clip.length : i];
+}
+
 function drawAnimal(a, ex, ey, now) {
   if (a.kind === 'bird') { drawBird(a, ex, ey, now); return; }
   const rabbit = a.kind === 'rabbit';
   const wolf = isCampKind(a.kind); // a camp monster: wears the leash bar in threat red
   const big = a.kind === 'dire';   // the 2x sprite: everything about its frame is wider
-  const set = SPRITES[a.kind][a.dir];
-  const frame = a.moving ? 1 + (Math.floor(a.animT) % 2) : 0;
-  const spr = set[frame];
+  const spr = clipFrame(SPRITES[a.kind][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const py = Math.round(a.y + 4 - spr.height - ey);
   const sw = rabbit ? 4 : big ? 12 : wolf ? 6 : 7;
@@ -1488,7 +1495,7 @@ function drawAnimal(a, ex, ey, now) {
 // something this small is all bar.
 function drawBird(a, ex, ey, now) {
   const flying = a.flyT > 0;
-  const spr = SPRITES.bird[a.dir][flying ? 1 + (Math.floor(a.animT) % 2) : 0];
+  const spr = clipFrame(SPRITES.bird[a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const py = Math.round(a.y - a.alt - spr.height - ey);
   ctx.fillStyle = flying ? 'rgba(110,130,170,0.22)' : 'rgba(110,130,170,0.3)';
