@@ -1309,17 +1309,20 @@ function drawBag(now) {
   // inward only: a ±1 shake on a flush right edge would clip a column of rim
   ctx.translate(red ? (((now * 40) | 0) % 2 ? -1 : 0) : 0, 0);
   {
-    // The frame, hard against the corner. No cast shadow: it is flush with
-    // the screen's right and bottom edges, and the cells already carry the
-    // depth. The rim says the one state the grid cannot: amber means no cell
-    // is left free, whatever the pointer is doing.
+    // The frame, hard against the corner: the strip's own chrome
+    // (drawHudFrame) with only its free corner cut - the other three meet
+    // the screen's edges, where a notch would read as a hole - and a one-px
+    // cap, since the shelf's budget track stands on this edge. No cast
+    // shadow: the cells already carry the depth. The light says the one
+    // state the grid cannot: amber means no cell is left free, whatever the
+    // pointer is doing, and a refusal reddens line and light both.
     const f = bagFrameRect();
     const full = bagUsed(player) >= player.bagCap;
-    ctx.fillStyle = red ? BAG_BG_RED : BAG_BG; // one opaque ground for the whole widget
-    ctx.fillRect(f.x, f.y, f.w, f.h);
-    ctx.fillStyle = red ? '#c2465a' : full ? '#c9922f' : '#2c3a68';
-    ctx.fillRect(f.x, f.y, f.w, 1); ctx.fillRect(f.x, f.y + f.h - 1, f.w, 1);
-    ctx.fillRect(f.x, f.y, 1, f.h); ctx.fillRect(f.x + f.w - 1, f.y, 1, f.h);
+    drawHudFrame(f.x, f.y, f.w, f.h, {
+      bg: red ? BAG_BG_RED : BAG_BG, ink: red ? '#7a2436' : null,
+      lit: red ? '#c2465a' : full ? '#c9922f' : null,
+      corners: { tl: true, tr: false, bl: false, br: false }, cap: 1, seed: 47,
+    });
     for (let i = 0; i < player.bagCap; i++) {
       const r = bagCellRect(i), s = player.bag[i];
       const on = hov && hov.kind === 'cell' && hov.i === i;
@@ -1413,10 +1416,89 @@ const POUCH_GAP = 2;                         // between neighbouring squares
 const POUCH_W = FOOD_SQ * 2 + POUCH_GAP;     // the block: two columns...
 const POUCH_H = POUCH_W;                     // ...and two rows
 const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W;
-const AB_PAD = 2, AB_XP = 5, AB_SEGS = 10; // AB_SEGS: xp bar notches
+const AB_PAD = 3, AB_XP = 5, AB_SEGS = 10; // AB_PAD: the frame's outline, its lit line and one px of ground (drawHudFrame); AB_SEGS: xp bar notches
 const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
 const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
 const AB_BG = '#0d1229';
+// ---- the hud frame: the one plate the bottom widgets stand on ----------
+// The strip and the pack are the frostlands' own chrome, at a combat
+// surface's volume: the settings slab's chamfered corners and bevel
+// (bakeFrostSlab, js/panels.js) and the menu planks' snow cap
+// (drawMenuButton, js/menu.js), with none of their mottling, rivets or
+// icicles - the wells cover most of the ground, and a plate that is looked
+// at for an hour has to stay quiet. Four layers, all pixels, nothing soft:
+//   * the SILHOUETTE, one dark line (the xp bar's own ink) with its top
+//     corners cut two pixels, so the plate sits on the snow as a shape and
+//     not a rectangle - the bottom corners stay square where they meet the
+//     screen's edge, since a notch of world there reads as a hole;
+//   * the GROUND inside it, one opaque colour;
+//   * the BEVEL: an icy line along the top and left, a deep one along the
+//     bottom and right, the slab's light from the top-left;
+//   * the SNOW CAP: a ragged one-to-two pixel drift resting on every top
+//     edge, with a frost pixel here and there sunk into the lit line under
+//     it - deterministic (hash2 off the seed), so it never shimmers.
+// `tab` is a block rising off the top edge and flush with the right side
+// (the pouch block's): the outline steps up around it as ONE silhouette,
+// the ground runs through the seam, and the lit line turns the inside
+// corner rather than stopping at it. `lit` and `ink` are what a widget's
+// state colours (the pack's full amber, a refusal's red). Every margin
+// inside the outline is three pixels - line, light, ground - which is what
+// AB_PAD and BAG_PAD are.
+const HUD_INK = '#05070f';   // the silhouette
+const HUD_LIT = '#35426e';   // the icy light along the top and left
+const HUD_SHADE = '#070a18'; // the shade along the bottom and right
+const HUD_SNOW = '#f4f7ff', HUD_FROST = '#b8cce6';
+// a rect with its corners cut two pixels where `c` says so
+function chamCut(x, y, w, h, c) {
+  ctx.fillRect(x + 2, y, w - 4, h);
+  ctx.fillRect(x, y + 2, w, h - 4);
+  ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+  if (!c.tl) { ctx.fillRect(x, y, 2, 1); ctx.fillRect(x, y + 1, 1, 1); }
+  if (!c.tr) { ctx.fillRect(x + w - 2, y, 2, 1); ctx.fillRect(x + w - 1, y + 1, 1, 1); }
+  if (!c.bl) { ctx.fillRect(x, y + h - 1, 2, 1); ctx.fillRect(x, y + h - 2, 1, 1); }
+  if (!c.br) { ctx.fillRect(x + w - 2, y + h - 1, 2, 1); ctx.fillRect(x + w - 1, y + h - 2, 1, 1); }
+}
+function drawHudFrame(x, y, w, h, o) {
+  o = o || {};
+  const c = o.corners || { tl: true, tr: true, bl: false, br: false };
+  const t = o.tab || null, tc = { tl: true, tr: true, bl: false, br: false };
+  const ink = o.ink || HUD_INK, lit = o.lit || HUD_LIT, shade = o.shade || HUD_SHADE, seed = (o.seed || 1) * 13;
+  // the silhouette, then the ground - the tab's run down INTO the plate so
+  // the seam between the two is ground, never line
+  ctx.fillStyle = ink;
+  chamCut(x, y, w, h, c);
+  if (t) chamCut(t.x, t.y, t.w, y - t.y + 3, tc);
+  ctx.fillStyle = o.bg || AB_BG;
+  chamCut(x + 1, y + 1, w - 2, h - 2, c);
+  if (t) chamCut(t.x + 1, t.y + 1, t.w - 2, y - t.y + 2, tc);
+  // the bevel: light from the top-left, shade to the bottom-right; with a
+  // tab the top light runs to the inside corner and climbs it
+  ctx.fillStyle = lit;
+  if (t) {
+    ctx.fillRect(x + 2, y + 1, t.x - x - 1, 1);
+    ctx.fillRect(t.x + 1, t.y + 2, 1, y - t.y);
+    ctx.fillRect(t.x + 2, t.y + 1, t.w - 4, 1);
+  } else ctx.fillRect(x + 2, y + 1, w - 4, 1);
+  ctx.fillRect(x + 1, y + 2, 1, h - 4);
+  ctx.fillStyle = shade;
+  ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
+  const rt = t ? t.y + 2 : y + 2;
+  ctx.fillRect(x + w - 2, rt, 1, y + h - 2 - rt);
+  // the snow cap, on every top edge the sky can reach
+  if (o.cap !== false) {
+    const segs = t ? [[x + 2, t.x - 1, y], [t.x + 2, t.x + t.w - 3, t.y]] : [[x + 2, x + w - 3, y]];
+    const tall = o.cap === 1 ? 0 : 1; // a one-px cap for an edge something already stands on
+    for (const [x0, x1, top] of segs) {
+      for (let px = x0; px <= x1; px++) {
+        const hb = hash2(px * 3 + 5, seed);
+        const sh = 1 + (hb > 0.6 ? tall : 0);
+        ctx.fillStyle = HUD_SNOW;
+        ctx.fillRect(px, top - sh, 1, sh);
+        if (hb > 0.3 && hb < 0.42) { ctx.fillStyle = HUD_FROST; ctx.fillRect(px, top + 1, 1, 1); }
+      }
+    }
+  }
+}
 // The weapon well's half of the refusal the backpack already has: a bit that
 // will not fit in the tool reddens and shakes the WELL, exactly as one that
 // will not fit in the pack reddens and shakes the frame (bagDenied) - so the
@@ -1445,7 +1527,7 @@ function stripAnchorX() {
 // How far the strip drops to be AWAY: its own height plus the pouch block's
 // tab standing over it, so the whole widget clears the bottom edge rather
 // than leaving a sliver of tab over a cinematic.
-const HUD_SLIDE = AB_H + POUCH_RISE + 3;
+const HUD_SLIDE = AB_H + POUCH_RISE + 5; // ...its outline, and the snow on top of it
 // How far the HUD has slid in: 0 while it is away below the screen, 1 once it
 // is home. The intro rides it up (renderUI) - and a ceremony PINS it there,
 // because the drop brief's camera branch holds state.intro for the whole
@@ -2330,25 +2412,21 @@ const cardFanCv = (() => {
 // prints its key (the pad's glyph while one is in hand), and the count in
 // the TOP-RIGHT, over the icon's corner if it has to be - so the eye reads
 // keys along the strip's bottom edge and numbers along its top.
-// A button (a meal, the cards) wears a rim that lights on hover and reddens
-// on a refusal; `plain` (the gold) is a readout and wears no rim at all, so
-// the one square you cannot press never looks like the three you can.
-function drawPouchCell(r, act, icon, n, col, on, red, live, now, plain) {
+// All four wear the same rim, so the block is one symmetrical thing; on a
+// button (a meal, the cards) it lights on hover and reddens on a refusal,
+// and on the gold - a readout - it never does either, which with no key cap
+// in its corner is what says the one square you cannot press.
+function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
   if (red) {
     ctx.save();
     ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
     ctx.fillStyle = '#c2465a';
     ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
   }
-  if (plain) {
-    ctx.fillStyle = '#0a0e23';
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-  } else {
-    ctx.fillStyle = red ? '#c2465a' : on ? '#8fa0c8' : n > 0 ? '#35426e' : '#232c52';
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    ctx.fillStyle = BAG_WELL;
-    ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  }
+  ctx.fillStyle = red ? '#c2465a' : on ? '#8fa0c8' : n > 0 ? '#35426e' : '#232c52';
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = BAG_WELL;
+  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   const k = icon.width <= 8 ? 2 : 1, iw = icon.width * k, ih = icon.height * k;
   if (n <= 0) ctx.globalAlpha = 0.35;
   ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
@@ -2371,39 +2449,25 @@ function drawFoodCell(i, now, on) {
   const n = isCard ? cardTotal(p) : bagCount(p, b.type);
   const red = foodFlash > 0 && foodFlashI === i;
   const live = n > 0 && (isCard || p.foodCd <= 0);
-  drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now, false);
+  drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now);
   if (!isCard) drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, b.type);
 }
 // THE GOLD PLATE, top-right of the block: the coin and the gold, inked
 // '#f5c542' because the one number on the HUD that is money must never read
-// as a count of something carried. A readout, not a button - no key, no
-// hover, no refusal, and no rim (plain), so it is the one flat square.
+// as a count of something carried. A readout, not a button - the same rim
+// as its three neighbours, but no key cap, no hover and no refusal.
 function drawGoldCell() {
-  drawPouchCell(goldCellRect(), null, SPRITES.itemGold, inv.gold, '#f5c542', false, false, true, 0, true);
+  drawPouchCell(goldCellRect(), null, SPRITES.itemGold, inv.gold, '#f5c542', false, false, true, 0);
 }
 function drawHudStrip(now) {
   const R = hudStripRect();
   const hov = mouse.inside ? stripHit(mouse.x, mouse.y) : null;
   const bhov = mouse.inside ? abBuyHit(mouse.x, mouse.y) : -1;
-  // one chamfered plate behind bar and wells - the bag's ground, so the
-  // two HUD pieces sit in the same family
-  ctx.fillStyle = AB_BG;
-  ctx.fillRect(R.x - 3, R.y, R.w + 6, R.h);
-  ctx.fillStyle = '#35426e';
-  ctx.fillRect(R.x - 2, R.y, R.w + 4, 1);
-  ctx.fillRect(R.x - 2, R.y + R.h - 1, R.w + 4, 1);
-  ctx.fillRect(R.x - 3, R.y + 1, 1, R.h - 2);
-  ctx.fillRect(R.x + R.w + 2, R.y + 1, 1, R.h - 2);
-  // the pouch block's tab: the same plate carried up behind the two rows of
-  // squares, rimmed on its top and sides, and open onto the strip below so
-  // the two read as one shape
+  // one frame behind bar, wells and the pouch block's tab (drawHudFrame,
+  // above): the bag's ground and the bag's chrome, so the two HUD pieces
+  // sit in the same family
   const tb = pouchTabRect();
-  ctx.fillStyle = AB_BG;
-  ctx.fillRect(tb.x, tb.y, tb.w, tb.h);
-  ctx.fillStyle = '#35426e';
-  ctx.fillRect(tb.x + 1, tb.y, tb.w - 2, 1);
-  ctx.fillRect(tb.x, tb.y + 1, 1, tb.h - 1);
-  ctx.fillRect(tb.x + tb.w - 1, tb.y + 1, 1, tb.h - 1);
+  drawHudFrame(R.x - 3, R.y, R.w + 6, R.h, { tab: { x: tb.x, y: tb.y, w: tb.w }, seed: 31 });
   for (let i = 0; i < TOOL_SLOTS; i++) {
     drawToolCell(i, now, hov && hov.kind === 'slot' && hov.i === i);
   }

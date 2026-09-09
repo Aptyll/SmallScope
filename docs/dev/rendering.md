@@ -420,7 +420,7 @@ keeps it flush on every size.
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Both bottom-right widgets slide **their own size** away for the landing intro — the strip
-`HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 3), the pack `BAG_W` or the shelf's reach past it, whichever is
+`HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the pack `BAG_W` or the shelf's reach past it, whichever is
 wider — because a shove that only cleared the frame would leave the widest tool's cell parked over
 the cinematic.
 
@@ -563,7 +563,7 @@ rail.
 
 ### The hud strip
 
-`drawHudStrip` is one plate, flush to the bottom: **five 34px wells** —
+`drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **five 34px wells** —
 `[ WEAPON ][1][2][3][4]`, the weapon leading and the class abilities following in key order
 (`stripCellRect`; `toolCellRect(i)` is well 0, `abCellRect(i)` is well `1 + i`) — then, on the
 right end, the **pouch block** (`pouchCellRect(col, row)`: a 2×2 of 24px squares, berry over
@@ -706,10 +706,32 @@ none of keeps its seat but dims to 0.35, so the block never rearranges. The **ca
 icon is three cards fanned — white, green, blue, each a step up and over from the last
 (`cardFanCv`) — and its count is every rarity together; hover raises `tipCards`, one row per
 rarity held in that rarity's ink, which is the only place the hand is read by kind. The **gold
-plate** (`drawGoldCell`, `goldCellRect`) is a readout, not a button — no key, no hover, no
-refusal, and **no rim** (`plain`), so the one square you cannot press is the one flat square;
-`stripHit` answers `frame` over it and `tipGold` gives the exact figure — inked `#f5c542`
-because the one number on the HUD that is money must never read as a count of something carried.
+plate** (`drawGoldCell`, `goldCellRect`) wears the same rim as its three neighbours, so the
+block is one symmetrical thing, but it is a readout, not a button — no key cap, no hover, no
+refusal — which is what marks the one square you cannot press; `stripHit` answers `frame` over
+it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
+that is money must never read as a count of something carried.
+
+### The hud frame
+
+`drawHudFrame(x, y, w, h, o)` is the one plate the strip and the pack stand on: the frostlands'
+chrome — the settings slab's chamfered corners and bevel (`bakeFrostSlab`, panels.js) and the
+menu planks' snow cap (`drawMenuButton`, menu.js) — at a combat surface's volume, with none of
+their mottling, rivets or icicles, because the wells cover most of the ground and a plate looked
+at for an hour has to stay quiet. Four pixel layers: the **silhouette** (`HUD_INK`, the xp bar's
+own ink) with its top corners cut two pixels and the corners that meet a screen edge left
+square (a notch of world there reads as a hole; `o.corners`); the **ground** (`o.bg`, `AB_BG`
+by default); the **bevel** — `HUD_LIT` along the top and left, `HUD_SHADE` along the bottom
+and right; and the **snow cap** — a ragged one-to-two pixel drift on every top edge the sky
+reaches, with the odd frost pixel sunk into the lit line under it, deterministic off `o.seed`
+through `hash2` so it never shimmers (`o.cap: 1` keeps it one pixel for an edge something
+already stands on, `false` drops it). `o.tab` is a block rising off the top edge and flush
+with the right side — the pouch block's — and the frame draws the two as **one silhouette**:
+the outline steps up around the tab, the ground runs through the seam, and the lit line turns
+the inside corner and climbs it. `o.lit`/`o.ink` are what a widget's states colour (the pack's
+full amber, a refusal's red). Every margin inside the outline is three pixels — line, light,
+ground — which is what `AB_PAD` and `BAG_PAD` are, so a well sits the same distance from the
+edge on every side of both widgets.
 
 **One well size for the whole bottom HUD** (3.25): the strip's wells, the pack's grid cells and
 the shelf's cells are all `HUD_CELL` (34) square, and every item icon in them is drawn doubled
@@ -824,9 +846,11 @@ A grid cell holding a tool or a bit wears that item's **tier plate** rather than
 so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
 as pips along the bottom, in the corner a stack number would have used.
 
-- **One background, one border, no internal line.** Every part of the frame is the same opaque
-  `BAG_BG` and the border is a single 1 px rim; the rule that used to mark off the numbers row
-  went with the row.
+- **One background, one frame, no internal line.** Every part of the frame is the same opaque
+  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears — only its free top-left
+  corner cut, the other three meeting the screen's edges, and a one-pixel cap because the
+  shelf's budget track stands on that edge; the rule that used to mark off the numbers row went
+  with the row.
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
   cell recesses to `BAG_WELL` *below* the frame's ground, an empty one sits *above* it at
   `#171f45`, and the ground itself is between — occupied / free / frame.
