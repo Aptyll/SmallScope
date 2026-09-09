@@ -233,13 +233,15 @@ aim line and draw meter. `setClass(p, c)` swaps one in (full heal — it's a pre
 
 | # | Name | Fantasy | Kit | Flies in with |
 | --- | --- | --- | --- | --- |
-| 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | a SHORTBOW loaded ARROW + BARBED SHOT |
-| 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a SLING loaded HEFT then ARROW - the fitting before the shot, filling its 7 tensile exactly |
+| 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | a SHORTBOW with an ARROW in its second cell, the first held open |
+| 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a SLING with a BARBED SHOT in its second cell, the first held open |
 
 The **weapon is part of the class**: `CLASS_LOADOUT` (js/tools.js) pairs each one with a tool
-and its bits, and `setClass` / `Player.reset` hand it over — so the two classes do not shoot the
-same thing, every bot arrives armed, and a respawn is re-armed after
-[death spills the build](gameplay.md#death-and-respawn). See
+and **one projectile**, and `setClass` / `Player.reset` hand it over — so the two classes do not
+shoot the same thing, every bot arrives armed, and a respawn is re-armed after
+[death spills the build](gameplay.md#death-and-respawn). The cell in FRONT of that projectile is
+deliberately empty, so the first modifier you walk over auto-fits there and shapes the shot you are
+already firing: [starting loadouts](gameplay.md#starting-loadouts). See
 [Tools and bits](gameplay.md#tools-and-bits). The four ABILITIES beside the weapon — what each
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay.md#class-abilities-keys-1-4) in gameplay.md.
