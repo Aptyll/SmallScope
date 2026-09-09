@@ -24,11 +24,12 @@
 // very first flight is exactly that ride - its manual jump is refused - so a
 // new player's first ground is the roost, beside the merchant and the gate.
 // state.drop outlives mode 'drop' - and the whole match: past the
-// line's end each bird dives into the corner's treeline, blows a crater in
-// the trees, its MERCHANT (the driver on its neck - the `merchant` banner,
-// js/robots.js) hops off to fell the rim and raise a gate, a LANE of pines
-// falls one by one from the crater out to the open snow (the parkour roll's
-// felling front), and the bird sits there as its team's OBJECTIVE - guarding
+// line's end each bird banks off the road into the woods beside it
+// (roadNest, world.js) and blows a crater in the trees, its MERCHANT (the
+// driver on its neck - the `merchant` banner, js/robots.js) hops off to fell
+// the rim and raise a gate, a SPUR of pines falls one by one from the crater
+// straight back to the road and is paved behind the front (the parkour
+// roll's felling front), and the bird sits there as its team's OBJECTIVE - guarding
 // itself with a wing gust and calming back down (preen regen) between scares.
 // Keep its nerve up: at zero the bird is DRIVEN OFF (hurtEagle / eagleFlee),
 // and its whole side falls with it.
@@ -53,15 +54,15 @@ const BRIEF_HOLD_OURS = 4;  // s it holds on your own to finish
 const BRIEF_GO_MIN = 1;     // s a glide leg lasts at least, however close the target
 const BRIEF_MAX_T = 24;     // s the whole tour may run before it force-ends (safety)
 const BRIEF_PLATE_A = 0.82; // the dark plate under the headline (drawDropBrief): the roost is pines edge to edge
-// the LANE the crash cuts back to the open snow, pine by pine - aimed from
-// the crater at the MIDDLE of the corner's treeline (e.mouth: the diagonal's
-// own edge tile, diagEnd), and run until the woods are provably behind it
-const LANE_R = 0.8;         // tiles either side of the centreline a fell reaches: a diagonal band two tiles across
+// the SPUR the crash cuts back to the road, pine by pine - aimed from the
+// crater at its junction on the road's centreline (e.mouth: roadNest,
+// world.js), run until the front is inside the road, and PAVED behind the
+// front into a track SPUR_HW wide (world.js: what falls is what is paved)
+const LANE_R = SPUR_HW;     // tiles either side of the centreline a fell reaches - the paved track's own half-width
 const LANE_SPD = 3.5;       // tiles/s the felling front walks out from the crater
 const LANE_WARN = 0.5;      // s a pine shudders on its feet before it goes down
 const LANE_DELAY = 0.8;     // s after the impact before the first pine shudders
-const LANE_MAX = 90;        // tiles the lane may run at most (the border is 30-70 deep, the roost ~8 inside it)
-const LANE_CLEAR = 6;       // tiles of pine-free snow past the last fell that prove the lane is OUT - a bay inside the border is not the field
+const LANE_MAX = 60;        // tiles the spur may run at most (the nest is ROAD_NEST_OFF off the road: this is a safety)
 // the WIND TRAIL: the air the bird tears in level flight - ONE continuous
 // ribbon off each wingtip, laid along the flown line where the tip actually
 // was and fading out toward its tail (drawEagleTrail - pure reads of the
@@ -117,8 +118,9 @@ const FLEE_SPD = 220;       // px/s once airborne - faster than it arrived, it w
 const EAGLE_CINE_T = 3.2;   // s the camera holds the takeoff before the end screens queue
 const RUFFLE_T = 0.45;      // s of the resting idle's wing shuffle (frame 1 only - a full
                             // spread is the gust telegraph, and the idle must never wear it)
-const BOOM_R = 3.6;         // tiles of trees the impact clears outright...
-const BOOM_STUMP_R = 4.6;   // ...and the ring beyond snapped to stumps - the gate's build sites (robots.js)
+const BOOM_R = 3.6;         // tiles of trees the impact clears outright - and paves: the roost stands on packed earth, one ground with its spur and the road (the pad, addPad)
+const BOOM_STUMP_R = 4.8;   // ...the MIDDLE ring beyond snapped to stumps: the merchant's turret sites (robots.js)...
+const BOOM_STUMP_R2 = 6.0;  // ...and the OUTER ring beyond that: its wall sites - two layers, so the walls stand outside the guns
 const BOOM_LIFE = 0.9;      // seconds the impact shockwave rings run
 // where the five riders sit, in the bird's own frame (x along the heading,
 // y across the wings, unscaled sprite px): one on its back, two on the inner
@@ -133,8 +135,8 @@ const EAGLE_SEATS = [[-2, 0], [2, -11], [2, 11], [-7, -19], [-7, 19]];
 // forest on the corner side - so the dive past it always has forest to land
 // in and the window's end (lastOpenU) is always open snow. `mouth` is the
 // treeline itself on the diagonal - the first open tile past that last pine,
-// the MIDDLE of the corner's tree edge - which the lane the crash cuts aims
-// at (planLane). Pure reads of borderDepth (world.js) - no rng(), no hash2 -
+// the road's GATE (roadSpan, world.js, the same rule). Pure reads of
+// borderDepth (world.js) - no rng(), no hash2 -
 // so a seed always flies the same line. fromLeft: the bottom-left corner,
 // else top-right.
 function diagEnd(fromLeft) {
@@ -195,9 +197,10 @@ function makeEagles() {
       gustCd: 0, windT: 0, hitT: 99,          // the wing gust and the calm-down clock
       idleT: 3 + team * 2, ruffleT: 0,        // the resting idle: seconds to the next wing shuffle (offset so the birds never sync)
       fleeT: 0, fleeFrom: 0, fleeTo: 0,       // the driven-off takeoff
-      mouth: team === 0 ? r.mouth1 : r.mouth0, // the middle of its roost corner's treeline: where the lane aims (diagEnd)
-      laneDir: null,                          // the lane's unit direction, set at the crash (eagleCrash) - the gate and the merchant's post read it
-      lane: null, merchant: null,             // the road falling open (planLane) and the driver once it is down (robots.js)
+      mouth: { x: roadNest(team).x, y: roadNest(team).y }, // its spur's JUNCTION on the road (roadNest, world.js): where the spur aims, and the way in for every walker
+      laneDir: null,                          // the spur's unit direction, set at the crash (eagleCrash) - the gate and the merchant's post read it
+      lane: null, spur: null, pad: null,      // the spur falling open and paving (planLane), its road registry entry (addSpur) and the crater's (addPad)
+      merchant: null,                         // the driver once it is down (robots.js)
     };
     e.jumpEnd = lastOpenU(e);
     e.jumpOpen = Math.min((e.dur - DROP_LOCK_T) / e.dur, e.jumpEnd - 0.05);
@@ -451,6 +454,10 @@ function updateEagle(e, dt) {
     const u = Math.min(1, e.diveT / EAGLE_DIVE_T);
     e.x = e.from.x + (e.crash.x - e.from.x) * u;
     e.y = e.from.y + (e.crash.y - e.from.y) * u;
+    // the BANK: the head comes round from the line's heading to the stoop's
+    // own bearing over the first part of the dive, so the turn off the road
+    // into the nest's woods reads as a turn
+    e.heading = e.diveH0 + e.diveTurn * Math.min(1, u * 1.8);
     // speed motes stream off the stoop
     particles.push({
       x: e.x - Math.cos(e.heading) * rand(14, 26), y: e.y - Math.sin(e.heading) * rand(14, 26),
@@ -579,45 +586,56 @@ function eagleGustFx(e, k) {
 }
 
 // the end of the line: a bot still aboard is thrown, a human rides the dive
-// down (landAboard at the crash), and the bird tips over toward the nearest
-// standing forest past the line's end
+// down (landAboard at the crash), and the bird banks off the road into its
+// nest's woods (findCrashPoint), the head coming round through the stoop
 function beginDive(e) {
   for (const p of players) if (p.active && p.aboard && p.team === e.team && p.control !== 'human') dropJump(p, true);
   e.state = 'dive';
   e.from = { x: e.x, y: e.y };
   e.crash = findCrashPoint(e);
   e.diveT = 0;
+  // the turn: from the line's heading to the crash's bearing, the short way round
+  let turn = Math.atan2(e.crash.y - e.y, e.crash.x - e.x) - e.heading;
+  while (turn > Math.PI) turn -= Math.PI * 2;
+  while (turn < -Math.PI) turn += Math.PI * 2;
+  e.diveH0 = e.heading; e.diveTurn = turn;
 }
 
-// walk out past the line's end looking for DEEP forest: the first tile that
-// sits CRASH_DEPTH inside the treeline by the border's own measure
-// (forestDepth - inside the roost disc, world.js, that is tiles in from the
-// arc) AND whose 7x7 still holds MIN_CRASH_TREES takes the impact, so the
-// roost always sits a proper way into the woods with trees all round it, never
-// kissing the tree edge or a bay in it. Pure reads - no rng(), no hash2 - so
-// the same seed buries the same bird in the same trees; the deepest, densest
-// spot seen stands in if no tile ever qualifies.
+// the crash lands on the NEST roadNest (world.js) picked for this side -
+// ROAD_NEST_OFF tiles off the road to the bird's own right, at the first
+// junction inward from the gate where the spot is DEEP (roadNestDeep:
+// CRASH_DEPTH inside the treeline by the border's own measure, forestDepth,
+// and as far inside the corner's roost disc) AND whose 7x7 still holds
+// MIN_CRASH_TREES, so the roost always sits a proper way into the woods with
+// trees all round it, never kissing the tree edge or a bay in it. Pure reads
+// - no rng(), no hash2 - so the same seed buries the same bird in the same
+// trees. Should something have changed the spot since worldgen (a felled
+// patch, a rock), the nearest tile round it that still qualifies takes the
+// impact, the deepest, densest seen standing in; the blast ring always stays
+// off the road.
 function findCrashPoint(e) {
-  const hx = Math.cos(e.heading), hy = Math.sin(e.heading);
-  let best = null, bestScore = -Infinity;
-  for (let step = 4; step <= 60; step++) {
-    const tx = Math.floor((e.x + hx * step * TILE) / TILE);
-    const ty = Math.floor((e.y + hy * step * TILE) / TILE);
-    if (tx < 4 || ty < 4 || tx >= WORLD - 4 || ty >= WORLD - 4) break;
-    const depth = forestDepth(tx, ty);
-    let trees = 0;
+  const n = roadNest(e.team);
+  const ix = Math.round(n.nx), iy = Math.round(n.ny);
+  const treesAt = (tx, ty) => {
+    let t = 0;
     for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
-      const o = inWorld(tx + dx, ty + dy) && objAt(tx + dx, ty + dy);
-      if (o && (o.type === 'tree' || o.type === 'deadTree')) trees++;
+      const o = objAt(tx + dx, ty + dy);
+      if (o && (o.type === 'tree' || o.type === 'deadTree')) t++;
     }
-    if (depth >= CRASH_DEPTH && trees >= MIN_CRASH_TREES) return { x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE };
-    const score = Math.min(depth, CRASH_DEPTH) * 4 + trees;
+    return t;
+  };
+  let best = null, bestScore = -Infinity;
+  for (let r = 0; r <= 6; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+    const tx = ix + dx, ty = iy + dy;
+    if (tx < 4 || ty < 4 || tx >= WORLD - 4 || ty >= WORLD - 4) continue;
+    if (roadMainDist(tx, ty) < BOOM_STUMP_R + 1) continue;
+    const trees = treesAt(tx, ty);
+    if (roadNestDeep(tx, ty) && trees >= MIN_CRASH_TREES) return { x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE };
+    const score = Math.min(forestDepth(tx, ty), CRASH_DEPTH) * 4 + trees - r * 2;
     if (score > bestScore) { bestScore = score; best = { x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE }; }
   }
-  if (best) return best;
-  const tx = Math.max(4, Math.min(WORLD - 5, Math.floor((e.x + hx * 8 * TILE) / TILE)));
-  const ty = Math.max(4, Math.min(WORLD - 5, Math.floor((e.y + hy * 8 * TILE) / TILE)));
-  return { x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE };
+  return best || { x: (ix + 0.5) * TILE, y: (iy + 0.5) * TILE };
 }
 
 // impact: the near trees are blown apart outright, the ring beyond snapped to
@@ -629,13 +647,19 @@ function eagleCrash(e) {
   e.restT = 0;
   e.x = e.crash.x; e.y = e.crash.y;
   const ctx0 = Math.floor(e.x / TILE), cty0 = Math.floor(e.y / TILE);
-  const R = Math.ceil(BOOM_STUMP_R);
+  const R = Math.ceil(BOOM_STUMP_R2);
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const tx = ctx0 + dx, ty = cty0 + dy;
-    if (!inWorld(tx, ty) || Math.hypot(dx, dy) > BOOM_STUMP_R) continue;
+    if (!inWorld(tx, ty) || Math.hypot(dx, dy) > BOOM_STUMP_R2) continue;
     const o = objAt(tx, ty);
-    if (!o || (o.type !== 'tree' && o.type !== 'deadTree')) continue;
+    if (!o) continue;
     const ox = tx * TILE + 8, oy = ty * TILE + 8;
+    if (o.type === 'rock' || o.type === 'bush') { // shattered or flattened outright, out to the outer ring: a rock in the wall's band would leave a hole in it
+      objects[idx(tx, ty)] = null;
+      burst(ox, oy - 6, o.type === 'rock' ? '#9aa4b4' : '#88b090', 6, 50, 0.45, true);
+      continue;
+    }
+    if (o.type !== 'tree' && o.type !== 'deadTree') continue;
     objects[idx(tx, ty)] = Math.hypot(dx, dy) <= BOOM_R ? null : { type: 'stump', tx, ty, flash: 0, shake: 0 };
     burst(ox, oy - 8, '#eef4fb', 8, 70, 0.6, true);
     burst(ox, oy - 8, o.type === 'tree' ? '#2f5c4b' : '#6b5a48', 5, 60, 0.55, true);
@@ -656,39 +680,60 @@ function eagleCrash(e) {
   state.shake = Math.max(state.shake, near < 400 ? 9 : near < 1000 ? 5 : 3);
   SFX.boom();
   logEvent('THE ' + TEAMS[skin(e.team)].name + ' EAGLE HAS LANDED', players.find((p) => p.team === e.team));
-  // the crater is not the whole landing: the lane back to the snow starts
-  // falling (laneStep) - aimed from the crater at the middle of the corner's
-  // treeline (e.mouth), back the way the bird came if the mouth is somehow
-  // under it - and the driver climbs down to work the roost
+  // the crater is not the whole landing: the spur back to the road starts
+  // falling (laneStep) - aimed from the crater at its junction on the
+  // centreline (e.mouth), back the way the bird came if the junction is
+  // somehow under it - registered with the road (addSpur, world.js) so it
+  // paves as it falls, and the driver climbs down to work the roost
   const mx = e.mouth.x - e.x, my = e.mouth.y - e.y, ml = Math.hypot(mx, my);
   e.laneDir = ml > TILE ? { x: mx / ml, y: my / ml } : { x: -Math.cos(e.heading), y: -Math.sin(e.heading) };
+  e.spur = addSpur(e.team, e.mouth.x / TILE - 0.5, e.mouth.y / TILE - 0.5, e.x / TILE - 0.5, e.y / TILE - 0.5, BOOM_R);
+  // the pad: the blown disc is packed earth from this frame - one ground
+  // from the road down the spur to the roost - so its tiles turn to 3 at
+  // once and the ground repaints out to the verge (a one-time cost, under
+  // the shake and the boom)
+  e.pad = addPad(e.team, e.x / TILE - 0.5, e.y / TILE - 0.5, BOOM_R);
+  {
+    const g = groundCv.getContext('2d'), PR = Math.ceil(BOOM_R) + 3;
+    g.imageSmoothingEnabled = false;
+    for (let dy = -PR; dy <= PR; dy++) for (let dx = -PR; dx <= PR; dx++) {
+      const tx = ctx0 + dx, ty = cty0 + dy;
+      if (!inWorld(tx, ty)) continue;
+      if (ground[idx(tx, ty)] === 0 && roadDist(tx, ty) < 0) ground[idx(tx, ty)] = 3;
+      paintGroundTile(g, tx, ty);
+    }
+  }
   e.lane = planLane(e);
   spawnMerchant(e);
   for (const p of players) if (p.active && p.aboard && p.team === e.team && p === player) landAboard(p);
 }
 
-// The LANE: the crash's one road out. From the crater along e.laneDir - at
-// the MIDDLE of the corner's treeline (e.mouth), so every roost's road comes
-// out where the field is widest - to the open snow, every pine within LANE_R
-// of the centreline becomes a felling event timed by its distance along the
-// lane, so a FRONT walks out from the roost at LANE_SPD - the parkour roll's
+// The SPUR: the crash's one road out, and a road it is. From the crater
+// along e.laneDir - straight at its junction on the road's centreline
+// (e.mouth: roadNest, world.js), so every roost is one straight sightline
+// off the road - to the road's edge, every pine within LANE_R of the
+// centreline becomes a felling event timed by its distance along the spur,
+// so a FRONT walks out from the roost at LANE_SPD - the parkour roll's
 // grammar (pkAnimStep, world.js): each pine shudders LANE_WARN ahead of the
 // front (o.shake, decayed by sim.js's object-timer loop), then goes down in
-// needles and snow. A rock in the band shatters the same way, so the road is
-// a road for a walker and not just for the eye. The lane is OUT only when the
-// last LANE_CLEAR tiles held nothing to fell AND the border itself says open
-// (forestDepth) - a clearing inside the woods used to end it early and leave
-// the roost walled in behind a bay. Pays no gold, like the crater; leaves no
-// stumps, because a road is a road. Pure reads - the lane a seed gets is the
-// lane it always gets.
+// needles and snow. A rock in the band shatters the same way, so the track
+// is a track for a walker and not just for the eye. Behind the front the
+// same band is PAVED: every snow tile it has passed, from the blast's rim
+// (BOOM_R) to the road, turns to packed earth (ground 3 - the `pave` list,
+// spent by laneStep, which also lifts a stump off the track and repaints the
+// ground round each tile) and the spur's registry entry (e.spur.paved,
+// world.js) advances with it, so the bake, both maps and onRoad see the
+// track grow at the front's own pace. The spur is done when the front is
+// inside the road (roadMainDist) - LANE_MAX is only a safety. Pays no gold,
+// like the crater; leaves no stumps, because a road is a road. Pure reads -
+// the spur a seed gets is the spur it always gets.
 function laneFells(o) { return !!o && (o.type === 'tree' || o.type === 'deadTree' || o.type === 'rock'); }
 function planLane(e) {
-  const hx = e.laneDir.x, hy = e.laneDir.y;
-  const ev = [], seen = new Set();
+  const hx = e.laneDir.x, hy = e.laneDir.y, ox = (e.x - 8) / TILE, oy = (e.y - 8) / TILE; // the crater, tile-index space
+  const ev = [], pave = [], seen = new Set();
   const reach = Math.ceil(LANE_R);
-  let lastFell = 0;
   for (let s = 0; s < LANE_MAX; s += 1 / 3) {
-    const fx = (e.x - 8) / TILE + hx * s, fy = (e.y - 8) / TILE + hy * s; // tile-index space, like pkPlanCarve
+    const fx = ox + hx * s, fy = oy + hy * s; // like pkPlanCarve
     const cx = Math.round(fx), cy = Math.round(fy);
     if (!inWorld(cx, cy)) break;
     for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
@@ -697,21 +742,25 @@ function planLane(e) {
       const i = idx(tx, ty);
       if (seen.has(i)) continue;
       seen.add(i);
+      const along = (tx - ox) * hx + (ty - oy) * hy; // this tile's own distance out from the crater
+      if (along >= BOOM_R && ground[i] === 0 && roadMainDist(tx, ty) >= 0) pave.push({ i, s: along });
       if (!laneFells(objects[i])) continue;
-      lastFell = s;
       const t = LANE_DELAY + s / LANE_SPD;
       ev.push({ t: Math.max(LANE_DELAY * 0.4, t - LANE_WARN), i, k: 2 }); // the shudder
       ev.push({ t, i, k: 1 });                                            // the fall
     }
-    if (s - lastFell >= LANE_CLEAR && forestDepth(cx, cy) < 0) break; // out of the woods for real
+    if (roadMainDist(cx, cy) < -LANE_R) break; // the front is inside the road: out
   }
   ev.sort((a, b) => a.t - b.t);
-  return ev.length ? { t: 0, ev, next: 0, sfxT: 0 } : null;
+  pave.sort((a, b) => a.s - b.s);
+  return { t: 0, ev, next: 0, sfxT: 0, pave, paved: 0 };
 }
 
-// one frame of the front: spend every event it has reached. A shudder is a
-// shake on a standing pine, a fall takes it off the tile outright - no ground
-// write, so no repaint (the minimap's half-second sweep picks it up).
+// one frame of the front: spend every event it has reached - a shudder is a
+// shake on a standing pine, a fall takes it off the tile outright - then the
+// paving catches up to the front: each tile it has passed turns to earth
+// and the ground repaints round it (paintGroundTile, draw-world.js: the
+// verge is ROAD_SHOULDER wide, so the repaint reaches three tiles out).
 function laneStep(e, dt) {
   const L = e.lane;
   L.t += dt; L.sfxT += dt;
@@ -734,7 +783,20 @@ function laneStep(e, dt) {
     if (o.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
     if (L.sfxT > 0.3 && nearPlayer(px, py, 320)) { L.sfxT = 0; SFX.treeFall(); }
   }
-  if (L.next >= L.ev.length) e.lane = null;
+  const front = (L.t - LANE_DELAY) * LANE_SPD; // tiles out from the crater
+  if (L.paved < L.pave.length && L.pave[L.paved].s <= front) {
+    const g = groundCv.getContext('2d'), touched = new Set();
+    while (L.paved < L.pave.length && L.pave[L.paved].s <= front) {
+      const i = L.pave[L.paved++].i, tx = i % WORLD, ty = (i / WORLD) | 0;
+      if (ground[i] === 0) ground[i] = 3;
+      if (objects[i] && objects[i].type === 'stump') objects[i] = null;
+      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) if (inWorld(tx + dx, ty + dy)) touched.add(idx(tx + dx, ty + dy));
+    }
+    if (e.spur) e.spur.paved = L.paved >= L.pave.length ? e.spur.len : Math.max(0, Math.min(e.spur.len, front - BOOM_R));
+    g.imageSmoothingEnabled = false;
+    for (const i of touched) paintGroundTile(g, i % WORLD, (i / WORLD) | 0);
+  }
+  if (L.next >= L.ev.length && L.paved >= L.pave.length) e.lane = null;
 }
 
 // the impact language, shared by the landing and the loss (k scales it up):
@@ -1482,6 +1544,7 @@ window.DBG = {
   // the paint: which preset a team wears on this screen (settings.teamBlue), and the two merchants
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the roost's road out: the felling front, or fire the whole lane at once
+  spurs, roadNest, roadSpan, roadDist, roadMainDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the two distances, and where a bird would land
   planLane, laneStep: (team, dt) => { const e = state.drop.eagles[team]; if (e.lane) laneStep(e, dt == null ? 99 : dt); return e.lane; },
   hurtEagle: (team, dmg, src) => { const e = state.drop.eagles[team]; hurtEagle(e, dmg == null ? 25 : dmg, src); return e; },
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),

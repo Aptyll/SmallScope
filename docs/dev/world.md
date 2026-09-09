@@ -14,8 +14,8 @@ anything that must stay stable per tile.
   ([eagle drop](rendering.md#eagle-drop-mode-drop)) — are forested to `ROOST_R` (68 tiles from the
   corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
-  there the corner holds one solid block of woods and the treeline the lane cuts to is at least
-  the arc. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
+  there the corner holds one solid block of woods: the nest sits `CRASH_DEPTH` inside the arc and
+  the road's gate is at least the arc out. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
   `borderNoise`, so a seed's interior is exactly what it was before the corners were guaranteed
   (the discs move no seed's ground hash; the [camps](#camps)' clearings do); not under `PRACTICE`. Interior feature counts
   (ponds, rock clusters, bushes, wildlife) were doubled to hold density. `ringPts` is `RING_N`
@@ -36,8 +36,8 @@ anything that must stay stable per tile.
   instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. Types: `tree`, `deadTree`, `stump`, `rock`,
-  `bush`, `chest`, `den`, `post`, `cairn`, `banner`, `wall`, `turret`, `generator`, `spawner`,
-  `barracks`, `part`. `post`/`cairn`/`banner` are [the road](#the-road)'s furniture (`banner` is
+  `bush`, `chest`, `den`, `cairn`, `banner`, `wall`, `turret`, `generator`, `spawner`,
+  `barracks`, `part`. `cairn`/`banner` are [the road](#the-road)'s furniture (`banner` is
   also the practice gate's flag). `deadTree` (a 3 hp snag, chopped like a
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
   that carries its `site` — the camp record — so a hover can wear the camp's clock)
@@ -104,63 +104,96 @@ runtime ground change.
 
 ## The road
 
-One straight lane down the map's diagonal, from the mouth of one roost corner's treeline to the
-other's — about `ROAD_HW` (3.5) tiles either side of the centreline, a seven-tile lane with room
-for a whole side and a wave to fight in (the `the road` group of the `world` banner, js/world.js).
-Ground `3`, packed earth showing through the snow with two ruts down its length: it **walks like
-snow** (only ice and holes are special-cased in `updatePlayer`'s momentum block) but it is **not
-snow** — nothing digs into it (`tryProne`, the hunter's burrow), nothing grows or is built on it
-(every `ground === 0` site test refuses it: a stump cannot be on it, `findSite` will not put a bay
-on it), a fish never counts it as water (`fishWater`), and the footprint emitter leaves no prints
-on it.
+One straight lane down the map's whole diagonal, corner to corner and off both world edges — a
+route that comes from beyond and goes on past us, not one that starts and ends here. Across the
+open field it is about `ROAD_HW` (3.5) tiles either side of the centreline, a seven-tile lane with
+room for a whole side and a wave to fight in; where it crosses each roost corner's treeline — the
+**gate**, `roadSpan()`'s `u0`/`u1`, two pennant poles — it eases over `ROAD_GATE_BLEND` (2) u to
+`ROAD_HW_WOOD` (2.5), a five-tile forest road with the pines closing in (`roadHW(u)`); and
+`ROAD_LOG_IN` (10) u past each nest's junction a **felled trunk** lies across it (`log`, below):
+the way on is blocked, and the road running on under it to the edge says the route does not end
+here (the `the road` group of the `world` banner, js/world.js). Ground `3`, packed earth showing
+through the snow with two ruts down its length: it **walks like snow** (only ice and holes are
+special-cased in `updatePlayer`'s momentum block) but it is **not snow** — nothing digs into it
+(`tryProne`, the hunter's burrow), nothing grows or is built on it (every `ground === 0` site test
+refuses it: a stump cannot be on it, `findSite` will not put a bay on it), a fish never counts it
+as water (`fishWater`), and the footprint emitter leaves no prints on it.
 
 **Its edge is ragged, never a tile staircase.** `roadEdgeAt(u, side)` wanders the half-width
 along the lane on the position noise — a slow drift of ±`ROAD_RAG` (0.8) and a fine ripple, each
-side its own — and `roadDist(fx, fy)` measures any point against that wandering edge (negative
-inside; past a mouth, the distance past the end). Both the ground array (`onRoad`, a tile's centre)
-and the ground bake (a pixel) ask the same function, so what a tile *is* and what it *looks like*
-agree to within the verge. **It never meets ice**: `genWorld`'s carve rules keep every pond and
-river `ROAD_ICE_KEEP` tiles off its edge and taper a river to nothing on its way in (the tile
-world, above), so the lane is dry from mouth to mouth and the ice network lives further out on
-the map.
+side its own — and `roadMainDist(fx, fy)` measures any point against that wandering edge (negative
+inside; no ends). Both the ground array (`onRoad`, a tile's centre) and the ground bake (a pixel)
+ask the same function, so what a tile *is* and what it *looks like* agree to within the verge.
+**It never meets ice**: `genWorld`'s carve rules keep every pond and river `ROAD_ICE_KEEP` tiles
+off its edge and taper a river to nothing on its way in (the tile world, above), so the lane is
+dry from end to end and the ice network lives further out on the map.
+
+**The nests sit beside it, not on it.** `roadNest(team)` picks each side's **junction** on the
+centreline — at least `ROAD_NEST_IN` (8) u inward from its gate, walking further in (to
+`ROAD_NEST_MAX`, 40) until the **nest**, `ROAD_NEST_OFF` (13) tiles off the centreline to the
+bird's own right, is deep: `roadNestDeep` wants `CRASH_DEPTH` inside the treeline by the border's
+measure (`forestDepth`) *and* inside the roost disc's arc, with `MIN_CRASH_TREES` round it
+(boot.js's crash rule — the deepest, densest candidate stands in if none qualifies). RED (team 0)
+flies down to the bottom-left and its right is the top-left side (`roadOffS < 0`); BLUE's is the
+bottom-right — the two nests mirror through the map's centre like the camps. Pure reads, cached
+per team; a seed's nests are where they always are. The bird lands there
+([eagle drop](rendering.md#eagle-drop-mode-drop)) and its felling front cuts a **spur** from the
+crater straight back to the junction, **paved behind it** into a track `SPUR_HW` (1.25) tiles
+either side of its centreline — under `MERCH_GATE_GAP`, so the gate's stumps stay off it — and
+registered in `spurs` (`addSpur(team, jx, jy, cx, cy, end)`: the junction, the unit direction
+toward the crater, the length to the blast's rim, and `paved`, measured back from the crater end
+as the front advances); the crater itself is a **pad** in the same registry (`addPad(team, cx, cy,
+r)`, a disc of `BOOM_R`, paved whole the frame the bird lands — `eagleCrash`, boot.js), so the
+roost, the spur and the road are one ground. `spurDist` answers 99 where a spur is not yet paved,
+and `roadDist(fx, fy)` is the min of `roadMainDist` and every spur and pad, so the bake, both maps
+and every `onRoad` read see one road system that grows exactly as the front passes. From the road,
+then, the way to a bird is one straight sightline down its spur.
 
 **Its furniture** is placed with it, off the same ragged edge (`mark` in `placeRoad`,
-`ROAD_POST_OUT` (0.9) tiles past it): a mile **`post`** on each shoulder every `ROAD_POST_STEP`
-(12) tiles — `solid: false`, walked and shot *through*, since a lane's edge must never snag a
-column or eat an arrow, and skipped where a pine, rock or bush already stands; two **`banner`**
-poles at each mouth carrying a `team` (0 at the bottom-left mouth, 1 at the top-right — the
-practice gate's own flag object, which now paints its cloth in `TEAMS[skin(team)]`'s coat and
-both maps in that side's ink, and *fells* what stands on its spot, since a mouth flares into the
-woods); and one **`cairn`** on the centreline at the map's centre, solid cover where the two waves
-meet. All three are inert to E (no `tool`). Their pixels: `POST_SPR`/`CAIRN_SPR` baked beside
-`CHEST_SPR` in draw-world.js and drawn in `render()`'s object pass; the pole is `drawBanner`.
+`ROAD_POLE_OUT` (0.9) tiles past it): two **`banner`** poles at each gate carrying a `team` (0 at
+the bottom-left gate, 1 at the top-right — the practice gate's own flag object, which now paints
+its cloth in `TEAMS[skin(team)]`'s coat and both maps in that side's ink, and *fells* what stands
+on its spot, since the gate stands in the treeline, but gives way to a rock or a bush); one
+**`cairn`** on the centreline at the map's centre, solid cover where the two waves meet; and the
+**`log`** across each forest end — `ROAD_LOG_HALF` (2) pieces either side of the centreline along
+the cross-diagonal, five tiles touching corner to corner so nothing squeezes between them, each
+carrying `seg` (0 the up-left end, 1 the trunk, 2 the down-right end), solid, and a pine on the
+verge gives way to its ends. All inert to E (no `tool`). The shoulders are otherwise bare: a
+lane's edge is not a thing to look at. Their pixels: `CAIRN_SPR` baked beside `CHEST_SPR` in
+draw-world.js and drawn in `render()`'s object pass; the pole is `drawBanner`; the trunk is
+**ground** — `paintLog` under `paintGroundTile` bakes each piece flat (`LOG_COL`), and a tile
+paints its four neighbours' pieces too, shifted, because the trunk is wider than the diagonal it
+runs on and spills past a tile's corners.
 
 `placeRoad()` runs at boot **after `genWorld()` and before `placeCamps()`**, on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
-exactly the rule `diagEnd` (boot.js) flies the eagles by, so the road ends where each lane's
+exactly the rule `diagEnd` (boot.js) flies the eagles by, so the gates are where each line's
 mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
-run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone, a
-pine at the treeline's flare is felled (there is no ice to meet - see above). (An existing seed's
-*terrain* is therefore no longer bit-identical to its pre-road self along that band; everything
-off the band is.) `roadAlong`/`roadOffS`/`roadOff`/`roadPoint` are the geometry — the diagonal is
-`tx + ty = WORLD - 1`, `u` running from the bottom-left corner, `roadOffS` signed toward the
-bottom-right side — taking a tile index or a continuous tile coordinate alike; `onRoad(tx, ty)`
-is the membership test, and `roadWaypoints(team)` the centreline every `ROAD_STEP` (20) tiles from
-a side's own mouth to the rival's, which is the march the waves walk
-([Soldiers](gameplay.md#soldiers-the-waves)). Not under `PRACTICE` (`roadDist` answers 99).
+run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone,
+the pines of the woods it cuts through are felled (there is no ice to meet - see above). (An
+existing seed's *terrain* is therefore no longer bit-identical to its pre-road self along that
+band; everything off the band is.) `roadAlong`/`roadOffS`/`roadOff`/`roadPoint` are the geometry —
+the diagonal is `tx + ty = WORLD - 1`, `u` running from the bottom-left corner, `roadOffS` signed
+toward the bottom-right side — taking a tile index or a continuous tile coordinate alike;
+`onRoad(tx, ty)` is the membership test, and `roadWaypoints(team)` the centreline every
+`ROAD_STEP` (20) tiles from a side's own junction to the rival's, which is the march the waves
+walk ([Soldiers](gameplay.md#soldiers-the-waves)). Not under `PRACTICE` (`roadMainDist` answers
+99 and no spur is ever registered).
 
 Both maps paint it: a tan stroke on the minimap, a brown ink line down the parchment
-(`updateMinimap`, `buildWorldMapImg`). In the world it is **painted over the snow per pixel**,
-not per tile: `paintGroundTile` paints every road tile, and every snow tile within
-`ROAD_SHOULDER` (1.4) + 1.2 tiles of the edge, as snow first and then hands it to
-`paintRoadOverlay` (the `the road's pixels` group, draw-world.js), which asks `roadDist` per
-pixel — inside, packed earth in two tones by 8 px quad, the two ruts at `ROAD_RUT` (1.0) tiles
-off the centreline (broken, wandering a little along the lane on a per-quarter-tile cached
-noise), the odd stone and hoof-dark spot, and drifts of snow lying over the last 0.7 tiles of the
-verge; outside, mud spread off the road in patches thinning to greyed snow and then the field.
-The drifts and the mud are placed on a low-frequency `clump` noise read per pixel, not on a
-per-pixel roll, so the melt reads as patches rather than sand. The whole bake costs ~0.2 s at
-boot on top of the ground's own.
+(`updateMinimap`, `buildWorldMapImg`) — from the ground array, so a paved spur appears on both as
+it is laid. In the world it is **painted over the snow per pixel**, not per tile:
+`paintGroundTile` paints every road tile, and every snow tile within `ROAD_SHOULDER` (1.4) + 1.2
+tiles of the edge, as snow first and then hands it to `paintRoadOverlay` (the `the road's pixels`
+group, draw-world.js), which asks `roadDist` per pixel — inside, packed earth in two tones by 8 px
+quad, the two ruts at `ROAD_RUT` (1.0) tiles off the *diagonal's* centreline (broken, wandering a
+little along the lane on a per-quarter-tile cached noise — a spur, measured off the same line, is
+too far off it to carry them), the odd stone and hoof-dark spot, and drifts of snow lying over the
+last 0.7 tiles of the verge; outside, mud spread off the road in patches thinning to greyed snow
+and then the field. The drifts and the mud are placed on a low-frequency `clump` noise read per
+pixel, not on a per-pixel roll, so the melt reads as patches rather than sand. The whole bake
+costs ~0.2 s at boot on top of the ground's own; a spur's paving repaints three tiles round each
+tile it lays, a few tiles a frame for the seconds the front takes.
 
 ## Camps
 

@@ -431,9 +431,6 @@ function render() {
       if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20);
       // the combo readout, above the bar's slot so neither ever covers the other
       drawDummyMeter(o, px + 8, dy - 10);
-    } else if (o.type === 'post') {
-      // the road's mile post (placeRoad, world.js): a stake at the shoulder
-      drawSpriteFlash(POST_SPR, px + sh + 5, py + TILE - POST_SPR.height, o.flash);
     } else if (o.type === 'cairn') {
       ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);

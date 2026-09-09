@@ -464,7 +464,7 @@ random draw, the `YIELD` table (every gold payout, the one table still in core.j
 `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`, js/structures.js; `SOLDIER_*` —
 speed, aggro, siege reach, the bird damage, the bounty — and `MERCH_BAY_*` — when the barracks
 is due, how far behind the roost, the rebuild wait — js/robots.js; `ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/
-`ROAD_STEP`/`ROAD_POST_STEP`, js/world.js, which reshape the map, and the road's colours
+`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`, js/world.js, which reshape the map, and the road's colours
 `ROAD_COL_*` beside `paintRoadOverlay` (draw-world.js); `AI_WAVE_R`/`AI_WAVE_D`, js/ai.js) and the bots' objective clocks (`AI_LEVELS`'
 `push`/`guard`, `AI_ALLY_PUSH`, `AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`,
 js/ai.js), the chest

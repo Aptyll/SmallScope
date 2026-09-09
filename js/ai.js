@@ -74,7 +74,7 @@ const AI_ABIL_T = 0.5;    // s between ability rolls
 const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is noticed from
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
 const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
-const AI_GATE = 128;      // px out from a lane's mouth, on the open snow, where a walk to a roost stages
+const AI_GATE = 128;      // px up the road from a spur's junction where a walk to a roost stages
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
 const AI_ESCORT_R = 400;  // px past which the human is too far to escort
@@ -166,11 +166,11 @@ function aiOnGuard(p, prof) {
   const r = aiRank(p), n = aiPushers(prof);
   return r >= n && r < n + prof.guard ? e : null;
 }
-// the staging point of a roost: AI_GATE px past the lane's mouth on the open
-// snow, so the way in is always field -> gate -> mouth -> lane -> bird
+// the staging point of a roost: AI_GATE px up the road from the spur's
+// junction (e.mouth) toward the field, on the road itself, so the way in is
+// always road -> junction -> spur -> bird (roadNest/roadPoint, world.js)
 function aiLaneGate(e) {
-  const dx = e.mouth.x - e.x, dy = e.mouth.y - e.y, d = Math.hypot(dx, dy) || 1;
-  return { x: e.mouth.x + dx / d * AI_GATE, y: e.mouth.y + dy / d * AI_GATE };
+  return roadPoint(roadNest(e.team).u + (e.team === 0 ? 1 : -1) * AI_GATE / (TILE * Math.SQRT2));
 }
 // Walk toward a roost the way its lane allows: from the field to the gate,
 // in through the mouth, then down the lane to the bird (reach tiles off it).

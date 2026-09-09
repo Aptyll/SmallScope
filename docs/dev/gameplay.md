@@ -2268,14 +2268,18 @@ Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js
   inside `TUR_LOCK` (0.14 rad) charges for `aim` seconds (0.55 / 0.45 / 0.35) before firing a
   **bolt** every `rate` seconds. Losing the bearing bleeds the charge back down rather than
   cancelling it. Targeting runs through `turretMark`/`turretHolds`, which reject anything on the
-  turret's own team, anything dead, and any player still `inAir` on the eagle; `turretSees` walks
-  tiles from the pivot and holds fire when a solid tile blocks the shot, skipping the turret's own
+  turret's own team, anything dead, and any player still `inAir` on the eagle. It needs no line of
+  sight: a bolt flies **over the world** (`solid: false`, the wisp's own flag, so the arrow loop's
+  solid-tile branch skips it) — over walls, pines and the turret's own mount — and never sieges a
+  building, so a gun behind a wall of its own is a gun and not a prop, and the merchant's ring of
+  walls stands *outside* its turrets. Range alone limits a mark. (Before 3.29 `turretSees` walked
+  tiles from the pivot and held fire when a solid tile blocked the shot, skipping the turret's own
   footprint (the pivot sits above the tile, so the first samples fall back inside the mount). With
   no mark it sweeps ±1.15 rad at a third of its traverse, so a live turret never reads as a prop.
   A bolt is an ordinary entry in `arrows` tagged `kind: 'bolt'`, so it inherits arrow collision,
   friendly fire and kill credit for free — it just draws differently and flies at `BOLT_SPD` (250).
   `fireBolt` walks the spawn point out of the turret's own footprint first: turrets are solid
-  tiles and bolts die on solid tiles, so a depressed barrel would otherwise shoot itself.
+  tiles and bolts died on solid tiles, so a depressed barrel would otherwise have shot itself — both gone with the flag.)
   **Generator**: deposits `tiers[tier].pay` gold every `period` seconds straight into its
   **owner's** wallet (`awardGold` — the `+N` floater rises at the generator, but there is
   nothing to collect and no pile to cap). **Bot bay** (`spawner`):
@@ -2414,8 +2418,9 @@ The `soldiers` banner (js/robots.js). Every `STRUCTS.barracks.waveT` seconds eac
 side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
 that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
 bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
-cargo, no payout but the bounty) and a **route**: its own eagle's mouth (out of the roost's lane),
-`roadWaypoints(team)`, the rival's mouth; the rival roost itself is read live each frame, since
+cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth` — down the
+roost's spur to the road), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
+read live each frame, since
 it may have flown. `updateSoldier` is four rungs, first hit wins:
 
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
@@ -2451,25 +2456,37 @@ down the moment it roosts (`spawnMerchant`, called
 from `eagleCrash`, the `merchant` banner in js/robots.js) and works the roost for its side, in
 order — with one job that jumps the queue the moment it is due: `MERCH_BAY_T` (30 s) after the
 landing it raises the **barracks** ([base building](#base-building)) in the woods `MERCH_BAY_BACK`
-(6) tiles *behind* the roost, against the lane: `merchBaySite` picks the nearest 3×2 placement to
+(8) tiles out from the roost on the **bay's bearing** (`merchBayDir`: of the two back corners, ±135° off the spur's axis, the one pointing nearer the world's edge — deeper into the corner's woods, mirrored for both sides — outside the outer wall ring, at the corner the walls leave open): `merchBaySite` picks the nearest 3×2 placement to
 that point whose footprint is dry land holding nothing the axe cannot take, `merchBayBlocker`
-hands it every pine, snag, rock and stump on the footprint and a `MERCH_BAY_RING` (1) ring round
-it, felled at `MERCH_BAY_SWING` (0.34 s — the lane's pace, so the bay is up before the second
-minute) through `merchFell` (the rim's swing, factored out — it leaves the tile empty; the rim
-puts a stump back), and then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the
+hands it every pine, snag and rock on the footprint and a `MERCH_BAY_RING` (1) ring round it,
+and the stumps on the footprint alone, felled at `MERCH_BAY_SWING` (0.34 s — the spur's pace, so
+the bay is up before the second minute) through `merchFell` (the rim's swing, factored out — it
+leaves the tile empty, and the merchant puts a stump back everywhere but the footprint itself:
+its axe always leaves a site), and then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the
 door sets the site (`createStruct`, nobody pays). Wrecked, `b.bay` no longer resolves and the
 clock restarts at `MERCH_BAY_REBUILD` (45 s); the clearing is already made, so the second build
-is the hammering alone. Otherwise: a **gate** at the mouth of the lane the crash cut — `createStruct` a turret on the crash's
-ring stump flanking the lane each side (the nearest stump outside `MERCH_GATE_GAP` of the lane's
-centreline — `e.laneDir`, the road's own direction toward the middle of the corner's tree edge,
-[the lane](rendering.md#eagle-drop-mode-drop) — on the field side), then walls on the ring stumps out to `MERCH_GATE_W` (`b.plan`,
-built in that order, `MERCH_BUILD_T` of hammering each, a site skipped while a body stands on it
-and retried last when no route reaches it); then the **rim**: every pine within `MERCH_CLEAR_R`
-(5.6 tiles — one ring past `BOOM_STUMP_R`) of the roost felled to a **stump** at
-`MERCH_SWING_T` a swing, **paying no gold** (like the crater and the lane — the same free start
+is the hammering alone. Otherwise: the **defence**, off the crash's two stump rings
+([the crash](rendering.md#eagle-drop-mode-drop): the middle ring out to `BOOM_STUMP_R`, the outer
+to `BOOM_STUMP_R2`), every stump read by its bearing off the spur's axis (`e.laneDir`, from the
+crater to the junction; 0 is toward the road) — `createStruct` a **turret** on the middle-ring
+stump nearest each of the four `MERCH_CORNERS` bearings (±45°, ±135°), so four guns cover every
+angle from inside; then a **wall** on every tile of the one-tile band at `MERCH_WALL_R` (5.4, the
+middle of the outer stump ring) — stump or bare ground alike, since a wall needs no stump and a
+one-tile circle's tiles touch at least corner to corner, which a body cannot pass — but the spur's
+gap (`MERCH_GATE_GAP` either side of the centreline on the road side — over `SPUR_HW`, so the paved
+track is never walled) and `MERCH_BAY_GAP` (0.35 rad, about four tiles at the ring) round the bay's
+bearing, round the ring in bearing order so the wall goes up as one — a **closed** ring outside the
+guns with two ways through, the road's and the merchant's own past its bay, skipped from the start
+so it is never walled in waiting for the bay, and its way out to fell and build beyond the walls
+(the crash clears every rock and bush out to the outer ring as well, so nothing the merchant
+cannot build on ever sits in the band)
+(`b.plan`, built in that order, `MERCH_BUILD_T` of hammering each, a site skipped while a body
+stands on it and retried last when no route reaches it); then the **rim**: every pine within
+`MERCH_CLEAR_R` (7.2 tiles — one ring past `BOOM_STUMP_R2`) of the roost felled to a **stump** at
+`MERCH_SWING_T` a swing, **paying no gold** (like the crater and the spur — the same free start
 for both sides), picking the nearest pine to itself that still has an open side to stand on and
 keeping a timed `b.avoids` list of trunks no route reached (one player flipped forever between two
-walled-in trees); then it keeps to the lane mouth, a step or two either way — **and keeps shop there**: that post is
+walled-in trees); then it keeps to its post at the head of the spur, a step or two either way — **and keeps shop there**: that post is
 [the counter](#the-merchants-counter), open to either team, and it stands still and faces its
 customer for as long as one is being served.
 
