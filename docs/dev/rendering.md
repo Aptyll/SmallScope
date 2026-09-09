@@ -380,9 +380,9 @@ keeps it flush on every size.
 | top left | **nothing** — see the strip below | — |
 | top right | the minimap and its day/night ring, alive count, clock, and the market's plates under them | `renderMinimap`, `renderNotices` |
 | bottom left | the hover tooltip, with the event feed stacked above it | `drawTooltip`, `renderEventLog` |
-| bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom; hovering the weapon well raises its bit column out of it | `drawHudStrip`, `drawBitColumn` |
+| bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the two meal buttons (berry over fish) with the **purse** tab standing on the rim above them — the three numbers you own, always on | `drawFoodCell`, `drawPurse` |
-| bottom right | the backpack: the ten-cell grid, **open by default**, on the pack button it rises off | `drawBag` |
+| bottom right | the backpack: the ten-cell grid, **open by default**, on the pack button it rises off — and the **weapon shelf** standing on its top edge, always up | `drawBag`, `drawShelf` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Both bottom-right widgets slide **their own size** away for the landing intro — the strip
@@ -459,13 +459,13 @@ One panel, bottom left, saying what the pointer is on — and the fourth deliber
 show-don't-label, recorded as such in [CLAUDE.md](../../CLAUDE.md#ui-rule-show-dont-label). What
 earns it: a tool's rate of fire against a bit's weight is a **comparison of numbers**, and no shape
 compares numbers. It is a carve-out and not a licence — every well still has to read at a glance
-with the panel shut, which is what the tier plates, the bit column's pips and the cooldown wipes are for.
+with the panel shut, which is what the tier plates, the shelf's pips and the cooldown wipes are for.
 
 It is bottom **left** because that is the corner the pointer is furthest from while it hovers the
 backpack, the weapon strip or a wiki row, so the panel never sits under the hand reading it.
 
 **`tipAt(mx, my)` is the only source**, and it asks the same hit-testers, in the same order, that
-the mousedown handler does — the character panel's gear wells, then the bit column, then the
+the mousedown handler does — the character panel's gear wells, then the shelf, then the
 weapon strip, then the backpack —
 so what the panel describes and what a click would do can never be two different things. A live
 drag outranks all of them: whatever is on the cursor describes itself. It answers in two modes
@@ -559,8 +559,8 @@ clearing IS the bow being ready, since nothing else gates the draw
 ([the cycle](gameplay.md#the-cycle)). It is the same hand the ability wells turn: a press waits on
 the weapon's clock and on the key's, and the two are one question asked of different clocks, so
 they are answered in one shape. What is loaded
-stays out of the resting well — the hover-raised bit column is where the build is read and
-edited.
+stays out of the resting well — the [shelf](#the-weapon-shelf) over the backpack is where the
+build is read and edited.
 
 A fifth thing, and the only one that is an *event*: the well takes a **red band all the way round
 it and the pack's own 1px shake** for `toolFlash` seconds when a bit has nowhere to go in the
@@ -670,49 +670,68 @@ scale with it — and its coin lines up over the two item icons below, so purse,
 read as one right-aligned tally. It is a readout, not a button: `stripHit` answers `frame` over
 it, so it swallows its own clicks without doing anything with them.
 
-The whole widget — plate, wells, buy plates and the risen bit column — draws at the **HUD SIZE**
+The whole widget — plate, wells and buy plates — draws at the **HUD SIZE**
 the ESC panel's GAME slider holds (`settings.hudScale`, 0.75×–1.5×, default 0.8×). All geometry stays in 1×
 strip space: at 1× everything draws straight to the frame, and at any other size `drawHudScaled`
 bakes the widget into `hudScaleCv` and blits it scaled about the strip's bottom-centre anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
-Every hit test (`stripHit`, `abBuyHit`, `bitColHit`, `bitEditSlot`) maps the pointer back through
-the same anchor via `stripMouse` first, so a click can never land beside its pixel. While the
+Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
+the same anchor via `stripMouse` first, so a click can never land beside its pixel. The shelf is
+not in this bake: it draws at 1x with the backpack it stands on, so its rects need no such map. While the
 slider's knob is in hand, `renderSettings` draws the strip live over the slab — the minimap
 slider's preview grammar.
 
 The strip's **upgrade** half is entirely the floating buy plates above these wells — a skill
 point is spent nowhere else, and nothing else on the strip is ever bought.
 
-### The bit column
+### The weapon shelf
 
-Hovering the weapon well raises its tool's bit cells out of it (`bitEditSlot`, js/tools.js — it
-also stays up while the pointer is on the risen column, or while a bit is being carried), bottom
-to top, joined to the well by a 1 px spine so the stack reads as coming *out* of the slot rather
-than floating over it. Cell 0 is at the bottom because it fires first, and the column is the one
-place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass) is on screen at
-once. Four marks, no words, all off `toolPlan`:
+**The build is on screen at all times**, on the backpack's top edge: the tool at the left end of a
+row (`shelfCellRect(-1)`) and its bit cells running right in firing order, which is the one place
+the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass) is on screen at once.
+`SHELF_CELL` 16, `SHELF_GAP` 2, the row's RIGHT end flush with the pack's grid, pinned by its
+BOTTOM to whichever pack edge is up (`bagFrameRect().y` open, `bagBtnRect().y` shut) and grown
+upward, so the row and the budget track keep their pixels whatever the build does and a fitting's
+rail is what climbs into the open screen. It is **not a panel**: bare wells with their own drop
+shadows (`shelfWell`), so the corner stays world everywhere between them and only a cell itself
+answers `shelfHit`.
 
-- a **gold caret** on the left edge marks the lead shot;
+Five marks, no words, all off `toolPlan`:
+
+- the **row** is the press, left to right out of the tool: cell 0 leaves first;
 - every cell carries its **weight** as pips along its bottom — on modifiers too, since a fitting
   costs the press what a shot does, and the [hatched plate](gameplay.md#tiers-and-how-a-find-reads) is what still
   tells the two kinds apart;
 - every cell **past the cut** (the first one the budget could not reach) goes red-rimmed and
-  washed out, and the spine stops under it: it is carried, not thrown. Dead weight is a property
-  of where a bit *sits*, never of the bit;
-- over the top cell the **budget** is a track as wide as the column, filled in the tier's own ink
-  to what this press spends of the tool's tensile and capped in red when the column weighs more
-  than the tool can swing.
+  washed out: it is carried, not thrown. Dead weight is a property of where a bit *sits*, never
+  of the bit;
+- a **rail** over the row runs from each fitting to the last shot it reaches, in that fitting's
+  own colour, with a blip over every shot on the way that it is really in the envelope of
+  (`shelfRails`, off each shot's `mods`) — the forward-only rule drawn rather than written.
+  Rails stack upward with the LAST modifier nearest the row, which is what keeps them untangled:
+  a rail's stem drops to its own cell through rails that all start further right, so no stem ever
+  crosses a line. Each gets a 1 px dark seat, for the reason world text is outlined. Hovering
+  either end lights the pair — the rail, and the shots it lands on, rimmed in its colour;
+- the **gold bar** in the gap left of a cell is the lead shot: what the next press puts in the
+  air first, and what the aim line on the ground is drawn for. On cell 0 that gap is between the
+  tool and its first bit, which reads as the tool feeding it;
+- under the bit cells the **budget** is a track filled in the tier's own ink to what this press
+  spends of the tool's tensile, its tail left red when the row weighs more than the tool can
+  swing.
 
-That, and nothing written down, is the whole of "bow tensile strength". It is a hold, not a mode:
-it is on screen exactly as long as the pointer is.
+That, and nothing written down, is the whole of "bow tensile strength".
+
+And one **event**: every cell the last press SPENT flashes white and fades over `BIT_LIT_T`
+(0.3 s), its rails with it — `bitLit`/`bitLitAt` (js/tools.js), set in `fireTool` for the local
+player alone, held by reference to the tool that fired so a swap cannot leave a flash on somebody
+else's cells, and aged in `updateFx` beside the refusal reds. A build is fired far more often than
+it is edited, so the press itself is where the row is learned.
 
 **A tool carrying more than one press can swing wears a "!"** (`drawOverWarn`, ui.js) in the
-weapon well's top-right corner — a gold triangle with a dark stroke, bobbing a pixel so the eye
-catches it on a strip that is otherwise still. It is *in* the corner rather than floating above
-the rim because the raised bit column and its shadow own every pixel over the rim
-(`BITC_LIFT`), and a warning that hides under the column the moment you go to read it is no
-warning. It is a warning and not a refusal: the build still fires as far up the column as the
-budget reaches, and the budget bar is where you go to see exactly where it stops.
+top-right corner of every well it sits in — the strip's, the pack's grid and the shelf's — a gold
+triangle with a dark stroke, bobbing a pixel so the eye catches it on a strip that is otherwise
+still. It is a warning and not a refusal: the build still fires along the row as far as the
+budget reaches, and the shelf's budget track is where you go to see exactly where it stops.
 
 ### The backpack
 
@@ -743,8 +762,9 @@ Gear is not in this widget at all any more — the four pieces live on
 [the character panel](#the-character-panel-g).
 
 Everything that lays the widget out or hit-tests it asks **`bagOpenNow()`**, never
-`state.bagOpen`: a raised bit column forces the pack open (there has to be a grid to drag bits
-from), and the two answers disagreeing by a row would land every click one cell out.
+`state.bagOpen`: the merchant's counter forces the pack open (a sale is a drag out of the grid),
+the weapon shelf stands on whichever edge it answers with, and the two answers disagreeing by a
+row would land every click one cell out.
 
 A grid cell holding a tool or a bit wears that item's **tier plate** rather than the default well,
 so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
@@ -1250,8 +1270,8 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
 - `kind` **arrow** — dead (off a plank), paused, map, and anywhere in the title/settings/wheel that isn't
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
   so hover and click can never disagree), a live wheel segment, or a control inside the backpack
-  widget (`gearHit()` / `bagHit()`), a weapon or ability well (`stripHit()`) or a cell of a raised bit column
-  (`bitColHit()` — the strip's purse tab is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
+  widget (`gearHit()` / `bagHit()`), a weapon or ability well (`stripHit()`) or a cell of the weapon shelf
+  (`shelfHit()` — the strip's purse tab is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over a stump or finished structure
   (right-clickable; `dim` beyond the 60 px reach); **reticle** — everywhere else in play.

@@ -478,11 +478,14 @@ function shopBuy(p, sec, i) {
   if (!o || !merchNear(p)) { shopDeny(p); return false; }
   const cost = { gold: o.price };
   if (!canAfford(cost, p)) { shopDeny(p); return false; }
-  // room BEFORE money: nothing is ever paid for that cannot be carried
+  // room BEFORE money: nothing is ever paid for that cannot be carried. A
+  // bought BIT arms itself the way a found one does (fitAdd, js/tools.js) - the
+  // tool's free cells first, the pack with what is left - so a purchase made to
+  // fill a hole in the build is already in the build when you walk away.
   if (o.kind === 'tool') {
     const cell = makeTool(o.id);
     if (!bagPut(p, cell)) { shopNoRoom(p); return false; }
-  } else if (!bagAdd(p, o.type, 1)) {
+  } else if (!fitAdd(p, o.type, 1)) {
     shopNoRoom(p);
     return false;
   }

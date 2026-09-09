@@ -1141,11 +1141,11 @@ function cursorInfo() {
   if (sp) return { kind: sp === 'panel' ? 'arrow' : 'hand' };
   // the backpack widget: a hand over anything in it that does something, a
   // plain arrow over the rest of its frame (which still swallows the click).
-  // The weapon slots and an open bit column are the other left-draggable HUD.
+  // The weapon shelf standing on it is the other left-draggable HUD.
   const bh = bagHit(mouse.x, mouse.y);
   if (gearHit(mouse.x, mouse.y) >= 0 || (bh && bh.kind !== 'frame')) return { kind: 'hand' };
   if (bh) return { kind: 'arrow' };
-  if (bitColHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
+  if (shelfHit(mouse.x, mouse.y)) return { kind: 'hand' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
   if (sh && (sh.kind === 'slot' || sh.kind === 'ab' || sh.kind === 'food')) return { kind: 'hand' };

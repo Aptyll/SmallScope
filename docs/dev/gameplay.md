@@ -205,9 +205,10 @@ Two rules govern it, and both are load-bearing:
 
 - **It applies forward and only forward.** A modifier changes every projectile *after* it in the
   list and none before it, so where a modifier sits is the whole of what it is worth and a FLAME
-  in the top cell sets nothing alight. Once a press has reached one it stays in the envelope for
+  in the LAST cell sets nothing alight. Once a press has reached one it stays in the envelope for
   the rest of that press — there is no per-shot expiry. That is why the WARRIOR flies in with its
-  HEFT *under* its arrow.
+  HEFT *before* its arrow. The shelf draws that reach as a **rail** running forward off the
+  fitting ([the shelf](#the-weapon-shelf)).
 - **It compounds with whatever is already there.** Every `mod` composes with the value it is
   handed — `*=` a multiplier, `+=` a quantity — and must never `=` or `Math.max` it. Two SPEEDUPs are
   four times the speed, two SPLITTERs nine shots, two FLAMEs twice as long at twice the rate
@@ -289,11 +290,11 @@ whose budget covers all of it fires all of it at once.
 
 `toolPlan(cell)` walks the cells from 0 up and returns `{ shots, used, cut, load, tensile }`. It is
 the *only* place the arithmetic lives, and the press, the [aim line](#the-draw) and the
-[bit column](rendering.md#the-bit-column) all read it — so the three can never disagree about what
+[shelf](rendering.md#the-weapon-shelf) all read it — so the three can never disagree about what
 the button is about to do.
 
 - An empty cell costs nothing and stops nothing.
-- Otherwise the cell's weight is added to `load` (the whole column's weight, which is what the
+- Otherwise the cell's weight is added to `load` (the whole row's weight, which is what the
   "!" reads) and, while the press is still running, tested against the budget: if
   `used + weight > tensile` the walk records `cut` and fires nothing further. Everything before
   the cut has already gone.
@@ -349,19 +350,32 @@ on its own altitude — and all three then call the same local `blow()`, which h
 type, fire and shove to `hurtUnit`. Nothing about *what a shot does* is written per kind, which is
 what keeps the left button honest across the whole roster.
 
-### The bit column
+### The weapon shelf
 
-**Hovering the weapon well raises its bit cells out of it** — `bitEditSlot()` (js/tools.js) is
-derived from the pointer every read, never stored: open over the well, kept open while the
-pointer is on the risen column itself, and forced open while a **bit is being carried** anywhere
-(the column is where a bit goes, so picking one up presents the destination). Cell 0 is at the
-**bottom**, nearest the tool, because that is
-what fires first; a gold caret on the left edge marks the lead shot, the budget bar over the top
-cell says what the press spends of the tool's strength, and every cell past the cut goes
-red-rimmed and washed out. While the column is up the backpack is open too (`bagOpenNow`), because
-customising a tool means dragging bits between the two. It is a hover, not a mode.
+**The build is on screen at all times, on the backpack's top edge** — the tool at the left end of
+a row and its bit cells running right in **firing order**, which is also the direction a fitting
+reaches along, so the row reads the way the press resolves. Until **PATCH 3.21** it was a column
+that rose out of the strip's weapon well on hover, and a build you had to hold the pointer still
+to look at was a build nobody looked at; it moved to the one corner already about carried things,
+a cell away from the pack it is loaded out of.
 
-The drag is one mechanism shared by the grid, the weapon slot and the column
+It is **not a panel**: bare wells with their own drop shadows, so the corner stays world
+everywhere between them and only a cell itself swallows a click. It is pinned by its BOTTOM to
+the pack (the open frame's top edge, or the shut button's) and grows upward, and the row's RIGHT
+end is flush with the pack's grid — a bigger tool grows leftward rather than moving the corner it
+is read in. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
+`shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
+js/ui.js, at 1x with the backpack it stands on rather than at the strip's HUD SIZE.
+
+Five marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: the ROW is
+the press left to right; a cell **past the cut** is red-rimmed and washed out; **weight** is pips
+along a cell's bottom edge; a **rail** over the row runs from each fitting to the last shot it
+reaches, blipping over every shot it is really in the envelope of; and the **gold bar** in the gap
+left of a cell is the lead shot. And one event: every cell the last press SPENT flashes white and
+fades (`bitLit`/`bitLitAt`, js/tools.js — `BIT_LIT_T` 0.3 s, aged in `updateFx`), its rails with
+it, so the left button teaches the row it is firing.
+
+The drag is one mechanism shared by the grid, the weapon slot and the shelf
 ([UI banner](../../js/ui.js), `state.drag`): a press **arms** a pick-up and only travel past
 `DRAG_SLOP` promotes it, so a tap on a berry still eats it
 while a drag off either one picks it up. A release over any well that will take it puts it there;
@@ -413,7 +427,7 @@ The pack advertises the gesture rather than expecting you to know it: `drawShift
 **SHIFT key cap** (the world prompts' own `drawKeyPrompt`, the keybind-indicator carve-out of
 [CLAUDE.md](../../CLAUDE.md)'s UI rule) over the pack's top-right corner whenever the pointer is
 on a well with somewhere to send what it holds, and the verb on it is that **destination** —
-`LOAD` for a bit in the grid, `STOW` for a bit in the risen column or the tool on the weapon,
+`LOAD` for a bit in the grid, `STOW` for a bit on the shelf or the tool on the weapon,
 `HOLD` for a tool in the grid — so the plate teaches which way the transfer goes rather than
 merely announcing a key. `shiftVerb` asks the same wells in the same order `sendAt` does, so the
 plate and the click can never disagree; a berry and a card get none, because eating and drafting
@@ -430,6 +444,19 @@ bit, and only kinds at or under the given tier are in the pool.
 | a broken rock | `ROCK_DROP` 0.2 | 0 |
 | a felled tree | `TREE_DROP` 0.04 | 0 |
 | a sprung chest | `CHEST_TOOL` 0.75 | up to 2 |
+
+**A found bit arms itself.** The pack is the overflow, not the destination: a bit walked over
+(or bought over the counter) goes into the tool's first free cell, and only what the tool cannot
+hold lands in the grid — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
+is why a FULL pack with an empty bit cell still magnetises a drop and still claims it. The drop
+pickup (js/sim.js) and `shopBuy` (js/shop.js) both go through the pair, so the ordinary way to
+arm a find is to walk over it, and the drag is what you reach for to ARRANGE a build rather than
+what you must do to have one — which is half of why the [shelf](#the-weapon-shelf) is on screen
+at all times: a bit that loaded itself has to be seen loading itself. It fills a free cell
+whatever the tensile budget says (a bit the press cannot afford is drawn red on the shelf and
+sent back to the pack with one click, so the pickup never has to guess what you meant by it),
+and a **bot is left out** — `botFitLoadout` does this for them on its own timer and is choosier
+about it, so a pickup that shoved a bit into a bot's tool would only make it a worse shot.
 
 So the bottom tier lies around loose and the good stuff is in the treeline's chests. A found tool
 comes out **empty** — its bits are the next thing to find.
@@ -461,10 +488,10 @@ says its tier, so three 12×12 silhouettes cover five tools across three tiers �
 
 ### Bots
 
-A bot has no bit column and no pointer, so `botFitLoadout(p)` (called from `updateAI`'s step 8 on
+A bot has no shelf and no pointer, so `botFitLoadout(p)` (called from `updateAI`'s step 8 on
 a 2.5 s timer) does by hand what a person does with a drag: push loose bits into the tool it is
 firing **while they still fit inside its tensile budget**, sort the build so its modifiers sit
-under the shots they are meant to change (a stable sort, no rng), and put a spare tool on a free
+before the shots they are meant to change (a stable sort, no rng), and put a spare tool on a free
 key — or over a strictly worse body, which then takes the bag cell the new one came out of. It
 only takes bits that fly *toward* what they were aimed at; a bot cannot read a boomerang or an
 orbit and leaves those for someone who can.
@@ -475,7 +502,7 @@ orbit and leaves those for someone who can.
 `Player.reset()` and from `setClass()` — so the weapon is part of picking a class, every AI
 player gets its own, and a respawn is re-armed. The HUNTER flies in with a SHORTBOW loaded ARROW +
 BARBED SHOT (7 of its 9 strength, both firing); the WARRIOR with a SLING loaded **HEFT then
-ARROW** — the fitting under the shot, filling the sling's 7 exactly. The order in `bits` is the
+ARROW** — the fitting before the shot, filling the sling's 7 exactly. The order in `bits` is the
 firing order, and a starting kit that fitted a modifier *above* its only shot would teach the
 forward-only rule backwards on the first press of the match. Death **spills the equipped tool** with
 the bag (`spillInventory`), so a build lies where its owner fell and the bird hands back the
@@ -1618,7 +1645,7 @@ numbers.
 | `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | bag, stack 5 | clicking its cell — opens the pick-1-of-3 draft (see [Roguelike cards](#roguelike-cards)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
-| `bit:<id>` | `bitArt_<id>` | bag, stack 4 | dragged into a cell of a tool's bit column |
+| `bit:<id>` | `bitArt_<id>` | bag, stack 4 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
 
 An unopened card is a completely ordinary `ITEMS` entry — one per rarity, since a stack has to be
 homogeneous and a white card and a gold card are not interchangeable — which is what makes bag
@@ -1776,7 +1803,7 @@ it: keys 1-4 are the class abilities, and gear is bought where gear is worn. `ge
 read through `charHit`) is still shared by the click handler, `cursorInfo` (hand cursor) and
 `tipAt`, so the three can never disagree. The click is swallowed **before** `clickAction` — the
 panel, the backpack widget, the hud strip (the weapon well, an ability well casting and its buy
-badge) and a raised bit column are the left-clickable HUD in play. Bots buy in `updateAI`'s
+badge) and the weapon shelf are the left-clickable HUD in play. Bots buy in `updateAI`'s
 spend step: cheapest piece first, keeping a 15-gold float so they still build.
 
 ## Roguelike cards
@@ -2387,7 +2414,7 @@ the two sticks. The bindings themselves: [the three controllers](multiplayer.md#
 The primer is a **real HORN BOW carrying a real overload** — ARROW 2, FLAME 4, ARROW 2, THROWING
 LOG 8 against a tensile of 15 — run through `toolPlan` at bake time, so every number on it is the
 game's own arithmetic and the picture cannot drift from the weapon. The cells, the hatch on the
-modifier, the weight pips, the budget track and the "!" are the **same marks** the bit column and
+modifier, the weight pips, the rail, the gold lead bar, the budget track and the "!" are the **same marks** the shelf and
 the weapon well draw in play (`modPlate` / `drawOverWarn`, ui.js, both of which take the context
 to paint so a bake can borrow them) — that is the whole point: what is learned here is recognised
 there. A gold arrow up the left edge is the firing order, each cell is annotated in its own bit's
