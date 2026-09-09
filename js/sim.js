@@ -1264,6 +1264,10 @@ function updateFx(dt) {
   // in, and the cursor when a swap changed what the hand is holding (hudFx, ui.js)
   if (wellLit && (wellLit.t -= dt) <= 0) wellLit = null;
   if (dragLit > 0) dragLit -= dt;
+  { // ...and so is the drawer's slide (bagEase chases bagOpenNow, ui.js)
+    const want = bagOpenNow() ? 1 : 0, d = want - bagEase;
+    bagEase += Math.sign(d) * Math.min(Math.abs(d), dt / BAG_SLIDE_T);
+  }
   if (toolFlash > 0) toolFlash -= dt; // ... and the weapon well's, beside it
   if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's

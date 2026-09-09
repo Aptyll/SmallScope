@@ -71,7 +71,7 @@ const KEY_ACTIONS = [
   { id: 'ab3', verb: 'ABILITY 3', key: '3' }, { id: 'ab4', verb: 'ABILITY 4', key: '4' },
   { id: 'dodge', verb: 'DODGE', key: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q' }, { id: 'fish', verb: 'EAT FISH', key: 'f' },
-  { id: 'card', verb: 'DRAW CARD', key: 'c' },
+  { id: 'card', verb: 'DRAW CARD', key: 'c' }, { id: 'bag', verb: 'INVENTORY', key: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g' },
   { id: 'map', verb: 'WORLD MAP', key: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p' },
@@ -225,6 +225,10 @@ function keyPress(e) {
   if (keyIs(e, 'berry')) player.input.eatBerry = true;
   if (keyIs(e, 'fish')) player.input.eatFish = true;
   if (keyIs(e, 'card')) player.input.useCard = true;
+  // the pack key drops the inventory drawer under the weapon shelf. It is
+  // HUD and not an overlay, so unlike the map and ESC it neither stops the
+  // sim nor swallows anything but its own clicks.
+  if (keyIs(e, 'bag')) state.bagOpen = !state.bagOpen;
   // The work key at the practice rack: the press opens the armory wheel over
   // it, the pointer picks, and RELEASING it takes - the right-click wheel's
   // own hold-and-release grammar, moved onto the key. A real work target in
@@ -285,6 +289,7 @@ function keyPress(e) {
     else if (state.mapOpen) state.mapOpen = false;
     else if (state.shop) closeShop();
     else if (state.charOpen) state.charOpen = false;
+    else if (state.bagOpen) state.bagOpen = false; // the drawer slides back up
     else { state.settingsOpen = !state.settingsOpen; dragSlider = null; state.wheel = null; }
   }
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }

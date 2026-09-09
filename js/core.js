@@ -114,6 +114,7 @@ const state = {
   dayPop: null,  // the dawn headline, top centre: { day, t } - set by each dawn and the landing (js/sim.js), drawn by renderUI
   paused: false,
   mapOpen: false,
+  bagOpen: false,      // the inventory drawer under the weapon shelf (B, or its tab): HUD, it does NOT stop the sim
   charOpen: false,     // the character panel (G): HUD, it does NOT stop the sim either
   // the MERCHANT whose counter is open (js/shop.js), or null. HUD like the two
   // above - the sim runs on underneath - and it holds the merchant itself

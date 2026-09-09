@@ -202,13 +202,14 @@ const CARD_PRICE = { white: 25, green: 45, blue: 80, purple: 130, gold: 210 };
 function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slice(1); }
 const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
 for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
-// The one bag everyone starts with; a second one raises p.bagCap. ONE row
-// of BAG_COLS (3.26) - a simple inventory: the spare tool or bits a fight
-// turns up, with every cell earned by choosing what to keep. It can afford
-// to be one row because nothing that is merely COUNTED lives in it any more
-// (meals and cards are the pouch) and a found bit loads itself into a tool
-// before it ever takes a cell (fitAdd, js/tools.js).
-const BAG_CAP = 5;
+// The one bag everyone starts with; a second one raises p.bagCap. Two rows
+// of BAG_COLS small cells in the drawer under the weapon shelf (3.27, the
+// backpack banner in js/ui.js): the spare tools a walk turns up and the bits
+// no tool had a cell for, with every cell earned by choosing what to keep.
+// Nothing that is merely COUNTED lives in it (meals and cards are the
+// pouch), and a found bit loads itself into a tool before it ever takes a
+// cell (fitAdd, js/tools.js).
+const BAG_CAP = 12;
 // Is this kind carried in the POUCH (p.food) rather than in a cell? One test,
 // asked by all four counting helpers, so a pouch kind can never be half in
 // one store and half in the other.
@@ -954,6 +955,7 @@ function endMatch(how) {
   state.deadSel = 0;
   state.deadHover = [0, 0];
   state.mapOpen = false;
+  state.bagOpen = false;
   state.settingsOpen = false;
   state.wheel = null;
   state.flagAim = false;

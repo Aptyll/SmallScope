@@ -356,20 +356,20 @@ what keeps the left button honest across the whole roster.
 
 ### The weapon shelf
 
-**The build is on screen at all times, on the backpack's top edge** — the tool at the left end of
+**The build is on screen at all times, top-left** — the tool at the left end of
 a row and its bit cells running right in **firing order**, which is also the direction a fitting
 reaches along, so the row reads the way the press resolves. Until **PATCH 3.21** it was a column
 that rose out of the strip's weapon well on hover, and a build you had to hold the pointer still
-to look at was a build nobody looked at; it moved to the one corner already about carried things,
-a cell away from the pack it is loaded out of.
+to look at was a build nobody looked at; since **3.27** it is the top-left corner and the whole of
+what the HUD says about the arsenal — one tool, read in one place, the strip's weapon well gone
+— with the [inventory drawer](rendering.md#the-backpack) shut under it.
 
 It is **not a panel**: bare wells with their own drop shadows, so the corner stays world
-everywhere between them and only a cell itself swallows a click. It is pinned by its BOTTOM to
-the pack's top edge and grows upward, and the row's RIGHT
-end is flush with the pack's grid — a bigger tool grows leftward rather than moving the corner it
-is read in. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
+everywhere between them and only a cell itself swallows a click. It is pinned by its TOP to the
+corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
+read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
-js/ui.js, scaled with the backpack it stands on at the strip's HUD SIZE
+js/ui.js, scaled about the top-left corner at the strip's HUD SIZE
 ([rendering.md](rendering.md#the-hud-strip)).
 
 Five marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: the ROW is
@@ -862,7 +862,7 @@ because there is nothing to refill.
 Three indicators carry it, and none is a word (the hud strip's weapon well only reddens its rim
 when the selected tool cannot answer — an empty slot, or a tensile budget that reaches no shot):
 
-- **The weapon well** (`drawToolCell`) — the top-down cooldown wipe, the same cover every
+- **The weapon well** (the shelf's tool cell, `drawShelf`) — the top-down cooldown wipe, the same cover every
   ability well cools by, over exactly `toolCycle`. When the wipe is gone, the bow is ready.
   Always.
 - **The overhead bar** (`drawPlayer`) — the draw meter's slot doubles as the cycle readout for
@@ -1768,7 +1768,7 @@ A player carries in two places, and which one a kind lives in is **one flag on i
 
 **The bag** (`p.bag`) is a fixed array of `p.bagCap` cells, each one `null`
 or a `{ type, n }` stack of at most `ITEMS[type].stack`. Everyone starts with **one bag of 10**
-(`BAG_CAP` 5, one row of `BAG_COLS` — a simple inventory); a second bag is a bigger `bagCap` and a longer array,
+(`BAG_CAP` 12, two rows of `BAG_COLS` 6 in the [drawer](rendering.md#the-backpack) under the weapon shelf, shut until B); a second bag is a bigger `bagCap` and a longer array,
 nothing else. It holds the **build**: the spare tools and bits a player lays out, compares and
 chooses between — and a bit only takes a cell once every tool carried (the one in hand, then
 each in the pack) is full, since `fitAdd` (js/tools.js) loads it into them first.

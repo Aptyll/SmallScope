@@ -70,9 +70,10 @@ boot reading the saved one, a resize onto another screen) re-fits the view. What
   (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
   draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
   presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
-- **The right-hand touch column stands on the pack's top edge** (`bagFrameRect().y` through
-  `cornerToScreen`, since the corner draws at the HUD SIZE), as the grid is always up in the
-  corner the column climbs out of. See [the backpack](#the-backpack).
+- **The weapon shelf sits under the plates**: the top-left is the menu cog and the zoom pair's
+  corner too, so `shelfRowY()` drops the row to 44 on a phone (20 on a desktop) and the
+  [drawer](#the-backpack) under it drops with it. The right-hand touch column climbs from the
+  bottom edge like the left one.
 - **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
   finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
   says who moved the pointer last (input.js).
@@ -404,25 +405,24 @@ at one map pixel per tile, a build or a cut ice hole arriving half a second late
 
 `renderUI()` owns three corners and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
-deliberately empty** — every number you own (berries, fish, gold) is on the **hud strip's right
-end**, which is why nothing slides in from the left during the landing intro. The
-pack's frame sits on the view's last pixel — no margin, the 1 px rim is the edge — so a resize
-keeps it flush on every size.
+the weapon** (3.27): the one tool in hand and the bits loaded into it, with the inventory drawer
+shut under it — the corner a Noita wand or a Terraria held item lives in — while every number
+you own (berries, fish, gold, cards) is on the **hud strip's right end**. The bottom right is
+empty world.
 
 | Where | What | Function |
 | --- | --- | --- |
-| top left | **nothing** — see the strip below | — |
+| top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the pull tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
 | bottom left | the hover tooltip | `drawTooltip` |
-| bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom | `drawHudStrip` |
+| bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
-| bottom right | the backpack: the ten-cell grid, **always up**, flush in the corner — and the **weapon shelf** standing on its top edge, always up | `drawBag`, `drawShelf` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
-Both bottom-right widgets slide **their own size** away for the landing intro — the strip
-`HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the pack `BAG_W` or the shelf's reach past it, whichever is
-wider — because a shove that only cleared the frame would leave the widest tool's cell parked over
-the cinematic.
+Both widgets slide **their own size** away for the landing intro — the strip down by
+`HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the top-left corner left by `CORNER_REACH` (the widest
+row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
+tool cell would leave a longbow's row parked over the cinematic.
 
 ### Market notices: the plates under the minimap
 
@@ -563,9 +563,9 @@ rail.
 
 ### The hud strip
 
-`drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **five 34px wells** —
-`[ WEAPON ][1][2][3][4]`, the weapon leading and the class abilities following in key order
-(`stripCellRect`; `toolCellRect(i)` is well 0, `abCellRect(i)` is well `1 + i`) — then, on the
+`drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **four 34px wells** —
+`[1][2][3][4]`, the class abilities in key order (`stripCellRect`; `abCellRect(i)` is well `i`;
+the weapon left the strip for [the shelf](#the-weapon-shelf) in 3.27) — then, on the
 right end, the **pouch block** (`pouchCellRect(col, row)`: a 2×2 of 24px squares, berry over
 fish, gold over cards, its bottom flush with the wells' and its top `POUCH_RISE` (14) px above
 the strip on a tab of the plate, `pouchTabRect`) — all over the
@@ -577,11 +577,12 @@ It sits at the *bottom* so the strip's top edge stays open screen for the abilit
 **floating buy plates** (below). The plate swallows clicks so nothing fires through it. There is
 no rail: the dodge pips it once carried are said by the overhead stamina bar.
 
-The tool well (`drawToolCell`) says three things and carries no words. The **plate** behind the icon
+The weapon's well is [the shelf's tool cell](#the-weapon-shelf) now (`drawShelf`, top-left; the strip's
+own well went in 3.27), and it says three things and carries no words. The **plate** behind the icon
 is the tool's tier colour — the same colour it wears in every other well it ever sits in, so a
 tier is stated once and stated the same way everywhere (`tierPlate`, and `tierShine` sweeps a
-highlight across the top tier's plate); the 12px tool art is drawn doubled, so the lead
-weapon well reads at the ability icons' size. The **rim** is that tier, quiet at rest and
+highlight across the top tier's plate); the 12px tool art is drawn doubled, so the tool
+reads at the ability icons' size. The **rim** is that tier, quiet at rest and
 brightened to the tier's ink on hover — the four ability wells' own grammar. It used to go white
 and the whole well used to sit a pixel proud, as the tell for the SELECTED slot; there is one
 weapon slot (`TOOL_SLOTS`), so that highlight could never turn off, and a highlight that is always
@@ -642,7 +643,7 @@ cooldown, level and next-level price, the blurb, nothing the well itself already
 #### The cooldown sweep
 
 `drawSweepCover(x, y, w, h, frac, col, edge)` is League's radial cooldown **cut to a square**, and
-the **one readout the weapon well and the four ability wells share**: the
+the **one readout the shelf's tool cell and the four ability wells share**: the
 veil fills the well and retreats **clockwise from 12 o'clock**, so the dark that is left is the
 wait that is left and the hand's angle is the fraction at a glance. That is the whole reason it
 replaced the top-down wipe: on a 20 s clock a bar three quarters down and a bar half
@@ -728,15 +729,17 @@ through `hash2` so it never shimmers (`o.cap: 1` keeps it one pixel for an edge 
 already stands on, `false` drops it). `o.tab` is a block rising off the top edge and flush
 with the right side — the pouch block's — and the frame draws the two as **one silhouette**:
 the outline steps up around the tab, the ground runs through the seam, and the lit line turns
-the inside corner and climbs it. `o.lit`/`o.ink` are what a widget's states colour (the pack's
+the inside corner and climbs it. `o.lit`/`o.ink` are what a widget's states colour (the drawer's
 full amber, a refusal's red). Every margin inside the outline is three pixels — line, light,
 ground — which is what `AB_PAD` and `BAG_PAD` are, so a well sits the same distance from the
-edge on every side of both widgets.
+edge on every side of both widgets. The [drawer](#the-backpack) wears it with every corner cut
+and no cap: it lives under the shelf, not under the sky.
 
-**One well size for the whole bottom HUD** (3.25): the strip's wells, the pack's grid cells and
-the shelf's cells are all `HUD_CELL` (34) square, and every item icon in them is drawn doubled
-(`drawItemIcon`'s `k`), so a tool reads at one size in the weapon well, on the shelf and in
-the grid.
+**One well size for the HUD** (3.25): the strip's wells and the shelf's cells are `HUD_CELL` (34)
+square, and every item icon in them is drawn doubled (`drawItemIcon`'s `k`), so a tool reads at
+one size on the shelf as an ability does on the strip. The drawer's cells are the exception on
+purpose — `BAG_CELL` (18) with the art at 1× — because a spare is glanced at and dragged, not
+read all match.
 
 The whole widget — plate, wells and buy plates — draws at the **HUD SIZE**
 the ESC panel's GAME slider holds (`settings.hudScale`, 0.75×–1.5×, default 0.8×). All geometry stays in 1×
@@ -744,34 +747,35 @@ strip space: at 1× everything draws straight to the frame, and at any other siz
 bakes the widget into `hudScaleCv` and blits it scaled about the strip's anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
-the same anchor via `stripMouse` first, so a click can never land beside its pixel. **The anchor
-is `stripAnchorX()`**: the view's bottom-centre until the dial grows the strip and the corner
-widget into each other, when the strip steps left to centre in the room the corner leaves it —
-measured at the corner's widest (`CORNER_REACH`: the pack, or a longbow's six-cell row), so it
-never jumps when the tool changes. **`hudSc()` caps the dial** at the size where the strip,
-flush left, and that widest corner would meet, so the two never overlap on a narrow view and past
-that point the slider simply stops growing them (on the 640 frame the cap is about 1.4×; a phone's
-narrower fit caps lower). **The corner scales with the same dial**: `drawCornerScaled`
-bakes the pack and the shelf at 1× and blits them about the bottom-right corner, `bagHit` and
-`shelfHit` map the pointer back through `cornerMouse`, and anything outside the bake that has
-to stand on the widget (the touch column, the shop's room) goes the other way through
-`cornerToScreen`. While the slider's knob is in hand, `renderSettings` draws the strip and the
-corner live over the slab — the minimap slider's preview grammar.
+the same anchor via `stripMouse` first, so a click can never land beside its pixel. **`hudSc()`
+caps the dial** at the size where the strip would outgrow the view, so past that point the
+slider simply stops growing it rather than pushing its ends off the screen. **The top-left corner
+scales with the same dial**: `drawCornerScaled` bakes the shelf and the drawer at 1× and blits
+them about the top-left corner (sized by `CORNER_REACH` and the drawer's height), and `bagHit`
+and `shelfHit` map the pointer back through `cornerMouse`. While the slider's knob is in hand,
+`renderSettings` draws the strip and the corner live over the slab — the minimap slider's
+preview grammar.
 
 The strip's **upgrade** half is entirely the floating buy plates above these wells — a skill
 point is spent nowhere else, and nothing else on the strip is ever bought.
 
 ### The weapon shelf
 
-**The build is on screen at all times**, on the backpack's top edge: the tool at the left end of a
-row (`shelfCellRect(-1)`) and its bit cells running right in firing order, which is the one place
-the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass) is on screen at once.
-`SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, the row's RIGHT end flush with the pack's grid, pinned by its
-BOTTOM to the pack's top edge (`bagFrameRect().y`) and grown
-upward, so the row and the budget track keep their pixels whatever the build does and a fitting's
-rail is what climbs into the open screen. It is **not a panel**: bare wells with their own drop
-shadows (`shelfWell`), so the corner stays world everywhere between them and only a cell itself
-answers `shelfHit`.
+**The one weapon, top-left, on screen at all times** (3.27): the tool in hand at the left end of a
+row (`shelfCellRect(-1)`, at `SHELF_X`/`shelfRowY()`) and its bit cells running right in firing
+order, which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
+is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
+lost its weapon well and everything else carried is in [the drawer](#the-backpack) under this
+row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (20; 44 on
+a phone, under the menu and zoom plates) and grown rightward, so the tool cell — and the
+drawer's tab under it — never move whatever the build does, and a fitting's rail is what climbs
+into the open screen above them; the SHIFT plate hangs off the row's right end (`shelfRowRight`).
+It is **not a panel**: bare wells with their own drop shadows (`shelfWell`), so the corner
+stays world everywhere between them and only a cell itself answers `shelfHit`. The tool cell is
+the weapon's one well now, so it carries every tell the strip's used to: the **sweep** of the
+rate of fire (`drawSweepCover`, the same hand the ability wells turn), the dry-bow red when the
+tool cannot answer the button, the refusal red (`toolFlash`) when a bit will not fit, and the
+"!" when the build weighs more than a press can spend.
 
 Five marks, no words, all off `toolPlan`:
 
@@ -820,44 +824,44 @@ budget reaches, and the shelf's budget track is where you go to see exactly wher
 
 ### The backpack
 
-**It is always up** — the ten-cell grid sits flush in the bottom-right corner all match, on every
-fit, and there is no pack button, no B key and no open/shut state any more (3.23). The grid is
-what a match is spent looking at, and a pack that had to be asked for hid the build; the shut
-button it used to rise off was a second thing in the corner saying nothing the grid does not.
-On a phone the [touch column](#phones) stands on the frame's top edge instead of the old
-button's, so the plates climb from `bagFrameRect().y`.
+**A drawer under the weapon shelf, shut until asked for** (3.27). The HUD shows one weapon —
+[the shelf](#the-weapon-shelf) — and everything else a player carries is in here: the spare
+tools a walk turns up and the bits no tool had a cell for. It is **invisible by default**: the
+pack key (B; L3 on a pad) or a click on the **pull tab** under the tool cell (`bagTabRect`, a
+chevron pointing the way the drawer will go and the key's cap beside it — the keybind-indicator
+carve-out) sets `state.bagOpen`, the same again or ESC clears it, and the merchant's counter
+holds it open while it is up because a sale is a drag out of it. `bagOpenNow()` is the one
+answer everything reads; `bagEase` chases it on wall time over `BAG_SLIDE_T` (0.15 s,
+`updateFx`), and the drawer draws sliding out from under the tab, clipped to the screen below
+the tab's bottom edge so it emerges rather than fades. It answers the pointer only once fully
+open; the tab always answers. `endMatch` shuts it.
 
-The frame (`bagFrameRect()`, pinned bottom-right to the view's last pixel and grown upward,
-`BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 5 — one row of five): the
-tools, bits and unopened cards a build is made of. There is no numbers row in it — the two meals
-are a pouch on [the hud strip's pouch block](#the-hud-strip) and the gold is the plate beside
-them. The rim carries the one state the cells cannot: it goes **amber when no cell is free**, and
-the whole frame reddens and shakes for `bagFlash` seconds when something could not be carried
-(`bagDenied()`, aged in `updateFx`).
+The frame (`bagFrameRect()`, two px under the tab, its cells starting on the tool cell's own
+left edge, `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
+`BAG_COLS` 6): the tools and bits a build is made of, in **small cells** — `BAG_CELL` 18 with the
+art at 1×, a third of a well, because a spare is glanced at and dragged, not read all match.
+There is no numbers row — the two meals, the gold and the cards are the
+[strip's pouch block](#the-hud-strip). The tab's rim carries every state the shut drawer cannot
+show: open keeps it lit, **amber** means no cell is free, and a refusal (`bagDenied()`, aged in
+`updateFx`) reddens and shakes tab and drawer alike for `bagFlash` seconds.
 
-Gear is not in this widget at all any more — the four pieces live on
+Gear is not in this widget at all — the four pieces live on
 [the character panel](#the-character-panel-g).
-
-The merchant's counter sells by a drag out of this grid, and the [weapon shelf](#the-weapon-shelf)
-stands on its top edge — both lay out from `bagFrameRect()`, so the three can never disagree by
-a row.
 
 A grid cell holding a tool or a bit wears that item's **tier plate** rather than the default well,
 so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
 as pips along the bottom, in the corner a stack number would have used.
 
-- **One background, one frame, no internal line.** Every part of the frame is the same opaque
-  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears — only its free top-left
-  corner cut, the other three meeting the screen's edges, and a one-pixel cap because the
-  shelf's budget track stands on that edge; the rule that used to mark off the numbers row went
-  with the row.
+- **One background, one frame, no internal line.** Every part of the drawer is the same opaque
+  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears — every corner cut, no snow
+  cap, since it lives under the shelf and not under the sky.
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
   cell recesses to `BAG_WELL` *below* the frame's ground, an empty one sits *above* it at
   `#171f45`, and the ground itself is between — occupied / free / frame.
 - **An empty cell is the *lighter* one**: it has no icon to show off, and free space is what the
   grid is being read for, while a full cell goes dark behind its item. A stack of one prints no
   number — an empty corner says it.
-- **A click on a cell uses what is in it** — a card by drawing from it, and a bit or a tool by
+- **A click on a cell uses what is in it** — a bit or a tool by
   [sending it to the weapon](gameplay.md#the-bit-column) — resolved on the
   release so that a press which travels is still a drag. Putting a *carried* item down is on the
   release too, since 3.22.
@@ -867,7 +871,7 @@ as pips along the bottom, in the corner a stack number would have used.
   while something is on the cursor, saying what letting go there *would* do before it does it
   ([what a gesture answers with](gameplay.md#what-a-gesture-answers-with)); that ring is painted
   after the drag ghost and outside the well, because the ghost is exactly as big as the cell.
-- **The frame swallows every click over itself.** `bagHit` reports `cell` or `frame`
+- **The drawer swallows every click over itself.** `bagHit` reports `tab`, `cell` or `frame`
   (anywhere else inside, inert but eaten).
 - **The grid does not stop the sim.** It is HUD, not an overlay — the same deal the
   [M map](gameplay.md#the-m-map-does-not-pause) takes, only smaller.
