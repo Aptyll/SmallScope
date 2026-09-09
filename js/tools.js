@@ -359,6 +359,14 @@ const TOOL_ROF_STEP = 1 / 60; // a tool's `rof` is counted in game steps of this
 // bits with no code of their own - see checklists.md, "adding a carried item".
 // A tool's stack is 1 because it is INSTANCED: its cell carries the bits
 // loaded into it, so two of them are never the same object.
+//
+// A BIT STACKS TO 255, which is a deliberate "as many as you will ever find".
+// A bit is ammunition for the build rather than a thing to ration: the pack's
+// ten cells are for the CHOICE between kinds, and a cell that filled up at
+// four made a run of arrows cost cells that a second kind of arrow wanted.
+// The count still reads in three characters inside an 18px cell, which is the
+// ceiling the number itself is picked against.
+const BIT_STACK = 255;
 function toolType(id) { return 'tool:' + id; }
 function bitType(id) { return 'bit:' + id; }
 function toolIdOf(type) { return type.startsWith('tool:') ? type.slice(5) : null; }
@@ -572,6 +580,96 @@ function fitAdd(p, type, n) {
   return got + bagAdd(p, type, n - got);
 }
 
+// ---- a tool that lands in the snow arrives bare ---------------------------
+// A DISCARDED WEAPON SHEDS ITS BUILD. The body and its fittings part company
+// the moment the tool hits the ground: every loaded bit comes out as its own
+// drop, flung along whatever threw the tool plus a kick of its own, so what
+// lies in the snow is a bare body in a scatter of bits rather than one pickup
+// carrying somebody else's finished weapon.
+//
+// It is the counterweight to the pack being the OVERFLOW (fitAdd above). A
+// find arms itself on the way in, so getting rid of a tool had become the way
+// to move a whole build in one gesture - and a body picked off the snow that
+// arrives already built is the one pickup nobody has to think about. Now the
+// bits are still all there, in reach, one walk apart: it costs a moment, not
+// the build.
+//
+// The tool INSTANCE is untouched by any of this - the same object still moves
+// bag to snow to bag (CLAUDE.md's hard rule); it is emptied here on purpose,
+// where it is thrown, rather than quietly rebuilt from its type name later.
+const SHED_KICK = 80;   // px/s of a shed bit's own, off the throw's heading
+function shedBits(cell, x, y, hx, hy, p) {
+  if (!cell || !cell.bits) return 0;
+  const m = Math.hypot(hx || 0, hy || 0) || 1;
+  const ux = (hx || 0) / m, uy = (hy || 0) / m;
+  let n = 0;
+  for (let i = 0; i < cell.bits.length; i++) {
+    const id = cell.bits[i];
+    if (!id) continue;
+    cell.bits[i] = null;
+    n++;
+    const a = rng() * Math.PI * 2;
+    const d = flingDrop(spawnDrop(x, y, bitType(id), 1),
+      ux * TOSS_SPEED + Math.cos(a) * SHED_KICK,
+      uy * TOSS_SPEED + Math.sin(a) * SHED_KICK);
+    if (p) lockDrop(d, p); // what you threw away stays thrown away for a moment
+  }
+  return n;
+}
+
+// ---- a better body takes the build with it --------------------------------
+// A FIND THAT IS STRICTLY BETTER SWAPS ITSELF INTO THE HAND. Two conditions,
+// both hard: the find's TIER is higher than what is held, and its `cap` is at
+// least as big, so nothing already loaded is left with nowhere to sit. Then
+// the bits move across CELL FOR CELL - the row's order IS the build, and a
+// modifier that landed behind the shots it was in front of would be worth
+// nothing - and the old body is treated exactly as the find was: into the
+// pack, or into the snow it was lying in if the pack is full.
+//
+// It is the one place the weapon changes with no hand on it, which is why it
+// carries a tell of its own (swapFx below). And it is not a courtesy for the
+// local human: a bot walking over a longbow trades up on the same rule,
+// through the same two functions, so the roster stays honest.
+function toolUpgrade(p, cell) {
+  if (!isToolCell(cell)) return false;
+  const cur = heldTool(p);
+  if (!cur) return false;            // an empty hand is an ordinary pickup
+  const A = TOOLS[toolIdOf(cur.type)], B = TOOLS[toolIdOf(cell.type)];
+  return !!A && !!B && B.tier > A.tier && B.cap >= A.cap;
+}
+// ...and doing it. Returns the body that came off, for the caller to file.
+function takeUpgrade(p, cell) {
+  const cur = heldTool(p);
+  for (let i = 0; i < cur.bits.length; i++) { cell.bits[i] = cur.bits[i]; cur.bits[i] = null; }
+  slotPut(p, p.toolSel, cell);
+  swapFx(p, cell);
+  return cur;
+}
+// AN UPGRADE THAT HAPPENS TO YOU HAS TO BE SEEN HAPPENING, and seen by
+// everyone: a rival trading up mid-fight is news to whoever is shooting at
+// them. So the tell is in the WORLD first - the new body's own icon rises out
+// of the player inside a spray of its tier's colour - and on the shelf second,
+// where the whole row lights in that same tier ink for a long beat, tool cell
+// included, because the row is what actually changed.
+const SWAP_T = 1.1;      // s the risen icon lives
+const SWAP_RISE = 26;    // px it climbs over that
+const swaps = [];        // { x, y, type, tier, t } - drawn by drawSwaps, js/render.js
+function swapFx(p, cell) {
+  const T = TOOLS[toolIdOf(cell.type)];
+  swaps.push({ x: p.x, y: p.y - 10, type: cell.type, tier: T.tier, t: 0 });
+  burst(p.x, p.y - 8, TOOL_TIERS[T.tier].ink, 14, 70, 0.6);
+  burst(p.x, p.y - 8, TOOL_TIERS[T.tier].rim, 8, 40, 0.85);
+  if (p === player) {
+    const cells = [-1];  // the tool well leads the row (shelfCellRect, js/ui.js)
+    for (let i = 0; i < cell.bits.length; i++) if (cell.bits[i]) cells.push(i);
+    bitLit = { cell, cells, t: SWAP_T, col: TOOL_TIERS[T.tier].ink };
+    SFX.levelUp();
+  } else if (nearPlayer(p.x, p.y)) SFX.pickup();
+}
+function updateSwaps(dt) {
+  for (let i = swaps.length - 1; i >= 0; i--) if ((swaps[i].t += dt) > SWAP_T) swaps.splice(i, 1);
+}
+
 // ---- what a tool fires ---------------------------------------------------
 // One press = one activation of the selected tool, resolved in ONE frame:
 // toolPlan spends the tool's tensile budget along the row and every shot it
@@ -587,13 +685,25 @@ function fitAdd(p, type, n) {
 // held by REFERENCE to the tool that fired, so swapping weapons cannot leave a
 // flash on somebody else's cells, and updateFx ages it on wall time beside the
 // refusal reds.
+// TWO EVENTS RIDE THIS ONE FLASH. The press, white, for BIT_LIT_T - and the
+// TOOL SWAP above, which lights the whole row (cell -1, the tool well,
+// included) in the new tier's ink for the longer SWAP_T. `col` is what tells
+// them apart on screen, and the tool cell is what tells them apart at a
+// glance: a press never lights it.
 const BIT_LIT_T = 0.3;
-let bitLit = null;   // { cell, cells: [i...], t }
-// how lit cell i of `cell` is, 1 at the loose and 0 by the end of the flash
+// { cell, cells: [i...], t, col } - `col` overrides the press's white, which
+// is what lets the tool swap (swapFx above) borrow the same flash in its own
+// tier ink for a longer beat. Cell -1 is the TOOL well, the shelf's own index.
+let bitLit = null;
+// how lit cell i of `cell` is, 1 at the loose and 0 by the end of the flash.
+// CLAMPED: a longer-lived flash than the press's rides this same ramp, and an
+// alpha over 1 is a value the canvas silently ignores rather than clips.
 function bitLitAt(cell, i) {
   if (!bitLit || bitLit.cell !== cell || bitLit.cells.indexOf(i) < 0) return 0;
-  return bitLit.t / BIT_LIT_T;
+  return Math.min(1, bitLit.t / BIT_LIT_T);
 }
+// ...and in what colour: white for a press, the tier's ink for a swap
+function bitLitCol() { return (bitLit && bitLit.col) || '#f4f7ff'; }
 function fireTool(p) {
   cancelCatch(p); // a press is a press: the hoist gives way to the shot (the spear below re-starts it on a catch)
   // the cover is read before anything below can break it - the ambush shot is
@@ -1167,6 +1277,6 @@ for (const id in TOOLS) {
   RES_COLORS[toolType(id)] = TOOL_TIERS[T.tier].ink;
 }
 for (const id in BITS) {
-  ITEMS[bitType(id)] = { icon: 'bitArt_' + id, stack: 4, iw: 8 };
+  ITEMS[bitType(id)] = { icon: 'bitArt_' + id, stack: BIT_STACK, iw: 8 };
   RES_COLORS[bitType(id)] = BITS[id].col;
 }

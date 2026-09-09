@@ -91,6 +91,16 @@ carrying the pointer. A pad button and a touch plate press a *key* through those
 drift from the keyboard and a new key handled in a listener alone is dead on both (the rule in
 [CLAUDE.md](../../CLAUDE.md#hard-rules)).
 
+**And the answer runs back out the same way.** `haptic(kind)` (the `haptics` banner, input.js) is
+the one call that tells the *hand* something happened — a pad through its own
+`vibrationActuator`, a phone through `navigator.vibrate`, a mouse not at all, since it has no
+motor and the cue and the on-screen pulse beside it are its whole answer. A caller names what
+happened (`grab`, `place`, `seat`, `swap`, `deny` — sized so the five are told apart with the
+eyes shut) and never which controller is in hand, exactly as a key is asked for through its
+action. The RUMBLE row on the ESC panel's GAME page (`settings.haptics`) is its off switch. Its
+one caller today is the backpack's own feedback
+([hudFx](gameplay.md#what-a-gesture-answers-with)).
+
 **The keyboard is read by where a key sits, not by what it prints** (the `keys and binds`
 banner, input.js; issue #43). The listeners translate `e.code` — the physical key — into the
 game's key *name*, the face that key wears on a US board, lowercase for a letter (`keyName`:

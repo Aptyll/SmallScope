@@ -440,6 +440,49 @@ function fireUp() {
   mouse.down = false;
 }
 
+// ---- haptics: telling the HAND something happened ------------------------
+// A gesture that moves an item has to answer in the hand that made it and not
+// only on the screen: a pad rumbles, a phone buzzes, and a mouse has neither,
+// so for a mouse the answer is the cue and the pulse the caller raises beside
+// this. ONE entry point, for the same reason a key is asked for through its
+// action - a caller must never have to know which of the three controllers is
+// in hand. It lives here because this is the file the three of them meet in;
+// `pad` (gamepad.js) and `MOBILE` (mobile.js) are run-time reads, both files
+// loading after this one.
+//
+// The four strengths are a LANGUAGE, not a volume dial: a grab is the lightest
+// thing the hand can feel, a place is firmer, a SWAP is the longest and
+// hardest because it is the one move that also changes what you are holding,
+// and a refusal is a single hard knock. Told apart with the eyes shut, which
+// is the whole job.
+const HAPTIC = {
+  grab:  { ms: 18, s: 0.22 },
+  place: { ms: 28, s: 0.45 },
+  seat:  { ms: 34, s: 0.55 },
+  swap:  { ms: 55, s: 0.8 },
+  deny:  { ms: 75, s: 0.95 },
+};
+function haptic(kind) {
+  const h = HAPTIC[kind];
+  if (!h || !settings.haptics) return;
+  try {
+    // the pad's own actuator first: a rumble belongs in the hands actually
+    // holding the game, and a phone's motor is the fallback for a finger
+    const gp = padActive() && pad.slot >= 0 ? (navigator.getGamepads() || [])[pad.slot] : null;
+    const act = gp && (gp.vibrationActuator || (gp.hapticActuators && gp.hapticActuators[0]));
+    if (act && act.playEffect) {
+      // playEffect REJECTS rather than throws (a pad that went away
+      // mid-gesture, an effect the browser will not run), and an unhandled
+      // rejection in a hot path is a console full of noise
+      const p = act.playEffect('dual-rumble', { duration: h.ms, strongMagnitude: h.s, weakMagnitude: h.s * 0.6 });
+      if (p && p.catch) p.catch(() => {});
+      return;
+    }
+    if (act && act.pulse) { const p = act.pulse(h.s, h.ms); if (p && p.catch) p.catch(() => {}); return; }
+    if (MOBILE && navigator.vibrate) navigator.vibrate(h.ms);
+  } catch (e) { /* no actuator, or a browser that refuses one: the ear and the eye still answered */ }
+}
+
 // The worker flag is press-and-HOLD, the build wheel's grammar one button
 // over: the press raises the preview, the release plants where it landed.
 // Nothing about the flag is drawn until this press, which is the whole point

@@ -472,6 +472,7 @@ function updatePlay(dt) {
   for (let i = drops.length - 1; i >= 0; i--) {
     const d = drops[i];
     d.t += dt;
+    if (d.lockT > 0) d.lockT = Math.max(0, d.lockT - dt); // what one player threw, still refusing that one hand
     d.vz -= 220 * dt;
     d.z += d.vz * dt;
     if (d.z < 0) { d.z = 0; d.vz = -d.vz * 0.4; if (Math.abs(d.vz) < 15) d.vz = 0; }
@@ -484,11 +485,13 @@ function updatePlay(dt) {
     // sitting on it. (Gold never lies here - awardGold pays it on the spot.)
     // ...and "room" counts the free cells of the tool in hand, not just the
     // pack's: a found bit arms itself (fitRoom / fitAdd, js/tools.js), so a
-    // full pack with an empty bit cell still pulls a bit in and still claims it
-    const roomFor = (p) => fitRoom(p, d.type) > 0;
+    // full pack with an empty bit cell still pulls a bit in and still claims
+    // it - and a body that will SWAP for the one in hand is always room,
+    // because that pickup is an exchange and not an addition (toolUpgrade)
+    const roomFor = (p) => fitRoom(p, d.type) > 0 || toolUpgrade(p, d.it);
     let near = null, pd = 1e9;
     for (const p of players) {
-      if (!p.active || p.dead || inAir(p) || !roomFor(p)) continue;
+      if (!p.active || p.dead || inAir(p) || dropLocked(d, p) || !roomFor(p)) continue;
       const dd = Math.hypot(d.x - p.x, d.y - p.y);
       if (dd < pd) { pd = dd; near = p; }
     }
@@ -498,6 +501,9 @@ function updatePlay(dt) {
     }
     if (d.t > 0.35) for (const p of players) {
       if (!p.active || p.dead || inAir(p) || Math.hypot(d.x - p.x, d.y - p.y) >= 7) continue;
+      // your own throw, inside its three seconds: not a claimant and not a
+      // refusal either - you are standing on something you meant to put down
+      if (dropLocked(d, p)) continue;
       // standing on a pickup you cannot carry says so on the HUD and leaves
       // it lying there - the drop is not consumed and not destroyed
       if (!roomFor(p)) { if (p === player) bagDenied(); continue; }
@@ -508,7 +514,17 @@ function updatePlay(dt) {
         // drop, so a stack that only partly fits leaves its remainder lying
         // there instead of being picked up forever. An instanced drop (a
         // loaded tool) goes in whole or not at all - it cannot be split.
-        const got = d.it ? (bagPut(p, d.it) ? 1 : 0) : fitAdd(p, d.type, d.n);
+        //
+        // A STRICTLY BETTER BODY takes the hand instead, and the build with
+        // it (takeUpgrade, js/tools.js). What comes off is then treated
+        // exactly as this find was a moment ago: the pack, or the snow it was
+        // lying in - so the exchange never needs a cell that is not there.
+        let got;
+        if (toolUpgrade(p, d.it)) {
+          const old = takeUpgrade(p, d.it);
+          got = 1;
+          if (!bagPut(p, old)) spawnDrop(d.x, d.y, old.type, 1, old);
+        } else got = d.it ? (bagPut(p, d.it) ? 1 : 0) : fitAdd(p, d.type, d.n);
         if (got > 0) {
           d.n -= got;
           addFloater(p.x, p.y - 14, '+' + got, RES_COLORS[d.type]);
@@ -1240,7 +1256,12 @@ function updateFx(dt) {
     if (f.t > 0.9) floaters.splice(i, 1);
   }
   updateWarps(dt); // the silhouettes a teleport request left behind (js/tools.js)
+  updateSwaps(dt); // ...and the risen icon a tool that traded itself up leaves
   if (bagFlash > 0) bagFlash -= dt; // the backpack's refusal red is chrome: wall time
+  // ...and the positive half of the same idiom: the well an item just landed
+  // in, and the cursor when a swap changed what the hand is holding (hudFx, ui.js)
+  if (wellLit && (wellLit.t -= dt) <= 0) wellLit = null;
+  if (dragLit > 0) dragLit -= dt;
   if (toolFlash > 0) toolFlash -= dt; // ... and the weapon well's, beside it
   if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's

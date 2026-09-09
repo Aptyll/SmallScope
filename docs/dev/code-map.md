@@ -31,7 +31,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the singletons | `state`, `settings`, `perf` | `state` (`players`/`player` + the entity arrays: `players`, player.js) |
 | settings persistence and the minimap-size helpers | `saveSettings`, `loadSettings`, `mmScale`, `applyMinimapSize` | `state` |
 | `relayout()` — the resize pair's second half | `relayout` | `state` (`fitCanvas`: `canvas`, canvas.js — still the resize pair) |
-| floaters, particles, drops, cost math, and the HUD's four-character count (`999` › `1.2K` › `340K` › `1.2M`) | `addFloater`, `burst`, `spawnDrop`, `canAfford`, `NUM_SUFFIX`/`shortNum` | `helpers` |
+| floaters, particles, drops, cost math, and the HUD's four-character count (`999` › `1.2K` › `340K` › `1.2M`) | `addFloater`, `burst`, `spawnDrop` (returns the drop), `canAfford`, `NUM_SUFFIX`/`shortNum` | `helpers` |
+| a thing put down ON PURPOSE: the heading a throw carries, and the three seconds it refuses the hand that threw it | `TOSS_SPEED`, `TOSS_LOCK_T`, `flingDrop`, `lockDrop`, `dropLocked` (set by `throwCell`/`shedBits`, read by the drop loop in `updatePlay` sim.js and the drop draw pass, render.js) | `helpers` |
 | food: the 1.5 s meal, the 3 s clock berries and fish share, and every way one is broken | `FOOD_CD`/`FOOD_EAT`/`FOOD_SLOW`/`FOOD_FX_T`, `startEat`, `eatBerry`/`eatFish`, `updateEat`, `breakEat` | `helpers` › `food` (the heal numbers: `ITEMS[type].heal`, `players`, player.js; the wells that draw the clock: `drawFoodClock`, ui.js) |
 | the gold flare and crack an ambush arrow lands with | `ambushFx`, the `crit` flag on `addDmgFloater` | `helpers` |
 
@@ -77,6 +78,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad / touch) | `input` |
 | what a key does, what a button does - the four entry points every controller presses through | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease` | `input` |
 | the bare gestures a trigger or a plate sends: the draw, the worker flag, a wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `flagDown`/`flagUp`, `openWheelNear`, `panelScrollBy` | `input` |
+| telling the HAND something happened - a pad's rumble, a phone's buzz, one call over all three controllers | `HAPTIC`, `haptic` (its caller: `hudFx`, ui.js; its off switch: the RUMBLE row, `SET_TABS` panels.js) | `haptics` |
 | the zoom wheel, the listeners | the `addEventListener` block | `input` |
 | folding keys, mouse and both sticks into player 0's struct | `sampleHumanInput` | `input` |
 
@@ -212,7 +214,10 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a bot putting its loot to work, having no shelf and no pointer | `botFitLoadout` | `tools & bits` › `a bot fitting what it has found` (called from `updateAI`: `ai`, ai.js) |
 | the icons for both, and the one bake helper they share | `TOOL_ART`, `TOOL_ART_PAL`, `BIT_ART`, `BIT_PAL`, `bakeGrid` | `tools & bits` › `icons` |
 | **a found bit arming itself**: the free cells of the tool in hand counted as room, and the pickup that fills them before the pack (a bot is left to `botFitLoadout`) | `autoFitTool`, `fitRoom`, `fitAdd` (its callers: the drop pickup in `updatePlay`, sim.js; `shopBuy`, shop.js) | `tools & bits` › `a find arms itself` |
-| what the last press SPENT, lit on the shelf and fading | `BIT_LIT_T`, `bitLit`, `bitLitAt` (set in `fireTool`, aged in `updateFx`, sim.js) | `tools & bits` › `what a tool fires` |
+| **a discarded weapon shedding its build** as it lands — every ground-drop path calls it | `SHED_KICK`, `shedBits` (its callers: `throwCell`, ui.js; `spillInventory`, player.js) | `tools & bits` › `a tool that lands in the snow arrives bare` |
+| **a better body taking the hand and the build with it**: whether a find would swap, doing it (bits move cell for cell), and the tell it raises | `toolUpgrade`, `takeUpgrade`, `swapFx`, `SWAP_T`/`SWAP_RISE`/`swaps`, `updateSwaps` (called from the drop pickup in `updatePlay` sim.js; drawn by `drawSwaps`, render.js) | `tools & bits` › `a better body takes the build with it` |
+| what the last press SPENT — or, on a swap, the whole row — lit on the shelf and fading | `BIT_LIT_T`, `bitLit` (`{cell, cells, t, col}`; cell -1 is the tool well), `bitLitAt` (clamped), `bitLitCol` (set in `fireTool` and `swapFx`, aged in `updateFx`, sim.js) | `tools & bits` › `what a tool fires` |
+| how big a stack of bits a cell holds | `BIT_STACK` (read by the `ITEMS` registration at the foot of the file) | `tools & bits` › `items: one bag entry per kind` |
 
 ## js/abilities.js
 
@@ -292,6 +297,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the `.` overlay's routes: waypoints + goal tile, a bird's perch line, a fish's heading arrow | `drawNavPaths`, `hbArrow` | `debug overlays` |
 | which body a bit flies as, and the four that are not the arrow | `BIT_BODY`, `drawTumbler`, `drawMote`, `drawSwungBody`/`FIST_MAP`/`AXE_MAP`/`BIT_INK`, `drawWarpShot` | `render` (after the shots pass; the names they answer to: `body` on `BITS`, tools.js) |
 | the silhouettes a teleport strings across its jump | `drawWarps` | `render` › `the teleport's flash` (the flash itself: `warpPlayer`/`warps`, tools.js) |
+| the ring and the risen icon a TOOL SWAP raises, on every player | `drawSwaps` | `render` › `a weapon that changed hands with nobody's hand on it` (the event itself: `swapFx`/`swaps`, tools.js) |
 | **the three item icons that MOVE** (the gold piece, the berry, the fish): the frame stamped into each one's live canvas, once a frame off one clock, so `SPRITES[ITEMS[type].icon]` stays one generic read everywhere | `stepItemIcons`, `ITEM_FR` (the frames: `SPRITES.itemAnim`; the grids: the `gold nugget` and `items` sections of sprites.js) | `render` (called at the top of `render()`, before anything draws) |
 | pointer state and the bow aim line | `cursorInfo`, `drawCursor`, `drawAimLine` | `cursor & aim line` |
 
@@ -307,7 +313,9 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the backpack (bottom-right, OPEN by default): the pack button (shut: the whole widget), the open frame's ten-cell grid, the refusal flash | `BAG_CELL`/`BAG_GAP`/`BAG_PAD`/`BAG_BTN`/`BAG_BG`/`BAG_WELL`, `bagOpenNow`, `bagFrameRect`, `bagBtnRect`, `bagCellRect`, `bagCellPlate`, `bagHit`, `bagClick`, `bagDenied`, `drawFoodClock`, `drawBag` | `UI` › `the backpack` |
 | the pack button's 20px rucksack icon, baked once | `BAG_ICON`, `BAG_ICON_PAL`, `bagIconCv` | `UI` › `the pack icon` |
 | the character panel (G): the live body with its gear bands, the stat ledger off the live kit, the four gear pieces and their buys | `CHAR_LEDW`/`CHAR_WELL`, `charLayout`, `charHit`, `gearHit` (the piece-index read tipAt and the cursor keep using), `charClick`, `drawCharPanel` (state: `state.charOpen`, core.js) | `UI` › `the character panel` |
-| carrying an item between the grid, the weapon slot and the shelf | `state.drag`/`state.dragPend`, `DRAG_SLOP`, `hudPress`, `hudMove`, `hudRelease`, `dragTake`, `dragLift` (a well's item onto the cursor), `dragReturn`, `dragDrop`, `dragDropBag`, `dragDropBit`, `dragDropSlot`, `throwCell`, `drawDragGhost` | `UI` › `carrying an item on the cursor` (its three listeners: `input`, input.js) |
+| carrying an item between the grid, the weapon slot and the shelf | `state.drag`/`state.dragPend`, `DRAG_SLOP`, `hudPress`, `hudMove`, `hudRelease`, `dragTake`, `dragLift` (a well's item onto the cursor), `dragReturn`, `dragDrop`, `dragDropBag`, `dragDropBit`, `dragDropSlot`, `throwCell` (the throw's heading + lock: `flingDrop`/`lockDrop`, core.js; a tool's bits: `shedBits`, tools.js), `drawDragGhost` | `UI` › `carrying an item on the cursor` (its three listeners: `input`, input.js) |
+| **what a gesture answers with** — one call raising the cue, the rumble and the well's pulse together (five kinds: grab / place / seat / swap / deny) | `hudFx`, `HUD_FX`, `WELL_LIT_T`/`DRAG_LIT_T`, `wellLit`/`dragLit`, `wellLitAt`, `drawWellLit` (aged in `updateFx`, sim.js; the rumble: `haptic`, input.js) | `UI` › `what a gesture answers with` |
+| **what letting go would do**, as a ring on the well under the pointer while something is carried | `dropKindBag`, `dropKindSlot`, `dropKindBit`, `DROP_RIM`/`dropRim`, `drawDropRing`, `drawDropPromise` (drawn after `drawDragGhost`, over it) | `UI` › `what a gesture answers with` |
 | where the item a drop DISPLACES goes - home, which makes the drop a swap | `dragHome` (its three callers are the three `dragDrop*`; false = the ousted item rides the cursor as before) | `UI` › `carrying an item on the cursor` |
 | a click or SHIFT-click SENDING an item to its one other side (bag <-> weapon, bag <-> shelf) | `sendBagCell`, `sendBitCell`, `sendSlot` (each returns whether it handled the click), `sendAt` (the shift-while-carrying hit test), `tipSend` | `UI` › `one click sends it to the other side` (resolved in `hudRelease`, refused by `bagDenied`/`toolDenied`) |
 | the SHIFT key cap over the pack: where the hovered well would send what it holds | `shiftVerb` (LOAD / STOW / HOLD / null, asking `sendAt`'s wells in `sendAt`'s order), `drawShiftHint` | `UI` › `the pack's SHIFT plate` (the cap itself: `drawKeyPrompt`, `selection, hints & wheel`) |
