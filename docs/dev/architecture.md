@@ -38,7 +38,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sim.js](../../js/sim.js) | ~810 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
 | [js/draw-world.js](../../js/draw-world.js) | ~1160 | shared scope, no `window.*` export | the world's pixels: the prerendered ground, every entity's sprite pass, the flag and camp glyphs, lighting/weather/vignettes |
 | [js/render.js](../../js/render.js) | ~980 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
-| [js/ui.js](../../js/ui.js) | ~1950 | shared scope, no `window.*` export | the in-match HUD: radial wheel, brackets and prompts, minimap, the backpack, the character panel, the weapon strip, the weapon shelf, the drag, card draft, the hover tooltip |
+| [js/ui.js](../../js/ui.js) | ~1950 | shared scope, no `window.*` export | the in-match HUD: radial wheel, brackets and prompts, minimap, the backpack, the character panel, the weapon strip, the weapon shelf, the drag, the hover tooltip |
 | [js/shop.js](../../js/shop.js) | ~700 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
 | [js/panels.js](../../js/panels.js) | ~820 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab, the PLAYER name panel |
 | [js/menu.js](../../js/menu.js) | ~1450 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
@@ -194,7 +194,7 @@ for the current API — it is deliberately the whole external surface, and
 All game state lives in top-level singletons shared across the game files — `state` and
 `settings` in core.js, `players`/`player`/`inv` and the entity arrays in player.js:
 
-- **`state`** — the match: tick, day/time, darkness, mode, overlays (`state.draft`, `state.msg`).
+- **`state`** — the match: tick, day/time, darkness, mode, overlays (`state.mapOpen`, `state.msg`).
 - **`settings`** — the player's dials, persisted **under the profile** (`PROFILE.putSettings`).
 - **`players`** — the ten players. `player` and `inv` are aliases for **the local player only**
   (player 0) and its gold-only wallet; carried goods are `player.bag` and the two meals the

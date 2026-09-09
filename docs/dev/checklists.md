@@ -445,8 +445,8 @@ already current, so it is safe to call from a state change that repeats.
 range/dmg/rate, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the roll-out
 cadence is inline in `updateStructures()`'s spawner branch), `CHEST_ODDS` (a chest's card rarity
 roll, js/actions.js), `RESPAWN_BASE`/`RESPAWN_LV` (the wait for the
-bird, beside `die()`, js/player.js), the `CARDS` table (every card's effect, by rarity) and `pick3Distinct`'s
-draw-3 rule, the `YIELD` table (every gold payout, the one table still in core.js), the trickle
+bird, beside `die()`, js/player.js), the `CARDS` table (every card's effect, by rarity) and `useCard`'s (js/core.js)
+random draw, the `YIELD` table (every gold payout, the one table still in core.js), the trickle
 (`TRICKLE_GOLD`/`TRICKLE_T`, js/sim.js) and `TREE_HP` (js/world.js) beside it, the hero-level table
 (`LEVEL_XP`/`LVL_HP`/`LVL_DMG`, js/player.js — sized against the harness, see
 [multiplayer.md](multiplayer.md#bots)), the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/

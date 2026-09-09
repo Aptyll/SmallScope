@@ -340,8 +340,8 @@ function noteFrame(x, y, col) {
 const SHOP_RESTOCK = 120; // s between turnovers
 const SHOP_COLS = 3;      // offers in every section
 // Cards are rolled by rarity, not by name: an unopened card is what changes
-// hands and the pick of three inside it is drawn afterwards (openDraft,
-// js/ui.js), so the buyer is paying for the odds. Kinder than a chest's odds
+// hands and the buff inside it is drawn afterwards (useCard,
+// js/core.js), so the buyer is paying for the odds. Kinder than a chest's odds
 // (CHEST_ODDS, js/world.js) - a counter you can choose to walk to should show
 // the better rarities more often than a box you tripped over.
 const SHOP_CARD_ODDS = { white: 0.4, green: 0.3, blue: 0.19, purple: 0.09, gold: 0.02 };

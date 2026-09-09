@@ -166,27 +166,30 @@ function playerTint(p) {
 // moved with bagPut() rather than rebuilt from a type name. Nothing else in
 // the bag has state of its own.
 //
-// FOOD IS NOT IN THE BAG AT ALL. An item marked `pouch` lives in `p.food`, a
-// pair of uncapped counters beside the wallet, and takes no cell: the two
-// meals are pressed on Q and F from the hud strip's own buttons and are never
-// laid out, compared or dragged, so every cell one of them took was a cell
-// taken off the build. The six helpers below route them there, which is what
-// keeps the pickup, the catch, the sale, the AI's food check and the death
-// spill generic over "a berry" and "a bit" alike.
+// FOOD AND CARDS ARE NOT IN THE BAG AT ALL. An item marked `pouch` lives in
+// `p.food`, a set of uncapped counters beside the wallet, and takes no cell:
+// the two meals are pressed on Q and F from the hud strip's own buttons, and
+// an unopened card (3.26) is DRAWN on the card key from the strip's card
+// button - one at random from everything held, its buff picked at random
+// (useCard, js/core.js) - so none of them is ever laid out, compared or
+// dragged, and every cell one of them took was a cell taken off the build.
+// The six helpers below route them there, which is what keeps the pickup, the
+// catch, the sale, the AI's food check and the death spill generic over "a
+// berry" and "a bit" alike.
 // `heal` is what a meal is worth before HEARTHWEAVE - the ONE place the number
 // lives, so the tooltip and the meal that lands can never disagree (js/core.js).
 const ITEMS = {
   berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
   fish: { icon: 'itemFish', stack: Infinity, pouch: true, heal: 50 },
-  // unopened roguelike cards - one ITEMS entry per rarity, so bag storage,
-  // the drop pickup, the refusal flash and death-spill are all free (see
-  // checklists.md "adding a carried item"). Opening one (bagClick) starts
-  // the pick-1-of-3 draft instead of eating; see CARDS below and state.draft.
-  cardWhite:  { icon: 'itemCardWhite',  stack: 5 },
-  cardGreen:  { icon: 'itemCardGreen',  stack: 5 },
-  cardBlue:   { icon: 'itemCardBlue',   stack: 5 },
-  cardPurple: { icon: 'itemCardPurple', stack: 5 },
-  cardGold:   { icon: 'itemCardGold',   stack: 5 },
+  // unopened roguelike cards - one ITEMS entry per rarity, in the pouch like
+  // a meal, so the drop pickup, the counter and the death spill are all free
+  // (see checklists.md "adding a carried item"). Drawing one (useCard,
+  // js/core.js) applies a random entry of its rarity; see CARDS below.
+  cardWhite:  { icon: 'itemCardWhite',  stack: Infinity, pouch: true },
+  cardGreen:  { icon: 'itemCardGreen',  stack: Infinity, pouch: true },
+  cardBlue:   { icon: 'itemCardBlue',   stack: Infinity, pouch: true },
+  cardPurple: { icon: 'itemCardPurple', stack: Infinity, pouch: true },
+  cardGold:   { icon: 'itemCardGold',   stack: Infinity, pouch: true },
 };
 const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // What one unopened card of each rarity costs at the merchant's counter
@@ -199,15 +202,19 @@ const CARD_PRICE = { white: 25, green: 45, blue: 80, purple: 130, gold: 210 };
 function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slice(1); }
 const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
 for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
-// The one bag everyone starts with; a second one raises p.bagCap. Two rows of
-// BAG_COLS - a simple inventory: room for the meals, a card or two, and the
-// spare tool or bits a fight turns up, with every cell earned by choosing
-// what to keep.
-const BAG_CAP = 10;
+// The one bag everyone starts with; a second one raises p.bagCap. ONE row
+// of BAG_COLS (3.26) - a simple inventory: the spare tool or bits a fight
+// turns up, with every cell earned by choosing what to keep. It can afford
+// to be one row because nothing that is merely COUNTED lives in it any more
+// (meals and cards are the pouch) and a found bit loads itself into a tool
+// before it ever takes a cell (fitAdd, js/tools.js).
+const BAG_CAP = 5;
 // Is this kind carried in the POUCH (p.food) rather than in a cell? One test,
 // asked by all four counting helpers, so a pouch kind can never be half in
 // one store and half in the other.
 function isPouch(type) { return !!(ITEMS[type] && ITEMS[type].pouch); }
+// a fresh pouch: every pouch kind at zero, so a count is never undefined
+function newPouch() { const o = {}; for (const k in ITEMS) if (ITEMS[k].pouch) o[k] = 0; return o; }
 function bagCount(p, type) {
   if (isPouch(type)) return p.food[type] || 0;
   let n = 0;
@@ -308,8 +315,9 @@ const GEAR = [
 ];
 // ---- roguelike cards ------------------------------------------------------
 // Dropped by a sprung chest in the treeline (hitObject's chest branch,
-// js/actions.js, rolled against CHEST_ODDS) and picked via a pick-1-of-3
-// draft (state.draft, opened from bagClick).
+// js/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
+// on the card key: one card at random from everything held, one entry at
+// random from its rarity (useCard, js/core.js) - no draft screen (3.26).
 // Same shape as a GEAR variant's mod(k, L) minus the level - a card is a
 // one-shot pick, not a leveled buy - folded into the kit cumulatively by
 // refreshKit below, so every kit-reading site in the sim picks them up for
@@ -352,15 +360,6 @@ const CARDS = {
     { name: "WINTER'S CHILD", blurb: 'MUCH FASTER, SHARPER ON ICE', mod: (k) => { k.iceMax *= 1.3; k.iceSteer += 0.35; k.walkMul += 0.05; } },
   ],
 };
-// 3 distinct entries from CARDS[rarity], the draft's pick-1-of-3 options
-function pick3Distinct(rarity) {
-  const pool = CARDS[rarity].map((c, id) => id);
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
-  }
-  return pool.slice(0, Math.min(3, pool.length));
-}
 
 // the class kit plus the gear-free defaults - the fields no class kit
 // carries; a variant's mod() edits them in place. Shared by refreshKit and
@@ -413,6 +412,7 @@ function makeInput() {
                          // (key 3 for the human; the burrow itself is now the
                          // hunter's SNOW COVER cast, key 4, not an input)
     eatBerry: false, eatFish: false, // edge-triggered
+    useCard: false,      // edge-triggered: draw one unopened card at random (useCard, js/core.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/abilities.js
     cmd: null,           // one-shot: {kind:'build'|'upgrade'|'demolish'|'craft', tx, ty, id} or {kind:'gear', piece} or {kind:'ability', i}
   };
@@ -435,7 +435,7 @@ class Player {
     // the POUCH: the two meals, uncapped and cell-free (the ITEMS `pouch`
     // flag above). Read and written only through the bag helpers, so every
     // caller stays generic over where a kind actually lives.
-    this.food = { berry: 0, fish: 0 };
+    this.food = newPouch();             // the pouch: the two meals and the unopened cards, uncapped
     this.cls = 0;                       // CLASSES index; the select screen sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
@@ -706,8 +706,9 @@ function spillInventory(p, killer) {
     const base = Math.floor(n / parts), rem = n % parts;
     for (let i = 0; i < parts; i++) spawnDrop(p.x, p.y - 4, k, base + (i < rem ? 1 : 0));
   }
-  // the pouch: a hoard of meals is worth as much as a bag of them was, so it
-  // goes down with the body too - one drop per kind, carrying the whole count
+  // the pouch: a hoard of meals (or of unopened cards) is worth as much as a
+  // bag of them was, so it goes down with the body too - one drop per kind,
+  // carrying the whole count
   for (const k in p.food) {
     const n = p.food[k];
     p.food[k] = 0;
@@ -955,7 +956,6 @@ function endMatch(how) {
   state.mapOpen = false;
   state.settingsOpen = false;
   state.wheel = null;
-  state.draft = null;
   state.flagAim = false;
   state.deadTimer = 0;
   state.defeatT = 0;

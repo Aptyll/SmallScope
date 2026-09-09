@@ -115,8 +115,8 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals,
-the sheet, the map, the standings, mute, pause — with the key each starts on, in the order the
+verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the card
+draw, the sheet, the map, the standings, mute, pause — with the key each starts on, in the order the
 CONTROLS page lists them; `settings.binds` (action id → key name) is the live map, saved with
 the profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
 reserved key or a key two actions share falls back to its default). **Nothing compares a key
@@ -166,7 +166,7 @@ not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
 off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
-dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
+L3 draws a card, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 holds the worker
 flag, dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
@@ -184,7 +184,7 @@ right stick scrolls the page, and the left stick is a pointer
 over pointer-only surfaces (a panel, the wiki, class select) and the arrow
 keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
 `padRepeat`). The panels that keep the world running under them — the chart, the counter, the
-sheet, the draft (`padPanelMode`) — keep the feet too: WASD walks under them
+sheet (`padPanelMode`) — keep the feet too: WASD walks under them
 (`sampleHumanInput`), so there the left stick walks and the right stick is the hand. A mode flip under held buttons releases them in the mode they were pressed in and
 keeps them marked down, so the START that opened the slab does not close it (`padReleaseAll`).
 While the pad owns the pointer `mouse.inside` is held true, so a mouse parked off the window
@@ -589,7 +589,7 @@ The ladder:
    shop is human-only except the drag that sells. Then, with gold in hand, build a generator (or, 30% of the time and
    only where `findSite` finds 3×2 of room, a bot bay) on a nearby stump, else upgrade its own
    work; steps off a build site first, since a building is solid. Picking up a dropped card off the ground already falls out of the loot rung
-   (drops are type-agnostic loot); a bot never opens the pick-1-of-3 draft itself
+   (drops are type-agnostic loot); a bot never presses the card key itself
    (`bagClick` is mouse-only) — the instant one is carried, `resolveCardForBot` resolves it with a
    single random pick, since choosing among three is specifically the human decision point.
 13. **harvest** — walk to a tree/rock/berried bush within `AI_FORAGE` (12 tiles) and hold E at

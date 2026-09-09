@@ -1,6 +1,6 @@
 'use strict';
 // The in-match HUD: the radial wheel, tile brackets and key prompts, the
-// minimap, the backpack + gear widget, the hud strip and the card draft -
+// minimap, the backpack + gear widget and the hud strip -
 // everything renderUI() puts over the world while you play.
 // ------------------------------------------------------------ radial wheel
 // One geometry, any number of options: n wedges of exactly 2*PI/n, the first
@@ -829,10 +829,8 @@ function bagHit(mx, my) {
 function bagClick(h) {
   if (!h) return false;
   if (h.kind === 'frame') return true; // the panel eats it; the world never sees it
-  const s = player.bag[h.i];
-  if (!s) { SFX.deny(); return true; }
-  if (CARD_TYPE_RARITY[s.type]) openDraft(CARD_TYPE_RARITY[s.type]);
-  else SFX.deny();
+  // a cell that a plain click could not send anywhere (sendAt tried first)
+  SFX.deny();
   return true;
 }
 
@@ -1078,72 +1076,6 @@ function dragDropBag(i) {
   else { state.drag = { cell: s, from: { k: 'bag', i } }; hudFx('swap', 'bag', i); }
   return true;
 }
-// opens the pick-1-of-3 draft for a rarity - a pure local UI state change,
-// like the pack toggle above, not a contest (only the local human ever
-// touches their own bag). Does NOT pause the sim: bag/map/wheel don't either.
-function openDraft(rarity) {
-  state.draft = { rarity, options: pick3Distinct(rarity) };
-  SFX.pickup();
-}
-const DRAFT_CW = 130, DRAFT_CH = 96, DRAFT_GAP = 10;
-function draftLayout() {
-  const w = DRAFT_CW * 3 + DRAFT_GAP * 2;
-  const x0 = Math.round((VIEW_W - w) / 2), y = Math.round((VIEW_H - DRAFT_CH) / 2);
-  const cards = [];
-  for (let i = 0; i < 3; i++) cards.push({ x: x0 + i * (DRAFT_CW + DRAFT_GAP), y, w: DRAFT_CW, h: DRAFT_CH });
-  return cards;
-}
-function draftHit(mx, my) {
-  if (!state.draft) return -1;
-  const cards = draftLayout();
-  for (let i = 0; i < cards.length; i++) {
-    const r = cards[i];
-    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return i;
-  }
-  return -1;
-}
-// a card picks it - bagTake, push onto p.cards, refreshKit, exactly the
-// storage/kit halves the plan calls for; anywhere else just closes the
-// draft. Either way the click never reaches the world (see mousedown).
-function draftClick() {
-  const d = state.draft;
-  const i = draftHit(mouse.x, mouse.y);
-  if (i >= 0) {
-    const id = d.options[i];
-    bagTake(player, cardKey(d.rarity), 1);
-    player.cards.push({ rarity: d.rarity, id });
-    refreshKit(player);
-    addFloater(player.x, player.y - 18, CARDS[d.rarity][id].name, RES_COLORS[cardKey(d.rarity)]);
-    SFX.levelUp();
-  }
-  state.draft = null;
-}
-// bots skip this UI entirely - see resolveCardForBot in the ai banner
-function renderDraft() {
-  const d = state.draft;
-  ctx.fillStyle = 'rgba(6,10,24,0.72)';
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  const cards = draftLayout();
-  const col = RES_COLORS[cardKey(d.rarity)];
-  const hit = draftHit(mouse.x, mouse.y);
-  const title = d.rarity.toUpperCase() + ' CARD - CHOOSE ONE';
-  drawPixelTextShadow(ctx, title, Math.round((VIEW_W - pixelTextWidth(title, 2)) / 2), cards[0].y - 16, col, '#0a0e23', 2);
-  for (let i = 0; i < cards.length; i++) {
-    const r = cards[i], hot = hit === i;
-    const lift = hot ? 2 : 0;
-    const x = r.x, y = r.y - lift, w = r.w, h = r.h;
-    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 2, r.y + 2, w, h);
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = hot ? '#1f2b5c' : '#141c3c'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-    ctx.fillStyle = col;
-    ctx.fillRect(x + 2, y + 1, w - 4, 1); ctx.fillRect(x + 1, y + 2, 1, h - 4);
-    ctx.fillRect(x + 2, y + h - 2, w - 4, 1); ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
-    const card = CARDS[d.rarity][d.options[i]];
-    ctx.drawImage(SPRITES[ITEMS[cardKey(d.rarity)].icon], x + Math.round(w / 2) - 4, y + 10);
-    drawPixelTextShadow(ctx, card.name, x + Math.round((w - pixelTextWidth(card.name)) / 2), y + 26, hot ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-    drawPixelTextShadow(ctx, card.blurb, x + Math.round((w - pixelTextWidth(card.blurb)) / 2), y + 40, '#9fb6d8', '#0a0e23');
-  }
-}
 // One cell, and the reason nothing in here is bigger than anything else:
 // grid slots and gear plates all come out of this. Returns
 // the y it actually drew at, since a hover lift shifts it.
@@ -1345,8 +1277,6 @@ function drawFoodClock(x, y, w, h, type) {
 // plain click's own move (hudRelease), and while carrying something it is
 // sendAt, which spends the click on this well and leaves the hand loaded. The
 // verb reads the same either way, because the well's item goes the same way.
-// A card gets no plate: drafting is not a transfer, and a plate over it would
-// promise a move that does not exist.
 function shiftVerb(mx, my) {
   if (!mouse.inside || player.dead) return null;
   const fh = shelfHit(mx, my);    // the same wells, in the same order, sendAt tries
@@ -1470,11 +1400,18 @@ function drawBag(now) {
 // own so it slides in with the HUD, scales with it, and stays one glance from
 // the meals and the abilities it is spent on.
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
-const FOOD_CELL = 16; // a meal button's height; 2 * FOOD_CELL + AB_GAP = AB_CELL
-const FOOD_W = 40;    // ...and its width: the key cap, the 8px icon and a 4-char count
-const FOOD_ICON_X = 13; // the icon is PINNED, so a count that grows never shifts it
-const PURSE_H = 11;   // the tab over that column: an 8px coin with a pixel of air
-const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + FOOD_W;
+// THE POUCH BLOCK, the strip's right end: the four numbers you own in a 2x2
+// of half-height cells - berry over fish on the left, gold over cards on the
+// right (3.26). Each cell reads left to right as a key cap (the carve-out; the
+// gold has none), a SQUARE icon plate, and the count right-aligned - so the
+// four line up as two columns of squares and two columns of numbers, and a
+// count that grows never moves an icon.
+const FOOD_CELL = 16;  // a pouch cell's height; 2 * FOOD_CELL + AB_GAP = AB_CELL
+const FOOD_KEY_W = 9;  // the key cap's seat, left of the square
+const FOOD_SQ = 16;    // the icon plate: a FOOD_CELL square
+const FOOD_W = FOOD_KEY_W + FOOD_SQ + 2 + 22; // ...then a 4-char count and its air
+const POUCH_W = FOOD_W * 2 + AB_GAP; // the block: two columns
+const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W;
 const AB_PAD = 2, AB_XP = 5, AB_SEGS = 10; // AB_SEGS: xp bar notches
 const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
 const AB_BG = '#0d1229';
@@ -1503,10 +1440,10 @@ function stripAnchorX() {
   const s = hudSc(), half = (AB_W / 2 + 3) * s;
   return Math.min(VIEW_W / 2, VIEW_W - CORNER_REACH * s - 4 - half);
 }
-// How far the strip drops to be AWAY: its own height plus the purse tab
-// standing on it, so the whole widget clears the bottom edge rather than
-// leaving a sliver of tab over a cinematic.
-const HUD_SLIDE = AB_H + PURSE_H;
+// How far the strip drops to be AWAY: its own height and a pixel, so the
+// whole widget clears the bottom edge rather than leaving a rim over a
+// cinematic.
+const HUD_SLIDE = AB_H + 1;
 // How far the HUD has slid in: 0 while it is away below the screen, 1 once it
 // is home. The intro rides it up (renderUI) - and a ceremony PINS it there,
 // because the drop brief's camera branch holds state.intro for the whole
@@ -1551,17 +1488,22 @@ function stripCellRect(j) {
 function toolCellRect(i) { return stripCellRect(i); }
 // ability i's well: keys 1-4, in order to the weapon's right
 function abCellRect(i) { return stripCellRect(1 + i); }
-// meal button i (0 the berry over 1 the fish), the strip's right end
-const FOOD_BTNS = [{ type: 'berry', act: 'berry' }, { type: 'fish', act: 'fish' }]; // the meal, and the action whose key its cap prints
-function foodCellRect(i) {
+// pouch cell (col, row) of the 2x2 block: col 0 the meals, col 1 gold and cards
+function pouchCellRect(col, row) {
   const R = hudStripRect();
-  return { x: R.x + AB_W - FOOD_W, y: R.y + AB_PAD + i * (FOOD_CELL + AB_GAP), w: FOOD_W, h: FOOD_CELL };
+  return { x: R.x + AB_W - POUCH_W + col * (FOOD_W + AB_GAP), y: R.y + AB_PAD + row * (FOOD_CELL + AB_GAP), w: FOOD_W, h: FOOD_CELL };
 }
-// the purse tab, flush on the strip's top rim over the meal column
-function pursePlateRect() {
-  const R = hudStripRect();
-  return { x: R.x + AB_W - FOOD_W, y: R.y - PURSE_H, w: FOOD_W, h: PURSE_H };
-}
+// the three BUTTONS of the block, in stripHit's 'food' order: the berry (0)
+// over the fish (1) on the left, the cards (2) bottom-right; the gold plate
+// top-right is a readout and answers 'frame'. Each carries the action whose
+// key its cap prints and the input intent its press sets.
+const FOOD_BTNS = [
+  { type: 'berry', act: 'berry', intent: 'eatBerry', col: 0, row: 0 },
+  { type: 'fish', act: 'fish', intent: 'eatFish', col: 0, row: 1 },
+  { type: 'card', act: 'card', intent: 'useCard', col: 1, row: 1 },
+];
+function foodCellRect(i) { const b = FOOD_BTNS[i]; return pouchCellRect(b.col, b.row); }
+function goldCellRect() { return pouchCellRect(1, 0); }
 // The meal buttons' share of that refusal: a press that could not become a
 // meal - nothing in the bag, the clock still up, full health, a busy body -
 // reddens and shakes the button that was asked, in the red the well and the
@@ -1572,7 +1514,7 @@ function pursePlateRect() {
 // updateFx ages it on wall time beside bagFlash and toolFlash.
 let foodFlash = 0, foodFlashI = 0;
 function foodDenied(type) {
-  const i = type === 'fish' ? 1 : 0;
+  const i = type === 'fish' ? 1 : type === 'card' ? 2 : 0;
   if (foodFlash > 0 && foodFlashI === i) return;
   foodFlash = 0.6;
   foodFlashI = i;
@@ -1625,11 +1567,6 @@ function stripHit(mx, my) {
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
   ({ x: mx, y: my } = stripMouse(mx, my));
   const R = hudStripRect();
-  // the purse tab: opaque HUD, so it swallows its own clicks the way the rest
-  // of the strip's plate does - a readout is not a button, but it is not a
-  // hole through to the snow either
-  const pr = pursePlateRect();
-  if (mx >= pr.x && mx < pr.x + pr.w && my >= pr.y && my < pr.y + pr.h) return { kind: 'frame' };
   if (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h) return null;
   for (let i = 0; i < TOOL_SLOTS; i++) {
     const s = toolCellRect(i);
@@ -1924,7 +1861,7 @@ function hudPress(mx, my) {
   const sh = stripHit(mx, my);
   if (sh) {
     if (sh.kind === 'ab') player.input.ability = sh.i; // click-to-cast: the well IS the key
-    else if (sh.kind === 'food') player.input[sh.i === 0 ? 'eatBerry' : 'eatFish'] = true; // the button IS the key, refusals and all (startEat)
+    else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat / useCard)
     else if (sh.kind === 'slot' && player.tools[sh.i]) state.dragPend = { src: { k: 'slot', i: sh.i }, x: mx, y: my };
     else if (sh.kind === 'slot') state.dragPend = { src: { k: 'slot', i: sh.i }, x: mx, y: my, empty: true };
     return true;
@@ -1954,7 +1891,7 @@ function hudMove(mx, my) {
 // itself on the well under the pointer and stays in hand (sendAt). An armed
 // press that never travelled is the click it always was, and that click is
 // the TRANSFER: the bag cell's own use (a bit into the weapon, a tool into
-// the hand, otherwise bagClick's eat/draft), the weapon well and a bit cell
+// the hand, otherwise bagClick's refusal), the weapon well and a bit cell
 // of the shelf both stowing what they hold in the pack.
 //
 // SHIFT sends too, in both hands: with an empty one it is the plain click
@@ -2354,11 +2291,33 @@ function drawAbBuyPlate(i, now, hot) {
 // rearranges; the click sets the same edge-trigger the key does and startEat
 // speaks every refusal - and the refused button wears the well's red band and
 // the pack's 1px shake for it (foodDenied).
-function drawFoodCell(i, now, on) {
-  const p = player, type = FOOD_BTNS[i].type;
-  const r = foodCellRect(i);
-  const n = bagCount(p, type);
-  const red = foodFlash > 0 && foodFlashI === i;
+// how many unopened cards the pouch holds, all rarities together
+function cardTotal(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
+// the card button's refusal: nothing to draw
+function cardDenied() { foodDenied('card'); }
+// THE CARD ICON: three cards fanned - white, green and blue, each a pixel
+// further up and over than the last - baked once at 12x12. Three different
+// colours, because the button holds every rarity at once and the fan is
+// what says "a hand" rather than "a card".
+const cardFanCv = (() => {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 12;
+  const g = cv.getContext('2d');
+  const cards = [['#d9dfe8', '#8a94a8', 0, 3], ['#5fd18a', '#2f7a4b', 3, 1], ['#4a90e2', '#245390', 6, 0]];
+  for (const [face, edge, dx, dy] of cards) {
+    g.fillStyle = '#0a0e23'; g.fillRect(dx, dy, 6, 9);        // the rim
+    g.fillStyle = face; g.fillRect(dx + 1, dy + 1, 4, 7);      // the face
+    g.fillStyle = edge; g.fillRect(dx + 2, dy + 3, 2, 3);      // its pip
+  }
+  return cv;
+})();
+// ONE POUCH CELL, the block's whole grammar: the key cap in its seat on the
+// left (the pad's glyph while one is in hand), the SQUARE icon plate beside
+// it, and the count right-aligned on the cell's edge. A button (a meal, the
+// cards) lights its rim on hover and reddens on a refusal; the gold plate is
+// a readout and never does either. `icon` is the sprite or the bake to
+// centre in the square, `n` the count, `col` the count's ink.
+function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
   if (red) {
     ctx.save();
     ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
@@ -2369,38 +2328,40 @@ function drawFoodCell(i, now, on) {
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const live = n > 0 && p.foodCd <= 0;
-  const lab = keyCapShort(FOOD_BTNS[i].act); // the meal's key, cut to the seat before the icon
-  if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 3, FOOD_BTNS[i].act, 1, !live); // the dpad arm the meal is on
-  else drawPixelTextOutline(ctx, lab, r.x + (lab.length > 2 ? 2 : 4), r.y + 6, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+  if (act) {
+    const lab = keyCapShort(act);
+    if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 3, act, 1, !live);
+    else drawPixelTextOutline(ctx, lab, r.x + (lab.length > 1 ? 1 : 3), r.y + 5, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+  }
+  // the square: a plate a shade up from the well, the icon centred in it
+  const sx = r.x + FOOD_KEY_W, sy = r.y;
+  ctx.fillStyle = n > 0 ? '#171f45' : '#111838';
+  ctx.fillRect(sx + 1, sy + 1, FOOD_SQ - 2, FOOD_SQ - 2);
   if (n <= 0) ctx.globalAlpha = 0.35;
-  ctx.drawImage(SPRITES[ITEMS[type].icon], r.x + FOOD_ICON_X, r.y + 4);
+  ctx.drawImage(icon, sx + ((FOOD_SQ - icon.width) >> 1), sy + ((FOOD_SQ - icon.height) >> 1));
   ctx.globalAlpha = 1;
-  // right-aligned on the same edge the purse's gold uses, so the three
-  // numbers on this column read as one stacked tally
   const t = shortNum(n);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), r.y + 6,
-    n > 0 ? '#f4f7ff' : '#7a8bb8', '#0f1632');
-  drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, type);
+  drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), r.y + 5, n > 0 ? col : '#7a8bb8', '#0f1632');
   if (red) ctx.restore();
 }
-// THE PURSE: the coin and the gold behind it, flush on the strip's top rim
-// over the meal column - the strip's own plate and rim, so it reads as a tab
-// of the widget rather than a bar parked over the world. Gold is inked
-// '#f5c542' here exactly as it was on the pack's old numbers row, because the
-// one number on the HUD that is money must never read as a count of something
-// carried. Uncapped, so it wears shortNum like the meals under it.
-function drawPurse() {
-  const r = pursePlateRect();
-  ctx.fillStyle = AB_BG;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = '#35426e';
-  ctx.fillRect(r.x, r.y, r.w, 1);          // the tab's own top edge...
-  ctx.fillRect(r.x, r.y + 1, 1, r.h - 1);  // ...and its sides, down onto the strip's rim
-  ctx.fillRect(r.x + r.w - 1, r.y + 1, 1, r.h - 1);
-  ctx.drawImage(SPRITES.itemGold, r.x + FOOD_ICON_X, r.y + 2);
-  const t = shortNum(inv.gold);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), r.y + 4, '#f5c542', '#0f1632');
+// a meal button, or the card button: the pouch grammar pointed at a thing
+// you press - the meals share the food clock, the cards have no clock
+function drawFoodCell(i, now, on) {
+  const p = player, b = FOOD_BTNS[i];
+  const r = foodCellRect(i);
+  const isCard = b.type === 'card';
+  const n = isCard ? cardTotal(p) : bagCount(p, b.type);
+  const red = foodFlash > 0 && foodFlashI === i;
+  const live = n > 0 && (isCard || p.foodCd <= 0);
+  drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now);
+  if (!isCard) drawFoodClock(r.x + FOOD_KEY_W + 1, r.y + 1, FOOD_SQ - 2, r.h - 2, b.type);
+}
+// THE GOLD PLATE, top-right of the block: the coin in its square and the gold
+// behind it, inked '#f5c542' because the one number on the HUD that is money
+// must never read as a count of something carried. A readout, not a button -
+// no key, no hover, no refusal.
+function drawGoldCell() {
+  drawPouchCell(goldCellRect(), null, SPRITES.itemGold, inv.gold, '#f5c542', false, false, true, 0);
 }
 function drawHudStrip(now) {
   const R = hudStripRect();
@@ -2425,7 +2386,7 @@ function drawHudStrip(now) {
   for (let i = 0; i < FOOD_BTNS.length; i++) {
     drawFoodCell(i, now, hov && hov.kind === 'food' && hov.i === i);
   }
-  drawPurse();
+  drawGoldCell();
   drawXpBar(now, R.x, R.y + AB_PAD + AB_CELL + AB_PAD);
 }
 // The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
@@ -2849,6 +2810,23 @@ function tipBit(id) {
   d.notes.push([b.blurb, TIP_DIM]);
   return d;
 }
+// the card button: every rarity in hand on its own row, in its own ink, so
+// what the next draw could be is read here and nowhere else
+function tipCards() {
+  const d = { title: 'CARDS', tcol: '#f4f7ff', kind: 'UNOPENED', icon: cardFanCv, plate: BAG_WELL, rim: '#35426e', rows: [], notes: [] };
+  for (const r of CARD_RARITIES) {
+    const n = bagCount(player, cardKey(r));
+    if (n > 0) d.rows.push([r.toUpperCase(), String(n), RES_COLORS[cardKey(r)]]);
+  }
+  if (!d.rows.length) d.rows.push(['NONE', '', TIP_DIM]);
+  d.notes.push(['ONE AT RANDOM, ITS BUFF AT RANDOM', TIP_DIM]);
+  return d;
+}
+// the gold plate: the exact figure, since the plate itself is rounded
+function tipGold() {
+  return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#35426e',
+    rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
+}
 // anything else a bag cell can hold
 function tipStack(s) {
   const r = CARD_TYPE_RARITY[s.type];
@@ -2856,7 +2834,6 @@ function tipStack(s) {
     const d = tipBase(s.type, r.toUpperCase() + ' CARD', 'UNOPENED');
     d.tcol = RES_COLORS[s.type];
     d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
-    d.notes.push(['CLICK: DRAW ONE OF THREE BUFFS', TIP_DIM]);
     return d;
   }
   if (ITEMS[s.type] && ITEMS[s.type].heal) {
@@ -3013,7 +2990,12 @@ function tipAt(mx, my) {
   // descriptor, so the two surfaces can never disagree about a berry
   if (sh && sh.kind === 'food') {
     const type = FOOD_BTNS[sh.i].type;
+    if (type === 'card') return tipCards();
     return tipStack({ type, n: bagCount(player, type) });
+  }
+  if (sh && sh.kind === 'frame') {
+    const g = goldCellRect(), m = stripMouse(mx, my);
+    if (m.x >= g.x && m.x < g.x + g.w && m.y >= g.y && m.y < g.y + g.h) return tipGold();
   }
   if (sh && sh.kind === 'slot') {
     const cell = player.tools[sh.i];

@@ -556,7 +556,7 @@ function updatePlayer(p, dt) {
   const inp = p.input;
 
   if (p.dead) { // out of the match: nothing it wants gets through
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
     inp.ability = -1;
     inp.cmd = null;
     return;
@@ -569,7 +569,7 @@ function updatePlayer(p, dt) {
   // you, and the surface spends it like any other momentum.
   if (p.stunT > 0) {
     p.stunT = Math.max(0, p.stunT - dt);
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
     inp.work = inp.fire = inp.slide = false;
     inp.ability = -1;
     inp.cmd = null;
@@ -591,6 +591,7 @@ function updatePlayer(p, dt) {
   if (inp.dodge) { inp.dodge = false; tryDodge(p); }
   if (inp.eatBerry) { inp.eatBerry = false; eatBerry(p); }
   if (inp.eatFish) { inp.eatFish = false; eatFish(p); }
+  if (inp.useCard) { inp.useCard = false; useCard(p); }
   if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; tryAbility(p, i); }
   if (inp.cmd) { const c = inp.cmd; inp.cmd = null; runCmd(p, c); }
 

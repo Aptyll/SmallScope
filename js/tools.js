@@ -559,24 +559,36 @@ function bitPut(cell, i, id) {
 // and is choosier than this - it will not load a boomerang it cannot aim, and
 // it builds INSIDE the budget - so a pickup that shoved a bit into a bot's
 // tool would only make it a worse shot.
-function autoFitTool(p) { return p.control === 'human' ? heldTool(p) : null; }
-// how many free cells that tool is offering for `type`, which is room on top
-// of whatever the pack will take: every path that hands a player an item asks
-// through here, so a FULL PACK with an empty cell in the tool still magnetises
-// a drop and still claims it
+//
+// EVERY TOOL YOU CARRY IS A DESTINATION (3.26): the one in hand first, then
+// each tool lying in the pack in cell order, so a bit only ever takes a cell
+// of its own once every weapon you own is full - the pack is one row now,
+// and a row of loose bits beside tools with empty cells was the row wasted.
+function autoFitTools(p) {
+  if (p.control !== 'human') return [];
+  const out = [];
+  const held = heldTool(p);
+  if (held) out.push(held);
+  for (const s of p.bag) if (s && s.bits) out.push(s);
+  return out;
+}
+// how many free cells those tools are offering for `type`, which is room on
+// top of whatever the pack will take: every path that hands a player an item
+// asks through here, so a FULL PACK with an empty cell in a tool still
+// magnetises a drop and still claims it
 function fitRoom(p, type) {
-  const cell = bitIdOf(type) && autoFitTool(p);
   let n = 0;
-  if (cell) for (const b of cell.bits) if (!b) n++;
+  if (bitIdOf(type)) for (const cell of autoFitTools(p)) for (const b of cell.bits) if (!b) n++;
   return bagRoom(p, type) + n;
 }
-// ...and the transfer: the tool first, the pack with the remainder. Returns
+// ...and the transfer: the tools first, the pack with the remainder. Returns
 // how many were taken, exactly as bagAdd does.
 function fitAdd(p, type, n) {
   const id = bitIdOf(type);
-  const cell = id && autoFitTool(p);
   let got = 0, free;
-  while (cell && got < n && (free = cell.bits.indexOf(null)) >= 0) { bitPut(cell, free, id); got++; }
+  if (id) for (const cell of autoFitTools(p)) {
+    while (got < n && (free = cell.bits.indexOf(null)) >= 0) { bitPut(cell, free, id); got++; }
+  }
   return got + bagAdd(p, type, n - got);
 }
 

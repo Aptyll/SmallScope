@@ -71,6 +71,7 @@ const KEY_ACTIONS = [
   { id: 'ab3', verb: 'ABILITY 3', key: '3' }, { id: 'ab4', verb: 'ABILITY 4', key: '4' },
   { id: 'dodge', verb: 'DODGE', key: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q' }, { id: 'fish', verb: 'EAT FISH', key: 'f' },
+  { id: 'card', verb: 'DRAW CARD', key: 'c' },
   { id: 'char', verb: 'CHARACTER', key: 'g' },
   { id: 'map', verb: 'WORLD MAP', key: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p' },
@@ -223,6 +224,7 @@ function keyPress(e) {
   if (keyIs(e, 'dodge')) player.input.dodge = true;
   if (keyIs(e, 'berry')) player.input.eatBerry = true;
   if (keyIs(e, 'fish')) player.input.eatFish = true;
+  if (keyIs(e, 'card')) player.input.useCard = true;
   // The work key at the practice rack: the press opens the armory wheel over
   // it, the pointer picks, and RELEASING it takes - the right-click wheel's
   // own hold-and-release grammar, moved onto the key. A real work target in
@@ -233,7 +235,7 @@ function keyPress(e) {
   // roost, and the counter opening instead would swallow the very key that
   // gets you down.
   if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen &&
-      !state.settingsOpen && !state.draft && !state.drag && !player.dead && !player.aboard) {
+      !state.settingsOpen && !state.drag && !player.dead && !player.aboard) {
     // The merchant's counter is a PANEL, not a held wheel, so the key that
     // opened it shuts it - whatever else has come into reach meanwhile.
     if (state.shop) { closeShop(); return; }
@@ -266,21 +268,20 @@ function keyPress(e) {
   // the sheet key raises the character panel - the body, the live stat
   // ledger and the four gear pieces. HUD like the bag: the sim runs on
   // underneath.
-  if (keyIs(e, 'char') && !state.settingsOpen && !state.draft) state.charOpen = !state.charOpen;
+  if (keyIs(e, 'char') && !state.settingsOpen) state.charOpen = !state.charOpen;
   // the four ability binds cast, left to right exactly as the strip shows
   // them (a click on the well sets the same field - hudPress, js/ui.js).
   // Edge-triggered like the dodge; the sim consumes it (tryAbility,
   // js/abilities.js). What is loaded in the weapon is on the shelf over the pack.
   const ab = e.repeat ? -1 : ['ab1', 'ab2', 'ab3', 'ab4'].findIndex((a) => keyIs(e, a));
   if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
-  if (keyIs(e, 'map') && !state.settingsOpen && !state.draft && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; }
+  if (keyIs(e, 'map') && !state.settingsOpen && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; }
   if (e.key === 'Escape') {
     // a carried item goes back first, then the flag aim: both are gestures
     // half-finished, and Escape is how either is thought better of
     if (state.drag) { dragReturn(); state.dragPend = null; }
     else if (state.flagAim) state.flagAim = false;
     else if (state.wheel) state.wheel = null;
-    else if (state.draft) state.draft = null; // closes without picking
     else if (state.mapOpen) state.mapOpen = false;
     else if (state.shop) closeShop();
     else if (state.charOpen) state.charOpen = false;
@@ -355,7 +356,7 @@ canvas.addEventListener('mousedown', (e) => {
 // a button went down at the pointer: 0 left, 1 middle, 2 right
 function pointerPress(button) {
   if (button === 2) {
-    if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.draft) return;
+    if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y)) return; // no build wheel through the HUD
     SFX.unlock();
@@ -377,7 +378,6 @@ function pointerPress(button) {
   if (state.mode === 'dead') { SFX.unlock(); deadClick(); return; }
   if (state.mode !== 'play') return;
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
-  if (state.draft) { SFX.unlock(); draftClick(); return; } // a card, or anywhere else: closes either way
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) return;
   // The backpack widget, the weapon slots and the weapon shelf swallow every
@@ -425,7 +425,7 @@ function pointerRelease(button) {
 // aim stick send. The mouse arrives through pointerPress instead because a
 // press has the HUD to get past first; a trigger is never over a well.
 function fireDown() {
-  if (state.mode !== 'play' || state.wheel || state.draft || state.settingsOpen || state.mapOpen ||
+  if (state.mode !== 'play' || state.wheel || state.settingsOpen || state.mapOpen ||
       state.drag || state.dragPend || state.shop || player.dead) return false;
   mouse.down = true;
   clickAction(player);
@@ -485,7 +485,7 @@ function haptic(kind) {
 // - a preview for an order you have not started is clutter. The middle
 // button, R3 on a pad and the touch FLAG plate all hold it.
 function flagDown() {
-  if (state.mode !== 'play' || state.settingsOpen || state.wheel || state.draft) return false;
+  if (state.mode !== 'play' || state.settingsOpen || state.wheel) return false;
   if (!hasWorkers(player)) return false;                      // nobody to order: the button is dead
   if (!state.mapOpen && overHud(mouse.x, mouse.y)) return false; // the HUD swallows its own presses
   SFX.unlock();
@@ -497,7 +497,7 @@ function flagUp() {
   // which is what makes this cancellable without a hub to release into
   if (!state.flagAim) return;
   state.flagAim = false;
-  if (state.mode !== 'play' || state.settingsOpen || state.wheel || state.draft) return;
+  if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
   if (state.mapOpen) {
     // the chart commands too: it is the only way to flag a tile off-screen
     const mt = mapTileAt(mouse.x, mouse.y);
@@ -514,7 +514,7 @@ function flagUp() {
 // ax/ay is the press point the pick travels from (wheelLayout, ui.js); the
 // caller resolves the wheel on its own release, as the right button does.
 function openWheelNear(p, ax, ay) {
-  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.draft || p.dead) return false;
+  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || p.dead) return false;
   const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
   let best = null, bd = 60; // the right button's own reach
   for (let ty = pty - 4; ty <= pty + 4; ty++) for (let tx = ptx - 4; tx <= ptx + 4; tx++) {
@@ -599,7 +599,7 @@ function sampleHumanInput(p) {
     inp.slide = keyHeld('slide');
     inp.grapple = keyHeld('ab3'); // a reel in progress keeps answering the held key
     inp.fire = inp.work = false;
-    inp.eatBerry = inp.eatFish = false;
+    inp.eatBerry = inp.eatFish = inp.useCard = false;
     inp.ability = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }
@@ -612,7 +612,7 @@ function sampleHumanInput(p) {
   if (state.mode !== 'play' || state.paused || state.settingsOpen || state.eagleCine || state.dropBrief) {
     inp.mx = inp.my = 0;
     inp.fire = inp.work = inp.slide = inp.grapple = false;
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
     inp.ability = -1;
     inp.cmd = null;
     if (p.charging) { p.charging = false; p.chargeT = 0; }

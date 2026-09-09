@@ -127,7 +127,6 @@ const state = {
   // drag yet: { src, x, y }. Resolves as a plain click if the button comes
   // back up without moving - see the drag banner in js/ui.js.
   dragPend: null,
-  draft: null,         // the pick-1-of-3 card draft: { rarity, options: [id,id,id] } - HUD, does NOT stop the sim
   settingsOpen: false,
   rebind: null,        // a cap on the CONTROLS page listening for its key: the action's id (input.js), or null
   wheel: null, // radial menu: { kind: 'build'|'manage', tx, ty, seg, ax, ay } - ax/ay is the press point
@@ -412,6 +411,49 @@ function startEat(p, type) {
 // now covers both
 function eatBerry(p) { startEat(p, 'berry'); }
 function eatFish(p) { startEat(p, 'fish'); }
+
+// DRAWING A CARD. The card key and a click on the strip's card button both
+// arrive here: one unopened card is taken at random from everything the
+// pouch holds (so a rarer card is exactly as likely as it is common in your
+// hand), one entry of its rarity is picked at random, and the buff lands on
+// the spot - onto p.cards, into the kit, and as a burst in the rarity's
+// colour with the card's name rising out of it. No screen, no choice, no
+// pause: the pick of three was the one thing in the game that asked you to
+// read a menu mid-fight. Refused with nothing to draw (cardDenied, ui.js -
+// the button's own red), like a meal with nothing behind it. A bot draws
+// through resolveCardForBot (js/ai.js) and never comes here.
+function useCard(p) {
+  if (p.dead) { return; }
+  let total = 0;
+  for (const r of CARD_RARITIES) total += bagCount(p, cardKey(r));
+  if (total <= 0 || inAir(p)) { if (p === player) cardDenied(); return; }
+  let pick = Math.floor(rng() * total), rarity = CARD_RARITIES[0];
+  for (const r of CARD_RARITIES) { pick -= bagCount(p, cardKey(r)); if (pick < 0) { rarity = r; break; } }
+  bagTake(p, cardKey(rarity), 1);
+  const id = Math.floor(rng() * CARDS[rarity].length);
+  p.cards.push({ rarity, id });
+  refreshKit(p);
+  const col = RES_COLORS[cardKey(rarity)];
+  cardFx(p.x, p.y, col);
+  addFloater(p.x, p.y - 18, CARDS[rarity][id].name, col);
+  if (nearPlayer(p.x, p.y)) SFX.levelUp();
+}
+// the buff landing: a ring of sparks thrown out and up in the card's colour,
+// a white flare in the middle, and a slow column of motes climbing out of
+// the body for a moment after - the level-up's own language, in the rarity's
+// ink, so what you just became is read at a glance from across the clearing
+function cardFx(x, y, color) {
+  burst(x, y - 6, '#fff6d8', 8, 60, 0.35);
+  for (let i = 0; i < 22; i++) {
+    const a = rng() * Math.PI * 2, s = rand(30, 70);
+    particles.push({ x, y: y - 4, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.5 - 40,
+      life: rand(0.5, 0.9), maxLife: 0.5, color, size: rng() < 0.4 ? 2 : 1, grav: 60 });
+  }
+  for (let i = 0; i < 14; i++) {
+    particles.push({ x: x + rand(-7, 7), y: y + rand(-4, 4), vx: rand(-4, 4), vy: rand(-55, -25),
+      life: rand(0.7, 1.2), maxLife: 0.6, color, size: 1, grav: 0 });
+  }
+}
 
 // The meal ticking, and the shared clock beside it. Called from updatePlayer
 // next to the ability clock, for every player alike.

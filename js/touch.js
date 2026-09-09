@@ -56,7 +56,7 @@ function touchFinger(kind) { for (const f of touch.fingers.values()) if (f.kind 
 // still aiming under it, and the sim swallows the shot itself)
 function touchOverlay() {
   if (state.mode !== 'play') return true;
-  return state.settingsOpen || state.mapOpen || !!state.shop || state.charOpen || !!state.draft || state.paused || player.dead;
+  return state.settingsOpen || state.mapOpen || !!state.shop || state.charOpen || state.paused || player.dead;
 }
 // the menu plate is a cross over anything Escape backs out of; a cog in free
 // play; gone on the title's bare column, where there is nothing to back out of

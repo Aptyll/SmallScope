@@ -1484,8 +1484,8 @@ window.DBG = {
   // the backpack: the item table, the slot array, and add/take/count without
   // walking onto a drop. bagHit is what the pointer tests against; food is a
   // POUCH and takes no cell, so `food` is where a berry actually sits, and
-  // pursePlateRect is the always-on gold readout on the hud strip.
-  ITEMS, BAG_CAP, bagFrameRect, bagCellRect, bagHit, pursePlateRect, foodCellRect, shortNum,
+  // goldCellRect is the always-on gold readout on the hud strip.
+  ITEMS, BAG_CAP, bagFrameRect, bagCellRect, bagHit, goldCellRect, foodCellRect, shortNum, useCard: (p) => useCard(p || player),
   // the drag, and what it answers with: the armed press, the three moves, the
   // cue/rumble/pulse raiser, and what a release on a given well WOULD do -
   // so a driver can prove the promise and the move agree without a mouse

@@ -489,7 +489,7 @@ on a well with somewhere to send what it holds, and the verb on it is that **des
 `LOAD` for a bit in the grid, `STOW` for a bit on the shelf or the tool on the weapon,
 `HOLD` for a tool in the grid — so the plate teaches which way the transfer goes rather than
 merely announcing a key. `shiftVerb` asks the same wells in the same order `sendAt` does, so the
-plate and the click can never disagree; a berry and a card get none, because eating and drafting
+plate and the click can never disagree; a berry and a card get none, because eating and drawing
 are not transfers. The cap presses down while the key is actually held.
 
 ### Where tools and bits come from
@@ -1510,8 +1510,8 @@ leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key now: sources
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
 [fish net](world.md#fish-nets) you are standing on), and death spills — and a wrecked net's
 contents — carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
-the **hud strip's right end** (bottom centre) — the two meal buttons and the purse tab standing
-on the rim over them, on screen whether the pack is open or not. Death empties
+the **hud strip's right end** (bottom centre) — the pouch block, berry over fish and gold over
+cards, on screen all match. Death empties
 wallet, pouch and bag alike —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
 toward the nearest player, and everyone standing on one contests it
@@ -1768,14 +1768,16 @@ A player carries in two places, and which one a kind lives in is **one flag on i
 
 **The bag** (`p.bag`) is a fixed array of `p.bagCap` cells, each one `null`
 or a `{ type, n }` stack of at most `ITEMS[type].stack`. Everyone starts with **one bag of 10**
-(`BAG_CAP`, two rows of `BAG_COLS` — a simple inventory); a second bag is a bigger `bagCap` and a longer array,
-nothing else. It holds the **build**: the tools, bits and unopened cards a player lays out,
-compares and chooses between.
+(`BAG_CAP` 5, one row of `BAG_COLS` — a simple inventory); a second bag is a bigger `bagCap` and a longer array,
+nothing else. It holds the **build**: the spare tools and bits a player lays out, compares and
+chooses between — and a bit only takes a cell once every tool carried (the one in hand, then
+each in the pack) is full, since `fitAdd` (js/tools.js) loads it into them first.
 
-**The pouch** (`p.food`) is a pair of uncapped counters beside the wallet, and it holds the two
-**meals** — everything with `pouch: true`. Food takes no cell, cannot be dragged, cannot be
-arranged and cannot be refused: it is pressed on Q and F from
-[the hud strip's meal buttons](rendering.md#the-hud-strip) and nowhere else, so every cell one of
+**The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
+holds the two **meals** and the five **unopened card** rarities — everything with `pouch: true`.
+A pouch kind takes no cell, cannot be dragged, cannot be arranged and cannot be refused: a meal
+is pressed on Q and F and a card drawn on C from
+[the hud strip's pouch block](rendering.md#the-hud-strip) and nowhere else, so every cell one of
 them used to take was a cell taken off the build. Being uncapped is why every count that shows
 one goes through **`shortNum`** (js/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
 characters at most. The exact figure stays in the tooltip, the surface whose job is comparing
@@ -1785,7 +1787,7 @@ numbers.
 | --- | --- | --- | --- |
 | `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal button — eats it (see [Food](#food-the-meal-is-a-channel)) |
 | `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
-| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | bag, stack 5 | clicking its cell — opens the pick-1-of-3 draft (see [Roguelike cards](#roguelike-cards)) |
+| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | C, or clicking the strip's card button — draws one at random (see [Roguelike cards](#roguelike-cards)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
 | `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
 
@@ -1959,7 +1961,7 @@ spend step: cheapest piece first, keeping a 15-gold float so they still build.
 
 A permanent buff dropped by a sprung **chest** in the treeline (`placeChests`, js/world.js;
 `hitObject`'s chest branch in js/actions.js rolls the rarity against `CHEST_ODDS` through
-`rollCardRarity`), one at a time, one draft at a time.
+`rollCardRarity`), one at a time, drawn one at a time.
 `CARDS` is `{ white: [...], green: [...], blue: [...], purple: [...], gold: [...] }`
 (`CARD_RARITIES`, White → Gold rising in rarity and magnitude), each entry `{ name, blurb, mod(k) }` —
 the exact shape a `GEAR` variant's `mod(k, L)` is, minus the level argument, since a card is a
@@ -1968,25 +1970,24 @@ vocabulary (`dmgBase`, `dr`, `maxHp`, `walkMul`, `stealth`, `ambushMul`, `iceMax
 genuinely new field, `killHeal` — a flat heal on a confirmed kill, hooked at `die()`'s existing
 kill-credit line the same way `updateEat` applies a meal's.
 
-**The draft**: clicking an unopened card's bag cell (`bagClick`) calls `openDraft(rarity)`, which sets `state.draft = { rarity, options }` — three distinct
-entries drawn at random from `CARDS[rarity]` (`pick3Distinct`). `renderDraft`/`draftLayout`/
-`draftHit` draw and hit-test three cards centred on screen, but as an in-match overlay like
-the bag or the map — **it does not pause the sim**, same as every other HUD overlay here, so a
-draft is read at real risk, not in a safe pause. `draftClick()` (the mousedown handler routes to it
-first, ahead of the wheel/settings/map/bag, whenever `state.draft` is set) either applies the
-clicked card — `bagTake` the one card, push `{ rarity, id }` onto `p.cards`, `refreshKit(p)` — or,
-for a click anywhere else (or ESC), just closes the draft; either way the click never reaches the
-world underneath. `refreshKit` folds every entry in `p.cards` in after gear and skill, cumulatively
+**The draw** (3.26; the pick-1-of-3 draft screen is gone): an unopened card is a pouch kind, and
+the card key (`'card'`, C; L3 on a pad) or a click on the strip's card button sets the
+`useCard` intent, which `useCard(p)` (js/core.js, beside `startEat`) resolves on the spot —
+one card taken at random from everything held (so a rarity is as likely as it is common in the
+hand), one entry of that rarity at random, `bagTake` the card, push `{ rarity, id }` onto
+`p.cards`, `refreshKit(p)`, then `cardFx` (a burst in the rarity's colour) and a floater with the
+card's name. Nothing to draw is a refusal on the button (`cardDenied`). A bot draws the same way
+through `resolveCardForBot` (js/ai.js), minus the key and the burst. `refreshKit` folds every entry in `p.cards` in after gear and skill, cumulatively
 (`for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);`), so picking the same effect twice stacks
 it, and every existing kit-reading site in the sim — movement, `emitBit`, dodge timing, the AI,
 `seenAt`'s stealth — picks a card up for free, the same way it already does for gear. `p.cards` is
 set once in the `Player` constructor and never touched by `reset()`, so a build survives every
 respawn within a match.
 
-**Bots never see the draft** — `bagClick` is a mouse-only entry point `updateAI` never calls.
+**Bots never press the card key** — `useCard` is reached through the input struct, which `updateAI` never sets for cards.
 Instead, the instant a bot is carrying any unopened card, `resolveCardForBot(p)` resolves it
-server-side with one random pick from that rarity's pool — no 3-option UI, since choosing among
-three is specifically the human decision point.
+server-side with one random pick from that rarity's pool — the same odds a human's draw gets,
+minus the burst and the floater.
 
 ## Base building
 
