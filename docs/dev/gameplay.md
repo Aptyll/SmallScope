@@ -142,8 +142,9 @@ thing they are issued.
 
 ### A tool
 
-One entry in the `TOOLS` table (`shortbow`, `sling`, `recurve`, `hornbow`, `longbow`). A tool is a
-**body** and carries no behaviour of its own — three numbers and a look:
+One entry in the `TOOLS` table (`shortbow`, `sling`, `longsword`, `recurve`, `hornbow`, `longbow`). A tool is a
+**body** and carries no behaviour of its own — three numbers and a look (plus, on the one blade,
+a `melee` block: [the cut](#the-cut-a-melee-tool)):
 
 | field | means |
 | --- | --- |
@@ -154,7 +155,7 @@ One entry in the `TOOLS` table (`shortbow`, `sling`, `recurve`, `hornbow`, `long
 
 `cap` and `tensile` are the two halves of a tool: **cap is how much you may hang on it, tensile
 how much of that it can swing at once.** The tiers grow the two together at roughly four weight a
-cell — SHORTBOW 9/2, SLING 10/2, RECURVE 13/3, HORN BOW 15/4, LONGBOW 22/5 — so a build that fits
+cell — SHORTBOW 9/2, SLING 10/2, LONGSWORD 10/2, RECURVE 13/3, HORN BOW 15/4, LONGBOW 22/5 — so a build that fits
 its cap and busts its budget is not refused, it is *truncated*, and the weapon well wears a
 [**"!"**](rendering.md#the-bit-column) to say so.
 
@@ -335,6 +336,33 @@ Every bit a press can afford leaves in the **same frame**, so no two of them may
 one another: each bit past the first is nudged `SHOT_SKEW` (0.05 rad) off the aim, alternating
 sides, and a DUPLICATE's repeats `DUP_SKEW` (0.07) — per *bit* and per *repeat*, never per arm of
 a SPLITTER's fan, which already spreads its own arms.
+
+### The cut: a melee tool
+
+The LONGSWORD is the one body with a `melee` block in `TOOLS` (`reach` 24 px of blade at full
+draw, `half` 1.05 rad of sweep either side of the aim), and that block is the whole difference:
+`fireTool` runs the same press, the same `toolPlan` and the same cycle, and then hands the plan to
+`slashTool` instead of `emitBit`. **The draw is still the throttle** — a tap reaches
+`SLASH_REACH_MIN` (60 %) of the blade for `DRAW_DMG_MIN` of the damage, a full draw the whole
+blade at its whole worth (`slashReach`) — and **every bit in the plan is one cut of the same
+swing**: its damage through `emitBit`'s own sum (bit, kit, level, the draw's multiplier, the
+modifiers' `dmgMul`/`dmgAdd`, the ambush), its modifiers' damage type and fire on every body the
+edge reaches. What the edge reaches is the **wedge** — `inCone`/`unitsInCone`/`structsInCone`
+(js/actions.js): a body counts by its centre plus its own radius, a building by any tile of its
+footprint — and nothing else: a body behind the caster is never cut. A bit whose whole point is its
+flight (a boomerang, a lob, an orbit) swings as a plain cut worth its damage; the sword is a place
+the fittings you found can still go, not a second arsenal. Each cut leaves its wedge on the snow
+(`slashes`, `SLASH_T` 0.22 s, ticked by `updateSlashes` from `updatePlay`) — the outline in white,
+gold when it landed, with a bright edge sweeping across it — drawn by `drawSlashes` (js/abilities.js,
+called from js/render.js beside the E swing arcs), and the local player's draw grows the same wedge
+in place of the aim line (`drawAimLine`), so the reach the cut is about to have is on the ground
+before it lands. **The hand swings the sword itself**: the blade is drawn at its real 22 px length
+(`TOOL_HELD_ART`, baked as `toolHeld_<art>_<tier>` beside the 12 px bag icon, and used wherever the
+hand holds a tool that has one), a draw winds it back to the start of its arc, and for `SLASH_T`
+after the loose (`p.slashT`/`slashA`/`slashHalf`, counted down in `updatePlayer`) `drawHeldTool`
+sweeps it across the wedge pivoting at the hands, two ghosts of it trailing, in front of the body
+whichever way it faces. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70, and
+only presses fire once the target is under the edge (`aiMelee`, js/ai.js).
 
 ### Flight paths
 
@@ -597,7 +625,7 @@ still scatter, so the spill looks like a spill, and then go with the tool they c
 ([Starting loadouts](#starting-loadouts)) and is handed the same one back at the bird on every
 respawn, so a body spilling one puts a weapon on the ground that *nobody* will ever stoop for — and
 ground fought over twice ends up carpeted in them. So a tool spilled by a **death** with
-`STARTER_CAP` (2) bit cells or fewer — the bottom of the table, the SHORTBOW and the SLING —
+`STARTER_CAP` (2) bit cells or fewer — the bottom of the table, the SHORTBOW, the SLING and the LONGSWORD —
 never lands. `isStarterTool(s)` is the test and `evaporateTool(cell, x, y)` (js/tools.js) is what
 happens instead: the build sheds into thin air and the bare body follows it, all of them
 [vanishing drops](#economy-one-currency). The test is the *tool*, not a list of names, so a tier a
@@ -650,7 +678,8 @@ orbit and leaves those for someone who can.
 `CLASS_LOADOUT` gives each class a tool and its bits, and `giveLoadout(p)` is called from
 `Player.reset()` and from `setClass()` — so the weapon is part of picking a class, every AI
 player gets its own, and a respawn is re-armed. Each class flies in with **one projectile and
-nothing else**: the HUNTER a SHORTBOW loaded ARROW, the WARRIOR a SLING loaded BARBED SHOT.
+nothing else**: the HUNTER a SHORTBOW loaded ARROW, the WARRIOR a LONGSWORD with a BARBED SHOT on
+its edge — the one **melee** body ([the cut](#the-cut-a-melee-tool) below).
 
 **The shot sits in the LAST cell and every cell above it is left empty** (3.26). The order in
 `bits` is the firing order and a modifier only reaches the shots *after* it, so holding cell 0 open
@@ -665,7 +694,7 @@ budgets are sized for it — see [a tool](#a-tool). Death **spills the equipped 
 the bag (`spillInventory`) — bare, its bits scattered beside it
 ([shedBits](#a-discarded-weapon-sheds-its-build)) — so a build lies where its owner fell and the
 bird hands back the starting one: you come back armed, but not as the player you were. What it
-does **not** leave is the starting kit itself: a SHORTBOW or SLING off a body evaporates rather
+does **not** leave is the starting kit itself: a SHORTBOW or LONGSWORD off a body evaporates rather
 than lying there for nobody ([a starting tool does not litter](#a-starting-tool-does-not-litter)). The gear pop-up's preview
 shows the weapon at the body's side (`drawGearPreview`, js/menu.js) — the other half of what a
 class flies out with.
@@ -705,9 +734,12 @@ digit), exactly as a meal button with nothing behind it does; a press on one red
 it (`abDenied`, the twin of `toolDenied`/`foodDenied`). The ASK floats clear of the wells: while a
 point is unspent each un-maxed key grows a bobbing gold plus plate in the open screen above its
 well (`abBuyRect`/`abBuyHit`/`drawAbBuyPlate`, UI › `hud strip`), gear's old chevron made a real
-button. The plate press buys, any press on the well casts, so the two can never steal each
-other's click; hover lights the plate and the tooltip carries the numbers (`LOCKED` and `UNLOCK
-1 SKILL PT` on a dark key). Bots spend each free point in `updateAI`'s rung 0, lowest ability
+button. The plate press buys — and so does **the key itself while a point is unspent**: the sim
+consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a cast otherwise
+(js/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
+next press casts it; a maxed key casts straight through an unspent point. That reaches every
+controller and the well click alike, since all of them set the one field. Hover lights the plate
+and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in `updateAI`'s rung 0, lowest ability
 level first — which spends their first four unlocking all four keys before any gets a cut. The cd
 column in the tables below is the level-1 base.
 
@@ -744,13 +776,22 @@ WARRIOR — close pressure, blocking, momentum:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **SHIELD WALL** | 9 s | raises a tower shield toward the aim for up to 2.2 s (the key again lowers it early; the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the bow is out of hand |
-| 2 | **BULL RUSH** | 12 s | charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames): the **first rival hit is carried** on the shoulder and **slammed** at the end — 10 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
-| 3 | **AVALANCHE STOMP** | 14 s | a leap-stomp at the feet: 12 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
-| 4 | **JUGGERNAUT** | 20 s | 5 s: immune to stun (`stunUnit` head) and knockback (`damagePlayer`), speed ramps +50 % over the duration, and body contact at speed bowls rivals over — damage scales with the speed carried in, once per rival per activation (`p.jugHit`) |
+| 1 | **SHIELD WALL** | 9 s | raises a tower shield toward the aim for up to 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `SLAM_DMG` (8), `SLAM_STUN` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
+| 2 | **BULL RUSH** | 12 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end — 10 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
+| 3 | **STOMP** | 14 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
+| 4 | **EXECUTE** | 18 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abExecute`: every unit in it takes `execDmg` — `EXEC_DMG` (10) plus `EXEC_MISSING` (half) of the life it has already lost, capped at `EXEC_BONUS_MAX` (40) extra — so a body the other three keys have worked over is finished, and a full one takes ten. `EXEC_KB` shove; a cut over twice the base is a crit |
+
+Every wind-up with an area is **telegraphed on the snow for both sides** (`drawAbilityGround`): the
+pierce's and the charge's marching line, the stomp's ring, the slam's and the execute's wedge — in
+`TELE_COL` red, `TELE_HOT` gold for the last quarter, the inside hashing in as the landing nears
+(`castProg`, off `p.castMax`) — and every landing flashes the same shape in the blow's own colour
+for `AB_FX_T` (`abFx`, ticked in `updateAbilityWorld`). The shapes are `drawWedge`/`drawRing`/
+`drawTeleLine`, and the sword's sweep (`drawSlashes`, called from js/render.js beside the E swing
+arcs) is the same wedge. A telegraphed cast keeps the body facing the live aim the whole wind-up
+(`updateAbilities`), so the shape and the body agree about where it is going.
 
 A player's movement caps fold through one function — `abilityMoveMul(p)`: root pins, cast/shield/net/
-crater drag (the pierce windup's own harder drag included), juggernaut ramps — applied to the walk
+crater drag (the pierce windup's own harder drag included) — applied to the walk
 cap **and** the ice cap in `updatePlayer`; the grapple's reel is its own movement branch there,
 beside the rush's. An
 animal or a bot folds the same root and slow through `unitMoveMul(e)`, spent inside `navStep`.
@@ -1161,7 +1202,7 @@ Every one of them is **drawn on the body, for both sides**, at whatever size tha
 `drawUnitStates(e, px, py, w, h, now)` (js/abilities.js) takes the sprite's own box and is called by
 `drawAbilityOnPlayer`, `drawAnimal`, `drawBird` and `drawRobot` alike. A state you cannot see is a
 rule you cannot play around, and that is as true of a deer as of a rival. The player keeps two tells
-of its own on top (a raised shield, the juggernaut's rim), and the stun badge is the one visual that
+of its own on top (a raised shield), and the stun badge is the one visual that
 differs by kind: over an animal or a robot the sparks sit above the health bar, while on a player
 they ride a badge that **mirrors the level badge on the other side of the overhead frame** — same
 backing and track, its left frame column shared with the health bar backing's right edge — whose
@@ -2270,9 +2311,10 @@ Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js
     shot used to simply die on a wall, it now sieges it first. A bit whose `solid` is `false`
     (the care arrow, the wisp, the hook) passes through buildings without touching them — that
     is the trade for passing walls, and it needs no second flag;
-  - the **abilities**: the stomp's ring, the juggernaut's shoulder (one per building per
-    activation, off the same `jugHit` list the bodies use), the charge's slam into whatever it
-    was driven into, the net, and the piercing shot, which rides the arrows array like any bit;
+  - the **abilities**: the stomp's ring, the shield's slam and the execute (their wedge, through
+    `structsInCone`), the charge's slam into whatever it was driven into, the net, and the
+    piercing shot, which rides the arrows array like any bit — and the sword's cut, whose wedge
+    reaches a wall the same way;
   - a **worker or soldier bot's axe** on a siege flag (`robotStrike`).
 
   **`STRUCT_DR` (0.6) damps a player's blow, and only a player's.** Every one of those player

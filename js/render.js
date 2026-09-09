@@ -638,6 +638,8 @@ function render() {
   }
   ctx.globalAlpha = 1;
 
+  // the sword's sweeps (js/abilities.js draws them: every player who just cut)
+  drawSlashes(ex, ey);
   // swing arcs (every player who is mid-swing)
   for (const p of players) {
     if (!p.active || p.dead || inAir(p) || p.swingT <= 0) continue;
@@ -1410,6 +1412,14 @@ function drawAimLine(ex, ey, now) {
   if (!cell) return;
   const plan = toolPlan(cell);
   if (!plan.shots.length) return;
+  // a blade's draw grows a WEDGE, not a line: the exact reach the cut will
+  // sweep at this draw (slashReach, js/tools.js), from the body along the aim
+  const melee = TOOLS[toolIdOf(cell.type)].melee;
+  if (melee) {
+    const a = Math.atan2(mouseWY() - (player.y - BOW_Y), mouseWX() - player.x);
+    drawWedge(Math.round(player.x - ex), Math.round(player.y - 2 - ey), a, slashReach(melee, drawPow(player)), melee.half, col, full ? 0.85 : 0.6, 0);
+    return;
+  }
   const lead = plan.shots[0];
   const bit = BITS[lead.id];
   if (bit.path === 'boomer' || bit.path === 'orbit' || bit.path === 'curve') return;

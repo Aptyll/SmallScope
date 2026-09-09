@@ -610,7 +610,10 @@ function updatePlayer(p, dt) {
   if (inp.eatBerry) { inp.eatBerry = false; eatBerry(p); }
   if (inp.eatFish) { inp.eatFish = false; eatFish(p); }
   if (inp.useCard) { inp.useCard = false; useCard(p); }
-  if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; tryAbility(p, i); }
+  // an ability key with a skill point in hand LEVELS the key instead of
+  // casting it (the plate is the same buy for the mouse); the cast waits for
+  // the next press. A maxed key casts through an unspent point as ever.
+  if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; if (abLvCanBuy(p, i)) buyAbilityLv(p, i); else tryAbility(p, i); }
   if (inp.cmd) { const c = inp.cmd; inp.cmd = null; runCmd(p, c); }
 
   // the class abilities' own clock: cooldowns, the cast landing, and every
@@ -704,8 +707,12 @@ function updatePlayer(p, dt) {
     // BULL RUSH: the charge owns the velocity the way a roll does - straight
     // down its line, walls and the first body met resolved by rushStep
     p.rushT -= dt;
-    p.vx = p.rushNX * RUSH_SPD;
-    p.vy = p.rushNY * RUSH_SPD;
+    // the first RUSH_RAMP seconds come up to speed rather than snapping to
+    // it, so the charge leaves the wind-up smooth instead of teleporting a
+    // frame down the line
+    const ramp = Math.min(1, 0.4 + 0.6 * (RUSH_T - p.rushT) / RUSH_RAMP);
+    p.vx = p.rushNX * RUSH_SPD * ramp;
+    p.vy = p.rushNY * RUSH_SPD * ramp;
     const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
     rushStep(p, mv, dt);
   } else if (p.grapT > 0) {
@@ -728,8 +735,8 @@ function updatePlayer(p, dt) {
     if (!inp.grapple || gd <= GRAP_ARRIVE || mv.blockedX || mv.blockedY || p.grapT <= 0) grapEnd(p);
   } else {
     const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
-    // every cap an ability may drag on (root, net, crater, cast, shield) or
-    // ramp up (juggernaut), folded once - js/abilities.js - with the meal's
+    // every cap an ability may drag on (root, net, crater, cast, shield),
+    // folded once - js/abilities.js - with the meal's
     // own drag beside them (js/core.js): a body chewing walks, exactly the way
     // a body mid-cast does
     const abMul = abilityMoveMul(p) * (p.eatT > 0 ? FOOD_SLOW : 1);
@@ -964,6 +971,7 @@ function updatePlayer(p, dt) {
   }
   p.readyFlash = Math.max(0, p.readyFlash - dt);
   p.dryT = Math.max(0, p.dryT - dt);
+  p.slashT = Math.max(0, p.slashT - dt); // the blade's sweep in the hand (slashTool, js/tools.js)
 
   // The tool: pressing arms the shot, releasing fires it. The press does not
   // have to land on a ready tool - it stays armed, so holding through the
@@ -1277,6 +1285,7 @@ function updateFx(dt) {
   }
   updateWarps(dt); // the silhouettes a teleport request left behind (js/tools.js)
   updateSwaps(dt); // ...and the risen icon a tool that traded itself up leaves
+  updateSlashes(dt); // ...and the sword's sweep on the snow (js/tools.js)
   if (bagFlash > 0) bagFlash -= dt; // the backpack's refusal red is chrome: wall time
   // ...and the positive half of the same idiom: the well an item just landed
   // in, and the cursor when a swap changed what the hand is holding (hudFx, ui.js)
