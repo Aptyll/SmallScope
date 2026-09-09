@@ -482,7 +482,10 @@ function updatePlay(dt) {
     // A player with no room for it is neither magnetised nor a claimant, so a
     // full bag hands the pickup to whoever else is standing there instead of
     // sitting on it. (Gold never lies here - awardGold pays it on the spot.)
-    const roomFor = (p) => bagRoom(p, d.type) > 0;
+    // ...and "room" counts the free cells of the tool in hand, not just the
+    // pack's: a found bit arms itself (fitRoom / fitAdd, js/tools.js), so a
+    // full pack with an empty bit cell still pulls a bit in and still claims it
+    const roomFor = (p) => fitRoom(p, d.type) > 0;
     let near = null, pd = 1e9;
     for (const p of players) {
       if (!p.active || p.dead || inAir(p) || !roomFor(p)) continue;
@@ -505,7 +508,7 @@ function updatePlay(dt) {
         // drop, so a stack that only partly fits leaves its remainder lying
         // there instead of being picked up forever. An instanced drop (a
         // loaded tool) goes in whole or not at all - it cannot be split.
-        const got = d.it ? (bagPut(p, d.it) ? 1 : 0) : bagAdd(p, d.type, d.n);
+        const got = d.it ? (bagPut(p, d.it) ? 1 : 0) : fitAdd(p, d.type, d.n);
         if (got > 0) {
           d.n -= got;
           addFloater(p.x, p.y - 14, '+' + got, RES_COLORS[d.type]);
@@ -1241,6 +1244,8 @@ function updateFx(dt) {
   if (toolFlash > 0) toolFlash -= dt; // ... and the weapon well's, beside it
   if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
+  // the shelf's flash is chrome too: what the last press spent, fading (js/tools.js)
+  if (bitLit && (bitLit.t -= dt) <= 0) bitLit = null;
   for (let i = footprints.length - 1; i >= 0; i--) {
     const f = footprints[i];
     f.t += dt;

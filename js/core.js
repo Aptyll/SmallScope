@@ -120,7 +120,7 @@ const state = {
   // rather than a flag, because walking out of that body's reach is what shuts it.
   shop: null,
   // an item riding the pointer between the grid, the four weapon slots and a
-  // tool's bit column: { cell, from } - see the drag banner in js/ui.js. The
+  // tool's own bit cells: { cell, from } - see the drag banner in js/ui.js. The
   // cell is the same object the bag held, so a tool keeps its bits across it.
   drag: null,
   // a press on a holdable cell that has not travelled far enough to become a

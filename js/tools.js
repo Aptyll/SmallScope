@@ -3,7 +3,7 @@
 // it fires. A tool is a body - how often it can shoot, how many bits it holds,
 // and how much WEIGHT it can swing in one press; a bit is a shot, or a
 // modifier that rewrites every shot fired after it. One press spends the
-// tool's strength up the column and looses everything it can afford at once.
+// tool's strength along the row and looses everything it can afford at once.
 // Both are carried items, both scatter out of the world, and a tool keeps its
 // bits wherever it goes.
 // Keys 1-4 are the class abilities now (js/abilities.js), not slot picks.
@@ -72,9 +72,10 @@ const TIER_SHINE = 2; // the tier whose plate animates
 // A MODIFIER bit (`proj: false`) never flies, but it costs weight like
 // everything else. Its `mod(m)` edits the shot envelope - and it edits it for
 // every projectile AFTER it in the list and for NONE before it, so where a
-// modifier sits is the whole of what it is worth, and a FLAME in the top cell
+// modifier sits is the whole of what it is worth, and a FLAME in the LAST cell
 // sets nothing alight. Once a press has reached a modifier it stays in the
-// envelope for the rest of that press: there is no per-shot expiry.
+// envelope for the rest of that press: there is no per-shot expiry. The shelf
+// draws that reach as a rail running forward off the fitting (js/ui.js).
 //
 // A MOD COMPOUNDS WITH WHAT IS ALREADY IN THE ENVELOPE. Every `mod` must
 // COMPOSE with the value it is handed - `*=` a multiplier, `+=` a quantity -
@@ -169,15 +170,15 @@ const BITS = {
   // sits in - a modifier is not free any more, and a tool packed with them has
   // nothing left to throw a shot with.
   speedup: {
-    name: 'SPEEDUP', blurb: 'SHOTS ABOVE IT FLY TWICE AS FAST.', price: 22, tier: 0, proj: false,
+    name: 'SPEEDUP', blurb: 'SHOTS AFTER IT FLY TWICE AS FAST.', price: 22, tier: 0, proj: false,
     weight: 3, col: '#8fe08a', mod: (m) => { m.spdMul *= 2; },
   },
   fan: {
-    name: 'SPLITTER', blurb: 'SHOTS ABOVE IT SPLIT IN THREE, WEAKER.', price: 28, tier: 0, proj: false,
+    name: 'SPLITTER', blurb: 'SHOTS AFTER IT SPLIT IN THREE, WEAKER.', price: 28, tier: 0, proj: false,
     weight: 4, col: '#cfe0f2', mod: (m) => { m.fan *= 3; m.dmgMul *= 0.6; },
   },
   flame: {
-    name: 'FLAME', blurb: 'SHOTS ABOVE IT SET WHAT THEY HIT ALIGHT.', price: 46, tier: 1, proj: false,
+    name: 'FLAME', blurb: 'SHOTS AFTER IT SET WHAT THEY HIT ALIGHT.', price: 46, tier: 1, proj: false,
     weight: 4, col: '#ff9440',
     mod: (m) => {
       m.type = 'fire';
@@ -191,15 +192,15 @@ const BITS = {
     },
   },
   twin: {
-    name: 'DUPLICATE', blurb: 'EVERY SHOT ABOVE IT IS FIRED TWICE.', price: 60, tier: 1, proj: false,
+    name: 'DUPLICATE', blurb: 'EVERY SHOT AFTER IT IS FIRED TWICE.', price: 60, tier: 1, proj: false,
     weight: 5, col: '#a259e6', mod: (m) => { m.dup *= 2; },
   },
   heft: {
-    name: 'HEFT', blurb: 'SHOTS ABOVE IT HIT HARDER, FLY SLOWER.', price: 95, tier: 2, proj: false,
+    name: 'HEFT', blurb: 'SHOTS AFTER IT HIT HARDER, FLY SLOWER.', price: 95, tier: 2, proj: false,
     weight: 5, col: '#f2cc6a', mod: (m) => { m.dmgMul *= 1.6; m.spdMul *= 0.75; },
   },
   longshot: {
-    name: 'LONGSHOT', blurb: 'SHOTS ABOVE IT FLY MUCH FURTHER.', price: 88, tier: 2, proj: false,
+    name: 'LONGSHOT', blurb: 'SHOTS AFTER IT FLY MUCH FURTHER.', price: 88, tier: 2, proj: false,
     weight: 4, col: '#7ac0e8', mod: (m) => { m.lifeMul *= 1.8; m.spdMul *= 1.15; },
   },
   pyre: {
@@ -213,7 +214,7 @@ const BITS = {
     },
   },
   cinder: {
-    name: 'CINDER BURST', blurb: 'EVERY IMPACT ABOVE IT THROWS EMBERS.', price: 135, tier: 2, proj: false,
+    name: 'CINDER BURST', blurb: 'EVERY IMPACT AFTER IT THROWS EMBERS.', price: 135, tier: 2, proj: false,
     weight: 6, col: '#ffb347',
     mod: (m) => {
       m.type = 'fire';
@@ -394,7 +395,7 @@ function toolLoad(cell) {
 }
 // ...and whether that is more than one press can spend. This is the "!" over
 // the well (drawOverWarn, js/ui.js): the build still fires, it just stops
-// partway up the column, and the budget bar says where.
+// partway along the row, and the shelf's budget track says where.
 function toolOver(cell) { return toolLoad(cell) > TOOLS[toolIdOf(cell.type)].tensile; }
 // a fresh shot envelope: what a press starts with before a single modifier
 // has touched it. The damage TYPE is 'blunt' until a fire modifier says
@@ -416,7 +417,7 @@ function bitMods(id) {
 
 // ONE ACTIVATION, RESOLVED IN A SINGLE PASS OVER THE CELLS: what fires, in
 // what order, and through which envelope. This is the whole of the weapon's
-// arithmetic, and the press, the aim line and the bit column all read it, so
+// arithmetic, and the press, the aim line and the shelf all read it, so
 // the three can never disagree about what the button is about to do.
 //
 // TENSILE IS A BUDGET, not a ceiling on one bit. It resets here at the top of
@@ -433,10 +434,17 @@ function bitMods(id) {
 // once a modifier is in the envelope it stays there for every shot after it
 // in the same press. Two of a kind compound, because every `mod` composes
 // with what it is handed (see BITS above).
+//
+// A shot also carries `mods`: the CELLS whose fittings shaped it, snapshotted
+// beside the envelope they wrote. Nothing in the sim reads it - it is what the
+// shelf draws its rails from (drawShelf, js/ui.js), so the picture of which
+// fitting reaches which shot is read off the same pass that fires them and can
+// never claim a rule the press does not follow.
 function toolPlan(cell) {
   const T = TOOLS[toolIdOf(cell.type)];
   const m = newMods();
-  const plan = { shots: [], used: 0, cut: -1, load: 0, tensile: T.tensile };
+  const mi = [];
+  const plan = { shots: [], spent: [], used: 0, cut: -1, load: 0, tensile: T.tensile };
   for (let i = 0; i < cell.bits.length; i++) {
     const id = cell.bits[i];
     if (!id) continue;                 // a gap costs nothing and stops nothing
@@ -445,13 +453,15 @@ function toolPlan(cell) {
     if (plan.cut >= 0) continue;       // past the cut: still carried, never fired
     if (plan.used + b.weight > T.tensile) { plan.cut = i; continue; }
     plan.used += b.weight;
-    if (b.proj) plan.shots.push({ id, i, m: Object.assign({}, m) });
-    else if (b.mod) b.mod(m);
+    plan.spent.push(i);                // ...and what it spent it ON, for the shelf to light
+
+    if (b.proj) plan.shots.push({ id, i, m: Object.assign({}, m), mods: mi.slice() });
+    else if (b.mod) { b.mod(m); mi.push(i); }
   }
   return plan;
 }
 // what the next press puts in the air FIRST - the lead shot, which is what
-// the column's caret marks and what the aim line is drawn for. -1 when the
+// the shelf's gold bar marks and what the aim line is drawn for. -1 when the
 // press would put nothing in the air at all.
 function peekBit(cell) {
   const s = toolPlan(cell).shots;
@@ -507,32 +517,6 @@ function shotFlight(b, m, pw) {
   const sm = drawSpeedMul(pw);
   return { spd: b.speed * m.spdMul * sm, life: b.life * m.lifeMul * drawRangeMul(pw) / sm };
 }
-// Whether the weapon's bit column is up: HOVER over the weapon well raises
-// it, and it stays up while the pointer is on the risen column itself (or
-// while a bit is being carried anywhere - the column is where a bit goes).
-// Derived every read, never stored, so it can never disagree with where the
-// pointer actually is; `bitColHover` only remembers that it was open, which
-// is what lets the pointer climb the column without it snapping shut.
-let bitColHover = false;
-function bitEditSlot() {
-  if (!player || state.mode !== 'play' || player.dead) { bitColHover = false; return -1; }
-  const cell = player.tools[0];
-  if (!cell) { bitColHover = false; return -1; }
-  if (state.drag && bitIdOf(state.drag.cell.type)) return 0;
-  if (!mouse.inside) { bitColHover = false; return -1; }
-  const m = stripMouse(mouse.x, mouse.y); // the strip may draw scaled (HUD SIZE); its rects stay 1x
-  const r = toolCellRect(0);
-  let over = m.x >= r.x - 2 && m.x < r.x + r.w + 2 &&
-    m.y >= r.y - 3 && m.y < r.y + r.h + 3;
-  if (!over && bitColHover) {
-    const top = bitColRect(0, cell.bits.length - 1);
-    over = m.x >= top.x - 8 && m.x < top.x + top.w + 8 &&
-      m.y >= top.y - 6 && m.y < r.y + r.h;
-  }
-  bitColHover = over;
-  return over ? 0 : -1;
-}
-
 // ---- equipping -----------------------------------------------------------
 // Every move of a tool or a bit goes through these two, so a cell is never in
 // two places at once. Both return the thing displaced, for the caller to put
@@ -548,12 +532,68 @@ function bitPut(cell, i, id) {
   return was;
 }
 
+// ---- a find arms itself ---------------------------------------------------
+// THE PACK IS THE OVERFLOW, NOT THE DESTINATION. A bit picked up off the snow
+// (or bought over the counter) walks into the tool's first free cell, and only
+// what the tool cannot hold goes into the grid - so the ordinary way to arm a
+// find is to walk over it, and the drag is what you reach for to ARRANGE a
+// build rather than what you must do to have one. The shelf over the pack
+// (js/ui.js) is where it lands, which is half of why that shelf is on screen
+// at all times: a bit that loaded itself has to be seen loading itself.
+//
+// It fills a free cell whatever the tensile budget says. A bit the press
+// cannot afford stops that press where it sits rather than jamming it
+// (toolPlan), the shelf draws the cell red and washed out, and one click sends
+// it back to the pack - so an unaffordable find is visible and undone in a
+// click, and the pickup never has to guess what you meant by it.
+//
+// A BOT IS LEFT OUT: botFitLoadout below does this for them on its own timer
+// and is choosier than this - it will not load a boomerang it cannot aim, and
+// it builds INSIDE the budget - so a pickup that shoved a bit into a bot's
+// tool would only make it a worse shot.
+function autoFitTool(p) { return p.control === 'human' ? heldTool(p) : null; }
+// how many free cells that tool is offering for `type`, which is room on top
+// of whatever the pack will take: every path that hands a player an item asks
+// through here, so a FULL PACK with an empty cell in the tool still magnetises
+// a drop and still claims it
+function fitRoom(p, type) {
+  const cell = bitIdOf(type) && autoFitTool(p);
+  let n = 0;
+  if (cell) for (const b of cell.bits) if (!b) n++;
+  return bagRoom(p, type) + n;
+}
+// ...and the transfer: the tool first, the pack with the remainder. Returns
+// how many were taken, exactly as bagAdd does.
+function fitAdd(p, type, n) {
+  const id = bitIdOf(type);
+  const cell = id && autoFitTool(p);
+  let got = 0, free;
+  while (cell && got < n && (free = cell.bits.indexOf(null)) >= 0) { bitPut(cell, free, id); got++; }
+  return got + bagAdd(p, type, n - got);
+}
+
 // ---- what a tool fires ---------------------------------------------------
 // One press = one activation of the selected tool, resolved in ONE frame:
-// toolPlan spends the tool's tensile budget down the column and every shot it
+// toolPlan spends the tool's tensile budget along the row and every shot it
 // can afford leaves together. The tool's rate of fire sets the gap to the next
 // press (toolRof) and the draw sets what each shot is worth (`the draw` above).
 // Nothing cycles between presses any more - a press is the whole tool.
+// WHAT THE PRESS SPENT, LIT ON THE SHELF. A build is fired far more often than
+// it is edited, so the press itself is where the column is learned: every cell
+// the activation paid for - the shots AND the fittings that shaped them -
+// flashes together for BIT_LIT_T, and the rails between them flash with it, so
+// one click of the left button says "these three went, and that flame is why".
+// It is the local player's alone (nothing else has a shelf on screen), it is
+// held by REFERENCE to the tool that fired, so swapping weapons cannot leave a
+// flash on somebody else's cells, and updateFx ages it on wall time beside the
+// refusal reds.
+const BIT_LIT_T = 0.3;
+let bitLit = null;   // { cell, cells: [i...], t }
+// how lit cell i of `cell` is, 1 at the loose and 0 by the end of the flash
+function bitLitAt(cell, i) {
+  if (!bitLit || bitLit.cell !== cell || bitLit.cells.indexOf(i) < 0) return 0;
+  return bitLit.t / BIT_LIT_T;
+}
 function fireTool(p) {
   cancelCatch(p); // a press is a press: the hoist gives way to the shot (the spear below re-starts it on a catch)
   // the cover is read before anything below can break it - the ambush shot is
@@ -563,6 +603,7 @@ function fireTool(p) {
   if (!cell) { dryFire(p); return; }          // an empty slot has nothing to press
   const plan = toolPlan(cell);
   if (!plan.shots.length) { dryFire(p); return; } // pressed a tool that cannot answer
+  if (p === player) bitLit = { cell, cells: plan.spent, t: BIT_LIT_T };
   // the index into the volley is the skew off the aim, so no two bits of one
   // press leave inside each other
   plan.shots.forEach((s, k) => emitBit(p, BITS[s.id], s.id, s.m, amb, k));
@@ -852,9 +893,9 @@ function dropLoot(x, y, tier, chance) {
 // a preview: the two classes do not shoot the same thing. Called from
 // initPlayers() and again whenever the local player changes class at select.
 // The order inside `bits` is the FIRING order, cell 0 first, and a modifier
-// only reaches the shots after it - so the WARRIOR's HEFT sits UNDER its
-// arrow. A starting kit that fitted a modifier above its only shot would
-// teach the rule backwards on the first press of the match.
+// only reaches the shots after it - so the WARRIOR's HEFT sits BEFORE its
+// arrow. A starting kit that fitted a modifier past its only shot would teach
+// the rule backwards on the first press of the match.
 const CLASS_LOADOUT = [
   { tool: 'shortbow', bits: ['arrow', 'barb'] }, // HUNTER: the plain shaft, and a heavier one
   { tool: 'sling',    bits: ['heft', 'arrow'] }, // WARRIOR: the fitting first, then the shot it makes land like a fist
@@ -873,7 +914,7 @@ function giveLoadout(p) {
 }
 
 // ---- a bot fitting what it has found -------------------------------------
-// A bot has no bit column and no pointer, so it does by hand the two things a
+// A bot has no shelf and no pointer, so it does by hand the two things a
 // person does with a drag: push loose bits into the tool it is actually
 // firing, and put a spare tool on a free key (or over a worse one, which then
 // takes the bag cell the new one came out of). Without this a bot walks the
@@ -907,8 +948,8 @@ function botFitLoadout(p) {
       if (cur.bits.indexOf(null) < 0) break;
     }
     // ...and then sorts the build the way a person would, since a modifier
-    // above the shots it is meant to change is worth nothing: fittings to the
-    // bottom, shots on top of them. A stable sort, no rng - deterministic.
+    // sitting past the shots it is meant to change is worth nothing: fittings
+    // to the front, shots behind them. A stable sort, no rng - deterministic.
     const live = cur.bits.filter(Boolean);
     live.sort((a, c) => (BITS[a].proj ? 1 : 0) - (BITS[c].proj ? 1 : 0));
     for (let k = 0; k < cur.bits.length; k++) cur.bits[k] = live[k] || null;

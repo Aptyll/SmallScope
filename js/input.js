@@ -274,7 +274,7 @@ function keyPress(e) {
   // the four ability binds cast, left to right exactly as the strip shows
   // them (a click on the well sets the same field - hudPress, js/ui.js).
   // Edge-triggered like the dodge; the sim consumes it (tryAbility,
-  // js/abilities.js). The bit column rises on HOVER over the weapon well.
+  // js/abilities.js). What is loaded in the weapon is on the shelf over the pack.
   const ab = e.repeat ? -1 : ['ab1', 'ab2', 'ab3', 'ab4'].findIndex((a) => keyIs(e, a));
   if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
   if (keyIs(e, 'map') && !state.settingsOpen && !state.draft && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; }
@@ -361,7 +361,7 @@ function pointerPress(button) {
   if (button === 2) {
     if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.draft) return;
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || bitColHit(mouse.x, mouse.y) >= 0) return; // no build wheel through the HUD
+        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y)) return; // no build wheel through the HUD
     SFX.unlock();
     const tx = Math.floor(mouseWX() / TILE), ty = Math.floor(mouseWY() / TILE);
     const o = structOf(objAt(tx, ty));
@@ -384,7 +384,7 @@ function pointerPress(button) {
   if (state.draft) { SFX.unlock(); draftClick(); return; } // a card, or anywhere else: closes either way
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) return;
-  // The backpack widget, the weapon slots and an open bit column swallow every
+  // The backpack widget, the weapon slots and the weapon shelf swallow every
   // press over themselves before the tool ever sees them. The character panel
   // is asked first while it is up - a press on a gear well buys, the X
   // closes, and the slab eats the rest. Everything else goes through

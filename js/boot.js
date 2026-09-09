@@ -1385,16 +1385,17 @@ window.DBG = {
   hudStripRect, stripHit,
   // Tools and bits: the two tables, the tier palette, an instance maker, the
   // firing pipeline and the loot roll - so a driver can stage a build without
-  // mining for it. `toolCellRect` / `bitColRect` / `bitColHit` are the wells
-  // the pointer tests against. bitEditSlot is whether the hover-raised column is up (-1 = down).
-  TOOL_TIERS, TOOL_SLOTS, makeTool, toolType, bitType, bitMods, newMods,
+  // mining for it. `toolCellRect` is the strip's weapon well, and
+  // `shelfCellRect` / `shelfHit` the always-up shelf's (cell -1 is the tool).
+  // `fitAdd` is the pickup's own path: a bit into the tool, the rest in the pack.
+  TOOL_TIERS, TOOL_SLOTS, makeTool, toolType, bitType, bitMods, newMods, fitAdd,
   // toolPlan is the whole press resolved without firing it: what the budget
   // reaches, through which envelope, and where it runs out (`cut`)
   toolPlan, toolLoad, toolOver,
   toolRof, toolCycle, peekBit, toolReady, dropLoot, giveLoadout, CLASS_LOADOUT,
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit
   drawPow, shotFlight, drawDmgMul, DRAW_RANGE_MIN, DRAW_SPEED_MIN, DRAW_DMG_MIN,
-  toolCellRect, bitColRect, bitColHit, bitEditSlot, tierPlate,
+  toolCellRect, shelfCellRect, shelfHit, shelfRails, tierPlate,
   // the closing line's three bits: what a shot does where it LANDS, the
   // teleport with no shot to fire it, the flashes it strings across the jump,
   // and the chop a thrown axe lands - so a driver can prove an arrival or a
