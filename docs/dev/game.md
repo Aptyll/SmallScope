@@ -14,14 +14,17 @@ Ten players in `players` — **player 0 is you, the rest are AI** — across **t
 BLUE** (players alternate). Everyone picks one of **two classes** (the ranged HUNTER, the melee
 WARRIOR) and is **dropped in by their team's armoured eagle** — the two birds fly the map's one
 diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
-its line each eagle dives into its **corner's** treeline — RED always bottom-left, BLUE always
-top-right — and becomes its team's **objective**; its **merchant** climbs down to raise a gate,
-clear the rim and then keep shop at the lane mouth for anybody at all who walks up to it, and a
-**lane** of pines falls open back to the snow. Between the two lane mouths runs **the road** — one
-straight packed-earth lane down the map's diagonal, seven tiles wide with ragged snowy verges,
-mile posts on its shoulders, a pennant pole in each side's colour at its mouths and a marker at its
-middle, dry from end to end because the ice keeps clear of it, there from worldgen and readable
-from anywhere —
+its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
+always top-right, each to its own right of the road — and becomes its team's **objective**; its
+**merchant** climbs down to raise the base's first defence (four guns inside a closed ring of walls, open only at the road and at the corner its bay will take), clear the rim and then keep shop at the head of the spur
+for anybody at all who walks up to it, and a **spur** of pines falls open from the crater straight
+back to the road, paved behind the felling front into a track. **The road** itself runs the map's
+whole diagonal, world edge to world edge — one straight packed-earth lane, seven tiles wide across
+the field with ragged snowy verges, narrowing to five where it enters each corner's woods between
+a pair of pennant poles in that side's colour, a marker at its middle and a felled trunk across
+each forest end, dry from end to end because the ice keeps clear of it, there from worldgen and
+readable from anywhere: a route that comes from beyond and goes on past us, with the nests beside
+it, so from the road the way to a bird is one straight sightline down its spur —
 and half a minute after landing each merchant clears the woods *behind*
 its bird and raises a **barracks** there: every thirty seconds it marches a **wave** of soldier bots
 down the road toward the rival bird, fighting whatever it meets and swinging at the roost when it
@@ -119,8 +122,9 @@ on purpose: it sells what changes the way you *play* rather than what you surviv
 you walk to a body to get it. [Gear](gameplay.md#gear).
 
 **Your eagle is your life.** The bird that carried the team in crashes into its corner's trees at
-the end of its line and roosts there, armoured in team colour — the crater it blows, the lane its
-landing cuts to the open snow and the gate its merchant raises are the team's starting base, an
+the end of its line and roosts there, armoured in team colour — the crater it blows (packed earth,
+one ground with the spur and the road), the spur its landing cuts back to the road and the guns
+and walls its merchant raises are the team's starting base, an
 easier opening for a new player who can help fortify before walking out. Its hp pool is its **nerve**:
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly

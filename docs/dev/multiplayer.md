@@ -425,7 +425,7 @@ gold is XP and the table only climbs, so the level *is* the clock. An early deat
 nothing and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
-`RESPAWN_OUT` (40 px) down the lane from the bird (`e.laneDir`; the nearest standable tile there
+`RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
 through `nearestDryTile`, the same spiral a hole is climbed out of) and calls `p.reset(false)`,
 the exact full-clear a fresh landing gets, i-frames included — so the way back into the match is
 the road everyone walked out on, past the merchant and the gate. A bird still in the air (a player
@@ -561,15 +561,15 @@ The ladder:
    own side's column on the road (`aiWaveHead` — the own soldier nearest the rival bird that is
    still on the march, within `AI_WAVE_D`) rather than ahead of it alone, closing to `AI_WAVE_R`
    of it and going on from there; with no column out it walks as it always did.
-   The walk is `aiToRoost`: the roost sits in its corner's forest at the end of its lane and the
-   lane is the only way in, so off it the route is field → `aiLaneGate` (`AI_GATE` px past the
-   mouth on open snow) → mouth → lane → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
+   The walk is `aiToRoost`: the roost sits in its corner's woods at the end of its spur and the
+   spur is the only way in, so off it the route is road → `aiLaneGate` (`AI_GATE` px up the road
+   from the junction, toward the field) → junction (`e.mouth`) → spur → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. In the
-   lane, the roost's **gate turrets come down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
+   spur, the roost's **gate turrets come down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
    standing off the bird under bolt fire never finishes a draw), then a hunter takes its
-   station `AI_HOLD` (96 px) out **on the lane's axis**, where the gate's gap leaves the line to
+   station `AI_HOLD` (96 px) out **on the spur's axis**, where the gate's gap leaves the line to
    the roost open (off the axis its walls eat the shot) and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until

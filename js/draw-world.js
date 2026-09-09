@@ -106,6 +106,15 @@ function paintGroundTile(g, tx, ty) {
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py);
       }
+      // the felled trunk across a forest road (placeRoad, world.js) lies flat
+      // on the ground, so it is ground: baked here over whatever the tile is.
+      // A piece's band spills past its tile's corners into the four tiles
+      // beside it (the trunk is wider than the diagonal it runs on), so a
+      // tile paints its neighbours' pieces too, shifted, and its own last.
+      for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1], [0, 0]]) {
+        const lo = objAt(tx + dx, ty + dy);
+        if (lo && lo.type === 'log') paintLog(g, lo.seg, px, py, -dx * TILE, -dy * TILE);
+      }
 }
 
 // ---- the road's pixels ----------------------------------------------------
@@ -126,6 +135,48 @@ const ROAD_COL_RUT = '#a08d70';                        // the ruts
 const ROAD_COL_STONE = '#9c8d74', ROAD_COL_DARK = '#b5a68c', ROAD_COL_LIGHT = '#dbcfba';
 const ROAD_COL_MUD = '#ded8cc', ROAD_COL_GREY = '#dde3ec'; // the shoulder's dirty snow, then grey snow
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
+// The felled trunk across each forest road's far end (placeRoad, world.js):
+// one 16 px piece per tile along the cross-diagonal, running from the
+// tile's top-left corner to its bottom-right so the pieces meet corner to
+// corner in one line. `seg` 0 is the up-left end and 2 the down-right end,
+// each stopping short to show its sawn face and rings; 1 is the trunk. A
+// real trunk, eleven pixels across the diagonal: snow lies along its spine,
+// bark shows down the lower side with the odd knot, a dark rim holds it
+// against the packed earth like every other thing on the ground, and a soft
+// shadow falls off its lower flank.
+const LOG_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', face: '#c9a070', ring: '#7a5634', snow: '#f4f7ff', snowD: '#d8e4f2' };
+// ox/oy shift the piece's own frame: 0 for the tile it stands on, +-TILE
+// when a neighbour paints the part of it that spills over the tile edge
+function paintLog(g, seg, px, py, ox, oy) {
+  for (let y = 0; y < TILE; y++) for (let x = 0; x < TILE; x++) {
+    const lx = x + ox, ly = y + oy;
+    const t = lx - ly, a = lx + ly; // across the trunk (0 on its spine, + toward the lower-right flank) and along it (0 at the piece's up-left corner)
+    const inEnd = (seg === 0 && a < 4) || (seg === 2 && a > 26); // past the sawn end: nothing
+    if (inEnd) continue;
+    // the ends round off: the band narrows over the last three pixels
+    const half = (seg === 0 && a < 7) ? 2 + (a - 4) : (seg === 2 && a > 23) ? 2 + (26 - a) : 5;
+    const h = hash2(seg * 16 + lx, ly); // this pixel's own roll, the same every bake
+    // the lower-side stubs of two lopped branches on the trunk piece
+    const stub = seg === 1 && (Math.abs(a - 9) <= 1 || Math.abs(a - 21) <= 1) && t >= 6 && t <= 8 + (Math.abs(a - 9) <= 1 ? 1 : 0);
+    if (stub) { g.fillStyle = t === 6 ? LOG_COL.mid : t === 7 ? LOG_COL.dark : LOG_COL.rim; g.fillRect(px + x, py + y, 1, 1); continue; }
+    if ((t === 6 || t === 7) && Math.abs(t - 6) < half - 3) { // the shadow off the lower flank
+      g.fillStyle = 'rgba(40,60,100,0.22)'; g.fillRect(px + x, py + y, 1, 1);
+      continue;
+    }
+    if (t < -half || t > half) continue;
+    let c;
+    if ((seg === 0 && a <= 6) || (seg === 2 && a >= 24)) { // the sawn face, seen edge-on: pale wood under a dark rim
+      c = Math.abs(t) === half ? LOG_COL.rim : Math.abs(t) <= 1 ? LOG_COL.ring : LOG_COL.face;
+    } else if (Math.abs(t) === half) c = LOG_COL.rim;
+    else if (t <= -1) { // the top: snow lying in patches, bark where it has slid off
+      const snowy = vnoise(a / 5 + seg * 7, t + 3.3) > 0.42 - t * 0.06;
+      c = snowy ? (h < 0.18 ? LOG_COL.snowD : LOG_COL.snow) : (t === -4 ? LOG_COL.light : LOG_COL.mid);
+    } else if (t === 0) c = h < 0.5 ? LOG_COL.light : LOG_COL.snowD;
+    else if (t <= 2) c = h < 0.08 ? LOG_COL.rim : h < 0.35 ? LOG_COL.dark : LOG_COL.mid; // bark grain, a knot now and then
+    else c = h < 0.3 ? LOG_COL.mid : LOG_COL.dark;
+    g.fillStyle = c; g.fillRect(px + x, py + y, 1, 1);
+  }
+}
 const roadRutCache = new Map();
 function roadRutAt(u) {
   const k = Math.round(u * 4);
@@ -240,39 +291,9 @@ const CHEST_SPR = (() => {
   });
   return c;
 })();
-// The road's mile post and its centre cairn (placeRoad, world.js), baked
-// here like the chest. The post is a plain tarred stake under a snow cap -
-// quiet on purpose, it is the lane's edge and not a thing to look at; the
-// cairn is a heap of river stones under snow, the one solid thing on the
-// road, where the two waves meet.
-const POST_SPR = (() => {
-  const pal = { o: '#241a12', W: '#8a6142', w: '#5c4226', d: '#3a2a1c', s: '#f4f7ff' };
-  const rows = [
-    '.ssss.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oddo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    '.oWwo.',
-    'oowwoo',
-    'ssssss',
-  ];
-  const c = document.createElement('canvas');
-  c.width = 6; c.height = rows.length;
-  const g = c.getContext('2d');
-  rows.forEach((r, y) => {
-    for (let x = 0; x < 6; x++) if (pal[r[x]]) { g.fillStyle = pal[r[x]]; g.fillRect(x, y, 1, 1); }
-  });
-  return c;
-})();
+// The road's centre cairn (placeRoad, world.js), baked here like the chest:
+// a heap of river stones under snow, the one solid thing on the road, where
+// the two waves meet.
 const CAIRN_SPR = (() => {
   const pal = { o: '#2a2e3a', G: '#9aa2b2', g: '#737b8c', d: '#596072', s: '#f4f7ff', S: '#d8e4f2' };
   const rows = [

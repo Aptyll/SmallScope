@@ -1585,8 +1585,10 @@ on the diagonal — the **last wooded tile** out from the corner, so a bay in th
 is still forest on the corner side (pure reads of `borderDepth` — no `rng()`, no `hash2`) — so the
 dive past it always has forest to land in; both corners are guaranteed woods anyway by the
 [roost disc](world.md#the-tile-world). `diagEnd` also returns the corner's **mouth** — the first
-open tile past that last pine, the middle of the corner's tree edge — which `makeEagles` hands each
-bird as `e.mouth`: the point its lane aims at. The two birds fly it in **opposite directions**, each shifted
+open tile past that last pine, the road's gate on the diagonal (`roadSpan`, the same rule) — kept
+for the record; what `makeEagles` hands each bird as `e.mouth` is its spur's **junction**
+(`roadNest(team)`, [the road](world.md#the-road)): the point on the road's centreline its spur
+aims at, and the way in for every walker. The two birds fly it in **opposite directions**, each shifted
 `EAGLE_LANE` (2.5 tiles) along its own right-hand perpendicular so the mid-route pass over the
 map's centre is a fly-by, ~5 tiles apart, never a collision. `beginDrop` sets mode `drop`, snaps
 the world zoom to `DROP_ZOOM` around its centre and starts the menu exit. Every rider gets a
@@ -1660,16 +1662,29 @@ mode `play`) outranks and clears it.
 
 **`state.drop` now outlives the whole match** — it never goes null, because the roosts are the
 objectives. A bird's life is `fly → dive → down → flee → gone` (`e.state`): at the end of its line
-`beginDive` throws any remaining rider, `findCrashPoint` walks 4–60 tiles further along the
-heading for the first tile that sits ≥`CRASH_DEPTH` (14) tiles inside the treeline by the border's
-own measure (`forestDepth` = `borderDepth` − edge distance; inside the
-[roost disc](world.md#the-tile-world) that is tiles in from the arc) **and** whose 7×7 still holds
-≥`MIN_CRASH_TREES` (40 of 49 — the border is solid, so fewer means an edge or a bay) — the roost
-sits a proper way **inside** the woods with trees all round it, never on the tree edge, with the
-deepest, densest spot seen as the fallback (pure reads — no `rng()`, no `hash2` — so a seed always
-buries its birds in the same trees) — and the stoop runs `EAGLE_DIVE_T` (1.4 s,
-`u²`-eased, wingbeats quickening, speed motes streaming). `eagleCrash` then clears every tree
-within `BOOM_R` (3.6 tiles) outright, snaps the ring out to `BOOM_STUMP_R` (4.6) to stumps —
+`beginDive` throws any remaining rider and `findCrashPoint` lands on the side's **nest** —
+`roadNest(team)` ([the road](world.md#the-road)): `ROAD_NEST_OFF` (13) tiles off the road's
+centreline to the bird's own right, at the first junction inward from the gate where the spot is
+deep (`roadNestDeep`: ≥`CRASH_DEPTH` (14) tiles inside the treeline by the border's own measure,
+`forestDepth` = `borderDepth` − edge distance, **and** as far inside the corner's
+[roost disc](world.md#the-tile-world), since `forestDepth` only knows the nearest world edge)
+**and** whose 7×7 still holds ≥`MIN_CRASH_TREES` (40 of 49 — the border is solid, so fewer means
+an edge or a bay) — the roost sits a proper way **inside** the woods with trees all round it,
+never on the tree edge, RED's to the top-left side of its road, BLUE's to the bottom-right,
+mirrored through the map's centre; should the spot have changed since worldgen the nearest tile
+round it that still qualifies takes the impact, the blast ring always off the road (pure reads —
+no `rng()`, no `hash2` — so a seed always buries its birds in the same trees). The stoop runs
+`EAGLE_DIVE_T` (1.4 s, `u²`-eased, wingbeats quickening, speed motes streaming) and **banks**: the
+heading turns from the line's to the crash's bearing over the first part of the dive
+(`e.diveH0`/`e.diveTurn`, set by `beginDive`), so the turn off the road into the nest's woods
+reads as a turn, and the roosting bird faces the way it came down. `eagleCrash` then clears every tree
+within `BOOM_R` (3.6 tiles) outright and **paves the disc** (the pad: every snow tile in it turns
+to ground `3` that frame and `addPad` registers it with the road, [world.md](world.md#the-road),
+so the roost stands on the same packed earth as its spur and the road), snaps **two rings** to
+stumps — the middle out to `BOOM_STUMP_R` (4.8), the merchant's turret sites, and the outer out to
+`BOOM_STUMP_R2` (6.0), where its wall ring runs, so the walls stand outside the guns — and clears
+every rock and bush out to the outer ring outright, so nothing sits in the wall's band that a wall
+cannot replace —
 **paying no gold**, a crater of free fells would warp the economy at minute one — plants the
 **roost hitbox** (`eagle` objects on the open tiles within `EAGLE_TILE_R`, solid to walkers and a
 rival-only E target; `eagleFlee` clears them again at liftoff), plans the **lane** and drops off
@@ -1678,24 +1693,28 @@ bursts, hanging feathers, a radial dust ring, two shockwave rings squashed flat 
 so they read as a blast wave along the ground, never a halo), distance-scaled `state.shake`,
 `SFX.boom()` (the timber sample dropped low under a synth blast, layered on purpose) and a
 `HAS LANDED` feed headline — the landing is a landing, not a wound: the bird takes **no damage**
-from its own dive. **The lane** (`planLane`/`laneStep`, `e.lane = { t, ev, next }`): from the
-crater along `e.laneDir` — set by `eagleCrash` as the unit vector from the crash to `e.mouth`, the
-**middle of the corner's tree edge** (`diagEnd`), back the way the bird came only if the mouth is
-somehow under it — to the open snow, every pine (and rock: `laneFells`) within `LANE_R`
-(0.8 tiles — a diagonal band two tiles across) of the centreline becomes two events timed by its
-distance along the lane, so a **felling front** walks out from the roost at `LANE_SPD` (3.5
-tiles/s) starting `LANE_DELAY` after the impact: each pine **shudders `LANE_WARN` (0.5 s) ahead
-of the front** (`o.shake`, the parkour roll's own tell, decayed by sim.js's object-timer loop),
-then goes down in needles and snow with a throttled `SFX.treeFall` (a rock shatters to
-`SFX.break_`). It is the parkour's
-`pkAnimStep` grammar without the ice — a watched transition, never a blink — and it pays nothing
-and leaves no stumps: a road is a road. The lane is **out** only when the last `LANE_CLEAR` (6)
-tiles held nothing to fell *and* `forestDepth` says open — a clearing inside the border used to
-end it early and leave the roost walled in behind a bay — capped at `LANE_MAX` (90) tiles. Pure
-reads, so a seed's lane is always the same lane; the merchant's gate and post read `e.laneDir`
-too, so the gate flanks the road that was actually cut.
-`laneStep` runs from `updateEagle`'s `down` branch and drops `e.lane` when the last event is
-spent. The grounded bird is the team's **objective**, and its hp pool is its
+from its own dive. **The spur** (`planLane`/`laneStep`, `e.lane = { t, ev, next, pave, paved }`):
+from the crater along `e.laneDir` — set by `eagleCrash` as the unit vector from the crash to
+`e.mouth`, its **junction on the road's centreline** (`roadNest`), back the way the bird came only
+if the junction is somehow under it — to the road's edge, every pine (and rock: `laneFells`)
+within `LANE_R` (= `SPUR_HW`, 1.25 tiles — the paved track's own half-width) of the centreline
+becomes two events timed by its distance along the spur, so a **felling front** walks out from the
+roost at `LANE_SPD` (3.5 tiles/s) starting `LANE_DELAY` after the impact: each pine **shudders
+`LANE_WARN` (0.5 s) ahead of the front** (`o.shake`, the parkour roll's own tell, decayed by
+sim.js's object-timer loop), then goes down in needles and snow with a throttled `SFX.treeFall`
+(a rock shatters to `SFX.break_`). It is the parkour's `pkAnimStep` grammar without the ice — a
+watched transition, never a blink — and it pays nothing and leaves no stumps: a road is a road.
+**Behind the front the band is paved**: `eagleCrash` registers the spur with the road
+(`addSpur`, `e.spur`, [the road](world.md#the-road)), `planLane` lists every snow tile of the
+band from the blast's rim (`BOOM_R`) to the road with its distance out (`pave`), and each
+`laneStep` turns the tiles the front has passed to ground `3`, lifts any stump off them, advances
+`e.spur.paved` and repaints the ground three tiles round each (`paintGroundTile`), so the track
+grows at the front's own pace on the bake, both maps and every `onRoad` read alike. The spur is
+done when the front is inside the road (`roadMainDist`; `LANE_MAX` (60) is only a safety) and
+`e.lane` drops when the last event and the last tile are spent. Pure reads, so a seed's spur is
+always the same spur; the merchant's gate and post read `e.laneDir` too, so the gate flanks the
+track that was actually cut. `laneStep` runs from `updateEagle`'s `down` branch. The grounded bird
+is the team's **objective**, and its hp pool is its
 **nerve**: `EAGLE_HP` (2000, sized as a siege since 2.61, when the bots learned to go for it),
 spooked down a flat `EAGLE_ARROW_DMG` (12) per rival arrow through `hurtEagle` (the sim.js arrow
 loop tests the roost tiles themselves — *before* tile solidity, which would eat the shot — so the

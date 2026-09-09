@@ -230,18 +230,11 @@ function turretMuzzle(o) {
   const r = TUR_BARREL - (o.rec || 0) * 3;
   return { x: pv.x + c * r, y: pv.y + sn * r, nx: c, ny: sn };
 }
-// bolts die on solid tiles, so a turret that cannot see its mark holds fire
-// rather than shooting the wall in front of it. Its own footprint is skipped:
-// the pivot sits above the tile, so the first samples fall back inside the mount.
-function turretSees(o, pv, tx, ty) {
-  const dx = tx - pv.x, dy = ty - pv.y, d = Math.hypot(dx, dy) || 1;
-  for (let s2 = 6; s2 < d; s2 += 6) {
-    const gx = Math.floor((pv.x + dx / d * s2) / TILE), gy = Math.floor((pv.y + dy / d * s2) / TILE);
-    if (structOf(objAt(gx, gy)) === o) continue;
-    if (isSolidTile(gx, gy)) return false;
-  }
-  return true;
-}
+// A bolt flies OVER the world - walls, pines, the roost's own tiles
+// (`solid: false`, fireBolt) - so a turret needs no line of sight: the
+// merchant stands its guns inside a ring of walls (the two stump rings,
+// eagleCrash) and they cover the ground beyond it, and a player's turret
+// behind a wall of its own is a gun and not a prop. Range alone limits it.
 // a valid mark is an enemy player (never one still on the eagle) or worker
 // bot - unitAlive (js/actions.js) is the one gate, so a merchant is never one
 function turretFoe(o, tg) {
@@ -249,8 +242,7 @@ function turretFoe(o, tg) {
 }
 function turretHolds(o, tg, range, pv) {
   return turretFoe(o, tg) &&
-    Math.hypot(tg.x - pv.x, turretAimY(tg) - pv.y) <= (tg instanceof Player ? seenAt(tg, range) : range) &&
-    turretSees(o, pv, tg.x, turretAimY(tg));
+    Math.hypot(tg.x - pv.x, turretAimY(tg) - pv.y) <= (tg instanceof Player ? seenAt(tg, range) : range);
 }
 function turretMark(o, range, pv) {
   let best = null, bd = range;
@@ -260,24 +252,21 @@ function turretMark(o, range, pv) {
     // GHOSTSTEP - and a body buried in the snow - shrink the ring this target
     // is acquired (and held) inside
     if (d > (tg instanceof Player ? seenAt(tg, range) : range)) return;
-    if (d < bd && turretSees(o, pv, tg.x, turretAimY(tg))) { bd = d; best = tg; }
+    if (d < bd) { bd = d; best = tg; }
   };
   for (const p of players) test(p);
   for (const b of robots) test(b);
   return best;
 }
 // the shot leaves the barrel tip and rides the normal arrow pipeline, so it
-// hits players and animals, respects friendly fire, and credits the owner
+// hits players and animals, respects friendly fire, and credits the owner -
+// but it passes the world (`solid: false`, the wisp's own flag: the arrow
+// loop's solid-tile branch skips it), so it clears the wall in front of the
+// gun, the pines, and the turret's own mount, and never sieges a building
 function fireBolt(o, t, pv) {
   const m = turretMuzzle(o), team = o.team === undefined ? 0 : o.team;
-  // A turret is a solid tile and bolts die on solid tiles, so a depressed barrel
-  // would otherwise shoot itself: walk the spawn point out of our own footprint.
-  let bx = m.x, by = m.y;
-  for (let g = 0; g < 8 && structOf(objAt(Math.floor(bx / TILE), Math.floor(by / TILE))) === o; g++) {
-    bx += m.nx * 4; by += m.ny * 4;
-  }
   arrows.push({
-    kind: 'bolt', x: bx, y: by,
+    kind: 'bolt', x: m.x, y: m.y, solid: false,
     vx: m.nx * BOLT_SPD, vy: m.ny * BOLT_SPD,
     t: 0, life: BOLT_LIFE, dmg: t.dmg, pow: 1,
     owner: o.owner === undefined ? 0 : o.owner, team: team, trailD: 0,
