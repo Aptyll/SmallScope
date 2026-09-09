@@ -1390,7 +1390,7 @@ function drawBag(now) {
 // ALWAYS HERE: food is a pouch and not a bag stack (the `inventory` banner,
 // js/player.js), so these two buttons are the whole of where a berry and a
 // fish are read and pressed, and the counts on them are uncapped - hence
-// FOOD_W, wide enough for shortNum's four characters beside the icon.
+// shortNum, four characters at most in a square's corner.
 //
 // And flush on the strip's top edge over that column, THE PURSE: the coin and
 // the gold behind it, on screen for the whole match. Money is the number a
@@ -1401,19 +1401,21 @@ function drawBag(now) {
 // the meals and the abilities it is spent on.
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
 // THE POUCH BLOCK, the strip's right end: the four numbers you own in a 2x2
-// of half-height cells - berry over fish on the left, gold over cards on the
-// right (3.26). Each cell reads left to right as a key cap (the carve-out; the
-// gold has none), a SQUARE icon plate, and the count right-aligned - so the
-// four line up as two columns of squares and two columns of numbers, and a
-// count that grows never moves an icon.
-const FOOD_CELL = 16;  // a pouch cell's height; 2 * FOOD_CELL + AB_GAP = AB_CELL
-const FOOD_KEY_W = 9;  // the key cap's seat, left of the square
-const FOOD_SQ = 16;    // the icon plate: a FOOD_CELL square
-const FOOD_W = FOOD_KEY_W + FOOD_SQ + 2 + 22; // ...then a 4-char count and its air
-const POUCH_W = FOOD_W * 2 + AB_GAP; // the block: two columns
+// of SQUARES - berry over fish on the left, gold over cards on the right
+// (3.26). Every cell is the ability wells' own grammar at two thirds the
+// size: the doubled icon in the middle, the key cap in the top-left corner
+// (the carve-out; the gold has none) and the count in the bottom-right, so
+// the block reads as four stamps and not as four bars. It is TALLER than a
+// well: two squares and their gap stand POUCH_RISE px above the strip's top
+// edge on a tab of the strip's own plate, its bottom flush with the wells'.
+const FOOD_SQ = 24;                          // a pouch cell: a square
+const POUCH_GAP = 2;                         // between neighbouring squares
+const POUCH_W = FOOD_SQ * 2 + POUCH_GAP;     // the block: two columns...
+const POUCH_H = POUCH_W;                     // ...and two rows
 const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W;
 const AB_PAD = 2, AB_XP = 5, AB_SEGS = 10; // AB_SEGS: xp bar notches
 const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
+const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
 const AB_BG = '#0d1229';
 // The weapon well's half of the refusal the backpack already has: a bit that
 // will not fit in the tool reddens and shakes the WELL, exactly as one that
@@ -1440,10 +1442,10 @@ function stripAnchorX() {
   const s = hudSc(), half = (AB_W / 2 + 3) * s;
   return Math.min(VIEW_W / 2, VIEW_W - CORNER_REACH * s - 4 - half);
 }
-// How far the strip drops to be AWAY: its own height and a pixel, so the
-// whole widget clears the bottom edge rather than leaving a rim over a
-// cinematic.
-const HUD_SLIDE = AB_H + 1;
+// How far the strip drops to be AWAY: its own height plus the pouch block's
+// tab standing over it, so the whole widget clears the bottom edge rather
+// than leaving a sliver of tab over a cinematic.
+const HUD_SLIDE = AB_H + POUCH_RISE + 3;
 // How far the HUD has slid in: 0 while it is away below the screen, 1 once it
 // is home. The intro rides it up (renderUI) - and a ceremony PINS it there,
 // because the drop brief's camera branch holds state.intro for the whole
@@ -1491,7 +1493,14 @@ function abCellRect(i) { return stripCellRect(1 + i); }
 // pouch cell (col, row) of the 2x2 block: col 0 the meals, col 1 gold and cards
 function pouchCellRect(col, row) {
   const R = hudStripRect();
-  return { x: R.x + AB_W - POUCH_W + col * (FOOD_W + AB_GAP), y: R.y + AB_PAD + row * (FOOD_CELL + AB_GAP), w: FOOD_W, h: FOOD_CELL };
+  return { x: R.x + AB_W - POUCH_W + col * (FOOD_SQ + POUCH_GAP),
+    y: R.y + AB_PAD + AB_CELL - POUCH_H + row * (FOOD_SQ + POUCH_GAP), w: FOOD_SQ, h: FOOD_SQ };
+}
+// the tab the block stands on: the strip's plate carried up behind the two
+// rows, a rim's width around them, down to the strip's own top edge
+function pouchTabRect() {
+  const R = hudStripRect(), b = pouchCellRect(0, 0);
+  return { x: b.x - 3, y: b.y - 3, w: POUCH_W + 6, h: R.y - b.y + 3 };
 }
 // the three BUTTONS of the block, in stripHit's 'food' order: the berry (0)
 // over the fish (1) on the left, the cards (2) bottom-right; the gold plate
@@ -1567,7 +1576,10 @@ function stripHit(mx, my) {
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
   ({ x: mx, y: my } = stripMouse(mx, my));
   const R = hudStripRect();
-  if (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h) return null;
+  // the pouch block's tab stands above the plate: inside it counts as on the strip
+  const tb = pouchTabRect();
+  const onTab = mx >= tb.x && mx < tb.x + tb.w && my >= tb.y && my < tb.y + tb.h;
+  if (!onTab && (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h)) return null;
   for (let i = 0; i < TOOL_SLOTS; i++) {
     const s = toolCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'slot', i };
@@ -2295,53 +2307,57 @@ function drawAbBuyPlate(i, now, hot) {
 function cardTotal(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
 // the card button's refusal: nothing to draw
 function cardDenied() { foodDenied('card'); }
-// THE CARD ICON: three cards fanned - white, green and blue, each a pixel
-// further up and over than the last - baked once at 12x12. Three different
+// THE CARD ICON: three cards fanned - white, green and blue, each a step up
+// and over from the last - baked once at 16x16, the size a doubled 8px item
+// icon draws at, so the four squares carry art of one size. Three different
 // colours, because the button holds every rarity at once and the fan is
 // what says "a hand" rather than "a card".
 const cardFanCv = (() => {
   const cv = document.createElement('canvas');
-  cv.width = cv.height = 12;
+  cv.width = cv.height = 16;
   const g = cv.getContext('2d');
-  const cards = [['#d9dfe8', '#8a94a8', 0, 3], ['#5fd18a', '#2f7a4b', 3, 1], ['#4a90e2', '#245390', 6, 0]];
+  const cards = [['#d9dfe8', '#8a94a8', 0, 5], ['#5fd18a', '#2f7a4b', 4, 2], ['#4a90e2', '#245390', 8, 0]];
   for (const [face, edge, dx, dy] of cards) {
-    g.fillStyle = '#0a0e23'; g.fillRect(dx, dy, 6, 9);        // the rim
-    g.fillStyle = face; g.fillRect(dx + 1, dy + 1, 4, 7);      // the face
-    g.fillStyle = edge; g.fillRect(dx + 2, dy + 3, 2, 3);      // its pip
+    g.fillStyle = '#0a0e23'; g.fillRect(dx, dy, 8, 11);       // the rim
+    g.fillStyle = face; g.fillRect(dx + 1, dy + 1, 6, 9);      // the face
+    g.fillStyle = edge; g.fillRect(dx + 3, dy + 4, 2, 3);      // its pip
   }
   return cv;
 })();
-// ONE POUCH CELL, the block's whole grammar: the key cap in its seat on the
-// left (the pad's glyph while one is in hand), the SQUARE icon plate beside
-// it, and the count right-aligned on the cell's edge. A button (a meal, the
-// cards) lights its rim on hover and reddens on a refusal; the gold plate is
-// a readout and never does either. `icon` is the sprite or the bake to
-// centre in the square, `n` the count, `col` the count's ink.
-function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
+// ONE POUCH SQUARE, the block's whole grammar - the ability well's, smaller:
+// the icon doubled in the middle (a bake that is already 16px draws at 1x),
+// the key cap in the top-left corner (the pad's glyph while one is in hand),
+// and the count in the bottom-right, over the icon's corner if it has to be.
+// A button (a meal, the cards) wears a rim that lights on hover and reddens
+// on a refusal; `plain` (the gold) is a readout and wears no rim at all, so
+// the one square you cannot press never looks like the three you can.
+function drawPouchCell(r, act, icon, n, col, on, red, live, now, plain) {
   if (red) {
     ctx.save();
     ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
     ctx.fillStyle = '#c2465a';
     ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
   }
-  ctx.fillStyle = red ? '#c2465a' : on ? '#8fa0c8' : n > 0 ? '#35426e' : '#232c52';
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = BAG_WELL;
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  if (plain) {
+    ctx.fillStyle = '#0a0e23';
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+  } else {
+    ctx.fillStyle = red ? '#c2465a' : on ? '#8fa0c8' : n > 0 ? '#35426e' : '#232c52';
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.fillStyle = BAG_WELL;
+    ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  }
+  const k = icon.width <= 8 ? 2 : 1, iw = icon.width * k, ih = icon.height * k;
+  if (n <= 0) ctx.globalAlpha = 0.35;
+  ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1) - 1, iw, ih);
+  ctx.globalAlpha = 1;
   if (act) {
     const lab = keyCapShort(act);
-    if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 3, act, 1, !live);
-    else drawPixelTextOutline(ctx, lab, r.x + (lab.length > 1 ? 1 : 3), r.y + 5, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+    if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 2, act, 1, !live);
+    else drawPixelTextOutline(ctx, lab, r.x + 2, r.y + 2, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
   }
-  // the square: a plate a shade up from the well, the icon centred in it
-  const sx = r.x + FOOD_KEY_W, sy = r.y;
-  ctx.fillStyle = n > 0 ? '#171f45' : '#111838';
-  ctx.fillRect(sx + 1, sy + 1, FOOD_SQ - 2, FOOD_SQ - 2);
-  if (n <= 0) ctx.globalAlpha = 0.35;
-  ctx.drawImage(icon, sx + ((FOOD_SQ - icon.width) >> 1), sy + ((FOOD_SQ - icon.height) >> 1));
-  ctx.globalAlpha = 1;
   const t = shortNum(n);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), r.y + 5, n > 0 ? col : '#7a8bb8', '#0f1632');
+  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + r.h - 8, n > 0 ? col : '#7a8bb8', '#0f1632');
   if (red) ctx.restore();
 }
 // a meal button, or the card button: the pouch grammar pointed at a thing
@@ -2353,15 +2369,15 @@ function drawFoodCell(i, now, on) {
   const n = isCard ? cardTotal(p) : bagCount(p, b.type);
   const red = foodFlash > 0 && foodFlashI === i;
   const live = n > 0 && (isCard || p.foodCd <= 0);
-  drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now);
-  if (!isCard) drawFoodClock(r.x + FOOD_KEY_W + 1, r.y + 1, FOOD_SQ - 2, r.h - 2, b.type);
+  drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now, false);
+  if (!isCard) drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, b.type);
 }
-// THE GOLD PLATE, top-right of the block: the coin in its square and the gold
-// behind it, inked '#f5c542' because the one number on the HUD that is money
-// must never read as a count of something carried. A readout, not a button -
-// no key, no hover, no refusal.
+// THE GOLD PLATE, top-right of the block: the coin and the gold, inked
+// '#f5c542' because the one number on the HUD that is money must never read
+// as a count of something carried. A readout, not a button - no key, no
+// hover, no refusal, and no rim (plain), so it is the one flat square.
 function drawGoldCell() {
-  drawPouchCell(goldCellRect(), null, SPRITES.itemGold, inv.gold, '#f5c542', false, false, true, 0);
+  drawPouchCell(goldCellRect(), null, SPRITES.itemGold, inv.gold, '#f5c542', false, false, true, 0, true);
 }
 function drawHudStrip(now) {
   const R = hudStripRect();
@@ -2376,6 +2392,16 @@ function drawHudStrip(now) {
   ctx.fillRect(R.x - 2, R.y + R.h - 1, R.w + 4, 1);
   ctx.fillRect(R.x - 3, R.y + 1, 1, R.h - 2);
   ctx.fillRect(R.x + R.w + 2, R.y + 1, 1, R.h - 2);
+  // the pouch block's tab: the same plate carried up behind the two rows of
+  // squares, rimmed on its top and sides, and open onto the strip below so
+  // the two read as one shape
+  const tb = pouchTabRect();
+  ctx.fillStyle = AB_BG;
+  ctx.fillRect(tb.x, tb.y, tb.w, tb.h);
+  ctx.fillStyle = '#35426e';
+  ctx.fillRect(tb.x + 1, tb.y, tb.w - 2, 1);
+  ctx.fillRect(tb.x, tb.y + 1, 1, tb.h - 1);
+  ctx.fillRect(tb.x + tb.w - 1, tb.y + 1, 1, tb.h - 1);
   for (let i = 0; i < TOOL_SLOTS; i++) {
     drawToolCell(i, now, hov && hov.kind === 'slot' && hov.i === i);
   }

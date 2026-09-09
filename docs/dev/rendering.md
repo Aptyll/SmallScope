@@ -415,12 +415,12 @@ keeps it flush on every size.
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
 | bottom left | the hover tooltip | `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom | `drawHudStrip` |
-| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of half-height cells — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
+| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | bottom right | the backpack: the ten-cell grid, **always up**, flush in the corner — and the **weapon shelf** standing on its top edge, always up | `drawBag`, `drawShelf` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Both bottom-right widgets slide **their own size** away for the landing intro — the strip
-`HUD_SLIDE` (`AB_H` + 1), the pack `BAG_W` or the shelf's reach past it, whichever is
+`HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 3), the pack `BAG_W` or the shelf's reach past it, whichever is
 wider — because a shove that only cleared the frame would leave the widest tool's cell parked over
 the cinematic.
 
@@ -566,8 +566,9 @@ rail.
 `drawHudStrip` is one plate, flush to the bottom: **five 34px wells** —
 `[ WEAPON ][1][2][3][4]`, the weapon leading and the class abilities following in key order
 (`stripCellRect`; `toolCellRect(i)` is well 0, `abCellRect(i)` is well `1 + i`) — then, on the
-right end, the **pouch block** (`pouchCellRect(col, row)`: a 2×2 of 16px cells whose pair plus
-the gap equals one well — berry over fish, gold over cards) — all over the
+right end, the **pouch block** (`pouchCellRect(col, row)`: a 2×2 of 24px squares, berry over
+fish, gold over cards, its bottom flush with the wells' and its top `POUCH_RISE` (14) px above
+the strip on a tab of the plate, `pouchTabRect`) — all over the
 **plum xp bar** along the bottom (lifetime gold, left-to-right, no level number — that lives on
 the overhead badge). The bar has a dark silhouette and a frost rim so it reads against the
 plate, and is **notched into `AB_SEGS` segments** WoW-fashion — a tick cuts dark plum through
@@ -679,31 +680,35 @@ bright line the old wipes carried at the front of their cover; pass `null` inste
 turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
-The **pouch block** (3.26) is the strip's right end: a 2×2 of `FOOD_W`×`FOOD_CELL` (49×16)
-cells — **berry** over **fish** on the left, **gold** over **cards** on the right — every one
-drawn by `drawPouchCell` in one grammar read left to right: the key cap in a `FOOD_KEY_W` seat
-(the keybind-indicator carve-out, wearing the pad's own glyph while one is in hand; the gold has
-none), a **square icon plate** (`FOOD_SQ`, a 16px square a shade up from the well, the 8px item
-icon centred in it), and the count right-aligned on the cell's edge — `shortNum`, because the
-pouch has no ceiling. So the block reads as two columns of squares and two columns of numbers,
-and a count that grows never moves an icon.
+The **pouch block** (3.26) is the strip's right end: a 2×2 of `FOOD_SQ` (24 px) **squares** —
+**berry** over **fish** on the left, **gold** over **cards** on the right — standing on a tab of
+the strip's own plate (`pouchTabRect`: rimmed on top and sides, open onto the strip) whose
+bottom row is flush with the wells and whose top rises `POUCH_RISE` (14) px above the strip's
+edge, so the block is a small panel on the strip's end rather than four bars squeezed into one
+well. Every square is drawn by `drawPouchCell` in the ability wells' own grammar at two thirds
+the size: the item icon **doubled** in the middle (the card fan is baked at 16 px and draws at
+1×, so all four carry art of one size), the key cap in the top-left corner (the
+keybind-indicator carve-out, wearing the pad's own glyph while one is in hand; the gold has
+none), and the count in the bottom-right corner — `shortNum`, because the pouch has no ceiling,
+and a four-character count covers the icon's corner rather than moving it.
 
 Three of the four are **buttons** (`FOOD_BTNS`: berry, fish, cards, in `stripHit`'s `food`
-order): hover lights the rim, a press sets the same edge-triggered intent the key does
-(`eatBerry`/`eatFish`/`useCard`), so `startEat` and `useCard` speak every refusal and a button
-can never disagree with its key. A refusal *shows*: whatever the reason (none in the pouch, the
-clock still up, full health, a busy body, nothing to draw), the button that was asked takes the
-well's red band and the pack's 1px shake for `foodFlash` seconds — `foodDenied(type)` /
-`cardDenied()`, aged in `updateFx` beside `bagDenied()`/`toolDenied()`. The shared food clock
-(`drawFoodClock`) sweeps both meal squares together and lifts the one being chewed white; the
-card button has no clock. A kind you have none of keeps its seat but dims to 0.35, so the block
-never rearranges. The **card button**'s icon is three cards fanned — white, green, blue, each a
-pixel up and over from the last (`cardFanCv`, baked once) — and its count is every rarity
-together; hover raises `tipCards`, one row per rarity held in that rarity's ink, which is the
-only place the hand is read by kind. The **gold plate** (`drawGoldCell`, `goldCellRect`) is a
-readout, not a button — no key, no hover, no refusal; `stripHit` answers `frame` over it and
-`tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD that is
-money must never read as a count of something carried.
+order; the tab counts as on the strip for the hit test): hover lights the rim, a press sets the
+same edge-triggered intent the key does (`eatBerry`/`eatFish`/`useCard`), so `startEat` and
+`useCard` speak every refusal and a button can never disagree with its key. A refusal *shows*:
+whatever the reason (none in the pouch, the clock still up, full health, a busy body, nothing
+to draw), the button that was asked takes the well's red band and the pack's 1px shake for
+`foodFlash` seconds — `foodDenied(type)` / `cardDenied()`, aged in `updateFx` beside
+`bagDenied()`/`toolDenied()`. The shared food clock (`drawFoodClock`) sweeps both meal squares
+together and lifts the one being chewed white; the card button has no clock. A kind you have
+none of keeps its seat but dims to 0.35, so the block never rearranges. The **card button**'s
+icon is three cards fanned — white, green, blue, each a step up and over from the last
+(`cardFanCv`) — and its count is every rarity together; hover raises `tipCards`, one row per
+rarity held in that rarity's ink, which is the only place the hand is read by kind. The **gold
+plate** (`drawGoldCell`, `goldCellRect`) is a readout, not a button — no key, no hover, no
+refusal, and **no rim** (`plain`), so the one square you cannot press is the one flat square;
+`stripHit` answers `frame` over it and `tipGold` gives the exact figure — inked `#f5c542`
+because the one number on the HUD that is money must never read as a count of something carried.
 
 **One well size for the whole bottom HUD** (3.25): the strip's wells, the pack's grid cells and
 the shelf's cells are all `HUD_CELL` (34) square, and every item icon in them is drawn doubled
