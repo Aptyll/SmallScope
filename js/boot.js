@@ -1449,6 +1449,10 @@ window.DBG = {
   shopLayout, shopHit: (x, y) => shopHit(x == null ? mouse.x : x, y == null ? mouse.y : y),
   shopBuy: (sec, i, p) => shopBuy(p || player, sec, i),
   shopSellCell: (i, p) => shopSellCell(p || player, i),
+  // the SELL ALL button's own press, and the two numbers it reads itself out
+  // with - the pack's worth over the counter and how many cells that is
+  shopSellAll: (p) => shopSellAll(p || player), packValue: (p) => packValue(p || player),
+  packCount: (p) => packCount(p || player),
   shopTrade: (id, dir, p) => shopTrade(p || player, id, dir),
   CARD_PRICE,
   // what the pointer is on, as the panel would describe it (null = nothing)

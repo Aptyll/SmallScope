@@ -219,6 +219,10 @@ a `cap` at least as big **swaps itself into the hand** and takes the build with 
 ([the swap](gameplay.md#where-tools-and-bits-come-from)), so a new tool that is a straight upgrade
 of an existing one needs no pickup code — and one that is better but *narrower* is deliberately
 left an ordinary pickup rather than being made to drop somebody's bits.
+**A `cap` above 5 is the one number with a layout cost**: the corner's two width constants
+(`CORNER_REACH` and `CORNER_CLAIM`, js/ui.js) both spell "six wells" out as `6 * SHELF_CELL +
+5 * SHELF_GAP`, so a roomier tool would run its row off the intro bake and under the merchant's
+slab, which is pinned off the claim ([the panel](gameplay.md#the-panel)). Widen both together.
 
 **A new way to put a tool on the ground must call `shedBits` first** (js/tools.js) — the two that
 exist, `throwCell` (ui.js) and `spillInventory` (player.js), both do. Skip it and that one path is
