@@ -356,7 +356,12 @@ the fittings you found can still go, not a second arsenal. Each cut leaves its w
 gold when it landed, with a bright edge sweeping across it — drawn by `drawSlashes` (js/abilities.js,
 called from js/render.js beside the E swing arcs), and the local player's draw grows the same wedge
 in place of the aim line (`drawAimLine`), so the reach the cut is about to have is on the ground
-before it lands. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70, and
+before it lands. **The hand swings the sword itself**: the blade is drawn at its real 22 px length
+(`TOOL_HELD_ART`, baked as `toolHeld_<art>_<tier>` beside the 12 px bag icon, and used wherever the
+hand holds a tool that has one), a draw winds it back to the start of its arc, and for `SLASH_T`
+after the loose (`p.slashT`/`slashA`/`slashHalf`, counted down in `updatePlayer`) `drawHeldTool`
+sweeps it across the wedge pivoting at the hands, two ghosts of it trailing, in front of the body
+whichever way it faces. A bot with a blade fights at `AI_MELEE_D` (18 px) instead of a bow's 70, and
 only presses fire once the target is under the edge (`aiMelee`, js/ai.js).
 
 ### Flight paths

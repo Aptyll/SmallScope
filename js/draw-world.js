@@ -1861,7 +1861,7 @@ function drawPlayer(p, ex, ey, now) {
     // mid-cast (or holding the shield, or charging) has no hand free for it.
     const held = state.mode !== 'title' && (!lying || p.charging) && catchF < 0 &&
       p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0;
-    const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0;
+    const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
     if (toolBehind) drawHeldTool(p, px, py);
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
     if (pose && pose.rot) {
@@ -2178,17 +2178,46 @@ function drawHeldTool(p, px, py) {
   // the weapon's art points its business end along TOOL_FWD (js/tools.js);
   // rotating by the aim (or the facing) minus that puts the arrowhead, the
   // sword's point or the sling's stone toward where its owner is looking
-  const fwd = weapon ? TOOL_FWD[TOOLS[toolIdOf(weapon.type)].art] || 0 : 0;
+  const wDef = weapon ? TOOLS[toolIdOf(weapon.type)] : null;
+  const fwd = wDef ? TOOL_FWD[wDef.art] || 0 : 0;
+  // the blade at its real length, where the art has one (TOOL_HELD_ART,
+  // js/tools.js); everything else is its bag icon
+  const wHeld = wDef ? SPRITES['toolHeld_' + wDef.art + '_' + wDef.tier] || wIcon : null;
+
+  // THE SWING: a blade mid-cut is swung through its whole wedge, pivoting at
+  // the hands - the sword itself at the sweep's edge with two ghosts of it
+  // trailing, so the arc the cut took is read off the weapon and not only off
+  // the snow. Over everything, whichever way the body faces.
+  if (p.slashT > 0 && wDef && wDef.melee && wHeld) {
+    const half = wHeld.width >> 1;
+    const prog = 1 - p.slashT / SLASH_T;
+    const sw = Math.min(1, prog / 0.7); // the blade crosses in the first 70%, then hangs at the end of the arc
+    const e = p.slashA - p.slashHalf + sw * p.slashHalf * 2;
+    for (let k = 2; k >= 0; k--) {
+      const t = e - k * 0.32 * sw;
+      ctx.globalAlpha = k ? (k === 1 ? 0.4 : 0.18) * (1 - prog) : 1;
+      ctx.save();
+      ctx.translate(Math.round(cxp + Math.cos(t) * 5), Math.round(cyp - 2 + Math.sin(t) * 4));
+      ctx.rotate(t - fwd);
+      ctx.drawImage(wHeld, -half, -half);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    return;
+  }
 
   // the drawn weapon tracks the aim. Drawn over the sweep: the shot about to
-  // leave is the thing to read.
+  // leave is the thing to read. A blade is drawn back to the START of its
+  // arc, wound up, so the draw reads as the swing it is about to be.
   if (drawing) {
-    const half = wIcon.width >> 1;
+    const spr = wDef.melee ? wHeld : wIcon;
+    const half = spr.width >> 1;
     const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+    const t = wDef.melee ? a - wDef.melee.half * (0.4 + 0.6 * drawPow(p)) : a;
     ctx.save();
-    ctx.translate(Math.round(cxp + Math.cos(a) * 8), Math.round(cyp - 2 + Math.sin(a) * 8));
-    ctx.rotate(a - fwd);
-    ctx.drawImage(wIcon, -half, -half);
+    ctx.translate(Math.round(cxp + Math.cos(t) * (wDef.melee ? 4 : 8)), Math.round(cyp - 2 + Math.sin(t) * (wDef.melee ? 3 : 8)));
+    ctx.rotate(t - fwd);
+    ctx.drawImage(spr, -half, -half);
     ctx.restore();
   }
   if (drawing || swinging) return;
@@ -2196,7 +2225,7 @@ function drawHeldTool(p, px, py) {
   // carried: the weapon (or, through the swing cooldown, the work tool) sits
   // in the leading hand, with a 1px walk bob, turned to the facing - a work
   // tool's icon points up and is left as drawn, the way it always was
-  const icon = t.key === 'bow' ? wIcon : SPRITES[t.icon];
+  const icon = t.key === 'bow' ? wHeld : SPRITES[t.icon];
   if (!icon) return;
   const half = icon.width >> 1;
   const bob = p.moving ? Math.floor(p.animT) % 2 : 0;

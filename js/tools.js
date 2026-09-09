@@ -357,7 +357,7 @@ const TOOLS = {
   // sweep to either side of the aim. Every bit still loads and still counts:
   // what is fitted is what the edge is worth, and a modifier under it
   // rewrites the cut the way it rewrites a shot.
-  longsword:{ name: 'LONGSWORD',   tier: 0, price: 28,  rof: 30, cap: 2, tensile: 10, art: 'sword', melee: { reach: 24, half: 1.05 } },
+  longsword:{ name: 'LONGSWORD',   tier: 0, price: 28,  rof: 30, cap: 2, tensile: 10, art: 'sword', melee: { reach: 28, half: 1.05 } },
   recurve:  { name: 'RECURVE BOW', tier: 1, price: 85,  rof: 40, cap: 3, tensile: 13, art: 'recurve' },
   hornbow:  { name: 'HORN BOW',    tier: 1, price: 72,  rof: 34, cap: 4, tensile: 15, art: 'bow' },
   longbow:  { name: 'LONGBOW',     tier: 2, price: 170, rof: 28, cap: 5, tensile: 22, art: 'recurve' },
@@ -861,7 +861,7 @@ function emitBit(p, b, id, m, amb, seq) {
 // saw is what hit them. A bit whose whole point is its flight - a boomerang,
 // a lob, an orbit - swings as a plain cut worth its damage; the sword is a
 // place the fittings you found can still go, not a second arsenal.
-const SLASH_T = 0.22;        // s the sweep lives on the snow
+const SLASH_T = 0.28;        // s the sweep lives on the snow - and the hand swings the blade through it
 const SLASH_REACH_MIN = 0.6; // a tap reaches this fraction of the blade
 const slashes = [];          // {x, y, a, r, half, t, hit}
 function slashReach(melee, pw) { return melee.reach * (SLASH_REACH_MIN + (1 - SLASH_REACH_MIN) * pw); }
@@ -892,6 +892,7 @@ function slashTool(p, cell, plan, melee, amb) {
     if (PRACTICE) abHitDummies(p.x + Math.cos(a) * r * 0.5, p.y + Math.sin(a) * r * 0.5, r * 0.5, dmg);
   }
   slashes.push({ x: p.x, y: p.y - 2, a, r, half: melee.half, t: 0, hit: targets.length > 0 });
+  p.slashT = SLASH_T; p.slashA = a; p.slashHalf = melee.half; // the hand swings the blade through the same arc (drawHeldTool)
   if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
   else p.dir = dy > 0 ? 'down' : 'up';
   if (targets.length && (p === player || targets.includes(player))) state.shake = Math.max(state.shake, 2);
@@ -1346,6 +1347,37 @@ const TOOL_ART = {
     '............',
   ],
 };
+// The blade AS HELD: the 12px icon is the bag's, and a longsword drawn at
+// twelve pixels in a sixteen-pixel hand reads as a dagger. This is the same
+// sword at its real length (22 px, point left like the icon), baked per tier
+// beside it as toolHeld_<art>_<tier>, and drawHeldTool draws it in place of
+// the icon whenever the hand holds a tool that has one.
+const TOOL_HELD_ART = {
+  sword: [
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '..................mM..',
+    '..................mM..',
+    '..eeeeeeeeeeeeeeeemMG.',
+    'WeeeeeeeeeeeeeeeeemMgo',
+    '..EEEEEEEEEEEEEEEEmMG.',
+    '..................mM..',
+    '..................mM..',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+    '......................',
+  ],
+};
 // 8x8 bit glyphs. Each says what the bit DOES by shape - a head and fletching
 // for the plain arrow, a spiral for the wisp, a chevron stack for SPEEDUP -
 // because the plate behind it is already spending the colour on tier.
@@ -1463,6 +1495,7 @@ for (const art in TOOL_ART) {
     const pal = Object.assign({ '.': null, o: '#241a12', s: '#e8dcb4', W: '#ffffff', g: '#6b4a30', G: '#a3794f', e: '#c8d2e4', E: '#8b93a8' },
       TOOL_ART_PAL[t]);
     SPRITES['toolArt_' + art + '_' + t] = bakeGrid(TOOL_ART[art], pal, 12);
+    if (TOOL_HELD_ART[art]) SPRITES['toolHeld_' + art + '_' + t] = bakeGrid(TOOL_HELD_ART[art], pal, TOOL_HELD_ART[art][0].length);
   }
 }
 for (const id in BIT_ART) SPRITES['bitArt_' + id] = bakeGrid(BIT_ART[id], BIT_PAL, 8);

@@ -491,6 +491,7 @@ class Player {
     // the meal being chewed and the clock BOTH meals share (js/core.js)
     this.eatT = 0; this.eatType = null; this.eatFxT = 0; this.foodCd = 0;
     this.nockT = 0;                                // the cycle: seconds until the next press (toolCycle, js/tools.js)
+    this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (slashTool, js/tools.js; drawHeldTool, js/draw-world.js)
     this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/tools.js)
     this.fireArmed = false;                        // the bow button has been pressed since the last loose
     this.readyFlash = 0; this.dryT = 0;            // HUD tells: renocked / pressed empty

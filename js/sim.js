@@ -971,6 +971,7 @@ function updatePlayer(p, dt) {
   }
   p.readyFlash = Math.max(0, p.readyFlash - dt);
   p.dryT = Math.max(0, p.dryT - dt);
+  p.slashT = Math.max(0, p.slashT - dt); // the blade's sweep in the hand (slashTool, js/tools.js)
 
   // The tool: pressing arms the shot, releasing fires it. The press does not
   // have to land on a ready tool - it stays armed, so holding through the
