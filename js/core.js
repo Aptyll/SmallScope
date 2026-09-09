@@ -213,7 +213,7 @@ function mmStep() { return Math.max(0, Math.min(MM_ZOOMS.length - 1, settings.mm
 function mmWant() { return MM_ZOOMS[mmStep()]; }
 function mmScale() { return mmCur < 0 ? mmWant() : mmCur; }
 // pointer over the minimap disc (its ring included)
-function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mouse.y - MM_CY) <= MM_R + 6; } // to the outline's outer edge
+function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mouse.y - MM_CY) <= MM_R + 7; } // to the outline's outer edge
 
 // performance monitor: fps averaged over half-second windows from raw
 // (unclamped) frame deltas, so sim clamping can't mask slow frames

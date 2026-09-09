@@ -586,21 +586,22 @@ const mmViewCtx = mmView.getContext('2d');
 // per-pixel hypot/atan2 loop issuing a fillRect per lit pixel. Run every
 // frame that was ~1.6 ms - a third of the whole frame, the largest single
 // cost in the game - for pixels that never change. So the chrome is baked
-// per (radius, hover) and the arc band per (radius, progress step): the arcs
+// per radius and the arc band per (radius, progress step): the arcs
 // only move as fast as the clock, so quantising the cycle to MM_ARC_STEPS
 // repaints the band every couple of real seconds instead of every frame.
 const mmChromes = new Map();
-function mmChrome(hov) {
-  const key = MM_R * 2 + (hov ? 1 : 0);
+function mmChrome() {
+  const key = MM_R;
   let c = mmChromes.get(key);
   if (!c) {
     const R = MM_R + 7, S = R * 2 + 2;
     c = document.createElement('canvas'); c.width = c.height = S;
     const g = c.getContext('2d'), cc = R + 1;
-    // the outline is ONE crisp pixel, the frame's own rim colour, and the
-    // hover is the same pixel gone pale - no halo, no second ring outside it
-    mmRing(g, cc, cc, MM_R + 6, MM_R + 7, hov ? '#9aa8d0' : '#2c3a68'); // outline
-    mmRing(g, cc, cc, 0, MM_R + 6, '#0f1632');                          // silhouette disc
+    // a strong black outline, two crisp pixels, and NO hover state - the
+    // disc is the same shape whatever the pointer is doing; no halo, no
+    // second ring outside it
+    mmRing(g, cc, cc, MM_R + 5, MM_R + 7, '#000000');                   // outline
+    mmRing(g, cc, cc, 0, MM_R + 5, '#0f1632');                          // silhouette disc
     mmRing(g, cc, cc, MM_R + 2, MM_R + 5, '#2a3358');                   // day ring track
     mmChromes.set(key, c);
   }
@@ -624,7 +625,7 @@ function mmArcBand(prog) {
     // dusk boundary tick: one pixel column across the band, a little past it,
     // over the arcs exactly as the per-frame draw laid it
     const ba = a0 + dayFrac * Math.PI * 2;
-    mmRing(g, cc, cc, r0 - 1, r1 + 1, '#8f9cc4', ba - 0.03, ba + 0.03);
+    mmRing(g, cc, cc, r0 - 1, r1, '#8f9cc4', ba - 0.03, ba + 0.03); // stops short of the outline
   }
   return mmArc.cv;
 }
@@ -634,12 +635,10 @@ function renderMinimap(now) {
   const vp = viewPlayer();
   const ptx = vp.x / TILE, pty = vp.y / TILE;
   const s = mmScale(); // px per tile: the wheel over the disc changes it
-  const hov = overMinimap() && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel;
 
-  // silhouette: an opaque dark disc under everything, with a single-pixel
-  // outline so the whole control reads as one solid shape on the snow (baked,
-  // above)
-  ctx.drawImage(mmChrome(hov), MM_CX - MM_R - 8, MM_CY - MM_R - 8);
+  // silhouette: an opaque dark disc under everything, in a black outline so
+  // the whole control reads as one solid shape on the snow (baked, above)
+  ctx.drawImage(mmChrome(), MM_CX - MM_R - 8, MM_CY - MM_R - 8);
 
   // pixel-clipped map view centered on the player
   const half = MM_R / s; // tiles from the centre to the edge

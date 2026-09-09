@@ -381,10 +381,10 @@ scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-e
 zoom in the wheel handler and is saved with the settings. Every marker drawn over it (players,
 camp glyphs, your side's [worker flags](gameplay.md#worker-flags)) multiplies its tile
 offset by `s`. The disc sits on an opaque `#0f1632`
-backing (to `MM_R + 6`) with a **single crisp 1 px outline** in the HUD's rim colour `#2c3a68`
-that goes pale while hovered — the hover state is the whole affordance, there is no hint, and
-there is no halo or second ring outside it (the pale outer rim went in 3.24).
-`overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
+backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no
+hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;
+there is no halo or second ring outside it (the pale outer rim and the hover brightening went
+in 3.24). `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
 game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
 backing, rims and the day/night band one pixel at a time (pixel-centre distance test, optional
 clockwise angle span), and the map view is clipped by `mmMask(r)` — a cached pixel disc
