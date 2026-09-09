@@ -705,9 +705,12 @@ digit), exactly as a meal button with nothing behind it does; a press on one red
 it (`abDenied`, the twin of `toolDenied`/`foodDenied`). The ASK floats clear of the wells: while a
 point is unspent each un-maxed key grows a bobbing gold plus plate in the open screen above its
 well (`abBuyRect`/`abBuyHit`/`drawAbBuyPlate`, UI › `hud strip`), gear's old chevron made a real
-button. The plate press buys, any press on the well casts, so the two can never steal each
-other's click; hover lights the plate and the tooltip carries the numbers (`LOCKED` and `UNLOCK
-1 SKILL PT` on a dark key). Bots spend each free point in `updateAI`'s rung 0, lowest ability
+button. The plate press buys — and so does **the key itself while a point is unspent**: the sim
+consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a cast otherwise
+(js/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
+next press casts it; a maxed key casts straight through an unspent point. That reaches every
+controller and the well click alike, since all of them set the one field. Hover lights the plate
+and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in `updateAI`'s rung 0, lowest ability
 level first — which spends their first four unlocking all four keys before any gets a cut. The cd
 column in the tables below is the level-1 base.
 

@@ -610,7 +610,10 @@ function updatePlayer(p, dt) {
   if (inp.eatBerry) { inp.eatBerry = false; eatBerry(p); }
   if (inp.eatFish) { inp.eatFish = false; eatFish(p); }
   if (inp.useCard) { inp.useCard = false; useCard(p); }
-  if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; tryAbility(p, i); }
+  // an ability key with a skill point in hand LEVELS the key instead of
+  // casting it (the plate is the same buy for the mouse); the cast waits for
+  // the next press. A maxed key casts through an unspent point as ever.
+  if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; if (abLvCanBuy(p, i)) buyAbilityLv(p, i); else tryAbility(p, i); }
   if (inp.cmd) { const c = inp.cmd; inp.cmd = null; runCmd(p, c); }
 
   // the class abilities' own clock: cooldowns, the cast landing, and every
