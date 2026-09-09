@@ -551,6 +551,29 @@ Without it, getting rid of a tool had become the way to move a whole build in on
 body picked off the snow arrived already built — the one pickup nobody had to think about. The
 bits are all still there, in reach, one walk apart: it costs a moment, not the build.
 
+Its last argument, `gone`, sheds the row into **thin air** instead of onto the snow — the bits
+still scatter, so the spill looks like a spill, and then go with the tool they came out of. Only
+`evaporateTool` passes it ([below](#a-starting-tool-does-not-litter)).
+
+### A starting tool does not litter
+
+**A kill should not leave a shortbow.** Every player flies in with its class's tool
+([Starting loadouts](#starting-loadouts)) and is handed the same one back at the bird on every
+respawn, so a body spilling one puts a weapon on the ground that *nobody* will ever stoop for — and
+ground fought over twice ends up carpeted in them. So a tool spilled by a **death** with
+`STARTER_CAP` (2) bit cells or fewer — the bottom of the table, the SHORTBOW and the SLING —
+never lands. `isStarterTool(s)` is the test and `evaporateTool(cell, x, y)` (js/tools.js) is what
+happens instead: the build sheds into thin air and the bare body follows it, all of them
+[vanishing drops](#economy-one-currency). The test is the *tool*, not a list of names, so a tier a
+later table adds under those two is covered on the day it is added.
+
+It is a **death** rule, not a tool rule, and `spillInventory` (js/player.js) is its only caller —
+both the pack loop and the weapon slot. A starting tool dragged out of the pack **on purpose**
+still lands and still lies there (`throwCell`, js/ui.js), so you may hand a teammate your sling;
+one the world **rolled** as loot (`dropLoot`) is an ordinary find; one displaced by an
+[upgrade swap](#where-tools-and-bits-come-from) goes into the snow like anything else. Only what
+falls off a body evaporates.
+
 The pool a roll draws from is the **whole table** at or under that tier: every kind is unlocked for
 every profile alike, so any match can roll any of them. See [the wiki](#the-wiki).
 
@@ -597,7 +620,9 @@ firing order, and a starting kit that fitted a modifier *above* its only shot wo
 forward-only rule backwards on the first press of the match. Death **spills the equipped tool** with
 the bag (`spillInventory`) — bare, its bits scattered beside it
 ([shedBits](#a-discarded-weapon-sheds-its-build)) — so a build lies where its owner fell and the
-bird hands back the starting one: you come back armed, but not as the player you were. The gear pop-up's preview
+bird hands back the starting one: you come back armed, but not as the player you were. What it
+does **not** leave is the starting kit itself: a SHORTBOW or SLING off a body evaporates rather
+than lying there for nobody ([a starting tool does not litter](#a-starting-tool-does-not-litter)). The gear pop-up's preview
 shows the weapon at the body's side (`drawGearPreview`, js/menu.js) — the other half of what a
 class flies out with.
 
@@ -1529,6 +1554,15 @@ comes back to life when the three seconds are up. And a body that would
 [swap for the tool in hand](#where-tools-and-bits-come-from) counts as room whatever the pack
 holds, because that pickup is an exchange.
 
+**And a drop can be on its way out.** Kit that comes off a body and is worth less than the litter
+it would leave carries a `fade` (`vanishDrop`, js/core.js): it falls, hops and casts its shadow
+like any other drop — so a death still *reads* as a spill — and over `VANISH_T` (0.8 s) lifts
+`VANISH_LIFT` px, thins to nothing, leaves a small pale puff and is spliced out. It is out of
+everybody's reach the whole way, and **every loot path asks `dropGone(d)`**: the pickup loop
+skips it above the magnet, the bots' loot scan (js/ai.js) never walks to it, it wears no tier
+glint — a glint says "walk to this" — and the hitbox view draws it no pickup ring. What goes this
+way, and why: [a starting tool does not litter](#a-starting-tool-does-not-litter).
+
 ## The merchant's counter
 
 **Each eagle's merchant is a shop, and both shops serve everybody.** Walk up to either team's
@@ -2451,7 +2485,10 @@ already baked into the kit, not an item, so only what's still sitting unopened i
 **And the weapon slot empties with it** — but a tool that lands in the snow *comes apart* as it
 lands (`shedBits`, [a discarded weapon](#a-discarded-weapon-sheds-its-build)): the bare body and
 every bit that was in it scatter around the corpse as separate pickups, with no heading, since
-nobody threw this one. A kill spills a weapon and its build as things to walk over one at a time,
+nobody threw this one. **Starting kit is the exception and does not land at all** — a tool of
+`STARTER_CAP` cells or fewer, and everything fitted into it, evaporates where it fell
+([a starting tool does not litter](#a-starting-tool-does-not-litter)), because the bird hands that
+same tool straight back and a body dropping one leaves nothing anybody would stoop for. A kill spills a weapon and its build as things to walk over one at a time,
 so the looter gets what they can carry rather than one cell holding a finished weapon; and
 `reset()` hands the dead player its class's starting loadout back, so a respawn is armed but is
 not the player it was. (An item riding the cursor

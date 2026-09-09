@@ -725,10 +725,17 @@ function spillInventory(p, killer) {
   // heading to carry since nobody threw this. So a kill spills a weapon and
   // its build across the snow as separate things to walk over - the looter
   // gets what they can carry rather than one cell holding a finished weapon.
+  //
+  // ...unless it is STARTING KIT, which comes apart and then EVAPORATES,
+  // build and all (isStarterTool / evaporateTool, js/tools.js): the respawn
+  // hands that tool straight back, so a body dropping one leaves litter
+  // nobody will ever stoop for. This is the ONLY path that does it - a tool
+  // put down on purpose still lies where it was put.
   for (let i = 0; i < p.bag.length; i++) {
     const s = p.bag[i];
     p.bag[i] = null;
     if (!s || s.n <= 0) continue;
+    if (isStarterTool(s)) { evaporateTool(s, p.x, p.y - 4); continue; }
     shedBits(s, p.x, p.y - 4, 0, 0, null);
     spawnDrop(p.x, p.y - 4, s.type, s.n, s.bits ? s : null);
   }
@@ -736,6 +743,7 @@ function spillInventory(p, killer) {
     const s = p.tools[i];
     p.tools[i] = null;
     if (!s) continue;
+    if (isStarterTool(s)) { evaporateTool(s, p.x, p.y - 4); continue; }
     shedBits(s, p.x, p.y - 4, 0, 0, null);
     spawnDrop(p.x, p.y - 4, s.type, 1, s);
   }

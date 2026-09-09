@@ -319,7 +319,7 @@ function burst(x, y, color, n, spd, life, grav) {
 // death or a hand-off. Plain stacking items leave it undefined.
 function spawnDrop(x, y, type, n, it) {
   const a = rng() * Math.PI * 2;
-  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0, it: it || null, lock: -1, lockT: 0 };
+  const d = { x, y, vx: Math.cos(a) * rand(20, 45), vy: Math.sin(a) * rand(20, 45) - 30, z: 0, vz: rand(30, 60), type, n: n || 1, t: 0, it: it || null, lock: -1, lockT: 0, fade: 0 };
   drops.push(d);
   return d;
 }
@@ -339,6 +339,22 @@ function flingDrop(d, vx, vy) { d.vx += vx; d.vy += vy; d.vz += 26; return d; }
 function lockDrop(d, p) { d.lock = p ? p.id : -1; d.lockT = TOSS_LOCK_T; return d; }
 // the question the pickup asks before magnetising or claiming anything
 function dropLocked(d, p) { return d.lockT > 0 && d.lock === p.id; }
+
+// A DROP NOBODY IS MEANT TO GET. Kit that comes off a body and is worth less
+// than the litter it would leave falls, hops and casts its shadow like
+// anything else - so a death still READS as a spill - and then EVAPORATES:
+// it lifts VANISH_LIFT px, thins to nothing over VANISH_T and goes, out of
+// everybody's reach the whole way. It never magnetises, never glints and
+// never claims, because a glint says "walk to this" and nobody can have it.
+// What goes this way and why: evaporateTool, js/tools.js.
+const VANISH_T = 0.8;            // s a drop takes to go
+const VANISH_LIFT = 6;           // px it rises while it does
+const VANISH_COL = '#cfe0f2';    // the pale motes of the puff it leaves behind
+function vanishDrop(d) { d.fade = VANISH_T; return d; }
+// the question every loot path asks before it wants a drop at all - the
+// pickup loop (updatePlay, js/sim.js), the bot's loot scan (js/ai.js) and
+// both drop passes (js/render.js)
+function dropGone(d) { return d.fade > 0; }
 
 // wallets are per player: every cost check and payment names whose it is
 function canAfford(cost, p) { const w = (p || player).inv; for (const k in cost) if ((w[k] || 0) < cost[k]) return false; return true; }

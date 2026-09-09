@@ -646,7 +646,7 @@ function updateAI(p, dt) {
   // 7. loot on the ground is neutral and first-come: pick up what is close.
   let loot = null, ld = 72;
   for (const d of drops) {
-    if (d.t < 0.35) continue;
+    if (d.t < 0.35 || dropGone(d)) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < ld) { ld = dd; loot = d; }
   }
