@@ -238,10 +238,16 @@ function loadSettings() {
   } catch (e) { }
   mmCur = mmWant();
 }
+// The disc sits in the top-right corner with the SAME gap to both edges
+// (MM_GAP, measured from the black outline's outer edge at MM_R + MM_OUT),
+// so it reads as one compact shape tucked into the corner, not a thing
+// hugging one edge and floating off the other.
+const MM_OUT = 7;  // outline's outer radius past MM_R (mmChrome, ui.js)
+const MM_GAP = 4;  // px of screen between the outline and either edge
 function applyMinimapSize() {
   MM_R = settings.mmR;
-  MM_CX = VIEW_W - MM_R - 8;
-  MM_CY = MM_R + 16;
+  MM_CX = VIEW_W - MM_R - MM_OUT - MM_GAP;
+  MM_CY = MM_R + MM_OUT + MM_GAP;
 }
 // recompute everything positioned off VIEW_W/VIEW_H; must run after any
 // change to the canvas size (window resize, fullscreen)

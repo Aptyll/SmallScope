@@ -712,8 +712,7 @@ function renderMinimap(now) {
   ctx.globalAlpha = 1;
 
   // beneath the minimap, the elapsed play-time alone, centred on the disc's
-  // axis so the two read as one column. Clear of the fps readout, which owns
-  // the extreme top-right corner. (The alive count that used to share the row
+  // axis so the two read as one column. (The alive count that used to share the row
   // went in 3.24: a match no longer ends on bodies, so it was a number that
   // decided nothing.)
   const clock = clockTxt(state.elapsed);

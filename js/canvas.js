@@ -239,8 +239,8 @@ const sctx = scratch.getContext('2d');
 
 // offscreen minimap canvas (1px per world tile)
 let MM_R = 24;                   // minimap radius in px (1px = 1 tile)
-let MM_CX = VIEW_W - 32;         // minimap center
-let MM_CY = 40;
+let MM_CX = VIEW_W - 35;         // minimap center (applyMinimapSize, core.js, sets the real ones)
+let MM_CY = 35;
 
 // Panel layout anchors. These live here rather than in the map/settings
 // sections because relayout() assigns them on every canvas resize —

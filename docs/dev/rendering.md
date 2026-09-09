@@ -411,7 +411,7 @@ keeps it flush on every size.
 | Where | What | Function |
 | --- | --- | --- |
 | top left | **nothing** — see the strip below | — |
-| top right | the minimap and its day/night ring, the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
+| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
 | bottom left | the hover tooltip | `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the two meal buttons (berry over fish) with the **purse** tab standing on the rim above them — the three numbers you own, always on | `drawFoodCell`, `drawPurse` |
