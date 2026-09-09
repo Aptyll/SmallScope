@@ -154,9 +154,16 @@ One entry in the `TOOLS` table (`shortbow`, `sling`, `recurve`, `hornbow`, `long
 
 `cap` and `tensile` are the two halves of a tool: **cap is how much you may hang on it, tensile
 how much of that it can swing at once.** The tiers grow the two together at roughly four weight a
-cell — SHORTBOW 9/2, SLING 7/2, RECURVE 13/3, HORN BOW 15/4, LONGBOW 22/5 — so a build that fits
+cell — SHORTBOW 9/2, SLING 10/2, RECURVE 13/3, HORN BOW 15/4, LONGBOW 22/5 — so a build that fits
 its cap and busts its budget is not refused, it is *truncated*, and the weapon well wears a
 [**"!"**](rendering.md#the-bit-column) to say so.
+
+The two **starting** bodies are sized against their class's shot plus one fitting on top of it
+([starting loadouts](#starting-loadouts)), so nobody's first pickup can truncate the weapon they
+are already holding: the SHORTBOW's 9 carries an ARROW (2) under any modifier in the table, the
+SLING's 10 a BARBED SHOT (5) under a modifier of 5. The two weight-6 fire modifiers (PYRE, CINDER
+BURST) still overrun the sling — both are tier 2, so they come out of a chest or the shop rather
+than off a rock, and by then the truncation is a decision and a reason to want a bigger body.
 
 A tool is **instanced**: its bag cell *is* the tool, `bits` array and all (`makeTool`), so it is
 moved between bag, slot and drop rather than rebuilt from its type name — see the hard rule in
@@ -210,9 +217,10 @@ Two rules govern it, and both are load-bearing:
 - **It applies forward and only forward.** A modifier changes every projectile *after* it in the
   list and none before it, so where a modifier sits is the whole of what it is worth and a FLAME
   in the LAST cell sets nothing alight. Once a press has reached one it stays in the envelope for
-  the rest of that press — there is no per-shot expiry. That is why the WARRIOR flies in with its
-  HEFT *before* its arrow. The shelf draws that reach as a **rail** running forward off the
-  fitting ([the shelf](#the-weapon-shelf)).
+  the rest of that press — there is no per-shot expiry. That is why both classes fly in with their
+  one shot in the LAST cell and the cell in front of it empty, so the first fitting they pick up
+  auto-fits where it can reach ([starting loadouts](#starting-loadouts)). The shelf draws that
+  reach as a **rail** running forward off the fitting ([the shelf](#the-weapon-shelf)).
 - **It compounds with whatever is already there.** Every `mod` composes with the value it is
   handed — `*=` a multiplier, `+=` a quantity — and must never `=` or `Math.max` it. Two SPEEDUPs are
   four times the speed, two SPLITTERs nine shots, two FLAMEs twice as long at twice the rate
@@ -613,11 +621,19 @@ orbit and leaves those for someone who can.
 
 `CLASS_LOADOUT` gives each class a tool and its bits, and `giveLoadout(p)` is called from
 `Player.reset()` and from `setClass()` — so the weapon is part of picking a class, every AI
-player gets its own, and a respawn is re-armed. The HUNTER flies in with a SHORTBOW loaded ARROW +
-BARBED SHOT (7 of its 9 strength, both firing); the WARRIOR with a SLING loaded **HEFT then
-ARROW** — the fitting before the shot, filling the sling's 7 exactly. The order in `bits` is the
-firing order, and a starting kit that fitted a modifier *above* its only shot would teach the
-forward-only rule backwards on the first press of the match. Death **spills the equipped tool** with
+player gets its own, and a respawn is re-armed. Each class flies in with **one projectile and
+nothing else**: the HUNTER a SHORTBOW loaded ARROW, the WARRIOR a SLING loaded BARBED SHOT.
+
+**The shot sits in the LAST cell and every cell above it is left empty** (3.26). The order in
+`bits` is the firing order and a modifier only reaches the shots *after* it, so holding cell 0 open
+means the first fitting anybody picks up is auto-fitted there (`fitAdd` takes the first free cell,
+and `botFitLoadout` does the same for a bot) and lands in front of the shot it was always meant to
+shape — a SPLITTER walked over turns that one arrow into three on the very next press. A kit that
+filled cell 0 would put that first find *past* the only projectile, where it does nothing, and
+teach the forward-only rule backwards. A `null` in `bits` is a real entry rather than a gap to
+skip: it is the reserved cell, `toolPlan` charges nothing for it, and `giveLoadout` right-aligns
+the row against the tool's own `cap` so the shot stays last whatever the body's size. The tensile
+budgets are sized for it — see [a tool](#a-tool). Death **spills the equipped tool** with
 the bag (`spillInventory`) — bare, its bits scattered beside it
 ([shedBits](#a-discarded-weapon-sheds-its-build)) — so a build lies where its owner fell and the
 bird hands back the starting one: you come back armed, but not as the player you were. What it

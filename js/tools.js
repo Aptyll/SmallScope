@@ -342,9 +342,16 @@ function updateWarps(dt) {
 // press, and the tiers grow the two together at roughly four weight a cell:
 // a build that fits its cap and busts its budget still fires, it just stops
 // partway up, and the well wears a "!" to say so.
+//
+// The two STARTING bodies are sized against the shot their class flies in
+// with plus one fitting on top of it (CLASS_LOADOUT, below), so nobody's first
+// pickup can truncate the weapon they are already holding: the SHORTBOW's 9
+// carries an ARROW (2) under anything, the SLING's 10 a BARBED SHOT (5) under
+// a fitting of 5 - the two tier-2 fire fittings weigh 6 and still overrun it,
+// which is a decision and a reason to want a bigger body.
 const TOOLS = {
   shortbow: { name: 'SHORTBOW',    tier: 0, price: 30,  rof: 55, cap: 2, tensile: 9,  art: 'bow' },
-  sling:    { name: 'SLING',       tier: 0, price: 26,  rof: 26, cap: 2, tensile: 7,  art: 'sling' },
+  sling:    { name: 'SLING',       tier: 0, price: 26,  rof: 26, cap: 2, tensile: 10, art: 'sling' },
   recurve:  { name: 'RECURVE BOW', tier: 1, price: 85,  rof: 40, cap: 3, tensile: 13, art: 'recurve' },
   hornbow:  { name: 'HORN BOW',    tier: 1, price: 72,  rof: 34, cap: 4, tensile: 15, art: 'bow' },
   longbow:  { name: 'LONGBOW',     tier: 2, price: 170, rof: 28, cap: 5, tensile: 22, art: 'recurve' },
@@ -1037,29 +1044,42 @@ function dropLoot(x, y, tier, chance) {
 }
 
 // ---- starting loadouts ---------------------------------------------------
-// Every player flies in with its class's tool in the one weapon slot, its
-// class's own bits in it, which is what makes the pick a choice rather than
-// a preview: the two classes do not shoot the same thing. Called from
+// Every player flies in with its class's tool in the one weapon slot and ONE
+// projectile in it, which is what makes the pick a choice rather than a
+// preview: the two classes do not shoot the same thing. Called from
 // initPlayers() and again whenever the local player changes class at select.
-// The order inside `bits` is the FIRING order, cell 0 first, and a modifier
-// only reaches the shots after it - so the WARRIOR's HEFT sits BEFORE its
-// arrow. A starting kit that fitted a modifier past its only shot would teach
-// the rule backwards on the first press of the match.
+//
+// THE SHOT SITS IN THE LAST CELL AND EVERY CELL ABOVE IT IS LEFT EMPTY. The
+// order inside `bits` is the FIRING order, cell 0 first, and a modifier only
+// reaches the shots AFTER it - so holding cell 0 open means the first fitting
+// anybody picks up is auto-fitted there (fitAdd takes the first free cell) and
+// lands in front of the shot it was always meant to shape. A kit that filled
+// cell 0 would put that first find PAST the only projectile, where it does
+// nothing, and teach the rule backwards on the press that follows. A `null` in
+// `bits` is a real entry rather than a gap to skip: it is the reserved cell,
+// and toolPlan charges nothing for it.
+//
+// The starting shot also has to leave room for that fitting inside the tool's
+// TENSILE budget, or the first pickup truncates the press to nothing - which
+// is what the SLING's 10 is sized for: BARBED SHOT and a fitting up to 5.
 const CLASS_LOADOUT = [
-  { tool: 'shortbow', bits: ['arrow', 'barb'] }, // HUNTER: the plain shaft, and a heavier one
-  { tool: 'sling',    bits: ['heft', 'arrow'] }, // WARRIOR: the fitting first, then the shot it makes land like a fist
+  { tool: 'shortbow', bits: [null, 'arrow'] }, // HUNTER: the plain shaft, a cell held open above it
+  { tool: 'sling',    bits: [null, 'barb'] },  // WARRIOR: the heavier weaving shot, same open cell
 ];
 function giveLoadout(p) {
   p.tools = new Array(TOOL_SLOTS).fill(null);
   p.toolSel = 0;
   const L = CLASS_LOADOUT[p.cls] || CLASS_LOADOUT[0];
   const cell = makeTool(L.tool);
-  for (let i = 0; i < L.bits.length && i < cell.bits.length; i++) cell.bits[i] = L.bits[i];
+  // right-aligned against the tool's own cap, so the shot stays in the LAST
+  // cell and the reserved ones stay in front of it whatever the body's size
+  const off = Math.max(0, cell.bits.length - L.bits.length);
+  for (let i = 0; i < L.bits.length && off + i < cell.bits.length; i++) cell.bits[off + i] = L.bits[i];
   p.tools[0] = cell;
   // what you fly in with counts as met, so the tree opens on the kinds you
   // have actually held rather than only on what you have picked off the snow
   noteSeen(p, cell.type);
-  for (const b of L.bits) noteSeen(p, bitType(b));
+  for (const b of L.bits) if (b) noteSeen(p, bitType(b));
 }
 
 // ---- a bot fitting what it has found -------------------------------------
