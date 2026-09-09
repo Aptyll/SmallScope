@@ -412,7 +412,7 @@ empty world.
 
 | Where | What | Function |
 | --- | --- | --- |
-| top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the pull tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
+| top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the small white arrow of the **inventory drawer**, shut until B or the arrow | `drawShelf`, `drawBag` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
 | bottom left | the hover tooltip | `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
@@ -766,9 +766,10 @@ row (`shelfCellRect(-1)`, at `SHELF_X`/`shelfRowY()`) and its bit cells running 
 order, which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
 is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
 lost its weapon well and everything else carried is in [the drawer](#the-backpack) under this
-row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (20; 44 on
-a phone, under the menu and zoom plates) and grown rightward, so the tool cell — and the
-drawer's tab under it — never move whatever the build does, and a fitting's rail is what climbs
+row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (18; 44 on
+a phone, under the menu and zoom plates) and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
+frame under it sits flush with the view's edge) and grown rightward, so the tool cell — and the
+drawer's arrow under it — never move whatever the build does, and a fitting's rail is what climbs
 into the open screen above them; the SHIFT plate hangs off the row's right end (`shelfRowRight`).
 It is **not a panel**: bare wells with their own drop shadows (`shelfWell`), so the corner
 stays world everywhere between them and only a cell itself answers `shelfHit`. The tool cell is
@@ -827,23 +828,24 @@ budget reaches, and the shelf's budget track is where you go to see exactly wher
 **A drawer under the weapon shelf, shut until asked for** (3.27). The HUD shows one weapon —
 [the shelf](#the-weapon-shelf) — and everything else a player carries is in here: the spare
 tools a walk turns up and the bits no tool had a cell for. It is **invisible by default**: the
-pack key (B; L3 on a pad) or a click on the **pull tab** under the tool cell (`bagTabRect`, a
-chevron pointing the way the drawer will go and the key's cap beside it — the keybind-indicator
-carve-out) sets `state.bagOpen`, the same again or ESC clears it, and the merchant's counter
+pack key (B; L3 on a pad) or a click on the **arrow** under the tool cell (`bagTabRect` is the
+band it sits in and answers from: a plain small white chevron, rimmed a pixel dark like every
+mark over the world, no plate, pointing the way the drawer will go) sets `state.bagOpen`, the
+same again or ESC clears it, and the merchant's counter
 holds it open while it is up because a sale is a drag out of it. `bagOpenNow()` is the one
 answer everything reads; `bagEase` chases it on wall time over `BAG_SLIDE_T` (0.15 s,
 `updateFx`), and the drawer draws sliding out from under the tab, clipped to the screen below
 the tab's bottom edge so it emerges rather than fades. It answers the pointer only once fully
-open; the tab always answers. `endMatch` shuts it.
+open; the arrow's band always answers. `endMatch` shuts it.
 
-The frame (`bagFrameRect()`, two px under the tab, its cells starting on the tool cell's own
-left edge, `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
+The frame (`bagFrameRect()`, flush with the view's left edge a px under the arrow's band, its
+first cell on the tool cell's own left edge, `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
 `BAG_COLS` 6): the tools and bits a build is made of, in **small cells** — `BAG_CELL` 18 with the
 art at 1×, a third of a well, because a spare is glanced at and dragged, not read all match.
 There is no numbers row — the two meals, the gold and the cards are the
-[strip's pouch block](#the-hud-strip). The tab's rim carries every state the shut drawer cannot
-show: open keeps it lit, **amber** means no cell is free, and a refusal (`bagDenied()`, aged in
-`updateFx`) reddens and shakes tab and drawer alike for `bagFlash` seconds.
+[strip's pouch block](#the-hud-strip). The arrow never moves; its colour is its only state — gold
+under the pointer, **amber** when no cell is free, red on a refusal (`bagDenied()`, aged in
+`updateFx`, which also reddens and shakes the open drawer for `bagFlash` seconds).
 
 Gear is not in this widget at all — the four pieces live on
 [the character panel](#the-character-panel-g).
@@ -853,8 +855,9 @@ so a find is read at a glance without a rarity word anywhere; a tool also counts
 as pips along the bottom, in the corner a stack number would have used.
 
 - **One background, one frame, no internal line.** Every part of the drawer is the same opaque
-  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears — every corner cut, no snow
-  cap, since it lives under the shelf and not under the sky.
+  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears — its two free corners cut,
+  the two on the view's edge square, and no snow cap, since it lives under the shelf and not
+  under the sky.
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
   cell recesses to `BAG_WELL` *below* the frame's ground, an empty one sits *above* it at
   `#171f45`, and the ground itself is between — occupied / free / frame.

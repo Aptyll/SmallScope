@@ -724,7 +724,7 @@ function renderMinimap(now) {
 // tool in hand and the bits loaded into it, and everything else a player
 // carries - the spare tools a walk turns up, the bits no cell had room for -
 // is in a drawer that is INVISIBLE UNTIL ASKED FOR. The pack key (B, L3 on a
-// pad) or the pull tab under the tool cell drops it down from beneath the
+// pad) or the small arrow under the tool cell drops it down from beneath the
 // shelf; the same again, or ESC, slides it back up. The merchant's counter
 // drops it too, since a sale is a drag out of it. The pack is the overflow
 // (fitAdd, js/tools.js): a found bit loads itself into a tool first, and a
@@ -741,9 +741,9 @@ function renderMinimap(now) {
 // Clicking a cell uses or sends what is in it. The drawer swallows every
 // other click over itself so nothing is fired at the world through it. It
 // does NOT stop the sim - it is HUD, not an overlay. Two things are said in
-// colour rather than in words: the tab's rim (and the open drawer's light)
-// goes amber when no cell is left free, and tab and drawer alike redden and
-// shake when something could not be carried (bagDenied).
+// colour rather than in words: the arrow (and the open drawer's light) goes
+// amber when no cell is left free, and arrow and drawer alike redden when
+// something could not be carried (bagDenied) - the drawer shaking with it.
 //
 // ONE WELL SIZE FOR THE HUD (3.25): the strip's ability wells and the
 // shelf's cells are HUD_CELL square with their item art doubled
@@ -757,7 +757,7 @@ const BAG_GAP = 2;     // between neighbouring cells
 const BAG_PAD = 3;     // frame edge to the first cell: line, light, ground (drawHudFrame)
 const BAG_COLS = 6;    // the drawer is six columns wide (BAG_CAP 12: two rows)
 const BAG_W = BAG_PAD * 2 + BAG_COLS * BAG_CELL + (BAG_COLS - 1) * BAG_GAP;
-const BAG_TAB_H = 9;   // the pull tab under the tool cell
+const BAG_TAB_H = 7;   // the band under the tool cell the arrow sits in, and answers the pointer from
 const BAG_SLIDE_T = 0.15; // s the drawer takes to drop or lift; updateFx eases it
 let bagEase = 0;       // 0 shut .. 1 open, on wall time
 const BAG_BG = '#0d1229';     // the whole frame
@@ -783,15 +783,16 @@ function bagGridH() {
 // counter's sell well (js/shop.js). Everything that lays it out or hit-tests
 // it asks this, never state.bagOpen; bagEase chases the answer.
 function bagOpenNow() { return state.bagOpen || shopOpen(); }
-// the pull tab, under the shelf's tool cell: the drawer's handle and its
-// only always-on pixels
-function bagTabRect() { return { x: SHELF_X, y: shelfRowY() + SHELF_CELL + 2, w: SHELF_CELL, h: BAG_TAB_H }; }
-// the drawer, fully open: its top edge two px under the tab, its cells
-// starting on the tool cell's own left edge
+// the handle's band, under the shelf's tool cell and level with the budget
+// track beside it: the arrow is drawn in its middle, and the whole band
+// answers the pointer so a small mark is not a small target
+function bagTabRect() { return { x: SHELF_X, y: shelfRowY() + SHELF_CELL + 1, w: SHELF_CELL, h: BAG_TAB_H }; }
+// the drawer, fully open: flush with the view's left edge, its top a px
+// under the arrow's band, its first cell on the tool cell's own left edge
 function bagFrameRect() {
   const t = bagTabRect();
   const h = BAG_PAD * 2 + bagGridH(); // pad, the grid, pad
-  return { x: SHELF_X - BAG_PAD, y: t.y + t.h + 2, w: BAG_W, h };
+  return { x: SHELF_X - BAG_PAD, y: t.y + t.h + 1, w: BAG_W, h };
 }
 // cell i of the inventory grid
 function bagCellRect(i) {
@@ -817,7 +818,7 @@ function cornerMouse(mx, my) {
   if (s === 1) return { x: mx, y: my };
   return { x: mx / s, y: my / s };
 }
-// What the pointer is on: { kind: 'tab' } (the pull tab, always) | { kind:
+// What the pointer is on: { kind: 'tab' } (the arrow's band, always) | { kind:
 // 'cell', i } (a grid slot) | { kind: 'frame' } (anywhere else inside the
 // open drawer, swallowed and otherwise inert) | null. A drawer still moving
 // answers nothing but its tab. Shared by the click handler, the cursor and
@@ -1328,7 +1329,7 @@ function drawBag(now) {
     drawHudFrame(f.x, f.y, f.w, f.h, {
       bg: red ? BAG_BG_RED : BAG_BG, ink: red ? '#7a2436' : null,
       lit: red ? '#c2465a' : full ? '#c9922f' : null,
-      corners: { tl: true, tr: true, bl: true, br: true }, cap: false, seed: 47,
+      corners: { tl: false, tr: true, bl: false, br: true }, cap: false, seed: 47, // flush left: only the free corners cut
     });
     for (let i = 0; i < player.bagCap; i++) {
       const r = bagCellRect(i), s = player.bag[i];
@@ -1366,31 +1367,25 @@ function drawBag(now) {
     }
     ctx.restore();
   }
-  // THE TAB: the drawer's handle, under the tool cell. It reads as what it
-  // does by its shape - a chevron pointing the way the drawer will go, down
-  // to open and up to shut - and by lifting on hover; the pack key's cap
-  // beside the chevron is the keybind-indicator carve-out. Its rim carries
-  // every state the shut drawer cannot show: open keeps it lit, amber means
-  // no cell is free, and a refusal reddens and shakes it.
+  // THE ARROW: the drawer's handle, a plain small chevron under the tool
+  // cell with no plate behind it - white, rimmed a pixel dark so it reads on
+  // snow the way every mark over the world does - pointing the way the
+  // drawer will go, down to open and up to shut. Nothing moves: its colour is
+  // its only state - gold under the pointer, amber when no cell is free, red
+  // on a refusal - so it stays the quietest thing in the corner.
   const onTab = hov && hov.kind === 'tab';
-  ctx.save();
-  ctx.translate(shake, onTab ? -1 : 0);
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(t.x + 1, t.y + 1 + (onTab ? 1 : 0), t.w, t.h);
-  ctx.fillStyle = red ? '#c2465a' : onTab ? '#8fa0c8' : full ? '#c9922f' : open ? '#5a7fb8' : '#35426e';
-  ctx.fillRect(t.x, t.y, t.w, t.h);
-  ctx.fillStyle = red ? BAG_BG_RED : BAG_WELL;
-  ctx.fillRect(t.x + 1, t.y + 1, t.w - 2, t.h - 2);
-  if (padActive()) drawPadBind(ctx, t.x + 2, t.y + 1, 'bag', 1, false);
-  else drawPixelTextOutline(ctx, keyCapShort('bag'), t.x + 3, t.y + 2, '#f4f7ff', '#0f1632');
-  // the chevron, right of the cap
-  ctx.fillStyle = onTab ? '#ffd95c' : '#9fb6d8';
-  const cx = t.x + t.w - 8, cy = t.y + 3;
-  for (let d = 0; d < 3; d++) {
-    const yy = open ? cy + 2 - d : cy + d;
-    ctx.fillRect(cx - 2 + d, yy, 1, 1); ctx.fillRect(cx + 2 - d, yy, 1, 1);
-  }
-  ctx.restore();
+  const col = red ? '#e0637a' : onTab ? '#ffd95c' : full ? '#c9922f' : '#f4f7ff';
+  const ax = t.x + (t.w >> 1), ay = t.y + 2; // the arrow's centre column and top row
+  const stamp = (ox, oy, c) => {
+    ctx.fillStyle = c;
+    for (let d = 0; d < 4; d++) {
+      const yy = (open ? ay + 3 - d : ay + d) + oy;
+      ctx.fillRect(ax - 3 + d + ox, yy, 1, 1);
+      ctx.fillRect(ax + 3 - d + ox, yy, 1, 1);
+    }
+  };
+  for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (ox || oy) stamp(ox, oy, '#0f1632');
+  stamp(0, 0, col);
   drawShiftHint(); // outside the refusal shake: the plate is not what refused
 }
 
@@ -1709,8 +1704,8 @@ const SHELF_CELL = HUD_CELL, SHELF_GAP = 2; // a well (the one size), and the ai
 const SHELF_BAR = 4;                  // the budget track, under the row
 const SHELF_RAIL = 3;                 // what one modifier's rail costs above it
 const SHELF_SLOT = 0;                 // the weapon slot it edits (TOOL_SLOTS is 1)
-const SHELF_X = 4;                    // the tool cell's left edge
-function shelfRowY() { return MOBILE ? 44 : 20; } // the row's top: room for five rails above it, and on a phone for the plates
+const SHELF_X = BAG_PAD;              // the tool cell's left edge: the drawer's first cell sits under it, its frame flush with the view's edge
+function shelfRowY() { return MOBILE ? 44 : 18; } // the row's top: room for five rails above it, and on a phone for the plates
 // how far in from the left edge the corner widget can reach: the widest row
 // (a five-bit longbow) and the SHIFT plate off its end - what the intro
 // slide and the bake are sized by, so neither jumps when the tool changes
