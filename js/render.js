@@ -681,9 +681,8 @@ function render() {
   renderWeather(ex, ey);
   renderVignettes();
   replayTick(now); // banks the finished world frame - must stay above renderUI
-  // what the pointer is on, resolved ONCE and before anything lays out around
-  // it: the event feed steps up by tipLift() the way it does for the replay
-  // window, so this cannot come after the feed (see the tooltips banner, ui.js)
+  // what the pointer is on, resolved ONCE per frame, before the UI draws
+  // (see the tooltips banner, ui.js)
   tipResolve();
   renderUI(now);
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
@@ -701,21 +700,14 @@ function render() {
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
   if (state.mode === 'play' && state.settingsOpen) renderSettings(now);
-  if (state.mode === 'play' && state.draft) renderDraft(now);
   if (state.mode === 'title' || state.intro > 0) renderTitle(now);
   // the last four seconds: the whole frame on a death (the recap - the
   // countdown and its ESC prompt draw over it, so it goes first), the
   // bottom-left corner on pause
   renderReplay();
   if (state.mode === 'dead') renderDead(now);
-  // both sit above the death dim: the feed and the standings are exactly what
-  // you read while you are down. They duck under the map/settings panels.
-  if (!state.mapOpen && !state.settingsOpen && !window.DBG.hideUI &&
-    !endScreen() && // a victory or defeat screen owns the whole frame
-    (state.mode === 'play' || state.mode === 'dead')) renderEventLog();
-  // the tooltip owns the bottom-left corner while it is up (the feed lifted
-  // out of its way above); it draws in every mode, since the tech tree on the
-  // title screen is read through it too
+  // the tooltip owns the bottom-left corner while it is up; it draws in every
+  // mode, since the tech tree on the title screen is read through it too
   if (!window.DBG.hideUI && !endScreen()) drawTooltip();
   if (scoreboardOpen()) renderScoreboard();
   if (!window.DBG.hideUI) drawTags();
@@ -1227,7 +1219,7 @@ function cursorInfo() {
   if (shelfHit(mouse.x, mouse.y)) return { kind: 'hand' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
-  if (sh && (sh.kind === 'slot' || sh.kind === 'ab' || sh.kind === 'food')) return { kind: 'hand' };
+  if (sh && (sh.kind === 'ab' || sh.kind === 'food')) return { kind: 'hand' };
   if (sh) return { kind: 'arrow' };
 
   // Every reticle in play carries the tool's state, whatever it is hovering:

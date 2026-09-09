@@ -964,7 +964,7 @@ function hasWorkers(p) {
 // (the `what a flag looks like` group) and both read this.
 function flagTarget() {
   if (!state.flagAim || window.DBG.hideUI || !mouse.inside || !player || player.dead) return null;
-  if (state.paused || state.settingsOpen || state.wheel || state.draft) return null;
+  if (state.paused || state.settingsOpen || state.wheel) return null;
   const tx = Math.floor(mouseWX() / TILE), ty = Math.floor(mouseWY() / TILE);
   if (!inWorld(tx, ty) || overHud(mouse.x, mouse.y)) return null;
   const f = player.flag;

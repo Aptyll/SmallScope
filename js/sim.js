@@ -556,7 +556,7 @@ function updatePlayer(p, dt) {
   const inp = p.input;
 
   if (p.dead) { // out of the match: nothing it wants gets through
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
     inp.ability = -1;
     inp.cmd = null;
     return;
@@ -569,7 +569,7 @@ function updatePlayer(p, dt) {
   // you, and the surface spends it like any other momentum.
   if (p.stunT > 0) {
     p.stunT = Math.max(0, p.stunT - dt);
-    inp.dodge = inp.eatBerry = inp.eatFish = false;
+    inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
     inp.work = inp.fire = inp.slide = false;
     inp.ability = -1;
     inp.cmd = null;
@@ -591,6 +591,7 @@ function updatePlayer(p, dt) {
   if (inp.dodge) { inp.dodge = false; tryDodge(p); }
   if (inp.eatBerry) { inp.eatBerry = false; eatBerry(p); }
   if (inp.eatFish) { inp.eatFish = false; eatFish(p); }
+  if (inp.useCard) { inp.useCard = false; useCard(p); }
   if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; tryAbility(p, i); }
   if (inp.cmd) { const c = inp.cmd; inp.cmd = null; runCmd(p, c); }
 
@@ -1263,6 +1264,10 @@ function updateFx(dt) {
   // in, and the cursor when a swap changed what the hand is holding (hudFx, ui.js)
   if (wellLit && (wellLit.t -= dt) <= 0) wellLit = null;
   if (dragLit > 0) dragLit -= dt;
+  { // ...and so is the drawer's slide (bagEase chases bagOpenNow, ui.js)
+    const want = bagOpenNow() ? 1 : 0, d = want - bagEase;
+    bagEase += Math.sign(d) * Math.min(Math.abs(d), dt / BAG_SLIDE_T);
+  }
   if (toolFlash > 0) toolFlash -= dt; // ... and the weapon well's, beside it
   if (foodFlash > 0) foodFlash -= dt; // ... and the meal button's
   if (abFlash > 0) abFlash -= dt;     // ... and a locked ability well's
@@ -1273,12 +1278,6 @@ function updateFx(dt) {
     f.t += dt;
     if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : 9)) footprints.splice(i, 1);
   }
-  // the event feed ages here too: it is chrome, so it fades on wall time in
-  // every mode, not only while the sim is stepping
-  for (let i = events.length - 1; i >= 0; i--) {
-    events[i].t += dt;
-    if (events[i].t > EVENT_LIFE) events.splice(i, 1);
-  }
-  ageNotices(dt); // ...and the market's plates under the minimap (js/shop.js)
+  ageNotices(dt); // the market's plates under the minimap age here too (js/shop.js)
 }
 

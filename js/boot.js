@@ -1385,7 +1385,7 @@ window.DBG = {
   hudStripRect, stripHit,
   // Tools and bits: the two tables, the tier palette, an instance maker, the
   // firing pipeline and the loot roll - so a driver can stage a build without
-  // mining for it. `toolCellRect` is the strip's weapon well, and
+  // mining for it. `shelfCellRect(-1)` is the weapon's one well, and
   // `shelfCellRect` / `shelfHit` the always-up shelf's (cell -1 is the tool).
   // `fitAdd` is the pickup's own path: a bit into the tool, the rest in the pack.
   TOOL_TIERS, TOOL_SLOTS, makeTool, toolType, bitType, bitMods, newMods, fitAdd,
@@ -1404,7 +1404,7 @@ window.DBG = {
   takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit
   drawPow, shotFlight, drawDmgMul, DRAW_RANGE_MIN, DRAW_SPEED_MIN, DRAW_DMG_MIN,
-  toolCellRect, shelfCellRect, shelfHit, shelfRails, tierPlate,
+  shelfCellRect, shelfHit, shelfRails, tierPlate,
   // the closing line's three bits: what a shot does where it LANDS, the
   // teleport with no shot to fire it, the flashes it strings across the jump,
   // and the chop a thrown axe lands - so a driver can prove an arrival or a
@@ -1453,7 +1453,6 @@ window.DBG = {
   CARD_PRICE,
   // what the pointer is on, as the panel would describe it (null = nothing)
   tipAt: (x, y) => tipAt(x == null ? mouse.x : x, y == null ? mouse.y : y),
-  tipLift,
   fireTool: (p) => fireTool(p || player),
   // the fish catch's three beats: start one by hand, read which frame a body is on
   startCatch: (p) => startCatch(p || player), cancelCatch: (p) => cancelCatch(p || player), catchFrame,
@@ -1485,8 +1484,9 @@ window.DBG = {
   // the backpack: the item table, the slot array, and add/take/count without
   // walking onto a drop. bagHit is what the pointer tests against; food is a
   // POUCH and takes no cell, so `food` is where a berry actually sits, and
-  // pursePlateRect is the always-on gold readout on the hud strip.
-  ITEMS, BAG_CAP, bagFrameRect, bagBtnRect, bagCellRect, bagHit, pursePlateRect, foodCellRect, shortNum,
+  // goldCellRect is the always-on gold readout on the hud strip.
+  ITEMS, BAG_CAP, bagFrameRect, bagTabRect, bagCellRect, bagHit, goldCellRect, foodCellRect, shortNum, useCard: (p) => useCard(p || player),
+  get bagEase() { return bagEase; },
   // the drag, and what it answers with: the armed press, the three moves, the
   // cue/rumble/pulse raiser, and what a release on a given well WOULD do -
   // so a driver can prove the promise and the move agree without a mouse
@@ -1519,8 +1519,9 @@ window.DBG = {
   buyGear: (i, p) => buyGear(p || player, i),
   pickGear: (i, v) => pickGear(i, v), gearLayout, gearScreenHit, beginGear,
   setGear: (i, v, p) => { const q = p || player; q.gear[i] = v; refreshKit(q); return q.kit; },
-  // the match readouts: stage feed lines without staging the kills behind
-  // them, and check the standings (hold TAB in game, or set keys.tab here)
+  // the match readouts: the log (not drawn - read it here), staged lines
+  // without the kills behind them, and the standings (hold TAB in game, or
+  // set keys.tab here)
   events, logEvent, scoreGroups, scoreboardOpen,
   // the four-second replay: the filmstrip itself, how much is banked, whether it is up, and whether it fills the frame
   replay: {

@@ -114,13 +114,7 @@ const state = {
   dayPop: null,  // the dawn headline, top centre: { day, t } - set by each dawn and the landing (js/sim.js), drawn by renderUI
   paused: false,
   mapOpen: false,
-  // The backpack grid (B, or the pack button): HUD, it does NOT stop the sim.
-  // It starts OPEN - the grid is where a find is read and a build is laid
-  // out, and a pack that has to be asked for hides the one surface a match
-  // spends its whole time in. B still shuts it. A PHONE starts it shut
-  // instead, because the touch column owns that corner: mobileRefresh
-  // (js/mobile.js) is the one place that knows which we are.
-  bagOpen: true,
+  bagOpen: false,      // the inventory drawer under the weapon shelf (B, or its tab): HUD, it does NOT stop the sim
   charOpen: false,     // the character panel (G): HUD, it does NOT stop the sim either
   // the MERCHANT whose counter is open (js/shop.js), or null. HUD like the two
   // above - the sim runs on underneath - and it holds the merchant itself
@@ -134,7 +128,6 @@ const state = {
   // drag yet: { src, x, y }. Resolves as a plain click if the button comes
   // back up without moving - see the drag banner in js/ui.js.
   dragPend: null,
-  draft: null,         // the pick-1-of-3 card draft: { rarity, options: [id,id,id] } - HUD, does NOT stop the sim
   settingsOpen: false,
   rebind: null,        // a cap on the CONTROLS page listening for its key: the action's id (input.js), or null
   wheel: null, // radial menu: { kind: 'build'|'manage', tx, ty, seg, ax, ay } - ax/ay is the press point
@@ -220,7 +213,7 @@ function mmStep() { return Math.max(0, Math.min(MM_ZOOMS.length - 1, settings.mm
 function mmWant() { return MM_ZOOMS[mmStep()]; }
 function mmScale() { return mmCur < 0 ? mmWant() : mmCur; }
 // pointer over the minimap disc (its ring included)
-function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mouse.y - MM_CY) <= MM_R + 7; }
+function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mouse.y - MM_CY) <= MM_R + 7; } // to the outline's outer edge
 
 // performance monitor: fps averaged over half-second windows from raw
 // (unclamped) frame deltas, so sim clamping can't mask slow frames
@@ -245,10 +238,16 @@ function loadSettings() {
   } catch (e) { }
   mmCur = mmWant();
 }
+// The disc sits in the top-right corner with the SAME gap to both edges
+// (MM_GAP, measured from the black outline's outer edge at MM_R + MM_OUT),
+// so it reads as one compact shape tucked into the corner, not a thing
+// hugging one edge and floating off the other.
+const MM_OUT = 7;  // outline's outer radius past MM_R (mmChrome, ui.js)
+const MM_GAP = 4;  // px of screen between the outline and either edge
 function applyMinimapSize() {
   MM_R = settings.mmR;
-  MM_CX = VIEW_W - MM_R - 8;
-  MM_CY = MM_R + 16;
+  MM_CX = VIEW_W - MM_R - MM_OUT - MM_GAP;
+  MM_CY = MM_R + MM_OUT + MM_GAP;
 }
 // recompute everything positioned off VIEW_W/VIEW_H; must run after any
 // change to the canvas size (window resize, fullscreen)
@@ -413,6 +412,49 @@ function startEat(p, type) {
 // now covers both
 function eatBerry(p) { startEat(p, 'berry'); }
 function eatFish(p) { startEat(p, 'fish'); }
+
+// DRAWING A CARD. The card key and a click on the strip's card button both
+// arrive here: one unopened card is taken at random from everything the
+// pouch holds (so a rarer card is exactly as likely as it is common in your
+// hand), one entry of its rarity is picked at random, and the buff lands on
+// the spot - onto p.cards, into the kit, and as a burst in the rarity's
+// colour with the card's name rising out of it. No screen, no choice, no
+// pause: the pick of three was the one thing in the game that asked you to
+// read a menu mid-fight. Refused with nothing to draw (cardDenied, ui.js -
+// the button's own red), like a meal with nothing behind it. A bot draws
+// through resolveCardForBot (js/ai.js) and never comes here.
+function useCard(p) {
+  if (p.dead) { return; }
+  let total = 0;
+  for (const r of CARD_RARITIES) total += bagCount(p, cardKey(r));
+  if (total <= 0 || inAir(p)) { if (p === player) cardDenied(); return; }
+  let pick = Math.floor(rng() * total), rarity = CARD_RARITIES[0];
+  for (const r of CARD_RARITIES) { pick -= bagCount(p, cardKey(r)); if (pick < 0) { rarity = r; break; } }
+  bagTake(p, cardKey(rarity), 1);
+  const id = Math.floor(rng() * CARDS[rarity].length);
+  p.cards.push({ rarity, id });
+  refreshKit(p);
+  const col = RES_COLORS[cardKey(rarity)];
+  cardFx(p.x, p.y, col);
+  addFloater(p.x, p.y - 18, CARDS[rarity][id].name, col);
+  if (nearPlayer(p.x, p.y)) SFX.levelUp();
+}
+// the buff landing: a ring of sparks thrown out and up in the card's colour,
+// a white flare in the middle, and a slow column of motes climbing out of
+// the body for a moment after - the level-up's own language, in the rarity's
+// ink, so what you just became is read at a glance from across the clearing
+function cardFx(x, y, color) {
+  burst(x, y - 6, '#fff6d8', 8, 60, 0.35);
+  for (let i = 0; i < 22; i++) {
+    const a = rng() * Math.PI * 2, s = rand(30, 70);
+    particles.push({ x, y: y - 4, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.5 - 40,
+      life: rand(0.5, 0.9), maxLife: 0.5, color, size: rng() < 0.4 ? 2 : 1, grav: 60 });
+  }
+  for (let i = 0; i < 14; i++) {
+    particles.push({ x: x + rand(-7, 7), y: y + rand(-4, 4), vx: rand(-4, 4), vy: rand(-55, -25),
+      life: rand(0.7, 1.2), maxLife: 0.6, color, size: 1, grav: 0 });
+  }
+}
 
 // The meal ticking, and the shared clock beside it. Called from updatePlayer
 // next to the ability clock, for every player alike.

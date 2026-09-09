@@ -115,8 +115,8 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the pack,
-the sheet, the map, the standings, mute, pause — with the key each starts on, in the order the
+verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the card
+draw, the inventory drawer, the sheet, the map, the standings, mute, pause — with the key each starts on, in the order the
 CONTROLS page lists them; `settings.binds` (action id → key name) is the live map, saved with
 the profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
 reserved key or a key two actions share falls back to its default). **Nothing compares a key
@@ -166,9 +166,9 @@ not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
 off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
-L3 the pack, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
+L3 the inventory drawer, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 holds the worker
-flag, dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
+flag (and draws a card on a tap under `PAD_TAP`, the way BACK splits map from standings), dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
 armory, the roll die, the range bell), and BACK is the standings while held and the map on a
 tap under `PAD_TAP`. The
@@ -184,7 +184,7 @@ right stick scrolls the page, and the left stick is a pointer
 over pointer-only surfaces (a panel, the wiki, class select) and the arrow
 keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
 `padRepeat`). The panels that keep the world running under them — the chart, the counter, the
-sheet, the draft (`padPanelMode`) — keep the feet too: WASD walks under them
+sheet (`padPanelMode`) — keep the feet too: WASD walks under them
 (`sampleHumanInput`), so there the left stick walks and the right stick is the hand. A mode flip under held buttons releases them in the mode they were pressed in and
 keeps them marked down, so the START that opened the slab does not close it (`padReleaseAll`).
 While the pad owns the pointer `mouse.inside` is held true, so a mouse parked off the window
@@ -202,7 +202,7 @@ travel — and **draws while it is down and looses when it lifts**, the mouse bu
 (`fireDown` on landing, `fireUp` on the lift). A finger on the minimap is M; a finger on the
 HUD (the strip's wells, the pack, the sheet, the counter) is the mouse — `pointerMove` +
 `pointerPress(0)`, then the release — so drags, buys and casts already work. The plates
-(`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing from the pack's corner —
+(`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing from the bottom edge —
 DODGE (big), WORK (E held for the finger's life), SLIDE (a latch on shift: one tap on, one off),
 CHARACTER — a left column of BUILD (opens `openWheelNear` and the same finger drags to the
 wedge) and, once there is a crew, FLAG (raises the order, the lift plants it where the finger
@@ -337,7 +337,7 @@ Five players per colour means **teammates share it**, so anything that names one
 takes a second axis: `playerTint(p)` returns a per-player shade of that team's palette (`trim`,
 `hatL`, `trimD`, `hat` by `floor(id / TEAM_COUNT) % 4` — the fifth teammate reuses the first
 shade). The team colour stays the background, the tint is the ink — see the
-[scoreboard and event feed](rendering.md#scoreboard-and-event-feed).
+[scoreboard and event log](rendering.md#scoreboard-and-event-log).
 
 ## PvP
 
@@ -433,18 +433,18 @@ the timer holds at zero until it roosts; a bird that has fled mid-timer is left 
 roguelike cards), gear, skill ranks, level and xp are never touched by `reset()`, so a build
 survives every respawn within a match; the wallet, the pouch, the bag and the weapon do not.
 
-### Kills and the event feed
+### Kills and the event log
 
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
 there is no `src` (`DEATH_CAUSE`: `'ice'` for a hole, `'wolf'` for a den's pack or the alpha, `'dire'` for the dire wolf). A death with an `src` other than
-the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the feed in the killer's colours;
+the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours;
 without one it writes `"<victim> FELL THROUGH THE ICE"` in the victim's. **Any new way to hurt a
-player must pass its `src`**, or the kill goes uncredited and the feed line reads as an accident.
+player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
 The other thing logged today is a level-up at `LOG_LEVEL` (5) or above — the early levels come too
-fast to be news. `logEvent(txt, p)` is the whole interface; the feed's look and lifetimes are in
-[rendering.md](rendering.md#scoreboard-and-event-feed). `DBG.logEvent`/`DBG.events` stage lines
+fast to be news. `logEvent(txt, p)` is the whole interface; the log is not drawn
+([rendering.md](rendering.md#scoreboard-and-event-log)). `DBG.logEvent`/`DBG.events` stage lines
 without staging the kills behind them.
 
 ## Contested orders
@@ -589,7 +589,7 @@ The ladder:
    shop is human-only except the drag that sells. Then, with gold in hand, build a generator (or, 30% of the time and
    only where `findSite` finds 3×2 of room, a bot bay) on a nearby stump, else upgrade its own
    work; steps off a build site first, since a building is solid. Picking up a dropped card off the ground already falls out of the loot rung
-   (drops are type-agnostic loot); a bot never opens the pick-1-of-3 draft itself
+   (drops are type-agnostic loot); a bot never presses the card key itself
    (`bagClick` is mouse-only) — the instant one is carried, `resolveCardForBot` resolves it with a
    single random pick, since choosing among three is specifically the human decision point.
 13. **harvest** — walk to a tree/rock/berried bush within `AI_FORAGE` (12 tiles) and hold E at

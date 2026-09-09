@@ -1,6 +1,6 @@
 'use strict';
 // The in-match HUD: the radial wheel, tile brackets and key prompts, the
-// minimap, the backpack + gear widget, the hud strip and the card draft -
+// minimap, the backpack + gear widget and the hud strip -
 // everything renderUI() puts over the world while you play.
 // ------------------------------------------------------------ radial wheel
 // One geometry, any number of options: n wedges of exactly 2*PI/n, the first
@@ -586,19 +586,22 @@ const mmViewCtx = mmView.getContext('2d');
 // per-pixel hypot/atan2 loop issuing a fillRect per lit pixel. Run every
 // frame that was ~1.6 ms - a third of the whole frame, the largest single
 // cost in the game - for pixels that never change. So the chrome is baked
-// per (radius, hover) and the arc band per (radius, progress step): the arcs
+// per radius and the arc band per (radius, progress step): the arcs
 // only move as fast as the clock, so quantising the cycle to MM_ARC_STEPS
 // repaints the band every couple of real seconds instead of every frame.
 const mmChromes = new Map();
-function mmChrome(hov) {
-  const key = MM_R * 2 + (hov ? 1 : 0);
+function mmChrome() {
+  const key = MM_R;
   let c = mmChromes.get(key);
   if (!c) {
-    const R = MM_R + 8, S = R * 2 + 2;
+    const R = MM_R + 7, S = R * 2 + 2;
     c = document.createElement('canvas'); c.width = c.height = S;
     const g = c.getContext('2d'), cc = R + 1;
-    mmRing(g, cc, cc, MM_R + 7, MM_R + 8, hov ? '#9aa8d0' : '#6f7ca8'); // rim
-    mmRing(g, cc, cc, 0, MM_R + 7, '#0f1632');                          // silhouette disc
+    // a strong black outline, two crisp pixels, and NO hover state - the
+    // disc is the same shape whatever the pointer is doing; no halo, no
+    // second ring outside it
+    mmRing(g, cc, cc, MM_R + 5, MM_R + 7, '#000000');                   // outline
+    mmRing(g, cc, cc, 0, MM_R + 5, '#0f1632');                          // silhouette disc
     mmRing(g, cc, cc, MM_R + 2, MM_R + 5, '#2a3358');                   // day ring track
     mmChromes.set(key, c);
   }
@@ -622,7 +625,7 @@ function mmArcBand(prog) {
     // dusk boundary tick: one pixel column across the band, a little past it,
     // over the arcs exactly as the per-frame draw laid it
     const ba = a0 + dayFrac * Math.PI * 2;
-    mmRing(g, cc, cc, r0 - 1, r1 + 1, '#8f9cc4', ba - 0.03, ba + 0.03);
+    mmRing(g, cc, cc, r0 - 1, r1, '#8f9cc4', ba - 0.03, ba + 0.03); // stops short of the outline
   }
   return mmArc.cv;
 }
@@ -632,11 +635,10 @@ function renderMinimap(now) {
   const vp = viewPlayer();
   const ptx = vp.x / TILE, pty = vp.y / TILE;
   const s = mmScale(); // px per tile: the wheel over the disc changes it
-  const hov = overMinimap() && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel;
 
-  // silhouette: an opaque dark disc under everything, rimmed by a pale line
-  // so the whole control reads as one solid shape on the snow (baked, above)
-  ctx.drawImage(mmChrome(hov), MM_CX - MM_R - 9, MM_CY - MM_R - 9);
+  // silhouette: an opaque dark disc under everything, in a black outline so
+  // the whole control reads as one solid shape on the snow (baked, above)
+  ctx.drawImage(mmChrome(), MM_CX - MM_R - 8, MM_CY - MM_R - 8);
 
   // pixel-clipped map view centered on the player
   const half = MM_R / s; // tiles from the centre to the edge
@@ -709,76 +711,55 @@ function renderMinimap(now) {
   ctx.fillRect(Math.round(MM_CX + Math.cos(ta) * (r0 + 1)) - 1, Math.round(MM_CY + Math.sin(ta) * (r0 + 1)) - 1, 3, 3);
   ctx.globalAlpha = 1;
 
-  // beneath the minimap, one centred row: players still in the match (a pixel
-  // figure + the count, no label) then the elapsed play-time. Clear of the
-  // fps readout, which owns the extreme top-right corner.
+  // beneath the minimap, the elapsed play-time alone, centred on the disc's
+  // axis so the two read as one column. (The alive count that used to share the row
+  // went in 3.23: a match no longer ends on bodies, so it was a number that
+  // decided nothing.)
   const clock = clockTxt(state.elapsed);
-  const alive = String(aliveCount());
-  const rowW = ALIVE_ICON_W + 2 + pixelTextWidth(alive) + 7 + pixelTextWidth(clock);
-  let rx = Math.round(MM_CX - rowW / 2);
-  const ry = MM_CY + MM_R + 9;
-  drawAliveIcon(rx, ry - 1, '#f4f7ff', '#0f1632');
-  rx += ALIVE_ICON_W + 2;
-  drawPixelTextOutline(ctx, alive, rx, ry, '#f4f7ff', '#0f1632');
-  rx += pixelTextWidth(alive) + 7;
-  drawPixelTextOutline(ctx, clock, rx, ry, '#f4f7ff', '#0f1632');
+  drawPixelTextOutline(ctx, clock, Math.round(MM_CX - pixelTextWidth(clock) / 2), MM_CY + MM_R + 9, '#f4f7ff', '#0f1632');
 }
 
-// the "players left" glyph: a hooded figure, 5x7, stamped with the same 1px
-// rim the outline font uses so it reads on snow beside the count
-const ALIVE_ICON = [
-  '.###.',
-  '#####',
-  '#.#.#',
-  '.###.',
-  '#####',
-  '#####',
-  '#...#',
-];
-const ALIVE_ICON_W = 5;
-function drawAliveIcon(x, y, color, outline) {
-  const stamp = (ox, oy, c) => {
-    ctx.fillStyle = c;
-    for (let r = 0; r < ALIVE_ICON.length; r++)
-      for (let q = 0; q < ALIVE_ICON_W; q++)
-        if (ALIVE_ICON[r][q] === '#') ctx.fillRect(x + q + ox, y + r + oy, 1, 1);
-  };
-  for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (ox || oy) stamp(ox, oy, outline);
-  stamp(0, 0, color);
-}
-
-// ---- the backpack: one button, and the frame it opens - bottom-right -----
-// It STARTS OPEN (state.bagOpen, js/core.js) - the grid is what a match is
-// spent looking at, and a pack that has to be asked for hides the build. B or
-// the button shuts it.
+// ---- the backpack: a DRAWER under the weapon shelf, top-left ------------
+// THE HUD SHOWS ONE WEAPON (3.23): the shelf in the top-left corner is the
+// tool in hand and the bits loaded into it, and everything else a player
+// carries - the spare tools a walk turns up, the bits no cell had room for -
+// is in a drawer that is INVISIBLE UNTIL ASKED FOR. The pack key (B, L3 on a
+// pad) or the small arrow under the tool cell drops it down from beneath the
+// shelf; the same again, or ESC, slides it back up. The merchant's counter
+// drops it too, since a sale is a drag out of it. The pack is the overflow
+// (fitAdd, js/tools.js): a found bit loads itself into a tool first, and a
+// found tool goes in here, so the shelf never has to be read past.
 //
-// Shut, the pack is ONE BUTTON flush in the corner - a 26px plate wearing the
-// 20px pack icon (BAG_ICON below) and nothing else. Open (B, or clicking it),
-// the frame rises off the button's top edge and is nothing but the ten-cell
-// GRID: a SIMPLE INVENTORY of the things a build is made of. No numbers row
-// any more - the two meals are a pouch on the hud strip's own buttons and the
-// gold is the purse tab beside them, both on screen whether the pack is open
-// or shut. Nothing else lives here either: gear is on the character panel (G,
-// below), and skill points are spent on the strip's own floating plates.
+// Small cells, on purpose: BAG_CELL px with the item art at 1x, a third the
+// size of a well, because a spare is a thing you glance at and drag, not a
+// thing you read all match - the shelf is for reading.
 //
-// ONE BACKGROUND, ONE BORDER, NO INTERNAL LINE. Every part of the frame -
-// behind the cells, behind the grid - is the same opaque BAG_BG, so nothing
-// inside reads as a separate panel stacked on another. The frame is pinned by
-// its BOTTOM RIGHT over the button and grows upward, so opening never pushes
-// anything off-screen.
+// ONE BACKGROUND, ONE FRAME, NO INTERNAL LINE. Every part of the drawer is
+// the same opaque BAG_BG inside the strip's own chrome (drawHudFrame), so
+// nothing inside reads as a separate panel stacked on another.
 //
-// Clicking the button (or B) toggles the grid; clicking a cell uses or sends
-// what is in it. The frame swallows every other click over itself so nothing
-// is fired at the world through it. The grid does NOT stop the sim - it is
-// HUD, not an overlay. Two things are said in colour rather than in words: the
-// button's rim goes amber when no cell is left free, and button and frame
-// alike redden and shake when something could not be carried (bagDenied).
-const BAG_CELL = 18;   // a grid slot
+// Clicking a cell uses or sends what is in it. The drawer swallows every
+// other click over itself so nothing is fired at the world through it. It
+// does NOT stop the sim - it is HUD, not an overlay. Two things are said in
+// colour rather than in words: the arrow (and the open drawer's light) goes
+// amber when no cell is left free, and arrow and drawer alike redden when
+// something could not be carried (bagDenied) - the drawer shaking with it.
+//
+// ONE WELL SIZE FOR THE HUD (3.23): the strip's ability wells and the
+// shelf's cells are HUD_CELL square with their item art doubled
+// (drawItemIcon's k), so a tool reads at the same size on the shelf as an
+// ability does on the strip. The HUD SIZE dial scales both widgets: the
+// strip about its bottom-centre anchor (drawHudScaled), the shelf and its
+// drawer about the top-left corner (drawCornerScaled).
+const HUD_CELL = 34;
+const BAG_CELL = 18;   // a drawer cell: the art at 1x
 const BAG_GAP = 2;     // between neighbouring cells
-const BAG_PAD = 3;     // frame edge to the first cell
-const BAG_COLS = 5;    // the grid is five columns wide (BAG_CAP 10: two rows)
-const BAG_BTN = 26;    // the closed pack: one big button, flush in the corner
+const BAG_PAD = 3;     // frame edge to the first cell: line, light, ground (drawHudFrame)
+const BAG_COLS = 6;    // the drawer is six columns wide (BAG_CAP 12: two rows)
 const BAG_W = BAG_PAD * 2 + BAG_COLS * BAG_CELL + (BAG_COLS - 1) * BAG_GAP;
+const BAG_TAB_H = 7;   // the band under the tool cell the arrow sits in, and answers the pointer from
+const BAG_SLIDE_T = 0.15; // s the drawer takes to drop or lift; updateFx eases it
+let bagEase = 0;       // 0 shut .. 1 open, on wall time
 const BAG_BG = '#0d1229';     // the whole frame
 const BAG_BG_RED = '#4a121c'; // ... and while a refusal is up
 // a filled cell recesses BELOW that ground, an empty one sits above it, so
@@ -797,20 +778,21 @@ function bagGridH() {
   const rows = Math.ceil(player.bagCap / BAG_COLS);
   return rows * BAG_CELL + (rows - 1) * BAG_GAP;
 }
-// The pack is OPEN whenever its own toggle says so, and also whenever the
-// merchant's counter is up, because a sale is a DRAG out of the grid into the
-// counter's sell well (js/shop.js). Everything that lays the widget out or
-// hit-tests it asks this, never state.bagOpen, or the two disagree by a row and
-// every click below the gear lands one cell out - the weapon shelf reads it
-// too, since the shelf stands on whichever of the two edges is up.
+// The drawer is OPEN whenever its own toggle says so, and also whenever the
+// merchant's counter is up, because a sale is a DRAG out of it into the
+// counter's sell well (js/shop.js). Everything that lays it out or hit-tests
+// it asks this, never state.bagOpen; bagEase chases the answer.
 function bagOpenNow() { return state.bagOpen || shopOpen(); }
-// the pack button, flush in the corner - drawn shut and open alike, so the
-// toggle never moves under the pointer that just used it
-function bagBtnRect() { return { x: VIEW_W - BAG_BTN, y: VIEW_H - BAG_BTN, w: BAG_BTN, h: BAG_BTN }; }
-// the open frame, its bottom edge on the button's top; it grows upward
+// the handle's band, under the shelf's tool cell and level with the budget
+// track beside it: the arrow is drawn in its middle, and the whole band
+// answers the pointer so a small mark is not a small target
+function bagTabRect() { return { x: SHELF_X, y: shelfRowY() + SHELF_CELL + 1, w: SHELF_CELL, h: BAG_TAB_H }; }
+// the drawer, fully open: flush with the view's left edge, its top a px
+// under the arrow's band, its first cell on the tool cell's own left edge
 function bagFrameRect() {
+  const t = bagTabRect();
   const h = BAG_PAD * 2 + bagGridH(); // pad, the grid, pad
-  return { x: VIEW_W - BAG_W, y: VIEW_H - BAG_BTN - h, w: BAG_W, h };
+  return { x: SHELF_X - BAG_PAD, y: t.y + t.h + 1, w: BAG_W, h };
 }
 // cell i of the inventory grid
 function bagCellRect(i) {
@@ -826,17 +808,27 @@ function overHud(x, y) {
   return !!bagHit(x, y) || !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
     !!shelfHit(x, y) || overMinimap();
 }
-// What the pointer is on: { kind: 'btn' } (the pack button) | { kind: 'cell',
-// i } (a grid slot) | { kind: 'frame' } (anywhere else inside the open
-// frame, swallowed and otherwise inert) | null. Shut, only the button
-// answers - the rest of the corner is world. Shared by the click handler,
-// the cursor and the widget's own hover, so the three can never disagree.
+// THE CORNER SCALES WITH THE HUD SIZE DIAL, about the top-left corner
+// (drawCornerScaled, below the shelf). Every rect in this banner and the
+// shelf's stays in 1x space; a pointer is mapped back through the corner
+// anchor here before any hit test reads it, the way stripMouse does for the
+// strip, so a click can never land beside its pixel.
+function cornerMouse(mx, my) {
+  const s = hudSc();
+  if (s === 1) return { x: mx, y: my };
+  return { x: mx / s, y: my / s };
+}
+// What the pointer is on: { kind: 'tab' } (the arrow's band, always) | { kind:
+// 'cell', i } (a grid slot) | { kind: 'frame' } (anywhere else inside the
+// open drawer, swallowed and otherwise inert) | null. A drawer still moving
+// answers nothing but its tab. Shared by the click handler, the cursor and
+// the widget's own hover, so the three can never disagree.
 function bagHit(mx, my) {
-  if (state.mode !== 'play' || player.dead || state.paused ||
-      state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
-  const b = bagBtnRect();
-  if (mx >= b.x && mx < b.x + b.w && my >= b.y && my < b.y + b.h) return { kind: 'btn' };
-  if (!bagOpenNow()) return null;
+  if (!shelfUp()) return null;
+  ({ x: mx, y: my } = cornerMouse(mx, my));
+  const t = bagTabRect();
+  if (mx >= t.x && mx < t.x + t.w && my >= t.y && my < t.y + t.h) return { kind: 'tab' };
+  if (bagEase < 1) return null;
   const f = bagFrameRect();
   if (mx < f.x || mx >= f.x + f.w || my < f.y || my >= f.y + f.h) return null;
   for (let i = 0; i < player.bagCap; i++) {
@@ -848,12 +840,10 @@ function bagHit(mx, my) {
 // one left click on the widget; returns true if it was swallowed
 function bagClick(h) {
   if (!h) return false;
+  if (h.kind === 'tab') { state.bagOpen = !state.bagOpen; SFX.pickup(); return true; }
   if (h.kind === 'frame') return true; // the panel eats it; the world never sees it
-  if (h.kind === 'btn') { state.bagOpen = !state.bagOpen; SFX.pickup(); return true; }
-  const s = player.bag[h.i];
-  if (!s) { SFX.deny(); return true; }
-  if (CARD_TYPE_RARITY[s.type]) openDraft(CARD_TYPE_RARITY[s.type]);
-  else SFX.deny();
+  // a cell that a plain click could not send anywhere (sendAt tried first)
+  SFX.deny();
   return true;
 }
 
@@ -1099,74 +1089,8 @@ function dragDropBag(i) {
   else { state.drag = { cell: s, from: { k: 'bag', i } }; hudFx('swap', 'bag', i); }
   return true;
 }
-// opens the pick-1-of-3 draft for a rarity - a pure local UI state change,
-// like the pack toggle above, not a contest (only the local human ever
-// touches their own bag). Does NOT pause the sim: bag/map/wheel don't either.
-function openDraft(rarity) {
-  state.draft = { rarity, options: pick3Distinct(rarity) };
-  SFX.pickup();
-}
-const DRAFT_CW = 130, DRAFT_CH = 96, DRAFT_GAP = 10;
-function draftLayout() {
-  const w = DRAFT_CW * 3 + DRAFT_GAP * 2;
-  const x0 = Math.round((VIEW_W - w) / 2), y = Math.round((VIEW_H - DRAFT_CH) / 2);
-  const cards = [];
-  for (let i = 0; i < 3; i++) cards.push({ x: x0 + i * (DRAFT_CW + DRAFT_GAP), y, w: DRAFT_CW, h: DRAFT_CH });
-  return cards;
-}
-function draftHit(mx, my) {
-  if (!state.draft) return -1;
-  const cards = draftLayout();
-  for (let i = 0; i < cards.length; i++) {
-    const r = cards[i];
-    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return i;
-  }
-  return -1;
-}
-// a card picks it - bagTake, push onto p.cards, refreshKit, exactly the
-// storage/kit halves the plan calls for; anywhere else just closes the
-// draft. Either way the click never reaches the world (see mousedown).
-function draftClick() {
-  const d = state.draft;
-  const i = draftHit(mouse.x, mouse.y);
-  if (i >= 0) {
-    const id = d.options[i];
-    bagTake(player, cardKey(d.rarity), 1);
-    player.cards.push({ rarity: d.rarity, id });
-    refreshKit(player);
-    addFloater(player.x, player.y - 18, CARDS[d.rarity][id].name, RES_COLORS[cardKey(d.rarity)]);
-    SFX.levelUp();
-  }
-  state.draft = null;
-}
-// bots skip this UI entirely - see resolveCardForBot in the ai banner
-function renderDraft() {
-  const d = state.draft;
-  ctx.fillStyle = 'rgba(6,10,24,0.72)';
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  const cards = draftLayout();
-  const col = RES_COLORS[cardKey(d.rarity)];
-  const hit = draftHit(mouse.x, mouse.y);
-  const title = d.rarity.toUpperCase() + ' CARD - CHOOSE ONE';
-  drawPixelTextShadow(ctx, title, Math.round((VIEW_W - pixelTextWidth(title, 2)) / 2), cards[0].y - 16, col, '#0a0e23', 2);
-  for (let i = 0; i < cards.length; i++) {
-    const r = cards[i], hot = hit === i;
-    const lift = hot ? 2 : 0;
-    const x = r.x, y = r.y - lift, w = r.w, h = r.h;
-    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 2, r.y + 2, w, h);
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, w, h);
-    ctx.fillStyle = hot ? '#1f2b5c' : '#141c3c'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-    ctx.fillStyle = col;
-    ctx.fillRect(x + 2, y + 1, w - 4, 1); ctx.fillRect(x + 1, y + 2, 1, h - 4);
-    ctx.fillRect(x + 2, y + h - 2, w - 4, 1); ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
-    const card = CARDS[d.rarity][d.options[i]];
-    ctx.drawImage(SPRITES[ITEMS[cardKey(d.rarity)].icon], x + Math.round(w / 2) - 4, y + 10);
-    drawPixelTextShadow(ctx, card.name, x + Math.round((w - pixelTextWidth(card.name)) / 2), y + 26, hot ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-    drawPixelTextShadow(ctx, card.blurb, x + Math.round((w - pixelTextWidth(card.blurb)) / 2), y + 40, '#9fb6d8', '#0a0e23');
-  }
-}
 // One cell, and the reason nothing in here is bigger than anything else:
-// grid slots, gear plates and the pack button all come out of this. Returns
+// grid slots and gear plates all come out of this. Returns
 // the y it actually drew at, since a hover lift shifts it.
 function bagCellPlate(r, rim, inner, lift) {
   const y = r.y - (lift ? 1 : 0);
@@ -1176,52 +1100,6 @@ function bagCellPlate(r, rim, inner, lift) {
   ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
   return y;
 }
-
-// ---- the pack icon: a 20px rucksack, baked once --------------------------
-// The button is the whole widget while the pack is shut, so the old 12px
-// item sprite is not enough icon for it: this is a proper leather rucksack -
-// rolled flap with a gold buckle, stitched hem, two side pockets - drawn at
-// the strip icons' detail level and centred on the 26px button plate.
-const BAG_ICON = [
-  '.....oooo...oooo....',
-  '....os..o...o..so...',
-  '....os.oooooo..so...',
-  '...os.owwwwwwo.so...',
-  '...osowhhwwhhwoso...',
-  '..osowwwwwwwwwwoso..',
-  '..osowwwwwwwwwwoso..',
-  '..oootttttttttoooo..',
-  '..owwwwwwggwwwwwwo..',
-  '..owwwwwwgGwwwwwwo..',
-  '.owuowwwwwwwwwwouwo.',
-  '.owuowwwwwwwwwwouwo.',
-  '.owuowwwwwwwwwwouwo.',
-  '.owuowwwwwwwwwwouwo.',
-  '.owwowwttttttwwowwo.',
-  '.owwowwwwwwwwwwowwo.',
-  '..oowwwwwwwwwwwwoo..',
-  '...owwwwwwwwwwwwo...',
-  '...ouuuuuuuuuuuuo...',
-  '....oooooooooooo....',
-];
-const BAG_ICON_PAL = {
-  o: '#141a2c', w: '#a8794a', u: '#6e4a28', h: '#c49a6a',
-  t: '#e8dcb4', g: '#f2cc6a', G: '#b98a2e', s: '#5f6f96',
-};
-const bagIconCv = (() => {
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = 20;
-  const g = cv.getContext('2d');
-  for (let r = 0; r < BAG_ICON.length; r++) {
-    for (let c = 0; c < BAG_ICON[r].length; c++) {
-      const col = BAG_ICON_PAL[BAG_ICON[r][c]];
-      if (!col) continue;
-      g.fillStyle = col;
-      g.fillRect(c, r, 1, 1);
-    }
-  }
-  return cv;
-})();
 
 // ---- the character panel (G) ---------------------------------------------
 // WoW's C key, at this game's size: one slab, sim running live behind it.
@@ -1412,14 +1290,10 @@ function drawFoodClock(x, y, w, h, type) {
 // plain click's own move (hudRelease), and while carrying something it is
 // sendAt, which spends the click on this well and leaves the hand loaded. The
 // verb reads the same either way, because the well's item goes the same way.
-// A card gets no plate: drafting is not a transfer, and a plate over it would
-// promise a move that does not exist.
 function shiftVerb(mx, my) {
   if (!mouse.inside || player.dead) return null;
   const fh = shelfHit(mx, my);    // the same wells, in the same order, sendAt tries
   if (fh) return (fh.kind === 'bit' ? shelfCell().bits[fh.i] : shelfCell()) ? 'STOW' : null;
-  const sh = stripHit(mx, my);
-  if (sh) return sh.kind === 'slot' && player.tools[sh.i] ? 'STOW' : null;
   const bh = bagHit(mx, my);
   if (!bh || bh.kind !== 'cell') return null;
   const s = player.bag[bh.i];
@@ -1429,44 +1303,34 @@ function shiftVerb(mx, my) {
 function drawShiftHint() {
   const verb = shiftVerb(mouse.x, mouse.y);
   if (!verb) return;
-  // over the pack's top-right corner, whether it is the open frame or the
-  // shut button - clear of the grid it is about, and of the shelf over it
-  const totalW = promptW(verb, 'slide');
-  // clear of the SHELF, rails and all - the plate hangs over the whole corner
-  // widget, and a fitting's rail must never grow up through it
-  const top = shelfUp() ? shelfTopY() : bagOpenNow() ? bagFrameRect().y : bagBtnRect().y;
-  drawKeyPrompt(VIEW_W - 2 - totalW, top - 12, verb, keyHeld('slide'), 'slide');
+  // off the shelf row's right end, level with its cells - clear of the
+  // rails above the row and of the drawer below it
+  drawKeyPrompt(shelfRowRight() + 5, shelfRowY() + 12, verb, keyHeld('slide'), 'slide');
 }
 
 function drawBag(now) {
-  if (player.dead) return;
+  if (!shelfUp()) return;
   const hov = mouse.inside ? bagHit(mouse.x, mouse.y) : null;
-  const red = bagFlash > 0;
-  const open = bagOpenNow();
-  ctx.save();
-  // inward only: a ±1 shake on a flush right edge would clip a column of rim
-  ctx.translate(red ? (((now * 40) | 0) % 2 ? -1 : 0) : 0, 0);
-  // The button, shut and open alike: hover lights the rim, open keeps it lit,
-  // a bag with no free cell wears amber whatever the pointer is doing, and a
-  // refusal reddens it - the button is the whole widget while the pack is
-  // shut, so every state the frame used to carry lives on it too.
-  const btn = bagBtnRect();
-  const onBtn = hov && hov.kind === 'btn';
-  const full = bagUsed(player) >= player.bagCap;
-  ctx.fillStyle = red ? '#c2465a' : onBtn || open ? '#8fa0c8' : full ? '#c9922f' : '#35426e';
-  ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-  ctx.fillStyle = red ? BAG_BG_RED : open ? '#182350' : BAG_WELL;
-  ctx.fillRect(btn.x + 1, btn.y + 1, btn.w - 2, btn.h - 2);
-  ctx.drawImage(bagIconCv, btn.x + 3, btn.y + 3);
-  if (open) {
-    // The frame, off the button's top edge. No cast shadow: it is hard
-    // against the screen's right edge, and the cells already carry the depth.
+  const red = bagFlash > 0, full = bagUsed(player) >= player.bagCap, open = bagOpenNow();
+  const shake = red ? (((now * 40) | 0) % 2 ? -1 : 1) : 0;
+  const t = bagTabRect();
+  // THE DRAWER, sliding out from under the tab: clipped to the screen below
+  // the tab's bottom edge, so it emerges rather than fades. The strip's own
+  // chrome (drawHudFrame), every corner cut and no snow cap - it lives under
+  // the shelf, not under the sky. No cast shadow: the cells already carry
+  // the depth. The light says the one state the grid cannot: amber means no
+  // cell is left free, and a refusal reddens line and light both.
+  if (bagEase > 0) {
     const f = bagFrameRect();
-    ctx.fillStyle = red ? BAG_BG_RED : BAG_BG; // one opaque ground for the whole widget
-    ctx.fillRect(f.x, f.y, f.w, f.h);
-    ctx.fillStyle = red ? '#c2465a' : '#2c3a68';
-    ctx.fillRect(f.x, f.y, f.w, 1); ctx.fillRect(f.x, f.y + f.h - 1, f.w, 1);
-    ctx.fillRect(f.x, f.y, 1, f.h); ctx.fillRect(f.x + f.w - 1, f.y, 1, f.h);
+    const lift = Math.round((1 - easeOut(bagEase)) * (f.h + 3));
+    ctx.save();
+    ctx.beginPath(); ctx.rect(-8, t.y + t.h + 1, VIEW_W + 16, VIEW_H); ctx.clip();
+    ctx.translate(shake, -lift);
+    drawHudFrame(f.x, f.y, f.w, f.h, {
+      bg: red ? BAG_BG_RED : BAG_BG, ink: red ? '#7a2436' : null,
+      lit: red ? '#c2465a' : full ? '#c9922f' : null,
+      corners: { tl: false, tr: true, bl: false, br: true }, cap: false, seed: 47, // flush left: only the free corners cut
+    });
     for (let i = 0; i < player.bagCap; i++) {
       const r = bagCellRect(i), s = player.bag[i];
       const on = hov && hov.kind === 'cell' && hov.i === i;
@@ -1486,8 +1350,8 @@ function drawBag(now) {
       // right corner without its outline eating the cell's own rim
       drawItemIcon(s.type, r, y - 2);
       if (s.n > 1) { // a lone item needs no '1' on it - an empty corner says it
-        const t = String(s.n);
-        drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), y + 10, '#f4f7ff', '#0f1632');
+        const n = String(s.n);
+        drawPixelTextOutline(ctx, n, r.x + r.w - 3 - pixelTextWidth(n), y + 10, '#f4f7ff', '#0f1632');
       }
       // a loaded tool counts its bits in the corner the stack number would
       // have used, so a full build is told apart from a bare body in the grid
@@ -1500,17 +1364,35 @@ function drawBag(now) {
       // ...and last, over everything in it: the pulse a cell wears for a
       // beat after something landed there, in the colour of what happened
       drawWellLit(wl, 'bag', i);
-      // Food answers to one shared clock (FOOD_CD, js/core.js), so it wipes
     }
+    ctx.restore();
   }
-  ctx.restore();
+  // THE ARROW: the drawer's handle, a plain small chevron under the tool
+  // cell with no plate behind it - white, rimmed a pixel dark so it reads on
+  // snow the way every mark over the world does - pointing the way the
+  // drawer will go, down to open and up to shut. Nothing moves: its colour is
+  // its only state - gold under the pointer, amber when no cell is free, red
+  // on a refusal - so it stays the quietest thing in the corner.
+  const onTab = hov && hov.kind === 'tab';
+  const col = red ? '#e0637a' : onTab ? '#ffd95c' : full ? '#c9922f' : '#f4f7ff';
+  const ax = t.x + (t.w >> 1), ay = t.y + 2; // the arrow's centre column and top row
+  const stamp = (ox, oy, c) => {
+    ctx.fillStyle = c;
+    for (let d = 0; d < 4; d++) {
+      const yy = (open ? ay + 3 - d : ay + d) + oy;
+      ctx.fillRect(ax - 3 + d + ox, yy, 1, 1);
+      ctx.fillRect(ax + 3 - d + ox, yy, 1, 1);
+    }
+  };
+  for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (ox || oy) stamp(ox, oy, '#0f1632');
+  stamp(0, 0, col);
   drawShiftHint(); // outside the refusal shake: the plate is not what refused
 }
 
-// ---- hud strip: the weapon and ability wells over the xp bar, bottom-centre
-// One opaque plate. Five wells on top: the WEAPON first on the left - the
-// tool the button fires - with the four class abilities following in key
-// order 1-4; under them the plum xp bar (xp IS lifetime gold), notched into
+// ---- hud strip: the ability wells over the xp bar, bottom-centre --------
+// One opaque plate. Four wells on top - the class abilities in key order
+// 1-4 (the WEAPON left the strip for the shelf, top-left, in 3.23: one tool,
+// read in one place); under them the plum xp bar (xp IS lifetime gold), notched into
 // AB_SEGS segments so progress through a level is countable at a glance. The
 // bar sits at the BOTTOM so the strip's top edge is open screen: that is
 // where an affordable ability level floats its buy plate (abBuyRect below),
@@ -1536,7 +1418,7 @@ function drawBag(now) {
 // ALWAYS HERE: food is a pouch and not a bag stack (the `inventory` banner,
 // js/player.js), so these two buttons are the whole of where a berry and a
 // fish are read and pressed, and the counts on them are uncapped - hence
-// FOOD_W, wide enough for shortNum's four characters beside the icon.
+// shortNum, four characters at most in a square's corner.
 //
 // And flush on the strip's top edge over that column, THE PURSE: the coin and
 // the gold behind it, on screen for the whole match. Money is the number a
@@ -1545,15 +1427,103 @@ function drawBag(now) {
 // only with the pack open. It is a tab of the strip rather than a bar of its
 // own so it slides in with the HUD, scales with it, and stays one glance from
 // the meals and the abilities it is spent on.
-const AB_CELL = 34, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well; AB_N: abilities
-const FOOD_CELL = 16; // a meal button's height; 2 * FOOD_CELL + AB_GAP = AB_CELL
-const FOOD_W = 40;    // ...and its width: the key cap, the 8px icon and a 4-char count
-const FOOD_ICON_X = 13; // the icon is PINNED, so a count that grows never shifts it
-const PURSE_H = 11;   // the tab over that column: an 8px coin with a pixel of air
-const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + FOOD_W;
-const AB_PAD = 2, AB_XP = 5, AB_SEGS = 10; // AB_SEGS: xp bar notches
+const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
+// THE POUCH BLOCK, the strip's right end: the four numbers you own in a 2x2
+// of SQUARES - berry over fish on the left, gold over cards on the right
+// (3.23). Every cell is the ability wells' own grammar at two thirds the
+// size: the doubled icon in the middle, the key cap in the bottom-left corner
+// (the carve-out; the gold has none) and the count in the top-right, so
+// the block reads as four stamps and not as four bars. It is TALLER than a
+// well: two squares and their gap stand POUCH_RISE px above the strip's top
+// edge on a tab of the strip's own plate, its bottom flush with the wells'.
+const FOOD_SQ = 24;                          // a pouch cell: a square
+const POUCH_GAP = 2;                         // between neighbouring squares
+const POUCH_W = FOOD_SQ * 2 + POUCH_GAP;     // the block: two columns...
+const POUCH_H = POUCH_W;                     // ...and two rows
+const AB_W = AB_N * AB_CELL + AB_N * AB_GAP + POUCH_W; // four wells, four gaps, the pouch block
+const AB_PAD = 3, AB_XP = 5, AB_SEGS = 10; // AB_PAD: the frame's outline, its lit line and one px of ground (drawHudFrame); AB_SEGS: xp bar notches
 const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
+const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
 const AB_BG = '#0d1229';
+// ---- the hud frame: the one plate the bottom widgets stand on ----------
+// The strip and the pack are the frostlands' own chrome, at a combat
+// surface's volume: the settings slab's chamfered corners and bevel
+// (bakeFrostSlab, js/panels.js) and the menu planks' snow cap
+// (drawMenuButton, js/menu.js), with none of their mottling, rivets or
+// icicles - the wells cover most of the ground, and a plate that is looked
+// at for an hour has to stay quiet. Four layers, all pixels, nothing soft:
+//   * the SILHOUETTE, one dark line (the xp bar's own ink) with its top
+//     corners cut two pixels, so the plate sits on the snow as a shape and
+//     not a rectangle - the bottom corners stay square where they meet the
+//     screen's edge, since a notch of world there reads as a hole;
+//   * the GROUND inside it, one opaque colour;
+//   * the BEVEL: an icy line along the top and left, a deep one along the
+//     bottom and right, the slab's light from the top-left;
+//   * the SNOW CAP: a ragged one-to-two pixel drift resting on every top
+//     edge, with a frost pixel here and there sunk into the lit line under
+//     it - deterministic (hash2 off the seed), so it never shimmers.
+// `tab` is a block rising off the top edge and flush with the right side
+// (the pouch block's): the outline steps up around it as ONE silhouette,
+// the ground runs through the seam, and the lit line turns the inside
+// corner rather than stopping at it. `lit` and `ink` are what a widget's
+// state colours (the pack's full amber, a refusal's red). Every margin
+// inside the outline is three pixels - line, light, ground - which is what
+// AB_PAD and BAG_PAD are.
+const HUD_INK = '#05070f';   // the silhouette
+const HUD_LIT = '#35426e';   // the icy light along the top and left
+const HUD_SHADE = '#070a18'; // the shade along the bottom and right
+const HUD_SNOW = '#f4f7ff', HUD_FROST = '#b8cce6';
+// a rect with its corners cut two pixels where `c` says so
+function chamCut(x, y, w, h, c) {
+  ctx.fillRect(x + 2, y, w - 4, h);
+  ctx.fillRect(x, y + 2, w, h - 4);
+  ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+  if (!c.tl) { ctx.fillRect(x, y, 2, 1); ctx.fillRect(x, y + 1, 1, 1); }
+  if (!c.tr) { ctx.fillRect(x + w - 2, y, 2, 1); ctx.fillRect(x + w - 1, y + 1, 1, 1); }
+  if (!c.bl) { ctx.fillRect(x, y + h - 1, 2, 1); ctx.fillRect(x, y + h - 2, 1, 1); }
+  if (!c.br) { ctx.fillRect(x + w - 2, y + h - 1, 2, 1); ctx.fillRect(x + w - 1, y + h - 2, 1, 1); }
+}
+function drawHudFrame(x, y, w, h, o) {
+  o = o || {};
+  const c = o.corners || { tl: true, tr: true, bl: false, br: false };
+  const t = o.tab || null, tc = { tl: true, tr: true, bl: false, br: false };
+  const ink = o.ink || HUD_INK, lit = o.lit || HUD_LIT, shade = o.shade || HUD_SHADE, seed = (o.seed || 1) * 13;
+  // the silhouette, then the ground - the tab's run down INTO the plate so
+  // the seam between the two is ground, never line
+  ctx.fillStyle = ink;
+  chamCut(x, y, w, h, c);
+  if (t) chamCut(t.x, t.y, t.w, y - t.y + 3, tc);
+  ctx.fillStyle = o.bg || AB_BG;
+  chamCut(x + 1, y + 1, w - 2, h - 2, c);
+  if (t) chamCut(t.x + 1, t.y + 1, t.w - 2, y - t.y + 2, tc);
+  // the bevel: light from the top-left, shade to the bottom-right; with a
+  // tab the top light runs to the inside corner and climbs it
+  ctx.fillStyle = lit;
+  if (t) {
+    ctx.fillRect(x + 2, y + 1, t.x - x - 1, 1);
+    ctx.fillRect(t.x + 1, t.y + 2, 1, y - t.y);
+    ctx.fillRect(t.x + 2, t.y + 1, t.w - 4, 1);
+  } else ctx.fillRect(x + 2, y + 1, w - 4, 1);
+  ctx.fillRect(x + 1, y + 2, 1, h - 4);
+  ctx.fillStyle = shade;
+  ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
+  const rt = t ? t.y + 2 : y + 2;
+  ctx.fillRect(x + w - 2, rt, 1, y + h - 2 - rt);
+  // the snow cap, on every top edge the sky can reach
+  if (o.cap !== false) {
+    const segs = t ? [[x + 2, t.x - 1, y], [t.x + 2, t.x + t.w - 3, t.y]] : [[x + 2, x + w - 3, y]];
+    const tall = o.cap === 1 ? 0 : 1; // a one-px cap for an edge something already stands on
+    for (const [x0, x1, top] of segs) {
+      for (let px = x0; px <= x1; px++) {
+        const hb = hash2(px * 3 + 5, seed);
+        const sh = 1 + (hb > 0.6 ? tall : 0);
+        ctx.fillStyle = HUD_SNOW;
+        ctx.fillRect(px, top - sh, 1, sh);
+        if (hb > 0.3 && hb < 0.42) { ctx.fillStyle = HUD_FROST; ctx.fillRect(px, top + 1, 1, 1); }
+      }
+    }
+  }
+}
 // The weapon well's half of the refusal the backpack already has: a bit that
 // will not fit in the tool reddens and shakes the WELL, exactly as one that
 // will not fit in the pack reddens and shakes the frame (bagDenied) - so the
@@ -1568,10 +1538,10 @@ function toolDenied() {
 function hudStripRect() {
   return { x: Math.round((VIEW_W - AB_W) / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
 }
-// How far the strip drops to be AWAY: its own height plus the purse tab
-// standing on it, so the whole widget clears the bottom edge rather than
-// leaving a sliver of tab over a cinematic.
-const HUD_SLIDE = AB_H + PURSE_H;
+// How far the strip drops to be AWAY: its own height plus the pouch block's
+// tab standing over it, so the whole widget clears the bottom edge rather
+// than leaving a sliver of tab over a cinematic.
+const HUD_SLIDE = AB_H + POUCH_RISE + 5; // ...its outline, and the snow on top of it
 // How far the HUD has slid in: 0 while it is away below the screen, 1 once it
 // is home. The intro rides it up (renderUI) - and a ceremony PINS it there,
 // because the drop brief's camera branch holds state.intro for the whole
@@ -1592,33 +1562,48 @@ function hudHome() { return hudInT() >= 1; }
 // a phone keeps a HUD SIZE of its own (hudScaleM): the same slider edits
 // whichever is live, so a profile that plays on both keeps both
 function hudScaleKey() { return MOBILE ? 'hudScaleM' : 'hudScale'; }
-function hudSc() { return settings[hudScaleKey()] || 0.8; }
+// The size the HUD is actually drawn at: the dial, CAPPED at the size where
+// the strip would outgrow the view, so past that point the slider simply
+// stops growing it rather than pushing its ends off the screen.
+function hudSc() {
+  const want = settings[hudScaleKey()] || 0.8;
+  return Math.min(want, (VIEW_W - 8) / (AB_W + 6));
+}
 function stripMouse(mx, my) {
   const s = hudSc();
   if (s === 1) return { x: mx, y: my };
   return { x: VIEW_W / 2 + (mx - VIEW_W / 2) / s, y: VIEW_H + (my - VIEW_H) / s };
 }
-// well j of the five, left to right, over the xp bar
+// well j of the four, left to right, over the xp bar
 function stripCellRect(j) {
   const R = hudStripRect();
   return { x: R.x + j * (AB_CELL + AB_GAP), y: R.y + AB_PAD, w: AB_CELL, h: AB_CELL };
 }
-// the ONE weapon well, the strip's left end (i is kept so the drag plumbing
-// stays generic over slots)
-function toolCellRect(i) { return stripCellRect(i); }
-// ability i's well: keys 1-4, in order to the weapon's right
-function abCellRect(i) { return stripCellRect(1 + i); }
-// meal button i (0 the berry over 1 the fish), the strip's right end
-const FOOD_BTNS = [{ type: 'berry', act: 'berry' }, { type: 'fish', act: 'fish' }]; // the meal, and the action whose key its cap prints
-function foodCellRect(i) {
+// ability i's well: keys 1-4, in order from the strip's left end
+function abCellRect(i) { return stripCellRect(i); }
+// pouch cell (col, row) of the 2x2 block: col 0 the meals, col 1 gold and cards
+function pouchCellRect(col, row) {
   const R = hudStripRect();
-  return { x: R.x + AB_W - FOOD_W, y: R.y + AB_PAD + i * (FOOD_CELL + AB_GAP), w: FOOD_W, h: FOOD_CELL };
+  return { x: R.x + AB_W - POUCH_W + col * (FOOD_SQ + POUCH_GAP),
+    y: R.y + AB_PAD + AB_CELL - POUCH_H + row * (FOOD_SQ + POUCH_GAP), w: FOOD_SQ, h: FOOD_SQ };
 }
-// the purse tab, flush on the strip's top rim over the meal column
-function pursePlateRect() {
-  const R = hudStripRect();
-  return { x: R.x + AB_W - FOOD_W, y: R.y - PURSE_H, w: FOOD_W, h: PURSE_H };
+// the tab the block stands on: the strip's plate carried up behind the two
+// rows, a rim's width around them, down to the strip's own top edge
+function pouchTabRect() {
+  const R = hudStripRect(), b = pouchCellRect(0, 0);
+  return { x: b.x - 3, y: b.y - 3, w: POUCH_W + 6, h: R.y - b.y + 3 };
 }
+// the three BUTTONS of the block, in stripHit's 'food' order: the berry (0)
+// over the fish (1) on the left, the cards (2) bottom-right; the gold plate
+// top-right is a readout and answers 'frame'. Each carries the action whose
+// key its cap prints and the input intent its press sets.
+const FOOD_BTNS = [
+  { type: 'berry', act: 'berry', intent: 'eatBerry', col: 0, row: 0 },
+  { type: 'fish', act: 'fish', intent: 'eatFish', col: 0, row: 1 },
+  { type: 'card', act: 'card', intent: 'useCard', col: 1, row: 1 },
+];
+function foodCellRect(i) { const b = FOOD_BTNS[i]; return pouchCellRect(b.col, b.row); }
+function goldCellRect() { return pouchCellRect(1, 0); }
 // The meal buttons' share of that refusal: a press that could not become a
 // meal - nothing in the bag, the clock still up, full health, a busy body -
 // reddens and shakes the button that was asked, in the red the well and the
@@ -1629,7 +1614,7 @@ function pursePlateRect() {
 // updateFx ages it on wall time beside bagFlash and toolFlash.
 let foodFlash = 0, foodFlashI = 0;
 function foodDenied(type) {
-  const i = type === 'fish' ? 1 : 0;
+  const i = type === 'fish' ? 1 : type === 'card' ? 2 : 0;
   if (foodFlash > 0 && foodFlashI === i) return;
   foodFlash = 0.6;
   foodFlashI = i;
@@ -1674,7 +1659,7 @@ function abBuyHit(mx, my) {
   }
   return -1;
 }
-// { kind:'slot', i } | { kind:'ab', i } | { kind:'food', i } | { kind:'frame' }
+// { kind:'ab', i } | { kind:'food', i } | { kind:'frame' }
 // | null. Shared by the click handler, the cursor and the strip's own hover
 // so they cannot disagree.
 function stripHit(mx, my) {
@@ -1682,16 +1667,10 @@ function stripHit(mx, my) {
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
   ({ x: mx, y: my } = stripMouse(mx, my));
   const R = hudStripRect();
-  // the purse tab: opaque HUD, so it swallows its own clicks the way the rest
-  // of the strip's plate does - a readout is not a button, but it is not a
-  // hole through to the snow either
-  const pr = pursePlateRect();
-  if (mx >= pr.x && mx < pr.x + pr.w && my >= pr.y && my < pr.y + pr.h) return { kind: 'frame' };
-  if (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h) return null;
-  for (let i = 0; i < TOOL_SLOTS; i++) {
-    const s = toolCellRect(i);
-    if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'slot', i };
-  }
+  // the pouch block's tab stands above the plate: inside it counts as on the strip
+  const tb = pouchTabRect();
+  const onTab = mx >= tb.x && mx < tb.x + tb.w && my >= tb.y && my < tb.y + tb.h;
+  if (!onTab && (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h)) return null;
   for (let i = 0; i < AB_N; i++) {
     const s = abCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'ab', i };
@@ -1704,26 +1683,33 @@ function stripHit(mx, my) {
 }
 
 // ---- the weapon shelf ----------------------------------------------------
-// THE BUILD IS ON SCREEN AT ALL TIMES, on the backpack's top edge: the tool at
-// the left end and its bit cells running right in FIRING ORDER - which is also
-// the direction a fitting reaches along, so the row reads the way the press
-// resolves. It used to rise out of the strip's weapon well on hover, and a
-// build you had to hold the pointer still to see was a build nobody looked at;
-// here it sits in the one corner already about carried things, a cell away
-// from the pack it is loaded out of.
+// THE ONE WEAPON, TOP-LEFT, ON SCREEN AT ALL TIMES (3.23): the tool in hand
+// at the left end and its bit cells running right in FIRING ORDER - which is
+// also the direction a fitting reaches along, so the row reads the way the
+// press resolves. It is the whole of what the HUD says about the arsenal -
+// the strip lost its weapon well, and everything else carried is in the
+// drawer under this row, shut until asked for (the backpack banner, above) -
+// so one tool is read in one place, the way Noita's wand or Terraria's held
+// item is.
 //
-// It is NOT a panel. Bare wells with their own drop shadows, exactly as the
-// risen column was, so the corner stays world everywhere between them and only
-// a cell itself ever swallows a click.
+// It is NOT a panel. Bare wells with their own drop shadows, so the corner
+// stays world everywhere between them and only a cell itself ever swallows
+// a click.
 //
-// Pinned by its BOTTOM to the pack (the open frame's top edge, or the shut
-// button's) and grown upward: the budget track and the row keep their pixels
-// whatever the build does, and a fitting's rail is what climbs into the open
-// screen above them.
-const SHELF_CELL = 16, SHELF_GAP = 2; // a well, and the air between two
+// Pinned by its TOP to shelfRowY - under the sky on a desktop, under the
+// menu and zoom plates on a phone - and grown rightward from SHELF_X: the
+// budget track and the row keep their pixels whatever the build does, and a
+// fitting's rail is what climbs into the open screen above them.
+const SHELF_CELL = HUD_CELL, SHELF_GAP = 2; // a well (the one size), and the air between two
 const SHELF_BAR = 4;                  // the budget track, under the row
 const SHELF_RAIL = 3;                 // what one modifier's rail costs above it
 const SHELF_SLOT = 0;                 // the weapon slot it edits (TOOL_SLOTS is 1)
+const SHELF_X = BAG_PAD;              // the tool cell's left edge: the drawer's first cell sits under it, its frame flush with the view's edge
+function shelfRowY() { return MOBILE ? 44 : 18; } // the row's top: room for five rails above it, and on a phone for the plates
+// how far in from the left edge the corner widget can reach: the widest row
+// (a five-bit longbow) and the SHIFT plate off its end - what the intro
+// slide and the bake are sized by, so neither jumps when the tool changes
+const CORNER_REACH = SHELF_X + 6 * SHELF_CELL + 5 * SHELF_GAP + 80;
 // the tool the shelf is showing, or null with the weapon well empty
 function shelfCell() { return player.tools[SHELF_SLOT] || null; }
 // ...and whether the shelf is on screen and answering the pointer at all: the
@@ -1734,43 +1720,20 @@ function shelfUp() {
 }
 // how many wells the row is: the tool, and one per bit cell it has
 function shelfCells() { const c = shelfCell(); return (c ? c.bits.length : 0) + 1; }
-// THE ROW STEPS OVER THE STRIP RATHER THAN UNDER IT. The strip is the one HUD
-// piece the HUD SIZE dial scales, and at the top of its range the purse tab on
-// its right rim climbs into the corner a wide row stands in. What the next
-// press will fire is not a thing to read through a gold counter, so the shelf
-// lifts by exactly enough to clear the tab - which only ever happens at the
-// dial's largest sizes with a four- or five-cell tool.
-function shelfLift() {
-  const s = hudSc();
-  if (s <= 1) return 0;
-  const pr = pursePlateRect();
-  // where the tab's right edge and top land, through drawHudScaled's own map
-  const rx = VIEW_W / 2 - (VIEW_W / 2 - (pr.x + pr.w)) * s;
-  const ry = VIEW_H - (VIEW_H - pr.y) * s;
-  const n = shelfCells();
-  if (rx <= VIEW_W - BAG_PAD - n * SHELF_CELL - (n - 1) * SHELF_GAP) return 0; // clear of the row anyway
-  const bottom = (bagOpenNow() ? bagFrameRect().y : bagBtnRect().y) - 2;       // the budget track's underside
-  return Math.max(0, Math.ceil(bottom - ry + 1));
-}
-// Cell -1 is the TOOL and 0..cap-1 are its bits: one row, left to right, its
-// RIGHT end flush with the pack's grid below it. A bigger tool grows the row
-// leftward rather than shifting the corner it is read in, and only the widest
-// (a 5-cell longbow) reaches past the pack's own edge.
+// Cell -1 is the TOOL and 0..cap-1 are its bits: one row, left to right
+// from the corner. A bigger tool grows the row rightward, so the tool cell -
+// and the drawer's tab under it - never move.
 function shelfCellRect(i) {
-  const n = shelfCells(); // the tool leads the row
-  const k = i + 1;
-  const top = bagOpenNow() ? bagFrameRect().y : bagBtnRect().y;
-  return {
-    x: VIEW_W - BAG_PAD - (n - k) * SHELF_CELL - (n - 1 - k) * SHELF_GAP,
-    y: top - 2 - SHELF_BAR - 1 - SHELF_CELL - shelfLift(),
-    w: SHELF_CELL, h: SHELF_CELL,
-  };
+  return { x: SHELF_X + (i + 1) * (SHELF_CELL + SHELF_GAP), y: shelfRowY(), w: SHELF_CELL, h: SHELF_CELL };
 }
+// the row's right edge, where the SHIFT plate hangs
+function shelfRowRight() { const n = shelfCells(); return SHELF_X + n * SHELF_CELL + (n - 1) * SHELF_GAP; }
 // What the pointer is on: { kind: 'tool' } | { kind: 'bit', i } | null. The
 // gaps, the rails and the budget track are not hit tested - they say things,
 // they do not take anything, and the snow behind them stays clickable.
 function shelfHit(mx, my) {
   if (!shelfUp()) return null;
+  ({ x: mx, y: my } = cornerMouse(mx, my));
   const t = shelfCellRect(-1);
   if (mx >= t.x && mx < t.x + t.w && my >= t.y && my < t.y + t.h) return { kind: 'tool' };
   const cell = shelfCell();
@@ -1806,10 +1769,6 @@ function shelfRails(cell, plan) {
 // The top of everything the shelf draws: the row, and one rail for every
 // fitting that reaches a shot. Whatever hangs over the shelf (the pack's SHIFT
 // plate) clears THIS rather than the row, so a rail can never grow up into it.
-function shelfTopY() {
-  const cell = shelfCell(), row = shelfCellRect(-1).y;
-  return cell ? row - 3 - shelfRails(cell, toolPlan(cell)).length * SHELF_RAIL : row;
-}
 // A carried bit landing in bit cell i of slot s. One bit comes off the stack;
 // whatever it displaces goes home first (dragHome - the pack cell or the bit
 // cell this drag began in, which makes the drop a swap), then onto the
@@ -1862,7 +1821,7 @@ function dragDrop(mx, my) {
     return;
   }
   const sh = stripHit(mx, my);
-  if (sh) { if (sh.kind === 'slot') dragDropSlot(sh.i); else dragReturn(); return; }
+  if (sh) { dragReturn(); return; } // the strip takes nothing: the weapon's well is on the shelf
   const bh = bagHit(mx, my);
   if (bh) { if (bh.kind === 'cell') dragDropBag(bh.i); else dragReturn(); return; }
   if (overHud(mx, my)) { dragReturn(); return; }
@@ -1942,8 +1901,6 @@ function sendSlot(i) {
 function sendAt(mx, my) {
   const fh = shelfHit(mx, my);
   if (fh) return fh.kind === 'bit' ? sendBitCell(SHELF_SLOT, fh.i) : sendSlot(SHELF_SLOT);
-  const sh = stripHit(mx, my);
-  if (sh) return sh.kind === 'slot' && sendSlot(sh.i);
   const bh = bagHit(mx, my);
   if (bh) return bh.kind === 'cell' && sendBagCell(bh.i);
   return false;
@@ -1998,15 +1955,13 @@ function hudPress(mx, my) {
   const sh = stripHit(mx, my);
   if (sh) {
     if (sh.kind === 'ab') player.input.ability = sh.i; // click-to-cast: the well IS the key
-    else if (sh.kind === 'food') player.input[sh.i === 0 ? 'eatBerry' : 'eatFish'] = true; // the button IS the key, refusals and all (startEat)
-    else if (sh.kind === 'slot' && player.tools[sh.i]) state.dragPend = { src: { k: 'slot', i: sh.i }, x: mx, y: my };
-    else if (sh.kind === 'slot') state.dragPend = { src: { k: 'slot', i: sh.i }, x: mx, y: my, empty: true };
+    else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat / useCard)
     return true;
   }
   const bh = bagHit(mx, my);
   if (bh) {
     if (bh.kind === 'cell' && player.bag[bh.i]) state.dragPend = { src: { k: 'bag', i: bh.i }, x: mx, y: my };
-    else if (bh.kind !== 'cell') return bagClick(bh); // the pack button acts on the press
+    else if (bh.kind !== 'cell') return bagClick(bh); // the frame eats the press
     return true;
   }
   return false;
@@ -2028,7 +1983,7 @@ function hudMove(mx, my) {
 // itself on the well under the pointer and stays in hand (sendAt). An armed
 // press that never travelled is the click it always was, and that click is
 // the TRANSFER: the bag cell's own use (a bit into the weapon, a tool into
-// the hand, otherwise bagClick's eat/draft), the weapon well and a bit cell
+// the hand, otherwise bagClick's refusal), the weapon well and a bit cell
 // of the shelf both stowing what they hold in the pack.
 //
 // SHIFT sends too, in both hands: with an empty one it is the plain click
@@ -2183,13 +2138,16 @@ function drawOverWarn(r, y, now, g) {
 }
 
 // an item icon centred in a cell of any size (tools are 12x12, everything
-// else 8x8), so one call covers every well the two sizes share
-function drawItemIcon(type, r, y, g) {
+// else 8x8), so one call covers every well the two sizes share; k doubles it
+// for the HUD_CELL wells, where 1x art would swim
+function drawItemIcon(type, r, y, g, k) {
   const d = ITEMS[type];
   if (!d) return;
   const im = SPRITES[d.icon];
   if (!im) return;
-  (g || ctx).drawImage(im, r.x + ((r.w - im.width) >> 1), y + ((r.h - im.height) >> 1));
+  k = k || 1;
+  const w = im.width * k, h = im.height * k;
+  (g || ctx).drawImage(im, r.x + ((r.w - w) >> 1), y + ((r.h - h) >> 1), w, h);
 }
 
 // ---- drawing the strip, the shelf and the carried item -----------------
@@ -2260,55 +2218,6 @@ function drawSweepCover(x, y, w, h, frac, col, edge) {
   for (let s = 0; s <= end; s++) {
     ctx.fillRect(Math.floor(cx + hx * s), Math.floor(cy + hy * s), 1, 1);
   }
-}
-function drawToolCell(i, now, hov) {
-  const p = player;
-  const cell = p.tools[i];
-  const sel = p.toolSel === i;
-  const r = toolCellRect(i);
-  const dry = sel && !toolReady(p);
-  const tp = cell ? tierPlate(cell.type, hov) : { plate: BAG_WELL, rim: hov ? '#8fa0c8' : '#232c52' };
-  // "it does not fit in here": a red band all the way round the well and the
-  // pack's own 1px shake, so the two containers refuse in one language
-  const red = toolFlash > 0;
-  if (red) {
-    ctx.save();
-    ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
-    ctx.fillStyle = '#c2465a';
-    ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
-  }
-  // The rim is the TIER, quiet at rest and brightened to the tier's ink on
-  // hover - the four ability wells' own grammar. It used to go white and the
-  // whole well used to sit a pixel proud, as the tell for the SELECTED slot;
-  // there is one weapon slot (TOOL_SLOTS), so that highlight could never turn
-  // off, and a highlight that is always on is not a highlight - it just made
-  // the strip's left end shout over four wells that had something to say. A
-  // tool that cannot answer the button still goes red: the dry-bow tell is
-  // real news, and the only reason this well ever leaves its resting colour.
-  ctx.fillStyle = red ? '#c2465a' : dry ? '#7e3346' : tp.rim;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = dry ? '#241028' : tp.plate;
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  if (cell) {
-    tierShine(r, r.y, cell.type, now);
-    // the 12px tool art doubled: the weapon well leads the strip
-    // and reads at the ability icons' size, not the bag's
-    const im = ITEMS[cell.type] && SPRITES[ITEMS[cell.type].icon];
-    if (im) {
-      ctx.drawImage(im, r.x + ((r.w - im.width * 2) >> 1), r.y + 1 + ((r.h - im.height * 2) >> 1),
-        im.width * 2, im.height * 2);
-    }
-    // the SWEEP is the rate of fire, the same hand the ability wells turn
-    // (drawSweepCover above): a slow tool holds its well longer, and the two
-    // clocks a press waits on read in one shape
-    if (p.nockT > 0 && sel) {
-      drawSweepCover(r.x + 1, r.y + 1, r.w - 2, r.h - 2,
-        Math.min(1, p.nockT / Math.max(0.01, toolCycle(p))), CD_SWEEP, CD_EDGE);
-    }
-    // ...and the "!" when the build weighs more than one press can spend
-    if (toolOver(cell)) drawOverWarn(r, r.y, now);
-  }
-  if (red) ctx.restore();
 }
 // An ability well says everything without a word: the 32px icon is the
 // ability, a SWEEP round the well is its cooldown (drawSweepCover above - the
@@ -2425,11 +2334,38 @@ function drawAbBuyPlate(i, now, hot) {
 // rearranges; the click sets the same edge-trigger the key does and startEat
 // speaks every refusal - and the refused button wears the well's red band and
 // the pack's 1px shake for it (foodDenied).
-function drawFoodCell(i, now, on) {
-  const p = player, type = FOOD_BTNS[i].type;
-  const r = foodCellRect(i);
-  const n = bagCount(p, type);
-  const red = foodFlash > 0 && foodFlashI === i;
+// how many unopened cards the pouch holds, all rarities together
+function cardTotal(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
+// the card button's refusal: nothing to draw
+function cardDenied() { foodDenied('card'); }
+// THE CARD ICON: three cards fanned - white, green and blue, each a step up
+// and over from the last - baked once at 16x16, the size a doubled 8px item
+// icon draws at, so the four squares carry art of one size. Three different
+// colours, because the button holds every rarity at once and the fan is
+// what says "a hand" rather than "a card".
+const cardFanCv = (() => {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = 16;
+  const g = cv.getContext('2d');
+  const cards = [['#d9dfe8', '#8a94a8', 0, 5], ['#5fd18a', '#2f7a4b', 4, 2], ['#4a90e2', '#245390', 8, 0]];
+  for (const [face, edge, dx, dy] of cards) {
+    g.fillStyle = '#0a0e23'; g.fillRect(dx, dy, 8, 11);       // the rim
+    g.fillStyle = face; g.fillRect(dx + 1, dy + 1, 6, 9);      // the face
+    g.fillStyle = edge; g.fillRect(dx + 3, dy + 4, 2, 3);      // its pip
+  }
+  return cv;
+})();
+// ONE POUCH SQUARE, the block's whole grammar - the ability well's, smaller:
+// the icon doubled in the middle (a bake that is already 16px draws at 1x),
+// the key cap in the BOTTOM-LEFT corner, exactly where an ability well
+// prints its key (the pad's glyph while one is in hand), and the count in
+// the TOP-RIGHT, over the icon's corner if it has to be - so the eye reads
+// keys along the strip's bottom edge and numbers along its top.
+// All four wear the same rim, so the block is one symmetrical thing; on a
+// button (a meal, the cards) it lights on hover and reddens on a refusal,
+// and on the gold - a readout - it never does either, which with no key cap
+// in its corner is what says the one square you cannot press.
+function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
   if (red) {
     ctx.save();
     ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
@@ -2440,55 +2376,47 @@ function drawFoodCell(i, now, on) {
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const live = n > 0 && p.foodCd <= 0;
-  const lab = keyCapShort(FOOD_BTNS[i].act); // the meal's key, cut to the seat before the icon
-  if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 3, FOOD_BTNS[i].act, 1, !live); // the dpad arm the meal is on
-  else drawPixelTextOutline(ctx, lab, r.x + (lab.length > 2 ? 2 : 4), r.y + 6, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+  const k = icon.width <= 8 ? 2 : 1, iw = icon.width * k, ih = icon.height * k;
   if (n <= 0) ctx.globalAlpha = 0.35;
-  ctx.drawImage(SPRITES[ITEMS[type].icon], r.x + FOOD_ICON_X, r.y + 4);
+  ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
   ctx.globalAlpha = 1;
-  // right-aligned on the same edge the purse's gold uses, so the three
-  // numbers on this column read as one stacked tally
+  if (act) {
+    const lab = keyCapShort(act);
+    if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 8, act, 1, !live);
+    else drawPixelTextOutline(ctx, lab, r.x + 2, r.y + r.h - 8, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+  }
   const t = shortNum(n);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), r.y + 6,
-    n > 0 ? '#f4f7ff' : '#7a8bb8', '#0f1632');
-  drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, type);
+  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? col : '#7a8bb8', '#0f1632');
   if (red) ctx.restore();
 }
-// THE PURSE: the coin and the gold behind it, flush on the strip's top rim
-// over the meal column - the strip's own plate and rim, so it reads as a tab
-// of the widget rather than a bar parked over the world. Gold is inked
-// '#f5c542' here exactly as it was on the pack's old numbers row, because the
-// one number on the HUD that is money must never read as a count of something
-// carried. Uncapped, so it wears shortNum like the meals under it.
-function drawPurse() {
-  const r = pursePlateRect();
-  ctx.fillStyle = AB_BG;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = '#35426e';
-  ctx.fillRect(r.x, r.y, r.w, 1);          // the tab's own top edge...
-  ctx.fillRect(r.x, r.y + 1, 1, r.h - 1);  // ...and its sides, down onto the strip's rim
-  ctx.fillRect(r.x + r.w - 1, r.y + 1, 1, r.h - 1);
-  ctx.drawImage(SPRITES.itemGold, r.x + FOOD_ICON_X, r.y + 2);
-  const t = shortNum(inv.gold);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), r.y + 4, '#f5c542', '#0f1632');
+// a meal button, or the card button: the pouch grammar pointed at a thing
+// you press - the meals share the food clock, the cards have no clock
+function drawFoodCell(i, now, on) {
+  const p = player, b = FOOD_BTNS[i];
+  const r = foodCellRect(i);
+  const isCard = b.type === 'card';
+  const n = isCard ? cardTotal(p) : bagCount(p, b.type);
+  const red = foodFlash > 0 && foodFlashI === i;
+  const live = n > 0 && (isCard || p.foodCd <= 0);
+  drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now);
+  if (!isCard) drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, b.type);
+}
+// THE GOLD PLATE, top-right of the block: the coin and the gold, inked
+// '#f5c542' because the one number on the HUD that is money must never read
+// as a count of something carried. A readout, not a button - the same rim
+// as its three neighbours, but no key cap, no hover and no refusal.
+function drawGoldCell() {
+  drawPouchCell(goldCellRect(), null, SPRITES.itemGold, inv.gold, '#f5c542', false, false, true, 0);
 }
 function drawHudStrip(now) {
   const R = hudStripRect();
   const hov = mouse.inside ? stripHit(mouse.x, mouse.y) : null;
   const bhov = mouse.inside ? abBuyHit(mouse.x, mouse.y) : -1;
-  // one chamfered plate behind bar and wells - the bag's ground, so the
-  // two HUD pieces sit in the same family
-  ctx.fillStyle = AB_BG;
-  ctx.fillRect(R.x - 3, R.y, R.w + 6, R.h);
-  ctx.fillStyle = '#35426e';
-  ctx.fillRect(R.x - 2, R.y, R.w + 4, 1);
-  ctx.fillRect(R.x - 2, R.y + R.h - 1, R.w + 4, 1);
-  ctx.fillRect(R.x - 3, R.y + 1, 1, R.h - 2);
-  ctx.fillRect(R.x + R.w + 2, R.y + 1, 1, R.h - 2);
-  for (let i = 0; i < TOOL_SLOTS; i++) {
-    drawToolCell(i, now, hov && hov.kind === 'slot' && hov.i === i);
-  }
+  // one frame behind bar, wells and the pouch block's tab (drawHudFrame,
+  // above): the bag's ground and the bag's chrome, so the two HUD pieces
+  // sit in the same family
+  const tb = pouchTabRect();
+  drawHudFrame(R.x - 3, R.y, R.w + 6, R.h, { tab: { x: tb.x, y: tb.y, w: tb.w }, seed: 31 });
   for (let i = 0; i < AB_N; i++) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
     drawAbBuyPlate(i, now, bhov === i);
@@ -2496,7 +2424,7 @@ function drawHudStrip(now) {
   for (let i = 0; i < FOOD_BTNS.length; i++) {
     drawFoodCell(i, now, hov && hov.kind === 'food' && hov.i === i);
   }
-  drawPurse();
+  drawGoldCell();
   drawXpBar(now, R.x, R.y + AB_PAD + AB_CELL + AB_PAD);
 }
 // The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
@@ -2505,8 +2433,8 @@ function drawHudStrip(now) {
 // bottom-centre anchor - uictx's smoothing is off, so the art scales
 // nearest-neighbour instead of every fillRect going soft under a fractional
 // transform. The bake's headroom covers the buy plates' bob and the purse tab,
-// and nothing taller: the build moved off this widget onto the pack's own
-// shelf, which is drawn at 1x with the backpack it stands on.
+// and nothing taller: the build lives on the pack's own shelf, which scales
+// with the corner it stands in (drawCornerScaled).
 const HUD_BAKE_HEAD = 26;
 const hudScaleCv = document.createElement('canvas');
 const hudScaleCtx = hudScaleCv.getContext('2d');
@@ -2537,6 +2465,38 @@ function drawHudScaled(now, slideY) {
     Math.round(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
     Math.round(VIEW_H - (VIEW_H - by) * s) + slideY,
     Math.round(bw * s), Math.round(bh * s));
+}
+
+// THE CORNER - the shelf and the drawer under it - at the same HUD SIZE,
+// scaled about the TOP-LEFT corner so the tool cell stays put in it. The
+// same deal as drawHudScaled: at 1x straight to the frame, otherwise a 1x
+// bake blitted with smoothing off. The bake is sized to the widget's reach
+// (CORNER_REACH, the drawer's height) so nothing of it is left behind.
+const cornerScaleCv = document.createElement('canvas');
+const cornerScaleCtx = cornerScaleCv.getContext('2d');
+function drawCornerScaled(now, slideX) {
+  const s = hudSc();
+  if (s === 1) {
+    ctx.save();
+    ctx.translate(slideX, 0);
+    drawShelf(now);
+    drawBag(now);
+    ctx.restore();
+    return;
+  }
+  const f = bagFrameRect();
+  const bw = Math.max(CORNER_REACH, f.x + f.w + 4), bh = f.y + f.h + 6;
+  if (cornerScaleCv.width !== bw || cornerScaleCv.height !== bh) {
+    cornerScaleCv.width = bw; cornerScaleCv.height = bh;
+    cornerScaleCtx.imageSmoothingEnabled = false;
+  }
+  const o = ctx;
+  ctx = cornerScaleCtx;
+  ctx.clearRect(0, 0, bw, bh);
+  drawShelf(now);
+  drawBag(now);
+  ctx = o;
+  ctx.drawImage(cornerScaleCv, slideX, 0, Math.round(bw * s), Math.round(bh * s));
 }
 
 // ONE WELL OF THE SHELF: its drop shadow, the tier rim and the plate inside
@@ -2575,18 +2535,25 @@ function drawShelf(now) {
   const cell = shelfCell();
   const hov = mouse.inside ? shelfHit(mouse.x, mouse.y) : null;
   const hovBit = hov && hov.kind === 'bit' ? hov.i : -1;
-  // the tool leads the row, in the tier plate it wears in every other well -
-  // and it takes the weapon's refusal red (toolFlash) alongside the strip's,
-  // since this is the well the pointer is on when a bit will not fit
-  const t = shelfCellRect(-1), red = toolFlash > 0;
+  // the tool leads the row, in the tier plate it wears in every other well.
+  // This is the weapon's one well now, so it carries every tell the strip's
+  // used to: the refusal red (toolFlash) when a bit will not fit, the
+  // dry-bow red when the tool cannot answer the button, and the SWEEP - the
+  // rate of fire, the same hand the ability wells turn (drawSweepCover), so
+  // the two clocks a press waits on read in one shape
+  const p = player, t = shelfCellRect(-1), red = toolFlash > 0, dry = !!cell && !toolReady(p);
   ctx.save();
   if (red) ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
-  shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool', red ? '#c2465a' : null);
+  shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool', red ? '#c2465a' : dry ? '#7e3346' : null);
   if (cell) {
     tierShine(t, t.y, cell.type, now);
-    drawItemIcon(cell.type, t, t.y);
-    // the same "!" the strip's well and the pack's grid wear, in the one place
-    // the budget track below can say exactly where the press runs out
+    drawItemIcon(cell.type, t, t.y, null, 2);
+    if (p.nockT > 0) {
+      drawSweepCover(t.x + 1, t.y + 1, t.w - 2, t.h - 2,
+        Math.min(1, p.nockT / Math.max(0.01, toolCycle(p))), CD_SWEEP, CD_EDGE);
+    }
+    // the same "!" the pack's grid wears, in the one place the budget track
+    // below can say exactly where the press runs out
     if (toolOver(cell)) drawOverWarn(t, t.y, now);
     // ...and the tool's own share of the row flash: a press never lights this
     // cell, so a lit TOOL means one thing only - the body itself just changed
@@ -2650,11 +2617,11 @@ function drawShelf(now) {
       if (dead) ctx.globalAlpha = 0.45; // ...and it is washed out with it
       modPlate(bitType(id), r, r.y);
       tierShine(r, r.y, bitType(id), now);
-      drawItemIcon(bitType(id), r, r.y - 1); // a pixel up, clear of the pips
+      drawItemIcon(bitType(id), r, r.y - 2, null, 2); // up a little, clear of the pips
       // WEIGHT, as pips, on both kinds - a fitting costs the press what a
       // shot does, and the hatched plate is what says which kind it is
       ctx.fillStyle = dead ? '#e0637a' : '#f2cc6a';
-      for (let k = 0; k < b.weight && k < 8; k++) ctx.fillRect(r.x + 1 + k * 2, r.y + r.h - 3, 1, 2);
+      for (let k = 0; k < b.weight && k < 8; k++) ctx.fillRect(r.x + 2 + k * 4, r.y + r.h - 5, 2, 3);
       ctx.globalAlpha = 1;
     }
     const lit = bitLitAt(cell, i);
@@ -2709,17 +2676,20 @@ function drawShelf(now) {
 // drag actually aims at.
 function drawDropPromise() {
   if (!state.drag || !mouse.inside || shopHit(mouse.x, mouse.y)) return;
+  // the ring is painted in screen space after the corner's bake, so a 1x
+  // rect of the shelf or the drawer is mapped through the HUD SIZE first
+  const k = hudSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
   const fh = shelfHit(mouse.x, mouse.y);
   if (fh) {
-    if (fh.kind === 'bit') drawDropRing(shelfCellRect(fh.i), dropKindBit(SHELF_SLOT, fh.i));
-    else drawDropRing(shelfCellRect(-1), dropKindSlot(SHELF_SLOT));
+    if (fh.kind === 'bit') drawDropRing(sc(shelfCellRect(fh.i)), dropKindBit(SHELF_SLOT, fh.i));
+    else drawDropRing(sc(shelfCellRect(-1)), dropKindSlot(SHELF_SLOT));
     return;
   }
   const bh = bagHit(mouse.x, mouse.y);
   if (!bh || bh.kind !== 'cell') return;
   const r = bagCellRect(bh.i);
   if (player.bag[bh.i]) r.y -= 1; // a hovered FULL cell's plate lifts a pixel; the ring rides with it
-  drawDropRing(r, dropKindBag(bh.i));
+  drawDropRing(sc(r), dropKindBag(bh.i));
 }
 function drawDragGhost(now) {
   const d = state.drag;
@@ -2779,9 +2749,7 @@ function drawDragGhost(now) {
 //
 // It is bottom LEFT because that is the corner the pointer is furthest from
 // while it hovers the backpack, the weapon strip or a tech node, so the panel
-// never sits under the hand reading it. The event feed shares that corner and
-// steps up by tipLift() while one is open, exactly as it already does for the
-// replay window.
+// never sits under the hand reading it, and nothing else lives in that corner.
 //
 // EVERY tooltip comes from tipAt(), which asks the same hit-testers, in the
 // same order, that the click handler does - so what the panel describes and
@@ -2882,6 +2850,23 @@ function tipBit(id) {
   d.notes.push([b.blurb, TIP_DIM]);
   return d;
 }
+// the card button: every rarity in hand on its own row, in its own ink, so
+// what the next draw could be is read here and nowhere else
+function tipCards() {
+  const d = { title: 'CARDS', tcol: '#f4f7ff', kind: 'UNOPENED', icon: cardFanCv, plate: BAG_WELL, rim: '#35426e', rows: [], notes: [] };
+  for (const r of CARD_RARITIES) {
+    const n = bagCount(player, cardKey(r));
+    if (n > 0) d.rows.push([r.toUpperCase(), String(n), RES_COLORS[cardKey(r)]]);
+  }
+  if (!d.rows.length) d.rows.push(['NONE', '', TIP_DIM]);
+  d.notes.push(['ONE AT RANDOM, ITS BUFF AT RANDOM', TIP_DIM]);
+  return d;
+}
+// the gold plate: the exact figure, since the plate itself is rounded
+function tipGold() {
+  return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#35426e',
+    rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
+}
 // anything else a bag cell can hold
 function tipStack(s) {
   const r = CARD_TYPE_RARITY[s.type];
@@ -2889,7 +2874,6 @@ function tipStack(s) {
     const d = tipBase(s.type, r.toUpperCase() + ' CARD', 'UNOPENED');
     d.tcol = RES_COLORS[s.type];
     d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
-    d.notes.push(['CLICK: DRAW ONE OF THREE BUFFS', TIP_DIM]);
     return d;
   }
   if (ITEMS[s.type] && ITEMS[s.type].heal) {
@@ -3046,23 +3030,15 @@ function tipAt(mx, my) {
   // descriptor, so the two surfaces can never disagree about a berry
   if (sh && sh.kind === 'food') {
     const type = FOOD_BTNS[sh.i].type;
+    if (type === 'card') return tipCards();
     return tipStack({ type, n: bagCount(player, type) });
   }
-  if (sh && sh.kind === 'slot') {
-    const cell = player.tools[sh.i];
-    if (cell) return tipSend(tipCell(cell), 'STOW IT IN THE PACK');
-    return { title: 'EMPTY SLOT ' + (sh.i + 1), tcol: TIP_DIM, kind: 'WEAPON', rows: [], plate: BAG_WELL, rim: '#35426e',
-      notes: [['DRAG A TOOL HERE FROM THE PACK', TIP_DIM]] };
+  if (sh && sh.kind === 'frame') {
+    const g = goldCellRect(), m = stripMouse(mx, my);
+    if (m.x >= g.x && m.x < g.x + g.w && m.y >= g.y && m.y < g.y + g.h) return tipGold();
   }
   const bh = bagHit(mx, my);
   if (!bh) return null;
-  if (bh.kind === 'btn') {
-    return { title: 'BACKPACK', tcol: '#f4f7ff', kind: 'B TO OPEN', icon: bagIconCv,
-      plate: BAG_WELL, rim: '#35426e',
-      rows: [['CELLS USED', bagUsed(player) + '/' + player.bagCap,
-        bagUsed(player) >= player.bagCap ? '#e0637a' : '#f4f7ff']],
-      notes: [['DRAG ONTO THE SNOW TO THROW AWAY', TIP_DIM]] };
-  }
   if (bh.kind === 'cell') {
     const s = player.bag[bh.i];
     const d = tipCell(s);
@@ -3079,8 +3055,6 @@ function tipAt(mx, my) {
 }
 // resolved once a frame, before anything that has to lay out around it
 function tipResolve() { tipNow = tipAt(mouse.x, mouse.y); }
-// how far the event feed steps up to keep clear of an open tooltip
-function tipLift() { return tipNow ? tipSize(tipNow).h + 4 : 0; }
 function tipSize(d) {
   const iw = d.icon ? d.icon.width + 3 : 0;
   let w = iw + pixelTextWidth(d.title);
@@ -3163,21 +3137,13 @@ function renderUI(now) {
   renderMinimap(now);
   ctx.restore();
 
-  // The bottom-right corner - the backpack and the weapon shelf standing on
-  // its top edge - rides the intro slide in from the right as ONE widget. It
-  // slides by whichever of the two reaches further in from the edge, because
-  // the pack now starts open and the widest tool's row is a few px wider than
-  // it: a shove that only cleared the shut button would leave most of the
-  // frame parked over the cinematic.
-  if (!out) {
-    ctx.save();
-    ctx.translate(Math.round(slide * Math.max(bagOpenNow() ? BAG_W : BAG_BTN, VIEW_W - shelfCellRect(-1).x)), 0);
-    drawBag(now);
-    drawShelf(now);
-    ctx.restore();
-  }
+  // The top-left corner - the weapon shelf and the drawer under it - rides
+  // the intro slide in from the LEFT as one widget, at the HUD SIZE the dial
+  // holds (drawCornerScaled), by its widest reach so no tool's row is left
+  // parked over the cinematic.
+  if (!out) drawCornerScaled(now, -Math.round(slide * CORNER_REACH * hudSc()));
 
-  // hud strip (the xp bar over the weapon, ability and meal wells),
+  // hud strip (the xp bar over the ability wells and the pouch block),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD
   // SIZE the settings dial holds (drawHudScaled). The carried item rides the
   // pointer over everything, so it stays outside the scale and the slide.
@@ -3344,10 +3310,6 @@ function drawTouchIcon(g, id, cx, cy, col, bg) {
       break;
     case 'map': // the minimap disc
       touchRing(g, cx, cy, 4, col); g.fillRect(cx, cy, 1, 1);
-      break;
-    case 'pack': // the backpack
-      g.fillRect(cx - 3, cy - 2, 7, 6); g.fillRect(cx - 2, cy - 4, 5, 2);
-      g.fillStyle = bg || TOUCH_PLATE; g.fillRect(cx - 1, cy, 3, 1);
       break;
   }
 }

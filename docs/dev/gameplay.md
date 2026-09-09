@@ -356,20 +356,21 @@ what keeps the left button honest across the whole roster.
 
 ### The weapon shelf
 
-**The build is on screen at all times, on the backpack's top edge** — the tool at the left end of
+**The build is on screen at all times, top-left** — the tool at the left end of
 a row and its bit cells running right in **firing order**, which is also the direction a fitting
 reaches along, so the row reads the way the press resolves. Until **PATCH 3.21** it was a column
 that rose out of the strip's weapon well on hover, and a build you had to hold the pointer still
-to look at was a build nobody looked at; it moved to the one corner already about carried things,
-a cell away from the pack it is loaded out of.
+to look at was a build nobody looked at; since **3.23** it is the top-left corner and the whole of
+what the HUD says about the arsenal — one tool, read in one place, the strip's weapon well gone
+— with the [inventory drawer](rendering.md#the-backpack) shut under it.
 
 It is **not a panel**: bare wells with their own drop shadows, so the corner stays world
-everywhere between them and only a cell itself swallows a click. It is pinned by its BOTTOM to
-the pack (the open frame's top edge, or the shut button's) and grows upward, and the row's RIGHT
-end is flush with the pack's grid — a bigger tool grows leftward rather than moving the corner it
-is read in. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
+everywhere between them and only a cell itself swallows a click. It is pinned by its TOP to the
+corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
+read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
-js/ui.js, at 1x with the backpack it stands on rather than at the strip's HUD SIZE.
+js/ui.js, scaled about the top-left corner at the strip's HUD SIZE
+([rendering.md](rendering.md#the-hud-strip)).
 
 Five marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: the ROW is
 the press left to right; a cell **past the cut** is red-rimmed and washed out; **weight** is pips
@@ -488,7 +489,7 @@ on a well with somewhere to send what it holds, and the verb on it is that **des
 `LOAD` for a bit in the grid, `STOW` for a bit on the shelf or the tool on the weapon,
 `HOLD` for a tool in the grid — so the plate teaches which way the transfer goes rather than
 merely announcing a key. `shiftVerb` asks the same wells in the same order `sendAt` does, so the
-plate and the click can never disagree; a berry and a card get none, because eating and drafting
+plate and the click can never disagree; a berry and a card get none, because eating and drawing
 are not transfers. The cap presses down while the key is actually held.
 
 ### Where tools and bits come from
@@ -861,7 +862,7 @@ because there is nothing to refill.
 Three indicators carry it, and none is a word (the hud strip's weapon well only reddens its rim
 when the selected tool cannot answer — an empty slot, or a tensile budget that reaches no shot):
 
-- **The weapon well** (`drawToolCell`) — the top-down cooldown wipe, the same cover every
+- **The weapon well** (the shelf's tool cell, `drawShelf`) — the top-down cooldown wipe, the same cover every
   ability well cools by, over exactly `toolCycle`. When the wipe is gone, the bow is ready.
   Always.
 - **The overhead bar** (`drawPlayer`) — the draw meter's slot doubles as the cycle readout for
@@ -1509,8 +1510,8 @@ leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key now: sources
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
 [fish net](world.md#fish-nets) you are standing on), and death spills — and a wrecked net's
 contents — carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
-the **hud strip's right end** (bottom centre) — the two meal buttons and the purse tab standing
-on the rim over them, on screen whether the pack is open or not. Death empties
+the **hud strip's right end** (bottom centre) — the pouch block, berry over fish and gold over
+cards, on screen all match. Death empties
 wallet, pouch and bag alike —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
 toward the nearest player, and everyone standing on one contests it
@@ -1559,8 +1560,8 @@ the press opens it and E, Escape, the X or **walking out of reach** shuts it (`u
 re-checks `inReach` every step). It is HUD like the pack and the character sheet — **the sim runs
 on underneath, and standing at a counter protects nobody**.
 
-Two things open with it: the **backpack** (`bagOpenNow`), because a sale is a drag out of the
-grid; and nothing else — the character sheet closes, since the two slabs would sit on each other.
+The **backpack** is already up beside it, because a sale is a drag out of the grid; the character
+sheet closes, since the two slabs would sit on each other.
 While it is up, E does not swing at the world (`sampleHumanInput`), the way a wheel already
 swallows it.
 
@@ -1656,13 +1657,13 @@ seconds.
 
 A headline goes to **two places at once**, and a restock's does too:
 
-- the **event feed**, bottom-left — `FISH SPIKE 34G`, `BERRIES CRASH 2G`, `THE MERCHANTS RESTOCK`
-  — the match's own record, where everything else that happened to somebody already is;
+- the **event log** (not drawn; `DBG.events`) — `FISH SPIKE 34G`, `BERRIES CRASH 2G`,
+  `THE MERCHANTS RESTOCK` — the match's own record, where everything else that happened to
+  somebody already is;
 - a **plate top-right under the minimap** — the `market notices` banner in js/shop.js, drawn by
   `renderNotices` ([the plates](rendering.md#market-notices-the-plates-under-the-minimap)) —
   because a price is not something that happened to a player: it is the state of the world you are
-  about to sell your bag into, and it has to arrive where the clock and the alive count are
-  rather than in a log at the far corner.
+  about to sell your bag into, and it has to arrive on screen, where the clock is.
 
 Both readouts take their colour from one table (`NOTE_KIND`), handed straight to `logEvent` as its
 palette override, so the two can never disagree about which way a price went.
@@ -1767,14 +1768,16 @@ A player carries in two places, and which one a kind lives in is **one flag on i
 
 **The bag** (`p.bag`) is a fixed array of `p.bagCap` cells, each one `null`
 or a `{ type, n }` stack of at most `ITEMS[type].stack`. Everyone starts with **one bag of 10**
-(`BAG_CAP`, two rows of `BAG_COLS` — a simple inventory); a second bag is a bigger `bagCap` and a longer array,
-nothing else. It holds the **build**: the tools, bits and unopened cards a player lays out,
-compares and chooses between.
+(`BAG_CAP` 12, two rows of `BAG_COLS` 6 in the [drawer](rendering.md#the-backpack) under the weapon shelf, shut until B); a second bag is a bigger `bagCap` and a longer array,
+nothing else. It holds the **build**: the spare tools and bits a player lays out, compares and
+chooses between — and a bit only takes a cell once every tool carried (the one in hand, then
+each in the pack) is full, since `fitAdd` (js/tools.js) loads it into them first.
 
-**The pouch** (`p.food`) is a pair of uncapped counters beside the wallet, and it holds the two
-**meals** — everything with `pouch: true`. Food takes no cell, cannot be dragged, cannot be
-arranged and cannot be refused: it is pressed on Q and F from
-[the hud strip's meal buttons](rendering.md#the-hud-strip) and nowhere else, so every cell one of
+**The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
+holds the two **meals** and the five **unopened card** rarities — everything with `pouch: true`.
+A pouch kind takes no cell, cannot be dragged, cannot be arranged and cannot be refused: a meal
+is pressed on Q and F and a card drawn on C from
+[the hud strip's pouch block](rendering.md#the-hud-strip) and nowhere else, so every cell one of
 them used to take was a cell taken off the build. Being uncapped is why every count that shows
 one goes through **`shortNum`** (js/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
 characters at most. The exact figure stays in the tooltip, the surface whose job is comparing
@@ -1784,7 +1787,7 @@ numbers.
 | --- | --- | --- | --- |
 | `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal button — eats it (see [Food](#food-the-meal-is-a-channel)) |
 | `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
-| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | bag, stack 5 | clicking its cell — opens the pick-1-of-3 draft (see [Roguelike cards](#roguelike-cards)) |
+| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | C, or clicking the strip's card button — draws one at random (see [Roguelike cards](#roguelike-cards)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
 | `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
 
@@ -1958,7 +1961,7 @@ spend step: cheapest piece first, keeping a 15-gold float so they still build.
 
 A permanent buff dropped by a sprung **chest** in the treeline (`placeChests`, js/world.js;
 `hitObject`'s chest branch in js/actions.js rolls the rarity against `CHEST_ODDS` through
-`rollCardRarity`), one at a time, one draft at a time.
+`rollCardRarity`), one at a time, drawn one at a time.
 `CARDS` is `{ white: [...], green: [...], blue: [...], purple: [...], gold: [...] }`
 (`CARD_RARITIES`, White → Gold rising in rarity and magnitude), each entry `{ name, blurb, mod(k) }` —
 the exact shape a `GEAR` variant's `mod(k, L)` is, minus the level argument, since a card is a
@@ -1967,25 +1970,24 @@ vocabulary (`dmgBase`, `dr`, `maxHp`, `walkMul`, `stealth`, `ambushMul`, `iceMax
 genuinely new field, `killHeal` — a flat heal on a confirmed kill, hooked at `die()`'s existing
 kill-credit line the same way `updateEat` applies a meal's.
 
-**The draft**: clicking an unopened card's bag cell (`bagClick`) calls `openDraft(rarity)`, which sets `state.draft = { rarity, options }` — three distinct
-entries drawn at random from `CARDS[rarity]` (`pick3Distinct`). `renderDraft`/`draftLayout`/
-`draftHit` draw and hit-test three cards centred on screen, but as an in-match overlay like
-the bag or the map — **it does not pause the sim**, same as every other HUD overlay here, so a
-draft is read at real risk, not in a safe pause. `draftClick()` (the mousedown handler routes to it
-first, ahead of the wheel/settings/map/bag, whenever `state.draft` is set) either applies the
-clicked card — `bagTake` the one card, push `{ rarity, id }` onto `p.cards`, `refreshKit(p)` — or,
-for a click anywhere else (or ESC), just closes the draft; either way the click never reaches the
-world underneath. `refreshKit` folds every entry in `p.cards` in after gear and skill, cumulatively
+**The draw** (3.23; the pick-1-of-3 draft screen is gone): an unopened card is a pouch kind, and
+the card key (`'card'`, C; L3 on a pad) or a click on the strip's card button sets the
+`useCard` intent, which `useCard(p)` (js/core.js, beside `startEat`) resolves on the spot —
+one card taken at random from everything held (so a rarity is as likely as it is common in the
+hand), one entry of that rarity at random, `bagTake` the card, push `{ rarity, id }` onto
+`p.cards`, `refreshKit(p)`, then `cardFx` (a burst in the rarity's colour) and a floater with the
+card's name. Nothing to draw is a refusal on the button (`cardDenied`). A bot draws the same way
+through `resolveCardForBot` (js/ai.js), minus the key and the burst. `refreshKit` folds every entry in `p.cards` in after gear and skill, cumulatively
 (`for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);`), so picking the same effect twice stacks
 it, and every existing kit-reading site in the sim — movement, `emitBit`, dodge timing, the AI,
 `seenAt`'s stealth — picks a card up for free, the same way it already does for gear. `p.cards` is
 set once in the `Player` constructor and never touched by `reset()`, so a build survives every
 respawn within a match.
 
-**Bots never see the draft** — `bagClick` is a mouse-only entry point `updateAI` never calls.
+**Bots never press the card key** — `useCard` is reached through the input struct, which `updateAI` never sets for cards.
 Instead, the instant a bot is carrying any unopened card, `resolveCardForBot(p)` resolves it
-server-side with one random pick from that rarity's pool — no 3-option UI, since choosing among
-three is specifically the human decision point.
+server-side with one random pick from that rarity's pool — the same odds a human's draw gets,
+minus the burst and the floater.
 
 ## Base building
 
@@ -2125,7 +2127,7 @@ Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js
   the local player. Damage is **contested** with everything else E does, since it runs inside
   `swingHit`'s `contest('work:' + idx)`. At 0 hp it calls `destroyStructure(o, true, p)` — the
   wreck pays out exactly like a demolition, straight to the wrecker — and
-  logs `<NAME> WRECKED A <TYPE>` to the event feed. Nothing else damages a building: arrows die
+  logs `<NAME> WRECKED A <TYPE>` to the event log. Nothing else damages a building: arrows die
   on solid tiles without hurting them, and no AI or wildlife targets one.
 - Demolish refunds **50% of the cumulative cost across tiers** (`cumulativeCost`), paid to the
   demolisher on the spot through `awardGold` — 23 gold for a fully-upgraded wall. `demolishStruct()` →
@@ -2396,8 +2398,8 @@ holding it.) All three loops are generic per type, so a future resource spills w
 death code, and an instanced tool travels as the same object it always was
 (`spawnDrop`'s `it`). The standings are unaffected because `scoreOf` ranks lifetime
 `xp`, not the purse, so a looted player keeps the place it earned. `die` also credits the kill (and
-heals the killer if their kit carries `killHeal`, off a card) and writes the feed line — see
-[Kills and the event feed](multiplayer.md#kills-and-the-event-feed) — then asks
+heals the killer if their kit carries `killHeal`, off a card) and writes the log line — see
+[Kills and the event log](multiplayer.md#kills-and-the-event-log) — then asks
 `teamEagleDown(p.team)`: with the eagle still roosting, `p.respawnT` starts counting down
 (`respawnTime(p)`, `updateRespawns` — see [Respawn at the bird](multiplayer.md#respawn-at-the-bird)
 for the whole path); with it driven off, `p.eliminated = true`, the permanent path. Either way
@@ -2456,8 +2458,7 @@ your own marker cross it. Consequences worth knowing:
 
 - The replay ring keeps recording (`replayLive`) — the capture point is above the map's dim, so
   the banked frames are clean world frames. `replayShowing` still hides the *window* under the panel.
-- Dying with the map open is now possible; `endMatch` clears `state.mapOpen` (and
-  `state.bagOpen`), and M only toggles in `play` and `drop` modes (mid-flight it is the ride's
+- Dying with the map open is now possible; `endMatch` clears `state.mapOpen`, and M only toggles in `play` and `drop` modes (mid-flight it is the ride's
   wide read; `landPlayer` closes it at touchdown), so the chart cannot survive into the death
   overlay.
 - The world keeps the zoom you were playing at. The panel is a fixed 308×226 and the canvas no
@@ -2480,9 +2481,9 @@ saved any. A pre-profile save under the old `localStorage['softfall.settings']` 
 once by `PROFILE.load()` and the key removed; see
 [architecture.md](architecture.md#profilejs). `applyMinimapSize()` must be called after changing `mmR` —
 it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**) needs no apply
-call: the hud strip reads it live every frame
-([rendering.md](rendering.md#the-hud-strip)). The **backpack**'s open/closed state is `state.bagOpen`,
-not a setting: it is per-match HUD, and `endMatch` closes it. (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
+call: the hud strip, the pack and the shelf read it live every frame
+([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
+([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 
 There is no fullscreen control in the ESC menu (players use F11; a phone asks for it on the
@@ -2600,9 +2601,9 @@ route every walker is following with the tile it is heading for; the next press 
 has no ESC-menu row, only the `. HITBOX` line in the CONTROLS block; the rest is in
 [Debug overlays](rendering.md#debug-overlays-hitboxes-and-routes).
 
-Beneath the minimap
-`renderMinimap()` prints one centred row: a 5×7 pixel figure (`ALIVE_ICON`, no label) with
-`aliveCount()` — players active and not dead, riders included — then the elapsed clock.
+Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. (The
+alive count that shared the row went in 3.23 — a match no longer ends on bodies, so it decided
+nothing; `aliveCount()` still serves the rules.)
 
 ## Audio
 

@@ -18,7 +18,7 @@
 //     turn over every SHOP_RESTOCK seconds - the same twelve at both counters,
 //     because there is one market and two shopfronts onto it.
 //   - the PANEL. Bought from with a click, sold to by DRAGGING out of the
-//     pack, which opens beside it for exactly that reason (bagOpenNow, ui.js).
+//     pack, which is always up beside it (drawBag, ui.js).
 //
 // The counter does not stop the sim, and standing at one does not protect you:
 // it is HUD like the backpack and the character sheet, and walking out of
@@ -136,13 +136,13 @@ function updateMarket(dt) {
 // ------------------------------------------------------------ market notices
 // The market's news as something you SEE, not something you read in a log.
 //
-// Every headline here leaves its line in the event feed as well (logEvent,
-// js/panels.js) - the feed is the match's own record and the market belongs
-// in it - but the feed is bottom-left, small, and full of what happened to
+// Every headline here leaves its line in the event log as well (logEvent,
+// js/panels.js) - the log is the match's own record and the market belongs
+// in it - but the log is not drawn, and it is full of what happened to
 // PLAYERS. A price is not something that happened to a player: it is the state of
 // the world you are about to sell your bag into, and it has to arrive where
 // the other things you glance at mid-fight are. So it also raises a PLATE,
-// top-right, hard under the minimap beside the clock and the alive count.
+// top-right, hard under the minimap beside the clock.
 //
 // One shape, three notices, read left to right with no sentence in it: the
 // MARK of what the news IS (the merchant's GOLD SACK, SPRITES.goldSack,
@@ -174,7 +174,7 @@ const NOTE_FR = 0.11;    // s per frame of the sack's six
 // of "60G" at 2x is 41, over the 30 the mark's well and the tail's gutter take,
 // and the rest is the air that keeps the price off the arrow.
 const NOTE_W = 78, NOTE_H = 22, NOTE_PITCH = 26;
-const NOTE_GAP = 18;     // below the disc's alive/clock row, which ends 14px under it
+const NOTE_GAP = 18;     // below the disc's clock, which ends 14px under it
 const notices = [];      // {kind, txt, good, t}; ageNotices runs the clock
 // the tails: which way the price went. 8x8, the item icons' own grid, so the
 // good beside it and the tail after it read as one rank. A kind with no tail
@@ -202,7 +202,7 @@ function marketNotice(kind, txt, good) {
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
 
-// Chrome, like the event feed: it ages on WALL time from updateFx (js/sim.js),
+// Chrome: it ages on WALL time from updateFx (js/sim.js),
 // so a plate fades out - and the sack keeps turning over its six frames -
 // while the sim is paused rather than hanging there.
 function ageNotices(dt) {
@@ -340,8 +340,8 @@ function noteFrame(x, y, col) {
 const SHOP_RESTOCK = 120; // s between turnovers
 const SHOP_COLS = 3;      // offers in every section
 // Cards are rolled by rarity, not by name: an unopened card is what changes
-// hands and the pick of three inside it is drawn afterwards (openDraft,
-// js/ui.js), so the buyer is paying for the odds. Kinder than a chest's odds
+// hands and the buff inside it is drawn afterwards (useCard,
+// js/core.js), so the buyer is paying for the odds. Kinder than a chest's odds
 // (CHEST_ODDS, js/world.js) - a counter you can choose to walk to should show
 // the better rarities more often than a box you tripped over.
 const SHOP_CARD_ODDS = { white: 0.4, green: 0.3, blue: 0.19, purple: 0.09, gold: 0.02 };
@@ -679,7 +679,7 @@ function closeShop() {
 // target should be hard to miss with an item on the cursor; and the restock
 // road along the bottom rail.
 function shopLayout() {
-  const x = Math.max(2, Math.round((VIEW_W - BAG_W - SHOP_W) / 2));
+  const x = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2));
   const y = SHOP_Y;
   const cx = x + SHOP_PAD, cw = SHOP_W - SHOP_PAD * 2;
   const secs = [];

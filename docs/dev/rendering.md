@@ -70,9 +70,10 @@ boot reading the saved one, a resize onto another screen) re-fits the view. What
   (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
   draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
   presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
-- **The pack starts shut**, alone among the fits: the right-hand touch column climbs out of the
-  bottom-right corner the open frame fills, so `mobileRefresh()` writes `state.bagOpen = !MOBILE`
-  whenever the answer changes. See [the backpack](#the-backpack).
+- **The weapon shelf sits under the plates**: the top-left is the menu cog and the zoom pair's
+  corner too, so `shelfRowY()` drops the row to 44 on a phone (20 on a desktop) and the
+  [drawer](#the-backpack) under it drops with it. The right-hand touch column climbs from the
+  bottom edge like the left one.
 - **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
   finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
   says who moved the pointer last (input.js).
@@ -224,8 +225,8 @@ map/settings overlays (the M map also in mode `drop`) → `renderTitle` (the mai
 overlay (`renderDead`: the death dim and its planks, or `renderVictory` / `renderDefeat` — see
 [The end screens](#the-end-screens)) →
 `renderReplay` (the replay window, above both the death dim and the pause dim) →
-the event feed and the held-TAB scoreboard (deliberately **above** the death dim, see
-[Scoreboard and event feed](#scoreboard-and-event-feed)) →
+the held-TAB scoreboard (deliberately **above** the death dim, see
+[Scoreboard and event log](#scoreboard-and-event-log)) →
 the info stack (`drawTags`, left edge at the top quarter: FPS / POS / SEED as aligned
 label-value rows — one ESC-menu toggle or F3; only the fps line in `title`) → the screen fade
 (`state.fade`, the reroll whiteout) → the pixel cursor (always last). The bow's
@@ -382,8 +383,10 @@ scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-e
 zoom in the wheel handler and is saved with the settings. Every marker drawn over it (players,
 camp glyphs, your side's [worker flags](gameplay.md#worker-flags)) multiplies its tile
 offset by `s`. The disc sits on an opaque `#0f1632`
-backing with a pale 1 px outer rim that brightens while hovered — the hover state is the whole
-affordance, there is no hint. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
+backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no
+hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;
+there is no halo or second ring outside it (the pale outer rim and the hover brightening went
+in 3.23). `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
 game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
 backing, rims and the day/night band one pixel at a time (pixel-centre distance test, optional
 clockwise angle span), and the map view is clipped by `mmMask(r)` — a cached pixel disc
@@ -402,34 +405,33 @@ at one map pixel per tile, a build or a cut ice hole arriving half a second late
 
 `renderUI()` owns three corners and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
-deliberately empty** — every number you own (berries, fish, gold) is on the **hud strip's right
-end**, which is why nothing slides in from the left during the landing intro. The
-pack button sits on the view's last pixel — no margin, the 1 px rim is the edge — so a resize
-keeps it flush on every size.
+the weapon** (3.23): the one tool in hand and the bits loaded into it, with the inventory drawer
+shut under it — the corner a Noita wand or a Terraria held item lives in — while every number
+you own (berries, fish, gold, cards) is on the **hud strip's right end**. The bottom right is
+empty world.
 
 | Where | What | Function |
 | --- | --- | --- |
-| top left | **nothing** — see the strip below | — |
-| top right | the minimap and its day/night ring, alive count, clock, and the market's plates under them | `renderMinimap`, `renderNotices` |
-| bottom left | the hover tooltip, with the event feed stacked above it | `drawTooltip`, `renderEventLog` |
-| bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom | `drawHudStrip` |
-| bottom centre, right end | the two meal buttons (berry over fish) with the **purse** tab standing on the rim above them — the three numbers you own, always on | `drawFoodCell`, `drawPurse` |
-| bottom right | the backpack: the ten-cell grid, **open by default**, on the pack button it rises off — and the **weapon shelf** standing on its top edge, always up | `drawBag`, `drawShelf` |
+| top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the small white arrow of the **inventory drawer**, shut until B or the arrow | `drawShelf`, `drawBag` |
+| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
+| bottom left | the hover tooltip | `drawTooltip` |
+| bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
+| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
-Both bottom-right widgets slide **their own size** away for the landing intro — the strip
-`HUD_SLIDE` (`AB_H` + `PURSE_H`), the pack `BAG_W` when open and `BAG_BTN` when shut — because a
-fixed shove that cleared the old shut button would leave most of an open frame parked over the
-cinematic.
+Both widgets slide **their own size** away for the landing intro — the strip down by
+`HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the top-left corner left by `CORNER_REACH` (the widest
+row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
+tool cell would leave a longbow's row parked over the cinematic.
 
 ### Market notices: the plates under the minimap
 
 The market's own voice on the HUD — the `market notices` banner in [js/shop.js](../../js/shop.js),
 raised by `marketNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
 spike, a price crash and a counter turning over each raise one, *as well as* the line they already
-put in the [event feed](#scoreboard-and-event-feed): the feed is the record of what happened to
+put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
 somebody, and a price is not that — it is the state of the world your bag is about to be sold
-into, so it belongs where the clock and the alive count already are.
+into, so it belongs where the clock already is.
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
 what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down.
@@ -462,7 +464,7 @@ and the feed line can never disagree about which way a price went.
 
 `noteRect(k)` places slot `k` off `MM_*` — right edge flush with the disc's own, `NOTE_GAP` (18 px)
 under its rim, so the column follows the minimap wherever the size dial and the view put it and
-never lands on the alive/clock row. **The newest plate is player 0**, hard under the disc, and its
+never lands on the clock. **The newest plate is player 0**, hard under the disc, and its
 arrival pushes the stack down: it flies in `NOTE_SLIDE` (30 px) off the right edge over `NOTE_IN`
 (0.55 s) while the plates below ease down a whole `NOTE_PITCH` on that same curve. They are drawn
 **oldest first** so the newest lands on top of the stack it is shoving.
@@ -503,9 +505,8 @@ so what the panel describes and what a click would do can never be two different
 drag outranks all of them: whatever is on the cursor describes itself. It answers in two modes
 only, `play` and `title` (the wiki's ARSENAL rows); every other mode returns null.
 
-`tipResolve()` runs **once per frame in `render()`, before `renderUI`**, because the event feed
-lays itself out around the result: `renderEventLog` steps up by `tipLift()` exactly as it already
-does for the replay window. Resolving it later would put the feed a frame behind the panel.
+`tipResolve()` runs **once per frame in `render()`, before `renderUI`**, so every draw in the
+frame reads the same answer.
 
 A descriptor is `{ title, tcol, kind, rows: [[label, value, col]], notes: [[text, col]], icon,
 plate, rim }` and `drawTooltip` is the only thing that knows how to paint one: the icon on its own
@@ -562,11 +563,12 @@ rail.
 
 ### The hud strip
 
-`drawHudStrip` is one plate, flush to the bottom: **five 34px wells** —
-`[ WEAPON ][1][2][3][4]`, the weapon leading and the class abilities following in key order
-(`stripCellRect`; `toolCellRect(i)` is well 0, `abCellRect(i)` is well `1 + i`) — then, on the
-right end, the two **meal buttons** stacked berry-over-fish (`foodCellRect(i)`, two 16px cells
-whose pair plus the gap equals one well) — all over the
+`drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **four 34px wells** —
+`[1][2][3][4]`, the class abilities in key order (`stripCellRect`; `abCellRect(i)` is well `i`;
+the weapon left the strip for [the shelf](#the-weapon-shelf) in 3.23) — then, on the
+right end, the **pouch block** (`pouchCellRect(col, row)`: a 2×2 of 24px squares, berry over
+fish, gold over cards, its bottom flush with the wells' and its top `POUCH_RISE` (14) px above
+the strip on a tab of the plate, `pouchTabRect`) — all over the
 **plum xp bar** along the bottom (lifetime gold, left-to-right, no level number — that lives on
 the overhead badge). The bar has a dark silhouette and a frost rim so it reads against the
 plate, and is **notched into `AB_SEGS` segments** WoW-fashion — a tick cuts dark plum through
@@ -575,11 +577,12 @@ It sits at the *bottom* so the strip's top edge stays open screen for the abilit
 **floating buy plates** (below). The plate swallows clicks so nothing fires through it. There is
 no rail: the dodge pips it once carried are said by the overhead stamina bar.
 
-The tool well (`drawToolCell`) says three things and carries no words. The **plate** behind the icon
+The weapon's well is [the shelf's tool cell](#the-weapon-shelf) now (`drawShelf`, top-left; the strip's
+own well went in 3.23), and it says three things and carries no words. The **plate** behind the icon
 is the tool's tier colour — the same colour it wears in every other well it ever sits in, so a
 tier is stated once and stated the same way everywhere (`tierPlate`, and `tierShine` sweeps a
-highlight across the top tier's plate); the 12px tool art is drawn doubled, so the lead
-weapon well reads at the ability icons' size. The **rim** is that tier, quiet at rest and
+highlight across the top tier's plate); the 12px tool art is drawn doubled, so the tool
+reads at the ability icons' size. The **rim** is that tier, quiet at rest and
 brightened to the tier's ink on hover — the four ability wells' own grammar. It used to go white
 and the whole well used to sit a pixel proud, as the tell for the SELECTED slot; there is one
 weapon slot (`TOOL_SLOTS`), so that highlight could never turn off, and a highlight that is always
@@ -640,7 +643,7 @@ cooldown, level and next-level price, the blurb, nothing the well itself already
 #### The cooldown sweep
 
 `drawSweepCover(x, y, w, h, frac, col, edge)` is League's radial cooldown **cut to a square**, and
-the **one readout the weapon well and the four ability wells share**: the
+the **one readout the shelf's tool cell and the four ability wells share**: the
 veil fills the well and retreats **clockwise from 12 o'clock**, so the dark that is left is the
 wait that is left and the hand's angle is the fraction at a glance. That is the whole reason it
 replaced the top-down wipe: on a 20 s clock a bar three quarters down and a bar half
@@ -678,55 +681,102 @@ bright line the old wipes carried at the front of their cover; pass `null` inste
 turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
-A **meal button** (`drawFoodCell`) is the same grammar pointed at food, and it is now the *only*
-place a meal is read or pressed — food is a [pouch](gameplay.md#inventory-and-the-backpack) and
-never a bag cell. `FOOD_W`×`FOOD_CELL` (40×16), read left to right: the key letter (Q/F — the
-keybind-indicator carve-out, wearing the pad's own dpad glyph while one is in hand), the 8px item
-icon pinned at `FOOD_ICON_X` so a count that grows never shifts it, and the count right-aligned on
-the button's own edge — `shortNum`, because the pouch has no ceiling. The shared food clock
-(`drawFoodClock`) sweeps both buttons together and lifts the one being chewed white. A meal you
-have none of keeps its seat but dims to 0.35, so the column never rearranges; the click sets the same
-`eatBerry`/`eatFish` edge-trigger the key does, so `startEat` speaks every refusal and the
-button can never disagree with Q or F. And it *shows* the refusal: whatever the reason (none in
-the bag, the clock still up, full health, a busy body), the button that was asked takes the
-well's red band and the pack's 1px shake for `foodFlash` seconds — `foodDenied(type)`, the third
-of `bagDenied()`/`toolDenied()`, fired only from `startEat` and aged in `updateFx` beside them —
-so a Q with no berry reads as denied rather than dead. Hover raises the food descriptor
-(`tipStack`), which is where the **exact** count lives — the button itself is rounded.
+The **pouch block** (3.23) is the strip's right end: a 2×2 of `FOOD_SQ` (24 px) **squares** —
+**berry** over **fish** on the left, **gold** over **cards** on the right — standing on a tab of
+the strip's own plate (`pouchTabRect`: rimmed on top and sides, open onto the strip) whose
+bottom row is flush with the wells and whose top rises `POUCH_RISE` (14) px above the strip's
+edge, so the block is a small panel on the strip's end rather than four bars squeezed into one
+well. Every square is drawn by `drawPouchCell` in the ability wells' own grammar at two thirds
+the size: the item icon **doubled** in the middle (the card fan is baked at 16 px and draws at
+1×, so all four carry art of one size), the key cap in the **bottom-left** corner, where an
+ability well prints its key (the keybind-indicator carve-out, wearing the pad's own glyph while
+one is in hand; the gold has none), and the count in the **top-right** corner — `shortNum`,
+because the pouch has no ceiling, and a four-character count covers the icon's corner rather
+than moving it — so keys read along the strip's bottom edge and numbers along its top.
 
-Flush on the strip's top rim over that column sits the **purse** (`drawPurse` /
-`pursePlateRect`, `PURSE_H` 11): the coin and your gold, `shortNum`-cut and inked `#f5c542`, on
-screen for the whole match. It wears the strip's own plate and rim so it reads as a *tab* of the
-widget rather than a bar parked over the world — which is what lets it slide in with the HUD and
-scale with it — and its coin lines up over the two item icons below, so purse, berries and fish
-read as one right-aligned tally. It is a readout, not a button: `stripHit` answers `frame` over
-it, so it swallows its own clicks without doing anything with them.
+Three of the four are **buttons** (`FOOD_BTNS`: berry, fish, cards, in `stripHit`'s `food`
+order; the tab counts as on the strip for the hit test): hover lights the rim, a press sets the
+same edge-triggered intent the key does (`eatBerry`/`eatFish`/`useCard`), so `startEat` and
+`useCard` speak every refusal and a button can never disagree with its key. A refusal *shows*:
+whatever the reason (none in the pouch, the clock still up, full health, a busy body, nothing
+to draw), the button that was asked takes the well's red band and the pack's 1px shake for
+`foodFlash` seconds — `foodDenied(type)` / `cardDenied()`, aged in `updateFx` beside
+`bagDenied()`/`toolDenied()`. The shared food clock (`drawFoodClock`) sweeps both meal squares
+together and lifts the one being chewed white; the card button has no clock. A kind you have
+none of keeps its seat but dims to 0.35, so the block never rearranges. The **card button**'s
+icon is three cards fanned — white, green, blue, each a step up and over from the last
+(`cardFanCv`) — and its count is every rarity together; hover raises `tipCards`, one row per
+rarity held in that rarity's ink, which is the only place the hand is read by kind. The **gold
+plate** (`drawGoldCell`, `goldCellRect`) wears the same rim as its three neighbours, so the
+block is one symmetrical thing, but it is a readout, not a button — no key cap, no hover, no
+refusal — which is what marks the one square you cannot press; `stripHit` answers `frame` over
+it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
+that is money must never read as a count of something carried.
+
+### The hud frame
+
+`drawHudFrame(x, y, w, h, o)` is the one plate the strip and the pack stand on: the frostlands'
+chrome — the settings slab's chamfered corners and bevel (`bakeFrostSlab`, panels.js) and the
+menu planks' snow cap (`drawMenuButton`, menu.js) — at a combat surface's volume, with none of
+their mottling, rivets or icicles, because the wells cover most of the ground and a plate looked
+at for an hour has to stay quiet. Four pixel layers: the **silhouette** (`HUD_INK`, the xp bar's
+own ink) with its top corners cut two pixels and the corners that meet a screen edge left
+square (a notch of world there reads as a hole; `o.corners`); the **ground** (`o.bg`, `AB_BG`
+by default); the **bevel** — `HUD_LIT` along the top and left, `HUD_SHADE` along the bottom
+and right; and the **snow cap** — a ragged one-to-two pixel drift on every top edge the sky
+reaches, with the odd frost pixel sunk into the lit line under it, deterministic off `o.seed`
+through `hash2` so it never shimmers (`o.cap: 1` keeps it one pixel for an edge something
+already stands on, `false` drops it). `o.tab` is a block rising off the top edge and flush
+with the right side — the pouch block's — and the frame draws the two as **one silhouette**:
+the outline steps up around the tab, the ground runs through the seam, and the lit line turns
+the inside corner and climbs it. `o.lit`/`o.ink` are what a widget's states colour (the drawer's
+full amber, a refusal's red). Every margin inside the outline is three pixels — line, light,
+ground — which is what `AB_PAD` and `BAG_PAD` are, so a well sits the same distance from the
+edge on every side of both widgets. The [drawer](#the-backpack) wears it with every corner cut
+and no cap: it lives under the shelf, not under the sky.
+
+**One well size for the HUD** (3.23): the strip's wells and the shelf's cells are `HUD_CELL` (34)
+square, and every item icon in them is drawn doubled (`drawItemIcon`'s `k`), so a tool reads at
+one size on the shelf as an ability does on the strip. The drawer's cells are the exception on
+purpose — `BAG_CELL` (18) with the art at 1× — because a spare is glanced at and dragged, not
+read all match.
 
 The whole widget — plate, wells and buy plates — draws at the **HUD SIZE**
 the ESC panel's GAME slider holds (`settings.hudScale`, 0.75×–1.5×, default 0.8×). All geometry stays in 1×
 strip space: at 1× everything draws straight to the frame, and at any other size `drawHudScaled`
-bakes the widget into `hudScaleCv` and blits it scaled about the strip's bottom-centre anchor
+bakes the widget into `hudScaleCv` and blits it scaled about the strip's anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
-the same anchor via `stripMouse` first, so a click can never land beside its pixel. The shelf is
-not in this bake: it draws at 1x with the backpack it stands on, so its rects need no such map. While the
-slider's knob is in hand, `renderSettings` draws the strip live over the slab — the minimap
-slider's preview grammar.
+the same anchor via `stripMouse` first, so a click can never land beside its pixel. **`hudSc()`
+caps the dial** at the size where the strip would outgrow the view, so past that point the
+slider simply stops growing it rather than pushing its ends off the screen. **The top-left corner
+scales with the same dial**: `drawCornerScaled` bakes the shelf and the drawer at 1× and blits
+them about the top-left corner (sized by `CORNER_REACH` and the drawer's height), and `bagHit`
+and `shelfHit` map the pointer back through `cornerMouse`. While the slider's knob is in hand,
+`renderSettings` draws the strip and the corner live over the slab — the minimap slider's
+preview grammar.
 
 The strip's **upgrade** half is entirely the floating buy plates above these wells — a skill
 point is spent nowhere else, and nothing else on the strip is ever bought.
 
 ### The weapon shelf
 
-**The build is on screen at all times**, on the backpack's top edge: the tool at the left end of a
-row (`shelfCellRect(-1)`) and its bit cells running right in firing order, which is the one place
-the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass) is on screen at once.
-`SHELF_CELL` 16, `SHELF_GAP` 2, the row's RIGHT end flush with the pack's grid, pinned by its
-BOTTOM to whichever pack edge is up (`bagFrameRect().y` open, `bagBtnRect().y` shut) and grown
-upward, so the row and the budget track keep their pixels whatever the build does and a fitting's
-rail is what climbs into the open screen. It is **not a panel**: bare wells with their own drop
-shadows (`shelfWell`), so the corner stays world everywhere between them and only a cell itself
-answers `shelfHit`.
+**The one weapon, top-left, on screen at all times** (3.23): the tool in hand at the left end of a
+row (`shelfCellRect(-1)`, at `SHELF_X`/`shelfRowY()`) and its bit cells running right in firing
+order, which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
+is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
+lost its weapon well and everything else carried is in [the drawer](#the-backpack) under this
+row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (18; 44 on
+a phone, under the menu and zoom plates) and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
+frame under it sits flush with the view's edge) and grown rightward, so the tool cell — and the
+drawer's arrow under it — never move whatever the build does, and a fitting's rail is what climbs
+into the open screen above them; the SHIFT plate hangs off the row's right end (`shelfRowRight`).
+It is **not a panel**: bare wells with their own drop shadows (`shelfWell`), so the corner
+stays world everywhere between them and only a cell itself answers `shelfHit`. The tool cell is
+the weapon's one well now, so it carries every tell the strip's used to: the **sweep** of the
+rate of fire (`drawSweepCover`, the same hand the ability wells turn), the dry-bow red when the
+tool cannot answer the button, the refusal red (`toolFlash`) when a bit will not fit, and the
+"!" when the build weighs more than a press can spend.
 
 Five marks, no words, all off `toolPlan`:
 
@@ -775,51 +825,46 @@ budget reaches, and the shelf's budget track is where you go to see exactly wher
 
 ### The backpack
 
-**It starts open** (`state.bagOpen`, js/core.js, and put back by `respawnPlayer` after a
-death shut it): the grid is what a match is spent looking at, and a pack that has to be asked for
-hides the build. B or the button shuts it. **A phone starts it shut** — the
-[touch column](#phones) runs up the very corner the open frame fills, so there the grid is
-something you open, read and shut again. `mobileRefresh()` (js/mobile.js) is the one place that
-knows which we are, and it only writes the default when the answer *changes*, so a resize never
-shuts a pack the player opened.
+**A drawer under the weapon shelf, shut until asked for** (3.23). The HUD shows one weapon —
+[the shelf](#the-weapon-shelf) — and everything else a player carries is in here: the spare
+tools a walk turns up and the bits no tool had a cell for. It is **invisible by default**: the
+pack key (B; L3 on a pad) or a click on the **arrow** under the tool cell (`bagTabRect` is the
+band it sits in and answers from: a plain small white chevron, rimmed a pixel dark like every
+mark over the world, no plate, pointing the way the drawer will go) sets `state.bagOpen`, the
+same again or ESC clears it, and the merchant's counter
+holds it open while it is up because a sale is a drag out of it. `bagOpenNow()` is the one
+answer everything reads; `bagEase` chases it on wall time over `BAG_SLIDE_T` (0.15 s,
+`updateFx`), and the drawer draws sliding out from under the tab, clipped to the screen below
+the tab's bottom edge so it emerges rather than fades. It answers the pointer only once fully
+open; the arrow's band always answers. `endMatch` shuts it.
 
-Shut, the pack is **one button flush in the corner** — a 26 px plate (`BAG_BTN`, `bagBtnRect()`)
-wearing the 20 px `BAG_ICON` rucksack (a proper leather pack at the strip icons' detail level:
-rolled flap, gold buckle, stitched hem, side pockets — baked once to `bagIconCv`) and nothing
-else. No frame, no numbers: the corner is world while the pack is shut. The button
-carries every state the frame carries — hover and open light its rim, amber means no cell is
-free, and it reddens and shakes for `bagFlash` seconds when something could not be carried
-(`bagDenied()`, aged in `updateFx`).
+The frame (`bagFrameRect()`, flush with the view's left edge a px under the arrow's band, its
+first cell on the tool cell's own left edge, `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
+`BAG_COLS` 6): the tools and bits a build is made of, in **small cells** — `BAG_CELL` 18 with the
+art at 1×, a third of a well, because a spare is glanced at and dragged, not read all match.
+There is no numbers row — the two meals, the gold and the cards are the
+[strip's pouch block](#the-hud-strip). The arrow never moves; its colour is its only state — gold
+under the pointer, **amber** when no cell is free, red on a refusal (`bagDenied()`, aged in
+`updateFx`, which also reddens and shakes the open drawer for `bagFlash` seconds).
 
-Open, the **frame rises off the button's top edge**
-(`bagFrameRect()`, pinned bottom-right over the button so the toggle never moves under the
-pointer that just used it), and it is **nothing but the inventory grid** (`BAG_CAP` 10 — two rows
-of five): the tools, bits and unopened cards a build is made of. There is no numbers row in it any
-more — the two meals are a pouch on [the hud strip's meal buttons](#the-hud-strip) and the gold is
-the purse tab over them, both on screen whether the pack is open or shut.
-
-Gear is not in this widget at all any more — the four pieces live on
+Gear is not in this widget at all — the four pieces live on
 [the character panel](#the-character-panel-g).
-
-Everything that lays the widget out or hit-tests it asks **`bagOpenNow()`**, never
-`state.bagOpen`: the merchant's counter forces the pack open (a sale is a drag out of the grid),
-the weapon shelf stands on whichever edge it answers with, and the two answers disagreeing by a
-row would land every click one cell out.
 
 A grid cell holding a tool or a bit wears that item's **tier plate** rather than the default well,
 so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
 as pips along the bottom, in the corner a stack number would have used.
 
-- **One background, one border, no internal line.** Every part of the frame is the same opaque
-  `BAG_BG` and the border is a single 1 px rim; the rule that used to mark off the numbers row
-  went with the row.
+- **One background, one frame, no internal line.** Every part of the drawer is the same opaque
+  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears — its two free corners cut,
+  the two on the view's edge square, and no snow cap, since it lives under the shelf and not
+  under the sky.
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
   cell recesses to `BAG_WELL` *below* the frame's ground, an empty one sits *above* it at
   `#171f45`, and the ground itself is between — occupied / free / frame.
 - **An empty cell is the *lighter* one**: it has no icon to show off, and free space is what the
   grid is being read for, while a full cell goes dark behind its item. A stack of one prints no
   number — an empty corner says it.
-- **A click on a cell uses what is in it** — a card by drawing from it, and a bit or a tool by
+- **A click on a cell uses what is in it** — a bit or a tool by
   [sending it to the weapon](gameplay.md#the-bit-column) — resolved on the
   release so that a press which travels is still a drag. Putting a *carried* item down is on the
   release too, since 3.22.
@@ -829,8 +874,8 @@ as pips along the bottom, in the corner a stack number would have used.
   while something is on the cursor, saying what letting go there *would* do before it does it
   ([what a gesture answers with](gameplay.md#what-a-gesture-answers-with)); that ring is painted
   after the drag ghost and outside the well, because the ghost is exactly as big as the cell.
-- **The open frame swallows every click over itself.** `bagHit` reports `btn` (the button),
-  `cell` or `frame` (anywhere else inside, inert but eaten); shut, only the button answers.
+- **The drawer swallows every click over itself.** `bagHit` reports `tab`, `cell` or `frame`
+  (anywhere else inside, inert but eaten).
 - **The grid does not stop the sim.** It is HUD, not an overlay — the same deal the
   [M map](gameplay.md#the-m-map-does-not-pause) takes, only smaller.
 
@@ -978,11 +1023,10 @@ scale, no blur. The outline colour is the opaque `#0f1632` (the eight passes ove
 translucent colour would stack unevenly). Sites: floaters (damage numbers, gold, `LEVEL n`),
 the overhead name tags, the E and fish prompts, the radial-wheel labels, every number on the backpack
 widget (the strip's food counts and gold, each bag cell's stack count, a gear cell's hover price),
-the alive count and clock under the minimap — the alive icon is stamped with the same eight-offset
-rim by `drawAliveIcon` — `state.msg`, the info stack, and the drop-UI text.
+the clock under the minimap, `state.msg`, the info stack, and the drop-UI text.
 `drawPixelTextShadow` (a single bottom-right 1 px shadow) remains for text sitting on a panel,
-plank or overlay — the settings/map panels, the main menu, the death overlay, the scoreboard and
-the event feed's plates — where a full outline reads heavy. Checked at noon on open snow and at
+plank or overlay — the settings/map panels, the main menu, the death overlay and the scoreboard —
+where a full outline reads heavy. Checked at noon on open snow and at
 full night. A line drawn under a `globalAlpha` fade must use `Shadow`: the outline's eight passes
 overlap, so a translucent stamp stacks unevenly and the rim goes blotchy.
 
@@ -1123,7 +1167,7 @@ and you can sit and watch it, so a lost match ends when you stop watching — **
 overlay opens the defeat screen (`openDefeat()`, `state.deadView = 'defeat'`) and that screen's own
 single **LOBBY** plank is the door out. A respawn-pending death's LOBBY still leaves directly:
 nothing has been lost yet. `endScreen()` is the one test for "a ceremony owns the frame" —
-`renderUI`, `renderEventLog` and `replayShowing` all bow out under it (the recap would cover the
+`renderUI` and `replayShowing` both bow out under it (the recap would cover the
 whole ceremony); the held-TAB scoreboard and the info stack still draw over both.
 
 **The two timelines.** `WIN_T` and `DEF_T` name every beat, and the render pass and the sound cues
@@ -1149,7 +1193,7 @@ beat calls `endSkip()`, which jumps the relevant clock to the end.
   tassels were), a snow bank where the dais stood and **the whole losing side** standing knee-deep
   in it on the win's stands — no raised block — with the local player **prone and side-on** in the
   middle at the same 3×, an arrow planted beside it where the crown would be → five stat plates →
-  one plank. Nothing under the rule here either: who put you down is the event feed's line, and
+  one plank. Nothing under the rule here either: who put you down is the death headline's, and
   this screen is the side's loss, not yours.
 
 **What they print** is one frozen object either way — `endSnapshot()` on `state.end`, taken in
@@ -1206,8 +1250,7 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
 - **The recap**, on a **death** (a respawn wait or an elimination, once `deadReady()` — half a
   second of dim — has landed): the **whole frame**, the way a goal replays. The countdown reads
   over it on a wait; the spectate strip, the death dim, its headline and its planks wait
-  underneath (`renderDead` returns early while `replayFull()`), and the event feed still lands
-  over it, so who put you down is read while you watch it happen. A close box sits inside the
+  underneath (`renderDead` returns early while `replayFull()`). A close box sits inside the
   frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
   action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
@@ -1290,26 +1333,19 @@ LOBBY fade-out.
 report the live capture size, slot size and atlas cost, so a headless driver can check the
 resolution without playing to a death; `DBG.replayClose()` puts the recap away.
 
-## Scoreboard and event feed
+## Scoreboard and event log
 
-Two readouts of the **match** rather than of the world, in the `scoreboard & log` banner. Both
-draw after the death overlay, so the dim never touches them — being down is exactly when you read
-them — and both duck under the map/settings panels. The feed also stands down over
-[the end screens](#the-end-screens); the scoreboard does not.
+Two readouts of the **match** rather than of the world, in the `scoreboard & log` banner.
 
-**The feed** (bottom left) is the last `EVENT_MAX` (4) lines of `events`, oldest at the top,
-newest along the bottom. It has that corner to itself now the gear row lives in the
-[backpack](#the-backpack-and-gear-widget), and shares it only with the
-[replay window](#replay-the-last-four-seconds), stepping up by `replayLift()` px for as long as
-that window is open *in the corner* (the wait's big window sits clear of it). `logEvent(txt, p)` pushes one; `p` is the player the line is *about* and
-supplies both colours — plate in the team's dark `coatD` over an opaque dark base (a bright plate
-on snow leaves the text nothing to sit on), a 1 px edge in the team's bright `mark`, and the ink
-in `playerTint(p)` so two players on one team read as two people. `updateFx()` ages every line on
-wall time (so the feed fades in any mode, including paused) and drops it at `EVENT_LIFE` (8 s);
-alpha is `1 - t/EVENT_LIFE`, i.e. purely the line's age, which is what makes the stack read
-oldest-faintest. A new line arrives with an `EVENT_FLASH` (0.35 s) pop: it slides in from the left
-edge and takes a white wash that decays quadratically. What gets logged lives in
-[multiplayer.md](multiplayer.md#kills-and-the-event-feed).
+**The log is not drawn.** `events` is the last `EVENT_MAX` (12) lines the match wrote, newest
+last, and `logEvent(txt, p, o?)` is the one interface every caller speaks — `p` is the player the
+line is *about* and supplies its colours (plate `coatD`, edge `mark`, ink `playerTint(p)`), `o`
+overrides them for a line nobody owns. The bottom-left feed that used to draw them went in 3.23:
+a scrolling column of sentences on the play surface was the one thing there the
+[UI rule](../../CLAUDE.md#ui-rule-show-dont-label) forbids, and the bottom-left corner is the
+tooltip's alone now. The ring stays as the match's record (`DBG.events`) so a future readout — a
+kill toast, a recap — lands on it for free. What gets logged lives in
+[multiplayer.md](multiplayer.md#kills-and-the-event-log).
 
 **The scoreboard** is held-TAB (`scoreboardOpen()`: `keys['tab']`, any mode but `title`, so it
 works while dead and while riding the eagle) and is drawn per frame, not baked — every number on
@@ -1336,7 +1372,7 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
   so hover and click can never disagree), a live wheel segment, or a control inside the backpack
   widget (`gearHit()` / `bagHit()`), a weapon or ability well (`stripHit()`) or a cell of the weapon shelf
-  (`shelfHit()` — the strip's purse tab is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
+  (`shelfHit()` — the strip's gold plate is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over a stump or finished structure
   (right-clickable; `dim` beyond the 60 px reach); **reticle** — everywhere else in play.

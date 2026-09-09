@@ -37,13 +37,6 @@ function mobileRefresh() {
   const m = settings.mobile === 'on' ? true : settings.mobile === 'off' ? false : mobileAuto();
   const changed = m !== MOBILE;
   MOBILE = m;
-  // The pack starts OPEN on a desktop and SHUT on a phone, and this is the one
-  // place that knows which we are. The touch column (dodge/work/slide/char,
-  // js/touch.js) runs up the very corner the open frame fills, so on a phone
-  // the grid is something you open, read and shut again rather than something
-  // that sits under four buttons all match. Only on a CHANGE, so a resize
-  // never shuts a pack the player opened.
-  if (changed) state.bagOpen = !m;
   return changed;
 }
 

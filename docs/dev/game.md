@@ -133,7 +133,7 @@ own from anywhere. [Eagle drop](rendering.md#eagle-drop-mode-drop),
 [Death and respawn](gameplay.md#death-and-respawn), [Bots](multiplayer.md#bots).
 
 **Roguelike cards come out of the treeline's chests.** A sprung chest drops a **rarity-rolled
-card**, drafted three-at-a-time from a bag cell without pausing the sim, and a picked card is
+card**, drawn at random on a key from the pouch without pausing the sim, and a picked card is
 baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#roguelike-cards).
 
 **An ice hole is a build site.** Break the ice twice and the hole it leaves takes the one `water`

@@ -318,10 +318,9 @@ function aiOpenSides(tx, ty) {
   return n;
 }
 
-// bots skip the pick-1-of-3 draft UI entirely (bagClick is a mouse-only
-// entry point) - the instant one is carried, resolve it server-side with a
-// single random pick, since "choosing among 3" is specifically the human
-// decision point and inventing an AI heuristic for it isn't worth it
+// a bot draws the instant it holds a card: the same random pick useCard
+// (js/core.js) makes for a human, minus the key, the burst and the floater -
+// the rarest first, since a bot has no reason to sit on one
 function resolveCardForBot(p) {
   for (const rarity of CARD_RARITIES) {
     if (bagCount(p, cardKey(rarity)) <= 0) continue;
