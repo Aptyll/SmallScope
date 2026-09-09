@@ -559,7 +559,8 @@ function updateAI(p, dt) {
     // lane is the only way in: off it, the walk is aiToRoost's (gate, mouth,
     // lane); on it, the class decides the approach
     // the roost's gate carries turrets: any bot in the lane takes those down
-    // first with E (STRUCT_HIT_DMG a swing), exactly as a hand would, since
+    // first with E (STRUCT_HIT_DMG a swing, 10 of it once STRUCT_DR has taken
+    // its cut), exactly as a hand would, since
     // a bot standing off the bird under bolt fire never gets a draw finished
     const tur = aiInLane(p, e) ? nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; }) : null;
     // the wave is the push: off the rival's lane, a pusher walks with the

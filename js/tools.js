@@ -91,8 +91,8 @@ const TIER_SHINE = 2; // the tier whose plate animates
 // `m.burn` seconds at `m.burnDps` a second - on a rival, a deer or a worker
 // bot alike, because a burn is a unit state like any other.
 //
-// `path` is one of: 'line' straight | 'zig' weaving | 'orbit' circling the
-// shooter | 'boomer' out and back | 'lob' a heavy throw that arcs down |
+// `path` is one of: 'line' straight | 'orbit' circling the shooter |
+// 'boomer' out and curving back | 'lob' a heavy throw that arcs down |
 // 'curve' a scything arc, the way a thrown axe goes.
 //
 // The swung pair's flight, in seconds - declared above the table because the
@@ -110,8 +110,8 @@ const BITS = {
     life: 0.85, speed: 320, dmg: 8, col: '#e8dcb4',
   },
   barb: {
-    name: 'BARBED SHOT', blurb: 'WEAVES. HITS HARDER.', price: 16, tier: 0, proj: true,
-    weight: 5, path: 'zig', solid: true, ff: false, kb: 1.2,
+    name: 'BARBED SHOT', blurb: 'A HEAVY SHAFT. SLOW, AND IT HITS HARDER.', price: 16, tier: 0, proj: true,
+    weight: 5, path: 'line', solid: true, ff: false, kb: 1.2,
     life: 1, speed: 250, dmg: 12, col: '#cfd8e8',
   },
   hook: {
@@ -894,19 +894,46 @@ function catchFrame(p) {
 // Called once per shot per sim step, BEFORE the step is integrated, so the
 // path owns the velocity and everything downstream (the trail, the hit tests,
 // the drawn body) just follows it. 'line' is the old arrow and costs nothing.
-const ZIG_HZ = 9;      // weaves per second
-const ZIG_SWING = 0.5; // rad either side of the bearing
 const ORBIT_R = 46;    // px the wisp circles its shooter at
 const LOB_DRAG = 0.55; // per second: how fast a thrown log gives up its speed
 const LOB_FALL = 210;  // px/s^2 the same log is pulled down at
 const CURVE_TURN = 3.4; // rad/s a thrown axe's bearing sweeps, always the one way
+// THE BOOMERANG, as one continuous curve. It flies out bleeding speed down to
+// BOOM_SLOW - never to nothing, because a shot that stops dead reads as a
+// bounce rather than a turn - and then BANKS: the bearing is swung toward the
+// thrower a little each step instead of snapped onto them, so the velocity
+// never jumps and the shot carves a teardrop, coming home along the outside
+// of its own path.
+//
+// Every number here is a FRACTION of the flight rather than a count of
+// seconds, which is what keeps the shape the same at every draw: the half
+// turn is allowed BOOM_SWING of the life whatever that life is (a tap's
+// quarter-second loop and a LONGSHOT's three-second sweep are the same
+// picture at different sizes), and because the turn rate is a rate and the
+// speed is a speed, the ARC widens on its own for a fast shot and tightens
+// for a slow one.
+//
+// AND IT ALWAYS COMES HOME. The return builds speed back to full, and is
+// floored at whatever pace actually closes the gap by BOOM_SPARE of the life
+// - a fixed deadline, not a rolling one, or the target recedes as fast as the
+// shot chases it and the loop lands on the last frame every time. That floor
+// is only spent once the shot is roughly POINTED home (BOOM_ALIGN), since
+// speed spent mid-turn only widens the arc it has to fly back out of, and it
+// is capped at BOOM_RUSH so a sprinting owner is chased rather than snapped
+// to. The flight ends at the hand (BOOM_HOME_R) or at the end of its life,
+// whichever comes first: it never trails a walking owner around the map.
+const BOOM_OUT = 0.24;   // of life spent flying out before the bank begins
+const BOOM_SLOW = 0.3;   // of speed left at the top of the turn
+const BOOM_SWING = 0.4;  // of life a full half turn is allowed to take, at range
+const BOOM_BITE = 1.8;   // ...but never an arc wider than this fraction of the gap
+const BOOM_ALIGN = 2;    // rad off home the catch-up pace starts being spent
+const BOOM_SPARE = 0.85; // of the life the return aims to be home by
+const BOOM_RUSH = 2.2;   // ceiling on the return's catch-up speed, x the bit's own
+const BOOM_HOME_R = 10;  // px from the thrower's hand the flight ends at - or the
+                         // step just taken, whichever is wider, so a fast shot
+                         // in a long frame cannot stride straight over the hand
 function steerBit(a, dt) {
   if (!a.path || a.path === 'line') return;
-  if (a.path === 'zig') {
-    const w = a.ang + Math.sin(a.t * ZIG_HZ * Math.PI * 2) * ZIG_SWING;
-    a.vx = Math.cos(w) * a.spd; a.vy = Math.sin(w) * a.spd;
-    return;
-  }
   if (a.path === 'lob') {
     a.vx *= Math.pow(LOB_DRAG, dt);
     a.vy = a.vy * Math.pow(LOB_DRAG, dt) + LOB_FALL * dt;
@@ -920,17 +947,36 @@ function steerBit(a, dt) {
     return;
   }
   if (a.path === 'boomer') {
-    // out on the bearing, slowing, then hauled back to whoever threw it
     const o = players[a.owner];
-    const half = a.life * 0.45;
-    if (a.t < half) {
-      const e = 1 - a.t / half;
-      a.vx = Math.cos(a.ang) * a.spd * e; a.vy = Math.sin(a.ang) * a.spd * e;
-    } else if (o) {
+    const u = Math.min(a.t / a.life, 1);
+    // the throw: speed bleeds off to BOOM_SLOW and holds there through the turn
+    let spd = a.spd * (u < BOOM_OUT ? 1 - (1 - BOOM_SLOW) * (u / BOOM_OUT) : BOOM_SLOW);
+    if (u >= BOOM_OUT && o) {
       const dx = o.x - a.x, dy = (o.y - BOW_Y) - a.y, d = Math.hypot(dx, dy) || 1;
-      a.vx = dx / d * a.spd; a.vy = dy / d * a.spd;
-      if (d < 8) a.t = a.life; // home: the flight is over
+      // BANK, never snap: the bearing turns the short way toward home by at
+      // most this step's share of the swing, which is what makes the arc an arc
+      let df = (Math.atan2(dy, dx) - a.ang) % (Math.PI * 2);
+      if (df > Math.PI) df -= Math.PI * 2;
+      if (df < -Math.PI) df += Math.PI * 2;
+      // The swing tightens as the hand nears. A wide arc reads beautifully at
+      // range, but a wide arc ten px out is an ORBIT around the thrower that
+      // never lands - a circle of radius r cannot curve into anything closer
+      // than r - so the turn is also never slower than the rate that holds
+      // that radius inside the gap left (r <= d / BOOM_BITE). At range this
+      // term is nothing and BOOM_SWING owns the shape; on the doorstep it is
+      // the whole of the guidance, and it is what makes the loop CLOSE.
+      const w = Math.max(Math.PI / (a.life * BOOM_SWING), BOOM_BITE * Math.hypot(a.vx, a.vy) / d);
+      const turn = w * dt;
+      a.ang += df > turn ? turn : df < -turn ? -turn : df;
+      // the return builds back up to full speed...
+      spd = a.spd * (BOOM_SLOW + (1 - BOOM_SLOW) * (u - BOOM_OUT) / (1 - BOOM_OUT));
+      // ...and once it is pointed home, never below the pace that closes the
+      // gap by the deadline. This is the whole of the guarantee.
+      if (Math.abs(df) < BOOM_ALIGN) spd = Math.max(spd, d / Math.max(a.life * BOOM_SPARE - a.t, 1e-3));
+      spd = Math.min(spd, a.spd * BOOM_RUSH);
+      if (d <= Math.max(BOOM_HOME_R, spd * dt)) a.t = a.life + 1; // caught: the loop retires it this step
     }
+    a.vx = Math.cos(a.ang) * spd; a.vy = Math.sin(a.ang) * spd;
     return;
   }
   if (a.path === 'orbit') {
@@ -1104,8 +1150,7 @@ function botFitLoadout(p) {
       const id = s && bitIdOf(s.type);
       if (!id) continue;
       const b = BITS[id];
-      if (b.proj && (b.bot === false ||
-        (b.path !== 'line' && b.path !== 'zig' && b.path !== 'lob'))) continue;
+      if (b.proj && (b.bot === false || (b.path !== 'line' && b.path !== 'lob'))) continue;
       let free;
       // a bot builds INSIDE the budget: a bit it cannot afford would only
       // truncate the press it is already firing, so it stays in the pack

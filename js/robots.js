@@ -940,7 +940,7 @@ function robotStrike(b, e, pt) {
   const d = Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) || 1;
   const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
   if (nearPlayer(b.x, b.y)) SFX.swing();
-  if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src);
+  if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src, b); // `b` swung it, so STRUCT_DR stays off: ROBOT_DMG is already a building number
   else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: b.kind === 'soldier' ? 'soldier' : 'worker' });
 }
 

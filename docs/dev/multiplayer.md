@@ -566,7 +566,8 @@ The ladder:
    mouth on open snow) → mouth → lane → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. In the
-   lane, the roost's **gate turrets come down first** (E, `STRUCT_HIT_DMG` a swing — a bot
+   lane, the roost's **gate turrets come down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
+   `STRUCT_DR` has taken its cut — a bot
    standing off the bird under bolt fire never finishes a draw), then a hunter takes its
    station `AI_HOLD` (96 px) out **on the lane's axis**, where the gate's gap leaves the line to
    the roost open (off the axis its walls eat the shot) and outside the gust, and looses at the

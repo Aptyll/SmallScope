@@ -143,6 +143,10 @@ lives in `docs/dev/*.md` beside the code it protects.
   the `status effects` banner); an area effect sweeps `unitsNear`/`unitsHit`, never a loop per kind.
   Reaching for `damagePlayer` in a new ability is how wildlife and worker bots quietly stop being in
   the game: [gameplay](docs/dev/gameplay.md#status-effects-one-set-for-every-unit).
+- **A building is not a unit, and takes its blow through `hurtStruct`** — which is where
+  `STRUCT_DR` damps a player's damage, and only a player's (a bot names itself and keeps its
+  own number). An area effect asks `structsNear`, the `unitsNear` for walls; anything shot dies
+  on a wall already, so a bit sieges from the arrow loop's solid-tile branch and nowhere else.
 - **Anything that walks to a goal routes there** through `navTo`/`navStep` (the `pathfinding`
   banner), never by steering straight at it, and **drops the goal when they return `ok = false`**
   (no route, or pinned) — there are no stuck timers; a caller that ignores `ok` stands still forever.

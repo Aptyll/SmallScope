@@ -340,10 +340,20 @@ function updatePlay(dt) {
     // a bit whose `solid` is false passes through the world - that is the
     // whole of "never hits ground", and the only reason a wisp can circle you
     // through a treeline
-    if (!dead && a.solid !== false && isSolidTile(Math.floor(a.x / TILE), Math.floor(a.y / TILE))) {
-      dead = true; a.struck = true;
-      burst(a.x, a.y, '#cfd8e8', 3, 25, 0.25, true);
-      if (a.burn > 0) burst(a.x, a.y, '#ff9440', 7, 50, 0.5);
+    if (!dead && a.solid !== false) {
+      const stx = Math.floor(a.x / TILE), sty = Math.floor(a.y / TILE);
+      if (isSolidTile(stx, sty)) {
+        dead = true; a.struck = true;
+        // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
+        // SIEGES it. Every bit a wall stops does, whatever it is, at STRUCT_DR
+        // off (hurtStruct, js/actions.js) - and a bit that passes walls
+        // (`solid: false`: the care arrow, the wisp, the hook) buys that with
+        // its siege, which is the whole of the trade and needs no second flag.
+        const st = structOf(objAt(stx, sty));
+        if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
+        burst(a.x, a.y, '#cfd8e8', 3, 25, 0.25, true);
+        if (a.burn > 0) burst(a.x, a.y, '#ff9440', 7, 50, 0.5);
+      }
     }
     // What the shot does to a BODY, said once for all three kinds: the damage
     // type, the fire it lights and the shove it lands are the bit's, and
