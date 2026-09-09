@@ -2795,7 +2795,7 @@ function tipBase(type, title, kind) {
     icon: ITEMS[type] && SPRITES[ITEMS[type].icon], plate: tp.plate, rim: tp.rim, type,
   };
 }
-const TIP_PATH = { line: 'STRAIGHT', zig: 'ZIG-ZAG', orbit: 'ORBIT', boomer: 'BOOMERANG', lob: 'ARCS DOWN', curve: 'CURVES' };
+const TIP_PATH = { line: 'STRAIGHT', orbit: 'ORBIT', boomer: 'BOOMERANG', lob: 'ARCS DOWN', curve: 'CURVES' };
 // KNOCKBACK is the one bit number that is a multiple rather than a quantity
 // (see BITS, js/tools.js), so it prints as one - 'x1' is the ordinary shove
 const TIP_KB = (kb) => 'x' + (Math.round((kb === undefined ? 1 : kb) * 10) / 10);

@@ -212,16 +212,25 @@ function updateAbilities(p, dt) {
     }
     if (sp > JUG_MIN_SP) {
       const nx = p.vx / sp, ny = p.vy / sp;
+      const dmg = Math.max(3, Math.round(4 + sp * 0.04));
       // anything alive in the way, not only the rival players: a body running
       // this hard bowls a deer or a worker over exactly as it does a player
       for (const q of unitsHit(p, p.x, p.y, PLAYER_R * 2 + 2)) {
         if (p.jugHit.includes(q)) continue;
         p.jugHit.push(q);
-        const dmg = Math.max(3, Math.round(4 + sp * 0.04));
         hurtUnit(q, dmg, nx, ny, p, { kb: 140 });
         if (!q.dead) { stunUnit(q, JUG_STUN); q.kbx += nx * 140; q.kby += ny * 140; }
         burst(q.x, unitMidY(q), '#e05a4a', 8, 55, 0.5, true);
         if (p === player || q === player) state.shake = Math.max(state.shake, 3);
+      }
+      // ...and a rival's WALLS are in the way like anything else. One shoulder
+      // per building per activation, off the SAME jugHit list, so a body
+      // pinned against a wall does not grind it down a frame at a time.
+      for (const s of structsNear(p, p.x, p.y, PLAYER_R * 2 + 2)) {
+        if (p.jugHit.includes(s)) continue;
+        p.jugHit.push(s);
+        hurtStruct(s, dmg, p);
+        if (p === player) state.shake = Math.max(state.shake, 3);
       }
     }
   }
@@ -464,6 +473,14 @@ function rushEnd(p, wall) {
   const v = p.rushVictim;
   p.rushVictim = null;
   p.vx = p.rushNX * 60; p.vy = p.rushNY * 60;
+  // A charge stopped by a rival's BUILDING slams the building: the tile just
+  // past the body is whatever was driven into, and it takes the wall slam's
+  // own number - the same blow a carried body would have taken into it.
+  if (wall) {
+    const bx = p.x + p.rushNX * (PLAYER_R + 6), by = p.y + p.rushNY * (PLAYER_R + 6);
+    const st = structOf(objAt(Math.floor(bx / TILE), Math.floor(by / TILE)));
+    if (structFoe(p, st)) hurtStruct(st, Math.round(RUSH_DMG * RUSH_WALL_MUL), p);
+  }
   if (v && unitAlive(v)) {
     const mul = wall ? RUSH_WALL_MUL : 1;
     hurtUnit(v, Math.round(RUSH_DMG * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul });
@@ -490,6 +507,9 @@ function abStomp(p) {
     hurtUnit(q, STOMP_DMG, nx, ny, p, { kb: STOMP_KB });
     if (!q.dead) { stunUnit(q, STOMP_STUN); q.kbx += nx * STOMP_KB; q.kby += ny * STOMP_KB; }
   }
+  // the ring does not stop at bodies: every rival building it touches takes
+  // the same blow, damped once by STRUCT_DR inside hurtStruct (js/actions.js)
+  for (const s of structsNear(p, px, py, STOMP_R)) hurtStruct(s, STOMP_DMG, p);
   if (PRACTICE) abHitDummies(px, py, STOMP_R, STOMP_DMG);
   craters.push({ x: px, y: py + 3, team: p.team, t: 0 });
   // the shockwave: one ring of snow thrown outward
@@ -560,6 +580,9 @@ function updateAbilityWorld(dt) {
     n.spin += dt * 14;
     let dead = n.d >= NET_RANGE;
     if (!dead && isSolidTile(Math.floor(n.x / TILE), Math.floor(n.y / TILE))) {
+      // a net that ends on a rival's building lands on it, the way a shot does
+      const st = structOf(objAt(Math.floor(n.x / TILE), Math.floor(n.y / TILE)));
+      if (structFoe(sideOf(n), st)) hurtStruct(st, NET_DMG, abCredit(n));
       burst(n.x, n.y, '#cfd8e8', 4, 30, 0.3, true);
       dead = true;
     }

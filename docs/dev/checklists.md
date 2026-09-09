@@ -593,12 +593,15 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   rival worker's axe on an attack [flag](gameplay.md#worker-flags), and now every class ability and
   the roll like any other body — but the AI's target picker still ignores them: a bot only
   downs a worker by accident, with a shot meant for a player. Buildings are not immune either: a
-  **player** on another team breaks one with E, and a worker on a siege flag does the same through
-  the same `hurtStruct` (see [Base building](gameplay.md#base-building)), but no wildlife does, and
-  arrows and bolts pass buildings without damaging them.
+  **player** on another team breaks one with E, with **any bit a wall stops**, or with any
+  ability that lands damage, and a worker on a siege flag does the same — all through the one
+  `hurtStruct`, which damps a player's blow by `STRUCT_DR` and a bot's not at all (see
+  [Base building](gameplay.md#base-building)). No wildlife does. A bit that passes walls
+  (`solid: false`) passes buildings too, and a turret bolt chips whatever rival wall it dies on.
 - **A structure is not a unit, and neither is the roosting eagle.** Everything in
   [status effects](gameplay.md#status-effects-one-set-for-every-unit) — damage types, fire, the six
-  states — is for bodies that walk. A building has an hp pool and `hurtStruct`; the eagle is an
+  states — is for bodies that walk. A building has an hp pool and `hurtStruct` (and `structsNear`
+  where a body would answer to `unitsNear`); the eagle is an
   objective with `hurtEagle` and a ceremony of its own. A flaming shot that hits either does its
   impact damage and nothing more: neither burns. That is deliberate, not an oversight — but it is
   the obvious next place fire could go, and it would need a burn clock and a draw pass on each.

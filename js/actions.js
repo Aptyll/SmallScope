@@ -62,7 +62,7 @@ const ARROW_BODY = [];    // flat [i, j, key] triples parsed from the map once,
   for (const p of px) ARROW_BODY.push(p[0], p[1], p[2]);
 }
 const WORK_REACH = 1;     // E (and the hands on their own: autoWork) work tiles within this many tiles (Chebyshev) of the player's tile
-const STRUCT_HIT_DMG = 10; // axe damage per E swing against an ENEMY building (own ones are demolished from the wheel)
+const STRUCT_HIT_DMG = 25; // RAW axe damage per E swing against an ENEMY building - STRUCT_DR takes its 60% off like any other player blow, so a swing lands 10 (own buildings are demolished from the wheel)
 
 // The roll as a weapon. A dash goes *through* anything small - rabbits,
 // wolves, robots, other players - swiping each of them once per roll and
@@ -620,11 +620,24 @@ function hitDummy(o, dmg, hx, hy) {
   if (nearPlayer(hx, hy)) SFX.hit();
 }
 
-// One blow against a building on another team. Both things that can land one
-// - a player's E swing and a worker bot's axe on a siege flag - come through
-// here, so the flash, the floater, the wreck's payout and the feed line are
-// one path and cannot drift apart. `p` is who swung (null = nobody to credit).
-function hurtStruct(o, dmg, p) {
+// What a building shrugs off a PLAYER's blow. Every way a hand can reach a
+// wall now lands here - the E swing, every bit a tool fires (js/sim.js), the
+// abilities' rings and slams (js/abilities.js) - and every one of those
+// numbers was tuned against a 40-160 hp BODY, which would melt a 60 hp wall.
+// So the damping is charged ONCE, here, on the one path, rather than as a
+// building-sized number written out per weapon: raise a shot's damage and the
+// siege scales with it, and nothing new ever has to remember the rule. It is
+// a player's blow that is damped, never a worker's axe (ROBOT_DMG is already
+// a building number), which is what the fourth argument says.
+const STRUCT_DR = 0.6;
+// One blow against a building on another team. Everything that can land one -
+// a player's E swing, a shot, an ability, a worker bot's axe on a siege flag -
+// comes through here, so the damping, the flash, the floater, the wreck's
+// payout and the feed line are one path and cannot drift apart. `p` is who
+// gets the credit (null = nobody); `bot` is the chassis that swung, on the one
+// blow a player is credited for but did not throw.
+function hurtStruct(o, dmg, p, bot) {
+  if (!bot) dmg = Math.max(1, Math.round(dmg * (1 - STRUCT_DR)));
   const c = structCenter(o);
   o.hp -= dmg;
   o.flash = 0.1;
@@ -746,6 +759,30 @@ function unitsNear(src, x, y, r) {
 // the roll, a respawn and the landing ever set invuln (damagePlayer).
 function unitsHit(src, x, y, r) {
   return unitsNear(src, x, y, r).filter((e) => !(e.invuln > 0));
+}
+
+// A building anyone but its own side may swing at. A wall has a team and no
+// life of its own, so this is the whole of unitFoe for one: never your own,
+// never a neutral, and PVP has nothing to say about it - a wall is not a body.
+// `src` is a player or a sideOf() stand-in for a thing lying in the world.
+function structFoe(src, s) {
+  return !!s && !!STRUCTS[s.type] && s.team !== undefined && !!src && s.team !== src.team;
+}
+// Every rival building the circle touches, resolved to its anchor and listed
+// ONCE: the buildings half of unitsNear, and the one door an AREA effect gets
+// to a wall. A tile counts when its own centre is inside the reach plus a
+// tile's half width (exactly how abHitDummies measures), so a 3x2 bay is
+// caught by whichever of its six tiles the ring actually crosses.
+function structsNear(src, x, y, r) {
+  const out = [];
+  const tx0 = Math.floor((x - r - 8) / TILE), tx1 = Math.floor((x + r + 8) / TILE);
+  const ty0 = Math.floor((y - r - 8) / TILE), ty1 = Math.floor((y + r + 8) / TILE);
+  for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+    const s = structOf(objAt(tx, ty));
+    if (!structFoe(src, s) || out.includes(s)) continue;
+    if (Math.hypot(tx * TILE + 8 - x, ty * TILE + 8 - y) <= r + 8) out.push(s);
+  }
+  return out;
 }
 
 // ---- the one blow --------------------------------------------------------

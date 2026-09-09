@@ -345,11 +345,39 @@ carries no `path` and falls straight through.
 | `path` | what it does |
 | --- | --- |
 | `line` | nothing — the old arrow, and it costs nothing |
-| `zig` | the bearing weaves ±`ZIG_SWING` at `ZIG_HZ` |
 | `lob` | drag on both axes plus `LOB_FALL` gravity: a heavy throw that arcs down and lands |
-| `boomer` | out on the bearing slowing to nothing, then hauled back to whoever threw it; the flight ends when it gets home |
+| `boomer` | out on the bearing bleeding down to `BOOM_SLOW`, then one continuous curve home — see below |
 | `orbit` | a ring of `ORBIT_R` around the shooter, eased out over the first 0.25 s and swept at its own speed |
 | `curve` | the bearing sweeps one way at `CURVE_TURN` (3.4 rad/s): a scythe, the way a thrown axe goes |
+
+**The boomerang is the one path that has to CLOSE**, so it is the one with a controller rather
+than a formula. Past `BOOM_OUT` of its life it **banks**: the bearing is turned the short way
+toward the thrower a little each step instead of snapped onto them, so the velocity never jumps
+and the shot carves a teardrop, coming home along the outside of its own path. Every number is a
+*fraction of the flight* rather than a count of seconds — the half turn is allowed `BOOM_SWING`
+of the life whatever that life is — which is what keeps the shape identical at every draw, from a
+tap's quarter-second loop to a LONGSHOT's three-second sweep; and because the turn is a rate and
+the speed is a speed, the arc widens on its own for a fast shot and tightens for a slow one.
+
+Three rules make it *always* come home rather than usually:
+
+- the return **builds speed back up to full**, and is floored at whatever pace closes the gap by
+  `BOOM_SPARE` of the life — a **fixed** deadline, not a rolling one, or the target recedes as
+  fast as the shot chases it and the loop lands on the last frame every time. That floor is only
+  spent once the shot is roughly *pointed* home (`BOOM_ALIGN`), since speed spent mid-turn only
+  widens the arc it has to fly back out of, and it is capped at `BOOM_RUSH` so a sprinting owner
+  is chased rather than snapped to.
+- the swing **tightens as the hand nears** (`BOOM_BITE`): a circle of radius *r* cannot curve
+  into anything closer than *r*, so a turn wide enough to read well at range is an orbit around
+  the thrower at ten px. At range that term is nothing and `BOOM_SWING` owns the shape; on the
+  doorstep it is the whole of the guidance, and it is what makes the loop close.
+- it ends at the hand (`BOOM_HOME_R`, or the step just taken, whichever is wider — a fast shot in
+  a long frame must not stride straight over the hand) **or at the end of its life**, whichever
+  comes first. The life cap is unconditional, so a boomerang never trails a walking owner around
+  the map even in the one geometry it cannot solve (thrown in the direction you are sprinting).
+
+Measured over every draw × every direction the thrower can be moving × 60/30/20 fps, that is
+1343 of 1344 flights home, at 70–88% of the life they were given, and none outliving it.
 
 Three per-bit rules land in the arrow update in `updatePlay`: `a.solid !== false` gates the tile
 test (that is the whole of "never hits ground"), `a.ff` lifts the team check on players and worker
@@ -2232,15 +2260,38 @@ Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js
   roll-out timer as a bar under them; a flickering slat across each vent grille; a roof **beacon**
   that blinks amber while a bot is due; and an hp bar over the roof once damaged. `removeStruct()`
   clears the whole footprint and kills its robots with it.
-- **Buildings take damage from E, but only from the other team.** `hitObject()`'s structure
-  branch deals `STRUCT_HIT_DMG` (10) a swing, at the `swingCd` of 0.34 s — so ~2 s for a tier-1
-  wall (60 hp), ~10 s for a tier-3 one (300 hp), ~7.5 s for the bay (220 hp). It flashes and
-  shakes the building like any other struck object, floats the damage, and shakes the camera for
-  the local player. Damage is **contested** with everything else E does, since it runs inside
-  `swingHit`'s `contest('work:' + idx)`. At 0 hp it calls `destroyStructure(o, true, p)` — the
-  wreck pays out exactly like a demolition, straight to the wrecker — and
-  logs `<NAME> WRECKED A <TYPE>` to the event log. Nothing else damages a building: arrows die
-  on solid tiles without hurting them, and no AI or wildlife targets one.
+- **Buildings take damage from everything a rival can throw, and only from the other team.**
+  `hurtStruct(o, dmg, p, bot)` is the one blow — the flash, the shake, the floater, the camera
+  kick, the wreck payout and the `<NAME> WRECKED A <TYPE>` feed line are one path and cannot
+  drift apart. Four things reach it:
+  - the **E swing**, `hitObject()`'s structure branch, **contested** with everything else E does
+    (it runs inside `swingHit`'s `contest('work:' + idx)`);
+  - **every bit a tool fires**, in the arrow update's solid-tile branch (js/sim.js): where a
+    shot used to simply die on a wall, it now sieges it first. A bit whose `solid` is `false`
+    (the care arrow, the wisp, the hook) passes through buildings without touching them — that
+    is the trade for passing walls, and it needs no second flag;
+  - the **abilities**: the stomp's ring, the juggernaut's shoulder (one per building per
+    activation, off the same `jugHit` list the bodies use), the charge's slam into whatever it
+    was driven into, the net, and the piercing shot, which rides the arrows array like any bit;
+  - a **worker or soldier bot's axe** on a siege flag (`robotStrike`).
+
+  **`STRUCT_DR` (0.6) damps a player's blow, and only a player's.** Every one of those player
+  numbers was tuned against a 40–160 hp *body* and would melt a 60 hp wall, so the damping is
+  charged once, inside `hurtStruct`, rather than written out as a second building-sized number
+  per weapon: raise a shot's damage and the siege scales with it, and a new ability never has to
+  remember the rule. A bot names itself in the fourth argument and keeps its full `ROBOT_DMG`,
+  which is already a building number. `STRUCT_HIT_DMG` is the **raw** E swing (25) and lands 10
+  after the damping — exactly what it always landed, at the `swingCd` of 0.34 s: ~2 s for a
+  tier-1 wall (60 hp), ~10 s for a tier-3 one (300 hp), ~7.5 s for the bay (220 hp). A full-draw
+  plain arrow lands 7, so a tier-1 wall is nine shots. At 0 hp it calls
+  `destroyStructure(o, true, p)` and the wreck pays out exactly like a demolition, straight to
+  the wrecker. Wildlife still damages nothing.
+
+  **`structsNear(src, x, y, r)` is the buildings half of `unitsNear`** — every rival building
+  the circle touches, resolved to its anchor and listed once, so an **area** effect reaches a
+  wall through one call rather than a tile loop per ability, and a 3×2 bay is caught by whichever
+  of its six tiles the ring actually crosses. `structFoe(src, s)` is its `unitFoe`: never your
+  own, never a neutral, and PVP has nothing to say about it, because a wall is not a body.
 - Demolish refunds **50% of the cumulative cost across tiers** (`cumulativeCost`), paid to the
   demolisher on the spot through `awardGold` — 23 gold for a fully-upgraded wall. `demolishStruct()` →
   `destroyStructure(o, true, p)` is the live path for that, reached from `runCmd` for the wheel's

@@ -182,7 +182,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the roll as a hit: the sweep and the tackle | `rollSweep`, `rollTackle`, `tackleObject`, `tackleObjAhead`, `rollPow`, `rollDmg` | `actions` › `the roll as a hit` |
 | going to ground and getting back up | `tryProne`, `risePlayer` | `actions` › `prone` |
 | the empty-press tell (an empty slot, or a budget that reaches no shot) | `dryFire` | `actions` › `the empty press` |
-| one blow against a building on another team (E swing and worker axe alike) | `hurtStruct`, `STRUCT_HIT_DMG`, `destroyStructure` | `actions` (its tail) |
+| one blow against a building on another team (E swing, every bit a tool fires, every ability, worker axe alike) | `hurtStruct`, `STRUCT_DR`, `STRUCT_HIT_DMG`, `destroyStructure` | `actions` (its tail) |
+| which buildings an AREA effect reaches, and whose they are | `structsNear`, `structFoe` | `status effects` (beside `unitsNear`/`unitFoe`, which they mirror) |
 | every way of hurting the practice dummy (E, every bit, the tackle), and the meter's combo ledger | `hitDummy` | `actions` (its tail; the dummy itself: `practice arena`, world.js; the plate: `drawDummyMeter`, draw-world.js) |
 | **the one blow every kind of unit takes** - a player, an animal, a worker bot | `hurtUnit` | `status effects` (its per-kind ends: `damagePlayer` player.js, `hurtAnimal` wildlife.js, `hurtRobot` robots.js) |
 | every living thing in a circle an area effect may touch, in one list | `unitsNear`, `unitsHit` (blows only), `unitFoe`, `unitTeam`, `unitAlive`, `unitMidY`, `isAnimalUnit` | `status effects` › `what a unit IS` |
@@ -205,7 +206,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | moving a tool onto a key or a bit into a cell (the two the drag goes through) | `slotPut`, `bitPut` | `tools & bits` › `equipping` |
 | what a press actually fires, and the shot it puts in the air; the fish taken with no press at all | `fireTool`, `emitBit`, `offBy`/`SHOT_SKEW`/`DUP_SKEW` (the volley's spread), `autoFish`, `FISH_AUTO_CD` | `tools & bits` › `what a tool fires` |
 | the catch pose: its clock, the cancel every step, press and hit call, which of its three frames is up | `CATCH_T`, `startCatch`, `cancelCatch`, `catchFrame` | `tools & bits` - after `autoFish` (ticked in `updatePlayer`, sim.js; drawn by `drawPlayer`, draw-world.js; the net take in `updateStructures`, structures.js) |
-| how each bit flies, and the numbers behind the five non-straight paths | `steerBit`, `ZIG_*`, `ORBIT_R`, `LOB_DRAG`/`LOB_FALL`, `CURVE_TURN` | `tools & bits` › `how a bit flies` |
+| how each bit flies, and the numbers behind the four non-straight paths | `steerBit`, `ORBIT_R`, `LOB_DRAG`/`LOB_FALL`, `CURVE_TURN`, `BOOM_*` (the boomerang's return controller) | `tools & bits` › `how a bit flies` |
 | what a shot does where it LANDS, and the two that do anything | `BIT_IMPACT`, `bitImpact`, `AXE_CHOP_R`, `WARP_BACK` | `tools & bits` › `what a bit does where it lands` (called from the arrow update: `update`, sim.js) |
 | the teleport itself: the jump, and the silhouettes it strings across it | `warpPlayer`, `updateWarps`, `warps`, `WARP_FLASH_T`/`WARP_STEP`/`WARP_MAX` | `tools & bits` › `the teleport` (drawn by `drawWarps`, render.js; aged in `updateFx`, sim.js) |
 | how hard a shot shoves what it hits | `kb` on each `BITS` row (`HIT_KB` player.js, `ROBOT_KB` robots.js, `o.kbMul` in `hurtUnit`) | `tools & bits` (beside `BITS`) |
