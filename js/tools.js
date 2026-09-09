@@ -352,6 +352,12 @@ function updateWarps(dt) {
 const TOOLS = {
   shortbow: { name: 'SHORTBOW',    tier: 0, price: 30,  rof: 55, cap: 2, tensile: 9,  art: 'bow' },
   sling:    { name: 'SLING',       tier: 0, price: 26,  rof: 26, cap: 2, tensile: 10, art: 'sling' },
+  // the one MELEE body: `melee` is what makes a press a CUT rather than a
+  // shot (slashTool below) - `reach` px of blade at full draw, `half` rad of
+  // sweep to either side of the aim. Every bit still loads and still counts:
+  // what is fitted is what the edge is worth, and a modifier under it
+  // rewrites the cut the way it rewrites a shot.
+  longsword:{ name: 'LONGSWORD',   tier: 0, price: 28,  rof: 30, cap: 2, tensile: 10, art: 'sword', melee: { reach: 24, half: 1.05 } },
   recurve:  { name: 'RECURVE BOW', tier: 1, price: 85,  rof: 40, cap: 3, tensile: 13, art: 'recurve' },
   hornbow:  { name: 'HORN BOW',    tier: 1, price: 72,  rof: 34, cap: 4, tensile: 15, art: 'bow' },
   longbow:  { name: 'LONGBOW',     tier: 2, price: 170, rof: 28, cap: 5, tensile: 22, art: 'recurve' },
@@ -760,11 +766,18 @@ function fireTool(p) {
   const plan = toolPlan(cell);
   if (!plan.shots.length) { dryFire(p); return; } // pressed a tool that cannot answer
   if (p === player) bitLit = { cell, cells: plan.spent, t: BIT_LIT_T };
-  // the index into the volley is the skew off the aim, so no two bits of one
-  // press leave inside each other
-  plan.shots.forEach((s, k) => emitBit(p, BITS[s.id], s.id, s.m, amb, k));
+  const T = TOOLS[toolIdOf(cell.type)];
+  if (T.melee) {
+    // a blade: the same press, the same plan, the same cycle - but the bits
+    // are swung, not thrown (slashTool below)
+    slashTool(p, cell, plan, T.melee, amb);
+  } else {
+    // the index into the volley is the skew off the aim, so no two bits of one
+    // press leave inside each other
+    plan.shots.forEach((s, k) => emitBit(p, BITS[s.id], s.id, s.m, amb, k));
+    if (nearPlayer(p.x, p.y)) SFX.arrow();
+  }
   p.nockT = toolRof(p, cell);
-  if (nearPlayer(p.x, p.y)) SFX.arrow();
   // the loose is what breaks cover - one ambush per burrow, then you are a
   // player lying in the open with a tool that still has to cycle
   risePlayer(p);
@@ -834,6 +847,61 @@ function emitBit(p, b, id, m, amb, seq) {
   }
   if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
   else p.dir = dy > 0 ? 'down' : 'up';
+}
+
+// ---- the cut -------------------------------------------------------------
+// A melee tool's press. The draw is still the throttle - a tap is a short,
+// weak cut and a full draw the whole blade at its whole worth (SLASH_REACH_MIN
+// is the reach floor, drawDmgMul the damage's) - and every bit in the plan is
+// one cut of the same swing: its damage through emitBit's own sum, its
+// modifiers' damage type and fire on every body the edge reaches. What the
+// edge reaches is the WEDGE (inCone, js/actions.js) and nothing else: a body
+// behind the caster is never cut, and the sweep left on the snow (`slashes`,
+// drawn by drawSlashes in js/render.js) is that exact wedge, so what a rival
+// saw is what hit them. A bit whose whole point is its flight - a boomerang,
+// a lob, an orbit - swings as a plain cut worth its damage; the sword is a
+// place the fittings you found can still go, not a second arsenal.
+const SLASH_T = 0.22;        // s the sweep lives on the snow
+const SLASH_REACH_MIN = 0.6; // a tap reaches this fraction of the blade
+const slashes = [];          // {x, y, a, r, half, t, hit}
+function slashReach(melee, pw) { return melee.reach * (SLASH_REACH_MIN + (1 - SLASH_REACH_MIN) * pw); }
+function slashTool(p, cell, plan, melee, amb) {
+  const kit = kitOf(p);
+  const pw = drawPow(p);
+  const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
+  const a = Math.atan2(dy, dx);
+  const r = slashReach(melee, pw);
+  const spdBonus = kit.spdDmg * Math.min(1, Math.hypot(p.vx, p.vy) / 200);
+  const targets = unitsInCone(p, p.x, p.y, a, r, melee.half);
+  const walls = structsInCone(p, p.x, p.y, a, r, melee.half);
+  for (const s of plan.shots) {
+    const b = BITS[s.id], m = s.m;
+    let dmg = (b.dmg + kit.dmgPow * pw * 0.5 + kit.dmgBase + spdBonus + LVL_DMG * (p.level - 1)) * drawDmgMul(pw);
+    dmg = Math.round(dmg * m.dmgMul + m.dmgAdd);
+    if (amb) dmg = Math.round(dmg * kit.ambushMul);
+    const kb = b.kb === undefined ? 1 : b.kb;
+    for (const q of targets) {
+      const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+      hurtUnit(q, dmg, (q.x - p.x) / d, (q.y - p.y) / d, p, {
+        type: m.type, burn: m.burn, burnDps: m.burnDps, ambush: amb, kb: 30, kbMul: kb,
+      });
+      burst(q.x, unitMidY(q), '#eef4fb', 4, 40, 0.3, true);
+    }
+    for (const w of walls) hurtStruct(w, dmg, p);
+    // the practice dummy: the wedge's far half is where a dummy stands to be hit
+    if (PRACTICE) abHitDummies(p.x + Math.cos(a) * r * 0.5, p.y + Math.sin(a) * r * 0.5, r * 0.5, dmg);
+  }
+  slashes.push({ x: p.x, y: p.y - 2, a, r, half: melee.half, t: 0, hit: targets.length > 0 });
+  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
+  else p.dir = dy > 0 ? 'down' : 'up';
+  if (targets.length && (p === player || targets.includes(player))) state.shake = Math.max(state.shake, 2);
+  if (nearPlayer(p.x, p.y)) { SFX.swing(); if (targets.length) SFX.hit(); }
+}
+function updateSlashes(dt) {
+  for (let i = slashes.length - 1; i >= 0; i--) {
+    slashes[i].t += dt;
+    if (slashes[i].t >= SLASH_T) slashes.splice(i, 1);
+  }
 }
 
 // Fishing is the hands working on their own, like a tree in reach
@@ -1011,6 +1079,7 @@ const TECH = [
   // tier 0: the roots every branch grows out of
   { id: 'tool:shortbow', req: null },
   { id: 'tool:sling',    req: null },
+  { id: 'tool:longsword', req: null },
   { id: 'bit:arrow',     req: null },
   { id: 'bit:barb',      req: null },
   { id: 'bit:hook',      req: null },
@@ -1107,10 +1176,10 @@ function dropLoot(x, y, tier, chance) {
 //
 // The starting shot also has to leave room for that fitting inside the tool's
 // TENSILE budget, or the first pickup truncates the press to nothing - which
-// is what the SLING's 10 is sized for: BARBED SHOT and a fitting up to 5.
+// is what the LONGSWORD's 10 is sized for: BARBED SHOT and a fitting up to 5.
 const CLASS_LOADOUT = [
   { tool: 'shortbow', bits: [null, 'arrow'] }, // HUNTER: the plain shaft, a cell held open above it
-  { tool: 'sling',    bits: [null, 'barb'] },  // WARRIOR: the heavier weaving shot, same open cell
+  { tool: 'longsword', bits: [null, 'barb'] }, // WARRIOR: the blade, the heavy bit on its edge, same open cell
 ];
 function giveLoadout(p) {
   p.tools = new Array(TOOL_SLOTS).fill(null);
@@ -1237,6 +1306,23 @@ const TOOL_ART = {
     '......mM.s..',
     '........mM..',
     '.........Mm.',
+    '............',
+  ],
+  sword: [ // the longsword laid flat, point LEFT (drawn rotated a + PI onto the
+    // aim like the bows, whose arc faces -x): a white point, the lit edge
+    // over the shaded flat in steel (e/E, the two keys only this art uses),
+    // the cross-guard in the tier's metal, a wooden grip and a dark pommel
+    '............',
+    '............',
+    '............',
+    '........mM..',
+    '..eeeeeemM..',
+    'WeeeeeeemMgo',
+    '..EEEEEEmM..',
+    '........mM..',
+    '............',
+    '............',
+    '............',
     '............',
   ],
   sling: [ // a forked stick, two cords and a stone in the cradle
@@ -1368,7 +1454,7 @@ function bakeGrid(rows, pal, w) {
 // special case for the new items
 for (const art in TOOL_ART) {
   for (let t = 0; t < TOOL_TIERS.length; t++) {
-    const pal = Object.assign({ '.': null, o: '#241a12', s: '#e8dcb4', W: '#ffffff', g: '#6b4a30', G: '#a3794f' },
+    const pal = Object.assign({ '.': null, o: '#241a12', s: '#e8dcb4', W: '#ffffff', g: '#6b4a30', G: '#a3794f', e: '#c8d2e4', E: '#8b93a8' },
       TOOL_ART_PAL[t]);
     SPRITES['toolArt_' + art + '_' + t] = bakeGrid(TOOL_ART[art], pal, 12);
   }

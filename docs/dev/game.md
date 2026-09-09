@@ -62,7 +62,7 @@ the backpack shows the build at all times, to be rebuilt mid-fight.
 [Tools and bits](gameplay.md#tools-and-bits), [the counter](gameplay.md#the-merchants-counter).
 
 **Keys 1-4 are your class.** Each class carries four active abilities — the HUNTER's piercing
-shot, net, grapple and snow cover; the WARRIOR's shield, rush, stomp and juggernaut — each with a
+shot, net, grapple and snow cover; the WARRIOR's shield (and its slam), rush, stomp and execute — each with a
 cooldown, a
 cast the body visibly performs, and effects drawn plainly for both sides: the game is readable
 first, sneaky second. [Class abilities](gameplay.md#class-abilities-keys-1-4),

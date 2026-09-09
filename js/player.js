@@ -88,7 +88,7 @@ const CLASSES = [
   },
   {
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
-    blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS; THE RUSH CARRIES BODIES.', 'SPEED IS DAMAGE - NOTHING STOPS A JUGGERNAUT.'],
+    blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS; THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH; THE EXECUTE FINISHES IT.'],
     stats: { ice: 4, draw: 2, power: 3, tough: 5 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, dmgBase: 3, dmgPow: 6, spdDmg: 5, dodgeSpeed: 230, maxHp: 120 },
@@ -510,10 +510,10 @@ class Player {
     // the class abilities (keys 1-4, js/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -
     // slowed under a net or a crater, mid-reel on the grapple, shielded,
-    // mid-rush, or five seconds of juggernaut
+    // or mid-rush
     this.abCd = [0, 0, 0, 0];
     this.abLv = [0, 0, 0, 0];                      // ability levels, 0 (LOCKED) ..AB_LV_MAX - a skill point each, fresh every match (js/abilities.js)
-    this.castAb = -1; this.castT = 0;
+    this.castAb = -1; this.castT = 0; this.castMax = 0; // castMax is the wind-up's full length, so a telegraph can read how far along it is (castProg)
     // Every state ANY unit can be under - stun, root, slow and its net
     // drape, the mark, and fire - is written and cleared in one place for
     // all three kinds of unit (`status effects`, js/actions.js), so a player,
@@ -521,7 +521,7 @@ class Player {
     clearUnitStatus(this);
     this.shieldT = 0; this.shieldA = 0;            // the tower shield, and where it faces
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0; this.rushVictim = null;
-    this.jugT = 0; this.jugHit = []; this.jugFxT = 0;
+    this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/abilities.js)
     this.buffT = 0;                                // s of ALPHA'S BLOOD left (campBuff, wildlife.js): harder blows, a quicker walk
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
@@ -661,12 +661,8 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   p.hp -= dmg;
   p.hurtT = 0.25;
   if (!dot) {
-    // a juggernaut takes the damage and none of the shove (js/abilities.js)
-    if (p.jugT > 0) { p.kbx = 0; p.kby = 0; }
-    else {
-      const k = HIT_KB * (kb === undefined ? 1 : kb);
-      p.kbx = dx * k; p.kby = dy * k;
-    }
+    const k = HIT_KB * (kb === undefined ? 1 : kb);
+    p.kbx = dx * k; p.kby = dy * k;
   }
   risePlayer(p); // nobody stays buried through a hit: the cover is blown with the body
   breakEat(p);   // ...and the meal goes with it - that is what makes the channel a channel
@@ -787,7 +783,7 @@ function die(p, src, cause) {
   p.eatT = 0; p.eatType = null;
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
-  p.jugT = 0; p.hopT = 0; p.grapT = 0;
+  p.castSlam = false; p.hopT = 0; p.grapT = 0;
   p.buffT = 0; // the blood goes with the body too
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
   burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);

@@ -225,6 +225,10 @@ function aiEscorts(p) {
 // the rival bird it is pushing - so a defender finds the archer standing off
 // its roost and an ally joins the fight the human is in. Every candidate
 // still resolves through seenAt: a buried rival is buried for everyone.
+// is the weapon in hand a blade? A bot with one fights at arm's length
+// (AI_MELEE_D px) instead of at a bow's 70
+const AI_MELEE_D = 18;
+function aiMelee(p) { const c = heldTool(p); return !!c && !!TOOLS[toolIdOf(c.type)].melee; }
 function aiNearestEnemy(p, prof, anchors) {
   let best = null, bs = Infinity;
   for (const q of players) {
@@ -469,14 +473,16 @@ function updateAI(p, dt) {
     }
     // the class abilities, spent off cooldown at the foe - through the same
     // edge key a human presses, so a bot can never cast what a hand couldn't
-    if (ai.abilOk && p.castT <= 0 && p.rushT <= 0 && p.shieldT <= 0 && p.grapT <= 0 && inp.ability < 0) {
+    if (ai.abilOk && p.castT <= 0 && p.grapT <= 0 && inp.ability < 0) {
       if (p.cls === 0) { // hunter: skewer the open lane, tangle the gap
         // (the grapple is a held key and a terrain read - a hand skill the
         // ladder does not try to fake; snow cover is spent at rung 2)
         if (abReady(p, 0) && d > 55 && d < 230 && clear) inp.ability = 0; // lock the piercing draw on them
         else if (abReady(p, 1) && d < 110 && clear) inp.ability = 1;      // net the gap
-      } else { // warrior: get there, and be unstoppable arriving
-        if (abReady(p, 3) && d < 110) inp.ability = 3;               // juggernaut into the fight
+      } else if (p.shieldT > 0 || p.rushT > 0) { // warrior, wall up or mid-charge: the SLAM, the moment they are under it
+        if (abUnlocked(p, 0) && d < SLAM_R - 4) inp.ability = 0;
+      } else { // warrior: get there, and finish what the arrival started
+        if (abReady(p, 3) && d < EXEC_R - 4 && foe.hp < foe.maxHp * 0.55) inp.ability = 3; // the execute on a body already bleeding
         else if (abReady(p, 1) && d > 36 && d < 120 && clear) inp.ability = 1; // rush the line
         else if (abReady(p, 2) && d < 42) inp.ability = 2;           // stomp at arm's length
         else if (abReady(p, 0) && d < 150 && p.hp < p.maxHp * 0.75) inp.ability = 0; // shield the arrows
@@ -484,6 +490,7 @@ function updateAI(p, dt) {
     }
     const side = p.id % 2 ? 1 : -1;
     const a = Math.atan2(foe.y - p.y, foe.x - p.x);
+    const melee = aiMelee(p);
     if (!clear) {
       // no line to them: never walk into the corner that is blocking it
       // (ten bodies doing exactly that at a lane's bend was a fight nobody
@@ -498,14 +505,18 @@ function updateAI(p, dt) {
       ai.tgt = null;
       return;
     }
-    const turn = d > 85 ? 0.3 * side : d < 50 ? Math.PI * 0.85 * side : Math.PI / 2 * side * prof.strafe;
+    // a blade holds at arm's length and circles there; a bow holds ~70px:
+    // close in when far, back off when crowded, strafe in between
+    const turn = melee ? (d > AI_MELEE_D ? 0.15 * side : Math.PI / 2 * side * prof.strafe)
+      : d > 85 ? 0.3 * side : d < 50 ? Math.PI * 0.85 * side : Math.PI / 2 * side * prof.strafe;
     inp.mx = Math.cos(a + turn); inp.my = Math.sin(a + turn);
     // a slow side plants its feet to shoot: the standing part of each 2 s is
     // the only part it draws and looses in (a draw cut off by the walk goes
     // as the weak tap it is), so stopping IS the tell
     const planted = prof.strafe >= 1 || (state.tick % 120) >= 120 * prof.strafe;
     if (planted && prof.strafe < 1) { inp.mx = 0; inp.my = 0; }
-    inp.fire = planted && clear && p.chargeT < kitOf(p).bowCharge * prof.draw; // draw, then loose at the profile's draw
+    // draw, then loose at the profile's draw - a blade only once they are under it
+    inp.fire = planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < kitOf(p).bowCharge * prof.draw;
     if (p.hp < p.maxHp * 0.45 && p.dodgeCharges > 0 && rng() < dt * 2 * prof.dodge) inp.dodge = true;
     ai.tgt = null;
     return;
@@ -518,8 +529,9 @@ function updateAI(p, dt) {
     const clear = aiLineClear(p, wolf.x, wolf.y - 4);
     aimAt(wolf.x, wolf.y - 4);
     const away = Math.atan2(p.y - wolf.y, p.x - wolf.x);
-    if (d < 64) { inp.mx = Math.cos(away); inp.my = Math.sin(away); }
-    inp.fire = clear && p.chargeT < kitOf(p).bowCharge * 0.7;
+    const melee = aiMelee(p);
+    if (d < 64 && !melee) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade stands its ground
+    inp.fire = clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < kitOf(p).bowCharge * 0.7;
     if (d < 30 && p.dodgeCharges > 0 && rng() < dt * 3) inp.dodge = true;
     ai.tgt = null;
     return;

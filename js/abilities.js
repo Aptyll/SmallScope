@@ -45,8 +45,19 @@ const GRAP_MISS_CD = 1;     // s a hook that caught nothing costs
 // warrior
 const SHIELD_T = 2.2;       // s the shield can be held up
 const SHIELD_ARC = 0.35;    // cos-margin of the front arc that blocks
+// the SLAM: the shield key again while the wall is up (or mid-charge) - a
+// short wind-up, then the shield's face driven into everything in the wedge
+// ahead. It ENDS the wall and starts its cooldown, so a slam is the wall's
+// second half spent all at once.
+const SLAM_CAST = 0.16;     // s of wind-up the wedge is on the snow for
+const SLAM_R = 30;          // px of reach
+const SLAM_HALF = 0.85;     // rad either side of the shield's face
+const SLAM_DMG = 8;
+const SLAM_STUN = 1.1;
+const SLAM_KB = 150;        // px/s of shove, straight down the face
 const RUSH_SPD = 300;
 const RUSH_T = 0.42;        // s of charge (~4 tiles)
+const RUSH_RAMP = 0.08;     // s the charge takes to reach full speed, so it leaves smooth
 const RUSH_DMG = 10;
 const RUSH_STUN = 0.6;
 const RUSH_WALL_MUL = 1.6;  // driven into a tree/rock/wall: the slam is worse
@@ -57,10 +68,23 @@ const STOMP_STUN = 0.25;
 const CRATER_R = 30;        // the deep-snow crater the stomp leaves...
 const CRATER_T = 4;         // ...and how long it slows rivals crossing it
 const CRATER_SLOW = 0.55;
-const JUG_T = 5;            // s of juggernaut
-const JUG_SPD = 0.5;        // extra speed ramped in over the duration
-const JUG_MIN_SP = 90;      // px/s of body speed before contact hurts anyone
-const JUG_STUN = 0.5;
+// the EXECUTE: a slow overhead cut whose worth is the target's MISSING life -
+// the finisher the other three keys set up. A whole body of life missing is
+// EXEC_MISSING of it again on top of the base, capped so a dire wolf at a
+// sliver is not a one-line kill.
+const EXEC_R = 30;
+const EXEC_HALF = 0.75;     // rad either side of the aim: narrower than the sword
+const EXEC_DMG = 10;        // the base, at full life
+const EXEC_MISSING = 0.5;   // ...plus this share of the life the target has lost
+const EXEC_BONUS_MAX = 40;  // ...to at most this much extra
+const EXEC_KB = 120;
+// every readable shape an ability puts on the snow for BOTH sides: the
+// telegraph while a cast winds up (the wedge, the ring, the charge's line),
+// and the flash where it landed. abFx holds the flashes; the telegraphs are
+// read live off the caster.
+const AB_FX_T = 0.28;       // s a landed shape flashes for
+const TELE_COL = '#e0637a'; // the wind-up's colour...
+const TELE_HOT = '#ffd95c'; // ...and the last quarter of it, when it is about to land
 
 // ---- the two kits --------------------------------------------------------
 // One row per key. `use(p)` is the whole effect, fired when the cast lands -
@@ -94,26 +118,27 @@ const CLASS_AB = [
   [ // WARRIOR - close pressure, blocking, momentum
     {
       id: 'shield', name: 'SHIELD WALL', cd: 9, cast: 0.12,
-      blurb: 'RAISE THE TOWER SHIELD. ARROWS FROM THE FRONT BREAK ON IT.',
-      use: (p) => abShieldUp(p),
+      blurb: 'RAISE THE TOWER SHIELD. PRESS AGAIN TO SLAM: STUNS WHAT IS AHEAD, ENDS THE WALL.',
+      // the one key with two halves: the raise, and - pressed again while the
+      // wall is up or mid-charge (tryAbility sets castSlam) - the slam
+      use: (p) => (p.castSlam ? abSlam(p) : abShieldUp(p)),
       // the strip's active tell: how much of the wall is left, and its colour
       acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 ? p.shieldT / SHIELD_T : 0),
     },
     {
-      id: 'rush', name: 'BULL RUSH', cd: 12, cast: 0.2,
+      id: 'rush', name: 'BULL RUSH', cd: 12, cast: 0.3,
       blurb: 'CHARGE A LINE. THE FIRST RIVAL HIT IS CARRIED AND SLAMMED.',
       use: (p) => abRush(p),
     },
     {
-      id: 'stomp', name: 'AVALANCHE STOMP', cd: 14, cast: 0.28,
+      id: 'stomp', name: 'STOMP', cd: 14, cast: 0.28,
       blurb: 'LEAP AND SLAM THE SNOW. THE CRATER SLOWS WHOEVER CROSSES IT.',
       use: (p) => abStomp(p),
     },
     {
-      id: 'jug', name: 'JUGGERNAUT', cd: 20, cast: 0.3,
-      blurb: 'NOTHING STOPS YOU. YOUR BODY BOWLS RIVALS OVER AS YOU RUN.',
-      use: (p) => abJuggernaut(p),
-      acol: '#e05a4a', activeF: (p) => (p.jugT > 0 ? p.jugT / JUG_T : 0),
+      id: 'exec', name: 'EXECUTE', cd: 18, cast: 0.55,
+      blurb: 'A HEAVY OVERHEAD CUT. THE LESS LIFE THEY HAVE LEFT, THE HARDER IT LANDS.',
+      use: (p) => abExecute(p),
     },
   ],
 ];
@@ -121,6 +146,7 @@ const CLASS_AB = [
 // the world the abilities put things into
 const craters = [];  // {x, y, team, t}
 const nets = [];     // {x, y, nx, ny, d, owner, team, spin}
+const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col} - where a blow landed, flashed for AB_FX_T
 
 // ---- levelling -----------------------------------------------------------
 // Whether the key is bought at all (level 0 = locked: no cast, a dim well and
@@ -153,14 +179,25 @@ function buyAbilityLv(p, i) {
 // snow cover's is the other: pressing it again stands the body up, free.
 function tryAbility(p, i) {
   if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0 ||
-    p.dodgeT > 0 || p.rushT > 0 || p.grapT > 0 || p.castT > 0 || p.eatT > 0 || inAir(p)) return; // a meal occupies the hands the same way a cast does
+    p.dodgeT > 0 || p.grapT > 0 || p.castT > 0 || p.eatT > 0 || inAir(p)) return; // a meal occupies the hands the same way a cast does
   const ab = CLASS_AB[p.cls][i];
   if (!ab) return;
   // a key nobody has spent a point on is not yours yet: the dim well already
   // says so, and the press reddens it the way a bit that will not fit reddens
   // the tool well (abDenied, js/ui.js)
   if (!abUnlocked(p, i)) { if (p === player) abDenied(i); return; }
-  if (ab.id === 'shield' && p.shieldT > 0) { abShieldDown(p, true); return; }
+  // THE SLAM: the shield key while the wall is up, or mid-charge. A charge
+  // stops on the spot (the body it carried is slammed where it stands) and
+  // the wind-up begins from there; without a wall up the slam is the shield's
+  // own cast, so it waits on the shield's cooldown like the raise would
+  if (ab.id === 'shield' && (p.shieldT > 0 || p.rushT > 0)) {
+    if (p.shieldT <= 0 && p.abCd[i] > 0) { if (p === player) SFX.deny(); return; }
+    if (p.rushT > 0) rushEnd(p, false);
+    p.castSlam = true;
+    startCast(p, i, SLAM_CAST);
+    return;
+  }
+  if (p.rushT > 0) return; // every other key waits out the charge
   if (ab.id === 'snow' && p.prone) { risePlayer(p); return; } // rising is free; only going under pays
   if (p.abCd[i] > 0) { if (p === player) SFX.deny(); return; }
   if (ab.id === 'rush' && p.rootT > 0) { if (p === player) SFX.deny(); return; } // pinned: nothing that moves you
@@ -170,16 +207,24 @@ function tryAbility(p, i) {
     const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
     if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) { if (p === player) SFX.deny(); return; }
   }
+  startCast(p, i, ab.cast);
+}
+// the wind-up itself: cover broken, the draw dropped, the body turned to the
+// aim and the clock set. `t` is the cast's length - the table's, or the slam's
+function startCast(p, i, t) {
   risePlayer(p); // a cast breaks cover the way the shot does
   if (p.charging) { p.charging = false; p.chargeT = 0; }
   p.fireArmed = false;
   p.castAb = i;
-  p.castT = ab.cast;
+  p.castT = t;
+  p.castMax = t;
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
   if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
   else p.dir = dy > 0 ? 'down' : 'up';
   if (nearPlayer(p.x, p.y)) SFX.swing();
 }
+// how far through its wind-up a cast is, 0 at the press and 1 at the landing
+function castProg(p) { return p.castT > 0 && p.castMax > 0 ? 1 - p.castT / p.castMax : 0; }
 
 // per-player tick: cooldowns, the cast landing, and every timed state an
 // ability leaves on a body. Called from updatePlayer once the player is alive.
@@ -193,47 +238,6 @@ function updateAbilities(p, dt) {
   if (p.dead) return; // a burn can finish a player mid-tick
   if (p.rootT > 0) p.sliding = false;
   if (p.buffT > 0) p.buffT = Math.max(0, p.buffT - dt); // ALPHA'S BLOOD running out (campBuff, wildlife.js)
-  // juggernaut: the body is the weapon while it moves. One bowl-over per
-  // rival per activation, scaled by the speed actually carried into them.
-  if (p.jugT > 0) {
-    p.jugT = Math.max(0, p.jugT - dt);
-    const sp = Math.hypot(p.vx, p.vy);
-    if (sp > 40) {
-      p.jugFxT -= dt;
-      if (p.jugFxT <= 0) {
-        p.jugFxT = 0.05;
-        particles.push({
-          x: p.x - p.vx / sp * 6 + rand(-2, 2), y: p.y - 2 + rand(-3, 3),
-          vx: rand(-6, 6), vy: rand(-14, -6),
-          life: rand(0.3, 0.5), maxLife: 0.4, color: Math.random() < 0.5 ? '#e05a4a' : '#f2937f',
-          size: 1, grav: -6, alpha: 0.7,
-        });
-      }
-    }
-    if (sp > JUG_MIN_SP) {
-      const nx = p.vx / sp, ny = p.vy / sp;
-      const dmg = Math.max(3, Math.round(4 + sp * 0.04));
-      // anything alive in the way, not only the rival players: a body running
-      // this hard bowls a deer or a worker over exactly as it does a player
-      for (const q of unitsHit(p, p.x, p.y, PLAYER_R * 2 + 2)) {
-        if (p.jugHit.includes(q)) continue;
-        p.jugHit.push(q);
-        hurtUnit(q, dmg, nx, ny, p, { kb: 140 });
-        if (!q.dead) { stunUnit(q, JUG_STUN); q.kbx += nx * 140; q.kby += ny * 140; }
-        burst(q.x, unitMidY(q), '#e05a4a', 8, 55, 0.5, true);
-        if (p === player || q === player) state.shake = Math.max(state.shake, 3);
-      }
-      // ...and a rival's WALLS are in the way like anything else. One shoulder
-      // per building per activation, off the SAME jugHit list, so a body
-      // pinned against a wall does not grind it down a frame at a time.
-      for (const s of structsNear(p, p.x, p.y, PLAYER_R * 2 + 2)) {
-        if (p.jugHit.includes(s)) continue;
-        p.jugHit.push(s);
-        hurtStruct(s, dmg, p);
-        if (p === player) state.shake = Math.max(state.shake, 3);
-      }
-    }
-  }
   // the shield tracks the aim while it is up, and lowers itself on the timer
   if (p.shieldT > 0) {
     p.shieldT -= dt;
@@ -250,9 +254,11 @@ function updateAbilities(p, dt) {
   if (p.castT > 0) {
     p.castT -= dt;
     const ab = CLASS_AB[p.cls][p.castAb];
-    // the locked draw keeps facing the aim the whole windup, so the telegraph
-    // line and the body agree about where this is going
-    if (ab && ab.id === 'pierce') {
+    // a cast with a telegraph on the snow keeps facing the aim the whole
+    // wind-up - the locked draw, the charge's line, the slam's and the
+    // execute's wedge - so the shape and the body agree about where this is
+    // going, and what lands is what was shown
+    if (ab && (ab.id === 'pierce' || ab.id === 'rush' || ab.id === 'exec' || (ab.id === 'shield' && p.castSlam))) {
       const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
       if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
       else p.dir = dy > 0 ? 'down' : 'up';
@@ -268,8 +274,8 @@ function updateAbilities(p, dt) {
 }
 
 // every movement cap an ability is allowed to touch, in one multiplier: the
-// root pins, a cast and a raised shield slow, a net drags, the juggernaut
-// ramps. updatePlayer applies it to the walk cap and the ice cap alike.
+// root pins, a cast and a raised shield slow, a net drags. updatePlayer
+// applies it to the walk cap and the ice cap alike.
 function abilityMoveMul(p) {
   if (p.rootT > 0) return 0;
   let m = 1;
@@ -281,7 +287,6 @@ function abilityMoveMul(p) {
   }
   if (p.shieldT > 0) m *= 0.4;
   if (p.slowT > 0) m *= p.slowMul;
-  if (p.jugT > 0) m *= 1 + JUG_SPD * (1 - p.jugT / JUG_T);
   if (p.buffT > 0) m *= CAMP_BUFF_SPD; // ALPHA'S BLOOD (campBuff, wildlife.js)
   return m;
 }
@@ -407,14 +412,35 @@ function abShieldUp(p) {
   burst(p.x, p.y - 4, '#9aa3ad', 6, 35, 0.35, true);
   if (nearPlayer(p.x, p.y)) SFX.place();
 }
-// down early (the key again) or on the timer: the cooldown starts HERE, so
-// holding the wall the full stretch and dropping it at once cost the same
+// down on the timer, or spent by the slam: the cooldown starts HERE, so
+// holding the wall the full stretch and slamming at once cost the same
 function abShieldDown(p, early) {
   if (p.shieldT <= 0 && !early) return;
   p.shieldT = 0;
   const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'shield');
   if (i >= 0) p.abCd[i] = abCdOf(p, i);
   if (nearPlayer(p.x, p.y)) SFX.pickup();
+}
+// THE SLAM lands: the shield's face driven through the wedge ahead. Everything
+// alive in it takes the blow, the shove down the face and a real stun; the
+// wall it was part of is spent, whether it was up or the charge stood in for
+// it. The wedge on the snow is exactly inCone's (js/actions.js).
+function abSlam(p) {
+  p.castSlam = false;
+  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const nx = Math.cos(a), ny = Math.sin(a);
+  for (const q of unitsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) {
+    hurtUnit(q, SLAM_DMG, nx, ny, p, { kb: SLAM_KB });
+    if (!q.dead) { stunUnit(q, SLAM_STUN); q.kbx += nx * SLAM_KB * 0.5; q.kby += ny * SLAM_KB * 0.5; }
+    burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
+    if (p === player || q === player) state.shake = Math.max(state.shake, 4);
+  }
+  for (const s of structsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) hurtStruct(s, SLAM_DMG, p);
+  if (PRACTICE) abHitDummies(p.x + nx * SLAM_R * 0.5, p.y + ny * SLAM_R * 0.5, SLAM_R * 0.5, SLAM_DMG);
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SLAM_R, half: SLAM_HALF, t: 0, col: '#f2cc6a' });
+  burst(p.x + nx * 8, p.y - 4 + ny * 6, '#9aa3ad', 8, 45, 0.4, true);
+  abShieldDown(p, true);
+  if (nearPlayer(p.x, p.y)) SFX.hit();
 }
 // an incoming shot dies on a raised shield when it flies INTO the front arc
 function abShieldBlocks(t, nx, ny) {
@@ -512,6 +538,7 @@ function abStomp(p) {
   for (const s of structsNear(p, px, py, STOMP_R)) hurtStruct(s, STOMP_DMG, p);
   if (PRACTICE) abHitDummies(px, py, STOMP_R, STOMP_DMG);
   craters.push({ x: px, y: py + 3, team: p.team, t: 0 });
+  abFx.push({ kind: 'ring', x: px, y: py, r: STOMP_R, t: 0, col: '#f4f7ff' });
   // the shockwave: one ring of snow thrown outward
   for (let i = 0; i < 22; i++) {
     const a = (i / 22) * Math.PI * 2;
@@ -525,14 +552,29 @@ function abStomp(p) {
   if (nearPlayer(px, py)) SFX.break_();
 }
 
-function abJuggernaut(p) {
-  p.jugT = JUG_T;
-  p.jugHit.length = 0;
-  p.jugFxT = 0;
-  burst(p.x, p.y - 6, '#e05a4a', 10, 50, 0.5, true);
-  burst(p.x, p.y - 8, '#f2937f', 6, 40, 0.45, true);
-  if (p === player) state.shake = Math.max(state.shake, 3);
-  if (nearPlayer(p.x, p.y)) SFX.hit();
+// THE EXECUTE lands: the overhead cut through the wedge ahead, worth the base
+// plus a share of every point of life the body under it has already lost -
+// the three keys before this one are how that life went missing. The same
+// blow for every kind of unit: a wolf at a sliver is finished like a rival.
+function execDmg(q) {
+  const max = q.maxHp || q.hp;
+  return EXEC_DMG + Math.min(EXEC_BONUS_MAX, Math.round(Math.max(0, max - q.hp) * EXEC_MISSING));
+}
+function abExecute(p) {
+  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const nx = Math.cos(a), ny = Math.sin(a);
+  for (const q of unitsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) {
+    const dmg = execDmg(q);
+    hurtUnit(q, dmg, nx, ny, p, { kb: EXEC_KB, crit: dmg > EXEC_DMG * 2 });
+    burst(q.x, unitMidY(q), '#e05a4a', 10, 55, 0.5);
+    burst(q.x, unitMidY(q), '#f4f7ff', 6, 45, 0.4, true);
+    if (p === player || q === player) state.shake = Math.max(state.shake, 5);
+  }
+  for (const s of structsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) hurtStruct(s, EXEC_DMG, p);
+  if (PRACTICE) abHitDummies(p.x + nx * EXEC_R * 0.5, p.y + ny * EXEC_R * 0.5, EXEC_R * 0.5, EXEC_DMG);
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: EXEC_R, half: EXEC_HALF, t: 0, col: '#e05a4a' });
+  burst(p.x + nx * 10, p.y - 2 + ny * 8, '#eef4fb', 8, 45, 0.4, true);
+  if (nearPlayer(p.x, p.y)) SFX.break_();
 }
 
 // the practice dummy takes area hits like everything else: any dummy tile
@@ -564,6 +606,10 @@ function abHitDummies(x, y, r, dmg) {
 function abCredit(w) { const o = players[w.owner]; return o && !o.dead ? o : null; }
 
 function updateAbilityWorld(dt) {
+  for (let i = abFx.length - 1; i >= 0; i--) {
+    abFx[i].t += dt;
+    if (abFx[i].t >= AB_FX_T) abFx.splice(i, 1);
+  }
   for (let i = craters.length - 1; i >= 0; i--) {
     const z = craters[i];
     z.t += dt;
@@ -605,34 +651,151 @@ function updateAbilityWorld(dt) {
 // Flat things on the snow, drawn before the drops and the entities: the
 // pierce telegraph is as plainly visible as the shot will be, to BOTH sides -
 // the game is readable first, sneaky second.
+// ---- the shapes ----
+// One vocabulary for every blow with an area: a WEDGE (the sword, the slam,
+// the execute - inCone's exact shape) and a RING (the stomp). Each is a
+// 1px-seated dotted outline with a sparse hash inside so the snow still
+// reads through it, drawn in world px with the camera already subtracted.
+// `fill` 0..1 is how much of the inside is hashed - a wind-up fills in as it
+// nears landing, a landed flash is full and fades.
+function drawWedge(px, py, a, r, half, col, alpha, fill) {
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = col;
+  const steps = Math.max(6, Math.round(r * half / 2.5));
+  for (let i = 0; i <= steps; i++) {
+    const t = a - half + (i / steps) * half * 2;
+    const x = Math.round(px + Math.cos(t) * r), y = Math.round(py + Math.sin(t) * r);
+    ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y + 1, 2, 2);
+    ctx.fillStyle = col; ctx.fillRect(x, y, 2, 2);
+  }
+  for (const t of [a - half, a + half]) {
+    for (let s = 4; s < r - 1; s += 3) {
+      const x = Math.round(px + Math.cos(t) * s), y = Math.round(py + Math.sin(t) * s);
+      ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y + 1, 1, 1);
+      ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1);
+    }
+  }
+  if (fill > 0) {
+    ctx.globalAlpha = alpha * 0.5;
+    ctx.fillStyle = col;
+    for (let s = 6; s < r * fill; s += 4) {
+      const n = Math.max(2, Math.round(s * half / 3));
+      for (let i = 0; i <= n; i++) {
+        const t = a - half + (i / n) * half * 2;
+        if ((i + Math.round(s / 4)) % 2) continue;
+        ctx.fillRect(Math.round(px + Math.cos(t) * s), Math.round(py + Math.sin(t) * s), 1, 1);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+function drawRing(px, py, r, col, alpha, fill) {
+  ctx.globalAlpha = alpha;
+  const n = Math.max(12, Math.round(r * 1.2));
+  for (let i = 0; i < n; i++) {
+    const t = (i / n) * Math.PI * 2;
+    const x = Math.round(px + Math.cos(t) * r), y = Math.round(py + Math.sin(t) * r);
+    ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y + 1, 2, 2);
+    ctx.fillStyle = col; ctx.fillRect(x, y, 2, 2);
+  }
+  if (fill > 0) {
+    ctx.globalAlpha = alpha * 0.5;
+    ctx.fillStyle = col;
+    for (let s = 5; s < r * fill; s += 4) {
+      const m = Math.round(s * 1.1);
+      for (let i = 0; i < m; i++) {
+        if ((i + Math.round(s / 4)) % 2) continue;
+        const t = (i / m) * Math.PI * 2;
+        ctx.fillRect(Math.round(px + Math.cos(t) * s), Math.round(py + Math.sin(t) * s), 1, 1);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+// a dashed line marching from (x0, y0) out along (nx, ny) for `len` px - the
+// pierce's and the charge's telegraph
+function drawTeleLine(x0, y0, nx, ny, len, col, alpha, now, ex, ey) {
+  const march = (now * 60) % 4; // dashes crawl toward the landing
+  ctx.globalAlpha = alpha;
+  for (let s = 10 + march; s < len; s += 4) {
+    const px = Math.round(x0 + nx * s - ex), py = Math.round(y0 + ny * s - ey);
+    if (px < -2 || py < -2 || px > WV_W + 2 || py > WV_H + 2) continue;
+    ctx.fillStyle = '#0a0e23'; ctx.fillRect(px, py + 1, 1, 1);
+    ctx.fillStyle = col; ctx.fillRect(px, py, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+// the sword's sweep, drawn over the bodies (js/render.js beside the E swing
+// arcs): the wedge it reached, fading, and a bright edge sweeping across it
+function drawSlashes(ex, ey) {
+  for (const s of slashes) {
+    const px = Math.round(s.x - ex), py = Math.round(s.y - ey);
+    if (px < -40 || py < -40 || px > WV_W + 40 || py > WV_H + 40) continue;
+    const prog = s.t / SLASH_T;
+    drawWedge(px, py, s.a, s.r, s.half, s.hit ? '#ffd95c' : '#f4f7ff', 0.7 * (1 - prog), 0);
+    const e = s.a - s.half + prog * s.half * 2; // the edge, across the wedge over the sweep
+    ctx.globalAlpha = 0.9 - prog * 0.5;
+    for (let i = 0; i < 3; i++) {
+      const t = e - i * 0.18;
+      const rr = s.r - 1 - i * 2;
+      for (let k = 6; k < rr; k += 2) {
+        ctx.fillStyle = i ? '#cfe0f2' : '#ffffff';
+        ctx.fillRect(Math.round(px + Math.cos(t) * k), Math.round(py + Math.sin(t) * k), 1, 1);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
 function drawAbilityGround(ex, ey, now) {
-  // the piercing shot's ground telegraph: a thin line from every locked draw
-  // out along its live aim, brightening as the loose gets near - it teaches
-  // the caster what "through everyone on the line" means, and it gives
-  // whoever is standing on it the whole windup to not be
+  // every wind-up's telegraph, live off the caster and drawn for BOTH sides:
+  // the piercing shot's line, the charge's line, the stomp's ring, the
+  // slam's and the execute's wedge - each in the wind-up red, hot gold for
+  // the last quarter, filling in as the landing nears. It teaches the caster
+  // what the key reaches, and it gives whoever is inside the whole wind-up
+  // to not be
   for (const p of players) {
     if (!p.active || p.dead || inAir(p) || p.castT <= 0) continue;
     const ab = CLASS_AB[p.cls][p.castAb];
-    if (!ab || ab.id !== 'pierce') continue;
+    if (!ab) continue;
+    const closing = castProg(p);
+    const col = closing > 0.75 ? TELE_HOT : TELE_COL;
+    const px = Math.round(p.x - ex), py = Math.round(p.y - 2 - ey);
+    if (px < -80 || py < -80 || px > WV_W + 80 || py > WV_H + 80) continue;
     const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
-    const d = Math.hypot(dx, dy) || 1;
-    const nx = dx / d, ny = dy / d;
-    const closing = 1 - p.castT / PIERCE_WIND; // 0 -> 1 over the windup
-    let len = PIERCE_RANGE;
-    for (let s = 10; s < PIERCE_RANGE; s += 4) {
-      if (isSolidTile(Math.floor((p.x + nx * s) / TILE), Math.floor((p.y - BOW_Y + ny * s) / TILE))) { len = s; break; }
+    const a = Math.atan2(dy, dx), nx = Math.cos(a), ny = Math.sin(a);
+    if (ab.id === 'pierce' || ab.id === 'rush') {
+      const range = ab.id === 'pierce' ? PIERCE_RANGE : RUSH_SPD * RUSH_T;
+      const y0 = ab.id === 'pierce' ? p.y - BOW_Y : p.y;
+      let len = range;
+      for (let s = 10; s < range; s += 4) {
+        if (isSolidTile(Math.floor((p.x + nx * s) / TILE), Math.floor((y0 + ny * s) / TILE))) { len = s; break; }
+      }
+      drawTeleLine(p.x, y0, nx, ny, len, col, 0.5 + 0.45 * closing, now, ex, ey);
+      if (ab.id === 'rush') {
+        // the end of the line: where the charge stops and the slam happens
+        ctx.globalAlpha = 0.6 + 0.4 * closing;
+        ctx.fillStyle = col;
+        for (let i = -3; i <= 3; i++) ctx.fillRect(Math.round(p.x + nx * len - ny * i - ex), Math.round(y0 + ny * len + nx * i - ey), 1, 1);
+        ctx.globalAlpha = 1;
+      }
+    } else if (ab.id === 'stomp') {
+      drawRing(px, py + 2, STOMP_R, col, 0.55 + 0.4 * closing, closing);
+    } else if (ab.id === 'exec') {
+      drawWedge(px, py, a, EXEC_R, EXEC_HALF, col, 0.55 + 0.4 * closing, closing);
+    } else if (ab.id === 'shield' && p.castSlam) {
+      drawWedge(px, py, a, SLAM_R, SLAM_HALF, col, 0.55 + 0.4 * closing, closing);
     }
-    const march = (now * 60) % 4; // dashes crawl toward the loose
-    for (let s = 10 + march; s < len; s += 4) {
-      const px = Math.round(p.x + nx * s - ex), py = Math.round(p.y - BOW_Y + ny * s - ey);
-      if (px < -2 || py < -2 || px > WV_W + 2 || py > WV_H + 2) continue;
-      ctx.globalAlpha = 0.5 + 0.45 * closing;
-      ctx.fillStyle = '#0a0e23';
-      ctx.fillRect(px, py + 1, 1, 1);
-      ctx.fillStyle = closing > 0.75 ? '#ffd95c' : '#e0637a';
-      ctx.fillRect(px, py, 1, 1);
-    }
-    ctx.globalAlpha = 1;
+  }
+  // where a blow landed: the same shape, in the blow's own colour, full and
+  // gone in a beat
+  for (const f of abFx) {
+    const px = Math.round(f.x - ex), py = Math.round(f.y - ey);
+    if (px < -60 || py < -60 || px > WV_W + 60 || py > WV_H + 60) continue;
+    const prog = f.t / AB_FX_T;
+    const alpha = 0.9 * (1 - prog);
+    if (f.kind === 'wedge') drawWedge(px, py, f.a, f.r + prog * 3, f.half, f.col, alpha, 1 - prog);
+    else drawRing(px, py + 2, f.r + prog * 4, f.col, alpha, 1 - prog);
   }
   for (const z of craters) {
     const px = Math.round(z.x - ex), py = Math.round(z.y - ey);
@@ -724,10 +887,12 @@ function abilityPose(p) {
     case 'net': return { dx: p.dir === 'left' ? 1 : p.dir === 'right' ? -1 : 0, dy: 0, rot: 0 }; // braced back
     case 'grap': return { dx: 0, dy: -1, rot: 0.1 * (p.dir === 'left' ? -1 : 1) };  // arm slung forward
     case 'snow': return { dx: 0, dy: 2, rot: 0 };                                   // the kneel down
-    case 'shield': return { dx: 0, dy: 1, rot: 0 };                                 // planted
-    case 'rush': return { dx: 0, dy: 0, rot: 0.14 * (p.dir === 'left' ? -1 : 1) };  // head down
+    case 'shield': return p.castSlam
+      ? { dx: p.dir === 'left' ? 1 : p.dir === 'right' ? -1 : 0, dy: prog < 0.6 ? 1 : -1, rot: 0 } // coiled back, then the drive
+      : { dx: 0, dy: 1, rot: 0 };                                                   // planted
+    case 'rush': return { dx: 0, dy: prog < 0.5 ? 1 : 0, rot: 0.14 * (p.dir === 'left' ? -1 : 1) }; // head down, feet dug in
     case 'stomp': return { dx: 0, dy: -Math.round(6 * Math.sin(Math.PI * prog)), rot: 0 }; // the leap
-    case 'jug': return { dx: 0, dy: prog < 0.5 ? 1 : -1, rot: 0 };                  // the chest-beat
+    case 'exec': return { dx: 0, dy: prog < 0.8 ? -Math.round(3 * prog) : 2, rot: 0 }; // the blade climbs, then comes down
   }
   return null;
 }
@@ -798,8 +963,8 @@ function drawUnitStates(e, px, py, w, h, now) {
   }
 }
 
-// The player's own layer: the two states only a player can be in - a raised
-// shield and the juggernaut's fury - over the four every unit shares.
+// The player's own layer: the one state only a player can be in - a raised
+// shield - over the four every unit shares.
 function drawAbilityOnPlayer(p, px, py, now) {
   if (p.shieldT > 0) {
     const a = p.shieldA;
@@ -815,15 +980,6 @@ function drawAbilityOnPlayer(p, px, py, now) {
     ctx.fillStyle = TEAMS[skin(p.team)].mark; // the trim carries the side
     ctx.fillRect(0, -2, 1, 4);
     ctx.restore();
-  }
-  if (p.jugT > 0) {
-    // fury: a red rim pulsing off the sprite's own silhouette
-    ctx.globalAlpha = 0.35 + 0.2 * Math.sin(now * 10);
-    ctx.fillStyle = '#e05a4a';
-    ctx.fillRect(px + 3, py + 1, 10, 1);
-    ctx.fillRect(px + 2, py + 4, 1, 8);
-    ctx.fillRect(px + 13, py + 4, 1, 8);
-    ctx.globalAlpha = 1;
   }
   drawUnitStates(p, px, py, 16, 16, now);
 }
@@ -1095,38 +1251,38 @@ const AB32 = [
       '................................',
       '................................',
     ],
-    [ // JUGGERNAUT: the great helm wreathed in fury - the eye slit burning,
-      // embers off the crown
-      '................................',
-      '.............r....r.............',
-      '..........r...rr...r............',
-      '...........oooooooooo...........',
-      '..........oSSSSSSSSSSo..........',
-      '.........oSssssssssssSo.........',
-      '........oSsssCCCCsssssSo........',
-      '........oSssssCCssssssSo........',
-      '....r...oSssssCCssssssSo...r....',
-      '........oSssssCCssssssSo........',
-      '........oSssssCCssssssSo........',
-      '........oSssssCCssssssSo........',
-      '........oSokrrrpprrrkoSo........',
-      '........oSokrrrrrrrrkoSo........',
-      '........oSooooooooooooSo........',
-      '...r....oSssssssssssssSo....r...',
-      '........oSssssssssssssSo........',
-      '........oSssssssssssssSo........',
-      '........oSssksskssksssSo........',
-      '........oSssksskssksssSo........',
-      '........oSssssssssssssSo........',
-      '.........oSssssssssssSo.........',
-      '..........oSssssssssSo..........',
-      '...........oSSSSSSSSo...........',
-      '............oooooooo............',
-      '......r.................r.......',
+    [ // EXECUTE: the greatsword coming straight down - gold guard, wrapped
+      // grip, a white gleam on the edge - and the blood already flying off it
       '................................',
       '................................',
-      '................................',
-      '................................',
+      '..............oooo..............',
+      '.............oGggGo.............',
+      '..............oGGo..............',
+      '..............oDko..............',
+      '..............okDo..............',
+      '..............oDko..............',
+      '..............okDo..............',
+      '..............oDko..............',
+      '..........oooooooooooo..........',
+      '.........oGgggggggggGo..........',
+      '..........oooooooooooo..........',
+      '.............oCssSo.............',
+      '.............oWssSo.............',
+      '.............oWssSo.............',
+      '.............oCssSo.............',
+      '.............oCssSo.............',
+      '.............oCssSo.............',
+      '.............oCssSo.............',
+      '.............oCssSo.............',
+      '.......r.....oCssSo.....r.......',
+      '......r......oCssSo......r......',
+      '.............oCssSo.............',
+      '........r....oCssSo....r........',
+      '.............oCssSo.............',
+      '..........r..oCssSo..r..........',
+      '..............oCSo..............',
+      '..............oCSo..............',
+      '...............oo...............',
       '................................',
       '................................',
     ],

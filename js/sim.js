@@ -707,8 +707,12 @@ function updatePlayer(p, dt) {
     // BULL RUSH: the charge owns the velocity the way a roll does - straight
     // down its line, walls and the first body met resolved by rushStep
     p.rushT -= dt;
-    p.vx = p.rushNX * RUSH_SPD;
-    p.vy = p.rushNY * RUSH_SPD;
+    // the first RUSH_RAMP seconds come up to speed rather than snapping to
+    // it, so the charge leaves the wind-up smooth instead of teleporting a
+    // frame down the line
+    const ramp = Math.min(1, 0.4 + 0.6 * (RUSH_T - p.rushT) / RUSH_RAMP);
+    p.vx = p.rushNX * RUSH_SPD * ramp;
+    p.vy = p.rushNY * RUSH_SPD * ramp;
     const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
     rushStep(p, mv, dt);
   } else if (p.grapT > 0) {
@@ -731,8 +735,8 @@ function updatePlayer(p, dt) {
     if (!inp.grapple || gd <= GRAP_ARRIVE || mv.blockedX || mv.blockedY || p.grapT <= 0) grapEnd(p);
   } else {
     const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
-    // every cap an ability may drag on (root, net, crater, cast, shield) or
-    // ramp up (juggernaut), folded once - js/abilities.js - with the meal's
+    // every cap an ability may drag on (root, net, crater, cast, shield),
+    // folded once - js/abilities.js - with the meal's
     // own drag beside them (js/core.js): a body chewing walks, exactly the way
     // a body mid-cast does
     const abMul = abilityMoveMul(p) * (p.eatT > 0 ? FOOD_SLOW : 1);
@@ -1280,6 +1284,7 @@ function updateFx(dt) {
   }
   updateWarps(dt); // the silhouettes a teleport request left behind (js/tools.js)
   updateSwaps(dt); // ...and the risen icon a tool that traded itself up leaves
+  updateSlashes(dt); // ...and the sword's sweep on the snow (js/tools.js)
   if (bagFlash > 0) bagFlash -= dt; // the backpack's refusal red is chrome: wall time
   // ...and the positive half of the same idiom: the well an item just landed
   // in, and the cursor when a swap changed what the hand is holding (hudFx, ui.js)

@@ -784,6 +784,29 @@ function structsNear(src, x, y, r) {
   }
   return out;
 }
+// The WEDGE: a blow swung from (x, y) along bearing `a`, reaching `r` px and
+// `half` rad to either side. The longsword's cut, the shield's slam and the
+// execute all sweep exactly this shape and draw exactly this shape (the
+// `wedge` fx, js/abilities.js), so what the snow shows is what the blade
+// reaches. A body counts by its centre plus its own radius, so a big deer
+// standing just off the rim is still under the edge.
+function inCone(x, y, a, r, half, qx, qy, qr) {
+  const dx = qx - x, dy = qy - y;
+  const d = Math.hypot(dx, dy);
+  if (d > r + (qr || 0)) return false;
+  if (d < 2) return true;
+  let da = Math.atan2(dy, dx) - a;
+  while (da > Math.PI) da -= Math.PI * 2;
+  while (da < -Math.PI) da += Math.PI * 2;
+  return Math.abs(da) <= half + (qr || 0) / Math.max(d, 1);
+}
+function unitsInCone(src, x, y, a, r, half) {
+  return unitsHit(src, x, y, r + 8).filter((q) => inCone(x, y, a, r, half, q.x, q.y - (q.alt || 0), unitRadius(q)));
+}
+function structsInCone(src, x, y, a, r, half) {
+  return structsNear(src, x, y, r).filter((s) =>
+    footprint(s.type, s.tx, s.ty).some(([tx, ty]) => inCone(x, y, a, r, half, tx * TILE + 8, ty * TILE + 8, 8)));
+}
 
 // ---- the one blow --------------------------------------------------------
 // `src` is the player who dealt it (kill credit and the feed line) or null for
@@ -837,8 +860,6 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
 // surface spends it the way it spends any other momentum.
 function stunUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
-  // a juggernaut cannot be stunned - that is most of what the ability IS
-  if (e instanceof Player && e.jugT > 0) return;
   const cur = e.stunT || 0;
   e.stunT = Math.max(cur, t);
   e.stunMax = cur > 0 ? Math.max(e.stunMax || 0, e.stunT) : e.stunT;
@@ -863,7 +884,6 @@ function stunUnit(e, t) {
 // snared rival does.
 function rootUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
-  if (e instanceof Player && e.jugT > 0) return; // nothing stops a juggernaut, the jaws included
   e.rootT = Math.max(e.rootT || 0, t);
   if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
 }

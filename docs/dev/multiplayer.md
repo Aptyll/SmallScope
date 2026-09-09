@@ -234,7 +234,7 @@ aim line and draw meter. `setClass(p, c)` swaps one in (full heal — it's a pre
 | # | Name | Fantasy | Kit | Flies in with |
 | --- | --- | --- | --- | --- |
 | 0 | **HUNTER** — bow, distance control, the one class that hides | keep the gap and own the ground between | the ranged numbers: quick nock (0.4 s), full draw power, 92 hp | a SHORTBOW with an ARROW in its second cell, the first held open |
-| 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a SLING with a BARBED SHOT in its second cell, the first held open |
+| 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a LONGSWORD — the one melee body — with a BARBED SHOT on its edge in the second cell, the first held open |
 
 The **weapon is part of the class**: `CLASS_LOADOUT` (js/tools.js) pairs each one with a tool
 and **one projectile**, and `setClass` / `Player.reset` hand it over — so the two classes do not
