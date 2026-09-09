@@ -369,7 +369,8 @@ the pack's top edge and grows upward, and the row's RIGHT
 end is flush with the pack's grid — a bigger tool grows leftward rather than moving the corner it
 is read in. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
-js/ui.js, at 1x with the backpack it stands on rather than at the strip's HUD SIZE.
+js/ui.js, scaled with the backpack it stands on at the strip's HUD SIZE
+([rendering.md](rendering.md#the-hud-strip)).
 
 Five marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: the ROW is
 the press left to right; a cell **past the cut** is red-rimmed and washed out; **weight** is pips
@@ -2479,7 +2480,7 @@ saved any. A pre-profile save under the old `localStorage['softfall.settings']` 
 once by `PROFILE.load()` and the key removed; see
 [architecture.md](architecture.md#profilejs). `applyMinimapSize()` must be called after changing `mmR` —
 it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**) needs no apply
-call: the hud strip reads it live every frame
+call: the hud strip, the pack and the shelf read it live every frame
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)

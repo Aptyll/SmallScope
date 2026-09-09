@@ -741,7 +741,15 @@ function renderMinimap(now) {
 // in colour rather than in words: the frame's rim goes amber when no cell is
 // left free, and the whole frame reddens and shakes when something could not
 // be carried (bagDenied).
-const BAG_CELL = 18;   // a grid slot
+// ONE WELL SIZE FOR THE WHOLE BOTTOM HUD. The strip's wells, the pack's grid
+// cells and the shelf's cells are all HUD_CELL square (3.25), and every item
+// icon in them is drawn doubled (drawItemIcon's k), so a tool reads at the
+// same size in the weapon well, on the shelf and in the grid - one thing,
+// one size, wherever it sits. The HUD SIZE dial then scales all three
+// together: the strip about its bottom-centre anchor (drawHudScaled) and the
+// corner widget about the bottom-right corner (drawCornerScaled).
+const HUD_CELL = 34;
+const BAG_CELL = HUD_CELL; // a grid slot
 const BAG_GAP = 2;     // between neighbouring cells
 const BAG_PAD = 3;     // frame edge to the first cell
 const BAG_COLS = 5;    // the grid is five columns wide (BAG_CAP 10: two rows)
@@ -785,6 +793,22 @@ function overHud(x, y) {
   return !!bagHit(x, y) || !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
     !!shelfHit(x, y) || overMinimap();
 }
+// THE CORNER SCALES WITH THE HUD SIZE DIAL, about the bottom-right corner
+// (drawCornerScaled, below the shelf). Every rect in this banner and the
+// shelf's stays in 1x space; a pointer is mapped back through the corner
+// anchor here before any hit test reads it, the way stripMouse does for the
+// strip, so a click can never land beside its pixel. cornerToScreen is the
+// other direction, for anything OUTSIDE the bake that has to stand on the
+// widget (the touch column, the shop's room).
+function cornerMouse(mx, my) {
+  const s = hudSc();
+  if (s === 1) return { x: mx, y: my };
+  return { x: VIEW_W - (VIEW_W - mx) / s, y: VIEW_H - (VIEW_H - my) / s };
+}
+function cornerToScreen(x, y) {
+  const s = hudSc();
+  return { x: VIEW_W - (VIEW_W - x) * s, y: VIEW_H - (VIEW_H - y) * s };
+}
 // What the pointer is on: { kind: 'cell', i } (a grid slot) | { kind:
 // 'frame' } (anywhere else inside the frame, swallowed and otherwise inert)
 // | null. Shared by the click handler, the cursor and the widget's own hover,
@@ -792,6 +816,7 @@ function overHud(x, y) {
 function bagHit(mx, my) {
   if (state.mode !== 'play' || player.dead || state.paused ||
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
+  ({ x: mx, y: my } = cornerMouse(mx, my));
   const f = bagFrameRect();
   if (mx < f.x || mx >= f.x + f.w || my < f.y || my >= f.y + f.h) return null;
   for (let i = 0; i < player.bagCap; i++) {
@@ -1380,19 +1405,20 @@ function drawBag(now) {
       if (!s) { drawWellLit(wl, 'bag', i); continue; }
       modPlate(s.type, r, y);
       tierShine(r, y, s.type, now);
-      // the icon sits high in the cell so the count can have the bottom
-      // right corner without its outline eating the cell's own rim
-      drawItemIcon(s.type, r, y - 2);
+      // the icon sits high in the cell, doubled like the weapon well's, so
+      // the count can have the bottom right corner without its outline
+      // eating the cell's own rim
+      drawItemIcon(s.type, r, y - 3, null, 2);
       if (s.n > 1) { // a lone item needs no '1' on it - an empty corner says it
         const t = String(s.n);
-        drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), y + 10, '#f4f7ff', '#0f1632');
+        drawPixelTextOutline(ctx, t, r.x + r.w - 3 - pixelTextWidth(t), y + r.h - 9, '#f4f7ff', '#0f1632');
       }
       // a loaded tool counts its bits in the corner the stack number would
       // have used, so a full build is told apart from a bare body in the grid
       if (s.bits) {
         for (let k = 0; k < s.bits.length && k < 5; k++) {
           ctx.fillStyle = s.bits[k] ? BITS[s.bits[k]].col : '#2c3560';
-          ctx.fillRect(r.x + 3 + k * 3, y + r.h - 4, 2, 2);
+          ctx.fillRect(r.x + 3 + k * 5, y + r.h - 6, 3, 3);
         }
       }
       // ...and last, over everything in it: the pulse a cell wears for a
@@ -1443,7 +1469,7 @@ function drawBag(now) {
 // only with the pack open. It is a tab of the strip rather than a bar of its
 // own so it slides in with the HUD, scales with it, and stays one glance from
 // the meals and the abilities it is spent on.
-const AB_CELL = 34, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well; AB_N: abilities
+const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
 const FOOD_CELL = 16; // a meal button's height; 2 * FOOD_CELL + AB_GAP = AB_CELL
 const FOOD_W = 40;    // ...and its width: the key cap, the 8px icon and a 4-char count
 const FOOD_ICON_X = 13; // the icon is PINNED, so a count that grows never shifts it
@@ -1464,7 +1490,18 @@ function toolDenied() {
   hudFx("deny");
 }
 function hudStripRect() {
-  return { x: Math.round((VIEW_W - AB_W) / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
+  return { x: Math.round(stripAnchorX() - AB_W / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
+}
+// WHERE THE STRIP IS CENTRED. Bottom-centre of the view - until the dial
+// grows the strip and the corner widget into each other, when the strip
+// steps LEFT to centre itself in the room the corner leaves it. The corner
+// is measured at its widest (the pack, or a five-bit longbow's shelf row,
+// whichever reaches further in), so the strip never jumps when the tool
+// changes; hudSc's cap is what keeps it from ever stepping off the left edge.
+const CORNER_REACH = Math.max(BAG_W, BAG_PAD + 6 * HUD_CELL + 5 * 2); // 1x px in from the right edge (the 2 is SHELF_GAP, declared below this loads)
+function stripAnchorX() {
+  const s = hudSc(), half = (AB_W / 2 + 3) * s;
+  return Math.min(VIEW_W / 2, VIEW_W - CORNER_REACH * s - 4 - half);
 }
 // How far the strip drops to be AWAY: its own height plus the purse tab
 // standing on it, so the whole widget clears the bottom edge rather than
@@ -1490,11 +1527,19 @@ function hudHome() { return hudInT() >= 1; }
 // a phone keeps a HUD SIZE of its own (hudScaleM): the same slider edits
 // whichever is live, so a profile that plays on both keeps both
 function hudScaleKey() { return MOBILE ? 'hudScaleM' : 'hudScale'; }
-function hudSc() { return settings[hudScaleKey()] || 0.8; }
+// The size the bottom HUD is actually drawn at: the dial, CAPPED at the size
+// where the strip (flush against the left edge) and the corner widget at its
+// widest (CORNER_REACH, below) would meet - so the two can never overlap on a
+// narrow view, and past that point the slider simply stops growing them.
+function hudSc() {
+  const want = settings[hudScaleKey()] || 0.8;
+  return Math.min(want, (VIEW_W - 8) / (AB_W + 6 + CORNER_REACH));
+}
 function stripMouse(mx, my) {
   const s = hudSc();
   if (s === 1) return { x: mx, y: my };
-  return { x: VIEW_W / 2 + (mx - VIEW_W / 2) / s, y: VIEW_H + (my - VIEW_H) / s };
+  const ax = stripAnchorX();
+  return { x: ax + (mx - ax) / s, y: VIEW_H + (my - VIEW_H) / s };
 }
 // well j of the five, left to right, over the xp bar
 function stripCellRect(j) {
@@ -1618,7 +1663,7 @@ function stripHit(mx, my) {
 // button's) and grown upward: the budget track and the row keep their pixels
 // whatever the build does, and a fitting's rail is what climbs into the open
 // screen above them.
-const SHELF_CELL = 16, SHELF_GAP = 2; // a well, and the air between two
+const SHELF_CELL = HUD_CELL, SHELF_GAP = 2; // a well (the one size), and the air between two
 const SHELF_BAR = 4;                  // the budget track, under the row
 const SHELF_RAIL = 3;                 // what one modifier's rail costs above it
 const SHELF_SLOT = 0;                 // the weapon slot it edits (TOOL_SLOTS is 1)
@@ -1632,24 +1677,6 @@ function shelfUp() {
 }
 // how many wells the row is: the tool, and one per bit cell it has
 function shelfCells() { const c = shelfCell(); return (c ? c.bits.length : 0) + 1; }
-// THE ROW STEPS OVER THE STRIP RATHER THAN UNDER IT. The strip is the one HUD
-// piece the HUD SIZE dial scales, and at the top of its range the purse tab on
-// its right rim climbs into the corner a wide row stands in. What the next
-// press will fire is not a thing to read through a gold counter, so the shelf
-// lifts by exactly enough to clear the tab - which only ever happens at the
-// dial's largest sizes with a four- or five-cell tool.
-function shelfLift() {
-  const s = hudSc();
-  if (s <= 1) return 0;
-  const pr = pursePlateRect();
-  // where the tab's right edge and top land, through drawHudScaled's own map
-  const rx = VIEW_W / 2 - (VIEW_W / 2 - (pr.x + pr.w)) * s;
-  const ry = VIEW_H - (VIEW_H - pr.y) * s;
-  const n = shelfCells();
-  if (rx <= VIEW_W - BAG_PAD - n * SHELF_CELL - (n - 1) * SHELF_GAP) return 0; // clear of the row anyway
-  const bottom = bagFrameRect().y - 2;       // the budget track's underside
-  return Math.max(0, Math.ceil(bottom - ry + 1));
-}
 // Cell -1 is the TOOL and 0..cap-1 are its bits: one row, left to right, its
 // RIGHT end flush with the pack's grid below it. A bigger tool grows the row
 // leftward rather than shifting the corner it is read in, and only the widest
@@ -1660,7 +1687,7 @@ function shelfCellRect(i) {
   const top = bagFrameRect().y;
   return {
     x: VIEW_W - BAG_PAD - (n - k) * SHELF_CELL - (n - 1 - k) * SHELF_GAP,
-    y: top - 2 - SHELF_BAR - 1 - SHELF_CELL - shelfLift(),
+    y: top - 2 - SHELF_BAR - 1 - SHELF_CELL,
     w: SHELF_CELL, h: SHELF_CELL,
   };
 }
@@ -1669,6 +1696,7 @@ function shelfCellRect(i) {
 // they do not take anything, and the snow behind them stays clickable.
 function shelfHit(mx, my) {
   if (!shelfUp()) return null;
+  ({ x: mx, y: my } = cornerMouse(mx, my));
   const t = shelfCellRect(-1);
   if (mx >= t.x && mx < t.x + t.w && my >= t.y && my < t.y + t.h) return { kind: 'tool' };
   const cell = shelfCell();
@@ -2081,13 +2109,16 @@ function drawOverWarn(r, y, now, g) {
 }
 
 // an item icon centred in a cell of any size (tools are 12x12, everything
-// else 8x8), so one call covers every well the two sizes share
-function drawItemIcon(type, r, y, g) {
+// else 8x8), so one call covers every well the two sizes share; k doubles it
+// for the HUD_CELL wells, where 1x art would swim
+function drawItemIcon(type, r, y, g, k) {
   const d = ITEMS[type];
   if (!d) return;
   const im = SPRITES[d.icon];
   if (!im) return;
-  (g || ctx).drawImage(im, r.x + ((r.w - im.width) >> 1), y + ((r.h - im.height) >> 1));
+  k = k || 1;
+  const w = im.width * k, h = im.height * k;
+  (g || ctx).drawImage(im, r.x + ((r.w - w) >> 1), y + ((r.h - h) >> 1), w, h);
 }
 
 // ---- drawing the strip, the shelf and the carried item -----------------
@@ -2400,11 +2431,11 @@ function drawHudStrip(now) {
 // The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
 // everything draws straight to the frame as it always did; any other size
 // bakes the widget at 1x into hudScaleCv and blits it scaled about the strip's
-// bottom-centre anchor - uictx's smoothing is off, so the art scales
+// anchor (stripAnchorX) - uictx's smoothing is off, so the art scales
 // nearest-neighbour instead of every fillRect going soft under a fractional
 // transform. The bake's headroom covers the buy plates' bob and the purse tab,
-// and nothing taller: the build moved off this widget onto the pack's own
-// shelf, which is drawn at 1x with the backpack it stands on.
+// and nothing taller: the build lives on the pack's own shelf, which scales
+// with the corner it stands in (drawCornerScaled).
 const HUD_BAKE_HEAD = 26;
 const hudScaleCv = document.createElement('canvas');
 const hudScaleCtx = hudScaleCv.getContext('2d');
@@ -2431,9 +2462,49 @@ function drawHudScaled(now, slideY) {
   drawHudStrip(now);
   ctx.restore();
   ctx = o;
+  const ax = stripAnchorX();
   ctx.drawImage(hudScaleCv,
-    Math.round(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
+    Math.round(ax - (ax - bx) * s),
     Math.round(VIEW_H - (VIEW_H - by) * s) + slideY,
+    Math.round(bw * s), Math.round(bh * s));
+}
+
+// THE CORNER - the backpack and the shelf standing on it - at the same HUD
+// SIZE, scaled about the BOTTOM-RIGHT corner so the pack stays flush in it.
+// The same deal as drawHudScaled: at 1x straight to the frame, otherwise a 1x
+// bake blitted with smoothing off. The bake covers everything the corner
+// hangs into the open screen - the rails over the row and the SHIFT plate
+// over those - so nothing of the widget is left behind at 1x.
+const cornerScaleCv = document.createElement('canvas');
+const cornerScaleCtx = cornerScaleCv.getContext('2d');
+function drawCornerScaled(now, slideX) {
+  const s = hudSc();
+  if (s === 1) {
+    ctx.save();
+    ctx.translate(slideX, 0);
+    drawBag(now);
+    drawShelf(now);
+    ctx.restore();
+    return;
+  }
+  const left = Math.min(bagFrameRect().x, shelfCellRect(-1).x) - 6;
+  const top = (shelfUp() ? shelfTopY() : bagFrameRect().y) - 18;
+  const bw = VIEW_W - left, bh = VIEW_H - top;
+  if (cornerScaleCv.width !== bw || cornerScaleCv.height !== bh) {
+    cornerScaleCv.width = bw; cornerScaleCv.height = bh;
+    cornerScaleCtx.imageSmoothingEnabled = false;
+  }
+  const o = ctx;
+  ctx = cornerScaleCtx;
+  ctx.clearRect(0, 0, bw, bh);
+  ctx.save();
+  ctx.translate(-left, -top);
+  drawBag(now);
+  drawShelf(now);
+  ctx.restore();
+  ctx = o;
+  ctx.drawImage(cornerScaleCv,
+    Math.round(VIEW_W - bw * s) + slideX, Math.round(VIEW_H - bh * s),
     Math.round(bw * s), Math.round(bh * s));
 }
 
@@ -2482,7 +2553,7 @@ function drawShelf(now) {
   shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool', red ? '#c2465a' : null);
   if (cell) {
     tierShine(t, t.y, cell.type, now);
-    drawItemIcon(cell.type, t, t.y);
+    drawItemIcon(cell.type, t, t.y, null, 2);
     // the same "!" the strip's well and the pack's grid wear, in the one place
     // the budget track below can say exactly where the press runs out
     if (toolOver(cell)) drawOverWarn(t, t.y, now);
@@ -2548,11 +2619,11 @@ function drawShelf(now) {
       if (dead) ctx.globalAlpha = 0.45; // ...and it is washed out with it
       modPlate(bitType(id), r, r.y);
       tierShine(r, r.y, bitType(id), now);
-      drawItemIcon(bitType(id), r, r.y - 1); // a pixel up, clear of the pips
+      drawItemIcon(bitType(id), r, r.y - 2, null, 2); // up a little, clear of the pips
       // WEIGHT, as pips, on both kinds - a fitting costs the press what a
       // shot does, and the hatched plate is what says which kind it is
       ctx.fillStyle = dead ? '#e0637a' : '#f2cc6a';
-      for (let k = 0; k < b.weight && k < 8; k++) ctx.fillRect(r.x + 1 + k * 2, r.y + r.h - 3, 1, 2);
+      for (let k = 0; k < b.weight && k < 8; k++) ctx.fillRect(r.x + 2 + k * 4, r.y + r.h - 5, 2, 3);
       ctx.globalAlpha = 1;
     }
     const lit = bitLitAt(cell, i);
@@ -3051,17 +3122,12 @@ function renderUI(now) {
   ctx.restore();
 
   // The bottom-right corner - the backpack and the weapon shelf standing on
-  // its top edge - rides the intro slide in from the right as ONE widget. It
-  // slides by whichever of the two reaches further in from the edge, because
-  // the widest tool's row is a few px wider than the frame: a shove that only
-  // cleared the frame would leave the tool's cell parked over the cinematic.
-  if (!out) {
-    ctx.save();
-    ctx.translate(Math.round(slide * Math.max(BAG_W, VIEW_W - shelfCellRect(-1).x)), 0);
-    drawBag(now);
-    drawShelf(now);
-    ctx.restore();
-  }
+  // its top edge - rides the intro slide in from the right as ONE widget, at
+  // the HUD SIZE the dial holds (drawCornerScaled). It slides by whichever of
+  // the two reaches further in from the edge, because the widest tool's row
+  // is wider than the frame: a shove that only cleared the frame would leave
+  // the tool's cell parked over the cinematic.
+  if (!out) drawCornerScaled(now, Math.round(slide * Math.max(BAG_W, VIEW_W - shelfCellRect(-1).x) * hudSc()));
 
   // hud strip (the xp bar over the weapon, ability and meal wells),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD

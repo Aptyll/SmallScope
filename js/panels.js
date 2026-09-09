@@ -1121,7 +1121,7 @@ function renderSettings(now, opts) {
   // slider's grammar. Only during the drag, and drawn last: the strip's home
   // sits under the slab's bottom edge, so it rides over the panel for exactly
   // as long as the hand is resizing it.
-  if (dragSlider === 'hud' && state.mode === 'play' && !player.dead) drawHudScaled(now, 0, false);
+  if (dragSlider === 'hud' && state.mode === 'play' && !player.dead) { drawHudScaled(now, 0); drawCornerScaled(now, 0); }
 }
 
 // ------------------------------------------------------------ player profile

@@ -679,7 +679,7 @@ function closeShop() {
 // target should be hard to miss with an item on the cursor; and the restock
 // road along the bottom rail.
 function shopLayout() {
-  const x = Math.max(2, Math.round((VIEW_W - BAG_W - SHOP_W) / 2));
+  const x = Math.max(2, Math.round((VIEW_W - BAG_W * hudSc() - SHOP_W) / 2)); // the pack at the size it is drawn
   const y = SHOP_Y;
   const cx = x + SHOP_PAD, cw = SHOP_W - SHOP_PAD * 2;
   const secs = [];

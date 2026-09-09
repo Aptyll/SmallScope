@@ -70,8 +70,9 @@ boot reading the saved one, a resize onto another screen) re-fits the view. What
   (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
   draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
   presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
-- **The right-hand touch column stands on the pack's top edge** (`bagFrameRect().y`), since the
-  grid is always up in the corner the column climbs out of. See [the backpack](#the-backpack).
+- **The right-hand touch column stands on the pack's top edge** (`bagFrameRect().y` through
+  `cornerToScreen`, since the corner draws at the HUD SIZE), as the grid is always up in the
+  corner the column climbs out of. See [the backpack](#the-backpack).
 - **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
   finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
   says who moved the pointer last (input.js).
@@ -702,16 +703,30 @@ scale with it — and its coin lines up over the two item icons below, so purse,
 read as one right-aligned tally. It is a readout, not a button: `stripHit` answers `frame` over
 it, so it swallows its own clicks without doing anything with them.
 
+**One well size for the whole bottom HUD** (3.25): the strip's wells, the pack's grid cells and
+the shelf's cells are all `HUD_CELL` (34) square, and every item icon in them is drawn doubled
+(`drawItemIcon`'s `k`), so a tool reads at one size in the weapon well, on the shelf and in
+the grid.
+
 The whole widget — plate, wells and buy plates — draws at the **HUD SIZE**
 the ESC panel's GAME slider holds (`settings.hudScale`, 0.75×–1.5×, default 0.8×). All geometry stays in 1×
 strip space: at 1× everything draws straight to the frame, and at any other size `drawHudScaled`
-bakes the widget into `hudScaleCv` and blits it scaled about the strip's bottom-centre anchor
+bakes the widget into `hudScaleCv` and blits it scaled about the strip's anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
-the same anchor via `stripMouse` first, so a click can never land beside its pixel. The shelf is
-not in this bake: it draws at 1x with the backpack it stands on, so its rects need no such map. While the
-slider's knob is in hand, `renderSettings` draws the strip live over the slab — the minimap
-slider's preview grammar.
+the same anchor via `stripMouse` first, so a click can never land beside its pixel. **The anchor
+is `stripAnchorX()`**: the view's bottom-centre until the dial grows the strip and the corner
+widget into each other, when the strip steps left to centre in the room the corner leaves it —
+measured at the corner's widest (`CORNER_REACH`: the pack, or a longbow's six-cell row), so it
+never jumps when the tool changes. **`hudSc()` caps the dial** at the size where the strip,
+flush left, and that widest corner would meet, so the two never overlap on a narrow view and past
+that point the slider simply stops growing them (on the 640 frame the cap is about 1.4×; a phone's
+narrower fit caps lower). **The corner scales with the same dial**: `drawCornerScaled`
+bakes the pack and the shelf at 1× and blits them about the bottom-right corner, `bagHit` and
+`shelfHit` map the pointer back through `cornerMouse`, and anything outside the bake that has
+to stand on the widget (the touch column, the shop's room) goes the other way through
+`cornerToScreen`. While the slider's knob is in hand, `renderSettings` draws the strip and the
+corner live over the slab — the minimap slider's preview grammar.
 
 The strip's **upgrade** half is entirely the floating buy plates above these wells — a skill
 point is spent nowhere else, and nothing else on the strip is ever bought.
@@ -721,7 +736,7 @@ point is spent nowhere else, and nothing else on the strip is ever bought.
 **The build is on screen at all times**, on the backpack's top edge: the tool at the left end of a
 row (`shelfCellRect(-1)`) and its bit cells running right in firing order, which is the one place
 the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass) is on screen at once.
-`SHELF_CELL` 16, `SHELF_GAP` 2, the row's RIGHT end flush with the pack's grid, pinned by its
+`SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, the row's RIGHT end flush with the pack's grid, pinned by its
 BOTTOM to the pack's top edge (`bagFrameRect().y`) and grown
 upward, so the row and the budget track keep their pixels whatever the build does and a fitting's
 rail is what climbs into the open screen. It is **not a panel**: bare wells with their own drop

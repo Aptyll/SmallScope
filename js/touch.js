@@ -79,7 +79,7 @@ function touchLayout() {
   if (glyph) out.push({ id: 'menu', x: 14, y: 14, r: TOUCH_R_SMALL, glyph });
   if (touchOverlay() || !MOBILE) return out;
   const put = (id, x, y) => { const b = TOUCH_BTNS[id]; if (b.when && !b.when()) return; out.push({ id, x, y, r: b.r, glyph: id }); };
-  let y = bagFrameRect().y - 4; // the grid is always up: the column stands on it
+  let y = Math.round(cornerToScreen(0, bagFrameRect().y).y) - 4; // the grid is always up: the column stands on it, at the HUD SIZE it wears
   const col = (id, x) => { const r = TOUCH_BTNS[id].r; y -= r; put(id, x, y); y -= r + 5; };
   col('dodge', VIEW_W - TOUCH_COL_X);
   col('work', VIEW_W - TOUCH_COL_X);
