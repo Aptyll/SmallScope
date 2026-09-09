@@ -1403,8 +1403,8 @@ const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the on
 // THE POUCH BLOCK, the strip's right end: the four numbers you own in a 2x2
 // of SQUARES - berry over fish on the left, gold over cards on the right
 // (3.26). Every cell is the ability wells' own grammar at two thirds the
-// size: the doubled icon in the middle, the key cap in the top-left corner
-// (the carve-out; the gold has none) and the count in the bottom-right, so
+// size: the doubled icon in the middle, the key cap in the bottom-left corner
+// (the carve-out; the gold has none) and the count in the top-right, so
 // the block reads as four stamps and not as four bars. It is TALLER than a
 // well: two squares and their gap stand POUCH_RISE px above the strip's top
 // edge on a tab of the strip's own plate, its bottom flush with the wells'.
@@ -2326,8 +2326,10 @@ const cardFanCv = (() => {
 })();
 // ONE POUCH SQUARE, the block's whole grammar - the ability well's, smaller:
 // the icon doubled in the middle (a bake that is already 16px draws at 1x),
-// the key cap in the top-left corner (the pad's glyph while one is in hand),
-// and the count in the bottom-right, over the icon's corner if it has to be.
+// the key cap in the BOTTOM-LEFT corner, exactly where an ability well
+// prints its key (the pad's glyph while one is in hand), and the count in
+// the TOP-RIGHT, over the icon's corner if it has to be - so the eye reads
+// keys along the strip's bottom edge and numbers along its top.
 // A button (a meal, the cards) wears a rim that lights on hover and reddens
 // on a refusal; `plain` (the gold) is a readout and wears no rim at all, so
 // the one square you cannot press never looks like the three you can.
@@ -2349,15 +2351,15 @@ function drawPouchCell(r, act, icon, n, col, on, red, live, now, plain) {
   }
   const k = icon.width <= 8 ? 2 : 1, iw = icon.width * k, ih = icon.height * k;
   if (n <= 0) ctx.globalAlpha = 0.35;
-  ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1) - 1, iw, ih);
+  ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
   ctx.globalAlpha = 1;
   if (act) {
     const lab = keyCapShort(act);
-    if (padActive()) drawPadBind(ctx, r.x + 2, r.y + 2, act, 1, !live);
-    else drawPixelTextOutline(ctx, lab, r.x + 2, r.y + 2, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+    if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 8, act, 1, !live);
+    else drawPixelTextOutline(ctx, lab, r.x + 2, r.y + r.h - 8, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
   }
   const t = shortNum(n);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + r.h - 8, n > 0 ? col : '#7a8bb8', '#0f1632');
+  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? col : '#7a8bb8', '#0f1632');
   if (red) ctx.restore();
 }
 // a meal button, or the card button: the pouch grammar pointed at a thing

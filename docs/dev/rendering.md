@@ -687,10 +687,11 @@ bottom row is flush with the wells and whose top rises `POUCH_RISE` (14) px abov
 edge, so the block is a small panel on the strip's end rather than four bars squeezed into one
 well. Every square is drawn by `drawPouchCell` in the ability wells' own grammar at two thirds
 the size: the item icon **doubled** in the middle (the card fan is baked at 16 px and draws at
-1×, so all four carry art of one size), the key cap in the top-left corner (the
-keybind-indicator carve-out, wearing the pad's own glyph while one is in hand; the gold has
-none), and the count in the bottom-right corner — `shortNum`, because the pouch has no ceiling,
-and a four-character count covers the icon's corner rather than moving it.
+1×, so all four carry art of one size), the key cap in the **bottom-left** corner, where an
+ability well prints its key (the keybind-indicator carve-out, wearing the pad's own glyph while
+one is in hand; the gold has none), and the count in the **top-right** corner — `shortNum`,
+because the pouch has no ceiling, and a four-character count covers the icon's corner rather
+than moving it — so keys read along the strip's bottom edge and numbers along its top.
 
 Three of the four are **buttons** (`FOOD_BTNS`: berry, fish, cards, in `stripHit`'s `food`
 order; the tab counts as on the strip for the hit test): hover lights the rim, a press sets the
