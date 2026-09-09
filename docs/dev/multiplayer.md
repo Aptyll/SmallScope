@@ -115,7 +115,7 @@ font cannot draw (the arrows, the modifiers, punctuation with no glyph) is a wor
 SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
-verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the pack,
+verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals,
 the sheet, the map, the standings, mute, pause — with the key each starts on, in the order the
 CONTROLS page lists them; `settings.binds` (action id → key name) is the live map, saved with
 the profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
@@ -166,7 +166,7 @@ not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
 off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
-L3 the pack, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
+dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 holds the worker
 flag, dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
@@ -202,7 +202,7 @@ travel — and **draws while it is down and looses when it lifts**, the mouse bu
 (`fireDown` on landing, `fireUp` on the lift). A finger on the minimap is M; a finger on the
 HUD (the strip's wells, the pack, the sheet, the counter) is the mouse — `pointerMove` +
 `pointerPress(0)`, then the release — so drags, buys and casts already work. The plates
-(`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing from the pack's corner —
+(`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing off the pack's top edge —
 DODGE (big), WORK (E held for the finger's life), SLIDE (a latch on shift: one tap on, one off),
 CHARACTER — a left column of BUILD (opens `openWheelNear` and the same finger drags to the
 wedge) and, once there is a crew, FLAG (raises the order, the lift plants it where the finger

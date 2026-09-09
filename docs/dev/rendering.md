@@ -70,9 +70,8 @@ boot reading the saved one, a resize onto another screen) re-fits the view. What
   (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
   draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
   presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
-- **The pack starts shut**, alone among the fits: the right-hand touch column climbs out of the
-  bottom-right corner the open frame fills, so `mobileRefresh()` writes `state.bagOpen = !MOBILE`
-  whenever the answer changes. See [the backpack](#the-backpack).
+- **The right-hand touch column stands on the pack's top edge** (`bagFrameRect().y`), since the
+  grid is always up in the corner the column climbs out of. See [the backpack](#the-backpack).
 - **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
   finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
   says who moved the pointer last (input.js).
@@ -404,7 +403,7 @@ at one map pixel per tile, a build or a cut ice hole arriving half a second late
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
 deliberately empty** — every number you own (berries, fish, gold) is on the **hud strip's right
 end**, which is why nothing slides in from the left during the landing intro. The
-pack button sits on the view's last pixel — no margin, the 1 px rim is the edge — so a resize
+pack's frame sits on the view's last pixel — no margin, the 1 px rim is the edge — so a resize
 keeps it flush on every size.
 
 | Where | What | Function |
@@ -414,13 +413,13 @@ keeps it flush on every size.
 | bottom left | the hover tooltip, with the event feed stacked above it | `drawTooltip`, `renderEventLog` |
 | bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the two meal buttons (berry over fish) with the **purse** tab standing on the rim above them — the three numbers you own, always on | `drawFoodCell`, `drawPurse` |
-| bottom right | the backpack: the ten-cell grid, **open by default**, on the pack button it rises off — and the **weapon shelf** standing on its top edge, always up | `drawBag`, `drawShelf` |
+| bottom right | the backpack: the ten-cell grid, **always up**, flush in the corner — and the **weapon shelf** standing on its top edge, always up | `drawBag`, `drawShelf` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Both bottom-right widgets slide **their own size** away for the landing intro — the strip
-`HUD_SLIDE` (`AB_H` + `PURSE_H`), the pack `BAG_W` when open and `BAG_BTN` when shut — because a
-fixed shove that cleared the old shut button would leave most of an open frame parked over the
-cinematic.
+`HUD_SLIDE` (`AB_H` + `PURSE_H`), the pack `BAG_W` or the shelf's reach past it, whichever is
+wider — because a shove that only cleared the frame would leave the widest tool's cell parked over
+the cinematic.
 
 ### Market notices: the plates under the minimap
 
@@ -722,7 +721,7 @@ point is spent nowhere else, and nothing else on the strip is ever bought.
 row (`shelfCellRect(-1)`) and its bit cells running right in firing order, which is the one place
 the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass) is on screen at once.
 `SHELF_CELL` 16, `SHELF_GAP` 2, the row's RIGHT end flush with the pack's grid, pinned by its
-BOTTOM to whichever pack edge is up (`bagFrameRect().y` open, `bagBtnRect().y` shut) and grown
+BOTTOM to the pack's top edge (`bagFrameRect().y`) and grown
 upward, so the row and the budget track keep their pixels whatever the build does and a fitting's
 rail is what climbs into the open screen. It is **not a panel**: bare wells with their own drop
 shadows (`shelfWell`), so the corner stays world everywhere between them and only a cell itself
@@ -775,36 +774,27 @@ budget reaches, and the shelf's budget track is where you go to see exactly wher
 
 ### The backpack
 
-**It starts open** (`state.bagOpen`, js/core.js, and put back by `respawnPlayer` after a
-death shut it): the grid is what a match is spent looking at, and a pack that has to be asked for
-hides the build. B or the button shuts it. **A phone starts it shut** — the
-[touch column](#phones) runs up the very corner the open frame fills, so there the grid is
-something you open, read and shut again. `mobileRefresh()` (js/mobile.js) is the one place that
-knows which we are, and it only writes the default when the answer *changes*, so a resize never
-shuts a pack the player opened.
+**It is always up** — the ten-cell grid sits flush in the bottom-right corner all match, on every
+fit, and there is no pack button, no B key and no open/shut state any more (3.23). The grid is
+what a match is spent looking at, and a pack that had to be asked for hid the build; the shut
+button it used to rise off was a second thing in the corner saying nothing the grid does not.
+On a phone the [touch column](#phones) stands on the frame's top edge instead of the old
+button's, so the plates climb from `bagFrameRect().y`.
 
-Shut, the pack is **one button flush in the corner** — a 26 px plate (`BAG_BTN`, `bagBtnRect()`)
-wearing the 20 px `BAG_ICON` rucksack (a proper leather pack at the strip icons' detail level:
-rolled flap, gold buckle, stitched hem, side pockets — baked once to `bagIconCv`) and nothing
-else. No frame, no numbers: the corner is world while the pack is shut. The button
-carries every state the frame carries — hover and open light its rim, amber means no cell is
-free, and it reddens and shakes for `bagFlash` seconds when something could not be carried
+The frame (`bagFrameRect()`, pinned bottom-right to the view's last pixel and grown upward,
+`BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 10 — two rows of five): the
+tools, bits and unopened cards a build is made of. There is no numbers row in it — the two meals
+are a pouch on [the hud strip's meal buttons](#the-hud-strip) and the gold is the purse tab over
+them. The rim carries the one state the cells cannot: it goes **amber when no cell is free**, and
+the whole frame reddens and shakes for `bagFlash` seconds when something could not be carried
 (`bagDenied()`, aged in `updateFx`).
-
-Open, the **frame rises off the button's top edge**
-(`bagFrameRect()`, pinned bottom-right over the button so the toggle never moves under the
-pointer that just used it), and it is **nothing but the inventory grid** (`BAG_CAP` 10 — two rows
-of five): the tools, bits and unopened cards a build is made of. There is no numbers row in it any
-more — the two meals are a pouch on [the hud strip's meal buttons](#the-hud-strip) and the gold is
-the purse tab over them, both on screen whether the pack is open or shut.
 
 Gear is not in this widget at all any more — the four pieces live on
 [the character panel](#the-character-panel-g).
 
-Everything that lays the widget out or hit-tests it asks **`bagOpenNow()`**, never
-`state.bagOpen`: the merchant's counter forces the pack open (a sale is a drag out of the grid),
-the weapon shelf stands on whichever edge it answers with, and the two answers disagreeing by a
-row would land every click one cell out.
+The merchant's counter sells by a drag out of this grid, and the [weapon shelf](#the-weapon-shelf)
+stands on its top edge — both lay out from `bagFrameRect()`, so the three can never disagree by
+a row.
 
 A grid cell holding a tool or a bit wears that item's **tier plate** rather than the default well,
 so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
@@ -829,8 +819,8 @@ as pips along the bottom, in the corner a stack number would have used.
   while something is on the cursor, saying what letting go there *would* do before it does it
   ([what a gesture answers with](gameplay.md#what-a-gesture-answers-with)); that ring is painted
   after the drag ghost and outside the well, because the ghost is exactly as big as the cell.
-- **The open frame swallows every click over itself.** `bagHit` reports `btn` (the button),
-  `cell` or `frame` (anywhere else inside, inert but eaten); shut, only the button answers.
+- **The frame swallows every click over itself.** `bagHit` reports `cell` or `frame`
+  (anywhere else inside, inert but eaten).
 - **The grid does not stop the sim.** It is HUD, not an overlay — the same deal the
   [M map](gameplay.md#the-m-map-does-not-pause) takes, only smaller.
 

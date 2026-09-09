@@ -18,7 +18,7 @@
 //     turn over every SHOP_RESTOCK seconds - the same twelve at both counters,
 //     because there is one market and two shopfronts onto it.
 //   - the PANEL. Bought from with a click, sold to by DRAGGING out of the
-//     pack, which opens beside it for exactly that reason (bagOpenNow, ui.js).
+//     pack, which is always up beside it (drawBag, ui.js).
 //
 // The counter does not stop the sim, and standing at one does not protect you:
 // it is HUD like the backpack and the character sheet, and walking out of

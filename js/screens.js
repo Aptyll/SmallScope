@@ -399,8 +399,7 @@ function deadActivate(i) {
   if (label === 'LOBBY' && state.over === 'lost' && state.deadView !== 'defeat') openDefeat();
   else if (label === 'LOBBY') toLobby();
   else if (label === 'SPECTATE') { state.deadView = 'spec'; state.spec = -1; specNext(1); }
-  // ...back to the HUD the match started with: endMatch shut the pack (see respawnPlayer)
-  else if (label === 'KEEP PLAYING') { state.mode = 'play'; state.bagOpen = !MOBILE; }
+  else if (label === 'KEEP PLAYING') state.mode = 'play';
 }
 
 // who can be watched: any living player after an elimination, only the side's

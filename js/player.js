@@ -853,7 +853,6 @@ function respawnPlayer(p) {
   if (p === player) {
     state.over = null;
     state.mode = 'play';
-    state.bagOpen = !MOBILE; // the pack comes back the way a match starts it (endMatch shut it)
     state.spec = -1; // the camera returns to the local player, not whoever it was watching
     camX = Math.max(0, Math.min(WORLD * TILE - WV_W, p.x - WV_W / 2));
     camY = Math.max(0, Math.min(WORLD * TILE - WV_H, p.y - WV_H / 2));
@@ -954,7 +953,6 @@ function endMatch(how) {
   state.deadSel = 0;
   state.deadHover = [0, 0];
   state.mapOpen = false;
-  state.bagOpen = false;
   state.settingsOpen = false;
   state.wheel = null;
   state.draft = null;

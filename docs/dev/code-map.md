@@ -64,7 +64,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| is this a phone: the device's answer, the setting over it, the live flag - and the one place the pack's open-by-default is turned off, since the touch column owns that corner | `mobileAuto`, `mobileRefresh` (writes `state.bagOpen` on a change), `MOBILE`, `settings.mobile` (core.js) | `mobile` |
+| is this a phone: the device's answer, the setting over it, the live flag | `mobileAuto`, `mobileRefresh`, `MOBILE`, `settings.mobile` (core.js) | `mobile` |
 | the footprint a phone's fit keeps, and the camera it opens at | `MOBILE_MIN_W`/`MOBILE_MIN_H`, `MOBILE_ZOOM`, `MOBILE_SHORT` (read by `fitCanvas`, canvas.js) | `mobile` |
 | held upright, and the first finger's fullscreen ask | `mobilePortrait`, `mobileGesture` | `mobile` (the prompt's pixels: `drawRotatePrompt`, `touch controls`, ui.js) |
 
@@ -310,8 +310,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | HUD and minimap | `renderUI`, `renderMinimap`, `updateMinimap` (throttled to `MM_REBUILD` ticks), `mmChrome`/`mmArcBand` (the disc's baked chrome and cached day/night arc band) | `UI` (the disc's per-tile colour comes from `objMapColor(o, 'mm')`: `world`, world.js) |
 | is the pointer over HUD that owns its own clicks, rather than over the world | `overHud` | `UI` (its callers are input.js's middle-button handlers and `flagTarget`, robots.js) |
 | the `E SHOP` cap over a merchant in reach | `drawShopHint` | `selection, hints & wheel` (the resolver and everything behind it: `merchNear`, shop.js) |
-| the backpack (bottom-right, OPEN by default): the pack button (shut: the whole widget), the open frame's ten-cell grid, the refusal flash | `BAG_CELL`/`BAG_GAP`/`BAG_PAD`/`BAG_BTN`/`BAG_BG`/`BAG_WELL`, `bagOpenNow`, `bagFrameRect`, `bagBtnRect`, `bagCellRect`, `bagCellPlate`, `bagHit`, `bagClick`, `bagDenied`, `drawFoodClock`, `drawBag` | `UI` › `the backpack` |
-| the pack button's 20px rucksack icon, baked once | `BAG_ICON`, `BAG_ICON_PAL`, `bagIconCv` | `UI` › `the pack icon` |
+| the backpack (bottom-right, ALWAYS up, no button): the frame's ten-cell grid, the refusal flash, the full-bag amber rim | `BAG_CELL`/`BAG_GAP`/`BAG_PAD`/`BAG_BG`/`BAG_WELL`, `bagFrameRect`, `bagCellRect`, `bagCellPlate`, `bagHit`, `bagClick`, `bagDenied`, `drawFoodClock`, `drawBag` | `UI` › `the backpack` |
 | the character panel (G): the live body with its gear bands, the stat ledger off the live kit, the four gear pieces and their buys | `CHAR_LEDW`/`CHAR_WELL`, `charLayout`, `charHit`, `gearHit` (the piece-index read tipAt and the cursor keep using), `charClick`, `drawCharPanel` (state: `state.charOpen`, core.js) | `UI` › `the character panel` |
 | carrying an item between the grid, the weapon slot and the shelf | `state.drag`/`state.dragPend`, `DRAG_SLOP`, `hudPress`, `hudMove`, `hudRelease`, `dragTake`, `dragLift` (a well's item onto the cursor), `dragReturn`, `dragDrop`, `dragDropBag`, `dragDropBit`, `dragDropSlot`, `throwCell` (the throw's heading + lock: `flingDrop`/`lockDrop`, core.js; a tool's bits: `shedBits`, tools.js), `drawDragGhost` | `UI` › `carrying an item on the cursor` (its three listeners: `input`, input.js) |
 | **what a gesture answers with** — one call raising the cue, the rumble and the well's pulse together (five kinds: grab / place / seat / swap / deny) | `hudFx`, `HUD_FX`, `WELL_LIT_T`/`DRAG_LIT_T`, `wellLit`/`dragLit`, `wellLitAt`, `drawWellLit` (aged in `updateFx`, sim.js; the rumble: `haptic`, input.js) | `UI` › `what a gesture answers with` |

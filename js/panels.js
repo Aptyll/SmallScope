@@ -742,7 +742,7 @@ function drawToolPrimer(g, y0) {
 // DBG.keyRows all read it, so a click can never disagree with a pixel.
 const KEY_ROWS = [
   [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
-    'dodge', 'slide', 'work', 'berry', 'fish', 'bag', 'char'],
+    'dodge', 'slide', 'work', 'berry', 'fish', 'char'],
   ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'BUILD WHEEL'], ['MMB', 'ORDER CREW'],
     ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
 ];
@@ -866,7 +866,7 @@ function drawPadReadout(x0, y0) {
   const cols = [
     [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
       ['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH']],
-    [['stick', 'L3', 'BACKPACK'], ['dpad', 'U', 'CHARACTER'], ['dpad', 'D', 'HOLD: BUILD WHEEL'], ['stick', 'R3', 'HOLD: ORDER CREW'], ['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'],
+    [['dpad', 'U', 'CHARACTER'], ['dpad', 'D', 'HOLD: BUILD WHEEL'], ['stick', 'R3', 'HOLD: ORDER CREW'], ['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'],
       ['pill', 'START', 'SETTINGS'], null, ['face', 'A', 'TAKE'], ['face', 'B', 'BACK'], ['bump', 'LB', 'PAGE TABS'], ['dpad', 'L', 'SELECT'], ['stick', 'L', 'POINTER'], ['stick', 'R', 'SCROLL']],
   ];
   for (let c = 0; c < 2; c++) {
@@ -885,11 +885,11 @@ function drawPadReadout(x0, y0) {
 })();
 (function bakeCtrlTouch() {
   const g = ctrlCvs.touch.getContext('2d');
-  // the two sticks and the pack's own button first, then the plates in the
-  // order they climb the right column and sit on the left; the icons are the
-  // plates' own (drawTouchIcon, ui.js)
+  // the two sticks first, then the plates in the order they climb the right
+  // column and sit on the left; the icons are the plates' own (drawTouchIcon,
+  // ui.js)
   const cols = [
-    [['stick', 'MOVE', TOUCH_INK], ['stick', 'AIM - LIFT TO FIRE', TOUCH_HOT], ['dodge', 'DODGE'], ['work', 'HARVEST'], ['slide', 'SLIDE'], ['char', 'CHARACTER'], ['pack', 'BACKPACK']],
+    [['stick', 'MOVE', TOUCH_INK], ['stick', 'AIM - LIFT TO FIRE', TOUCH_HOT], ['dodge', 'DODGE'], ['work', 'HARVEST'], ['slide', 'SLIDE'], ['char', 'CHARACTER']],
     [['build', 'HOLD: BUILD WHEEL'], ['flag', 'HOLD: ORDER CREW'], ['map', 'WORLD MAP'], ['cog', 'SETTINGS'], ['x', 'BACK'], ['zoomOut', 'ZOOM']],
   ];
   for (let c = 0; c < 2; c++) {

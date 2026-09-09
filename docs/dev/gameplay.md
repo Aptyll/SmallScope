@@ -365,7 +365,7 @@ a cell away from the pack it is loaded out of.
 
 It is **not a panel**: bare wells with their own drop shadows, so the corner stays world
 everywhere between them and only a cell itself swallows a click. It is pinned by its BOTTOM to
-the pack (the open frame's top edge, or the shut button's) and grows upward, and the row's RIGHT
+the pack's top edge and grows upward, and the row's RIGHT
 end is flush with the pack's grid — a bigger tool grows leftward rather than moving the corner it
 is read in. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
@@ -1559,8 +1559,8 @@ the press opens it and E, Escape, the X or **walking out of reach** shuts it (`u
 re-checks `inReach` every step). It is HUD like the pack and the character sheet — **the sim runs
 on underneath, and standing at a counter protects nobody**.
 
-Two things open with it: the **backpack** (`bagOpenNow`), because a sale is a drag out of the
-grid; and nothing else — the character sheet closes, since the two slabs would sit on each other.
+The **backpack** is already up beside it, because a sale is a drag out of the grid; the character
+sheet closes, since the two slabs would sit on each other.
 While it is up, E does not swing at the world (`sampleHumanInput`), the way a wheel already
 swallows it.
 
@@ -2456,8 +2456,7 @@ your own marker cross it. Consequences worth knowing:
 
 - The replay ring keeps recording (`replayLive`) — the capture point is above the map's dim, so
   the banked frames are clean world frames. `replayShowing` still hides the *window* under the panel.
-- Dying with the map open is now possible; `endMatch` clears `state.mapOpen` (and
-  `state.bagOpen`), and M only toggles in `play` and `drop` modes (mid-flight it is the ride's
+- Dying with the map open is now possible; `endMatch` clears `state.mapOpen`, and M only toggles in `play` and `drop` modes (mid-flight it is the ride's
   wide read; `landPlayer` closes it at touchdown), so the chart cannot survive into the death
   overlay.
 - The world keeps the zoom you were playing at. The panel is a fixed 308×226 and the canvas no
@@ -2481,8 +2480,8 @@ once by `PROFILE.load()` and the key removed; see
 [architecture.md](architecture.md#profilejs). `applyMinimapSize()` must be called after changing `mmR` —
 it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**) needs no apply
 call: the hud strip reads it live every frame
-([rendering.md](rendering.md#the-hud-strip)). The **backpack**'s open/closed state is `state.bagOpen`,
-not a setting: it is per-match HUD, and `endMatch` closes it. (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
+([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
+([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 
 There is no fullscreen control in the ESC menu (players use F11; a phone asks for it on the

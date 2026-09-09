@@ -747,37 +747,32 @@ function drawAliveIcon(x, y, color, outline) {
   stamp(0, 0, color);
 }
 
-// ---- the backpack: one button, and the frame it opens - bottom-right -----
-// It STARTS OPEN (state.bagOpen, js/core.js) - the grid is what a match is
-// spent looking at, and a pack that has to be asked for hides the build. B or
-// the button shuts it.
-//
-// Shut, the pack is ONE BUTTON flush in the corner - a 26px plate wearing the
-// 20px pack icon (BAG_ICON below) and nothing else. Open (B, or clicking it),
-// the frame rises off the button's top edge and is nothing but the ten-cell
-// GRID: a SIMPLE INVENTORY of the things a build is made of. No numbers row
-// any more - the two meals are a pouch on the hud strip's own buttons and the
-// gold is the purse tab beside them, both on screen whether the pack is open
-// or shut. Nothing else lives here either: gear is on the character panel (G,
-// below), and skill points are spent on the strip's own floating plates.
+// ---- the backpack: the grid, always up, flush in the bottom-right corner -
+// It is ALWAYS OPEN - the grid is what a match is spent looking at, and a
+// pack that has to be asked for hides the build. There is no pack button and
+// no toggle any more: the frame is nothing but the ten-cell GRID, a SIMPLE
+// INVENTORY of the things a build is made of, hard against the view's right
+// and bottom edges. No numbers row - the two meals are a pouch on the hud
+// strip's own buttons and the gold is the purse tab beside them. Nothing else
+// lives here either: gear is on the character panel (G, below), and skill
+// points are spent on the strip's own floating plates.
 //
 // ONE BACKGROUND, ONE BORDER, NO INTERNAL LINE. Every part of the frame -
 // behind the cells, behind the grid - is the same opaque BAG_BG, so nothing
 // inside reads as a separate panel stacked on another. The frame is pinned by
-// its BOTTOM RIGHT over the button and grows upward, so opening never pushes
-// anything off-screen.
+// its BOTTOM RIGHT to the corner and grows upward, so a bigger bag never
+// pushes anything off-screen.
 //
-// Clicking the button (or B) toggles the grid; clicking a cell uses or sends
-// what is in it. The frame swallows every other click over itself so nothing
-// is fired at the world through it. The grid does NOT stop the sim - it is
-// HUD, not an overlay. Two things are said in colour rather than in words: the
-// button's rim goes amber when no cell is left free, and button and frame
-// alike redden and shake when something could not be carried (bagDenied).
+// Clicking a cell uses or sends what is in it. The frame swallows every
+// other click over itself so nothing is fired at the world through it. The
+// grid does NOT stop the sim - it is HUD, not an overlay. Two things are said
+// in colour rather than in words: the frame's rim goes amber when no cell is
+// left free, and the whole frame reddens and shakes when something could not
+// be carried (bagDenied).
 const BAG_CELL = 18;   // a grid slot
 const BAG_GAP = 2;     // between neighbouring cells
 const BAG_PAD = 3;     // frame edge to the first cell
 const BAG_COLS = 5;    // the grid is five columns wide (BAG_CAP 10: two rows)
-const BAG_BTN = 26;    // the closed pack: one big button, flush in the corner
 const BAG_W = BAG_PAD * 2 + BAG_COLS * BAG_CELL + (BAG_COLS - 1) * BAG_GAP;
 const BAG_BG = '#0d1229';     // the whole frame
 const BAG_BG_RED = '#4a121c'; // ... and while a refusal is up
@@ -797,20 +792,12 @@ function bagGridH() {
   const rows = Math.ceil(player.bagCap / BAG_COLS);
   return rows * BAG_CELL + (rows - 1) * BAG_GAP;
 }
-// The pack is OPEN whenever its own toggle says so, and also whenever the
-// merchant's counter is up, because a sale is a DRAG out of the grid into the
-// counter's sell well (js/shop.js). Everything that lays the widget out or
-// hit-tests it asks this, never state.bagOpen, or the two disagree by a row and
-// every click below the gear lands one cell out - the weapon shelf reads it
-// too, since the shelf stands on whichever of the two edges is up.
-function bagOpenNow() { return state.bagOpen || shopOpen(); }
-// the pack button, flush in the corner - drawn shut and open alike, so the
-// toggle never moves under the pointer that just used it
-function bagBtnRect() { return { x: VIEW_W - BAG_BTN, y: VIEW_H - BAG_BTN, w: BAG_BTN, h: BAG_BTN }; }
-// the open frame, its bottom edge on the button's top; it grows upward
+// the frame, its bottom edge on the view's last row; it grows upward. The
+// weapon shelf stands on its top edge (shelfCellRect), so this one rect is
+// where the whole corner widget is laid out from.
 function bagFrameRect() {
   const h = BAG_PAD * 2 + bagGridH(); // pad, the grid, pad
-  return { x: VIEW_W - BAG_W, y: VIEW_H - BAG_BTN - h, w: BAG_W, h };
+  return { x: VIEW_W - BAG_W, y: VIEW_H - h, w: BAG_W, h };
 }
 // cell i of the inventory grid
 function bagCellRect(i) {
@@ -826,17 +813,13 @@ function overHud(x, y) {
   return !!bagHit(x, y) || !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
     !!shelfHit(x, y) || overMinimap();
 }
-// What the pointer is on: { kind: 'btn' } (the pack button) | { kind: 'cell',
-// i } (a grid slot) | { kind: 'frame' } (anywhere else inside the open
-// frame, swallowed and otherwise inert) | null. Shut, only the button
-// answers - the rest of the corner is world. Shared by the click handler,
-// the cursor and the widget's own hover, so the three can never disagree.
+// What the pointer is on: { kind: 'cell', i } (a grid slot) | { kind:
+// 'frame' } (anywhere else inside the frame, swallowed and otherwise inert)
+// | null. Shared by the click handler, the cursor and the widget's own hover,
+// so the three can never disagree.
 function bagHit(mx, my) {
   if (state.mode !== 'play' || player.dead || state.paused ||
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
-  const b = bagBtnRect();
-  if (mx >= b.x && mx < b.x + b.w && my >= b.y && my < b.y + b.h) return { kind: 'btn' };
-  if (!bagOpenNow()) return null;
   const f = bagFrameRect();
   if (mx < f.x || mx >= f.x + f.w || my < f.y || my >= f.y + f.h) return null;
   for (let i = 0; i < player.bagCap; i++) {
@@ -849,7 +832,6 @@ function bagHit(mx, my) {
 function bagClick(h) {
   if (!h) return false;
   if (h.kind === 'frame') return true; // the panel eats it; the world never sees it
-  if (h.kind === 'btn') { state.bagOpen = !state.bagOpen; SFX.pickup(); return true; }
   const s = player.bag[h.i];
   if (!s) { SFX.deny(); return true; }
   if (CARD_TYPE_RARITY[s.type]) openDraft(CARD_TYPE_RARITY[s.type]);
@@ -1166,7 +1148,7 @@ function renderDraft() {
   }
 }
 // One cell, and the reason nothing in here is bigger than anything else:
-// grid slots, gear plates and the pack button all come out of this. Returns
+// grid slots and gear plates all come out of this. Returns
 // the y it actually drew at, since a hover lift shifts it.
 function bagCellPlate(r, rim, inner, lift) {
   const y = r.y - (lift ? 1 : 0);
@@ -1176,52 +1158,6 @@ function bagCellPlate(r, rim, inner, lift) {
   ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
   return y;
 }
-
-// ---- the pack icon: a 20px rucksack, baked once --------------------------
-// The button is the whole widget while the pack is shut, so the old 12px
-// item sprite is not enough icon for it: this is a proper leather rucksack -
-// rolled flap with a gold buckle, stitched hem, two side pockets - drawn at
-// the strip icons' detail level and centred on the 26px button plate.
-const BAG_ICON = [
-  '.....oooo...oooo....',
-  '....os..o...o..so...',
-  '....os.oooooo..so...',
-  '...os.owwwwwwo.so...',
-  '...osowhhwwhhwoso...',
-  '..osowwwwwwwwwwoso..',
-  '..osowwwwwwwwwwoso..',
-  '..oootttttttttoooo..',
-  '..owwwwwwggwwwwwwo..',
-  '..owwwwwwgGwwwwwwo..',
-  '.owuowwwwwwwwwwouwo.',
-  '.owuowwwwwwwwwwouwo.',
-  '.owuowwwwwwwwwwouwo.',
-  '.owuowwwwwwwwwwouwo.',
-  '.owwowwttttttwwowwo.',
-  '.owwowwwwwwwwwwowwo.',
-  '..oowwwwwwwwwwwwoo..',
-  '...owwwwwwwwwwwwo...',
-  '...ouuuuuuuuuuuuo...',
-  '....oooooooooooo....',
-];
-const BAG_ICON_PAL = {
-  o: '#141a2c', w: '#a8794a', u: '#6e4a28', h: '#c49a6a',
-  t: '#e8dcb4', g: '#f2cc6a', G: '#b98a2e', s: '#5f6f96',
-};
-const bagIconCv = (() => {
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = 20;
-  const g = cv.getContext('2d');
-  for (let r = 0; r < BAG_ICON.length; r++) {
-    for (let c = 0; c < BAG_ICON[r].length; c++) {
-      const col = BAG_ICON_PAL[BAG_ICON[r][c]];
-      if (!col) continue;
-      g.fillStyle = col;
-      g.fillRect(c, r, 1, 1);
-    }
-  }
-  return cv;
-})();
 
 // ---- the character panel (G) ---------------------------------------------
 // WoW's C key, at this game's size: one slab, sim running live behind it.
@@ -1429,12 +1365,12 @@ function shiftVerb(mx, my) {
 function drawShiftHint() {
   const verb = shiftVerb(mouse.x, mouse.y);
   if (!verb) return;
-  // over the pack's top-right corner, whether it is the open frame or the
-  // shut button - clear of the grid it is about, and of the shelf over it
+  // over the pack's top-right corner - clear of the grid it is about, and of
+  // the shelf over it
   const totalW = promptW(verb, 'slide');
   // clear of the SHELF, rails and all - the plate hangs over the whole corner
   // widget, and a fitting's rail must never grow up through it
-  const top = shelfUp() ? shelfTopY() : bagOpenNow() ? bagFrameRect().y : bagBtnRect().y;
+  const top = shelfUp() ? shelfTopY() : bagFrameRect().y;
   drawKeyPrompt(VIEW_W - 2 - totalW, top - 12, verb, keyHeld('slide'), 'slide');
 }
 
@@ -1442,29 +1378,19 @@ function drawBag(now) {
   if (player.dead) return;
   const hov = mouse.inside ? bagHit(mouse.x, mouse.y) : null;
   const red = bagFlash > 0;
-  const open = bagOpenNow();
   ctx.save();
   // inward only: a ±1 shake on a flush right edge would clip a column of rim
   ctx.translate(red ? (((now * 40) | 0) % 2 ? -1 : 0) : 0, 0);
-  // The button, shut and open alike: hover lights the rim, open keeps it lit,
-  // a bag with no free cell wears amber whatever the pointer is doing, and a
-  // refusal reddens it - the button is the whole widget while the pack is
-  // shut, so every state the frame used to carry lives on it too.
-  const btn = bagBtnRect();
-  const onBtn = hov && hov.kind === 'btn';
-  const full = bagUsed(player) >= player.bagCap;
-  ctx.fillStyle = red ? '#c2465a' : onBtn || open ? '#8fa0c8' : full ? '#c9922f' : '#35426e';
-  ctx.fillRect(btn.x, btn.y, btn.w, btn.h);
-  ctx.fillStyle = red ? BAG_BG_RED : open ? '#182350' : BAG_WELL;
-  ctx.fillRect(btn.x + 1, btn.y + 1, btn.w - 2, btn.h - 2);
-  ctx.drawImage(bagIconCv, btn.x + 3, btn.y + 3);
-  if (open) {
-    // The frame, off the button's top edge. No cast shadow: it is hard
-    // against the screen's right edge, and the cells already carry the depth.
+  {
+    // The frame, hard against the corner. No cast shadow: it is flush with
+    // the screen's right and bottom edges, and the cells already carry the
+    // depth. The rim says the one state the grid cannot: amber means no cell
+    // is left free, whatever the pointer is doing.
     const f = bagFrameRect();
+    const full = bagUsed(player) >= player.bagCap;
     ctx.fillStyle = red ? BAG_BG_RED : BAG_BG; // one opaque ground for the whole widget
     ctx.fillRect(f.x, f.y, f.w, f.h);
-    ctx.fillStyle = red ? '#c2465a' : '#2c3a68';
+    ctx.fillStyle = red ? '#c2465a' : full ? '#c9922f' : '#2c3a68';
     ctx.fillRect(f.x, f.y, f.w, 1); ctx.fillRect(f.x, f.y + f.h - 1, f.w, 1);
     ctx.fillRect(f.x, f.y, 1, f.h); ctx.fillRect(f.x + f.w - 1, f.y, 1, f.h);
     for (let i = 0; i < player.bagCap; i++) {
@@ -1749,7 +1675,7 @@ function shelfLift() {
   const ry = VIEW_H - (VIEW_H - pr.y) * s;
   const n = shelfCells();
   if (rx <= VIEW_W - BAG_PAD - n * SHELF_CELL - (n - 1) * SHELF_GAP) return 0; // clear of the row anyway
-  const bottom = (bagOpenNow() ? bagFrameRect().y : bagBtnRect().y) - 2;       // the budget track's underside
+  const bottom = bagFrameRect().y - 2;       // the budget track's underside
   return Math.max(0, Math.ceil(bottom - ry + 1));
 }
 // Cell -1 is the TOOL and 0..cap-1 are its bits: one row, left to right, its
@@ -1759,7 +1685,7 @@ function shelfLift() {
 function shelfCellRect(i) {
   const n = shelfCells(); // the tool leads the row
   const k = i + 1;
-  const top = bagOpenNow() ? bagFrameRect().y : bagBtnRect().y;
+  const top = bagFrameRect().y;
   return {
     x: VIEW_W - BAG_PAD - (n - k) * SHELF_CELL - (n - 1 - k) * SHELF_GAP,
     y: top - 2 - SHELF_BAR - 1 - SHELF_CELL - shelfLift(),
@@ -2006,7 +1932,7 @@ function hudPress(mx, my) {
   const bh = bagHit(mx, my);
   if (bh) {
     if (bh.kind === 'cell' && player.bag[bh.i]) state.dragPend = { src: { k: 'bag', i: bh.i }, x: mx, y: my };
-    else if (bh.kind !== 'cell') return bagClick(bh); // the pack button acts on the press
+    else if (bh.kind !== 'cell') return bagClick(bh); // the frame eats the press
     return true;
   }
   return false;
@@ -3056,13 +2982,6 @@ function tipAt(mx, my) {
   }
   const bh = bagHit(mx, my);
   if (!bh) return null;
-  if (bh.kind === 'btn') {
-    return { title: 'BACKPACK', tcol: '#f4f7ff', kind: 'B TO OPEN', icon: bagIconCv,
-      plate: BAG_WELL, rim: '#35426e',
-      rows: [['CELLS USED', bagUsed(player) + '/' + player.bagCap,
-        bagUsed(player) >= player.bagCap ? '#e0637a' : '#f4f7ff']],
-      notes: [['DRAG ONTO THE SNOW TO THROW AWAY', TIP_DIM]] };
-  }
   if (bh.kind === 'cell') {
     const s = player.bag[bh.i];
     const d = tipCell(s);
@@ -3166,12 +3085,11 @@ function renderUI(now) {
   // The bottom-right corner - the backpack and the weapon shelf standing on
   // its top edge - rides the intro slide in from the right as ONE widget. It
   // slides by whichever of the two reaches further in from the edge, because
-  // the pack now starts open and the widest tool's row is a few px wider than
-  // it: a shove that only cleared the shut button would leave most of the
-  // frame parked over the cinematic.
+  // the widest tool's row is a few px wider than the frame: a shove that only
+  // cleared the frame would leave the tool's cell parked over the cinematic.
   if (!out) {
     ctx.save();
-    ctx.translate(Math.round(slide * Math.max(bagOpenNow() ? BAG_W : BAG_BTN, VIEW_W - shelfCellRect(-1).x)), 0);
+    ctx.translate(Math.round(slide * Math.max(BAG_W, VIEW_W - shelfCellRect(-1).x)), 0);
     drawBag(now);
     drawShelf(now);
     ctx.restore();
@@ -3344,10 +3262,6 @@ function drawTouchIcon(g, id, cx, cy, col, bg) {
       break;
     case 'map': // the minimap disc
       touchRing(g, cx, cy, 4, col); g.fillRect(cx, cy, 1, 1);
-      break;
-    case 'pack': // the backpack
-      g.fillRect(cx - 3, cy - 2, 7, 6); g.fillRect(cx - 2, cy - 4, 5, 2);
-      g.fillStyle = bg || TOUCH_PLATE; g.fillRect(cx - 1, cy, 3, 1);
       break;
   }
 }

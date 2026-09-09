@@ -67,7 +67,7 @@ function touchMenuGlyph() {
   return touchOverlay() || state.wheel || state.flagAim ? 'x' : 'cog';
 }
 
-// Where the plates sit: the right column climbs from the pack's corner (roll,
+// Where the plates sit: the right column climbs off the pack's top edge (roll,
 // work, slide, the sheet - under the right thumb, which is also the aim), the
 // left column holds build and the flag (under the walking thumb, and the
 // flag only once there is a crew), the top-left row is the menu cog and the
@@ -79,7 +79,7 @@ function touchLayout() {
   if (glyph) out.push({ id: 'menu', x: 14, y: 14, r: TOUCH_R_SMALL, glyph });
   if (touchOverlay() || !MOBILE) return out;
   const put = (id, x, y) => { const b = TOUCH_BTNS[id]; if (b.when && !b.when()) return; out.push({ id, x, y, r: b.r, glyph: id }); };
-  let y = VIEW_H - BAG_BTN - 4;
+  let y = bagFrameRect().y - 4; // the grid is always up: the column stands on it
   const col = (id, x) => { const r = TOUCH_BTNS[id].r; y -= r; put(id, x, y); y -= r + 5; };
   col('dodge', VIEW_W - TOUCH_COL_X);
   col('work', VIEW_W - TOUCH_COL_X);

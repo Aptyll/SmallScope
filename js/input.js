@@ -71,7 +71,7 @@ const KEY_ACTIONS = [
   { id: 'ab3', verb: 'ABILITY 3', key: '3' }, { id: 'ab4', verb: 'ABILITY 4', key: '4' },
   { id: 'dodge', verb: 'DODGE', key: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q' }, { id: 'fish', verb: 'EAT FISH', key: 'f' },
-  { id: 'bag', verb: 'BACKPACK', key: 'b' }, { id: 'char', verb: 'CHARACTER', key: 'g' },
+  { id: 'char', verb: 'CHARACTER', key: 'g' },
   { id: 'map', verb: 'WORLD MAP', key: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p' },
 ];
@@ -263,10 +263,6 @@ function keyPress(e) {
       }
     }
   }
-  // the pack key opens the backpack grid. It is HUD and not an overlay, so
-  // unlike the map and ESC it neither stops the sim nor swallows anything
-  // but its own clicks.
-  if (keyIs(e, 'bag')) state.bagOpen = !state.bagOpen;
   // the sheet key raises the character panel - the body, the live stat
   // ledger and the four gear pieces. HUD like the bag: the sim runs on
   // underneath.

@@ -114,13 +114,6 @@ const state = {
   dayPop: null,  // the dawn headline, top centre: { day, t } - set by each dawn and the landing (js/sim.js), drawn by renderUI
   paused: false,
   mapOpen: false,
-  // The backpack grid (B, or the pack button): HUD, it does NOT stop the sim.
-  // It starts OPEN - the grid is where a find is read and a build is laid
-  // out, and a pack that has to be asked for hides the one surface a match
-  // spends its whole time in. B still shuts it. A PHONE starts it shut
-  // instead, because the touch column owns that corner: mobileRefresh
-  // (js/mobile.js) is the one place that knows which we are.
-  bagOpen: true,
   charOpen: false,     // the character panel (G): HUD, it does NOT stop the sim either
   // the MERCHANT whose counter is open (js/shop.js), or null. HUD like the two
   // above - the sim runs on underneath - and it holds the merchant itself

@@ -25,12 +25,12 @@ const PAD_IDLE = 30;                      // s since its last input before a pad
 // resolved to whatever key the action holds by actKey, so a rebind moves the
 // pad with the keyboard: A rolls, X works, Y / B / LB / RB are the four
 // abilities in strip order (LB held is the grapple, the one held ability),
-// START is the ESC slab (Escape, the one fixed key), L3 the pack, up the
-// character sheet, left and right the two meals. Four are gestures rather
+// START is the ESC slab (Escape, the one fixed key), up the character
+// sheet, left and right the two meals. Four are gestures rather
 // than keys and are handled by hand in padPress/padRelease: RT is the draw
 // (held) and LT the slide, R3 holds the worker flag, down holds the build
 // wheel, and BACK is the standings while held and the map on a tap.
-const PAD_PLAY = { 0: 'dodge', 1: 'ab2', 2: 'work', 3: 'ab1', 4: 'ab3', 5: 'ab4', 9: 'Escape', 10: 'bag', 12: 'char', 14: 'berry', 15: 'fish' };
+const PAD_PLAY = { 0: 'dodge', 1: 'ab2', 2: 'work', 3: 'ab1', 4: 'ab3', 5: 'ab4', 9: 'Escape', 12: 'char', 14: 'berry', 15: 'fish' };
 // Over a menu or a panel: A takes (whatever the pointer is on, or the
 // selection where a menu is key-driven - padTake), B, BACK and START back
 // out, the dpad and the bumpers are the arrow keys every menu already answers.
