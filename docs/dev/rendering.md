@@ -403,7 +403,7 @@ into, so it belongs where the clock and the alive count already are.
 what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down.
 
 The mark is the kind's own (`NOTE_KIND[k].mark`, a `SPRITES` key or null), 16×16 in a sunken well:
-the merchant's **gold sack** (`SPRITES.goldSack`, six frames turning over on `NOTE_FR` (0.11 s) the
+the merchant's **gold sack** (`SPRITES.goldSack`, ten frames turning over on `NOTE_FR` (0.11 s) the
 whole time a **price** plate is up, so the coin keeps catching the light) and a still wooden
 **crate** (`SPRITES.crate`) when the counter itself has turned over — a sack of coin is what a
 price is worth, a crate is what a delivery *is*. A stock plate has **no tail**: its crate has
@@ -1136,7 +1136,9 @@ it up in the air. It is drawn twice, once behind the body and once in front, so 
 **in** the snow rather than on a hill. `stampGrid(rows, pal, x, y, s, rim)` paints a char grid at
 any cell size, the shape [sprites.js](../../js/sprites.js) authors in, for the crown, the arrow and
 the stat glyphs (`WIN_ICONS`) that never earned a baked sprite; the sprites the screens do use are
-the champion bodies, `SPRITES.gearIcons`, `itemGold` and `itemBow`.
+the champion bodies, `SPRITES.gearIcons`, `itemBow` and `itemGold` — that last one a **live
+canvas** whose frame `stepItemIcons()` stamps in each frame, like every item icon that moves
+([sprites.md](sprites.md)).
 
 **The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOU COLLAPSED
 IN THE SNOW** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing

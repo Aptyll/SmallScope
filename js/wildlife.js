@@ -27,7 +27,9 @@ function animalLevel() {
   for (const p of players) if (p.active) { n++; s += p.level; }
   return n ? Math.max(1, Math.min(LEVEL_MAX, Math.round(s / n))) : 1;
 }
-const HIT_PUFF = { rabbit: '#eef2fa', deer: '#a5825a', wolf: '#6f778c', alpha: '#c9d2e4', dire: '#4a3040', bird: '#cfd6e4' };
+// what a hit knocks off a body: its own coat, so a puff says which beast
+// took the blow. Both prey are warm brown since the new sheets landed.
+const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#c9d2e4', dire: '#4a3040', bird: '#cfd6e4' };
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
@@ -57,6 +59,50 @@ const RABBIT_DODGE_MISS = 14;  // px off the body's centre a shot's line must pa
 const RABBIT_DODGE_SPD = 260;  // px/s of the jink
 const RABBIT_DODGE_T = 0.11;   // s it lasts: ~29 px, well clear of the 8 px disc an arrow lands in
 const RABBIT_DODGE_CD = 10;    // s for the charge to come back
+// The beat a rabbit sits up for before it goes: it hears you, rocks back onto
+// its haunches (the `rise` clip) and only then bolts. It is what the meadow's
+// oldest line - "a rabbit sits tight and then goes off like a spring" - looks
+// like, and it is the one still shot a hunter is ever offered at one. A hit
+// skips it (hurtAnimal), so a rabbit already running never stops to pose.
+const RABBIT_ALERT = 0.3;
+// The head-up window: seconds either prey keeps WATCHING after the last sign
+// of a player - the beat a deer stands in when a flight ends, before it puts
+// its head back down. It costs nothing (no speed, no sight, no bolt of its
+// own; a.senseT and the mark over the head are unchanged) and buys the one
+// thing that cannot be said in words: grazing MEANS "has not seen you", so a
+// meadow of heads-down is a meadow you can still walk into.
+const PREY_WARY_T = 3;
+
+// What a beast is DOING, drawn: the sprite clip it plays and the frames a
+// second it plays at. The imported bunny and stag came in AS behaviours - a
+// graze, a gallop, a sit-up - so a beast's animation is not a walk flag any
+// more but a name, chosen from its state by the `setClip` calls at the end of
+// updatePrey / updateCampMonster / updateBird (and by the stun branch of
+// updateAnimal) and played by `clipFrame`, js/draw-world.js - which is the
+// ONLY thing that turns a clip and an animT into a canvas, so nothing else
+// needs to know a clip's length. A kind's clips are the keys of its SPRITES entry
+// (js/sprites.js); `idle` is the one every kind has, and the fallback.
+// A one-frame clip's rate is moot, hence the zeroes.
+const ANIM_CLIPS = {
+  rabbit: { idle: 6, rise: 8, hop: 14 },
+  deer: { idle: 4, graze: 5, run: 16 },
+  wolf: { idle: 0, run: 8 },
+  alpha: { idle: 0, run: 8 },
+  dire: { idle: 0, run: 7 },
+  bird: { idle: 0, fly: 14 },
+};
+// A clip change restarts the loop, so a sit-up always begins on the frame it
+// was drawn to begin on rather than wherever the last one had got to.
+function setClip(a, clip) {
+  if (a.clip === clip) return;
+  a.clip = clip;
+  a.animT = 0;
+}
+// one clip's worth of time, `rate` the caller's own gait multiplier (a wander
+// is the same gallop, slower)
+function stepClip(a, dt, rate) {
+  a.animT += dt * ((ANIM_CLIPS[a.kind] || {})[a.clip] || 0) * (rate === undefined ? 1 : rate);
+}
 
 function makeAnimal(kind, x, y) {
   const level = animalLevel();
@@ -65,8 +111,9 @@ function makeAnimal(kind, x, y) {
     kind, x, y, hp, maxHp: hp, level,
     senseT: 0,                           // s it has had a player in sight (0: it has not) - the mark over its head (drawAnimal)
     dir: rng() < 0.5 ? 'left' : 'right',
-    goal: null, idleT: rand(0.5, 2.5), mvx: 0, mvy: 0, moving: false,
-    animT: rng() * 2, flash: 0, kbx: 0, kby: 0,
+    goal: null, idleT: rand(0.5, 2.5), mvx: 0, mvy: 0,
+    clip: 'idle', animT: rng() * 2, flash: 0, kbx: 0, kby: 0, // the clip it plays, and how far into it (ANIM_CLIPS)
+    alertT: 0, wary: 0,                  // rabbit: the sit-up before the bolt (RABBIT_ALERT); both: the head-up window after one (PREY_WARY_T)
     fleeT: 0, fleeGoal: null, nav: null,  // prey: its flight; any walker: its route (see pathfinding)
     sprint: 1,                           // deer: the stamina bar its sprint runs off (0..1)
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
@@ -103,10 +150,10 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   // and a hit is the ONLY thing that wakes one
   if (isCampKind(a.kind)) wakeCamp(a, players[owner]);
   else if (a.kind === 'bird') flushBirds(a.home, a);
-  else a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2;
+  else { a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2; a.alertT = 0; } // a hit rabbit goes NOW; it does not stop to sit up
   addDmgFloater(a.x, a.y - (a.alt || 0) - 12, dmg, false, ambush);
   a.kbx = nx * kb; a.kby = ny * kb;
-  burst(a.x, a.y - (a.alt || 0) - 4, HIT_PUFF[a.kind] || '#a5825a', 6, 40, 0.4);
+  burst(a.x, a.y - (a.alt || 0) - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
   if (ambush) ambushFx(a.x, a.y - (a.alt || 0) - 4);
   if (nearPlayer(a.x, a.y)) { SFX.hit(); if (a.hp > 0 && a.kind !== 'bird') SFX.yelp(); }
 }
@@ -386,9 +433,9 @@ function updateAnimal(a, dt) {
     // dropped rather than resumed - a tackle can slide a body a long way from
     // the leg it was on. A shove still moves it, same as any idle animal.
     a.stunT = Math.max(0, a.stunT - dt);
-    a.moving = false;
+    setClip(a, 'idle'); // stars over a still body: the standing clip, held
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, unitRadius(a));
-    if (a.stunT <= 0) { a.goal = null; a.fleeGoal = null; a.dashT = 0; navClear(a); a.idleT = 0.3; }
+    if (a.stunT <= 0) { a.goal = null; a.fleeGoal = null; a.dashT = 0; a.alertT = 0; navClear(a); a.idleT = 0.3; }
   } else if (isCampKind(a.kind)) updateCampMonster(a, dt);
   else if (a.kind === 'bird') updateBird(a, dt);
   else updatePrey(a, dt);
@@ -513,9 +560,14 @@ function updatePrey(a, dt) {
   }
   const seen = !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
   if (a.fleeT <= 0 && seen) {
-    const t = FLEE_TIME[a.kind];
-    a.fleeT = rand(t[0], t[1]);
-    a.goal = null; navClear(a); // the graze is off
+    // a rabbit that has only just noticed you sits up first (RABBIT_ALERT);
+    // the deer, and a rabbit whose beat is spent, go
+    if (rabbit && a.senseT <= 0 && a.alertT <= 0) a.alertT = RABBIT_ALERT;
+    else if (a.alertT <= 0) {
+      const t = FLEE_TIME[a.kind];
+      a.fleeT = rand(t[0], t[1]);
+    }
+    a.goal = null; navClear(a); // the graze is off either way
   }
 
   let moving = false, sprinting = false, dashing = false;
@@ -527,6 +579,10 @@ function updatePrey(a, dt) {
     a.mvx = a.dashX; a.mvy = a.dashY;
     moveEntity(a, (a.dashX * spd + a.kbx) * dt, (a.dashY * spd + a.kby) * dt, r);
     moving = dashing = true;
+  } else if (a.alertT > 0) {
+    // up on its haunches, wound and not yet let go: nothing walks, and the
+    // clip below is the whole tell
+    a.alertT -= dt;
   } else if (a.fleeT > 0) {
     a.fleeT -= dt;
     const from = scare || player;
@@ -566,10 +622,24 @@ function updatePrey(a, dt) {
   // inside its ring or is running from one, down the frame neither is true -
   // so a deer wearing it is a deer that has seen you, and one without has not
   a.senseT = seen || a.fleeT > 0 ? a.senseT + dt : 0;
+  // ...and the softer one under it: the mark snaps off the moment it loses
+  // you, but the animal keeps its head up a while longer (PREY_WARY_T)
+  a.wary = seen || a.fleeT > 0 || a.alertT > 0 ? PREY_WARY_T : Math.max(0, a.wary - dt);
 
   if (moving && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
-  a.animT += dt * (moving ? (dashing ? 16 : rabbit ? 10 : sprinting ? 12 : 7) : 0);
-  a.moving = moving;
+  // Which clip, and that IS the read on what the animal knows (ANIM_CLIPS).
+  // Standing still and settled, a deer has its HEAD DOWN in the snow and a
+  // rabbit is low over its paws; standing still and WARY - it has you in
+  // sight, or it has just finished running from you - the deer's head is up
+  // and turning and the rabbit is rocked back on its haunches. So a grazing
+  // deer is a deer that has not seen you, which is the whole of why closing
+  // on one under GHOSTSTEP or buried in the snow is worth doing, and it is
+  // told without a word. Moving is the gallop or the hop, run slower for a
+  // wander than for a flight: the same gait, not a different one.
+  if (moving) setClip(a, rabbit ? 'hop' : 'run');
+  else if (a.wary > 0) setClip(a, rabbit ? 'rise' : 'idle');
+  else setClip(a, rabbit ? 'idle' : 'graze');
+  stepClip(a, dt, dashing ? 1.4 : sprinting ? 1.5 : a.fleeT > 0 ? 1 : moving ? 0.6 : 1);
 }
 
 // what a kill pays: one profile per kind out of the YIELD table, grown
@@ -589,11 +659,11 @@ function animalDies(a) {
     awardGold(hunter, base + bonus, a.x, a.y - (a.alt || 0));
   }
   if (a.kind === 'rabbit') {
-    burst(a.x, a.y - 3, '#eef2fa', 10, 45, 0.5);
-    burst(a.x, a.y - 3, '#c9d0e2', 6, 35, 0.4);
+    burst(a.x, a.y - 3, '#9a6a45', 10, 45, 0.5);
+    burst(a.x, a.y - 3, '#c29068', 6, 35, 0.4);
     spawnDrop(a.x, a.y, 'berry');
   } else if (a.kind === 'deer') {
-    burst(a.x, a.y - 5, '#8a6847', 12, 50, 0.55);
+    burst(a.x, a.y - 5, '#8f582f', 12, 50, 0.55);
     burst(a.x, a.y - 5, '#f2cc6a', 8, 45, 0.5);
   } else if (a.kind === 'wolf') {
     burst(a.x, a.y - 5, '#6f778c', 12, 50, 0.55);
@@ -751,8 +821,8 @@ function updateCampMonster(a, dt) {
   }
 
   if (moving && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
-  a.animT += dt * (moving ? (t ? 12 : 6) : 0);
-  a.moving = moving;
+  setClip(a, moving ? 'run' : 'idle');   // a wolf has the two: standing, and coming for you
+  stepClip(a, dt, moving ? (t ? 1.5 : 0.75) : 0);
 }
 
 // ------------------------------------------------------------ birds
@@ -833,8 +903,8 @@ function updateBird(a, dt) {
   }
 
   if (a.flyT > 0 && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
-  a.animT += dt * (a.flyT > 0 ? 14 : 0);
-  a.moving = a.flyT > 0;
+  setClip(a, a.flyT > 0 ? 'fly' : 'idle');
+  stepClip(a, dt, a.flyT > 0 ? 1 : 0);
   a.x = Math.max(8, Math.min(WORLD * TILE - 8, a.x));
   a.y = Math.max(8, Math.min(WORLD * TILE - 8, a.y));
 }

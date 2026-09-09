@@ -96,8 +96,8 @@ White/Green/Blue/Purple/Gold — where the rarity itself is the only colour that
 `itemCardWhite`…`itemCardGold` are five palette swaps of one grid, the same relationship `GEAR_MATS`
 has to a single gear icon.
 
-**The pine is twenty-four bend frames of one tree**, and one of two sprites here not drawn by hand
-(the gold sack below is the other):
+**The pine is twenty-four bend frames of one tree**, and the first of the imported sprites — the
+others are the gold sack, the three animated goods and both prey, below:
 `treeSway` is `docs/media/new_media/001.png` cropped to **27×37**, snapped onto
 `TSPAL` (fourteen colours, `bake`d like everything else), and then **sheared** into its other
 frames. It draws at
@@ -121,26 +121,72 @@ hash also gives, is what keeps a stand from reading as one stamp repeated. `TPAL
 still dresses the `stump` a felled pine leaves. Which frame a tree is wearing is decided by the
 wind, not here - [rendering.md](rendering.md#the-wind-field).
 
-**The gold sack is the merchant's mark, and the second imported sprite.** `SPRITES.goldSack` is
-`docs/media/new_media/bag_of_gold_spritesheet.png` — a 192×32 strip — split at 32 px into the six
-frames `sackA`…`sackF` and snapped onto `SACKPAL` (fourteen colours: three outlines, four cloth,
-five coin, two shine), pixel for pixel, so the file and the grids are the same picture. Unlike the
+**The gold sack is the merchant's mark.** `SPRITES.goldSack` is
+`docs/media/new_media3/bag_of_gold_bouncing.png` — a 320×32 strip — split at 32 px into the ten
+frames of `sack` and snapped onto `SACKPAL` (twelve colours: an outline, five cloth, two cord,
+three coin, one shine). Unlike the
 pine the **source order IS the animation order**: it was drawn as a loop, and the cloth barely
-moves while the coin in the neck of the sack sparkles, so the cycle reads as light catching gold
+moves while the coin in the neck of the sack glows, so the cycle reads as light catching gold
 rather than as a bag being jostled.
 
-It is authored at 32 and **baked at 16**, through `bakeHalf` — the one thing in this file that does
-not bake a grid at its own cell size. Its only caller is the market plate
-([the plates](rendering.md#market-notices-the-plates-under-the-minimap)), which is HUD chrome where
-16 is the size that reads. `bakeHalf` averages each 2×2 block with the alpha as the weight rather
-than blitting the canvas down, because a plain half-size blit throws away three pixels in four and
-on art whose whole animation is a 1 px sparkle moving about that *is* the animation thrown away.
-Edit the grids at 32; what ships is the average of them.
+Its only caller is the market plate
+([the plates](rendering.md#market-notices-the-plates-under-the-minimap)), HUD chrome where **16** is
+the size that reads — so the 32 px source was **resampled offline to 16×16** and snapped onto
+`SACKPAL` before it ever reached this file. It sits in the same sunken well as the hand-drawn
+crate below and has to be as crisp as one.
+
+<a id="the-offline-resample"></a>
+**Everything imported is resampled OFFLINE, never halved at load.** The sheets in
+`docs/media/new_media3/` are drawn much larger than the game wants them — a bunny frame is 32 px
+tall against a 16 px player — so the pass that produced these grids scaled each frame to the size
+it ships at, then **snapped every pixel onto the subject's own palette and every edge to hard
+alpha**. Two rules come out of that and both matter:
+
+- **What is written in this file is what draws.** `bake()` paints every grid 1:1, so editing one
+  character changes exactly one pixel in the game — the same contract every hand-drawn grid here
+  has always had.
+- **No sprite in the game has a soft edge or an off-palette pixel.** The earlier `bakeHalf` did
+  the downscale at load as an alpha-weighted 2×2 average, which is fine for a HUD stamp whose
+  whole animation is a 1 px sparkle and wrong for everything else: it fringes every edge with
+  half-transparent pixels and invents colours the palette never had. Against hard-edged art at a
+  whole-number zoom that reads as blur. `bakeHalf` is **gone**; nothing bakes at anything but its
+  own cell size.
+
+**Three item icons are loops rather than stamps**, all three off 16×16 strips in
+`docs/media/new_media3/`, resampled to the **8×8** every other item icon is, so what changed is
+the art and not the fit:
+
+| icon | source | frames | palette | the loop |
+| --- | --- | --- | --- | --- |
+| `itemGold` | `gold_nugget.png` | 8 | `NUGPAL` (14) | a shine crossing the face |
+| `itemBerry` | `berries.png` | 10 | `BERPAL` (9) | a sparkle over the stalks |
+| `itemFish` | `fish.png` | 8 | `FIPAL` (10) | the fins working |
+
+The **fish is the one whose palette does not match its sheet**: it arrived salmon and `FIPAL` is
+**hue-shifted** to the cold blue everything else about a fish in this game already is — the
+market's fish line and price graph, the pickup floater, `RES_COLORS.fish` (`#7ac0e8`) — because a
+pink icon under a blue number reads as two different goods. Every entry keeps its **lightness**,
+which is what carries the shading, and lands in a tight band around 205°; only the cream belly is
+hand-nudged, because the source told its two bellies apart by hue at equal lightness and one hue
+cannot carry that. `fish.png` itself is untouched, so a regenerated grid set needs the shift
+reapplied — the grids are the sheet pixel for pixel, the twelve numbers in `FIPAL` are not.
+
+They are exposed as **live canvases**, and that is the whole trick. `SPRITES.itemAnim[key]` holds
+the frames; `SPRITES[key]` is one canvas per icon that `stepItemIcons()` (js/render.js) stamps the
+current frame into, once a frame, before anything draws. So `SPRITES[ITEMS[type].icon]` — how the
+bag, a shop price, a sale row, a drop on the snow, a tooltip and the wiki all reach an item icon —
+stays **one generic read**, and no call site has to know which three goods move. Handing those
+reads a frame array instead would mean teaching every one of them about three special cases; the
+three are not special, they are icons that happen to move. One clock drives all of them
+(`ITEM_FR`, 100 ms), so every berry on the screen is on the same beat — a dozen icons each looping
+to their own is a fruit machine, not a HUD — and a frame that has not changed is not redrawn.
+Each canvas starts on frame 0, so a panel that bakes an item icon into a still image at boot (the
+control primer) gets a picture rather than a hole.
 
 **The crate is the other mark on that plate, and it is hand-drawn.** `SPRITES.crate` is the 16×16
 `crate` grid on `CRATE_PAL` (five colours: an outline, plank in shade and in light, the pale X of
-bracing, and the top rail's highlight), `bake`d 1:1 at the size it is drawn — a still box has no
-sparkle to lose, so there is nothing for a 32 px authoring pass to preserve. It replaces the sack
+bracing, and the top rail's highlight), drawn by hand at the 16×16 it ships at rather than
+resampled down from a sheet. It replaces the sack
 on the plate whose news is a **turnover** rather than a price (`NOTE_KIND.stock.mark`,
 [the plates](rendering.md#market-notices-the-plates-under-the-minimap)): same 16×16 stamp, same
 sunken well, so the column reads as one column whichever kind lands in it.
@@ -153,13 +199,40 @@ the gun to one angle. The pivot is sprite-local **(16, 14)**, just above the col
 the sprite is wider than its one-tile footprint, so the draw pass centres it (`sx` in the structure
 branch of `render()`); and a 32px sprite is too big for a radial-wheel segment, so `turretIcon` (the
 old 16×16 cannon) is baked into `teamBuild[team].icon.turret`, the same escape hatch the bay uses.
-Wildlife is
-side-view only — rabbits are 12×11 (sit) / 14×9 (hop), deer are 26×22 (stand + two walk frames
-sharing a `deerHead` upper body), wolves are 16×13 (a shared `wolfBody` plus three leg rows per
-frame, the deer's trick), birds are 9×6 (perched) / 9×5 (two wing frames) — and left variants are
-`flipH` of the right-facing grids. The camps' two [alpha and dire wolf](world.md#camps) are
+**Wildlife is side-view only, and its frames are named CLIPS.** `SPRITES[kind][dir]` is an
+**object**, not a flat list: one array per behaviour, every kind carrying at least `idle` — the
+frame anything asking for "the beast" takes (the wiki's cards read `.right.idle[0]`). Which clip
+is playing is the animal's business, not the sprite's: js/wildlife.js sets `a.clip` from what the
+beast is doing (`ANIM_CLIPS`, [gameplay.md](gameplay.md#what-a-beast-is-doing-the-clips)) and
+`clipFrame` in draw-world.js plays it. `bakeClips` builds a set and `mapClips` walks one — the
+mirror for `left`, and the alpha/dire wash below.
+
+The **rabbit** and the **deer** are imported: three sheets each out of `docs/media/new_media3/`,
+snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the animation order.
+
+| kind | clips (frames, and the sheet each came off) | source cell | **ships at** |
+| --- | --- | --- | --- |
+| `rabbit` | `idle` 10 `bunny…gently_look_around`, `hop` 6 `…hopping_right`, `rise` 8 `…stand_up_and_wiggle` | 28×30 | **11×12** |
+| `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **19×19** |
+| `wolf` | `idle` 1, `run` 2 | — | 16×13 |
+| `bird` | `idle` 1 (perched), `fly` 2 | — | 9×6 / 9×5 |
+
+Both are [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
+than a 16 px player and the stag more than twice one. The **rabbit ships at 11×12**, deliberately
+shy of half its source: a bunny the height of the hero read as a hare the size of a dog, and the
+stag beside it is the animal that is meant to look big. Each kind's three sheets share **one
+crop** — the box every frame of every clip fits inside — because a clip taking over on a different
+crop would jump against the one it replaced. The deer keeps its whole 38×38 cell (the gallop
+reaches column 0, the graze column 37); the rabbit is trimmed to 28×30, which still holds the ear
+tips the hop throws up.
+
+The wolf and the bird keep their hand-drawn grids (a shared `wolfBody` plus three leg rows per
+frame, the trick the deer used to use; `birdPerch` plus two wing frames) — they were already an
+idle and a two-frame gait, so the clip shape only names what they had. Left variants are `flipH`
+of the right-facing frames. The camps' two [alpha and dire wolf](world.md#camps) are
 **placeholder looks derived from the wolf, not grids**: `wash` washes the wolf's frames toward
-silver (alpha) or a dark red (dire) and `double` blows the dire up to 32�26 nearest-neighbour
+silver (alpha) or a dark red (dire), each through `mapClips` so every clip is washed, and `double`
+blows the dire up to 32�26 nearest-neighbour
 (the tail of js/sprites.js) — each wants its own grid through the concept-art skill one day.
 The two camp props are
 `deadTree` (two 16×24 snags on `DTPAL`, the footprint the pine used to share so they draw in the same

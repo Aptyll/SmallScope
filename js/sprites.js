@@ -33,32 +33,6 @@
     return c;
   }
 
-  // A grid baked at HALF its cell size, every output pixel the alpha-weighted
-  // average of a 2x2 block. Blitting the full canvas into a half-size one
-  // instead would throw away three pixels in four, and on art whose whole
-  // animation is a 1px sparkle moving about (the gold sack) that IS the
-  // animation thrown away. The grids stay authored at full size - this only
-  // changes what gets baked out of them.
-  function bakeHalf(rows, pal) {
-    const src = bake(rows, pal);
-    const w = src.width >> 1, h = src.height >> 1;
-    const c = document.createElement('canvas');
-    c.width = w; c.height = h;
-    const d = src.getContext('2d').getImageData(0, 0, src.width, src.height).data;
-    const g = c.getContext('2d'), out = g.createImageData(w, h);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      let r = 0, gg = 0, b = 0, a = 0;
-      for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) {
-        const i = (((y << 1) + dy) * src.width + (x << 1) + dx) * 4, al = d[i + 3];
-        r += d[i] * al; gg += d[i + 1] * al; b += d[i + 2] * al; a += al;
-      }
-      const o = (y * w + x) * 4;
-      if (!a) continue;
-      out.data[o] = r / a; out.data[o + 1] = gg / a; out.data[o + 2] = b / a; out.data[o + 3] = a >> 2;
-    }
-    g.putImageData(out, 0, 0);
-    return c;
-  }
 
   function flipH(src) {
     const c = document.createElement('canvas');
@@ -1963,104 +1937,1140 @@
   ];
 
   // ---------------------------------------------------------------- rabbit
-  // Winter hare, side view facing right: white coat, cool blue shading,
-  // long ears laid slightly back, pink inner ear.
+  // The meadow's bunny, side view facing right: a chunky brown hare with a
+  // pink inner ear and one white glint in the eye. Three sheets out of
+  // docs/media/new_media3/ split at 32 px into the three CLIPS a behaviour
+  // plays (ANIM_CLIPS, js/wildlife.js): `idle` is
+  // bunny_facing_right_gently_look_around, `hop` is
+  // bunny_facing_right_hopping_right, `rise` is
+  // bunny_facing_right_stand_up_and_wiggle - the sit-up a rabbit that has
+  // noticed you does. The source order IS the animation order in all three.
+  //
+  // The sheets are drawn far bigger than the meadow wants them - at its own
+  // cell size this bunny stands taller than a 16 px player - so the offline
+  // pass that made these grids RESAMPLED each frame down to the 11x12 they
+  // ship at, snapping every pixel onto RBPAL and every edge to hard alpha.
+  // What is written here is therefore what draws: bake() paints it 1:1, and
+  // editing a character here changes exactly one pixel in the game. (Baking
+  // the big grid and halving it at load - an alpha-weighted 2x2 average, which
+  // this file used to do for the gold sack - leaves every edge a soft fringe
+  // and invents colours the palette never had: pixel art with the pixels
+  // sanded off. Snapping offline keeps both hard.)
+  //
+  // All three clips share ONE crop of the source, the box every frame of
+  // every clip fits inside, or a clip taking over would jump against the one
+  // it replaced.
   const RBPAL = {
     '.': null,
-    'o': '#2e2a3a', // outline
-    'w': '#eef2fa', // fur
-    'W': '#ffffff', // fur highlight
-    'd': '#c9d0e2', // fur shade
-    'D': '#a4adc6', // fur deep shade
-    'p': '#e0a3a8', // inner ear
-    'e': '#211d2b', // eye
-    'n': '#b97880', // nose
+    'o': '#040102', // outline
+    'e': '#22110a', // eye, and the deepest shadow
+    'D': '#371c0f', // fur, deepest
+    'd': '#512c1c', // fur, dark
+    's': '#73472d', // fur, shade
+    'S': '#88593a', // fur, shade light
+    'f': '#9a6a45', // fur
+    'F': '#b27f57', // fur, light
+    'h': '#c29068', // fur, highlight
+    'p': '#c9897f', // inner ear
+    'w': '#d0c8be', // eye glint
   };
 
-  const rabbitSit = [
-    '.....oo.....',
-    '....owdo.oo.',
-    '....owdoowpo',
-    '....owwwwwpo',
-    '...owwwwwwwo',
-    '..owwwwwWewo',
-    '.owwwwwwwWwn',
-    '.owwwwwwwWo.',
-    'oWwwwwwwdwo.',
-    'oDdwwwddwwo.',
-    '.odo...odo..',
+  const rabbitIdle = [
+    [
+      '...........',
+      '....eDDd...',
+      '....sSds...',
+      '....dFssd..',
+      '.....dSfFs.',
+      '.....sfSfS.',
+      '...ddSfsffD',
+      '..dffSSfSs.',
+      '.eSfSfSSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '.....d.d...',
+      '....sfDsD..',
+      '....DFsss..',
+      '.....dfFFs.',
+      '.....sSffS.',
+      '...ddSfSfsD',
+      '..dffsSfsS.',
+      '.eSfSfSSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '.....s.DD..',
+      '.....SDdd..',
+      '.....Ssss..',
+      '.....sfFfD.',
+      '.....SSffs.',
+      '...ddfsffs.',
+      '..dfSsffsd.',
+      '.eSfSfSSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '.....s..d..',
+      '.....Sdds..',
+      '.....ssss..',
+      '.....sfFfD.',
+      '.....SSffd.',
+      '...dsfSfSs.',
+      '..dffsfSSd.',
+      '.effSfSffd.',
+      'DdffSfFhhd.',
+      '.DSfssffd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '.....dD.D..',
+      '.....SDdd..',
+      '.....Ssss..',
+      '.....sfFfD.',
+      '.....SSffd.',
+      '...dsfSfSs.',
+      '..dffsfSSd.',
+      '.eSfSfSffd.',
+      'DdffSfFhhd.',
+      '.eSfssffd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '.....dD.D..',
+      '.....SdDs..',
+      '.....Ssss..',
+      '.....sfFfD.',
+      '.....SSffd.',
+      '...dsfSffs.',
+      '..dffSfSSd.',
+      '.DffSfSffd.',
+      '.dffSfFhhd.',
+      '.eSfssffd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '.....s.DD..',
+      '.....Sedd..',
+      '.....Sdsd..',
+      '.....sfFfD.',
+      '.....SSffd.',
+      '...ddfSffs.',
+      '..dfSsffsd.',
+      '.offSfSSSd.',
+      'DdffSffhhd.',
+      '.dSfssffd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '.....d.dD..',
+      '....dSDsd..',
+      '.....Ssss..',
+      '.....dffFs.',
+      '.....sSffS.',
+      '...ddSfSfSD',
+      '..dffsSfsS.',
+      '.eSfSfSSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '....eDDd...',
+      '....sSdsD..',
+      '....dFssd..',
+      '.....dSfFs.',
+      '.....sfsfS.',
+      '...ddSfsffD',
+      '..dffsSfSs.',
+      '.eSfSfSSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSd..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '....eDDd...',
+      '....sSds...',
+      '....dFssd..',
+      '.....dSfFs.',
+      '.....sfSfS.',
+      '...ddSfsffD',
+      '..dffsSfSs.',
+      '.eSfSfSSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSd..',
+      '..DddDdDD..',
+    ]
   ];
+
   const rabbitHop = [
-    '..ooo.........',
-    '.owwwoo.......',
-    '..oowwwoo.....',
-    '...oowwwwwoo..',
-    '.oowwwwwwwwwo.',
-    'owwwwwwwwWewo.',
-    'oWwwwwwwwwwWwn',
-    'oDdwwwwddwwwo.',
-    '.odo.odo..odo.',
+    [
+      '...........',
+      '....eDDd...',
+      '....dSds...',
+      '....DFssd..',
+      '.....dSfFs.',
+      '.....sfSfS.',
+      '...ddSfsffD',
+      '..dffSSfSs.',
+      '.eSfSfSSSD.',
+      'DsffSffhhd.',
+      '.eSfsSfSs..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '...........',
+      '....dsDd...',
+      '....dFssD..',
+      '.....FsSs..',
+      '.....dffFs.',
+      '...ddsfsfS.',
+      '..dfSSfSfSD',
+      '.eSfSSSSSd.',
+      'DdffSffffd.',
+      '.eSfsSsFf..',
+      '..DddddDD..',
+    ],
+    [
+      '...........',
+      '...........',
+      '....DDdD...',
+      '....SSdde..',
+      '.....SSfFd.',
+      '.....dfSfS.',
+      '..DsSSfsfS.',
+      '..sffSfffSD',
+      'DsffffSSsd.',
+      '.dffSffFhd.',
+      '.ofssssss..',
+      '..ddeDee...',
+    ],
+    [
+      '.....e.....',
+      '....sddd...',
+      '....ffsSs..',
+      '.....sffFs.',
+      '.....sfsfS.',
+      '...ssSfSfSD',
+      '.esffSSSSd.',
+      'DdffffSSfd.',
+      '.dffffSfSd.',
+      '.SfSfhfeoD.',
+      '.SDDsdD....',
+      '.d.eD......',
+    ],
+    [
+      '...........',
+      '....dddd...',
+      '....sSssD..',
+      '.....sSfFd.',
+      '....DdfSfS.',
+      '..dSSSfsffD',
+      'DsSffsSffsD',
+      '.dffffSSsD.',
+      '.sffSfffhs.',
+      'dSsdssdsfse',
+      'd..D....Dd.',
+      '...........',
+    ],
+    [
+      '...........',
+      '...........',
+      '....DDDD...',
+      '....sSds...',
+      '.....FsSs..',
+      '.....dffFs.',
+      '..DsSsfsfS.',
+      '.DSfsSfSfSD',
+      'DdffSsSSSd.',
+      '.DffSffffd.',
+      '..sdsSfFfD.',
+      '.....eDdDD.',
+    ]
+  ];
+
+  const rabbitRise = [
+    [
+      '...........',
+      '....eDDd...',
+      '....dSds...',
+      '....dFssd..',
+      '.....dSfFs.',
+      '.....sfSfS.',
+      '...ddSfsffD',
+      '..dffsSfSs.',
+      '.eSfSfSSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSs..',
+      '..DddDdDD..',
+    ],
+    [
+      '...........',
+      '....dDdD...',
+      '....SSdd...',
+      '....dfSSSD.',
+      '.....dfffS.',
+      '.....sfdfS.',
+      '...dsSfffSD',
+      '..dffSsSsd.',
+      '.oSffffFFd.',
+      '.dffSffSSd.',
+      '.dsfsfsdeD.',
+      '..DddD.....',
+    ],
+    [
+      '.....e.....',
+      '....SssD...',
+      '....fSsss..',
+      '.....sffFs.',
+      '.....sfsfS.',
+      '....dSfSfSD',
+      '...dfSSSSd.',
+      '..dfffSffD.',
+      '.oSfffSSSd.',
+      'DdffSFFd...',
+      '.dsfsfs....',
+      '..DddD.....',
+    ],
+    [
+      '...........',
+      '...dsDdD...',
+      '....FSsss..',
+      '.....dffFs.',
+      '.....sfsfS.',
+      '....dSfSfSD',
+      '..DsfSSSSd.',
+      '..sfffSSfde',
+      '.DffffSsSD.',
+      'DdffSFhs...',
+      '.esfsfs....',
+      '...dde.....',
+    ],
+    [
+      '...........',
+      '....sdd....',
+      '....SSddD..',
+      '....dSSfFd.',
+      '.....dfSfS.',
+      '...DdSfsffD',
+      '..sffSSffsD',
+      '.effffSSsD.',
+      'DdffSffFhd.',
+      '.eSfSfSfdD.',
+      '..dSse.e...',
+      '...DD......',
+    ],
+    [
+      '...........',
+      '...........',
+      '.....Sdd...',
+      '.....Fsde..',
+      '.....sSfFs.',
+      '....dDSSffD',
+      '..sffsfsffd',
+      'DdfffSSffSd',
+      'ddffSfSsSd.',
+      '.DffSffFFD.',
+      '..dssdSfS..',
+      '.......dDe.',
+    ],
+    [
+      '...........',
+      '...........',
+      '....DdDD...',
+      '....dfdde..',
+      '.....fSfFs.',
+      '.....eSSffD',
+      '..Dsfsfsffd',
+      '..sffSfffSd',
+      'DsffffSsSd.',
+      '.dfffffFhd.',
+      '..sfsSfffD.',
+      '...DdDDdDe.',
+    ],
+    [
+      '...........',
+      '.....DDd...',
+      '....dSds...',
+      '....dFssd..',
+      '.....dSfFs.',
+      '.....sfSfS.',
+      '...ddSfsffD',
+      '..dffsSfSs.',
+      '.eSfSffSSD.',
+      'DdffSffhhd.',
+      '.eSfssfSs..',
+      '..DddDdDD..',
+    ]
   ];
 
   // ---------------------------------------------------------------- deer
-  // Side view facing right: warm winter coat, cream belly and throat,
-  // white rump patch, small antlers, dark slender legs.
+  // The stag, side view facing right: warm coat, pale antlers, dark slender
+  // legs. Three sheets out of docs/media/new_media3/ split at 38 px into the
+  // clips (ANIM_CLIPS, js/wildlife.js): `idle` is
+  // deer_facing_right_gently_look_around (head up, watching), `graze` is
+  // deer_facing_right_grazing_loop (head down into the snow and back) and
+  // `run` is deer_facing_right_galloping. Head up against head down is the
+  // whole read on whether it has seen you, which is why the two idles are
+  // separate clips rather than one longer loop.
+  //
+  // Resampled to the 19x19 it ships at and snapped onto DEPAL, the same pass
+  // and for the same reason as the rabbit above.
   const DEPAL = {
     '.': null,
-    'o': '#2f2114', // outline
-    'b': '#8a6847', // coat mid
-    'B': '#a5825a', // coat light
-    'd': '#6d4f34', // coat dark
-    'D': '#523a26', // leg dark
-    'c': '#e7d9bc', // cream belly / throat
-    'a': '#b99f78', // antler
-    'A': '#d8c39a', // antler light
-    'e': '#1d1710', // eye
-    'n': '#241a12', // nose
-    'h': '#241a12', // hoof
-    'w': '#f4f1e4', // white rump / tail
+    'o': '#040202', // outline
+    'e': '#27140b', // eye and hoof, deepest
+    'D': '#442514', // coat, deepest
+    'd': '#5e361f', // coat, dark
+    'v': '#6f4224', // coat, shade
+    'n': '#6f5136', // antler, deep
+    'b': '#8f582f', // coat
+    'a': '#7f6446', // antler
+    'B': '#9d6639', // coat, light
+    'c': '#9b744f', // antler, warm
+    'L': '#b47844', // coat, lit
+    'A': '#b48a60', // antler, light
+    'C': '#b7986d', // antler, lit
   };
 
-  const deerHead = [
-    '................a...a.....',
-    '................aA..aA....',
-    '.................a...a....',
-    '..............aA.a..aA....',
-    '...............oaaoaao....',
-    '...............obabao.....',
-    '.............odbBBbebo....',
-    '...............obBbbbno...',
-    '...............odbbcoo....',
-    '...............odbbco.....',
-    '...............odbco......',
-    '....oooooooooooodbco......',
-    '...owwdbbbbbbbbbbbBco.....',
-    '..owwbbbbbbbbbbbbbBBco....',
-    '..owdbbbbbbbbbbbbbBco.....',
-    '..odbbbbbbbbbbbbbbco......',
-    '...oddbccccccccccdo.......',
+  const deerIdle = [
+    [
+      '......oo.e..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndodoDdo..',
+      '.........ednDDDD...',
+      '..........nnvbe....',
+      '...........eBbBo...',
+      '..........oddvdD...',
+      '.........oDvLao....',
+      '....edddvBvbbAd....',
+      '...DLBBLBbdnvbD....',
+      '..evbbbbbbbDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDvdvBDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '......oo.e..oDoD...',
+      '......nnD....eeD...',
+      '.......aDone.odoo..',
+      '........nnddooDdo..',
+      '.........ednDdDD...',
+      '.........DcDvbe....',
+      '..........ovaLdo...',
+      '..........odvdv....',
+      '.........oDvBao....',
+      '....edddvBvbbAd....',
+      '...DLBBLBbdnvbD....',
+      '..evbbbbbbbDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDvdvBDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '......oD.e..oeoe...',
+      '......dnDo...eeD...',
+      '.......nDnoD.DDoo..',
+      '........naDn.DDD...',
+      '.........edaodDo...',
+      '.........DBDbvo....',
+      '..........obnBo....',
+      '..........ovvdD....',
+      '.........oDbano....',
+      '....edddvBvvALe....',
+      '...DLBBLBbdvvbe....',
+      '..evbbbbbbbDddo....',
+      '..ovbvbbdbBDde.....',
+      '...ebDDvdbvDeo.....',
+      '...DDeeooveoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '.......doe...e.e...',
+      '......ocDo....Ddo..',
+      '.......dDnoD.DoDo..',
+      '........naed.DDD...',
+      '.........edaodDo...',
+      '.........DBDvve....',
+      '..........obano....',
+      '..........ovvdD....',
+      '.........oDnano....',
+      '....edddvBvvALe....',
+      '...DLBBLBbdvvbe....',
+      '..evbbbbbBBDddo....',
+      '..ovbvbbvbBdde.....',
+      '...ebDDvvbbDeo.....',
+      '...DDeeoebooe......',
+      '..eDoe...eeoe......',
+      '..Do.o...oDoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '.......doe...e.e...',
+      '......ocDo....Ddo..',
+      '.......dDnoD.DoDo..',
+      '........naed.DDd...',
+      '.........edaodDo...',
+      '.........DBDvve....',
+      '..........obano....',
+      '..........ovvdD....',
+      '.........oDnano....',
+      '....edddvBvvALe....',
+      '...DLBBLBbdvvbe....',
+      '..evbbbbbbbDdDo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDvdbbDeo.....',
+      '...DDeeoeveoe......',
+      '..eDoe...Deoe......',
+      '..Do.o...oDoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '.......doe...e.e...',
+      '......ocDo....Ddo..',
+      '.......dDnoD.DoDo..',
+      '........naed.DDd...',
+      '.........edaodD....',
+      '.........DdDbvo....',
+      '..........ebano....',
+      '..........ovvdD....',
+      '.........oDnano....',
+      '....edddvBvvALe....',
+      '...DLBBLBbdvvbe....',
+      '..evbbbbbbbDdDo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDvdvBDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '.......doe...e.e...',
+      '......ocDo....De...',
+      '.......dDnoD.DoDo..',
+      '........naed.DDD...',
+      '.........edaodD....',
+      '.........Dvdvve....',
+      '..........obbBe....',
+      '..........odvdv....',
+      '.........oDnano....',
+      '....edddvBvvALe....',
+      '...DLBBLBbdvvbe....',
+      '..evbbbbbbbDdDo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDvdvBDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '......oo.e..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndodoDdo..',
+      '.........enaDDDD...',
+      '..........nnvbe....',
+      '...........eBBBo...',
+      '..........odvvdD...',
+      '.........oDvLao....',
+      '....edddvBvbBAd....',
+      '...DLBBLBbdnnbD....',
+      '..evbbbbbbBDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDddvBDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '......oo.e..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndodoDdo..',
+      '.........edaDDDD...',
+      '..........bnvbe....',
+      '...........eBbBo...',
+      '..........odvvdD...',
+      '.........oDvLao....',
+      '....edddvBvbbAd....',
+      '...DLBBLBbdnvbD....',
+      '..evbbbbbbBDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDvdvBDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ],
+    [
+      '......oo.e..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndodoDdo..',
+      '.........edaDDDD...',
+      '..........nnvbe....',
+      '...........eBbBo...',
+      '..........oddvdD...',
+      '.........oDvLao....',
+      '....edddvBvbbAd....',
+      '...DLBBLBbdnvbD....',
+      '..evbbbbbbBDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDvdvBDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oooo......',
+    ]
   ];
-  const deerStand = deerHead.concat([
-    '...oddo......oddo.........',
-    '....odo......odo..........',
-    '....oDo......oDo..........',
-    '....oDo......oDo..........',
-    '....oho......oho..........',
-  ]);
-  const deerWalkA = deerHead.concat([
-    '...oddo......oddo.........',
-    '...odo........odo.........',
-    '..oDo..........oDo........',
-    '..oDo..........oDo........',
-    '..oho..........oho........',
-  ]);
-  const deerWalkB = deerHead.concat([
-    '...oddo......oddo.........',
-    '.....odo....odo...........',
-    '......oDo....oDo..........',
-    '......oDo....oDo..........',
-    '......oho....oho..........',
-  ]);
+
+  const deerGraze = [
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......aDonoDoD.o..',
+      '........nndonoDdo..',
+      '.........ednDDDe...',
+      '..........nnvbe....',
+      '...........eBbBo...',
+      '..........odvvdD...',
+      '.........oDvLbo....',
+      '....edddvBvbbAd....',
+      '...dLBBLBbdvvbD....',
+      '..evbbbbbbBDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDddvbDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oeoo......',
+    ],
+    [
+      '...................',
+      '.......Do.D.oeoe...',
+      '.......DaD...eeD...',
+      '........DDonoDDe.o.',
+      '.........dndovoDno.',
+      '..........ednDDDD..',
+      '...........bnvbe...',
+      '...........eDBabo..',
+      '.........oeddvddo..',
+      '....edddvBdbBcD....',
+      '...dLBBLBbvbvLd....',
+      '..evbbbbbbbdvvD....',
+      '..ovbvbbdbBdvDo....',
+      '...ebDDddvbDee.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oe.o......',
+    ],
+    [
+      '...................',
+      '...................',
+      '.........o.........',
+      '.........dodo.o.e..',
+      '..........ae...DDo.',
+      '..........DadoDoD..',
+      '...........nnDnoDeo',
+      '............DnDenn.',
+      '.........o.oobddo..',
+      '....edddvLvdddnne..',
+      '...dLBBLBbvbbvbBco.',
+      '..evbbbbbbdbbBDodD.',
+      '..ovbvbbvbvvbLD....',
+      '...ebDDddbvdvd.....',
+      '...DDeeoovDeo......',
+      '..eDoe...DDee......',
+      '..Do.o...oe.eo.....',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oe.e......',
+    ],
+    [
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '.............n.....',
+      '............doo.o..',
+      '............dde.eoo',
+      '............ed..eD.',
+      '.....ooooddoon..ovo',
+      '...oDLLBLBBvDne.DDD',
+      '..edbBbBBbvbvbndDD.',
+      '...ebbbbbBvbbvbdDo.',
+      '...ebbDvvbDbBvbdD..',
+      '...DveeDDbddBvnvD..',
+      '..eDeee..evoeoeBdo.',
+      '..Do.o....Doeo.eD..',
+      '..Do.eo..odoe......',
+      '..oo.oo...eoo......',
+    ],
+    [
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '..............D....',
+      '.............no.oo.',
+      '.....ooooDd..dnooDe',
+      '....DLLBLLLvede..Do',
+      '..edbBbBBbbvvvo..Do',
+      '...ebbbbbbvbbdD.ede',
+      '...ebbdvvBvbbecddee',
+      '...evDedvbDvvBvveo.',
+      '..edeeeooebdbvBbo..',
+      '..Deoe....DeeDnbo..',
+      '..Do.eo..odoeovBo..',
+      '..oo.oo...eoo..D...',
+    ],
+    [
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '..............d..o.',
+      '.....ooooDd..eaooDe',
+      '...oDLLBLBLvedn..eD',
+      '..edbBbBBbbvvvo..Do',
+      '...ebbbbbBbbbdD..Do',
+      '...ebbdvvBvbvenodoD',
+      '...evDedvbDbbBnvdo.',
+      '..edeeeooebdbdbbo..',
+      '..Deoe....Deovabo..',
+      '..Do.eo..odoeebBo..',
+      '..oo.oo...eoo.DDo..',
+    ],
+    [
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '.............DD..o.',
+      '.............ddooee',
+      '.....oooeddo.do..ee',
+      '...oDLLBLBBvevo..Do',
+      '..edbBbBBbbvvno.ono',
+      '...ebbbbbbbbvdnoDeD',
+      '...ebbdvvBdbvBndDe.',
+      '...evDeDdbdbbvbbe..',
+      '..edeee..ebDDvabo..',
+      '..Deoe....DeoebBo..',
+      '..Do.eo..odoe.DDo..',
+      '..oo.oo...eoo......',
+    ],
+    [
+      '...................',
+      '...................',
+      '...................',
+      '...................',
+      '..........e.Do.o.o.',
+      '..........DnD..eee.',
+      '...........noD..DDo',
+      '...........DDDonoDo',
+      '.........o..DvdDoDd',
+      '....eddDdBnDeddDDDo',
+      '..odLLBLLbbvvdbnd..',
+      '..evbbbbbbvbbvvbLd.',
+      '..ovbbbbbBvbbLvdnn.',
+      '...ebDdvvBDdbce.o..',
+      '...DdeeDebDDDD.....',
+      '..eDoDe..edoe......',
+      '..Do.o....D.eo.....',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oeoo......',
+    ],
+    [
+      '...................',
+      '...................',
+      '........o.Do.oeoD..',
+      '.......onnD...een..',
+      '........econoD.Doo.',
+      '.........eadDnoDed.',
+      '..........ondnodD..',
+      '...........DBvvv...',
+      '.........oooevnLdo.',
+      '....edddvLvdvdvnv..',
+      '...dLBBLBbvbbLdo...',
+      '..evbbbbbbvbbAd....',
+      '..ovbvbbbBvdvnD....',
+      '...ebDDddbvdde.....',
+      '...DDeeoeveeo......',
+      '..eDoe...DDee......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oeoo......',
+    ],
+    [
+      '..........o.o......',
+      '......oDDn...DoD...',
+      '.......dnoD.o.De...',
+      '........nDdonoDoe..',
+      '.........dandonde..',
+      '..........oDnDDo...',
+      '...........dbdBe...',
+      '...........ovBBao..',
+      '.........oedvneo...',
+      '....edddvBdvcLd....',
+      '...dLBBLBbvbvcd....',
+      '..evbbbbbbbdnbe....',
+      '..ovbvbbdbBDdD.....',
+      '...ebDDddvbDe......',
+      '...DDeeooDDee......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oeoo......',
+    ],
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......aDonoDoD.o..',
+      '........nndonoDvo..',
+      '.........ednDDDe...',
+      '.........onnvbe....',
+      '...........eBaBo...',
+      '..........odvvdD...',
+      '.........oDvLbo....',
+      '....edddvBvbbAd....',
+      '...dLBBLBbdvvbD....',
+      '..evbbbbbbBDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDddvbDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oeoo......',
+    ],
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......aDonoDoD.o..',
+      '........nndonoDvo..',
+      '.........ednDDDe...',
+      '..........nnvbe....',
+      '...........eBaBo...',
+      '..........odvvdD...',
+      '.........oDvLbo....',
+      '....edddvBvbbAd....',
+      '...dLBBLBbdvvbD....',
+      '..evbbbbbbBDvvo....',
+      '..ovbvbbdbBdde.....',
+      '...ebDDddvbDeo.....',
+      '...DDeeooDdoe......',
+      '..eDoe...eDoe......',
+      '..Do.o...oeoe......',
+      '..Do.eo..oDoe......',
+      '..oo.oo..oeoo......',
+    ]
+  ];
+
+  const deerRun = [
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndonoDdo..',
+      '.........ednDDDe...',
+      '..........nvvbe....',
+      '...........eBbBo...',
+      '..........odvvdD...',
+      '.........oDvLbo....',
+      '....edddvBvbbAd....',
+      '...dLBBLBbdvvbD....',
+      '..evbbbbbbBDvvo....',
+      '..ovbvbbdbbdve.....',
+      '...ebDDddvbDeo.....',
+      '...DDeeooDdoD......',
+      '..eDoe...eDoe......',
+      '..Do.o...oDoe......',
+      '..Do.eo..odoe......',
+      '..oo.oo..oeoo......',
+    ],
+    [
+      '......oo.D..eDe....',
+      '......DnD....DDo...',
+      '.......nDonoaoDDo..',
+      '........dndonend...',
+      '.........ednddoe...',
+      '..........bbnnd....',
+      '...........DbBLD...',
+      '..........evbdo....',
+      '........ooDvLAo....',
+      '....eddnBBvbbAd....',
+      '...dLBBLBbdvvbD....',
+      '..evbbbbbbBdvvo....',
+      '..ovbvbbdbBdve.....',
+      '..ovbeeDDvveDe.....',
+      '..Ddee..obe.oee....',
+      '.oDoe...oD...oe....',
+      '.oDoe...oD...oo....',
+      '.oe.e...Do...o.....',
+      '....oo..o..........',
+    ],
+    [
+      '......DDDD..eeDo...',
+      '......Dae.D..eD....',
+      '.......eaodonoDeo..',
+      '........eaadDend...',
+      '.........odDndo....',
+      '..........evnnvo...',
+      '...........DbBBe...',
+      '..........evbdo....',
+      '.....oooeddvLcD....',
+      '...ebLBLBBdbvcd....',
+      '..evBbBBbbvdvve....',
+      '..ovbbbbvbBDvD.....',
+      '...ebddvdbbDDo.....',
+      '..evvDeDDbeeoee....',
+      '.oDeee..DD....eo...',
+      '.Deee...De....oe...',
+      '.e.eo..DD.....oo...',
+      '.o.oo.oe...........',
+      '...o...............',
+    ],
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndonoDdo..',
+      '.........ednDDDe...',
+      '..........bnvbe....',
+      '...........eBbBo...',
+      '..........odvvdD...',
+      '.....oo..oDvLbo....',
+      '...ebLBdnBvbbAd....',
+      '..evBbBLBbdvvbD....',
+      '..oDbbbbvBBDvvo....',
+      '...evbdvdbbDde.....',
+      '..eDvdDddbDDeo.....',
+      '..Doooooedo.oee....',
+      '.oo.oe..eD....ee...',
+      '....oooDD......eo..',
+      '......oo........o..',
+      '...................',
+    ],
+    [
+      '.........o..o.o....',
+      '......DDDD..eeDo...',
+      '......Dae.D..eD....',
+      '.......eaodonoDeo..',
+      '........eaadDend...',
+      '..........BDndo....',
+      '..........evbnvo...',
+      '...........DbBBe...',
+      '..........evbdo....',
+      '....edooeddvLAD....',
+      '...DLBBLBBdbvcd....',
+      '..evbbvBbbvdbve....',
+      '...DbbdbbBBDvD.....',
+      '....DbdvdbbDDe.....',
+      '...odeeDevdeeo.....',
+      '....DDe..DDoe......',
+      '.....eooode.e......',
+      '......ooDo..oe.....',
+      '.............oo....',
+    ],
+    [
+      '.........o..o.o....',
+      '......DDDD..eeDo...',
+      '......Dae.D..eD....',
+      '.......eaodonoDeo..',
+      '........eaadDend...',
+      '.........odDndo....',
+      '..........evbnvo...',
+      '...........DbBBe...',
+      '..........evbdo....',
+      '.....oooeddvLAD....',
+      '...ebLBLBBdbvcd....',
+      '..evBbBBbbvdbve....',
+      '...DbbvbbbBDvD.....',
+      '....DbdvDbbdDe.....',
+      '....DeeDDDbDe......',
+      '....Doee..edo......',
+      '....oD.ee.oDo......',
+      '.....Do.eoeeo......',
+      '......o..o.oo......',
+    ],
+    [
+      '.........o..o.o....',
+      '......DDDD..eeDo...',
+      '......Dae.D..eD....',
+      '.......eaodonoDeo..',
+      '........eaadDend...',
+      '.........odDnvo....',
+      '..........evnnvo...',
+      '...........DbBBe...',
+      '..........evbdo....',
+      '.....oooDddbLAD....',
+      '...ebLBLBBdbvcd....',
+      '..evBbBBbbvdbve....',
+      '..ovbbbbbbBvve.....',
+      '...ebvdvddbvDe.....',
+      '...odDeDDedvv......',
+      '...eDee...ooDD.....',
+      '...eeee...Ded......',
+      '...od.e...eo.......',
+      '...oo.oo..oo.......',
+    ],
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndonoDdo..',
+      '.........ednDDDe...',
+      '..........bnvbe....',
+      '...........eBbBo...',
+      '..........odvvdD...',
+      '.........oDvLbo....',
+      '....edddnBvbbAd....',
+      '...dLBBLBbdvvbD....',
+      '..evbbbbbbBdvvo....',
+      '..ovbvbbvdbbde.....',
+      '..ovbeDddddvbD.....',
+      '..DDeeoooooooDo....',
+      '.oDoD.....e..oD....',
+      '.oDeo....ee..oo....',
+      '.ee.Do..oe.........',
+      '.o..oo.............',
+    ],
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoDdo..',
+      '........nndonoDDo..',
+      '.........ednnDDe...',
+      '..........bBvbDo...',
+      '..........oDBbBo...',
+      '..........evvvdo...',
+      '........eddvLbo....',
+      '...ebLBBBBdbvcd....',
+      '..evBbBBbbvvvbe....',
+      '..ovbbbbbbbndD.....',
+      '..ovbddvddbbbe.....',
+      '..evveeDDDeDDvD....',
+      '.edDee...oe..oDe...',
+      '.eeee....eo....eo..',
+      '.doeo...ee.........',
+      'oo.eo...o..........',
+      '...o...............',
+    ],
+    [
+      '......oo.D..e.e....',
+      '......nnD....DDo...',
+      '.......nDonoDoD.o..',
+      '........nndonoDdo..',
+      '.........ednDDDe...',
+      '..........bvvbe....',
+      '..........oDBbBo...',
+      '..........evvvdD...',
+      '.....oooeddvLBD....',
+      '...ebLBLBBdbvcd....',
+      '..evBbBBbbvdbve....',
+      '..ovbbbbbbBbdD.....',
+      '..ovbddvdDbbve.....',
+      '..DvdeoDDDedbe.....',
+      '.eDeeo...eeoeDD....',
+      'ed..e...ee....eD...',
+      'e...e..e........o..',
+      '...oo.o............',
+      '...................',
+    ],
+    [
+      '.........o..o.o....',
+      '......DDDD..eeDo...',
+      '......Dae.D..eD....',
+      '.......eaodonoDeo..',
+      '........eaadDend...',
+      '..........bDndo....',
+      '..........evbnvo...',
+      '...........DbBBD...',
+      '..........evbdo....',
+      '....eddoeddvLAD....',
+      '..odLBBLBBdbvcd....',
+      '..evbbbBbbbdvve....',
+      '..ovbvbbvbBdve.....',
+      '..evbDDdddbvDo.....',
+      '.oDeeeooeevd.......',
+      '.oD..eo...DD.......',
+      'ooe.oe..oeoD.......',
+      '........o..DD......',
+      '............eo.....',
+    ],
+    [
+      '.........o..o.o....',
+      '......DDDD..eeDo...',
+      '......Dae.D..eD....',
+      '.......eaodonoDeo..',
+      '........eaadDend...',
+      '.........odDndo....',
+      '..........evbnvo...',
+      '...........DbBBe...',
+      '..........evbdo....',
+      '....oDooeddvLAD....',
+      '...DLLBLBBdbvcd....',
+      '..evBbBBbBndbbe....',
+      '..ovbdbbbbbDdD.....',
+      '...DbdvvDvbDDe.....',
+      '..eddeeDevdeo......',
+      '..Dooeo..Deee......',
+      '..D...e..Dee.......',
+      '.oo...oe.Do........',
+      '........oe.........',
+    ]
+  ];
 
   // ---------------------------------------------------------------- wall
   const WPAL = {
@@ -2599,13 +3609,9 @@
     'y': '#8b93a8',
     'Y': '#a8b0c4',
     'k': '#666d84',
-    'r': '#d6454f',
-    'R': '#f2707a',
-    'g': '#3a6b52',
     'O': '#3a3f52',
-    'n': '#d8a850', // gold
-    'N': '#f2cc6a', // gold bright
-    'h': '#fff2c0', // gold shine
+    'n': '#d8a850', // the bag's buckle
+    'N': '#f2cc6a', // ...and its light
   };
 
   const itemWood = [
@@ -2628,44 +3634,241 @@
     '..OOO...',
     '........',
   ];
-  const itemBerry = [
-    '........',
-    '...og...',
-    '..orgo..',
-    '.oRrrro.',
-    '.orrRro.',
-    '..orro..',
-    '...oo...',
-    '........',
+  // The berry and the fish are LOOPS rather than stamps, and the only item
+  // icons that are: a berry cluster with a sparkle crossing its stalks
+  // (docs/media/new_media3/berries.png, ten frames) and a fish whose fins
+  // work (fish.png, eight), each a 16x16 strip resampled to the 8x8 every
+  // other item icon is and snapped onto its own palette. They are exposed
+  // the way the gold piece is - one LIVE canvas per icon that stepItemIcons
+  // (js/render.js) stamps the frame into - so `SPRITES[ITEMS[type].icon]`
+  // stays one generic read everywhere in the game.
+  const BERPAL = {
+    '.': null,
+    'o': '#120a0d', // outline
+    'k': '#421101', // stalk, and the deep rim
+    'd': '#711102', // berry, deepest
+    'D': '#a00001', // berry, shade
+    'r': '#fc0201', // berry
+    'g': '#02b602', // leaf
+    'G': '#1ee302', // leaf, light
+    'y': '#f7ec1c', // the sparkle
+    'w': '#fdfbfb', // highlight
+  };
+
+  const berry = [
+    [
+      'kkgk....',
+      'kgggk...',
+      '.og.kk..',
+      '.d.kk.d.',
+      'DrDkkrrd',
+      'drDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      '.kgk....',
+      'kgggk...',
+      '.og.kk..',
+      '.d.kk.d.',
+      'DrDkkrrd',
+      'drDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      '.kg.....',
+      'ggggk...',
+      '.okDdd..',
+      '..dkdyd.',
+      '.rrkdrrD',
+      'krrrrdrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      '.kkk....',
+      'kgggk...',
+      '.kk.kd..',
+      '..drkDd.',
+      '.rrdDrrD',
+      'krDDrDrd',
+      '.dkrrdd.',
+      '...dd...',
+    ],
+    [
+      '.kgk....',
+      'kgggk...',
+      '.og.kk..',
+      '.d..k.d.',
+      'DrDkkrrd',
+      'drDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      'kkgk....',
+      'kgggk...',
+      '.og.kk..',
+      '.d.kk.d.',
+      'DrDkkrrd',
+      'drDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      'kkgk....',
+      'kgggk...',
+      '.og.kk..',
+      '.d.kk.d.',
+      'DrDkkrrd',
+      'drDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      '.kg.....',
+      'kgggk...',
+      '.gg.kk..',
+      '.d..k.d.',
+      'Drrkkrrd',
+      'DrDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      '.kgk....',
+      'kgggk...',
+      '.og.kk..',
+      '.d.kk.d.',
+      'DrDkkrrd',
+      'drDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ],
+    [
+      'kkgk....',
+      'kgggk...',
+      '.og.kk..',
+      '.d.kk.d.',
+      'DrDkkrrd',
+      'drDrrDrd',
+      '.ddrrkd.',
+      '...dd...',
+    ]
   ];
+
+  // The fish arrived SALMON, and the fish in this game is blue - the market's
+  // fish line, its price graph, the pickup floater and RES_COLORS.fish are all
+  // one cold blue, and a pink icon under a blue number reads as two different
+  // goods. So the palette is HUE-SHIFTED and the grids are not: every entry
+  // keeps the lightness it had (which is what carries the shading) and lands in
+  // a tight band around 205 deg, the family the old hand-drawn fish and
+  // RES_COLORS.fish (#7ac0e8) already lived in. Only `c` is off that rule: the
+  // source told its two bellies apart by HUE at the same lightness (a peach and
+  // a cream), which one hue cannot carry, so the cream is lifted to be the
+  // highlight above the pale instead.
+  //
+  // docs/media/new_media3/fish.png is UNTOUCHED and still salmon: the shift
+  // lives here, in the twelve numbers below, and a regenerated grid set would
+  // need it reapplied. The grids themselves are the sheet, pixel for pixel.
   const FIPAL = {
     '.': null,
-    'o': '#243b52',
-    'b': '#4f7ea3',
-    'B': '#6f9fc0',
-    'w': '#c9dded',
-    'e': '#101d2c',
+    'o': '#010000', // outline, deepest
+    'd': '#21628f', // back, deep
+    'b': '#387099', // back and fins
+    'r': '#658cab', // tail and fin, mid
+    'K': '#7a9db9', // the underside
+    'k': '#69b3dc', // the stripe along the flank
+    's': '#a1a9b2', // the eye
+    'p': '#94c9e6', // flank, light
+    'P': '#b9d9ee', // belly, pale
+    'c': '#d5e1f0', // belly, highlight
   };
-  const itemFish = [
-    '........',
-    '....oo..',
-    '.o.oBBo.',
-    '.ooBbBBo',
-    '.oBbBeBo',
-    '.oowbBBo',
-    '.o.oBBo.',
-    '....oo..',
+
+  const fish = [
+    [
+      '........',
+      '....b...',
+      'b..rrbb.',
+      'bbbkkkrr',
+      'bpPPPPsr',
+      'brKKKrb.',
+      '........',
+      '........',
+    ],
+    [
+      '........',
+      '....b...',
+      'b..rrbb.',
+      'bbbkkprr',
+      'bpPPPPsr',
+      'brKKKKK.',
+      '........',
+      '........',
+    ],
+    [
+      '........',
+      '........',
+      '...rrbb.',
+      'rbbkkprr',
+      'bpPPPsPr',
+      '.rrKKKK.',
+      '..b.....',
+      '........',
+    ],
+    [
+      '........',
+      '....b...',
+      '...brbb.',
+      'bbbkkkrr',
+      'bpPPPsPr',
+      '.rrKKKb.',
+      '........',
+      '........',
+    ],
+    [
+      '........',
+      '....b...',
+      'b..rrbb.',
+      'bbbkkkrr',
+      'bpPPPPsr',
+      'brKKKrb.',
+      '........',
+      '........',
+    ],
+    [
+      '........',
+      '....b...',
+      'b..rrbb.',
+      'bbbkkprr',
+      'bpPPPspr',
+      'brKKKKK.',
+      '........',
+      '........',
+    ],
+    [
+      '........',
+      '........',
+      'b..rrbb.',
+      'bbbkkkrr',
+      'bpPPPPPr',
+      'brKKKKK.',
+      '........',
+      '........',
+    ],
+    [
+      '........',
+      '....b...',
+      '...brbb.',
+      'rbbkkkrr',
+      'bpPPPPsr',
+      '.rrKKrb.',
+      '........',
+      '........',
+    ]
   ];
-  const itemGold = [
-    '........',
-    '..oooo..',
-    '.onNNno.',
-    'onNhNnno',
-    'onNNnno.',
-    '.onnno..',
-    '..ooo...',
-    '........',
-  ];
+
 
   // Roguelike cards: one shared silhouette (a card face with a sparkle pip),
   // five palettes - the rarity IS the card's colour, the way GEAR_MATS tints
@@ -2704,233 +3907,319 @@
     '...oooooo...',
   ];
 
+  // ---------------------------------------------------------------- gold nugget
+  // The gold piece, everywhere gold is shown: the purse, a price, a sale
+  // row, a lifetime total, and a piece lying on the snow. Eight frames off
+  // docs/media/new_media3/gold_nugget.png, resampled from 16x16 to the 8x8
+  // every other item icon is and snapped onto NUGPAL - so what changed is
+  // the art, not the fit. A shine crossing the face is the loop.
+  const NUGPAL = {
+    '.': null,
+    'q': '#5a2a01', // matrix, deepest
+    'Q': '#713901', // matrix, deep
+    'm': '#764f00', // matrix
+    'o': '#905a01', // outline
+    'M': '#aa6e03', // matrix, light
+    'a': '#d48804', // gold, deep
+    'e': '#e9970c', // gold, ember
+    'r': '#fd9401', // gold, orange
+    'A': '#faaa09', // gold, amber
+    'h': '#fcba06', // gold, warm
+    'g': '#feca05', // gold
+    'y': '#f9f623', // gold, bright
+    'l': '#fbfab7', // shine
+    'w': '#fefefc', // shine, hottest
+  };
+
+  const nugget = [
+    [
+      '...oo...',
+      '...hlA..',
+      '..Agygh.',
+      '.agggggh',
+      'MaAhMMaM',
+      'omQmmmM.',
+      '.mQQmM..',
+      '........',
+    ],
+    [
+      '...oo...',
+      '...hgh..',
+      '..Aggyh.',
+      '.agggggh',
+      'MaAhMMaM',
+      'omQomoa.',
+      '.mQQoM..',
+      '........',
+    ],
+    [
+      '...yl...',
+      '...lwl..',
+      '..ywwwy.',
+      '.Ayyyyyg',
+      'aegyMMAa',
+      'omQomoa.',
+      '.mQoMM..',
+      '........',
+    ],
+    [
+      '...ee...',
+      '...lly..',
+      '..yylly.',
+      '.Ayyyyyg',
+      'aegyMMAa',
+      'MoooMoa.',
+      '.mQoMa..',
+      '........',
+    ],
+    [
+      '...oo...',
+      '...hgA..',
+      '..Agggh.',
+      '.agggggA',
+      'MaAhMMaM',
+      'omQmomM.',
+      '.mQooM..',
+      '........',
+    ],
+    [
+      '...oo...',
+      '...hgA..',
+      '..Agggh.',
+      '.agggggA',
+      'MaAhMMaM',
+      'omQmmmM.',
+      '.mQoMM..',
+      '........',
+    ],
+    [
+      '...oo...',
+      '...hyg..',
+      '..Aggyg.',
+      '.agggggg',
+      'MaAhMMaM',
+      'omQmmmM.',
+      '.mQQoM..',
+      '........',
+    ],
+    [
+      '...oo...',
+      '...hll..',
+      '..Agyyh.',
+      '.agggggh',
+      'MaAhMMaM',
+      'omQmmmM.',
+      '.mQQmM..',
+      '........',
+    ]
+  ];
+
   // ---------------------------------------------------------------- gold sack
   // The merchant's mark, and the face of every market notice (the `market
-  // notices` banner, js/shop.js): a cinched sack of coin with the hoard
-  // spilling out of its neck. Six 32x32 frames off
-  // docs/media/new_media/bag_of_gold_spritesheet.png, parsed pixel for pixel -
-  // the cloth barely moves and the SPARKLE does, so the loop reads as coin
-  // catching the light rather than as a bag being jostled.
+  // notices` banner, js/shop.js): a cinched sack with the hoard glowing in
+  // its neck. Ten frames off docs/media/new_media3/bag_of_gold_bouncing.png,
+  // resampled from 32x32 to the 16x16 the market plate reads at and snapped
+  // onto SACKPAL - the cloth barely moves and the coin does, so the loop
+  // reads as gold catching the light rather than as a bag being jostled.
+  // It sits beside the hand-drawn crate on that plate and has to be as crisp
+  // as one.
   const SACKPAL = {
     '.': null,
-    'o': '#4e2301', // outline
-    'O': '#4f190c', // outline, warm
-    'q': '#441c24', // outline, deepest
-    'c': '#a77641', // cloth
-    'd': '#8c5a26', // cloth shade
-    'k': '#7a4313', // cloth deep
-    'n': '#d7bb91', // cloth highlight
-    'e': '#f98805', // coin, deep orange
-    'h': '#f8990b', // coin, orange
-    'a': '#f8ba20', // coin, amber
-    'y': '#f9e020', // coin, gold
-    'g': '#f9fa15', // coin, bright
-    'l': '#fbfaa2', // shine
-    'w': '#fdfcd4', // shine, hottest
+    'o': '#040102', // outline
+    'q': '#402521', // cloth, deepest
+    'k': '#613411', // cord, deep
+    'd': '#624235', // cloth, shade
+    'c': '#72503b', // cloth
+    't': '#947436', // cord
+    'C': '#9d7752', // cloth, light
+    'n': '#ab865f', // cloth, highlight
+    'e': '#d98717', // coin, deep
+    'a': '#f8b91c', // coin, amber
+    'y': '#fbe523', // coin, gold
+    'l': '#fdfa9b', // shine
   };
-  const sackA = [
-    '...............OO...............',
-    '..............oeeo..............',
-    '.............ooggeO.............',
-    '............oweoggeO.oo.........',
-    '...........oewgeowwoogeo........',
-    '.......OOOoowgggoooowgweo.......',
-    '......oewgeoggeoggoegwwweo......',
-    '.....oowgwgoeeowwgeoeeegoo......',
-    '....odoegwgwooegwwgeoeooddO.....',
-    '....ocdoeewweowgggwwooodccdo....',
-    '...odcddoooegoeeeegooddcccdo....',
-    '...occccdddooooooooddcccccdo....',
-    '...oddcccdddddddddddccccdddo....',
-    '....oddcccccddddddcccccdddo.....',
-    '.....odddccccccccccccddddo......',
-    '.....ooddddcccccccdddddooo......',
-    '....oddooddddddddddddoodddo.....',
-    '....odccdoooddddddooodddddo.....',
-    '...oddcccdddoooooodddcddcddo....',
-    '...odccccccdddddddddcddccddo....',
-    '..oddcccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odcccccccccccccccccccccdddo...',
-    '..oddccccccccccccccccccccdddo...',
-    '...odddccccccccccccccccddddo....',
-    '....odddddccccccccccdddddddo....',
-    '.....ooddddddddddddddddddoo.....',
-    '.......oodddddddddddddooo.......',
-    '.........ooooooooooooo..........',
-    '................................',
-  ];
-  const sackB = [
-    '................................',
-    '...............oo...............',
-    '.............Oohho..............',
-    '............oweogao..oo.........',
-    '............ewgeogaoogeO........',
-    '...........owgggoodowgweO.......',
-    '.......kwckoggaoggoegwwweo......',
-    '......owglyohaowwgeoeeegoo......',
-    '.....ooygwgwooegwwgeoeeooo......',
-    '....odoegylweowgggwwoeooddo.....',
-    '....ocdoeeawgoeeeeghooodccdo....',
-    '...odcddoooegoeeeeaooddcccdo....',
-    '...occccdddooooooooddcccccdo....',
-    '...oddcccdddddddddddccccdddo....',
-    '....oddcccccddddddcccccdddo.....',
-    '.....odddccccccccccccddddo......',
-    '....ododdddcccccccdddddoodo.....',
-    '....odcooddddddddddddoodddo.....',
-    '...oddcccoooddddddooocddcddo....',
-    '...odccccccdooooooddcddccddo....',
-    '..oddcccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odcccccccccccccccccccccdddo...',
-    '..oddccccccccccccccccccccdddo...',
-    '...odddccccccccccccccccddddo....',
-    '....odddddccccccccccdddddddo....',
-    '.....ooddddddddddddddddddoo.....',
-    '.......oodddddddddddddooo.......',
-    '.........ooooooooooooo..........',
-    '................................',
-  ];
-  const sackC = [
-    '................................',
-    '................................',
-    '...............kkO..............',
-    '.............OOyyeO.............',
-    '............OweogyeO.oO.........',
-    '...........oewgeowwoOgeO........',
-    '.......OOOOowggyoowolgweO.......',
-    '......OewgeoggaoggoegwwweO......',
-    '......owgwgohhowwghohhhgoo......',
-    '.....kohgwgwooegwwgeoeeoddo.....',
-    '....ocdoahwweowgggwwooodccdo....',
-    '...odcddoooegoeheegooddcccdo....',
-    '...occccdddooooooooddcccccdo....',
-    '...oddcccdddddddddddccccdddo....',
-    '....oddcccccddddddcccccdddo.....',
-    '.....odddccccccccccccddddo......',
-    '.....ooddddcccccccdddddooo......',
-    '....oddooddddddddddddoodddo.....',
-    '....odccdoooddddddooodddddo.....',
-    '...Oddcccdddoooooodddcddcddo....',
-    '...odccccccdddddddddcddcccddo...',
-    '..odcccccccccccccccccccccccdd...',
-    '..odcccccccccccccccccccccccddo..',
-    '..odcccccccccccccccccccccccddo..',
-    '..odccccccccccccccccccccccdddo..',
-    '...ddccccccccccccccccccccdddo...',
-    '...odddcccccccccccccccccdddo....',
-    '....odddddccccccccccddddddo.....',
-    '.....ooddddddddddddddddddoo.....',
-    '.......oodddddddddddddooo.......',
-    '.........ooooooooooooo..........',
-    '................................',
-  ];
-  const sackD = [
-    '................................',
-    '................................',
-    '...............oo...............',
-    '...............eeO..............',
-    '.............ooggeo.............',
-    '............oweoggeo.oo.........',
-    '...........oewgeowwoogeo........',
-    '.......ooooowggkccoowgweo.......',
-    '.....ooewgeoggekggkegwwwoo......',
-    '....odkwgwgoeeowwgaoeeeoddo.....',
-    '....kcdogwgwoohgwwgaooodccdo....',
-    '...odcddoooweowgggwooddcccco....',
-    '...occccdddooooooooddcccccco....',
-    '...oddccccddddddddddccccdddo....',
-    '....oddcccccdddddccccccdddo.....',
-    '.....odddccccccccccccddddo......',
-    '.....ooddddcccccccddddddooo.....',
-    '.....ddooddddddcdddddoodddo.....',
-    '....odccdoooddddddoooddddddo....',
-    '....ddcccdddoooooodddcddccdo....',
-    '...odccccccdddddddddcddcccddO...',
-    '..kdcccccccccccccccccccccccddo..',
-    '..odcccccccccccccccccccccccddo..',
-    '.odccccccccccccccccccccccccddo..',
-    '.odccccccccccccccccccccccccddo..',
-    '.oddccccccccccccccccccccccdddo..',
-    '..Odddccccccccccccccccccddddo...',
-    '...oddddddcccccccccccddddddo....',
-    '.....oddddddddddddddddddddoO....',
-    '.......ooddddddddddddddooo......',
-    '.........ooooooooooooo..........',
-    '................................',
-  ];
-  const sackE = [
-    '................................',
-    '...............OO...............',
-    '..............ohhO..............',
-    '.............OOyghq.............',
-    '............Oweoggho.Oq.........',
-    '...........oewgeglwoOgeO........',
-    '.......OOOOolgghoowolgaeq.......',
-    '......oewgeoggyoggoolgwheo......',
-    '.....oowggaoyyowwgedyywwoo......',
-    '....odoagwgoecegwwgeeeeoddo.....',
-    '....ocdoaagwoowgggwwooodccdo....',
-    '...odcddooowhoehhhgooddcccdo....',
-    '...occccdddooooooooddcccccdo....',
-    '...oddcccdddddddddddccccdddo....',
-    '....Oddcccccddddddcccccdddo.....',
-    '.....odddccccccccccccddddo......',
-    '....ododdddcccccccdddddoodo.....',
-    '....odcooddddddddddddoodddo.....',
-    '...oddccdoooddddddooodddcdo.....',
-    '...odccccdddoooooodddcddcddo....',
-    '..oddccccccdddddddddcddcccdo....',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..oddccccccccccccccccccccdddo...',
-    '...odddccccccccccccccccddddo....',
-    '....odddddccccccccccdddddddo....',
-    '.....ooddddddddddddddddddoo.....',
-    '.......oodddddddddddddooo.......',
-    '.........ooooooooooooo..........',
-    '................................',
-  ];
-  const sackF = [
-    '...............oo...............',
-    '..............oeeo..............',
-    '.............ooggeo.............',
-    '............oweoggeo.oo.........',
-    '...........oewgeowwoogeo........',
-    '.......ooooowgggoywowgweo.......',
-    '......oewgeoggeeoooegwwweo......',
-    '.....oowgwgoeeeoggoeeeegoo......',
-    '....odoegwgwoeowwgeoeeooddo.....',
-    '....ocdoeewweoegwwgeooodccdo....',
-    '...odcnnoooegowgggwooddcccdo....',
-    '...occccdddooooooooddcccccdo....',
-    '...oddcccdddddddddddccccdddo....',
-    '....oddcccccddddddcccccdddo.....',
-    '.....odddccccccccccccddddo......',
-    '.....ooddddcccccccdddddooo......',
-    '....oddooddddddddddddoodddo.....',
-    '....odccdoooddddddooodddddo.....',
-    '...oddcccdddoooooodddcddcddo....',
-    '...odccccccdddddddddcddccddo....',
-    '..oddcccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odccccccccccccccccccccccddo...',
-    '..odcccccccccccccccccccccdddo...',
-    '..oddccccccccccccccccccccdddo...',
-    '...odddccccccccccccccccddddo....',
-    '....odddddccccccccccdddddddo....',
-    '.....ooddddddddddddddddddoo.....',
-    '.......oodddddddddddddooo.......',
-    '.........ooooooooooooo..........',
-    '................................',
+
+  const sack = [
+    [
+      '................',
+      '....o.qqqoo.....',
+      '...oqodqqoqo....',
+      '....qddcddq.....',
+      '....qqoqqqcd....',
+      '....oqdqqqqod...',
+      '...oqqqdqqcood..',
+      '...qdqcccddooq..',
+      '..odcctnecddo...',
+      '..qcctyyyaccq...',
+      '.oqccayyaeccqo..',
+      '.oqdceaeetcdqo..',
+      '..qqdcttcccqq...',
+      '...oqddddqqo....',
+      '....ooooooo.....',
+      '................',
+    ],
+    [
+      '................',
+      '.......oo.......',
+      '....ooddqoo.....',
+      '...odqdddqdo....',
+      '....odqddqqo....',
+      '....qqdqqdqqc...',
+      '....qooooocood..',
+      '...odqccdqdo.q..',
+      '..oqcdccccqqo...',
+      '..occcayytcdo...',
+      '.odccyyyyaccqo..',
+      '.oqdceyaetcdqo..',
+      '.oqqctttttcqqo..',
+      '..oqqccccdqqo...',
+      '...ooqqqqqoo....',
+      '................',
+    ],
+    [
+      '................',
+      '.......oo.......',
+      '....ooddqoo.....',
+      '...odqdddqdo....',
+      '....odqddqqo....',
+      '....qqdqqdqdq...',
+      '....qooooocoqq..',
+      '...odqccdqdood..',
+      '..oqcdccccqqo...',
+      '..occcayytcdo...',
+      '.odccnyyyaccqo..',
+      '.oqccayaeaccqo..',
+      '.oqdctaetccqqo..',
+      '..oqdcccccdqo...',
+      '...ooqqqqqoo....',
+      '................',
+    ],
+    [
+      '................',
+      '....o.qqqoo.....',
+      '...oqodqqoqo....',
+      '....qddcddq.....',
+      '....qqoqqqqo....',
+      '....oqdqqdqdq...',
+      '...oqqqdqocoqq..',
+      '...qdqcccddood..',
+      '..odcctnecqqo...',
+      '..qcctyyyaccq...',
+      '.oqccayyaeccqo..',
+      '.oqdceaeetcdqo..',
+      '..qqdcttcccqq...',
+      '...oqddddqqo....',
+      '....ooooooo.....',
+      '................',
+    ],
+    [
+      '................',
+      '....o.qqqoo.....',
+      '...oqodqqoqo....',
+      '....qddcddq.....',
+      '....qqoqqqcd....',
+      '....oqdqqqqod...',
+      '...oqqqdqqcood..',
+      '...qdqcccddooq..',
+      '..odcctnecddo...',
+      '..qcctyyyaccq...',
+      '.oqccayyaeccqo..',
+      '.oqdceaeetcdqo..',
+      '..qqdcttcccqq...',
+      '...oqddddqqo....',
+      '....ooooooo.....',
+      '................',
+    ],
+    [
+      '................',
+      '....o.qqqoo.....',
+      '...oqodqqoqo....',
+      '....qddcddq.....',
+      '....qqoqqqcd....',
+      '....oqdqqqqod...',
+      '...oqqqdqqcood..',
+      '...qdqcccddooq..',
+      '..odcctnecddo...',
+      '..qcctyyyaccq...',
+      '.oqccayyaeccqo..',
+      '.oqdceaeetcdqo..',
+      '..qqdcttcccqq...',
+      '...oqddddqqo....',
+      '....ooooooo.....',
+      '................',
+    ],
+    [
+      '................',
+      '....o.qqqoo.....',
+      '...oqodqqoqo....',
+      '....qddcddq.....',
+      '....qqoqqqcd....',
+      '....oqdqqqqod...',
+      '...oqqqqqqdood..',
+      '...qdqcccddooq..',
+      '..odcctnecddo...',
+      '..qcctyyyaccq...',
+      '.oqccayyaecdqo..',
+      '.oqdceaeetcdqo..',
+      '..qqdcttcccqq...',
+      '...oqddddqqo....',
+      '....ooooooo.....',
+      '................',
+    ],
+    [
+      '................',
+      '.......oo.......',
+      '....ooddqoo.....',
+      '...odqdddqdo....',
+      '....odqddqqo....',
+      '....qqdqqdqdq...',
+      '....qooooocoqq..',
+      '...odqcccqdood..',
+      '..oqcdccccqqo...',
+      '..qcccayytccq...',
+      '.oqctnyyyacdqo..',
+      '.oqdceyaettdqo..',
+      '..qqdtaettcqq...',
+      '...oqdkcdqqo....',
+      '....ooooooo.....',
+      '................',
+    ],
+    [
+      '................',
+      '.......oo.......',
+      '....oodqqoo.....',
+      '...odqdddqdo....',
+      '....oqqqqqqo....',
+      '....qcndcdqdq...',
+      '....qooooocoqq..',
+      '...qdqcccqdood..',
+      '..oqcdccccqqo...',
+      '..qcctayytccq...',
+      '.oqccyyyyacdqo..',
+      '.oqdceyaeecdqo..',
+      '..qqdtaettcqq...',
+      '...oqdqkdqqo....',
+      '....ooooooo.....',
+      '................',
+    ],
+    [
+      '................',
+      '....o.qqqoo.....',
+      '...oqodqqoqo....',
+      '....qddcddq.....',
+      '....qqoqqqcd....',
+      '....oqdqqqqod...',
+      '...oqqqdqqcood..',
+      '...qdqcccddooq..',
+      '..odcctnecddo...',
+      '..qcctyyyaccq...',
+      '.oqccayyaeccqo..',
+      '.oqdceaeetcdqo..',
+      '..qqdcttcccqq...',
+      '...oqddddqqo....',
+      '....ooooooo.....',
+      '................',
+    ]
   ];
 
   // ------------------------------------------------------------------- crate
@@ -3833,6 +5122,44 @@
   // baked once, up here, because both the array and the atlas below need it
   const treeSpr = treeSway.map((f) => bake(f, TSPAL));
 
+  // A beast's frames are named CLIPS, one array per behaviour, so
+  // `SPRITES[kind][dir]` is an object rather than a flat list and every kind
+  // wears the same two names at least: `idle` is what it does standing still
+  // and is the frame anything asking for "the beast" takes (the wiki's cards
+  // read `.right.idle[0]`). Which clip is playing is the animal's business,
+  // not the sprite's - js/wildlife.js sets `a.clip`, drawAnimal plays it.
+  function bakeClips(clips, pal) {
+    const out = {};
+    for (const k in clips) out[k] = clips[k].map((f) => bake(f, pal));
+    return out;
+  }
+  function mapClips(set, fn) {
+    const out = {};
+    for (const k in set) out[k] = set[k].map(fn);
+    return out;
+  }
+  // the four beasts, right-facing; left is every clip mirrored
+  const rabbitSet = bakeClips({ idle: rabbitIdle, hop: rabbitHop, rise: rabbitRise }, RBPAL);
+  const deerSet = bakeClips({ idle: deerIdle, graze: deerGraze, run: deerRun }, DEPAL);
+  const wolfSet = bakeClips({ idle: [wolfStand], run: [wolfRunA, wolfRunB] }, WOPAL);
+  const birdSet = bakeClips({ idle: [birdPerch], fly: [birdFlyA, birdFlyB] }, BIPAL);
+
+  // The three goods that MOVE. Their frames bake like anything else; what
+  // ships beside them is a blank canvas of the same size per icon, which
+  // stepItemIcons (js/render.js) redraws each frame. It starts on frame 0 so
+  // anything that bakes an item icon into a still panel at boot (the control
+  // primer) gets a picture rather than a hole.
+  const goldFrames = nugget.map((f) => bake(f, NUGPAL));
+  const berryFrames = berry.map((f) => bake(f, BERPAL));
+  const fishFrames = fish.map((f) => bake(f, FIPAL));
+  function liveIcon(frames) {
+    const c = document.createElement('canvas');
+    c.width = frames[0].width; c.height = frames[0].height;
+    c.getContext('2d').drawImage(frames[0], 0, 0);
+    c.frame = 0;
+    return c;
+  }
+
   window.SPRITES = {
     teams: TEAM_SKINS,
     playerTeam: teamPlayers,
@@ -3883,24 +5210,12 @@
     bushEmpty: bake(bushEmpty, BPAL),
     bushBud: bake(bushBud, BPAL),
     bushRipen: bake(bushRipen, BPAL),
-    rabbit: {
-      right: [bake(rabbitSit, RBPAL), bake(rabbitHop, RBPAL), bake(rabbitSit, RBPAL)],
-      left: [flipH(bake(rabbitSit, RBPAL)), flipH(bake(rabbitHop, RBPAL)), flipH(bake(rabbitSit, RBPAL))],
-    },
-    wolf: {
-      right: [bake(wolfStand, WOPAL), bake(wolfRunA, WOPAL), bake(wolfRunB, WOPAL)],
-      left: [flipH(bake(wolfStand, WOPAL)), flipH(bake(wolfRunA, WOPAL)), flipH(bake(wolfRunB, WOPAL))],
-    },
-    bird: {
-      right: [bake(birdPerch, BIPAL), bake(birdFlyA, BIPAL), bake(birdFlyB, BIPAL)],
-      left: [flipH(bake(birdPerch, BIPAL)), flipH(bake(birdFlyA, BIPAL)), flipH(bake(birdFlyB, BIPAL))],
-    },
+    rabbit: { right: rabbitSet, left: mapClips(rabbitSet, flipH) },
+    wolf: { right: wolfSet, left: mapClips(wolfSet, flipH) },
+    bird: { right: birdSet, left: mapClips(birdSet, flipH) },
     deadTree: [bake(deadTree1, DTPAL), bake(deadTree2, DTPAL)],
     den: bake(den, DNPAL),
-    deer: {
-      right: [bake(deerStand, DEPAL), bake(deerWalkA, DEPAL), bake(deerWalkB, DEPAL)],
-      left: [flipH(bake(deerStand, DEPAL)), flipH(bake(deerWalkA, DEPAL)), flipH(bake(deerWalkB, DEPAL))],
-    },
+    deer: { right: deerSet, left: mapClips(deerSet, flipH) },
     imp: [bake(imp1, IPAL), bake(imp2, IPAL)],
     eagle: [bake(eagleSpread, EGPAL), bake(eagleMid, EGPAL), bake(eagleBack, EGPAL)],
     // eagleTeam[team] - the same three flap frames in that team's armour
@@ -3920,14 +5235,22 @@
     torch: [bake(torch1, TOPAL), bake(torch2, TOPAL)],
     itemWood: bake(itemWood, ITPAL),
     itemStone: bake(itemStone, ITPAL),
-    itemBerry: bake(itemBerry, ITPAL),
-    itemGold: bake(itemGold, ITPAL),
-    itemFish: bake(itemFish, FIPAL),
     itemBag: bake(itemBag, ITPAL),
-    // the merchant's sack, six frames of coin catching the light. Authored at
-    // 32 and baked at 16 (bakeHalf): the market plate it rides is HUD chrome
-    // and 16 is the size that reads there.
-    goldSack: [sackA, sackB, sackC, sackD, sackE, sackF].map((f) => bakeHalf(f, SACKPAL)),
+    // THE THREE ANIMATED GOODS. `itemAnim[key]` is the frames; `SPRITES[key]`
+    // is one LIVE canvas per icon that stepItemIcons (js/render.js) stamps the
+    // current frame into, once a frame, off one clock. That indirection is the
+    // point: an item icon is reached generically all over the game
+    // (`SPRITES[ITEMS[type].icon]` - the bag, a price, a sale row, a drop on
+    // the snow, a tooltip), and handing those reads an ARRAY would mean
+    // teaching every one of them which three goods are special. They are not
+    // special: they are icons that happen to move.
+    itemAnim: { itemGold: goldFrames, itemBerry: berryFrames, itemFish: fishFrames },
+    itemGold: liveIcon(goldFrames),
+    itemBerry: liveIcon(berryFrames),
+    itemFish: liveIcon(fishFrames),
+    // the merchant's sack, ten frames of coin catching the light: 16x16, the
+    // size the market plate reads at, beside the crate on the same plate
+    goldSack: sack.map((f) => bake(f, SACKPAL)),
     // the same 16px stamp, but for the plate that is about STOCK not price
     crate: bake(crate, CRATE_PAL),
     itemCardWhite: bake(itemCard, CARD_PALS.white),
@@ -3986,6 +5309,8 @@
     return c;
   }
   const W = window.SPRITES.wolf;
-  window.SPRITES.alpha = { right: W.right.map((s) => wash(s, '#dfe6f4', 0.45)), left: W.left.map((s) => wash(s, '#dfe6f4', 0.45)) };
-  window.SPRITES.dire = { right: W.right.map((s) => double(wash(s, '#5a1e2c', 0.5))), left: W.left.map((s) => double(wash(s, '#5a1e2c', 0.5))) };
+  const alphaSkin = (s) => wash(s, '#dfe6f4', 0.45);
+  const direSkin = (s) => double(wash(s, '#5a1e2c', 0.5));
+  window.SPRITES.alpha = { right: mapClips(W.right, alphaSkin), left: mapClips(W.left, alphaSkin) };
+  window.SPRITES.dire = { right: mapClips(W.right, direSkin), left: mapClips(W.left, direSkin) };
 })();

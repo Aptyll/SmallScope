@@ -185,8 +185,10 @@ which carries the same `mm`/`map` pair and gets solidity, both maps and the E pr
 it is food) is the storage half: the bag *or* the [pouch](gameplay.md#inventory-and-the-backpack),
 the drop pickup, the death spill, the drag and the refusal tell are all generic over that table.
 What is *not* generic and must be written per item: an 8×8 icon sprite (bake it beside its own
-code, not in the byte-fragile js/sprites.js — see `bakeGrid` in js/tools.js and `CHEST_SPR`), a
-colour in `RES_COLORS` for the pickup floater, **what it is worth** (see the counter below, or
+code, not in the byte-fragile js/sprites.js — see `bakeGrid` in js/tools.js and `CHEST_SPR`; an
+icon that should **loop** is still one canvas to everything that draws it — put the frames in
+`SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
+[sprites.md](sprites.md)), a colour in `RES_COLORS` for the pickup floater, **what it is worth** (see the counter below, or
 it sells for nothing), whatever *makes* the item, and what using it does —
 `bagClick` maps a cell click onto an input flag, so a new item needs its own branch there or
 clicking its cell will just deny (`sendBagCell` runs first and handles only the two kinds that
@@ -348,7 +350,13 @@ What it must do to get them:
 4. call **`drawUnitStates(e, px, py, w, h, now)`** in its draw pass, or its states are invisible and
    unplayable-around;
 5. join `separateUnits`, `UNIT_MASS` and `unitRadius` (see the CLAUDE.md rule), and give it a hit
-   test the way `animalHit`/`robotHit` do — that is the one thing the arrow loop asks per kind.
+   test the way `animalHit`/`robotHit` do — that is the one thing the arrow loop asks per kind;
+6. if it goes in `animals`, its `SPRITES` entry is **clips, not a flat frame list** —
+   `{ right: { idle: [...], ... }, left: ... }`, `idle` mandatory because it is the fallback and
+   the frame the wiki's card takes — plus an `ANIM_CLIPS` row naming the same clips with their
+   frames a second, and a `setClip(a, name)` at the end of its update. Miss the row and the clip
+   never advances; miss `idle` and `clipFrame` has nothing to fall back to
+   ([the clips](gameplay.md#what-a-beast-is-doing-the-clips)).
 
 **Adding a stump-built structure** — add a `STRUCTS` entry (3 tiers) and its wheel slot in
 `STRUCT_ORDER` (the **build** wheel draws the local team's `SPRITES.teamBuild[team][type][0]` or,

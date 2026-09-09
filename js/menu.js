@@ -2524,7 +2524,7 @@ function wikiClick() {
 // noticed mark - so the page teaches the frame by showing it, not naming it.
 // A camp monster shows its leash bar part-filled, since bare track says nothing.
 function drawWikiBeast(bs, cx, baseY, level, now) {
-  const spr = SPRITES[bs.kind].right[0];
+  const spr = SPRITES[bs.kind].right.idle[0];
   // the snow it stands on: a low pale mound with a shaded rim
   ctx.fillStyle = '#c9dcee'; ctx.fillRect(cx - 13, baseY - 1, 26, 3);
   ctx.fillStyle = '#eef4fb'; ctx.fillRect(cx - 11, baseY - 2, 22, 3);
@@ -2687,7 +2687,7 @@ function renderWiki(now, a) {
       // the right fan out - a column of their own each, label rows 10 px
       // apart - so no line crosses a plate, a bar or another line.
       const fx = L.left + 40, base = y + 52;
-      const spr = SPRITES.deer.right[0], py = base + 2 - spr.height;
+      const spr = SPRITES.deer.right.idle[0], py = base + 2 - spr.height;
       drawWikiBeast(WIKI_BEASTS[1], fx, base, level, now);
       wikiLeader(fx - 17, py - 6, fx - 27, py - 6, 'LEVEL', '#f2cc6a');
       wikiLeader(fx + 4, py - 14, fx + 26, py - 22, 'SEES YOU', '#f4f7ff');
