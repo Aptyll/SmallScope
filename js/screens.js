@@ -145,9 +145,6 @@ function rpCloseHit() {
 function replayFull() { return rpFull() && replayShowing(); }
 function replayClose() { state.rpClosed = true; SFX.pickup(); }
 
-// px the event feed lifts to clear the window - only when it shares the corner
-function replayLift() { return replayShowing() && !rpFull() ? RP_H + 4 : 0; }
-
 // the overlay tracks the game canvas: the window's rect, at the canvas's
 // scale, in device pixels
 let rpKey = '';
@@ -307,9 +304,9 @@ function deadItems() {
   return state.deadView === 'defeat' ? ['LOBBY'] : (DEAD_ITEMS[state.over] || DEAD_ITEMS.lost);
 }
 
-// a full-frame end screen is up: the HUD, the event feed and the replay
-// window all bow out under one, because both are compositions and both put
-// something exactly where those sit
+// a full-frame end screen is up: the HUD and the replay window both bow out
+// under one, because both are compositions and both put something exactly
+// where those sit
 function endScreen() {
   return state.mode === 'dead' && (state.over === 'won' || state.deadView === 'defeat');
 }
@@ -1191,7 +1188,7 @@ const DEF_SLIDE = 0.32; // the plank's slide, finishing exactly on DEF_T.menu
 // columns the win prints, with the placing in front of them. That number is
 // the one thing a loss has to say that a win does not - "4/6" and not a word
 // of it, because the podium glyph beside it is the label. Who put the local
-// player down is the event feed's line, not this screen's: the side lost.
+// player down is the death headline's, not this screen's: the side lost.
 const DEF_STATS = [
   { icon: 'place', roll: false, val: (w) => w.place + '/' + w.of },
   { icon: 'gold', roll: true, val: (w) => String(w.gold) },

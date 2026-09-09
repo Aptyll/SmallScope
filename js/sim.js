@@ -1273,12 +1273,6 @@ function updateFx(dt) {
     f.t += dt;
     if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : 9)) footprints.splice(i, 1);
   }
-  // the event feed ages here too: it is chrome, so it fades on wall time in
-  // every mode, not only while the sim is stepping
-  for (let i = events.length - 1; i >= 0; i--) {
-    events[i].t += dt;
-    if (events[i].t > EVENT_LIFE) events.splice(i, 1);
-  }
-  ageNotices(dt); // ...and the market's plates under the minimap (js/shop.js)
+  ageNotices(dt); // the market's plates under the minimap age here too (js/shop.js)
 }
 

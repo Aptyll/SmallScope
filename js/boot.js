@@ -1453,7 +1453,6 @@ window.DBG = {
   CARD_PRICE,
   // what the pointer is on, as the panel would describe it (null = nothing)
   tipAt: (x, y) => tipAt(x == null ? mouse.x : x, y == null ? mouse.y : y),
-  tipLift,
   fireTool: (p) => fireTool(p || player),
   // the fish catch's three beats: start one by hand, read which frame a body is on
   startCatch: (p) => startCatch(p || player), cancelCatch: (p) => cancelCatch(p || player), catchFrame,
@@ -1519,8 +1518,9 @@ window.DBG = {
   buyGear: (i, p) => buyGear(p || player, i),
   pickGear: (i, v) => pickGear(i, v), gearLayout, gearScreenHit, beginGear,
   setGear: (i, v, p) => { const q = p || player; q.gear[i] = v; refreshKit(q); return q.kit; },
-  // the match readouts: stage feed lines without staging the kills behind
-  // them, and check the standings (hold TAB in game, or set keys.tab here)
+  // the match readouts: the log (not drawn - read it here), staged lines
+  // without the kills behind them, and the standings (hold TAB in game, or
+  // set keys.tab here)
   events, logEvent, scoreGroups, scoreboardOpen,
   // the four-second replay: the filmstrip itself, how much is banked, whether it is up, and whether it fills the frame
   replay: {

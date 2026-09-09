@@ -594,11 +594,13 @@ function mmChrome(hov) {
   const key = MM_R * 2 + (hov ? 1 : 0);
   let c = mmChromes.get(key);
   if (!c) {
-    const R = MM_R + 8, S = R * 2 + 2;
+    const R = MM_R + 7, S = R * 2 + 2;
     c = document.createElement('canvas'); c.width = c.height = S;
     const g = c.getContext('2d'), cc = R + 1;
-    mmRing(g, cc, cc, MM_R + 7, MM_R + 8, hov ? '#9aa8d0' : '#6f7ca8'); // rim
-    mmRing(g, cc, cc, 0, MM_R + 7, '#0f1632');                          // silhouette disc
+    // the outline is ONE crisp pixel, the frame's own rim colour, and the
+    // hover is the same pixel gone pale - no halo, no second ring outside it
+    mmRing(g, cc, cc, MM_R + 6, MM_R + 7, hov ? '#9aa8d0' : '#2c3a68'); // outline
+    mmRing(g, cc, cc, 0, MM_R + 6, '#0f1632');                          // silhouette disc
     mmRing(g, cc, cc, MM_R + 2, MM_R + 5, '#2a3358');                   // day ring track
     mmChromes.set(key, c);
   }
@@ -634,9 +636,10 @@ function renderMinimap(now) {
   const s = mmScale(); // px per tile: the wheel over the disc changes it
   const hov = overMinimap() && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel;
 
-  // silhouette: an opaque dark disc under everything, rimmed by a pale line
-  // so the whole control reads as one solid shape on the snow (baked, above)
-  ctx.drawImage(mmChrome(hov), MM_CX - MM_R - 9, MM_CY - MM_R - 9);
+  // silhouette: an opaque dark disc under everything, with a single-pixel
+  // outline so the whole control reads as one solid shape on the snow (baked,
+  // above)
+  ctx.drawImage(mmChrome(hov), MM_CX - MM_R - 8, MM_CY - MM_R - 8);
 
   // pixel-clipped map view centered on the player
   const half = MM_R / s; // tiles from the centre to the edge
@@ -709,42 +712,13 @@ function renderMinimap(now) {
   ctx.fillRect(Math.round(MM_CX + Math.cos(ta) * (r0 + 1)) - 1, Math.round(MM_CY + Math.sin(ta) * (r0 + 1)) - 1, 3, 3);
   ctx.globalAlpha = 1;
 
-  // beneath the minimap, one centred row: players still in the match (a pixel
-  // figure + the count, no label) then the elapsed play-time. Clear of the
-  // fps readout, which owns the extreme top-right corner.
+  // beneath the minimap, the elapsed play-time alone, centred on the disc's
+  // axis so the two read as one column. Clear of the fps readout, which owns
+  // the extreme top-right corner. (The alive count that used to share the row
+  // went in 3.24: a match no longer ends on bodies, so it was a number that
+  // decided nothing.)
   const clock = clockTxt(state.elapsed);
-  const alive = String(aliveCount());
-  const rowW = ALIVE_ICON_W + 2 + pixelTextWidth(alive) + 7 + pixelTextWidth(clock);
-  let rx = Math.round(MM_CX - rowW / 2);
-  const ry = MM_CY + MM_R + 9;
-  drawAliveIcon(rx, ry - 1, '#f4f7ff', '#0f1632');
-  rx += ALIVE_ICON_W + 2;
-  drawPixelTextOutline(ctx, alive, rx, ry, '#f4f7ff', '#0f1632');
-  rx += pixelTextWidth(alive) + 7;
-  drawPixelTextOutline(ctx, clock, rx, ry, '#f4f7ff', '#0f1632');
-}
-
-// the "players left" glyph: a hooded figure, 5x7, stamped with the same 1px
-// rim the outline font uses so it reads on snow beside the count
-const ALIVE_ICON = [
-  '.###.',
-  '#####',
-  '#.#.#',
-  '.###.',
-  '#####',
-  '#####',
-  '#...#',
-];
-const ALIVE_ICON_W = 5;
-function drawAliveIcon(x, y, color, outline) {
-  const stamp = (ox, oy, c) => {
-    ctx.fillStyle = c;
-    for (let r = 0; r < ALIVE_ICON.length; r++)
-      for (let q = 0; q < ALIVE_ICON_W; q++)
-        if (ALIVE_ICON[r][q] === '#') ctx.fillRect(x + q + ox, y + r + oy, 1, 1);
-  };
-  for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (ox || oy) stamp(ox, oy, outline);
-  stamp(0, 0, color);
+  drawPixelTextOutline(ctx, clock, Math.round(MM_CX - pixelTextWidth(clock) / 2), MM_CY + MM_R + 9, '#f4f7ff', '#0f1632');
 }
 
 // ---- the backpack: the grid, always up, flush in the bottom-right corner -
@@ -2705,9 +2679,7 @@ function drawDragGhost(now) {
 //
 // It is bottom LEFT because that is the corner the pointer is furthest from
 // while it hovers the backpack, the weapon strip or a tech node, so the panel
-// never sits under the hand reading it. The event feed shares that corner and
-// steps up by tipLift() while one is open, exactly as it already does for the
-// replay window.
+// never sits under the hand reading it, and nothing else lives in that corner.
 //
 // EVERY tooltip comes from tipAt(), which asks the same hit-testers, in the
 // same order, that the click handler does - so what the panel describes and
@@ -2998,8 +2970,6 @@ function tipAt(mx, my) {
 }
 // resolved once a frame, before anything that has to lay out around it
 function tipResolve() { tipNow = tipAt(mouse.x, mouse.y); }
-// how far the event feed steps up to keep clear of an open tooltip
-function tipLift() { return tipNow ? tipSize(tipNow).h + 4 : 0; }
 function tipSize(d) {
   const iw = d.icon ? d.icon.width + 3 : 0;
   let w = iw + pixelTextWidth(d.title);

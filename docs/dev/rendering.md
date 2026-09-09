@@ -223,8 +223,8 @@ map/settings overlays (the M map also in mode `drop`) → `renderTitle` (the mai
 overlay (`renderDead`: the death dim and its planks, or `renderVictory` / `renderDefeat` — see
 [The end screens](#the-end-screens)) →
 `renderReplay` (the replay window, above both the death dim and the pause dim) →
-the event feed and the held-TAB scoreboard (deliberately **above** the death dim, see
-[Scoreboard and event feed](#scoreboard-and-event-feed)) →
+the held-TAB scoreboard (deliberately **above** the death dim, see
+[Scoreboard and event log](#scoreboard-and-event-log)) →
 the info stack (`drawTags`, left edge at the top quarter: FPS / POS / SEED as aligned
 label-value rows — one ESC-menu toggle or F3; only the fps line in `title`) → the screen fade
 (`state.fade`, the reroll whiteout) → the pixel cursor (always last). The bow's
@@ -381,8 +381,10 @@ scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-e
 zoom in the wheel handler and is saved with the settings. Every marker drawn over it (players,
 camp glyphs, your side's [worker flags](gameplay.md#worker-flags)) multiplies its tile
 offset by `s`. The disc sits on an opaque `#0f1632`
-backing with a pale 1 px outer rim that brightens while hovered — the hover state is the whole
-affordance, there is no hint. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
+backing (to `MM_R + 6`) with a **single crisp 1 px outline** in the HUD's rim colour `#2c3a68`
+that goes pale while hovered — the hover state is the whole affordance, there is no hint, and
+there is no halo or second ring outside it (the pale outer rim went in 3.24).
+`overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
 game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
 backing, rims and the day/night band one pixel at a time (pixel-centre distance test, optional
 clockwise angle span), and the map view is clipped by `mmMask(r)` — a cached pixel disc
@@ -409,8 +411,8 @@ keeps it flush on every size.
 | Where | What | Function |
 | --- | --- | --- |
 | top left | **nothing** — see the strip below | — |
-| top right | the minimap and its day/night ring, alive count, clock, and the market's plates under them | `renderMinimap`, `renderNotices` |
-| bottom left | the hover tooltip, with the event feed stacked above it | `drawTooltip`, `renderEventLog` |
+| top right | the minimap and its day/night ring, the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
+| bottom left | the hover tooltip | `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the weapon and ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the two meal buttons (berry over fish) with the **purse** tab standing on the rim above them — the three numbers you own, always on | `drawFoodCell`, `drawPurse` |
 | bottom right | the backpack: the ten-cell grid, **always up**, flush in the corner — and the **weapon shelf** standing on its top edge, always up | `drawBag`, `drawShelf` |
@@ -426,9 +428,9 @@ the cinematic.
 The market's own voice on the HUD — the `market notices` banner in [js/shop.js](../../js/shop.js),
 raised by `marketNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
 spike, a price crash and a counter turning over each raise one, *as well as* the line they already
-put in the [event feed](#scoreboard-and-event-feed): the feed is the record of what happened to
+put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
 somebody, and a price is not that — it is the state of the world your bag is about to be sold
-into, so it belongs where the clock and the alive count already are.
+into, so it belongs where the clock already is.
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
 what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down.
@@ -461,7 +463,7 @@ and the feed line can never disagree about which way a price went.
 
 `noteRect(k)` places slot `k` off `MM_*` — right edge flush with the disc's own, `NOTE_GAP` (18 px)
 under its rim, so the column follows the minimap wherever the size dial and the view put it and
-never lands on the alive/clock row. **The newest plate is player 0**, hard under the disc, and its
+never lands on the clock. **The newest plate is player 0**, hard under the disc, and its
 arrival pushes the stack down: it flies in `NOTE_SLIDE` (30 px) off the right edge over `NOTE_IN`
 (0.55 s) while the plates below ease down a whole `NOTE_PITCH` on that same curve. They are drawn
 **oldest first** so the newest lands on top of the stack it is shoving.
@@ -502,9 +504,8 @@ so what the panel describes and what a click would do can never be two different
 drag outranks all of them: whatever is on the cursor describes itself. It answers in two modes
 only, `play` and `title` (the wiki's ARSENAL rows); every other mode returns null.
 
-`tipResolve()` runs **once per frame in `render()`, before `renderUI`**, because the event feed
-lays itself out around the result: `renderEventLog` steps up by `tipLift()` exactly as it already
-does for the replay window. Resolving it later would put the feed a frame behind the panel.
+`tipResolve()` runs **once per frame in `render()`, before `renderUI`**, so every draw in the
+frame reads the same answer.
 
 A descriptor is `{ title, tcol, kind, rows: [[label, value, col]], notes: [[text, col]], icon,
 plate, rim }` and `drawTooltip` is the only thing that knows how to paint one: the icon on its own
@@ -968,11 +969,10 @@ scale, no blur. The outline colour is the opaque `#0f1632` (the eight passes ove
 translucent colour would stack unevenly). Sites: floaters (damage numbers, gold, `LEVEL n`),
 the overhead name tags, the E and fish prompts, the radial-wheel labels, every number on the backpack
 widget (the strip's food counts and gold, each bag cell's stack count, a gear cell's hover price),
-the alive count and clock under the minimap — the alive icon is stamped with the same eight-offset
-rim by `drawAliveIcon` — `state.msg`, the info stack, and the drop-UI text.
+the clock under the minimap, `state.msg`, the info stack, and the drop-UI text.
 `drawPixelTextShadow` (a single bottom-right 1 px shadow) remains for text sitting on a panel,
-plank or overlay — the settings/map panels, the main menu, the death overlay, the scoreboard and
-the event feed's plates — where a full outline reads heavy. Checked at noon on open snow and at
+plank or overlay — the settings/map panels, the main menu, the death overlay and the scoreboard —
+where a full outline reads heavy. Checked at noon on open snow and at
 full night. A line drawn under a `globalAlpha` fade must use `Shadow`: the outline's eight passes
 overlap, so a translucent stamp stacks unevenly and the rim goes blotchy.
 
@@ -1113,7 +1113,7 @@ and you can sit and watch it, so a lost match ends when you stop watching — **
 overlay opens the defeat screen (`openDefeat()`, `state.deadView = 'defeat'`) and that screen's own
 single **LOBBY** plank is the door out. A respawn-pending death's LOBBY still leaves directly:
 nothing has been lost yet. `endScreen()` is the one test for "a ceremony owns the frame" —
-`renderUI`, `renderEventLog` and `replayShowing` all bow out under it (the recap would cover the
+`renderUI` and `replayShowing` both bow out under it (the recap would cover the
 whole ceremony); the held-TAB scoreboard and the info stack still draw over both.
 
 **The two timelines.** `WIN_T` and `DEF_T` name every beat, and the render pass and the sound cues
@@ -1139,7 +1139,7 @@ beat calls `endSkip()`, which jumps the relevant clock to the end.
   tassels were), a snow bank where the dais stood and **the whole losing side** standing knee-deep
   in it on the win's stands — no raised block — with the local player **prone and side-on** in the
   middle at the same 3×, an arrow planted beside it where the crown would be → five stat plates →
-  one plank. Nothing under the rule here either: who put you down is the event feed's line, and
+  one plank. Nothing under the rule here either: who put you down is the death headline's, and
   this screen is the side's loss, not yours.
 
 **What they print** is one frozen object either way — `endSnapshot()` on `state.end`, taken in
@@ -1196,8 +1196,7 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
 - **The recap**, on a **death** (a respawn wait or an elimination, once `deadReady()` — half a
   second of dim — has landed): the **whole frame**, the way a goal replays. The countdown reads
   over it on a wait; the spectate strip, the death dim, its headline and its planks wait
-  underneath (`renderDead` returns early while `replayFull()`), and the event feed still lands
-  over it, so who put you down is read while you watch it happen. A close box sits inside the
+  underneath (`renderDead` returns early while `replayFull()`). A close box sits inside the
   frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
   action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
@@ -1280,26 +1279,19 @@ LOBBY fade-out.
 report the live capture size, slot size and atlas cost, so a headless driver can check the
 resolution without playing to a death; `DBG.replayClose()` puts the recap away.
 
-## Scoreboard and event feed
+## Scoreboard and event log
 
-Two readouts of the **match** rather than of the world, in the `scoreboard & log` banner. Both
-draw after the death overlay, so the dim never touches them — being down is exactly when you read
-them — and both duck under the map/settings panels. The feed also stands down over
-[the end screens](#the-end-screens); the scoreboard does not.
+Two readouts of the **match** rather than of the world, in the `scoreboard & log` banner.
 
-**The feed** (bottom left) is the last `EVENT_MAX` (4) lines of `events`, oldest at the top,
-newest along the bottom. It has that corner to itself now the gear row lives in the
-[backpack](#the-backpack-and-gear-widget), and shares it only with the
-[replay window](#replay-the-last-four-seconds), stepping up by `replayLift()` px for as long as
-that window is open *in the corner* (the wait's big window sits clear of it). `logEvent(txt, p)` pushes one; `p` is the player the line is *about* and
-supplies both colours — plate in the team's dark `coatD` over an opaque dark base (a bright plate
-on snow leaves the text nothing to sit on), a 1 px edge in the team's bright `mark`, and the ink
-in `playerTint(p)` so two players on one team read as two people. `updateFx()` ages every line on
-wall time (so the feed fades in any mode, including paused) and drops it at `EVENT_LIFE` (8 s);
-alpha is `1 - t/EVENT_LIFE`, i.e. purely the line's age, which is what makes the stack read
-oldest-faintest. A new line arrives with an `EVENT_FLASH` (0.35 s) pop: it slides in from the left
-edge and takes a white wash that decays quadratically. What gets logged lives in
-[multiplayer.md](multiplayer.md#kills-and-the-event-feed).
+**The log is not drawn.** `events` is the last `EVENT_MAX` (12) lines the match wrote, newest
+last, and `logEvent(txt, p, o?)` is the one interface every caller speaks — `p` is the player the
+line is *about* and supplies its colours (plate `coatD`, edge `mark`, ink `playerTint(p)`), `o`
+overrides them for a line nobody owns. The bottom-left feed that used to draw them went in 3.24:
+a scrolling column of sentences on the play surface was the one thing there the
+[UI rule](../../CLAUDE.md#ui-rule-show-dont-label) forbids, and the bottom-left corner is the
+tooltip's alone now. The ring stays as the match's record (`DBG.events`) so a future readout — a
+kill toast, a recap — lands on it for free. What gets logged lives in
+[multiplayer.md](multiplayer.md#kills-and-the-event-log).
 
 **The scoreboard** is held-TAB (`scoreboardOpen()`: `keys['tab']`, any mode but `title`, so it
 works while dead and while riding the eagle) and is drawn per frame, not baked — every number on

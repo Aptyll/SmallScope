@@ -335,8 +335,8 @@ per-kind and are not the entry point. For an **area** effect sweep `unitsHit(src
 a player mid-roll or fresh off a respawn is dropped) or `unitsNear` (a lasting ground condition,
 which a roll should not shrug off) rather than writing a loop per kind — that loop is exactly how wildlife and bots
 fall out of a feature. Still pass the attacker as `src` (or, when the world did it, a `DEATH_CAUSE`
-key as `o.cause`): miss it and the kill is uncredited on the TAB scoreboard and the event feed
-reports the death as an accident. A **new damage type** is one row in `DMG_TYPES`; if it lingers on
+key as `o.cause`): miss it and the kill is uncredited on the TAB scoreboard and the event log
+records the death as an accident. A **new damage type** is one row in `DMG_TYPES`; if it lingers on
 the body the way `fire` does, it also needs a `DOT_CAUSE` key, or a roll or a respawn puts the
 fire out. **A hit grants no i-frames** — two shots landing in the same step both count, which is
 what makes a volley worth its weight; only something deliberate (the roll, a respawn, the landing)

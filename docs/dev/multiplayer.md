@@ -337,7 +337,7 @@ Five players per colour means **teammates share it**, so anything that names one
 takes a second axis: `playerTint(p)` returns a per-player shade of that team's palette (`trim`,
 `hatL`, `trimD`, `hat` by `floor(id / TEAM_COUNT) % 4` — the fifth teammate reuses the first
 shade). The team colour stays the background, the tint is the ink — see the
-[scoreboard and event feed](rendering.md#scoreboard-and-event-feed).
+[scoreboard and event log](rendering.md#scoreboard-and-event-log).
 
 ## PvP
 
@@ -433,18 +433,18 @@ the timer holds at zero until it roosts; a bird that has fled mid-timer is left 
 roguelike cards), gear, skill ranks, level and xp are never touched by `reset()`, so a build
 survives every respawn within a match; the wallet, the pouch, the bag and the weapon do not.
 
-### Kills and the event feed
+### Kills and the event log
 
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
 there is no `src` (`DEATH_CAUSE`: `'ice'` for a hole, `'wolf'` for a den's pack or the alpha, `'dire'` for the dire wolf). A death with an `src` other than
-the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the feed in the killer's colours;
+the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours;
 without one it writes `"<victim> FELL THROUGH THE ICE"` in the victim's. **Any new way to hurt a
-player must pass its `src`**, or the kill goes uncredited and the feed line reads as an accident.
+player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
 The other thing logged today is a level-up at `LOG_LEVEL` (5) or above — the early levels come too
-fast to be news. `logEvent(txt, p)` is the whole interface; the feed's look and lifetimes are in
-[rendering.md](rendering.md#scoreboard-and-event-feed). `DBG.logEvent`/`DBG.events` stage lines
+fast to be news. `logEvent(txt, p)` is the whole interface; the log is not drawn
+([rendering.md](rendering.md#scoreboard-and-event-log)). `DBG.logEvent`/`DBG.events` stage lines
 without staging the kills behind them.
 
 ## Contested orders

@@ -40,7 +40,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/render.js](../../js/render.js) | ~980 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
 | [js/ui.js](../../js/ui.js) | ~1950 | shared scope, no `window.*` export | the in-match HUD: radial wheel, brackets and prompts, minimap, the backpack, the character panel, the weapon strip, the weapon shelf, the drag, card draft, the hover tooltip |
 | [js/shop.js](../../js/shop.js) | ~700 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
-| [js/panels.js](../../js/panels.js) | ~820 | shared scope, no `window.*` export | the TAB scoreboard + event feed, the M world map, the ESC settings slab, the PLAYER name panel |
+| [js/panels.js](../../js/panels.js) | ~820 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab, the PLAYER name panel |
 | [js/menu.js](../../js/menu.js) | ~1450 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
 | [js/screens.js](../../js/screens.js) | ~1160 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/boot.js](../../js/boot.js) | ~1330 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the lane, the drop brief), the boot order, `window.DBG`, the rAF loop |

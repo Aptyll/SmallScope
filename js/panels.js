@@ -1,21 +1,24 @@
 'use strict';
-// The four overlay panels: the TAB scoreboard and the event feed, the M
-// world map on its parchment, the ESC settings slab, and the PLAYER name
+// The overlay panels: the TAB scoreboard (and the match log behind it), the
+// M world map on its parchment, the ESC settings slab, and the PLAYER name
 // panel with its lifetime numbers.
 // ------------------------------------------------------------ scoreboard & log
 // Two readouts of the match rather than of the world. TAB, held, opens the
 // standings from any mode but the title - being dead is exactly when you want
-// them - and everything significant that happens to a player leaves a line in
-// the feed at the bottom left. Both draw after the death overlay so neither is
-// dimmed by it. Colours everywhere: the team is the plate, playerTint(p) is
-// the ink, so teammates read as one side and still as two people.
+// them - and draws after the death overlay so it is never dimmed by it.
+// Colours: the team is the plate, playerTint(p) is the ink, so teammates read
+// as one side and still as two people.
 
-// ---- event feed ----
-const EVENT_MAX = 4;      // lines on screen; the oldest scroll off the top
-const EVENT_LIFE = 8;     // seconds from arrival to gone, faded linearly across it
-const EVENT_FLASH = 0.35; // arrival: slides in from the edge under a white pop
+// ---- event log ----
+// Everything significant that happens to a player leaves a line here. It is
+// NOT drawn any more (3.24 took the bottom-left feed off the screen - a
+// scrolling column of sentences on the play surface was the one thing there
+// the UI rule forbids); the ring is the match's record, read through
+// DBG.events, and the one interface every caller already speaks (logEvent) so
+// a future readout - a kill toast, a recap - lands on it for free.
+const EVENT_MAX = 12;     // lines kept; the oldest fall off
 const LOG_LEVEL = 5;      // level-ups below this come too fast to be news
-const events = [];        // {txt, bg, fg, t}; updateFx ages and expires them
+const events = [];        // {txt, bg, edge, fg, t}, newest last
 
 // p tints the line and is who it is about; null = a line nobody owns. The
 // plate takes the team's dark coat, not its bright mark: the ink is a pale
@@ -31,42 +34,7 @@ function logEvent(txt, p, o) {
     edge: o.edge || (p ? TEAMS[skin(p.team)].mark : '#6d7ea6'),
     fg: o.fg || (p ? playerTint(p) : '#e6ecfa'),
   });
-  while (events.length > EVENT_MAX * 3) events.shift();
-}
-
-function renderEventLog() {
-  const n = Math.min(EVENT_MAX, events.length);
-  if (!n) return;
-  const pitch = 10;
-  // oldest at the top, newest along the bottom; it shares the bottom-left
-  // corner with the replay window and the tooltip, and steps up by their
-  // height for as long as either is open
-  let y = VIEW_H - 8 - replayLift() - tipLift() - pitch * n;
-  for (let i = events.length - n; i < events.length; i++) {
-    const e = events[i];
-    const a = Math.max(0, 1 - e.t / EVENT_LIFE); // age alone sets the alpha
-    const f = Math.max(0, 1 - e.t / EVENT_FLASH);
-    const w = pixelTextWidth(e.txt) + 8;
-    const x = 4 - Math.round(7 * f * f); // slides in off the left edge
-    ctx.globalAlpha = a;
-    ctx.fillStyle = 'rgba(6,9,22,0.75)'; // base: the world must not read through the plate
-    ctx.fillRect(x, y, w, 9);
-    ctx.globalAlpha = a * 0.8;
-    ctx.fillStyle = e.bg;
-    ctx.fillRect(x, y, w, 9);
-    ctx.globalAlpha = a;
-    ctx.fillStyle = e.edge;
-    ctx.fillRect(x, y, 1, 9); // the bright team mark, hard against the plate
-    if (f > 0) { // the arrival pop
-      ctx.globalAlpha = 0.6 * f * f;
-      ctx.fillStyle = '#f4f7ff';
-      ctx.fillRect(x, y, w, 9);
-      ctx.globalAlpha = a;
-    }
-    drawPixelTextShadow(ctx, e.txt, x + 4, y + 2, e.fg, 'rgba(6,9,22,0.9)');
-    ctx.globalAlpha = 1;
-    y += pitch;
-  }
+  while (events.length > EVENT_MAX) events.shift();
 }
 
 // ---- scoreboard (hold TAB) ----

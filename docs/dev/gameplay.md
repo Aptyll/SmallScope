@@ -1656,13 +1656,13 @@ seconds.
 
 A headline goes to **two places at once**, and a restock's does too:
 
-- the **event feed**, bottom-left — `FISH SPIKE 34G`, `BERRIES CRASH 2G`, `THE MERCHANTS RESTOCK`
-  — the match's own record, where everything else that happened to somebody already is;
+- the **event log** (not drawn; `DBG.events`) — `FISH SPIKE 34G`, `BERRIES CRASH 2G`,
+  `THE MERCHANTS RESTOCK` — the match's own record, where everything else that happened to
+  somebody already is;
 - a **plate top-right under the minimap** — the `market notices` banner in js/shop.js, drawn by
   `renderNotices` ([the plates](rendering.md#market-notices-the-plates-under-the-minimap)) —
   because a price is not something that happened to a player: it is the state of the world you are
-  about to sell your bag into, and it has to arrive where the clock and the alive count are
-  rather than in a log at the far corner.
+  about to sell your bag into, and it has to arrive on screen, where the clock is.
 
 Both readouts take their colour from one table (`NOTE_KIND`), handed straight to `logEvent` as its
 palette override, so the two can never disagree about which way a price went.
@@ -2125,7 +2125,7 @@ Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js
   the local player. Damage is **contested** with everything else E does, since it runs inside
   `swingHit`'s `contest('work:' + idx)`. At 0 hp it calls `destroyStructure(o, true, p)` — the
   wreck pays out exactly like a demolition, straight to the wrecker — and
-  logs `<NAME> WRECKED A <TYPE>` to the event feed. Nothing else damages a building: arrows die
+  logs `<NAME> WRECKED A <TYPE>` to the event log. Nothing else damages a building: arrows die
   on solid tiles without hurting them, and no AI or wildlife targets one.
 - Demolish refunds **50% of the cumulative cost across tiers** (`cumulativeCost`), paid to the
   demolisher on the spot through `awardGold` — 23 gold for a fully-upgraded wall. `demolishStruct()` →
@@ -2396,8 +2396,8 @@ holding it.) All three loops are generic per type, so a future resource spills w
 death code, and an instanced tool travels as the same object it always was
 (`spawnDrop`'s `it`). The standings are unaffected because `scoreOf` ranks lifetime
 `xp`, not the purse, so a looted player keeps the place it earned. `die` also credits the kill (and
-heals the killer if their kit carries `killHeal`, off a card) and writes the feed line — see
-[Kills and the event feed](multiplayer.md#kills-and-the-event-feed) — then asks
+heals the killer if their kit carries `killHeal`, off a card) and writes the log line — see
+[Kills and the event log](multiplayer.md#kills-and-the-event-log) — then asks
 `teamEagleDown(p.team)`: with the eagle still roosting, `p.respawnT` starts counting down
 (`respawnTime(p)`, `updateRespawns` — see [Respawn at the bird](multiplayer.md#respawn-at-the-bird)
 for the whole path); with it driven off, `p.eliminated = true`, the permanent path. Either way
@@ -2599,9 +2599,9 @@ route every walker is following with the tile it is heading for; the next press 
 has no ESC-menu row, only the `. HITBOX` line in the CONTROLS block; the rest is in
 [Debug overlays](rendering.md#debug-overlays-hitboxes-and-routes).
 
-Beneath the minimap
-`renderMinimap()` prints one centred row: a 5×7 pixel figure (`ALIVE_ICON`, no label) with
-`aliveCount()` — players active and not dead, riders included — then the elapsed clock.
+Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. (The
+alive count that shared the row went in 3.24 — a match no longer ends on bodies, so it decided
+nothing; `aliveCount()` still serves the rules.)
 
 ## Audio
 
