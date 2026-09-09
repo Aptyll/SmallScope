@@ -1710,6 +1710,23 @@ function shelfRowY() { return MOBILE ? 44 : 18; } // the row's top: room for fiv
 // (a five-bit longbow) and the SHIFT plate off its end - what the intro
 // slide and the bake are sized by, so neither jumps when the tool changes
 const CORNER_REACH = SHELF_X + 6 * SHELF_CELL + 5 * SHELF_GAP + 80;
+// WHAT THE CORNER CLAIMS OF THE FRAME, in view px at the HUD SIZE the dial
+// holds: the widest row a tool can ever grow to, or the drawer under it,
+// whichever reaches further. The merchant's slab is pinned off this
+// (shopLayout, js/shop.js) so a trade never stands on the pack it is dragged
+// out of. It is the FIXED reach and not the live shelfRowRight(): the row
+// grows with the tool in hand, and a slab that slid sideways when a swap
+// changed the row mid-trade would walk out from under the pointer. The SHIFT
+// plate CORNER_REACH allows for is left out of it - that is a hover hint,
+// not a widget, and 80 px of room for one is 80 px the counter would lose.
+const CORNER_CLAIM = Math.max(BAG_W, SHELF_X + 6 * SHELF_CELL + 5 * SHELF_GAP);
+function cornerClaim() { return Math.round(CORNER_CLAIM * hudSc()); }
+// ...and how far DOWN it reaches with the drawer open: the other half of the
+// room a panel pinned off the corner has to miss, for a view too NARROW to
+// stand one beside it. This one is measured live off the drawer, because
+// unlike the row's width it does not move with the tool in hand - only with
+// the number of cells carried, which nothing changes today.
+function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h) * hudSc()); }
 // the tool the shelf is showing, or null with the weapon well empty
 function shelfCell() { return player.tools[SHELF_SLOT] || null; }
 // ...and whether the shelf is on screen and answering the pointer at all: the
@@ -1810,10 +1827,13 @@ function dragDropSlot(i) {
 // away - so a fumbled release inside the frame costs nothing and a deliberate
 // drag out onto the snow is the one way to get rid of a tool.
 function dragDrop(mx, my) {
-  // the counter first: its sell well is the one place a release turns an item
-  // into gold, and the rest of the slab sends it home
+  // the counter first: its sell STRIP is the one place a release turns an item
+  // into gold, and the rest of the slab sends it home. Both halves of the
+  // strip take the release - the well you aim at and the SELL ALL button at
+  // its end - because the strip is one full-width target with an item on the
+  // cursor and only becomes two controls once your hand is empty.
   const sp = shopHit(mx, my);
-  if (sp) { if (sp.kind === 'sell') shopDropSell(); else dragReturn(); return; }
+  if (sp) { if (sp.kind === 'sell' || sp.kind === 'sellAll') shopDropSell(); else dragReturn(); return; }
   const fh = shelfHit(mx, my);
   if (fh) {
     if (fh.kind === 'bit') dragDropBit(SHELF_SLOT, fh.i);
@@ -3137,24 +3157,44 @@ function renderUI(now) {
   renderMinimap(now);
   ctx.restore();
 
+  // THE COUNTER WASHES THE FRAME (shopScrim, js/shop.js), and exactly what a
+  // trade is made of stays lit above the wash: the counter itself, the corner
+  // - the weapon shelf and the pack drawer a sale is dragged out of - the item
+  // on the cursor, and the tooltip that prices what the pointer is on (drawn
+  // later still, js/render.js). Everything else goes under it, the minimap and
+  // the hud strip included: neither is part of a sale, and a counter that only
+  // dimmed the world left the two brightest widgets on screen competing with
+  // the thing you opened.
+  //
+  // So the ORDER is the whole mechanism, and it is here rather than in the
+  // panel: minimap and strip, the wash, then the corner and the slab.
+  const shop = !out && shopOpen();
   // The top-left corner - the weapon shelf and the drawer under it - rides
   // the intro slide in from the LEFT as one widget, at the HUD SIZE the dial
   // holds (drawCornerScaled), by its widest reach so no tool's row is left
   // parked over the cinematic.
-  if (!out) drawCornerScaled(now, -Math.round(slide * CORNER_REACH * hudSc()));
+  const cornerSlide = -Math.round(slide * CORNER_REACH * hudSc());
+  if (!out && !shop) drawCornerScaled(now, cornerSlide);
 
   // hud strip (the xp bar over the ability wells and the pouch block),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD
   // SIZE the settings dial holds (drawHudScaled). The carried item rides the
   // pointer over everything, so it stays outside the scale and the slide.
-  if (!out) {
-    drawHudScaled(now, Math.round(slide * HUD_SLIDE));
-    if (hudIn >= 1) { drawDragGhost(now); drawDropPromise(); }
-  }
+  if (!out) drawHudScaled(now, Math.round(slide * HUD_SLIDE));
 
   // the merchant's counter (js/shop.js): over the HUD like the character
-  // sheet, with the pack open beside it to drag a sale out of
-  if (!out && shopOpen()) drawShopPanel(now);
+  // sheet, with the pack open beside it to drag a sale out of - and lit,
+  // with the corner, out of the wash the two of them stand in
+  if (shop) {
+    shopScrim();
+    drawCornerScaled(now, cornerSlide);
+    drawShopPanel(now);
+  }
+
+  // whatever is riding the pointer, and the ring promising where a release
+  // lands: last of the HUD, so it is over every well it could be dropped into
+  // - the counter's sell strip and its wash included
+  if (!out && hudIn >= 1) { drawDragGhost(now); drawDropPromise(); }
 
   // the character panel (G): over the HUD, under the toasts and the tooltip
   if (!out && state.charOpen && !player.dead) drawCharPanel(now);

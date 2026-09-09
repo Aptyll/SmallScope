@@ -519,6 +519,42 @@ function shopSellCell(p, i) {
   return v;
 }
 
+// WHAT THE PACK IS WORTH over the counter, and how many cells that is - the
+// two numbers the SELL ALL button reads itself out with, and the tooltip
+// beside it. One walk of the bag, so the plate and the tip can never disagree
+// about what a press is about to fetch.
+function packValue(p) { let v = 0; for (const s of p.bag) v += sellValue(s); return v; }
+function packCount(p) { return bagUsed(p); }
+
+// THE WHOLE PACK, over the counter in one press. What it takes is the BAG and
+// nothing else, and the bag's own boundaries are the whole rule: the two
+// meals and the unopened cards are in the POUCH and not in a cell at all
+// (isPouch, js/player.js), and the tool in hand with the bits fitted into it
+// is on the SHELF (p.tools). So what a press here cannot reach is exactly
+// what is being carried on purpose, and the drawer emptying is the answer.
+//
+// It resolves as ONE sale - one payment, one floater, one coin - rather than
+// twelve, because it is one decision; twelve cues for one press is a slot
+// machine. Half a pack that will not sell (nothing does today, but a worthless
+// kind would) is left where it is rather than failing the lot.
+function shopSellAll(p) {
+  if (!merchNear(p)) { shopDeny(p); return 0; }
+  let v = 0;
+  for (let i = 0; i < p.bag.length; i++) {
+    const s = p.bag[i];
+    if (!s) continue;
+    const g = sellValue(s);
+    if (g <= 0) continue;
+    v += g;
+    p.bag[i] = null;
+  }
+  if (v <= 0) { shopDeny(p); return 0; } // an empty pack, or nothing in it worth a coin
+  tradeGold(p, v);
+  shopFx(p, '+' + v, RES_COLORS.gold);
+  if (p === player) SFX.coin();
+  return v;
+}
+
 // One unit of a traded good, either way, at the live price. `dir` is +1 to buy
 // and -1 to sell - one function, because the price is the same number in both
 // directions and splitting it would be two ways to read one quantity.
@@ -551,13 +587,16 @@ function shopCmd(p, c) {
   if (c.act === 'buy') shopBuy(p, c.sec, c.i);
   else if (c.act === 'trade') shopTrade(p, c.good, c.dir);
   else if (c.act === 'sell') shopSellCell(p, c.i);
+  else if (c.act === 'sellAll') shopSellAll(p);
 }
 
 // ------------------------------------------------------------ the shop panel
-// THE TRADING POST: one slab, the sim running live behind it. It is pinned in
-// the room LEFT of the backpack rather than dead centre, because the pack is
-// open beside it the whole time it is up - a sale is a DRAG out of the grid
-// and into the sell well, so the grid has to be reachable and visible at once.
+// THE TRADING POST: one slab, the sim running live behind it, and the rest of
+// the frame washed dark under it (shopScrim, below). It is pinned into the
+// room to the RIGHT of the top-left CORNER rather than dead centre, because
+// the weapon shelf and the pack drawer stand there and the drawer is open the
+// whole time this is up - a sale is a DRAG out of that grid and into the sell
+// strip, so the grid has to be reachable and visible at once (shopLayout).
 //
 // The name is load-bearing, and the sign says SHOP for the same reason the
 // file is called shop.js: the whole slab is the shop, and the MARKET is ONE
@@ -574,7 +613,8 @@ function shopCmd(p, c) {
 // every well wearing its item's own tier plate with its price on a band along
 // the bottom; the MARKET rule and its two cards, each carrying a live price, a
 // three-day graph and a pair of trade plates whose ARRANGEMENT is the
-// direction; the SELL well; and the RESTOCK ROAD along the bottom rail.
+// direction; the SELL strip - the drop well and the SELL ALL button on one
+// line; and the RESTOCK ROAD along the bottom rail.
 //
 // Two rules make the stock read as one grid rather than as twelve loose
 // pictures, which is what it looked like before:
@@ -595,7 +635,7 @@ function shopCmd(p, c) {
 // have one: reading a market IS reading numbers, and no shape compares a
 // price today against a price yesterday.
 //
-// It is WIDE AND SHORT, and pinned near the TOP EDGE rather than centred,
+// It is WIDE AND SHORT, and pinned near the TOP EDGE,
 // which is the one piece of this layout that is not taste: the tooltip is
 // bottom-left and grows upward off the bottom rim, and a tall centred slab
 // puts its own bottom-left corner exactly where a tall tooltip lands - so
@@ -619,8 +659,17 @@ const SHOP_SEC_HEAD = 8;                                // its name, and the rul
 const SHOP_SEC_H = SHOP_SEC_HEAD + SHOP_WELL_H + SHOP_BAND;
 const SHOP_CARD_W = 157, SHOP_CARD_H = 46;              // one market card
 const SHOP_GRAPH_H = 22;
-const SHOP_SELL_H = 16;    // the sell strip along the counter's edge
+const SHOP_SELL_H = 16;    // the sell strip along the counter's edge...
+const SHOP_ALL_W = 82;     // ...the SELL ALL button at its right end, and the
+const SHOP_ALL_GAP = 4;    //    air between the two halves
 const SHOP_SELL_GAP = 5;   // air under it, so the strip is not sitting on the rail
+const SHOP_CORNER_GAP = 6; // frame left between the corner widget and the slab
+// The deepest tooltip an offer here can raise (the same ~192 the slab's own
+// height is budgeted against, below). Only the UNDER placement spends it: at
+// the top edge the slab is already clear of the bottom-left corner a tooltip
+// grows out of, and dropping it down the frame is the one move that could
+// walk it into one.
+const SHOP_TIP_CLEAR = 196;
 const SHOP_LANE_H = 20;    // the restock road along the bottom
 const SHOP_FOOT = 5;       // that counter edge itself; the frame is 3 on the other three sides
 const SHOP_BG = '#0a0e23', SHOP_IN = '#10173a';
@@ -676,11 +725,38 @@ function closeShop() {
 // awning, carrying the portrait and the purse; the four sections as a 2x2 grid
 // of three-well rows; the MARKET rule and its two cards side by side; the SELL
 // strip, the full width of the slab, because it is a drop target and a drop
-// target should be hard to miss with an item on the cursor; and the restock
-// road along the bottom rail.
+// target should be hard to miss with an item on the cursor - the drop WELL and
+// the SELL ALL button that shares that line; and the restock road along the
+// bottom rail.
 function shopLayout() {
-  const x = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2));
-  const y = SHOP_Y;
+  // WHERE IT STANDS, and the rule is one sentence: A COUNTER MAY NOT STAND ON
+  // THE PACK IT IS SOLD OUT OF. The weapon shelf and the pack drawer are in
+  // the top-left (cornerClaim / cornerBottom, js/ui.js) and a sale is a drag
+  // out of that drawer into this slab, so the slab takes the room BESIDE the
+  // corner where there is one, and the room UNDER it where there is not.
+  //
+  //   BESIDE - the ordinary answer, and it keeps the centre whenever the view
+  //     is wide enough for both, which on a 640-wide frame is a nudge of 28.
+  //   UNDER - a TALL, NARROW frame (a 1440x2560 monitor lands at 360x640, and
+  //     336 of those 360 columns are this slab, so nothing fits beside it).
+  //     There it centres across and drops below the drawer instead. It is
+  //     gated on clearing the deepest TOOLTIP as well as the frame, because
+  //     the tooltip grows up out of the bottom-left and the whole reason this
+  //     panel is short and high is that a tooltip must never cover an offer -
+  //     dropping it into a tooltip's lap would trade one overlap for a worse
+  //     one.
+  //   NEITHER - it stops at the view's right rim and the minimap's rim goes
+  //     under it. That is the deliberate order of the three: the pack is what
+  //     the trade is MADE of, the minimap is a readout, and the market's own
+  //     plates draw over the slab anyway (renderNotices).
+  const mid = Math.max(2, Math.round((VIEW_W - SHOP_W) / 2));
+  const rim = VIEW_W - SHOP_W - 2;                     // the furthest right it may stand
+  const beside = cornerClaim() + SHOP_CORNER_GAP;
+  const under = cornerBottom() + SHOP_CORNER_GAP;
+  let x = mid, y = SHOP_Y;
+  if (beside <= rim) x = Math.max(mid, beside);
+  else if (under + SHOP_H <= VIEW_H - SHOP_TIP_CLEAR) y = under;
+  else x = Math.max(2, rim);
   const cx = x + SHOP_PAD, cw = SHOP_W - SHOP_PAD * 2;
   const secs = [];
   for (let i = 0; i < SHOP_SECTIONS.length; i++) {
@@ -706,18 +782,25 @@ function shopLayout() {
   // strip. The strip is measured off the LANE and not off the frame, so
   // widening the road never walks it into the market cards.
   const laneY = y + SHOP_H - SHOP_FOOT - SHOP_LANE_H;
+  const sellY = laneY - SHOP_SELL_GAP - SHOP_SELL_H;
   return {
     panel: { x, y, w: SHOP_W, h: SHOP_H },
     head: { x: cx, y: y + 11, w: cw, h: 11 }, // the sign row, hung off the awning's hem
     mkt: { x: cx, y: mkY, w: cw, h: 8 },
     secs, cards,
-    well: { x: cx, y: laneY - SHOP_SELL_GAP - SHOP_SELL_H, w: cw, h: SHOP_SELL_H },
+    // the strip is two controls on one line: the drop well you aim at with an
+    // item on the cursor, and the SELL ALL button at its right end. ALL is at
+    // the RIGHT for the reason the restock road's clock is - the tooltip grows
+    // up out of the bottom-LEFT corner, and the one control here that empties
+    // your pack must be readable while you are reading what it would fetch.
+    well: { x: cx, y: sellY, w: cw - SHOP_ALL_W - SHOP_ALL_GAP, h: SHOP_SELL_H },
+    all: { x: cx + cw - SHOP_ALL_W, y: sellY, w: SHOP_ALL_W, h: SHOP_SELL_H },
     lane: { x: cx, y: laneY, w: cw, h: SHOP_LANE_H },
     xr: { x: x + SHOP_W - SHOP_PAD - 11, y: y + 11, w: 11, h: 11 },
   };
 }
 
-// 'x' | 'panel' | { kind:'buy', sec, i } | { kind:'sell' } |
+// 'x' | 'panel' | { kind:'buy', sec, i } | { kind:'sell' } | { kind:'sellAll' } |
 // { kind:'trade', id, dir } | { kind:'good', id } | null.
 // Shared by the click, the cursor and the tooltip, so the three can never
 // disagree about what the pointer is on.
@@ -731,6 +814,7 @@ function shopHit(mx, my) {
       if (hitR(s.wells[i], mx, my) && shopOffer(s.id, i)) return { kind: 'buy', sec: s.id, i };
     }
   }
+  if (hitR(L.all, mx, my)) return { kind: 'sellAll' };
   if (hitR(L.well, mx, my)) return { kind: 'sell' };
   for (const c of L.cards) {
     if (hitR(c.buy, mx, my)) return { kind: 'trade', id: c.id, dir: 1 };
@@ -747,6 +831,11 @@ function shopClick(h) {
   if (h === 'x') { closeShop(); return true; }
   if (h.kind === 'buy') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'buy', sec: h.sec, i: h.i }; return true; }
   if (h.kind === 'trade') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'trade', good: h.id, dir: h.dir }; return true; }
+  // SELL ALL goes through input.cmd like the buys rather than resolving on the
+  // spot the way a drop does: nothing is on the cursor, so there is nothing a
+  // dropped command could take with it, and a bot could press it tomorrow.
+  // An empty pack is refused down in shopSellAll, where the one rule lives.
+  if (h.kind === 'sellAll') { player.input.cmd = { kind: 'shop', act: 'sellAll' }; return true; }
   return true; // the slab eats the rest; the world never sees it
 }
 // A carried cell let go over the sell well (dragDrop, js/ui.js). It resolves
@@ -853,13 +942,29 @@ function drawShopLantern(x, y, now, beat) {
   ctx.fillRect(x, y - 1, 1, 1); ctx.fillRect(x + 4, y - 1, 1, 1);
 }
 
+// THE COUNTER'S WASH, over the whole frame. What stays LIT above it is
+// everything a trade is made of and nothing else: this slab, the corner - the
+// weapon shelf and the pack drawer a sale is dragged out of - the item on the
+// cursor, and the tooltip pricing whatever the pointer is on. The minimap, the
+// hud strip and the world all go under it.
+//
+// The ORDER that does that is in renderUI (js/ui.js), which is why this is a
+// pass of its own rather than the first two lines of drawShopPanel: a panel
+// cannot dim what was drawn after it, and the corner has to be drawn after.
+// It is deep on purpose - the old 0.38 left the strip and the minimap as
+// bright as the counter, so the slab read as one more window over a busy HUD
+// instead of as the only thing on screen you are doing.
+const SHOP_WASH = 'rgba(4,6,18,0.62)';
+function shopScrim() {
+  ctx.fillStyle = SHOP_WASH;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+}
+
 function drawShopPanel(now) {
   const L = shopLayout(), P = L.panel;
   const h = mouse.inside ? shopHit(mouse.x, mouse.y) : null;
   const b = state.shop;
   const ti = skin(b ? b.team : player.team);
-  ctx.fillStyle = 'rgba(4,6,18,0.38)';
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(P.x + 3, P.y + 3, P.w, P.h); // a square slab throws a square shadow
   ctx.fillStyle = SHOP_BG; ctx.fillRect(P.x, P.y, P.w, P.h);
   ctx.fillStyle = SHOP_IN; ctx.fillRect(P.x + 3, P.y + 3, P.w - 6, P.h - 3 - SHOP_FOOT);
@@ -871,6 +976,7 @@ function drawShopPanel(now) {
   drawShopHeading(L.mkt, 'MARKET', true);
   for (const c of L.cards) drawMarketCard(c, h, now);
   drawSellWell(L.well, h, now);
+  drawSellAll(L.all, h, now);
   drawShopLane(L.lane, now);
 
   // the X: the drawn way out (ESC, E and walking away all close too)
@@ -1046,11 +1152,14 @@ function drawShopWell(r, o, hot, now) {
   drawPixelText(ctx, txt, r.x + r.w - 4 - pixelTextWidth(txt), y + iconH + 2, dear ? SHOP_DEAR_INK : RES_COLORS.gold);
 }
 
-// The SELL strip: the full width of the slab's bottom rim, a recessed well
-// with corner brackets, and the word on it. It is the one control here that
+// The SELL strip: along the slab's bottom rim, a recessed well with corner
+// brackets, and the word on it. It is the one control here that
 // is not a click - you arrive at it holding something - so it says SELL
 // rather than trusting a glyph to carry a verb, and it is wide because a drop
 // target you are aiming at with an item on the cursor should be hard to miss.
+// (It gave up its last SHOP_ALL_W px to the SELL ALL button at the strip's
+// end and is still two thirds of the slab; a release anywhere along the whole
+// line, that button included, is a sale - dragDrop, js/ui.js.)
 // Idle it is SELL -> a coin; with something in hand it becomes that item ->
 // a coin and the gold it fetches, and the whole well lights and pulses.
 function drawSellWell(r, h, now) {
@@ -1086,6 +1195,74 @@ function drawSellWell(r, h, now) {
   ctx.drawImage(SPRITES.itemGold, cx, r.y + ((r.h - 8) >> 1));
   ctx.globalAlpha = 1;
   if (d) drawPixelTextShadow(ctx, txt, cx + 12, mid, RES_COLORS.gold, SHOP_BG);
+}
+
+// SELL ALL: the whole pack over the counter in one press, at the strip's
+// right end. It is a CLICK where the well beside it is a DROP, so it wears a
+// button's grammar and not a target's - a raised plate that lifts under the
+// pointer, the market cards' own - rather than a second recessed well with
+// brackets, which would say "aim at me with something in your hand".
+//
+// It says its press in three marks and one word. The PACK - the drawer's own
+// cells, drawn small - is what it empties; the arrow out of it into a COIN is
+// which way that goes; and the gold beside the coin is what the press is
+// worth right now, which is the one number the decision is actually made on.
+// The word is ALL, and it earns its three characters the way SELL beside it
+// does: a press that empties everything you are carrying must not be guessed
+// at from a picture. What it CANNOT take is said by leaving it out - the
+// weapon on the shelf and the pouch on the strip are both drawn, both lit,
+// and neither is in this glyph.
+//
+// A pack with nothing in it goes flat and dark and does not lift. That is not
+// the counter's out-of-reach red (SHOP_DEAR_*): that red means "you cannot
+// afford this", and an empty pack is not a refusal, it is an empty pack.
+function drawSellAll(r, h, now) {
+  const d = state.drag;
+  const val = packValue(player);
+  const on = val > 0;
+  const hot = !!h && h.kind === 'sellAll';
+  const y = r.y - (hot && on && !d ? 1 : 0); // a drop target does not lift; a button does
+  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
+  ctx.fillStyle = !on ? '#232c52' : d ? SHOP_LAMP : hot ? '#f2cc6a' : SHOP_WOOD_L;
+  ctx.fillRect(r.x, y, r.w, r.h);
+  ctx.fillStyle = on ? SHOP_WOOD : '#1a2246';   // the plate's own face, lit from the top edge
+  ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
+  ctx.fillStyle = on ? (hot ? '#a5744e' : SHOP_WOOD_L) : '#232c52';
+  ctx.fillRect(r.x + 1, y + 1, r.w - 2, 1);
+  ctx.fillStyle = '#0d1229';
+  ctx.fillRect(r.x + 2, y + 2, r.w - 4, r.h - 4);
+
+  const txt = on ? String(val) : '';
+  const lab = 'ALL', labW = pixelTextWidth(lab), numW = txt ? pixelTextWidth(txt) : 0;
+  const wide = labW + 5 + PACK_GLYPH_W + 4 + 3 + 4 + 8 + (txt ? 2 + numW : 0);
+  let cx = r.x + ((r.w - wide) >> 1);
+  const mid = y + ((r.h - 5) >> 1);
+  ctx.globalAlpha = on ? 1 : 0.45;
+  drawPixelTextShadow(ctx, lab, cx, mid, on ? '#ffd95c' : SHOP_LABEL, SHOP_BG);
+  cx += labW + 5;
+  drawPackGlyph(cx, y + ((r.h - PACK_GLYPH_H) >> 1), on ? SHOP_IRON_L : SHOP_IRON);
+  cx += PACK_GLYPH_W + 4;
+  drawTradeArrow(cx, y + (r.h >> 1), 1, on ? '#f2cc6a' : '#4a3421');
+  cx += 3 + 4;
+  ctx.drawImage(SPRITES.itemGold, cx, y + ((r.h - 8) >> 1));
+  ctx.globalAlpha = 1;
+  if (txt) drawPixelTextShadow(ctx, txt, cx + 10, mid, RES_COLORS.gold, SHOP_BG);
+}
+
+// THE PACK, as a glyph: the drawer's own cells, three by two, at 2 px each.
+// It is CELLS and not a bag pictogram because cells are what the player is
+// looking at while they press it - the drawer is open under the shelf the
+// whole time the counter is - and it is six lit pips on the plate's own dark
+// ground rather than a drawn frame with wells in it, because at eight pixels
+// across a rim and a recess are the same two greys and the grid stops reading
+// as a grid at all. Cool iron, against the warm ALL and the coin either side:
+// this half of the button is the container, not the money.
+const PACK_GLYPH_W = 10, PACK_GLYPH_H = 7;
+function drawPackGlyph(x, y, col) {
+  ctx.fillStyle = col;
+  for (let c = 0; c < 3; c++) {
+    for (let w = 0; w < 2; w++) ctx.fillRect(x + 1 + c * 3, y + 1 + w * 3, 2, 2);
+  }
 }
 
 // A slow band of light crossing the sell well, left to right, for ever. The
@@ -1417,6 +1594,25 @@ function tipShop(h) {
       d.notes.push(['MADE GOODS FETCH HALF THEIR PRICE', TIP_DIM]);
       d.notes.push(['FISH AND BERRIES FETCH THE MARKET', TIP_DIM]);
     }
+    return d;
+  }
+  // SELL ALL prices the WHOLE pack, which is the one thing on this panel no
+  // shape can say: a button can show that it empties the drawer, but not what
+  // twelve cells add up to, nor which two stores it will not touch.
+  if (h.kind === 'sellAll') {
+    const n = packCount(player), v = packValue(player);
+    const d = { title: 'SELL ALL', tcol: n ? RES_COLORS.gold : TIP_DIM, kind: 'THE COUNTER', rows: [], notes: [],
+      icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#35426e' };
+    if (state.drag) { // arriving with something in hand: the whole strip is one target
+      d.rows.push(['THIS FETCHES', sellValue(state.drag.cell) + ' GOLD', RES_COLORS.gold]);
+      d.notes.push(['LET GO HERE TO SELL IT', TIP_DIM]);
+      return d;
+    }
+    if (!n) { d.notes.push(['THE PACK IS EMPTY', TIP_DIM]); return d; }
+    d.rows.push(['THE PACK', n + (n === 1 ? ' CELL' : ' CELLS'), '#f4f7ff']);
+    d.rows.push(['FETCHES', v + ' GOLD', RES_COLORS.gold]);
+    d.notes.push(['CLICK TO SELL THE WHOLE PACK', TIP_DIM]);
+    d.notes.push(['THE WEAPON AND THE POUCH STAY', TIP_DIM]);
     return d;
   }
   const id = h.id;

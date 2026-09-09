@@ -838,6 +838,12 @@ answer everything reads; `bagEase` chases it on wall time over `BAG_SLIDE_T` (0.
 the tab's bottom edge so it emerges rather than fades. It answers the pointer only once fully
 open; the arrow's band always answers. `endMatch` shuts it.
 
+While that counter is up the **corner is drawn out of the counter's wash** — the whole frame goes
+dark under `shopScrim` and the shelf and this drawer are two of the four things left lit above it
+([the counter](gameplay.md#opening-it)) — so `renderUI` draws `drawCornerScaled` *after* the wash
+in that case and before it otherwise. The corner's own reach is `cornerClaim()` across and `cornerBottom()` down, which is
+what the counter's slab is pinned clear of.
+
 The frame (`bagFrameRect()`, flush with the view's left edge a px under the arrow's band, its
 first cell on the tool cell's own left edge, `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
 `BAG_COLS` 6): the tools and bits a build is made of, in **small cells** — `BAG_CELL` 18 with the

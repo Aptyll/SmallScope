@@ -1533,9 +1533,9 @@ holds, because that pickup is an exchange.
 
 **Each eagle's merchant is a shop, and both shops serve everybody.** Walk up to either team's
 [merchant](#the-merchant), press **E**, and its counter opens — the **SHOP**: twelve
-offers rolled off the tool, bit and card pools, a **sell well** anything in the pack can be
-dragged onto, a live **fish and berry market**, and a [restock road](#the-restock-road) counting
-down to the next turnover. The whole feature is
+offers rolled off the tool, bit and card pools, a **sell strip** anything in the pack can be
+dragged onto with a **SELL ALL** button at its end, a live **fish and berry market**, and a
+[restock road](#the-restock-road) counting down to the next turnover. The whole feature is
 [js/shop.js](../../js/shop.js) — the `market`, `the counter's stock`, `buying and selling` and
 `the shop panel` banners.
 
@@ -1564,6 +1564,16 @@ The **backpack** is already up beside it, because a sale is a drag out of the gr
 sheet closes, since the two slabs would sit on each other.
 While it is up, E does not swing at the world (`sampleHumanInput`), the way a wheel already
 swallows it.
+
+**The frame goes under a wash while the counter is open** (`shopScrim`, `SHOP_WASH`), and exactly
+four things stay lit above it — the ones a trade is made of: **the counter**, **the corner** (the
+weapon shelf and the pack drawer a sale is dragged out of), **the item on the cursor**, and **the
+[tooltip](rendering.md#the-hover-tooltip)** pricing whatever the pointer is on. The minimap, the
+hud strip and the world all go under. The mechanism is the draw ORDER in `renderUI` (js/ui.js) and
+not the panel: a panel cannot dim what is drawn after it, so the minimap and the strip are drawn,
+then the wash, then the corner and the slab — which is why the corner is drawn in two places
+there. Everything painted after that block — the market's plates, the tooltip, a phone's plates —
+is above the wash by arriving late.
 
 **The post has its own song.** `openShop` calls `SFX.music.hold('village', …)` — FOREST VILLAGE
 LOOP, which loops for exactly as long as the counter is open — and `closeShop` calls
@@ -1608,13 +1618,27 @@ roll by consuming draws out of the shared stream.
 its own reach the way `buyGear` re-validates its cost, and it checks **bag room before it takes
 the money**, so nothing is ever paid for that cannot be carried. Bots do not shop yet.
 
-**Selling** is a **drag**: pick a cell out of the grid and let go over the sell well
+**Selling** is a **drag**: pick a cell out of the grid and let go anywhere on the sell strip
 (`shopDropSell`, reached from `dragDrop`). The whole cell goes — an instanced tool cannot be
 split — and **a loaded tool sells with its bits**, at half of each, so nothing is ever quietly
 emptied for gold (`cellValue` → `sellValue`). Made goods fetch **half** their asking price; that
 margin is the whole reason looting still beats shopping. Unlike the buys, a sale resolves on the
 spot rather than through `input.cmd`: what is on the cursor is out of the bag already, and a
 command the sim might drop that frame (pause, the chart) would take the item with it.
+
+**Or all of it at once.** The **SELL ALL** button at the strip's right end (`shopSellAll`) puts
+the whole pack over the counter in one press — for `packValue(p)`, what the drawer is worth right
+now, printed on the button itself. **What it takes is the BAG, and the bag's own boundaries are
+the whole rule**: the two meals and the unopened cards are in the pouch
+([`p.food`](#inventory-and-the-backpack)) and take no cell, and the tool in hand with the bits
+fitted into it is on the shelf (`p.tools`),
+so **what the press cannot reach is exactly what is being carried on purpose** — no exclusion list
+had to be written, and one cannot rot. It resolves as **one** sale, not twelve: one payment, one
+floater, one coin, because it is one decision. Unlike the drag it goes through `input.cmd` like
+the buys — nothing is on the cursor for a dropped command to take with it — and an empty pack is
+refused with the ordinary deny. A **release** on it, rather than a click, sells the carried cell
+like the rest of the strip: with an item in hand the strip is one full-width target and only
+becomes two controls once your hand is empty.
 
 **A sale pays gold but no XP** — `tradeGold`, the one documented exception to the `gainGold`
 rule in [CLAUDE.md](../../CLAUDE.md). A trade is an exchange, not a source: the counter buys food
@@ -1677,19 +1701,40 @@ the map for, and news you only hear once you are already there is not news.
 
 ### The panel
 
-It is **wide and short and pinned near the top edge** rather than centred, and that is the one
+It is **wide and short and pinned near the top edge**, and that is the one
 piece of the layout that is not taste: the [tooltip](rendering.md#the-hover-tooltip) is bottom-left and grows
 upward off the bottom rim, so a tall centred slab would put its own bottom-left corner exactly
 where a tall tooltip lands — hovering the last row of offers would hide the last row of offers.
 Its **height** is spent against that same rule. The deepest tooltip an offer here can raise tops
-out around 192 px on the 270-row frame the slab is authored in (it centres in the 640×360 view), and the order along the bottom of the
+out around 192 px on the 270-row frame the slab is authored in, and the order along the bottom of the
 336×216 slab is chosen against that line: the **sell strip ends at 190**, clear of it, and only
 the restock road below runs under it — the road, whose countdown sits at its **right** end where
 no tooltip reaches. So all a tooltip can ever cover is the wagon, briefly, while you are reading a
 tool — never an offer, a card, the sell target or the clock.
-The pack, the hud strip and the feed all stay readable underneath while you trade. (On the
-shortest view the canvas allows, 350×240, the slab covers the pack, as the narrower one before it
-did; every ordinary view clears it.)
+
+**It is pinned clear of the corner**, and that rule is one sentence: **a counter may not stand on
+the pack it is sold out of** — a sale is a drag from that drawer into this slab. The weapon shelf
+and the pack drawer are in the top-left (`cornerClaim` / `cornerBottom`, js/ui.js), and the slab
+takes the room **beside** the corner where there is one and the room **under** it where there is
+not:
+
+| | when | where it goes |
+| --- | --- | --- |
+| **beside** | `cornerClaim() + 6` still leaves the slab inside the frame | `x = max(centred, cornerClaim() + 6)`, `y = 4`. It keeps the centre whenever the view is wide enough for both, so on the ordinary 640×360 frame this is a nudge of 28 px |
+| **under** | it does not, but the slab clears both the frame's bottom and the deepest tooltip below the drawer | centred across, `y = cornerBottom() + 6`. A **tall, narrow** frame: a 1440×2560 monitor lands at 360×640 and 336 of those 360 columns are this slab, so nothing fits beside it |
+| **neither** | both fail | `x` at the view's right rim, `y = 4` — the minimap's rim goes under it |
+
+The width claim is the corner's **fixed** reach — the widest row a tool could ever grow to — and
+not the live `shelfRowRight()`, because the row grows with the tool in hand and a slab that slid
+sideways when a swap changed the row mid-trade would walk out from under the pointer. The **under**
+branch is gated on `SHOP_TIP_CLEAR` (196) as well as on the frame, because dropping the slab down
+the frame is the one move that could walk it into the [tooltip](rendering.md#the-hover-tooltip)
+growing out of the bottom-left — which would trade one overlap for the exact one the panel's
+height budget exists to prevent. And where nothing fits at all (the shortest view the canvas
+allows, 320×240, where the slab is wider than the frame), it covers the corner as it always did:
+the clamp says so rather than pretending. The last-resort order is deliberate — the pack is what
+the trade is *made of*, the minimap is a readout, and the market's own plates draw over the slab
+anyway.
 
 Top to bottom: the **awning** — a snow-capped, icicled valance striped in the counter's own team
 colours, the one thing on the panel that says whose eagle this is — with the shop's sign hung off
@@ -1700,6 +1745,23 @@ the slab, with air under it now rather than sitting on the rail; and the
 [restock road](#the-restock-road) along that rail. The frame, the section rules, the market cards and
 that edge are all cut from one timber palette under iron corner brackets, which is what makes the
 slab read as a shopfront rather than as one more blue HUD panel.
+
+The **strip is two controls on one line**: the drop well you aim at with an item on the cursor,
+and the **SELL ALL** button (`SHOP_ALL_W`, 82 px) at its right end. ALL is at the right for the
+reason the restock road's clock is — the tooltip grows out of the bottom-**left** corner, and the
+one control here that empties your pack must stay readable while you are reading what it fetches.
+It is a **click** where the well beside it is a **drop**, so it wears a button's grammar and not a
+target's: a raised plate that lifts under the pointer rather than a second recessed well with
+brackets, which would say "aim at me with something in your hand". It says its press in three
+marks and one word — the **pack**, drawn as six lit pips in the drawer's own 3×2 (`drawPackGlyph`,
+cells rather than a bag pictogram, because cells are what you are looking at while you press it);
+the **arrow** out of it into a **coin**; and the **gold** beside the coin, the number the decision
+is actually made on. The word is ALL, and it earns its three characters the way SELL beside it
+does: a press that empties everything you are carrying must not be guessed at from a picture.
+**What it cannot take is said by leaving it out** — the weapon on the shelf and the pouch on the
+strip are both drawn, both lit, and neither is in that glyph. With an empty pack it goes flat and
+dark and does not lift; that is deliberately *not* the counter's out-of-reach red
+(`SHOP_DEAR_*`), which means "you cannot afford this" — an empty pack is not a refusal.
 
 Every offer well wears **its item's own tier plate** (`tierPlate`, gilded ones still shine) with
 the price on a band along the bottom. Two rules make the twelve read as one grid rather than as
