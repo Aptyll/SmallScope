@@ -662,7 +662,7 @@ function updateMinimap() {
     let r, g, b;
     const o = structOf(objects[i]); // resolves a multi-tile building's 'part' fillers to the anchor
     if (o) {
-      const c = objMapColor(o, 'mm') || MM_UNKNOWN;
+      const c = objMapColor(o) || MM_UNKNOWN;
       r = c[0]; g = c[1]; b = c[2];
     } else if (ground[i] === 2) { r = 58; g = 92; b = 128; } // open water hole
     else if (ground[i] === 1) { r = 145; g = 188; b = 212; } // ice
@@ -776,18 +776,23 @@ function renderMinimap(now) {
   mmViewCtx.globalCompositeOperation = 'destination-in';
   mmViewCtx.drawImage(mmMask(MM_R), 0, 0);
   ctx.drawImage(mmView, MM_CX - MM_R, MM_CY - MM_R);
-  // the other players, in team colour, wherever they fall inside the view. A
+  // every body inside the view in the grammar both maps share (drawMap*,
+  // draw-world.js), in its side's ink: the robots first - every worker,
+  // soldier and merchant standing, none of them hides - then the players. A
   // rival buried past PRONE_MAP drops off it entirely - a dot that survived
   // the cover would make the whole thing pointless. Your own side never does.
+  for (const r of robots) {
+    if (r.dead) continue;
+    const dx = (r.x / TILE - ptx) * s, dy = (r.y / TILE - pty) * s;
+    if (Math.hypot(dx, dy) > MM_R - 1) continue;
+    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(r.team)].mark, '#0f1632', 1, true);
+  }
   for (const p of players) {
     if (p === vp || !p.active || p.dead || inAir(p)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // a falcon-marked rival stays on it
     const dx = (p.x / TILE - ptx) * s, dy = (p.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
-    ctx.fillStyle = '#0f1632';
-    ctx.fillRect(Math.round(MM_CX + dx) - 2, Math.round(MM_CY + dy) - 2, 4, 4);
-    ctx.fillStyle = TEAMS[skin(p.team)].mark;
-    ctx.fillRect(Math.round(MM_CX + dx) - 1, Math.round(MM_CY + dy) - 1, 2, 2);
+    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, '#0f1632', 1, false);
   }
   // flags on your side, as the same pennant and ring the chart draws: where
   // the side was sent is exactly the kind of thing you check without opening
@@ -807,11 +812,7 @@ function renderMinimap(now) {
     if (e.state !== 'down') continue;
     const dx = (e.x / TILE - ptx) * s, dy = (e.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    const gx = Math.round(MM_CX + dx), gy = Math.round(MM_CY + dy);
-    ctx.fillStyle = '#0f1632';
-    ctx.fillRect(gx - 3, gy - 1, 7, 3); ctx.fillRect(gx - 1, gy - 3, 3, 7);
-    ctx.fillStyle = TEAMS[skin(e.team)].mark;
-    ctx.fillRect(gx - 2, gy, 5, 1); ctx.fillRect(gx, gy - 2, 1, 5);
+    drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, '#0f1632');
   }
   // the camps, glyph only - a name would not fit inside the disc (the
   // world map and the arrival toast are where they are read by name)
@@ -820,11 +821,9 @@ function renderMinimap(now) {
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
     drawCampIcon(ctx, L, MM_CX + dx, MM_CY + dy, L.spec.mark, '#0f1632');
   }
-  // the centre dot: white for you, the team colour for a player you are watching
-  ctx.fillStyle = '#0f1632';
-  ctx.fillRect(MM_CX - 2, MM_CY - 2, 4, 4);
-  ctx.fillStyle = vp === player ? '#ffffff' : TEAMS[skin(vp.team)].mark;
-  ctx.fillRect(MM_CX - 1, MM_CY - 1, 2, 2);
+  // the centre: the watched body - you, or a player you are watching - as
+  // the white heart in its side's ink, the mark the chart gives it too
+  drawMapYou(ctx, MM_CX, MM_CY, TEAMS[skin(vp.team)].mark, '#0f1632', 1);
 
   // day/night cycle ring: a 3 px band of pixels, the elapsed part painted
   // clockwise from 12 o'clock in the day colour, then the night colour

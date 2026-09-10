@@ -349,7 +349,7 @@ Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `D
 ## UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-compass, labels) into offscreen canvases at boot (the two frost slabs share `bakeFrostSlab()`); per-frame code blits them and draws only the live parts on top.
+compass, labels — the chart's legend is live, since its marks wear the side's ink) into offscreen canvases at boot (the two frost slabs share `bakeFrostSlab()`); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`, `ROW_*`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
 after the panel is rebuilt. They are declared **up in the `canvas` banner next to `relayout()`**
@@ -365,14 +365,35 @@ size of the slab, clears the middle out of it, and caches it under the team inde
 pass blits one image and then owns every well on top of it. Its size is constant (`SHOP_W` ×
 `SHOP_H`), which is why it needs no rebuild on a resize; only the panel's *position* moves.
 
-The map panel's bake keeps a fixed 192×192 map slot; the world is bigger than that, so
-`renderWorldMap()` blits `mapCv` scaled by `MAP_S = MAP_W / WORLD` and every tile-space
-position drawn on top (grid lines, camera rect, player marker) must be multiplied by `MAP_S`.
-The sim keeps stepping under it and the local player keeps walking
-([the M map does not pause](gameplay.md#the-m-map-does-not-pause)), so every one of those live
-parts — the camera rect, the player markers, the player's own diamond — moves while the chart is
-open, and `buildWorldMapImg()` re-inks the terrain each frame so a wall built or a tree felled
-behind the parchment shows up on it.
+The map panel's bake keeps a fixed 192×192 map slot; the world is bigger than that, so every
+tile-space position drawn on the chart (the camera rect, every mark) is multiplied by
+`MAP_S = MAP_W / WORLD`, and `mapTileAt` is the inverse. **The chart is a drawn map, not a
+photograph of the tiles** (3.32): `buildWorldMapImg()` files every tile under a `CH_*` class
+(`objChart(o)` for what stands on it, else the ground array), flattens the class map — a lone
+tile of forest or ice is ground again, a snow pinhole with three sides of one mass is that mass
+(`CHART_NEED`) — resamples it into the slot by priority (`chartSpan`: each chart pixel takes the
+highest class among the tiles it covers, so a one-tile wall never drops out of its run where 232
+tiles fold into 192 px), and paints one flat ink per class (`CHART_INK`) with a 1 px rim where
+the forest or the ice meets lower ground (`CHART_RIM`). No per-tile hash and no grid: a single
+bush, rock or stump has no class and shows the ground, because at that scale a speck is noise;
+the buried chests keep theirs, a gold speck being a thing worth walking to. A side's buildings
+and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
+reads as a shape in its colour with the bird bright at its heart. The sim keeps stepping under
+it and the local player keeps walking
+([the M map does not pause](gameplay.md#the-m-map-does-not-pause)), so every live part — the
+camera rect, every body's mark, the watched body's heart — moves while the chart is open; the
+image itself is re-inked at most every `MM_REBUILD` ticks, like the minimap's, so a wall built
+or a tree felled behind the parchment shows up on it within half a second.
+
+**One grammar for both maps** (`drawMapDot`/`drawMapUnit`/`drawMapYou`/`drawMapBird`, the
+`what a body looks like on a map` group in draw-world.js): a square in its side's ink is a
+body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 on the disc), and
+every worker, soldier and merchant standing is drawn, none of them hides; the watched body
+(`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
+of its side's ink, never a colour of its own that would read as a third team; the bird diamond
+is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. The chart's
+legend (drawn live, in your side's ink) is those four marks and nothing else — the terrain needs
+no key.
 The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
 `MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is
 px per tile — an eased `mmCur` chasing `MM_ZOOMS[settings.mmZoom]` (0.25 … 4 over twelve rungs,
@@ -380,7 +401,7 @@ index 5 = the 1:1 baseline) on the same `ZOOM_EASE` the camera uses, so both zoo
 hand feel like one control. A save written before `settings.v` indexes the old six-rung ladder
 and is carried across by `MM_MIGRATE` on load. Stepped by the
 scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-empts the camera
-zoom in the wheel handler and is saved with the settings. Every marker drawn over it (players,
+zoom in the wheel handler and is saved with the settings. Every marker drawn over it (robots, players,
 camp glyphs, your side's [flags](gameplay.md#team-flags) with their rings) multiplies its tile
 offset by `s`. The disc sits on an opaque `#0f1632`
 backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no

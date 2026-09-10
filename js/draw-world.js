@@ -1770,6 +1770,39 @@ function drawFlagMark(g, x, y, f, col, rim, s) {
   drawFlagPennant(g, x, y, col, rim);
 }
 
+// ---- what a body looks like on a map ------------------------------------
+// ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap disc (renderMinimap, ui.js)
+// and the parchment chart (renderWorldMap, panels.js) draw every moving thing
+// through these three, so a shape learnt on one is read on the other:
+//   a SQUARE in the side's ink is a body, and its size says which - a player
+//   k + 1 px, a robot (a worker, a soldier, the merchant) k px, so a base's
+//   crew never outweighs the ten that matter (k is 2 on the chart, 1 on the
+//   disc);
+//   the WATCHED body - you, or whoever the camera rides - is a player's
+//   square gone WHITE inside a ring of its side's ink: "me" and "my side" in
+//   one mark, never a colour of its own that would read as a third team;
+//   the BIRD DIAMOND is an objective, roosted or flying.
+// Each sits on a 1 px rim in the map's own dark so it reads on snow, forest,
+// ice and parchment alike. (x, y) is the body's centre in that map's px.
+function drawMapDot(g, x, y, size, col, rim) {
+  const x0 = Math.round(x) - (size >> 1), y0 = Math.round(y) - (size >> 1);
+  g.fillStyle = rim; g.fillRect(x0 - 1, y0 - 1, size + 2, size + 2);
+  g.fillStyle = col; g.fillRect(x0, y0, size, size);
+}
+function drawMapUnit(g, x, y, col, rim, k, bot) { drawMapDot(g, x, y, bot ? k : k + 1, col, rim); }
+function drawMapYou(g, x, y, col, rim, k) {
+  drawMapDot(g, x, y, k + 3, col, rim);
+  const x0 = Math.round(x) - ((k + 1) >> 1), y0 = Math.round(y) - ((k + 1) >> 1);
+  g.fillStyle = '#ffffff'; g.fillRect(x0, y0, k + 1, k + 1);
+}
+function drawMapBird(g, x, y, col, rim) {
+  const gx = Math.round(x), gy = Math.round(y);
+  g.fillStyle = rim;
+  g.fillRect(gx - 3, gy - 1, 7, 3); g.fillRect(gx - 1, gy - 3, 3, 7);
+  g.fillStyle = col;
+  g.fillRect(gx - 2, gy, 5, 1); g.fillRect(gx, gy - 2, 1, 5);
+}
+
 // every player draws through here - the local one, the AI fills, network
 // peers later. Team palette on the sprite, name tag on everybody else.
 // gear on the body: bought depth is visible depth. Each piece at level 2+

@@ -20,30 +20,52 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // mm/map fields, and every site below asks that table first. Adding a scenery
 // type is one entry here, plus its draw branch in render() and what a swing
 // does to it in hitObject(): checklists.md#common-changes.
+//
+// THE CHART'S CLASSES (3.32). The minimap paints a tile the `mm` colour of
+// what stands on it, but the parchment world map (renderWorldMap, panels.js)
+// is not a picture of the tiles: every tile names one of these CLASSES and
+// the chart flattens them into MASSES - a lone tile of anything is dropped,
+// a pinhole is filled, each mass is inked with a rim - so it reads as a
+// drawn chart, not a photograph of the ground. `map` on an OBJECTS/STRUCTS
+// entry is a class, or a function of the object returning one; an entry
+// with none lets the ground show through (a bush, a rock, a stump, a camp's
+// props - the glyph marks those): at the chart's scale a thing that stands
+// alone on its tile is a speck, and a speck is noise. The ORDER is the paint priority: where one chart
+// pixel covers two tiles (WORLD tiles into MAP_W px) the higher class wins,
+// so a one-tile wall never drops out of its run. A side's buildings and
+// its eagle are two depths of the same ink, so a base reads as a shape in
+// its colour with the bird bright at its heart - and both go through skin()
+// like every other team paint.
+const CH_SNOW = 0, CH_FOREST = 1, CH_ROAD = 2, CH_ICE = 3, CH_HOLE = 4, CH_CHEST = 5,
+      CH_RED = 6, CH_BLUE = 7, CH_EAGLE_RED = 8, CH_EAGLE_BLUE = 9;
+const chTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_BLUE : CH_RED;   // a side's building
+const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE : CH_EAGLE_RED; // its bird, its gate
 const OBJECTS = {
   // lift 33: the pine's canopy reaches 21 px above its own tile (drawn at
   // py - 21), and the prompt clears it by the same 12 px everything else gets
   tree:     { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 33, auto: true,
-              mm: [52, 100, 82],   map: treeMapPx },
+              mm: [52, 100, 82],   map: CH_FOREST },
   deadTree: { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 20, auto: true,
-              mm: [138, 128, 116], map: [150, 132, 108] },
+              mm: [138, 128, 116], map: CH_FOREST },
   rock:     { solid: true,  tool: 'pick', needs: 'pick', verb: 'MINE', lift: 10, auto: true,
-              mm: [122, 131, 153], map: [104, 108, 118] },
+              mm: [122, 131, 153] },
   // a picked bush is still a bush: `ready` is what decides whether E offers it
+  // (a bush is on the minimap and off the chart: one tile of anything is
+  // noise at the chart's scale)
   bush:     { solid: false, tool: 'axe',  needs: null,   verb: 'PICK', lift: 10, auto: true,
               ready: (o) => o.berries > 0,
-              mm: [88, 148, 108],  map: (o) => o.berries > 0 ? MAP_BUSH_RIPE : MAP_BUSH_BARE },
+              mm: [88, 148, 108] },
   // a buried cache swapped in for an inner-edge border tree (placeChests):
   // one free E press springs it - hitObject's chest branch pays the gold and
   // rolls the card. Any tool opens it, so `needs` stays null.
   chest:    { solid: true,  tool: 'axe',  needs: null,   verb: 'OPEN', lift: 12, auto: true,
-              mm: [242, 204, 100], map: [206, 160, 70] },
-  den:      { solid: true,  mm: [92, 86, 100],   map: [86, 80, 92] },
+              mm: [242, 204, 100], map: CH_CHEST },
+  den:      { solid: true,  mm: [92, 86, 100] },
   // the practice arena's target (the `practice arena` banner below): any tool
   // hits it, it never falls, and it mends itself between combos. E swings,
   // every bit and the roll's tackle all land through hitDummy (js/actions.js).
   dummy:    { solid: true,  tool: 'axe',  needs: null,   verb: 'HIT', lift: 28,
-              mm: [216, 178, 122], map: [188, 148, 96] },
+              mm: [216, 178, 122] },
   // The training field's dressing (practice arena only): inert scenery like
   // the den - no `tool`, so E never offers them - drawn in the y-sorted pass.
   // The banner is the parkour gate's flag; the rack spans TWO tiles - the
@@ -54,42 +76,37 @@ const OBJECTS = {
   // side's ink the way a roosting eagle does
   banner:   { solid: true,
               mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
-              map: (o) => o.team === undefined ? MAP_BANNER : skin(o.team) ? MAP_EAGLE_BLUE : MAP_EAGLE_RED },
-  rack:     { solid: true,  mm: [168, 132, 92],  map: [150, 116, 80] },
+              map: (o) => o.team === undefined ? null : chEagle(o) },
+  rack:     { solid: true,  mm: [168, 132, 92] },
   // the road's furniture (the `the road` group below): the cairn at the
   // map's centre, solid cover where the two waves meet. Inert to E (no
   // `tool`); its pixels are CAIRN_SPR in render()'s object pass (draw-world.js).
-  cairn:    { solid: true,  mm: [150, 156, 170], map: [116, 120, 132] },
+  cairn:    { solid: true,  mm: [150, 156, 170] },
   // the felled trunk across each forest road's far end (placeRoad): one
   // piece per tile along the cross-diagonal, `seg` 0/1/2 the up-left end,
   // the trunk, the down-right end. Solid and inert to E; its pixels are baked
   // flat into the ground (paintLog under paintGroundTile, draw-world.js),
   // never drawn in the y-sorted pass - a trunk on the ground is ground.
-  log:      { solid: true,  mm: [124, 94, 62],   map: [110, 82, 54] },
+  log:      { solid: true,  mm: [124, 94, 62] },
   // the parkour roll station (practice arena only): the die that rerolls the
   // track. Inert to E's work verbs like the rack - holding E beside it opens
   // the roll wheel (pkDieNear, the practice arena banner below).
-  pkdie:    { solid: true,  mm: [242, 204, 100], map: [206, 160, 70] },
+  pkdie:    { solid: true,  mm: [242, 204, 100] },
   // the archery range's bell (practice arena only): E beside it rings the
   // timed round on and off. Inert to E's work verbs like the die - the press
   // resolves through agBellNear (the practice arena banner below).
-  agbell:   { solid: true,  mm: [216, 158, 74],  map: [186, 132, 60] },
-  stump:    { solid: false, mm: [188, 200, 218], map: [172, 138, 92] },
+  agbell:   { solid: true,  mm: [216, 158, 74] },
+  stump:    { solid: false, mm: [188, 200, 218] },
   // a roosting team eagle's hitbox tiles (placed by eagleCrash, js/boot.js):
   // solid to walkers and a work target for RIVAL E swings only - workTarget
   // reads the `team` an object carries. Drawn by drawEagle, never the object
   // pass; the swing itself lands in hitObject's eagle branch (hurtEagle).
   eagle:    { solid: true,  tool: 'axe',  needs: null,   verb: 'STRIKE', lift: 16, auto: true,
-              mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
-              map: (o) => skin(o.team) ? MAP_EAGLE_BLUE : MAP_EAGLE_RED },
+              mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED, map: chEagle },
   // a multi-tile building's filler tiles: solid, and structOf() has resolved
   // them to their anchor long before either map sees one
   part:     { solid: true },
 };
-// The two entries whose map colour is not a constant. Both return one of a
-// handful of shared arrays rather than a fresh one: buildWorldMapImg walks
-// every tile in the world on every frame the map is open.
-const MAP_BUSH_RIPE = [170, 72, 80], MAP_BUSH_BARE = [118, 128, 98];
 // A picked bush regrows on its own clock (`regrow`, counted down with the
 // object timers in js/sim.js; the pick sets it, hitObject in js/actions.js),
 // and the plant IS the clock: bare for the first stretch, pale BUDS where
@@ -100,30 +117,30 @@ const MAP_BUSH_RIPE = [170, 72, 80], MAP_BUSH_BARE = [118, 128, 98];
 const BUSH_REGROW = 70;   // s from a pick to the next two berries
 const BUSH_BUD_T = 35;    // s left when the buds show
 const BUSH_RIPEN_T = 12;  // s left when the berries come in dull
+// the minimap's team inks: a roosting bird (and the road-mouth pennant) in
+// the side's bright mark, its buildings a step deeper, so a base is a shape
+// in its colour with the bird lit at the middle
 const MM_EAGLE_RED = [224, 85, 72], MM_EAGLE_BLUE = [106, 168, 232];
-const MM_BANNER = [214, 88, 76], MAP_BANNER = [186, 74, 62]; // the practice gate's own red
-const MAP_EAGLE_RED = [196, 74, 64], MAP_EAGLE_BLUE = [92, 140, 200];
-const MAP_TREE_RIM = [116, 144, 104], MAP_TREE_DEEP = [44, 66, 50],
-      MAP_TREE_MID = [60, 88, 64], MAP_TREE_LIT = [74, 102, 74];
-// a canopy on the parchment: a lit rim wherever the tile above is not another
-// tree, and one of three hash-picked shades of shade under one that is
-function treeMapPx(o, i, h) {
-  const up = i >= WORLD ? objects[i - WORLD] : o;
-  if (!up || up.type !== 'tree') return MAP_TREE_RIM;
-  if (h > 0.86) return MAP_TREE_DEEP;
-  if (h > 0.45) return MAP_TREE_MID;
-  return MAP_TREE_LIT;
-}
+const MM_TEAM_RED = [172, 68, 60], MM_TEAM_BLUE = [78, 128, 188];
+const mmTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? MM_TEAM_BLUE : MM_TEAM_RED; // STRUCTS' mm (structures.js)
+const MM_BANNER = [214, 88, 76]; // the practice gate's own red
 
-// The colour whatever stands on a tile paints on a map: `mm` for the minimap
-// disc, `map` for the parchment world map. One lookup across both tables, so
+// What stands on a tile, on each map: objMapColor is the `mm` colour the
+// minimap disc paints it (an [r, g, b]), objChart the CH_* class the
+// parchment chart files it under. One lookup each across both tables, so
 // neither map carries a list of type names and a new type is coloured by its
-// own entry alone. null = nothing here has that colour, and the caller paints
-// the ground underneath instead.
-function objMapColor(o, field, i, h) {
+// own entry alone. null = nothing here to paint, and the caller shows the
+// ground underneath instead.
+function objMapColor(o) {
   const d = OBJECTS[o.type] || STRUCTS[o.type];
-  const c = d && d[field];
-  return typeof c === 'function' ? c(o, i, h) : (c || null);
+  const c = d && d.mm;
+  return typeof c === 'function' ? c(o) : (c || null);
+}
+function objChart(o) {
+  const d = OBJECTS[o.type] || STRUCTS[o.type];
+  const c = d && d.map;
+  const v = typeof c === 'function' ? c(o) : c;
+  return v == null ? null : v;
 }
 // what the minimap paints an object whose entry has no `mm` at all
 const MM_UNKNOWN = [188, 200, 218];
