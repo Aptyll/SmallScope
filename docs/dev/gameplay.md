@@ -2705,8 +2705,8 @@ runs (`updateTitle`: animals and fish) — see [Main menu](rendering.md#main-men
 
 ## The M map does not pause
 
-**M** opens the world chart with the sim still stepping, the same deal the
-[build list](#base-building) takes: night still falls, arrows still fly, bots still hunt you.
+**M** opens the world chart with the sim still stepping (M, Escape or its CLOSE plank put it
+away), the same deal the [build list](#base-building) takes: night still falls, arrows still fly, bots still hunt you.
 `sampleHumanInput` handles it in its own branch, and the rule is *the map keeps your feet and
 nothing else*: `mx`/`my`, `slide` and the grapple's held key are read as usual, the edge-triggered
 `dodge` passes

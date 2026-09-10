@@ -1435,7 +1435,7 @@ window.DBG = {
   structures, robots, tracers, arrows, STRUCTS, SWING_TOOLS, TOOLS, BITS,
   // the team flag: plant one without a mouse (any player), lift it, open the
   // wheel by hand, and read back whose flag a body serves and the ring
-  FLAG_TYPES, FLAG_ORDER, FLAG_R, mapTileAt, servedFlag, humanFlag, inFlag, openFlagWheel,
+  FLAG_TYPES, FLAG_ORDER, FLAG_R, mapTileAt, mapCloseRect, mapCloseHit, servedFlag, humanFlag, inFlag, openFlagWheel,
   // the two coordinate bridges, so a driver can put the pointer on a tile
   wToSX, wToSY, mouseWX, mouseWY,
   plantFlag: (tx, ty, type, p) => plantFlag(p || player, tx, ty, type),

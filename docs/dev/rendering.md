@@ -50,7 +50,7 @@ screen whose short side is under `MOBILE_SHORT` CSS px, so a tablet stays on the
 `'on'`/`'off'` force it), and `fitCanvas()` calls it first, so a flip anywhere (the setting,
 boot reading the saved one, a resize onto another screen) re-fits the view. What a phone gets:
 
-- **The biggest game pixel the overlays allow.** The world map slab is 308×226 and the settings
+- **The biggest game pixel the overlays allow.** The world map slab is 212×226 and the settings
   slab 240×218, so a phone takes the largest whole device-pixel scale that keeps the view above
   `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — far fewer rows than a monitor's 360 (a 1170-px-tall
   phone lands on 234 rows at 5×; a 1080-px one cannot, 5× would be 216, so it takes 270 rows
@@ -349,7 +349,7 @@ Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `D
 ## UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-compass, labels — the chart's legend is live, since its marks wear the side's ink) into offscreen canvases at boot (the two frost slabs share `bakeFrostSlab()`); per-frame code blits them and draws only the live parts on top.
+labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases at boot (the two frost slabs share `bakeFrostSlab()`); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`, `ROW_*`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
 after the panel is rebuilt. They are declared **up in the `canvas` banner next to `relayout()`**
@@ -373,8 +373,12 @@ photograph of the tiles** (3.32): `buildWorldMapImg()` files every tile under a 
 tile of forest or ice is ground again, a snow pinhole with three sides of one mass is that mass
 (`CHART_NEED`) — resamples it into the slot by priority (`chartSpan`: each chart pixel takes the
 highest class among the tiles it covers, so a one-tile wall never drops out of its run where 232
-tiles fold into 192 px), and paints one flat ink per class (`CHART_INK`) with a 1 px rim where
-the forest or the ice meets lower ground (`CHART_RIM`). No per-tile hash and no grid: a single
+tiles fold into 192 px), and paints one flat ink per class (`CHART_INK`). The light comes from
+the top-left, as it does on the snow: a mass's rim is lit where lower ground lies above or left of
+it and inked where it lies below or right (`CHART_LIT`/`CHART_RIM` — the forest, the ice, and the
+road's shadow edge), and each ground wears an ordered stipple (`chartGrain`: canopy bumps on a
+checker lattice, a diagonal sheen on the ice, a sparse grain on the parchment — a lattice, never a
+hash), so the chart has the grain of a drawn thing without the noise of one. No grid: a single
 bush, rock or stump has no class and shows the ground, because at that scale a speck is noise;
 the buried chests keep theirs, a gold speck being a thing worth walking to. A side's buildings
 and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
@@ -391,9 +395,13 @@ body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 o
 every worker, soldier and merchant standing is drawn, none of them hides; the watched body
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
 of its side's ink, never a colour of its own that would read as a third team; the bird diamond
-is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. The chart's
-legend (drawn live, in your side's ink) is those four marks and nothing else — the terrain needs
-no key.
+is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. **The slab is
+the chart and a header, nothing else** (`PANEL_W` 212: the chart with a 10 px margin either side,
+`MAP_HEAD_Y`/`MAP_HEAD_H` the row over it): the day at 2× on the left, and on the right the
+`CLOSE` plank — `drawMenuButton`, the game's one button, hit through `mapCloseRect`/`mapCloseHit`
+in `pointerPress` (play and drop alike; the cursor is a hand over it) — with no compass (the chart
+is north-up, as the world is), no key (the marks are the minimap's own), no clock (the disc wears
+it) and no title.
 The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
 `MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is
 px per tile — an eased `mmCur` chasing `MM_ZOOMS[settings.mmZoom]` (0.25 … 4 over twelve rungs,

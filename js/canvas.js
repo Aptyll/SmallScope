@@ -247,11 +247,10 @@ let MM_CY = 35;
 // declaring them 2800 lines further down left relayout() reaching forward
 // into a TDZ, safe only while nothing called it before boot finished. The
 // offsets *within* each baked panel stay in their own sections.
-const PANEL_W = 308, PANEL_H = 226;
+const PANEL_W = 212, PANEL_H = 226; // the map slab: the chart with a 10 px margin either side, the header over it
 let PANEL_X = Math.round((VIEW_W - PANEL_W) / 2);   // relayout() recenters these
 let PANEL_Y = Math.round((VIEW_H - PANEL_H) / 2);
-let MAP_X = PANEL_X + 10, MAP_Y = PANEL_Y + 24;     // 192x192 map area
-let COL_CX = PANEL_X + 254;                          // right column center
+let MAP_X = PANEL_X + 10, MAP_Y = PANEL_Y + 26;     // 192x192 map area, under the header row
 const MAP_W = 192;             // the baked panel's map slot — the world scales into it
 const MAP_S = MAP_W / WORLD;   // tiles -> map px
 

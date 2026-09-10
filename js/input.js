@@ -391,12 +391,12 @@ function pointerPress(button) {
   if (button === 1) return; // the middle button is nobody's
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
-  if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropJump(player); return; }
+  if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropJump(player); else if (mapCloseHit()) state.mapOpen = false; return; }
   if (state.mode === 'dead') { SFX.unlock(); deadClick(); return; }
   if (state.mode !== 'play') return;
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
-  if (state.mapOpen) return;
+  if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // the chart's CLOSE plank; the rest of the slab swallows the press
   // the build list: a press on a row picks it, a press on the world lays
   // the ghost (a red ghost refuses with the deny cue and nothing else);
   // presses over the rest of the HUD go on to it as ever

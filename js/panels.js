@@ -128,16 +128,27 @@ function renderScoreboard() {
 // ground array), and the class map is FLATTENED before it is painted: a lone
 // tile of forest or ice is dropped (fewer than CHART_NEED neighbours of its
 // own kind and it is ground again), a snow pinhole with three sides of one
-// mass is that mass. Then it is RESAMPLED into the MAP_W slot by
-// priority - chartSpan says which tiles each chart pixel covers, and the
-// pixel takes the highest class among them, so a one-tile wall never drops
-// out of its run where WORLD tiles fold into MAP_W px - and PAINTED one flat
-// ink per class (CHART_INK), the forest and the ice wearing a 1 px rim where
-// they meet lower ground (CHART_RIM). No per-tile hash, no grid, no dot for
-// a single bush: what was left of the noise was the chart's own. The image
-// is re-inked at most every MM_REBUILD ticks like the minimap's (a wall
-// going up half a second late on a chart is invisible) and on the tick a
-// fresh match resets the clock.
+// mass is that mass. Then it is RESAMPLED into the MAP_W slot by priority -
+// chartSpan says which tiles each chart pixel covers, and the pixel takes
+// the highest class among them, so a one-tile wall never drops out of its
+// run where WORLD tiles fold into MAP_W px - and PAINTED one flat ink per
+// class (CHART_INK). The light comes from the top-left, as it does on the
+// snow itself: a mass's rim is LIT where lower ground lies above or to its
+// left and INKED where it lies below or to its right (CHART_LIT/CHART_RIM),
+// and each ground wears an ordered STIPPLE (chartGrain - a lattice, never a
+// hash), so the chart has the grain of a drawn thing without the noise of
+// one. No grid, no dot for a single bush: a lone tile is a speck at this
+// scale. The image is re-inked at most every MM_REBUILD ticks like the
+// minimap's (a wall going up half a second late on a chart is invisible)
+// and on the tick a fresh match resets the clock.
+//
+// THE SLAB is the chart and a header, nothing else: the map centred with
+// the same margin on every side, and over it the day on the left and the
+// CLOSE plank on the right (mapCloseRect - the game's one button, lifting
+// on hover, pressed through pointerPress like every other; M and Escape
+// still close it). No compass (the chart is north-up, as the world is), no
+// key (the marks are the minimap's own, learnt there), no clock (the disc
+// wears it).
 
 // a screen point over the chart -> the world tile under it (null off the map).
 // The chart is the only way to flag a tile that is off-screen, so the flag
@@ -146,6 +157,16 @@ function mapTileAt(sx, sy) {
   if (sx < MAP_X || sy < MAP_Y || sx >= MAP_X + MAP_W || sy >= MAP_Y + MAP_W) return null;
   const tx = Math.floor((sx - MAP_X) / MAP_S), ty = Math.floor((sy - MAP_Y) / MAP_S);
   return inWorld(tx, ty) ? { tx, ty } : null;
+}
+// the CLOSE plank, top-right of the slab, and whether the pointer is on it
+const MAP_HEAD_Y = 6, MAP_HEAD_H = 14; // the header row inside the slab: where the day and the plank sit
+function mapCloseRect() {
+  const w = pixelTextWidth('CLOSE', 2) + 14;
+  return { x: PANEL_X + PANEL_W - 10 - w, y: PANEL_Y + MAP_HEAD_Y, w, h: MAP_HEAD_H };
+}
+function mapCloseHit() {
+  const r = mapCloseRect(), mx = mouse.x, my = mouse.y;
+  return mouse.inside && mx >= r.x - 2 && mx < r.x + r.w + 2 && my >= r.y - 3 && my < r.y + r.h + 3;
 }
 
 const mapCv = document.createElement('canvas');
@@ -165,15 +186,27 @@ const CHART_INK = [
   [220, 205, 166], [64, 96, 70], [150, 116, 74], [156, 194, 212], [52, 84, 116],
   [222, 176, 76], [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
 ];
-const CHART_RIM = []; // the rim a mass wears where it meets lower ground
-CHART_RIM[CH_FOREST] = [36, 58, 42];
-CHART_RIM[CH_ICE] = [82, 124, 150];
+const CHART_RIM = [];  // the inked rim a mass wears where lower ground lies below or right of it
+CHART_RIM[CH_FOREST] = [36, 58, 42]; CHART_RIM[CH_ICE] = [82, 124, 150]; CHART_RIM[CH_ROAD] = [118, 90, 56];
+const CHART_LIT = [];  // the lit rim where lower ground lies above or left of it
+CHART_LIT[CH_FOREST] = [98, 134, 98]; CHART_LIT[CH_ICE] = [202, 228, 240];
+const CHART_GRAIN = []; // the stipple's ink
+CHART_GRAIN[CH_SNOW] = [211, 195, 156]; CHART_GRAIN[CH_FOREST] = [78, 112, 82]; CHART_GRAIN[CH_ICE] = [180, 212, 226];
 const CHART_NEED = []; // neighbours of its own class a tile needs to stay on the chart
 CHART_NEED[CH_FOREST] = 2; CHART_NEED[CH_ICE] = 2;
 const CHART_DARK = '#241a10'; // the leather: every mark's rim, the camps' and names' too
+const CHART_INK_TXT = '#4a3322'; // the header's ink
 let chartBuiltAt = -1e9;
 
 function chartGround(i) { const g = ground[i]; return g === 2 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW; }
+// the stipple: canopy bumps on a checker lattice, a diagonal sheen across
+// the ice, a sparse grain on the parchment
+function chartGrain(c, px, py) {
+  if (c === CH_FOREST) return ((px & 3) === 0 && (py & 3) === 0) || ((px & 3) === 2 && (py & 3) === 2);
+  if (c === CH_ICE) return (px + py) % 8 === 0;
+  if (c === CH_SNOW) return (px % 6 === 0 && py % 6 === 3) || (px % 6 === 3 && py % 6 === 0);
+  return false;
+}
 
 function buildWorldMapImg() {
   if (state.tick - chartBuiltAt < MM_REBUILD && state.tick >= chartBuiltAt) return;
@@ -211,13 +244,17 @@ function buildWorldMapImg() {
       out[py * W + px] = best;
     }
   }
-  // paint: the flat ink, and the rim where a mass meets lower ground
+  // paint: the flat ink, its stipple, then the lit rim toward the light and
+  // the inked rim away from it (a strip one pixel wide takes the ink)
   const dd = mapImg.data;
   for (let py = 0; py < W; py++) for (let px = 0; px < W; px++) {
     const i = py * W + px, c = out[i];
-    let ink = CHART_INK[c];
-    const rim = CHART_RIM[c];
-    if (rim && ((px > 0 && out[i - 1] < c) || (px < W - 1 && out[i + 1] < c) || (py > 0 && out[i - W] < c) || (py < W - 1 && out[i + W] < c))) ink = rim;
+    let ink = CHART_GRAIN[c] && chartGrain(c, px, py) ? CHART_GRAIN[c] : CHART_INK[c];
+    if (CHART_RIM[c]) {
+      const dn = (px < W - 1 && out[i + 1] < c) || (py < W - 1 && out[i + W] < c);
+      const up = (px > 0 && out[i - 1] < c) || (py > 0 && out[i - W] < c);
+      if (dn) ink = CHART_RIM[c]; else if (up && CHART_LIT[c]) ink = CHART_LIT[c];
+    }
     const j = i * 4;
     dd[j] = ink[0]; dd[j + 1] = ink[1]; dd[j + 2] = ink[2]; dd[j + 3] = 255;
   }
@@ -227,10 +264,9 @@ function buildWorldMapImg() {
 const panelCv = document.createElement('canvas');
 panelCv.width = PANEL_W; panelCv.height = PANEL_H;
 
-// the parchment's chrome: leather, a FLAT parchment (the mottle went with
-// the chart's noise in 3.32), its worn rim, the stitched trim, the title,
-// the map's mat and the compass. The right column's legend is drawn live
-// (renderWorldMap) because its marks wear the side's ink.
+// the slab's chrome: leather, the mottled parchment, its worn rim, the
+// stitched trim, the studs, and the map's mat. The header is drawn live
+// (renderWorldMap): the day changes and the plank lifts.
 function buildMapPanel() {
   const g = panelCv.getContext('2d');
   const cham = (x, y, w, h) => { // rect with 2px chamfered corners
@@ -241,6 +277,14 @@ function buildMapPanel() {
   // dark leather outline, then parchment
   g.fillStyle = CHART_DARK; cham(0, 0, PANEL_W, PANEL_H);
   g.fillStyle = '#d3c39b'; cham(1, 1, PANEL_W - 2, PANEL_H - 2);
+  // parchment mottling
+  for (let y = 3; y < PANEL_H - 3; y += 3) {
+    for (let x = 3; x < PANEL_W - 3; x += 3) {
+      const h = hash2(x * 13 + 1, y * 17 + 9);
+      if (h > 0.82) { g.fillStyle = '#dccfae'; g.fillRect(x, y, 3, 3); }
+      else if (h < 0.18) { g.fillStyle = '#c9b78d'; g.fillRect(x, y, 3, 3); }
+    }
+  }
   // worn darker rim
   g.fillStyle = 'rgba(120,90,50,0.16)';
   g.fillRect(2, 2, PANEL_W - 4, 3); g.fillRect(2, PANEL_H - 5, PANEL_W - 4, 3);
@@ -254,34 +298,13 @@ function buildMapPanel() {
   for (const [sx, sy] of [[4, 4], [PANEL_W - 7, 4], [4, PANEL_H - 7], [PANEL_W - 7, PANEL_H - 7]]) {
     g.fillRect(sx, sy + 1, 3, 1); g.fillRect(sx + 1, sy, 1, 3);
   }
-  // title with ornament dashes
-  const title = 'THE FROSTLANDS';
-  const tw = pixelTextWidth(title, 2);
-  const tx0 = Math.round((PANEL_W - tw) / 2);
-  drawPixelTextShadow(g, title, tx0, 8, '#4a3322', 'rgba(120,92,58,0.45)', 2);
-  g.fillStyle = '#8a6a45';
-  g.fillRect(tx0 - 26, 13, 18, 1); g.fillRect(tx0 + tw + 8, 13, 18, 1);
-  g.fillRect(tx0 - 30, 12, 2, 3); g.fillRect(tx0 + tw + 28, 12, 2, 3);
   // map mat: highlight line, dark frame (map itself drawn dynamically inside)
+  const mx = MAP_X - PANEL_X, my = MAP_Y - PANEL_Y;
   g.fillStyle = '#b5a37e';
-  g.fillRect(7, 21, 198, 1); g.fillRect(7, 218, 198, 1);
-  g.fillRect(7, 21, 1, 198); g.fillRect(204, 21, 1, 198);
+  g.fillRect(mx - 3, my - 3, MAP_W + 6, 1); g.fillRect(mx - 3, my + MAP_W + 2, MAP_W + 6, 1);
+  g.fillRect(mx - 3, my - 3, 1, MAP_W + 6); g.fillRect(mx + MAP_W + 2, my - 3, 1, MAP_W + 6);
   g.fillStyle = CHART_DARK;
-  g.fillRect(8, 22, 196, 196);
-  // column divider
-  g.fillStyle = '#b5a37e'; g.fillRect(209, 24, 1, 192);
-  // compass rose, center (254,49)
-  g.fillStyle = '#4a3322';
-  g.fillRect(253, 39, 2, 10);            // N arm (lower half)
-  g.fillRect(253, 49, 2, 12);            // S arm
-  g.fillRect(242, 48, 12, 2);            // W arm
-  g.fillRect(254, 48, 12, 2);            // E arm
-  g.fillRect(248, 43, 2, 2); g.fillRect(258, 43, 2, 2); // NW/NE ticks
-  g.fillRect(248, 54, 2, 2); g.fillRect(258, 54, 2, 2); // SW/SE ticks
-  g.fillStyle = '#a84438';               // red north tip
-  g.fillRect(252, 37, 4, 2); g.fillRect(253, 35, 2, 2);
-  g.fillStyle = '#d3c39b'; g.fillRect(253, 48, 2, 2);   // center pip
-  drawPixelText(g, 'N', Math.round(254 - pixelTextWidth('N') / 2), 26, '#4a3322');
+  g.fillRect(mx - 2, my - 2, MAP_W + 4, MAP_W + 4);
 }
 
 function renderWorldMap(now) {
@@ -289,6 +312,11 @@ function renderWorldMap(now) {
   ctx.fillStyle = 'rgba(6,10,24,0.72)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.drawImage(panelCv, PANEL_X, PANEL_Y);
+
+  // the header: the day, and the way out
+  const dayT = 'DAY ' + state.day;
+  drawPixelTextShadow(ctx, dayT, PANEL_X + 11, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 'rgba(120,92,58,0.45)', 2);
+  drawMenuButton(mapCloseRect(), 'CLOSE', mapCloseHit() ? 1 : 0, now, false, false);
 
   // terrain
   buildWorldMapImg();
@@ -392,37 +420,6 @@ function renderWorldMap(now) {
   ctx.beginPath(); ctx.arc(pmx, pmy, 2 + ph * 6, 0, Math.PI * 2); ctx.stroke();
   ctx.globalAlpha = 1;
   drawMapYou(ctx, pmx, pmy, ink, CHART_DARK, 2);
-
-  // the legend, in the right column: the four marks, each in your side's
-  // ink, since the ink is the side and the shape is the thing
-  const lgx = PANEL_X + 221, lgt = PANEL_X + 230;
-  let ly = PANEL_Y + 75;
-  drawMapBird(ctx, lgx, ly, ink, CHART_DARK); drawPixelText(ctx, 'EAGLE', lgt, ly - 4, '#4a3322'); ly += 12;
-  drawMapUnit(ctx, lgx, ly, ink, CHART_DARK, 2, false); drawPixelText(ctx, 'PLAYER', lgt, ly - 4, '#4a3322'); ly += 12;
-  drawMapUnit(ctx, lgx, ly, ink, CHART_DARK, 2, true); drawPixelText(ctx, 'BOT', lgt, ly - 4, '#4a3322'); ly += 12;
-  drawMapYou(ctx, lgx, ly, ink, CHART_DARK, 2); drawPixelText(ctx, 'YOU', lgt, ly - 4, '#4a3322');
-
-  // day & elapsed time, inked into the right column
-  const dayT = 'DAY ' + state.day;
-  drawPixelTextShadow(ctx, dayT, Math.round(COL_CX - pixelTextWidth(dayT) / 2), PANEL_Y + 168,
-    '#4a3322', 'rgba(120,92,58,0.45)');
-  const mins = Math.floor(state.elapsed / 60);
-  const secs = Math.floor(state.elapsed % 60);
-  const clk = mins + ':' + (secs < 10 ? '0' : '') + secs;
-  drawPixelTextShadow(ctx, clk, Math.round(COL_CX - pixelTextWidth(clk) / 2), PANEL_Y + 179,
-    '#6a5436', 'rgba(120,92,58,0.35)');
-  // the way out: a keybind indicator, so it prints whatever the map is bound
-  // to and wears the pad's button while one is in hand
-  const hy = PANEL_Y + 206;
-  if (padActive() && PAD_BIND.map) {
-    const gw = padBindW('map'), hw = gw + 3 + pixelTextWidth('CLOSE');
-    const hx = Math.round(COL_CX - hw / 2);
-    drawPadBind(ctx, hx, hy - 2, 'map', 1);
-    drawPixelText(ctx, 'CLOSE', hx + gw + 3, hy, '#7a6647');
-  } else {
-    const ht = keyCap('map') + ' CLOSE';
-    drawPixelText(ctx, ht, Math.round(COL_CX - pixelTextWidth(ht) / 2), hy, '#7a6647');
-  }
 }
 
 // ------------------------------------------------------------ settings menu (ESC)
