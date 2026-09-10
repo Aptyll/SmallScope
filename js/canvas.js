@@ -247,13 +247,27 @@ let MM_CY = 35;
 // declaring them 2800 lines further down left relayout() reaching forward
 // into a TDZ, safe only while nothing called it before boot finished. The
 // offsets *within* each baked panel stay in their own sections.
-const PANEL_W = 308, PANEL_H = 226;
+// The map slab FITS THE VIEW: the chart takes every row the view gives it,
+// up to CHART_MAX (the match world at one px a tile - the crispest rung),
+// so a monitor's 360 rows chart at 1:1 while a phone at the MOBILE_MIN_H
+// floor (232, mobile.js) still seats the whole slab with a 192 chart.
+// fitMapSlab() sizes it (relayout, core.js); the chart's buffers and the
+// slab's bake follow the size (mapAlloc, panels.js).
+const CHART_MAX = 232;  // px: the chart never outgrows a tile a pixel
+const MAP_SIDE = 10;    // the parchment either side of the chart
+const MAP_HEAD = 26;    // rows over it: the header row and its margins
+const MAP_FOOT = 8;     // rows under it
+let MAP_W = 192;             // the chart's slot — the world scales into it
+let MAP_S = MAP_W / WORLD;   // tiles -> map px
+let PANEL_W = MAP_W + MAP_SIDE * 2, PANEL_H = MAP_HEAD + MAP_W + MAP_FOOT;
 let PANEL_X = Math.round((VIEW_W - PANEL_W) / 2);   // relayout() recenters these
 let PANEL_Y = Math.round((VIEW_H - PANEL_H) / 2);
-let MAP_X = PANEL_X + 10, MAP_Y = PANEL_Y + 24;     // 192x192 map area
-let COL_CX = PANEL_X + 254;                          // right column center
-const MAP_W = 192;             // the baked panel's map slot — the world scales into it
-const MAP_S = MAP_W / WORLD;   // tiles -> map px
+let MAP_X = PANEL_X + MAP_SIDE, MAP_Y = PANEL_Y + MAP_HEAD;
+function fitMapSlab() {
+  MAP_W = Math.max(96, Math.min(CHART_MAX, VIEW_H - MAP_HEAD - MAP_FOOT - 6));
+  MAP_S = MAP_W / WORLD;
+  PANEL_W = MAP_W + MAP_SIDE * 2; PANEL_H = MAP_HEAD + MAP_W + MAP_FOOT;
+}
 
 const SET_W = 240, SET_H = 218;
 let SET_X = Math.round((VIEW_W - SET_W) / 2);       // relayout() recenters these

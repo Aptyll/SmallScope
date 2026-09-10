@@ -8,11 +8,14 @@
 // a hole - and the one placement rule they all answer to (canPlaceAt).
 // tiers[0] is what the list builds; tiers[1]/[2] cost/buildT are the upgrade
 // price and (already shortened) upgrade construction time. `mm` and `map` are
-// the two map colours, the same pair OBJECTS carries for scenery - both maps
-// read whichever of the two tables holds the tile's type, so a new building
-// is coloured by its entry here and nothing else.
+// what the two maps paint it, the same pair OBJECTS carries for scenery -
+// both maps read whichever of the two tables holds the tile's type, so a new
+// building is coloured by its entry here and nothing else. Every building
+// wears ITS SIDE'S INK on both (mmTeam / chTeam, world.js): at a map's scale
+// a wall and a turret are the same pixel, and whose base it is is the whole
+// read - the type is the sprite's job.
 const STRUCTS = {
-  wall: { name: 'WALL', mm: [163, 121, 79], map: [112, 78, 46], tiers: [
+  wall: { name: 'WALL', mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 5 },  hp: 60,  buildT: 4   },
     { cost: { gold: 12 }, hp: 140, buildT: 2.4 },
     { cost: { gold: 30 }, hp: 300, buildT: 2.4 },
@@ -22,18 +25,18 @@ const STRUCTS = {
   // `tiled` type: each footprint tile wears the named type's own grid, so it
   // needs no art of its own and nothing has to turn (3/4-view art cannot).
   // Hurt as one, upgraded as one.
-  longwall: { name: 'LONG WALL', w: 2, h: 1, rotates: true, tiled: 'wall', mm: [163, 121, 79], map: [112, 78, 46], tiers: [
+  longwall: { name: 'LONG WALL', w: 2, h: 1, rotates: true, tiled: 'wall', mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 9 },  hp: 120, buildT: 6   },
     { cost: { gold: 22 }, hp: 280, buildT: 3.6 },
     { cost: { gold: 55 }, hp: 600, buildT: 3.6 },
   ]},
   // traverse = rad/s the head swings; aim = seconds held on target before it fires
-  turret: { name: 'TURRET', mm: [196, 120, 86], map: [150, 96, 70], tiers: [
+  turret: { name: 'TURRET', mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 10 }, hp: 50,  buildT: 8,   range: 60, dmg: 6,  rate: 1.0,  traverse: 2.2, aim: 0.55 },
     { cost: { gold: 25 }, hp: 90,  buildT: 4.8, range: 76, dmg: 9,  rate: 0.8,  traverse: 3.0, aim: 0.45 },
     { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 92, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35 },
   ]},
-  generator: { name: 'GENERATOR', mm: [120, 180, 196], map: [96, 130, 150], tiers: [
+  generator: { name: 'GENERATOR', mm: mmTeam, map: chTeam, tiers: [
     // 4 / 6 / 10 gold a minute against the clock's own 15 (TRICKLE_*, js/sim.js):
     // a top generator is two thirds of a second trickle for 82 gold, paid back
     // in eight minutes - an early build, and something worth walking over to wreck
@@ -43,7 +46,7 @@ const STRUCTS = {
   ]},
   // the bot bay is the one big build: a single tier on a 3x2 tile footprint
   // (w/h - see footprint()/findSite()), its three bots rolling out one by one
-  spawner: { name: 'BOT BAY', w: 3, h: 2, mm: [170, 140, 220], map: [128, 104, 160], tiers: [
+  spawner: { name: 'BOT BAY', w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 45 }, hp: 220, buildT: 16, bots: 3, botHp: 24 },
   ]},
   // THE BARRACKS: the wave bay each merchant raises in the woods behind its
@@ -57,7 +60,7 @@ const STRUCTS = {
   // merchant walks back and raises it again. `cap` is the most of its
   // soldiers alive at once: a side nobody fights back against does not
   // fill the map, it waits for its column to spend itself.
-  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: [222, 128, 96], map: [160, 92, 64], tiers: [
+  barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 5, waveT: 30, grow: 180, botHp: 30, cap: 24 },
   ]},
   // The fish net: the one building that goes on water instead of snow.
@@ -66,7 +69,7 @@ const STRUCTS = {
   // never freezes over while it stands (the dawn refreeze), and is not solid
   // (isSolidTile), because walking onto it is how anyone - owner or not -
   // takes the catch out of it.
-  net: { name: 'FISH NET', water: true, mm: [150, 186, 200], map: [118, 156, 176], tiers: [
+  net: { name: 'FISH NET', water: true, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 8 }, hp: 45, buildT: 5 },
   ]},
 };

@@ -164,9 +164,12 @@ it: `solid` (does it block a walker), `tool` (what E reaches for) and `ready` (w
 reaching *right now* — the bush's berries), `auto` (the hands go to it on their own the moment it
 is in reach — `autoWork`; without it the thing waits for E, as only bare ice and the dummy do; a
 rival building needs no flag — `autoToolFor` asks `STRUCTS` and `ownsStruct`), `needs` (the tool a swing must already be holding,
-null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (the colour each of the two maps
-paints it — an `[r, g, b]`, or a `(o, i, h)` function when it is not a constant, as the tree's
-canopy and the bush's berries are not). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
+null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
+paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
+under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
+out for anything that stands alone on its tile — a bush, a rock, a stump — since at the chart's
+scale a speck is noise, and read [rendering](rendering.md#ui-panels-are-baked-once) for what the
+chart does with a class). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
 gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
 need no edit — none of them names a type any more. An object *instance* carrying a `team` field
 (the roosting eagles' hitbox tiles) is a rival-only E target — `workTarget()` applies that
@@ -385,10 +388,9 @@ new row is a new row, no layout to touch) and, unless it is the net's kind, in `
 type's tile on every footprint tile (`tiled: 'wall'`, the long wall) needs no grid at all and may
 `rotates`; anything else with art of its own needs a grid baked into the per-team `teamBuild` sets
 (see [sprites.md](sprites.md)), and both
-map colour tables (`updateMinimap`/`buildWorldMapImg` — both resolve a multi-tile footprint's
-`part` fillers through `structOf()` first, so one branch on the real type colours the whole
-building, but the branch itself is still hand-written per type; skip it and a new type silently
-draws as a bare stump). `isSolidTile()` is now generic (`!!STRUCTS[o.type] || ...`) — a new
+maps colour it from the entry's `mm`/`map` — every building wears its side's ink (`mmTeam`/`chTeam`,
+world.js), and `updateMinimap`/`buildWorldMapImg` resolve a multi-tile footprint's `part`
+fillers through `structOf()` first, so the anchor's entry colours the whole building. `isSolidTile()` is now generic (`!!STRUCTS[o.type] || ...`) — a new
 `STRUCTS` entry is automatically solid for free, and only a genuinely new *non-`STRUCTS`* scenery
 type needs a line there. `hitObject()`, the draws pass (via `structSprite`), construction,
 ownership and refunds already dispatch on `STRUCTS[o.type]` too — no per-type work there, and

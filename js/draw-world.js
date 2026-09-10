@@ -1700,15 +1700,19 @@ function drawFlagPennant(g, x, y, col, rim) {
   for (const [rx, ry, rw, rh] of rects) g.fillRect(rx, ry, rw, rh);
 }
 // THE RING: the ground an order covers, FLAG_R about the flag, drawn flat on
-// the snow under everything that walks it. A dark line under a dashed one in
-// the order's own colour, the dashes crawling round it so a standing order
-// reads as live and not as a boundary painted on the map; `a` fades the one
-// a held wheel previews. g is the world canvas at whatever zoom, so the ring
-// scales with the tile - it is a place, not a HUD element.
+// the snow under everything that walks it. A dark line under a dashed one
+// in THE SIDE'S INK (3.32: it wore FLAG_MINE before, and white on snow was a
+// ring nobody saw - the glyph on the pennant says which order, the ring
+// says whose ground), two pixels wide, the dashes crawling round it so a
+// standing order reads as live and not as a boundary painted on the map;
+// `a` fades the one a held wheel previews, which keeps the lit wedge's
+// colour since it is the wheel's, not yet an order. g is the world canvas at
+// whatever zoom, so the ring scales with the tile - it is a place, not a HUD
+// element.
 function drawFlagRing(g, cx, cy, col, now, a) {
   g.save();
   g.globalAlpha = a;
-  g.lineWidth = 1;
+  g.lineWidth = 2;
   g.setLineDash([4, 4]);
   g.lineDashOffset = -((now * 6) % 8);
   g.strokeStyle = '#0f1632';
@@ -1725,7 +1729,7 @@ function drawFlagRings(ox, oy, now) {
   for (const q of players) {
     if (!q.active || !q.flag || q.team !== team) continue;
     const f = q.flag;
-    drawFlagRing(ctx, f.tx * TILE + 8 - ox, f.ty * TILE + 8 - oy, FLAG_TYPES[f.type].col, now, 0.55);
+    drawFlagRing(ctx, f.tx * TILE + 8 - ox, f.ty * TILE + 8 - oy, TEAMS[skin(q.team)].mark, now, 0.85);
   }
   const w = state.wheel;
   if (w && w.kind === 'flag' && !state.mapOpen) {
@@ -1758,16 +1762,51 @@ function drawFlag(q, ex, ey, now) {
 }
 // a flag on either map: the pennant with the ring it covers about it, at that
 // map's px per tile - the ring is the order's whole meaning, so the maps
-// carry it too. (x, y) is the pennant's foot.
+// carry it too: the ground inside washed in the side's ink, a dark rim under
+// a solid line of the same ink (3.32: a lone line at a third alpha was a
+// ring nobody saw). (x, y) is the pennant's foot.
 function drawFlagMark(g, x, y, f, col, rim, s) {
-  const r = FLAG_R / TILE * s;
+  const r = FLAG_R / TILE * s, cx = Math.round(x) + 0.5, cy = Math.round(y) - 2.5;
   g.save();
-  g.globalAlpha = 0.3;
-  g.lineWidth = 1;
-  g.strokeStyle = col;
-  g.beginPath(); g.arc(Math.round(x) + 0.5, Math.round(y) - 2.5, r, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2);
+  g.globalAlpha = 0.18; g.fillStyle = col; g.fill();
+  g.globalAlpha = 0.7; g.lineWidth = 3; g.strokeStyle = rim || '#0f1632'; g.stroke();
+  g.globalAlpha = 1; g.lineWidth = 1; g.strokeStyle = col; g.stroke();
   g.restore();
   drawFlagPennant(g, x, y, col, rim);
+}
+
+// ---- what a body looks like on a map ------------------------------------
+// ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap disc (renderMinimap, ui.js)
+// and the parchment chart (renderWorldMap, panels.js) draw every moving thing
+// through these three, so a shape learnt on one is read on the other:
+//   a SQUARE in the side's ink is a body, and its size says which - a player
+//   k + 1 px, a robot (a worker, a soldier, the merchant) k px, so a base's
+//   crew never outweighs the ten that matter (k is 2 on the chart, 1 on the
+//   disc);
+//   the WATCHED body - you, or whoever the camera rides - is a player's
+//   square gone WHITE inside a ring of its side's ink: "me" and "my side" in
+//   one mark, never a colour of its own that would read as a third team;
+//   the BIRD DIAMOND is an objective, roosted or flying.
+// Each sits on a 1 px rim in the map's own dark so it reads on snow, forest,
+// ice and parchment alike. (x, y) is the body's centre in that map's px.
+function drawMapDot(g, x, y, size, col, rim) {
+  const x0 = Math.round(x) - (size >> 1), y0 = Math.round(y) - (size >> 1);
+  g.fillStyle = rim; g.fillRect(x0 - 1, y0 - 1, size + 2, size + 2);
+  g.fillStyle = col; g.fillRect(x0, y0, size, size);
+}
+function drawMapUnit(g, x, y, col, rim, k, bot) { drawMapDot(g, x, y, bot ? k : k + 1, col, rim); }
+function drawMapYou(g, x, y, col, rim, k) {
+  drawMapDot(g, x, y, k + 3, col, rim);
+  const x0 = Math.round(x) - ((k + 1) >> 1), y0 = Math.round(y) - ((k + 1) >> 1);
+  g.fillStyle = '#ffffff'; g.fillRect(x0, y0, k + 1, k + 1);
+}
+function drawMapBird(g, x, y, col, rim) {
+  const gx = Math.round(x), gy = Math.round(y);
+  g.fillStyle = rim;
+  g.fillRect(gx - 3, gy - 1, 7, 3); g.fillRect(gx - 1, gy - 3, 3, 7);
+  g.fillStyle = col;
+  g.fillRect(gx - 2, gy, 5, 1); g.fillRect(gx, gy - 2, 1, 5);
 }
 
 // every player draws through here - the local one, the AI fills, network

@@ -505,7 +505,7 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
   adding one after boot does not.
 - `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
   of position *within a run* — use them for anything that must stay stable per tile no matter when
-  it is asked (ground texture, forest boundary, tree rare-drops, panel mottling, map dithering).
+  it is asked (ground texture, forest boundary, tree rare-drops, the frost slabs' mottling).
   `borderDepth()` rides on `vnoise`, so the seed reshapes the forest and with it the whole map
   (everywhere but inside the two roost discs, which every seed grows alike).
 - Two exceptions to the single stream, both for the same reason — nothing outside worldgen may

@@ -256,10 +256,10 @@ function applyMinimapSize() {
 // change to the canvas size (window resize, fullscreen)
 function relayout() {
   applyMinimapSize();
+  fitMapSlab();
   PANEL_X = Math.round((VIEW_W - PANEL_W) / 2);
   PANEL_Y = Math.round((VIEW_H - PANEL_H) / 2);
-  MAP_X = PANEL_X + 10; MAP_Y = PANEL_Y + 24;
-  COL_CX = PANEL_X + 254;
+  MAP_X = PANEL_X + MAP_SIDE; MAP_Y = PANEL_Y + MAP_HEAD;
   SET_X = Math.round((VIEW_W - SET_W) / 2);
   SET_Y = Math.round((VIEW_H - SET_H) / 2);
   SL_X = SET_X + 112;
