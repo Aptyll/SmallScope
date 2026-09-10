@@ -442,7 +442,7 @@ at one map pixel per tile, a build or a cut ice hole arriving half a second late
 
 ## The HUD corners
 
-`renderUI()` owns three corners and one strip, and every one of them is positioned off
+`renderUI()` owns three corners, the top edge and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
 the weapon** (3.23): the one tool in hand and the bits loaded into it, with the inventory drawer
 shut under it — the corner a Noita wand or a Terraria held item lives in — while every number
@@ -453,12 +453,13 @@ empty world.
 | --- | --- | --- |
 | top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the small white arrow of the **inventory drawer**, shut until B or the arrow | `drawShelf`, `drawBag` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
+| top centre | the **team rail**: every player in the match as a 14px chip on two plates, your side left (you first, your emblem white) and the rival right, each chip only *up* / *waiting* / *out* — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | bottom left | the hover tooltip | `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
-Both widgets slide **their own size** away for the landing intro — the strip down by
+All three widgets slide **their own size** away for the landing intro — the rail up by `RAIL_SLIDE`, the strip down by
 `HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the top-left corner left by `CORNER_REACH` (the widest
 row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
 tool cell would leave a longbow's row parked over the cinematic.
@@ -751,6 +752,46 @@ block is one symmetrical thing, but it is a readout, not a button — no key cap
 refusal — which is what marks the one square you cannot press; `stripHit` answers `frame` over
 it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
 that is money must never read as a count of something carried.
+
+### The team rail
+
+`drawRailScaled` (the `team rail` block under the HUD SIZE code, ui.js; 3.33) is the roster
+along the top edge: two [hud frame](#the-hud-frame) plates, `RAIL_MID` (10) px apart, centred on
+`VIEW_W` at `RAIL_Y` (3) — **your side on the left** and the rival's on the right, a 14px
+**chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) — the class's
+12×12 emblem (`CLASS12`/`classIcon12`, menu.js: drawn by hand beside `CLASS32`, never a shrink
+of it) on the `BAG_WELL` ground in a rim painted by side through `skin()`. `railSides` orders
+each side by id and puts **you first**, with your emblem baked white — the maps' own "you"
+(`drawMapYou`). A chip carries exactly one bit, in the wells' own grammar:
+
+- **up**: the side's `mark` rim, the emblem lit;
+- **waiting**: a dead player with `respawnT` running — `drawSweepCover` lays the `CD_SWEEP`
+  slate over the emblem with the `CD_EDGE` hand walking round from twelve, `respawnT /
+  respawnTime(p)` of the way, exactly as an ability well waits; the rim goes to the cooldown's
+  dark blue;
+- **out**: `eliminated`, or dead with no countdown (its bird already driven off) — the rim dark,
+  the emblem at `LOCK_DIM`.
+
+No hp, no name, no number: "three of us are up, two of them are down for a while" is read by
+counting lit chips and glancing at the hands. Under the pointer a chip's rim goes white and the
+[tooltip](#the-hover-tooltip) carries the words (`tipRail`, through `railHit` in `tipAt`): the
+name in `playerTint`, the class, the level, and the countdown or OUT while the body is down — the
+scoreboard's own line. The references agree on the shape: Helldivers and Fortnite stack text-free
+squad rows, none of the three puts an enemy frame on the HUD, and League's one enemy read is the
+death timer — the right plate is that timer made a hand. *Where* anyone is stays the minimap's job.
+
+It is drawn straight after the minimap in `renderUI` (under the counter's wash with it), rides
+the intro slide up by `RAIL_SLIDE`, and **stays up while you are dead** — the side's state is
+what a spectator reads, so the spectate control (`specLayout`, screens.js), the camp plate and the
+DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when there is no rail:
+the practice arena, or a match with an empty side — `railSides` is null and nothing draws), and
+the two notes step under the spectate control as well while it is up (`noteY`).
+**Its scale is a whole number**: `railSc` rounds the HUD SIZE dial and never goes under 1 (a 12px
+emblem at 0.8 drops two of its rows, where a 34px well shrugs it off), capped where the plates
+would reach a phone's zoom pair (`RAIL_KEEP`, 80 px each end on `MOBILE`) or the view's edge;
+the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through
+it. A known overlap: a longbow carrying five modifier bits stacks five rails above the shelf row
+that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
 
 ### The hud frame
 

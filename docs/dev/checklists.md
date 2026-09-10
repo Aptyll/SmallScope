@@ -303,7 +303,8 @@ new class needs written:
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
 5. a 32×32 class **emblem** in `CLASS32` ([js/menu.js](../../js/menu.js), same palette) — the
-   symbolic mark the select roster reads the class by;
+   symbolic mark the select roster reads the class by — and its 12×12 twin in `CLASS12` beside
+   it, drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail) wears;
 6. a `CLASS_LOADOUT` entry ([js/tools.js](../../js/tools.js));
 7. a fight rung in `updateAI` ([js/ai.js](../../js/ai.js)) that spends the four keys at the
    ranges the kit is good at — the class branch there is per-class content and the one `if`

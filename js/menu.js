@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.32'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.33'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.33', 'THE TEAM RAIL ALONG THE TOP EDGE: EVERY PLAYER IN THE MATCH AS A CHIP ON TWO PLATES, YOUR SIDE ON THE LEFT WITH YOU FIRST IN WHITE AND THE RIVAL ON THE RIGHT, EACH IN ITS SIDE\'S COLOUR - A CHIP SAYS ONLY WHETHER THAT PLAYER IS UP: A DEAD ONE GOES UNDER THE WELLS\' SLATE WITH THE HAND WALKING ROUND IT UNTIL THE BIRD SETS THEM DOWN, ONE THAT IS NOT COMING BACK GOES DARK, AND HOVERING A CHIP NAMES THE PLAYER, THEIR CLASS AND LEVEL. NO HP AND NO NUMBERS ON THE RAIL ITSELF; THE CAMP AND DAY HEADLINES AND THE SPECTATE CONTROL HANG UNDER IT.'],
   ['3.32', 'THE M MAP IS A DRAWN CHART NOW - A WINTER CHART OF SNOW, PALE ICE AND COLD WOODS ON THE FROST SLAB, LIT AND INKED MASSES INSTEAD OF SPECKLE, EVERY BASE IN ITS SIDE\'S COLOUR, THE DAY OVER IT AND A CLOSE PLATE BESIDE IT, AS BIG AS YOUR SCREEN ALLOWS, AND A FLAG\'S RING IN ITS SIDE\'S INK ON THE SNOW AND BOTH MAPS - AND BOTH MAPS SHOW EVERY ROBOT, WITH YOU AS THE WHITE HEART IN YOUR OWN TEAM\'S INK INSTEAD OF A RED DIAMOND.'],
   ['3.31', 'T OPENS THE BUILD LIST AND THE GHOST UNDER THE POINTER IS WHAT A CLICK LAYS: ANY OPEN SNOW OR ROAD TILE WITHIN REACH TAKES A PIECE, SNAPPED TO THE GRID WITH ITS FOOTPRINT RIMMED WHITE WHERE IT CAN STAND AND RED WHERE IT CANNOT, THE LIST STAYS UP SO A WALL IS A RUN, R TURNS THE NEW LONG WALL (TWO WALL TILES FOR A LITTLE UNDER TWO WALLS), A STUMP IS NO LONGER A SITE, HOLDING E BESIDE A BUILDING OF YOUR OWN MANAGES IT, THE RIGHT BUTTON IS THE FLAG WHEEL EVERYWHERE, AND BOTS BUILD ON OPEN SNOW TOO.'],
   ['3.30', 'RIGHT-CLICK ANYWHERE FOR THE FLAG WHEEL - ATTACK, DEFEND, GATHER OR RALLY - AND THE RING ON THE SNOW IS THE GROUND THE ORDER COVERS: YOUR WORKERS AND EVERY AI TEAMMATE READ IT, FROM ANYWHERE ON THE MAP AND OVER THE CHART TOO, BOTS FLY FLAGS OF THEIR OWN AND JOIN EACH OTHER\'S RATHER THAN TWIN THEM, AND YOUR FLAG IS THE SIDE\'S WHOLE PLAN WHILE IT STANDS - THE MIDDLE BUTTON AND THE TILE-READ WORKER ORDERS ARE GONE.'],
@@ -1956,6 +1957,63 @@ function classIcon32(i) {
       }
     }
     class32Cache.set(i, cv);
+  }
+  return cv;
+}
+
+// The same emblems at 12px for the team rail's chips (drawRailChip, ui.js):
+// drawn by hand, not shrunk - a 32px mark dropped to 12 loses its lines. The
+// local player's own chip is baked with every colour but the outline pushed
+// to white, the maps' "you". A new class brings a CLASS12 beside its CLASS32.
+const CLASS12 = [
+  [ // HUNTER: the bow, the string and the arrow across
+    '............',
+    '.oo.........',
+    '.oto........',
+    '.otwo.......',
+    '.ot.wo......',
+    '.ot..wo.....',
+    'rrttttwWWWo.',
+    '.ot..wo.....',
+    '.ot.wo......',
+    '.otwo.......',
+    '.oto........',
+    '.oo.........',
+  ],
+  [ // WARRIOR: the gauntlet, knuckles first
+    '............',
+    '.oo.oo.oo.oo',
+    '.Cs.Cs.Cs.Cs',
+    '.Cs.Cs.Cs.Cs',
+    '.Cs.Cs.Cs.Cs',
+    '.ooooooooooo',
+    '.oCsCsCsCsso',
+    '.ossssssssso',
+    '.oSSSSSSSSSo',
+    '..ooooooooo.',
+    '..oggggggggo',
+    '..ooooooooo.',
+  ],
+];
+const class12Cache = new Map();
+function classIcon12(i, you) {
+  const key = i * 2 + (you ? 1 : 0);
+  let cv = class12Cache.get(key);
+  if (!cv) {
+    cv = document.createElement('canvas');
+    cv.width = cv.height = 12;
+    const g = cv.getContext('2d');
+    const rows = CLASS12[i];
+    for (let r = 0; r < rows.length; r++) {
+      const row = rows[r];
+      for (let c = 0; c < row.length; c++) {
+        const ch = row[c], col = AB32_PAL[ch];
+        if (!col) continue;
+        g.fillStyle = you && ch !== 'o' ? '#f4f7ff' : col;
+        g.fillRect(c, r, 1, 1);
+      }
+    }
+    class12Cache.set(key, cv);
   }
   return cv;
 }
