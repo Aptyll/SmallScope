@@ -364,9 +364,11 @@ function specLayout() {
   for (const p of players) if (p.active) nw = Math.max(nw, pixelTextWidth(p.name));
   const w = SPEC_AW + 6 + nw + 6 + SPEC_AW;
   const x = Math.round((VIEW_W - w) / 2);
-  return { x, y: SPEC_Y, w, h: SPEC_H,
-    left: { x, y: SPEC_Y, w: SPEC_AW, h: SPEC_H },
-    right: { x: x + w - SPEC_AW, y: SPEC_Y, w: SPEC_AW, h: SPEC_H } };
+  const rb = railBottom(); // the team rail keeps the top edge while you are out (ui.js)
+  const y = rb ? rb + 4 : SPEC_Y;
+  return { x, y, w, h: SPEC_H,
+    left: { x, y, w: SPEC_AW, h: SPEC_H },
+    right: { x: x + w - SPEC_AW, y, w: SPEC_AW, h: SPEC_H } };
 }
 // which spectate arrow the pointer is on: -1 left, 1 right, 0 neither
 function specHit() {
