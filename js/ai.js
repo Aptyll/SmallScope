@@ -78,6 +78,10 @@ const AI_GATE = 128;      // px up the road from a spur's junction where a walk 
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
 const AI_ESCORT_R = 400;  // px past which the human is too far to escort
+const AI_FLAG_T = 0.5;    // s between a bot's re-reads of the side's flags (aiFlagSync)
+const AI_FLAG_DROP = 3;   // s a bot keeps its own flag flying past the last reason for it
+const AI_FLAG_IN = FLAG_R * 0.6; // px from a flag inside which a bot counts as AT it (the flag rung)
+const AI_FLAG_HELP = FLAG_R * 2; // px within which an idle bot joins a teammate's GATHER (a fight it joins from anywhere)
 // which profile p plays by: a staged override (DBG, the harness), else by side
 function aiProfile(p) {
   if (p.ai.prof) return p.ai.prof;
@@ -205,6 +209,72 @@ function aiEagleTile(e, p) {
     if (!o || o.type !== 'eagle' || o.team !== e.team) continue;
     const d = Math.hypot(o.tx * TILE + 8 - p.x, o.ty * TILE + 8 - p.y);
     if (d < bd) { bd = d; best = o; }
+  }
+  return best;
+}
+
+// ---- the flag ---------------------------------------------------------------
+// A bot's flag is the ladder's own decision made visible (the `team flags`
+// banner, robots.js): ai.want is what the last tick decided - DEFEND at its
+// bird, ATTACK at the rival's, GATHER where it works - and this flies it.
+// Coordination is one flag a plan, not one a bot: a teammate already flying
+// the same order over the same ground is JOINED (ai.join) instead of
+// twinned, a bot with nothing of its own to fly helps at the side's nearest
+// flag, and a HUMAN teammate's flag pulls every own flag down - while it
+// stands the side has one plan, the human's. Re-read every AI_FLAG_T; an own
+// flag outlives its reason by AI_FLAG_DROP so a threat that flickers does
+// not flicker the flag with it.
+function aiFlagSync(p, dt) {
+  const ai = p.ai;
+  ai.flagT -= dt;
+  if (ai.flagT > 0) return;
+  ai.flagT = AI_FLAG_T;
+  const w = ai.want;
+  if (humanFlag(p.team)) { if (p.flag) clearFlag(p); ai.join = -1; ai.wantT = 0; return; }
+  if (!w) {
+    if (p.flag) {
+      ai.wantT += AI_FLAG_T;
+      if (ai.wantT >= AI_FLAG_DROP) { clearFlag(p); ai.wantT = 0; }
+      ai.join = -1;
+      return;
+    }
+    // nothing of its own to fly: help at whatever the side has standing that
+    // wants hands (aiHelps)
+    const j = ai.join >= 0 ? players[ai.join] : null;
+    if (j && j.active && j.flag && aiHelps(p, j.flag)) return;
+    const q = nearestTeamFlag(p, (f) => aiHelps(p, f));
+    ai.join = q ? q.id : -1;
+    return;
+  }
+  ai.wantT = 0;
+  const q = teamFlagAt(p.team, w.type, w.x, w.y, p);
+  if (q) { if (p.flag) clearFlag(p); ai.join = q.id; return; }
+  ai.join = -1;
+  const f = p.flag;
+  if (f && f.type === w.type && Math.hypot(f.tx * TILE + 8 - w.x, f.ty * TILE + 8 - w.y) < FLAG_R * 0.5) return; // the standing flag already says it
+  plantFlag(p, Math.floor(w.x / TILE), Math.floor(w.y / TILE), w.type);
+}
+// Would an idle bot go and help at a teammate's flag? An ATTACK from
+// anywhere - unless it is one of the side's guards, who keep the bird - so
+// a push one bot starts is a push the free hands join; a GATHER only when it
+// is near (a workplace is one bot's, and four bots crossing the map to
+// share a tree is a side that has stopped farming); a DEFEND never - the
+// threat read (aiDefendersWanted) already calls exactly the number home,
+// and a side that empties the map for one arrow never pushes; a RALLY from
+// anywhere (a human's only, and a human's flag is served regardless).
+function aiHelps(p, f) {
+  if (f.type === 'attack') return !aiOnGuard(p, aiProfile(p));
+  if (f.type === 'gather') return Math.hypot(f.tx * TILE + 8 - p.x, f.ty * TILE + 8 - p.y) < AI_FLAG_HELP;
+  return f.type === 'rally';
+}
+// the nearest tile of a building's footprint to p, as a work target (E on
+// an enemy building under an ATTACK flag)
+function aiStructTile(o, p) {
+  let best = null, bd = 1e9;
+  for (let dy = 0; dy < structH(o.type); dy++) for (let dx = 0; dx < structW(o.type); dx++) {
+    const tx = o.tx + dx, ty = o.ty + dy;
+    const d = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y);
+    if (d < bd) { bd = d; best = { tx, ty }; }
   }
   return best;
 }
@@ -372,16 +442,47 @@ function updateAI(p, dt) {
   const sit = aiSituation();
   const mine = sit[p.team], theirs = sit[1 - p.team];
   const own = mine ? mine.e : null;
-  const pushE = ai.pushCd > 0 ? null : aiWantsPush(p, prof, theirs, mine);
+  const alarm = !!(mine && mine.threat && mine.hp < AI_ALARM_HP);
+  let pushE = ai.pushCd > 0 ? null : aiWantsPush(p, prof, theirs, mine);
   let defend = null;
   if (mine && mine.threat) {
-    const alarm = mine.hp < AI_ALARM_HP;
     if (pushE) defend = alarm && !(theirs.hp < mine.hp) ? own : null;
     else if (alarm || Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R) defend = own;
     else defend = mine.defenders < aiDefendersWanted(mine) ? own : null;
   }
-  const guardE = aiOnGuard(p, prof);
-  const ward = prof.support && !player.dead && !inAir(player) && player !== p ? player : null;
+  let guardE = aiOnGuard(p, prof);
+  let ward = prof.support && !player.dead && !inAir(player) && player !== p ? player : null;
+
+  // ---- the flag (the `team flags` banner, robots.js) ---------------------
+  // What the ladder decides is what its own flag says: aiFlagSync flies last
+  // tick's decision (or joins a teammate already flying it), and this tick's
+  // is written for the next read - DEFEND at its bird when it is answering a
+  // threat, ATTACK at the rival bird when it is pushing, GATHER where it
+  // works (the harvest rung, below).
+  // (a guard's station is not flown: standing by the bird with nothing on it
+  // is a routine, not a plan, and a DEFEND there would call the side home)
+  aiFlagSync(p, dt);
+  if (defend) ai.want = { type: 'defend', x: own.x, y: own.y };
+  else if (pushE) ai.want = { type: 'attack', x: pushE.x, y: pushE.y };
+  else ai.want = null;
+  // THE ORDER: a flag somebody else planted that this bot serves - a human
+  // teammate's (the side's whole plan while it stands) or a teammate's it
+  // joined. It is the side's plan over the bot's own: the defend, guard,
+  // push and escort reads give way to it, the one exception the alarm (its
+  // bird under half nerve), which no order overrides. An ATTACK covering the
+  // rival bird and a DEFEND covering its own are folded straight into
+  // pushE/defend, so the push and defend rungs play them with everything
+  // they know (the lane, the gate's turrets, the archer's station); every
+  // other order is walked by the flag rung (5a).
+  const fl = servedFlag(p);
+  const order = fl && fl.owner !== p.id ? fl : null;
+  const flX = order ? order.tx * TILE + 8 : 0, flY = order ? order.ty * TILE + 8 : 0;
+  if (order) {
+    pushE = order.type === 'attack' && theirs && ai.pushCd <= 0 && inFlag(order, theirs.e.x, theirs.e.y) ? theirs.e : null;
+    if (!alarm) defend = order.type === 'defend' && own && inFlag(order, own.x, own.y) ? own : null;
+    guardE = null;
+    ward = null;
+  }
 
   // 0. spend a free skill point before the ladder - waiting on it is leaving
   //    growth on the table. Lowest ability level first, so the kit rises
@@ -398,7 +499,8 @@ function updateAI(p, dt) {
   //    only starts one with nobody close enough to do that. Standing there
   //    chewing under fire is not patience, it is a free kill. `foe` is read
   //    here rather than at rung 2 because this rung is the first to need it.
-  const foe = aiNearestEnemy(p, prof, [defend || guardE, pushE, ward]);
+  // (an order's ground is an anchor too: a rival on it is found on arrival)
+  const foe = aiNearestEnemy(p, prof, [defend || guardE, pushE, ward, order ? { x: flX, y: flY } : null]);
   const foeD = foe ? Math.hypot(foe.x - p.x, foe.y - p.y) : Infinity;
   // the reaction: a rival stays noticed prof.react seconds before the bot
   // turns on it (a slow side keeps chopping while you line up the shot)
@@ -410,7 +512,9 @@ function updateAI(p, dt) {
   // rival is at arm's length (AI_SIEGE_R), which is a rival it cannot ignore
   const siege = pushE && theirs && theirs.attackers > theirs.defenders &&
     Math.hypot(theirs.e.x - p.x, theirs.e.y - p.y) < AI_ROOST_R;
-  const engage = foe && ai.seeT >= prof.react && !(siege && foeD > AI_SIEGE_R) ? foe : null;
+  // a RALLY is a disengage: on the way to one only a rival at arm's length is fought
+  const rally = order && order.type === 'rally';
+  const engage = foe && ai.seeT >= prof.react && !((siege || rally) && foeD > AI_SIEGE_R) ? foe : null;
   if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
     if (p.hp < p.maxHp * 0.5 && bagCount(p, 'fish') > 0) inp.eatFish = true;
     else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
@@ -541,6 +645,36 @@ function updateAI(p, dt) {
   //    Everything below this rung walks somewhere, and a bot crawling to a
   //    berry bush at PRONE_SPEED is a bot that has stopped playing.
   if (p.prone) { inp.fire = false; return; }
+
+  // 5a. the order: a flag somebody else on the side planted (the block above
+  //     the ladder). An attack on the rival bird and a defend at its own
+  //     were folded into pushE/defend and are played below; this walks the
+  //     rest. Outside the ring: get there (a flag in a corner's woods is a
+  //     walk into trees, hence the roost budget), and a ring it cannot
+  //     route to is left to the ladder. Inside: ATTACK breaks what is theirs
+  //     with E (rivals in sight are rung 3's - the ring anchors them) and
+  //     holds the ground when nothing is left; RALLY stands; DEFEND and
+  //     GATHER go on down the ladder, with the work bounded to the ring.
+  if (order && !defend && !pushE) {
+    const d = Math.hypot(flX - p.x, flY - p.y);
+    if (d > AI_FLAG_IN) {
+      if (steerTo(flX, flY, 3, AI_ROOST_BUDGET) >= 0) { aimAt(flX, flY); inp.fire = false; ai.tgt = null; return; }
+    } else if (order.type === 'attack') {
+      const st = enemyStructNear(p.team, flX, flY, FLAG_R);
+      if (st) {
+        const t = aiStructTile(st, p);
+        const tx = t.tx * TILE + 8, ty = t.ty * TILE + 8;
+        aimAt(tx, ty);
+        const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
+        if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) { inp.work = true; inp.fire = false; ai.tgt = null; return; }
+        if (steerTo(tx, ty, WORK_REACH, AI_ROOST_BUDGET) >= 0) { inp.fire = false; ai.tgt = null; return; }
+      }
+      inp.fire = false; ai.tgt = null; return; // nothing left to break: hold the ground
+    } else if (order.type === 'rally') {
+      inp.fire = false; ai.tgt = null; return;
+    }
+  }
+  const bound = order && !defend && !pushE && (order.type === 'defend' || order.type === 'gather') ? order : null;
 
   // 5b. its bird is under attack: get to it. Rung 3 takes over on arrival -
   //     the bird is an anchor, so the archer standing off it is in sight.
@@ -737,15 +871,19 @@ function updateAI(p, dt) {
     (ai.tgt.type === 'bush' && ai.tgt.berries <= 0))) ai.tgt = null;
   ai.avoidT -= dt;
   if (ai.avoidT <= 0) ai.avoid = null;
+  // (under a DEFEND or GATHER order the work is bounded to the order's ring)
+  if (ai.tgt && bound && !inFlag(bound, ai.tgt.tx * TILE + 8, ai.tgt.ty * TILE + 8)) ai.tgt = null;
   if (!ai.tgt && ai.thinkT <= 0) {
     ai.thinkT = 0.6;
     ai.tgt = nearestObj(p.x, p.y, AI_FORAGE, (o) => o !== ai.avoid &&
       (o.type === 'tree' || o.type === 'rock' || o.type === 'chest' ||
         (o.type === 'bush' && o.berries > 0)) &&
-      aiOpenSides(o.tx, o.ty) >= 1);
+      aiOpenSides(o.tx, o.ty) >= 1 && (!bound || inFlag(bound, o.tx * TILE + 8, o.ty * TILE + 8)));
   }
   if (ai.tgt) {
     const t = ai.tgt;
+    // its own flag says where it works - unless it is already working under someone else's
+    if (!order) ai.want = { type: 'gather', x: t.tx * TILE + 8, y: t.ty * TILE + 8 };
     aimAt(t.tx * TILE + 8, t.ty * TILE + 8);
     const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
     if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) {
@@ -763,7 +901,9 @@ function updateAI(p, dt) {
     return;
   }
 
-  // 11. nothing to do: roam between its camp and the middle of the map
+  // 11. nothing to do: roam between its camp and the middle of the map -
+  //     unless an order has it on its ring, where nothing to do is standing
+  if (bound) { inp.fire = false; return; }
   ai.roam -= dt;
   if (ai.roam <= 0) {
     ai.roam = rand(3, 7);

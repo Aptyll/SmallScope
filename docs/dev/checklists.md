@@ -590,7 +590,7 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   fires a travelling bolt through the `arrows` array, so the `tracers` pass still has nothing
   pushing to it. Wolves are hostile but only to players.
   Worker bots take arrows from any rival, the turret bolts that were already aiming at them, a
-  rival worker's axe on an attack [flag](gameplay.md#worker-flags), and now every class ability and
+  rival worker's axe on an attack [flag](gameplay.md#team-flags), and now every class ability and
   the roll like any other body — but the AI's target picker still ignores them: a bot only
   downs a worker by accident, with a shot meant for a player. Buildings are not immune either: a
   **player** on another team breaks one with E, with **any bit a wall stops**, or with any
@@ -608,7 +608,6 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
 - **The AI does not play around the new states.** `updateAI` reads no `burnT`, `netT` or `rootT`,
   so a bot on fire does not break off and a netted one does not change its mind. Everything lands
   on them correctly; nothing reacts to it yet.
-- **bots never plant a worker flag.** `p.flag` exists on every player and the whole dispatch is
-  player-generic, but only `sampleHumanInput`'s middle-click writes one, so a bot's bay gathers the
-  way it always did. Teaching `updateAI` to plant one is the obvious next move and needs no new
-  plumbing.
+- **bots never plant a RALLY flag.** Every other order a bot flies is its ladder's own decision
+  made visible (`aiFlagSync`, ai.js); nothing in the ladder is a retreat, so the fourth wedge is a
+  human's alone until one is.

@@ -257,6 +257,9 @@ function render() {
       else if (o.type === 'net') drawNet(o, px, py, now);
     }
   }
+  // your side's flag rings - the ground each order covers - flat on the snow
+  // under everything that walks it, and the ring a held flag wheel previews
+  drawFlagRings(ox, oy, now);
 
   // what the abilities left flat on the snow - craters, and the piercing
   // shot's telegraph line - then drops (all under entities)
@@ -322,8 +325,8 @@ function render() {
   // the training grounds' archery targets: entities, never tile objects (a
   // slider crosses tiles every frame), sorted by their base like everything
   if (PRACTICE) for (const t of ptargets) draws.push({ y: t.y + 1, pt: t });
-  // your side's worker flags, half a pixel behind their own tile so a flag
-  // planted on a tree is never swallowed by that tree's canopy
+  // your side's flags, half a pixel behind their own tile so a flag planted
+  // on a tree is never swallowed by that tree's canopy
   for (const q of players) {
     if (!q.active || !q.flag || q.team !== viewPlayer().team) continue;
     draws.push({ y: (q.flag.ty + 1) * TILE + 0.5, f: q });
@@ -552,7 +555,6 @@ function render() {
   }
 
   drawSelection(ox, oy, now);
-  drawFlagAim(ox, oy);
   drawWorkHint(ox, oy);
   drawFishHint(ex, ey, now);
   // the parkour's two readouts: the lap clock over the runner, BEST / LAST
@@ -700,13 +702,10 @@ function render() {
   // the drop brief's roost headlines (updateDrop's tour, js/boot.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
   else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
-  // the flag order riding the pointer (its target tile is bracketed back in
-  // the world pass); only up while the middle button is held
-  if (state.mode === 'play') drawFlagCursor();
-  if (state.mode === 'play' && state.wheel) renderWheel(now);
-
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
+  // after the chart: a flag wheel opens over it too (pinned to the press point)
+  if (state.mode === 'play' && state.wheel) renderWheel(now);
   if (state.mode === 'play' && state.settingsOpen) renderSettings(now);
   if (state.mode === 'title' || state.intro > 0) renderTitle(now);
   // the last four seconds: the whole frame on a death (the recap - the

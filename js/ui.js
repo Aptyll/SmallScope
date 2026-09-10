@@ -26,6 +26,9 @@ function wheelOptions() {
   // special-cased either - wheelSpan(1) is the whole circle, so any direction
   // out of the hub picks it and the hub still cancels.
   if (w.kind === 'build') return buildOptionsAt(w.tx, w.ty).map((type) => ({ id: type }));
+  // the flag wheel: the four orders, attack straight up (the `team flags`
+  // banner, robots.js)
+  if (w.kind === 'flag') return FLAG_ORDER.map((id) => ({ id }));
   // the practice rack offers every tool in the game, in table (tier) order -
   // the arena is the one place trying an unearned weapon costs nothing
   if (w.kind === 'rack') return Object.keys(TOOLS).map((id) => ({ id }));
@@ -51,8 +54,10 @@ function wheelLayout() {
   const edge = WHEEL_R + WHEEL_PAD;
   // the wheel is UI, not world: it sits over its tile but keeps its own pixel
   // size at every zoom, so the anchor comes through wToS and the radii don't
-  let cx = Math.round(wToSX(w.tx * TILE + 8));
-  let cy = Math.round(wToSY(w.ty * TILE + 8));
+  // (a flag wheel over the chart is pinned to its press point instead: the
+  // chart's tile is under the pointer, not under the camera)
+  let cx = w.sx !== undefined ? Math.round(w.sx) : Math.round(wToSX(w.tx * TILE + 8));
+  let cy = w.sx !== undefined ? Math.round(w.sy) : Math.round(wToSY(w.ty * TILE + 8));
   cx = Math.max(edge + 2, Math.min(VIEW_W - edge - 2, cx));
   cy = Math.max(edge + 2, Math.min(VIEW_H - edge - 14, cy)); // bottom margin fits the label
   const opts = wheelOptions();
@@ -77,11 +82,21 @@ function wheelLayout() {
 function resolveWheel() {
   const w = state.wheel;
   const L = wheelLayout();
-  if (L.seg < 0) return; // released in the hub = cancel
+  if (L.seg < 0) {
+    // released in the hub = cancel - except a flag wheel held over your own
+    // flag, whose hub IS the flag (drawWheelHub): releasing there lifts it
+    if (w.kind === 'flag' && wheelOnOwnFlag()) player.input.cmd = { kind: 'flag', tx: w.tx, ty: w.ty, id: null };
+    return;
+  }
   player.input.cmd = {
-    kind: w.kind === 'build' ? 'build' : w.kind === 'rack' ? 'rack' : w.kind === 'pkdie' ? 'pkdie' : w.kind === 'agbell' ? 'agbell' : L.opts[L.seg].id,
+    kind: w.kind === 'build' ? 'build' : w.kind === 'flag' ? 'flag' : w.kind === 'rack' ? 'rack' : w.kind === 'pkdie' ? 'pkdie' : w.kind === 'agbell' ? 'agbell' : L.opts[L.seg].id,
     tx: w.tx, ty: w.ty, id: L.opts[L.seg].id,
   };
+}
+// is the open wheel standing on the local player's own flag?
+function wheelOnOwnFlag() {
+  const w = state.wheel, f = player.flag;
+  return !!(w && f && f.tx === w.tx && f.ty === w.ty);
 }
 
 // run a queued build/manage/gear order for any player
@@ -91,6 +106,9 @@ function runCmd(p, c) {
   if (c.kind === 'shop') { shopCmd(p, c); return; } // the merchant's counter (js/shop.js) - it checks its own reach
 
   if (c.kind === 'build') { placeStruct(c.tx, c.ty, c.id, p); return; }
+  // the flag: per-player state, planted anywhere on the map (no reach, no
+  // contest); id null is the lift (the `team flags` banner, js/robots.js)
+  if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return; }
   if (c.kind === 'rack') { rackEquip(p, c); return; } // the practice armory (js/world.js)
   if (c.kind === 'pkdie') { pkWheelPick(p, c); return; } // the parkour roll die (js/world.js)
   if (c.kind === 'agbell') { agRing(p, c); return; } // the archery range's bell (js/world.js)
@@ -383,13 +401,17 @@ function drawWheelStick(L) {
 // - which is where the pointer starts, so the way out is the way you came in.
 function drawWheelHub(L) {
   const cancel = L.seg < 0;
+  // a flag wheel over your own flag: the hub IS the flag, and releasing in
+  // it lifts the flag - so it wears the pennant, lit while the pointer is in
+  const lift = state.wheel.kind === 'flag' && wheelOnOwnFlag();
   ctx.beginPath();
   ctx.arc(L.cx, L.cy, WHEEL_HUB - 1.5, 0, Math.PI * 2);
-  ctx.fillStyle = cancel ? '#3a1f2c' : '#0e142c';
+  ctx.fillStyle = lift ? '#0e142c' : cancel ? '#3a1f2c' : '#0e142c';
   ctx.fill();
-  ctx.strokeStyle = cancel ? '#ff8a7a' : '#2a3358';
+  ctx.strokeStyle = lift ? (cancel ? '#ffd95c' : '#2a3358') : cancel ? '#ff8a7a' : '#2a3358';
   ctx.lineWidth = 1;
   ctx.stroke();
+  if (lift) { drawFlagPennant(ctx, L.cx - 2, L.cy + 4, cancel ? '#ffd95c' : TEAMS[skin(player.team)].mark); return; }
   ctx.fillStyle = cancel ? '#ff8a7a' : '#46527a';
   for (let d = -3; d <= 3; d++) { // rasterised, so the cross stays crisp
     ctx.fillRect(L.cx + d, L.cy + d, 1, 1);
@@ -439,6 +461,10 @@ function renderWheel(now) {
         ctx.fillRect(Math.round(ix - 8), Math.round(iy - 8), 16, 16);
       }
       ctx.globalAlpha = 1;
+    } else if (w.kind === 'flag') {
+      // the order's glyph at twice its banner size, in its own ink (the
+      // stakes: pale for your side, red for theirs) - lit gold under the pick
+      drawFlagIcon(ctx, opt.id, ix, iy, hovered ? '#ffd95c' : FLAG_TYPES[opt.id].col, '#0f1632', 2);
     } else if (w.kind === 'rack') {
       // a tool's own strip icon: the family silhouette in its tier's metal
       const T = TOOLS[opt.id];
@@ -484,8 +510,10 @@ function renderWheel(now) {
   drawWheelHub(L);
   drawWheelStick(L);
 
-  // hovered label + cost under the wheel (or CANCEL, from inside the hub)
+  // hovered label + cost under the wheel (or CANCEL, from inside the hub -
+  // LIFT, from the hub of a flag wheel standing on your own flag)
   let label = 'CANCEL', color = '#9fb6d8';
+  if (L.seg < 0 && w.kind === 'flag' && wheelOnOwnFlag()) { label = 'LIFT'; color = '#ffd95c'; }
   if (L.seg >= 0) {
     const opt = L.opts[L.seg];
     const o = structOf(objAt(w.tx, w.ty));
@@ -493,6 +521,9 @@ function renderWheel(now) {
       const t0 = STRUCTS[opt.id].tiers[0];
       label = STRUCTS[opt.id].name + ' : ' + costText(t0.cost);
       color = canAfford(t0.cost) ? '#ffd95c' : '#ff8a7a';
+    } else if (w.kind === 'flag') {
+      label = FLAG_TYPES[opt.id].name;
+      color = FLAG_TYPES[opt.id].col;
     } else if (w.kind === 'rack') {
       label = TOOLS[opt.id].name;
       color = TOOL_TIERS[TOOLS[opt.id].tier].rim; // the name in its tier's metal
@@ -663,13 +694,17 @@ function renderMinimap(now) {
     ctx.fillStyle = TEAMS[skin(p.team)].mark;
     ctx.fillRect(Math.round(MM_CX + dx) - 1, Math.round(MM_CY + dy) - 1, 2, 2);
   }
-  // worker flags on your side, as the same pennant the chart draws: where the
-  // crew was sent is exactly the kind of thing you check without opening a map
+  // flags on your side, as the same pennant and ring the chart draws: where
+  // the side was sent is exactly the kind of thing you check without opening
+  // a map (the disc clips the ring, so a flag off its edge shows as its rim)
   for (const q of players) {
     if (!q.active || q.team !== vp.team || !q.flag) continue;
     const dx = (q.flag.tx + 0.5 - ptx) * s, dy = (q.flag.ty + 0.5 - pty) * s;
-    if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawFlagPennant(ctx, MM_CX + dx, MM_CY + dy + 3, TEAMS[skin(q.team)].mark);
+    if (Math.hypot(dx, dy) > MM_R - 2 + FLAG_R / TILE * s) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(MM_CX, MM_CY, MM_R - 1, 0, Math.PI * 2); ctx.clip();
+    drawFlagMark(ctx, MM_CX + dx, MM_CY + dy + 3, q.flag, TEAMS[skin(q.team)].mark, undefined, s);
+    ctx.restore();
   }
   // the downed eagles: both objectives, always on the disc - keeping yours
   // alive (and finding theirs) is the match

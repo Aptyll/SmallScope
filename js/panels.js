@@ -342,29 +342,28 @@ function renderWorldMap(now) {
     ctx.fillRect(ox2 - 1, oy2 - 1, 3, 3);
   }
 
-  // worker flags, your side's only: the same pennant the minimap draws, with
-  // the job's icon over it - the chart is where an order across the world is
-  // given and read, so it has room to say which order it was
+  // flags, your side's only: the same pennant and ring the minimap draws,
+  // with the order's icon over it - the chart is where an order across the
+  // world is given and read, so it has room to say which order it was
   for (const q of players) {
     if (!q.active || q.team !== player.team || !q.flag) continue;
     const lx = MAP_X + Math.round((q.flag.tx + 0.5) * MAP_S);
     const ly = MAP_Y + Math.round((q.flag.ty + 0.5) * MAP_S);
-    drawFlagIcon(ctx, q.flag.job, lx + 3, ly - 10, TEAMS[skin(q.team)].mark, '#241a10');
-    drawFlagPennant(ctx, lx, ly, TEAMS[skin(q.team)].mark, '#241a10');
+    drawFlagMark(ctx, lx, ly, q.flag, TEAMS[skin(q.team)].mark, '#241a10', MAP_S);
+    drawFlagIcon(ctx, q.flag.type, lx + 3, ly - 10, TEAMS[skin(q.team)].mark, '#241a10');
   }
-  // the tile the pointer would plant on - only while the middle button is
-  // held, exactly as in the world (state.flagAim)
-  if (state.flagAim && mouse.inside) {
-    const mt = mapTileAt(mouse.x, mouse.y);
-    if (mt) {
-      const f = player.flag;
-      const lift = !!f && f.tx === mt.tx && f.ty === mt.ty;
-      const gx = MAP_X + Math.round((mt.tx + 0.5) * MAP_S), gy = MAP_Y + Math.round((mt.ty + 0.5) * MAP_S);
-      ctx.globalAlpha = 0.55 + 0.2 * Math.sin(now * 4);
-      if (lift) drawFlagPennant(ctx, gx, gy, '#f4f7ff', '#241a10');
-      else drawFlagIcon(ctx, flagResolve(player, mt.tx, mt.ty).job, gx, gy - 6, '#f4f7ff', '#241a10');
-      ctx.globalAlpha = 1;
-    }
+  // the tile a flag wheel held over the chart would plant on: the ring it
+  // would cover, in the lit wedge's colour (the wheel itself draws after)
+  const w = state.wheel;
+  if (w && w.kind === 'flag' && w.sx !== undefined) {
+    const L = wheelLayout();
+    const gx = MAP_X + Math.round((w.tx + 0.5) * MAP_S), gy = MAP_Y + Math.round((w.ty + 0.5) * MAP_S);
+    const col = L.seg >= 0 ? FLAG_TYPES[L.opts[L.seg].id].col : '#c9d0e2';
+    ctx.save();
+    ctx.globalAlpha = L.seg >= 0 ? 0.7 : 0.35;
+    ctx.strokeStyle = col; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(gx + 0.5, gy + 0.5, FLAG_R / TILE * MAP_S, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
   }
 
   // player marker: inked diamond + pulsing ring
@@ -711,7 +710,7 @@ function drawToolPrimer(g, y0) {
 const KEY_ROWS = [
   [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
     'dodge', 'slide', 'work', 'berry', 'fish', 'card', 'bag', 'char'],
-  ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'BUILD WHEEL'], ['MMB', 'ORDER CREW'],
+  ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'BUILD WHEEL'], ['RMB', 'FLAG WHEEL'],
     ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
 ];
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
@@ -834,7 +833,7 @@ function drawPadReadout(x0, y0) {
   const cols = [
     [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
       ['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH']],
-    [['stick', 'L3', 'INVENTORY'], ['dpad', 'U', 'CHARACTER'], ['dpad', 'D', 'HOLD: BUILD WHEEL'], ['stick', 'R3', 'DRAW CARD'], ['stick', 'R3', 'HOLD: ORDER CREW'], ['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'],
+    [['stick', 'L3', 'INVENTORY'], ['dpad', 'U', 'CHARACTER'], ['dpad', 'D', 'HOLD: BUILD WHEEL'], ['stick', 'R3', 'DRAW CARD'], ['stick', 'R3', 'HOLD: FLAG WHEEL'], ['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'],
       ['pill', 'START', 'SETTINGS'], null, ['face', 'A', 'TAKE'], ['face', 'B', 'BACK'], ['bump', 'LB', 'PAGE TABS'], ['dpad', 'L', 'SELECT'], ['stick', 'L', 'POINTER'], ['stick', 'R', 'SCROLL']],
   ];
   for (let c = 0; c < 2; c++) {
@@ -858,7 +857,7 @@ function drawPadReadout(x0, y0) {
   // ui.js)
   const cols = [
     [['stick', 'MOVE', TOUCH_INK], ['stick', 'AIM - LIFT TO FIRE', TOUCH_HOT], ['dodge', 'DODGE'], ['work', 'HARVEST'], ['slide', 'SLIDE'], ['char', 'CHARACTER']],
-    [['build', 'HOLD: BUILD WHEEL'], ['flag', 'HOLD: ORDER CREW'], ['map', 'WORLD MAP'], ['cog', 'SETTINGS'], ['x', 'BACK'], ['zoomOut', 'ZOOM']],
+    [['build', 'HOLD: BUILD WHEEL'], ['flag', 'HOLD: FLAG WHEEL'], ['map', 'WORLD MAP'], ['cog', 'SETTINGS'], ['x', 'BACK'], ['zoomOut', 'ZOOM']],
   ];
   for (let c = 0; c < 2; c++) {
     let y = 6;

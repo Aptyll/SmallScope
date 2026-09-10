@@ -1649,20 +1649,22 @@ function drawCampClock(o, cx, topY) {
 }
 
 // ---- what a flag looks like ---------------------------------------------
-// the job glyph, 7x7 about (x, y), stamped with the 1px dark rim a camp's
-// icon uses so it reads on snow, on parchment and on team cloth alike
-function drawFlagIcon(g, job, x, y, col, rim) {
-  const spec = FLAG_JOBS[job];
+// the order's glyph, 7x7 about (x, y) at scale s (1 on a banner, 2 on the
+// wheel), stamped with the 1px dark rim a camp's icon uses so it reads on
+// snow, on parchment and on team cloth alike
+function drawFlagIcon(g, type, x, y, col, rim, s) {
+  const spec = FLAG_TYPES[type];
   if (!spec) return;
-  const x0 = Math.round(x) - 3, y0 = Math.round(y) - 3;
+  s = s || 1;
+  const x0 = Math.round(x) - 3 * s, y0 = Math.round(y) - 3 * s;
   g.fillStyle = rim || '#0f1632';
-  for (const [rx, ry, rw, rh] of spec.icon) g.fillRect(x0 + rx - 1, y0 + ry - 1, rw + 2, rh + 2);
+  for (const [rx, ry, rw, rh] of spec.icon) g.fillRect(x0 + rx * s - 1, y0 + ry * s - 1, rw * s + 2, rh * s + 2);
   g.fillStyle = col || spec.col;
-  for (const [rx, ry, rw, rh] of spec.icon) g.fillRect(x0 + rx, y0 + ry, rw, rh);
+  for (const [rx, ry, rw, rh] of spec.icon) g.fillRect(x0 + rx * s, y0 + ry * s, rw * s, rh * s);
 }
 // the small marker - a pole and a pennant, (x, y) is its FOOT. Both maps and
-// the pick-up cursor draw the same one, so a flag is the same shape whatever
-// it is standing on.
+// the wheel's lift hub draw the same one, so a flag is the same shape
+// whatever it is standing on.
 function drawFlagPennant(g, x, y, col, rim) {
   const px = Math.round(x), py = Math.round(y);
   const rects = [[px, py - 7, 1, 8], [px + 1, py - 7, 4, 3]];
@@ -1671,11 +1673,46 @@ function drawFlagPennant(g, x, y, col, rim) {
   g.fillStyle = col;
   for (const [rx, ry, rw, rh] of rects) g.fillRect(rx, ry, rw, rh);
 }
+// THE RING: the ground an order covers, FLAG_R about the flag, drawn flat on
+// the snow under everything that walks it. A dark line under a dashed one in
+// the order's own colour, the dashes crawling round it so a standing order
+// reads as live and not as a boundary painted on the map; `a` fades the one
+// a held wheel previews. g is the world canvas at whatever zoom, so the ring
+// scales with the tile - it is a place, not a HUD element.
+function drawFlagRing(g, cx, cy, col, now, a) {
+  g.save();
+  g.globalAlpha = a;
+  g.lineWidth = 1;
+  g.setLineDash([4, 4]);
+  g.lineDashOffset = -((now * 6) % 8);
+  g.strokeStyle = '#0f1632';
+  g.beginPath(); g.arc(cx, cy + 1, FLAG_R, 0, Math.PI * 2); g.stroke();
+  g.strokeStyle = col;
+  g.beginPath(); g.arc(cx, cy, FLAG_R, 0, Math.PI * 2); g.stroke();
+  g.restore();
+}
+// every standing ring on your side (the y-sorted pole is drawFlag's), and -
+// while a flag wheel is held - the ring the pick would lay, in the lit
+// wedge's colour, or grey from the hub where nothing is chosen yet
+function drawFlagRings(ox, oy, now) {
+  const team = viewPlayer().team;
+  for (const q of players) {
+    if (!q.active || !q.flag || q.team !== team) continue;
+    const f = q.flag;
+    drawFlagRing(ctx, f.tx * TILE + 8 - ox, f.ty * TILE + 8 - oy, FLAG_TYPES[f.type].col, now, 0.55);
+  }
+  const w = state.wheel;
+  if (w && w.kind === 'flag' && !state.mapOpen) {
+    const L = wheelLayout();
+    const col = L.seg >= 0 ? FLAG_TYPES[L.opts[L.seg].id].col : '#8fa4c8';
+    drawFlagRing(ctx, w.tx * TILE + 8 - ox, w.ty * TILE + 8 - oy, col, now, L.seg >= 0 ? 0.7 : 0.3);
+  }
+}
 // The planted flag itself, in the world pass (y-sorted with the entities): a
-// pole at the tile's centre and a dark banner on it carrying the SAME job
-// icon the cursor previewed, inked in the team's colour - so what the crew
-// was told, and who told them, both read from across the field. Dark cloth
-// and a bright glyph, not the other way round: at nine pixels square a solid
+// pole at the tile's centre and a dark banner on it carrying the SAME order
+// icon the wheel offered, inked in the team's colour - so what the side was
+// told, and who told them, both read from across the field. Dark cloth and a
+// bright glyph, not the other way round: at nine pixels square a solid
 // colour with a hole punched in it is a blob, and the glyph is the message.
 function drawFlag(q, ex, ey, now) {
   const f = q.flag;
@@ -1691,33 +1728,20 @@ function drawFlag(q, ex, ey, now) {
   ctx.fillRect(bx + w, by - 21, 13, 11);
   ctx.fillStyle = '#141c3c';
   ctx.fillRect(bx + 1 + w, by - 20, 11, 9);
-  drawFlagIcon(ctx, f.job, bx + 6 + w, by - 16, col, '#141c3c');
+  drawFlagIcon(ctx, f.type, bx + 6 + w, by - 16, col, '#141c3c');
 }
-// the target tile, in the world pass: drawSelection's four corner brackets,
-// dark rim first so they read on snow. Steady, not pulsing - the E bracket
-// breathes to catch an eye that is not looking, and this one is only on
-// screen because a hand is already holding it there.
-function drawFlagAim(ox, oy) {
-  if (state.mapOpen) return;
-  const t = flagTarget();
-  if (!t) return;
-  const bx = t.tx * TILE - ox, by = t.ty * TILE - oy;
-  const corners = (c, px, py) => {
-    ctx.fillStyle = c;
-    ctx.fillRect(px, py, 3, 1); ctx.fillRect(px, py, 1, 3);
-    ctx.fillRect(px + TILE - 3, py, 3, 1); ctx.fillRect(px + TILE - 1, py, 1, 3);
-    ctx.fillRect(px, py + TILE - 1, 3, 1); ctx.fillRect(px, py + TILE - 3, 1, 3);
-    ctx.fillRect(px + TILE - 3, py + TILE - 1, 3, 1); ctx.fillRect(px + TILE - 1, py + TILE - 3, 1, 3);
-  };
-  corners('rgba(15,22,50,0.9)', bx + 1, by + 1);
-  corners(t.col, bx, by);
-}
-// ...and the order itself riding the pointer, clear of the reticle's ticks
-function drawFlagCursor() {
-  const t = flagTarget();
-  if (!t) return;
-  if (t.lift) drawFlagPennant(ctx, mouse.x + 9, mouse.y + 12, TEAMS[skin(player.team)].mark);
-  else drawFlagIcon(ctx, t.job, mouse.x + 12, mouse.y + 9, t.col);
+// a flag on either map: the pennant with the ring it covers about it, at that
+// map's px per tile - the ring is the order's whole meaning, so the maps
+// carry it too. (x, y) is the pennant's foot.
+function drawFlagMark(g, x, y, f, col, rim, s) {
+  const r = FLAG_R / TILE * s;
+  g.save();
+  g.globalAlpha = 0.3;
+  g.lineWidth = 1;
+  g.strokeStyle = col;
+  g.beginPath(); g.arc(Math.round(x) + 0.5, Math.round(y) - 2.5, r, 0, Math.PI * 2); g.stroke();
+  g.restore();
+  drawFlagPennant(g, x, y, col, rim);
 }
 
 // every player draws through here - the local one, the AI fills, network

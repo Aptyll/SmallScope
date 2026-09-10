@@ -25,7 +25,7 @@ const TOUCH_COL_X = 22;                       // the two columns' centres, in fr
 // `latch` flips an action's key on each tap (SLIDE is the slide key, a
 // toggle under a thumb); `zoom` steps the camera a rung; a
 // `gesture` plate is held and dragged - BUILD opens the wheel and the finger
-// picks the wedge, FLAG raises the order and the finger's lift plants it.
+// picks the wedge, FLAG opens the flag wheel over the aim the same way.
 // `when` hides a plate that has nothing to do; `menu` is the one plate that
 // stays up over every panel and screen, where its glyph is a cross and its
 // key backs out (Escape).
@@ -35,7 +35,7 @@ const TOUCH_BTNS = {
   slide: { r: TOUCH_R, latch: 'slide' },
   char: { r: TOUCH_R - 2, act: 'char' },
   build: { r: TOUCH_R, gesture: 'wheel' },
-  flag: { r: TOUCH_R, gesture: 'flag', when: () => hasWorkers(player) },
+  flag: { r: TOUCH_R, gesture: 'flag' },
   menu: { r: TOUCH_R_SMALL, key: 'Escape' },
   zoomOut: { r: TOUCH_R_SMALL, zoom: -1 },
   zoomIn: { r: TOUCH_R_SMALL, zoom: 1 },
@@ -64,7 +64,7 @@ function touchMenuGlyph() {
   if (state.mode === 'title') return state.menu.panel || state.menu.screen !== 'menu' ? 'x' : null;
   if (state.mode === 'drop') return state.mapOpen ? 'x' : null;
   if (state.mode === 'dead') return state.deadView === 'spec' ? 'x' : null;
-  return touchOverlay() || state.wheel || state.flagAim ? 'x' : 'cog';
+  return touchOverlay() || state.wheel ? 'x' : 'cog';
 }
 
 // Where the plates sit: the right column climbs off the pack's top edge (roll,
@@ -186,14 +186,13 @@ function touchBtnPress(f, id) {
   else if (b.latch) { const k = actKey(b.latch).toLowerCase(); keys[k] = !keys[k]; }
   else if (b.zoom) kWant = Math.max(kMin(), Math.min(kMax(), kWant + b.zoom));
   else if (b.gesture === 'wheel') { pointerMove(f.x, f.y, 'touch'); f.gesture = openWheelNear(player, f.x, f.y); }
-  else if (b.gesture === 'flag') { pointerMove(f.x, f.y, 'touch'); f.gesture = flagDown(); }
+  else if (b.gesture === 'flag') { pointerMove(f.x, f.y, 'touch'); f.gesture = openFlagWheel(); }
 }
 function touchBtnRelease(f, id) {
   const b = TOUCH_BTNS[id];
   touch.held[id] = false;
   if (b.act || b.key) { const k = b.act ? actKey(b.act) : b.key; keys[k.toLowerCase()] = false; keyRelease({ key: k }); }
-  else if (b.gesture === 'wheel' && f.gesture) { if (state.wheel) { resolveWheel(); state.wheel = null; } }
-  else if (b.gesture === 'flag' && f.gesture) flagUp();
+  else if (b.gesture && f.gesture) { if (state.wheel) { resolveWheel(); state.wheel = null; } } // build and flag wheels alike
 }
 
 // the sticks, once per frame from loop(): each finger's travel from where it

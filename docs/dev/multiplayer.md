@@ -140,7 +140,8 @@ two share one. Every held key lets go on a rebind, the listen dies with the slab
 on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Four gestures have no key and are exposed bare for a
 trigger or a plate: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
 because a press has the HUD to get past first, a trigger is never over a well),
-`flagDown`/`flagUp` (the worker order), `openWheelNear(p, ax, ay)` (a build/manage wheel on the
+`openFlagWheel()` (the flag wheel on the tile under the pointer — the chart's tile while the map
+is up), `openWheelNear(p, ax, ay)` (a build/manage wheel on the
 nearest site or own building in the right button's reach, for a controller with no tile under
 its pointer) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
 last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep rewriting the aim
@@ -167,8 +168,8 @@ off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the j
 way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
 L3 the inventory drawer, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
-(held, released fires — the same falling edge as the button), LT the slide, R3 holds the worker
-flag (and draws a card on a tap under `PAD_TAP`, the way BACK splits map from standings), dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
+(held, released fires — the same falling edge as the button), LT the slide, R3 holds the flag
+wheel open over the aim (and draws a card on a tap under `PAD_TAP`, the way BACK splits map from standings), dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
 armory, the roll die, the range bell), and BACK is the standings while held and the map on a
 tap under `PAD_TAP`. The
@@ -205,8 +206,8 @@ HUD (the strip's wells, the pack, the sheet, the counter) is the mouse — `poin
 (`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing from the bottom edge —
 DODGE (big), WORK (E held for the finger's life), SLIDE (a latch on shift: one tap on, one off),
 CHARACTER — a left column of BUILD (opens `openWheelNear` and the same finger drags to the
-wedge) and, once there is a crew, FLAG (raises the order, the lift plants it where the finger
-is), and a top-left row of the menu cog and the zoom pair. Over any panel or screen
+wedge) and FLAG (opens the flag wheel over the aim the same way, and the lift plants the wedge
+the finger is on), and a top-left row of the menu cog and the zoom pair. Over any panel or screen
 (`touchOverlay`) every finger is the mouse, a drag that grabbed nothing scrolls the page, and the
 one plate left is the cog turned cross: Escape. `touchPoll` reads the sticks once per frame and
 rewrites the aim through the pointer as the pad does; the plates' pixels are
@@ -540,6 +541,31 @@ The ladder:
    (nor the alpha under level 6).
 5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
    this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.
+5a. **the order** — a [flag](gameplay.md#team-flags) somebody else on the side planted that
+   this bot serves (`servedFlag`): a human teammate's, which is the side's whole plan while it
+   stands, or a teammate's it joined. Read before the ladder (`aiFlagSync`, then the `order`
+   block): it overrides the defend, guard, push and escort reads below — the one exception the
+   **alarm** (its own bird under `AI_ALARM_HP`), which no order overrides — and an ATTACK whose
+   ring covers the rival bird, or a DEFEND whose ring covers its own, is folded straight into
+   `pushE`/`defend` so rungs 6 and 8 play them with everything they know (the lane, the gate's
+   turrets, the archer's station). Every other order this rung walks: outside `AI_FLAG_IN` of
+   the flag it goes there (on the roost budget — a ring in a corner's woods is a walk into
+   trees), and a flag it cannot route to is left to the ladder; inside, ATTACK breaks the
+   nearest rival building in the ring with E and holds the ground when nothing is left (rivals
+   in sight are rung 3's — the ring is an anchor), RALLY stands (and on the way only a rival
+   inside `AI_SIEGE_R` is fought: a rally is a disengage), DEFEND and GATHER go on down the
+   ladder with the harvest bounded to the ring and the roam replaced by standing. **A bot's own
+   flag is the ladder made visible**: rung 6 answering a threat flies DEFEND at its bird, rung 8
+   pushing flies ATTACK at the rival bird, rung 13 flies GATHER where it works (`ai.want`, read
+   every `AI_FLAG_T` and kept `AI_FLAG_DROP` past its last reason; a guard's station, rung 7,
+   is a routine and flies nothing). It plants nothing a
+   teammate is already flying over the same ground — it joins that flag (`ai.join`) — and a bot
+   with nothing of its own to fly helps at the side's nearest standing flag that wants hands
+   (`aiHelps`: an ATTACK from anywhere unless it is a guard, a GATHER only inside
+   `AI_FLAG_HELP`, a DEFEND never — the threat read already calls the right number home — a
+   RALLY from anywhere). A human's flag pulls every own flag down.
+   Planting goes through `plantFlag` directly rather than `input.cmd`: a flag is per-player
+   state, not an act in the world, and the human's radial ends in the same function.
 6. **defend** — its own bird under `threat` on the shared read (**the two birds**, below): as
    many bots as the threat calls for (`aiDefendersWanted` — one more than the attackers seen at
    it, never fewer than two) walk to it (`aiToRoost`, below) from wherever on the map they are,

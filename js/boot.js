@@ -1433,15 +1433,13 @@ window.DBG = {
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
   structures, robots, tracers, arrows, STRUCTS, SWING_TOOLS, TOOLS, BITS,
-  // the worker flag: plant one without a mouse, read back what a tile would
-  // order, and reach the corridor a PATH flag asks its crew to clear
-  FLAG_JOBS, flagCorridor, mapTileAt,
+  // the team flag: plant one without a mouse (any player), lift it, open the
+  // wheel by hand, and read back whose flag a body serves and the ring
+  FLAG_TYPES, FLAG_ORDER, FLAG_R, mapTileAt, servedFlag, humanFlag, inFlag, openFlagWheel,
   // the two coordinate bridges, so a driver can put the pointer on a tile
   wToSX, wToSY, mouseWX, mouseWY,
-  plantFlag: (tx, ty, p) => plantFlag(p || player, tx, ty),
+  plantFlag: (tx, ty, type, p) => plantFlag(p || player, tx, ty, type),
   clearFlag: (p) => clearFlag(p || player),
-  flagResolve: (tx, ty, p) => flagResolve(p || player, tx, ty),
-  flagTarget, // what the held press is aiming at right now (null = nothing drawn)
   get flag() { return player.flag; },
   // the hud strip - the xp bar + weapon/ability strip, bottom-centre.
   hudStripRect, stripHit,
