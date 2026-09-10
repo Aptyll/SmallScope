@@ -132,13 +132,16 @@ function renderScoreboard() {
 // chartSpan says which tiles each chart pixel covers, and the pixel takes
 // the highest class among them, so a one-tile wall never drops out of its
 // run where WORLD tiles fold into MAP_W px - and PAINTED one flat ink per
-// class (CHART_INK). The light comes from the top-left, as it does on the
-// snow itself: a mass's rim is LIT where lower ground lies above or to its
-// left and INKED where it lies below or to its right (CHART_LIT/CHART_RIM),
-// and each ground wears an ordered STIPPLE (chartGrain - a lattice, never a
-// hash), so the chart has the grain of a drawn thing without the noise of
-// one. No grid, no dot for a single bush: a lone tile is a speck at this
-// scale. The image is re-inked at most every MM_REBUILD ticks like the
+// class (CHART_INK) - A WINTER CHART: the open ground is snow, the woods a
+// deep cold pine, the lakes pale ice, the road a track trodden through it.
+// The light comes from the top-left, as it does on the snow itself: a
+// mass's rim is LIT where lower ground lies above or to its left and INKED
+// where it lies below or to its right (CHART_LIT/CHART_RIM), and the woods
+// are a scatter of tiny PINES (chartPines: a three-pixel tree, dark with
+// a dusting of snow on its shoulder, one per lattice cell nudged by hash2 so
+// the rows never line up - a wood, not a grid of studs); the ice wears a
+// sparse sheen and the snow a faint grain (chartGrain). No grid, no dot for
+// a single bush: a lone tile is a speck at this scale. The image is re-inked at most every MM_REBUILD ticks like the
 // minimap's (a wall going up half a second late on a chart is invisible)
 // and on the tick a fresh match resets the clock.
 //
@@ -191,19 +194,23 @@ function mapAlloc() {
   chartBuiltAt = -1e9;
   buildMapPanel();
 }
-// one flat ink per class, indexed by CH_* (world.js) - the parchment, the
+// one flat ink per class, indexed by CH_* (world.js) - the snow, the
 // woods, the road, the ice, open water, a chest, then a side's buildings
 // and its bird in the two depths of each team's ink
 const CHART_INK = [
-  [220, 205, 166], [64, 96, 70], [150, 116, 74], [156, 194, 212], [52, 84, 116],
+  [232, 237, 244], [58, 88, 82], [172, 150, 118], [176, 208, 226], [56, 92, 128],
   [222, 176, 76], [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
 ];
 const CHART_RIM = [];  // the inked rim a mass wears where lower ground lies below or right of it
-CHART_RIM[CH_FOREST] = [36, 58, 42]; CHART_RIM[CH_ICE] = [82, 124, 150]; CHART_RIM[CH_ROAD] = [118, 90, 56];
+CHART_RIM[CH_FOREST] = [30, 50, 46]; CHART_RIM[CH_ICE] = [110, 148, 172]; CHART_RIM[CH_ROAD] = [128, 106, 78];
 const CHART_LIT = [];  // the lit rim where lower ground lies above or left of it
-CHART_LIT[CH_FOREST] = [98, 134, 98]; CHART_LIT[CH_ICE] = [202, 228, 240];
+CHART_LIT[CH_FOREST] = [118, 150, 142]; CHART_LIT[CH_ICE] = [218, 236, 244];
 const CHART_GRAIN = []; // the stipple's ink
-CHART_GRAIN[CH_SNOW] = [211, 195, 156]; CHART_GRAIN[CH_FOREST] = [78, 112, 82]; CHART_GRAIN[CH_ICE] = [180, 212, 226];
+CHART_GRAIN[CH_SNOW] = [220, 227, 236]; CHART_GRAIN[CH_ICE] = [200, 224, 236];
+// the pine: three pixels of dark tree and one of snow on its shoulder,
+// one per CHART_PINE_STEP cell, nudged by hash2 so no two rows line up
+const CHART_PINE = [34, 58, 54], CHART_PINE_SNOW = [138, 168, 160];
+const CHART_PINE_STEP = 6;
 const CHART_NEED = []; // neighbours of its own class a tile needs to stay on the chart
 CHART_NEED[CH_FOREST] = 2; CHART_NEED[CH_ICE] = 2;
 const CHART_DARK = '#241a10'; // the leather: every mark's rim, the camps' and names' too
@@ -214,8 +221,7 @@ function chartGround(i) { const g = ground[i]; return g === 2 ? CH_HOLE : g === 
 // the stipple: canopy bumps on a checker lattice, a diagonal sheen across
 // the ice, a sparse grain on the parchment
 function chartGrain(c, px, py) {
-  if (c === CH_FOREST) return ((px & 3) === 0 && (py & 3) === 0) || ((px & 3) === 2 && (py & 3) === 2);
-  if (c === CH_ICE) return (px + py) % 8 === 0;
+  if (c === CH_ICE) return (px + py) % 9 === 0;
   if (c === CH_SNOW) return (px % 6 === 0 && py % 6 === 3) || (px % 6 === 3 && py % 6 === 0);
   return false;
 }
@@ -270,7 +276,30 @@ function buildWorldMapImg() {
     const j = i * 4;
     dd[j] = ink[0]; dd[j + 1] = ink[1]; dd[j + 2] = ink[2]; dd[j + 3] = 255;
   }
+  chartPines(out, dd, W);
   mapCtx.putImageData(mapImg, 0, 0);
+}
+
+// the woods' pines: one tree per lattice cell (odd rows staggered), each
+// nudged up to 3 px either way by hash2 - as far as the cell allows - so
+// no row or column of them lines up and the wood reads as grown, not gridded. A tree
+// is a dark apex over a dark base of three, with a lighter pixel on its
+// left shoulder for the snow it carries; it stands only where the pixels
+// two out on every side are still woods, so no tree spills onto a rim, the
+// snow or a road
+function chartPines(out, dd, W) {
+  const put = (x, y, c) => { const j = (y * W + x) * 4; dd[j] = c[0]; dd[j + 1] = c[1]; dd[j + 2] = c[2]; };
+  const S = CHART_PINE_STEP;
+  for (let cy = 0, row = 0; cy < W; cy += S, row++) for (let cx = row & 1 ? (S >> 1) : 0; cx < W; cx += S) {
+    const h = hash2(cx * 3 + 1, cy * 5 + 7), h2 = hash2(cy * 3 + 5, cx * 7 + 11);
+    const x = cx + ((h * 4) | 0), y = cy + ((h2 * 4) | 0);
+    if (x < 2 || y < 2 || x >= W - 2 || y >= W - 2) continue;
+    let ok = true;
+    for (let dy = -2; dy <= 2 && ok; dy++) for (let dx = -2; dx <= 2; dx++) if (out[(y + dy) * W + x + dx] !== CH_FOREST) { ok = false; break; }
+    if (!ok) continue;
+    put(x, y - 1, CHART_PINE); put(x - 1, y, CHART_PINE); put(x, y, CHART_PINE); put(x + 1, y, CHART_PINE);
+    put(x - 1, y - 1, CHART_PINE_SNOW);
+  }
 }
 
 const panelCv = document.createElement('canvas');
@@ -353,7 +382,7 @@ function renderWorldMap(now) {
   }
 
   // current camera view
-  ctx.strokeStyle = 'rgba(58,44,28,0.5)';
+  ctx.strokeStyle = 'rgba(40,52,80,0.55)';
   ctx.lineWidth = 1;
   ctx.strokeRect(MAP_X + (camX / TILE) * MAP_S + 0.5, MAP_Y + (camY / TILE) * MAP_S + 0.5,
     (WV_W / TILE) * MAP_S - 1, (WV_H / TILE) * MAP_S - 1);
@@ -367,13 +396,13 @@ function renderWorldMap(now) {
   for (const L of camps) {
     const lx = MAP_X + Math.round((L.tx + 0.5) * MAP_S);
     const ly = MAP_Y + Math.round((L.ty + 0.5) * MAP_S);
-    drawCampIcon(ctx, L, lx, ly - 3, '#3a2c1c', 'rgba(228,216,186,0.85)');
+    drawCampIcon(ctx, L, lx, ly - 3, '#2c3448', 'rgba(240,244,250,0.9)');
     const w = pixelTextWidth(L.name);
     const nx = Math.max(MAP_X + 1, Math.min(MAP_X + MAP_W - w - 1, Math.round(lx - w / 2)));
     let ny = ly + 3;
     if (inked.some((r) => nx < r.x + r.w + 2 && nx + w + 2 > r.x && ny < r.y + 7 && ny + 7 > r.y)) ny = ly - 12;
     inked.push({ x: nx, y: ny, w });
-    drawPixelTextShadow(ctx, L.name, nx, ny, '#3a2c1c', 'rgba(228,216,186,0.85)');
+    drawPixelTextShadow(ctx, L.name, nx, ny, '#2c3448', 'rgba(240,244,250,0.9)');
   }
 
   // every body on the chart wears the one grammar both maps share (drawMap*,

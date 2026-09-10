@@ -373,12 +373,16 @@ photograph of the tiles** (3.32): `buildWorldMapImg()` files every tile under a 
 tile of forest or ice is ground again, a snow pinhole with three sides of one mass is that mass
 (`CHART_NEED`) — resamples it into the slot by priority (`chartSpan`: each chart pixel takes the
 highest class among the tiles it covers, so a one-tile wall never drops out of its run where 232
-tiles fold into 192 px), and paints one flat ink per class (`CHART_INK`). The light comes from
-the top-left, as it does on the snow: a mass's rim is lit where lower ground lies above or left of
-it and inked where it lies below or right (`CHART_LIT`/`CHART_RIM` — the forest, the ice, and the
-road's shadow edge), and each ground wears an ordered stipple (`chartGrain`: canopy bumps on a
-checker lattice, a diagonal sheen on the ice, a sparse grain on the parchment — a lattice, never a
-hash), so the chart has the grain of a drawn thing without the noise of one. No grid: a single
+tiles fold into 192 px), and paints one flat ink per class (`CHART_INK`) — **a winter chart**:
+snow-white open ground, deep cold pine for the woods, pale ice, a tan track for the road. The
+light comes from the top-left, as it does on the snow: a mass's rim is lit where lower ground lies
+above or left of it and inked where it lies below or right (`CHART_LIT`/`CHART_RIM` — the forest,
+the ice, and the road's shadow edge). The woods are a scatter of tiny **pines** (`chartPines`: a
+three-pixel tree, dark, with a lighter pixel of snow on its shoulder, one per `CHART_PINE_STEP`
+lattice cell nudged by `hash2` so no row lines up, and only where the pixels two out on every
+side are still woods — a bright dot on a regular lattice read as studs, so the tree is dark on a
+dark ground and the scatter is jittered), the ice wears a sparse diagonal sheen and the snow a
+faint grain (`chartGrain`), so the chart has the grain of a drawn thing without the noise of one. No grid: a single
 bush, rock or stump has no class and shows the ground, because at that scale a speck is noise;
 the buried chests keep theirs, a gold speck being a thing worth walking to. A side's buildings
 and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
