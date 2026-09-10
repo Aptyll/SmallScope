@@ -50,7 +50,7 @@ screen whose short side is under `MOBILE_SHORT` CSS px, so a tablet stays on the
 `'on'`/`'off'` force it), and `fitCanvas()` calls it first, so a flip anywhere (the setting,
 boot reading the saved one, a resize onto another screen) re-fits the view. What a phone gets:
 
-- **The biggest game pixel the overlays allow.** The world map slab is 212×226 and the settings
+- **The biggest game pixel the overlays allow.** The world map slab is 212×226 at the floor (it grows with the view: `fitMapSlab`, canvas.js) and the settings
   slab 240×218, so a phone takes the largest whole device-pixel scale that keeps the view above
   `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — far fewer rows than a monitor's 360 (a 1170-px-tall
   phone lands on 234 rows at 5×; a 1080-px one cannot, 5× would be 216, so it takes 270 rows
@@ -396,12 +396,16 @@ every worker, soldier and merchant standing is drawn, none of them hides; the wa
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
 of its side's ink, never a colour of its own that would read as a third team; the bird diamond
 is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. **The slab is
-the chart and a header, nothing else** (`PANEL_W` 212: the chart with a 10 px margin either side,
-`MAP_HEAD_Y`/`MAP_HEAD_H` the row over it): the day at 2× on the left, and on the right the
-`CLOSE` plank — `drawMenuButton`, the game's one button, hit through `mapCloseRect`/`mapCloseHit`
-in `pointerPress` (play and drop alike; the cursor is a hand over it) — with no compass (the chart
-is north-up, as the world is), no key (the marks are the minimap's own), no clock (the disc wears
-it) and no title.
+the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
+`relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
+px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
+(a phone at the 232-row floor gets the 192 chart), and `mapAlloc()` (panels.js) remakes the chart's
+buffers and re-bakes the slab whenever `MAP_W` changes. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
+the day at 2× on the left, and on the right the `CLOSE` plate — `drawParchButton`, a plank in the
+parchment's own grammar (leather-bound tan, lifting off its shadow on hover), hit through
+`mapCloseRect`/`mapCloseHit` in `pointerPress` (play and drop alike; the cursor is a hand over it)
+— with no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
+own), no clock (the disc wears it), no title and no trim: a leather edge and the parchment.
 The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
 `MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is
 px per tile — an eased `mmCur` chasing `MM_ZOOMS[settings.mmZoom]` (0.25 … 4 over twelve rungs,

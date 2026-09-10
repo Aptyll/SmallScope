@@ -143,12 +143,15 @@ function renderScoreboard() {
 // and on the tick a fresh match resets the clock.
 //
 // THE SLAB is the chart and a header, nothing else: the map centred with
-// the same margin on every side, and over it the day on the left and the
-// CLOSE plank on the right (mapCloseRect - the game's one button, lifting
-// on hover, pressed through pointerPress like every other; M and Escape
-// still close it). No compass (the chart is north-up, as the world is), no
-// key (the marks are the minimap's own, learnt there), no clock (the disc
-// wears it).
+// the same margin either side, and over it the day on the left and the
+// CLOSE plate on the right (mapCloseRect - a plank in the parchment's own
+// grammar, drawParchButton: bound in leather, lifting on hover like every
+// plank in the game, pressed through pointerPress like every other; M and
+// Escape still close it). No compass (the chart is north-up, as the world
+// is), no key (the marks are the minimap's own, learnt there), no clock
+// (the disc wears it), no trim: a leather edge and the parchment. The slab
+// fits the view (fitMapSlab, canvas.js) and mapAlloc follows it - the
+// chart's buffers and the slab's bake are remade when MAP_W changes.
 
 // a screen point over the chart -> the world tile under it (null off the map).
 // The chart is the only way to flag a tile that is off-screen, so the flag
@@ -162,7 +165,7 @@ function mapTileAt(sx, sy) {
 const MAP_HEAD_Y = 6, MAP_HEAD_H = 14; // the header row inside the slab: where the day and the plank sit
 function mapCloseRect() {
   const w = pixelTextWidth('CLOSE', 2) + 14;
-  return { x: PANEL_X + PANEL_W - 10 - w, y: PANEL_Y + MAP_HEAD_Y, w, h: MAP_HEAD_H };
+  return { x: PANEL_X + PANEL_W - MAP_SIDE - w, y: PANEL_Y + MAP_HEAD_Y, w, h: MAP_HEAD_H };
 }
 function mapCloseHit() {
   const r = mapCloseRect(), mx = mouse.x, my = mouse.y;
@@ -170,15 +173,24 @@ function mapCloseHit() {
 }
 
 const mapCv = document.createElement('canvas');
-mapCv.width = MAP_W; mapCv.height = MAP_W;
 const mapCtx = mapCv.getContext('2d');
-const mapImg = mapCtx.createImageData(MAP_W, MAP_W);
+let mapImg = null;
 const chartCls = new Uint8Array(WORLD * WORLD);  // the class of every tile
 const chartTmp = new Uint8Array(WORLD * WORLD);  // the flatten's scratch
-const chartOut = new Uint8Array(MAP_W * MAP_W);  // the class of every chart pixel
-// the tiles [t0, t1] chart pixel p covers on either axis
-const chartSpan = [];
-for (let p = 0; p < MAP_W; p++) chartSpan.push([Math.floor(p / MAP_S), Math.min(WORLD - 1, Math.floor((p + 1) / MAP_S - 1e-6))]);
+let chartOut = null;   // the class of every chart pixel
+let chartSpan = null;  // the tiles [t0, t1] chart pixel p covers on either axis
+let mapAllocW = 0;     // the MAP_W the buffers and the bake were made for
+function mapAlloc() {
+  if (mapAllocW === MAP_W) return;
+  mapAllocW = MAP_W;
+  mapCv.width = mapCv.height = MAP_W;
+  mapImg = mapCtx.createImageData(MAP_W, MAP_W);
+  chartOut = new Uint8Array(MAP_W * MAP_W);
+  chartSpan = [];
+  for (let p = 0; p < MAP_W; p++) chartSpan.push([Math.floor(p / MAP_S), Math.min(WORLD - 1, Math.floor((p + 1) / MAP_S - 1e-6))]);
+  chartBuiltAt = -1e9;
+  buildMapPanel();
+}
 // one flat ink per class, indexed by CH_* (world.js) - the parchment, the
 // woods, the road, the ice, open water, a chest, then a side's buildings
 // and its bird in the two depths of each team's ink
@@ -262,12 +274,12 @@ function buildWorldMapImg() {
 }
 
 const panelCv = document.createElement('canvas');
-panelCv.width = PANEL_W; panelCv.height = PANEL_H;
 
-// the slab's chrome: leather, the mottled parchment, its worn rim, the
-// stitched trim, the studs, and the map's mat. The header is drawn live
-// (renderWorldMap): the day changes and the plank lifts.
+// the slab's chrome: leather, the mottled parchment, its worn rim, and the
+// map's mat - no trim, no studs. The header is drawn live (renderWorldMap):
+// the day changes and the plate lifts.
 function buildMapPanel() {
+  panelCv.width = PANEL_W; panelCv.height = PANEL_H;
   const g = panelCv.getContext('2d');
   const cham = (x, y, w, h) => { // rect with 2px chamfered corners
     g.fillRect(x + 2, y, w - 4, h);
@@ -289,15 +301,6 @@ function buildMapPanel() {
   g.fillStyle = 'rgba(120,90,50,0.16)';
   g.fillRect(2, 2, PANEL_W - 4, 3); g.fillRect(2, PANEL_H - 5, PANEL_W - 4, 3);
   g.fillRect(2, 2, 3, PANEL_H - 4); g.fillRect(PANEL_W - 5, 2, 3, PANEL_H - 4);
-  // stitched trim
-  g.fillStyle = '#8a6a45';
-  for (let x = 8; x < PANEL_W - 10; x += 6) { g.fillRect(x, 5, 3, 1); g.fillRect(x, PANEL_H - 6, 3, 1); }
-  for (let y = 8; y < PANEL_H - 10; y += 6) { g.fillRect(5, y, 1, 3); g.fillRect(PANEL_W - 6, y, 1, 3); }
-  // corner studs
-  g.fillStyle = '#5a4028';
-  for (const [sx, sy] of [[4, 4], [PANEL_W - 7, 4], [4, PANEL_H - 7], [PANEL_W - 7, PANEL_H - 7]]) {
-    g.fillRect(sx, sy + 1, 3, 1); g.fillRect(sx + 1, sy, 1, 3);
-  }
   // map mat: highlight line, dark frame (map itself drawn dynamically inside)
   const mx = MAP_X - PANEL_X, my = MAP_Y - PANEL_Y;
   g.fillStyle = '#b5a37e';
@@ -307,7 +310,26 @@ function buildMapPanel() {
   g.fillRect(mx - 2, my - 2, MAP_W + 4, MAP_W + 4);
 }
 
+// a plank in the parchment's grammar: a tan plate bound in leather, lit
+// along its top and left and worn along its bottom and right, the label in
+// the chart's ink; it lifts off its shadow and brightens under the pointer
+function drawParchButton(r, label, hv) {
+  const lift = Math.round(hv * 2);
+  const x = r.x, y = r.y - lift, w = r.w, h = r.h;
+  ctx.fillStyle = 'rgba(58,44,28,0.35)'; chamRect(x + 1, r.y + 2, w, h); // the shadow stays on the ground
+  ctx.fillStyle = CHART_DARK; chamRect(x, y, w, h);                        // leather binding
+  ctx.fillStyle = hv > 0.5 ? '#ece0be' : '#dccfae'; chamRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.fillStyle = hv > 0.5 ? '#fff6dc' : '#ede2c2';
+  ctx.fillRect(x + 2, y + 1, w - 4, 1); ctx.fillRect(x + 1, y + 2, 1, h - 4);
+  ctx.fillStyle = '#b5a37e';
+  ctx.fillRect(x + 2, y + h - 2, w - 4, 1); ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
+  const tw = pixelTextWidth(label, 2);
+  drawPixelTextShadow(ctx, label, Math.round(x + (w - tw) / 2), y + Math.round((h - 10) / 2),
+    hv > 0.5 ? '#2e2014' : CHART_INK_TXT, 'rgba(120,92,58,0.45)', 2);
+}
+
 function renderWorldMap(now) {
+  mapAlloc();
   // dim the world behind the map
   ctx.fillStyle = 'rgba(6,10,24,0.72)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
@@ -315,8 +337,8 @@ function renderWorldMap(now) {
 
   // the header: the day, and the way out
   const dayT = 'DAY ' + state.day;
-  drawPixelTextShadow(ctx, dayT, PANEL_X + 11, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 'rgba(120,92,58,0.45)', 2);
-  drawMenuButton(mapCloseRect(), 'CLOSE', mapCloseHit() ? 1 : 0, now, false, false);
+  drawPixelTextShadow(ctx, dayT, PANEL_X + MAP_SIDE + 1, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 'rgba(120,92,58,0.45)', 2);
+  drawParchButton(mapCloseRect(), 'CLOSE', mapCloseHit() ? 1 : 0);
 
   // terrain
   buildWorldMapImg();

@@ -1353,7 +1353,7 @@ if (PRACTICE) {
 }
 initPlayers();
 renderGround();
-buildMapPanel();
+mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
 buildNamePanel();
 buildHelpPanel();
