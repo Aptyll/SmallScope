@@ -377,11 +377,14 @@ What it must do to get them:
    never advances; miss `idle` and `clipFrame` has nothing to fall back to
    ([the clips](gameplay.md#what-a-beast-is-doing-the-clips)).
 
-**Adding a stump-built structure** — add a `STRUCTS` entry (3 tiers) and its wheel slot in
-`STRUCT_ORDER` (the **build** wheel draws the local team's `SPRITES.teamBuild[team][type][0]` or,
-for a sprite too big to be its own 16×16 icon — see the bay, the turret — a dedicated
-entry in `teamBuild[team].icon`, and sizes itself: a sixth entry is six even wedges, no layout to
-touch), a grid baked into the per-team `teamBuild` sets (see [sprites.md](sprites.md)), and both
+**Adding a structure** — add a `STRUCTS` entry (3 tiers) and its row in `BUILD_ORDER` (the
+build list draws the local team's `SPRITES.teamBuild[team][type][0]` or, for a sprite too big to
+be its own 16×16 icon — see the bay, the turret — a dedicated entry in `teamBuild[team].icon`; a
+new row is a new row, no layout to touch) and, unless it is the net's kind, in `STRUCT_ORDER` too
+(the pad's wheel sizes itself: a sixth entry is six even wedges). A piece that wears another
+type's tile on every footprint tile (`tiled: 'wall'`, the long wall) needs no grid at all and may
+`rotates`; anything else with art of its own needs a grid baked into the per-team `teamBuild` sets
+(see [sprites.md](sprites.md)), and both
 map colour tables (`updateMinimap`/`buildWorldMapImg` — both resolve a multi-tile footprint's
 `part` fillers through `structOf()` first, so one branch on the real type colours the whole
 building, but the branch itself is still hand-written per type; skip it and a new type silently

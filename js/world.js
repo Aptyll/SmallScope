@@ -150,14 +150,14 @@ function netAt(tx, ty) {
   return o && o.type === 'net' ? o : null;
 }
 
-// What right-clicking a tile opens - one question, asked by the input
-// handler, the cursor, the selection brackets and the wheel alike, so none of
-// them can offer a site the others refuse. A stump is a land site (the five
-// buildings that stand on snow); a bare open hole is a water site (the net);
-// anything else is not a site.
+// A bare open hole is the one SITE left in the game: the `water` building
+// (the net) goes on it, and everything else stands on any open snow or road
+// tile the build list's ghost is over (canPlaceAt, structures.js - the one
+// placement rule). Kept for the pad's wheel (buildOptionsAt), which offers
+// the net over a hole and the land list anywhere else.
 function buildSiteAt(tx, ty) {
   const o = objAt(tx, ty);
-  if (o) return o.type === 'stump' ? 'land' : null;
+  if (o) return null;
   return inWorld(tx, ty) && ground[idx(tx, ty)] === 2 ? 'water' : null;
 }
 function buildOptionsAt(tx, ty) {
@@ -168,43 +168,38 @@ function buildOptionsAt(tx, ty) {
 // holds the building object and every other footprint tile holds a 'part'
 // filler { type: 'part', of } pointing back at it, so objAt() on any covered
 // tile is solid and structOf() resolves to the building. One object per tile
-// still holds - the fillers are the object on their tile.
-function structW(type) { return (STRUCTS[type] && STRUCTS[type].w) || 1; }
-function structH(type) { return (STRUCTS[type] && STRUCTS[type].h) || 1; }
+// still holds - the fillers are the object on their tile. A type that
+// `rotates` may stand TURNED (`o.rot` 1): its w and h swap, and that is the
+// whole of rotation - such a type is `tiled` (each footprint tile wears one
+// tile of art), so nothing in the art has to turn. structW/structH take the
+// OBJECT, so a turned one answers turned, or a bare type name (unturned).
+function structW(x) { const S = STRUCTS[typeof x === 'string' ? x : x.type]; if (!S) return 1; return (typeof x !== 'string' && x.rot ? S.h : S.w) || 1; }
+function structH(x) { const S = STRUCTS[typeof x === 'string' ? x : x.type]; if (!S) return 1; return (typeof x !== 'string' && x.rot ? S.w : S.h) || 1; }
 function structOf(o) { return o && o.type === 'part' ? o.of : o; }
-function footprint(type, tx, ty) {
-  const r = [];
-  for (let dy = 0; dy < structH(type); dy++) for (let dx = 0; dx < structW(type); dx++) r.push([tx + dx, ty + dy]);
+function footprint(type, tx, ty, rot) {
+  const r = [], f = { type, rot: rot ? 1 : 0 };
+  for (let dy = 0; dy < structH(f); dy++) for (let dx = 0; dx < structW(f); dx++) r.push([tx + dx, ty + dy]);
   return r;
 }
 function structCenter(o) {
-  return { x: (o.tx + structW(o.type) / 2) * TILE, y: (o.ty + structH(o.type) / 2) * TILE };
+  return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o) / 2) * TILE };
 }
 // where a building meets the ground in front: bots roll out of, and return to, this point
 function structMouth(o) {
-  return { x: (o.tx + structW(o.type) / 2) * TILE, y: (o.ty + structH(o.type)) * TILE + 6 };
+  return { x: (o.tx + structW(o) / 2) * TILE, y: (o.ty + structH(o)) * TILE + 6 };
 }
-// The anchor for a w x h building that covers the stump at (tx, ty): every
-// candidate placement containing it is tried, and the one covering the most
-// stumps wins. A tile qualifies if it is in-world snow holding nothing or a
-// stump, and no player is standing inside the footprint (buildings are solid).
+// The anchor for a w x h building that covers the tile at (tx, ty) - the
+// pad's wheel and the AI order a big building by ONE tile: every candidate
+// placement containing it is tried through canPlaceAt (reach aside, unturned),
+// and the one covering the most stumps wins. Null when none stands.
 function findSite(type, tx, ty) {
   const w = structW(type), h = structH(type);
   let best = null, bs = -1;
   for (let ay = ty - h + 1; ay <= ty; ay++) for (let ax = tx - w + 1; ax <= tx; ax++) {
-    let ok = true, stumps = 0;
-    for (const [x, y] of footprint(type, ax, ay)) {
-      if (!inWorld(x, y) || ground[idx(x, y)] !== 0) { ok = false; break; }
-      const o = objects[idx(x, y)];
-      if (o) { if (o.type === 'stump') stumps++; else { ok = false; break; } }
-    }
-    if (!ok) continue;
-    for (const q of players) {
-      if (!q.active || q.dead || inAir(q)) continue;
-      if (q.x > ax * TILE - PLAYER_R && q.x < (ax + w) * TILE + PLAYER_R &&
-          q.y > ay * TILE - PLAYER_R && q.y < (ay + h) * TILE + PLAYER_R) { ok = false; break; }
-    }
-    if (ok && stumps > bs) { bs = stumps; best = { tx: ax, ty: ay }; }
+    if (!canPlaceAt(type, ax, ay, 0, null).ok) continue;
+    let stumps = 0;
+    for (const [x, y] of footprint(type, ax, ay)) { const o = objects[idx(x, y)]; if (o && o.type === 'stump') stumps++; }
+    if (stumps > bs) { bs = stumps; best = { tx: ax, ty: ay }; }
   }
   return best;
 }

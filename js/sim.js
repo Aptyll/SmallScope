@@ -469,7 +469,7 @@ function updatePlay(dt) {
     else state.loc.t += dt;
   }
 
-  // stump-built structures + their robots
+  // structures + their robots
   updateStructures(dt);
   updateRespawns(dt);
   for (const b of robots) updateRobot(b, dt);

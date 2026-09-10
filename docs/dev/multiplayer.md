@@ -141,9 +141,9 @@ on blur and on any press but its own cap, and `resetBinds` puts the defaults bac
 trigger or a plate: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
 because a press has the HUD to get past first, a trigger is never over a well),
 `openFlagWheel()` (the flag wheel on the tile under the pointer — the chart's tile while the map
-is up), `openWheelNear(p, ax, ay)` (a build/manage wheel on the
-nearest site or own building in the right button's reach, for a controller with no tile under
-its pointer) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
+is up), `openWheelNear(p, ax, ay)` (a build wheel on the tile the body faces — or the manage
+wheel, with a building of the player's own there — for a controller with no pointer to lay the
+build list's ghost with) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
 last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep rewriting the aim
 through it every frame so the reticle rides the body, until the mouse itself moves.
 
@@ -169,7 +169,7 @@ way off the roost), X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
 L3 the inventory drawer, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 holds the flag
-wheel open over the aim (and draws a card on a tap under `PAD_TAP`, the way BACK splits map from standings), dpad down holds the build wheel (the right stick picks the wedge by its tilt from the
+wheel open over the aim (and draws a card on a tap under `PAD_TAP`, the way BACK splits map from standings), dpad down holds the build wheel over the tile the body faces — a pad has no pointer to lay the list's ghost with, so `openWheelNear` offers the wheel there and lays the pick on that tile — (the right stick picks the wedge by its tilt from the
 wheel's own hub, `PAD_WHEEL_R` off `wheelLayout` — the same over a wheel X holds open: the
 armory, the roll die, the range bell), and BACK is the standings while held and the map on a
 tap under `PAD_TAP`. The
@@ -205,7 +205,7 @@ HUD (the strip's wells, the pack, the sheet, the counter) is the mouse — `poin
 `pointerPress(0)`, then the release — so drags, buys and casts already work. The plates
 (`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing from the bottom edge —
 DODGE (big), WORK (E held for the finger's life), SLIDE (a latch on shift: one tap on, one off),
-CHARACTER — a left column of BUILD (opens `openWheelNear` and the same finger drags to the
+CHARACTER — a left column of BUILD (opens `openWheelNear` over the facing tile, and the same finger drags to the
 wedge) and FLAG (opens the flag wheel over the aim the same way, and the lift plants the wedge
 the finger is on), and a top-left row of the menu cog and the zoom pair. Over any panel or screen
 (`touchOverlay`) every finger is the mouse, a drag that grabbed nothing scrolls the page, and the

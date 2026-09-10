@@ -805,7 +805,7 @@ function unitsInCone(src, x, y, a, r, half) {
 }
 function structsInCone(src, x, y, a, r, half) {
   return structsNear(src, x, y, r).filter((s) =>
-    footprint(s.type, s.tx, s.ty).some(([tx, ty]) => inCone(x, y, a, r, half, tx * TILE + 8, ty * TILE + 8, 8)));
+    footprint(s.type, s.tx, s.ty, s.rot).some(([tx, ty]) => inCone(x, y, a, r, half, tx * TILE + 8, ty * TILE + 8, 8)));
 }
 
 // ---- the one blow --------------------------------------------------------

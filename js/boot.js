@@ -1640,11 +1640,14 @@ window.DBG = {
   // and its top-up (which a driver can call by hand to force one now)
   animalLevel, PREY_POP, updatePreyStock,
   // debug staging: place a construction site directly, no cost or validation
-  buildStruct: (tx, ty, type, tier) => {
+  buildStruct: (tx, ty, type, tier, rot) => {
     const t = Math.min(STRUCTS[type].tiers.length - 1, tier || 0);
-    return createStruct(tx, ty, type, t, player, true); // anchor = top-left for a big footprint
+    return createStruct(tx, ty, type, t, player, true, rot); // anchor = top-left for a big footprint
   },
   findSite, structOf, footprint,
+  // the build list and its ghost: the one placement rule, the list's order
+  // and reach, what the ghost snaps to right now, and the building E manages
+  canPlaceAt, BUILD_ORDER, BUILD_REACH, buildGhostAt, manageNear, placeStruct,
   finishBuild: (o) => { if (o && o.building) o.buildT = o.buildTotal; },
   // z is a world scale; it lands on the nearest pixel-exact rung, as the
   // wheel does. snap skips the ease. setK sets the rung itself.

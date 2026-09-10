@@ -1,11 +1,12 @@
 'use strict';
 // Everything built: the STRUCTS table every buildable is an entry in,
-// placing/upgrading/wrecking stump structures, and the per-type building sim
+// placing/upgrading/wrecking structures, and the per-type building sim
 // (turrets, generators, bays, nets, keeps). The bots a bay rolls out are
 // js/robots.js, which loads next.
-// ------------------------------------------------------------ stump structures
-// Stump-built structures: right-click a stump, pick from the radial wheel.
-// tiers[0] is what the wheel builds; tiers[1]/[2] cost/buildT are the upgrade
+// ------------------------------------------------------------ structures
+// Everything the build list (T, js/ui.js) lays on open snow - and the net on
+// a hole - and the one placement rule they all answer to (canPlaceAt).
+// tiers[0] is what the list builds; tiers[1]/[2] cost/buildT are the upgrade
 // price and (already shortened) upgrade construction time. `mm` and `map` are
 // the two map colours, the same pair OBJECTS carries for scenery - both maps
 // read whichever of the two tables holds the tile's type, so a new building
@@ -15,6 +16,16 @@ const STRUCTS = {
     { cost: { gold: 5 },  hp: 60,  buildT: 4   },
     { cost: { gold: 12 }, hp: 140, buildT: 2.4 },
     { cost: { gold: 30 }, hp: 300, buildT: 2.4 },
+  ]},
+  // THE LONG WALL: two wall tiles laid as one piece for a little under two
+  // walls - the piece R turns (`rotates`: 2x1 or 1x2, o.rot) - and the one
+  // `tiled` type: each footprint tile wears the named type's own grid, so it
+  // needs no art of its own and nothing has to turn (3/4-view art cannot).
+  // Hurt as one, upgraded as one.
+  longwall: { name: 'LONG WALL', w: 2, h: 1, rotates: true, tiled: 'wall', mm: [163, 121, 79], map: [112, 78, 46], tiers: [
+    { cost: { gold: 9 },  hp: 120, buildT: 6   },
+    { cost: { gold: 22 }, hp: 280, buildT: 3.6 },
+    { cost: { gold: 55 }, hp: 600, buildT: 3.6 },
   ]},
   // traverse = rad/s the head swings; aim = seconds held on target before it fires
   turret: { name: 'TURRET', mm: [196, 120, 86], map: [150, 96, 70], tiers: [
@@ -49,9 +60,9 @@ const STRUCTS = {
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: [222, 128, 96], map: [160, 92, 64], tiers: [
     { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 5, waveT: 30, grow: 180, botHp: 30, cap: 24 },
   ]},
-  // The fish net: the one building that goes on water instead of a stump.
+  // The fish net: the one building that goes on water instead of snow.
   // `water: true` is the whole difference, and every site reads that flag
-  // rather than the type name - it builds on an open hole (placeStruct),
+  // rather than the type name - it builds on an open hole (canPlaceAt),
   // never freezes over while it stands (the dawn refreeze), and is not solid
   // (isSolidTile), because walking onto it is how anyone - owner or not -
   // takes the catch out of it.
@@ -59,9 +70,16 @@ const STRUCTS = {
     { cost: { gold: 8 }, hp: 45, buildT: 5 },
   ]},
 };
-const STRUCT_ORDER = ['wall', 'turret', 'generator', 'spawner']; // stump wheel: 4 even wedges (the barracks is the merchant's alone)
+// THE BUILD LIST (T, js/ui.js): every buildable in the order the list shows
+// them, the net last because its site is the rarest. The two wheel tables
+// are the pad's and a finger's (openWheelNear, input.js): a wheel over the
+// facing tile offers the land list on land and the net over a hole. The
+// barracks is the merchant's alone and on none of them.
+const BUILD_ORDER = ['wall', 'longwall', 'turret', 'generator', 'spawner', 'net'];
+const STRUCT_ORDER = ['wall', 'longwall', 'turret', 'generator', 'spawner'];
+const WATER_STRUCT_ORDER = ['net'];
+const BUILD_REACH = 64;    // px from the builder to the nearest tile of what it lays
 const BARRACKS_ROLL = 0.5; // s between the soldiers of one wave leaving the door
-const WATER_STRUCT_ORDER = ['net']; // open-hole wheel: one wedge, the whole circle
 
 // fish nets: a building laid over an open hole that fishes it on its own
 const NET_CAP = 3;         // fish a net holds before it stops catching
@@ -79,42 +97,89 @@ function cumulativeCost(type, tier) {
   return total;
 }
 
-// Building is a contested order: two players can claim the same stump in one
+// Can `type` stand with its anchor on (tx, ty), turned `rot`, laid by p?
+// THE one placement rule - the ghost's colour, the click, the pad's wheel,
+// findSite and the AI all ask it, so none of them can offer a site another
+// refuses. A `water` building wants a bare open hole; everything else wants
+// every footprint tile to be in-world snow or road (ground 0 / 3) holding
+// nothing or a stump (a stump is consumed - it is no longer a site, just
+// something a wall may stand on). No unit may stand inside the footprint (a
+// building is solid, and would entomb it), and the builder - when there is
+// one - must be within BUILD_REACH of the nearest footprint tile. Cost is
+// not asked here: a ghost you cannot afford yet is still a valid site, and
+// the list's own row says the price.
+//   -> { ok, why }   why: 'ground' | 'blocked' | 'unit' | 'far' | null
+function canPlaceAt(type, tx, ty, rot, p) {
+  const S = STRUCTS[type];
+  if (!S) return { ok: false, why: 'ground' };
+  rot = S.rotates && rot ? 1 : 0;
+  const tiles = footprint(type, tx, ty, rot);
+  let near = Infinity;
+  for (const [x, y] of tiles) {
+    if (!inWorld(x, y)) return { ok: false, why: 'ground' };
+    const g = ground[idx(x, y)], o = objects[idx(x, y)];
+    if (S.water) { if (o || g !== 2) return { ok: false, why: o ? 'blocked' : 'ground' }; }
+    else {
+      if (g !== 0 && g !== 3) return { ok: false, why: 'ground' };
+      if (o && o.type !== 'stump') return { ok: false, why: 'blocked' };
+    }
+    if (p) near = Math.min(near, Math.hypot(x * TILE + 8 - p.x, y * TILE + 8 - p.y));
+  }
+  if (!S.water) {
+    const w = structW({ type, rot }), h = structH({ type, rot });
+    const x0 = tx * TILE, y0 = ty * TILE, x1 = (tx + w) * TILE, y1 = (ty + h) * TILE;
+    const inside = (x, y, r) => x > x0 - r && x < x1 + r && y > y0 - r && y < y1 + r;
+    for (const q of players) if (q.active && !q.dead && !inAir(q) && inside(q.x, q.y, PLAYER_R)) return { ok: false, why: 'unit' };
+    for (const b of robots) if (unitAlive(b) && inside(b.x, b.y, 7)) return { ok: false, why: 'unit' };
+    for (const a of animals) if (!a.dead && inside(a.x, a.y, 6)) return { ok: false, why: 'unit' };
+  }
+  if (p && near > BUILD_REACH) return { ok: false, why: 'far' };
+  return { ok: true, why: null };
+}
+// one of p's own FINISHED buildings to manage (upgrade / demolish - the
+// barracks is `fixed` and refuses both, so it is nobody's to open): the one
+// under p's aim if it is in reach, else the nearest in reach. What holding
+// E beside a building opens (keyPress, input.js) and the pad's wheel falls
+// back to (openWheelNear).
+function manageNear(p) {
+  const own = (o) => o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && !o.building && ownsStruct(o, p) && o.team !== undefined;
+  const at = structOf(objAt(Math.floor(p.input.aimX / TILE), Math.floor(p.input.aimY / TILE)));
+  const reach = (o) => { const c = structCenter(o); return Math.hypot(c.x - p.x, c.y - p.y) <= 60 + (structW(o) + structH(o)) * 4; };
+  if (own(at) && reach(at)) return at;
+  let best = null, bd = Infinity;
+  for (const o of structures) {
+    if (!own(o) || !reach(o)) continue;
+    const c = structCenter(o), d = Math.hypot(c.x - p.x, c.y - p.y);
+    if (d < bd) { bd = d; best = o; }
+  }
+  return best;
+}
+
+// Building is a contested order: two players can claim the same tile in one
 // step. The claim is checked and paid for when it wins, so a loser keeps its
-// gold. p defaults to the local player (DBG staging).
-function placeStruct(tx, ty, type, p) {
+// gold. p defaults to the local player (DBG staging). A big building ordered
+// by ONE tile (the pad's wheel, the AI) is fitted around that tile by
+// findSite when it will not stand anchored on it.
+function placeStruct(tx, ty, type, p, rot) {
   p = p || player;
   const deny = (msg, t) => { if (p === player) { SFX.deny(); if (msg) showMsg(msg, t); } };
-  // Two kinds of site, and the type picks which: a `water` building wants a
-  // bare open hole (nothing on it, ground 2), everything else wants a stump.
-  const water = !!STRUCTS[type].water;
-  const site = objAt(tx, ty);
-  if (water ? (site || !inWorld(tx, ty) || ground[idx(tx, ty)] !== 2)
-            : (!site || site.type !== 'stump')) { deny(); return; }
-  const cxp = tx * TILE + 8, cyp = ty * TILE + 8;
-  if (Math.hypot(cxp - p.x, cyp - p.y) > 60) { deny(); return; }
-  const big = structW(type) > 1 || structH(type) > 1;
-  // the solid buildings must never entomb the player who ordered one
-  // (findSite does the same check over a big footprint); a net is walked on,
-  // so standing over the hole is exactly where you set one from
-  if (!big && !water && Math.abs(cxp - p.x) < 8 + PLAYER_R && Math.abs(cyp - p.y) < 8 + PLAYER_R) {
-    deny('STEP OFF THE STUMP FIRST', 1.6);
-    return;
+  const S = STRUCTS[type];
+  if (!S || !inWorld(tx, ty)) { deny(); return; }
+  rot = S.rotates && rot ? 1 : 0;
+  let can = canPlaceAt(type, tx, ty, rot, p);
+  if (!can.ok && can.why !== 'far' && (structW(type) > 1 || structH(type) > 1)) {
+    const a = findSite(type, tx, ty);
+    if (a) { tx = a.tx; ty = a.ty; rot = 0; can = canPlaceAt(type, tx, ty, rot, p); }
   }
-  const t0 = STRUCTS[type].tiers[0];
+  if (!can.ok) { deny(); return; } // the ghost already said so, in red
+  const t0 = S.tiers[0];
   if (!canAfford(t0.cost, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return; }
-  let anchor = { tx, ty };
-  if (big) {
-    anchor = findSite(type, tx, ty);
-    if (!anchor) { deny('NO ROOM - NEEDS 3X2 CLEAR SNOW', 1.8); return; }
-  }
+  const cxp = (tx + structW({ type, rot }) / 2) * TILE, cyp = (ty + structH({ type, rot }) / 2) * TILE;
   contest('site:' + idx(tx, ty), p, () => {
-    const s = objAt(tx, ty);
-    if (water ? (s || ground[idx(tx, ty)] !== 2) : (!s || s.type !== 'stump')) return;
+    if (!canPlaceAt(type, tx, ty, rot, p).ok) return; // somebody's build landed on it first
     if (!canAfford(t0.cost, p)) return;
-    if (big) { anchor = findSite(type, tx, ty); if (!anchor) return; }
     pay(t0.cost, p);
-    createStruct(anchor.tx, anchor.ty, type, 0, p, true);
+    createStruct(tx, ty, type, 0, p, true, rot);
     if (nearPlayer(cxp, cyp)) SFX.hammer();
     burst(cxp, cyp, '#eef4fb', 8, 40, 0.4, true);
   });
@@ -122,14 +187,15 @@ function placeStruct(tx, ty, type, p) {
 
 // The one place a building object is made (placeStruct and DBG.buildStruct):
 // the anchor object, its footprint fillers, the registry and per-type state.
-function createStruct(tx, ty, type, tier, p, building) {
+function createStruct(tx, ty, type, tier, p, building, rot) {
   const t = STRUCTS[type].tiers[tier];
   const o = placeObj(tx, ty, type, {
     tier, hp: building ? Math.ceil(t.hp * 0.3) : t.hp, maxHp: t.hp,
     building: !!building, buildT: 0, buildTotal: t.buildT, dustT: 0,
     owner: p.id, team: p.team, // paints the sprite and gates the manage wheel
+    rot: STRUCTS[type].rotates && rot ? 1 : 0, // turned: w and h swapped (structW/structH, world.js)
   });
-  for (const [x, y] of footprint(type, tx, ty)) {
+  for (const [x, y] of footprint(type, tx, ty, o.rot)) {
     if (x !== tx || y !== ty) objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
   }
   // ang: where the barrel points. tgt/chg: the mark and how locked on it is.
@@ -189,7 +255,7 @@ function demolishStruct(o, p) {
 }
 
 function removeStruct(o) {
-  for (const [x, y] of footprint(o.type, o.tx, o.ty)) objects[idx(x, y)] = null;
+  for (const [x, y] of footprint(o.type, o.tx, o.ty, o.rot)) objects[idx(x, y)] = null;
   const i = structures.indexOf(o);
   if (i >= 0) structures.splice(i, 1);
   if (o.bots) for (const b of o.bots) {
@@ -287,14 +353,14 @@ function updateStructures(dt) {
       // SC2-style: hp grows from the 30% floor toward max as the site rises
       o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.7 * dt / o.buildTotal);
       o.dustT -= dt;
-      const big = structW(o.type) > 1 || structH(o.type) > 1;
+      const big = structW(o) > 1 || structH(o) > 1;
       if (o.dustT <= 0) {
         o.dustT = 0.8;
         if (nearPlayer(ox, oy)) SFX.building();
         if (big) {
           // dust off the whole footprint's front edge
           const c = structCenter(o);
-          burst(c.x + rand(-18, 18), (o.ty + structH(o.type)) * TILE - 2, '#c9d0e2', 3, 25, 0.35, true);
+          burst(c.x + rand(-18, 18), (o.ty + structH(o)) * TILE - 2, '#c9d0e2', 3, 25, 0.35, true);
         } else burst(ox, oy + 4, '#c9d0e2', 3, 25, 0.35, true);
       }
       if (big) {
@@ -303,7 +369,7 @@ function updateStructures(dt) {
         o.sparkT -= dt;
         if (r.rows > 0 && r.rows < r.h && o.sparkT <= 0) {
           o.sparkT = 0.11;
-          const x = o.tx * TILE + 3 + rng() * (structW(o.type) * TILE - 6);
+          const x = o.tx * TILE + 3 + rng() * (structW(o) * TILE - 6);
           burst(x, r.edgeY, rng() < 0.5 ? '#fff1b0' : '#ffb347', 2, 45, 0.28, true);
         }
       }
@@ -313,7 +379,7 @@ function updateStructures(dt) {
         o.flash = 0.3; // the completion flash
         if (big) {
           // snow settles along the whole roofline
-          const top = (o.ty + structH(o.type)) * TILE - structSprite(o).height + 4;
+          const top = (o.ty + structH(o)) * TILE - structSprite(o).height + 4;
           for (let i = 0; i < 6; i++) burst(o.tx * TILE + 4 + i * 8, top, '#f4f7fc', 3, 35, 0.6, true);
           burst(structCenter(o).x, top + 12, '#aeb6c4', 8, 50, 0.5, true);
         } else {

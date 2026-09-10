@@ -925,7 +925,7 @@ instead. Since it only appears in reach, it doubles as the "you're close enough"
 always picks the right tool it is no longer reachable in normal play; buildings are not gated
 at all, since the axe is the only tool E ever brings out for one.
 
-**Stumps and open ice holes** are not E targets — they are the right-click wheel's domain (`buildSiteAt`). **Buildings on another
+**Stumps and open ice holes** are not E targets — a stump is ground a piece may stand on and a hole the net's site (`canPlaceAt`, the [build list](#base-building)). **Buildings on another
 team are**: `workTarget()` resolves the tile through `structOf()` (so any tile of a 3×2 footprint
 counts, via its `part`) and returns the axe when `ownsStruct()` is false, and `swingHit` routes
 the swing to the anchor. Your own buildings stay wheel-only, so E is never ambiguous. See
@@ -2172,33 +2172,62 @@ minus the burst and the floater.
 
 ## Base building
 
-Right-clicking a **stump** within 60 px opens a radial **build wheel** anchored at the stump's
-screen position (clamped to stay on-screen) — a right-click on any *other* tile is the
-[flag wheel](#team-flags), on the same grammar — four even wedges: wall, turret, generator, bot
-bay (`STRUCT_ORDER`, type `spawner`) — `wheelSpan(n)`/
-`wheelAng(i, n)` re-derive n even wedges from `STRUCT_ORDER.length` alone, so an entry comes and
-goes with no layout code (the Keep's did), only the option itself; push out of the hub and release over a wedge to build,
-release inside the hub to cancel.
+**T opens the build list, and the ghost under the pointer is what a click lays.** The list
+(`drawBuildList`, the `build list` group in [ui.js](../../js/ui.js)) is a column under the weapon
+shelf, one row a piece in `BUILD_ORDER` — wall, long wall, turret, generator, bot bay, fish net —
+each row its icon and its price (gold's colour while the purse covers it, red while not), the
+picked row rimmed gold. The mouse wheel walks the rows (the camera's zoom waits), a click on a row
+picks it, and **R turns a piece that turns**: the picked row wears the rotate key's cap. In the
+world the picked piece rides the pointer as a **ghost** (`drawBuildGhost`, the world pass): its
+own art, faint, snapped to the tile grid with its footprint centred on the tile under the pointer,
+rimmed in the standard bright ink where it can stand and the danger red where it cannot, and a
+**dot at every tile corner inside `BUILD_REACH`** (64 px) of the builder, so the snap and the reach
+read as one thing without a number. A left-click lays the ghost and **the list stays up** for the
+next piece — a wall is a run, not a piece. T again, Escape or the right button put it away; a
+red ghost refuses with the deny cue and nothing else. Rust is the reference.
 
-**The site picks the menu.** `buildSiteAt(tx, ty)` answers `'land'` for a stump, `'water'` for a
-bare open ice hole, and `null` otherwise — and the input handler, the cursor's hammer, the
-selection brackets and `wheelOptions()` all ask that one function, so none of them can offer a site
-another refuses. A water site lists `WATER_STRUCT_ORDER`, which is just the
-[fish net](world.md#fish-nets); nothing is special-cased for a single option, because
-`wheelSpan(1)` is the whole circle and the hub still cancels.
+**One placement rule.** `canPlaceAt(type, tx, ty, rot, p)` (structures.js) is what the ghost's
+colour, the click, the pad's wheel, `findSite` and the AI all ask, so none of them can offer a
+site another refuses: a `water` building wants a bare open ice hole; everything else wants every
+footprint tile to be in-world snow or road (`ground` 0 / 3) holding nothing or a **stump** (a
+stump is consumed — it is no longer a site, just something a wall may stand on), no unit inside the
+footprint (a building is solid and would entomb it), and the builder within `BUILD_REACH` of the
+nearest footprint tile. It answers `{ ok, why }` and never asks the price: a ghost you cannot afford
+yet is still a valid site, and the row says the price. There are no build *sites* left but the
+hole: `buildSiteAt` answers `'water'` for a bare hole and `null` for everything else, and only the
+pad's wheel (`buildOptionsAt`) still asks it.
 
-Right-clicking a **finished** structure (any tile of it) opens a
-**manage wheel**: upgrade straight up, demolish last, and — unlike the build wheel — this list
-*isn't* generic over `STRUCT_ORDER` (`wheelOptions()` hand-builds it), so a type's own extra
-order would go between the two — the Keep's card craft did, and the bay's old gather/guard toggle
-did before its crew went under the [flag](#team-flags); today no type has one. This wheel is the **only** way to
-build — there are no free-placed buildables. All the data lives in the `STRUCTS` table: three
-tiers for wall/turret/generator (the wood → stone → gold *look* is just the sprite
-palette) and **one each for the bay and the net**, each with a gold `cost`, `hp`, `buildT`, and
-per-type stats. A `water: true` entry (only the net) goes on a hole instead of a stump, and that
-flag — never the type name — is what `placeStruct`, `isSolidTile` and the dawn refreeze each read;
-see [Fish nets](world.md#fish-nets).
-`tiers[0]` is what the wheel builds; upgrading pays the next tier's cost and re-runs a shorter
+**Rotation is the footprint, never the art.** A type marked `rotates` may stand turned (`o.rot`
+1): its `w` and `h` swap (`structW`/`structH` take the *object*, so a turned one answers turned —
+or a bare type name, unturned; `footprint(type, tx, ty, rot)`), and that is the whole of it. A
+3/4-view sprite cannot turn, so a type that rotates is `tiled`: each footprint tile wears one tile
+of the named type's own grid (`drawTiledStruct`, draw-world.js; `structSprite` resolves `tiled` the
+way it resolves `art`). Today that is the **long wall** alone — two wall tiles laid as one piece
+for a little under two walls, 2×1 or 1×2, hurt and upgraded as one — and the bay stays 3×2.
+
+**Managing is E.** Holding E beside one of your own *finished* buildings (`manageNear`: the one
+under the aim in reach, else the nearest in reach; never the barracks, which is `fixed`) opens
+the **manage wheel** on the practice rack's grammar — upgrade straight up, demolish last — and
+the release takes. Unlike the old build wheel this list *isn't* generic over a table
+(`wheelOptions()` hand-builds it), so a type's own extra order would go between the two — the
+Keep's card craft did, and the bay's old gather/guard toggle did before its crew went under the
+[flag](#team-flags); today no type has one. E never swings at a building of your own
+(`workTarget`), which is what leaves the key free to open it. The right button is the
+[flag wheel](#team-flags) everywhere now.
+
+**A pad and a finger still build from a wheel.** `openWheelNear` (dpad down, the touch BUILD
+plate) opens the build wheel on the tile the body **faces**, offering `STRUCT_ORDER` on land and
+`WATER_STRUCT_ORDER` over a hole (`wheelSpan(n)`/`wheelAng(i, n)` re-derive n even wedges from the
+table's length alone, so an entry comes and goes with no layout code); the pick is laid on that
+tile, a big one fitted round it by `findSite`, and a building of the player's own on that tile
+opens its manage wheel instead.
+
+All the data lives in the `STRUCTS` table: three tiers for wall/long wall/turret/generator (the
+wood → stone → gold *look* is just the sprite palette) and **one each for the bay and the net**,
+each with a gold `cost`, `hp`, `buildT`, and per-type stats. A `water: true` entry (only the net)
+goes on a hole instead of snow, and that flag — never the type name — is what `canPlaceAt`,
+`isSolidTile` and the dawn refreeze each read; see [Fish nets](world.md#fish-nets).
+`tiers[0]` is what the list builds; upgrading pays the next tier's cost and re-runs a shorter
 construction, and the last tier (`tiers.length - 1`) reports MAX TIER. Building and [gear](#gear)
 are the two gold sinks.
 
@@ -2240,17 +2269,17 @@ Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js
   hub as a knob that moves **1:1** with the pointer — so the knob is visibly inside the lit wedge —
   clamped to the lane between the hub rim and the icon ring so it never lands on an icon. Grey on
   the cross means nothing is chosen; gold out in a wedge means that is what a release will do.
-- `placeStruct(tx, ty, type, p)` consumes the stump (the tile is **empty** after demolition —
-  stumps are a finite site resource), pays `tiers[0].cost` from that player's wallet, and has
-  `createStruct()` drop the object into `building` state at 30% hp, stamped with `owner`/`team`
-  (`createStruct` is the one constructor — `DBG.buildStruct` uses it too — and lays the `part`
-  fillers for a big footprint). It enforces the 60 px reach
-  and the don't-entomb-yourself AABB check, and the placement itself is
-  [contested](multiplayer.md#contested-orders) so two players can't claim one stump.
-- **The bay needs room**: `findSite(type, tx, ty)` tries every 3×2 anchor that covers the clicked
-  stump and takes the one covering the most stumps, where every tile is in-world snow holding
-  nothing or a stump and no player stands inside it; none → "NO ROOM" and the order is denied (the
-  AI only orders a bay where `findSite` succeeds). The anchor is the top-left tile.
+- `placeStruct(tx, ty, type, p, rot)` asks `canPlaceAt` (a stump under the footprint is consumed
+  — the tile is **empty** after demolition), pays `tiers[0].cost` from that player's wallet, and
+  has `createStruct()` drop the object into `building` state at 30% hp, stamped with
+  `owner`/`team`/`rot` (`createStruct` is the one constructor — `DBG.buildStruct` uses it too —
+  and lays the `part` fillers for a big footprint, turned or not). The placement itself is
+  [contested](multiplayer.md#contested-orders) on the anchor tile, and the winner re-asks
+  `canPlaceAt` before it builds, so two footprints can't land on one tile.
+- **A big building ordered by one tile** (the pad's wheel, the AI): `findSite(type, tx, ty)`
+  tries every anchor that covers that tile through `canPlaceAt` (reach aside, unturned) and takes
+  the one covering the most stumps; none → the order is denied. The anchor is the top-left tile.
+  The list never needs it: its ghost *is* the anchor.
 - **Ownership**: a building wears its team's palette (`structSprite`), and `ownsStruct(o, p)`
   means only its side can open the manage wheel, upgrade or demolish it. Stumps are neutral.
 - **Construction**: `updateStructures()` (called from `updatePlay`, iterating only the
@@ -2677,7 +2706,7 @@ runs (`updateTitle`: animals and fish) — see [Main menu](rendering.md#main-men
 ## The M map does not pause
 
 **M** opens the world chart with the sim still stepping, the same deal the
-[build wheel](#base-building) takes: night still falls, arrows still fly, bots still hunt you.
+[build list](#base-building) takes: night still falls, arrows still fly, bots still hunt you.
 `sampleHumanInput` handles it in its own branch, and the rule is *the map keeps your feet and
 nothing else*: `mx`/`my`, `slide` and the grapple's held key are read as usual, the edge-triggered
 `dodge` passes

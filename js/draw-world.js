@@ -1208,7 +1208,7 @@ function bigBuildReveal(o) {
   const spr = structSprite(o), h = spr.height;
   const p = o.buildT / o.buildTotal;
   const rows = p < 0.12 ? 0 : Math.min(h, Math.max(1, Math.round(h * (p - 0.12) / 0.86)));
-  return { rows, h, edgeY: (o.ty + structH(o.type)) * TILE - rows };
+  return { rows, h, edgeY: (o.ty + structH(o)) * TILE - rows };
 }
 
 // The barracks (STRUCTS.barracks, structures.js) wears the bay's sprite, so
@@ -1462,8 +1462,34 @@ const NET_FISH_AT = [[3, 4], [8, 8], [4, 11]]; // where a held fish lies in the 
 // a building wears its owner's team palette over its tier material
 function structSprite(o) {
   const set = SPRITES.teamBuild[skin(o.team === undefined ? 0 : o.team)];
-  const art = (STRUCTS[o.type] && STRUCTS[o.type].art) || o.type; // a type wearing another's grid (the barracks)
+  const S = STRUCTS[o.type];
+  // a type wearing another's grid (the barracks, `art`), or one tile of
+  // another's on every footprint tile (the long wall, `tiled`)
+  const art = (S && (S.tiled || S.art)) || o.type;
   return set ? set[art][o.tier] : SPRITES[art][o.tier];
+}
+// A `tiled` building (the long wall): each footprint tile wears the named
+// type's own tile of art, so a piece turned by R is two wall tiles either
+// way and no art has to turn. The scaffold stages and the sprite go on per
+// tile, the cracks per tile, and one bar over the middle.
+function drawTiledStruct(o, px, py, sh, now) {
+  const spr = structSprite(o);
+  const w = structW(o), h = structH(o);
+  const p = o.building ? o.buildT / o.buildTotal : 1;
+  for (let dy = 0; dy < h; dy++) for (let dx = 0; dx < w; dx++) {
+    const x = px + dx * TILE, y = py + dy * TILE;
+    if (o.building && p < 1 / 3) ctx.drawImage(SPRITES.scaffold[0], x, y);
+    else if (o.building && p < 2 / 3) ctx.drawImage(SPRITES.scaffold[1], x, y);
+    else {
+      drawSpriteFlash(spr, x + sh, y + TILE - spr.height, o.flash);
+      if (o.building) ctx.drawImage(SPRITES.scaffold[2], x, y);
+      else if (o.hp < o.maxHp * 0.6) {
+        ctx.fillStyle = 'rgba(40,25,15,0.5)';
+        ctx.fillRect(x + 4, y + 5, 1, 3); ctx.fillRect(x + 10, y + 3, 1, 4);
+      }
+    }
+  }
+  if (!o.building && o.hp < o.maxHp) drawHealthBar(px + sh + (w * TILE >> 1), py + TILE - spr.height - 5, o.hp, o.maxHp, 16, o.team);
 }
 
 // The frame a beast is on: the clip it put itself in (ANIM_CLIPS,

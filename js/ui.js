@@ -105,7 +105,7 @@ function runCmd(p, c) {
   if (c.kind === 'ability') { buyAbilityLv(p, c.i); return; } // an ability level: a skill point, from anywhere
   if (c.kind === 'shop') { shopCmd(p, c); return; } // the merchant's counter (js/shop.js) - it checks its own reach
 
-  if (c.kind === 'build') { placeStruct(c.tx, c.ty, c.id, p); return; }
+  if (c.kind === 'build') { placeStruct(c.tx, c.ty, c.id, p, c.rot); return; } // rot: the list's R (a wheel's order is unturned)
   // the flag: per-player state, planted anywhere on the map (no reach, no
   // contest); id null is the lift (the `team flags` banner, js/robots.js)
   if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return; }
@@ -122,29 +122,28 @@ function runCmd(p, c) {
 // ------------------------------------------------------------ selection, hints & wheel
 // white corner brackets over the hovered / wheel-targeted tile
 function drawSelection(ox, oy, now) {
-  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen) return;
+  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.build) return; // the build list's ghost has the tile
   let tx, ty;
   if (state.wheel) {
     tx = state.wheel.tx; ty = state.wheel.ty;
   } else {
     tx = Math.floor(mouseWX() / TILE);
     ty = Math.floor(mouseWY() / TILE);
+    // what E opens rather than swings at: the practice rack, and one of
+    // your own finished buildings (its manage wheel) - in reach
     const o = structOf(objAt(tx, ty));
-    // a bare open hole brackets too: it is a build site with nothing on it,
-    // and the brackets are the only thing that says so
-    if (!o) { if (!buildSiteAt(tx, ty)) return; }
-    else if (o.type !== 'stump' && o.type !== 'rack' &&
-             !(STRUCTS[o.type] && !o.building && o.team === player.team)) return;
+    if (!o) return;
+    if (o.type !== 'rack' && !(STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team)) return;
     if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > 60) return;
   }
   // a big building brackets its whole footprint, from its anchor - and the
   // practice rack its whole two-tile pair, from its lead
   const o2 = structOf(objAt(tx, ty));
-  const big = o2 && STRUCTS[o2.type] && (structW(o2.type) > 1 || structH(o2.type) > 1);
+  const big = o2 && STRUCTS[o2.type] && (structW(o2) > 1 || structH(o2) > 1);
   const rk = o2 && o2.type === 'rack' ? (o2.lead ? o2 : objAt(o2.tx - 1, o2.ty)) : null;
   const bx = rk ? rk.tx * TILE + (rk.dx || 0) - ox : (big ? o2.tx : tx) * TILE - ox;
   const by = (big ? o2.ty : ty) * TILE - oy;
-  const bw = rk ? TILE * 2 : (big ? structW(o2.type) : 1) * TILE, bh = (big ? structH(o2.type) : 1) * TILE;
+  const bw = rk ? TILE * 2 : (big ? structW(o2) : 1) * TILE, bh = (big ? structH(o2) : 1) * TILE;
   ctx.globalAlpha = 0.6 + 0.3 * Math.sin(now * 6);
   // four 3px corner brackets, dark shadow first so white reads on snow
   const corners = (c, px, py) => {
@@ -183,12 +182,12 @@ function drawWorkHint(ox, oy) {
   // prompt goes - 33 for the 37px pine, 20 for a dead tree's 8px overhang, 10
   // for the short ones. A building is drawn up from its footprint's bottom
   // edge and can be taller than its tiles, so clear its own sprite instead.
-  const lift = isStruct ? structSprite(st).height - structH(st.type) * TILE + 12 :
+  const lift = isStruct ? structSprite(st).height - structH(st) * TILE + 12 :
     t.o ? ((d && d.lift) || 10) : 8;
   // a multi-tile building takes the prompt on its centre, not the tile you aimed at
-  const hx = isStruct ? (st.tx + structW(st.type) / 2) * TILE : t.tx * TILE + 8;
+  const hx = isStruct ? (st.tx + structW(st) / 2) * TILE : t.tx * TILE + 8;
   const hty = isStruct ? st.ty * TILE : t.ty * TILE;
-  const hby = isStruct ? (st.ty + structH(st.type)) * TILE : t.ty * TILE + TILE;
+  const hby = isStruct ? (st.ty + structH(st)) * TILE : t.ty * TILE + TILE;
   const pressed = !!player.input.work;
   const totalW = promptW(verb, 'work');
   const x = Math.round(hx - ox - totalW / 2);
@@ -452,7 +451,8 @@ function renderWheel(now) {
     if (w.kind === 'build') {
       const affordable = canAfford(STRUCTS[opt.id].tiers[0].cost);
       const tb = SPRITES.teamBuild[skin(player.team)];
-      const spr = (tb.icon && tb.icon[opt.id]) || tb[opt.id][0];
+      const art = STRUCTS[opt.id].tiled || STRUCTS[opt.id].art || opt.id; // a piece wearing another's tile (the long wall)
+      const spr = (tb.icon && (tb.icon[opt.id] || tb.icon[art])) || tb[art][0];
       ctx.globalAlpha = affordable ? 1 : 0.55;
       ctx.drawImage(spr, Math.round(ix - 8), Math.round(iy - 8));
       if (!affordable) {
@@ -550,6 +550,101 @@ function renderWheel(now) {
   drawPixelTextOutline(ctx, label,
     Math.round(Math.max(2, Math.min(VIEW_W - lw - 2, L.cx - lw / 2))),
     Math.round(L.cy + WHEEL_R + WHEEL_PAD + 6), color, '#0f1632');
+}
+
+// ---- the build list and its ghost -----------------------------------------
+// T opens a column of every buildable (BUILD_ORDER, structures.js) under
+// the weapon shelf, one row a piece: its icon and its price, the picked row
+// lit, a price you cannot pay in red - and, on a piece that turns, the
+// rotate key's cap. The world under the pointer carries the GHOST: the
+// piece's own art, faint, snapped to the tile grid with its footprint rimmed
+// in the standard bright ink where it can stand and the danger red where it
+// cannot (canPlaceAt - one rule for the colour, the click and the AI), and a
+// dot at every tile corner inside the builder's reach, so the snap and the
+// reach read as one thing without a number. A click lays the ghost and the
+// list stays up for the next piece: a wall is a run, not a piece.
+const BUILD_X = 3;           // the column's left edge: flush with the drawer it replaces (BAG_PAD, declared below - a literal, since this is read at load)
+const BUILD_Y = 64;          // under the shelf
+const BUILD_ROW = 20;        // a row's pitch
+const BUILD_W = 62;          // a row's width: icon, price, the rotate cap
+const BUILD_OK = '#f4f7ff', BUILD_NO = '#ff8a7a'; // the ghost's two answers (the flag's own pair, robots.js)
+function buildRowRect(i) { return { x: BUILD_X, y: BUILD_Y + i * BUILD_ROW, w: BUILD_W, h: BUILD_ROW - 2 }; }
+function buildListHit(mx, my) {
+  if (!state.build) return -1;
+  for (let i = 0; i < BUILD_ORDER.length; i++) {
+    const r = buildRowRect(i);
+    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return i;
+  }
+  return -1;
+}
+// what the ghost is right now: the picked piece, turned or not, anchored so
+// its footprint sits centred on the tile under the pointer, and whether it
+// can stand there. Null with no list up.
+function buildGhostAt() {
+  const b = state.build;
+  if (!b) return null;
+  const type = BUILD_ORDER[b.sel];
+  const rot = STRUCTS[type].rotates ? b.rot : 0;
+  const f = { type, rot };
+  const w = structW(f), h = structH(f);
+  const tx = Math.floor(mouseWX() / TILE) - (w >> 1), ty = Math.floor(mouseWY() / TILE) - (h >> 1);
+  return { type, rot, tx, ty, w, h, can: canPlaceAt(type, tx, ty, rot, player) };
+}
+// the world half: the reach dots and the ghost, in the world pass beside drawSelection
+function drawBuildGhost(ox, oy, now) {
+  if (state.mode !== 'play' || !state.build || state.mapOpen || state.settingsOpen || state.wheel) return;
+  const ptx = Math.floor(player.x / TILE), pty = Math.floor(player.y / TILE);
+  const r = Math.ceil(BUILD_REACH / TILE) + 1;
+  ctx.fillStyle = 'rgba(15,22,50,0.4)';
+  for (let ty = pty - r; ty <= pty + r; ty++) for (let tx = ptx - r; tx <= ptx + r; tx++) {
+    if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > BUILD_REACH) continue;
+    ctx.fillRect(tx * TILE - ox, ty * TILE - oy, 1, 1);
+  }
+  if (!mouse.inside || overHud(mouse.x, mouse.y) || buildListHit(mouse.x, mouse.y) >= 0) return;
+  const g = buildGhostAt();
+  const col = g.can.ok ? BUILD_OK : BUILD_NO;
+  const px = g.tx * TILE - ox, py = g.ty * TILE - oy, fw = g.w * TILE, fh = g.h * TILE;
+  const spr = structSprite({ type: g.type, tier: 0, team: player.team, rot: g.rot });
+  if (spr) {
+    ctx.globalAlpha = g.can.ok ? 0.55 : 0.3;
+    if (STRUCTS[g.type].tiled) { for (let dy = 0; dy < g.h; dy++) for (let dx = 0; dx < g.w; dx++) ctx.drawImage(spr, px + dx * TILE, py + dy * TILE + TILE - spr.height); }
+    else ctx.drawImage(spr, px + ((fw - spr.width) >> 1), py + fh - spr.height);
+    ctx.globalAlpha = 1;
+  }
+  // the footprint's rim, dark under the colour, so it reads on snow and ice alike
+  const rim = (c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h); };
+  rim('rgba(15,22,50,0.9)', px + 1, py + 1, fw, fh);
+  rim(col, px, py, fw, fh);
+}
+// the HUD half: the column of rows, in the UI pass
+function drawBuildList(now) {
+  const b = state.build;
+  if (!b || state.mapOpen || state.settingsOpen) return;
+  const tb = SPRITES.teamBuild[skin(player.team)];
+  for (let i = 0; i < BUILD_ORDER.length; i++) {
+    const type = BUILD_ORDER[i], S = STRUCTS[type], sel = i === b.sel;
+    const r = buildRowRect(i);
+    const t0 = S.tiers[0], afford = canAfford(t0.cost);
+    ctx.fillStyle = '#0a0e23'; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
+    ctx.fillStyle = sel ? '#141c3c' : '#0d1229'; ctx.fillRect(r.x, r.y, r.w, r.h);
+    if (sel) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1); ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h); }
+    // the icon: a type's own 16x16 (or the dedicated one a big sprite keeps
+    // in `icon`); a tiled piece shows its tile twice, one over the other
+    const art = S.tiled || S.art || type;
+    const spr = (tb.icon && tb.icon[type]) || (tb.icon && tb.icon[art]) || (tb[art] && tb[art][0]);
+    ctx.globalAlpha = afford ? 1 : 0.5;
+    if (spr) {
+      const iw = Math.min(16, spr.width), ih = Math.min(16, spr.height);
+      if (S.tiled) { ctx.drawImage(spr, 0, 0, iw, ih, r.x + 1, r.y + 1, iw, ih); ctx.drawImage(spr, 0, 0, iw, ih, r.x + 5, r.y + 1, iw, ih); }
+      else ctx.drawImage(spr, 0, 0, iw, ih, r.x + 2, r.y + 1, iw, ih);
+    }
+    ctx.globalAlpha = 1;
+    // the price, in gold's own colour while the purse covers it, red while not
+    const cost = '' + (t0.cost.gold || 0);
+    drawPixelTextOutline(ctx, cost, r.x + 25, r.y + 6, afford ? RES_COLORS.gold : BUILD_NO, '#0f1632');
+    // the piece that turns wears the rotate key's cap on its row while picked
+    if (S.rotates && sel) drawKeyCap(ctx, r.x + r.w - 14, r.y + 4, keyCap('rotate'), keyHeld('rotate'), 0, now);
+  }
 }
 
 // ------------------------------------------------------------ UI

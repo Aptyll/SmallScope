@@ -11,7 +11,7 @@ function makeRobot(sp) {
   let sx = m.x, sy = m.y;
   if (isSolidTile(Math.floor(sx / TILE), Math.floor(sy / TILE))) {
     // mouth blocked: the first free tile in the rings around the footprint
-    const w = structW(sp.type), h = structH(sp.type);
+    const w = structW(sp), h = structH(sp);
     outer: for (let r = 1; r <= 3; r++) {
       for (let dy = -r; dy < h + r; dy++) for (let dx = -r; dx < w + r; dx++) {
         if (dx > -r && dx < w + r - 1 && dy > -r && dy < h + r - 1) continue;
@@ -955,8 +955,8 @@ function foePoint(e, fx, fy) {
   if (fx === undefined) return structCenter(e);
   const x0 = e.tx * TILE, y0 = e.ty * TILE;
   return {
-    x: Math.max(x0, Math.min(x0 + structW(e.type) * TILE, fx)),
-    y: Math.max(y0, Math.min(y0 + structH(e.type) * TILE, fy)),
+    x: Math.max(x0, Math.min(x0 + structW(e) * TILE, fx)),
+    y: Math.max(y0, Math.min(y0 + structH(e) * TILE, fy)),
   };
 }
 // nearest enemy UNIT (player or worker) inside range. Players are noticed through

@@ -313,7 +313,7 @@ function render() {
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
         seen.add(o);
       }
-      draws.push({ y: (o.ty + structH(o.type)) * TILE, o, tx: o.tx, ty: o.ty });
+      draws.push({ y: (o.ty + structH(o)) * TILE, o, tx: o.tx, ty: o.ty });
     }
   }
   for (const p of players) {
@@ -488,17 +488,19 @@ function render() {
       // the plant filling toward ripe - the frames say roughly, a look asks
       // exactly. A ripe bush wears the rim instead, and says pick me.
       if (o.berries <= 0 && o === hovO) drawHealthBar(px + 8, py + 1, BUSH_REGROW - o.regrow, BUSH_REGROW, 12);
+    } else if (STRUCTS[o.type] && STRUCTS[o.type].tiled) {
+      drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
     } else if (STRUCTS[o.type]) {
       const spr = structSprite(o);
-      const sy = py + structH(o.type) * TILE - spr.height; // skirt on the footprint's bottom edge
+      const sy = py + structH(o) * TILE - spr.height; // skirt on the footprint's bottom edge
       // a sprite wider than its footprint (the 32x32 turret on one tile) centres over it
-      const sx = px + ((structW(o.type) * TILE - spr.width) >> 1);
+      const sx = px + ((structW(o) * TILE - spr.width) >> 1);
       if (o.building) {
         const p = o.buildT / o.buildTotal;
         if (spr.width > 16) {
           // a big build: the foundation is staked out first, then the walls
           // rise out of it behind a weld line (bigBuildReveal for the split)
-          const fw = structW(o.type) * TILE, fh = structH(o.type) * TILE;
+          const fw = structW(o) * TILE, fh = structH(o) * TILE;
           ctx.fillStyle = 'rgba(58,66,82,0.5)';
           ctx.fillRect(px + 1, py + 1, fw - 2, fh - 2);
           ctx.fillStyle = '#1c2130';
@@ -555,6 +557,7 @@ function render() {
   }
 
   drawSelection(ox, oy, now);
+  drawBuildGhost(ox, oy, now);
   drawWorkHint(ox, oy);
   drawFishHint(ex, ey, now);
   // the parkour's two readouts: the lap clock over the runner, BEST / LAST
@@ -569,9 +572,9 @@ function render() {
     const px = o.tx * TILE - ox, py = o.ty * TILE - oy;
     if (px < -20 || px > WV_W + 4 || py < -20 || py > WV_H + 4) continue;
     const p = Math.min(1, o.buildT / o.buildTotal);
-    const big = structW(o.type) > 1;
-    const bw = big ? 24 : 12, bx = big ? px + structW(o.type) * 8 - 12 : px + 2;
-    const by = big ? (o.ty + structH(o.type)) * TILE - oy - structSprite(o).height - 12 : py - 7;
+    const big = structW(o) > 1;
+    const bw = big ? 24 : 12, bx = big ? px + structW(o) * 8 - 12 : px + 2;
+    const by = big ? (o.ty + structH(o)) * TILE - oy - structSprite(o).height - 12 : py - 7;
     ctx.fillStyle = 'rgba(15,22,50,0.8)';
     ctx.fillRect(bx, by, bw, 4);
     ctx.fillStyle = '#ffd95c';
@@ -702,6 +705,8 @@ function render() {
   // the drop brief's roost headlines (updateDrop's tour, js/boot.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
   else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
+  // the build list's column under the shelf (its ghost is back in the world pass)
+  if (state.mode === 'play') drawBuildList(now);
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
   // after the chart: a flag wheel opens over it too (pinned to the press point)
@@ -1116,7 +1121,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   // itself over (`sx` in the structure draw) whether it is wider than its
   // tiles or not - so it is the line the damage bar has to sit on too
   for (const o of structures) {
-    const w = structW(o.type) * TILE, h = structH(o.type) * TILE;
+    const w = structW(o) * TILE, h = structH(o) * TILE;
     hbMid(o.tx * TILE + w / 2 - ox, o.ty * TILE - 24 - oy, o.ty * TILE + h - oy);
   }
 
@@ -1246,8 +1251,15 @@ function cursorInfo() {
   const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
   const o = structOf(objAt(tx, ty));
   const busy = player.fallT > 0 || player.dodgeT > 0; // tools locked out
-  // build sites (right-click) outrank tool hints; beyond the 60px reach they dim
-  if (buildSiteAt(tx, ty) || (o && STRUCTS[o.type] && !o.building && o.team === player.team)) {
+  // the build list up: a hand over its rows, the hammer over the world -
+  // dim where the ghost cannot stand
+  if (state.build) {
+    if (buildListHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
+    const g = buildGhostAt();
+    return { kind: 'hammer', dim: !g || !g.can.ok };
+  }
+  // one of your own buildings (E manages it) outranks tool hints; beyond the 60px reach it dims
+  if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team) {
     const far = Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > 60;
     return { kind: 'hammer', dim: far };
   }
