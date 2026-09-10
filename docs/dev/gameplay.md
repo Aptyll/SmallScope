@@ -2604,17 +2604,19 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
 
 - **The ring**, `drawFlagRing`, flat on the snow under everything that walks it (`drawFlagRings`,
   called from the world pass right after the flat statics): a dark line under a dashed one in the
-  order's colour, the dashes crawling round it so a standing order reads as *live* and not as a
-  boundary painted on the map. It is drawn on the world canvas, so it scales with the tile — it is
+  **side's ink** (`TEAMS[skin(team)].mark` — it wore `FLAG_MINE` until 3.32, and white on snow was
+  a ring nobody saw), two pixels wide, the dashes crawling round it so a standing order reads as
+  *live* and not as a boundary painted on the map. On both maps `drawFlagMark` draws the same
+  ground washed in the side's ink under a dark rim and a solid line of that ink. It is drawn on the world canvas, so it scales with the tile — it is
   a place, not a HUD element. While a flag wheel is held over the world the same function previews
   the ring the pick would lay, in the lit wedge's colour, or grey from the hub where nothing is
   chosen yet; over the chart the chart draws that preview itself.
-- **Two colours, and they carry the stakes, not the order** (`FLAG_MINE` / `FLAG_FOE`): DEFEND,
-  GATHER and RALLY wear the game's standard bright ink, ATTACK the danger red. The *glyph* says
-  which order it is; amber and green are already spoken for (affordable / interactable, and good)
-  and an order is neither. `FLAG_MINE` is `#f4f7ff` and not a softer slate for a reason — this
-  world is snow, and anything near it disappears into the ground; it reads for the same reason
-  `drawSelection`'s white brackets do.
+- **Two colours for the glyphs, and they carry the stakes, not the order** (`FLAG_MINE` /
+  `FLAG_FOE`, on the wheel's icons, the planted banner and the plant burst): DEFEND, GATHER and
+  RALLY wear the game's standard bright ink, ATTACK the danger red. The *glyph* says which order it
+  is; amber and green are already spoken for (affordable / interactable, and good) and an order is
+  neither. The ring says whose ground, in the side's ink — the one colour the whole side already
+  reads on every nameplate and map mark.
 - **The planted flag**, `drawFlag()`, y-sorted into the world draws half a pixel behind its own
   tile so a flag on a tree isn't swallowed by the canopy: a pole with a **dark banner carrying the
   order's glyph inked in the team's colour**. Dark cloth and a bright glyph, not the reverse — at

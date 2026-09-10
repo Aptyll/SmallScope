@@ -1700,15 +1700,19 @@ function drawFlagPennant(g, x, y, col, rim) {
   for (const [rx, ry, rw, rh] of rects) g.fillRect(rx, ry, rw, rh);
 }
 // THE RING: the ground an order covers, FLAG_R about the flag, drawn flat on
-// the snow under everything that walks it. A dark line under a dashed one in
-// the order's own colour, the dashes crawling round it so a standing order
-// reads as live and not as a boundary painted on the map; `a` fades the one
-// a held wheel previews. g is the world canvas at whatever zoom, so the ring
-// scales with the tile - it is a place, not a HUD element.
+// the snow under everything that walks it. A dark line under a dashed one
+// in THE SIDE'S INK (3.32: it wore FLAG_MINE before, and white on snow was a
+// ring nobody saw - the glyph on the pennant says which order, the ring
+// says whose ground), two pixels wide, the dashes crawling round it so a
+// standing order reads as live and not as a boundary painted on the map;
+// `a` fades the one a held wheel previews, which keeps the lit wedge's
+// colour since it is the wheel's, not yet an order. g is the world canvas at
+// whatever zoom, so the ring scales with the tile - it is a place, not a HUD
+// element.
 function drawFlagRing(g, cx, cy, col, now, a) {
   g.save();
   g.globalAlpha = a;
-  g.lineWidth = 1;
+  g.lineWidth = 2;
   g.setLineDash([4, 4]);
   g.lineDashOffset = -((now * 6) % 8);
   g.strokeStyle = '#0f1632';
@@ -1725,7 +1729,7 @@ function drawFlagRings(ox, oy, now) {
   for (const q of players) {
     if (!q.active || !q.flag || q.team !== team) continue;
     const f = q.flag;
-    drawFlagRing(ctx, f.tx * TILE + 8 - ox, f.ty * TILE + 8 - oy, FLAG_TYPES[f.type].col, now, 0.55);
+    drawFlagRing(ctx, f.tx * TILE + 8 - ox, f.ty * TILE + 8 - oy, TEAMS[skin(q.team)].mark, now, 0.85);
   }
   const w = state.wheel;
   if (w && w.kind === 'flag' && !state.mapOpen) {
@@ -1758,14 +1762,16 @@ function drawFlag(q, ex, ey, now) {
 }
 // a flag on either map: the pennant with the ring it covers about it, at that
 // map's px per tile - the ring is the order's whole meaning, so the maps
-// carry it too. (x, y) is the pennant's foot.
+// carry it too: the ground inside washed in the side's ink, a dark rim under
+// a solid line of the same ink (3.32: a lone line at a third alpha was a
+// ring nobody saw). (x, y) is the pennant's foot.
 function drawFlagMark(g, x, y, f, col, rim, s) {
-  const r = FLAG_R / TILE * s;
+  const r = FLAG_R / TILE * s, cx = Math.round(x) + 0.5, cy = Math.round(y) - 2.5;
   g.save();
-  g.globalAlpha = 0.3;
-  g.lineWidth = 1;
-  g.strokeStyle = col;
-  g.beginPath(); g.arc(Math.round(x) + 0.5, Math.round(y) - 2.5, r, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.arc(cx, cy, r, 0, Math.PI * 2);
+  g.globalAlpha = 0.18; g.fillStyle = col; g.fill();
+  g.globalAlpha = 0.7; g.lineWidth = 3; g.strokeStyle = rim || '#0f1632'; g.stroke();
+  g.globalAlpha = 1; g.lineWidth = 1; g.strokeStyle = col; g.stroke();
   g.restore();
   drawFlagPennant(g, x, y, col, rim);
 }
