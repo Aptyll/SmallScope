@@ -271,7 +271,7 @@ function aiHelps(p, f) {
 // an enemy building under an ATTACK flag)
 function aiStructTile(o, p) {
   let best = null, bd = 1e9;
-  for (let dy = 0; dy < structH(o.type); dy++) for (let dx = 0; dx < structW(o.type); dx++) {
+  for (let dy = 0; dy < structH(o); dy++) for (let dx = 0; dx < structW(o); dx++) {
     const tx = o.tx + dx, ty = o.ty + dy;
     const d = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y);
     if (d < bd) { bd = d; best = { tx, ty }; }
@@ -390,6 +390,25 @@ function aiOpenSides(tx, ty) {
     if (inWorld(nx, ny) && !isSolidTile(nx, ny) && ground[idx(nx, ny)] !== 2) n++;
   }
   return n;
+}
+// where a bot lays a building: the nearest tile within AI_BUILD_R of it the
+// piece can stand on (canPlaceAt, structures.js - the same rule the ghost
+// answers, reach aside, since the bot walks there), a 1x1 with room round
+// it (aiOpenSides) so it never walls itself in, a big one wherever it fits.
+// Null when nothing near will take it.
+const AI_BUILD_R = 5; // tiles
+function aiBuildSite(p, type) {
+  const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
+  const big = structW(type) > 1 || structH(type) > 1;
+  let best = null, bd = Infinity;
+  for (let ty = pty - AI_BUILD_R; ty <= pty + AI_BUILD_R; ty++) for (let tx = ptx - AI_BUILD_R; tx <= ptx + AI_BUILD_R; tx++) {
+    const d = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y);
+    if (d >= bd || !inWorld(tx, ty)) continue;
+    if (!canPlaceAt(type, tx, ty, 0, null).ok) continue;
+    if (!big && aiOpenSides(tx, ty) < 3) continue;
+    bd = d; best = { tx, ty };
+  }
+  return best;
 }
 
 // a bot draws the instant it holds a card: the same random pick useCard
@@ -823,7 +842,7 @@ function updateAI(p, dt) {
   }
   const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold ? (rng() < 0.3 ? 'spawner' : 'generator') : null;
   if (ai.buildT <= 0 && wantType) {
-    const st = nearestObj(p.x, p.y, 5, (o) => o.type === 'stump' && aiOpenSides(o.tx, o.ty) >= 3);
+    const st = aiBuildSite(p, wantType);
     if (st) {
       const sx = st.tx * TILE + 8, sy = st.ty * TILE + 8;
       const d = Math.hypot(sx - p.x, sy - p.y);

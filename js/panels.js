@@ -709,8 +709,8 @@ function drawToolPrimer(g, y0) {
 // DBG.keyRows all read it, so a click can never disagree with a pixel.
 const KEY_ROWS = [
   [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
-    'dodge', 'slide', 'work', 'berry', 'fish', 'card', 'bag', 'char'],
-  ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'BUILD WHEEL'], ['RMB', 'FLAG WHEEL'],
+    'dodge', 'slide', 'work', 'berry', 'fish', 'card', 'bag', 'char', 'build', 'rotate'],
+  ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'FLAG WHEEL'],
     ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
 ];
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;

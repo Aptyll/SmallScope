@@ -49,7 +49,7 @@ anything that must stay stable per tile.
 - Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. Deleting is
   `objects[idx] = null` (structures should go through `destroyStructure` so the `structures`
   registry stays in sync — it routes tiered types through `removeStruct`).
-- `wall`, `turret`, `generator`, `spawner` are the **stump-built structures** (see
+- `wall`, `longwall`, `turret`, `generator`, `spawner` are the **structures** any open snow or road tile takes (see
   [Base building](gameplay.md#base-building)). Each carries `{ tier, maxHp, building, buildT,
   buildTotal, dustT, sparkT }` plus per-type fields (turret `cd`; generator `payT`; spawner `mode`,
   `bots`, `respawnT`/`respawnTotal`, `door`), and every live one is also referenced from the module-scope `structures`
@@ -661,15 +661,17 @@ one flag — never the type name — is what every site reads:
 
 | `water: true` means | where |
 | --- | --- |
-| built on a bare open hole, not a stump | `placeStruct` (and the contest callback re-checks it) |
-| the wheel over open water offers it, and only it | `buildSiteAt` → `buildOptionsAt` → `WATER_STRUCT_ORDER` |
+| built on a bare open hole, not snow | `canPlaceAt` (the ghost's colour, the click, and the contest callback re-checks it) |
+| a pad's wheel over open water offers it, and only it | `buildSiteAt` → `buildOptionsAt` → `WATER_STRUCT_ORDER` |
 | not solid — you walk **on** it, and the plunge check skips it | `isSolidTile`, `updatePlay` |
 | its hole never refreezes while it stands | the dawn branch, via `netAt` |
 | drawn flat, under everything, never y-sorted | `drawNet` in the flat pass — see [rendering](rendering.md#render-pass-order) |
 
-Right-clicking a hole opens the ordinary build wheel with a single option. Nothing is special-cased
-for a one-option wheel: `wheelSpan(1)` is the full circle, so any direction out of the hub picks
-the net and the hub still cancels.
+The net is the [build list](gameplay.md#base-building)'s last row: its ghost is white over a bare
+hole and red anywhere else, the same `canPlaceAt` read as every other piece. A pad's build wheel
+over a hole offers the net alone, and nothing is special-cased for a one-option wheel:
+`wheelSpan(1)` is the full circle, so any direction out of the hub picks the net and the hub
+still cancels.
 
 A finished net runs two clocks in `updateStructures`' `net` branch:
 

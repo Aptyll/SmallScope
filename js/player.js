@@ -621,7 +621,7 @@ function resolveContests() {
 }
 
 const animals = []; // passive wildlife: rabbits and deer, spawned once at boot
-const structures = []; // every stump-built tiered building (walls included)
+const structures = []; // every tiered building (walls included)
 const robots = []; // spawner-owned worker bots
 const tracers = []; // turret shot lines: {x0,y0,x1,y1,t}
 const arrows = []; // live bow shots: {x,y,vx,vy,t,life,dmg,pow}
@@ -968,6 +968,7 @@ function endMatch(how) {
   state.bagOpen = false;
   state.settingsOpen = false;
   state.wheel = null;
+  state.build = null;
   state.deadTimer = 0;
   state.defeatT = 0;
   state.rpClosed = false; // every death opens the replay again

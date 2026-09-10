@@ -134,6 +134,10 @@ const state = {
   // press point; a flag wheel opened over the chart carries sx/sy, the screen
   // point it is pinned to instead of its tile (wheelLayout, js/ui.js)
   wheel: null,
+  // the build list (T, js/ui.js): { sel, rot } while it is open - the row
+  // picked and whether the piece is turned; the ghost under the pointer is
+  // what a click lays. Null while it is closed.
+  build: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
   // the open sub-panel ('settings' | 'help' | 'patch' | 'name' | null) and its slide progress
   // one hover ease per MENU_ITEMS entry + the seed row. That length is a

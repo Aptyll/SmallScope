@@ -73,6 +73,7 @@ const KEY_ACTIONS = [
   { id: 'berry', verb: 'EAT BERRY', key: 'q' }, { id: 'fish', verb: 'EAT FISH', key: 'f' },
   { id: 'card', verb: 'DRAW CARD', key: 'c' }, { id: 'bag', verb: 'INVENTORY', key: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g' },
+  { id: 'build', verb: 'BUILD', key: 't' }, { id: 'rotate', verb: 'ROTATE', key: 'r' },
   { id: 'map', verb: 'WORLD MAP', key: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab' },
   { id: 'mute', verb: 'MUTE', key: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p' },
 ];
@@ -229,6 +230,18 @@ function keyPress(e) {
   // HUD and not an overlay, so unlike the map and ESC it neither stops the
   // sim nor swallows anything but its own clicks.
   if (keyIs(e, 'bag')) state.bagOpen = !state.bagOpen;
+  // THE BUILD LIST (drawBuildList, js/ui.js): T opens it over the world and
+  // T again closes it (so do Escape and the right button); while it is up
+  // the ghost under the pointer is what a left-click lays, the wheel walks
+  // the rows, and R turns a piece that turns. It takes the drawer's place
+  // under the shelf, so the drawer lifts. Not over the map or the slab, not
+  // dead, not seated on the roost.
+  if (keyIs(e, 'build') && !e.repeat && !state.mapOpen && !state.settingsOpen && !player.dead && !player.aboard) {
+    SFX.unlock();
+    if (state.build) state.build = null;
+    else { state.build = { sel: 0, rot: 0 }; state.wheel = null; state.bagOpen = false; }
+  }
+  if (keyIs(e, 'rotate') && !e.repeat && state.build) state.build.rot ^= 1;
   // The work key at the practice rack: the press opens the armory wheel over
   // it, the pointer picks, and RELEASING it takes - the right-click wheel's
   // own hold-and-release grammar, moved onto the key. A real work target in
@@ -245,8 +258,14 @@ function keyPress(e) {
     if (state.shop) { closeShop(); return; }
     const t = workTarget(player);
     if (!t || !t.near) {
-      const rk = rackNear(player);
-      if (rk) { SFX.unlock(); state.wheel = { kind: 'rack', tx: rk.tx, ty: rk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
+      // one of your OWN buildings in reach: the press opens its manage
+      // wheel (upgrade / demolish) on the rack's grammar - E is the one verb
+      // for the world, and a building of yours is the one thing it never
+      // swings at (manageNear, structures.js)
+      const mg = manageNear(player);
+      const rk = mg ? null : rackNear(player);
+      if (mg) { SFX.unlock(); state.wheel = { kind: 'manage', tx: mg.tx, ty: mg.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
+      else if (rk) { SFX.unlock(); state.wheel = { kind: 'rack', tx: rk.tx, ty: rk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
       else {
         // the parkour die: holding the key beside it opens the roll wheel -
         // ROLL plus the three difficulties - on the rack wheel's own grammar
@@ -285,6 +304,7 @@ function keyPress(e) {
     // half-finished, and Escape is how either is thought better of
     if (state.drag) { dragReturn(); state.dragPend = null; }
     else if (state.wheel) state.wheel = null;
+    else if (state.build) state.build = null;
     else if (state.mapOpen) state.mapOpen = false;
     else if (state.shop) closeShop();
     else if (state.charOpen) state.charOpen = false;
@@ -304,7 +324,7 @@ function keyRelease(e) {
   // range bell) takes what the pointer is on (or cancels from the hub),
   // exactly as releasing the right button does
   if (keyIs(e, 'work') && state.wheel &&
-      (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell')) {
+      (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage')) {
     resolveWheel();
     state.wheel = null;
   }
@@ -321,7 +341,7 @@ window.addEventListener('blur', () => {
   // an E-held wheel (armory, roll die or range bell) is a held gesture too:
   // its keyup is lost with the focus, so it closes (choosing nothing)
   // instead of sticking open
-  if (state.wheel && (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell')) state.wheel = null;
+  if (state.wheel && (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage')) state.wheel = null;
 });
 
 canvas.addEventListener('mousemove', (e) => {
@@ -359,20 +379,13 @@ canvas.addEventListener('mousedown', (e) => {
 function pointerPress(button) {
   if (button === 2) {
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
+    if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y)) return; // no wheel through the HUD
-    SFX.unlock();
-    const tx = Math.floor(mouseWX() / TILE), ty = Math.floor(mouseWY() / TILE);
-    const o = structOf(objAt(tx, ty));
-    const site = buildSiteAt(tx, ty); // a stump, or an open hole to net over
-    const near = Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) <= 60;
-    // ax/ay: the press point every later pointer move is measured against.
-    // A site or one of your own buildings in reach opens its wheel; any
-    // other tile on the map is a place to plant a flag on.
-    if (near && site) state.wheel = { kind: 'build', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y };
-    else if (near && o && STRUCTS[o.type] && !o.building && o.team === player.team) state.wheel = { kind: 'manage', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y };
-    else openFlagWheel();
+    // any tile on the map is a place to plant a flag on (building is the
+    // list on T, managing is E beside your own building)
+    openFlagWheel();
     return;
   }
   if (button === 1) return; // the middle button is nobody's
@@ -384,6 +397,19 @@ function pointerPress(button) {
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) return;
+  // the build list: a press on a row picks it, a press on the world lays
+  // the ghost (a red ghost refuses with the deny cue and nothing else);
+  // presses over the rest of the HUD go on to it as ever
+  if (state.build) {
+    const row = buildListHit(mouse.x, mouse.y);
+    if (row >= 0) { SFX.unlock(); state.build.sel = row; return; }
+    if (!overHud(mouse.x, mouse.y)) {
+      const g = buildGhostAt();
+      if (g && g.can.ok) { SFX.unlock(); player.input.cmd = { kind: 'build', tx: g.tx, ty: g.ty, id: g.type, rot: g.rot }; }
+      else SFX.deny();
+      return;
+    }
+  }
   // The backpack widget, the weapon slots and the weapon shelf swallow every
   // press over themselves before the tool ever sees them. The character panel
   // is asked first while it is up - a press on a gear well buys, the X
@@ -507,26 +533,26 @@ function openFlagWheel() {
   return true;
 }
 
-// A build or manage wheel with no tile under a pointer: the nearest thing in
-// reach the right button would open on - a stump or an open hole to net, or
-// one of your own buildings - for a pad's dpad and the touch BUILD plate.
-// ax/ay is the press point the pick travels from (wheelLayout, ui.js); the
-// caller resolves the wheel on its own release, as the right button does.
+// A build wheel with no pointer to lay a ghost with - a pad's dpad and the
+// touch BUILD plate: it opens on the tile the body FACES, offering what
+// stands there (the net over a hole, the land list otherwise); the pick is
+// laid on that tile, a big one fitted round it (placeStruct -> findSite).
+// With a building of the player's own on that tile it is the manage wheel
+// instead. ax/ay is the press point the pick travels from (wheelLayout,
+// ui.js); the caller resolves the wheel on its own release, as the right
+// button does.
 function openWheelNear(p, ax, ay) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || p.dead) return false;
-  const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
-  let best = null, bd = 60; // the right button's own reach
-  for (let ty = pty - 4; ty <= pty + 4; ty++) for (let tx = ptx - 4; tx <= ptx + 4; tx++) {
-    if (tx < 0 || ty < 0 || tx >= WORLD || ty >= WORLD) continue;
-    const d = Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y);
-    if (d >= bd) continue;
-    if (buildSiteAt(tx, ty)) { best = { kind: 'build', tx, ty }; bd = d; continue; }
-    const o = structOf(objAt(tx, ty));
-    if (o && STRUCTS[o.type] && !o.building && o.team === p.team) { best = { kind: 'manage', tx, ty }; bd = d; }
-  }
-  if (!best) { SFX.deny(); return false; }
+  const dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0, dy = p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0;
+  const tx = Math.floor(p.x / TILE) + dx, ty = Math.floor((p.y + 4) / TILE) + dy;
+  if (!inWorld(tx, ty)) { SFX.deny(); return false; }
+  const o = structOf(objAt(tx, ty));
+  let kind = null;
+  if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === p.team) kind = 'manage';
+  else if (buildOptionsAt(tx, ty).some((t) => canPlaceAt(t, tx, ty, 0, p).ok || findSite(t, tx, ty))) kind = 'build';
+  if (!kind) { SFX.deny(); return false; }
   SFX.unlock();
-  state.wheel = { kind: best.kind, tx: best.tx, ty: best.ty, seg: -1, ax, ay };
+  state.wheel = { kind, tx, ty, seg: -1, ax, ay };
   return true;
 }
 
@@ -559,6 +585,12 @@ canvas.addEventListener('wheel', (e) => {
   // over the open ESC panel the wheel walks the open settings page
   if (state.settingsOpen) { settingsScrollBy(e.deltaY > 0 ? 14 : -14); return; }
   if (state.mapOpen || state.wheel) return;
+  // the build list up: the wheel walks its rows (the camera's zoom waits)
+  if (state.build) {
+    const n = BUILD_ORDER.length;
+    state.build.sel = (state.build.sel + (e.deltaY > 0 ? 1 : -1) + n) % n;
+    return;
+  }
   // over the minimap the wheel zooms the minimap instead of the camera
   if (overMinimap()) {
     settings.mmZoom = Math.max(0, Math.min(MM_ZOOMS.length - 1, (settings.mmZoom | 0) + (e.deltaY > 0 ? -1 : 1)));
