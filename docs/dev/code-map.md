@@ -78,7 +78,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a cap listening for its key, the swap on a conflict, the reset | `state.rebind`, `rebindStart`, `rebindKey`, `setBind`, `resetBinds`, `bindsDefault`, `rebindLive` | `keys and binds` |
 | the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad / touch) | `input` |
 | what a key does, what a button does - the four entry points every controller presses through | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease` | `input` |
-| the bare gestures a trigger or a plate sends: the draw, the worker flag, a wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `flagDown`/`flagUp`, `openWheelNear`, `panelScrollBy` | `input` |
+| the bare gestures a trigger or a plate sends: the draw, the flag wheel, a build wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy` | `input` |
 | telling the HAND something happened - a pad's rumble, a phone's buzz, one call over all three controllers | `HAPTIC`, `haptic` (its caller: `hudFx`, ui.js; its off switch: the RUMBLE row, `SET_TABS` panels.js) | `haptics` |
 | the zoom wheel, the listeners | the `addEventListener` block | `input` |
 | folding keys, mouse and both sticks into player 0's struct | `sampleHumanInput` | `input` |
@@ -160,17 +160,17 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| tuning: what a worker swing hits for, how far a flag spreads, what counts as an enemy doorstep | `ROBOT_DMG`, `ROBOT_ATK_CD`, `ROBOT_REACH`, `ROBOT_AGGRO`, `ROBOT_LEASH`, `ROBOT_MAD`, `FLAG_BASE_R`, `FLAG_HARVEST_R`, `FLAG_SIEGE_R`, `FLAG_PATH_W` | `worker flags` |
+| tuning: what a worker swing hits for, how far it notices and chases, how far a flag's ring reaches | `ROBOT_DMG`, `ROBOT_ATK_CD`, `ROBOT_REACH`, `ROBOT_AGGRO`, `ROBOT_LEASH`, `ROBOT_MAD`, `FLAG_R` | `team flags` |
 | a bot leaving the bay's mouth, and the frame it spends deciding | `makeRobot`, `updateRobot` (`updateStructures` rolls them out: `the building sim`, structures.js) | `workers` |
 | shooting a worker bot: its hitbox, its damage, its wreck, and who it is now angry at | `robotHit`, `hurtRobot`, `robotDies`, `b.mad` | `workers` |
 | what a worker does this frame: the flag dispatch, the harvest tick, the melee | the tail of `updateRobot`, `engage`, `gather`, `holdAt` | `workers` |
 | the eagle's merchant: climbing down at the crash, the barracks it clears the woods for and raises behind the roost (and rebuilds), the defence it raises off the two stump rings (four corner turrets inside, a wall ring with corner gaps outside), the rim it fells, keeping to its post at the head of the spur, and standing still to serve whoever opens its counter | `MERCH_*` (incl. `MERCH_BAY_*`), `freeTileNear`, `spawnMerchant` (called from `eagleCrash`, boot.js), `updateMerchant` (dispatched from `updateRobot` on `b.merchant`), `merchFell`, `merchBaySite`, `merchBayBlocker`, `b.bay`/`b.bayT`/`b.baySite`, `b.plan`/`b.avoids`, `shopServing` (js/shop.js) | `merchant` |
 | a wave's soldier: its route down the road, the four rungs it fights by, the bird strike, the bounty | `SOLDIER_*`, `makeSoldier` (rolled out by `updateStructures`'s barracks branch, structures.js), `updateSoldier` (dispatched from `updateRobot` on `b.kind === 'soldier'`), `robotDies`'s bounty (the `workers` banner) | `soldiers` (the pennant: `drawRobot`, draw-world.js; the gust: `updateEagle`/`eagleGust`, boot.js) |
-| the worker flag: what a tile orders, planting/moving/lifting it, whose crew reads it | `FLAG_JOBS`, `FLAG_ATTACK`, `flagResolve`, `plantFlag`, `clearFlag`, `flagRecall`, `flagOf` | `worker flags` |
-| the lane a PATH flag asks for, and who has already claimed a tile in it | `flagCorridor`, `flagPathTarget`, `objTaken` | `worker flags` |
-| a worker's attack: who is a valid mark, where the axe lands, the blow itself | `robotFoeUnit`, `enemyStructNear`, `foeAlive`, `foePoint`, `robotStrike`, `ROBOT_*` | `worker flags` › `a worker's simple attack` |
-| who can be ordered, and what the held press is aiming at right now | `hasWorkers`, `state.flagAim`, `flagTarget` | `worker flags` (its tail; `overHud`: `UI`, ui.js) |
-| what a flag LOOKS like - all five draw functions | `drawFlagIcon`, `drawFlagPennant`, `drawFlag`, `drawFlagAim`, `drawFlagCursor` | not here: `entity draw` › `what a flag looks like`, draw-world.js |
+| the team flag: the four orders and their glyphs, the wheel's order, planting/moving/lifting one, whose flag a body serves (a human's over all), a teammate's to join, the nearest to help at | `FLAG_TYPES`, `FLAG_ORDER`, `FLAG_MINE`/`FLAG_FOE`, `plantFlag`, `clearFlag`, `flagRecall`, `flagOf`, `servedFlag`, `humanFlag`, `teamFlagAt`, `nearestTeamFlag`, `flagPos`, `inFlag` | `team flags` |
+| what is hostile inside a flag's ring, and who has already claimed a tile in it | `flagFoe`, `enemyStructNear`, `objTaken` | `team flags` |
+| a worker's attack: who is a valid mark, where the axe lands, the blow itself | `robotFoeUnit`, `foeAlive`, `foePoint`, `robotStrike`, `ROBOT_*` | `team flags` › `a worker's simple attack` |
+| how an AI PLAYER answers a flag, and flies its own | `aiFlagSync`, `aiStructTile`, `AI_FLAG_*`, the `order` block and rung 5a of `updateAI` | not here: `ai` › `the flag`, ai.js |
+| what a flag LOOKS like - all six draw functions | `drawFlagIcon`, `drawFlagPennant`, `drawFlagRing`, `drawFlagRings`, `drawFlag`, `drawFlagMark` | not here: `entity draw` › `what a flag looks like`, draw-world.js |
 
 ## js/actions.js
 
@@ -280,7 +280,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the level plate a hero and a beast share, the noticed `!` over an animal that sees you, the stun stars | `drawLevelBadge`, `drawSenseMark`, `drawStunStars` (under `drawHealthBar`) | `entity draw` |
 | the camp glyph both maps stamp, and the respawn clock a hovered anchor wears | `drawCampIcon`, `drawCampClock` | `entity draw` › `the camp glyph` (its `CAMPS` spec: `camps`, world.js) |
 | ALPHA'S BLOOD worn: the amber ring of pips around a blooded player's feet | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | `entity draw` |
-| what a worker flag looks like: the job glyph, the map pennant, the planted banner, and the held-press preview's two halves | `drawFlagIcon`, `drawFlagPennant`, `drawFlag`, `drawFlagAim`, `drawFlagCursor` | `entity draw` › `what a flag looks like` (what they read, `flagTarget`/`FLAG_JOBS`: `worker flags`, robots.js) |
+| what a flag looks like: the order's glyph (at any scale), the map pennant, the ring an order covers (every standing one and the held wheel's preview), the planted banner, and a map's pennant-with-ring | `drawFlagIcon`, `drawFlagPennant`, `drawFlagRing`, `drawFlagRings`, `drawFlag`, `drawFlagMark` | `entity draw` › `what a flag looks like` (what they read, `FLAG_TYPES`/`FLAG_R`: `team flags`, robots.js; the wheel's pick: `wheelLayout`, ui.js) |
 | the snow over a buried body, its row spans, and the bury meter | `drawSnowCover`, `poseBounds`, `poseSpans`, `drawBuryRing` | `entity draw` |
 | worn gear on the 16×16 sprite | `GEAR_MARKS`, `drawGearMarks` | `entity draw` |
 | the stun tell: orbiting sparks, and the plate that carries them on a player's frame while it lasts | `drawStunStars`, the overhead block inside `drawPlayer` | `entity draw` |
@@ -316,7 +316,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | radial menu geometry and hit math | `wheelSpan`, `wheelAng`, `wheelOptions`, `wheelLayout`, `resolveWheel` | `radial wheel` |
 | brackets, the E prompt (never over what the hands take on their own), the fish brackets, wheel pixels | `drawSelection`, `drawWorkHint`, `drawFishHint`, `renderWheel`, `drawWheelHub`, `drawWheelStick` | `selection, hints & wheel` |
 | HUD and minimap | `renderUI`, `renderMinimap`, `updateMinimap` (throttled to `MM_REBUILD` ticks), `mmChrome`/`mmArcBand` (the disc's baked chrome and cached day/night arc band) | `UI` (the disc's per-tile colour comes from `objMapColor(o, 'mm')`: `world`, world.js) |
-| is the pointer over HUD that owns its own clicks, rather than over the world | `overHud` | `UI` (its callers are input.js's middle-button handlers and `flagTarget`, robots.js) |
+| is the pointer over HUD that owns its own clicks, rather than over the world | `overHud` | `UI` (its caller is `openFlagWheel`, input.js) |
 | the `E SHOP` cap over a merchant in reach | `drawShopHint` | `selection, hints & wheel` (the resolver and everything behind it: `merchNear`, shop.js) |
 | the backpack: the inventory DRAWER under the weapon shelf top-left, shut until B / L3 / the small arrow under the tool cell (the counter holds it open), sliding out from under the tab; its twelve small cells, the refusal flash, the full-bag amber | `HUD_CELL` (the one well size the strip and the shelf share), `BAG_CELL`/`BAG_GAP`/`BAG_PAD`/`BAG_BG`/`BAG_WELL`/`BAG_TAB_H`/`BAG_SLIDE_T`, `bagEase` (chases `bagOpenNow` in `updateFx`, sim.js), `bagOpenNow`, `bagTabRect`, `bagFrameRect`, `bagCellRect`, `bagCellPlate`, `cornerMouse` (the HUD SIZE map about the top-left corner), `bagHit`, `bagClick`, `bagDenied`, `drawFoodClock`, `drawBag` | `UI` › `the backpack` |
 | the character panel (G): the live body with its gear bands, the stat ledger off the live kit, the four gear pieces and their buys | `CHAR_LEDW`/`CHAR_WELL`, `charLayout`, `charHit`, `gearHit` (the piece-index read tipAt and the cursor keep using), `charClick`, `drawCharPanel` (state: `state.charOpen`, core.js) | `UI` › `the character panel` |

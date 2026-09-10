@@ -442,9 +442,9 @@ class Player {
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/abilities.js)
     this.cards = [];                    // picked roguelike cards, {rarity,id} - like gear, survives a respawn
-    // the one order marker this player commands its workers with (middle click,
-    // see the `worker flags` banner in js/robots.js): null, or { tx, ty, job, unit }. NOT
-    // cleared by reset() - an order outlives the hand that gave it.
+    // the one order marker this player has standing (the right-click radial;
+    // see the `team flags` banner in js/robots.js): null, or { tx, ty, type,
+    // owner }. NOT cleared by reset() - an order outlives the hand that gave it.
     this.flag = null;
     this.eliminated = false;            // its bird was driven off: no coming back - see die()/eagleFleeResolve
     this.respawnT = 0;                  // seconds left on an active respawn countdown
@@ -470,6 +470,11 @@ class Player {
       // noticed, aox/aoy the current aim scatter, abilOk this tick's ability
       // roll, pushCd a roost it could not reach
       prof: null, seeT: 0, aimT: 0, aox: 0, aoy: 0, abilT: 0, abilOk: true, pushCd: 0,
+      // the flag (aiFlagSync, ai.js): want is the order this tick's ladder
+      // would fly ({ type, x, y } or null), wantT how long it has flown one
+      // with no reason left, join the teammate whose flag it serves instead
+      // of planting a twin (-1 = none), flagT the re-read clock
+      want: null, wantT: 0, join: -1, flagT: 0,
     };
     this.reset(true);
   }
@@ -963,7 +968,6 @@ function endMatch(how) {
   state.bagOpen = false;
   state.settingsOpen = false;
   state.wheel = null;
-  state.flagAim = false;
   state.deadTimer = 0;
   state.defeatT = 0;
   state.rpClosed = false; // every death opens the replay again

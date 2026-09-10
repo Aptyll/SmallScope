@@ -144,10 +144,13 @@ baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#rogu
 building — a **fish net**, laid flat and walked *on* rather than into — over a live fish population
 that walkers on the ice and nets draw down and a trickle refills. [Ice holes and fishing](world.md#ice-holes-and-fishing).
 
-**Hold middle mouse to aim your one worker flag, release to plant — what it sits on is the order.**
-One flag per player, and the target tile decides the job: a tree means cut there, open ground means
-clear a lane, your own building means guard it, anything another team owns means go break it.
-[Worker flags](gameplay.md#worker-flags), [Robots](gameplay.md#robots).
+**Right-click anywhere and the flag wheel offers four orders — ATTACK, DEFEND, GATHER, RALLY — and
+the ring on the snow is the ground the order covers.** One flag per player, read by the whole
+side: every worker bot the planter's bays roll out, and every AI teammate. Bots fly flags of
+their own — a bot's flag is only ever its own decision made visible — and join a teammate's
+rather than twin it, but **a human's flag is the side's whole plan**: while it stands every
+bot on the team lifts its own and follows it. [Team flags](gameplay.md#team-flags),
+[Robots](gameplay.md#robots), [Bots](multiplayer.md#bots).
 
 **The camps are the jungle, and the jungle is symmetric.** Seven fixed sites mirrored across the
 road so both teams walk the same distance: four **WOLF DENS** that pay gold, two **ALPHA STONES**

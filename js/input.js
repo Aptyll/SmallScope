@@ -281,10 +281,9 @@ function keyPress(e) {
   if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
   if (keyIs(e, 'map') && !state.settingsOpen && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; }
   if (e.key === 'Escape') {
-    // a carried item goes back first, then the flag aim: both are gestures
+    // a carried item goes back first, then an open wheel: both are gestures
     // half-finished, and Escape is how either is thought better of
     if (state.drag) { dragReturn(); state.dragPend = null; }
-    else if (state.flagAim) state.flagAim = false;
     else if (state.wheel) state.wheel = null;
     else if (state.mapOpen) state.mapOpen = false;
     else if (state.shop) closeShop();
@@ -310,15 +309,13 @@ function keyRelease(e) {
     state.wheel = null;
   }
 }
-// a key - or the middle button - held while the window loses focus never sends
-// its keyup/mouseup: alt-tabbing out would otherwise leave the scoreboard (or
-// a walk direction, or the flag preview) stuck on
+// a key held while the window loses focus never sends its keyup: alt-tabbing
+// out would otherwise leave the scoreboard (or a walk direction) stuck on
 // - and an item on the cursor goes back where it came from rather than
 // hanging there over a game that has stopped listening
 window.addEventListener('blur', () => {
   for (const k in keys) keys[k] = false;
   state.rebind = null; // a cap left listening would eat the first key back
-  state.flagAim = false;
   state.dragPend = null;
   if (state.drag) dragReturn();
   // an E-held wheel (armory, roll die or range bell) is a held gesture too:
@@ -361,22 +358,24 @@ canvas.addEventListener('mousedown', (e) => {
 // a button went down at the pointer: 0 left, 1 middle, 2 right
 function pointerPress(button) {
   if (button === 2) {
-    if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
+    if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
+    if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y)) return; // no build wheel through the HUD
+        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     SFX.unlock();
     const tx = Math.floor(mouseWX() / TILE), ty = Math.floor(mouseWY() / TILE);
     const o = structOf(objAt(tx, ty));
     const site = buildSiteAt(tx, ty); // a stump, or an open hole to net over
-    if (!o && !site) return;
-    if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > 60) { SFX.deny(); return; }
-    // ax/ay: the press point every later pointer move is measured against
-    if (site) state.wheel = { kind: 'build', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y };
-    else if (STRUCTS[o.type] && !o.building && o.team === player.team) state.wheel = { kind: 'manage', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y };
-    else if (STRUCTS[o.type]) SFX.deny(); // someone else's building
+    const near = Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) <= 60;
+    // ax/ay: the press point every later pointer move is measured against.
+    // A site or one of your own buildings in reach opens its wheel; any
+    // other tile on the map is a place to plant a flag on.
+    if (near && site) state.wheel = { kind: 'build', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y };
+    else if (near && o && STRUCTS[o.type] && !o.building && o.team === player.team) state.wheel = { kind: 'manage', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y };
+    else openFlagWheel();
     return;
   }
-  if (button === 1) { flagDown(); return; }
+  if (button === 1) return; // the middle button is nobody's
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
   if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropJump(player); return; }
@@ -404,7 +403,7 @@ window.addEventListener('mouseup', (e) => { pointerRelease(e.button); });
 // ...and came back up
 function pointerRelease(button) {
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
-  if (button === 1) { flagUp(); return; }
+  if (button === 1) return;
   // a carried item is put down (or thrown), and an armed press that never
   // travelled resolves as the plain click it was - both before the tool's own
   // release, so a drag never also looses a shot
@@ -484,33 +483,28 @@ function haptic(kind) {
   } catch (e) { /* no actuator, or a browser that refuses one: the ear and the eye still answered */ }
 }
 
-// The worker flag is press-and-HOLD, the build wheel's grammar one button
-// over: the press raises the preview, the release plants where it landed.
-// Nothing about the flag is drawn until this press, which is the whole point
-// - a preview for an order you have not started is clutter. The middle
-// button, R3 on a pad and the touch FLAG plate all hold it.
-function flagDown() {
-  if (state.mode !== 'play' || state.settingsOpen || state.wheel) return false;
-  if (!hasWorkers(player)) return false;                      // nobody to order: the button is dead
-  if (!state.mapOpen && overHud(mouse.x, mouse.y)) return false; // the HUD swallows its own presses
-  SFX.unlock();
-  state.flagAim = true;
-  return true;
-}
-function flagUp() {
-  // the release is the order. Escape (or losing focus) drops flagAim first,
-  // which is what makes this cancellable without a hub to release into
-  if (!state.flagAim) return;
-  state.flagAim = false;
-  if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
+// The flag wheel: the four orders (FLAG_ORDER, robots.js) round the tile
+// under the pointer, on the build wheel's own grammar - held open, the
+// travel picks, the release plants (resolveWheel, ui.js). Over the chart it
+// opens on the chart's tile and is pinned to the press point (sx/sy), the
+// one way to order a tile that is off-screen. The right button, R3 on a
+// pad and the touch FLAG plate all hold it; the caller resolves it on its
+// own release, as the right button does. False when nothing opened.
+function openFlagWheel() {
+  if (state.mode !== 'play' || state.settingsOpen || state.wheel || player.dead) return false;
+  let tx, ty, sx, sy;
   if (state.mapOpen) {
-    // the chart commands too: it is the only way to flag a tile off-screen
     const mt = mapTileAt(mouse.x, mouse.y);
-    if (mt) plantFlag(player, mt.tx, mt.ty); else SFX.deny();
-    return;
+    if (!mt) return false;
+    tx = mt.tx; ty = mt.ty; sx = mouse.x; sy = mouse.y;
+  } else {
+    if (overHud(mouse.x, mouse.y)) return false; // the HUD swallows its own presses
+    tx = Math.floor(mouseWX() / TILE); ty = Math.floor(mouseWY() / TILE);
   }
-  if (overHud(mouse.x, mouse.y)) return; // dragged onto the HUD to think better of it
-  plantFlag(player, Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE));
+  if (!inWorld(tx, ty)) return false;
+  SFX.unlock();
+  state.wheel = { kind: 'flag', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y, sx, sy };
+  return true;
 }
 
 // A build or manage wheel with no tile under a pointer: the nearest thing in
@@ -551,7 +545,7 @@ function panelScrollBy(d) {
   return false;
 }
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-// middle click plants the flag; nothing about it should reach the page
+// the middle button does nothing in-game, and nothing of it should reach the page either
 canvas.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
 canvas.addEventListener('wheel', (e) => {
   if (state.mode === 'title') {

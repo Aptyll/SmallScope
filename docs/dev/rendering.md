@@ -381,7 +381,7 @@ hand feel like one control. A save written before `settings.v` indexes the old s
 and is carried across by `MM_MIGRATE` on load. Stepped by the
 scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-empts the camera
 zoom in the wheel handler and is saved with the settings. Every marker drawn over it (players,
-camp glyphs, your side's [worker flags](gameplay.md#worker-flags)) multiplies its tile
+camp glyphs, your side's [flags](gameplay.md#team-flags) with their rings) multiplies its tile
 offset by `s`. The disc sits on an opaque `#0f1632`
 backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no
 hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;

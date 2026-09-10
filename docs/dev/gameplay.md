@@ -2173,7 +2173,8 @@ minus the burst and the floater.
 ## Base building
 
 Right-clicking a **stump** within 60 px opens a radial **build wheel** anchored at the stump's
-screen position (clamped to stay on-screen), four even wedges: wall, turret, generator, bot
+screen position (clamped to stay on-screen) — a right-click on any *other* tile is the
+[flag wheel](#team-flags), on the same grammar — four even wedges: wall, turret, generator, bot
 bay (`STRUCT_ORDER`, type `spawner`) — `wheelSpan(n)`/
 `wheelAng(i, n)` re-derive n even wedges from `STRUCT_ORDER.length` alone, so an entry comes and
 goes with no layout code (the Keep's did), only the option itself; push out of the hub and release over a wedge to build,
@@ -2190,7 +2191,7 @@ Right-clicking a **finished** structure (any tile of it) opens a
 **manage wheel**: upgrade straight up, demolish last, and — unlike the build wheel — this list
 *isn't* generic over `STRUCT_ORDER` (`wheelOptions()` hand-builds it), so a type's own extra
 order would go between the two — the Keep's card craft did, and the bay's old gather/guard toggle
-did before its crew went under the [worker flag](#worker-flags); today no type has one. This wheel is the **only** way to
+did before its crew went under the [flag](#team-flags); today no type has one. This wheel is the **only** way to
 build — there are no free-placed buildables. All the data lives in the `STRUCTS` table: three
 tiers for wall/turret/generator (the wood → stone → gold *look* is just the sprite
 palette) and **one each for the bay and the net**, each with a gold `cost`, `hp`, `buildT`, and
@@ -2359,8 +2360,8 @@ jobs — `updateUnitStatus` first, so a chassis wears every state a player can b
 (`makeRobot` clears the full set into it): rooted, netted, slowed, marked, stunned, on fire, and
 scrapped by a burn like anything else ([status effects](#status-effects-one-set-for-every-unit)).
 The root and the slow are spent inside `navStep` for a routed drive and folded into `wander()` by
-hand for the loiter, which is the only movement a worker steers itself. **What job it runs is decided by the [worker flag](#worker-flags) of the player who owns its
-bay** (`flagOf(b)`); with no flag it falls back to the original bay-centred gather: pick the
+hand for the loiter, which is the only movement a worker steers itself. **What job it runs is decided by the [flag](#team-flags) the player who owns its
+bay serves** (`flagOf(b)` — a human teammate's flag over the owner's own); with no flag it falls back to the original bay-centred gather: pick the
 nearest tree/rock within 8 tiles of the bay's mouth (`structMouth`, also where they deposit)
 (`nearestObj`, the predicate generalisation of `nearestBerryBush`), work it in 0.9 s ticks into a
 `carry` gold count (same `YIELD` numbers as `hitObject`, tree-fall leaves a stump and pays the
@@ -2409,7 +2410,7 @@ picker — goes after a worker.
 `hurtRobot` also sets `b.mad`/`b.madT`/`b.madX`/`b.madY` when the hit came from another team **and
 the worker is under a flag**: it fights back for `ROBOT_MAD` (6 s) from where it was standing, and
 never follows past `ROBOT_LEASH` (90 px) of that spot. An unflagged worker is the same defenceless
-hauler it always was — see [Worker flags](#worker-flags) for why the anger is gated on the flag.
+hauler it always was — see [Team flags](#team-flags) for why the anger is gated on the flag.
 
 ### Soldiers: the waves
 
@@ -2504,93 +2505,97 @@ it is invisible to every weapon in the world rather than merely immune to one of
 health bar either: a full bar that could never move would promise a fight that is not on offer.
 There is no second driver and now there never needs to be. `DBG.merchants` lists both.
 
-## Worker flags
+## Team flags
 
-**One order marker per player, planted with the middle mouse button, that every worker bot that
-player owns reads as its standing order.** Two players on one team have one flag each; the crew a
-flag commands is `b.owner === p.id`, i.e. everyone out of the bays that player built. The whole
-system is the `worker flags` banner in [robots.js](../../js/robots.js), plus the dispatch
-at the tail of `updateRobot()`.
+**One order marker per player, of four kinds, that the whole side reads — every worker bot out of
+a bay the planter owns, and every AI player on the team.** A flag is an **area**: `FLAG_R` (192 px,
+twelve tiles) round the tile it stands on is the ground the order is about, and a ring on the snow
+says so. The sim side is the `team flags` banner in [robots.js](../../js/robots.js) plus the
+dispatch at the tail of `updateRobot()`; how an AI *player* answers one is the `flag` rung in
+[ai.js](../../js/ai.js) ([Bots](multiplayer.md#bots)); the wheel is the `radial wheel` banner in
+[ui.js](../../js/ui.js).
 
-**What the flag is standing on IS the order.** There is no menu and no mode. `flagResolve(p, tx, ty)`
-is the one function that decides, and both the cursor preview and `plantFlag` read it, so what the
-pointer promises is what the crew does:
+**The wheel is the order.** Right-click any tile that is not a build site or one of your own
+buildings (those keep their [build and manage wheels](#base-building)) and the **flag wheel**
+opens on it, on the build wheel's own grammar — held open, the travel from the press picks, the
+release plants: `FLAG_ORDER` clockwise from straight up, **ATTACK, DEFEND, GATHER, RALLY**
+(`FLAG_TYPES`), each a wedge carrying its glyph at twice the banner's size. The hub cancels — unless
+the wheel stands on your own flag, in which case the hub *is* the flag (it wears the pennant, the
+label reads LIFT) and releasing there picks it up. R3 on a pad and the touch FLAG plate open the
+same wheel over the aim. `resolveWheel` writes `input.cmd = { kind: 'flag', tx, ty, id }` and
+`runCmd` performs it next step — `plantFlag(p, tx, ty, type)`, or `clearFlag(p)` for the lift —
+so the human's radial and a bot's `plantFlag` end in one function. A flag has no reach and goes
+through no `contest()`: it is per-player state, not an act in the world.
 
-| under the flag | job | what the crew does |
+| order | the crew, inside the ring | an AI teammate, inside the ring |
 | --- | --- | --- |
-| a unit on another team | `hunt` | chase *that* unit anywhere and kill it |
-| a building on another team | `siege` | break it, then the nearest enemy building within `FLAG_SIEGE_R` (14 tiles) of the flag |
-| your own building | `guard` | ring up on its `structMouth` and hold; swing at any foe inside `ROBOT_AGGRO` (70 px) without leaving the post |
-| a tree, dead tree or rock | `harvest` | cut that spot, then spread outward over `FLAG_HARVEST_R` (7 tiles) |
-| open ground within `FLAG_BASE_R` (9 tiles) of an enemy building | `march` | route there fighting hostile *units* met on the way, then hold |
-| open ground anywhere else | `path` | clear a straight lane to it from the bay's mouth, chopping and mining what is in the way |
+| **ATTACK** | kill every rival unit and break every rival building in it (`flagFoe`: units first, a player through `seenAt`, a rival wave's soldiers included), chasing no further than `ROBOT_LEASH` past the rim; nothing left → hold the flag | a ring over the rival bird is a **push** (rung 8, the lane and the archer's station and all); anywhere else, break the nearest rival building with E and hold the ground when none is left — rivals in sight are rung 3's, the ring anchors them |
+| **DEFEND** | hold the flag in a ring of posts and swing at whatever enters, never following out of the rim | a ring over its own bird is the **defend** rung (6); anywhere else, stand on the ring and go on down the ladder — hunt, loot, spend, harvest bounded to the ring, and stand where it would have roamed |
+| **GATHER** | cut and mine everything in the ring, nearest the flag first (`cutNear`), banking a load at home at 8+ | walk in, then harvest bounded to the ring |
+| **RALLY** | come and stand (a load is banked only if home is right there) | come and stand, fighting only a rival inside `AI_SIEGE_R` on the way — a rally is a disengage |
 
-Only `job` (and a hunt's `unit`) is stored on `p.flag = { tx, ty, job, unit }`. Everything else is
-re-read off the tile as it is needed, which is what makes the jobs *survive their own success*:
-felling the tree a harvest flag stands on spreads the crew outward instead of stranding it, and
-wrecking the building a siege flag stands on rolls them straight on to the next one. A hunt whose
-mark dies falls back to holding the flag's ground.
+Only `{ tx, ty, type, owner }` is stored on `p.flag`; everything else is re-read off the ring as
+it is needed, which is what makes the orders *survive their own success*: felling every tree
+inside a GATHER ring leaves the crew holding the flag rather than stranded, and wrecking the last
+building inside an ATTACK ring holds the ground it stood on.
 
-- **`path`** builds its lane with `flagCorridor(from, tx, ty)` — the straight line from
-  `structMouth(b.home)` out to the flag, `FLAG_PATH_W` (1) tiles either side of it, walked
-  **outward** so a crew clears from the door forward rather than from the far end back.
-  `flagPathTarget` hands each worker the first obstacle in it no sibling has already claimed
-  (`objTaken`), so they fan out along the lane instead of stacking on one trunk. Once the lane is
-  open they fall through to harvesting around the far end.
-- **Only the three attack jobs chase** (`FLAG_ATTACK`). On every other flag a worker swings back
-  at whoever hit it and no further ([Robots](#robots), `b.mad`). **Moving the flag home is the
-  retreat** — there is no separate order for it.
-- **The middle button is press-and-HOLD, not a click.** The press raises the preview
-  (`state.flagAim`), the release plants where the pointer ended up — the build wheel's grammar one
-  button over. It is a *gesture and not a mode* on purpose: everything else in this game that
-  previews, previews something you are already doing (the aim line needs a drawn bow, the wheel a
-  held right-click), and an always-on hover ghost for an order you have not started is clutter
-  that also fights `drawSelection` for the same tile. **Nothing about the flag is on screen unless
-  `state.flagAim` is true.** Escape or losing window focus drops it — the press has no hub to
-  release into, so those two are the cancel. The press is refused outright when `hasWorkers(p)` is
-  false (a live worker, or a bay about to roll one out): with nobody to order, the button is dead.
-- The gesture **plants, moves and picks up**: releasing on the flag's own tile lifts it, and a
-  lifted flag hands the crew back to the bay, which is exactly the behaviour that existed before
-  flags did. Releasing over the HUD is "thought better of it". `flagRecall(p)` clears every
-  commanded worker's target and route the frame an order lands, so the crew is *visibly* seen to
-  turn.
-- It works **over the chart (M) too**, through `mapTileAt(sx, sy)` — the only way to command a tile
-  that is off-screen. At `MAP_S` (192/232 px per tile) one chart pixel is ~1.2 tiles, so a map
-  order is ±1 tile: fine for "march on that base", not for picking one tree.
-- The flag has **no resting affordance by design**, and no hint text either (the onboarding
-  teaching lines were removed with the rest of the text hints): the ESC panel's CONTROLS block is
-  where the middle-mouse binding is looked up.
-- The order is per-player state, not a world resource, so it does **not** go through `contest()`.
-  bots never plant one, which is why a bot's bay still gathers exactly as it always did.
+**Whose flag a body serves** is one function, `servedFlag(p)`: **a human teammate's flag, if one
+stands; else the teammate's flag a bot has joined; else its own.** That first clause is the whole
+of command: *a human's flag is the side's plan.* While it stands every bot on the team lifts its
+own flag (`aiFlagSync`) and walks to the human's from anywhere on the map — the defend, guard,
+push and escort reads all give way to it — and every worker on the side (an AI teammate's bays
+included, through `flagOf`) reads it. The one thing no order overrides is the **alarm**: a bird
+under half its nerve calls everyone home regardless. Bots fly flags of their own, but **a bot's
+flag is never a decision of its own — it is the ladder's decision made visible**: DEFEND at its
+bird when it is walking home to a threat, ATTACK at the rival bird when it is pushing, GATHER
+where it works (a guard's routine station flies nothing). Coordination is *one flag a plan, not
+one a bot*: a bot plants nothing a teammate is already flying over the same ground
+(`teamFlagAt`) — it joins that flag (`ai.join`) — and a bot with nothing of its own to fly helps
+at the side's nearest standing flag that wants hands (`nearestTeamFlag` under `aiHelps`: an
+ATTACK from anywhere unless it is one of the side's guards, a GATHER only inside `AI_FLAG_HELP`,
+a DEFEND never — the threat read already calls exactly the number home — a RALLY from
+anywhere). No bot ever flies a RALLY; there is no retreat in the ladder to make visible. The
+whole of that is [the order](multiplayer.md#bots) in the ladder.
 
-**What it looks like** (the `what a flag looks like` group in [draw-world.js](../../js/draw-world.js)
-draws all three; `FLAG_JOBS`, in robots.js, holds the 7×7 icon grids as camp-glyph-style rect lists):
+- **Moving is planting.** One flag per player, so planting anywhere moves it, and `flagRecall(p)`
+  clears every worker that will read the new order (the whole side's for a human's flag, the
+  owner's own for a bot's) the frame it lands, so the crew is *visibly* seen to turn.
+- **A worker never chases off a flag but an ATTACK.** On every other order it swings back at
+  whoever hit it and no further (`b.mad`, [Robots](#robots)); a worker with no flag at all is the
+  same defenceless hauler it always was.
+- It works **over the chart (M) too**: the right button opens the wheel on the chart's tile
+  (`mapTileAt`) and pins it to the press point (`w.sx`/`w.sy`, `wheelLayout`) — the only way to
+  order a tile that is off-screen. At `MAP_S` one chart pixel is ~1.2 tiles, so a map order is ±1
+  tile: fine for "take that bird", not for picking one tree.
+- The middle mouse button does nothing now; the press-and-hold gesture went with the tile-read
+  orders it previewed.
 
-- **The preview**, up only while the press is held, in two halves because they live in two spaces.
-  Both read `flagTarget()`, which resolves the tile once and returns `null` for every reason
-  nothing should be drawn (no `flagAim`, an overlay up, the pointer over the HUD).
-  `drawFlagAim(ox, oy)` marks the target tile in the **world** pass, right beside `drawSelection` —
-  the same four 3 px corner brackets over the same offset dark rim, so it scales with the tile and
-  speaks the language the E bracket already speaks. It does **not** pulse: the E bracket breathes
-  to catch an eye that isn't looking, and this one is only on screen because a hand is holding it
-  there. `drawFlagCursor()` rides the pointer in the **UI** pass at a fixed size, carrying the
-  job's icon — or the flag itself, when the release would lift it.
-- **Two colours, and they carry the stakes, not the job** (`FLAG_MINE` / `FLAG_FOE`): anything
-  pointed at your own side is the game's standard bright ink, the three that point at another team
-  are the danger red. The *icon* says which job it is; amber and green are already spoken for
-  (affordable / interactable, and good) and a work order is neither. `FLAG_MINE` is `#f4f7ff` and
-  not a softer slate for a reason — this world is snow, and anything near it disappears into the
-  ground; it reads for the same reason `drawSelection`'s white brackets do.
+**What it looks like** (the `what a flag looks like` group in [draw-world.js](../../js/draw-world.js);
+`FLAG_TYPES`, in robots.js, holds the 7×7 glyph grids as camp-glyph-style rect lists):
+
+- **The ring**, `drawFlagRing`, flat on the snow under everything that walks it (`drawFlagRings`,
+  called from the world pass right after the flat statics): a dark line under a dashed one in the
+  order's colour, the dashes crawling round it so a standing order reads as *live* and not as a
+  boundary painted on the map. It is drawn on the world canvas, so it scales with the tile — it is
+  a place, not a HUD element. While a flag wheel is held over the world the same function previews
+  the ring the pick would lay, in the lit wedge's colour, or grey from the hub where nothing is
+  chosen yet; over the chart the chart draws that preview itself.
+- **Two colours, and they carry the stakes, not the order** (`FLAG_MINE` / `FLAG_FOE`): DEFEND,
+  GATHER and RALLY wear the game's standard bright ink, ATTACK the danger red. The *glyph* says
+  which order it is; amber and green are already spoken for (affordable / interactable, and good)
+  and an order is neither. `FLAG_MINE` is `#f4f7ff` and not a softer slate for a reason — this
+  world is snow, and anything near it disappears into the ground; it reads for the same reason
+  `drawSelection`'s white brackets do.
 - **The planted flag**, `drawFlag()`, y-sorted into the world draws half a pixel behind its own
   tile so a flag on a tree isn't swallowed by the canopy: a pole with a **dark banner carrying the
-  same job icon inked in the team's colour**. Dark cloth and a bright glyph, not the reverse — at
+  order's glyph inked in the team's colour**. Dark cloth and a bright glyph, not the reverse — at
   nine pixels square a solid colour with a hole punched in it is a blob, and the glyph is the
   message. Only your own side's flags are drawn (an order marker is not intelligence to hand a
-  rival), on all three surfaces.
-- **Both maps**, through the shared `drawFlagPennant()`: a pole-and-pennant in the team's colour on
-  the minimap disc, and the same pennant with the job icon over it on the chart. The chart's
-  *hover* preview is gated on `state.flagAim` exactly like the world's — the planted pennants are
-  always drawn, the preview never is.
+  rival, and neither is the puff it lands with — `plantFlag`'s burst is the local side's only), on
+  all three surfaces.
+- **Both maps**, through the shared `drawFlagMark()`: the pennant in the team's colour with the
+  ring it covers about it at that map's px per tile — a disc on the minimap (clipped to the disc,
+  so a flag just off its edge shows as its rim) and the same on the chart, with the glyph over it.
 
 ## Death and respawn
 

@@ -130,11 +130,10 @@ const state = {
   dragPend: null,
   settingsOpen: false,
   rebind: null,        // a cap on the CONTROLS page listening for its key: the action's id (input.js), or null
-  wheel: null, // radial menu: { kind: 'build'|'manage', tx, ty, seg, ax, ay } - ax/ay is the press point
-  // middle button HELD: the worker-flag preview is up and the release plants
-  // it. Nothing about the flag is on screen unless this is true - see the
-  // `worker flags` banner (js/robots.js) for why the preview is a gesture.
-  flagAim: false,
+  // radial menu: { kind: 'build'|'manage'|'flag'|..., tx, ty, seg, ax, ay } - ax/ay is the
+  // press point; a flag wheel opened over the chart carries sx/sy, the screen
+  // point it is pinned to instead of its tile (wheelLayout, js/ui.js)
+  wheel: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
   // the open sub-panel ('settings' | 'help' | 'patch' | 'name' | null) and its slide progress
   // one hover ease per MENU_ITEMS entry + the seed row. That length is a

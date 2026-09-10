@@ -1,8 +1,9 @@
 'use strict';
-// The worker bots and the one flag per player that commands them: a bot's life
-// from the bay's mouth to its wreck, the frame it spends deciding what to do,
-// and the order marker it reads to decide it. Everything here is sim - a flag's
-// pixels are the `what a flag looks like` group in js/draw-world.js.
+// The worker bots and the one flag per player the whole side reads: a bot's
+// life from the bay's mouth to its wreck, the frame it spends deciding what to
+// do, and the order marker it reads to decide it. Everything here is sim - a
+// flag's pixels are the `what a flag looks like` group in js/draw-world.js,
+// and how an AI PLAYER answers one is the `flag` rung in js/ai.js.
 // ------------------------------------------------------------ workers
 function makeRobot(sp) {
   const t = STRUCTS[sp.type].tiers[sp.tier]; // the bay's worker, or the barracks' soldier (makeSoldier): both carry botHp
@@ -241,11 +242,10 @@ function updateRobot(b, dt) {
 
   // ---- the flag is the order -------------------------------------------
   // No flag and this is the bay-centred gather it has always been. With one,
-  // the job the flag resolved to says where the crew works, stands or swings,
-  // and only an attack flag lets a worker leave its post to chase.
+  // its kind says what the crew does with the ground inside its ring (the
+  // `team flags` banner below), and only an ATTACK lets a worker chase.
   const fl = flagOf(b);
-  const job = fl ? fl.job : null;
-  const chase = !!(job && FLAG_ATTACK[job]);
+  const type = fl ? fl.type : null;
   const fx = fl ? fl.tx * TILE + 8 : hx, fy = fl ? fl.ty * TILE + 8 : hy;
   if (b.avoidT > 0) b.avoidT -= dt; else b.avoid = null;
   // anger only lives under a flag - an unflagged worker is the same
@@ -253,6 +253,12 @@ function updateRobot(b, dt) {
   if (b.madT > 0 && fl && foeAlive(b, b.mad)) b.madT -= dt;
   else { b.mad = null; b.madT = 0; }
   b.atkAim = null;
+  // one post each, spaced around the flag, so a crew holding ground is a
+  // ring on it and not a pile
+  const post = () => {
+    const a = (Math.max(0, home.bots.indexOf(b))) * 2.4;
+    holdAt(fx + Math.cos(a) * 18, fy + Math.sin(a) * 11);
+  };
 
   if (!fl) {
     if (b.carry >= 8) homeRun();
@@ -260,45 +266,36 @@ function updateRobot(b, dt) {
       (o.type === 'tree' || o.type === 'rock') && o !== b.avoid))) {
       if (b.carry > 0) homeRun(); else wander();
     }
-  } else if (chase) {
+  } else if (type === 'attack') {
     b.tgt = null;
-    // the mark: the flag's own - a hunted unit, or the flagged building and
-    // then the nearest one still standing around it - with anything hostile
-    // met on the way taking priority over all of it
-    let foe = null;
-    if (job === 'hunt') foe = foeAlive(b, fl.unit) ? fl.unit : null;
-    else if (job === 'siege') foe = enemyStructNear(b.team, fx, fy, FLAG_SIEGE_R * TILE);
-    const met = robotFoeUnit(b, ROBOT_AGGRO);
-    if (met) foe = met;
-    if (!foe || !engage(foe)) holdAt(fx, fy); // nothing left to break: hold the ground
+    // whatever hostile is on it first, then the nearest thing inside the
+    // ring - units before buildings - chased no further than a leash past
+    // the ring's edge, so a raider cannot walk the crew off across the map
+    const foe = robotFoeUnit(b, ROBOT_AGGRO) || flagFoe(b, fx, fy, true);
+    if (!foe || !engage(foe, fx, fy, FLAG_R + ROBOT_LEASH)) post(); // nothing left to break: hold the ground
   } else if (b.carry >= 8) {
     homeRun();
   } else if (b.mad && engage(b.mad, b.madX, b.madY, ROBOT_LEASH)) {
     // struck at its post: swings back from where it was standing, and never
     // follows past the leash - chasing is what an attack flag is for
-  } else if (job === 'guard') {
+  } else if (type === 'defend') {
     b.tgt = null;
-    const o = structOf(objAt(fl.tx, fl.ty));
-    const post = o ? structMouth(o) : { x: fx, y: fy };
-    const met = robotFoeUnit(b, ROBOT_AGGRO);
-    if (!met || !engage(met, post.x, post.y, ROBOT_LEASH)) {
+    // anything that comes into the ring is met, and never followed out of it
+    const foe = flagFoe(b, fx, fy, false);
+    if (!foe || !engage(foe, fx, fy, FLAG_R)) {
       if (b.carry > 0 && Math.hypot(hx - b.x, hy - b.y) < 40) homeRun();
-      else {
-        // one post each, spaced around the building it is watching
-        const a = (Math.max(0, home.bots.indexOf(b))) * 2.4;
-        holdAt(post.x + Math.cos(a) * 18, post.y + Math.sin(a) * 11);
-      }
+      else post();
     }
-  } else if (job === 'path') {
-    // the lane first; once it is open, work the ground around the far end
-    if (!gather(() => flagPathTarget(b, fl) || cutNear(fx, fy, FLAG_HARVEST_R))) {
-      if (b.carry > 0) homeRun(); else holdAt(fx, fy);
+  } else if (type === 'gather') {
+    // everything inside the ring, nearest the flag first
+    if (!gather(() => cutNear(fx, fy, FLAG_R / TILE))) {
+      if (b.carry > 0) homeRun(); else post();
     }
   } else {
-    // harvest: the flagged tile itself, then outward around it
-    if (!gather(() => cutNear(fx, fy, FLAG_HARVEST_R))) {
-      if (b.carry > 0) homeRun(); else holdAt(fx, fy);
-    }
+    // rally: come and stand. A load is banked only if home is right there.
+    b.tgt = null;
+    if (b.carry > 0 && Math.hypot(hx - b.x, hy - b.y) < 40) homeRun();
+    else post();
   }
 
   b.animT += dt * (moving ? 8 : 0);
@@ -780,13 +777,14 @@ function updateSoldier(b, dt) {
   if (b.hp <= 0 && !b.dead) robotDies(b, null);
 }
 
-// ------------------------------------------------------------ worker flags
-// The worker flag: one order marker per player, and everything the workers
-// reading it are allowed to do. See the `worker flags` banner.
-const FLAG_BASE_R = 9;     // tiles: ground this close to an ENEMY building is a march order, not a path
-const FLAG_HARVEST_R = 7;  // tiles a harvest flag spreads outward over once its own tile is cut
-const FLAG_SIEGE_R = 14;   // tiles a siege flag rolls on to the next enemy building inside
-const FLAG_PATH_W = 1;     // corridor half-width in tiles: 1 = a three-tile lane
+// ------------------------------------------------------------ team flags
+// The flag: ONE order marker per player, of four kinds, that the whole side
+// reads - every worker bot out of a bay the planter owns (the dispatch at the
+// tail of updateRobot) and every AI player on the team (the `flag` rung,
+// js/ai.js). A flag is an AREA: FLAG_R px round the tile it stands on is the
+// ground the order is about, drawn as a ring on the snow (drawFlagRing,
+// js/draw-world.js) so what an order covers is never a guess.
+const FLAG_R = 192;        // px round a flag its order covers (12 tiles)
 const ROBOT_DMG = 5;       // one worker swing, against a unit or a building
 const ROBOT_ATK_CD = 1.1;  // seconds between those swings
 const ROBOT_REACH = 15;    // px from a worker's body to what its axe can reach
@@ -794,58 +792,109 @@ const ROBOT_AGGRO = 70;    // px a worker on any flag notices a foe inside
 const ROBOT_LEASH = 90;    // px a worker on a *defensive* flag will leave its post to swing
 const ROBOT_MAD = 6;       // seconds a struck worker stays angry at whoever hit it
 
-// ONE marker per player, planted with the middle mouse button, that every
-// worker bot that player owns reads as its standing order. What the flag is
-// STANDING ON is the order - there is no menu and no mode: a tree or a rock
-// means cut here, open ground means clear a road out to here, your own
-// building means guard it, and anything another team owns means go break it.
-// Moving the flag re-gives the order, moving it home is the retreat, and
-// middle-clicking the flag itself picks it up and hands the crew back to the
-// bay - which is exactly the behaviour that existed before flags did.
+//   p.flag = { tx, ty, type, owner }   // owner: the planter's player id
 //
-//   p.flag = { tx, ty, job, unit }   // `unit` is only ever set for a hunt
-//
-// Only `job` (and a hunt's mark) is remembered. Everything else is re-read
-// off the tile as it is needed, so felling the tree a HARVEST flag stands on
-// spreads the crew outward instead of stranding it, and wrecking the building
-// a SIEGE flag stands on rolls them on to the next one nearby.
-// TWO colours only, and they carry the STAKES, not the job - the icon is what
-// says which job it is. Anything pointed at your own side is the game's plain
-// pale ink; the three that point at another team are the danger red every
-// other hostile thing in the game already uses. Amber and green are spoken
-// for (affordable / interactable, and good), and a work order is neither.
+// The four orders, and what each asks of the ground inside the ring:
+//   attack - kill every rival unit and break every rival building in it
+//   defend - hold it, and swing at whatever comes in; never chase out of it
+//   gather - cut and mine everything in it
+//   rally  - come here and stand; nothing is fought on the way
+// Which flag a body serves is servedFlag(): A HUMAN'S FLAG IS THE SIDE'S
+// WHOLE PLAN - while one stands every bot on the team lifts its own and
+// follows it (aiFlagSync, js/ai.js), and every worker on the side reads it.
+// With no human flag a bot serves the one it planted itself (a bot's flag is
+// only ever the ladder's own decision made visible) or a teammate's it
+// joined instead of planting a twin over the same ground.
+// TWO colours only, and they carry the STAKES, not the order - the icon is
+// what says which order it is. The two pointed at your own side wear the
+// game's plain pale ink; the one pointed at another team is the danger red
+// every other hostile thing in the game already uses. Amber and green are
+// spoken for (affordable / interactable, and good), and an order is neither.
 // The pale one is the game's standard bright ink, NOT a soft slate: this
 // world is snow, and anything near it disappears into the ground. It reads
 // for the same reason drawSelection's brackets do - a dark rim under white.
 const FLAG_MINE = '#f4f7ff', FLAG_FOE = '#ff8a7a';
-const FLAG_JOBS = {
+const FLAG_TYPES = {
   // icon: rects on a 7x7 grid, stamped by drawFlagIcon (the camp glyph's idiom)
-  harvest: { col: FLAG_MINE, icon: [[0, 0, 5, 1], [0, 1, 6, 1], [1, 2, 5, 1], [3, 3, 1, 4]] }, // an axe
-  path:    { col: FLAG_MINE, icon: [[1, 1, 5, 1], [2, 3, 3, 1], [3, 5, 1, 1]] },               // a lane running away
-  guard:   { col: FLAG_MINE, icon: [[0, 0, 7, 2], [1, 2, 5, 2], [2, 4, 3, 1], [3, 5, 1, 1]] }, // a shield
-  siege:   { col: FLAG_FOE,  icon: [[2, 0, 3, 3], [1, 3, 5, 1], [3, 4, 1, 3]] },               // a sword
-  hunt:    { col: FLAG_FOE,  icon: [[2, 0, 3, 3], [1, 3, 5, 1], [3, 4, 1, 3]] },
-  march:   { col: FLAG_FOE,  icon: [[2, 0, 3, 3], [1, 3, 5, 1], [3, 4, 1, 3]] },
+  attack: { name: 'ATTACK', col: FLAG_FOE,  icon: [[2, 0, 3, 3], [1, 3, 5, 1], [3, 4, 1, 3]] },                     // a sword
+  defend: { name: 'DEFEND', col: FLAG_MINE, icon: [[0, 0, 7, 2], [1, 2, 5, 2], [2, 4, 3, 1], [3, 5, 1, 1]] },       // a shield
+  gather: { name: 'GATHER', col: FLAG_MINE, icon: [[0, 0, 5, 1], [0, 1, 6, 1], [1, 2, 5, 1], [3, 3, 1, 4]] },       // an axe
+  rally:  { name: 'RALLY',  col: FLAG_MINE, icon: [[0, 0, 2, 1], [5, 0, 2, 1], [1, 1, 2, 1], [4, 1, 2, 1], [2, 2, 3, 1], [3, 3, 1, 1], [2, 5, 3, 1]] }, // a chevron down onto the ground
 };
-// the three that let a worker leave its post and chase; every other job only
-// ever swings back at whoever hit it
-const FLAG_ATTACK = { siege: 1, hunt: 1, march: 1 };
+// the radial's wedges, clockwise from straight up (wheelOptions, js/ui.js)
+const FLAG_ORDER = ['attack', 'defend', 'gather', 'rally'];
 
-// a unit on another team standing on this point: a hunt order's mark. A rival
-// buried deep enough to be off both maps cannot be flagged either - concealOf
-// is the one place "can this be noticed" is decided.
-function flagUnitAt(team, x, y) {
-  for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || q.team === team) continue;
-    if (concealOf(q) >= PRONE_MAP) continue;
-    if (Math.hypot(q.x - x, q.y - 6 - y) < 10) return q;
+// where a flag stands, in world px, and whether a point is inside its ring
+function flagPos(f) { return { x: f.tx * TILE + 8, y: f.ty * TILE + 8 }; }
+function inFlag(f, x, y) { return Math.hypot(f.tx * TILE + 8 - x, f.ty * TILE + 8 - y) < FLAG_R; }
+// the flag a HUMAN on this team has standing - the side's plan while it stands
+function humanFlag(team) {
+  for (const q of players) if (q.active && q.control === 'human' && q.team === team && q.flag) return q.flag;
+  return null;
+}
+// the flag this player's crews and, for a bot, the bot itself answer to:
+// a human teammate's, else the teammate's flag a bot has joined, else its own
+function servedFlag(p) {
+  const h = humanFlag(p.team);
+  if (h) return h;
+  if (p.control === 'ai' && p.ai.join >= 0) {
+    const q = players[p.ai.join];
+    if (q && q.active && q.flag) return q.flag;
   }
-  for (const b of robots) {
-    if (!unitAlive(b) || b.team === team) continue;
-    if (Math.hypot(b.x - x, b.y - 1 - y) < 10) return b;
+  return p.flag;
+}
+// a teammate (not `except`) already flying an order of this kind whose ring
+// covers (x, y) - the flag a bot joins instead of planting a twin
+function teamFlagAt(team, type, x, y, except) {
+  for (const q of players) {
+    if (!q.active || q === except || q.team !== team || !q.flag || q.flag.type !== type) continue;
+    if (inFlag(q.flag, x, y)) return q;
   }
   return null;
 }
+// the nearest standing flag on the side that passes `pred(flag)`, whoever
+// planted it (a bot with nothing of its own to do goes and helps: aiHelps,
+// js/ai.js, says at which)
+function nearestTeamFlag(p, pred) {
+  let best = null, bd = Infinity;
+  for (const q of players) {
+    if (!q.active || q === p || q.team !== p.team || !q.flag || (pred && !pred(q.flag))) continue;
+    const d = Math.hypot(q.flag.tx * TILE + 8 - p.x, q.flag.ty * TILE + 8 - p.y);
+    if (d < bd) { bd = d; best = q; }
+  }
+  return best;
+}
+
+// plant / move: one flag per player, so planting anywhere moves it. The
+// burst and the sound are the local side's only - a rival's flag is not
+// intelligence to hand across the map, and neither is the puff it lands with.
+function plantFlag(p, tx, ty, type) {
+  if (!inWorld(tx, ty) || !FLAG_TYPES[type]) return;
+  p.flag = { tx, ty, type, owner: p.id };
+  flagRecall(p);
+  if (player && p.team === player.team) burst(tx * TILE + 8, ty * TILE + 8, FLAG_TYPES[type].col, 8, 45, 0.4, true);
+  if (p === player) SFX.place();
+}
+function clearFlag(p) {
+  if (!p.flag) return;
+  const x = p.flag.tx * TILE + 8, y = p.flag.ty * TILE + 8;
+  p.flag = null;
+  flagRecall(p);
+  if (player && p.team === player.team) burst(x, y, '#c9d0e2', 6, 40, 0.35, true);
+  if (p === player) SFX.pickup();
+}
+// every worker that will read the new order drops what it was doing and
+// turns for it the same frame it lands - an order has to be visibly obeyed
+// at once. A human's flag is read by the whole side's crews; a bot's by its own.
+function flagRecall(p) {
+  const side = p.control === 'human';
+  for (const b of robots) {
+    if (b.dead || b.merchant || b.kind === 'soldier') continue;
+    if (b.owner === p.id || (side && b.team === p.team)) { b.tgt = null; b.atkAim = null; navClear(b); }
+  }
+}
+// the order a given worker is under: what its bay's owner serves, or none
+function flagOf(b) { const p = players[b.owner]; return p && p.active ? servedFlag(p) : null; }
 
 // nearest building belonging to any other team, within r px of (x, y)
 function enemyStructNear(team, x, y, r) {
@@ -858,87 +907,32 @@ function enemyStructNear(team, x, y, r) {
   }
   return best;
 }
-
-// What planting here would order. The cursor preview and plantFlag() both
-// read this one function, so what the pointer promises is what the crew does.
-function flagResolve(p, tx, ty) {
-  const x = tx * TILE + 8, y = ty * TILE + 8;
-  const u = flagUnitAt(p.team, x, y);
-  if (u) return { job: 'hunt', unit: u };
-  const o = structOf(objAt(tx, ty));
-  if (o && STRUCTS[o.type]) return { job: ownsStruct(o, p) ? 'guard' : 'siege', unit: null };
-  if (o && (o.type === 'tree' || o.type === 'deadTree' || o.type === 'rock')) return { job: 'harvest', unit: null };
-  // open ground this close to somebody else's building is a march on it,
-  // not a road-building job - the same tile says two different things
-  // depending on whose doorstep it is
-  if (enemyStructNear(p.team, x, y, FLAG_BASE_R * TILE)) return { job: 'march', unit: null };
-  return { job: 'path', unit: null };
-}
-
-// plant / move / pick up: one button does all three, and the flag itself is
-// the pick-up target, so there is no separate cancel
-function plantFlag(p, tx, ty) {
-  if (!inWorld(tx, ty)) return;
-  if (p.flag && p.flag.tx === tx && p.flag.ty === ty) { clearFlag(p); return; }
-  const r = flagResolve(p, tx, ty);
-  p.flag = { tx, ty, job: r.job, unit: r.unit };
-  flagRecall(p);
-  burst(tx * TILE + 8, ty * TILE + 8, FLAG_JOBS[r.job].col, 8, 45, 0.4, true);
-  if (p === player) SFX.place();
-}
-function clearFlag(p) {
-  if (!p.flag) return;
-  const x = p.flag.tx * TILE + 8, y = p.flag.ty * TILE + 8;
-  p.flag = null;
-  flagRecall(p);
-  burst(x, y, '#c9d0e2', 6, 40, 0.35, true);
-  if (p === player) SFX.pickup();
-}
-// every worker on this flag drops what it was doing and turns for the new
-// order the same frame it lands - an order has to be visibly obeyed at once
-function flagRecall(p) {
-  for (const b of robots) if (b.owner === p.id && !b.dead) { b.tgt = null; b.atkAim = null; navClear(b); }
-}
-// the order a given worker is under: its bay owner's flag, or none
-function flagOf(b) { const p = players[b.owner]; return p && p.active ? p.flag : null; }
-
-// Every tile of the lane a PATH flag asks for: a straight corridor
-// FLAG_PATH_W tiles either side of the line from the bay's mouth out to the
-// flag, walked OUTWARD, so a crew clears it from the door forward instead of
-// from the far end back.
-function flagCorridor(from, tx, ty) {
-  const sx = Math.floor(from.x / TILE), sy = Math.floor(from.y / TILE);
-  const dx = tx - sx, dy = ty - sy;
-  const n = Math.max(Math.abs(dx), Math.abs(dy)) || 1;
-  const across = Math.abs(dx) >= Math.abs(dy); // widen square to the lane
-  const out = [], seen = new Set();
-  for (let i = 0; i <= n; i++) {
-    const cx = Math.round(sx + dx * i / n), cy = Math.round(sy + dy * i / n);
-    for (let k = -FLAG_PATH_W; k <= FLAG_PATH_W; k++) {
-      const px = across ? cx : cx + k, py = across ? cy + k : cy;
-      if (!inWorld(px, py)) continue;
-      const id = idx(px, py);
-      if (seen.has(id)) continue;
-      seen.add(id);
-      out.push([px, py]);
-    }
+// The nearest hostile INSIDE a flag's ring, measured from the worker: a
+// unit first (a player through seenAt, so a buried archer is not there for
+// the crew either; a rival wave's soldiers count), then - when `structs` -
+// a building. Units before buildings because a building does not swing back.
+function flagFoe(b, fx, fy, structs) {
+  let best = null, bd = Infinity;
+  for (const q of players) {
+    if (!q.active || q.dead || inAir(q) || q.team === b.team) continue;
+    const df = Math.hypot(q.x - fx, q.y - 6 - fy);
+    if (df >= FLAG_R || df > seenAt(q, FLAG_R)) continue;
+    const d = Math.hypot(q.x - b.x, q.y - 6 - b.y);
+    if (d < bd) { bd = d; best = q; }
   }
-  return out;
+  for (const r of robots) {
+    if (r === b || !unitAlive(r) || r.team === b.team) continue;
+    if (Math.hypot(r.x - fx, r.y - 1 - fy) >= FLAG_R) continue;
+    const d = Math.hypot(r.x - b.x, r.y - 1 - b.y);
+    if (d < bd) { bd = d; best = r; }
+  }
+  if (!best && structs) best = enemyStructNear(b.team, fx, fy, FLAG_R);
+  return best;
 }
 // is another live worker out of the same bay already swinging at this?
 function objTaken(b, o) {
   for (const s of b.home.bots) if (s !== b && !s.dead && s.tgt === o) return true;
   return false;
-}
-// the first thing still standing in that lane no sibling has already claimed
-function flagPathTarget(b, fl) {
-  for (const [tx, ty] of flagCorridor(structMouth(b.home), fl.tx, fl.ty)) {
-    const o = objAt(tx, ty);
-    if (!o || (o.type !== 'tree' && o.type !== 'deadTree' && o.type !== 'rock')) continue;
-    if (o === b.avoid || objTaken(b, o)) continue;
-    return o;
-  }
-  return null;
 }
 
 // ---- a worker's simple attack -------------------------------------------
@@ -992,34 +986,4 @@ function robotStrike(b, e, pt) {
   if (nearPlayer(b.x, b.y)) SFX.swing();
   if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src, b); // `b` swung it, so STRUCT_DR stays off: ROBOT_DMG is already a building number
   else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: b.kind === 'soldier' ? 'soldier' : 'worker' });
-}
-
-// ---- who can be ordered, and what the held press is aiming at -----------
-// Does this player have anyone to command? A live worker, or a bay that is
-// about to roll one out - the affordance has to be there the moment the bay
-// is up, not only once the first bot is in the yard. No crew, no preview.
-function hasWorkers(p) {
-  for (const b of robots) if (!b.dead && b.owner === p.id) return true;
-  for (const o of structures) if (o.type === 'spawner' && o.owner === p.id) return true;
-  return false;
-}
-// THE PREVIEW, and it is only up while the middle button is HELD
-// (state.flagAim). Everything else in this game that previews, previews
-// something you are already doing - the aim line needs a drawn bow, the build
-// wheel a held right-click - and an order you have not started is no
-// different. It comes in two halves because they live in two spaces:
-// drawFlagAim() marks the target TILE in the world pass (so its brackets
-// scale with the tile, like drawSelection's), and drawFlagCursor() rides the
-// pointer in the UI pass at a fixed size. Both are drawn in js/draw-world.js
-// (the `what a flag looks like` group) and both read this.
-function flagTarget() {
-  if (!state.flagAim || window.DBG.hideUI || !mouse.inside || !player || player.dead) return null;
-  if (state.paused || state.settingsOpen || state.wheel) return null;
-  const tx = Math.floor(mouseWX() / TILE), ty = Math.floor(mouseWY() / TILE);
-  if (!inWorld(tx, ty) || overHud(mouse.x, mouse.y)) return null;
-  const f = player.flag;
-  // over your own flag the release lifts it instead, so the preview says so
-  if (f && f.tx === tx && f.ty === ty) return { tx, ty, lift: true, col: '#c9d0e2' };
-  const job = flagResolve(player, tx, ty).job;
-  return { tx, ty, job, col: FLAG_JOBS[job].col };
 }
