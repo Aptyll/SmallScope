@@ -136,24 +136,25 @@ function renderScoreboard() {
 // deep cold pine, the lakes pale ice, the road a track trodden through it.
 // The light comes from the top-left, as it does on the snow itself: a
 // mass's rim is LIT where lower ground lies above or to its left and INKED
-// where it lies below or to its right (CHART_LIT/CHART_RIM), and the woods
-// are a scatter of tiny PINES (chartPines: a three-pixel tree, dark with
-// a dusting of snow on its shoulder, one per lattice cell nudged by hash2 so
-// the rows never line up - a wood, not a grid of studs); the ice wears a
-// sparse sheen and the snow a faint grain (chartGrain). No grid, no dot for
-// a single bush: a lone tile is a speck at this scale. The image is re-inked at most every MM_REBUILD ticks like the
+// where it lies below or to its right (CHART_LIT/CHART_RIM); the ice wears
+// a sparse sheen and the snow a faint grain (chartGrain), and the woods
+// nothing at all - the palette does the work (a lattice of canopy dots read
+// as studs; scattered pine glyphs read as clutter; both were tried in 3.32).
+// No grid, no dot for a single bush: a lone tile is a speck at this scale. The image is re-inked at most every MM_REBUILD ticks like the
 // minimap's (a wall going up half a second late on a chart is invisible)
 // and on the tick a fresh match resets the clock.
 //
-// THE SLAB is the chart and a header, nothing else: the map centred with
-// the same margin either side, and over it the day on the left and the
-// CLOSE plate on the right (mapCloseRect - a plank in the parchment's own
-// grammar, drawParchButton: bound in leather, lifting on hover like every
-// plank in the game, pressed through pointerPress like every other; M and
-// Escape still close it). No compass (the chart is north-up, as the world
-// is), no key (the marks are the minimap's own, learnt there), no clock
-// (the disc wears it), no trim: a leather edge and the parchment. The slab
-// fits the view (fitMapSlab, canvas.js) and mapAlloc follows it - the
+// THE SLAB is the chart and a header, nothing else, on the game's own
+// FROST SLAB (bakeFrostSlab, the settings and help panels' night-blue
+// stone; the parchment of old read as summer against a winter chart): the
+// map centred with the same margin either side, and over it the day on the
+// left and the CLOSE plate on the right (mapCloseRect - a plate in the
+// slab's own grammar, drawFrostButton: bound in the slab's dark, lifting
+// off its shadow on hover like every plank in the game, pressed through
+// pointerPress like every other; M and Escape still close it). No compass
+// (the chart is north-up, as the world is), no key (the marks are the
+// minimap's own, learnt there), no clock (the disc wears it), no title. The
+// slab fits the view (fitMapSlab, canvas.js) and mapAlloc follows it - the
 // chart's buffers and the slab's bake are remade when MAP_W changes.
 
 // a screen point over the chart -> the world tile under it (null off the map).
@@ -207,14 +208,10 @@ const CHART_LIT = [];  // the lit rim where lower ground lies above or left of i
 CHART_LIT[CH_FOREST] = [118, 150, 142]; CHART_LIT[CH_ICE] = [218, 236, 244];
 const CHART_GRAIN = []; // the stipple's ink
 CHART_GRAIN[CH_SNOW] = [220, 227, 236]; CHART_GRAIN[CH_ICE] = [200, 224, 236];
-// the pine: three pixels of dark tree and one of snow on its shoulder,
-// one per CHART_PINE_STEP cell, nudged by hash2 so no two rows line up
-const CHART_PINE = [34, 58, 54], CHART_PINE_SNOW = [138, 168, 160];
-const CHART_PINE_STEP = 6;
 const CHART_NEED = []; // neighbours of its own class a tile needs to stay on the chart
 CHART_NEED[CH_FOREST] = 2; CHART_NEED[CH_ICE] = 2;
-const CHART_DARK = '#241a10'; // the leather: every mark's rim, the camps' and names' too
-const CHART_INK_TXT = '#4a3322'; // the header's ink
+const CHART_DARK = '#0f1632'; // the minimap's own dark: every mark's rim on the chart, so a mark reads the same on both maps
+const CHART_INK_TXT = '#ffd95c'; // the header's ink: the gold every slab titles in
 let chartBuiltAt = -1e9;
 
 function chartGround(i) { const g = ground[i]; return g === 2 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW; }
@@ -276,85 +273,46 @@ function buildWorldMapImg() {
     const j = i * 4;
     dd[j] = ink[0]; dd[j + 1] = ink[1]; dd[j + 2] = ink[2]; dd[j + 3] = 255;
   }
-  chartPines(out, dd, W);
   mapCtx.putImageData(mapImg, 0, 0);
-}
-
-// the woods' pines: one tree per lattice cell (odd rows staggered), each
-// nudged up to 3 px either way by hash2 - as far as the cell allows - so
-// no row or column of them lines up and the wood reads as grown, not gridded. A tree
-// is a dark apex over a dark base of three, with a lighter pixel on its
-// left shoulder for the snow it carries; it stands only where the pixels
-// two out on every side are still woods, so no tree spills onto a rim, the
-// snow or a road
-function chartPines(out, dd, W) {
-  const put = (x, y, c) => { const j = (y * W + x) * 4; dd[j] = c[0]; dd[j + 1] = c[1]; dd[j + 2] = c[2]; };
-  const S = CHART_PINE_STEP;
-  for (let cy = 0, row = 0; cy < W; cy += S, row++) for (let cx = row & 1 ? (S >> 1) : 0; cx < W; cx += S) {
-    const h = hash2(cx * 3 + 1, cy * 5 + 7), h2 = hash2(cy * 3 + 5, cx * 7 + 11);
-    const x = cx + ((h * 4) | 0), y = cy + ((h2 * 4) | 0);
-    if (x < 2 || y < 2 || x >= W - 2 || y >= W - 2) continue;
-    let ok = true;
-    for (let dy = -2; dy <= 2 && ok; dy++) for (let dx = -2; dx <= 2; dx++) if (out[(y + dy) * W + x + dx] !== CH_FOREST) { ok = false; break; }
-    if (!ok) continue;
-    put(x, y - 1, CHART_PINE); put(x - 1, y, CHART_PINE); put(x, y, CHART_PINE); put(x + 1, y, CHART_PINE);
-    put(x - 1, y - 1, CHART_PINE_SNOW);
-  }
 }
 
 const panelCv = document.createElement('canvas');
 
-// the slab's chrome: leather, the mottled parchment, its worn rim, and the
-// map's mat - no trim, no studs. The header is drawn live (renderWorldMap):
-// the day changes and the plate lifts.
+// the slab's chrome: the frost slab every panel shares (untitled - the
+// header is the day), and the map's mat: an icy line round a dark frame.
+// The header is drawn live (renderWorldMap): the day changes and the plate
+// lifts.
 function buildMapPanel() {
   panelCv.width = PANEL_W; panelCv.height = PANEL_H;
   const g = panelCv.getContext('2d');
-  const cham = (x, y, w, h) => { // rect with 2px chamfered corners
-    g.fillRect(x + 2, y, w - 4, h);
-    g.fillRect(x, y + 2, w, h - 4);
-    g.fillRect(x + 1, y + 1, w - 2, h - 2);
-  };
-  // dark leather outline, then parchment
-  g.fillStyle = CHART_DARK; cham(0, 0, PANEL_W, PANEL_H);
-  g.fillStyle = '#d3c39b'; cham(1, 1, PANEL_W - 2, PANEL_H - 2);
-  // parchment mottling
-  for (let y = 3; y < PANEL_H - 3; y += 3) {
-    for (let x = 3; x < PANEL_W - 3; x += 3) {
-      const h = hash2(x * 13 + 1, y * 17 + 9);
-      if (h > 0.82) { g.fillStyle = '#dccfae'; g.fillRect(x, y, 3, 3); }
-      else if (h < 0.18) { g.fillStyle = '#c9b78d'; g.fillRect(x, y, 3, 3); }
-    }
-  }
-  // worn darker rim
-  g.fillStyle = 'rgba(120,90,50,0.16)';
-  g.fillRect(2, 2, PANEL_W - 4, 3); g.fillRect(2, PANEL_H - 5, PANEL_W - 4, 3);
-  g.fillRect(2, 2, 3, PANEL_H - 4); g.fillRect(PANEL_W - 5, 2, 3, PANEL_H - 4);
-  // map mat: highlight line, dark frame (map itself drawn dynamically inside)
+  bakeFrostSlab(g, PANEL_W, PANEL_H, null);
   const mx = MAP_X - PANEL_X, my = MAP_Y - PANEL_Y;
-  g.fillStyle = '#b5a37e';
+  g.fillStyle = '#35426e';
   g.fillRect(mx - 3, my - 3, MAP_W + 6, 1); g.fillRect(mx - 3, my + MAP_W + 2, MAP_W + 6, 1);
   g.fillRect(mx - 3, my - 3, 1, MAP_W + 6); g.fillRect(mx + MAP_W + 2, my - 3, 1, MAP_W + 6);
-  g.fillStyle = CHART_DARK;
+  g.fillStyle = '#0a0e23';
   g.fillRect(mx - 2, my - 2, MAP_W + 4, MAP_W + 4);
 }
 
-// a plank in the parchment's grammar: a tan plate bound in leather, lit
-// along its top and left and worn along its bottom and right, the label in
-// the chart's ink; it lifts off its shadow and brightens under the pointer
-function drawParchButton(r, label, hv) {
+// a plate in the frost slab's grammar: the slab's stone bound in its dark,
+// an icy light along its top and left and deep shade along its bottom and
+// right, the label in the plank's pale ink going gold under the pointer; it
+// lifts off its shadow and brightens as every plank in the game does (the
+// menu's snow cap and icicles stay on the menu - a plate on a slab is a
+// plate, not a signpost)
+function drawFrostButton(r, label, hv) {
   const lift = Math.round(hv * 2);
   const x = r.x, y = r.y - lift, w = r.w, h = r.h;
-  ctx.fillStyle = 'rgba(58,44,28,0.35)'; chamRect(x + 1, r.y + 2, w, h); // the shadow stays on the ground
-  ctx.fillStyle = CHART_DARK; chamRect(x, y, w, h);                        // leather binding
-  ctx.fillStyle = hv > 0.5 ? '#ece0be' : '#dccfae'; chamRect(x + 1, y + 1, w - 2, h - 2);
-  ctx.fillStyle = hv > 0.5 ? '#fff6dc' : '#ede2c2';
+  ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(x + 1, r.y + 2, w, h); // the shadow stays on the ground
+  ctx.fillStyle = '#0a0e23'; chamRect(x, y, w, h);                      // the binding
+  ctx.fillStyle = hv > 0.5 ? '#243472' : '#1a2450'; chamRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.fillStyle = hv > 0.5 ? '#5a7fb8' : '#35426e';
   ctx.fillRect(x + 2, y + 1, w - 4, 1); ctx.fillRect(x + 1, y + 2, 1, h - 4);
-  ctx.fillStyle = '#b5a37e';
+  ctx.fillStyle = '#080c1c';
   ctx.fillRect(x + 2, y + h - 2, w - 4, 1); ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
   const tw = pixelTextWidth(label, 2);
   drawPixelTextShadow(ctx, label, Math.round(x + (w - tw) / 2), y + Math.round((h - 10) / 2),
-    hv > 0.5 ? '#2e2014' : CHART_INK_TXT, 'rgba(120,92,58,0.45)', 2);
+    hv > 0.5 ? '#ffd95c' : '#cfe0ff', '#0a0e23', 2);
 }
 
 function renderWorldMap(now) {
@@ -366,8 +324,8 @@ function renderWorldMap(now) {
 
   // the header: the day, and the way out
   const dayT = 'DAY ' + state.day;
-  drawPixelTextShadow(ctx, dayT, PANEL_X + MAP_SIDE + 1, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 'rgba(120,92,58,0.45)', 2);
-  drawParchButton(mapCloseRect(), 'CLOSE', mapCloseHit() ? 1 : 0);
+  drawPixelTextShadow(ctx, dayT, PANEL_X + MAP_SIDE + 1, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 'rgba(8,12,28,0.9)', 2);
+  drawFrostButton(mapCloseRect(), 'CLOSE', mapCloseHit() ? 1 : 0);
 
   // terrain
   buildWorldMapImg();
@@ -515,7 +473,8 @@ function bakeFrostSlab(g, w, h, title) {
   for (const [cx2, cy2] of [[7, 7], [w - 8, 7], [7, h - 8], [w - 8, h - 8]]) {
     g.fillRect(cx2, cy2, 1, 1);
   }
-  // title with dashes
+  // title with dashes (none for a slab that heads itself: the M map)
+  if (!title) return;
   const tw = pixelTextWidth(title);
   const tx0 = Math.round((w - tw) / 2);
   drawPixelTextShadow(g, title, tx0, 8, '#ffd95c', 'rgba(8,12,28,0.9)');

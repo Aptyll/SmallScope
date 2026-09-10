@@ -377,12 +377,10 @@ tiles fold into 192 px), and paints one flat ink per class (`CHART_INK`) — **a
 snow-white open ground, deep cold pine for the woods, pale ice, a tan track for the road. The
 light comes from the top-left, as it does on the snow: a mass's rim is lit where lower ground lies
 above or left of it and inked where it lies below or right (`CHART_LIT`/`CHART_RIM` — the forest,
-the ice, and the road's shadow edge). The woods are a scatter of tiny **pines** (`chartPines`: a
-three-pixel tree, dark, with a lighter pixel of snow on its shoulder, one per `CHART_PINE_STEP`
-lattice cell nudged by `hash2` so no row lines up, and only where the pixels two out on every
-side are still woods — a bright dot on a regular lattice read as studs, so the tree is dark on a
-dark ground and the scatter is jittered), the ice wears a sparse diagonal sheen and the snow a
-faint grain (`chartGrain`), so the chart has the grain of a drawn thing without the noise of one. No grid: a single
+the ice, and the road's shadow edge). The ice wears a sparse diagonal sheen and the snow a faint grain
+(`chartGrain`), and the woods nothing at all — the palette does the work (a lattice of canopy
+dots read as studs and a jittered scatter of pine glyphs as clutter; both were tried and pulled in
+3.32), so the chart has the grain of a drawn thing without the noise of one. No grid: a single
 bush, rock or stump has no class and shows the ground, because at that scale a speck is noise;
 the buried chests keep theirs, a gold speck being a thing worth walking to. A side's buildings
 and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
@@ -404,12 +402,16 @@ the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()`
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
 px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
 (a phone at the 232-row floor gets the 192 chart), and `mapAlloc()` (panels.js) remakes the chart's
-buffers and re-bakes the slab whenever `MAP_W` changes. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
-the day at 2× on the left, and on the right the `CLOSE` plate — `drawParchButton`, a plank in the
-parchment's own grammar (leather-bound tan, lifting off its shadow on hover), hit through
-`mapCloseRect`/`mapCloseHit` in `pointerPress` (play and drop alike; the cursor is a hand over it)
-— with no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
-own), no clock (the disc wears it), no title and no trim: a leather edge and the parchment.
+buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the **frost slab** every
+panel shares (`bakeFrostSlab` with no title — the parchment of old read as summer against a winter
+chart), the chart in a dark frame with an icy line round it. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
+the day at 2× in the slabs' title gold on the left, and on the right the `CLOSE` plate —
+`drawFrostButton`, a plate in the slab's own grammar (its stone bound in its dark, lifting off its
+shadow on hover, the label going gold), hit through `mapCloseRect`/`mapCloseHit` in `pointerPress`
+(play and drop alike; the cursor is a hand over it) — with no compass (the chart is north-up, as
+the world is), no key (the marks are the minimap's own), no clock (the disc wears it) and no
+title. Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
+same on both maps.
 The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
 `MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is
 px per tile — an eased `mmCur` chasing `MM_ZOOMS[settings.mmZoom]` (0.25 … 4 over twelve rungs,
