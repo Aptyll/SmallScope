@@ -92,8 +92,8 @@ on both maps (its `mm`/`map` entry), and one free E press (`OPEN`, `needs: null`
 `hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` gold on the spot and drops one
 card rolled from `CHEST_ODDS` (all four constants beside `placeChests`). The tile empties with
 it, leaving a one-tile notch in the treeline where the cache was dug out. The sprite bakes in
-[draw-world.js](../../js/draw-world.js) (`CHEST_SPR`, top of the entity draw banner) rather than
-in the byte-fragile js/sprites.js.
+[js/draw/ground.js](../../js/draw/ground.js) (`CHEST_SPR`, under the `the scenery bakes` banner) rather than
+in the byte-fragile grid files under js/sprites/.
 
 `renderGround()` pre-renders the *entire* 3712×3712 ground to one offscreen canvas at boot and
 the frame loop just blits the camera window out of it. It is a one-time cost — never call it per
@@ -160,7 +160,7 @@ the cross-diagonal, five tiles touching corner to corner so nothing squeezes bet
 carrying `seg` (0 the up-left end, 1 the trunk, 2 the down-right end), solid, and a pine on the
 verge gives way to its ends. All inert to E (no `tool`). The shoulders are otherwise bare: a
 lane's edge is not a thing to look at. Their pixels: `CAIRN_SPR` baked beside `CHEST_SPR` in
-draw-world.js and drawn in `render()`'s object pass; the pole is `drawBanner`; the trunk is
+js/draw/ground.js and drawn in `render()`'s object pass; the pole is `drawBanner`; the trunk is
 **ground** — `paintLog` under `paintGroundTile` bakes each piece flat (`LOG_COL`), and a tile
 paints its four neighbours' pieces too, shifted, because the trunk is wider than the diagonal it
 runs on and spills past a tile's corners.
@@ -185,7 +185,7 @@ Both maps paint it: a tan stroke on the minimap, a brown ink line down the parch
 it is laid. In the world it is **painted over the snow per pixel**, not per tile:
 `paintGroundTile` paints every road tile, and every snow tile within `ROAD_SHOULDER` (1.4) + 1.2
 tiles of the edge, as snow first and then hands it to `paintRoadOverlay` (the `the road's pixels`
-group, draw-world.js), which asks `roadDist` per pixel — inside, packed earth in two tones by 8 px
+group, js/draw/ground.js), which asks `roadDist` per pixel — inside, packed earth in two tones by 8 px
 quad, the two ruts at `ROAD_RUT` (1.0) tiles off the *diagonal's* centreline (broken, wandering a
 little along the lane on a per-quarter-tile cached noise — a spur, measured off the same line, is
 too far off it to carry them), the odd stone and hoof-dark spot, and drifts of snow lying over the
@@ -275,7 +275,7 @@ enough to be shown: a camp with anything alive in it holds the clock at `repop` 
 pack never trickles back; cleared, it counts down; and due, it **holds at zero** for as long as
 any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward for a while and it
 still grows back, the moment the intruder leaves — then every slot is refilled at once. **The
-anchor prop wears the clock**: `drawCampClock` (draw-world.js) draws the neutral unit bar over
+anchor prop wears the clock**: `drawCampClock` (js/draw/marks.js) draws the neutral unit bar over
 a hovered den mouth or alpha stone, the picked bush's own read
 ([rendering.md](rendering.md#the-tree-fade)), filling toward the camp's return while it is
 empty and nothing at all while anything in it lives; a full bar holding is a camp that is due
@@ -314,9 +314,9 @@ The arena is one open **40×23-tile snowfield** (`PR_W`/`PR_H`) cut to pure comb
 east of the dummy on its own row (`lead` on the left tile, a solid silent follower right; a
 two-tile pair can only centre on a tile boundary, so the lead carries `dx: -8` and the sprite,
 brackets and prompt all draw nudged 8px left — `RACK_SPR` itself is baked per-pixel
-in js/draw-world.js so the strung staves get true curves), the spawn just south of the dummy —
+in js/draw/practice.js so the strung staves get true curves), the spawn just south of the dummy —
 **the rack is the armory**: standing within E's own reach of it (`rackNear`) raises an `E ARM`
-key-cap over it (`drawRackHint`, ui.js — proximity, not hover), **holding E opens a radial
+key-cap over it (`drawRackHint`, js/ui/wheel.js — proximity, not hover), **holding E opens a radial
 wheel** of every tool in the game (`state.wheel` kind `'rack'`, the ordinary wheel pipeline),
 the pointer picks, and **releasing E takes** — the right-click wheel's hold-and-release grammar
 moved onto the key (a real work target in reach keeps E's day job, the same rule that decides
@@ -335,7 +335,7 @@ bit-identical on every visit and no seed can reshape it.
 both sides, and ice being mechanically slippery is the whole game of it). A cleared walk
 (`PK_WALK`) leads out of the field's west side to the **checkered start/finish line**: a
 **fixed five-tile strip** (`PK_LINE`) that `pkPlanCarve` force-ices on every carve whatever
-width the roll cut the lane, so the painted band (`drawParkourLine`, render.js's flat pass), the
+width the roll cut the lane, so the painted band (`drawParkourLine`, js/draw/practice.js, called from js/draw/render.js's flat pass), the
 lap test and the two `banner` flags capping its ends never stretch, gap or move. The lap:
 stepping onto the line box starts the clock (`parkour`, the
 module state beside `PK_*`), a checkpoint at the current track's farthest-east waypoint keeps a
@@ -343,7 +343,7 @@ lap honest (`parkour.cpTx/cpTy`, a radius test on the ice), and recrossing the
 line records it and rolls straight into the next lap. Leaving the ice for `PK_OFF_T` seconds (or
 dying) abandons the run. The live clock rides over the runner's head (gold, icy blue once the
 checkpoint is armed) and BEST / LAST hang on a frost plate above the gate (`drawParkour`,
-js/draw-world.js) — the dummy meter's instrument language, same recorded carve-out. **BEST is
+js/draw/practice.js) — the dummy meter's instrument language, same recorded carve-out. **BEST is
 the profile's all-time record on the stock track**: seeded from `PROFILE.bestLap()` at gen,
 written back through
 `PROFILE.setBestLap()` on a record (stored at the plate's own 0.1 s precision; only a strictly
@@ -358,10 +358,10 @@ and a reroll unregisters the old track's cracks and holes before the forest regr
 **The roll station is one die and one held wheel**: the die on its plinth stands in a small
 felled nook off the walk's south side, adjacent to the walk so its `E ROLL` cap rises as you
 pass (`pkdie`, `PK_DIE` — `pkDieNear` resolves it, shared by the prompt, `drawPkHint` in
-js/ui.js, and the press in js/input.js). **Holding E beside it opens a three-wedge radial
+js/ui/wheel.js, and the press in js/input.js). **Holding E beside it opens a three-wedge radial
 wheel** (kind `'pkdie'`, the armory rack's own hold-and-release grammar and the ordinary wheel
 pipeline): one wedge per difficulty, each drawn as **that difficulty's coloured die** — a
-green, amber or red cube with its pip count (`PK_DIE_COL`, draw-world.js), the current track's
+green, amber or red cube with its pip count (`PK_DIE_COL`, js/draw/practice.js), the current track's
 one wearing a gold frame. Releasing on a wedge IS the roll (`pkWheelPick`, through the same
 `input.cmd` → `runCmd` path every wheel uses): it carves a **fresh random track** at that
 difficulty, and the standing die's whole body recolours to the picked cube, so the die always
@@ -417,7 +417,7 @@ face overlapping it, so the stack never gaps — whose wheels visibly turn while
 snow trail paced by distance), whose lane hop lifts the whole carriage and lands with a puff,
 and whose hidden pop-up form rattles on the rail with a snow fleck for a beat before the face
 flips up, bouncing as it locks. The two face sizes are separate per-pixel bakes
-(`bakeTargetFace` → `TARGET_SPR`/`TARGET_SPR_S`, draw-world.js), never runtime downscales,
+(`bakeTargetFace` → `TARGET_SPR`/`TARGET_SPR_S`, js/draw/practice.js), never runtime downscales,
 every break snaps a quick shock ring out from the hit, sized to the face it came off
 (`agRings`/`drawAgRings` — rasterised dots over a dark rim pass, white-hot cooling to gold),
 and a milestone run (every fifth consecutive hit) flares at the face. **A mover
@@ -432,11 +432,11 @@ spent for good. **Every arrow into a face also extends a consecutive-hit run** (
 minigame or not: the hit popup carries it from the second hit on (`X3` alone in free practice —
 white, gold from five, hot orange from ten — appended to the points during a round), any
 practice arrow that ends without striking a face breaks it (the arrow loop, js/sim.js — the
-dummy counts as a break: the run is a *target* run), and ringing a round in starts it over. `drawPTarget` (js/draw-world.js) owns every pixel, `TARGET_SPR` is the 32×32 face —
+dummy counts as a break: the run is a *target* run), and ringing a round in starts it over. `drawPTarget` (js/draw/practice.js) owns every pixel, `TARGET_SPR` is the 32×32 face —
 baked per-pixel (true circles, hash-dithered band edges, top-left light) rather than from a grid.
 
 **The archery round** hangs off the **bell** (`agbell`, `AG_BELL`) west of the dummy: standing
-within E's reach (`agBellNear`) raises an `E RING` cap (`drawBellHint`, ui.js), and **holding E
+within E's reach (`agBellNear`) raises an `E RING` cap (`drawBellHint`, js/ui/wheel.js), and **holding E
 opens a three-wedge radial wheel** (kind `'agbell'`, the roll die's own hold-and-release
 grammar and the ordinary wheel pipeline) — one wedge per difficulty, each drawn as **the target
 face the round pours out, smaller as the pick gets harder**, the armed one wearing a gold frame
@@ -444,7 +444,7 @@ face the round pours out, smaller as the pick gets harder**, the armed one weari
 Releasing on a wedge IS the ring (`agRing`, through the same `input.cmd` → `runCmd` path every
 order takes) and runs the show (`agame.phase`, ticked by `agUpdate` from `updatePractice`): the
 stock roster bursts away and **the dummy, the rack and the bell itself sink under the snow**
-(`agSinkU` crops their sprites in render.js; at full depth their objects leave the grid
+(`agSinkU` crops their sprites in js/draw/render.js; at full depth their objects leave the grid
 entirely, so nothing blocks a shot — which is also why a running round cannot be rung off, and
 `agEndRound` puts the same instances back), a **3-2-1 countdown** lands in the eagle drop's
 big-number language, and for `AG_T` seconds **random targets pour onto the track from the
@@ -455,7 +455,7 @@ fast/medium pay more, speed scored by **class** so the bonus means the same thin
 difficulty's table; the floater at the face says what it paid). A TIME / SCORE / HITS plate
 rides top-centre (`drawAgameUI` — a practice instrument, the dummy meter's carve-out), every
 live face outside the view gets a gold chevron pinned to the screen edge on the archer's line to
-it (`drawAgMarkers`, draw-world.js — the shooter's off-screen marker, eight baked pixel
+it (`drawAgMarkers`, js/draw/practice.js — the shooter's off-screen marker, eight baked pixel
 arrowheads, and none at all while every face is in view), timing
 out ends the round with the final score standing large, and BEST / LAST hang
 on a frost plate over the bell (`drawAgame`). **BEST is the profile's all-time record**
@@ -472,7 +472,7 @@ exceptions: a record parkour lap (`PROFILE.setBestLap`) and a record archery rou
 slab's LEAVE PRACTICE plank ([settings](gameplay.md#settings)).
 
 The **dummy** is an `OBJECTS` entry (`solid`, any tool, verb HIT) with one solid tile and a
-26×42 sprite (`DUMMY_SPR`, baked in js/draw-world.js beside the chest). Every way of hurting it
+26×42 sprite (`DUMMY_SPR`, baked in js/draw/practice.js). Every way of hurting it
 lands in `hitDummy` (js/actions.js): the E swing (`DUMMY_WORK_DMG`), every bit — the arrow loop
 tests the dummy across its base tile and the two above it, so torso and head shots land — and
 the roll's tackle. It never breaks: the pool floors at zero, the overhead bar appears only
@@ -485,7 +485,7 @@ Over the dummy's head hangs its **damage meter** — LAST HIT / DPS / TOTAL for 
 progress, a recorded labelled-row carve-out from show-don't-label (CLAUDE.md, shared with the
 parkour's plate). `hitDummy` keeps the ledger (`mLast`/`mTotal`/`mT0`/`mT1` on the object; a
 hit after the mend window starts it over), DPS is total over first-to-last hit floored at one
-second, and `drawDummyMeter` (js/draw-world.js) draws the plate — visible only while a combo is
+second, and `drawDummyMeter` (js/draw/practice.js) draws the plate — visible only while a combo is
 live, lingering `DUMMY_METER_LINGER` past the mend so the final read stands, then fading.
 
 ## Determinism and noise
@@ -523,7 +523,7 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
 
 `DAY_LEN = 110`, `NIGHT_LEN = 55`, so a full `CYCLE` is 165 s. `state.time` runs within the cycle,
 `state.day` increments at wrap. Each wrap (and the landing, for DAY 1) raises the **day headline**
-— `state.dayPop`, a ~3.5 s fade of bare `DAY N` at 2×, top centre (drawn in `renderUI`, ui.js) —
+— `state.dayPop`, a ~3.5 s fade of bare `DAY N` at 2×, top centre (drawn in `renderUI`, js/ui/compose.js) —
 because days are the calendar a survival strategy is timed against, so a new one headlines
 rather than riding the bottom message line.
 `update()` derives `state.darkness` (0→1) from a hand-written

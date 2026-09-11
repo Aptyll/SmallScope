@@ -6,7 +6,7 @@ code you should not "clean up".
 ## Concepting a new look
 
 A new sprite — a character, an NPC, a creature, a building — is **picked off a concept sheet
-before its grid goes into `js/sprites.js`**: three candidate looks in the game's own ASCII grid
+before its grid goes into its owning file under `js/sprites/`**: three candidate looks in the game's own ASCII grid
 language, rendered at 6× in both team colours and every facing beside a player for scale, saved
 under `docs/media/concepts/` and handed to Noah to choose from. The whole procedure, the sheet
 template and the grid lint are the `concept-art` skill in
@@ -188,19 +188,19 @@ which carries the same `mm`/`map` pair and gets solidity, both maps and the E pr
 it is food) is the storage half: the bag *or* the [pouch](gameplay.md#inventory-and-the-backpack),
 the drop pickup, the death spill, the drag and the refusal tell are all generic over that table.
 What is *not* generic and must be written per item: an 8×8 icon sprite (bake it beside its own
-code, not in the byte-fragile js/sprites.js — see `bakeGrid` in js/tools.js and `CHEST_SPR`; an
+code, not in the byte-fragile grid files under js/sprites/ — see `bakeGrid` in js/tools.js and `CHEST_SPR`; an
 icon that should **loop** is still one canvas to everything that draws it — put the frames in
 `SPRITES.itemAnim[key]` and the canvas in `SPRITES[key]`, and `stepItemIcons` animates it, see
 [sprites.md](sprites.md)), a colour in `RES_COLORS` for the pickup floater, **what it is worth** (see the counter below, or
 it sells for nothing), whatever *makes* the item, and what using it does —
 `bagClick` maps a cell click onto an input flag, so a new item needs its own branch there or
 clicking its cell will just deny (`sendBagCell` runs first and handles only the two kinds that
-have somewhere to *go*, a bit and a tool) — and a branch in `tipStack` (the `tooltips` banner, js/ui.js) or
+have somewhere to *go*, a bit and a tool) — and a branch in `tipStack` (the `tooltips` banner, js/ui/tooltip.js) or
 hovering it says only its raw type name. **A new FOOD is the one item that is already generic**:
 give its `ITEMS` row a `heal` and `pouch: true` and it picks up the pouch, the meal channel, the
 shared clock and the tooltip rows for free (`startEat`, js/core.js — see
 [Food](gameplay.md#food-the-meal-is-a-channel)); what it still needs is its own key and a seat in
-`FOOD_BTNS` (js/ui.js), because a meal is pressed from the hud strip and never from a cell. The
+`FOOD_BTNS` (js/ui/strip.js), because a meal is pressed from the hud strip and never from a cell. The
 drop draw pass and the bag cell both centre an icon
 on its own width, so a 12×12 needs no branch. Gold is **not** an `ITEMS` entry and must not become
 one: it is a wallet number with no ceiling. See
@@ -223,17 +223,17 @@ a `cap` at least as big **swaps itself into the hand** and takes the build with 
 of an existing one needs no pickup code — and one that is better but *narrower* is deliberately
 left an ordinary pickup rather than being made to drop somebody's bits.
 **A `cap` above 5 is the one number with a layout cost**: the corner's two width constants
-(`CORNER_REACH` and `CORNER_CLAIM`, js/ui.js) both spell "six wells" out as `6 * SHELF_CELL +
+(`CORNER_REACH` and `CORNER_CLAIM`, js/ui/strip.js) both spell "six wells" out as `6 * SHELF_CELL +
 5 * SHELF_GAP`, so a roomier tool would run its row off the intro bake and under the merchant's
 slab, which is pinned off the claim ([the panel](gameplay.md#the-panel)). Widen both together.
 
 **A new way to put a tool on the ground must call `shedBits` first** (js/tools.js) — the two that
-exist, `throwCell` (ui.js) and `spillInventory` (player.js), both do. Skip it and that one path is
+exist, `throwCell` (js/ui/bag.js) and `spillInventory` (player.js), both do. Skip it and that one path is
 the only one in the game handing the next person to walk over it a finished weapon.
 
 **A new way to take a drop must ask `dropGone(d)` first** (js/core.js) — the three that exist, the
 pickup loop in `updatePlay` (sim.js), the bot's loot scan (ai.js) and the drop draw pass
-(render.js), all do. A drop with a `fade` is evaporating and belongs to nobody
+(js/draw/render.js), all do. A drop with a `fade` is evaporating and belongs to nobody
 ([a starting tool does not litter](gameplay.md#a-starting-tool-does-not-litter)); skip the question
 and starting kit becomes lootable again from that one path alone.
 
@@ -265,20 +265,20 @@ nobody can read the numbers of. Give it a `req` naming the node beneath it (null
 tier-0 row), and keep each lineage to a root plus at most two children — the tech screen's 8×3 grid
 derives its rows from `TECH` and a fourth column would draw off the page. A ninth *lineage* is
 the other way off it: the rows have to fall between the tier names and the ESC line, so adding one
-means retuning `TECH_ROWH`/`y0` (js/menu.js) as the eighth did. The screen and its
+means retuning `TECH_ROWH`/`y0` (js/ui/menu.js) as the eighth did. The screen and its
 tooltip both follow from that one row.
 
 A brand-new `path` is the only thing that is not table-driven: it needs a
 branch in `steerBit` — plus a line in `drawAimLine`'s honesty
 rule, which refuses to draw a straight line for a path that does not fly straight. A new **body**
 is table-driven again: name it in the bit's `body` and add that name to `BIT_BODY`
-(js/render.js), which is the only place the names mean anything. Same for a new **impact** —
+(js/draw/render.js), which is the only place the names mean anything. Same for a new **impact** —
 what the shot does where it *lands* — one `impact` on the bit and one row in `BIT_IMPACT`
 (js/tools.js), which the arrow update calls only when the shot ended on something.
 
 **Putting something on the merchant's counter** — nothing, if it is a tool, a bit or a card: the
 stock is rolled off `TOOLS`/`BITS`/`CARD_RARITIES` themselves (`shopRestock`,
-[js/shop.js](../../js/shop.js)), so a new kind is on sale the moment it has a `price`. A new
+[js/ui/shop.js](../../js/ui/shop.js)), so a new kind is on sale the moment it has a `price`. A new
 **section** is a row in `SHOP_SECTIONS` plus its branch in `shopOffer` and room in
 `shopLayout`'s 2×2 grid — which is full, so a fifth section is a re-layout, not an insert.
 A new **traded good** (a thing whose price moves) is one `GOODS` entry and its `MKT_ORDER`
@@ -294,7 +294,10 @@ new class needs written:
 
 1. a `CLASSES` entry ([js/player.js](../../js/player.js)) — `name` and the `kit` numbers are
    the load-bearing halves;
-2. the full sprite set in the byte-fragile [js/sprites.js](../../js/sprites.js) —
+2. the full sprite set in the byte-fragile [js/sprites/characters.js](../../js/sprites/characters.js)
+   (a beast goes in beasts.js, a building in buildings.js, an item in items.js, terrain in
+   terrain.js, HUD art in icons.js), registered by adding its key to that file's
+   `Object.assign(SPRITES, {...})` at the bottom —
    4 directions × 3 frames plus the 5-pose prone set, baked into `SPRITES.champ[c]` per team
    via the `TEAM_SKINS` bakes ([sprites.md](sprites.md)) — **this is the expensive part**;
 3. a `CLASS_AB` row of four actives ([js/abilities.js](../../js/abilities.js)): each ability's
@@ -302,7 +305,7 @@ new class needs written:
    `abilityPose` case, any world entities it leaves and their tick/draw, and its on-body draw
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
-5. a 32×32 class **emblem** in `CLASS32` ([js/menu.js](../../js/menu.js), same palette) — the
+5. a 32×32 class **emblem** in `CLASS32` ([js/ui/menu.js](../../js/ui/menu.js), same palette) — the
    symbolic mark the select roster reads the class by — and its 12×12 twin in `CLASS12` beside
    it, drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail) wears;
 6. a `CLASS_LOADOUT` entry ([js/tools.js](../../js/tools.js));
@@ -422,7 +425,7 @@ needs to learn about it. What *does* cost work: any **new object type** its `pro
 checklist above), and any **new kind of monster** (a `MONSTER` row if it fights like the three
 wolves — hp in `ANIMAL_HP`/`ANIMAL_LV_HP`, a `HIT_PUFF` colour, a `YIELD` payout, a `WIKI_BEASTS`
 card, its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
-overlay's sizes in render.js, `animalHit`'s radius if it is not 8, and — if it can hurt a player
+overlay's sizes in js/draw/render.js, `animalHit`'s radius if it is not 8, and — if it can hurt a player
 — a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
 
 **Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `buildWorldMapImg()`,
@@ -471,7 +474,7 @@ random draw, the `YIELD` table (every gold payout, the one table still in core.j
 speed, aggro, siege reach, the bird damage, the bounty — and `MERCH_BAY_*` — when the barracks
 is due, how far behind the roost, the rebuild wait — js/robots.js; `ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/
 `ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`, js/world.js, which reshape the map, and the road's colours
-`ROAD_COL_*` beside `paintRoadOverlay` (draw-world.js); `AI_WAVE_R`/`AI_WAVE_D`, js/ai.js) and the bots' objective clocks (`AI_LEVELS`'
+`ROAD_COL_*` beside `paintRoadOverlay` (js/draw/ground.js); `AI_WAVE_R`/`AI_WAVE_D`, js/ai.js) and the bots' objective clocks (`AI_LEVELS`'
 `push`/`guard`, `AI_ALLY_PUSH`, `AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`,
 js/ai.js), the chest
 count/spacing/payout (`CHEST_*` above `placeChests()` in js/world.js),
@@ -485,7 +488,7 @@ in js/tools.js, the flight-path constants beside `steerBit`, the damage roll in 
 `update()`, the `WIND_*` block in js/sim.js (the three ripples, the bend that meanders them, the
 gust envelope's floor and peak, and how fast it all dies at dusk) and the
 `CLOUD_*` / `RAY_*` / `NIGHT_*` / `STAR_*` blocks in the
-`light & weather` banner of js/draw-world.js (including `RAY_AFTER` / `RAY_NOON_HALF`, which decide
+`light & weather` banner of js/draw/light.js (including `RAY_AFTER` / `RAY_NOON_HALF`, which decide
 how long the sun shafts are up for), and `FLAKE_BASE` / `FLAKE_MIN` / `FLAKE_MAX` beside the flake
 block in js/sim.js. Several of those bake at LOAD, so a change to them needs a reload rather than
 just a repaint: `bakeCloud`'s `lo`/`hi` ramp, its `CLOUD_CURVE` / `CLOUD_GAIN` contrast shaping and
@@ -497,16 +500,18 @@ that picks a level is live).
 ([architecture.md](architecture.md#shared-global-scope)); these rules stand for any move.
 Move whole sections **verbatim** — no renames, no reformatting, no "while I'm here" fixes
 (intentional dead code stays; see Known drift). Cut banner-boundary to banner-boundary, re-located
-fresh with `grep -n "// ------" js/*.js`, never by remembered line numbers. Before committing:
+fresh with `grep -n "// ------" js/*.js js/*/*.js`, never by remembered line numbers. Before committing:
 grep all files for duplicate top-level names (a duplicate `function` silently overwrites:
-`grep -hE '^(async )?function |^(const|let|class) ' js/*.js | sed -E 's/^(async )?(function|const|let|class) ([A-Za-z0-9_$]+).*/\3/' | sort | uniq -d`
+`grep -hE '^(async )?function |^(const|let|class) ' js/*.js js/*/*.js | sed -E 's/^(async )?(function|const|let|class) ([A-Za-z0-9_$]+).*/\3/' | sort | uniq -d`
 must print nothing); scan the moved code's **top-level statements** — every name a
 load-time statement references must live in a file loaded above it in index.html (runtime calls
 may point anywhere); never reorder existing `<script>` tags; and update the docs in the same
 commit — the architecture.md file table, code-map.md's sections, index.html's comment. Then the
 full browser pass off both
-the served URL and `file://`. Use a CRLF-preserving editor (the repo is CRLF; `sed -i` mangles it
-here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragile grids.
+the served URL and `file://`. The git index is LF and the working tree CRLF through autocrlf, so
+an editor that writes LF is fine and git normalises, but `sed -i` still strips CRs and is banned;
+and the grid files under js/sprites/ are byte-fragile ASCII art — move a grid line whole, never
+re-wrap or re-indent one, and keep them pure ASCII (there is no BOM any more).
 
 ## Known drift
 
@@ -549,7 +554,7 @@ here), and **never rewrite js/sprites.js** — it has a UTF-8 BOM and byte-fragi
   are 1920×1080 canvas dumps except the preview. `github-pass` stays in the tree unreferenced
   (it duplicated the 1280×640 hero). Steam coming-soon sits at the bottom. [LICENSE](../../LICENSE)
   is MIT for the source code only; art, audio and the Softfall name are all rights reserved,
-  including the sprite grids in `js/sprites.js`, baked sound in `js/sfxdata.js`, and files under
+  including the sprite grids under `js/sprites/`, baked sound in `js/sfxdata.js`, and files under
   `audio/` and `docs/media/`. The About copy is still
   the pillars of [game.md](game.md) — when a pillar changes, both change. No docs links and no
   controls list. The older capsule set (`docs/media/capsule/01-pass` … `05-practice`, Noah's

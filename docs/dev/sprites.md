@@ -1,7 +1,8 @@
 # Working on sprites
 
 How the ASCII-grid sprite system works and which sprites share grids with which. Read this before
-editing [../../js/sprites.js](../../js/sprites.js) — note the encoding warning at the end.
+editing anything under [js/sprites/](../../js/sprites/) — the shape of a sprite file, and which
+file holds what, is at the end.
 
 Sprites are literal ASCII grids paired with a palette object mapping character → hex (or `null`
 for transparent), baked by `bake()` at load. Left-facing variants are `flipH()` of the right ones.
@@ -15,7 +16,7 @@ a dedicated icon grid baked into `teamBuild[team].icon` (the turret's and the ba
 **bot bay** (`spawner`) is the one big sprite: a single-tier 48×38 grid (`bay`, `BAYPAL`) on a 3×2
 tile footprint — steel plates under a flat two-row snow cap, a team-painted lintel band (`L`/`T`/`t`
 via `bayTeamPal`), riveted flanks with a grille and hazard stripe, and a 20-px dark doorway (cols
-14–33, rows 13–35, floor row 36 — `drawBayOverlay` in draw-world.js clips to it). Its 16×16 wheel glyph is
+14–33, rows 13–35, floor row 36 — `drawBayOverlay` in js/draw/structs.js clips to it). Its 16×16 wheel glyph is
 a separate grid, `bayIcon`, exported as `teamBuild[team].icon.spawner`; the old 16×16 `spawner` grid
 is still baked as the flat `SPRITES.spawner` but unreferenced. The
 construction stages are one shared `scaffold` set (`[posts, frame, lattice-overlay]`, `SCPAL`),
@@ -87,7 +88,7 @@ twelve 12×12 grids, **one per variant** (`gearLongsight` … `gearGhoststep`), 
 (ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`: the glyph
 says which piece, the material says its level. Drawn by the HUD's gear plates and class select's
 collapsed gear widget; the gear pop-up's wells wear the detailed 32×32 `GEAR32` set instead
-(js/menu.js — see [gameplay.md](gameplay.md#gear)). `itemBag` is
+(js/ui/menu.js — see [gameplay.md](gameplay.md#gear)). `itemBag` is
 12×12 for the same reason — it sits in the same 18 px HUD well — but shares `ITPAL` with the
 8×8 item icons rather than taking a material palette: it is one object, not four levels of one.
 The five **roguelike card** icons take the gear icons' trick the other way round: one shared 8×8
@@ -172,7 +173,7 @@ cannot carry that. `fish.png` itself is untouched, so a regenerated grid set nee
 reapplied — the grids are the sheet pixel for pixel, the twelve numbers in `FIPAL` are not.
 
 They are exposed as **live canvases**, and that is the whole trick. `SPRITES.itemAnim[key]` holds
-the frames; `SPRITES[key]` is one canvas per icon that `stepItemIcons()` (js/render.js) stamps the
+the frames; `SPRITES[key]` is one canvas per icon that `stepItemIcons()` (js/draw/render.js) stamps the
 current frame into, once a frame, before anything draws. So `SPRITES[ITEMS[type].icon]` — how the
 bag, a shop price, a sale row, a drop on the snow, a tooltip and the wiki all reach an item icon —
 stays **one generic read**, and no call site has to know which three goods move. Handing those
@@ -193,7 +194,7 @@ sunken well, so the column reads as one column whichever kind lands in it.
 
 **The turret is half grid, half raster.** `turret` is a **32×32** mount — collar, column, plinth
 and snow skirt — whose top 16 rows are deliberately empty. The rotating housing and barrel are not
-baked at all: `drawTurretHead()` in draw-world.js rasterises them pixel by pixel at the live bearing and
+baked at all: `drawTurretHead()` in js/draw/structs.js rasterises them pixel by pixel at the live bearing and
 dilates the result into a 1px dark rim, exactly as the arrows do, because a baked grid would lock
 the gun to one angle. The pivot is sprite-local **(16, 14)**, just above the collar. Two knock-ons:
 the sprite is wider than its one-tile footprint, so the draw pass centres it (`sx` in the structure
@@ -204,7 +205,7 @@ old 16×16 cannon) is baked into `teamBuild[team].icon.turret`, the same escape 
 frame anything asking for "the beast" takes (the wiki's cards read `.right.idle[0]`). Which clip
 is playing is the animal's business, not the sprite's: js/wildlife.js sets `a.clip` from what the
 beast is doing (`ANIM_CLIPS`, [gameplay.md](gameplay.md#what-a-beast-is-doing-the-clips)) and
-`clipFrame` in draw-world.js plays it. `bakeClips` builds a set and `mapClips` walks one — the
+`clipFrame` in js/draw/bodies.js plays it. `bakeClips` builds a set and `mapClips` walks one — the
 mirror for `left`, and the alpha/dire wash below.
 
 The **rabbit** and the **deer** are imported: three sheets each out of `docs/media/new_media3/`,
@@ -233,7 +234,7 @@ of the right-facing frames. The camps' two [alpha and dire wolf](world.md#camps)
 **placeholder looks derived from the wolf, not grids**: `wash` washes the wolf's frames toward
 silver (alpha) or a dark red (dire), each through `mapClips` so every clip is washed, and `double`
 blows the dire up to 32�26 nearest-neighbour
-(the tail of js/sprites.js) — each wants its own grid through the concept-art skill one day.
+(the tail of js/sprites/beasts.js) — each wants its own grid through the concept-art skill one day.
 The two camp props are
 `deadTree` (two 16×24 snags on `DTPAL`, the footprint the pine used to share so they draw in the same
 band) and `den` (one 16×12 mound on `DNPAL`, drawn at `py + 4` like a rock). The berry bush is
@@ -244,21 +245,40 @@ plant ([the regrow stages](world.md#the-tile-world)).
 Anything drawn through `drawSpriteFlash` must stay within 64×64.
 
 **New sprites bake beside the code that draws them, not here.** The treasure chest (`CHEST_SPR`,
-js/draw-world.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGrid`, js/tools.js)
+js/draw/ground.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGrid`, js/tools.js)
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
-is a plain object. The reason is the paragraph below: `js/sprites.js` is byte-fragile, so the
-fewer sessions that rewrite it, the better. Tool art goes further and follows the gear icons'
+is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
+below), so a sprite that belongs to a drawer can live beside it. Tool art goes further and follows the gear icons'
 trick — one 12×12 silhouette per family, baked once per **tier** through `TOOL_ART_PAL`, so shape
 says which weapon and palette says how good it is. The two detailed 32×32 icon sets do the same:
 the ability icons (`AB32`/`AB32_PAL`, js/abilities.js) and the gear-variant icons (`GEAR32`,
-js/menu.js) bake lazily beside their drawers, and `GEAR32` deliberately shares `AB32_PAL` so
+js/ui/menu.js) bake lazily beside their drawers, and `GEAR32` deliberately shares `AB32_PAL` so
 every big icon in the game speaks one palette.
 
-`js/sprites.js` has a UTF-8 BOM and **seven** rows that repair a mangled byte via
-`'...'.replace('о', 'g')` — in `stump`, `imp1` (×2), `wall` (×2, one of them a `/g` replace),
-`heartHalf` and `heartEmpty`. Preserve the file's encoding when editing — re-saving it as
-something else will corrupt the grids, and the corruption is silent: `bake()` sizes each canvas
-from `rows[0].length` alone, so an unmatched palette char is indistinguishable from a transparent
-pixel and a broken repair just shifts that grid row one column sideways. (`heartHalf`'s repair is
-currently a no-op — `.replace('g', 'g')`.)
+## The shape of a sprite file
+
+`js/sprites/core.js` loads first and makes two globals: the empty `SPRITES` registry and `SPR`,
+the helpers every art file shares — `bake`, `spansOf`, `bakeSpan`, `flipH`, `bakeClips`, `mapClips`,
+`liveIcon`, `wash`, `double`, the `TEAM_SKINS` table and `teamBuildPal`. Each of the seven art files
+is a private IIFE with the same skeleton: destructure what it needs off `SPR`, its palettes and
+grids under `// ---- name` banners, the set builders, and at the bottom one
+`Object.assign(SPRITES, { ... })` naming every key it owns. Nothing reads another file's grid, so
+they load in any order after core; a new sprite goes into the file that owns its subject and its
+key onto that file's `Object.assign`.
+
+| File | Banners | Registers |
+| --- | --- | --- |
+| `characters.js` | player, the fish catch, skater, prone, raider, the merchant | `playerTeam`, `champ`, `player`, `raider`, `merchant` |
+| `terrain.js` | trees, rocks, gold ore, gold mine, bush, the dead snags, the den | `tree`, `treeAtlas`, `stump`, `rock`, `goldOre`, `mine`, `bush*`, `deadTree`, `den` |
+| `beasts.js` | imp, rabbit, deer, wolf, the bird, the camps' wolves | `rabbit`, `wolf`, `bird`, `deer`, `imp`, `alpha`, `dire` |
+| `eagle.js` | eagle | `eagle`, `eagleTeam`, `eagleFlash`, `eagleShadow` |
+| `buildings.js` | wall, tiered structures, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret`, `generator`, `spawner`, `net`, `scaffold`, `robot`, `spikes`, `fire`, `torch` |
+| `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
+| `icons.js` | gear icons, heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
+
+The grids are **pure ASCII and byte-fragile**: `bake()` sizes each canvas from `rows[0].length`
+alone, and an unmatched palette char is indistinguishable from a transparent pixel, so a row that
+gains or loses a character silently shifts that grid row sideways. Move a row whole, never re-wrap
+or re-indent one, and keep the files ASCII (the old single file carried a BOM and seven rows that
+repaired a mangled byte inline; the split wrote those rows as the ASCII they repaired to).
 

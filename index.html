@@ -38,7 +38,16 @@
      localStorage: it has no dependencies, so it goes first. -->
 <script src="js/profile.js"></script>
 <script src="js/font.js"></script>
-<script src="js/sprites.js"></script>
+<!-- js/sprites/: every sprite as a char grid + palette, baked at load. core.js first (it
+     makes SPRITES and the SPR helpers); each file after it registers the keys it owns. -->
+<script src="js/sprites/core.js"></script>
+<script src="js/sprites/characters.js"></script>
+<script src="js/sprites/terrain.js"></script>
+<script src="js/sprites/beasts.js"></script>
+<script src="js/sprites/eagle.js"></script>
+<script src="js/sprites/buildings.js"></script>
+<script src="js/sprites/items.js"></script>
+<script src="js/sprites/icons.js"></script>
 <!-- audio/sfx/*.mp3 baked to base64 by app/bake-sfx.js: a file:// page cannot fetch
      its own folder, so this is what lets the sound effects work when index.html
      is opened straight off the disk. Must load before audio.js. -->
@@ -67,13 +76,32 @@
 <script src="js/abilities.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/sim.js"></script>
-<script src="js/draw-world.js"></script>
-<script src="js/render.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/shop.js"></script>
-<script src="js/panels.js"></script>
-<script src="js/menu.js"></script>
-<script src="js/screens.js"></script>
+<!-- js/draw/: the world's pixels, cut from the one draw-world.js. ground.js first (every
+     other draw file calls its hash2); render.js composes the frame and comes last. -->
+<script src="js/draw/ground.js"></script>
+<script src="js/draw/practice.js"></script>
+<script src="js/draw/overhead.js"></script>
+<script src="js/draw/structs.js"></script>
+<script src="js/draw/bodies.js"></script>
+<script src="js/draw/marks.js"></script>
+<script src="js/draw/light.js"></script>
+<script src="js/draw/render.js"></script>
+<!-- js/ui/: the in-match HUD, cut from the one ui.js, in this order - four of its
+     load-time constants read an earlier file's (AB_CELL, SHELF_X, CORNER_CLAIM, RAIL_PAD);
+     then the screens: the shop, the panels, the menu and the end screens. -->
+<script src="js/ui/wheel.js"></script>
+<script src="js/ui/minimap.js"></script>
+<script src="js/ui/bag.js"></script>
+<script src="js/ui/strip.js"></script>
+<script src="js/ui/hud-draw.js"></script>
+<script src="js/ui/rail.js"></script>
+<script src="js/ui/tooltip.js"></script>
+<script src="js/ui/compose.js"></script>
+<script src="js/ui/touch-plates.js"></script>
+<script src="js/ui/shop.js"></script>
+<script src="js/ui/panels.js"></script>
+<script src="js/ui/menu.js"></script>
+<script src="js/ui/screens.js"></script>
 <script src="js/boot.js"></script>
 </body>
 </html>

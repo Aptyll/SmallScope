@@ -15,7 +15,7 @@ node app/bake-sfx.js       # audio/sfx/*.mp3 -> js/sfxdata.js; rerun after chang
 **Double-clicking [index.html](index.html) has to work** — nothing may depend on being served. A
 `file://` page cannot `fetch` its own folder, which is why `app/bake-sfx.js` inlines the sound
 effects (its output is committed); an asset loaded any other way is silently dead off the disk.
-No package manager, dependencies, tests or linter: edit a `js/*.js` file and reload.
+No package manager, dependencies, tests or linter: edit a file under `js/` and reload.
 
 **Verify changes in the browser, not by re-reading code.** `window.DBG` (end of
 [js/boot.js](js/boot.js)) stages a scene without playing to it, `?seed=N` pins the world,
@@ -42,10 +42,12 @@ Read the relevant one **before** working in that area — they carry the detail 
 
 ## Architecture
 
-Five legacy files — `profile.js`, `font.js`, `sprites.js`, the generated `sfxdata.js`,
-`audio.js` — keep their IIFEs and expose fixed `window` globals; after them the game code is
-**flat top-level classic scripts sharing one global scope** — twenty-five files, `core.js` through
-`boot.js` (the tag `pre-split` keeps the one-file history).
+Four legacy files — `profile.js`, `font.js`, the generated `sfxdata.js`, `audio.js` — and the
+eight sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (the
+sprite files each `Object.assign` their keys into `SPRITES`); after them the game code is
+**flat top-level classic scripts sharing one global scope** — thirty-nine files, `core.js`
+through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
+and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
 globals**, so each file's globals must exist before the next loads. The file table and the
 shared-scope mechanism: [architecture](docs/dev/architecture.md).
@@ -67,14 +69,14 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs).
 
-The game code is organized only by `// ------ name` banners inside its twenty-five files.
+The game code is organized only by `// ------ name` banners inside its thirty-nine files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 
 ## Versioning
 
 **Never commit to main.** Branch as `<name>/<topic>`, run `/sync` before every push, merge via PR.
-The PR's last commit bumps `PATCH_TXT` ([js/menu.js](js/menu.js)) by 0.01 over origin/main and tops
+The PR's last commit bumps `PATCH_TXT` ([js/ui/menu.js](js/ui/menu.js)) by 0.01 over origin/main and tops
 `PATCH_NOTES` with one uppercase sentence; the commit message begins with the patch name
 (`PATCH 2.11 — ...`), so `git log --oneline` reads as a build history.
 
@@ -87,13 +89,13 @@ control must read as what it does by its shape and its hover state alone, and if
 yourself writing a hint sentence, build the affordance instead. Text is for names, numbers,
 headlines (a death, a camp) and five deliberate carve-outs: **keybind indicators** (`'ESC
 BACK'`, a "1" in a slot's corner — which name an *action*, print whatever key it is bound to
-(`keyCap`, input.js) and wear the pad's button while one is in hand (`PAD_BIND`, ui.js), so a new
+(`keyCap`, input.js) and wear the pad's button while one is in hand (`PAD_BIND`, ui/wheel.js), so a new
 one goes through `drawKeyPrompt`/`drawPadBind`), the **settings, PLAYER, gear, character and shop panels**'
 labelled rows, the **instruments** — the practice room's (the dummy meter, the parkour's lap
 clock and the archery round's readouts, with their BEST / LAST plates) and the merchant's
 (the two price graphs and their high/low) — because an instrument's whole job is comparing
 numbers, and the **hover tooltip** (bottom-left,
-`tipAt`/`drawTooltip`, ui.js) — which earns it because comparing a tool's rate of fire against a
+`tipAt`/`drawTooltip`, ui/tooltip.js) — which earns it because comparing a tool's rate of fire against a
 bit's weight is comparing *numbers*, and no shape does that. It is a carve-out, not a licence: the
 well still has to read at a glance without it. Anything else that wants words is a design bug.
 

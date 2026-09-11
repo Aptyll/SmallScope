@@ -64,7 +64,7 @@ cmd           one-shot order {kind:'build'|'upgrade'|'demolish', tx, ty, id}
               or {kind:'skill', i} - a hud-ability rank: same, free (a skill point)
               or {kind:'shop', act, ...} - a buy or a food trade at the
               merchant's counter: no tile and no contest (an offer is a line,
-              not a queue), but it re-checks its own reach (shopCmd, js/shop.js)
+              not a queue), but it re-checks its own reach (shopCmd, js/ui/shop.js)
 ```
 
 `sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the two sticks, `pad.mx/my`
@@ -198,7 +198,7 @@ bot fills, once per step from `sampleHumanInput`.
   strafing rival at range is missed where a hand would lead it; the lock holds only to
   `CK_LOCK_R` (240 px) and through `seenAt`, so cover and GHOSTSTEP break it (`ckSees`); the
   auto-draw is a bot's, under the hand's; and a tool with nothing to swing fires nothing.
-- **What the eye gets** (`drawClickMarks`, draw-world.js): a ring blooms and fades where the
+- **What the eye gets** (`drawClickMarks`, js/draw/marks.js): a ring blooms and fades where the
   order landed — white for a walk, gold for a job, red for a fight (`CK_COL`) — and a breathing
   ring in the foe's ink sits under a locked target's feet. Nothing is written.
 
@@ -211,7 +211,7 @@ the first pad by index is often the wrong one — then the one already held, the
 last one held. A pad the browser could not lay out — `mapping ''`, Firefox on Linux — is read by
 where its axes rest the first frame its left stick does, `padCalibrate`: an axis parked near ±1
 is a trigger, the rest are the sticks in index order). The CONTROLS page's GAMEPAD
-listing ends in a live **readout** (`drawPadReadout`, panels.js: the pad's name, the sticks'
+listing ends in a live **readout** (`drawPadReadout`, js/ui/panels.js: the pad's name, the sticks'
 knobs, the triggers' bars, the sixteen buttons as pips off `pad.raw`/`pad.down`) — a stick that
 walks the knob but not the player, or a pad that moves the mouse but leaves the knob still, says
 where the fault is. The one thing it cannot fix: a driver that turns the pad into a mouse and a
@@ -235,7 +235,7 @@ panel (`padMenuMode`: any mode but play and the drop, or play with a panel up) t
 pointer surface, and always Enter over a key-driven menu (the idle mouse may be resting on
 another plank than the dpad picked), which every such menu answers (`padTake`) — B / BACK /
 START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
-`settingsKey`, panels.js, reached from both the title's slide-in and the in-match slab), the
+`settingsKey`, js/ui/panels.js, reached from both the title's slide-in and the in-match slab), the
 right stick scrolls the page, and the left stick is a pointer
 over pointer-only surfaces (a panel, the wiki, class select) and the arrow
 keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
@@ -248,7 +248,7 @@ never hides the pad's hand. `padActive()` — plugged in and touched within `PAD
 the CONTROLS page reads, and what every **keybind indicator** reads: while it is true the HOP
 OFF cap, the work prompts, the strip's 1-4 and Q/F, the SHIFT plate, the flight HUD's two and
 the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
-(`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, ui.js; `drawDropBind`, boot.js) —
+(`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, js/ui/wheel.js; `drawDropBind`, boot.js) —
 a change in `PAD_PLAY` is a row there.
 
 **Touch** (phone mode only — a finger on a desktop is a mouse). In free play the two halves of
@@ -311,7 +311,7 @@ rest of the count) — and the three notches
 over the rivals' column set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), which is stored and shown but **not yet read by
 `updateAI`** ([known drift](checklists.md#known-drift)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
-js/sprites.js is never rewritten) — same
+the grid files under js/sprites/ are never rewritten) — same
 16×16 body plan and frame set as the player, so `drawPlayer`/`drawGhost` just swap the set via
 `classSet(p)`; `SPRITES.playerTeam` is class 0.
 
@@ -360,7 +360,7 @@ player (default local) the way a pickup would, which is how to stage a level.
 
 ## Teams and colours
 
-Two presets live in `SPRITES.teams` (`TEAM_SKINS` in [js/sprites.js](../../js/sprites.js)):
+Two presets live in `SPRITES.teams` (`TEAM_SKINS` in [js/sprites/core.js](../../js/sprites/core.js)):
 **RED** (the original red/teal look, once called EMBER) and **BLUE** (once FROST). A player's team
 is `id % TEAM_COUNT` (2), so the ten players alternate into five a side. The team table is the
 only place a team colour is written down; the game code reads it back as `TEAMS` for name tags,
