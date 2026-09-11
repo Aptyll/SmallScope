@@ -87,6 +87,43 @@ function drawFlagRings(ox, oy, now) {
     drawFlagRing(ctx, w.tx * TILE + 8 - ox, w.ty * TILE + 8 - oy, col, now, L.seg >= 0 ? 0.7 : 0.3);
   }
 }
+// The CLICK scheme's two rings (the `click to move` banner, input.js), flat
+// on the snow under everything that walks: where the last order landed - a
+// ring that blooms out and fades over CK_MARK_T, white for a walk, gold for
+// a job, red for a fight (CK_COL) - and, while a lock holds, a ring under
+// the target's feet in its side's ink (a camp's monster: the hunt's amber),
+// breathing, so who the tool is on reads on the body itself. Both are
+// places, so they scale with the tile.
+function drawClickMarks(ex, ey, now) {
+  if (!ckOn()) return;
+  const m = ck.mark;
+  if (m && m.t > 0) {
+    const f = m.t / CK_MARK_T, r = 3 + (1 - f) * 6;
+    const x = Math.round(m.x - ex), y = Math.round(m.y - ey);
+    ctx.save();
+    ctx.globalAlpha = f;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#0f1632';
+    ctx.beginPath(); ctx.ellipse(x, y + 1, r, r * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = m.col;
+    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.6, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+  const t = ck.lock;
+  if (t && unitAlive(t)) {
+    const col = t.team !== undefined && TEAMS[skin(t.team)] ? TEAMS[skin(t.team)].mark : '#f2cc6a';
+    const r = 7 + Math.sin(now * 7) * 0.8;
+    const x = Math.round(t.x - ex), y = Math.round(t.y - ey) + 4;
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#0f1632';
+    ctx.beginPath(); ctx.ellipse(x, y + 1, r, r * 0.5, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = col;
+    ctx.beginPath(); ctx.ellipse(x, y, r, r * 0.5, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+}
 // The planted flag itself, in the world pass (y-sorted with the entities): a
 // pole at the tile's centre and a dark banner on it carrying the SAME order
 // icon the wheel offered, inked in the team's colour - so what the side was

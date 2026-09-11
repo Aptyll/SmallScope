@@ -77,7 +77,18 @@
 <script src="js/draw/marks.js"></script>
 <script src="js/draw/light.js"></script>
 <script src="js/draw/render.js"></script>
-<script src="js/ui.js"></script>
+<!-- js/ui/: the in-match HUD, cut from the one ui.js, in this order - four of its
+     load-time constants read an earlier file's (AB_CELL, SHELF_X, CORNER_CLAIM, RAIL_PAD);
+     then the screens: the shop, the panels, the menu and the end screens. -->
+<script src="js/ui/wheel.js"></script>
+<script src="js/ui/minimap.js"></script>
+<script src="js/ui/bag.js"></script>
+<script src="js/ui/strip.js"></script>
+<script src="js/ui/hud-draw.js"></script>
+<script src="js/ui/rail.js"></script>
+<script src="js/ui/tooltip.js"></script>
+<script src="js/ui/compose.js"></script>
+<script src="js/ui/touch-plates.js"></script>
 <script src="js/ui/shop.js"></script>
 <script src="js/ui/panels.js"></script>
 <script src="js/ui/menu.js"></script>
