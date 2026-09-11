@@ -2,7 +2,7 @@
 // A building's pixels: the turret's rotating half and its bolts, the bay
 // and barracks overlays, the net, and structSprite/drawTiledStruct - how a
 // tiered or multi-tile STRUCTS entry finds its sprite and lays it down.
-// ---- the turret's rotating half -------------------------------------------
+// ---- the turret's rotating half, the bay, the net and the tiled struct ----
 // The grid stops at the collar; the housing and barrel are rasterised pixel by
 // pixel at the live angle and dilated into a 1px dark rim - the same trick the
 // arrows use - so the gun stays crisp and readable at any bearing over snow.

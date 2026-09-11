@@ -232,7 +232,7 @@ function repaintGround(tx, ty) {
   }
 }
 
-// ------------------------------------------------------------ entity draw
+// ------------------------------------------------------------ the scenery bakes
 // Which of a pine's twenty-four bend frames it is wearing - and which half of
 // the atlas it takes it from. A tree does not animate on a clock of its own:
 // the wind field (the `wind` banner, js/sim.js) is sampled at the tree's own

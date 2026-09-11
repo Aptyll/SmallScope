@@ -1,6 +1,7 @@
 'use strict';
 // renderUI: the frame's UI pass in order - what goes over the world while
 // you play, from the minimap to the day headline. Last of the HUD files.
+// ------------------------------------------------------------ renderUI
 // the day headline's bake: bare outlined text wants a fade, and an outline
 // stamped under globalAlpha goes blotchy (the CLAUDE.md text rule), so the
 // opaque stamp is baked once per day number and the CANVAS fades

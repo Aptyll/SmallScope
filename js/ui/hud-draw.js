@@ -3,6 +3,7 @@
 // icons, the cooldown sweep, the ability, pouch, food and gold cells,
 // drawHudStrip and the scaled bakes, then the shelf's wells, the drop
 // promise and the drag ghost.
+// ---- the plates, bars and icons the widgets share --------------------------
 // a level-up is an edge the sim never announces to the HUD, so the xp bar
 // watches for it itself and pops white
 let abLvSeen = 0, abLvFlash = 0;

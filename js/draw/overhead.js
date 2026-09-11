@@ -2,7 +2,7 @@
 // What every unit shares over its head and in the air: the one arrow body
 // (flying, stuck, held), the overhead frame - health bar, level badge, the
 // sense mark, stun stars - and the build reveal a structure grows in under.
-// ---- the arrow body, shared -----------------------------------------------
+// ---- the arrow body, shared, and the frame over every unit's head ---------
 // One silhouette for every shaft in the game: the flying arrow (render.js)
 // rasterises ARROW_BODY
 // (js/actions.js) through this pair. hx/hy is the tip's exact (unrounded) screen position,

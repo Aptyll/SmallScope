@@ -2,6 +2,7 @@
 // A body in the world: a beast on its clip, a robot, the merchant, and the
 // player - gear marks, buff ring, pose bounds, snow cover, burial, the
 // ghost, the held tool. Every walking thing's sprite pass ends up here.
+// ---- beasts, robots and the merchant --------------------------------------
 // The frame a beast is on: the clip it put itself in (ANIM_CLIPS,
 // js/wildlife.js - a graze, a gallop, a sit-up) and how far into it, wrapped
 // the long way round so any animT lands on a frame rather than off the end.
@@ -163,6 +164,7 @@ function drawMerchant(b, ex, ey, now) {
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
 }
 
+// ---- the player -----------------------------------------------------------
 // every player draws through here - the local one, the AI fills, network
 // peers later. Team palette on the sprite, name tag on everybody else.
 // gear on the body: bought depth is visible depth. Each piece at level 2+

@@ -1,7 +1,7 @@
 'use strict';
 // The minimap: the rebuilt ground disc, its masks, chrome and view arc,
 // and renderMinimap. The map marks it stamps come from js/draw/marks.js.
-// ------------------------------------------------------------ UI
+// ------------------------------------------------------------ minimap
 // The terrain image is a full WORLD x WORLD sweep with a structOf() call per
 // tile - far too much to pay every frame for a picture that only changes when
 // something is built or the ground is cut. It rebuilds at most twice a

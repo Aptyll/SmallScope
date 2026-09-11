@@ -66,7 +66,7 @@ boot reading the saved one, a resize onto another screen) re-fits the view. What
   `hudScaleKey()`'s field, and the one GAME slider edits whichever is live, so a profile that
   plays on both keeps both.
 - **The touch controls** draw above everything but the fade and the cursor
-  (`drawTouchControls`, the `touch controls` banner, ui.js): plates from `touchLayout()`
+  (`drawTouchControls`, the `touch controls` banner, js/ui/touch-plates.js): plates from `touchLayout()`
   (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
   draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
   presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
@@ -392,7 +392,7 @@ image itself is re-inked at most every `MM_REBUILD` ticks, like the minimap's, s
 or a tree felled behind the parchment shows up on it within half a second.
 
 **One grammar for both maps** (`drawMapDot`/`drawMapUnit`/`drawMapYou`/`drawMapBird`, the
-`what a body looks like on a map` group in draw-world.js): a square in its side's ink is a
+`what a body looks like on a map` group in js/draw/marks.js): a square in its side's ink is a
 body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 on the disc), and
 every worker, soldier and merchant standing is drawn, none of them hides; the watched body
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
@@ -401,7 +401,7 @@ is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dar
 the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
 px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
-(a phone at the 232-row floor gets the 192 chart), and `mapAlloc()` (panels.js) remakes the chart's
+(a phone at the 232-row floor gets the 192 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
 buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the **frost slab** every
 panel shares (`bakeFrostSlab` with no title — the parchment of old read as summer against a winter
 chart), the chart in a dark frame with an icy line round it. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
@@ -466,7 +466,7 @@ tool cell would leave a longbow's row parked over the cinematic.
 
 ### Market notices: the plates under the minimap
 
-The market's own voice on the HUD — the `market notices` banner in [js/shop.js](../../js/shop.js),
+The market's own voice on the HUD — the `market notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
 raised by `marketNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
 spike, a price crash and a counter turning over each raise one, *as well as* the line they already
 put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
@@ -755,11 +755,11 @@ that is money must never read as a count of something carried.
 
 ### The team rail
 
-`drawRailScaled` (the `team rail` block under the HUD SIZE code, ui.js; 3.33) is the roster
+`drawRailScaled` (the `team rail` banner, js/ui/rail.js; 3.33) is the roster
 along the top edge: two [hud frame](#the-hud-frame) plates, `RAIL_MID` (10) px apart, centred on
 `VIEW_W` at `RAIL_Y` (3) — **your side on the left** and the rival's on the right, a 14px
 **chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) — the class's
-12×12 emblem (`CLASS12`/`classIcon12`, menu.js: drawn by hand beside `CLASS32`, never a shrink
+12×12 emblem (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`, never a shrink
 of it) on the `BAG_WELL` ground in a rim painted by side through `skin()`. `railSides` orders
 each side by id and puts **you first**, with your emblem baked white — the maps' own "you"
 (`drawMapYou`). A chip carries exactly one bit, in the wells' own grammar:
@@ -782,7 +782,7 @@ death timer — the right plate is that timer made a hand. *Where* anyone is sta
 
 It is drawn straight after the minimap in `renderUI` (under the counter's wash with it), rides
 the intro slide up by `RAIL_SLIDE`, and **stays up while you are dead** — the side's state is
-what a spectator reads, so the spectate control (`specLayout`, screens.js), the camp plate and the
+what a spectator reads, so the spectate control (`specLayout`, js/ui/screens.js), the camp plate and the
 DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when there is no rail:
 the practice arena, or a match with an empty side — `railSides` is null and nothing draws), and
 the two notes step under the spectate control as well while it is up (`noteY`).
@@ -796,8 +796,8 @@ that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
 ### The hud frame
 
 `drawHudFrame(x, y, w, h, o)` is the one plate the strip and the pack stand on: the frostlands'
-chrome — the settings slab's chamfered corners and bevel (`bakeFrostSlab`, panels.js) and the
-menu planks' snow cap (`drawMenuButton`, menu.js) — at a combat surface's volume, with none of
+chrome — the settings slab's chamfered corners and bevel (`bakeFrostSlab`, js/ui/panels.js) and the
+menu planks' snow cap (`drawMenuButton`, js/ui/menu.js) — at a combat surface's volume, with none of
 their mottling, rivets or icicles, because the wells cover most of the ground and a plate looked
 at for an hour has to stay quiet. Four pixel layers: the **silhouette** (`HUD_INK`, the xp bar's
 own ink) with its top corners cut two pixels and the corners that meet a screen edge left
@@ -897,7 +897,7 @@ js/tools.js, aged in `updateFx` beside the refusal reds, and both are the **loca
   (`swapFx`). The tool cell is the tell: a press never lights it, so a lit tool means one thing
   only, which is that the body itself just changed under you.
 
-**A tool carrying more than one press can swing wears a "!"** (`drawOverWarn`, ui.js) in the
+**A tool carrying more than one press can swing wears a "!"** (`drawOverWarn`, js/ui/hud-draw.js) in the
 top-right corner of every well it sits in — the strip's, the pack's grid and the shelf's — a gold
 triangle with a dark stroke, bobbing a pixel so the eye catches it on a strip that is otherwise
 still. It is a warning and not a refusal: the build still fires along the row as far as the
@@ -1005,7 +1005,7 @@ burning rival still has to read as the rival it is; the embers themselves are pa
 
 **The three bars over a body are three colours, never three shades of one**: health in the side's
 paint, stamina white, the draw meter gold (the palette is one block above `drawHealthBar` in
-[js/draw-world.js](../../js/draw-world.js); the cursor's bow ring, the aim line and the mouse icon
+[js/draw/overhead.js](../../js/draw/overhead.js); the cursor's bow ring, the aim line and the mouse icon
 read the same two golds, so "full draw" is one colour everywhere).
 `drawHealthBar(cxp, topY, hp, maxHp, w, team, col?)` draws a small bar above every unit, always visible
 — every player (in `drawPlayer`), animals (in `drawAnimal`), robots (in `drawRobot`), a hurt
@@ -1311,7 +1311,7 @@ inlaid base with its icicles) and `drawDefeatDrift`. The drift's profile is a
 cosine under a flattening root: a plain cosine domes, and a dome leaves the ends of a body lying on
 it up in the air. It is drawn twice, once behind the body and once in front, so the champion lies
 **in** the snow rather than on a hill. `stampGrid(rows, pal, x, y, s, rim)` paints a char grid at
-any cell size, the shape [sprites.js](../../js/sprites.js) authors in, for the crown, the arrow and
+any cell size, the shape the [js/sprites/](../../js/sprites/) grid files author in, for the crown, the arrow and
 the stat glyphs (`WIN_ICONS`) that never earned a baked sprite; the sprites the screens do use are
 the champion bodies, `SPRITES.gearIcons`, `itemBow` and `itemGold` — that last one a **live
 canvas** whose frame `stepItemIcons()` stamps in each frame, like every item icon that moves
@@ -1466,7 +1466,7 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
 - Reticle `mode` (table `RETICLE`): **idle** white cross; **amove** red ring — the CLICK scheme's
   A is armed and the next left press lays the attack-move
   ([the click scheme](multiplayer.md#the-click-scheme); its rings on the snow are
-  `drawClickMarks`, draw-world.js); **lock** gold ring — E will work
+  `drawClickMarks`, js/draw/marks.js); **lock** gold ring — E will work
   the object under the pointer (`workTarget()` is non-null: tree, rock, berried bush),
   dimmed when it is beyond `WORK_REACH`; **ice** the same lock in pale blue over bare ice;
   **hunt** amber breathing ring over an animal, a rival player or a rival robot (`unitUnder`,
@@ -1889,7 +1889,7 @@ drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map
 ## Light and weather
 
 Everything over the finished world frame, in world pixels, in `renderLighting()`
-([js/draw-world.js](../../js/draw-world.js), the `light & weather` banner). It is the last world
+([js/draw/light.js](../../js/draw/light.js), the `light & weather` banner). It is the last world
 pass; the debug overlays are the only thing above it.
 
 **Nothing on the map emits light, and there is no light registry.** The `lights` array,
@@ -2130,7 +2130,7 @@ weather moves reads it rather than keeping a clock of its own:
   are thrown 8 frames or more over (the heart of a gust) and **36.8 %** are within a frame of
   standing straight up — the motion distributed as gusts and lulls rather than evenly. Under
   `WIND_STILL` it returns a flat 0 and every pine simply stands up.
-- `treeFrame(tx, ty)` (js/draw-world.js) turns that into an atlas frame. The pine's frames are a
+- `treeFrame(tx, ty)` (js/draw/ground.js) turns that into an atlas frame. The pine's frames are a
   **ladder** of leans, not a cycle of phases ([sprites.md](sprites.md)) — 0 thrown fully left, 23
   fully right, the middle upright — so the map is direct: `round(11.5 + sway * 11.5)`, **clamped**
   rather than wrapped, because at the end of its travel a crown stops rather than snapping back the

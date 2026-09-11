@@ -1,6 +1,6 @@
 ---
 name: concept-art
-description: Make a concept sheet of two or three candidate pixel-art looks for a new sprite (a character, an NPC, a creature, a building), render it at 6x with both team palettes and every facing beside a player for scale, hand the PNG to Noah, and only build the pick into js/sprites.js. Use whenever a new sprite is asked for, a look is rejected ("looks like a witch"), or Noah asks for options, concepts, or "let me pick".
+description: Make a concept sheet of two or three candidate pixel-art looks for a new sprite (a character, an NPC, a creature, a building), render it at 6x with both team palettes and every facing beside a player for scale, hand the PNG to Noah, and only build the pick into its owning file under js/sprites/. Use whenever a new sprite is asked for, a look is rejected ("looks like a witch"), or Noah asks for options, concepts, or "let me pick".
 ---
 
 # Concept art for a new sprite
@@ -8,12 +8,12 @@ description: Make a concept sheet of two or three candidate pixel-art looks for 
 Noah picks looks from a sheet, not from prose. The 2026-09-01 merchant went through two sheets
 (`docs/media/concepts/merchant-concepts-1.png` hoods, all rejected; `-2.png` hat / pack / apron,
 D picked) before anything shipped, and the pick took one message. Do this **before** writing
-any grid into `js/sprites.js`; never push a look he has not seen.
+any grid into `js/sprites/`; never push a look he has not seen.
 
 ## What a sheet is
 
 One self-contained HTML page (a template is beside this file: `sheet-template.html`) that
-holds the candidate grids as **ASCII rows** — the same grid language `js/sprites.js` uses, one
+holds the candidate grids as **ASCII rows** — the same grid language `js/sprites/*.js` uses, one
 char per pixel, `.` transparent, `o` outline — renders them onto a canvas at `S = 6` px per
 pixel, and POSTs the canvas to the dev server's screenshot sink so the PNG lands in
 `shot.png` at the repo root. Per candidate, both team colours (RED and BLUE rows), four poses
@@ -55,14 +55,16 @@ Rules that make a sheet honest:
    is gitignored and overwritten by every render, the PNG under `docs/media/concepts/` is the record.
 5. Hand it over with `SendUserFile` (display `render`) and a one-line description of each
    letter plus your own pick and why. Then **stop and wait** for the letter.
-6. Build the pick: copy its grids into `js/sprites.js` beside the sprite's palette (the
+6. Build the pick: copy its grids into the owning file under `js/sprites/` (a person into
+   characters.js, a beast into beasts.js, a building into buildings.js) beside the sprite's
+   palette, and add its key to that file's `Object.assign(SPRITES, {...})` at the bottom (the
    merchant's `merchDown`/`merchUp`/`merchSide` + `merchantPal` are the pattern - the grids
    and the palette letters go over verbatim), keep the sheet's letter in the code comment,
    verify in the game at a close-up (`DBG.setK(6, true)`, `DBG.hideUI = true`, walk up to
    it), update [docs/dev/sprites.md](../../../docs/dev/sprites.md), bump the patch, push.
 7. Delete the sheet HTML from the repo root once its PNG is saved, and never commit `shot.png`;
    the PNGs in `docs/media/concepts/` are the whole deliverable (Noah cleared the HTML sheets
-   out on 2026-09-02 - the grids live on in `js/sprites.js` for whatever shipped).
+   out on 2026-09-02 - the grids live on in `js/sprites/characters.js` for whatever shipped).
 
 ## Why this and not a drawing tool
 

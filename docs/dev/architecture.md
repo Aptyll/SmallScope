@@ -5,7 +5,7 @@ Read this before adding a file, moving a function between files, or wondering wh
 came from. The rules that survive in [CLAUDE.md](../../CLAUDE.md) are the ones you break without
 ever opening this page; everything here is reference.
 
-## Four legacy IIFEs, one generated data file, and the flat game code
+## Three legacy IIFEs, the sprite folder, one generated data file, and the flat game code
 
 [index.html](../../index.html) loads them in a fixed order. There is no bundler,
 no module system and no import statement anywhere — **the files communicate only through
@@ -16,7 +16,14 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | --- | --- | --- | --- |
 | [js/profile.js](../../js/profile.js) | ~230 | `PROFILE` | the local player profile - name, stats, which kinds it has held - and the only file that touches storage |
 | [js/font.js](../../js/font.js) | ~100 | `drawPixelText`, `drawPixelTextShadow`, `drawPixelTextOutline`, `pixelTextWidth` | the bitmap font |
-| [js/sprites.js](../../js/sprites.js) | ~2500 | `SPRITES` | every sprite as a char-grid + palette, baked at load |
+| [js/sprites/core.js](../../js/sprites/core.js) | ~120 | `SPRITES`, `SPR` | the empty sprite registry and the bake helpers (`bake`/`bakeSpan`/`flipH`/`bakeClips`/`liveIcon`/`wash`/`double`) plus the `TEAM_SKINS` table; every other sprite file is a private IIFE that bakes its grids and `Object.assign`s the keys it owns into `SPRITES` |
+| [js/sprites/characters.js](../../js/sprites/characters.js) | ~810 | → `SPRITES` | the player body plan in every team paint, the skater, the prone poses, the fish catch, the raider, the merchant |
+| [js/sprites/terrain.js](../../js/sprites/terrain.js) | ~1320 | → `SPRITES` | the pine and its 24 wind frames + the one atlas, stumps, rocks, ore, the mine, the bush, the dead snags, the den |
+| [js/sprites/beasts.js](../../js/sprites/beasts.js) | ~1290 | → `SPRITES` | the imp, rabbit, deer, wolf and bird clips, and the camps' alpha and dire wolf derived from the wolf |
+| [js/sprites/eagle.js](../../js/sprites/eagle.js) | ~200 | → `SPRITES` | the eagle's flap frames, each side's armour, the hit flash and the shadow |
+| [js/sprites/buildings.js](../../js/sprites/buildings.js) | ~560 | → `SPRITES` | wall/turret/generator/spawner in three tiers and each side's fittings, the net, scaffold, bay, worker bots, spikes, fire, torch |
+| [js/sprites/items.js](../../js/sprites/items.js) | ~750 | → `SPRITES` | goods and their icons: wood, stone, bag, the three animated goods and their live icons, the sack, the crate, the cards, the axe/bow/pick |
+| [js/sprites/icons.js](../../js/sprites/icons.js) | ~340 | → `SPRITES` | HUD art: the gear glyphs in four materials, the hearts, the cursor set |
 | [js/sfxdata.js](../../js/sfxdata.js) | ~40 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/audio.js](../../js/audio.js) | ~570 | `SFX` | synth, samples and music under one master dial |
 | [js/core.js](../../js/core.js) | ~250 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
@@ -36,20 +43,36 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/abilities.js](../../js/abilities.js) | ~640 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim, the telegraph and landing shapes every side sees, and their draw passes |
 | [js/ai.js](../../js/ai.js) | ~380 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
 | [js/sim.js](../../js/sim.js) | ~810 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
-| [js/draw-world.js](../../js/draw-world.js) | ~1160 | shared scope, no `window.*` export | the world's pixels: the prerendered ground, every entity's sprite pass, the flag and camp glyphs, lighting/weather/vignettes |
-| [js/render.js](../../js/render.js) | ~980 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
-| [js/ui.js](../../js/ui.js) | ~1950 | shared scope, no `window.*` export | the in-match HUD: radial wheel, brackets and prompts, minimap, the backpack, the character panel, the weapon strip, the weapon shelf, the drag, the hover tooltip |
-| [js/shop.js](../../js/shop.js) | ~700 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
-| [js/panels.js](../../js/panels.js) | ~820 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab, the PLAYER name panel |
-| [js/menu.js](../../js/menu.js) | ~1450 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
-| [js/screens.js](../../js/screens.js) | ~1160 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
+| [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the chest, the cairn) - first of the draw files, every other one calls `hash2` |
+| [js/draw/practice.js](../../js/draw/practice.js) | ~740 | shared scope, no `window.*` export | the practice arena's pixels only: the dummy and its meter, the training grounds, the ice parkour, the roll station, the archery track and the range bell |
+| [js/draw/overhead.js](../../js/draw/overhead.js) | ~200 | shared scope, no `window.*` export | the one arrow body, and the frame every unit wears over its head: health bar, level badge, sense mark, stun stars, the build reveal |
+| [js/draw/structs.js](../../js/draw/structs.js) | ~240 | shared scope, no `window.*` export | a building's pixels: the turret's rotating half and bolts, the bay and barracks overlays, the net, `structSprite`/`drawTiledStruct` |
+| [js/draw/bodies.js](../../js/draw/bodies.js) | ~710 | shared scope, no `window.*` export | every walking thing's sprite pass: a beast on its clip, a robot, the merchant, and `drawPlayer` with its gear marks, buff ring, snow cover, burial, ghost and held tool |
+| [js/draw/marks.js](../../js/draw/marks.js) | ~160 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, the flag family, what a body looks like as a dot |
+| [js/draw/light.js](../../js/draw/light.js) | ~590 | shared scope, no `window.*` export | light and weather over the finished frame: specks, cloud shadows, god rays, the reflected sky, and the pass that grades day into night |
+| [js/draw/render.js](../../js/draw/render.js) | ~1480 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
+| [js/ui/wheel.js](../../js/ui/wheel.js) | ~650 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key and pad prompts, the work/rack/bell/shop hints, the build list and its ghost |
+| [js/ui/minimap.js](../../js/ui/minimap.js) | ~200 | shared scope, no `window.*` export | the minimap: its rebuilt disc, masks, chrome and view arc, `renderMinimap` |
+| [js/ui/bag.js](../../js/ui/bag.js) | ~670 | shared scope, no `window.*` export | the backpack drawer's geometry and hit tests, `overHud`, the drag verbs and what a gesture answers with, the character panel, the SHIFT plate, `drawBag` |
+| [js/ui/strip.js](../../js/ui/strip.js) | ~640 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, HUD SIZE, every cell rect and refusal flash, the weapon shelf's geometry and drops, sending a cell across, the drag's press/move/release |
+| [js/ui/hud-draw.js](../../js/ui/hud-draw.js) | ~740 | shared scope, no `window.*` export | drawing the strip and the shelf: the xp bar, tier and mod plates, item icons, the cooldown sweep, the ability/pouch/food/gold cells, `drawHudStrip`, the scaled bakes, the shelf's wells, the drag ghost |
+| [js/ui/rail.js](../../js/ui/rail.js) | ~150 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
+| [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~390 | shared scope, no `window.*` export | the hover tooltip: `tipAt` and `drawTooltip` |
+| [js/ui/compose.js](../../js/ui/compose.js) | ~140 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
+| [js/ui/touch-plates.js](../../js/ui/touch-plates.js) | ~140 | shared scope, no `window.*` export | the pixels of a phone's controls: the plates, the two sticks, the rotate prompt |
+| [js/ui/shop.js](../../js/ui/shop.js) | ~1640 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
+| [js/ui/panels.js](../../js/ui/panels.js) | ~1380 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab, the PLAYER name panel |
+| [js/ui/menu.js](../../js/ui/menu.js) | ~2920 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
+| [js/ui/screens.js](../../js/ui/screens.js) | ~1370 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/boot.js](../../js/boot.js) | ~1330 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.
 
 ### Shared global scope
 
-The game code is **not** wrapped in an IIFE (it was, until the split began — tag `pre-split`).
+The game code is **not** wrapped in an IIFE (it was, until the split began — tag `pre-split`; the
+sprite files under js/sprites/ are the deliberate exception, each a private IIFE registering into
+`SPRITES`).
 It is flat top-level code in classic scripts: a top-level `function` declaration becomes a
 `window` property, and a top-level `let`/`const` becomes a global lexical binding visible **as a
 bare identifier** to every classic script loaded after it. That is the whole splitting mechanism
@@ -122,13 +145,19 @@ the site-by-site list is in [rendering.md](rendering.md#text-over-the-world).
 `<` was added for a resolution cycle that no longer exists — see
 [Known drift](checklists.md#known-drift) before deleting a glyph that looks unused.
 
-### sprites.js
+### js/sprites/
 
 Literal ASCII grids paired with palette objects, baked to offscreen canvases by `bake()` at load.
-Team colours, classes and building tiers are all palette swaps of shared grids, which is why a
-pose edit propagates further than it looks. **The file has a UTF-8 BOM and seven rows repairing a
-mangled byte** (one of the seven is currently a no-op) — re-saving it in another encoding corrupts
-the grids silently. All of it, including which sprites share which grid: [sprites.md](sprites.md).
+`core.js` loads first: it makes the empty `window.SPRITES` registry and `window.SPR`, the helpers
+(`bake`, `spansOf`, `bakeSpan`, `flipH`, `bakeClips`, `mapClips`, `liveIcon`, `wash`, `double`) plus
+the `TEAM_SKINS` table and `teamBuildPal`. Every other file in the folder is a **private IIFE** that
+destructures what it needs off `SPR`, keeps its grids and palettes to itself, and ends with
+`Object.assign(SPRITES, { ... })` for the keys it owns - the same move js/tools.js makes for its
+tool and bit art - so the seven art files load in any order after core and nothing reads another
+file's grid. Team colours, classes and building tiers are all palette swaps of shared grids, which
+is why a pose edit propagates further than it looks. The grids are **pure ASCII, byte-fragile art**:
+move a row whole, never re-wrap or re-indent one. All of it, including which sprites share which
+grid and which file holds what: [sprites.md](sprites.md).
 
 Anything drawn through `drawSpriteFlash()` must fit in **64×64** — it recolours through a shared
 64×64 scratch canvas and larger sprites clip.
@@ -152,19 +181,19 @@ under every sampled cue, one-shot samples decoded out of `SFXDATA`, and `SFX.mus
 `audio/music/` through one `HTMLAudioElement` per track. Master / MUSIC / SOUNDS dials, the cue
 list, the mixing targets and the track table: [gameplay.md](gameplay.md#audio).
 
-### The game files (core.js … boot.js)
+### The game files (core.js … boot.js, with js/draw/ and js/ui/)
 
-Twenty-three files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
+Thirty-nine files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
 organized only by `// ------ name` banners.
 **Keep every banner honest.** Find any function by its banner in [code-map.md](code-map.md)
 rather than grepping blind.
 
 **A file that decides things does not also draw them.** Every one of the sim files - core, mobile,
 player, input, gamepad, touch, world, nav, wildlife, structures, robots, actions, ai, sim -
-contains zero canvas calls; the pixels for what they own live in draw-world.js, render.js, ui.js
-and panels.js (the touch plates and sticks: the `touch controls` banner, ui.js; the pad glyphs:
-`drawPadGlyph`, panels.js). canvas.js is the exception that proves it: it owns the buffers
-themselves.
+contains zero canvas calls; the pixels for what they own live under **js/draw/** (the world) and
+**js/ui/** (the HUD and the screens; the touch plates and sticks: js/ui/touch-plates.js; the pad
+glyphs: `drawPadGlyph`, js/ui/panels.js), so the folder is the boundary. canvas.js is the
+exception that proves it: it owns the buffers themselves.
 
 **A feature's tuning constants live in the file that owns the feature**, directly above the code
 that reads them — `MONSTER`/`CAMP_*` in wildlife.js, `TUR_*` in structures.js, `PRONE_*` in actions.js. Only

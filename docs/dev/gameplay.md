@@ -189,7 +189,7 @@ A **projectile bit** is one shot: `path` (how it flies), `solid` (whether a wall
 ([knockback](#knockback-one-number-thrown-at-three-weights)), and
 `life`/`speed`/`dmg` as baselines. Optional `lit` is a light radius it carries in
 flight; optional `reach` widens every hit test past the tip (a bit with a *body* — the fist, the
-axe); optional `body` names the silhouette the shots pass draws it as (`BIT_BODY`, js/render.js);
+axe); optional `body` names the silhouette the shots pass draws it as (`BIT_BODY`, js/draw/render.js);
 optional `impact` names what it does where it *lands* (`BIT_IMPACT`, js/tools.js); and
 `bot: false` marks a kind no bot will load. A spent shot is simply gone — nothing lands to be
 picked back up.
@@ -275,7 +275,7 @@ is the teleport's whole rule: a request that hits nothing takes you nowhere.
   The tell is `warps` — the character stamped as a flat violet silhouette every `WARP_STEP` (11
   px) of the line crossed, up to `WARP_MAX` (14) of them, fading together over `WARP_FLASH_T`
   (0.34 s) and **never at the arrival**, because the body is already standing there
-  (`drawWarps`, js/render.js; aged in `updateFx`). Without the trail a teleport reads as a body
+  (`drawWarps`, js/draw/render.js; aged in `updateFx`). Without the trail a teleport reads as a body
   blinking out of existence rather than as a path.
 - **`chop`** — one chop into every tree within `AXE_CHOP_R` (26 px) of where the head stopped,
   the struck tile included. It is the same blow an E swing lands (`chopTree`, js/actions.js —
@@ -354,7 +354,7 @@ flight (a boomerang, a lob, an orbit) swings as a plain cut worth its damage; th
 the fittings you found can still go, not a second arsenal. Each cut leaves its wedge on the snow
 (`slashes`, `SLASH_T` 0.22 s, ticked by `updateSlashes` from `updatePlay`) — the outline in white,
 gold when it landed, with a bright edge sweeping across it — drawn by `drawSlashes` (js/abilities.js,
-called from js/render.js beside the E swing arcs), and the local player's draw grows the same wedge
+called from js/draw/render.js beside the E swing arcs), and the local player's draw grows the same wedge
 in place of the aim line (`drawAimLine`), so the reach the cut is about to have is on the ground
 before it lands. **The hand swings the sword itself**: the blade is drawn at its real 22 px length
 (`TOOL_HELD_ART`, baked as `toolHeld_<art>_<tier>` beside the 12 px bag icon, and used wherever the
@@ -433,7 +433,7 @@ everywhere between them and only a cell itself swallows a click. It is pinned by
 corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
 read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
-js/ui.js, scaled about the top-left corner at the strip's HUD SIZE
+js/ui/hud-draw.js and js/ui/strip.js, scaled about the top-left corner at the strip's HUD SIZE
 ([rendering.md](rendering.md#the-hud-strip)).
 
 Five marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: the ROW is
@@ -447,7 +447,7 @@ js/tools.js, aged in `updateFx`): every cell the last press SPENT flashes white 
 the new tier's ink for `SWAP_T` (1.1 s).
 
 The drag is one mechanism shared by the grid, the weapon slot and the shelf
-([UI banner](../../js/ui.js), `state.drag`): a press **arms** a pick-up and only travel past
+(the drag banners of [js/ui/strip.js](../../js/ui/strip.js), `state.drag`): a press **arms** a pick-up and only travel past
 `DRAG_SLOP` promotes it, so a tap on a berry still eats it
 while a drag off either one picks it up. A release over any well that will take it puts it there;
 over the rest of the HUD it goes home; **over the world it is thrown**, which is the only way to
@@ -503,7 +503,7 @@ the weapon well in the same red for the same 0.6 s.
 
 **Every move of an item answers in three places at once** — the ear, the hand and the well it
 landed in — and one function raises all three (`hudFx(kind, k, i, slot)`, the `what a gesture
-answers with` banner, js/ui.js). Before 3.22 the drag rang a bare `SFX` at eleven call sites and a
+answers with` banner, js/ui/bag.js). Before 3.22 the drag rang a bare `SFX` at eleven call sites and a
 *swap* was inaudible against a plain put-down; now a new well or a new gesture cannot end up with
 two of the three and nobody noticing.
 
@@ -572,7 +572,7 @@ bit, and only kinds at or under the given tier are in the pool.
 (or bought over the counter) goes into the tool's first free cell, and only what the tool cannot
 hold lands in the grid — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
 is why a FULL pack with an empty bit cell still magnetises a drop and still claims it. The drop
-pickup (js/sim.js) and `shopBuy` (js/shop.js) both go through the pair, so the ordinary way to
+pickup (js/sim.js) and `shopBuy` (js/ui/shop.js) both go through the pair, so the ordinary way to
 arm a find is to walk over it, and the drag is what you reach for to ARRANGE a build rather than
 what you must do to have one — which is half of why the [shelf](#the-weapon-shelf) is on screen
 at all times: a bit that loaded itself has to be seen loading itself. It fills a free cell
@@ -607,7 +607,7 @@ The counterweight to the pack being the overflow: **a tool that lands in the sno
 `shedBits(cell, x, y, hx, hy, p)` (js/tools.js) empties the row as the tool goes down, spawning
 every loaded bit as its own drop flung along `hx`/`hy` — whatever threw the tool — plus a
 `SHED_KICK` of its own, so what lies there is a body in a scatter of fittings. Both ground-drop
-paths call it: the [drag out onto the world](#the-weapon-shelf) (`throwCell`, js/ui.js) and the
+paths call it: the [drag out onto the world](#the-weapon-shelf) (`throwCell`, js/ui/bag.js) and the
 [death spill](#death-and-respawn) (`spillInventory`, js/player.js), which passes no heading at all
 because nobody threw that one.
 
@@ -633,7 +633,7 @@ later table adds under those two is covered on the day it is added.
 
 It is a **death** rule, not a tool rule, and `spillInventory` (js/player.js) is its only caller —
 both the pack loop and the weapon slot. A starting tool dragged out of the pack **on purpose**
-still lands and still lies there (`throwCell`, js/ui.js), so you may hand a teammate your sling;
+still lands and still lies there (`throwCell`, js/ui/bag.js), so you may hand a teammate your sling;
 one the world **rolled** as loot (`dropLoot`) is an ordinary find; one displaced by an
 [upgrade swap](#where-tools-and-bits-come-from) goes into the snow like anything else. Only what
 falls off a body evaporates.
@@ -650,7 +650,7 @@ loadout card) — which is why nothing on screen has to say "TIER 2". `tierPlate
 lookup and `itemTier(type)` the raw index. The top tier is the only one that moves: `tierShine`
 sweeps a highlight across its plate.
 
-**Which of the two kinds of bit it is is stated on that same plate**, by `modPlate` (ui.js),
+**Which of the two kinds of bit it is is stated on that same plate**, by `modPlate` (js/ui/hud-draw.js),
 called wherever a bit sits — the grid, the column, the cursor, the counter's wells, a tech node,
 the tooltip's own icon plate. A **projectile** keeps the flat square plate every carried item
 wears: it is a thing you fire. A **modifier** gets its plate hatched in the bit's own colour and
@@ -696,7 +696,7 @@ the bag (`spillInventory`) — bare, its bits scattered beside it
 bird hands back the starting one: you come back armed, but not as the player you were. What it
 does **not** leave is the starting kit itself: a SHORTBOW or LONGSWORD off a body evaporates rather
 than lying there for nobody ([a starting tool does not litter](#a-starting-tool-does-not-litter)). The gear pop-up's preview
-shows the weapon at the body's side (`drawGearPreview`, js/menu.js) — the other half of what a
+shows the weapon at the body's side (`drawGearPreview`, js/ui/menu.js) — the other half of what a
 class flies out with.
 
 ## Class abilities (keys 1-4)
@@ -786,7 +786,7 @@ pierce's and the charge's marching line, the stomp's ring, the slam's and the ex
 `TELE_COL` red, `TELE_HOT` gold for the last quarter, the inside hashing in as the landing nears
 (`castProg`, off `p.castMax`) — and every landing flashes the same shape in the blow's own colour
 for `AB_FX_T` (`abFx`, ticked in `updateAbilityWorld`). The shapes are `drawWedge`/`drawRing`/
-`drawTeleLine`, and the sword's sweep (`drawSlashes`, called from js/render.js beside the E swing
+`drawTeleLine`, and the sword's sweep (`drawSlashes`, called from js/draw/render.js beside the E swing
 arcs) is the same wedge. A telegraphed cast keeps the body facing the live aim the whole wind-up
 (`updateAbilities`), so the shape and the body agree about where it is going.
 
@@ -837,7 +837,7 @@ typed twice, so a retune can never leave the wiki lying.
   BITS (damage, weight, speed, lifespan, flight) and MODIFIERS (weight, and the first sentence
   of the blurb) — worn to gilded, each kind's icon on its own tier plate with the blue pip for "you
   have held one" (`PROFILE.techSeen`), and a hover raising the full card in the tooltip
-  (`tipKind`, ui.js). Until PATCH 2.90 this plank was a **TECH TREE**: the same kinds as an 8×3
+  (`tipKind`, js/ui/tooltip.js). Until PATCH 2.90 this plank was a **TECH TREE**: the same kinds as an 8×3
   grid of lineages, nothing written down but the tier names, every number read one hover at a
   time. The table replaced it because a page for learning is a page for reading numbers.
 
@@ -1014,7 +1014,7 @@ what a player sees (a stubby line, a pale meter) is exactly what they get. Bots 
 curve: `updateAI` holds to `bowCharge × k` before loosing.
 
 A shot in flight is drawn in its own pass (using `ex`/`ey`). A bit may name a **body** of its own
-and `BIT_BODY` (js/render.js) is the only place those names mean anything, so a new silhouette is
+and `BIT_BODY` (js/draw/render.js) is the only place those names mean anything, so a new silhouette is
 one row in `BITS` and one row there rather than an `if` in the shots pass: `tumble` is a spinning
 5×5 block (`drawTumbler`, the log), `mote` a breathing rimmed core with no bearing at all
 (`drawMote`, the wisp), `fist` and `axe` are ASCII maps in the arrow's own language stamped as a
@@ -1027,7 +1027,7 @@ over a white core, so the thing crossing the snow visibly does not obey it. Ever
 head, a 1 px collar in the bit's own `col` (the bit is readable from the collar; the shaft never
 recolours), a single-gold shaft, and swept swallow-tail feathers in `TEAMS[a.team].mark` edged
 with the team's `coatD` — so whose shot it is reads from the tail. `arrowBodyPx`
-(js/draw-world.js) rasterises it at the live bearing by **DDA** — the spine advances exactly one
+(js/draw/overhead.js) rasterises it at the live bearing by **DDA** — the spine advances exactly one
 pixel along the flight's dominant axis per step (a diagonal shaft is a clean 8-connected
 staircase, never a lumpy one with doubled cells), body columns are sampled onto that chain with
 structural pixels winning collisions (`ARROW_BODY` is priority-sorted at parse), and each vane
@@ -1072,7 +1072,7 @@ otherwise ends in a short perpendicular range-cap bar. A `lob` gets only the fir
 flight, where it is still on the bearing; a `boomer` or an `orbit` gets **no line at all**, since
 the only honest straight line for those is none — what they do is shown by the shot itself the
 moment it leaves. Colour follows the draw meter: gold charging, pale gold at full (`DRAW_COL` / `DRAW_FULL_COL`,
-draw-world.js).
+js/draw/overhead.js).
 
 The weapon is also drawn **on the player** by `drawHeldTool()` (called from `drawPlayer()`): at
 rest the hands hold the tool on the *selected slot*, in its own tier colour, so what someone is
@@ -1391,7 +1391,7 @@ kind's `SPRITES` entry carries and the frames a second each runs at. `setClip(a,
 beast in one and **restarts the loop**, so a sit-up always begins on the frame it was drawn to
 begin on; `stepClip(a, dt, rate)` advances it, `rate` being the caller's own gait multiplier —
 a wander is the same gallop run slower, not a second animation; and `clipFrame`
-(js/draw-world.js) is the one thing that turns `a.clip` + `a.animT` into a canvas.
+(js/draw/bodies.js) is the one thing that turns `a.clip` + `a.animT` into a canvas.
 
 | kind | its clips | set by |
 | --- | --- | --- |
@@ -1541,7 +1541,7 @@ seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, app
 `hurtUnit` — a shot, a roll and a stomp alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
 `abilityMoveMul`). The alpha's kill wears it `CAMP_BUFF_T` (90 s), the dire's bloods the team
 `CAMP_BUFF_EPIC_T` (120 s), and a fresh grant only ever extends what is left. It is worn as an
-**amber ring of twelve pips around the feet** (`drawBuffRing`, draw-world.js) that loses a pip
+**amber ring of twelve pips around the feet** (`drawBuffRing`, js/draw/bodies.js) that loses a pip
 at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
 goes out with the body on death. There is no HUD element for it: the ring is the read.
 
@@ -1660,7 +1660,7 @@ way, and why: [a starting tool does not litter](#a-starting-tool-does-not-litter
 offers rolled off the tool, bit and card pools, a **sell strip** anything in the pack can be
 dragged onto with a **SELL ALL** button at its end, a live **fish and berry market**, and a
 [restock road](#the-restock-road) counting down to the next turnover. The whole feature is
-[js/shop.js](../../js/shop.js) — the `market`, `the counter's stock`, `buying and selling` and
+[js/ui/shop.js](../../js/ui/shop.js) — the `market`, `the counter's stock`, `buying and selling` and
 `the shop panel` banners.
 
 The post is the **shop**; the MARKET is one corner of it, under its own rule on the panel, and it
@@ -1677,7 +1677,7 @@ at all and draws no health bar.
 ### Opening it
 
 `merchNear(p)` is the resolver — the nearest merchant within `SHOP_REACH` (34 px) of a body,
-either team's — and the `E SHOP` cap over it (`drawShopHint`, js/ui.js) is the same proximity
+either team's — and the `E SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
 prompt the practice armory's `E ARM` uses, drawn only when no [work target](#the-swing-tools-e)
 is in reach, exactly as the press is only taken then. The counter is a **panel, not a held wheel**:
 the press opens it and E, Escape, the X or **walking out of reach** shuts it (`updateMarket`
@@ -1693,7 +1693,7 @@ swallows it.
 four things stay lit above it — the ones a trade is made of: **the counter**, **the corner** (the
 weapon shelf and the pack drawer a sale is dragged out of), **the item on the cursor**, and **the
 [tooltip](rendering.md#the-hover-tooltip)** pricing whatever the pointer is on. The minimap, the
-hud strip and the world all go under. The mechanism is the draw ORDER in `renderUI` (js/ui.js) and
+hud strip and the world all go under. The mechanism is the draw ORDER in `renderUI` (js/ui/compose.js) and
 not the panel: a panel cannot dim what is drawn after it, so the minimap and the strip are drawn,
 then the wash, then the corner and the slab — which is why the corner is drawn in two places
 there. Everything painted after that block — the market's plates, the tooltip, a phone's plates —
@@ -1771,7 +1771,7 @@ at the price it sells it, so paying levels for a sale would turn two clicks into
 ### The fish and berry market
 
 **Fish and berries have a price that moves, and they are the only two things in the game that do.**
-`GOODS` (js/shop.js) is the whole table: `base` is what a thing is worth when nothing is
+`GOODS` (js/ui/shop.js) is the whole table: `base` is what a thing is worth when nothing is
 happening, `min`/`max` are rails it can never leave, `vol` is the ordinary step and `shock`
 the chance a step is a **lurch** instead — straight to `lo` or `hi` of where it stood.
 
@@ -1808,7 +1808,7 @@ A headline goes to **two places at once**, and a restock's does too:
 - the **event log** (not drawn; `DBG.events`) — `FISH SPIKE 34G`, `BERRIES CRASH 2G`,
   `THE MERCHANTS RESTOCK` — the match's own record, where everything else that happened to
   somebody already is;
-- a **plate top-right under the minimap** — the `market notices` banner in js/shop.js, drawn by
+- a **plate top-right under the minimap** — the `market notices` banner in js/ui/shop.js, drawn by
   `renderNotices` ([the plates](rendering.md#market-notices-the-plates-under-the-minimap)) —
   because a price is not something that happened to a player: it is the state of the world you are
   about to sell your bag into, and it has to arrive on screen, where the clock is.
@@ -1838,7 +1838,7 @@ tool — never an offer, a card, the sell target or the clock.
 
 **It is pinned clear of the corner**, and that rule is one sentence: **a counter may not stand on
 the pack it is sold out of** — a sale is a drag from that drawer into this slab. The weapon shelf
-and the pack drawer are in the top-left (`cornerClaim` / `cornerBottom`, js/ui.js), and the slab
+and the pack drawer are in the top-left (`cornerClaim` / `cornerBottom`, js/ui/strip.js), and the slab
 takes the room **beside** the corner where there is one and the room **under** it where there is
 not:
 
@@ -2006,7 +2006,7 @@ pickup path can genuinely refuse. Six helpers in the `players` banner are the en
 cell) and `bagPut(p, cell)` (an instanced cell into the first free slot, or false). Nothing outside
 them touches `p.bag` — `updateEat` (the meal landing), the fish catch, the drop pickup, the AI's food check
 and `spillInventory` all go through the six. The one deliberate exception is the **drag**
-([UI banner](../../js/ui.js)), which is moving cells between wells rather than storing items, and
+(the drag banners of [js/ui/strip.js](../../js/ui/strip.js)), which is moving cells between wells rather than storing items, and
 owns `p.bag[i]` directly for exactly the length of one gesture.
 
 **The four counting helpers are also where the pouch lives** (`isPouch(type)`): for a `pouch` kind
@@ -2178,7 +2178,7 @@ minus the burst and the floater.
 ## Base building
 
 **T opens the build list, and the ghost under the pointer is what a click lays.** The list
-(`drawBuildList`, the `build list` group in [ui.js](../../js/ui.js)) is a column under the weapon
+(`drawBuildList`, the `build list` group in [js/ui/wheel.js](../../js/ui/wheel.js)) is a column under the weapon
 shelf, one row a piece in `BUILD_ORDER` — wall, long wall, turret, generator, bot bay, fish net —
 each row its icon and its price (gold's colour while the purse covers it, red while not), the
 picked row rimmed gold. The mouse wheel walks the rows (the camera's zoom waits), a click on a row
@@ -2206,7 +2206,7 @@ pad's wheel (`buildOptionsAt`) still asks it.
 1): its `w` and `h` swap (`structW`/`structH` take the *object*, so a turned one answers turned —
 or a bare type name, unturned; `footprint(type, tx, ty, rot)`), and that is the whole of it. A
 3/4-view sprite cannot turn, so a type that rotates is `tiled`: each footprint tile wears one tile
-of the named type's own grid (`drawTiledStruct`, draw-world.js; `structSprite` resolves `tiled` the
+of the named type's own grid (`drawTiledStruct`, js/draw/structs.js; `structSprite` resolves `tiled` the
 way it resolves `art`). Today that is the **long wall** alone — two wall tiles laid as one piece
 for a little under two walls, 2×1 or 1×2, hurt and upgraded as one — and the bay stays 3×2.
 
@@ -2236,7 +2236,7 @@ goes on a hole instead of snow, and that flag — never the type name — is wha
 construction, and the last tier (`tiers.length - 1`) reports MAX TIER. Building and [gear](#gear)
 are the two gold sinks.
 
-Mechanics (the wheel in [ui.js](../../js/ui.js), the buildings in [structures.js](../../js/structures.js)):
+Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in [structures.js](../../js/structures.js)):
 
 - `state.wheel` (`{kind:'build'|'manage'|'rack'|'pkdie'|'agbell', tx, ty, seg, ax, ay}`) is the open wheel —
   `'rack'` is the practice armory, `'pkdie'` the parkour roll die and `'agbell'` the archery
@@ -2547,7 +2547,7 @@ twelve tiles) round the tile it stands on is the ground the order is about, and 
 says so. The sim side is the `team flags` banner in [robots.js](../../js/robots.js) plus the
 dispatch at the tail of `updateRobot()`; how an AI *player* answers one is the `flag` rung in
 [ai.js](../../js/ai.js) ([Bots](multiplayer.md#bots)); the wheel is the `radial wheel` banner in
-[ui.js](../../js/ui.js).
+[js/ui/wheel.js](../../js/ui/wheel.js).
 
 **The wheel is the order.** Right-click any tile that is not a build site or one of your own
 buildings (those keep their [build and manage wheels](#base-building)) and the **flag wheel**
@@ -2604,7 +2604,7 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
 - The middle mouse button does nothing now; the press-and-hold gesture went with the tile-read
   orders it previewed.
 
-**What it looks like** (the `what a flag looks like` group in [draw-world.js](../../js/draw-world.js);
+**What it looks like** (the `what a flag looks like` group in [js/draw/marks.js](../../js/draw/marks.js);
 `FLAG_TYPES`, in robots.js, holds the 7×7 glyph grids as camp-glyph-style rect lists):
 
 - **The ring**, `drawFlagRing`, flat on the snow under everything that walks it (`drawFlagRings`,
@@ -2766,7 +2766,7 @@ phone allows, so it can never get taller. The wheel over the
 open panel scrolls the open page (both the in-match ESC slab and the title's slide-in — the
 title also takes W/S and the arrows), a 1 px thumb on the right edge appears only when a page
 overflows, and the open page's name wears gold with a gold underline while the others sit dim
-until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (panels.js) off
+until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (js/ui/panels.js) off
 the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` anchors all read the
 same function, so a click can never disagree with a pixel. Rows keep the **14 px pitch**;
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can
@@ -2795,8 +2795,8 @@ LEAVE MATCH in a match and LEAVE PRACTICE in [practice](world.md#the-practice-ar
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
 leave, so it centres CLOSE alone). `settingsHit()` answers `'close'` (→ `settingsClose`: the
 in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`) and
-`'leave'` (→ `toLobby()`, js/screens.js, the death screen's own fade back to the title on this
-seed, or `leavePractice()`, js/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
+`'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on this
+seed, or `leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
 title world); `leavePlankRect()` is the second plank, `null` on the title.
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
@@ -2818,9 +2818,9 @@ active — a green pip beside that word says one is — the keyboard otherwise) 
 one. Every listing is **three columns** (`CTRL_COL_X`) grouped by what the verbs are for —
 moving and fighting, the kit and its panels, the match's own keys — so it fits the window
 without a scroll. The pad's and the touch listing are baked once (`bakeCtrlPad`/`bakeCtrlTouch` into
-`ctrlCvs`, panels.js); **the keyboard's is live**: each rebindable verb beside
+`ctrlCvs`, js/ui/panels.js); **the keyboard's is live**: each rebindable verb beside
 its key drawn as a **cap** — the same cap the work prompt wears in the world (`drawKeyCap`,
-ui.js), printing whatever key the action is bound to — and the fixed ones (the mouse's
+js/ui/wheel.js), printing whatever key the action is bound to — and the fixed ones (the mouse's
 buttons, ESC, SCROLL, F3, `.`) as plain gold text, since nothing about them can be pressed. A
 cap is a button: it lifts white on hover, a click sets it **listening** (the face pulses gold)
 and the next key down is its key; a key another cap holds swaps the two, a reserved key is
@@ -2836,14 +2836,14 @@ page is long enough that its scroll track appears.
 GAMEPAD draws each button as a picture (`drawPadGlyph`: a face button is a disc with its
 letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a cross with its
 pressed arm lit) beside its verb — moving and fighting, the abilities and the kit, then the
-match's buttons with the menu set under a rule — and its live readout under them. TOUCH draws each plate with the plate's own glyph (`drawTouchIcon`, ui.js) and
+match's buttons with the menu set under a rule — and its live readout under them. TOUCH draws each plate with the plate's own glyph (`drawTouchIcon`, js/ui/touch-plates.js) and
 the two sticks. The bindings themselves: [the three controllers](multiplayer.md#the-three-controllers).
 
 The primer is a **real HORN BOW carrying a real overload** — ARROW 2, FLAME 4, ARROW 2, THROWING
 LOG 8 against a tensile of 15 — run through `toolPlan` at bake time, so every number on it is the
 game's own arithmetic and the picture cannot drift from the weapon. The cells, the hatch on the
 modifier, the weight pips, the rail, the gold lead bar, the budget track and the "!" are the **same marks** the shelf and
-the weapon well draw in play (`modPlate` / `drawOverWarn`, ui.js, both of which take the context
+the weapon well draw in play (`modPlate` / `drawOverWarn`, js/ui/hud-draw.js, both of which take the context
 to paint so a bake can borrow them) — that is the whole point: what is learned here is recognised
 there. A gold arrow up the left edge is the firing order, each cell is annotated in its own bit's
 colour with the log's cell red and washed out, and two lines close it: one press fires every bit
