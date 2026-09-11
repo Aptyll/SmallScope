@@ -67,7 +67,15 @@
 <script src="js/abilities.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/sim.js"></script>
-<script src="js/draw-world.js"></script>
+<!-- js/draw/: the world's pixels, cut from the one draw-world.js. ground.js first (every
+     other draw file calls its hash2); render.js composes the frame and comes last. -->
+<script src="js/draw/ground.js"></script>
+<script src="js/draw/practice.js"></script>
+<script src="js/draw/overhead.js"></script>
+<script src="js/draw/structs.js"></script>
+<script src="js/draw/bodies.js"></script>
+<script src="js/draw/marks.js"></script>
+<script src="js/draw/light.js"></script>
 <script src="js/draw/render.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/ui/shop.js"></script>
