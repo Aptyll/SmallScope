@@ -756,6 +756,15 @@ function mmArcBand(prog) {
   return mmArc.cv;
 }
 
+// the world point under a screen point on the disc (null off it): the
+// inverse of the projection renderMinimap draws with, for the CLICK scheme's
+// walk-across-the-map (ckPoint, input.js)
+function mmWorldAt(sx, sy) {
+  const vp = viewPlayer(), s = mmScale();
+  const dx = sx - MM_CX, dy = sy - MM_CY;
+  if (Math.hypot(dx, dy) > MM_R) return null;
+  return { x: (vp.x / TILE + dx / s) * TILE, y: (vp.y / TILE + dy / s) * TILE };
+}
 function renderMinimap(now) {
   updateMinimap();
   const vp = viewPlayer();

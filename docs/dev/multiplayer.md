@@ -67,9 +67,10 @@ cmd           one-shot order {kind:'build'|'upgrade'|'demolish', tx, ty, id}
               not a queue), but it re-checks its own reach (shopCmd, js/shop.js)
 ```
 
-`sampleHumanInput(player)` (input banner) folds `keys`/`mouse` — and the two sticks, `pad.mx/my`
-and `touch.mx/my`, clamped in beside WASD — into player 0's struct once per step,
-and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
+`sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the two sticks, `pad.mx/my`
+and `touch.mx/my`, clamped in beside WASD — into player 0's struct once per step (under the
+[CLICK scheme](#the-click-scheme) the walk keys are gone and `ckStep` writes the walk, the aim and
+the auto-attack's fire edges into the same struct from its orders), and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
 [map](gameplay.md#the-m-map-does-not-pause) don't stop the sim and so don't zero the whole struct:
 each drops only the intents it swallows (the map keeps movement, the wheel keeps movement minus
 the roll). The keydown
@@ -116,23 +117,32 @@ SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
 verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the card
-draw, the inventory drawer, the sheet, the map, the standings, mute, pause — with the key each starts on, in the order the
-CONTROLS page lists them; `settings.binds` (action id → key name) is the live map, saved with
-the profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
-reserved key or a key two actions share falls back to its default). **Nothing compares a key
+draw, the inventory drawer, the sheet, the map, the standings, mute, pause, and the CLICK
+scheme's three of its own (attack-move, stop, the held flag wheel) — with the key each starts on
+per scheme (`key` on WASD, `ck` on CLICK; an action with neither is not on that scheme), in the
+order the CONTROLS page lists them. **The keyboard has two schemes and each keeps its own map**
+(`settings.scheme`, `SCHEMES`): `settings.binds` is the WASD scheme's (action id → key name) and
+`settings.bindsClick` the CLICK scheme's, `binds()` whichever is live, both saved with the
+profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
+reserved key or a key two actions share falls back to its default; `schemeActs`/`schemeKey`
+are the per-scheme roster and default). **Nothing compares a key
 event against a literal**: `keyIs(e, 'work')`, `keyHeld('slide')`, `moveDir(k)` (the four walk
 binds and the arrows, which every key-driven menu steps on — the title's planks, the death
-planks, the wiki, gear, class select, the settings slab) and `keyBound(k)` ask the binds, and
-every keybind indicator names an action and prints `keyCap(action)` (`keyCapShort` for a well's
-corner, where SPACE is SPC). What is *not* an action is fixed: Escape backs out of everything,
+planks, the wiki, gear, class select, the settings slab; under CLICK the arrows alone) and
+`keyBound(k)` ask the live binds, and every keybind indicator names an action and prints
+`keyCap(action)` (`keyCapShort` for a well's corner, where SPACE is SPC; an action the live scheme
+has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
 Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
 debug flips, the mouse buttons are the mouse's, and `keyReserved` refuses those and the
 browser's F row to a bind. A pad button and a touch plate name an *action* (`PAD_PLAY`,
-`TOUCH_BTNS`' `act`/`latch`) and resolve it through `actKey`, so a rebind moves all three
-controllers at once.
+`TOUCH_BTNS`' `act`/`latch`): the key event they build carries it (`e.act`, which `keyIs` reads
+before the key) and their held state is `actHeld`'s (which `keyHeld` reads beside `keys`), so a
+rebind moves all three controllers at once and neither scheme's map ever sits between a button
+and its verb — a pad on the CLICK scheme still works with X, because X names `work`, not E.
 
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
-([the panel](gameplay.md#settings)): a click sets it listening (`state.rebind` is the action,
+([the panel](gameplay.md#settings); the listing is the live scheme's, and its top row — WASD /
+CLICK — is the scheme switch, `KEY_ROWS`/`KEY_SCHEME`, panels.js): a click sets it listening (`state.rebind` is the action,
 `rebindStart`), the next key down is its key (`rebindKey`, first thing in `keyPress`), Escape calls
 it off, a reserved key is refused with the deny cue, and a key another action holds **swaps** —
 that action takes the old key (`setBind`) — so every action always has one key of its own and no
@@ -146,6 +156,51 @@ wheel, with a building of the player's own there — for a controller with no po
 build list's ghost with) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
 last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep rewriting the aim
 through it every frame so the reticle rides the body, until the mouse itself moves.
+
+### The CLICK scheme
+
+The keyboard's second scheme (`settings.scheme = 'click'`; the `click to move` banner, input.js),
+the League / StarCraft / Age of Empires grammar, built to stand alone: **the right button is the
+hand and no key walks the body** (WASD and the arrows are off the feet; a pad's or a finger's
+stick still walks, and a tilted stick drops the order it would fight but keeps the lock). Every
+gesture is an *order* on `ck.order` and the sim never learns which scheme is in hand — `ckStep`
+turns the order into the walk, the aim, the work and the fire edges of the same input struct a
+bot fills, once per step from `sampleHumanInput`.
+
+- **A right press on open ground walks there by route** (`navTo`, the bots' own walker, so the
+  same feet go round the same trees); a route that fails drops the order, per the pathfinding
+  rule. Holding the button drags the goal under the pointer (`ck.follow`). A right press on the
+  chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Seated on the roost
+  it is the hop, and the fall drifts toward the spot and walks on landing; in flight it is the
+  jump, with the same rule the jump key has.
+- **On a tree, a bush, an ice hole or a rival building it is a walk into reach and the swing**
+  (`workTargetAt`, the work target by tile), held until the thing is spent. On one of your own
+  buildings, a merchant or the practice furniture it is a walk into reach and the thing opening
+  (`ckUse`: the counter as a panel; the manage, armory, die and bell wheels as wheels left
+  standing, which the next right press picks from, or the press that walked up to them, held
+  and released on a wedge).
+- **On a rival body it is a CHASE with a LOCK** (`unitUnder`, the hunt reticle's own boxes):
+  the body walks into its tool's reach (`ckReach`: a blade's reach, a bow's flight at the
+  auto-draw) and stands at `ckHoldR` (`CK_HOLD_BOW` 90 px, or the blade's reach), and while the
+  hand is off the button the tool draws and looses at the target by itself — `CK_AUTO_DRAW` 0.7
+  of the full draw, a NORMAL bot's own loose — with a clear line (`aiLineClear`) and the target
+  inside reach. The hand's own draw aims at the lock too, the assist, so a full draw is still the
+  reward for holding. **Abilities never take the lock**: they cast at the pointer, the skillshot
+  grammar (for that step the aim is the pointer and an auto-draw holds a step). The dodge rolls
+  toward the pointer, one rule.
+- **A (`amove`) arms the pointer** (the `amove` reticle) and the next left press is an
+  **attack-move**: walk there, lock the first foe seen within `CK_ACQ_R` (160 px) on the way —
+  a rival player through `seenAt`, a rival robot, a camp's monster, never a deer — chase it,
+  and walk on when it is down. On a body, that body. **S (`stop`) drops the lot**, and so does a
+  new order, a death and the scheme switch; Escape disarms A. **G (`flag`) holds the flag wheel**
+  open over the pointer and its release plants, the pad's R3 grammar.
+- **The balance of the assist:** a locked shot goes where the target *is*, never led, so a
+  strafing rival at range is missed where a hand would lead it; the lock holds only to
+  `CK_LOCK_R` (240 px) and through `seenAt`, so cover and GHOSTSTEP break it (`ckSees`); the
+  auto-draw is a bot's, under the hand's; and a tool with nothing to swing fires nothing.
+- **What the eye gets** (`drawClickMarks`, draw-world.js): a ring blooms and fades where the
+  order landed — white for a walk, gold for a job, red for a fight (`CK_COL`) — and a breathing
+  ring in the foe's ink sits under a locked target's feet. Nothing is written.
 
 **The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events. Which
 pad, out of everything the browser lists, is `padFind`: one with a button down or its left stick

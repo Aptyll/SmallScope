@@ -1677,7 +1677,12 @@ window.DBG = {
   // so an AZERTY board can be staged without one. keyRows is where every
   // cap on the CONTROLS page sits, listing-local.
   KEY_ACTIONS, setBind, resetBinds, rebindStart, keyName, keyLabel, keyCap, mendBinds,
-  get binds() { return settings.binds; },
+  get binds() { return binds(); }, // the live scheme's map
+  // the CLICK scheme (input.js): its state, the two presses and the pickers
+  ck, ckOn, ckClear, ckRightPress, ckRightRelease, ckArmedPress, ckReach: (p) => ckReach(p || player),
+  ckAcquire: (p) => ckAcquire(p || player), ckSees: (t, p) => ckSees(p || player, t), unitUnder, mmWorldAt,
+  // the four entry points a pad and a plate press through, and their held state
+  keyPress, keyRelease, actHeld, settingsLayout,
   keyRows: () => keyRowsLayout(),
   get settingsRows() {
     const L = settingsLayout();

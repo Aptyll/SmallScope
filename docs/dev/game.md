@@ -150,7 +150,9 @@ population that walkers on the ice and nets draw down and a trickle refills.
 [Base building](gameplay.md#base-building), [Ice holes and fishing](world.md#ice-holes-and-fishing).
 
 **Right-click anywhere and the flag wheel offers four orders — ATTACK, DEFEND, GATHER, RALLY — and
-the ring on the snow is the ground the order covers.** One flag per player, read by the whole
+the ring on the snow is the ground the order covers** (on the keyboard's CLICK scheme, where the
+right button walks and orders the body itself, the wheel is held on G instead:
+[the click scheme](multiplayer.md#the-click-scheme))**.** One flag per player, read by the whole
 side: every worker bot the planter's bays roll out, and every AI teammate. Bots fly flags of
 their own — a bot's flag is only ever its own decision made visible — and join a teammate's
 rather than twin it, but **a human's flag is the side's whole plan**: while it stands every

@@ -74,7 +74,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the physical key -> game key name translation (e.code, AZERTY-proof), and what a key prints on screen (the layout map) | `CODE_KEY`, `keyName`, `KEY_LABEL`, `keyLabel`, `kbLayout` | `keys and binds` |
-| the rebindable actions, their defaults, the live binds and how anything asks for a key | `KEY_ACTIONS`/`KEY_ACT`, `settings.binds`, `mendBinds`, `actKey`, `keyIs`/`keyHeld`/`keyBound`, `moveDir`, `keyCap`/`keyCapShort`, `keyReserved` | `keys and binds` |
+| the rebindable actions, their defaults per scheme, the two bind maps and the live one, how anything asks for a key, and a pad's or a plate's held actions | `KEY_ACTIONS`/`KEY_ACT` (`key` / `ck`), `SCHEMES`, `schemeKey`/`schemeActs`, `settings.binds`/`settings.bindsClick`/`binds()`, `mendBinds`, `actKey`, `actHeld`, `keyIs`/`keyHeld`/`keyBound`, `moveDir`, `keyCap`/`keyCapShort`, `keyReserved` | `keys and binds` |
 | a cap listening for its key, the swap on a conflict, the reset | `state.rebind`, `rebindStart`, `rebindKey`, `setBind`, `resetBinds`, `bindsDefault`, `rebindLive` | `keys and binds` |
 | the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad / touch) | `input` |
 | what a key does, what a button does - the four entry points every controller presses through | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease` | `input` |
@@ -82,6 +82,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | telling the HAND something happened - a pad's rumble, a phone's buzz, one call over all three controllers | `HAPTIC`, `haptic` (its caller: `hudFx`, ui.js; its off switch: the RUMBLE row, `SET_TABS` panels.js) | `haptics` |
 | the zoom wheel, the listeners | the `addEventListener` block | `input` |
 | folding keys, mouse and both sticks into player 0's struct | `sampleHumanInput` | `input` |
+| the CLICK scheme: its state and constants, the right press and its release, the armed left press, what an order does per step (the walk, the chase and lock, the auto-attack, a use), who an attack-move takes, how far the tool reaches | `ck`, `CK_*`, `ckOn`/`ckClear`/`ckOrder`, `ckPoint`, `merchUnder`, `ckRightPress`/`ckRightRelease`, `ckArmedPress`, `ckSees`, `ckAcquire`, `ckReach`/`ckHoldR`, `ckUse`, `ckStep` (the rings: `drawClickMarks`, draw-world.js; the armed reticle: `cursorInfo`, render.js; the scheme row: `KEY_ROWS`/`KEY_SCHEME`, panels.js) | `click to move` |
 
 ## js/gamepad.js
 
@@ -180,7 +181,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what a click / E / space actually does, and the work the hands take with no key (a tree, a berried bush in reach) | `clickAction`, `tryWork`, `workTarget`, `startSwing`, `autoToolFor`, `autoPrio`/`AUTO_PRIO_*`, `autoTarget`, `autoWork`, `tryDodge`, `hitObject`, `crackIce` (what a click FIRES: `fireTool`, tools.js; the fish half: `autoFish`, tools.js) | `actions` |
+| what a click / E / space actually does, and the work the hands take with no key (a tree, a berried bush in reach) | `clickAction`, `tryWork`, `workTarget`/`workTargetAt` (by tile: the CLICK scheme's right button), `startSwing`, `autoToolFor`, `autoPrio`/`AUTO_PRIO_*`, `autoTarget`, `autoWork`, `tryDodge`, `hitObject`, `crackIce` (what a click FIRES: `fireTool`, tools.js; the fish half: `autoFish`, tools.js) | `actions` |
 | one chop into a standing tree - gold, stump, fell payout, loot roll, jackpot - whatever landed it | `chopTree` | `actions` (above `hitObject`; its other caller is `BIT_IMPACT.chop`, tools.js) |
 | the tuning for everything a player does: the three SWING tools, the shot trail, E's reach, the roll, prone | `SWING_TOOLS`/`SWING_*`, `BOW_Y`, `ARROW_*`, `WORK_REACH`, `STRUCT_HIT_DMG`, `ROLL_*`/`TACKLE_*`, `PRONE_*`, `AMBUSH_MUL` | `actions` (its head; the two kit baselines `BOW_CHARGE`/`BOW_NOCK`: `players`, player.js; the weapon's own tuning: `TOOLS`/`BITS`, tools.js) |
 | the roll as a hit: the sweep and the tackle | `rollSweep`, `rollTackle`, `tackleObject`, `tackleObjAhead`, `rollPow`, `rollDmg` | `actions` › `the roll as a hit` |
@@ -190,7 +191,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | which buildings an AREA effect reaches, and whose they are | `structsNear`, `structFoe` | `status effects` (beside `unitsNear`/`unitFoe`, which they mirror) |
 | every way of hurting the practice dummy (E, every bit, the tackle), and the meter's combo ledger | `hitDummy` | `actions` (its tail; the dummy itself: `practice arena`, world.js; the plate: `drawDummyMeter`, draw-world.js) |
 | **the one blow every kind of unit takes** - a player, an animal, a worker bot | `hurtUnit` | `status effects` (its per-kind ends: `damagePlayer` player.js, `hurtAnimal` wildlife.js, `hurtRobot` robots.js) |
-| every living thing in a circle an area effect may touch, in one list | `unitsNear`, `unitsHit` (blows only), `unitFoe`, `unitTeam`, `unitAlive`, `unitMidY`, `isAnimalUnit` | `status effects` › `what a unit IS` |
+| every living thing in a circle an area effect may touch, in one list; and the rival body under a POINTER, by each kind's box (the hunt reticle and the CLICK scheme's right button) | `unitsNear`, `unitsHit` (blows only), `unitFoe`, `unitTeam`, `unitAlive`, `unitMidY`, `isAnimalUnit`, `unitUnder` | `status effects` › `what a unit IS` |
 | asking those two on behalf of a THING in the world (a net, a shot) rather than a body | `sideOf` | `status effects` › `what a unit IS` (its kill-credit half: `abCredit`, abilities.js) |
 | putting a state ON a body - the one writer for each | `stunUnit`, `rootUnit`, `slowUnit`, `netUnit`, `markUnit`, `igniteUnit` | `status effects` › `the states a unit can be under` |
 | what a damage TYPE is, and the fire that outlives its blow | `DMG_TYPES`, `BURN_T`/`BURN_DPS`/`BURN_TICK`/`BURN_MAX`, `igniteUnit`, `updateBurn`, `douseUnit` | `status effects` › `fire` (the bits that deal it: `BITS.flame`/`pyre`/`cinder`, tools.js; the exemption from the roll’s and the respawn’s i-frames: `DOT_CAUSE`, player.js) |
@@ -320,7 +321,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | radial menu geometry and hit math | `wheelSpan`, `wheelAng`, `wheelOptions`, `wheelLayout`, `resolveWheel` | `radial wheel` |
 | brackets, the E prompt (never over what the hands take on their own), the fish brackets, wheel pixels | `drawSelection`, `drawWorkHint`, `drawFishHint`, `renderWheel`, `drawWheelHub`, `drawWheelStick` | `selection, hints & wheel` |
-| HUD and minimap | `renderUI`, `renderMinimap`, `updateMinimap` (throttled to `MM_REBUILD` ticks), `mmChrome`/`mmArcBand` (the disc's baked chrome and cached day/night arc band) | `UI` (the disc's per-tile colour comes from `objMapColor(o)`: `world`, world.js; the marks over it: `drawMap*`, draw-world.js) |
+| HUD and minimap (and the disc's inverse projection, for a walk ordered on it) | `renderUI`, `renderMinimap`, `mmWorldAt`, `updateMinimap` (throttled to `MM_REBUILD` ticks), `mmChrome`/`mmArcBand` (the disc's baked chrome and cached day/night arc band) | `UI` (the disc's per-tile colour comes from `objMapColor(o)`: `world`, world.js; the marks over it: `drawMap*`, draw-world.js) |
 | is the pointer over HUD that owns its own clicks, rather than over the world | `overHud` | `UI` (its caller is `openFlagWheel`, input.js) |
 | the `E SHOP` cap over a merchant in reach | `drawShopHint` | `selection, hints & wheel` (the resolver and everything behind it: `merchNear`, shop.js) |
 | the backpack: the inventory DRAWER under the weapon shelf top-left, shut until B / L3 / the small arrow under the tool cell (the counter holds it open), sliding out from under the tab; its twelve small cells, the refusal flash, the full-bag amber | `HUD_CELL` (the one well size the strip and the shelf share), `BAG_CELL`/`BAG_GAP`/`BAG_PAD`/`BAG_BG`/`BAG_WELL`/`BAG_TAB_H`/`BAG_SLIDE_T`, `bagEase` (chases `bagOpenNow` in `updateFx`, sim.js), `bagOpenNow`, `bagTabRect`, `bagFrameRect`, `bagCellRect`, `bagCellPlate`, `cornerMouse` (the HUD SIZE map about the top-left corner), `bagHit`, `bagClick`, `bagDenied`, `drawFoodClock`, `drawBag` | `UI` › `the backpack` |

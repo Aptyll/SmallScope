@@ -139,7 +139,7 @@ function touchDown(id, x, y) {
   if (touchOverlay()) { touch.fingers.set(id, touchPtr(id, x, y)); return; }
   // free play: the minimap is the map key, the HUD is the mouse, the two
   // halves of the world are the two sticks
-  if (Math.hypot(x - MM_CX, y - MM_CY) <= MM_R + 7) { SFX.unlock(); keyPress({ key: actKey('map'), repeat: false }); touch.fingers.set(id, f); return; }
+  if (Math.hypot(x - MM_CX, y - MM_CY) <= MM_R + 7) { SFX.unlock(); keyPress({ key: actKey('map'), act: 'map', repeat: false }); touch.fingers.set(id, f); return; }
   if (overHud(x, y)) { touch.fingers.set(id, touchPtr(id, x, y)); return; }
   if (x < VIEW_W / 2) { if (!touchFinger('move')) f.kind = 'move'; }
   else if (!touchFinger('aim')) { f.kind = 'aim'; fireDown(); }
@@ -182,8 +182,12 @@ function touchBtnPress(f, id) {
   const b = TOUCH_BTNS[id];
   touch.held[id] = true;
   SFX.unlock();
-  if (b.act || b.key) { const k = b.act ? actKey(b.act) : b.key; keys[k.toLowerCase()] = true; keyPress({ key: k, repeat: false }); }
-  else if (b.latch) { const k = actKey(b.latch).toLowerCase(); keys[k] = !keys[k]; }
+  // a plate names an ACTION: the event carries it (e.act) and its held state
+  // is actHeld's (input.js), so a keyboard scheme's map never sits between
+  // the plate and its verb; a bare key (Escape) is pressed as itself
+  if (b.act) { actHeld[b.act] = true; keyPress({ key: actKey(b.act), act: b.act, repeat: false }); }
+  else if (b.key) { keys[b.key.toLowerCase()] = true; keyPress({ key: b.key, repeat: false }); }
+  else if (b.latch) actHeld[b.latch] = !actHeld[b.latch];
   else if (b.zoom) kWant = Math.max(kMin(), Math.min(kMax(), kWant + b.zoom));
   else if (b.gesture === 'wheel') { pointerMove(f.x, f.y, 'touch'); f.gesture = openWheelNear(player, f.x, f.y); }
   else if (b.gesture === 'flag') { pointerMove(f.x, f.y, 'touch'); f.gesture = openFlagWheel(); }
@@ -191,7 +195,8 @@ function touchBtnPress(f, id) {
 function touchBtnRelease(f, id) {
   const b = TOUCH_BTNS[id];
   touch.held[id] = false;
-  if (b.act || b.key) { const k = b.act ? actKey(b.act) : b.key; keys[k.toLowerCase()] = false; keyRelease({ key: k }); }
+  if (b.act) { actHeld[b.act] = false; keyRelease({ key: actKey(b.act), act: b.act }); }
+  else if (b.key) { keys[b.key.toLowerCase()] = false; keyRelease({ key: b.key }); }
   else if (b.gesture && f.gesture) { if (state.wheel) { resolveWheel(); state.wheel = null; } } // build and flag wheels alike
 }
 

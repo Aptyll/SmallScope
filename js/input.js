@@ -64,51 +64,81 @@ function keyLabel(k) {
 // compares a key event against a literal: keyIs / keyHeld ask the binds, and
 // a pad button or a touch plate names an ACTION (PAD_PLAY, TOUCH_BTNS) and
 // presses whatever key it holds, so a rebind moves all three controllers.
+//
+// TWO SCHEMES, TWO MAPS. `key` is the action's key on the WASD scheme and
+// `ck` its key on the CLICK scheme (settings.scheme; the scheme itself is
+// the `click to move` banner below): an action with no key on a scheme is
+// not on that scheme at all - the four walk keys and the harvest key are the
+// right button's under CLICK, and STOP, ATTACK MOVE and the held FLAG WHEEL
+// key have no WASD life. Each scheme keeps its own binds (settings.binds,
+// settings.bindsClick), so a rebind on one never moves the other, and
+// binds() is whichever is live. CLICK's defaults are the genre's: QWER the
+// abilities (R the big one), A the attack-move, S the stop, D and F the two
+// meals, G the ping wheel, C the sheet.
 const KEY_ACTIONS = [
   { id: 'up', verb: 'MOVE UP', key: 'w' }, { id: 'left', verb: 'MOVE LEFT', key: 'a' },
   { id: 'down', verb: 'MOVE DOWN', key: 's' }, { id: 'right', verb: 'MOVE RIGHT', key: 'd' },
-  { id: 'ab1', verb: 'ABILITY 1', key: '1' }, { id: 'ab2', verb: 'ABILITY 2', key: '2' },
-  { id: 'ab3', verb: 'ABILITY 3', key: '3' }, { id: 'ab4', verb: 'ABILITY 4', key: '4' },
-  { id: 'dodge', verb: 'DODGE', key: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift' }, { id: 'work', verb: 'HARVEST', key: 'e' },
-  { id: 'berry', verb: 'EAT BERRY', key: 'q' }, { id: 'fish', verb: 'EAT FISH', key: 'f' },
-  { id: 'card', verb: 'DRAW CARD', key: 'c' }, { id: 'bag', verb: 'INVENTORY', key: 'b' },
-  { id: 'char', verb: 'CHARACTER', key: 'g' },
-  { id: 'build', verb: 'BUILD', key: 't' }, { id: 'rotate', verb: 'ROTATE', key: 'r' },
-  { id: 'map', verb: 'WORLD MAP', key: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab' },
-  { id: 'mute', verb: 'MUTE', key: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p' },
+  { id: 'ab1', verb: 'ABILITY 1', key: '1', ck: 'q' }, { id: 'ab2', verb: 'ABILITY 2', key: '2', ck: 'w' },
+  { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
+  { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
+  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift' }, { id: 'work', verb: 'HARVEST', key: 'e' },
+  { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
+  { id: 'flag', verb: 'FLAG WHEEL', ck: 'g' },
+  { id: 'card', verb: 'DRAW CARD', key: 'c', ck: 'z' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
+  { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
+  { id: 'build', verb: 'BUILD', key: 't', ck: 't' }, { id: 'rotate', verb: 'ROTATE', key: 'r', ck: 'x' },
+  { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab', ck: 'Tab' },
+  { id: 'mute', verb: 'MUTE', key: 'n', ck: 'n' }, { id: 'pause', verb: 'PAUSE', key: 'p', ck: 'p' },
 ];
 const KEY_ACT = {};
 for (const a of KEY_ACTIONS) KEY_ACT[a.id] = a;
+const SCHEMES = ['wasd', 'click'];
+function schemeKey(a, scheme) { return (scheme || settings.scheme) === 'click' ? a.ck : a.key; } // the action's default on a scheme, or undefined
+function schemeActs(scheme) { return KEY_ACTIONS.filter((a) => schemeKey(a, scheme)); }       // the actions a scheme has
+function binds() { return settings.scheme === 'click' ? settings.bindsClick : settings.binds; } // the live map
 // keys no bind may take: the fixed jobs above, and the browser's F row
 function keyReserved(k) { return k === 'Escape' || k === 'Enter' || k === 'Backspace' || k === '.' || k === 'Meta' || /^(Arrow|F\d)/.test(k); }
-settings.binds = {};
-for (const a of KEY_ACTIONS) settings.binds[a.id] = a.key;
+settings.binds = {}; settings.bindsClick = {};
+for (const a of KEY_ACTIONS) { if (a.key) settings.binds[a.id] = a.key; if (a.ck) settings.bindsClick[a.id] = a.ck; }
 // a loaded profile's binds made whole (boot.js, after loadSettings): a bind an
 // action never had, a reserved key or a key two actions share falls back to
 // the default
 function mendBinds() {
-  const s = settings.binds && typeof settings.binds === 'object' ? settings.binds : {};
-  const out = {}, used = {};
-  for (const a of KEY_ACTIONS) {
-    const k = s[a.id];
-    out[a.id] = typeof k === 'string' && k && !keyReserved(k) && !used[k] ? k : a.key;
-    used[out[a.id]] = true;
-  }
-  settings.binds = out;
+  const mend = (map, scheme) => {
+    const s = map && typeof map === 'object' ? map : {};
+    const out = {}, used = {};
+    for (const a of schemeActs(scheme)) {
+      const k = s[a.id];
+      out[a.id] = typeof k === 'string' && k && !keyReserved(k) && !used[k] ? k : schemeKey(a, scheme);
+      used[out[a.id]] = true;
+    }
+    return out;
+  };
+  settings.binds = mend(settings.binds, 'wasd');
+  settings.bindsClick = mend(settings.bindsClick, 'click');
+  if (!SCHEMES.includes(settings.scheme)) settings.scheme = 'wasd';
 }
 // an action's key ('work' -> 'e'), or the bare name of a key that is no
 // action's (Escape) - what a pad button and a plate resolve through
-function actKey(a) { return settings.binds[a] || a; }
-function keyIs(e, a) { return e.key === settings.binds[a]; }           // is this key event the action's key?
-function keyHeld(a) { return !!keys[settings.binds[a].toLowerCase()]; } // is the action's key down right now?
-function keyBound(k) { for (const a of KEY_ACTIONS) if (settings.binds[a.id] === k) return true; return false; }
+function actKey(a) { return binds()[a] || settings.binds[a] || a; }
+// A pad button and a touch plate name an ACTION, and the event they build
+// carries it (e.act): a plate is not a key on either scheme's map, so a map
+// never gets between a pad and its verb. Their held state lives in actHeld
+// beside the keyboard's `keys`. The keyboard's own events carry only a key,
+// read against the live map.
+const actHeld = {};
+function keyIs(e, a) { return e.act !== undefined ? e.act === a : e.key === binds()[a]; }              // is this key event the action's?
+function keyHeld(a) { const k = binds()[a]; return !!actHeld[a] || (!!k && !!keys[k.toLowerCase()]); } // is the action down right now?
+function keyBound(k) { const b = binds(); for (const a in b) if (b[a] === k) return true; return false; }
 // a lowercase key as a menu direction: the four walk binds and the arrows,
-// which every key-driven menu steps on (menuKey, deadKey, settingsKey ...)
+// which every key-driven menu steps on (menuKey, deadKey, settingsKey ...) -
+// the CLICK scheme has no walk binds, so there the arrows alone step
 function moveDir(k) {
-  if (k === 'arrowup' || k === settings.binds.up.toLowerCase()) return 'up';
-  if (k === 'arrowdown' || k === settings.binds.down.toLowerCase()) return 'down';
-  if (k === 'arrowleft' || k === settings.binds.left.toLowerCase()) return 'left';
-  if (k === 'arrowright' || k === settings.binds.right.toLowerCase()) return 'right';
+  const b = binds(), is = (a) => !!b[a] && k === b[a].toLowerCase();
+  if (k === 'arrowup' || is('up')) return 'up';
+  if (k === 'arrowdown' || is('down')) return 'down';
+  if (k === 'arrowleft' || is('left')) return 'left';
+  if (k === 'arrowright' || is('right')) return 'right';
   return null;
 }
 // what a keybind indicator prints for an action: the bound key's face, or
@@ -118,11 +148,14 @@ function keyCap(a) {
   if (a === 'esc') return 'ESC';
   if (a === 'enter') return 'ENTER';
   if (a === 'click') return 'CLICK';
+  // an action the live scheme has no key for is the right button's there
+  // (the walk and the harvest, under CLICK)
   if (a === 'move') {
-    const l = ['up', 'left', 'down', 'right'].map((d) => keyLabel(settings.binds[d]));
+    if (!binds().up) return 'RMB';
+    const l = ['up', 'left', 'down', 'right'].map((d) => keyLabel(binds()[d]));
     return l.every((s) => s.length === 1) ? l.join('') : l.join('/');
   }
-  return keyLabel(settings.binds[a]);
+  return binds()[a] ? keyLabel(binds()[a]) : 'RMB';
 }
 // ...and its short form for a well's corner, where two or three characters fit
 const KEY_SHORT = { SPACE: 'SPC', SHIFT: 'SHF', CTRL: 'CTL', ENTER: 'ENT', CAPS: 'CAP', DOWN: 'DN', LEFT: '<', RIGHT: '>', BKSP: 'BK' };
@@ -145,14 +178,14 @@ function rebindKey(e) {
   SFX.place();
 }
 function setBind(a, k) {
-  const old = settings.binds[a];
-  for (const b of KEY_ACTIONS) if (b.id !== a && settings.binds[b.id] === k) settings.binds[b.id] = old;
-  settings.binds[a] = k;
+  const b = binds(), old = b[a];
+  for (const id in b) if (id !== a && b[id] === k) b[id] = old;
+  b[a] = k;
   for (const n in keys) keys[n] = false;
 }
-function bindsDefault() { return KEY_ACTIONS.every((a) => settings.binds[a.id] === a.key); }
+function bindsDefault() { return schemeActs().every((a) => binds()[a.id] === schemeKey(a)); }
 function resetBinds() {
-  for (const a of KEY_ACTIONS) settings.binds[a.id] = a.key;
+  for (const a of schemeActs()) binds()[a.id] = schemeKey(a);
   for (const n in keys) keys[n] = false;
   saveSettings();
 }
@@ -220,6 +253,16 @@ function keyPress(e) {
   // the ESC slab has the arrows while it is up: they page and scroll it
   // (settingsKey, js/panels.js) - what a pad's bumpers and dpad reach it by
   if (state.settingsOpen && settingsKey(e.key.toLowerCase())) return;
+  // the CLICK scheme's own keys (the `click to move` banner): S drops every
+  // order and the lock, A arms the pointer for an attack-move - the next
+  // left press lays it, A again or Escape disarms - and G holds the flag
+  // wheel open over the pointer, the pad's R3 grammar; its release plants
+  // (keyRelease)
+  if (ckOn() && !e.repeat) {
+    if (keyIs(e, 'stop')) { ckClear(); SFX.unlock(); }
+    if (keyIs(e, 'amove') && !player.dead && !state.settingsOpen) { ck.arm = !ck.arm; SFX.unlock(); }
+    if (keyIs(e, 'flag')) openFlagWheel();
+  }
   // edge-triggered intents go into the local player's input struct; the sim
   // reads and clears them, exactly as it does for an bot
   if (keyIs(e, 'dodge')) player.input.dodge = true;
@@ -302,7 +345,8 @@ function keyPress(e) {
   if (e.key === 'Escape') {
     // a carried item goes back first, then an open wheel: both are gestures
     // half-finished, and Escape is how either is thought better of
-    if (state.drag) { dragReturn(); state.dragPend = null; }
+    if (ck.arm) ck.arm = false; // an armed attack-move is the lightest gesture to think better of
+    else if (state.drag) { dragReturn(); state.dragPend = null; }
     else if (state.wheel) state.wheel = null;
     else if (state.build) state.build = null;
     else if (state.mapOpen) state.mapOpen = false;
@@ -320,6 +364,9 @@ window.addEventListener('keyup', (e) => {
   keyRelease({ key: k, char: e.key });
 });
 function keyRelease(e) {
+  // letting go of the flag key with the wheel it held up plants the pick (or
+  // lifts from the hub), exactly as the pad's R3 and the right button do
+  if (keyIs(e, 'flag') && state.wheel && state.wheel.kind === 'flag') { resolveWheel(); state.wheel = null; return; }
   // letting go of the work key with a wheel it held up (armory, roll die or
   // range bell) takes what the pointer is on (or cancels from the hub),
   // exactly as releasing the right button does
@@ -342,6 +389,8 @@ window.addEventListener('blur', () => {
   // its keyup is lost with the focus, so it closes (choosing nothing)
   // instead of sticking open
   if (state.wheel && (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage')) state.wheel = null;
+  // ...and so is the flag wheel G holds, and a held right button's follow
+  if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
 });
 
 canvas.addEventListener('mousemove', (e) => {
@@ -378,6 +427,7 @@ canvas.addEventListener('mousedown', (e) => {
 // a button went down at the pointer: 0 left, 1 middle, 2 right
 function pointerPress(button) {
   if (button === 2) {
+    if (ckOn()) { ckRightPress(); return; } // the CLICK scheme: the right button is the hand
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
     if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
@@ -394,6 +444,7 @@ function pointerPress(button) {
   if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropJump(player); else if (mapCloseHit()) state.mapOpen = false; return; }
   if (state.mode === 'dead') { SFX.unlock(); deadClick(); return; }
   if (state.mode !== 'play') return;
+  if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // the chart's CLOSE plank; the rest of the slab swallows the press
@@ -428,6 +479,7 @@ function pointerPress(button) {
 window.addEventListener('mouseup', (e) => { pointerRelease(e.button); });
 // ...and came back up
 function pointerRelease(button) {
+  if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   if (button === 1) return;
   // a carried item is put down (or thrown), and an armed press that never
@@ -556,6 +608,238 @@ function openWheelNear(p, ax, ay) {
   return true;
 }
 
+// ------------------------------------------------------------ click to move
+// THE SECOND KEYBOARD SCHEME (settings.scheme 'click'; 'wasd' is the first,
+// and the KEYBOARD listing's top row switches): the right button is the hand
+// and NO KEY WALKS THE BODY. A right press on open ground is an ORDER to walk
+// there by route - navTo, the bots' own walker, so the same feet round the
+// same trees - and holding it drags the goal under the pointer (the League
+// habit). On a tree, a bush, a hole or a rival building it is a walk into
+// reach and the swing; on one of your own buildings, a merchant or the
+// practice furniture a walk into reach and the thing opening; on the chart
+// or the minimap a walk across the map; seated on the roost, the hop. On a
+// rival body it is a CHASE with a LOCK: the body walks into its tool's reach
+// by route, stands, and the tool draws and looses at the target by itself
+// (CK_AUTO_DRAW, a NORMAL bot's own loose) while the hand is off the button;
+// the hand's own draw aims at the lock too - the assist - and a full draw is
+// still the reward for holding. Abilities never take the lock: they cast at
+// the pointer, the skillshot grammar. A arms the pointer and the next left
+// press is an ATTACK-MOVE: walk there, lock the first foe seen within
+// CK_ACQ_R on the way, chase it, and walk on when it is down. S drops the
+// lot. A tilted stick (a pad, a finger) is a walk of its own and drops the
+// order too, but keeps the lock: WoW's grammar, the target stays while you
+// strafe.
+//
+// What balances the assist: a locked shot goes where the target IS, never
+// led, so a strafing rival at range is missed where a hand would lead it;
+// the lock holds only to CK_LOCK_R and through seenAt, so cover and
+// GHOSTSTEP break it; the auto-draw is a bot's, under the hand's; and
+// nothing here reaches the sim but the same input struct a bot fills
+// (ckStep -> sampleHumanInput), so the sim never learns which scheme is in
+// hand. The rings on the snow are drawClickMarks (draw-world.js); the armed
+// pointer is the 'amove' reticle (cursorInfo, render.js).
+const CK_ACQ_R = 160;     // px an attack-move takes a foe from
+const CK_LOCK_R = 240;    // px a lock holds to (the leash); a rival's cover shortens it through seenAt
+const CK_HOLD_BOW = 90;   // px a bow chases to before it stands (a blade: its own reach)
+const CK_AUTO_DRAW = 0.7; // the auto-attack looses at this fraction of the full draw (AI_LEVELS' NORMAL)
+const CK_ARRIVE = 5;      // px from a goal that counts as arrived
+const CK_MARK_T = 0.6;    // s the click ring lives on the snow
+const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
+// order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
+//        | {kind:'use', what:'manage'|'shop'|'rack'|'pkdie'|'agbell', o, tx, ty}
+// lock: the unit the tool is on; arm: A pressed, the next left press lays
+// the attack-move; follow: the right button is down over open ground; hop:
+// a right press while seated on the roost; mark: the last ring on the snow
+const ck = { order: null, lock: null, arm: false, follow: false, hop: false, mark: null };
+function ckOn() { return settings.scheme === 'click'; }
+function ckClear() { ck.order = null; ck.lock = null; ck.arm = false; ck.follow = false; ck.hop = false; }
+function ckOrder(o, mx, my, kind) { ck.order = o; ck.lock = null; ck.mark = { x: mx, y: my, t: CK_MARK_T, col: CK_COL[kind] }; }
+// where a press landed, in the world: the chart's tile, the disc's point,
+// or the ground under the pointer - null over the HUD or off the map. `far`
+// says it came off a map, where only a walk can be meant.
+function ckPoint() {
+  let wx, wy, far = true;
+  if (state.mapOpen) { const mt = mapTileAt(mouse.x, mouse.y); if (!mt) return null; wx = mt.tx * TILE + 8; wy = mt.ty * TILE + 8; }
+  else if (overMinimap()) { const w = mmWorldAt(mouse.x, mouse.y); if (!w) return null; wx = w.x; wy = w.y; }
+  else if (overHud(mouse.x, mouse.y)) return null;
+  else { wx = mouseWX(); wy = mouseWY(); far = false; }
+  if (!inWorld(Math.floor(wx / TILE), Math.floor(wy / TILE))) return null;
+  return { wx, wy, far, tx: Math.floor(wx / TILE), ty: Math.floor(wy / TILE) };
+}
+// a merchant under a world point - the robots' own box; it is no unit to
+// unitUnder (unitAlive refuses it), and here it is a counter to walk to
+function merchUnder(wx, wy) {
+  for (const b of robots) if (b.merchant && !b.dead && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
+  return null;
+}
+function ckRightPress() {
+  if ((state.mode !== 'play' && state.mode !== 'drop') || state.settingsOpen) return;
+  // a wheel a walk opened (manage, the armory, the die, the bell) stands
+  // until a press picks; the flag wheel is G's, and G's release plants it
+  if (state.wheel) { if (state.wheel.kind !== 'flag') { resolveWheel(); state.wheel = null; } return; }
+  if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
+  ck.arm = false;
+  if (player.dead) return;
+  const pt = ckPoint();
+  if (!pt) return;
+  const { wx, wy, tx, ty } = pt;
+  // riding or seated: the press is the hop, and the walk waits for the landing
+  if (state.mode === 'drop') { dropJump(player); if (player.aboard) return; }
+  else if (player.aboard) ck.hop = true;
+  SFX.unlock();
+  if (!pt.far && !player.aboard) {
+    const t = unitUnder(player, wx, wy);
+    if (t) { ckOrder({ kind: 'chase', t }, t.x, t.y + 2, 'foe'); ck.lock = t; return; }
+    const m = merchUnder(wx, wy);
+    if (m) { ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, m.x, m.y + 2, 'work'); return; }
+    const o = structOf(objAt(tx, ty));
+    if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team) { ckOrder({ kind: 'use', what: 'manage', o, tx, ty }, wx, wy, 'work'); return; }
+    if (o && (o.type === 'rack' || o.type === 'pkdie' || o.type === 'agbell')) { ckOrder({ kind: 'use', what: o.type, o, tx, ty }, wx, wy, 'work'); return; }
+    if (workTargetAt(player, tx, ty)) { ckOrder({ kind: 'work', tx, ty }, tx * TILE + 8, ty * TILE + 8, 'work'); return; }
+  }
+  ckOrder({ kind: 'move', x: wx, y: wy }, wx, wy, 'move');
+  ck.follow = !pt.far;
+}
+function ckRightRelease() {
+  ck.follow = false;
+  // a wheel held open by the press that walked up to it: letting go on a
+  // wedge takes it; letting go on the hub leaves it standing for a pick
+  const w = state.wheel;
+  if (w && w.kind !== 'flag' && wheelLayout().seg >= 0) { resolveWheel(); state.wheel = null; }
+}
+// the left press that lays an armed attack-move: on a body, that body; on
+// the ground (the chart's and the disc's included), the walk that fights
+function ckArmedPress() {
+  ck.arm = false;
+  const pt = ckPoint();
+  if (!pt || player.dead) return;
+  SFX.unlock();
+  const t = pt.far ? null : unitUnder(player, pt.wx, pt.wy);
+  if (t) { ckOrder({ kind: 'chase', t }, t.x, t.y + 2, 'foe'); ck.lock = t; return; }
+  ckOrder({ kind: 'amove', x: pt.wx, y: pt.wy }, pt.wx, pt.wy, 'foe');
+}
+// can p still hold this lock: alive, a foe, and inside the leash - a rival
+// player through seenAt, so its cover and GHOSTSTEP shorten the leash
+function ckSees(p, t) {
+  if (!unitAlive(t) || !unitFoe(p, t)) return false;
+  const d = Math.hypot(t.x - p.x, t.y - p.y);
+  return d <= (t instanceof Player ? seenAt(t, CK_LOCK_R) : CK_LOCK_R);
+}
+// the nearest foe an attack-move takes: a rival player it can see, a rival
+// robot, or a camp's monster - never a deer, which is a hunt and not a fight
+function ckAcquire(p) {
+  let best = null, bd = CK_ACQ_R;
+  const take = (e, r) => { const d = Math.hypot(e.x - p.x, e.y - p.y); if (d <= r && d < bd) { bd = d; best = e; } };
+  for (const q of players) if (enemyOf(p, q)) take(q, seenAt(q, CK_ACQ_R));
+  for (const b of robots) if (unitAlive(b) && b.team !== p.team) take(b, CK_ACQ_R);
+  for (const a of animals) if (a.home && unitAlive(a)) take(a, CK_ACQ_R);
+  return best;
+}
+// how far the tool in hand lands a blow at the auto-draw: a blade's reach, a
+// bow's flight at CK_AUTO_DRAW (shotFlight, the loose's own envelope); 0 with
+// nothing to swing, and then nothing fires by itself
+function ckReach(p) {
+  const cell = heldTool(p);
+  if (!cell) return 0;
+  const T = TOOLS[toolIdOf(cell.type)];
+  if (T.melee) return T.melee.reach + 6;
+  const plan = toolPlan(cell);
+  if (!plan.shots.length) return 0;
+  const lead = plan.shots[0], fl = shotFlight(BITS[lead.id], lead.m, CK_AUTO_DRAW);
+  return fl.spd * fl.life;
+}
+function ckHoldR(p, reach) {
+  const cell = heldTool(p), T = cell && TOOLS[toolIdOf(cell.type)];
+  if (T && T.melee) return T.melee.reach * 0.8;
+  return reach > 0 ? Math.min(CK_HOLD_BOW, reach * 0.85) : CK_HOLD_BOW;
+}
+// a 'use' order: walk into the thing's reach, then open it - the counter as
+// a panel, the rest as the wheel the work key would hold (keyPress), left
+// standing for a right press to pick
+function ckUse(p, o, walk, r) {
+  if (state.wheel || state.shop) { ck.order = null; return; }
+  const cx = o.tx * TILE + 8, cy = o.ty * TILE + 8;
+  r.aimX = p.input.aimX = cx; r.aimY = p.input.aimY = cy; // manageNear reads the aim
+  const k = o.what;
+  const near = k === 'manage' ? (manageNear(p) === o.o ? o.o : null) : k === 'shop' ? (merchNear(p) === o.o ? o.o : null)
+    : k === 'rack' ? rackNear(p) : k === 'pkdie' ? pkDieNear(p) : agBellNear(p);
+  if (near) {
+    ck.order = null;
+    SFX.unlock();
+    if (k === 'shop') openShop(near);
+    else if (k !== 'agbell' || agame.phase === 'off') state.wheel = { kind: k, tx: near.tx, ty: near.ty, seg: -1, ax: mouse.x, ay: mouse.y };
+    return;
+  }
+  if (walk(k === 'shop' ? o.o.x : cx, k === 'shop' ? o.o.y : cy, k === 'shop' ? 0 : WORK_REACH) < 0) ck.order = null;
+}
+// one step of the scheme, for sampleHumanInput: what the orders and the
+// lock make of the walk, the aim, the fire and the work this step. smx/smy
+// is a stick's tilt, which the walk keeps (the order it fought is already
+// dropped). fire null leaves the button's own edges alone.
+function ckStep(p, dt, smx, smy) {
+  const inp = p.input;
+  const r = { mx: smx, my: smy, aimX: mouseWX(), aimY: mouseWY(), fire: null, work: false };
+  // seated on the roost: the right press was the hop (updateDrop reads the work intent)
+  if (p.aboard) { r.work = ck.hop; return r; }
+  ck.hop = false;
+  if (ck.mark && ck.mark.t > 0) ck.mark.t -= dt;
+  // falling off the roost: there is no route from mid-air (the seat is over
+  // the bird's own solid tiles, and navTo would hand the goal back as
+  // unreachable), so the walk keeps its goal for the landing and the fall
+  // drifts toward it, the way WASD drifts a fall
+  if (p.dropT > 0) {
+    const o = ck.order;
+    if (o && (o.kind === 'move' || o.kind === 'amove')) { const dx = o.x - p.x, dy = o.y - p.y, d = Math.hypot(dx, dy); if (d > CK_ARRIVE) { r.mx = dx / d; r.my = dy / d; } }
+    return r;
+  }
+  // the held right button drags a walk's goal under the pointer
+  if (ck.follow && ck.order && ck.order.kind === 'move' && !state.mapOpen && !overHud(mouse.x, mouse.y)) { ck.order.x = mouseWX(); ck.order.y = mouseWY(); }
+  // the lock: dropped the moment the target is dead, gone or out of sight
+  if (ck.lock && !ckSees(p, ck.lock)) { ck.lock = null; if (ck.order && ck.order.kind === 'chase') ck.order = null; }
+  // an attack-move takes the first foe it sees on the way
+  if (!ck.lock && ck.order && ck.order.kind === 'amove') ck.lock = ckAcquire(p);
+  const o = ck.order, t = ck.lock;
+  // the route to (x, y), the bots' own steerTo: -1 when there is none (the
+  // order is dropped, never waited on). A click can order a walk across the
+  // map or into a corner's forest, so it spends the bots' roost budget on
+  // the search (a search that runs out still hands back a first leg)
+  const walk = (x, y, reach) => { const n = navTo(p, x, y, PLAYER_R, reach || 0, dt, NAV_BUDGET * 4); if (!n.ok) return -1; r.mx = n.dx; r.my = n.dy; return n.d; };
+  if (o && !t) {
+    if (o.kind === 'move' || o.kind === 'amove') {
+      const d = walk(o.x, o.y, 0);
+      if (d < 0 || d < CK_ARRIVE) ck.order = null;
+    } else if (o.kind === 'work') {
+      const wt = workTargetAt(p, o.tx, o.ty);
+      if (!wt) ck.order = null;
+      else {
+        r.aimX = o.tx * TILE + 8; r.aimY = o.ty * TILE + 8;
+        if (wt.near) r.work = true;
+        else if (walk(r.aimX, r.aimY, WORK_REACH) < 0) ck.order = null;
+      }
+    } else if (o.kind === 'use') ckUse(p, o, walk, r);
+  }
+  if (t) {
+    // the chase: into the tool's reach by route, then stand and let it work.
+    // A tilted stick keeps the feet - the target stays while you strafe.
+    const ty = t.y - (t instanceof Player ? 6 : (t.alt || 0) + 4);
+    const d = Math.hypot(t.x - p.x, t.y - p.y);
+    const reach = ckReach(p), hold = ckHoldR(p, reach);
+    r.aimX = t.x; r.aimY = ty;
+    if (d > hold && !smx && !smy) walk(t.x, t.y, 0);
+    // the auto-attack: the hand off the button, a clear flight, the target
+    // inside the tool's reach - draw to the auto-draw and loose (the same
+    // held-then-dropped intent a bot fires by)
+    if (!mouse.down) r.fire = reach > 0 && d <= reach && aiLineClear(p, t.x, ty) && p.chargeT < kitOf(p).bowCharge * CK_AUTO_DRAW;
+  } else if (!mouse.down) r.fire = false;
+  // an ability casts at the POINTER, never at the lock (the skillshot's
+  // grammar): for that one step the aim is the pointer, and an auto-draw
+  // holds a step rather than loose at it
+  if (inp.ability >= 0 && t) { r.aimX = mouseWX(); r.aimY = mouseWY(); if (r.fire !== null) r.fire = p.charging; }
+  // the roll goes where the pointer is - one rule, with no walk keys to read
+  if (inp.dodge) { const dx = mouseWX() - p.x, dy = mouseWY() - p.y, l = Math.hypot(dx, dy); if (l > 1) { r.mx = dx / l; r.my = dy / l; } }
+  return r;
+}
+
 // whichever scrolling page is up walks by d px - the wheel listener below,
 // a finger's drag and a pad's right stick all arrive here. False when
 // nothing on screen scrolls.
@@ -606,20 +890,30 @@ canvas.addEventListener('wheel', (e) => {
 // struct an AI writes, once per sim step. Pause and the settings panel zero it
 // (and drop any draw) so nothing leaks through a stopped sim; the map, which
 // does not stop the sim, keeps the feet and drops everything else.
-function sampleHumanInput(p) {
+function sampleHumanInput(p, dt) {
   const inp = p.input;
   inp.aimX = mouseWX();
   inp.aimY = mouseWY();
-  // read the walk keys once - each branch below decides who gets them
+  // read the walk keys once - each branch below decides who gets them. The
+  // CLICK scheme has no walk keys: its orders walk instead (ckStep, above),
+  // and a body that has just died has no orders left
   let mx = 0, my = 0;
-  if (keyHeld('up') || keys['arrowup']) my -= 1;
-  if (keyHeld('down') || keys['arrowdown']) my += 1;
-  if (keyHeld('left') || keys['arrowleft']) mx -= 1;
-  if (keyHeld('right') || keys['arrowright']) mx += 1;
+  if (ckOn() && p.dead) ckClear();
+  if (!ckOn()) {
+    if (keyHeld('up') || keys['arrowup']) my -= 1;
+    if (keyHeld('down') || keys['arrowdown']) my += 1;
+    if (keyHeld('left') || keys['arrowleft']) mx -= 1;
+    if (keyHeld('right') || keys['arrowright']) mx += 1;
+  }
   // ...and the two sticks, a pad's left one and the touch move stick, at
   // their tilt (both files load after this one; this is a run-time read)
   mx = Math.max(-1, Math.min(1, mx + pad.mx + touch.mx));
   my = Math.max(-1, Math.min(1, my + pad.my + touch.my));
+  // a tilted stick is a walk of its own, and drops the order it would fight
+  if (ckOn() && (mx || my)) { ck.order = null; ck.follow = false; }
+  const live = state.mode === 'play' && !state.paused && !state.settingsOpen && !state.eagleCine && !state.dropBrief;
+  const c = ckOn() && live ? ckStep(p, dt, mx, my) : null;
+  if (c) { mx = c.mx; my = c.my; inp.aimX = c.aimX; inp.aimY = c.aimY; }
   // The chart does not stop the world, so it does not stop the player: you
   // keep walking, sliding, rolling and burrowing with it up, and watch your
   // own marker move across it. Everything that acts on the world is dropped -
@@ -640,7 +934,7 @@ function sampleHumanInput(p) {
   }
   // state.eagleCine / state.dropBrief: a ceremony has the camera - hands off
   // the controls until it hands back, exactly as pause zeroes them
-  if (state.mode !== 'play' || state.paused || state.settingsOpen || state.eagleCine || state.dropBrief) {
+  if (!live) {
     inp.mx = inp.my = 0;
     inp.fire = inp.work = inp.slide = inp.grapple = false;
     inp.dodge = inp.eatBerry = inp.eatFish = inp.useCard = false;
@@ -649,8 +943,14 @@ function sampleHumanInput(p) {
     if (p.charging) { p.charging = false; p.chargeT = 0; }
     p.firePrev = false;
     p.fireArmed = false;
-    // the one thing that works mid-air: WASD drifts the fall (updateDrop reads it)
-    if (state.mode === 'drop' && !state.paused) { inp.mx = mx; inp.my = my; }
+    // the one thing that works mid-air: WASD drifts the fall (updateDrop
+    // reads it) - under CLICK, a landing spot ordered mid-air is what the
+    // fall drifts toward
+    if (state.mode === 'drop' && !state.paused) {
+      const o = ckOn() && ck.order && ck.order.kind === 'move' ? ck.order : null;
+      if (o) { const dx = o.x - p.x, dy = o.y - p.y, d = Math.hypot(dx, dy); if (d > CK_ARRIVE) { mx = dx / d; my = dy / d; } }
+      inp.mx = mx; inp.my = my;
+    }
     return;
   }
   inp.mx = mx; inp.my = my;
@@ -659,7 +959,8 @@ function sampleHumanInput(p) {
   // HELD ability input, read by updatePlayer's grapple branch; releasing it
   // lets go early
   inp.grapple = keyHeld('ab3');
-  inp.work = keyHeld('work') && !state.wheel && !state.shop; // the counter swallows the work key the way a wheel does
+  inp.work = (keyHeld('work') || !!(c && c.work)) && !state.wheel && !state.shop; // the counter swallows the work key the way a wheel does
+  if (c && c.fire !== null) inp.fire = c.fire; // the auto-attack's own edges, with the hand off the button
   if (state.wheel) { inp.fire = false; inp.dodge = false; inp.ability = -1; } // the wheel swallows the shot
 }
 

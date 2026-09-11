@@ -115,10 +115,10 @@ function update(dt) {
   // with the world still moving, the same deal the build wheel takes.
   if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
     !state.paused && !state.settingsOpen) {
-    sampleHumanInput(player);
+    sampleHumanInput(player, dt);
     updatePlay(dt);
   } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') {
-    sampleHumanInput(player); // still drops a held draw when an overlay opens
+    sampleHumanInput(player, dt); // still drops a held draw when an overlay opens
   } else if (state.mode === 'title') {
     updateTitle(dt); // menu timers, camera drift, and the ambient world behind it
   }
