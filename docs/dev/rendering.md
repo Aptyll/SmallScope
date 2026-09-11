@@ -1642,16 +1642,28 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   character pre-rolled** by `PROFILE.rollChar` (a winter word and a random look), a slot index
   is that character's copy for editing, and `first` is the fresh install (js/boot.js opens it
   before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
-  Left: the model at 3× on its stage (`drawModel`, class select's light and ring), the 16 px body
-  at 2× walking beside it (what the snow will show), and the **name field** under them (the
-  buffer at 2× with a caret, capacity ticks, a refusal flooding it red — `menu.nameBuf` /
-  `menu.nameShake`). Right: the option column (`CH_ROWS`), each row an 8 px glyph and its
-  cells — the **class pair** first (the two `CLASS32` emblems; once the character exists the
-  other one is dark under a padlock: **class is fixed at creation**), the two body-type
-  silhouettes, the six skin-tone swatches, hair style as a chevron pair around count pips, the
-  eight hair-colour swatches, beard and face as chevron pairs — with the **shuffle plate** (a new
-  look, `shuffleLook`) beside the emblems. The model IS the preview: every cell repaints it on
-  the spot. The screen **owns the keyboard** (input.js routes to `createKey` before its own
+  Two columns centred as one block (`createLayout`), sharing a top line and a foot. Left, the
+  stage: the model at 3× (`drawModel`, class select's light and ring), the **die** on its
+  top-right corner (`drawDie` — five pips at rest, gold under the hand, and for `DIE_T` after
+  a press it rattles and flickers through the six faces while `shuffleLook` lands a new look:
+  a roll, not a button), the 16 px body at 2× walking on a snow pad by its feet (what the snow
+  will show), and the **name field** centred under the stage with its own die: the buffer at
+  2× with a caret, or **selected** on a gold band (`menu.nameSel`) when the next letter will
+  replace it — a new character's pre-rolled name arrives selected, the name die (`rollName`,
+  a fresh word from the pool, the same tumble) leaves its word selected, and a click on the
+  field selects what is there; Backspace on a selection clears it. The rim lights under the
+  hand, the underline goes red while the name would be refused (`nameOk`, which also dims
+  DONE), the capacity ticks sit under it, and a refusal on DONE rattles and floods it red
+  (`menu.nameShake`). Right, the
+  option panel (`CH_ROWS`): the **class pair** centred at its head (the two `CLASS32`
+  emblems; once the character exists the other one is dark under a padlock: **class is fixed
+  at creation**), then **one row per axis in one grammar** — an 8 px glyph in the gutter and a
+  `CH_CELL` (24 px) cell per choice, each cell a 1× crop of the *bare* model wearing that
+  choice (`drawLookCell`: the head crop `CH_HEAD` for tone, hair, hair colour, beard and face,
+  the torso crop `CH_TORSO` for the body type), so a row is its choices seen before they are
+  picked — no swatches, no chevrons, no count pips. Cells sit in the same columns on every row;
+  the widest row (`CH_ROW_N`) sets the panel's width. DONE / CANCEL centred along the foot.
+  The screen **owns the keyboard** (input.js routes to `createKey` before its own
   shortcuts): letters are the name, Backspace edits it, Up/Down walk `menu.crow` (a gold tick
   breathes at the row's glyph while the pointer is off the page), Left/Right turn the row, Enter
   is DONE, Esc CANCEL. DONE (`createCommit`) dims while the name would be refused and rattles

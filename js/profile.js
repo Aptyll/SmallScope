@@ -238,6 +238,8 @@
     name() { const c = profile.chars[profile.active]; return c ? c.name : DEFAULT_NAME; },
     // a fresh, UNSAVED character for the create screen to open on: rolled
     // name, rolled look, the class the caller asks for (or a coin)
+    // a fresh name alone: the create screen's name die
+    rollName() { return randomName(); },
     rollChar(cls) {
       return mendChar({ name: randomName(), cls: typeof cls === 'number' ? cls : Math.floor(Math.random() * CLASS_N), look: randomLook() });
     },

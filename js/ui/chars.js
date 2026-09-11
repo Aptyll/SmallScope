@@ -72,7 +72,9 @@ function createLayout() {
   const stage = { x: left, y: toy + 12, w: CH_STAGE, h: CH_STAGE };
   const die = { x: stage.x + stage.w - 24, y: stage.y + 2, w: 22, h: 22 };
   const mini = { x: stage.x + stage.w - 34, y: stage.y + stage.h - 36, w: 32, h: 32 }; // the in-world body, 2x
-  const name = { x: stage.x + Math.round((stage.w - CH_NAME_W) / 2), y: stage.y + stage.h + 12, w: CH_NAME_W, h: CH_NAME_H };
+  // the name field and its die, centred under the stage as one
+  const name = { x: stage.x + Math.round((stage.w - CH_NAME_W - CH_NAME_H - 6) / 2), y: stage.y + stage.h + 12, w: CH_NAME_W, h: CH_NAME_H };
+  const nameDie = { x: name.x + name.w + 6, y: name.y, w: CH_NAME_H, h: CH_NAME_H }; // rolls a new name
   const x0 = left + CH_STAGE + CH_GAP + 16; // the cells' left edge; a row's glyph sits in the 16 px gutter before it
   const cellsW = panelW - 16;
   const rows = CH_ROWS.map((r, i) => i
@@ -84,7 +86,7 @@ function createLayout() {
   const px = cx - Math.round(pw / 2), py = toy + 230;
   planks.push({ x: px, y: py, w: CH_BW, h: CH_BH, id: 'done' });
   if (!first) planks.push({ x: px + CH_BW + CH_BGAP, y: py, w: CH_BW, h: CH_BH, id: 'cancel' });
-  return { toy, cx, stage, die, mini, name, rows, planks };
+  return { toy, cx, stage, die, mini, name, nameDie, rows, planks };
 }
 // the cells of one option row, each with a hit id and the value it sets
 function rowCells(r) {
@@ -180,8 +182,9 @@ function beginCreate(slot, first) {
   const spec = c ? { name: c.name, cls: c.cls, look: Object.assign({}, c.look) } : PROFILE.rollChar();
   m.cedit = { slot, spec, first: !!first };
   m.nameBuf = spec.name;
+  m.nameSel = slot < 0; // a pre-rolled name arrives selected: the first letter typed replaces it
   m.nameShake = 0;
-  m.dieT = 0;
+  m.dieT = m.nameDieT = 0;
   m.crow = 0;
   m.khover = {};
   m.screen = m.cscreen = 'create';
@@ -237,11 +240,21 @@ function shuffleLook() {
   m.dieT = DIE_T;
   SFX.dodge();
 }
-// what the pointer is on: a cell's id, 'die', 'done', 'cancel', or null
+// the name die: a fresh word from the pool, the field's own tumble
+function rollName() {
+  const m = state.menu;
+  m.nameBuf = PROFILE.rollName();
+  m.nameSel = true;
+  m.nameDieT = DIE_T;
+  SFX.dodge();
+}
+// what the pointer is on: a cell's id, 'die', 'nameDie', 'name', 'done', 'cancel', or null
 function createHit() {
   const L = createLayout();
   for (const r of L.rows) for (const c of rowCells(r)) if (overRect(c, 1, 1)) return c.id;
   if (overRect(L.die, 2, 2)) return 'die';
+  if (overRect(L.nameDie, 2, 2)) return 'nameDie';
+  if (overRect(L.name, 2, 2)) return 'name';
   for (const p of L.planks) if (overRect(p, 2, 3)) return p.id;
   return null;
 }
@@ -260,7 +273,7 @@ function createKey(e) {
   if (k === 'enter') { createCommit(); return; }
   if (k === 'escape') { createCancel(); return; }
   if (k === 'backspace') {
-    if (m.nameBuf) { m.nameBuf = m.nameBuf.slice(0, -1); SFX.tally(); }
+    if (m.nameBuf) { m.nameBuf = m.nameSel ? '' : m.nameBuf.slice(0, -1); m.nameSel = false; SFX.tally(); }
     return;
   }
   if (k === 'arrowup') { m.crow = (m.crow + CH_ROWS.length - 1) % CH_ROWS.length; SFX.pickup(); return; }
@@ -274,6 +287,7 @@ function createKey(e) {
   const ch = String(e.char != null ? e.char : e.key).toUpperCase(); // what the key TYPED, not where it sits
   if (ch.length !== 1) return;
   if (!/^[A-Z0-9]$/.test(ch)) return;
+  if (m.nameSel) { m.nameBuf = ''; m.nameSel = false; } // the selected name goes, this letter starts the new one
   if (m.nameBuf.length >= PROFILE.NAME_MAX) { m.nameShake = NAME_SHAKE_T; SFX.iceKnock(); return; }
   m.nameBuf += ch;
   SFX.tally();
@@ -285,7 +299,10 @@ function createClick() {
   if (!h) return;
   if (h === 'done') { m.pressT = 0.12; createCommit(); return; }
   if (h === 'cancel') { m.pressT = 0.12; createCancel(); return; }
+  m.nameSel = false;
   if (h === 'die') { shuffleLook(); return; }
+  if (h === 'nameDie') { rollName(); return; }
+  if (h === 'name') { m.nameSel = !!m.nameBuf; if (m.nameSel) SFX.pickup(); return; }
   const c = createCellById(h);
   if (!c) return;
   m.crow = CH_ROWS.findIndex((r) => r.id === c.axis);
@@ -295,6 +312,7 @@ function updateCreate(dt) {
   const m = state.menu;
   if (m.nameShake > 0) m.nameShake = Math.max(0, m.nameShake - dt);
   if (m.dieT > 0) m.dieT = Math.max(0, m.dieT - dt);
+  if (m.nameDieT > 0) m.nameDieT = Math.max(0, m.nameDieT - dt);
   const want = m.charT >= 1 && mouse.inside ? createHit() || '' : '';
   for (const k of Object.keys(m.khover)) m.khover[k] += ((want === k ? 1 : 0) - m.khover[k]) * Math.min(1, dt * 14);
   if (want && m.khover[want] === undefined) m.khover[want] = 0;
@@ -457,7 +475,8 @@ function drawDie(r, hv, tumble, now) {
   const y = drawWell(rr, hv, false, true);
   const face = tumble > 0 ? DIE_FACES[Math.floor(now * 18) % 6] : DIE_FACES[4];
   ctx.fillStyle = tumble > 0 || hv > 0.5 ? '#ffd95c' : '#8fa0c8';
-  for (const k of face) ctx.fillRect(rr.x + 4 + (k % 3) * 6, y + 4 + Math.floor(k / 3) * 6, 2, 2);
+  const st = Math.floor((r.w - 8) / 3) + 1, o = Math.round((r.w - 2 * st - 2) / 2); // pip pitch and inset for this plate
+  for (const k of face) ctx.fillRect(rr.x + o + (k % 3) * st, y + o + Math.floor(k / 3) * st, 2, 2);
 }
 
 // The create screen: the model at 3x on its stage with the die on its
@@ -484,22 +503,31 @@ function renderCreate(now, a) {
   ctx.drawImage(set.down[1 + (Math.floor(now * 4) % 2)], L.mini.x - slide, L.mini.y, 32, 32);
   // the die on the stage's corner
   drawDie({ x: L.die.x - slide, y: L.die.y, w: L.die.w, h: L.die.h }, m.khover.die || 0, m.dieT / DIE_T, now);
-  // the name field: a well, the buffer at 2x with the caret, the capacity
-  // ticks under it, a refusal flooding it red
+  // the name field: a well whose rim lights under the hand, the buffer at 2x
+  // with the caret - or SELECTED, on a gold band, when the next letter will
+  // replace it (a pre-rolled name, a rolled one, a click on the field) - the
+  // capacity ticks under it, and the underline: slate while the name is
+  // good, red while it would be refused; a refusal on DONE rattles and
+  // floods it red. The name die beside it rolls a fresh word.
   const f = { x: L.name.x - slide, y: L.name.y, w: L.name.w, h: L.name.h };
   const bad = m.nameShake / NAME_SHAKE_T;
   const shake = bad > 0 ? Math.round(Math.sin(now * 90) * 2.5 * bad) : 0;
-  ctx.fillStyle = '#080c1c'; ctx.fillRect(f.x - 1, f.y - 1, f.w + 2, f.h + 2);
+  const nh = m.khover.name || 0;
+  const ok = nameOk();
+  ctx.fillStyle = nh > 0.5 ? '#8fa0c8' : '#2c3560'; ctx.fillRect(f.x - 1, f.y - 1, f.w + 2, f.h + 2);
   ctx.fillStyle = '#0a0e23'; ctx.fillRect(f.x, f.y, f.w, f.h);
-  ctx.fillStyle = '#2c3a68'; ctx.fillRect(f.x + 1, f.y + f.h - 1, f.w - 2, 1);
+  ctx.fillStyle = ok || !m.nameBuf ? '#2c3a68' : '#a83a3a'; ctx.fillRect(f.x + 1, f.y + f.h - 2, f.w - 2, 2);
   if (bad > 0) { ctx.globalAlpha = a * 0.5 * bad; ctx.fillStyle = '#a83a3a'; ctx.fillRect(f.x, f.y, f.w, f.h); ctx.globalAlpha = a; }
   const txt = m.nameBuf;
   const tw = pixelTextWidth(txt, 2);
   const tx = f.x + Math.round((f.w - tw - 5) / 2) + shake, ty = f.y + 5;
-  drawPixelTextShadow(ctx, txt, tx, ty, bad > 0 ? '#ffb0a0' : '#f4f7ff', '#0a0e23', 2);
-  if (Math.floor(now * 2) % 2 === 0) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(txt ? tx + tw + 2 : tx - 5, ty, 2, 10); }
+  const sel = m.nameSel && txt;
+  if (sel) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(tx - 2, ty - 2, tw + 4, 14); }
+  drawPixelTextShadow(ctx, txt, tx, ty, sel ? '#0a0e23' : bad > 0 ? '#ffb0a0' : '#f4f7ff', sel ? '#c89a3c' : '#0a0e23', 2);
+  if (!sel && Math.floor(now * 2) % 2 === 0) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(txt ? tx + tw + 2 : tx - 5, ty, 2, 10); }
   let kx = f.x + Math.round((f.w - (PROFILE.NAME_MAX * 4 - 1)) / 2);
   for (let i = 0; i < PROFILE.NAME_MAX; i++, kx += 4) { ctx.fillStyle = i < txt.length ? '#f2cc6a' : '#2c3a68'; ctx.fillRect(kx, f.y + f.h + 4, 3, 2); }
+  drawDie({ x: L.nameDie.x - slide, y: L.nameDie.y, w: L.nameDie.w, h: L.nameDie.h }, m.khover.nameDie || 0, m.nameDieT / DIE_T, now);
 
   // the option panel
   for (let i = 0; i < L.rows.length; i++) {
@@ -527,7 +555,6 @@ function renderCreate(now, a) {
   }
 
   // the planks: DONE dims while the name would be refused
-  const ok = nameOk();
   for (const p of L.planks) {
     const hv = m.khover[p.id] || 0;
     const live = p.id !== 'done' || ok;
