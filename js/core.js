@@ -202,7 +202,12 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   mobile: 'auto', hudScaleM: 1.25,
   // the pad's rumble and a phone's buzz on a gesture that moves an item
   // (haptic, js/input.js). A mouse has no motor and never notices this row.
-  haptics: true };
+  haptics: true,
+  // the keyboard scheme: 'wasd' (the keys walk, the mouse aims) or 'click'
+  // (the right button walks and orders - the `click to move` banner,
+  // js/input.js). The KEYBOARD listing's top row; each scheme keeps its own
+  // binds (settings.binds / settings.bindsClick, mended by mendBinds).
+  scheme: 'wasd' };
 // Minimap zoom ladder, px per world tile: index settings.mmZoom (5 = the 1:1
 // baseline). Twice the rungs and twice the reach of the old six, and like the
 // camera it eases between them rather than snapping - mmCur is what anything

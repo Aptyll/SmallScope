@@ -153,7 +153,7 @@ function padPoll(dt) {
   }
   const lt = ltv > (pad.lt ? PAD_TRIG * 0.5 : PAD_TRIG);
   const rt = rtv > (pad.rt ? PAD_TRIG * 0.5 : PAD_TRIG);
-  if (lt !== pad.lt) { pad.lt = lt; pad.lastT = now; if (!menu) keys[actKey('slide').toLowerCase()] = lt; }
+  if (lt !== pad.lt) { pad.lt = lt; pad.lastT = now; if (!menu) actHeld.slide = lt; }
   if (rt !== pad.rt) {
     pad.rt = rt; pad.lastT = now;
     if (!menu) { if (rt) fireDown(); else fireUp(); }
@@ -253,13 +253,16 @@ function padPress(i, menu) {
     if (k) keyPress({ key: k, repeat: false });
     return;
   }
-  if (i === 8) { keys[actKey('board').toLowerCase()] = true; pad.backT = 0; return; }
+  if (i === 8) { actHeld.board = true; pad.backT = 0; return; }
   if (i === 11) { pad.flag = openFlagWheel(); pad.r3T = 0; return; }
   if (i === 13) { pad.wheel = openWheelNear(player, mouse.x, mouse.y); return; }
-  const k = PAD_PLAY[i] && actKey(PAD_PLAY[i]);
-  if (!k) return;
-  keys[k.toLowerCase()] = true;
-  keyPress({ key: k, repeat: false });
+  // a button names an ACTION: the event carries it (e.act) and the held
+  // state is actHeld's, so a keyboard scheme's map never sits between the
+  // button and its verb (keyIs / keyHeld, input.js)
+  const a = PAD_PLAY[i];
+  if (!a) return;
+  actHeld[a] = true;
+  keyPress({ key: actKey(a), act: a, repeat: false });
 }
 function padRelease(i, menu) {
   if (menu) {
@@ -269,31 +272,31 @@ function padRelease(i, menu) {
     return;
   }
   if (i === 8) {
-    keys[actKey('board').toLowerCase()] = false;
-    if (pad.backT >= 0 && pad.backT < PAD_TAP) keyPress({ key: actKey('map'), repeat: false });
+    actHeld.board = false;
+    if (pad.backT >= 0 && pad.backT < PAD_TAP) keyPress({ key: actKey('map'), act: 'map', repeat: false });
     pad.backT = -1;
     return;
   }
   if (i === 11) {
     // let go quickly: not an order but a card - the wheel, if it opened, is
     // closed choosing nothing before it can plant anything
-    if (pad.r3T >= 0 && pad.r3T < PAD_TAP) { if (pad.flag) state.wheel = null; keyPress({ key: actKey('card'), repeat: false }); keyRelease({ key: actKey('card') }); }
+    if (pad.r3T >= 0 && pad.r3T < PAD_TAP) { if (pad.flag) state.wheel = null; keyPress({ key: actKey('card'), act: 'card', repeat: false }); keyRelease({ key: actKey('card'), act: 'card' }); }
     else if (pad.flag && state.wheel) { resolveWheel(); state.wheel = null; }
     pad.flag = false; pad.r3T = -1;
     return;
   }
   if (i === 13) { if (pad.wheel && state.wheel) { resolveWheel(); state.wheel = null; } pad.wheel = false; return; }
-  const k = PAD_PLAY[i] && actKey(PAD_PLAY[i]);
-  if (!k) return;
-  keys[k.toLowerCase()] = false;
-  keyRelease({ key: k });
+  const a = PAD_PLAY[i];
+  if (!a) return;
+  actHeld[a] = false;
+  keyRelease({ key: actKey(a), act: a });
 }
 // the mode flipped under held buttons (START opened the slab, a death): let
 // go of everything in the mode it was pressed in, and keep the buttons
 // marked down so the same hold does not press again in the new one
 function padReleaseAll() {
   for (const i in pad.down) if (pad.down[i]) padRelease(+i, pad.menu);
-  if (pad.lt) { keys[actKey('slide').toLowerCase()] = false; }
+  if (pad.lt) actHeld.slide = false;
   if (pad.rt) { if (pad.menu) { if (pad.click) pointerRelease(0); } else fireUp(); }
   pad.lt = pad.rt = false;
   pad.click = pad.flag = pad.wheel = false;

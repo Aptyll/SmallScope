@@ -173,8 +173,9 @@ lives in `docs/dev/*.md` beside the code it protects.
   `pointerRelease`** (input.js), never in a listener: a gamepad and a finger press the same keys
   and buttons through those four, so a key handled in the listener alone is dead on a pad. And
   **a key is asked for through its action** — `keyIs(e, 'work')`/`keyHeld('slide')`, never a
-  literal `'e'` — because the player rebinds (`settings.binds`) and the listener names keys by
-  where they sit (`e.code`), so a literal is dead on a rebind and on an AZERTY board.
+  literal `'e'` — because the player rebinds (`binds()`, one map per keyboard scheme) and the
+  listener names keys by where they sit (`e.code`), so a literal is dead on a rebind, on an
+  AZERTY board and on the CLICK scheme, where E is an ability.
 - **Anything a player does takes a `p` and reads `p.input`**, never `keys`/`mouse` (local player only),
   and anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).

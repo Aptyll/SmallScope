@@ -749,40 +749,64 @@ function drawToolPrimer(g, y0) {
 // one. keyRowsLayout lays it out listing-local (the blit origin is the
 // content window's top less the scroll); the draw, the hit test and
 // DBG.keyRows all read it, so a click can never disagree with a pixel.
-const KEY_ROWS = [
-  [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
-    'dodge', 'slide', 'work', 'berry', 'fish', 'card', 'bag', 'char', 'build', 'rotate'],
-  ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'FLAG WHEEL'],
-    ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
-];
+// The listing is the live SCHEME's (settings.scheme: the WASD scheme, or
+// the CLICK scheme of the `click to move` banner, input.js), and its first
+// row is the scheme itself - two words, the one in force gold, a click on
+// the other switches (and drops every order the click scheme held). Under
+// CLICK the walk keys and the harvest key are the right button's, so those
+// rows are the mouse's fixed words instead.
+const KEY_ROWS = {
+  wasd: [
+    [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
+      'dodge', 'slide', 'work', 'berry', 'fish', 'card', 'bag', 'char', 'build', 'rotate'],
+    ['map', 'board', 'mute', 'pause', ['CLICK', 'FIRE'], ['RMB', 'FLAG WHEEL'],
+      ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+  ],
+  click: [
+    [{ acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove', 'stop', 'dodge', 'slide', 'berry', 'fish', 'flag',
+      'card', 'bag', 'char', 'build', 'rotate'],
+    ['map', 'board', 'mute', 'pause', ['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'],
+      ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+  ],
+};
+const KEY_SCHEME = [{ id: 'wasd', label: 'WASD' }, { id: 'click', label: 'CLICK' }];
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
-const KEYS_PRIMER_Y = KEY_ROWS_Y + 12 * KEY_ROW_H + 12; // the primer bakes under the listing and its RESET
+const KEY_ROWS_N = 1 + Math.max(...Object.values(KEY_ROWS).map((s) => Math.max(s[0].length, s[1].length))); // the scheme row over the tallest listing
+const KEYS_PRIMER_Y = KEY_ROWS_Y + KEY_ROWS_N * KEY_ROW_H + 12; // the primer bakes under the listing and its RESET
 function keyRowsLayout() {
-  const caps = [], words = [];
+  const caps = [], words = [], scheme = [];
+  const R = KEY_ROWS[settings.scheme] || KEY_ROWS.wasd;
+  let resetY = 0;
   for (let c = 0; c < 2; c++) {
     const x0 = c === 0 ? 14 : 124;
-    const rows = KEY_ROWS[c].map((row) => {
+    const rows = R[c].map((row) => {
       if (Array.isArray(row)) return { fixed: row[0], verb: row[1], w: pixelTextWidth(row[0]) };
       const acts = row.acts || [row];
       const runs = acts.map((a) => { const lab = keyCap(a); return { act: a, lab, w: pixelTextWidth(lab) + 6 }; });
       return { runs, verb: row.verb || KEY_ACT[row].verb, w: runs.reduce((s, r) => s + r.w + 2, -2) };
     });
+    // the scheme row heads the first column: the two words, then the verb
+    if (c === 0) rows.unshift({ scheme: KEY_SCHEME.map((s) => ({ id: s.id, label: s.label, w: pixelTextWidth(s.label) })),
+      verb: 'SCHEME', w: KEY_SCHEME.reduce((s, o) => s + pixelTextWidth(o.label) + 8, -8) });
     const dx = Math.max(30, rows.reduce((m, r) => Math.max(m, r.w), 0) + 4); // the verbs line up past the widest run
     let y = KEY_ROWS_Y;
     for (const r of rows) {
       if (r.fixed) words.push({ x: x0, y: y + 3, t: r.fixed, col: '#ffd95c' });
+      else if (r.scheme) { let x = x0; for (const s of r.scheme) { scheme.push({ id: s.id, label: s.label, x, y: y + 3, w: s.w, h: 7 }); x += s.w + 8; } }
       else { let x = x0; for (const q of r.runs) { caps.push({ act: q.act, x, y, w: q.w, h: 10, lab: q.lab }); x += q.w + 2; } }
       words.push({ x: x0 + dx, y: y + 3, t: r.verb, col: '#7a8bb8' });
       y += KEY_ROW_H;
     }
+    if (c === 1) resetY = y + KEY_ROW_H + 3; // RESET a row under the right column
   }
   const rw = pixelTextWidth('RESET');
-  return { caps, words, reset: { x: SET_W - 16 - rw, y: KEY_ROWS_Y + 11 * KEY_ROW_H + 3, w: rw, h: 7 } };
+  return { caps, words, scheme, reset: { x: SET_W - 16 - rw, y: resetY, w: rw, h: 7 } };
 }
 // the listing at ox, oy (the blit origin); hit is settingsHit's answer
 function drawKeyRows(ox, oy, hit, now) {
   const K = keyRowsLayout();
   for (const w of K.words) drawPixelText(ctx, w.t, ox + w.x, oy + w.y, w.col);
+  for (const s of K.scheme) drawPixelText(ctx, s.label, ox + s.x, oy + s.y, settings.scheme === s.id ? '#ffd95c' : hit === 'scheme:' + s.id ? '#f4f7ff' : '#7a8bb8');
   for (const c of K.caps) drawKeyCap(ctx, ox + c.x, oy + c.y, c.lab, false, state.rebind === c.act ? 2 : hit === 'key:' + c.act ? 1 : 0, now);
   drawPixelText(ctx, 'RESET', ox + K.reset.x, oy + K.reset.y, bindsDefault() ? '#2c3a68' : hit === 'keyreset' ? '#cfe0ff' : '#7a8bb8');
 }
@@ -982,6 +1006,7 @@ function settingsHit() {
   if (setTab === 'controls') {
     if (L.ctrl !== 'keys' || my < L.clipY0 + CTRL_TAB_H) return null;
     const K = keyRowsLayout(), ox = SET_X, oy = L.clipY0 + CTRL_TAB_H - L.scroll;
+    for (const s of K.scheme) if (s.id !== settings.scheme && mx >= ox + s.x - 2 && mx < ox + s.x + s.w + 4 && my >= oy + s.y - 3 && my < oy + s.y + s.h + 3) return 'scheme:' + s.id;
     for (const c of K.caps) if (mx >= ox + c.x - 1 && mx < ox + c.x + c.w + 1 && my >= oy + c.y - 1 && my < oy + c.y + c.h + 1) return 'key:' + c.act;
     const r = K.reset;
     if (!bindsDefault() && mx >= ox + r.x - 3 && mx < ox + r.x + r.w + 3 && my >= oy + r.y - 3 && my < oy + r.y + r.h + 3) return 'keyreset';
@@ -1009,6 +1034,9 @@ function settingsMouseDown() {
   if (!hit) return;
   if (hit.startsWith('key:')) { const a = hit.slice(4); if (state.rebind === a) { state.rebind = null; SFX.pickup(); } else rebindStart(a); return; }
   if (hit === 'keyreset') { resetBinds(); SFX.place(); return; }
+  // the scheme words: the other scheme takes over, and every order the
+  // click scheme held is dropped with it (its binds are its own and stay)
+  if (hit.startsWith('scheme:')) { settings.scheme = hit.slice(7); ckClear(); state.rebind = null; for (const n in keys) keys[n] = false; SFX.place(); saveSettings(); return; }
   if (hit.startsWith('tab:')) { setTab = hit.slice(4); SFX.pickup(); return; }
   if (hit.startsWith('ctab:')) { ctrlTab = hit.slice(5); SFX.pickup(); return; }
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || hit === 'hud') { dragSlider = hit; applySliderDrag(); return; }

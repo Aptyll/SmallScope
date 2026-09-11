@@ -988,6 +988,11 @@ Sounds: `SFX.nock()` on the cycle completing (very quiet — it plays after ever
 
 ### The draw
 
+Under the keyboard's [CLICK scheme](multiplayer.md#the-click-scheme) a locked target draws the
+tool by itself to `CK_AUTO_DRAW` (0.7 — the same fraction a NORMAL bot looses at) while the hand
+is off the button, through this same curve and the same cycle: the auto-attack is a bot's loose
+and nothing more, a floor under the hand's own draw, never a second weapon.
+
 `drawPow(p)` — `chargeT` over the kit's `bowCharge`, clamped 0..1 — scales the shot three ways
 at once, each on a straight line from a floor to the bit's own number (the `the draw` banner,
 js/tools.js):

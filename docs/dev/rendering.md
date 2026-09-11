@@ -1461,11 +1461,16 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   (`shelfHit()` — the strip's gold plate is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over a stump or finished structure
-  (right-clickable; `dim` beyond the 60 px reach); **reticle** — everywhere else in play.
-- Reticle `mode` (table `RETICLE`): **idle** white cross; **lock** gold ring — E will work
+  (right-clickable; `dim` beyond the 60 px reach, except under the CLICK scheme, where the press
+  walks there); **reticle** — everywhere else in play.
+- Reticle `mode` (table `RETICLE`): **idle** white cross; **amove** red ring — the CLICK scheme's
+  A is armed and the next left press lays the attack-move
+  ([the click scheme](multiplayer.md#the-click-scheme); its rings on the snow are
+  `drawClickMarks`, draw-world.js); **lock** gold ring — E will work
   the object under the pointer (`workTarget()` is non-null: tree, rock, berried bush),
   dimmed when it is beyond `WORK_REACH`; **ice** the same lock in pale blue over bare ice;
-  **hunt** amber breathing ring over an animal; **fish** water-blue ring over a fish; **bow** — while charging the ring closes as
+  **hunt** amber breathing ring over an animal, a rival player or a rival robot (`unitUnder`,
+  actions.js — the same boxes the CLICK scheme's right button picks a body by); **fish** water-blue ring over a fish; **bow** — while charging the ring closes as
   the draw fills and turns pale gold at full, like the meter. `dim` (50% alpha) also means tools
   are blocked right now: floundering in a hole, or mid-roll.
 - Every reticle in play also carries the **selected tool's own state**, whatever the pointer is

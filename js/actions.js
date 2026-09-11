@@ -106,8 +106,10 @@ function clickAction(p) {
 // what E would work right now for p: the tile p is aiming at, if it holds
 // something a tool can harvest (bare ice counts, for the pick). Shared by
 // tryWork(), the AI and the cursor, so the lock ring can never lie about E.
-function workTarget(p) {
-  const tx = Math.floor(p.input.aimX / TILE), ty = Math.floor(p.input.aimY / TILE);
+function workTarget(p) { return workTargetAt(p, Math.floor(p.input.aimX / TILE), Math.floor(p.input.aimY / TILE)); }
+// ...and the same answer for any tile: what the CLICK scheme's right button
+// asks of the tile it landed on (ckRightPress, input.js)
+function workTargetAt(p, tx, ty) {
   if (!inWorld(tx, ty)) return null;
   const o = objects[idx(tx, ty)];
   let t = -1;
@@ -759,6 +761,23 @@ function unitsNear(src, x, y, r) {
 // the roll, a respawn and the landing ever set invuln (damagePlayer).
 function unitsHit(src, x, y, r) {
   return unitsNear(src, x, y, r).filter((e) => !(e.invuln > 0));
+}
+// The rival body under a world point, for a pointer: a player, a robot or an
+// animal, by the box each kind stands in. The hunt reticle (cursorInfo,
+// render.js) and the CLICK scheme's right button (input.js) both ask this,
+// so the ring and the click can never disagree about who is under the
+// pointer. A merchant is no unit here (unitAlive), as everywhere.
+function unitUnder(src, wx, wy) {
+  for (const q of players) if (enemyOf(src, q) && Math.abs(wx - q.x) <= 8 && wy >= q.y - 14 && wy <= q.y + 4) return q;
+  for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
+  for (const a of animals) {
+    if (!unitAlive(a)) continue;
+    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : a.kind === 'dire' ? 17 : a.kind === 'wolf' || a.kind === 'alpha' ? 9 : 13;
+    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : a.kind === 'dire' ? 28 : a.kind === 'wolf' || a.kind === 'alpha' ? 14 : 22;
+    const by = a.y + 4 - (a.alt || 0); // birds ride their alt
+    if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
+  }
+  return null;
 }
 
 // A building anyone but its own side may swing at. A wall has a team and no

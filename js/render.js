@@ -260,6 +260,9 @@ function render() {
   // your side's flag rings - the ground each order covers - flat on the snow
   // under everything that walks it, and the ring a held flag wheel previews
   drawFlagRings(ox, oy, now);
+  // the CLICK scheme's rings: where the last order landed, and the lock's
+  // ring under its target
+  drawClickMarks(ex, ey, now);
 
   // what the abilities left flat on the snow - craters, and the piercing
   // shot's telegraph line - then drops (all under entities)
@@ -1253,6 +1256,9 @@ function cursorInfo() {
   const tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
   const o = structOf(objAt(tx, ty));
   const busy = player.fallT > 0 || player.dodgeT > 0; // tools locked out
+  // the CLICK scheme's armed attack-move: the pointer is the order waiting to
+  // be laid, and reads as one wherever it is
+  if (ckOn() && ck.arm) return ret('amove', false);
   // the build list up: a hand over its rows, the hammer over the world -
   // dim where the ghost cannot stand
   if (state.build) {
@@ -1260,35 +1266,19 @@ function cursorInfo() {
     const g = buildGhostAt();
     return { kind: 'hammer', dim: !g || !g.can.ok };
   }
-  // one of your own buildings (E manages it) outranks tool hints; beyond the 60px reach it dims
+  // one of your own buildings (E manages it) outranks tool hints; beyond the
+  // 60px reach it dims - not under CLICK, where the press walks there
   if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team) {
     const far = Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > 60;
-    return { kind: 'hammer', dim: far };
+    return { kind: 'hammer', dim: far && !ckOn() };
   }
   if (player.charging) {
     return ret('bow', false, { frac: drawPow(player) });
   }
-  // a living thing under the pointer: hunting reticle
-  for (const q of players) {
-    if (!enemyOf(player, q)) continue;
-    if (Math.abs(wx - q.x) <= 8 && wy >= q.y - 14 && wy <= q.y + 4) {
-      return ret('hunt', busy);
-    }
-  }
-  for (const b of robots) {
-    if (!unitAlive(b) || b.team === player.team) continue; // a merchant is not a mark
-    if (Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) {
-      return ret('hunt', busy);
-    }
-  }
-  for (const a of animals) {
-    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : a.kind === 'dire' ? 17 : a.kind === 'wolf' || a.kind === 'alpha' ? 9 : 13;
-    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : a.kind === 'dire' ? 28 : a.kind === 'wolf' || a.kind === 'alpha' ? 14 : 22;
-    const by = a.y + 4 - (a.alt || 0); // birds ride their alt
-    if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) {
-      return ret('hunt', busy);
-    }
-  }
+  // a living thing under the pointer: hunting reticle (unitUnder, actions.js
+  // - the boxes the CLICK scheme's right button picks a body by, so the ring
+  // and the click agree; a merchant is not a mark)
+  if (unitUnder(player, wx, wy)) return ret('hunt', busy);
   // a fish under the ice: water-blue ring (the bow spears it from point-blank)
   if (hoverFish()) return ret('fish', busy);
   // something E can work: lock ring (ice-blue over bare ice), dim out of reach
@@ -1307,6 +1297,7 @@ const RETICLE = {
   fish: { col: '#7ac0e8', gap: 4, diag: true },
   ice:  { col: '#a8e0f8', gap: 3, diag: true },
   bow:  { col: '#ffd95c', gap: 6, diag: true },
+  amove: { col: '#ff6a5c', gap: 4, diag: true }, // the CLICK scheme's armed attack-move
 };
 let lastCssCursor = null;
 
