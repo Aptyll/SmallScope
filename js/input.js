@@ -288,8 +288,10 @@ function keyPress(e) {
   // The work key at the practice rack: the press opens the armory wheel over
   // it, the pointer picks, and RELEASING it takes - the right-click wheel's
   // own hold-and-release grammar, moved onto the key. A real work target in
-  // reach keeps the key's day job (the same rule that decides which prompt
-  // is showing), and ordinary work is suppressed while any wheel is up
+  // reach keeps the key's day job over any of that furniture (the same rule
+  // that decides which prompt is showing) - but NOT over a merchant, which
+  // takes the key ahead of the work itself; ordinary work is suppressed
+  // while any wheel is up, and while the counter is open
   // (sampleHumanInput). Seated on the roost, it is the hop (updateDrop reads
   // the held work intent) and nothing else: the merchant stands beside the
   // roost, and the counter opening instead would swallow the very key that
@@ -299,6 +301,17 @@ function keyPress(e) {
     // The merchant's counter is a PANEL, not a held wheel, so the key that
     // opened it shuts it - whatever else has come into reach meanwhile.
     if (state.shop) { closeShop(); return; }
+    // ...and a MERCHANT IN REACH OWNS THE KEY OUTRIGHT - ahead of a work
+    // target, and so ahead of everything below it. Inside SHOP_REACH of a
+    // body you are AT the counter, which nobody arrives at by accident;
+    // meanwhile the merchant fells trees for a living and loiters among
+    // them, so there is very often a trunk one tile from the counter, and E
+    // swinging at that trunk is the shop refusing to open for no reason the
+    // player can see. The same rule decides which cap is showing
+    // (drawWorkHint, js/ui/wheel.js) and whether the cursor promises a swing
+    // (cursorInfo, js/draw/render.js).
+    const mb = merchNear(player);
+    if (mb) { SFX.unlock(); openShop(mb); return; }
     const t = workTarget(player);
     if (!t || !t.near) {
       // one of your OWN buildings in reach: the press opens its manage
@@ -323,10 +336,6 @@ function keyPress(e) {
           // mid-ceremony.
           const bl = agBellNear(player);
           if (bl && agame.phase === 'off') { SFX.unlock(); state.wheel = { kind: 'agbell', tx: bl.tx, ty: bl.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
-          // ...and a MERCHANT: the press opens its counter (js/shop.js). Last
-          // in the chain because the practice room's furniture and a merchant
-          // can never be in reach of each other.
-          else { SFX.unlock(); openShop(merchNear(player)); }
         }
       }
     }

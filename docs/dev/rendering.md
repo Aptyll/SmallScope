@@ -1468,7 +1468,9 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   ([the click scheme](multiplayer.md#the-click-scheme); its rings on the snow are
   `drawClickMarks`, js/draw/marks.js); **lock** gold ring — E will work
   the object under the pointer (`workTarget()` is non-null: tree, rock, berried bush),
-  dimmed when it is beyond `WORK_REACH`; **ice** the same lock in pale blue over bare ice;
+  dimmed when it is beyond `WORK_REACH`, and **never inside a merchant's reach**, where E is the
+  counter's ([opening it](gameplay.md#opening-it)) and a ring would promise a swing the key does
+  not make; **ice** the same lock in pale blue over bare ice;
   **hunt** amber breathing ring over an animal, a rival player or a rival robot (`unitUnder`,
   actions.js — the same boxes the CLICK scheme's right button picks a body by); **fish** water-blue ring over a fish; **bow** — while charging the ring closes as
   the draw fills and turns pale gold at full, like the meter. `dim` (50% alpha) also means tools
