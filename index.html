@@ -38,7 +38,16 @@
      localStorage: it has no dependencies, so it goes first. -->
 <script src="js/profile.js"></script>
 <script src="js/font.js"></script>
-<script src="js/sprites.js"></script>
+<!-- js/sprites/: every sprite as a char grid + palette, baked at load. core.js first (it
+     makes SPRITES and the SPR helpers); each file after it registers the keys it owns. -->
+<script src="js/sprites/core.js"></script>
+<script src="js/sprites/characters.js"></script>
+<script src="js/sprites/terrain.js"></script>
+<script src="js/sprites/beasts.js"></script>
+<script src="js/sprites/eagle.js"></script>
+<script src="js/sprites/buildings.js"></script>
+<script src="js/sprites/items.js"></script>
+<script src="js/sprites/icons.js"></script>
 <!-- audio/sfx/*.mp3 baked to base64 by app/bake-sfx.js: a file:// page cannot fetch
      its own folder, so this is what lets the sound effects work when index.html
      is opened straight off the disk. Must load before audio.js. -->
