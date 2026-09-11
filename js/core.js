@@ -267,7 +267,7 @@ function relayout() {
   MAP_X = PANEL_X + MAP_SIDE; MAP_Y = PANEL_Y + MAP_HEAD;
   SET_X = Math.round((VIEW_W - SET_W) / 2);
   SET_Y = Math.round((VIEW_H - SET_H) / 2);
-  SL_X = SET_X + 112;
+  SL_X = SET_X + 130;
   SET_MUTE_X = SL_X - 14;
   fitFlakes();
   renderBars();

@@ -141,8 +141,8 @@ rebind moves all three controllers at once and neither scheme's map ever sits be
 and its verb — a pad on the CLICK scheme still works with X, because X names `work`, not E.
 
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
-([the panel](gameplay.md#settings); the listing is the live scheme's, and its top row — WASD /
-CLICK — is the scheme switch, `KEY_ROWS`/`KEY_SCHEME`, panels.js): a click sets it listening (`state.rebind` is the action,
+([the panel](gameplay.md#settings); the listing is the live scheme's, and the CONTROLS navbar's
+WASD / CLICK cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels.js): a click sets it listening (`state.rebind` is the action,
 `rebindStart`), the next key down is its key (`rebindKey`, first thing in `keyPress`), Escape calls
 it off, a reserved key is refused with the deny cue, and a key another action holds **swaps** —
 that action takes the old key (`setBind`) — so every action always has one key of its own and no
