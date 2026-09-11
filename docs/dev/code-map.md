@@ -539,7 +539,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the roster: three slot cards, the ledger, the quill, the hold-to-delete plate, the empty slot's plus | `charsLayout`, `charsHit`, `beginChars`/`leaveChars`, `activateChar`, `charsKey`, `charsClick`, `updateChars`, `drawCharCard`, `drawLedger`, `renderChars`, `CH_CARD_*`, `CH_DEL_T` | `characters` › `the roster` |
+| the roster: three slot cards, the ledger, the quill, the X plate that deletes, the empty slot's plus | `charsLayout`, `charsHit`, `beginChars`/`leaveChars`, `activateChar`, `deleteSlot`, `charsKey`, `charsClick`, `updateChars`, `drawCharCard`, `drawLedger`, `renderChars`, `CH_CARD_*` | `characters` › `the roster` |
 | the create / customize screen: the pre-rolled buffer, the option rows and their cells, the class pair and its lock, the shuffle, the name field, DONE / CANCEL, the keyboard | `CH_ROWS`, `createLayout`, `rowCells`, `beginCreate`, `createCommit`/`createCancel`, `setLook`/`cycleLook`/`shuffleLook`, `createHit`, `createKey`, `createClick`, `updateCreate`, `nameOk`, `renderCreate`, `drawModel`, `drawWell`, `NAME_SHAKE_T` | `characters` › `the create screen` (the store: `PROFILE`, profile.js; the model: `SPRITES.portrait`, js/sprites/looks.js) |
 | the character tag bottom-left of the title screen | `charTagRect`, `overCharTag`, `drawCharTag` (the player that wears it: `applyCharacter`, player.js) | `characters` › `the character tag` |
 

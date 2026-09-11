@@ -1634,9 +1634,8 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   DAYS / GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
   `drawLedger`). The active card wears the gold rim; a card click makes it active
   (`activateChar`) and leaves; the quill bottom-right opens the customize screen on that slot;
-  the plate top-right **deletes on a hold** (`CH_DEL_T`, 0.8 s — its floor fills red while the
-  button stays down, drains if it is let go, `updateChars`), and deleting the last character
-  reopens the create screen as a first launch. An empty slot is a dashed well with a plus in it,
+  the X plate top-right (red under the hand) **deletes on the press** (`deleteSlot`), and
+  deleting the last character reopens the create screen as a first launch. An empty slot is a dashed well with a plus in it,
   and a click there is a new character. Left/Right walk `menu.ksel`, Enter picks, Esc backs out
   (`charsKey`).
 - **The create screen** opens on `menu.cedit = { slot, spec, first }` — slot −1 is a **new

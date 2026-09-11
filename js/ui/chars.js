@@ -12,7 +12,7 @@
 // on a PRE-ROLLED character - a rolled name and look - so DONE is one press
 // away and nobody is stopped at a blank form. Nothing on either screen is a
 // sentence: the model IS the preview, a swatch is a colour, a chevron cycles
-// a row, the class is the emblem, the delete plate fills while it is held.
+// a row, the class is the emblem, the X plate deletes.
 // Text is the name, the ledger's labels (the character panel carve-out) and
 // the two planks.
 
@@ -23,7 +23,6 @@ const CH_ROW_P = 22;       // the option rows' pitch
 const CH_SW = 12;          // a swatch's side
 const CH_NAME_W = 176, CH_NAME_H = 20;
 const CH_BW = 88, CH_BH = 20, CH_BGAP = 12;
-const CH_DEL_T = 0.8;      // s the delete plate is held before a slot goes
 const NAME_SHAKE_T = 0.3;  // the name field's refusal: it rattles and flushes red
 // the create screen's rows, in keyboard order: the axis they turn and what
 // the row is made of. `cls` is the class pair, only live for a new character.
@@ -95,7 +94,6 @@ function beginChars() {
   const m = state.menu;
   m.screen = m.cscreen = 'chars';
   m.ksel = PROFILE.activeIndex();
-  m.delHold = 0;
   m.khover = {};
   SFX.place();
   SFX.music.play('select');
@@ -142,25 +140,20 @@ function charsClick() {
   if (h.kind === 'new') beginCreate(-1, false);
   else if (h.kind === 'quill') beginCreate(h.i, false);
   else if (h.kind === 'card') { activateChar(h.i); SFX.unlock(); leaveChars(); }
-  // 'del' is a HOLD, not a click: updateChars fills it while the button stays down
+  else if (h.kind === 'del') deleteSlot(h.i);
 }
-// the delete plate fills while the button is held over it, and the slot goes
-// at full; letting go early lets it drain - nothing is ever lost to a click
+// the X plate: the slot goes on the press. The last character gone puts the
+// create screen back up as a first launch - the game needs somebody to play.
+function deleteSlot(i) {
+  const m = state.menu;
+  if (!PROFILE.deleteChar(i)) return;
+  applyCharacter();
+  m.ksel = Math.min(i, Math.max(0, PROFILE.chars().length - 1));
+  SFX.break_();
+  if (!PROFILE.hasChar()) beginCreate(-1, true);
+}
 function updateChars(dt) {
   const m = state.menu;
-  const h = m.charT >= 1 && mouse.down ? charsHit() : null;
-  if (h && h.kind === 'del' && h.i === m.ksel) {
-    m.delHold += dt / CH_DEL_T;
-    if (m.delHold >= 1) {
-      m.delHold = 0;
-      PROFILE.deleteChar(h.i);
-      applyCharacter();
-      m.ksel = Math.min(m.ksel, Math.max(0, PROFILE.chars().length - 1));
-      SFX.break_();
-      if (!PROFILE.hasChar()) beginCreate(-1, true); // the last one gone: back to the start
-    }
-  } else if (h && h.kind === 'del') m.ksel = h.i;
-  else m.delHold = Math.max(0, m.delHold - dt * 3);
   const hv = m.charT >= 1 ? charsHit() : null;
   const want = hv ? hv.kind + hv.i : '';
   for (const k of Object.keys(m.khover)) m.khover[k] += ((want === k ? 1 : 0) - m.khover[k]) * Math.min(1, dt * 14);
@@ -420,14 +413,13 @@ function drawCharCard(c, now, a) {
   // the quill and the delete plate
   const qh = m.khover['quill' + c.i] || 0;
   stampGrid(CH_QUILL, qh > 0.5 ? CH_QUILL_HOT : CH_QUILL_PAL, c.quill.x + 3, c.quill.y + 2 - Math.round(qh), 1);
+  // the X plate: slate at rest, red under the hand - a press deletes the slot
   const dh = m.khover['del' + c.i] || 0;
-  const hold = focus ? m.delHold : 0;
   ctx.fillStyle = dh > 0.5 ? '#c86a5a' : '#2c3560';
   ctx.fillRect(c.del.x, c.del.y, c.del.w, c.del.h);
-  ctx.fillStyle = '#0f1632';
+  ctx.fillStyle = dh > 0.5 ? '#5a1e1e' : '#0f1632';
   ctx.fillRect(c.del.x + 1, c.del.y + 1, c.del.w - 2, c.del.h - 2);
-  if (hold > 0) { ctx.fillStyle = '#a83a3a'; ctx.fillRect(c.del.x + 1, c.del.y + c.del.h - 1 - Math.round((c.del.h - 2) * hold), c.del.w - 2, Math.round((c.del.h - 2) * hold)); }
-  ctx.fillStyle = dh > 0.5 || hold > 0 ? '#ffd0c0' : '#5a6690';
+  ctx.fillStyle = dh > 0.5 ? '#ffd0c0' : '#5a6690';
   for (let i = 0; i < 5; i++) { ctx.fillRect(c.del.x + 3 + i, c.del.y + 3 + i, 1, 1); ctx.fillRect(c.del.x + 7 - i, c.del.y + 3 + i, 1, 1); }
 }
 function renderChars(now, a) {

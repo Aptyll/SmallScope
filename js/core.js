@@ -151,9 +151,9 @@ const state = {
     // the create screen's unsaved buffer ({ slot, spec, first } - slot -1 is
     // a new character, first the fresh-install pass with no title to go
     // back to), nameBuf/nameShake its name field and refusal rattle, crow the
-    // keyboard row, ksel the roster's keyboard slot, delHold the delete
-    // plate's hold (0..1), khover the hover eases keyed by hit id
-    charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameShake: 0, crow: 0, ksel: 0, delHold: 0, khover: {},
+    // keyboard row, ksel the roster's keyboard slot, khover the hover eases
+    // keyed by hit id
+    charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameShake: 0, crow: 0, ksel: 0, khover: {},
     moved: false, dieT: 0, rolling: 0, camT: 0, pressT: 0,
     // frozen planks: refusal shudder timer, which plank was struck (menu index),
     // per-knock crack seed, the struck point (plank-local) and the ice chips it sprays (screen-space).
