@@ -351,9 +351,11 @@
     }
   };
   // portrait(cls, look, team): the 48 x 48 model of one character in one
-  // team's paint, composed on first ask and kept (a handful of characters is
-  // all that ever asks). `bare` leaves the outfit off - the create screen's
+  // team's paint, composed on first ask and kept. The create screen asks for
+  // one per option cell per click, so the cache is emptied past PORTRAIT_KEEP
+  // rather than growing with every roll of the die. `bare` leaves the outfit off - the create screen's
   // head-and-shoulders read while a face is being chosen is the same model.
+  const PORTRAIT_KEEP = 512;
   const cache = new Map();
   function portrait(cls, look, team, bare) {
     const key = cls + '|' + team + '|' + (bare ? 1 : 0) + '|' + [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face].join(',');
@@ -368,6 +370,7 @@
     stamp(g, BEARD[look.beard], pal);
     stamp(g, HAIR[look.hair], pal);
     if (!bare) stamp(g, OUTFIT[cls] || OUTFIT[0], pal);
+    if (cache.size >= PORTRAIT_KEEP) cache.clear();
     cache.set(key, c);
     return c;
   }

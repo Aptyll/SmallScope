@@ -11,30 +11,38 @@
 // A fresh install opens the create screen before the title (js/boot.js),
 // on a PRE-ROLLED character - a rolled name and look - so DONE is one press
 // away and nobody is stopped at a blank form. Nothing on either screen is a
-// sentence: the model IS the preview, a swatch is a colour, a chevron cycles
-// a row, the class is the emblem, the X plate deletes.
+// sentence: the model IS the preview, a cell is a choice worn by the model,
+// the die rolls one, the class is the emblem, the X plate deletes.
 // Text is the name, the ledger's labels (the character panel carve-out) and
 // the two planks.
 
 // ---- layout -------------------------------------------------------------
 const CH_CARD_W = 120, CH_CARD_H = 184, CH_CARD_GAP = 16; // a roster slot
 const CH_STAGE = 144;      // the create screen's model, the 48 px portrait at 3x
-const CH_ROW_P = 22;       // the option rows' pitch
-const CH_SW = 12;          // a swatch's side
+const CH_CELL = 24;        // an option cell's side: a 1x crop of the model wearing that option
+const CH_CELL_GAP = 2;
+const CH_ROW_P = 28;       // the option rows' pitch
+const CH_GAP = 24;         // between the stage column and the option panel
 const CH_NAME_W = 176, CH_NAME_H = 20;
 const CH_BW = 88, CH_BH = 20, CH_BGAP = 12;
 const NAME_SHAKE_T = 0.3;  // the name field's refusal: it rattles and flushes red
-// the create screen's rows, in keyboard order: the axis they turn and what
-// the row is made of. `cls` is the class pair, only live for a new character.
+const DIE_T = 0.4;         // the die's tumble after a press
+// the create screen's rows, in keyboard order: the axis each turns and the
+// crop of the bare model its cells show - the head (x 12, y 2) for anything
+// on the face, the torso (x 12, y 22) for the body. `cls` is the class pair,
+// only live for a new character. Every row is the same thing: one cell per
+// choice, the choice drawn in it, the picked one gold.
+const CH_HEAD = { x: 12, y: 2 }, CH_TORSO = { x: 12, y: 22 };
 const CH_ROWS = [
   { id: 'cls', kind: 'cls' },
-  { id: 'sex', kind: 'sex' },
-  { id: 'tone', kind: 'swatch' },
-  { id: 'hair', kind: 'cycle' },
-  { id: 'hairCol', kind: 'swatch' },
-  { id: 'beard', kind: 'cycle' },
-  { id: 'face', kind: 'cycle' },
+  { id: 'sex', crop: CH_TORSO },
+  { id: 'tone', crop: CH_HEAD },
+  { id: 'hair', crop: CH_HEAD },
+  { id: 'hairCol', crop: CH_HEAD },
+  { id: 'beard', crop: CH_HEAD },
+  { id: 'face', crop: CH_HEAD },
 ];
+const CH_ROW_N = Math.max(...Object.values(PROFILE.LOOK_N)); // the widest row sets the panel
 
 // the roster: three slots across the middle, the back hint under them
 function charsLayout() {
@@ -51,39 +59,41 @@ function charsLayout() {
   }
   return { toy, cx, cards, back: toy + 222 };
 }
-// the create screen: the model on its stage left, the class pair over the
-// option column right, the name under the stage, the planks along the foot
+// the create screen, two columns sharing a top line and a foot, centred as
+// one block: the stage (the model, the die on its corner, the in-world body
+// on a snow pad) with the name under it, and the option panel - the class
+// pair centred at its head, the look rows under it, every cell the same
+// size in the same columns. DONE / CANCEL centred along the foot.
 function createLayout() {
   const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
-  const stage = { x: cx - 264, y: toy + 24, w: CH_STAGE, h: CH_STAGE };
-  const mini = { x: stage.x + stage.w + 10, y: stage.y + stage.h - 40, w: 32, h: 32 }; // the in-world body, 2x
-  const name = { x: stage.x - 8, y: stage.y + stage.h + 18, w: CH_NAME_W, h: CH_NAME_H };
-  const x0 = cx - 40; // the option column's left edge (its glyphs sit 14 px left of it)
-  // the class pair heads the column (a 36 px row), the six look rows follow
-  const rows = CH_ROWS.map((r, i) => ({ id: r.id, kind: r.kind, x: x0, y: i ? toy + 76 + (i - 1) * CH_ROW_P : toy + 28, w: 220, h: i ? 20 : 36 }));
-  const shuffle = { x: x0 + 96, y: toy + 35, w: 24, h: 22 };
+  const panelW = 16 + CH_ROW_N * CH_CELL + (CH_ROW_N - 1) * CH_CELL_GAP; // the glyph gutter + the widest row
+  const left = cx - Math.round((CH_STAGE + CH_GAP + panelW) / 2);
+  const stage = { x: left, y: toy + 12, w: CH_STAGE, h: CH_STAGE };
+  const die = { x: stage.x + stage.w - 24, y: stage.y + 2, w: 22, h: 22 };
+  const mini = { x: stage.x + stage.w - 34, y: stage.y + stage.h - 36, w: 32, h: 32 }; // the in-world body, 2x
+  const name = { x: stage.x + Math.round((stage.w - CH_NAME_W) / 2), y: stage.y + stage.h + 12, w: CH_NAME_W, h: CH_NAME_H };
+  const x0 = left + CH_STAGE + CH_GAP + 16; // the cells' left edge; a row's glyph sits in the 16 px gutter before it
+  const cellsW = panelW - 16;
+  const rows = CH_ROWS.map((r, i) => i
+    ? { id: r.id, crop: r.crop, x: x0, y: toy + 56 + (i - 1) * CH_ROW_P, w: cellsW, h: CH_CELL }
+    : { id: r.id, kind: r.kind, x: x0 + Math.round(cellsW / 2) - 39, y: toy + 12, w: 78, h: 36 });
   const planks = [];
   const first = state.menu.cedit && state.menu.cedit.first;
   const pw = first ? CH_BW : CH_BW * 2 + CH_BGAP;
-  const px = cx + 60 - Math.round(pw / 2), py = toy + 212;
+  const px = cx - Math.round(pw / 2), py = toy + 230;
   planks.push({ x: px, y: py, w: CH_BW, h: CH_BH, id: 'done' });
   if (!first) planks.push({ x: px + CH_BW + CH_BGAP, y: py, w: CH_BW, h: CH_BH, id: 'cancel' });
-  return { toy, cx, stage, mini, name, rows, shuffle, planks };
+  return { toy, cx, stage, die, mini, name, rows, planks };
 }
 // the cells of one option row, each with a hit id and the value it sets
 function rowCells(r) {
-  const N = PROFILE.LOOK_N, out = [];
-  if (r.kind === 'sex') {
-    for (let v = 0; v < N.sex; v++) out.push({ id: 'sex' + v, x: r.x + v * 24, y: r.y, w: 18, h: 20, axis: 'sex', v });
-  } else if (r.kind === 'swatch') {
-    for (let v = 0; v < N[r.id]; v++) out.push({ id: r.id + v, x: r.x + v * (CH_SW + 5), y: r.y + 4, w: CH_SW, h: CH_SW, axis: r.id, v });
-  } else if (r.kind === 'cycle') {
-    const n = N[r.id];
-    out.push({ id: r.id + 'L', x: r.x, y: r.y + 2, w: 12, h: 16, axis: r.id, step: -1 });
-    out.push({ id: r.id + 'R', x: r.x + 24 + n * 8, y: r.y + 2, w: 12, h: 16, axis: r.id, step: 1 });
-  } else if (r.kind === 'cls') {
+  const out = [];
+  if (r.kind === 'cls') {
     for (let v = 0; v < CLASSES.length; v++) out.push({ id: 'cls' + v, x: r.x + v * 42, y: r.y, w: 36, h: 36, axis: 'cls', v });
+  } else {
+    const n = PROFILE.LOOK_N[r.id];
+    for (let v = 0; v < n; v++) out.push({ id: r.id + v, x: r.x + v * (CH_CELL + CH_CELL_GAP), y: r.y, w: CH_CELL, h: CH_CELL, axis: r.id, v, crop: r.crop });
   }
   return out;
 }
@@ -171,6 +181,7 @@ function beginCreate(slot, first) {
   m.cedit = { slot, spec, first: !!first };
   m.nameBuf = spec.name;
   m.nameShake = 0;
+  m.dieT = 0;
   m.crow = 0;
   m.khover = {};
   m.screen = m.cscreen = 'create';
@@ -218,17 +229,19 @@ function cycleLook(axis, step) {
   const n = PROFILE.LOOK_N[axis];
   setLook(axis, ((state.menu.cedit.spec.look[axis] + step) % n + n) % n);
 }
+// the die: a press tumbles it (DIE_T of faces flickering) and lands a new look
 function shuffleLook() {
-  const e = state.menu.cedit;
+  const m = state.menu, e = m.cedit;
   if (!e) return;
   e.spec.look = PROFILE.rollChar(e.spec.cls).look;
+  m.dieT = DIE_T;
   SFX.dodge();
 }
-// what the pointer is on: a cell's id, 'shuffle', 'done', 'cancel', or null
+// what the pointer is on: a cell's id, 'die', 'done', 'cancel', or null
 function createHit() {
   const L = createLayout();
   for (const r of L.rows) for (const c of rowCells(r)) if (overRect(c, 1, 1)) return c.id;
-  if (overRect(L.shuffle, 2, 2)) return 'shuffle';
+  if (overRect(L.die, 2, 2)) return 'die';
   for (const p of L.planks) if (overRect(p, 2, 3)) return p.id;
   return null;
 }
@@ -272,16 +285,16 @@ function createClick() {
   if (!h) return;
   if (h === 'done') { m.pressT = 0.12; createCommit(); return; }
   if (h === 'cancel') { m.pressT = 0.12; createCancel(); return; }
-  if (h === 'shuffle') { shuffleLook(); return; }
+  if (h === 'die') { shuffleLook(); return; }
   const c = createCellById(h);
   if (!c) return;
   m.crow = CH_ROWS.findIndex((r) => r.id === c.axis);
-  if (c.step) cycleLook(c.axis, c.step);
-  else setLook(c.axis, c.v);
+  setLook(c.axis, c.v);
 }
 function updateCreate(dt) {
   const m = state.menu;
   if (m.nameShake > 0) m.nameShake = Math.max(0, m.nameShake - dt);
+  if (m.dieT > 0) m.dieT = Math.max(0, m.dieT - dt);
   const want = m.charT >= 1 && mouse.inside ? createHit() || '' : '';
   for (const k of Object.keys(m.khover)) m.khover[k] += ((want === k ? 1 : 0) - m.khover[k]) * Math.min(1, dt * 14);
   if (want && m.khover[want] === undefined) m.khover[want] = 0;
@@ -300,7 +313,8 @@ const CH_QUILL_PAL = { '.': null, h: '#9fb6d8', t: '#f2cc6a' };
 const CH_QUILL_HOT = { '.': null, h: '#ffd95c', t: '#fff1c2' };
 const CH_LOCK = ['.oooo.', 'o....o', 'o....o', 'oooooo', 'oooooo', 'oo..oo', 'oooooo'];
 const CH_LOCK_PAL = { '.': null, o: '#8fa0c8' };
-const CH_SHUFFLE = ['w........w', '.w......w.', '..w....w..', '...w..w...', '....ww....', '....ww....', '...w..w...', '..w....w..', '.w......w.', 'w........w'];
+// the die's six faces: where the pips sit on a 3 x 3 lattice
+const DIE_FACES = [[4], [0, 8], [0, 4, 8], [0, 2, 6, 8], [0, 2, 4, 6, 8], [0, 2, 3, 5, 6, 8]];
 // the option rows' glyphs, 8 x 8, at the row's left: a figure, a drop, a
 // comb, a palette, a beard, a face
 const CH_ROW_GLYPH = {
@@ -311,8 +325,6 @@ const CH_ROW_GLYPH = {
   beard: ['w......w', 'w......w', 'ww....ww', '.ww..ww.', '.wwwwww.', '..wwww..', '...ww...', '........'],
   face: ['..wwww..', '.w....w.', 'w.w..w.w', 'w......w', 'w.w..w.w', 'w..ww..w', '.w....w.', '..wwww..'],
 };
-const CH_MALE = ['..wwww..', '.wwwwww.', '.wwwwww.', '..wwww..', '.wwwwww.', 'wwwwwwww', 'wwwwwwww', 'w.wwww.w', '..wwww..', '..wwww..', '..ww.ww.', '..ww.ww.'];
-const CH_FEMALE = ['..wwww..', '.wwwwww.', '.wwwwww.', '..wwww..', '..wwww..', '.wwwwww.', '.wwwwww.', '..wwww..', '.wwwwww.', 'wwwwwwww', '..ww.ww.', '..ww.ww.'];
 
 // a well: the this-is-a-button grammar shared by every plate here - a dark
 // drop shadow, a slate rim that lightens under the hand and goes gold when
@@ -326,13 +338,6 @@ function drawWell(r, hv, picked, lift) {
   ctx.fillStyle = picked ? '#1a2142' : '#0f1632';
   ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
   return y;
-}
-function drawChevron(x, y, dir, hot) {
-  ctx.fillStyle = hot ? '#ffd95c' : '#8fa0c8';
-  for (let i = 0; i < 5; i++) {
-    const d = i < 3 ? i : 4 - i;
-    ctx.fillRect(x + (dir < 0 ? 4 - d : d), y + i * 2, 2, 2);
-  }
 }
 // the 48 px model, S px per pixel, on a pool of light with a gold ring
 // turning on the snow (class select's stage grammar)
@@ -433,13 +438,36 @@ function renderChars(now, a) {
   ctx.globalAlpha = 1;
 }
 
-// The create screen: the model at 3x on its stage, the in-world body walking
-// beside it (what the snow will actually show), the name field under them;
-// the option rows down the right - a row's glyph, then its swatches, its
-// silhouettes, or a chevron pair around the count's pips - the class pair
-// under the rows (the unpicked emblem dark, and locked once the character
-// exists), the shuffle plate, and the planks along the foot. The keyboard row
-// breathes gold ticks at its glyph.
+// one option cell: a well with a 1x crop of the bare model wearing that
+// choice in it - the head for anything on the face, the torso for the body -
+// so a row IS its choices, seen before they are picked. The picked cell is
+// gold and sits a px up; a hovered one lifts under the hand.
+function drawLookCell(c, spec, team, hv, picked) {
+  const y = drawWell(c, hv, picked, true);
+  const look = Object.assign({}, spec.look); look[c.axis] = c.v;
+  const src = SPRITES.portrait(spec.cls, look, team, true);
+  ctx.drawImage(src, c.crop.x, c.crop.y, c.w - 2, c.h - 2, c.x + 1, y + 1, c.w - 2, c.h - 2);
+}
+// the die: a well with a face of pips on it. At rest it shows five; under
+// the hand it lifts and the pips go gold; for DIE_T after a press the face
+// flickers through the six and the plate rattles - a roll, not a button.
+function drawDie(r, hv, tumble, now) {
+  const rattle = tumble > 0 ? Math.round(Math.sin(now * 70) * 2 * tumble) : 0;
+  const rr = { x: r.x + rattle, y: r.y, w: r.w, h: r.h };
+  const y = drawWell(rr, hv, false, true);
+  const face = tumble > 0 ? DIE_FACES[Math.floor(now * 18) % 6] : DIE_FACES[4];
+  ctx.fillStyle = tumble > 0 || hv > 0.5 ? '#ffd95c' : '#8fa0c8';
+  for (const k of face) ctx.fillRect(rr.x + 4 + (k % 3) * 6, y + 4 + Math.floor(k / 3) * 6, 2, 2);
+}
+
+// The create screen: the model at 3x on its stage with the die on its
+// corner and the in-world body on a snow pad beside its feet (what the snow
+// will actually show), the name field under the stage; the option panel to
+// the right - the class pair centred at its head (the unpicked emblem dark,
+// and locked once the character exists), then a row per axis: its glyph in
+// the gutter, and a cell per choice showing that choice on the model. DONE
+// and CANCEL centred along the foot. The keyboard row breathes gold ticks at
+// its glyph.
 function renderCreate(now, a) {
   const m = state.menu, e = m.cedit;
   if (!e) return;
@@ -454,6 +482,8 @@ function renderCreate(now, a) {
   ctx.fillStyle = '#e8eef8';
   ctx.beginPath(); ctx.ellipse(L.mini.x + 16 - slide, L.mini.y + 30, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
   ctx.drawImage(set.down[1 + (Math.floor(now * 4) % 2)], L.mini.x - slide, L.mini.y, 32, 32);
+  // the die on the stage's corner
+  drawDie({ x: L.die.x - slide, y: L.die.y, w: L.die.w, h: L.die.h }, m.khover.die || 0, m.dieT / DIE_T, now);
   // the name field: a well, the buffer at 2x with the caret, the capacity
   // ticks under it, a refusal flooding it red
   const f = { x: L.name.x - slide, y: L.name.y, w: L.name.w, h: L.name.h };
@@ -471,22 +501,18 @@ function renderCreate(now, a) {
   let kx = f.x + Math.round((f.w - (PROFILE.NAME_MAX * 4 - 1)) / 2);
   for (let i = 0; i < PROFILE.NAME_MAX; i++, kx += 4) { ctx.fillStyle = i < txt.length ? '#f2cc6a' : '#2c3a68'; ctx.fillRect(kx, f.y + f.h + 4, 3, 2); }
 
-  // the option rows
-  const hot = m.charT >= 1 ? createHit() : null;
+  // the option panel
   for (let i = 0; i < L.rows.length; i++) {
     const r = L.rows[i];
     const rx = r.x + slide;
     if (r.kind !== 'cls') {
-      stampGrid(CH_ROW_GLYPH[r.id], CH_ICON_PAL, rx - 16, r.y + 6, 1);
-      if (m.crow === i && !mouse.inside) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(rx - 20, r.y + 6 + Math.round(Math.sin(now * 4) + 1), 2, 6); }
+      stampGrid(CH_ROW_GLYPH[r.id], CH_ICON_PAL, rx - 14, r.y + 8, 1);
+      if (m.crow === i && !mouse.inside) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(rx - 18, r.y + 8 + Math.round(Math.sin(now * 4) + 1), 2, 6); }
     }
     for (const c of rowCells(r)) {
       const hv = m.khover[c.id] || 0;
-      const cr = { x: c.x + slide, y: c.y, w: c.w, h: c.h };
-      if (c.axis === 'sex') {
-        const y = drawWell(cr, hv, spec.look.sex === c.v, true);
-        stampGrid(c.v ? CH_FEMALE : CH_MALE, { '.': null, w: spec.look.sex === c.v ? '#ffd95c' : hv > 0.5 ? '#f4f7ff' : '#8fa0c8' }, cr.x + 5, y + 4, 1);
-      } else if (c.axis === 'cls') {
+      const cr = Object.assign({}, c, { x: c.x + slide });
+      if (c.axis === 'cls') {
         const locked = e.slot >= 0;
         const picked = spec.cls === c.v;
         ctx.globalAlpha = a * (picked ? 1 : locked ? 0.3 : 0.6 + hv * 0.4);
@@ -494,32 +520,11 @@ function renderCreate(now, a) {
         ctx.drawImage(classIcon32(c.v), cr.x + 2, y + 2);
         if (locked && !picked) stampGrid(CH_LOCK, CH_LOCK_PAL, cr.x + 15, y + 14, 1);
         ctx.globalAlpha = a;
-      } else if (c.step) {
-        drawChevron(cr.x + 3, cr.y + 3, c.step, hv > 0.5);
       } else {
-        // a swatch: the tone's skin or the hair colour, the picked one gold-rimmed and lifted
-        const picked = spec.look[c.axis] === c.v;
-        const y = cr.y - (picked ? 1 : Math.round(hv));
-        ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(cr.x + 1, cr.y + 1, cr.w, cr.h);
-        ctx.fillStyle = picked ? '#ffd95c' : hv > 0.5 ? '#f4f7ff' : '#2c3560';
-        ctx.fillRect(cr.x, y, cr.w, cr.h);
-        const col = c.axis === 'tone' ? SPRITES.LOOK.tones[c.v] : SPRITES.LOOK.hairCols[c.v];
-        ctx.fillStyle = col[0]; ctx.fillRect(cr.x + 1, y + 1, cr.w - 2, cr.h - 2);
-        ctx.fillStyle = col[1]; ctx.fillRect(cr.x + 1, y + cr.h - 4, cr.w - 2, 3);
-      }
-    }
-    if (r.kind === 'cycle') { // the pips between the chevrons: which of the row's choices is on
-      const n = PROFILE.LOOK_N[r.id], v = spec.look[r.id];
-      for (let k = 0; k < n; k++) {
-        ctx.fillStyle = k === v ? '#ffd95c' : '#35426e';
-        ctx.fillRect(rx + 18 + k * 8, r.y + 9, 4, 3);
+        drawLookCell(cr, spec, team, hv, spec.look[c.axis] === c.v);
       }
     }
   }
-  // the shuffle plate: two crossing arrows, a new look each press
-  const sh = m.khover.shuffle || 0;
-  const sy = drawWell({ x: L.shuffle.x + slide, y: L.shuffle.y, w: L.shuffle.w, h: L.shuffle.h }, sh, false, true);
-  stampGrid(CH_SHUFFLE, { '.': null, w: sh > 0.5 ? '#ffd95c' : '#8fa0c8' }, L.shuffle.x + slide + 7, sy + 6, 1);
 
   // the planks: DONE dims while the name would be refused
   const ok = nameOk();
@@ -531,6 +536,7 @@ function renderCreate(now, a) {
   }
   ctx.globalAlpha = 1;
 }
+
 
 // ---- the character tag --------------------------------------------------
 // Bottom-left of the title, mirroring the patch tag on the right: the active
