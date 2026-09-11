@@ -85,7 +85,13 @@ brim; long hair runs down beside the neck to where the coat begins. The file ass
 table's length against `PROFILE.LOOK_N` / `CLASS_N` at load, so a new choice is added in
 profile.js and here together or the game refuses to boot. Front view only for now — the
 32 px in-world rework is where turning it round belongs. A new class needs an `OUTFIT` layer
-here ([checklists](checklists.md#common-changes)).
+here ([checklists](checklists.md#common-changes)). `portrait` keeps what it composes in a cache
+the create screen fills quickly — a cell per choice per row, refreshed on every pick — so the cache
+is emptied past `PORTRAIT_KEEP` (512) rather than growing with every roll of the die.
+
+A first concept round for a stronger model (`docs/media/concepts/model-concepts-1.png`,
+2026-09-11: A BUNDLED, B LANKY, C STOUT, each with eye, brow, mouth and mark layers) was
+**rejected whole**; the PNG is kept as the record of what not to draw again.
 
 **Team colours are palette swaps of those same grids.** `TEAM_SKINS` (two presets, RED and BLUE,
 also exported as `SPRITES.teams` so the game code can read the names and marker colours) drives
