@@ -54,6 +54,39 @@ team's paint. The hoist is **16x20**: four rows of fish above the hat on the sam
 is up. Look A off `docs/media/concepts/fish-catch-concepts-1.png`; which frame shows and for how long
 is `catchFrame` / `CATCH_T` in [js/tools.js](../../js/tools.js) - [fishing](world.md#ice-holes-and-fishing).
 
+## Looks: a character on the class body
+
+A **character** ([profile.js](architecture.md#profilejs)) is a look — `sex`, `tone`, `hair`,
+`hairCol`, `beard`, `face`, each an index — on a class body, and it is drawn at two sizes from one
+set of tables. `SPRITES.LOOK` (characters.js, the `looks` section) is the one list: six skin
+tones (`k`/`K`/`x`), eight hair colours (`h`/`H`), and per hair style a **fringe** — two
+six-wide masks over the first face row and the row under it. **At 16 px only the tone and the
+fringe read**: `champLook(cls, look, team)` rebuilds the class set through `lookPal` (the tone
+and hair letters swapped in) with the fringe cut into the front and side walking frames by
+`fringed` (mask chars replace *skin* pixels only, so a hat or hood is never painted on; the
+pom-hat body shows six pixels under its brim, the hood four), and caches the set per
+(class, team, tone, hair, colour) — ten players and a menu is all that ever asks. Every reader
+of a body goes through `classSet(p)` (player.js), which asks it. Body type, beard and face do
+not touch the 16 px body until the 32 px rework.
+
+The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look, team,
+bare)`) is where the whole look reads — the create screen, the roster and class select's
+stage. It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
+neck, shoulders, arms, undershirt `u`, pants, boots), `HEAD[face]` (16 wide at x 16: round,
+square-jawed, narrow — eyes `W`/`e`, nose shade, blush, mouth), `BEARD[beard]` (none, stubble,
+short, full — `h` only inside the face, rimmed only where it hangs past the chin),
+`HAIR[hair]` (20 wide from row 4: a shared crown, then the style — crop, side part, long to the
+shoulders, bangs, spiked, bald is `null`; hair rows over the face carry no inner outline, so the
+head's own rim stays), then `OUTFIT[cls]` over everything (the hunter's pom hat and trimmed
+coat, the warrior's fur-lined hood with goggles pushed up and a scarf collar; the same
+`r`/`R`/`d`/`t`/`T`/`m`/`M` letters as the 16 px body, so one team palette paints both
+sizes). The hats stop at row 8 and the hair's fringe rows sit at 9–10, so hair shows under a
+brim; long hair runs down beside the neck to where the coat begins. The file asserts every
+table's length against `PROFILE.LOOK_N` / `CLASS_N` at load, so a new choice is added in
+profile.js and here together or the game refuses to boot. Front view only for now — the
+32 px in-world rework is where turning it round belongs. A new class needs an `OUTFIT` layer
+here ([checklists](checklists.md#common-changes)).
+
 **Team colours are palette swaps of those same grids.** `TEAM_SKINS` (two presets, RED and BLUE,
 also exported as `SPRITES.teams` so the game code can read the names and marker colours) drives
 four baked sets — the three below plus `eagleTeam[team]`: the drop eagle's three flap frames with
@@ -268,7 +301,8 @@ key onto that file's `Object.assign`.
 
 | File | Banners | Registers |
 | --- | --- | --- |
-| `characters.js` | player, the fish catch, skater, prone, raider, the merchant | `playerTeam`, `champ`, `player`, `raider`, `merchant` |
+| `characters.js` | player, the fish catch, skater, prone, raider, looks, the merchant | `playerTeam`, `champ`, `LOOK`, `champLook`, `player`, `raider`, `merchant` |
+| `looks.js` | bodies, heads, beards, hair, outfits | `portrait`, `MODEL_LAYERS` |
 | `terrain.js` | trees, rocks, gold ore, gold mine, bush, the dead snags, the den | `tree`, `treeAtlas`, `stump`, `rock`, `goldOre`, `mine`, `bush*`, `deadTree`, `den` |
 | `beasts.js` | imp, rabbit, deer, wolf, the bird, the camps' wolves | `rabbit`, `wolf`, `bird`, `deer`, `imp`, `alpha`, `dire` |
 | `eagle.js` | eagle | `eagle`, `eagleTeam`, `eagleFlash`, `eagleShadow` |

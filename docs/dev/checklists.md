@@ -287,8 +287,8 @@ that table, but the panel has room for exactly two cards, and "one currency" ([g
 means a good is a *commodity you carry*, never a second wallet.
 
 **Adding a class** — the tables make most of it mechanical, and every screen picks the new
-entry up with no edit: the select roster grows a portrait (the column wraps right past
-`SEL_P_PER`), the strip, the gear pop-up's preview/ledger and the bot class hash
+entry up with no edit: the create screen's class pair grows an emblem, the strip, the gear
+pop-up's preview/ledger and the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
 new class needs written:
 
@@ -306,8 +306,14 @@ new class needs written:
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
 5. a 32×32 class **emblem** in `CLASS32` ([js/ui/menu.js](../../js/ui/menu.js), same palette) — the
-   symbolic mark the select roster reads the class by — and its 12×12 twin in `CLASS12` beside
-   it, drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail) wears;
+   symbolic mark the create screen's class pair and the roster read the class by — and its 12×12
+   twin in `CLASS12` beside it, drawn by hand (never a shrink), which the
+   [team rail](rendering.md#the-team-rail) wears;
+5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
+   the hat stopping at row 8 so the hair shows under it) and `CLASS_N` bumped in
+   [js/profile.js](../../js/profile.js), which looks.js asserts against at load; a `champLook`
+   branch in characters.js saying where the new body's fringe sits
+   ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
 6. a `CLASS_LOADOUT` entry ([js/tools.js](../../js/tools.js));
 7. a fight rung in `updateAI` ([js/ai.js](../../js/ai.js)) that spends the four keys at the
    ranges the kit is good at — the class branch there is per-class content and the one `if`

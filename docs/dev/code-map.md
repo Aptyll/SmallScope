@@ -30,6 +30,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the player, the fish catch pose, the skater, prone, the raider | by banner | `player`, `the fish catch`, `skater (champion 2)`, `prone`, `raider` |
+| a character's paint on the class body: the tone and hair-colour tables, the six fringes, the per-character bake and its cache | `LOOK`, `fringed`, `lookPal`, `lookSet`, `champLook` | `looks` |
+
+## js/sprites/looks.js (legacy IIFE)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the 48 px character model: the two bodies, three heads, four beards, six hair styles, two class outfits, and the compose | `BODY`, `HEAD`, `BEARD`, `HAIR`, `OUTFIT`, `modelPal`, `portrait` | `bodies`, `heads`, `beards`, `hair`, `outfits` |
 
 ## js/sprites/terrain.js (legacy IIFE)
 
@@ -513,15 +520,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `ctrlCvs.keys`) | `settings menu (ESC)` › beside `bakeCtrlKeys` |
 | the VIDEO page's quality macro over the render-pass toggles | `VID_PRESETS`, `vidPreset` (the flags themselves: `settings.vid*`, core.js; their gates sit at each pass's call site) | `settings menu (ESC)` |
 | the three sound dials, the speaker that mutes them, the grey-when-muted fill, the minimap and HUD size knobs (HUD SIZE edits `hudScaleKey()`'s field - the phone's own on a phone) | `applySliderDrag`, `muteBtnRect`, `drawMuteBtn`, `drawSliderRow`, `drawSliderById`, `toggleVal` | `settings menu (ESC)` |
-| the PLAYER panel: the name field, its validation, the two planks | `openNamePanel`, `nameKey`, `nameOk`, `nameCommit`, `nameDismiss`, `namePanelHit`, `renderNamePanel`, `buildNamePanel` | `player profile` |
-| the profile name bottom-left of the title screen, and the player that wears it | `nameTagRect`, `overNameTag`, `drawNameTag`, `applyProfileName` | `player profile` |
 
 ## js/ui/menu.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the title screen: buttons, die, panels, play intro | `menuLayout`, `drawMenuButton`, `drawPillar`, `rerollWorld`, `beginIntro`, `renderTitle` | `main menu` |
-| class select: the painted night, the two roster columns (your side left, rivals right, face-down until the count), the rivals' difficulty notches, PLAY in the title plank's place, the one-class stage with hoverable ability tooltips flanked by the emblems and the gear widget, the five-second count to the eagle (a second PLAY skips it) | `selectLayout`, `selectHit`, `selectAbilHit`, `CLASS32`/`classIcon32` (and the rail's 12px `CLASS12`/`classIcon12` beside them), `drawSelectBackdrop`, `drawSelectPortrait`, `drawSelectStage`, `drawSelectCard`, `drawSelectRosters`, `drawSelectCount`, `renderSelect`, `selectClass`, `pressPlay`, `cancelCount`, `selectRevealed`, `setAiLevel`, `lockIn`, `COUNT_T`, `SEL_ROST_X` | `main menu` › `class select` (the levels' names: `AI_LEVELS`, ai.js) |
+| class select: the painted night, the two roster columns (your side left, rivals right, face-down until the count), the rivals' difficulty notches, PLAY in the title plank's place, your character on stage (the 48 px model, hoverable ability tooltips) flanked by the three character slots and the gear widget, the five-second count to the eagle (a second PLAY skips it) | `selectLayout`, `selectHit`, `selectAbilHit`, `CLASS32`/`classIcon32` (and the rail's 12px `CLASS12`/`classIcon12` beside them), `drawSelectBackdrop`, `drawSelectSlot`, `drawSelectStage`, `drawSelectCard`, `drawSelectRosters`, `drawSelectCount`, `renderSelect`, `selectSlot`/`selectStep`, `pressPlay`, `cancelCount`, `selectRevealed`, `setAiLevel`, `lockIn`, `COUNT_T`, `SEL_ROST_X` | `main menu` › `class select` (the levels' names: `AI_LEVELS`, ai.js; the slots' store: `PROFILE`, profile.js) |
 | the practice plank's breakable ice, and entering/leaving the arena | `menuFrozen`, `ICE_FLAW`, `iceRefuse`, `breakPracticeIce`, `beginPractice`, `leavePractice` | `main menu` (the resting crack `ICE_FLAW` and the standing knock cracks `menu.iceMarks`, both drawn in `drawMenuButton`) |
 | the patch tag and its notes panel | `PATCH_TXT`, `PATCH_NOTES`, `buildPatchPanel`, `patchTagRect` | `main menu` |
 | picking variants pre-match: the pop-up over class select - live preview, stat ledger with hover deltas, twelve 32×32 icon wells, the equip flash | `gearLayout`, `gearScreenHit`, `pickGear`, `renderGear`, `drawGearWell`, `drawGearPreview`, `gearPreviewKit`, `GEAR_STATS`, `GEAR32`/`gearIcon32`, `beginGear`/`leaveGear` | `main menu` › `the gear pop-up` (the numbers' base: `baseKit`, player.js) |
@@ -529,6 +534,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the BEASTS page: the five cards, a kind at a level, the figure wearing its frame, the labelled legend | `WIKI_BEASTS`, `WIKI_LEVELS`, `wikiBeastHp`, `wikiBeastGold`, `drawWikiBeast`, `wikiLeader` | `main menu` › `the wiki` (the numbers: `ANIMAL_HP`/`ANIMAL_LV_HP`/`ANIMAL_LV_GOLD`, wildlife.js; `YIELD`, core.js) |
 | the ARSENAL page: the three tables' columns, the kinds of a sort worn to gilded, a row on its tier plate | `WIKI_TOOL_COLS`/`WIKI_BIT_COLS`/`WIKI_MOD_COLS`, `wikiKinds`, `drawWikiRow` | `main menu` › `the wiki` (the kinds themselves: `TECH`, `TOOLS`, `BITS`, tools.js) |
 | the CLASSES page: an ability row's columns, the four stat pips, the word-wrap the blurbs use, the `cls` and `ab` draws in `renderWiki` | `WIKI_AB_COLS`, `WIKI_STATS`, `wikiWrap` | `main menu` › `the wiki` (the classes and kits: `CLASSES`, player.js; the abilities: `CLASS_AB`, `classAbIcon`, abilities.js; the card a hover raises: `tipClassAb`, js/ui/tooltip.js) |
+
+## js/ui/chars.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the roster: three slot cards, the ledger, the quill, the X plate that deletes, the empty slot's plus | `charsLayout`, `charsHit`, `beginChars`/`leaveChars`, `activateChar`, `deleteSlot`, `charsKey`, `charsClick`, `updateChars`, `drawCharCard`, `drawLedger`, `renderChars`, `CH_CARD_*` | `characters` › `the roster` |
+| the create / customize screen: the pre-rolled buffer, the option rows and their cells, the class pair and its lock, the shuffle, the name field, DONE / CANCEL, the keyboard | `CH_ROWS`, `createLayout`, `rowCells`, `beginCreate`, `createCommit`/`createCancel`, `setLook`/`cycleLook`/`shuffleLook`, `createHit`, `createKey`, `createClick`, `updateCreate`, `nameOk`, `renderCreate`, `drawModel`, `drawWell`, `NAME_SHAKE_T` | `characters` › `the create screen` (the store: `PROFILE`, profile.js; the model: `SPRITES.portrait`, js/sprites/looks.js) |
+| the character tag bottom-left of the title screen | `charTagRect`, `overCharTag`, `drawCharTag` (the player that wears it: `applyCharacter`, player.js) | `characters` › `the character tag` |
 
 ## js/ui/screens.js
 

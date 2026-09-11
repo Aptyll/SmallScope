@@ -6,20 +6,28 @@
 // else: swap the private read()/write() pair for requests, keep the surface
 // below identical.
 //
-// There are no accounts, no passwords and no sign-in. A profile is a name, a
-// handful of lifetime stats, and the settings that used to live under a key of
-// their own (moved here in v1; the old key is migrated once and removed).
+// There are no accounts, no passwords and no sign-in. A profile is up to
+// CHAR_MAX CHARACTERS - each a name, a class fixed at creation, a look and its
+// own lifetime stats - one of them active, plus the flags and settings the
+// player carries between them (moved here in v1; the old key is migrated once
+// and removed; v2 turned the one name into the character slots).
 (function () {
   const KEY = 'softfall.profile';
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
   const DEFAULT_NAME = 'WANDERER'; // what a corrupt save falls back to mid-session
+  const CHAR_MAX = 3;              // character slots a profile holds
+  const CLASS_N = 2;               // CLASSES.length (js/player.js) - a class index past this is repaired to 0
+  // the look's axes and how many choices each has. The pictures for them are
+  // js/sprites/looks.js, which asserts its tables against these counts at
+  // load; this file only stores and repairs the numbers.
+  const LOOK_N = { sex: 2, tone: 6, hair: 6, hairCol: 8, beard: 4, face: 3 };
 
-  // A fresh profile is NAMED, not asked: the first-launch prompt was friction
-  // where a new player wanted the game, so load() rolls one of these winter
-  // words instead and the name panel waits behind the title's name tag for
-  // whenever they care. Every word passes validate() (A-Z, under NAME_MAX,
-  // clean), and none is a class name.
+  // A fresh character comes PRE-ROLLED, not blank: the create screen opens on
+  // one of these winter words and a random look, so a player who wants the
+  // game presses PLAY once and a player who wants to be someone stays and
+  // shapes it. Every word passes validate() (A-Z, under NAME_MAX, clean), and
+  // none is a class name.
   const NAME_POOL = [
     'JUNIPER', 'ROWAN', 'ASPEN', 'BIRCH', 'ALDER', 'BRAMBLE', 'SORREL', 'THISTLE',
     'FROST', 'DRIFT', 'FLURRY', 'EMBER', 'FLINT', 'TINDER', 'GLACIER', 'AURORA',
@@ -28,6 +36,41 @@
   ];
   function randomName() {
     return NAME_POOL[Math.floor(Math.random() * NAME_POOL.length)];
+  }
+  function randomLook() {
+    const look = {};
+    for (const k in LOOK_N) look[k] = Math.floor(Math.random() * LOOK_N[k]);
+    return look;
+  }
+  // a look repaired axis by axis against LOOK_N: a missing or out-of-range
+  // value (a hand-edited save, a table that shrank) lands on 0, never throws
+  function mendLook(src) {
+    const look = {};
+    for (const k in LOOK_N) {
+      const v = src && typeof src[k] === 'number' && isFinite(src[k]) ? Math.floor(src[k]) : 0;
+      look[k] = v >= 0 && v < LOOK_N[k] ? v : 0;
+    }
+    return look;
+  }
+  function blankStats() {
+    return { wins: 0, matches: 0, gold: 0, days: 0, kills: 0, deaths: 0 };
+  }
+  // a character's stored shape. `born` is when it was made (ms), unread by
+  // the game and kept for a server to order slots by.
+  function mendChar(src) {
+    const c = { name: '', cls: 0, look: mendLook(src && src.look), stats: blankStats(), born: Date.now() };
+    if (src && typeof src === 'object') {
+      if (typeof src.name === 'string' && validate(src.name).ok) c.name = validate(src.name).name;
+      if (typeof src.cls === 'number' && isFinite(src.cls) && src.cls >= 0 && src.cls < CLASS_N) c.cls = Math.floor(src.cls);
+      if (src.stats && typeof src.stats === 'object') {
+        for (const k in c.stats) {
+          if (typeof src.stats[k] === 'number' && isFinite(src.stats[k])) c.stats[k] = Math.max(0, Math.floor(src.stats[k]));
+        }
+      }
+      if (typeof src.born === 'number' && isFinite(src.born)) c.born = src.born;
+    }
+    if (!c.name) c.name = randomName();
+    return c;
   }
 
   // A basic filter, deliberately: it normalises the obvious letter-for-digit
@@ -50,16 +93,20 @@
   // against, so every field below is guaranteed present to every reader
   function blank() {
     return {
-      v: 1,
-      name: '',        // '' only until load() rolls a random one; edited from the name panel
+      v: 2,
+      // the character slots (mendChar's shape, at most CHAR_MAX) and which one
+      // is active. An empty list is a fresh install: boot opens the create
+      // screen before the title (js/boot.js). Everything a character owns -
+      // its name, class, look and stats - lives in its slot; what follows is
+      // the player's, shared by all three.
+      chars: [],
+      active: 0,
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       practice: false, // has the PRACTICE TOOL plank been knocked open (3 knocks; stays open)
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played) - these two are all practice writes
-      // wins = matches the local player was standing for at the win
-      // (endMatch('won')); days = days begun (takeoff + each dawn still in).
-      // A save written as games/bestDay is a different pair and is not copied.
-      stats: { wins: 0, gold: 0, days: 0 },
+      // (the lifetime stats moved onto the characters in v2: a v1 save's
+      // name and stats become its first character in load())
       // The arsenal tree. A MATCH reads nothing back out of here - every kind
       // is unlocked for every profile alike - so the one live list is `seen`:
       // every `TECH` node id this profile has ever held, written from the
@@ -131,21 +178,23 @@
       const s = read();
       profile = blank();
       if (s && typeof s === 'object') {
-        if (typeof s.name === 'string') profile.name = s.name;
         profile.dropped = !!s.dropped;
         profile.practice = !!s.practice;
         if (typeof s.bestLap === 'number' && isFinite(s.bestLap) && s.bestLap > 0) profile.bestLap = s.bestLap;
         if (typeof s.bestRange === 'number' && isFinite(s.bestRange) && s.bestRange > 0) profile.bestRange = Math.floor(s.bestRange);
-        if (s.stats && typeof s.stats === 'object') {
-          // only the live keys. games/bestDay from PATCH 1.82 are not wins/days
-          // (matches started vs matches won; highest day vs days begun), so an
-          // old save keeps its gold and starts the new counters at zero
-          for (const k in profile.stats) {
-            if (typeof s.stats[k] === 'number' && isFinite(s.stats[k])) {
-              profile.stats[k] = Math.max(0, Math.floor(s.stats[k]));
-            }
-          }
+        if (Array.isArray(s.chars)) {
+          // the slots, each repaired on its own; past CHAR_MAX are dropped
+          for (const c of s.chars.slice(0, CHAR_MAX)) profile.chars.push(mendChar(c));
+        } else if (typeof s.name === 'string' && s.name) {
+          // a v1 save: its one name and its numbers become the first
+          // character, a hunter with a rolled look (the class is the
+          // player's to fix by making another; the stats are the point)
+          const c = mendChar({ name: s.name, cls: 0, look: randomLook(), stats: s.stats });
+          if (validate(s.name).ok) c.name = validate(s.name).name;
+          profile.chars.push(c);
         }
+        if (typeof s.active === 'number' && isFinite(s.active)) profile.active = Math.floor(s.active);
+        if (profile.active < 0 || profile.active >= profile.chars.length) profile.active = 0;
         // the tech lists: strings only, de-duplicated, and a save written
         // before the tree existed simply arrives without them and keeps the
         // empty pair blank() made
@@ -167,28 +216,70 @@
         } catch (e) { }
         saveNow();
       }
-      // a stored name that no longer passes (the filter grew, a hand-edited
-      // save) is dropped rather than shown, and an empty name - a fresh
-      // profile, an old SKIP, or that repair - rolls a random one and keeps
-      // it, so a player always has a name and never has to stop for one
-      if (profile.name && !validate(profile.name).ok) profile.name = '';
-      if (!profile.name) { profile.name = randomName(); saveNow(); }
+      if (s && s.v !== 2) saveNow(); // a migrated save is written back in its new shape at once
       return profile;
     },
 
     get() { return profile; },
-    // the name to print: load() guarantees one, the default is a last resort
-    name() { return profile.name || DEFAULT_NAME; },
     validate,
 
-    // Set the name, validated. Returns validate()'s result; on failure nothing
-    // is written and the caller keeps its editor open.
-    setName(raw) {
-      const r = validate(raw);
+    // ---- characters -------------------------------------------------------
+    // The slots. A character is { name, cls, look, stats, born } (mendChar);
+    // the active one is what the local player wears into a match
+    // (applyCharacter, js/player.js). Everything a match writes back - the
+    // stat calls below - lands on the active slot.
+    CHAR_MAX, CLASS_N, LOOK_N,
+    chars() { return profile.chars; },
+    activeIndex() { return profile.active; },
+    char() { return profile.chars[profile.active] || null; },
+    hasChar() { return profile.chars.length > 0; },
+    // the name to print: the active character's, the default only for a
+    // profile with no character yet (boot never plays one)
+    name() { const c = profile.chars[profile.active]; return c ? c.name : DEFAULT_NAME; },
+    // a fresh, UNSAVED character for the create screen to open on: rolled
+    // name, rolled look, the class the caller asks for (or a coin)
+    rollChar(cls) {
+      return mendChar({ name: randomName(), cls: typeof cls === 'number' ? cls : Math.floor(Math.random() * CLASS_N), look: randomLook() });
+    },
+    // Make a character from a spec ({ name, cls, look }) into the next free
+    // slot and make it active. Returns validate()'s result for the name, or
+    // { ok: false, why: 'FULL' }; on failure nothing is written.
+    createChar(spec) {
+      if (profile.chars.length >= CHAR_MAX) return { ok: false, why: 'FULL' };
+      const r = validate(spec && spec.name);
       if (!r.ok) return r;
-      profile.name = r.name;
+      const c = mendChar({ name: r.name, cls: spec.cls, look: spec.look, stats: null });
+      profile.chars.push(c);
+      profile.active = profile.chars.length - 1;
       saveNow();
       return r;
+    },
+    // Rename and re-dress slot i. The class is NOT taken from the spec: it is
+    // fixed at creation, and the only way to another class is another
+    // character. Returns validate()'s result; on failure nothing is written.
+    updateChar(i, spec) {
+      const c = profile.chars[i];
+      if (!c) return { ok: false, why: 'EMPTY' };
+      const r = validate(spec && spec.name);
+      if (!r.ok) return r;
+      c.name = r.name;
+      c.look = mendLook(spec.look);
+      saveNow();
+      return r;
+    },
+    deleteChar(i) {
+      if (!profile.chars[i]) return false;
+      profile.chars.splice(i, 1);
+      if (profile.active >= profile.chars.length) profile.active = Math.max(0, profile.chars.length - 1);
+      else if (profile.active > i) profile.active--;
+      saveNow();
+      return true;
+    },
+    setActive(i) {
+      if (!profile.chars[i] || profile.active === i) return false;
+      profile.active = i;
+      saveNow();
+      return true;
     },
 
     // ---- first flight -------------------------------------------------------
@@ -236,13 +327,18 @@
     putSettings(s) { profile.settings = s; saveNow(); },
 
     // ---- stats ------------------------------------------------------------
-    stats() { return profile.stats; },
-    addWin() { profile.stats.wins++; scheduleSave(); },
-    addGold(n) { if (n > 0) { profile.stats.gold += n; scheduleSave(); } },
+    // The ACTIVE character's lifetime numbers; a call with no character
+    // (nothing plays without one) counts on a throwaway so it never throws.
+    stats() { const c = profile.chars[profile.active]; return c ? c.stats : blankStats(); },
+    addWin() { this.stats().wins++; scheduleSave(); },
+    addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
     // one call per day the player sets foot in: day 1 as the eagles take off
     // (js/boot.js beginDrop), every later day at its dawn (js/sim.js) - counted
     // at the START of the day, so quitting mid-match keeps the days begun
-    addDay() { profile.stats.days++; scheduleSave(); },
+    addDay() { this.stats().days++; scheduleSave(); },
+    addMatch() { this.stats().matches++; scheduleSave(); }, // one per eagle takeoff (beginDrop)
+    addKill() { this.stats().kills++; scheduleSave(); },    // a rival the local player downed (die, js/player.js)
+    addDeath() { this.stats().deaths++; scheduleSave(); },  // the local player downed
 
     // ---- tech tree ----------------------------------------------------------
     // Ids in and out; what a node IS lives in js/tools.js. This file only

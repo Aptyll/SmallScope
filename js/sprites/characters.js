@@ -710,6 +710,91 @@
   // champ[c][team] - one full pose set per champion per team colour
   const champPlayers = [teamPlayers, TEAM_SKINS.map((t) => skaterSet(teamPlayerPal(t)))];
 
+  // ---------------------------------------------------------------- looks
+  // A CHARACTER's paint on the class body: its skin tone (k/K/x) and, on the
+  // front and side walking frames, a FRINGE of its hair colour (h/H) under the
+  // hat's brim - the first face row is the one place at 16 px where hair
+  // reads, so a style is a mask over that row (and the next, for long hair)
+  // and everything else the style says is the 48 px model's business
+  // (js/sprites/looks.js). Body type, beard and face shape do not touch the
+  // 16 px body at all until the 32 px rework. The tables are the ONE list of
+  // looks: profile.js stores an index into each and asserts the counts.
+  const LOOK = {
+    // [k skin, K shade, x blush]
+    tones: [
+      ['#f2c69b', '#d69f72', '#e8967f'], ['#fbe0c4', '#e2b898', '#f0a89a'], ['#e0a97a', '#bd8354', '#d88a70'],
+      ['#b97a4e', '#94582f', '#c2764f'], ['#8a5533', '#663a1f', '#9a5a3a'], ['#5a3a26', '#3f2718', '#6a4230'],
+    ],
+    // [h hair, H hair light]
+    hairCols: [
+      ['#2a2118', '#3d3226'], ['#5c3b20', '#7a5230'], ['#a8702f', '#c48b43'], ['#d9a441', '#f0c766'],
+      ['#c8452a', '#e0653f'], ['#b8bcc4', '#dfe3ea'], ['#f4f0e8', '#ffffff'], ['#4a6fb8', '#6f93d8'],
+    ],
+    // the six styles' fringes: [the face's first row, the row under it], six
+    // wide across the front face; the side and the hooded body take a slice
+    hairs: [
+      ['hhhhhh', '......'], // CROP
+      ['hhhh..', '......'], // PART
+      ['hhhhhh', 'h....h'], // LONG - it hangs beside the eyes
+      ['.hhhh.', '......'], // TAIL
+      ['h.hh.h', '......'], // SPIKE
+      ['......', '......'], // BALD
+    ],
+    beardN: 4, faceN: 3, sexN: 2,
+  };
+  // mask chars over skin only, so a hood or a hat never gets hair painted on
+  const fringed = (rows, r, x0, mask) => rows.map((row, i) => {
+    const m = i === r ? mask[0] : i === r + 1 ? mask[1] : null;
+    if (!m) return row;
+    let out = row;
+    for (let j = 0; j < m.length; j++) {
+      if (m[j] === 'h' && out[x0 + j] === 'k') out = out.slice(0, x0 + j) + 'h' + out.slice(x0 + j + 1);
+    }
+    return out;
+  });
+  const lookPal = (pal, look) => {
+    const t = LOOK.tones[look.tone] || LOOK.tones[0], h = LOOK.hairCols[look.hairCol] || LOOK.hairCols[0];
+    return Object.assign({}, pal, { k: t[0], K: t[1], x: t[2], h: h[0], H: h[1] });
+  };
+  // the same builders as the class sets, with the fringe cut into the front
+  // and side walking frames (the site differs per body: the pom-hat body
+  // shows six skin pixels under its brim, the hood four)
+  const lookSet = (cls, pal, look) => {
+    const f = LOOK.hairs[look.hair] || LOOK.hairs[0];
+    if (cls === 1) {
+      const sp = Object.assign({}, pal, SKPAL_EXTRA);
+      const dn = (g) => fringed(g, 4, 6, [f[0].slice(1, 5), f[1].slice(1, 5)]);
+      const sd = (g) => fringed(g, 4, 9, [f[0].slice(4), '..']);
+      return Object.assign(skaterSet(sp), {
+        down: [bake(dn(skDownIdle), sp), bake(dn(skDownA), sp), bake(dn(skDownB), sp)],
+        right: [bake(sd(skSideIdle), sp), bake(sd(skSideA), sp), bake(sd(skSideB), sp)],
+        left: [flipH(bake(sd(skSideIdle), sp)), flipH(bake(sd(skSideA), sp)), flipH(bake(sd(skSideB), sp))],
+      });
+    }
+    const dn = (g) => fringed(g, 6, 5, f);
+    const sd = (g) => fringed(g, 6, 7, [f[0].slice(2), '....']);
+    return Object.assign(playerSet(pal), {
+      down: [bake(dn(playerDownIdle), pal), bake(dn(playerDownA), pal), bake(dn(playerDownB), pal)],
+      right: [bake(sd(playerSideIdle), pal), bake(sd(playerSideA), pal), bake(sd(playerSideB), pal)],
+      left: [flipH(bake(sd(playerSideIdle), pal)), flipH(bake(sd(playerSideA), pal)), flipH(bake(sd(playerSideB), pal))],
+    });
+  };
+  // champLook(cls, look, team): the full pose set for one character in one
+  // team's paint, baked on first ask and kept - ten players and a menu or two
+  // is all that ever asks, so the cache stays small. Every reader of a
+  // player's body goes through classSet(p) (js/player.js), which asks here.
+  const lookCache = new Map();
+  function champLook(cls, look, team) {
+    if (!look) return champPlayers[cls][team];
+    const key = cls + '|' + team + '|' + look.tone + '|' + look.hair + '|' + look.hairCol;
+    let set = lookCache.get(key);
+    if (!set) {
+      set = lookSet(cls, lookPal(teamPlayerPal(TEAM_SKINS[team]), look), look);
+      lookCache.set(key, set);
+    }
+    return set;
+  }
+
   // the MERCHANT who drives each team's eagle and works its roost (the
   // `merchant` banner, js/robots.js): the player body plan in a trader's tan
   // coat, with the hat and the trim in the team's colour so the side reads
@@ -799,6 +884,7 @@
   Object.assign(SPRITES, {
     playerTeam: teamPlayers,
     champ: champPlayers,
+    LOOK, champLook, // a character's paint on a class body (the `looks` section above)
     merchant: teamMerchants, // merchant[team] - the eagle's driver, a full walking pose set per team colour
     player: teamPlayers[0],
     raider: {

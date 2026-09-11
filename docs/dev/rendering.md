@@ -1544,7 +1544,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   under the select header; `drawEmbers` the sparks rising off the logo and the braziers. The logo
   gets a pulsing ember glow behind it and a 1px ice rim along its top edges. Pillars rise from
   below at boot and sink away with the items on play. `PATCH_TXT` prints bottom-right and the
-  profile name bottom-left (`drawNameTag`); both are click targets, and both ride the footer's
+  active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Buttons** are procedural frost planks (`drawMenuButton`): chamfered slab with hashed
   wood-grain, a snow cap along the top, icicles off the bottom, corner rivets and a gold rule
@@ -1569,60 +1569,97 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   entries (newest first, word-wrapped) into `patchNotesCv` as tall as they need, and render blits
   the `PN_H` window at `menu.patchScroll`. Past one window a pixel scrollbar appears (`drawPatchBar`:
   iron rail, gilt thumb, ice nubs) — wheel, Up/Down, the nubs (step) and the track (page) move it.
-  PLAYER is `namePanelCv` (the `player profile` banner), opened by clicking the profile name
-  bottom-left (`nameTagRect` / `overNameTag`, the mirror of the patch tag, with a quill glyph that
-  gilds beside it). **It never opens itself**: a fresh profile rolls a random name at load
-  (`PROFILE`, [architecture.md](architecture.md#profilejs)) instead of being stopped by a prompt,
-  and the quill is the whole affordance for changing it. It is the one panel that **owns the
-  keyboard**: the `keydown` handler routes to `nameKey()` before its own shortcuts while it is
-  up, so letters are text rather than hotkeys. A character the name may not hold is simply never
-  drawn, the DONE plank dims while the buffer would be refused, and Enter on a refused one rattles
-  the field red instead of printing a reason. Under the rule, the three lifetime stats read as a
-  ledger — icon, labelled row (WINS / GOLD EARNED / DAYS PLAYED, a deliberate text carve-out),
-  dotted leader, number right-aligned with a thousands comma. WINS is matches the local player
-  was standing for when `endMatch('won')` fired; DAYS PLAYED is days begun (takeoff plus each
-  dawn still in the match); GOLD EARNED is the lifetime `addGold` total. The second plank is a
-  plain CANCEL that leaves the stored name alone.
+  The **character tag** bottom-left (`charTagRect` / `overCharTag` / `drawCharTag`, js/ui/chars.js,
+  the mirror of the patch tag: the active character's in-world body, its name and a quill that
+  gilds on hover) opens the [character screens](#the-character-screens) below.
   Any open panel ducks the logo to zero alpha.
 - **Class select** (`menu.screen = 'select'`, entered by SINGLEPLAYER via `beginSelect`): ONE
   screen on its **own painted night** (`drawSelectBackdrop` — starfield, two additive aurora
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
-  backdrop), laid out **the way a League lobby is**. `selectLayout()`/`selectHit()` are the rect
+  backdrop), laid out **the way a League lobby is**. `selectLayout()`/`selectHit()` (which
+  answers `'play'`, `'gear'`, `'diff' + k`, `'slot' + i` or null) are the rect
   source for both drawing and the mouse. Down the **left** run your side's five **roster cards**
   and down the **right** the rivals' (`drawSelectRosters`/`drawSelectCard`, `SEL_ROST_X` from
   centre, one `SEL_CARD` well per player in player order under a rule in the side's paint): the
-  player's 16×16 class sprite in `skin(team)` paint with its name beside it — names are text's
-  job — yours gold-rimmed and wearing the class on stage before it is locked, a rival's
+  player's 16×16 body in its look and `skin(team)` paint with its name beside it — names are text's
+  job — yours gold-rimmed, a rival's
   **face-down** (the body as one flat shade through the scratch canvas) until the countdown turns
   it. Over the rivals' column sits their **difficulty meter**: three notches filled up to
   `settings.aiLevel` in the rivals' paint, the hovered one lifting (`menu.dhover`), the level's
   name (`AI_LEVELS`, js/ai.js — NORMAL / HARD / IMPOSSIBLE) printed once under them, gold and
   naming the notch under the pointer while one is hovered; a click is `setAiLevel`, which saves
   the profile's settings. **PLAY** wears the title's first plank in its exact place (`MENU_Y0`,
-  `MENU_BW`×`MENU_BH`); the **stage** under it holds the chosen class alone (`drawSelectStage`):
-  walking in place at 4× in your side's paint under a warm pool of light with a gold ring turning
-  on the snow, the class weapon's own tool art at the hand, the name below, and its four ability
+  `MENU_BW`×`MENU_BH`); the **stage** under it holds **your character** alone (`drawSelectStage`):  `MENU_BW`×`MENU_BH`); the **stage** under it holds the chosen class alone (`drawSelectStage`):
+  the 48 px model (`SPRITES.portrait`, [sprites.md](sprites.md#looks-a-character-on-the-class-body))
+  at 2× in your side's paint under a warm pool of light with a gold ring turning
+  on the snow, the class weapon's own tool art at the hand, the name below with the class in
+  small beside it, and its four ability
   icons in the strip's own wells (`classAbIcon`) — the kit is read here exactly as it will be
-  worn, and **hovering a well raises the ability tooltip** (`selectAbilHit` →
-  `tipClassAb(i, csel)`). The **class emblems** flank the figure's left (`drawSelectPortrait`,
-  one 36px well per `CLASSES` entry wearing its 32×32 `CLASS32` mark, `SEL_P_PER` (2) to a
-  column with further columns growing leftward, so a new class costs this screen nothing but its
-  emblem), the chosen one gold-rimmed and the others dim and warm on hover (`menu.chover`); the
+    worn, and **hovering a well raises the ability tooltip** (`selectAbilHit` →
+  `tipClassAb(i, csel)`). **There is no class picker**: the class came with the character. The
+  **character slots** flank the figure's left (`drawSelectSlot`, one `SEL_P_CELL` well per
+  profile slot, a filled one wearing that character's body at 2×, the active one gold and
+  walking, the others dim and warm on hover (`menu.chover`)); a slot click or the arrows
+  (`selectSlot`/`selectStep`) make that character active — `activateChar` → `applyCharacter`,
+  so the stage, the kit, the loadout and the ability wells follow it (`menu.csel` mirrors
+  `player.cls` for the gear preview and the ability tooltip; `menu.cswapT` pops the stage). The
   **collapsed gear widget** (the four picked variant icons in a column) flanks its right, and
-  clicking it opens the gear pop-up. A portrait click or the arrows move `menu.csel`
-  (`menu.cswapT` pops the stage). Enter or the plank call `pressPlay()` — `setClass` locks the
+  clicking it opens the gear pop-up. Enter or the plank call `pressPlay()` — `setClass` locks the
   class and the **countdown** starts: `menu.countT` runs `COUNT_T` (5) seconds, the whole second
   left drawn in 4× gold digits over the plank (`drawSelectCount`, white the instant it changes,
   sinking through its second), `SFX.nock` ticking each one, the plank sunk throughout, and
   **one rival card turning face-up per tick** (`selectRevealed()`: the first on the press, the
   last on ONE, all of them once it has run out, and none at rest — a white flash as each turns).
   Gear stays open through the count (the widget still opens its pop-up, which shuts itself at
-  zero); a class swap is refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`)
+  zero); a slot swap is refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`)
   and, at rest, go back to the menu; **PLAY again (Enter, Space or the plank) skips the rest of
   it** — the second `pressPlay()` ends the count where zero would have (every card face-up, the
   gear pop-up shut). At zero, or on that press, `lockIn()` — `menu.lockT`, then straight to
   `beginDrop()` (the eagle ride, below). No instructional text anywhere on the screen.
+
+### The character screens
+
+Two more surfaces on class select's painted night, both in [js/ui/chars.js](../../js/ui/chars.js)
+(the `characters` banner) on one ease (`menu.charT`; `menu.cscreen` remembers which of the two
+is fading out): the **roster** (`menu.screen = 'chars'`, `beginChars`/`leaveChars`, entered
+from the character tag) and the **create / customize screen** (`'create'`, `beginCreate(slot,
+first)`). The store behind them is [profile.js](architecture.md#profilejs); `charsLayout()` /
+`createLayout()` + `rowCells()` are each screen's one rect source for the draw, the hit test
+(`charsHit`/`createHit`) and the cursor.
+
+- **The roster** is the profile's three slots as cards across the middle (`drawCharCard`,
+  `CH_CARD_W`×`CH_CARD_H`): the 48 px model at 2× on its light, the name in gold with the 12 px
+  class emblem beside it, and the **ledger** under a rule — WINS / MATCHES / KILLS / DEATHS /
+  DAYS / GOLD as icon, label, dotted leader, number (the character-panel text carve-out;
+  `drawLedger`). The active card wears the gold rim; a card click makes it active
+  (`activateChar`) and leaves; the quill bottom-right opens the customize screen on that slot;
+  the X plate top-right (red under the hand) **deletes on the press** (`deleteSlot`), and
+  deleting the last character reopens the create screen as a first launch. An empty slot is a dashed well with a plus in it,
+  and a click there is a new character. Left/Right walk `menu.ksel`, Enter picks, Esc backs out
+  (`charsKey`).
+- **The create screen** opens on `menu.cedit = { slot, spec, first }` — slot −1 is a **new
+  character pre-rolled** by `PROFILE.rollChar` (a winter word and a random look), a slot index
+  is that character's copy for editing, and `first` is the fresh install (js/boot.js opens it
+  before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
+  Left: the model at 3× on its stage (`drawModel`, class select's light and ring), the 16 px body
+  at 2× walking beside it (what the snow will show), and the **name field** under them (the
+  buffer at 2× with a caret, capacity ticks, a refusal flooding it red — `menu.nameBuf` /
+  `menu.nameShake`). Right: the option column (`CH_ROWS`), each row an 8 px glyph and its
+  cells — the **class pair** first (the two `CLASS32` emblems; once the character exists the
+  other one is dark under a padlock: **class is fixed at creation**), the two body-type
+  silhouettes, the six skin-tone swatches, hair style as a chevron pair around count pips, the
+  eight hair-colour swatches, beard and face as chevron pairs — with the **shuffle plate** (a new
+  look, `shuffleLook`) beside the emblems. The model IS the preview: every cell repaints it on
+  the spot. The screen **owns the keyboard** (input.js routes to `createKey` before its own
+  shortcuts): letters are the name, Backspace edits it, Up/Down walk `menu.crow` (a gold tick
+  breathes at the row's glyph while the pointer is off the page), Left/Right turn the row, Enter
+  is DONE, Esc CANCEL. DONE (`createCommit`) dims while the name would be refused and rattles
+  the field on a refusal; it creates (`PROFILE.createChar`) or updates (`updateChar`, which
+  never takes a class), makes the result active and returns to the roster.
+- Every plate here shares one grammar (`drawWell`): a dark drop shadow, a slate rim that
+  lightens under the hand and goes gold when picked, a navy floor. Hover eases live in
+  `menu.khover`, keyed by hit id.
 - **Gear pop-up** (`menu.screen = 'gear'`, easing over the still-lit select screen on
   `menu.gearT`): a dim, then a floating panel in two columns (`gearLayout()`/`gearScreenHit()`).
   LEFT is the **live preview** (`drawGearPreview`): the chosen class walking in place at 4×
