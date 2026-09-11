@@ -246,6 +246,7 @@ function seatPos(e, si) {
 
 function beginDrop() {
   PROFILE.addDay(); // day 1 of the days-played stat: the clock starts with the eagle
+  PROFILE.addMatch(); // ...and the character's matches: one per takeoff
   // a profile's first flight ever counts itself down and jumps for you -
   // reading the ride is a lot to ask of someone who has never seen it
   state.drop = { eagles: makeEagles(), firstFlight: !PROFILE.hasDropped() };
@@ -1355,7 +1356,6 @@ initPlayers();
 renderGround();
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
-buildNamePanel();
 buildHelpPanel();
 buildPatchPanel();
 camX = player.x - WV_W / 2;
@@ -1383,6 +1383,10 @@ if (PRACTICE) {
   camY = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
   state.introFrom = { x: camX, y: camY };
   state.intro = HUD_IN_T; state.introLen = HUD_IN_T;
+} else if (!PROFILE.hasChar()) {
+  // a fresh install: the first thing seen is the create screen, opened on a
+  // pre-rolled character (js/ui/chars.js) - the title menu is behind it
+  beginCreate(-1, true);
 }
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
@@ -1425,10 +1429,10 @@ window.DBG = {
   pad, padActive, touch, touchLayout, touchDown, touchMove, touchUp,
   mobile: () => MOBILE, mobilePortrait,
   setMobile: (v) => { settings.mobile = v; fitCanvas(); relayout(); },
-  // the local profile: the store itself, the PLAYER panel and the two hit
-  // rects, so a driver can open the name editor and read back what it accepts
-  PROFILE, openNamePanel, nameKey, nameCommit, nameDismiss, nameOk,
-  namePlankRects, namePanelHit, nameTagRect, overNameTag, applyProfileName,
+  // the local profile: the store itself and the character screens (js/ui/chars.js),
+  // so a driver can open the roster or the create screen and read back what it accepts
+  PROFILE, beginChars, leaveChars, beginCreate, createCommit, createCancel, createKey, createHit, charsHit,
+  createLayout, charsLayout, nameOk, charTagRect, overCharTag, applyCharacter, activateChar,
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,

@@ -11,8 +11,8 @@ nine other people are on it.
 ## A match
 
 Ten players in `players` — **player 0 is you, the rest are AI** — across **two teams of five, RED vs
-BLUE** (players alternate). Everyone picks one of **two classes** (the ranged HUNTER, the melee
-WARRIOR) and is **dropped in by their team's armoured eagle** — the two birds fly the map's one
+BLUE** (players alternate). Everyone plays one of **two classes** (the ranged HUNTER, the melee
+WARRIOR — a human's is the one their **character** was made with) and is **dropped in by their team's armoured eagle** — the two birds fly the map's one
 diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
 its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
 always top-right, each to its own right of the road — and becomes its team's **objective**; its
@@ -184,10 +184,13 @@ merchant rebuilds it. [The road](world.md#the-road), [the waves](gameplay.md#sol
   the local one — see [multiplayer.md](multiplayer.md).
 - **Not a game that explains itself in text.** The UI rule in [CLAUDE.md](../../CLAUDE.md) is a
   design constraint, not a style preference.
-- **Not an account.** The player profile is a display name, a few lifetime numbers and a record of
-  which kinds you have held, in the browser, and it names itself — a fresh profile rolls a random
-  name rather than stopping a new player at a prompt. No passwords, no sign-in, nothing
-  to log into. A match reads **nothing** back out of it — everything about a match is decided
-  inside that match, and the arsenal is unlocked for everybody alike. See
-  [architecture.md](architecture.md#profilejs). If a server ever holds it, it holds the same
-  object.
+- **Not an account.** The player profile is up to three **characters** — each a name, a class
+  fixed when it was made, a look (body type, skin tone, hair, beard, face) and its own lifetime
+  numbers — plus a record of which kinds you have held, in the browser. No passwords, no sign-in,
+  nothing to log into. A fresh install opens the create screen **before** the title on a
+  pre-rolled name and look, so PLAY is one press away and nobody is stopped at a blank form. **A
+  character is paint, never power**: a match reads its name, class and look and nothing else —
+  everything about a match is decided inside that match, and the arsenal is unlocked for
+  everybody alike. See [architecture.md](architecture.md#profilejs) and
+  [the character screens](rendering.md#the-character-screens). If a server ever holds it, it
+  holds the same object.

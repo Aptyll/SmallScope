@@ -140,7 +140,27 @@ function levelUp(p) {
   if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
   if (p === player) SFX.levelUp();
 }
-function classSet(p) { return SPRITES.champ[p.cls][skin(p.team)]; }
+// the pose set a body draws from: its class body in its team's paint, worn
+// by its character's look (tone and fringe at 16 px - js/sprites/characters.js)
+function classSet(p) { return SPRITES.champLook(p.cls, p.look, skin(p.team)); }
+// a bot's look, off the seed like its class and gear: a roster of faces,
+// the same faces on a replayed world. LOOK_N is the axes' sizes (profile.js).
+function botLook(id) {
+  const look = {}, N = PROFILE.LOOK_N;
+  let k = 0;
+  for (const ax in N) look[ax] = Math.floor(hash2(id * 41 + 11 + k++ * 7, 123) * N[ax]) % N[ax];
+  return look;
+}
+// The local player wears the ACTIVE CHARACTER: its name, its look, and its
+// class (fixed at creation - js/profile.js), whose loadout comes with it.
+// Called from initPlayers and whenever the roster's active slot changes
+// (the character screens, js/ui/chars.js; class select's slot strip).
+function applyCharacter() {
+  const c = PROFILE.char();
+  player.name = c ? c.name : PROFILE.name();
+  player.look = c ? c.look : botLook(0);
+  setClass(player, c ? c.cls : 0);
+}
 // Five players share each team colour, so text that names one player (the
 // scoreboard, the event log) also needs a per-player shade of that team's
 // palette - the team colour stays the background, this is the ink.
@@ -426,9 +446,10 @@ class Player {
     this.control = control;             // 'human' | 'ai' | 'none' (nobody -> ghost)
     // the local player wears the profile's display name; every other player is
     // named off its team - live, through the `name` getter below, so the name
-    // follows the paint (skin) when the team-colour setting flips. Editing the
-    // name at the menu calls applyProfileName().
+    // follows the paint (skin) when the team-colour setting flips. Which
+    // character the local player IS (name, look, class) is applyCharacter().
     this._name = control === 'human' ? PROFILE.name() : null;
+    this.look = botLook(id);            // the face on the class body ({ sex, tone, hair, hairCol, beard, face }, profile.js LOOK_N)
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
     this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag
     this.bagCap = BAG_CAP;              // slots; one starting backpack
@@ -479,7 +500,7 @@ class Player {
     this.reset(true);
   }
   get active() { return this.control !== 'none'; }
-  // a named player (the human, via applyProfileName) keeps its name; every other
+  // a named player (the human, via applyCharacter) keeps its name; every other
   // player is called after the colour it is WEARING right now
   get name() { return this._name !== null ? this._name : TEAMS[skin(this.team)].name + '-' + (this.id + 1); }
   set name(v) { this._name = v; }
@@ -566,6 +587,7 @@ function initPlayers() {
   }
   player = players[0];
   inv = player.inv;
+  applyCharacter(); // the local player is whoever the profile has active
 }
 
 // who p is allowed to shoot: another live player on another team (this is the
@@ -802,6 +824,7 @@ function die(p, src, cause) {
   spillInventory(p, killer);
   if (killer) {
     killer.kills++;
+    if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
     // effect that isn't a plain kitOf() field - mirrors eatBerry's heal
     if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
@@ -817,7 +840,7 @@ function die(p, src, cause) {
   // however its players go down after that
   if (!teamEagleDown(p.team)) p.respawnT = respawnTime(p);
   else p.eliminated = true;
-  if (p === player) endMatch(p.eliminated ? 'lost' : 'respawning');
+  if (p === player) { if (!PRACTICE) PROFILE.addDeath(); endMatch(p.eliminated ? 'lost' : 'respawning'); }
   else {
     addFloater(p.x, p.y - 20, p.name + (p.eliminated ? ' OUT' : ' DOWN'), TEAMS[skin(p.team)].mark);
     if (state.spec === p.id) specNext(1); // the player being watched went down: follow another
@@ -947,7 +970,7 @@ function endSnapshot() {
     // is down at the whistle still shares the result)
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: q.name, cls: q.cls, gear: q.gear.slice(), gearLv: q.gearLv.slice() })),
+      .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team, gear: q.gear.slice(), gearLv: q.gearLv.slice() })),
     place: player.eliminated ? left + 1 : 1, of: players.filter((q) => q.active).length,
   };
 }

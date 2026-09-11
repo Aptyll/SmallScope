@@ -14,10 +14,11 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 
 | File | Lines | Exposes | Role |
 | --- | --- | --- | --- |
-| [js/profile.js](../../js/profile.js) | ~230 | `PROFILE` | the local player profile - name, stats, which kinds it has held - and the only file that touches storage |
+| [js/profile.js](../../js/profile.js) | ~370 | `PROFILE` | the local player profile - up to three characters (name, class, look, stats), which kinds it has held, the settings - and the only file that touches storage |
 | [js/font.js](../../js/font.js) | ~100 | `drawPixelText`, `drawPixelTextShadow`, `drawPixelTextOutline`, `pixelTextWidth` | the bitmap font |
 | [js/sprites/core.js](../../js/sprites/core.js) | ~120 | `SPRITES`, `SPR` | the empty sprite registry and the bake helpers (`bake`/`bakeSpan`/`flipH`/`bakeClips`/`liveIcon`/`wash`/`double`) plus the `TEAM_SKINS` table; every other sprite file is a private IIFE that bakes its grids and `Object.assign`s the keys it owns into `SPRITES` |
-| [js/sprites/characters.js](../../js/sprites/characters.js) | ~810 | → `SPRITES` | the player body plan in every team paint, the skater, the prone poses, the fish catch, the raider, the merchant |
+| [js/sprites/characters.js](../../js/sprites/characters.js) | ~890 | → `SPRITES` | the player body plan in every team paint, the skater, the prone poses, the fish catch, the raider, the merchant, and `champLook` - a character's tone and fringe on the class body |
+| [js/sprites/looks.js](../../js/sprites/looks.js) | ~380 | → `SPRITES` | the 48 px character model: body, head, beard, hair and class-outfit layers composed per character (`portrait`) |
 | [js/sprites/terrain.js](../../js/sprites/terrain.js) | ~1320 | → `SPRITES` | the pine and its 24 wind frames + the one atlas, stumps, rocks, ore, the mine, the bush, the dead snags, the den |
 | [js/sprites/beasts.js](../../js/sprites/beasts.js) | ~1290 | → `SPRITES` | the imp, rabbit, deer, wolf and bird clips, and the camps' alpha and dire wolf derived from the wolf |
 | [js/sprites/eagle.js](../../js/sprites/eagle.js) | ~200 | → `SPRITES` | the eagle's flap frames, each side's armour, the hit flash and the shadow |
@@ -61,8 +62,9 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/compose.js](../../js/ui/compose.js) | ~140 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
 | [js/ui/touch-plates.js](../../js/ui/touch-plates.js) | ~140 | shared scope, no `window.*` export | the pixels of a phone's controls: the plates, the two sticks, the rotate prompt |
 | [js/ui/shop.js](../../js/ui/shop.js) | ~1640 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
-| [js/ui/panels.js](../../js/ui/panels.js) | ~1380 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab, the PLAYER name panel |
-| [js/ui/menu.js](../../js/ui/menu.js) | ~2920 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
+| [js/ui/panels.js](../../js/ui/panels.js) | ~1220 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
+| [js/ui/menu.js](../../js/ui/menu.js) | ~2930 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
+| [js/ui/chars.js](../../js/ui/chars.js) | ~460 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1370 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/boot.js](../../js/boot.js) | ~1330 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop |
 
@@ -90,7 +92,11 @@ split is complete; the tag `pre-split` keeps the one-file history.
 
 ### profile.js
 
-The local player profile — display name, lifetime stats (`wins`, `gold`, `days`), the
+The local player profile — up to `CHAR_MAX` (3) **characters** in `chars` with `active`
+naming the one the local player wears (each `{ name, cls, look, stats, born }`: the class is
+fixed at creation, `look` is an index per axis of `LOOK_N` — `sex`, `tone`, `hair`,
+`hairCol`, `beard`, `face` — and `stats` the character's own `wins` / `matches` / `gold` /
+`days` / `kills` / `deaths`), the
 one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
 eagle, gating the scripted first flight that rides the landing), the one-shot `practice` flag
 (`practiceOpen()`/`markPractice()`: has the PRACTICE TOOL plank's ice been broken — three
@@ -106,18 +112,27 @@ There are no accounts, no passwords and no sign-in, and nothing here is authorit
 file is a save file.
 
 - **`PROFILE.load()`** repairs a partial or corrupt save against a blank profile rather than
-  throwing, and folds a pre-profile `softfall.settings` key in on the way past (once, then removes
-  it). Boot calls it **before `loadSettings()`**, which now reads `PROFILE.settings()`.
+  throwing (`mendChar`/`mendLook` repair each slot axis by axis: a class or look index out of
+  range lands on 0, a bad name is re-rolled), folds a pre-profile `softfall.settings` key in on
+  the way past (once, then removes it), and turns a **v1 save's** one `name` + `stats` into its
+  first character (a hunter with a rolled look; the numbers are the point). Boot calls it
+  **before `loadSettings()`**, which now reads `PROFILE.settings()`. **A fresh install has no
+  character** (`hasChar()` false) and boot opens the create screen before the title.
+- **The character calls**: `chars()`, `activeIndex()`, `char()`, `rollChar(cls)` (a fresh
+  unsaved spec with a random name and look), `createChar(spec)` (into the next free slot, made
+  active; `{ ok: false, why: 'FULL' }` past three), `updateChar(i, spec)` (name and look only —
+  the class in the spec is ignored), `deleteChar(i)`, `setActive(i)`. `LOOK_N` and `CLASS_N`
+  are exported so js/sprites/looks.js can assert its tables against them at load.
 - **`PROFILE.validate(raw)`** is the one name validator: trimmed, uppercased, `A-Z0-9` only, 16
   characters, and a basic profanity list matched after the obvious digit-for-letter swaps are
-  folded out. It returns `{ ok, name }` or `{ ok: false, why }`. **A profile always has a name**:
-  a fresh install (and a stored name that no longer passes) rolls one from `NAME_POOL` at load —
-  winter words, every one clean under the validator — so there is no first-launch prompt, and the
-  name panel only opens when the player asks for it.
-- **The stat calls coalesce.** `addGold` fires on every payout, `addWin` once per
-  `endMatch('won')`, `addDay` at eagle takeoff and at each dawn the local player is still in, so
+  folded out. It returns `{ ok, name }` or `{ ok: false, why }`. **A character always has a
+  name**: a new one is pre-rolled from `NAME_POOL` — winter words, every one clean under the
+  validator — so the create screen opens on a name rather than a blank.
+- **The stat calls coalesce, and land on the active character.** `addGold` fires on every
+  payout, `addWin` once per `endMatch('won')`, `addMatch` and `addDay` at eagle takeoff (and
+  `addDay` at each dawn the local player is still in), `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
-  `setName` and `putSettings` write through immediately. A save written with the old `games` /
+  the character calls and `putSettings` write through immediately. A save written with the old `games` /
   `bestDay` pair keeps its gold and starts wins and days at zero — those were different
   numbers, not a rename.
 - **The tech lists are ids and nothing else.** `markSeen` coalesces (it fires from a pickup) and is
@@ -128,7 +143,8 @@ file is a save file.
   written before the tree existed simply arrives without them. What a node *is*, what it costs and
   what unlocking one does to a match are all in js/tools.js — this file only remembers.
 
-The panel, the field and the title-screen tag are in panels.js, under the `player profile` banner.
+The screens and the title-screen tag are js/ui/chars.js; the local player takes a character on
+through `applyCharacter()` (js/player.js).
 
 ### font.js
 

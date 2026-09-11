@@ -24,8 +24,10 @@ fewer bots, a frozen target dummy, or a ghost.
 **A `Player` owns everything the old singleton did** — position, velocity, facing, hp, bow draw,
 dodge charges, slide state, swing state, held tool, i-frames, footprint cadence — plus `id`,
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
-wears the profile's display name, set in the constructor and refreshed by `applyProfileName()`
-when it is edited — see [architecture.md](architecture.md#profilejs)), `spawn` (the tile it landed
+wears its **active character's** name, class and look — `applyCharacter()`, called by
+`initPlayers` and whenever the roster's active slot changes — see
+[architecture.md](architecture.md#profilejs)), `look` (the face on the class body: a bot's is
+hashed off its id by `botLook`, so a replayed world fields the same faces), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
 (the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
 and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
@@ -302,8 +304,10 @@ already firing: [starting loadouts](gameplay.md#starting-loadouts). See
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay.md#class-abilities-keys-1-4) in gameplay.md.
 
-The local player picks on the class select screen (see
-[Main menu](rendering.md#main-menu-title)); bots hash theirs — class **and** all four gear
+The local player's class is **fixed on the character** it was created with (js/profile.js; the
+create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
+only way to the other class is another character, and class select swaps between the profile's
+three from its slot column; bots hash theirs — class, look **and** all four gear
 variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Class select shows that roster as two columns of cards — your side left, the
 rivals right, their picks face-down until PLAY's countdown turns them (a second PLAY skips the
@@ -313,7 +317,9 @@ IMPOSSIBLE, remembered with the profile), which is stored and shown but **not ye
 `updateAI`** ([known drift](checklists.md#known-drift)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
 16×16 body plan and frame set as the player, so `drawPlayer`/`drawGhost` just swap the set via
-`classSet(p)`; `SPRITES.playerTeam` is class 0.
+`classSet(p)`, which asks `SPRITES.champLook(cls, look, skin(team))` for the class body in the
+character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
+`SPRITES.playerTeam` is class 0 in the default look.
 
 ## Hero levels
 

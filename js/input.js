@@ -227,9 +227,9 @@ window.addEventListener('keydown', (e) => {
 function keyPress(e) {
   // a cap on the CONTROLS page is listening: this key is its answer
   if (state.rebind) { if (rebindLive()) { rebindKey(e); return; } state.rebind = null; }
-  // the name editor owns the keyboard while it is up: its letters are text,
-  // not shortcuts, and F3 / '.' below would fire on keys the field ignores
-  if (state.mode === 'title' && state.menu.panel === 'name') { nameKey(e); return; }
+  // the create screen owns the keyboard while it is up: its letters are the
+  // name, not shortcuts, and F3 / '.' below would fire on keys the field ignores
+  if (state.mode === 'title' && state.menu.screen === 'create') { createKey(e); return; }
   // F3 flips the info stack in any mode, minecraft-style (the browser's own
   // F3 find bar is suppressed above)
   if (e.key === 'F3') { settings.info = !settings.info; saveSettings(); return; }

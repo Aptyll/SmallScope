@@ -1095,7 +1095,7 @@ function renderVictory(now) {
       if (k === 0) bobMe = bob;
       const by = s.y + Math.round((1 - sr) * 26) + bob;
       ctx.globalAlpha = sr;
-      ctx.drawImage(SPRITES.champ[s.m.cls][ti].down[Math.sin(ph) > 0.6 ? 1 : 0], s.x, by, WIN_BODY, WIN_BODY);
+      ctx.drawImage(SPRITES.champLook(s.m.cls, s.m.look, ti).down[Math.sin(ph) > 0.6 ? 1 : 0], s.x, by, WIN_BODY, WIN_BODY);
       drawGearMarks(s.m, s.x, by, 3);
       drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by - (k ? 8 : 13), tm.mark, '#0f1632');
       ctx.globalAlpha = 1;
@@ -1305,7 +1305,7 @@ function renderDefeat(now) {
       if (sr <= 0) continue;
       const by = s.y - Math.round((1 - sr) * 8);
       ctx.globalAlpha = sr;
-      ctx.drawImage(SPRITES.champ[s.m.cls][ti].down[0], s.x, by, WIN_BODY, WIN_BODY);
+      ctx.drawImage(SPRITES.champLook(s.m.cls, s.m.look, ti).down[0], s.x, by, WIN_BODY, WIN_BODY);
       drawGearMarks(s.m, s.x, by, 3);
       drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by - 8, tm.mark, '#0f1632');
       ctx.globalAlpha = 1;
@@ -1317,7 +1317,7 @@ function renderDefeat(now) {
     const me = stands[0];
     const bx = me.x, by = L.stageY + 6 - WIN_BODY - settle;
     ctx.globalAlpha = rise;
-    ctx.drawImage(SPRITES.champ[me.m.cls][ti].prone.right[0], bx, by, WIN_BODY, WIN_BODY);
+    ctx.drawImage(SPRITES.champLook(me.m.cls, me.m.look, ti).prone.right[0], bx, by, WIN_BODY, WIN_BODY);
     drawPixelTextOutline(ctx, me.m.name, centreTextX(bx + (WIN_BODY >> 1), me.m.name), by + 13, tm.mark, '#0f1632');
     ctx.globalAlpha = 1;
     // ...and the snow in FRONT of them all, over every boot and the body's

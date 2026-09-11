@@ -139,16 +139,21 @@ const state = {
   // what a click lays. Null while it is closed.
   build: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
-  // the open sub-panel ('settings' | 'help' | 'patch' | 'name' | null) and its slide progress
+  // the open sub-panel ('settings' | 'help' | 'patch' | null) and its slide progress
   // one hover ease per MENU_ITEMS entry + the seed row. That length is a
   // coupling to a table in a file that loads later, so the ease loop tops up a
   // missing cell rather than trusting it - a short array turned into NaN and
   // silently deleted the seed row when the fifth plank arrived.
   menu: { sel: 0, hover: [0, 0, 0, 0, 0, 0], t: 0,
     panel: null, panelT: 0, closing: false, patchScroll: 0, // patchScroll: px the notes are scrolled
-    // the PLAYER panel (the `player profile` banner): the name being typed,
-    // the refusal rattle and the two planks' hover eases
-    nameBuf: '', nameShake: 0, nameHover: [0, 0],
+    // the character screens (js/ui/chars.js): charT their ease (screen
+    // 'chars' is the roster, 'create' the create/customize screen), cedit
+    // the create screen's unsaved buffer ({ slot, spec, first } - slot -1 is
+    // a new character, first the fresh-install pass with no title to go
+    // back to), nameBuf/nameShake its name field and refusal rattle, crow the
+    // keyboard row, ksel the roster's keyboard slot, delHold the delete
+    // plate's hold (0..1), khover the hover eases keyed by hit id
+    charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameShake: 0, crow: 0, ksel: 0, delHold: 0, khover: {},
     moved: false, dieT: 0, rolling: 0, camT: 0, pressT: 0,
     // frozen planks: refusal shudder timer, which plank was struck (menu index),
     // per-knock crack seed, the struck point (plank-local) and the ice chips it sprays (screen-space).
@@ -159,7 +164,7 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'select' | 'gear' | 'wiki'. 'gear' is the pop-up over
+    // screen: 'menu' | 'select' | 'gear' | 'wiki' | 'chars' | 'create'. 'gear' is the pop-up over
     // the still-lit select screen (gearT its ease, grow the keyboard row,
     // gearFxT/gearFxSlot the equip flash); the wiki is a surface of its own
     // on wikiT, with wikiTab the open page (menu.js `the wiki`).

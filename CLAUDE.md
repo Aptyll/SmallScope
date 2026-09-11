@@ -52,10 +52,11 @@ and the screens) (the tag `pre-split` keeps the one-file history).
 globals**, so each file's globals must exist before the next loads. The file table and the
 shared-scope mechanism: [architecture](docs/dev/architecture.md).
 
-**`js/profile.js` is the only file that touches `localStorage`** — the local player profile (name,
-lifetime stats, which kinds it has ever held, and the settings that live under it). Everything else
+**`js/profile.js` is the only file that touches `localStorage`** — the local player profile (up to three
+characters - name, class, look, lifetime stats - which kinds it has ever held, and the settings that
+live under it). Everything else
 goes through `PROFILE`, so putting the profile on a server stays a one-file change; never read or
-write a storage key directly. **A match reads nothing back out of a profile**: the whole arsenal is
+write a storage key directly. **A match reads nothing back out of a profile but the character's name, class and look**: the whole arsenal is
 unlocked for everybody, so `LOOT_POOL` is the same on a first flight as on a five-hundredth
 ([the wiki](docs/dev/gameplay.md#the-wiki)).
 
