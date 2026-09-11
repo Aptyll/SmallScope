@@ -2758,10 +2758,11 @@ browser toggles it.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
 (minimap size, hud size, screen shake, rumble, info display, cursor, my team, touch mode), VIDEO (below),
-AUDIO (the three sound dials and the speaker), CONTROLS (three baked listings, below) — and each page scrolls independently
-inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..202) when its rows
-outgrow it, which is what lets the slab hold any number of future settings: 218 is already close
-to the 240-row floor `fitCanvas()` guarantees, so it can never get taller. The wheel over the
+AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
+inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..198) when its rows
+outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
+(`SET_W`/`SET_H`, canvas.js), and 226 is as tall as the 232-row floor `fitCanvas()` guarantees a
+phone allows, so it can never get taller. The wheel over the
 open panel scrolls the open page (both the in-match ESC slab and the title's slide-in — the
 title also takes W/S and the arrows), a 1 px thumb on the right edge appears only when a page
 overflows, and the open page's name wears gold with a gold underline while the others sit dim
@@ -2769,7 +2770,7 @@ until hovered. Everything inside the panel is laid out by **`settingsLayout()`**
 the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` anchors all read the
 same function, so a click can never disagree with a pixel. Rows keep the **14 px pitch**;
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can
-never land on two rows. It answers a row id, `'mute'`, `'leave'`, `'tab:<id>'`, `'ctab:<id>'`
+never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'tab:<id>'`, `'ctab:<id>'`
 (a CONTROLS sub-tab) or `'c:<row>:<opt>'` (a choice row's word). A **choice row** carries its
 own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro, TOUCH MODE's set
 `settings.mobile` and re-fit the view — so the draw (the word in force wears gold), the hit and
@@ -2787,14 +2788,16 @@ everything but the cloud shadows, HIGH is everything, and the word matching the 
 wears gold — a hand-picked mix golds none of them. SNOWFALL is deliberately in no preset:
 falling snow is the game's identity and nearly free, so only a deliberate hand turns it off.
 
-**The in-match slab hangs one plank under itself: the way out.** A frost plank
-(`leavePlankRect`, drawn by the title's own `drawMenuButton`) reads LEAVE MATCH in a match and
-LEAVE PRACTICE in [practice](world.md#the-practice-arena) — the ESC slab is the one menu either
-has, so its exit lives there. `settingsHit()` answers `'leave'` for it (only while
-`state.settingsOpen`, so the title's slide-in never grows it) and the click is `toLobby()`
-(js/screens.js, the death screen's own fade back to the title on this seed) or
-`leavePractice()` (js/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh title
-world).
+**The foot is planks, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
+frost planks drawn by the title's own `drawMenuButton`: **CLOSE** — the one way out that is a
+button; ESC and the pad's B still fold the slab — and, in a match only, the way out beside it,
+LEAVE MATCH in a match and LEAVE PRACTICE in [practice](world.md#the-practice-arena) (the ESC
+slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
+leave, so it centres CLOSE alone). `settingsHit()` answers `'close'` (→ `settingsClose`: the
+in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`) and
+`'leave'` (→ `toLobby()`, js/screens.js, the death screen's own fade back to the title on this
+seed, or `leavePractice()`, js/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
+title world); `leavePlankRect()` is the second plank, `null` on the title.
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the
 left end of the MASTER track on the AUDIO page — `muteBtnRect()` returns `null` on any other
@@ -2803,22 +2806,28 @@ red × when it is off. While muted all three sound dials draw grey rather than g
 (`drawSliderRow`'s `dim`), so what the speaker silences reads off the page without a word of
 text. **N** still toggles the same flag from anywhere.
 
-**The CONTROLS page is itself tabbed** — KEYBOARD, GAMEPAD, TOUCH (`CTRL_TABS`), one listing per
-controller, since a phone and a pad each put the same verbs somewhere else. Its sub-navbar is
+**The CONTROLS page is itself tabbed** — WASD, CLICK, GAMEPAD, TOUCH (`CTRL_TABS`, each cell
+naming its listing in `ctrl`), one listing per controller, since a phone and a pad each put the
+same verbs somewhere else — and the keyboard's listing is **two cells, one per scheme**: the
+cell in gold is the scheme in force (`ctrlCellNow`), and a click on the other makes it the
+live scheme (`settings.scheme`, dropping every order the click scheme held) as well as opening
+its listing, so there is no SCHEME row and no words to switch. Its sub-navbar is
 pinned at the top of the content window (`CTRL_TAB_H`) and only the listing under it scrolls;
 it opens on the controller in hand (`ctrlTabNow`: TOUCH on a phone, GAMEPAD while a pad is
-active — a green pip beside that word says one is — KEYBOARD otherwise) until a click picks
-one. The pad's and the touch listing are baked once (`bakeCtrlPad`/`bakeCtrlTouch` into
-`ctrlCvs`, panels.js); **KEYBOARD is live**: two columns of verbs, each rebindable one beside
+active — a green pip beside that word says one is — the keyboard otherwise) until a click picks
+one. Every listing is **three columns** (`CTRL_COL_X`) grouped by what the verbs are for —
+moving and fighting, the kit and its panels, the match's own keys — so it fits the window
+without a scroll. The pad's and the touch listing are baked once (`bakeCtrlPad`/`bakeCtrlTouch` into
+`ctrlCvs`, panels.js); **the keyboard's is live**: each rebindable verb beside
 its key drawn as a **cap** — the same cap the work prompt wears in the world (`drawKeyCap`,
 ui.js), printing whatever key the action is bound to — and the fixed ones (the mouse's
 buttons, ESC, SCROLL, F3, `.`) as plain gold text, since nothing about them can be pressed. A
 cap is a button: it lifts white on hover, a click sets it **listening** (the face pulses gold)
 and the next key down is its key; a key another cap holds swaps the two, a reserved key is
 refused, Escape or a click elsewhere calls it off
-([rebinding](multiplayer.md#the-three-controllers)). RESET at the foot of the right column puts
-the defaults back and sits dim while they already are. `KEY_ROWS` is the two columns (an
-action id, a run of caps on one verb — MOVE, ABILITIES — or a fixed pair), `keyRowsLayout`
+([rebinding](multiplayer.md#the-three-controllers)). RESET, a row under the listing at its right
+edge, puts the defaults back and sits dim while they already are. `KEY_ROWS` is the three
+columns per scheme (an action id, a run of caps on one verb — MOVE, ABILITIES — or a fixed pair), `keyRowsLayout`
 places every cap and word listing-local, and the draw (`drawKeyRows`), `settingsHit`
 (`'key:<action>'`, `'keyreset'`) and `DBG.keyRows` all read it. Under a rule at
 `KEYS_PRIMER_Y`, baked (`bakeCtrlKeys`), **THE WEAPON** — the one thing about the left button a
@@ -2826,8 +2835,8 @@ new player cannot work out by pressing it, drawn rather than explained (`drawToo
 page is long enough that its scroll track appears.
 GAMEPAD draws each button as a picture (`drawPadGlyph`: a face button is a disc with its
 letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a cross with its
-pressed arm lit) beside its verb, the play set on the left and the held gestures and the menu
-set on the right. TOUCH draws each plate with the plate's own glyph (`drawTouchIcon`, ui.js) and
+pressed arm lit) beside its verb — moving and fighting, the abilities and the kit, then the
+match's buttons with the menu set under a rule — and its live readout under them. TOUCH draws each plate with the plate's own glyph (`drawTouchIcon`, ui.js) and
 the two sticks. The bindings themselves: [the three controllers](multiplayer.md#the-three-controllers).
 
 The primer is a **real HORN BOW carrying a real overload** — ARROW 2, FLAME 4, ARROW 2, THROWING

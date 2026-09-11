@@ -51,7 +51,7 @@ screen whose short side is under `MOBILE_SHORT` CSS px, so a tablet stays on the
 boot reading the saved one, a resize onto another screen) re-fits the view. What a phone gets:
 
 - **The biggest game pixel the overlays allow.** The world map slab is 212×226 at the floor (it grows with the view: `fitMapSlab`, canvas.js) and the settings
-  slab 240×218, so a phone takes the largest whole device-pixel scale that keeps the view above
+  slab 320×226, so a phone takes the largest whole device-pixel scale that keeps the view above
   `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — far fewer rows than a monitor's 360 (a 1170-px-tall
   phone lands on 234 rows at 5×; a 1080-px one cannot, 5× would be 216, so it takes 270 rows
   at 4×), and the 3×5 font and the HUD grow with the pixel.

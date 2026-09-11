@@ -269,11 +269,13 @@ function fitMapSlab() {
   PANEL_W = MAP_W + MAP_SIDE * 2; PANEL_H = MAP_HEAD + MAP_W + MAP_FOOT;
 }
 
-const SET_W = 240, SET_H = 218;
+// 226 rows is the tallest the slab can be and still fit a phone's 232-row
+// floor (MOBILE_MIN_H, mobile.js) - the bake is once, so it never grows
+const SET_W = 320, SET_H = 226;
 let SET_X = Math.round((VIEW_W - SET_W) / 2);       // relayout() recenters these
 let SET_Y = Math.round((VIEW_H - SET_H) / 2);
-let SL_X = SET_X + 112;
-const SL_W = 66;  // slider track
+let SL_X = SET_X + 130;
+const SL_W = 100;  // slider track
 // The panel's rows have no fixed anchors any more: the ESC slab is tabbed and
 // each page lays its rows out (and scrolls them) through settingsLayout()
 // in panels.js, off SET_X/SET_Y/SL_X alone.
