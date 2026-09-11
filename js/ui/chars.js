@@ -21,6 +21,7 @@ const CH_CARD_W = 120, CH_CARD_H = 184, CH_CARD_GAP = 16; // a roster slot
 const CH_STAGE = 144;      // the create screen's model, the 48 px portrait at 3x
 const CH_CELL = 24;        // an option cell's side: a 1x crop of the model wearing that option
 const CH_CELL_GAP = 2;
+const CH_PLATE = 36;       // the head row's plates: the two class emblems and the die
 const CH_ROW_P = 28;       // the option rows' pitch
 const CH_GAP = 24;         // between the stage column and the option panel
 const CH_NAME_W = 176, CH_NAME_H = 20;
@@ -60,39 +61,38 @@ function charsLayout() {
   return { toy, cx, cards, back: toy + 222 };
 }
 // the create screen, two columns sharing a top line and a foot, centred as
-// one block: the stage (the model, the die on its corner, the in-world body
-// on a snow pad) with the name under it, and the option panel - the class
-// pair centred at its head, the look rows under it, every cell the same
-// size in the same columns. DONE / CANCEL centred along the foot.
+// one block: the stage (the model, the in-world body on a snow pad) with the
+// name under it, and the option panel - its head row the class pair at the
+// left and the die at the right, both at CH_PLATE, the look rows under it,
+// every cell the same size, every row starting in the same column and the
+// head row spanning the widest. DONE / CANCEL centred along the foot.
 function createLayout() {
   const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
   const panelW = 16 + CH_ROW_N * CH_CELL + (CH_ROW_N - 1) * CH_CELL_GAP; // the glyph gutter + the widest row
   const left = cx - Math.round((CH_STAGE + CH_GAP + panelW) / 2);
   const stage = { x: left, y: toy + 12, w: CH_STAGE, h: CH_STAGE };
-  const die = { x: stage.x + stage.w - 24, y: stage.y + 2, w: 22, h: 22 };
   const mini = { x: stage.x + stage.w - 34, y: stage.y + stage.h - 36, w: 32, h: 32 }; // the in-world body, 2x
-  // the name field and its die, centred under the stage as one
-  const name = { x: stage.x + Math.round((stage.w - CH_NAME_W - CH_NAME_H - 6) / 2), y: stage.y + stage.h + 12, w: CH_NAME_W, h: CH_NAME_H };
-  const nameDie = { x: name.x + name.w + 6, y: name.y, w: CH_NAME_H, h: CH_NAME_H }; // rolls a new name
+  const name = { x: stage.x + Math.round((stage.w - CH_NAME_W) / 2), y: stage.y + stage.h + 12, w: CH_NAME_W, h: CH_NAME_H };
   const x0 = left + CH_STAGE + CH_GAP + 16; // the cells' left edge; a row's glyph sits in the 16 px gutter before it
   const cellsW = panelW - 16;
   const rows = CH_ROWS.map((r, i) => i
     ? { id: r.id, crop: r.crop, x: x0, y: toy + 56 + (i - 1) * CH_ROW_P, w: cellsW, h: CH_CELL }
-    : { id: r.id, kind: r.kind, x: x0 + Math.round(cellsW / 2) - 39, y: toy + 12, w: 78, h: 36 });
+    : { id: r.id, kind: r.kind, x: x0, y: toy + 12, w: CH_PLATE * 2 + 6, h: CH_PLATE });
+  const die = { x: x0 + cellsW - CH_PLATE, y: toy + 12, w: CH_PLATE, h: CH_PLATE }; // the head row's right end
   const planks = [];
   const first = state.menu.cedit && state.menu.cedit.first;
   const pw = first ? CH_BW : CH_BW * 2 + CH_BGAP;
   const px = cx - Math.round(pw / 2), py = toy + 230;
   planks.push({ x: px, y: py, w: CH_BW, h: CH_BH, id: 'done' });
   if (!first) planks.push({ x: px + CH_BW + CH_BGAP, y: py, w: CH_BW, h: CH_BH, id: 'cancel' });
-  return { toy, cx, stage, die, mini, name, nameDie, rows, planks };
+  return { toy, cx, stage, die, mini, name, rows, planks };
 }
 // the cells of one option row, each with a hit id and the value it sets
 function rowCells(r) {
   const out = [];
   if (r.kind === 'cls') {
-    for (let v = 0; v < CLASSES.length; v++) out.push({ id: 'cls' + v, x: r.x + v * 42, y: r.y, w: 36, h: 36, axis: 'cls', v });
+    for (let v = 0; v < CLASSES.length; v++) out.push({ id: 'cls' + v, x: r.x + v * (CH_PLATE + 6), y: r.y, w: CH_PLATE, h: CH_PLATE, axis: 'cls', v });
   } else {
     const n = PROFILE.LOOK_N[r.id];
     for (let v = 0; v < n; v++) out.push({ id: r.id + v, x: r.x + v * (CH_CELL + CH_CELL_GAP), y: r.y, w: CH_CELL, h: CH_CELL, axis: r.id, v, crop: r.crop });
@@ -184,7 +184,7 @@ function beginCreate(slot, first) {
   m.nameBuf = spec.name;
   m.nameSel = slot < 0; // a pre-rolled name arrives selected: the first letter typed replaces it
   m.nameShake = 0;
-  m.dieT = m.nameDieT = 0;
+  m.dieT = 0;
   m.crow = 0;
   m.khover = {};
   m.screen = m.cscreen = 'create';
@@ -232,28 +232,23 @@ function cycleLook(axis, step) {
   const n = PROFILE.LOOK_N[axis];
   setLook(axis, ((state.menu.cedit.spec.look[axis] + step) % n + n) % n);
 }
-// the die: a press tumbles it (DIE_T of faces flickering) and lands a new look
+// the die: a press tumbles it (DIE_T of faces flickering) and lands a new
+// look AND a new name, the name selected so a letter typed next replaces it
 function shuffleLook() {
   const m = state.menu, e = m.cedit;
   if (!e) return;
-  e.spec.look = PROFILE.rollChar(e.spec.cls).look;
+  const c = PROFILE.rollChar(e.spec.cls);
+  e.spec.look = c.look;
+  m.nameBuf = c.name;
+  m.nameSel = true;
   m.dieT = DIE_T;
   SFX.dodge();
 }
-// the name die: a fresh word from the pool, the field's own tumble
-function rollName() {
-  const m = state.menu;
-  m.nameBuf = PROFILE.rollName();
-  m.nameSel = true;
-  m.nameDieT = DIE_T;
-  SFX.dodge();
-}
-// what the pointer is on: a cell's id, 'die', 'nameDie', 'name', 'done', 'cancel', or null
+// what the pointer is on: a cell's id, 'die', 'name', 'done', 'cancel', or null
 function createHit() {
   const L = createLayout();
   for (const r of L.rows) for (const c of rowCells(r)) if (overRect(c, 1, 1)) return c.id;
   if (overRect(L.die, 2, 2)) return 'die';
-  if (overRect(L.nameDie, 2, 2)) return 'nameDie';
   if (overRect(L.name, 2, 2)) return 'name';
   for (const p of L.planks) if (overRect(p, 2, 3)) return p.id;
   return null;
@@ -301,7 +296,6 @@ function createClick() {
   if (h === 'cancel') { m.pressT = 0.12; createCancel(); return; }
   m.nameSel = false;
   if (h === 'die') { shuffleLook(); return; }
-  if (h === 'nameDie') { rollName(); return; }
   if (h === 'name') { m.nameSel = !!m.nameBuf; if (m.nameSel) SFX.pickup(); return; }
   const c = createCellById(h);
   if (!c) return;
@@ -312,7 +306,6 @@ function updateCreate(dt) {
   const m = state.menu;
   if (m.nameShake > 0) m.nameShake = Math.max(0, m.nameShake - dt);
   if (m.dieT > 0) m.dieT = Math.max(0, m.dieT - dt);
-  if (m.nameDieT > 0) m.nameDieT = Math.max(0, m.nameDieT - dt);
   const want = m.charT >= 1 && mouse.inside ? createHit() || '' : '';
   for (const k of Object.keys(m.khover)) m.khover[k] += ((want === k ? 1 : 0) - m.khover[k]) * Math.min(1, dt * 14);
   if (want && m.khover[want] === undefined) m.khover[want] = 0;
@@ -475,17 +468,17 @@ function drawDie(r, hv, tumble, now) {
   const y = drawWell(rr, hv, false, true);
   const face = tumble > 0 ? DIE_FACES[Math.floor(now * 18) % 6] : DIE_FACES[4];
   ctx.fillStyle = tumble > 0 || hv > 0.5 ? '#ffd95c' : '#8fa0c8';
-  const st = Math.floor((r.w - 8) / 3) + 1, o = Math.round((r.w - 2 * st - 2) / 2); // pip pitch and inset for this plate
-  for (const k of face) ctx.fillRect(rr.x + o + (k % 3) * st, y + o + Math.floor(k / 3) * st, 2, 2);
+  const pip = Math.round(r.w / 9), st = Math.round(r.w / 4), o = Math.round((r.w - 2 * st - pip) / 2); // pips sized to the plate
+  for (const k of face) ctx.fillRect(rr.x + o + (k % 3) * st, y + o + Math.floor(k / 3) * st, pip, pip);
 }
 
-// The create screen: the model at 3x on its stage with the die on its
-// corner and the in-world body on a snow pad beside its feet (what the snow
-// will actually show), the name field under the stage; the option panel to
-// the right - the class pair centred at its head (the unpicked emblem dark,
-// and locked once the character exists), then a row per axis: its glyph in
-// the gutter, and a cell per choice showing that choice on the model. DONE
-// and CANCEL centred along the foot. The keyboard row breathes gold ticks at
+// The create screen: the model at 3x on its stage with the in-world body on
+// a snow pad beside its feet (what the snow will actually show), the name
+// field under the stage; the option panel to the right - its head row the
+// class pair (the unpicked emblem dark, and locked once the character
+// exists) and, at the row's far end, the die that rolls the whole character,
+// then a row per axis: its glyph in the gutter, and a cell per choice
+// showing that choice on the model. DONE and CANCEL centred along the foot. The keyboard row breathes gold ticks at
 // its glyph.
 function renderCreate(now, a) {
   const m = state.menu, e = m.cedit;
@@ -501,14 +494,12 @@ function renderCreate(now, a) {
   ctx.fillStyle = '#e8eef8';
   ctx.beginPath(); ctx.ellipse(L.mini.x + 16 - slide, L.mini.y + 30, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
   ctx.drawImage(set.down[1 + (Math.floor(now * 4) % 2)], L.mini.x - slide, L.mini.y, 32, 32);
-  // the die on the stage's corner
-  drawDie({ x: L.die.x - slide, y: L.die.y, w: L.die.w, h: L.die.h }, m.khover.die || 0, m.dieT / DIE_T, now);
   // the name field: a well whose rim lights under the hand, the buffer at 2x
   // with the caret - or SELECTED, on a gold band, when the next letter will
   // replace it (a pre-rolled name, a rolled one, a click on the field) - the
   // capacity ticks under it, and the underline: slate while the name is
   // good, red while it would be refused; a refusal on DONE rattles and
-  // floods it red. The name die beside it rolls a fresh word.
+  // floods it red.
   const f = { x: L.name.x - slide, y: L.name.y, w: L.name.w, h: L.name.h };
   const bad = m.nameShake / NAME_SHAKE_T;
   const shake = bad > 0 ? Math.round(Math.sin(now * 90) * 2.5 * bad) : 0;
@@ -527,9 +518,9 @@ function renderCreate(now, a) {
   if (!sel && Math.floor(now * 2) % 2 === 0) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(txt ? tx + tw + 2 : tx - 5, ty, 2, 10); }
   let kx = f.x + Math.round((f.w - (PROFILE.NAME_MAX * 4 - 1)) / 2);
   for (let i = 0; i < PROFILE.NAME_MAX; i++, kx += 4) { ctx.fillStyle = i < txt.length ? '#f2cc6a' : '#2c3a68'; ctx.fillRect(kx, f.y + f.h + 4, 3, 2); }
-  drawDie({ x: L.nameDie.x - slide, y: L.nameDie.y, w: L.nameDie.w, h: L.nameDie.h }, m.khover.nameDie || 0, m.nameDieT / DIE_T, now);
 
-  // the option panel
+  // the option panel: the die at the head row's right end, then the rows
+  drawDie({ x: L.die.x + slide, y: L.die.y, w: L.die.w, h: L.die.h }, m.khover.die || 0, m.dieT / DIE_T, now);
   for (let i = 0; i < L.rows.length; i++) {
     const r = L.rows[i];
     const rx = r.x + slide;

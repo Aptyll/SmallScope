@@ -153,7 +153,7 @@ const state = {
     // back to), nameBuf/nameShake its name field and refusal rattle, crow the
     // keyboard row, ksel the roster's keyboard slot, khover the hover eases
     // keyed by hit id
-    charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameSel: false, nameShake: 0, nameDieT: 0, dieT: 0, crow: 0, ksel: 0, khover: {},
+    charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameSel: false, nameShake: 0, dieT: 0, crow: 0, ksel: 0, khover: {},
     moved: false, dieT: 0, rolling: 0, camT: 0, pressT: 0,
     // frozen planks: refusal shudder timer, which plank was struck (menu index),
     // per-knock crack seed, the struck point (plank-local) and the ice chips it sprays (screen-space).

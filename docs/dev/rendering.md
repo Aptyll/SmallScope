@@ -1643,21 +1643,21 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   is that character's copy for editing, and `first` is the fresh install (js/boot.js opens it
   before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
   Two columns centred as one block (`createLayout`), sharing a top line and a foot. Left, the
-  stage: the model at 3× (`drawModel`, class select's light and ring), the **die** on its
-  top-right corner (`drawDie` — five pips at rest, gold under the hand, and for `DIE_T` after
-  a press it rattles and flickers through the six faces while `shuffleLook` lands a new look:
-  a roll, not a button), the 16 px body at 2× walking on a snow pad by its feet (what the snow
-  will show), and the **name field** centred under the stage with its own die: the buffer at
-  2× with a caret, or **selected** on a gold band (`menu.nameSel`) when the next letter will
-  replace it — a new character's pre-rolled name arrives selected, the name die (`rollName`,
-  a fresh word from the pool, the same tumble) leaves its word selected, and a click on the
-  field selects what is there; Backspace on a selection clears it. The rim lights under the
-  hand, the underline goes red while the name would be refused (`nameOk`, which also dims
-  DONE), the capacity ticks sit under it, and a refusal on DONE rattles and floods it red
-  (`menu.nameShake`). Right, the
-  option panel (`CH_ROWS`): the **class pair** centred at its head (the two `CLASS32`
-  emblems; once the character exists the other one is dark under a padlock: **class is fixed
-  at creation**), then **one row per axis in one grammar** — an 8 px glyph in the gutter and a
+  stage: the model at 3× (`drawModel`, class select's light and ring), the 16 px body at 2×
+  walking on a snow pad by its feet (what the snow will show), and the **name field** centred
+  under the stage: the buffer at 2× with a caret, or **selected** on a gold band
+  (`menu.nameSel`) when the next letter will replace it — a new character's pre-rolled name
+  arrives selected, a roll of the die leaves its word selected, and a click on the field
+  selects what is there; Backspace on a selection clears it. The rim lights under the hand,
+  the underline goes red while the name would be refused (`nameOk`, which also dims DONE),
+  the capacity ticks sit under it, and a refusal on DONE rattles and floods it red
+  (`menu.nameShake`). Right, the option panel (`CH_ROWS`): its **head row** starts in the
+  cells' column like every row and spans the widest — the **class pair** at its left (the two
+  `CLASS32` emblems on `CH_PLATE` wells; once the character exists the other one is dark under
+  a padlock: **class is fixed at creation**) and the **die** at its right end, the same size
+  (`drawDie` — five pips at rest, gold under the hand, and for `DIE_T` after a press it rattles
+  and flickers through the six faces while `shuffleLook` lands a new look *and* a new name: a
+  roll, not a button) — then **one row per axis in one grammar** — an 8 px glyph in the gutter and a
   `CH_CELL` (24 px) cell per choice, each cell a 1× crop of the *bare* model wearing that
   choice (`drawLookCell`: the head crop `CH_HEAD` for tone, hair, hair colour, beard and face,
   the torso crop `CH_TORSO` for the body type), so a row is its choices seen before they are
