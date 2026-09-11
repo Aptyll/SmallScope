@@ -1282,8 +1282,11 @@ function cursorInfo() {
   if (unitUnder(player, wx, wy)) return ret('hunt', busy);
   // a fish under the ice: water-blue ring (the bow spears it from point-blank)
   if (hoverFish()) return ret('fish', busy);
-  // something E can work: lock ring (ice-blue over bare ice), dim out of reach
-  const wt = workTarget(player);
+  // something E can work: lock ring (ice-blue over bare ice), dim out of
+  // reach. Nothing at a counter: inside a merchant's reach E is the shop's
+  // (keyPress, js/input.js), and a ring there would promise a swing the key
+  // no longer makes.
+  const wt = merchNear(player) ? null : workTarget(player);
   if (wt) return ret(wt.o ? 'lock' : 'ice', busy || !wt.near);
   return ret('idle', busy);
 }

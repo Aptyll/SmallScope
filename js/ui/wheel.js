@@ -163,17 +163,20 @@ function drawSelection(ox, oy, now) {
 // when the target is in reach and tools aren't blocked, so it doubles as
 // the "you're close enough" signal.
 function drawWorkHint(ox, oy) {
-  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel) return;
+  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop) return;
   if (player.charging || player.fallT > 0 || player.dodgeT > 0) return;
   if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
+  // a MERCHANT in reach owns the key outright (keyPress, js/input.js), so its
+  // cap is the one that shows - trunk under the aim or not
+  if (drawShopHint(ox, oy)) return;
   let t = workTarget(player);
   // what the hands take on their own (autoToolFor: a tree, a rock, a chest, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
   if (t && t.o && autoToolFor(t.o, player) >= 0) t = null;
   
-  // no work target: the armory, the roll station, the range bell or a
-  // MERCHANT may still be in reach
-  if (!t || !t.near) { drawRackHint(ox, oy); drawPkHint(ox, oy); drawBellHint(ox, oy); drawShopHint(ox, oy); return; }
+  // no work target: the armory, the roll station or the range bell may still
+  // be in reach (the merchant answered above)
+  if (!t || !t.near) { drawRackHint(ox, oy); drawPkHint(ox, oy); drawBellHint(ox, oy); return; }
   const st = t.o && structOf(t.o);
   const isStruct = !!(st && STRUCTS[st.type]);
   const d = t.o && OBJECTS[t.o.type];
@@ -343,14 +346,17 @@ function drawBellHint(ox, oy) {
 // The merchant's prompt, the rack's own proximity grammar one body over: an
 // E SHOP cap over whichever merchant is in reach (merchNear, js/shop.js -
 // the same resolver the press uses), either team's. It hides while the
-// counter is up, the way every hint hides under a wheel.
+// counter is up, the way every hint hides under a wheel. Returns whether it
+// drew: the merchant owns E in that bubble, so a cap here is the whole
+// answer and drawWorkHint stops on it.
 function drawShopHint(ox, oy) {
-  if (state.shop) return;
+  if (state.shop) return false;
   const b = merchNear(player);
-  if (!b) return;
+  if (!b) return false;
   const verb = 'SHOP';
   const totalW = promptW(verb, 'work');
   drawKeyPrompt(Math.round(b.x - ox - totalW / 2), Math.round(b.y - 44 - oy), verb, keyHeld('work'));
+  return true;
 }
 
 

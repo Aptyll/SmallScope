@@ -901,7 +901,8 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   is bare ice with no object (→ pick, cracking toward a fishing hole); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
-  does nothing. A valid target swaps `p.swing` to the right one, drops any draw, faces the
+  does nothing — and **standing at a merchant's counter, E is the counter's** and swings at nothing
+  at all ([opening it](#opening-it)). A valid target swaps `p.swing` to the right one, drops any draw, faces the
   tile, and starts the swing; `swingHit(p)` **contests** the locked tile (`p.workTx/Ty`) so only
   one player's swing lands on it in a step, then hits whatever is there via
   `hitObject(o, p)`/`crackIce()`. Once `swingT` and `swingCd`
@@ -1678,8 +1679,15 @@ at all and draws no health bar.
 
 `merchNear(p)` is the resolver — the nearest merchant within `SHOP_REACH` (34 px) of a body,
 either team's — and the `E SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
-prompt the practice armory's `E ARM` uses, drawn only when no [work target](#the-swing-tools-e)
-is in reach, exactly as the press is only taken then. The counter is a **panel, not a held wheel**:
+prompt the practice armory's `E ARM` uses. **A merchant in reach owns E outright**: unlike the
+armory, the roll die and the bell — which all stand aside for a real
+[work target](#the-swing-tools-e) — the counter is taken *first*, ahead of the swing and ahead of
+everything else the key does (`keyPress`, js/input.js). It has to be. The merchant fells trees for
+a living and loiters among them, so there is very often a trunk one tile off the counter, and E
+swinging at that trunk was the shop refusing to open with the `E SHOP` cap still hanging over the
+body — and if that trunk was one of the `auto` kinds the hands take on their own, no work cap even
+showed to explain it. One rule answers in all three places: the press, the cap, and whether the
+cursor's [lock ring](rendering.md#cursor) promises a swing. The counter is a **panel, not a held wheel**:
 the press opens it and E, Escape, the X or **walking out of reach** shuts it (`updateMarket`
 re-checks `inReach` every step). It is HUD like the pack and the character sheet — **the sim runs
 on underneath, and standing at a counter protects nobody**.
