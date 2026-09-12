@@ -58,7 +58,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/strip.js](../../js/ui/strip.js) | ~640 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, HUD SIZE, every cell rect and refusal flash, the weapon shelf's geometry and drops, sending a cell across, the drag's press/move/release |
 | [js/ui/hud-draw.js](../../js/ui/hud-draw.js) | ~740 | shared scope, no `window.*` export | drawing the strip and the shelf: the xp bar, tier and mod plates, item icons, the cooldown sweep, the ability/pouch/food/gold cells, `drawHudStrip`, the scaled bakes, the shelf's wells, the drag ghost |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~150 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
-| [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~390 | shared scope, no `window.*` export | the hover tooltip: `tipAt` and `drawTooltip` |
+| [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~420 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~140 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
 | [js/ui/touch-plates.js](../../js/ui/touch-plates.js) | ~140 | shared scope, no `window.*` export | the pixels of a phone's controls: the plates, the two sticks, the rotate prompt |
 | [js/ui/shop.js](../../js/ui/shop.js) | ~1640 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |

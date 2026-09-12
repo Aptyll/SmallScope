@@ -468,7 +468,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what the pointer is on, said in words, bottom left | `tipAt`, `tipResolve`, `tipNow`, `tipSize`, `drawTooltip`, `TIP_*` | `tooltips` (resolved once per frame in `render`, js/draw/render.js) |
+| what the pointer is on, said in words | `tipAt`, `tipResolve`, `tipNow`, `tipSize`, `drawTooltip`, `TIP_*` | `tooltips` (resolved once per frame in `render`, js/draw/render.js) |
+| where that panel sits — beside the pointer, or parked bottom left | `tipPos`, `TIP_GAP`, `TIP_EDGE` (the row that picks: `settings.tipFollow`, `SET_TABS` js/ui/panels.js) | `tooltips` |
 | the per-kind descriptions that panel is built from | `tipBase`, `tipTool`, `tipBit`, `tipStack`, `tipCell`, `tipGear`, `tipGold`, `tipCards`, `tipClassAb`, `tipRail`, `tipSend`, `tipKind` (a wiki ARSENAL row), `tipSec`, `TIP_PATH` | `tooltips` (the shop's own: `tipShop`, js/ui/shop.js) |
 
 ## js/ui/compose.js

@@ -1524,6 +1524,9 @@ window.DBG = {
   CARD_PRICE,
   // what the pointer is on, as the panel would describe it (null = nothing)
   tipAt: (x, y) => tipAt(x == null ? mouse.x : x, y == null ? mouse.y : y),
+  // and where this frame's panel is sitting, the rect drawTooltip paints -
+  // which is how the TOOLTIP row's two modes are read without eyeballing px
+  tipRect: () => { if (!tipNow) return null; const s = tipSize(tipNow); return Object.assign(tipPos(s.w, s.h), s); },
   fireTool: (p) => fireTool(p || player),
   // the fish catch's three beats: start one by hand, read which frame a body is on
   startCatch: (p) => startCatch(p || player), cancelCatch: (p) => cancelCatch(p || player), catchFrame,

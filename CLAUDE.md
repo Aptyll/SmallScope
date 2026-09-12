@@ -95,8 +95,8 @@ one goes through `drawKeyPrompt`/`drawPadBind`), the **settings, PLAYER, gear, c
 labelled rows, the **instruments** — the practice room's (the dummy meter, the parkour's lap
 clock and the archery round's readouts, with their BEST / LAST plates) and the merchant's
 (the two price graphs and their high/low) — because an instrument's whole job is comparing
-numbers, and the **hover tooltip** (bottom-left,
-`tipAt`/`drawTooltip`, ui/tooltip.js) — which earns it because comparing a tool's rate of fire against a
+numbers, and the **hover tooltip** (beside the pointer, or parked bottom-left — `tipAt`/`tipPos`/
+`drawTooltip`, ui/tooltip.js) — which earns it because comparing a tool's rate of fire against a
 bit's weight is comparing *numbers*, and no shape does that. It is a carve-out, not a licence: the
 well still has to read at a glance without it. Anything else that wants words is a design bug.
 

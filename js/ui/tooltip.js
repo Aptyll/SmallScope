@@ -1,8 +1,8 @@
 'use strict';
-// The hover tooltip: tipAt resolves what the pointer is on into rows, and
-// drawTooltip prints them bottom-left. The one place the HUD compares numbers.
+// The hover tooltip: tipAt resolves what the pointer is on into rows, tipPos
+// places the panel, drawTooltip prints it. The one place the HUD compares numbers.
 // ------------------------------------------------------------ tooltips
-// One panel, bottom left, that says what the pointer is on - and the one
+// One panel that says what the pointer is on - and the one
 // deliberate exception to show-don't-label in the HUD, recorded as such in
 // CLAUDE.md's UI rule. The reason it earns the exception: a tool's rate of
 // fire, a bit's weight and a card's effect are NUMBERS the player is being
@@ -10,9 +10,13 @@
 // keep doing the at-a-glance job - tier plate, pips, wipes - and this is where
 // you go when at-a-glance is not enough.
 //
-// It is bottom LEFT because that is the corner the pointer is furthest from
-// while it hovers the backpack, the weapon strip or a tech node, so the panel
-// never sits under the hand reading it, and nothing else lives in that corner.
+// WHERE it sits is the player's (settings.tipFollow - the TOOLTIP row on the
+// ESC panel's GAME page), and tipPos is the only thing that answers:
+//   FOLLOWING, the default: beside the pointer, so the numbers arrive where the
+//     eye already is and reading one costs no glance across the screen.
+//   FIXED: bottom left - the corner the pointer is furthest from while it hovers
+//     the backpack, the weapon strip or a tech node, so the panel can never
+//     cover the well beside the one being read, and nothing else lives there.
 //
 // EVERY tooltip comes from tipAt(), which asks the same hit-testers, in the
 // same order, that the click handler does - so what the panel describes and
@@ -340,6 +344,31 @@ function tipSize(d) {
   const h = TIP_PAD * 2 + head + d.rows.length * TIP_ROW + (d.notes || []).length * TIP_ROW;
   return { w: Math.min(TIP_MAXW, w) + TIP_PAD * 2, h };
 }
+// WHERE the panel goes, the one answer for both modes. FIXED is the corner it
+// was born in; FOLLOWING rides the pointer, and the whole of that is clearing
+// the hand: TIP_GAP is measured sideways because every cursor glyph and the
+// 18px drag ghost are wider below the hotspot than beside it, so a panel held
+// TIP_GAP px to one side is clear of the lot without being flung away from the
+// numbers it is there to put under the eye. It flips to the pointer's other
+// side at the right edge and clamps into the view, so a corner still reads.
+//
+// A FINGER keeps the corner whatever the setting says: a thumb is ON the well
+// it is asking about, so a panel beside it is a panel under the hand. Same test
+// drawCursor uses to keep an arrow out from under a thumb (js/draw/render.js).
+const TIP_GAP = 11;   // clear air between pointer and panel, sideways
+const TIP_EDGE = 4;   // closest the panel comes to any view edge
+function tipPos(w, h) {
+  if (!settings.tipFollow || mouse.src === 'touch') return { x: TIP_EDGE, y: VIEW_H - 8 - h };
+  const mx = Math.round(mouse.x), my = Math.round(mouse.y);
+  let x = mx + TIP_GAP;
+  if (x + w > VIEW_W - TIP_EDGE) x = mx - TIP_GAP - w;
+  // the head row sits level with the pointer, so the name is what the eye lands
+  // on and the rows read downward from it
+  const y = my - TIP_PAD;
+  const clamp = (v, hi) => Math.max(TIP_EDGE, Math.min(v, Math.max(TIP_EDGE, hi)));
+  return { x: clamp(x, VIEW_W - TIP_EDGE - w), y: clamp(y, VIEW_H - TIP_EDGE - h) };
+}
+
 // The panel itself: an item's own tier plate behind the icon, the name in its
 // tier ink, then label/value rows with a dotted leader between them - the
 // PLAYER panel's ledger, which is where that pattern already lives.
@@ -347,7 +376,7 @@ function drawTooltip() {
   const d = tipNow;
   if (!d) return;
   const { w, h } = tipSize(d);
-  const x = 4, y = VIEW_H - 8 - h;
+  const { x, y } = tipPos(w, h);
   ctx.fillStyle = 'rgba(4,6,18,0.55)';
   ctx.fillRect(x + 2, y + 2, w, h);
   ctx.fillStyle = BAG_BG;
