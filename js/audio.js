@@ -104,6 +104,10 @@
   // returns false and the caller's synth line plays in its place.
   const SFX_DIR = 'audio/sfx/';
   const RESTOCK_RING = 0.9; // s between the wagon and the bell in SFX.restock
+  // How far up the bull grunt behind SFX.bigHurt is pitched to read as a great
+  // BIRD instead: 1.5 is a fifth and a half, which is the difference between a
+  // beast in a field and something with a beak over your roost.
+  const BIGHURT_RATE = 1.5;
   const SAMPLES = {
     chop: ['wood_chop_#2-1787704670150.mp3'],
     mine: ['stone_on_wood.mp3', 'stone_tap_wood.mp3'],
@@ -593,7 +597,11 @@
     // for the objective the whole match is about - so the roost sounded like
     // a person being punched. Its own voice, dropped low, is the difference
     // between "someone got hit" and "the bird is being driven off".
-    bigHurt() { if (smp('bigHurt', { vol: 0.75, rate: 0.9, jitter: 0.05 })) return; tone(150, 0.26, 'sawtooth', 0.16, -70); noise(0.18, 0.22, 380); },
+    // ...and it is a BIRD: the clip is a bull at rest, so it plays a fifth
+    // and a half up (BIGHURT_RATE) with the chest resonance filtered off
+    // underneath, which turns a bovine grunt into something with a beak. The
+    // synth line under it climbs the same way.
+    bigHurt() { if (smp('bigHurt', { vol: 0.8, rate: BIGHURT_RATE, jitter: 0.04, hp: 320 })) return; tone(430, 0.22, 'sawtooth', 0.13, -180); noise(0.16, 0.18, 900); },
     // a creature crying out under a hit it survived
     yelp() { if (smp('yelp', { vol: 0.55, jitter: 0.1, delay: 0.05 })) return; tone(620, 0.12, 'sawtooth', 0.07, -240, 0.05); },
     // a UI confirmation - a panel opening, a slot returning. The world's own
@@ -737,7 +745,7 @@
     // the camera handed to another body, watching from nowhere
     spectate() { if (smp('spectate', { vol: 0.5, jitter: 0, gap: 0.2 })) return; tone(520, 0.2, 'sine', 0.05, -200); },
     // The market moving hard (marketNews, js/shop.js), under the plate that
-    // rises with it (the `market notices` banner, js/shop.js): a coin dinging
+    // rises with it (the `notices` banner, js/shop.js): a coin dinging
     // on a spike, a sad fall on a crash. Two DIFFERENT clips rather than one
     // pitched two ways, and unjittered, because this is read as a DIRECTION
     // and not as a texture - a spike must never be mistakable for a crash.

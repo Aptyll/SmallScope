@@ -43,9 +43,9 @@ declare victory. The three affordances:
   `shopHit(x, y)`, `shopBuy/shopSellCell/shopTrade` and `shopLayout()` drive the panel without a
   pointer; `DBG.marketStep(n)` walks the prices n moves on, so a spike is one call rather than
   three days of waiting, and it ticks the restock clock with them. The news it cuts is a
-  [plate under the minimap](rendering.md#market-notices-the-plates-under-the-minimap) as well as a
+  [plate under the minimap](rendering.md#notices-the-plates-under-the-minimap) as well as a
   feed line: `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits,
-  `DBG.marketNotice(kind, txt, good)` raises one without moving a price, and
+  `DBG.raiseNotice(kind, txt, good)` raises one without moving a price, and
   `DBG.shopRestock(true)` turns the counter over *loudly* (bare, it is the quiet boot roll).
   A plate ages on wall time in `updateFx`, so `DBG.step` runs its arrival and its fade.
 - **`?seed=N`** pins the world — the same seed twice proves a change is deterministic, two seeds

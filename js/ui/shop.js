@@ -89,7 +89,7 @@ function marketNews(id) {
   r.pop = 3;
   const k = up ? 'spike' : 'crash';
   logEvent(GOODS[id].name + (up ? ' SPIKE ' : ' CRASH ') + now + 'G', null, NOTE_KIND[k]);
-  marketNotice(k, now + 'G', id); // ...and the plate under the minimap
+  raiseNotice(k, now + 'G', id); // ...and the plate under the minimap
   SFX.market(up);
 }
 
@@ -133,8 +133,11 @@ function updateMarket(dt) {
   if (state.shop && (player.dead || !inReach(player, state.shop))) closeShop();
 }
 
-// ------------------------------------------------------------ market notices
-// The market's news as something you SEE, not something you read in a log.
+// ------------------------------------------------------------ notices
+// News as something you SEE, not something you read in a log. The market is
+// this corner's first and biggest customer - hence its living here - but the
+// plate is not the market's: anything that happens where you are NOT can
+// raise one (`raiseNotice`), and the roost under attack does.
 //
 // Every headline here leaves its line in the event log as well (logEvent,
 // js/panels.js) - the log is the match's own record and the market belongs
@@ -144,15 +147,17 @@ function updateMarket(dt) {
 // the other things you glance at mid-fight are. So it also raises a PLATE,
 // top-right, hard under the minimap beside the clock.
 //
-// One shape, three notices, read left to right with no sentence in it: the
+// One shape, four notices, read left to right with no sentence in it: the
 // MARK of what the news IS (the merchant's GOLD SACK, SPRITES.goldSack,
-// turning over its six frames the whole time a PRICE plate is up - and a
-// wooden CRATE, SPRITES.crate, when the counter itself has turned over,
-// because a sack of coin is what a price is worth and a crate is what a
-// delivery is), then what it is about (the good's own item icon beside the
+// turning over its six frames the whole time a PRICE plate is up - a wooden
+// CRATE, SPRITES.crate, when the counter itself has turned over, because a
+// sack of coin is what a price is worth and a crate is what a delivery is -
+// and the maps' own BIRD DIAMOND in your side's ink when the news is your
+// roost), then what it is about (the good's own item icon beside the
 // price it landed on, both at the SAME scale - an 8 px icon against a 10 px
 // number reads as a footnote to it, and these two are one reading - or NEW
-// STOCK for a turnover), then one glyph carrying WHICH WAY - an arrow up or
+// STOCK for a turnover, or the NERVE the bird has left), then one glyph
+// carrying WHICH WAY - an arrow up or
 // an arrow down. A stock plate has no tail: its crate has already said which
 // kind of news this is, so the headline takes that room instead. The plate's
 // frame and ink carry the same green/red/gold the feed line does, so the two
@@ -193,11 +198,44 @@ const NOTE_KIND = {
   crash: { bg: '#3a1420', edge: '#e0637a', fg: '#ff9a8a', mark: null, tail: 'down',
     tp: { '.': null, a: '#a83c50', h: '#ff9a8a' } },
   stock: { bg: '#2a2340', edge: '#c9a227', fg: '#f2cc6a', mark: 'crate', tail: null },
+  // YOUR ROOST IS BEING STRUCK AND YOU ARE SOMEWHERE ELSE (hurtEagle,
+  // js/boot.js, in the same beat as SFX.alarm). Its own alarm red - hotter
+  // than a crash's rose, because a price falling costs you gold and this
+  // costs you the match - and the falling tail, since what the number on it
+  // says is the nerve the bird has left.
+  roost: { bg: '#3a1414', edge: '#d0453a', fg: '#ff9a8a', glyph: 'bird', tail: 'down',
+    tp: { '.': null, a: '#a83c50', h: '#ff9a8a' } },
+};
+// A mark that is STAMPED rather than blitted, named by its kind's `glyph`, so
+// a kind whose mark is not a sprite needs no `if` in the draw. Grids in the
+// tails' own language (`stampGrid`, js/ui/screens.js): 16 wide, to fill the
+// same well the 16x16 sprites do, and `h` is filled in per draw with YOUR
+// SIDE'S ink - which is the whole reason to stamp one instead of baking a
+// sprite, since a baked sprite cannot be recoloured per team.
+//
+// The BIRD is a soaring raptor from below - head, swept wings, tail - and not
+// the maps' 7 px objective diamond blown up: at 2x that diamond reads as a
+// medical PLUS, and its cousin the arrow tail is already on the far end of
+// this same plate. A mark has to be the thing, not a marker for it.
+const NOTE_MARKS = {
+  bird: [
+    '.......hh.......',
+    '......hhhh......',
+    '......hhhh......',
+    '.hh...hhhh...hh.',
+    '.hhhh.hhhh.hhhh.',
+    '..hhhhhhhhhhhh..',
+    '...hhhhhhhhhh...',
+    '.......hh.......',
+    '......hhhh......',
+    '.......hh.......',
+  ],
 };
 
 // raise one. `good` is a GOODS/ITEMS key whose icon rides beside the text, or
-// null for a notice about the counter itself.
-function marketNotice(kind, txt, good) {
+// null for a notice about the counter itself - or about something that is not
+// the counter at all.
+function raiseNotice(kind, txt, good) {
   notices.push({ kind, txt: String(txt).toUpperCase(), good, t: 0 });
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
@@ -252,7 +290,13 @@ function renderNotices() {
     // frame, because a delivery on a counter is a thing sitting there.
     ctx.fillStyle = 'rgba(3,5,14,0.5)';
     ctx.fillRect(x + 1, y + 3, 18, 16);
-    ctx.drawImage(K.mark ? SPRITES[K.mark]
+    // a stamped mark sits where a sprite would, centred in the well's 16 rows
+    // (the grids are 10 tall, so 3 px of air above and below) and inked in
+    // your side's colour, with the rim pass so it reads on the wash
+    if (K.glyph) {
+      stampGrid(NOTE_MARKS[K.glyph], { '.': null, h: TEAMS[skin(player.team)].mark },
+        x + 2, y + 6, 1, '#0b1024');
+    } else ctx.drawImage(K.mark ? SPRITES[K.mark]
       : SPRITES.goldSack[Math.floor(e.t / NOTE_FR) % SPRITES.goldSack.length], x + 2, y + 3);
     // What it is about, centred in the well between the mark and the tail: the
     // good's own icon and the price it landed on, sized TOGETHER - the icon is
@@ -380,7 +424,7 @@ function shopRestock(quiet) {
   // old blip was: a turnover is the one market event you might want to walk
   // across the map for, and news you only hear once you are already there is
   // not news.
-  marketNotice('stock', 'NEW STOCK', null);
+  raiseNotice('stock', 'NEW STOCK', null);
   SFX.restock();
 }
 

@@ -846,6 +846,14 @@ function hurtEagle(e, dmg, src, hx, hy) {
   else if (player && e.team === player.team && !player.eliminated
       && state.elapsed - (e.warnT === undefined ? -99 : e.warnT) >= EAGLE_WARN_GAP) {
     e.warnT = state.elapsed;
+    // ...and the news arrives where the other things you glance at mid-fight
+    // do: a plate top-right under the minimap, on the market's own grammar
+    // (the `notices` banner, js/ui/shop.js) - your side's bird diamond, the
+    // NERVE it has left as a number, and the falling tail. The cue turns your
+    // head and the plate says what happened, which is the market's split too;
+    // the feed line goes with it, since the log is the match's record.
+    logEvent('YOUR EAGLE IS UNDER ATTACK', null, NOTE_KIND.roost);
+    raiseNotice('roost', Math.round(Math.max(0, e.hp) / e.maxHp * 100) + '%', null);
     SFX.alarm();
   }
   if (e.hp <= 0) eagleFlee(e, src);
@@ -1527,7 +1535,7 @@ window.DBG = {
   shopRestock: (loud) => shopRestock(!loud), shopOffer, itemValue, cellValue, sellValue,
   // the market's plates under the minimap: the live stack, where a slot lands,
   // and a way to raise one without waiting for the walk to do it
-  notices, noteRect, NOTE_KIND, marketNotice,
+  notices, noteRect, NOTE_KIND, raiseNotice,
   merchNear: (p) => merchNear(p || player),
   openShop: (p) => openShop(merchNear(p || player)), closeShop, shopOpen,
   shopLayout, shopHit: (x, y) => shopHit(x == null ? mouse.x : x, y == null ? mouse.y : y),

@@ -464,14 +464,17 @@ All three widgets slide **their own size** away for the landing intro — the ra
 row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
 tool cell would leave a longbow's row parked over the cinematic.
 
-### Market notices: the plates under the minimap
+### Notices: the plates under the minimap
 
-The market's own voice on the HUD — the `market notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
-raised by `marketNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
-spike, a price crash and a counter turning over each raise one, *as well as* the line they already
+The HUD's corner for news from where you are NOT — the `notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
+raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
+spike, a price crash, a counter turning over and **your roost being struck while you are elsewhere**
+each raise one, *as well as* the line they already
 put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
 somebody, and a price is not that — it is the state of the world your bag is about to be sold
-into, so it belongs where the clock already is.
+into, so it belongs where the clock already is. The market is this corner's first and biggest
+customer, which is why the block lives in shop.js, but the plate is not the market's: 3.41's
+`roost` kind is the same card with a different mark on it.
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
 what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down.
@@ -482,6 +485,14 @@ whole time a **price** plate is up, so the coin keeps catching the light) and a 
 **crate** (`SPRITES.crate`) when the counter itself has turned over — a sack of coin is what a
 price is worth, a crate is what a delivery *is*. A stock plate has **no tail**: its crate has
 already said which kind of news this is, so the headline takes that 8 px instead.
+
+A kind may name a **drawn** mark instead of a blitted one — `NOTE_KIND[k].glyph` into `NOTE_GLYPH`,
+one entry per glyph so the draw never grows an `if` per kind. The `roost` plate's is `bird`:
+`drawMapBird` at **2×** (the `s` argument added in 3.41 — 1 is the maps' own 7 px glyph) in your
+side's ink through `skin(player.team)`, so the stamp is *the same diamond the disc and the chart
+use for an objective* rather than a second drawing of a bird. Its text is the **nerve the bird has
+left**, as a percent, under the falling tail — the plate says what happened where the cue
+(`SFX.alarm`) only turned your head, which is the market's own split between a ding and a number.
 
 What it is about is the good's own item icon and the price it landed on, **sized together** —
 `runW(s)` measures the pair at a scale and the icon is drawn at the text's own, so a 2× price

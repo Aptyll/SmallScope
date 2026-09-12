@@ -75,8 +75,9 @@ function renderUI(now) {
   // the character panel (G): over the HUD, under the toasts and the tooltip
   if (!out && state.charOpen && !player.dead) drawCharPanel(now);
 
-  // the market's plates, top-right under the minimap (the `market notices`
-  // banner, js/shop.js). Above the counter and the sheet on purpose: a price
+  // the news plates, top-right under the minimap (the `notices` banner,
+  // js/ui/shop.js): the market's three and the roost under attack. Above the
+  // counter and the sheet on purpose: a price
   // that moved while you were standing at the shop is exactly the news that
   // must not arrive behind the panel it is about. They stay up while you are
   // down, like the feed - the market does not stop for a death.
