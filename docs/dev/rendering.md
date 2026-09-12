@@ -454,7 +454,7 @@ empty world.
 | top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the small white arrow of the **inventory drawer**, shut until B or the arrow | `drawShelf`, `drawBag` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: every player in the match as a 14px chip on two plates, your side left (you first, your emblem white) and the rival right, each chip only *up* / *waiting* / *out* — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
-| bottom left | the hover tooltip | `drawTooltip` |
+| beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
@@ -529,14 +529,29 @@ panels, and the end screens own the frame outright. Each kind carries its own cu
 
 ### The hover tooltip
 
-One panel, bottom left, saying what the pointer is on — and the fourth deliberate carve-out from
+One panel saying what the pointer is on — and the fourth deliberate carve-out from
 show-don't-label, recorded as such in [CLAUDE.md](../../CLAUDE.md#ui-rule-show-dont-label). What
 earns it: a tool's rate of fire against a bit's weight is a **comparison of numbers**, and no shape
 compares numbers. It is a carve-out and not a licence — every well still has to read at a glance
 with the panel shut, which is what the tier plates, the shelf's pips and the cooldown wipes are for.
 
-It is bottom **left** because that is the corner the pointer is furthest from while it hovers the
-backpack, the weapon strip or a wiki row, so the panel never sits under the hand reading it.
+**Where it sits is the player's**, and `tipPos(w, h)` is the only thing that answers — the TOOLTIP
+row on the ESC panel's GAME page (`settings.tipFollow`, default **on**):
+
+- **FOLLOWING** (the default) rides it beside the pointer, so the numbers arrive where the eye
+  already is. `TIP_GAP` (11 px) is measured **sideways**, because every cursor glyph and the 18 px
+  drag ghost reach further below the hotspot than beside it — one sideways step clears the lot
+  without flinging the panel away from the thing it describes. The head row sits level with the
+  pointer (`y = my - TIP_PAD`), the panel flips to the pointer's other side rather than cross the
+  right edge, and both axes clamp `TIP_EDGE` (4 px) inside the view, so a hover in any corner reads.
+- **FIXED** parks it bottom **left**, the corner the pointer is furthest from while it hovers the
+  backpack, the weapon strip or a wiki row — so the panel can never cover the well beside the one
+  being read, and nothing else lives in that corner.
+
+A **finger** keeps the corner whatever the row says (`mouse.src === 'touch'`): a thumb is already on
+the well it is asking about, so a panel beside it is a panel under the hand — the same test
+`drawCursor` uses to keep an arrow out from under a thumb. `DBG.tipRect()` returns the rect the
+panel is painted at this frame, which is how the two modes are read without eyeballing pixels.
 
 **`tipAt(mx, my)` is the only source**, and it asks the same hit-testers, in the same order, that
 the mousedown handler does — the character panel's gear wells, then the shelf, then the

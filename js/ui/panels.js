@@ -489,6 +489,8 @@ function bakeFrostSlab(g, w, h, title) {
 // floor fitCanvas() guarantees a phone, able to hold any number of future settings.
 // Row tables, not row code: a page is a list of {id, label, kind} and the
 // layout, the draw, the hit test and the DBG anchors all read the same table.
+// A toggle whose two states have names of their own carries them as on/off;
+// without them the row reads ON / OFF.
 const SET_TABS = [
   { id: 'game', label: 'GAME', rows: [
     { id: 'map', label: 'MINIMAP SIZE', kind: 'slider' },
@@ -498,8 +500,12 @@ const SET_TABS = [
     // swapped (haptic, js/input.js) - dead on a mouse, which has no motor
     { id: 'haptics', label: 'RUMBLE', kind: 'toggle' },
     { id: 'info', label: 'INFO DISPLAY', kind: 'toggle' },
-    { id: 'cursor', label: 'CURSOR', kind: 'toggle' },
-    { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle' }, // BLUE always, or the roster's colour (skin, player.js)
+    { id: 'cursor', label: 'CURSOR', kind: 'toggle', on: 'PIXEL', off: 'BROWSER' },
+    // where the hover tooltip sits (tipPos, js/ui/tooltip.js) - beside the
+    // pointer, or parked in the bottom-left corner
+    { id: 'tipFollow', label: 'TOOLTIP', kind: 'toggle', on: 'FOLLOWS POINTER', off: 'BOTTOM LEFT' },
+    // BLUE always, or the roster's colour (skin, player.js)
+    { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle', on: 'ALWAYS BLUE', off: 'AS DEALT' },
     // phone mode (js/mobile.js): the device's own answer, or forced either
     // way - the fit, the camera and the touch controls all follow it
     { id: 'mobile', label: 'TOUCH MODE', kind: 'choice',
@@ -580,7 +586,7 @@ function settingsLayout() {
   const rows = [];
   let y = clipY0 + 6;
   for (const r of tab.rows) {
-    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick };
+    const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on, off: r.off };
     if (r.kind === 'choice') {
       let x = SL_X;
       row.opts = r.opts.map(o => { const w = pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
@@ -1185,9 +1191,7 @@ function renderSettings(now, opts) {
       if (y < L.clipY0 - 12 || y > L.clipY1 + 4) continue;
       drawPixelText(ctx, r.label, SET_X + 14, y, '#cfe0ff');
       if (r.kind === 'slider') drawSliderById(r.id, y, r.id === 'vol' || r.id === 'music' || r.id === 'sfx' ? off : false);
-      else if (r.kind === 'toggle') drawToggleRow(y, toggleVal(r.id),
-        r.id === 'cursor' ? 'PIXEL' : r.id === 'teamBlue' ? 'ALWAYS BLUE' : undefined,
-        r.id === 'cursor' ? 'BROWSER' : r.id === 'teamBlue' ? 'AS DEALT' : undefined);
+      else if (r.kind === 'toggle') drawToggleRow(y, toggleVal(r.id), r.on, r.off);
       else if (r.kind === 'choice') {
         const cur = r.val ? r.val() : null; // the word in force wears gold; a hand-picked mix golds none
         for (const o of r.opts) {

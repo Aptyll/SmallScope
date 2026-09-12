@@ -133,6 +133,9 @@ there for two rounds while every served check passed.
   `currentTime` back. `duration` is only
   finite because [app/server.js](../../app/server.js) answers Range requests — a plain 200 makes an element
   treat a multi-MB mp3 as an unbounded stream.
+- `DBG.tipAt(x, y)` is the tooltip the pointer would get there (`null` for none) and
+  `DBG.tipRect()` the rect this frame's panel is painted at - which is how the TOOLTIP row's two
+  modes ([the hover tooltip](rendering.md#the-hover-tooltip)) are read without eyeballing pixels.
 - For the ESC panel, `DBG.settingsRows` gives the open page's row anchors (already scrolled -
   a row's `y` is where it is on screen), the navbar cells and the scroll state;
   `DBG.setSettingsTab(id)` flips the page, `DBG.settingsScrollBy(px)` walks it, and

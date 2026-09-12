@@ -2743,6 +2743,8 @@ your own marker cross it. Consequences worth knowing:
 
 `settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
+`tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
+left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
 `aiLevel` — the rival bots' difficulty notch on class select, an index into `AI_LEVELS` (js/ai.js) —
 `mobile` — the TOUCH MODE row, `'auto'` / `'on'` / `'off'` over the device's own answer
 ([phones](rendering.md#phones)) — `hudScaleM` — the HUD SIZE a phone plays at, the one
@@ -2765,7 +2767,7 @@ first finger, `mobileGesture`); a `fullscreenchange` listener still refits the c
 browser toggles it.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(minimap size, hud size, screen shake, rumble, info display, cursor, my team, touch mode), VIDEO (below),
+(minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team, touch mode), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..198) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
@@ -2782,7 +2784,10 @@ never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'t
 (a CONTROLS sub-tab) or `'c:<row>:<opt>'` (a choice row's word). A **choice row** carries its
 own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro, TOUCH MODE's set
 `settings.mobile` and re-fit the view — so the draw (the word in force wears gold), the hit and
-the click all read one table.
+the click all read one table. A **toggle row** whose two states have names of their own carries
+them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT,
+MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plain toggle's row id
+**is** its `settings` key, which is the whole of what its click does.
 
 **The VIDEO page** holds one QUALITY row and five toggles, every one a cosmetic-only render
 pass a weak GPU can shed (they read at draw time; nothing the sim computes changes):
