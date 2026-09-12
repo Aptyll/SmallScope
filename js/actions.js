@@ -893,6 +893,12 @@ function stunUnit(e, t) {
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
     if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; }
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
+    // ...and if it is YOUR hands the swing, the cast, the shield and the meal
+    // were just knocked out of, you are told. Only the local player, only a
+    // FRESH stun (a second blow inside the window extends it and says nothing
+    // new), and it is the one status whose cue is about being unable to act -
+    // the strip's numbers cannot say that while the body is not answering.
+    if (e === player && cur <= 0) SFX.dazed();
   }
   burst(e.x, unitMidY(e) - 3, '#ffe9a8', 4, 26, 0.4, true);
 }
@@ -925,6 +931,11 @@ function netUnit(e, t, mul) {
 // gold chevrons alone - the falcon still says "I have found this".
 function markUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
+  // being FOUND is the one status a player has to hear: the chevrons are over
+  // your own head where you cannot see them, and what has changed is that
+  // your cover has stopped working - the whole reason to be lying in the snow
+  // at all. Fresh marks only, or a falcon circling re-rings it every second.
+  if (e === player && !(e.markT > 0)) SFX.marked();
   e.markT = Math.max(e.markT || 0, t);
 }
 

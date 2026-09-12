@@ -26,7 +26,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sprites/items.js](../../js/sprites/items.js) | ~750 | → `SPRITES` | goods and their icons: wood, stone, bag, the three animated goods and their live icons, the sack, the crate, the cards, the axe/bow/pick |
 | [js/sprites/icons.js](../../js/sprites/icons.js) | ~340 | → `SPRITES` | HUD art: the gear glyphs in four materials, the hearts, the cursor set |
 | [js/sfxdata.js](../../js/sfxdata.js) | ~40 | `SFXDATA` | **generated** — the sfx bank as base64 |
-| [js/audio.js](../../js/audio.js) | ~570 | `SFX` | synth, samples and music under one master dial |
+| [js/audio.js](../../js/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/core.js](../../js/core.js) | ~250 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
 | [js/mobile.js](../../js/mobile.js) | ~70 | shared scope, no `window.*` export | phones: whether this is one (`MOBILE`, the TOUCH MODE setting over the device's answer), the overlays' footprint a phone's fit keeps, the portrait test, the fullscreen ask. Before canvas.js because `fitCanvas` asks it at load |
 | [js/canvas.js](../../js/canvas.js) | ~260 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas` (a phone branch: the biggest game pixel the overlays allow, no 16:9 cap), pixel-exact zoom, the panel layout anchors |
@@ -196,6 +196,11 @@ Three layers under one master dial: a WebAudio synth for UI blips *and* as the f
 under every sampled cue, one-shot samples decoded out of `SFXDATA`, and `SFX.music` streaming
 `audio/music/` through one `HTMLAudioElement` per track. Master / MUSIC / SOUNDS dials, the cue
 list, the mixing targets and the track table: [gameplay.md](gameplay.md#audio).
+
+Cues come in two grammars and the file is ordered by them: **world** cues, which are a thing on
+the map making a noise and are pitch-jittered per shot, and the **notification** layer — the
+market's four and the eighteen abstract cues under them — which are not, because each says *this
+happened* and must arrive identical every time.
 
 ### The game files (core.js … boot.js, with js/draw/ and js/ui/)
 

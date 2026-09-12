@@ -132,6 +132,33 @@
     crash: ['sad sound.mp3'],
     freight: ['freigh moving.mp3'],
     restock: ['market refresh notification.mp3'],
+    // THE NOTIFICATION LAYER, and the whole set is deliberately ABSTRACT -
+    // not one of these is a thing in the world making a noise. A stepped
+    // control, a panel, a countdown, a status landing on your own body and a
+    // warning from across the map all have to be told apart from each other
+    // AND from the world's axes and bowstrings in the same instant, which is
+    // exactly what the synth blips do badly: six of them are the same square
+    // wave two notes apart. These are unjittered by default for the same
+    // reason the market's four are (below): a cue that says a THING HAPPENED
+    // must arrive identical every time, or it reads as texture.
+    count: ['lowdong.mp3'],              // one second of a countdown gone
+    uiOpen: ['dongding.mp3'],            // a panel, drawer or chart coming up
+    uiShut: ['swirl_down_quiet.mp3'],    // ...and going away
+    notch: ['mip.mp3'],                  // one step of a stepped control
+    turn: ['dialquick.mp3'],             // a piece turned on the spot
+    wheelUp: ['ollolodolo.mp3'],         // a radial wheel rolling open
+    record: ['dinglechime.mp3'],         // a new BEST on an instrument
+    runUp: ['wooow.mp3'],                // a run of hits reaching a milestone
+    runBroke: ['hard_no.mp3'],           // ...and the run lost
+    alarm: ['synth_notification1.mp3'],  // your objective, struck out of sight
+    marked: ['radarblip.mp3'],           // you have been found
+    dazed: ['woorglegoorgle.mp3'],       // ...and stunned out of your own hands
+    nightfall: ['lowchill.mp3'],         // the cold coming down, dawnChime's opposite
+    warp: ['laserreverb.mp3'],           // a body moved without walking it
+    spectate: ['reverb_ghost.mp3'],      // the camera handed to another body
+    defeat: ['lowwarp.mp3'],             // the match lost, victory's opposite
+    bigHurt: ['bull_grunt.mp3'],         // a great bird taking a blow
+    botOut: ['digital_scan.mp3'],        // a machine rolling out of the bay
   };
 
   const bank = {};   // key -> [{ buf, s, d, g }], one entry per file that decoded
@@ -532,6 +559,11 @@
     swing() { if (smp('whoosh', { vol: 0.6, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
     bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
     dodge() { if (smp('whoosh', { vol: 0.65, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
+    // A BODY MOVED WITHOUT WALKING IT (warpPlayer, js/tools.js). It borrowed
+    // the dodge whoosh, which is the sound of air being crossed - the one
+    // thing a teleport never does. Nothing else in the game moves a body this
+    // way, so it gets the one cue nothing else in the game sounds like.
+    warp() { if (smp('warp', { vol: 0.65, jitter: 0 })) return; tone(880, 0.1, 'sine', 0.08, -700); noise(0.14, 0.12, 2600); tone(180, 0.22, 'triangle', 0.08, 120, 0.04); },
     arrow() { if (smp('bow', { vol: 0.7, jitter: 0.08, dur: 0.6 })) return; noise(0.09, 0.18, 1800); tone(720, 0.06, 'triangle', 0.07, -260); },
     // one boot in the snow. Quiet and heavily jittered - it plays six times a second.
     step() { smp('step', { vol: 0.45, jitter: 0.15, gap: 0.08, dur: 0.24 }); },
@@ -557,6 +589,11 @@
     turretFire() { tone(880, 0.05, 'square', 0.07, -520); noise(0.07, 0.2, 2600); tone(230, 0.11, 'triangle', 0.09, -90, 0.02); },
     hit() { if (smp('impact', { vol: 0.65, rate: 1.1, jitter: 0.1, dur: 0.5 })) return; noise(0.06, 0.25, 800); tone(140, 0.08, 'sawtooth', 0.1, -50); },
     hurt() { if (smp('oof', { vol: 0.7, jitter: 0.07 })) return; tone(200, 0.18, 'sawtooth', 0.16, -120); noise(0.12, 0.2, 500); },
+    // A GREAT BIRD taking a blow. The eagle used hurt() - a man's winded oof
+    // for the objective the whole match is about - so the roost sounded like
+    // a person being punched. Its own voice, dropped low, is the difference
+    // between "someone got hit" and "the bird is being driven off".
+    bigHurt() { if (smp('bigHurt', { vol: 0.75, rate: 0.9, jitter: 0.05 })) return; tone(150, 0.26, 'sawtooth', 0.16, -70); noise(0.18, 0.22, 380); },
     // a creature crying out under a hit it survived
     yelp() { if (smp('yelp', { vol: 0.55, jitter: 0.1, delay: 0.05 })) return; tone(620, 0.12, 'sawtooth', 0.07, -240, 0.05); },
     // a UI confirmation - a panel opening, a slot returning. The world's own
@@ -598,7 +635,12 @@
       noise(0.5, 0.5, 320); noise(0.2, 0.4, 1100);
       tone(58, 0.5, 'triangle', 0.2, -26); tone(40, 0.75, 'sine', 0.16, -10);
     },
-    nightSting() {
+    // NIGHT COMING DOWN, dawnChime's opposite number: the cold arriving over
+    // a world that is about to be harder to see in. The two synth lines under
+    // it are the old nightSting, which had been unreferenced since the raider
+    // removal - the sting had no event left, and this is the event.
+    nightFall() {
+      if (smp('nightfall', { vol: 0.6, jitter: 0 })) return;
       tone(196, 1.2, 'triangle', 0.09, -20);
       tone(147, 1.4, 'triangle', 0.08, -15, 0.15);
     },
@@ -623,8 +665,77 @@
       tone(294, 1.5, 'triangle', 0.05, 0, 0.30);
       noise(0.45, 0.09, 3200);
     },
+    // ...and the match LOST: victory's opposite number, and it had none -
+    // the defeat song came up under silence where a win got a fanfare. A
+    // sting, not a dirge: the song is the mourning, this is the news.
+    defeat() {
+      if (smp('defeat', { vol: 0.7, jitter: 0 })) return;
+      tone(294, 0.5, 'triangle', 0.09, -80);
+      tone(196, 0.9, 'triangle', 0.08, -50, 0.12);
+    },
     // one number climbing on the victory screen: a dry, quiet blip
     tally() { tone(1320, 0.03, 'square', 0.035); },
+    // ---- the notification cues (SAMPLES' last block) --------------------
+    // None of these is a thing in the world making a noise, and none of them
+    // is jittered: each says THIS HAPPENED, and a cue that arrives a little
+    // different every time reads as texture instead.
+    //
+    // A COUNTDOWN TICK - one whole second of the wait gone: the class
+    // screen's plank and the range's 3-2-1 alike. Both were the nock blip,
+    // which is the sound of a bow being ready and says nothing about time.
+    countTick() { if (smp('count', { vol: 0.6, jitter: 0 })) return; tone(220, 0.1, 'triangle', 0.1, -40); tone(110, 0.16, 'sine', 0.08, -20, 0.02); },
+    // A PANEL, DRAWER OR CHART, and `open` says which way it went - so one
+    // call site does the pair: SFX.ui(state.bagOpen) reads as the toggle it
+    // follows, and the two halves can never drift apart.
+    ui(open) {
+      // the two clips arrive 4 dB apart once trim() has levelled them (the
+      // shut one is a whisper amplified to SMP_MAXG), so the mix is per half
+      if (smp(open ? 'uiOpen' : 'uiShut', { vol: open ? 0.42 : 0.38, jitter: 0 })) return;
+      tone(open ? 420 : 620, 0.06, 'triangle', 0.09, open ? 170 : -170);
+      tone(open ? 620 : 420, 0.09, 'triangle', 0.07, open ? 120 : -120, 0.05);
+    },
+    // ONE NOTCH of a stepped control - a zoom rung, a build row, a minimap
+    // step, a wheel wedge the travel crossed. It fires as fast as a hand can
+    // step, so it is quiet and holds its own gap.
+    notch() { if (smp('notch', { vol: 0.22, jitter: 0, gap: 0.05 })) return; tone(1180, 0.025, 'square', 0.03); },
+    // a piece turned on the spot (R over the build ghost): a dial, not a step
+    turn() { if (smp('turn', { vol: 0.4, jitter: 0, dur: 0.45 })) return; tone(520, 0.05, 'square', 0.05, 260); },
+    // a radial wheel rolling open under the held key, button or thumb
+    wheelUp() { if (smp('wheelUp', { vol: 0.5, jitter: 0 })) return; tone(480, 0.05, 'triangle', 0.06, 200); tone(720, 0.07, 'triangle', 0.05, 160, 0.04); },
+    // A NEW BEST on any of the practice instruments - the range's round, the
+    // parkour's lap. One cue for the one meaning: it was the level-up sample
+    // at the bell and the dawn chime at the line, so the same event sounded
+    // like two different things twenty tiles apart.
+    record() {
+      if (smp('record', { vol: 0.7, jitter: 0 })) return;
+      tone(659, 0.1, 'triangle', 0.08); tone(988, 0.14, 'triangle', 0.08, 0, 0.09); tone(1318, 0.3, 'triangle', 0.07, 0, 0.2);
+    },
+    // The range's consecutive-hit run (agStreak, js/world.js): a milestone
+    // reached, pitched UP as the run grows - the one place a rate is meant to
+    // be heard, because the number it tracks is the thing being climbed - and
+    // the run lost. Losing five in a row must not sound like losing one, so
+    // the break only speaks for a run worth mourning (the call site's rule).
+    runUp(n) { if (smp('runUp', { vol: 0.6, jitter: 0, rate: Math.min(1.5, 1 + (n - 5) * 0.04) })) return; tone(700 + n * 12, 0.12, 'square', 0.07, 300); },
+    runBroke() { if (smp('runBroke', { vol: 0.6, jitter: 0 })) return; tone(300, 0.14, 'sawtooth', 0.09, -140); },
+    // YOUR OBJECTIVE IS BEING STRUCK AND YOU CANNOT SEE IT: the one cue in
+    // the game that speaks for something off screen, which is why it is a
+    // notification and not the bird's own voice (bigHurt, below, is what the
+    // blow sounds like when you are standing there). The caller holds it to
+    // one warning every few seconds - a siege is many blows, not many
+    // alarms.
+    alarm() {
+      if (smp('alarm', { vol: 0.7, jitter: 0 })) return;
+      tone(880, 0.12, 'square', 0.08); tone(660, 0.16, 'square', 0.08, 0, 0.14); tone(880, 0.2, 'square', 0.08, 0, 0.3);
+    },
+    // a status landing on YOUR OWN body, where a number on the strip is not
+    // enough: found by a mark (the sweep that says you are on someone's
+    // chart) and stunned out of your own hands
+    marked() { if (smp('marked', { vol: 0.55, jitter: 0 })) return; tone(1320, 0.05, 'sine', 0.05); tone(1320, 0.05, 'sine', 0.05, 0, 0.18); },
+    dazed() { if (smp('dazed', { vol: 0.6, jitter: 0 })) return; tone(180, 0.3, 'sawtooth', 0.1, -60); noise(0.2, 0.1, 400); },
+    // a worker rolling out of the bay's shutter
+    botOut() { if (smp('botOut', { vol: 0.5, jitter: 0.04, gap: 0.4 })) return; tone(300, 0.07, 'square', 0.05, 200); noise(0.1, 0.08, 1800); },
+    // the camera handed to another body, watching from nowhere
+    spectate() { if (smp('spectate', { vol: 0.5, jitter: 0, gap: 0.2 })) return; tone(520, 0.2, 'sine', 0.05, -200); },
     // The market moving hard (marketNews, js/shop.js), under the plate that
     // rises with it (the `market notices` banner, js/shop.js): a coin dinging
     // on a spike, a sad fall on a crash. Two DIFFERENT clips rather than one

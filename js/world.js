@@ -1006,8 +1006,9 @@ function hitPTarget(t) {
   agStreak++;
   // a milestone run flares at the face: gold at every fifth in a row, hot
   // orange from ten - the popup says the number, this says the moment
-  if (agStreak >= 5 && agStreak % 5 === 0) {
+  if (agStreak >= AG_RUN_STEP && agStreak % AG_RUN_STEP === 0) {
     burst(f.x, f.y, agStreak >= 10 ? '#ff9440' : '#ffd95c', 10, 70, 0.5, true);
+    SFX.runUp(agStreak); // ...and it rings higher the longer the run is
   }
   if (!t.stock && agame.phase === 'play') {
     // speed pays by CLASS (slow/medium/fast), not raw px/s - the classes
@@ -1092,6 +1093,12 @@ let agFurniture = [];    // the dummy + rack + bell objects the round sinks away
 // (the arrow loop, js/sim.js). The hit popup carries it from the second hit
 // on - hotter-coloured as the run grows - and a fresh round starts it over.
 let agStreak = 0;
+// the run's MILESTONE, every one of which flares at the face and rings
+// (SFX.runUp, pitched up as the run climbs) - and the length a run has to
+// reach before losing it is worth hearing at all (SFX.runBroke, the arrow
+// loop in js/sim.js). One number, or the flare and the cue disagree about
+// what a milestone is.
+const AG_RUN_STEP = 5;
 // the hit-ring flash: every face break snaps one quick shock ring out from
 // the hit, sized to the face it came off (agShatter pushes, updatePractice
 // ages, drawAgRings in js/draw-world.js draws)
@@ -1163,7 +1170,7 @@ function agEndRound() {
   for (const t of ptargets) { const f = ptFace(t); burst(f.x, f.y, '#f4f7ff', 5, 40, 0.4, true); }
   ptargets.length = 0;
   for (const o of agFurniture) objects[idx(o.tx, o.ty)] = o;
-  if (agame.record) SFX.levelUp(); else SFX.place();
+  if (agame.record) SFX.record(); else SFX.place();
 }
 
 // one random target onto the track, from the armed difficulty's spawn table
@@ -1232,7 +1239,7 @@ function agUpdate(dt) {
     }
   } else if (G.phase === 'count') {
     const left = Math.ceil(AG_COUNT_T - G.t);
-    if (left !== G.tick) { G.tick = left; SFX.nock(); }
+    if (left !== G.tick) { G.tick = left; if (left > 0) SFX.countTick(); }
     if (G.t >= AG_COUNT_T) {
       G.phase = 'play'; G.t = 0; G.spawnT = (AG_DIFF[G.diff] || AG_DIFF.medium).spawnT;
       for (let i = 0; i < 4; i++) agSpawn();
@@ -1832,7 +1839,7 @@ function updatePractice(dt) {
       if (record) { parkour.best = parkour.t; if (!parkour.custom) PROFILE.setBestLap(parkour.t); }
       burst(player.x, player.y - 10, '#ffd95c', 12, 60, 0.55, true);
       burst(player.x, player.y - 10, '#f4f7ff', 8, 45, 0.45, true);
-      if (record) SFX.dawnChime(); else SFX.place();
+      if (record) SFX.record(); else SFX.place();
       parkour.t = 0; parkour.cp = false;
     }
     if (!onIce) { parkour.offT += dt; if (parkour.offT > PK_OFF_T) parkour.on = false; }

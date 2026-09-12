@@ -1625,7 +1625,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   clicking it opens the gear pop-up. Enter or the plank call `pressPlay()` — `setClass` locks the
   class and the **countdown** starts: `menu.countT` runs `COUNT_T` (5) seconds, the whole second
   left drawn in 4× gold digits over the plank (`drawSelectCount`, white the instant it changes,
-  sinking through its second), `SFX.nock` ticking each one, the plank sunk throughout, and
+  sinking through its second), `SFX.countTick` ticking each one (a low bell, not the bow's
+  renock blip it had been), the plank sunk throughout, and
   **one rival card turning face-up per tick** (`selectRevealed()`: the first on the press, the
   last on ONE, all of them once it has run out, and none at rest — a white flash as each turns).
   Gear stays open through the count (the widget still opens its pop-up, which shuts itself at
@@ -1872,7 +1873,11 @@ loop tests the roost tiles themselves — *before* tile solidity, which would ea
 arrow hitbox is exactly the collision box, corners included) and `EAGLE_WORK_DMG` (20) per rival
 E swing (via `hitObject`'s eagle branch) — a lone warrior's E drives it off in about a minute under
 the gust (2.63: a hundred swings, twelve gusts, 53 s), a pair in half that, but arrows alone take
-minutes. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
+minutes. **Every blow is audible, and one of the two cues carries off screen**: within earshot it
+is the bird's own `SFX.bigHurt` (3.41 — it had been `hurt()`, the human oof), and out of earshot,
+for your OWN bird only, `SFX.alarm` instead, at most one per `EAGLE_WARN_GAP` (9 s). A siege is a
+hundred blows and one piece of news, and until 3.41 a roost being emptied across the map made no
+sound at all unless you happened to be looking at the minimap. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
 next tile out past the roost's 3×3, which 44 was not; resolved through `seenAt`, like every
 watcher) makes it rear — wings thrown open for
 `GUST_WIND_T`, the whole telegraph — then `eagleGust` throws every rival in `GUST_BLAST_R` back at

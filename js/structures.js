@@ -454,6 +454,10 @@ function updateStructures(dt) {
           robots.push(b);
           burst(b.x, b.y - 4, '#c3c9d3', 6, 35, 0.4, true);
           burst(b.x, b.y + 2, '#e4e8ee', 5, 30, 0.45, true); // exhaust off the mouth
+          // a machine waking up, for anyone standing in the yard: the bay
+          // shutter, the exhaust and a new chassis had been entirely silent,
+          // which is odd for the one building that manufactures things
+          if (nearPlayer(b.x, b.y)) SFX.botOut();
         }
       }
       // the shutter: open while a worker is out in the yard or one is rolling

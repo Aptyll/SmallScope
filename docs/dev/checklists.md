@@ -462,7 +462,11 @@ site's dust timer) needs a wide `jitter` and a `gap`, or it settles into a rhyth
 **notification** cue is the opposite: no jitter at all, and two directions get two *different*
 clips rather than one pitched two ways (`SFX.market`), since it is heard as a meaning and not as
 a texture. Two clips as one cue is one `smp` per clip with a `delay` on the second
-(`SFX.restock`). See [Audio](gameplay.md#audio).
+(`SFX.restock`), and a cue with two *directions* takes the direction as an argument and picks its
+clip from it (`SFX.ui(open)`) rather than being two cues a caller has to choose between. Before
+writing a new one, read the eighteen in the notification block: a surface opening, a step of a
+stepped control and a countdown second already have cues, and the answer is usually to call one
+of those from a new place. See [Audio](gameplay.md#audio).
 
 **Adding a song** — one `TRACKS` entry in [js/audio.js](../../js/audio.js) (`f`, `loop`, `vol`,
 and `next` if it should chain into another when it ends), then one `SFX.music.play('key')` at the
@@ -597,8 +601,6 @@ re-wrap or re-indent one, and keep them pure ASCII (there is no BOM any more).
   `drawHeldTool` puts the *equipped* tool in the hands at rest, and only the axe and pick rows'
   icons are still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
   `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
-- `SFX.nightSting` in [js/audio.js](../../js/audio.js) is unreferenced since the raider removal
-  (`SFX.monsterDie` is live again — every animal death plays it).
 - `audio/music/` is again exactly the files `TRACKS` names — nine, since WHISPERING WOODS was
   wired to the wiki in `PATCH 3.01`. The alternate takes and album art
   that sat beside them (34 MB, nothing loading them) were deleted in `PATCH 1.53`; recover one with

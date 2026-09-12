@@ -94,6 +94,11 @@ const EAGLE_HP = 2000;
 const EAGLE_WORK_DMG = 20;  // what one rival E swing chips off the roosting bird
 const EAGLE_ARROW_DMG = 12; // what one rival arrow chips, whatever it would do to a body
 const EAGLE_TILE_R = 1.6;   // tiles around the roost marked solid - the hitbox arrows AND walkers test
+// ...and the one thing in the game that shouts from off screen: seconds
+// between two "YOUR BIRD IS BEING STRUCK" alarms (SFX.alarm, hurtEagle). A
+// siege is a hundred blows and one piece of news, and the news is worth
+// hearing again only about as often as a side can answer it.
+const EAGLE_WARN_GAP = 9;
 const CRASH_DEPTH = 14;     // tiles inside the treeline (forestDepth) the roost sits at least - never on the edge, and a proper lane of pines past the stump ring
 const MIN_CRASH_TREES = 40; // of the 49 tiles in the crash site's 7x7 that must still hold a pine (the border is solid, so fewer means an edge or a bay)
 // the wing gust: the bird's own defense. A rival inside GUST_R makes it rear
@@ -830,7 +835,19 @@ function hurtEagle(e, dmg, src, hx, hy) {
   const px = hx === undefined ? e.x : hx, py = (hy === undefined ? e.y : hy) - 8;
   burst(px, py, '#f6f8ff', 5, 45, 0.5, true);
   burst(px, py, TEAMS[skin(e.team)].mark, 3, 40, 0.4);
-  if (nearPlayer(e.x, e.y)) SFX.hurt();
+  // WITHIN EARSHOT it is the bird's own voice - it had been using hurt(), the
+  // man's winded oof, so the objective the whole match is about sounded like
+  // somebody being punched. OUT OF EARSHOT, and only for YOUR OWN bird, it is
+  // a warning instead: the roost is the one thing you must defend that you
+  // cannot see from where you fight, and the minimap only says so if you
+  // happen to be looking at it. One alarm per EAGLE_WARN_GAP, never both cues
+  // at once - standing there, the blow IS the news.
+  if (nearPlayer(e.x, e.y)) SFX.bigHurt();
+  else if (player && e.team === player.team && !player.eliminated
+      && state.elapsed - (e.warnT === undefined ? -99 : e.warnT) >= EAGLE_WARN_GAP) {
+    e.warnT = state.elapsed;
+    SFX.alarm();
+  }
   if (e.hp <= 0) eagleFlee(e, src);
 }
 

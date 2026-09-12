@@ -432,7 +432,12 @@ spent for good. **Every arrow into a face also extends a consecutive-hit run** (
 minigame or not: the hit popup carries it from the second hit on (`X3` alone in free practice —
 white, gold from five, hot orange from ten — appended to the points during a round), any
 practice arrow that ends without striking a face breaks it (the arrow loop, js/sim.js — the
-dummy counts as a break: the run is a *target* run), and ringing a round in starts it over. `drawPTarget` (js/draw/practice.js) owns every pixel, `TARGET_SPR` is the 32×32 face —
+dummy counts as a break: the run is a *target* run), and ringing a round in starts it over.
+**The run is audible from 3.41**: every `AG_RUN_STEP` (5) in a row flares at the face AND rings
+`SFX.runUp(agStreak)` - the one cue in the game deliberately PITCHED by a number, because the
+number is the thing being climbed - and losing a run that long plays `SFX.runBroke` (a run of one
+or two is not news). One `AG_RUN_STEP` for the flare and both cues, or they disagree about what a
+milestone is. `drawPTarget` (js/draw/practice.js) owns every pixel, `TARGET_SPR` is the 32×32 face —
 baked per-pixel (true circles, hash-dithered band edges, top-left light) rather than from a grid.
 
 **The archery round** hangs off the **bell** (`agbell`, `AG_BELL`) west of the dummy: standing
@@ -446,7 +451,8 @@ order takes) and runs the show (`agame.phase`, ticked by `agUpdate` from `update
 stock roster bursts away and **the dummy, the rack and the bell itself sink under the snow**
 (`agSinkU` crops their sprites in js/draw/render.js; at full depth their objects leave the grid
 entirely, so nothing blocks a shot — which is also why a running round cannot be rung off, and
-`agEndRound` puts the same instances back), a **3-2-1 countdown** lands in the eagle drop's
+`agEndRound` puts the same instances back), a **3-2-1 countdown** lands (a second per tick on
+`SFX.countTick`, the class screen's own cue) in the eagle drop's
 big-number language, and for `AG_T` seconds **random targets pour onto the track from the
 picked difficulty's spawn table** (`AG_DIFF`: the three mover speeds, the small/still/pop odds,
 the crowd cap and its refill pace — easy is slow, large and sparse, hard fast, small and

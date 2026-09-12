@@ -315,7 +315,7 @@ function warpPlayer(p, x, y) {
   p.kbx = 0; p.kby = 0;
   burst(x, y - 6, BITS.warp.col, 12, 60, 0.5, true);
   burst(p.x, p.y - 6, '#f4f7ff', 6, 40, 0.4, true);
-  if (nearPlayer(x, y)) SFX.dodge();
+  if (nearPlayer(x, y)) SFX.warp();
   if (p === player) state.shake = Math.max(state.shake, 2);
 }
 function updateWarps(dt) {
