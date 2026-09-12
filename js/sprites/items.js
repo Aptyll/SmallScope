@@ -631,7 +631,7 @@
 
   // ------------------------------------------------------------------- crate
   // What a TURNOVER looks like: the mark on the market's `NEW STOCK` plate
-  // (the `market notices` banner, js/shop.js), where the gold sack says the
+  // (the `notices` banner, js/shop.js), where the gold sack says the
   // PRICE of a thing and this says there is new stock on the counter. Authored
   // at the 16 it is drawn at rather than at 32 like the sack - it is a still
   // object with no sparkle to lose, and native pixels keep its braces crisp.

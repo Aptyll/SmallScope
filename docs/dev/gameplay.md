@@ -1816,8 +1816,8 @@ A headline goes to **two places at once**, and a restock's does too:
 - the **event log** (not drawn; `DBG.events`) — `FISH SPIKE 34G`, `BERRIES CRASH 2G`,
   `THE MERCHANTS RESTOCK` — the match's own record, where everything else that happened to
   somebody already is;
-- a **plate top-right under the minimap** — the `market notices` banner in js/ui/shop.js, drawn by
-  `renderNotices` ([the plates](rendering.md#market-notices-the-plates-under-the-minimap)) —
+- a **plate top-right under the minimap** — the `notices` banner in js/ui/shop.js, drawn by
+  `renderNotices` ([the plates](rendering.md#notices-the-plates-under-the-minimap)) —
   because a price is not something that happened to a player: it is the state of the world you are
   about to sell your bag into, and it has to arrive on screen, where the clock is.
 
@@ -2253,7 +2253,10 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   ([world.md](world.md#the-practice-arena)); ESC/M/settings/death
   close it, a left-click cancels it, and the game **keeps running** — opening the
   wheel mid-night is deliberate pressure. `wheelLayout()` is shared by `resolveWheel()` and
-  `renderWheel()` so hover math and pixels can never disagree. `resolveWheel()` does not act: it
+  `renderWheel()` so hover math and pixels can never disagree - and by `pointerMove` (js/input.js),
+  which is where `seg` finally earns its place in that struct: it holds the wedge the cue last
+  spoke for, so crossing into another one ticks `SFX.notch` once, for a mouse, a stick or a thumb
+  alike (the wheel opening itself is `SFX.wheelUp`). `resolveWheel()` does not act: it
   writes `player.input.cmd`, and `runCmd(p, c)` performs it in the next sim step (re-checking
   ownership and the 60 px reach).
 - **One geometry, any number of options.** `wheelSpan(n)` is `2*PI/n` and `wheelAng(i, n)` is
@@ -2983,6 +2986,37 @@ The wagon runs its full 3.3 s, so it is still rolling under the bell, which is t
 goods arrive, *then* they are laid out. Jitter on either half would blur the two beats into one
 noise, and a spike that could be mistaken for a crash is worse than no cue at all — these say a
 *direction*, like the plates they arrive with ([the market](#the-fish-and-berry-market)).
+
+**The notification layer is the market's rule generalised: eighteen cues, none of them a thing in
+the world making a noise.** A stepped control, a panel, a countdown, a status landing on your own
+body and a warning from across the map all have to be told apart from each other *and* from the
+axes and bowstrings in the same instant, and that is exactly what the synth blips do badly — half
+of them are the same square wave two notes apart, which is why `pickup`/`place`/`swap` all read as
+"the UI answered" and nothing more. They are **unjittered** for the market's reason: each says
+*this happened*, and a cue that arrives a little different every time reads as texture.
+
+| Cue | Says | Fired from |
+| --- | --- | --- |
+| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/world.js) — both had been the `nock` blip, which is the sound of a bow being ready |
+| `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
+| `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
+| `turn()` | a piece turned on the spot | R over the build ghost |
+| `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's four (manage, rack, roll die, range bell) the press opened |
+| `record()` | a new BEST | `agEndRound` and the parkour line (js/world.js) — one cue for one meaning, where it had been the level-up sample at the bell and the dawn chime at the line |
+| `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim.js) when a run of that length ends in the snow |
+| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/boot.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
+| `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/actions.js), **local player only and fresh applications only** — a falcon circling would otherwise re-ring every second |
+| `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim.js), `dawnChime`'s opposite number; its synth line is the old `nightSting`, which had had no event since the raiders |
+| `warp()` | a body moved without walking it | `warpPlayer` (js/tools.js), which had borrowed the dodge whoosh — the sound of air being crossed, the one thing a teleport never does |
+| `spectate()` | the camera handed to another body | `specNext` (js/ui/screens.js) |
+| `defeat()` | the match lost | `endMatch` (js/player.js) — the defeat song had been coming up under silence where a win got a fanfare |
+| `bigHurt()` | a great bird taking a blow | `hurtEagle` within earshot; it had been `hurt()`, a man's winded oof for the objective the whole match is about. The clip is a bull at rest, so it plays `BIGHURT_RATE` (1.5) up with a 320 Hz highpass under it — pitch and the chest resonance are what separate a beast in a field from something with a beak |
+| `botOut()` | a machine rolling out of the bay | the spawner's shutter (js/structures.js), `nearPlayer` only |
+
+Four of those replaced a **borrowed** cue rather than filling a silence (`countTick`, `record`,
+`warp`, `bigHurt`), and that is the distinction worth keeping: a borrowed cue is not a small
+problem, because it teaches the ear the wrong thing — an eagle that goes "oof" is a person, and
+two instruments that award a record two different ways are two unrelated events.
 
 **Ambience.** `SFX.setAmbience(on, night)` is called every frame from `update()`: on wherever the
 world is live, off under the death and end screens where a song already owns the mix. audio.js

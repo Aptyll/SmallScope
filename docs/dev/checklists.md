@@ -43,9 +43,9 @@ declare victory. The three affordances:
   `shopHit(x, y)`, `shopBuy/shopSellCell/shopTrade` and `shopLayout()` drive the panel without a
   pointer; `DBG.marketStep(n)` walks the prices n moves on, so a spike is one call rather than
   three days of waiting, and it ticks the restock clock with them. The news it cuts is a
-  [plate under the minimap](rendering.md#market-notices-the-plates-under-the-minimap) as well as a
+  [plate under the minimap](rendering.md#notices-the-plates-under-the-minimap) as well as a
   feed line: `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits,
-  `DBG.marketNotice(kind, txt, good)` raises one without moving a price, and
+  `DBG.raiseNotice(kind, txt, good)` raises one without moving a price, and
   `DBG.shopRestock(true)` turns the counter over *loudly* (bare, it is the quiet boot roll).
   A plate ages on wall time in `updateFx`, so `DBG.step` runs its arrival and its fade.
 - **`?seed=N`** pins the world — the same seed twice proves a change is deterministic, two seeds
@@ -462,7 +462,11 @@ site's dust timer) needs a wide `jitter` and a `gap`, or it settles into a rhyth
 **notification** cue is the opposite: no jitter at all, and two directions get two *different*
 clips rather than one pitched two ways (`SFX.market`), since it is heard as a meaning and not as
 a texture. Two clips as one cue is one `smp` per clip with a `delay` on the second
-(`SFX.restock`). See [Audio](gameplay.md#audio).
+(`SFX.restock`), and a cue with two *directions* takes the direction as an argument and picks its
+clip from it (`SFX.ui(open)`) rather than being two cues a caller has to choose between. Before
+writing a new one, read the eighteen in the notification block: a surface opening, a step of a
+stepped control and a countdown second already have cues, and the answer is usually to call one
+of those from a new place. See [Audio](gameplay.md#audio).
 
 **Adding a song** — one `TRACKS` entry in [js/audio.js](../../js/audio.js) (`f`, `loop`, `vol`,
 and `next` if it should chain into another when it ends), then one `SFX.music.play('key')` at the
@@ -597,8 +601,6 @@ re-wrap or re-indent one, and keep them pure ASCII (there is no BOM any more).
   `drawHeldTool` puts the *equipped* tool in the hands at rest, and only the axe and pick rows'
   icons are still resolved through the table. The row is kept so `SWING_TOOLS` stays one entry per
   `p.swing` value, and `SPRITES.itemBow` itself is live on the end screen's kills plate.
-- `SFX.nightSting` in [js/audio.js](../../js/audio.js) is unreferenced since the raider removal
-  (`SFX.monsterDie` is live again — every animal death plays it).
 - `audio/music/` is again exactly the files `TRACKS` names — nine, since WHISPERING WOODS was
   wired to the wiki in `PATCH 3.01`. The alternate takes and album art
   that sat beside them (34 MB, nothing loading them) were deleted in `PATCH 1.53`; recover one with

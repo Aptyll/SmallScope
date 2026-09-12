@@ -46,13 +46,18 @@ function applyZoom(dt, snap) {
   return zPrev;
 }
 
+// WHEN NIGHT COUNTS AS DOWN, in darkness: the owl starts answering instead of
+// the wind gust, and the cue below rings once on the way past. One number for
+// both, or "night" means two different things ten seconds apart.
+const NIGHT_CUE = 0.55;
+
 function update(dt) {
   const zPrev = applyZoom(dt); // the scale this frame started at, for the lean below
   // the wind gusts and the night owl audio.js schedules over its synth bed:
   // on wherever the world is live, off under the death and victory screens,
   // where a song already owns the mix
   SFX.setAmbience(!state.paused && (state.mode !== 'dead' || state.over === 'respawning'),
-    state.darkness > 0.55);
+    state.darkness > NIGHT_CUE);
 
   // time (the clock starts with the eagle - the match is live while you ride).
   // The practice arena has no clock at all: state.time stays pinned at the
@@ -95,6 +100,12 @@ function update(dt) {
   else if (t < DAY_LEN) dark = (t - (DAY_LEN - 12)) / 12;
   else if (t < CYCLE - 10) dark = 1;
   else dark = 1 - (t - (CYCLE - 10)) / 10;
+  // the cold coming down, dawnChime's opposite number: dawn has a chime and a
+  // headline and dusk had neither, though it is the change that decides how
+  // far anyone can see. Only the way DOWN speaks - the curve crosses this
+  // number again on its way out, and the chime already owns that moment.
+  if (dark >= NIGHT_CUE && state.darkness < NIGHT_CUE
+    && (state.mode === 'play' || state.mode === 'drop')) SFX.nightFall();
   state.darkness = dark;
 
   if (state.mode === 'dead') {
@@ -445,7 +456,9 @@ function updatePlay(dt) {
       if (a.impact && a.struck) bitImpact(a);
       // a practice shot that ends any way but in a target face breaks the
       // range's consecutive-hit run (agStreak, js/world.js) - minigame or not
-      if (PRACTICE && !a.ptHit) agStreak = 0;
+      // ...and a run worth mourning says so on the way out: dropping one shot
+      // is not news, dropping a milestone run is (AG_RUN_STEP, js/world.js)
+      if (PRACTICE && !a.ptHit) { if (agStreak >= AG_RUN_STEP) SFX.runBroke(); agStreak = 0; }
       // A shot that ends - a miss, a wall, a body, or the end of its life -
       // just vanishes: nothing is ever lying in the snow to walk back over.
       arrows.splice(i, 1);

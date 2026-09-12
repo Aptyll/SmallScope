@@ -981,6 +981,9 @@ function endMatch(how) {
   // count a win only the first time this match resolves as won - a second
   // endMatch('won') (or a driver poking it) must not increment twice
   const awardWin = how === 'won' && state.over !== 'won';
+  // ...and the same edge for the loss sting below: a second endMatch('lost')
+  // (or a driver poking it) must not ring twice over one ending
+  const firstLoss = how === 'lost' && state.over !== 'lost';
   state.over = how;
   if (awardWin) PROFILE.addWin();
   state.mode = 'dead';
@@ -1002,6 +1005,10 @@ function endMatch(how) {
   // plank, so this is the only moment its numbers are still true.
   state.end = how === 'won' || how === 'lost' ? endSnapshot() : null;
   if (how === 'won') { SFX.victory(); state.shake = Math.max(state.shake, 4); }
+  // ...and a loss gets the same courtesy: the defeat song used to come up
+  // under silence where a win got a fanfare, so the worse of the two endings
+  // was the quieter one. A sting, not a dirge - the song does the mourning.
+  else if (firstLoss) SFX.defeat();
   // the end screen has a song of its own; a respawn timer is not the end of anything
   if (how === 'won' || how === 'lost') SFX.music.play(how === 'won' ? 'victory' : 'defeat', { in: 1.2 });
   player.input = makeInput(); // whatever was held dies with the player

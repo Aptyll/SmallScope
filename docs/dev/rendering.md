@@ -464,14 +464,17 @@ All three widgets slide **their own size** away for the landing intro — the ra
 row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
 tool cell would leave a longbow's row parked over the cinematic.
 
-### Market notices: the plates under the minimap
+### Notices: the plates under the minimap
 
-The market's own voice on the HUD — the `market notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
-raised by `marketNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
-spike, a price crash and a counter turning over each raise one, *as well as* the line they already
+The HUD's corner for news from where you are NOT — the `notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
+raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
+spike, a price crash, a counter turning over and **your roost being struck while you are elsewhere**
+each raise one, *as well as* the line they already
 put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
 somebody, and a price is not that — it is the state of the world your bag is about to be sold
-into, so it belongs where the clock already is.
+into, so it belongs where the clock already is. The market is this corner's first and biggest
+customer, which is why the block lives in shop.js, but the plate is not the market's: 3.41's
+`roost` kind is the same card with a different mark on it.
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
 what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down.
@@ -482,6 +485,14 @@ whole time a **price** plate is up, so the coin keeps catching the light) and a 
 **crate** (`SPRITES.crate`) when the counter itself has turned over — a sack of coin is what a
 price is worth, a crate is what a delivery *is*. A stock plate has **no tail**: its crate has
 already said which kind of news this is, so the headline takes that 8 px instead.
+
+A kind may name a **drawn** mark instead of a blitted one — `NOTE_KIND[k].glyph` into `NOTE_GLYPH`,
+one entry per glyph so the draw never grows an `if` per kind. The `roost` plate's is `bird`:
+`drawMapBird` at **2×** (the `s` argument added in 3.41 — 1 is the maps' own 7 px glyph) in your
+side's ink through `skin(player.team)`, so the stamp is *the same diamond the disc and the chart
+use for an objective* rather than a second drawing of a bird. Its text is the **nerve the bird has
+left**, as a percent, under the falling tail — the plate says what happened where the cue
+(`SFX.alarm`) only turned your head, which is the market's own split between a ding and a number.
 
 What it is about is the good's own item icon and the price it landed on, **sized together** —
 `runW(s)` measures the pair at a scale and the icon is drawn at the text's own, so a 2× price
@@ -1625,7 +1636,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   clicking it opens the gear pop-up. Enter or the plank call `pressPlay()` — `setClass` locks the
   class and the **countdown** starts: `menu.countT` runs `COUNT_T` (5) seconds, the whole second
   left drawn in 4× gold digits over the plank (`drawSelectCount`, white the instant it changes,
-  sinking through its second), `SFX.nock` ticking each one, the plank sunk throughout, and
+  sinking through its second), `SFX.countTick` ticking each one (a low bell, not the bow's
+  renock blip it had been), the plank sunk throughout, and
   **one rival card turning face-up per tick** (`selectRevealed()`: the first on the press, the
   last on ONE, all of them once it has run out, and none at rest — a white flash as each turns).
   Gear stays open through the count (the widget still opens its pop-up, which shuts itself at
@@ -1872,7 +1884,11 @@ loop tests the roost tiles themselves — *before* tile solidity, which would ea
 arrow hitbox is exactly the collision box, corners included) and `EAGLE_WORK_DMG` (20) per rival
 E swing (via `hitObject`'s eagle branch) — a lone warrior's E drives it off in about a minute under
 the gust (2.63: a hundred swings, twelve gusts, 53 s), a pair in half that, but arrows alone take
-minutes. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
+minutes. **Every blow is audible, and one of the two cues carries off screen**: within earshot it
+is the bird's own `SFX.bigHurt` (3.41 — it had been `hurt()`, the human oof), and out of earshot,
+for your OWN bird only, `SFX.alarm` instead, at most one per `EAGLE_WARN_GAP` (9 s). A siege is a
+hundred blows and one piece of news, and until 3.41 a roost being emptied across the map made no
+sound at all unless you happened to be looking at the minimap. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
 next tile out past the roost's 3×3, which 44 was not; resolved through `seenAt`, like every
 watcher) makes it rear — wings thrown open for
 `GUST_WIND_T`, the whole telegraph — then `eagleGust` throws every rival in `GUST_BLAST_R` back at

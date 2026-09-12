@@ -412,7 +412,11 @@ function specNext(dir) {
   let i = state.spec;
   for (let k = 0; k < n; k++) {
     i = ((i + dir) % n + n) % n;
-    if (specOk(players[i])) { state.spec = i; return; }
+    // the camera leaving your own body for somebody else's is the one moment
+    // the player is not IN the world any more, and it had no sound at all -
+    // the view simply jumped across the map. Once per handover, not once per
+    // candidate the loop skips over.
+    if (specOk(players[i])) { if (state.spec !== i) SFX.spectate(); state.spec = i; return; }
   }
   state.spec = -1; // nobody left to watch
 }

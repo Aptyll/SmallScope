@@ -170,7 +170,7 @@ moves while the coin in the neck of the sack glows, so the cycle reads as light 
 rather than as a bag being jostled.
 
 Its only caller is the market plate
-([the plates](rendering.md#market-notices-the-plates-under-the-minimap)), HUD chrome where **16** is
+([the plates](rendering.md#notices-the-plates-under-the-minimap)), HUD chrome where **16** is
 the size that reads — so the 32 px source was **resampled offline to 16×16** and snapped onto
 `SACKPAL` before it ever reached this file. It sits in the same sunken well as the hand-drawn
 crate below and has to be as crisp as one.
@@ -228,7 +228,7 @@ control primer) gets a picture rather than a hole.
 bracing, and the top rail's highlight), drawn by hand at the 16×16 it ships at rather than
 resampled down from a sheet. It replaces the sack
 on the plate whose news is a **turnover** rather than a price (`NOTE_KIND.stock.mark`,
-[the plates](rendering.md#market-notices-the-plates-under-the-minimap)): same 16×16 stamp, same
+[the plates](rendering.md#notices-the-plates-under-the-minimap)): same 16×16 stamp, same
 sunken well, so the column reads as one column whichever kind lands in it.
 
 **The turret is half grid, half raster.** `turret` is a **32×32** mount — collar, column, plinth

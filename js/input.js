@@ -243,8 +243,8 @@ function keyPress(e) {
     // does not stop the sim, so the jump keys stay live under it. The lock
     // inside dropJump refuses (and denies) a jump before the window - the
     // repeat guard keeps a held key from machine-gunning that deny.
-    if (keyIs(e, 'map')) { state.mapOpen = !state.mapOpen; return; }
-    if (e.key === 'Escape') { state.mapOpen = false; return; }
+    if (keyIs(e, 'map')) { state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); return; }
+    if (e.key === 'Escape') { if (state.mapOpen) SFX.ui(false); state.mapOpen = false; return; }
     if ((keyIs(e, 'dodge') || e.key === 'Enter' || keyIs(e, 'work')) && !e.repeat) dropJump(player);
     return;
   }
@@ -272,7 +272,7 @@ function keyPress(e) {
   // the pack key drops the inventory drawer under the weapon shelf. It is
   // HUD and not an overlay, so unlike the map and ESC it neither stops the
   // sim nor swallows anything but its own clicks.
-  if (keyIs(e, 'bag')) state.bagOpen = !state.bagOpen;
+  if (keyIs(e, 'bag')) { state.bagOpen = !state.bagOpen; SFX.ui(state.bagOpen); }
   // THE BUILD LIST (drawBuildList, js/ui.js): T opens it over the world and
   // T again closes it (so do Escape and the right button); while it is up
   // the ghost under the pointer is what a left-click lays, the wheel walks
@@ -283,8 +283,9 @@ function keyPress(e) {
     SFX.unlock();
     if (state.build) state.build = null;
     else { state.build = { sel: 0, rot: 0 }; state.wheel = null; state.bagOpen = false; }
+    SFX.ui(!!state.build);
   }
-  if (keyIs(e, 'rotate') && !e.repeat && state.build) state.build.rot ^= 1;
+  if (keyIs(e, 'rotate') && !e.repeat && state.build) { state.build.rot ^= 1; SFX.turn(); }
   // The work key at the practice rack: the press opens the armory wheel over
   // it, the pointer picks, and RELEASING it takes - the right-click wheel's
   // own hold-and-release grammar, moved onto the key. A real work target in
@@ -339,33 +340,37 @@ function keyPress(e) {
         }
       }
     }
+    // ...and whichever of those four wheels opened rolls out on one cue -
+    // one line at the end of the chain rather than one per branch, since the
+    // guard above means nothing was up when the press arrived
+    if (state.wheel) SFX.wheelUp();
   }
   // the sheet key raises the character panel - the body, the live stat
   // ledger and the four gear pieces. HUD like the bag: the sim runs on
   // underneath.
-  if (keyIs(e, 'char') && !state.settingsOpen) state.charOpen = !state.charOpen;
+  if (keyIs(e, 'char') && !state.settingsOpen) { state.charOpen = !state.charOpen; SFX.ui(state.charOpen); }
   // the four ability binds cast, left to right exactly as the strip shows
   // them (a click on the well sets the same field - hudPress, js/ui.js).
   // Edge-triggered like the dodge; the sim consumes it (tryAbility,
   // js/abilities.js). What is loaded in the weapon is on the shelf over the pack.
   const ab = e.repeat ? -1 : ['ab1', 'ab2', 'ab3', 'ab4'].findIndex((a) => keyIs(e, a));
   if (ab >= 0) { SFX.unlock(); player.input.ability = ab; }
-  if (keyIs(e, 'map') && !state.settingsOpen && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; }
+  if (keyIs(e, 'map') && !state.settingsOpen && !state.dropBrief) { state.wheel = null; state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); }
   if (e.key === 'Escape') {
     // a carried item goes back first, then an open wheel: both are gestures
     // half-finished, and Escape is how either is thought better of
     if (ck.arm) ck.arm = false; // an armed attack-move is the lightest gesture to think better of
     else if (state.drag) { dragReturn(); state.dragPend = null; }
     else if (state.wheel) state.wheel = null;
-    else if (state.build) state.build = null;
-    else if (state.mapOpen) state.mapOpen = false;
+    else if (state.build) { state.build = null; SFX.ui(false); }
+    else if (state.mapOpen) { state.mapOpen = false; SFX.ui(false); }
     else if (state.shop) closeShop();
-    else if (state.charOpen) state.charOpen = false;
-    else if (state.bagOpen) state.bagOpen = false; // the drawer slides back up
-    else { state.settingsOpen = !state.settingsOpen; dragSlider = null; state.wheel = null; }
+    else if (state.charOpen) { state.charOpen = false; SFX.ui(false); }
+    else if (state.bagOpen) { state.bagOpen = false; SFX.ui(false); } // the drawer slides back up
+    else { state.settingsOpen = !state.settingsOpen; dragSlider = null; state.wheel = null; SFX.ui(state.settingsOpen); }
   }
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
-  if (keyIs(e, 'pause')) state.paused = !state.paused;
+  if (keyIs(e, 'pause')) { state.paused = !state.paused; SFX.ui(state.paused); } // the PAUSED plate is a surface like any other
 }
 window.addEventListener('keyup', (e) => {
   const k = keyName(e);
@@ -416,6 +421,13 @@ function pointerMove(x, y, src) {
   // a press on a bag/slot/bit cell only becomes a DRAG once it travels: that
   // is what lets one gesture both use an item and move it (see hudMove, ui.js)
   if (state.dragPend) hudMove(mouse.x, mouse.y);
+  // a radial wheel is a stepped control like the zoom's rungs: one notch per
+  // wedge the travel crosses. Every controller moves the pointer through
+  // here, so a pad's stick and a thumb step it exactly as a mouse does.
+  if (state.wheel) {
+    const seg = wheelLayout().seg;
+    if (seg !== state.wheel.seg) { state.wheel.seg = seg; if (seg >= 0) SFX.notch(); }
+  }
 }
 // the in-canvas cursor must vanish when the pointer leaves the page
 canvas.addEventListener('mouseleave', () => { mouse.inside = false; });
@@ -590,6 +602,7 @@ function openFlagWheel() {
   }
   if (!inWorld(tx, ty)) return false;
   SFX.unlock();
+  SFX.wheelUp();
   state.wheel = { kind: 'flag', tx, ty, seg: -1, ax: mouse.x, ay: mouse.y, sx, sy };
   return true;
 }
@@ -613,6 +626,7 @@ function openWheelNear(p, ax, ay) {
   else if (buildOptionsAt(tx, ty).some((t) => canPlaceAt(t, tx, ty, 0, p).ok || findSite(t, tx, ty))) kind = 'build';
   if (!kind) { SFX.deny(); return false; }
   SFX.unlock();
+  SFX.wheelUp();
   state.wheel = { kind, tx, ty, seg: -1, ax, ay };
   return true;
 }
@@ -882,17 +896,22 @@ canvas.addEventListener('wheel', (e) => {
   if (state.build) {
     const n = BUILD_ORDER.length;
     state.build.sel = (state.build.sel + (e.deltaY > 0 ? 1 : -1) + n) % n;
+    SFX.notch();
     return;
   }
   // over the minimap the wheel zooms the minimap instead of the camera
   if (overMinimap()) {
-    settings.mmZoom = Math.max(0, Math.min(MM_ZOOMS.length - 1, (settings.mmZoom | 0) + (e.deltaY > 0 ? -1 : 1)));
+    const mz = settings.mmZoom | 0;
+    settings.mmZoom = Math.max(0, Math.min(MM_ZOOMS.length - 1, mz + (e.deltaY > 0 ? -1 : 1)));
+    if (settings.mmZoom !== mz) SFX.notch();
     saveSettings();
     return;
   }
   // scroll up = closer. One notch = one device pixel per world pixel, which
   // is the finest step that still lands on a pixel-exact zoom.
+  const k0 = kWant;
   kWant = Math.max(kMin(), Math.min(kMax(), kWant + (e.deltaY > 0 ? -1 : 1)));
+  if (kWant !== k0) SFX.notch(); // ...and nothing at the ends of the range, where the notch does nothing
 }, { passive: false });
 
 // The local human's controller: keyboard + mouse folded into the same input
