@@ -25,7 +25,8 @@ fs.rmSync(DIST, { recursive: true, force: true });
   const { packager } = require('@electron/packager');
   const [out] = await packager({
     dir: HERE, out: DIST, name: NAME, platform: 'win32', arch: 'x64', overwrite: true, asar: false,
-    ignore: [/[\\/]dist([\\/]|$)/, /[\\/]build\.js$/, /[\\/]package-lock\.json$/],
+    // anchored to this folder's own dist/: node_modules/steamworks.js/dist holds the native module and steam_api64.dll
+    ignore: [/^[\\/]dist([\\/]|$)/, /^[\\/]build\.js$/, /^[\\/]package-lock\.json$/],
     executableName: NAME,
   });
   // Steam's runtime reads the App ID from a file beside the exe
