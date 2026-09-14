@@ -26,7 +26,11 @@ declare victory. The three affordances:
   want *before* freezing), `hideUI = true` drops the HUD/info stack/cursor for captures, `buildStruct` stages
   a construction site with no cost or validation, `warp(tx, ty, p?)` drops a player on a tile, and
   `setControl(id, mode)` hands a player to an AI, a human or nobody, `setLocal(id)` reseats this
-  screen's player in slot `id` (title only; `?local=N` does it at load). `setHide(h, p?)` stages a
+  screen's player in slot `id` (title only; `?local=N` does it at load). `netEcho()` snapshots the
+  match, blanks every singleton, applies the snapshot back and returns the pixels of the world
+  frame that differ (`diff`, zero or the snapshot is missing a field the eye can see), the JSON
+  weight by section and the fields that did not round-trip; `netEchoRun(ticks, every)` does it
+  along a run and reports the worst - run it after adding a field to any entity. `setHide(h, p?)` stages a
   buried body without lying in the snow for `PRONE_BURY`, and `concealOf` / `seenAt(range, p?)` /
   `ambushReady` read back what the world makes of it. **Stage the scene** (place
   structures, warp beside a camp, jump `state.day`/`state.time`) instead of playing to reach it.

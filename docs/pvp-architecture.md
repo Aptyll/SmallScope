@@ -296,11 +296,22 @@ networking.
    step 4: a floater that carries a team's paint records the host's `skin()` colour, so the
    client will want the team instead; and `burst` draws off the sim's `rng`, which a client
    replaying it does too. Measured on seed 42: 20 s of a ten-bot match records about 50 entries a second, and 44% of them are footsteps (`sfxFor(p, 'step')` for every walking body), the obvious first thing to derive from snapshot motion on the client instead of shipping.
-4. **Loopback harness.** `NET` with the loopback transport, but with a `DBG.netEcho` flag that
-   makes solo **serialize every snapshot and apply it back into a second set of singletons**,
-   then diffs. This is how the schema is proven complete before a second machine exists: any
-   field the render pass reads that the snapshot does not carry shows up as a visible glitch
-   on a headless capture. This is also where the quantizers get their precision picked.
+4. **Loopback harness - DONE (PATCH 3.45).** `NET` (js/net/net.js) with the loopback
+   transport, and the snapshot (js/net/snapshot.js) built **by reflection** rather than a field
+   table: every own property of every entity, refs as kind+index tokens, `input`/`ai`/`nav`
+   skipped, the road registry a section of its own so an eagle's spur keeps its identity.
+   `netEcho()` renders the world frame, snapshots, blanks every singleton, applies and
+   renders again; the pixels that differ are the schema's misses, and a field-level audit
+   names them. Measured on seed 42 over a 90 s match through the drop with buildings, bots
+   and drops: 90 echoes, **0 pixels off in every one**, 0 fields lost, ~150 ms per echo. The
+   JSON weighs 3.3 MB, of which 3.15 MB is the static `objects` array - so the wire form
+   ships tiles only as mutation events over the seed-generated baseline, and the per-tick
+   body is the remaining ~140 KB before quantization (players 23 KB, animals 27 KB, robots
+   2-48 KB, fish 6 KB, ground 72 KB once). The quantizers and the delta are step 5's, cut
+   from this correct form rather than written beside it. Two harness lessons: `render()`
+   rolls the screen shake and animates a few things off the wall clock, so the harness pins
+   both; and the eagle's `spur`/`pad`/`lane` carry clocks that advance after the crash,
+   which a first draft skipped and the echo caught as a 24-pixel drift at the roost.
 5. **Two browsers, one machine.** A `transport-ws.js` that speaks the same interface over a
    local WebSocket relay (a thirty-line addition to `app/server.js`), so host and client can be
    two headless Edge tabs on `?seed=N` driven by the existing `POST /shot` harness. Latency and

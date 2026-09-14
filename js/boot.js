@@ -1605,10 +1605,10 @@ window.DBG = {
   // reset), the camera on it - the same thing ?local=N does at load
   setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
   localId: () => localId,
-  // reseat this screen's player in slot `id` (a fresh roster: bots and bags
-  // reset), the camera on it - the same thing ?local=N does at load
-  setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
-  localId: () => localId,
+  // the snapshot and its echo harness (js/net/snapshot.js): netEcho() renders,
+  // snapshots, blanks, applies and renders again - a nonzero diff is a field
+  // the schema is missing; netEchoRun(ticks, every) does it along a run
+  netEcho, netEchoRun, snapBuild, snapApply, snapSize, NET, netSetup,
   placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
   // the two end screens: their timelines, the frozen numbers they print, and
   // a way to open the loss summary without pressing its plank. Set
