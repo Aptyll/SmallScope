@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.52'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.53'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.53', 'IN THE DESKTOP APP WITH STEAM, THE MULTIPLAYER PLANK LISTS STEAM LOBBIES AND JOINS THEM WITH A CLICK, THE SAME WAY IT LISTS ROOMS IN A BROWSER.'],
   ['3.52', 'THE MULTIPLAYER DOORS READ AT A GLANCE: EVERY ROOM SHOWS ITS CODE AND ITS SEATS, THE WAITING ROOM ITS CODE, A CROWN ON THE HOST AND A NAME ON THE PLANK A GUEST WAITS ON, AND A HOST WHO LEAVES SAYS SO INSTEAD OF FREEZING YOUR SCREEN.'],
   ['3.51', 'AN ONLINE MATCH NOW SURVIVES A LOSSY WIRE: EACH PLAYER TELLS THE HOST THE LAST MOMENT IT SAW, AND THE HOST SENDS EVERYTHING THAT MOVED SINCE THAT MOMENT - A DROPPED PACKET COSTS NOTHING BUT A BEAT.'],
   ['3.50', 'AN ONLINE MATCH SENDS EVERY POSITION AS AN EIGHTH OF A PIXEL IN TWO BYTES, AND NOTHING AT ALL FOR A BODY THAT HAS NOT MOVED THAT FAR - A SIXTH LESS ON THE WIRE, AND STILL NOTHING LOST THAT THE EYE CAN SEE.'],
@@ -334,7 +335,10 @@ function drawDownloadTag() {
 // them lit in that side's paint), its four-letter code on a plate and a red
 // dot once its match is under way; a room on another patch is dimmed and
 // inert, its patch printed where the code would be. A relay pip beside HOST
-// says the list is live, and an empty list shows one ghost of a row. HOST makes a room on the relay and opens the waiting room (the
+// says the list is live, and an empty list shows one ghost of a row. Under
+// the wrapper with Steam asked for (netSteam) the list is Steam's lobbies
+// (steamRooms, js/net/transport-steam.js) in the same shape, with no code
+// plate - a lobby is joined off the list, never read aloud. HOST makes a room on the relay and opens the waiting room (the
 // class-select screen, which every peer then sees as this screen does); a
 // room's plank joins it, the row staying lit until the host's WELCOME
 // arrives, or rattling if the room would not have us.
@@ -346,7 +350,8 @@ function beginRooms() {
   m.screen = 'rooms';
   m.rooms = []; m.roomsOk = false; m.rhover = {}; m.rsel = -1; m.roomsShake = 0;
   if (roomsFeed) roomsFeed.close();
-  roomsFeed = wsRooms(netRelay(), (rooms, ok) => { m.rooms = rooms.slice(0, RM_MAX); m.roomsOk = ok; });
+  const feed = (rooms, ok) => { m.rooms = rooms.slice(0, RM_MAX); m.roomsOk = ok; };
+  roomsFeed = netSteam() ? steamRooms(feed) : wsRooms(netRelay(), feed); // Steam's lobbies under the wrapper, the relay's rooms otherwise
   SFX.place();
   SFX.music.play('select');
 }
@@ -385,7 +390,7 @@ function joinRoom(k) {
   // the world is the host's: SEED is decided at load (js/core.js), so a page
   // born on another seed starts over on the room's and joins from boot (?join=)
   const seed = r.data && +r.data.seed;
-  if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room; return; }
+  if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
   netJoin(r.room);
   SFX.place();
 }
@@ -480,9 +485,9 @@ function renderRooms(now, a) {
     // the seats, then the code (or, dimmed, the patch this room is on) at the right
     const pw = drawSeatPips(r.x + dx + 96, r.y + 10 - lift, d.sides || [Math.min(5, d.humans | 0), 0], live);
     if (ok) {
-      const code = room.room || '';
+      const code = String(room.room || '');
       const cw = pixelTextWidth(code) + 6;
-      drawCodePlate(r.x + dx + r.w - 8 - cw, r.y + 6 - lift, code, joining ? '#ffd95c' : '#dfe6ff');
+      if (code.length <= 6) drawCodePlate(r.x + dx + r.w - 8 - cw, r.y + 6 - lift, code, joining ? '#ffd95c' : '#dfe6ff'); // a Steam lobby's id is not for reading aloud
       if (live) { ctx.fillStyle = '#e0524f'; ctx.fillRect(r.x + dx + 96 + pw + 6, r.y + 10 - lift, 3, 3); } // a match already under way
     } else {
       const pt = String(d.patch || '').replace(/^PATCH /, '');
@@ -499,11 +504,11 @@ function renderRooms(now, a) {
 function drawRoomPlate(now, a) {
   if (NET.role === 'solo') return;
   const { toy, cx } = selectLayout();
-  const code = (NET.transport && NET.transport.room) || '';
+  const code = String((NET.transport && (NET.transport.room || NET.transport.lobbyId)) || '');
   const x = cx - SEL_ROST_X, y = toy + 62;
   ctx.globalAlpha = a;
   drawRelayPip(x, y + 6, !!(NET.transport && NET.transport.open), now);
-  if (code) drawCodePlate(x + 9, y, code, '#ffd95c', 2);
+  if (code && code.length <= 6) drawCodePlate(x + 9, y, code, '#ffd95c', 2); // a relay code; a Steam lobby is joined off the list
 }
 // In a match, a client whose socket is down: a red pip blinking top-centre
 // while the transport redials, and nothing at all while the link is good
