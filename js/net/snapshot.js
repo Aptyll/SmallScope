@@ -15,7 +15,8 @@
 // every entity carries a stable network id (snapNid), a host keeps a shadow
 // of what it last sent per id and sends only the fields that changed, and
 // the whole message goes as binary with every object key as an index into a
-// dictionary both ends grow in step (the `encode` banner). A full snapshot
+// dictionary both ends grow in step and a position as an int16 count of
+// eighths of a px (the `encode` banner). A full snapshot
 // and a delta write into the singletons through the same apply, and the
 // entities a client holds are updated IN PLACE, so a reference resolved a
 // tick ago still points at the thing.
@@ -290,8 +291,10 @@ function snapApply(s) {
 // ground only where they changed; and each singleton only when its packed
 // form changed. The transport is reliable and ordered, so "since last sent"
 // is exact - an unreliable one keys the shadow by the client's ack instead
-// (docs/pvp-architecture.md). A primitive field compares by value, a nested
-// one (a bag, a route's points, a building's bots) by its JSON.
+// (docs/pvp-architecture.md). A primitive field compares by value - a
+// quantized one (SNAP_QUANT, the `encode` banner) by the value the client
+// will hold - a nested one (a bag, a route's points, a building's bots) by
+// its JSON.
 const snapShadow = { objs: null, objJson: null, ground: null, ents: {}, singles: {}, eagles: [] };
 function snapShadowReset() {
   snapShadow.objs = null; snapShadow.objJson = null; snapShadow.ground = null;
@@ -306,10 +309,13 @@ function snapSame(va, vb) {
 }
 // the fields of `packed` that differ from `prev` (all of them for a first
 // send), plus the names that left as `$del`; null when nothing changed
+// A quantized field (SNAP_QUANT) compares AS THE CLIENT WILL SEE IT: the
+// shadow holds the exact value, but a body nudged less than a quantum has
+// not moved on the wire, and resending it would be bytes for nothing
 function snapFieldDiff(packed, prev) {
   if (!prev) return packed;
   let out = null, del = null;
-  for (const k of Object.keys(packed)) { if (!snapSame(packed[k], prev[k])) { (out = out || {})[k] = packed[k]; } }
+  for (const k of Object.keys(packed)) { if (!snapSame(snapQv(k, packed[k]), snapQv(k, prev[k]))) { (out = out || {})[k] = packed[k]; } }
   for (const k of Object.keys(prev)) if (!(k in packed)) (del = del || []).push(k);
   if (del) { (out = out || {}).$del = del; }
   return out;
@@ -452,7 +458,32 @@ function snapApplyDelta(d) {
 // reliable, ordered channel keeps the two lists equal. A joiner is handed
 // the host's whole list with its WELCOME. Numbers go as the smallest
 // integer that holds them or a float32; strings as utf8; the rest by tag.
-const ENC_TAG = { NULL: 0, FALSE: 1, TRUE: 2, I8: 3, I16: 4, I32: 5, F32: 6, F64: 7, STR: 8, ARR: 9, OBJ: 10 };
+//
+// QUANTIZED FIELDS: a position or a velocity crosses as an int16 count of
+// EIGHTHS of a px (Q16, 3 bytes against a float32's 5), and only those - a
+// field is quantized by its NAME at encode time, so a timer, hp, gold or
+// anything the HUD prints as a number never is. The host reads nothing
+// back: the sim keeps its exact floats and only the bytes to a client are
+// coarse. Why an eighth: a sprite lands at Math.round(x - camera), so any
+// error under half a px is invisible at rest, and the sim's own sub-px
+// nudges (separateUnits' pushes, a knockback decaying toward zero for
+// ever) fall below it - which is what lets the shadow compare (snapFieldDiff)
+// drop a body that has not moved on the wire. A position is FLOORED, not
+// rounded: for a camera on the same grid, Math.round(floor8(x) - c) ===
+// Math.round(x - c) exactly (the floor shifts by less than the distance to
+// the next rounding edge), so the echo's frame cannot move a pixel, where a
+// rounding quantizer can. A velocity is ROUNDED: it is only ever a direction
+// on a client (an arrow's heading, a bolt's), and flooring a knockback
+// decayed to 1e-100 would hand it -0.125 for good. A value past ±4095 px
+// (or px/s) falls through to the float32 unchanged.
+const SNAP_Q = 8;                     // quanta per px
+const SNAP_Q_MAX = 32767 / SNAP_Q;    // the int16's reach in px
+const SNAP_QPOS = new Set(['x', 'y']);                                  // floored
+const SNAP_QUANT = new Set(['x', 'y', 'vx', 'vy', 'kbx', 'kby']);       // all of them; kbx/kby are a knockback's velocity, same unit as vx
+function snapQable(k, v) { return SNAP_QUANT.has(k) && typeof v === 'number' && v >= -SNAP_Q_MAX && v <= SNAP_Q_MAX; } // NaN/Infinity fail the range
+function snapQi(k, v) { return SNAP_QPOS.has(k) ? Math.floor(v * SNAP_Q) : Math.round(v * SNAP_Q); } // the int16 on the wire
+function snapQv(k, v) { return snapQable(k, v) ? snapQi(k, v) / SNAP_Q : v; } // what the client will hold for field k
+const ENC_TAG = { NULL: 0, FALSE: 1, TRUE: 2, I8: 3, I16: 4, I32: 5, F32: 6, F64: 7, STR: 8, ARR: 9, OBJ: 10, Q16: 11 };
 function encDict() { return { names: [], index: new Map() }; }
 const encTextEnc = new TextEncoder(), encTextDec = new TextDecoder();
 function snapEncode(value, dict) {
@@ -469,10 +500,13 @@ function snapEncode(value, dict) {
     if (k.length && k.length < 10 && /^[0-9]+$/.test(k)) { u16(0xFFFF); u32(+k); return; }
     let i = dict.index.get(k); if (i === undefined) { i = dict.names.length; dict.names.push(k); dict.index.set(k, i); fresh.push(k); } u16(i);
   };
-  const put = (v) => {
+  // `k` is the key this value sits under, when it sits under one: a
+  // quantized field is known by its name (an array element has none)
+  const put = (v, k) => {
     if (v === null || v === undefined) { u8(ENC_TAG.NULL); return; }
     if (v === false) { u8(ENC_TAG.FALSE); return; }
     if (v === true) { u8(ENC_TAG.TRUE); return; }
+    if (k !== undefined && snapQable(k, v)) { u8(ENC_TAG.Q16); need(2); view.setInt16(pos, snapQi(k, v)); pos += 2; return; }
     if (typeof v === 'number') {
       if (Number.isInteger(v) && v >= -2147483648 && v <= 2147483647) {
         if (v >= -128 && v <= 127) { u8(ENC_TAG.I8); need(1); view.setInt8(pos, v); pos += 1; }
@@ -486,7 +520,7 @@ function snapEncode(value, dict) {
     if (Array.isArray(v)) { u8(ENC_TAG.ARR); u32(v.length); for (const x of v) put(x); return; }
     const keys = Object.keys(v);
     u8(ENC_TAG.OBJ); u32(keys.length);
-    for (const k of keys) { key(k); put(v[k]); }
+    for (const k of keys) { key(k); put(v[k], k); }
   };
   put(value);
   // the header: the names this message is the first to use
@@ -513,6 +547,7 @@ function snapDecode(bytes, dict) {
       case ENC_TAG.I32: { const v = view.getInt32(pos); pos += 4; return v; }
       case ENC_TAG.F32: { const v = view.getFloat32(pos); pos += 4; return v; }
       case ENC_TAG.F64: { const v = view.getFloat64(pos); pos += 8; return v; }
+      case ENC_TAG.Q16: { const v = view.getInt16(pos) / SNAP_Q; pos += 2; return v; }
       case ENC_TAG.STR: { const n = view.getUint32(pos); pos += 4; const s = encTextDec.decode(bytes.subarray(pos, pos + n)); pos += n; return s; }
       case ENC_TAG.ARR: { const n = view.getUint32(pos); pos += 4; const a = new Array(n); for (let i = 0; i < n; i++) a[i] = get(); return a; }
       case ENC_TAG.OBJ: {
@@ -560,14 +595,17 @@ function snapFrame() {
   return new Uint32Array(wctx.getImageData(0, 0, WV_W, WV_H).data.buffer);
 }
 // every path at which two packed snapshots disagree (the first `max`): the
-// field-level answer to a nonzero pixel diff
-function snapCompare(a, b, path, out, max) {
+// field-level answer to a nonzero pixel diff. The one tolerance is the
+// wire's own: a field on SNAP_QUANT may differ by less than a quantum
+// (`k` is the key the value sits under), and nothing else by anything
+function snapCompare(a, b, path, out, max, k) {
   if (out.length >= max) return;
   if (a === b) return;
   const ta = typeof a, tb = typeof b;
+  if (ta === 'number' && tb === 'number' && k !== undefined && SNAP_QUANT.has(k) && Math.abs(a - b) <= 1 / SNAP_Q) return; // <=: a floored 1e-26 is a quantum from its wire value to the last bit
   if (ta !== tb || a === null || b === null || ta !== 'object') { out.push(path + ': ' + JSON.stringify(a) + ' -> ' + JSON.stringify(b)); return; }
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
-  for (const k of keys) snapCompare(a[k], b[k], path + '.' + k, out, max);
+  for (const kk of keys) snapCompare(a[kk], b[kk], path + '.' + kk, out, max, Array.isArray(a) ? undefined : kk); // an array element sits under no name, and is not quantized
 }
 // the same compare for a CLIENT checking itself against the host's full form
 // mid-match: a control is a screen's own view, the wind is recomputed
@@ -583,13 +621,35 @@ function snapCompareLoose(a, b, path, out, max) {
   for (const k of keys) if (!SNAP_LOOSE_SKIP.has(k)) snapCompareLoose(a[k], b[k], path + '.' + k, out, max);
 }
 function snapDiff(a, b) { let n = 0; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) n++; return n; }
-// One echo: frame, snapshot, blank, apply, frame; the pixels that differ,
+// The wire's one DESIGNED loss, written into the world: every field the
+// encoder quantizes (SNAP_QUANT) set to the value the bytes would carry.
+// The echo renders its reference frame from this state, so the pixels it
+// counts are what the wire lost BESIDES the quantum - which is what it is
+// there to prove is nothing. (Left to the exact state, a merchant's axe,
+// drawn rotated toward its stump from a sub-px position, shifts its
+// antialiasing by one colour unit on an eighth of a px: the quantum's own
+// cost, visible to the diff and to nothing else.) Harness only: a live
+// host never reads a quantized value back.
+function snapQuantize() {
+  const seen = new Set();
+  const walk = (v) => {
+    if (v === null || typeof v !== 'object' || seen.has(v) || v instanceof Map || v instanceof Set || ArrayBuffer.isView(v)) return;
+    seen.add(v);
+    if (Array.isArray(v)) { for (const x of v) walk(x); return; }
+    for (const k of Object.keys(v)) { if (SNAP_SKIP.has(k)) continue; const c = v[k]; if (typeof c === 'number') { if (snapQable(k, c)) v[k] = snapQv(k, c); } else walk(c); }
+  };
+  walk(players); for (const k in SNAP_KINDS) walk(SNAP_KINDS[k]());
+  if (state.drop) walk(state.drop.eagles);
+  walk(objects); walk(nets); walk(spurs); walk(market); walk(state.end); walk(state.eagleCine);
+}
+// One echo: quantize, frame, snapshot, blank, apply, frame; the pixels that differ,
 // the frame's own noise (two renders of the same state, for anything that
 // animates off the wall clock), and the JSON weight by section. The live
 // state IS the applied state afterwards, so a run can go on and echo again.
 // The snapshot crosses through the binary encoder on its way, so the echo
 // proves the bytes as well as the fields.
 function netEcho() {
+  snapQuantize();
   const a1 = snapFrame(), a2 = snapFrame();
   const noise = snapDiff(a1, a2);
   const s = snapBuild();

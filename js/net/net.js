@@ -308,11 +308,14 @@ function netClientApplyDelta(msg) {
   if (changed === null) { NET.synced = false; NET.transport.send('host', { t: 'resync' }); return; } // an id we never had: ask for the whole thing
   // the check, against the host's own full form when it rides along
   if (msg.full && !NET.verifyFail) {
-    // a body still easing toward an earlier target is compared at that target, not where it is drawn
-    // a body still easing is compared at the host's position (its target), not where it is drawn
-    const moved = new Set(); for (const [e, f] of changed) if ('x' in f || 'y' in f) moved.add(e);
+    // a body still easing toward an earlier target is compared at that
+    // target, not where it is drawn - PER AXIS: an axis this delta moved
+    // already holds the host's value, the other is still drawn short of its
+    // own target (a fish that turned in x alone is still easing in y)
+    const movedX = new Set(), movedY = new Set();
+    for (const [e, f] of changed) { if ('x' in f) movedX.add(e); if ('y' in f) movedY.add(e); }
     const eased = [];
-    for (const [e] of shown) if (e._t0 && !moved.has(e)) { eased.push([e, e.x, e.y]); e.x = e._tx; e.y = e._ty; }
+    for (const [e] of shown) if (e._t0) { eased.push([e, e.x, e.y]); if (!movedX.has(e)) e.x = e._tx; if (!movedY.has(e)) e.y = e._ty; }
     const out = []; snapCompareLoose(msg.full, snapBuild(), '', out, 8);
     for (const [e, x, y] of eased) { e.x = x; e.y = y; }
     if (out.length) NET.verifyFail = { tick: msg.tick, out };

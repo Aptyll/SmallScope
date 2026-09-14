@@ -26,10 +26,12 @@ declare victory. The three affordances:
   want *before* freezing), `hideUI = true` drops the HUD/info stack/cursor for captures, `buildStruct` stages
   a construction site with no cost or validation, `warp(tx, ty, p?)` drops a player on a tile, and
   `setControl(id, mode)` hands a player to an AI, a human or nobody, `setLocal(id)` reseats this
-  screen's player in slot `id` (title only; `?local=N` does it at load). `netEcho()` snapshots the
-  match, blanks every singleton, applies the snapshot back and returns the pixels of the world
-  frame that differ (`diff`, zero or the snapshot is missing a field the eye can see), the JSON
-  weight by section and the fields that did not round-trip; `netEchoRun(ticks, every)` does it
+  screen's player in slot `id` (title only; `?local=N` does it at load). `netEcho()` writes the
+  wire's quantum into the world (`snapQuantize`: positions to eighths of a px, the one designed
+  loss), snapshots the match, blanks every singleton, applies the snapshot back through the
+  bytes and returns the pixels of the world frame that differ (`diff`, zero or the snapshot is
+  missing a field the eye can see), the JSON weight by section and the fields that did not
+  round-trip (`mismatch`, tolerating one quantum on `x`/`y`/`vx`/`vy`/`kbx`/`kby` and nothing else); `netEchoRun(ticks, every)` does it
   along a run and reports the worst - run it after adding a field to any entity. `netStatus()`
   is the match between tabs: role, the peers' slots, bytes each way and the last second's rate,
   the newest snapshot tick. `netDeltaRun(ticks, every)` sends this page's sim as binary deltas and

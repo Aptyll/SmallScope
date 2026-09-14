@@ -158,7 +158,8 @@ page before it went between tabs:
 - **Bytes with a dictionary.** The whole message is binary: every object key an index into a
   dictionary both ends grow in step (a message leads with the names it is the first to use, the
   welcome hands a joiner the list as it stands), numbers as the smallest integer that holds them
-  or a float32, tile indices as numbers. The relay forwards binary frames untouched but for a
+  or a float32 - a position or a velocity as an int16 count of eighths of a px (below) - tile
+  indices as numbers. The relay forwards binary frames untouched but for a
   routing header.
 - **15 Hz and interpolation.** `SNAP_EVERY` is 4; a client eases every body a delta moved from
   where it is drawn to where the host put it over one interval, and snaps instead of easing past
@@ -175,9 +176,34 @@ and a walk with no disagreement. Two bugs the proofs caught on the way: a token 
 live object it named (a barracks gutted to two keys) - hence the merge allow-list - and a
 delta that moved a body on one axis restarting its ease toward a stale target on the other.
 
-Still owed: quantized positions (a float32 is 5 bytes; 1/8 px in an int16 is 3), the
-unreliable channel's ack-keyed shadow for Steam, and a per-kind field policy if 87 KB/s is still
-too much for nine clients on a home upload (it is ~800 KB/s at ten players).
+**Quantized positions (PATCH 3.50).** `x`, `y`, `vx`, `vy`, `kbx`, `kby` cross as an int16 count of
+eighths of a px (`Q16`, 3 bytes against a float32's 5) - by field NAME at encode time, so a
+timer, hp, gold or anything the HUD prints as a number never does, and the host reads nothing
+back (the sim keeps its floats; only the bytes to a client are coarse). An eighth because a
+sprite lands at `Math.round(x - camera)`, so an error under half a px is invisible at rest,
+and the sim's own sub-px nudges (`separateUnits`' pushes, a knockback decaying toward zero
+for ever) fall below it - the shadow compare (`snapFieldDiff`) compares the quantized value,
+so a body that has not moved on the wire is not resent, which is where most of the saving
+is: at identical states the named fields carried per delta fell from 166 to 96. A position
+is FLOORED (against a camera on the same grid, `round(floor8(x) - c) === round(x - c)`, so a
+floored body cannot round to a different px), a velocity ROUNDED (it is only a heading on a
+client, and flooring a knockback at 1e-100 would hand it -0.125 for good); past +/-4095 a
+value falls through to the float32. The quantum is the wire's one designed loss, and the
+proofs say so exactly: `snapCompare` tolerates one quantum on the named fields and nothing
+else, and `netEcho` writes the wire's values into the world (`snapQuantize`) before its
+reference frame, so the pixels it counts are what was lost BESIDES the quantum (left exact, a
+merchant's axe drawn rotated toward its stump from a sub-px position moved one colour unit).
+Measured on seed 42, strict A/B at identical states (two shadows, four minutes in, 150
+deltas): **8212 -> 6842 bytes per delta**; along a run 20 s in, 5775 -> 4374; live between two
+tabs a host sends **~85 -> 72 KB/s** to one client with the switch flipped in place. The
+echo is 0 px with an empty mismatch list, 1500 ticks of deltas applied back with no mismatch,
+a body at rest holds one exact position on the client, and the client's self-check ran null
+through a ride, the hop and a 123 px walk. Found on the way: the self-check compared a body
+moved on one axis where it was DRAWN on the other, not at that axis's ease target - fixed
+per axis, which is what let a client that ate 300 queued deltas in one poll pass.
+
+Still owed: the unreliable channel's ack-keyed shadow for Steam, and a per-kind field policy
+if 72 KB/s is still too much for nine clients on a home upload (~650 KB/s at ten players).
 
 ## Message schema
 
