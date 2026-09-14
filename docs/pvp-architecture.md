@@ -149,15 +149,17 @@ Cut from the reflection snapshot, not written beside it, in three layers, each p
 page before it went between tabs:
 
 - **Stable ids and field deltas.** Every moving entity carries a network id for its life
-  (`snapNid`); the host keeps a shadow of what it last sent per id and sends only the fields that
-  changed (a nested field by its JSON), the arrays' order when it changed, the ids that left,
-  tiles and ground where they changed, each singleton field by field. A client updates its
+  (`snapNid`); the host keeps a ring of what it packed at each flush tick and sends each client
+  only the fields touched since the tick that client acked (a nested field by its JSON), the
+  arrays' order when it moved, the ids that left, tiles and ground where they changed, each
+  singleton field by field (ack-keyed since PATCH 3.51, below). A client updates its
   entities **in place** under those ids, so a reference resolved a tick ago still points at the
   thing - which is also why a tile changes in place, and why a player's aliased plain objects
   (`inv`, `food`, `kit`, `flag`, `spawn`, `look`) are merged rather than replaced.
 - **Bytes with a dictionary.** The whole message is binary: every object key an index into a
   dictionary both ends grow in step (a message leads with the names it is the first to use, the
-  welcome hands a joiner the list as it stands), numbers as the smallest integer that holds them
+  header carries every name from the index the client's acked message left the list at, written
+  by position), numbers as the smallest integer that holds them
   or a float32 - a position or a velocity as an int16 count of eighths of a px (below) - tile
   indices as numbers. The relay forwards binary frames untouched but for a
   routing header.
@@ -202,8 +204,37 @@ through a ride, the hop and a 123 px walk. Found on the way: the self-check comp
 moved on one axis where it was DRAWN on the other, not at that axis's ease target - fixed
 per axis, which is what let a client that ate 300 queued deltas in one poll pass.
 
-Still owed: the unreliable channel's ack-keyed shadow for Steam, and a per-kind field policy
-if 72 KB/s is still too much for nine clients on a home upload (~650 KB/s at ten players).
+**The ack-keyed base (PATCH 3.51).** The shadow became a RING: `snapHistoryPush` packs the
+world at every flush tick (`HIST_KEEP` = 75 entries, 5 s) and keeps, per entry, what that tick
+touched - per entity the names that changed or left (whole for one new that tick), the ids
+gone, whether the order moved, the same for the eagles and the singletons, each tile's touched
+names (whole for one made or unmade), the ground cells, the structures' key - while the tile
+shadow keeps only the newest form of every tile, so the ring holds no world per tick, only what
+moved. A client acks the newest tick it applied on every input it sends; the host keeps that
+per peer and cuts each peer's delta from the ring entry at ITS ack (`snapDeltaFrom`, peers on
+one ack sharing the cut), a full sync going to a peer whose ack aged out of the ring
+(`netHostFull`, which also sets the base to the tick it sends). **The cut is the UNION of the
+entries after the base, not a compare of the two ends**: the ack is a round trip stale, so the
+client may hold any tick between the base and now, and a field that flipped and flipped back
+in between has to go again or the client keeps the flip - the first cut compared the ends, and
+between two tabs a bot's `moving` flag that went false at 896 and true at 900, cut from 892,
+was never sent. `d.base` names the base; a client refuses a delta whose base is newer than
+what it holds (a resync follows) and ignores one no newer than what it holds, which is what an
+unreliable channel needs and a reliable one never exercises. The key dictionary is ack-keyed
+too: a message's header carries every name from the index the peer's acked message left the
+list at, written by position on the far side, so a lost message loses no name and a repeat is
+harmless; the full sync carries the list from 0 (the welcome no longer does). Proved with
+`DBG.netLoss(f)`, which throws away that share of a host's snapshot sends before the
+transport: between two tabs on seed 42 the client's self-check stayed null through the ride,
+the hop and a 121 px walk at 30% loss (251 drops by then), a stretch at 70%, and a 7 s
+blackout that outlived the ring and came back through the full sync; in the page,
+`netDeltaRun(1200, 4, loss)` at 0.3 and 0.7 (bases up to 60 ticks back) with no mismatch. On
+the relay the ack trails the send by a round trip, so a delta is a few fields fatter than
+before (4.0-4.5 KB along a run 20 s in).
+
+Still owed: the transport half of the unreliable channel (Steam's 1200-byte cap needs the
+delta split into parts or slimmed further), and a per-kind field policy if ~70 KB/s is still
+too much for nine clients on a home upload (~650 KB/s at ten players).
 
 ## Message schema
 

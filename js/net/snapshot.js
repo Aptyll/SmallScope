@@ -12,8 +12,9 @@
 // differ - zero or the schema is missing something the eye can see.
 //
 // THE WIRE FORM is cut from it, not written beside it (the `delta` banner):
-// every entity carries a stable network id (snapNid), a host keeps a shadow
-// of what it last sent per id and sends only the fields that changed, and
+// every entity carries a stable network id (snapNid), a host keeps a ring
+// of what it packed at each tick and sends each client only the fields that
+// changed since the tick that client acked, and
 // the whole message goes as binary with every object key as an index into a
 // dictionary both ends grow in step and a position as an int16 count of
 // eighths of a px (the `encode` banner). A full snapshot
@@ -226,6 +227,7 @@ function snapEaglesRepoint() {
 // from a delta; then the structures registry re-pointed at the tiles
 function snapApplyTiles(s) {
   const tiles = s.objects || s.objDiff || null;
+  const wholeAt = s.objWholeAt ? new Set(s.objWholeAt) : null;
   if (tiles) {
     if (s.objects) objects.fill(null);
     for (const i in tiles) {
@@ -233,9 +235,12 @@ function snapApplyTiles(s) {
       // a tile that is still there changes IN PLACE: a bot's home bay, a
       // part's anchor and the structures registry hold it by identity. A
       // full form carries whole tiles; a delta carries the fields that
-      // changed (and the names that left as $del)
+      // changed (and the names that left as $del), or the whole tile when
+      // it was made or unmade since the base (objWhole for all, objWholeAt
+      // for the named ones) - then a key absent from it left, but never
+      // the bookkeeping the wire skips
       if (u && old) {
-        if (s.objects) { for (const k of Object.keys(old)) if (!(k in u)) delete old[k]; }
+        if (s.objects || s.objWhole || (wholeAt && wholeAt.has(+i))) { for (const k of Object.keys(old)) if (!(k in u) && !SNAP_SKIP.has(k)) delete old[k]; }
         if (u.$del) { for (const k of u.$del) delete old[k]; delete u.$del; }
         Object.assign(old, u);
       } else objects[i] = u;
@@ -286,20 +291,29 @@ function snapApply(s) {
 
 // ------------------------------------------------------------ delta
 // What a host sends every snapshot tick: per entity, only the fields that
-// changed since it last sent them, against a shadow it keeps per network
-// id; the order each array stands in; the ids that left; the tiles and the
-// ground only where they changed; and each singleton only when its packed
-// form changed. The transport is reliable and ordered, so "since last sent"
-// is exact - an unreliable one keys the shadow by the client's ack instead
-// (docs/pvp-architecture.md). A primitive field compares by value - a
-// quantized one (SNAP_QUANT, the `encode` banner) by the value the client
-// will hold - a nested one (a bag, a route's points, a building's bots) by
-// its JSON.
-const snapShadow = { objs: null, objJson: null, ground: null, ents: {}, singles: {}, eagles: [] };
+// changed since a BASE the client has confirmed it holds; the order each
+// array stands in when it changed since then; the ids that left since then;
+// the tiles and the ground where they changed since then; and each
+// singleton only where its packed form differs. The base is ACK-KEYED: the
+// host keeps a ring of what it packed at each flush tick (snapHistoryPush,
+// HIST_KEEP deep), a client acks the newest tick it applied on every input
+// it sends, and each client's delta is cut against the ring entry at ITS
+// ack (snapDeltaFrom) - so a delta lost on an unreliable channel is not
+// lost for good: the ack does not move, and the next delta carries the
+// same changes again. An ack older than the ring earns a full sync. On a
+// reliable channel the ack simply trails the send by a round trip and the
+// delta is a few fields fatter for it. A primitive field compares by value
+// - a quantized one (SNAP_QUANT, the `encode` banner) by the value the
+// client will hold - a nested one (a bag, a route's points, a building's
+// bots) by its JSON. A tile goes field by field against what it was at the
+// base: each ring entry keeps the before-form of every tile it changed, so
+// any base in the ring can be reconstructed tile by tile without a shadow
+// of the whole world per tick.
+const HIST_KEEP = 75; // flush ticks kept in the ring: 5 s at 15 Hz. An ack older than this is a full sync
+const snapShadow = { objs: null, ground: null, hist: [], byTick: new Map() };
 function snapShadowReset() {
-  snapShadow.objs = null; snapShadow.objJson = null; snapShadow.ground = null;
-  snapShadow.ents = { P: new Map(), R: new Map(), A: new Map(), W: new Map(), D: new Map(), F: new Map() };
-  snapShadow.singles = {}; snapShadow.singlesObj = {}; snapShadow.eagles = [];
+  snapShadow.objs = null; snapShadow.ground = null;
+  snapShadow.hist = []; snapShadow.byTick = new Map();
 }
 snapShadowReset();
 function snapSame(va, vb) {
@@ -308,7 +322,7 @@ function snapSame(va, vb) {
   return JSON.stringify(va) === JSON.stringify(vb);
 }
 // the fields of `packed` that differ from `prev` (all of them for a first
-// send), plus the names that left as `$del`; null when nothing changed
+// send), plus the names that left as `$del`; null when nothing changed.
 // A quantized field (SNAP_QUANT) compares AS THE CLIENT WILL SEE IT: the
 // shadow holds the exact value, but a body nudged less than a quantum has
 // not moved on the wire, and resending it would be bytes for nothing
@@ -320,82 +334,162 @@ function snapFieldDiff(packed, prev) {
   if (del) { (out = out || {}).$del = del; }
   return out;
 }
-function snapKindDelta(kind, arr, sh, out) {
-  const order = [], seen = new Set();
-  let ch = null;
-  for (const e of arr) {
-    const packed = packEnt(e, kind === 'P' ? null : kind);
-    const n = kind === 'P' ? e.id : packed._nid;
-    if (kind === 'P') delete packed._nid; else delete packed._nid;
-    order.push(n); seen.add(n);
-    const d = snapFieldDiff(packed, sh.get(n));
-    if (d) (ch = ch || []).push([n, d]);
-    sh.set(n, packed);
-  }
-  let del = null;
-  for (const n of sh.keys()) if (!seen.has(n)) { (del = del || []).push(n); }
-  if (del) for (const n of del) sh.delete(n);
-  const k = {};
-  if (ch) k.ch = ch;
-  if (del) k.del = del;
-  // the order goes only when it changed (an arrival, a departure, a reorder)
-  const key = order.join(',');
-  if (sh.order !== key) { sh.order = key; k.order = order; }
-  if (ch || del || k.order) out[kind] = k;
-}
-function snapBuildDelta() {
-  const d = { v: 2, tick: state.tick };
-  const sh = snapShadow;
-  snapKindDelta('P', players, sh.ents.P, d);
-  for (const k in SNAP_KINDS) snapKindDelta(k, SNAP_KINDS[k](), sh.ents[k], d);
-  // the eagles, by team, field by field
-  if (state.drop) {
-    const es = [];
-    for (let i = 0; i < state.drop.eagles.length; i++) {
-      const packed = pack(state.drop.eagles[i], 0, true);
-      const f = snapFieldDiff(packed, sh.eagles[i]);
-      sh.eagles[i] = packed;
-      if (f) es.push([i, f]);
+// The world as packed at this tick, into the ring, WITH what changed since
+// the previous entry: per entity the names that changed or left (null for
+// an entity new this tick - whole), the ids that left, whether the order
+// moved, the same for the eagles and the singletons, each tile's changed
+// names (null for one made or unmade), the ground cells, the structures'
+// key. A cut from any base is the UNION of the entries after it, not a
+// compare of the two ends: a client behind a lossy wire may hold any tick
+// between the base and now (its ack is in flight), so a field that flipped
+// and flipped back must still go, or the client keeps the flip. Idempotent
+// within a tick. The tile shadow (the newest form of every tile) is updated
+// here, so the ring holds no world per tick, only what moved.
+function snapHistoryPush() {
+  const sh = snapShadow, tick = state.tick;
+  const have = sh.byTick.get(tick);
+  if (have) return have;
+  const p = sh.hist.length ? sh.hist[sh.hist.length - 1] : null; // the previous entry
+  const h = { tick, ents: {}, order: {}, orderKey: {}, chg: {}, gone: {}, orderMoved: {}, eagles: [], eagleChg: [], singles: null, singlesJs: {}, singlesChg: {}, structs: '', structsMoved: false, tiles: null, groundCh: null };
+  const namesOf = (f) => { const n = new Set(Object.keys(f)); if (f.$del) { n.delete('$del'); for (const k of f.$del) n.add(k); } return n; };
+  for (const kind of ['P', ...Object.keys(SNAP_KINDS)]) {
+    const arr = kind === 'P' ? players : SNAP_KINDS[kind]();
+    const m = new Map(), order = [], chg = new Map(), was = p ? p.ents[kind] : null;
+    for (const e of arr) {
+      const packed = packEnt(e, kind === 'P' ? null : kind);
+      const n = kind === 'P' ? e.id : packed._nid;
+      delete packed._nid;
+      m.set(n, packed); order.push(n);
+      const prev = was ? was.get(n) : null;
+      const f = snapFieldDiff(packed, prev);
+      if (f) chg.set(n, prev ? namesOf(f) : null);
     }
-    if (es.length) d.eagles = es;
-  } else sh.eagles = [];
-  // the singletons: a plain object (the state keys, the market) field by
-  // field against its shadow, an array (the registry, the ice, the nets)
-  // whole when its JSON changed
-  const singles = snapSingles();
-  if (!sh.singlesObj) sh.singlesObj = {};
-  for (const k of Object.keys(singles)) {
-    const v = singles[k];
-    if (v && typeof v === 'object' && !Array.isArray(v)) {
-      const f = snapFieldDiff(v, sh.singlesObj[k]);
-      sh.singlesObj[k] = v;
-      if (f) d[k] = f;
-    } else {
-      const js = JSON.stringify(v);
-      if (sh.singles[k] !== js) { sh.singles[k] = js; d[k] = v; }
-    }
+    const gone = new Set();
+    if (was) for (const n of was.keys()) if (!m.has(n)) gone.add(n);
+    h.ents[kind] = m; h.order[kind] = order; h.orderKey[kind] = order.join(',');
+    h.chg[kind] = chg; h.gone[kind] = gone; h.orderMoved[kind] = !p || p.orderKey[kind] !== h.orderKey[kind];
   }
-  // tiles against the shadow: a tile whose primitive fields all match its
-  // shadow is skipped without packing (most of the world, every tick); one
-  // that differs goes field by field, whole when the shadow had none
-  if (!sh.objs) { sh.objs = new Array(objects.length).fill(null); }
-  let objDiff = null;
+  h.eagles = state.drop ? state.drop.eagles.map((e) => pack(e, 0, true)) : [];
+  for (let i = 0; i < h.eagles.length; i++) { const prev = p ? p.eagles[i] : null; const f = snapFieldDiff(h.eagles[i], prev); if (f) h.eagleChg[i] = prev ? namesOf(f) : null; }
+  h.singles = snapSingles();
+  for (const k of Object.keys(h.singles)) {
+    const v = h.singles[k], isObj = v && typeof v === 'object' && !Array.isArray(v);
+    const pv = p ? p.singles[k] : undefined, pObj = pv && typeof pv === 'object' && !Array.isArray(pv);
+    if (isObj) { if (pObj) { const f = snapFieldDiff(v, pv); if (f) h.singlesChg[k] = namesOf(f); } else h.singlesChg[k] = true; }
+    else { h.singlesJs[k] = JSON.stringify(v); if (!p || pObj || p.singlesJs[k] !== h.singlesJs[k]) h.singlesChg[k] = true; }
+  }
+  h.structs = structures.map((o) => idx(o.tx, o.ty)).join(',');
+  h.structsMoved = !p || p.structs !== h.structs;
+  // tiles against the newest shadow: a tile whose primitive fields all match
+  // is skipped without packing (most of the world, every tick)
+  if (!sh.objs) sh.objs = new Array(objects.length).fill(null);
   for (let i = 0; i < objects.length; i++) {
     const o = objects[i], prev = sh.objs[i];
     if (!o && !prev) continue;
     if (o && prev && snapTileSame(o, prev)) continue;
     const packed = o ? pack(o, 0, true) : null;
-    const f = packed ? snapFieldDiff(packed, prev) : null;
-    if (packed && !f) { sh.objs[i] = packed; continue; }
-    (objDiff = objDiff || {})[i] = packed ? f : null;
+    const f = packed && prev ? snapFieldDiff(packed, prev) : null;
+    if (packed && prev && !f) { sh.objs[i] = packed; continue; }
+    (h.tiles = h.tiles || new Map()).set(i, f ? namesOf(f) : null); // null: made or unmade - whole
     sh.objs[i] = packed;
   }
+  if (!sh.ground) { sh.ground = new Uint8Array(ground); }
+  else for (let i = 0; i < ground.length; i++) if (ground[i] !== sh.ground[i]) { (h.groundCh = h.groundCh || new Set()).add(i); sh.ground[i] = ground[i]; }
+  sh.hist.push(h); sh.byTick.set(tick, h);
+  while (sh.hist.length > HIST_KEEP) sh.byTick.delete(sh.hist.shift().tick);
+  return h;
+}
+// the ring entry at a tick, or null when it has aged out (or was never pushed)
+function snapHistoryAt(tick) { return snapShadow.byTick.get(tick) || null; }
+// The delta from ring entry `base` to the newest entry `h`: everything any
+// entry after the base touched, as it stands now (base null: from nothing -
+// everything, the first send). `d.base` names the base tick (-1 for
+// nothing) so a client can refuse a delta built on a state it never had.
+function snapDeltaFrom(h, base) {
+  const d = { v: 2, tick: h.tick, base: base ? base.tick : -1 };
+  const sh = snapShadow;
+  const after = base ? sh.hist.slice(sh.hist.indexOf(base) + 1) : null; // the entries after the base, oldest first
+  // the fields of `packed` named by `names`, present ones by value, absent ones as $del
+  const pick = (packed, names) => { let f = null, del = null; for (const k of names) { if (k in packed) (f = f || {})[k] = packed[k]; else (del = del || []).push(k); } if (del) (f = f || {}).$del = del; return f; };
+  for (const kind of ['P', ...Object.keys(SNAP_KINDS)]) {
+    const now = h.ents[kind];
+    let ch = null, del = null, order = !base;
+    if (!base) { for (const [n, packed] of now) (ch = ch || []).push([n, packed]); }
+    else {
+      const names = new Map(); // id -> Set of names, or null for whole
+      for (const e of after) {
+        for (const [n, ns] of e.chg[kind]) { const cur = names.get(n); if (ns === null || cur === null) names.set(n, null); else { if (!cur) names.set(n, new Set(ns)); else for (const k of ns) cur.add(k); } }
+        for (const n of e.gone[kind]) if (!names.has(n)) names.set(n, new Set()); // touched: gone at some point
+        if (e.orderMoved[kind]) order = true;
+      }
+      for (const [n, ns] of names) {
+        const packed = now.get(n);
+        if (!packed) { (del = del || []).push(n); continue; }
+        const f = ns === null ? packed : pick(packed, ns);
+        if (f) (ch = ch || []).push([n, f]);
+      }
+    }
+    const k = {};
+    if (ch) k.ch = ch;
+    if (del) k.del = del;
+    if (order) k.order = h.order[kind];
+    if (ch || del || order) d[kind] = k;
+  }
+  // the eagles, by team
+  const es = [];
+  for (let i = 0; i < h.eagles.length; i++) {
+    let ns = base ? undefined : null;
+    if (base) for (const e of after) { const c = e.eagleChg[i]; if (c === undefined) continue; if (c === null || ns === null) ns = null; else { if (!ns) ns = new Set(c); else for (const k of c) ns.add(k); } }
+    if (ns === undefined) continue;
+    const f = ns === null ? h.eagles[i] : pick(h.eagles[i], ns);
+    if (f) es.push([i, f]);
+  }
+  if (es.length) d.eagles = es;
+  // the singletons: a plain object (the state keys, the market) by the names
+  // touched, an array (the registry, the ice, the nets) whole when touched
+  for (const k of Object.keys(h.singles)) {
+    const v = h.singles[k], isObj = v && typeof v === 'object' && !Array.isArray(v);
+    let ns = base ? undefined : true;
+    if (base) for (const e of after) { const c = e.singlesChg[k]; if (c === undefined) continue; if (c === true || ns === true) ns = true; else { if (!ns) ns = new Set(c); else for (const kk of c) ns.add(kk); } }
+    if (ns === undefined) continue;
+    if (ns === true || !isObj) d[k] = v; else { const f = pick(v, ns); if (f) d[k] = f; }
+  }
+  // tiles and ground: every cell any entry after the base touched. A tile
+  // made or unmade at any point goes whole (or null, gone now); one only
+  // edited goes by the names touched; a ground cell goes as it stands.
+  // With no base everything goes whole, and the apply is told so
+  let objDiff = null, g = null;
+  if (!base) {
+    for (let i = 0; i < sh.objs.length; i++) if (sh.objs[i]) (objDiff = objDiff || {})[i] = sh.objs[i];
+    if (objDiff) d.objWhole = true;
+  } else {
+    const tiles = new Map(), cells = new Set();
+    for (const e of after) {
+      if (e.tiles) for (const [i, ns] of e.tiles) { const cur = tiles.get(i); if (ns === null || cur === null) tiles.set(i, null); else { if (!cur) tiles.set(i, new Set(ns)); else for (const k of ns) cur.add(k); } }
+      if (e.groundCh) for (const i of e.groundCh) cells.add(i);
+    }
+    for (const [i, ns] of tiles) {
+      const now = sh.objs[i];
+      if (!now) { (objDiff = objDiff || {})[i] = null; continue; }
+      const f = ns === null ? now : pick(now, ns);
+      if (f) (objDiff = objDiff || {})[i] = f;
+      if (ns === null) (d.objWholeAt = d.objWholeAt || []).push(i); // this one is whole: keys absent from it left
+    }
+    for (const i of cells) (g = g || []).push(i, sh.ground[i]);
+  }
   if (objDiff) d.objDiff = objDiff;
-  const structs = structures.map((o) => idx(o.tx, o.ty)).join(',');
-  if (sh.singles.$structs !== structs) { sh.singles.$structs = structs; d.structs = structures.map((o) => idx(o.tx, o.ty)); }
-  if (!sh.ground) sh.ground = new Uint8Array(ground);
-  else { let g = null; for (let i = 0; i < ground.length; i++) if (ground[i] !== sh.ground[i]) { (g = g || []).push(i, ground[i]); sh.ground[i] = ground[i]; } if (g) d.groundDiff = g; }
+  if (g) d.groundDiff = g;
+  if (!base || after.some((e) => e.structsMoved)) d.structs = h.structs ? h.structs.split(',').map(Number) : [];
   return d;
+}
+// this tick's delta against the previous push (the reliable channel's form,
+// and what the in-page proofs send): everything on a first call
+function snapBuildDelta() {
+  const sh = snapShadow;
+  const last = sh.hist.length ? sh.hist[sh.hist.length - 1] : null;
+  const h = snapHistoryPush();
+  const base = last === h ? (sh.hist.length > 1 ? sh.hist[sh.hist.length - 2] : null) : last;
+  return snapDeltaFrom(h, base);
 }
 // the no-allocation test a live tile takes against its packed shadow: true
 // only when every field is a primitive equal to the shadow's and the key
@@ -412,13 +506,6 @@ function snapTileSame(o, prev) {
     return false;
   }
   return n === Object.keys(prev).length;
-}
-function snapObjSame(a, b) {
-  if (!a || !b) return a === b;
-  const ka = Object.keys(a), kb = Object.keys(b);
-  if (ka.length !== kb.length) return false;
-  for (const k of ka) { const va = a[k], vb = b[k]; if (va !== vb) { if (va === null || vb === null || typeof va !== 'object' || typeof vb !== 'object') return false; return null; } }
-  return true; // null above means "nested: decide by JSON"
 }
 // a delta into the singletons: entities updated in place under their ids,
 // arrays re-ordered as the host's stand, departures dropped. Returns the
@@ -454,9 +541,12 @@ function snapApplyDelta(d) {
 // ------------------------------------------------------------ encode
 // The bytes: a compact binary form of any snapshot-shaped value, with every
 // object key an index into a DICTIONARY both ends grow in step - a message
-// begins with the names it is the first to use, appended in order, so the
-// reliable, ordered channel keeps the two lists equal. A joiner is handed
-// the host's whole list with its WELCOME. Numbers go as the smallest
+// begins with the names from index `from` to the end of the list, written
+// BY POSITION on the far side, so a message lost on the way loses no name
+// (the next carries them again) and a repeat is harmless. A host passes
+// the length its dictionary had after the message that client last acked
+// (js/net/net.js); the full sync passes 0 and carries the whole list.
+// Numbers go as the smallest
 // integer that holds them or a float32; strings as utf8; the rest by tag.
 //
 // QUANTIZED FIELDS: a position or a velocity crosses as an int16 count of
@@ -486,9 +576,8 @@ function snapQv(k, v) { return snapQable(k, v) ? snapQi(k, v) / SNAP_Q : v; } //
 const ENC_TAG = { NULL: 0, FALSE: 1, TRUE: 2, I8: 3, I16: 4, I32: 5, F32: 6, F64: 7, STR: 8, ARR: 9, OBJ: 10, Q16: 11 };
 function encDict() { return { names: [], index: new Map() }; }
 const encTextEnc = new TextEncoder(), encTextDec = new TextDecoder();
-function snapEncode(value, dict) {
+function snapEncode(value, dict, from) {
   let buf = new Uint8Array(1 << 16), view = new DataView(buf.buffer), pos = 0;
-  const fresh = [];
   const need = (n) => { if (pos + n > buf.length) { let len = buf.length * 2; while (len < pos + n) len *= 2; const nb = new Uint8Array(len); nb.set(buf); buf = nb; view = new DataView(buf.buffer); } };
   const u8 = (v) => { need(1); buf[pos++] = v; };
   const u16 = (v) => { need(2); view.setUint16(pos, v); pos += 2; };
@@ -498,7 +587,7 @@ function snapEncode(value, dict) {
   // name: the world has fifty thousand of them and a dictionary would carry every one
   const key = (k) => {
     if (k.length && k.length < 10 && /^[0-9]+$/.test(k)) { u16(0xFFFF); u32(+k); return; }
-    let i = dict.index.get(k); if (i === undefined) { i = dict.names.length; dict.names.push(k); dict.index.set(k, i); fresh.push(k); } u16(i);
+    let i = dict.index.get(k); if (i === undefined) { i = dict.names.length; dict.names.push(k); dict.index.set(k, i); } u16(i);
   };
   // `k` is the key this value sits under, when it sits under one: a
   // quantized field is known by its name (an array element has none)
@@ -523,8 +612,9 @@ function snapEncode(value, dict) {
     for (const k of keys) { key(k); put(v[k], k); }
   };
   put(value);
-  // the header: the names this message is the first to use
-  const hb = encTextEnc.encode(JSON.stringify(fresh));
+  // the header: every name from `from` (this message's own fresh ones included)
+  from = from || 0;
+  const hb = encTextEnc.encode(JSON.stringify([from, dict.names.slice(from)]));
   const out = new Uint8Array(4 + hb.length + pos);
   new DataView(out.buffer).setUint32(0, hb.length);
   out.set(hb, 4); out.set(buf.subarray(0, pos), 4 + hb.length);
@@ -534,8 +624,8 @@ function snapDecode(bytes, dict) {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let pos = 0;
   const hl = view.getUint32(0); pos = 4;
-  const fresh = JSON.parse(encTextDec.decode(bytes.subarray(pos, pos + hl))); pos += hl;
-  for (const k of fresh) { dict.index.set(k, dict.names.length); dict.names.push(k); }
+  const [from, names] = JSON.parse(encTextDec.decode(bytes.subarray(pos, pos + hl))); pos += hl;
+  for (let i = 0; i < names.length; i++) { dict.names[from + i] = names[i]; dict.index.set(names[i], from + i); }
   const get = () => {
     const t = bytes[pos++];
     switch (t) {
@@ -682,23 +772,35 @@ function netEchoRun(ticks, every) {
 // and applied to that same world - which IS the world, so each apply is a
 // no-op if the delta was right, and a field-level compare of the world
 // against the host's full form after every apply says so. Returns the delta
-// sizes, and the first mismatch if any.
-function netDeltaRun(ticks, every) {
-  every = every || SNAP_EVERY;
+// sizes, and the first mismatch if any. With `loss` (0..1) that share of
+// deltas is thrown away unapplied and unacked, so the next is cut from the
+// older base the way a host cuts one for a client behind a lossy wire -
+// which exercises the ring, the whole-tile resend and the dictionary's
+// positions, but NOT a missed change: the world here is the host's own and
+// holds every change already. That proof is the client's self-check
+// between two tabs under DBG.netLoss (docs/dev/checklists.md).
+function netDeltaRun(ticks, every, loss) {
+  every = every || SNAP_EVERY; loss = loss || 0;
   snapShadowReset();
   const dOut = encDict(), dIn = encDict();
-  let total = 0, n = 0, worst = 0, mismatch = null;
-  const base = snapEncode(snapBuildDelta(), dOut); snapDecode(base, dIn); // the first delta is everything; the shadow is primed
+  let total = 0, n = 0, worst = 0, mismatch = null, dropped = 0, oldest = 0;
+  let ack = snapHistoryPush().tick, dictAt = dOut.names.length; // the first entry is the base everything is cut from
+  let rng = 12345; const roll = () => { rng = (rng * 1103515245 + 12345) & 0x7fffffff; return rng / 0x80000000; };
   for (let t = 0; t < ticks; t += every) {
     for (let i = 0; i < every; i++) update(TICK_DT);
     const before = JSON.stringify(snapBuild());
-    const bytes = snapEncode(snapBuildDelta(), dOut);
+    const h = snapHistoryPush(), base = snapHistoryAt(ack);
+    if (!base) { mismatch = ['base ' + ack + ' aged out of the ring at tick ' + h.tick]; break; }
+    oldest = Math.max(oldest, h.tick - base.tick);
+    const bytes = snapEncode(snapDeltaFrom(h, base), dOut, dictAt);
     total += bytes.length; n++; if (bytes.length > worst) worst = bytes.length;
+    if (loss && roll() < loss) { dropped++; continue; } // lost: not applied, not acked
     const d = snapDecode(bytes, dIn);
     const changed = snapApplyDelta(d);
     if (changed === null) { mismatch = ['lost an id at tick ' + state.tick]; break; }
+    ack = h.tick; dictAt = dOut.names.length;
     const out = []; snapCompare(JSON.parse(before), snapBuild(), '', out, 5);
     if (out.length) { mismatch = out; break; }
   }
-  return { deltas: n, avgBytes: n ? Math.round(total / n) : 0, worstBytes: worst, perSecond: Math.round(total / Math.max(1, n) * (60 / every)), mismatch };
+  return { deltas: n, dropped, oldestBase: oldest, avgBytes: n ? Math.round(total / n) : 0, worstBytes: worst, perSecond: Math.round(total / Math.max(1, n) * (60 / every)), mismatch };
 }

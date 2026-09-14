@@ -13,7 +13,9 @@ const NET = {
   get isHost() { return this.role !== 'client'; },
   get isClient() { return this.role === 'client'; },
   transport: null,           // set by netSetup(); the five-call interface below
-  peers: new Map(),          // a host's: transport peer id -> { slot, uid, name }
+  peers: new Map(),          // a host's: transport peer id -> { slot, uid, name, ack, dictAt } - ack: the newest tick that client applied (its delta is cut from there); dictAt: tick -> the dictionary's length after that tick's message to it
+  fulls: 0,                  // a host's: how many full syncs it has sent (a join, a resync, an ack aged out of the ring)
+  lossOut: 0, dropped: 0,    // a host's proof switch: the fraction of snapshot sends thrown away before the transport (DBG.netLoss), and how many were
   parked: new Map(),         // a host's: uid -> slot, for a peer that dropped and may come back
   hostSlot: 0,               // a client's: which slot the host's own player sits in
   synced: false,             // a client's: has the first full snapshot landed
@@ -63,7 +65,7 @@ function netSetup(role, transport) {
   NET.peers.clear(); NET.parked.clear();
   NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
-  NET.bytesIn = 0; NET.bytesOut = 0; NET.bIn0 = 0; NET.bOut0 = 0; NET.bpsT = 0;
+  NET.bytesIn = 0; NET.bytesOut = 0; NET.bIn0 = 0; NET.bOut0 = 0; NET.bpsT = 0; NET.dropped = 0; NET.fulls = 0;
   if (NET.role === 'host') { NET.transport.listen(); snapShadowReset(); }
   if (NET.role === 'client') {
     try { NET.uid = sessionStorage.getItem('softfall.netuid'); } catch (e) {}
@@ -125,14 +127,11 @@ function netHostStep(dt) {
     if (msg.t === 'hello') { netHostHello(peer, msg); continue; }
     const pr = NET.peers.get(peer);
     if (!pr) continue;
-    if (msg.t === 'resync') { // a delta named an id the client never had: the whole thing again
-      const full = snapEncode({ t: 'full', tick: state.tick, snap: snapBuild() }, NET.dictOut);
-      NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
-      continue;
-    }
+    if (msg.t === 'resync') { netHostFull(peer, pr); continue; } // a delta the client could not take: the whole thing again
     if (msg.t === 'in') {
       const p = players[pr.slot], i = p.input, m = msg.in;
       NET.bytesIn += JSON.stringify(msg).length;
+      if (msg.ack > pr.ack) pr.ack = msg.ack; // the newest snapshot it applied: its next delta is cut from there
       i.mx = m.mx; i.my = m.my; i.aimX = m.aimX; i.aimY = m.aimY;
       i.fire = m.fire; i.work = m.work; i.slide = m.slide; i.grapple = m.grapple;
       i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump; i.eatBerry = i.eatBerry || m.eatBerry; i.eatFish = i.eatFish || m.eatFish; i.useCard = i.useCard || m.useCard;
@@ -170,14 +169,25 @@ function netHostHello(peer, msg) {
   if (msg.name) p.name = msg.name;
   if (msg.look) p.look = msg.look;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
-  NET.peers.set(peer, { slot, uid: msg.uid, name: msg.name, lastTick: 0 });
-  // the welcome carries the key dictionary as it stands, so the bytes that
-  // follow - the full snapshot, then every delta - read with it
-  NET.transport.send(peer, { t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), dict: NET.dictOut.names.slice() });
-  const full = snapEncode({ t: 'full', tick: state.tick, snap: snapBuild() }, NET.dictOut);
-  NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
+  const pr = { slot, uid: msg.uid, name: msg.name, lastTick: 0, ack: -1, dictAt: new Map() };
+  NET.peers.set(peer, pr);
+  NET.transport.send(peer, { t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster() });
+  netHostFull(peer, pr);
   logEvent((p.name || 'A PLAYER') + ' JOINED', p);
   netHostRoster(); netHostRoom();
+}
+// the whole match to one peer, and that peer's base set to this tick: the
+// full sync rides the reliable channel, so the host takes it as held from
+// the moment it goes (an ack that never comes only makes later deltas fatter
+// until the ring runs out, and then it is this again). The bytes carry the
+// dictionary from index 0, whole
+function netHostFull(peer, pr) {
+  const h = snapHistoryPush();
+  const full = snapEncode({ t: 'full', tick: h.tick, snap: snapBuild() }, NET.dictOut, 0);
+  NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
+  NET.fulls++;
+  pr.ack = h.tick;
+  pr.dictAt = new Map([[h.tick, NET.dictOut.names.length]]);
 }
 function netHostLeave(peer) {
   const pr = NET.peers.get(peer);
@@ -191,18 +201,34 @@ function netHostLeave(peer) {
   netHostRoster(); netHostRoom();
 }
 function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls, look: p.look })); }
-// after the step: every SNAP_EVERY ticks the tick form and the cosmetics
-// the step recorded go to every peer
+// after the step: every SNAP_EVERY ticks this tick goes into the ring and
+// each peer gets the delta from ITS acked tick (peers on one ack share the
+// cut), with the cosmetics the step recorded; a peer whose ack has aged out
+// of the ring gets the whole match again. The dictionary header starts where
+// that peer's acked message left the list (js/net/snapshot.js, `encode`)
 function netHostFlush() {
   if (NET.role !== 'host') return;
   evRecord = NET.peers.size > 0;
   if (!NET.peers.size) { evRing.length = 0; return; }
   if (state.tick % SNAP_EVERY) return;
-  const msg = { t: 'snap', tick: state.tick, d: snapBuildDelta(), ev: evDrain() };
-  if (NET.verify && state.tick % VERIFY_EVERY === 0) msg.full = snapBuild(); // the client checks itself against this
-  const bytes = snapEncode(msg, NET.dictOut);
-  NET.bytesOut += bytes.length;
-  NET.transport.send('*', bytes);
+  const h = snapHistoryPush();
+  const ev = evDrain();
+  const full = NET.verify && state.tick % VERIFY_EVERY === 0 ? snapBuild() : null; // the client checks itself against this
+  const cuts = new Map(); // ack tick -> delta
+  for (const [peer, pr] of NET.peers) {
+    const base = snapHistoryAt(pr.ack);
+    if (!base) { netHostFull(peer, pr); continue; }
+    let d = cuts.get(pr.ack);
+    if (!d) { d = snapDeltaFrom(h, base); cuts.set(pr.ack, d); }
+    const msg = { t: 'snap', tick: h.tick, d, ev };
+    if (full) msg.full = full;
+    const bytes = snapEncode(msg, NET.dictOut, pr.dictAt.get(pr.ack) || 0);
+    pr.dictAt.set(h.tick, NET.dictOut.names.length);
+    for (const t of pr.dictAt.keys()) if (t < pr.ack) pr.dictAt.delete(t);
+    if (NET.lossOut && Math.random() < NET.lossOut) { NET.dropped++; continue; } // the proof's lossy wire
+    NET.bytesOut += bytes.length;
+    NET.transport.send(peer, bytes);
+  }
   netRate();
 }
 // the last second's bytes each way, for netStatus
@@ -223,7 +249,7 @@ function netClientStep(dt) {
   const T = NET.transport;
   if (NET.synced && player) {
     const i = player.input;
-    const msg = { t: 'in', tick: ++NET.inTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, eatBerry: i.eatBerry, eatFish: i.eatFish, useCard: i.useCard, ability: i.ability, cmd: i.cmd } };
+    const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, eatBerry: i.eatBerry, eatFish: i.eatFish, useCard: i.useCard, ability: i.ability, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
     // the edges are the host's now: a press is sent once
     i.dodge = false; i.jump = false; i.eatBerry = false; i.eatFish = false; i.useCard = false; i.ability = -1; i.cmd = null;
@@ -262,9 +288,7 @@ function netClientWelcome(msg) {
   NET.hostSlot = msg.hostSlot;
   initPlayers(roster, msg.slot);
   camX = player.x - WV_W / 2; camY = player.y - WV_H / 2;
-  // the host's key dictionary as it stood: every byte after this reads with it
-  NET.dictIn = encDict();
-  for (const k of msg.dict || []) { NET.dictIn.index.set(k, NET.dictIn.names.length); NET.dictIn.names.push(k); }
+  NET.dictIn = encDict(); // the full sync that follows carries the host's whole list
   NET.welcomed = true; // the title screen moves to the waiting room on this
 }
 // a later roster (someone came or went while we wait): the bodies stay, their
@@ -297,6 +321,11 @@ function netClientApply(s) {
 // every moving body it touched is set up to EASE from where it is drawn to
 // where the host put it over the next snapshot interval (netClientLerp)
 function netClientApplyDelta(msg) {
+  // an unreliable channel can hand us yesterday: a snapshot no newer than the
+  // one held is nothing; a delta cut from a base newer than what is held (the
+  // host thought we had something we never got) cannot be taken at all
+  if (msg.tick <= NET.lastTick) return;
+  if (msg.d.base > NET.lastTick) { NET.synced = false; NET.transport.send('host', { t: 'resync' }); return; }
   const over = state.over, end = state.end;
   // the display positions, before the host's overwrite them
   const shown = new Map();

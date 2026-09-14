@@ -34,11 +34,15 @@ declare victory. The three affordances:
   round-trip (`mismatch`, tolerating one quantum on `x`/`y`/`vx`/`vy`/`kbx`/`kby` and nothing else); `netEchoRun(ticks, every)` does it
   along a run and reports the worst - run it after adding a field to any entity. `netStatus()`
   is the match between tabs: role, the peers' slots, bytes each way and the last second's rate,
-  the newest snapshot tick. `netDeltaRun(ticks, every)` sends this page's sim as binary deltas and
+  the newest snapshot tick. `netDeltaRun(ticks, every, loss)` sends this page's sim as binary deltas and
   applies them back, checking the world against the full form after each (run it after adding a
-  field that is a reference or a nested object); `netVerify(true)` on a host rides the full form
+  field that is a reference or a nested object; `loss` throws that share away unacked, so the
+  cuts come from older bases in the ring); `netVerify(true)` on a host rides the full form
   along every 5 s so each client checks itself - `netStatus().verifyFail` names the first fields
-  that disagreed.
+  that disagreed - and `netLoss(f)` on a host throws away that share of its snapshot sends before
+  the transport, which is the ack-keyed delta's proof (`netStatus()` counts `dropped`, `fulls`
+  and the peers' `acks`). In the Claude browser pane a tab that never got a frame does not tick
+  at all: drive a client with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
   **A match between two tabs**: serve the game, open `?seed=N&net=host&room=R` in one tab and
   `?seed=N&net=client&room=R` in another (the same seed - the host refuses a different one);
   the client takes the smaller side's first AI slot, or its own slot back after a reload.
