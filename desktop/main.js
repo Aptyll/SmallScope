@@ -9,15 +9,20 @@
 //   npm start -- --join=LOBBYID    join one (the seed comes from the lobby)
 //   npm start -- --seed=N          pin the world, as ?seed=N does
 //
-// APP_ID comes from steam_appid.txt beside this file (Softfall's own, 5244550,
-// committed - the build copies it beside the exe); with no file it is Valve's
-// Spacewar (480), the App ID every Steam developer may use for testing. Steam must be running and signed in, or
+// APP_ID: the SteamAppId Steam puts in the environment of a build it launches,
+// else steam_appid.txt beside this file (Softfall's own, 5244550, committed -
+// the build copies it beside the exe; the depot script strips it from an
+// upload), else Valve's Spacewar (480), the App ID every developer may test on.
+// Steam must be running and signed in, or
 // init fails and the bridge reports `ready: false` - the page then plays solo.
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 const APP_ID = (() => {
+  // a build Steam launches gets its id in the environment; a run from the repo reads the file
+  const env = parseInt(process.env.SteamAppId || process.env.SteamGameId || '', 10);
+  if (env) return env;
   try { return parseInt(fs.readFileSync(path.join(__dirname, 'steam_appid.txt'), 'utf8'), 10) || 480; } catch (e) { return 480; }
 })();
 let steam = null, steamErr = null;
