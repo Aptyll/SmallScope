@@ -25,12 +25,17 @@ const APP_ID = (() => {
   if (env) return env;
   try { return parseInt(fs.readFileSync(path.join(__dirname, 'steam_appid.txt'), 'utf8'), 10) || 480; } catch (e) { return 480; }
 })();
+// softfall-steam.log beside the exe: a Steam launch has no console, so the
+// resolved App ID, whether the API came up, and the transport's errors go here
+const LOG = path.join(path.dirname(process.execPath), 'softfall-steam.log');
+function slog(line) { try { fs.appendFileSync(LOG, new Date().toISOString() + ' ' + line + '\n'); } catch (e) {} }
 let steam = null, steamErr = null;
 try {
   const steamworks = require('steamworks.js');
   steam = steamworks.init(APP_ID);
   steamworks.electronEnableSteamOverlay();
 } catch (e) { steamErr = e.message; }
+slog('appId ' + APP_ID + ' (env SteamAppId=' + (process.env.SteamAppId || '') + ') init ' + (steam ? 'OK' : 'FAILED: ' + steamErr));
 
 const args = {};
 for (const a of process.argv.slice(1)) { const m = /^--(\w+)(?:=(.*))?$/.exec(a); if (m) args[m[1]] = m[2] === undefined ? '1' : m[2]; }
@@ -97,6 +102,7 @@ ipcMain.handle('steam:leaveLobby', (e, id) => { const l = lobbies.get(String(id)
 ipcMain.handle('steam:lobby', (e, id) => { const l = lobbies.get(String(id)); return l ? lobbyInfo(l) : null; });
 ipcMain.handle('steam:lobbies', async () => (await steam.matchmaking.getLobbies()).map(lobbyInfo));
 ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(String(id)); return l ? l.mergeFullData(data) : false; });
+ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
 ipcMain.handle('steam:invite', (e, id) => { const l = lobbies.get(String(id)); if (l) l.openInviteDialog(); return !!l; });
 // text goes as utf8 on the RELIABLE channel: steamworks.js exposes Steam's
 // older P2P sockets, whose reliable packet is capped at 1 MB and unreliable
