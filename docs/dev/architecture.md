@@ -264,7 +264,9 @@ Plus the flat arrays every pass iterates: `animals`, `arrows`, `drops`, `particl
 The Windows wrapper, and **the one folder with packages** (`package.json`: Electron and
 steamworks.js; `npm install` once, `npm start`; `npm run build` is build.js: the game copied in
 beside main.js, @electron/packager over it, a portable zip - what a `v*` tag's workflow attaches
-to a Release). `main.js` opens one `BrowserWindow` on the same
+to a Release; `npm run steam:stage` is steam-stage.js: that build unzipped into the Steamworks
+SDK's `tools/ContentBuilder/content/` with `Softfall.exe` at the root and no steam_appid.txt,
+for the SteamPipe upload Noah runs by hand). `main.js` opens one `BrowserWindow` on the same
 `index.html` a browser opens - `backgroundThrottling` off, so a host keeps stepping behind another
 window - initialises Steam on the dev App ID (Valve's 480, or `steam_appid.txt` beside the exe) and
 answers the bridge's IPC: lobbies (create / join / leave / list / data / invite), packets
