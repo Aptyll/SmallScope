@@ -49,7 +49,8 @@ function isHuman(p) { return p.control === 'human' || p.control === 'remote'; }
 // networking sockets from the wrapper later:
 //   connect(room)              client: open a session to the host
 //   listen()                   host: accept sessions
-//   send(peer, msg) -> bool    a host names the peer (or '*'), a client's go to the host
+//   send(peer, msg, lossy) -> bool  a host names the peer (or '*'), a client's go to the host;
+//                              lossy marks bytes a transport may drop whole (a delta, never a full sync)
 //   poll(dt) -> [{ peer, msg }]
 //   close()
 // The loopback has no peers: send drops, poll is empty. It exists so that the
@@ -232,7 +233,7 @@ function netHostFlush() {
     for (const t of pr.dictAt.keys()) if (t < pr.ack) pr.dictAt.delete(t);
     if (NET.lossOut && Math.random() < NET.lossOut) { NET.dropped++; continue; } // the proof's lossy wire
     NET.bytesOut += bytes.length;
-    NET.transport.send(peer, bytes);
+    NET.transport.send(peer, bytes, true); // lossy: the ring resends what a dropped delta carried
   }
   netRate();
 }

@@ -232,9 +232,28 @@ blackout that outlived the ring and came back through the full sync; in the page
 the relay the ack trails the send by a round trip, so a delta is a few fields fatter than
 before (4.0-4.5 KB along a run 20 s in).
 
-Still owed: the transport half of the unreliable channel (Steam's 1200-byte cap needs the
-delta split into parts or slimmed further), and a per-kind field policy if ~70 KB/s is still
-too much for nine clients on a home upload (~650 KB/s at ten players).
+**The unreliable channel on Steam (PATCH 3.54).** The host marks a delta LOSSY on the
+transport call (`send(peer, bytes, true)`, netHostFlush); the Steam transport splits one into
+binary frames - a 7-byte header (magic, sequence, part index, part count) over up to 1193
+bytes of payload - on the UNRELIABLE channel when it fits `STEAM_LOSSY_PARTS` (16) of them, a
+4.5 KB delta being four. The receiver keeps a frame's parts under its peer and sequence and
+hands the bytes over only WHOLE: a part that never comes leaves the delta undelivered, and the
+sequence is given up once `STEAM_PENDING` newer ones have come (`lost` on the transport,
+`netStatus().framesLost`) - the ack-keyed ring resends what it carried, and a half-applied
+delta would be a world the host never had. A repeat after completion is ignored (the completed
+marker stays until it ages out), parts may arrive in any order, and the sequence wraps at
+65536. Everything else - the full sync (three reliable frames of `STEAM_CHUNK`), the welcome,
+rosters, a client's inputs - stays reliable, and the wire form's bytes no longer go as base64 in
+JSON: the bridge (`steam:send`, the pump) carries a Uint8Array as bytes both ways, a frame told
+from text by its first byte. Proved in Node against a fake bridge (16 checks: four unreliable
+frames for 4.5 KB assembled exactly, reordered and repeated parts, a dropped part never
+delivered and counted once, the full sync reliable, an oversize lossy frame falling back to
+reliable, text both ways, the wrap); the wrapper boots headless with the new bridge. **Not
+verified against a running Steam** (none on this machine): the first live test should watch
+`framesLost` and `fulls` on the host's `netStatus()`.
+
+Still owed: a per-kind field policy if ~70 KB/s is still too much for nine clients on a home
+upload (~650 KB/s at ten players).
 
 ## Message schema
 

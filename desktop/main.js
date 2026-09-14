@@ -104,11 +104,11 @@ ipcMain.handle('steam:lobbies', async () => (await steam.matchmaking.getLobbies(
 ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(String(id)); return l ? l.mergeFullData(data) : false; });
 ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
 ipcMain.handle('steam:invite', (e, id) => { const l = lobbies.get(String(id)); if (l) l.openInviteDialog(); return !!l; });
-// text goes as utf8 on the RELIABLE channel: steamworks.js exposes Steam's
-// older P2P sockets, whose reliable packet is capped at 1 MB and unreliable
-// at 1200 bytes - the transport chunks above the first and the wire form
-// (docs/pvp-architecture.md) is what makes the second usable
-ipcMain.handle('steam:send', (e, to, text, reliable) => steam.networking.sendP2PPacket(BigInt(to), reliable === false ? 0 : 2, Buffer.from(text, 'utf8')));
+// text goes as utf8, bytes as they are; steamworks.js exposes Steam's older
+// P2P sockets, whose reliable packet is capped at 1 MB and unreliable at
+// 1200 bytes - the transport (js/net/transport-steam.js) chunks a message to
+// fit whichever channel it asks for
+ipcMain.handle('steam:send', (e, to, data, reliable) => steam.networking.sendP2PPacket(BigInt(to), reliable === false ? 0 : 2, typeof data === 'string' ? Buffer.from(data, 'utf8') : Buffer.from(data)));
 ipcMain.handle('steam:accept', (e, id) => { steam.networking.acceptP2PSession(BigInt(id)); return true; });
 
 // ---- the pump: packets and lobby events to the page ---------------------
@@ -118,7 +118,8 @@ function pump() {
   let n;
   while ((n = steam.networking.isP2PPacketAvailable()) > 0) {
     const pk = steam.networking.readP2PPacket(n);
-    list.push({ from: str(pk.steamId.steamId64), text: pk.data.toString('utf8') });
+    // a binary frame (the transport's magic first byte) goes to the page as bytes, anything else as text
+    list.push(pk.data[0] === 0xB1 ? { from: str(pk.steamId.steamId64), bin: new Uint8Array(pk.data) } : { from: str(pk.steamId.steamId64), text: pk.data.toString('utf8') });
     if (list.length >= 64) break;
   }
   if (list.length) win.webContents.send('steam:packets', list);
