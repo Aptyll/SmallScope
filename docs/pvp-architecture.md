@@ -312,10 +312,21 @@ networking.
    rolls the screen shake and animates a few things off the wall clock, so the harness pins
    both; and the eagle's `spur`/`pad`/`lane` carry clocks that advance after the crash,
    which a first draft skipped and the echo caught as a 24-pixel drift at the roost.
-5. **Two browsers, one machine.** A `transport-ws.js` that speaks the same interface over a
-   local WebSocket relay (a thirty-line addition to `app/server.js`), so host and client can be
-   two headless Edge tabs on `?seed=N` driven by the existing `POST /shot` harness. Latency and
-   loss are injected here. Every reconnect and late-join path is tested here, not on Steam.
+5. **Two browsers, one machine - DONE (PATCH 3.46), first cut.** `js/net/transport-ws.js` over
+   a relay in `app/server.js` (hand-rolled WebSocket server, no dependency); the protocol in
+   `js/net/net.js`: HELLO/WELCOME/FULL/SNAP/IN/REFUSE as JSON, a `remote` control kind on the
+   host, the client never stepping and deriving its screen from its own body
+   (`netClientMode`), the leap off the eagle made an input (`input.jump`) because a key handler
+   that called `dropJump` directly did nothing on a client, and a worker-driven `loop()` while
+   a tab is hidden (risk 3). Verified between two tabs on seed 42: the client joins the smaller
+   side's first AI slot, rides its bird, a key press hops it off through the host, it walks
+   87 px with the camera following and the host's particles and floaters arriving, dies into
+   the death overlay and respawns, rejoins its own slot after a reload, and a third tab late-
+   joins into slot 2. **The wire is fat**: 30 Hz snapshots of ~80 KB JSON, ~1.3 MB/s per
+   client, 3.3 MB for the full sync - correct, not sendable over Steam. What this step leaves
+   for the next: the quantized binary form and the delta against the acked snapshot, the
+   objects diff already done (tiles and ground ship only where they changed), interpolation
+   on the client (30 Hz motion with none), and the cosmetics' footsteps derived locally.
 6. **The wrapper.** `desktop/` with Electron, steamworks.js, the preload bridge, and the
    `transport-steam.js` adapter. First target is only: create lobby, join lobby, exchange
    `HELLO`/`WELCOME`, run the same match the WebSocket transport already runs.

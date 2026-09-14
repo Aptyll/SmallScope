@@ -829,7 +829,7 @@ function flagPos(f) { return { x: f.tx * TILE + 8, y: f.ty * TILE + 8 }; }
 function inFlag(f, x, y) { return Math.hypot(f.tx * TILE + 8 - x, f.ty * TILE + 8 - y) < FLAG_R; }
 // the flag a HUMAN on this team has standing - the side's plan while it stands
 function humanFlag(team) {
-  for (const q of players) if (q.active && q.control === 'human' && q.team === team && q.flag) return q.flag;
+  for (const q of players) if (q.active && isHuman(q) && q.team === team && q.flag) return q.flag;
   return null;
 }
 // the flag this player's crews and, for a bot, the bot itself answer to:
@@ -887,7 +887,7 @@ function clearFlag(p) {
 // turns for it the same frame it lands - an order has to be visibly obeyed
 // at once. A human's flag is read by the whole side's crews; a bot's by its own.
 function flagRecall(p) {
-  const side = p.control === 'human';
+  const side = isHuman(p);
   for (const b of robots) {
     if (b.dead || b.merchant || b.kind === 'soldier') continue;
     if (b.owner === p.id || (side && b.team === p.team)) { b.tgt = null; b.atkAim = null; navClear(b); }

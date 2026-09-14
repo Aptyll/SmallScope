@@ -432,6 +432,7 @@ function makeInput() {
     work: false,         // E held
     slide: false,        // shift held
     dodge: false,        // edge-triggered, cleared once the sim reads it
+    jump: false,         // edge-triggered: the leap off the eagle, or the hop off the roost (dropJump, js/boot.js)
     grapple: false,      // held: the grapple reels only while this is down
                          // (key 3 for the human; the burrow itself is now the
                          // hunter's SNOW COVER cast, key 4, not an input)
@@ -451,7 +452,7 @@ class Player {
     // named off its team - live, through the `name` getter below, so the name
     // follows the paint (skin) when the team-colour setting flips. Which
     // character the local player IS (name, look, class) is applyCharacter().
-    this._name = control === 'human' ? PROFILE.name() : null;
+    this._name = control === 'human' ? PROFILE.name() : null; // a remote human is named by the roster
     this.look = botLook(id);            // the face on the class body ({ sex, tone, hair, hairCol, beard, face }, profile.js LOOK_N)
     this.spawn = { tx: WORLD >> 1, ty: WORLD >> 1 }; // landing tile once the eagle drops this player (the bot brain's "home")
     this.inv = { gold: 0 };             // the wallet is currency only - carried goods are in the bag

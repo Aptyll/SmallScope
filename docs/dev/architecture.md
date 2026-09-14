@@ -45,8 +45,9 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ai.js](../../js/ai.js) | ~380 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
 | [js/sim.js](../../js/sim.js) | ~810 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
 | [js/net/events.js](../../js/net/events.js) | ~90 | shared scope, no `window.*` export | the sim's cosmetics on their way to the screen: `sfxAt`/`sfxFor`/`sfxOwn`/`shakeAt`/`shakeFor`, the ring a host records them into (`evPush`/`evDrain`, only inside the step and only with `evRecord` on - solo records nothing) and `evPlay`, the client's replay of one entry. First of the js/net/ files the online plan adds ([docs/pvp-architecture.md](../pvp-architecture.md)) |
-| [js/net/net.js](../../js/net/net.js) | ~40 | shared scope, no `window.*` export | `NET`: which role this screen plays (`solo` / `host` / `client` - `isHost` is true for the first two, and is what anything asking "am I simulating?" reads), the five-call transport interface and the loopback that solo speaks through, `netSetup` |
+| [js/net/net.js](../../js/net/net.js) | ~220 | shared scope, no `window.*` export | `NET`: which role this screen plays (`solo` / `host` / `client` - `isHost` is true for the first two, and is what anything asking "am I simulating?" reads), `isHuman` (a `remote` control is a person on another screen), the five-call transport interface and the loopback solo speaks through, and the match protocol: a host's `netHostStep` (peers' inputs into their bodies, HELLO into a slot, a vanished peer into a bot with its slot parked `RECONNECT_GRACE`) and `netHostFlush` (the tick snapshot and the recorded cosmetics every `SNAP_EVERY` ticks), a client's `netClientStep` (its input out, snapshots and events in) and `netClientMode` (which screen the state calls for, and the match's end read to our side) |
 | [js/net/snapshot.js](../../js/net/snapshot.js) | ~230 | shared scope, no `window.*` export | the match's whole authoritative state as one plain object, built by reflection over every entity (`snapBuild`, refs turned into kind+index tokens by `pack`) and written back into the singletons (`snapApply`), plus the echo harness that proves it complete: `netEcho` renders, snapshots, blanks, applies, renders again and counts the pixels that differ; `netEchoRun` does it along a run; `snapSize` weighs the JSON by section |
+| [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~40 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a client redialing every `WS_RETRY` s with the same uid |
 | [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the chest, the cairn) - first of the draw files, every other one calls `hash2` |
 | [js/draw/practice.js](../../js/draw/practice.js) | ~740 | shared scope, no `window.*` export | the practice arena's pixels only: the dummy and its meter, the training grounds, the ice parkour, the roll station, the archery track and the range bell |
 | [js/draw/overhead.js](../../js/draw/overhead.js) | ~200 | shared scope, no `window.*` export | the one arrow body, and the frame every unit wears over its head: health bar, level badge, sense mark, stun stars, the build reveal |
@@ -207,7 +208,7 @@ happened* and must arrive identical every time.
 
 ### The game files (core.js … boot.js, with js/draw/ and js/ui/)
 
-Forty-two files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
+Forty-three files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
 organized only by `// ------ name` banners.
 **Keep every banner honest.** Find any function by its banner in [code-map.md](code-map.md)
 rather than grepping blind.
@@ -263,7 +264,10 @@ Neither script is part of the game, and nothing in `js/` may depend on either ha
 `sfxdata.js`, which one of them writes.
 
 - **`app/server.js`** — a static server on `http://localhost:8471` with a `POST /shot` sink that
-  writes the canvas to `shot.png`. It answers **Range requests**, which is why music seeks work
+  writes the canvas to `shot.png`, and the **ws relay** at `/ws?room=NAME&role=host|client` for a
+  match between tabs (`GET /ws-debug` lists its rooms): a hand-rolled WebSocket server, since the
+  repo takes no dependency - text frames, fragmentation, 64-bit lengths - that forwards a client's
+  frames to its room's host and a host's to the client it names. It answers **Range requests**, which is why music seeks work
   when served; a plain 200 makes an `<audio>` element treat a multi-MB mp3 as an unbounded stream.
   Its single `ROOT` const carries the static root, the traversal guard and the shot sink alike.
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.

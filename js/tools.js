@@ -578,7 +578,7 @@ function bitPut(cell, i, id) {
 // of its own once every weapon you own is full - the pack is one row now,
 // and a row of loose bits beside tools with empty cells was the row wasted.
 function autoFitTools(p) {
-  if (p.control !== 'human') return [];
+  if (!isHuman(p)) return [];
   const out = [];
   const held = heldTool(p);
   if (held) out.push(held);

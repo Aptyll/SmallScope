@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.45'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.46'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.46', 'TWO WINDOWS CAN NOW PLAY ONE MATCH ON ONE MACHINE - ONE HOSTS, THE OTHER JOINS, TAKES A SLOT, RIDES, FIGHTS, DIES AND COMES BACK, EVEN AFTER A RELOAD. A DEV BUILD OF THE ONLINE GAME, NOT YET THE ONLINE GAME.'],
   ['3.45', 'THE WHOLE MATCH CAN NOW BE WRITTEN DOWN AS ONE SNAPSHOT AND READ BACK PIXEL FOR PIXEL - THE THING AN ONLINE HOST WILL SEND YOUR SCREEN. NOTHING CHANGES IN PLAY.'],
   ['3.44', 'EVERY SOUND, SHAKE AND PUFF THE MATCH MAKES NOW PASSES THROUGH ONE DOOR ON ITS WAY TO YOUR SCREEN - NOTHING CHANGES FOR YOU TODAY, BUT IT IS WHAT LETS AN ONLINE HOST TELL YOUR SCREEN WHAT HAPPENED. A BOT RETURNING TO ITS BIRD ACROSS THE MAP NO LONGER RINGS IN YOUR EAR.'],
   ['3.43', 'YOUR PLAYER CAN NOW SIT IN ANY OF THE TEN SLOTS, NOT ONLY THE FIRST - THE MATCH IS BUILT FROM A ROSTER, WHICH IS HOW AN ONLINE LOBBY WILL SEAT EVERYONE.'],

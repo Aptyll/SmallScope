@@ -13,30 +13,208 @@ const NET = {
   get isHost() { return this.role !== 'client'; },
   get isClient() { return this.role === 'client'; },
   transport: null,           // set by netSetup(); the five-call interface below
-  peers: [],                 // a host's connected peers: { id, slot, lastInputTick }
+  peers: new Map(),          // a host's: transport peer id -> { slot, uid, name }
+  parked: new Map(),         // a host's: uid -> slot, for a peer that dropped and may come back
+  hostSlot: 0,               // a client's: which slot the host's own player sits in
+  synced: false,             // a client's: has the first full snapshot landed
+  inTick: 0,                 // a client's: the tick its last input went out for
+  lastTick: -1,              // a client's: the newest snapshot tick applied
+  hostOver: null,            // a client's: the host's own `state.over`, kept out of ours
+  bytesIn: 0, bytesOut: 0,   // running totals, for the measurements
+  uid: null,                 // a client's identity across a reconnect (per tab)
 };
+// how often a host sends: every SNAP_EVERY ticks (30 Hz at the 60 Hz step;
+// the plan's 15 arrives with the delta form). LATE_JOIN_T: how far into a
+// match a new peer may still take an AI slot; RECONNECT_GRACE: how long a
+// dropped peer's slot waits for it before the bot keeps it.
+const SNAP_EVERY = 2;
+const LATE_JOIN_T = 300;
+const RECONNECT_GRACE = 60;
+// which controls are a person: a `remote` body is a human on another screen,
+// and everything that treats a human differently from a bot (a whole side
+// reading its flag, the pack auto-fitting, the eagle never force-dropping it)
+// asks this rather than the string
+function isHuman(p) { return p.control === 'human' || p.control === 'remote'; }
 
-// The transport interface every adapter implements - the loopback here, a
-// local WebSocket relay for two tabs on one machine (step 5), Steam's
-// networking sockets from the wrapper (step 6):
-//   connect(hostId)            client: open a session to the host
+// The transport interface every adapter implements - the loopback here, the
+// WebSocket relay for tabs on one machine (js/net/transport-ws.js), Steam's
+// networking sockets from the wrapper later:
+//   connect(room)              client: open a session to the host
 //   listen()                   host: accept sessions
-//   send(peer, bytes, reliable)
-//   poll() -> [{ peer, bytes }]
-//   close(peer)
+//   send(peer, msg) -> bool    a host names the peer (or '*'), a client's go to the host
+//   poll(dt) -> [{ peer, msg }]
+//   close()
 // The loopback has no peers: send drops, poll is empty. It exists so that the
 // host code path runs unchanged in solo, with nothing to receive.
 const loopbackTransport = {
-  connect() {},
-  listen() {},
-  send() {},
-  poll() { return []; },
-  close() {},
+  connect() {}, listen() {}, send() { return false; }, poll() { return []; }, close() {},
 };
 
 function netSetup(role, transport) {
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
-  NET.peers.length = 0;
+  NET.peers.clear(); NET.parked.clear();
+  NET.synced = false; NET.lastTick = -1; NET.hostOver = null;
+  if (NET.role === 'host') { NET.transport.listen(); snapShadowReset(); }
+  if (NET.role === 'client') {
+    try { NET.uid = sessionStorage.getItem('softfall.netuid'); } catch (e) {}
+    if (!NET.uid) { NET.uid = Math.random().toString(36).slice(2, 10); try { sessionStorage.setItem('softfall.netuid', NET.uid); } catch (e) {} }
+    NET.transport.connect();
+  }
 }
-netSetup('solo');
+
+// ------------------------------------------------------------ host
+// Runs at the top of the step: the peers' messages become their bodies'
+// input structs, a HELLO becomes a slot, a vanished peer becomes a bot.
+// A remote input is MERGED, not copied: held fields overwrite, edge fields
+// (dodge, a meal, an ability, an order) latch until the sim consumes them,
+// since a press between two steps must not be lost to the next struct.
+function netHostStep(dt) {
+  if (NET.role !== 'host') return;
+  for (const { peer, msg } of NET.transport.poll(dt)) {
+    if (msg.t === 'peer') continue;                         // the relay's notice; HELLO follows
+    if (msg.t === 'gone') { netHostLeave(peer); continue; }
+    if (msg.t === 'hello') { netHostHello(peer, msg); continue; }
+    const pr = NET.peers.get(peer);
+    if (!pr) continue;
+    if (msg.t === 'in') {
+      const p = players[pr.slot], i = p.input, m = msg.in;
+      NET.bytesIn += JSON.stringify(msg).length;
+      i.mx = m.mx; i.my = m.my; i.aimX = m.aimX; i.aimY = m.aimY;
+      i.fire = m.fire; i.work = m.work; i.slide = m.slide; i.grapple = m.grapple;
+      i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump; i.eatBerry = i.eatBerry || m.eatBerry; i.eatFish = i.eatFish || m.eatFish; i.useCard = i.useCard || m.useCard;
+      if (m.ability >= 0) i.ability = m.ability;
+      if (m.cmd) i.cmd = m.cmd;
+      pr.lastTick = msg.tick;
+    }
+  }
+  for (const [uid, park] of NET.parked) { park.t += dt; if (park.t > RECONNECT_GRACE) NET.parked.delete(uid); }
+}
+function netHostHello(peer, msg) {
+  const refuse = (why) => NET.transport.send(peer, { t: 'refuse', why });
+  if (msg.patch !== PATCH_TXT) return refuse('VERSION');
+  if (msg.seed !== SEED) return refuse('SEED');
+  let slot = -1;
+  const park = NET.parked.get(msg.uid);
+  if (park && players[park.slot].control === 'ai') { slot = park.slot; NET.parked.delete(msg.uid); }
+  else {
+    if (state.drop && state.elapsed > LATE_JOIN_T) return refuse('LATE');
+    // the smaller side's first AI slot (the side with fewer people, not fewer bodies)
+    const humans = [0, 0]; for (const p of players) if (isHuman(p)) humans[p.team]++;
+    const want = humans[0] <= humans[1] ? 0 : 1;
+    for (const t of [want, 1 - want]) { for (const p of players) if (p.control === 'ai' && p.team === t) { slot = p.id; break; } if (slot >= 0) break; }
+    if (slot < 0) return refuse('FULL');
+  }
+  const p = players[slot];
+  p.control = 'remote';
+  if (msg.name) p.name = msg.name;
+  if (msg.look) p.look = msg.look;
+  if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
+  NET.peers.set(peer, { slot, uid: msg.uid, name: msg.name, lastTick: 0 });
+  NET.transport.send(peer, { t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster() });
+  const full = { t: 'full', tick: state.tick, snap: snapBuild() };
+  NET.bytesOut += NET.transport.send(peer, full) ? JSON.stringify(full).length : 0;
+  logEvent((p.name || 'A PLAYER') + ' JOINED', p);
+}
+function netHostLeave(peer) {
+  const pr = NET.peers.get(peer);
+  if (!pr) return;
+  NET.peers.delete(peer);
+  const p = players[pr.slot];
+  p.control = 'ai'; // the side keeps its number while the slot waits
+  p.input = makeInput();
+  NET.parked.set(pr.uid, { slot: pr.slot, t: 0 });
+  logEvent((p.name || 'A PLAYER') + ' LEFT', p);
+}
+function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls, look: p.look })); }
+// after the step: every SNAP_EVERY ticks the tick form and the cosmetics
+// the step recorded go to every peer
+function netHostFlush() {
+  if (NET.role !== 'host') return;
+  evRecord = NET.peers.size > 0;
+  if (!NET.peers.size) { evRing.length = 0; return; }
+  if (state.tick % SNAP_EVERY) return;
+  const msg = { t: 'snap', tick: state.tick, snap: snapBuildTick(), ev: evDrain() };
+  const text = JSON.stringify(msg);
+  NET.bytesOut += text.length;
+  NET.transport.send('*', msg);
+}
+
+// ------------------------------------------------------------ client
+// A client's step: its own input goes out, whatever arrived comes in. The
+// sim never runs here; the snapshot IS the match, and the only thing decided
+// locally is which screen to show for it (netClientMode).
+function netClientStep(dt) {
+  if (NET.role !== 'client') return;
+  const T = NET.transport;
+  if (NET.synced && player) {
+    const i = player.input;
+    const msg = { t: 'in', tick: ++NET.inTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, eatBerry: i.eatBerry, eatFish: i.eatFish, useCard: i.useCard, ability: i.ability, cmd: i.cmd } };
+    if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
+    // the edges are the host's now: a press is sent once
+    i.dodge = false; i.jump = false; i.eatBerry = false; i.eatFish = false; i.useCard = false; i.ability = -1; i.cmd = null;
+  }
+  for (const { msg } of T.poll(dt)) {
+    if (msg.t === 'closed') { NET.synced = false; continue; }    // the transport redials; HELLO again on open
+    if (msg.t === 'refuse') { NET.refused = msg.why; continue; }
+    if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
+    if (msg.t === 'full') { NET.bytesIn += JSON.stringify(msg).length; netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; continue; }
+    if (msg.t === 'snap') {
+      NET.bytesIn += JSON.stringify(msg).length;
+      if (!NET.synced) continue;
+      netClientApply(msg.snap); NET.lastTick = msg.tick;
+      for (const ev of msg.ev) evPlay(ev);
+    }
+  }
+  if (T.open && !NET.helloed) { netClientHello(); NET.helloed = true; }
+  if (!T.open) NET.helloed = false;
+}
+function netClientHello() {
+  const c = PROFILE.char();
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: c ? c.name : PROFILE.name(), cls: c ? c.cls : 0, look: c ? c.look : null });
+}
+// the roster the host dealt: our slot is the human here, the host's is a
+// remote one, and the bodies are built before the first snapshot fills them
+function netClientWelcome(msg) {
+  const roster = msg.roster.map((r, i) => ({ control: i === msg.slot ? 'human' : r.control === 'human' ? 'remote' : r.control, team: r.team, name: r.name, cls: r.cls, look: r.look }));
+  NET.hostSlot = msg.hostSlot;
+  initPlayers(roster, msg.slot);
+  camX = player.x - WV_W / 2; camY = player.y - WV_H / 2;
+}
+// the snapshot in, with the host's own result kept out of ours: `over` is a
+// screen's verdict, not the match's, and the client reads its own off the bird
+function netClientApply(s) {
+  const over = state.over, end = state.end;
+  snapApply(s);
+  NET.hostOver = state.over;
+  state.over = over; state.end = end;
+  // a control is a screen's own view: the host's human is a remote body here
+  // and ours is the human, whatever the host calls them
+  for (const p of players) { if (p.id === localId) p.control = 'human'; else if (p.control === 'human') p.control = 'remote'; }
+  netClientMode();
+}
+// which screen this state calls for, from the local player's own body: the
+// ride while aboard or falling, the death overlay while down, play otherwise,
+// and the match's end read from the host's verdict turned to our side
+function netClientMode() {
+  const me = player;
+  if (!me || !state.drop) return;
+  const hostWon = NET.hostOver === 'won' ? true : NET.hostOver === 'lost' ? false : null;
+  if (hostWon !== null && state.over !== 'won' && state.over !== 'lost') {
+    const hostTeam = players[NET.hostSlot].team;
+    endMatch((hostWon ? hostTeam : 1 - hostTeam) === me.team ? 'won' : 'lost');
+    return;
+  }
+  if (state.over === 'won' || state.over === 'lost') return;
+  if (me.aboard || me.dropT > 0) {
+    if (state.mode !== 'drop') { state.mode = 'drop'; state.menu.panel = null; state.menu.screen = 'menu'; applyZoom(0, true); }
+    return;
+  }
+  if (me.dead) {
+    if (state.mode !== 'dead') endMatch(me.eliminated ? 'lost' : 'respawning');
+    return;
+  }
+  if (state.mode === 'drop') { handOver(me); return; }
+  if (state.mode === 'dead') { state.over = null; state.mode = 'play'; state.spec = -1; state.introFrom = { x: camX, y: camY }; state.intro = HUD_IN_T; state.introLen = HUD_IN_T; return; }
+  if (state.mode === 'title') { state.mode = 'play'; state.menu.panel = null; state.menu.screen = 'menu'; }
+}

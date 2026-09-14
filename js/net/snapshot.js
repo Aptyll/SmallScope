@@ -129,6 +129,62 @@ function snapBuild() {
   s.ground = snapB64(ground);
   return s;
 }
+// ---- the per-tick form ---------------------------------------------------
+// What a host sends every snapshot tick: everything that moves, in full, and
+// the world's tiles and ground only WHERE THEY CHANGED since the last send
+// (the static world is 95% of the full form and seed-generated on every
+// screen). A shadow of what was last sent is kept per host; the transport is
+// reliable and ordered, so "since last sent" is exact - an unreliable one
+// keys the shadow by the client's ack instead (docs/pvp-architecture.md).
+// A tile with only primitive fields is compared field by field; one with a
+// nested field (a building's bots, a turret's mark) by its packed JSON.
+const snapShadow = { objs: null, objJson: null, ground: null };
+function snapShadowReset() { snapShadow.objs = null; snapShadow.objJson = null; snapShadow.ground = null; }
+function snapObjSame(a, b) {
+  if (!a || !b) return a === b;
+  const ka = Object.keys(a), kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) { const va = a[k], vb = b[k]; if (va !== vb) { if (va === null || vb === null || typeof va !== 'object' || typeof vb !== 'object') return false; return null; } }
+  return true; // null above means "nested: decide by JSON"
+}
+function snapBuildTick() {
+  const s = { v: 1, tick: true, state: {}, players: [], structs: [], camps: [], objDiff: {}, groundDiff: [] };
+  for (const k of SNAP_STATE) s.state[k] = pack(state[k], 0);
+  for (const p of players) s.players.push(pack(p, 0, true));
+  for (const o of structures) s.structs.push(idx(o.tx, o.ty));
+  s.robots = robots.map((e) => pack(e, 0, true));
+  s.animals = animals.map((e) => pack(e, 0, true));
+  s.arrows = arrows.map((e) => pack(e, 0, true));
+  s.drops = drops.map((e) => pack(e, 0, true));
+  s.fish = fish.map((e) => pack(e, 0, true));
+  for (const c of camps) s.camps.push({ repopT: c.repopT });
+  s.drop = state.drop ? { firstFlight: state.drop.firstFlight, eagles: state.drop.eagles.map((e) => pack(e, 0, true)) } : null;
+  s.spurs = pack(spurs, 0);
+  s.holes = holes.slice();
+  s.iceCracks = [...iceCracks.entries()];
+  s.nets = pack(nets, 0);
+  s.market = pack(market, 0);
+  // tiles and ground against the shadow
+  if (!snapShadow.objs) { snapShadow.objs = new Array(objects.length).fill(null); snapShadow.objJson = new Array(objects.length).fill(null); }
+  for (let i = 0; i < objects.length; i++) {
+    const o = objects[i], sh = snapShadow.objs[i];
+    if (!o && !sh) continue;
+    const packed = o ? pack(o, 0, true) : null;
+    let same = snapObjSame(packed, sh);
+    let js = null;
+    if (same === null) { js = JSON.stringify(packed); same = js === snapShadow.objJson[i]; }
+    if (same) continue;
+    s.objDiff[i] = packed;
+    snapShadow.objs[i] = packed; snapShadow.objJson[i] = js;
+  }
+  // a building goes every tick whatever the shadow says: the moving arrays a
+  // client rebuilds each tick are what its references point at, and a
+  // reference resolved a tick ago points at a copy that tick threw away
+  for (const o of structures) { const i = idx(o.tx, o.ty); if (!(i in s.objDiff)) { const packed = pack(o, 0, true); s.objDiff[i] = packed; snapShadow.objs[i] = packed; snapShadow.objJson[i] = null; } }
+  if (!snapShadow.ground) { snapShadow.ground = new Uint8Array(ground); }
+  else for (let i = 0; i < ground.length; i++) if (ground[i] !== snapShadow.ground[i]) { s.groundDiff.push(i, ground[i]); snapShadow.ground[i] = ground[i]; }
+  return s;
+}
 // bytes per section of the JSON form - the budget the wire form is cut from
 function snapSize(s) {
   s = s || snapBuild();
@@ -144,9 +200,11 @@ function snapSize(s) {
 // resolved last, once everything they can name exists again.
 function snapApply(s) {
   for (const k of SNAP_STATE) state[k] = unpack(s.state[k]);
-  // world tiles: wholesale, then the structures registry re-pointed at them
-  objects.fill(null);
-  for (const i in s.objects) objects[i] = unpack(s.objects[i]);
+  // world tiles: wholesale from the full form, where they changed from the
+  // tick form; then the structures registry re-pointed at them
+  const tiles = s.objects || s.objDiff || {};
+  if (s.objects) objects.fill(null);
+  for (const i in tiles) objects[i] = tiles[i] ? unpack(tiles[i]) : null;
   structures.length = 0;
   for (const i of s.structs) if (objects[i]) structures.push(objects[i]);
   const fill = (arr, list) => { arr.length = 0; for (const e of list) arr.push(unpack(e)); };
@@ -190,12 +248,16 @@ function snapApply(s) {
   const mk = unpack(s.market); for (const k of Object.keys(mk)) market[k] = mk[k];
   // the ground: only tiles that changed are repainted - the whole array is
   // a boot-time bake (repaintGround, js/draw/ground.js)
-  const g = snapUnB64(s.ground);
-  for (let i = 0; i < ground.length; i++) if (ground[i] !== g[i]) { ground[i] = g[i]; repaintGround(i % WORLD, (i / WORLD) | 0); }
+  if (s.ground) {
+    const g = snapUnB64(s.ground);
+    for (let i = 0; i < ground.length; i++) if (ground[i] !== g[i]) { ground[i] = g[i]; repaintGround(i % WORLD, (i / WORLD) | 0); }
+  } else if (s.groundDiff) {
+    for (let k = 0; k < s.groundDiff.length; k += 2) { const i = s.groundDiff[k]; ground[i] = s.groundDiff[k + 1]; repaintGround(i % WORLD, (i / WORLD) | 0); }
+  }
   // and the references, now that everything they can point at exists
   const seen = new Set();
   for (const p of players) snapResolve(p, seen);
-  for (const i of Object.keys(s.objects)) snapResolve(objects[i], seen);
+  for (const i of Object.keys(tiles)) if (objects[i]) snapResolve(objects[i], seen);
   for (const arr of [robots, animals, arrows, drops, fish, nets]) snapResolve(arr, seen);
   if (state.drop) snapResolve(state.drop.eagles, seen);
   snapResolve(state.end, seen); snapResolve(state.eagleCine, seen);

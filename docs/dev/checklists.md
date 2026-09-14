@@ -30,7 +30,11 @@ declare victory. The three affordances:
   match, blanks every singleton, applies the snapshot back and returns the pixels of the world
   frame that differ (`diff`, zero or the snapshot is missing a field the eye can see), the JSON
   weight by section and the fields that did not round-trip; `netEchoRun(ticks, every)` does it
-  along a run and reports the worst - run it after adding a field to any entity. `setHide(h, p?)` stages a
+  along a run and reports the worst - run it after adding a field to any entity. `netStatus()`
+  is the match between tabs: role, the peers' slots, bytes each way, the newest snapshot tick.
+  **A match between two tabs**: serve the game, open `?seed=N&net=host&room=R` in one tab and
+  `?seed=N&net=client&room=R` in another (the same seed - the host refuses a different one);
+  the client takes the smaller side's first AI slot, or its own slot back after a reload. `setHide(h, p?)` stages a
   buried body without lying in the snow for `PRONE_BURY`, and `concealOf` / `seenAt(range, p?)` /
   `ambushReady` read back what the world makes of it. **Stage the scene** (place
   structures, warp beside a camp, jump `state.day`/`state.time`) instead of playing to reach it.

@@ -45,7 +45,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 Four legacy files — `profile.js`, `font.js`, the generated `sfxdata.js`, `audio.js` — and the
 eight sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (the
 sprite files each `Object.assign` their keys into `SPRITES`); after them the game code is
-**flat top-level classic scripts sharing one global scope** — forty-two files, `core.js`
+**flat top-level classic scripts sharing one global scope** — forty-three files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
@@ -70,7 +70,7 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs).
 
-The game code is organized only by `// ------ name` banners inside its forty-two files.
+The game code is organized only by `// ------ name` banners inside its forty-three files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 
@@ -185,7 +185,9 @@ lives in `docs/dev/*.md` beside the code it protects.
   literal `'e'` — because the player rebinds (`binds()`, one map per keyboard scheme) and the
   listener names keys by where they sit (`e.code`), so a literal is dead on a rebind, on an
   AZERTY board and on the CLICK scheme, where E is an ability.
-- **Anything a player does takes a `p` and reads `p.input`**, never `keys`/`mouse` (local player only),
+- **Anything a player does takes a `p` and reads `p.input`**, never `keys`/`mouse` (local player only) - the
+  leap off the eagle included (`input.jump`): a key handler that calls a sim function directly does
+  nothing on a `client`, whose sim never runs (`NET.isClient`, js/net/net.js) -
   and anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).
 - **Never add or remove an `rng()` call inside `genWorld()`** — it reshuffles every existing seed

@@ -124,15 +124,26 @@ function update(dt) {
   // the match runs on while the local player is down - other players are still
   // playing. Only pause and the settings panel stop the sim: the map is read
   // with the world still moving, the same deal the build wheel takes.
-  if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
+  // A CLIENT never steps: it sends what its hands are doing and applies what
+  // the host says the match is (netClientStep, js/net/net.js) - in every
+  // mode, since the host decides when the ride begins. A host (solo is one
+  // with no peers) reads its peers' inputs into their bodies before the step
+  // and sends the snapshot after it.
+  if (NET.isClient) {
+    if (state.mode !== 'title') sampleHumanInput(player, dt);
+    netClientStep(dt);
+  } else if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
     !state.paused && !state.settingsOpen) {
     sampleHumanInput(player, dt);
+    netHostStep(dt);
     evInStep = true; // the step's cosmetics are the sim's: recorded for a host's clients (js/net/events.js)
     updatePlay(dt);
     evInStep = false;
+    netHostFlush();
   } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') {
     sampleHumanInput(player, dt); // still drops a held draw when an overlay opens
   } else if (state.mode === 'title') {
+    netHostStep(dt); // a peer may knock while the host is still at the title
     updateTitle(dt); // menu timers, camera drift, and the ambient world behind it
   }
 
@@ -251,6 +262,9 @@ function updatePlay(dt) {
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
   for (const p of players) {
+    // the leap is the one act a rider can take: read here, before the air
+    // skips the body, so a remote hand's press lands like a local one
+    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); }
     if (!p.active || inAir(p)) continue;
     if (p.control === 'ai') updateAI(p, dt);
     updatePlayer(p, dt);

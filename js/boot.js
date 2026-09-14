@@ -595,7 +595,7 @@ function eagleGustFx(e, k) {
 // down (landAboard at the crash), and the bird banks off the road into its
 // nest's woods (findCrashPoint), the head coming round through the stoop
 function beginDive(e) {
-  for (const p of players) if (p.active && p.aboard && p.team === e.team && p.control !== 'human') dropJump(p, true);
+  for (const p of players) if (p.active && p.aboard && p.team === e.team && !isHuman(p)) dropJump(p, true);
   e.state = 'dive';
   e.from = { x: e.x, y: e.y };
   e.crash = findCrashPoint(e);
@@ -1377,6 +1377,13 @@ if (PRACTICE) {
   stockCamps();      // the monsters go in once the world is standing
 }
 initPlayers();
+// the match's role for this screen (js/net/net.js): ?net=host&room=R hosts a
+// room on the dev server's relay, ?net=client&room=R joins it; nothing else
+// (and any file:// page) is solo. A lobby hands the role in instead, later.
+(function () {
+  const q = /[?&]net=(host|client)/.exec(location.search), r = /[?&]room=([A-Za-z0-9_-]+)/.exec(location.search);
+  if (q && location.protocol !== 'file:') netSetup(q[1], wsTransport(r ? r[1] : 'lobby')); else netSetup('solo');
+})();
 renderGround();
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
@@ -1609,6 +1616,8 @@ window.DBG = {
   // snapshots, blanks, applies and renders again - a nonzero diff is a field
   // the schema is missing; netEchoRun(ticks, every) does it along a run
   netEcho, netEchoRun, snapBuild, snapApply, snapSize, NET, netSetup,
+  // the two-tab match: role, peers, bytes each way, the newest snapshot tick
+  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open) }),
   placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
   // the two end screens: their timelines, the frozen numbers they print, and
   // a way to open the loss summary without pressing its plank. Set
@@ -1764,6 +1773,29 @@ const TICK_MAX = 3;
 const TICK_SLACK = TICK_DT * 0.25;
 let tickAcc = 0;
 
+// A HIDDEN TAB does not get animation frames, and its timers are held to a
+// beat a second - which is fine for one screen and the end of the match for
+// nine others when that screen is the host (docs/pvp-architecture.md, risk
+// 3). A worker's clock is not throttled the same way, so while the page is
+// hidden the frames come from one, and the visible page goes back to rAF.
+let hiddenTimer = null;
+function hiddenTick() { if (document.hidden) loop(performance.now()); }
+function watchHidden() {
+  if (document.hidden && !hiddenTimer) {
+    try {
+      const w = new Worker(URL.createObjectURL(new Blob(['setInterval(() => postMessage(0), 16)'], { type: 'text/javascript' })));
+      w.onmessage = hiddenTick; hiddenTimer = w;
+    } catch (e) { hiddenTimer = setInterval(hiddenTick, 16); }
+  } else if (!document.hidden && hiddenTimer) {
+    if (hiddenTimer.terminate) hiddenTimer.terminate(); else clearInterval(hiddenTimer);
+    hiddenTimer = null;
+    last = performance.now();
+    requestAnimationFrame(loop);
+  }
+}
+document.addEventListener('visibilitychange', watchHidden);
+watchHidden(); // a page opened in a background tab never gets a first frame to arm itself from
+
 let last = performance.now();
 function loop(nowMs) {
   const rawDt = (nowMs - last) / 1000;
@@ -1794,6 +1826,7 @@ function loop(nowMs) {
     if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     render();
   }
-  requestAnimationFrame(loop);
+  if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
+  else watchHidden();
 }
 requestAnimationFrame(loop);
