@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.53'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.54'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.54', 'ON STEAM, EACH MOMENT OF THE MATCH NOW CROSSES THE WIRE IN SMALL PIECES THAT MAY BE LOST WITHOUT WAITING - A PIECE THAT NEVER COMES COSTS A BEAT, NEVER A STALL.'],
   ['3.53', 'IN THE DESKTOP APP WITH STEAM, THE MULTIPLAYER PLANK LISTS STEAM LOBBIES AND JOINS THEM WITH A CLICK, THE SAME WAY IT LISTS ROOMS IN A BROWSER.'],
   ['3.52', 'THE MULTIPLAYER DOORS READ AT A GLANCE: EVERY ROOM SHOWS ITS CODE AND ITS SEATS, THE WAITING ROOM ITS CODE, A CROWN ON THE HOST AND A NAME ON THE PLANK A GUEST WAITS ON, AND A HOST WHO LEAVES SAYS SO INSTEAD OF FREEZING YOUR SCREEN.'],
   ['3.51', 'AN ONLINE MATCH NOW SURVIVES A LOSSY WIRE: EACH PLAYER TELLS THE HOST THE LAST MOMENT IT SAW, AND THE HOST SENDS EVERYTHING THAT MOVED SINCE THAT MOMENT - A DROPPED PACKET COSTS NOTHING BUT A BEAT.'],

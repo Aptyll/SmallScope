@@ -40,7 +40,7 @@ declare victory. The three affordances:
   cuts come from older bases in the ring); `netVerify(true)` on a host rides the full form
   along every 5 s so each client checks itself - `netStatus().verifyFail` names the first fields
   that disagreed - and `netLoss(f)` on a host throws away that share of its snapshot sends before
-  the transport, which is the ack-keyed delta's proof (`netStatus()` counts `dropped`, `fulls`
+  the transport, which is the ack-keyed delta's proof (`netStatus()` counts `dropped`, `fulls`, and under Steam `framesLost` - deltas the unreliable channel lost a part of -
   and the peers' `acks`). In the Claude browser pane a tab that never got a frame does not tick
   at all: drive a client with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
   **A match between two tabs**: serve the game, open `?seed=N&net=host&room=R` in one tab and

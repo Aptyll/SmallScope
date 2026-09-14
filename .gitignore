@@ -107,6 +107,8 @@ shot.png
 
 # Staged YouTube-short frames (the finished mp4 is kept)
 docs/media/shorts/frames/
+docs/media/shorts/_raw/
+docs/media/shorts/verify/
 
 # The wrapper's installed packages (desktop/package.json is the list)
 desktop/node_modules/
