@@ -255,7 +255,7 @@ function beginDrop() {
   // a profile's first flight ever counts itself down and jumps for you -
   // reading the ride is a lot to ask of someone who has never seen it
   state.drop = { eagles: makeEagles(), firstFlight: !PROFILE.hasDropped() };
-  const seats = [0, 0]; // next free wing seat per team; player 0 takes seat 0 on the red bird
+  const seats = [0, 0]; // next free wing seat per team, dealt in slot order - the first slot of each side sits at seat 0
   for (const p of players) {
     if (!p.active) continue;
     const e = state.drop.eagles[p.team];
@@ -1602,6 +1602,14 @@ window.DBG = {
   bagUsed: (p) => bagUsed(p || player),
   // hand a player to an AI, a human, or nobody (a ghost at its camp)
   setControl: (id, mode) => { const p = players[id]; if (p) p.control = mode; return p; },
+  // reseat this screen's player in slot `id` (a fresh roster: bots and bags
+  // reset), the camera on it - the same thing ?local=N does at load
+  setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
+  localId: () => localId,
+  // reseat this screen's player in slot `id` (a fresh roster: bots and bags
+  // reset), the camera on it - the same thing ?local=N does at load
+  setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
+  localId: () => localId,
   placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
   // the two end screens: their timelines, the frozen numbers they print, and
   // a way to open the loss summary without pressing its plank. Set

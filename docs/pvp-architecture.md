@@ -213,9 +213,10 @@ host owns; it calls `netEvent('hit', ...)`.
 Everything before the first tick rides Steam's lobby system. The match itself rides P2P.
 
 1. **The LOBBY plank.** On the title, beside PLAY, when `window.steamBridge` exists. It opens a
-   panel with CREATE, JOIN (friends' lobbies via the overlay's invite, plus a public list if we
-   want one) and the class row the current class-select already draws.
-2. **Create.** Host calls `createLobby(kind, 10)`. Lobby data set by the host: `patch`,
+   panel with CREATE, a public lobby list (`requestLobbyList`, filtered to this patch, with a
+   JOIN plank per row that reads as its player count and team colours), a friend's invite via
+   the overlay, and the class row the current class-select already draws.
+2. **Create.** Host calls `createLobby(PUBLIC or FRIENDS_ONLY, 10)`. Lobby data set by the host: `patch`,
    `schema`, `seed` (rolled now, so every joiner can pre-generate the world while waiting),
    `aiLevel`, `state = 'open'`. The host's own `HELLO` fields go into lobby member data.
 3. **Join.** A joiner calls `joinLobby(id)`. Steam refuses a full lobby. On entering, the client
@@ -273,10 +274,13 @@ networking.
    the momentum integrator has only ever seen 16 ms steps. Move the host tick off rAF onto a
    timer so an unfocused window keeps stepping. `DBG.step` already steps by `1/60`; it moves to
    `TICK_DT`.
-2. **Unpin player 0.** `initPlayers(roster)` takes a roster (default: the one it builds today).
-   `player = players[localId]`; `beginDrop` seats by slot; `applyCharacter(p, char)` takes a
-   target; `skin()` keeps reading `player.team` and is already correct for any local id.
-   Verified by staging the local human in slot 7 with `DBG` and playing a match.
+2. **Unpin player 0 - DONE (PATCH 3.43).** `initPlayers(roster, local)` takes a roster (default:
+   the one it builds today) and the local slot; `player = players[localId]`; `beginDrop` seats
+   in slot order; `applyCharacter(p?)` takes a target; `skin()` reads `player.team` and was
+   already correct for any local id, as were the team rail and the maps. `?local=N` and
+   `DBG.setLocal(N)` seat the local player elsewhere for a check. What is still owed for a
+   lobby is a `remote` control kind: the human-only branches (`autoFitTools`, a human's flag
+   read by the whole side, the eagle's forced drop) test `control === 'human'` today.
 3. **Events out of the sim.** Introduce `netEvent` and route every `SFX`/fx call that marks a
    host-owned moment through it. In solo the function plays the cosmetics directly, so nothing
    changes on screen; the diff is mechanical and the code map gains a row per banner touched.
@@ -353,7 +357,9 @@ Ranked by how likely each is to bite and how expensive it is when it does.
 
 Things this pass does not settle and a later one must, with the current lean in italics.
 
-- Public lobbies or invite-only at launch. *Invite-only; a public list is a UI project.*
+- ~~Public lobbies or invite-only at launch.~~ **Decided: public lobbies ship.** The list is a
+  lobby-data filter on `patch` and `state = 'open'`, and the room's own kind is the host's choice
+  at CREATE. The UI cost is one list screen.
 - Whether the host may play as a client of its own sim through the same code path, or is
   special-cased to write `p.input` directly. *Same path with the loopback transport, so the
   host's own latency is one tick and its code is the client's code.*

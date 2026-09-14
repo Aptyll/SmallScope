@@ -6,7 +6,7 @@
 // ------------------------------------------------------------ players
 // Every player in the match is a Player. They all carry identical state and are
 // all driven from the same `input` struct, so a feature written for "the
-// player" is a feature every player has: the local human (player 0), the AI fills,
+// player" is a feature every player has: the local human (slot localId), the AI fills,
 // and eventually a network peer are only different in who fills that struct.
 // Sim code takes a `p` argument; `player` (the local player) is for the camera,
 // HUD, cursor and audio only.
@@ -154,12 +154,16 @@ function botLook(id) {
 // The local player wears the ACTIVE CHARACTER: its name, its look, and its
 // class (fixed at creation - js/profile.js), whose loadout comes with it.
 // Called from initPlayers and whenever the roster's active slot changes
-// (the character screens, js/ui/chars.js; class select's slot strip).
-function applyCharacter() {
+// (the character screens, js/ui/chars.js; class select's slot strip). It
+// takes the player to dress so that a lobby can dress a REMOTE human's body
+// the same way from a spec of its own, but the profile's character is only
+// ever this screen's.
+function applyCharacter(p) {
+  p = p || player;
   const c = PROFILE.char();
-  player.name = c ? c.name : PROFILE.name();
-  player.look = c ? c.look : botLook(0);
-  setClass(player, c ? c.cls : 0);
+  p.name = c ? c.name : PROFILE.name();
+  p.look = c ? c.look : botLook(0);
+  setClass(p, c ? c.cls : 0);
 }
 // Five players share each team colour, so text that names one player (the
 // scoreboard, the event log) also needs a per-player shade of that team's
@@ -440,9 +444,9 @@ function makeInput() {
 }
 
 class Player {
-  constructor(id, control) {
+  constructor(id, control, team) {
     this.id = id;
-    this.team = id % TEAM_COUNT;
+    this.team = team === undefined ? id % TEAM_COUNT : team; // alternating by slot unless a roster says otherwise
     this.control = control;             // 'human' | 'ai' | 'none' (nobody -> ghost)
     // the local player wears the profile's display name; every other player is
     // named off its team - live, through the `name` getter below, so the name
@@ -572,11 +576,33 @@ class Player {
 const players = [];  // every player; filled by initPlayers() at boot
 let player = null;   // the local player - camera, HUD, cursor and audio follow this one
 let inv = null;      // === player.inv, the counters the HUD draws
+// which slot THIS screen's player sits in. Nothing about a slot makes it the
+// local one - slot 0 is only the default - so anything that means "me" reads
+// `player` (or `p === player`), never an id: an online match seats this screen
+// wherever the host's roster says (docs/pvp-architecture.md), and a bot-vs-bot
+// harness seats it nowhere in particular. ?local=N seats it in slot N for a
+// session, the way ?seed=N pins the world - the check that no code still
+// assumes slot 0 is to play from slot 7.
+let localId = 0;
+const LOCAL_SLOT = (function () {
+  const q = /[?&]local=([0-9]+)/.exec(location.search);
+  return q ? Math.min(MAX_PLAYERS - 1, parseInt(q[1], 10) || 0) : 0;
+})();
 
-// one human (this session) and an AI in every other player
-function initPlayers() {
+// A ROSTER is one entry per slot: { control, team?, name?, cls?, look? }.
+// The default is today's match - this screen's human in its slot and an AI
+// in every other - and a lobby hands in one of its own, with its humans
+// already named, classed and dressed.
+function defaultRoster(local) {
+  const r = [];
+  for (let i = 0; i < MAX_PLAYERS; i++) r.push({ control: i === local ? 'human' : 'ai' });
+  return r;
+}
+function initPlayers(roster, local) {
+  local = local === undefined ? LOCAL_SLOT : local;
+  roster = roster || defaultRoster(local);
   players.length = 0;
-  for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, i === 0 ? 'human' : 'ai'));
+  for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
   // bots draw their class AND their four gear variants from the seed,
   // so a replayed world fields the same roster in the same loadouts
   for (const p of players) if (p.control === 'ai') {
@@ -585,7 +611,15 @@ function initPlayers() {
     // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
     setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
   }
-  player = players[0];
+  // a roster's own dressing (a lobby's humans) lands over the defaults
+  for (const p of players) {
+    const r = roster[p.id];
+    if (r.name != null) p.name = r.name;
+    if (r.look) p.look = r.look;
+    if (r.cls != null) setClass(p, r.cls);
+  }
+  localId = local;
+  player = players[local];
   inv = player.inv;
   applyCharacter(); // the local player is whoever the profile has active
 }

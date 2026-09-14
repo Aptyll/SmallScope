@@ -105,7 +105,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| players, teams, classes + kits, hero levels, the input struct, contested orders | `Player`, `CLASSES`, `kitOf`, `gainGold`, `levelUp`, `makeInput`, `initPlayers`, `contest` | `players` |
+| players, teams, classes + kits, hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `kitOf`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyCharacter(p?)`, `contest` | `players` |
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
 | the numbers a player is made of: the player count and teams, walk/roll/slide speeds, hero levels, and the two bow baselines a kit is written against | `MAX_PLAYERS`, `TEAM_COUNT`, `PVP`, `PLAYER_SPEED`/`PLAYER_R`, `ICE_MAX`/`SLIDE_MIN`/`SLIDE_EXIT`/`TRAIL_MIN`/`SNOW_TRAIL_*`, `LEVEL_*`/`LVL_*`, `DODGE_*`, `BOW_CHARGE`/`BOW_NOCK` | `players` (above `CHAMPS`, which reads four of them at load time) |
 | the entity arrays and the local aliases | `animals`…`camps`, `players`, `player`, `inv` | `players` (the banner's tail) |
@@ -137,7 +137,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the bare gestures a trigger or a plate sends: the draw, the flag wheel, a build wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy` | `input` |
 | telling the HAND something happened - a pad's rumble, a phone's buzz, one call over all three controllers | `HAPTIC`, `haptic` (its caller: `hudFx`, js/ui/bag.js; its off switch: the RUMBLE row, `SET_TABS` js/ui/panels.js) | `haptics` |
 | the zoom wheel, the listeners | the `addEventListener` block | `input` |
-| folding keys, mouse and both sticks into player 0's struct | `sampleHumanInput` | `input` |
+| folding keys, mouse and both sticks into the local player's struct | `sampleHumanInput` | `input` |
 | the CLICK scheme: its state and constants, the right press and its release, the armed left press, what an order does per step (the walk, the chase and lock, the auto-attack, a use), who an attack-move takes, how far the tool reaches | `ck`, `CK_*`, `ckOn`/`ckClear`/`ckOrder`, `ckPoint`, `merchUnder`, `ckRightPress`/`ckRightRelease`, `ckArmedPress`, `ckSees`, `ckAcquire`, `ckReach`/`ckHoldR`, `ckUse`, `ckStep` (the rings: `drawClickMarks`, js/draw/marks.js; the armed reticle: `cursorInfo`, render.js; the scheme row: `KEY_ROWS`/`KEY_SCHEME`, panels.js) | `click to move` |
 
 ## js/gamepad.js

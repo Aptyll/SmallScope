@@ -9,9 +9,11 @@ to the world.
 
 `MAX_PLAYERS` (10) players are created once at boot by `initPlayers()`. Each player is one of:
 
-- `control: 'human'` — driven by keyboard/mouse. Today exactly one player is human: **player 0, this
-  session's player**. `player` and `inv` point at it (and only at it) for the camera, HUD, cursor,
-  audio gating and the aim line.
+- `control: 'human'` — driven by keyboard/mouse. Today exactly one player is human: **this
+  session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
+  elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
+  `player` or tests `p === player`, never an id). `player` and `inv` point at it (and only at
+  it) for the camera, HUD, cursor, audio gating and the aim line.
 - `control: 'ai'` — driven by `updateAI()`. Every place nobody takes is filled with one at boot.
 - `control: 'none'` — nobody is in it. The player still exists; it is drawn as a flat team-tinted
   silhouette at its `spawn` (`drawGhost`) and is skipped by the sim, arrows and drops. A player
@@ -19,12 +21,20 @@ to the world.
   `p.active` is the `control !== 'none'` test every such loop uses.
 
 `DBG.setControl(id, 'human'|'ai'|'none')` flips a player live, which is how you stage a scene with
-fewer bots, a frozen target dummy, or a ghost.
+fewer bots, a frozen target dummy, or a ghost. `DBG.setLocal(id)` rebuilds the ten with this
+screen's player in slot `id` (title only: it is a fresh `initPlayers`).
+
+**`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls?, look? }` per
+slot — and the local slot; with neither it builds today's match (`defaultRoster`: this screen's
+human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still rolls its
+class and gear off the seed; a roster entry's own `name`/`cls`/`look` land over that, which is
+how a lobby will dress a remote human's body ([docs/pvp-architecture.md](../pvp-architecture.md)).
+The profile's character is only ever applied to this screen's player (`applyCharacter(p?)`).
 
 **A `Player` owns everything the old singleton did** — position, velocity, facing, hp, bow draw,
 dodge charges, slide state, swing state, held tool, i-frames, footprint cadence — plus `id`,
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
-wears its **active character's** name, class and look — `applyCharacter()`, called by
+wears its **active character's** name, class and look — `applyCharacter(p?)`, called by
 `initPlayers` and whenever the roster's active slot changes — see
 [architecture.md](architecture.md#profilejs)), `look` (the face on the class body: a bot's is
 hashed off its id by `botLook`, so a replayed world fields the same faces), `spawn` (the tile it landed
@@ -70,7 +80,7 @@ cmd           one-shot order {kind:'build'|'upgrade'|'demolish', tx, ty, id}
 ```
 
 `sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the two sticks, `pad.mx/my`
-and `touch.mx/my`, clamped in beside WASD — into player 0's struct once per step (under the
+and `touch.mx/my`, clamped in beside WASD — into the local player's struct once per step (under the
 [CLICK scheme](#the-click-scheme) the walk keys are gone and `ckStep` writes the walk, the aim and
 the auto-attack's fire edges into the same struct from its orders), and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
 [map](gameplay.md#the-m-map-does-not-pause) don't stop the sim and so don't zero the whole struct:
