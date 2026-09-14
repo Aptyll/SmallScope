@@ -66,7 +66,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/menu.js](../../js/ui/menu.js) | ~2930 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
 | [js/ui/chars.js](../../js/ui/chars.js) | ~460 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1370 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
-| [js/boot.js](../../js/boot.js) | ~1330 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop |
+| [js/boot.js](../../js/boot.js) | ~1330 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.
 

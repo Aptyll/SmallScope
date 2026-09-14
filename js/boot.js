@@ -1725,19 +1725,47 @@ window.DBG = {
   },
   layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_CX, MM_CY }),
   hideUI: false,
-  step: (dt, n) => { for (let i = 0; i < (n || 1); i++) { update(dt || 1 / 60); } render(); },
+  step: (dt, n) => { for (let i = 0; i < (n || 1); i++) { update(dt || TICK_DT); } render(); },
 };
+
+// ------------------------------------------------------------ the fixed step
+// The sim steps in TICK_DT slices, never in the frame's own delta. A frame
+// banks its time in `tickAcc` and update() runs once per whole slice owed,
+// so a 60 Hz screen steps about once a frame, a 144 Hz screen about every
+// other frame, and a stall steps several times in one - and the world's
+// clocks, the momentum walk and every cooldown read the same dt on every
+// machine whatever the refresh rate. That is what lets a step be numbered
+// (state.tick), stamped onto an input and replayed by a host: the
+// precondition for online play (docs/pvp-architecture.md). 1/60 because
+// that is the step the game was tuned under - TOOL_ROF_STEP counts rate of
+// fire in it, and the integrators have only ever seen 16 ms - so the feel
+// is the one it had; a coarser network tick is a snapshot cadence, not a
+// sim one. render() still runs once per frame, so between steps a frame
+// repeats the last sim state (no interpolation yet - a client will need it
+// for the snapshot buffer, and it arrives with that).
+const TICK_DT = 1 / 60;
+// steps one frame may take: three is the old 50 ms dt cap, one slice at a
+// time. Past it the rest of the owed time is DROPPED, not banked, so a long
+// stall costs a moment of slow motion and never a spiral of catch-up steps
+const TICK_MAX = 3;
+// a step is owed once the bank is within TICK_SLACK of a whole slice. rAF's
+// stamps jitter a ms or two around the refresh, and a bank that had to
+// reach the slice exactly would take 0 steps one frame and 2 the next on a
+// 60 Hz screen - a visible stutter. Stepping this little early lets the
+// bank run slightly negative and settle back, so the AVERAGE rate stays
+// exactly 60 and almost every 60 Hz frame takes exactly one step
+const TICK_SLACK = TICK_DT * 0.25;
+let tickAcc = 0;
 
 let last = performance.now();
 function loop(nowMs) {
   const rawDt = (nowMs - last) / 1000;
   // clamped at BOTH ends: rAF can hand back a stamp behind the clock `last`
   // was taken off (a headless first frame, a tab restored from the bfcache),
-  // and a negative dt runs every timer in the game backwards for one frame -
-  // cooldowns, status, the market clock, an animation's own position in its
-  // clip. Capped above for the opposite reason: a long stall must not
-  // teleport anything through a wall.
-  const dt = Math.max(0, Math.min(0.05, rawDt));
+  // and a negative dt would run the bank backwards. Capped above for the
+  // opposite reason: a long stall (a hidden tab, a debugger) must not owe
+  // seconds of steps
+  const dt = Math.max(0, Math.min(TICK_DT * TICK_MAX, rawDt));
   last = nowMs;
   perf.frames++;
   perf.acc += rawDt;
@@ -1747,9 +1775,16 @@ function loop(nowMs) {
     perf.acc = 0;
   }
   if (!window.DBG.freeze) {
-    padPoll(dt);   // the sticks have no events: read them before the step
+    padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
     touchPoll();
-    update(dt);
+    tickAcc += dt;
+    let n = 0;
+    while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX) {
+      update(TICK_DT);
+      tickAcc -= TICK_DT;
+      n++;
+    }
+    if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     render();
   }
   requestAnimationFrame(loop);
