@@ -182,10 +182,13 @@ same id-keyed pattern. Structures are keyed by tile index and only ship on chang
 
 ### Events
 
-Each is the moment a sim file used to fire a cue or an fx directly. On the host
-`netEvent(kind, ...)` plays the local cosmetics **and** queues the event; on a client
-`playEvent` runs the cosmetics only. A sim file never calls `SFX.hit()` again at a moment the
-host owns; it calls `netEvent('hit', ...)`.
+Two layers. **Cosmetics** are captured generically (PATCH 3.43, js/net/events.js): the ring
+carries `burst`, `float`, `dmg`, `sfx` (cue at a place with a radius), `sfxp` (cue for a
+player id), `sfxo` (owner cue / bystander cue), `shake` and `shakep` entries, recorded inside
+the step on the host and replayed by `evPlay` on a client against *its* player. Nothing below
+needs a cosmetic payload. **Semantic events** are the ones in this table: each changes client
+state (a tile, a feed line, an overlay, a profile stat) and rides the reliable channel with
+the snapshot.
 
 | kind | payload | client cosmetics |
 | --- | --- | --- |
@@ -277,10 +280,18 @@ networking.
    `player = players[localId]`; `beginDrop` seats by slot; `applyCharacter(p, char)` takes a
    target; `skin()` keeps reading `player.team` and is already correct for any local id.
    Verified by staging the local human in slot 7 with `DBG` and playing a match.
-3. **Events out of the sim.** Introduce `netEvent` and route every `SFX`/fx call that marks a
-   host-owned moment through it. In solo the function plays the cosmetics directly, so nothing
-   changes on screen; the diff is mechanical and the code map gains a row per banner touched.
-   `Math.random` in actions.js's fire colour moves to `fxRng`.
+3. **Events out of the sim - DONE (PATCH 3.43), as cosmetic capture rather than a named table.**
+   Every cue, shake, puff and floater the step raises goes through js/net/events.js: `sfxAt`,
+   `sfxFor`, `sfxOwn`, `shakeAt`, `shakeFor` carry the where and the who instead of the
+   local answer, and `burst`/`addFloater`/`addDmgFloater` record themselves. Recording is on
+   only inside `updatePlay` (`evInStep`) and only with `evRecord` set, so solo is untouched and
+   nothing the HUD raises for itself is ever recorded. `evPlay` replays one entry on a client.
+   The semantic events in the table above (a build, a ground change, a death, the end, the
+   roost alarm with its plate, the market's) are state, not cosmetics, and land with the
+   snapshot in step 4. `Math.random` in the fire colour moved to `fxRng`. Two wrinkles for
+   step 4: a floater that carries a team's paint records the host's `skin()` colour, so the
+   client will want the team instead; and `burst` draws off the sim's `rng`, which a client
+   replaying it does too. Measured on seed 42: 20 s of a ten-bot match records about 50 entries a second, and 44% of them are footsteps (`sfxFor(p, 'step')` for every walking body), the obvious first thing to derive from snapshot motion on the client instead of shipping.
 4. **Loopback harness.** `NET` with the loopback transport, but with a `DBG.netEcho` flag that
    makes solo **serialize every snapshot and apply it back into a second set of singletons**,
    then diffs. This is how the schema is proven complete before a second machine exists: any

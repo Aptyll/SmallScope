@@ -161,7 +161,7 @@ function abReady(p, i) { return p.abLv[i] > 0 && p.abCd[i] <= 0; } // bought AND
 function abLvCanBuy(p, i) { return p.skillPts > 0 && p.abLv[i] < AB_LV_MAX; }
 function abCdOf(p, i) { return CLASS_AB[p.cls][i].cd * (1 - AB_LV_CD * (Math.max(1, p.abLv[i]) - 1)); }
 function buyAbilityLv(p, i) {
-  if (!abLvCanBuy(p, i)) { if (p === player) SFX.deny(); return; }
+  if (!abLvCanBuy(p, i)) { sfxFor(p, 'deny'); return; }
   p.skillPts--;
   p.abLv[i]++;
   // the first point is the one that changes what you CAN do, so it says so;
@@ -169,8 +169,7 @@ function buyAbilityLv(p, i) {
   const nm = CLASS_AB[p.cls][i].name;
   addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], GEAR_MATS[p.abLv[i] - 1]);
   burst(p.x, p.y - 8, GEAR_MATS[p.abLv[i] - 1], p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
-  if (p === player) SFX.levelUp();
-  else if (nearPlayer(p.x, p.y)) SFX.pickup();
+  sfxOwn(p, 'levelUp', 'pickup');
 }
 
 // ---- casting -------------------------------------------------------------
@@ -191,7 +190,7 @@ function tryAbility(p, i) {
   // the wind-up begins from there; without a wall up the slam is the shield's
   // own cast, so it waits on the shield's cooldown like the raise would
   if (ab.id === 'shield' && (p.shieldT > 0 || p.rushT > 0)) {
-    if (p.shieldT <= 0 && p.abCd[i] > 0) { if (p === player) SFX.deny(); return; }
+    if (p.shieldT <= 0 && p.abCd[i] > 0) { sfxFor(p, 'deny'); return; }
     if (p.rushT > 0) rushEnd(p, false);
     p.castSlam = true;
     startCast(p, i, SLAM_CAST);
@@ -199,13 +198,13 @@ function tryAbility(p, i) {
   }
   if (p.rushT > 0) return; // every other key waits out the charge
   if (ab.id === 'snow' && p.prone) { risePlayer(p); return; } // rising is free; only going under pays
-  if (p.abCd[i] > 0) { if (p === player) SFX.deny(); return; }
-  if (ab.id === 'rush' && p.rootT > 0) { if (p === player) SFX.deny(); return; } // pinned: nothing that moves you
+  if (p.abCd[i] > 0) { sfxFor(p, 'deny'); return; }
+  if (ab.id === 'rush' && p.rootT > 0) { sfxFor(p, 'deny'); return; } // pinned: nothing that moves you
   if (ab.id === 'snow') {
     // no snow underfoot is a flat no before the kneel even starts - the speed
     // check waits for the cast to land (tryProne, called by abSnowCover)
     const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
-    if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) { if (p === player) SFX.deny(); return; }
+    if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) { sfxFor(p, 'deny'); return; }
   }
   startCast(p, i, ab.cast);
 }
@@ -221,7 +220,7 @@ function startCast(p, i, t) {
   const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
   if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
   else p.dir = dy > 0 ? 'down' : 'up';
-  if (nearPlayer(p.x, p.y)) SFX.swing();
+  sfxAt('swing', p.x, p.y);
 }
 // how far through its wind-up a cast is, 0 at the press and 1 at the landing
 function castProg(p) { return p.castT > 0 && p.castMax > 0 ? 1 - p.castT / p.castMax : 0; }
@@ -319,8 +318,8 @@ function abPierce(p) {
   // the snap: arrowhead flash at the bow, and the sound of the lock letting go
   burst(p.x + Math.cos(a) * 7, p.y - BOW_Y + Math.sin(a) * 7, '#f4f7ff', 8, 55, 0.3, true);
   burst(p.x + Math.cos(a) * 9, p.y - BOW_Y + Math.sin(a) * 9, '#ffd95c', 5, 45, 0.25, true);
-  if (p === player) state.shake = Math.max(state.shake, 2);
-  if (nearPlayer(p.x, p.y)) { SFX.nock(); SFX.arrow(); }
+  shakeFor(p, 2);
+  sfxAt('nock', p.x, p.y); sfxAt('arrow', p.x, p.y);
 }
 
 function abNetShot(p) {
@@ -333,7 +332,7 @@ function abNetShot(p) {
   p.vy -= ny * NET_KICK;
   p.hopT = 0.3;
   burst(p.x, p.y + 4, '#eef4fb', 4, 30, 0.3, true);
-  if (nearPlayer(p.x, p.y)) SFX.arrow();
+  sfxAt('arrow', p.x, p.y);
 }
 
 // The hook: thrown down the aim ray, it catches the first tree or rock near
@@ -370,14 +369,14 @@ function abGrapple(p) {
     const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'grap');
     if (i >= 0) p.abCd[i] = GRAP_MISS_CD;
     burst(p.x + nx * 14, p.y + ny * 14, '#8b93a8', 3, 25, 0.25, true);
-    if (p === player) SFX.deny();
+    sfxFor(p, 'deny');
     return;
   }
   p.grapX = ax; p.grapY = ay;
   p.grapT = GRAP_MAX_T;
   p.sliding = false;
   burst(ax, ay - 4, '#c8d2e4', 6, 40, 0.35, true);
-  if (nearPlayer(p.x, p.y)) SFX.place();
+  sfxAt('place', p.x, p.y);
 }
 // every way the line lets go: the key released, the anchor reached, a wall, a
 // stun, the water, or the hook slipping on the safety timer. The momentum is
@@ -389,7 +388,7 @@ function grapEnd(p) {
   const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'grap');
   if (i >= 0) p.abCd[i] = abCdOf(p, i);
   burst(p.x, p.y - 2, '#c8d2e4', 4, 30, 0.3, true);
-  if (nearPlayer(p.x, p.y)) SFX.pickup();
+  sfxAt('pickup', p.x, p.y);
 }
 
 // Snow cover: the burrow, moved onto the kit. The whole state is still prone
@@ -410,7 +409,7 @@ function abShieldUp(p) {
   p.shieldT = SHIELD_T;
   p.shieldA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
   burst(p.x, p.y - 4, '#9aa3ad', 6, 35, 0.35, true);
-  if (nearPlayer(p.x, p.y)) SFX.place();
+  sfxAt('place', p.x, p.y);
 }
 // down on the timer, or spent by the slam: the cooldown starts HERE, so
 // holding the wall the full stretch and slamming at once cost the same
@@ -419,7 +418,7 @@ function abShieldDown(p, early) {
   p.shieldT = 0;
   const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'shield');
   if (i >= 0) p.abCd[i] = abCdOf(p, i);
-  if (nearPlayer(p.x, p.y)) SFX.pickup();
+  sfxAt('pickup', p.x, p.y);
 }
 // THE SLAM lands: the shield's face driven through the wedge ahead. Everything
 // alive in it takes the blow, the shove down the face and a real stun; the
@@ -433,14 +432,14 @@ function abSlam(p) {
     hurtUnit(q, SLAM_DMG, nx, ny, p, { kb: SLAM_KB });
     if (!q.dead) { stunUnit(q, SLAM_STUN); q.kbx += nx * SLAM_KB * 0.5; q.kby += ny * SLAM_KB * 0.5; }
     burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
-    if (p === player || q === player) state.shake = Math.max(state.shake, 4);
+    shakeFor(p, 4, q);
   }
   for (const s of structsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) hurtStruct(s, SLAM_DMG, p);
   if (PRACTICE) abHitDummies(p.x + nx * SLAM_R * 0.5, p.y + ny * SLAM_R * 0.5, SLAM_R * 0.5, SLAM_DMG);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: SLAM_R, half: SLAM_HALF, t: 0, col: '#f2cc6a' });
   burst(p.x + nx * 8, p.y - 4 + ny * 6, '#9aa3ad', 8, 45, 0.4, true);
   abShieldDown(p, true);
-  if (nearPlayer(p.x, p.y)) SFX.hit();
+  sfxAt('hit', p.x, p.y);
 }
 // an incoming shot dies on a raised shield when it flies INTO the front arc
 function abShieldBlocks(t, nx, ny) {
@@ -458,7 +457,7 @@ function abRush(p) {
   if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
   else p.dir = dy > 0 ? 'down' : 'up';
   burst(p.x, p.y + 4, '#dfe8f4', 8, 45, 0.4, true);
-  if (nearPlayer(p.x, p.y)) SFX.dodge();
+  sfxAt('dodge', p.x, p.y);
 }
 // one step of the charge, called from updatePlayer's movement branch with the
 // wall verdict for this frame. The first rival in the path is grabbed and
@@ -479,7 +478,7 @@ function rushStep(p, mv, dt) {
       if (q instanceof Player) risePlayer(q);
       stunUnit(q, 0.3); // manhandled: nothing they hold survives the grab
       burst(q.x, unitMidY(q), '#eef4fb', 6, 40, 0.4, true);
-      if (nearPlayer(q.x, q.y)) SFX.hit();
+      sfxAt('hit', q.x, q.y);
       break;
     }
   } else if (unitAlive(v)) {
@@ -513,13 +512,13 @@ function rushEnd(p, wall) {
     if (!v.dead) stunUnit(v, RUSH_STUN * mul);
     burst(v.x, v.y - 5, '#e04a54', 8, 50, 0.5);
     burst(v.x, v.y - 4, '#eef4fb', 10, 55, 0.5, true);
-    if (p === player || v === player) state.shake = Math.max(state.shake, wall ? 6 : 4);
-    if (nearPlayer(v.x, v.y)) SFX.hit();
+    shakeFor(p, wall ? 6 : 4, v);
+    sfxAt('hit', v.x, v.y);
   } else if (wall) {
     p.vx = -p.rushNX * 40; p.vy = -p.rushNY * 40; // the thud, without a body to spend it on
     burst(p.x + p.rushNX * 6, p.y - 2, '#eef4fb', 8, 45, 0.45, true);
-    if (p === player) state.shake = Math.max(state.shake, 3);
-    if (nearPlayer(p.x, p.y)) SFX.hit();
+    shakeFor(p, 3);
+    sfxAt('hit', p.x, p.y);
   }
 }
 
@@ -548,8 +547,8 @@ function abStomp(p) {
       life: 0.4, maxLife: 0.35, color: i % 3 ? '#eef4fb' : '#cfd8e8', size: i % 2 ? 2 : 1, grav: 60,
     });
   }
-  if (p === player) state.shake = Math.max(state.shake, 5);
-  if (nearPlayer(px, py)) SFX.break_();
+  shakeFor(p, 5);
+  sfxAt('break_', px, py);
 }
 
 // THE EXECUTE lands: the overhead cut through the wedge ahead, worth the base
@@ -568,13 +567,13 @@ function abExecute(p) {
     hurtUnit(q, dmg, nx, ny, p, { kb: EXEC_KB, crit: dmg > EXEC_DMG * 2 });
     burst(q.x, unitMidY(q), '#e05a4a', 10, 55, 0.5);
     burst(q.x, unitMidY(q), '#f4f7ff', 6, 45, 0.4, true);
-    if (p === player || q === player) state.shake = Math.max(state.shake, 5);
+    shakeFor(p, 5, q);
   }
   for (const s of structsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) hurtStruct(s, EXEC_DMG, p);
   if (PRACTICE) abHitDummies(p.x + nx * EXEC_R * 0.5, p.y + ny * EXEC_R * 0.5, EXEC_R * 0.5, EXEC_DMG);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: EXEC_R, half: EXEC_HALF, t: 0, col: '#e05a4a' });
   burst(p.x + nx * 10, p.y - 2 + ny * 8, '#eef4fb', 8, 45, 0.4, true);
-  if (nearPlayer(p.x, p.y)) SFX.break_();
+  sfxAt('break_', p.x, p.y);
 }
 
 // the practice dummy takes area hits like everything else: any dummy tile

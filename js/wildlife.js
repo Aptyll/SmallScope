@@ -155,7 +155,7 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   a.kbx = nx * kb; a.kby = ny * kb;
   burst(a.x, a.y - (a.alt || 0) - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
   if (ambush) ambushFx(a.x, a.y - (a.alt || 0) - 4);
-  if (nearPlayer(a.x, a.y)) { SFX.hit(); if (a.hp > 0 && a.kind !== 'bird') SFX.yelp(); }
+  sfxAt('hit', a.x, a.y); if (a.hp > 0 && a.kind !== 'bird') sfxAt('yelp', a.x, a.y);
 }
 
 // The passive pair, and the strength the meadow is kept at: PREY_POP of each
@@ -650,7 +650,7 @@ function updatePrey(a, dt) {
 // alive to credit pays nobody.
 function animalDies(a) {
   a.dead = true;
-  if (nearPlayer(a.x, a.y)) SFX.monsterDie(a.kind);
+  sfxAt('monsterDie', a.x, a.y, 0, a.kind);
   const hunter = a.lastHit !== undefined ? players[a.lastHit] : null;
   const y = YIELD[a.kind];
   if (hunter && !hunter.dead && y && y.coins) {
@@ -755,7 +755,7 @@ function wakeCamp(w, t) {
     if (!o.target) howl = true;
     o.target = t; o.threat = 1;
   }
-  if (howl && nearPlayer(w.x, w.y, 260)) SFX.howl();
+  if (howl) sfxAt('howl', w.x, w.y, 260);
 }
 
 function updateCampMonster(a, dt) {
@@ -799,7 +799,7 @@ function updateCampMonster(a, dt) {
       a.biteCd = M.cd;
       damagePlayer(t, M.bite + M.lvBite * (a.level - 1), a.mvx, a.mvy, null, a.kind === 'dire' ? 'dire' : 'wolf');
       burst(a.x + a.mvx * 6, a.y - 4, '#e04a54', M.big ? 9 : 5, 40, 0.35);
-      if (nearPlayer(a.x, a.y)) SFX.bite();
+      sfxAt('bite', a.x, a.y);
     }
   } else if (a.goal) {
     // patrolling its camp, on a route like any other walk
@@ -855,7 +855,7 @@ function flushBirds(L, from) {
     b.fa = Math.atan2(b.y - from.y, b.x - from.x) + rand(-0.7, 0.7);
     b.perch = rookeryPerch(L) || b.perch;
   }
-  if (woke && nearPlayer(from.x, from.y, 220)) SFX.wings();
+  if (woke) sfxAt('wings', from.x, from.y, 220);
 }
 
 function updateBird(a, dt) {

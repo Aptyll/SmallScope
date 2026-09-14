@@ -127,7 +127,9 @@ function update(dt) {
   if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
     !state.paused && !state.settingsOpen) {
     sampleHumanInput(player, dt);
+    evInStep = true; // the step's cosmetics are the sim's: recorded for a host's clients (js/net/events.js)
     updatePlay(dt);
+    evInStep = false;
   } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') {
     sampleHumanInput(player, dt); // still drops a held draw when an overlay opens
   } else if (state.mode === 'title') {
@@ -399,7 +401,7 @@ function updatePlay(dt) {
           if (abShieldBlocks(t, nx, ny)) {
             burst(a.x, a.y, '#c8d2e4', 6, 45, 0.35, true);
             burst(a.x, a.y, '#f4f7ff', 3, 30, 0.3, true);
-            if (nearPlayer(a.x, a.y)) SFX.hit();
+            sfxAt('hit', a.x, a.y);
             dead = true; a.struck = true;
             break;
           }
@@ -446,7 +448,7 @@ function updatePlay(dt) {
         for (const t of unitsNear(sideOf(a), a.x, a.y, a.cinder)) igniteUnit(t, a.burn, a.burnDps, src);
         burst(a.x, a.y, '#ff9440', 14, 90, 0.5);
         burst(a.x, a.y, '#ffd95c', 10, 70, 0.45);
-        if (nearPlayer(a.x, a.y)) SFX.break_();
+        sfxAt('break_', a.x, a.y);
       } else if (a.burn > 0) {
         burst(a.x, a.y, '#ff9440', 8, 55, 0.55);
       }
@@ -560,7 +562,7 @@ function updatePlay(dt) {
           d.n -= got;
           addFloater(p.x, p.y - 14, '+' + got, RES_COLORS[d.type]);
           noteSeen(p, d.type); // the local player has now held one: mark the tech node
-          if (p === player) SFX.stash();
+          sfxFor(p, 'stash');
         }
         if (d.n <= 0) drops.splice(j, 1); else d.t = 0;
       });
@@ -689,7 +691,7 @@ function updatePlayer(p, dt) {
       p.y = (out.ty + 0.5) * TILE;
       p.invuln = Math.max(p.invuln, 0.8);
       burst(p.x, p.y + 4, '#cfe4f2', 8, 40, 0.45, true);
-      if (nearPlayer(p.x, p.y)) SFX.dodge();
+      sfxAt('dodge', p.x, p.y);
     }
   } else if (p.dodgeT > 0) {
     // rolling: the dash owns the velocity; friction waits until the roll ends,
@@ -826,7 +828,7 @@ function updatePlayer(p, dt) {
       p.prone = false; p.hide = 0; p.riseT = 0; // crawled off the edge: no cover in the water
       if (p.charging) { p.charging = false; p.chargeT = 0; }
       p.fireArmed = false;
-      if (nearPlayer(p.x, p.y)) SFX.splash();
+      sfxAt('splash', p.x, p.y);
       burst(p.x, p.y + 4, '#3a6080', 10, 55, 0.5, true);
       burst(p.x, p.y + 2, '#ddf1f8', 8, 60, 0.5, true);
       damagePlayer(p, HOLE_FALL_DMG, 0, 0, null, 'ice');
@@ -844,7 +846,7 @@ function updatePlayer(p, dt) {
     if (!snow) p.hide = Math.max(0, p.hide - dt * 2.2);
     else if (!p.moving && p.hide < 1) {
       p.hide = Math.min(1, p.hide + dt / kit.bury);
-      if (p.hide >= 1) { p.hideFlash = 0.4; if (p === player) SFX.hidden(); }
+      if (p.hide >= 1) { p.hideFlash = 0.4; sfxFor(p, 'hidden'); }
     }
     p.crawlT = p.moving ? p.crawlT + dt * 3.6 : 0;
     // One timer, two jobs, and which one it is doing says what state the body
@@ -925,7 +927,7 @@ function updatePlayer(p, dt) {
       const px = p.dir === 'left' || p.dir === 'right' ? p.x : p.x + side;
       const py = p.dir === 'left' || p.dir === 'right' ? p.y + 6 + (p.footSide ? 1 : -1) : p.y + 6;
       footprints.push({ x: px, y: py, t: 0 });
-      if (p === player) SFX.step();
+      sfxFor(p, 'step');
       if (footprints.length > 400) footprints.shift();
     }
   } else {
@@ -980,7 +982,7 @@ function updatePlayer(p, dt) {
   // exactly the human's clock.
   if (p.nockT > 0) {
     p.nockT = Math.max(0, p.nockT - dt);
-    if (p.nockT === 0) { p.readyFlash = 0.16; if (p === player) SFX.nock(); }
+    if (p.nockT === 0) { p.readyFlash = 0.16; sfxFor(p, 'nock'); }
   }
   p.readyFlash = Math.max(0, p.readyFlash - dt);
   p.dryT = Math.max(0, p.dryT - dt);
@@ -1011,7 +1013,7 @@ function updatePlayer(p, dt) {
     p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.eatT <= 0) { // a body mid-ability has no hand free for the draw (a meal is already cancelled by the press above); an auto swing is never in the way
     p.charging = true;
     p.chargeT = 0;
-    if (nearPlayer(p.x, p.y)) SFX.bowDraw();
+    sfxAt('bowDraw', p.x, p.y);
   }
   if (!inp.fire && p.charging) {
     p.charging = false;

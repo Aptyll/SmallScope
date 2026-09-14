@@ -549,7 +549,7 @@ function updateEagle(e, dt) {
 function eagleGust(e) {
   e.gustCd = GUST_CD;
   eagleGustFx(e, 1);
-  if (nearPlayer(e.x, e.y)) SFX.gust();
+  sfxAt('gust', e.x, e.y);
   for (const q of players) {
     if (!q.active || q.dead || inAir(q) || q.team === e.team) continue;
     const dx = q.x - e.x, dy = q.y - e.y;
@@ -682,9 +682,9 @@ function eagleCrash(e) {
     if (!objAt(tx, ty) && ground[idx(tx, ty)] !== 2) placeObj(tx, ty, 'eagle', { team: e.team });
   }
   eagleBoomFx(e, 1);
-  const near = Math.hypot(player.x - e.x, player.y - e.y);
-  state.shake = Math.max(state.shake, near < 400 ? 9 : near < 1000 ? 5 : 3);
-  SFX.boom();
+  // felt everywhere, hardest close by: three rings, the widest reaching every screen
+  shakeAt(e.x, e.y, 3, EV_ANYWHERE); shakeAt(e.x, e.y, 5, 1000); shakeAt(e.x, e.y, 9, 400);
+  sfxAt('boom', e.x, e.y, EV_ANYWHERE);
   logEvent('THE ' + TEAMS[skin(e.team)].name + ' EAGLE HAS LANDED', players.find((p) => p.team === e.team));
   // the crater is not the whole landing: the spur back to the road starts
   // falling (laneStep) - aimed from the crater at its junction on the
@@ -781,13 +781,13 @@ function laneStep(e, dt) {
     if (o.type === 'rock') {
       burst(px, py - 6, '#9aa4b4', 6, 50, 0.45, true); // the rock shatters
       burst(px, py - 4, '#f4f7ff', 4, 40, 0.4, true);
-      if (L.sfxT > 0.3 && nearPlayer(px, py, 320)) { L.sfxT = 0; SFX.break_(); }
+      if (L.sfxT > 0.3) { L.sfxT = 0; sfxAt('break_', px, py, 320); }
       continue;
     }
     burst(px, py - 8, o.type === 'tree' ? '#88b090' : '#6b5a48', 5, 45, 0.45, true); // needles off the falling pine
     burst(px, py - 4, '#f4f7ff', 4, 40, 0.4, true);
     if (o.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
-    if (L.sfxT > 0.3 && nearPlayer(px, py, 320)) { L.sfxT = 0; SFX.treeFall(); }
+    if (L.sfxT > 0.3) { L.sfxT = 0; sfxAt('treeFall', px, py, 320); }
   }
   const front = (L.t - LANE_DELAY) * LANE_SPD; // tiles out from the crater
   if (L.paved < L.pave.length && L.pave[L.paved].s <= front) {
@@ -884,9 +884,8 @@ function eagleFlee(e, src) {
     if (o && o.type === 'eagle' && o.team === e.team) objects[idx(tx, ty)] = null;
   }
   eagleGustFx(e, 2); // the takeoff downdraft: the gust's language writ large
-  const near = Math.hypot(player.x - e.x, player.y - e.y);
-  state.shake = Math.max(state.shake, near < 500 ? 7 : 4);
-  SFX.gust();
+  shakeAt(e.x, e.y, 4, EV_ANYWHERE); shakeAt(e.x, e.y, 7, 500);
+  sfxAt('gust', e.x, e.y, EV_ANYWHERE);
   logEvent('THE ' + TEAMS[skin(e.team)].name + ' EAGLE WAS DRIVEN OFF', src || players.find((p) => p.team === e.team));
   state.eagleCine = { team: e.team, t: 0, srcId: src ? src.id : -1 };
 }
