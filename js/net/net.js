@@ -90,8 +90,12 @@ function netRelay() {
 // the relay, join one by its code, or leave whichever this is and be solo
 // again with today's ten. The Steam transport takes the same three when the
 // wrapper is asked for it (?transport=steam).
+// is this screen riding Steam: the wrapper's bridge is there and the page
+// was asked for it (?transport=steam, the wrapper's --transport=steam). The
+// rooms screen lists Steam's lobbies then instead of the relay's rooms
+function netSteam() { return !!window.steamBridge && /[?&]transport=steam/.test(location.search); }
 function netTransportFor(room) {
-  if (window.steamBridge && /[?&]transport=steam/.test(location.search)) return steamTransport(room);
+  if (netSteam()) return steamTransport(room);
   return wsTransport(netRelay(), room);
 }
 function netHost() { netSetup('host', netTransportFor(null)); }

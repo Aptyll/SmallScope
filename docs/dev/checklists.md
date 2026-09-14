@@ -47,8 +47,9 @@ declare victory. The three affordances:
   `?seed=N&net=client&room=R` in another (the same seed - the host refuses a different one);
   the client takes the smaller side's first AI slot, or its own slot back after a reload.
   **Under the wrapper** (`cd desktop && npm start -- --net=host` on one machine, `--join=LOBBYID` on
-  another, Steam running on both) the same match rides a Steam lobby; `DBG.netStatus().lobby` is
-  the id to hand the joiner and `DBG.lobbies()` lists the open ones. `npm start -- --seed=42
+  another, Steam running on both) the same match rides a Steam lobby - or, with
+  `--transport=steam` alone, the MULTIPLAYER plank lists the open lobbies and a click joins one;
+  `DBG.netStatus().lobby` is the id to hand a joiner by hand and `DBG.lobbies()` lists them raw. `npm start -- --seed=42
   --shot=out.png --wait=4 --quit` boots the game from disk headlessly and captures it. `setHide(h, p?)` stages a
   buried body without lying in the snow for `PRONE_BURY`, and `concealOf` / `seenAt(range, p?)` /
   `ambushReady` read back what the world makes of it. **Stage the scene** (place

@@ -2762,7 +2762,11 @@ rooms list with a rattle; one whose host leaves mid-match gets the HOST LEFT end
 headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
 and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
 redials (`drawNetLink`). Joining a room whose seed is not this page's reloads the page onto it
-(`?seed=N&join=CODE`). Which relay: `netRelay()` (js/net/net.js) - `?relay=host:port` once,
+(`?seed=N&join=CODE`). Under the wrapper with Steam asked for (`netSteam()`, js/net/net.js) the
+same screen lists Steam's lobbies instead (`steamRooms`, js/net/transport-steam.js: the host
+writes its name, patch, seed, state and seat counts into the lobby's data), joined with the same
+click and with no code plate, since a lobby id is not for reading aloud. Which relay:
+`netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host. The **DOWNLOAD tag**
 at the bottom centre of the title, in a browser only, opens the newest GitHub Release, which
 every `v*` tag builds (.github/workflows/desktop.yml).

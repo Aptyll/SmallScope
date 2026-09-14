@@ -454,6 +454,10 @@ networking.
    leaving sends a waiting guest back to the list and ends a playing one on a HOST LEFT plate
    (`hostleft`), and a dropped socket blinks a pip mid-match. A version plate on the door is
    still owed (a room on another patch is dimmed with its patch printed, which covers the list).
+   PATCH 3.53: under the wrapper with `--transport=steam` the plank lists Steam's lobbies through
+   the same screen (`steamRooms`), and the Steam transport carries the wire form's bytes as
+   base64 - it was written before the bytes and would have JSON-stringified a Uint8Array.
+   Unverified against a live Steam, like the transport itself.
 8. **Pass 2 (only if needed): walk prediction** for the local player over the unacked inputs,
    with a snap threshold and a smooth pull-in. **Interpolation landed in 3.49** with the wire
    form (above); prediction stays deferred.
