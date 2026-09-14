@@ -1,0 +1,363 @@
+# Online PvP architecture
+
+Steam lobbies for matchmaking, one player as **host** running the authoritative simulation,
+every other player a **client** that sends input and renders what the host says. Transport is
+`ISteamNetworkingSockets` peer-to-peer over Steam Datagram Relay, reached from a Windows wrapper
+through steamworks.js. No dedicated servers, no host migration at launch.
+
+This is the design pass only. Nothing here is code yet, and the deep docs under `docs/dev/`
+still describe the single-player game as it stands. Read [game.md](dev/game.md) and
+[multiplayer.md](dev/multiplayer.md) first: the ten-player `Player` array, the input struct and the
+bot brain are what make this plan short.
+
+## What the code already gives us
+
+- **Every combatant is a `Player`** in one array of `MAX_PLAYERS` (10), and every one of them
+  steps through `updatePlayer(p, dt)` off its own `p.input`. A bot is `updateAI(p, dt)` writing
+  that struct; a human is `sampleHumanInput(p, dt)` writing it. A network peer is a third writer.
+- **The input struct is the whole controller-to-sim interface** (`makeInput()`): two axes, an aim
+  point, five held flags, four edge-triggered flags, an ability index and a one-shot `cmd`. It
+  is small, flat and already the only way a player acts on the world.
+- **The world is a function of `SEED`.** `genWorld`, the road, the camps, the chests, the wildlife
+  and the shoal all derive from it. A client can build the whole static map from a 32-bit number.
+- **Contested orders resolve from `(SEED, id, state.tick)`** through `contest()`. Only the host
+  will run them, so the property becomes a free extra rather than a requirement.
+- **A sim file does not draw.** `render()` and `renderUI()` read the singletons (`players`,
+  `arrows`, `structures`, `state`) and never call into the step, so a client that writes a
+  snapshot into those singletons renders it with the draw code untouched.
+
+## What the code does not give us
+
+- **The step was variable** until PATCH 3.42: `loop()` handed `update()` the real frame `dt`,
+  clamped to 50 ms, with no accumulator, so `state.tick` only counted calls. It is fixed at
+  `TICK_DT` (1/60 s) now, which is what lets an input be stamped with the tick it belongs to and
+  a snapshot with the tick it shows. What is still owed is render interpolation between steps.
+- **Player 0 is the local human, by construction.** `initPlayers` makes it so, `player`/`inv`
+  alias it, `beginDrop` seats it on the red bird, `applyCharacter` dresses it from the profile,
+  `skin()` reads its team, and `gainGold` feeds the profile's stats through it.
+- **Effects and sounds fire inside the sim.** `SFX.*`, `burst`, floaters and `state.shake`
+  are called from actions.js, abilities.js, player.js, structures.js, robots.js and wildlife.js
+  at the moment the thing happens. A client does not run those moments, so it has to be told.
+- **The loop is rAF.** A background window is throttled to about 1 Hz, which is fine for one
+  player and fatal for a host with nine.
+- **There is no wrapper.** README promises Steam; nothing in the repo runs outside a browser.
+
+## Module boundaries
+
+Five new files under `js/net/`, loaded after `sim.js` and before `boot.js`, in the same flat
+shared scope as everything else. Nothing under `js/` imports a Steam symbol. The game keeps
+working from `file://` because with no bridge present the only transport is the loopback.
+
+| File | Owns | Talks to |
+| --- | --- | --- |
+| `js/net/net.js` | `NET`: the role (`solo` / `host` / `client`), the peer table, the tick clock, `netHostStep()`, `netClientStep()`, the seam `updatePlay` calls | sim.js, boot.js |
+| `js/net/schema.js` | the message table, the field lists a snapshot carries, the quantizers, `encode`/`decode` for every message, `SCHEMA_VER` | net.js only |
+| `js/net/snapshot.js` | building a snapshot on the host (`snapPlayer`, `snapArrows`, delta against last ack), applying one on the client (`applySnapshot` writes the singletons), interpolation buffer, the full sync | net.js, the singletons |
+| `js/net/events.js` | the event ring: `netEvent(kind, ...)` is what a sim file calls where it used to call `SFX.hit()` directly; on the host it both plays the cue and queues the event, on a client `playEvent` does the local cosmetics | actions.js, abilities.js, player.js, structures.js, robots.js, wildlife.js |
+| `js/net/transport-loopback.js` | the solo transport: `send` is a no-op, `poll` returns nothing | net.js |
+| `js/net/transport-steam.js` | the Steam transport: wraps `window.steamBridge` (lobby calls, `sendMessageToUser`, `receiveMessagesOnChannel`) behind the same five-call interface | the wrapper's preload |
+
+The transport interface, the only thing the two adapters share:
+
+```
+connect(hostId)          client: open a P2P session to the host's SteamID
+listen()                 host: accept sessions
+send(peer, bytes, flags) flags: RELIABLE | UNRELIABLE_NO_NAGLE
+poll() -> [{peer, bytes}]
+close(peer)
+```
+
+**The wrapper** (a new top-level `desktop/` folder, Electron): the main process holds
+steamworks.js, the `BrowserWindow` loads `index.html` with `backgroundThrottling: false`, and a
+preload exposes `window.steamBridge` with the lobby and messaging calls plus the local SteamID and
+persona name. The renderer never touches Node. The wrapper is a shell around the same
+`index.html` a browser opens, so `node app/server.js` and double-click still run the game solo.
+
+**The role is decided once, before `startGame`.** `solo` when there is no bridge or the player
+picked the offline plank; `host` when the local player created the lobby; `client` when they
+joined one. `NET.role === 'solo'` behaves as a host with no peers, and every guard reads
+`NET.isHost` (true for solo and host) or `NET.isClient`.
+
+### The sim seam
+
+`updatePlay` today:
+
+```
+tick++
+for p: if ai -> updateAI; updatePlayer
+resolveContests; updateMarket; updateAbilityWorld; updateDrop; arrows; drops; ...
+```
+
+After the change, host and solo:
+
+```
+netHostStep():  for each remote p: p.input <- newest queued input for this tick (or held last)
+tick++
+for p: if ai -> updateAI; if remote -> (already written); updatePlayer
+resolveContests ... (unchanged)
+netHostFlush(): every fourth tick build + send snapshot; flush the event ring; ack inputs
+```
+
+Client:
+
+```
+netClientStep(): send this tick's input (with the two before it)
+                 drain incoming: snapshots into the interpolation buffer, events into playEvent
+                 applyInterpolated(renderTime) -> writes players/arrows/drops/structures/robots/animals/fish/eagles/market/state clock
+                 (no updatePlayer, no updateAI, no resolveContests, no world subsystem updates)
+cosmetics only:  particles, floaters, footprints, snow, camera, shake, fx aging, HUD clocks
+```
+
+The fixed step lives in `loop()`: an accumulator hands `update(TICK_DT)` zero or more times per
+frame, capped at a few steps to stop a stall spiralling, and `render()` runs once with the
+fraction left over for the interpolation. `TICK_DT = 1 / 60` - **landed in PATCH 3.42**, at 60
+rather than the 30 first proposed, because `TOOL_ROF_STEP` already counts rate of fire in 1/60
+steps and every integrator was tuned there, so the refactor changed no feel; a coarser network
+tick is a snapshot cadence, not a sim one. Practice and the title step the same way, so there is
+one loop, not two.
+
+## Authority, in one table
+
+| Thing | Owner | Reaches a client as |
+| --- | --- | --- |
+| player position, velocity, facing, hp, level, xp, gold, bag, food, gear, cards, cooldowns, status timers, prone, aboard/drop | host | snapshot fields |
+| arrows, drops, robots, animals, fish, camp monsters, the two eagles, structures and their hp/tier | host | snapshot lists (structures and eagles keyed by id, delta only) |
+| `ground` / `objects` mutations, a build, a demolish, a felled tree, a hole opening | host | reliable event, plus a periodic 32-bit hash of both arrays for drift |
+| market prices, stock, restock road | host | snapshot block at 1 Hz, trades as events |
+| `state.time` / `day` / `tick` / `darkness` / wind | host | every snapshot carries `tick` and `time`; clients derive darkness and wind from them as they do now |
+| deaths, kills, respawn timers, the end of the match | host | reliable event (`die`, `respawn`, `end`) |
+| a hit landing, a swing, a cast, a shop trade, a market notice, a roost alarm | host | event; the client plays the fx and cue |
+| particles, floaters, footprints, snow, camera, shake, cursor, HUD, tooltips, minimap, audio | each machine | never on the wire |
+| profile stats (`addGold`, `addKill`, `addWin`...) | the owning client | events applied to `PROFILE` by the machine that owns the character |
+| the local player's walk | client, **pass 2 only** | predicted then reconciled |
+
+**Prediction is deliberately zero at launch.** The clients render the world about 100 ms in the
+past and interpolate. The game is momentum walking, 1.5 s meals and a bow you draw; it is not a
+twitch shooter, and a mispredicted roll that un-hits is a worse feel than a short delay on the
+walk. If the walk feels sluggish under real SDR latency, pass 2 predicts **only the movement
+banner** for the local player: it is a pure function of the input, the position and the static
+tile grid, so re-running it over the unacked inputs is cheap and exact. Nothing that touches
+another unit, a contest or damage is ever predicted.
+
+## Message schema
+
+All messages are binary `ArrayBuffer`s over the transport, first byte the type, second the
+`SCHEMA_VER`. Lobby-phase state rides Steam lobby data and lobby chat, not this channel.
+`R` is reliable, `U` is unreliable no-Nagle.
+
+| Type | Dir | Ch | Body |
+| --- | --- | --- | --- |
+| `HELLO` | c→h | R | `patch:u16` (PATCH_TXT ×100), `schema:u8`, `steamId:u64`, `name:str16`, `cls:u8`, `look:u8[6]` |
+| `WELCOME` | h→c | R | `id:u8` (slot), `team:u8`, `seed:u32`, `tick:u32`, `time:f32`, `roster:[{id, team, control, name, cls, look}]×10`, `aiLevel:u8` |
+| `REFUSE` | h→c | R | `why:u8` (VERSION / FULL / LATE / BANNED) |
+| `FULLSYNC` | h→c | R, chunked | every snapshot field for every entity, `ground:u8[WORLD²]` (54 KB, deflated), `objects` as a sparse `(idx:u16, type:u8, extra)` list, structures, market, eagles. Sent once at join and once on reconnect |
+| `INPUT` | c→h | U | `tick:u32`, then 3 × `{mx:i8, my:i8, aimX:u16, aimY:u16, flags:u8 (fire, work, slide, dodge, grapple, eatBerry, eatFish), ability:i8}` for ticks `t, t-1, t-2`; optional `cmd` appended as `{kind:u8, tx:u8, ty:u8, id:u8}` or `{kind:u8, piece:u8}` |
+| `CMD` | c→h | R | a `cmd` that must not be lost even under loss: build, upgrade, demolish, gear, skill, shop. Carries `tick` and a `seq:u16`; the host de-duplicates by seq |
+| `SNAP` | h→c | U | `tick:u32`, `time:f32`, `ackInput:u32`, `baseTick:u32` (the snapshot this is a delta from, 0 for full), then a bitmask-prefixed block per player, then arrows, drops, robots, animals, fish, eagles, each as `count` + entries |
+| `ACK` | c→h | U | `snapTick:u32` — the newest snapshot applied, so the host can delta from it |
+| `EVENT` | h→c | R | `tick:u32`, then a list of `{kind:u8, ...}` (table below) |
+| `PING`/`PONG` | both | U | `t:u32` ms; the client uses the RTT to size its interpolation delay |
+| `LEAVE` | both | R | `why:u8` |
+| `HASH` | h→c | U | `tick:u32`, `ground:u32`, `objects:u32`; a client that disagrees twice in a row requests `FULLSYNC` |
+
+### The per-player snapshot block
+
+A bitmask says which groups changed since `baseTick`; unchanged groups are omitted.
+
+| Group | Fields | Bytes |
+| --- | --- | --- |
+| pose | `x, y` (u16, 1/8 px), `vx, vy` (i8, 1/4 px/s), `dir` (u8), `moving, sliding, prone, dead, aboard` flags | 7 |
+| vitals | `hp, maxHp` (u16), `level` (u8), `xp` (u16), `gold` (u32), `kills` (u8) | 12 |
+| clocks | `swingT, swingCd, nockT, chargeT, dodgeT, eatT, castT, respawnT, hurtT, invuln` as u8 in 10 ms | 10 |
+| status | `stunT, rootT, slowT, netT, markT, igniteT, shieldT, buffT, hide` as u8 | 9 |
+| charges | `dodgeCharges, skillPts, abCd[4]` (u16 each), `abLv[4]` (u8) | 14 |
+| held | current slot index, the tool instance in hand (type + bits, so the drawn body is right) | ~6 |
+| bag | the full bag and pouch, only sent to **that** player's client and only on change | ~40 |
+| meta | `cls, look, control, team, eliminated, flag` | rare, ~10 |
+
+Ten players at 15 Hz with pose every snapshot and the rest on change is well under 1 KB per
+snapshot. Arrows are `{id:u16, x, y, vx, vy, type:u8, owner:u8}`; a client that has not seen an
+arrow's id spawns it, one it stops seeing is removed. Drops, robots, animals and fish follow the
+same id-keyed pattern. Structures are keyed by tile index and only ship on change.
+
+### Events
+
+Each is the moment a sim file used to fire a cue or an fx directly. On the host
+`netEvent(kind, ...)` plays the local cosmetics **and** queues the event; on a client
+`playEvent` runs the cosmetics only. A sim file never calls `SFX.hit()` again at a moment the
+host owns; it calls `netEvent('hit', ...)`.
+
+| kind | payload | client cosmetics |
+| --- | --- | --- |
+| `hit` | target unit ref, dmg, nx, ny, dmgType, crit | flash, floater, knock puff, `SFX.hit`/`bigHurt`, shake if local |
+| `swing` | player id, tool type | swing arc fx, `SFX.axe`/`pick` |
+| `loose` | player id, pow | `SFX.loose` |
+| `cast` | player id, ability id, aim | telegraph shapes, cue |
+| `die` | player id, killer id, cause | death fx, feed line, `SFX.die`; the local client opens the death overlay |
+| `respawn` | player id | landing fx |
+| `struct` | tile, type, tier, op (build/upgrade/wreck/demolish) | `repaintGround` if needed, `SFX.build`/`wreck` |
+| `ground` | tile, new type | `repaintGround` |
+| `obj` | tile, type or null, extra | felled tree, opened chest, hole |
+| `drop` | drop id, x, y, type, n, item | spawn animation, `SFX.drop` |
+| `pickup` | drop id, player id | magnet fx, `SFX.pickup` |
+| `gold` | player id, n, x, y | gold floater; the owning client calls `PROFILE.addGold` |
+| `trade` | player id, act, good, n, price | till fx; the counter refreshes |
+| `notice` | kind, payload | `raiseNotice` |
+| `eagle` | team, hp, hx, hy | burst, `bigHurt`/`alarm`, the roost plate |
+| `end` | how, snapshot of the tally | `endMatch` on every client with the host's numbers |
+| `stat` | player id, which, n | the owning client's `PROFILE.add*` |
+| `sound` | cue id, x, y | any cue not covered above; gated by `nearPlayer` locally |
+
+## The lobby lifecycle
+
+Everything before the first tick rides Steam's lobby system. The match itself rides P2P.
+
+1. **The LOBBY plank.** On the title, beside PLAY, when `window.steamBridge` exists. It opens a
+   panel with CREATE, JOIN (friends' lobbies via the overlay's invite, plus a public list if we
+   want one) and the class row the current class-select already draws.
+2. **Create.** Host calls `createLobby(kind, 10)`. Lobby data set by the host: `patch`,
+   `schema`, `seed` (rolled now, so every joiner can pre-generate the world while waiting),
+   `aiLevel`, `state = 'open'`. The host's own `HELLO` fields go into lobby member data.
+3. **Join.** A joiner calls `joinLobby(id)`. Steam refuses a full lobby. On entering, the client
+   checks `patch` and `schema` against its own and leaves with a version plate if they differ,
+   otherwise it publishes its member data (name, class, look) and starts `genWorld` off the
+   lobby's seed in the background.
+4. **Waiting room.** The class-select lobby screen, drawn for ten slots: humans from member
+   data, the rest as bots. Team assignment is the host's: alternate by join order, humans first
+   on both sides, and a SWAP arrow on the host's screen. Team choice is member data written by
+   the host; clients read it. Ready is a member-data flag.
+5. **Start.** The host sets `state = 'starting'`, which locks joins, and starts the existing
+   five-second PLAY count on every screen. Each client opens a P2P session to the host's
+   identity (SDR handles the relay) and sends `HELLO`. The host answers `WELCOME` with the final
+   roster, slot ids and teams, then `FULLSYNC` (cheap at tick 0: nothing has moved), then its
+   first `SNAP`. A client whose session is not up by the end of the count is refused with
+   `LATE` and the slot becomes a bot.
+6. **Tick 0.** The host calls `initPlayers` with the roster instead of the defaults, then
+   `beginDrop`. `beginDrop` seats players by slot, not by `p === player`. Every client has
+   already run `initPlayers` from the `WELCOME` roster, set `player = players[myId]`, and
+   applies the first snapshot; the eagle ride is fully authoritative, so the ride and the jump
+   window arrive as snapshot state (`aboard`, `dropT`, eagle position) like everything else.
+7. **In match.** The lobby stays alive with `state = 'live'` so a dropped client can find the
+   host again. Steam's lobby member list is how the host notices a peer that vanished without a
+   `LEAVE`.
+8. **End.** `end` event; every client shows the ceremony with the host's tally. The lobby
+   returns to `open` and the same room can start again with the same roster.
+
+### Joins, leaves, reconnects
+
+- **A client drops.** The host holds the slot for `RECONNECT_GRACE` (60 s), flips the body to
+  `control: 'ai'` so the side keeps its number, and remembers the SteamID. A `HELLO` from that
+  id inside the grace lands back in the slot: `WELCOME` with the same id, `FULLSYNC`, and the
+  body returns to `remote`. Past the grace the slot is a bot for the rest of the match.
+- **A mid-match join** is a `HELLO` from a new SteamID while `state = 'live'`. Accepted only
+  into an `ai` slot on the smaller team (or either at equal size), and only while
+  `state.elapsed` is under `LATE_JOIN_T` (5 minutes past the drop). The joiner gets the full
+  sync and respawns at their bird through the ordinary respawn path. Refused with `LATE` after.
+- **The host quits or vanishes.** No migration at launch. Clients that lose the host session
+  for `HOST_LOST_T` (10 s) end locally with a `HOST LEFT` plate: no win, no loss, no stat
+  writes. The lobby closes. Host migration is the first thing players will ask for and the
+  hardest thing on this page; it needs every client to hold enough state to become the host,
+  and a deterministic successor pick. It is scoped out on purpose and listed under risks.
+- **Kick.** Host only, from the waiting room. In match, a peer is only ever dropped by Steam.
+
+## Migration plan
+
+Each step is a PR on its own, each keeps solo play identical, and each is verifiable with the
+existing seed-42 fingerprint and headless staging before any Steam code exists. Steps 1 through 4
+are pure refactors of the single-player game and are worth doing whatever happens to the
+networking.
+
+1. **Fixed step - DONE (PATCH 3.42).** Accumulator in `loop()`, `TICK_DT = 1/60`, `update(TICK_DT)` zero or more
+   times per frame, `render()` once (the leftover fraction is banked, not yet interpolated). The world's clocks and the
+   day cycle come out identical at the same wall time; gameplay feel is re-checked by hand since
+   the momentum integrator has only ever seen 16 ms steps. Move the host tick off rAF onto a
+   timer so an unfocused window keeps stepping. `DBG.step` already steps by `1/60`; it moves to
+   `TICK_DT`.
+2. **Unpin player 0.** `initPlayers(roster)` takes a roster (default: the one it builds today).
+   `player = players[localId]`; `beginDrop` seats by slot; `applyCharacter(p, char)` takes a
+   target; `skin()` keeps reading `player.team` and is already correct for any local id.
+   Verified by staging the local human in slot 7 with `DBG` and playing a match.
+3. **Events out of the sim.** Introduce `netEvent` and route every `SFX`/fx call that marks a
+   host-owned moment through it. In solo the function plays the cosmetics directly, so nothing
+   changes on screen; the diff is mechanical and the code map gains a row per banner touched.
+   `Math.random` in actions.js's fire colour moves to `fxRng`.
+4. **Loopback harness.** `NET` with the loopback transport, but with a `DBG.netEcho` flag that
+   makes solo **serialize every snapshot and apply it back into a second set of singletons**,
+   then diffs. This is how the schema is proven complete before a second machine exists: any
+   field the render pass reads that the snapshot does not carry shows up as a visible glitch
+   on a headless capture. This is also where the quantizers get their precision picked.
+5. **Two browsers, one machine.** A `transport-ws.js` that speaks the same interface over a
+   local WebSocket relay (a thirty-line addition to `app/server.js`), so host and client can be
+   two headless Edge tabs on `?seed=N` driven by the existing `POST /shot` harness. Latency and
+   loss are injected here. Every reconnect and late-join path is tested here, not on Steam.
+6. **The wrapper.** `desktop/` with Electron, steamworks.js, the preload bridge, and the
+   `transport-steam.js` adapter. First target is only: create lobby, join lobby, exchange
+   `HELLO`/`WELCOME`, run the same match the WebSocket transport already runs.
+7. **Lobby screens.** The LOBBY plank, the waiting room over the existing class-select, the
+   version plate, the `HOST LEFT` end state, the reconnect plate. All under the show-don't-label
+   rule: a slot's team is its colour, a ready is a lit plank, a missing peer is a dimmed tag.
+8. **Pass 2 (only if needed): walk prediction** for the local player over the unacked inputs,
+   with a snap threshold and a smooth pull-in.
+
+## Risks
+
+Ranked by how likely each is to bite and how expensive it is when it does.
+
+1. **The fixed step changes the game's feel.** Every integrator, cooldown and animation was
+   tuned under 16 ms frames. Landing the step at 1/60 sidestepped this for the sim itself; the
+   cost that remains is presentation: a screen above 60 Hz now repeats a sim state on the
+   frames between steps, and a heavy stall plays a moment of slow motion instead of a jump.
+   Render interpolation, which the client's snapshot buffer needs anyway, removes the first.
+2. **The snapshot schema is never quite complete.** The render pass and the HUD read dozens of
+   fields, and any one the snapshot omits renders stale on a client: a bow drawn that never
+   looses, a stun star that never clears. Mitigation: the loopback echo harness in step 4 is a
+   diff, not a play test, and the schema is versioned so a client and a host never disagree
+   silently.
+3. **Background throttling on the host.** Alt-tab and the whole lobby freezes. Mitigation:
+   host tick on a timer, `backgroundThrottling: false` in the wrapper, and a visible plate on
+   the clients when snapshots stop arriving so the failure is legible rather than a rubber band.
+4. **Edge-triggered inputs under loss.** `dodge`, `ability`, `eatFish` and `cmd` are one-tick
+   pulses. A lost datagram eats a dodge in a fight. Mitigation: three ticks per `INPUT`, a host
+   that consumes each tick's struct exactly once, and `CMD` on the reliable channel for anything
+   with a cost.
+5. **Host advantage and trust.** The host sees zero latency and can, in principle, edit
+   anything. For a friends-lobby game this is accepted and stated; the host also gets the
+   `aiLevel` and the seed. Mitigation: input clamps on the host so a hacked client cannot walk
+   at 10× speed, and nothing else.
+6. **Steam Datagram Relay latency is real.** Two players on the same continent see 30 to 80 ms
+   RTT through a relay; across an ocean it is 150+. With zero prediction the walk lags by that
+   plus a snapshot interval. Mitigation: the interpolation delay is sized from the measured
+   RTT, and step 8 exists.
+7. **Profile stats and gold attribution.** `gainGold` is the XP source and calls
+   `PROFILE.addGold` on the machine it runs on, which is the host for everyone. Mitigation: the
+   `gold` and `stat` events, and a rule that the host never writes another SteamID's profile.
+8. **Two ways to run the same page.** Electron and `file://` must both work forever. Every Steam
+   call goes through one bridge object with an `if (!window.steamBridge)` at exactly one place,
+   the role pick. A stray reference elsewhere is a broken double-click.
+9. **Binary encoding in JavaScript.** Hand-written `DataView` packing is fiddly and the bugs are
+   silent misalignments. Mitigation: the schema is a table in `schema.js` and encode/decode are
+   generated from the same table, never written twice.
+10. **World drift.** A client whose `ground`/`objects` disagree with the host walks through a
+    wall that is not there. Mitigation: mutations are reliable events, the `HASH` check runs
+    every second, and a mismatch pulls a full sync rather than guessing.
+11. **Host migration will be demanded.** A host with a bad connection takes nine people down.
+    It is out of scope here because it needs every client to hold a complete authoritative
+    state and to agree on a successor; the snapshot schema being complete (risk 2) is the
+    precondition, so getting that right first keeps the door open.
+12. **Chunking the full sync.** `FULLSYNC` with the 54 KB ground array exceeds a single
+    message's comfortable size; it is deflated and chunked over the reliable channel, and a
+    client that joins mid-match spends a second or two on a plate while it lands. Steam's
+    reliable channel handles the ordering; our code handles the reassembly and the timeout.
+
+## Open decisions
+
+Things this pass does not settle and a later one must, with the current lean in italics.
+
+- Public lobbies or invite-only at launch. *Invite-only; a public list is a UI project.*
+- Whether the host may play as a client of its own sim through the same code path, or is
+  special-cased to write `p.input` directly. *Same path with the loopback transport, so the
+  host's own latency is one tick and its code is the client's code.*
+- Where the `?seed=N` and `DBG` harness sit in a networked match. *Host only; a client's DBG
+  writes to singletons are overwritten by the next snapshot, which is correct.*
+- Whether `PATCH_TXT` alone is the version handshake or a content hash of `js/` is added.
+  *`PATCH_TXT` plus `SCHEMA_VER`; a content hash is cheap to add later.*
