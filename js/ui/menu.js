@@ -13,13 +13,13 @@ const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
 const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'WIKI', 'SETTINGS'];
 // sealed under ice until they exist: inert to hover, keys and clicks.
-// MULTIPLAYER (1) is solid ice - a coming-soon plank. PRACTICE TOOL (2) is
-// sealed the same way but its ice is BREAKABLE, and it says so: one crack web
+// MULTIPLAYER (1) thawed in 3.48: it opens the rooms screen below. PRACTICE
+// TOOL (2) is sealed, but its ice is BREAKABLE, and it says so: one crack web
 // stands on it at rest (ICE_FLAW, drawn by drawMenuButton) where the solid
 // plank has none. Three knocks shatter the sheet (iceRefuse below), the
 // profile remembers, and from then on the plank is a live item that boots
 // the training arena (beginPractice).
-function menuFrozen(i) { return i === 1 || (i === 2 && !PROFILE.practiceOpen()); }
+function menuFrozen(i) { return i === 2 && !PROFILE.practiceOpen(); }
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 // First plank, in the 270-tall authored frame; the seed row follows the last
 // plank. The pitch tightened by 2 and the column started 4 higher when the
@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.47'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.48'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.48', 'THE MULTIPLAYER PLANK THAWS: HOST A ROOM OR JOIN ONE OFF THE LIST, WAIT TOGETHER ON THE CLASS SCREEN, AND RIDE THE SAME EAGLE - IN A BROWSER OR THE DOWNLOADED APP, WHICH THE NEW DOWNLOAD TAG HANDS YOU.'],
   ['3.47', 'THE GAME HAS A WINDOWS WRAPPER: A DESKTOP WINDOW AROUND THE SAME PAGE, WITH STEAM BEHIND IT FOR LOBBIES AND PEER-TO-PEER PLAY. THE BROWSER AND THE DOUBLE-CLICK STILL WORK EXACTLY AS THEY DID.'],
   ['3.46', 'TWO WINDOWS CAN NOW PLAY ONE MATCH ON ONE MACHINE - ONE HOSTS, THE OTHER JOINS, TAKES A SLOT, RIDES, FIGHTS, DIES AND COMES BACK, EVEN AFTER A RELOAD. A DEV BUILD OF THE ONLINE GAME, NOT YET THE ONLINE GAME.'],
   ['3.45', 'THE WHOLE MATCH CAN NOW BE WRITTEN DOWN AS ONE SNAPSHOT AND READ BACK PIXEL FOR PIXEL - THE THING AN ONLINE HOST WILL SEND YOUR SCREEN. NOTHING CHANGES IN PLAY.'],
@@ -297,6 +298,145 @@ function overPatchTag() {
   const r = patchTagRect();
   return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
 }
+// the DOWNLOAD tag, bottom centre, in a browser only: the wrapper IS the
+// download (desktop/), so the page under it has nothing to offer. It opens
+// the newest release, which a tag push builds (.github/workflows/desktop.yml)
+const DOWNLOAD_URL = 'https://github.com/Aptyll/SmallScope/releases/latest';
+const IS_APP = !!window.steamBridge || /Electron/i.test(navigator.userAgent);
+const DL_TXT = 'DOWNLOAD';
+function downloadTagRect() {
+  const w = pixelTextWidth(DL_TXT) + 7; // the arrow and its gap lead the word
+  return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - 9, w, h: 5 };
+}
+function overDownloadTag() {
+  if (IS_APP) return false;
+  const r = downloadTagRect();
+  return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
+}
+function drawDownloadTag() {
+  if (IS_APP) return;
+  const r = downloadTagRect(), hot = !state.menu.panel && overDownloadTag();
+  const col = hot ? '#ffd95c' : '#5a6690';
+  ctx.fillStyle = col; // a down arrow: the shaft and its head
+  ctx.fillRect(r.x + 2, r.y, 1, 3); ctx.fillRect(r.x + 1, r.y + 2, 3, 1); ctx.fillRect(r.x + 2, r.y + 3, 1, 1);
+  drawPixelTextShadow(ctx, DL_TXT, r.x + 7, r.y, col, 'rgba(15,22,50,0.9)');
+  if (hot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(r.x, r.y + 7, r.w, 1); }
+}
+
+// ------------------------------------------------------------ rooms
+// The MULTIPLAYER plank's screen: the relay's open rooms as planks under a
+// HOST plank (docs/pvp-architecture.md; the relay: app/server.js). A room's
+// plank carries its host's name and ten pips, one lit per person in it, in
+// the paint of the side they sit on; a room on another patch is dimmed and
+// inert. HOST makes a room on the relay and opens the waiting room (the
+// class-select screen, which every peer then sees as this screen does); a
+// room's plank joins it, the row staying lit until the host's WELCOME
+// arrives, or rattling if the room would not have us.
+const RM_W = 200, RM_H = 22, RM_GAP = 6, RM_MAX = 6;
+const RM_PIP = 3, RM_PIP_GAP = 2;
+let roomsFeed = null; // the relay's list socket while the screen is up (wsRooms)
+function beginRooms() {
+  const m = state.menu;
+  m.screen = 'rooms';
+  m.rooms = []; m.roomsOk = false; m.rhover = {}; m.rsel = -1; m.roomsShake = 0;
+  if (roomsFeed) roomsFeed.close();
+  roomsFeed = wsRooms(netRelay(), (rooms, ok) => { m.rooms = rooms.slice(0, RM_MAX); m.roomsOk = ok; });
+  SFX.place();
+  SFX.music.play('select');
+}
+function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null; } }
+function leaveRooms() {
+  roomsFeedClose();
+  if (NET.role !== 'solo') netLeave();
+  state.menu.screen = 'menu';
+  SFX.pickup();
+  SFX.music.play('intro');
+}
+function roomsLayout() {
+  const toy = frameTop();
+  const host = { x: Math.round((VIEW_W - MENU_BW) / 2), y: toy + MENU_Y0, w: MENU_BW, h: MENU_BH };
+  const rows = [];
+  const x = Math.round((VIEW_W - RM_W) / 2);
+  for (let k = 0; k < state.menu.rooms.length; k++) rows.push({ x, y: toy + MENU_Y0 + MENU_PITCH + 10 + k * (RM_H + RM_GAP), w: RM_W, h: RM_H, k });
+  return { toy, host, rows };
+}
+function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
+function roomsHit() {
+  const { host, rows } = roomsLayout();
+  if (overRect(host, 2, 3)) return 'host';
+  for (const r of rows) if (roomOk(state.menu.rooms[r.k]) && overRect(r, 2, 2)) return r.k;
+  return null;
+}
+function hostRoom() {
+  roomsFeedClose();
+  netHost();
+  beginSelect();
+}
+function joinRoom(k) {
+  const m = state.menu, r = m.rooms[k];
+  if (!r || !roomOk(r) || NET.role === 'client') return;
+  m.rsel = k;
+  // the world is the host's: SEED is decided at load (js/core.js), so a page
+  // born on another seed starts over on the room's and joins from boot (?join=)
+  const seed = r.data && +r.data.seed;
+  if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room; return; }
+  netJoin(r.room);
+  SFX.place();
+}
+function roomsKey(k) {
+  const m = state.menu;
+  if (k === 'escape' || k === 'backspace') { leaveRooms(); return; }
+  if (moveDir(k) === 'up') { m.rsel = Math.max(-1, m.rsel - 1); SFX.pickup(); }
+  else if (moveDir(k) === 'down') { m.rsel = Math.min(m.rooms.length - 1, m.rsel + 1); SFX.pickup(); }
+  else if (k === 'enter' || k === ' ') { if (m.rsel < 0) hostRoom(); else joinRoom(m.rsel); }
+}
+function roomsClick() {
+  const m = state.menu;
+  if (m.roomsT < 1) return;
+  const h = roomsHit();
+  if (h === 'host') { m.pressT = 0.12; hostRoom(); }
+  else if (h !== null) joinRoom(h);
+}
+function updateRooms(dt) {
+  const m = state.menu;
+  const h = m.roomsT >= 1 ? roomsHit() : null;
+  const keys = ['host']; for (let k = 0; k < m.rooms.length; k++) keys.push(k);
+  for (const key of keys) { const t = h === key || (key !== 'host' && key === m.rsel) ? 1 : 0; m.rhover[key] = (m.rhover[key] || 0) + (t - (m.rhover[key] || 0)) * Math.min(1, dt * 14); }
+  if (m.roomsShake > 0) m.roomsShake = Math.max(0, m.roomsShake - dt);
+  // a join answered: the waiting room on a welcome, a rattle on a refusal
+  if (NET.role === 'client') {
+    if (NET.welcomed) { roomsFeedClose(); beginSelect(); }
+    else if (NET.refused || (NET.transport.error && !NET.transport.open)) { netLeave(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
+  }
+}
+function renderRooms(now, a) {
+  const m = state.menu;
+  const { host, rows } = roomsLayout();
+  drawSelectBackdrop(now, a);
+  ctx.globalAlpha = a;
+  drawMenuButton(host, 'HOST', m.rhover.host || 0, now, m.pressT > 0 && (m.rhover.host || 0) > 0.5);
+  const shake = m.roomsShake > 0 ? Math.round(Math.sin(m.roomsShake * 60) * 2 * (m.roomsShake / NAME_SHAKE_T)) : 0;
+  for (const r of rows) {
+    const room = m.rooms[r.k], ok = roomOk(room), joining = r.k === m.rsel && NET.role === 'client';
+    const dx = r.k === m.rsel && shake ? shake : 0;
+    ctx.globalAlpha = a * (ok ? 1 : 0.4);
+    drawMenuButton({ x: r.x + dx, y: r.y, w: r.w, h: r.h }, '', ok ? (m.rhover[r.k] || 0) : 0, now, joining);
+    const lift = ok ? Math.round((m.rhover[r.k] || 0) * 2) : 0;
+    const nm = (room.data && room.data.name) || '?';
+    drawPixelTextShadow(ctx, nm, r.x + dx + 8, r.y + 8 - lift, joining ? '#ffd95c' : '#dfe6ff', '#0a0e23');
+    // ten pips, one per seat: the people in it lit in their side's paint
+    const humans = Math.min(10, (room.data && room.data.humans) | 0), live = room.data && room.data.state === 'live';
+    const px0 = r.x + dx + r.w - 8 - 10 * RM_PIP - 9 * RM_PIP_GAP;
+    for (let i = 0; i < 10; i++) {
+      const lit = i < humans;
+      ctx.fillStyle = lit ? TEAMS[skin(i % 2)].mark : live ? '#3a2a2a' : '#1a2142';
+      ctx.fillRect(px0 + i * (RM_PIP + RM_PIP_GAP), r.y + 9 - lift, RM_PIP, RM_PIP);
+    }
+  }
+  ctx.globalAlpha = a;
+  drawBackHint(ctx, Math.round(VIEW_W / 2), roomsLayout().toy + 244, 'BACK');
+  ctx.globalAlpha = 1;
+}
 
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
@@ -399,6 +539,7 @@ function menuActivate(i) {
   if (menuFrozen(i)) return; // solid ice - iceRefuse() is the only answer
   SFX.unlock();
   if (i === 0) beginSelect();
+  else if (i === 1) beginRooms();
   else if (i === 2) beginPractice();
   else if (i === 3) beginWiki();
   else if (i === 4) openMenuPanel('settings');
@@ -466,6 +607,7 @@ function menuKey(e) {
   if (m.screen === 'gear') { if (m.gearT >= 1) gearKey(k); return; }
   if (m.screen === 'select') { if (m.screenT >= 1 && m.gearT <= 0) selectKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
+  if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
@@ -487,6 +629,7 @@ function menuClick() {
   if (m.screen === 'gear') { gearClick(); return; }
   if (m.screen === 'select') { selectClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
+  if (m.screen === 'rooms') { roomsClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
   if (m.panel) {
     if (!menuPanelReady()) return;
@@ -497,6 +640,7 @@ function menuClick() {
   }
   if (overCharTag()) { beginChars(); return; }
   if (overPatchTag()) { openMenuPanel('patch'); return; }
+  if (overDownloadTag()) { SFX.unlock(); window.open(DOWNLOAD_URL, '_blank'); return; }
   const h = menuHit();
   if (h < 0) return;
   if (menuFrozen(h)) { iceRefuse(h); return; }
@@ -566,6 +710,8 @@ function updateTitle(dt) {
   m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'chars' || m.screen === 'create' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'chars') updateChars(dt);
   else if (m.screen === 'create') updateCreate(dt);
+  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
+  if (m.screen === 'rooms') updateRooms(dt);
   // a frozen plank can't be selected, so its hover ease tracks the pointer instead
   const hit = !m.panel && m.screen === 'menu' ? menuHit() : -1;
   for (let i = 0; i <= MENU_ITEMS.length; i++) {
@@ -608,7 +754,7 @@ function updateTitle(dt) {
     m.countT -= dt;
     const n = Math.max(0, Math.ceil(m.countT));
     if (n < m.countN) { m.countN = n; if (n > 0) SFX.countTick(); }
-    if (m.countT <= 0) { m.countT = 0; if (m.screen === 'gear') leaveGear(); lockIn(); }
+    if (m.countT <= 0) { m.countT = 0; if (m.screen === 'gear') leaveGear(); if (!NET.isClient) lockIn(); }
   }
   if (m.lockT > 0) {
     m.lockT -= dt;
@@ -1774,9 +1920,10 @@ function gearClick() {
 function selectHit() {
   const { slots, play, loadout, diff } = selectLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
+  if (over(loadout, 3, 2)) return 'gear';
+  if (NET.isClient) return null; // a guest's room: the host's PLAY, the host's difficulty, its own character as it came
   for (const r of slots) if (over(r, 2, 2)) return 'slot' + r.i;
   if (over(play, 2, 3)) return 'play';
-  if (over(loadout, 3, 2)) return 'gear';
   for (let k = 0; k < diff.length; k++) if (over(diff[k], 2, 3)) return 'diff' + k;
   return null;
 }
@@ -1791,6 +1938,7 @@ function beginSelect() {
   SFX.music.play('select');
 }
 function leaveSelect() {
+  if (NET.role !== 'solo') netLeave(); // a host's room closes; a guest walks out of one
   state.menu.screen = 'menu';
   state.menu.countT = 0;
   SFX.pickup();
@@ -1821,7 +1969,7 @@ function selectStep(d) {
 // face-up, the gear pop-up shut, lockIn).
 function pressPlay() {
   const m = state.menu;
-  if (m.lockT > 0) return;
+  if (m.lockT > 0 || NET.isClient) return; // the host's plank
   if (m.countT > 0) {
     m.countT = 0; m.countN = 0;
     if (m.screen === 'gear') leaveGear();
@@ -2221,7 +2369,7 @@ function renderSelect(now, a) {
   const hover = m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
   const pressed = m.pressT > 0 || m.lockT > 0 || m.countT > 0;
   ctx.globalAlpha = a;
-  drawMenuButton(play, 'PLAY', hover === 'play' ? 1 : 0.7, now, pressed);
+  if (!NET.isClient) drawMenuButton(play, 'PLAY', hover === 'play' ? 1 : 0.7, now, pressed);
   // the collapsed gear widget: the four picked variants in a column at the
   // figure's hand; its pop-up opens off a click (beginGear). Hover lifts it -
   // the this-is-a-button grammar.
@@ -2832,7 +2980,8 @@ function renderTitle(now) {
   const sc = easeInOut(m.screenT);             // class select cross-fade
   const tc = easeInOut(m.wikiT);               // ...and the wiki's own
   const kc = easeInOut(m.charT);               // ...and the character screens'
-  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, kc); // chrome ducks under a panel or any full screen
+  const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
+  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, kc, rc); // chrome ducks under a panel or any full screen
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
@@ -2921,6 +3070,7 @@ function renderTitle(now) {
     drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
     drawCharTag(now); // the active character and its quill, opposite corner
+    drawDownloadTag(); // bottom centre, browsers only
     ctx.globalAlpha = 1;
   }
 
@@ -2930,6 +3080,7 @@ function renderTitle(now) {
   if (sc > 0.005 && gc > 0.005) renderGear(now, sc * (1 - out) * gc);
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
+  if (rc > 0.005) renderRooms(now, rc * (1 - out));
 
   // sub-panels slide up from the bottom edge over the still-visible world
   if (m.panel) {

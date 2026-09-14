@@ -132,6 +132,7 @@ function update(dt) {
   if (NET.isClient) {
     if (state.mode !== 'title') sampleHumanInput(player, dt);
     netClientStep(dt);
+    if (state.mode === 'title') updateTitle(dt); // the waiting room is the title's: its eases and hovers run here too
   } else if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
     !state.paused && !state.settingsOpen) {
     sampleHumanInput(player, dt);

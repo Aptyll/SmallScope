@@ -67,6 +67,10 @@ poll() -> [{peer, bytes}]
 close(peer)
 ```
 
+**Order of transports, revised 2026-09-14 (Noah's ruling)**: the relay first, for browser and
+wrapper alike - it is the server Noah hosts - and Steam later behind a flag. The wrapper below
+stays as written; it just does not lead.
+
 **The wrapper** (a new top-level `desktop/` folder, Electron): the main process holds
 steamworks.js, the `BrowserWindow` loads `index.html` with `backgroundThrottling: false`, and a
 preload exposes `window.steamBridge` with the lobby and messaging calls plus the local SteamID and
@@ -341,9 +345,18 @@ networking.
    reliable packet is capped at 1 MB (hence the parts) and an unreliable one at 1200 bytes,
    which makes the quantized wire form a precondition for the unreliable channel rather than
    an optimisation.
-7. **Lobby screens.** The LOBBY plank, the waiting room over the existing class-select, the
-   version plate, the `HOST LEFT` end state, the reconnect plate. All under the show-don't-label
-   rule: a slot's team is its colour, a ready is a lit plank, a missing peer is a dimmed tag.
+7. **Lobby screens - DONE (PATCH 3.48), on the relay first.** Noah's ruling (2026-09-14): the
+   relay is the product's server - a browser at a served address, the wrapper at file:// and one
+   machine playing itself in two windows all reach the relay Noah hosts with the port forwarded
+   - and Steam waits behind a flag (`?transport=steam`, `--transport=steam`), the same three
+   doors (`netHost`/`netJoin`/`netLeave`) on either. The MULTIPLAYER plank thawed: the rooms
+   screen lists the relay's open rooms as planks under HOST (a host's name, ten pips lit per
+   person in their side's paint, another patch dimmed); joining reloads the page onto the room's
+   seed; the waiting room is the class-select screen minus PLAY, the notches and the swap for
+   guests, with the host's count on every screen. The DOWNLOAD tag on the title opens the newest
+   Release, which every `v*` tag builds (desktop/build.js, .github/workflows/desktop.yml: a
+   153 MB portable zip, music included). Still owed here: the `HOST LEFT` end state as a plate
+   (a guest's transport reports it, the screen does not yet), a version plate on the door.
 8. **Pass 2 (only if needed): walk prediction** for the local player over the unacked inputs,
    with a snap threshold and a smooth pull-in.
 

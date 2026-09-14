@@ -1,4 +1,6 @@
-// Minimal static file server for local dev.
+// Minimal static file server for local dev - and the match relay (below),
+// which is the same file because the relay is what Noah runs to host a
+// night of games: `node app/server.js` on a machine with the port forwarded.
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
@@ -14,8 +16,7 @@ const MIME = {
 
 const server = http.createServer((req, res) => {
   if (req.url === '/ws-debug') { // the relay's rooms, for a harness to read
-    const out = {}; for (const [k, r] of rooms) out[k] = { host: !!r.host, clients: [...r.clients.keys()] };
-    res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out)); return;
+    res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(roomList(true))); return;
   }
   if (req.method === 'POST' && (req.url === '/shot' || req.url.startsWith('/shot?'))) {
     let body = '';
@@ -72,18 +73,40 @@ const server = http.createServer((req, res) => {
 });
 
 // ------------------------------------------------------------ ws relay
-// A room-per-match relay for two (or ten) tabs on one machine, so the host
-// and client code paths run for real before a Steam transport exists
-// (js/net/transport-ws.js; docs/pvp-architecture.md, step 5). Dependency-
-// free on purpose - the repo has no package manager - so the WebSocket
-// handshake and framing are done here by hand: text frames only, client
-// frames masked, server frames not, lengths up to 2^53. The relay is dumb:
-// a room has one host and any number of clients; a client's frame goes to
-// the host tagged with the client's id, a host's frame carries `to` (a
-// client id, or '*' for every client) and is forwarded without it. Joining
-// and leaving reach the host as {t:'peer'} / {t:'gone'}.
-const rooms = new Map(); // name -> { host, clients: Map(id -> socket) }
+// The relay a match rides between screens: a browser, the wrapper, and one
+// day a Steam transport all speak to it alike (js/net/transport-ws.js;
+// docs/pvp-architecture.md). Dependency-free on purpose - the repo has no
+// package manager - so the WebSocket handshake and framing are done here by
+// hand: text frames, fragmentation, client frames masked, server frames not,
+// lengths up to 2^53. The relay is dumb: it never reads a match. A ROOM has
+// one host and any number of clients; a client's frame goes to the host
+// tagged with the client's id, a host's frame carries `to` (a client id, or
+// '*' for every client) and is forwarded without it; joining and leaving
+// reach the host as {t:'peer'} / {t:'gone'}.
+//   /ws?role=host              host a new room: the greeting carries its code
+//   /ws?role=host&room=CODE    host a named room (the harness)
+//   /ws?role=client&room=CODE  join one
+//   /ws?role=list              be sent the open rooms now and on every change
+// A host publishes what the list shows with {t:'room', data:{...}}: the
+// host's name, the patch, the seed, the room's state, the humans in it. The
+// list is public by design (Noah's ruling): a room is listed until its host
+// leaves, and a client sees the patch so a mismatch reads as dimmed, not as a
+// refusal at the door.
+const rooms = new Map(); // code -> { host, clients: Map(id -> socket), data }
+const listeners = new Set();
+const ROOM_MAX = 64;
 let nextPeer = 1;
+function makeCode() {
+  const A = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I or O: a code is read aloud
+  for (let tries = 0; tries < 100; tries++) { let c = ''; for (let i = 0; i < 4; i++) c += A[crypto.randomInt(A.length)]; if (!rooms.has(c)) return c; }
+  return null;
+}
+function roomList(all) {
+  const out = [];
+  for (const [code, r] of rooms) if (all || r.host) out.push({ room: code, n: r.clients.size + (r.host ? 1 : 0), data: r.data || {} });
+  return out;
+}
+function tellListeners() { const msg = { t: 'rooms', rooms: roomList(false) }; for (const s of listeners) wsSend(s, msg); }
 function wsAccept(key) { return crypto.createHash('sha1').update(key + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11').digest('base64'); }
 function wsFrame(text) {
   const body = Buffer.from(text, 'utf8'), n = body.length;
@@ -123,12 +146,24 @@ function wsParse(sock, buf, onText) {
 server.on('upgrade', (req, sock) => {
   const url = new URL(req.url, 'http://localhost');
   if (url.pathname !== '/ws' || !req.headers['sec-websocket-key']) { sock.destroy(); return; }
-  const room = url.searchParams.get('room') || 'lobby', role = url.searchParams.get('role') === 'host' ? 'host' : 'client';
+  const role = url.searchParams.get('role') === 'host' ? 'host' : url.searchParams.get('role') === 'list' ? 'list' : 'client';
+  let room = (url.searchParams.get('room') || '').toUpperCase();
   sock.write('HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ' + wsAccept(req.headers['sec-websocket-key']) + '\r\n\r\n');
-  let r = rooms.get(room); if (!r) { r = { host: null, clients: new Map() }; rooms.set(room, r); }
   const id = nextPeer++;
-  console.log('ws ' + role + ' #' + id + ' joins room ' + room);
   let buf = Buffer.alloc(0);
+  if (role === 'list') {
+    listeners.add(sock);
+    wsSend(sock, { t: 'relay', id, role });
+    wsSend(sock, { t: 'rooms', rooms: roomList(false) });
+    sock.on('data', (chunk) => { buf = wsParse(sock, Buffer.concat([buf, chunk]), () => wsSend(sock, { t: 'rooms', rooms: roomList(false) })); });
+    const bye = () => listeners.delete(sock);
+    sock.on('close', bye); sock.on('error', bye);
+    return;
+  }
+  if (role === 'host' && !room) { room = makeCode(); if (!room || rooms.size >= ROOM_MAX) { wsSend(sock, { t: 'refuse', why: 'FULL' }); sock.end(); return; } }
+  if (role === 'client' && !rooms.has(room)) { wsSend(sock, { t: 'refuse', why: 'NOROOM' }); sock.end(); return; }
+  let r = rooms.get(room); if (!r) { r = { host: null, clients: new Map(), data: {} }; rooms.set(room, r); }
+  console.log('ws ' + role + ' #' + id + ' joins room ' + room);
   if (role === 'host') {
     if (r.host) wsSend(r.host, { t: 'replaced' });
     r.host = sock;
@@ -138,10 +173,12 @@ server.on('upgrade', (req, sock) => {
     wsSend(r.host, { t: 'peer', peer: id });
   }
   wsSend(sock, { t: 'relay', id, role, room }); // the relay's own greeting - not the game's HELLO
+  tellListeners();
   sock.on('data', (chunk) => {
     buf = wsParse(sock, Buffer.concat([buf, chunk]), (text) => {
       let msg; try { msg = JSON.parse(text); } catch (e) { return; }
       if (role === 'host') {
+        if (msg.t === 'room') { r.data = msg.data || {}; tellListeners(); return; }
         const to = msg.to; delete msg.to;
         if (to === '*') for (const c of r.clients.values()) wsSend(c, msg);
         else wsSend(r.clients.get(+to), msg);
@@ -149,11 +186,12 @@ server.on('upgrade', (req, sock) => {
     });
   });
   const bye = () => {
-    if (role === 'host') { if (r.host === sock) r.host = null; }
+    if (role === 'host') { if (r.host === sock) { r.host = null; for (const c of r.clients.values()) wsSend(c, { t: 'hostGone' }); } }
     else { r.clients.delete(id); wsSend(r.host, { t: 'gone', peer: id }); }
     if (!r.host && !r.clients.size) rooms.delete(room);
+    tellListeners();
   };
   sock.on('close', bye); sock.on('error', bye);
 });
 
-server.listen(PORT, () => console.log('serving on http://localhost:' + PORT + ' (ws relay at /ws?room=NAME&role=host|client)'));
+server.listen(PORT, () => console.log('serving on http://localhost:' + PORT + ' (ws relay at /ws?role=host|client|list&room=CODE)'));

@@ -174,6 +174,10 @@ const state = {
     // ran out); dhover the three difficulty notches' hover eases (menu.js
     // `class select`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
+    // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the
+    // relay's open rooms, whether the relay answered, the row hovers, the
+    // keyboard row, and the refusal rattle of a room that would not have us
+    roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
     gearT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, wikiT: 0, wikiTab: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
@@ -210,6 +214,7 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // finger ignores this and keeps the corner - a thumb would cover the panel it
   // just asked for.
   tipFollow: true,
+  relay: '',          // the match relay (host:port) this screen talks to; empty = the page's own host (netRelay, js/net/net.js)
   // the pad's rumble and a phone's buzz on a gesture that moves an item
   // (haptic, js/input.js). A mouse has no motor and never notices this row.
   haptics: true,

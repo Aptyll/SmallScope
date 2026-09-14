@@ -272,6 +272,7 @@ function beginDrop() {
   state.mode = 'drop';
   state.menu.panel = null;
   state.menu.screen = 'menu';
+  netHostRoom(); // the relay's list: this room is live now
   // the view grows around its centre (applyZoom keeps the point under the
   // screen centre put); ease in from the drift's framing. The eagle's framing
   // is snapped rather than eased: the ride opens on a cross-fade from the
@@ -1384,12 +1385,13 @@ initPlayers();
 // two roles ride a Steam lobby instead: ?net=host makes one, ?net=client&lobby=ID
 // joins it (js/net/transport-steam.js).
 (function () {
-  const q = /[?&]net=(host|client)/.exec(location.search), r = /[?&]room=([A-Za-z0-9_-]+)/.exec(location.search);
-  const lb = /[?&]lobby=([0-9]+)/.exec(location.search);
-  if (q && window.steamBridge) netSetup(q[1], steamTransport(lb ? lb[1] : null));
-  else if (q && location.protocol !== 'file:') netSetup(q[1], wsTransport(r ? r[1] : 'lobby'));
-  else netSetup('solo');
+  const q = /[?&]net=(host|client)/.exec(location.search), r = /[?&](?:room|lobby)=([A-Za-z0-9_-]+)/.exec(location.search);
+  netRelay(); // a ?relay= in the URL is remembered now, whether or not a role follows
+  if (q) netSetup(q[1], netTransportFor(r ? r[1] : null)); else netSetup('solo');
 })();
+// ...and a page reloaded onto a room's seed to join it (joinRoom, js/ui/menu.js)
+// walks straight into the rooms screen with that join under way
+const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search); return j ? j[1].toUpperCase() : null; })();
 renderGround();
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
@@ -1425,6 +1427,7 @@ if (PRACTICE) {
   // pre-rolled character (js/ui/chars.js) - the title menu is behind it
   beginCreate(-1, true);
 }
+if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) { beginRooms(); state.menu.rsel = -2; netJoin(JOIN_AT_BOOT); }
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {

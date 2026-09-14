@@ -110,3 +110,5 @@ docs/media/shorts/frames/
 
 # The wrapper's installed packages (desktop/package.json is the list)
 desktop/node_modules/
+desktop/app/
+desktop/dist/

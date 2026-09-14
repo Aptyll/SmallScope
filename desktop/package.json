@@ -5,9 +5,11 @@
   "description": "The Windows wrapper: Electron around index.html, Steam through steamworks.js",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "build": "node build.js"
   },
   "devDependencies": {
+    "@electron/packager": "^18.3.0",
     "electron": "^33.0.0"
   },
   "dependencies": {

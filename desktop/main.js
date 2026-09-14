@@ -50,7 +50,11 @@ function createWindow() {
   if (args.seed) query.seed = args.seed;
   if (args.net) query.net = args.net;
   if (args.join) { query.net = 'client'; query.lobby = args.join; }
-  win.loadFile(path.join(__dirname, '..', 'index.html'), { query });
+  if (args.relay) query.relay = args.relay;           // the match relay (host:port); remembered by the page
+  if (args.transport) query.transport = args.transport; // 'steam' to ride a Steam lobby instead of the relay
+  // packaged (build.js copies the game into app/), or run from the repo
+  const page = fs.existsSync(path.join(__dirname, 'app', 'index.html')) ? path.join(__dirname, 'app', 'index.html') : path.join(__dirname, '..', 'index.html');
+  win.loadFile(page, { query });
   if (args.devtools) win.webContents.openDevTools({ mode: 'detach' });
   // a headless check: --shot=PATH captures the window after --wait seconds,
   // prints the bridge and the page's net status, and --quit closes it

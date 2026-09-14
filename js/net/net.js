@@ -51,10 +51,11 @@ const loopbackTransport = {
 };
 
 function netSetup(role, transport) {
+  if (NET.transport && NET.transport !== loopbackTransport) NET.transport.close();
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
   NET.peers.clear(); NET.parked.clear();
-  NET.synced = false; NET.lastTick = -1; NET.hostOver = null;
+  NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false;
   if (NET.role === 'host') { NET.transport.listen(); snapShadowReset(); }
   if (NET.role === 'client') {
     try { NET.uid = sessionStorage.getItem('softfall.netuid'); } catch (e) {}
@@ -62,6 +63,45 @@ function netSetup(role, transport) {
     NET.transport.connect();
   }
 }
+// Which relay this screen talks to (host:port). ?relay=ADDR in the URL sets
+// it for good (it is remembered with the settings, the way the wrapper's
+// --relay flag arrives as that query); otherwise the address the page was
+// served from, which is the relay itself when Noah serves the game; a page
+// off the disk with nothing remembered assumes the relay is on this machine.
+const RELAY_DEFAULT = 'localhost:8471';
+function netRelay() {
+  const q = /[?&]relay=([^&]+)/.exec(location.search);
+  if (q) { const r = decodeURIComponent(q[1]); if (settings.relay !== r) { settings.relay = r; saveSettings(); } return r; }
+  if (settings.relay) return settings.relay;
+  if (location.protocol === 'http:' || location.protocol === 'https:') return location.host;
+  return RELAY_DEFAULT;
+}
+// The three doors the title screen opens (js/ui/menu.js): host a room on
+// the relay, join one by its code, or leave whichever this is and be solo
+// again with today's ten. The Steam transport takes the same three when the
+// wrapper is asked for it (?transport=steam).
+function netTransportFor(room) {
+  if (window.steamBridge && /[?&]transport=steam/.test(location.search)) return steamTransport(room);
+  return wsTransport(netRelay(), room);
+}
+function netHost() { netSetup('host', netTransportFor(null)); }
+function netJoin(code) { netSetup('client', netTransportFor(code)); }
+function netLeave() {
+  const was = NET.role;
+  netSetup('solo');
+  if (was === 'client') { initPlayers(); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; } // the host's roster goes with the host
+  else if (was === 'host') for (const p of players) if (p.control === 'remote') { p.control = 'ai'; p.input = makeInput(); }
+}
+// what the relay's list says of this room: who hosts it, on what patch and
+// seed, whether it is still open, and how many people are in it
+function netHostRoom() {
+  if (NET.role !== 'host' || !NET.transport.roomData) return;
+  let humans = 0; for (const p of players) if (isHuman(p)) humans++;
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, state: state.drop ? 'live' : 'open', humans });
+}
+// the roster to every peer, on every change of it: a client's waiting room
+// draws the same ten this one does
+function netHostRoster() { if (NET.role === 'host' && NET.peers.size) NET.transport.send('*', { t: 'roster', roster: netRoster() }); }
 
 // ------------------------------------------------------------ host
 // Runs at the top of the step: the peers' messages become their bodies'
@@ -89,6 +129,13 @@ function netHostStep(dt) {
     }
   }
   for (const [uid, park] of NET.parked) { park.t += dt; if (park.t > RECONNECT_GRACE) NET.parked.delete(uid); }
+  // the waiting room's count, to every peer as it changes: the digits a
+  // client shows are the host's, and so is the moment the eagle comes
+  if (NET.transport.open && !NET.published) { NET.published = true; netHostRoom(); }
+  if (state.mode === 'title' && NET.peers.size) {
+    const m = state.menu, n = m.countT > 0 ? Math.ceil(m.countT) : m.countN === 0 ? 0 : -1;
+    if (n !== NET.countN) { NET.countN = n; NET.transport.send('*', { t: 'count', t: m.countT, n }); }
+  }
 }
 function netHostHello(peer, msg) {
   const refuse = (why) => NET.transport.send(peer, { t: 'refuse', why });
@@ -115,6 +162,7 @@ function netHostHello(peer, msg) {
   const full = { t: 'full', tick: state.tick, snap: snapBuild() };
   NET.bytesOut += NET.transport.send(peer, full) ? JSON.stringify(full).length : 0;
   logEvent((p.name || 'A PLAYER') + ' JOINED', p);
+  netHostRoster(); netHostRoom();
 }
 function netHostLeave(peer) {
   const pr = NET.peers.get(peer);
@@ -125,6 +173,7 @@ function netHostLeave(peer) {
   p.input = makeInput();
   NET.parked.set(pr.uid, { slot: pr.slot, t: 0 });
   logEvent((p.name || 'A PLAYER') + ' LEFT', p);
+  netHostRoster(); netHostRoom();
 }
 function netRoster() { return players.map((p) => ({ control: p.control, team: p.team, name: p._name, cls: p.cls, look: p.look })); }
 // after the step: every SNAP_EVERY ticks the tick form and the cosmetics
@@ -157,7 +206,11 @@ function netClientStep(dt) {
   for (const { msg } of T.poll(dt)) {
     if (msg.t === 'closed') { NET.synced = false; continue; }    // the transport redials; HELLO again on open
     if (msg.t === 'refuse') { NET.refused = msg.why; continue; }
+    if (msg.t === 'hostGone') { NET.refused = 'HOSTGONE'; NET.synced = false; continue; }
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
+    // the waiting room: the host's ten and its count, drawn here as there
+    if (msg.t === 'roster') { netClientRoster(msg.roster); continue; }
+    if (msg.t === 'count') { state.menu.countT = msg.t; state.menu.countN = msg.n; continue; }
     if (msg.t === 'full') { NET.bytesIn += JSON.stringify(msg).length; netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; continue; }
     if (msg.t === 'snap') {
       NET.bytesIn += JSON.stringify(msg).length;
@@ -180,6 +233,20 @@ function netClientWelcome(msg) {
   NET.hostSlot = msg.hostSlot;
   initPlayers(roster, msg.slot);
   camX = player.x - WV_W / 2; camY = player.y - WV_H / 2;
+  NET.welcomed = true; // the title screen moves to the waiting room on this
+}
+// a later roster (someone came or went while we wait): the bodies stay, their
+// names, classes, faces and kinds change in place - ours stays the human
+function netClientRoster(roster) {
+  for (let i = 0; i < players.length && i < roster.length; i++) {
+    const p = players[i], r = roster[i];
+    if (i === localId) continue;
+    p.control = r.control === 'human' ? 'remote' : r.control;
+    p.team = r.team;
+    p.name = r.name;
+    if (r.look) p.look = r.look;
+    if (p.cls !== r.cls) setClass(p, r.cls);
+  }
 }
 // the snapshot in, with the host's own result kept out of ours: `over` is a
 // screen's verdict, not the match's, and the client reads its own off the bird

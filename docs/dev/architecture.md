@@ -262,7 +262,9 @@ Plus the flat arrays every pass iterates: `animals`, `arrows`, `drops`, `particl
 ## desktop/
 
 The Windows wrapper, and **the one folder with packages** (`package.json`: Electron and
-steamworks.js; `npm install` once, `npm start`). `main.js` opens one `BrowserWindow` on the same
+steamworks.js; `npm install` once, `npm start`; `npm run build` is build.js: the game copied in
+beside main.js, @electron/packager over it, a portable zip - what a `v*` tag's workflow attaches
+to a Release). `main.js` opens one `BrowserWindow` on the same
 `index.html` a browser opens - `backgroundThrottling` off, so a host keeps stepping behind another
 window - initialises Steam on the dev App ID (Valve's 480, or `steam_appid.txt` beside the exe) and
 answers the bridge's IPC: lobbies (create / join / leave / list / data / invite), packets
@@ -281,10 +283,13 @@ Neither script is part of the game, and nothing in `js/` may depend on either ha
 `sfxdata.js`, which one of them writes.
 
 - **`app/server.js`** — a static server on `http://localhost:8471` with a `POST /shot` sink that
-  writes the canvas to `shot.png`, and the **ws relay** at `/ws?room=NAME&role=host|client` for a
-  match between tabs (`GET /ws-debug` lists its rooms): a hand-rolled WebSocket server, since the
-  repo takes no dependency - text frames, fragmentation, 64-bit lengths - that forwards a client's
-  frames to its room's host and a host's to the client it names. It answers **Range requests**, which is why music seeks work
+  writes the canvas to `shot.png`, and the **match relay** at `/ws` (`role=host` is given a
+  four-letter room code, `role=client&room=CODE` joins one, `role=list` is pushed the open rooms;
+  `GET /ws-debug` lists them): a hand-rolled WebSocket server, since the repo takes no dependency
+  - text frames, fragmentation, 64-bit lengths - that forwards a client's frames to its room's host
+  and a host's to the client it names, and never reads a match. This is the server Noah runs to
+  host a night of games, with the port forwarded; a browser at any address and the wrapper both
+  reach it (`netRelay`, js/net/net.js). It answers **Range requests**, which is why music seeks work
   when served; a plain 200 makes an `<audio>` element treat a multi-MB mp3 as an unbounded stream.
   Its single `ROOT` const carries the static root, the traversal guard and the shot sink alike.
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.
