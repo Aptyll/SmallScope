@@ -1626,7 +1626,12 @@ window.DBG = {
   // the schema is missing; netEchoRun(ticks, every) does it along a run
   netEcho, netEchoRun, snapBuild, snapApply, snapSize, NET, netSetup,
   // the two-tab match: role, peers, bytes each way, the newest snapshot tick
-  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open), lobby: NET.transport && NET.transport.lobbyId || null, transportError: NET.transport && NET.transport.error || null }),
+  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, bpsIn: NET.bpsIn, bpsOut: NET.bpsOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open), lobby: NET.transport && NET.transport.lobbyId || null, room: NET.transport && NET.transport.room || null, transportError: NET.transport && NET.transport.error || null, verify: NET.verify, verifyFail: NET.verifyFail }),
+  // the wire form's own proofs: netDeltaRun(ticks, every) sends `ticks` of this
+  // page's sim as binary deltas and applies them back, comparing against the
+  // full form after each; netVerify(on) makes a host ride its full form along
+  // every VERIFY_EVERY ticks so each client checks itself (netStatus().verifyFail)
+  netDeltaRun, netVerify: (on) => { NET.verify = !!on; return NET.verify; }, snapBuildDelta, snapEncode, snapDecode, encDict,
   // the wrapper's lobbies, for a joiner picking one by hand (steamBridge only)
   lobbies: () => (window.steamBridge ? window.steamBridge.lobbies() : Promise.resolve([])),
   placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,

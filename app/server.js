@@ -117,8 +117,18 @@ function wsFrame(text) {
   return Buffer.concat([head, body]);
 }
 function wsSend(sock, obj) { if (sock && !sock.destroyed) sock.write(wsFrame(JSON.stringify(obj))); }
+// a binary frame (op 2): a snapshot's bytes, forwarded untouched but for the routing header
+function wsFrameBin(body) {
+  const n = body.length;
+  let head;
+  if (n < 126) head = Buffer.from([0x82, n]);
+  else if (n < 65536) { head = Buffer.alloc(4); head[0] = 0x82; head[1] = 126; head.writeUInt16BE(n, 2); }
+  else { head = Buffer.alloc(10); head[0] = 0x82; head[1] = 127; head.writeUInt32BE(Math.floor(n / 0x100000000), 2); head.writeUInt32BE(n >>> 0, 6); }
+  return Buffer.concat([head, body]);
+}
+function wsSendBin(sock, body) { if (sock && !sock.destroyed) sock.write(wsFrameBin(body)); }
 // parses every complete frame off a socket's buffer; returns the rest
-function wsParse(sock, buf, onText) {
+function wsParse(sock, buf, onText, onBin) {
   let off = 0;
   for (;;) {
     if (buf.length - off < 2) break;
@@ -135,9 +145,10 @@ function wsParse(sock, buf, onText) {
     const fin = (b0 & 0x80) !== 0;
     // a browser fragments a big message (a full sync is megabytes): a text
     // frame opens it, continuation frames (op 0) carry the rest, FIN closes
-    if (op === 1 || op === 0) {
+    if (op === 1 || op === 2 || op === 0) {
+      if (op !== 0) sock.fragBin = op === 2;
       sock.frag = sock.frag ? Buffer.concat([sock.frag, body]) : body;
-      if (fin) { const text = sock.frag.toString('utf8'); sock.frag = null; onText(text); }
+      if (fin) { const whole = sock.frag; sock.frag = null; if (sock.fragBin) { if (onBin) onBin(whole); } else onText(whole.toString('utf8')); }
     } else if (op === 8) { sock.end(); return Buffer.alloc(0); }
     else if (op === 9) { const pong = Buffer.concat([Buffer.from([0x8a, body.length]), body]); sock.write(pong); }
   }
@@ -183,6 +194,14 @@ server.on('upgrade', (req, sock) => {
         if (to === '*') for (const c of r.clients.values()) wsSend(c, msg);
         else wsSend(r.clients.get(+to), msg);
       } else { msg.peer = id; wsSend(r.host, msg); }
+    }, (bin) => {
+      // bytes: a host's carry the peer in front (0xFFFFFFFF for all), a client's get its id put in front
+      if (role === 'host') {
+        if (bin.length < 4) return;
+        const to = bin.readUInt32BE(0), body = bin.subarray(4);
+        if (to === 0xFFFFFFFF) for (const c of r.clients.values()) wsSendBin(c, body);
+        else wsSendBin(r.clients.get(to), body);
+      } else { const head = Buffer.alloc(4); head.writeUInt32BE(id, 0); wsSendBin(r.host, Buffer.concat([head, bin])); }
     });
   });
   const bye = () => {

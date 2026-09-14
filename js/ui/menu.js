@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.48'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.49'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.49', 'AN ONLINE MATCH NOW SENDS ONLY WHAT CHANGED, AS BYTES, FIFTEEN TIMES A SECOND, AND YOUR SCREEN GLIDES BETWEEN THEM - FIFTEEN TIMES LESS ON THE WIRE THAN LAST PATCH, WITH NOTHING LOST.'],
   ['3.48', 'THE MULTIPLAYER PLANK THAWS: HOST A ROOM OR JOIN ONE OFF THE LIST, WAIT TOGETHER ON THE CLASS SCREEN, AND RIDE THE SAME EAGLE - IN A BROWSER OR THE DOWNLOADED APP, WHICH THE NEW DOWNLOAD TAG HANDS YOU.'],
   ['3.47', 'THE GAME HAS A WINDOWS WRAPPER: A DESKTOP WINDOW AROUND THE SAME PAGE, WITH STEAM BEHIND IT FOR LOBBIES AND PEER-TO-PEER PLAY. THE BROWSER AND THE DOUBLE-CLICK STILL WORK EXACTLY AS THEY DID.'],
   ['3.46', 'TWO WINDOWS CAN NOW PLAY ONE MATCH ON ONE MACHINE - ONE HOSTS, THE OTHER JOINS, TAKES A SLOT, RIDES, FIGHTS, DIES AND COMES BACK, EVEN AFTER A RELOAD. A DEV BUILD OF THE ONLINE GAME, NOT YET THE ONLINE GAME.'],

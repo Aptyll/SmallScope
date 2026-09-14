@@ -143,6 +143,42 @@ banner** for the local player: it is a pure function of the input, the position 
 tile grid, so re-running it over the unacked inputs is cheap and exact. Nothing that touches
 another unit, a contest or damage is ever predicted.
 
+## The wire form (PATCH 3.49)
+
+Cut from the reflection snapshot, not written beside it, in three layers, each proven in the
+page before it went between tabs:
+
+- **Stable ids and field deltas.** Every moving entity carries a network id for its life
+  (`snapNid`); the host keeps a shadow of what it last sent per id and sends only the fields that
+  changed (a nested field by its JSON), the arrays' order when it changed, the ids that left,
+  tiles and ground where they changed, each singleton field by field. A client updates its
+  entities **in place** under those ids, so a reference resolved a tick ago still points at the
+  thing - which is also why a tile changes in place, and why a player's aliased plain objects
+  (`inv`, `food`, `kit`, `flag`, `spawn`, `look`) are merged rather than replaced.
+- **Bytes with a dictionary.** The whole message is binary: every object key an index into a
+  dictionary both ends grow in step (a message leads with the names it is the first to use, the
+  welcome hands a joiner the list as it stands), numbers as the smallest integer that holds them
+  or a float32, tile indices as numbers. The relay forwards binary frames untouched but for a
+  routing header.
+- **15 Hz and interpolation.** `SNAP_EVERY` is 4; a client eases every body a delta moved from
+  where it is drawn to where the host put it over one interval, and snaps instead of easing past
+  `LERP_SNAP` (a teleport). The local player is eased like the rest: no prediction yet.
+- **What the sim keeps to itself.** `SNAP_SKIP` names the bookkeeping that ticks every step and no
+  draw pass reads (footstep and dust clocks, a bot's think timer, a fish's turn clock...); the
+  echo harness runs without them, so a name added there is proven harmless or caught as pixels.
+
+Measured on seed 42, a ten-body match with buildings: a delta averages **5.8 KB** at 15 Hz,
+**87 KB/s per client** (down from 1.3 MB/s), ~6 ms of host time per delta, the full sync 1.9 MB of
+bytes against 3.3 MB of JSON; 300 deltas applied back in the page with zero fields lost; between
+two tabs the client checked itself against the host's full form every 5 s through a ride, a hop
+and a walk with no disagreement. Two bugs the proofs caught on the way: a token merged into the
+live object it named (a barracks gutted to two keys) - hence the merge allow-list - and a
+delta that moved a body on one axis restarting its ease toward a stale target on the other.
+
+Still owed: quantized positions (a float32 is 5 bytes; 1/8 px in an int16 is 3), the
+unreliable channel's ack-keyed shadow for Steam, and a per-kind field policy if 87 KB/s is still
+too much for nine clients on a home upload (it is ~800 KB/s at ten players).
+
 ## Message schema
 
 All messages are binary `ArrayBuffer`s over the transport, first byte the type, second the
@@ -358,7 +394,8 @@ networking.
    153 MB portable zip, music included). Still owed here: the `HOST LEFT` end state as a plate
    (a guest's transport reports it, the screen does not yet), a version plate on the door.
 8. **Pass 2 (only if needed): walk prediction** for the local player over the unacked inputs,
-   with a snap threshold and a smooth pull-in.
+   with a snap threshold and a smooth pull-in. **Interpolation landed in 3.49** with the wire
+   form (above); prediction stays deferred.
 
 ## Risks
 

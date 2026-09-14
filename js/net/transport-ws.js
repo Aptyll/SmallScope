@@ -30,8 +30,17 @@ function wsTransport(relay, room) {
     dial() {
       const params = 'role=' + this.role + (this.room ? '&room=' + encodeURIComponent(this.room) : '');
       let s; try { s = new WebSocket(wsUrl(this.relay, params)); } catch (e) { this.error = String(e); this.retryT = WS_RETRY; return; }
+      s.binaryType = 'arraybuffer';
       s.onopen = () => { this.error = null; };
       s.onmessage = (ev) => {
+        // a binary frame is a snapshot's bytes (js/net/snapshot.js): a host's
+        // arrive bare, a client's with the relay's 4-byte peer id in front
+        if (ev.data instanceof ArrayBuffer) {
+          const u = new Uint8Array(ev.data);
+          if (this.role === 'host') this.queue.push({ peer: new DataView(ev.data).getUint32(0), bin: u.subarray(4) });
+          else this.queue.push({ peer: 'host', bin: u });
+          return;
+        }
         let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
         if (m.t === 'relay') { this.id = m.id; if (m.room) this.room = m.room; this.open = true; return; }
         if (m.t === 'refuse' && !this.open) { this.error = m.why; this.retryT = Infinity; return; } // no such room: do not redial
@@ -44,6 +53,15 @@ function wsTransport(relay, room) {
     // a host names the client (or '*'); a client's frames only ever go to the host
     send(peer, msg) {
       if (!this.open || !this.sock) return false;
+      if (msg instanceof Uint8Array) {
+        // bytes: a host's carry the peer in front (0xFFFFFFFF for every client)
+        if (this.role !== 'host') { this.sock.send(msg); return true; }
+        const out = new Uint8Array(4 + msg.length);
+        new DataView(out.buffer).setUint32(0, peer === '*' ? 0xFFFFFFFF : +peer);
+        out.set(msg, 4);
+        this.sock.send(out);
+        return true;
+      }
       if (this.role === 'host') msg.to = peer;
       this.sock.send(JSON.stringify(msg));
       return true;

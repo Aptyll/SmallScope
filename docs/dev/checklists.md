@@ -31,7 +31,12 @@ declare victory. The three affordances:
   frame that differ (`diff`, zero or the snapshot is missing a field the eye can see), the JSON
   weight by section and the fields that did not round-trip; `netEchoRun(ticks, every)` does it
   along a run and reports the worst - run it after adding a field to any entity. `netStatus()`
-  is the match between tabs: role, the peers' slots, bytes each way, the newest snapshot tick.
+  is the match between tabs: role, the peers' slots, bytes each way and the last second's rate,
+  the newest snapshot tick. `netDeltaRun(ticks, every)` sends this page's sim as binary deltas and
+  applies them back, checking the world against the full form after each (run it after adding a
+  field that is a reference or a nested object); `netVerify(true)` on a host rides the full form
+  along every 5 s so each client checks itself - `netStatus().verifyFail` names the first fields
+  that disagreed.
   **A match between two tabs**: serve the game, open `?seed=N&net=host&room=R` in one tab and
   `?seed=N&net=client&room=R` in another (the same seed - the host refuses a different one);
   the client takes the smaller side's first AI slot, or its own slot back after a reload.

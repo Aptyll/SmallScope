@@ -21,13 +21,19 @@ const NET = {
   lastTick: -1,              // a client's: the newest snapshot tick applied
   hostOver: null,            // a client's: the host's own `state.over`, kept out of ours
   bytesIn: 0, bytesOut: 0,   // running totals, for the measurements
+  bpsIn: 0, bpsOut: 0, bpsT: 0, bIn0: 0, bOut0: 0, // ...and the last second's rate
   uid: null,                 // a client's identity across a reconnect (per tab)
+  dictOut: null, dictIn: null, // the key dictionaries the bytes are written and read with (js/net/snapshot.js)
+  verify: false,             // a host's: every VERIFY_EVERY ticks the full form rides along and each client checks itself against it
+  verifyFail: null,          // a client's: the first fields that disagreed, if any ever did
 };
-// how often a host sends: every SNAP_EVERY ticks (30 Hz at the 60 Hz step;
-// the plan's 15 arrives with the delta form). LATE_JOIN_T: how far into a
-// match a new peer may still take an AI slot; RECONNECT_GRACE: how long a
-// dropped peer's slot waits for it before the bot keeps it.
-const SNAP_EVERY = 2;
+// how often a host sends: every SNAP_EVERY ticks (15 Hz at the 60 Hz step;
+// the client interpolates between two, netClientLerp). LATE_JOIN_T: how far
+// into a match a new peer may still take an AI slot; RECONNECT_GRACE: how
+// long a dropped peer's slot waits for it before the bot keeps it.
+const SNAP_EVERY = 4;
+const VERIFY_EVERY = 300;
+const LERP_SNAP = 120; // px: a body that moved further than this between snapshots teleported, and is not eased
 const LATE_JOIN_T = 300;
 const RECONNECT_GRACE = 60;
 // which controls are a person: a `remote` body is a human on another screen,
@@ -56,6 +62,8 @@ function netSetup(role, transport) {
   NET.transport = transport || loopbackTransport;
   NET.peers.clear(); NET.parked.clear();
   NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false;
+  NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
+  NET.bytesIn = 0; NET.bytesOut = 0; NET.bIn0 = 0; NET.bOut0 = 0; NET.bpsT = 0;
   if (NET.role === 'host') { NET.transport.listen(); snapShadowReset(); }
   if (NET.role === 'client') {
     try { NET.uid = sessionStorage.getItem('softfall.netuid'); } catch (e) {}
@@ -117,6 +125,11 @@ function netHostStep(dt) {
     if (msg.t === 'hello') { netHostHello(peer, msg); continue; }
     const pr = NET.peers.get(peer);
     if (!pr) continue;
+    if (msg.t === 'resync') { // a delta named an id the client never had: the whole thing again
+      const full = snapEncode({ t: 'full', tick: state.tick, snap: snapBuild() }, NET.dictOut);
+      NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
+      continue;
+    }
     if (msg.t === 'in') {
       const p = players[pr.slot], i = p.input, m = msg.in;
       NET.bytesIn += JSON.stringify(msg).length;
@@ -158,9 +171,11 @@ function netHostHello(peer, msg) {
   if (msg.look) p.look = msg.look;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
   NET.peers.set(peer, { slot, uid: msg.uid, name: msg.name, lastTick: 0 });
-  NET.transport.send(peer, { t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster() });
-  const full = { t: 'full', tick: state.tick, snap: snapBuild() };
-  NET.bytesOut += NET.transport.send(peer, full) ? JSON.stringify(full).length : 0;
+  // the welcome carries the key dictionary as it stands, so the bytes that
+  // follow - the full snapshot, then every delta - read with it
+  NET.transport.send(peer, { t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), dict: NET.dictOut.names.slice() });
+  const full = snapEncode({ t: 'full', tick: state.tick, snap: snapBuild() }, NET.dictOut);
+  NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
   logEvent((p.name || 'A PLAYER') + ' JOINED', p);
   netHostRoster(); netHostRoom();
 }
@@ -183,10 +198,20 @@ function netHostFlush() {
   evRecord = NET.peers.size > 0;
   if (!NET.peers.size) { evRing.length = 0; return; }
   if (state.tick % SNAP_EVERY) return;
-  const msg = { t: 'snap', tick: state.tick, snap: snapBuildTick(), ev: evDrain() };
-  const text = JSON.stringify(msg);
-  NET.bytesOut += text.length;
-  NET.transport.send('*', msg);
+  const msg = { t: 'snap', tick: state.tick, d: snapBuildDelta(), ev: evDrain() };
+  if (NET.verify && state.tick % VERIFY_EVERY === 0) msg.full = snapBuild(); // the client checks itself against this
+  const bytes = snapEncode(msg, NET.dictOut);
+  NET.bytesOut += bytes.length;
+  NET.transport.send('*', bytes);
+  netRate();
+}
+// the last second's bytes each way, for netStatus
+function netRate() {
+  const now = performance.now();
+  if (now - NET.bpsT < 1000) return;
+  const dt = (now - NET.bpsT) / 1000;
+  NET.bpsIn = Math.round((NET.bytesIn - NET.bIn0) / dt); NET.bpsOut = Math.round((NET.bytesOut - NET.bOut0) / dt);
+  NET.bIn0 = NET.bytesIn; NET.bOut0 = NET.bytesOut; NET.bpsT = now;
 }
 
 // ------------------------------------------------------------ client
@@ -203,7 +228,18 @@ function netClientStep(dt) {
     // the edges are the host's now: a press is sent once
     i.dodge = false; i.jump = false; i.eatBerry = false; i.eatFish = false; i.useCard = false; i.ability = -1; i.cmd = null;
   }
-  for (const { msg } of T.poll(dt)) {
+  netClientLerp();
+  netRate();
+  for (const item of T.poll(dt)) {
+    let msg = item.msg;
+    // bytes: a full snapshot or a delta, read with the dictionary the welcome seeded
+    if (item.bin) {
+      NET.bytesIn += item.bin.length;
+      try { msg = snapDecode(item.bin, NET.dictIn); } catch (e) { NET.refused = 'BYTES'; continue; }
+      if (msg.t === 'full') { netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; continue; }
+      if (msg.t === 'snap') { if (NET.synced) netClientApplyDelta(msg); continue; }
+      continue;
+    }
     if (msg.t === 'closed') { NET.synced = false; continue; }    // the transport redials; HELLO again on open
     if (msg.t === 'refuse') { NET.refused = msg.why; continue; }
     if (msg.t === 'hostGone') { NET.refused = 'HOSTGONE'; NET.synced = false; continue; }
@@ -211,13 +247,6 @@ function netClientStep(dt) {
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); continue; }
     if (msg.t === 'count') { state.menu.countT = msg.t; state.menu.countN = msg.n; continue; }
-    if (msg.t === 'full') { NET.bytesIn += JSON.stringify(msg).length; netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; continue; }
-    if (msg.t === 'snap') {
-      NET.bytesIn += JSON.stringify(msg).length;
-      if (!NET.synced) continue;
-      netClientApply(msg.snap); NET.lastTick = msg.tick;
-      for (const ev of msg.ev) evPlay(ev);
-    }
   }
   if (T.open && !NET.helloed) { netClientHello(); NET.helloed = true; }
   if (!T.open) NET.helloed = false;
@@ -233,6 +262,9 @@ function netClientWelcome(msg) {
   NET.hostSlot = msg.hostSlot;
   initPlayers(roster, msg.slot);
   camX = player.x - WV_W / 2; camY = player.y - WV_H / 2;
+  // the host's key dictionary as it stood: every byte after this reads with it
+  NET.dictIn = encDict();
+  for (const k of msg.dict || []) { NET.dictIn.index.set(k, NET.dictIn.names.length); NET.dictIn.names.push(k); }
   NET.welcomed = true; // the title screen moves to the waiting room on this
 }
 // a later roster (someone came or went while we wait): the bodies stay, their
@@ -259,6 +291,65 @@ function netClientApply(s) {
   // and ours is the human, whatever the host calls them
   for (const p of players) { if (p.id === localId) p.control = 'human'; else if (p.control === 'human') p.control = 'remote'; }
   netClientMode();
+}
+// a delta in: the entities it names change in place, the host's verdict and
+// our controls are kept as in a full apply, the events it carried play, and
+// every moving body it touched is set up to EASE from where it is drawn to
+// where the host put it over the next snapshot interval (netClientLerp)
+function netClientApplyDelta(msg) {
+  const over = state.over, end = state.end;
+  // the display positions, before the host's overwrite them
+  const shown = new Map();
+  for (const k in SNAP_KINDS) for (const e of SNAP_KINDS[k]()) shown.set(e, [e.x, e.y]);
+  for (const p of players) shown.set(p, [p.x, p.y]);
+  if (state.drop) for (const e of state.drop.eagles) shown.set(e, [e.x, e.y]);
+  const changed = snapApplyDelta(msg.d);
+  NET.lastTick = msg.tick;
+  if (changed === null) { NET.synced = false; NET.transport.send('host', { t: 'resync' }); return; } // an id we never had: ask for the whole thing
+  // the check, against the host's own full form when it rides along
+  if (msg.full && !NET.verifyFail) {
+    // a body still easing toward an earlier target is compared at that target, not where it is drawn
+    // a body still easing is compared at the host's position (its target), not where it is drawn
+    const moved = new Set(); for (const [e, f] of changed) if ('x' in f || 'y' in f) moved.add(e);
+    const eased = [];
+    for (const [e] of shown) if (e._t0 && !moved.has(e)) { eased.push([e, e.x, e.y]); e.x = e._tx; e.y = e._ty; }
+    const out = []; snapCompareLoose(msg.full, snapBuild(), '', out, 8);
+    for (const [e, x, y] of eased) { e.x = x; e.y = y; }
+    if (out.length) NET.verifyFail = { tick: msg.tick, out };
+  }
+  NET.hostOver = state.over;
+  state.over = over; state.end = end;
+  for (const p of players) { if (p.id === localId) p.control = 'human'; else if (p.control === 'human') p.control = 'remote'; }
+  for (const ev of msg.ev || []) evPlay(ev);
+  const now = performance.now();
+  for (const [e, f] of changed) {
+    if (typeof e.x !== 'number' || typeof e.y !== 'number') continue;
+    const mx = 'x' in f, my = 'y' in f;
+    if (!mx && !my) continue; // the body did not move: whatever ease it is on goes on
+    const was = shown.get(e);
+    // the host's position: the field that came, or the target already held for the one that did not
+    const hx = mx ? e.x : e._t0 ? e._tx : e.x, hy = my ? e.y : e._t0 ? e._ty : e.y;
+    if (!was || Math.hypot(hx - was[0], hy - was[1]) > LERP_SNAP) { e.x = hx; e.y = hy; e._tx = hx; e._ty = hy; e._t0 = 0; continue; } // new here, or teleported: no easing
+    e._fx = was[0]; e._fy = was[1]; e._tx = hx; e._ty = hy; e._t0 = now;
+    e.x = was[0]; e.y = was[1];
+  }
+  netClientMode();
+}
+// every tick: each eased body moves from where it was drawn toward the
+// host's position over one snapshot interval, so 15 snapshots a second read
+// as motion rather than steps. A body the host stopped naming keeps its last
+// target; the local player is eased like the rest (no prediction here)
+function netClientLerp() {
+  const now = performance.now(), period = SNAP_EVERY * TICK_DT * 1000;
+  const ease = (e) => {
+    if (e._t0 === undefined || e._t0 === 0) return;
+    const k = Math.min(1, (now - e._t0) / period);
+    e.x = e._fx + (e._tx - e._fx) * k; e.y = e._fy + (e._ty - e._fy) * k;
+    if (k >= 1) e._t0 = 0;
+  };
+  for (const k in SNAP_KINDS) for (const e of SNAP_KINDS[k]()) ease(e);
+  for (const p of players) ease(p);
+  if (state.drop) for (const e of state.drop.eagles) ease(e);
 }
 // which screen this state calls for, from the local player's own body: the
 // ride while aboard or falling, the death overlay while down, play otherwise,
