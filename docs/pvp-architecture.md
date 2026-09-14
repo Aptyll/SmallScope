@@ -327,9 +327,20 @@ networking.
    for the next: the quantized binary form and the delta against the acked snapshot, the
    objects diff already done (tiles and ground ship only where they changed), interpolation
    on the client (30 Hz motion with none), and the cosmetics' footsteps derived locally.
-6. **The wrapper.** `desktop/` with Electron, steamworks.js, the preload bridge, and the
-   `transport-steam.js` adapter. First target is only: create lobby, join lobby, exchange
-   `HELLO`/`WELCOME`, run the same match the WebSocket transport already runs.
+6. **The wrapper - DONE (PATCH 3.47), unverified against a running Steam.** `desktop/` with
+   Electron 33 and steamworks.js 0.4, `main.js` answering the bridge's IPC and pumping packets,
+   `preload.js` exposing `window.steamBridge` and nothing else of Node, and
+   `js/net/transport-steam.js` speaking it behind the same five calls: the host creates a
+   public lobby on the dev App ID (480) and writes patch, seed and state into its data; a
+   joiner reads the seed and reloads itself onto it; chat updates become peer/gone; packets
+   over `STEAM_CHUNK` go as parts. Verified: Electron boots the game from disk with the
+   bridge present and Steam absent, and plays solo. **Not verified**: a lobby round trip -
+   Steam was not running on the machine this was written on. **Deviation from the plan**:
+   steamworks.js 0.4 exposes Steam's older `ISteamNetworking` P2P sockets, not
+   `ISteamNetworkingSockets`; they relay through Steam's network all the same, but a
+   reliable packet is capped at 1 MB (hence the parts) and an unreliable one at 1200 bytes,
+   which makes the quantized wire form a precondition for the unreliable channel rather than
+   an optimisation.
 7. **Lobby screens.** The LOBBY plank, the waiting room over the existing class-select, the
    version plate, the `HOST LEFT` end state, the reconnect plate. All under the show-don't-label
    rule: a slot's team is its colour, a ready is a lit plank, a missing peer is a dimmed tag.

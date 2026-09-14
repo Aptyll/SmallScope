@@ -48,6 +48,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/net/net.js](../../js/net/net.js) | ~220 | shared scope, no `window.*` export | `NET`: which role this screen plays (`solo` / `host` / `client` - `isHost` is true for the first two, and is what anything asking "am I simulating?" reads), `isHuman` (a `remote` control is a person on another screen), the five-call transport interface and the loopback solo speaks through, and the match protocol: a host's `netHostStep` (peers' inputs into their bodies, HELLO into a slot, a vanished peer into a bot with its slot parked `RECONNECT_GRACE`) and `netHostFlush` (the tick snapshot and the recorded cosmetics every `SNAP_EVERY` ticks), a client's `netClientStep` (its input out, snapshots and events in) and `netClientMode` (which screen the state calls for, and the match's end read to our side) |
 | [js/net/snapshot.js](../../js/net/snapshot.js) | ~230 | shared scope, no `window.*` export | the match's whole authoritative state as one plain object, built by reflection over every entity (`snapBuild`, refs turned into kind+index tokens by `pack`) and written back into the singletons (`snapApply`), plus the echo harness that proves it complete: `netEcho` renders, snapshots, blanks, applies, renders again and counts the pixels that differ; `netEchoRun` does it along a run; `snapSize` weighs the JSON by section |
 | [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~40 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a client redialing every `WS_RETRY` s with the same uid |
+| [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~90 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge`, parts over `STEAM_CHUNK` reassembled, a joiner reloading onto the lobby's seed |
 | [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the chest, the cairn) - first of the draw files, every other one calls `hash2` |
 | [js/draw/practice.js](../../js/draw/practice.js) | ~740 | shared scope, no `window.*` export | the practice arena's pixels only: the dummy and its meter, the training grounds, the ice parkour, the roll station, the archery track and the range bell |
 | [js/draw/overhead.js](../../js/draw/overhead.js) | ~200 | shared scope, no `window.*` export | the one arrow body, and the frame every unit wears over its head: health bar, level badge, sense mark, stun stars, the build reveal |
@@ -208,7 +209,7 @@ happened* and must arrive identical every time.
 
 ### The game files (core.js … boot.js, with js/draw/ and js/ui/)
 
-Forty-three files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
+Forty-four files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
 organized only by `// ------ name` banners.
 **Keep every banner honest.** Find any function by its banner in [code-map.md](code-map.md)
 rather than grepping blind.
@@ -257,6 +258,22 @@ All game state lives in top-level singletons shared across the game files — `s
 
 Plus the flat arrays every pass iterates: `animals`, `arrows`, `drops`, `particles`, `floaters`,
 `footprints`, `structures`, `robots`, `fish`, `camps`.
+
+## desktop/
+
+The Windows wrapper, and **the one folder with packages** (`package.json`: Electron and
+steamworks.js; `npm install` once, `npm start`). `main.js` opens one `BrowserWindow` on the same
+`index.html` a browser opens - `backgroundThrottling` off, so a host keeps stepping behind another
+window - initialises Steam on the dev App ID (Valve's 480, or `steam_appid.txt` beside the exe) and
+answers the bridge's IPC: lobbies (create / join / leave / list / data / invite), packets
+(`send`, a pump reading Steam's P2P queue every 8 ms into the page), and the lobby callbacks as
+events. `preload.js` exposes exactly that as `window.steamBridge` and nothing else of Node; the
+game reads it only in js/net/transport-steam.js and at boot's role pick. Without Steam running
+the bridge reports `ready: false` and the page plays solo. Flags: `--net=host`, `--join=LOBBYID`,
+`--seed=N`, `--devtools`, and for a headless check `--shot=PATH --wait=S --quit`. steamworks.js
+0.4 exposes Steam's older P2P sockets (reliable packets to 1 MB, unreliable to 1200 bytes), not
+the networking sockets the plan named; the transport chunks above the first, and the second is
+what the wire form is for ([docs/pvp-architecture.md](../pvp-architecture.md)).
 
 ## app/
 

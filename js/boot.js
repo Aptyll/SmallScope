@@ -1380,9 +1380,15 @@ initPlayers();
 // the match's role for this screen (js/net/net.js): ?net=host&room=R hosts a
 // room on the dev server's relay, ?net=client&room=R joins it; nothing else
 // (and any file:// page) is solo. A lobby hands the role in instead, later.
+// Under the wrapper (desktop/, which exposes window.steamBridge) the same
+// two roles ride a Steam lobby instead: ?net=host makes one, ?net=client&lobby=ID
+// joins it (js/net/transport-steam.js).
 (function () {
   const q = /[?&]net=(host|client)/.exec(location.search), r = /[?&]room=([A-Za-z0-9_-]+)/.exec(location.search);
-  if (q && location.protocol !== 'file:') netSetup(q[1], wsTransport(r ? r[1] : 'lobby')); else netSetup('solo');
+  const lb = /[?&]lobby=([0-9]+)/.exec(location.search);
+  if (q && window.steamBridge) netSetup(q[1], steamTransport(lb ? lb[1] : null));
+  else if (q && location.protocol !== 'file:') netSetup(q[1], wsTransport(r ? r[1] : 'lobby'));
+  else netSetup('solo');
 })();
 renderGround();
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
@@ -1617,7 +1623,9 @@ window.DBG = {
   // the schema is missing; netEchoRun(ticks, every) does it along a run
   netEcho, netEchoRun, snapBuild, snapApply, snapSize, NET, netSetup,
   // the two-tab match: role, peers, bytes each way, the newest snapshot tick
-  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open) }),
+  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open), lobby: NET.transport && NET.transport.lobbyId || null, transportError: NET.transport && NET.transport.error || null }),
+  // the wrapper's lobbies, for a joiner picking one by hand (steamBridge only)
+  lobbies: () => (window.steamBridge ? window.steamBridge.lobbies() : Promise.resolve([])),
   placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
   // the two end screens: their timelines, the frozen numbers they print, and
   // a way to open the loss summary without pressing its plank. Set

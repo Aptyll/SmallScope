@@ -10,6 +10,7 @@ rules.
 ```
 node app/server.js          # static server + screenshot sink on http://localhost:8471
 node app/bake-sfx.js       # audio/sfx/*.mp3 -> js/sfxdata.js; rerun after changing a clip
+cd desktop && npm install && npm start   # the Windows wrapper: Electron + Steam (the ONE place with packages)
 ```
 
 **Double-clicking [index.html](index.html) has to work** — nothing may depend on being served. A
@@ -45,7 +46,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 Four legacy files — `profile.js`, `font.js`, the generated `sfxdata.js`, `audio.js` — and the
 eight sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (the
 sprite files each `Object.assign` their keys into `SPRITES`); after them the game code is
-**flat top-level classic scripts sharing one global scope** — forty-three files, `core.js`
+**flat top-level classic scripts sharing one global scope** — forty-four files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
@@ -70,7 +71,7 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs).
 
-The game code is organized only by `// ------ name` banners inside its forty-three files.
+The game code is organized only by `// ------ name` banners inside its forty-four files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 

@@ -1,0 +1,16 @@
+{
+  "name": "softfall-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Windows wrapper: Electron around index.html, Steam through steamworks.js",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  },
+  "dependencies": {
+    "steamworks.js": "^0.4.0"
+  }
+}
