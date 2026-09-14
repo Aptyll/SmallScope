@@ -25,7 +25,8 @@ declare victory. The three affordances:
   deterministic (it halts `render()` too, so the canvas holds the last frame — set the value you
   want *before* freezing), `hideUI = true` drops the HUD/info stack/cursor for captures, `buildStruct` stages
   a construction site with no cost or validation, `warp(tx, ty, p?)` drops a player on a tile, and
-  `setControl(id, mode)` hands a player to an AI, a human or nobody. `setHide(h, p?)` stages a
+  `setControl(id, mode)` hands a player to an AI, a human or nobody, `setLocal(id)` reseats this
+  screen's player in slot `id` (title only; `?local=N` does it at load). `setHide(h, p?)` stages a
   buried body without lying in the snow for `PRONE_BURY`, and `concealOf` / `seenAt(range, p?)` /
   `ambushReady` read back what the world makes of it. **Stage the scene** (place
   structures, warp beside a camp, jump `state.day`/`state.time`) instead of playing to reach it.

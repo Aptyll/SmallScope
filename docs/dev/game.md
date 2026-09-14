@@ -10,7 +10,7 @@ nine other people are on it.
 
 ## A match
 
-Ten players in `players` — **player 0 is you, the rest are AI** — across **two teams of five, RED vs
+Ten players in `players` — **one is you, the rest are AI** — across **two teams of five, RED vs
 BLUE** (players alternate). Everyone plays one of **two classes** (the ranged HUNTER, the melee
 WARRIOR — a human's is the one their **character** was made with) and is **dropped in by their team's armoured eagle** — the two birds fly the map's one
 diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
