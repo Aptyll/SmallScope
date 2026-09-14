@@ -458,6 +458,9 @@ networking.
    the same screen (`steamRooms`), and the Steam transport carries the wire form's bytes as
    base64 - it was written before the bytes and would have JSON-stringified a Uint8Array.
    Unverified against a live Steam, like the transport itself.
+   The app is registered: desktop/steam_appid.txt carries Softfall's App ID (5244550), read by
+   the wrapper and copied beside the exe by the build; 480 is only the fallback when the file is
+   missing. A tester's account must own the app (a Steam key from the partner site).
 8. **Pass 2 (only if needed): walk prediction** for the local player over the unacked inputs,
    with a snap threshold and a smooth pull-in. **Interpolation landed in 3.49** with the wire
    form (above); prediction stays deferred.

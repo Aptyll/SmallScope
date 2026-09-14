@@ -9,9 +9,9 @@
 //   npm start -- --join=LOBBYID    join one (the seed comes from the lobby)
 //   npm start -- --seed=N          pin the world, as ?seed=N does
 //
-// APP_ID is Valve's Spacewar (480), the App ID every Steam developer may use
-// for testing lobbies and networking; a shipped build reads its own from
-// steam_appid.txt beside the exe. Steam must be running and signed in, or
+// APP_ID comes from steam_appid.txt beside this file (Softfall's own, 5244550,
+// committed - the build copies it beside the exe); with no file it is Valve's
+// Spacewar (480), the App ID every Steam developer may use for testing. Steam must be running and signed in, or
 // init fails and the bridge reports `ready: false` - the page then plays solo.
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
