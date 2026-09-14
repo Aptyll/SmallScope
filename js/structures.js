@@ -165,7 +165,7 @@ function manageNear(p) {
 // findSite when it will not stand anchored on it.
 function placeStruct(tx, ty, type, p, rot) {
   p = p || player;
-  const deny = (msg, t) => { if (p === player) { SFX.deny(); if (msg) showMsg(msg, t); } };
+  const deny = (msg, t) => { sfxFor(p, 'deny'); if (p === player && msg) showMsg(msg, t); };
   const S = STRUCTS[type];
   if (!S || !inWorld(tx, ty)) { deny(); return; }
   rot = S.rotates && rot ? 1 : 0;
@@ -183,7 +183,7 @@ function placeStruct(tx, ty, type, p, rot) {
     if (!canAfford(t0.cost, p)) return;
     pay(t0.cost, p);
     createStruct(tx, ty, type, 0, p, true, rot);
-    if (nearPlayer(cxp, cyp)) SFX.hammer();
+    sfxAt('hammer', cxp, cyp);
     burst(cxp, cyp, '#eef4fb', 8, 40, 0.4, true);
   });
 }
@@ -235,7 +235,7 @@ function rollCardRarity(odds) {
 
 function startUpgrade(o, p) {
   p = p || player;
-  const deny = (msg, t) => { if (p === player) { SFX.deny(); if (msg) showMsg(msg, t); } };
+  const deny = (msg, t) => { sfxFor(p, 'deny'); if (p === player && msg) showMsg(msg, t); };
   if (o.building || !ownsStruct(o, p) || STRUCTS[o.type].fixed) { deny(); return; }
   if (o.tier >= STRUCTS[o.type].tiers.length - 1) { deny('MAX TIER', 1.4); return; }
   const t = STRUCTS[o.type].tiers[o.tier + 1];
@@ -247,13 +247,13 @@ function startUpgrade(o, p) {
   o.buildT = 0;
   o.buildTotal = t.buildT;
   o.dustT = 0;
-  if (nearPlayer(o.tx * TILE + 8, o.ty * TILE + 8)) SFX.hammer();
+  sfxAt('hammer', o.tx * TILE + 8, o.ty * TILE + 8);
   burst(o.tx * TILE + 8, o.ty * TILE + 8, '#eef4fb', 8, 40, 0.4, true);
 }
 
 function demolishStruct(o, p) {
   // a `fixed` building (the barracks) is the eagle's, not the wallet's: nobody pulls it down for the refund
-  if (!ownsStruct(o, p || player) || STRUCTS[o.type].fixed) { if ((p || player) === player) SFX.deny(); return; }
+  if (!ownsStruct(o, p || player) || STRUCTS[o.type].fixed) { sfxFor(p || player, 'deny'); return; }
   destroyStructure(o, true, p || player);
 }
 
@@ -341,7 +341,7 @@ function fireBolt(o, t, pv) {
     owner: o.owner === undefined ? 0 : o.owner, team: team, trailD: 0,
   });
   burst(m.x, m.y, TEAMS[skin(team)].mark, 4, 60, 0.22, true);
-  if (nearPlayer(pv.x, pv.y)) SFX.turretFire();
+  sfxAt('turretFire', pv.x, pv.y);
 }
 
 function updateStructures(dt) {
@@ -359,7 +359,7 @@ function updateStructures(dt) {
       const big = structW(o) > 1 || structH(o) > 1;
       if (o.dustT <= 0) {
         o.dustT = 0.8;
-        if (nearPlayer(ox, oy)) SFX.building();
+        sfxAt('building', ox, oy);
         if (big) {
           // dust off the whole footprint's front edge
           const c = structCenter(o);
@@ -390,7 +390,7 @@ function updateStructures(dt) {
           burst(ox, oy - 4, '#eef4fb', 10, 50, 0.6, true);
           burst(ox, oy - 4, o.tier === 2 ? '#f2cc6a' : o.tier === 1 ? '#a8b0c4' : '#c9a06a', 6, 45, 0.5, true);
         }
-        if (nearPlayer(ox, oy)) { SFX.hammer(); state.shake = Math.max(state.shake, big ? 2.5 : 1.5); }
+        sfxAt('hammer', ox, oy); shakeAt(ox, oy, big ? 2.5 : 1.5);
         if (o.type === 'turret') o.cd = 0;
         if (o.type === 'generator') o.payT = STRUCTS.generator.tiers[o.tier].period;
         if (o.type === 'spawner') { o.respawnT = o.respawnTotal = 1; }
@@ -457,7 +457,7 @@ function updateStructures(dt) {
           // a machine waking up, for anyone standing in the yard: the bay
           // shutter, the exhaust and a new chassis had been entirely silent,
           // which is odd for the one building that manufactures things
-          if (nearPlayer(b.x, b.y)) SFX.botOut();
+          sfxAt('botOut', b.x, b.y);
         }
       }
       // the shutter: open while a worker is out in the yard or one is rolling
@@ -502,7 +502,7 @@ function updateStructures(dt) {
           fish.splice(k, 1);
           o.fish++;
           o.catchT = NET_CATCH_T;
-          if (nearPlayer(ox, oy)) SFX.splash();
+          sfxAt('splash', ox, oy);
           burst(ox, oy, '#7fa9c6', 6, 40, 0.4, true);
           burst(ox, oy, '#ddf1f8', 5, 45, 0.4, true);
           break;
@@ -522,7 +522,7 @@ function updateStructures(dt) {
             o.takeT = NET_TAKE_T;
             if (p.catchT <= 0) startCatch(p); // the first fish off the rope is hoisted; the rest come up under it
             addFloater(p.x, p.y - 14, '+1', RES_COLORS.fish);
-            if (p === player) SFX.stash();
+            sfxFor(p, 'stash');
           });
         }
       }

@@ -508,7 +508,7 @@ function sellValue(s) {
 }
 
 // the local refusals, so a bot's failed order is silent
-function shopDeny(p) { if (p === player) SFX.deny(); }
+function shopDeny(p) { sfxFor(p, 'deny'); }
 function shopNoRoom(p) { if (p === player) bagDenied(); }
 
 // A LINE off the counter. Reached through runCmd (input.cmd {kind:'shop'}), so
@@ -536,7 +536,7 @@ function shopBuy(p, sec, i) {
   pay(cost, p);
   noteSeen(p, o.type); // bought counts as held: the tech tree opens on it
   shopFx(p, '-' + o.price, RES_COLORS.gold);
-  if (p === player) SFX.coin();
+  sfxFor(p, 'coin');
   return true;
 }
 
@@ -550,7 +550,7 @@ function shopSell(p, s) {
   if (v <= 0) { shopDeny(p); return 0; }
   tradeGold(p, v);
   shopFx(p, '+' + v, RES_COLORS.gold);
-  if (p === player) SFX.coin();
+  sfxFor(p, 'coin');
   return v;
 }
 // ...the same sale, addressed by bag index: the path a bot or a later caller
@@ -595,7 +595,7 @@ function shopSellAll(p) {
   if (v <= 0) { shopDeny(p); return 0; } // an empty pack, or nothing in it worth a coin
   tradeGold(p, v);
   shopFx(p, '+' + v, RES_COLORS.gold);
-  if (p === player) SFX.coin();
+  sfxFor(p, 'coin');
   return v;
 }
 
@@ -615,7 +615,7 @@ function shopTrade(p, id, dir) {
     tradeGold(p, price);
     shopFx(p, '+' + price, RES_COLORS[id]);
   }
-  if (p === player) SFX.coin();
+  sfxFor(p, 'coin');
   return true;
 }
 

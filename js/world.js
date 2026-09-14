@@ -1040,7 +1040,7 @@ function agShatter(t) {
   agRings.push({ x: f.x, y: f.y, t: 0, max: ptHitR(t) + 5 });       // the shock ring
   if (t.stock) { t.broken = PT_RESPAWN; t.wob = 0; }
   else t.gone = true;  // updatePractice sweeps it out of the array
-  if (nearPlayer(f.x, f.y)) SFX.break_();
+  sfxAt('break_', f.x, f.y);
 }
 
 // ---- the archery round: one bell -----------------------------------------
@@ -1365,7 +1365,7 @@ function rackEquip(p, c) {
   cell.bits[0] = 'arrow';
   p.tools[p.toolSel] = cell;
   burst(p.x, p.y - 8, '#e8dcb4', 6, 40, 0.4, true);
-  if (nearPlayer(p.x, p.y)) SFX.place();
+  sfxAt('place', p.x, p.y);
 }
 
 // the rack the player is standing at - Chebyshev 1 of any of its tiles, E's
@@ -1619,7 +1619,7 @@ function pkRoll(diff) {
   const dx2 = PK_DIE.tx * TILE + 8, dy2 = PK_DIE.ty * TILE + 8;
   burst(dx2, dy2 - 10, '#f4f7ff', 10, 55, 0.5, true);
   burst(dx2, dy2 - 10, '#8fd8ff', 8, 45, 0.45, true);
-  if (nearPlayer(dx2, dy2)) SFX.unlock();
+  sfxAt('unlock', dx2, dy2);
 }
 
 // The sweep, one frame's worth: advance the front around the ring and spend
@@ -1657,7 +1657,7 @@ function pkAnimStep(dt) {
       if (hadTree) {
         burst(px, py - 8, '#88b090', 4, 45, 0.45, true);  // needles off the falling pine
         if (rng() < 0.6) burst(px, py - 4, '#f4f7ff', 3, 40, 0.4, true);
-        if (pkAnim.sfxT > 0.28 && nearPlayer(px, py)) { pkAnim.sfxT = 0; SFX.break_(); }
+        if (pkAnim.sfxT > 0.28) { pkAnim.sfxT = 0; sfxAt('break_', px, py); }
       } else if (rng() < 0.5) {
         burst(px, py, '#ddf1f8', 2, 35, 0.4, true);        // frost settling on fresh ice
       }
@@ -1696,7 +1696,7 @@ function pkAnimStep(dt) {
     const lx = (PK_LINE.x0 + PK_LINE.x1 + 1) * TILE / 2, ly = (PK_LINE.y + 0.5) * TILE;
     burst(lx, ly, '#8fd8ff', 10, 55, 0.5, true);
     burst(lx, ly, '#f4f7ff', 8, 50, 0.45, true);
-    if (nearPlayer(lx, ly)) SFX.place();
+    sfxAt('place', lx, ly);
   }
 }
 
@@ -1738,7 +1738,7 @@ function updatePractice(dt) {
       const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
       burst(ox, oy - 14, '#f4f7ff', 8, 40, 0.5, true);
       burst(ox, oy - 14, '#e0c890', 5, 35, 0.45, true);
-      if (nearPlayer(ox, oy)) SFX.place();
+      sfxAt('place', ox, oy);
     }
   }
   for (const t of ptargets) {
@@ -1752,7 +1752,7 @@ function updatePractice(dt) {
         t.wob = 0.45;
         const f = ptFace(t);
         burst(f.x, f.y, '#f4f7ff', 6, 35, 0.4, true);
-        if (nearPlayer(f.x, f.y)) SFX.place();
+        sfxAt('place', f.x, f.y);
       }
     }
     if (t.kind === 'pop') {

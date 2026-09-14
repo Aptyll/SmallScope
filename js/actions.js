@@ -180,7 +180,7 @@ function startSwing(p, t) {
   p.swingT = 0.18;
   p.swingCd = 0.34;
   p.swingHitDone = false;
-  if (nearPlayer(p.x, p.y)) SFX.swing();
+  sfxAt('swing', p.x, p.y);
 }
 
 // The hands work on their own. Whatever an OBJECTS entry marks `auto` (a
@@ -272,7 +272,7 @@ function tryDodge(p) {
   if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
   else if (dy !== 0) p.dir = dy > 0 ? 'down' : 'up';
   burst(p.x, p.y + 4, '#dfe8f4', 6, 40, 0.35, true);
-  if (nearPlayer(p.x, p.y)) SFX.dodge();
+  sfxAt('dodge', p.x, p.y);
 }
 
 // ---- the roll as a hit ---------------------------------------------------
@@ -309,8 +309,8 @@ function rollTackle(p, sp, nx, ny) {
   p.vx = -nx * 30; p.vy = -ny * 30; // bounced back off it
   damagePlayer(p, Math.max(1, Math.round(rollLerp(ROLL_DMG, t) * TACKLE_SELF)), -nx, -ny, null, 'tackle');
   if (!p.dead) stunUnit(p, rollLerp(TACKLE_STUN, t));
-  if (p === player) state.shake = Math.max(state.shake, 4);
-  if (nearPlayer(p.x, p.y)) SFX.hit();
+  shakeFor(p, 4);
+  sfxAt('hit', p.x, p.y);
   burst(p.x + nx * 5, p.y - 3, '#eef4fb', 8, 45, 0.45, true);
 }
 
@@ -389,7 +389,7 @@ function tryProne(p) {
   const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
   if (p.dodgeT > 0 || p.sliding || Math.hypot(p.vx, p.vy) > PRONE_ENTER ||
     !inWorld(tx, ty) || ground[idx(tx, ty)] !== 0) {
-    if (p === player) SFX.deny();
+    sfxFor(p, 'deny');
     return;
   }
   p.prone = true;
@@ -397,7 +397,7 @@ function tryProne(p) {
   p.vx = p.vy = 0;
   p.sliding = false; p.slideT = 0;
   burst(p.x, p.y + 4, '#eef4fb', 7, 34, 0.4, true);
-  if (nearPlayer(p.x, p.y)) SFX.bury();
+  sfxAt('bury', p.x, p.y);
 }
 
 // Back on your feet, whatever put you there - the ambush shot, a hit, an E
@@ -412,7 +412,7 @@ function risePlayer(p) {
   p.riseT = PRONE_RISE;
   if (h > 0.2) {
     burst(p.x, p.y + 2, '#eef4fb', 4 + Math.round(h * 7), 44, 0.45, true);
-    if (nearPlayer(p.x, p.y)) SFX.rise();
+    sfxAt('rise', p.x, p.y);
   }
 }
 
@@ -423,7 +423,7 @@ function risePlayer(p) {
 function dryFire(p) {
   p.dryT = 0.45;
   burst(p.x, p.y - BOW_Y, '#8a97bd', 3, 22, 0.3, true);
-  if (p === player) SFX.dryFire();
+  sfxFor(p, 'dryFire');
 }
 
 // the swing lands on the tile tryWork() locked, whatever is there by now
@@ -447,7 +447,7 @@ function crackIce(tx, ty, p) {
   const i = idx(tx, ty);
   const px = tx * TILE + 8, py = ty * TILE + 8;
   const hits = (iceCracks.get(i) || 0) + 1;
-  if (nearPlayer(px, py)) SFX.mine();
+  sfxAt('mine', px, py);
   burst(px, py, '#ddf1f8', 6, 45, 0.4, true);
   if (hits >= ICE_HOLE_HITS) {
     // broken through: the tile becomes open water
@@ -455,8 +455,8 @@ function crackIce(tx, ty, p) {
     ground[i] = 2;
     holes.push(i);
     repaintGround(tx, ty);
-    if (nearPlayer(px, py)) SFX.splash();
-    if (p === player) state.shake = Math.max(state.shake, 2);
+    sfxAt('splash', px, py);
+    shakeFor(p, 2);
     burst(px, py, '#3a6080', 10, 50, 0.5, true);
     burst(px, py, '#ddf1f8', 8, 55, 0.5, true);
     // the noise sends nearby fish darting away
@@ -496,19 +496,18 @@ function nearestDryTile(x, y, p) {
 // a tree is worth should depend on which of them felled it.
 function chopTree(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
-  const near = nearPlayer(ox, oy);
   const dead = o.type === 'deadTree'; // the rookery's cover: quicker, same gold
   o.flash = 0.1;
   o.shake = 0.22;
   o.hp--;
-  if (near) SFX.chop();
+  sfxAt('chop', ox, oy);
   awardGold(p, dead ? YIELD.deadTreeHit : YIELD.treeHit, ox, oy);
   burst(ox, oy - 10, '#eef4fb', dead ? 5 : 6, 40, 0.5, true);
   burst(ox, oy - 12, dead ? '#6b5a48' : '#3f7a5c', 3, 30, 0.4, true);
   if (o.hp > 0) return;
   objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
-  if (near) SFX.treeFall();
-  if (p === player) state.shake = Math.max(state.shake, dead ? 2 : 2.5);
+  sfxAt('treeFall', ox, oy);
+  shakeFor(p, dead ? 2 : 2.5);
   // PACKMULE / FORAGER fatten the fell
   awardGold(p, Math.round((dead ? YIELD.deadTreeFall : YIELD.treeFall) * kitOf(p).harvestMul), ox, oy - 6);
   burst(ox, oy - 8, '#eef4fb', dead ? 12 : 14, 55, 0.7, true);
@@ -522,19 +521,18 @@ function chopTree(o, p) {
     awardGold(p, YIELD.treeRare, ox, oy - 12);
     burst(ox, oy - 8, '#f2cc6a', 10, 50, 0.6, true);
     addFloater(ox, oy - 32, 'JACKPOT!', '#f2cc6a');
-    if (near) SFX.coin();
+    sfxAt('coin', ox, oy);
   }
 }
 
 function hitObject(o, p) {
   p = p || player;
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
-  const near = nearPlayer(ox, oy); // remote players' work must not spam the mix
   // hard tool gating: an object with a `needs` bounces off anything else
   const k = SWING_TOOLS[p.swing].key;
   const d = OBJECTS[o.type];
   if (d && d.needs && k !== d.needs) {
-    if (near) SFX.deny();
+    sfxAt('deny', ox, oy);
     addFloater(ox, oy - 14, d.needs === 'pick' ? 'NEEDS PICKAXE' : 'NEEDS AXE', '#9fb6d8');
     return;
   }
@@ -544,13 +542,13 @@ function hitObject(o, p) {
     chopTree(o, p);
   } else if (o.type === 'rock') {
     o.hp--;
-    if (near) SFX.mine();
+    sfxAt('mine', ox, oy);
     awardGold(p, YIELD.rockHit, ox, oy);
     burst(ox, oy - 4, '#a8b0c4', 6, 45, 0.4, true);
     if (o.hp <= 0) {
       objects[idx(o.tx, o.ty)] = null;
-      if (near) SFX.break_();
-      if (p === player) state.shake = Math.max(state.shake, 2);
+      sfxAt('break_', ox, oy);
+      shakeFor(p, 2);
       awardGold(p, Math.round(YIELD.rockBreak * kitOf(p).harvestMul), ox, oy - 6);
       burst(ox, oy - 4, '#8b93a8', 12, 55, 0.6, true);
       // the common source: a rock is where a bottom-tier tool or bit was
@@ -563,21 +561,19 @@ function hitObject(o, p) {
     // own-team case can still land here through a stale swing lock, so the
     // gate workTarget applies is re-checked before any damage.
     const e = state.drop && state.drop.eagles[o.team];
-    if (!e || e.state !== 'down' || p.team === o.team) { if (near) SFX.deny(); return; }
+    if (!e || e.state !== 'down' || p.team === o.team) { sfxAt('deny', ox, oy); return; }
     hurtEagle(e, EAGLE_WORK_DMG, p, ox, oy); // the puff lands on the struck tile
-    if (near) SFX.chop();
+    sfxAt('chop', ox, oy);
   } else if (o.type === 'dummy') {
     hitDummy(o, DUMMY_WORK_DMG, ox, oy - 10);
   } else if (o.type === 'bush') {
     if (o.berries > 0) {
       o.berries = 0;
       o.regrow = BUSH_REGROW;
-      if (near) SFX.stash();
+      sfxAt('stash', ox, oy);
       spawnDrop(ox, oy, 'berry'); spawnDrop(ox, oy, 'berry');
       burst(ox, oy - 4, '#4c8560', 5, 35, 0.4, true);
-    } else if (near) {
-      SFX.swing();
-    }
+    } else sfxAt('swing', ox, oy);
   } else if (o.type === 'chest') {
     // a buried cache in the treeline (placeChests, js/world.js): one free E
     // press springs it - gold straight into the purse, a card drop rolled
@@ -585,8 +581,8 @@ function hitObject(o, p) {
     // rock and a felled tree only ever pay out the bottom tier). The tile
     // opens with it, so a sprung chest leaves a gap in the forest wall.
     objects[idx(o.tx, o.ty)] = null;
-    if (near) SFX.stash();
-    if (p === player) state.shake = Math.max(state.shake, 1.5);
+    sfxAt('stash', ox, oy);
+    shakeFor(p, 1.5);
     awardGold(p, randi(CHEST_GOLD_MIN, CHEST_GOLD_MAX), ox, oy);
     const rarity = rollCardRarity(CHEST_ODDS);
     const key = cardKey(rarity);
@@ -619,7 +615,7 @@ function hitDummy(o, dmg, hx, hy) {
   o.shake = 0.24;
   addDmgFloater(hx, hy - 6, dmg);
   burst(hx, hy - 4, '#e0c890', 5, 40, 0.4, true); // straw off the sack
-  if (nearPlayer(hx, hy)) SFX.hit();
+  sfxAt('hit', hx, hy);
 }
 
 // What a building shrugs off a PLAYER's blow. Every way a hand can reach a
@@ -644,10 +640,10 @@ function hurtStruct(o, dmg, p, bot) {
   o.hp -= dmg;
   o.flash = 0.1;
   o.shake = 0.22;
-  if (nearPlayer(c.x, c.y)) SFX.hit();
+  sfxAt('hit', c.x, c.y);
   burst(c.x, c.y - 4, '#a3794f', 5, 40, 0.4, true);
   addDmgFloater(c.x, c.y - 12, dmg);
-  if (p === player) state.shake = Math.max(state.shake, 1);
+  shakeFor(p, 1);
   if (o.hp <= 0) {
     const name = STRUCTS[o.type].name;
     // the wreck pays out like a demolition, straight to whoever broke it
@@ -666,7 +662,7 @@ function destroyStructure(o, refund, p) {
   else objects[idx(o.tx, o.ty)] = null;
   const c = structCenter(o), ox = c.x, oy = c.y;
   for (let i = 0; i < spill; i++) spawnDrop(ox, oy, 'fish');
-  if (nearPlayer(ox, oy)) SFX.break_();
+  sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
   burst(ox, oy, '#eef4fb', 6, 40, 0.5, true);
   if (refund && STRUCTS[o.type] && p) {
@@ -898,7 +894,7 @@ function stunUnit(e, t) {
     // FRESH stun (a second blow inside the window extends it and says nothing
     // new), and it is the one status whose cue is about being unable to act -
     // the strip's numbers cannot say that while the body is not answering.
-    if (e === player && cur <= 0) SFX.dazed();
+    if (cur <= 0) sfxFor(e, 'dazed');
   }
   burst(e.x, unitMidY(e) - 3, '#ffe9a8', 4, 26, 0.4, true);
 }
@@ -935,7 +931,7 @@ function markUnit(e, t) {
   // your own head where you cannot see them, and what has changed is that
   // your cover has stopped working - the whole reason to be lying in the snow
   // at all. Fresh marks only, or a falcon circling re-rings it every second.
-  if (e === player && !(e.markT > 0)) SFX.marked();
+  if (!(e.markT > 0)) sfxFor(e, 'marked');
   e.markT = Math.max(e.markT || 0, t);
 }
 
@@ -957,7 +953,7 @@ function igniteUnit(e, t, dps, src) {
     e.burnTick = BURN_TICK;
     e.burnFxT = 0;
     burst(e.x, unitMidY(e), '#ff9440', 7, 50, 0.5);
-    if (nearPlayer(e.x, e.y)) SFX.hidden();
+    sfxAt('hidden', e.x, e.y);
   }
 }
 // The burn's own clock, run once per sim step for every kind of unit that has
@@ -974,7 +970,7 @@ function updateBurn(e, dt) {
       x: e.x + rand(-4, 4), y: unitMidY(e) + rand(-3, 4),
       vx: rand(-8, 8), vy: rand(-30, -14),
       life: rand(0.25, 0.45), maxLife: 0.4,
-      color: Math.random() < 0.45 ? '#ff9440' : Math.random() < 0.6 ? '#ffd95c' : '#e0533a',
+      color: fxRng() < 0.45 ? '#ff9440' : fxRng() < 0.6 ? '#ffd95c' : '#e0533a', // fxRng: the one draw off the sim's stream this file made
       size: 1, grav: -22, alpha: 0.85,
     });
   }

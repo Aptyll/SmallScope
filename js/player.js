@@ -128,7 +128,7 @@ function awardGold(p, n, x, y) {
   if (!p || n <= 0) return;
   gainGold(p, n);
   addFloater(x, y - 14, '+' + n, RES_COLORS.gold);
-  if (p === player) SFX.coin();
+  sfxFor(p, 'coin');
 }
 function levelUp(p) {
   p.level++;
@@ -138,7 +138,7 @@ function levelUp(p) {
   // the early levels come too fast to be news; the late ones say who is ahead
   if (p.level >= LOG_LEVEL) logEvent(p.name + ' REACHED LEVEL ' + p.level, p);
   if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
-  if (p === player) SFX.levelUp();
+  sfxFor(p, 'levelUp');
 }
 // the pose set a body draws from: its class body in its team's paint, worn
 // by its character's look (tone and fringe at 16 px - js/sprites/characters.js)
@@ -413,7 +413,7 @@ function gearCost(p, i) { return p.gearLv[i] >= GEAR_LV_MAX ? null : { gold: GEA
 // new hp on the spot, the way a hero level does.
 function buyGear(p, i) {
   const cost = gearCost(p, i);
-  if (!cost || !canAfford(cost, p)) { if (p === player) SFX.deny(); return; }
+  if (!cost || !canAfford(cost, p)) { sfxFor(p, 'deny'); return; }
   pay(cost, p);
   p.gearLv[i]++;
   const oldMax = p.maxHp;
@@ -421,8 +421,7 @@ function buyGear(p, i) {
   if (p.maxHp > oldMax) p.hp = Math.min(p.maxHp, p.hp + (p.maxHp - oldMax));
   addFloater(p.x, p.y - 18, GEAR[i][p.gear[i]].name + ' ' + p.gearLv[i], GEAR_MATS[p.gearLv[i] - 1]);
   burst(p.x, p.y - 8, GEAR_MATS[p.gearLv[i] - 1], 8, 40, 0.45);
-  if (p === player) SFX.levelUp();
-  else if (nearPlayer(p.x, p.y)) SFX.pickup();
+  sfxOwn(p, 'levelUp', 'pickup');
 }
 // one frame of intent - the whole interface between a controller and the sim
 function makeInput() {
@@ -731,9 +730,9 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   cancelCatch(p); // ...and the hoist: a fish over your head is a hit you did not see coming
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
   // times a second for as long as it runs
-  if (p === player && !dot) state.shake = Math.max(state.shake, crit ? 6 : 3);
+  if (!dot) shakeFor(p, crit ? 6 : 3);
   addDmgFloater(p.x, p.y - 18, dmg, p === player, crit);
-  if (nearPlayer(p.x, p.y) && !dot) SFX.hurt();
+  if (!dot) sfxAt('hurt', p.x, p.y);
   burst(p.x, p.y - 6, dot ? '#ff9440' : '#e04a54', 8, 50, 0.45);
   if (p.hp <= 0) die(p, src, cause);
 }
@@ -865,7 +864,7 @@ function die(p, src, cause) {
       const heal = Math.min(killer.kit.killHeal, killer.maxHp - killer.hp);
       killer.hp += heal;
       addFloater(killer.x, killer.y - 14, '+' + heal, '#8fe08a');
-      if (nearPlayer(killer.x, killer.y)) SFX.heal();
+      sfxAt('heal', killer.x, killer.y);
     }
   }
   logEvent(killer ? killer.name + ' ' + (KILL_VERB[cause] || 'SHOT') + ' ' + p.name
@@ -918,7 +917,7 @@ function respawnPlayer(p) {
   p.respawnT = 0;
   p.reset(false);
   burst(p.x, p.y - 2, '#f4f7ff', 16, 70, 0.5, true);
-  if (nearPlayer(p.x, p.y)) SFX.place();
+  sfxAt('place', p.x, p.y);
   if (p === player) {
     state.over = null;
     state.mode = 'play';
@@ -984,7 +983,7 @@ function practiceRevive(p) {
   p.x = (s.tx + 0.5) * TILE; p.y = (s.ty + 0.5) * TILE;
   p.invuln = 2;
   burst(p.x, p.y - 4, '#f4f7ff', 14, 60, 0.5, true);
-  SFX.place();
+  sfxAt('place', p.x, p.y); // in earshot only - it had rung on every screen for every bot's return
 }
 
 // Both end screens print the same object, so there is one of these rather

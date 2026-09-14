@@ -2900,6 +2900,18 @@ nothing; `aliveCount()` still serves the rules.)
 
 [js/audio.js](../../js/audio.js) is three layers under one master dial, and `SFX` is all of them.
 
+**Inside the step, a cue is asked for through js/net/events.js, never gated by hand.** A world
+cue at a place is `sfxAt('cue', x, y[, r][, 0, arg])` (heard within `r` px, `nearPlayer`'s
+default when 0; `EV_ANYWHERE` reaches every screen - the eagle's boom); a cue for one body is
+`sfxFor(p, 'cue')` (a step, a nock, a refusal, a status landing on *you*); a level gained is
+`sfxOwn(p, 'levelUp', 'pickup')` - one cue for the owner, another for bystanders in earshot.
+Shakes go the same way (`shakeFor(p, n[, q])`, `shakeAt(x, y, n[, r])`). Solo play hears
+exactly what the bare gates played; the point is that a host can record the where and the who
+for a client that never ran the step. Outside the step - the HUD, the menus, the counter
+opening, the practice instruments - the bare `SFX.cue()` is right, because that screen raised it
+for itself. Three cues still gate by hand on purpose, pending the plan's semantic events: the
+roost alarm (with its plate), the market's four (with theirs), and the two end-of-match songs.
+
 `ensure()` builds the graph lazily: `master` (the master dial) → destination, and `sfxBus` (the
 SOUNDS dial) under it. **Everything synthesised or sampled goes through `sfxBus`**, the wind bed
 included — a new voice that connects to `master` directly would ignore the SOUNDS dial. The three
