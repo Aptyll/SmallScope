@@ -21,7 +21,7 @@ declare victory. The three affordances:
 
 - **`window.DBG`** (end of [js/boot.js](../../js/boot.js)) — read the object literal for the
   current surface; it is the whole external API. The non-obvious members: `step(dt, n)` runs `n`
-  fixed-`dt` update ticks and one render, `freeze = true` stops the rAF loop so stepping is
+  update ticks of `dt` (default `TICK_DT`, the live loop's own 1/60 s slice) and one render, `freeze = true` stops the rAF loop so stepping is
   deterministic (it halts `render()` too, so the canvas holds the last frame — set the value you
   want *before* freezing), `hideUI = true` drops the HUD/info stack/cursor for captures, `buildStruct` stages
   a construction site with no cost or validation, `warp(tx, ty, p?)` drops a player on a tile, and
