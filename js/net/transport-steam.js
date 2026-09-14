@@ -49,6 +49,7 @@ function steamTransport(lobbyId) {
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
+      if (this.bridge.log) this.bridge.log('host ' + (this.open ? 'lobby ' + this.lobbyId : 'error ' + this.error));
     },
     async connect() {
       this.role = 'client';
@@ -64,6 +65,7 @@ function steamTransport(lobbyId) {
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
+      if (this.bridge.log) this.bridge.log('client ' + (this.open ? 'joined ' + this.lobbyId : 'error ' + this.error));
     },
     wire() {
       if (this.wired) return; this.wired = true;

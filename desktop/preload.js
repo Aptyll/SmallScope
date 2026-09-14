@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('steamBridge', {
   lobbies: () => ipcRenderer.invoke('steam:lobbies'),
   setLobbyData: (id, data) => ipcRenderer.invoke('steam:setLobbyData', String(id), data),
   invite: (id) => ipcRenderer.invoke('steam:invite', String(id)),
+  log: (line) => ipcRenderer.invoke('steam:log', String(line)), // a line into softfall-steam.log beside the exe
   send: (to, text, reliable) => ipcRenderer.invoke('steam:send', String(to), text, reliable),
   accept: (id) => ipcRenderer.invoke('steam:accept', String(id)),
   onEvent: (cb) => ipcRenderer.on('steam:event', (e, ev) => cb(ev)),
