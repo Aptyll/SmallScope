@@ -3,12 +3,6 @@
 > The title's MULTIPLAYER plank and its rooms screen, the waiting room, and the DOWNLOAD tag:
 > [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
 
-> The title's MULTIPLAYER plank and its rooms screen, the waiting room, and the DOWNLOAD tag:
-> [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
-
-> The title's MULTIPLAYER plank and its rooms screen, the waiting room, and the DOWNLOAD tag:
-> [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
-
 Everything that draws: the camera, the pass order, the baked panels, and the pixel cursor.
 Read this before touching `render()`, adding a draw pass, or changing anything positioned off
 `VIEW_W`/`VIEW_H`. The hard invariants are summarised in [../../CLAUDE.md](../../CLAUDE.md).

@@ -2745,40 +2745,27 @@ your own marker cross it. Consequences worth knowing:
 ## Settings
 
 **The MULTIPLAYER plank** (js/ui/menu.js, the `rooms` banner) is the relay's open rooms as planks
-under a HOST plank: a room's plank carries its host's name and ten pips, one lit per person in
-the paint of the side they sit on; a room on another patch is dimmed and inert. HOST makes a room
-on the relay and opens the **waiting room** - the class-select screen, which every peer sees as
-the host does, minus PLAY, the difficulty notches and the character swap (a guest's class came
-with it); the host's count shows on every screen and the eagle comes on the host's zero. Joining
-a room whose seed is not this page's reloads the page onto it (`?seed=N&join=CODE`). Which
-relay: `netRelay()` (js/net/net.js) - `?relay=host:port` once, remembered with the settings
-(`settings.relay`), else the page's own host. The **DOWNLOAD tag** at the bottom centre of the
-title, in a browser only, opens the newest GitHub Release, which every `v*` tag builds
-(.github/workflows/desktop.yml).
-
-**The MULTIPLAYER plank** (js/ui/menu.js, the `rooms` banner) is the relay's open rooms as planks
-under a HOST plank: a room's plank carries its host's name and ten pips, one lit per person in
-the paint of the side they sit on; a room on another patch is dimmed and inert. HOST makes a room
-on the relay and opens the **waiting room** - the class-select screen, which every peer sees as
-the host does, minus PLAY, the difficulty notches and the character swap (a guest's class came
-with it); the host's count shows on every screen and the eagle comes on the host's zero. Joining
-a room whose seed is not this page's reloads the page onto it (`?seed=N&join=CODE`). Which
-relay: `netRelay()` (js/net/net.js) - `?relay=host:port` once, remembered with the settings
-(`settings.relay`), else the page's own host. The **DOWNLOAD tag** at the bottom centre of the
-title, in a browser only, opens the newest GitHub Release, which every `v*` tag builds
-(.github/workflows/desktop.yml).
-
-**The MULTIPLAYER plank** (js/ui/menu.js, the `rooms` banner) is the relay's open rooms as planks
-under a HOST plank: a room's plank carries its host's name and ten pips, one lit per person in
-the paint of the side they sit on; a room on another patch is dimmed and inert. HOST makes a room
-on the relay and opens the **waiting room** - the class-select screen, which every peer sees as
-the host does, minus PLAY, the difficulty notches and the character swap (a guest's class came
-with it); the host's count shows on every screen and the eagle comes on the host's zero. Joining
-a room whose seed is not this page's reloads the page onto it (`?seed=N&join=CODE`). Which
-relay: `netRelay()` (js/net/net.js) - `?relay=host:port` once, remembered with the settings
-(`settings.relay`), else the page's own host. The **DOWNLOAD tag** at the bottom centre of the
-title, in a browser only, opens the newest GitHub Release, which every `v*` tag builds
-(.github/workflows/desktop.yml).
+under a HOST plank, a relay pip beside HOST (green and breathing while the list socket is open,
+red and blinking while it is not) and, while the list is empty, one ghost of a row where the
+first room will stand. A room's plank carries its host's name, ten seat pips (five a side, the
+people in them lit in that side's paint - the relay lists a count per side), its four-letter
+code on a plate (the thing a host reads aloud) and a red dot once its match is under way; a room
+on another patch is dimmed and inert with its patch printed where the code would be. HOST makes
+a room on the relay and opens the **waiting room** - the class-select screen, which every peer
+sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
+your side's roster, a crown over the host's card, a brighter rim on every person's card than a
+bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
+guest sees it minus the difficulty notches and the character swap (its class came with it), and
+where PLAY would be a frozen plank wearing the host's name: the host's count comes over it and
+the eagle on the host's zero. A guest whose host walks out of the waiting room is back on the
+rooms list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
+headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
+and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
+redials (`drawNetLink`). Joining a room whose seed is not this page's reloads the page onto it
+(`?seed=N&join=CODE`). Which relay: `netRelay()` (js/net/net.js) - `?relay=host:port` once,
+remembered with the settings (`settings.relay`), else the page's own host. The **DOWNLOAD tag**
+at the bottom centre of the title, in a browser only, opens the newest GitHub Release, which
+every `v*` tag builds (.github/workflows/desktop.yml).
 
 `settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —

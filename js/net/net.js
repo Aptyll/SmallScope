@@ -106,8 +106,9 @@ function netLeave() {
 // seed, whether it is still open, and how many people are in it
 function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
-  let humans = 0; for (const p of players) if (isHuman(p)) humans++;
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, state: state.drop ? 'live' : 'open', humans });
+  let humans = 0; const sides = [0, 0];
+  for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, state: state.drop ? 'live' : 'open', humans, sides });
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same ten this one does
@@ -268,7 +269,11 @@ function netClientStep(dt) {
     }
     if (msg.t === 'closed') { NET.synced = false; continue; }    // the transport redials; HELLO again on open
     if (msg.t === 'refuse') { NET.refused = msg.why; continue; }
-    if (msg.t === 'hostGone') { NET.refused = 'HOSTGONE'; NET.synced = false; continue; }
+    if (msg.t === 'hostGone') { // the match ends here: a plate in play, the rooms list from the waiting room (updateTitle)
+      NET.refused = 'HOSTGONE'; NET.synced = false;
+      if (state.mode !== 'title' && state.over !== 'hostleft') endMatch('hostleft');
+      continue;
+    }
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); continue; }
@@ -390,6 +395,7 @@ function netClientMode() {
   const me = player;
   if (!me || !state.drop) return;
   const hostWon = NET.hostOver === 'won' ? true : NET.hostOver === 'lost' ? false : null;
+  if (state.over === 'hostleft') return;
   if (hostWon !== null && state.over !== 'won' && state.over !== 'lost') {
     const hostTeam = players[NET.hostSlot].team;
     endMatch((hostWon ? hostTeam : 1 - hostTeam) === me.team ? 'won' : 'lost');

@@ -448,8 +448,12 @@ networking.
    seed; the waiting room is the class-select screen minus PLAY, the notches and the swap for
    guests, with the host's count on every screen. The DOWNLOAD tag on the title opens the newest
    Release, which every `v*` tag builds (desktop/build.js, .github/workflows/desktop.yml: a
-   153 MB portable zip, music included). Still owed here: the `HOST LEFT` end state as a plate
-   (a guest's transport reports it, the screen does not yet), a version plate on the door.
+   153 MB portable zip, music included). PATCH 3.52 dressed the doors: the rooms list carries a
+   relay pip, seat pips a side, the code on a plate and a live dot, the waiting room the code, a
+   crown on the host and rims on the people, a guest a frozen plank in the host's name; a host
+   leaving sends a waiting guest back to the list and ends a playing one on a HOST LEFT plate
+   (`hostleft`), and a dropped socket blinks a pip mid-match. A version plate on the door is
+   still owed (a room on another patch is dimmed with its patch printed, which covers the list).
 8. **Pass 2 (only if needed): walk prediction** for the local player over the unacked inputs,
    with a snap threshold and a smooth pull-in. **Interpolation landed in 3.49** with the wire
    form (above); prediction stays deferred.
