@@ -67,6 +67,10 @@ poll() -> [{peer, bytes}]
 close(peer)
 ```
 
+**Order of transports, revised 2026-09-14 (Noah's ruling)**: the relay first, for browser and
+wrapper alike - it is the server Noah hosts - and Steam later behind a flag. The wrapper below
+stays as written; it just does not lead.
+
 **The wrapper** (a new top-level `desktop/` folder, Electron): the main process holds
 steamworks.js, the `BrowserWindow` loads `index.html` with `backgroundThrottling: false`, and a
 preload exposes `window.steamBridge` with the lobby and messaging calls plus the local SteamID and
@@ -139,6 +143,99 @@ banner** for the local player: it is a pure function of the input, the position 
 tile grid, so re-running it over the unacked inputs is cheap and exact. Nothing that touches
 another unit, a contest or damage is ever predicted.
 
+## The wire form (PATCH 3.49)
+
+Cut from the reflection snapshot, not written beside it, in three layers, each proven in the
+page before it went between tabs:
+
+- **Stable ids and field deltas.** Every moving entity carries a network id for its life
+  (`snapNid`); the host keeps a ring of what it packed at each flush tick and sends each client
+  only the fields touched since the tick that client acked (a nested field by its JSON), the
+  arrays' order when it moved, the ids that left, tiles and ground where they changed, each
+  singleton field by field (ack-keyed since PATCH 3.51, below). A client updates its
+  entities **in place** under those ids, so a reference resolved a tick ago still points at the
+  thing - which is also why a tile changes in place, and why a player's aliased plain objects
+  (`inv`, `food`, `kit`, `flag`, `spawn`, `look`) are merged rather than replaced.
+- **Bytes with a dictionary.** The whole message is binary: every object key an index into a
+  dictionary both ends grow in step (a message leads with the names it is the first to use, the
+  header carries every name from the index the client's acked message left the list at, written
+  by position), numbers as the smallest integer that holds them
+  or a float32 - a position or a velocity as an int16 count of eighths of a px (below) - tile
+  indices as numbers. The relay forwards binary frames untouched but for a
+  routing header.
+- **15 Hz and interpolation.** `SNAP_EVERY` is 4; a client eases every body a delta moved from
+  where it is drawn to where the host put it over one interval, and snaps instead of easing past
+  `LERP_SNAP` (a teleport). The local player is eased like the rest: no prediction yet.
+- **What the sim keeps to itself.** `SNAP_SKIP` names the bookkeeping that ticks every step and no
+  draw pass reads (footstep and dust clocks, a bot's think timer, a fish's turn clock...); the
+  echo harness runs without them, so a name added there is proven harmless or caught as pixels.
+
+Measured on seed 42, a ten-body match with buildings: a delta averages **5.8 KB** at 15 Hz,
+**87 KB/s per client** (down from 1.3 MB/s), ~6 ms of host time per delta, the full sync 1.9 MB of
+bytes against 3.3 MB of JSON; 300 deltas applied back in the page with zero fields lost; between
+two tabs the client checked itself against the host's full form every 5 s through a ride, a hop
+and a walk with no disagreement. Two bugs the proofs caught on the way: a token merged into the
+live object it named (a barracks gutted to two keys) - hence the merge allow-list - and a
+delta that moved a body on one axis restarting its ease toward a stale target on the other.
+
+**Quantized positions (PATCH 3.50).** `x`, `y`, `vx`, `vy`, `kbx`, `kby` cross as an int16 count of
+eighths of a px (`Q16`, 3 bytes against a float32's 5) - by field NAME at encode time, so a
+timer, hp, gold or anything the HUD prints as a number never does, and the host reads nothing
+back (the sim keeps its floats; only the bytes to a client are coarse). An eighth because a
+sprite lands at `Math.round(x - camera)`, so an error under half a px is invisible at rest,
+and the sim's own sub-px nudges (`separateUnits`' pushes, a knockback decaying toward zero
+for ever) fall below it - the shadow compare (`snapFieldDiff`) compares the quantized value,
+so a body that has not moved on the wire is not resent, which is where most of the saving
+is: at identical states the named fields carried per delta fell from 166 to 96. A position
+is FLOORED (against a camera on the same grid, `round(floor8(x) - c) === round(x - c)`, so a
+floored body cannot round to a different px), a velocity ROUNDED (it is only a heading on a
+client, and flooring a knockback at 1e-100 would hand it -0.125 for good); past +/-4095 a
+value falls through to the float32. The quantum is the wire's one designed loss, and the
+proofs say so exactly: `snapCompare` tolerates one quantum on the named fields and nothing
+else, and `netEcho` writes the wire's values into the world (`snapQuantize`) before its
+reference frame, so the pixels it counts are what was lost BESIDES the quantum (left exact, a
+merchant's axe drawn rotated toward its stump from a sub-px position moved one colour unit).
+Measured on seed 42, strict A/B at identical states (two shadows, four minutes in, 150
+deltas): **8212 -> 6842 bytes per delta**; along a run 20 s in, 5775 -> 4374; live between two
+tabs a host sends **~85 -> 72 KB/s** to one client with the switch flipped in place. The
+echo is 0 px with an empty mismatch list, 1500 ticks of deltas applied back with no mismatch,
+a body at rest holds one exact position on the client, and the client's self-check ran null
+through a ride, the hop and a 123 px walk. Found on the way: the self-check compared a body
+moved on one axis where it was DRAWN on the other, not at that axis's ease target - fixed
+per axis, which is what let a client that ate 300 queued deltas in one poll pass.
+
+**The ack-keyed base (PATCH 3.51).** The shadow became a RING: `snapHistoryPush` packs the
+world at every flush tick (`HIST_KEEP` = 75 entries, 5 s) and keeps, per entry, what that tick
+touched - per entity the names that changed or left (whole for one new that tick), the ids
+gone, whether the order moved, the same for the eagles and the singletons, each tile's touched
+names (whole for one made or unmade), the ground cells, the structures' key - while the tile
+shadow keeps only the newest form of every tile, so the ring holds no world per tick, only what
+moved. A client acks the newest tick it applied on every input it sends; the host keeps that
+per peer and cuts each peer's delta from the ring entry at ITS ack (`snapDeltaFrom`, peers on
+one ack sharing the cut), a full sync going to a peer whose ack aged out of the ring
+(`netHostFull`, which also sets the base to the tick it sends). **The cut is the UNION of the
+entries after the base, not a compare of the two ends**: the ack is a round trip stale, so the
+client may hold any tick between the base and now, and a field that flipped and flipped back
+in between has to go again or the client keeps the flip - the first cut compared the ends, and
+between two tabs a bot's `moving` flag that went false at 896 and true at 900, cut from 892,
+was never sent. `d.base` names the base; a client refuses a delta whose base is newer than
+what it holds (a resync follows) and ignores one no newer than what it holds, which is what an
+unreliable channel needs and a reliable one never exercises. The key dictionary is ack-keyed
+too: a message's header carries every name from the index the peer's acked message left the
+list at, written by position on the far side, so a lost message loses no name and a repeat is
+harmless; the full sync carries the list from 0 (the welcome no longer does). Proved with
+`DBG.netLoss(f)`, which throws away that share of a host's snapshot sends before the
+transport: between two tabs on seed 42 the client's self-check stayed null through the ride,
+the hop and a 121 px walk at 30% loss (251 drops by then), a stretch at 70%, and a 7 s
+blackout that outlived the ring and came back through the full sync; in the page,
+`netDeltaRun(1200, 4, loss)` at 0.3 and 0.7 (bases up to 60 ticks back) with no mismatch. On
+the relay the ack trails the send by a round trip, so a delta is a few fields fatter than
+before (4.0-4.5 KB along a run 20 s in).
+
+Still owed: the transport half of the unreliable channel (Steam's 1200-byte cap needs the
+delta split into parts or slimmed further), and a per-kind field policy if ~70 KB/s is still
+too much for nine clients on a home upload (~650 KB/s at ten players).
+
 ## Message schema
 
 All messages are binary `ArrayBuffer`s over the transport, first byte the type, second the
@@ -182,10 +279,13 @@ same id-keyed pattern. Structures are keyed by tile index and only ship on chang
 
 ### Events
 
-Each is the moment a sim file used to fire a cue or an fx directly. On the host
-`netEvent(kind, ...)` plays the local cosmetics **and** queues the event; on a client
-`playEvent` runs the cosmetics only. A sim file never calls `SFX.hit()` again at a moment the
-host owns; it calls `netEvent('hit', ...)`.
+Two layers. **Cosmetics** are captured generically (PATCH 3.44, js/net/events.js): the ring
+carries `burst`, `float`, `dmg`, `sfx` (cue at a place with a radius), `sfxp` (cue for a
+player id), `sfxo` (owner cue / bystander cue), `shake` and `shakep` entries, recorded inside
+the step on the host and replayed by `evPlay` on a client against *its* player. Nothing below
+needs a cosmetic payload. **Semantic events** are the ones in this table: each changes client
+state (a tile, a feed line, an overlay, a profile stat) and rides the reliable channel with
+the snapshot.
 
 | kind | payload | client cosmetics |
 | --- | --- | --- |
@@ -281,27 +381,82 @@ networking.
    `DBG.setLocal(N)` seat the local player elsewhere for a check. What is still owed for a
    lobby is a `remote` control kind: the human-only branches (`autoFitTools`, a human's flag
    read by the whole side, the eagle's forced drop) test `control === 'human'` today.
-3. **Events out of the sim.** Introduce `netEvent` and route every `SFX`/fx call that marks a
-   host-owned moment through it. In solo the function plays the cosmetics directly, so nothing
-   changes on screen; the diff is mechanical and the code map gains a row per banner touched.
-   `Math.random` in actions.js's fire colour moves to `fxRng`.
-4. **Loopback harness.** `NET` with the loopback transport, but with a `DBG.netEcho` flag that
-   makes solo **serialize every snapshot and apply it back into a second set of singletons**,
-   then diffs. This is how the schema is proven complete before a second machine exists: any
-   field the render pass reads that the snapshot does not carry shows up as a visible glitch
-   on a headless capture. This is also where the quantizers get their precision picked.
-5. **Two browsers, one machine.** A `transport-ws.js` that speaks the same interface over a
-   local WebSocket relay (a thirty-line addition to `app/server.js`), so host and client can be
-   two headless Edge tabs on `?seed=N` driven by the existing `POST /shot` harness. Latency and
-   loss are injected here. Every reconnect and late-join path is tested here, not on Steam.
-6. **The wrapper.** `desktop/` with Electron, steamworks.js, the preload bridge, and the
-   `transport-steam.js` adapter. First target is only: create lobby, join lobby, exchange
-   `HELLO`/`WELCOME`, run the same match the WebSocket transport already runs.
-7. **Lobby screens.** The LOBBY plank, the waiting room over the existing class-select, the
-   version plate, the `HOST LEFT` end state, the reconnect plate. All under the show-don't-label
-   rule: a slot's team is its colour, a ready is a lit plank, a missing peer is a dimmed tag.
+3. **Events out of the sim - DONE (PATCH 3.44), as cosmetic capture rather than a named table.**
+   Every cue, shake, puff and floater the step raises goes through js/net/events.js: `sfxAt`,
+   `sfxFor`, `sfxOwn`, `shakeAt`, `shakeFor` carry the where and the who instead of the
+   local answer, and `burst`/`addFloater`/`addDmgFloater` record themselves. Recording is on
+   only inside `updatePlay` (`evInStep`) and only with `evRecord` set, so solo is untouched and
+   nothing the HUD raises for itself is ever recorded. `evPlay` replays one entry on a client.
+   The semantic events in the table above (a build, a ground change, a death, the end, the
+   roost alarm with its plate, the market's) are state, not cosmetics, and land with the
+   snapshot in step 4. `Math.random` in the fire colour moved to `fxRng`. Two wrinkles for
+   step 4: a floater that carries a team's paint records the host's `skin()` colour, so the
+   client will want the team instead; and `burst` draws off the sim's `rng`, which a client
+   replaying it does too. Measured on seed 42: 20 s of a ten-bot match records about 50 entries a second, and 44% of them are footsteps (`sfxFor(p, 'step')` for every walking body), the obvious first thing to derive from snapshot motion on the client instead of shipping.
+4. **Loopback harness - DONE (PATCH 3.45).** `NET` (js/net/net.js) with the loopback
+   transport, and the snapshot (js/net/snapshot.js) built **by reflection** rather than a field
+   table: every own property of every entity, refs as kind+index tokens, `input`/`ai`/`nav`
+   skipped, the road registry a section of its own so an eagle's spur keeps its identity.
+   `netEcho()` renders the world frame, snapshots, blanks every singleton, applies and
+   renders again; the pixels that differ are the schema's misses, and a field-level audit
+   names them. Measured on seed 42 over a 90 s match through the drop with buildings, bots
+   and drops: 90 echoes, **0 pixels off in every one**, 0 fields lost, ~150 ms per echo. The
+   JSON weighs 3.3 MB, of which 3.15 MB is the static `objects` array - so the wire form
+   ships tiles only as mutation events over the seed-generated baseline, and the per-tick
+   body is the remaining ~140 KB before quantization (players 23 KB, animals 27 KB, robots
+   2-48 KB, fish 6 KB, ground 72 KB once). The quantizers and the delta are step 5's, cut
+   from this correct form rather than written beside it. Two harness lessons: `render()`
+   rolls the screen shake and animates a few things off the wall clock, so the harness pins
+   both; and the eagle's `spur`/`pad`/`lane` carry clocks that advance after the crash,
+   which a first draft skipped and the echo caught as a 24-pixel drift at the roost.
+5. **Two browsers, one machine - DONE (PATCH 3.46), first cut.** `js/net/transport-ws.js` over
+   a relay in `app/server.js` (hand-rolled WebSocket server, no dependency); the protocol in
+   `js/net/net.js`: HELLO/WELCOME/FULL/SNAP/IN/REFUSE as JSON, a `remote` control kind on the
+   host, the client never stepping and deriving its screen from its own body
+   (`netClientMode`), the leap off the eagle made an input (`input.jump`) because a key handler
+   that called `dropJump` directly did nothing on a client, and a worker-driven `loop()` while
+   a tab is hidden (risk 3). Verified between two tabs on seed 42: the client joins the smaller
+   side's first AI slot, rides its bird, a key press hops it off through the host, it walks
+   87 px with the camera following and the host's particles and floaters arriving, dies into
+   the death overlay and respawns, rejoins its own slot after a reload, and a third tab late-
+   joins into slot 2. **The wire is fat**: 30 Hz snapshots of ~80 KB JSON, ~1.3 MB/s per
+   client, 3.3 MB for the full sync - correct, not sendable over Steam. What this step leaves
+   for the next: the quantized binary form and the delta against the acked snapshot, the
+   objects diff already done (tiles and ground ship only where they changed), interpolation
+   on the client (30 Hz motion with none), and the cosmetics' footsteps derived locally.
+6. **The wrapper - DONE (PATCH 3.47), unverified against a running Steam.** `desktop/` with
+   Electron 33 and steamworks.js 0.4, `main.js` answering the bridge's IPC and pumping packets,
+   `preload.js` exposing `window.steamBridge` and nothing else of Node, and
+   `js/net/transport-steam.js` speaking it behind the same five calls: the host creates a
+   public lobby on the dev App ID (480) and writes patch, seed and state into its data; a
+   joiner reads the seed and reloads itself onto it; chat updates become peer/gone; packets
+   over `STEAM_CHUNK` go as parts. Verified: Electron boots the game from disk with the
+   bridge present and Steam absent, and plays solo. **Not verified**: a lobby round trip -
+   Steam was not running on the machine this was written on. **Deviation from the plan**:
+   steamworks.js 0.4 exposes Steam's older `ISteamNetworking` P2P sockets, not
+   `ISteamNetworkingSockets`; they relay through Steam's network all the same, but a
+   reliable packet is capped at 1 MB (hence the parts) and an unreliable one at 1200 bytes,
+   which makes the quantized wire form a precondition for the unreliable channel rather than
+   an optimisation.
+7. **Lobby screens - DONE (PATCH 3.48), on the relay first.** Noah's ruling (2026-09-14): the
+   relay is the product's server - a browser at a served address, the wrapper at file:// and one
+   machine playing itself in two windows all reach the relay Noah hosts with the port forwarded
+   - and Steam waits behind a flag (`?transport=steam`, `--transport=steam`), the same three
+   doors (`netHost`/`netJoin`/`netLeave`) on either. The MULTIPLAYER plank thawed: the rooms
+   screen lists the relay's open rooms as planks under HOST (a host's name, ten pips lit per
+   person in their side's paint, another patch dimmed); joining reloads the page onto the room's
+   seed; the waiting room is the class-select screen minus PLAY, the notches and the swap for
+   guests, with the host's count on every screen. The DOWNLOAD tag on the title opens the newest
+   Release, which every `v*` tag builds (desktop/build.js, .github/workflows/desktop.yml: a
+   153 MB portable zip, music included). PATCH 3.52 dressed the doors: the rooms list carries a
+   relay pip, seat pips a side, the code on a plate and a live dot, the waiting room the code, a
+   crown on the host and rims on the people, a guest a frozen plank in the host's name; a host
+   leaving sends a waiting guest back to the list and ends a playing one on a HOST LEFT plate
+   (`hostleft`), and a dropped socket blinks a pip mid-match. A version plate on the door is
+   still owed (a room on another patch is dimmed with its patch printed, which covers the list).
 8. **Pass 2 (only if needed): walk prediction** for the local player over the unacked inputs,
-   with a snap threshold and a smooth pull-in.
+   with a snap threshold and a smooth pull-in. **Interpolation landed in 3.49** with the wire
+   form (above); prediction stays deferred.
 
 ## Risks
 

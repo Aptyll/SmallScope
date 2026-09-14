@@ -14,6 +14,11 @@ to the world.
   elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
   `player` or tests `p === player`, never an id). `player` and `inv` point at it (and only at
   it) for the camera, HUD, cursor, audio gating and the aim line.
+- `control: 'remote'` — a human on another screen, in a match this screen hosts: its `input` is
+  written from the wire (`netHostStep`, js/net/net.js) and it steps through `updatePlayer` like
+  the local human. `isHuman(p)` is true for both kinds, and is what every human-only branch
+  asks. On a **client** every body is drawn from the host's snapshot and none is stepped; the
+  client's own slot is its `'human'` and the host's is a `'remote'` (`netClientApply`).
 - `control: 'ai'` — driven by `updateAI()`. Every place nobody takes is filled with one at boot.
 - `control: 'none'` — nobody is in it. The player still exists; it is drawn as a flat team-tinted
   silhouette at its `spawn` (`drawGhost`) and is skipped by the sim, arrows and drops. A player
@@ -63,6 +68,9 @@ fire          bow held: rising edge draws, falling edge looses. The rising edge
 work          E held (with it clear, the hands still take a tree, a bush or a fish in reach: autoWork/autoFish)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
+jump          edge-triggered: the leap off the eagle, or the hop off the roost -
+              the ride's one act (dropJump, js/boot.js; read at the top of
+              updatePlay's player loop, before the air skips the body)
 grapple       held (key 3): the hunter's grapple reels only while this is down -
               the one held ability input (updatePlayer's grapple branch reads it;
               the burrow is the SNOW COVER cast on `ability`, not a field here)

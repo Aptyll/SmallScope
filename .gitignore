@@ -104,3 +104,11 @@ dist
 
 # Headless screenshot sink (app/server.js POST /shot)
 shot.png
+
+# Staged YouTube-short frames (the finished mp4 is kept)
+docs/media/shorts/frames/
+
+# The wrapper's installed packages (desktop/package.json is the list)
+desktop/node_modules/
+desktop/app/
+desktop/dist/

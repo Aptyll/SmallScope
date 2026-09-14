@@ -174,6 +174,10 @@ const state = {
     // ran out); dhover the three difficulty notches' hover eases (menu.js
     // `class select`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
+    // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the
+    // relay's open rooms, whether the relay answered, the row hovers, the
+    // keyboard row, and the refusal rattle of a room that would not have us
+    roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
     gearT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, wikiT: 0, wikiTab: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
@@ -210,6 +214,7 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // finger ignores this and keeps the corner - a thumb would cover the panel it
   // just asked for.
   tipFollow: true,
+  relay: '',          // the match relay (host:port) this screen talks to; empty = the page's own host (netRelay, js/net/net.js)
   // the pad's rumble and a phone's buzz on a gesture that moves an item
   // (haptic, js/input.js). A mouse has no motor and never notices this row.
   haptics: true,
@@ -294,6 +299,7 @@ function clockTxt(sec) {
 }
 
 function addFloater(x, y, txt, color) {
+  evPush('float', [x, y, txt, color]); // the sim's cosmetics are recorded for screens that do not run it (js/net/events.js)
   floaters.push({ x, y, txt, color: color || '#ffffff', t: 0 });
 }
 
@@ -301,6 +307,7 @@ function addFloater(x, y, txt, color) {
 // for damage taken. Heavy hits (10+) render at 2x; a little random drift
 // keeps rapid repeat hits from stacking into one unreadable pile.
 function addDmgFloater(x, y, amount, taken, crit) {
+  evPush('dmg', [x, y, amount, taken, crit]);
   const n = Math.max(1, Math.round(amount));
   floaters.push({
     x: x + rand(-3, 3), y,
@@ -316,10 +323,11 @@ function addDmgFloater(x, y, amount, taken, crit) {
 function ambushFx(x, y) {
   burst(x, y, '#fff4d0', 10, 90, 0.4);
   burst(x, y, '#ffd95c', 7, 55, 0.5);
-  if (nearPlayer(x, y)) SFX.ambush();
+  sfxAt('ambush', x, y);
 }
 
 function burst(x, y, color, n, spd, life, grav) {
+  evPush('burst', [x, y, color, n, spd, life, grav]);
   for (let i = 0; i < n; i++) {
     const a = rng() * Math.PI * 2, s = rand(0.3, 1) * (spd || 40);
     particles.push({
@@ -438,7 +446,7 @@ function startEat(p, type) {
   p.eatFxT = 0;
   if (p.charging) { p.charging = false; p.chargeT = 0; } // the bow comes down for the meal
   p.fireArmed = false;
-  if (nearPlayer(p.x, p.y)) SFX.eat();
+  sfxAt('eat', p.x, p.y);
 }
 
 // the two edge-triggered intents (the input struct, multiplayer.md) - still
@@ -471,7 +479,7 @@ function useCard(p) {
   const col = RES_COLORS[cardKey(rarity)];
   cardFx(p.x, p.y, col);
   addFloater(p.x, p.y - 18, CARDS[rarity][id].name, col);
-  if (nearPlayer(p.x, p.y)) SFX.levelUp();
+  sfxAt('levelUp', p.x, p.y);
 }
 // the buff landing: a ring of sparks thrown out and up in the card's colour,
 // a white flare in the middle, and a slow column of motes climbing out of
@@ -516,7 +524,7 @@ function updateEat(p, dt) {
   p.foodCd = FOOD_CD;
   const heal = Math.round(ITEMS[type].heal * kitOf(p).foodMul); // HEARTHWEAVE makes meals bigger
   p.hp = Math.min(p.maxHp, p.hp + heal);
-  if (nearPlayer(p.x, p.y)) SFX.heal();
+  sfxAt('heal', p.x, p.y);
   addFloater(p.x, p.y - 14, '+' + heal, '#8fe08a');
   burst(p.x, p.y - 8, RES_COLORS[type], 6, 30, 0.4);
 }

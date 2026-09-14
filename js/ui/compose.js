@@ -8,6 +8,7 @@
 let dayPopCv = null, dayPopDay = 0;
 function renderUI(now) {
   if (state.mode === 'title' || state.mode === 'drop' || window.DBG.hideUI) return;
+  drawNetLink(now); // a client's dropped link, or nothing (the `rooms` banner, menu.js)
   if (endScreen()) return; // a victory or defeat screen owns the whole frame
 
   // title -> play: the HUD slides in over the last part of the intro - the

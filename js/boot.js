@@ -272,6 +272,7 @@ function beginDrop() {
   state.mode = 'drop';
   state.menu.panel = null;
   state.menu.screen = 'menu';
+  netHostRoom(); // the relay's list: this room is live now
   // the view grows around its centre (applyZoom keeps the point under the
   // screen centre put); ease in from the drift's framing. The eagle's framing
   // is snapped rather than eased: the ride opens on a cross-fade from the
@@ -549,7 +550,7 @@ function updateEagle(e, dt) {
 function eagleGust(e) {
   e.gustCd = GUST_CD;
   eagleGustFx(e, 1);
-  if (nearPlayer(e.x, e.y)) SFX.gust();
+  sfxAt('gust', e.x, e.y);
   for (const q of players) {
     if (!q.active || q.dead || inAir(q) || q.team === e.team) continue;
     const dx = q.x - e.x, dy = q.y - e.y;
@@ -595,7 +596,7 @@ function eagleGustFx(e, k) {
 // down (landAboard at the crash), and the bird banks off the road into its
 // nest's woods (findCrashPoint), the head coming round through the stoop
 function beginDive(e) {
-  for (const p of players) if (p.active && p.aboard && p.team === e.team && p.control !== 'human') dropJump(p, true);
+  for (const p of players) if (p.active && p.aboard && p.team === e.team && !isHuman(p)) dropJump(p, true);
   e.state = 'dive';
   e.from = { x: e.x, y: e.y };
   e.crash = findCrashPoint(e);
@@ -682,9 +683,9 @@ function eagleCrash(e) {
     if (!objAt(tx, ty) && ground[idx(tx, ty)] !== 2) placeObj(tx, ty, 'eagle', { team: e.team });
   }
   eagleBoomFx(e, 1);
-  const near = Math.hypot(player.x - e.x, player.y - e.y);
-  state.shake = Math.max(state.shake, near < 400 ? 9 : near < 1000 ? 5 : 3);
-  SFX.boom();
+  // felt everywhere, hardest close by: three rings, the widest reaching every screen
+  shakeAt(e.x, e.y, 3, EV_ANYWHERE); shakeAt(e.x, e.y, 5, 1000); shakeAt(e.x, e.y, 9, 400);
+  sfxAt('boom', e.x, e.y, EV_ANYWHERE);
   logEvent('THE ' + TEAMS[skin(e.team)].name + ' EAGLE HAS LANDED', players.find((p) => p.team === e.team));
   // the crater is not the whole landing: the spur back to the road starts
   // falling (laneStep) - aimed from the crater at its junction on the
@@ -781,13 +782,13 @@ function laneStep(e, dt) {
     if (o.type === 'rock') {
       burst(px, py - 6, '#9aa4b4', 6, 50, 0.45, true); // the rock shatters
       burst(px, py - 4, '#f4f7ff', 4, 40, 0.4, true);
-      if (L.sfxT > 0.3 && nearPlayer(px, py, 320)) { L.sfxT = 0; SFX.break_(); }
+      if (L.sfxT > 0.3) { L.sfxT = 0; sfxAt('break_', px, py, 320); }
       continue;
     }
     burst(px, py - 8, o.type === 'tree' ? '#88b090' : '#6b5a48', 5, 45, 0.45, true); // needles off the falling pine
     burst(px, py - 4, '#f4f7ff', 4, 40, 0.4, true);
     if (o.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
-    if (L.sfxT > 0.3 && nearPlayer(px, py, 320)) { L.sfxT = 0; SFX.treeFall(); }
+    if (L.sfxT > 0.3) { L.sfxT = 0; sfxAt('treeFall', px, py, 320); }
   }
   const front = (L.t - LANE_DELAY) * LANE_SPD; // tiles out from the crater
   if (L.paved < L.pave.length && L.pave[L.paved].s <= front) {
@@ -884,9 +885,8 @@ function eagleFlee(e, src) {
     if (o && o.type === 'eagle' && o.team === e.team) objects[idx(tx, ty)] = null;
   }
   eagleGustFx(e, 2); // the takeoff downdraft: the gust's language writ large
-  const near = Math.hypot(player.x - e.x, player.y - e.y);
-  state.shake = Math.max(state.shake, near < 500 ? 7 : 4);
-  SFX.gust();
+  shakeAt(e.x, e.y, 4, EV_ANYWHERE); shakeAt(e.x, e.y, 7, 500);
+  sfxAt('gust', e.x, e.y, EV_ANYWHERE);
   logEvent('THE ' + TEAMS[skin(e.team)].name + ' EAGLE WAS DRIVEN OFF', src || players.find((p) => p.team === e.team));
   state.eagleCine = { team: e.team, t: 0, srcId: src ? src.id : -1 };
 }
@@ -1378,6 +1378,20 @@ if (PRACTICE) {
   stockCamps();      // the monsters go in once the world is standing
 }
 initPlayers();
+// the match's role for this screen (js/net/net.js): ?net=host&room=R hosts a
+// room on the dev server's relay, ?net=client&room=R joins it; nothing else
+// (and any file:// page) is solo. A lobby hands the role in instead, later.
+// Under the wrapper (desktop/, which exposes window.steamBridge) the same
+// two roles ride a Steam lobby instead: ?net=host makes one, ?net=client&lobby=ID
+// joins it (js/net/transport-steam.js).
+(function () {
+  const q = /[?&]net=(host|client)/.exec(location.search), r = /[?&](?:room|lobby)=([A-Za-z0-9_-]+)/.exec(location.search);
+  netRelay(); // a ?relay= in the URL is remembered now, whether or not a role follows
+  if (q) netSetup(q[1], netTransportFor(r ? r[1] : null)); else netSetup('solo');
+})();
+// ...and a page reloaded onto a room's seed to join it (joinRoom, js/ui/menu.js)
+// walks straight into the rooms screen with that join under way
+const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search); return j ? j[1].toUpperCase() : null; })();
 renderGround();
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
@@ -1413,6 +1427,7 @@ if (PRACTICE) {
   // pre-rolled character (js/ui/chars.js) - the title menu is behind it
   beginCreate(-1, true);
 }
+if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) { beginRooms(); state.menu.rsel = -2; netJoin(JOIN_AT_BOOT); }
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {
@@ -1606,10 +1621,19 @@ window.DBG = {
   // reset), the camera on it - the same thing ?local=N does at load
   setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
   localId: () => localId,
-  // reseat this screen's player in slot `id` (a fresh roster: bots and bags
-  // reset), the camera on it - the same thing ?local=N does at load
-  setLocal: (id) => { initPlayers(undefined, id); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; return player; },
-  localId: () => localId,
+  // the snapshot and its echo harness (js/net/snapshot.js): netEcho() renders,
+  // snapshots, blanks, applies and renders again - a nonzero diff is a field
+  // the schema is missing; netEchoRun(ticks, every) does it along a run
+  netEcho, netEchoRun, snapBuild, snapApply, snapSize, NET, netSetup,
+  // the two-tab match: role, peers, bytes each way, the newest snapshot tick
+  netStatus: () => ({ role: NET.role, peers: [...NET.peers.values()].map((q) => q.slot), parked: NET.parked.size, synced: NET.synced, lastTick: NET.lastTick, bytesIn: NET.bytesIn, bytesOut: NET.bytesOut, bpsIn: NET.bpsIn, bpsOut: NET.bpsOut, hostOver: NET.hostOver, refused: NET.refused || null, open: !!(NET.transport && NET.transport.open), lobby: NET.transport && NET.transport.lobbyId || null, room: NET.transport && NET.transport.room || null, transportError: NET.transport && NET.transport.error || null, verify: NET.verify, verifyFail: NET.verifyFail, acks: [...NET.peers.values()].map((q) => q.ack), hist: snapShadow.hist.length, lossOut: NET.lossOut, dropped: NET.dropped, fulls: NET.fulls }),
+  // the wire form's own proofs: netDeltaRun(ticks, every) sends `ticks` of this
+  // page's sim as binary deltas and applies them back, comparing against the
+  // full form after each; netVerify(on) makes a host ride its full form along
+  // every VERIFY_EVERY ticks so each client checks itself (netStatus().verifyFail)
+  netDeltaRun, netVerify: (on) => { NET.verify = !!on; return NET.verify; }, netLoss: (f) => { NET.lossOut = +f || 0; return NET.lossOut; }, snapHistoryPush, snapDeltaFrom, snapBuildDelta, snapEncode, snapDecode, encDict,
+  // the wrapper's lobbies, for a joiner picking one by hand (steamBridge only)
+  lobbies: () => (window.steamBridge ? window.steamBridge.lobbies() : Promise.resolve([])),
   placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
   // the two end screens: their timelines, the frozen numbers they print, and
   // a way to open the loss summary without pressing its plank. Set
@@ -1765,6 +1789,29 @@ const TICK_MAX = 3;
 const TICK_SLACK = TICK_DT * 0.25;
 let tickAcc = 0;
 
+// A HIDDEN TAB does not get animation frames, and its timers are held to a
+// beat a second - which is fine for one screen and the end of the match for
+// nine others when that screen is the host (docs/pvp-architecture.md, risk
+// 3). A worker's clock is not throttled the same way, so while the page is
+// hidden the frames come from one, and the visible page goes back to rAF.
+let hiddenTimer = null;
+function hiddenTick() { if (document.hidden) loop(performance.now()); }
+function watchHidden() {
+  if (document.hidden && !hiddenTimer) {
+    try {
+      const w = new Worker(URL.createObjectURL(new Blob(['setInterval(() => postMessage(0), 16)'], { type: 'text/javascript' })));
+      w.onmessage = hiddenTick; hiddenTimer = w;
+    } catch (e) { hiddenTimer = setInterval(hiddenTick, 16); }
+  } else if (!document.hidden && hiddenTimer) {
+    if (hiddenTimer.terminate) hiddenTimer.terminate(); else clearInterval(hiddenTimer);
+    hiddenTimer = null;
+    last = performance.now();
+    requestAnimationFrame(loop);
+  }
+}
+document.addEventListener('visibilitychange', watchHidden);
+watchHidden(); // a page opened in a background tab never gets a first frame to arm itself from
+
 let last = performance.now();
 function loop(nowMs) {
   const rawDt = (nowMs - last) / 1000;
@@ -1795,6 +1842,7 @@ function loop(nowMs) {
     if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     render();
   }
-  requestAnimationFrame(loop);
+  if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
+  else watchHidden();
 }
 requestAnimationFrame(loop);

@@ -66,7 +66,7 @@ function hurtRobot(b, dmg, nx, ny, src) {
   addDmgFloater(b.x, b.y - 12, dmg);
   burst(b.x, b.y - 2, '#c3c9d3', 6, 45, 0.35, true);
   burst(b.x, b.y - 2, '#ffb347', 3, 40, 0.3, true); // sparks off the plating
-  if (nearPlayer(b.x, b.y)) SFX.hit();
+  sfxAt('hit', b.x, b.y);
   if (b.hp <= 0) robotDies(b, src);
 }
 
@@ -75,7 +75,7 @@ function hurtRobot(b, dmg, nx, ny, src) {
 // on its way home worth the arrows. A wreck nobody caused eats its load.
 function robotDies(b, src) {
   b.dead = true;
-  if (nearPlayer(b.x, b.y)) SFX.break_();
+  sfxAt('break_', b.x, b.y);
   burst(b.x, b.y - 4, '#98a1b0', 10, 50, 0.5, true);
   burst(b.x, b.y - 4, '#3b4150', 4, 35, 0.4);
   if (b.carry > 0) {
@@ -165,7 +165,7 @@ function updateRobot(b, dt) {
     gainGold(players[b.owner] || player, b.carry);
     addFloater(hx, hy - 14, '+' + b.carry, RES_COLORS.gold);
     b.carry = 0;
-    if (nearPlayer(hx, hy)) SFX.coin();
+    sfxAt('coin', hx, hy);
   };
 
   const harvest = () => {
@@ -176,21 +176,21 @@ function updateRobot(b, dt) {
       const dry = t.type === 'deadTree';   // a rookery perch: quicker, same gold
       t.hp--;
       b.carry += dry ? YIELD.deadTreeHit : YIELD.treeHit;
-      if (nearPlayer(ox, oy)) SFX.chop();
+      sfxAt('chop', ox, oy);
       burst(ox, oy - 10, '#eef4fb', 3, 35, 0.4, true);
       if (t.hp <= 0) {
         objects[idx(t.tx, t.ty)] = { type: 'stump', tx: t.tx, ty: t.ty, flash: 0, shake: 0 };
         b.carry += dry ? YIELD.deadTreeFall : YIELD.treeFall;
         if (t.rare) b.carry += YIELD.treeRare;
         burst(ox, oy - 8, '#eef4fb', 8, 45, 0.5, true);
-        if (nearPlayer(ox, oy)) SFX.treeFall();
+        sfxAt('treeFall', ox, oy);
         if (dry) flushBirds(campAt(ox, oy), { x: ox, y: oy }); // the flock loses its perch (dormant: see the birds banner, wildlife.js)
         b.tgt = null;
       }
     } else {
       t.hp--;
       b.carry += YIELD.rockHit;
-      if (nearPlayer(ox, oy)) SFX.mine();
+      sfxAt('mine', ox, oy);
       burst(ox, oy - 4, '#a8b0c4', 3, 35, 0.35, true);
       if (t.hp <= 0) {
         objects[idx(t.tx, t.ty)] = null;
@@ -506,7 +506,7 @@ function merchBayBlocker(b, s) {
 // drops its goal when the route fails.
 function updateMerchant(b, dt) {
   const e = b.roost;
-  if (b.hopT > 0) { b.hopT -= dt; if (b.hopT <= 0) { burst(b.x, b.y + 2, '#eef4fb', 8, 45, 0.45, true); if (nearPlayer(b.x, b.y)) SFX.land(); } b.moving = false; return; }
+  if (b.hopT > 0) { b.hopT -= dt; if (b.hopT <= 0) { burst(b.x, b.y + 2, '#eef4fb', 8, 45, 0.45, true); sfxAt('land', b.x, b.y); } b.moving = false; return; }
   let moving = false, mvx = 0, mvy = 0;
   const from = { x: b.x, y: b.y };
   const walkToward = (px, py, reach) => {
@@ -582,7 +582,7 @@ function updateMerchant(b, dt) {
           b.workT = 0; b.tgt = null;
           b.bay = createStruct(s.tx, s.ty, 'barracks', 0, owner, true); // the eagle's own: nobody pays
           burst(mx, my - 8, '#eef4fb', 10, 45, 0.45, true);
-          if (nearPlayer(mx, my)) SFX.hammer();
+          sfxAt('hammer', mx, my);
         }
       }
       return finish();
@@ -606,7 +606,7 @@ function updateMerchant(b, dt) {
         b.plan.shift();
         createStruct(s.tx, s.ty, s.type, 0, owner, true); // the eagle's own defence: nobody pays
         burst(px, py, '#eef4fb', 8, 40, 0.4, true);
-        if (nearPlayer(px, py)) SFX.hammer();
+        sfxAt('hammer', px, py);
       }
     }
     return finish();
@@ -745,7 +745,7 @@ function updateSoldier(b, dt) {
       const pt = { x: t.tx * TILE + 8, y: t.ty * TILE + 8 };
       if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH + 6) busy = walkToward(pt.x, pt.y, 1) >= 0;
       else {
-        swing(pt, () => { if (nearPlayer(b.x, b.y)) SFX.swing(); hurtEagle(roost, SOLDIER_EAGLE_DMG, null, pt.x, pt.y); });
+        swing(pt, () => { sfxAt('swing', b.x, b.y); hurtEagle(roost, SOLDIER_EAGLE_DMG, null, pt.x, pt.y); });
         busy = true;
       }
     }
@@ -829,7 +829,7 @@ function flagPos(f) { return { x: f.tx * TILE + 8, y: f.ty * TILE + 8 }; }
 function inFlag(f, x, y) { return Math.hypot(f.tx * TILE + 8 - x, f.ty * TILE + 8 - y) < FLAG_R; }
 // the flag a HUMAN on this team has standing - the side's plan while it stands
 function humanFlag(team) {
-  for (const q of players) if (q.active && q.control === 'human' && q.team === team && q.flag) return q.flag;
+  for (const q of players) if (q.active && isHuman(q) && q.team === team && q.flag) return q.flag;
   return null;
 }
 // the flag this player's crews and, for a bot, the bot itself answer to:
@@ -873,7 +873,7 @@ function plantFlag(p, tx, ty, type) {
   p.flag = { tx, ty, type, owner: p.id };
   flagRecall(p);
   if (player && p.team === player.team) burst(tx * TILE + 8, ty * TILE + 8, FLAG_TYPES[type].col, 8, 45, 0.4, true);
-  if (p === player) SFX.place();
+  sfxFor(p, 'place');
 }
 function clearFlag(p) {
   if (!p.flag) return;
@@ -881,13 +881,13 @@ function clearFlag(p) {
   p.flag = null;
   flagRecall(p);
   if (player && p.team === player.team) burst(x, y, '#c9d0e2', 6, 40, 0.35, true);
-  if (p === player) SFX.pickup();
+  sfxFor(p, 'pickup');
 }
 // every worker that will read the new order drops what it was doing and
 // turns for it the same frame it lands - an order has to be visibly obeyed
 // at once. A human's flag is read by the whole side's crews; a bot's by its own.
 function flagRecall(p) {
-  const side = p.control === 'human';
+  const side = isHuman(p);
   for (const b of robots) {
     if (b.dead || b.merchant || b.kind === 'soldier') continue;
     if (b.owner === p.id || (side && b.team === p.team)) { b.tgt = null; b.atkAim = null; navClear(b); }
@@ -983,7 +983,7 @@ function robotStrike(b, e, pt) {
   const src = players[b.owner] || null;
   const d = Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) || 1;
   const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
-  if (nearPlayer(b.x, b.y)) SFX.swing();
+  sfxAt('swing', b.x, b.y);
   if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src, b); // `b` swung it, so STRUCT_DR stays off: ROBOT_DMG is already a building number
   else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: b.kind === 'soldier' ? 'soldier' : 'worker' });
 }

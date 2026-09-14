@@ -315,8 +315,8 @@ function warpPlayer(p, x, y) {
   p.kbx = 0; p.kby = 0;
   burst(x, y - 6, BITS.warp.col, 12, 60, 0.5, true);
   burst(p.x, p.y - 6, '#f4f7ff', 6, 40, 0.4, true);
-  if (nearPlayer(x, y)) SFX.warp();
-  if (p === player) state.shake = Math.max(state.shake, 2);
+  sfxAt('warp', x, y);
+  shakeFor(p, 2);
 }
 function updateWarps(dt) {
   for (let i = warps.length - 1; i >= 0; i--) {
@@ -578,7 +578,7 @@ function bitPut(cell, i, id) {
 // of its own once every weapon you own is full - the pack is one row now,
 // and a row of loose bits beside tools with empty cells was the row wasted.
 function autoFitTools(p) {
-  if (p.control !== 'human') return [];
+  if (!isHuman(p)) return [];
   const out = [];
   const held = heldTool(p);
   if (held) out.push(held);
@@ -715,8 +715,8 @@ function swapFx(p, cell) {
     const cells = [-1];  // the tool well leads the row (shelfCellRect, js/ui.js)
     for (let i = 0; i < cell.bits.length; i++) if (cell.bits[i]) cells.push(i);
     bitLit = { cell, cells, t: SWAP_T, col: TOOL_TIERS[T.tier].ink };
-    SFX.levelUp();
-  } else if (nearPlayer(p.x, p.y)) SFX.pickup();
+  }
+  sfxOwn(p, 'levelUp', 'pickup'); // rings for the owner, reads as a pickup in earshot
 }
 function updateSwaps(dt) {
   for (let i = swaps.length - 1; i >= 0; i--) if ((swaps[i].t += dt) > SWAP_T) swaps.splice(i, 1);
@@ -775,7 +775,7 @@ function fireTool(p) {
     // the index into the volley is the skew off the aim, so no two bits of one
     // press leave inside each other
     plan.shots.forEach((s, k) => emitBit(p, BITS[s.id], s.id, s.m, amb, k));
-    if (nearPlayer(p.x, p.y)) SFX.arrow();
+    sfxAt('arrow', p.x, p.y);
   }
   p.nockT = toolRof(p, cell);
   // the loose is what breaks cover - one ambush per burrow, then you are a
@@ -895,8 +895,8 @@ function slashTool(p, cell, plan, melee, amb) {
   p.slashT = SLASH_T; p.slashA = a; p.slashHalf = melee.half; // the hand swings the blade through the same arc (drawHeldTool)
   if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
   else p.dir = dy > 0 ? 'down' : 'up';
-  if (targets.length && (p === player || targets.includes(player))) state.shake = Math.max(state.shake, 2);
-  if (nearPlayer(p.x, p.y)) { SFX.swing(); if (targets.length) SFX.hit(); }
+  if (targets.length) { shakeFor(p, 2); for (const t of targets) shakeFor(t, 2); }
+  sfxAt('swing', p.x, p.y); if (targets.length) sfxAt('hit', p.x, p.y);
 }
 function updateSlashes(dt) {
   for (let i = slashes.length - 1; i >= 0; i--) {
@@ -937,7 +937,7 @@ function autoFish(p, dt) {
     addFloater(f.x, f.y - 10, 'FISH!', '#7ac0e8');
     burst(f.x, f.y, '#9fc4dd', 8, 45, 0.45, true);
     burst(f.x, f.y, '#ddf1f8', 5, 35, 0.4, true);
-    if (nearPlayer(f.x, f.y)) { SFX.splash(); SFX.stash(); }
+    sfxAt('splash', f.x, f.y); sfxAt('stash', f.x, f.y);
   });
 }
 

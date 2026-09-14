@@ -296,7 +296,7 @@ function renderReplay() {
 // explanation). LOBBY fades out and reloads into the title screen on the same seed. viewPlayer() is who the camera and minimap
 // frame, and the only thing the rest of the file needs to know about any of it.
 const DEAD_BW = 112, DEAD_BH = 20, DEAD_GAP = 12; // the title menu plank, side by side
-const DEAD_ITEMS = { lost: ['SPECTATE', 'LOBBY'], won: ['KEEP PLAYING', 'LOBBY'], respawning: [] };
+const DEAD_ITEMS = { lost: ['SPECTATE', 'LOBBY'], won: ['KEEP PLAYING', 'LOBBY'], respawning: [], hostleft: ['LOBBY'] }; // hostleft: a guest whose host left mid-match - no win, no loss, the door
 
 // the planks on offer: the defeat summary has nothing left to offer but the
 // door, so it is the one view whose items are its own rather than the ending's
@@ -531,11 +531,12 @@ function renderDead(now) {
   // playing underneath, so it goes where an eye lands rather than where the
   // body fell. 3x, or 2x on a view too narrow to hold it (the run is 25
   // glyphs - 297px at 3x).
-  const t = 'YOU COLLAPSED IN THE SNOW';
+  const gone = state.over === 'hostleft'; // the host walked out from under the match
+  const t = gone ? 'THE HOST LEFT' : 'YOU COLLAPSED IN THE SNOW';
   const ts = pixelTextWidth(t, 3) <= VIEW_W - 20 ? 3 : 2;
   const toy = frameTop();
   drawPixelTextOutline(ctx, t, Math.round((VIEW_W - pixelTextWidth(t, ts)) / 2), toy + 34, '#cfe4f2', '#0a0e23', ts);
-  const t2 = 'YOU ARE OUT OF THE MATCH';
+  const t2 = gone ? 'THE MATCH ENDS HERE' : 'YOU ARE OUT OF THE MATCH';
   drawPixelTextOutline(ctx, t2, Math.round((VIEW_W - pixelTextWidth(t2, 2)) / 2), toy + 34 + ts * 5 + 8, '#8f9cc4', '#0a0e23', 2);
   drawEndPlanks(now, 0);
 }

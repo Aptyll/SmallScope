@@ -2744,6 +2744,29 @@ your own marker cross it. Consequences worth knowing:
 
 ## Settings
 
+**The MULTIPLAYER plank** (js/ui/menu.js, the `rooms` banner) is the relay's open rooms as planks
+under a HOST plank, a relay pip beside HOST (green and breathing while the list socket is open,
+red and blinking while it is not) and, while the list is empty, one ghost of a row where the
+first room will stand. A room's plank carries its host's name, ten seat pips (five a side, the
+people in them lit in that side's paint - the relay lists a count per side), its four-letter
+code on a plate (the thing a host reads aloud) and a red dot once its match is under way; a room
+on another patch is dimmed and inert with its patch printed where the code would be. HOST makes
+a room on the relay and opens the **waiting room** - the class-select screen, which every peer
+sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
+your side's roster, a crown over the host's card, a brighter rim on every person's card than a
+bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
+guest sees it minus the difficulty notches and the character swap (its class came with it), and
+where PLAY would be a frozen plank wearing the host's name: the host's count comes over it and
+the eagle on the host's zero. A guest whose host walks out of the waiting room is back on the
+rooms list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
+headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
+and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
+redials (`drawNetLink`). Joining a room whose seed is not this page's reloads the page onto it
+(`?seed=N&join=CODE`). Which relay: `netRelay()` (js/net/net.js) - `?relay=host:port` once,
+remembered with the settings (`settings.relay`), else the page's own host. The **DOWNLOAD tag**
+at the bottom centre of the title, in a browser only, opens the newest GitHub Release, which
+every `v*` tag builds (.github/workflows/desktop.yml).
+
 `settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
@@ -2899,6 +2922,18 @@ nothing; `aliveCount()` still serves the rules.)
 ## Audio
 
 [js/audio.js](../../js/audio.js) is three layers under one master dial, and `SFX` is all of them.
+
+**Inside the step, a cue is asked for through js/net/events.js, never gated by hand.** A world
+cue at a place is `sfxAt('cue', x, y[, r][, 0, arg])` (heard within `r` px, `nearPlayer`'s
+default when 0; `EV_ANYWHERE` reaches every screen - the eagle's boom); a cue for one body is
+`sfxFor(p, 'cue')` (a step, a nock, a refusal, a status landing on *you*); a level gained is
+`sfxOwn(p, 'levelUp', 'pickup')` - one cue for the owner, another for bystanders in earshot.
+Shakes go the same way (`shakeFor(p, n[, q])`, `shakeAt(x, y, n[, r])`). Solo play hears
+exactly what the bare gates played; the point is that a host can record the where and the who
+for a client that never ran the step. Outside the step - the HUD, the menus, the counter
+opening, the practice instruments - the bare `SFX.cue()` is right, because that screen raised it
+for itself. Three cues still gate by hand on purpose, pending the plan's semantic events: the
+roost alarm (with its plate), the market's four (with theirs), and the two end-of-match songs.
 
 `ensure()` builds the graph lazily: `master` (the master dial) → destination, and `sfxBus` (the
 SOUNDS dial) under it. **Everything synthesised or sampled goes through `sfxBus`**, the wind bed

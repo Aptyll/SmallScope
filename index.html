@@ -77,6 +77,13 @@
 <script src="js/abilities.js"></script>
 <script src="js/ai.js"></script>
 <script src="js/sim.js"></script>
+<!-- js/net/: what a match shares between screens. events.js records the step's cosmetics
+     (a puff, a number, a cue, a shake) for a host's clients; solo records nothing. -->
+<script src="js/net/events.js"></script>
+<script src="js/net/net.js"></script>
+<script src="js/net/snapshot.js"></script>
+<script src="js/net/transport-ws.js"></script>
+<script src="js/net/transport-steam.js"></script>
 <!-- js/draw/: the world's pixels, cut from the one draw-world.js. ground.js first (every
      other draw file calls its hash2); render.js composes the frame and comes last. -->
 <script src="js/draw/ground.js"></script>

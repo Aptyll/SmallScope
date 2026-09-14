@@ -26,7 +26,30 @@ declare victory. The three affordances:
   want *before* freezing), `hideUI = true` drops the HUD/info stack/cursor for captures, `buildStruct` stages
   a construction site with no cost or validation, `warp(tx, ty, p?)` drops a player on a tile, and
   `setControl(id, mode)` hands a player to an AI, a human or nobody, `setLocal(id)` reseats this
-  screen's player in slot `id` (title only; `?local=N` does it at load). `setHide(h, p?)` stages a
+  screen's player in slot `id` (title only; `?local=N` does it at load). `netEcho()` writes the
+  wire's quantum into the world (`snapQuantize`: positions to eighths of a px, the one designed
+  loss), snapshots the match, blanks every singleton, applies the snapshot back through the
+  bytes and returns the pixels of the world frame that differ (`diff`, zero or the snapshot is
+  missing a field the eye can see), the JSON weight by section and the fields that did not
+  round-trip (`mismatch`, tolerating one quantum on `x`/`y`/`vx`/`vy`/`kbx`/`kby` and nothing else); `netEchoRun(ticks, every)` does it
+  along a run and reports the worst - run it after adding a field to any entity. `netStatus()`
+  is the match between tabs: role, the peers' slots, bytes each way and the last second's rate,
+  the newest snapshot tick. `netDeltaRun(ticks, every, loss)` sends this page's sim as binary deltas and
+  applies them back, checking the world against the full form after each (run it after adding a
+  field that is a reference or a nested object; `loss` throws that share away unacked, so the
+  cuts come from older bases in the ring); `netVerify(true)` on a host rides the full form
+  along every 5 s so each client checks itself - `netStatus().verifyFail` names the first fields
+  that disagreed - and `netLoss(f)` on a host throws away that share of its snapshot sends before
+  the transport, which is the ack-keyed delta's proof (`netStatus()` counts `dropped`, `fulls`
+  and the peers' `acks`). In the Claude browser pane a tab that never got a frame does not tick
+  at all: drive a client with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
+  **A match between two tabs**: serve the game, open `?seed=N&net=host&room=R` in one tab and
+  `?seed=N&net=client&room=R` in another (the same seed - the host refuses a different one);
+  the client takes the smaller side's first AI slot, or its own slot back after a reload.
+  **Under the wrapper** (`cd desktop && npm start -- --net=host` on one machine, `--join=LOBBYID` on
+  another, Steam running on both) the same match rides a Steam lobby; `DBG.netStatus().lobby` is
+  the id to hand the joiner and `DBG.lobbies()` lists the open ones. `npm start -- --seed=42
+  --shot=out.png --wait=4 --quit` boots the game from disk headlessly and captures it. `setHide(h, p?)` stages a
   buried body without lying in the snow for `PRONE_BURY`, and `concealOf` / `seenAt(range, p?)` /
   `ambushReady` read back what the world makes of it. **Stage the scene** (place
   structures, warp beside a camp, jump `state.day`/`state.time`) instead of playing to reach it.

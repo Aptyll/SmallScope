@@ -1,0 +1,29 @@
+# The portable Windows build, attached to a GitHub Release on every version
+# tag - the DOWNLOAD tag on the title screen opens the newest one. Publishing
+# a build is one tag push:
+#   git tag v3.48 && git push --tags
+name: desktop
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install the wrapper's packages
+        run: npm ci
+        working-directory: desktop
+      - name: Package the game
+        run: node build.js
+        working-directory: desktop
+      - name: Attach to the release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: desktop/dist/Softfall-win64.zip
+          generate_release_notes: true
