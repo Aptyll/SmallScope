@@ -10,7 +10,7 @@
 // ------------------------------------------------------------ tools & bits
 // Ordering: this file needs ITEMS (js/player.js) and RES_COLORS
 // (js/structures.js) at LOAD time - it registers one ITEMS entry per tool and
-// per bit so the bag, the drop pickup, the death spill and the refusal flash
+// per bit so the bag, the drop pickup, the throw and the refusal flash
 // are all generic over the new items exactly as they are over a berry. It
 // loads after js/actions.js because the shot it spawns is the arrow pipeline's
 // and it reads that file's tuning (BOW_Y, AMBUSH_MUL) at runtime.
@@ -368,7 +368,7 @@ const TOOL_ROF_STEP = 1 / 60; // a tool's `rof` is counted in game steps of this
 // ---- items: one bag entry per kind ---------------------------------------
 // Namespaced keys ('tool:longbow', 'bit:flame') so a kind can never collide
 // with a berry or a card. Registering here is what makes the bag, the drop
-// pickup, the death spill and the "it does not fit" flash work on tools and
+// pickup, the throw and the "it does not fit" flash work on tools and
 // bits with no code of their own - see checklists.md, "adding a carried item".
 // A tool's stack is 1 because it is INSTANCED: its cell carries the bits
 // loaded into it, so two of them are never the same object.
@@ -622,11 +622,10 @@ function fitAdd(p, type, n) {
 // The tool INSTANCE is untouched by any of this - the same object still moves
 // bag to snow to bag (CLAUDE.md's hard rule); it is emptied here on purpose,
 // where it is thrown, rather than quietly rebuilt from its type name later.
-// `gone` sheds the row into thin air instead of onto the snow: the bits of a
-// tool that is itself evaporating (evaporateTool, below) still scatter, so
-// the spill looks like a spill, and then go with it.
+// The throw (throwCell, js/ui/bag.js) is its one caller: a death keeps the
+// build on the body (die, js/player.js), so nothing else puts a tool down.
 const SHED_KICK = 80;   // px/s of a shed bit's own, off the throw's heading
-function shedBits(cell, x, y, hx, hy, p, gone) {
+function shedBits(cell, x, y, hx, hy, p) {
   if (!cell || !cell.bits) return 0;
   const m = Math.hypot(hx || 0, hy || 0) || 1;
   const ux = (hx || 0) / m, uy = (hy || 0) / m;
@@ -640,33 +639,9 @@ function shedBits(cell, x, y, hx, hy, p, gone) {
     const d = flingDrop(spawnDrop(x, y, bitType(id), 1),
       ux * TOSS_SPEED + Math.cos(a) * SHED_KICK,
       uy * TOSS_SPEED + Math.sin(a) * SHED_KICK);
-    if (gone) vanishDrop(d);           // a starting tool's build goes with it
-    else if (p) lockDrop(d, p);        // what you threw away stays thrown away for a moment
+    if (p) lockDrop(d, p);             // what you threw away stays thrown away for a moment
   }
   return n;
-}
-
-// ---- a starting tool does not litter the snow ----------------------------
-// A KILL SHOULD NOT LEAVE A SHORTBOW. Every player flies in with its class's
-// tool (CLASS_LOADOUT, below) and is handed the same one back at the bird on
-// every respawn, so a body spilling one puts a weapon on the ground that
-// NOBODY will ever stoop for - and ground fought over twice is ground carpeted
-// in them. The test is the tool itself rather than a list of names: STARTER_CAP
-// bit cells or fewer is the bottom of the table (shortbow and sling, cap 2),
-// which is exactly what the two classes fly in with, so a tier a later table
-// adds under them is covered on the day it is added.
-//
-// It is a DEATH rule, not a tool rule. Dragged out of the pack on purpose it
-// still lands and still lies there (throwCell, js/ui.js) - you may hand a
-// teammate your sling, and a starting tool the world rolled as loot (dropLoot)
-// is an ordinary find. Only what falls off a body evaporates.
-const STARTER_CAP = 2;   // bit cells at or under which a tool is starting kit
-function isStarterTool(s) { const d = toolDefOf(s); return !!d && d.cap <= STARTER_CAP; }
-// ...and how it goes: the build scatters and thins out, then the bare body
-// does, all of it out of reach the whole way (vanishDrop, js/core.js)
-function evaporateTool(cell, x, y) {
-  shedBits(cell, x, y, 0, 0, null, true);
-  vanishDrop(spawnDrop(x, y, cell.type, 1, cell));
 }
 
 // ---- a better body takes the build with it --------------------------------

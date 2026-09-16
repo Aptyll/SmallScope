@@ -214,7 +214,7 @@ which carries the same `mm`/`map` pair and gets solidity, both maps and the E pr
 
 **Adding a carried item** — one `ITEMS` entry (`icon`, `stack`, plus `heal` and `pouch: true` if
 it is food) is the storage half: the bag *or* the [pouch](gameplay.md#inventory-and-the-backpack),
-the drop pickup, the death spill, the drag and the refusal tell are all generic over that table.
+the drop pickup, the drag and the refusal tell are all generic over that table.
 What is *not* generic and must be written per item: an 8×8 icon sprite (bake it beside its own
 code, not in the byte-fragile grid files under js/sprites/ — see `bakeGrid` in js/tools.js and `CHEST_SPR`; an
 icon that should **loop** is still one canvas to everything that draws it — put the frames in
@@ -236,7 +236,7 @@ one: it is a wallet number with no ceiling. See
 
 **Adding a weapon (a tool) or a bit** — both are one entry in `TOOLS` / `BITS`
 ([js/tools.js](../../js/tools.js)); the loop at the foot of that file registers the `ITEMS` and
-`RES_COLORS` rows, so storage, drops, the death spill, the drag, the click that sends it between
+`RES_COLORS` rows, so storage, drops, the drag, the click that sends it between
 pack and weapon, and the loot pools all pick it up
 with no other edit. Both need a `price`, or the merchant sells it for nothing and buys it back
 for nothing ([the counter](gameplay.md#the-merchants-counter) - half the price is what it fetches,
@@ -255,15 +255,9 @@ left an ordinary pickup rather than being made to drop somebody's bits.
 5 * SHELF_GAP`, so a roomier tool would run its row off the intro bake and under the merchant's
 slab, which is pinned off the claim ([the panel](gameplay.md#the-panel)). Widen both together.
 
-**A new way to put a tool on the ground must call `shedBits` first** (js/tools.js) — the two that
-exist, `throwCell` (js/ui/bag.js) and `spillInventory` (player.js), both do. Skip it and that one path is
-the only one in the game handing the next person to walk over it a finished weapon.
-
-**A new way to take a drop must ask `dropGone(d)` first** (js/core.js) — the three that exist, the
-pickup loop in `updatePlay` (sim.js), the bot's loot scan (ai.js) and the drop draw pass
-(js/draw/render.js), all do. A drop with a `fade` is evaporating and belongs to nobody
-([a starting tool does not litter](gameplay.md#a-starting-tool-does-not-litter)); skip the question
-and starting kit becomes lootable again from that one path alone.
+**A new way to put a tool on the ground must call `shedBits` first** (js/tools.js) — the one that
+exists, `throwCell` (js/ui/bag.js), does (a death puts nothing down since 3.55). Skip it and that
+one path is the only one in the game handing the next person to walk over it a finished weapon.
 
 **Every bit needs a `weight`**, both kinds, because weight is what the press spends. A
 **projectile bit** also needs `path`/`solid`/`ff`/`kb`/`life`/`speed`/`dmg`/`col` and an

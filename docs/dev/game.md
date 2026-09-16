@@ -129,8 +129,9 @@ easier opening for a new player who can help fortify before walking out. Its hp 
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly
 away, and its whole side falls with it as it goes. **It is also the way back**: a player who
-goes down waits out a timer and is set down again at the roost — no Keep, no permadeath; death
-costs the wallet, the bag and the walk. The bird is the **only objective** and the one way a
+goes down waits out a timer and is set down again at the roost with everything it had — no Keep,
+no permadeath, no spill; death costs the wait and the walk, League-style, and a kill pays its
+taker a flat bounty. The bird is the **only objective** and the one way a
 match ends, which is why both teams always have somewhere worth walking to — and why every bot
 on the map knows where both birds are and what is happening at them, and answers a hit on its
 own from anywhere. [Eagle drop](rendering.md#eagle-drop-mode-drop),
@@ -178,8 +179,9 @@ merchant rebuilds it. [The road](world.md#the-road), [the waves](gameplay.md#sol
 - **Not a resource tree.** One currency, deliberately. A proposal that adds a second resource is
   proposing a different game.
 - **Not a deathmatch.** Kills never win a match and never end one — only the bird does. Death
-  still costs everything you carried and the walk back from your roost; that is the stake
-  everything else borrows from, and the objective is the only place it is ever permanent.
+  costs a wait that grows with your level and the walk back from your roost, never what you
+  carried; the stake is the time a wiped side hands the other, and the objective is the only place
+  a death is ever permanent.
 - **Not a solo survival game.** Every mechanic runs per player off `p.input`, and `player` is only
   the local one — see [multiplayer.md](multiplayer.md).
 - **Not a game that explains itself in text.** The UI rule in [CLAUDE.md](../../CLAUDE.md) is a
