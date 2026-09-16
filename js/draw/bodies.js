@@ -160,7 +160,7 @@ function drawMerchant(b, ex, ey, now) {
     }
   }
   drawUnitStates(b, px, py - lift, spr.width, spr.height, now);
-  drawPixelTextOutline(ctx, 'MERCH', centreTextX(b.x - ex, 'MERCH'), py - 17 - lift, TEAMS[skin(b.team)].mark, '#0f1632');
+  drawWorldText('MERCH', centreTextX(b.x - ex, 'MERCH'), py - 17 - lift, TEAMS[skin(b.team)].mark);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), py - 10, b, 5);
 }
 
@@ -381,9 +381,9 @@ function drawPlayer(p, ex, ey, now) {
   // legible - your own included: the profile name is what the rest of the
   // table sees over your head, and hiding it from you alone would make it
   // the one label in the game you cannot check.
-  drawPixelTextOutline(ctx, p.name,
+  drawWorldText(p.name,
     centreTextX(p.x - ex, p.name), hy - 18, // clear of the draw meter's frame (top row hy-11) with a gap row
-    TEAMS[skin(p.team)].mark, '#0f1632');
+    TEAMS[skin(p.team)].mark);
   // dodge stamina: one clean unsegmented WHITE bar under the health bar -
   // white on every side, since stamina has no side, and white is neither the
   // team's paint above it nor the gold of the draw - charges stay discrete

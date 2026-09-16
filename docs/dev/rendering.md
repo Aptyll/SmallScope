@@ -1979,11 +1979,37 @@ pass; the debug overlays are the only thing above it.
 
 **Nothing on the map emits light, and there is no light registry.** The `lights` array,
 `rebuildLights()` and the offscreen `lightCv` are gone with the darkness they existed for, and so
-is the player's personal glow. **Night is a colour**: a `multiply` of `NIGHT_TINT` at
-`globalAlpha = state.darkness`, plus a little `NIGHT_DEEP` for depth. It cools and dims what is
+is the player's personal glow. **Night is a colour and a closing in**: a `multiply` of
+`NIGHT_TINT` at `globalAlpha = state.darkness`, a little `NIGHT_DEEP` for depth, and then
+`nightEdge` — a vignette **inside the world pass**, so it never touches the HUD. It cools what is
 already drawn instead of laying a slab over it, so snow stays snow, team colours stay legible at
 midnight, and dusk eases into it off the darkness curve with nothing to schedule. A new glowing
 object adds a pass here; it does not register anywhere.
+
+**The grade is pale on purpose, and the dark lives at the rim.** What says *night* has to be the
+**hue** and the **edge**, because the one thing it cannot be is the middle of the screen going
+dark — a top-down field read at a glance has to stay read at a glance. An earlier `NIGHT_TINT`
+(`#45599c` at `dark * 0.17` of the deep wash) left the world at **34 %** of its daylight: measured
+on seed 42's roost, open snow fell from L169 to **L58** and pines from L108 to **L37**, which is
+why a blue MERCH tag sat invisible on blue snow and a red team's paint stopped being red at all.
+The tint now leaves snow at **L98** and pines at **L51** on that same ground while its channels stay far
+apart — `NIGHT_TINT`'s blue is nearly twice its red, and **that ratio is the whole read**; lifting
+it is what turns night into dusk. `NIGHT_EDGE` then takes the light back at the corners, where
+nobody is reading anything. Those four numbers are what to re-measure after retuning it.
+
+**The grade dims what the world *is*, never what the game is *saying*.** A name tag, the MERCH /
+PERCH caps and a damage floater are HUD that happens to be pinned to a body, and a `multiply`
+lands on the ink and on the snow under it alike — so a coloured readout converges on its own
+background exactly as fast as that background cools. Pre-brightening the ink cannot fix it: the
+tint's red channel is half its blue, so a RED team's tag loses its hue before it regains its
+value whatever it is drawn in. So world text is **held back** instead — `drawWorldText` queues
+the glyphs (`worldInk`) and `flushWorldInk` stamps them at the **end of `renderLighting`**, above
+the tint, the depth wash and the rim. It is the same carve-out the two debug overlays get, for
+the same reason. Queue order is draw order, so a nearer body's tag still covers a farther one's;
+the queue only applies while `ctx === wctx`, so a UI pass that reuses one of those drawers (the
+wiki's animal page raises a sense mark of its own) draws where it stands. Everything else over
+the world — bodies, shots, ground decals — goes **under** the grade, which is what keeps night a
+place rather than a filter.
 
 The day half is two things, drawn in that order because a shadow falls across a sunbeam and not
 the other way round:
