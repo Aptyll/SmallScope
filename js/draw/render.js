@@ -432,6 +432,8 @@ function render() {
       ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
       if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the alpha stone's clock
+    } else if (o.type === 'pylon') {
+      drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
     } else if (o.type === 'banner') {
       drawBanner(o, px + sh, py, now);
     } else if (o.type === 'rack') {
@@ -662,6 +664,7 @@ function render() {
   }
 
   drawDropAir(ex, ey, now); // the eagle, its rider and anyone falling from it
+  drawZips(ex, ey);         // the ziplines' cables and their riders' ropes, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
   // the two debug views, above the lighting on purpose - see the banner
   if (settings.hitbox > 1 || window.DBG.showPaths) drawNavPaths(ox, oy, ex, ey);

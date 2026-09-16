@@ -212,7 +212,9 @@ fish brackets (`drawFishHint`) → the parkour's lap clock and BEST/LAST plate
 arrows (bolts branch to `drawBolt`) → `drawWarps` (the silhouettes a teleport strung across its
 jump) → **`drawSwaps`** ([the tool swap](#the-tool-swap)) → `drawTurretFx` (each turret's charging aim line and its
 muzzle flash) → turret tracers → swing arcs (one per swinging player) → floaters → `drawDropAir` (the
-eagle, its shadow, the rider and every faller, while `state.drop` exists) → `renderLighting` →
+eagle, its shadow, the rider and every faller, while `state.drop` exists) → `drawZips` (each
+side's zipline cable, span by span with its sag and wind lean — over every body and canopy, under
+the night; js/draw/zipline.js) → `renderLighting` →
 `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately **above** the lighting,
 see [Debug overlays](#debug-overlays-hitboxes-and-routes)) →
 **the world blit** (`worldCv` scaled onto the canvas — everything above it drew in world space,

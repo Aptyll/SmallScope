@@ -88,6 +88,11 @@ const OBJECTS = {
   // flat into the ground (paintLog under paintGroundTile, draw-world.js),
   // never drawn in the y-sorted pass - a trunk on the ground is ground.
   log:      { solid: true,  mm: [124, 94, 62] },
+  // a zipline's pylon (placeZips, the `zipline` banner below): solid, inert
+  // to E, carrying its `team`. Its pixels are PYLON_SPRS in render()'s
+  // object pass (js/draw/zipline.js); the cable itself is not an object at
+  // all - it hangs between the pylons' points (zips) and is drawn by drawZips.
+  pylon:    { solid: true,  mm: [150, 156, 170] },
   // the parkour roll station (practice arena only): the die that rerolls the
   // track. Inert to E's work verbs like the rack - holding E beside it opens
   // the roll wheel (pkDieNear, the practice arena banner below).
@@ -687,6 +692,184 @@ function roadWaypoints(team) {
   const n = Math.max(1, Math.round(Math.abs(b - a) / ROAD_STEP));
   for (let i = 0; i <= n; i++) pts.push(roadPoint(a + (b - a) * i / n));
   return pts;
+}
+
+// ------------------------------------------------------------ zipline
+// THE ZIPLINE: one cable per team, strung on pylons from just outside its
+// base's wall ring, down beside the spur and along the road's own verge, to
+// a terminus ZIP_MID_GAP road-units short of the centre cairn - so the
+// middle stretch where the waves meet is cable-free and is always walked
+// into. The walk out of a base is dead time with no decisions in it; the
+// fight is not; the cable compresses exactly the first and stops at the
+// second. A body of the OWNING TEAM standing under it clips on with E
+// (input.jump - the same hop intent the eagle reads), rides at ZIP_SPD
+// (three times walk) in whichever direction it holds along the cable, and
+// lets go anywhere with E again; a dodge rolls off it the way it rolls off
+// the grapple. Riding is hands-on-the-handle: no swing, shot, cast, fish or
+// prone (every gate lists `p.zip >= 0` beside fallT and dodgeT), but a
+// rider is still a body to every weapon - arrows, the roll's sweep, a
+// turret, a wolf - and plain damage never dismounts. A stun, a root or a
+// net does (zipEnd with `fell`: dropped at rest on the snow under the
+// cable). The exit KEEPS the cable's velocity the way grapEnd keeps the
+// reel's, so a hop-off is a dash and shift on landing carves a slide.
+// Riders leave the unit-contact list (separateUnits: the body is above the
+// ground) and move by the cable alone - no moveEntity, so a wall or a pine
+// under the line never stops one. The lines are laid at boot by placeZips,
+// right after the road, on pure reads (roadNest, roadSpan, roadEdgeAt,
+// findCrashPoint, objAt): nothing rolls, so genWorld and every seed's
+// ground are untouched; a pylon (`pylon`, OBJECTS) fells the pine or rock
+// on its tile like the road's own furniture and refuses anything else. Its
+// pixels and the cable pass are js/draw/zipline.js. Waves never ride: the
+// march is the match's clock. Bots do not ride yet (docs/zipline-plan.md).
+const ZIP_MID_GAP = 20;    // u short of the centre cairn the front terminus stands
+const ZIP_OUT = 0.6;       // tiles past the ragged road edge the cable runs - the shoulder, never the lane
+const ZIP_SPAN = 10;       // u between pylons along the road (about 226 px)
+const ZIP_SPD = 220;       // px/s - 3x walk, under GRAP_REEL (260) so the hook stays the fastest thing in the game
+const ZIP_GRAB = 14;       // px off the cable's ground track a body may clip on from
+const ZIP_ALT = 8;         // px the riding body hangs above its own shadow (the draw)
+const ZIP_H = 31;          // px above the ground track the cable itself hangs at a pylon: one row under the crossarm's top (PYLON_H, js/draw/zipline.js)
+const ZIP_SAG = 3;         // px a span sags at its middle
+const ZIP_BASE_OUT = 7.5;  // tiles from the crater the base pylon stands: outside the outer stump ring (BOOM_STUMP_R2) and the wall ring (MERCH_WALL_R), so the ring closes under it
+const ZIP_SPUR_OFF = 1.9;  // tiles the spur leg stands off the spur's own axis (over SPUR_HW: never on the track), toward the front
+const zips = [];           // [team] -> { team, pts: [{x, y}] (body positions, base -> front), cum: [px along at each point], len }
+// a point `s` tiles off the diagonal at u, signed like roadOffS (+ toward the
+// bottom-right side), in continuous tile-index space
+function zipTile(u, s) { return { x: u + s / Math.SQRT2, y: WORLD - 1 - u + s / Math.SQRT2 }; }
+function placeZips() {
+  zips.length = 0;
+  if (PRACTICE) return;
+  const sp = roadSpan(), um = (sp.u0 + sp.u1) / 2;
+  for (const team of [0, 1]) {
+    const n = roadNest(team), dirF = team === 0 ? 1 : -1, side = n.side; // dirF: u toward the centre
+    const c = findCrashPoint({ team }), cx = c.x / TILE - 0.5, cy = c.y / TILE - 0.5; // where the bird will come down (boot.js: the same rule the crash uses)
+    let ax = n.jx - cx, ay = n.jy - cy; const L = Math.hypot(ax, ay) || 1; ax /= L; ay /= L; // the spur's axis, crater -> road
+    const lx = dirF / Math.SQRT2, ly = -dirF / Math.SQRT2;                                    // along the road, toward the front
+    const tiles = [];
+    tiles.push({ x: cx + ax * ZIP_BASE_OUT + lx * ZIP_SPUR_OFF, y: cy + ay * ZIP_BASE_OUT + ly * ZIP_SPUR_OFF });
+    const u1 = n.u + dirF * ZIP_SPUR_OFF / Math.SQRT2, uEnd = um - dirF * ZIP_MID_GAP;
+    const verge = (u) => zipTile(u, side * (roadEdgeAt(u, side) + ZIP_OUT));
+    tiles.push(verge(u1));
+    for (let k = 1; ; k++) {
+      let u = u1 + dirF * k * ZIP_SPAN;
+      const last = (uEnd - u) * dirF < ZIP_SPAN * 0.4; // a stub of a span at the end joins the one before it
+      if (last) u = uEnd;
+      tiles.push(verge(u));
+      if (last) break;
+    }
+    const pts = [];
+    for (const t of tiles) {
+      // the pylon's tile: the nearest along the road that is dry and holds
+      // nothing but worldgen's scenery (a pine or a rock gives way, like the
+      // road's poles); the point stands even if no tile will take a pylon
+      let tx = Math.round(t.x), ty = Math.round(t.y);
+      for (const k of [0, 1, -1, 2, -2]) {
+        const qx = tx + k, qy = ty - k;
+        if (!inWorld(qx, qy) || ground[idx(qx, qy)] === 2) continue;
+        const o = objects[idx(qx, qy)];
+        if (o && !laneFells(o)) continue;
+        placeObj(qx, qy, 'pylon', { team });
+        tx = qx; ty = qy;
+        break;
+      }
+      pts.push({ x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE - 4 }); // a body position: its feet (p.y + 4) on the tile's centre
+    }
+    const cum = [0];
+    for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+    zips[team] = { team, pts, cum, len: cum[cum.length - 1] };
+  }
+}
+// the cable at `d` px along: the body position on its ground track, the unit
+// tangent (base -> front), the span it is on and how far across it (0..1)
+function zipPoint(z, d) {
+  d = Math.max(0, Math.min(z.len, d));
+  let i = 1;
+  while (i < z.cum.length - 1 && z.cum[i] < d) i++;
+  const a = z.pts[i - 1], b = z.pts[i], sl = (z.cum[i] - z.cum[i - 1]) || 1;
+  const t = (d - z.cum[i - 1]) / sl;
+  return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, tx: (b.x - a.x) / sl, ty: (b.y - a.y) / sl, seg: i - 1, t };
+}
+// how high above its ground track the cable hangs at `d`: ZIP_H at a pylon,
+// ZIP_SAG less at a span's middle
+function zipLift(z, d) { const q = zipPoint(z, d); return ZIP_H - ZIP_SAG * 4 * q.t * (1 - q.t); }
+// the nearest point of a line to (x, y): px along it and px off its track
+function zipNearest(z, x, y) {
+  let best = { d: 0, dist: Infinity };
+  for (let i = 1; i < z.pts.length; i++) {
+    const a = z.pts[i - 1], b = z.pts[i], sl = (z.cum[i] - z.cum[i - 1]) || 1;
+    const t = Math.max(0, Math.min(1, ((x - a.x) * (b.x - a.x) + (y - a.y) * (b.y - a.y)) / (sl * sl)));
+    const dist = Math.hypot(x - (a.x + (b.x - a.x) * t), y - (a.y + (b.y - a.y) * t));
+    if (dist < best.dist) best = { d: z.cum[i - 1] + t * sl, dist };
+  }
+  return best;
+}
+// the line a body may clip on right now: its own side's, within ZIP_GRAB of
+// its track - or null. Team-locked: a rival under your cable is a walker.
+function zipNear(p) {
+  const z = zips[p.team];
+  if (!z) return null;
+  const n = zipNearest(z, p.x, p.y);
+  return n.dist <= ZIP_GRAB ? { z, d: n.d } : null;
+}
+// the hop intent on the ground (updatePlay reads input.jump for every
+// player alike): riding, it lets go; under a cable, it clips on
+function zipToggle(p) {
+  if (p.zip >= 0) { zipEnd(p, false); return; }
+  const near = zipNear(p);
+  if (near) zipStart(p, near);
+}
+function zipStart(p, near) {
+  if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || inAir(p)) return;
+  if (p.grapT > 0) grapEnd(p);      // off the rope and onto the handle
+  risePlayer(p);                    // up out of the snow first
+  breakEat(p);                      // the meal is over: both hands are on the handle
+  cancelCatch(p);
+  if (p.charging) { p.charging = false; p.chargeT = 0; }
+  p.fireArmed = false;
+  p.sliding = false; p.slideT = 0;
+  p.zip = near.z.team; p.zipD = near.d;
+  // the way you are holding, or toward the front when the stick is idle -
+  // the direction you are almost always going
+  const q = zipPoint(near.z, near.d), dot = p.input.mx * q.tx + p.input.my * q.ty;
+  p.zipDir = dot < -0.3 ? -1 : 1;
+  const at = zipPoint(near.z, near.d);
+  p.x = at.x; p.y = at.y;
+  sfxAt('dodge', p.x, p.y);
+  burst(p.x, p.y + 4, '#dfe8f4', 4, 26, 0.3, true);
+}
+// letting go: the body stays where the cable put it and KEEPS the cable's
+// velocity for the surface to spend (a hop-off is a dash); `fell` - knocked
+// off by a stun, a root or a net - drops it at rest instead
+function zipEnd(p, fell) {
+  if (p.zip < 0) return;
+  p.zip = -1;
+  if (fell) { p.vx = 0; p.vy = 0; }
+  // a pine or a rock stands under the shoulder here and there: come down beside it
+  const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
+  if (isSolidTile(tx, ty)) {
+    const out = nearestDryTile(p.x, p.y + 4, p);
+    p.x = (out.tx + 0.5) * TILE; p.y = (out.ty + 0.5) * TILE - 4;
+  }
+  if (!fell) sfxAt('dodge', p.x, p.y);
+  burst(p.x, p.y + 4, '#cfd8e8', 4, 30, 0.3, true);
+}
+// one sim step of the ride (updatePlayer's movement ladder): a held stick
+// along the cable past a dead zone picks the direction, the cable sets the
+// position outright, and either end lets go
+function zipStep(p, dt, mx, my, len) {
+  const z = zips[p.zip];
+  if (!z) { p.zip = -1; return; }
+  const q0 = zipPoint(z, p.zipD);
+  if (len > 0) {
+    const dot = mx * q0.tx + my * q0.ty;
+    if (dot > 0.5) p.zipDir = 1; else if (dot < -0.5) p.zipDir = -1;
+  }
+  p.zipD += p.zipDir * ZIP_SPD * dt;
+  const q = zipPoint(z, p.zipD);
+  p.x = q.x; p.y = q.y;
+  p.vx = q.tx * ZIP_SPD * p.zipDir; p.vy = q.ty * ZIP_SPD * p.zipDir;
+  p.sliding = false;
+  if (Math.abs(p.vx) > Math.abs(p.vy)) p.dir = p.vx > 0 ? 'right' : 'left'; else p.dir = p.vy > 0 ? 'down' : 'up';
+  if (p.zipD <= 0 || p.zipD >= z.len) { p.zipD = Math.max(0, Math.min(z.len, p.zipD)); zipEnd(p, false); }
 }
 
 // ------------------------------------------------------------ camps

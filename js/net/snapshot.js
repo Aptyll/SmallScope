@@ -569,7 +569,7 @@ function snapApplyDelta(d) {
 const SNAP_Q = 8;                     // quanta per px
 const SNAP_Q_MAX = 32767 / SNAP_Q;    // the int16's reach in px
 const SNAP_QPOS = new Set(['x', 'y']);                                  // floored
-const SNAP_QUANT = new Set(['x', 'y', 'vx', 'vy', 'kbx', 'kby']);       // all of them; kbx/kby are a knockback's velocity, same unit as vx
+const SNAP_QUANT = new Set(['x', 'y', 'vx', 'vy', 'kbx', 'kby', 'zipD']); // all of them; kbx/kby are a knockback's velocity, same unit as vx; zipD is px along a zipline
 function snapQable(k, v) { return SNAP_QUANT.has(k) && typeof v === 'number' && v >= -SNAP_Q_MAX && v <= SNAP_Q_MAX; } // NaN/Infinity fail the range
 function snapQi(k, v) { return SNAP_QPOS.has(k) ? Math.floor(v * SNAP_Q) : Math.round(v * SNAP_Q); } // the int16 on the wire
 function snapQv(k, v) { return snapQable(k, v) ? snapQi(k, v) / SNAP_Q : v; } // what the client will hold for field k

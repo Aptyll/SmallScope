@@ -378,6 +378,19 @@ function renderWorldMap(now) {
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // buried: off the map, same as the minimap - unless falcon-marked
     drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false);
   }
+  // the ziplines: each side's cable as a thread in its ink along the verge,
+  // the minimap's own line at the chart's scale
+  for (const z of zips) {
+    if (!z) continue;
+    ctx.save();
+    ctx.strokeStyle = TEAMS[skin(z.team)].mark;
+    ctx.globalAlpha = 0.8;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    z.pts.forEach((pt, i) => ctx[i ? 'lineTo' : 'moveTo'](MAP_X + (pt.x / TILE) * MAP_S, MAP_Y + (pt.y / TILE) * MAP_S));
+    ctx.stroke();
+    ctx.restore();
+  }
   // the eagles as bird diamonds in team colour: the two roosted objectives,
   // and mid-flight (the M map is the ride's chart) each bird on its own line,
   // dashed across the parchment

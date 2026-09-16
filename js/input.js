@@ -299,6 +299,10 @@ function keyPress(e) {
   // gets you down.
   if (keyIs(e, 'work') && !e.repeat && !state.wheel && !state.mapOpen &&
       !state.settingsOpen && !state.drag && !player.dead && !player.aboard) {
+    // Riding a zipline, the key lets go of it - ahead of everything, since a
+    // rider passes the counter and every trunk at 220 px/s (zipToggle,
+    // world.js, through the hop intent the step reads for every player)
+    if (player.zip >= 0) { player.input.jump = true; return; }
     // The merchant's counter is a PANEL, not a held wheel, so the key that
     // opened it shuts it - whatever else has come into reach meanwhile.
     if (state.shop) { closeShop(); return; }
@@ -313,6 +317,10 @@ function keyPress(e) {
     // (cursorInfo, js/draw/render.js).
     const mb = merchNear(player);
     if (mb) { SFX.unlock(); openShop(mb); return; }
+    // ...then a ZIPLINE overhead: under your own side's cable the key clips
+    // on (the cap over the cable says so - drawZipHint, js/ui/wheel.js), and
+    // the trunk beside it is still chopped from one step further out
+    if (zipNear(player)) { player.input.jump = true; return; }
     const t = workTarget(player);
     if (!t || !t.near) {
       // one of your OWN buildings in reach: the press opens its manage
@@ -709,6 +717,10 @@ function ckRightPress() {
   // riding or seated: the press is the hop, and the walk waits for the landing
   if (state.mode === 'drop') { player.input.jump = true; if (player.aboard) return; }
   else if (player.aboard) ck.hop = true;
+  // on a zipline the press lets go of it; under your own cable, a press ON
+  // the cable's track clips on (a press anywhere else is the walk it always was)
+  else if (player.zip >= 0) { player.input.jump = true; return; }
+  else if (zipNear(player) && zipNearest(zips[player.team], wx, wy).dist <= ZIP_GRAB * 1.5) { SFX.unlock(); player.input.jump = true; return; }
   SFX.unlock();
   if (!pt.far && !player.aboard) {
     const t = unitUnder(player, wx, wy);

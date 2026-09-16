@@ -47,7 +47,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 Four legacy files — `profile.js`, `font.js`, the generated `sfxdata.js`, `audio.js` — and the
 eight sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (the
 sprite files each `Object.assign` their keys into `SPRITES`); after them the game code is
-**flat top-level classic scripts sharing one global scope** — forty-four files, `core.js`
+**flat top-level classic scripts sharing one global scope** — forty-five files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
@@ -72,7 +72,7 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs).
 
-The game code is organized only by `// ------ name` banners inside its forty-four files.
+The game code is organized only by `// ------ name` banners inside its forty-five files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 
@@ -166,6 +166,8 @@ lives in `docs/dev/*.md` beside the code it protects.
   `navStep` is also where `unitMoveMul` is spent, so a hand-steered walk folds it in itself.
 - **A loop over `players` that touches the world must skip `inAir(p)`** (riding or falling from the
   eagle) alongside `!p.active`/`p.dead` — arrows, drops, wildlife, the draw list and both maps all do.
+  A zipline's rider (`p.zip >= 0`) is the narrower case: still a target for every weapon, but
+  nothing may shove or reposition it (`separateUnits` skips it) — the cable owns where it is.
 - **Gold never goes straight into `p.inv.gold`** — every payout calls `gainGold(p, n)`, which is
   also the XP source; a direct `+=` earns no levels. One exception: `tradeGold`, the merchant's
   till — a sale is an exchange, and a counter that buys fish at its own asking price would

@@ -239,7 +239,10 @@ function drawPlayer(p, ex, ey, now) {
   const set = lying ? classSet(p).prone[p.dir] : classSet(p)[p.dir];
   let frame = 0;
   if (lying) frame = p.moving ? 1 + (Math.floor(p.crawlT) % 2) : 0;
-  else if (p.moving) frame = 1 + (Math.floor(p.animT) % 2);
+  else if (p.moving && p.zip < 0) frame = 1 + (Math.floor(p.animT) % 2); // a zipline's rider hangs still
+  // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
+  // is - the rope and handle over its head are the cable pass's (drawZips)
+  const zl = p.zip >= 0 ? ZIP_ALT : 0;
   let spr = set[frame];
   // the fish catch: three DOWN-facing frames whatever the body faces
   // (catchFrame, js/tools.js). The hoist frame is 20 tall on the same feet,
@@ -299,7 +302,7 @@ function drawPlayer(p, ex, ey, now) {
     // body: the pose shifts / tilts the sprite itself (abilityPose,
     // js/abilities.js), so an ability visibly happens to the model
     const pose = state.mode !== 'title' ? abilityPose(p) : null;
-    const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0);
+    const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl;
     const sy = ay + (16 - spr.height); // a taller frame (the hoist) keeps its feet
     // deep in the treeline the viewed hero wears a black 1px rim so the body
     // pops off the faded canopy - treeFadeSil (render.js) is the occluder
@@ -326,7 +329,7 @@ function drawPlayer(p, ex, ey, now) {
     // axe bobbing over a body on its belly reads as a floating axe. A body
     // mid-cast (or holding the shield, or charging) has no hand free for it.
     const held = state.mode !== 'title' && (!lying || p.charging) && catchF < 0 &&
-      p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0;
+      p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
     if (toolBehind) drawHeldTool(p, px, py);
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
@@ -347,6 +350,7 @@ function drawPlayer(p, ex, ey, now) {
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/abilities.js)
     if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
+    if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
     // and the snow goes on last, over body and bow alike
     if (lying && p.hide > 0) {
       drawSnowCover(p, spr, px, py, local ? 0.66 : p.team === player.team ? 0.85 : 1);
@@ -367,7 +371,7 @@ function drawPlayer(p, ex, ey, now) {
   // the whole stack hangs off one y so it can drop with the body: a prone
   // pose starts ~6 rows lower in the same 16x16 cell, and bars floating where
   // a head no longer is look broken
-  const hy = py + (lying ? 6 : 0) - (catchF === 2 ? 4 : 0); // the hoist holds the fish where the plate would sit
+  const hy = py + (lying ? 6 : 0) - (catchF === 2 ? 4 : 0) - (zl ? zl + 5 : 0); // the hoist holds the fish where the plate would sit; a rider's frame rises with it and clears the handle
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;

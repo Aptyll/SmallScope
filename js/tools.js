@@ -891,7 +891,7 @@ function updateSlashes(dt) {
 const FISH_AUTO_CD = 1.2;
 function autoFish(p, dt) {
   p.fishCd = Math.max(0, p.fishCd - dt);
-  if (p.fishCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 || inAir(p)) return;
+  if (p.fishCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 || inAir(p) || p.zip >= 0) return;
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
   if (!inWorld(ftx, fty) || ground[idx(ftx, fty)] !== 1) return;
   let bi = -1, bd = FISH_CATCH_R;

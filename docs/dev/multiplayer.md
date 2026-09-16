@@ -70,7 +70,9 @@ slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
 jump          edge-triggered: the leap off the eagle, or the hop off the roost -
               the ride's one act (dropJump, js/boot.js; read at the top of
-              updatePlay's player loop, before the air skips the body)
+              updatePlay's player loop, before the air skips the body) - and
+              on the ground the zipline's: clip on under your side's cable,
+              let go while riding (zipToggle, js/world.js; E sets it there)
 grapple       held (key 3): the hunter's grapple reels only while this is down -
               the one held ability input (updatePlayer's grapple branch reads it;
               the burrow is the SNOW COVER cast on `ability`, not a field here)
@@ -192,7 +194,8 @@ bot fills, once per step from `sampleHumanInput`.
   rule. Holding the button drags the goal under the pointer (`ck.follow`). A right press on the
   chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Seated on the roost
   it is the hop, and the fall drifts toward the spot and walks on landing; in flight it is the
-  jump, with the same rule the jump key has.
+  jump, with the same rule the jump key has. Riding a zipline it lets go; standing under your
+  side's cable, a press **on the cable's track** clips on (a press anywhere else is the walk).
 - **On a tree, a bush, an ice hole or a rival building it is a walk into reach and the swing**
   (`workTargetAt`, the work target by tile), held until the thing is spent. On one of your own
   buildings, a merchant or the practice furniture it is a walk into reach and the thing opening
@@ -434,7 +437,8 @@ shooter. `damagePlayer` takes a seventh argument, `crit`, which the arrow loop p
 `a.ambush`: it runs the damage floater hotter and at double scale and doubles the local shake. Any
 hit also calls `risePlayer` before anything else, so nobody stays buried through one. A hunter's
 PIERCING SHOT (`a.pierce`) is the one arrow that takes a body and keeps flying — everyone on the
-line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it.
+line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
+riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay.md#the-zipline)).
 
 **Whether a rival can be seen at all is a separate question from whether they can be shot.**
 `enemyOf` answers the second; `seenAt(p, range)` answers the first, and every watcher in the
