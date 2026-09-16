@@ -94,8 +94,8 @@ it in under a second) and shift on landing carves a slide; a body coming down ov
 (the odd pine or rock on the shoulder) is set beside it (`nearestDryTile`). Riders draw lifted
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
 (`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
-`drawZipHint` (js/ui/wheel.js). Bots do not ride yet ([the plan](../zipline-plan.md), task 2);
-the waves never will.
+`drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every
+walk the ladder orders ([bots](multiplayer.md#bots)); the waves never will.
 
 ## Unit collisions
 

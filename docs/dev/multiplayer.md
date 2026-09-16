@@ -572,16 +572,31 @@ cover still works), `react` (0.7 / 0.3 / 0 s a rival stays noticed before the bo
 `aim` (22 / 8 / 0 px of scatter, re-rolled every `AI_AIM_T`), `lead` (0 / 0.5 / 1 of the
 target's motion), `draw` (0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
 weak shot), `dodge` (×0.5 / 1 / 2), `abil` (0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
-ready ability is spent), `flee` (0.5 / 0.35 / 0.2 hp it hides at), `work` (0.5 / 0.8 / 1 duty
+ready ability is spent), `flee` (0.5 / 0.35 / 0 hp it hides at), `work` (0.5 / 0.8 / 1 duty
 cycle of the E key while harvesting — its level pace), `strafe` (0.45 / 0.8 / 1 of each 2 s it
 keeps moving in a fight; the rest it PLANTS — stands, draws and shoots, the only time a slow side
 fires, so stopping is the tell and the moment a new player hits it — and under 1 it circles that
 much less, walking in straighter), `pick`
 (`'near'`, or IMPOSSIBLE's `'weak'` — the rival with the least hp), `push` and `guard` (the
-objective, below), `support` (allies only). What is **not** in a profile: answering a hit on its
-own bird — at every level the side answers from anywhere on the map, as many bots as the threat
-calls for (**the two birds**, below); the difficulty is how well they fight when they get there,
-never whether they come.
+objective, below), `support` (allies only), and `relentless` — **IMPOSSIBLE's rivals alone**
+(an ally borrows the top notch's hands, never this: `AI_ALLIES` strips it and keeps a flee point,
+a guard and its own clock). A relentless side **never gives ground**: a bow crowded under 50 px
+circles in instead of backing off, a blocked line is routed in through the open at any range, a
+camp on it is fought where it stands, it never burrows (`flee` 0) and keeps no guard; after its
+`push.t` **everyone** goes (`push.n` 99) — and goes as a **pack**: off the rival's lane the
+pushers rally at their own zipline's end, the last fast ground before the fight, until `AI_PACK`
+(5) of the side's living bots are within `AI_PACK_R` (200 px) of it, then each is committed
+(`ai.packGo`, cleared only by a death or a recall) and goes on however the others fare, so a
+respawn rides straight back to the rally and the roost is hit by a wave of them every time
+rather than one body at a time into the guns. On the push it **charges**: only what closes to
+`AI_SIEGE_R` is fought, the whole way — a wave on the road, an archer standing off, a defender
+at the roost are all walked past for the bird (the siege rule from the first step, whatever the
+numbers) — except at its own besieged bird, where a respawn fights everything it sees before it
+rides out again. The one thing that turns it home is the pusher rule every level has: its own
+bird under `AI_ALARM_HP` while it is *losing* the race. What is **not** in a profile: answering
+a hit on its own bird — at every level the side answers from anywhere on the map, as many bots
+as the threat calls for (**the two birds**, below); the difficulty is how well they fight when
+they get there, never whether they come.
 
 The ladder:
 
@@ -662,7 +677,7 @@ The ladder:
    the pushers in player order (`aiRank`) stand by their own bird, going on down the ladder to work
    what is near while inside `AI_GUARD_R` of it. The bird is their anchor.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
-   side's `push.n` lowest-ranked bots (2 / 3 / 3), **one more every `AI_ESCALATE`** (120 s) so a
+   side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
    stalemate always breaks (`aiPushers`), go for the rival bird — an ally goes whenever
    **the human is already on it** (inside `AI_ROOST_R`), so a push you start is a push your side
    joins — and **any** bot joins a siege its side has going once the rival bird is under
@@ -670,7 +685,8 @@ The ladder:
    is wanted. **The wave is the push**: off the rival's lane, a pusher walks with the head of its
    own side's column on the road (`aiWaveHead` — the own soldier nearest the rival bird that is
    still on the march, within `AI_WAVE_D`) rather than ahead of it alone, closing to `AI_WAVE_R`
-   of it and going on from there; with no column out it walks as it always did.
+   of it and going on from there; with no column out it walks as it always did. (A relentless
+   side's grouping is its pack at the zipline's end instead — the profile, above.)
    The walk is `aiToRoost`: the roost sits in its corner's woods at the end of its spur and the
    spur is the only way in, so off it the route is road → `aiLaneGate` (`AI_GATE` px up the road
    from the junction, toward the field) → junction (`e.mouth`) → spur → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
@@ -695,8 +711,9 @@ The ladder:
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk). Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
-12. **spend** — first a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
-   plus a 15-gold float. **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
+12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
+   plus a 15-gold float is bought at rung 0 beside the skill point, from anywhere, mid-push or
+   mid-defence alike — the gear pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the
    shop is human-only except the drag that sells. Then, with gold in hand, build a generator (or, 30% of the time and
@@ -725,7 +742,18 @@ map's eagle marks and the bird's nerve bar.
 
 Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the bot's own player
 ([gameplay.md](gameplay.md#pathfinding)) — it routes around trees, rocks, buildings and water,
-and returns **-1 when there is no route** (or the bot has been pinned for a while). That, not a
+and returns **-1 when there is no route** (or the bot has been pinned for a while). **It rides
+the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
+intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
+its own side's cable, riding to the point nearest the goal and walking the rest beat the feet by
+`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`aiZipMount`, the nearest point of the
+cable whose ground a body can stand on), presses `input.jump` under it, holds the stick along
+the cable toward the exit while it rides (the goal re-read every think, so a rider called home
+mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
+A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot
+never coasts to the terminus by accident, and rungs 3 and 4 let go before they fight: nobody
+rides past an enemy holding the handle. Measured on seed 42: four allies ordered to RALLY at the
+cairn from their roost arrived in 12.4–12.9 s by the cable against 22.3–24.6 s on foot. That, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
 `ai.huntAvoid`, loot lets the drop lie, spend backs off for 15 s, a push on `ai.pushCd`, roam
 re-picks. Harvest routes
@@ -753,7 +781,14 @@ rivals' own pushes taking the allied bird down to 560–1060 nerve on the way an
 back — where 2.63's runs half-stalemated; seed 42 on HARD was an ally win at 12:35 and on
 IMPOSSIBLE a loss at 16:40, the allies' siege at 380 nerve when the rivals came home and won
 the race. The NORMAL tail runs a few minutes long of the target, so the ally clocks are the
-next thing to tune. Before the siege rule two to four allies sat at the rival roost for eight
+next thing to tune. **3.57's relentless IMPOSSIBLE** (with everyone riding the zipline), seed
+42 again: the pack of five went at 5:16, all five were at the allied bird by 5:45 and took it
+to **15 % nerve** — then bled to the levelled allies (level 5–6 against 12 at the dive, since
+a rusher never farms), whose own push at seven minutes won at 16:30 with the rival bird at 1 %.
+A rush from the first second (push.t 0) never once touched the allied bird in 25 minutes; a
+four-minute build-up with a pack of four took it to 36 % and lost at 9:00. The dive, not the
+race, is what the level is for: with a hand on the human's side rather than a bot the bird at
+15 % at six minutes is the match. Before the siege rule two to four allies sat at the rival roost for eight
 minutes winning every fight against defenders who came back from sixty pixels away and never
 landed a swing on the bird — the reason respawn at the objective needs the rule.
 

@@ -171,7 +171,12 @@ the body at rest under the cable; a rival bot's arrow hits a rider (`hp` falls, 
 mount. Crops: a pylon, a span with its sag, a rider with the handle, the chart. `.` for hitboxes.
 A minute of unattended play raises no page errors; `DBG.netEchoRun` shows a rider on a client.
 
-## Task 2 — bots ride it (PATCH 3.57)
+## Task 2 — bots ride it (PATCH 3.57) — SHIPPED 2026-09-16
+
+Shipped as written below, with two differences: the plan is stateless (the goal is re-read every
+think, so no `p.ai.zip`), and the exit is decided by distance to the exit point rather than a
+saving test, which would let go 400 px early. The same PR redesigned IMPOSSIBLE as a relentless
+pack rush (multiplayer.md, *Bots*); the harness numbers are in the memory note.
 
 `updateAI` reaches every walk through one `steerTo(x, y, reach, budget)` (ai.js:437). Wrap it:
 `aiGo(x, y, reach, budget)` asks `aiZipPlan(p, x, y)` whether a ride saves `ZIP_AI_GAIN` seconds —

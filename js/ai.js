@@ -45,6 +45,14 @@ const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 //           that, so a stalemate always breaks
 //   guard   how many of the next bots stand by their own bird from 0.6 t on
 //   support allies only: escort the human and join their fights and pushes
+//   relentless  IMPOSSIBLE's rivals only: never give ground - a bow closes
+//           in instead of backing off when crowded, a blocked line is walked
+//           in through the open at any range, a camp on it is fought where it
+//           stands - which with push {0, 99}, guard 0 and flee 0 is a side
+//           that rushes your bird from the first second, everyone, and never
+//           stops fighting; the only thing that turns one home is its own
+//           bird under half nerve while it is LOSING the race (the pusher
+//           rule below). Allies never inherit it (AI_ALLIES)
 // What is NOT in a profile: answering a hit on its own bird. At every level
 // a struck roost, or a rival seen standing off it, is answered from anywhere
 // on the map by as many bots as the threat calls for (the two birds, below)
@@ -53,7 +61,7 @@ const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 const AI_LEVELS = [
   { name: 'NORMAL', sight: 147, react: 0.7, aim: 30, lead: 0, draw: 0.7, dodge: 0.5, abil: 0.35, flee: 0.5, work: 0.5, strafe: 0.45, pick: 'near', push: { t: 360, n: 2 }, guard: 1 },
   { name: 'HARD', sight: 200, react: 0.3, aim: 8, lead: 0.5, draw: 0.9, dodge: 1, abil: 0.8, flee: 0.35, work: 0.8, strafe: 0.8, pick: 'near', push: { t: 360, n: 3 }, guard: 2 },
-  { name: 'IMPOSSIBLE', sight: 267, react: 0, aim: 0, lead: 1, draw: 0.95, dodge: 2, abil: 1, flee: 0.2, work: 1, strafe: 1, pick: 'weak', push: { t: 300, n: 3 }, guard: 2 },
+  { name: 'IMPOSSIBLE', sight: 267, react: 0, aim: 0, lead: 1, draw: 0.95, dodge: 2, abil: 1, flee: 0, work: 1, strafe: 1, pick: 'weak', push: { t: 300, n: 99 }, guard: 0, relentless: true },
 ];
 // your allies at each rival level: the next notch up, supportive, one of
 // them on guard, and on the objective on their own clock - late on NORMAL,
@@ -63,8 +71,11 @@ const AI_LEVELS = [
 // human sits it out (the harness, multiplayer.md): an ally push takes two
 // to three minutes to drive a bird off, so NORMAL's leaves at twelve
 const AI_ALLY_PUSH = [{ t: 720, n: 2 }, { t: 480, n: 3 }, { t: 420, n: 3 }];
+// (an ally borrows the notch's hands, never IMPOSSIBLE's recklessness: it
+// keeps a guard, a clock and a flee point of its own, so the human's side
+// is still the one that holds its bird)
 const AI_ALLIES = AI_LEVELS.map((_, i) => Object.assign({}, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)],
-  { name: 'ALLY', support: true, push: AI_ALLY_PUSH[i], guard: 1 }));
+  { name: 'ALLY', support: true, push: AI_ALLY_PUSH[i], guard: 1, relentless: false, flee: Math.max(0.2, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)].flee) }));
 const AI_GUARD_R = 160;   // px a guard lets itself drift from its bird before walking back
 const AI_ESCALATE = 120;  // s after push.t per extra pusher a side commits
 // how many of a side push right now: push.n, growing past push.t
@@ -330,6 +341,8 @@ function aiNearestEnemy(p, prof, anchors) {
 // the head of its side's wave on the road: the own soldier nearest the
 // rival bird that is still on the march (outside AI_ROOST_R of it) and near
 // enough to be worth walking with - a push rides its wave (rung 5c)
+const AI_PACK = 5;       // relentless pushers that must be together at the rally (their cable's end) before the pack goes on
+const AI_PACK_R = 200;   // px round the rally a pusher counts as at it (bodies milling at a point stand 70-150 px apart)
 const AI_WAVE_R = 80;    // px a pusher keeps to the column's head
 const AI_WAVE_D = 640;   // px past which the column is too far behind to wait for
 function aiWaveHead(p, e) {
@@ -341,6 +354,45 @@ function aiWaveHead(p, e) {
     bd = d; best = b;
   }
   return best;
+}
+
+// ---- the ride ---------------------------------------------------------------
+// A bot rides the zipline (the `zipline` banner, world.js) the way a hand
+// does, through the same hop intent: every walk the ladder orders goes
+// through steerTo, and steerTo asks aiZipWorth first - would walking to its
+// own side's cable, riding to the point nearest the goal and walking the
+// rest beat the feet by ZIP_AI_GAIN seconds? If so it walks to the mount
+// (aiZipMount: the nearest point of the cable whose ground a body can stand
+// on), presses the hop under it, holds the stick along the cable toward the
+// exit while it rides, and presses the hop again ZIP_AI_OFF short of the
+// exit. The goal is re-read every think, so a rider called home mid-cable
+// simply holds the other way. Nothing here decides WHERE a bot goes - the
+// rungs do - only how it covers the ground; and a ride with no rung wanting
+// it (aiThink returned without a walk) is let go of at once, so a bot never
+// coasts to the terminus by accident. A fight (rung 3) and a camp on it
+// (rung 4) let go first: nobody rides past an enemy holding the handle.
+const ZIP_AI_GAIN = 4;   // s a ride must save over the feet before a bot walks to the cable
+const ZIP_AI_OFF = 6;    // px short of the exit point it lets go (a step is 3.7 px at ZIP_SPD)
+// the feet's time over a straight line, at the bot's own walk
+function aiWalkT(p, d) { return d / (PLAYER_SPEED * kitOf(p).walkMul); }
+// the ride from p's spot to (x, y), if the cable saves ZIP_AI_GAIN over the
+// feet: { z, d0, d1 } (px along at the mount and the exit), else null
+function aiZipWorth(p, x, y) {
+  const z = zips[p.team];
+  if (!z) return null;
+  const nb = zipNearest(z, p.x, p.y), ng = zipNearest(z, x, y);
+  const feet = aiWalkT(p, Math.hypot(x - p.x, y - p.y));
+  const ride = aiWalkT(p, nb.dist) + Math.abs(ng.d - nb.d) / ZIP_SPD + aiWalkT(p, ng.dist);
+  return feet - ride >= ZIP_AI_GAIN ? { z, d0: nb.d, d1: ng.d } : null;
+}
+// the mount: the point of the cable at d, or the nearest along it whose
+// ground tile a body can stand on (the shoulder holds the odd pine or rock)
+function aiZipMount(z, d) {
+  for (const k of [0, 16, -16, 32, -32, 48, -48]) {
+    const q = zipPoint(z, d + k);
+    if (walkable(Math.floor(q.x / TILE), Math.floor((q.y + 4) / TILE))) return q;
+  }
+  return null;
 }
 
 // the camp monster nearest of those already hunting this bot. A camp is
@@ -425,6 +477,14 @@ function resolveCardForBot(p) {
 }
 
 function updateAI(p, dt) {
+  const ai = p.ai;
+  ai.zipUsed = false;
+  if (p.dead) ai.packGo = false;
+  aiThink(p, dt);
+  // riding with no rung wanting the ride this think: let go (the ride, above)
+  if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
+}
+function aiThink(p, dt) {
   const inp = p.input, ai = p.ai;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;
   if (p.dead || p.fallT > 0) { inp.fire = false; return; }
@@ -434,11 +494,33 @@ function updateAI(p, dt) {
   // walk the route to (x, y) - reach 1 stops beside a tile it cannot stand
   // on, which is exactly WORK_REACH - and return the straight-line distance,
   // or -1 when there is no route (drop the goal, do not wait on it)
-  const steerTo = (x, y, reach, budget) => {
+  const walkTo = (x, y, reach, budget) => {
     const n = navTo(p, x, y, PLAYER_R, reach || 0, dt, budget);
     if (!n.ok) return -1;
     inp.mx = n.dx; inp.my = n.dy;
     return n.d;
+  };
+  // every walk the ladder orders: by the zipline when the cable is worth it
+  // (the ride, above), else the feet. Riding, it holds the stick along the
+  // cable toward the exit nearest the goal and lets go there; on the ground,
+  // a worthwhile ride is a walk to the mount and the hop under the cable.
+  // Returns the straight-line distance to the goal either way, so a rung
+  // reads progress, or walkTo's -1 for a goal with no way to it at all.
+  const steerTo = (x, y, reach, budget) => {
+    if (p.zip >= 0) {
+      const z = zips[p.zip], d1 = zipNearest(z, x, y).d;
+      ai.zipUsed = true;
+      if (Math.abs(d1 - p.zipD) <= ZIP_AI_OFF) inp.jump = true; // the exit: let go (zipToggle, next step)
+      else { const q = zipPoint(z, p.zipD), s = d1 > p.zipD ? 1 : -1; inp.mx = q.tx * s; inp.my = q.ty * s; }
+      return Math.hypot(x - p.x, y - p.y);
+    }
+    const w = aiZipWorth(p, x, y);
+    if (w) {
+      if (zipNear(p)) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
+      const m = aiZipMount(w.z, w.d0);
+      if (m && walkTo(m.x, m.y, 0, budget) >= 0) return Math.hypot(x - p.x, y - p.y);
+    }
+    return walkTo(x, y, reach, budget);
   };
   const aimAt = (x, y) => { inp.aimX = x; inp.aimY = y; };
 
@@ -463,6 +545,7 @@ function updateAI(p, dt) {
   const own = mine ? mine.e : null;
   const alarm = !!(mine && mine.threat && mine.hp < AI_ALARM_HP);
   let pushE = ai.pushCd > 0 ? null : aiWantsPush(p, prof, theirs, mine);
+  if (!pushE) ai.packGo = false; // a pack's commitment (the objective rung) ends with the push - and with a death (updateAI)
   let defend = null;
   if (mine && mine.threat) {
     if (pushE) defend = alarm && !(theirs.hp < mine.hp) ? own : null;
@@ -512,6 +595,19 @@ function updateAI(p, dt) {
     for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
+  //    ...and gear the same way: the gear pop-up is a menu bought from
+  //    anywhere (gameplay.md), so a purse fat enough to keep a building
+  //    float (buyGear re-validates, so a stale order is harmless) is spent on
+  //    the cheapest piece here, mid-push or mid-defence alike, rather than
+  //    at the spend rung a pusher never reaches
+  if (!inp.cmd) {
+    let gi = -1, gc = 1e9;
+    for (let i = 0; i < GEAR_SLOTS.length; i++) {
+      const c = gearCost(p, i);
+      if (c && c.gold < gc) { gc = c.gold; gi = i; }
+    }
+    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
+  }
 
   // 1. food, exactly as a human eats it (Q / F) - but a meal is a 1.5 s
   //    channel now and a hit knocks it out of the hands (js/core.js), so a bot
@@ -533,7 +629,15 @@ function updateAI(p, dt) {
     Math.hypot(theirs.e.x - p.x, theirs.e.y - p.y) < AI_ROOST_R;
   // a RALLY is a disengage: on the way to one only a rival at arm's length is fought
   const rally = order && order.type === 'rally';
-  const engage = foe && ai.seeT >= prof.react && !((siege || rally) && foeD > AI_SIEGE_R) ? foe : null;
+  // the CHARGE: a relentless side on its push fights only what is at arm's
+  // length the whole way - a wave on the road, an archer standing off, a
+  // defender at the roost are all walked past for the bird (the siege rule,
+  // from the first step and whatever the numbers); what closes to
+  // AI_SIEGE_R is fought where it stands, and nothing else slows the rush
+  // (...away from home: a respawn at its own besieged bird fights what is
+  // there with everything it sees before it rides out again)
+  const charge = prof.relentless && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
+  const engage = foe && ai.seeT >= prof.react && !((siege || rally || charge) && foeD > AI_SIEGE_R) ? foe : null;
   if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
     if (p.hp < p.maxHp * 0.5 && bagCount(p, 'fish') > 0) inp.eatFish = true;
     else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
@@ -582,6 +686,7 @@ function updateAI(p, dt) {
   if (engage) {
     const foe = engage;
     const d = foeD;
+    if (p.zip >= 0) inp.jump = true; // off the zipline first: nobody fights holding the handle
     const tf = prof.lead > 0 ? d / 300 * prof.lead : 0; // s of flight it leads by
     aimAt(foe.x + foe.vx * tf + ai.aox, foe.y - 6 + foe.vy * tf + ai.aoy);
     // hold ~70px: close in when far, back off when crowded, strafe in between
@@ -622,7 +727,8 @@ function updateAI(p, dt) {
       // close in, give ground straight back and let them come round the
       // corner into the line. Re-read every think, so a cleared line goes
       // straight back to the strafe below.
-      if (d > 60) { if (steerTo(foe.x, foe.y, 3) < 0) { inp.mx = 0; inp.my = 0; } }
+      // (a relentless side never gives ground: it routes in at any range)
+      if (d > 60 || prof.relentless) { if (steerTo(foe.x, foe.y, 3) < 0) { inp.mx = 0; inp.my = 0; } }
       else { inp.mx = -Math.cos(a); inp.my = -Math.sin(a); }
       inp.fire = false;
       ai.tgt = null;
@@ -630,8 +736,9 @@ function updateAI(p, dt) {
     }
     // a blade holds at arm's length and circles there; a bow holds ~70px:
     // close in when far, back off when crowded, strafe in between
+    // (a relentless bow never backs off when crowded: it circles in close)
     const turn = melee ? (d > AI_MELEE_D ? 0.15 * side : Math.PI / 2 * side * prof.strafe)
-      : d > 85 ? 0.3 * side : d < 50 ? Math.PI * 0.85 * side : Math.PI / 2 * side * prof.strafe;
+      : d > 85 ? 0.3 * side : d < 50 && !prof.relentless ? Math.PI * 0.85 * side : Math.PI / 2 * side * prof.strafe;
     inp.mx = Math.cos(a + turn); inp.my = Math.sin(a + turn);
     // a slow side plants its feet to shoot: the standing part of each 2 s is
     // the only part it draws and looses in (a draw cut off by the walk goes
@@ -648,12 +755,13 @@ function updateAI(p, dt) {
   // 4. a camp it has woken hunts back: a bot with a monster on it fights
   //    its way out, shooting the nearest one and giving ground while it does
   if (wolf) {
+    if (p.zip >= 0) inp.jump = true; // off the zipline first
     const d = Math.hypot(wolf.x - p.x, wolf.y - p.y);
     const clear = aiLineClear(p, wolf.x, wolf.y - 4);
     aimAt(wolf.x, wolf.y - 4);
     const away = Math.atan2(p.y - wolf.y, p.x - wolf.x);
     const melee = aiMelee(p);
-    if (d < 64 && !melee) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade stands its ground
+    if (d < 64 && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground
     inp.fire = clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < kitOf(p).bowCharge * 0.7;
     if (d < 30 && p.dodgeCharges > 0 && rng() < dt * 3) inp.dodge = true;
     ai.tgt = null;
@@ -730,9 +838,34 @@ function updateAI(p, dt) {
     const tur = aiInLane(p, e) ? nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; }) : null;
     // the wave is the push: off the rival's lane, a pusher walks with the
     // head of its side's column rather than ahead of it alone
-    const head = aiInLane(p, e) ? null : aiWaveHead(p, e);
+    const head = aiInLane(p, e) || prof.relentless ? null : aiWaveHead(p, e); // (a relentless side's grouping is the pack below, not the column's pace)
     if (head && Math.hypot(head.x - p.x, head.y - p.y) > AI_WAVE_R) {
       if (steerTo(head.x, head.y, 2) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; }
+    }
+    // a relentless side hits as a PACK, never a trickle: off the rival's
+    // lane, its pushers rally at their own cable's end - the last fast
+    // ground before the fight - until AI_PACK of the side's living bots are
+    // together there (or as many as are living), then go on as one. A
+    // respawn rides straight back to the rally, so a wave of them lands on
+    // the roost every time rather than one body at a time into the guns.
+    // Once the pack is together each of them is COMMITTED (ai.packGo): it
+    // goes on however the others fare, until it dies or is called home -
+    // a pack that re-counts itself every step falls back to the rally the
+    // moment one body steps out of the ring.
+    if (prof.relentless && !aiInLane(p, e) && !ai.packGo) {
+      const z = zips[p.team], end = z ? z.pts[z.pts.length - 1] : null;
+      if (end) {
+        let alive = 0, here = 0;
+        for (const q of players) {
+          if (!q.active || q.dead || inAir(q) || q.team !== p.team || q.control !== 'ai') continue;
+          alive++;
+          if (Math.hypot(q.x - end.x, q.y - end.y) < AI_PACK_R) here++;
+        }
+        const dEnd = Math.hypot(end.x - p.x, end.y - p.y);
+        if (here >= Math.min(AI_PACK, alive)) ai.packGo = true;
+        else if (dEnd > AI_PACK_R * 0.3) { if (steerTo(end.x, end.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; } }
+        else { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; } // at the rally: wait for the side
+      }
     }
     if (!aiInLane(p, e)) {
       if (aiToRoost(p, e, steerTo, 5) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; }
@@ -829,17 +962,8 @@ function updateAI(p, dt) {
   ai.fitT -= dt;
   if (ai.fitT <= 0) { ai.fitT = 2.5; botFitLoadout(p); }
 
-  // 9. spend the purse: gear first when the purse is fat enough to keep a
-  //    building float (buyGear re-validates, so a stale order is harmless),
-  //    then a stump to build on, then its own work to upgrade
-  if (!inp.cmd) {
-    let gi = -1, gc = 1e9;
-    for (let i = 0; i < GEAR_SLOTS.length; i++) {
-      const c = gearCost(p, i);
-      if (c && c.gold < gc) { gc = c.gold; gi = i; }
-    }
-    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
-  }
+  // 9. spend the purse (gear went at rung 0, from anywhere): a stump to
+  //    build on, then its own work to upgrade
   const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold ? (rng() < 0.3 ? 'spawner' : 'generator') : null;
   if (ai.buildT <= 0 && wantType) {
     const st = aiBuildSite(p, wantType);
