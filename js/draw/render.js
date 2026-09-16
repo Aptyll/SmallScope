@@ -660,15 +660,14 @@ function render() {
     }
   }
 
-  // floaters (damage numbers drift sideways, rise faster, and can be 2x)
+  // floaters (damage numbers drift sideways, rise faster, and can be 2x) -
+  // queued, not drawn: a number is a readout, so it is stamped above the
+  // night grade with the tags (the `ink over the world` banner, js/draw/light.js)
   for (const f of floaters) {
-    const a = 1 - f.t / 0.9;
-    ctx.globalAlpha = a;
     const s = f.scale || 1;
-    drawPixelTextOutline(ctx, f.txt,
+    drawWorldText(f.txt,
       Math.round(f.x + (f.vx || 0) * f.t - ex - pixelTextWidth(f.txt, s) / 2),
-      Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, '#0f1632', s);
-    ctx.globalAlpha = 1;
+      Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / 0.9);
   }
 
   drawDropAir(ex, ey, now); // the eagle, its rider and anyone falling from it

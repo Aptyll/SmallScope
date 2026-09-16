@@ -121,15 +121,17 @@ lives in `docs/dev/*.md` beside the code it protects.
 - **Screen position is `round(world − camera)`, rounded exactly once.** Statics subtract the
   rounded `ox`/`oy`; moving entities subtract the exact `ex`/`ey` and round at the end. Rounding
   camera and entity separately makes sprites vibrate ±1 px against the background while walking.
-- **Text over the world uses `drawPixelTextOutline`** (a 1px dark rim on all sides, opaque colour);
-  `Shadow` is for text on panels and planks, and for anything under a `globalAlpha` fade. White
-  pixel text on white snow with only a drop shadow is unreadable.
+- **Text over the world goes through `drawWorldText`** (js/draw/light.js): a
+  `drawPixelTextOutline` (1px dark rim all sides) *queued* and stamped after the night grade — call
+  the outline directly in a world pass and the tint sinks a team blue into blue snow. In a UI pass
+  the outline is the right call; `Shadow` is for panels, planks and anything under a `globalAlpha`
+  fade. White pixel text on white snow with only a drop shadow is unreadable.
 - **Runtime ground change?** Call `repaintGround(tx, ty)` — it repaints the tile plus its four
   neighbours into the prerendered ground canvas. Never call `renderGround()` per frame; it bakes
   the entire 3712×3712 world and is a boot-time cost.
-- **Nothing on the map emits light, and night is a colour, not a darkness** —
-  [`renderLighting`](docs/dev/rendering.md#light-and-weather) grades the finished world frame, so
-  a new glowing thing adds a pass there rather than registering anywhere.
+- **Nothing on the map emits light; night is a colour and a rim, never a darkness in the middle** —
+  [`renderLighting`](docs/dev/rendering.md#light-and-weather) grades the finished world frame (the
+  dark lives at `NIGHT_EDGE`), so a new glowing thing adds a pass there, not a registry.
 - **Anything the weather moves reads `windSway(tx, ty)`**, never a clock of its own: one field
   (the `wind` banner, js/sim.js — waves summed on crossing bearings under a gust envelope) drives
   the snow and every pine's frame, and it dies at dusk.

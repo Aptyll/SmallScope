@@ -467,8 +467,94 @@ function drawIceStars(ox, oy, tx0, ty0, tx1, ty1) {
 // ---- the pass ----
 // Day: shafts first, then the cloud that shades them - a shadow falls across
 // a sunbeam, not the other way round. Then the hour's tint, then the night.
-const NIGHT_TINT = '#45599c';  // multiply: what full dark does to the snow
+//
+// NIGHT IS A COLOUR AND A CLOSING IN, NOT A DARKNESS. What says "night" has
+// to be the HUE and the EDGE, because the one thing it cannot be is the
+// middle of the screen going dark: a top-down field read at a glance has to
+// stay read at a glance, and an earlier grade that left the world at 34% of
+// its daylight took the trees, the team colours and every label down with it
+// - measured on seed 42's roost, snow fell from L169 to L58 and pines from
+// L108 to L37, which is why a blue MERCH tag sat invisible on blue snow.
+// So the multiply is deliberately PALE and deliberately BLUE: on the same
+// ground it now leaves snow at L98 of its L169 and pines at L51 of their
+// L108, while the tint's own channels stay far apart, so snow still
+// separates from pine and a red team keeps some red. NIGHT_TINT's blue
+// channel is nearly twice its red - that ratio is the whole read, and
+// lifting it is what turns night into dusk. Those four numbers are what to
+// re-measure after retuning it.
+// The dark then comes back at the RIM (NIGHT_EDGE), where nobody is reading
+// anything: the view closes in around the player instead of dimming them.
+const NIGHT_TINT = '#7f92ea';  // multiply: what full dark does to the snow
 const NIGHT_DEEP = '#0b1338';  // and a little of this on top, for depth
+const NIGHT_DEEP_A = 0.12;     // how much of it at full dark
+const NIGHT_EDGE = 0.40;       // ...and how far the world view's RIM sinks past the middle
+// The rim, in world-view pixels so it never touches the HUD - a night
+// vignette inside the world pass, unlike the always-on frame one below which
+// sits over everything in view space. Rebuilt only when the view resizes.
+let nvGrd = null, nvKey = 0;
+function nightEdge(a) {
+  if (nvKey !== WV_W * 4096 + WV_H) {
+    nvKey = WV_W * 4096 + WV_H;
+    const r = Math.hypot(WV_W, WV_H) / 2;
+    nvGrd = ctx.createRadialGradient(WV_W / 2, WV_H / 2, r * 0.30, WV_W / 2, WV_H / 2, r);
+    nvGrd.addColorStop(0, 'rgba(6,10,32,0)');
+    nvGrd.addColorStop(1, 'rgba(6,10,32,1)');
+  }
+  ctx.globalAlpha = a;
+  ctx.fillStyle = nvGrd;
+  ctx.fillRect(0, 0, WV_W, WV_H);
+  ctx.globalAlpha = 1;
+}
+
+// ---- ink over the world ----
+// THE GRADE DIMS WHAT THE WORLD IS, NEVER WHAT THE GAME IS SAYING. A name
+// tag, a damage floater, an alert "!" - these are HUD that happens to be
+// pinned to a body, and the multiply lands on the ink and on the snow under
+// it alike, so a coloured readout converges on its own background exactly as
+// fast as that background cools. Pre-brightening the ink cannot fix it: the
+// tint's red channel is half its blue, so a RED team's tag loses its hue
+// before it regains its value whatever it is drawn in, and by midnight it is
+// a lilac smudge on blue snow. The lighting has no headroom to give.
+//
+// So world text is HELD BACK instead. A call queues the glyphs and they are
+// stamped at the END of renderLighting, above the tint, the depth wash and
+// the rim - the same carve-out the two debug overlays get, for the same
+// reason: a thing whose whole job is to be read has to read at midnight.
+// Queue order is draw order, so a nearer body's tag still covers a farther
+// one's exactly as it did when the calls drew in place.
+// Everything else over the world - the bodies, the shots, the ground
+// decals - goes under the grade, which is what keeps night a place.
+// The queue only exists for the grade, so it only applies inside the world
+// buffer: a UI pass that reuses one of these drawers (the wiki's animal page
+// raises a sense mark of its own, ui/menu.js) has no grade over it and no
+// flush coming, and draws where it stands.
+const worldInk = [];
+function drawWorldText(text, x, y, color, scale, alpha) {
+  if (ctx !== wctx) {
+    const was = ctx.globalAlpha;
+    if (alpha !== undefined) ctx.globalAlpha = was * alpha;
+    drawPixelTextOutline(ctx, text, x, y, color, '#0f1632', scale || 1);
+    ctx.globalAlpha = was;
+    return;
+  }
+  // The queue carries the caller's OWN fade with it. Everything above a
+  // buried head - the tag included - fades with the cover (`concealOf`, the
+  // stack in drawPlayer sets ctx.globalAlpha and trusts it), and stamping a
+  // tag later at full opacity would hand a rival the one tell burial exists
+  // to take away. So the alpha standing at queue time is folded in here; an
+  // explicit one (a floater's own fade) multiplies it.
+  worldInk.push(text, x, y, color, scale || 1,
+    (alpha === undefined ? 1 : alpha) * ctx.globalAlpha);
+}
+function flushWorldInk() {
+  for (let i = 0; i < worldInk.length; i += 6) {
+    ctx.globalAlpha = worldInk[i + 5];
+    drawPixelTextOutline(ctx, worldInk[i], worldInk[i + 1], worldInk[i + 2],
+      worldInk[i + 3], '#0f1632', worldInk[i + 4]);
+  }
+  ctx.globalAlpha = 1;
+  worldInk.length = 0;
+}
 
 function renderLighting(ox, oy, now) {
   const dark = state.darkness;
@@ -504,23 +590,28 @@ function renderLighting(ox, oy, now) {
     ctx.globalAlpha = 1;
   }
 
-  // Night. A multiply carries the whole shift: it cools and darkens what is
-  // there instead of laying an opaque slab over it, so snow stays snow, team
-  // colours stay legible and the ice keeps its stars. globalAlpha rides the
-  // darkness curve, so dusk eases into it with nothing to schedule.
+  // Night. A multiply carries the whole shift: it cools what is there instead
+  // of laying an opaque slab over it, so snow stays snow, team colours stay
+  // legible and the ice keeps its stars. globalAlpha rides the darkness
+  // curve, so dusk eases into it with nothing to schedule. Then the rim
+  // closes in - the half of the effect that is allowed to be dark, because
+  // there is nothing out there to read.
   if (dark > 0.005) {
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = dark;
     ctx.fillStyle = NIGHT_TINT;
     ctx.fillRect(0, 0, WV_W, WV_H);
     ctx.globalCompositeOperation = 'source-over';
-    ctx.globalAlpha = dark * 0.17;
+    ctx.globalAlpha = dark * NIGHT_DEEP_A;
     ctx.fillStyle = NIGHT_DEEP;
     ctx.fillRect(0, 0, WV_W, WV_H);
     ctx.globalAlpha = 1;
+    nightEdge(dark * NIGHT_EDGE);
   }
 
   litShots(ox, oy, now, dark);
+  // ...and last, the readouts the grade was never allowed to touch
+  flushWorldInk();
 }
 
 // A shot can still carry its own light: the CARE ARROW and the WISP do, and

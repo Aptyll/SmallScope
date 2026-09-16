@@ -1162,7 +1162,7 @@ function drawEagle(e, ex, ey, now) {
       ctx.fillStyle = '#3a3448'; ctx.fillRect(bx, by, bw, 3);
       ctx.fillStyle = TEAMS[skin(e.team)].mark;
       ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), 3);
-      drawPixelTextOutline(ctx, 'PERCH', centreTextX(sx, 'PERCH'), by - 8, TEAMS[skin(e.team)].mark, '#0f1632'); // two clear rows over the frame, as a player's tag sits
+      drawWorldText('PERCH', centreTextX(sx, 'PERCH'), by - 8, TEAMS[skin(e.team)].mark); // two clear rows over the frame, as a player's tag sits
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -

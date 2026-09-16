@@ -125,7 +125,7 @@ function drawLevelBadge(rx, topY, level) {
 // grazing on wears the absence of it.
 function drawSenseMark(cx, topY, e, col) {
   const lift = e.senseT < 0.05 ? 2 : e.senseT < 0.1 ? 1 : 0;
-  drawPixelTextOutline(ctx, '!', cx - 1, topY + lift, col, '#0f1632');
+  drawWorldText('!', cx - 1, topY + lift, col);
 }
 
 // Seeing stars. Three sparks on an orbit, phased off the unit's own stun
