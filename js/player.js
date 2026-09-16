@@ -198,7 +198,7 @@ function playerTint(p) {
 // (useCard, js/core.js) - so none of them is ever laid out, compared or
 // dragged, and every cell one of them took was a cell taken off the build.
 // The six helpers below route them there, which is what keeps the pickup, the
-// catch, the sale, the AI's food check and the death spill generic over "a
+// catch, the sale and the AI's food check generic over "a
 // berry" and "a bit" alike.
 // `heal` is what a meal is worth before HEARTHWEAVE - the ONE place the number
 // lives, so the tooltip and the meal that lands can never disagree (js/core.js).
@@ -206,7 +206,7 @@ const ITEMS = {
   berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
   fish: { icon: 'itemFish', stack: Infinity, pouch: true, heal: 50 },
   // unopened roguelike cards - one ITEMS entry per rarity, in the pouch like
-  // a meal, so the drop pickup, the counter and the death spill are all free
+  // a meal, so the drop pickup and the counter are all free
   // (see checklists.md "adding a carried item"). Drawing one (useCard,
   // js/core.js) applies a random entry of its rarity; see CARDS below.
   cardWhite:  { icon: 'itemCardWhite',  stack: Infinity, pouch: true },
@@ -559,10 +559,12 @@ class Player {
     // The one weapon slot the button fires. It holds a tool CELL - the same
     // object a bag cell is, bits and all - so moving one between the bag and
     // the slot is a reference move and a tool never loses what is loaded
-    // into it. Regranted here rather than kept, because death spills the
-    // build where you fell (spillInventory) and the bird hands your class's
-    // own loadout back. js/tools.js owns all of it.
-    giveLoadout(this);
+    // into it. Granted on the FIRST landing only: a death keeps the build
+    // (die), so a respawn comes back holding what it went down holding -
+    // unless every slot is bare, when the bird hands the class's own
+    // loadout over rather than set down a body with nothing to fire.
+    // js/tools.js owns all of it.
+    if (first || !this.tools || !this.tools.some((t) => t)) giveLoadout(this);
     this.workTx = -1; this.workTy = -1;            // tile the current E swing is aimed at
     this.hurtT = 0; this.invuln = first ? 0 : 3;
     this.kbx = 0; this.kby = 0;
@@ -744,76 +746,25 @@ const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', wolf: 'WENT TO THE WOLVES', d
 // read for the verb too, so a worker's axe doesn't get written up as a shot
 const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 
-// Death empties the wallet AND the backpack. Gold goes to the credited
-// killer outright (through awardGold, so a kill also levels the killer - the
-// bounty is the point of taking the fight); with no killer to pay it goes
-// down with the body, because gold is never a physical drop. Everything
-// carried still spills as pickups, one per bag stack, because a stack is
-// already the unit the bag counts in - a killer with a full bag of their own
-// simply leaves them lying. Lifetime xp is untouched, and the standings rank
-// on xp (scoreOf), so a looted player keeps the place it earned.
-function spillInventory(p, killer) {
-  for (const k in p.inv) {
-    const n = p.inv[k];
-    p.inv[k] = 0;
-    if (n <= 0) continue;
-    if (k === 'gold') {
-      if (killer && !killer.dead) awardGold(killer, n, killer.x, killer.y);
-      continue;
-    }
-    const parts = Math.min(3, n);
-    const base = Math.floor(n / parts), rem = n % parts;
-    for (let i = 0; i < parts; i++) spawnDrop(p.x, p.y - 4, k, base + (i < rem ? 1 : 0));
-  }
-  // the pouch: a hoard of meals (or of unopened cards) is worth as much as a
-  // bag of them was, so it goes down with the body too - one drop per kind,
-  // carrying the whole count
-  for (const k in p.food) {
-    const n = p.food[k];
-    p.food[k] = 0;
-    if (n > 0) spawnDrop(p.x, p.y - 4, k, n);
-  }
-  // the bag, and then the weapon slot: a build goes down with the body and
-  // lies where it fell for whoever walks over it. reset() hands the player
-  // its class's starting loadout back, so a respawn is armed but not the same
-  // player it was.
-  //
-  // A TOOL COMES APART AS IT LANDS, exactly as a thrown one does (shedBits,
-  // js/tools.js): the body drops bare and its fittings scatter around it, no
-  // heading to carry since nobody threw this. So a kill spills a weapon and
-  // its build across the snow as separate things to walk over - the looter
-  // gets what they can carry rather than one cell holding a finished weapon.
-  //
-  // ...unless it is STARTING KIT, which comes apart and then EVAPORATES,
-  // build and all (isStarterTool / evaporateTool, js/tools.js): the respawn
-  // hands that tool straight back, so a body dropping one leaves litter
-  // nobody will ever stoop for. This is the ONLY path that does it - a tool
-  // put down on purpose still lies where it was put.
-  for (let i = 0; i < p.bag.length; i++) {
-    const s = p.bag[i];
-    p.bag[i] = null;
-    if (!s || s.n <= 0) continue;
-    if (isStarterTool(s)) { evaporateTool(s, p.x, p.y - 4); continue; }
-    shedBits(s, p.x, p.y - 4, 0, 0, null);
-    spawnDrop(p.x, p.y - 4, s.type, s.n, s.bits ? s : null);
-  }
-  for (let i = 0; i < p.tools.length; i++) {
-    const s = p.tools[i];
-    p.tools[i] = null;
-    if (!s) continue;
-    if (isStarterTool(s)) { evaporateTool(s, p.x, p.y - 4); continue; }
-    shedBits(s, p.x, p.y - 4, 0, 0, null);
-    spawnDrop(p.x, p.y - 4, s.type, 1, s);
-  }
-}
+// DEATH COSTS TIME, NOTHING ELSE. A body goes down with everything it had
+// and comes back with all of it: the wallet, the pouch, the bag, the weapon
+// and its build, the cards, the gear, the level. Nothing spills and nothing
+// is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
+// build lay where it fell, is gone - it made the fifteenth minute a bag you
+// were afraid to carry). What a kill is worth is a flat bounty from nowhere,
+// paid to the credited killer through awardGold so it levels them, sized
+// against a scrapped soldier's SOLDIER_BOUNTY (4): a player is three of them.
+// The one stake left on a death is the wait below and the walk back.
+const KILL_BOUNTY = 12;   // gold (and so xp) a downed rival pays its killer
 
-// The wait for the bird to set a downed player back down: gold-free, and a
-// read of the hero's level alone - 3 s at level 1, 5 s at level 2, 25 s at
-// LEVEL_MAX - so an early death costs almost nothing and a late one costs
-// real match, which is what makes a wiped side late (everyone high) a real
-// window on a roost its defenders otherwise come back to sixty pixels from
-// the bird every few seconds. Nothing off the match clock: the level IS the
-// clock, since gold is XP and the table only climbs.
+// The wait for the bird to set a downed player back down: a read of the
+// hero's level alone - 3 s at level 1, 5 s at level 2, 25 s at LEVEL_MAX -
+// so an early death costs almost nothing and a late one costs real match,
+// which is what makes a wiped side late (everyone high) a real window on a
+// roost its defenders otherwise come back to sixty pixels from the bird
+// every few seconds. Nothing off the match clock: the level IS the clock,
+// since gold is XP and the table only climbs. With nothing else lost on a
+// death, this wait is the WHOLE penalty.
 const RESPAWN_BASE = 1;   // s
 const RESPAWN_LV = 2;     // s more per hero level
 function respawnTime(p) { return RESPAWN_BASE + RESPAWN_LV * p.level; }
@@ -852,12 +803,12 @@ function die(p, src, cause) {
   // kill credit and the feed line: the killer's colours if there is one,
   // otherwise the victim's, since the victim is who the line is about
   const killer = src && src !== p ? src : null;
-  // an item on the cursor goes back in the bag first, so it spills with the
-  // rest of the build instead of vanishing with the hand that was holding it
+  // an item on the cursor goes back in the bag, so it is still there when the
+  // body comes back instead of vanishing with the hand that was holding it
   if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
-  spillInventory(p, killer);
   if (killer) {
     killer.kills++;
+    if (!killer.dead) awardGold(killer, KILL_BOUNTY, killer.x, killer.y); // the bounty, not the victim's purse
     if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
     // effect that isn't a plain kitOf() field - mirrors eatBerry's heal

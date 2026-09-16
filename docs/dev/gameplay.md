@@ -131,7 +131,7 @@ comes out at ~60 px/s with a sideways kick and the deer shoved ~14 px.
 Everything in this section lives in **[js/tools.js](../../js/tools.js)**, under the `tools & bits`
 banner. It loads after `actions.js` because a shot it fires is the arrow pipeline's, and its
 top-level code registers one `ITEMS` row per kind — which is what makes the bag, the drop pickup,
-the death spill and the refusal flash work on tools and bits with no storage code of their own.
+the throw and the refusal flash work on tools and bits with no storage code of their own.
 
 **There is ONE weapon slot** (`p.tools`, `TOOL_SLOTS` = 1 — the array and the drag plumbing stay
 generic over it), and the left button fires it. Keys 1-4 belong to the
@@ -606,37 +606,14 @@ with fewer cells than the build needs, is an ordinary pickup into the pack.
 The counterweight to the pack being the overflow: **a tool that lands in the snow arrives bare.**
 `shedBits(cell, x, y, hx, hy, p)` (js/tools.js) empties the row as the tool goes down, spawning
 every loaded bit as its own drop flung along `hx`/`hy` — whatever threw the tool — plus a
-`SHED_KICK` of its own, so what lies there is a body in a scatter of fittings. Both ground-drop
-paths call it: the [drag out onto the world](#the-weapon-shelf) (`throwCell`, js/ui/bag.js) and the
-[death spill](#death-and-respawn) (`spillInventory`, js/player.js), which passes no heading at all
-because nobody threw that one.
+`SHED_KICK` of its own, so what lies there is a body in a scatter of fittings. The one ground-drop
+path calls it: the [drag out onto the world](#the-weapon-shelf) (`throwCell`, js/ui/bag.js). A
+death puts nothing down ([Death and respawn](#death-and-respawn) — the body keeps its build), so
+until a second way to put a tool on the ground exists, the throw is the only caller.
 
 Without it, getting rid of a tool had become the way to move a whole build in one gesture, and a
 body picked off the snow arrived already built — the one pickup nobody had to think about. The
 bits are all still there, in reach, one walk apart: it costs a moment, not the build.
-
-Its last argument, `gone`, sheds the row into **thin air** instead of onto the snow — the bits
-still scatter, so the spill looks like a spill, and then go with the tool they came out of. Only
-`evaporateTool` passes it ([below](#a-starting-tool-does-not-litter)).
-
-### A starting tool does not litter
-
-**A kill should not leave a shortbow.** Every player flies in with its class's tool
-([Starting loadouts](#starting-loadouts)) and is handed the same one back at the bird on every
-respawn, so a body spilling one puts a weapon on the ground that *nobody* will ever stoop for — and
-ground fought over twice ends up carpeted in them. So a tool spilled by a **death** with
-`STARTER_CAP` (2) bit cells or fewer — the bottom of the table, the SHORTBOW, the SLING and the LONGSWORD —
-never lands. `isStarterTool(s)` is the test and `evaporateTool(cell, x, y)` (js/tools.js) is what
-happens instead: the build sheds into thin air and the bare body follows it, all of them
-[vanishing drops](#economy-one-currency). The test is the *tool*, not a list of names, so a tier a
-later table adds under those two is covered on the day it is added.
-
-It is a **death** rule, not a tool rule, and `spillInventory` (js/player.js) is its only caller —
-both the pack loop and the weapon slot. A starting tool dragged out of the pack **on purpose**
-still lands and still lies there (`throwCell`, js/ui/bag.js), so you may hand a teammate your sling;
-one the world **rolled** as loot (`dropLoot`) is an ordinary find; one displaced by an
-[upgrade swap](#where-tools-and-bits-come-from) goes into the snow like anything else. Only what
-falls off a body evaporates.
 
 The pool a roll draws from is the **whole table** at or under that tier: every kind is unlocked for
 every profile alike, so any match can roll any of them. See [the wiki](#the-wiki).
@@ -676,8 +653,10 @@ orbit and leaves those for someone who can.
 ### Starting loadouts
 
 `CLASS_LOADOUT` gives each class a tool and its bits, and `giveLoadout(p)` is called from
-`Player.reset()` and from `setClass()` — so the weapon is part of picking a class, every AI
-player gets its own, and a respawn is re-armed. Each class flies in with **one projectile and
+`Player.reset()` on the **first** landing and from `setClass()` — so the weapon is part of picking
+a class and every AI player gets its own. A respawn keeps the weapon it died holding
+([Death and respawn](#death-and-respawn)); `reset(false)` only hands the kit over again when every
+weapon slot is bare, so nobody is set down with nothing to fire. Each class flies in with **one projectile and
 nothing else**: the HUNTER a SHORTBOW loaded ARROW, the WARRIOR a LONGSWORD with a BARBED SHOT on
 its edge — the one **melee** body ([the cut](#the-cut-a-melee-tool) below).
 
@@ -690,12 +669,7 @@ filled cell 0 would put that first find *past* the only projectile, where it doe
 teach the forward-only rule backwards. A `null` in `bits` is a real entry rather than a gap to
 skip: it is the reserved cell, `toolPlan` charges nothing for it, and `giveLoadout` right-aligns
 the row against the tool's own `cap` so the shot stays last whatever the body's size. The tensile
-budgets are sized for it — see [a tool](#a-tool). Death **spills the equipped tool** with
-the bag (`spillInventory`) — bare, its bits scattered beside it
-([shedBits](#a-discarded-weapon-sheds-its-build)) — so a build lies where its owner fell and the
-bird hands back the starting one: you come back armed, but not as the player you were. What it
-does **not** leave is the starting kit itself: a SHORTBOW or LONGSWORD off a body evaporates rather
-than lying there for nobody ([a starting tool does not litter](#a-starting-tool-does-not-litter)). The gear pop-up's preview
+budgets are sized for it — see [a tool](#a-tool). The gear pop-up's preview
 shows the weapon at the body's side (`drawGearPreview`, js/ui/menu.js) — the other half of what a
 class flies out with.
 
@@ -1606,8 +1580,9 @@ every payout is also XP, see [Hero levels](multiplayer.md#hero-levels)): the `+N
 at the place the action happened (the tree, the kill, the wreck), and the local earner gets the
 coin blip. Who earns is always the actor: the swinger of the blow, the final-blow shooter of an
 animal or a loaded worker bot (its `b.carry` goes to whoever downed it), the breaker of an enemy
-building (the 50% wreck refund, same as a demolishing owner's), the killer of a player (the
-victim's whole wallet — an uncredited death takes its gold down with the body), and a
+building (the 50% wreck refund, same as a demolishing owner's), the killer of a player (a flat
+`KILL_BOUNTY` of 12 from nowhere — the victim's own purse is untouched, and an uncredited death
+pays nobody), and a
 generator's **owner**, into whose wallet each `pay` tick deposits directly. Robots still carry a
 single gold number (`b.carry`) and deposit at 8+ into their owner's wallet.
 
@@ -1624,11 +1599,10 @@ deliberate throw give it a heading and a lock on top (`flingDrop`/`lockDrop`, js
 removed when `d.n` hits zero** — that is what lets a stack of 5 bits half-fill a bag and
 leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key now: sources pay `berry` and
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
-[fish net](world.md#fish-nets) you are standing on), and death spills — and a wrecked net's
-contents — carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
+[fish net](world.md#fish-nets) you are standing on), and a wrecked net's
+contents carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
 the **hud strip's right end** (bottom centre) — the pouch block, berry over fish and gold over
-cards, on screen all match. Death empties
-wallet, pouch and bag alike —
+cards, on screen all match. Death touches none of them —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
 toward the nearest player, and everyone standing on one contests it
 (`canAfford`/`pay` also take the player whose wallet is meant) — except that a player with **no
@@ -1644,15 +1618,6 @@ down is not a denial; it draws at half alpha with its tier glint off for that pl
 comes back to life when the three seconds are up. And a body that would
 [swap for the tool in hand](#where-tools-and-bits-come-from) counts as room whatever the pack
 holds, because that pickup is an exchange.
-
-**And a drop can be on its way out.** Kit that comes off a body and is worth less than the litter
-it would leave carries a `fade` (`vanishDrop`, js/core.js): it falls, hops and casts its shadow
-like any other drop — so a death still *reads* as a spill — and over `VANISH_T` (0.8 s) lifts
-`VANISH_LIFT` px, thins to nothing, leaves a small pale puff and is spliced out. It is out of
-everybody's reach the whole way, and **every loot path asks `dropGone(d)`**: the pickup loop
-skips it above the magnet, the bots' loot scan (js/ai.js) never walks to it, it wears no tier
-glint — a glint says "walk to this" — and the hitbox view draws it no pickup ring. What goes this
-way, and why: [a starting tool does not litter](#a-starting-tool-does-not-litter).
 
 ## The merchant's counter
 
@@ -1987,8 +1952,7 @@ numbers.
 
 An unopened card is a completely ordinary `ITEMS` entry — one per rarity, since a stack has to be
 homogeneous and a white card and a gold card are not interchangeable — which is what makes bag
-storage, the drop pickup, the refusal flash and death-spill (see
-[Death and respawn](#death-and-respawn)) all free for it, same as any other carried item. Tools and bits
+storage, the drop pickup and the refusal flash all free for it, same as any other carried item. Tools and bits
 register their rows the same way, from [js/tools.js](../../js/tools.js), under namespaced keys so
 a kind can never collide with a berry.
 
@@ -2012,15 +1976,15 @@ pickup path can genuinely refuse. Six helpers in the `players` banner are the en
 `bagAdd(p, type, n)` (tops up partial stacks before opening a cell, returns how many went in),
 `bagTake(p, type, n)` (spends from the **last** stack backwards, so partials empty and free their
 cell) and `bagPut(p, cell)` (an instanced cell into the first free slot, or false). Nothing outside
-them touches `p.bag` — `updateEat` (the meal landing), the fish catch, the drop pickup, the AI's food check
-and `spillInventory` all go through the six. The one deliberate exception is the **drag**
+them touches `p.bag` — `updateEat` (the meal landing), the fish catch, the drop pickup and the AI's
+food check all go through the six. The one deliberate exception is the **drag**
 (the drag banners of [js/ui/strip.js](../../js/ui/strip.js)), which is moving cells between wells rather than storing items, and
 owns `p.bag[i]` directly for exactly the length of one gesture.
 
 **The four counting helpers are also where the pouch lives** (`isPouch(type)`): for a `pouch` kind
 `bagCount` reads `p.food[type]`, `bagRoom` answers `Infinity`, `bagAdd` always takes it all and
 `bagTake` spends it. That one branch is what keeps every caller generic over where a kind actually
-sits — the drop pickup, the catch, a market trade, the AI's food check and the death spill are
+sits — the drop pickup, the catch, a market trade and the AI's food check are
 written once and neither know nor care.
 
 **Refusing is a real outcome** for what the *bag* holds, and every path that cannot store
@@ -2647,34 +2611,22 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
 ## Death and respawn
 
 Death is a walk back, never the end: while your team's eagle still roosts (`teamEagleDown`, the
-eagle-drop banner in js/boot.js) going down costs a timer and everything you carried, and you are
+eagle-drop banner in js/boot.js) going down costs a **timer and nothing else**, and you are
 set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
 is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw and
-momentum either way. **Death empties the wallet** (`spillInventory(p, killer)`, right beside
-`die`): a credited killer pockets the victim's gold outright through `awardGold` — so a kill levels
-the killer, which is the bounty that makes taking the fight worth it — while an uncredited death
-(ice, wolves, or the killer already dead) takes its gold down with the body, because gold is never
-a physical drop. Any other `inv` key would spill as pickups split into up to 3 drops. **The
-backpack empties too**, one drop per stack — a stack is already the unit the bag counts in, so a
-killer whose own bag is full simply leaves them lying; this is also, for free, how an **unopened
-roguelike card drops on death** (see [Roguelike cards](#roguelike-cards)) — a picked card is
-already baked into the kit, not an item, so only what's still sitting unopened in the bag spills.
-**And the weapon slot empties with it** — but a tool that lands in the snow *comes apart* as it
-lands (`shedBits`, [a discarded weapon](#a-discarded-weapon-sheds-its-build)): the bare body and
-every bit that was in it scatter around the corpse as separate pickups, with no heading, since
-nobody threw this one. **Starting kit is the exception and does not land at all** — a tool of
-`STARTER_CAP` cells or fewer, and everything fitted into it, evaporates where it fell
-([a starting tool does not litter](#a-starting-tool-does-not-litter)), because the bird hands that
-same tool straight back and a body dropping one leaves nothing anybody would stoop for. A kill spills a weapon and its build as things to walk over one at a time,
-so the looter gets what they can carry rather than one cell holding a finished weapon; and
-`reset()` hands the dead player its class's starting loadout back, so a respawn is armed but is
-not the player it was. (An item riding the cursor
-mid-drag goes back in the bag first, so it spills with the rest instead of vanishing with the hand
-holding it.) All three loops are generic per type, so a future resource spills without touching
-death code, and an instanced tool travels as the same object it always was
-(`spawnDrop`'s `it`). The standings are unaffected because `scoreOf` ranks lifetime
-`xp`, not the purse, so a looted player keeps the place it earned. `die` also credits the kill (and
+momentum either way. **Death keeps everything** (3.55, League-style): the wallet, the pouch, the
+bag, the weapon and the build loaded into it, the unopened cards, the gear, the skill ranks, the
+level and xp all stay on the body, and `reset(false)` brings the same player back — nothing
+spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding
+the cursor mid-drag goes back in the bag, so it is still there when the body comes back instead
+of vanishing with the hand holding it.) The purse-spill rule of 1.25–3.54 — the killer pocketed
+the victim's gold and the build lay where it fell — went because it punished the player who had
+done well hardest and made the late match a bag you were afraid to carry. **What a kill is worth
+is a flat bounty from nowhere**: `KILL_BOUNTY` (12, beside `die`; a scrapped soldier's
+`SOLDIER_BOUNTY` is 4, so a player is three of them) to the credited killer through `awardGold`,
+so a kill still levels the killer and taking the fight is still worth it — while an uncredited
+death (ice, wolves, or the killer already dead) pays nobody. `die` also credits the kill (and
 heals the killer if their kit carries `killHeal`, off a card) and writes the log line — see
 [Kills and the event log](multiplayer.md#kills-and-the-event-log) — then asks
 `teamEagleDown(p.team)`: with the eagle still roosting, `p.respawnT` starts counting down

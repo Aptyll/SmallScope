@@ -52,7 +52,7 @@ and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
 downed player back down — with `false`, which is what gives the return its 3 s of i-frames.
 
 Behaviour lives in free functions taking `p` (`updatePlayer`, `tryWork`, `fireTool`, `tryDodge`,
-`startEat`, `damagePlayer`, `die`, `spillInventory`, `placeStruct`, …), matching the rest of the file's
+`startEat`, `damagePlayer`, `die`, `placeStruct`, …), matching the rest of the file's
 style — the class is the state container, not a god object.
 
 ## The input struct
@@ -313,9 +313,9 @@ aim line and draw meter. `setClass(p, c)` swaps one in (full heal — it's a pre
 | 1 | **WARRIOR** — close pressure, blocking, momentum | get to arm's length and stay there | 120 hp, faster on ice (×1.15), +5 speed damage, dash 230, softer bow numbers | a LONGSWORD — the one melee body — with a BARBED SHOT on its edge in the second cell, the first held open |
 
 The **weapon is part of the class**: `CLASS_LOADOUT` (js/tools.js) pairs each one with a tool
-and **one projectile**, and `setClass` / `Player.reset` hand it over — so the two classes do not
-shoot the same thing, every bot arrives armed, and a respawn is re-armed after
-[death spills the build](gameplay.md#death-and-respawn). The cell in FRONT of that projectile is
+and **one projectile**, and `setClass` / `Player.reset` (the first landing) hand it over — so the
+two classes do not shoot the same thing and every bot arrives armed; a respawn keeps the weapon it
+died with ([death keeps everything](gameplay.md#death-and-respawn)). The cell in FRONT of that projectile is
 deliberately empty, so the first modifier you walk over auto-fits there and shapes the shot you are
 already firing: [starting loadouts](gameplay.md#starting-loadouts). See
 [Tools and bits](gameplay.md#tools-and-bits). The four ABILITIES beside the weapon — what each
@@ -466,12 +466,11 @@ swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes
 `seenAt`, like every other watcher — and after `PREEN_DELAY` unhit it preens `PREEN_RATE`
 hp/s back.
 
-`die(p, src, cause)` empties the wallet, the pouch **and the bag** the same way regardless of what happens
-next: the killer pockets the gold via `awardGold`, an uncredited death's gold goes down with the
-body (gold is never a physical drop), and every carried
-stack always spills, one drop each (the standings rank lifetime `xp`, so they still show what the
-player earned). What happens next depends on `teamEagleDown(p.team)` alone — see
-[Respawn at the bird](#respawn-at-the-bird) — either a gold-free respawn timer (`p.respawnT`,
+`die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
+bag, weapon and build all stay, and the credited killer is paid a flat `KILL_BOUNTY` (12) via
+`awardGold` — an uncredited death pays nobody (gold is never a physical drop). What happens next
+depends on `teamEagleDown(p.team)` alone — see
+[Respawn at the bird](#respawn-at-the-bird) — either a respawn timer (`p.respawnT`,
 `respawnTime(p)`, ticked by `updateRespawns`) while the team's eagle still roosts, or
 `p.eliminated = true`, the permanent path, once it has been driven off;
 `updatePlayer` just zeroes a dead player's intents either way. Only the local player's **elimination**
@@ -507,13 +506,15 @@ high) a real window on a roost its defenders otherwise come back to from sixty p
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
 `RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
 through `nearestDryTile`, the same spiral a hole is climbed out of) and calls `p.reset(false)`,
-the exact full-clear a fresh landing gets, i-frames included — so the way back into the match is
+the transient-clear a fresh landing gets, i-frames included — so the way back into the match is
 the road everyone walked out on, past the merchant and the gate. A bird still in the air (a player
 shot in the seconds between its own landing and the bird's) has nowhere to set anyone down, so
 the timer holds at zero until it roosts; a bird that has fled mid-timer is left to
-`eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `p.cards` (picked
-roguelike cards), gear, skill ranks, level and xp are never touched by `reset()`, so a build
-survives every respawn within a match; the wallet, the pouch, the bag and the weapon do not.
+`eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `reset()` never
+touches `p.cards` (picked roguelike cards), gear, skill ranks, level, xp, the wallet, the pouch or
+the bag, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
+over again when every slot is bare), so the whole player survives every respawn within a match —
+the wait is the entire cost ([death keeps everything](gameplay.md#death-and-respawn)).
 
 ### Kills and the event log
 
@@ -738,7 +739,7 @@ the local player is dead, so write your own clock back into it each step, and on
 first so the frame loop stops stepping under you. Two runs of one seed are **not** the same
 match: the title screen's live world spends seed draws for however many frames it was up
 before the harness started, so a seed is a distribution, not a replay. Wrapping `gainGold`
-and bucketing by the caller in `new Error().stack` (`hitObject`, `spillInventory`,
+and bucketing by the caller in `new Error().stack` (`hitObject`, the kill bounty in `die`,
 `animalDies`, `updateStructures`, else the trickle) is how the economy was sized in 2.63.
 The match-length target is a match that ends round fifteen minutes with the human sitting it
 out, ten to twenty at the tails, which is what the ally clocks are set for. On 2.64's numbers
