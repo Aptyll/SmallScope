@@ -110,6 +110,16 @@ docs/media/shorts/frames/
 docs/media/shorts/_raw/
 docs/media/shorts/verify/
 
+# The montage clips and their webm originals (each folder's tools/ rebuilds
+# them from the seed; the index and the harness are kept)
+docs/media/montage/*.mp4
+docs/media/montage/_raw/
+docs/media/montage/_report.json
+docs/media/montage2/*.mp4
+docs/media/montage2/_raw/
+docs/media/montage2/_report.json
+docs/media/montage*/tools/shots/
+
 # The wrapper's installed packages (desktop/package.json is the list)
 desktop/node_modules/
 desktop/app/
