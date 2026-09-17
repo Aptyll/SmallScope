@@ -60,7 +60,7 @@ Go down and you wait, then land back at your own bird. Kills never win a match. 
 
 - **Runs from a double-click.** `index.html` loads a handful of classic scripts. There is no bundler, no `node_modules`, and nothing that has to be served — a `file://` page is how the game is meant to be played.
 - **HTML5 canvas pixel art**, 2D top-down, one winter world per seed. Share a seed number, get the same map.
-- **Single-player today:** two teams of five, your four team-mates and the five rivals played by AI at Normal, Hard or Impossible. Keyboard, gamepad, or a phone's twin-stick touch.
+- **Single-player today:** two teams of five, your four team-mates and the five rivals played by AI at Normal, Hard or Impossible. Keyboard and mouse, or a gamepad.
 - **The whole arsenal is unlocked from the first match.** A wiki on the menu writes every tool and bit down with its numbers.
 
 ```

@@ -552,8 +552,8 @@ two notes crossing, told from `stash`'s rising pair by ear alone), the hardest r
 only pulse on the cursor itself.
 
 - the **ear**: the cue above.
-- the **hand**: `haptic(kind)` ([the three controllers](multiplayer.md#the-three-controllers)) —
-  a pad rumbles, a phone buzzes, a mouse does neither.
+- the **hand**: `haptic(kind)` ([the two controllers](multiplayer.md#the-two-controllers)) —
+  a pad rumbles, a mouse cannot.
 - the **eye**: the well pulses for `WELL_LIT_T` (0.3 s) in the colour of what happened
   (`wellLit`/`drawWellLit`), and on a swap the carried ghost flares gold and grows a ring for
   `DRAG_LIT_T` (0.36 s) — so the hand visibly changes contents rather than quietly doing it. Both
@@ -1706,7 +1706,7 @@ weapon shelf and the pack drawer a sale is dragged out of), **the item on the cu
 hud strip and the world all go under. The mechanism is the draw ORDER in `renderUI` (js/ui/compose.js) and
 not the panel: a panel cannot dim what is drawn after it, so the minimap and the strip are drawn,
 then the wash, then the corner and the slab — which is why the corner is drawn in two places
-there. Everything painted after that block — the market's plates, the tooltip, a phone's plates —
+there. Everything painted after that block — the market's plates, the tooltip —
 is above the wash by arriving late.
 
 **The post has its own song.** `openShop` calls `SFX.music.hold('village', …)` — FOREST VILLAGE
@@ -2229,8 +2229,7 @@ Keep's card craft did, and the bay's old gather/guard toggle did before its crew
 (`workTarget`), which is what leaves the key free to open it. The right button is the
 [flag wheel](#team-flags) everywhere now.
 
-**A pad and a finger still build from a wheel.** `openWheelNear` (dpad down, the touch BUILD
-plate) opens the build wheel on the tile the body **faces**, offering `STRUCT_ORDER` on land and
+**A pad still builds from a wheel.** `openWheelNear` (dpad down) opens the build wheel on the tile the body **faces**, offering `STRUCT_ORDER` on land and
 `WATER_STRUCT_ORDER` over a hole (`wheelSpan(n)`/`wheelAng(i, n)` re-derive n even wedges from the
 table's length alone, so an entry comes and goes with no layout code); the pick is laid on that
 tile, a big one fitted round it by `findSite`, and a building of the player's own on that tile
@@ -2256,7 +2255,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   wheel mid-night is deliberate pressure. `wheelLayout()` is shared by `resolveWheel()` and
   `renderWheel()` so hover math and pixels can never disagree - and by `pointerMove` (js/input.js),
   which is where `seg` finally earns its place in that struct: it holds the wedge the cue last
-  spoke for, so crossing into another one ticks `SFX.notch` once, for a mouse, a stick or a thumb
+  spoke for, so crossing into another one ticks `SFX.notch` once, for a mouse or a stick
   alike (the wheel opening itself is `SFX.wheelUp`). `resolveWheel()` does not act: it
   writes `player.input.cmd`, and `runCmd(p, c)` performs it in the next sim step (re-checking
   ownership and the 60 px reach).
@@ -2567,7 +2566,7 @@ opens on it, on the build wheel's own grammar — held open, the travel from the
 release plants: `FLAG_ORDER` clockwise from straight up, **ATTACK, DEFEND, GATHER, RALLY**
 (`FLAG_TYPES`), each a wedge carrying its glyph at twice the banner's size. The hub cancels — unless
 the wheel stands on your own flag, in which case the hub *is* the flag (it wears the pennant, the
-label reads LIFT) and releasing there picks it up. R3 on a pad and the touch FLAG plate open the
+label reads LIFT) and releasing there picks it up. R3 on a pad opens the
 same wheel over the aim. `resolveWheel` writes `input.cmd = { kind: 'flag', tx, ty, id }` and
 `runCmd` performs it next step — `plantFlag(p, tx, ty, type)`, or `clearFlag(p)` for the lift —
 so the human's radial and a bot's `plantFlag` end in one function. A flag has no reach and goes
@@ -2765,10 +2764,8 @@ every `v*` tag builds (.github/workflows/desktop.yml).
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
 `aiLevel` — the rival bots' difficulty notch on class select, an index into `AI_LEVELS` (js/ai.js) —
-`mobile` — the TOUCH MODE row, `'auto'` / `'on'` / `'off'` over the device's own answer
-([phones](rendering.md#phones)) — `hudScaleM` — the HUD SIZE a phone plays at, the one
-slider editing whichever of the two is live — `binds` — the key each action is bound to
-([the three controllers](multiplayer.md#the-three-controllers)) —
+`binds` — the key each action is bound to
+([the two controllers](multiplayer.md#the-two-controllers)) —
 and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) persists
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
@@ -2781,17 +2778,15 @@ call: the hud strip, the pack and the shelf read it live every frame
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
 
-There is no fullscreen control in the ESC menu (players use F11; a phone asks for it on the
-first finger, `mobileGesture`); a `fullscreenchange` listener still refits the canvas when the
+There is no fullscreen control in the ESC menu (players use F11); a `fullscreenchange` listener still refits the canvas when the
 browser toggles it.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team, touch mode), VIDEO (below),
+(minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..198) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
-(`SET_W`/`SET_H`, canvas.js), and 226 is as tall as the 232-row floor `fitCanvas()` guarantees a
-phone allows, so it can never get taller. The wheel over the
+(`SET_W`/`SET_H`, canvas.js), and 226 fits under the 240-row floor `fitCanvas()` keeps, so it can never get taller. The wheel over the
 open panel scrolls the open page (both the in-match ESC slab and the title's slide-in — the
 title also takes W/S and the arrows), a 1 px thumb on the right edge appears only when a page
 overflows, and the open page's name wears gold with a gold underline while the others sit dim
@@ -2801,8 +2796,7 @@ same function, so a click can never disagree with a pixel. Rows keep the **14 px
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can
 never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'tab:<id>'`, `'ctab:<id>'`
 (a CONTROLS sub-tab) or `'c:<row>:<opt>'` (a choice row's word). A **choice row** carries its
-own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro, TOUCH MODE's set
-`settings.mobile` and re-fit the view — so the draw (the word in force wears gold), the hit and
+own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro — so the draw (the word in force wears gold), the hit and
 the click all read one table. A **toggle row** whose two states have names of their own carries
 them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT,
 MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plain toggle's row id
@@ -2838,18 +2832,18 @@ red × when it is off. While muted all three sound dials draw grey rather than g
 (`drawSliderRow`'s `dim`), so what the speaker silences reads off the page without a word of
 text. **N** still toggles the same flag from anywhere.
 
-**The CONTROLS page is itself tabbed** — WASD, CLICK, GAMEPAD, TOUCH (`CTRL_TABS`, each cell
-naming its listing in `ctrl`), one listing per controller, since a phone and a pad each put the
+**The CONTROLS page is itself tabbed** — WASD, CLICK, GAMEPAD (`CTRL_TABS`, each cell
+naming its listing in `ctrl`), one listing per controller, since a pad puts the
 same verbs somewhere else — and the keyboard's listing is **two cells, one per scheme**: the
 cell in gold is the scheme in force (`ctrlCellNow`), and a click on the other makes it the
 live scheme (`settings.scheme`, dropping every order the click scheme held) as well as opening
 its listing, so there is no SCHEME row and no words to switch. Its sub-navbar is
 pinned at the top of the content window (`CTRL_TAB_H`) and only the listing under it scrolls;
-it opens on the controller in hand (`ctrlTabNow`: TOUCH on a phone, GAMEPAD while a pad is
+it opens on the controller in hand (`ctrlTabNow`: GAMEPAD while a pad is
 active — a green pip beside that word says one is — the keyboard otherwise) until a click picks
 one. Every listing is **three columns** (`CTRL_COL_X`) grouped by what the verbs are for —
 moving and fighting, the kit and its panels, the match's own keys — so it fits the window
-without a scroll. The pad's and the touch listing are baked once (`bakeCtrlPad`/`bakeCtrlTouch` into
+without a scroll. The pad's listing is baked once (`bakeCtrlPad` into
 `ctrlCvs`, js/ui/panels.js); **the keyboard's is live**: each rebindable verb beside
 its key drawn as a **cap** — the same cap the work prompt wears in the world (`drawKeyCap`,
 js/ui/wheel.js), printing whatever key the action is bound to — and the fixed ones (the mouse's
@@ -2857,7 +2851,7 @@ buttons, ESC, SCROLL, F3, `.`) as plain gold text, since nothing about them can 
 cap is a button: it lifts white on hover, a click sets it **listening** (the face pulses gold)
 and the next key down is its key; a key another cap holds swaps the two, a reserved key is
 refused, Escape or a click elsewhere calls it off
-([rebinding](multiplayer.md#the-three-controllers)). RESET, a row under the listing at its right
+([rebinding](multiplayer.md#the-two-controllers)). RESET, a row under the listing at its right
 edge, puts the defaults back and sits dim while they already are. `KEY_ROWS` is the three
 columns per scheme (an action id, a run of caps on one verb — MOVE, ABILITIES — or a fixed pair), `keyRowsLayout`
 places every cap and word listing-local, and the draw (`drawKeyRows`), `settingsHit`
@@ -2868,8 +2862,7 @@ page is long enough that its scroll track appears.
 GAMEPAD draws each button as a picture (`drawPadGlyph`: a face button is a disc with its
 letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a cross with its
 pressed arm lit) beside its verb — moving and fighting, the abilities and the kit, then the
-match's buttons with the menu set under a rule — and its live readout under them. TOUCH draws each plate with the plate's own glyph (`drawTouchIcon`, js/ui/touch-plates.js) and
-the two sticks. The bindings themselves: [the three controllers](multiplayer.md#the-three-controllers).
+match's buttons with the menu set under a rule — and its live readout under them. The bindings themselves: [the two controllers](multiplayer.md#the-two-controllers).
 
 The primer is a **real HORN BOW carrying a real overload** — ARROW 2, FLAME 4, ARROW 2, THROWING
 LOG 8 against a tensile of 15 — run through `toolPlan` at bake time, so every number on it is the

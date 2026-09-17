@@ -6,8 +6,8 @@
 // A rolling four seconds of what was on screen, kept as pixels rather than as
 // state, played back while you are dead or paused. A DEATH gets the RECAP:
 // the whole frame, the way a goal replays - the ally view (a respawn wait)
-// or the elimination's planks wait underneath until its close box, ESC, a
-// pad's B or a finger's menu plate puts it away, and the RESPAWNING IN Ns
+// or the elimination's planks wait underneath until its close box, ESC or a
+// pad's B puts it away, and the RESPAWNING IN Ns
 // line and the ESC BACK prompt draw over it. PAUSE gets the WINDOW: the
 // bottom-left corner at RP_W x RP_H, under the pause planks.
 //
@@ -433,8 +433,8 @@ function toLobby() {
 
 function deadKey(k) {
   if (state.fade) return;
-  // the recap takes every back key (a pad's B and a finger's menu plate
-  // arrive as escape) and puts itself away: the allies are underneath
+  // the recap takes every back key (a pad's B arrives
+  // as escape) and puts itself away: the allies are underneath
   if (replayFull()) {
     if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') replayClose();
     return;

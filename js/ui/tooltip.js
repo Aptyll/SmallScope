@@ -351,14 +351,10 @@ function tipSize(d) {
 // TIP_GAP px to one side is clear of the lot without being flung away from the
 // numbers it is there to put under the eye. It flips to the pointer's other
 // side at the right edge and clamps into the view, so a corner still reads.
-//
-// A FINGER keeps the corner whatever the setting says: a thumb is ON the well
-// it is asking about, so a panel beside it is a panel under the hand. Same test
-// drawCursor uses to keep an arrow out from under a thumb (js/draw/render.js).
 const TIP_GAP = 11;   // clear air between pointer and panel, sideways
 const TIP_EDGE = 4;   // closest the panel comes to any view edge
 function tipPos(w, h) {
-  if (!settings.tipFollow || mouse.src === 'touch') return { x: TIP_EDGE, y: VIEW_H - 8 - h };
+  if (!settings.tipFollow) return { x: TIP_EDGE, y: VIEW_H - 8 - h };
   const mx = Math.round(mouse.x), my = Math.round(mouse.y);
   let x = mx + TIP_GAP;
   if (x + w > VIEW_W - TIP_EDGE) x = mx - TIP_GAP - w;

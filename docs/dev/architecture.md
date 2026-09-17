@@ -28,12 +28,10 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sfxdata.js](../../js/sfxdata.js) | ~40 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/audio.js](../../js/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/core.js](../../js/core.js) | ~250 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
-| [js/mobile.js](../../js/mobile.js) | ~70 | shared scope, no `window.*` export | phones: whether this is one (`MOBILE`, the TOUCH MODE setting over the device's answer), the overlays' footprint a phone's fit keeps, the portrait test, the fullscreen ask. Before canvas.js because `fitCanvas` asks it at load |
-| [js/canvas.js](../../js/canvas.js) | ~260 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas` (a phone branch: the biggest game pixel the overlays allow, no 16:9 cap), pixel-exact zoom, the panel layout anchors |
+| [js/canvas.js](../../js/canvas.js) | ~260 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
 | [js/player.js](../../js/player.js) | ~880 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
 | [js/input.js](../../js/input.js) | ~560 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `flagDown`/`flagUp`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
 | [js/gamepad.js](../../js/gamepad.js) | ~200 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
-| [js/touch.js](../../js/touch.js) | ~230 | shared scope, no `window.*` export | fingers: the two floating sticks, the plates' table and layout, a finger as the mouse everywhere else; `touchPoll` (from `loop()`) |
 | [js/world.js](../../js/world.js) | ~1650 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the camps at their fixed mirrored sites, and the practice training grounds |
 | [js/nav.js](../../js/nav.js) | ~310 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
 | [js/wildlife.js](../../js/wildlife.js) | ~600 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters (and the dormant flock) |
@@ -66,7 +64,6 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/rail.js](../../js/ui/rail.js) | ~150 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
 | [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~420 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
 | [js/ui/compose.js](../../js/ui/compose.js) | ~140 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
-| [js/ui/touch-plates.js](../../js/ui/touch-plates.js) | ~140 | shared scope, no `window.*` export | the pixels of a phone's controls: the plates, the two sticks, the rotate prompt |
 | [js/ui/shop.js](../../js/ui/shop.js) | ~1640 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1220 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
 | [js/ui/menu.js](../../js/ui/menu.js) | ~2930 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
@@ -215,10 +212,10 @@ organized only by `// ------ name` banners.
 **Keep every banner honest.** Find any function by its banner in [code-map.md](code-map.md)
 rather than grepping blind.
 
-**A file that decides things does not also draw them.** Every one of the sim files - core, mobile,
-player, input, gamepad, touch, world, nav, wildlife, structures, robots, actions, ai, sim -
+**A file that decides things does not also draw them.** Every one of the sim files - core,
+player, input, gamepad, world, nav, wildlife, structures, robots, actions, ai, sim -
 contains zero canvas calls; the pixels for what they own live under **js/draw/** (the world) and
-**js/ui/** (the HUD and the screens; the touch plates and sticks: js/ui/touch-plates.js; the pad
+**js/ui/** (the HUD and the screens; the pad
 glyphs: `drawPadGlyph`, js/ui/panels.js), so the folder is the boundary. canvas.js is the
 exception that proves it: it owns the buffers themselves.
 

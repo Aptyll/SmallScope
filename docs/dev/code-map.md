@@ -116,14 +116,6 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | death (which keeps everything on the body), the flat bounty a kill pays, the wait for the bird and the return at it, the one permanent path (a driven-off eagle), the team-level win check | `KILL_BOUNTY`, `die`, `RESPAWN_BASE`/`RESPAWN_LV`, `respawnTime`, `updateRespawns`, `RESPAWN_OUT`, `respawnPlayer`, `teamInMatch`, `rivalTeamsInMatch`, `checkLastStanding`, `endMatch`, `endSnapshot` | `damage & death` (`teamEagleDown`: `eagle drop`, boot.js) |
 | practice undoing a death on the spot | `practiceRevive` (die()'s first branch under `PRACTICE`) | `damage & death` |
 
-## js/mobile.js
-
-| Looking for | Start at | Banner |
-| --- | --- | --- |
-| is this a phone: the device's answer, the setting over it, the live flag | `mobileAuto`, `mobileRefresh`, `MOBILE`, `settings.mobile` (core.js) | `mobile` |
-| the footprint a phone's fit keeps, and the camera it opens at | `MOBILE_MIN_W`/`MOBILE_MIN_H`, `MOBILE_ZOOM`, `MOBILE_SHORT` (read by `fitCanvas`, canvas.js) | `mobile` |
-| held upright, and the first finger's fullscreen ask | `mobilePortrait`, `mobileGesture` | `mobile` (the prompt's pixels: `drawRotatePrompt`, `touch controls`, js/ui/touch-plates.js) |
-
 ## js/input.js
 
 | Looking for | Start at | Banner |
@@ -131,10 +123,10 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the physical key -> game key name translation (e.code, AZERTY-proof), and what a key prints on screen (the layout map) | `CODE_KEY`, `keyName`, `KEY_LABEL`, `keyLabel`, `kbLayout` | `keys and binds` |
 | the rebindable actions, their defaults per scheme, the two bind maps and the live one, how anything asks for a key, and a pad's or a plate's held actions | `KEY_ACTIONS`/`KEY_ACT` (`key` / `ck`), `SCHEMES`, `schemeKey`/`schemeActs`, `settings.binds`/`settings.bindsClick`/`binds()`, `mendBinds`, `actKey`, `actHeld`, `keyIs`/`keyHeld`/`keyBound`, `moveDir`, `keyCap`/`keyCapShort`, `keyReserved` | `keys and binds` |
 | a cap listening for its key, the swap on a conflict, the reset | `state.rebind`, `rebindStart`, `rebindKey`, `setBind`, `resetBinds`, `bindsDefault`, `rebindLive` | `keys and binds` |
-| the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad / touch) | `input` |
+| the raw state, and who moved the pointer last | `keys`, `mouse` (`mouse.src`: mouse / pad) | `input` |
 | what a key does, what a button does - the four entry points every controller presses through | `keyPress`/`keyRelease`, `pointerMove`, `pointerPress`/`pointerRelease` | `input` |
 | the bare gestures a trigger or a plate sends: the draw, the flag wheel, a build wheel with no tile under a pointer, a page scroll | `fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy` | `input` |
-| telling the HAND something happened - a pad's rumble, a phone's buzz, one call over all three controllers | `HAPTIC`, `haptic` (its caller: `hudFx`, js/ui/bag.js; its off switch: the RUMBLE row, `SET_TABS` js/ui/panels.js) | `haptics` |
+| telling the HAND something happened - a pad's rumble, one call whichever controller is in hand | `HAPTIC`, `haptic` (its caller: `hudFx`, js/ui/bag.js; its off switch: the RUMBLE row, `SET_TABS` js/ui/panels.js) | `haptics` |
 | the zoom wheel, the listeners | the `addEventListener` block | `input` |
 | folding keys, mouse and both sticks into the local player's struct | `sampleHumanInput` | `input` |
 | the CLICK scheme: its state and constants, the right press and its release, the armed left press, what an order does per step (the walk, the chase and lock, the auto-attack, a use), who an attack-move takes, how far the tool reaches | `ck`, `CK_*`, `ckOn`/`ckClear`/`ckOrder`, `ckPoint`, `merchUnder`, `ckRightPress`/`ckRightRelease`, `ckArmedPress`, `ckSees`, `ckAcquire`, `ckReach`/`ckHoldR`, `ckUse`, `ckStep` (the rings: `drawClickMarks`, js/draw/marks.js; the armed reticle: `cursorInfo`, render.js; the scheme row: `KEY_ROWS`/`KEY_SCHEME`, panels.js) | `click to move` |
@@ -146,14 +138,6 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | which button is which key, in play and over a menu | `PAD_PLAY`, `PAD_MENU` | `gamepad` |
 | the poll, which pad out of the browser's list (a live one over an idle ghost), the sticks, the aim off the body (and a wedge off a wheel's hub), the pointer over a panel, the walk under the panels that keep the world running, the stick-as-arrows repeat, A as the click or the selection | `padPoll`, `padFind`/`padLive`, `padAim`, `padRepeat`, `padTake`, `padMenuMode`/`padPanelMode`/`padPointerMode` | `gamepad` |
 | a pad in hand (the CONTROLS page opens on its tab); an unmapped pad's layout read off its rest values; the live sticks and triggers the readout draws | `padActive`, `pad`, `padCalibrate` (`pad.rest`), `pad.raw` | `gamepad` |
-
-## js/touch.js
-
-| Looking for | Start at | Banner |
-| --- | --- | --- |
-| what each plate does, and where the plates sit | `TOUCH_BTNS`, `touchLayout`, `touchBtnAt` | `touch` (their pixels: `drawTouchControls`, js/ui/touch-plates.js) |
-| a finger landing: plate, minimap, HUD, or one of the two sticks | `touchDown`, `touchPtr`, `touchOverlay`, `touchMenuGlyph` | `touch` |
-| the sticks read once per frame, and the aim riding the body | `touchPoll`, `touch` | `touch` |
 
 ## js/world.js
 
@@ -419,7 +403,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | radial menu geometry and hit math | `wheelSpan`, `wheelAng`, `wheelOptions`, `wheelLayout`, `resolveWheel`, `wheelOnOwnFlag`, `WHEEL_*` | `radial wheel` |
 | brackets, the E prompt (never over what the hands take on their own, never under an open counter, and never over a work target at one - the `E SHOP` cap wins there and `drawWorkHint` stops on it), the fish brackets, wheel pixels, the command a pick runs | `drawSelection`, `drawWorkHint`, `drawFishHint`, `renderWheel`, `drawWheelHub`, `drawWheelStick`, `runCmd` | `selection, hints & wheel` |
 | the `E SHOP` cap over a merchant in reach (it returns whether it drew: the merchant owns E in that bubble), the bare cap over a zipline's cable while the body stands under its own side's (`zipNear`, world.js - the key's next claim after the merchant's), and the arena's three caps | `drawShopHint`, `drawZipHint`, `drawBellHint`, `drawPkHint`, `drawRackHint` | `selection, hints & wheel` (the resolver behind the shop's: `merchNear`, js/ui/shop.js) |
-| a keybind indicator: the key cap (the bound key's face, hover and listening states), the cap + verb prompt and its footprint, the action -> pad glyph table, the glyph worn while a pad is in hand, and the ESC BACK / CLOSE line under a slab | `drawKeyCap`, `drawKeyPrompt`, `promptW`, `PAD_BIND`, `padBindW`, `drawPadBind`, `drawBackHint` (the flight HUD's two: `drawDropBind`, boot.js; the glyph pictures: `drawPadGlyph`, js/ui/panels.js) | `selection, hints & wheel` |
+| a keybind indicator: the key cap (the bound key's face, hover and listening states), the cap + verb prompt and its footprint, the action -> pad glyph table, the glyph worn while a pad is in hand, and the ESC BACK / CLOSE line under a slab | `drawKeyCap`, `drawKeyPrompt`, `promptW`, `PAD_BIND`, `padBindW`, `drawPadBind`, `drawBackHint`, `pixDisc`/`pixRing` (the scanline disc and ring every pad glyph is built from) (the flight HUD's two: `drawDropBind`, boot.js; the glyph pictures: `drawPadGlyph`, js/ui/panels.js) | `selection, hints & wheel` |
 | the build list and its ghost: the rows, their hit test, what the ghost snaps to and whether it can stand, the two draws | `BUILD_X`/`BUILD_Y`/`BUILD_ROW`/`BUILD_W`, `BUILD_OK`/`BUILD_NO`, `buildRowRect`, `buildListHit`, `buildGhostAt`, `drawBuildGhost`, `drawBuildList` | `selection, hints & wheel` › `the build list and its ghost` (the placement rule it asks: `canPlaceAt`, structures.js) |
 
 ## js/ui/minimap.js
@@ -487,12 +471,6 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the frame's UI pass in order - what goes over the world while you play, from the minimap to the day headline | `renderUI`, `dayPopCv` (the day headline's bake) | `renderUI` (last of the HUD files; the pieces it calls live in the eight files above it) |
 
-## js/ui/touch-plates.js
-
-| Looking for | Start at | Banner |
-| --- | --- | --- |
-| a phone's plates and sticks (js/touch.js decides), the glyph set the CONTROLS page borrows, the rotate prompt | `drawTouchControls`, `drawTouchPlate`, `drawTouchStick`, `drawTouchIcon`, `touchDisc`/`touchRing`, `drawRotatePrompt`, `TOUCH_PLATE`/`TOUCH_RIM`/`TOUCH_INK`/`TOUCH_HOT`/`TOUCH_AIM_COL`/`TOUCH_STICK_COL` | `touch controls` |
-
 ## js/ui/shop.js
 
 | Looking for | Start at | Banner |
@@ -524,12 +502,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the TAB standings, the event log (kept, not drawn) | `logEvent`, `events`, `scoreGroups`, `renderScoreboard` | `scoreboard & log` |
 | the M map: the chart's class map, its flatten and its resample into the slot, the inks and rims and stipple, the marks, the header's day and CLOSE plank, and the chart point -> world tile inverse a map order needs | `buildMapPanel`, `buildWorldMapImg` (throttled to `MM_REBUILD` ticks), `chartGround`, `chartGrain`, `chartSpan`, `CHART_INK`/`CHART_RIM`/`CHART_LIT`/`CHART_GRAIN`/`CHART_NEED`/`CHART_DARK`, `MAP_HEAD_Y`/`MAP_HEAD_H`, `mapAlloc` (the buffers and the bake at the slab's current size), `drawFrostButton`, `mapCloseRect`/`mapCloseHit` (read by `pointerPress`, input.js, and the cursor), `renderWorldMap`, `mapTileAt` | `world map (M)` (the class a tile files under comes from `objChart(o)`: `world`, world.js; the marks: `drawMap*`, js/draw/marks.js) |
 | the ESC menu: its tabbed pages, their rows (a choice row's `val`/`pick`), the scroll, the keys that page and scroll it, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `settingsTabBy`, `settingsKey`, `setTab`/`setScroll`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
-| the CONTROLS page's three listings (keyboard / gamepad / touch) in three columns, its pinned sub-navbar of four cells (WASD and CLICK are the keyboard's, and pick the scheme), which opens by default, the pad glyphs, the live pad readout under the GAMEPAD listing | `CTRL_COL_X`, `PAD_READ_Y`/`PAD_READ_H`, `drawPadReadout`, `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`/`ctrlCellNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`/`bakeCtrlTouch`, `drawPadGlyph` (the touch icons: `drawTouchIcon`, js/ui/touch-plates.js) | `settings menu (ESC)` |
+| the CONTROLS page's listings (keyboard / gamepad) in three columns, its pinned sub-navbar of three cells (WASD and CLICK are the keyboard's, and pick the scheme), which opens by default, the pad glyphs, the live pad readout under the GAMEPAD listing | `CTRL_COL_X`, `PAD_READ_Y`/`PAD_READ_H`, `drawPadReadout`, `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`/`ctrlCellNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`, `drawPadGlyph` | `settings menu (ESC)` |
 | the KEYBOARD listing's live caps - the rows, their layout, the draw, and the `'key:<action>'` / `'keyreset'` hits | `KEY_ROWS`, `KEY_ROW_H`/`KEY_ROWS_Y`/`KEYS_PRIMER_Y`, `keyRowsLayout`, `drawKeyRows` (the click: `settingsMouseDown`; the listen itself: `rebindStart`, input.js) | `settings menu (ESC)` |
 | the slab's foot planks: CLOSE, and in a match LEAVE PRACTICE or LEAVE MATCH beside it | `SET_FOOT_Y`/`SET_PLANK_*`, `footPlanks`, `leavePlankRect`, `settingsClose` (the clicks: `closeMenuPanel`/`leavePractice`, js/ui/menu.js; `toLobby`, js/ui/screens.js) | `settings menu (ESC)` |
 | the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `ctrlCvs.keys`) | `settings menu (ESC)` › beside `bakeCtrlKeys` |
 | the VIDEO page's quality macro over the render-pass toggles | `VID_PRESETS`, `vidPreset` (the flags themselves: `settings.vid*`, core.js; their gates sit at each pass's call site) | `settings menu (ESC)` |
-| the three sound dials, the speaker that mutes them, the grey-when-muted fill, the minimap and HUD size knobs (HUD SIZE edits `hudScaleKey()`'s field - the phone's own on a phone) | `applySliderDrag`, `muteBtnRect`, `drawMuteBtn`, `drawSliderRow`, `drawSliderById`, `toggleVal` | `settings menu (ESC)` |
+| the three sound dials, the speaker that mutes them, the grey-when-muted fill, the minimap and HUD size knobs | `applySliderDrag`, `muteBtnRect`, `drawMuteBtn`, `drawSliderRow`, `drawSliderById`, `toggleVal` | `settings menu (ESC)` |
 
 ## js/ui/menu.js
 
@@ -569,7 +547,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the twin eagle rides down the fixed corner-to-corner diagonal, the wing seats and the merchant's neck seat, the jump window and its lock, a bot's treeline-safe forced drop, riding the landing and the E hop off the roost, free fall, landing, the flight bar, the dotted path, the wind trail, the zoomed-out view | `diagEnd` (and the corner's `mouth` it returns; `e.mouth` itself is the spur's junction, `roadNest`, world.js), `makeEagleRoute`, `forestDepth`, `lastOpenU`, `makeEagles`, `eagleScale`, `riderScale`, `riderDir`, `drawSeated`, `seatPos`, `MERCH_SEAT`, `beginDrop`, `dropJump`, `landPlayer`, `handOver`, `landAboard`, `hopOff`, `HOP_FALL_T`/`HOP_ALT`, `drawHopPrompt`, `updateDrop`, `updateEagle`, `drawDropAir`, `TRAIL_T`/`TRAIL_STEP`/`TRAIL_RIM`/`TRAIL_TIP`/`TRAIL_TIP_AMP`/`TRAIL_BACK`/`TRAIL_BACK_AMP`, `drawEagleTrail`, `drawEagle`, `renderDropUI` | `eagle drop` |
 | the drop brief: the roost tour a landing ridden to the crash opens on - the phase machine (a beat, the rival roost, then your own to finish), the camera's aim, the two headlines, the DAY 1 it hands back to | `state.dropBrief` (core.js), `BRIEF_WAIT`/`BRIEF_HOLD`/`BRIEF_HOLD_OURS`/`BRIEF_GO_MIN`/`BRIEF_MAX_T`, `endBrief`, `dropBriefTarget`, `drawDropBrief` (the glide: the camera banner, sim.js; the control zeroing: `sampleHumanInput`, input.js) | `eagle drop` |
 | the banking dive off the road onto the nest, the tree-shattering impact, the SPUR it fells straight back to the road pine by pine and paves behind the front, and the roosting objective: its wing-gust defense, its preen regen, and the driven-off ceremony that ends the match | `beginDive` (the bank: `e.diveH0`/`e.diveTurn`), `CRASH_DEPTH`/`MIN_CRASH_TREES`, `findCrashPoint`, `eagleCrash` (sets `e.laneDir`, the spur's direction toward `e.mouth`, and registers `e.spur`), `LANE_R`/`LANE_SPD`/`LANE_WARN`/`LANE_DELAY`/`LANE_MAX`, `laneFells`, `planLane` (the `pave` list), `laneStep` (the paving), `eagleBoomFx`, `eagleGust`, `eagleGustFx`, `hurtEagle`, `eagleFlee`, `eagleFleeResolve`, `teamEagleDown` (the driver it drops off: `spawnMerchant`, robots.js) | `eagle drop` |
-| boot order (the saved TOUCH MODE re-fits the view), `DBG` | `startGame`, `window.DBG` | `boot` |
+| boot order, `DBG` | `startGame`, `window.DBG` | `boot` |
 | the sim's cosmetics recorded for screens that do not run it: a cue at a place / for a body / one for the owner and one for bystanders, a shake for a body or at a place, the ring and its flush, the replay of one entry | `sfxAt`, `sfxFor`, `sfxOwn`, `shakeAt`, `shakeFor`, `evPush`, `evDrain`, `evPlay`, `evRecord`, `evInStep`, `EV_ANYWHERE` | `sim events` (js/net/events.js) |
 | which role this screen plays in a match, the transport interface and the loopback solo speaks through, who counts as a person | `NET`, `SNAP_EVERY`/`LATE_JOIN_T`/`RECONNECT_GRACE`, `isHuman`, `loopbackTransport`, `netSetup` | `net roles` (js/net/net.js) |
 | a host's half of the match: peers' inputs merged into their bodies (held fields overwrite, edges latch), a HELLO into the smaller side's first AI slot or its parked one back, a vanished peer into a bot, the roster, each peer's ack kept and its delta cut from the ring entry at it every SNAP_EVERY ticks with the cosmetics (a full sync to a peer whose ack aged out) | `netHostStep`, `netHostHello`, `netHostFull`, `netHostLeave`, `netRoster`, `netHostFlush` | `host` (js/net/net.js) |

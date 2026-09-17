@@ -205,17 +205,11 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // the VIDEO page's dressing toggles, all cosmetic-only passes a weak GPU
   // can shed (the ESC panel's QUALITY row presets them; panels.js)
   vidClouds: true, vidRays: true, vidStars: true, vidSnow: true, vidVig: true,
-  // phone mode (js/mobile.js): 'auto' reads the device, 'on'/'off' force it -
-  // the TOUCH MODE row. hudScaleM is the HUD SIZE a phone plays at; the same
-  // slider edits whichever of the two is live (hudSc, ui.js)
-  mobile: 'auto', hudScaleM: 1.25,
   // where the hover tooltip sits: true = it rides beside the pointer, false =
-  // the fixed bottom-left corner it was born in (tipPos, js/ui/tooltip.js). A
-  // finger ignores this and keeps the corner - a thumb would cover the panel it
-  // just asked for.
+  // the fixed bottom-left corner it was born in (tipPos, js/ui/tooltip.js).
   tipFollow: true,
   relay: '',          // the match relay (host:port) this screen talks to; empty = the page's own host (netRelay, js/net/net.js)
-  // the pad's rumble and a phone's buzz on a gesture that moves an item
+  // the pad's rumble on a gesture that moves an item
   // (haptic, js/input.js). A mouse has no motor and never notices this row.
   haptics: true,
   // the keyboard scheme: 'wasd' (the keys walk, the mouse aims) or 'click'

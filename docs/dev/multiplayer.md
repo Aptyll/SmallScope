@@ -89,8 +89,8 @@ cmd           one-shot order {kind:'build'|'upgrade'|'demolish', tx, ty, id}
               not a queue), but it re-checks its own reach (shopCmd, js/ui/shop.js)
 ```
 
-`sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the two sticks, `pad.mx/my`
-and `touch.mx/my`, clamped in beside WASD — into the local player's struct once per step (under the
+`sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the pad's stick, `pad.mx/my`,
+clamped in beside WASD — into the local player's struct once per step (under the
 [CLICK scheme](#the-click-scheme) the walk keys are gone and `ckStep` writes the walk, the aim and
 the auto-attack's fire edges into the same struct from its orders), and zeroes it — dropping any draw — while pause or the settings panel is up. The wheel and the
 [map](gameplay.md#the-m-map-does-not-pause) don't stop the sim and so don't zero the whole struct:
@@ -103,20 +103,21 @@ bots and future network peers can't use it.
 `workTarget(p)` reads `p.input.aimX/aimY`, not the mouse, which is why the cursor's lock ring and a
 bot's chop resolve through exactly the same function.
 
-## The three controllers
+## The two controllers
 
-The local human has three: keyboard and mouse (js/input.js), a gamepad (js/gamepad.js) and
-fingers (js/touch.js). **The other two are the first in disguise.** The browser listeners in
+The local human has two: keyboard and mouse (js/input.js) and a gamepad (js/gamepad.js) — the
+Steam Deck's hands. (A third, a phone's fingers, was deleted in 3.58; the tag
+`pre-phone-removal` keeps it.) **The pad is the keyboard in disguise.** The browser listeners in
 input.js only translate events; what a key *does* lives in `keyPress(e)`/`keyRelease(e)` (`e` is
 `{key, repeat, char}` — a real KeyboardEvent translated, or an object a pad builds) and what a
 button does in `pointerPress(button)`/`pointerRelease(button)`, with `pointerMove(x, y, src)`
-carrying the pointer. A pad button and a touch plate press a *key* through those, so neither can
-drift from the keyboard and a new key handled in a listener alone is dead on both (the rule in
+carrying the pointer. A pad button presses a *key* through those, so it cannot
+drift from the keyboard and a new key handled in a listener alone is dead on a pad (the rule in
 [CLAUDE.md](../../CLAUDE.md#hard-rules)).
 
 **And the answer runs back out the same way.** `haptic(kind)` (the `haptics` banner, input.js) is
 the one call that tells the *hand* something happened — a pad through its own
-`vibrationActuator`, a phone through `navigator.vibrate`, a mouse not at all, since it has no
+`vibrationActuator`, a mouse not at all, since it has no
 motor and the cue and the on-screen pulse beside it are its whole answer. A caller names what
 happened (`grab`, `place`, `seat`, `swap`, `deny` — sized so the five are told apart with the
 eyes shut) and never which controller is in hand, exactly as a key is asked for through its
@@ -156,10 +157,10 @@ planks, the wiki, gear, class select, the settings slab; under CLICK the arrows 
 has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
 Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
 debug flips, the mouse buttons are the mouse's, and `keyReserved` refuses those and the
-browser's F row to a bind. A pad button and a touch plate name an *action* (`PAD_PLAY`,
-`TOUCH_BTNS`' `act`/`latch`): the key event they build carries it (`e.act`, which `keyIs` reads
-before the key) and their held state is `actHeld`'s (which `keyHeld` reads beside `keys`), so a
-rebind moves all three controllers at once and neither scheme's map ever sits between a button
+browser's F row to a bind. A pad button names an *action* (`PAD_PLAY`):
+the key event it builds carries it (`e.act`, which `keyIs` reads
+before the key) and its held state is `actHeld`'s (which `keyHeld` reads beside `keys`), so a
+rebind moves both controllers at once and neither scheme's map ever sits between a button
 and its verb — a pad on the CLICK scheme still works with X, because X names `work`, not E.
 
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
@@ -176,14 +177,14 @@ because a press has the HUD to get past first, a trigger is never over a well),
 is up), `openWheelNear(p, ax, ay)` (a build wheel on the tile the body faces — or the manage
 wheel, with a building of the player's own there — for a controller with no pointer to lay the
 build list's ghost with) and `panelScrollBy(d)` (whichever page is up). `mouse.src` is who moved the pointer
-last — `'mouse'`, `'pad'`, `'touch'` — and in play the pad and a finger keep rewriting the aim
+last — `'mouse'` or `'pad'` — and in play the pad keeps rewriting the aim
 through it every frame so the reticle rides the body, until the mouse itself moves.
 
 ### The CLICK scheme
 
 The keyboard's second scheme (`settings.scheme = 'click'`; the `click to move` banner, input.js),
 the League / StarCraft / Age of Empires grammar, built to stand alone: **the right button is the
-hand and no key walks the body** (WASD and the arrows are off the feet; a pad's or a finger's
+hand and no key walks the body** (WASD and the arrows are off the feet; a pad's
 stick still walks, and a tilted stick drops the order it would fight but keeps the lock). Every
 gesture is an *order* on `ck.order` and the sim never learns which scheme is in hand — `ckStep`
 turns the order into the walk, the aim, the work and the fire edges of the same input struct a
@@ -273,23 +274,6 @@ OFF cap, the work prompts, the strip's 1-4 and Q/F, the SHIFT plate, the flight 
 the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
 (`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, js/ui/wheel.js; `drawDropBind`, boot.js) —
 a change in `PAD_PLAY` is a row there.
-
-**Touch** (phone mode only — a finger on a desktop is a mouse). In free play the two halves of
-the world are the two sticks, each appearing under the thumb that lands: the left walks
-(`TOUCH_STICK_R` of travel); the right aims — a bearing off the body, `TOUCH_AIM_R0`..`R1` by
-travel — and **draws while it is down and looses when it lifts**, the mouse button's grammar
-(`fireDown` on landing, `fireUp` on the lift). A finger on the minimap is M; a finger on the
-HUD (the strip's wells, the pack, the sheet, the counter) is the mouse — `pointerMove` +
-`pointerPress(0)`, then the release — so drags, buys and casts already work. The plates
-(`TOUCH_BTNS`, laid out by `touchLayout`): a right column climbing from the bottom edge —
-DODGE (big), WORK (E held for the finger's life), SLIDE (a latch on shift: one tap on, one off),
-CHARACTER — a left column of BUILD (opens `openWheelNear` over the facing tile, and the same finger drags to the
-wedge) and FLAG (opens the flag wheel over the aim the same way, and the lift plants the wedge
-the finger is on), and a top-left row of the menu cog and the zoom pair. Over any panel or screen
-(`touchOverlay`) every finger is the mouse, a drag that grabbed nothing scrolls the page, and the
-one plate left is the cog turned cross: Escape. `touchPoll` reads the sticks once per frame and
-rewrites the aim through the pointer as the pad does; the plates' pixels are
-[the touch controls banner](rendering.md#phones).
 
 ## Classes
 

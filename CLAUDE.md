@@ -19,6 +19,10 @@ cd desktop && npm run build              # the portable zip a version tag also b
 effects (its output is committed); an asset loaded any other way is silently dead off the disk.
 No package manager, dependencies, tests or linter: edit a file under `js/` and reload.
 
+**The game ships on Steam for a desktop: keyboard and mouse, and a gamepad (Steam Deck).** Phone
+and touch support was deleted in 3.58 (the tag `pre-phone-removal` keeps it) — never add a touch
+handler, a phone fit or a mobile layout, and never spend a verification step on one.
+
 **Verify changes in the browser, not by re-reading code.** `window.DBG` (end of
 [js/boot.js](js/boot.js)) stages a scene without playing to it, `?seed=N` pins the world,
 `POST /shot` sinks the canvas, and **`.`** toggles hitboxes and routes:
@@ -34,8 +38,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
 | worldgen, tiles, ground, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |
-| players, classes and kits, the input struct, **the three controllers** (keyboard, gamepad, touch), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
-| **phones**: the fit a phone gets, the rotate prompt, the touch plates' pixels | [docs/dev/rendering.md](docs/dev/rendering.md#phones) |
+| players, classes and kits, the input struct, **the two controllers** (keyboard, gamepad), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
 | sprite grids and palettes | [docs/dev/sprites.md](docs/dev/sprites.md) |
 | a **new look** for anything drawn — concept sheets Noah picks from before a grid ships | the `concept-art` skill ([.claude/skills/concept-art/SKILL.md](.claude/skills/concept-art/SKILL.md)); past sheets in `docs/media/concepts/` |
 | adding an object/tool/structure/ground type/camp, tuning balance, intentional dead code | [docs/dev/checklists.md](docs/dev/checklists.md) |
@@ -47,7 +50,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 Four legacy files — `profile.js`, `font.js`, the generated `sfxdata.js`, `audio.js` — and the
 eight sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (the
 sprite files each `Object.assign` their keys into `SPRITES`); after them the game code is
-**flat top-level classic scripts sharing one global scope** — forty-five files, `core.js`
+**flat top-level classic scripts sharing one global scope** — forty-three files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
@@ -72,7 +75,7 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs).
 
-The game code is organized only by `// ------ name` banners inside its forty-five files.
+The game code is organized only by `// ------ name` banners inside its forty-three files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 
@@ -185,7 +188,7 @@ lives in `docs/dev/*.md` beside the code it protects.
   always BLUE on your screen (`settings.teamBlue`), and a bare `TEAMS[p.team]` is the one thing
   on it painted the wrong colour. Rules (`p.team`, `enemyOf`) never call it.
 - **What a key does lives in `keyPress`/`keyRelease`, what a button does in `pointerPress`/
-  `pointerRelease`** (input.js), never in a listener: a gamepad and a finger press the same keys
+  `pointerRelease`** (input.js), never in a listener: a gamepad presses the same keys
   and buttons through those four, so a key handled in the listener alone is dead on a pad. And
   **a key is asked for through its action** — `keyIs(e, 'work')`/`keyHeld('slide')`, never a
   literal `'e'` — because the player rebinds (`binds()`, one map per keyboard scheme) and the

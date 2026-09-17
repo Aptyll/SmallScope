@@ -31,8 +31,7 @@ core.js — `FRAME_H` names it.) `VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas(
   than letterbox or blur — the Terraria/Stardew trade. 16:9 screens always fill edge-to-edge.
 - `VIEW_W` is **capped at 16:9** (`ceil(VIEW_H * 16/9)`): wider-than-16:9 monitors get pillarbox
   bars instead of extra vision — the SC2 rule. Narrower screens simply see less width. A guard
-  keeps the view at least 320×240 so the UI panels always fit. **A phone takes neither the
-  target rows nor the cap** — see [Phones](#phones).
+  keeps the view at least 320×240 so the UI panels always fit.
 - A third canvas, `#replay`, sits *above* `#game` and carries the replay window at device
   resolution; see [Replay](#replay-the-last-four-seconds). It is the only thing drawn outside
   `#game`'s pixel grid, and the only reason is that the grid has too few pixels there.
@@ -44,49 +43,6 @@ core.js — `FRAME_H` names it.) `VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas(
   and is deliberately darker than the world so the eye stays on the game; on ≤16:9 screens it
   is cleared and fully covered. It uses `hash2`, so it must never run before boot — it is baked
   once per canvas size by `relayout()`, never per frame, and the game never draws into it.
-
-## Phones
-
-`MOBILE` (js/mobile.js) is the one flag: `mobileRefresh()` sets it from the TOUCH MODE setting
-(`settings.mobile`: `'auto'` reads the device — a coarse primary pointer, touch events and a
-screen whose short side is under `MOBILE_SHORT` CSS px, so a tablet stays on the desktop fit —
-`'on'`/`'off'` force it), and `fitCanvas()` calls it first, so a flip anywhere (the setting,
-boot reading the saved one, a resize onto another screen) re-fits the view. What a phone gets:
-
-- **The biggest game pixel the overlays allow.** The world map slab is 212×226 at the floor (it grows with the view: `fitMapSlab`, canvas.js) and the settings
-  slab 320×226, so a phone takes the largest whole device-pixel scale that keeps the view above
-  `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — far fewer rows than a monitor's 360 (a 1170-px-tall
-  phone lands on 234 rows at 5×; a 1080-px one cannot, 5× would be 216, so it takes 270 rows
-  at 4×), and the 3×5 font and the HUD grow with the pixel.
-  It is the same rule as the desktop's 320×240 guard with the target rows removed; the `TARGET_ROWS`
-  nearest-scale pick is the desktop branch only.
-- **No 16:9 cap and no frost bars**: `VIEW_W = FULL_W`. A phone is 19.5:9 or wider and the
-  width is the thumbs' room, so `renderBars()` clears itself (its bars are under 2 px).
-- **The camera opens at `MOBILE_ZOOM`** (1.5): the moment phone mode comes on, `fitCanvas` sets
-  `zoomCur` to it before re-runging `kWant`, so a sprite is thumb-sized. The wheel's rungs are
-  unchanged; the touch zoom pair steps the same `kWant`.
-- **Its own HUD SIZE**: `settings.hudScaleM` (default 1.25) — `hudSc()` reads
-  `hudScaleKey()`'s field, and the one GAME slider edits whichever is live, so a profile that
-  plays on both keeps both.
-- **The touch controls** draw above everything but the fade and the cursor
-  (`drawTouchControls`, the `touch controls` banner, js/ui/touch-plates.js): plates from `touchLayout()`
-  (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
-  draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
-  presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
-- **The weapon shelf sits under the plates**: the top-left is the menu cog and the zoom pair's
-  corner too, so `shelfRowY()` drops the row to 44 on a phone (20 on a desktop) and the
-  [drawer](#the-backpack) under it drops with it. The right-hand touch column climbs from the
-  bottom edge like the left one.
-- **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
-  finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
-  says who moved the pointer last (input.js).
-- **Held upright**, `mobilePortrait()` is true: `drawRotatePrompt` covers the frame with a
-  night slab and a phone snapping between upright and sideways under an arrow, and
-  `touchDown` swallows every finger. `mobileGesture()` asks for fullscreen and a landscape
-  lock on every press until one lands (a phone Safari grants neither; the refusals are silent).
-
-`DBG.setMobile('on')` forces the phone fit on any window;
-[checklists](checklists.md#verifying-a-change) has the emulation recipe.
 
 ## World zoom, and the two pixel spaces
 
@@ -406,7 +362,7 @@ is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dar
 the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
 px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
-(a phone at the 232-row floor gets the 192 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
+(a window at the 240-row floor gets a 200 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
 buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the **frost slab** every
 panel shares (`bakeFrostSlab` with no title — the parchment of old read as summer against a winter
 chart), the chart in a dark frame with an icy line round it. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
@@ -564,9 +520,7 @@ row on the ESC panel's GAME page (`settings.tipFollow`, default **on**):
   backpack, the weapon strip or a wiki row — so the panel can never cover the well beside the one
   being read, and nothing else lives in that corner.
 
-A **finger** keeps the corner whatever the row says (`mouse.src === 'touch'`): a thumb is already on
-the well it is asking about, so a panel beside it is a panel under the hand — the same test
-`drawCursor` uses to keep an arrow out from under a thumb. `DBG.tipRect()` returns the rect the
+`DBG.tipRect()` returns the rect the
 panel is painted at this frame, which is how the two modes are read without eyeballing pixels.
 
 **`tipAt(mx, my)` is the only source**, and it asks the same hit-testers, in the same order, that
@@ -819,7 +773,7 @@ the practice arena, or a match with an empty side — `railSides` is null and no
 the two notes step under the spectate control as well while it is up (`noteY`).
 **Its scale is a whole number**: `railSc` rounds the HUD SIZE dial and never goes under 1 (a 12px
 emblem at 0.8 drops two of its rows, where a 34px well shrugs it off), capped where the plates
-would reach a phone's zoom pair (`RAIL_KEEP`, 80 px each end on `MOBILE`) or the view's edge;
+would reach the view's edge;
 the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through
 it. A known overlap: a longbow carrying five modifier bits stacks five rails above the shelf row
 that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
@@ -877,8 +831,8 @@ row (`shelfCellRect(-1)`, at `SHELF_X`/`shelfRowY()`) and its bit cells running 
 order, which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
 is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
 lost its weapon well and everything else carried is in [the drawer](#the-backpack) under this
-row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (18; 44 on
-a phone, under the menu and zoom plates) and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
+row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (18)
+and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
 frame under it sits flush with the view's edge) and grown rightward, so the tool cell — and the
 drawer's arrow under it — never move whatever the build does, and a fitting's rail is what climbs
 into the open screen above them; the SHIFT plate hangs off the row's right end (`shelfRowRight`).
@@ -1371,7 +1325,7 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
   frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
   action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
-  `replayClose()` — a pad's B and a finger's menu plate arrive as escape. `state.rpClosed`
+  `replayClose()` — a pad's B arrives as escape. `state.rpClosed`
   remembers, reset by every `endMatch`, so it opens once per death.
 - **The window**, on **pause**: the **bottom-left corner** at `RP_W`×`RP_H` (160×90), under the
   pause planks.

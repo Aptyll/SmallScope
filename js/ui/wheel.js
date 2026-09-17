@@ -225,6 +225,26 @@ const PAD_BIND = {
   berry: ['dpad', 'L'], fish: ['dpad', 'R'], char: ['dpad', 'U'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
   esc: ['face', 'B'], enter: ['face', 'A'], move: ['stick', 'L'],
 };
+// a filled disc and a 1px ring, in scanlines, so they are pixel art and not
+// an anti-aliased arc (a pad's face buttons and sticks, here and on the
+// CONTROLS page's GAMEPAD listing, panels.js)
+function pixDisc(g, cx, cy, r, col) {
+  g.fillStyle = col;
+  for (let dy = -r; dy <= r; dy++) {
+    const w = Math.floor(Math.sqrt(r * r - dy * dy));
+    g.fillRect(cx - w, cy + dy, w * 2 + 1, 1);
+  }
+}
+function pixRing(g, cx, cy, r, col) {
+  g.fillStyle = col;
+  const ri = r - 1;
+  for (let dy = -r; dy <= r; dy++) {
+    const wo = Math.floor(Math.sqrt(r * r - dy * dy));
+    const wi = Math.abs(dy) > ri ? -1 : Math.floor(Math.sqrt(ri * ri - dy * dy));
+    if (wi < 0) g.fillRect(cx - wo, cy + dy, wo * 2 + 1, 1);
+    else { g.fillRect(cx - wo, cy + dy, wo - wi, 1); g.fillRect(cx + wi + 1, cy + dy, wo - wi, 1); }
+  }
+}
 // the glyph's footprint, so a caller can lay a verb beside it
 function padBindW(key) { const b = PAD_BIND[key]; return !b ? 0 : b[0] === 'bump' || b[0] === 'trig' ? 13 : b[0] === 'pill' ? 11 : b[0] === 'stick' ? 17 : 9; }
 // the pad's button for an action, drawn at x, y (top-left) at `s` px per px;
@@ -240,7 +260,7 @@ function drawPadBind(g, x, y, key, s, pressed) {
   // a dark rim under the disc so it reads on snow as the cap's navy did
   const w = padBindW(key);
   g.fillStyle = '#0f1632';
-  if (b[0] === 'face' || b[0] === 'stick') { touchDisc(g, 4, 4, 5, '#0f1632'); }
+  if (b[0] === 'face' || b[0] === 'stick') { pixDisc(g, 4, 4, 5, '#0f1632'); }
   else g.fillRect(-1, -1, w + 2, 11);
   drawPadGlyph(g, 0, 0, b[0], b[1]);
   g.restore();
