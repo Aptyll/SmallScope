@@ -582,16 +582,20 @@ through when it outgrows it: the wheel, up/down (W/S), and an iron rail on the r
 thumb (`drawWikiRail`; clicking the rail pages). Left/right (A/D) or a click switch pages; ESC
 leaves. What the pages say is [gameplay.md](gameplay.md#the-wiki).
 
-A page is data. `WIKI_PAGES` is `{ id, label, build() }` and `build` returns the page's
-**blocks** top to bottom — `line` (a sentence), `rule` (a gold rule), `head` (a section name
+A page is data. `WIKI_PAGES` is `{ id, label, build(cw) }` and `build` returns the page's
+**blocks** top to bottom for a content width — `line` (a sentence), `rule` (a gold rule), `head` (a section name
 with its column heads over their columns), `row` (a kind on its tier plate with its numbers in
 the columns, `WIKI_TOOL_COLS` / `WIKI_BIT_COLS` / `WIKI_MOD_COLS` naming each column's label,
 width and getter), `legend` (the deer wearing the overhead frame, a leader from each part of it
 to its name), `beast` (a kind standing on its snow beside its growth table, `WIKI_BEASTS`),
-`cls` (a class card: the body at 3x, pitch, health and the stat pips, `WIKI_STATS`) and `ab`
+`cls` (a class card: the body at 3x, pitch, health and the stat pips, `WIKI_STATS`), `ab`
 (an ability: key plate, the strip's icon in a well, name, the `WIKI_AB_COLS` numbers, the blurb
-wrapped by `wikiWrap`; hoverable, answering `tipClassAb`) —
-each with a fixed height, built once (`wikiBlocks`). `wikiLayout()` is the single source of
+wrapped by `wikiWrap`; hoverable, answering `tipClassAb`) and `lore` (a WORLD entry,
+`WIKI_WORLD`: its figures in a `WIKI_FIG_W` column, its name in gold and its paragraph from
+`WIKI_TEXT_X`, as tall as the taller of the two) —
+each with a fixed height, built once per content width (`wikiBlocks(pageId, cw)`: the WORLD
+page is the only one whose `build` reads `cw`, to wrap its sentences to a slab that has
+narrowed with the view). `wikiLayout()` is the single source of
 every rect: the slab, the tab cells, the window, each block's y (pre-scroll), the scroll bound,
 the rail and its thumb; `wikiHit(mx, my)` reads it back as a tab, a row (carrying its kind id,
 which is what the tooltip asks for) or the rail, so the hover, the click and the tooltip can
@@ -605,8 +609,11 @@ frame in the world changes it on the page. A camp monster's leash bar is shown p
 track says nothing. An ARSENAL row is the kind's icon on
 the tier plate a bag cell wears (`tierPlate`, `modPlate`, `tierShine`), rimmed and lifted a pixel
 under the pointer, the blue pip for `PROFILE.techSeen`, its name in the tier's ink, a dotted
-leader to its numbers. Nothing here is bought or pressed: a click only opens a tab or pages the
-rail.
+leader to its numbers. A WORLD entry's figures (`drawWikiFig`) are whatever sprites its `fig()`
+returns at draw time — so they wear the side you play through `skin` — stood left to right on
+one mound (`wikiMound`, the beasts' own; `road` makes it packed earth in the road's colours,
+`air` leaves the eagle, a sprite seen from above, on no ground at all). Nothing here is bought
+or pressed: a click only opens a tab or pages the rail.
 
 ### The hud strip
 

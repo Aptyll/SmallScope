@@ -71,8 +71,10 @@ first, sneaky second. [Class abilities](gameplay.md#class-abilities-keys-1-4),
 every tool and bit down with its numbers, and all of it is unlocked: what your fiftieth match may
 drop is exactly what your first one may drop, so a new player and a veteran play the same game and
 a find is a find because of what it *is*, never because of what you have ground out. The same
-wiki is where the game explains itself — the beasts, what a level does to them — one page a
-subject, so the snow never has to. [The wiki](gameplay.md#the-wiki).
+wiki is where the game explains itself — the beasts, what a level does to them, and on its WORLD
+page the valley itself: why two companies are on the snow and why nobody on it dies
+([the setting](lore.md)) — one page a subject, so the snow never has to.
+[The wiki](gameplay.md#the-wiki).
 
 **The draw is the ammunition.** There is no quiver: what a shot is worth — how far, how fast, how
 hard — is how long the string was held, and the tool's own cycle is all that sits between one
