@@ -838,6 +838,13 @@ typed twice, so a retune can never leave the wiki lying.
   of the blurb) — worn to gilded, each kind's icon on its own tier plate with the blue pip for "you
   have held one" (`PROFILE.techSeen`), and a hover raising the full card in the tooltip
   (`tipKind`, js/ui/tooltip.js).
+- **WORLD** — the one page with no numbers on it: the valley written down. Ten entries in the
+  order a scout meets them — SOFTFALL, THE WORKS, THE CLAIM, THE EAGLES, THE SCOUTS, THE
+  COUNTER, THE MACHINES, THE ROAD, THE WOLVES, GOLD (`WIKI_WORLD`) — each a figure on its mound
+  in the side you play beside a short paragraph, between a two-line opening and a one-line
+  close. Every sentence is either something a match does or the valley's reason for it, and the
+  sentences live in that table alone; the premise, the fixed words and the voice they are
+  written in are [lore.md](lore.md).
 
 The `TECH` table in [js/tools.js](../../js/tools.js) carries the kinds and exactly one
 edge per node — `req`, the node beneath it, null on the tier-0 row. Nothing at runtime reads the

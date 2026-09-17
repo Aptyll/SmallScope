@@ -35,6 +35,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 | Working on | Read |
 | --- | --- |
 | what the game *is* — the pillars, and what it deliberately is not | [docs/dev/game.md](docs/dev/game.md) |
+| **a name or any sentence a player reads**: the setting's premise, the valley's reason for what a match does, the fixed words, the voice | [docs/dev/lore.md](docs/dev/lore.md) |
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
 | worldgen, tiles, ground, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |

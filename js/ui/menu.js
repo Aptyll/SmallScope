@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.64'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.65'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.65', 'THE WIKI HAS A WORLD PAGE: WHAT SOFTFALL IS, WHAT THE SNOW BURIED, WHY TWO COMPANIES FLY IN EVERY WINTER, AND WHY NOBODY ON THE SNOW EVER DIES.'],
   ['3.64', 'THE PIXEL FONT LEARNS THE SEMICOLON AND THE QUOTATION MARK, SO FOURTEEN OLD PATCH NOTES STOP PRINTING QUESTION MARKS IN THEIR PLACE.'],
   ['3.63', 'THE HUNTER\'S CLASS CARD DESCRIBES THE KIT IT REALLY HAS - THE NET, THE GRAPPLE, THE SNOW AND THE SHOT OUT OF IT - AND THE WARRIOR\'S NO LONGER PRINTS QUESTION MARKS WHERE ITS SEMICOLONS WERE.'],
   ['3.62', 'A HOUSEKEEPING PATCH: TWO LINES OF THE DEVELOPER DOCS, NOTHING IN THE GAME.'],
@@ -2667,9 +2668,9 @@ function renderGear(now, a) {
 // It takes the music layer outright the way class select does, not as a hold:
 // WHISPERING WOODS loops under it from the moment it opens (beginWiki), and
 // the title track comes back on the way out (leaveWiki).
-// A page is data: WIKI_PAGES is {id, label, build()}, build returning the
+// A page is data: WIKI_PAGES is {id, label, build(cw)}, build returning the
 // page's BLOCKS top to bottom (a heading, a line, a rule, a beast card, a
-// table row), each with a fixed height, so the layout, the draw, the hit
+// table row, a world entry) for a content width, each with a fixed height, so the layout, the draw, the hit
 // test and the scroll bound all read one list and a new page is one table
 // entry and one builder, never new plumbing. Nothing here is bought, unlocked
 // or researched. The ARSENAL page is what the tech tree was for: every kind
@@ -2683,7 +2684,11 @@ function renderGear(now, a) {
 // js/wildlife.js and js/core.js), so the page can never disagree with the
 // game. The CLASSES page is the two classes as class select reads them -
 // body, pitch, health and the four stat pips - and their eight abilities
-// with the cooldown, the cast and what each does, off CLASS_AB itself.
+// with the cooldown, the cast and what each does, off CLASS_AB itself. The
+// WORLD page is the one with no numbers on it: the valley written down - the
+// snow, what is under it, the one law, and who is on it - each entry a figure
+// on its mound beside a paragraph (WIKI_WORLD; the premise and the rules the
+// words answer to are docs/dev/lore.md).
 const WIKI_W_MAX = 400;
 const WIKI_H = 200;           // the slab; the window is inside it
 const WIKI_LEVELS = [1, 6, 12]; // the three columns a beast's growth is shown at
@@ -2751,6 +2756,38 @@ function wikiKinds(sort) {
   return ids.sort((p, q) => itemTier(p) - itemTier(q));
 }
 
+// the world page: the setting, in the order a scout meets it. An entry is a
+// name, a paragraph (wrapped to the column when the page is built) and `fig` -
+// the sprites that stand on its mound, left to right, read at draw time so
+// they wear the side you play. `road` stands them on packed earth, not snow,
+// and `air` on nothing (the eagle's sprite is the bird seen from above).
+// Every sentence is either something the match does or the reason for it -
+// the voice, the fixed words and what stays unanswered: docs/dev/lore.md.
+const WIKI_FIG_W = 44;   // the figure column...
+const WIKI_TEXT_X = 52;  // ...and where an entry's words start, off the content's left margin
+const WIKI_WORLD = [
+  { name: 'SOFTFALL', fig: () => [SPRITES.tree[0]],
+    text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
+  { name: 'THE WORKS', fig: () => [SPRITES.rock[0], SPRITES.crate],
+    text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM AND THE ROCKS ARE THEIR RUBBLE, SO THERE IS GOLD IN BOTH, AND NOW AND THEN A TOOL. THE TREELINE KEEPS THE CRATES THAT NEVER SHIPPED. BREAK IT OPEN AND IT IS YOURS.' },
+  { name: 'THE CLAIM', fig: () => [SPRITES.champ[0][skin(player.team)].right[0], SPRITES.champ[1][skin(1 - player.team)].left[0]],
+    text: 'VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER COMPANY\'S BIRD OFF ITS GROUND AND THE WHOLE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
+  { name: 'THE EAGLES', air: true, fig: () => [SPRITES.eagleTeam[skin(player.team)][0]],
+    text: 'BIG ENOUGH TO CARRY FIVE SCOUTS AND A MERCHANT, ARMOURED IN COMPANY COLOUR, AND BRAVE ONLY UP TO A POINT. IT BEATS ITS WINGS AT WHATEVER CROWDS IT. HIT IT ENOUGH AND ITS NERVE GOES. IT LEAVES, AND ITS COMPANY LEAVES WITH IT.' },
+  { name: 'THE SCOUTS', fig: () => [SPRITES.champ[0][skin(player.team)].down[0], SPRITES.champ[1][skin(player.team)].down[0]],
+    text: 'A COMPANY SENDS FIVE. HUNTERS KEEP THE GAP AND WARRIORS CLOSE IT. A SCOUT WHO GOES DOWN IS CARRIED BACK TO THE ROOST AND SENT OUT AGAIN WITH EVERYTHING THEY HAD. THE BETTER THE SCOUT, THE LONGER THE COMPANY MAKES THEM SIT FIRST.' },
+  { name: 'THE COUNTER', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
+    text: 'THE MERCHANTS ARE A GUILD OF THEIR OWN. ONE RIDES IN WITH EACH BIRD, RAISES ITS WALLS AND GUNS, THEN SELLS TO ANY PURSE THAT WALKS UP, YOURS OR THEIRS. THEY ARE NOT ON A SIDE. THEY ARE ON THE PRICE OF FISH. NOBODY LAYS A HAND ON ONE.' },
+  { name: 'THE MACHINES', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(player.team)][1]],
+    text: 'OLDER THAN THE ROAD. THEY SLEEP UNDER THE SNOW UNTIL GOLD WAKES ONE, AND THEN THEY DO THE ONE THING THEY REMEMBER: GATHER, GUARD, OR MARCH. WHO BUILT THEM IS THE VALLEY\'S FAVOURITE ARGUMENT.' },
+  { name: 'THE ROAD', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
+    text: 'ONE STRAIGHT LANE FROM CORNER TO CORNER, PACKED HARD BY WHATEVER THE WORKS HAULED ALONG IT. BOTH BIRDS ROOST BESIDE IT AND BOTH COLUMNS MARCH DOWN IT, SO EVERYTHING IN SOFTFALL ENDS UP ON THE ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
+  { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
+    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE ALPHAS KEEP TO THEIR STONES AND THE DIRE WOLF TO ITS HOLLOW, AND A COMPANY THAT BRINGS IT DOWN WALKS TALLER FOR A WHILE.' },
+  { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
+    text: 'THE ONLY THING THE VALLEY PAYS IN, AND THE ONLY THING THAT TEACHES. A SCOUT WHO HAS EARNED A LOT OF IT HAS DONE A LOT, AND THAT IS ALL A LEVEL IS. NOBODY HERE HAS EVER FOUND A USE FOR A SECOND CURRENCY.' },
+];
+
 const WIKI_PAGES = [
   { id: 'classes', label: 'CLASSES', build() {
     const b = [];
@@ -2784,11 +2821,32 @@ const WIKI_PAGES = [
     }
     return b;
   } },
+  { id: 'world', label: 'WORLD', build(cw) {
+    // the one page of sentences, so the one page that wraps: every line is
+    // broken to the content width it is built for (cw), and an entry is as
+    // tall as the taller of its figure and its paragraph
+    const b = [];
+    const para = (text, col) => { for (const t of wikiWrap(text, cw)) b.push({ kind: 'line', h: 9, text: t, col }); };
+    para('SOFTFALL IS A VALLEY AND THE SNOW THAT BURIED IT. EACH WINTER TWO COMPANIES FLY IN TO DIG.', '#cfe0ff');
+    para('NOBODY IS HERE TO KILL ANYBODY. THE VALLEY HAS ONE LAW, AND IT IS ABOUT A BIRD.', TIP_DIM);
+    b.push({ kind: 'rule', h: 10 });
+    for (const e of WIKI_WORLD) {
+      const lines = wikiWrap(e.text, cw - WIKI_TEXT_X);
+      const fh = Math.max(...e.fig().map((s) => s.height));
+      b.push({ kind: 'lore', h: Math.max(Math.max(fh, 18) + 12, 14 + lines.length * 8 + 8), entry: e, lines, fh });
+    }
+    b.push({ kind: 'rule', h: 10 });
+    para('THAT IS ALL ANYBODY KNOWS. THE REST IS UNDER THE SNOW.', TIP_DIM);
+    return b;
+  } },
 ];
-const wikiBuilt = {}; // a page's blocks, built once - the content is constant
-function wikiBlocks(pageId) {
-  if (!wikiBuilt[pageId]) wikiBuilt[pageId] = WIKI_PAGES.find((p) => p.id === pageId).build();
-  return wikiBuilt[pageId];
+// a page's blocks, built once per content width: the content is constant, and
+// only the WORLD page's wrap reads the width at all
+const wikiBuilt = {};
+function wikiBlocks(pageId, cw) {
+  const key = pageId + ':' + cw;
+  if (!wikiBuilt[key]) wikiBuilt[key] = WIKI_PAGES.find((p) => p.id === pageId).build(cw);
+  return wikiBuilt[key];
 }
 function wikiPage() { return WIKI_PAGES[Math.max(0, Math.min(WIKI_PAGES.length - 1, state.menu.wikiTab))]; }
 
@@ -2804,7 +2862,7 @@ function wikiLayout() {
   const tabs = WIKI_PAGES.map((p, i) => ({ id: p.id, label: p.label, x: x + 12 + i * cw, y: y + 7, w: cw, h: 9 }));
   const winY = y + 22, winH = h - 28;
   const page = wikiPage();
-  const blocks = wikiBlocks(page.id);
+  const blocks = wikiBlocks(page.id, w - 28); // the content's width: the margins under `left`/`right` below
   let by = winY + 4, total = 4;
   const rows = blocks.map((bl) => { const r = { bl, y: by }; by += bl.h; total += bl.h; return r; });
   const maxScroll = Math.max(0, total + 4 - winH);
@@ -2877,15 +2935,33 @@ function wikiClick() {
   }
 }
 
+// the ground a figure stands on, w px wide: a low pale mound with a shaded
+// rim - snow, or the road's packed earth (ROAD_COL_*, js/draw/ground.js)
+function wikiMound(cx, baseY, w, road) {
+  const hw = w >> 1;
+  ctx.fillStyle = road ? ROAD_COL_RUT : '#c9dcee'; ctx.fillRect(cx - hw, baseY - 1, w, 3);
+  ctx.fillStyle = road ? ROAD_COL_A : '#eef4fb'; ctx.fillRect(cx - hw + 2, baseY - 2, w - 4, 3);
+}
+// a WORLD entry's figures on one mound, left to right about cx, each over
+// its own shadow - or, `air`, on the wing with no ground under them at all
+function drawWikiFig(e, cx, baseY) {
+  const sprs = e.fig();
+  const total = sprs.reduce((w, s) => w + s.width, 0) + 2 * (sprs.length - 1);
+  if (!e.air) wikiMound(cx, baseY, Math.max(26, total + 8), e.road);
+  let x = cx - (total >> 1);
+  for (const s of sprs) {
+    if (!e.air) { ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(x + 2, baseY, s.width - 4, 2); }
+    ctx.drawImage(s, x, baseY + 2 - s.height);
+    x += s.width + 2;
+  }
+}
 // One beast standing on its snow, wearing exactly the frame drawAnimal hangs
 // over it in the world - health, the second bar, the level plate, the
 // noticed mark - so the page teaches the frame by showing it, not naming it.
 // A camp monster shows its leash bar part-filled, since bare track says nothing.
 function drawWikiBeast(bs, cx, baseY, level, now) {
   const spr = SPRITES[bs.kind].right.idle[0];
-  // the snow it stands on: a low pale mound with a shaded rim
-  ctx.fillStyle = '#c9dcee'; ctx.fillRect(cx - 13, baseY - 1, 26, 3);
-  ctx.fillStyle = '#eef4fb'; ctx.fillRect(cx - 11, baseY - 2, 22, 3);
+  wikiMound(cx, baseY, 26);
   ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bs.bw ? bs.bw >> 1 : 3), baseY, bs.bw || 6, 2);
   const px = cx - (spr.width >> 1), py = baseY + 2 - spr.height;
   ctx.drawImage(spr, px, py);
@@ -3051,6 +3127,13 @@ function renderWiki(now, a) {
       wikiLeader(fx + 4, py - 14, fx + 26, py - 22, 'SEES YOU', '#f4f7ff');
       wikiLeader(fx + 11, py - 7, fx + 34, py - 12, 'HEALTH', BAR_NEUTRAL);
       wikiLeader(fx + 11, py - 4, fx + 42, py - 2, 'STAMINA - A WOLF\'S LEASH', STAM_COL);
+    } else if (bl.kind === 'lore') {
+      // a WORLD entry: its figures on their mound in the left column, feet a
+      // fixed drop under the entry's top, its name in gold and its paragraph
+      const e = bl.entry, tx = L.left + WIKI_TEXT_X;
+      drawWikiFig(e, L.left + (WIKI_FIG_W >> 1), y + Math.max(bl.fh, 18) + 4);
+      drawPixelTextShadow(ctx, e.name, tx, y + 4, '#ffd95c', '#0a0e23');
+      bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
     } else if (bl.kind === 'beast') {
       const bs = bl.beast;
       drawWikiBeast(bs, L.left + 26, y + 40, level, now);
