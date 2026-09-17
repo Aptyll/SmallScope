@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.63'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.64'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.64', 'THE PIXEL FONT LEARNS THE SEMICOLON AND THE QUOTATION MARK, SO FOURTEEN OLD PATCH NOTES STOP PRINTING QUESTION MARKS IN THEIR PLACE.'],
   ['3.63', 'THE HUNTER\'S CLASS CARD DESCRIBES THE KIT IT REALLY HAS - THE NET, THE GRAPPLE, THE SNOW AND THE SHOT OUT OF IT - AND THE WARRIOR\'S NO LONGER PRINTS QUESTION MARKS WHERE ITS SEMICOLONS WERE.'],
   ['3.62', 'A HOUSEKEEPING PATCH: TWO LINES OF THE DEVELOPER DOCS, NOTHING IN THE GAME.'],
   ['3.61', 'IN A ROOM YOU JOINED, THE START COUNTDOWN NOW REACHES YOU, YOUR GOLD, KILLS, DEATHS AND MATCHES COUNT ON YOUR CHARACTER, THE LEAP OFF THE EAGLE SOUNDS, AND A STEAM HOST WHO LEAVES SAYS SO.'],
