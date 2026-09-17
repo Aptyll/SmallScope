@@ -325,6 +325,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | which relay or transport a screen uses, the three doors the title opens (host, join, leave), a room's listing and the roster to every peer | `RELAY_DEFAULT`, `netRelay`, `netSteam`, `netTransportFor`, `netHost`, `netJoin`, `netLeave`, `netHostRoom`, `netHostRoster`, `netClientRoster` | `net roles` |
 | a host's half: inputs in, HELLO / leave, the roster, the snapshot flush | `netHostStep`, `netHostHello`, `netHostFull`, `netHostLeave`, `netRoster`, `netHostFlush` | `host` |
 | a client's half: its input out, welcome / full / snap in, the screen the local body calls for | `netClientStep`, `netClientHello`, `netClientWelcome`, `netClientApply`, `netClientMode` | `client` |
+| a client's lifetime stats and the leap's cue, read off its own snapshot body (what the step gates on `p === player`) | `netClientStats`, `NET.was` | `client` |
 | a client easing every moved body to where the host put it | `LERP_SNAP`, `netClientApplyDelta`, `netClientLerp` | `client` |
 | the mid-match proofs: a client checking itself against the host's full form, a host throwing away a share of its sends | `NET.verify`/`VERIFY_EVERY`, `NET.lossOut` | `net roles` (the `NET` literal), `host` and `client` (the compare: `snapCompareLoose`, snapshot.js) |
 

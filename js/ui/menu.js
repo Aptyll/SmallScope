@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.60'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.61'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.61', 'IN A ROOM YOU JOINED, THE START COUNTDOWN NOW REACHES YOU, YOUR GOLD, KILLS, DEATHS AND MATCHES COUNT ON YOUR CHARACTER, THE LEAP OFF THE EAGLE SOUNDS, AND A STEAM HOST WHO LEAVES SAYS SO.'],
   ['3.60', 'THE DEVELOPER DOCS WERE CHECKED LINE BY LINE AGAINST THE CODE AND CORRECTED - NOTHING IN THE GAME CHANGES.'],
   ['3.59', 'THE PHONE BUILD IS GONE - SOFTFALL IS A DESKTOP GAME FOR STEAM: KEYBOARD AND MOUSE, OR A GAMEPAD.'],
   ['3.58', 'JOINING A ROOM, YOU NOW HEAR THE MERCHANT FELLING TREES, YOUR EAGLE BEING HIT AND THE REFUSED LEAP - THREE SOUNDS ONLY THE HOST USED TO GET.'],

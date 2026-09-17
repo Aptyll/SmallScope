@@ -44,6 +44,9 @@ function wsTransport(relay, room) {
         let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
         if (m.t === 'relay') { this.id = m.id; if (m.room) this.room = m.room; this.open = true; return; }
         if (m.t === 'refuse' && !this.open) { this.error = m.why; this.retryT = Infinity; return; } // no such room: do not redial
+        // another host took this room (the relay routes to it now): stand down
+        // rather than redial and take it back, or the two would swap it forever
+        if (m.t === 'replaced') { this.error = 'REPLACED'; this.close(); return; }
         this.queue.push({ peer: m.peer === undefined ? 'host' : m.peer, msg: m });
       };
       s.onclose = () => { this.open = false; this.sock = null; if (this.retryT !== Infinity) this.retryT = WS_RETRY; this.queue.push({ peer: 'host', msg: { t: 'closed' } }); };

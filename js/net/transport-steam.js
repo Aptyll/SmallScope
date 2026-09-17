@@ -96,6 +96,11 @@ function steamTransport(lobbyId) {
           if (entered) { this.members.add(ev.user); this.queue.push({ peer: ev.user, msg: { t: 'peer' } }); }
           else if (this.members.delete(ev.user)) this.queue.push({ peer: ev.user, msg: { t: 'gone' } });
         }
+        // a client hears its host leave the same way: Steam hands the lobby to
+        // somebody else, but the sim went with the owner we joined, so the match
+        // ends here as it does on the relay (hostGone, netClientPoll)
+        if (ev.t === 'chat' && ev.lobby === this.lobbyId && this.role === 'client' && ev.user === this.owner && (ev.change & 1) === 0)
+          this.queue.push({ peer: 'host', msg: { t: 'hostGone' } });
       });
     },
     receive(from, text, bin) {

@@ -20,13 +20,12 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   channel's frames) has run against a live Steam - only in Node against a fake bridge and as a
   headless wrapper boot. The first live test should watch `DBG.netStatus()`: `framesLost` on a
   client (the receiver counts a delta it gave up on) and `fulls` on the host.
-- **Owed:** a Steam client is never told its host left (only the relay sends `hostGone`; the Steam
-  transport reports lobby chat updates to the host alone); a client's lifetime stats
-  (`PROFILE.addGold`/`addKill`/`addDeath`) are written only where `p === player` inside the step,
-  which is the host's screen; the host clamps nothing in a remote input; a per-kind field policy if
+- **Owed:** the host clamps nothing in a remote input; notices (`raiseNotice`: the roost alarm's
+  plate, the market's) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
   ~70 KB/s per client is too much for nine clients on a home upload; walk prediction (deferred).
-- **Known bug:** the waiting room's `count` message is built as `{ t: 'count', t: m.countT, n }`
-  (`netHostStep`) - the second `t` overwrites the type, so a client never matches it.
+- **Steam's host-left notice is code-read only**: a client turns the owner's leaving
+  `LobbyChatUpdate` into `hostGone` (`wire`, js/net/transport-steam.js), never run against a live
+  lobby - the first live test should have the host quit mid-match and mid-wait.
 
 ## What the game already gave the net code
 
@@ -166,7 +165,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - then clear th
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
 | a hit's puff and number, a cue, a shake | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |
 | particles, footprints, snow, camera, cursor, HUD, tooltips, minimap, audio | each machine | never on the wire |
-| profile stats | **owed** | `PROFILE.addGold`/`addKill`/`addDeath` run where `p === player` inside the step, which is the host's screen; a client's `endMatch('won')` does write its own `addWin` |
+| profile stats | client-side | every `PROFILE.add*` in the sim is gated on `p === player` inside the step, which is the host's screen, so a client writes its own from its snapshot body: `netClientStats` (js/net/net.js) diffs `xp` (gold), `kills`, `dead`'s rising edge and `aboard`'s falling edge (`markDropped`, and the hard music cut off a flying bird - the leap's cue arrives as `sfxFor`'s event), counts the match and its first day at takeoff, and `endMatch('won')` writes `addWin` |
 
 **There is no prediction.** A client eases every body, its own included, over one snapshot
 interval. The game is momentum walking, 1.5 s meals and a bow you draw; a mispredicted roll that
@@ -300,13 +299,14 @@ nothing reads).
 | `welcome` | h→c | JSON | `slot`, `hostSlot`, `seed`, `tick`, `roster` |
 | `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
 | `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls, look}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human` |
-| `count` | h→c (`*`) | JSON | the waiting room's countdown: `n`, the digit shown (**broken - see Status**) |
+| `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
 | `full` | h→c | bytes, reliable | `tick`, `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
 | `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
 | `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, eatBerry, eatFish, useCard, ability, cmd}`. One struct per client tick, sent once; the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
 | `resync` | c→h | JSON | no body: the client could not take a delta; the host answers with a `full` |
 | `peer` / `gone` | transport→h | - | someone joined or left the room or lobby (`gone` hands the body to a bot and parks the slot, below) |
-| `closed` / `hostGone` | transport→c | - | relay only: the client's own socket dropped (it redials) / the host's socket closed |
+| `closed` / `hostGone` | transport→c | - | the client's own socket dropped (relay; it redials) / the host is gone: its socket closed on the relay, or the lobby's owner left on Steam |
+| `replaced` | relay→h | JSON | another host socket took this room's code: the transport sets `error = 'REPLACED'` and closes without redialling (two hosts would otherwise swap the room forever) |
 | `room` | h→relay | JSON | `data`: `{name, patch, seed, state: 'open' or 'live', humans, sides}` - what the list shows (`netHostRoom`); on Steam the same object goes into lobby data as strings |
 
 There is no ping, no ack message of its own (the ack rides every `in`), no world hash and no
@@ -398,8 +398,9 @@ The same screens and the same protocol ride either transport; only the list and 
 - **The host quits or vanishes.** No migration. On the relay the host's socket closing sends every
   client `hostGone` at once (there is no grace timer): a waiting guest goes back to the rooms list
   with a rattle, a playing one ends on the HOST LEFT plate (`endMatch('hostleft')`: no win, no
-  loss). **On Steam a client is not told** - owed (Status). A second host socket on a room's code
-  replaces the first (`{t:'replaced'}`, which the page does not handle).
+  loss). On Steam the client's transport raises the same `hostGone` when the owner it joined leaves
+  the lobby (unverified live - Status). A second host socket on a room's code replaces the first:
+  the old host is told `{t:'replaced'}` and stands down.
 - **Host migration** needs every client to hold enough state to become the host and a
   deterministic successor pick. It is scoped out on purpose.
 

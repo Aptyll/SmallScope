@@ -307,9 +307,9 @@ function dropJump(p, force) {
     p.x += -Math.sin(d.heading) * off;
     p.y += Math.cos(d.heading) * off;
   }
+  sfxFor(p, 'dodge');
   if (p === player) {
     PROFILE.markDropped(); // the first-flight countdown never comes back after a real jump
-    SFX.dodge();
     // a hard cut, not a crossfade: the ride's song is INTERRUPTED by the jump,
     // which then runs to its end and hands over to FOXGLOVE DROP (TRACKS.next)
     SFX.music.play('jump', { out: 0.1, in: 0.05 });

@@ -115,7 +115,7 @@ bot's chop resolve through exactly the same function.
 ## The two controllers
 
 The local human has two: keyboard and mouse (js/input.js) and a gamepad (js/gamepad.js) — the
-Steam Deck's hands. (A third, a phone's fingers, was deleted in 3.58; the tag
+Steam Deck's hands. (A third, a phone's fingers, was deleted; the tag
 `pre-phone-removal` keeps it.) **The pad is the keyboard in disguise.** The browser listeners in
 input.js only translate events; what a key *does* lives in `keyPress(e)`/`keyRelease(e)` (`e` is
 `{key, repeat, char}` — a real KeyboardEvent translated, or an object a pad builds) and what a
@@ -818,7 +818,13 @@ what the rest of the code needs to know is this:
   `player.team` and the rival profile to the other side, so a client on the far team plays beside
   rival-grade bots; `aiSituation`'s `human` flag, `aiRank`'s skip and the escort's ward are the
   host's `player` alone — a remote human is counted at a roost but starts no ally push and gets no
-  escort. A human flag does lead its side for either kind (`isHuman`).
+  escort. A human flag does lead its side for either kind (`isHuman`). Notices (`raiseNotice`) and
+  the own-bird alarm are raised on the host's screen only.
+- **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
+  stats, `markDropped` and the leap's hard music cut never run on a client's screen, so
+  `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `xp` climbing is gold,
+  `kills` climbing a kill, `dead` rising a death, `aboard` falling the leap, and the first step of
+  the ride the match and its first day. A new local-only side effect in the sim needs its edge there.
 
 ## Where players start
 
