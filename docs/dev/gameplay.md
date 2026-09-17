@@ -1465,11 +1465,19 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
   and an animal with nowhere to run stops fleeing.
 - **A deer's sprint.** A deer always wears a second bar under its health — stamina white
   (`STAM_COL`), stacked the way a player's is (`drawAnimal`) — and spends it on the first stretch
-  of every flight: while `a.sprint` (0..1) is above zero the legs run at `DEER_SPRINT` (170 px/s,
-  past any walk or slide) and the bar drains over `DEER_SPRINT_T` (2.5 s of running); empty, the
-  flight drops to `PREY_RUN` (92) and the deer is catchable on foot. It refills over
-  `DEER_SPRINT_REGEN` (10 s) whenever the deer is not fleeing, so the bar is the hunt's read:
-  a full one means the deer will simply leave, a low one means run it again now.
+  of every flight: while `a.sprint` (0..1) is above zero the legs run at `DEER_SPRINT` and the bar
+  drains over `DEER_SPRINT_T` (2.5 s of running); empty, the flight drops to `PREY_RUN.deer`, its
+  walk. Both paces are multiples of a player's walk, tuned in one place — `DEER_RUN_MUL` (1.4,
+  101 px/s) and `DEER_WALK_MUL` (1.15, 83 px/s), the px/s consts derived from them — so a deer
+  outpaces a walking scout either way and the empty bar is when a roll, a slide or an arrow closes
+  the gap. It refills over `DEER_SPRINT_REGEN` (10 s) whenever the deer is not fleeing, so the bar
+  is the hunt's read: a full one means the deer will simply leave, a low one means run it again now.
+- **A deer never jumps pace.** `a.spd` is the speed it is at, and `deerPace(a, want, dt)` closes
+  it on the one it wants by an exponential of `dt` — an ease-out, the same curve at any step
+  length, there within 2% after `DEER_EASE_T` (0.28 s): the startle from a standstill to the run,
+  the drop to the walk when the bar empties, the graze, and the stop, where the idle branch
+  coasts the body along its last heading until the pace is spent. A stun zeroes it. The gallop
+  clip's rate follows `a.spd` too, so the legs wind up and down with the body.
 - **A rabbit's jink.** A rabbit wears the same white bar (`a.dodge`, 0..1), but it is one
   **dodge charge**, ready only when full. `arrowAtRabbit` looks at every shot in flight each step:
   one inside `RABBIT_DODGE_SIGHT` (90 px), still flying *toward* the rabbit, on a line that passes
