@@ -80,15 +80,15 @@ const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 // hashed from the seed (bots) in initPlayers().
 const CLASSES = [
   {
-    name: 'HUNTER', role: 'BOW, TRAPS, DISTANCE',
-    blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'TRAPS, NETS AND A FALCON CONTROL THE GROUND.', 'CALL A VOLLEY ON ANYONE WHO STANDS STILL.'],
+    name: 'HUNTER', role: 'BOW, DISTANCE, AMBUSH',
+    blurb: ['THE BOW IS THE ARGUMENT: KEEP THE GAP.', 'THE NET TANGLES THEM. THE GRAPPLE PULLS YOU CLEAR.', 'THE SNOW HIDES YOU. THE SHOT OUT OF IT HITS MUCH HARDER.'],
     stats: { ice: 3, draw: 4, power: 4, tough: 2 },
     kit: { iceMax: 1, iceSteer: 2.8, slideMin: SLIDE_MIN, fatigue: 1, chargeMul: 0.55,
       bowCharge: BOW_CHARGE, nock: 0.4, dmgBase: 4, dmgPow: 9, spdDmg: 0, dodgeSpeed: DODGE_SPEED, maxHp: 92 },
   },
   {
     name: 'WARRIOR', role: 'PRESSURE, BLOCKING, MOMENTUM',
-    blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS; THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH; THE EXECUTE FINISHES IT.'],
+    blurb: ['THE FIGHT IS AT ARM\'S LENGTH: GET THERE.', 'THE SHIELD EATS ARROWS. THE RUSH CARRIES BODIES.', 'THE SWORD REACHES A BODY LENGTH. THE EXECUTE FINISHES IT.'],
     stats: { ice: 4, draw: 2, power: 3, tough: 5 },
     kit: { iceMax: 1.15, iceSteer: 3.2, slideMin: 70, fatigue: 0.7, chargeMul: 0.7,
       bowCharge: 0.75, nock: 0.5, dmgBase: 3, dmgPow: 6, spdDmg: 5, dodgeSpeed: 230, maxHp: 120 },

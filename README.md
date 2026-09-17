@@ -44,7 +44,7 @@ Go down and you wait, then land back at your own bird. Kills never win a match. 
 
 **Gold is the only currency, and gold is also XP.** Fish and berries have a price that moves all day. One backpack, four class keys, gear bought from anywhere, worker bots on a planted flag, and a roll that is a hit.
 
-**Every scout is a HUNTER or a WARRIOR.** Piercing shot, net, grapple, snow cover. Shield, rush, stomp, juggernaut. Four keys, each with a cast the body visibly performs.
+**Every scout is a HUNTER or a WARRIOR.** Piercing shot, net, grapple, snow cover. Shield, rush, stomp, execute. Four keys, each with a cast the body visibly performs.
 
 <p align="center">
   <img src="docs/media/github-practice.png" alt="The practice field: bow drawn on the mending dummy, the bell and the target track in the snow" width="920">

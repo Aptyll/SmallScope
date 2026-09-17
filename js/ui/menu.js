@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.62'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.63'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.63', 'THE HUNTER\'S CLASS CARD DESCRIBES THE KIT IT REALLY HAS - THE NET, THE GRAPPLE, THE SNOW AND THE SHOT OUT OF IT - AND THE WARRIOR\'S NO LONGER PRINTS QUESTION MARKS WHERE ITS SEMICOLONS WERE.'],
   ['3.62', 'A HOUSEKEEPING PATCH: TWO LINES OF THE DEVELOPER DOCS, NOTHING IN THE GAME.'],
   ['3.61', 'IN A ROOM YOU JOINED, THE START COUNTDOWN NOW REACHES YOU, YOUR GOLD, KILLS, DEATHS AND MATCHES COUNT ON YOUR CHARACTER, THE LEAP OFF THE EAGLE SOUNDS, AND A STEAM HOST WHO LEAVES SAYS SO.'],
   ['3.60', 'THE DEVELOPER DOCS WERE CHECKED LINE BY LINE AGAINST THE CODE AND CORRECTED - NOTHING IN THE GAME CHANGES.'],
@@ -2753,7 +2754,7 @@ const WIKI_PAGES = [
   { id: 'classes', label: 'CLASSES', build() {
     const b = [];
     b.push({ kind: 'line', h: 9, text: 'TWO CLASSES, PICKED ON THE WAY IN. KEYS 1-4 ARE THE CLASS, EACH ON ITS OWN COOLDOWN.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY; EACH ONE AFTER IS ' + Math.round(AB_LV_CD * 100) + '% OFF THAT ABILITY\'S COOLDOWN, TO LEVEL ' + AB_LV_MAX + '.', col: TIP_DIM });
+    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY. EACH ONE AFTER IS ' + Math.round(AB_LV_CD * 100) + '% OFF THAT ABILITY\'S COOLDOWN, TO LEVEL ' + AB_LV_MAX + '.', col: TIP_DIM });
     CLASSES.forEach((c, cls) => {
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });
