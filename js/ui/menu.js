@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.59'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.60'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.60', 'THE DEVELOPER DOCS WERE CHECKED LINE BY LINE AGAINST THE CODE AND CORRECTED - NOTHING IN THE GAME CHANGES.'],
   ['3.59', 'THE PHONE BUILD IS GONE - SOFTFALL IS A DESKTOP GAME FOR STEAM: KEYBOARD AND MOUSE, OR A GAMEPAD.'],
   ['3.58', 'JOINING A ROOM, YOU NOW HEAR THE MERCHANT FELLING TREES, YOUR EAGLE BEING HIT AND THE REFUSED LEAP - THREE SOUNDS ONLY THE HOST USED TO GET.'],
   ['3.57', 'THE BOTS RIDE THE ZIPLINE TOO, AND IMPOSSIBLE IS A DIFFERENT ANIMAL: AT FIVE MINUTES THE WHOLE RIVAL SIDE GATHERS AT THEIR CABLE\'S END AND DIVES YOUR BIRD AS A PACK, FIGHTS ONLY WHAT IS IN ARM\'S REACH ON THE WAY, NEVER BACKS OFF, NEVER HIDES, AND RIDES STRAIGHT BACK INTO IT EVERY TIME YOU KILL ONE.'],

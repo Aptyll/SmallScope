@@ -1,7 +1,7 @@
 # Players, teams and AI
 
 Softfall is a two-sided team battle, RED vs BLUE. Every combatant — the local human, the AI
-fills, and eventually a network peer — is a `Player` in the module-scope `players` array, and they
+fills, and a human on another screen ([Online play](#online-play)) — is a `Player` in the module-scope `players` array, and they
 all run the same code. Read this before adding an ability, an input, or anything a player can do
 to the world.
 
@@ -9,7 +9,7 @@ to the world.
 
 `MAX_PLAYERS` (10) players are created once at boot by `initPlayers()`. Each player is one of:
 
-- `control: 'human'` — driven by keyboard/mouse. Today exactly one player is human: **this
+- `control: 'human'` — driven by this screen's keyboard/mouse or pad. Exactly one per screen: **this
   session's player**, in slot `localId` (0 unless `?local=N` or `DBG.setLocal(N)` seats it
   elsewhere — nothing about slot 0 makes it the local one, and anything that means "me" reads
   `player` or tests `p === player`, never an id). `player` and `inv` point at it (and only at
@@ -33,10 +33,10 @@ screen's player in slot `id` (title only: it is a fresh `initPlayers`).
 slot — and the local slot; with neither it builds today's match (`defaultRoster`: this screen's
 human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still rolls its
 class and gear off the seed; a roster entry's own `name`/`cls`/`look` land over that, which is
-how a lobby will dress a remote human's body ([docs/pvp-architecture.md](../pvp-architecture.md)).
+how a lobby dresses a remote human's body (`netClientWelcome`, [Online play](#online-play)).
 The profile's character is only ever applied to this screen's player (`applyCharacter(p?)`).
 
-**A `Player` owns everything the old singleton did** — position, velocity, facing, hp, bow draw,
+**A `Player` owns its whole body** — position, velocity, facing, hp, bow draw,
 dodge charges, slide state, swing state, held tool, i-frames, footprint cadence — plus `id`,
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
 wears its **active character's** name, class and look — `applyCharacter(p?)`, called by
@@ -79,14 +79,22 @@ grapple       held (key 3): the hunter's grapple reels only while this is down -
 eatBerry      edge-triggered (Q): STARTS the 1.5s meal, it does not heal on the spot
 eatFish       edge-triggered (F): same, and off the same shared 3s clock
               (startEat, js/core.js - see Food in gameplay.md)
+useCard       edge-triggered (the card key): draw one unopened card at random
+              (useCard, js/core.js)
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
               (tryAbility, js/abilities.js - see Classes below)
-cmd           one-shot order {kind:'build'|'upgrade'|'demolish', tx, ty, id}
+cmd           one-shot order, run by runCmd (js/ui/wheel.js):
+              {kind:'build'|'upgrade'|'demolish', tx, ty, id} - a build also
+              carries rot, the list's R (a wheel's order is unturned)
               or {kind:'gear', piece} - a gear buy: no tile, no reach, no contest
-              or {kind:'skill', i} - a hud-ability rank: same, free (a skill point)
+              or {kind:'ability', i} - an ability level: same, paid with a skill point
               or {kind:'shop', act, ...} - a buy or a food trade at the
               merchant's counter: no tile and no contest (an offer is a line,
               not a queue), but it re-checks its own reach (shopCmd, js/ui/shop.js)
+              or {kind:'flag', tx, ty, id} - plant that order's flag there, no
+              reach and no contest; id null lifts it
+              or {kind:'rack'|'pkdie'|'agbell', ...} - the practice room's
+              armory, roll die and range bell
 ```
 
 `sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the pad's stick, `pad.mx/my`,
@@ -96,9 +104,10 @@ the auto-attack's fire edges into the same struct from its orders), and zeroes i
 [map](gameplay.md#the-m-map-does-not-pause) don't stop the sim and so don't zero the whole struct:
 each drops only the intents it swallows (the map keeps movement, the wheel keeps movement minus
 the roll). The keydown
-handlers and `resolveWheel()` no longer act directly: they set `input.dodge` / `input.eatFish` /
-`input.cmd` and let the next `updatePlayer` perform it. **A new ability must be a field here**, or
-bots and future network peers can't use it.
+handlers and `resolveWheel()` never act directly: they set `input.dodge` / `input.eatFish` /
+`input.cmd` and let the next `updatePlayer` perform it. **A new ability must be a field here** —
+and in the `in` message a client sends and `netHostStep` copies (js/net/net.js) — or bots and
+remote humans can't use it.
 
 `workTarget(p)` reads `p.input.aimX/aimY`, not the mouse, which is why the cursor's lock ring and a
 bot's chop resolve through exactly the same function.
@@ -131,7 +140,7 @@ game's key *name*, the face that key wears on a US board, lowercase for a letter
 `KeyW` → `'w'`, `Space` → `' '`, `ShiftLeft` → `'Shift'`, `Period` → `'.'`; a code the table
 does not know falls back to `e.key`, so an on-screen keyboard is not dead). `keys`, the binds and
 every comparison are written in those names, so an AZERTY board walks on its Z Q S D without
-knowing it. `e.char` is what the key *typed*, which only the name editor reads (`nameKey`). What
+knowing it. `e.char` is what the key *typed*, which only the name editor reads (`createKey`, js/ui/chars.js). What
 the player *sees* runs the other way: `keyLabel` prints the face the key has on the board in hand
 where the browser can say (Chrome's `navigator.keyboard.getLayoutMap()`, cached in `kbLayout` and
 refreshed on `layoutchange` — `KeyW` reads Z on AZERTY), else the US face; anything the pixel
@@ -140,7 +149,8 @@ SPACE, SHIFT, UP, SEMI …).
 
 **What a key does is an action, and an action has a key.** `KEY_ACTIONS` is every rebindable
 verb — the four walk keys, the four abilities, dodge, slide, harvest, the two meals, the card
-draw, the inventory drawer, the sheet, the map, the standings, mute, pause, and the CLICK
+draw, the inventory drawer, the sheet, the build list and its rotate, the map, the standings, mute,
+pause, and the CLICK
 scheme's three of its own (attack-move, stop, the held flag wheel) — with the key each starts on
 per scheme (`key` on WASD, `ck` on CLICK; an action with neither is not on that scheme), in the
 order the CONTROLS page lists them. **The keyboard has two schemes and each keeps its own map**
@@ -171,7 +181,7 @@ it off, a reserved key is refused with the deny cue, and a key another action ho
 that action takes the old key (`setBind`) — so every action always has one key of its own and no
 two share one. Every held key lets go on a rebind, the listen dies with the slab (`rebindLive`),
 on blur and on any press but its own cap, and `resetBinds` puts the defaults back. Four gestures have no key and are exposed bare for a
-trigger or a plate: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
+pad's trigger or button: `fireDown`/`fireUp` (the draw — the mouse goes through `pointerPress`
 because a press has the HUD to get past first, a trigger is never over a well),
 `openFlagWheel()` (the flag wheel on the tile under the pointer — the chart's tile while the map
 is up), `openWheelNear(p, ax, ay)` (a build wheel on the tile the body faces — or the manage
@@ -318,8 +328,8 @@ same loadouts. Class select shows that roster as two columns of cards — your s
 rivals right, their picks face-down until PLAY's countdown turns them (a second PLAY skips the
 rest of the count) — and the three notches
 over the rivals' column set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
-IMPOSSIBLE, remembered with the profile), which is stored and shown but **not yet read by
-`updateAI`** ([known drift](checklists.md#known-drift)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
+IMPOSSIBLE, remembered with the profile), the profile the rivals play by
+(`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
 16×16 body plan and frame set as the player, so `drawPlayer`/`drawGhost` just swap the set via
 `classSet(p)`, which asks `SPRITES.champLook(cls, look, skin(team))` for the class body in the
@@ -336,16 +346,15 @@ payout every source uses — and robot deposits both route through it) — it pa
 sized against a bot chaining pines all match (about a gold a second on the fells plus the
 [trickle](gameplay.md#economy-one-currency)'s 15 a minute): that bot is level 9 or 10 at fifteen
 minutes and capped past twenty, a player who fights and farms by halves sits two or three levels
-under it, and the trickle alone is level 3 by seven minutes — a level is news all match, where
-2.62's table (385 to cap) had every bot capped by 2:00. Spending gold and dying never touch
+under it, and the trickle alone is level 3 by seven minutes — a level is news all match. Spending gold and dying never touch
 `xp`; level and xp are set in the constructor, not `reset()`, so they would survive a `reset`.
 
 Growth is flat and identical for both classes: each level past 1 adds `LVL_HP` (9) to
 `maxHp` (via `levelMaxHp(p)`, healed on the spot) and `LVL_DMG` (2) to every arrow
 (`emitBit` adds it after the bit's base + pow × draw + speed bonus). Level 12 is +99 hp / +22
-damage, and a level-8 hero of this table is about a capped hero of the old one: rarer, and
-worth more. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
-plays `SFX.levelUp()` for the local player. The table's **average** level is also what the
+damage. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
+raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
+is that player, a pickup to bystanders in earshot. The table's **average** level is also what the
 wildlife is dealt at spawn (`animalLevel`, js/wildlife.js): an animal never levels, but the
 meadow and the dens restock at the level the match has reached —
 [gameplay.md](gameplay.md#wildlife).
@@ -356,9 +365,7 @@ point buys exactly one thing: **a level on one of the four class abilities**
 plates or by pressing the ability's own key while the point is unspent. The keys start **locked at level 0** — the first point on one is what makes it castable
 at all — and the four of them hold exactly 12 levels, so twelve points by level 12 cap all four
 with nothing stranded; what a build chooses is the ORDER, since you land with one point, four
-dark keys and a match to spend the rest across. (The old kit-skill
-row — LOOSE/DODGE/AMBUSH/FLETCH ranks in the backpack — was removed with the pack's
-simplification; its passive bonuses live on only as gear variants and cards.) Bots spend each
+dark keys and a match to spend the rest across. Bots spend each
 free point in `updateAI`'s rung 0, lowest ability level first, so their first four unlock all
 four keys.
 
@@ -372,7 +379,7 @@ player (default local) the way a pickup would, which is how to stage a level.
 ## Teams and colours
 
 Two presets live in `SPRITES.teams` (`TEAM_SKINS` in [js/sprites/core.js](../../js/sprites/core.js)):
-**RED** (the original red/teal look, once called EMBER) and **BLUE** (once FROST). A player's team
+**RED** (the red/teal look) and **BLUE**. A player's team
 is `id % TEAM_COUNT` (2), so the ten players alternate into five a side. The team table is the
 only place a team colour is written down; the game code reads it back as `TEAMS` for name tags,
 map markers, death bursts and the eagles' armour.
@@ -398,9 +405,12 @@ A team colour drives both **characters** and **buildings**:
 - `SPRITES.robotTeam[team]` — bay robots wear their owner's colour, and the bay itself is one
   palette per team (`bayTeamPal`: its lintel band), not a tier material.
 
-Structures carry `owner` (player id) and `team`, set by `placeStruct()`. `ownsStruct(o, p)` gates the
-manage wheel, upgrades and demolition; the right-click handler and `cursorInfo()` only offer the
-hammer over a stump (neutral) or your own building.
+Structures carry `owner` (player id) and `team`, set by `placeStruct()`. Ownership is the
+**team's**: `ownsStruct(o, p)` (`o.team === p.team`, or no team at all) gates upgrades and
+demolition in `runCmd`, and the same team test opens the manage wheel (hold E, or a pad's
+`openWheelNear`) on anything not `fixed`. `cursorInfo()` (js/draw/render.js) shows the hammer in two
+places only: over the world while the T build list is up (dim where the ghost cannot stand), and
+over a building of your side's. The right button builds nothing — it is the flag wheel.
 
 Five players per colour means **teammates share it**, so anything that names one player in text
 takes a second axis: `playerTint(p)` returns a per-player shade of that team's palette (`trim`,
@@ -441,7 +451,7 @@ its `EAGLE_HP` (2000) pool — a flat chip, whatever the arrow would do to a bod
 standing off it take minutes and the side has time to answer — the
 tiles are the one hit test walkers, arrows and E all share, so there is no corner an arrow can
 strike without damage — a rival **E swing** chips `EAGLE_WORK_DMG` (20: a hundred swings, about a
-minute for a lone warrior under the gust, measured at 53 s) through `hitObject`'s eagle
+minute for a lone warrior under the gust) through `hitObject`'s eagle
 branch (the roost tiles are `eagle` objects, a rival-only work target — `workTarget` reads the
 `team` they carry), and at zero the bird is **driven off**: `eagleFlee` lifts it away over the
 treeline while every camera pans to watch (`state.eagleCine`, the driven-off ceremony), and
@@ -457,9 +467,8 @@ hp/s back.
 `die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
 bag, weapon and build all stay, and the credited killer is paid a flat `KILL_BOUNTY` (12) via
 `awardGold` — an uncredited death pays nobody (gold is never a physical drop). What happens next
-depends on `teamEagleDown(p.team)` alone — see
-[Respawn at the bird](#respawn-at-the-bird) — either a respawn timer (`p.respawnT`,
-`respawnTime(p)`, ticked by `updateRespawns`) while the team's eagle still roosts, or
+depends on `teamEagleDown(p.team)` alone: the wait and the return of
+[Respawn at the bird](#respawn-at-the-bird) while the team's eagle still roosts, or
 `p.eliminated = true`, the permanent path, once it has been driven off;
 `updatePlayer` just zeroes a dead player's intents either way. Only the local player's **elimination**
 takes the full death overlay with it (`endMatch('lost')`); a respawn-pending local death gets the
@@ -483,7 +492,7 @@ match keeps simulating while you are out** — `update()` runs `updatePlay` in b
 
 ### Respawn at the bird
 
-There is no Keep and no permadeath: the team's roosting eagle is the way back, and the only thing
+The team's roosting eagle is the way back, and the only thing
 that takes a player out for good is that eagle being driven off. `updateRespawns(dt)` (called from
 `updatePlay` beside `updateStructures`) counts down every `p.dead && !p.eliminated` player's
 `p.respawnT` — `respawnTime(p)`: `RESPAWN_BASE` (1 s) plus `RESPAWN_LV` (2 s) per hero level —
@@ -508,13 +517,18 @@ the wait is the entire cost ([death keeps everything](gameplay.md#death-and-resp
 
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
-there is no `src` (`DEATH_CAUSE`: `'ice'` for a hole, `'wolf'` for a den's pack or the alpha, `'dire'` for the dire wolf). A death with an `src` other than
-the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours;
-without one it writes `"<victim> FELL THROUGH THE ICE"` in the victim's. **Any new way to hurt a
+there is no `src` (`DEATH_CAUSE`, js/player.js: `ice`, `wolf` — a den's pack or the alpha — `dire`,
+`tackle`, `eagle`, `fire`, `soldier`; an unnamed one reads WENT DOWN). A death with an `src` other than
+the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours
+(`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
+without one it writes the cause's line — `"<victim> FELL THROUGH THE ICE"` — in the victim's. **Any new way to hurt a
 player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
-The other thing logged today is a level-up at `LOG_LEVEL` (5) or above — the early levels come too
-fast to be news. `logEvent(txt, p)` is the whole interface; the log is not drawn
+The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels come too
+fast to be news — a wrecked building, a scrapped worker, the dire wolf's slayer, each eagle
+landing, coming under attack and being driven off, a peer joining or leaving, and the market's
+spikes, crashes and restocks. `logEvent(txt, p, o)` is the whole interface (`o` a palette for a line
+no player owns); the log is not drawn
 ([rendering.md](rendering.md#scoreboard-and-event-log)). `DBG.logEvent`/`DBG.events` stage lines
 without staging the kills behind them.
 
@@ -551,9 +565,9 @@ with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch 
 top) plus the support fields, so your side is always the more competent one and the difficulty
 is how good the *other* side is. `aiProfile(p)` is the one place that choice is made
 (`p.ai.prof` overrides it for a staged bot — `DBG`, the calibration harness). Every field is a
-worse or better use of the same input struct: `sight` (147 / 200 / 267 px — scaled 4/3 with the 640×360 frame in 3.22, so a bot keeps the same share of what a screen shows a hand — through `seenAt` so
+worse or better use of the same input struct: `sight` (147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
 cover still works), `react` (0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
-`aim` (22 / 8 / 0 px of scatter, re-rolled every `AI_AIM_T`), `lead` (0 / 0.5 / 1 of the
+`aim` (30 / 8 / 0 px of scatter, re-rolled every `AI_AIM_T`), `lead` (0 / 0.5 / 1 of the
 target's motion), `draw` (0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
 weak shot), `dodge` (×0.5 / 1 / 2), `abil` (0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
 ready ability is spent), `flee` (0.5 / 0.35 / 0 hp it hides at), `work` (0.5 / 0.8 / 1 duty
@@ -578,8 +592,8 @@ at the roost are all walked past for the bird (the siege rule from the first ste
 numbers) — except at its own besieged bird, where a respawn fights everything it sees before it
 rides out again. The one thing that turns it home is the pusher rule every level has: its own
 bird under `AI_ALARM_HP` while it is *losing* the race. What is **not** in a profile: answering
-a hit on its own bird — at every level the side answers from anywhere on the map, as many bots
-as the threat calls for (**the two birds**, below); the difficulty is how well they fight when
+a hit on its own bird — at every level the side answers from anywhere on the map
+(`aiDefendersWanted`, **the two birds**, below); the difficulty is how well they fight when
 they get there, never whether they come.
 
 The ladder:
@@ -607,8 +621,8 @@ The ladder:
    when `aiLineClear()` says the flight path is open — and with **no** line it never walks into
    the corner blocking it: past 60 px it routes in through the open (`steerTo`, so in a lane it
    comes down the axis rather than into the tree wall), inside it gives ground straight back and
-   lets them come round the corner into the line (ten bodies pushing into a lane's bend was a
-   fight nobody fired a shot in for a quarter of an hour). **Class abilities are spent here, off
+   lets them come round the corner into the line (bodies pushing into a lane's bend is a
+   fight nobody fires a shot in). **Class abilities are spent here, off
    cooldown at the foe** — on the profile's ability roll (`ai.abilOk`), through the same edge
    field a human's key
    sets (`inp.ability`), each gated by the range it is good at (a warrior rushes the mid-gap,
@@ -650,14 +664,13 @@ The ladder:
    Planting goes through `plantFlag` directly rather than `input.cmd`: a flag is per-player
    state, not an act in the world, and the human's radial ends in the same function.
 6. **defend** — its own bird under `threat` on the shared read (**the two birds**, below): as
-   many bots as the threat calls for (`aiDefendersWanted` — one more than the attackers seen at
-   it, never fewer than two) walk to it (`aiToRoost`, below) from wherever on the map they are,
+   many bots as `aiDefendersWanted` calls home walk to it (`aiToRoost`, below) from wherever on the map they are,
    farming, escorting or guarding, and stand 80 px off — the bird anchors rung 3, so the
    attackers are in sight on arrival — while a bot already inside `AI_ROOST_R` holds its station
    and the rest go on with the match (a side that empties the map for one arrow is a side that
    never pushes). Under `AI_ALARM_HP` (half its nerve) everyone comes, pushers included, the one
    exception a pusher whose side is winning the race — the rival bird lower still — who presses on.
-7. **guard** — from 0.6 × `push.t` on, the profile's `guard` bots (1 / 2 / 2; allies 1) after
+7. **guard** — from 0.6 × `push.t` on, the profile's `guard` bots (1 / 2 / 0 — a relentless side keeps none; allies 1) after
    the pushers in player order (`aiRank`) stand by their own bird, going on down the ladder to work
    what is near while inside `AI_GUARD_R` of it. The bird is their anchor.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
@@ -700,13 +713,19 @@ The ladder:
    mid-defence alike — the gear pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the
-   shop is human-only except the drag that sells. Then, with gold in hand, build a generator (or, 30% of the time and
-   only where `findSite` finds 3×2 of room, a bot bay) on a nearby stump, else upgrade its own
-   work; steps off a build site first, since a building is solid. Picking up a dropped card off the ground already falls out of the loot rung
-   (drops are type-agnostic loot); a bot never presses the card key itself
-   (`bagClick` is mouse-only) — the instant one is carried, `resolveCardForBot` resolves it with a
-   single random pick, since choosing among three is specifically the human decision point.
-13. **harvest** — walk to a tree/rock/berried bush within `AI_FORAGE` (12 tiles) and hold E at
+   shop is human-only except the drag that sells. Then, with a generator's price in hand, build a generator (or, 30% of the
+   time, a bot bay) on the site `aiBuildSite` finds: the nearest tile within `AI_BUILD_R` (5 tiles)
+   that passes `canPlaceAt` — the build list's own rule, any open snow or road tile, reach aside
+   since the bot walks there — a 1×1 only with three open sides so it never walls itself in, the
+   bay wherever its 3×2 fits; else upgrade its own side's work within three tiles. It steps off
+   a build site first, since a building is solid, and a site it cannot reach (or is wedged on for
+   3 s) is left for 15 s. Picking up a dropped card off the ground already falls out of the loot rung
+   (drops are type-agnostic loot); a bot never presses the card key (`input.useCard`) — the
+   instant one is carried, `resolveCardForBot` (top of every think) makes the same single random
+   pick `useCard` makes for a hand, rarest first, minus the burst and the floater. The loot
+   itself is put to work between the loot and spend rungs: every 2.5 s `botFitLoadout`
+   (js/tools.js) loads found bits into the tool being fired.
+13. **harvest** — walk to a tree/rock/chest/berried bush within `AI_FORAGE` (12 tiles) and hold E at
    the profile's `work` duty cycle.
 14. **roam** — wander between its landing site and the map centre.
 
@@ -736,8 +755,8 @@ the cable toward the exit while it rides (the goal re-read every think, so a rid
 mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
 A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot
 never coasts to the terminus by accident, and rungs 3 and 4 let go before they fight: nobody
-rides past an enemy holding the handle. Measured on seed 42: four allies ordered to RALLY at the
-cairn from their roost arrived in 12.4–12.9 s by the cable against 22.3–24.6 s on foot. That, not a
+rides past an enemy holding the handle (roost to cairn is about 12.5 s by the cable against
+23 s on foot, seed 42). The -1, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
 `ai.huntAvoid`, loot lets the drop lie, spend backs off for 15 s, a push on `ai.pushCd`, roam
 re-picks. Harvest routes
@@ -748,33 +767,58 @@ extend the ladder — a goal that is never dropped is a bot that stands still fo
 **Calibrating a level** is done bot-vs-bot, headless, in the served page: make the local player a
 bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[0]` for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
-`sampleHumanInput`, `DBG.beginDrop()`, then step `update(1 / 30)` in a loop until
-`teamInMatch` fails for a side (a 15-minute match takes ~10 s; `state.elapsed` pauses while
+`sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
+`DBG.step(dt, n)` runs `n` steps and one render; the bots' strafe and work clocks count ticks, so
+any other `dt` plays a different bot) in a loop until
+`teamInMatch` fails for a side (`state.elapsed` pauses while
 the local player is dead, so write your own clock back into it each step, and only `'won'` /
 `'lost'` in `state.over` end a match — `'respawning'` is the proxy dying). Set `DBG.freeze`
 first so the frame loop stops stepping under you. Two runs of one seed are **not** the same
 match: the title screen's live world spends seed draws for however many frames it was up
 before the harness started, so a seed is a distribution, not a replay. Wrapping `gainGold`
 and bucketing by the caller in `new Error().stack` (`hitObject`, the kill bounty in `die`,
-`animalDies`, `updateStructures`, else the trickle) is how the economy was sized in 2.63.
+`animalDies`, `updateStructures`, else the trickle) is how the economy is sized.
 The match-length target is a match that ends round fifteen minutes with the human sitting it
-out, ten to twenty at the tails, which is what the ally clocks are set for. On 2.64's numbers
-(respawn at the bird, the proportionate defence, the siege rule and the blocked-line rule)
-every NORMAL run resolved on the ally push — seeds 42, 99 and 7 at 17:28, 18:26 and 20:35, the
-rivals' own pushes taking the allied bird down to 560–1060 nerve on the way and being thrown
-back — where 2.63's runs half-stalemated; seed 42 on HARD was an ally win at 12:35 and on
-IMPOSSIBLE a loss at 16:40, the allies' siege at 380 nerve when the rivals came home and won
-the race. The NORMAL tail runs a few minutes long of the target, so the ally clocks are the
-next thing to tune. **3.57's relentless IMPOSSIBLE** (with everyone riding the zipline), seed
-42 again: the pack of five went at 5:16, all five were at the allied bird by 5:45 and took it
-to **15 % nerve** — then bled to the levelled allies (level 5–6 against 12 at the dive, since
-a rusher never farms), whose own push at seven minutes won at 16:30 with the rival bird at 1 %.
-A rush from the first second (push.t 0) never once touched the allied bird in 25 minutes; a
-four-minute build-up with a pack of four took it to 36 % and lost at 9:00. The dive, not the
-race, is what the level is for: with a hand on the human's side rather than a bot the bird at
-15 % at six minutes is the match. Before the siege rule two to four allies sat at the rival roost for eight
-minutes winning every fight against defenders who came back from sixty pixels away and never
-landed a swing on the bird — the reason respawn at the objective needs the rule.
+out, ten to twenty at the tails, which is what the ally clocks are set for. Where the levels
+last measured (seed 42 unless said): NORMAL resolves on the ally push at 17–21 min (seeds 42,
+99, 7), a few minutes long of the target, so the ally clocks are the next thing to tune; HARD is
+an ally win at about 12:35; relentless IMPOSSIBLE's pack of five goes at about 5:15 and takes
+the allied bird to **15 % nerve** by six minutes, then bleeds to the levelled allies (a rusher
+never farms: level 5–6 against 12), who win at about 16:30 — the dive, not the race, is what the
+level is for, and with a hand rather than a bot on the human's side that dive is the match. A
+`push.t` of 0 never touches the bird, and a four-minute pack of four reaches 36 % and loses.
+
+## Online play
+
+A match is ten seats, and any of them can be a person on another screen: relay rooms between
+browsers (js/net/transport-ws.js, served by `app/server.js`) and Steam lobbies in the wrapper
+(js/net/transport-steam.js, behind `window.steamBridge` and `?transport=steam`). The wire, the
+lobby lifecycle and the migration plan are [docs/pvp-architecture.md](../pvp-architecture.md);
+what the rest of the code needs to know is this:
+
+- **`NET.role` is `'solo'`, `'host'` or `'client'`** (js/net/net.js). Solo is a host with no peers
+  on a loopback transport, so everything that asks "am I simulating?" reads `NET.isHost` and solo
+  and host share every branch. **The host runs the whole sim**; a `NET.isClient` screen runs no
+  step at all — it sends its own `input` struct up (`netClientStep`, an `in` message the host
+  copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
+  `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
+  function directly therefore does nothing on a client.
+- **A joiner takes an AI seat.** `netHostHello` refuses a different patch or seed, deals the first
+  bot slot of the side with fewer people (none left: FULL; past `LATE_JOIN_T`, 300 s into a
+  match: LATE), flips it to `'remote'` and dresses it with the joiner's name, look and class. The
+  `welcome` carries the roster (`netRoster`: control, team, name, cls, look per slot), which the
+  client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
+  drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.
+- **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,
+  `sfxFor`, `sfxOwn`, `shakeAt` and `shakeFor` (js/net/events.js) play the cosmetic on the host and
+  record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the
+  snapshot and the client replays each entry against its *own* player (`evPlay`). A bare
+  `if (p === player) SFX.cue()` in the step is a sound no client hears.
+- **What is still the host's screen.** `aiProfile` deals the ally profile to the *host's*
+  `player.team` and the rival profile to the other side, so a client on the far team plays beside
+  rival-grade bots; `aiSituation`'s `human` flag, `aiRank`'s skip and the escort's ward are the
+  host's `player` alone — a remote human is counted at a roost but starts no ally push and gets no
+  escort. A human flag does lead its side for either kind (`isHuman`).
 
 ## Where players start
 
