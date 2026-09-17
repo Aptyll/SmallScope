@@ -115,8 +115,7 @@ bot's chop resolve through exactly the same function.
 ## The two controllers
 
 The local human has two: keyboard and mouse (js/input.js) and a gamepad (js/gamepad.js) — the
-Steam Deck's hands. (A third, a phone's fingers, was deleted; the tag
-`pre-phone-removal` keeps it.) **The pad is the keyboard in disguise.** The browser listeners in
+Steam Deck's hands. **The pad is the keyboard in disguise.** The browser listeners in
 input.js only translate events; what a key *does* lives in `keyPress(e)`/`keyRelease(e)` (`e` is
 `{key, repeat, char}` — a real KeyboardEvent translated, or an object a pad builds) and what a
 button does in `pointerPress(button)`/`pointerRelease(button)`, with `pointerMove(x, y, src)`
