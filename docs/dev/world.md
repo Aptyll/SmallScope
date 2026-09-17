@@ -195,6 +195,41 @@ pixel, not on a per-pixel roll, so the melt reads as patches rather than sand. T
 costs ~0.2 s at boot on top of the ground's own; a spur's paving repaints three tiles round each
 tile it lays, a few tiles a frame for the seconds the front takes.
 
+## The zipline
+
+One cable per team along the road, the `zipline` banner of [js/world.js](../../js/world.js): a
+polyline of **pylon** points `zips[team] = { team, pts, cum, len }` (`pts` are body positions —
+a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at each point) laid by
+`placeZips()` at boot **right after `placeRoad()`**, on pure reads (`roadNest`, `roadSpan`,
+`roadEdgeAt`, `findCrashPoint`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
+untouched. Not under `PRACTICE`. The points, base to front:
+
+1. the **base pylon**, `ZIP_BASE_OUT` (7.5) tiles from the crater along the spur's axis (the crash
+   point by the crash's own rule, `findCrashPoint`) and `ZIP_SPUR_OFF` (1.9) tiles off that axis
+   toward the front — outside the outer stump ring and the merchant's wall ring, so the ring closes
+   under the cable, and over `SPUR_HW` so the track is never blocked;
+2. the **verge pylon** where the spur meets the road, `ZIP_SPUR_OFF` along the road from the
+   junction and `roadEdgeAt(u, side) + ZIP_OUT` (0.6) tiles off the centreline on the bird's own
+   right (`roadNest(team).side` — the two cables sit on opposite verges and mirror through the
+   centre like the nests and camps);
+3. a pylon every `ZIP_SPAN` (10) u along the same verge to the **terminus** at `ZIP_MID_GAP`
+   (20) u short of the centre cairn — a stub of a span at the end joins the one before it — so the
+   middle stretch where the waves meet is cable-free.
+
+A pylon's tile is the nearest along the road (u, u±1, u±2) that is dry and holds nothing but
+worldgen's scenery — a pine or a rock gives way, like the road's poles (`laneFells`); anything
+else refuses, and the point stands whether or not a pylon does. It is an `OBJECTS` entry
+(`pylon`: solid, inert to E, carrying its `team`; `mm` grey), so `isSolidTile`, `canPlaceAt` and
+both maps handle it for free. Its pixels are `PYLON_SPRS` (one bake per team skin) and the cable
+pass `drawZips` in [js/draw/zipline.js](../../js/draw/zipline.js); both maps stroke each line in
+its side's ink. Seed 42: RED's line runs u 35→91, BLUE's 131→196.
+
+`zipPoint(z, d)` is the cable at `d` px along (position, unit tangent, span and how far across
+it), `zipLift(z, d)` how high it hangs there (`ZIP_H` 31 at a pylon, `ZIP_SAG` 3 less mid-span),
+`zipNearest(z, x, y)` the nearest point of a line to a spot, and `zipNear(p)` the line a body may
+clip on — its own team's, within `ZIP_GRAB` (14) px of the track — or null: **team-locked**, a
+rival under your cable is a walker. The ride itself: [the zipline](gameplay.md#the-zipline).
+
 ## Camps
 
 The jungle: named places at **fixed, mirrored sites** where neutral monsters stand — the things

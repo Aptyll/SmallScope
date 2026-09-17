@@ -60,6 +60,43 @@ underfoot sets friction and speed caps. All the tuning constants live in the `pl
   ice-gliding use the standing pose. `die(p)` and `Player.reset()` zero `vx/vy` and clear
   `sliding`. Footprints and slide trails from every player share the one `footprints` decal array.
 
+### The zipline
+
+The one movement that is neither walked nor slid: a body of the owning team standing under its
+side's cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
+`keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
+eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
+(world.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
+`updatePlayer`'s movement ladder, after the grapple's and before the surface model
+(`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
+under the line never stops a rider — and `p.vx/vy` to the tangent × `ZIP_SPD` (220 px/s, three
+times a walk, under `GRAP_REEL`), which is what the walk-animation gate, the trails and the exit
+read. Holding the stick along the cable past a dead zone picks the direction (`p.zipDir`, ±1;
+the stick idle at the clip-on rides **toward the front**), across it does nothing, and either end
+lets go. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
+`p.zipDir` — declared in `reset()` beside the grapple's, so a respawn never comes back clipped
+on; `die` lets go too.
+
+**Hands on the handle.** `p.zip >= 0` joins the inline gates of `tryWork`, `autoWork`,
+`tryAbility`, the bow draw (updatePlayer), `autoFish` and `tryProne`; `zipStart` itself refuses
+a stunned, floundering, rolling, rushing, casting or shielded body and ends a grapple, a draw, a
+meal, a catch and a slide. A meal and a card are the two things a rider may still use. `tryDodge`
+rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash). **A rider is
+still a body to every weapon** — arrows, the roll's sweep, a turret, a wolf, `seenAt` — and plain
+damage never dismounts (its knockback decays unspent, since the ride branch never applies
+`kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
+`rootUnit` and `netUnit`: dropped at rest on the snow under the cable. The one thing that cannot
+touch a rider is another body: `separateUnits` skips `p.zip >= 0` the way it skips `inAir(p)`.
+
+**Letting go keeps the cable's speed** — `zipEnd(p, false)` leaves `vx/vy` at 220 px/s for the
+surface model to spend exactly as `grapEnd` leaves the reel's, so a hop-off is a dash (snow kills
+it in under a second) and shift on landing carves a slide; a body coming down over a solid tile
+(the odd pine or rock on the shoulder) is set beside it (`nearestDryTile`). Riders draw lifted
+`ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
+(`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
+`drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every
+walk the ladder orders ([bots](multiplayer.md#bots)); the waves never will.
+
 ## Unit collisions
 
 Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5, deer 5, wolf and alpha 4.5, the dire wolf 9,
@@ -2614,8 +2651,8 @@ Death is a walk back, never the end: while your team's eagle still roosts (`team
 eagle-drop banner in js/boot.js) going down costs a **timer and nothing else**, and you are
 set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
-is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw and
-momentum either way. **Death keeps everything** (3.55, League-style): the wallet, the pouch, the
+is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw,
+momentum and zipline handle either way. **Death keeps everything** (3.55, League-style): the wallet, the pouch, the
 bag, the weapon and the build loaded into it, the unopened cards, the gear, the skill ranks, the
 level and xp all stay on the body, and `reset(false)` brings the same player back — nothing
 spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding

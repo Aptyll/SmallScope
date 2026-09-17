@@ -60,7 +60,8 @@ function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rab
 function unitMass(e) { return MONSTER[e.kind] ? MONSTER[e.kind].mass : UNIT_MASS[e.kind]; }
 function separateUnits() {
   const us = [];
-  for (const p of players) if (p.active && !p.dead && !inAir(p)) us.push({ e: p, r: PLAYER_R, m: UNIT_MASS.player, vel: true, small: true, roll: p.dodgeT > 0 });
+  // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
+  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, m: UNIT_MASS.player, vel: true, small: true, roll: p.dodgeT > 0 });
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a deer and the dire wolf (MONSTER.big)
   for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), m: unitMass(a), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });

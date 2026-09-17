@@ -178,7 +178,7 @@ function buyAbilityLv(p, i) {
 // snow cover's is the other: pressing it again stands the body up, free.
 function tryAbility(p, i) {
   if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0 ||
-    p.dodgeT > 0 || p.grapT > 0 || p.castT > 0 || p.eatT > 0 || inAir(p)) return; // a meal occupies the hands the same way a cast does
+    p.dodgeT > 0 || p.grapT > 0 || p.castT > 0 || p.eatT > 0 || inAir(p) || p.zip >= 0) return; // a meal occupies the hands the same way a cast does; so does a zipline's handle
   const ab = CLASS_AB[p.cls][i];
   if (!ab) return;
   // a key nobody has spent a point on is not yours yet: the dim well already

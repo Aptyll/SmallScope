@@ -153,7 +153,7 @@ function fishInRange(f, p) {
 // cooldown; the bow comes back on its own once the cooldown runs out.
 function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0) return; // both hands are on the ability, or on the meal
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.zip >= 0) return; // both hands are on the ability, on the meal, or on the zipline's handle
   if (p.prone) { risePlayer(p); return; } // no swinging an axe on your belly: E stands you up
   const t = workTarget(p);
   if (!t || !t.near) return;
@@ -229,7 +229,7 @@ function autoTarget(p) {
 // with a fall, a roll, a stun, an ability or a meal, waits.
 function autoWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.prone || inAir(p)) return;
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.prone || inAir(p) || p.zip >= 0) return;
   const t = autoTarget(p);
   if (!t) return;
   cancelCatch(p); // a swing is a swing: the hoist gives way to it
@@ -245,6 +245,7 @@ function tryDodge(p) {
   risePlayer(p); // a roll is the fast way out of the snow, and it costs a charge
   breakEat(p);   // ...and out of a meal: the roll is the one way YOU end your own channel
   if (p.grapT > 0) grapEnd(p); // rolling off the rope: the reel's speed feeds the dash below
+  if (p.zip >= 0) zipEnd(p, false); // ...and off the zipline's handle the same way
   let dx = p.input.mx, dy = p.input.my;
   if (!dx && !dy) {
     dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0;
@@ -384,7 +385,7 @@ function rollSweep(p) {
 // Everything else about the state is one number, `p.hide`, which updatePlayer
 // ramps and every watcher reads back through seenAt().
 function tryProne(p) {
-  if (p.dead || p.fallT > 0 || inAir(p)) return;
+  if (p.dead || p.fallT > 0 || inAir(p) || p.zip >= 0) return;
   if (p.prone) { risePlayer(p); return; }
   const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
   if (p.dodgeT > 0 || p.sliding || Math.hypot(p.vx, p.vy) > PRONE_ENTER ||
@@ -889,6 +890,7 @@ function stunUnit(e, t) {
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
     if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; }
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
+    if (e.zip >= 0) zipEnd(e, true);               // ...and the zipline's handle: dropped at rest under the cable
     // ...and if it is YOUR hands the swing, the cast, the shield and the meal
     // were just knocked out of, you are told. Only the local player, only a
     // FRESH stun (a second blow inside the window extends it and says nothing
@@ -906,7 +908,7 @@ function stunUnit(e, t) {
 function rootUnit(e, t) {
   if (t <= 0 || !unitAlive(e)) return;
   e.rootT = Math.max(e.rootT || 0, t);
-  if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
+  if (e instanceof Player) { if (e.zip >= 0) zipEnd(e, true); e.vx = 0; e.vy = 0; e.sliding = false; } // a rider is pulled off the cable
 }
 // Slowed: a multiplier on everything that moves the body, for a window.
 // Always the WORSE of what is already on you and what has just landed, which
@@ -921,6 +923,7 @@ function netUnit(e, t, mul) {
   if (!unitAlive(e)) return;
   slowUnit(e, t, mul);
   e.netT = Math.max(e.netT || 0, t);
+  if (e instanceof Player && e.zip >= 0) zipEnd(e, true); // the drape brings a rider down
 }
 // Marked: revealed. On a player seenAt() returns its full range and both maps
 // keep drawing them; an animal or a bot has no cover to strip, so it is the

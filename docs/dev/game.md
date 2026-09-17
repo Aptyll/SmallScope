@@ -171,7 +171,12 @@ wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutr
 met on the road reaches the rival bird, and a scrapped soldier pays its killer gold (and so XP)
 on the spot — so the lane is where the fighting, the pushing and the paying are, and a base is
 something to walk *out* of. A raid that wrecks the barracks stalls a side's waves until its
-merchant rebuilds it. [The road](world.md#the-road), [the waves](gameplay.md#soldiers-the-waves),
+merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side's
+cable runs from outside its wall ring along the road's verge to short of the middle, and any body
+of that team under it clips on with E, rides either way at three times a walk, and lets go
+anywhere — hands on the handle, still a target, dropped by a stun or a net, and the last stretch
+into the fight always walked. [The road](world.md#the-road), [the zipline](world.md#the-zipline),
+[the ride](gameplay.md#the-zipline), [the waves](gameplay.md#soldiers-the-waves),
 [the barracks](gameplay.md#base-building).
 
 ## What the design is not

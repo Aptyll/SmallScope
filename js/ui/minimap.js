@@ -169,6 +169,20 @@ function renderMinimap(now) {
     drawFlagMark(ctx, MM_CX + dx, MM_CY + dy + 3, q.flag, TEAMS[skin(q.team)].mark, undefined, s);
     ctx.restore();
   }
+  // the ziplines, each a thread in its side's ink along the road's verge
+  // (the chart strokes the same lines): where the fast way out runs
+  for (const z of zips) {
+    if (!z) continue;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(MM_CX, MM_CY, MM_R - 1, 0, Math.PI * 2); ctx.clip();
+    ctx.strokeStyle = TEAMS[skin(z.team)].mark;
+    ctx.globalAlpha = 0.8;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    z.pts.forEach((pt, i) => ctx[i ? 'lineTo' : 'moveTo'](MM_CX + (pt.x / TILE - ptx) * s, MM_CY + (pt.y / TILE - pty) * s));
+    ctx.stroke();
+    ctx.restore();
+  }
   // the downed eagles: both objectives, always on the disc - keeping yours
   // alive (and finding theirs) is the match
   if (state.drop) for (const e of state.drop.eagles) {

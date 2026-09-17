@@ -164,11 +164,13 @@ function drawSelection(ox, oy, now) {
 // the "you're close enough" signal.
 function drawWorkHint(ox, oy) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop) return;
-  if (player.charging || player.fallT > 0 || player.dodgeT > 0) return;
+  if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
   if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
   // a MERCHANT in reach owns the key outright (keyPress, js/input.js), so its
   // cap is the one that shows - trunk under the aim or not
   if (drawShopHint(ox, oy)) return;
+  // ...then a zipline overhead, the key's next claim (keyPress again)
+  if (drawZipHint(ox, oy)) return;
   let t = workTarget(player);
   // what the hands take on their own (autoToolFor: a tree, a rock, a chest, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
@@ -298,6 +300,19 @@ function drawKeyPrompt(x, y, verb, pressed, action) {
 function promptW(verb, action) {
   action = action || 'work';
   return (padActive() && PAD_BIND[action] ? padBindW(action) : pixelTextWidth(keyCap(action)) + 6) + 3 + pixelTextWidth(verb);
+}
+
+// The zipline's prompt: a bare cap, no verb, over the cable at the body's own
+// column while it stands under its side's line (zipNear, js/world.js - the
+// resolver keyPress clips on with). The cable overhead is the whole
+// affordance; the cap only says which key takes it.
+function drawZipHint(ox, oy) {
+  const near = zipNear(player);
+  if (!near) return false;
+  const w = promptW('', 'work');
+  const y = Math.round(player.y + 4 - zipLift(near.z, near.d) - oy - 19); // clear of the cable, and of the name tag stamped over the world (drawWorldText)
+  drawKeyPrompt(Math.round(player.x - ox - w / 2), Math.max(1, Math.min(WV_H - 11, y)), '', keyHeld('work'));
+  return true;
 }
 
 // The practice armory's prompt: PROXIMITY, not hover - standing beside the
