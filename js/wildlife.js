@@ -37,13 +37,23 @@ const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '
 const FLEE_SIGHT = { rabbit: 26, deer: 46 };
 const FLEE_TIME = { rabbit: [0.6, 1.1], deer: [1.1, 1.9] };
 const PREY_SPD = { rabbit: 42, deer: 26 };   // px/s grazing
-const PREY_RUN = { rabbit: 80, deer: 92 };   // px/s bolting
-// A deer's sprint: the first stretch of a flight goes at DEER_SPRINT, well
-// over any walk or slide, off a stamina bar it always wears (a.sprint, 0..1);
-// the bar drains over DEER_SPRINT_T of running and refills over
+// A deer's two flight gaits, as multiples of a player's walk (PLAYER_SPEED):
+// the run while its stamina bar lasts and the walk once it is empty. The
+// px/s numbers below are derived from these two, so this is the one place
+// a deer's pace is tuned.
+const DEER_WALK_MUL = 1.15;   // 1.1 to 1.2 is the band
+const DEER_RUN_MUL = 1.4;     // 1.3 to 1.5 is the band
+// ...and the time it takes to get from one pace to another: a startled deer
+// is at its run, and a spent one back down at its walk, DEER_EASE_T after the
+// change, on an ease-out (fast at first, settling in) - never a jump in speed
+const DEER_EASE_T = 0.28;     // s; 0.2 to 0.35 reads as a startle, not a dash
+const PREY_RUN = { rabbit: 80, deer: Math.round(PLAYER_SPEED * DEER_WALK_MUL) };   // px/s bolting
+// A deer's sprint: the first stretch of a flight goes at DEER_SPRINT, a run
+// a walking player cannot match, off a stamina bar it always wears (a.sprint,
+// 0..1); the bar drains over DEER_SPRINT_T of running and refills over
 // DEER_SPRINT_REGEN of grazing, so a deer that has just been run is the one
-// you can catch, and the bar says which
-const DEER_SPRINT = 170;      // px/s while the bar lasts
+// you can close on, and the bar says which
+const DEER_SPRINT = Math.round(PLAYER_SPEED * DEER_RUN_MUL); // px/s while the bar lasts
 const DEER_SPRINT_T = 2.5;    // s of sprint in a full bar
 const DEER_SPRINT_REGEN = 10; // s from empty to full, grazing
 // A rabbit's jink: the same bar under its health (a.dodge, 0..1) holds ONE
@@ -116,6 +126,7 @@ function makeAnimal(kind, x, y) {
     alertT: 0, wary: 0,                  // rabbit: the sit-up before the bolt (RABBIT_ALERT); both: the head-up window after one (PREY_WARY_T)
     fleeT: 0, fleeGoal: null, nav: null,  // prey: its flight; any walker: its route (see pathfinding)
     sprint: 1,                           // deer: the stamina bar its sprint runs off (0..1)
+    spd: 0,                              // deer: the pace it is actually at, px/s, eased toward the one it wants (deerPace)
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
     home: null,                          // the camp it belongs to, if any
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
@@ -434,6 +445,7 @@ function updateAnimal(a, dt) {
     // the leg it was on. A shove still moves it, same as any idle animal.
     a.stunT = Math.max(0, a.stunT - dt);
     setClip(a, 'idle'); // stars over a still body: the standing clip, held
+    a.spd = 0;          // ...and a deer comes out of it from a standstill (deerPace)
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, unitRadius(a));
     if (a.stunT <= 0) { a.goal = null; a.fleeGoal = null; a.dashT = 0; a.alertT = 0; navClear(a); a.idleT = 0.3; }
   } else if (isCampKind(a.kind)) updateCampMonster(a, dt);
@@ -533,6 +545,16 @@ function rabbitDodge(a, s) {
   burst(a.x, a.y, '#eef2fa', 5, 30, 0.3); // the snow it kicks off
 }
 
+// A deer never changes pace in one step: a.spd closes on the pace it wants by
+// a fixed share of the gap per second - an ease-out, steepest at the moment of
+// the change - and is there (within 2%) DEER_EASE_T later. The share is an
+// exponential of dt, so the curve is the same at any step length.
+function deerPace(a, want, dt) {
+  a.spd += (want - a.spd) * (1 - Math.exp(-4 * dt / DEER_EASE_T));
+  if (Math.abs(want - a.spd) < 0.5) a.spd = want;
+  return a.spd;
+}
+
 // rabbits and deer: wander, nibble, and bolt from anyone who gets close
 function updatePrey(a, dt) {
   const rabbit = a.kind === 'rabbit';
@@ -593,7 +615,10 @@ function updatePrey(a, dt) {
       // a deer with sprint left in the bar spends it here, and runs for it
       sprinting = !rabbit && a.sprint > 0;
       if (sprinting) a.sprint = Math.max(0, a.sprint - dt / DEER_SPRINT_T);
-      const n = navStep(a, a.fleeGoal.x, a.fleeGoal.y, r, sprinting ? DEER_SPRINT : PREY_RUN[a.kind], dt);
+      // ...up to it from whatever pace the startle caught it at, and back
+      // down to the walk when the bar empties (deerPace): never a jump
+      const want = sprinting ? DEER_SPRINT : PREY_RUN[a.kind];
+      const n = navStep(a, a.fleeGoal.x, a.fleeGoal.y, r, rabbit ? want : deerPace(a, want, dt), dt);
       if (!n.ok || n.d < 6) a.fleeGoal = null;
       moving = true;
     } else {
@@ -603,13 +628,18 @@ function updatePrey(a, dt) {
   } else if (a.goal) {
     // grazing is a routed walk to a real tile: it rounds the trees instead of
     // bumping them, and it ends on the spot the animal was heading for
-    const n = navStep(a, a.goal.x, a.goal.y, r, PREY_SPD[a.kind], dt);
+    const n = navStep(a, a.goal.x, a.goal.y, r, rabbit ? PREY_SPD[a.kind] : deerPace(a, PREY_SPD[a.kind], dt), dt);
     if (!n.ok || n.d < 6) { a.goal = null; navClear(a); a.idleT = rabbit ? rand(0.8, 2.2) : rand(1.6, 4); }
     else moving = true;
   } else {
     a.idleT -= dt;
+    // a deer that has just stopped runs its pace out along the heading it
+    // had (deerPace, to nothing) rather than halting dead - hand-steered, so
+    // unitMoveMul is folded in here the way navStep folds it into a routed step
+    const coast = rabbit ? 0 : deerPace(a, 0, dt) * unitMoveMul(a);
+    if (coast > 4) moving = true; // still in its gait until it has all but stopped
     // a shove (arrow or unit collision) still moves an idle animal
-    if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, r);
+    if (coast > 0 || Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, (a.mvx * coast + a.kbx) * dt, (a.mvy * coast + a.kby) * dt, r);
     if (a.idleT <= 0) {
       a.goal = preyWander(a);
       if (!a.goal) a.idleT = rand(1.5, 3); // nibbling where it stands, or boxed in
@@ -639,7 +669,10 @@ function updatePrey(a, dt) {
   if (moving) setClip(a, rabbit ? 'hop' : 'run');
   else if (a.wary > 0) setClip(a, rabbit ? 'rise' : 'idle');
   else setClip(a, rabbit ? 'idle' : 'graze');
-  stepClip(a, dt, dashing ? 1.4 : sprinting ? 1.5 : a.fleeT > 0 ? 1 : moving ? 0.6 : 1);
+  // a deer's gallop keeps time with its eased pace (1 at its flight walk, the
+  // wander's 0.6 the floor), so the legs wind up and down with the body
+  const gait = rabbit ? (a.fleeT > 0 ? 1 : 0.6) : Math.max(0.6, a.spd / PREY_RUN.deer);
+  stepClip(a, dt, dashing ? 1.4 : moving ? gait : 1);
 }
 
 // what a kill pays: one profile per kind out of the YIELD table, grown
