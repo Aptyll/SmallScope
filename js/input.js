@@ -62,8 +62,8 @@ function keyLabel(k) {
 // the arrows walk the menus (and the arrows always walk the body too), F3 and
 // '.' are the two debug flips, the mouse buttons are the mouse's. Nothing
 // compares a key event against a literal: keyIs / keyHeld ask the binds, and
-// a pad button or a touch plate names an ACTION (PAD_PLAY, TOUCH_BTNS) and
-// presses whatever key it holds, so a rebind moves all three controllers.
+// a pad button names an ACTION (PAD_PLAY) and presses whatever key it
+// holds, so a rebind moves both controllers.
 //
 // TWO SCHEMES, TWO MAPS. `key` is the action's key on the WASD scheme and
 // `ck` its key on the CLICK scheme (settings.scheme; the scheme itself is
@@ -119,11 +119,11 @@ function mendBinds() {
   if (!SCHEMES.includes(settings.scheme)) settings.scheme = 'wasd';
 }
 // an action's key ('work' -> 'e'), or the bare name of a key that is no
-// action's (Escape) - what a pad button and a plate resolve through
+// action's (Escape) - what a pad button resolves through
 function actKey(a) { return binds()[a] || settings.binds[a] || a; }
-// A pad button and a touch plate name an ACTION, and the event they build
-// carries it (e.act): a plate is not a key on either scheme's map, so a map
-// never gets between a pad and its verb. Their held state lives in actHeld
+// A pad button names an ACTION, and the event it builds carries it (e.act):
+// a button is not a key on either scheme's map, so a map never gets between
+// a pad and its verb. Its held state lives in actHeld
 // beside the keyboard's `keys`. The keyboard's own events carry only a key,
 // read against the live map.
 const actHeld = {};
@@ -197,21 +197,21 @@ function rebindLive() {
 }
 
 // ------------------------------------------------------------ input
-const keys = {}; // key name (lowercase) -> held; written by the listeners, a pad and a plate alike
-// inside: pointer over the canvas. src: who moved it last - 'mouse', 'pad'
-// (js/gamepad.js) or 'touch' (js/touch.js); in play the pad and a finger
-// keep writing the aim through it every frame, and stop the moment the mouse
-// itself moves, so the three never fight over one reticle
+const keys = {}; // key name (lowercase) -> held; written by the listeners and a pad alike
+// inside: pointer over the canvas. src: who moved it last - 'mouse' or 'pad'
+// (js/gamepad.js); in play the pad keeps writing the aim through it every
+// frame, and stops the moment the mouse itself moves, so the two never fight
+// over one reticle
 const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, src: 'mouse' };
 
 // EVERY CONTROLLER IS A KEYBOARD AND A MOUSE IN DISGUISE. The listeners here
 // only translate the browser's events; what a key does lives in keyPress /
 // keyRelease and what a button does in pointerPress / pointerRelease, so a
-// gamepad and a finger press the same keys and the same buttons instead of
-// each keeping a copy of this file - a key handled in a listener alone is
+// gamepad presses the same keys and the same buttons instead of
+// keeping a copy of this file - a key handled in a listener alone is
 // dead on a pad. `e` is {key, repeat, char}: key the game's NAME for the key
 // (keyName above), char what it typed (the name editor's letters) - a real
-// KeyboardEvent translated, or the object a pad or a plate builds.
+// KeyboardEvent translated, or the object a pad builds.
 const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3']);
 window.addEventListener('keydown', (e) => {
   const k = keyName(e);
@@ -431,7 +431,7 @@ function pointerMove(x, y, src) {
   if (state.dragPend) hudMove(mouse.x, mouse.y);
   // a radial wheel is a stepped control like the zoom's rungs: one notch per
   // wedge the travel crosses. Every controller moves the pointer through
-  // here, so a pad's stick and a thumb step it exactly as a mouse does.
+  // here, so a pad's stick steps it exactly as a mouse does.
   if (state.wheel) {
     const seg = wheelLayout().seg;
     if (seg !== state.wheel.seg) { state.wheel.seg = seg; if (seg >= 0) SFX.notch(); }
@@ -532,8 +532,8 @@ function pointerRelease(button) {
   dragSlider = null;
 }
 
-// The tool's own press and release, BARE: what a pad's trigger and a finger's
-// aim stick send. The mouse arrives through pointerPress instead because a
+// The tool's own press and release, BARE: what a pad's trigger sends.
+// The mouse arrives through pointerPress instead because a
 // press has the HUD to get past first; a trigger is never over a well.
 function fireDown() {
   if (state.mode !== 'play' || state.wheel || state.settingsOpen || state.mapOpen ||
@@ -549,13 +549,12 @@ function fireUp() {
 
 // ---- haptics: telling the HAND something happened ------------------------
 // A gesture that moves an item has to answer in the hand that made it and not
-// only on the screen: a pad rumbles, a phone buzzes, and a mouse has neither,
+// only on the screen: a pad rumbles and a mouse cannot,
 // so for a mouse the answer is the cue and the pulse the caller raises beside
 // this. ONE entry point, for the same reason a key is asked for through its
-// action - a caller must never have to know which of the three controllers is
-// in hand. It lives here because this is the file the three of them meet in;
-// `pad` (gamepad.js) and `MOBILE` (mobile.js) are run-time reads, both files
-// loading after this one.
+// action - a caller must never have to know which controller is in hand. It
+// lives here because this is the file they meet in; `pad` (gamepad.js) is a
+// run-time read, that file loading after this one.
 //
 // The four strengths are a LANGUAGE, not a volume dial: a grab is the lightest
 // thing the hand can feel, a place is firmer, a SWAP is the longest and
@@ -573,8 +572,7 @@ function haptic(kind) {
   const h = HAPTIC[kind];
   if (!h || !settings.haptics) return;
   try {
-    // the pad's own actuator first: a rumble belongs in the hands actually
-    // holding the game, and a phone's motor is the fallback for a finger
+    // the pad's own actuator: a rumble belongs in the hands holding the game
     const gp = padActive() && pad.slot >= 0 ? (navigator.getGamepads() || [])[pad.slot] : null;
     const act = gp && (gp.vibrationActuator || (gp.hapticActuators && gp.hapticActuators[0]));
     if (act && act.playEffect) {
@@ -585,8 +583,7 @@ function haptic(kind) {
       if (p && p.catch) p.catch(() => {});
       return;
     }
-    if (act && act.pulse) { const p = act.pulse(h.s, h.ms); if (p && p.catch) p.catch(() => {}); return; }
-    if (MOBILE && navigator.vibrate) navigator.vibrate(h.ms);
+    if (act && act.pulse) { const p = act.pulse(h.s, h.ms); if (p && p.catch) p.catch(() => {}); }
   } catch (e) { /* no actuator, or a browser that refuses one: the ear and the eye still answered */ }
 }
 
@@ -594,8 +591,8 @@ function haptic(kind) {
 // under the pointer, on the build wheel's own grammar - held open, the
 // travel picks, the release plants (resolveWheel, ui.js). Over the chart it
 // opens on the chart's tile and is pinned to the press point (sx/sy), the
-// one way to order a tile that is off-screen. The right button, R3 on a
-// pad and the touch FLAG plate all hold it; the caller resolves it on its
+// one way to order a tile that is off-screen. The right button and R3 on a
+// pad both hold it; the caller resolves it on its
 // own release, as the right button does. False when nothing opened.
 function openFlagWheel() {
   if (state.mode !== 'play' || state.settingsOpen || state.wheel || player.dead) return false;
@@ -615,8 +612,7 @@ function openFlagWheel() {
   return true;
 }
 
-// A build wheel with no pointer to lay a ghost with - a pad's dpad and the
-// touch BUILD plate: it opens on the tile the body FACES, offering what
+// A build wheel with no pointer to lay a ghost with - a pad's dpad: it opens on the tile the body FACES, offering what
 // stands there (the net over a hole, the land list otherwise); the pick is
 // laid on that tile, a big one fitted round it (placeStruct -> findSite).
 // With a building of the player's own on that tile it is the manage wheel
@@ -657,7 +653,7 @@ function openWheelNear(p, ax, ay) {
 // the pointer, the skillshot grammar. A arms the pointer and the next left
 // press is an ATTACK-MOVE: walk there, lock the first foe seen within
 // CK_ACQ_R on the way, chase it, and walk on when it is down. S drops the
-// lot. A tilted stick (a pad, a finger) is a walk of its own and drops the
+// lot. A tilted stick (a pad) is a walk of its own and drops the
 // order too, but keeps the lock: WoW's grammar, the target stays while you
 // strafe.
 //
@@ -875,8 +871,8 @@ function ckStep(p, dt, smx, smy) {
   return r;
 }
 
-// whichever scrolling page is up walks by d px - the wheel listener below,
-// a finger's drag and a pad's right stick all arrive here. False when
+// whichever scrolling page is up walks by d px - the wheel listener below
+// and a pad's right stick both arrive here. False when
 // nothing on screen scrolls.
 function panelScrollBy(d) {
   if (state.mode === 'title') {
@@ -945,10 +941,10 @@ function sampleHumanInput(p, dt) {
     if (keyHeld('left') || keys['arrowleft']) mx -= 1;
     if (keyHeld('right') || keys['arrowright']) mx += 1;
   }
-  // ...and the two sticks, a pad's left one and the touch move stick, at
-  // their tilt (both files load after this one; this is a run-time read)
-  mx = Math.max(-1, Math.min(1, mx + pad.mx + touch.mx));
-  my = Math.max(-1, Math.min(1, my + pad.my + touch.my));
+  // ...and a pad's left stick, at its tilt (gamepad.js loads after this
+  // file; this is a run-time read)
+  mx = Math.max(-1, Math.min(1, mx + pad.mx));
+  my = Math.max(-1, Math.min(1, my + pad.my));
   // a tilted stick is a walk of its own, and drops the order it would fight
   if (ckOn() && (mx || my)) { ck.order = null; ck.follow = false; }
   const live = state.mode === 'play' && !state.paused && !state.settingsOpen && !state.eagleCine && !state.dropBrief;

@@ -10,27 +10,23 @@ nine other people are on it.
 
 ## A match
 
-Ten players in `players` — **one is you, the rest are AI** — across **two teams of five, RED vs
+Ten players in `players` — **people and AI: every seat nobody takes is a bot's**, alone or in an
+online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
 BLUE** (players alternate). Everyone plays one of **two classes** (the ranged HUNTER, the melee
 WARRIOR — a human's is the one their **character** was made with) and is **dropped in by their team's armoured eagle** — the two birds fly the map's one
 diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
 its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
 always top-right, each to its own right of the road — and becomes its team's **objective**; its
-**merchant** climbs down to raise the base's first defence (four guns inside a closed ring of walls, open only at the road and at the corner its bay will take), clear the rim and then keep shop at the head of the spur
-for anybody at all who walks up to it, and a **spur** of pines falls open from the crater straight
-back to the road, paved behind the felling front into a track. **The road** itself runs the map's
-whole diagonal, world edge to world edge — one straight packed-earth lane, seven tiles wide across
-the field with ragged snowy verges, narrowing to five where it enters each corner's woods between
-a pair of pennant poles in that side's colour, a marker at its middle and a felled trunk across
-each forest end, dry from end to end because the ice keeps clear of it, there from worldgen and
-readable from anywhere: a route that comes from beyond and goes on past us, with the nests beside
-it, so from the road the way to a bird is one straight sightline down its spur —
-and half a minute after landing each merchant clears the woods *behind*
-its bird and raises a **barracks** there: every thirty seconds it marches a **wave** of soldier bots
-down the road toward the rival bird, fighting whatever it meets and swinging at the roost when it
-arrives, the waves growing by one every three minutes. Both sides get the same waves, so with
-nobody on the road the two columns meet in the middle and grind — which side's wave gets through
-is decided by who walks out to it. **Drive off the rival eagle
+**merchant** climbs down to raise the base's first defence (four guns inside a closed ring of walls), then
+keeps shop at the head of the **spur** — the track of felled pines that opens from the crater
+straight back to the road — for anybody at all who walks up to it. **The road** runs the map's
+whole diagonal, world edge to world edge: one straight, dry packed-earth lane, there from
+worldgen and readable from anywhere, with the nests beside it, so the way to a bird is one
+sightline down its spur ([the road](world.md#the-road)). Half a minute after landing each
+merchant raises a **barracks** behind its bird: every thirty seconds it marches a **wave** of
+soldier bots down the road at the rival bird, one soldier more every three minutes. Both sides
+get the same waves, so with nobody on the road the two columns meet in the middle and grind —
+which side's wave gets through is decided by who walks out to it. **Drive off the rival eagle
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
 down at their own bird.
 
@@ -92,7 +88,7 @@ colliding with them. [Momentum movement](gameplay.md#momentum-movement-players-o
 **Snow cover goes prone and the snow covers you — and it is the hunter's.** Concealment is a real
 state the world reads, not a
 visual effect: everything that decides it can see a player goes through one function, and burial
-lives inside it. It is a class ability now (the hunter's key 4), not a universal key.
+lives inside it. It is a class ability (the hunter's key 4); a warrior never hides.
 [Prone](gameplay.md#prone-under-the-snow).
 
 **E is the one verb for the world.** The same key harvests a tree, mines a rock, breaks an
@@ -110,8 +106,8 @@ sells them for, so what a bag of fish is worth is a question of *when*.
 [Economy](gameplay.md#economy-one-currency), [the counter](gameplay.md#the-merchants-counter),
 [Hero levels](multiplayer.md#hero-levels).
 
-**You carry a 10-cell backpack, and it is the build.** The wallet (`p.inv`) is gold and nothing
-else, and the ten cells are for the tools, bits and cards a match hands you — the things worth
+**You carry a 12-cell backpack, and it is the build.** The wallet (`p.inv`) is gold and nothing
+else, and the twelve cells (`BAG_CAP`) are for the tools, bits and cards a match hands you — the things worth
 laying out and choosing between. Berries and fish are not in it: food is an uncapped **pouch**
 (`p.food`) pressed on Q and F from the HUD, because a meal is never arranged, only eaten.
 [Inventory and the backpack](gameplay.md#inventory-and-the-backpack).
@@ -129,8 +125,8 @@ easier opening for a new player who can help fortify before walking out. Its hp 
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly
 away, and its whole side falls with it as it goes. **It is also the way back**: a player who
-goes down waits out a timer and is set down again at the roost with everything it had — no Keep,
-no permadeath, no spill; death costs the wait and the walk, League-style, and a kill pays its
+goes down waits out a timer and is set down again at the roost with everything it had — wallet, bag, weapon and build;
+death costs the wait and the walk, League-style, and a kill pays its
 taker a flat bounty. The bird is the **only objective** and the one way a
 match ends, which is why both teams always have somewhere worth walking to — and why every bot
 on the map knows where both birds are and what is happening at them, and answers a hit on its
@@ -187,8 +183,9 @@ into the fight always walked. [The road](world.md#the-road), [the zipline](world
   costs a wait that grows with your level and the walk back from your roost, never what you
   carried; the stake is the time a wiped side hands the other, and the objective is the only place
   a death is ever permanent.
-- **Not a solo survival game.** Every mechanic runs per player off `p.input`, and `player` is only
-  the local one — see [multiplayer.md](multiplayer.md).
+- **Not a solo survival game.** Every mechanic runs per player off `p.input` — a hand's, a bot's
+  or a remote human's in an online lobby — and `player` is only this screen's: see
+  [multiplayer.md](multiplayer.md).
 - **Not a game that explains itself in text.** The UI rule in [CLAUDE.md](../../CLAUDE.md) is a
   design constraint, not a style preference.
 - **Not an account.** The player profile is up to three **characters** — each a name, a class
@@ -199,5 +196,6 @@ into the fight always walked. [The road](world.md#the-road), [the zipline](world
   character is paint, never power**: a match reads its name, class and look and nothing else —
   everything about a match is decided inside that match, and the arsenal is unlocked for
   everybody alike. See [architecture.md](architecture.md#profilejs) and
-  [the character screens](rendering.md#the-character-screens). If a server ever holds it, it
+  [the character screens](rendering.md#the-character-screens). An online lobby sends the host
+  exactly that name, class and look and nothing more; if a server ever holds the profile, it
   holds the same object.

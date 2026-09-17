@@ -7,23 +7,22 @@ anything that must stay stable per tile.
 ## The tile world
 
 - `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `PRACTICE` the const is
-  76 instead — see [the practice arena](#the-practice-arena)). The forest border keeps its
-  original depth (`BORDER_MIN`/`BORDER_MAX` 30–70, avg ~50), so the growth all went into the
-  open interior (~132 tiles across, double the old ~92²'s area). The two **roost corners** —
+  76 instead — see [the practice arena](#the-practice-arena)). The forest border is
+  `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an open interior ~132 tiles
+  across. The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
   ([eagle drop](rendering.md#eagle-drop-mode-drop)) — are forested to `ROOST_R` (68 tiles from the
   corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
   there the corner holds one solid block of woods: the nest sits `CRASH_DEPTH` inside the arc and
   the road's gate is at least the arc out. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
-  `borderNoise`, so a seed's interior is exactly what it was before the corners were guaranteed
-  (the discs move no seed's ground hash; the [camps](#camps)' clearings do); not under `PRACTICE`. Interior feature counts
-  (ponds, rock clusters, bushes, wildlife) were doubled to hold density. `ringPts` is `RING_N`
-  (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles from the centre at
-  the treeline — the old spawn camps. Nobody starts there any more (players land from the eagles,
-  see [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved, but the river
-  spokes and the keep-clear rules still hang off them — which is exactly why `RING_N` is frozen at
-  six instead of tracking `MAX_PLAYERS`: the roster growing to ten must not reshape terrain.
+  `borderNoise`, so the discs cost the shared stream nothing and move no seed's ground hash
+  (the [camps](#camps)' clearings do); not under `PRACTICE`.
+- `ringPts` is `RING_N` (6) points, evenly spaced on a ring `SPAWN_D` (`WORLD / 2 - 55`) tiles
+  from the centre at the treeline. Nobody starts there (players land from the eagles,
+  [multiplayer.md](multiplayer.md#where-players-start)) and no pocket is carved; the river
+  spokes and the keep-clear rules hang off them — which is why `RING_N` is frozen at
+  six instead of tracking `MAX_PLAYERS`: the roster's size must not reshape terrain.
 - `ground` — `Uint8Array(WORLD²)`: `0` snow, `1` ice, `2` open-water hole (runtime-only, see
   [Ice holes and fishing](#ice-holes-and-fishing)), `3` the road ([The road](#the-road)). Ice is **mechanically slippery** (see
   [Momentum movement](gameplay.md#momentum-movement-players-only)), and worldgen carves it as a travel
@@ -35,10 +34,13 @@ anything that must stay stable per tile.
   `ROAD_ICE_TAPER` (7) tiles first (`carveRiver`'s disc shrinks with `roadDist`), so it peters out
   instead of ending in a cut. Neither test rolls anything, so a seed's rng stream is what it was.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
-  `{ type, tx, ty, hp, flash, shake, ...extra }`. Types: `tree`, `deadTree`, `stump`, `rock`,
-  `bush`, `chest`, `den`, `cairn`, `banner`, `wall`, `turret`, `generator`, `spawner`,
-  `barracks`, `part`. `cairn`/`banner` are [the road](#the-road)'s furniture (`banner` is
-  also the practice gate's flag). `deadTree` (a 3 hp snag, chopped like a
+  `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
+  `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `rack`, `cairn`, `log`,
+  `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `part`; the `STRUCTS` table's: `wall`,
+  `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `cairn`/`banner`/`log` are
+  [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
+  [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
+  [the practice arena](#the-practice-arena). `deadTree` (a 3 hp snag, chopped like a
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
   that carries its `site` — the camp record — so a hover can wear the camp's clock)
   exist only inside [camps](#camps) (`cairn` is a camp's anchor too); `chest` is a
@@ -61,27 +63,34 @@ anything that must stay stable per tile.
   berries back but dull) inside `BUSH_RIPEN_T`, then `bush` — chosen in `render()`'s bush
   branch, so a player reads wait-or-move-on off the plant at a glance, and **under the pointer a
   regrowing bush wears the neutral unit bar** filling toward ripe (the frames say roughly, a hover
-  says exactly — [rendering.md](rendering.md#the-tree-fade)); `ready` still refuses E until the
+  says exactly — [rendering.md](rendering.md#render-pass-order)); `ready` refuses E until the
   berries are ripe, so neither in-between frame ever rims. The first
   three have three tiers; the spawner
   (the bot bay) has one and a **3×2 footprint** — `STRUCTS.spawner.w/h`, with `footprint()`,
   `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
   helpers. Stumps are **consumable build anchors**: building on one replaces it (a bay consumes
   every stump under it), and demolition/destruction leaves the tiles empty, not stumps.
-- The world center is an empty clearing (the old gold-ore ring is gone); `CENTER_R` in
-  `genWorld()` still keeps ice ponds, rocks, and bushes clear of it so the river spokes meet in
-  open ground, and the ore loop's two `rand()` draws per spot are kept as no-ops so existing
-  seeds still generate the same world.
+- The world center is an empty clearing: `CENTER_R` in `genWorld()` keeps ice ponds, rocks and
+  bushes clear of it so the river spokes meet in open ground. The ore loop there draws two
+  `rand()` per spot and places nothing — **no-ops kept on purpose**, so every seed's stream
+  stays what it is.
 - Every `tree` carries `rare` (boolean), set at worldgen from `treeRare(tx, ty)`: a `hash2`
   roll gives each tree a `TREE_RARE_CHANCE` (8%) shot at a **jackpot** — `YIELD.treeRare` extra
   gold (straight to the feller through `awardGold`, plus a `JACKPOT!` floater), paid by
   `hitObject()` only when the tree actually falls, on top of the normal payout. Being a position hash rather than an `rng()`
   draw, the roll is the same whenever it is asked — `DBG.treeRare(tx, ty)` reports it for any
   tile, occupied or not.
+- **The ground is baked once.** `renderGround()` (js/draw/ground.js) pre-renders the whole
+  ground to one offscreen canvas at boot and the frame loop blits the camera window out of it;
+  the per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
+  `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
+  edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-fishing) and
+  their dawn refreeze, a spur's and a roost pad's paving ([the road](#the-road)), and the
+  practice arena's track rolls.
 
 ## Treasure chests
 
-`placeChests()` (the `world` banner, right above the camps) runs at boot after
+`placeChests()` (the `world` banner, js/world.js) runs at boot after
 `placeCamps()`: it scans for **border trees on the forest's inner edge** (a `tree` with at
 least one cardinal neighbour of open snow — reachable with E from open ground) and swaps
 `CHEST_COUNT` (14) of them for `chest` objects, at least `CHEST_SPACING` (22) tiles apart.
@@ -89,18 +98,13 @@ Selection rolls on its own `mulberry32(SEED ^ 0x43484553)` stream (`chRng`) so i
 can never perturb the shared `rng` stream and terrain stays bit-identical for an existing seed
 (chests place after the camps and touch only `objects`, never `ground`). A chest is solid, gold
 on both maps (its `mm`/`map` entry), and one free E press (`OPEN`, `needs: null`) springs it —
-`hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` gold on the spot and drops one
-card rolled from `CHEST_ODDS` (all four constants beside `placeChests`). The tile empties with
+`hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` (8–20) gold on the spot, drops one
+card rolled from `CHEST_ODDS` (those constants beside `placeChests`) and, `CHEST_TOOL` (0.75,
+js/tools.js) of the time, a **top-tier** tool or bit through `dropLoot` — the one place the top
+tier is found. The tile empties with
 it, leaving a one-tile notch in the treeline where the cache was dug out. The sprite bakes in
 [js/draw/ground.js](../../js/draw/ground.js) (`CHEST_SPR`, under the `the scenery bakes` banner) rather than
 in the byte-fragile grid files under js/sprites/.
-
-`renderGround()` pre-renders the *entire* 3712×3712 ground to one offscreen canvas at boot and
-the frame loop just blits the camera window out of it. It is a one-time cost — never call it per
-frame. The per-tile painter is factored out as `paintGroundTile(g, tx, ty)`, and a runtime
-ground change must call `repaintGround(tx, ty)` — it repaints the tile plus its four neighbors
-(edge rims depend on neighbors) into the prerendered canvas. Ice holes are currently the only
-runtime ground change.
 
 ## The road
 
@@ -115,9 +119,9 @@ the way on is blocked, and the road running on under it to the edge says the rou
 here (the `the road` group of the `world` banner, js/world.js). Ground `3`, packed earth showing
 through the snow with two ruts down its length: it **walks like snow** (only ice and holes are
 special-cased in `updatePlayer`'s momentum block) but it is **not snow** — nothing digs into it
-(`tryProne`, the hunter's burrow), nothing grows or is built on it (every `ground === 0` site test
-refuses it: a stump cannot be on it, `findSite` will not put a bay on it), a fish never counts it
-as water (`fishWater`), and the footprint emitter leaves no prints on it.
+(`tryProne`, the hunter's burrow), nothing grows on it, a fish never counts it
+as water (`fishWater`), and the footprint emitter leaves no prints on it. A building **does**
+stand on it: `canPlaceAt` (js/structures.js) takes ground `0` and `3` alike.
 
 **Its edge is ragged, never a tile staircase.** `roadEdgeAt(u, side)` wanders the half-width
 along the lane on the position noise — a slow drift of ±`ROAD_RAG` (0.8) and a fine ripple, each
@@ -151,7 +155,7 @@ then, the way to a bird is one straight sightline down its spur.
 
 **Its furniture** is placed with it, off the same ragged edge (`mark` in `placeRoad`,
 `ROAD_POLE_OUT` (0.9) tiles past it): two **`banner`** poles at each gate carrying a `team` (0 at
-the bottom-left gate, 1 at the top-right — the practice gate's own flag object, which now paints
+the bottom-left gate, 1 at the top-right — the practice gate's own flag object, which paints
 its cloth in `TEAMS[skin(team)]`'s coat and both maps in that side's ink, and *fells* what stands
 on its spot, since the gate stands in the treeline, but gives way to a rock or a bush); one
 **`cairn`** on the centreline at the map's centre, solid cover where the two waves meet; and the
@@ -165,14 +169,14 @@ js/draw/ground.js and drawn in `render()`'s object pass; the pole is `drawBanner
 paints its four neighbours' pieces too, shifted, because the trunk is wider than the diagonal it
 runs on and spills past a tile's corners.
 
-`placeRoad()` runs at boot **after `genWorld()` and before `placeCamps()`**, on pure reads —
+`placeRoad()` runs at boot **right after `genWorld()`** (then `placeZips()`, `placeCamps()`,
+`placeChests()` — js/boot.js), on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
 exactly the rule `diagEnd` (boot.js) flies the eagles by, so the gates are where each line's
 mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
 run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone,
-the pines of the woods it cuts through are felled (there is no ice to meet - see above). (An
-existing seed's *terrain* is therefore no longer bit-identical to its pre-road self along that
-band; everything off the band is.) `roadAlong`/`roadOffS`/`roadOff`/`roadPoint` are the geometry —
+the pines of the woods it cuts through are felled (there is no ice to meet - see above).
+`roadAlong`/`roadOffS`/`roadOff`/`roadPoint` are the geometry —
 the diagonal is `tx + ty = WORLD - 1`, `u` running from the bottom-left corner, `roadOffS` signed
 toward the bottom-right side — taking a tile index or a continuous tile coordinate alike;
 `onRoad(tx, ty)` is the membership test, and `roadWaypoints(team)` the centreline every
@@ -281,7 +285,8 @@ s)` is the conversion back to a tile. The layout as shipped:
 | ALPHA STONE | 104, +44 | 135, 158 | 158, 135 |
 | DIRE HOLLOW | 115.5, −40 | 87, 87 | — |
 
-`placeCamps()` runs as worldgen's last pass (boot, right after `placeRoad()`), then
+`placeCamps()` runs as worldgen's last ground pass (boot: after `placeRoad()` and `placeZips()`,
+before `placeChests()`), then
 `stockCamps()` fills every camp once `spawnAnimals`/`spawnFish` are done (and tops one up to
 strength, never past it, when `DBG` calls it by hand). Every site sits at least `CAMP_EDGE`
 (72) tiles from the world's edge — past the deepest treeline the border noise grows
@@ -290,11 +295,8 @@ the woods by accident. Terrain still comes from the seed: **`clearCamp()` clears
 inside `r + 2` of the centre** — a pine, a rock, a bush goes, ice becomes snow — so a camp is the
 same clearing on every seed, and the props then stamp the same on every seed. (A camp on a
 seed's forest bay is therefore a clearing cut into its edge, and a river running under one
-gets a snow bridge; measured over six seeds the worst approach ring was one den with a seventh
-of its `r + 2 .. r + 8` ring in pines.) Because the clearing writes `ground`, **a seed's ground
-hash is not what it was before the camps** — the one deliberate break with the
-[determinism](#determinism-and-noise) rule, and the reason nothing else in the camp draws a
-random number: with the sites fixed there is no stream left to protect.
+gets a snow bridge.) The clearing is the one pass that writes `ground` after `genWorld`
+([determinism](#determinism-and-noise)), and nothing in a camp draws a random number.
 
 ### Runtime
 
@@ -312,7 +314,7 @@ any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward fo
 still grows back, the moment the intruder leaves — then every slot is refilled at once. **The
 anchor prop wears the clock**: `drawCampClock` (js/draw/marks.js) draws the neutral unit bar over
 a hovered den mouth or alpha stone, the picked bush's own read
-([rendering.md](rendering.md#the-tree-fade)), filling toward the camp's return while it is
+([rendering.md](rendering.md#render-pass-order)), filling toward the camp's return while it is
 empty and nothing at all while anything in it lives; a full bar holding is a camp that is due
 and waiting for you to go.
 
@@ -344,26 +346,28 @@ never advances it under `PRACTICE` — crisp daylight forever, no dusk, no dawn 
 over the dummy's meter or the parkour's ice would change what those instruments measure between
 one lap and the next. The sun shafts stay ([rendering.md](rendering.md#light-and-weather)).
 
-The arena is one open **40×23-tile snowfield** (`PR_W`/`PR_H`) cut to pure combat: a single
-**dummy** standing in the open snow in the middle, the two-tile bow **rack** in the open snow
-east of the dummy on its own row (`lead` on the left tile, a solid silent follower right; a
-two-tile pair can only centre on a tile boundary, so the lead carries `dx: -8` and the sprite,
-brackets and prompt all draw nudged 8px left — `RACK_SPR` itself is baked per-pixel
-in js/draw/practice.js so the strung staves get true curves), the spawn just south of the dummy —
-**the rack is the armory**: standing within E's own reach of it (`rackNear`) raises an `E ARM`
-key-cap over it (`drawRackHint`, js/ui/wheel.js — proximity, not hover), **holding E opens a radial
-wheel** of every tool in the game (`state.wheel` kind `'rack'`, the ordinary wheel pipeline),
-the pointer picks, and **releasing E takes** — the right-click wheel's hold-and-release grammar
-moved onto the key (a real work target in reach keeps E's day job, the same rule that decides
-which prompt shows). The pick lands in `rackEquip` (`PRACTICE`-gated, the practice banner),
-replacing the selected slot with a fresh instance of the picked tool, a plain arrow seated so
-it fires the moment it is taken — the **archery targets riding a two-rail track around the
-field's whole perimeter** (below), and the **range bell** that runs the timed archery round
-over that track, standing west of the dummy as the rack's mirror: bell and rack flank the
-dummy on its row, each five tiles out. No fences, no wildlife, no chests, no pond, no
-harvest, and nothing spawns or restocks outside a round. `PRACTICE`
-(js/core.js) pins `SEED` to `PRACTICE_SEED` *above* the `?seed` parse, so the field is
-bit-identical on every visit and no seed can reshape it.
+The arena is one open **40×23-tile snowfield** (`PR_W`/`PR_H`) cut to pure combat. What stands
+in it:
+
+- a single **dummy** in the open snow in the middle, the spawn (`PR_SPAWN`) just south of it;
+- the two-tile bow **rack** east of the dummy on its own row, and the **range bell** west of it
+  as the rack's mirror, each five tiles out;
+- the **archery targets** riding a two-rail track around the field's whole perimeter (below).
+
+No fences, no wildlife, no chests, no pond, no harvest, and nothing spawns or restocks outside
+a round. `PRACTICE` (js/core.js) pins `SEED` to `PRACTICE_SEED` *above* the `?seed` parse, so
+the field is bit-identical on every visit and no seed can reshape it.
+
+**The rack is the armory.** It is a `lead` on the left tile and a solid silent follower on the
+right; a two-tile pair can only centre on a tile boundary, so the lead carries `dx: -8` and the
+sprite, brackets and prompt all draw nudged 8 px left (`RACK_SPR` is baked per-pixel in
+js/draw/practice.js). Standing within E's own reach (`rackNear`) raises an `E ARM` key-cap over
+it (`drawRackHint`, js/ui/wheel.js — proximity, not hover); **holding E opens a radial wheel** of
+every tool in the game (`state.wheel` kind `'rack'`, the ordinary wheel pipeline), the pointer
+picks, and **releasing E takes** (a real work target in reach keeps E's day job, the same rule
+that decides which prompt shows). The pick lands in `rackEquip` (`PRACTICE`-gated, the practice
+banner): the selected slot is replaced with a fresh instance of the picked tool, a plain arrow
+seated so it fires the moment it is taken.
 
 **The ice parkour** runs through the forest collar around the field: a narrow carved-ice loop
 (`PK_PATH` is the *stock* centreline in world tiles, carved by `pkCarve` — trees hug
@@ -382,9 +386,10 @@ js/draw/practice.js) — the dummy meter's instrument language, same recorded ca
 the profile's all-time record on the stock track**: seeded from `PROFILE.bestLap()` at gen,
 written back through
 `PROFILE.setBestLap()` on a record (stored at the plate's own 0.1 s precision; only a strictly
-lower time writes) — the one thing practice ever puts in the profile, while LAST stays
-session-only. Everything
-is coordinate tests against the carved ice — no objects, no triggers. The trickle that refills a
+lower time writes) — one of the two records practice writes (the other is the archery round's,
+below), while LAST stays session-only.
+
+Everything is coordinate tests against the carved ice — no objects, no triggers. The trickle that refills a
 match's shoal is **off entirely under `PRACTICE`** (js/wildlife.js), because the only ice in the
 world is the race line and a fish emerging into it would be absurd; `crackIce` still works on
 the track (a hole in the racing line is the player's own doing, and re-entering rebuilds —
@@ -400,38 +405,33 @@ green, amber or red cube with its pip count (`PK_DIE_COL`, js/draw/practice.js),
 one wearing a gold frame. Releasing on a wedge IS the roll (`pkWheelPick`, through the same
 `input.cmd` → `runCmd` path every wheel uses): it carves a **fresh random track** at that
 difficulty, and the standing die's whole body recolours to the picked cube, so the die always
-says what the current track is without opening anything. `pkRoll` picks the loop (`pkGenPath`: waypoints on a
-jittered ellipse per `PK_DIFF` around `PK_CX`/`PK_CY` at `PK_RX`/`PK_RY` — easy few points/wide
-carve, hard many alternating slalom points/narrow carve — pinned to the west gate with lightly
-jittered approach legs so consecutive rolls visibly differ where the roller stands, kept out of
-the field's `PK_APRON` (6) tile **tree belt** with chord segments routed around its corners,
-and the carve plan itself refuses field tiles) and re-aims the checkpoint at the new
-farthest-east waypoint. **The terrain change is a watched sweep, not a blink**: `pkRoll` sorts
-every affected tile into events keyed by ring angle (`pkAngKey`, 0 at the gate) and
-`pkAnimStep` (from `updatePractice`) spends them as one eased carving front laps the collar in
-`PK_ANIM_T` seconds — slow off the gate, quick round the far side, slow home — closing forest
-over the old track (tree + flash + snow poof, never onto the player) and cutting the new lane
-(each pine **shudders `PK_WARN` radians before it falls** — a `k:2` event sets `o.shake`, which
-sim.js's object-timer loop decays — then goes down in a needle burst; frost sparkles settle on
-fresh ice, a sparse `break_` ticks, and the line flashes when the front comes home). A **sparkle
-plume rides the front** the whole way: the roll samples the new path into a dense angle-ordered
-trail (`pkAnim.trail`) and the step emits deep-blue-and-white sparks at the front's trail
-position on a time-based clock (refresh-rate independent), so the sweep stays visible even
-where old and new track share tiles and no event fires. Each event is one ground write plus
-one `repaintGround` (a shudder is neither) —
-a handful per frame, `PK_ANIM_CAP` bounds dt spikes — and the die tumbles for the whole sweep
-while `pkRoll` refuses a re-roll and the `E ROLL` cap hides. `pkTiles` remembers
-the current carve (the walk, line and station never move), and a shared tile the player broke a
-hole through gets its own re-ice event, since its registration was wiped with the roll. **A rolled track flips
-`parkour.custom`**: BEST/LAST restart and the
-profile is never written from one — random loops are not comparable, so the stored record stays
-what it claims to be, the stock lap. Track rolls draw on the runtime `rng()` stream — post-boot
+says what the current track is without opening anything.
+
+- **The path.** `pkRoll` picks the loop through `pkGenPath`: waypoints on a jittered ellipse per
+  `PK_DIFF` around `PK_CX`/`PK_CY` at `PK_RX`/`PK_RY` (easy few points/wide carve, hard many
+  alternating slalom points/narrow carve), pinned to the west gate with lightly jittered
+  approach legs, kept out of the field's `PK_APRON` (6) tile **tree belt** with chord segments
+  routed around its corners (the carve plan itself refuses field tiles). The checkpoint is
+  re-aimed at the new farthest-east waypoint.
+- **The sweep.** The terrain change is watched, not a blink: `pkRoll` sorts every affected tile
+  into events keyed by ring angle (`pkAngKey`, 0 at the gate) and `pkAnimStep` (from
+  `updatePractice`) spends them as one eased carving front laps the collar in `PK_ANIM_T`
+  seconds, closing forest over the old track (never onto the player) and cutting the new lane.
+  Each pine shudders `PK_WARN` radians ahead of the front (a `k:2` event sets `o.shake`, which
+  sim.js's object-timer loop decays) before it falls. A sparkle plume rides the front along a
+  dense angle-ordered sample of the new path (`pkAnim.trail`) on a time-based clock, so the
+  sweep stays visible where old and new track share tiles and no event fires.
+- **Its cost and its locks.** Each event is one ground write plus one `repaintGround` (a
+  shudder is neither) — a handful per frame, `PK_ANIM_CAP` bounds dt spikes. For the whole sweep
+  the die tumbles, `pkRoll` refuses a re-roll and the `E ROLL` cap hides. `pkTiles` remembers
+  the current carve (the walk, line and station never move), and a shared tile the player broke
+  a hole through gets its own re-ice event, since its registration was wiped with the roll.
+- **A rolled track flips `parkour.custom`**: BEST/LAST restart and the profile is never written
+  from one — random loops are not comparable, so the stored record stays the stock lap.
+
+Track rolls draw on the runtime `rng()` stream — post-boot
 calls reshuffle nothing ([determinism](#determinism-and-noise)), and the arena's boot remains
 bit-identical: the stock loop is carved before any roll can happen.
-
-**There is no ground type 3 any more** — the dummy's packed-earth pad was the only thing that
-ever wrote it (2.27 returned that patch to snow and removed the earth paint branches with it),
-so the live grounds are 0 snow, 1 ice, 2 open water.
 
 **The archery targets** (Link's-Crossbow-Training-style) all ride one piece of furniture: a
 **two-rail track ringing the field** (`AG_RECT`, `AG_INSET` tiles in from the rim, so the ring
@@ -444,36 +444,38 @@ arrow loop (js/sim.js) tests every live face disc (`ptFace`/`ptLive`/`ptHitR` �
 scales with the target's `size`, small or large, `AG_SIZE`). A target lives at track distance
 `s` (`agPos` maps it to world x/y) on one of **two lanes** (`AG_LANE_GAP` px apart), with three
 habits: `still`, `move` (rolling `dir × spd` along the rail, `AG_SPD` slow/medium/fast) and
-`pop` (flipping up out of its trolley on its own `{hide, rise, hold, sink}` clock). **Every
-habit tells at a glance** (`drawPTarget`): a target is a rail *carriage* — plank body, steel
-wheels seated on the rail along the rail's own axis (`agEdge`, so a side-rail target rides its
-rail rather than dangling beside it), a mast sized to its face and planted in the body with the
-face overlapping it, so the stack never gaps — whose wheels visibly turn while it rolls (plus a
-snow trail paced by distance), whose lane hop lifts the whole carriage and lands with a puff,
-and whose hidden pop-up form rattles on the rail with a snow fleck for a beat before the face
-flips up, bouncing as it locks. The two face sizes are separate per-pixel bakes
-(`bakeTargetFace` → `TARGET_SPR`/`TARGET_SPR_S`, js/draw/practice.js), never runtime downscales,
-every break snaps a quick shock ring out from the hit, sized to the face it came off
-(`agRings`/`drawAgRings` — rasterised dots over a dark rim pass, white-hot cooling to gold),
-and a milestone run (every fifth consecutive hit) flares at the face. **A mover
+`pop` (flipping up out of its trolley on its own `{hide, rise, hold, sink}` clock).
+
+**Every habit tells at a glance** (`drawPTarget`, which owns every pixel): a target is a rail
+*carriage* — plank body, wheels seated on the rail along the rail's own axis (`agEdge`), a mast
+sized to its face — whose wheels turn while it rolls, whose lane hop lifts the whole carriage,
+and whose hidden pop-up form rattles on the rail for a beat before the face flips up. The two
+face sizes are separate per-pixel bakes (`bakeTargetFace` → `TARGET_SPR`/`TARGET_SPR_S`,
+js/draw/practice.js; `TARGET_SPR` is the 32×32 face — true circles, hash-dithered band edges),
+never runtime downscales, and every break snaps a shock ring out from the hit, sized to the
+face it came off (`agRings`/`drawAgRings`).
+
+**A mover
 about to run into anything parked — or rolling slower — on its rail hops to the free lane and
 keeps going** (`laneU` eases the hop, and `agBlocked` refuses a hop into an occupied stretch),
-which is what lets a crowded round keep flowing. A hit lands in `hitPTarget`, and **the face
+which is what lets a crowded round keep flowing.
+
+A hit lands in `hitPTarget`, and **the face
 explodes on contact**: points, popup, the run and the shatter (`agShatter` — chips, straw,
 splinters and the shock ring) all land the same frame, so the feedback is instant and the round
 clock can never eat a landed shot. After the break a **stock** target (the free-practice roster,
 `agStock`) stands bare `PT_RESPAWN` seconds and springs a fresh face, while a round target is
-spent for good. **Every arrow into a face also extends a consecutive-hit run** (`agStreak`),
+spent for good.
+
+**Every arrow into a face also extends a consecutive-hit run** (`agStreak`),
 minigame or not: the hit popup carries it from the second hit on (`X3` alone in free practice —
 white, gold from five, hot orange from ten — appended to the points during a round), any
 practice arrow that ends without striking a face breaks it (the arrow loop, js/sim.js — the
 dummy counts as a break: the run is a *target* run), and ringing a round in starts it over.
-**The run is audible from 3.41**: every `AG_RUN_STEP` (5) in a row flares at the face AND rings
+**The run is audible**: every `AG_RUN_STEP` (5) in a row flares at the face AND rings
 `SFX.runUp(agStreak)` - the one cue in the game deliberately PITCHED by a number, because the
-number is the thing being climbed - and losing a run that long plays `SFX.runBroke` (a run of one
-or two is not news). One `AG_RUN_STEP` for the flare and both cues, or they disagree about what a
-milestone is. `drawPTarget` (js/draw/practice.js) owns every pixel, `TARGET_SPR` is the 32×32 face —
-baked per-pixel (true circles, hash-dithered band edges, top-left light) rather than from a grid.
+number is the thing being climbed - and losing a run that long plays `SFX.runBroke`. One
+`AG_RUN_STEP` for the flare and both cues, or they disagree about what a milestone is.
 
 **The archery round** hangs off the **bell** (`agbell`, `AG_BELL`) west of the dummy: standing
 within E's reach (`agBellNear`) raises an `E RING` cap (`drawBellHint`, js/ui/wheel.js), and **holding E
@@ -481,6 +483,7 @@ opens a three-wedge radial wheel** (kind `'agbell'`, the roll die's own hold-and
 grammar and the ordinary wheel pipeline) — one wedge per difficulty, each drawn as **the target
 face the round pours out, smaller as the pick gets harder**, the armed one wearing a gold frame
 (the bell itself never wears the difficulty — no recolour, the wheel's frame is the readout).
+
 Releasing on a wedge IS the ring (`agRing`, through the same `input.cmd` → `runCmd` path every
 order takes) and runs the show (`agame.phase`, ticked by `agUpdate` from `updatePractice`): the
 stock roster bursts away and **the dummy, the rack and the bell itself sink under the snow**
@@ -493,7 +496,9 @@ picked difficulty's spawn table** (`AG_DIFF`: the three mover speeds, the small/
 the crowd cap and its refill pace — easy is slow, large and sparse, hard fast, small and
 crowded) — each worth points on the harder-shot-pays-more rule (base 10; small, pop-up and
 fast/medium pay more, speed scored by **class** so the bonus means the same thing on every
-difficulty's table; the floater at the face says what it paid). A TIME / SCORE / HITS plate
+difficulty's table; the floater at the face says what it paid).
+
+A TIME / SCORE / HITS plate
 rides top-centre (`drawAgameUI` — a practice instrument, the dummy meter's carve-out), every
 live face outside the view gets a gold chevron pinned to the screen edge on the archer's line to
 it (`drawAgMarkers`, js/draw/practice.js — the shooter's off-screen marker, eight baked pixel
@@ -523,8 +528,7 @@ back to `DUMMY_HP` after `DUMMY_RESET_T` seconds unhit, with a shimmer for the a
 respawn, runs the archery round (`agUpdate`), and times the parkour laps.
 
 Over the dummy's head hangs its **damage meter** — LAST HIT / DPS / TOTAL for the combo in
-progress, a recorded labelled-row carve-out from show-don't-label (CLAUDE.md, shared with the
-parkour's plate). `hitDummy` keeps the ledger (`mLast`/`mTotal`/`mT0`/`mT1` on the object; a
+progress (an instrument, CLAUDE.md's carve-out). `hitDummy` keeps the ledger (`mLast`/`mTotal`/`mT0`/`mT1` on the object; a
 hit after the mend window starts it over), DPS is total over first-to-last hit floored at one
 second, and `drawDummyMeter` (js/draw/practice.js) draws the plate — visible only while a combo is
 live, lingering `DUMMY_METER_LINGER` past the mend so the final read stands, then fading.
@@ -542,8 +546,8 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
 
 - `rng` is a single `mulberry32(SEED)` stream shared by worldgen *and* runtime effects (particle
   bursts, animal wanders, drop velocities). Worldgen is reproducible only because it runs first at
-  boot. **Adding or removing any `rng()` call inside `genWorld()` reshuffles the whole world**;
-  adding one after boot does not.
+  boot — hence the CLAUDE.md rule against adding or removing an `rng()` call inside `genWorld()`;
+  adding one after boot reshuffles nothing.
 - `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
   of position *within a run* — use them for anything that must stay stable per tile no matter when
   it is asked (ground texture, forest boundary, tree rare-drops, the frost slabs' mottling).
@@ -554,8 +558,8 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
   snowflake top-ups in `fitFlakes()`, so window size / resolution changes cannot move the world
   (the boot-time 70 flakes still draw from `rng`, unchanged). `chRng` (`SEED ^ 0x43484553`) feeds
   the [treasure chests](#treasure-chests)' placement. The [camps](#camps) roll nothing at all -
-  their sites are written down - and their clearings are the one pass that writes `ground`
-  after `genWorld`, which is why a seed's ground hash moved when they arrived.
+  their sites are written down - and their clearings are the one boot pass that writes `ground`
+  after `genWorld`, so a seed's ground hash includes them.
 - `SEED` is a `const` in the rng banner and `hash2` closes over it, so nothing may call `hash2`
   before that line runs. Everything that does — `genWorld`, `renderGround`, the panel bakes — is
   further down in boot order.
@@ -570,14 +574,14 @@ rather than riding the bottom message line.
 `update()` derives `state.darkness` (0→1) from a hand-written
 ramp: dusk over the last 12 s of day, full dark, then a 10 s dawn.
 
-Night is visual pressure plus one real edge: a wolf's sight range scales
-with `state.darkness` (×1.75 at full dark), so a den is a different proposition after sunset.
-The visual half is a **colour**, not a darkness — a blue multiply over the finished frame with the
+Night is a **colour**, not a darkness — a blue multiply over the finished frame with the
 stars reflected in the ice under it, and nothing to carry a lamp for
-([rendering.md](rendering.md#light-and-weather)). What else keys off the cycle:
+([rendering.md](rendering.md#light-and-weather)) — and no sim rule sharpens at night: nothing
+in wildlife or the AI reads `state.darkness`. What keys off the cycle:
 
-- `darkness < 0.3` gates the only passive heal: slow daylight HP regen in `updatePlayer()`, for every player.
-  (There is no cold/warmth system — it was removed along with placeable campfires.)
+- The only passive heal, slow HP regen in `updatePlayer()` for every player, runs while
+  `state.darkness < 0.3` — or at any hour under a kit with `nightHeal` (the HEARTHWEAVE gear,
+  js/player.js). There is no cold/warmth system.
 - **The wind dies with the light.** `windAmp()` squares `1 - darkness`, so the snow stops blowing
   sideways and every pine goes still over the twelve seconds of dusk and stays still until dawn
   ([the wind field](rendering.md#the-wind-field)).
@@ -588,17 +592,18 @@ stars reflected in the ice under it, and nothing to carry a lamp for
   ([the reflected sky](rendering.md#the-reflected-sky)) - so a frozen lake reads darker than the
   snow around it after dusk, and an ice hole is a hole in the reflection.
 - Carved ice holes refreeze at dawn and cracks heal — **unless a fish net stands on the hole**,
-  which is what holds that water open. The shoal is *not* topped up here any more; it refills
-  continuously instead. See [Ice holes and fishing](#ice-holes-and-fishing).
+  which is what holds that water open. The shoal is not topped up at dawn; it refills
+  continuously. See [Ice holes and fishing](#ice-holes-and-fishing).
 
-`state.day` no longer drives any difficulty. What damages a player: another player's arrows, a
+`state.day` drives no difficulty. What damages a player: another player's arrows, a
 plunge through the ice (see [PvP](multiplayer.md#pvp)), and the wolves of a
 [wolf den](#camps).
 
 ## Ice holes and fishing
 
 **E over a bare ice tile** (no object) brings out the pickaxe and calls `crackIce(tx, ty)` on
-that tile (see [Tools and the bow](gameplay.md#tools-and-the-bow)). Hits accumulate in the
+that tile (see [The swing tools](gameplay.md#the-swing-tools-e); the weapons:
+[Tools and bits](gameplay.md#tools-and-bits)). Hits accumulate in the
 `iceCracks` map (`tile idx → hits`, rendered as bright fracture decals in their own pass);
 `ICE_HOLE_HITS` (2) breaks through — the tile becomes `ground = 2` (open water), joins the
 `holes` list, and is repainted into the ground canvas via `repaintGround()`. Constants live in the `fish` banner of
@@ -606,9 +611,9 @@ that tile (see [Tools and the bow](gameplay.md#tools-and-the-bow)). Hits accumul
 `FISH_MAX`/`FISH_MIN`, `FISH_CATCH_R`; `FISH_SPAWN_T` alone stays in core.js, and the `NET_*` set
 sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net entry it tunes).
 
-- **Falling in**: standing over a hole tile (checked at the player's feet in `updatePlay`)
-  plunges the player: `HOLE_FALL_DMG` (15) via `damagePlayer`, velocity zeroed, and
-  `player.fallT` runs `HOLE_FALL_T` (1.1 s) of floundering — no movement, tools, dodge, or
+- **Falling in**: standing over a hole tile (checked at each player's feet in `updatePlayer`,
+  js/sim.js) plunges that player: `HOLE_FALL_DMG` (15) via `damagePlayer`, velocity zeroed, and
+  `p.fallT` runs `HOLE_FALL_T` (1.1 s) of floundering — no movement, tools, dodge, or
   slide (`clickAction`, `tryWork`, and `tryDodge` all check `fallT`). `drawPlayer` clips
   the sprite to the waterline with ripple rects. The climb-out teleports to
   `nearestDryTile()` with brief i-frames. An **active dodge roll crosses holes safely**
@@ -617,7 +622,7 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   that tile is walked across like any other, which is how the catch changes hands.
 - **Everyone else avoids water**: `moveEntity` treats hole tiles as solid for every entity
   except the player, so animals and robots never wade in — a net does not change that, because
-  `walkable()` still refuses `ground === 2`, so no bot ever routes over one. `isSolidTile` now
+  `walkable()` refuses `ground === 2`, so no bot ever routes over one. `isSolidTile`
   skips any `water: true` STRUCTS entry, so a net is not solid either; arrows still fly over holes.
 - **Refreeze**: at dawn every hole reverts to ice (`repaintGround` again) and `iceCracks`
   clears — except a hole carrying a net, which stays open water *and stays in `holes`*, so it
@@ -630,10 +635,9 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   side, falling back to the fish's per-fish `ts` turn bias), and movement is hard-clamped —
   a position that would poke the body into snow is never committed. That clamp is **axis-aligned**
   (`fishClear` probes ±margin on the four compass directions from the centre) while the drawn body
-  is rotated, so a fish swimming diagonally along a shore can still clip a corner of snow with its
-  nose or tail for a frame or two — measured at ~19 frames in 20 s across a 30-fish shoal, at the
-  0.4 alpha an under-ice fish is drawn with. It is a shimmer at the waterline, not a fish in a
-  snowdrift. They render as translucent silhouettes
+  is rotated, so a fish swimming diagonally along a shore can clip a corner of snow with its
+  nose or tail for a frame or two, at the 0.4 alpha an under-ice fish is drawn with — accepted.
+  They render as translucent silhouettes
   through the ice — brighter and surfaced inside an open hole — in a pass right after the
   ground blit (using `ex`/`ey`). Cracking ice spooks nearby fish into a fast dart.
 - **Fishing is automatic**: `autoFish(p, dt)` (js/tools.js, called from `updatePlayer` every
@@ -658,21 +662,20 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   brackets' brightness is the whole of that hint. Fish are food: **F** eats one for +50 HP over a 1.5 s channel a
   hit can break (`eatFish`, mirroring the berry's Q/+20; both meals share one 3 s clock - see
   [Food](gameplay.md#food-the-meal-is-a-channel)), counted beside the berries on the backpack strip
-  (`SPRITES.itemFish`, 8×8, own `FIPAL`). `SFX.splash()` was added for the water sounds. `DBG`
+  (`SPRITES.itemFish`, 8×8, own `FIPAL`). `SFX.splash()` is the water cue. `DBG`
   exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`,
   `buildSiteAt`.
 
 ### The shoal is a population, not a nightly reset
 
-Spears and nets take fish **out** of `fish`, and nothing puts them back at dawn any more. What
+`autoFish` and nets take fish **out** of `fish`, and nothing puts them back at dawn. What
 refills it is a trickle in `updateFish`: `state.fishT` counts down `FISH_SPAWN_T` (11 s), or
 `FISH_SPAWN_FAST` (4 s) while the shoal is under `FISH_MIN` (10), and each expiry calls
 `spawnEmerger()` unless the shoal is already at `FISH_MAX` (30). So the water can be fished down
-hard, never to nothing, and recovers fastest when it is emptiest. Measured from a shoal of 4:
-**4 → 11 in 30 s** under the floor, then **11 → 16 over the next 60 s** above it.
+hard, never to nothing, and recovers fastest when it is emptiest.
 
-**`born` is a fish's whole life story.** A born fish is the one the game always had: hard-clamped
-inside the water, drawn, spearable, nettable. An **emerger** is none of those. `spawnEmerger()`
+**`born` is a fish's whole life story.** A born fish is hard-clamped
+inside the water, drawn, catchable, nettable. An **emerger** is none of those. `spawnEmerger()`
 puts it two tiles *into the snow* beside a roomy shore tile, pointed at the water — the snow being
 the deep lake the map has no way to draw — and it creeps in at `FISH_EMERGE_SPD` (7 px/s) with the
 wander, the edge cap and the clamp all switched off, because the shore is the thing it is crossing.
@@ -682,16 +685,15 @@ and it is what promotes the fish (`vis >= 1` *and* `fishClear` agreeing ⇒ `bor
 clamp keeps `vis` at 1 forever). The **draw alpha ramps off the back half of it** —
 `max(0, (vis - 0.5) * 2)` — so an emerger is completely invisible until more than half its body is
 under the ice, and by the time anything is drawn the only part still outside is a pixel or two of
-tail at a fraction of 0.4 (worst case measured: **0.24**). An emerger that has not made it in
+tail at a fraction of 0.4. An emerger that has not made it in
 `FISH_EMERGE_MAX` (14 s) is dropped, unseen. Everything that selects a fish — `hoverFish`,
 `fishInRange`, `autoFish`, the net, the `crackIce` spook — tests
 `born` first.
 
 **The emerge sites are found once and cached** (`emergeSites`/`buildEmergeSites`, a lazy one-time
-scan costing ~1.4 ms). The first version rejection-sampled random tiles for one, and on a 232²
-world the odds of a random tile being ice with swimming room *and* having snow exactly two tiles
-off are low enough that thirty tries routinely found nothing — which silently throttled the whole
-trickle to near zero (measured 0 successes in 12 calls). With the cached list it is 20/20. The
+scan costing ~1.4 ms) — never rejection-sample random tiles for one: on a 232² world a tile
+that is ice with swimming room *and* has snow exactly two tiles off is rare enough that the
+tries come up empty and the trickle silently stops. The
 shoreline never moves, and a hole only flips ice↔water which `fishClear` counts as swimmable
 either way, so one scan stays correct for the match; `genWorld()` only ever runs at boot.
 
@@ -704,7 +706,7 @@ one flag — never the type name — is what every site reads:
 | --- | --- |
 | built on a bare open hole, not snow | `canPlaceAt` (the ghost's colour, the click, and the contest callback re-checks it) |
 | a pad's wheel over open water offers it, and only it | `buildSiteAt` → `buildOptionsAt` → `WATER_STRUCT_ORDER` |
-| not solid — you walk **on** it, and the plunge check skips it | `isSolidTile`, `updatePlay` |
+| not solid — you walk **on** it, and the plunge check skips it | `isSolidTile`, `updatePlayer` |
 | its hole never refreezes while it stands | the dawn branch, via `netAt` |
 | drawn flat, under everything, never y-sorted | `drawNet` in the flat pass — see [rendering](rendering.md#render-pass-order) |
 

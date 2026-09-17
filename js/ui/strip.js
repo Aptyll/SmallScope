@@ -173,14 +173,11 @@ function hudHome() { return hudInT() >= 1; }
 // widget scaled about its bottom-centre anchor; stripMouse maps the pointer
 // back through that anchor, so every hit test below converts first and the
 // rects themselves never move.
-// a phone keeps a HUD SIZE of its own (hudScaleM): the same slider edits
-// whichever is live, so a profile that plays on both keeps both
-function hudScaleKey() { return MOBILE ? 'hudScaleM' : 'hudScale'; }
 // The size the HUD is actually drawn at: the dial, CAPPED at the size where
 // the strip would outgrow the view, so past that point the slider simply
 // stops growing it rather than pushing its ends off the screen.
 function hudSc() {
-  const want = settings[hudScaleKey()] || 0.8;
+  const want = settings.hudScale || 0.8;
   return Math.min(want, (VIEW_W - 8) / (AB_W + 6));
 }
 function stripMouse(mx, my) {
@@ -310,8 +307,7 @@ function stripHit(mx, my) {
 // stays world everywhere between them and only a cell itself ever swallows
 // a click.
 //
-// Pinned by its TOP to shelfRowY - under the sky on a desktop, under the
-// menu and zoom plates on a phone - and grown rightward from SHELF_X: the
+// Pinned by its TOP to shelfRowY, under the sky, and grown rightward from SHELF_X: the
 // budget track and the row keep their pixels whatever the build does, and a
 // fitting's rail is what climbs into the open screen above them.
 const SHELF_CELL = HUD_CELL, SHELF_GAP = 2; // a well (the one size), and the air between two
@@ -319,7 +315,7 @@ const SHELF_BAR = 4;                  // the budget track, under the row
 const SHELF_RAIL = 3;                 // what one modifier's rail costs above it
 const SHELF_SLOT = 0;                 // the weapon slot it edits (TOOL_SLOTS is 1)
 const SHELF_X = BAG_PAD;              // the tool cell's left edge: the drawer's first cell sits under it, its frame flush with the view's edge
-function shelfRowY() { return MOBILE ? 44 : 18; } // the row's top: room for five rails above it, and on a phone for the plates
+function shelfRowY() { return 18; } // the row's top: room for five rails above it
 // how far in from the left edge the corner widget can reach: the widest row
 // (a five-bit longbow) and the SHIFT plate off its end - what the intro
 // slide and the bake are sized by, so neither jumps when the tool changes

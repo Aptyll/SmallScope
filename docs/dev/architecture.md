@@ -17,7 +17,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/profile.js](../../js/profile.js) | ~370 | `PROFILE` | the local player profile - up to three characters (name, class, look, stats), which kinds it has held, the settings - and the only file that touches storage |
 | [js/font.js](../../js/font.js) | ~100 | `drawPixelText`, `drawPixelTextShadow`, `drawPixelTextOutline`, `pixelTextWidth` | the bitmap font |
 | [js/sprites/core.js](../../js/sprites/core.js) | ~120 | `SPRITES`, `SPR` | the empty sprite registry and the bake helpers (`bake`/`bakeSpan`/`flipH`/`bakeClips`/`liveIcon`/`wash`/`double`) plus the `TEAM_SKINS` table; every other sprite file is a private IIFE that bakes its grids and `Object.assign`s the keys it owns into `SPRITES` |
-| [js/sprites/characters.js](../../js/sprites/characters.js) | ~890 | → `SPRITES` | the player body plan in every team paint, the skater, the prone poses, the fish catch, the raider, the merchant, and `champLook` - a character's tone and fringe on the class body |
+| [js/sprites/characters.js](../../js/sprites/characters.js) | ~900 | → `SPRITES` | the player body plan in every team paint, the skater, the prone poses, the fish catch, the raider, the merchant, and `champLook` - a character's tone and fringe on the class body |
 | [js/sprites/looks.js](../../js/sprites/looks.js) | ~380 | → `SPRITES` | the 48 px character model: body, head, beard, hair and class-outfit layers composed per character (`portrait`) |
 | [js/sprites/terrain.js](../../js/sprites/terrain.js) | ~1320 | → `SPRITES` | the pine and its 24 wind frames + the one atlas, stumps, rocks, ore, the mine, the bush, the dead snags, the den |
 | [js/sprites/beasts.js](../../js/sprites/beasts.js) | ~1290 | → `SPRITES` | the imp, rabbit, deer, wolf and bird clips, and the camps' alpha and dire wolf derived from the wolf |
@@ -25,76 +25,72 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sprites/buildings.js](../../js/sprites/buildings.js) | ~560 | → `SPRITES` | wall/turret/generator/spawner in three tiers and each side's fittings, the net, scaffold, bay, worker bots, spikes, fire, torch |
 | [js/sprites/items.js](../../js/sprites/items.js) | ~750 | → `SPRITES` | goods and their icons: wood, stone, bag, the three animated goods and their live icons, the sack, the crate, the cards, the axe/bow/pick |
 | [js/sprites/icons.js](../../js/sprites/icons.js) | ~340 | → `SPRITES` | HUD art: the gear glyphs in four materials, the hearts, the cursor set |
-| [js/sfxdata.js](../../js/sfxdata.js) | ~40 | `SFXDATA` | **generated** — the sfx bank as base64 |
+| [js/sfxdata.js](../../js/sfxdata.js) | ~60 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/audio.js](../../js/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
-| [js/core.js](../../js/core.js) | ~250 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
-| [js/mobile.js](../../js/mobile.js) | ~70 | shared scope, no `window.*` export | phones: whether this is one (`MOBILE`, the TOUCH MODE setting over the device's answer), the overlays' footprint a phone's fit keeps, the portrait test, the fullscreen ask. Before canvas.js because `fitCanvas` asks it at load |
-| [js/canvas.js](../../js/canvas.js) | ~260 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas` (a phone branch: the biggest game pixel the overlays allow, no 16:9 cap), pixel-exact zoom, the panel layout anchors |
-| [js/player.js](../../js/player.js) | ~880 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
-| [js/input.js](../../js/input.js) | ~560 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `flagDown`/`flagUp`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
-| [js/gamepad.js](../../js/gamepad.js) | ~200 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
-| [js/touch.js](../../js/touch.js) | ~230 | shared scope, no `window.*` export | fingers: the two floating sticks, the plates' table and layout, a finger as the mouse everywhere else; `touchPoll` (from `loop()`) |
-| [js/world.js](../../js/world.js) | ~1650 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the camps at their fixed mirrored sites, and the practice training grounds |
-| [js/nav.js](../../js/nav.js) | ~310 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
-| [js/wildlife.js](../../js/wildlife.js) | ~600 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters (and the dormant flock) |
-| [js/structures.js](../../js/structures.js) | ~500 | shared scope, no `window.*` export | the `STRUCTS` table, building/upgrading/wrecking, and the per-type building sim |
-| [js/robots.js](../../js/robots.js) | ~900 | shared scope, no `window.*` export | the worker bots a bay rolls out, the eagle's merchant and the barracks it raises, the soldiers a barracks marches down the road, and the one flag per player whose tile is their standing order |
-| [js/actions.js](../../js/actions.js) | ~830 | shared scope, no `window.*` export | what a player does: the swing tools and harvesting, the roll as a hit, prone — and, under its own banner, the damage types and status effects **every** kind of unit shares |
-| [js/tools.js](../../js/tools.js) | ~760 | shared scope, no `window.*` export | the weapon: the `TOOLS` and `BITS` tables, what a press fires, how each bit flies, the loot rolls, the tech tree, and the icons for both |
-| [js/abilities.js](../../js/abilities.js) | ~640 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim, the telegraph and landing shapes every side sees, and their draw passes |
-| [js/ai.js](../../js/ai.js) | ~380 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
-| [js/sim.js](../../js/sim.js) | ~810 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
-| [js/net/events.js](../../js/net/events.js) | ~90 | shared scope, no `window.*` export | the sim's cosmetics on their way to the screen: `sfxAt`/`sfxFor`/`sfxOwn`/`shakeAt`/`shakeFor`, the ring a host records them into (`evPush`/`evDrain`, only inside the step and only with `evRecord` on - solo records nothing) and `evPlay`, the client's replay of one entry. First of the js/net/ files the online plan adds ([docs/pvp-architecture.md](../pvp-architecture.md)) |
-| [js/net/net.js](../../js/net/net.js) | ~220 | shared scope, no `window.*` export | `NET`: which role this screen plays (`solo` / `host` / `client` - `isHost` is true for the first two, and is what anything asking "am I simulating?" reads), `isHuman` (a `remote` control is a person on another screen), the five-call transport interface and the loopback solo speaks through, and the match protocol: a host's `netHostStep` (peers' inputs into their bodies, HELLO into a slot, a vanished peer into a bot with its slot parked `RECONNECT_GRACE`) and `netHostFlush` (the tick snapshot and the recorded cosmetics every `SNAP_EVERY` ticks), a client's `netClientStep` (its input out, snapshots and events in) and `netClientMode` (which screen the state calls for, and the match's end read to our side) |
-| [js/net/snapshot.js](../../js/net/snapshot.js) | ~480 | shared scope, no `window.*` export | the match's whole authoritative state as one plain object, built by reflection over every entity (`snapBuild`, refs turned into kind+id tokens by `pack`, every moving entity under a stable network id) and written back into the singletons in place (`snapApply`); the wire form cut from it - per-entity field deltas against a shadow of the last send (`snapBuildDelta`/`snapApplyDelta`) and the binary encoding with a shared key dictionary (`snapEncode`/`snapDecode`); and the proofs: `netEcho` renders, snapshots, blanks, applies through the bytes, renders again and counts the pixels that differ, `netEchoRun` along a run, `netDeltaRun` sends a run as deltas and checks the world after each |
-| [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~40 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a client redialing every `WS_RETRY` s with the same uid |
-| [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~90 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - a joiner reloading onto the lobby's seed |
+| [js/core.js](../../js/core.js) | ~520 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
+| [js/canvas.js](../../js/canvas.js) | ~270 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
+| [js/player.js](../../js/player.js) | ~1010 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
+| [js/input.js](../../js/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
+| [js/gamepad.js](../../js/gamepad.js) | ~320 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
+| [js/world.js](../../js/world.js) | ~2030 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the camps at their fixed mirrored sites, and the practice training grounds |
+| [js/nav.js](../../js/nav.js) | ~320 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
+| [js/wildlife.js](../../js/wildlife.js) | ~910 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters (and the dormant flock) |
+| [js/structures.js](../../js/structures.js) | ~530 | shared scope, no `window.*` export | the `STRUCTS` table, building/upgrading/wrecking, and the per-type building sim |
+| [js/robots.js](../../js/robots.js) | ~990 | shared scope, no `window.*` export | the worker bots a bay rolls out, the eagle's merchant and the barracks it raises, the soldiers a barracks marches down the road, and the one flag per player whose tile is their standing order |
+| [js/actions.js](../../js/actions.js) | ~1020 | shared scope, no `window.*` export | what a player does: the swing tools and harvesting, the roll as a hit, prone — and, under its own banner, the damage types and status effects **every** kind of unit shares |
+| [js/tools.js](../../js/tools.js) | ~1490 | shared scope, no `window.*` export | the weapon: the `TOOLS` and `BITS` tables, what a press fires, how each bit flies, the loot rolls, the tech tree, and the icons for both |
+| [js/abilities.js](../../js/abilities.js) | ~1310 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim, the telegraph and landing shapes every side sees, and their draw passes |
+| [js/ai.js](../../js/ai.js) | ~1060 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
+| [js/sim.js](../../js/sim.js) | ~1340 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
+| [js/net/events.js](../../js/net/events.js) | ~80 | shared scope, no `window.*` export | the sim's cosmetics on their way to the screen: `sfxAt`/`sfxFor`/`sfxOwn`/`shakeAt`/`shakeFor`, the ring a host records them into (`evPush`/`evDrain`, only inside the step and only with `evRecord` on - solo records nothing) and `evPlay`, the client's replay of one entry. The online plan the js/net/ files follow: [docs/pvp-architecture.md](../pvp-architecture.md) |
+| [js/net/net.js](../../js/net/net.js) | ~420 | shared scope, no `window.*` export | `NET`: this screen's role (`solo` / `host` / `client`; `isHost` is "am I simulating?"), `isHuman`, the five-call transport interface and its loopback, and the match protocol (`netHostStep`/`netHostFlush`, `netClientStep`/`netClientMode`; `RECONNECT_GRACE`, `SNAP_EVERY`) - the detail: [code-map](code-map.md) |
+| [js/net/snapshot.js](../../js/net/snapshot.js) | ~810 | shared scope, no `window.*` export | the match's authoritative state as one plain object (`snapBuild`/`snapApply`, refs packed to kind+id tokens by `pack`), its wire form (`snapBuildDelta`/`snapApplyDelta` against a shadow of the last send, `snapEncode`/`snapDecode` binary with a shared key dictionary) and the proofs (`netEcho`, `netEchoRun`, `netDeltaRun`: render, send through the bytes, render again, count differing pixels) |
+| [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~90 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a client redialing every `WS_RETRY` s with the same uid |
+| [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~190 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - a joiner reloading onto the lobby's seed |
 | [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the chest, the cairn) - first of the draw files, every other one calls `hash2` |
 | [js/draw/practice.js](../../js/draw/practice.js) | ~740 | shared scope, no `window.*` export | the practice arena's pixels only: the dummy and its meter, the training grounds, the ice parkour, the roll station, the archery track and the range bell |
 | [js/draw/zipline.js](../../js/draw/zipline.js) | ~110 | shared scope, no `window.*` export | the zipline's pixels: the pylon bakes (one per team skin), the cable pass `drawZips` and a rider's handle and rope `drawZipHandle` (the thing itself: the `zipline` banner, world.js) |
 | [js/draw/overhead.js](../../js/draw/overhead.js) | ~200 | shared scope, no `window.*` export | the one arrow body, and the frame every unit wears over its head: health bar, level badge, sense mark, stun stars, the build reveal |
 | [js/draw/structs.js](../../js/draw/structs.js) | ~240 | shared scope, no `window.*` export | a building's pixels: the turret's rotating half and bolts, the bay and barracks overlays, the net, `structSprite`/`drawTiledStruct` |
 | [js/draw/bodies.js](../../js/draw/bodies.js) | ~710 | shared scope, no `window.*` export | every walking thing's sprite pass: a beast on its clip, a robot, the merchant, and `drawPlayer` with its gear marks, buff ring, snow cover, burial, ghost and held tool |
-| [js/draw/marks.js](../../js/draw/marks.js) | ~160 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, the flag family, what a body looks like as a dot |
-| [js/draw/light.js](../../js/draw/light.js) | ~590 | shared scope, no `window.*` export | light and weather over the finished frame: specks, cloud shadows, god rays, the reflected sky, and the pass that grades day into night |
-| [js/draw/render.js](../../js/draw/render.js) | ~1480 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
-| [js/ui/wheel.js](../../js/ui/wheel.js) | ~650 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key and pad prompts, the work/rack/bell/shop hints, the build list and its ghost |
-| [js/ui/minimap.js](../../js/ui/minimap.js) | ~200 | shared scope, no `window.*` export | the minimap: its rebuilt disc, masks, chrome and view arc, `renderMinimap` |
+| [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, the flag family, what a body looks like as a dot |
+| [js/draw/light.js](../../js/draw/light.js) | ~680 | shared scope, no `window.*` export | light and weather over the finished frame: specks, cloud shadows, god rays, the reflected sky, and the pass that grades day into night |
+| [js/draw/render.js](../../js/draw/render.js) | ~1460 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
+| [js/ui/wheel.js](../../js/ui/wheel.js) | ~690 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key and pad prompts, the work/rack/bell/shop hints, the build list and its ghost |
+| [js/ui/minimap.js](../../js/ui/minimap.js) | ~230 | shared scope, no `window.*` export | the minimap: its rebuilt disc, masks, chrome and view arc, `renderMinimap` |
 | [js/ui/bag.js](../../js/ui/bag.js) | ~670 | shared scope, no `window.*` export | the backpack drawer's geometry and hit tests, `overHud`, the drag verbs and what a gesture answers with, the character panel, the SHIFT plate, `drawBag` |
 | [js/ui/strip.js](../../js/ui/strip.js) | ~640 | shared scope, no `window.*` export | the hud strip's bones: its constants, the hud frame, HUD SIZE, every cell rect and refusal flash, the weapon shelf's geometry and drops, sending a cell across, the drag's press/move/release |
 | [js/ui/hud-draw.js](../../js/ui/hud-draw.js) | ~740 | shared scope, no `window.*` export | drawing the strip and the shelf: the xp bar, tier and mod plates, item icons, the cooldown sweep, the ability/pouch/food/gold cells, `drawHudStrip`, the scaled bakes, the shelf's wells, the drag ghost |
 | [js/ui/rail.js](../../js/ui/rail.js) | ~150 | shared scope, no `window.*` export | the team rail along the top edge, and the anchors the screens hang under it |
-| [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~420 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
-| [js/ui/compose.js](../../js/ui/compose.js) | ~140 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
-| [js/ui/touch-plates.js](../../js/ui/touch-plates.js) | ~140 | shared scope, no `window.*` export | the pixels of a phone's controls: the plates, the two sticks, the rotate prompt |
-| [js/ui/shop.js](../../js/ui/shop.js) | ~1640 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
-| [js/ui/panels.js](../../js/ui/panels.js) | ~1220 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
-| [js/ui/menu.js](../../js/ui/menu.js) | ~2930 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
-| [js/ui/chars.js](../../js/ui/chars.js) | ~460 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
-| [js/ui/screens.js](../../js/ui/screens.js) | ~1370 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
-| [js/boot.js](../../js/boot.js) | ~1330 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
+| [js/ui/tooltip.js](../../js/ui/tooltip.js) | ~410 | shared scope, no `window.*` export | the hover tooltip: `tipAt`, `tipPos` and `drawTooltip` |
+| [js/ui/compose.js](../../js/ui/compose.js) | ~150 | shared scope, no `window.*` export | `renderUI`, the frame's UI pass in order |
+| [js/ui/shop.js](../../js/ui/shop.js) | ~1680 | shared scope, no `window.*` export | the merchant's counter: the fish/berry market and its three-day history, the rolled stock and its turnover, buying and selling, and the panel all three are read on |
+| [js/ui/panels.js](../../js/ui/panels.js) | ~1210 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
+| [js/ui/menu.js](../../js/ui/menu.js) | ~3210 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, class select, the gear pop-up, the tech tree screen, `PATCH_TXT` |
+| [js/ui/chars.js](../../js/ui/chars.js) | ~580 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
+| [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
+| [js/boot.js](../../js/boot.js) | ~1840 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.
 
 ### Shared global scope
 
-The game code is **not** wrapped in an IIFE (it was, until the split began — tag `pre-split`; the
-sprite files under js/sprites/ are the deliberate exception, each a private IIFE registering into
-`SPRITES`).
+The game code is **not** wrapped in an IIFE (the sprite files under js/sprites/ are the
+deliberate exception, each a private IIFE registering into `SPRITES`).
 It is flat top-level code in classic scripts: a top-level `function` declaration becomes a
 `window` property, and a top-level `let`/`const` becomes a global lexical binding visible **as a
-bare identifier** to every classic script loaded after it. That is the whole splitting mechanism
-— sections moved between files verbatim and bare identifiers kept resolving, with no export
+bare identifier** to every classic script loaded after it. That is the whole mechanism: a
+section moves between files verbatim and its bare identifiers keep resolving, with no export
 lists and no namespace. ES modules are off the table because `file://` must keep working. The
-split is complete; the tag `pre-split` keeps the one-file history.
+tag `pre-split` keeps the one-file history.
 
 - **Load-order rule**: a file may reference names from any file at runtime, but its top-level
   (load-time) statements may only reference names from files loaded above it.
 - **Collision behavior**: a `let`/`const` declared in two files throws a `SyntaxError` at load
-  (loud, good); a `function` declared in two files silently overwrites (silent, bad) — which is
-  why the split's Gate A greps for duplicate top-level names before every commit.
-- **Performance**: splitting changes nothing at runtime — same total parse, same JIT. The split
-  is for maintainability, a sim/render seam, and files a session can load whole.
+  (loud, good); a `function` declared in two files silently overwrites (silent, bad) — so grep
+  for a duplicate top-level name before adding or moving a function.
+- **Performance**: the file count changes nothing at runtime — same total parse, same JIT. The
+  files are for maintainability, a sim/render seam, and files a session can load whole.
 
 ### profile.js
 
@@ -107,22 +103,23 @@ one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever j
 eagle, gating the scripted first flight that rides the landing), the one-shot `practice` flag
 (`practiceOpen()`/`markPractice()`: has the PRACTICE TOOL plank's ice been broken — three
 knocks at the title, after which the plank stays a live menu item), `bestLap`
-(`bestLap()`/`setBestLap()`: the ice parkour's all-time record, the one thing the practice
-arena writes — [world.md](world.md#the-practice-arena)), the
+(`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
+(`bestRange()`/`setBestRange()`: the archery round's best score) — the only two things the
+practice arena writes ([world.md](world.md#the-practice-arena)) — the
 [arsenal](gameplay.md#the-wiki)'s `tech.seen` (the wiki's "held one" pips; `tech.done` rides along unread) and the
-`settings` object that used to live under a key of its own — as one JSON blob under
-`softfall.profile`. **It is the only file in the project that touches `localStorage`**, and that
-is the whole point of it: swapping the private `read()` / `write()` pair for requests turns the
+`settings` object — as one JSON blob under
+`softfall.profile`. It is the only file that touches `localStorage` (the CLAUDE.md rule):
+swapping the private `read()` / `write()` pair for requests turns the
 local profile into a server account without touching the game code.
 There are no accounts, no passwords and no sign-in, and nothing here is authoritative — a save
 file is a save file.
 
 - **`PROFILE.load()`** repairs a partial or corrupt save against a blank profile rather than
   throwing (`mendChar`/`mendLook` repair each slot axis by axis: a class or look index out of
-  range lands on 0, a bad name is re-rolled), folds a pre-profile `softfall.settings` key in on
-  the way past (once, then removes it), and turns a **v1 save's** one `name` + `stats` into its
-  first character (a hunter with a rolled look; the numbers are the point). Boot calls it
-  **before `loadSettings()`**, which now reads `PROFILE.settings()`. **A fresh install has no
+  range lands on 0, a bad name is re-rolled) and migrates older saves in place (a pre-profile
+  `softfall.settings` key is folded in once and removed; a v1 save's `name` + `stats` become its
+  first character). Boot calls it
+  **before `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install has no
   character** (`hasChar()` false) and boot opens the create screen before the title.
 - **The character calls**: `chars()`, `activeIndex()`, `char()`, `rollChar(cls)` (a fresh
   unsaved spec with a random name and look), `createChar(spec)` (into the next free slot, made
@@ -138,16 +135,12 @@ file is a save file.
   payout, `addWin` once per `endMatch('won')`, `addMatch` and `addDay` at eagle takeoff (and
   `addDay` at each dawn the local player is still in), `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
-  the character calls and `putSettings` write through immediately. A save written with the old `games` /
-  `bestDay` pair keeps its gold and starts wins and days at zero — those were different
-  numbers, not a rename.
+  the character calls and `putSettings` write through immediately.
 - **The tech lists are ids and nothing else.** `markSeen` coalesces (it fires from a pickup) and is
-  the only writer left: `tech.done` is what a pre-PATCH-2.08 save had researched, carried through
-  load and save so a veteran's record survives, read by nothing now that the whole arsenal is
-  unlocked. `load()` copies only strings and
-  de-duplicates, so a hand-edited save cannot put a number or a repeat into the tree, and a save
-  written before the tree existed simply arrives without them. What a node *is*, what it costs and
-  what unlocking one does to a match are all in js/tools.js — this file only remembers.
+  the only writer: `tech.done` is carried through load and save untouched and read by nothing
+  (the whole arsenal is unlocked). `load()` copies only strings and de-duplicates, so a
+  hand-edited save cannot put a number or a repeat into the lists. What a node *is* lives in
+  js/tools.js — this file only remembers.
 
 The screens and the title-screen tag are js/ui/chars.js; the local player takes a character on
 through `applyCharacter()` (js/player.js).
@@ -159,42 +152,34 @@ string silently comes out as a row of question marks. Four exports: `drawPixelTe
 `drawPixelTextShadow` (one bottom-right 1 px shadow), `drawPixelTextOutline` (a 1 px rim on all
 eight sides) and `pixelTextWidth` for layout.
 
-**Which one to use is a rendering rule, not a taste call** — text over the world uses `Outline`,
-text on a panel or plank uses `Shadow`, and anything drawn under a `globalAlpha` fade must use
-`Shadow` because the outline's eight overlapping passes stack unevenly. The full reasoning and
-the site-by-site list is in [rendering.md](rendering.md#text-over-the-world).
+**Which one to use is a rendering rule, not a taste call** (the CLAUDE.md hard rule); a
+`globalAlpha` fade must use `Shadow` because the outline's eight overlapping passes stack
+unevenly. The reasoning and the site-by-site list: [rendering.md](rendering.md#text-over-the-world).
 
-`<` was added for a resolution cycle that no longer exists — see
-[Known drift](checklists.md#known-drift) before deleting a glyph that looks unused.
+See [Intentional dead code](checklists.md#intentional-dead-code) before deleting a glyph that looks unused (`<`).
 
 ### js/sprites/
 
 Literal ASCII grids paired with palette objects, baked to offscreen canvases by `bake()` at load.
-`core.js` loads first: it makes the empty `window.SPRITES` registry and `window.SPR`, the helpers
-(`bake`, `spansOf`, `bakeSpan`, `flipH`, `bakeClips`, `mapClips`, `liveIcon`, `wash`, `double`) plus
-the `TEAM_SKINS` table and `teamBuildPal`. Every other file in the folder is a **private IIFE** that
-destructures what it needs off `SPR`, keeps its grids and palettes to itself, and ends with
+Nine files: `core.js` loads first and makes the empty `window.SPRITES` registry and `window.SPR`
+(the bake helpers); each of the eight art files is a **private IIFE** that ends with
 `Object.assign(SPRITES, { ... })` for the keys it owns - the same move js/tools.js makes for its
-tool and bit art - so the seven art files load in any order after core and nothing reads another
-file's grid. Team colours, classes and building tiers are all palette swaps of shared grids, which
-is why a pose edit propagates further than it looks. The grids are **pure ASCII, byte-fragile art**:
-move a row whole, never re-wrap or re-indent one. All of it, including which sprites share which
-grid and which file holds what: [sprites.md](sprites.md).
-
-Anything drawn through `drawSpriteFlash()` must fit in **64×64** — it recolours through a shared
-64×64 scratch canvas and larger sprites clip.
+tool and bit art - so they load in any order after core and nothing reads another file's grid.
+Team colours, classes and building tiers are all palette swaps of shared grids, which
+is why a pose edit propagates further than it looks. The helper list, the byte-fragile grid rule,
+the 64×64 `drawSpriteFlash()` limit, which sprites share which grid and which file holds what:
+[sprites.md](sprites.md#the-shape-of-a-sprite-file).
 
 ### sfxdata.js
 
 Generated by `node app/bake-sfx.js`, which reads `audio/sfx/*.mp3` and writes each clip into
 this file as base64. **The output is committed.** It exists because a `file://` page may not
-`fetch` its own folder, so without the inlined bytes every sound effect falls back to the synth
-when the game is opened off the disk — which sounds exactly as it did before samples existed, and
-is therefore invisible unless you are listening for it. Rerun the baker after any change to
+`fetch` its own folder, so without the inlined bytes every sound effect silently falls back to
+the synth when the game is opened off the disk. Rerun the baker after any change to
 `audio/sfx/` and before committing.
 
 Music is deliberately **not** baked: it is ~70 MB, and an `<audio>` element streams a relative
-`file://` path perfectly well — it was only ever `fetch` that was blocked.
+`file://` path perfectly well — only `fetch` is blocked.
 
 ### audio.js
 
@@ -210,30 +195,28 @@ happened* and must arrive identical every time.
 
 ### The game files (core.js … boot.js, with js/draw/ and js/ui/)
 
-Forty-four files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
-organized only by `// ------ name` banners.
-**Keep every banner honest.** Find any function by its banner in [code-map.md](code-map.md)
-rather than grepping blind.
+Forty-three files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
+organized only by `// ------ name` banners; find any function by its banner in
+[code-map.md](code-map.md).
 
-**A file that decides things does not also draw them.** Every one of the sim files - core, mobile,
-player, input, gamepad, touch, world, nav, wildlife, structures, robots, actions, ai, sim -
+**A file that decides things does not also draw them.** Every one of the sim files - core,
+player, input, gamepad, world, nav, wildlife, structures, robots, actions, ai, sim -
 contains zero canvas calls; the pixels for what they own live under **js/draw/** (the world) and
-**js/ui/** (the HUD and the screens; the touch plates and sticks: js/ui/touch-plates.js; the pad
+**js/ui/** (the HUD and the screens; the pad
 glyphs: `drawPadGlyph`, js/ui/panels.js), so the folder is the boundary. canvas.js is the
 exception that proves it: it owns the buffers themselves.
 
-**A feature's tuning constants live in the file that owns the feature**, directly above the code
-that reads them — `MONSTER`/`CAMP_*` in wildlife.js, `TUR_*` in structures.js, `PRONE_*` in actions.js. Only
-the numbers with no one owner stay in core.js: `TILE`/`WORLD`, the view size, the day cycle, and
-the `YIELD` economy table that three files read. Adding a number for a feature means adding it
-beside that feature, never here.
+**A feature's tuning constants live in the file that owns the feature** (the CLAUDE.md rule) —
+`MONSTER`/`CAMP_*` in wildlife.js, `TUR_*` in structures.js, `PRONE_*` in actions.js. What stays
+in core.js: `TILE`/`WORLD`, the view size, the day cycle, and the `YIELD` economy table that
+three files read.
 
 The one rule that constrains a move: **a const is only visible to a file that loads after the one
 declaring it**, so anything read at *load time* — an object literal, a top-level loop, a `const`
 initialised from another — has to be declared no later than that. Reads inside a function are
 free, because every function in the game runs long after the last script tag. Two constants sit
 where they do only because of this: `FISH_SPAWN_T` (core.js, because `state`'s literal reads it)
-and `BOW_CHARGE`/`BOW_NOCK`/`DODGE_SPEED`/`SLIDE_MIN` (player.js, because the `CHAMPS` table
+and `BOW_CHARGE`/`BOW_NOCK`/`DODGE_SPEED`/`SLIDE_MIN` (player.js, because the `CLASSES` table
 does). Each one says so in a comment; if you move a block and the console shows a
 `ReferenceError` naming a constant on load, this is why.
 
@@ -269,15 +252,24 @@ to a Release; `npm run steam:stage` is steam-stage.js: that build unzipped into 
 SDK's `tools/ContentBuilder/content/` with `Softfall.exe` at the root and no steam_appid.txt,
 for the SteamPipe upload Noah runs by hand). `main.js` opens one `BrowserWindow` on the same
 `index.html` a browser opens - `backgroundThrottling` off, so a host keeps stepping behind another
-window - initialises Steam on the dev App ID (Valve's 480, or `steam_appid.txt` beside the exe) and
+window - initialises Steam on the App ID it resolves in this order: the `SteamAppId`/`SteamGameId`
+environment variable (a build Steam launched), else `steam_appid.txt` beside main.js (Softfall's
+own, 5244550, committed; the build copies it beside the exe), else Valve's Spacewar (480) - and
 answers the bridge's IPC: lobbies (create / join / leave / list / data / invite), packets
 (`send`, a pump reading Steam's P2P queue every 8 ms into the page), and the lobby callbacks as
 events. `preload.js` exposes exactly that as `window.steamBridge` and nothing else of Node; the
 game reads it only in js/net/transport-steam.js and at boot's role pick. Without Steam running
 the bridge reports `ready: false` and the page plays solo. Flags: `--net=host`, `--join=LOBBYID`,
-`--seed=N`, `--devtools`, and for a headless check `--shot=PATH --wait=S --quit`. steamworks.js
-0.4 exposes Steam's older P2P sockets (reliable packets to 1 MB, unreliable to 1200 bytes), not
-the networking sockets the plan named; the transport chunks text above the first, and a
+`--seed=N`, `--devtools`, and for a headless check `--shot=PATH --wait=S --quit`.
+
+**main.js prefers `desktop/app/index.html` over `../index.html`**, and build.js is what fills
+`desktop/app/` (the page, the code, the audio). A `desktop/app/` left over from an earlier build
+therefore silently runs an **old game** under `npm start`: delete it, or rebuild, before judging a
+change in the wrapper.
+
+steamworks.js
+0.4 exposes Steam's older P2P sockets (reliable packets to 1 MB, unreliable to 1200 bytes);
+the transport chunks text above the first, and a
 snapshot delta rides the second as numbered binary frames (`steamFrames`), the bridge carrying
 bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
 

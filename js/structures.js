@@ -75,7 +75,7 @@ const STRUCTS = {
 };
 // THE BUILD LIST (T, js/ui.js): every buildable in the order the list shows
 // them, the net last because its site is the rarest. The two wheel tables
-// are the pad's and a finger's (openWheelNear, input.js): a wheel over the
+// are the pad's (openWheelNear, input.js): a wheel over the
 // facing tile offers the land list on land and the net over a hole. The
 // barracks is the merchant's alone and on none of them.
 const BUILD_ORDER = ['wall', 'longwall', 'turret', 'generator', 'spawner', 'net'];

@@ -143,7 +143,7 @@ function bagClick(h) {
 // better of a drag.
 // ---- what a gesture answers with ----------------------------------------
 // EVERY MOVE OF AN ITEM ANSWERS IN THREE PLACES AT ONCE: the ear (its own
-// cue), the hand (a rumble on a pad, a buzz on a phone - `haptic`, input.js)
+// cue), the hand (a rumble on a pad - `haptic`, input.js)
 // and the eye (the well it landed in, pulsing). One function raises all three,
 // so a new well or a new gesture cannot end up with two of the three and no
 // one noticing; before this the drag rang a bare SFX at eleven call sites and

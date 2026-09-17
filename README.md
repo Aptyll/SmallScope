@@ -20,7 +20,7 @@
 
 ## A match
 
-Ten players — **you, and nine AI** — across two teams. Everyone is carried in by their team's armoured eagle. The birds fly the map's one diagonal in opposite directions, pass in the middle, and dive into opposite corners of the treeline. Where yours lands is your roost, your merchant, your way back from a death, and the only thing that ends the match.
+Ten players across two teams — **you, your friends, and AI in every empty seat**. Everyone is carried in by their team's armoured eagle. The birds fly the map's one diagonal in opposite directions, pass in the middle, and dive into opposite corners of the treeline. Where yours lands is your roost, your merchant, your way back from a death, and the only thing that ends the match.
 
 <p align="center">
   <img src="docs/media/github-roost.png" alt="On the snow beside the roosting blue eagle in its crater, Day 1, the merchant in the trees" width="920">
@@ -53,14 +53,14 @@ Go down and you wait, then land back at your own bird. Kills never win a match. 
 **Learn the string before the match.** Knock the ice off the practice plank on the title screen. A dummy, a scored archery round, a timed ice-parkour loop. Nothing in it counts.
 
 <p align="center">
-  <img src="docs/media/github-title.png" alt="Softfall title screen: Singleplayer, Practice Tool, Wiki and Settings on a snowy night" width="920">
+  <img src="docs/media/github-title.png" alt="Softfall title screen on a snowy night" width="920">
 </p>
 
 ## Why it is on GitHub
 
 - **Runs from a double-click.** `index.html` loads a handful of classic scripts. There is no bundler, no `node_modules`, and nothing that has to be served — a `file://` page is how the game is meant to be played.
 - **HTML5 canvas pixel art**, 2D top-down, one winter world per seed. Share a seed number, get the same map.
-- **Single-player today:** two teams of five, your four team-mates and the five rivals played by AI at Normal, Hard or Impossible. Keyboard, gamepad, or a phone's twin-stick touch.
+- **Solo or online:** two teams of five. Play alone with AI team-mates and rivals at Normal, Hard or Impossible, or host a room and let friends take seats - AI fills the rest. Keyboard and mouse, or a gamepad.
 - **The whole arsenal is unlocked from the first match.** A wiki on the menu writes every tool and bit down with its numbers.
 
 ```
@@ -89,7 +89,7 @@ Wishlist when the store page lands. Windows release, price to be announced. The 
 | --- | --- |
 | **Release** | Coming soon |
 | **Platform** | Windows, and this browser build |
-| **Players** | Single-player vs AI, two teams of five |
+| **Players** | Single-player vs AI, or online rooms - two teams of five |
 | **Developer** | Softfall |
 | **Support** | softfallbusiness@gmail.com |
 | **Languages** | English |

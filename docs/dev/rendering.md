@@ -13,9 +13,9 @@ Every player gets the **same camera** (the SC2/League model): the view always sh
 `TARGET_ROWS` (360) rows of world — a 1920×1080 fullscreen is exactly 640×360 at 3×, 1440p is
 the same frame at 4× and 4K at 6×, and other monitors buy sharpness with their extra pixels,
 never zoom. There is deliberately **no resolution setting**; camera zoom is a gameplay feature
-(below), not a display one. (The frame was 480×270 until 3.22; the menus, panels and end screens
-are still authored in that 270-row frame and centred in the taller view through `frameTop()`,
-core.js — `FRAME_H` names it.) `VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas()`:
+(below), not a display one. (The menus, panels and end screens are authored in a 270-row frame
+and centred in the taller view through `frameTop()`, core.js — `FRAME_H` names it.)
+`VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas()`:
 
 - It picks an integer **device**-pixel scale (via `devicePixelRatio`, so game pixels land
   exactly on device pixels even under fractional 125%/150% OS scaling) closest to
@@ -27,12 +27,13 @@ core.js — `FRAME_H` names it.) `VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas(
   rects and the 3×5 font blow up by a whole number and stay exact — and no layout code changes.
   The extra resolution exists for one reason: it is what lets a world pixel be a whole number of
   *device* pixels at zooms that are not whole numbers of *canvas* pixels.
-- Heights that don't divide cleanly (1440p → 5×, 288 rows) **"breathe"** a few percent rather
-  than letterbox or blur — the Terraria/Stardew trade. 16:9 screens always fill edge-to-edge.
+- 720p, 1080p, 1440p and 4K all divide 360 rows into a whole scale (2×, 3×, 4×, 6×). A height
+  that doesn't (a window, an odd panel) **"breathes"** a few percent — `VIEW_H` is
+  `ceil(deviceH / dev)` — rather than letterbox or blur, the Terraria/Stardew trade. 16:9
+  screens always fill edge-to-edge.
 - `VIEW_W` is **capped at 16:9** (`ceil(VIEW_H * 16/9)`): wider-than-16:9 monitors get pillarbox
   bars instead of extra vision — the SC2 rule. Narrower screens simply see less width. A guard
-  keeps the view at least 320×240 so the UI panels always fit. **A phone takes neither the
-  target rows nor the cap** — see [Phones](#phones).
+  keeps the view at least 320×240 so the UI panels always fit.
 - A third canvas, `#replay`, sits *above* `#game` and carries the replay window at device
   resolution; see [Replay](#replay-the-last-four-seconds). It is the only thing drawn outside
   `#game`'s pixel grid, and the only reason is that the grid has too few pixels there.
@@ -44,49 +45,6 @@ core.js — `FRAME_H` names it.) `VIEW_W`/`VIEW_H` are `let`s set by `fitCanvas(
   and is deliberately darker than the world so the eye stays on the game; on ≤16:9 screens it
   is cleared and fully covered. It uses `hash2`, so it must never run before boot — it is baked
   once per canvas size by `relayout()`, never per frame, and the game never draws into it.
-
-## Phones
-
-`MOBILE` (js/mobile.js) is the one flag: `mobileRefresh()` sets it from the TOUCH MODE setting
-(`settings.mobile`: `'auto'` reads the device — a coarse primary pointer, touch events and a
-screen whose short side is under `MOBILE_SHORT` CSS px, so a tablet stays on the desktop fit —
-`'on'`/`'off'` force it), and `fitCanvas()` calls it first, so a flip anywhere (the setting,
-boot reading the saved one, a resize onto another screen) re-fits the view. What a phone gets:
-
-- **The biggest game pixel the overlays allow.** The world map slab is 212×226 at the floor (it grows with the view: `fitMapSlab`, canvas.js) and the settings
-  slab 320×226, so a phone takes the largest whole device-pixel scale that keeps the view above
-  `MOBILE_MIN_W`×`MOBILE_MIN_H` (320×232) — far fewer rows than a monitor's 360 (a 1170-px-tall
-  phone lands on 234 rows at 5×; a 1080-px one cannot, 5× would be 216, so it takes 270 rows
-  at 4×), and the 3×5 font and the HUD grow with the pixel.
-  It is the same rule as the desktop's 320×240 guard with the target rows removed; the `TARGET_ROWS`
-  nearest-scale pick is the desktop branch only.
-- **No 16:9 cap and no frost bars**: `VIEW_W = FULL_W`. A phone is 19.5:9 or wider and the
-  width is the thumbs' room, so `renderBars()` clears itself (its bars are under 2 px).
-- **The camera opens at `MOBILE_ZOOM`** (1.5): the moment phone mode comes on, `fitCanvas` sets
-  `zoomCur` to it before re-runging `kWant`, so a sprite is thumb-sized. The wheel's rungs are
-  unchanged; the touch zoom pair steps the same `kWant`.
-- **Its own HUD SIZE**: `settings.hudScaleM` (default 1.25) — `hudSc()` reads
-  `hudScaleKey()`'s field, and the one GAME slider edits whichever is live, so a profile that
-  plays on both keeps both.
-- **The touch controls** draw above everything but the fade and the cursor
-  (`drawTouchControls`, the `touch controls` banner, js/ui/touch-plates.js): plates from `touchLayout()`
-  (js/touch.js), a floating stick under each thumb that is down (white for the walk, the
-  draw's gold for the aim). Over a panel only the one menu plate stays, as a cross, and it
-  presses Escape. The plates' glyphs are the CONTROLS page's TOUCH tab's (`drawTouchIcon`).
-- **The weapon shelf sits under the plates**: the top-left is the menu cog and the zoom pair's
-  corner too, so `shelfRowY()` drops the row to 44 on a phone (20 on a desktop) and the
-  [drawer](#the-backpack) under it drops with it. The right-hand touch column climbs from the
-  bottom edge like the left one.
-- **The pixel cursor on a finger is the reticle only** (`render()`'s last line): the aim a
-  finger or a pad is steering is worth drawing, an arrow under a thumb is not. `mouse.src`
-  says who moved the pointer last (input.js).
-- **Held upright**, `mobilePortrait()` is true: `drawRotatePrompt` covers the frame with a
-  night slab and a phone snapping between upright and sideways under an arrow, and
-  `touchDown` swallows every finger. `mobileGesture()` asks for fullscreen and a landscape
-  lock on every press until one lands (a phone Safari grants neither; the refusals are silent).
-
-`DBG.setMobile('on')` forces the phone fit on any window;
-[checklists](checklists.md#verifying-a-change) has the emulation recipe.
 
 ## World zoom, and the two pixel spaces
 
@@ -115,8 +73,9 @@ Consequences a new pass has to respect:
   the world view is *wider* than the canvas, and culling to the canvas eats the edges.
 - `worldCv` is allocated at the most zoomed-out size (`ZOOM_FLOOR`) once per
   canvas size, and each frame uses the `WV_W`×`WV_H` corner — never resize it per frame.
-- Anything **UI-layer but anchored to a world point** (only the radial wheel today) converts
-  through `wToSX`/`wToSY`, and keeps its own pixel size.
+- Anything **UI-layer but anchored to a world point** (the radial wheel, the HOP OFF key cap over the
+  roost, the archery round's off-screen markers, the gamepad's aim pointer) converts through `wToSX`/`wToSY`, and
+  keeps its own pixel size.
 - **A pointer position becomes a world position only through `mouseWX()`/`mouseWY()`**
   (`mouse / zoomCur + cam`). Aim, hover, the work target and the right-click tile all read them,
   so the zoom cannot be applied in one place and forgotten in another.
@@ -154,89 +113,102 @@ not stored as a float at all:
 frame-rate independent) and parks it exactly on the rung. **It zooms about the centre of the
 view**: `camX`/`camY` name the top-left corner, so after `sizeWorldView()` it shifts them by
 half the change in `WV_W`/`WV_H`, and the world point under the middle of the screen stays put
-through every frame of the ease. Without that the picture pivots about the corner and the follow
-camera (7/s, against the ease's 16/s) drags it back over most of a second — measured 55 screen
-px off centre four frames into a two-notch zoom in. While the ease runs the blit scale is
-fractional and ~12% of pixels break the grid; nobody reads pixel edges mid-zoom, and it lands
-clean. Measured with a block-uniformity scan over ~270k device px per rung: **0 stray pixels at
-every rung, on both a `devScale` 3 and a `devScale` 4 display; 12.3% mid-glide.**
+through every frame of the ease. Without that the picture pivots about the corner and the
+slower follow camera drags it back over most of a second. While the ease runs the blit scale is
+fractional and some pixels break the grid; nobody reads pixel edges mid-zoom, and it lands
+clean — every rung is block-uniform at rest.
 
-Nothing in that path touches the canvas, so unlike the old `applyView()` it never calls
-`fitCanvas()`/`relayout()` **and the overlays no longer force the zoom back to base** — the
-fixed-size panels fit at any zoom now. `applyZoom(0, true)` snaps instead of easing, which is
+Nothing in that path touches the canvas, so it never calls `fitCanvas()`/`relayout()`, and no
+overlay forces the zoom back to base — the fixed-size panels fit at any zoom.
+`applyZoom(0, true)` snaps instead of easing, which is
 what `beginDrop`/`landPlayer` use. The eagle ride forces `DROP_ZOOM` (the max-out view, `ZOOM_OUT_ROWS`
 of world) for as long as mode is `drop`; landing returns to whatever the player had set.
 `DBG.setK(k, snap)` sets the rung directly, `DBG.setZoom(z, snap)` lands on the nearest rung,
 and `DBG.getZoom()` reports `k`, `devScale`, `exact` and the whole `rungs` ladder. The scroll
-wheel is zoom only — there is no tool selection to cycle.
-
-Zooming **out** past the baseline is now allowed, which retires the old fairness ceiling
-(nobody buys vision) — a PvP rule from when widening the view meant enlarging the canvas.
+wheel is zoom only (over the minimap it steps the disc's zoom instead).
 
 **Mouse coords are divided by `scale` on the way in**, landing in screen space. Round positions
 when drawing (`Math.round`) or sprites smear across subpixels.
 
-**Cross-file invariant:** any code path that changes the canvas size — window resize,
-`fullscreenchange` — must call `fitCanvas()` then `relayout()`. `relayout()` recomputes
-everything positioned off `VIEW_W`/`VIEW_H`: the minimap anchors, the map/settings panel
-positions (`PANEL_X/Y`, `SET_X/Y`, `SL_X`, `ROW_*` — `let`s **declared in the `canvas` banner
-beside `relayout()`**, not down in their own sections, so `relayout()` never reaches forward
-into a temporal dead zone; the offsets *within* each baked panel stay fixed in their own
-sections), `fitFlakes()`, which keeps snow density constant by topping up/trimming
-the `flakes` array (see [Snow](#snow)), and `renderBars()`, which re-bakes the pillarbox frame. Never write layout
-code against a literal 640/360 (or the old 480/270); a screen authored in the 270-row frame
-starts at `frameTop()` (`FRAME_H`, core.js) — `menuLayout()` shows the pattern (`toy` offset).
+**Canvas size changed → `fitCanvas()` then `relayout()`** (the
+[CLAUDE.md](../../CLAUDE.md#hard-rules) rule; both listeners live in canvas.js). `relayout()`
+(js/core.js) recomputes everything positioned off `VIEW_W`/`VIEW_H`, in this order:
+`applyMinimapSize()` (the disc's anchors), `fitMapSlab()` (the chart's size, below), the
+map/settings panel positions (`PANEL_X/Y`, `MAP_X/Y`, `SET_X/Y`, `SL_X`, `SET_MUTE_X`),
+`fitFlakes()` (see [Snow](#snow)), `renderBars()` (re-bakes the pillarbox frame) and
+`layoutReplay()`. Those panel `let`s are **declared together in js/canvas.js** (the file after
+core.js), not down in their own panel sections, so by the time anything can call `relayout()`
+none of them is still in a temporal dead zone — a new panel anchor is declared there too; the
+offsets *within* each baked panel stay in their own sections. A screen authored
+in the 270-row frame starts at `frameTop()` — `menuLayout()` shows the pattern (`toy` offset).
 
-`render()` keeps two camera offsets: tiles and other statics subtract the rounded `ox`/`oy`,
-while moving entities (player, animals, robots, drops, particles, floaters, swing arc) subtract
-the exact `ex`/`ey` and round once at the end. Screen pos must be `round(world - camera)` with a
-**single** rounding — rounding camera and entity separately makes their boundary crossings
-disagree and the sprite vibrates ±1px against the background while walking (measured 48 flips/s),
-which reads as ghosting on high-refresh displays. New entity draw code must use `ex`/`ey`.
+`render()` keeps two camera offsets for the single-rounding rule
+([CLAUDE.md](../../CLAUDE.md#hard-rules)): tiles and other statics subtract the rounded
+`ox`/`oy` (the screen shake folded in), while moving entities (player, animals, robots, drops,
+particles, floaters, swing arc) subtract the exact `ex`/`ey` and round once at the end. New
+entity draw code must use `ex`/`ey`.
 
 ## Render pass order
 
-`render()` runs: ground blit → under-ice fish → ice-crack decals → the parkour start line
-(`drawParkourLine`, `PRACTICE` only) → **the stars reflected in the ice**
-(`drawIceStars`, night only — on the surface, so it covers the fish and the cracks, and under
-everything that walks) → footprints (walking prints,
-slide grooves, skate scratches and belly-crawl furrows all share the one `footprints` array,
-branching on `f.k`) → flat objects
-(stumps, and **fish nets** via `drawNet`) → item drops → **y-sorted
-`draws` array** (tall objects + every live player + animals + robots, sorted by feet Y; empty
-players draw as team-tinted silhouettes via `drawGhost`) →
-selection brackets (`drawSelection`: white pulsing corners with a dark shadow over the hovered
-stump / open ice hole / finished structure, or the wheel's target) → the E work prompt (`drawWorkHint`) → the
-fish brackets (`drawFishHint`) → the parkour's lap clock and BEST/LAST plate
-(`drawParkour`, `PRACTICE` only) → construction progress bars → particles →
-arrows (bolts branch to `drawBolt`) → `drawWarps` (the silhouettes a teleport strung across its
-jump) → **`drawSwaps`** ([the tool swap](#the-tool-swap)) → `drawTurretFx` (each turret's charging aim line and its
-muzzle flash) → turret tracers → swing arcs (one per swinging player) → floaters → `drawDropAir` (the
-eagle, its shadow, the rider and every faller, while `state.drop` exists) → `drawZips` (each
-side's zipline cable, span by span with its sag and wind lean — over every body and canopy, under
-the night; js/draw/zipline.js) → `renderLighting` →
-`drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately **above** the lighting,
-see [Debug overlays](#debug-overlays-hitboxes-and-routes)) →
-**the world blit** (`worldCv` scaled onto the canvas — everything above it drew in world space,
-everything below draws in screen space; see [World zoom](#world-zoom-and-the-two-pixel-spaces))
-→ `renderWeather` (snow, see below) →
+`render()` (js/draw/render.js) runs, in order. **World space** (`ctx = wctx`):
+
+1. ground blit → under-ice fish → ice-crack decals;
+2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
+3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
+   one `footprints` array, branching on `f.k`);
+4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
+   it covers the fish and the cracks, and under everything that walks);
+5. flat objects (stumps, and **fish nets** via `drawNet`);
+6. `drawFlagRings` (your side's flag rings, and the ring a held flag wheel previews) →
+   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (craters,
+   the piercing shot's telegraph) → item drops;
+7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
+   targets and your side's flags, sorted by feet Y; empty player slots draw as team-tinted
+   silhouettes via `drawGhost`);
+8. `drawSelection` (white pulsing corners with a dark shadow over the hovered stump / open ice
+   hole / finished structure, or the wheel's target) → `drawBuildGhost` (the build list's ghost)
+   → `drawWorkHint` (the E work prompt) → `drawFishHint` (the fish brackets);
+9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
+   `drawAgRings`;
+10. construction progress bars → particles → `drawAimLine` (the bow's) → arrows (bolts branch to
+    `drawBolt`, a bit with a `body` to `BIT_BODY`);
+11. `drawWarps` (the silhouettes a teleport strung across its jump) → **`drawSwaps`**
+    ([the tool swap](#the-tool-swap)) → `drawAbilityAir` (the spinning net, the grapple's rope)
+    → `drawTurretFx` (each turret's charging aim line and muzzle flash) → turret tracers;
+12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → floaters
+    (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
+13. `drawDropAir` (the eagle, its shadow, the rider and every faller, while `state.drop`
+    exists) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
+    over every body and canopy, under the night; js/draw/zipline.js);
+14. `renderLighting` → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
+    **above** the lighting, see [Debug overlays](#debug-overlays-hitboxes-and-routes)).
+
+Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
+drew in world space, everything below draws in screen space; see
+[World zoom](#world-zoom-and-the-two-pixel-spaces)). **Screen space**:
+`renderWeather` (snow, see below) →
 `renderVignettes` → **`replayTick`** (banks the frame just finished into the replay ring — it
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
-itself) → `renderUI` (skipped in `title` and `drop`) → `renderDropUI` (mode `drop` only:
-the flight bar, keybind indicators) → `drawDropBrief` (mode `play`,
-only while [the drop brief](#the-drop-brief) holds a roost) or `drawHopPrompt` (mode `play`, the
-local player still seated on its roost: the HOP OFF key cap — E, or the pad's A disc while one is in hand) → `renderWheel` (radial menu, above the UI) →
-map/settings overlays (the M map also in mode `drop`) → `renderTitle` (the main menu, also during the play intro) → the end-of-match
-overlay (`renderDead`: the death dim and its planks, or `renderVictory` / `renderDefeat` — see
-[The end screens](#the-end-screens)) →
-`renderReplay` (the replay window, above both the death dim and the pause dim) →
-the held-TAB scoreboard (deliberately **above** the death dim, see
-[Scoreboard and event log](#scoreboard-and-event-log)) →
-the info stack (`drawTags`, left edge at the top quarter: FPS / POS / SEED as aligned
-label-value rows — one ESC-menu toggle or F3; only the fps line in `title`) → the screen fade
-(`state.fade`, the reroll whiteout) → the pixel cursor (always last). The bow's
-`drawAimLine` sits between the particles and the arrows pass. Anything that should be occluded by trees goes into `draws`
-with a sort key; anything flat goes in the pre-pass.
+itself) → `tipResolve` ([the hover tooltip](#the-hover-tooltip)'s one answer for the frame) →
+`renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
+`renderDropUI` (mode `drop` only: the flight bar, keybind indicators) → `drawDropBrief` (mode
+`play`, only while [the drop brief](#the-drop-brief) holds a roost) or `drawHopPrompt` (mode
+`play`, the local player still seated on its roost: the HOP OFF key cap — E, or the pad's A disc
+while one is in hand) → `drawBuildList` (mode `play`: the build list's column under the shelf)
+→ `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
+the chart, because a flag wheel opens over it) → `renderSettings` → `renderTitle` (the main
+menu, also during the play intro) → `renderReplay` (the replay window: the whole frame on a
+death, the corner on pause — **before** the death overlay, whose countdown and ESC prompt draw
+over it) → the end-of-match overlay (`renderDead`: the death dim and its planks, or
+`renderVictory` / `renderDefeat` — see [The end screens](#the-end-screens)) → `drawTooltip`
+(every mode but an end screen) → the held-TAB scoreboard (deliberately **above** the death dim,
+see [Scoreboard and event log](#scoreboard-and-event-log)) → the info stack (`drawTags`, left
+edge at the top quarter: FPS / POS / SEED as aligned label-value rows — one ESC-menu toggle or
+F3; only the fps line in `title`) → the screen fade (`state.fade`, the reroll whiteout) → the
+pixel cursor (always last).
+
+Anything that should be occluded by trees goes into `draws` with a sort key; anything flat goes
+in the pre-pass.
 
 A **tree** is 27×37 and draws at `(px - 5, py - 21)` — bottom-aligned on its own tile, trunk on
 the tile's centre line, canopy overhanging the tile above (which the `draws`
@@ -267,7 +239,7 @@ nearest pine's position on the same ramp, computed beside the y-sort and stamped
 (the current frame tinted black on the scratch canvas, blitted at the eight neighbours, the same
 rim grammar as `drawPixelTextOutline`) — so the body pops off the canopy over it and the rim
 dissolves as the hero steps into the open; a lying body keeps its stealth read bare. Only that
-handful of pines ever flips `globalAlpha`, so the atlas batch below stays whole. A **dead tree** is still the old 16×24 snag at `py - 8`. Short ground sprites (rock, bush,
+handful of pines ever flips `globalAlpha`, so the atlas batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (rock, bush,
 stump, a den's mouth) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely.
 
@@ -343,10 +315,9 @@ then reborn (`makeFlake`) at a fresh spot in the field.
 
 **The seventy boot flakes come off the main `rng` and that count is load-bearing** — that loop runs
 before `genWorld()`, so adding or dropping one shifts the rng prefix and every existing seed with
-it. Everything else (resize and zoom top-ups, and **rebirths**) draws from `fxRng`. Rebirths used
-to come off `rng` too, which quietly made the main stream depend on how many flakes were on screen;
-now that the count follows the zoom that would have made a match's rolls depend on the player's
-camera, so they were moved. Worldgen is untouched either way — it runs before the first `updateFx`.
+it. Everything else (resize and zoom top-ups, and **rebirths**) draws from `fxRng`, never `rng`:
+the count follows the zoom, so a rebirth off the main stream would make a match's rolls depend on
+the player's camera.
 
 Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `DBG.flakes` and
 `DBG.cam()` expose the array and the exact camera.
@@ -354,13 +325,14 @@ Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `D
 ## UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases at boot (the two frost slabs share `bakeFrostSlab()`); per-frame code blits them and draws only the live parts on top.
-Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`, `ROW_*`) are shared between the bake
+labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases (every frost slab — these three and the patch notes — is `bakeFrostSlab()`, js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
+Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
-after the panel is rebuilt. They are declared **up in the `canvas` banner next to `relayout()`**
-(which reassigns them on every canvas-size change) rather than in these sections; a new panel row
-must be declared there too. The bake draws in panel-relative coordinates (e.g. `ROW_FPS - SET_Y`),
-so a recenter never requires a re-bake — keep any new row's bake-side label and per-frame widget
+after the panel is rebuilt. They are declared in js/canvas.js and reassigned by `relayout()`
+([above](#world-zoom-and-the-two-pixel-spaces)). The ESC slab's **rows have no fixed anchors**:
+it is tabbed, and each page lays its rows out (and scrolls them) through `settingsLayout()`
+(js/ui/panels.js) off `SET_X`/`SET_Y`/`SL_X` alone. A bake draws in panel-relative coordinates,
+so a recenter never requires a re-bake — keep any new bake-side label and its per-frame widget
 expressed the same way.
 
 The [trading post](gameplay.md#the-panel) bakes its chrome the same way but **lazily and per
@@ -370,22 +342,22 @@ size of the slab, clears the middle out of it, and caches it under the team inde
 pass blits one image and then owns every well on top of it. Its size is constant (`SHOP_W` ×
 `SHOP_H`), which is why it needs no rebuild on a resize; only the panel's *position* moves.
 
-The map panel's bake keeps a fixed 192×192 map slot; the world is bigger than that, so every
-tile-space position drawn on the chart (the camera rect, every mark) is multiplied by
-`MAP_S = MAP_W / WORLD`, and `mapTileAt` is the inverse. **The chart is a drawn map, not a
-photograph of the tiles** (3.32): `buildWorldMapImg()` files every tile under a `CH_*` class
+The map panel's chart is a `MAP_W`-square slot **fitted to the view** (`fitMapSlab()`, below:
+96 to `CHART_MAX` 232 px), so every tile-space position drawn on the chart (the camera rect,
+every mark) is multiplied by `MAP_S = MAP_W / WORLD`, and `mapTileAt` is the inverse. **The chart
+is a drawn map, not a photograph of the tiles**: `buildWorldMapImg()` files every tile under a `CH_*` class
 (`objChart(o)` for what stands on it, else the ground array), flattens the class map — a lone
 tile of forest or ice is ground again, a snow pinhole with three sides of one mass is that mass
 (`CHART_NEED`) — resamples it into the slot by priority (`chartSpan`: each chart pixel takes the
-highest class among the tiles it covers, so a one-tile wall never drops out of its run where 232
-tiles fold into 192 px), and paints one flat ink per class (`CHART_INK`) — **a winter chart**:
+highest class among the tiles it covers, so a one-tile wall never drops out of its run when a
+small window folds the 232 tiles into fewer px), and paints one flat ink per class (`CHART_INK`) — **a winter chart**:
 snow-white open ground, deep cold pine for the woods, pale ice, a tan track for the road. The
 light comes from the top-left, as it does on the snow: a mass's rim is lit where lower ground lies
 above or left of it and inked where it lies below or right (`CHART_LIT`/`CHART_RIM` — the forest,
 the ice, and the road's shadow edge). The ice wears a sparse diagonal sheen and the snow a faint grain
-(`chartGrain`), and the woods nothing at all — the palette does the work (a lattice of canopy
-dots read as studs and a jittered scatter of pine glyphs as clutter; both were tried and pulled in
-3.32), so the chart has the grain of a drawn thing without the noise of one. No grid: a single
+(`chartGrain`), and the woods **nothing at all** — the palette does the work, and a forest
+texture (canopy dots, pine glyphs) reads as studs or clutter at this scale — so the chart has the
+grain of a drawn thing without the noise of one. No grid: a single
 bush, rock or stump has no class and shows the ground, because at that scale a speck is noise;
 the buried chests keep theirs, a gold speck being a thing worth walking to. A side's buildings
 and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
@@ -406,10 +378,9 @@ is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dar
 the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
 px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
-(a phone at the 232-row floor gets the 192 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
+(a window at the 240-row floor gets a 200 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
 buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the **frost slab** every
-panel shares (`bakeFrostSlab` with no title — the parchment of old read as summer against a winter
-chart), the chart in a dark frame with an icy line round it. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
+panel shares (`bakeFrostSlab` with no title), the chart in a dark frame with an icy line round it. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
 the day at 2× in the slabs' title gold on the left, and on the right the `CLOSE` plate —
 `drawFrostButton`, a plate in the slab's own grammar (its stone bound in its dark, lifting off its
 shadow on hover, the label going gold), hit through `mapCloseRect`/`mapCloseHit` in `pointerPress`
@@ -429,16 +400,14 @@ camp glyphs, your side's [flags](gameplay.md#team-flags) with their rings) multi
 offset by `s`. The disc sits on an opaque `#0f1632`
 backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no
 hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;
-there is no halo or second ring outside it (the pale outer rim and the hover brightening went
-in 3.23). `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
+there is no halo or second ring outside it. `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
 game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
 backing, rims and the day/night band one pixel at a time (pixel-centre distance test, optional
 clockwise angle span), and the map view is clipped by `mmMask(r)` — a cached pixel disc
 composited with `destination-in` on the `mmView` scratch canvas — instead of `clip()`.
-**But `mmRing` never runs per frame**: a per-pixel `hypot`/`atan2` loop issuing a `fillRect`
-per lit pixel was ~1.6 ms a frame — the largest single cost in the game. The static chrome
-(silhouette, both rim variants, the ring's track) is baked per `(MM_R, hover)` in `mmChrome`,
-and the day/night arcs plus the dusk tick per `(MM_R, progress step)` in `mmArcBand` — the
+**But `mmRing` must never run per frame**: it is a per-pixel `hypot`/`atan2` loop issuing a
+`fillRect` per lit pixel (~1.6 ms a frame when it did). The static chrome (outline, silhouette,
+the ring's track) is baked per `MM_R` alone in `mmChrome`, and the day/night arcs plus the dusk tick per `(MM_R, progress step)` in `mmArcBand` — the
 cycle quantised to `MM_ARC_STEPS` (512), about a pixel of arc per step, so the band repaints
 every couple of real seconds. Only the progress tip, the centre dot and the markers are
 per-frame fills. The terrain image is throttled the same way: `updateMinimap()`'s full
@@ -449,7 +418,7 @@ at one map pixel per tile, a build or a cut ice hole arriving half a second late
 
 `renderUI()` owns three corners, the top edge and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
-the weapon** (3.23): the one tool in hand and the bits loaded into it, with the inventory drawer
+the weapon**: the one tool in hand and the bits loaded into it, with the inventory drawer
 shut under it — the corner a Noita wand or a Terraria held item lives in — while every number
 you own (berries, fish, gold, cards) is on the **hud strip's right end**. The bottom right is
 empty world.
@@ -464,7 +433,8 @@ empty world.
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
-All three widgets slide **their own size** away for the landing intro — the rail up by `RAIL_SLIDE`, the strip down by
+Every widget slides **its own size** away for the landing intro — the minimap up by
+`MM_R * 2 + 40`, the rail up by `RAIL_SLIDE`, the strip down by
 `HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the top-left corner left by `CORNER_REACH` (the widest
 row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
 tool cell would leave a longbow's row parked over the cinematic.
@@ -478,7 +448,7 @@ each raise one, *as well as* the line they already
 put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
 somebody, and a price is not that — it is the state of the world your bag is about to be sold
 into, so it belongs where the clock already is. The market is this corner's first and biggest
-customer, which is why the block lives in shop.js, but the plate is not the market's: 3.41's
+customer, which is why the block lives in shop.js, but the plate is not the market's: the
 `roost` kind is the same card with a different mark on it.
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
@@ -491,11 +461,14 @@ whole time a **price** plate is up, so the coin keeps catching the light) and a 
 price is worth, a crate is what a delivery *is*. A stock plate has **no tail**: its crate has
 already said which kind of news this is, so the headline takes that 8 px instead.
 
-A kind may name a **drawn** mark instead of a blitted one — `NOTE_KIND[k].glyph` into `NOTE_GLYPH`,
-one entry per glyph so the draw never grows an `if` per kind. The `roost` plate's is `bird`:
-`drawMapBird` at **2×** (the `s` argument added in 3.41 — 1 is the maps' own 7 px glyph) in your
-side's ink through `skin(player.team)`, so the stamp is *the same diamond the disc and the chart
-use for an objective* rather than a second drawing of a bird. Its text is the **nerve the bird has
+A kind may name a **stamped** mark instead of a blitted one — `NOTE_KIND[k].glyph` into
+`NOTE_MARKS`, one pixel grid per glyph (16 wide, in the tails' own grid language) so the draw
+never grows an `if` per kind. `renderNotices` stamps it with `stampGrid` (js/ui/screens.js),
+filling `h` with your side's ink through `skin(player.team)` over a dark rim — the reason to
+stamp rather than bake, since a baked sprite cannot be recoloured per team. The `roost` plate's
+is `bird`: a soaring raptor from below (head, swept wings, tail), **not** the maps' objective
+diamond — `drawMapBird(g, x, y, col, rim)` is one 7 px size only, and blown up to 2× it reads
+as a medical plus beside the arrow tail on the same plate. Its text is the **nerve the bird has
 left**, as a percent, under the falling tail — the plate says what happened where the cue
 (`SFX.alarm`) only turned your head, which is the market's own split between a ding and a number.
 
@@ -520,7 +493,7 @@ and the feed line can never disagree about which way a price went.
 
 `noteRect(k)` places slot `k` off `MM_*` — right edge flush with the disc's own, `NOTE_GAP` (18 px)
 under its rim, so the column follows the minimap wherever the size dial and the view put it and
-never lands on the clock. **The newest plate is player 0**, hard under the disc, and its
+never lands on the clock. **The newest plate is slot `k = 0`**, hard under the disc, and its
 arrival pushes the stack down: it flies in `NOTE_SLIDE` (30 px) off the right edge over `NOTE_IN`
 (0.55 s) while the plates below ease down a whole `NOTE_PITCH` on that same curve. They are drawn
 **oldest first** so the newest lands on top of the stack it is shoving.
@@ -545,11 +518,10 @@ panels, and the end screens own the frame outright. Each kind carries its own cu
 
 ### The hover tooltip
 
-One panel saying what the pointer is on — and the fourth deliberate carve-out from
-show-don't-label, recorded as such in [CLAUDE.md](../../CLAUDE.md#ui-rule-show-dont-label). What
-earns it: a tool's rate of fire against a bit's weight is a **comparison of numbers**, and no shape
-compares numbers. It is a carve-out and not a licence — every well still has to read at a glance
-with the panel shut, which is what the tier plates, the shelf's pips and the cooldown wipes are for.
+One panel saying what the pointer is on — the fifth deliberate carve-out from
+show-don't-label ([CLAUDE.md](../../CLAUDE.md#ui-rule-show-dont-label) holds the why). Every well
+still has to read at a glance with the panel shut, which is what the tier plates, the shelf's
+pips and the cooldown sweeps are for.
 
 **Where it sits is the player's**, and `tipPos(w, h)` is the only thing that answers — the TOOLTIP
 row on the ESC panel's GAME page (`settings.tipFollow`, default **on**):
@@ -561,20 +533,21 @@ row on the ESC panel's GAME page (`settings.tipFollow`, default **on**):
   pointer (`y = my - TIP_PAD`), the panel flips to the pointer's other side rather than cross the
   right edge, and both axes clamp `TIP_EDGE` (4 px) inside the view, so a hover in any corner reads.
 - **FIXED** parks it bottom **left**, the corner the pointer is furthest from while it hovers the
-  backpack, the weapon strip or a wiki row — so the panel can never cover the well beside the one
+  backpack, the weapon shelf or a wiki row — so the panel can never cover the well beside the one
   being read, and nothing else lives in that corner.
 
-A **finger** keeps the corner whatever the row says (`mouse.src === 'touch'`): a thumb is already on
-the well it is asking about, so a panel beside it is a panel under the hand — the same test
-`drawCursor` uses to keep an arrow out from under a thumb. `DBG.tipRect()` returns the rect the
+`DBG.tipRect()` returns the rect the
 panel is painted at this frame, which is how the two modes are read without eyeballing pixels.
 
-**`tipAt(mx, my)` is the only source**, and it asks the same hit-testers, in the same order, that
-the mousedown handler does — the character panel's gear wells, then the shelf, then the
-weapon strip, then the backpack —
-so what the panel describes and what a click would do can never be two different things. A live
-drag outranks all of them: whatever is on the cursor describes itself. It answers in two modes
-only, `play` and `title` (the wiki's ARSENAL rows); every other mode returns null.
+**`tipAt(mx, my)` is the only source**, and it asks the same hit-testers the press handler
+does, so what the panel describes and what a click would do can never be two different things.
+In `play`, in order: the merchant's counter (`shopHit` → `tipShop` — first, so a drag held over
+its sell well is priced rather than merely described), then a **live drag** (whatever is on the
+cursor describes itself, `tipCell`), the character panel's gear wells (`gearHit`), a rail chip
+(`railHit`), the shelf (`shelfHit`: the tool cell, a loaded bit, or an empty bit cell), a
+floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, a meal or card button,
+the gold plate) and last the drawer (`bagHit`). In `title` it answers the wiki's rows and
+ability cards and class select's stage wells; every other mode returns null.
 
 `tipResolve()` runs **once per frame in `render()`, before `renderUI`**, so every draw in the
 frame reads the same answer.
@@ -589,10 +562,13 @@ short tooltip is a short panel.
 The builders, one per kind: `tipTool` (rate of fire, bit slots, max weight, then the loaded bits in
 **firing order** with `>` on the one up next), `tipBit` (damage, weight, speed, lifespan, flight —
 then only the flags that are *true*, because four rows of NO would drown the three that matter),
-`tipStack` (food, cards), `tipGear`, `tipClassAb` (a strip
+`tipStack` (a meal), `tipCards` (the hand, a row per rarity), `tipGold`, `tipRail` (a rail
+chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipGear`, `tipClassAb` (a strip
 ability well in play, or class select's stage wells with `cls` passed — the in-play cooldown
 and cast-hint rows only appear in play), and `tipKind` (a wiki row), which strips the "what is loaded in it"
-half and ends on whether this profile has ever held one.
+half and ends on whether this profile has ever held one. `tipCell(s)` picks the builder for
+whatever a bag or shelf cell holds, and `tipSend(d, txt)` adds the one free line saying what a
+click on that well would do.
 
 ### The wiki screen
 
@@ -636,43 +612,16 @@ rail.
 
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **four 34px wells** —
 `[1][2][3][4]`, the class abilities in key order (`stripCellRect`; `abCellRect(i)` is well `i`;
-the weapon left the strip for [the shelf](#the-weapon-shelf) in 3.23) — then, on the
-right end, the **pouch block** (`pouchCellRect(col, row)`: a 2×2 of 24px squares, berry over
-fish, gold over cards, its bottom flush with the wells' and its top `POUCH_RISE` (14) px above
-the strip on a tab of the plate, `pouchTabRect`) — all over the
+the weapon is not on the strip — its one well is [the shelf's tool cell](#the-weapon-shelf)) —
+then, on the right end, the **pouch block** (the 2×2 of squares on its tab, described at the end
+of [the cooldown sweep](#the-cooldown-sweep)) — all over the
 **plum xp bar** along the bottom (lifetime gold, left-to-right, no level number — that lives on
 the overhead badge). The bar has a dark silhouette and a frost rim so it reads against the
 plate, and is **notched into `AB_SEGS` segments** WoW-fashion — a tick cuts dark plum through
 the fill and sits faint on the empty track, so progress through a level is countable either way.
 It sits at the *bottom* so the strip's top edge stays open screen for the ability wells'
-**floating buy plates** (below). The plate swallows clicks so nothing fires through it. There is
-no rail: the dodge pips it once carried are said by the overhead stamina bar.
-
-The weapon's well is [the shelf's tool cell](#the-weapon-shelf) now (`drawShelf`, top-left; the strip's
-own well went in 3.23), and it says three things and carries no words. The **plate** behind the icon
-is the tool's tier colour — the same colour it wears in every other well it ever sits in, so a
-tier is stated once and stated the same way everywhere (`tierPlate`, and `tierShine` sweeps a
-highlight across the top tier's plate); the 12px tool art is drawn doubled, so the tool
-reads at the ability icons' size. The **rim** is that tier, quiet at rest and
-brightened to the tier's ink on hover — the four ability wells' own grammar. It used to go white
-and the whole well used to sit a pixel proud, as the tell for the SELECTED slot; there is one
-weapon slot (`TOOL_SLOTS`), so that highlight could never turn off, and a highlight that is always
-on is not a highlight — it just made the strip's left end shout over four wells that had something
-to say. A tool that cannot answer the button still goes red, which is the old dry-bow
-tell — and now the only reason this well ever leaves its resting colour. And the **cooldown sweep** ([below](#the-cooldown-sweep)) turns once through exactly
-`toolCycle`, so the rate of fire is the speed of the hand rather than a number — and the veil
-clearing IS the bow being ready, since nothing else gates the draw
-([the cycle](gameplay.md#the-cycle)). It is the same hand the ability wells turn: a press waits on
-the weapon's clock and on the key's, and the two are one question asked of different clocks, so
-they are answered in one shape. What is loaded
-stays out of the resting well — the [shelf](#the-weapon-shelf) over the backpack is where the
-build is read and edited.
-
-A fifth thing, and the only one that is an *event*: the well takes a **red band all the way round
-it and the pack's own 1px shake** for `toolFlash` seconds when a bit has nowhere to go in the
-tool ([one click sends it](gameplay.md#the-bit-column)) — `toolDenied()`, the twin of `bagDenied()` in
-the same red and aged in `updateFx` beside it, so the two containers refuse in one language and
-the one that is full is the one that answers.
+**floating buy plates** (below). The plate swallows clicks so nothing fires through it. Stamina
+is not on the strip: the overhead stamina bar says it.
 
 An **ability well** (`drawClassAbCell`) is the same grammar pointed at `CLASS_AB[p.cls][i]`: its
 detailed 32px icon (`classAbIcon`, baked from `AB32` in js/abilities.js) is the ability, a
@@ -694,7 +643,7 @@ above the well
 AND `hudHome()`, so the plate's existence IS the appears-then-goes ask; `drawAbBuyPlate` draws it
 under the same two gates
 — a gold-rimmed plus, lighting on hover, the tooltip carrying the numbers). The `hudHome()` half
-matters because the plate hangs in open screen ABOVE the strip: the intro's 40px slide is not far
+matters because the plate hangs in open screen ABOVE the strip: the intro's `HUD_SLIDE` ([the HUD corners](#the-hud-corners)) is not far
 enough to carry it off the bottom with the wells, and a **drop brief pins `state.intro`** for the
 whole roost tour (the brief's camera branch in js/sim.js never counts it down), so without that
 gate four gold plus plates bob alone along the bottom edge for the length of the cinematic.
@@ -716,46 +665,39 @@ cooldown, level and next-level price, the blurb, nothing the well itself already
 `drawSweepCover(x, y, w, h, frac, col, edge)` is League's radial cooldown **cut to a square**, and
 the **one readout the shelf's tool cell and the four ability wells share**: the
 veil fills the well and retreats **clockwise from 12 o'clock**, so the dark that is left is the
-wait that is left and the hand's angle is the fraction at a glance. That is the whole reason it
-replaced the top-down wipe: on a 20 s clock a bar three quarters down and a bar half
-down look alike in the corner of an eye mid-fight, while a hand at 4 o'clock and one at 7 do not.
-One grammar over the whole strip — the weapon's rate of fire and an ability's cooldown are the
-same question asked of different clocks, so only the speed of the hand tells a 0.8 s bow from a
-20 s fury.
+wait that is left and the hand's angle is the fraction at a glance — a hand at 4 o'clock and one
+at 7 read apart in the corner of an eye mid-fight, where two bars part-way down do not. It is
+the **one shape every wait on the HUD is drawn in** — the weapon's rate of fire, an ability's
+cooldown, the meal clock, a rail chip's respawn — so only the speed of the hand tells a 0.8 s
+bow from a 20 s fury.
 
-The **meal clock** turns it too (`drawFoodClock`, and with it the last top-down wipe in the game
-left): both meal buttons off the one shared `p.foodCd`, so the two turn **together** — which is the
-thing that says it is one clock and not two. It scales further down than it looks like it should,
-which is why the gate stayed after the 8px surfaces it was written for went away: `drawFoodClock`
-passes `CD_EDGE` only at `w >= 12`, and below that a cell turns the **bare veil** — the same wedge
-sweeping the same way, minus a stroke that at that size lands ACROSS the berry and reads as a
-scratch on the fruit rather than as a clock over it.
+The **meal clock** turns it too (`drawFoodClock`): both meal buttons off the one shared
+`p.foodCd`, so the two turn **together** — which is the thing that says it is one clock and not
+two. `drawFoodClock` passes `CD_EDGE` only at `w >= 12`; below that a cell turns the **bare
+veil**, because at that size the hand's stroke lands ACROSS the berry and reads as a scratch on
+the fruit rather than as a clock over it.
 
 Two things it does not do the obvious way. It is **rasterised a pixel at a time**, for the reason
 `mmRing` rasterises every curve of the minimap ([UI panels are baked once](#ui-panels-are-baked-once)):
 a canvas path anti-aliases, and a soft diagonal across a 32px well is blur on a screen where every
 other edge is hard. Unlike the minimap's chrome this one **cannot be baked** — the hand moves every
-frame — so it pays the two costs that made `mmRing` the game's largest single cost, and dodges them
-on size: the well is 32×32 (1024 angle tests, not a 68px disc's 4624 × several rings), each row is
-walked once and its covered pixels coalesced into ONE `fillRect` per run instead of one per pixel,
-and only a well actually on cooldown is walked at all. Measured on the bake path over repeated
-runs: **28–37 µs a well, 0.14–0.19 ms with all five turning** — around 1% of a 60fps frame,
-against `mmRing`'s old 1.6 ms.
-And the veil is **not** the near-black cover the old top-down wipes used (`rgba(8,12,30,0.82)`,
-deleted with the last of them) but a translucent slate (`CD_SWEEP`):
+frame — so it stays cheap on size: the well is 32×32 (1024 angle tests), each row is walked once
+and its covered pixels coalesced into ONE `fillRect` per run instead of one per pixel, and only
+a well actually on cooldown is walked at all (about 30 µs a well).
+And the veil is **not** a near-black cover but a translucent slate (`CD_SWEEP`):
 the well's ground is `#080b1c` and half of every icon is nearly as dark, so a darker-still wash
 over it changes nothing the eye can find, and the sweep would be a bare line turning over a well
 that never dims. The slate drags an icon's lit pixels down and lifts its dark ones to a blue-grey,
-so the waiting wedge is a different **material** rather than merely a darker one — which is what
-League's grey veil is actually doing. `CD_EDGE` draws the hand itself, centre to rim, in the 1px
-bright line the old wipes carried at the front of their cover; pass `null` instead and the cell
+so the waiting wedge is a different **material** rather than merely a darker one. `CD_EDGE`
+draws the hand itself, centre to rim, as a 1px bright line; pass `null` instead and the cell
 turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
-The **pouch block** (3.23) is the strip's right end: a 2×2 of `FOOD_SQ` (24 px) **squares** —
+The **pouch block** is the strip's right end: a 2×2 of `FOOD_SQ` (24 px) **squares**
+(`pouchCellRect(col, row)`) —
 **berry** over **fish** on the left, **gold** over **cards** on the right — standing on a tab of
 the strip's own plate (`pouchTabRect`: rimmed on top and sides, open onto the strip) whose
-bottom row is flush with the wells and whose top rises `POUCH_RISE` (14) px above the strip's
+bottom row is flush with the wells and whose top rises `POUCH_RISE` (13) px above the strip's
 edge, so the block is a small panel on the strip's end rather than four bars squeezed into one
 well. Every square is drawn by `drawPouchCell` in the ability wells' own grammar at two thirds
 the size: the item icon **doubled** in the middle (the card fan is baked at 16 px and draws at
@@ -786,7 +728,7 @@ that is money must never read as a count of something carried.
 
 ### The team rail
 
-`drawRailScaled` (the `team rail` banner, js/ui/rail.js; 3.33) is the roster
+`drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster
 along the top edge: two [hud frame](#the-hud-frame) plates, `RAIL_MID` (10) px apart, centred on
 `VIEW_W` at `RAIL_Y` (3) — **your side on the left** and the rival's on the right, a 14px
 **chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) — the class's
@@ -807,9 +749,8 @@ No hp, no name, no number: "three of us are up, two of them are down for a while
 counting lit chips and glancing at the hands. Under the pointer a chip's rim goes white and the
 [tooltip](#the-hover-tooltip) carries the words (`tipRail`, through `railHit` in `tipAt`): the
 name in `playerTint`, the class, the level, and the countdown or OUT while the body is down — the
-scoreboard's own line. The references agree on the shape: Helldivers and Fortnite stack text-free
-squad rows, none of the three puts an enemy frame on the HUD, and League's one enemy read is the
-death timer — the right plate is that timer made a hand. *Where* anyone is stays the minimap's job.
+scoreboard's own line. The rival's plate is League's death timer made a hand (the references are
+in rail.js's header); *where* anyone is stays the minimap's job.
 
 It is drawn straight after the minimap in `renderUI` (under the counter's wash with it), rides
 the intro slide up by `RAIL_SLIDE`, and **stays up while you are dead** — the side's state is
@@ -819,7 +760,7 @@ the practice arena, or a match with an empty side — `railSides` is null and no
 the two notes step under the spectate control as well while it is up (`noteY`).
 **Its scale is a whole number**: `railSc` rounds the HUD SIZE dial and never goes under 1 (a 12px
 emblem at 0.8 drops two of its rows, where a 34px well shrugs it off), capped where the plates
-would reach a phone's zoom pair (`RAIL_KEEP`, 80 px each end on `MOBILE`) or the view's edge;
+would reach the view's edge;
 the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through
 it. A known overlap: a longbow carrying five modifier bits stacks five rails above the shelf row
 that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
@@ -843,10 +784,11 @@ the outline steps up around the tab, the ground runs through the seam, and the l
 the inside corner and climbs it. `o.lit`/`o.ink` are what a widget's states colour (the drawer's
 full amber, a refusal's red). Every margin inside the outline is three pixels — line, light,
 ground — which is what `AB_PAD` and `BAG_PAD` are, so a well sits the same distance from the
-edge on every side of both widgets. The [drawer](#the-backpack) wears it with every corner cut
-and no cap: it lives under the shelf, not under the sky.
+edge on every side of both widgets. The [drawer](#the-backpack) wears it with only its two free
+(right) corners cut — it is flush with the view's left edge — and no cap: it lives under the
+shelf, not under the sky.
 
-**One well size for the HUD** (3.23): the strip's wells and the shelf's cells are `HUD_CELL` (34)
+**One well size for the HUD**: the strip's wells and the shelf's cells are `HUD_CELL` (34)
 square, and every item icon in them is drawn doubled (`drawItemIcon`'s `k`), so a tool reads at
 one size on the shelf as an ability does on the strip. The drawer's cells are the exception on
 purpose — `BAG_CELL` (18) with the art at 1× — because a spare is glanced at and dragged, not
@@ -872,22 +814,39 @@ point is spent nowhere else, and nothing else on the strip is ever bought.
 
 ### The weapon shelf
 
-**The one weapon, top-left, on screen at all times** (3.23): the tool in hand at the left end of a
+**The one weapon, top-left, on screen at all times**: the tool in hand at the left end of a
 row (`shelfCellRect(-1)`, at `SHELF_X`/`shelfRowY()`) and its bit cells running right in firing
 order, which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
 is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
-lost its weapon well and everything else carried is in [the drawer](#the-backpack) under this
-row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (18; 44 on
-a phone, under the menu and zoom plates) and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
+has no weapon well and everything else carried is in [the drawer](#the-backpack) under this
+row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (18)
+and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
 frame under it sits flush with the view's edge) and grown rightward, so the tool cell — and the
 drawer's arrow under it — never move whatever the build does, and a fitting's rail is what climbs
 into the open screen above them; the SHIFT plate hangs off the row's right end (`shelfRowRight`).
 It is **not a panel**: bare wells with their own drop shadows (`shelfWell`), so the corner
-stays world everywhere between them and only a cell itself answers `shelfHit`. The tool cell is
-the weapon's one well now, so it carries every tell the strip's used to: the **sweep** of the
-rate of fire (`drawSweepCover`, the same hand the ability wells turn), the dry-bow red when the
-tool cannot answer the button, the refusal red (`toolFlash`) when a bit will not fit, and the
-"!" when the build weighs more than a press can spend.
+stays world everywhere between them and only a cell itself answers `shelfHit`.
+
+**The tool cell is the weapon's one well** (the head of `drawShelf`), and it carries no words:
+
+- the **plate** behind the icon is the tool's tier colour — the same colour it wears in every
+  other well it ever sits in, so a tier is stated once (`tierPlate`; `tierShine` sweeps a
+  highlight across the top tier's plate) — and the 12px tool art is drawn doubled, so the tool
+  reads at the ability icons' size;
+- the **rim** is that tier, quiet at rest and brightened to the tier's ink on hover — the ability
+  wells' own grammar. There is one weapon slot (`TOOL_SLOTS`), so there is no "selected" tell;
+- a tool that cannot answer the button (`!toolReady(p)`) goes **dry red** — the only resting
+  state that leaves the tier colour;
+- the **[cooldown sweep](#the-cooldown-sweep)** turns once through exactly `toolCycle` off
+  `p.nockT`, so the rate of fire is the speed of the hand rather than a number — and the veil
+  clearing IS the bow being ready, since nothing else gates the draw
+  ([the cycle](gameplay.md#the-cycle));
+- the one *event*: a **red band all the way round and the pack's own 1px shake** for `toolFlash`
+  seconds when a bit has nowhere to go in the tool
+  ([one click sends it](gameplay.md#the-weapon-shelf)) — `toolDenied()`, the twin of `bagDenied()`
+  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language
+  and the one that is full is the one that answers;
+- the **"!"** when the build weighs more than a press can spend (below).
 
 Five marks, no words, all off `toolPlan`:
 
@@ -929,14 +888,15 @@ js/tools.js, aged in `updateFx` beside the refusal reds, and both are the **loca
   only, which is that the body itself just changed under you.
 
 **A tool carrying more than one press can swing wears a "!"** (`drawOverWarn`, js/ui/hud-draw.js) in the
-top-right corner of every well it sits in — the strip's, the pack's grid and the shelf's — a gold
-triangle with a dark stroke, bobbing a pixel so the eye catches it on a strip that is otherwise
+top-right corner of the shelf's tool cell (`toolOver(cell)`, `drawShelf`) — and, baked still, on
+the CONTROLS page's weapon primer (`drawToolPrimer`, js/ui/panels.js); a spare in the drawer does not wear it — a gold
+triangle with a dark stroke, bobbing a pixel so the eye catches it on a row that is otherwise
 still. It is a warning and not a refusal: the build still fires along the row as far as the
 budget reaches, and the shelf's budget track is where you go to see exactly where it stops.
 
 ### The backpack
 
-**A drawer under the weapon shelf, shut until asked for** (3.23). The HUD shows one weapon —
+**A drawer under the weapon shelf, shut until asked for**. The HUD shows one weapon —
 [the shelf](#the-weapon-shelf) — and everything else a player carries is in here: the spare
 tools a walk turns up and the bits no tool had a cell for. It is **invisible by default**: the
 pack key (B; L3 on a pad) or a click on the **arrow** under the tool cell (`bagTabRect` is the
@@ -957,8 +917,8 @@ what the counter's slab is pinned clear of.
 
 The frame (`bagFrameRect()`, flush with the view's left edge a px under the arrow's band, its
 first cell on the tool cell's own left edge, `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
-`BAG_COLS` 6): the tools and bits a build is made of, in **small cells** — `BAG_CELL` 18 with the
-art at 1×, a third of a well, because a spare is glanced at and dragged, not read all match.
+`BAG_COLS` 6): the tools and bits a build is made of, in the small `BAG_CELL` cells
+([the hud frame](#the-hud-frame) has the size and the why).
 There is no numbers row — the two meals, the gold and the cards are the
 [strip's pouch block](#the-hud-strip). The arrow never moves; its colour is its only state — gold
 under the pointer, **amber** when no cell is free, red on a refusal (`bagDenied()`, aged in
@@ -972,9 +932,7 @@ so a find is read at a glance without a rarity word anywhere; a tool also counts
 as pips along the bottom, in the corner a stack number would have used.
 
 - **One background, one frame, no internal line.** Every part of the drawer is the same opaque
-  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears — its two free corners cut,
-  the two on the view's edge square, and no snow cap, since it lives under the shelf and not
-  under the sky.
+  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears (free corners cut, no cap).
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
   cell recesses to `BAG_WELL` *below* the frame's ground, an empty one sits *above* it at
   `#171f45`, and the ground itself is between — occupied / free / frame.
@@ -982,9 +940,9 @@ as pips along the bottom, in the corner a stack number would have used.
   grid is being read for, while a full cell goes dark behind its item. A stack of one prints no
   number — an empty corner says it.
 - **A click on a cell uses what is in it** — a bit or a tool by
-  [sending it to the weapon](gameplay.md#the-bit-column) — resolved on the
+  [sending it to the weapon](gameplay.md#the-weapon-shelf) — resolved on the
   release so that a press which travels is still a drag. Putting a *carried* item down is on the
-  release too, since 3.22.
+  release too.
 - **A well answers when something lands in it**: a `WELL_LIT_T` (0.3 s) wash in the colour of what
   happened — blue placed, green merged, gold swapped, red refused (`drawWellLit`) — drawn last,
   over the item. The same four colours come back as a **ring** around the well under the pointer
@@ -1015,11 +973,10 @@ already in the numbers — dotted leaders, label left, value right, the panels' 
 RIGHT: the **four equipped pieces**, head to toe — each a 32 px icon well (`gearIcon32`) with its
 variant name inked in the piece's level material, gear's three buy pips, and the next level's
 price (coin + number, gold when affordable, slate when not). An affordable well pulses its rim
-gold; a **click on the well buys** through the same `input.cmd {kind:'gear', piece}` path the old
-HUD row used, so the panel and the bots still share one entry point (`buyGear`). A maxed piece
-goes quiet behind a gold rim. Hovering a well raises `tipGear` exactly as the old row did
-(`gearHit` now reads through `charHit`, so the tooltip, the cursor and the click can never
-disagree).
+gold; a **click on the well buys** through `input.cmd {kind:'gear', piece}`, so the panel and
+the bots share one entry point (`buyGear`). A maxed piece goes quiet behind a gold rim. Hovering
+a well raises `tipGear` (`gearHit` reads through `charHit`, so the tooltip, the cursor and the
+click can never disagree).
 
 ## Overhead health bars
 
@@ -1057,18 +1014,18 @@ where the stun stars turn, an animal that has a player in sight wears the **noti
 `drawSenseMark`, the font's `!` under a dark rim, white on prey and threat red on a camp monster,
 rising out of the head over its first tenth of a second and gone the frame the sight is
 ([gameplay.md](gameplay.md#wildlife)); the stars win while a stun runs. How full a bar is carries the
-health. The old green → amber → red drain spent the rival's colour on "hurt", so a hurt ally
-read as an enemy at a glance. **Birds are the one exception** — 3 hp means every hit is a kill, and
+health — never its colour: a bar that drained toward red would spend the rival's colour on
+"hurt", and a hurt ally would read as an enemy at a glance. **Birds are the one exception** — 3 hp means every hit is a kill, and
 a bar over something that small is all bar; `drawBird` draws the sprite lifted off its own shadow
 by `a.alt` instead, which is the only read on how high one is.
-The overhead bar is the **only** player health display — the old top-left Minecraft-style hearts
-were removed in the HUD redesign (their sprites are still baked, unreferenced). Above it sits one
+The overhead bar is the **only** player health display (the heart sprites in
+js/sprites/icons.js are baked but unreferenced). Above it sits one
 more small meter — **the slot the hands report to**, and it carries three states that can never
 overlap, since a meal puts the bow down and blocks the draw for its whole length: gold while
 charging (`DRAW_COL`), one white blink (`DRAW_FULL_FLASH`, 0.12 s) and then pale gold
 (`DRAW_FULL_COL`) at full draw — brighter, never a new hue: two discrete states, since a gradient
-is unreadable at 14 px, and the hot orange it used to turn sat beside a red rival's bar as two warm
-bars; slate while the renock runs, pale gold the instant it comes back (the bow's own ready colour
+is unreadable at 14 px, and never orange, which beside a red rival's bar is two warm bars; slate
+while the renock runs, pale gold the instant it comes back (the bow's own ready colour
 — white is the stamina bar's); and **heal green** filling
 left to right while a meal is being chewed (`FOOD_EAT`, [Food](gameplay.md#food-the-meal-is-a-channel)).
 All three are drawn for **everyone**, because each is a tell somebody can act on — a shot is
@@ -1093,10 +1050,8 @@ sprite is centred on. Measured off the canvas: a 22-column run from −11 to +10
 
 **The stun plate is deliberately not counted.** It is a transient annex sharing the bar backing's
 right edge (`fx+8 .. fx+13`), so a stun makes the frame 28 px and overhangs to the right until it
-clears. Sizing the resting frame around it is what made the plate lopsided in the first place —
-the level badge is permanent and the stun plate is not, so the geometry follows the permanent one.
-Drawing the stun plate **empty** at rest would square both states, but it parks a bar that is never
-a bar over every head, which is worse than the overhang. Turn the
+clears: the level badge is permanent and the stun plate is not, so the geometry follows the
+permanent one. Turn the
 [centre column](#the-centre-column-hbmid) on under `.` before changing any of these numbers.
 
 **The name tag is centred by `centreTextX`, on the body and not on `fx`.** It is not part of the
@@ -1122,9 +1077,12 @@ centres itself, `+ sh` so the readout rides the hit shudder with the thing it be
 than holding still over a wall that is rocking. Bar widths are kept even for the same reason the
 sprites are.
 
-**The whole stack hangs off one `hy`**, not off `py` directly, for two reasons. It drops 6 rows
-for a [prone](gameplay.md#prone-under-the-snow) pose, which starts that much lower in the same
-16×16 cell — bars floating where a head no longer is look broken. And its alpha fades with
+**The whole stack hangs off one `hy`**, not off `py` directly (`drawPlayer`, js/draw/bodies.js).
+It drops 6 rows for a [prone](gameplay.md#prone-under-the-snow) pose, which starts that much
+lower in the same 16×16 cell — bars floating over a head that is not there look broken; it lifts
+4 rows while a caught fish is hoisted (the hoist holds the fish where the plate would sit), and
+by the lift + 5 for a zipline rider, so the frame rises with the body and clears the handle. And
+its alpha fades with
 `concealOf(p)`: name tag, both bars, the level badge and the draw meter that says a shot is coming
 all go with the cover, weighted so you keep a readable copy of your own (×0.55), your side keeps
 most of theirs (×0.7) and a rival keeps none (×1, skipped entirely below 3%). A buried rival whose
@@ -1132,15 +1090,27 @@ draw meter still showed would make the whole thing pointless.
 
 ## Text over the world
 
-White pixel text on a white snowfield is unreadable with a drop shadow, so everything drawn over
-the world goes through `drawPixelTextOutline(ctx, text, x, y, color, outline, scale)` in
-[font.js](../../js/font.js): the glyph stamped at the eight 1-px integer offsets in the outline
+White pixel text on a white snowfield is unreadable with a drop shadow, so text over the world
+wears an **outline**: `drawPixelTextOutline(ctx, text, x, y, color, outline, scale)` in
+[font.js](../../js/font.js) stamps the glyph at the eight 1-px integer offsets in the outline
 colour, then once in the text colour — a solid rim on every side, exactly 1 game px at any text
 scale, no blur. The outline colour is the opaque `#0f1632` (the eight passes overlap, so a
-translucent colour would stack unevenly). Sites: floaters (damage numbers, gold, `LEVEL n`),
-the overhead name tags, the E and fish prompts, the radial-wheel labels, every number on the backpack
-widget (the strip's food counts and gold, each bag cell's stack count, a gear cell's hover price),
-the clock under the minimap, `state.msg`, the info stack, and the drop-UI text.
+translucent colour would stack unevenly). Which call reaches it depends on the pass:
+
+- **In a world pass** (anything drawn while `ctx` is `wctx`) **call
+  `drawWorldText(text, x, y, color, scale, alpha)`** (the `ink over the world` banner,
+  js/draw/light.js), never the outline directly. It **queues** the glyphs, carrying the
+  `globalAlpha` standing at the call (a buried head's fade) times its own `alpha` (a floater's),
+  and `renderLighting` stamps the queue after the night grade — draw the outline in place and
+  the tint sinks a team colour into blue snow. The queue itself:
+  [Light and weather](#light-and-weather). Sites: floaters (damage numbers, gold, `LEVEL n`),
+  the overhead name tags, a roost's `PERCH` tag, the noticed `!` (`drawSenseMark`). Called from
+  a UI pass (the wiki's animal page) it draws the outline where it stands.
+- **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
+  and the drawer's counts, the clock under the minimap, `state.msg`, the DAY headline's bake,
+  the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`
+  (js/ui/wheel.js) itself.
+
 `drawPixelTextShadow` (a single bottom-right 1 px shadow) remains for text sitting on a panel,
 plank or overlay — the settings/map panels, the main menu, the death overlay and the scoreboard —
 where a full outline reads heavy. Checked at noon on open snow and at
@@ -1198,10 +1168,9 @@ frame that is genuinely centred has as many columns strictly left of the line as
 line rightwards. It is dotted so the frame it is measuring reads through it.
 
 **Reaches and sight ranges are deliberately not drawn.** `WORK_REACH`, a wolf's bite and a camp's ground, a
-turret's acquisition ring, the bird flush, the fish catch: they were in an earlier version of the
-pass and are out again, because they are wide enough to bury the 7 px circle the overlay exists to
-show, and because a sight range is per-target (`seenAt`) and so needs a design of its own rather
-than a ring. They come back on their own terms later.
+turret's acquisition ring, the bird flush, the fish catch: they are wide enough to bury the 7 px
+circle the overlay exists to show, and a sight range is per-target (`seenAt`), so it needs a
+design of its own rather than a ring.
 
 Both passes draw **above `renderLighting`** — the only world passes that do — because a debug view
 has to be as readable at midnight as at noon. Rings are rasterised by `hbRing` as 1 px world
@@ -1226,10 +1195,8 @@ something. `DBG.showPaths` still forces the same pass on by itself, whatever `se
 
 **Everything that walks has one of these**, grazing and patrolling included — see
 [wildlife](gameplay.md#wildlife). That is what makes the overlay readable: a line always shrinks
-into its box and ends on the tile the walker actually stops on. It used to be that an idling
-animal held a random heading on a timer with no `nav` at all, so there was nothing honest to draw
-and it stopped mid-stride wherever the clock ran out; wandering is a routed goal now, so that
-whole class of "line that never shrinks" is gone.
+into its box and ends on the tile the walker actually stops on. Wandering is a routed goal like
+any other; a mover steered by a heading on a timer would have no `nav` and nothing honest to draw.
 
 The two exceptions are the two things that don't walk:
 
@@ -1247,10 +1214,10 @@ goal tile to put it on.
 A [camp](world.md#camps) is a *named* place, so it has to be legible on every surface
 that shows the world. `drawCampIcon(g, C, x, y, col, rim)` is the shared stamp: the spec's
 `icon` rects inside a 7×7 box, drawn once inflated by 1 px in a rim colour and once in the ink,
-so the same glyph reads on parchment, on snow and over forest.
+so the same glyph reads on the chart, on snow and over forest.
 
 - **The minimap** (`renderMinimap`) draws the glyph for any camp inside the disc, in the
-  spec's `mark` over a dark rim. No name — `WOLF DEN` is wider than the whole 48 px disc.
+  spec's `mark` over a dark rim. No name — `WOLF DEN` is wider than the whole disc (48 px at the default `settings.mmR` of 24).
 - **The M map** (`renderWorldMap`) draws the glyph plus the name in map ink under it — over it
   instead when a name already inked would run into it, since two sites sit a label's width
   apart — clamped
@@ -1329,7 +1296,7 @@ sit on the standing body plan (see `drawPlayer`) — and there is no kit strip.
 
 The art is procedural, in the title screen's idiom — `drawWinAurora` (three additive curtains of
 2 px strands across the top band), `drawWinRays` (stepped wedges walking out from behind the
-champion, blocks rather than an anti-aliased triangle), `drawWinMotes` (gold and snow falling from
+local player, blocks rather than an anti-aliased triangle), `drawWinMotes` (gold and snow falling from
 `hash2` alone, no array; `cold` drops the sparks for the loss), `drawBlizzard` (wind streaks on the
 same no-array idiom, a second speed under the motes), `winBannerCv` + `drawWinBanner` (each
 side's banner **baked once** — a 36×96 gold-bordered cloth with a lit fold and a shaded edge, a
@@ -1340,24 +1307,24 @@ under a ripple pinned at the rail), `drawBrazierIron` + `drawWinBrazier` / `draw
 `drawWinDais` (three tiers: the raised block the local player stands on, the side's step, the
 inlaid base with its icicles) and `drawDefeatDrift`. The drift's profile is a
 cosine under a flattening root: a plain cosine domes, and a dome leaves the ends of a body lying on
-it up in the air. It is drawn twice, once behind the body and once in front, so the champion lies
+it up in the air. It is drawn twice, once behind the body and once in front, so the fallen player lies
 **in** the snow rather than on a hill. `stampGrid(rows, pal, x, y, s, rim)` paints a char grid at
 any cell size, the shape the [js/sprites/](../../js/sprites/) grid files author in, for the crown, the arrow and
 the stat glyphs (`WIN_ICONS`) that never earned a baked sprite; the sprites the screens do use are
-the champion bodies, `SPRITES.gearIcons`, `itemBow` and `itemGold` — that last one a **live
+the class bodies (`SPRITES.champ`), `SPRITES.gearIcons`, `itemBow` and `itemGold` — that last one a **live
 canvas** whose frame `stepItemIcons()` stamps in each frame, like every item icon that moves
 ([sprites.md](sprites.md)).
 
 **The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOU COLLAPSED
 IN THE SNOW** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
 to read and the match is still playing behind it, so it goes where an eye lands rather than over
-the body that fell — a second line saying the match is over for you, and two planks. That is the
-**elimination** only. **The respawn wait** is the fourth state and the lightest: no wash, no
+the body that fell — a second line saying the match is over for you, and two planks (SPECTATE /
+LOBBY). That is the **elimination**; a guest whose host left mid-match (`state.over =
+'hostleft'`) gets the same dim under **THE HOST LEFT** / **THE MATCH ENDS HERE** and one LOBBY
+plank. **The respawn wait** is the fourth state and the lightest: no wash, no
 planks, the camera already on an ally through the spectate strip, one line — **RESPAWNING IN Ns**
 at the same 3× in the same band, the number live. Both open under
-[the recap](#replay-the-last-four-seconds): the last four seconds fill the frame first (the
-countdown reads over it; the dim, the headline, the planks and the spectate strip wait), and its
-close box or ESC hands the frame to whichever of the two is underneath.
+[the recap](#replay-the-last-four-seconds), which owns the frame until it is closed.
 
 ## Replay: the last four seconds
 
@@ -1371,7 +1338,7 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
   frame's top-right corner (`rpCloseRect`/`rpCloseHit`, a 12 px plank with a cross that lights
   gold under the pointer), an **ESC BACK** prompt at its foot (`drawKeyPrompt` with the `esc`
   action, so a pad wears its B), and `deadKey` takes ESC, BACKSPACE, ENTER and SPACE as
-  `replayClose()` — a pad's B and a finger's menu plate arrive as escape. `state.rpClosed`
+  `replayClose()` — a pad's B arrives as escape. `state.rpClosed`
   remembers, reset by every `endMatch`, so it opens once per death.
 - **The window**, on **pause**: the **bottom-left corner** at `RP_W`×`RP_H` (160×90), under the
   pause planks.
@@ -1412,10 +1379,8 @@ across; `RP_RATE` 0.5 is the playback speed.
 cap (`RP_CAP_W`×`RP_CAP_H`, 640×360) and never an upscale. The canvas holds `devScale` device px
 per game px, so every capture is a reduction by exactly that whole number (`rpAtx` keeps
 smoothing on: nearest would sample one device px in nine and strobe an arrow in flight), and a
-UI pixel or a zoom-1 world pixel — one uniform block of device px — comes back as itself. At a
-1080p or 1440p fullscreen the capture is the whole frame, so the recap is **pixel for pixel**
-and the corner window's overlay shows it at device resolution with nothing resampled. A window
-that renders more rows than the cap loses the excess.
+UI pixel or a zoom-1 world pixel — one uniform block of device px — comes back as itself, which
+is what makes the recap **pixel for pixel** (see *Where each draws*, above).
 
 **A resize does not cost frames.** Each slot records the size it was captured at (`rpFW`/`rpFH`),
 so a change in view or zoom changes what the *next* frames look like and leaves the banked ones
@@ -1432,9 +1397,7 @@ baked ground. `RP_CAP_*`, `RP_FPS` and `RP_SECS` are the knobs.
 
 **Per-frame cost while alive** is one `drawImage` at `RP_FPS`, straight off the finished world
 pass. Canvas-to-canvas stays on the GPU; `getImageData`/`toDataURL` would stall the pipeline every
-capture, so neither is used, and nothing is allocated per frame. The capture is always a
-reduction (device px to game px) and runs with `imageSmoothingEnabled` on `rpAtx` — nearest
-there would sample 1 device px in 9 and strobe an arrow in flight in and out of the recording.
+capture, so neither is used, and nothing is allocated per frame.
 
 **Playback.** `replayShowing()` decides; every fresh open restarts at the oldest frame. The
 playhead advances `RP_FPS * RP_RATE` frames a second, so the four seconds take eight to watch and
@@ -1457,22 +1420,22 @@ Two readouts of the **match** rather than of the world, in the `scoreboard & log
 **The log is not drawn.** `events` is the last `EVENT_MAX` (12) lines the match wrote, newest
 last, and `logEvent(txt, p, o?)` is the one interface every caller speaks — `p` is the player the
 line is *about* and supplies its colours (plate `coatD`, edge `mark`, ink `playerTint(p)`), `o`
-overrides them for a line nobody owns. The bottom-left feed that used to draw them went in 3.23:
-a scrolling column of sentences on the play surface was the one thing there the
-[UI rule](../../CLAUDE.md#ui-rule-show-dont-label) forbids, and the bottom-left corner is the
-tooltip's alone now. The ring stays as the match's record (`DBG.events`) so a future readout — a
-kill toast, a recap — lands on it for free. What gets logged lives in
+overrides them for a line nobody owns. No feed draws them: a scrolling column of sentences on
+the play surface is what the [UI rule](../../CLAUDE.md#ui-rule-show-dont-label) forbids, and the
+bottom-left corner is the tooltip's alone. The ring is the match's record (`DBG.events`), so a
+readout — a kill toast, a recap — lands on it for free. What gets logged lives in
 [multiplayer.md](multiplayer.md#kills-and-the-event-log).
 
-**The scoreboard** is held-TAB (`scoreboardOpen()`: `keys['tab']`, any mode but `title`, so it
-works while dead and while riding the eagle) and is drawn per frame, not baked — every number on
+**The scoreboard** is held-TAB (`scoreboardOpen()`: `keyHeld('board')`, any mode but `title`, so it
+works while dead and while riding the eagle, and never under `DBG.hideUI`) and is drawn per frame, not baked — every number on
 it is live. `scoreGroups()` is the ordering: players grouped by team, teams ranked by their total
 `scoreOf(p)` and players inside a team by their own, ties broken by team then player id. `scoreOf`
 is **lifetime gold earned** (`p.xp`), not the purse — spending gold on a building is progress, and
 it is the number levels already run on — while the GOLD column shows the purse, so a player that has
 spent can sit above one showing more gold (its LVL column is the visible tell). A team stripe in
-`TEAMS[team].mark` runs down each group, each row carries a faint team wash (stronger for the
-local player, which also gets a gold `>`), dead players dim to 0.55 and gain an `OUT` tag. The panel
+`TEAMS[skin(team)].mark` runs down each group, each row carries a faint team wash (stronger for the
+local player, which also gets a gold `>`), dead players dim to 0.55 and gain a tag — the respawn
+countdown (`3s`), or `OUT` once `p.eliminated`. The panel
 is `SB_W` (168) wide, its height follows the row count, and it is centred on `VIEW_W`/`VIEW_H`
 every frame — no `relayout()` anchors, so it needs nothing on a resize.
 
@@ -1537,10 +1500,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `state.menu`:
 
 - **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / WIKI / SETTINGS —
-  `menuFrozen(i)` is true for MULTIPLAYER always, and for PRACTICE TOOL until the profile has
-  broken it open: frozen planks are drawn sealed under an ice glaze by
+  `menuFrozen(i)` is true for PRACTICE TOOL alone, until the profile has
+  broken it open (MULTIPLAYER is live: it opens the rooms screen, `beginRooms`): a frozen plank is
+  drawn sealed under an ice glaze by
   `drawMenuButton(..., frozen)`, never selectable or activatable;
-  arrow keys skip the iced planks and the hand cursor ignores them. Each frozen plank's
+  arrow keys skip an iced plank and the hand cursor ignores it. A frozen plank's
   `menu.hover` slot tracks the pointer instead of the selection and drives a cold shimmer —
   pale rim, a sheen sweeping the glaze, frost breath — and clicking one calls `iceRefuse(i)`:
   that plank rattles for `menu.iceT` (`menu.iceI` names which), hairline cracks flash from the
@@ -1554,13 +1518,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   the whole glaze sprays off, `PROFILE.markPractice()` keeps the break, and from then on the
   plank is a live item whose activation is `beginPractice()` (the reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
-  the column as the first live way in; MULTIPLAYER sits as a quiet coming-soon block;
+  the column as the first live way in; MULTIPLAYER opens the rooms screen;
   [WIKI](#the-wiki-screen) and SETTINGS are the two live utilities at the foot) plus
   the seed row (`SEED N` + an 11×11 die) as one more selectable, stacked
   `MENU_PITCH` apart from `MENU_Y0`. **`menu.hover` has one cell per rect** — items *plus* the
   seed row — and its length is a literal in core.js, a file that loads before `MENU_ITEMS`
-  exists; the ease tops a missing cell up with `|| 0` because a short array went NaN and silently
-  deleted the seed row when the fifth plank arrived. The slab (`MENU_SLAB_PAD` past each side of `MENU_BW`) and
+  exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
+  deletes the seed row - add a plank, add a cell. The slab (`MENU_SLAB_PAD` past each side of `MENU_BW`) and
   pillars (`TITLE_PILLAR_W`, `TITLE_PILLAR_DX`) size themselves to the rects; `menuLayout()` is the single source of rects for hit-testing
   (`menuHit()`) and drawing. `menu.sel` is the keyboard selection; the mouse only steals it
   when it actually moves (`menu.moved`, set by mousemove), so arrows and hover never fight.
@@ -1595,8 +1559,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   zero alpha underneath. SETTINGS is the existing panel via `renderSettings(now, { bare, slide })`
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
-  slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) still
-  bakes, but nothing on the title opens it any more (PRACTICE TOOL now boots the arena); PATCH
+  slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is
+  baked at boot (`buildHelpPanel`) but nothing on the title opens it; PATCH
   NOTES is `patchPanelCv`, opened by clicking the `PATCH_TXT` tag bottom-right (`patchTagRect` /
   `overPatchTag`; the tag turns gold with an underline on hover): the frame is baked once, the
   entries (newest first, word-wrapped) into `patchNotesCv` as tall as they need, and render blits
@@ -1623,7 +1587,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   name (`AI_LEVELS`, js/ai.js — NORMAL / HARD / IMPOSSIBLE) printed once under them, gold and
   naming the notch under the pointer while one is hovered; a click is `setAiLevel`, which saves
   the profile's settings. **PLAY** wears the title's first plank in its exact place (`MENU_Y0`,
-  `MENU_BW`×`MENU_BH`); the **stage** under it holds **your character** alone (`drawSelectStage`):  `MENU_BW`×`MENU_BH`); the **stage** under it holds the chosen class alone (`drawSelectStage`):
+  `MENU_BW`×`MENU_BH`); the **stage** under it holds **your character** alone (`drawSelectStage`):
   the 48 px model (`SPRITES.portrait`, [sprites.md](sprites.md#looks-a-character-on-the-class-body))
   at 2× in your side's paint under a warm pool of light with a gold ring turning
   on the snow, the class weapon's own tool art at the hand, the name below with the class in
@@ -1641,8 +1605,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   clicking it opens the gear pop-up. Enter or the plank call `pressPlay()` — `setClass` locks the
   class and the **countdown** starts: `menu.countT` runs `COUNT_T` (5) seconds, the whole second
   left drawn in 4× gold digits over the plank (`drawSelectCount`, white the instant it changes,
-  sinking through its second), `SFX.countTick` ticking each one (a low bell, not the bow's
-  renock blip it had been), the plank sunk throughout, and
+  sinking through its second), `SFX.countTick` ticking each one (a low bell), the plank sunk throughout, and
   **one rival card turning face-up per tick** (`selectRevealed()`: the first on the press, the
   last on ONE, all of them once it has run out, and none at rest — a white flash as each turns).
   Gear stays open through the count (the widget still opens its pop-up, which shuts itself at
@@ -1733,13 +1696,14 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   starts it (into the eagle ride); `beginIntro` (debug only, `DBG.beginIntro`) starts it straight
   into `play` with the player already standing in the world.
 - **Landing intro**: the human's `landPlayer` sets `state.intro = state.introLen = HUD_IN_T` (0.7 s)
-  with `introFrom` at the touchdown framing, so `renderUI` slides the HUD in (the left stack from
-  the left, the minimap from the top, the backpack from the right and the hud strip
-  up from the bottom) while the camera settles onto the play framing.
+  with `introFrom` at the touchdown framing, so `renderUI` (js/ui/compose.js) slides the HUD in
+  (the minimap and the team rail down from the top, the top-left corner — the weapon shelf and its
+  drawer — from the left by `CORNER_REACH`, and the hud strip up from the bottom by `HUD_SLIDE`)
+  while the camera settles onto the play framing.
   The DAY 1 headline fires when that intro ends.
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginSelect`,
-`selectLayout`, `selectHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `SET_*`/`ROW_*`/`MM_*` anchors) for driving all of this headlessly.
+`selectLayout`, `selectHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
 
 ## Eagle drop (mode `drop`)
 
@@ -1828,7 +1792,7 @@ held up so nobody dies watching the lesson, and the match runs on underneath —
 backdrop, not paused. `BRIEF_MAX_T` (24 s) is the safety rail, and `state.eagleCine` (or leaving
 mode `play`) outranks and clears it.
 
-**`state.drop` now outlives the whole match** — it never goes null, because the roosts are the
+**`state.drop` outlives the whole match** — it never goes null, because the roosts are the
 objectives. A bird's life is `fly → dive → down → flee → gone` (`e.state`): at the end of its line
 `beginDive` throws any remaining rider and `findCrashPoint` lands on the side's **nest** —
 `roadNest(team)` ([the road](world.md#the-road)): `ROAD_NEST_OFF` (13) tiles off the road's
@@ -1860,7 +1824,7 @@ the **merchant** (below), and fires `eagleBoomFx` (snow + team-colour
 bursts, hanging feathers, a radial dust ring, two shockwave rings squashed flat over `BOOM_LIFE`
 so they read as a blast wave along the ground, never a halo), distance-scaled `state.shake`,
 `SFX.boom()` (the timber sample dropped low under a synth blast, layered on purpose) and a
-`HAS LANDED` feed headline — the landing is a landing, not a wound: the bird takes **no damage**
+`HAS LANDED` line in the event log (`logEvent`) — the landing is a landing, not a wound: the bird takes **no damage**
 from its own dive. **The spur** (`planLane`/`laneStep`, `e.lane = { t, ev, next, pave, paved }`):
 from the crater along `e.laneDir` — set by `eagleCrash` as the unit vector from the crash to
 `e.mouth`, its **junction on the road's centreline** (`roadNest`), back the way the bird came only
@@ -1883,18 +1847,17 @@ done when the front is inside the road (`roadMainDist`; `LANE_MAX` (60) is only 
 always the same spur; the merchant's gate and post read `e.laneDir` too, so the gate flanks the
 track that was actually cut. `laneStep` runs from `updateEagle`'s `down` branch. The grounded bird
 is the team's **objective**, and its hp pool is its
-**nerve**: `EAGLE_HP` (2000, sized as a siege since 2.61, when the bots learned to go for it),
+**nerve**: `EAGLE_HP` (2000, sized as a siege, because the bots go for it),
 spooked down a flat `EAGLE_ARROW_DMG` (12) per rival arrow through `hurtEagle` (the sim.js arrow
 loop tests the roost tiles themselves — *before* tile solidity, which would eat the shot — so the
 arrow hitbox is exactly the collision box, corners included) and `EAGLE_WORK_DMG` (20) per rival
 E swing (via `hitObject`'s eagle branch) — a lone warrior's E drives it off in about a minute under
-the gust (2.63: a hundred swings, twelve gusts, 53 s), a pair in half that, but arrows alone take
+the gust (a hundred swings, twelve gusts, 53 s), a pair in half that, but arrows alone take
 minutes. **Every blow is audible, and one of the two cues carries off screen**: within earshot it
-is the bird's own `SFX.bigHurt` (3.41 — it had been `hurt()`, the human oof), and out of earshot,
-for your OWN bird only, `SFX.alarm` instead, at most one per `EAGLE_WARN_GAP` (9 s). A siege is a
-hundred blows and one piece of news, and until 3.41 a roost being emptied across the map made no
-sound at all unless you happened to be looking at the minimap. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
-next tile out past the roost's 3×3, which 44 was not; resolved through `seenAt`, like every
+is the bird's own `SFX.bigHurt`, and out of earshot,
+for your OWN bird only, `SFX.alarm` instead, at most one per `EAGLE_WARN_GAP` (9 s) — a siege is a
+hundred blows and one piece of news. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
+next tile out past the roost's 3×3; resolved through `seenAt`, like every
 watcher) makes it rear — wings thrown open for
 `GUST_WIND_T`, the whole telegraph — then `eagleGust` throws every rival in `GUST_BLAST_R` back at
 `GUST_KB` with a `GUST_STUN` tumble and `risePlayer` (wind strips the snow off a buried body), on
@@ -1946,8 +1909,8 @@ the lock refuses — then every faller: a `sin` **hop** off the wing
 over the first quarter of the fall, then the shrink from `p.dropSc` (the seat's size as it left)
 to 1× along
 `alt = p.dropAlt·(1 − q²)` with a widening shadow. The faller cull is against `WV_*`, the world
-pass rule — it was `VIEW_*` once, which is exactly why fallers in the far half of the zoomed-out
-frame used to vanish mid-air. A `down` bird casts **no shadow** — it is on the ground, and a dark
+pass rule — against `VIEW_*`, fallers in the far half of the zoomed-out frame vanish mid-air. A
+`down` bird casts **no shadow** — it is on the ground, and a dark
 copy under it read as a second bird — and folds its wings over `EAGLE_SETTLE_T` (the three
 frames as a settle animation), then **rests**, breathing a ±1 px bob with a wing-shuffle idle
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
@@ -1964,7 +1927,7 @@ last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) 
 under the chart-style bird diamond, the **jump window as a gold stretch** (dim while locked,
 pulsing bright once open — the lock is taught by the bar's shape, no sentence), seconds left as a
 number beside it (gold once open); `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
-the ride's wider read is the **M map** now (`renderWorldMap` also runs in mode `drop`, where it
+the ride's wider read is the **M map** (`renderWorldMap` also runs in mode `drop`, where it
 draws each flying bird's line dashed in team colour with the bird diamond riding it; M/Esc are
 handled in input.js's drop branch, the map swallows the jump click, and the sim keeps running
 under it). Text scale follows the view (2× when tall). Once `down`, both objectives are marked on
@@ -1979,9 +1942,8 @@ Everything over the finished world frame, in world pixels, in `renderLighting()`
 ([js/draw/light.js](../../js/draw/light.js), the `light & weather` banner). It is the last world
 pass; the debug overlays are the only thing above it.
 
-**Nothing on the map emits light, and there is no light registry.** The `lights` array,
-`rebuildLights()` and the offscreen `lightCv` are gone with the darkness they existed for, and so
-is the player's personal glow. **Night is a colour and a closing in**: a `multiply` of
+**Nothing on the map emits light, and there is no light registry** — not even a glow on the
+player. **Night is a colour and a closing in**: a `multiply` of
 `NIGHT_TINT` at `globalAlpha = state.darkness`, a little `NIGHT_DEEP` for depth, and then
 `nightEdge` — a vignette **inside the world pass**, so it never touches the HUD. It cools what is
 already drawn instead of laying a slab over it, so snow stays snow, team colours stay legible at
@@ -1990,11 +1952,10 @@ object adds a pass here; it does not register anywhere.
 
 **The grade is pale on purpose, and the dark lives at the rim.** What says *night* has to be the
 **hue** and the **edge**, because the one thing it cannot be is the middle of the screen going
-dark — a top-down field read at a glance has to stay read at a glance. An earlier `NIGHT_TINT`
-(`#45599c` at `dark * 0.17` of the deep wash) left the world at **34 %** of its daylight: measured
-on seed 42's roost, open snow fell from L169 to **L58** and pines from L108 to **L37**, which is
-why a blue MERCH tag sat invisible on blue snow and a red team's paint stopped being red at all.
-The tint now leaves snow at **L98** and pines at **L51** on that same ground while its channels stay far
+dark — a top-down field read at a glance has to stay read at a glance. Measured on seed 42's
+roost (daylight: open snow L169, pines L108), the tint leaves snow at **L98** and pines at
+**L51** — a darker one sinks a blue MERCH tag into blue snow and takes the red out of a red
+team's paint — while its channels stay far
 apart — `NIGHT_TINT`'s blue is nearly twice its red, and **that ratio is the whole read**; lifting
 it is what turns night into dusk. `NIGHT_EDGE` then takes the light back at the corners, where
 nobody is reading anything. Those four numbers are what to re-measure after retuning it.
@@ -2023,9 +1984,9 @@ the other way round:
   `RAY_AFTER` (4 s) past the landing — `landPlayer` stamps `state.rayT`, `updateFx` counts it down —
   and a **~15 s window around noon** (`RAY_NOON`, the middle of the daylight half). Both ease in and
   out over `RAY_WINDOW_FADE`. The gate is read *first*, so outside those windows the eight blits and
-  the two hundred motes behind them never run at all. The practice arena's clock never moves, so
-  its training light never gets them. The sun is far away; nothing here converges, and an earlier version that fanned
-  them off a nearby origin read as a spotlight rather than as daylight. What makes a parallel set
+  the 240 motes behind them never run at all. The practice arena's clock never moves, so
+  its training light never gets them. The sun is far away, so nothing here converges: shafts fanned
+  off a nearby origin read as a spotlight rather than as daylight. What makes a parallel set
   read as *beams* rather than as striping laid over the picture is the **length fade**: each shaft
   swells out of nothing, peaks about a third of the way along and **trails off** before it leaves
   the view, so it arrives from somewhere and dies in the air instead of running edge to edge. They
@@ -2040,12 +2001,10 @@ the other way round:
   The shaft is one **baked** 256×64 texture (`RAY_CV`) carrying *both* fades — a soft-shouldered
   cross-section and the swell-and-trail along its length — drawn scaled and rotated per shaft. That
   is why it is baked: drawn as gradient strips the length fade bands, and two gradients cannot
-  multiply in one fill. Eight `drawImage`s carry the whole pass, against twenty-six full-width
-  gradient fills in the first version, and it costs a third of what that did.
+  multiply in one fill. Eight `drawImage`s carry the whole pass.
   The set is anchored to the **view**, not the world, and every dimension is a fraction of
   `WV_W`/`WV_H`. Crepuscular rays are air, not ground, so nothing about them should slide when you
-  pan — and it means the shafts are composed identically at every zoom, which is what a
-  world-anchored version needed a subdivision ladder to fake.
+  pan — and it means the shafts are composed identically at every zoom.
 - **Dust motes** — the sparkle in the shafts, drawn by the same function, and the half of the
   effect that actually carries on snow. They live in **shaft coordinates** (`u` along, `v` across),
   so they can only ever exist where a shaft does and they drift *down* it rather than falling with
@@ -2054,7 +2013,7 @@ the other way round:
   seed moves teleports instead of drifting. They are drawn `source-over` in warm **gold**, not
   additively in white: snow sits at 0.95 and has no headroom left to brighten, so a white additive
   mote over a sunlit drift is invisible while a warm speck reads. The biggest get a white core and
-  a four-armed catch. ~180 of them a frame.
+  a four-armed catch. `RAY_N` 8 shafts × `RAY_MOTES` 30 = 240 of them, before the view cull.
 - **Cloud shadows** (`cloudShade`) — two tileable noise fields (`bakeCloud`) baked once at their
   **final world size** and drawn 1:1 through `repeat` patterns: no scaling, so no smoothing
   question and no seam. `pnoise` is value noise on a lattice wrapped per axis, which is the whole
@@ -2074,9 +2033,8 @@ the other way round:
   clamp, so open snow stays open and the deep part of a cloud is the only part that really
   darkens — the swing across the ground is what grows, not the average. Measured off the two baked
   textures at full daylight, as a percentage of the ground's own brightness left standing: the
-  deepest 0.1 % of the field sits at **61 %** and the median at **97 %**, against 82 % and 98 %
-  before the curve — a light-to-dark swing of **32 points against 13**, with the mean moving only
-  97 → 94. That is the number to check when retuning it; the shadow tint (`CLOUD_TINT`, cool, never
+  deepest 0.1 % of the field sits at **61 %**, the median at **97 %** and the mean at **94 %**.
+  That swing is the number to check when retuning it; the shadow tint (`CLOUD_TINT`, cool, never
   grey) is the other half of how hard it bites.
   **The practice arena is exempt** (`PRACTICE`): a shadow drifting over the dummy's meter or the
   parkour's ice would change what those instruments are measuring between one lap and the next, and
@@ -2102,7 +2060,7 @@ and *keeps* it that way. There is no headroom to fix it with. So the ice itself 
 first: every intact tile takes a deep-blue wash scaled by `state.darkness` (`STAR_MIRROR`), which
 is what a frozen lake at night actually looks like from above — a black mirror, darker than the
 snow around it — and it is what gives the stars something to be bright against. Without it the
-whole effect is invisible, which is exactly how the first version of this failed. Filled in
+whole effect is invisible. Filled in
 horizontal **runs** of adjacent ice, one `fillRect` per run rather than one per tile.
 
 **The sky.** The stars do not sit *on* the ice, they sit in a sky reflected *in* it, so they are
@@ -2125,18 +2083,16 @@ that cools the snow cools the stars with it, which is what a reflection does.
 **A `drawImage` whose source canvas differs from the last one cannot be batched.** The driver has
 to change texture, so it becomes its own GPU draw call, and a wide-open view holds around a
 thousand pines. This is the single largest performance fact in the renderer, and it is not about
-pixels at all — measured on a GTX 1060 at 886×498 over the treeline, same scene, same sprite
-count:
+pixels at all — the measurement behind the rule (a GTX 1060 at 886×498 over the treeline, taken on
+the sixteen-frame pine that preceded today's twenty-four):
 
 | what the pines drew from | fps |
 | --- | --- |
 | sixteen separate frame canvases, cycling | **97** |
 | the same sixteen, frame pinned so every call hits one canvas | **199** |
-| one canvas at 27×37 | 155 |
-| one canvas at 16×24 | 152 |
 | no trees at all | 205 |
 
-Sprite **area is irrelevant** (155 against 152 for a sprite two and a half times the size). What
+Sprite **area is irrelevant** (a sprite two and a half times the size cost 3 fps). What
 costs is the state change. So `SPRITES.treeAtlas` lays all twenty-four bend frames side by side in
 one canvas — and then all twenty-four again mirrored, forty-eight in all, because half the forest
 draws flipped and a wider atlas is still **one** texture —
@@ -2151,11 +2107,10 @@ more than everything else in the frame put together.
 
 The same rule, one level down: the sun's dust motes and the ice's reflected stars are hundreds of
 1–2 px dots a frame, and a `fillRect` per speck with its own `fillStyle` and `globalAlpha` is a
-draw call per speck. Collecting them into a `Path2D` per bucket was tried and is **worse** —
-building and tessellating a path of 1 px rects every frame cost 1.0 ms for 240 motes, against
-~0.05 ms for what replaced it.
+draw call per speck. A `Path2D` per bucket is **worse** — building and tessellating a path of
+1 px rects every frame costs 1.0 ms for 240 motes, against ~0.05 ms for the atlas.
 
-What replaced it is `bakeSpecks(kinds, paint)`: one texture holding a cell per *(kind, brightness
+The answer is `bakeSpecks(kinds, paint)`: one texture holding a cell per *(kind, brightness
 level)* — `SPECK_LV` of them, ten — so `drawSpeck(atlas, kind, alpha, x, y)` picks the level by
 alpha and the whole field draws from a single source with `globalAlpha` pinned at 1 and nothing to
 change between calls. `MOTE_CV` has two kinds (a grain, and a bright one with its catch);
@@ -2175,10 +2130,10 @@ in `renderLighting`, `vidStars` gates `drawIceStars` in `render()`, `vidSnow` ga
 weak GPU sheds the whole dressing without touching the sim
 ([settings](gameplay.md#settings)).
 
-Measured against `PATCH 2.02` — the build before any of this — by navigating one browser tab
-between the two servers six times and taking the median, so the same GPU and thermal state
-measures both: **191 fps before, 190 after, a difference of 0.03 ms per frame**. The atlas is what
-bought that back; before it the same scene ran at 87 fps.
+Measured against a build with none of these passes (one browser tab navigated between the two
+servers six times, median taken, so the same GPU and thermal state measures both): **191 fps
+without, 190 with — 0.03 ms per frame**. The tree atlas is what pays for it; on separate frame
+canvases the same scene runs at 87 fps.
 
 ### The wind field
 
@@ -2258,8 +2213,7 @@ weather moves reads it rather than keeping a clock of its own:
   a table is exact enough. The cost stays flat when a zoomed-out view is holding a thousand trees.
   Negative phases are fine — `|0` then `& 255` wraps them, at the price of a truncation a 256th of
   a cycle wide. Measured over 2000 tiles (about what the widest view holds), the field costs
-  **0.084 ms a frame against 0.050** for the zero-mean version before the lean and the skew — 0.2 %
-  of a 60 fps budget, and this is the one number here that *is* safe to take from a headless run,
+  **0.084 ms a frame** — 0.5 % of a 60 fps budget, and this is the one number here that *is* safe to take from a headless run,
   because it is V8 arithmetic rather than the rasteriser.
 
 On a GTX 1060 at 886×498 over the treeline the whole pass is inside measurement noise of not

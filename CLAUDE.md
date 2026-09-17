@@ -19,6 +19,10 @@ cd desktop && npm run build              # the portable zip a version tag also b
 effects (its output is committed); an asset loaded any other way is silently dead off the disk.
 No package manager, dependencies, tests or linter: edit a file under `js/` and reload.
 
+**The game ships on Steam for a desktop: keyboard and mouse, and a gamepad (Steam Deck).** Phone
+and touch support was deleted (the tag `pre-phone-removal` keeps it) — never add a touch
+handler, a phone fit or a mobile layout, and never spend a verification step on one.
+
 **Verify changes in the browser, not by re-reading code.** `window.DBG` (end of
 [js/boot.js](js/boot.js)) stages a scene without playing to it, `?seed=N` pins the world,
 `POST /shot` sinks the canvas, and **`.`** toggles hitboxes and routes:
@@ -34,8 +38,8 @@ Read the relevant one **before** working in that area — they carry the detail 
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
 | worldgen, tiles, ground, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |
-| players, classes and kits, the input struct, **the three controllers** (keyboard, gamepad, touch), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
-| **phones**: the fit a phone gets, the rotate prompt, the touch plates' pixels | [docs/dev/rendering.md](docs/dev/rendering.md#phones) |
+| players, classes and kits, the input struct, **the two controllers** (keyboard, gamepad), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
+| **online play**: host and clients, the snapshot and the wire, the relay, Steam lobbies (`js/net/`, `app/server.js`, `desktop/`) | [docs/pvp-architecture.md](docs/pvp-architecture.md) |
 | sprite grids and palettes | [docs/dev/sprites.md](docs/dev/sprites.md) |
 | a **new look** for anything drawn — concept sheets Noah picks from before a grid ships | the `concept-art` skill ([.claude/skills/concept-art/SKILL.md](.claude/skills/concept-art/SKILL.md)); past sheets in `docs/media/concepts/` |
 | adding an object/tool/structure/ground type/camp, tuning balance, intentional dead code | [docs/dev/checklists.md](docs/dev/checklists.md) |
@@ -45,22 +49,21 @@ Read the relevant one **before** working in that area — they carry the detail 
 ## Architecture
 
 Four legacy files — `profile.js`, `font.js`, the generated `sfxdata.js`, `audio.js` — and the
-eight sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (the
-sprite files each `Object.assign` their keys into `SPRITES`); after them the game code is
-**flat top-level classic scripts sharing one global scope** — forty-five files, `core.js`
+nine sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (`core.js`
+makes `SPRITES`, the other eight `Object.assign` their keys into it); after them the game code is
+**flat top-level classic scripts sharing one global scope** — forty-three files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
 globals**, so each file's globals must exist before the next loads. The file table and the
 shared-scope mechanism: [architecture](docs/dev/architecture.md).
 
-**`js/profile.js` is the only file that touches `localStorage`** — the local player profile (up to three
-characters - name, class, look, lifetime stats - which kinds it has ever held, and the settings that
-live under it). Everything else
-goes through `PROFILE`, so putting the profile on a server stays a one-file change; never read or
-write a storage key directly. **A match reads nothing back out of a profile but the character's name, class and look**: the whole arsenal is
-unlocked for everybody, so `LOOT_POOL` is the same on a first flight as on a five-hundredth
-([the wiki](docs/dev/gameplay.md#the-wiki)).
+**`js/profile.js` is the only file that touches `localStorage`** — the local player profile (up to
+three characters - name, class, look, lifetime stats - the kinds it has held, and the settings).
+Everything else goes through `PROFILE`, so putting the profile on a server stays a one-file change;
+never read or write a storage key directly. **A match reads nothing back out of a profile but the
+character's name, class and look**: the whole arsenal is unlocked for everybody, so `LOOT_POOL` is
+the same on a first flight as on a five-hundredth ([the wiki](docs/dev/gameplay.md#the-wiki)).
 
 All game state lives in module-scope singletons (`state`, `settings`, `players`) and the entity
 arrays beside them; `player`/`inv` are the **local player only**, carried goods are `player.bag` and
@@ -70,9 +73,9 @@ The full list: [code-map](docs/dev/code-map.md#jsplayerjs).
 A feature's **tuning constants live in the file that owns the feature**, above the code that reads
 them; `core.js` keeps only the numbers with no one owner. A const is invisible to files that load
 before its own, so anything read at *load time* must be declared no later:
-[architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs).
+[architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs-with-jsdraw-and-jsui).
 
-The game code is organized only by `// ------ name` banners inside its forty-five files.
+The game code is organized only by `// ------ name` banners inside its forty-three files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 
@@ -136,8 +139,8 @@ lives in `docs/dev/*.md` beside the code it protects.
   (the `wind` banner, js/sim.js — waves summed on crossing bearings under a gust envelope) drives
   the snow and every pine's frame, and it dies at dusk.
 - **A sprite the world holds hundreds of draws from ONE texture** — a `drawImage` whose source
-  canvas differs from the last cannot be batched, and the pines measured 97 fps as sixteen
-  canvases against 199 as one atlas: [rendering](docs/dev/rendering.md#drawing-a-thousand-of-something).
+  canvas differs from the last cannot be batched, and one atlas doubled the pines' frame rate:
+  [rendering](docs/dev/rendering.md#drawing-a-thousand-of-something).
 - **Units are solid to each other.** `separateUnits()` runs once per sim step after every mover has
   stepped; a new kind of thing that walks must join its list (and `UNIT_MASS`, and be marked `small`
   unless a roll should stop on it) or it walks through everyone. A player mid-roll is the exception:
@@ -175,8 +178,8 @@ lives in `docs/dev/*.md` beside the code it protects.
 - **A tool is an instance, not a type name.** Its bag cell carries the bits loaded into it, so a
   tool is **moved** between bag, slot, drop and back (`bagPut`, `slotPut`, `spawnDrop`'s `it`) and
   never rebuilt from `s.type` — rebuilding it silently empties somebody's build. But a tool that
-  lands in the **snow** arrives bare: every ground-drop path calls `shedBits` first, so the
-  fittings lie beside the body. What the button fires goes through `fireTool` → `emitBit` for
+  lands in the **snow** arrives bare: the one ground-drop path (`throwCell`, js/ui/bag.js) calls
+  `shedBits` first, and a new one must too, so the fittings lie beside the body. What the button fires goes through `fireTool` → `emitBit` for
   every player alike: [tools and bits](docs/dev/gameplay.md#tools-and-bits).
 - **Anything deciding it can see a player asks `seenAt(p, range)`**, never a bare range — that one
   function is where GHOSTSTEP and burial live (both maps gate on `concealOf(p)`).
@@ -185,19 +188,20 @@ lives in `docs/dev/*.md` beside the code it protects.
   always BLUE on your screen (`settings.teamBlue`), and a bare `TEAMS[p.team]` is the one thing
   on it painted the wrong colour. Rules (`p.team`, `enemyOf`) never call it.
 - **What a key does lives in `keyPress`/`keyRelease`, what a button does in `pointerPress`/
-  `pointerRelease`** (input.js), never in a listener: a gamepad and a finger press the same keys
+  `pointerRelease`** (input.js), never in a listener: a gamepad presses the same keys
   and buttons through those four, so a key handled in the listener alone is dead on a pad. And
   **a key is asked for through its action** — `keyIs(e, 'work')`/`keyHeld('slide')`, never a
   literal `'e'` — because the player rebinds (`binds()`, one map per keyboard scheme) and the
   listener names keys by where they sit (`e.code`), so a literal is dead on a rebind, on an
   AZERTY board and on the CLICK scheme, where E is an ability.
-- **Anything a player does takes a `p` and reads `p.input`**, never `keys`/`mouse` (local player only) - the
-  leap off the eagle included (`input.jump`): a key handler that calls a sim function directly does
-  nothing on a `client`, whose sim never runs (`NET.isClient`, js/net/net.js) -
-  and anything only one of them can get (a work swing, a build, a drop, a fish) goes through
+- **Anything a player does takes a `p` and reads `p.input`**, never `keys`/`mouse` (local player
+  only) - the leap off the eagle included (`input.jump`): a key handler that calls a sim function
+  directly does nothing on a `client`, whose sim never runs (`NET.isClient`, js/net/net.js) - and
+  anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).
 - **Never add or remove an `rng()` call inside `genWorld()`** — it reshuffles every existing seed
-  (the chests roll on their own `chRng`; the camps roll nothing). Use `hash2`/`vnoise` per tile, never before the `SEED` const.
+  (the chests roll on their own `chRng`; the camps roll nothing). Use `hash2`/`vnoise` per tile,
+  never before the `SEED` const.
 - **At most one object per tile.** Create with `placeObj`, read with `objAt`, and route structures
   through `placeStruct`/`destroyStructure` so the `structures` registry stays in sync. A building with
   `w`/`h` in `STRUCTS` (the bot bay, 3×2) fills its other tiles with `part` objects pointing at the
@@ -210,9 +214,12 @@ lives in `docs/dev/*.md` beside the code it protects.
 **The docs are part of the deliverable.** When a change makes a line in this file or in
 `docs/dev/*.md` false, fix it in the same turn as the code change — a stale line is worse than a
 missing one, because future sessions act on it without re-verifying. Prune
-[Known drift](docs/dev/checklists.md#known-drift) once fixed; what is worth recording at all:
-[checklists](docs/dev/checklists.md#what-is-worth-recording).
+[Known drift](docs/dev/checklists.md#known-drift) once fixed, and delete an
+[intentional dead code](docs/dev/checklists.md#intentional-dead-code) entry with the code it names;
+what is worth recording at all: [checklists](docs/dev/checklists.md#what-is-worth-recording).
+**Write what the code does now** — no "used to", no "since 3.xx", no old measurements: history is
+`git log`, and a fact explained in two places drifts in one of them, so give it one home and link.
 
-**Keep this file under ~150 lines** — it loads in full at the start of every session, and rule
+**Keep this file under ~230 lines** — it loads in full at the start of every session, and rule
 adherence drops as it grows. Anything derivable by reading the code belongs in `docs/dev/*.md`,
 which costs nothing until opened. Move a section out rather than thinning every section into mush.

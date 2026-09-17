@@ -64,7 +64,7 @@ function netSetup(role, transport) {
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
   NET.peers.clear(); NET.parked.clear();
-  NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false;
+  NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
   NET.bytesIn = 0; NET.bytesOut = 0; NET.bIn0 = 0; NET.bOut0 = 0; NET.bpsT = 0; NET.dropped = 0; NET.fulls = 0;
   if (NET.role === 'host') { NET.transport.listen(); snapShadowReset(); }
@@ -152,7 +152,7 @@ function netHostStep(dt) {
   if (NET.transport.open && !NET.published) { NET.published = true; netHostRoom(); }
   if (state.mode === 'title' && NET.peers.size) {
     const m = state.menu, n = m.countT > 0 ? Math.ceil(m.countT) : m.countN === 0 ? 0 : -1;
-    if (n !== NET.countN) { NET.countN = n; NET.transport.send('*', { t: 'count', t: m.countT, n }); }
+    if (n !== NET.countN) { NET.countN = n; NET.transport.send('*', { t: 'count', ct: m.countT, n }); }
   }
 }
 function netHostHello(peer, msg) {
@@ -261,6 +261,7 @@ function netClientStep(dt) {
     i.dodge = false; i.jump = false; i.eatBerry = false; i.eatFish = false; i.useCard = false; i.ability = -1; i.cmd = null;
   }
   netClientLerp();
+  netClientStats();
   netRate();
   for (const item of T.poll(dt)) {
     let msg = item.msg;
@@ -282,10 +283,36 @@ function netClientStep(dt) {
     if (msg.t === 'welcome') { netClientWelcome(msg); continue; }
     // the waiting room: the host's ten and its count, drawn here as there
     if (msg.t === 'roster') { netClientRoster(msg.roster); continue; }
-    if (msg.t === 'count') { state.menu.countT = msg.t; state.menu.countN = msg.n; continue; }
+    if (msg.t === 'count') { state.menu.countT = msg.ct; state.menu.countN = msg.n; continue; }
   }
   if (T.open && !NET.helloed) { netClientHello(); NET.helloed = true; }
   if (!T.open) NET.helloed = false;
+}
+// The character's lifetime stats on a client. Every PROFILE.add* in the sim
+// is gated on `p === player` INSIDE the step, which only the host's screen
+// runs, so a client reads the same facts off its own body as the snapshots
+// move it: xp is the match's gold earned (gainGold), kills only climbs, a
+// death is dead's rising edge, the match and its first day start at takeoff
+// (beginDrop's two, which a client never calls) and the leap off the bird is
+// aboard's falling edge (dropJump's markDropped, and off a FLYING bird the
+// hard music cut - the leap's cue itself arrives as sfxFor's event). A redial
+// keeps the baseline, so what was earned while the socket was down still counts.
+function netClientStats() {
+  const me = player;
+  if (!NET.synced || !me || state.mode === 'title') return;
+  const w = NET.was;
+  if (!w || w.p !== me) { PROFILE.addMatch(); PROFILE.addDay(); }
+  else {
+    if (me.xp > w.xp) PROFILE.addGold(me.xp - w.xp);
+    for (let k = w.kills; k < me.kills; k++) PROFILE.addKill();
+    if (me.dead && !w.dead) PROFILE.addDeath();
+    if (w.aboard && !me.aboard) {
+      PROFILE.markDropped();
+      const e = state.drop && state.drop.eagles[me.team];
+      if (e && e.state !== 'down') SFX.music.play('jump', { out: 0.1, in: 0.05 });
+    }
+  }
+  NET.was = { p: me, xp: me.xp, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
 function netClientHello() {
   const c = PROFILE.char();

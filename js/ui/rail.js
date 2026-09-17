@@ -19,7 +19,7 @@
 // three puts an enemy frame on the HUD; League's one enemy read is the death
 // timer, and the rail's right plate is that timer made a hand.
 // It scales with the HUD SIZE dial about its top-centre anchor
-// (drawRailScaled), capped so the plates clear a phone's zoom pair (railSc),
+// (drawRailScaled), capped so the plates clear the view's edge (railSc),
 // rides the intro slide down from above with the minimap, and stays up while
 // you are dead - the side's state is exactly what a spectator reads.
 const RAIL_CHIP = 14;               // a chip: the 12px emblem and its 1px rim
@@ -28,7 +28,6 @@ const RAIL_MID = 10;                // the air between the two sides' plates
 const RAIL_Y = 3;                   // the plates' top edge: room for the snow cap
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_CHIP + RAIL_PAD;
-const RAIL_KEEP = 80;               // px a phone's zoom pair claims at the left end (and the right, for symmetry)
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plates, the cap and the sky over them
 // the roster: your side then the rival's, each by id, you at the head of
 // yours. Null unless both sides have a body - the practice arena has no rail.
@@ -63,11 +62,9 @@ function railLayout() {
 }
 // the size the rail is drawn at: the HUD SIZE dial snapped to a whole number
 // (never under 1 - a 12px emblem at 0.8 drops two of its rows, where a 34px
-// well shrugs it off), capped where the plates would reach a phone's zoom
-// pair or the view's edge
+// well shrugs it off), capped where the plates would reach the view's edge
 function railSc(L) {
-  const keep = MOBILE ? RAIL_KEEP : 4;
-  return Math.min(Math.max(1, Math.round(hudSc())), (VIEW_W - 2 * keep) / (L.w + 2));
+  return Math.min(Math.max(1, Math.round(hudSc())), (VIEW_W - 2 * 4) / (L.w + 2));
 }
 // the rail's bottom edge in view px (0 while there is no rail): what the
 // top-centre headlines - the camp plate and DAY N - hang under

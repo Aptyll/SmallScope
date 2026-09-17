@@ -720,7 +720,7 @@ function roadWaypoints(team) {
 // ground are untouched; a pylon (`pylon`, OBJECTS) fells the pine or rock
 // on its tile like the road's own furniture and refuses anything else. Its
 // pixels and the cable pass are js/draw/zipline.js. Waves never ride: the
-// march is the match's clock. Bots do not ride yet (docs/zipline-plan.md).
+// march is the match's clock. Bots ride it through steerTo (aiZipWorth, js/ai.js).
 const ZIP_MID_GAP = 20;    // u short of the centre cairn the front terminus stands
 const ZIP_OUT = 0.6;       // tiles past the ragged road edge the cable runs - the shoulder, never the lane
 const ZIP_SPAN = 10;       // u between pylons along the road (about 226 px)

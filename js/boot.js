@@ -291,12 +291,12 @@ function dropJump(p, force) {
   if (!p.aboard || !state.drop) return;
   const d = state.drop.eagles[p.team];
   if (!force && d.state === 'fly' && d.t < d.dur - DROP_LOCK_T) {
-    if (p === player) SFX.deny();
+    sfxFor(p, 'deny');
     return;
   }
   // the first flight is fully scripted: the door stays shut to a manual leap
   // and the ride lands with you on it - the brief that follows is the lesson
-  if (!force && p === player && state.drop.firstFlight) { SFX.deny(); return; }
+  if (!force && p === player && state.drop.firstFlight) { sfxFor(p, 'deny'); return; }
   p.aboard = false;
   p.dropT = FALL_T; p.dropAlt = DROP_ALT; p.dropSc = riderScale(d); // the fall shrinks from the seat's size to 1x
   // the leap starts from the wing seat the rider was sitting on (p.x/p.y are
@@ -307,9 +307,9 @@ function dropJump(p, force) {
     p.x += -Math.sin(d.heading) * off;
     p.y += Math.cos(d.heading) * off;
   }
+  sfxFor(p, 'dodge');
   if (p === player) {
     PROFILE.markDropped(); // the first-flight countdown never comes back after a real jump
-    SFX.dodge();
     // a hard cut, not a crossfade: the ride's song is INTERRUPTED by the jump,
     // which then runs to its end and hands over to FOXGLOVE DROP (TRACKS.next)
     SFX.music.play('jump', { out: 0.1, in: 0.05 });
@@ -381,7 +381,8 @@ function hopOff(p) {
   if (e.state !== 'down') return;
   p.aboard = false;
   p.dropT = HOP_FALL_T; p.dropAlt = HOP_ALT; p.dropSc = 1;
-  if (p === player) { PROFILE.markDropped(); SFX.dodge(); }
+  if (p === player) PROFILE.markDropped();
+  sfxFor(p, 'dodge');
 }
 
 function updateDrop(dt) {
@@ -843,8 +844,8 @@ function hurtEagle(e, dmg, src, hx, hy) {
   // cannot see from where you fight, and the minimap only says so if you
   // happen to be looking at it. One alarm per EAGLE_WARN_GAP, never both cues
   // at once - standing there, the blow IS the news.
-  if (nearPlayer(e.x, e.y)) SFX.bigHurt();
-  else if (player && e.team === player.team && !player.eliminated
+  sfxAt('bigHurt', e.x, e.y);
+  if (!nearPlayer(e.x, e.y) && player && e.team === player.team && !player.eliminated
       && state.elapsed - (e.warnT === undefined ? -99 : e.warnT) >= EAGLE_WARN_GAP) {
     e.warnT = state.elapsed;
     // ...and the news arrives where the other things you glance at mid-fight
@@ -1345,9 +1346,6 @@ function startGame() {
 PROFILE.load();   // the profile carries the settings, so it is read first
 loadSettings();
 mendBinds(); // the profile's key binds made whole (input.js)
-// the saved TOUCH MODE is only now known: if it flips phone mode, the view
-// fitted at load is the wrong one (relayout() below places the UI for it)
-if (mobileRefresh()) fitCanvas();
 // ...and the tech tree, which decides what this profile's world may drop.
 // Must run after PROFILE.load() and before initPlayers()/any swing.
 rebuildLootPool();
@@ -1464,12 +1462,8 @@ window.DBG = {
   // drop a player (default the local one) on a tile - how to stage a camp
   warp: (tx, ty, p) => { const q = p || player; q.x = (tx + 0.5) * TILE; q.y = (ty + 0.5) * TILE; q.vx = q.vy = 0; return q; },
   settings, perf, treeRare, cursorInfo,
-  // the other two controllers (js/gamepad.js, js/touch.js) and phone mode
-  // (js/mobile.js): the live state of each, the plates' layout, and a way
-  // to force a phone's fit on a desktop window without a phone
-  pad, padActive, touch, touchLayout, touchDown, touchMove, touchUp,
-  mobile: () => MOBILE, mobilePortrait,
-  setMobile: (v) => { settings.mobile = v; fitCanvas(); relayout(); },
+  // the other controller (js/gamepad.js): its live state
+  pad, padActive,
   // the local profile: the store itself and the character screens (js/ui/chars.js),
   // so a driver can open the roster or the create screen and read back what it accepts
   PROFILE, beginChars, leaveChars, beginCreate, createCommit, createCancel, createKey, createHit, charsHit,
@@ -1746,7 +1740,7 @@ window.DBG = {
   // the CLICK scheme (input.js): its state, the two presses and the pickers
   ck, ckOn, ckClear, ckRightPress, ckRightRelease, ckArmedPress, ckReach: (p) => ckReach(p || player),
   ckAcquire: (p) => ckAcquire(p || player), ckSees: (t, p) => ckSees(p || player, t), unitUnder, mmWorldAt,
-  // the four entry points a pad and a plate press through, and their held state
+  // the entry points a pad presses through, and their held state
   keyPress, keyRelease, actHeld, settingsLayout,
   keyRows: () => keyRowsLayout(),
   get settingsRows() {
@@ -1832,7 +1826,6 @@ function loop(nowMs) {
   }
   if (!window.DBG.freeze) {
     padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
-    touchPoll();
     tickAcc += dt;
     let n = 0;
     while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX) {

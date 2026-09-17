@@ -708,7 +708,7 @@
     notch() { if (smp('notch', { vol: 0.22, jitter: 0, gap: 0.05 })) return; tone(1180, 0.025, 'square', 0.03); },
     // a piece turned on the spot (R over the build ghost): a dial, not a step
     turn() { if (smp('turn', { vol: 0.4, jitter: 0, dur: 0.45 })) return; tone(520, 0.05, 'square', 0.05, 260); },
-    // a radial wheel rolling open under the held key, button or thumb
+    // a radial wheel rolling open under the held key or button
     wheelUp() { if (smp('wheelUp', { vol: 0.5, jitter: 0 })) return; tone(480, 0.05, 'triangle', 0.06, 200); tone(720, 0.07, 'triangle', 0.05, 160, 0.04); },
     // A NEW BEST on any of the practice instruments - the range's round, the
     // parkour's lap. One cue for the one meaning: it was the level-up sample

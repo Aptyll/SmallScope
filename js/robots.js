@@ -437,13 +437,13 @@ function spawnMerchant(e) {
 function merchFell(b, t) {
   const px = t.tx * TILE + 8, py = t.ty * TILE + 8;
   t.hp--; t.flash = 0.1; t.shake = 0.22;
-  if (nearPlayer(px, py)) SFX[t.type === 'rock' ? 'mine' : 'chop']();
+  sfxAt(t.type === 'rock' ? 'mine' : 'chop', px, py);
   burst(px, py - 10, '#eef4fb', 3, 35, 0.4, true);
   if (t.hp > 0) return false;
   objects[idx(t.tx, t.ty)] = null;
   burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
   burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : t.type === 'rock' ? '#9aa4b4' : '#6b5a48', 5, 45, 0.5, true);
-  if (nearPlayer(px, py)) SFX[t.type === 'rock' ? 'break_' : 'treeFall']();
+  sfxAt(t.type === 'rock' ? 'break_' : 'treeFall', px, py);
   if (t.type === 'deadTree') flushBirds(campAt(px, py), { x: px, y: py });
   b.tgt = null;
   return true;
