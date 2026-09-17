@@ -291,12 +291,12 @@ function dropJump(p, force) {
   if (!p.aboard || !state.drop) return;
   const d = state.drop.eagles[p.team];
   if (!force && d.state === 'fly' && d.t < d.dur - DROP_LOCK_T) {
-    if (p === player) SFX.deny();
+    sfxFor(p, 'deny');
     return;
   }
   // the first flight is fully scripted: the door stays shut to a manual leap
   // and the ride lands with you on it - the brief that follows is the lesson
-  if (!force && p === player && state.drop.firstFlight) { SFX.deny(); return; }
+  if (!force && p === player && state.drop.firstFlight) { sfxFor(p, 'deny'); return; }
   p.aboard = false;
   p.dropT = FALL_T; p.dropAlt = DROP_ALT; p.dropSc = riderScale(d); // the fall shrinks from the seat's size to 1x
   // the leap starts from the wing seat the rider was sitting on (p.x/p.y are
@@ -381,7 +381,8 @@ function hopOff(p) {
   if (e.state !== 'down') return;
   p.aboard = false;
   p.dropT = HOP_FALL_T; p.dropAlt = HOP_ALT; p.dropSc = 1;
-  if (p === player) { PROFILE.markDropped(); SFX.dodge(); }
+  if (p === player) PROFILE.markDropped();
+  sfxFor(p, 'dodge');
 }
 
 function updateDrop(dt) {
@@ -843,8 +844,8 @@ function hurtEagle(e, dmg, src, hx, hy) {
   // cannot see from where you fight, and the minimap only says so if you
   // happen to be looking at it. One alarm per EAGLE_WARN_GAP, never both cues
   // at once - standing there, the blow IS the news.
-  if (nearPlayer(e.x, e.y)) SFX.bigHurt();
-  else if (player && e.team === player.team && !player.eliminated
+  sfxAt('bigHurt', e.x, e.y);
+  if (!nearPlayer(e.x, e.y) && player && e.team === player.team && !player.eliminated
       && state.elapsed - (e.warnT === undefined ? -99 : e.warnT) >= EAGLE_WARN_GAP) {
     e.warnT = state.elapsed;
     // ...and the news arrives where the other things you glance at mid-fight
