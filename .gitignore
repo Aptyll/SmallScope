@@ -118,6 +118,9 @@ docs/media/montage/_report.json
 docs/media/montage2/*.mp4
 docs/media/montage2/_raw/
 docs/media/montage2/_report.json
+docs/media/montage3/*.mp4
+docs/media/montage3/_raw/
+docs/media/montage3/_report.json
 docs/media/montage*/tools/shots/
 
 # The wrapper's installed packages (desktop/package.json is the list)
