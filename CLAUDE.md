@@ -20,7 +20,7 @@ effects (its output is committed); an asset loaded any other way is silently dea
 No package manager, dependencies, tests or linter: edit a file under `js/` and reload.
 
 **The game ships on Steam for a desktop: keyboard and mouse, and a gamepad (Steam Deck).** Phone
-and touch support was deleted (the tag `pre-phone-removal` keeps it) — never add a touch
+and touch support was deleted — never add a touch
 handler, a phone fit or a mobile layout, and never spend a verification step on one.
 
 **Verify changes in the browser, not by re-reading code.** `window.DBG` (end of
