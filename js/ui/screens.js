@@ -1629,12 +1629,12 @@ function renderDefeat(now) {
       // the hash: one row of identical silhouettes reads as cordwood
       const hf = hash2(k * 17 + 5, 97);
       const face = k === 0 ? 'right' : hf < 0.34 ? 'down' : (k & 1) ? 'left' : 'right';
-      const sink = k ? Math.round(hash2(k * 11 + 3, 47) * 4) - 2 : 0;
+      const sink = k ? Math.round(hash2(k * 11 + 3, 47) * 2) - 1 : 0;
       // even down there the local player can still say something - the loss's
       // emotes are performed WITHOUT getting up (the `emotes` banner)
       const act = k === 0 ? emoteNow(now) : null;
       const pose = act ? act.e.down(set, act.f) : null;
-      const by = L.stageY + 6 - WIN_BODY - settle + sink + Math.round((1 - sr) * 8);
+      const by = L.stageY + 2 - WIN_BODY - settle + sink + Math.round((1 - sr) * 8);
       ctx.globalAlpha = sr * 0.92; // the cold has them already
       if (pose) {
         drawEndBody(pose.spr, s.x + (pose.dx || 0), by + WIN_BODY - (pose.dy || 0));
@@ -1647,7 +1647,7 @@ function renderDefeat(now) {
     }
     // ...and the snow in FRONT of them all, over every boot and the bodies'
     // last rows: the drift has already started taking them back
-    drawDefeatDrift(L.cx, L.stageY + 14 - settle, hw + 32, 14, rise);
+    drawDefeatDrift(L.cx, L.stageY + 14 - settle, hw + 32, 7, rise);
     // an arrow planted where a body fell - what the crown is on the other
     // screen, and the only thing on this one still standing up. The local
     // player always earns one; the rest are the hash's to give, so the line
