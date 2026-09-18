@@ -2810,12 +2810,12 @@ macro over four of them — clouds, shafts, stars and the vignette (`VID_PRESETS
 everything but the cloud shadows, HIGH is everything, and the word matching the current mix
 wears gold — a hand-picked mix golds none of them. SNOWFALL is deliberately in no preset:
 falling snow is the game's identity and nearly free, so only a deliberate hand turns it off.
-Between QUALITY and the toggles sits **FPS CAP** — OFF / 30 / 60 / 120 / 144, a choice row
+Between QUALITY and the toggles sits **FPS CAP** — 30 / 60 / 120 / 144 / UNLIMITED, a choice row
 whose words are numbers because the row is an instrument — `settings.fpsCap`, which
 `capSkips` (js/boot.js, [the fixed step](code-map.md#jsbootjs)) reads at the top of every
 animation frame: a frame under the cap is skipped whole, its time banked into the next, so
-the sim still takes every 1/60 s step it is owed and only the presentation thins. OFF is
-every frame the screen offers.
+the sim still takes every 1/60 s step it is owed and only the presentation thins. UNLIMITED
+is every frame the screen offers.
 
 **The foot is planks, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
 frost planks drawn by the title's own `drawMenuButton`: **CLOSE** — the one way out that is a
