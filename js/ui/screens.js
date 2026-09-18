@@ -1647,7 +1647,7 @@ function renderDefeat(now) {
     }
     // ...and the snow in FRONT of them all, over every boot and the bodies'
     // last rows: the drift has already started taking them back
-    drawDefeatDrift(L.cx, L.stageY + 14 - settle, hw + 32, 7, rise);
+    drawDefeatDrift(L.cx, L.stageY + 10 - settle, hw + 32, 7, rise);
     // an arrow planted where a body fell - what the crown is on the other
     // screen, and the only thing on this one still standing up. The local
     // player always earns one; the rest are the hash's to give, so the line
