@@ -72,7 +72,9 @@ jump          edge-triggered: the leap off the eagle, or the hop off the roost -
               the ride's one act (dropJump, js/boot.js; read at the top of
               updatePlay's player loop, before the air skips the body) - and
               on the ground the zipline's: clip on under your side's cable,
-              let go while riding (zipToggle, js/world.js; E sets it there)
+              let go while riding, or - out of reach with the aim on your
+              cable as drawn - the walk there that clips on (zipToggle,
+              js/world.js; E sets it there)
 grapple       held (key 3): the hunter's grapple reels only while this is down -
               the one held ability input (updatePlayer's grapple branch reads it;
               the burrow is the SNOW COVER cast on `ability`, not a field here)
@@ -205,7 +207,9 @@ bot fills, once per step from `sampleHumanInput`.
   chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Seated on the roost
   it is the hop, and the fall drifts toward the spot and walks on landing; in flight it is the
   jump, with the same rule the jump key has. Riding a zipline it lets go; standing under your
-  side's cable, a press **on the cable's track** clips on (a press anywhere else is the walk).
+  side's cable, a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on,
+  or from out of reach walks the body there and clips on (`zipWalkStart` — the channel, ended by
+  any order of your own; a press anywhere else is the walk it always was).
 - **On a tree, a bush, an ice hole or a rival building it is a walk into reach and the swing**
   (`workTargetAt`, the work target by tile), held until the thing is spent. On one of your own
   buildings, a merchant or the practice furniture it is a walk into reach and the thing opening
@@ -748,8 +752,8 @@ and returns **-1 when there is no route** (or the bot has been pinned for a whil
 the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
 its own side's cable, riding to the point nearest the goal and walking the rest beat the feet by
-`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`aiZipMount`, the nearest point of the
-cable whose ground a body can stand on), presses `input.jump` under it, holds the stick along
+`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, world.js — the nearest point of
+the cable whose ground a body can stand on, shared with a player's walk to the cable), presses `input.jump` under it, holds the stick along
 the cable toward the exit while it rides (the goal re-read every think, so a rider called home
 mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
 A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot

@@ -68,8 +68,12 @@ function drawPylon(o, px, py) {
   ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
   drawSpriteFlash(PYLON_SPRS[skin(o.team)], px + 3, py + TILE - PYLON_H, o.flash);
 }
-// the cable's colours: steel in shadow, and the lit strand under it
+// the cable's colours: steel in shadow, and the lit strand under it; under
+// the pointer the strand wears the work-target rim's two golds on its beat
+// (drawTargetRim, js/draw/render.js) - the one "you can act on this" ink
 const ZIP_INK = '#1c2030', ZIP_LIT = '#6a7488';
+const ZIP_HOV_A = '#f2cc6a', ZIP_HOV_B = '#c9a227';
+const ZIP_GUIDE = '#ffd95c'; // the guide's dots: the draw meter's gold (DRAW_COL, js/draw/overhead.js)
 // The cable pass, between drawDropAir and renderLighting in render(): over
 // every body and canopy, under the night grade. A span is a 1 px dark line
 // with a 1 px lit line under it, rasterised pixel by pixel (a stroked path
@@ -79,9 +83,19 @@ const ZIP_INK = '#1c2030', ZIP_LIT = '#6a7488';
 // is skipped, and only a few are ever in it. (A rider's handle and rope are
 // drawPlayer's - drawZipHandle, below - so the frame over its head covers
 // the rope rather than the rope crossing the name.)
-function drawZips(ex, ey) {
+// the line that lights: the one under the pointer, or your own while the
+// body is walking itself to it (zipWalk) - null for none
+function zipLitLine() {
+  const hov = hoverZip();
+  if (hov) return hov.z;
+  return player.zipWalk && !player.dead ? zips[player.team] || null : null;
+}
+function drawZips(ex, ey, now) {
+  const hot = zipLitLine();
   for (const z of zips) {
     if (!z) continue;
+    // the hovered line lights whole: it is one thing, and the eye is asking what it is
+    const lit = hot === z ? (Math.sin(now * 6) > 0 ? ZIP_HOV_A : ZIP_HOV_B) : ZIP_LIT;
     for (let i = 1; i < z.pts.length; i++) {
       const a = z.pts[i - 1], b = z.pts[i];
       const ax = a.x - ex, ay = a.y + 4 - ZIP_H - ey, bx = b.x - ex, by = b.y + 4 - ZIP_H - ey;
@@ -96,10 +110,35 @@ function drawZips(ex, ey) {
         if (x === lx && y === ly) continue;
         lx = x; ly = y;
         ctx.fillStyle = ZIP_INK; ctx.fillRect(x, y, 1, 1);
-        ctx.fillStyle = ZIP_LIT; ctx.fillRect(x, y + 1, 1, 1);
+        ctx.fillStyle = lit; ctx.fillRect(x, y + 1, 1, 1);
       }
     }
   }
+}
+// The guide: while the pointer rests on your own cable - or the body is
+// walking itself to it - and the body stands too far out to clip on (past
+// ZIP_GRAB of the track), a static dotted gold line from the feet to the
+// nearest point of the track and a short bar across it there - the walk that
+// puts the cap over your head, in the aim line's own dots (drawAimLine,
+// js/draw/render.js), drawn right after it. Inside ZIP_GRAB the cap is the
+// whole answer and the line stays away.
+function drawZipGuide(ex, ey) {
+  const z = zipLitLine();
+  if (!z) return;
+  const n = zipNearest(z, player.x, player.y);
+  if (n.dist <= ZIP_GRAB) return;
+  const q = zipPoint(z, n.d);
+  const x0 = player.x, y0 = player.y + 4, dx = q.x - x0, dy = q.y + 4 - y0;
+  const d = Math.hypot(dx, dy) || 1, nx = dx / d, ny = dy / d;
+  for (let s = 8; s < d - 3; s += 6) {
+    const sx = Math.round(x0 + nx * s - ex), sy = Math.round(y0 + ny * s - ey);
+    ctx.globalAlpha = 0.55; ctx.fillStyle = '#0a0e23'; ctx.fillRect(sx + 1, sy + 1, 2, 2);
+    ctx.globalAlpha = 0.9; ctx.fillStyle = ZIP_GUIDE; ctx.fillRect(sx, sy, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+  const tx1 = Math.round(q.x - ex), ty1 = Math.round(q.y + 4 - ey), r = [];
+  for (let i = -2; i <= 2; i++) r.push([Math.round(tx1 - ny * i), Math.round(ty1 + nx * i), 1, 1]);
+  drawOutlinedRects(r, ZIP_GUIDE, 0.9);
 }
 // a rider's handle over its head and the rope up to the cable, drawn by
 // drawPlayer between the body and the frame over it: `hx` the body's centre

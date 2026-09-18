@@ -71,11 +71,43 @@ eagle already reads, and `updatePlay` consumes it for every player alike as `zip
 (`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
 under the line never stops a rider — and `p.vx/vy` to the tangent × `ZIP_SPD` (220 px/s, three
 times a walk, under `GRAP_REEL`), which is what the walk-animation gate, the trails and the exit
-read. Holding the stick along the cable past a dead zone picks the direction (`p.zipDir`, ±1;
-the stick idle at the clip-on rides **toward the front**), across it does nothing, and either end
-lets go. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
-`p.zipDir` — declared in `reset()` beside the grapple's, so a respawn never comes back clipped
-on; `die` lets go too.
+read. Holding the stick along the cable past a dead zone picks the direction (`p.zipDir`, ±1),
+across it does nothing, and either end lets go. **The clip-on reads the way you were last
+walking**, not the stick at the press: `p.lastMx/lastMy` (the stick's last held direction, kept
+across a stop — set in `updatePlayer` whenever it is held) dotted with the cable's tangent past
+−0.3 rides toward the base, anything else rides **toward the front** — so a body that walked home
+and stood still for the press goes home, and a walk in across the cable from the lane takes the
+default. At either end the cable has one way to go and the clip-on takes it, whatever the walk
+said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
+`p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
+comes back clipped on; `die` lets go too.
+
+**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is your own
+side's cable under the pointer as drawn (`zipUnder`, world.js — within `ZIP_HOVER` of the
+strand, never the invisible track under it), while the body is on the ground with nothing open
+over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
+its beat, and `drawZipGuide` (js/draw/zipline.js, right after the aim line) runs a static dotted
+gold line from the feet to the nearest point of the track and a bar across it there — the walk
+that puts the cap over your head — only while the body stands past `ZIP_GRAB` (32 px, two
+tiles); inside it the cap is the whole answer. The click scheme's press asks the same
+`zipUnder`, so what lights is what a press takes.
+
+**The walk to the cable — a channel.** E (or the click scheme's right press) with the pointer on
+your own cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
+`input.aimX/aimY` (`zipUnder` again — the aim rides the wire, so a host answers a client the
+same): `zipWalkStart` sets `p.zipWalk` (declared in `reset()`, cleared by `die`) and the body
+walks itself there — `zipWalkStep`, called at the top of `updatePlayer`'s input read, routes
+through `navTo` to the **mount** (`zipMount`: the nearest point of the track whose ground a body
+can stand on — the track point itself is the pylon's own tile at a pylon; the bots walk to the
+same point), re-read every step and never a straight line at it, hands the ladder the stick to
+hold, then `zipStart`s the moment it is inside `ZIP_GRAB`.
+It is a channel because the player is not holding the stick: **any movement input ends it**, the
+legs are theirs again — and so does anything that takes the body (a dodge, a draw, a cast, a
+rush, a shield, the grapple, a slide, prone, a stun, a root, a net, a hole, the air, a death),
+a route that fails or pins (`navTo`'s `ok`), and E again (`zipToggle` calls the walk off ahead
+of everything). No timer. The walk leaves `p.lastMx/lastMy` alone, so the clip-on at its end still
+rides the way you were walking before the press. While it runs, the cable stays lit and the guide
+line stays, pointer or no pointer (`zipLitLine`, js/draw/zipline.js).
 
 **Hands on the handle.** `p.zip >= 0` joins the inline gates of `tryWork`, `autoWork`,
 `tryAbility`, the bow draw (updatePlayer), `autoFish` and `tryProne`; `zipStart` itself refuses

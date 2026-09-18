@@ -647,12 +647,16 @@ function updatePlayer(p, dt) {
   // one cooldown a berry and a fish share (js/core.js)
   updateEat(p, dt);
 
-  // input
-  let mx = inp.mx, my = inp.my;
+  // input - or the walk to the zipline holding the stick for the player
+  // (zipWalkStep, world.js: any input of their own ends it), which leaves
+  // lastMx/lastMy alone so the clip-on still reads the walk before the press
+  let mx = inp.mx, my = inp.my, auto = false;
+  if (p.zipWalk) { const w = zipWalkStep(p, dt); if (w) { mx = w.mx; my = w.my; auto = true; } }
   const len = Math.hypot(mx, my);
   p.moving = len > 0;
   if (len > 0) {
     mx /= len; my /= len;
+    if (!auto) { p.lastMx = mx; p.lastMy = my; } // kept across the stop: the zipline's clip-on reads it (zipStart, world.js)
     if (p.swingT <= 0) {
       if (Math.abs(mx) > Math.abs(my)) p.dir = mx > 0 ? 'right' : 'left';
       else p.dir = my > 0 ? 'down' : 'up';

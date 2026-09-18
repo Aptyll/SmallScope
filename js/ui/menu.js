@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.67'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.68'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.68', 'THE ZIPLINE LIGHTS GOLD UNDER THE POINTER WITH A DOTTED WALK TO IT, E WALKS YOU THERE AND CLIPS YOU ON UNTIL YOU MOVE YOURSELF, AND THE RIDE GOES THE WAY YOU WERE LAST WALKING.'],
   ['3.67', 'THE VALLEY COMES OUT OF THE SNOW IN THREE SHAPES NOW - THE OPEN FIELD, A THICKET WITH PATHWAYS CUT THROUGH IT, OR A FROZEN LAKE WITH WOODED ISLANDS - PICKED ON THE CHIP BESIDE YOUR CHARACTER.'],
   ['3.66', 'A DEER NO LONGER OUTRUNS THE WHOLE VALLEY: IT RUNS A LITTLE FASTER THAN YOU WALK, AND IT GATHERS AND LOSES ITS SPEED INSTEAD OF SNAPPING TO IT.'],
   ['3.65', 'THE WIKI HAS A WORLD PAGE: WHAT SOFTFALL IS, WHAT THE SNOW BURIED, WHY TWO COMPANIES FLY IN EVERY WINTER, AND WHY NOBODY ON THE SNOW EVER DIES.'],

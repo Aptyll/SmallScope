@@ -141,6 +141,15 @@ function hoverFish() {
   for (const f of fish) if (f.born && Math.hypot(f.x - wx, f.y - wy) < 7) return f;
   return null;
 }
+// the local player's own cable under the pointer (zipUnder, world.js), while
+// it is on the ground with the world under the pointer and nothing open over
+// it - or null. The cable pass lights the strand on it and the guide line
+// walks the body to it (drawZips/drawZipGuide, js/draw/zipline.js)
+function hoverZip() {
+  if (!mouse.inside || state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || state.drag) return null;
+  if (player.dead || player.zip >= 0 || inAir(player)) return null;
+  return zipUnder(player.team, mouseWX(), mouseWY());
+}
 // bow-fishing works when the player stands on ice with the fish in FISH_CATCH_R
 function fishInRange(f, p) {
   p = p || player;

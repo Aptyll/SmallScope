@@ -362,7 +362,7 @@ function aiWaveHead(p, e) {
 // through steerTo, and steerTo asks aiZipWorth first - would walking to its
 // own side's cable, riding to the point nearest the goal and walking the
 // rest beat the feet by ZIP_AI_GAIN seconds? If so it walks to the mount
-// (aiZipMount: the nearest point of the cable whose ground a body can stand
+// (zipMount, world.js: the nearest point of the cable whose ground a body can stand
 // on), presses the hop under it, holds the stick along the cable toward the
 // exit while it rides, and presses the hop again ZIP_AI_OFF short of the
 // exit. The goal is re-read every think, so a rider called home mid-cable
@@ -384,15 +384,6 @@ function aiZipWorth(p, x, y) {
   const feet = aiWalkT(p, Math.hypot(x - p.x, y - p.y));
   const ride = aiWalkT(p, nb.dist) + Math.abs(ng.d - nb.d) / ZIP_SPD + aiWalkT(p, ng.dist);
   return feet - ride >= ZIP_AI_GAIN ? { z, d0: nb.d, d1: ng.d } : null;
-}
-// the mount: the point of the cable at d, or the nearest along it whose
-// ground tile a body can stand on (the shoulder holds the odd pine or rock)
-function aiZipMount(z, d) {
-  for (const k of [0, 16, -16, 32, -32, 48, -48]) {
-    const q = zipPoint(z, d + k);
-    if (walkable(Math.floor(q.x / TILE), Math.floor((q.y + 4) / TILE))) return q;
-  }
-  return null;
 }
 
 // the camp monster nearest of those already hunting this bot. A camp is
@@ -517,7 +508,7 @@ function aiThink(p, dt) {
     const w = aiZipWorth(p, x, y);
     if (w) {
       if (zipNear(p)) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
-      const m = aiZipMount(w.z, w.d0);
+      const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (world.js)
       if (m && walkTo(m.x, m.y, 0, budget) >= 0) return Math.hypot(x - p.x, y - p.y);
     }
     return walkTo(x, y, reach, budget);
