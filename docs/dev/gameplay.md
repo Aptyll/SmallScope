@@ -2673,8 +2673,10 @@ the side's own through `specOk`), one line — **RESPAWNING IN Ns** at 3× in th
 the live countdown, and [the replay window](rendering.md#replay-the-last-four-seconds) opens large
 over the view with a close box on its corner (or ESC), so the death is watched first and the ally
 after, the player choosing when. **LOBBY** on a `'lost'` dim does not leave: it opens
-[the defeat screen](rendering.md#the-end-screens), the loss's own summary, and that screen's single
-plank is the door out — a lost match ends when you stop watching it, not the instant you go down.
+[the defeat screen](rendering.md#the-end-screens), the loss's own summary — a lost match ends when
+you stop watching it, not the instant you go down. LOBBY on **either** ceremony then opens
+[the post-game lobby](rendering.md#the-post-game-lobby), the whole match's record, and that
+screen's LOBBY is the door out.
 `'respawning'` needs no state of its own beyond `state.rpClosed` (reset by every `endMatch`):
 once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'` the same
 one-line way `'KEEP PLAYING'` already does, lands the local player at its bird, and replays the HUD

@@ -647,6 +647,9 @@ const STRUCT_DR = 0.6;
 function hurtStruct(o, dmg, p, bot) {
   if (!bot) dmg = Math.max(1, Math.round(dmg * (1 - STRUCT_DR)));
   const c = structCenter(o);
+  // ...and the buildings' share of the lobby's siege column (js/ui/lobby.js),
+  // capped at the wall there was left, the way the bird's is
+  if (p instanceof Player) p.dmgStruct += Math.min(dmg, Math.max(0, o.hp));
   o.hp -= dmg;
   o.flash = 0.1;
   o.shake = 0.22;

@@ -115,6 +115,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | how hidden a player is, and how far anything notices it from | `concealOf`, `seenAt`, `ambushReady` | `players` › `being seen` |
 | death (which keeps everything on the body), the flat bounty a kill pays, the wait for the bird and the return at it, the one permanent path (a driven-off eagle), the team-level win check | `KILL_BOUNTY`, `die`, `RESPAWN_BASE`/`RESPAWN_LV`, `respawnTime`, `updateRespawns`, `RESPAWN_OUT`, `respawnPlayer`, `teamInMatch`, `rivalTeamsInMatch`, `checkLastStanding`, `endMatch`, `endSnapshot` | `damage & death` (`teamEagleDown`: `eagle drop`, boot.js) |
 | practice undoing a death on the spot | `practiceRevive` (die()'s first branch under `PRACTICE`) | `damage & death` |
+| the match record every player keeps, for [the post-game lobby](../../js/ui/lobby.js) | `p.kills`/`p.deaths`/`p.dmgOut`/`p.dmgIn`/`p.dmgBird`/`p.dmgStruct`/`p.hGold`/`p.hDmg` (written in `damagePlayer` and `die` here, `hurtEagle` js/boot.js, `hurtStruct` js/actions.js, `sampleStats` js/ui/lobby.js; a respawn's `reset` clears none of them) | `players` (declared) / `damage & death` (kept) |
 
 ## js/input.js
 
@@ -588,6 +589,17 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the death overlay and the respawn wait, spectating, back to the lobby, who the camera frames, the planks every ending shares | `DEAD_ITEMS`, `deadItems`, `endScreen`, `viewPlayer`, `specOk`, `specNext`, `toLobby`, `openDefeat`, `drawRespawnLine`, `renderDead`, `deadKey`, `deadClick`, `deadLayout`, `deadReady`, `endSkip`, `drawEndPlanks` | `death & spectate` (`endMatch`/`endSnapshot`: `damage & death`, player.js) |
 | the victory screen: its timeline, the side's stands, its sound cues, its art, and the passes both endings share | `WIN_T`, `WIN_BODY`/`WIN_TIER`/`WIN_BANNER_W`/`WIN_BANNER_H`, `winLayout`, `winStands`, `winCues`, `tallyCues`, `renderVictory`, `stampGrid`, `drawWinAurora`, `drawWinRays`, `drawWinMotes`, `WIN_CREST`, `mixHex`, `winBannerCv`, `drawWinBanner`, `drawBrazierIron`, `drawWinBrazier`, `drawWinDais`, `drawEndStatPlate`, `drawEndTally` | `victory` |
 | the defeat screen: the loss's own summary, on the same anchors and stands | `DEF_T`, `DEF_STATS`, `defCues`, `renderDefeat`, `drawBlizzard`, `drawDefeatDrift`, `drawDeadBrazier`, `DEF_ARROW` | `defeat` |
+
+## js/ui/lobby.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the two graphs' samples: the pitch, the cap, the halving that bounds a series of any length, and the sampler itself | `STAT_STEP`, `STAT_MAX`, `statT`, `statHalve`, `sampleStats` (its one caller: `updatePlay`, sim.js; the arrays it fills: `p.hGold`/`p.hDmg`, the `Player` constructor, js/player.js) | `the samples` |
+| the match's record, frozen at the whistle | `matchStats`, `statFreeze` (its one caller: `endMatch`, js/player.js) | `the record` |
+| the six sortable columns, this screen's own state, and the accent each ending is struck in | `SCORE_COLS`, `SCORE_GAP`/`SCORE_ROW`/`SCORE_STRIP`/`SCORE_ICON`, `scores`, `SCORE_PLANKS`, `SCORE_IN`, `scoreAccent`, `scoreHead` | `the columns` |
+| the composition, the two blocks in reading order, and the best every row's fill is drawn as a share of | `scoresLayout`, `scoreBlocks`, `scoreBest` | `the layout` |
+| the way in off either ceremony, the way back, and the controls: the headings that sort, the graph's tabs, the two planks | `openScores`, `scoresBack`, `scoresHit`, `scoresSort`, `scoresActivate`, `scoresKey`, `scoresClick` (the four one-line hand-offs: `deadActivate`/`renderDead`/`deadKey`/`deadClick`, js/ui/screens.js; the door: `toLobby`, same file) | `the way in` |
+| the pixels: the head, the sortable headings, the two blocks, the tabs, the planks, and the lead-shaded graph | `SC_*`, `scoreNum`, `scoreNumSmall`, `renderScores`, `drawScoreGraph` | `the pixels` |
 
 ## js/boot.js
 
