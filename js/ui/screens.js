@@ -597,26 +597,27 @@ const EMOTES = [
   // arms over the head, and what those arms are holding is a fish, which is
   // the correct thing to be holding at the end of a match in this valley
   { cap: '1', glyph: 'cheer',
-    up: (s, f) => ({ spr: s.catch[2], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 3)) * 6) }),
+    up: (s, f) => f < 0.08 ? { spr: s.catch[0] } : f < 0.16 ? { spr: s.catch[1] } : ({ spr: s.catch[2], dy: Math.round(Math.abs(Math.sin((f - 0.16) * Math.PI * 3)) * 8) }),
     down: (s, f) => { const h = Math.abs(Math.sin(f * Math.PI * 3)); return { spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(h * 10), puff: h < 0.25 }; } },
   // the shuffle: the two side frames on alternate beats, swaying across its
   // own feet
   { cap: '2', glyph: 'dance',
-    up: (s, f) => { const b = Math.floor(f * 12); return { spr: (b & 1 ? s.left : s.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -2 : 2, dy: b & 1 ? 0 : 3 }; },
+    up: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.left : s.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -4 : 4, dy: b & 1 ? 0 : 3 }; },
     down: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.prone.left : s.prone.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -6 : 6, dy: b & 1 ? 0 : 3, puff: f < 0.15 }; } },
   // the twirl, and the whole trick of it: a body that turns through all four
   // facings on the spot reads as spinning without a frame of new art
   { cap: '3', glyph: 'spin',
-    up: (s, f) => ({ spr: s[EM_TURN[Math.floor(f * 16) & 3]][0], dy: Math.round(Math.sin(f * Math.PI) * 4) }),
+    up: (s, f) => ({ spr: s[EM_TURN[Math.floor(f * 10) & 3]][0], dy: Math.round(Math.sin(f * Math.PI) * 10), puff: f > 0.9 }),
     down: (s, f) => ({ spr: s.prone[EM_TURN[Math.floor(f * 9) & 3]][0], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 4)) * 4), puff: f < 0.2 }) },
   // down and up again: a beat on its feet, the length of it flat in the
   // snow, and back up - the one emote that leaves the body plan, so it is
   // also the one that puffs. Downed, it has nowhere to go but deeper.
   { cap: '4', glyph: 'flop',
     up: (s, f) => {
-      if (f < 0.12 || f > 0.88) return { spr: s.down[0] };
-      const b = Math.floor((f - 0.12) * 20);
-      return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.22, low: true };
+      if (f < 0.08 || f > 0.92) return { spr: s.down[0] };
+      if (f < 0.16 || f > 0.84) return { spr: s.catch[0] }; // the stoop, going down and getting up
+      const b = Math.floor((f - 0.16) * 20);
+      return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.26, low: true };
     },
     down: (s, f) => ({ spr: s.prone.right[f < 0.5 ? 1 + (Math.floor(f * 12) & 1) : 0], dy: -Math.round(Math.sin(f * Math.PI) * 8), puff: f < 0.5 }) },
 ];
