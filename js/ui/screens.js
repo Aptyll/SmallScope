@@ -308,7 +308,7 @@ function deadItems() {
 // under one, because both are compositions and both put something exactly
 // where those sit
 function endScreen() {
-  return state.mode === 'dead' && (state.over === 'won' || state.deadView === 'defeat');
+  return state.mode === 'dead' && (state.over === 'won' || state.deadView === 'defeat' || state.deadView === 'scores');
 }
 
 function viewPlayer() {
@@ -396,7 +396,7 @@ function deadActivate(i) {
   // the door out of an elimination goes through the summary once; the
   // summary's own LOBBY (and every other ending's) actually leaves
   if (label === 'LOBBY' && state.over === 'lost' && state.deadView !== 'defeat') openDefeat();
-  else if (label === 'LOBBY') toLobby();
+  else if (label === 'LOBBY') openScores(state.deadView); // the post-game lobby (js/ui/lobby.js); its own LOBBY leaves
   else if (label === 'SPECTATE') { state.deadView = 'spec'; state.spec = -1; specNext(1); }
   else if (label === 'KEEP PLAYING') state.mode = 'play';
 }
@@ -433,6 +433,7 @@ function toLobby() {
 
 function deadKey(k) {
   if (state.fade) return;
+  if (state.deadView === 'scores') { scoresKey(k); return; } // the post-game record owns its own controls
   // the recap takes every back key (a pad's B arrives
   // as escape) and puts itself away: the allies are underneath
   if (replayFull()) {
@@ -458,6 +459,7 @@ function deadKey(k) {
 
 function deadClick() {
   if (state.fade) return;
+  if (state.deadView === 'scores') { scoresClick(); return; }
   if (replayFull()) { if (rpCloseHit()) replayClose(); return; } // the recap's box is its only target
   if (state.deadView === 'spec') {
     const d = specHit(); if (d) { specNext(d); SFX.pickup(); }
@@ -479,6 +481,7 @@ function drawRespawnLine() {
 }
 
 function renderDead(now) {
+  if (state.deadView === 'scores') { renderScores(now); return; } // the post-game record (js/ui/lobby.js)
   // the recap owns the frame: only a respawn wait's countdown reads over it
   if (replayFull()) { if (state.over === 'respawning') drawRespawnLine(); return; }
   if (state.deadView === 'spec') {

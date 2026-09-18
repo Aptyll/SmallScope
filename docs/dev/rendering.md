@@ -1257,11 +1257,14 @@ view.
 **When each is up.** A win goes straight to its screen (`endMatch('won')` → `state.over = 'won'`).
 A loss does **not**: an elimination only dims the play screen, because the match runs on underneath
 and you can sit and watch it, so a lost match ends when you stop watching — **LOBBY** on the death
-overlay opens the defeat screen (`openDefeat()`, `state.deadView = 'defeat'`) and that screen's own
-single **LOBBY** plank is the door out. A respawn-pending death's LOBBY still leaves directly:
-nothing has been lost yet. `endScreen()` is the one test for "a ceremony owns the frame" —
+overlay opens the defeat screen (`openDefeat()`, `state.deadView = 'defeat'`), which carries a
+single **LOBBY** plank of its own. Neither ceremony's LOBBY leaves, though: both open
+[the post-game lobby](#the-post-game-lobby) first, and that screen's LOBBY is the door out. A
+respawn-pending death's LOBBY leaves directly — nothing has been lost yet, so there is no record
+to read. `endScreen()` is the one test for "a screen owns the frame" —
 `renderUI` and `replayShowing` both bow out under it (the recap would cover the
-whole ceremony); the held-TAB scoreboard and the info stack still draw over both.
+whole ceremony); the held-TAB scoreboard and the info stack still draw over both. The post-game
+lobby answers it too.
 
 **The two timelines.** `WIN_T` and `DEF_T` name every beat, and the render pass and the sound cues
 (`winCues` / `defCues`, called from `update`) read one table each so they cannot drift apart. The
@@ -1334,6 +1337,47 @@ plank. **The respawn wait** is the fourth state and the lightest: no wash, no
 planks, the camera already on an ally through the spectate strip, one line — **RESPAWNING IN Ns**
 at the same 3× in the same band, the number live. Both open under
 [the recap](#replay-the-last-four-seconds), which owns the frame until it is closed.
+
+## The post-game lobby
+
+The ceremony answers *what happened to me*; the lobby answers *what happened*. **LOBBY** on either
+ending opens it (`openScores(state.deadView)`, js/ui/lobby.js, `state.deadView = 'scores'`) and
+**this** screen's LOBBY is the door out, so the walk out of a match is ceremony, then record, then
+the title. **BACK** (or ESC) hands the frame back to the ceremony it came from. It draws through
+the same three chokepoints every other dead view does - `renderDead`, `deadKey`, `deadClick` each
+hand off on one line - and counts as a full-frame screen in `endScreen()`, so the HUD and the
+recap bow out under it the way they do under the two ceremonies.
+
+**The table.** Every active player, both sides, the local player's side first (its colour through
+`skin()` like everything else, so your side is BLUE here too), five rows to a block under a team
+strip carrying that side's totals. Six columns - **LV K D DMG SIEGE GOLD** - and each heading is
+the sort control: click it to order both blocks by it, click it again to flip, and the heading
+wears the arrow. This is the [instrument carve-out](../../CLAUDE.md) of the show-don't-label rule
+and the only thing on the screen that earns printed headings; everything else reads as a shape -
+the side is a colour, the class is `classIcon12`'s emblem, your own row sits on a lit plate, and
+**the row's fill IS the bar**: each row is tinted across its own width by its share of the biggest
+value anywhere in the sorted column, so a block reads as a bar chart at a glance and pressing a
+heading redraws the chart.
+
+**The graph**, under the table on two tabs (**GOLD** / **DAMAGE**): one cumulative line per side,
+summed over its players, with the **lead** shaded between them in the colour of whoever is ahead at
+that moment - two cumulative totals nest, so filling under each would just fill the well, and what
+a reader wants is the gap and when it opened. Dotted uprights are the match's days (`CYCLE`), the
+top-left prints the scale (a chart with no scale is a squiggle, the merchant's own rule) and the
+match clock is in the head, printed once. A match shorter than two samples draws a flat line rather
+than a sentence saying so.
+
+**Where the numbers come from.** `sampleStats(dt)` (called from `updatePlay`, sim.js) pushes every
+player's cumulative gold earned and damage dealt onto `p.hGold`/`p.hDmg` every `STAT_STEP` seconds.
+They live on the PLAYER rather than in a table of their own because a player field crosses the wire
+with everything else, so a client's lobby draws the host's graph instead of a flat line; every
+player is sampled on the same tick, active or not, so index *i* means the same moment in all ten
+arrays and the series can simply be summed per side. A match has no length limit, so past
+`STAT_MAX` samples each series **halves** - every other sample dropped, newest kept - and the pitch
+doubles with it, which keeps the spacing uniform and ten players' history a few hundred numbers
+however long the match runs. The table itself is frozen by `statFreeze()` from `endMatch` on every
+real ending (a respawn wait is not one), because a won match runs on underneath its own ceremony
+and the bots still farming must not move the numbers while they are being read.
 
 ## Replay: the last four seconds
 

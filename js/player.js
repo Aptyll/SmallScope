@@ -477,6 +477,18 @@ class Player {
     this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
     this.trickleT = 0;                  // s toward the next passive coin (TRICKLE_T, js/sim.js)
     this.kills = 0;                     // rivals downed; scoreboard only, survives death
+    // The rest of the match record, for the post-game lobby (js/ui/lobby.js).
+    // Every one of them is a running total for the WHOLE match: a death
+    // clears nothing here, and reset() leaves them alone the way it leaves
+    // kills and the level. They cross the wire like any other field, so a
+    // client's lobby prints the host's numbers rather than its own guess.
+    this.deaths = 0;                    // times this body went down
+    this.dmgOut = 0;                    // damage dealt to RIVAL players, counted after their DR
+    this.dmgIn = 0;                     // damage taken from anything at all, counted after this body's DR
+    this.dmgBird = 0;                   // nerve knocked off the rival eagle (hurtEagle, boot.js)
+    this.dmgStruct = 0;                 // damage dealt to rival buildings, after STRUCT_DR (hurtStruct, actions.js)
+    this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
+    this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
     this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
     this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)
@@ -726,6 +738,13 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   if (p.dead || (p.invuln > 0 && !dot)) return;
   dmg = Math.max(1, dmg - kitOf(p).dr); // IRONHIDE flattens every hit, but never to zero
   p.hp -= dmg;
+  // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
+  // What is counted is what LANDED, DR already off it - the overkill on the
+  // last hit of a kill included, because that is what the swing was worth.
+  // Only a RIVAL's blow is anybody's damage dealt: the world's and your own
+  // side's still show up as damage taken, which is the honest read of both.
+  p.dmgIn += dmg;
+  if (src instanceof Player && src !== p && src.team !== p.team) src.dmgOut += dmg;
   p.hurtT = 0.25;
   if (!dot) {
     const k = HIT_KB * (kb === undefined ? 1 : kb);
@@ -786,6 +805,7 @@ function die(p, src, cause) {
   // on the spot, back at the spawn tile with the build and the bag untouched
   if (PRACTICE && p === player) { practiceRevive(p); return; }
   p.dead = true;
+  p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
   p.zip = -1;      // the handle is let go of (the respawn's reset clears the rest)
   p.zipWalk = false;
   p.charging = false;
@@ -975,6 +995,11 @@ function endMatch(how) {
   // (or a driver poking it) must not ring twice over one ending
   const firstLoss = how === 'lost' && state.over !== 'lost';
   state.over = how;
+  // the post-game lobby prints the match as it ENDED (js/ui/lobby.js): a won
+  // match runs on underneath its own ceremony, so the table is frozen here
+  // rather than read off `players` once the plank is finally pressed. A
+  // respawn wait is not an ending and freezes nothing.
+  if (how !== 'respawning') statFreeze();
   if (awardWin) PROFILE.addWin();
   state.mode = 'dead';
   state.deadView = 'menu';

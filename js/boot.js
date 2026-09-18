@@ -831,6 +831,9 @@ function eagleBoomFx(e, k) {
 // callers with no better point omit them.
 function hurtEagle(e, dmg, src, hx, hy) {
   if (e.state !== 'down' || state.eagleCine) return; // the ceremony has the match: no second flee under it
+  // the objective damage the post-game lobby prints (js/ui/lobby.js), capped
+  // at the nerve there actually was to take - a bird cannot lose more than it has
+  if (src instanceof Player) src.dmgBird += Math.min(dmg, Math.max(0, e.hp));
   e.hp -= dmg;
   e.hitT = 0; // frightened again: the calm-down clock starts over
   e.flash = 0.12;
@@ -1652,6 +1655,11 @@ window.DBG = {
   // the wrapper's lobbies, for a joiner picking one by hand (steamBridge only)
   lobbies: () => (window.steamBridge ? window.steamBridge.lobbies() : Promise.resolve([])),
   placeObj, idx, objAt, hoverFish, damagePlayer, die, endMatch, specNext, aliveCount, updateAI, contest,
+  // the post-game lobby (js/ui/lobby.js): freeze the table by hand, open the
+  // screen without walking a ceremony, drive it, and read back both the
+  // frozen record and the live screen state
+  statFreeze, sampleStats, openScores, scoresLayout, scoresHit, scoresKey, scoresClick, scores,
+  get matchStats() { return matchStats; },
   // the two end screens: their timelines, the frozen numbers they print, and
   // a way to open the loss summary without pressing its plank. Set
   // state.defeatT / state.deadTimer to scrub either ceremony to a beat.
