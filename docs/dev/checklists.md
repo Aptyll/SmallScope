@@ -468,6 +468,30 @@ remember `genWorld()`'s `free()` helper treats "ground must be 0" as the placeme
 `tryProne` (snow to dig into) and the footprint emitter. Check `fishWater()` too: it names the
 swimmable grounds outright.
 
+**Adding a map shape** — one `MAPS` entry in [js/world.js](../../js/world.js) (the `map types`
+group) plus whatever `mapTerrain` needs to read it, and that is the feature: `genWorld`'s
+interior pass plants from `mapTerrain`, the class screen's chip draws from it, `layPaths` cuts
+its paths if it grows woods (`mapGrown`), and the ore/berry top-up puts it back to OPEN FIELD's
+strength. Nothing else in the game knows a shape by name. Three rules bound one:
+
+- **The border forest and the two roost corners stay.** `borderDepth` is what the road's gates
+  (`roadSpan`), both nests (`roadNest`, `roadNestDeep`) and the crash rule are measured off, and
+  a shape that thins them breaks the opening of every match.
+- **OPEN FIELD must not move.** Grow the interior on `vnoise`/`hash2` alone, put any `rng()` a
+  shape needs at the very **end** of `genWorld` behind `mapGrown(MAP_TYPE)`, and prove it: hash
+  `ground`, `objects`, `animals` and `fish` against the same seeds on `main`
+  ([world](world.md#map-shapes) records the five that were checked).
+- **The valley has to be walkable.** `pathCost` refuses wood outright, so the route `layPaths`
+  finds is the shortest way through the ground that is already clear; check the **strict** search
+  returns one (`pathRoute(..., false)` non-null) rather than falling back to the axe, then
+  flood-fill `walkable()` from `roadNest(0)`'s junction and check every camp and the rival's
+  junction come back reachable **chopping nothing**. A shape that fails either is a shape that
+  walls a camp in.
+
+A shape is a **page**, so nothing may read `MAP_TYPE` at load time (it is set in js/boot.js after
+`loadSettings`), and a new entry changes what a lobby considers the same world: `MAPS.length`
+bounds the `?map=` parse, and the hello already carries the index.
+
 **Adding a sound** — drop the file in `audio/sfx/`, **run `node app/bake-sfx.js`** (this is not
 optional: without it the clip works when served and is silently dead when `index.html` is opened
 off the disk, which is how the game is actually played), add it to `SAMPLES` in

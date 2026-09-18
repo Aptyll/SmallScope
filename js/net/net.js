@@ -107,13 +107,13 @@ function netLeave() {
   if (was === 'client') { initPlayers(); camX = player.x - WV_W / 2; camY = player.y - WV_H / 2; } // the host's roster goes with the host
   else if (was === 'host') for (const p of players) if (p.control === 'remote') { p.control = 'ai'; p.input = makeInput(); }
 }
-// what the relay's list says of this room: who hosts it, on what patch and
-// seed, whether it is still open, and how many people are in it
+// what the relay's list says of this room: who hosts it, on what patch, seed
+// and map shape, whether it is still open, and how many people are in it
 function netHostRoom() {
   if (NET.role !== 'host' || !NET.transport.roomData) return;
   let humans = 0; const sides = [0, 0];
   for (const p of players) if (isHuman(p)) { humans++; sides[p.team]++; }
-  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, state: state.drop ? 'live' : 'open', humans, sides });
+  NET.transport.roomData({ name: player ? player.name : '', patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, state: state.drop ? 'live' : 'open', humans, sides });
 }
 // the roster to every peer, on every change of it: a client's waiting room
 // draws the same ten this one does
@@ -159,6 +159,7 @@ function netHostHello(peer, msg) {
   const refuse = (why) => NET.transport.send(peer, { t: 'refuse', why });
   if (msg.patch !== PATCH_TXT) return refuse('VERSION');
   if (msg.seed !== SEED) return refuse('SEED');
+  if ((msg.map | 0) !== MAP_TYPE) return refuse('SEED'); // the same world means the same shape of it (MAPS, world.js)
   let slot = -1;
   const park = NET.parked.get(msg.uid);
   if (park && players[park.slot].control === 'ai') { slot = park.slot; NET.parked.delete(msg.uid); }
@@ -316,7 +317,7 @@ function netClientStats() {
 }
 function netClientHello() {
   const c = PROFILE.char();
-  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, name: c ? c.name : PROFILE.name(), cls: c ? c.cls : 0, look: c ? c.look : null });
+  NET.transport.send('host', { t: 'hello', uid: NET.uid, patch: PATCH_TXT, seed: SEED, map: MAP_TYPE, name: c ? c.name : PROFILE.name(), cls: c ? c.cls : 0, look: c ? c.look : null });
 }
 // the roster the host dealt: our slot is the human here, the host's is a
 // remote one, and the bodies are built before the first snapshot fills them

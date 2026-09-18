@@ -1582,7 +1582,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**. `selectLayout()`/`selectHit()` (which
-  answers `'play'`, `'gear'`, `'diff' + k`, `'slot' + i` or null) are the rect
+  answers `'play'`, `'gear'`, `'map'`, `'diff' + k`, `'slot' + i` or null) are the rect
   source for both drawing and the mouse. Down the **left** run your side's five **roster cards**
   and down the **right** the rivals' (`drawSelectRosters`/`drawSelectCard`, `SEL_ROST_X` from
   centre, one `SEL_CARD` well per player in player order under a rule in the side's paint): the
@@ -1593,7 +1593,15 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `settings.aiLevel` in the rivals' paint, the hovered one lifting (`menu.dhover`), the level's
   name (`AI_LEVELS`, js/ai.js — NORMAL / HARD / IMPOSSIBLE) printed once under them, gold and
   naming the notch under the pointer while one is hovered; a click is `setAiLevel`, which saves
-  the profile's settings. **PLAY** wears the title's first plank in its exact place (`MENU_Y0`,
+  the profile's settings. Over **your** column sits that meter's mirror, the **map chip**: a
+  26 px picture of the shape the valley came out of the snow in
+  ([map shapes](world.md#map-shapes)), with its name printed under it in the difficulty name's
+  own place — the chip lifts and gilds under the hand and a click opens the
+  [map pop-up](#the-map-pop-up). It is a picture rather than a word because it can be: `mapChip`
+  bakes it straight off `mapTerrain` at 1 px a sampled tile with the road's diagonal inked over
+  it, so what the chip shows is **this seed's own valley**. In a room it is a readout and not a
+  button — the world is the host's (`selectHit` offers it only while `NET.role` is `'solo'`).
+  **PLAY** wears the title's first plank in its exact place (`MENU_Y0`,
   `MENU_BW`×`MENU_BH`); the **stage** under it holds **your character** alone (`drawSelectStage`):
   the 48 px model (`SPRITES.portrait`, [sprites.md](sprites.md#looks-a-character-on-the-class-body))
   at 2× in your side's paint under a warm pool of light with a gold ring turning
@@ -1695,6 +1703,23 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   (`leaveGear`) — PLAY (and a running count) stays on the select screen behind it. The ledger's labelled rows are
   the PLAYER-panel text carve-out: comparing numbers is this panel's whole job. See
   [gameplay.md](gameplay.md#gear).
+
+<a id="the-map-pop-up"></a>
+- **Map pop-up** (`menu.screen = 'map'`, the gear pop-up's twin: the same slab, the same chrome,
+  its own ease `menu.mapT`, easing over the still-lit select screen). `mapLayout()` /
+  `mapScreenHit()` are its one rect source. One **`MAPP_W` chip per `MAPS` entry** in a row
+  (`drawMapChip` — the gear well's grammar: a dark drop shadow, a slate rim that lightens under
+  the hand and goes gold on the shape this page grew, the hovered one lifting), each the same
+  `mapChip` bake at the bigger size, so the three are **this seed in each shape** side by side
+  and the pick is made by looking rather than by reading. The hovered (else the picked) shape's
+  **name** prints once under the row, and that is the only text on the panel. Left/Right walk
+  `menu.mrow` with breathing corner ticks; ESC, the **X**, or a click off the panel close it
+  (`leaveMapPick`); Enter or a click on a chip is `pickMap`.
+  **A pick is a page** — the shape is grown once at boot from consts every deterministic value
+  closes over, so `pickMap` saves `settings.mapType`, runs the reroll die's own whiteout and
+  loads `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so
+  js/boot.js lands straight back on this screen (`beginSelect`, `screenT = 1`) instead of the
+  title. Picking the shape already grown just closes the panel.
 - **Entrance**: `menu.t` staggers the logo and items in at boot.
 - **Menu exit**: `state.intro` counting down from `INTRO_T` (1.6 s) with `state.introLen = INTRO_T`
   is what dissolves the menu — `renderTitle` keeps drawing while it runs: the tint dissolves over
@@ -1711,6 +1736,9 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginSelect`,
 `selectLayout`, `selectHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
+The map pop-up is driven the same way through the globals `beginMapPick`, `mapLayout`,
+`mapScreenHit`, `mapKey`, `mapClick` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
+`DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
 
 ## Eagle drop (mode `drop`)
 

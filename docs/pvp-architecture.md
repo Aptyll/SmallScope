@@ -35,8 +35,10 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
 - **The input struct is the whole controller-to-sim interface** (`makeInput()`): two axes, an aim
   point, five held flags, four edge-triggered flags, an ability index and a one-shot `cmd`. It
   is small, flat and already the only way a player acts on the world.
-- **The world is a function of `SEED`.** `genWorld`, the road, the camps, the chests, the wildlife
-  and the shoal all derive from it. A client can build the whole static map from a 32-bit number.
+- **The world is a function of `SEED` and `MAP_TYPE`.** `genWorld`, the shape it grows
+  ([map shapes](dev/world.md#map-shapes)), the paths, the road, the camps, the chests, the
+  wildlife and the shoal all derive from the two. A client can build the whole static map from a
+  32-bit number and a small index.
 - **Contested orders resolve from `(SEED, id, state.tick)`** through `contest()`. Only the host
   runs them, so the property is a free extra rather than a requirement.
 - **A sim file does not draw.** `render()` and `renderUI()` read the singletons (`players`,
@@ -290,12 +292,12 @@ run against a live Steam** (Status, above).
 Every message is a plain object with a type `t`. The two that carry the match - `full` and
 `snap` - go through `snapEncode` as bytes; the rest are JSON text. On the relay everything is
 reliable and ordered; on Steam only a `snap` is sent unreliable. There is no schema version on the
-wire: the handshake is `PATCH_TXT` and the seed in the `hello` (a snapshot carries `v: 2`, which
-nothing reads).
+wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a snapshot carries
+`v: 2`, which nothing reads).
 
 | `t` | Dir | Form | Body |
 | --- | --- | --- | --- |
-| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `seed`, `name`, `cls`, `look` - from the profile's character |
+| `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `seed`, `map` (`MAP_TYPE` - the same world means the same shape of it, and a mismatch refuses with `SEED`), `name`, `cls`, `look` - from the profile's character |
 | `welcome` | h→c | JSON | `slot`, `hostSlot`, `seed`, `tick`, `roster` |
 | `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
 | `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls, look}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human` |
