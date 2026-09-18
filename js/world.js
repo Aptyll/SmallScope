@@ -1174,6 +1174,30 @@ function zipUnder(team, wx, wy) {
   n = zipNearest(z, wx, wy - 4 + zipLift(z, n.d));
   return n.dist <= ZIP_HOVER ? { z, d: n.d, dist: n.dist } : null;
 }
+// the mount: the point of the cable at d, or the nearest along it whose
+// ground tile a body can stand on - a pylon stands ON the track, and the
+// shoulder holds the odd pine or rock - so a walk to the cable (zipWalkStep
+// below, and a bot's, steerTo in ai.js) has a goal the feet can reach: the
+// track point itself, or a tile's width to either side of it (still well
+// inside ZIP_GRAB, so the press works from there) - the nearest along the
+// cable first, out to ten tiles either way. The first span out of a base
+// runs the spur's treeline, where the track is under pines for its whole
+// length and only the verge beside it can be stood on. Null when nothing
+// that far will do. The point comes back as the tile's centre in BODY
+// coordinates (feet at y + 4, as nearestDryTile hands one back), so the tile
+// the feet were tested on is the tile navTo routes to - an offset point off a
+// diagonal cable can put the two a row apart, and the route fails on a pine
+// nobody is standing under.
+function zipMount(z, d) {
+  for (let k = 0; k <= 160; k += 16) for (const o of (k ? [k, -k] : [0])) {
+    const q = zipPoint(z, d + o);
+    for (const s of [0, 16, -16]) {
+      const tx = Math.floor((q.x - q.ty * s) / TILE), ty = Math.floor((q.y + q.tx * s + 4) / TILE);
+      if (walkable(tx, ty)) return { x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE - 4 };
+    }
+  }
+  return null;
+}
 // the hop intent on the ground (updatePlay reads input.jump for every
 // player alike): riding, it lets go; walking to the cable, it calls the
 // walk off; under a cable, it clips on; out of reach with the aim on your
@@ -1220,7 +1244,8 @@ function zipWalkStep(p, dt) {
   if (!z || busy || p.input.mx || p.input.my) { zipWalkEnd(p); return null; }
   const n = zipNearest(z, p.x, p.y);
   if (n.dist <= ZIP_GRAB) { zipWalkEnd(p); zipStart(p, { z, d: n.d }); return null; }
-  const q = zipPoint(z, n.d);
+  const q = zipMount(z, n.d); // never the track point itself: at a pylon that is the pylon's tile
+  if (!q) { zipWalkEnd(p); return null; }
   const nv = navTo(p, q.x, q.y, PLAYER_R, 0, dt);
   if (!nv.ok) { zipWalkEnd(p); return null; }
   return { mx: nv.dx, my: nv.dy };
@@ -1242,6 +1267,9 @@ function zipStart(p, near) {
   // cable (the walk in from the lane) says nothing, so it is the default
   const q = zipPoint(near.z, near.d), dot = p.lastMx * q.tx + p.lastMy * q.ty;
   p.zipDir = dot < -0.3 ? -1 : 1;
+  // ...except at an end, which has one way to go (a clip-on AT the terminus
+  // that rode toward the front would let go on its first step)
+  if (near.d <= 1) p.zipDir = 1; else if (near.d >= near.z.len - 1) p.zipDir = -1;
   const at = zipPoint(near.z, near.d);
   p.x = at.x; p.y = at.y;
   sfxAt('dodge', p.x, p.y);

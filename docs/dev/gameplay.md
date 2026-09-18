@@ -77,7 +77,8 @@ walking**, not the stick at the press: `p.lastMx/lastMy` (the stick's last held 
 across a stop — set in `updatePlayer` whenever it is held) dotted with the cable's tangent past
 −0.3 rides toward the base, anything else rides **toward the front** — so a body that walked home
 and stood still for the press goes home, and a walk in across the cable from the lane takes the
-default. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
+default. At either end the cable has one way to go and the clip-on takes it, whatever the walk
+said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
 `p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
 comes back clipped on; `die` lets go too.
 
@@ -96,8 +97,10 @@ your own cable but the body out of reach is the same hop intent, and `zipToggle`
 `input.aimX/aimY` (`zipUnder` again — the aim rides the wire, so a host answers a client the
 same): `zipWalkStart` sets `p.zipWalk` (declared in `reset()`, cleared by `die`) and the body
 walks itself there — `zipWalkStep`, called at the top of `updatePlayer`'s input read, routes
-through `navTo` to the nearest point of the track (re-read every step; never a straight line at
-it) and hands the ladder the stick to hold, then `zipStart`s the moment it is inside `ZIP_GRAB`.
+through `navTo` to the **mount** (`zipMount`: the nearest point of the track whose ground a body
+can stand on — the track point itself is the pylon's own tile at a pylon; the bots walk to the
+same point), re-read every step and never a straight line at it, hands the ladder the stick to
+hold, then `zipStart`s the moment it is inside `ZIP_GRAB`.
 It is a channel because the player is not holding the stick: **any movement input ends it**, the
 legs are theirs again — and so does anything that takes the body (a dodge, a draw, a cast, a
 rush, a shield, the grapple, a slide, prone, a stun, a root, a net, a hole, the air, a death),

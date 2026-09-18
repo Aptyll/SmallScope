@@ -752,8 +752,8 @@ and returns **-1 when there is no route** (or the bot has been pinned for a whil
 the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
 its own side's cable, riding to the point nearest the goal and walking the rest beat the feet by
-`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`aiZipMount`, the nearest point of the
-cable whose ground a body can stand on), presses `input.jump` under it, holds the stick along
+`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, world.js — the nearest point of
+the cable whose ground a body can stand on, shared with a player's walk to the cable), presses `input.jump` under it, holds the stick along
 the cable toward the exit while it rides (the goal re-read every think, so a rider called home
 mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
 A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot
