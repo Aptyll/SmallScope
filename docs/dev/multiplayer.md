@@ -359,7 +359,11 @@ Growth is flat and identical for both classes: each level past 1 adds `LVL_HP` (
 (`emitBit` adds it after the bit's base + pow × draw + speed bonus). Level 12 is +99 hp / +22
 damage. A level-up pushes a 2× gold `LEVEL n` floater over the slot (skipped while `inAir`) and
 raises its cue through `sfxOwn(p, 'levelUp', 'pickup')` — the level's own ring on the screen that
-is that player, a pickup to bystanders in earshot. The table's **average** level is also what the
+is that player, a pickup to bystanders in earshot. What the level BOUGHT flies into the notice
+lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), its HEALTH and
+DAMAGE rows lit with `+LVL_HP` and `+LVL_DMG` — which is why those two `GEAR_STATS` rows fold the
+level in themselves: the kit never holds it.
+The table's **average** level is also what the
 wildlife is dealt at spawn (`animalLevel`, js/wildlife.js): an animal never levels, but the
 meadow and the dens restock at the level the match has reached —
 [gameplay.md](gameplay.md#wildlife).

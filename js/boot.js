@@ -1673,6 +1673,14 @@ window.DBG = {
   findPath, walkable, navTo, showPaths: false,
   // hero levels: pay a player gold (and XP) the way a pickup would
   gainGold: (n, p) => gainGold(p || player, n), LEVEL_XP, LEVEL_MAX,
+  // the stat ledger, the sheet that flies into the notice lane when a number
+  // moves (the `stat ledger` block, js/ui/shop.js): the table every surface
+  // prices a body with, the plate's own size, the live values, what each row
+  // is still lit for, and the raise without a change behind it - so a driver
+  // can prove a level, a card or a gear buy moved the number it was meant to
+  GEAR_STATS, STAT_W, statPlateH, raiseStatNote, noteLaneFloor,
+  statValues: (p) => GEAR_STATS.map(([n, get, fmt]) => [n, fmt(get(kitOf(p || player), p || player))]),
+  statLit: () => GEAR_STATS.map(([n], i) => (statLit[i] ? [n, statDeltaTxt(statLit[i].d, GEAR_STATS[i][2]), statLit[i].t] : null)).filter(Boolean),
   // gear: the table, a player's effective kit, and buy/pick without the HUD
   GEAR, GEAR_SLOTS, GEAR_COSTS, kitOf, refreshKit, gearHit, charLayout, charHit, BAG_CELL,
   gearCost: (i, p) => gearCost(p || player, i),

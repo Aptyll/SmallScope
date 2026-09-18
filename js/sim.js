@@ -1339,5 +1339,6 @@ function updateFx(dt) {
     if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : 9)) footprints.splice(i, 1);
   }
   ageNotices(dt); // the market's plates under the minimap age here too (js/shop.js)
+  updateStatLedger(dt); // ...and the stat sheet that flies into that lane when a number moves (js/ui/shop.js)
 }
 

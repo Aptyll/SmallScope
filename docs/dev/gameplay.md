@@ -2169,7 +2169,9 @@ the card key (`'card'`, C; L3 on a pad) or a click on the strip's card button se
 one card taken at random from everything held (so a rarity is as likely as it is common in the
 hand), one entry of that rarity at random, `bagTake` the card, push `{ rarity, id }` onto
 `p.cards`, `refreshKit(p)`, then `cardFx` (a burst in the rarity's colour) and a floater with the
-card's name. Nothing to draw is a refusal on the button (`cardDenied`). `refreshKit` folds every entry in `p.cards` in after gear, cumulatively
+card's name. The floater names the CARD; what it did to the NUMBERS flies into the notice lane
+as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), every row the pick
+moved lit and blinking on it. Nothing to draw is a refusal on the button (`cardDenied`). `refreshKit` folds every entry in `p.cards` in after gear, cumulatively
 (`for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);`), so picking the same effect twice stacks
 it, and every existing kit-reading site in the sim — movement, `emitBit`, dodge timing, the AI,
 `seenAt`'s stealth — picks a card up for free, the same way it already does for gear. `p.cards` is
@@ -2903,7 +2905,9 @@ has no ESC-menu row, only the `. HITBOX` line in the CONTROLS block; the rest is
 
 Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There
 is no alive count: a match does not end on bodies (`aliveCount()`, js/player.js, has no caller
-but `DBG`).
+but `DBG`). Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
+number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
+eight seconds: [rendering.md](rendering.md#the-stat-ledger-your-sheet-as-a-notice).
 
 ## Audio
 
@@ -2917,6 +2921,9 @@ default when 0; `EV_ANYWHERE` reaches every screen - the eagle's boom); a cue fo
 Shakes go the same way (`shakeFor(p, n[, q])`, `shakeAt(x, y, n[, r])`). The why, and the bare
 `SFX.cue()` outside the step, are CLAUDE.md's hard rule. Three cues still gate by hand on purpose, pending the plan's semantic events: the
 roost alarm (with its plate), the market's four (with theirs), and the two end-of-match songs.
+`SFX.stat(up)` is bare for a different reason and not an exception at all: `updateStatLedger`
+runs inside the step but is the LOCAL screen's own chrome, watching the local body's kit, and a
+client's snapshot moves those numbers for it.
 
 `ensure()` builds the graph lazily: `master` (the master dial) → destination, and `sfxBus` (the
 SOUNDS dial) under it. **Everything synthesised or sampled goes through `sfxBus`**, the wind bed
