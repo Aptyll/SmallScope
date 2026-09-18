@@ -766,7 +766,12 @@ function fireTool(p) {
 // as well would drag one side of the spread out with it.
 const SHOT_SKEW = 0.05; // rad between one bit of an activation and the next
 const DUP_SKEW = 0.07;  // ...and between a DUPLICATE's repeats of one bit
+const FAN_SPREAD = 0.16; // ...and between the arms of a SPLITTER's fan
 function offBy(k, step) { return k ? (k % 2 ? 1 : -1) * Math.ceil(k / 2) * step : 0; }
+// where arm k of repeat d leaves, off its bit's own line: the SPLITTER's fan
+// centred on it, each DUPLICATE nudged its own way. The piercing shot lays
+// its volley out through this too (abPierce, js/abilities.js).
+function armOff(m, k, d) { return (m.fan > 1 ? (k - (m.fan - 1) / 2) * FAN_SPREAD : 0) + offBy(d, DUP_SKEW); }
 
 // One projectile bit, put into the air, through the envelope the modifiers
 // UNDER it wrote (toolPlan's snapshot). `seq` is this bit's place in the
@@ -793,11 +798,9 @@ function emitBit(p, b, id, m, amb, seq) {
   const lit = Math.max(b.lit || 0, m.lit);
   // SPLITTER turns one bit into a fan and DUPLICATE fires the whole fan
   // again; every other shot is one arm, once
-  const arms = m.fan, reps = m.dup;
-  const spread = 0.16;
   const skew = offBy(seq, SHOT_SKEW);   // this bit's own place in the volley
-  for (let d = 0; d < reps; d++) for (let k = 0; k < arms; k++) {
-    const a = base + (arms > 1 ? (k - (arms - 1) / 2) * spread : 0) + skew + offBy(d, DUP_SKEW);
+  for (let d = 0; d < m.dup; d++) for (let k = 0; k < m.fan; k++) {
+    const a = base + armOff(m, k, d) + skew;
     arrows.push({
       x: p.x, y: p.y - BOW_Y,
       vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,

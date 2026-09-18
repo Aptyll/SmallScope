@@ -27,7 +27,7 @@ const AB_LV_CD = 0.12;
 const PIERCE_WIND = 0.7;    // s the draw is LOCKED before the shot looses itself
 const PIERCE_MUL = 1.5;     // over a fully drawn plain arrow's damage
 const PIERCE_SPD = 380;     // px/s (a plain arrow flies 320)
-const PIERCE_RANGE = 260;   // px of flight - the telegraph line draws this far
+const PIERCE_RANGE = 520;   // px of flight before the fittings stretch it - the telegraph draws the stretched one
 const PIERCE_SLOW = 0.15;   // walk multiplier while the draw is locked: commitment
 const NET_SPD = 300;
 const NET_RANGE = 130;
@@ -94,7 +94,7 @@ const CLASS_AB = [
   [ // HUNTER - bow, distance control, the ground between
     {
       id: 'pierce', name: 'PIERCING SHOT', cd: 12, cast: PIERCE_WIND,
-      blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE.',
+      blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE. EVERY MODIFIER ON YOUR TOOL RIDES IT.',
       use: (p) => abPierce(p),
     },
     {
@@ -297,24 +297,55 @@ function abilityMoveMul(p) {
 // which keeps the shot alive past a hit and remembers who it has already cut.
 // The cue that the lock released is hard and unmissable: the nock snap, a
 // white flash on the arrowhead, and the shot itself already gone.
+//
+// IT WEARS EVERY FITTING ON THE TOOL IN HAND. pierceMods folds each modifier
+// loaded on it into one envelope - wherever it sits in the row, and whatever
+// the tensile budget says: the pierce is the class's shot, not a press of the
+// tool, so neither the order nor the budget that ration a press apply to it.
+// The envelope is then spent exactly as a press spends one - SPEEDUP and
+// LONGSHOT stretch the flight, HEFT and SPLITTER scale the damage, the fire
+// rides it, SPLITTER fans it and DUPLICATE fires the fan again, and every arm
+// is a piercing shot of its own. Every mod composes (BITS, js/tools.js), so
+// the fold's order is the row's order or any other: the answer is the same.
+function pierceMods(p) {
+  const m = newMods();
+  const cell = heldTool(p);
+  if (cell) for (const id of cell.bits) {
+    const b = id ? BITS[id] : null;
+    if (b && !b.proj && b.mod) b.mod(m);
+  }
+  return m;
+}
+// ...and the flight that envelope buys: a full-draw shot at the pierce's own
+// speed and reach, through shotFlight (js/tools.js) - the rule every press
+// flies by, so a SPEEDUP carries it further as well as faster, as it does a bow's
+const PIERCE_FLIGHT = { speed: PIERCE_SPD, life: PIERCE_RANGE / PIERCE_SPD };
+function pierceFlight(m) { return shotFlight(PIERCE_FLIGHT, m, 1); }
 function abPierce(p) {
   const kit = kitOf(p);
   const b = BITS.arrow;
+  const m = pierceMods(p);
+  const { spd, life } = pierceFlight(m);
   const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
   const a = Math.atan2(dy, dx);
-  // a fully drawn plain arrow's own damage math (emitBit at pw = 1, no
-  // modifiers), then the pierce multiplier over the top
-  const dmg = Math.round(((b.dmg + kit.dmgPow * 0.5) + kit.dmgBase + LVL_DMG * (p.level - 1)) * PIERCE_MUL);
-  arrows.push({
-    x: p.x, y: p.y - BOW_Y,
-    vx: Math.cos(a) * PIERCE_SPD, vy: Math.sin(a) * PIERCE_SPD,
-    t: 0, life: PIERCE_RANGE / PIERCE_SPD, dmg, pow: 1,
-    owner: p.id, team: p.team, ambush: false, trailD: 0,
-    bit: 'arrow', path: 'line', solid: true, ff: false,
-    lit: 0, col: '#f4f7ff',
-    pierce: true, pierceHit: [],
-    ang: a, spd: PIERCE_SPD, ox: p.x, oy: p.y - BOW_Y,
-  });
+  // a fully drawn plain arrow's own damage math (emitBit at pw = 1), the
+  // pierce multiplier over it, and then the fittings, folded as emitBit folds them
+  const full = ((b.dmg + kit.dmgPow * 0.5) + kit.dmgBase + LVL_DMG * (p.level - 1)) * PIERCE_MUL;
+  const dmg = Math.round(full * m.dmgMul + m.dmgAdd);
+  for (let d = 0; d < m.dup; d++) for (let k = 0; k < m.fan; k++) {
+    const ak = a + armOff(m, k, d);
+    arrows.push({
+      x: p.x, y: p.y - BOW_Y,
+      vx: Math.cos(ak) * spd, vy: Math.sin(ak) * spd,
+      t: 0, life, dmg, pow: 1,
+      owner: p.id, team: p.team, ambush: false, trailD: 0,
+      bit: 'arrow', path: 'line', solid: true, ff: false,
+      lit: m.lit, col: '#f4f7ff',
+      type: m.type, burn: m.burn, burnDps: m.burnDps, cinder: m.cinder,
+      pierce: true, pierceHit: [],
+      ang: ak, spd, ox: p.x, oy: p.y - BOW_Y,
+    });
+  }
   // the snap: arrowhead flash at the bow, and the sound of the lock letting go
   burst(p.x + Math.cos(a) * 7, p.y - BOW_Y + Math.sin(a) * 7, '#f4f7ff', 8, 55, 0.3, true);
   burst(p.x + Math.cos(a) * 9, p.y - BOW_Y + Math.sin(a) * 9, '#ffd95c', 5, 45, 0.25, true);
@@ -711,6 +742,13 @@ function drawRing(px, py, r, col, alpha, fill) {
   }
   ctx.globalAlpha = 1;
 }
+// how far a telegraphed line runs out along (nx, ny) before the world stops it
+function teleLen(x0, y0, nx, ny, range) {
+  for (let s = 10; s < range; s += 4) {
+    if (isSolidTile(Math.floor((x0 + nx * s) / TILE), Math.floor((y0 + ny * s) / TILE))) return s;
+  }
+  return range;
+}
 // a dashed line marching from (x0, y0) out along (nx, ny) for `len` px - the
 // pierce's and the charge's telegraph
 function drawTeleLine(x0, y0, nx, ny, len, col, alpha, now, ex, ey) {
@@ -760,24 +798,30 @@ function drawAbilityGround(ex, ey, now) {
     const closing = castProg(p);
     const col = closing > 0.75 ? TELE_HOT : TELE_COL;
     const px = Math.round(p.x - ex), py = Math.round(p.y - 2 - ey);
-    if (px < -80 || py < -80 || px > WV_W + 80 || py > WV_H + 80) continue;
+    // the pierce's line is the flight the loose will take, the fittings in
+    // hand included (pierceMods), so it can cross the screen from a caster
+    // well off it - the cull reaches as far as the line does
+    const pm = ab.id === 'pierce' ? pierceMods(p) : null;
+    const pfl = pm && pierceFlight(pm);
+    const cull = pm ? pfl.spd * pfl.life : 80;
+    if (px < -cull || py < -cull || px > WV_W + cull || py > WV_H + cull) continue;
     const dx = p.input.aimX - p.x, dy = p.input.aimY - (p.y - BOW_Y);
     const a = Math.atan2(dy, dx), nx = Math.cos(a), ny = Math.sin(a);
-    if (ab.id === 'pierce' || ab.id === 'rush') {
-      const range = ab.id === 'pierce' ? PIERCE_RANGE : RUSH_SPD * RUSH_T;
-      const y0 = ab.id === 'pierce' ? p.y - BOW_Y : p.y;
-      let len = range;
-      for (let s = 10; s < range; s += 4) {
-        if (isSolidTile(Math.floor((p.x + nx * s) / TILE), Math.floor((y0 + ny * s) / TILE))) { len = s; break; }
+    if (ab.id === 'pierce') {
+      // one line per arm of a SPLITTER's fan, each where armOff will send it
+      // (a DUPLICATE's repeats ride inside their arm's line)
+      for (let k = 0; k < pm.fan; k++) {
+        const ak = a + armOff(pm, k, 0), kx = Math.cos(ak), ky = Math.sin(ak);
+        drawTeleLine(p.x, p.y - BOW_Y, kx, ky, teleLen(p.x, p.y - BOW_Y, kx, ky, cull), col, 0.5 + 0.45 * closing, now, ex, ey);
       }
-      drawTeleLine(p.x, y0, nx, ny, len, col, 0.5 + 0.45 * closing, now, ex, ey);
-      if (ab.id === 'rush') {
-        // the end of the line: where the charge stops and the slam happens
-        ctx.globalAlpha = 0.6 + 0.4 * closing;
-        ctx.fillStyle = col;
-        for (let i = -3; i <= 3; i++) ctx.fillRect(Math.round(p.x + nx * len - ny * i - ex), Math.round(y0 + ny * len + nx * i - ey), 1, 1);
-        ctx.globalAlpha = 1;
-      }
+    } else if (ab.id === 'rush') {
+      const len = teleLen(p.x, p.y, nx, ny, RUSH_SPD * RUSH_T);
+      drawTeleLine(p.x, p.y, nx, ny, len, col, 0.5 + 0.45 * closing, now, ex, ey);
+      // the end of the line: where the charge stops and the slam happens
+      ctx.globalAlpha = 0.6 + 0.4 * closing;
+      ctx.fillStyle = col;
+      for (let i = -3; i <= 3; i++) ctx.fillRect(Math.round(p.x + nx * len - ny * i - ex), Math.round(p.y + ny * len + nx * i - ey), 1, 1);
+      ctx.globalAlpha = 1;
     } else if (ab.id === 'stomp') {
       drawRing(px, py + 2, STOMP_R, col, 0.55 + 0.4 * closing, closing);
     } else if (ab.id === 'exec') {

@@ -38,12 +38,12 @@ function makeRobot(sp) {
   return b;
 }
 
-// A worker is a 12x10 body standing on its treads at b.y + 4, so its middle
-// sits a pixel above the anchor. Same radius as a player: a bot in the open
-// is as shootable as the rival who built it.
-// `pad` is a shot's own `reach` - extra px for a bit with a BODY rather than
-// a shaft's tip (the fist, the axe; js/tools.js). Absent for everything else.
-function robotHit(b, x, y, pad) { return Math.hypot(b.x - x, b.y - 1 - y) < 7 + (pad || 0); }
+// A worker is a 12x10 body standing on its treads at b.y + 4, so the disc a
+// shot lands in is centred a pixel above the anchor. The arrow loop sweeps a
+// shot's step against it (sweepDisc, js/sim.js), widened by the shot's own
+// `reach` (the fist, the axe; js/tools.js).
+const ROBOT_HIT_R = 7;
+function robotHitY(b) { return b.y - 1; }
 
 // px/s a chassis is shoved by an ordinary blow. hurtUnit writes over it for
 // anything carrying a shove of its own or a KNOCKBACK multiplier.

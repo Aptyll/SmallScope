@@ -405,7 +405,8 @@ for the body), are both dry, and `updatePlayer` refuses the draw on both the sam
 Every bit a press can afford leaves in the **same frame**, so no two of them may be stacked inside
 one another: each bit past the first is nudged `SHOT_SKEW` (0.05 rad) off the aim, alternating
 sides, and a DUPLICATE's repeats `DUP_SKEW` (0.07) — per *bit* and per *repeat*, never per arm of
-a SPLITTER's fan, which already spreads its own arms.
+a SPLITTER's fan, which already spreads its own arms `FAN_SPREAD` (0.16) apart. Where arm *k* of
+repeat *d* leaves is `armOff(m, k, d)`, and the piercing shot lays its volley out through it too.
 
 ### The cut: a melee tool
 
@@ -474,19 +475,32 @@ Three rules make it *always* come home rather than usually:
   comes first. The life cap is unconditional, so a boomerang never trails a walking owner around
   the map even in the one geometry it cannot solve (thrown in the direction you are sprinting).
 
-Three per-bit rules land in the arrow update in `updatePlay`: `a.solid !== false` gates the tile
-test (that is the whole of "never hits ground"), `a.ff` lifts the team check on players and worker
+Three per-bit rules land in the arrow update (`updatePlay`, and the sweep it asks, `shotContacts`):
+`a.solid !== false` gates the tile test (that is the whole of "never hits ground"), `a.ff` lifts the team check on players and worker
 bots (never on the shooter, at any weight), and `a.cinder` lights a ring around wherever the shot
 ended. **That solid-tile branch is also the one place a shot sieges**: when the tile that stopped
 it is a rival's building (`structFoe(sideOf(a), structOf(objAt(…)))`) the shot's damage goes
 through `hurtStruct`, `STRUCT_DR` (60 %) off like any player blow — so a bit that passes walls
 (`solid: false`) pays for that with its siege, and needs no second flag. A burning shot trails fire instead of team colour and bursts embers where it lands.
 
-**Three hit tests, one blow.** The branches differ only in what they test against — a raised tower
-shield and a 7 px body for a player, `robotHit` for a chassis, `animalHit` for a body that may be up
-on its own altitude — and all three then call the same local `blow()`, which hands the bit's damage,
-type, fire and shove to `hurtUnit`. Nothing about *what a shot does* is written per kind, which is
-what keeps the left button honest across the whole roster.
+**A shot meets everything its step crossed, then one blow.** A step is a *segment*, never a point:
+`shotContacts` (js/sim.js, `the shot's sweep`) lists what the segment met in the order it met
+it — the tiles it entered (a grid DDA) up to the first that ends it (a rival roost, the practice
+dummy, a solid tile), a target face, and every body whose hit disc it crossed (`sweepDisc`): the
+`ARROW_HIT_R` (10 px) disc at a player's chest, `ROBOT_HIT_R` (7) about `robotHitY` for a chassis,
+`animalHitR` about `animalHitY` for a body that may be up on its own altitude, each widened by the
+bit's `reach`. So speed never skips a hit — three SPEEDUPs throw a shot 43 px a step, wider than a
+rabbit and wider than a wall tile, and it still stops on the rabbit in front of the wall and never
+on the one behind it. The step's bounding box turns nearly every body away before the sweep is
+asked, so a body costs a shot a few comparisons. The tile a step starts in was asked by the step
+before; a shot's **first** step asks its spawn tile only if it is heading into it (still inside
+`TILE`/2 on), so a bow overhanging the tree its body hugs shoots out over the edge and never
+through the trunk. The arrow loop takes the contacts in order — a raised tower shield first, on a
+player — and every body goes through the same local `blow()`, which hands the bit's damage, type,
+fire and shove to `hurtUnit`. A shot that ends on something is clipped to the point it met it, so
+its burst, its embers, a cinder ring and an impact (the teleport's arrival) land there. Nothing
+about *what a shot does* is written per kind, which is what keeps the left button honest across
+the whole roster.
 
 ### The weapon shelf
 
@@ -800,7 +814,7 @@ HUNTER — bow, distance control, the ground between:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **PIERCING SHOT** | 12 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow ×`PIERCE_MUL` 1.5, `PIERCE_SPD` 380, `PIERCE_RANGE` 260) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim.js) — only a raised shield or the world stops it. The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
+| 1 | **PIERCING SHOT** | 12 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow ×`PIERCE_MUL` 1.5, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — wherever it sits in the row, and whatever the tensile budget says, since the pierce is the class's shot and not a press — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
 | 2 | **NET SHOT** | 15 s | a weighted net down a line (`nets`): first rival hit takes 4 and is **slowed** (`p.slowT`/`slowMul` ×0.4, 2 s, the drape drawn on them); the recoil kicks the hunter backward with an animated hop (`p.hopT`) |
 | 3 | **GRAPPLE** | 8 s | throws a hook down the aim ray: the first **tree, dead tree or rock** within `GRAP_RANGE` (170 px) and `GRAP_ASSIST` of the line (the aim assist) anchors it, and the body is reeled straight at it at `GRAP_REEL` (260 px/s — over `SLIDE_MIN`, so shift on release carves a slide). The reel runs **while key 3 is held** (`input.grapple`, the one held ability input); releasing, arriving, a wall or a stun lets go through `grapEnd`, which KEEPS the momentum and starts the cooldown — a long ride and an instant release cost the same. A hook that catches nothing costs `GRAP_MISS_CD` (1 s) |
 | 4 | **SNOW COVER** | 60 s | the burrow ([Prone](#prone-under-the-snow), which only this key opens): the cast kneels and calls `tryProne`, the 60 s clock is paid **on the way under**, and the key again — like every other way back up — rises free. A kneel the snow refuses (still moving, sliding, no snow underfoot) refunds the clock. The well's active tell drains with `p.hide` as the cover builds |
@@ -982,9 +996,9 @@ is [The draw](#the-draw); a shot loosed out of full snow
 cover multiplies the damage by `AMBUSH_MUL` (see [Prone](#prone-under-the-snow)). Shots carry
 their shooter's `owner`/`team`, live in the `arrows` array, and are updated in `updatePlay()`:
 they die on solid tiles (unless the bit passes through them — and a rival's **building** that
-stops one is sieged, [flight paths](#flight-paths)), on a **rival player** (tested first
-— see [PvP](multiplayer.md#pvp)), on an **enemy worker bot** (`robotHit`/`hurtRobot`, tested
-next), on any animal hit (knockback scales with power), or at the end of the bit's life.
+stops one is sieged), on a **rival player** (see [PvP](multiplayer.md#pvp)), on an **enemy worker
+bot** (`hurtRobot`) or on any animal hit (knockback scales with power) — whichever the step met
+first ([flight paths](#flight-paths)) — or at the end of the bit's life.
 
 `p.fireArmed` is what makes the draw survive a tool that isn't ready. It is set on the press edge,
 cleared on release and at every point that cancels a draw (`tryWork`, falling in a hole, a meal,
@@ -1460,7 +1474,8 @@ before the beat is.
 `updateUnitStatus` (the shared clock — root, slow, net, mark, fire), dispatches to
 `updatePrey` / `updateCampMonster` / `updateBird`, clamps to the world, and calls `animalDies(a)` — the
 one place a kill pays out, straight from the `YIELD` table. Everything in `animals` is a target
-for arrows (`animalHit(a, x, y)`, shared by the arrow update and the aim line), gets the amber
+for arrows (the disc `animalHitR` about `animalHitY`: the arrow update sweeps it, the aim line asks
+`animalHit`), gets the amber
 hunt reticle, and joins the y-sorted draws.
 
 **An animal is a unit like any other.** `makeAnimal` hands every kind the full status set through
@@ -1601,7 +1616,7 @@ The bird kind — `updateBird()`, `flushBirds(L, from)`, `rookeryPerch(L)`, `dra
 ([Intentional dead code](checklists.md#intentional-dead-code)). What the code does if one exists: a flock perched in a
 stand's snags is put up all at once by any player inside `BIRD_FLUSH` (34 px), an arrow, or a snag
 being chopped, flies at `BIRD_SPD` (112 px/s) and returns to a perch; `a.alt` (`BIRD_ALT` 15
-perched) is the only height in the game, subtracted by `animalHit` and the cursor, skipped by
+perched) is the only height in the game, subtracted by `animalHitY` and the cursor, skipped by
 `separateUnits`. A camp that wants a flock stands one up with
 `props` of `deadTree` and a spawn that perches birds on them (`rookeryPerch`).
 
@@ -2431,8 +2446,8 @@ point on a building's footprint** — the bay is 3×2 and a worker measuring to 
 never reach past the wall it is standing against. The same swing animation `drawRobot()` already
 had draws it, off `b.atkAim` and `b.atkCd` instead of `b.tgt` and `b.workT`.
 
-A worker is **shootable**: `robotHit(b, x, y)` is its hitbox (radius 7 about `b.y - 1`, the middle
-of a body whose treads sit at `b.y + 4`), and `hurtRobot(b, dmg, nx, ny, src)` is the single entry
+A worker is **shootable**: its hitbox is `ROBOT_HIT_R` (7) about `robotHitY(b)` (`b.y - 1`, the
+middle of a body whose treads sit at `b.y + 4`), and `hurtRobot(b, dmg, nx, ny, src)` is the single entry
 point for damage — flash, knockback, a damage floater, a scrap-and-sparks burst, `SFX.hit`, and
 `robotDies` at zero. Shots reach it (only from another team — friendly fire is off, as it is for
 players, so a bay's own side drives through its workers safely), and so does every class ability

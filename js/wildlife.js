@@ -142,12 +142,12 @@ function makeAnimal(kind, x, y) {
 
 // the body an arrow (and the aim line) tests against. Birds ride their alt
 // and are a smaller mark - that is most of what makes them a hard shot.
-// `pad` is a shot's own `reach`: extra px for a bit with a BODY rather than a
-// shaft's tip (the fist, the axe; js/tools.js). Absent for everything else.
-function animalHit(a, x, y, pad) {
-  const r = (a.kind === 'bird' ? 5 : a.kind === 'dire' ? 14 : 8) + (pad || 0);
-  return Math.hypot(a.x - x, a.y - (a.alt || 0) - 3 - y) < r;
-}
+// The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
+// shot's whole step against it (sweepDisc, js/sim.js), widened by the shot's
+// own `reach` (the fist, the axe; js/tools.js); the aim line asks animalHit.
+function animalHitR(a) { return a.kind === 'bird' ? 5 : a.kind === 'dire' ? 14 : 8; }
+function animalHitY(a) { return a.y - (a.alt || 0) - 3; }
+function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < animalHitR(a); }
 
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
 // come through here so a swipe reacts exactly like a shot does - the den
