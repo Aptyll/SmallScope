@@ -153,9 +153,19 @@ string silently comes out as a row of question marks. Four exports: `drawPixelTe
 `drawPixelTextShadow` (one bottom-right 1 px shadow), `drawPixelTextOutline` (a 1 px rim on all
 eight sides) and `pixelTextWidth` for layout.
 
-**Which one to use is a rendering rule, not a taste call** (the CLAUDE.md hard rule); a
-`globalAlpha` fade must use `Shadow` because the outline's eight overlapping passes stack
-unevenly. The reasoning and the site-by-site list: [rendering.md](rendering.md#text-over-the-world).
+**The string cache.** A frame draws a few hundred strings, and stamping each one glyph pixel
+by glyph pixel (nine times over for an outline) cost a quarter of the frame at 1080p. So
+`raster` is called only by `bake`: every string is drawn once per (kind, scale, colour, rim,
+text) into its own small canvas and every draw after that is one `drawImage` (`stamp`). The
+pixels are opaque and the canvas transparent around them, so `globalAlpha`, the composite
+mode and the UI pass's `devScale` transform land on it exactly as they landed on the rects;
+an outlined string under a fade therefore fades evenly, and the rim colour need not be
+opaque. The cache is dropped whole at `CACHE_MAX` (2048) strings — a clock retires one a
+second, never thousands.
+
+**Which one to use is a rendering rule, not a taste call** (the CLAUDE.md hard rule): a rim
+over the world, a shadow on a panel. The site-by-site list:
+[rendering.md](rendering.md#text-over-the-world).
 
 See [Intentional dead code](checklists.md#intentional-dead-code) before deleting a glyph that looks unused (`<`).
 

@@ -524,6 +524,13 @@ const SET_TABS = [
     { id: 'quality', label: 'QUALITY', kind: 'choice',
       opts: [{ id: 'low', label: 'LOW' }, { id: 'medium', label: 'MEDIUM' }, { id: 'high', label: 'HIGH' }],
       val: () => vidPreset(), pick: (v) => Object.assign(settings, VID_PRESETS[v]) },
+    // the frames the loop may present a second (capSkips, js/boot.js), low to
+    // high with UNLIMITED (every frame the screen offers) at the top end.
+    // Numbers, not words: the row is an instrument, and a player picking a
+    // cap knows their screen's rate
+    { id: 'fpsCap', label: 'FPS CAP', kind: 'choice',
+      opts: [{ id: '30', label: '30' }, { id: '60', label: '60' }, { id: '120', label: '120' }, { id: '144', label: '144' }, { id: '0', label: 'UNLIMITED' }],
+      val: () => String(settings.fpsCap | 0), pick: (v) => { settings.fpsCap = +v; } },
     { id: 'vidClouds', label: 'CLOUD SHADOWS', kind: 'toggle' },
     { id: 'vidRays', label: 'SUN SHAFTS', kind: 'toggle' },
     { id: 'vidStars', label: 'ICE STARS', kind: 'toggle' },

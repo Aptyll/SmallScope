@@ -552,6 +552,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the slab's foot planks: CLOSE, and in a match LEAVE PRACTICE or LEAVE MATCH beside it | `SET_FOOT_Y`/`SET_PLANK_*`, `footPlanks`, `leavePlankRect`, `settingsClose` (the clicks: `closeMenuPanel`/`leavePractice`, js/ui/menu.js; `toLobby`, js/ui/screens.js) | `settings menu (ESC)` |
 | the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `ctrlCvs.keys`) | `settings menu (ESC)` › beside `bakeCtrlKeys` |
 | the VIDEO page's quality macro over the render-pass toggles | `VID_PRESETS`, `vidPreset` (the flags themselves: `settings.vid*`, core.js; their gates sit at each pass's call site) | `settings menu (ESC)` |
+| the VIDEO page's FPS CAP choice row: 30 / 60 / 120 / 144 / UNLIMITED into `settings.fpsCap` | the `fpsCap` row of `SET_TABS` (the gate: `capSkips`, boot.js) | `settings menu (ESC)` |
 | the three sound dials, the speaker that mutes them, the grey-when-muted fill, the minimap and HUD size knobs | `applySliderDrag`, `muteBtnRect`, `drawMuteBtn`, `drawSliderRow`, `drawSliderById`, `toggleVal` | `settings menu (ESC)` |
 
 ## js/ui/menu.js
@@ -615,3 +616,4 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the match between screens: the sim's recorded cosmetics, roles, host and client, the snapshot, its delta and bytes, the two transports | not here: the five [js/net/](#jsneteventsjs) sections above, in load order | - |
 | a hidden tab's frames: a worker's clock drives loop() while the page is hidden, rAF when it is not | `hiddenTimer`, `hiddenTick`, `watchHidden` | `the fixed step` |
 | the fixed step: the rAF loop banks each frame's time and steps the sim in whole 1/60 s slices (up to three a frame, the rest dropped; a quarter-slice of slack so a 60 Hz screen steps once a frame), polls the pad once a frame before them, renders once after | `TICK_DT`, `TICK_MAX`, `TICK_SLACK`, `tickAcc`, `loop` (`padPoll`, js/gamepad.js) | `the fixed step` |
+| the FPS cap: a frame under `settings.fpsCap` is skipped whole before the bank is touched, so the sim still steps every slice it is owed; a due clock advanced a period per frame taken holds the average exactly, and resyncs after a stall | `capDue`, `capSkips` | `the fixed step` |
