@@ -2723,6 +2723,8 @@ every `v*` tag builds (.github/workflows/desktop.yml).
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
 `aiLevel` — the rival bots' difficulty notch on class select, an index into `AI_LEVELS` (js/ai.js) —
+`mapType` — the map shape picked on class select's chip, an index into `MAPS` (js/world.js); it is
+what the NEXT load grows, since a pick is a page ([map shapes](world.md#map-shapes)) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each
 ([the two controllers](multiplayer.md#the-two-controllers)) —

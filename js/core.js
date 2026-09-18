@@ -164,11 +164,15 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'select' | 'gear' | 'wiki' | 'chars' | 'create'. 'gear' is the pop-up over
-    // the still-lit select screen (gearT its ease, grow the keyboard row,
-    // gearFxT/gearFxSlot the equip flash); the wiki is a surface of its own
-    // on wikiT, with wikiTab the open page (menu.js `the wiki`).
+    // screen: 'menu' | 'select' | 'gear' | 'map' | 'wiki' | 'chars' | 'create'. 'gear' and
+    // 'map' are the two pop-ups over the still-lit select screen (gearT its
+    // ease, grow the keyboard row, gearFxT/gearFxSlot the equip flash; mapT
+    // and mrow the map's); the wiki is a surface of its own on wikiT, with
+    // wikiTab the open page (menu.js `the wiki`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
+    // the map pop-up over the still-lit select screen (menu.js `the map
+    // pop-up`): its ease, the keyboard row, and the hover ease per option
+    mapT: 0, mrow: 0, mhover: [],
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it
     // ran out); dhover the three difficulty notches' hover eases (menu.js
@@ -202,6 +206,11 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // the rival bots' difficulty: an index into AI_LEVELS (js/ai.js), picked on
   // class select's notches and remembered; 0 (NORMAL) until someone moves it
   aiLevel: 0,
+  // the shape the valley comes out of the snow in: an index into MAPS
+  // (js/world.js), picked on class select's map chip and remembered. A pick
+  // is a page (pickMap, js/ui/menu.js), so what this holds is what the NEXT
+  // load grows - MAP_TYPE is what THIS one did.
+  mapType: 0,
   // the VIDEO page's dressing toggles, all cosmetic-only passes a weak GPU
   // can shed (the ESC panel's QUALITY row presets them; panels.js)
   vidClouds: true, vidRays: true, vidStars: true, vidSnow: true, vidVig: true,

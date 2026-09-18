@@ -78,6 +78,11 @@ function paintGroundTile(g, tx, ty) {
         if (!inWorld(tx, ty + 1) || ground[idx(tx, ty + 1)] === 0) g.fillRect(px, py + TILE - 1, TILE, 1);
         if (!inWorld(tx - 1, ty) || ground[idx(tx - 1, ty)] === 0) g.fillRect(px, py, 1, TILE);
         if (!inWorld(tx + 1, ty) || ground[idx(tx + 1, ty)] === 0) g.fillRect(px + TILE - 1, py, 1, TILE);
+        // ...and, where a PATH crosses the lake (the paths, js/world.js), the
+        // earth spilling over this tile's share of the crossing, rimmed along
+        // its own ragged edge rather than along the tile's sides. The diagonal
+        // road never meets ice on any shape (ROAD_ICE_KEEP); a path does.
+        if (roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, true);
       } else {
         quad(g, '#ebf2fa', '#e7eff8');
         // dither speckles
@@ -104,7 +109,7 @@ function paintGroundTile(g, tx, ty) {
         }
         // the road (ground 3, and the snow beside it) is painted OVER the
         // snow per pixel, against its ragged edge - never per tile
-        if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py);
+        if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
       }
       // the felled trunk across a forest road (placeRoad, world.js) lies flat
       // on the ground, so it is ground: baked here over whatever the tile is.
@@ -126,14 +131,18 @@ function paintGroundTile(g, tx, ty) {
 // the last half tile of the verge; outside, ROAD_SHOULDER tiles of dirtied
 // snow, mud dithered in at the edge and thinning to grey and then to the
 // field. So the edge is one wandering line and never a tile staircase, and
-// a 16 px tile can be half road and half snow. A ford is skipped whole: ice
-// tiles never come here (paintGroundTile's ice branch), so the ruts stop at
-// the bank. The per-u noise (the edge, the ruts' wander) is cached by
-// quarter-tile, since a tile's 256 pixels share a handful of u values.
+// a 16 px tile can be half road and half snow. On an ICE tile - which only
+// a PATH ever crosses, never the diagonal - `onIce` paints the earth and its
+// snowy verge the same way but leaves the water alone outside it, under a
+// pale rim a pixel or two wide that follows the same ragged edge: a lake has
+// a shoreline, not a muddy shoulder. The per-u noise (the edge, the ruts'
+// wander) is cached by quarter-tile, since a tile's 256 pixels share a
+// handful of u values.
 const ROAD_COL_A = '#cdbfa8', ROAD_COL_B = '#c5b7a0'; // the two tones of packed earth
 const ROAD_COL_RUT = '#a08d70';                        // the ruts
 const ROAD_COL_STONE = '#9c8d74', ROAD_COL_DARK = '#b5a68c', ROAD_COL_LIGHT = '#dbcfba';
 const ROAD_COL_MUD = '#ded8cc', ROAD_COL_GREY = '#dde3ec'; // the shoulder's dirty snow, then grey snow
+const ROAD_COL_RIM = '#d6ecf4';                        // the broken-ice rim where a path crosses a frozen lake
 const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over the verge
 // The felled trunk across each forest road's far end (placeRoad, world.js):
 // one 16 px piece per tile along the cross-diagonal, running from the
@@ -184,7 +193,7 @@ function roadRutAt(u) {
   if (r === undefined) { r = ROAD_RUT + (vnoise(k / 4 * 0.45, 8.8) - 0.5) * 0.35; roadRutCache.set(k, r); }
   return r;
 }
-function paintRoadOverlay(g, tx, ty, px, py) {
+function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
     const d = roadDist(fx, fy);
@@ -204,6 +213,9 @@ function paintRoadOverlay(g, tx, ty, px, py) {
       else if (hp < 0.006) c = ROAD_COL_LIGHT;
       // the verge: drifts of snow lying over the earth, more of them toward the edge
       if (d > -0.7 && clump + hp * 0.25 > 1.02 - (d + 0.7) / 0.7 * 0.55) c = ROAD_COL_SNOW;
+    } else if (onIce) {
+      // the bank: broken ice along the crossing's own edge, and open water past it
+      if (d < 0.09) c = ROAD_COL_RIM;
     } else {
       // the shoulder: mud spread off the road in patches, thinning to greyed snow, then the field
       const k = 1 - d / ROAD_SHOULDER;

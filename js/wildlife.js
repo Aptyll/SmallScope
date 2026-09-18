@@ -241,6 +241,20 @@ const FISH_MARGIN = 6;     // body clearance from snow: soft-steered away, hard-
 // under the snow - the deep water no hole ever reaches (see spawnEmerger).
 const FISH_MAX = 30;       // cap: the boot shoal, and the ceiling the trickle fills to
 const FISH_MIN = 10;       // floor: below it the trickle runs at FISH_SPAWN_FAST instead
+// The shoal belongs to the WATER, not to the map. A shape that freezes half
+// the valley over (FROZEN ISLES, the map types in world.js) is not the same
+// lake as one with fourteen ponds in it, so the cap and the floor both ride
+// how much swimmable ice the world actually has - counted once by spawnFish,
+// out of the scan it already makes. The ratio NEVER goes below one, so no
+// shape holds fewer fish than the game has always had, and it is capped at
+// FISH_CAP_MUL so no shape can turn the counter into a fishery.
+// FISH_WATER_REF sits comfortably PAST what OPEN FIELD's fourteen ponds and
+// its rivers carve (about 1,900 tiles over the seeds measured), so the shape
+// the game shipped with always reads exactly 1 and is never moved: only a
+// shape that freezes the valley over grows a shoal at all.
+const FISH_WATER_REF = 2600; // swimmable interior ice tiles a shape needs before its shoal grows
+const FISH_CAP_MUL = 2.5;    // the most the shoal may be multiplied by
+let fishCap = FISH_MAX, fishFloor = FISH_MIN;
 const FISH_SPAWN_FAST = 4; // ...and while it is under FISH_MIN
 const FISH_EMERGE_SPD = 7; // px/s an unborn fish creeps out from under the shore
 const FISH_EMERGE_MAX = 14; // seconds before an emerger that never found water is dropped
@@ -278,7 +292,9 @@ function fishClear(x, y, margin) {
     fishWater(x, y - m) && fishWater(x, y + m);
 }
 
-// the seed shoal: dropped straight into interior water, already born
+// the seed shoal: dropped straight into interior water, already born - and
+// the one place the water is measured, since the scan for somewhere to put a
+// fish IS the measurement (fishCap / fishFloor, above)
 function spawnFish() {
   const spots = [];
   for (let i = 0; i < WORLD * WORLD; i++) {
@@ -286,8 +302,11 @@ function spawnFish() {
     const x = (i % WORLD + 0.5) * TILE, y = ((i / WORLD | 0) + 0.5) * TILE;
     if (fishClear(x, y, 14)) spots.push(i); // interior ice only, ~a tile off the shore
   }
+  const mul = Math.max(1, Math.min(FISH_CAP_MUL, spots.length / FISH_WATER_REF));
+  fishCap = Math.round(FISH_MAX * mul);
+  fishFloor = Math.round(FISH_MIN * mul);
   let guard = 0;
-  while (fish.length < FISH_MAX && spots.length && guard++ < 400) {
+  while (fish.length < fishCap && spots.length && guard++ < 400) {
     const i = spots[randi(0, spots.length - 1)];
     addFish((i % WORLD + 0.5) * TILE, ((i / WORLD | 0) + 0.5) * TILE);
   }
@@ -407,8 +426,8 @@ function updateFish(dt) {
   if (PRACTICE) return;
   state.fishT -= dt;
   if (state.fishT <= 0) {
-    state.fishT = fish.length < FISH_MIN ? FISH_SPAWN_FAST : FISH_SPAWN_T;
-    if (fish.length < FISH_MAX) spawnEmerger();
+    state.fishT = fish.length < fishFloor ? FISH_SPAWN_FAST : FISH_SPAWN_T;
+    if (fish.length < fishCap) spawnEmerger();
   }
 }
 

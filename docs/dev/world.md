@@ -1,15 +1,16 @@
 # The world
 
-The tile grid, worldgen, the seeded RNG contract, the day/night cycle, and the one runtime
-ground change (ice holes). Read this before touching `genWorld()`, adding a ground type, or
-anything that must stay stable per tile.
+The tile grid, worldgen, the three **map shapes** a valley comes out of the snow in, the seeded
+RNG contract, the day/night cycle, and the one runtime ground change (ice holes). Read this
+before touching `genWorld()`, adding a ground type, adding a shape, or anything that must stay
+stable per tile.
 
 ## The tile world
 
 - `WORLD = 232` tiles of `TILE = 16` px → a 3712×3712 px world (under `PRACTICE` the const is
   76 instead — see [the practice arena](#the-practice-arena)). The forest border is
-  `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an open interior ~132 tiles
-  across. The two **roost corners** —
+  `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an interior ~132 tiles
+  across — open on OPEN FIELD, and grown over by the other two [map shapes](#map-shapes). The two **roost corners** —
   bottom-left and top-right, where the eagles always come down
   ([eagle drop](rendering.md#eagle-drop-mode-drop)) — are forested to `ROOST_R` (68 tiles from the
   corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
@@ -70,8 +71,9 @@ anything that must stay stable per tile.
   `structCenter()` and `structMouth()` (the ground point in front of the doorway) as the geometry
   helpers. Stumps are **consumable build anchors**: building on one replaces it (a bay consumes
   every stump under it), and demolition/destruction leaves the tiles empty, not stumps.
-- The world center is an empty clearing: `CENTER_R` in `genWorld()` keeps ice ponds, rocks and
-  bushes clear of it so the river spokes meet in open ground. The ore loop there draws two
+- The world center is an empty clearing: `CENTER_R` (beside `MAPS`) keeps ice ponds, rocks,
+  bushes and every [shape](#map-shapes)'s own interior clear of it, so the river spokes meet in
+  open ground. The ore loop there draws two
   `rand()` per spot and places nothing — **no-ops kept on purpose**, so every seed's stream
   stays what it is.
 - Every `tree` carries `rare` (boolean), set at worldgen from `treeRare(tx, ty)`: a `hash2`
@@ -88,12 +90,117 @@ anything that must stay stable per tile.
   their dawn refreeze, a spur's and a roost pad's paving ([the road](#the-road)), and the
   practice arena's track rolls.
 
+## Map shapes
+
+**The valley comes out from under the snow a different shape each winter** ([lore](lore.md)), and
+`MAPS` (the `map types` group of [js/world.js](../../js/world.js)) is the shapes it comes out in.
+One entry is one **interior**; the border forest and the two roost corners are every shape's
+alike, because the road's gates, both nests and the crash rule are all measured off
+`borderDepth` and nothing may move them.
+
+| Shape | The interior |
+| --- | --- |
+| **OPEN FIELD** | one wide interior inside a ring of pines. The only wood is the border's — the world the game shipped with. |
+| **THICKET** | the woods took the whole valley in stands (`scale` how big a stand runs, `wood` how much of the noise is one), and what is left between them are the pathways. |
+| **FROZEN ISLES** | one frozen lake with wooded islands standing out of it: `land` is an island's shore, the ring of snow round its pines that ore, berries and anything built have to stand on, and `shore` is how far the lake laps **into** the treeline, drowning any island inside it — so the woods' own edge is always water and no island is reached dry-shod from the border. The band wobbles on the fine noise, like the roost discs' arc. |
+
+**`mapTerrain(k, tx, ty)` IS a shape**: one pure function of the position noise (`mapFbm`, three
+octaves) saying what shape `k` makes of a tile — `MT_SNOW`, `MT_ICE` or `MT_FOREST`. `genWorld`
+plants from it and the class screen's chip draws from it (`mapChip`, js/ui/menu.js), so the
+picture on the chip is **this seed's own valley** in that shape and not an illustration of one.
+
+**`MAP_TYPE` is the shape this page grew** — `?map=N`, else the profile's `settings.mapType`,
+read once in js/boot.js after `loadSettings()` and never again. Picking one is a **page**, the
+way a reroll is: the pick is saved, the whiteout runs and the page comes back on
+`?seed=<this seed>&map=<the pick>` standing on the class screen again (`pickMap`,
+[rendering.md](rendering.md#the-map-pop-up)). Only a **solo** lobby may pick — a host reloading
+would drop its room, and a guest's world is the host's (`netHostHello` refuses a hello whose map
+is not the host's, exactly as it refuses a seed; `joinRoom` carries `&map=` with `&seed=`).
+
+**A shape may not move OPEN FIELD.** The interior pass runs after the ponds and rivers, whose
+retries read what stands on a tile, and before the ore and the berries, whose rolls do not; it is
+pure position noise and draws no `rng()` at all, and the only `rng()` calls a shape adds — the
+ore and berry **top-up** (`MAP_ROCKS`/`MAP_BUSHES`, which put a grown shape back to OPEN FIELD's
+own strength, since most of the two scatter loops now land in wood or on the lake) — sit at the
+very end of `genWorld` behind `mapGrown(MAP_TYPE)`. Verified: OPEN FIELD's ground, objects,
+animals and fish hash bit-identical to the shape before the shapes existed, on seeds 42, 7, 55,
+999 and 1234.
+
+What a shape changes downstream, without a line of its own anywhere:
+
+- **the camps** stay at their fixed mirrored [sites](#camps) — `clearCamp` cuts the same clearing
+  out of whatever grew there, so a camp on THICKET is a clearing in the woods;
+- **the chests** ([below](#treasure-chests)) keep `CHEST_BURIED` of their number back for a pine
+  standing *inside* a stand;
+- **the shoal** rides how much swimmable ice there is (`FISH_WATER_REF`/`FISH_CAP_MUL`, the
+  `fish` banner of js/wildlife.js) — FROZEN ISLES holds 75 fish where OPEN FIELD holds 30;
+- **building** needs ground `0` or `3` as it always did, so on FROZEN ISLES a base stands on an
+  island's shore, the road or a path, never on the lake.
+
+## The paths
+
+A shape that grows woods over the whole valley would else be a wall, so it lays **paths** with
+them (the `the paths` group, [js/world.js](../../js/world.js)): packed earth about a pine wide,
+cut where the shape's own gaps run. **A path IS road** — `roadDist` mins over the path segments,
+so `placeRoad` paves them with the lane in its one pass, the ground array says `3`, both maps ink
+them, nothing grows on one, a building stands on one and nobody digs into one. Only narrower
+(`PATH_HW` against `ROAD_HW`) and without the ruts, which `paintRoadOverlay` measures off the
+diagonal a path is nowhere near.
+
+`layPaths()` runs at boot **between `genWorld()` and `placeRoad()`** and lays:
+
+1. **one route** from a side's junction on the road to the rival's;
+2. **a branch** off it to every camp, stopping `PATH_CAMP` tiles past the ground `clearCamp` will
+   clear, so the woods can never wall a camp in and the clearing never eats the path's end.
+
+Each is a **Dijkstra over the tiles** on a cost field (`pathCost`) where **wood is a wall, not a
+price**: open snow 1, the frozen lake `PATH_ICE`, a tile inside the road's corridor `PATH_LANE`,
+and **anything standing refused outright**. So what a route *is*, is **the shortest way between
+the two roosts through the ground that is already clear** — the gaps the noise left, threaded,
+never a line driven through a stand. A bush is not a wall (it is walked past, and the paving
+takes it like the lane does), and the lane's own tiles read as clear whatever stands on them,
+because `placeRoad` fells and paves the whole diagonal a moment after this runs — which is also
+what lets a route start at a junction buried in the corner's woods. It still pays `PATH_LANE` to
+be there, so it **crosses** the lane instead of joining it: a path is the way the road is not, a
+flank, walked, with no cable on it.
+
+Only if a shape leaves no clear route at all does `layPaths` search again with the axe (`cut`,
+where wood costs `PATH_WOOD` instead of refusing) — because a route is also the promise that
+there is one. On the seeds measured the main route has never needed it; a camp branch does now
+and then, when the noise walls a site in.
+
+The **paving** is about a tile wider than the route either side, so a path running down a gap
+trims the edge of the stands beside it. That is a cleared verge, not the route breaking through:
+*where a path goes never needed an axe.* The searched tile path is registered every `PATH_SEG`
+tiles as a segment (`addPathRoute`), which smooths the search's eight-way staircase into a
+polyline.
+
+`pathDist(fx, fy)` is the third term of `roadDist`, and it is **O(1)**: `indexPaths` stamps the
+two nearest segments into a per-tile `Int16Array` pair, so a pixel of the ground bake tests at
+most two segments instead of walking the whole network. Nothing is laid on OPEN FIELD or under
+`PRACTICE`, and `pathDist` answers 99 there, so neither pays anything.
+
+**A path is the one thing that meets ice.** Where it crosses a frozen lake the packed earth is
+laid over the ice per pixel against the same ragged edge the road has, under a pale rim a pixel
+or two wide that follows that edge (`paintRoadOverlay`'s `onIce`, js/draw/ground.js): a lake has
+a shoreline, not a muddy shoulder.
+
+Verified on seeds 42, 7 and 1234: the strict search finds the main route on both grown shapes
+without the axe (212–232 tiles, 61–83 of its ~95 segments more than `ROAD_HW + 2` off the
+diagonal, so it really is cross-country), and on the finished world a walker **chopping nothing**
+reaches the rival's junction and all seven camps on all three shapes.
+
 ## Treasure chests
 
 `placeChests()` (the `world` banner, js/world.js) runs at boot after
 `placeCamps()`: it scans for **border trees on the forest's inner edge** (a `tree` with at
 least one cardinal neighbour of open snow — reachable with E from open ground) and swaps
 `CHEST_COUNT` (14) of them for `chest` objects, at least `CHEST_SPACING` (22) tiles apart.
+On a shape that grows its own woods ([map shapes](#map-shapes)) `CHEST_BURIED` (0.3) of them are
+held back for a **buried** one instead — a pine with no open ground touching it and more pines
+two tiles off on all four sides, so the only way to that cache is to chop one down. OPEN FIELD's
+wood is one treeline and everything in it is on the inner edge, so OPEN FIELD buries none and
+rolls exactly the draws it always did.
 Selection rolls on its own `mulberry32(SEED ^ 0x43484553)` stream (`chRng`) so it
 can never perturb the shared `rng` stream and terrain stays bit-identical for an existing seed
 (chests place after the camps and touch only `objects`, never `ground`). A chest is solid, gold
@@ -129,8 +236,10 @@ side its own — and `roadMainDist(fx, fy)` measures any point against that wand
 inside; no ends). Both the ground array (`onRoad`, a tile's centre) and the ground bake (a pixel)
 ask the same function, so what a tile *is* and what it *looks like* agree to within the verge.
 **It never meets ice**: `genWorld`'s carve rules keep every pond and river `ROAD_ICE_KEEP` tiles
-off its edge and taper a river to nothing on its way in (the tile world, above), so the lane is
-dry from end to end and the ice network lives further out on the map.
+off its edge and taper a river to nothing on its way in (the tile world, above), and a
+[shape](#map-shapes)'s lake reads the same keep-out, so the lane is dry from end to end on every
+shape and the ice network lives further out on the map. A **path** is the one thing that crosses
+ice ([the paths](#the-paths)).
 
 **The nests sit beside it, not on it.** `roadNest(team)` picks each side's **junction** on the
 centreline — at least `ROAD_NEST_IN` (8) u inward from its gate, walking further in (to
@@ -547,7 +656,9 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
 - `rng` is a single `mulberry32(SEED)` stream shared by worldgen *and* runtime effects (particle
   bursts, animal wanders, drop velocities). Worldgen is reproducible only because it runs first at
   boot — hence the CLAUDE.md rule against adding or removing an `rng()` call inside `genWorld()`;
-  adding one after boot reshuffles nothing.
+  adding one after boot reshuffles nothing. A [map shape](#map-shapes) is the one thing that adds
+  any, and only at the very end of `genWorld` behind `mapGrown(MAP_TYPE)`, so OPEN FIELD's stream
+  is untouched.
 - `hash2(x, y)` mixes `SEED` in, and `vnoise(x, y)` is built on it. Both are still pure functions
   of position *within a run* — use them for anything that must stay stable per tile no matter when
   it is asked (ground texture, forest boundary, tree rare-drops, the frost slabs' mottling).
@@ -608,7 +719,7 @@ that tile (see [The swing tools](gameplay.md#the-swing-tools-e); the weapons:
 `ICE_HOLE_HITS` (2) breaks through — the tile becomes `ground = 2` (open water), joins the
 `holes` list, and is repainted into the ground canvas via `repaintGround()`. Constants live in the `fish` banner of
 [js/wildlife.js](../../js/wildlife.js) (`ICE_HOLE_HITS`, `HOLE_FALL_DMG`, `HOLE_FALL_T`,
-`FISH_MAX`/`FISH_MIN`, `FISH_CATCH_R`; `FISH_SPAWN_T` alone stays in core.js, and the `NET_*` set
+`FISH_MAX`/`FISH_MIN`/`FISH_WATER_REF`/`FISH_CAP_MUL`, `FISH_CATCH_R`; `FISH_SPAWN_T` alone stays in core.js, and the `NET_*` set
 sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net entry it tunes).
 
 - **Falling in**: standing over a hole tile (checked at each player's feet in `updatePlayer`,
@@ -627,8 +738,11 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
 - **Refreeze**: at dawn every hole reverts to ice (`repaintGround` again) and `iceCracks`
   clears — except a hole carrying a net, which stays open water *and stays in `holes`*, so it
   refreezes the dawn after somebody wrecks the net.
-- **Fish**: the `fish` array holds up to `FISH_MAX` (30) passive swimmers, that many spawned at
-  boot (`spawnFish()`, after `spawnAnimals()`) on **interior** ice only (tile centers passing
+- **Fish**: the `fish` array holds up to `fishCap` passive swimmers — `FISH_MAX` (30) times how
+  much swimmable ice the world has against `FISH_WATER_REF`, floored at 1 and capped at
+  `FISH_CAP_MUL` (2.5), so OPEN FIELD and THICKET hold the 30 the game has always had and
+  FROZEN ISLES holds 75 ([map shapes](#map-shapes)) — that many spawned at
+  boot (`spawnFish()`, after `spawnAnimals()`, which is also the one place the water is measured) on **interior** ice only (tile centers passing
   `fishClear` with a 14 px margin, ~a tile off the shore). `updateFish()` wanders them with a
   **soft edge cap**: `fishClear(x, y)` requires `FISH_MARGIN` (6 px) of water on all four sides
   of the body, the steering veers away from shore a look-ahead early (choosing the more open
@@ -670,9 +784,10 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
 
 `autoFish` and nets take fish **out** of `fish`, and nothing puts them back at dawn. What
 refills it is a trickle in `updateFish`: `state.fishT` counts down `FISH_SPAWN_T` (11 s), or
-`FISH_SPAWN_FAST` (4 s) while the shoal is under `FISH_MIN` (10), and each expiry calls
-`spawnEmerger()` unless the shoal is already at `FISH_MAX` (30). So the water can be fished down
-hard, never to nothing, and recovers fastest when it is emptiest.
+`FISH_SPAWN_FAST` (4 s) while the shoal is under `fishFloor` (`FISH_MIN`, 10, on the same
+multiplier the cap rides), and each expiry calls `spawnEmerger()` unless the shoal is already at
+`fishCap`. So the water can be fished down hard, never to nothing, and recovers fastest when it
+is emptiest.
 
 **`born` is a fish's whole life story.** A born fish is hard-clamped
 inside the water, drawn, catchable, nettable. An **emerger** is none of those. `spawnEmerger()`

@@ -36,8 +36,13 @@ it — through one function (`skin`, js/player.js) the paint goes through and th
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 
-The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest border and an open
-interior threaded by frozen lakes and rivers. See [world.md](world.md#the-tile-world).
+The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest border and an interior
+threaded by frozen lakes and rivers, and **what that interior is, is a pick**: OPEN FIELD's wide
+clearing, THICKET's stands with the pathways between them, or FROZEN ISLES' lake with wooded
+islands standing out of it. A shape is chosen beside the character on the class screen and
+changes only the interior — the border, both roosts and the road are every shape's alike, and a
+grown one cuts its own packed-earth paths so the woods are never a wall.
+See [world.md](world.md#the-tile-world) and [map shapes](world.md#map-shapes).
 
 Outside the match sits one room: the **practice tool** — a small, fixed, seedless training field
 cut to pure combat (a mending dummy, a perimeter target track with a bell-rung scored archery

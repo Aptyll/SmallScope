@@ -37,7 +37,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 | what the game *is* — the pillars, and what it deliberately is not | [docs/dev/game.md](docs/dev/game.md) |
 | **a name or any sentence a player reads**: the setting's premise, the valley's reason for what a match does, the fixed words, the voice | [docs/dev/lore.md](docs/dev/lore.md) |
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
-| worldgen, tiles, ground, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
+| worldgen, tiles, ground, **the three map shapes and the paths a grown one cuts**, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |
 | players, classes and kits, the input struct, **the two controllers** (keyboard, gamepad), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
 | **online play**: host and clients, the snapshot and the wire, the relay, Steam lobbies (`js/net/`, `app/server.js`, `desktop/`) | [docs/pvp-architecture.md](docs/pvp-architecture.md) |
@@ -201,8 +201,9 @@ lives in `docs/dev/*.md` beside the code it protects.
   anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).
 - **Never add or remove an `rng()` call inside `genWorld()`** — it reshuffles every existing seed
-  (the chests roll on their own `chRng`; the camps roll nothing). Use `hash2`/`vnoise` per tile,
-  never before the `SEED` const.
+  (the chests roll on their own `chRng`; the camps roll nothing; a **map shape** grows its
+  interior on `vnoise` alone and adds rolls only at the very end, behind `mapGrown`). Use
+  `hash2`/`vnoise` per tile, never before the `SEED` const.
 - **At most one object per tile.** Create with `placeObj`, read with `objAt`, and route structures
   through `placeStruct`/`destroyStructure` so the `structures` registry stays in sync. A building with
   `w`/`h` in `STRUCTS` (the bot bay, 3×2) fills its other tiles with `part` objects pointing at the

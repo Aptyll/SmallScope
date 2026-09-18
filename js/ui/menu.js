@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.66'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.67'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.67', 'THE VALLEY COMES OUT OF THE SNOW IN THREE SHAPES NOW - THE OPEN FIELD, A THICKET WITH PATHWAYS CUT THROUGH IT, OR A FROZEN LAKE WITH WOODED ISLANDS - PICKED ON THE CHIP BESIDE YOUR CHARACTER.'],
   ['3.66', 'A DEER NO LONGER OUTRUNS THE WHOLE VALLEY: IT RUNS A LITTLE FASTER THAN YOU WALK, AND IT GATHERS AND LOSES ITS SPEED INSTEAD OF SNAPPING TO IT.'],
   ['3.65', 'THE WIKI HAS A WORLD PAGE: WHAT SOFTFALL IS, WHAT THE SNOW BURIED, WHY TWO COMPANIES FLY IN EVERY WINTER, AND WHY NOBODY ON THE SNOW EVER DIES.'],
   ['3.64', 'THE PIXEL FONT LEARNS THE SEMICOLON AND THE QUOTATION MARK, SO FOURTEEN OLD PATCH NOTES STOP PRINTING QUESTION MARKS IN THEIR PLACE.'],
@@ -400,10 +401,11 @@ function joinRoom(k) {
   const m = state.menu, r = m.rooms[k];
   if (!r || !roomOk(r) || NET.role === 'client') return;
   m.rsel = k;
-  // the world is the host's: SEED is decided at load (js/core.js), so a page
-  // born on another seed starts over on the room's and joins from boot (?join=)
-  const seed = r.data && +r.data.seed;
-  if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
+  // the world is the host's: SEED and MAP_TYPE are both decided at load
+  // (js/core.js, js/boot.js), so a page born on another seed OR another
+  // shape starts over on the room's and joins from boot (?join=)
+  const seed = r.data && +r.data.seed, map = (r.data && r.data.map | 0) || 0;
+  if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
   netJoin(r.room);
   SFX.place();
 }
@@ -697,7 +699,8 @@ function menuKey(e) {
   if (state.fade) return; // a reroll is already leaving
   if (m.screen === 'wiki') { if (m.wikiT >= 1) wikiKey(k); return; }
   if (m.screen === 'gear') { if (m.gearT >= 1) gearKey(k); return; }
-  if (m.screen === 'select') { if (m.screenT >= 1 && m.gearT <= 0) selectKey(k); return; }
+  if (m.screen === 'map') { if (m.mapT >= 1) mapKey(k); return; }
+  if (m.screen === 'select') { if (m.screenT >= 1 && m.gearT <= 0 && m.mapT <= 0) selectKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
@@ -719,6 +722,7 @@ function menuClick() {
   if (state.fade) return;
   if (m.screen === 'wiki') { wikiClick(); return; }
   if (m.screen === 'gear') { gearClick(); return; }
+  if (m.screen === 'map') { mapClick(); return; }
   if (m.screen === 'select') { selectClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
@@ -790,7 +794,7 @@ function updateTitle(dt) {
   // the waiting room's comings and goings: a card whose kind changed (a bot
   // became a person, or the reverse) flashes and sounds; a guest whose host
   // left is back on the rooms list with a rattle
-  if (NET.role !== 'solo' && (m.screen === 'select' || m.screen === 'gear')) {
+  if (NET.role !== 'solo' && (m.screen === 'select' || m.screen === 'gear' || m.screen === 'map')) {
     if (!m.cardFx) { m.cardFx = {}; m.cardKind = players.map((p) => isHuman(p)); }
     for (const p of players) {
       const h = isHuman(p);
@@ -834,15 +838,17 @@ function updateTitle(dt) {
   }
   // class select cross-fade and its own hovers; the gear pop-up rides a
   // second ease (gearT) over the still-lit select screen
-  const st = m.screen === 'select' || m.screen === 'gear' ? 1 : 0;
+  const st = m.screen === 'select' || m.screen === 'gear' || m.screen === 'map' ? 1 : 0;
   m.screenT = Math.max(0, Math.min(1, m.screenT + (st ? 1 : -1) * dt / 0.35));
   const gt = m.screen === 'gear' ? 1 : 0;
   m.gearT = Math.max(0, Math.min(1, m.gearT + (gt ? 1 : -1) * dt / 0.3));
+  const mt = m.screen === 'map' ? 1 : 0;
+  m.mapT = Math.max(0, Math.min(1, m.mapT + (mt ? 1 : -1) * dt / 0.3));
   // the wiki is a surface of its own, not a third state of the pick pair -
   // it eases in over the same chrome on a clock of its own
   m.wikiT = Math.max(0, Math.min(1, m.wikiT + (m.screen === 'wiki' ? 1 : -1) * dt / 0.35));
   m.cswapT = Math.min(1, m.cswapT + dt / 0.22);
-  const sh = m.screen === 'select' && m.screenT >= 1 ? selectHit() : null;
+  const sh = m.screen === 'select' && m.screenT >= 1 && m.mapT <= 0 ? selectHit() : null;
   for (let i = 0; i < PROFILE.CHAR_MAX; i++) {
     // `|| 0`: the seed literal in core.js is two cells; the third slot's
     // hover ease starts from nothing, not from NaN
@@ -859,7 +865,7 @@ function updateTitle(dt) {
     m.countT -= dt;
     const n = Math.max(0, Math.ceil(m.countT));
     if (n < m.countN) { m.countN = n; if (n > 0) SFX.countTick(); }
-    if (m.countT <= 0) { m.countT = 0; if (m.screen === 'gear') leaveGear(); if (!NET.isClient) lockIn(); }
+    if (m.countT <= 0) { m.countT = 0; if (m.screen === 'gear') leaveGear(); if (m.screen === 'map') leaveMapPick(); if (!NET.isClient) lockIn(); }
   }
   if (m.lockT > 0) {
     m.lockT -= dt;
@@ -1324,7 +1330,10 @@ function drawPatchBar(ox, oy) {
 // and a click swaps the stage to it - the class comes with the character, it
 // is fixed at creation, so there is no class picker here) and the COLLAPSED
 // GEAR WIDGET on its right (the four picked variants; clicking it opens the
-// gear pop-up - beginGear; ESC, the X, or a click outside close it). PLAY
+// gear pop-up - beginGear; ESC, the X, or a click outside close it), and the
+// MAP CHIP at the head of your own column mirroring that meter - a picture of
+// the shape the valley came out of the snow in, opening the map pop-up
+// (beginMapPick, `the map pop-up` below). PLAY
 // locks the pick and starts the COUNTDOWN (pressPlay): COUNT_T seconds in
 // big digits over the plank, one rival card turning face-up per tick, gear
 // still open through it, ESC calling it off (cancelCount), PLAY again
@@ -1365,7 +1374,10 @@ function selectLayout() {
   const diff = [];
   const dx0 = cx + SEL_ROST_X - (3 * 12 + 2 * 4);
   for (let k = 0; k < 3; k++) diff.push({ x: dx0 + k * 16, y: toy + 80, w: 12, h: 6 });
-  return { toy, cx, play, body, slots, loadout, abils, cards, diff };
+  // ...and the map chip at the head of YOUR column, its mirror: what the two
+  // sides are walking on, against how hard the far one plays
+  const mapc = { x: cx - SEL_ROST_X, y: toy + 86 - MAPC_W, w: MAPC_W, h: MAPC_W };
+  return { toy, cx, play, body, slots, loadout, abils, cards, diff, mapc };
 }
 // which of the stage's ability wells (mx, my) is on, or -1
 function selectAbilHit(mx, my) {
@@ -2020,16 +2032,19 @@ function gearClick() {
   pickGear(h.row, h.v);
 }
 
-// what the pointer is on: 'play', 'gear', 'diff' + k (a difficulty notch),
-// 'slot' + i (a character slot), or null
+// what the pointer is on: 'play', 'gear', 'map' (the map chip), 'diff' + k
+// (a difficulty notch), 'slot' + i (a character slot), or null
 function selectHit() {
-  const { slots, play, loadout, diff } = selectLayout();
+  const { slots, play, loadout, diff, mapc } = selectLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(loadout, 3, 2)) return 'gear';
-  if (NET.isClient) return null; // a guest's room: the host's PLAY, the host's difficulty, its own character as it came
+  if (NET.isClient) return null; // a guest's room: the host's PLAY, the host's difficulty, the host's world, its own character as it came
   for (const r of slots) if (over(r, 2, 2)) return 'slot' + r.i;
   if (over(play, 2, 3)) return 'play';
   for (let k = 0; k < diff.length; k++) if (over(diff[k], 2, 3)) return 'diff' + k;
+  // the shape is picked before a room is opened: the pick is a page, and a
+  // host reloading would drop the room under everyone already in it
+  if (NET.role === 'solo' && over(mapc, 2, 2)) return 'map';
   return null;
 }
 
@@ -2126,11 +2141,12 @@ function selectKey(k) {
 
 function selectClick() {
   const m = state.menu;
-  if (m.lockT > 0 || m.screenT < 1 || m.gearT > 0) return;
+  if (m.lockT > 0 || m.screenT < 1 || m.gearT > 0 || m.mapT > 0) return;
   const h = selectHit();
   if (!h) return;
   if (h === 'play') pressPlay();                                    // PLAY: lock the pick, start the count
   else if (h === 'gear') { m.pressT = 0.12; beginGear(); }          // the gear widget opens its pop-up
+  else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // ...and the map chip its own
   else if (h.startsWith('diff')) setAiLevel(+h.slice(4));           // a difficulty notch
   else if (h.startsWith('slot')) selectSlot(+h.slice(4));           // a character slot
 }
@@ -2357,7 +2373,7 @@ function drawSelectStage(now, a, sw) {
   // the kit, said in the strip's own wells; hovering one lightens its rim
   // and raises the ability tooltip (tipClassAb via tipAt, ui.js)
   const { abils } = selectLayout();
-  const ah = m.screenT >= 1 && m.gearT <= 0 && mouse.inside ? selectAbilHit(mouse.x, mouse.y) : -1;
+  const ah = m.screenT >= 1 && m.gearT <= 0 && m.mapT <= 0 && mouse.inside ? selectAbilHit(mouse.x, mouse.y) : -1;
   for (let k = 0; k < 4; k++) {
     const r = abils[k];
     ctx.fillStyle = ah === k ? '#8fa0c8' : '#35426e';
@@ -2433,7 +2449,7 @@ function drawSelectRosters(now, a, slide) {
   }
   const lv = settings.aiLevel | 0;
   const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
+  const hover = m.screenT >= 1 && m.gearT <= 0 && m.mapT <= 0 ? selectHit() : null;
   const hk = hover && hover.startsWith('diff') ? +hover.slice(4) : -1;
   for (let k = 0; k < diff.length; k++) {
     const r = diff[k], hv = m.dhover[k] || 0, lift = Math.round(hv);
@@ -2445,6 +2461,15 @@ function drawSelectRosters(now, a, slide) {
   const nm = AI_LEVELS[hk >= 0 ? hk : lv].name;
   ctx.globalAlpha = a * (hk >= 0 ? 1 : 0.8);
   drawPixelTextShadow(ctx, nm, cx + SEL_ROST_X + slide - pixelTextWidth(nm), toy + 88, hk >= 0 ? '#ffd95c' : rc, '#0a0e23');
+  // ...and its mirror at your own column's head: the shape the valley came
+  // out of the snow in, as a picture of it, with its name under the rule.
+  // A guest's world is the host's, so its chip is a readout and not a button.
+  const mc = selectLayout().mapc, mh = hover === 'map';
+  ctx.globalAlpha = a;
+  drawMapChip({ x: mc.x - slide, y: mc.y, w: mc.w, h: mc.h }, MAP_TYPE, mh, false);
+  const mn = mapName(MAP_TYPE);
+  ctx.globalAlpha = a * (mh ? 1 : 0.8);
+  drawPixelTextShadow(ctx, mn, cx - SEL_ROST_X - slide, toy + 88, mh ? '#ffd95c' : '#8fa8d0', '#0a0e23');
   ctx.globalAlpha = a;
 }
 
@@ -2483,7 +2508,7 @@ function renderSelect(now, a) {
   // PLAY - the plank is the whole ask; it stays sunk while the count runs.
   // A guest's room: the plank is the host's, frozen and wearing the host's
   // name - the count comes over it when the host presses
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
+  const hover = m.screenT >= 1 && m.gearT <= 0 && m.mapT <= 0 ? selectHit() : null;
   const pressed = m.pressT > 0 || m.lockT > 0 || m.countT > 0;
   ctx.globalAlpha = a;
   if (!NET.isClient) drawMenuButton(play, 'PLAY', hover === 'play' ? 1 : 0.7, now, pressed);
@@ -2649,6 +2674,187 @@ function renderGear(now, a) {
     gh && gh !== 'x' && gh !== 'panel' && gh.v !== player.gear[gh.row] ? '#f4f7ff' : '#ffd95c', '#0a0e23');
   // the X: the one way out that is drawn (ESC and a click outside also close)
   const hot = gh === 'x';
+  ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
+  ctx.fillRect(xr.x, xr.y + rise, xr.w, xr.h);
+  ctx.fillStyle = '#0f1632';
+  ctx.fillRect(xr.x + 1, xr.y + rise + 1, xr.w - 2, xr.h - 2);
+  ctx.fillStyle = hot ? '#f4f7ff' : '#8fa8d0';
+  for (let k = 0; k < 4; k++) {
+    ctx.fillRect(xr.x + 3 + k, xr.y + rise + 3 + k, 1, 1);
+    ctx.fillRect(xr.x + xr.w - 4 - k, xr.y + rise + 3 + k, 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ---- the map pop-up ------------------------------------------------------
+// The other thing about the match that is not about a body: WHAT SHAPE THE
+// VALLEY CAME OUT OF THE SNOW IN (MAPS, js/world.js). The select screen
+// wears one CHIP at the head of your own column, mirroring the rivals'
+// difficulty meter at the head of theirs, and the chip is a picture of the
+// map rather than a word for it - this seed's own valley in the picked
+// shape, drawn straight off mapTerrain. Clicking it opens this pop-up: the
+// shapes side by side as bigger chips of the same seed, the picked one
+// gold-rimmed, its NAME under it (a name, which is what text is for), and
+// nothing else to read.
+//
+// A pick is a PAGE. The ground is grown once at boot off consts every
+// deterministic value in the game closes over, so the die's own whiteout
+// and reload is the honest way to change it: the pick is written to the
+// profile and the page comes back on ?seed=<this seed>&map=<the pick>, on
+// the same valley in its new shape, standing on the select screen again
+// (softfall.select). Only a SOLO lobby may do it - a host reloading would
+// drop the room, and a guest's world is the host's (netHostHello refuses a
+// hello whose shape is not the host's, exactly as it refuses a seed).
+const MAPC_W = 26;          // the chip on the select screen
+const MAPP_W = 62;          // ...and one in the pop-up
+const mapChipCv = [];       // one bake per shape per size, lazily
+
+// This seed's valley in shape k, as a size x size picture: mapTerrain per
+// sampled tile, the road's diagonal inked over it. The same rule genWorld
+// plants from, so the chip is the map and not a drawing of one - what it
+// cannot show is the trails, which are searched over the grown world and
+// not a function of position (layTrails, world.js).
+const MAPC_COL = ['#e7eff8', '#b9dcec', '#3d6b4a', '#c5b7a0']; // snow, ice, wood, the road
+function mapChip(k, size) {
+  const key = k + 'x' + size;
+  if (mapChipCv[key]) return mapChipCv[key];
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = size;
+  const g = cv.getContext('2d');
+  const s = roadSpan();
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const tx = Math.round((x + 0.5) / size * (WORLD - 1)), ty = Math.round((y + 0.5) / size * (WORLD - 1));
+    const u = roadAlong(tx, ty);
+    const t = mapTerrain(k, tx, ty);
+    const road = Math.abs(roadOffS(tx, ty)) < (u > s.u0 && u < s.u1 ? ROAD_HW : ROAD_HW_WOOD) + WORLD / size * 0.5;
+    g.fillStyle = road ? MAPC_COL[3] : MAPC_COL[t === MT_ICE ? 1 : t === MT_FOREST ? 2 : 0];
+    g.fillRect(x, y, 1, 1);
+  }
+  mapChipCv[key] = cv;
+  return cv;
+}
+// a chip on its plate: the picked one gold-rimmed, the hovered one lifting -
+// the gear well's own grammar, since it is the same kind of thing
+function drawMapChip(r, k, hot, picked) {
+  const lift = hot && !picked ? 1 : 0;
+  const x = r.x, y = r.y - lift;
+  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, r.y + 1, r.w, r.h);
+  ctx.fillStyle = picked ? '#c89a3c' : hot ? '#8fa0c8' : '#2c3560';
+  ctx.fillRect(x, y, r.w, r.h);
+  ctx.fillStyle = '#0f1632';
+  ctx.fillRect(x + 1, y + 1, r.w - 2, r.h - 2);
+  const a0 = ctx.globalAlpha;
+  ctx.globalAlpha = a0 * (picked || hot ? 1 : 0.8);
+  ctx.drawImage(mapChip(k, r.w - 4), x + 2, y + 2);
+  ctx.globalAlpha = a0;
+}
+
+const MAPP_GAP = 8;
+function mapLayout() {
+  const cx = Math.round(VIEW_W / 2);
+  const n = MAPS.length;
+  const gridW = n * MAPP_W + (n - 1) * MAPP_GAP;
+  const pw = gridW + 20, ph = MAPP_W + 42;
+  const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
+  const cells = [];
+  for (let k = 0; k < n; k++) cells.push({ x: px + 10 + k * (MAPP_W + MAPP_GAP), y: py + 12, w: MAPP_W, h: MAPP_W, k });
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, cells,
+    name: { x: cx, y: py + ph - 15 },
+    xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
+}
+// what the pointer is on inside the pop-up: a cell's index, 'x', 'panel'
+// (the slab swallows it) or null (outside - a click there closes)
+function mapScreenHit() {
+  const { cells, panel, xr } = mapLayout();
+  if (overRect(xr, 2, 2)) return 'x';
+  for (const c of cells) if (overRect(c, 2, 2)) return c.k;
+  if (mouse.x >= panel.x && mouse.x < panel.x + panel.w && mouse.y >= panel.y && mouse.y < panel.y + panel.h) return 'panel';
+  return null;
+}
+
+function beginMapPick() {
+  const m = state.menu;
+  m.screen = 'map';
+  m.mrow = MAP_TYPE;
+  SFX.place();
+}
+function leaveMapPick() {
+  state.menu.screen = 'select';
+  SFX.pickup();
+}
+// the pick: the profile remembers it and the page comes back on this seed in
+// that shape, standing on the select screen again. Picking the shape already
+// grown is a no-op - there is nothing to grow.
+function pickMap(k) {
+  if (state.fade || k === MAP_TYPE) return;
+  settings.mapType = k;
+  saveSettings();
+  SFX.dodge();
+  SFX.music.stop(0.45);
+  state.fade = {
+    a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
+    then: () => {
+      try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); } catch (e) { }
+      location.href = location.pathname + '?seed=' + SEED + '&map=' + k;
+    },
+  };
+}
+
+function mapKey(k) {
+  const m = state.menu;
+  if (m.lockT > 0) return;
+  if (k === 'escape' || k === 'backspace') leaveMapPick();
+  else if (moveDir(k) === 'left') { m.mrow = (m.mrow + MAPS.length - 1) % MAPS.length; SFX.pickup(); }
+  else if (moveDir(k) === 'right') { m.mrow = (m.mrow + 1) % MAPS.length; SFX.pickup(); }
+  else if (k === 'enter' || k === ' ') { if (m.mrow === MAP_TYPE) leaveMapPick(); else pickMap(m.mrow); }
+}
+function mapClick() {
+  const m = state.menu;
+  if (m.lockT > 0 || m.mapT < 1) return;
+  const h = mapScreenHit();
+  if (h === null || h === 'x') { leaveMapPick(); return; } // the X, or anywhere off the panel
+  if (h === 'panel') return;                               // the slab swallows it
+  m.mrow = h;
+  if (h === MAP_TYPE) leaveMapPick(); else pickMap(h);
+}
+
+// the pop-up: the gear panel's slab and its chrome, three chips wide
+function renderMapPick(now, a) {
+  const m = state.menu;
+  const { panel, cells, xr, name } = mapLayout();
+  ctx.fillStyle = 'rgba(4,6,18,' + (0.62 * a).toFixed(3) + ')';
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const rise = Math.round((1 - a) * 12);
+  const py = panel.y + rise;
+  ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(panel.x + 3, py + 3, panel.w, panel.h);
+  ctx.fillStyle = '#0a0e23'; chamRect(panel.x, py, panel.w, panel.h);
+  ctx.fillStyle = '#10173a'; chamRect(panel.x + 1, py + 1, panel.w - 2, panel.h - 2);
+  ctx.fillStyle = '#35426e';
+  ctx.fillRect(panel.x + 2, py + 1, panel.w - 4, 1); ctx.fillRect(panel.x + 1, py + 2, 1, panel.h - 4);
+  ctx.fillStyle = '#080c1c';
+  ctx.fillRect(panel.x + 2, py + panel.h - 2, panel.w - 4, 1); ctx.fillRect(panel.x + panel.w - 2, py + 2, 1, panel.h - 4);
+  const h = m.mapT >= 1 && mouse.inside ? mapScreenHit() : null;
+  for (const c of cells) {
+    drawMapChip({ x: c.x, y: c.y + rise, w: c.w, h: c.h }, c.k, h === c.k, c.k === MAP_TYPE);
+    ctx.globalAlpha = a;
+    if (c.k === m.mrow && h === null) { // the keyboard's cursor: four corner ticks, breathing
+      ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
+      ctx.fillStyle = '#f4f7ff';
+      ctx.fillRect(c.x - 1, c.y + rise - 1, 4, 1); ctx.fillRect(c.x - 1, c.y + rise - 1, 1, 4);
+      ctx.fillRect(c.x + c.w - 3, c.y + rise - 1, 4, 1); ctx.fillRect(c.x + c.w, c.y + rise - 1, 1, 4);
+      ctx.fillRect(c.x - 1, c.y + rise + c.h, 4, 1); ctx.fillRect(c.x - 1, c.y + rise + c.h - 3, 1, 4);
+      ctx.fillRect(c.x + c.w - 3, c.y + rise + c.h, 4, 1); ctx.fillRect(c.x + c.w, c.y + rise + c.h - 3, 1, 4);
+      ctx.globalAlpha = a;
+    }
+  }
+  // the hovered (else the picked) shape's name - the one word the chips earn
+  const hovered = typeof h === 'number';
+  const nm = mapName(hovered ? h : m.mapT >= 1 && !mouse.inside ? m.mrow : MAP_TYPE);
+  drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
+    hovered && h !== MAP_TYPE ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+  // the X: the one way out that is drawn (ESC and a click outside also close)
+  const hot = h === 'x';
   ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
   ctx.fillRect(xr.x, xr.y + rise, xr.w, xr.h);
   ctx.fillStyle = '#0f1632';
@@ -3274,10 +3480,12 @@ function renderTitle(now) {
     ctx.globalAlpha = 1;
   }
 
-  // class select stays fully lit under its gear pop-up; the pop-up rides gearT
-  const gc = easeInOut(state.menu.gearT);
+  // class select stays fully lit under either of its pop-ups; each rides its
+  // own ease (gearT, mapT), and only one is ever open
+  const gc = easeInOut(state.menu.gearT), mpc = easeInOut(state.menu.mapT);
   if (sc > 0.005) renderSelect(now, sc * (1 - out));
   if (sc > 0.005 && gc > 0.005) renderGear(now, sc * (1 - out) * gc);
+  if (sc > 0.005 && mpc > 0.005) renderMapPick(now, sc * (1 - out) * mpc);
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
   if (rc > 0.005) renderRooms(now, rc * (1 - out));

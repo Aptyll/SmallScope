@@ -1367,8 +1367,17 @@ if (PRACTICE) {
   // eagles at all
   genPracticeWorld();
 } else {
+  // the SHAPE this page grew (MAPS, js/world.js): ?map=N wins, else the
+  // profile's pick, so a reload carries a pick the way ?seed carries a
+  // reroll. Read after loadSettings and before genWorld, and never again.
+  MAP_TYPE = (function () {
+    const q = /[?&]map=(\d+)/.exec(location.search);
+    const k = q ? +q[1] : settings.mapType | 0;
+    return k >= 0 && k < MAPS.length ? k : 0;
+  })();
   genWorld();
-  placeRoad();       // the diagonal lane (world.js)
+  layPaths();       // ...and the paths a grown shape cuts through its own woods (world.js)
+  placeRoad();       // the diagonal lane, and the paths with it (world.js)
   placeZips();       // ...and each side's cable along it (world.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeChests();     // ...then the caches take their trees (objects only, no ground)
@@ -1434,15 +1443,28 @@ try {
     state.fade = { a: 1, to: 0, spd: 1 / 0.8, color: '#f4f7ff', then: null };
     state.menu.rolling = 0.5;
   }
+  // ...and from a MAP PICK, which is the same page on the same seed in a new
+  // shape (pickMap, js/ui/menu.js): it clears onto the screen it was made on,
+  // so picking a shape is one press and not a walk back through the menu
+  if (sessionStorage.getItem('softfall.select')) {
+    sessionStorage.removeItem('softfall.select');
+    if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) { beginSelect(); state.menu.screenT = 1; }
+  }
 } catch (e) { }
 
 // debug/dev harness: lets external tooling step frames & stage scenes
 window.DBG = {
   SEED, state, animals, objects, ground, mouse, keys, drops, footprints, flakes,
   fish, iceCracks, holes, crackIce, addFish, spawnEmerger, netAt, buildSiteAt,
+  // the shoal the water this shape froze can hold (the fish banner, wildlife.js)
+  get fishCap() { return fishCap; }, get fishFloor() { return fishFloor; },
   // the camps: the live registry, the table behind it, where each site is,
   // what is where, restock by hand, and blood a player by hand
   camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff, flushBirds,
+  // the map shape this page grew, the table behind it, the rule one IS, and
+  // the paths it cut: DBG.mapTerrain(k, tx, ty) answers for any shape
+  MAPS, mapTerrain, mapName, mapGrown, paths, pathDist,
+  get MAP_TYPE() { return MAP_TYPE; },
   // the practice arena: whether this boot is one, the dummy's live record,
   // the spawn tile, the shared hit paths, the archery targets, the parkour
   // clock and the ESC slab's exit plank
