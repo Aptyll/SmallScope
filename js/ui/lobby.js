@@ -14,8 +14,8 @@
 // column headings and printed values the way the practice room's meters and
 // the merchant's price graphs do. Everything that is NOT a number still reads
 // as a shape - the side you are on is a colour, a player's class is its
-// emblem, a row's share of the sorted column is the bar under it, and the
-// heading you sorted by wears the arrow.
+// emblem, a row's own fill IS its share of the sorted column, and the heading
+// you sorted by wears the arrow.
 //
 // Nothing here runs during a match except sampleStats() below, and nothing
 // here is anybody's state but this screen's: the table is frozen out of
@@ -115,7 +115,6 @@ const scores = {
 const SCORE_PLANKS = ['BACK', 'LOBBY'];
 const SCORE_IN = 0.28; // s the screen takes to arrive
 
-// the accents each ending is struck in: a win is gold, anything else frost
 // The head, the rule and the sort arrow are struck in the ending's own
 // accent - gold for a win, frost for anything else, the way the two
 // ceremonies are. `sort` is NOT: it is the colour the sorted column's numbers
@@ -138,7 +137,6 @@ function scoreHead() {
 // the window without a single literal 640 in it.
 function scoresLayout() {
   const toy = frameTop();
-  const nums = SCORE_COLS.reduce((a, c) => a + c.w + SCORE_GAP, 0);
   const w = Math.max(240, Math.min(VIEW_W - 24, 440));
   const x = Math.round((VIEW_W - w) / 2);
   // the numbers are pinned to the right edge and the name takes what is left,
@@ -277,8 +275,6 @@ function renderScores(now) {
   const arrive = Math.min(1, scores.t / SCORE_IN);
   const hit = scoresHit();
 
-  // the backdrop: the ceremony underneath is put away entirely - this screen
-  // is a page, not an overlay on a stage
   // OPAQUE once it has arrived: the ceremony's stage, and the match still
   // playing under that, are put away entirely. A page that lets the pines
   // show through reads as a pause menu, which is the wrong promise.
@@ -405,11 +401,11 @@ function scoreNumSmall(txt, col, y, color) {
   drawPixelText(ctx, txt, col.x + col.w - pixelTextWidth(txt, 1), y, color, 1);
 }
 
-// The graph: one line per side, summed over its players, in the side's own
-// colour, with the area under it filled. A chart with no scale is a squiggle
-// (the merchant's own rule, js/ui/shop.js), so the top of the well prints the
-// biggest value it reaches and the right end prints the match clock; the
-// dotted uprights are the match's days.
+// The graph: one cumulative line per side, summed over its players, in the
+// side's own colour, with the LEAD shaded between the two. A chart with no
+// scale is a squiggle (the merchant's own rule, js/ui/shop.js), so the top of
+// the well prints the biggest value it reaches; the match clock is in the
+// head and printed once. The dotted uprights are the match's days.
 function drawScoreGraph(r, ac) {
   const key = scores.tab === 0 ? 'hGold' : 'hDmg';
   ctx.fillStyle = SC_WELL;
