@@ -598,17 +598,17 @@ const EMOTES = [
   // the correct thing to be holding at the end of a match in this valley
   { cap: '1', glyph: 'cheer',
     up: (s, f) => ({ spr: s.catch[2], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 3)) * 6) }),
-    down: (s, f) => ({ spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 5)) * 4), puff: f < 0.12 }) },
+    down: (s, f) => { const h = Math.abs(Math.sin(f * Math.PI * 3)); return { spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(h * 10), puff: h < 0.25 }; } },
   // the shuffle: the two side frames on alternate beats, swaying across its
   // own feet
   { cap: '2', glyph: 'dance',
     up: (s, f) => { const b = Math.floor(f * 12); return { spr: (b & 1 ? s.left : s.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -2 : 2, dy: b & 1 ? 0 : 3 }; },
-    down: (s, f) => { const b = Math.floor(f * 14); return { spr: (b & 1 ? s.prone.left : s.prone.right)[1], dx: b & 1 ? -3 : 3, dy: b & 1 ? 0 : 2, puff: f < 0.12 }; } },
+    down: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.prone.left : s.prone.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -6 : 6, dy: b & 1 ? 0 : 3, puff: f < 0.15 }; } },
   // the twirl, and the whole trick of it: a body that turns through all four
   // facings on the spot reads as spinning without a frame of new art
   { cap: '3', glyph: 'spin',
     up: (s, f) => ({ spr: s[EM_TURN[Math.floor(f * 16) & 3]][0], dy: Math.round(Math.sin(f * Math.PI) * 4) }),
-    down: (s, f) => ({ spr: s.prone[EM_TURN[Math.floor(f * 11) & 3]][0], dy: Math.round(Math.sin(f * Math.PI * 4) * 2), puff: f < 0.12 }) },
+    down: (s, f) => ({ spr: s.prone[EM_TURN[Math.floor(f * 9) & 3]][0], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 4)) * 4), puff: f < 0.2 }) },
   // down and up again: a beat on its feet, the length of it flat in the
   // snow, and back up - the one emote that leaves the body plan, so it is
   // also the one that puffs. Downed, it has nowhere to go but deeper.
@@ -618,7 +618,7 @@ const EMOTES = [
       const b = Math.floor((f - 0.12) * 20);
       return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.22, low: true };
     },
-    down: (s, f) => ({ spr: s.prone.right[0], dy: -Math.round(Math.sin(f * Math.PI) * 4), puff: f < 0.3 }) },
+    down: (s, f) => ({ spr: s.prone.right[f < 0.5 ? 1 + (Math.floor(f * 12) & 1) : 0], dy: -Math.round(Math.sin(f * Math.PI) * 8), puff: f < 0.5 }) },
 ];
 
 // ---- the plates' art -----------------------------------------------------
