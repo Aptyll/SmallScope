@@ -451,6 +451,7 @@ function deadKey(k) {
   }
   if (endSkip()) return;
   if (!deadReady()) return;
+  if (emoteKey(k)) return; // the digits are the emote bar (the `emotes` banner)
   const n = deadLayout().length;
   if (moveDir(k) === 'left') { state.deadSel = (state.deadSel + n - 1) % n; SFX.pickup(); }
   else if (moveDir(k) === 'right') { state.deadSel = (state.deadSel + 1) % n; SFX.pickup(); }
@@ -466,6 +467,7 @@ function deadClick() {
     return;
   }
   if (endSkip()) return;
+  if (emoteClick()) return; // a plate under the pointer plays its emote
   const h = deadHit();
   if (h >= 0) { state.deadSel = h; deadActivate(h); }
 }
@@ -557,6 +559,229 @@ function drawEndPlanks(now, dy) {
     state.deadHover[i] += (want - state.deadHover[i]) * Math.min(1, dt * 14);
     drawMenuButton({ x: rs[i].x, y: rs[i].y + dy, w: rs[i].w, h: rs[i].h },
       rs[i].label, state.deadHover[i], now, false); // prints its own 2x label
+  }
+}
+
+// ------------------------------------------------------------ emotes
+// The ceremony ends and the side is just standing there - the moment a
+// scored goal hands back to the players, with nothing left to win and
+// everything left to mess about with. Four of them, on a bar of four picture
+// plates under the planks: a digit plays one, and so does the pad's dpad,
+// read clockwise from up, which is why a plate wears the direction in its
+// corner the way a slot wears its number rather than a word of hint.
+//
+// An emote is a POSE PICKER over the set every body on the stage is already
+// drawn from (champLook, js/sprites/characters.js): it hands back a frame,
+// an offset off that body's own feet and, now and then, a puff of snow. So
+// the whole feature costs no art. Each has a second performance for a body
+// that is already DOWN, and the loss's screen plays that one - the side lies
+// in the drift and emotes without getting up, so nothing on that screen ever
+// stands back up.
+//
+// The local player's is `emo` below; the mates on a WIN celebrate on their
+// own (emoteAmbient), rolled off a hash per slot rather than kept, the same
+// no-array idiom as the motes and the blizzard. A loss has no ambient at
+// all: that side is down.
+const EM_T = 1.5;                        // one performance, whichever it is
+const EM_KEYS = ['1', '2', '3', '4'];
+const EM_PAD = { 12: '1', 15: '2', 13: '3', 14: '4' }; // the dpad, clockwise from up
+const EM_PAD_CAP = ['U', 'R', 'D', 'L'];
+const EM_TURN = ['down', 'left', 'up', 'right']; // a turn on the spot, one facing a beat
+
+// the local player's: which plate, and the FRAME clock it started on - not
+// either ceremony's, because a skip jumps those and would strand a pose
+const emo = { i: -1, t0: -1e9, hover: [0, 0, 0, 0] };
+
+const EMOTES = [
+  // hoisted: the catch's hold frame is the one pose in the set with both
+  // arms over the head, and what those arms are holding is a fish, which is
+  // the correct thing to be holding at the end of a match in this valley
+  { cap: '1', glyph: 'cheer',
+    up: (s, f) => ({ spr: s.catch[2], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 3)) * 6) }),
+    down: (s, f) => ({ spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 5)) * 4), puff: f < 0.12 }) },
+  // the shuffle: the two side frames on alternate beats, swaying across its
+  // own feet
+  { cap: '2', glyph: 'dance',
+    up: (s, f) => { const b = Math.floor(f * 12); return { spr: (b & 1 ? s.left : s.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -2 : 2, dy: b & 1 ? 0 : 3 }; },
+    down: (s, f) => { const b = Math.floor(f * 14); return { spr: (b & 1 ? s.prone.left : s.prone.right)[1], dx: b & 1 ? -3 : 3, dy: b & 1 ? 0 : 2, puff: f < 0.12 }; } },
+  // the twirl, and the whole trick of it: a body that turns through all four
+  // facings on the spot reads as spinning without a frame of new art
+  { cap: '3', glyph: 'spin',
+    up: (s, f) => ({ spr: s[EM_TURN[Math.floor(f * 16) & 3]][0], dy: Math.round(Math.sin(f * Math.PI) * 4) }),
+    down: (s, f) => ({ spr: s.prone[EM_TURN[Math.floor(f * 11) & 3]][0], dy: Math.round(Math.sin(f * Math.PI * 4) * 2), puff: f < 0.12 }) },
+  // down and up again: a beat on its feet, the length of it flat in the
+  // snow, and back up - the one emote that leaves the body plan, so it is
+  // also the one that puffs. Downed, it has nowhere to go but deeper.
+  { cap: '4', glyph: 'flop',
+    up: (s, f) => {
+      if (f < 0.12 || f > 0.88) return { spr: s.down[0] };
+      const b = Math.floor((f - 0.12) * 20);
+      return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.22, low: true };
+    },
+    down: (s, f) => ({ spr: s.prone.right[0], dy: -Math.round(Math.sin(f * Math.PI) * 4), puff: f < 0.3 }) },
+];
+
+// ---- the plates' art -----------------------------------------------------
+// One 10x10 grid an emote, stamped at 2x in the ending's accent (gold on the
+// win, frost on the loss) - a figure with its arms up, a note, a turning
+// arrow and a body flat on the ground with the snow still settling over it.
+const EM_GLYPHS = {
+  cheer: [
+    '.g......g.',
+    '.g..hh..g.',
+    '.g..hh..g.',
+    '..g.gg.g..',
+    '...gggg...',
+    '...gggg...',
+    '...gggg...',
+    '...g..g...',
+    '...g..g...',
+    '..gg..gg..',
+  ],
+  dance: [
+    '...gggggg.',
+    '...gggggg.',
+    '...g....g.',
+    '...g....g.',
+    '...g....g.',
+    '...g....g.',
+    '.ggg..ggg.',
+    'ggggg.gggg',
+    'ggggg.gggg',
+    '.ggg..ggg.',
+  ],
+  spin: [
+    '...gggg...',
+    '..g....g..',
+    '.g......g.',
+    'g.....gggg',
+    'g......ggg',
+    'g.......gg',
+    '.g........',
+    '..g....g..',
+    '...gggg...',
+    '..........',
+  ],
+  flop: [
+    '....gg....',
+    '....gg....',
+    '....gg....',
+    '....gg....',
+    '..gggggg..',
+    '...gggg...',
+    '....gg....',
+    '.h..h..h..',
+    'h...h....h',
+    '..h.....h.',
+  ],
+};
+const EM_GLYPH_HOT = { '.': null, g: '#ffffff', o: '#ffffff', h: '#ffffff' };
+
+// ---- the bar -------------------------------------------------------------
+const EM_PLATE = 26, EM_GAP = 5, EM_BAR_DY = 24; // under the planks, inside the frame
+
+function emoteLayout() {
+  const L = winLayout();
+  const n = EMOTES.length;
+  const w = n * EM_PLATE + (n - 1) * EM_GAP;
+  const x0 = Math.round((VIEW_W - w) / 2);
+  return EMOTES.map((e, i) => ({ x: x0 + i * (EM_PLATE + EM_GAP), y: L.plankY + EM_BAR_DY, w: EM_PLATE, h: EM_PLATE }));
+}
+
+// the bar is live exactly when the planks are: before that a press is a skip
+// (endSkip), and the screen has not finished saying what it is
+function emoteLive() {
+  return emoteScreen() && deadReady() && !state.fade;
+}
+// ...and which screens have the bar at all: the two ceremonies, not the
+// post-game record that answers endScreen() beside them (js/ui/lobby.js)
+function emoteScreen() {
+  return endScreen() && state.deadView !== 'spec' && state.deadView !== 'scores';
+}
+
+// which plate the pointer is on (-1 for none)
+function emoteHit() {
+  if (!emoteLive()) return -1;
+  const rs = emoteLayout();
+  for (let i = 0; i < rs.length; i++) {
+    const r = rs[i];
+    if (mouse.x >= r.x - 2 && mouse.x < r.x + r.w + 2 && mouse.y >= r.y - 2 && mouse.y < r.y + r.h + 2) return i;
+  }
+  return -1;
+}
+
+function emotePlay(i) { emo.i = i; emo.t0 = performance.now() / 1000; SFX.place(); }
+function emoteKey(k) { const i = EM_KEYS.indexOf(k); if (i < 0 || !emoteLive()) return false; emotePlay(i); return true; }
+function emoteClick() { const h = emoteHit(); if (h < 0) return false; emotePlay(h); return true; }
+// the pad's dpad IS the bar over an end screen (padPress/padRelease,
+// js/gamepad.js); its planks keep the stick and the bumpers
+function emotePad(i) { return emoteScreen() ? EM_PAD[i] || null : null; }
+
+// what the local player's body is doing this frame, or null for standing there
+function emoteNow(now) {
+  if (emo.i < 0) return null;
+  const f = (now - emo.t0) / EM_T;
+  return f >= 0 && f < 1 ? { e: EMOTES[emo.i], f } : null;
+}
+
+// A mate celebrating on its own: every EM_AMB seconds each one rolls its own
+// slot off the hash, about half of them play, and the rest of the slot it
+// stands there. Nothing is kept between frames, so a resize costs it nothing.
+const EM_AMB = 2.6;
+function emoteAmbient(k, now) {
+  const ph = now / EM_AMB + k * 0.37;
+  const slot = Math.floor(ph);
+  const h = hash2(k * 13 + slot, 71);
+  if (h < 0.42) return null;
+  const f = ((ph - slot) * EM_AMB) / EM_T;
+  return f < 1 ? { e: EMOTES[Math.floor(h * 997) % EMOTES.length], f } : null;
+}
+
+// A body on the stage at 3x, bottom-aligned on the line its feet stand on:
+// the cheer's hoist frame is 20 rows on the same feet, which is what reading
+// the height pays for (the deal drawPlayer strikes too, js/draw/bodies.js).
+function drawEndBody(spr, x, footY) {
+  ctx.drawImage(spr, x, footY - spr.height * 3, WIN_BODY, spr.height * 3);
+}
+
+// snow thrown up under a body: a ring of pale specks spreading and settling
+function drawSnowPuff(cx, y, f, a) {
+  if (f < 0 || f > 1) return;
+  for (let i = 0; i < 10; i++) {
+    const h1 = hash2(i * 7 + 1, 43), h2 = hash2(i * 5 + 3, 89);
+    const ang = (i / 10) * Math.PI * 2 + h1;
+    const r = 3 + f * (10 + h2 * 10);
+    ctx.globalAlpha = a * (1 - f) * 0.9;
+    ctx.fillStyle = h1 > 0.6 ? '#ffffff' : '#dfe8f8';
+    ctx.fillRect(Math.round(cx + Math.cos(ang) * r), Math.round(y - 1 - Math.sin(ang) * r * 0.35 - f * 4), 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// the bar itself: the glyph is the whole explanation, the plate lifts under
+// the pointer and stays lit while its emote runs, and the corner carries
+// whatever plays it - the digit, or the pad's direction with one in hand. dy
+// slides it on with the planks without moving the rects emoteHit() tests.
+function drawEmoteBar(now, ac, dy) {
+  const rs = emoteLayout();
+  const hot = emoteHit();
+  const live = emoteNow(now);
+  const dt = Math.min(0.05, now - (drawEmoteBar.last || now)); drawEmoteBar.last = now;
+  const padOn = padActive();
+  for (let i = 0; i < rs.length; i++) {
+    const r = rs[i];
+    const want = hot === i || (live && emo.i === i) ? 1 : 0;
+    emo.hover[i] += (want - emo.hover[i]) * Math.min(1, dt * 14);
+    const y = r.y + dy - Math.round(emo.hover[i] * 2);
+    const lit = emo.hover[i] > 0.5;
+    ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(r.x + 2, r.y + dy + 2, r.w, r.h);
+    ctx.fillStyle = '#0a0e23'; chamRect(r.x, y, r.w, r.h);
+    ctx.fillStyle = '#141c3c'; chamRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
+    ctx.fillStyle = lit ? ac.rule : '#35426e';
+    ctx.fillRect(r.x + 2, y + 1, r.w - 4, 1); ctx.fillRect(r.x + 2, y + r.h - 2, r.w - 4, 1);
+    stampGrid(EM_GLYPHS[EMOTES[i].glyph], lit ? EM_GLYPH_HOT : ac.icon, r.x + 3, y + 2, 2);
+    if (padOn) drawPadGlyph(ctx, r.x + r.w - 11, y + r.h - 11, 'dpad', EM_PAD_CAP[i]);
+    else drawPixelTextShadow(ctx, EMOTES[i].cap, r.x + r.w - 6, y + r.h - 7, lit ? ac.txt : '#8f9cc4', '#0a0e23');
   }
 }
 
@@ -791,6 +1016,28 @@ function drawWinMotes(now, a, n, cold) {
     ctx.fillStyle = cold ? (h1 > 0.55 ? '#e8f2ff' : h1 > 0.28 ? '#b8cce6' : '#8fa8d8')
       : h1 > 0.55 ? '#ffd95c' : h1 > 0.28 ? '#ff8a3c' : '#e8f2ff';
     ctx.fillRect(x, Math.round(y), h2 > 0.78 ? 2 : 1, h2 > 0.78 ? 2 : 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// The confetti the crown fires: 2px flakes in the side's own colours and the
+// ceremony's gold, tumbling as they fall - a flake is one px wide on the
+// frames its edge is toward you, which is the whole of the tumble. Wound off
+// the beat the crown landed on, so it BURSTS rather than drizzling, and
+// stateless like the motes: `since` is all it is given.
+function drawWinConfetti(now, since, a, tm) {
+  const cols = [tm.coat, tm.coatL, tm.trim, '#ffd95c', '#ffffff', '#ff8a3c'];
+  for (let i = 0; i < 96; i++) {
+    const h1 = hash2(i * 9 + 1, 31), h2 = hash2(i * 3 + 7, 97), h3 = hash2(i * 11 + 5, 149);
+    const d = since - h1 * 0.55; // staggered, so the burst has a front to it
+    if (d <= 0) continue;
+    const y = -12 + d * (20 + h2 * 46) + d * d * 6; // and it gathers speed
+    if (y > VIEW_H) continue;
+    const x = Math.round(h3 * (VIEW_W - 2) + Math.sin(d * (1.4 + h1 * 2) + i) * (4 + h2 * 10));
+    const face = Math.abs(Math.sin(d * (5 + h1 * 6) + i)) > 0.35;
+    ctx.globalAlpha = a * Math.min(1, d * 3) * Math.min(1, (VIEW_H - y) / 40);
+    ctx.fillStyle = cols[Math.floor(h1 * 971) % cols.length];
+    ctx.fillRect(x, Math.round(y), face ? 3 : 1, 2);
   }
   ctx.globalAlpha = 1;
 }
@@ -1093,27 +1340,49 @@ function renderVictory(now) {
     // every body of the side, outer ranks first and the local player last: 3x,
     // each breathing on its own beat, wearing the gear it finished in, its
     // name over its head - the local player's a row higher, clear of its crown
-    let bobMe = 0;
+    let bobMe = 0, crownOff = false;
     for (let k = stands.length - 1; k >= 0; k--) {
       const s = stands[k];
       const sr = easeOut(Math.max(0, Math.min(1, (t - WIN_T.stage - s.rank * WIN_T.stand) / 0.55)));
       if (sr <= 0) continue;
+      const set = SPRITES.champLook(s.m.cls, s.m.look, ti);
       const ph = now * 2.2 + k * 1.3;
       const bob = Math.round(Math.sin(ph) * 1.5);
-      if (k === 0) bobMe = bob;
-      const by = s.y + Math.round((1 - sr) * 26) + bob;
+      // the local player performs what the player asked for; the mates
+      // celebrate on their own once the crown is down (the `emotes` banner)
+      const act = k === 0 ? emoteNow(now) : (t > WIN_T.crownLand ? emoteAmbient(k, now) : null);
+      const pose = act ? act.e.up(set, act.f) : null;
+      // how far over its own head the pose reaches - the cheer's hoist frame
+      // is four rows taller than the body plan and hops on top of that - so
+      // the name and the crown ride clear of it instead of through it
+      const lift = pose ? (pose.spr.height - 16) * 3 + (pose.dy || 0) : 0;
+      if (k === 0) { bobMe = pose ? -lift : bob; crownOff = !!(pose && pose.low); }
+      const by = s.y + Math.round((1 - sr) * 26) + (pose ? 0 : bob);
       ctx.globalAlpha = sr;
-      ctx.drawImage(SPRITES.champLook(s.m.cls, s.m.look, ti).down[Math.sin(ph) > 0.6 ? 1 : 0], s.x, by, WIN_BODY, WIN_BODY);
-      drawGearMarks(s.m, s.x, by, 3);
-      drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by - (k ? 8 : 13), tm.mark, '#0f1632');
+      if (pose) {
+        // the marks sit on the standing body plan (drawPlayer), so a body
+        // that has left it wears none of them
+        drawEndBody(pose.spr, s.x + (pose.dx || 0), by + WIN_BODY - (pose.dy || 0));
+        if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY, act.f / 0.22, sr);
+      } else {
+        ctx.drawImage(set.down[Math.sin(ph) > 0.6 ? 1 : 0], s.x, by, WIN_BODY, WIN_BODY);
+        drawGearMarks(s.m, s.x, by, 3);
+      }
+      drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by - (k ? 8 : 13) - lift, tm.mark, '#0f1632');
       ctx.globalAlpha = 1;
+      // the snow it kicks up arriving on the stage, on its own rank's beat
+      const land = WIN_T.stage + s.rank * WIN_T.stand + 0.55;
+      if (t > land && t < land + 0.45) drawSnowPuff(s.x + (WIN_BODY >> 1), s.y + WIN_BODY, (t - land) / 0.45, 1);
     }
     // the crown, dropped onto the local player's head
     const ct = (t - WIN_T.crown) / (WIN_T.crownLand - WIN_T.crown);
     if (ct > 0) {
       const e = Math.min(1, ct);
       const cy = Math.round(stands[0].y + 1 + (ct >= 1 ? bobMe : 0) - (1 - e * e) * 70);
-      stampGrid(WIN_CROWN, WIN_CROWN_PAL, L.cx - 13, cy + (ct > 1 && ct < 1.25 ? 1 : 0), 2, '#3c2a1e');
+      // ...and it comes off the moment the head it sits on goes into the
+      // snow: it lies on the block beside the body until that body is up
+      stampGrid(WIN_CROWN, WIN_CROWN_PAL, L.cx - 13 - (crownOff ? 26 : 0),
+        (crownOff ? stands[0].y + 36 : cy) + (ct > 1 && ct < 1.25 ? 1 : 0), 2, '#3c2a1e');
       if (ct >= 1 && ct < 1.6) { // a ring of sparks off the landing
         const f = (ct - 1) / 0.6;
         ctx.globalAlpha = 1 - f;
@@ -1126,6 +1395,9 @@ function renderVictory(now) {
       }
     }
   }
+
+  // the confetti the crown fires, over the stage and under the headline
+  if (t > WIN_T.crownLand) drawWinConfetti(now, t - WIN_T.crownLand, dim, tm);
 
   // --- the headline: VICTORY, one letter at a time ------------------------
   const TXT = 'VICTORY', S = 4;
@@ -1166,6 +1438,7 @@ function renderVictory(now) {
     const e = easeOut(Math.min(1, (t - (WIN_T.menu - WIN_SLIDE)) / WIN_SLIDE));
     ctx.globalAlpha = e;
     drawEndPlanks(now, Math.round((1 - e) * 16));
+    drawEmoteBar(now, WIN_ACCENT, Math.round((1 - e) * 16));
     ctx.globalAlpha = 1;
   }
 }
@@ -1219,12 +1492,16 @@ function defCues(t0, t1) {
 // read as weather instead of as static.
 function drawBlizzard(now, a) {
   const span = VIEW_W + 80;
+  // ...under one slow envelope over the whole sheet, so the wind arrives in
+  // GUSTS instead of hissing flat: two sines beating against each other, the
+  // way the world's own wind is summed (windSway, js/sim.js)
+  const gust = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(now * 0.55) * Math.sin(now * 0.23 + 1.3));
   for (let i = 0; i < 52; i++) {
     const h1 = hash2(i * 17 + 3, 41), h2 = hash2(i * 11 + 7, 89);
     const y = Math.round(h1 * (VIEW_H + 16)) - 8;
-    const x = Math.round(((now * (60 + h2 * 150) + h1 * span) % span) - 50);
-    const len = 4 + Math.round(h2 * 12);
-    ctx.globalAlpha = a * (0.12 + h2 * 0.16);
+    const x = Math.round(((now * (60 + h2 * 150) * gust + h1 * span) % span) - 50);
+    const len = 4 + Math.round(h2 * 12 * gust);
+    ctx.globalAlpha = a * (0.12 + h2 * 0.16) * gust;
     ctx.fillStyle = '#cfe4f2';
     ctx.fillRect(x, y, len, 1);
     if (len > 8) ctx.fillRect(x + 3, y + 1, len - 5, 1); // a shallow slant, in two steps
@@ -1269,7 +1546,35 @@ function drawDeadBrazier(cx, baseY, now, a) {
   ctx.globalAlpha = 1;
 }
 
-// an arrow planted where the body fell - what the crown is on the other
+// The frame icing over from its edges in, the way a window does: crystals
+// crowding the very edge and thinning inward, the band they may reach
+// growing while the screen sits there, so the loss keeps closing in after
+// everything else has settled. Sampled rather than swept - 300 points placed
+// by hash around the border, not a loop over fifty thousand pixels a frame.
+const DEF_RIME_BAND = 30, DEF_RIME_GROW = 7; // px deep, and the seconds it takes to get there
+function drawDefeatRime(t, a) {
+  const grow = Math.min(1, t / DEF_RIME_GROW) * DEF_RIME_BAND;
+  for (let i = 0; i < 620; i++) {
+    const h1 = hash2(i * 7 + 3, 211), h2 = hash2(i * 5 + 11, 307), h3 = hash2(i * 13 + 1, 17);
+    const dep = Math.pow(h2, 2.3) * DEF_RIME_BAND; // crowded at the edge, sparse inward
+    if (dep > grow) continue;
+    const e = Math.floor(h1 * 4), ver = e < 2;
+    const along = Math.round(h3 * (ver ? VIEW_W : VIEW_H));
+    const x = ver ? along : e === 2 ? Math.round(dep) : VIEW_W - 1 - Math.round(dep);
+    const y = e === 0 ? Math.round(dep) : e === 1 ? VIEW_H - 1 - Math.round(dep) : along;
+    // a crystal is a SPUR pointing in off the edge, not a speck: a sheet of
+    // specks is the snow this screen already has two of
+    const len = 1 + Math.round(h1 * 3);
+    const dir = e === 1 || e === 3 ? -1 : 1;
+    ctx.globalAlpha = a * 0.85 * Math.pow(1 - dep / DEF_RIME_BAND, 1.6);
+    ctx.fillStyle = h3 > 0.72 ? '#ffffff' : h3 > 0.35 ? '#e8f2ff' : '#b8cce6';
+    if (ver) ctx.fillRect(x, dir > 0 ? y : y - len + 1, 1, len);
+    else ctx.fillRect(dir > 0 ? x : x - len + 1, y, len, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// an arrow planted where a body fell - what the crown is on the other
 // screen, and the only thing on this one still standing up
 const DEF_ARROW = [
   '...s...', '..fsf..', '..fsf..', '..fsf..', '...s...',
@@ -1305,33 +1610,53 @@ function renderDefeat(now) {
     const stands = winStands(L, ws, 0);
     const hw = (stands.length >> 1) * (WIN_BODY + L.gap) + (WIN_BODY >> 1);
     drawDefeatDrift(L.cx, L.stageY - 4 - settle, hw + 12, 26, rise); // the bank behind
-    // the mates on their feet in it, outer ranks first, each settling a beat
-    // after the last, wearing the gear it finished in, its name over its head
-    for (let k = stands.length - 1; k >= 1; k--) {
+    // The whole side down in it, SIDE-ON: a body lying across the frame is
+    // the one pose that cannot be misread as standing, and a mate still on
+    // their feet among the fallen reads as a survivor, which is exactly what
+    // this screen has none of. Heads toward the middle, so the line lies
+    // mirrored the way it stood, each sunk a row or two off the hash so it
+    // is a field of them rather than a rank of dominoes, and no gear marks -
+    // those sit on the standing body plan (see drawPlayer). Outer ranks
+    // first, each settling a beat after the last; the name sits over the
+    // body's top row (row 7 of the prone grid).
+    const DEAD_INK = mixHex(tm.mark, '#141c3c', 0.42); // a colder plate than the win's
+    for (let k = stands.length - 1; k >= 0; k--) {
       const s = stands[k];
       const sr = easeOut(Math.max(0, Math.min(1, (t - DEF_T.stage - s.rank * DEF_T.stand) / 0.6)));
       if (sr <= 0) continue;
-      const by = s.y - Math.round((1 - sr) * 8);
-      ctx.globalAlpha = sr;
-      ctx.drawImage(SPRITES.champLook(s.m.cls, s.m.look, ti).down[0], s.x, by, WIN_BODY, WIN_BODY);
-      drawGearMarks(s.m, s.x, by, 3);
-      drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by - 8, tm.mark, '#0f1632');
+      const set = SPRITES.champLook(s.m.cls, s.m.look, ti);
+      // side-on with the head toward the middle, or face down head-on, off
+      // the hash: one row of identical silhouettes reads as cordwood
+      const hf = hash2(k * 17 + 5, 97);
+      const face = k === 0 ? 'right' : hf < 0.34 ? 'down' : (k & 1) ? 'left' : 'right';
+      const sink = k ? Math.round(hash2(k * 11 + 3, 47) * 4) - 2 : 0;
+      // even down there the local player can still say something - the loss's
+      // emotes are performed WITHOUT getting up (the `emotes` banner)
+      const act = k === 0 ? emoteNow(now) : null;
+      const pose = act ? act.e.down(set, act.f) : null;
+      const by = L.stageY + 6 - WIN_BODY - settle + sink + Math.round((1 - sr) * 8);
+      ctx.globalAlpha = sr * 0.92; // the cold has them already
+      if (pose) {
+        drawEndBody(pose.spr, s.x + (pose.dx || 0), by + WIN_BODY - (pose.dy || 0));
+        if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY - 6, Math.min(1, act.f / 0.3), sr);
+      } else {
+        ctx.drawImage(set.prone[face][0], s.x, by, WIN_BODY, WIN_BODY);
+      }
+      drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by + 4, DEAD_INK, '#0f1632');
       ctx.globalAlpha = 1;
     }
-    // ...and the local player face down among them, SIDE-ON: a body lying
-    // across the frame is the one pose that cannot be misread as standing.
-    // No gear marks - those sit on the standing body plan (see drawPlayer).
-    // The name sits over the body's top row (row 7 of the prone grid).
-    const me = stands[0];
-    const bx = me.x, by = L.stageY + 6 - WIN_BODY - settle;
-    ctx.globalAlpha = rise;
-    ctx.drawImage(SPRITES.champLook(me.m.cls, me.m.look, ti).prone.right[0], bx, by, WIN_BODY, WIN_BODY);
-    drawPixelTextOutline(ctx, me.m.name, centreTextX(bx + (WIN_BODY >> 1), me.m.name), by + 13, tm.mark, '#0f1632');
-    ctx.globalAlpha = 1;
-    // ...and the snow in FRONT of them all, over every boot and the body's
+    // ...and the snow in FRONT of them all, over every boot and the bodies'
     // last rows: the drift has already started taking them back
-    drawDefeatDrift(L.cx, L.stageY + 14 - settle, hw + 32, 20, rise);
-    stampGrid(DEF_ARROW, DEF_ARROW_PAL, L.cx + 14, L.stageY - 24 - settle, 2, '#0a0e23');
+    drawDefeatDrift(L.cx, L.stageY + 14 - settle, hw + 32, 14, rise);
+    // an arrow planted where a body fell - what the crown is on the other
+    // screen, and the only thing on this one still standing up. The local
+    // player always earns one; the rest are the hash's to give, so the line
+    // reads as a field somebody walked away from.
+    for (let k = 0; k < stands.length; k++) {
+      if (k && hash2(k * 9 + 3, 61) < 0.5) continue;
+      const ax = k ? stands[k].x + 6 + Math.round(hash2(k * 7 + 5, 23) * 28) : L.cx + 14;
+      stampGrid(DEF_ARROW, DEF_ARROW_PAL, ax, L.stageY - 24 - settle + (k ? Math.round(hash2(k * 3 + 1, 83) * 4) : 0), 2, '#0a0e23');
+    }
   }
 
   // --- the headline: DEFEAT, one letter at a time, falling ----------------
@@ -1373,6 +1698,11 @@ function renderDefeat(now) {
     const e = easeOut(Math.min(1, (t - (DEF_T.menu - DEF_SLIDE)) / DEF_SLIDE));
     ctx.globalAlpha = e;
     drawEndPlanks(now, Math.round((1 - e) * 16));
+    drawEmoteBar(now, DEF_ACCENT, Math.round((1 - e) * 16));
     ctx.globalAlpha = 1;
   }
+
+  // the frost taking the frame itself, last of all, so it sits over
+  // everything the screen has said
+  drawDefeatRime(t, dim);
 }

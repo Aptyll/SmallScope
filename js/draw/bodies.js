@@ -357,7 +357,12 @@ function drawPlayer(p, ex, ey, now) {
     }
   }
 
-  if (state.mode === 'title') return;
+  // ...and neither the title's living world nor an end screen's frozen one
+  // wears any of the tells below: both are compositions somebody is looking
+  // AT rather than a match somebody is reading, and a name plate with a
+  // health bar under it floating through the ceremony is the HUD showing up
+  // to a party it was not invited to (endScreen, js/ui/screens.js)
+  if (state.mode === 'title' || endScreen()) return;
 
   // Everything above the head is a tell, and a buried player gives none of
   // them away: name tag, both bars, the level badge and - the one that

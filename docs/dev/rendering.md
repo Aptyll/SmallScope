@@ -1263,8 +1263,10 @@ single **LOBBY** plank of its own. Neither ceremony's LOBBY leaves, though: both
 respawn-pending death's LOBBY leaves directly — nothing has been lost yet, so there is no record
 to read. `endScreen()` is the one test for "a screen owns the frame" —
 `renderUI` and `replayShowing` both bow out under it (the recap would cover the
-whole ceremony); the held-TAB scoreboard and the info stack still draw over both. The post-game
-lobby answers it too.
+whole ceremony), and so does every per-body tell in the world under the wash (`drawPlayer` bails
+on it exactly as it does on the title's living world: a name plate with a health bar under it
+floating through the ceremony is the HUD showing up to a party it was not invited to); the
+held-TAB scoreboard and the info stack still draw over both. The post-game lobby answers it too.
 
 **The two timelines.** `WIN_T` and `DEF_T` name every beat, and the render pass and the sound cues
 (`winCues` / `defCues`, called from `update`) read one table each so they cannot drift apart. The
@@ -1278,19 +1280,25 @@ beat calls `endSkip()`, which jumps the relevant clock to the end.
   team at 3× in a mirrored line (`winStands`: the local player in the middle on the raised block,
   mates fanning out a rank at a time to the right and the left, each rank a beat after the last),
   wearing the gear it finished in, its name over its head in the team's mark → a crown falling onto
-  the local player's head → four stat plates popping in with their numbers climbing from zero → the
-  planks sliding up. Nothing is written under the rule: the stage is the headline.
+  the local player's head, firing a confetti burst (`drawWinConfetti`) across the whole frame →
+  four stat plates popping in with their numbers climbing from zero → the planks and the emote bar
+  sliding up together. Each body throws a puff of snow (`drawSnowPuff`) on the beat it lands on the
+  stage. Nothing is written under the rule: the stage is the headline.
 - **Defeat**: the same beats inverted. A colder, heavier wash → **DEFEAT** *falling* in a letter at
   a time on an ease-**in** (it drops, it does not spring), flashing cold rather than white → a
   **frost** rule (`drawGoldRule` takes a `pal`; `RULE_FROST`) → the stage *settling* rather than
   rising: the braziers out (`drawDeadBrazier` — the same ironwork with ash on the rim and a thread
   of smoke), the same two banners **cold** (`winBannerCv`'s `cold`: the cloth chilled halfway to the
   wash through `mixHex`, gold gone to frost, moth holes bitten out of the alpha, frayed where the
-  tassels were), a snow bank where the dais stood and **the whole losing side** standing knee-deep
-  in it on the win's stands — no raised block — with the local player **prone and side-on** in the
-  middle at the same 3×, an arrow planted beside it where the crown would be → five stat plates →
-  one plank. Nothing under the rule here either: who put you down is the death headline's, and
-  this screen is the side's loss, not yours.
+  tassels were), a snow bank where the dais stood and **the whole losing side down in it** on the
+  win's stands — no raised block, every body **prone** at the same 3×, head toward the middle so
+  the line lies mirrored the way it stood, sunk a row or two off the hash and mixed side-on with
+  face-down so it is a field rather than a rank of cordwood, names in a chilled plate — with
+  arrows planted among them where the crown would be → five stat plates → one plank and the emote
+  bar. A mate still on their feet among the fallen would read as a survivor, which is exactly
+  what this screen has none of. Frost then takes the frame itself (`drawDefeatRime`), crowding in
+  from the edges for as long as the screen is up. Nothing under the rule here either: who put you
+  down is the death headline's, and this screen is the side's loss, not yours.
 
 **What they print** is one frozen object either way — `endSnapshot()` on `state.end`, taken in
 `endMatch` because the match keeps running underneath and a total that climbs behind a tally which
@@ -1317,7 +1325,12 @@ rules, a gold chevron down the hang and a fringed swallowtail cut into the alpha
 `flip` so both lit folds face the stage — then hung from a finialed iron rail a row at a time
 under a ripple pinned at the rail), `drawBrazierIron` + `drawWinBrazier` / `drawDeadBrazier`,
 `drawWinDais` (three tiers: the raised block the local player stands on, the side's step, the
-inlaid base with its icicles) and `drawDefeatDrift`. The drift's profile is a
+inlaid base with its icicles), `drawWinConfetti` (flakes in the side's own colours wound off the
+beat the crown landed, tumbling to an edge and back as they fall — stateless, `since` is all it is
+given), `drawSnowPuff`, `drawDefeatRime` (crystals as short spurs pointing in off the frame's
+edge, 620 of them placed by hash rather than a sweep of the border band) and `drawDefeatDrift`.
+`drawBlizzard` rides one slow gust envelope over the whole sheet — two sines beating against each
+other, the way the world's own wind is summed — so the weather swells instead of hissing flat. The drift's profile is a
 cosine under a flattening root: a plain cosine domes, and a dome leaves the ends of a body lying on
 it up in the air. It is drawn twice, once behind the body and once in front, so the fallen player lies
 **in** the snow rather than on a hill. `stampGrid(rows, pal, x, y, s, rim)` paints a char grid at
@@ -1326,6 +1339,31 @@ the stat glyphs (`WIN_ICONS`) that never earned a baked sprite; the sprites the 
 the class bodies (`SPRITES.champ`), `SPRITES.gearIcons`, `itemBow` and `itemGold` — that last one a **live
 canvas** whose frame `stepItemIcons()` stamps in each frame, like every item icon that moves
 ([sprites.md](sprites.md)).
+
+### The emote bar
+
+Once the planks are up there is nothing left to win, which is the moment a scored goal hands back
+to the players. Four emotes — a cheer, a shuffle, a twirl, a flop — sit on a bar of four picture
+plates under the planks (`emoteLayout`, the `emotes` banner): a digit plays one, and so does the
+pad's dpad read clockwise from up, which is why a plate wears its direction in the corner the way
+a bag slot wears its number rather than a word of hint. `emotePad` is what `padPress` asks, so the
+dpad *is* the bar over an end screen and the planks keep the stick and the bumpers. The bar is
+live exactly when the planks are (`emoteLive`): before that a press is a skip (`endSkip`).
+
+An emote is a **pose picker** over the set every body on the stage is already drawn from
+(`champLook`) — it hands back a frame, an offset off that body's own feet and sometimes a puff —
+so the whole feature costs no art. The cheer is the catch's hoist frame, the one pose in the set
+with both arms over the head; the twirl is the four facings in order, which is the whole trick of
+it; the flop drops onto the prone frames and gets back up, and the crown comes off with it and
+lies on the block until the body is up again. `drawEndBody` bottom-aligns whatever frame comes
+back on the line the feet stand on, so the hoist's extra rows keep their feet, and the name and
+the crown ride clear of a pose that reaches over the head.
+
+Every emote has a **second performance for a body already down**, and the loss's screen plays that
+one: the side lies in the drift and emotes without getting up, so nothing on that screen ever
+stands back up. The mates on a **win** celebrate on their own (`emoteAmbient`) — each rolls its
+own slot off the hash every `EM_AMB` seconds, about half of them play, and nothing is kept between
+frames, the same no-array idiom as the motes. A loss has no ambient at all.
 
 **The death dim** underneath is the third state, and it is not a ceremony: a wash, **YOU COLLAPSED
 IN THE SNOW** at 3× (2× on a view too narrow to hold it) in the upper band — it is the first thing
