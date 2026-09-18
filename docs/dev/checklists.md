@@ -39,9 +39,9 @@ declare victory. The affordances:
     about a second of stepped frames — step ~120 frames of `1/60` after warping before cropping
     anything, or the crop lands on empty world. A live bot parked beside the staged player will
     shoot it dead mid-capture: park its bow with `setNock(1e9, p)` first. And `warp` checks
-    nothing: a player dropped into a pine's tile has every shot it fires die in the tile it
-    spawned in (the arrow loop strikes the solid it starts inside), which reads as "the bow is
-    broken" - test `objects[ty * WORLD + tx]` for the stand tile and the line of fire first.
+    nothing: a player dropped into a pine's tile has nearly every shot it fires die in the tile it
+    spawned in (a shot's first step strikes the solid its bow is inside unless it is leaving over
+    the near edge - `shotContacts`), which reads as "the bow is broken" - test `objects[ty * WORLD + tx]` for the stand tile and the line of fire first.
 - **The wire** — the `DBG.net*` handles, the proofs behind [the match](../pvp-architecture.md):
   - `netEcho()` writes the wire's quantum into the world (`snapQuantize`: positions to eighths
     of a px, the one designed loss), snapshots the match, blanks every singleton, applies the
@@ -408,7 +408,8 @@ What it must do to get them:
 4. call **`drawUnitStates(e, px, py, w, h, now)`** in its draw pass, or its states are invisible and
    unplayable-around;
 5. join `separateUnits`, `UNIT_MASS` and `unitRadius` (see the CLAUDE.md rule), and give it a hit
-   test the way `animalHit`/`robotHit` do — that is the one thing the arrow loop asks per kind;
+   disc the way `animalHitR`/`animalHitY` and `ROBOT_HIT_R`/`robotHitY` do, swept by a loop over its list
+   in `shotContacts` (js/sim.js) — that is the one thing the arrow loop asks per kind;
 6. if it goes in `animals`, its `SPRITES` entry is **clips, not a flat frame list** —
    `{ right: { idle: [...], ... }, left: ... }`, `idle` mandatory because it is the fallback and
    the frame the wiki's card takes — plus an `ANIM_CLIPS` row naming the same clips with their
@@ -456,7 +457,7 @@ needs to learn about it. What *does* cost work: any **new object type** its `pro
 checklist above), and any **new kind of monster** (a `MONSTER` row if it fights like the three
 wolves — hp in `ANIMAL_HP`/`ANIMAL_LV_HP`, a `HIT_PUFF` colour, a `YIELD` payout, a `WIKI_BEASTS`
 card, its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` and the hitbox
-overlay's sizes in js/draw/render.js, `animalHit`'s radius if it is not 8, and — if it can hurt a player
+overlay's sizes in js/draw/render.js, `animalHitR`'s radius if it is not 8, and — if it can hurt a player
 — a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
 
 **Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `buildWorldMapImg()`,

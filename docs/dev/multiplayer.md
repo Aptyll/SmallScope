@@ -430,7 +430,8 @@ shade). The team colour stays the background, the tint is the ink — see the
 ## PvP
 
 `enemyOf(p, q)` is the one place the rule lives: another live, active player on **another** team.
-Arrows carry `owner`/`team` and test players first in `updatePlay`'s arrow loop, on an
+Arrows carry `owner`/`team` and meet players in `updatePlay`'s arrow loop — swept along each step,
+so a fast shot never steps over one ([flight paths](gameplay.md#flight-paths)) — on an
 `ARROW_HIT_R` (10 px) disc round the player's centre — wider than the 4.5 px body a walker
 collides with, because a walking target crosses its own width twice in the quarter second a
 full-draw arrow takes to fly 80 px, and the same disc on every side keeps it a fact of arrows
@@ -439,7 +440,7 @@ floater and possibly `die(p, src, cause)`. Friendly fire is off, and an arrow ca
 shooter. `damagePlayer` takes a seventh argument, `crit`, which the arrow loop passes from
 `a.ambush`: it runs the damage floater hotter and at double scale and doubles the local shake. Any
 hit also calls `risePlayer` before anything else, so nobody stays buried through one. A hunter's
-PIERCING SHOT (`a.pierce`) is the one arrow that takes a body and keeps flying — everyone on the
+PIERCING SHOT (`a.pierce`, every arm of it) is the one shot that takes a body and keeps flying — everyone on the
 line is hit once each (`a.pierceHit`), and only a raised shield or the world stops it. A player
 riding a zipline is a target like any other, and cannot shoot back ([the ride](gameplay.md#the-zipline)).
 

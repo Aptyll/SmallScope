@@ -1083,7 +1083,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   for (const p of players) {
     if (!p.active || p.dead || inAir(p)) continue;
     hbRing(p.x - ex, p.y - ey, PLAYER_R, HB_BODY);
-    hbRing(p.x - ex, p.y - 6 - ey, 7, HB_HURT);
+    hbRing(p.x - ex, p.y - 6 - ey, ARROW_HIT_R, HB_HURT);
     if (p.dodgeT > 0) hbRing(p.x - ex, p.y - ey, PLAYER_R + ROLL_HIT_R, HB_HURT);
     hbDot(p.x - ex, p.y - ey, HB_BODY);
     hbMid(p.x - ex, p.y - 32 - ey, p.y + 4 - ey); // up past the name tag, down past the feet
@@ -1094,7 +1094,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   for (const a of animals) {
     if (a.dead) continue;
     if (a.kind !== 'bird') hbRing(a.x - ex, a.y - ey, unitRadius(a), HB_BODY);
-    hbRing(a.x - ex, a.y - (a.alt || 0) - 3 - ey, a.kind === 'bird' ? 5 : a.kind === 'dire' ? 14 : 8, HB_HURT);
+    hbRing(a.x - ex, animalHitY(a) - ey, animalHitR(a), HB_HURT);
     hbDot(a.x - ex, a.y - ey, HB_BODY);
     hbMid(a.x - ex, a.y - (a.alt || 0) - 26 - ey, a.y + 4 - ey);
   }
@@ -1102,7 +1102,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   for (const b of robots) {
     if (b.dead) continue;
     hbRing(b.x - ex, b.y - ey, unitRadius(b), HB_BODY);
-    hbRing(b.x - ex, b.y - 1 - ey, 7, HB_HURT); // robotHit
+    hbRing(b.x - ex, robotHitY(b) - ey, ROBOT_HIT_R, HB_HURT);
     hbDot(b.x - ex, b.y - ey, HB_BODY);
     hbMid(b.x - ex, b.y - 24 - ey, b.y + 4 - ey);
   }

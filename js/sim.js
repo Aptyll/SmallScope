@@ -247,6 +247,149 @@ function update(dt) {
 // rival (2.47's playtest: 24 shots at a circling bot, none hit) - and the
 // same disc on every side keeps it a fact of arrows, not a hidden handicap.
 const ARROW_HIT_R = 10;
+// ------------------------------------------------------------ the shot's sweep
+// A SHOT MEETS EVERYTHING ITS STEP CROSSED, never only what the step ended
+// on. Two SPEEDUPs throw an arrow ~21 px a step and three ~43: wider than a
+// rabbit's disc and wider than a wall tile, so a shot asked only at its end
+// point stepped clean over both. Each step is a SEGMENT instead: the tiles it
+// enters are walked in order (a grid DDA - one or two tiles a step at a bow's
+// pace) up to the first that ends it, every body's hit disc is met by the
+// segment (sweepDisc), and the contacts are taken in the order the shot met
+// them - the rabbit in front of the wall is hit and the one behind it never
+// is, and a piercing shot cuts down its line in order until something stops it.
+// The step's bounding box turns nearly every body away before the sweep is
+// asked, so a body costs a shot four comparisons: less than the hypot the
+// point test paid.
+
+// The fraction of a step from (x0, y0) along (dx, dy) at which it first comes
+// within r of (cx, cy), or -1 if it never does. A step that STARTS inside the
+// disc meets it at 0 while it is closing on the centre or still inside at its
+// end - so a shot loosed from inside a hugging rival's disc, away from them,
+// flies clear, as it did when only the end point was asked.
+function sweepDisc(x0, y0, dx, dy, cx, cy, r) {
+  const fx = x0 - cx, fy = y0 - cy;
+  const b = fx * dx + fy * dy;          // < 0 while the step closes on the centre
+  const c = fx * fx + fy * fy - r * r;  // < 0 when it starts inside
+  if (c < 0) {
+    if (b < 0) return 0;
+    const ex = fx + dx, ey = fy + dy;
+    return ex * ex + ey * ey < r * r ? 0 : -1;
+  }
+  if (b >= 0) return -1;                // outside, and not closing
+  const A = dx * dx + dy * dy;
+  const disc = b * b - A * c;
+  if (disc < 0) return -1;              // the line passes the disc by
+  const s = (-b - Math.sqrt(disc)) / A;
+  return s <= 1 ? s : -1;               // ...or meets it past the end of this step
+}
+
+// Everything one shot's step meets, in the order it meets it: `{ s, k, t }`,
+// `s` the fraction of the step, `k` what was met ('eagle' 'dummy' 'wall'
+// 'face' 'player' 'robot' 'animal') and `t` the thing itself (a wall rides as
+// its tile, `tx`/`ty`). Nothing past the first contact that must END the shot
+// is listed - a wall, a rival roost, a target face, and for any shot but a
+// pierce the first body. One array, reused every step; updatePlay reads it.
+const shotHits = [];
+const byStep = (p, q) => p.s - q.s;
+function shotContacts(a, x0, y0, dx, dy) {
+  shotHits.length = 0;
+  let stop = 2; // where along the step the shot is ended (past 1: nowhere)
+  // THE WORLD: every tile the step enters, in order. The tile it starts in
+  // was asked by the step before, which ended in it - except on a shot's
+  // FIRST step, which starts at the bow, and a bow may overhang the tile its
+  // body is standing against. That tile is asked then only if the shot is
+  // heading INTO it (still inside it TILE/2 px on), never when it is leaving
+  // over the edge: a shot into the tree you hug dies on it, one away flies.
+  let tx = Math.floor(x0 / TILE), ty = Math.floor(y0 / TILE);
+  const tx1 = Math.floor((x0 + dx) / TILE), ty1 = Math.floor((y0 + dy) / TILE);
+  const ix = dx ? TILE / Math.abs(dx) : Infinity, iy = dy ? TILE / Math.abs(dy) : Infinity;
+  let bx = dx > 0 ? ((tx + 1) * TILE - x0) / dx : dx < 0 ? (tx * TILE - x0) / dx : Infinity;
+  let by = dy > 0 ? ((ty + 1) * TILE - y0) / dy : dy < 0 ? (ty * TILE - y0) / dy : Infinity;
+  let s = 0;
+  let ask = !a.flown && Math.min(bx, by) * Math.hypot(dx, dy) > TILE / 2;
+  for (;;) {
+    if (!ask) {
+      if (tx === tx1 && ty === ty1) break;
+      if (bx < by) { s = bx; bx += ix; tx += dx > 0 ? 1 : -1; }
+      else { s = by; by += iy; ty += dy > 0 ? 1 : -1; }
+      if (s > 1) break;
+    }
+    ask = false;
+    // the grounded eagles are the objectives: the roost's own hitbox tiles
+    // ARE the hit test, so anywhere a walker collides, an arrow damages - a
+    // radius around the bird's centre missed the block's corners. Asked
+    // BEFORE solidity, which would eat the shot; a friendly arrow falls
+    // through to it and dies on the tile like any other miss.
+    const o = objAt(tx, ty);
+    if (state.drop && o && o.type === 'eagle' && o.team !== a.team) {
+      shotHits.push({ s, k: 'eagle', t: o }); stop = s; break;
+    }
+    // the practice dummy: nearly three tiles tall on one solid tile, so a
+    // shot through the torso or head tiles (one and two above the base)
+    // lands too - asked before solidity, which would eat the base hit
+    if (PRACTICE) {
+      let dm = null;
+      for (let dd = 0; dd <= 2 && !dm; dd++) {
+        const q = objAt(tx, ty + dd);
+        if (q && q.type === 'dummy') dm = q;
+      }
+      if (dm && !(a.pierce && a.pierceHit.includes(dm))) {
+        shotHits.push({ s, k: 'dummy', t: dm });
+        if (!a.pierce) { stop = s; break; }
+      }
+    }
+    // a bit whose `solid` is false passes through the world - that is the
+    // whole of "never hits ground", and the only reason a wisp can circle you
+    // through a treeline
+    if (a.solid !== false && isSolidTile(tx, ty)) {
+      shotHits.push({ s, k: 'wall', tx, ty }); stop = s; break;
+    }
+  }
+  // ...the archery targets: the shot meets the FACE, wherever its habit has
+  // carried it - ptFace is the same geometry the draw uses, and the hit disc
+  // scales with the target's size (ptHitR)
+  if (PRACTICE) for (const t of ptargets) {
+    if (!ptLive(t)) continue;
+    const f = ptFace(t);
+    const s = sweepDisc(x0, y0, dx, dy, f.x, f.y, ptHitR(t));
+    if (s >= 0 && s < stop) { shotHits.push({ s, k: 'face', t }); stop = s; }
+  }
+  // THE BODIES, all three kinds, each by its own hit disc widened by the
+  // bit's `reach`. A bit with friendly fire on skips the team check - but
+  // never the shooter, who is not a target of their own tool at any weight.
+  // A pierce skips whoever it has already cut (a.pierceHit), so a slow
+  // overlap never pays twice.
+  const lx = Math.min(x0, x0 + dx), hx = Math.max(x0, x0 + dx);
+  const ly = Math.min(y0, y0 + dy), hy = Math.max(y0, y0 + dy);
+  const pad = a.reach || 0;
+  for (const t of players) {
+    if ((a.team === t.team && !a.ff) || t.id === a.owner) continue;
+    const r = ARROW_HIT_R + pad, cy = t.y - 6;
+    if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
+    if (!t.active || t.dead || inAir(t) || t.invuln > 0) continue;
+    if (a.pierce && a.pierceHit.includes(t)) continue;
+    const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
+    if (s >= 0 && s < stop) { shotHits.push({ s, k: 'player', t }); if (!a.pierce) stop = s; }
+  }
+  // worker bots take the same shot: they are units in the open, on a team
+  for (const t of robots) {
+    if (a.team === t.team && !a.ff) continue;
+    const r = ROBOT_HIT_R + pad, cy = robotHitY(t);
+    if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
+    if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
+    const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
+    if (s >= 0 && s < stop) { shotHits.push({ s, k: 'robot', t }); if (!a.pierce) stop = s; }
+  }
+  for (const t of animals) {
+    const r = animalHitR(t) + pad, cy = animalHitY(t);
+    if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
+    if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
+    const s = sweepDisc(x0, y0, dx, dy, t.x, cy, r);
+    if (s >= 0 && s < stop) { shotHits.push({ s, k: 'animal', t }); if (!a.pierce) stop = s; }
+  }
+  if (shotHits.length > 1) shotHits.sort(byStep);
+  return shotHits;
+}
 // ------------------------------------------------------------ passive income
 // The clock pays: every player on the ground draws TRICKLE_GOLD into its
 // wallet every TRICKLE_T s, through gainGold so it levels too - the League
@@ -292,7 +435,78 @@ function updatePlay(dt) {
     steerBit(a, dt);
     const vd = Math.hypot(a.vx, a.vy) || 1;
     const nx = a.vx / vd, ny = a.vy / vd;
-    a.x += a.vx * dt; a.y += a.vy * dt;
+    // the step is a SEGMENT, and what it crossed is what it meets (the
+    // shot's sweep, above) - never only where it happened to end
+    const x0 = a.x, y0 = a.y, dx = a.vx * dt, dy = a.vy * dt;
+    a.x += dx; a.y += dy;
+    // What the shot does to a BODY, said once for all three kinds: the damage
+    // type, the fire it lights and the shove it lands are the bit's, and
+    // hurtUnit (js/actions.js) hands them to a player, a deer or a worker bot
+    // alike. Only the hit disc differs per kind (shotContacts, above).
+    // `base` is the px/s shove this KIND of body takes from a shot; the bit's
+    // own KNOCKBACK (a.kb) scales it - and scales a player's HIT_KB too, which
+    // is the whole reason it travels as a multiplier (js/tools.js).
+    const blow = (t, base, hx, hy) => {
+      hurtUnit(t, a.dmg, nx, ny, players[a.owner], {
+        type: a.type, burn: a.burn, burnDps: a.burnDps, ambush: a.ambush,
+        kb: base, kbMul: a.kb,
+      });
+      if (a.ambush) ambushFx(hx, hy);
+      a.struck = true;
+    };
+    let dead = a.t > a.life;
+    // how much of the step the shot really flew: one that ends ON something
+    // ends where it met it, so its burst, its embers and its impact land there
+    let end = 1;
+    // Every contact in the order the step met it. A PIERCING shot
+    // (`a.pierce`, js/abilities.js) takes each body and keeps flying -
+    // a.pierceHit is everyone it has already cut - and only a raised shield
+    // or the world itself stops it; any other shot ends on the first.
+    if (!dead) for (const h of shotContacts(a, x0, y0, dx, dy)) {
+      const t = h.t, hx = x0 + dx * h.s, hy = y0 + dy * h.s;
+      if (h.k === 'eagle') {
+        hurtEagle(state.drop.eagles[t.team], EAGLE_ARROW_DMG, players[a.owner], hx, hy); // a flat spook, not the body damage
+        if (a.ambush) ambushFx(hx, hy);
+        dead = true;
+      } else if (h.k === 'dummy') {
+        if (a.pierce && a.pierceHit.includes(t)) continue; // three tiles, one body
+        hitDummy(t, a.dmg, hx, hy);
+        if (a.ambush) ambushFx(hx, hy);
+        a.struck = true;
+        if (a.pierce) a.pierceHit.push(t); // the pierce keeps flying
+        else dead = true;
+      } else if (h.k === 'face') {
+        hitPTarget(t); // the face explodes on contact
+        a.ptHit = true; // this shot keeps the consecutive-hit run alive
+        if (a.ambush) ambushFx(hx, hy);
+        dead = true;
+      } else if (h.k === 'wall') {
+        dead = true;
+        // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
+        // SIEGES it. Every bit a wall stops does, whatever it is, at STRUCT_DR
+        // off (hurtStruct, js/actions.js) - and a bit that passes walls
+        // (`solid: false`: the care arrow, the wisp, the hook) buys that with
+        // its siege, which is the whole of the trade and needs no second flag.
+        const st = structOf(objAt(h.tx, h.ty));
+        if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
+        burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
+        if (a.burn > 0) burst(hx, hy, '#ff9440', 7, 50, 0.5);
+      } else if (h.k === 'player' && abShieldBlocks(t, nx, ny)) {
+        // a raised tower shield eats any shot flying into its front arc -
+        // bolts and pierces included - before the body behind it is ever asked
+        burst(hx, hy, '#c8d2e4', 6, 45, 0.35, true);
+        burst(hx, hy, '#f4f7ff', 3, 30, 0.3, true);
+        sfxAt('hit', hx, hy);
+        dead = true;
+      } else {
+        blow(t, h.k === 'robot' ? ROBOT_KB : h.k === 'animal' ? 25 + 45 * a.pow : undefined, hx, hy);
+        if (h.k === 'player') burst(hx, hy, '#e04a54', 6, 45, 0.4);
+        if (a.pierce) a.pierceHit.push(t);
+        else dead = true;
+      }
+      if (dead) { a.struck = true; end = h.s; break; }
+    }
+    if (end < 1) { a.x = x0 + dx * end; a.y = y0 + dy * end; }
     // a faint mote in the shooter's colour every few px of flight: the shot
     // reads as a streak, and whose shot it is reads from across the map. The
     // step just walked is subdivided (rather than one mote per tick) so the
@@ -302,8 +516,8 @@ function updatePlay(dt) {
     // the distance they are owed and left to fade in place - and not before
     // the tail has cleared the bow, or every launch flicks a mote across the
     // archer's back.
-    a.trailD += vd * dt;
-    a.flown = (a.flown || 0) + vd * dt;
+    a.trailD += vd * dt * end;
+    a.flown = (a.flown || 0) + vd * dt * end;
     const tailB = (a.kind === 'bolt' || a.path === 'lob' || a.path === 'orbit') ? 0 : ARROW_LEN;
     while (a.trailD >= ARROW_TRAIL_STEP) {
       a.trailD -= ARROW_TRAIL_STEP;
@@ -317,144 +531,6 @@ function updatePlay(dt) {
         color: a.burn > 0 ? (((a.trailD * 3) | 0) % 2 ? '#ff9440' : '#ffd95c') : TEAMS[skin(a.team)].mark,
         size: 1, grav: 0, alpha: ARROW_TRAIL_A,
       });
-    }
-    let dead = a.t > a.life;
-    if (!dead && state.drop) {
-      // the grounded eagles are the objectives: the roost's own hitbox tiles
-      // ARE the hit test, so anywhere a walker collides, an arrow damages -
-      // a radius around the bird's centre missed the block's corners. Tested
-      // BEFORE tile solidity, which would eat the shot; a friendly arrow
-      // falls through to it and dies on the tile like any other miss.
-      const atx = Math.floor(a.x / TILE), aty = Math.floor(a.y / TILE);
-      if (inWorld(atx, aty)) {
-        const o = objects[idx(atx, aty)];
-        if (o && o.type === 'eagle' && o.team !== a.team) {
-          hurtEagle(state.drop.eagles[o.team], EAGLE_ARROW_DMG, players[a.owner], a.x, a.y); // a flat spook, not the body damage
-          if (a.ambush) ambushFx(a.x, a.y);
-          dead = true; a.struck = true;
-        }
-      }
-    }
-    if (!dead && PRACTICE) {
-      // the practice dummy: nearly three tiles tall on one solid tile, so a
-      // shot through the torso or head tiles (one and two above the base)
-      // lands too - tested before tile solidity, which would eat the base hit
-      const atx = Math.floor(a.x / TILE), aty = Math.floor(a.y / TILE);
-      let dm = null;
-      for (let dd = 0; dd <= 2 && !dm; dd++) {
-        const o = objAt(atx, aty + dd);
-        if (o && o.type === 'dummy') dm = o;
-      }
-      if (dm && !(a.pierce && a.pierceHit.includes(dm))) {
-        hitDummy(dm, a.dmg, a.x, a.y);
-        if (a.ambush) ambushFx(a.x, a.y);
-        a.struck = true;
-        if (a.pierce) a.pierceHit.push(dm); // the pierce keeps flying
-        else dead = true;
-      }
-      // ...and the archery targets: the shot meets the FACE, wherever its
-      // habit has carried it - ptFace is the same geometry the draw uses,
-      // and the hit disc scales with the target's size (ptHitR)
-      if (!dead) for (const t of ptargets) {
-        if (!ptLive(t)) continue;
-        const f = ptFace(t);
-        if (Math.hypot(f.x - a.x, f.y - a.y) < ptHitR(t)) {
-          hitPTarget(t); // the face explodes on contact
-          a.ptHit = true; // this shot keeps the consecutive-hit run alive
-          if (a.ambush) ambushFx(a.x, a.y);
-          dead = true; a.struck = true;
-          break;
-        }
-      }
-    }
-    // a bit whose `solid` is false passes through the world - that is the
-    // whole of "never hits ground", and the only reason a wisp can circle you
-    // through a treeline
-    if (!dead && a.solid !== false) {
-      const stx = Math.floor(a.x / TILE), sty = Math.floor(a.y / TILE);
-      if (isSolidTile(stx, sty)) {
-        dead = true; a.struck = true;
-        // ...and when the wall that stopped it is a RIVAL'S BUILDING, the shot
-        // SIEGES it. Every bit a wall stops does, whatever it is, at STRUCT_DR
-        // off (hurtStruct, js/actions.js) - and a bit that passes walls
-        // (`solid: false`: the care arrow, the wisp, the hook) buys that with
-        // its siege, which is the whole of the trade and needs no second flag.
-        const st = structOf(objAt(stx, sty));
-        if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
-        burst(a.x, a.y, '#cfd8e8', 3, 25, 0.25, true);
-        if (a.burn > 0) burst(a.x, a.y, '#ff9440', 7, 50, 0.5);
-      }
-    }
-    // What the shot does to a BODY, said once for all three kinds: the damage
-    // type, the fire it lights and the shove it lands are the bit's, and
-    // hurtUnit (js/actions.js) hands them to a player, a deer or a worker bot
-    // alike. Only the hit test below differs per kind - a raised shield, a
-    // chassis, a small animal high on its own altitude.
-    // `base` is the px/s shove this KIND of body takes from a shot; the bit's
-    // own KNOCKBACK (a.kb) scales it - and scales a player's HIT_KB too, which
-    // is the whole reason it travels as a multiplier (js/tools.js).
-    const blow = (t, base) => {
-      hurtUnit(t, a.dmg, nx, ny, players[a.owner], {
-        type: a.type, burn: a.burn, burnDps: a.burnDps, ambush: a.ambush,
-        kb: base, kbMul: a.kb,
-      });
-      if (a.ambush) ambushFx(a.x, a.y);
-      a.struck = true;
-    };
-    if (!dead) {
-      // players first: the same shot that drops a deer drops a rival. A bit
-      // with friendly fire on skips the team check - but never the shooter,
-      // who is not a target of their own tool at any weight. A PIERCING shot
-      // (`a.pierce`, js/abilities.js) takes the body and keeps flying -
-      // a.pierceHit is everyone it has already cut, so a slow overlap never
-      // pays twice - and only a raised shield or the world itself stops it.
-      for (const t of players) {
-        if ((a.team === t.team && !a.ff) || t.id === a.owner ||
-            !t.active || t.dead || inAir(t) || t.invuln > 0) continue;
-        if (a.pierce && a.pierceHit.includes(t)) continue;
-        if (Math.hypot(t.x - a.x, t.y - 6 - a.y) < ARROW_HIT_R + (a.reach || 0)) {
-          // a raised tower shield eats any shot flying into its front arc -
-          // bolts included - before the body behind it is ever asked
-          if (abShieldBlocks(t, nx, ny)) {
-            burst(a.x, a.y, '#c8d2e4', 6, 45, 0.35, true);
-            burst(a.x, a.y, '#f4f7ff', 3, 30, 0.3, true);
-            sfxAt('hit', a.x, a.y);
-            dead = true; a.struck = true;
-            break;
-          }
-          blow(t);
-          burst(a.x, a.y, '#e04a54', 6, 45, 0.4);
-          if (a.pierce) { a.pierceHit.push(t); continue; }
-          dead = true;
-          break;
-        }
-      }
-    }
-    if (!dead) {
-      // worker bots take the same shot: they are units in the open, on a
-      // team, and the only thing that ever stood outside the arrow pipeline
-      for (const b of robots) {
-        if ((a.team === b.team && !a.ff) || !unitAlive(b)) continue;
-        if (a.pierce && a.pierceHit.includes(b)) continue;
-        if (robotHit(b, a.x, a.y, a.reach)) {
-          blow(b, ROBOT_KB);
-          if (a.pierce) { a.pierceHit.push(b); continue; }
-          dead = true;
-          break;
-        }
-      }
-    }
-    if (!dead) {
-      for (const an of animals) {
-        if (an.dead) continue;
-        if (a.pierce && a.pierceHit.includes(an)) continue;
-        if (animalHit(an, a.x, a.y, a.reach)) {
-          blow(an, 25 + 45 * a.pow);
-          if (a.pierce) { a.pierceHit.push(an); continue; }
-          dead = true;
-          break;
-        }
-      }
     }
     if (dead) {
       // CINDER BURST: the shot ends and its embers go everywhere. Everything

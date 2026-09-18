@@ -552,8 +552,8 @@ sits in open snow with the treeline well clear of every face; rails drawn flat b
 `drawAgTrack` — two nested bands built from one exact-cornered `band` helper, with ties
 spanning the rails kept clear of the corner joins). Every target is a trolley
 on a rail — ENTITIES in `ptargets`, never tile objects (a mover crosses tiles every frame, and
-a raised face should not block a walker) — so only arrows meet them: the PRACTICE branch of the
-arrow loop (js/sim.js) tests every live face disc (`ptFace`/`ptLive`/`ptHitR` — the hit disc
+a raised face should not block a walker) — so only arrows meet them: the arrow loop's sweep
+(`shotContacts`, js/sim.js) meets every live face disc (`ptFace`/`ptLive`/`ptHitR` — the hit disc
 scales with the target's `size`, small or large, `AG_SIZE`). A target lives at track distance
 `s` (`agPos` maps it to world x/y) on one of **two lanes** (`AG_LANE_GAP` px apart), with three
 habits: `still`, `move` (rolling `dir × spd` along the rail, `AG_SPD` slow/medium/fast) and
