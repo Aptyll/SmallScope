@@ -72,7 +72,9 @@ jump          edge-triggered: the leap off the eagle, or the hop off the roost -
               the ride's one act (dropJump, js/boot.js; read at the top of
               updatePlay's player loop, before the air skips the body) - and
               on the ground the zipline's: clip on under your side's cable,
-              let go while riding (zipToggle, js/world.js; E sets it there)
+              let go while riding, or - out of reach with the aim on your
+              cable as drawn - the walk there that clips on (zipToggle,
+              js/world.js; E sets it there)
 grapple       held (key 3): the hunter's grapple reels only while this is down -
               the one held ability input (updatePlayer's grapple branch reads it;
               the burrow is the SNOW COVER cast on `ability`, not a field here)
@@ -205,8 +207,9 @@ bot fills, once per step from `sampleHumanInput`.
   chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Seated on the roost
   it is the hop, and the fall drifts toward the spot and walks on landing; in flight it is the
   jump, with the same rule the jump key has. Riding a zipline it lets go; standing under your
-  side's cable, a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on
-  (a press anywhere else is the walk).
+  side's cable, a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on,
+  or from out of reach walks the body there and clips on (`zipWalkStart` — the channel, ended by
+  any order of your own; a press anywhere else is the walk it always was).
 - **On a tree, a bush, an ice hole or a rival building it is a walk into reach and the swing**
   (`workTargetAt`, the work target by tile), held until the thing is spent. On one of your own
   buildings, a merchant or the practice furniture it is a walk into reach and the thing opening

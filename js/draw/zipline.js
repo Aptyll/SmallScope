@@ -83,12 +83,19 @@ const ZIP_GUIDE = '#ffd95c'; // the guide's dots: the draw meter's gold (DRAW_CO
 // is skipped, and only a few are ever in it. (A rider's handle and rope are
 // drawPlayer's - drawZipHandle, below - so the frame over its head covers
 // the rope rather than the rope crossing the name.)
-function drawZips(ex, ey, now) {
+// the line that lights: the one under the pointer, or your own while the
+// body is walking itself to it (zipWalk) - null for none
+function zipLitLine() {
   const hov = hoverZip();
+  if (hov) return hov.z;
+  return player.zipWalk && !player.dead ? zips[player.team] || null : null;
+}
+function drawZips(ex, ey, now) {
+  const hot = zipLitLine();
   for (const z of zips) {
     if (!z) continue;
     // the hovered line lights whole: it is one thing, and the eye is asking what it is
-    const lit = hov && hov.z === z ? (Math.sin(now * 6) > 0 ? ZIP_HOV_A : ZIP_HOV_B) : ZIP_LIT;
+    const lit = hot === z ? (Math.sin(now * 6) > 0 ? ZIP_HOV_A : ZIP_HOV_B) : ZIP_LIT;
     for (let i = 1; i < z.pts.length; i++) {
       const a = z.pts[i - 1], b = z.pts[i];
       const ax = a.x - ex, ay = a.y + 4 - ZIP_H - ey, bx = b.x - ex, by = b.y + 4 - ZIP_H - ey;
@@ -108,18 +115,19 @@ function drawZips(ex, ey, now) {
     }
   }
 }
-// The guide: while the pointer rests on your own cable and the body stands
-// too far out to clip on (past ZIP_GRAB of the track), a static dotted gold
-// line from the feet to the nearest point of the track and a short bar
-// across it there - the walk that puts the cap over your head, in the aim
-// line's own dots (drawAimLine, js/draw/render.js), drawn right after it.
-// Inside ZIP_GRAB the cap is the whole answer and the line stays away.
+// The guide: while the pointer rests on your own cable - or the body is
+// walking itself to it - and the body stands too far out to clip on (past
+// ZIP_GRAB of the track), a static dotted gold line from the feet to the
+// nearest point of the track and a short bar across it there - the walk that
+// puts the cap over your head, in the aim line's own dots (drawAimLine,
+// js/draw/render.js), drawn right after it. Inside ZIP_GRAB the cap is the
+// whole answer and the line stays away.
 function drawZipGuide(ex, ey) {
-  const hov = hoverZip();
-  if (!hov) return;
-  const n = zipNearest(hov.z, player.x, player.y);
+  const z = zipLitLine();
+  if (!z) return;
+  const n = zipNearest(z, player.x, player.y);
   if (n.dist <= ZIP_GRAB) return;
-  const q = zipPoint(hov.z, n.d);
+  const q = zipPoint(z, n.d);
   const x0 = player.x, y0 = player.y + 4, dx = q.x - x0, dy = q.y + 4 - y0;
   const d = Math.hypot(dx, dy) || 1, nx = dx / d, ny = dy / d;
   for (let s = 8; s < d - 3; s += 6) {

@@ -1175,11 +1175,55 @@ function zipUnder(team, wx, wy) {
   return n.dist <= ZIP_HOVER ? { z, d: n.d, dist: n.dist } : null;
 }
 // the hop intent on the ground (updatePlay reads input.jump for every
-// player alike): riding, it lets go; under a cable, it clips on
+// player alike): riding, it lets go; walking to the cable, it calls the
+// walk off; under a cable, it clips on; out of reach with the aim on your
+// own cable as drawn (zipUnder - the pointer, for a human), it starts the
+// walk there (zipWalkStart, below)
 function zipToggle(p) {
   if (p.zip >= 0) { zipEnd(p, false); return; }
+  if (p.zipWalk) { zipWalkEnd(p); return; }
   const near = zipNear(p);
-  if (near) zipStart(p, near);
+  if (near) { zipStart(p, near); return; }
+  if (zipUnder(p.team, p.input.aimX, p.input.aimY)) zipWalkStart(p);
+}
+// THE WALK TO THE CABLE: a channel. The body routes itself to the nearest
+// point of its own side's track (navTo - never a straight line at it) and
+// clips on the moment it is inside ZIP_GRAB, so the press that names the
+// cable is the whole gesture from anywhere the pointer can see it. It is
+// a channel because the player is not holding the stick: ANY held movement
+// takes the legs back and ends it, and so does anything that takes the body
+// - a dodge, a draw, a cast, a rush, a shield, the grapple, a slide, going
+// prone, a stun, a root, a net, a hole, the air, a death - and a route that
+// fails or pins (navTo's ok). No timer. State on the body: p.zipWalk (a
+// flag; the goal is re-read every step, since the nearest point moves with
+// the body). The walk does not write p.lastMx/lastMy (updatePlayer), so the
+// clip-on at the end still reads the way you were walking BEFORE the press.
+function zipWalkStart(p) {
+  if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || p.grapT > 0 || p.charging || inAir(p)) return;
+  risePlayer(p);
+  p.zipWalk = true;
+  navClear(p);
+}
+function zipWalkEnd(p) {
+  if (!p.zipWalk) return;
+  p.zipWalk = false;
+  navClear(p);
+}
+// one sim step of the walk (updatePlayer, before the input is read): the
+// stick to hold this step, or null once the walk is over - clipped on, called
+// off, or taken over by the player's own input
+function zipWalkStep(p, dt) {
+  if (!p.zipWalk) return null;
+  const z = zips[p.team];
+  const busy = p.dead || p.stunT > 0 || p.rootT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 ||
+    p.shieldT > 0 || p.grapT > 0 || p.charging || p.sliding || p.prone || inAir(p);
+  if (!z || busy || p.input.mx || p.input.my) { zipWalkEnd(p); return null; }
+  const n = zipNearest(z, p.x, p.y);
+  if (n.dist <= ZIP_GRAB) { zipWalkEnd(p); zipStart(p, { z, d: n.d }); return null; }
+  const q = zipPoint(z, n.d);
+  const nv = navTo(p, q.x, q.y, PLAYER_R, 0, dt);
+  if (!nv.ok) { zipWalkEnd(p); return null; }
+  return { mx: nv.dx, my: nv.dy };
 }
 function zipStart(p, near) {
   if (p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 || p.castT > 0 || p.shieldT > 0 || inAir(p)) return;

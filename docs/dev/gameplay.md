@@ -91,6 +91,21 @@ that puts the cap over your head — only while the body stands past `ZIP_GRAB` 
 tiles); inside it the cap is the whole answer. The click scheme's press asks the same
 `zipUnder`, so what lights is what a press takes.
 
+**The walk to the cable — a channel.** E (or the click scheme's right press) with the pointer on
+your own cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
+`input.aimX/aimY` (`zipUnder` again — the aim rides the wire, so a host answers a client the
+same): `zipWalkStart` sets `p.zipWalk` (declared in `reset()`, cleared by `die`) and the body
+walks itself there — `zipWalkStep`, called at the top of `updatePlayer`'s input read, routes
+through `navTo` to the nearest point of the track (re-read every step; never a straight line at
+it) and hands the ladder the stick to hold, then `zipStart`s the moment it is inside `ZIP_GRAB`.
+It is a channel because the player is not holding the stick: **any movement input ends it**, the
+legs are theirs again — and so does anything that takes the body (a dodge, a draw, a cast, a
+rush, a shield, the grapple, a slide, prone, a stun, a root, a net, a hole, the air, a death),
+a route that fails or pins (`navTo`'s `ok`), and E again (`zipToggle` calls the walk off ahead
+of everything). No timer. The walk leaves `p.lastMx/lastMy` alone, so the clip-on at its end still
+rides the way you were walking before the press. While it runs, the cable stays lit and the guide
+line stays, pointer or no pointer (`zipLitLine`, js/draw/zipline.js).
+
 **Hands on the handle.** `p.zip >= 0` joins the inline gates of `tryWork`, `autoWork`,
 `tryAbility`, the bow draw (updatePlayer), `autoFish` and `tryProne`; `zipStart` itself refuses
 a stunned, floundering, rolling, rushing, casting or shielded body and ends a grapple, a draw, a
