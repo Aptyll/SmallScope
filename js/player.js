@@ -557,6 +557,7 @@ class Player {
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (world.js): the line ridden (its team, or none), px along it, and which way
+    this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
     // The one weapon slot the button fires. It holds a tool CELL - the same
     // object a bag cell is, bits and all - so moving one between the bag and
     // the slot is a reference move and a tool never loses what is loaded

@@ -170,7 +170,8 @@ entity draw code must use `ex`/`ey`.
    → `drawWorkHint` (the E work prompt) → `drawFishHint` (the fish brackets);
 9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
    `drawAgRings`;
-10. construction progress bars → particles → `drawAimLine` (the bow's) → arrows (bolts branch to
+10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
+    dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (bolts branch to
     `drawBolt`, a bit with a `body` to `BIT_BODY`);
 11. `drawWarps` (the silhouettes a teleport strung across its jump) → **`drawSwaps`**
     ([the tool swap](#the-tool-swap)) → `drawAbilityAir` (the spinning net, the grapple's rope)
@@ -179,7 +180,8 @@ entity draw code must use `ex`/`ey`.
     (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
 13. `drawDropAir` (the eagle, its shadow, the rider and every faller, while `state.drop`
     exists) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
-    over every body and canopy, under the night; js/draw/zipline.js);
+    over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
+    js/draw/zipline.js);
 14. `renderLighting` → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](#debug-overlays-hitboxes-and-routes)).
 

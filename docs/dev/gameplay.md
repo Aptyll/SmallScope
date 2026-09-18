@@ -71,11 +71,25 @@ eagle already reads, and `updatePlay` consumes it for every player alike as `zip
 (`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
 under the line never stops a rider — and `p.vx/vy` to the tangent × `ZIP_SPD` (220 px/s, three
 times a walk, under `GRAP_REEL`), which is what the walk-animation gate, the trails and the exit
-read. Holding the stick along the cable past a dead zone picks the direction (`p.zipDir`, ±1;
-the stick idle at the clip-on rides **toward the front**), across it does nothing, and either end
-lets go. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
-`p.zipDir` — declared in `reset()` beside the grapple's, so a respawn never comes back clipped
-on; `die` lets go too.
+read. Holding the stick along the cable past a dead zone picks the direction (`p.zipDir`, ±1),
+across it does nothing, and either end lets go. **The clip-on reads the way you were last
+walking**, not the stick at the press: `p.lastMx/lastMy` (the stick's last held direction, kept
+across a stop — set in `updatePlayer` whenever it is held) dotted with the cable's tangent past
+−0.3 rides toward the base, anything else rides **toward the front** — so a body that walked home
+and stood still for the press goes home, and a walk in across the cable from the lane takes the
+default. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
+`p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
+comes back clipped on; `die` lets go too.
+
+**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is your own
+side's cable under the pointer as drawn (`zipUnder`, world.js — within `ZIP_HOVER` of the
+strand, never the invisible track under it), while the body is on the ground with nothing open
+over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
+its beat, and `drawZipGuide` (js/draw/zipline.js, right after the aim line) runs a static dotted
+gold line from the feet to the nearest point of the track and a bar across it there — the walk
+that puts the cap over your head — only while the body stands past `ZIP_GRAB` (32 px, two
+tiles); inside it the cap is the whole answer. The click scheme's press asks the same
+`zipUnder`, so what lights is what a press takes.
 
 **Hands on the handle.** `p.zip >= 0` joins the inline gates of `tryWork`, `autoWork`,
 `tryAbility`, the bow draw (updatePlayer), `autoFish` and `tryProne`; `zipStart` itself refuses

@@ -205,7 +205,8 @@ bot fills, once per step from `sampleHumanInput`.
   chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Seated on the roost
   it is the hop, and the fall drifts toward the spot and walks on landing; in flight it is the
   jump, with the same rule the jump key has. Riding a zipline it lets go; standing under your
-  side's cable, a press **on the cable's track** clips on (a press anywhere else is the walk).
+  side's cable, a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on
+  (a press anywhere else is the walk).
 - **On a tree, a bush, an ice hole or a rival building it is a walk into reach and the swing**
   (`workTargetAt`, the work target by tile), held until the thing is spent. On one of your own
   buildings, a merchant or the practice furniture it is a walk into reach and the thing opening

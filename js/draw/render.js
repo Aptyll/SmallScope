@@ -589,6 +589,7 @@ function render() {
   ctx.globalAlpha = 1;
 
   drawAimLine(ex, ey, now);
+  drawZipGuide(ex, ey);     // the dotted walk to the hovered cable (js/draw/zipline.js)
 
   // arrows: the one shared body (ARROW_MAP, js/actions.js - white tip, flint
   // head, the loaded bit's collar, one-gold shaft, team feathers) rasterised
@@ -664,7 +665,7 @@ function render() {
   }
 
   drawDropAir(ex, ey, now); // the eagle, its rider and anyone falling from it
-  drawZips(ex, ey);         // the ziplines' cables and their riders' ropes, over everything but the night (js/draw/zipline.js)
+  drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
   // the two debug views, above the lighting on purpose - see the banner
   if (settings.hitbox > 1 || window.DBG.showPaths) drawNavPaths(ox, oy, ex, ey);

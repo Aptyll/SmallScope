@@ -340,8 +340,12 @@ its side's ink. Seed 42: RED's line runs u 35→91, BLUE's 131→196.
 `zipPoint(z, d)` is the cable at `d` px along (position, unit tangent, span and how far across
 it), `zipLift(z, d)` how high it hangs there (`ZIP_H` 31 at a pylon, `ZIP_SAG` 3 less mid-span),
 `zipNearest(z, x, y)` the nearest point of a line to a spot, and `zipNear(p)` the line a body may
-clip on — its own team's, within `ZIP_GRAB` (14) px of the track — or null: **team-locked**, a
-rival under your cable is a walker. The ride itself: [the zipline](gameplay.md#the-zipline).
+clip on — its own team's, within `ZIP_GRAB` (32, two tiles) px of the track — or null:
+**team-locked**, a rival under your cable is a walker. `zipUnder(team, wx, wy)` is the same
+question for a world point against the cable **as drawn** — the point dropped to the track by
+the lift where it lands (once for the span, once more with that span's sag), within `ZIP_HOVER`
+(6) px — which the pointer's hover and the click scheme's press ask. The ride itself:
+[the zipline](gameplay.md#the-zipline).
 
 ## Camps
 

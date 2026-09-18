@@ -714,9 +714,10 @@ function ckRightPress() {
   if (state.mode === 'drop') { player.input.jump = true; if (player.aboard) return; }
   else if (player.aboard) ck.hop = true;
   // on a zipline the press lets go of it; under your own cable, a press ON
-  // the cable's track clips on (a press anywhere else is the walk it always was)
+  // the drawn cable (zipUnder, world.js - the strand the hover lights) clips
+  // on (a press anywhere else is the walk it always was)
   else if (player.zip >= 0) { player.input.jump = true; return; }
-  else if (zipNear(player) && zipNearest(zips[player.team], wx, wy).dist <= ZIP_GRAB * 1.5) { SFX.unlock(); player.input.jump = true; return; }
+  else if (zipNear(player) && zipUnder(player.team, wx, wy)) { SFX.unlock(); player.input.jump = true; return; }
   SFX.unlock();
   if (!pt.far && !player.aboard) {
     const t = unitUnder(player, wx, wy);

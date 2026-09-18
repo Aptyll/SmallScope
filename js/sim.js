@@ -653,6 +653,7 @@ function updatePlayer(p, dt) {
   p.moving = len > 0;
   if (len > 0) {
     mx /= len; my /= len;
+    p.lastMx = mx; p.lastMy = my; // kept across the stop: the zipline's clip-on reads it (zipStart, world.js)
     if (p.swingT <= 0) {
       if (Math.abs(mx) > Math.abs(my)) p.dir = mx > 0 ? 'right' : 'left';
       else p.dir = my > 0 ? 'down' : 'up';
