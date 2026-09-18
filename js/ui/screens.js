@@ -572,7 +572,8 @@ function drawEndPlanks(now, dy) {
 //
 // An emote is a POSE PICKER over the set every body on the stage is already
 // drawn from (champLook, js/sprites/characters.js): it hands back a frame,
-// an offset off that body's own feet and, now and then, a puff of snow. So
+// an offset off that body's own feet and, now and then, a puff of snow
+// (puff: how far along its 0..1 that snow is, so a pose may throw several). So
 // the whole feature costs no art. Each has a second performance for a body
 // that is already DOWN, and the loss's screen plays that one - the side lies
 // in the drift and emotes without getting up, so nothing on that screen ever
@@ -597,18 +598,18 @@ const EMOTES = [
   // arms over the head, and what those arms are holding is a fish, which is
   // the correct thing to be holding at the end of a match in this valley
   { cap: '1', glyph: 'cheer',
-    up: (s, f) => f < 0.08 ? { spr: s.catch[0] } : f < 0.16 ? { spr: s.catch[1] } : ({ spr: s.catch[2], dy: Math.round(Math.abs(Math.sin((f - 0.16) * Math.PI * 3)) * 8) }),
-    down: (s, f) => { const h = Math.abs(Math.sin(f * Math.PI * 3)); return { spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(h * 10), puff: h < 0.25 }; } },
+    up: (s, f) => { if (f < 0.08) return { spr: s.catch[0] }; if (f < 0.16) return { spr: s.catch[1] }; const q = ((f - 0.16) * 3) % 1; return { spr: s.catch[2], dy: Math.round(Math.sin(q * Math.PI) * 8), puff: q < 0.3 ? q / 0.3 : 0 }; },
+    down: (s, f) => { const q = (f * 3) % 1; return { spr: s.prone.down[1 + (Math.floor(f * 16) & 1)], dy: Math.round(Math.sin(q * Math.PI) * 10), puff: q < 0.3 ? q / 0.3 : 0 }; } },
   // the shuffle: the two side frames on alternate beats, swaying across its
   // own feet
   { cap: '2', glyph: 'dance',
     up: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.left : s.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -4 : 4, dy: b & 1 ? 0 : 3 }; },
-    down: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.prone.left : s.prone.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -6 : 6, dy: b & 1 ? 0 : 3, puff: f < 0.15 }; } },
+    down: (s, f) => { const b = Math.floor(f * 10); return { spr: (b & 1 ? s.prone.left : s.prone.right)[1 + ((b >> 1) & 1)], dx: b & 1 ? -6 : 6, dy: b & 1 ? 0 : 3, puff: f < 0.15 ? f / 0.15 : 0 }; } },
   // the twirl, and the whole trick of it: a body that turns through all four
   // facings on the spot reads as spinning without a frame of new art
   { cap: '3', glyph: 'spin',
-    up: (s, f) => ({ spr: s[EM_TURN[Math.floor(f * 10) & 3]][0], dy: Math.round(Math.sin(f * Math.PI) * 10), puff: f > 0.9 }),
-    down: (s, f) => ({ spr: s.prone[EM_TURN[Math.floor(f * 9) & 3]][0], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 4)) * 4), puff: f < 0.2 }) },
+    up: (s, f) => ({ spr: s[EM_TURN[Math.floor(f * 10) & 3]][0], dy: Math.round(Math.sin(f * Math.PI) * 10), puff: f > 0.85 ? (f - 0.85) / 0.15 : 0 }),
+    down: (s, f) => ({ spr: s.prone[EM_TURN[Math.floor(f * 9) & 3]][0], dy: Math.round(Math.abs(Math.sin(f * Math.PI * 4)) * 4), puff: f < 0.2 ? f / 0.2 : 0 }) },
   // down and up again: a beat on its feet, the length of it flat in the
   // snow, and back up - the one emote that leaves the body plan, so it is
   // also the one that puffs. Downed, it has nowhere to go but deeper.
@@ -617,9 +618,9 @@ const EMOTES = [
       if (f < 0.08 || f > 0.92) return { spr: s.down[0] };
       if (f < 0.16 || f > 0.84) return { spr: s.catch[0] }; // the stoop, going down and getting up
       const b = Math.floor((f - 0.16) * 20);
-      return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.26, low: true };
+      return { spr: s.prone.right[b < 1 ? 0 : 1 + (b & 1)], puff: f < 0.4 ? (f - 0.16) / 0.24 : 0, low: true };
     },
-    down: (s, f) => ({ spr: s.prone.right[f < 0.5 ? 1 + (Math.floor(f * 12) & 1) : 0], dy: -Math.round(Math.sin(f * Math.PI) * 8), puff: f < 0.5 }) },
+    down: (s, f) => ({ spr: s.prone.right[f < 0.5 ? 1 + (Math.floor(f * 12) & 1) : 0], dy: -Math.round(Math.sin(f * Math.PI) * 8), puff: f < 0.5 ? f / 0.5 : 0 }) },
 ];
 
 // ---- the plates' art -----------------------------------------------------
@@ -1364,7 +1365,7 @@ function renderVictory(now) {
         // the marks sit on the standing body plan (drawPlayer), so a body
         // that has left it wears none of them
         drawEndBody(pose.spr, s.x + (pose.dx || 0), by + WIN_BODY - (pose.dy || 0));
-        if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY, act.f / 0.22, sr);
+        if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY, pose.puff, sr);
       } else {
         ctx.drawImage(set.down[Math.sin(ph) > 0.6 ? 1 : 0], s.x, by, WIN_BODY, WIN_BODY);
         drawGearMarks(s.m, s.x, by, 3);
@@ -1639,11 +1640,11 @@ function renderDefeat(now) {
       ctx.globalAlpha = sr * 0.92; // the cold has them already
       if (pose) {
         drawEndBody(pose.spr, s.x + (pose.dx || 0), by + WIN_BODY - (pose.dy || 0));
-        if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY - 6, Math.min(1, act.f / 0.3), sr);
+        if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY - 6, pose.puff, sr);
       } else {
         ctx.drawImage(set.prone[face][0], s.x, by, WIN_BODY, WIN_BODY);
       }
-      drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by + 4, DEAD_INK, '#0f1632');
+      drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by + 4 - Math.max(0, pose ? pose.dy || 0 : 0), DEAD_INK, '#0f1632');
       ctx.globalAlpha = 1;
     }
     // ...and the snow in FRONT of them all, over every boot and the bodies'
