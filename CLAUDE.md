@@ -128,8 +128,8 @@ lives in `docs/dev/*.md` beside the code it protects.
 - **Text over the world goes through `drawWorldText`** (js/draw/light.js): a
   `drawPixelTextOutline` (1px dark rim all sides) *queued* and stamped after the night grade — call
   the outline directly in a world pass and the tint sinks a team blue into blue snow. In a UI pass
-  the outline is the right call; `Shadow` is for panels, planks and anything under a `globalAlpha`
-  fade. White pixel text on white snow with only a drop shadow is unreadable.
+  the outline is the right call; `Shadow` is for panels and planks. White pixel text on white
+  snow with only a drop shadow is unreadable.
 - **Runtime ground change?** Call `repaintGround(tx, ty)` — it repaints the tile plus its four
   neighbours into the prerendered ground canvas. Never call `renderGround()` per frame; it bakes
   the entire 3712×3712 world and is a boot-time cost.

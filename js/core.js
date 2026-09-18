@@ -214,6 +214,10 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // the VIDEO page's dressing toggles, all cosmetic-only passes a weak GPU
   // can shed (the ESC panel's QUALITY row presets them; panels.js)
   vidClouds: true, vidRays: true, vidStars: true, vidSnow: true, vidVig: true,
+  // the VIDEO page's FPS CAP row: frames per second the loop may present, 0
+  // = every frame the screen offers (capSkips, js/boot.js); the sim's step
+  // is 1/60 whatever this says
+  fpsCap: 0,
   // where the hover tooltip sits: true = it rides beside the pointer, false =
   // the fixed bottom-left corner it was born in (tipPos, js/ui/tooltip.js).
   tipFollow: true,

@@ -1103,8 +1103,9 @@ White pixel text on a white snowfield is unreadable with a drop shadow, so text 
 wears an **outline**: `drawPixelTextOutline(ctx, text, x, y, color, outline, scale)` in
 [font.js](../../js/font.js) stamps the glyph at the eight 1-px integer offsets in the outline
 colour, then once in the text colour — a solid rim on every side, exactly 1 game px at any text
-scale, no blur. The outline colour is the opaque `#0f1632` (the eight passes overlap, so a
-translucent colour would stack unevenly). Which call reaches it depends on the pass:
+scale, no blur. The outline colour is `#0f1632`. Every string is baked once into
+[the string cache](architecture.md#fontjs) and stamped as one image after that, so the nine
+passes never overlap on the target. Which call reaches it depends on the pass:
 
 - **In a world pass** (anything drawn while `ctx` is `wctx`) **call
   `drawWorldText(text, x, y, color, scale, alpha)`** (the `ink over the world` banner,
@@ -1123,8 +1124,8 @@ translucent colour would stack unevenly). Which call reaches it depends on the p
 `drawPixelTextShadow` (a single bottom-right 1 px shadow) remains for text sitting on a panel,
 plank or overlay — the settings/map panels, the main menu, the death overlay and the scoreboard —
 where a full outline reads heavy. Checked at noon on open snow and at
-full night. A line drawn under a `globalAlpha` fade must use `Shadow`: the outline's eight passes
-overlap, so a translucent stamp stacks unevenly and the rim goes blotchy.
+full night. Either kind fades evenly under a `globalAlpha` (the cache stamps one opaque image),
+so the choice between them is only weight: a rim over the world, a shadow on a panel.
 
 ## Damage feedback
 
@@ -1235,9 +1236,8 @@ so the same glyph reads on the chart, on snow and over forest.
 - **Arrival** — `updatePlay` keeps `state.loc` (`{ L, t }`) for the local player from
   `campAt(player.x, player.y)`, and `renderUI` shows a toast top centre for ~3.5 s whenever it
   changes: a dark plate ruled in the spec's `mark`, the glyph, the name at 2× and the `tag` under
-  it. It fades in and out, so it uses `drawPixelTextShadow` (see
-  [Text over the world](#text-over-the-world) — an outline stamped under `globalAlpha` goes
-  blotchy). The **day headline** (`state.dayPop`, set by each dawn and the landing in sim.js)
+  it. It sits on a plate, so it uses `drawPixelTextShadow` (see
+  [Text over the world](#text-over-the-world)). The **day headline** (`state.dayPop`, set by each dawn and the landing in sim.js)
   shares the spot but not the plate: bare `DAY N` at 2×, nothing else. It wants BOTH the fade and
   the outline text over the world demands, so the opaque outlined stamp is baked once per day
   number (`dayPopCv`) and the canvas fades. It steps under the location plate when both are up.

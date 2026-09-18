@@ -1840,8 +1840,33 @@ function watchHidden() {
 document.addEventListener('visibilitychange', watchHidden);
 watchHidden(); // a page opened in a background tab never gets a first frame to arm itself from
 
+// THE FPS CAP. settings.fpsCap (the VIDEO page's FPS CAP row; 0 = every
+// frame the screen offers) skips whole frames: a skipped one leaves `last`
+// alone, so its time is banked into the next and the sim still takes every
+// 1/60 s step it is owed - the cap is on the presentation, never the step.
+// `capDue` is when the next frame may run, advanced by one period per frame
+// taken so the AVERAGE rate is exactly the cap on any refresh rate (30 on a
+// 60 Hz screen is every other frame, not a beat that drifts against it),
+// with a quarter period of slack because rAF's stamps jitter; a due clock
+// more than a period behind (a stall, a hidden tab) resyncs instead of
+// paying itself back as a burst.
+let capDue = 0;
+function capSkips(nowMs) {
+  const cap = settings.fpsCap;
+  if (!cap) return false;
+  const per = 1000 / cap;
+  if (nowMs < capDue - per * 0.25) return true;
+  capDue = nowMs - capDue > per ? nowMs + per : capDue + per;
+  return false;
+}
+
 let last = performance.now();
 function loop(nowMs) {
+  if (capSkips(nowMs)) {
+    if (!document.hidden) requestAnimationFrame(loop);
+    else watchHidden();
+    return;
+  }
   const rawDt = (nowMs - last) / 1000;
   // clamped at BOTH ends: rAF can hand back a stamp behind the clock `last`
   // was taken off (a headless first frame, a tab restored from the bfcache),
