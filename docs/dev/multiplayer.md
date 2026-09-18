@@ -272,7 +272,9 @@ panel (`padMenuMode`: any mode but play and the drop, or play with a panel up) t
 pointer surface, and always Enter over a key-driven menu (the idle mouse may be resting on
 another plank than the dpad picked), which every such menu answers (`padTake`) — B / BACK /
 START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
-`settingsKey`, js/ui/panels.js, reached from both the title's slide-in and the in-match slab), the
+`settingsKey`, js/ui/panels.js, reached from both the title's slide-in and the in-match slab) —
+with one exception, an [end screen](rendering.md#the-emote-bar), where the dpad is the emote bar
+read clockwise from up (`emotePad`, js/ui/screens.js) and the bumpers keep the planks — the
 right stick scrolls the page, and the left stick is a pointer
 over pointer-only surfaces (a panel, the wiki, class select) and the arrow
 keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,

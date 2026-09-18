@@ -249,6 +249,11 @@ function padTake() {
 function padPress(i, menu) {
   if (menu) {
     if (i === 0) { padTake(); return; }
+    // over an end screen the dpad is the emote bar rather than the arrows -
+    // a quick chat's grammar, and the planks keep the stick and the bumpers
+    // (emotePad, js/ui/screens.js)
+    const em = emotePad(i);
+    if (em) { keyPress({ key: em, repeat: false }); return; }
     const k = PAD_MENU[i];
     if (k) keyPress({ key: k, repeat: false });
     return;
@@ -267,6 +272,7 @@ function padPress(i, menu) {
 function padRelease(i, menu) {
   if (menu) {
     if (i === 0) { if (pad.click) pointerRelease(0); pad.click = false; return; }
+    if (emotePad(i)) return; // it played on the press; the arrows never saw it
     const k = PAD_MENU[i];
     if (k) keyRelease({ key: k });
     return;

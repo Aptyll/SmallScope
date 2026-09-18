@@ -1664,6 +1664,9 @@ window.DBG = {
   // a way to open the loss summary without pressing its plank. Set
   // state.defeatT / state.deadTimer to scrub either ceremony to a beat.
   WIN_T, DEF_T, openDefeat, endSnapshot, endScreen, deadLayout, deadHit, deadActivate, respawnTime,
+  // ...and their emote bar: the table, where its plates sit, what the pointer
+  // is on, and a way to play one without a key (DBG.emotePlay(0..3))
+  EMOTES, EM_T, emoteLayout, emoteHit, emotePlay, emoteLive,
   // the replay window's rect this frame, its close box, and whether the pointer is on it
   rpRect, rpCloseRect, rpCloseHit,
   // routes: the search itself, and showPaths = true draws every unit's live route

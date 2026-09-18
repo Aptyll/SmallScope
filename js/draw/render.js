@@ -1198,7 +1198,7 @@ function cursorInfo() {
     if (!m.panel) { const h = menuHit(); if (h >= 0 && !menuFrozen(h)) return { kind: 'hand' }; } // a frozen plank isn't a way in, so no hand
     return { kind: 'arrow' };
   }
-  if (state.mode === 'dead') return { kind: deadHit() >= 0 || specHit() || rpCloseHit() ? 'hand' : 'arrow' };
+  if (state.mode === 'dead') return { kind: deadHit() >= 0 || emoteHit() >= 0 || specHit() || rpCloseHit() ? 'hand' : 'arrow' };
   if (state.mode === 'drop') return { kind: state.mapOpen && mapCloseHit() ? 'hand' : 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {

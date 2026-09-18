@@ -136,7 +136,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| which button is which key, in play and over a menu | `PAD_PLAY`, `PAD_MENU` | `gamepad` |
+| which button is which key, in play and over a menu | `PAD_PLAY`, `PAD_MENU` (the dpad's one exception, an end screen's emote bar: `emotePad`, js/ui/screens.js) | `gamepad` |
 | the poll, which pad out of the browser's list (a live one over an idle ghost), the sticks, the aim off the body (and a wedge off a wheel's hub), the pointer over a panel, the walk under the panels that keep the world running, the stick-as-arrows repeat, A as the click or the selection | `padPoll`, `padFind`/`padLive`, `padAim`, `padRepeat`, `padTake`, `padMenuMode`/`padPanelMode`/`padPointerMode` | `gamepad` |
 | a pad in hand (the CONTROLS page opens on its tab); an unmapped pad's layout read off its rest values; the live sticks and triggers the readout draws | `padActive`, `pad`, `padCalibrate` (`pad.rest`), `pad.raw` | `gamepad` |
 
@@ -403,7 +403,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | ALPHA'S BLOOD worn: the amber ring of pips around a blooded player's feet | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
 | the snow over a buried body, its row spans, and the bury meter | `drawSnowCover`, `poseBounds`, `poseSpans`, `drawBuryRing` | - |
 | worn gear on the 16×16 sprite | `GEAR_MARKS`, `drawGearMarks` | - |
-| where the overhead stack sits on a model, and centring odd-width text on it | `FRAME_DX`, `centreTextX` | - (the bars themselves: `drawHealthBar`, js/draw/overhead.js) |
+| where the overhead stack sits on a model, centring odd-width text on it, and the two frames that wear none of it | `FRAME_DX`, `centreTextX`, the `state.mode === 'title' || endScreen()` bail in `drawPlayer` (a composition somebody looks AT, not a match somebody reads) | - (the bars themselves: `drawHealthBar`, js/draw/overhead.js; `endScreen`: js/ui/screens.js) |
 
 ## js/draw/marks.js
 
@@ -587,8 +587,11 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the rolling four-second replay: the capture ring, its resolution, the full-frame recap on a death and the corner window on pause, the recap's close box and its ESC, the `#replay` overlay | `replayTick`, `rpTarget`, `rpEnsure`, `replayShowing`, `rpFull`, `replayFull`, `replayClose`, `rpRect`, `rpCloseRect`, `rpCloseHit`, `layoutReplay`, `renderReplay`, `RP_*` | `replay` |
 | the death overlay and the respawn wait, spectating, back to the lobby, who the camera frames, the planks every ending shares | `DEAD_ITEMS`, `deadItems`, `endScreen`, `viewPlayer`, `specOk`, `specNext`, `toLobby`, `openDefeat`, `drawRespawnLine`, `renderDead`, `deadKey`, `deadClick`, `deadLayout`, `deadReady`, `endSkip`, `drawEndPlanks` | `death & spectate` (`endMatch`/`endSnapshot`: `damage & death`, player.js) |
-| the victory screen: its timeline, the side's stands, its sound cues, its art, and the passes both endings share | `WIN_T`, `WIN_BODY`/`WIN_TIER`/`WIN_BANNER_W`/`WIN_BANNER_H`, `winLayout`, `winStands`, `winCues`, `tallyCues`, `renderVictory`, `stampGrid`, `drawWinAurora`, `drawWinRays`, `drawWinMotes`, `WIN_CREST`, `mixHex`, `winBannerCv`, `drawWinBanner`, `drawBrazierIron`, `drawWinBrazier`, `drawWinDais`, `drawEndStatPlate`, `drawEndTally` | `victory` |
-| the defeat screen: the loss's own summary, on the same anchors and stands | `DEF_T`, `DEF_STATS`, `defCues`, `renderDefeat`, `drawBlizzard`, `drawDefeatDrift`, `drawDeadBrazier`, `DEF_ARROW` | `defeat` |
+| the victory screen: its timeline, the side's stands, its sound cues, its art, and the passes both endings share | `WIN_T`, `WIN_BODY`/`WIN_TIER`/`WIN_BANNER_W`/`WIN_BANNER_H`, `winLayout`, `winStands`, `winCues`, `tallyCues`, `renderVictory`, `stampGrid`, `drawWinAurora`, `drawWinRays`, `drawWinMotes`, `drawWinConfetti`, `WIN_CREST`, `mixHex`, `winBannerCv`, `drawWinBanner`, `drawBrazierIron`, `drawWinBrazier`, `drawWinDais`, `drawEndStatPlate`, `drawEndTally` | `victory` |
+| the defeat screen: the loss's own summary, the whole side down in the drift, on the same anchors and stands | `DEF_T`, `DEF_STATS`, `defCues`, `renderDefeat`, `drawBlizzard`, `drawDefeatDrift`, `drawDeadBrazier`, `drawDefeatRime`, `DEF_RIME_BAND`/`DEF_RIME_GROW`, `DEF_ARROW` | `defeat` |
+| the four emotes both end screens hand back to the player, what performs them, and the bar that picks them | `EMOTES` (each with an `up` and a `down` pose picker), `EM_T`, `EM_TURN`, `emo`, `emoteNow`, `emoteAmbient`, `drawEndBody`, `drawSnowPuff` | `emotes` |
+| the bar's plates: where they sit, what the pointer is on, what plays one, and its pixels | `EM_PLATE`/`EM_GAP`/`EM_BAR_DY`, `emoteLayout`, `emoteScreen`/`emoteLive`, `emoteHit`, `emotePlay`, `emoteKey`/`emoteClick`, `drawEmoteBar`, `EM_GLYPHS`/`EM_GLYPH_HOT` | `emotes` (the cursor's hand: `cursorInfo`, js/draw/render.js) |
+| which key or pad button plays which plate | `EM_KEYS` (the digits, read by `deadKey`), `EM_PAD`/`EM_PAD_CAP`/`emotePad` (the dpad, read by `padPress`/`padRelease`, js/gamepad.js) | `emotes` |
 
 ## js/ui/lobby.js
 
