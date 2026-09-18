@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.71'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.72'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.72', 'A LEVEL, A CARD OR A GEAR BUY NOW FLIES YOUR WHOLE STAT SHEET IN UNDER THE MINIMAP WITH THE ROWS IT MOVED LIT AND BLINKING.'],
   ['3.71', 'THE VIDEO PAGE GAINS AN FPS CAP, AND EVERY LINE OF TEXT IS DRAWN ONCE AND STAMPED AFTER THAT: A QUARTER OF THE FRAME BACK.'],
   ['3.70', 'THE END SCREENS HAND THE STAGE BACK TO YOU: FOUR EMOTES UNDER THE PLANKS, CONFETTI OFF THE CROWN, AND THE WHOLE LOSING SIDE LIES IN THE DRIFT.'],
   ['3.69', 'LOBBY AFTER A WIN OR A LOSS NOW OPENS THE WHOLE MATCH: EVERY PLAYER ON BOTH SIDES WITH THEIR LEVEL, KILLS, DEATHS, DAMAGE, SIEGE AND GOLD, SORTABLE BY ANY OF THEM, OVER A GRAPH OF HOW THE TWO SIDES PULLED APART.'],
@@ -1510,14 +1511,24 @@ function gearPreviewKit(gear) {
   return k;
 }
 // The ledger: one row per number gear can touch. `dir` says which way is
-// better (+1 higher, -1 lower), which is what colours a hovered delta.
+// better (+1 higher, -1 lower), which is what colours a hovered delta - and
+// the stat sheet's, on the plate that flies into the notice lane when one of
+// these numbers moves (the `stat ledger` block, js/ui/shop.js).
+// A getter takes (kit, player), and the player is OPTIONAL: the gear pop-up
+// prices a pre-match pick where every hero is level 1 and hands it nothing,
+// while anything reading a body mid-match passes it and gets the HERO LEVEL
+// folded in. The two rows a level moves carry it here rather than at their
+// readers, because the kit itself never holds it - levelMaxHp adds the hp
+// (player.js) and emitBit adds the damage (tools.js), so a ledger off the
+// bare kit would report a level-up as nothing having changed.
 const GS_INT = (v) => String(Math.round(v));
 const GS_SEC = (v) => (Math.round(v * 100) / 100).toFixed(2) + 'S';
 const GS_PCT = (v) => Math.round(v * 100) + '%';
 const GS_NUM = (v) => String(Math.round(v * 10) / 10);
+const GS_LV = (p) => (p ? p.level : 1) - 1; // levels PAST the first: what the growth is paid on
 const GEAR_STATS = [
-  ['HEALTH', (k) => k.maxHp, GS_INT, 1],
-  ['DAMAGE', (k) => k.dmgBase, GS_INT, 1],
+  ['HEALTH', (k, p) => k.maxHp + LVL_HP * GS_LV(p), GS_INT, 1],
+  ['DAMAGE', (k, p) => k.dmgBase + LVL_DMG * GS_LV(p), GS_INT, 1],
   ['DRAW', (k) => k.bowCharge, GS_SEC, -1],
   ['RENOCK', (k) => k.nock, GS_SEC, -1],
   ['ARMOR', (k) => k.dr, GS_INT, 1],

@@ -735,6 +735,17 @@
       if (smp('alarm', { vol: 0.7, jitter: 0 })) return;
       tone(880, 0.12, 'square', 0.08); tone(660, 0.16, 'square', 0.08, 0, 0.14); tone(880, 0.2, 'square', 0.08, 0, 0.3);
     },
+    // A NUMBER ON YOUR OWN SHEET MOVED - a hero level, a card drawn, a gear
+    // piece bought (updateStatLedger, js/ui/minimap.js), under the row that
+    // lights with it. Two notes, up for better and down for worse, and quiet
+    // and HIGH on purpose: a level raises this on top of its own fanfare, so
+    // it has to read as a chime laid over that rather than a second tune
+    // fighting it. Pure synth, like the dawn chime - there is no world sound
+    // for a stat.
+    stat(up) {
+      tone(up ? 1046 : 784, 0.05, 'triangle', 0.045);
+      tone(up ? 1568 : 523, 0.11, 'triangle', 0.04, 0, 0.05);
+    },
     // a status landing on YOUR OWN body, where a number on the strip is not
     // enough: found by a mark (the sweep that says you are on someone's
     // chart) and stunned out of your own hands

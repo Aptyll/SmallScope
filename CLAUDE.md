@@ -99,9 +99,9 @@ BACK'`, a "1" in a slot's corner — which name an *action*, print whatever key 
 (`keyCap`, input.js) and wear the pad's button while one is in hand (`PAD_BIND`, ui/wheel.js), so a new
 one goes through `drawKeyPrompt`/`drawPadBind`), the **settings, PLAYER, gear, character and shop panels**'
 labelled rows, the **instruments** — the practice room's (the dummy meter, the parkour's lap
-clock and the archery round's readouts, with their BEST / LAST plates) and the merchant's
-(the two price graphs and their high/low) — because an instrument's whole job is comparing
-numbers, and the **hover tooltip** (beside the pointer, or parked bottom-left — `tipAt`/`tipPos`/
+clock and the archery round's readouts, with their BEST / LAST plates), the merchant's
+(the two price graphs and their high/low) and the **stat sheet** that flies into the notice
+lane when a number on yours moves — because an instrument's whole job is comparing numbers, and the **hover tooltip** (beside the pointer, or parked bottom-left — `tipAt`/`tipPos`/
 `drawTooltip`, ui/tooltip.js) — which earns it because comparing a tool's rate of fire against a
 bit's weight is comparing *numbers*, and no shape does that. It is a carve-out, not a licence: the
 well still has to read at a glance without it. Anything else that wants words is a design bug.

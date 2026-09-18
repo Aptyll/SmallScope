@@ -390,8 +390,11 @@ function bagCellPlate(r, rim, inner, lift) {
 // at 4x wearing its bought gear bands in their level materials
 // (drawGearMarks, the same pixels every rival reads on you in the world) with
 // the held weapon beside it - and under it the STAT LEDGER, GEAR_STATS read
-// off the LIVE kit (kitOf), so gear levels, ability ranks and cards are all
-// in the numbers. RIGHT: the four equipped pieces, each a 32px icon well
+// off the LIVE kit (kitOf) with the player handed to it, so gear levels,
+// cards and the hero level's own growth are all in the numbers - the same
+// table, numbers and verdict inks as the stat sheet that flies into the
+// notice lane (js/ui/shop.js), opened out: the panel's job is reading a body
+// at leisure, the plate's is catching what moved. RIGHT: the four equipped pieces, each a 32px icon well
 // (gearIcon32) with its variant name, gear's buy pips, and the next level's
 // price; a click on an affordable well buys through the same input.cmd the
 // old HUD row used, so bots and the panel still share one path. The ledger's
@@ -482,14 +485,15 @@ function drawCharPanel(now) {
     const im = SPRITES[ITEMS[held.type].icon];
     ctx.drawImage(im, pr.x + pr.w - 31, pr.y + pr.h - 33 + Math.round(Math.sin(now * 2.2) * 1.5), 24, 24);
   }
-  // the ledger: every number the kit carries RIGHT NOW - gear levels, ability
-  // ranks and cards already folded in, because it reads the live kit
+  // the ledger: every number this body carries RIGHT NOW - gear levels, cards
+  // and the hero level already folded in, because it reads the live kit and
+  // hands the getters the player (GEAR_STATS, js/ui/menu.js)
   const k = kitOf(player);
   for (let i = 0; i < GEAR_STATS.length; i++) {
     const [label, get, fmt] = GEAR_STATS[i];
     const y = L.led.y + i * 8;
     drawPixelTextShadow(ctx, label, L.led.x, y, '#7a8bb8', '#0a0e23');
-    const vTxt = fmt(get(k));
+    const vTxt = fmt(get(k, player));
     drawPixelTextShadow(ctx, vTxt, L.led.x + L.led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#0a0e23');
     ctx.fillStyle = '#2c3a68'; // the leader: dots from the label to its number
     for (let dx = L.led.x + pixelTextWidth(label) + 4; dx < L.led.x + L.led.w - pixelTextWidth(vTxt) - 4; dx += 4) {

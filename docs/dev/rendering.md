@@ -428,6 +428,7 @@ empty world.
 | Where | What | Function |
 | --- | --- | --- |
 | top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the small white arrow of the **inventory drawer**, shut until B or the arrow | `drawShelf`, `drawBag` |
+| top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: every player in the match as a 14px chip on two plates, your side left (you first, your emblem white) and the rival right, each chip only *up* / *waiting* / *out* — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
@@ -454,7 +455,16 @@ customer, which is why the block lives in shop.js, but the plate is not the mark
 `roost` kind is the same card with a different mark on it.
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
-what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down.
+what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down. That row is
+`noteBody`, the **default**: a kind may bring a `body` of its own instead, which is how the
+[stat sheet](#the-stat-ledger-your-sheet-as-a-notice) rides this lane carrying a ledger.
+
+**A plate is its kind's size.** `noteW(K)`/`noteH(K)` answer off the kind (78×22 unless it says
+otherwise), the lane **sums** the heights above a slot rather than counting a pitch, a plate slides
+its own width clear of the edge, and the newest shoves the stack down by *its* own height. Nothing
+in the lane is special-cased for the tall one. `noteLaneFloor()` is where the lane stops — the top
+of the hud strip's tab at the HUD SIZE the dial holds — and a plate that would cross it is not
+drawn, which on a short view drops the **oldest** news and keeps the newest.
 
 The mark is the kind's own (`NOTE_KIND[k].mark`, a `SPRITES` key or null), 16×16 in a sunken well:
 the merchant's **gold sack** (`SPRITES.goldSack`, ten frames turning over on `NOTE_FR` (0.11 s) the
@@ -517,6 +527,59 @@ standing at the shop must not arrive behind the panel it is about) and stay up w
 down, like the feed — the market does not stop for a death. They duck under the map and settings
 panels, and the end screens own the frame outright. Each kind carries its own cue:
 [audio](gameplay.md#audio).
+
+### The stat ledger: your sheet, as a notice
+
+The answer to *what did that DO?* — the `stat ledger` block in
+[js/ui/shop.js](../../js/ui/shop.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
+a [notice](#notices-the-plates-under-the-minimap) kind. A hero level, a card drawn on C and a gear
+buy all rewrite the kit silently: the floater over the body names the *thing* taken and never the
+*number* it moved, so until this plate the only place to read the change was the character panel — a
+key press and a pause in the middle of a fight.
+
+**It does not stand on the HUD, it arrives.** A change flies the sheet in off the right edge into
+the lane under the disc on the same ease, the same white frame pulse and the same lane as a price
+plate, holds `NOTE_LIFE` (8 s), and rides back out the way it came — and it **shoves** whatever
+plate was in the lane down under it exactly as a price plate does. When nothing has changed there is
+nothing on screen at all. The only thing about it that is not a price plate is its **size**
+(`STAT_W` 88 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
+edge, so the wider one still reads as the same lane.
+
+**Every row of the sheet is on it, dim, and the rows that moved are lit**: label and number to
+white, a wash across the row in its verdict colour, and the delta printed in the leader's own space
+between them — `+9`, `-15`, `+8%`, `-0.30S`, the magnitude in that row's own format behind the sign
+it moved in. Those rows **pulse** for `STAT_PULSE` (1.3 s) on the card's own three-pulses-under-a-
+decay flash grammar, so the thing you are meant to read is still blinking when your eyes arrive.
+The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a price
+that wash *is* the arrival, but over fourteen rows it would drown the green ones that are the news,
+so the frame pulses and the rows do the blinking. **Green is better and red is worse**, by the row's
+own `dir`, so a draw time that *fell* reads green — the grammar the gear pop-up's hover deltas
+already teach.
+
+**One stats plate is ever up.** A second change inside the first one's life drops it and flies a
+fresh one, so the plate is what your sheet is *now* rather than a stack of what it has been; a row
+still inside its own hold comes along on the new plate until that hold runs out.
+
+It **watches the kit** rather than hooking the writers — `levelUp`, `buyGear`, `useCard` and a
+bot's `resolveCardForBot` all land in it for free, a host's snapshot lands a client's the same way,
+and nothing that edits a kit has to remember to announce it. The test is the **printed** number,
+not the raw one: a change too small to move the row is one the plate cannot show, and a `+0` beside
+an unchanged number would be a lie. One cue per batch (`SFX.stat(up)`), never one per row — a gold
+card moves three numbers and is one thing that happened; its direction is the batch's balance, so a
+card that trades health for damage still speaks.
+
+It reads `GEAR_STATS`, the one table the [gear pop-up](#the-character-screens) prices a pick from
+and the [character panel](#the-character-panel-g) spells a body out with, so the three can never
+disagree about what a stat is, how it prints, or which way is up. Two rows carry the **hero level**
+that the kit itself never holds — `levelMaxHp` adds the hp and `emitBit` the damage — so the
+getters take `(kit, player)` and fold it in when a player is passed. The gear pop-up prices a
+pre-match pick where every hero is level 1 and passes nothing; everything reading a live body passes
+it. Without that a level-up would move no row at all.
+
+**Two kit fields have no row and so light nothing** — `killHeal` (BLOODLUST, VAMPIRE) and
+`ambushMul` (AMBUSHER'S EDGE, PHANTOM), the only card effects outside `GEAR_STATS`' vocabulary.
+Giving them rows is two more entries in that table plus taller character and gear panels to seat
+them in: both are already within a few pixels of `fitCanvas`'s 240-row floor.
 
 ### The hover tooltip
 
@@ -976,8 +1039,11 @@ LEFT: the **body as it stands right now** — the class sprite walking in place 
 bought gear bands in their level materials (`drawGearMarks`, the same pixels every rival reads on
 you in the world) with the held weapon beside it — under a header naming the sheet (the profile
 name in the team's mark, the class and hero level beside it). Below, the **stat ledger**:
-`GEAR_STATS` read off the **live kit** (`kitOf`), so gear levels, ability ranks and cards are all
-already in the numbers — dotted leaders, label left, value right, the panels' text carve-out.
+`GEAR_STATS` read off the **live kit** (`kitOf`) *and handed the player*, so gear levels, cards and
+the hero level's own hp and damage are all already in the numbers — dotted leaders, label left,
+value right, the panels' text carve-out. It is the same table, the same numbers and the same
+verdict inks as the [sheet that flies into the notice lane](#the-stat-ledger-your-sheet-as-a-notice),
+opened out: the panel's job is reading a body at leisure, the plate's is catching what moved.
 
 RIGHT: the **four equipped pieces**, head to toe — each a 32 px icon well (`gearIcon32`) with its
 variant name inked in the piece's level material, gear's three buy pips, and the next level's
@@ -1773,7 +1839,8 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   LEFT is the **live preview** (`drawGearPreview`): the chosen class walking in place at 4×
   wearing its four leather bands (every pre-match pick is the free level 1) with the class
   weapon at hand, and under it the **stat ledger** — one labelled row per number gear can touch
-  (`GEAR_STATS`), real values computed by `gearPreviewKit` through the same `baseKit`
+  (`GEAR_STATS`, whose getters take an optional player and are handed none here — every
+  pre-match hero is level 1), real values computed by `gearPreviewKit` through the same `baseKit`
   (js/player.js) the sim's `refreshKit` uses, so the page can never lie. RIGHT is all 12
   variants as **32px icon wells** (`drawGearWell`, icons `GEAR32`/`gearIcon32` baked on the
   ability icons' palette), four rows of three: the picked one gold-rimmed, the keyboard focus
