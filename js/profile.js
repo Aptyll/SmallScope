@@ -102,7 +102,6 @@
       chars: [],
       active: 0,
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
-      practice: false, // has the PRACTICE TOOL plank been knocked open (3 knocks; stays open)
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played) - these two are all practice writes
       // (the lifetime stats moved onto the characters in v2: a v1 save's
@@ -179,7 +178,6 @@
       profile = blank();
       if (s && typeof s === 'object') {
         profile.dropped = !!s.dropped;
-        profile.practice = !!s.practice;
         if (typeof s.bestLap === 'number' && isFinite(s.bestLap) && s.bestLap > 0) profile.bestLap = s.bestLap;
         if (typeof s.bestRange === 'number' && isFinite(s.bestRange) && s.bestRange > 0) profile.bestRange = Math.floor(s.bestRange);
         if (Array.isArray(s.chars)) {
@@ -288,12 +286,6 @@
     hasDropped() { return !!profile.dropped; },
     markDropped() { if (!profile.dropped) { profile.dropped = true; saveNow(); } },
 
-    // ---- the practice tool --------------------------------------------------
-    // whether the PRACTICE TOOL plank's ice has been broken (three knocks at
-    // the title menu, js/menu.js). Once open it never refreezes for this
-    // profile - the plank is a live menu item from then on.
-    practiceOpen() { return !!profile.practice; },
-    markPractice() { if (!profile.practice) { profile.practice = true; saveNow(); } },
     // the ice parkour's all-time best lap - one of the two things the arena
     // itself writes back (updatePractice, js/world.js). Stored at the plate's
     // own 0.1 s precision so the number shown IS the number kept; only a

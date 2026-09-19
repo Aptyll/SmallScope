@@ -1,6 +1,6 @@
 # Rendering
 
-> The title's MULTIPLAYER plank and its rooms screen, the waiting room, and the DOWNLOAD tag:
+> The title's MULTIPLAYER item and its rooms screen, and the waiting room:
 > [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
 
 Everything that draws: the camera, the pass order, the baked panels, and the pixel cursor.
@@ -1662,16 +1662,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `state.menu`:
 
 - **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL —
-  `menuFrozen(i)` is true for PRACTICE TOOL alone, until the profile has
-  broken it open (MULTIPLAYER is live: it opens the rooms screen, `beginRooms`): a frozen item
-  is drawn in ice-blue at three-quarter alpha, never selectable or activatable; arrow keys skip it
-  and the hand cursor ignores it. Its `menu.hover` slot tracks the pointer instead of the
-  selection, and clicking it calls `iceRefuse(i)`: the word rattles for `menu.iceT`
-  (`menu.iceI` names which; the struck point `menu.iceX/iceY` is reseeded per knock by
-  `menu.iceSeed`) and `menu.shards` ice chips spray and fall from it, to `SFX.iceKnock`.
-  Each knock is counted in `menu.iceMarks`, and the third calls `breakPracticeIce` — the
-  whole sheet sprays off, `PROFILE.markPractice()` keeps the break, and from then on the item
-  is live and its activation is `beginPractice()` (the reroll's whiteout onto
+  all three live from the first boot; PRACTICE TOOL's activation is `beginPractice()` (the
+  reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
   there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from the plank heading
@@ -1697,7 +1689,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   here for the wiki's header and the end screens (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
   active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
-- **Items** are plain words in the pixel font with a dark rim (`drawPixelTextOutline`): white,
+- **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
   the selected one gold and lifted a px (`menu.hover[i]` eases 0→1 toward it), a press
   (`menu.pressT`) sinking it a px; that is the whole selection cue. No plank, slab or frame — the
   **frost plank** (`drawMenuButton`: chamfered slab with hashed wood-grain, a snow cap, icicles,

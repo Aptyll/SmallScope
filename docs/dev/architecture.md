@@ -102,9 +102,7 @@ fixed at creation, `look` is an index per axis of `LOOK_N` — `sex`, `tone`, `h
 `hairCol`, `beard`, `face` — and `stats` the character's own `wins` / `matches` / `gold` /
 `days` / `kills` / `deaths`), the
 one-shot `dropped` flag (`hasDropped()`/`markDropped()`: has this profile ever jumped off the
-eagle, gating the scripted first flight that rides the landing), the one-shot `practice` flag
-(`practiceOpen()`/`markPractice()`: has the PRACTICE TOOL plank's ice been broken — three
-knocks at the title, after which the plank stays a live menu item), `bestLap`
+eagle, gating the scripted first flight that rides the landing), `bestLap`
 (`bestLap()`/`setBestLap()`: the ice parkour's all-time record) and `bestRange`
 (`bestRange()`/`setBestRange()`: the archery round's best score) — the only two things the
 practice arena writes ([world.md](world.md#the-practice-arena)) — the

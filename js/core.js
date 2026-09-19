@@ -155,11 +155,11 @@ const state = {
     // keyed by hit id
     charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameSel: false, nameShake: 0, dieT: 0, crow: 0, ksel: 0, khover: {},
     moved: false, dieT: 0, rolling: 0, camT: 0, pressT: 0,
-    // frozen planks: refusal shudder timer, which plank was struck (menu index),
-    // per-knock crack seed, the struck point (plank-local) and the ice chips it sprays (screen-space).
-    // iceMarks: the PRACTICE TOOL item's knocks so far - one entry per knock,
-    // and the third breaks the sheet for good (menu.js iceRefuse)
-    iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0, shards: [], iceMarks: [],
+    // a sealed plank's knock (drawMenuButton's frozen glaze cracks from
+    // iceX/iceY while iceT runs, on the plank iceI names); nothing sets them
+    // today - the title's items are all live - but a client's lobby still
+    // draws the host's name sealed, and the glaze reads them
+    iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0,
     // class select: which screen the menu shows, its cross-fade, the chosen
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap

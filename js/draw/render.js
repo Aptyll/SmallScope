@@ -1195,7 +1195,7 @@ function cursorInfo() {
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
     if (!m.panel && (overCharTag() || overPatchTag())) return { kind: 'hand' }; // the two corner tags
     if (overPatchWiki()) return { kind: 'hand' }; // the notes' WIKI plank
-    if (!m.panel) { const h = menuHit(); if (h >= 0 && !menuFrozen(h)) return { kind: 'hand' }; } // a frozen plank isn't a way in, so no hand
+    if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }
   if (state.mode === 'dead') return { kind: deadHit() >= 0 || emoteHit() >= 0 || specHit() || rpCloseHit() ? 'hand' : 'arrow' };

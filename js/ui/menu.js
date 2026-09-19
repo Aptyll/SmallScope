@@ -15,16 +15,12 @@ const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
 // seed lives on the map pop-up under the shape's name (rerollWorld below),
 // and the WIKI opens from the plank heading the patch notes (drawPatchWiki).
-// The items are plain words - white, the picked one gold - stacked at the
-// bottom middle of the view, MENU_TXT_PITCH apart with the last one's foot
-// MENU_BOTTOM above the edge; no plank, slab or frame around them.
-// PRACTICE TOOL (2) is sealed under ice until the profile has broken it:
-// inert to keys and the hand, drawn in ice-blue, and a click is a knock
-// (iceRefuse below) - it rattles and sprays chips, and the third knock breaks
-// it open for good (breakPracticeIce). From then on it is a live item that
-// boots the training arena (beginPractice).
-function menuFrozen(i) { return i === 2 && !PROFILE.practiceOpen(); }
-const MENU_TXT_PITCH = 14, MENU_BOTTOM = 34;
+// The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
+// stacked at the bottom middle of the view, MENU_TXT_PITCH apart with the
+// last one's foot MENU_BOTTOM above the edge; no plank, slab or frame around
+// them, and all three live from the first boot (PRACTICE TOOL boots the
+// training arena, beginPractice).
+const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
 // MENU_BH at MENU_Y0 in the 270-tall authored frame is where class select's
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
@@ -326,31 +322,6 @@ function overPatchTag() {
   const r = patchTagRect();
   return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
 }
-// the DOWNLOAD tag, bottom centre, in a browser only: the wrapper IS the
-// download (desktop/), so the page under it has nothing to offer. It opens
-// the newest release, which a tag push builds (.github/workflows/desktop.yml)
-const DOWNLOAD_URL = 'https://github.com/Aptyll/SmallScope/releases/latest';
-const IS_APP = !!window.steamBridge || /Electron/i.test(navigator.userAgent);
-const DL_TXT = 'DOWNLOAD';
-function downloadTagRect() {
-  const w = pixelTextWidth(DL_TXT) + 7; // the arrow and its gap lead the word
-  return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - 9, w, h: 5 };
-}
-function overDownloadTag() {
-  if (IS_APP) return false;
-  const r = downloadTagRect();
-  return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
-}
-function drawDownloadTag() {
-  if (IS_APP) return;
-  const r = downloadTagRect(), hot = !state.menu.panel && overDownloadTag();
-  const col = hot ? '#ffd95c' : '#5a6690';
-  ctx.fillStyle = col; // a down arrow: the shaft and its head
-  ctx.fillRect(r.x + 2, r.y, 1, 3); ctx.fillRect(r.x + 1, r.y + 2, 3, 1); ctx.fillRect(r.x + 2, r.y + 3, 1, 1);
-  drawPixelTextShadow(ctx, DL_TXT, r.x + 7, r.y, col, 'rgba(15,22,50,0.9)');
-  if (hot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(r.x, r.y + 7, r.w, 1); }
-}
-
 // ------------------------------------------------------------ rooms
 // The MULTIPLAYER plank's screen: the relay's open rooms as planks under a
 // HOST plank (docs/pvp-architecture.md; the relay: app/server.js). A room's
@@ -550,7 +521,7 @@ function menuLayout() {
   const toy = frameTop();
   const n = MENU_ITEMS.length;
   const rects = MENU_ITEMS.map((label, i) => {
-    const w = pixelTextWidth(label) + 8, h = 11;
+    const w = pixelTextWidth(label, MENU_TXT_SCALE) + 8, h = 7 * MENU_TXT_SCALE + 4;
     return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - MENU_BOTTOM - (n - i) * MENU_TXT_PITCH, w, h };
   });
   return { toy, rects };
@@ -569,76 +540,13 @@ function menuHit() {
 function menuSelect(i) {
   const m = state.menu;
   const N = MENU_ITEMS.length;
-  const dir = i >= m.sel ? 1 : -1;
-  let n = ((i % N) + N) % N;
-  const start = n;
-  while (menuFrozen(n)) { // sealed planks refuse the selection; skip the whole iced block
-    n = (((n + dir) % N) + N) % N;
-    if (n === start) return;
-  }
+  const n = ((i % N) + N) % N;
   if (n === m.sel) return;
   m.sel = n;
   SFX.pickup();
 }
 
-// knocking on a frozen plank: it shudders, cracks flash from the struck
-// point and heal as it refreezes, and a spray of ice chips falls away
-function iceRefuse(i) {
-  const m = state.menu;
-  if (m.iceT > 0.3) return; // still mid-shudder
-  const { rects } = menuLayout();
-  const r = rects[i];
-  m.iceT = 0.45;
-  m.iceI = i;
-  m.iceSeed = (m.iceSeed + 1) | 0;
-  m.iceX = Math.max(2, Math.min(r.w - 2, mouse.x - r.x));
-  m.iceY = Math.max(2, Math.min(r.h - 2, mouse.y - r.y));
-  for (let i = 0; i < 12; i++) {
-    const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6; // upward fan off the impact
-    const sp = 30 + Math.random() * 70;
-    m.shards.push({
-      x: r.x + m.iceX, y: r.y + m.iceY,
-      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20,
-      life: 0.4 + Math.random() * 0.4, w: Math.random() < 0.3 ? 2 : 1,
-      c: ['#e8f4ff', '#a8c8e8', '#f4f7ff'][i % 3],
-    });
-  }
-  // the practice item's ice takes damage instead of healing: every knock
-  // is counted (iceMarks), and the third breaks the sheet open for good
-  if (i === 2) {
-    m.iceMarks.push({ x: m.iceX, y: m.iceY, seed: m.iceSeed });
-    if (m.iceMarks.length >= 3) { breakPracticeIce(i); return; }
-  }
-  SFX.iceKnock();
-}
-
-// the third knock: the whole sheet lets go. The glaze bursts off the plank in
-// one spray, the profile keeps the break, and the plank is live from here on -
-// menuFrozen() reads PROFILE.practiceOpen(), so nothing else needs telling.
-function breakPracticeIce(i) {
-  const m = state.menu;
-  const { rects } = menuLayout();
-  const r = rects[i];
-  PROFILE.markPractice();
-  m.iceT = 0; m.iceI = -1;
-  m.iceMarks.length = 0;
-  for (let k = 0; k < 34; k++) { // the whole glaze coming away, not one chip
-    const a = -Math.PI / 2 + (Math.random() - 0.5) * 3.4;
-    const sp = 40 + Math.random() * 110;
-    m.shards.push({
-      x: r.x + 4 + Math.random() * (r.w - 8), y: r.y + 2 + Math.random() * (r.h - 4),
-      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 30,
-      life: 0.5 + Math.random() * 0.6, w: Math.random() < 0.4 ? 2 : 1,
-      c: ['#e8f4ff', '#a8c8e8', '#f4f7ff', '#ffffff'][k % 4],
-    });
-  }
-  m.sel = i; // the freed item takes the selection: the eye is already on it
-  SFX.break_();
-  SFX.unlock();
-}
-
 function menuActivate(i) {
-  if (menuFrozen(i)) return; // solid ice - iceRefuse() is the only answer
   SFX.unlock();
   if (i === 0) beginSelect();
   else if (i === 1) beginRooms();
@@ -741,10 +649,8 @@ function menuClick() {
   }
   if (overCharTag()) { beginChars(); return; }
   if (overPatchTag()) { openMenuPanel('patch'); return; }
-  if (overDownloadTag()) { SFX.unlock(); window.open(DOWNLOAD_URL, '_blank'); return; }
   const h = menuHit();
   if (h < 0) return;
-  if (menuFrozen(h)) { iceRefuse(h); return; }
   m.sel = h;
   m.pressT = 0.12;
   menuActivate(h);
@@ -821,7 +727,7 @@ function updateTitle(dt) {
   if (m.moved) {
     m.moved = false;
     const h = menuHit();
-    if (h >= 0 && !menuFrozen(h) && h !== m.sel) m.sel = h;
+    if (h >= 0 && h !== m.sel) m.sel = h;
   }
   // the character screens (js/ui/chars.js): their ease and their hovers
   m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'chars' || m.screen === 'create' ? 1 : -1) * dt / 0.35));
@@ -829,22 +735,13 @@ function updateTitle(dt) {
   else if (m.screen === 'create') updateCreate(dt);
   m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'rooms') updateRooms(dt);
-  // a frozen plank can't be selected, so its hover ease tracks the pointer instead
-  const hit = !m.panel && m.screen === 'menu' ? menuHit() : -1;
   for (let i = 0; i < MENU_ITEMS.length; i++) {
-    const target = menuFrozen(i) ? (hit === i ? 1 : 0) : (m.sel === i ? 1 : 0);
+    const target = m.sel === i ? 1 : 0;
     // `|| 0` because the array's length is a literal in core.js: a missing
     // cell would go NaN here and take its whole row off the screen
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
   m.pwHover = (m.pwHover || 0) + ((overPatchWiki() ? 1 : 0) - (m.pwHover || 0)) * Math.min(1, dt * 14); // the notes' WIKI plank
-  // the refusal shudder heals and the ice chips fall
-  if (m.iceT > 0) m.iceT = Math.max(0, m.iceT - dt);
-  for (let i = m.shards.length - 1; i >= 0; i--) {
-    const s = m.shards[i];
-    s.vy += 260 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
-    if (s.life <= 0) m.shards.splice(i, 1);
-  }
   // class select cross-fade and its own hovers; the gear pop-up rides a
   // second ease (gearT) over the still-lit select screen
   const st = m.screen === 'select' || m.screen === 'gear' || m.screen === 'map' ? 1 : 0;
@@ -1004,7 +901,8 @@ function drawMenuButton(r, label, hv, now, pressed, frozen) {
       ctx.globalAlpha = a0;
     }
     // one knock's crack web: dark fissures with the odd white glint, so they
-    // read against the pale glaze (the refusal flash, iceRefuse)
+    // read against the pale glaze (nothing knocks today; a client's sealed
+    // host plank never sets iceT)
     const cracksAt = (px0, py0, seed, alpha, steps) => {
       ctx.globalAlpha = alpha;
       for (let c = 0; c < 5; c++) {
@@ -3407,31 +3305,19 @@ function renderTitle(now) {
   ctx.globalAlpha = 1;
 
   // items: plain words that fade in staggered, sink away on play and duck
-  // under a panel; the picked one warms to gold and lifts a px, a press sinks
-  // it, and the iced one is ice-blue and rattles when knocked
+  // under a panel; the picked one warms to gold and lifts a px, a press sinks it
   for (let i = 0; i < rects.length; i++) {
     const r = rects[i];
     const inT = easeOut((m.t - 0.25 - i * 0.12) / 0.45);
     const a = inT * (1 - out) * (1 - pan);
     if (a <= 0.005) continue;
-    const frozen = menuFrozen(i);
-    const hv = frozen ? 0 : m.hover[i];
+    const hv = m.hover[i];
     const pressed = m.sel === i && (m.pressT > 0 || (mouse.down && menuHit() === i));
-    let x = r.x + 4, y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
-    if (frozen && m.iceI === i && m.iceT > 0) x += Math.round(Math.sin(now * 85) * 2.2 * (m.iceT / 0.45)); // the knock's rattle
-    ctx.globalAlpha = a * (frozen ? 0.75 : 1);
-    const col = frozen ? '#8fb4d8' : hv > 0.5 ? '#ffd95c' : '#f4f7ff';
-    drawPixelTextOutline(ctx, MENU_ITEMS[i], x, y, col, 'rgba(8,12,28,0.9)');
+    const y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
+    ctx.globalAlpha = a;
+    drawPixelTextOutline(ctx, MENU_ITEMS[i], r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
     ctx.globalAlpha = 1;
   }
-
-  // ice chips knocked off the frozen plank, falling and fading
-  for (const s of m.shards) {
-    ctx.globalAlpha = Math.min(1, s.life * 3) * (1 - out) * (1 - pan);
-    ctx.fillStyle = s.c;
-    ctx.fillRect(Math.round(s.x), Math.round(s.y), s.w, s.w);
-  }
-  ctx.globalAlpha = 1;
 
   // footer: the two corner tags ride the same fade; no gold rule under them
   const fin = easeOut((m.t - 0.9) / 0.5) * (1 - out) * (1 - pan);
@@ -3442,7 +3328,6 @@ function renderTitle(now) {
     drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
     drawCharTag(now); // the active character and its quill, opposite corner
-    drawDownloadTag(); // bottom centre, browsers only
     ctx.globalAlpha = 1;
   }
 

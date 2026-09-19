@@ -424,8 +424,8 @@ Every step shipped as its own PR and kept solo play identical.
    Walk prediction stays deferred.
 
 Releases: every `v*` tag builds the portable zip (desktop/build.js,
-.github/workflows/desktop.yml), which the DOWNLOAD tag on the title opens
-(`DOWNLOAD_URL`, js/ui/menu.js). A Steam tester's account must own the app.
+.github/workflows/desktop.yml) and attaches it to a GitHub Release. A Steam tester's account
+must own the app.
 
 
 ## Risks
