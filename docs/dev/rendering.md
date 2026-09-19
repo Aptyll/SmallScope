@@ -637,7 +637,7 @@ click on that well would do.
 
 ### The wiki screen
 
-`m.screen = 'wiki'`, entered from the main menu's WIKI plank and eased in on its own `wikiT`
+`m.screen = 'wiki'`, entered from the WIKI plank heading the patch notes panel and eased in on its own `wikiT`
 (the chrome ducks under it the way it does under class select). One surface: the title and its
 gold rule, then a translucent frost slab (`drawMenuSlab`, up to `WIKI_W_MAX` = 400 wide,
 `WIKI_H` = 200 tall, centred, narrowing with the view) with a **tab bar** of pages under its top
@@ -1661,7 +1661,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / WIKI —
+- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL —
   `menuFrozen(i)` is true for PRACTICE TOOL alone, until the profile has
   broken it open (MULTIPLAYER is live: it opens the rooms screen, `beginRooms`): a frozen plank is
   drawn sealed under an ice glaze by
@@ -1681,8 +1681,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   plank is a live item whose activation is `beginPractice()` (the reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
-  [WIKI](#the-wiki-screen) is the one utility at the foot — there is no SETTINGS plank: settings
-  are the ESC panel's in play, and the seed lives on the [map pop-up](#the-map-pop-up)), stacked
+  there is no WIKI or SETTINGS plank: the [wiki](#the-wiki-screen) opens from the plank heading
+  the patch notes, settings are the ESC panel's in play, and the seed lives on the
+  [map pop-up](#the-map-pop-up)), stacked
   `MENU_PITCH` apart from `MENU_Y0`. **`menu.hover` has one cell per plank** and its length is
   a literal in core.js, a file that loads before `MENU_ITEMS`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently

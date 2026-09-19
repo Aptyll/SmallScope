@@ -11,9 +11,10 @@
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
-const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'WIKI'];
+const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
-// seed lives on the map pop-up under the shape's name (rerollWorld below).
+// seed lives on the map pop-up under the shape's name (rerollWorld below),
+// and the WIKI opens from the plank heading the patch notes (drawPatchWiki).
 // sealed under ice until they exist: inert to hover, keys and clicks.
 // MULTIPLAYER (1) thawed in 3.48: it opens the rooms screen below. PRACTICE
 // TOOL (2) is sealed, but its ice is BREAKABLE, and it says so: one crack web
@@ -39,7 +40,7 @@ const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
 const PATCH_TXT = 'PATCH 3.74'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.74', 'THE TITLE IS FOUR PLANKS: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI ALSO OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
+  ['3.74', 'THE TITLE IS FOUR PLANKS: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
   ['3.73', 'THE PIERCING SHOT FLIES TWICE AS FAR AND WEARS EVERY MODIFIER ON YOUR TOOL, AND A FAST SHOT NO LONGER STEPS THROUGH A RABBIT OR A WALL.'],
   ['3.72', 'A LEVEL, A CARD OR A GEAR BUY NOW FLIES YOUR WHOLE STAT SHEET IN UNDER THE MINIMAP WITH THE ROWS IT MOVED LIT AND BLINKING.'],
   ['3.71', 'THE VIDEO PAGE GAINS AN FPS CAP, AND EVERY LINE OF TEXT IS DRAWN ONCE AND STAMPED AFTER THAT: A QUARTER OF THE FRAME BACK.'],
@@ -638,7 +639,6 @@ function menuActivate(i) {
   if (i === 0) beginSelect();
   else if (i === 1) beginRooms();
   else if (i === 2) beginPractice();
-  else if (i === 3) beginWiki();
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
