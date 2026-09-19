@@ -327,12 +327,12 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 The local player's class is **fixed on the character** it was created with (js/profile.js; the
 create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
 only way to the other class is another character, and class select swaps between the profile's
-three from its slot column; bots hash theirs — class, look **and** all four gear
+three from its character tabs; bots hash theirs — class, look **and** all four gear
 variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
-same loadouts. Class select shows that roster as two columns of cards — your side left, the
-rivals right, their picks face-down until PLAY's countdown turns them (a second PLAY skips the
-rest of the count) — and the three notches
-over the rivals' column set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
+same loadouts. Class select shows that roster as two team panels on the screen's edges — your side left, the
+rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
+the rest of the count) — and the three plates
+heading the rivals' panel set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
@@ -570,7 +570,7 @@ dropped card is a neutral pickup the same way, first-come whichever team gets th
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
 well each rung is played** (the `difficulty` banner at the top of ai.js): the **rivals** run
-`AI_LEVELS[settings.aiLevel]` — NORMAL / HARD / IMPOSSIBLE, class select's notches, remembered
+`AI_LEVELS[settings.aiLevel]` — NORMAL / HARD / IMPOSSIBLE, class select's plates, remembered
 with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch up (capped at the
 top) plus the support fields, so your side is always the more competent one and the difficulty
 is how good the *other* side is. `aiProfile(p)` is the one place that choice is made

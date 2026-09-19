@@ -284,12 +284,6 @@ function tipAt(mx, my) {
       // own ability card, read at the base cooldown since nobody has levelled
       return !h ? null : h.kind === 'row' ? tipKind(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls) : null;
     }
-    // the stage's ability wells on class select: the strip's own tooltip,
-    // readable before the class is ever locked
-    if (m.screen === 'select' && m.screenT >= 1 && m.gearT <= 0) {
-      const i = selectAbilHit(mx, my);
-      return i >= 0 ? tipClassAb(i, m.csel) : null;
-    }
     return null;
   }
   if (state.mode !== 'play') return null;

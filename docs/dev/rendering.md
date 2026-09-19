@@ -1667,8 +1667,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
   there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from the plank heading
-  the patch notes, settings are the ESC panel's in play, and the seed lives on the
-  [map pop-up](#the-map-pop-up)), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
+  the patch notes, settings are the ESC panel's in play, and the seed lives on
+  [class select](#class-select) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
   above the view's foot. **`menu.hover` has one cell per item** and its length is
   a literal in core.js, a file that loads before `MENU_ITEMS`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
@@ -1699,13 +1699,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   create screen, sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
 - **Die** (`drawSeedDie` — named apart from the create screen's `drawDie`, js/ui/chars.js,
   a later file whose declaration would take a same-named one): shows `1 + (SEED % 6)` (faces
-  1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on the
-  [map pop-up](#the-map-pop-up)'s seed row. Activating it (`rerollWorld`) starts a whiteout via
+  1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on
+  [class select](#class-select)'s seed row, under the map. Activating it (`rerollWorld`) starts a whiteout via
   `state.fade` (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info
   stack) and then navigates to `?seed=<new>&map=<this shape>` — `SEED` is a const everything
   closes over, so a new world is a new page. Boot checks `sessionStorage['softfall.reroll']` and
-  lands with the fade clearing from white and the die still settling, and `softfall.select` +
-  `softfall.map` put it back on the select screen with the pop-up open.
+  lands with the fade clearing from white and the die still settling, and `softfall.select`
+  puts it back on the select screen.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
   zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake)
@@ -1725,58 +1725,67 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   the mirror of the patch tag: the active character's in-world body, its name and a quill that
   gilds on hover) opens the [character screens](#the-character-screens) below.
   Any open panel ducks the logo to zero alpha.
+<a id="class-select"></a>
 - **Class select** (`menu.screen = 'select'`, entered by SINGLEPLAYER via `beginSelect`): ONE
   screen on its **own painted night** (`drawSelectBackdrop` — starfield, two additive aurora
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
-  backdrop), laid out **the way a League lobby is**. `selectLayout()`/`selectHit()` (which
-  answers `'play'`, `'gear'`, `'map'`, `'diff' + k`, `'slot' + i` or null) are the rect
-  source for both drawing and the mouse. Down the **left** run your side's five **roster cards**
-  and down the **right** the rivals' (`drawSelectRosters`/`drawSelectCard`, `SEL_ROST_X` from
-  centre, one `SEL_CARD` well per player in player order under a rule in the side's paint): the
-  player's 16×16 body in its look and `skin(team)` paint with its name beside it — names are text's
-  job — yours gold-rimmed, a rival's
-  **face-down** (the body as one flat shade through the scratch canvas) until the countdown turns
-  it. Over the rivals' column sits their **difficulty meter**: three notches filled up to
-  `settings.aiLevel` in the rivals' paint, the hovered one lifting (`menu.dhover`), the level's
-  name (`AI_LEVELS`, js/ai.js — NORMAL / HARD / IMPOSSIBLE) printed once under them, gold and
-  naming the notch under the pointer while one is hovered; a click is `setAiLevel`, which saves
-  the profile's settings. Over **your** column sits that meter's mirror, the **map chip**: a
-  26 px picture of the shape the valley came out of the snow in
-  ([map shapes](world.md#map-shapes)), with its name printed under it in the difficulty name's
-  own place — the chip lifts and gilds under the hand and a click opens the
-  [map pop-up](#the-map-pop-up). It is a picture rather than a word because it can be: `mapChip`
-  bakes it straight off `mapTerrain` at 1 px a sampled tile with the road's diagonal inked over
-  it, so what the chip shows is **this seed's own valley**. In a room it is a readout and not a
-  button — the world is the host's (`selectHit` offers it only while `NET.role` is `'solo'`).
-  **PLAY** is a frost plank at `MENU_Y0` (`MENU_BW`×`MENU_BH`); the **stage** under it holds
-  **your character** alone (`drawSelectStage`):
-  the 48 px model (`SPRITES.portrait`, [sprites.md](sprites.md#looks-a-character-on-the-class-body))
-  at 2× in your side's paint under a warm pool of light with a gold ring turning
-  on the snow, the class weapon's own tool art at the hand, the name below with the class in
-  small beside it, and its four ability
-  icons in the strip's own wells (`classAbIcon`) — the kit is read here exactly as it will be
-    worn, and **hovering a well raises the ability tooltip** (`selectAbilHit` →
-  `tipClassAb(i, csel)`). **There is no class picker**: the class came with the character. The
-  **character slots** flank the figure's left (`drawSelectSlot`, one `SEL_P_CELL` well per
-  profile slot, a filled one wearing that character's body at 2×, the active one gold and
-  walking, the others dim and warm on hover (`menu.chover`)); a slot click or the arrows
-  (`selectSlot`/`selectStep`) make that character active — `activateChar` → `applyCharacter`,
-  so the stage, the kit, the loadout and the ability wells follow it (`menu.csel` mirrors
-  `player.cls` for the gear preview and the ability tooltip; `menu.cswapT` pops the stage). The
-  **collapsed gear widget** (the four picked variant icons in a column) flanks its right, and
-  clicking it opens the gear pop-up. Enter or the plank call `pressPlay()` — `setClass` locks the
-  class and the **countdown** starts: `menu.countT` runs `COUNT_T` (5) seconds, the whole second
-  left drawn in 4× gold digits over the plank (`drawSelectCount`, white the instant it changes,
-  sinking through its second), `SFX.countTick` ticking each one (a low bell), the plank sunk throughout, and
-  **one rival card turning face-up per tick** (`selectRevealed()`: the first on the press, the
-  last on ONE, all of them once it has run out, and none at rest — a white flash as each turns).
-  Gear stays open through the count (the widget still opens its pop-up, which shuts itself at
-  zero); a slot swap is refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`)
-  and, at rest, go back to the menu; **PLAY again (Enter, Space or the plank) skips the rest of
-  it** — the second `pressPlay()` ends the count where zero would have (every card face-up, the
-  gear pop-up shut). At zero, or on that press, `lockIn()` — `menu.lockT`, then straight to
-  `beginDrop()` (the eagle ride, below). No instructional text anywhere on the screen.
+  backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
+  `selectLayout()`/`selectHit()` (which answers `'play'`, `'gear'`, `'diff' + k`, `'slot' + i`,
+  `'mapl'`/`'mapr'`, `'seed'` or null) are the rect source for both drawing and the mouse.
+  **Two team panels stand glued to the screen's edges** (`SEL_PANEL_W` wide, `drawSelectRosters`/
+  `drawSelectCard`): your side's five **frames** down the left, the rivals' down the right, in
+  player order under a `SEL_HEAD` head, each frame as tall as the view allows up to
+  `SEL_FRAME_MAX` — the side's paint as a bar down the screen edge, the player's body at 2×
+  toward it (1× in a short view) and the name inward of the body, yours gold-rimmed, a rival's
+  **face-down** (the body as one flat shade through the scratch canvas) until the countdown
+  turns it. Heading **your** panel are the **character tabs** (`drawSelectSlot`, one `SEL_TAB`
+  well per profile slot wearing that character's 16 px body, the active one gold and walking,
+  the others dim and warm on hover (`menu.chover`)); a tab click or Up/Down (`selectSlot`/
+  `selectStep`) make that character active — `activateChar` → `applyCharacter`, so the stage,
+  the kit and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;
+  `menu.cswapT` pops the stage). Heading the **rivals'** panel is the **difficulty**
+  (`drawSelectDiff`): three `SEL_LV_W`×`SEL_LV_H` plates stacked easy to hard, each carrying its
+  level's name (`AI_LEVELS`, js/ai.js — NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the
+  picked one filled in the rivals' paint, the hovered one lifting (`menu.dhover`); a click is
+  `setAiLevel`, which saves the profile's settings. Beside the plates sits the **target**
+  (`drawSelectTarget`, `SEL_TGT` across, `pxDisc` rings in white and the rivals' paint) with
+  `level + 1` arrows stuck in it — at the rim on NORMAL, the inner ring on HARD, the bullseye on
+  IMPOSSIBLE (`TGT_R`/`TGT_ANG`) — which fly in from the upper left over `menu.tgtT` whenever
+  the level it shows changes (`menu.tgtLv`: the hovered plate's, else the picked one's), a glint
+  where each lands. At the **top centre** sits the **map** (`drawSelectMap`): a `SEL_MAP` plate
+  holding this seed's own valley in the picked shape ([map shapes](world.md#map-shapes)) —
+  `mapChip` bakes it straight off `mapTerrain` at 1 px a sampled tile with the road's diagonal
+  inked over it — the shape's name under it and the **seed row** under that (`SEED_TXT` and the
+  [die](#main-menu-title), gold under the hand; a click is `rerollWorld`). A bare **chevron
+  either side** (`drawChevron`, gold under the hand) or Left/Right is `mapStep(±1)`: the picture
+  slides toward the pressed chevron with the neighbouring shape's coming in behind it
+  (`menu.mapSlide = {d, k, t}`, clipped to the plate, the name already the new one) while
+  `pickMap` runs its whiteout — a pick is a page: it saves `settings.mapType` and loads
+  `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so js/boot.js
+  lands straight back on this screen. In a room the chevrons and the seed row are not drawn and
+  not hit — the world is the host's (`NET.role` must be `'solo'`). The **stage** under the map
+  holds **your character** alone (`drawSelectStage`): the 48 px model (`SPRITES.portrait`,
+  [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at 2× in your side's paint under
+  a warm pool of light with a gold ring turning on the snow, the class weapon's own tool art at
+  the hand, the name below with the class in small beside it. **No ability wells and no class
+  picker**: the class came with the character. The **collapsed gear widget** (the four picked
+  variant icons in a column) stands at the figure's right hand, and clicking it opens the gear
+  pop-up. **LOCK IN** is a frost plank at the foot of the view (`MENU_BW`×`MENU_BH`, `SEL_PAD`
+  up). Enter, Space or the plank call `pressPlay()` — `setClass` locks the class and the
+  **countdown** starts: `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from
+  the figure's feet across the snow (`menu.lockFx` over `LOCK_FX_T`) and its light stays up, the
+  character tabs dim, the plank sinks and wears the whole second left in 2× gold digits where
+  its label was (`drawSelectCount`, white the instant it changes, sinking through its second),
+  `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
+  tick** (`selectRevealed()`: the first on the press, the last on ONE, all of them once it has
+  run out, and none at rest — a white flash as each turns). Gear stays open through the count
+  (the widget still opens its pop-up, which shuts itself at zero); a tab swap or a map step is
+  refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
+  the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
+  where zero would have (every frame face-up, the gear pop-up shut). At zero, or on that press,
+  `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle ride, below). No
+  instructional text anywhere on the screen.
 
 ### The character screens
 
@@ -1853,25 +1862,6 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   the PLAYER-panel text carve-out: comparing numbers is this panel's whole job. See
   [gameplay.md](gameplay.md#gear).
 
-<a id="the-map-pop-up"></a>
-- **Map pop-up** (`menu.screen = 'map'`, the gear pop-up's twin: the same slab, the same chrome,
-  its own ease `menu.mapT`, easing over the still-lit select screen). `mapLayout()` /
-  `mapScreenHit()` are its one rect source. One **`MAPP_W` chip per `MAPS` entry** in a row
-  (`drawMapChip` — the gear well's grammar: a dark drop shadow, a slate rim that lightens under
-  the hand and goes gold on the shape this page grew, the hovered one lifting), each the same
-  `mapChip` bake at the bigger size, so the three are **this seed in each shape** side by side
-  and the pick is made by looking rather than by reading. The hovered (else the picked) shape's
-  **name** prints once under the row, and under it the **seed row** (`SEED_TXT` + the
-  [die](#main-menu-title), gold under the hand): the other thing that decides which valley this
-  is. Left/Right walk `menu.mrow` over the chips and the seed row (`mrow === MAPS.length`) with
-  breathing corner ticks on a chip and gold on the row; Down/Up step between them; ESC, the
-  **X**, or a click off the panel close it (`leaveMapPick`); Enter or a click on a chip is
-  `pickMap`, on the seed row `rerollWorld`.
-  **A pick is a page** — the shape is grown once at boot from consts every deterministic value
-  closes over, so `pickMap` saves `settings.mapType`, runs the reroll die's own whiteout and
-  loads `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so
-  js/boot.js lands straight back on this screen (`beginSelect`, `screenT = 1`) instead of the
-  title. Picking the shape already grown just closes the panel.
 - **Entrance**: `menu.t` staggers the logo and items in at boot.
 - **Menu exit**: `state.intro` counting down from `INTRO_T` (1.6 s) with `state.introLen = INTRO_T`
   is what dissolves the menu — `renderTitle` keeps drawing while it runs: the tint dissolves over
@@ -1888,8 +1878,7 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginSelect`,
 `selectLayout`, `selectHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
-The map pop-up (and the seed die on it) is driven the same way through the globals `beginMapPick`, `mapLayout`,
-`mapScreenHit`, `mapKey`, `mapClick` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
+The map and the seed die on it are driven the same way through the globals `mapStep`, `rerollWorld` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
 `DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
 
 ## Eagle drop (mode `drop`)
