@@ -10,6 +10,7 @@ rules.
 ```
 node app/server.js          # static server + screenshot sink + the match relay on http://localhost:8471
 node app/bake-sfx.js       # audio/sfx/*.mp3 -> js/sfxdata.js; rerun after changing a clip
+node app/bake-logo.js      # docs/media/logos/mainMenuSoftfall.png -> js/logodata.js; rerun after replacing it
 cd desktop && npm install && npm start   # the Windows wrapper: Electron (+ Steam behind a flag) - the ONE place with packages
 cd desktop && npm run build              # the portable zip a version tag also builds and attaches to a Release
 ```
@@ -49,7 +50,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 
 ## Architecture
 
-Four legacy files — `profile.js`, `font.js`, the generated `sfxdata.js`, `audio.js` — and the
+Five legacy files — `profile.js`, `font.js`, the generated `sfxdata.js` and `logodata.js`, `audio.js` — and the
 nine sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (`core.js`
 makes `SPRITES`, the other eight `Object.assign` their keys into it); after them the game code is
 **flat top-level classic scripts sharing one global scope** — forty-four files, `core.js`

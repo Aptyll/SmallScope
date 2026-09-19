@@ -2777,9 +2777,7 @@ same screen lists Steam's lobbies instead (`steamRooms`, js/net/transport-steam.
 writes its name, patch, seed, state and seat counts into the lobby's data), joined with the same
 click and with no code plate, since a lobby id is not for reading aloud. Which relay:
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
-remembered with the settings (`settings.relay`), else the page's own host. The **DOWNLOAD tag**
-at the bottom centre of the title, in a browser only, opens the newest GitHub Release, which
-every `v*` tag builds (.github/workflows/desktop.yml).
+remembered with the settings (`settings.relay`), else the page's own host.
 
 `settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —

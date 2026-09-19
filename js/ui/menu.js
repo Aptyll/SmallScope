@@ -11,34 +11,34 @@
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
-const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'WIKI', 'SETTINGS'];
-// sealed under ice until they exist: inert to hover, keys and clicks.
-// MULTIPLAYER (1) thawed in 3.48: it opens the rooms screen below. PRACTICE
-// TOOL (2) is sealed, but its ice is BREAKABLE, and it says so: one crack web
-// stands on it at rest (ICE_FLAW, drawn by drawMenuButton) where the solid
-// plank has none. Three knocks shatter the sheet (iceRefuse below), the
-// profile remembers, and from then on the plank is a live item that boots
-// the training arena (beginPractice).
-function menuFrozen(i) { return i === 2 && !PROFILE.practiceOpen(); }
+const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
+// SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
+// seed lives on the map pop-up under the shape's name (rerollWorld below),
+// and the WIKI opens from the plank heading the patch notes (drawPatchWiki).
+// The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
+// stacked at the bottom middle of the view, MENU_TXT_PITCH apart with the
+// last one's foot MENU_BOTTOM above the edge; no plank, slab or frame around
+// them, and all three live from the first boot (PRACTICE TOOL boots the
+// training arena, beginPractice).
+const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
+// The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
+// MENU_BH at MENU_Y0 in the 270-tall authored frame is where class select's
+// PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
-// First plank, in the 270-tall authored frame; the seed row follows the last
-// plank. The pitch tightened by 2 and the column started 4 higher when the
-// fifth plank arrived, so the seed row still lands clear of the corner tags.
 const MENU_Y0 = 88;
-const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the planks
-// The practice plank's tell: its sheet is flawed from the first look - one
-// crack web standing at rest, at a fixed point and seed in the plank's own
-// pixels, on that plank and no other - so the art says which ice gives before
-// anyone knocks (the hint lives in the picture, never in a prompt). It is a
-// corner chip - struck a pixel in from the plank's top-right corner, with a
-// shorter walk than a knock's web (steps) - so its fissures run inward and
-// stop short of the label instead of scribbling over it. The webs the knocks
-// leave (iceMarks) join it; the break clears them and the flaw goes with the
-// glaze.
-const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.73'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.74';
+// the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
+// baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
+// A data URL decodes before the first frame in practice, and the draw checks
+// anyway; nothing else on the title changes size with it. LOGO_Y is its top
+// edge in the VIEW (not the authored frame): it hugs the top at any height.
+const LOGO_IMG = new Image();
+LOGO_IMG.src = window.LOGO_PNG || '';
+const LOGO_Y = 12;
+// PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
   ['3.73', 'THE PIERCING SHOT FLIES TWICE AS FAR AND WEARS EVERY MODIFIER ON YOUR TOOL, AND A FAST SHOT NO LONGER STEPS THROUGH A RABBIT OR A WALL.'],
   ['3.72', 'A LEVEL, A CARD OR A GEAR BUY NOW FLIES YOUR WHOLE STAT SHEET IN UNDER THE MINIMAP WITH THE ROWS IT MOVED LIT AND BLINKING.'],
   ['3.71', 'THE VIDEO PAGE GAINS AN FPS CAP, AND EVERY LINE OF TEXT IS DRAWN ONCE AND STAMPED AFTER THAT: A QUARTER OF THE FRAME BACK.'],
@@ -323,31 +323,6 @@ function overPatchTag() {
   const r = patchTagRect();
   return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
 }
-// the DOWNLOAD tag, bottom centre, in a browser only: the wrapper IS the
-// download (desktop/), so the page under it has nothing to offer. It opens
-// the newest release, which a tag push builds (.github/workflows/desktop.yml)
-const DOWNLOAD_URL = 'https://github.com/Aptyll/SmallScope/releases/latest';
-const IS_APP = !!window.steamBridge || /Electron/i.test(navigator.userAgent);
-const DL_TXT = 'DOWNLOAD';
-function downloadTagRect() {
-  const w = pixelTextWidth(DL_TXT) + 7; // the arrow and its gap lead the word
-  return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - 9, w, h: 5 };
-}
-function overDownloadTag() {
-  if (IS_APP) return false;
-  const r = downloadTagRect();
-  return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
-}
-function drawDownloadTag() {
-  if (IS_APP) return;
-  const r = downloadTagRect(), hot = !state.menu.panel && overDownloadTag();
-  const col = hot ? '#ffd95c' : '#5a6690';
-  ctx.fillStyle = col; // a down arrow: the shaft and its head
-  ctx.fillRect(r.x + 2, r.y, 1, 3); ctx.fillRect(r.x + 1, r.y + 2, 3, 1); ctx.fillRect(r.x + 2, r.y + 3, 1, 1);
-  drawPixelTextShadow(ctx, DL_TXT, r.x + 7, r.y, col, 'rgba(15,22,50,0.9)');
-  if (hot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(r.x, r.y + 7, r.w, 1); }
-}
-
 // ------------------------------------------------------------ rooms
 // The MULTIPLAYER plank's screen: the relay's open rooms as planks under a
 // HOST plank (docs/pvp-architecture.md; the relay: app/server.js). A room's
@@ -541,15 +516,15 @@ function drawNetLink(now) {
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 
-// layout was authored for the FRAME_H-tall frame (core.js); recenter it vertically
+// the words, centred, climbing from MENU_BOTTOM above the view's foot; toy
+// is the authored frame's top for the logo (frameTop, core.js)
 function menuLayout() {
   const toy = frameTop();
-  const bx = Math.round((VIEW_W - MENU_BW) / 2);
-  const rects = MENU_ITEMS.map((_, i) => ({ x: bx, y: toy + MENU_Y0 + i * MENU_PITCH, w: MENU_BW, h: MENU_BH }));
-  // the seed row: text + die, one selectable item
-  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
-  const sx = Math.round((VIEW_W - sw) / 2);
-  rects.push({ x: sx - 3, y: toy + MENU_Y0 + MENU_ITEMS.length * MENU_PITCH + 6, w: sw + 6, h: 13, seed: true });
+  const n = MENU_ITEMS.length;
+  const rects = MENU_ITEMS.map((label, i) => {
+    const w = pixelTextWidth(label, MENU_TXT_SCALE) + 8, h = 7 * MENU_TXT_SCALE + 4;
+    return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - MENU_BOTTOM - (n - i) * MENU_TXT_PITCH, w, h };
+  });
   return { toy, rects };
 }
 
@@ -563,87 +538,24 @@ function menuHit() {
   return -1;
 }
 
+// the keys' (or the pad's) pick: it lights the word, and stays lit until the
+// pointer moves again (keyNav) - at rest, and under a pointer that is off
+// every word, nothing is lit
 function menuSelect(i) {
   const m = state.menu;
-  const N = MENU_ITEMS.length + 1;
-  const dir = i >= m.sel ? 1 : -1;
-  let n = ((i % N) + N) % N;
-  const start = n;
-  while (menuFrozen(n)) { // sealed planks refuse the selection; skip the whole iced block
-    n = (((n + dir) % N) + N) % N;
-    if (n === start) return;
-  }
+  const N = MENU_ITEMS.length;
+  const n = ((i % N) + N) % N;
+  m.keyNav = true;
   if (n === m.sel) return;
   m.sel = n;
   SFX.pickup();
 }
 
-// knocking on a frozen plank: it shudders, cracks flash from the struck
-// point and heal as it refreezes, and a spray of ice chips falls away
-function iceRefuse(i) {
-  const m = state.menu;
-  if (m.iceT > 0.3) return; // still mid-shudder
-  const { rects } = menuLayout();
-  const r = rects[i];
-  m.iceT = 0.45;
-  m.iceI = i;
-  m.iceSeed = (m.iceSeed + 1) | 0;
-  m.iceX = Math.max(4, Math.min(r.w - 4, mouse.x - r.x));
-  m.iceY = Math.max(3, Math.min(r.h - 3, mouse.y - r.y));
-  for (let i = 0; i < 12; i++) {
-    const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6; // upward fan off the impact
-    const sp = 30 + Math.random() * 70;
-    m.shards.push({
-      x: r.x + m.iceX, y: r.y + m.iceY,
-      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 20,
-      life: 0.4 + Math.random() * 0.4, w: Math.random() < 0.3 ? 2 : 1,
-      c: ['#e8f4ff', '#a8c8e8', '#f4f7ff'][i % 3],
-    });
-  }
-  // the practice plank's ice takes damage instead of healing: every knock
-  // leaves its crack web standing (iceMarks, drawn by drawMenuButton), and
-  // the third breaks the sheet open for good
-  if (i === 2) {
-    m.iceMarks.push({ x: m.iceX, y: m.iceY, seed: m.iceSeed });
-    if (m.iceMarks.length >= 3) { breakPracticeIce(i); return; }
-  }
-  SFX.iceKnock();
-}
-
-// the third knock: the whole sheet lets go. The glaze bursts off the plank in
-// one spray, the profile keeps the break, and the plank is live from here on -
-// menuFrozen() reads PROFILE.practiceOpen(), so nothing else needs telling.
-function breakPracticeIce(i) {
-  const m = state.menu;
-  const { rects } = menuLayout();
-  const r = rects[i];
-  PROFILE.markPractice();
-  m.iceT = 0; m.iceI = -1;
-  m.iceMarks.length = 0;
-  for (let k = 0; k < 34; k++) { // the whole glaze coming away, not one chip
-    const a = -Math.PI / 2 + (Math.random() - 0.5) * 3.4;
-    const sp = 40 + Math.random() * 110;
-    m.shards.push({
-      x: r.x + 4 + Math.random() * (r.w - 8), y: r.y + 2 + Math.random() * (r.h - 4),
-      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 30,
-      life: 0.5 + Math.random() * 0.6, w: Math.random() < 0.4 ? 2 : 1,
-      c: ['#e8f4ff', '#a8c8e8', '#f4f7ff', '#ffffff'][k % 4],
-    });
-  }
-  m.sel = i; // the freed plank takes the selection: the eye is already on it
-  SFX.break_();
-  SFX.unlock();
-}
-
 function menuActivate(i) {
-  if (menuFrozen(i)) return; // solid ice - iceRefuse() is the only answer
   SFX.unlock();
   if (i === 0) beginSelect();
   else if (i === 1) beginRooms();
   else if (i === 2) beginPractice();
-  else if (i === 3) beginWiki();
-  else if (i === 4) openMenuPanel('settings');
-  else if (i === MENU_ITEMS.length) rerollWorld();
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
@@ -742,10 +654,8 @@ function menuClick() {
   }
   if (overCharTag()) { beginChars(); return; }
   if (overPatchTag()) { openMenuPanel('patch'); return; }
-  if (overDownloadTag()) { SFX.unlock(); window.open(DOWNLOAD_URL, '_blank'); return; }
   const h = menuHit();
   if (h < 0) return;
-  if (menuFrozen(h)) { iceRefuse(h); return; }
   m.sel = h;
   m.pressT = 0.12;
   menuActivate(h);
@@ -765,8 +675,11 @@ function beginIntro() {
   SFX.music.stop(0.6);
 }
 
-// the die: whiteout, then reload on a fresh seed (SEED is a const every
-// deterministic value closes over, so a new world is a new page)
+// the die (on the map pop-up, under the shape's name): whiteout, then
+// reload on a fresh seed in the same shape (SEED is a const every
+// deterministic value closes over, so a new world is a new page). It lands
+// back on the select screen with the pop-up open (softfall.select /
+// softfall.map, read by js/boot.js), so a roll is one press and not a walk.
 function rerollWorld() {
   const m = state.menu;
   if (state.fade) return;
@@ -777,8 +690,8 @@ function rerollWorld() {
   state.fade = {
     a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
     then: () => {
-      try { sessionStorage.setItem('softfall.reroll', '1'); } catch (e) { }
-      location.href = location.pathname + '?seed=' + next;
+      try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); sessionStorage.setItem('softfall.map', '1'); } catch (e) { }
+      location.href = location.pathname + '?seed=' + next + '&map=' + MAP_TYPE;
     },
   };
 }
@@ -818,8 +731,9 @@ function updateTitle(dt) {
   // the mouse only takes the selection when it moves (so arrows aren't fought)
   if (m.moved) {
     m.moved = false;
+    m.keyNav = false;
     const h = menuHit();
-    if (h >= 0 && !menuFrozen(h) && h !== m.sel) m.sel = h;
+    if (h >= 0 && h !== m.sel) m.sel = h;
   }
   // the character screens (js/ui/chars.js): their ease and their hovers
   m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'chars' || m.screen === 'create' ? 1 : -1) * dt / 0.35));
@@ -827,21 +741,15 @@ function updateTitle(dt) {
   else if (m.screen === 'create') updateCreate(dt);
   m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'rooms') updateRooms(dt);
-  // a frozen plank can't be selected, so its hover ease tracks the pointer instead
-  const hit = !m.panel && m.screen === 'menu' ? menuHit() : -1;
-  for (let i = 0; i <= MENU_ITEMS.length; i++) {
-    const target = menuFrozen(i) ? (hit === i ? 1 : 0) : (m.sel === i ? 1 : 0);
+  // a word lights under the pointer, or as the keys' pick until the pointer moves
+  const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
+  for (let i = 0; i < MENU_ITEMS.length; i++) {
+    const target = hit === i || (m.keyNav && m.sel === i) ? 1 : 0;
     // `|| 0` because the array's length is a literal in core.js: a missing
     // cell would go NaN here and take its whole row off the screen
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
-  // the refusal shudder heals and the ice chips fall
-  if (m.iceT > 0) m.iceT = Math.max(0, m.iceT - dt);
-  for (let i = m.shards.length - 1; i >= 0; i--) {
-    const s = m.shards[i];
-    s.vy += 260 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
-    if (s.life <= 0) m.shards.splice(i, 1);
-  }
+  m.pwHover = (m.pwHover || 0) + ((overPatchWiki() ? 1 : 0) - (m.pwHover || 0)) * Math.min(1, dt * 14); // the notes' WIKI plank
   // class select cross-fade and its own hovers; the gear pop-up rides a
   // second ease (gearT) over the still-lit select screen
   const st = m.screen === 'select' || m.screen === 'gear' || m.screen === 'map' ? 1 : 0;
@@ -1001,10 +909,8 @@ function drawMenuButton(r, label, hv, now, pressed, frozen) {
       ctx.globalAlpha = a0;
     }
     // one knock's crack web: dark fissures with the odd white glint, so they
-    // read against the pale glaze. Shared by the refusal flash, the practice
-    // plank's resting flaw (ICE_FLAW) and its STANDING marks - each knock
-    // there leaves its web in m.iceMarks until the third breaks the sheet
-    // (iceRefuse).
+    // read against the pale glaze (nothing knocks today; a client's sealed
+    // host plank never sets iceT)
     const cracksAt = (px0, py0, seed, alpha, steps) => {
       ctx.globalAlpha = alpha;
       for (let c = 0; c < 5; c++) {
@@ -1023,16 +929,14 @@ function drawMenuButton(r, label, hv, now, pressed, frozen) {
       ctx.fillRect(x + Math.round(px0), y + Math.round(py0), 1, 1);
       ctx.globalAlpha = a0;
     };
-    // the breakable sheet is the one that is already cracked: the flaw stands
-    // whatever the pointer is doing, and the knocks' webs land beside it
-    if (r.i === 2) cracksAt(ICE_FLAW.x, ICE_FLAW.y, ICE_FLAW.seed, a0 * 0.85, ICE_FLAW.steps);
-    if (r.i === 2) for (const mk of m.iceMarks) cracksAt(mk.x, mk.y, mk.seed, a0 * 0.85);
     if (m.iceT > 0 && m.iceI === r.i) cracksAt(m.iceX, m.iceY, m.iceSeed, a0 * Math.min(1, m.iceT / 0.45));
   }
 }
 
-// the reroll die (11x11): face cycles while hovered, tumbles while rolling
-function drawDie(x, y, hv, now) {
+// the reroll die (11x11): face cycles while hovered, tumbles while rolling.
+// Named apart from the create screen's drawDie (js/ui/chars.js), a later
+// file whose declaration would otherwise take this one's.
+function drawSeedDie(x, y, hv, now) {
   const m = state.menu;
   const rolling = m.rolling > 0;
   let face = 1 + (SEED % 6);
@@ -1054,15 +958,12 @@ function drawDie(x, y, hv, now) {
 }
 
 // ---- title dressing -------------------------------------------------------
-// The cinematic frame around the menu: a tint that weighs on the edges and
-// leaves the centre clear, two stone pillars with burning braziers flanking
-// the menu column, a frosted slab that gathers the items into one column, a
-// gold rule with diamond finials under the logo, and embers drifting up off
-// the logo and the flames. All of it is procedural - hash2() for the static
-// grain, now for the flicker - and every piece takes its alpha from the
-// caller so it fades with the chrome.
-const TITLE_PILLAR_DX = 118; // pillar centres either side of the (wider) menu column
-const TITLE_PILLAR_W = 16;   // shaft width; sits just outside the slab so the frame scales with the planks
+// What the title still dresses itself in: a tint that weighs on the edges and
+// leaves the centre clear (drawTitleBackdrop). The rest of this banner - the
+// gold rule, the embers, the frost slab - is drawn by the wiki, the rooms and
+// the end screens (js/ui/screens.js); the title itself is the logo and three
+// words over the world. Every piece takes its alpha from the caller so it
+// fades with the chrome.
 
 function drawTitleBackdrop(tintA) {
   ctx.fillStyle = 'rgba(10,16,42,' + tintA.toFixed(3) + ')';
@@ -1097,57 +998,6 @@ function drawGoldRule(cx, y, half, a, pal) {
   for (const ex of [cx - half, cx + half]) { dia(ex, 2, '#0a0e23'); dia(ex, 1, P.gem); }
   dia(cx, 3, '#0a0e23'); dia(cx, 2, P.bar);
   ctx.fillStyle = P.spark; ctx.fillRect(cx, y, 1, 1);
-}
-
-// a stone pillar: plinth, coursed shaft with a lit left edge and frost creeping
-// up from the base, a snow-capped capital and an iron brazier whose flame
-// flickers in place - the bowl and the embers are the whole tell, no halo
-function drawPillar(cx, top, bot, now, a) {
-  const w = TITLE_PILLAR_W, x = cx - (w >> 1), shaftTop = top + 7, shaftH = bot - shaftTop - 4;
-  ctx.globalAlpha = a;
-  ctx.fillStyle = 'rgba(4,6,18,0.45)'; ctx.fillRect(x + 3, shaftTop + 2, w + 2, shaftH + 2);
-  // shaft
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x - 1, shaftTop - 1, w + 2, shaftH + 2);
-  ctx.fillStyle = '#222c52'; ctx.fillRect(x, shaftTop, w, shaftH);
-  ctx.fillStyle = '#3a4878'; ctx.fillRect(x, shaftTop, 2, shaftH);
-  ctx.fillStyle = '#161d3c'; ctx.fillRect(x + w - 2, shaftTop, 2, shaftH);
-  for (let y = shaftTop + 8; y < bot - 6; y += 9) {
-    ctx.fillStyle = '#121834'; ctx.fillRect(x, y, w, 1);
-    const hb = hash2(y, cx);
-    ctx.fillRect(x + 3 + ((hb * 8) | 0), y - 8, 1, 8); // a vertical joint in the course above
-  }
-  for (let y = shaftTop + 1; y < bot - 5; y++) {
-    for (let xx = 1; xx < w - 1; xx++) {
-      const hb = hash2(xx * 5 + y * 3, cx + 11);
-      const frost = (bot - y) < 20 && hb > 0.86 - (20 - (bot - y)) * 0.014;
-      if (frost) { ctx.fillStyle = hb > 0.9 ? '#f4f7ff' : '#b8cce6'; ctx.fillRect(x + xx, y, 1, 1); }
-      else if (hb < 0.035) { ctx.fillStyle = '#2e3a6a'; ctx.fillRect(x + xx, y, 1, 1); }
-    }
-  }
-  // plinth
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x - 3, bot - 5, w + 6, 5);
-  ctx.fillStyle = '#2a3560'; ctx.fillRect(x - 2, bot - 4, w + 4, 3);
-  ctx.fillStyle = '#4a5a90'; ctx.fillRect(x - 2, bot - 4, w + 4, 1);
-  ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x - 2, bot - 5, 4, 1); ctx.fillRect(x + w - 4, bot - 5, 6, 1);
-  // capital: a snow-capped ledge under the bowl
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x - 3, top + 3, w + 6, 4);
-  ctx.fillStyle = '#2a3560'; ctx.fillRect(x - 2, top + 5, w + 4, 1);
-  ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x - 2, top + 3, w + 4, 2);
-  ctx.fillStyle = '#b8cce6'; ctx.fillRect(x - 2, top + 4, w + 4, 1);
-  // iron brazier
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x + 1, top - 2, w - 2, 6); ctx.fillRect(x + 3, top - 3, w - 6, 1);
-  ctx.fillStyle = '#3a2a22'; ctx.fillRect(x + 2, top - 1, w - 4, 3);
-  ctx.fillStyle = '#5a4434'; ctx.fillRect(x + 2, top - 1, w - 4, 1);
-  ctx.fillStyle = '#ff8a3c'; ctx.fillRect(x + 4, top - 2, w - 8, 1); // coals showing over the rim
-  // the flame: a wobbling stack of ember rows
-  const fl = now * 11 + cx;
-  const hgt = 5 + Math.round(Math.sin(fl) + Math.sin(fl * 0.37) * 0.8);
-  const rows = [[6, '#ffe37a'], [6, '#ffd95c'], [4, '#ffb347'], [4, '#ff8a3c'], [2, '#ff6a30'], [2, '#ff4a28'], [1, '#ff4a28']];
-  for (let i = 0; i < Math.min(rows.length, hgt); i++) {
-    const [ww, c] = rows[i];
-    const dx = i > 2 ? Math.round(Math.sin(fl * 1.3 + i * 1.7)) : 0;
-    ctx.fillStyle = c; ctx.fillRect(cx - (ww >> 1) + dx, top - 3 - i, ww, 1);
-  }
 }
 
 // n embers rising from (ox, oy) across spread px, each on its own loop
@@ -1234,7 +1084,23 @@ function buildHelpPanel() {
 // window at menu.patchScroll through the frame. When the entries outgrow the
 // window a scrollbar appears on the right: wheel, up/down keys, clicking the
 // nubs or the track all move it.
-const PN_Y = 24, PN_H = SET_H - 24 - 18; // the window: below the title, above the hint
+// the WIKI plank heads the notes: the title's own frost plank (drawMenuButton)
+// centred under the slab's title, and the notes window starts under it. A
+// click closes the panel and opens the wiki screen. Panel-space px, like
+// patchPanelClick's; its hover ease is menu.pwHover.
+const PW_H = 20;
+function patchWikiRect() { return { x: (SET_W - MENU_BW) >> 1, y: 20, w: MENU_BW, h: PW_H }; }
+const PN_Y = 20 + PW_H + 6, PN_H = SET_H - (20 + PW_H + 6) - 18; // the window: below the plank, above the hint
+function overPatchWiki() {
+  if (!menuPanelReady() || state.menu.panel !== 'patch') return false;
+  const r = patchWikiRect(), px = mouse.x - SET_X, py = mouse.y - SET_Y;
+  return px >= r.x - 2 && px < r.x + r.w + 2 && py >= r.y - 2 && py < r.y + r.h + 2;
+}
+function drawPatchWiki(ox, oy, now) {
+  const m = state.menu, r = patchWikiRect();
+  const pressed = overPatchWiki() && mouse.down;
+  drawMenuButton({ x: ox + r.x, y: oy + r.y, w: r.w, h: r.h, i: -1 }, 'WIKI', m.pwHover || 0, now, pressed, false);
+}
 const PN_BAR_X = SET_W - 13, PN_BAR_W = 6;
 const patchPanelCv = document.createElement('canvas');
 patchPanelCv.width = SET_W; patchPanelCv.height = SET_H;
@@ -1283,6 +1149,7 @@ function patchBarLayout() {
 }
 // a click inside the slab (panel-space px): nubs step, the track pages
 function patchPanelClick(px, py) {
+  if (overPatchWiki()) { closeMenuPanel(); beginWiki(); return; }
   if (!patchScrollMax()) return;
   const { track, thumb, up, down } = patchBarLayout();
   const inR = (r) => px >= r.x - 2 && px < r.x + r.w + 2 && py >= r.y && py < r.y + r.h;
@@ -2711,7 +2578,8 @@ function renderGear(now, a) {
 // shape, drawn straight off mapTerrain. Clicking it opens this pop-up: the
 // shapes side by side as bigger chips of the same seed, the picked one
 // gold-rimmed, its NAME under it (a name, which is what text is for), and
-// nothing else to read.
+// under that the SEED ROW - the seed's number and its die (rerollWorld), the
+// one other thing that decides which valley this is.
 //
 // A pick is a PAGE. The ground is grown once at boot off consts every
 // deterministic value in the game closes over, so the die's own whiteout
@@ -2770,19 +2638,23 @@ function mapLayout() {
   const cx = Math.round(VIEW_W / 2);
   const n = MAPS.length;
   const gridW = n * MAPP_W + (n - 1) * MAPP_GAP;
-  const pw = gridW + 20, ph = MAPP_W + 42;
+  const pw = gridW + 20, ph = MAPP_W + 58;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
   const cells = [];
   for (let k = 0; k < n; k++) cells.push({ x: px + 10 + k * (MAPP_W + MAPP_GAP), y: py + 12, w: MAPP_W, h: MAPP_W, k });
+  // the seed row: text + die, centred under the name
+  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
   return { cx, panel: { x: px, y: py, w: pw, h: ph }, cells,
-    name: { x: cx, y: py + ph - 15 },
+    name: { x: cx, y: py + MAPP_W + 27 },
+    seed: { x: cx - (sw >> 1) - 3, y: py + MAPP_W + 39, w: sw + 6, h: 13 },
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
-// what the pointer is on inside the pop-up: a cell's index, 'x', 'panel'
-// (the slab swallows it) or null (outside - a click there closes)
+// what the pointer is on inside the pop-up: a cell's index, 'seed', 'x',
+// 'panel' (the slab swallows it) or null (outside - a click there closes)
 function mapScreenHit() {
-  const { cells, panel, xr } = mapLayout();
+  const { cells, seed, panel, xr } = mapLayout();
   if (overRect(xr, 2, 2)) return 'x';
+  if (overRect(seed, 2, 2)) return 'seed';
   for (const c of cells) if (overRect(c, 2, 2)) return c.k;
   if (mouse.x >= panel.x && mouse.x < panel.x + panel.w && mouse.y >= panel.y && mouse.y < panel.y + panel.h) return 'panel';
   return null;
@@ -2819,10 +2691,13 @@ function pickMap(k) {
 function mapKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
+  const N = MAPS.length; // m.mrow === N is the seed row
   if (k === 'escape' || k === 'backspace') leaveMapPick();
-  else if (moveDir(k) === 'left') { m.mrow = (m.mrow + MAPS.length - 1) % MAPS.length; SFX.pickup(); }
-  else if (moveDir(k) === 'right') { m.mrow = (m.mrow + 1) % MAPS.length; SFX.pickup(); }
-  else if (k === 'enter' || k === ' ') { if (m.mrow === MAP_TYPE) leaveMapPick(); else pickMap(m.mrow); }
+  else if (moveDir(k) === 'left') { m.mrow = (m.mrow + N) % (N + 1); SFX.pickup(); }
+  else if (moveDir(k) === 'right') { m.mrow = (m.mrow + 1) % (N + 1); SFX.pickup(); }
+  else if (moveDir(k) === 'down' && m.mrow < N) { m.mrow = N; SFX.pickup(); }
+  else if (moveDir(k) === 'up' && m.mrow === N) { m.mrow = MAP_TYPE; SFX.pickup(); }
+  else if (k === 'enter' || k === ' ') { if (m.mrow === N) rerollWorld(); else if (m.mrow === MAP_TYPE) leaveMapPick(); else pickMap(m.mrow); }
 }
 function mapClick() {
   const m = state.menu;
@@ -2830,6 +2705,7 @@ function mapClick() {
   const h = mapScreenHit();
   if (h === null || h === 'x') { leaveMapPick(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                               // the slab swallows it
+  if (h === 'seed') { m.mrow = MAPS.length; rerollWorld(); return; }
   m.mrow = h;
   if (h === MAP_TYPE) leaveMapPick(); else pickMap(h);
 }
@@ -2837,7 +2713,7 @@ function mapClick() {
 // the pop-up: the gear panel's slab and its chrome, three chips wide
 function renderMapPick(now, a) {
   const m = state.menu;
-  const { panel, cells, xr, name } = mapLayout();
+  const { panel, cells, xr, name, seed } = mapLayout();
   ctx.fillStyle = 'rgba(4,6,18,' + (0.62 * a).toFixed(3) + ')';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   const rise = Math.round((1 - a) * 12);
@@ -2866,9 +2742,14 @@ function renderMapPick(now, a) {
   }
   // the hovered (else the picked) shape's name - the one word the chips earn
   const hovered = typeof h === 'number';
-  const nm = mapName(hovered ? h : m.mapT >= 1 && !mouse.inside ? m.mrow : MAP_TYPE);
+  const nm = mapName(hovered ? h : m.mapT >= 1 && !mouse.inside && m.mrow < MAPS.length ? m.mrow : MAP_TYPE);
   drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
     hovered && h !== MAP_TYPE ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+  // the seed row: number and die, gold under the hand or the keyboard's cursor
+  const sh = h === 'seed' || (h === null && m.mapT >= 1 && m.mrow === MAPS.length) ? 1 : 0;
+  const sx = seed.x + 3, sy = seed.y + rise + 3 - sh * 2;
+  drawPixelTextShadow(ctx, SEED_TXT, sx, sy, sh ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
+  drawSeedDie(sx + pixelTextWidth(SEED_TXT) + 6, seed.y + rise - sh * 2, sh, now);
   // the X: the one way out that is drawn (ESC and a click outside also close)
   const hot = h === 'x';
   ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
@@ -3408,80 +3289,43 @@ function renderTitle(now) {
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
 
-  // the frame: pillars rise from below at boot and sink away on play; the
-  // slab behind the column fades with the items
-  const frameIn = easeOut((m.t - 0.1) / 0.6);
-  const frameA = frameIn * chromeA;
-  const sink = Math.round((1 - frameIn) * 30 + out * 25);
-  if (frameA > 0.005) {
-    const last = rects[rects.length - 1];
-    const ptop = rects[0].y - 22 + sink, pbot = last.y + last.h + 14 + sink;
-    drawPillar(cx - TITLE_PILLAR_DX, ptop, pbot, now, frameA);
-    drawPillar(cx + TITLE_PILLAR_DX, ptop, pbot, now, frameA);
-    drawEmbers(now, frameA * 0.9, cx - TITLE_PILLAR_DX, ptop - 6, 8, 6, 17);
-    drawEmbers(now, frameA * 0.9, cx + TITLE_PILLAR_DX, ptop - 6, 8, 6, 43);
-    const slabIn = easeOut((m.t - 0.2) / 0.45);
-    const slabW = MENU_BW + MENU_SLAB_PAD * 2;
-    drawMenuSlab(cx - (slabW >> 1), rects[0].y - 14 + Math.round(out * 25), slabW, last.y + last.h + 8 - rects[0].y + 14, slabIn * chromeA);
-    ctx.globalAlpha = 1;
-  }
-
   // logo: drops in at boot, lifts away on play
   const logoIn = easeOut(m.t / 0.6);
-  const t1 = 'SOFTFALL';
-  const bob = Math.sin(now * 1.5) * 2;
-  const ly = Math.round(toy + 34 + bob - (1 - logoIn) * 30 - out * 40);
+  const ly = Math.round(LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
   const logoA = logoIn * (1 - out) * (1 - pan) * (1 - sc);
-  const lw = pixelTextWidth(t1, 4);
+  const logoOk = LOGO_IMG.complete && LOGO_IMG.naturalWidth > 0;
+  const lw = logoOk ? LOGO_IMG.naturalWidth : pixelTextWidth('SOFTFALL', 4);
+  const lh = logoOk ? LOGO_IMG.naturalHeight : 28;
   const lx = Math.round((VIEW_W - lw) / 2);
-  // a pulsing ember glow behind the letters
+  // a pulsing cold glow behind the letters: the picture's own cyan halo
   ctx.globalCompositeOperation = 'lighter';
   const pulse = 0.8 + 0.2 * Math.sin(now * 2.2);
-  const gr = 84;
-  const grd = ctx.createRadialGradient(cx, ly + 10, 2, cx, ly + 10, gr);
-  grd.addColorStop(0, 'rgba(255,150,60,' + (0.26 * logoA * pulse).toFixed(3) + ')');
-  grd.addColorStop(0.5, 'rgba(255,120,50,' + (0.08 * logoA * pulse).toFixed(3) + ')');
-  grd.addColorStop(1, 'rgba(255,100,40,0)');
-  ctx.fillStyle = grd; ctx.fillRect(cx - gr, ly + 10 - gr, gr * 2, gr * 2);
+  const gr = 96, gy = ly + (lh >> 1);
+  const grd = ctx.createRadialGradient(cx, gy, 2, cx, gy, gr);
+  grd.addColorStop(0, 'rgba(110,200,255,' + (0.22 * logoA * pulse).toFixed(3) + ')');
+  grd.addColorStop(0.5, 'rgba(80,150,255,' + (0.07 * logoA * pulse).toFixed(3) + ')');
+  grd.addColorStop(1, 'rgba(60,120,255,0)');
+  ctx.fillStyle = grd; ctx.fillRect(cx - gr, gy - gr, gr * 2, gr * 2);
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = logoA;
-  drawPixelText(ctx, t1, lx + 1, ly + 1, '#ff7a2a', 4); // ember under-glow
-  drawPixelText(ctx, t1, lx, ly - 1, '#fff1c2', 4);     // ice rim along every top edge
-  drawPixelTextShadow(ctx, t1, lx, ly, '#ffd95c', '#3c2a1e', 4);
-  drawGoldRule(cx, ly + 32, Math.round(lw / 2) + 6, logoA);
-  drawEmbers(now, logoA * 0.85, cx, ly + 26, lw, 22, 5);
+  if (logoOk) ctx.drawImage(LOGO_IMG, lx, ly);
+  else drawPixelTextShadow(ctx, 'SOFTFALL', lx, ly, '#ffd95c', '#3c2a1e', 4); // the word, until the picture decodes
   ctx.globalAlpha = 1;
 
-  // items: stagger in from the left, sink away on play, fade under a panel
+  // items: plain words that fade in staggered, sink away on play and duck
+  // under a panel; the picked one warms to gold and lifts a px, a press sinks it
   for (let i = 0; i < rects.length; i++) {
     const r = rects[i];
     const inT = easeOut((m.t - 0.25 - i * 0.12) / 0.45);
     const a = inT * (1 - out) * (1 - pan);
     if (a <= 0.005) continue;
-    ctx.globalAlpha = a;
-    const rr = { x: r.x - Math.round((1 - inT) * 60), y: r.y + Math.round(out * 25), w: r.w, h: r.h, i };
-    // the refusal shudder rattles the struck frozen plank in place (x only, so its hashed rime holds still)
-    if (menuFrozen(i) && m.iceI === i && m.iceT > 0) rr.x += Math.round(Math.sin(now * 85) * 2.2 * (m.iceT / 0.45));
     const hv = m.hover[i];
     const pressed = m.sel === i && (m.pressT > 0 || (mouse.down && menuHit() === i));
-    if (r.seed) {
-      const lift = Math.round(hv * 2);
-      const tx = rr.x + 3, ty = rr.y + 3 - lift;
-      drawPixelTextShadow(ctx, SEED_TXT, tx, ty, hv > 0.5 ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
-      drawDie(tx + pixelTextWidth(SEED_TXT) + 6, rr.y - lift, hv, now);
-    } else {
-      drawMenuButton(rr, MENU_ITEMS[i], hv, now, pressed, menuFrozen(i));
-    }
+    const y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
+    ctx.globalAlpha = a;
+    drawPixelTextOutline(ctx, MENU_ITEMS[i], r.x + 4, y, hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
     ctx.globalAlpha = 1;
   }
-
-  // ice chips knocked off the frozen plank, falling and fading
-  for (const s of m.shards) {
-    ctx.globalAlpha = Math.min(1, s.life * 3) * (1 - out) * (1 - pan);
-    ctx.fillStyle = s.c;
-    ctx.fillRect(Math.round(s.x), Math.round(s.y), s.w, s.w);
-  }
-  ctx.globalAlpha = 1;
 
   // footer: the two corner tags ride the same fade; no gold rule under them
   const fin = easeOut((m.t - 0.9) / 0.5) * (1 - out) * (1 - pan);
@@ -3492,7 +3336,6 @@ function renderTitle(now) {
     drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
     drawCharTag(now); // the active character and its quill, opposite corner
-    drawDownloadTag(); // bottom centre, browsers only
     ctx.globalAlpha = 1;
   }
 
@@ -3514,6 +3357,7 @@ function renderTitle(now) {
       ctx.drawImage(patchPanelCv, SET_X, SET_Y + slide);
       ctx.drawImage(patchNotesCv, 0, m.patchScroll, SET_W, PN_H, SET_X, SET_Y + slide + PN_Y, SET_W, PN_H);
       drawPatchBar(SET_X, SET_Y + slide);
+      drawPatchWiki(SET_X, SET_Y + slide, now);
       drawBackHint(ctx, SET_X + SET_W / 2, SET_Y + slide + 190);
     } else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
   }
