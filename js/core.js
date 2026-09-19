@@ -140,11 +140,11 @@ const state = {
   build: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
   // the open sub-panel ('settings' | 'help' | 'patch' | null) and its slide progress
-  // one hover ease per MENU_ITEMS entry + the seed row. That length is a
-  // coupling to a table in a file that loads later, so the ease loop tops up a
-  // missing cell rather than trusting it - a short array turned into NaN and
-  // silently deleted the seed row when the fifth plank arrived.
-  menu: { sel: 0, hover: [0, 0, 0, 0, 0, 0], t: 0,
+  // one hover ease per MENU_ITEMS entry. That length is a coupling to a
+  // table in a file that loads later, so the ease loop tops up a missing
+  // cell rather than trusting it - a short array turned into NaN and
+  // silently deleted a row when a fifth plank arrived.
+  menu: { sel: 0, hover: [0, 0, 0, 0], t: 0,
     panel: null, panelT: 0, closing: false, patchScroll: 0, // patchScroll: px the notes are scrolled
     // the character screens (js/ui/chars.js): charT their ease (screen
     // 'chars' is the roster, 'create' the create/customize screen), cedit

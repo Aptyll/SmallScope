@@ -1661,7 +1661,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / WIKI / SETTINGS —
+- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / WIKI —
   `menuFrozen(i)` is true for PRACTICE TOOL alone, until the profile has
   broken it open (MULTIPLAYER is live: it opens the rooms screen, `beginRooms`): a frozen plank is
   drawn sealed under an ice glaze by
@@ -1681,12 +1681,12 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   plank is a live item whose activation is `beginPractice()` (the reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
-  [WIKI](#the-wiki-screen) and SETTINGS are the two live utilities at the foot) plus
-  the seed row (`SEED N` + an 11×11 die) as one more selectable, stacked
-  `MENU_PITCH` apart from `MENU_Y0`. **`menu.hover` has one cell per rect** — items *plus* the
-  seed row — and its length is a literal in core.js, a file that loads before `MENU_ITEMS`
+  [WIKI](#the-wiki-screen) is the one utility at the foot — there is no SETTINGS plank: settings
+  are the ESC panel's in play, and the seed lives on the [map pop-up](#the-map-pop-up)), stacked
+  `MENU_PITCH` apart from `MENU_Y0`. **`menu.hover` has one cell per plank** and its length is
+  a literal in core.js, a file that loads before `MENU_ITEMS`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
-  deletes the seed row - add a plank, add a cell. The slab (`MENU_SLAB_PAD` past each side of `MENU_BW`) and
+  deletes a row - add a plank, add a cell. The slab (`MENU_SLAB_PAD` past each side of `MENU_BW`) and
   pillars (`TITLE_PILLAR_W`, `TITLE_PILLAR_DX`) size themselves to the rects; `menuLayout()` is the single source of rects for hit-testing
   (`menuHit()`) and drawing. `menu.sel` is the keyboard selection; the mouse only steals it
   when it actually moves (`menu.moved`, set by mousemove), so arrows and hover never fight.
@@ -1710,23 +1710,29 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   when hot (no glow behind the hot plank - it lifts and warms only). `menu.hover[i]` eases 0→1 toward the selected item and drives lift (2 px, the
   shadow stays on the ground) and the warm fill; `menu.pressT`
   sinks it for a beat; the lift, warm fill and gold rule are the whole selection cue (no selector arrows).
-- **Die** (`drawDie`): shows `1 + (SEED % 6)` (faces 1–6), cycles faces and jitters while hovered, tumbles while
-  `menu.rolling`. Activating it (`rerollWorld`) starts a whiteout via `state.fade`
-  (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info stack) and then
-  navigates to `?seed=<new>` — `SEED` is a const everything closes over, so a new world is a
-  new page. Boot checks `sessionStorage['softfall.reroll']` and lands with the fade
-  clearing from white and the die still settling.
+- **Die** (`drawSeedDie` — named apart from the create screen's `drawDie`, js/ui/chars.js,
+  a later file whose declaration would take a same-named one): shows `1 + (SEED % 6)` (faces
+  1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on the
+  [map pop-up](#the-map-pop-up)'s seed row. Activating it (`rerollWorld`) starts a whiteout via
+  `state.fade` (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info
+  stack) and then navigates to `?seed=<new>&map=<this shape>` — `SEED` is a const everything
+  closes over, so a new world is a new page. Boot checks `sessionStorage['softfall.reroll']` and
+  lands with the fade clearing from white and the die still settling, and `softfall.select` +
+  `softfall.map` put it back on the select screen with the pop-up open.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
-  zero alpha underneath. SETTINGS is the existing panel via `renderSettings(now, { bare, slide })`
+  zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake)
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
   slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is
   baked at boot (`buildHelpPanel`) but nothing on the title opens it; PATCH
   NOTES is `patchPanelCv`, opened by clicking the `PATCH_TXT` tag bottom-right (`patchTagRect` /
-  `overPatchTag`; the tag turns gold with an underline on hover): the frame is baked once, the
+  `overPatchTag`; the tag turns gold with an underline on hover): the frame is baked once, a
+  **WIKI plank** heads it (`patchWikiRect` / `overPatchWiki` / `drawPatchWiki` — the title's own
+  frost plank, `PW_H` tall under the slab's title, easing on `menu.pwHover`; a click closes the
+  panel and `beginWiki`), the
   entries (newest first, word-wrapped) into `patchNotesCv` as tall as they need, and render blits
-  the `PN_H` window at `menu.patchScroll`. Past one window a pixel scrollbar appears (`drawPatchBar`:
+  the `PN_H` window under the plank at `menu.patchScroll`. Past one window a pixel scrollbar appears (`drawPatchBar`:
   iron rail, gilt thumb, ice nubs) — wheel, Up/Down, the nubs (step) and the track (page) move it.
   The **character tag** bottom-left (`charTagRect` / `overCharTag` / `drawCharTag`, js/ui/chars.js,
   the mirror of the patch tag: the active character's in-world body, its name and a quill that
@@ -1868,9 +1874,12 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   the hand and goes gold on the shape this page grew, the hovered one lifting), each the same
   `mapChip` bake at the bigger size, so the three are **this seed in each shape** side by side
   and the pick is made by looking rather than by reading. The hovered (else the picked) shape's
-  **name** prints once under the row, and that is the only text on the panel. Left/Right walk
-  `menu.mrow` with breathing corner ticks; ESC, the **X**, or a click off the panel close it
-  (`leaveMapPick`); Enter or a click on a chip is `pickMap`.
+  **name** prints once under the row, and under it the **seed row** (`SEED_TXT` + the
+  [die](#main-menu-title), gold under the hand): the other thing that decides which valley this
+  is. Left/Right walk `menu.mrow` over the chips and the seed row (`mrow === MAPS.length`) with
+  breathing corner ticks on a chip and gold on the row; Down/Up step between them; ESC, the
+  **X**, or a click off the panel close it (`leaveMapPick`); Enter or a click on a chip is
+  `pickMap`, on the seed row `rerollWorld`.
   **A pick is a page** — the shape is grown once at boot from consts every deterministic value
   closes over, so `pickMap` saves `settings.mapType`, runs the reroll die's own whiteout and
   loads `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so
@@ -1892,7 +1901,7 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginSelect`,
 `selectLayout`, `selectHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
-The map pop-up is driven the same way through the globals `beginMapPick`, `mapLayout`,
+The map pop-up (and the seed die on it) is driven the same way through the globals `beginMapPick`, `mapLayout`,
 `mapScreenHit`, `mapKey`, `mapClick` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
 `DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
 

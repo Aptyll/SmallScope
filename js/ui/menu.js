@@ -11,7 +11,9 @@
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
-const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'WIKI', 'SETTINGS'];
+const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'WIKI'];
+// SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
+// seed lives on the map pop-up under the shape's name (rerollWorld below).
 // sealed under ice until they exist: inert to hover, keys and clicks.
 // MULTIPLAYER (1) thawed in 3.48: it opens the rooms screen below. PRACTICE
 // TOOL (2) is sealed, but its ice is BREAKABLE, and it says so: one crack web
@@ -21,9 +23,7 @@ const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'WIKI', 'SET
 // the training arena (beginPractice).
 function menuFrozen(i) { return i === 2 && !PROFILE.practiceOpen(); }
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
-// First plank, in the 270-tall authored frame; the seed row follows the last
-// plank. The pitch tightened by 2 and the column started 4 higher when the
-// fifth plank arrived, so the seed row still lands clear of the corner tags.
+// First plank, in the 270-tall authored frame.
 const MENU_Y0 = 88;
 const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the planks
 // The practice plank's tell: its sheet is flawed from the first look - one
@@ -36,9 +36,10 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.73'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.74'; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.74', 'THE TITLE IS FOUR PLANKS: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI ALSO OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
   ['3.73', 'THE PIERCING SHOT FLIES TWICE AS FAR AND WEARS EVERY MODIFIER ON YOUR TOOL, AND A FAST SHOT NO LONGER STEPS THROUGH A RABBIT OR A WALL.'],
   ['3.72', 'A LEVEL, A CARD OR A GEAR BUY NOW FLIES YOUR WHOLE STAT SHEET IN UNDER THE MINIMAP WITH THE ROWS IT MOVED LIT AND BLINKING.'],
   ['3.71', 'THE VIDEO PAGE GAINS AN FPS CAP, AND EVERY LINE OF TEXT IS DRAWN ONCE AND STAMPED AFTER THAT: A QUARTER OF THE FRAME BACK.'],
@@ -546,10 +547,6 @@ function menuLayout() {
   const toy = frameTop();
   const bx = Math.round((VIEW_W - MENU_BW) / 2);
   const rects = MENU_ITEMS.map((_, i) => ({ x: bx, y: toy + MENU_Y0 + i * MENU_PITCH, w: MENU_BW, h: MENU_BH }));
-  // the seed row: text + die, one selectable item
-  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
-  const sx = Math.round((VIEW_W - sw) / 2);
-  rects.push({ x: sx - 3, y: toy + MENU_Y0 + MENU_ITEMS.length * MENU_PITCH + 6, w: sw + 6, h: 13, seed: true });
   return { toy, rects };
 }
 
@@ -565,7 +562,7 @@ function menuHit() {
 
 function menuSelect(i) {
   const m = state.menu;
-  const N = MENU_ITEMS.length + 1;
+  const N = MENU_ITEMS.length;
   const dir = i >= m.sel ? 1 : -1;
   let n = ((i % N) + N) % N;
   const start = n;
@@ -642,8 +639,6 @@ function menuActivate(i) {
   else if (i === 1) beginRooms();
   else if (i === 2) beginPractice();
   else if (i === 3) beginWiki();
-  else if (i === 4) openMenuPanel('settings');
-  else if (i === MENU_ITEMS.length) rerollWorld();
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
@@ -765,8 +760,11 @@ function beginIntro() {
   SFX.music.stop(0.6);
 }
 
-// the die: whiteout, then reload on a fresh seed (SEED is a const every
-// deterministic value closes over, so a new world is a new page)
+// the die (on the map pop-up, under the shape's name): whiteout, then
+// reload on a fresh seed in the same shape (SEED is a const every
+// deterministic value closes over, so a new world is a new page). It lands
+// back on the select screen with the pop-up open (softfall.select /
+// softfall.map, read by js/boot.js), so a roll is one press and not a walk.
 function rerollWorld() {
   const m = state.menu;
   if (state.fade) return;
@@ -777,8 +775,8 @@ function rerollWorld() {
   state.fade = {
     a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
     then: () => {
-      try { sessionStorage.setItem('softfall.reroll', '1'); } catch (e) { }
-      location.href = location.pathname + '?seed=' + next;
+      try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); sessionStorage.setItem('softfall.map', '1'); } catch (e) { }
+      location.href = location.pathname + '?seed=' + next + '&map=' + MAP_TYPE;
     },
   };
 }
@@ -829,12 +827,13 @@ function updateTitle(dt) {
   if (m.screen === 'rooms') updateRooms(dt);
   // a frozen plank can't be selected, so its hover ease tracks the pointer instead
   const hit = !m.panel && m.screen === 'menu' ? menuHit() : -1;
-  for (let i = 0; i <= MENU_ITEMS.length; i++) {
+  for (let i = 0; i < MENU_ITEMS.length; i++) {
     const target = menuFrozen(i) ? (hit === i ? 1 : 0) : (m.sel === i ? 1 : 0);
     // `|| 0` because the array's length is a literal in core.js: a missing
     // cell would go NaN here and take its whole row off the screen
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
+  m.pwHover = (m.pwHover || 0) + ((overPatchWiki() ? 1 : 0) - (m.pwHover || 0)) * Math.min(1, dt * 14); // the notes' WIKI plank
   // the refusal shudder heals and the ice chips fall
   if (m.iceT > 0) m.iceT = Math.max(0, m.iceT - dt);
   for (let i = m.shards.length - 1; i >= 0; i--) {
@@ -1031,8 +1030,10 @@ function drawMenuButton(r, label, hv, now, pressed, frozen) {
   }
 }
 
-// the reroll die (11x11): face cycles while hovered, tumbles while rolling
-function drawDie(x, y, hv, now) {
+// the reroll die (11x11): face cycles while hovered, tumbles while rolling.
+// Named apart from the create screen's drawDie (js/ui/chars.js), a later
+// file whose declaration would otherwise take this one's.
+function drawSeedDie(x, y, hv, now) {
   const m = state.menu;
   const rolling = m.rolling > 0;
   let face = 1 + (SEED % 6);
@@ -1234,7 +1235,23 @@ function buildHelpPanel() {
 // window at menu.patchScroll through the frame. When the entries outgrow the
 // window a scrollbar appears on the right: wheel, up/down keys, clicking the
 // nubs or the track all move it.
-const PN_Y = 24, PN_H = SET_H - 24 - 18; // the window: below the title, above the hint
+// the WIKI plank heads the notes: the title's own frost plank (drawMenuButton)
+// centred under the slab's title, and the notes window starts under it. A
+// click closes the panel and opens the wiki screen. Panel-space px, like
+// patchPanelClick's; its hover ease is menu.pwHover.
+const PW_H = 20;
+function patchWikiRect() { return { x: (SET_W - MENU_BW) >> 1, y: 20, w: MENU_BW, h: PW_H }; }
+const PN_Y = 20 + PW_H + 6, PN_H = SET_H - (20 + PW_H + 6) - 18; // the window: below the plank, above the hint
+function overPatchWiki() {
+  if (!menuPanelReady() || state.menu.panel !== 'patch') return false;
+  const r = patchWikiRect(), px = mouse.x - SET_X, py = mouse.y - SET_Y;
+  return px >= r.x - 2 && px < r.x + r.w + 2 && py >= r.y - 2 && py < r.y + r.h + 2;
+}
+function drawPatchWiki(ox, oy, now) {
+  const m = state.menu, r = patchWikiRect();
+  const pressed = overPatchWiki() && mouse.down;
+  drawMenuButton({ x: ox + r.x, y: oy + r.y, w: r.w, h: r.h, i: -1 }, 'WIKI', m.pwHover || 0, now, pressed, false);
+}
 const PN_BAR_X = SET_W - 13, PN_BAR_W = 6;
 const patchPanelCv = document.createElement('canvas');
 patchPanelCv.width = SET_W; patchPanelCv.height = SET_H;
@@ -1283,6 +1300,7 @@ function patchBarLayout() {
 }
 // a click inside the slab (panel-space px): nubs step, the track pages
 function patchPanelClick(px, py) {
+  if (overPatchWiki()) { closeMenuPanel(); beginWiki(); return; }
   if (!patchScrollMax()) return;
   const { track, thumb, up, down } = patchBarLayout();
   const inR = (r) => px >= r.x - 2 && px < r.x + r.w + 2 && py >= r.y && py < r.y + r.h;
@@ -2711,7 +2729,8 @@ function renderGear(now, a) {
 // shape, drawn straight off mapTerrain. Clicking it opens this pop-up: the
 // shapes side by side as bigger chips of the same seed, the picked one
 // gold-rimmed, its NAME under it (a name, which is what text is for), and
-// nothing else to read.
+// under that the SEED ROW - the seed's number and its die (rerollWorld), the
+// one other thing that decides which valley this is.
 //
 // A pick is a PAGE. The ground is grown once at boot off consts every
 // deterministic value in the game closes over, so the die's own whiteout
@@ -2770,19 +2789,23 @@ function mapLayout() {
   const cx = Math.round(VIEW_W / 2);
   const n = MAPS.length;
   const gridW = n * MAPP_W + (n - 1) * MAPP_GAP;
-  const pw = gridW + 20, ph = MAPP_W + 42;
+  const pw = gridW + 20, ph = MAPP_W + 58;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
   const cells = [];
   for (let k = 0; k < n; k++) cells.push({ x: px + 10 + k * (MAPP_W + MAPP_GAP), y: py + 12, w: MAPP_W, h: MAPP_W, k });
+  // the seed row: text + die, centred under the name
+  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
   return { cx, panel: { x: px, y: py, w: pw, h: ph }, cells,
-    name: { x: cx, y: py + ph - 15 },
+    name: { x: cx, y: py + MAPP_W + 27 },
+    seed: { x: cx - (sw >> 1) - 3, y: py + MAPP_W + 39, w: sw + 6, h: 13 },
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
-// what the pointer is on inside the pop-up: a cell's index, 'x', 'panel'
-// (the slab swallows it) or null (outside - a click there closes)
+// what the pointer is on inside the pop-up: a cell's index, 'seed', 'x',
+// 'panel' (the slab swallows it) or null (outside - a click there closes)
 function mapScreenHit() {
-  const { cells, panel, xr } = mapLayout();
+  const { cells, seed, panel, xr } = mapLayout();
   if (overRect(xr, 2, 2)) return 'x';
+  if (overRect(seed, 2, 2)) return 'seed';
   for (const c of cells) if (overRect(c, 2, 2)) return c.k;
   if (mouse.x >= panel.x && mouse.x < panel.x + panel.w && mouse.y >= panel.y && mouse.y < panel.y + panel.h) return 'panel';
   return null;
@@ -2819,10 +2842,13 @@ function pickMap(k) {
 function mapKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
+  const N = MAPS.length; // m.mrow === N is the seed row
   if (k === 'escape' || k === 'backspace') leaveMapPick();
-  else if (moveDir(k) === 'left') { m.mrow = (m.mrow + MAPS.length - 1) % MAPS.length; SFX.pickup(); }
-  else if (moveDir(k) === 'right') { m.mrow = (m.mrow + 1) % MAPS.length; SFX.pickup(); }
-  else if (k === 'enter' || k === ' ') { if (m.mrow === MAP_TYPE) leaveMapPick(); else pickMap(m.mrow); }
+  else if (moveDir(k) === 'left') { m.mrow = (m.mrow + N) % (N + 1); SFX.pickup(); }
+  else if (moveDir(k) === 'right') { m.mrow = (m.mrow + 1) % (N + 1); SFX.pickup(); }
+  else if (moveDir(k) === 'down' && m.mrow < N) { m.mrow = N; SFX.pickup(); }
+  else if (moveDir(k) === 'up' && m.mrow === N) { m.mrow = MAP_TYPE; SFX.pickup(); }
+  else if (k === 'enter' || k === ' ') { if (m.mrow === N) rerollWorld(); else if (m.mrow === MAP_TYPE) leaveMapPick(); else pickMap(m.mrow); }
 }
 function mapClick() {
   const m = state.menu;
@@ -2830,6 +2856,7 @@ function mapClick() {
   const h = mapScreenHit();
   if (h === null || h === 'x') { leaveMapPick(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                               // the slab swallows it
+  if (h === 'seed') { m.mrow = MAPS.length; rerollWorld(); return; }
   m.mrow = h;
   if (h === MAP_TYPE) leaveMapPick(); else pickMap(h);
 }
@@ -2837,7 +2864,7 @@ function mapClick() {
 // the pop-up: the gear panel's slab and its chrome, three chips wide
 function renderMapPick(now, a) {
   const m = state.menu;
-  const { panel, cells, xr, name } = mapLayout();
+  const { panel, cells, xr, name, seed } = mapLayout();
   ctx.fillStyle = 'rgba(4,6,18,' + (0.62 * a).toFixed(3) + ')';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   const rise = Math.round((1 - a) * 12);
@@ -2866,9 +2893,14 @@ function renderMapPick(now, a) {
   }
   // the hovered (else the picked) shape's name - the one word the chips earn
   const hovered = typeof h === 'number';
-  const nm = mapName(hovered ? h : m.mapT >= 1 && !mouse.inside ? m.mrow : MAP_TYPE);
+  const nm = mapName(hovered ? h : m.mapT >= 1 && !mouse.inside && m.mrow < MAPS.length ? m.mrow : MAP_TYPE);
   drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
     hovered && h !== MAP_TYPE ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+  // the seed row: number and die, gold under the hand or the keyboard's cursor
+  const sh = h === 'seed' || (h === null && m.mapT >= 1 && m.mrow === MAPS.length) ? 1 : 0;
+  const sx = seed.x + 3, sy = seed.y + rise + 3 - sh * 2;
+  drawPixelTextShadow(ctx, SEED_TXT, sx, sy, sh ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
+  drawSeedDie(sx + pixelTextWidth(SEED_TXT) + 6, seed.y + rise - sh * 2, sh, now);
   // the X: the one way out that is drawn (ESC and a click outside also close)
   const hot = h === 'x';
   ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
@@ -3464,14 +3496,7 @@ function renderTitle(now) {
     if (menuFrozen(i) && m.iceI === i && m.iceT > 0) rr.x += Math.round(Math.sin(now * 85) * 2.2 * (m.iceT / 0.45));
     const hv = m.hover[i];
     const pressed = m.sel === i && (m.pressT > 0 || (mouse.down && menuHit() === i));
-    if (r.seed) {
-      const lift = Math.round(hv * 2);
-      const tx = rr.x + 3, ty = rr.y + 3 - lift;
-      drawPixelTextShadow(ctx, SEED_TXT, tx, ty, hv > 0.5 ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
-      drawDie(tx + pixelTextWidth(SEED_TXT) + 6, rr.y - lift, hv, now);
-    } else {
-      drawMenuButton(rr, MENU_ITEMS[i], hv, now, pressed, menuFrozen(i));
-    }
+    drawMenuButton(rr, MENU_ITEMS[i], hv, now, pressed, menuFrozen(i));
     ctx.globalAlpha = 1;
   }
 
@@ -3514,6 +3539,7 @@ function renderTitle(now) {
       ctx.drawImage(patchPanelCv, SET_X, SET_Y + slide);
       ctx.drawImage(patchNotesCv, 0, m.patchScroll, SET_W, PN_H, SET_X, SET_Y + slide + PN_Y, SET_W, PN_H);
       drawPatchBar(SET_X, SET_Y + slide);
+      drawPatchWiki(SET_X, SET_Y + slide, now);
       drawBackHint(ctx, SET_X + SET_W / 2, SET_Y + slide + 190);
     } else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
   }
