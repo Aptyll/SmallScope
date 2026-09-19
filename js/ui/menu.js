@@ -37,7 +37,15 @@ const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the plank
 // leave (iceMarks) join it; the break clears them and the flaw goes with the
 // glaze.
 const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
-const PATCH_TXT = 'PATCH 3.74'; // printed bottom-right of the title screen; click it for the notes
+const PATCH_TXT = 'PATCH 3.74';
+// the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
+// baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
+// A data URL decodes before the first frame in practice, and the draw checks
+// anyway; nothing else on the title changes size with it (LOGO_Y is where it
+// sits in the authored frame, its foot clear of the slab's top at MENU_Y0).
+const LOGO_IMG = new Image();
+LOGO_IMG.src = window.LOGO_PNG || '';
+const LOGO_Y = 8; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
   ['3.74', 'THE TITLE IS FOUR PLANKS: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -3460,28 +3468,28 @@ function renderTitle(now) {
 
   // logo: drops in at boot, lifts away on play
   const logoIn = easeOut(m.t / 0.6);
-  const t1 = 'SOFTFALL';
   const bob = Math.sin(now * 1.5) * 2;
-  const ly = Math.round(toy + 34 + bob - (1 - logoIn) * 30 - out * 40);
+  const ly = Math.round(toy + LOGO_Y + bob - (1 - logoIn) * 30 - out * 40);
   const logoA = logoIn * (1 - out) * (1 - pan) * (1 - sc);
-  const lw = pixelTextWidth(t1, 4);
+  const logoOk = LOGO_IMG.complete && LOGO_IMG.naturalWidth > 0;
+  const lw = logoOk ? LOGO_IMG.naturalWidth : pixelTextWidth('SOFTFALL', 4);
+  const lh = logoOk ? LOGO_IMG.naturalHeight : 28;
   const lx = Math.round((VIEW_W - lw) / 2);
-  // a pulsing ember glow behind the letters
+  // a pulsing cold glow behind the letters: the picture's own cyan halo
   ctx.globalCompositeOperation = 'lighter';
   const pulse = 0.8 + 0.2 * Math.sin(now * 2.2);
-  const gr = 84;
-  const grd = ctx.createRadialGradient(cx, ly + 10, 2, cx, ly + 10, gr);
-  grd.addColorStop(0, 'rgba(255,150,60,' + (0.26 * logoA * pulse).toFixed(3) + ')');
-  grd.addColorStop(0.5, 'rgba(255,120,50,' + (0.08 * logoA * pulse).toFixed(3) + ')');
-  grd.addColorStop(1, 'rgba(255,100,40,0)');
-  ctx.fillStyle = grd; ctx.fillRect(cx - gr, ly + 10 - gr, gr * 2, gr * 2);
+  const gr = 96, gy = ly + (lh >> 1);
+  const grd = ctx.createRadialGradient(cx, gy, 2, cx, gy, gr);
+  grd.addColorStop(0, 'rgba(110,200,255,' + (0.22 * logoA * pulse).toFixed(3) + ')');
+  grd.addColorStop(0.5, 'rgba(80,150,255,' + (0.07 * logoA * pulse).toFixed(3) + ')');
+  grd.addColorStop(1, 'rgba(60,120,255,0)');
+  ctx.fillStyle = grd; ctx.fillRect(cx - gr, gy - gr, gr * 2, gr * 2);
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = logoA;
-  drawPixelText(ctx, t1, lx + 1, ly + 1, '#ff7a2a', 4); // ember under-glow
-  drawPixelText(ctx, t1, lx, ly - 1, '#fff1c2', 4);     // ice rim along every top edge
-  drawPixelTextShadow(ctx, t1, lx, ly, '#ffd95c', '#3c2a1e', 4);
-  drawGoldRule(cx, ly + 32, Math.round(lw / 2) + 6, logoA);
-  drawEmbers(now, logoA * 0.85, cx, ly + 26, lw, 22, 5);
+  if (logoOk) ctx.drawImage(LOGO_IMG, lx, ly);
+  else drawPixelTextShadow(ctx, 'SOFTFALL', lx, ly, '#ffd95c', '#3c2a1e', 4); // the word, until the picture decodes
+  drawGoldRule(cx, ly + lh + 4, Math.round(lw / 2) - 20, logoA);
+  drawEmbers(now, logoA * 0.85, cx, ly + lh - 8, lw, 22, 5);
   ctx.globalAlpha = 1;
 
   // items: stagger in from the left, sink away on play, fade under a panel

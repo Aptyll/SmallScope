@@ -47,6 +47,9 @@
      is opened straight off the disk. Must load before audio.js. -->
 <script src="js/sfxdata.js"></script>
 <script src="js/audio.js"></script>
+<!-- docs/media/logos/mainMenuSoftfall.png keyed and baked by app/bake-logo.js
+     for the same reason: an <img> off a file:// path would taint the canvas. -->
+<script src="js/logodata.js"></script>
 <!-- The game code: flat classic scripts sharing one global scope
      (docs/dev/architecture.md). A file may reference names from any file at runtime, but its
      top-level (load-time) statements may only reference names from files loaded above it. -->

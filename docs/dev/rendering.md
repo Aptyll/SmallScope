@@ -1700,7 +1700,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   draws the two stone pillars `TITLE_PILLAR_DX` either side of the column (coursed shaft, frost
   at the base, snow-capped capital, an iron brazier whose flame flickers in the bowl — no
   circular glow); `drawMenuSlab` is the translucent slab with gilt corner brackets behind the items;
-  `drawGoldRule` the gold rule with diamond finials under the logo (`SOFTFALL`, no subtitle) and
+  `drawGoldRule` the gold rule with diamond finials under the logo (`LOGO_IMG`: the picture
+  `docs/media/logos/mainMenuSoftfall.png` keyed and baked to `js/logodata.js` by
+  `app/bake-logo.js`, drawn 1:1 at `LOGO_Y` under a cold pulsing glow, the pixel-font word
+  standing in only until it decodes; no subtitle) and
   under the select header; `drawEmbers` the sparks rising off the logo and the braziers. The logo
   gets a pulsing ember glow behind it and a 1px ice rim along its top edges. Pillars rise from
   below at boot and sink away with the items on play. `PATCH_TXT` prints bottom-right and the
