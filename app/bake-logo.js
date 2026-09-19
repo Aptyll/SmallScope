@@ -26,7 +26,7 @@ const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'docs', 'media', 'logos', 'mainMenuSoftfall.png');
 const OUT = path.join(ROOT, 'js', 'logodata.js');
 const OUTLINE_MAX = 70; // a channel above this is not outline navy
-const SHRINK = 4;       // source px per baked px
+const SHRINK = 3;       // source px per baked px
 const PROBE = process.argv.includes('--probe');
 
 // ---- PNG in ---------------------------------------------------------------

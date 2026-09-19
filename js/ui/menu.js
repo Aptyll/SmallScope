@@ -30,11 +30,12 @@ const PATCH_TXT = 'PATCH 3.74';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
-// anyway; nothing else on the title changes size with it (LOGO_Y is where it
-// sits in the authored frame, its foot clear of the slab's top at MENU_Y0).
+// anyway; nothing else on the title changes size with it. LOGO_Y is its top
+// edge in the VIEW (not the authored frame): it hugs the top at any height.
 const LOGO_IMG = new Image();
 LOGO_IMG.src = window.LOGO_PNG || '';
-const LOGO_Y = 8; // printed bottom-right of the title screen; click it for the notes
+const LOGO_Y = 12;
+// PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -3290,7 +3291,7 @@ function renderTitle(now) {
 
   // logo: drops in at boot, lifts away on play
   const logoIn = easeOut(m.t / 0.6);
-  const ly = Math.round(toy + LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
+  const ly = Math.round(LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
   const logoA = logoIn * (1 - out) * (1 - pan) * (1 - sc);
   const logoOk = LOGO_IMG.complete && LOGO_IMG.naturalWidth > 0;
   const lw = logoOk ? LOGO_IMG.naturalWidth : pixelTextWidth('SOFTFALL', 4);
