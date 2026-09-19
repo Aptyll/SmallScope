@@ -164,18 +164,18 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'select' | 'gear' | 'map' | 'wiki' | 'chars' | 'create'. 'gear' and
-    // 'map' are the two pop-ups over the still-lit select screen (gearT its
-    // ease, grow the keyboard row, gearFxT/gearFxSlot the equip flash; mapT
-    // and mrow the map's); the wiki is a surface of its own on wikiT, with
-    // wikiTab the open page (menu.js `the wiki`).
+    // screen: 'menu' | 'select' | 'gear' | 'wiki' | 'chars' | 'create'. 'gear' is the
+    // pop-up over the still-lit select screen (gearT its ease, grow the
+    // keyboard row, gearFxT/gearFxSlot the equip flash); the wiki is a surface
+    // of its own on wikiT, with wikiTab the open page (menu.js `the wiki`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
-    // the map pop-up over the still-lit select screen (menu.js `the map
-    // pop-up`): its ease, the keyboard row, and the hover ease per option
-    mapT: 0, mrow: 0, mhover: [],
+    // class select's map slide (mapStep: {d, k, t}, null at rest), the lock-in's
+    // ring (lockFx, s left), and the difficulty target's arrows: the level they
+    // show and how far into their flight (menu.js `class select`)
+    mapSlide: null, lockFx: 0, tgtLv: 0, tgtT: 1,
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it
-    // ran out); dhover the three difficulty notches' hover eases (menu.js
+    // ran out); dhover the three difficulty plates' hover eases (menu.js
     // `class select`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
     // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the

@@ -309,7 +309,7 @@ function treeRare(tx, ty) {
 //
 // `mapTerrain(k, tx, ty)` IS a shape - one pure function of the position
 // noise saying what shape k makes of a tile. genWorld plants from it and the
-// class screen's chip draws from it (drawMapChip, js/ui/menu.js), so the
+// class screen's map draws from it (mapChip, js/ui/menu.js), so the
 // picture on the chip is this seed's own valley in that shape rather than an
 // illustration of one. Nothing in here rolls: the shared rng stream every
 // later pass draws from is exactly what OPEN FIELD's always was, so an

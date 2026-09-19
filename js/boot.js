@@ -1449,14 +1449,10 @@ try {
   // ...and from a MAP PICK, which is the same page on the same seed in a new
   // shape (pickMap, js/ui/menu.js): it clears onto the screen it was made on,
   // so picking a shape is one press and not a walk back through the menu
-  // (and a ROLL of the seed die, which lands with the map pop-up open again)
-  const onMap = sessionStorage.getItem('softfall.map');
-  sessionStorage.removeItem('softfall.map');
   if (sessionStorage.getItem('softfall.select')) {
     sessionStorage.removeItem('softfall.select');
     if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
       beginSelect(); state.menu.screenT = 1;
-      if (onMap) { beginMapPick(); state.menu.mapT = 1; state.menu.mrow = MAPS.length; }
     }
   }
 } catch (e) { }

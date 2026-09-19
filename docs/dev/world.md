@@ -113,7 +113,7 @@ picture on the chip is **this seed's own valley** in that shape and not an illus
 read once in js/boot.js after `loadSettings()` and never again. Picking one is a **page**, the
 way a reroll is: the pick is saved, the whiteout runs and the page comes back on
 `?seed=<this seed>&map=<the pick>` standing on the class screen again (`pickMap`,
-[rendering.md](rendering.md#the-map-pop-up)). Only a **solo** lobby may pick — a host reloading
+[rendering.md](rendering.md#class-select)). Only a **solo** lobby may pick — a host reloading
 would drop its room, and a guest's world is the host's (`netHostHello` refuses a hello whose map
 is not the host's, exactly as it refuses a seed; `joinRoom` carries `&map=` with `&seed=`).
 
