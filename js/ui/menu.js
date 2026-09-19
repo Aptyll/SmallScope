@@ -15,28 +15,21 @@ const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
 // seed lives on the map pop-up under the shape's name (rerollWorld below),
 // and the WIKI opens from the plank heading the patch notes (drawPatchWiki).
-// sealed under ice until they exist: inert to hover, keys and clicks.
-// MULTIPLAYER (1) thawed in 3.48: it opens the rooms screen below. PRACTICE
-// TOOL (2) is sealed, but its ice is BREAKABLE, and it says so: one crack web
-// stands on it at rest (ICE_FLAW, drawn by drawMenuButton) where the solid
-// plank has none. Three knocks shatter the sheet (iceRefuse below), the
-// profile remembers, and from then on the plank is a live item that boots
-// the training arena (beginPractice).
+// The items are plain words - white, the picked one gold - stacked at the
+// bottom middle of the view, MENU_TXT_PITCH apart with the last one's foot
+// MENU_BOTTOM above the edge; no plank, slab or frame around them.
+// PRACTICE TOOL (2) is sealed under ice until the profile has broken it:
+// inert to keys and the hand, drawn in ice-blue, and a click is a knock
+// (iceRefuse below) - it rattles and sprays chips, and the third knock breaks
+// it open for good (breakPracticeIce). From then on it is a live item that
+// boots the training arena (beginPractice).
 function menuFrozen(i) { return i === 2 && !PROFILE.practiceOpen(); }
+const MENU_TXT_PITCH = 14, MENU_BOTTOM = 34;
+// The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
+// MENU_BH at MENU_Y0 in the 270-tall authored frame is where class select's
+// PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
-// First plank, in the 270-tall authored frame.
 const MENU_Y0 = 88;
-const MENU_SLAB_PAD = 22; // slab hangs this many px past each side of the planks
-// The practice plank's tell: its sheet is flawed from the first look - one
-// crack web standing at rest, at a fixed point and seed in the plank's own
-// pixels, on that plank and no other - so the art says which ice gives before
-// anyone knocks (the hint lives in the picture, never in a prompt). It is a
-// corner chip - struck a pixel in from the plank's top-right corner, with a
-// shorter walk than a knock's web (steps) - so its fissures run inward and
-// stop short of the label instead of scribbling over it. The webs the knocks
-// leave (iceMarks) join it; the break clears them and the flaw goes with the
-// glaze.
-const ICE_FLAW = { x: 128, y: 3, seed: 41, steps: 8 };
 const PATCH_TXT = 'PATCH 3.74';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
@@ -48,7 +41,7 @@ LOGO_IMG.src = window.LOGO_PNG || '';
 const LOGO_Y = 8; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLANKS, NO PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
+  ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
   ['3.73', 'THE PIERCING SHOT FLIES TWICE AS FAR AND WEARS EVERY MODIFIER ON YOUR TOOL, AND A FAST SHOT NO LONGER STEPS THROUGH A RABBIT OR A WALL.'],
   ['3.72', 'A LEVEL, A CARD OR A GEAR BUY NOW FLIES YOUR WHOLE STAT SHEET IN UNDER THE MINIMAP WITH THE ROWS IT MOVED LIT AND BLINKING.'],
   ['3.71', 'THE VIDEO PAGE GAINS AN FPS CAP, AND EVERY LINE OF TEXT IS DRAWN ONCE AND STAMPED AFTER THAT: A QUARTER OF THE FRAME BACK.'],
@@ -551,11 +544,15 @@ function drawNetLink(now) {
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
 
-// layout was authored for the FRAME_H-tall frame (core.js); recenter it vertically
+// the words, centred, climbing from MENU_BOTTOM above the view's foot; toy
+// is the authored frame's top for the logo (frameTop, core.js)
 function menuLayout() {
   const toy = frameTop();
-  const bx = Math.round((VIEW_W - MENU_BW) / 2);
-  const rects = MENU_ITEMS.map((_, i) => ({ x: bx, y: toy + MENU_Y0 + i * MENU_PITCH, w: MENU_BW, h: MENU_BH }));
+  const n = MENU_ITEMS.length;
+  const rects = MENU_ITEMS.map((label, i) => {
+    const w = pixelTextWidth(label) + 8, h = 11;
+    return { x: Math.round((VIEW_W - w) / 2), y: VIEW_H - MENU_BOTTOM - (n - i) * MENU_TXT_PITCH, w, h };
+  });
   return { toy, rects };
 }
 
@@ -594,8 +591,8 @@ function iceRefuse(i) {
   m.iceT = 0.45;
   m.iceI = i;
   m.iceSeed = (m.iceSeed + 1) | 0;
-  m.iceX = Math.max(4, Math.min(r.w - 4, mouse.x - r.x));
-  m.iceY = Math.max(3, Math.min(r.h - 3, mouse.y - r.y));
+  m.iceX = Math.max(2, Math.min(r.w - 2, mouse.x - r.x));
+  m.iceY = Math.max(2, Math.min(r.h - 2, mouse.y - r.y));
   for (let i = 0; i < 12; i++) {
     const a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6; // upward fan off the impact
     const sp = 30 + Math.random() * 70;
@@ -606,9 +603,8 @@ function iceRefuse(i) {
       c: ['#e8f4ff', '#a8c8e8', '#f4f7ff'][i % 3],
     });
   }
-  // the practice plank's ice takes damage instead of healing: every knock
-  // leaves its crack web standing (iceMarks, drawn by drawMenuButton), and
-  // the third breaks the sheet open for good
+  // the practice item's ice takes damage instead of healing: every knock
+  // is counted (iceMarks), and the third breaks the sheet open for good
   if (i === 2) {
     m.iceMarks.push({ x: m.iceX, y: m.iceY, seed: m.iceSeed });
     if (m.iceMarks.length >= 3) { breakPracticeIce(i); return; }
@@ -636,7 +632,7 @@ function breakPracticeIce(i) {
       c: ['#e8f4ff', '#a8c8e8', '#f4f7ff', '#ffffff'][k % 4],
     });
   }
-  m.sel = i; // the freed plank takes the selection: the eye is already on it
+  m.sel = i; // the freed item takes the selection: the eye is already on it
   SFX.break_();
   SFX.unlock();
 }
@@ -1008,10 +1004,7 @@ function drawMenuButton(r, label, hv, now, pressed, frozen) {
       ctx.globalAlpha = a0;
     }
     // one knock's crack web: dark fissures with the odd white glint, so they
-    // read against the pale glaze. Shared by the refusal flash, the practice
-    // plank's resting flaw (ICE_FLAW) and its STANDING marks - each knock
-    // there leaves its web in m.iceMarks until the third breaks the sheet
-    // (iceRefuse).
+    // read against the pale glaze (the refusal flash, iceRefuse)
     const cracksAt = (px0, py0, seed, alpha, steps) => {
       ctx.globalAlpha = alpha;
       for (let c = 0; c < 5; c++) {
@@ -1030,10 +1023,6 @@ function drawMenuButton(r, label, hv, now, pressed, frozen) {
       ctx.fillRect(x + Math.round(px0), y + Math.round(py0), 1, 1);
       ctx.globalAlpha = a0;
     };
-    // the breakable sheet is the one that is already cracked: the flaw stands
-    // whatever the pointer is doing, and the knocks' webs land beside it
-    if (r.i === 2) cracksAt(ICE_FLAW.x, ICE_FLAW.y, ICE_FLAW.seed, a0 * 0.85, ICE_FLAW.steps);
-    if (r.i === 2) for (const mk of m.iceMarks) cracksAt(mk.x, mk.y, mk.seed, a0 * 0.85);
     if (m.iceT > 0 && m.iceI === r.i) cracksAt(m.iceX, m.iceY, m.iceSeed, a0 * Math.min(1, m.iceT / 0.45));
   }
 }
@@ -1063,12 +1052,12 @@ function drawSeedDie(x, y, hv, now) {
 }
 
 // ---- title dressing -------------------------------------------------------
-// The frame around the menu: a tint that weighs on the edges and leaves the
-// centre clear, and a frosted slab that gathers the items into one column
-// (drawGoldRule is the wiki's and the end screens'). All of it is procedural -
-// hash2() for the static grain - and every piece takes its alpha from the
-// caller so it fades with the chrome. (drawEmbers below is the end screens'
-// brazier sparks, js/ui/screens.js; the title burns nothing.)
+// What the title still dresses itself in: a tint that weighs on the edges and
+// leaves the centre clear (drawTitleBackdrop). The rest of this banner - the
+// gold rule, the embers, the frost slab - is drawn by the wiki, the rooms and
+// the end screens (js/ui/screens.js); the title itself is the logo and three
+// words over the world. Every piece takes its alpha from the caller so it
+// fades with the chrome.
 
 function drawTitleBackdrop(tintA) {
   ctx.fillStyle = 'rgba(10,16,42,' + tintA.toFixed(3) + ')';
@@ -3394,17 +3383,6 @@ function renderTitle(now) {
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
 
-  // the frame: the slab behind the column fades with the items
-  const frameIn = easeOut((m.t - 0.1) / 0.6);
-  const frameA = frameIn * chromeA;
-  if (frameA > 0.005) {
-    const last = rects[rects.length - 1];
-    const slabIn = easeOut((m.t - 0.2) / 0.45);
-    const slabW = MENU_BW + MENU_SLAB_PAD * 2;
-    drawMenuSlab(cx - (slabW >> 1), rects[0].y - 14 + Math.round(out * 25), slabW, last.y + last.h + 8 - rects[0].y + 14, slabIn * chromeA);
-    ctx.globalAlpha = 1;
-  }
-
   // logo: drops in at boot, lifts away on play
   const logoIn = easeOut(m.t / 0.6);
   const ly = Math.round(toy + LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
@@ -3428,19 +3406,22 @@ function renderTitle(now) {
   else drawPixelTextShadow(ctx, 'SOFTFALL', lx, ly, '#ffd95c', '#3c2a1e', 4); // the word, until the picture decodes
   ctx.globalAlpha = 1;
 
-  // items: stagger in from the left, sink away on play, fade under a panel
+  // items: plain words that fade in staggered, sink away on play and duck
+  // under a panel; the picked one warms to gold and lifts a px, a press sinks
+  // it, and the iced one is ice-blue and rattles when knocked
   for (let i = 0; i < rects.length; i++) {
     const r = rects[i];
     const inT = easeOut((m.t - 0.25 - i * 0.12) / 0.45);
     const a = inT * (1 - out) * (1 - pan);
     if (a <= 0.005) continue;
-    ctx.globalAlpha = a;
-    const rr = { x: r.x - Math.round((1 - inT) * 60), y: r.y + Math.round(out * 25), w: r.w, h: r.h, i };
-    // the refusal shudder rattles the struck frozen plank in place (x only, so its hashed rime holds still)
-    if (menuFrozen(i) && m.iceI === i && m.iceT > 0) rr.x += Math.round(Math.sin(now * 85) * 2.2 * (m.iceT / 0.45));
-    const hv = m.hover[i];
+    const frozen = menuFrozen(i);
+    const hv = frozen ? 0 : m.hover[i];
     const pressed = m.sel === i && (m.pressT > 0 || (mouse.down && menuHit() === i));
-    drawMenuButton(rr, MENU_ITEMS[i], hv, now, pressed, menuFrozen(i));
+    let x = r.x + 4, y = r.y + 2 + Math.round((1 - inT) * 8) + Math.round(out * 25) - Math.round(hv) + (pressed ? 1 : 0);
+    if (frozen && m.iceI === i && m.iceT > 0) x += Math.round(Math.sin(now * 85) * 2.2 * (m.iceT / 0.45)); // the knock's rattle
+    ctx.globalAlpha = a * (frozen ? 0.75 : 1);
+    const col = frozen ? '#8fb4d8' : hv > 0.5 ? '#ffd95c' : '#f4f7ff';
+    drawPixelTextOutline(ctx, MENU_ITEMS[i], x, y, col, 'rgba(8,12,28,0.9)');
     ctx.globalAlpha = 1;
   }
 

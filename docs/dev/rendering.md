@@ -1663,32 +1663,24 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 
 - **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL —
   `menuFrozen(i)` is true for PRACTICE TOOL alone, until the profile has
-  broken it open (MULTIPLAYER is live: it opens the rooms screen, `beginRooms`): a frozen plank is
-  drawn sealed under an ice glaze by
-  `drawMenuButton(..., frozen)`, never selectable or activatable;
-  arrow keys skip an iced plank and the hand cursor ignores it. A frozen plank's
-  `menu.hover` slot tracks the pointer instead of the selection and drives a cold shimmer —
-  pale rim, a sheen sweeping the glaze, frost breath — and clicking one calls `iceRefuse(i)`:
-  that plank rattles for `menu.iceT` (`menu.iceI` names which), hairline cracks flash from the
-  struck point (`menu.iceX/iceY`, reseeded per knock by `menu.iceSeed`) and heal as it
-  refreezes, and `menu.shards` ice chips spray and fall, to `SFX.iceKnock`. **PRACTICE TOOL's
-  ice is breakable, and its art says so**: one crack web stands on that plank at rest
-  (`ICE_FLAW`, a fixed point and seed in the plank's pixels, drawn every frame by the same
-  `cracksAt` helper and on no other plank), so the hint that this sheet gives lives in the picture
-  rather than a prompt; each knock there also leaves its own crack web standing
-  (`menu.iceMarks`, the same helper), and the third calls `breakPracticeIce` —
-  the whole glaze sprays off, `PROFILE.markPractice()` keeps the break, and from then on the
-  plank is a live item whose activation is `beginPractice()` (the reroll's whiteout onto
+  broken it open (MULTIPLAYER is live: it opens the rooms screen, `beginRooms`): a frozen item
+  is drawn in ice-blue at three-quarter alpha, never selectable or activatable; arrow keys skip it
+  and the hand cursor ignores it. Its `menu.hover` slot tracks the pointer instead of the
+  selection, and clicking it calls `iceRefuse(i)`: the word rattles for `menu.iceT`
+  (`menu.iceI` names which; the struck point `menu.iceX/iceY` is reseeded per knock by
+  `menu.iceSeed`) and `menu.shards` ice chips spray and fall from it, to `SFX.iceKnock`.
+  Each knock is counted in `menu.iceMarks`, and the third calls `breakPracticeIce` — the
+  whole sheet sprays off, `PROFILE.markPractice()` keeps the break, and from then on the item
+  is live and its activation is `beginPractice()` (the reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
-  there is no WIKI or SETTINGS plank: the [wiki](#the-wiki-screen) opens from the plank heading
+  there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from the plank heading
   the patch notes, settings are the ESC panel's in play, and the seed lives on the
-  [map pop-up](#the-map-pop-up)), stacked
-  `MENU_PITCH` apart from `MENU_Y0`. **`menu.hover` has one cell per plank** and its length is
+  [map pop-up](#the-map-pop-up)), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
+  above the view's foot. **`menu.hover` has one cell per item** and its length is
   a literal in core.js, a file that loads before `MENU_ITEMS`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
-  deletes a row - add a plank, add a cell. The slab (`MENU_SLAB_PAD` past each side of `MENU_BW`) and
-  sizes itself to the rects; `menuLayout()` is the single source of rects for hit-testing
+  deletes a row - add an item, add a cell. `menuLayout()` is the single source of rects for hit-testing
   (`menuHit()`) and drawing. `menu.sel` is the keyboard selection; the mouse only steals it
   when it actually moves (`menu.moved`, set by mousemove), so arrows and hover never fight.
   Up/Down/W/S move, Enter/Space activate, Esc/Backspace close a panel; `menuKey()` and
@@ -1705,11 +1697,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   here for the wiki's header and the end screens (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
   active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
-- **Buttons** are procedural frost planks (`drawMenuButton`): chamfered slab with hashed
-  wood-grain, a snow cap along the top, icicles off the bottom, corner rivets and a gold rule
-  when hot (no glow behind the hot plank - it lifts and warms only). `menu.hover[i]` eases 0→1 toward the selected item and drives lift (2 px, the
-  shadow stays on the ground) and the warm fill; `menu.pressT`
-  sinks it for a beat; the lift, warm fill and gold rule are the whole selection cue (no selector arrows).
+- **Items** are plain words in the pixel font with a dark rim (`drawPixelTextOutline`): white,
+  the selected one gold and lifted a px (`menu.hover[i]` eases 0→1 toward it), a press
+  (`menu.pressT`) sinking it a px; that is the whole selection cue. No plank, slab or frame — the
+  **frost plank** (`drawMenuButton`: chamfered slab with hashed wood-grain, a snow cap, icicles,
+  corner rivets, a gold rule when hot, and a sealed ice glaze with a cold shimmer when `frozen`)
+  is drawn by class select's PLAY, the rooms screen, the notes' WIKI, the end screens and the
+  create screen, sized `MENU_BW`×`MENU_BH` at `MENU_Y0` where those stand it.
 - **Die** (`drawSeedDie` — named apart from the create screen's `drawDie`, js/ui/chars.js,
   a later file whose declaration would take a same-named one): shows `1 + (SEED % 6)` (faces
   1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on the
@@ -1762,8 +1756,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   bakes it straight off `mapTerrain` at 1 px a sampled tile with the road's diagonal inked over
   it, so what the chip shows is **this seed's own valley**. In a room it is a readout and not a
   button — the world is the host's (`selectHit` offers it only while `NET.role` is `'solo'`).
-  **PLAY** wears the title's first plank in its exact place (`MENU_Y0`,
-  `MENU_BW`×`MENU_BH`); the **stage** under it holds **your character** alone (`drawSelectStage`):
+  **PLAY** is a frost plank at `MENU_Y0` (`MENU_BW`×`MENU_BH`); the **stage** under it holds
+  **your character** alone (`drawSelectStage`):
   the 48 px model (`SPRITES.portrait`, [sprites.md](sprites.md#looks-a-character-on-the-class-body))
   at 2× in your side's paint under a warm pool of light with a gold ring turning
   on the snow, the class weapon's own tool art at the hand, the name below with the class in
