@@ -273,18 +273,12 @@ function keyPress(e) {
   // HUD and not an overlay, so unlike the map and ESC it neither stops the
   // sim nor swallows anything but its own clicks.
   if (keyIs(e, 'bag')) { state.bagOpen = !state.bagOpen; SFX.ui(state.bagOpen); }
-  // THE BUILD LIST (drawBuildList, js/ui.js): T opens it over the world and
-  // T again closes it (so do Escape and the right button); while it is up
-  // the ghost under the pointer is what a left-click lays, the wheel walks
-  // the rows, and R turns a piece that turns. It takes the drawer's place
-  // under the shelf, so the drawer lifts. Not over the map or the slab, not
-  // dead, not seated on the roost.
-  if (keyIs(e, 'build') && !e.repeat && !state.mapOpen && !state.settingsOpen && !player.dead && !player.aboard) {
-    SFX.unlock();
-    if (state.build) state.build = null;
-    else { state.build = { sel: 0, rot: 0 }; state.wheel = null; state.bagOpen = false; }
-    SFX.ui(!!state.build);
-  }
+  // THE BUILD LIST (the `build list` group, js/ui/wheel.js): T opens it
+  // under the hammer plate and T again closes it (so do a click on the
+  // plate, Escape and the right button); while it is up the ghost under the
+  // pointer is what a left-click lays, the wheel walks the rows, and R turns
+  // a piece that turns. toggleBuild says when it may open.
+  if (keyIs(e, 'build') && !e.repeat) toggleBuild();
   if (keyIs(e, 'rotate') && !e.repeat && state.build) { state.build.rot ^= 1; SFX.turn(); }
   // The work key at the practice rack: the press opens the armory wheel over
   // it, the pointer picks, and RELEASING it takes - the right-click wheel's
@@ -464,7 +458,7 @@ function pointerPress(button) {
     if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y)) return; // no wheel through the HUD
+        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any tile on the map is a place to plant a flag on (building is the
     // list on T, managing is E beside your own building)
     openFlagWheel();
@@ -480,6 +474,9 @@ function pointerPress(button) {
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // the chart's CLOSE plank; the rest of the slab swallows the press
+  // the hammer plate under the shelf opens and shuts the build list, as the
+  // build key does - never while carrying, when the release is the drop
+  if (!state.drag && buildTabHit(mouse.x, mouse.y)) { toggleBuild(); return; }
   // the build list: a press on a row picks it, a press on the world lays
   // the ghost (a red ghost refuses with the deny cue and nothing else);
   // presses over the rest of the HUD go on to it as ever

@@ -702,8 +702,6 @@ function render() {
   // the drop brief's roost headlines (updateDrop's tour, js/boot.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
   else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
-  // the build list's column under the shelf (its ghost is back in the world pass)
-  if (state.mode === 'play') drawBuildList(now);
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
   // after the chart: a flag wheel opens over it too (pinned to the press point)
@@ -729,6 +727,7 @@ function render() {
   // pointer, last of all so it sits above every overlay
   const cur = cursorInfo();
   applyCursorStyle(cur);
+  if (!window.DBG.hideUI) drawBuildCursor(cur); // the build list's piece, under the pointer's own glyph
   if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI) drawCursor(cur, now);
 }
 
@@ -1221,7 +1220,7 @@ function cursorInfo() {
   const bh = bagHit(mouse.x, mouse.y);
   if (gearHit(mouse.x, mouse.y) >= 0 || (bh && bh.kind !== 'frame')) return { kind: 'hand' };
   if (bh) return { kind: 'arrow' };
-  if (shelfHit(mouse.x, mouse.y)) return { kind: 'hand' };
+  if (shelfHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y)) return { kind: 'hand' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
   if (sh && (sh.kind === 'ab' || sh.kind === 'food')) return { kind: 'hand' };
@@ -1248,11 +1247,12 @@ function cursorInfo() {
   // be laid, and reads as one wherever it is
   if (ckOn() && ck.arm) return ret('amove', false);
   // the build list up: a hand over its rows, the hammer over the world -
-  // dim where the ghost cannot stand
+  // wearing the picked piece (drawBuildCursor, js/ui/wheel.js) wherever a
+  // press would lay it, and dim where the ghost cannot stand
   if (state.build) {
     if (buildListHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
     const g = buildGhostAt();
-    return { kind: 'hammer', dim: !g || !g.can.ok };
+    return { kind: 'hammer', dim: !g || !g.can.ok, piece: g && !overHud(mouse.x, mouse.y) ? g.type : null };
   }
   // one of your own buildings (E manages it) outranks tool hints; beyond the
   // 60px reach it dims - not under CLICK, where the press walks there

@@ -335,8 +335,10 @@ function cornerClaim() { return Math.round(CORNER_CLAIM * hudSc()); }
 // room a panel pinned off the corner has to miss, for a view too NARROW to
 // stand one beside it. This one is measured live off the drawer, because
 // unlike the row's width it does not move with the tool in hand - only with
-// the number of cells carried, which nothing changes today.
-function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h) * hudSc()); }
+// the number of cells carried, which nothing changes today. The build list's
+// hammer plate hangs under the drawer and is always up, so it is inside the
+// reach; the column under it is a gesture, and is not.
+function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h + 2 + BUILD_TAB_H) * hudSc()); }
 // the tool the shelf is showing, or null with the weapon well empty
 function shelfCell() { return player.tools[SHELF_SLOT] || null; }
 // ...and whether the shelf is on screen and answering the pointer at all: the

@@ -14,8 +14,11 @@
 // wears ITS SIDE'S INK on both (mmTeam / chTeam, world.js): at a map's scale
 // a wall and a turret are the same pixel, and whose base it is is the whole
 // read - the type is the sprite's job.
+// `blurb` is what a piece is FOR, one short sentence to a line (a line is
+// split at '. ' and must fit the tooltip's width): the build list's hover
+// (tipStruct, js/ui/tooltip.js) prints it under the numbers.
 const STRUCTS = {
-  wall: { name: 'WALL', mm: mmTeam, map: chTeam, tiers: [
+  wall: { name: 'WALL', blurb: 'NOTHING WALKS THROUGH IT. MOST SHOTS STOP ON IT.', mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 5 },  hp: 60,  buildT: 4   },
     { cost: { gold: 12 }, hp: 140, buildT: 2.4 },
     { cost: { gold: 30 }, hp: 300, buildT: 2.4 },
@@ -25,18 +28,18 @@ const STRUCTS = {
   // `tiled` type: each footprint tile wears the named type's own grid, so it
   // needs no art of its own and nothing has to turn (3/4-view art cannot).
   // Hurt as one, upgraded as one.
-  longwall: { name: 'LONG WALL', w: 2, h: 1, rotates: true, tiled: 'wall', mm: mmTeam, map: chTeam, tiers: [
+  longwall: { name: 'LONG WALL', blurb: 'TWO WALLS IN ONE PIECE, FOR LESS.', w: 2, h: 1, rotates: true, tiled: 'wall', mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 9 },  hp: 120, buildT: 6   },
     { cost: { gold: 22 }, hp: 280, buildT: 3.6 },
     { cost: { gold: 55 }, hp: 600, buildT: 3.6 },
   ]},
   // traverse = rad/s the head swings; aim = seconds held on target before it fires
-  turret: { name: 'TURRET', mm: mmTeam, map: chTeam, tiers: [
+  turret: { name: 'TURRET', blurb: 'SHOOTS THE NEAREST ENEMY IN RANGE. IT FIRES OVER WALLS AND TREES.', mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 10 }, hp: 50,  buildT: 8,   range: 60, dmg: 6,  rate: 1.0,  traverse: 2.2, aim: 0.55 },
     { cost: { gold: 25 }, hp: 90,  buildT: 4.8, range: 76, dmg: 9,  rate: 0.8,  traverse: 3.0, aim: 0.45 },
     { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 92, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35 },
   ]},
-  generator: { name: 'GENERATOR', mm: mmTeam, map: chTeam, tiers: [
+  generator: { name: 'GENERATOR', blurb: 'PAYS YOU GOLD FOR AS LONG AS IT STANDS.', mm: mmTeam, map: chTeam, tiers: [
     // 4 / 6 / 10 gold a minute against the clock's own 15 (TRICKLE_*, js/sim.js):
     // a top generator is two thirds of a second trickle for 82 gold, paid back
     // in eight minutes - an early build, and something worth walking over to wreck
@@ -46,7 +49,7 @@ const STRUCTS = {
   ]},
   // the bot bay is the one big build: a single tier on a 3x2 tile footprint
   // (w/h - see footprint()/findSite()), its three bots rolling out one by one
-  spawner: { name: 'BOT BAY', w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
+  spawner: { name: 'BOT BAY', blurb: 'ROLLS OUT BOTS THAT DIG GOLD FOR YOU. THEY WORK WHERE YOUR FLAG SAYS.', w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 45 }, hp: 220, buildT: 16, bots: 3, botHp: 24 },
   ]},
   // THE BARRACKS: the wave bay each merchant raises in the woods behind its
@@ -69,7 +72,7 @@ const STRUCTS = {
   // never freezes over while it stands (the dawn refreeze), and is not solid
   // (isSolidTile), because walking onto it is how anyone - owner or not -
   // takes the catch out of it.
-  net: { name: 'FISH NET', water: true, mm: mmTeam, map: chTeam, tiers: [
+  net: { name: 'FISH NET', blurb: 'GOES ON AN OPEN ICE HOLE AND FISHES. WHOEVER WALKS ONTO IT TAKES THE CATCH.', water: true, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 8 }, hp: 45, buildT: 5 },
   ]},
 };

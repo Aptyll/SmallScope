@@ -466,25 +466,31 @@ function drawHudScaled(now, slideY) {
     Math.round(bw * s), Math.round(bh * s));
 }
 
-// THE CORNER - the shelf and the drawer under it - at the same HUD SIZE,
-// scaled about the TOP-LEFT corner so the tool cell stays put in it. The
-// same deal as drawHudScaled: at 1x straight to the frame, otherwise a 1x
-// bake blitted with smoothing off. The bake is sized to the widget's reach
-// (CORNER_REACH, the drawer's height) so nothing of it is left behind.
+// THE CORNER - the shelf, the drawer under it, and the hammer plate and build
+// list under that (js/ui/wheel.js) - at the same HUD SIZE, scaled about the
+// TOP-LEFT corner so the tool cell stays put in it. The same deal as
+// drawHudScaled: at 1x straight to the frame, otherwise a 1x bake blitted
+// with smoothing off. The bake is sized to the widget's reach (CORNER_REACH,
+// the list hanging under the open drawer) so nothing of it is left behind.
 const cornerScaleCv = document.createElement('canvas');
 const cornerScaleCtx = cornerScaleCv.getContext('2d');
+function drawCorner(now) {
+  drawShelf(now);
+  drawBag(now);
+  drawBuildTab(now);
+  drawBuildList(now);
+}
 function drawCornerScaled(now, slideX) {
   const s = hudSc();
   if (s === 1) {
     ctx.save();
     ctx.translate(slideX, 0);
-    drawShelf(now);
-    drawBag(now);
+    drawCorner(now);
     ctx.restore();
     return;
   }
   const f = bagFrameRect();
-  const bw = Math.max(CORNER_REACH, f.x + f.w + 4), bh = f.y + f.h + 6;
+  const bw = Math.max(CORNER_REACH, f.x + f.w + 4), bh = Math.max(f.y + f.h + 6, buildFootMax() + 4);
   if (cornerScaleCv.width !== bw || cornerScaleCv.height !== bh) {
     cornerScaleCv.width = bw; cornerScaleCv.height = bh;
     cornerScaleCtx.imageSmoothingEnabled = false;
@@ -492,8 +498,7 @@ function drawCornerScaled(now, slideX) {
   const o = ctx;
   ctx = cornerScaleCtx;
   ctx.clearRect(0, 0, bw, bh);
-  drawShelf(now);
-  drawBag(now);
+  drawCorner(now);
   ctx = o;
   ctx.drawImage(cornerScaleCv, slideX, 0, Math.round(bw * s), Math.round(bh * s));
 }

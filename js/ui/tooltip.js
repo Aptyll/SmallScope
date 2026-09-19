@@ -226,6 +226,31 @@ function tipClassAb(i, cls) {
     : 'SPEND A SKILL POINT TO UNLOCK IT', TIP_DIM]);
   return d;
 }
+// A PIECE on the build list: the numbers a piece is chosen on - the price in
+// the row's own pair of inks, then what it stands up to, how long it takes,
+// and whatever that type alone has - and under them what it is FOR, one line
+// a sentence (STRUCTS[type].blurb). Always the first tier: the one the list lays.
+function tipStruct(type) {
+  const S = STRUCTS[type], t = S.tiers[0];
+  const d = { title: S.name, tcol: '#f4f7ff', kind: 'BUILDING', rows: [], notes: [],
+    icon: buildIcon(type), plate: '#141c3c', rim: '#35426e' };
+  d.rows.push(['COST', (t.cost.gold || 0) + ' GOLD', canAfford(t.cost) ? RES_COLORS.gold : '#e0637a']);
+  d.rows.push(['HEALTH', String(t.hp), '#f4f7ff']);
+  d.rows.push(['BUILDS IN', tipSec(t.buildT), '#f4f7ff']);
+  if (t.dmg) {
+    d.rows.push(['DAMAGE', String(t.dmg), '#e0637a']);
+    d.rows.push(['FIRES EVERY', tipSec(t.rate), '#f4f7ff']);
+    d.rows.push(['RANGE', String(t.range), '#f4f7ff']);
+  }
+  if (t.pay) d.rows.push(['GOLD A MINUTE', String(Math.round(t.pay * 60 / t.period)), RES_COLORS.gold]);
+  if (t.bots) {
+    d.rows.push(['BOTS', String(t.bots), '#f4f7ff']);
+    d.rows.push(['BOT HEALTH', String(t.botHp), '#f4f7ff']);
+  }
+  if (S.water) d.rows.push(['HOLDS', NET_CAP + ' FISH', '#7ac0e8']);
+  for (const s of S.blurb.split('. ')) d.notes.push([s.replace(/\.$/, ''), TIP_DIM]);
+  return d;
+}
 // A KIND on the wiki's ARSENAL page - the one tooltip that is not about
 // something you are holding, so it describes the kind itself and ends on the
 // one thing the page knows about you: whether you have ever held one.
@@ -246,8 +271,9 @@ function tipKind(id) {
 }
 
 // What the pointer is on, asked once per frame. The order mirrors the
-// mousedown handler exactly: gear, then the shelf, then the weapon strip,
-// then the backpack - so the panel and the click always agree.
+// mousedown handler exactly: the build list's rows, gear, then the shelf,
+// then the weapon strip, then the backpack - so the panel and the click
+// always agree.
 function tipAt(mx, my) {
   if (window.DBG.hideUI || !mouse.inside) return null;
   if (state.mode === 'title') {
@@ -280,6 +306,8 @@ function tipAt(mx, my) {
     if (d) d.notes.push(['SHIFT CLICK KEEPS THIS IN HAND', TIP_DIM]);
     return d;
   }
+  const bl = buildListHit(mx, my);
+  if (bl >= 0) return tipStruct(BUILD_ORDER[bl]);
   const gi = gearHit(mx, my);
   if (gi >= 0) return tipGear(gi);
   const rc = railHit(mx, my);
@@ -385,12 +413,12 @@ function drawTooltip() {
   if (d.icon) {
     // the icon on its own tier plate, so the panel opens with the same colour
     // the well the pointer is over is wearing
-    const s = d.icon.width;
+    const iw = d.icon.width, ih = d.icon.height;
     ctx.fillStyle = d.plate || BAG_WELL;
-    ctx.fillRect(tx - 1, cy - 1, s + 2, s + 2);
-    modPlate(d.type, { x: tx - 1, y: cy - 1, w: s + 2, h: s + 2 }, cy - 1);
+    ctx.fillRect(tx - 1, cy - 1, iw + 2, ih + 2);
+    modPlate(d.type, { x: tx - 1, y: cy - 1, w: iw + 2, h: ih + 2 }, cy - 1);
     ctx.drawImage(d.icon, tx, cy);
-    tx += s + 3;
+    tx += iw + 3;
   }
   drawPixelTextShadow(ctx, d.title, tx, cy, d.tcol, '#0a0e23');
   if (d.kind) drawPixelTextShadow(ctx, d.kind, tx, cy + 7, TIP_LABEL, '#0a0e23');
