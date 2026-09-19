@@ -222,7 +222,7 @@ function drawWorkHint(ox, oy) {
 const PAD_BIND = {
   work: ['face', 'X'], dodge: ['face', 'A'], slide: ['trig', 'LT'], click: ['trig', 'RT'],
   ab1: ['face', 'Y'], ab2: ['face', 'B'], ab3: ['bump', 'LB'], ab4: ['bump', 'RB'],
-  berry: ['dpad', 'L'], fish: ['dpad', 'R'], char: ['dpad', 'U'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
+  berry: ['dpad', 'L'], fish: ['dpad', 'R'], char: ['dpad', 'U'], build: ['dpad', 'D'], map: ['pill', 'BACK'], board: ['pill', 'BACK'],
   esc: ['face', 'B'], enter: ['face', 'A'], move: ['stick', 'L'],
 };
 // a filled disc and a 1px ring, in scanlines, so they are pixel art and not
@@ -594,29 +594,109 @@ function renderWheel(now) {
 }
 
 // ---- the build list and its ghost -----------------------------------------
-// T opens a column of every buildable (BUILD_ORDER, structures.js) under
-// the weapon shelf, one row a piece: its icon and its price, the picked row
-// lit, a price you cannot pay in red - and, on a piece that turns, the
-// rotate key's cap. The world under the pointer carries the GHOST: the
-// piece's own art, faint, snapped to the tile grid with its footprint rimmed
-// in the standard bright ink where it can stand and the danger red where it
-// cannot (canPlaceAt - one rule for the colour, the click and the AI), and a
-// dot at every tile corner inside the builder's reach, so the snap and the
-// reach read as one thing without a number. A click lays the ghost and the
-// list stays up for the next piece: a wall is a run, not a piece.
-const BUILD_X = 3;           // the column's left edge: flush with the drawer it replaces (BAG_PAD, declared below - a literal, since this is read at load)
-const BUILD_Y = 64;          // under the shelf
+// THE HAMMER PLATE sits under the weapon shelf the whole match: the build
+// key's cap (or the pad's button) beside the hammer the pointer turns into
+// over the world, so the way in is on screen before anyone asks. T or a click
+// on it opens a column of every buildable (BUILD_ORDER, structures.js)
+// hanging under it, one row a piece: its icon and its price, the picked row
+// lit, a price you cannot pay in red - and, on a piece that turns, the rotate
+// key's cap. The wheel walks the rows, a click picks one, and a hover prints
+// what the piece is for (tipStruct, js/ui/tooltip.js).
+//
+// Plate and column are the CORNER's: laid out in its 1x space, drawn inside
+// drawCornerScaled (js/ui/hud-draw.js) at the HUD SIZE the dial holds, hit
+// tested through cornerMouse, and hung off the drawer's live foot, so an open
+// pack pushes them down rather than being covered by them.
+//
+// The world under the pointer carries the GHOST: the piece's own art, faint,
+// snapped to the tile grid with its footprint rimmed in the standard bright
+// ink where it can stand and the danger red where it cannot (canPlaceAt - one
+// rule for the colour, the click and the AI), and a dot at every tile corner
+// inside the builder's reach, so the snap and the reach read as one thing
+// without a number. The pointer itself wears the picked piece
+// (drawBuildCursor), so the mode is read where the eye is: a press over the
+// world lays, and never fires. A click lays the ghost and the list stays up
+// for the next piece: a wall is a run, not a piece.
+const BUILD_X = 3;           // the column's left edge: flush with the tool cell (SHELF_X, declared below - a literal, since this is read at load)
+const BUILD_TAB_H = 14;      // the hammer plate's height: the cap and the 11-row hammer, a px of air round both
 const BUILD_ROW = 20;        // a row's pitch
 const BUILD_W = 62;          // a row's width: icon, price, the rotate cap
 const BUILD_OK = '#f4f7ff', BUILD_NO = '#ff8a7a'; // the ghost's two answers (the flag's own pair, robots.js)
-function buildRowRect(i) { return { x: BUILD_X, y: BUILD_Y + i * BUILD_ROW, w: BUILD_W, h: BUILD_ROW - 2 }; }
+const BUILD_LIT = '#ffd95c'; // the picked row's rim, the open plate's and the pointer's piece: one gold says "this one"
+// whether the plate is up: the corner's own gate, and never from the roost
+// seat, where the build key answers nothing
+function buildTabUp() { return shelfUp() && !player.aboard; }
+// the corner's live foot in 1x: the drawer's arrow band, or the drawer
+// itself while it is out - measured off the same slide drawBag draws it at
+function cornerFoot() {
+  const t = bagTabRect();
+  let y = t.y + t.h;
+  if (bagEase > 0) {
+    const f = bagFrameRect();
+    y = Math.max(y, f.y + f.h - Math.round((1 - easeOut(bagEase)) * (f.h + 3)));
+  }
+  return y;
+}
+// the key's footprint on the plate: the bound key's cap, or the pad's glyph
+function buildCapW() { return padActive() && PAD_BIND.build ? padBindW('build') : pixelTextWidth(keyCap('build')) + 6; }
+// the plate: under the corner's foot, on the tool cell's own left edge and
+// at least its width, grown for a long key name
+function buildTabRect() {
+  return { x: SHELF_X, y: cornerFoot() + 2, w: Math.max(SHELF_CELL, buildCapW() + 3 + 12 + 8), h: BUILD_TAB_H };
+}
+function buildTabHit(mx, my) {
+  if (!buildTabUp()) return false;
+  ({ x: mx, y: my } = cornerMouse(mx, my));
+  const r = buildTabRect();
+  return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
+}
+function buildRowRect(i) {
+  const t = buildTabRect();
+  return { x: BUILD_X, y: t.y + t.h + 3 + i * BUILD_ROW, w: BUILD_W, h: BUILD_ROW - 2 };
+}
+// the lowest the plate and the column can ever reach - the drawer fully out
+// under them - which is what the corner's bake is sized by
+function buildFootMax() { const f = bagFrameRect(); return f.y + f.h + 2 + BUILD_TAB_H + 3 + BUILD_ORDER.length * BUILD_ROW; }
 function buildListHit(mx, my) {
-  if (!state.build) return -1;
+  if (!state.build || !buildTabUp()) return -1;
+  ({ x: mx, y: my } = cornerMouse(mx, my));
   for (let i = 0; i < BUILD_ORDER.length; i++) {
     const r = buildRowRect(i);
     if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return i;
   }
   return -1;
+}
+// THE ONE WAY THE LIST OPENS AND SHUTS - the build key (keyPress, input.js)
+// and a click on the plate (pointerPress) alike. Not over the map or the
+// slab, not dead, not seated on the roost. Opening it lifts the drawer, so
+// the column hangs straight under the shelf.
+function toggleBuild() {
+  if (state.mapOpen || state.settingsOpen || player.dead || player.aboard) return false;
+  SFX.unlock();
+  if (state.build) state.build = null;
+  else { state.build = { sel: 0, rot: 0 }; state.wheel = null; state.bagOpen = false; }
+  SFX.ui(!!state.build);
+  return true;
+}
+// A PIECE'S ICON as one canvas, cached per paint: its own 16x16 (or the
+// dedicated one a big sprite keeps in `icon`), a tiled piece its tile twice,
+// one over the other. The row, the tooltip's head and the pointer all show
+// this one, so the three can never picture a piece differently.
+const buildIcons = {};
+function buildIcon(type) {
+  const sk = skin(player.team), key = sk + type;
+  if (buildIcons[key]) return buildIcons[key];
+  const S = STRUCTS[type], tb = SPRITES.teamBuild[sk];
+  const art = S.tiled || S.art || type;
+  const spr = (tb.icon && tb.icon[type]) || (tb.icon && tb.icon[art]) || (tb[art] && tb[art][0]);
+  const cv = document.createElement('canvas');
+  cv.width = S.tiled ? 20 : 16; cv.height = 16;
+  if (spr) {
+    const g = cv.getContext('2d'), iw = Math.min(16, spr.width), ih = Math.min(16, spr.height);
+    g.drawImage(spr, 0, 0, iw, ih, 0, 0, iw, ih);
+    if (S.tiled) g.drawImage(spr, 0, 0, iw, ih, 4, 0, iw, ih);
+  }
+  return (buildIcons[key] = cv);
 }
 // what the ghost is right now: the picked piece, turned or not, anchored so
 // its footprint sits centred on the tile under the pointer, and whether it
@@ -641,7 +721,7 @@ function drawBuildGhost(ox, oy, now) {
     if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > BUILD_REACH) continue;
     ctx.fillRect(tx * TILE - ox, ty * TILE - oy, 1, 1);
   }
-  if (!mouse.inside || overHud(mouse.x, mouse.y) || buildListHit(mouse.x, mouse.y) >= 0) return;
+  if (!mouse.inside || overHud(mouse.x, mouse.y)) return; // the plate and the column are HUD (overHud)
   const g = buildGhostAt();
   const col = g.can.ok ? BUILD_OK : BUILD_NO;
   const px = g.tx * TILE - ox, py = g.ty * TILE - oy, fw = g.w * TILE, fh = g.h * TILE;
@@ -657,28 +737,39 @@ function drawBuildGhost(ox, oy, now) {
   rim('rgba(15,22,50,0.9)', px + 1, py + 1, fw, fh);
   rim(col, px, py, fw, fh);
 }
-// the HUD half: the column of rows, in the UI pass
+// The plate, in the corner's 1x space: a well with the shelf's own drop
+// shadow, the key's cap and the hammer. Its states are colour and a pixel:
+// the rim lightens and the hammer lifts under the pointer, the cap drops
+// while the key is held, and the rim goes the picked row's gold while the
+// list is open - the column hangs from a lit plate.
+function drawBuildTab(now) {
+  if (!buildTabUp()) return;
+  const r = buildTabRect(), open = !!state.build;
+  const hot = mouse.inside && buildTabHit(mouse.x, mouse.y);
+  ctx.fillStyle = 'rgba(4,6,18,0.55)';
+  ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
+  ctx.fillStyle = open ? BUILD_LIT : hot ? '#8fa0c8' : '#2c3560';
+  ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = open ? '#141c3c' : BAG_WELL;
+  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  const cw = buildCapW(), cx = r.x + ((r.w - (cw + 3 + 12)) >> 1);
+  if (padActive() && PAD_BIND.build) drawPadBind(ctx, cx, r.y + 2, 'build', 1, keyHeld('build'));
+  else drawKeyCap(ctx, cx, r.y + 2, keyCap('build'), keyHeld('build'), hot ? 1 : 0, now);
+  ctx.drawImage(SPRITES.cursor.hammer, cx + cw + 3, r.y + 2 - (hot ? 1 : 0));
+}
+// The column of rows, in the corner's 1x space under the plate
 function drawBuildList(now) {
   const b = state.build;
-  if (!b || state.mapOpen || state.settingsOpen) return;
-  const tb = SPRITES.teamBuild[skin(player.team)];
+  if (!b || !buildTabUp()) return;
   for (let i = 0; i < BUILD_ORDER.length; i++) {
     const type = BUILD_ORDER[i], S = STRUCTS[type], sel = i === b.sel;
     const r = buildRowRect(i);
     const t0 = S.tiers[0], afford = canAfford(t0.cost);
     ctx.fillStyle = '#0a0e23'; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
     ctx.fillStyle = sel ? '#141c3c' : '#0d1229'; ctx.fillRect(r.x, r.y, r.w, r.h);
-    if (sel) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1); ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h); }
-    // the icon: a type's own 16x16 (or the dedicated one a big sprite keeps
-    // in `icon`); a tiled piece shows its tile twice, one over the other
-    const art = S.tiled || S.art || type;
-    const spr = (tb.icon && tb.icon[type]) || (tb.icon && tb.icon[art]) || (tb[art] && tb[art][0]);
+    if (sel) { ctx.fillStyle = BUILD_LIT; ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1); ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h); }
     ctx.globalAlpha = afford ? 1 : 0.5;
-    if (spr) {
-      const iw = Math.min(16, spr.width), ih = Math.min(16, spr.height);
-      if (S.tiled) { ctx.drawImage(spr, 0, 0, iw, ih, r.x + 1, r.y + 1, iw, ih); ctx.drawImage(spr, 0, 0, iw, ih, r.x + 5, r.y + 1, iw, ih); }
-      else ctx.drawImage(spr, 0, 0, iw, ih, r.x + 2, r.y + 1, iw, ih);
-    }
+    ctx.drawImage(buildIcon(type), r.x + (S.tiled ? 1 : 2), r.y + 1);
     ctx.globalAlpha = 1;
     // the price, in gold's own colour while the purse covers it, red while not
     const cost = '' + (t0.cost.gold || 0);
@@ -686,4 +777,22 @@ function drawBuildList(now) {
     // the piece that turns wears the rotate key's cap on its row while picked
     if (S.rotates && sel) drawKeyCap(ctx, r.x + r.w - 14, r.y + 4, keyCap('rotate'), keyHeld('rotate'), 0, now);
   }
+}
+// THE POINTER WEARS THE PIECE while the list is up and it is over the world
+// (cursorInfo's `piece`): the picked piece's icon on the picked row's gold,
+// tucked under the hotspot where the hammer glyph leaves its corner empty,
+// dim with the hammer where the ghost cannot stand. Drawn under the pixel
+// cursor and beside the browser's own alike, so the mode never depends on
+// which cursor is on.
+function drawBuildCursor(info) {
+  if (!info.piece || !mouse.inside) return;
+  const ic = buildIcon(info.piece);
+  const x = Math.round(mouse.x) + 3, y = Math.round(mouse.y) + 4;
+  const w = ic.width + 4, h = ic.height + 4;
+  ctx.globalAlpha = info.dim ? 0.5 : 0.95;
+  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = BUILD_LIT; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+  ctx.fillStyle = '#141c3c'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+  ctx.drawImage(ic, x + 2, y + 2);
+  ctx.globalAlpha = 1;
 }

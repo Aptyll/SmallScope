@@ -2201,19 +2201,31 @@ and the floater.
 
 ## Base building
 
-**T opens the build list, and the ghost under the pointer is what a click lays.** The list
-(`drawBuildList`, the `build list` group in [js/ui/wheel.js](../../js/ui/wheel.js)) is a column under the weapon
-shelf, one row a piece in `BUILD_ORDER` — wall, long wall, turret, generator, bot bay, fish net —
-each row its icon and its price (gold's colour while the purse covers it, red while not), the
-picked row rimmed gold. The mouse wheel walks the rows (the camera's zoom waits), a click on a row
-picks it, and **R turns a piece that turns**: the picked row wears the rotate key's cap. In the
-world the picked piece rides the pointer as a **ghost** (`drawBuildGhost`, the world pass): its
-own art, faint, snapped to the tile grid with its footprint centred on the tile under the pointer,
-rimmed in the standard bright ink where it can stand and the danger red where it cannot, and a
-**dot at every tile corner inside `BUILD_REACH`** (64 px) of the builder, so the snap and the reach
-read as one thing without a number. A left-click lays the ghost and **the list stays up** for the
-next piece — a wall is a run, not a piece. T again, Escape or the right button put it away; a
-red ghost refuses with the deny cue and nothing else. Rust is the reference.
+**T opens the build list, and the ghost under the pointer is what a click lays.** The way in is
+on screen all match: the **hammer plate** (`drawBuildTab`) under the weapon shelf's drawer
+arrow — the build key's cap (the pad's dpad-down glyph while one is in hand) beside the hammer
+the pointer turns into — and a click on it does what T does (`toggleBuild`, the one toggle both
+call). The list (`drawBuildList`, the `build list` group in
+[js/ui/wheel.js](../../js/ui/wheel.js)) is a column hanging from the plate, one row a piece in
+`BUILD_ORDER` — wall, long wall, turret, generator, bot bay, fish net — each row its icon and its
+price (gold's colour while the purse covers it, red while not), the picked row rimmed gold and
+the plate with it. Plate and column are the **top-left corner's**: drawn in its 1× space at the
+HUD SIZE (`drawCorner`, js/ui/hud-draw.js), hit tested through `cornerMouse`, and hung off the
+drawer's live foot (`cornerFoot`), so an open pack pushes them down rather than covering them.
+The mouse wheel walks the rows (the camera's zoom waits), a click on a row picks it, a **hover on
+a row prints what the piece is for** (`tipStruct`, js/ui/tooltip.js: the price, health, build
+time and the type's own numbers, then its `STRUCTS` `blurb`), and **R turns a piece that turns**:
+the picked row wears the rotate key's cap. In the world the picked piece rides the pointer as a
+**ghost** (`drawBuildGhost`, the world pass): its own art, faint, snapped to the tile grid with
+its footprint centred on the tile under the pointer, rimmed in the standard bright ink where it
+can stand and the danger red where it cannot, and a **dot at every tile corner inside
+`BUILD_REACH`** (64 px) of the builder, so the snap and the reach read as one thing without a
+number. **The pointer wears the piece too** — the hammer cursor with the picked piece's icon on
+the picked row's gold under it (`drawBuildCursor`, dim with the hammer where the ghost cannot
+stand), wherever a press would lay it — so the mode is read where the eye is: a left press over
+the world lays or refuses, and never fires. A left-click lays the ghost and **the list stays up**
+for the next piece — a wall is a run, not a piece. T again, the plate, Escape or the right button
+put it away; a red ghost refuses with the deny cue and nothing else. Rust is the reference.
 
 **One placement rule.** `canPlaceAt(type, tx, ty, rot, p)` (structures.js) is what the ghost's
 colour, the click, the pad's wheel, `findSite` and the AI all ask, so none of them can offer a

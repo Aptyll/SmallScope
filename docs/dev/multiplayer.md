@@ -418,8 +418,8 @@ Structures carry `owner` (player id) and `team`, set by `placeStruct()`. Ownersh
 **team's**: `ownsStruct(o, p)` (`o.team === p.team`, or no team at all) gates upgrades and
 demolition in `runCmd`, and the same team test opens the manage wheel (hold E, or a pad's
 `openWheelNear`) on anything not `fixed`. `cursorInfo()` (js/draw/render.js) shows the hammer in two
-places only: over the world while the T build list is up (dim where the ghost cannot stand), and
-over a building of your side's. The right button builds nothing — it is the flag wheel.
+places only: over the world while the T build list is up (dim where the ghost cannot stand, and
+wearing the picked piece's icon), and over a building of your side's. The right button builds nothing — it is the flag wheel.
 
 Five players per colour means **teammates share it**, so anything that names one player in text
 takes a second axis: `playerTint(p)` returns a per-player shade of that team's palette (`trim`,

@@ -417,10 +417,12 @@ What it must do to get them:
    never advances; miss `idle` and `clipFrame` has nothing to fall back to
    ([the clips](gameplay.md#what-a-beast-is-doing-the-clips)).
 
-**Adding a structure** — add a `STRUCTS` entry (3 tiers) and its row in `BUILD_ORDER` (the
-build list draws the local team's `SPRITES.teamBuild[team][type][0]` or, for a sprite too big to
-be its own 16×16 icon — see the bay, the turret — a dedicated entry in `teamBuild[team].icon`; a
-new row is a new row, no layout to touch) and, unless it is the net's kind, in `STRUCT_ORDER` too
+**Adding a structure** — add a `STRUCTS` entry (3 tiers, and a `blurb` saying what it is for,
+each sentence short enough for one tooltip line) and its row in `BUILD_ORDER` (the build list's
+icon, `buildIcon`, is the local team's `SPRITES.teamBuild[team][type][0]` or, for a sprite too
+big to be its own 16×16 icon — see the bay, the turret — a dedicated entry in
+`teamBuild[team].icon`; a new row is a new row, no layout to touch, and the row's hover prints the
+entry's numbers - a new per-type number is a row in `tipStruct`) and, unless it is the net's kind, in `STRUCT_ORDER` too
 (the pad's wheel sizes itself: a sixth entry is six even wedges). A piece that wears another
 type's tile on every footprint tile (`tiled: 'wall'`, the long wall) needs no grid at all and may
 `rotates`; anything else with art of its own needs a grid baked into the per-team `teamBuild` sets

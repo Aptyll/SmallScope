@@ -196,8 +196,7 @@ itself) → `tipResolve` ([the hover tooltip](#the-hover-tooltip)'s one answer f
 `renderDropUI` (mode `drop` only: the flight bar, keybind indicators) → `drawDropBrief` (mode
 `play`, only while [the drop brief](#the-drop-brief) holds a roost) or `drawHopPrompt` (mode
 `play`, the local player still seated on its roost: the HOP OFF key cap — E, or the pad's A disc
-while one is in hand) → `drawBuildList` (mode `play`: the build list's column under the shelf)
-→ `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
+while one is in hand) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
 the chart, because a flag wheel opens over it) → `renderSettings` → `renderTitle` (the main
 menu, also during the play intro) → `renderReplay` (the replay window: the whole frame on a
 death, the corner on pause — **before** the death overlay, whose countdown and ESC prompt draw
@@ -207,7 +206,8 @@ over it) → the end-of-match overlay (`renderDead`: the death dim and its plank
 see [Scoreboard and event log](#scoreboard-and-event-log)) → the info stack (`drawTags`, left
 edge at the top quarter: FPS / POS / SEED as aligned label-value rows — one ESC-menu toggle or
 F3; only the fps line in `title`) → the screen fade (`state.fade`, the reroll whiteout) → the
-pixel cursor (always last).
+build list's piece under the pointer (`drawBuildCursor`, beside the pixel cursor or the
+browser's own) → the pixel cursor (always last).
 
 Anything that should be occluded by trees goes into `draws` with a sort key; anything flat goes
 in the pre-pass.
@@ -875,9 +875,11 @@ Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
 the same anchor via `stripMouse` first, so a click can never land beside its pixel. **`hudSc()`
 caps the dial** at the size where the strip would outgrow the view, so past that point the
 slider simply stops growing it rather than pushing its ends off the screen. **The top-left corner
-scales with the same dial**: `drawCornerScaled` bakes the shelf and the drawer at 1× and blits
-them about the top-left corner (sized by `CORNER_REACH` and the drawer's height), and `bagHit`
-and `shelfHit` map the pointer back through `cornerMouse`. While the slider's knob is in hand,
+scales with the same dial**: `drawCornerScaled` bakes the shelf, the drawer and the
+[build list](gameplay.md#base-building)'s hammer plate and column under them at 1× (`drawCorner`)
+and blits them about the top-left corner (sized by `CORNER_REACH` and the column's reach under
+the open drawer, `buildFootMax`), and `bagHit`, `shelfHit`, `buildTabHit` and `buildListHit` map
+the pointer back through `cornerMouse`. While the slider's knob is in hand,
 `renderSettings` draws the strip and the corner live over the slab — the minimap slider's
 preview grammar.
 
@@ -1603,7 +1605,7 @@ the very last thing in `render()` (above every overlay and the info stack), so i
 game's pixel grid at every zoom level. `cursorInfo()` resolves the pointer state once per
 frame from `mouse`, `state`, `player` (draw/flounder/roll), and what's under the pointer, and
 both the pixel cursor and the browser-cursor fallback read from it. It returns
-`{ kind, mode, dim, frac, nock, dry, amb }`:
+`{ kind, mode, dim, frac, nock, dry, amb, piece }`:
 
 - `kind` **arrow** — dead (off a plank), paused, map, and anywhere in the title/settings/wheel that isn't
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
@@ -1611,9 +1613,12 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   widget (`gearHit()` / `bagHit()`), a weapon or ability well (`stripHit()`) or a cell of the weapon shelf
   (`shelfHit()` — the strip's gold plate is a readout and stays an arrow, see [The HUD corners](#the-hud-corners)); **grab** — dragging a
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
-  ghost *is* the cursor until it is put down); **hammer** — over a stump or finished structure
-  (right-clickable; `dim` beyond the 60 px reach, except under the CLICK scheme, where the press
-  walks there); **reticle** — everywhere else in play.
+  ghost *is* the cursor until it is put down); **hammer** — over the world while the build list
+  is up (`dim` where the ghost cannot stand, and wearing the picked piece as `piece` wherever a
+  press would lay it — `drawBuildCursor` puts its icon under the hotspot; the hammer plate and
+  the list's rows are a **hand**), or over a finished building of your side's that E manages
+  (`dim` beyond the 60 px reach, except under the CLICK scheme, where the press walks there);
+  **reticle** — everywhere else in play.
 - Reticle `mode` (table `RETICLE`): **idle** white cross; **amove** red ring — the CLICK scheme's
   A is armed and the next left press lays the attack-move
   ([the click scheme](multiplayer.md#the-click-scheme); its rings on the snow are

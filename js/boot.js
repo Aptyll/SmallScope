@@ -1748,6 +1748,9 @@ window.DBG = {
   // the build list and its ghost: the one placement rule, the list's order
   // and reach, what the ghost snaps to right now, and the building E manages
   canPlaceAt, BUILD_ORDER, BUILD_REACH, buildGhostAt, manageNear, placeStruct,
+  // ...and the hammer plate that opens it, the rows under it (1x corner
+  // space - the hit tests take the pointer's own), and the one toggle
+  buildTabRect, buildTabHit, buildRowRect, buildListHit, toggleBuild,
   finishBuild: (o) => { if (o && o.building) o.buildT = o.buildTotal; },
   // z is a world scale; it lands on the nearest pixel-exact rung, as the
   // wheel does. snap skips the ease. setK sets the rung itself.
