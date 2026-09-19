@@ -578,6 +578,11 @@ Code that is dead **on purpose** is the next section.
   human's until an objective rung learns them ([Bots](multiplayer.md#bots)).
 - **The alpha and the dire wolf wear placeholder sprites** (3.20): the wolf's grids washed and,
   for the dire, doubled ([sprites.md](sprites.md)). Each wants its own concept sheet.
+- **The music is the Steam download**: the nine tracks in `audio/music/` are 39 MB of the
+  game's 44 MB, encoded at 184–256 kbps. Re-encoding them to 128 kbps (ffmpeg, `-b:a 128k`,
+  or `-q:a 5` VBR) would cut the music to roughly 26 MB; the code reads the files by name in
+  `TRACKS` (js/audio.js), so a re-encode changes nothing but the bytes. Not a priority: it is
+  Noah's ears that decide, and a first install is mostly Electron's own ~265 MB anyway.
 - **A bot push that stands still mid-map** (seen in 2.63, not since 2.64's blocked-line rule in
   the fight rung, but seed 2 on NORMAL was never re-run): the way in is the harness's per-minute
   rows (own/rival roost distance per player) and `settings.hitbox = 1` on the stalled bots'

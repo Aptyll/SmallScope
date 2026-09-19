@@ -423,7 +423,9 @@ Every step shipped as its own PR and kept solo play identical.
    3.50; the ack-keyed ring - 3.51; Steam's unreliable channel and raw bytes over the bridge - 3.54.
    Walk prediction stays deferred.
 
-Releases: every `v*` tag builds the portable zip (desktop/build.js,
+Releases: every `v*` tag builds the portable zip (desktop/build.js - the page, `js/`, the
+mp3s of `audio/music/` and the wrapper with steamworks.js, nothing else; `npm run steam:stage`
+builds the same package into the SDK's content folder for a steamcmd upload),
 .github/workflows/desktop.yml) and attaches it to a GitHub Release. A Steam tester's account
 must own the app.
 

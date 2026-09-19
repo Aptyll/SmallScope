@@ -13,11 +13,14 @@ const APP = path.join(HERE, 'app');   // the game's files, copied for the packag
 const DIST = path.join(HERE, 'dist');
 const NAME = 'Softfall';
 
-// the game: the page, the code, the audio. Nothing from docs/, app/ or the wrapper's own node_modules
+// the game: the page, the code, the music. Nothing from docs/, app/ or the wrapper's own
+// node_modules, and of audio/ only the streamed tracks - the sample clips are baked into
+// js/sfxdata.js already, and audio/new_sfx_to_use holds clips the game does not play yet
 fs.rmSync(APP, { recursive: true, force: true });
-fs.mkdirSync(APP, { recursive: true });
+fs.mkdirSync(path.join(APP, 'audio'), { recursive: true });
 for (const f of ['index.html', 'LICENSE']) fs.copyFileSync(path.join(ROOT, f), path.join(APP, f));
-for (const d of ['js', 'audio']) fs.cpSync(path.join(ROOT, d), path.join(APP, d), { recursive: true });
+fs.cpSync(path.join(ROOT, 'js'), path.join(APP, 'js'), { recursive: true });
+fs.cpSync(path.join(ROOT, 'audio', 'music'), path.join(APP, 'audio', 'music'), { recursive: true, filter: (src) => fs.statSync(src).isDirectory() || /\.mp3$/i.test(src) });
 
 // main.js loads app/index.html when it is there, ../index.html when run from the repo
 fs.rmSync(DIST, { recursive: true, force: true });
@@ -25,8 +28,11 @@ fs.rmSync(DIST, { recursive: true, force: true });
   const { packager } = require('@electron/packager');
   const [out] = await packager({
     dir: HERE, out: DIST, name: NAME, platform: 'win32', arch: 'x64', overwrite: true, asar: false,
-    // anchored to this folder's own dist/: node_modules/steamworks.js/dist holds the native module and steam_api64.dll
-    ignore: [/^[\\/]dist([\\/]|$)/, /^[\\/]build\.js$/, /^[\\/]package-lock\.json$/],
+    // anchored to this folder's own dist/: node_modules/steamworks.js/dist holds the native module and steam_api64.dll.
+    // app.* catches a stale copy of the game parked beside app/ (app.stale-3.47 once shipped 46 MB);
+    // the type packages are editor-only
+    ignore: [/^[\\/]dist([\\/]|$)/, /^[\\/]app\.[^\\/]+/, /^[\\/]build\.js$/, /^[\\/]package-lock\.json$/,
+      /^[\\/]node_modules[\\/](@types|undici-types)([\\/]|$)/],
     executableName: NAME,
   });
   // Steam's runtime reads the App ID from a file beside the exe
