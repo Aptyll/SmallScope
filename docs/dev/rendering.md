@@ -1688,25 +1688,22 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   a literal in core.js, a file that loads before `MENU_ITEMS`
   exists; the ease tops a missing cell up with `|| 0`, because a short array goes NaN and silently
   deletes a row - add a plank, add a cell. The slab (`MENU_SLAB_PAD` past each side of `MENU_BW`) and
-  pillars (`TITLE_PILLAR_W`, `TITLE_PILLAR_DX`) size themselves to the rects; `menuLayout()` is the single source of rects for hit-testing
+  sizes itself to the rects; `menuLayout()` is the single source of rects for hit-testing
   (`menuHit()`) and drawing. `menu.sel` is the keyboard selection; the mouse only steals it
   when it actually moves (`menu.moved`, set by mousemove), so arrows and hover never fight.
   Up/Down/W/S move, Enter/Space activate, Esc/Backspace close a panel; `menuKey()` and
   `menuClick()` are the only entry points (`keydown`/`mousedown` route there in title mode,
   and `mousedown` re-reads the pointer position from its own event).
-- **Dressing** (the Frozen-Throne-style frame, all procedural, every piece taking its alpha from the
+- **Dressing** (all procedural, every piece taking its alpha from the
   caller so it fades with the chrome): `drawTitleBackdrop` replaces the flat tint with one that
-  weighs on the top/bottom edges plus a corner vignette, leaving the centre clear; `drawPillar`
-  draws the two stone pillars `TITLE_PILLAR_DX` either side of the column (coursed shaft, frost
-  at the base, snow-capped capital, an iron brazier whose flame flickers in the bowl — no
-  circular glow); `drawMenuSlab` is the translucent slab with gilt corner brackets behind the items;
+  weighs on the top/bottom edges plus a corner vignette, leaving the centre clear;
+  `drawMenuSlab` is the translucent slab with gilt corner brackets behind the items;
   `drawGoldRule` the gold rule with diamond finials under the logo (`LOGO_IMG`: the picture
   `docs/media/logos/mainMenuSoftfall.png` keyed and baked to `js/logodata.js` by
   `app/bake-logo.js`, drawn 1:1 at `LOGO_Y` under a cold pulsing glow, the pixel-font word
   standing in only until it decodes; no subtitle) and
-  under the select header; `drawEmbers` the sparks rising off the logo and the braziers. The logo
-  gets a pulsing ember glow behind it and a 1px ice rim along its top edges. Pillars rise from
-  below at boot and sink away with the items on play. `PATCH_TXT` prints bottom-right and the
+  under the select header. Nothing on the title burns: `drawEmbers` lives here for the end
+  screens' braziers (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
   active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Buttons** are procedural frost planks (`drawMenuButton`): chamfered slab with hashed

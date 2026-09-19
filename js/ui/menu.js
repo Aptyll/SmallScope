@@ -48,7 +48,7 @@ LOGO_IMG.src = window.LOGO_PNG || '';
 const LOGO_Y = 8; // printed bottom-right of the title screen; click it for the notes
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.74', 'THE TITLE IS FOUR PLANKS: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
+  ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLANKS, NO PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
   ['3.73', 'THE PIERCING SHOT FLIES TWICE AS FAR AND WEARS EVERY MODIFIER ON YOUR TOOL, AND A FAST SHOT NO LONGER STEPS THROUGH A RABBIT OR A WALL.'],
   ['3.72', 'A LEVEL, A CARD OR A GEAR BUY NOW FLIES YOUR WHOLE STAT SHEET IN UNDER THE MINIMAP WITH THE ROWS IT MOVED LIT AND BLINKING.'],
   ['3.71', 'THE VIDEO PAGE GAINS AN FPS CAP, AND EVERY LINE OF TEXT IS DRAWN ONCE AND STAMPED AFTER THAT: A QUARTER OF THE FRAME BACK.'],
@@ -1063,15 +1063,12 @@ function drawSeedDie(x, y, hv, now) {
 }
 
 // ---- title dressing -------------------------------------------------------
-// The cinematic frame around the menu: a tint that weighs on the edges and
-// leaves the centre clear, two stone pillars with burning braziers flanking
-// the menu column, a frosted slab that gathers the items into one column, a
-// gold rule with diamond finials under the logo, and embers drifting up off
-// the logo and the flames. All of it is procedural - hash2() for the static
-// grain, now for the flicker - and every piece takes its alpha from the
-// caller so it fades with the chrome.
-const TITLE_PILLAR_DX = 118; // pillar centres either side of the (wider) menu column
-const TITLE_PILLAR_W = 16;   // shaft width; sits just outside the slab so the frame scales with the planks
+// The frame around the menu: a tint that weighs on the edges and leaves the
+// centre clear, a frosted slab that gathers the items into one column, and a
+// gold rule with diamond finials under the logo. All of it is procedural -
+// hash2() for the static grain - and every piece takes its alpha from the
+// caller so it fades with the chrome. (drawEmbers below is the end screens'
+// brazier sparks, js/ui/screens.js; the title burns nothing.)
 
 function drawTitleBackdrop(tintA) {
   ctx.fillStyle = 'rgba(10,16,42,' + tintA.toFixed(3) + ')';
@@ -1106,57 +1103,6 @@ function drawGoldRule(cx, y, half, a, pal) {
   for (const ex of [cx - half, cx + half]) { dia(ex, 2, '#0a0e23'); dia(ex, 1, P.gem); }
   dia(cx, 3, '#0a0e23'); dia(cx, 2, P.bar);
   ctx.fillStyle = P.spark; ctx.fillRect(cx, y, 1, 1);
-}
-
-// a stone pillar: plinth, coursed shaft with a lit left edge and frost creeping
-// up from the base, a snow-capped capital and an iron brazier whose flame
-// flickers in place - the bowl and the embers are the whole tell, no halo
-function drawPillar(cx, top, bot, now, a) {
-  const w = TITLE_PILLAR_W, x = cx - (w >> 1), shaftTop = top + 7, shaftH = bot - shaftTop - 4;
-  ctx.globalAlpha = a;
-  ctx.fillStyle = 'rgba(4,6,18,0.45)'; ctx.fillRect(x + 3, shaftTop + 2, w + 2, shaftH + 2);
-  // shaft
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x - 1, shaftTop - 1, w + 2, shaftH + 2);
-  ctx.fillStyle = '#222c52'; ctx.fillRect(x, shaftTop, w, shaftH);
-  ctx.fillStyle = '#3a4878'; ctx.fillRect(x, shaftTop, 2, shaftH);
-  ctx.fillStyle = '#161d3c'; ctx.fillRect(x + w - 2, shaftTop, 2, shaftH);
-  for (let y = shaftTop + 8; y < bot - 6; y += 9) {
-    ctx.fillStyle = '#121834'; ctx.fillRect(x, y, w, 1);
-    const hb = hash2(y, cx);
-    ctx.fillRect(x + 3 + ((hb * 8) | 0), y - 8, 1, 8); // a vertical joint in the course above
-  }
-  for (let y = shaftTop + 1; y < bot - 5; y++) {
-    for (let xx = 1; xx < w - 1; xx++) {
-      const hb = hash2(xx * 5 + y * 3, cx + 11);
-      const frost = (bot - y) < 20 && hb > 0.86 - (20 - (bot - y)) * 0.014;
-      if (frost) { ctx.fillStyle = hb > 0.9 ? '#f4f7ff' : '#b8cce6'; ctx.fillRect(x + xx, y, 1, 1); }
-      else if (hb < 0.035) { ctx.fillStyle = '#2e3a6a'; ctx.fillRect(x + xx, y, 1, 1); }
-    }
-  }
-  // plinth
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x - 3, bot - 5, w + 6, 5);
-  ctx.fillStyle = '#2a3560'; ctx.fillRect(x - 2, bot - 4, w + 4, 3);
-  ctx.fillStyle = '#4a5a90'; ctx.fillRect(x - 2, bot - 4, w + 4, 1);
-  ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x - 2, bot - 5, 4, 1); ctx.fillRect(x + w - 4, bot - 5, 6, 1);
-  // capital: a snow-capped ledge under the bowl
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x - 3, top + 3, w + 6, 4);
-  ctx.fillStyle = '#2a3560'; ctx.fillRect(x - 2, top + 5, w + 4, 1);
-  ctx.fillStyle = '#f4f7ff'; ctx.fillRect(x - 2, top + 3, w + 4, 2);
-  ctx.fillStyle = '#b8cce6'; ctx.fillRect(x - 2, top + 4, w + 4, 1);
-  // iron brazier
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x + 1, top - 2, w - 2, 6); ctx.fillRect(x + 3, top - 3, w - 6, 1);
-  ctx.fillStyle = '#3a2a22'; ctx.fillRect(x + 2, top - 1, w - 4, 3);
-  ctx.fillStyle = '#5a4434'; ctx.fillRect(x + 2, top - 1, w - 4, 1);
-  ctx.fillStyle = '#ff8a3c'; ctx.fillRect(x + 4, top - 2, w - 8, 1); // coals showing over the rim
-  // the flame: a wobbling stack of ember rows
-  const fl = now * 11 + cx;
-  const hgt = 5 + Math.round(Math.sin(fl) + Math.sin(fl * 0.37) * 0.8);
-  const rows = [[6, '#ffe37a'], [6, '#ffd95c'], [4, '#ffb347'], [4, '#ff8a3c'], [2, '#ff6a30'], [2, '#ff4a28'], [1, '#ff4a28']];
-  for (let i = 0; i < Math.min(rows.length, hgt); i++) {
-    const [ww, c] = rows[i];
-    const dx = i > 2 ? Math.round(Math.sin(fl * 1.3 + i * 1.7)) : 0;
-    ctx.fillStyle = c; ctx.fillRect(cx - (ww >> 1) + dx, top - 3 - i, ww, 1);
-  }
 }
 
 // n embers rising from (ox, oy) across spread px, each on its own loop
@@ -3448,18 +3394,11 @@ function renderTitle(now) {
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
 
-  // the frame: pillars rise from below at boot and sink away on play; the
-  // slab behind the column fades with the items
+  // the frame: the slab behind the column fades with the items
   const frameIn = easeOut((m.t - 0.1) / 0.6);
   const frameA = frameIn * chromeA;
-  const sink = Math.round((1 - frameIn) * 30 + out * 25);
   if (frameA > 0.005) {
     const last = rects[rects.length - 1];
-    const ptop = rects[0].y - 22 + sink, pbot = last.y + last.h + 14 + sink;
-    drawPillar(cx - TITLE_PILLAR_DX, ptop, pbot, now, frameA);
-    drawPillar(cx + TITLE_PILLAR_DX, ptop, pbot, now, frameA);
-    drawEmbers(now, frameA * 0.9, cx - TITLE_PILLAR_DX, ptop - 6, 8, 6, 17);
-    drawEmbers(now, frameA * 0.9, cx + TITLE_PILLAR_DX, ptop - 6, 8, 6, 43);
     const slabIn = easeOut((m.t - 0.2) / 0.45);
     const slabW = MENU_BW + MENU_SLAB_PAD * 2;
     drawMenuSlab(cx - (slabW >> 1), rects[0].y - 14 + Math.round(out * 25), slabW, last.y + last.h + 8 - rects[0].y + 14, slabIn * chromeA);
@@ -3489,7 +3428,6 @@ function renderTitle(now) {
   if (logoOk) ctx.drawImage(LOGO_IMG, lx, ly);
   else drawPixelTextShadow(ctx, 'SOFTFALL', lx, ly, '#ffd95c', '#3c2a1e', 4); // the word, until the picture decodes
   drawGoldRule(cx, ly + lh + 4, Math.round(lw / 2) - 20, logoA);
-  drawEmbers(now, logoA * 0.85, cx, ly + lh - 8, lw, 22, 5);
   ctx.globalAlpha = 1;
 
   // items: stagger in from the left, sink away on play, fade under a panel
