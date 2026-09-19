@@ -1064,8 +1064,8 @@ function drawSeedDie(x, y, hv, now) {
 
 // ---- title dressing -------------------------------------------------------
 // The frame around the menu: a tint that weighs on the edges and leaves the
-// centre clear, a frosted slab that gathers the items into one column, and a
-// gold rule with diamond finials under the logo. All of it is procedural -
+// centre clear, and a frosted slab that gathers the items into one column
+// (drawGoldRule is the wiki's and the end screens'). All of it is procedural -
 // hash2() for the static grain - and every piece takes its alpha from the
 // caller so it fades with the chrome. (drawEmbers below is the end screens'
 // brazier sparks, js/ui/screens.js; the title burns nothing.)
@@ -3407,8 +3407,7 @@ function renderTitle(now) {
 
   // logo: drops in at boot, lifts away on play
   const logoIn = easeOut(m.t / 0.6);
-  const bob = Math.sin(now * 1.5) * 2;
-  const ly = Math.round(toy + LOGO_Y + bob - (1 - logoIn) * 30 - out * 40);
+  const ly = Math.round(toy + LOGO_Y - (1 - logoIn) * 30 - out * 40); // still at rest: no bob
   const logoA = logoIn * (1 - out) * (1 - pan) * (1 - sc);
   const logoOk = LOGO_IMG.complete && LOGO_IMG.naturalWidth > 0;
   const lw = logoOk ? LOGO_IMG.naturalWidth : pixelTextWidth('SOFTFALL', 4);
@@ -3427,7 +3426,6 @@ function renderTitle(now) {
   ctx.globalAlpha = logoA;
   if (logoOk) ctx.drawImage(LOGO_IMG, lx, ly);
   else drawPixelTextShadow(ctx, 'SOFTFALL', lx, ly, '#ffd95c', '#3c2a1e', 4); // the word, until the picture decodes
-  drawGoldRule(cx, ly + lh + 4, Math.round(lw / 2) - 20, logoA);
   ctx.globalAlpha = 1;
 
   // items: stagger in from the left, sink away on play, fade under a panel

@@ -1697,13 +1697,12 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 - **Dressing** (all procedural, every piece taking its alpha from the
   caller so it fades with the chrome): `drawTitleBackdrop` replaces the flat tint with one that
   weighs on the top/bottom edges plus a corner vignette, leaving the centre clear;
-  `drawMenuSlab` is the translucent slab with gilt corner brackets behind the items;
-  `drawGoldRule` the gold rule with diamond finials under the logo (`LOGO_IMG`: the picture
-  `docs/media/logos/mainMenuSoftfall.png` keyed and baked to `js/logodata.js` by
-  `app/bake-logo.js`, drawn 1:1 at `LOGO_Y` under a cold pulsing glow, the pixel-font word
-  standing in only until it decodes; no subtitle) and
-  under the select header. Nothing on the title burns: `drawEmbers` lives here for the end
-  screens' braziers (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
+  `drawMenuSlab` is the translucent slab with gilt corner brackets behind the items; the
+  logo is `LOGO_IMG` (the picture `docs/media/logos/mainMenuSoftfall.png` keyed and baked to
+  `js/logodata.js` by `app/bake-logo.js`), drawn 1:1 at `LOGO_Y` under a cold pulsing glow,
+  still at rest, with no rule and no subtitle, the pixel-font word standing in only until it
+  decodes. Nothing on the title burns and nothing is ruled: `drawEmbers` and `drawGoldRule` live
+  here for the wiki's header and the end screens (js/ui/screens.js). `PATCH_TXT` prints bottom-right and the
   active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Buttons** are procedural frost planks (`drawMenuButton`): chamfered slab with hashed
