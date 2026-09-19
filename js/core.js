@@ -154,7 +154,7 @@ const state = {
     // keyboard row, ksel the roster's keyboard slot, khover the hover eases
     // keyed by hit id
     charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameSel: false, nameShake: 0, dieT: 0, crow: 0, ksel: 0, khover: {},
-    moved: false, dieT: 0, rolling: 0, camT: 0, pressT: 0,
+    moved: false, keyNav: false, dieT: 0, rolling: 0, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
     // a sealed plank's knock (drawMenuButton's frozen glaze cracks from
     // iceX/iceY while iceT runs, on the plank iceI names); nothing sets them
     // today - the title's items are all live - but a client's lobby still

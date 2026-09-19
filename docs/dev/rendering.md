@@ -1690,8 +1690,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   active character bottom-left (`drawCharTag`, js/ui/chars.js); both are click targets, and both ride the footer's
   fade so a panel hides them.
 - **Items** are plain words in the pixel font at `MENU_TXT_SCALE` with a dark rim (`drawPixelTextOutline`): white,
-  the selected one gold and lifted a px (`menu.hover[i]` eases 0→1 toward it), a press
-  (`menu.pressT`) sinking it a px; that is the whole selection cue. No plank, slab or frame — the
+  and gold and lifted a px only under the pointer, or as the keys' pick until the pointer next
+  moves (`menu.keyNav`; `menu.hover[i]` eases 0→1 toward it), a press (`menu.pressT`) sinking
+  it a px; at rest nothing is lit. No plank, slab or frame — the
   **frost plank** (`drawMenuButton`: chamfered slab with hashed wood-grain, a snow cap, icicles,
   corner rivets, a gold rule when hot, and a sealed ice glaze with a cold shimmer when `frozen`)
   is drawn by class select's PLAY, the rooms screen, the notes' WIKI, the end screens and the

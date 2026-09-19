@@ -537,10 +537,14 @@ function menuHit() {
   return -1;
 }
 
+// the keys' (or the pad's) pick: it lights the word, and stays lit until the
+// pointer moves again (keyNav) - at rest, and under a pointer that is off
+// every word, nothing is lit
 function menuSelect(i) {
   const m = state.menu;
   const N = MENU_ITEMS.length;
   const n = ((i % N) + N) % N;
+  m.keyNav = true;
   if (n === m.sel) return;
   m.sel = n;
   SFX.pickup();
@@ -726,6 +730,7 @@ function updateTitle(dt) {
   // the mouse only takes the selection when it moves (so arrows aren't fought)
   if (m.moved) {
     m.moved = false;
+    m.keyNav = false;
     const h = menuHit();
     if (h >= 0 && h !== m.sel) m.sel = h;
   }
@@ -735,8 +740,10 @@ function updateTitle(dt) {
   else if (m.screen === 'create') updateCreate(dt);
   m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'rooms') updateRooms(dt);
+  // a word lights under the pointer, or as the keys' pick until the pointer moves
+  const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
   for (let i = 0; i < MENU_ITEMS.length; i++) {
-    const target = m.sel === i ? 1 : 0;
+    const target = hit === i || (m.keyNav && m.sel === i) ? 1 : 0;
     // `|| 0` because the array's length is a literal in core.js: a missing
     // cell would go NaN here and take its whole row off the screen
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
