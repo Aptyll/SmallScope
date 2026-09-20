@@ -123,6 +123,11 @@ docs/media/montage3/_raw/
 docs/media/montage3/_report.json
 docs/media/montage*/tools/shots/
 
+# The store art is kept (Steamworks wants the files); what makes it is not
+docs/media/steam/tools/raw/
+docs/media/steam/tools/shots/
+docs/media/steam/tools/logo-full.png
+
 # The wrapper's installed packages (desktop/package.json is the list)
 desktop/node_modules/
 desktop/app/
