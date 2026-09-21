@@ -2393,10 +2393,10 @@ function wreckTargetFace(size, lv) {
   const k = size / 32, cc = size / 2 - 0.5;
   const put = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
   const px = (fx, fy) => [Math.round(cc + fx * k), Math.round(cc + fy * k)];
-  // punctures: a dark hole with a torn lip, more and bigger the harder
+  // punctures: a dark hole with a torn lip, a few more and bigger the harder
   const holes = lv === 1
-    ? [[-6, -3, 1], [4, 5, 1], [-2, 8, 1], [7, -6, 1], [1, -1, 1]]
-    : [[-6, -3, 2], [4, 5, 2], [-2, 8, 1], [7, -6, 2], [1, -1, 2], [-9, 4, 1], [9, 2, 1], [-4, -9, 1], [3, -10, 1], [-1, 3, 1], [6, -1, 1], [-7, 9, 1], [10, -9, 1], [-11, -6, 1]];
+    ? [[-6, -3, 1], [4, 5, 1], [7, -6, 1]]
+    : [[-6, -3, 1], [4, 5, 2], [7, -6, 1], [-8, 7, 1], [1, -1, 1]];
   for (const [fx, fy, r] of holes) {
     const [hx, hy] = px(fx, fy);
     const rr = Math.max(1, Math.round(r * k * 0.7));
@@ -2405,32 +2405,32 @@ function wreckTargetFace(size, lv) {
     g.fillStyle = '#241a12';
     for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) if (dx * dx + dy * dy <= rr * rr) g.fillRect(hx + dx, hy + dy, 1, 1);
   }
-  // cracks: jagged dark lines walking out from a hole across the batt
-  const cracks = lv === 1 ? [[-6, -3, -2.6, 7]] : [[-6, -3, -2.6, 9], [4, 5, 0.9, 8], [1, -1, 2.4, 7], [7, -6, -0.6, 6]];
-  for (const [fx, fy, an, len] of cracks) {
+  // cracks: jagged dark lines walking across the batt, [x, y, bearing,
+  // length, width] in a 32 px face's units - a wide one is a split, a
+  // narrow one a hairline; HARD has one off a hole, IMPOSSIBLE is crazed
+  // through, with one great split top to bottom through the bullseye and
+  // branches running off it and off the rim
+  const crack = (fx, fy, an, len, w) => {
     let [x, y] = px(fx, fy);
     let a = an;
     for (let i = 0; i < len * k; i++) {
       x += Math.cos(a) * 0.9; y += Math.sin(a) * 0.9;
-      a += (hash2(i * 7 + fx * 3, fy * 5 + 1) - 0.5) * 0.9;
-      put(Math.round(x), Math.round(y), i % 3 === 0 ? '#241a12' : '#3a2c1c');
+      a += (hash2(i * 7 + fx * 3, fy * 5 + 1) - 0.5) * (w > 1 ? 0.5 : 0.9);
+      const rx = Math.round(x), ry = Math.round(y);
+      put(rx, ry, i % 3 === 0 ? '#241a12' : '#3a2c1c');
+      if (w > 1) put(rx + 1, ry, '#3a2c1c');
+      if (w > 2) put(rx - 1, ry, '#241a12');
     }
-  }
-  if (lv >= 2) {
-    // a bite out of the rim, lower right: the frame and the batt torn away
-    // to the sky, a ragged edge of splinters and loose straw around it
-    const bx = cc + 9.5 * k, by = cc + 8.5 * k, br = 6.2 * k;
-    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-      const d = Math.hypot(x - bx, y - by) + (hash2(x * 3 + 7, y * 5 + 2) - 0.5) * 1.6 * k;
-      if (d < br) g.clearRect(x, y, 1, 1);
-      else if (d < br + 1.2 * k) put(x, y, hash2(x, y * 3) > 0.5 ? '#241a12' : '#c9b078');
-    }
-    // the batt split top to bottom off the bullseye, a wide dark seam
-    let sx = cc - 1.5 * k;
-    for (let y = Math.round(cc - 12 * k); y < cc + 3 * k; y++) {
-      sx += (hash2(y * 11 + 3, 17) - 0.5) * 0.8;
-      put(Math.round(sx), y, '#241a12'); put(Math.round(sx) + 1, y, '#3a2c1c');
-    }
+  };
+  if (lv === 1) crack(-6, -3, -2.6, 7, 1);
+  else {
+    crack(-1, -14.5, 1.62, 29, 3);                      // the great split, top to bottom through the bullseye
+    crack(-1, -9, 0.3, 8, 1); crack(0, -4, -0.9, 7, 1); // branches off it
+    crack(0, 2, 2.9, 9, 2); crack(0, 6, 0.5, 8, 1);
+    crack(1, 9, -0.4, 6, 1); crack(-1, 11, 2.5, 5, 1);
+    crack(-12, -6, 0.2, 7, 1); crack(12, 4, 3.4, 8, 1); // hairlines in from the rim
+    crack(-9, 8, -0.7, 6, 1); crack(8, -10, 2.2, 6, 1);
+    crack(4, 5, 0.9, 5, 1); crack(-6, -3, -2.6, 5, 1);  // off the holes
   }
   return cv;
 }

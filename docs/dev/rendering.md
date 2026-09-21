@@ -1752,9 +1752,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   (`drawLobbyTarget`: the practice range's own archery face, `bakeTargetFace` from
   js/draw/practice.js with `bare` set so the rim carries no snow — straw batt, wooden frame, red
   ring, cream, red bullseye) is **worn by the level** (`wreckTargetFace`, baked once per size and
-  level, every mark laid out in a 32 px face's pixels and scaled): whole on NORMAL, shot through
-  and cracked on HARD, wrecked on IMPOSSIBLE — a bite out of the rim to the sky, the batt split
-  off the bullseye, punctures everywhere. Whenever the level it shows changes (`menu.tgtLv`) the
+  level, every mark laid out in a 32 px face's pixels and scaled): whole on NORMAL, a few
+  punctures and one crack on HARD, crazed through on IMPOSSIBLE — one great split top to bottom
+  through the bullseye with branches off it, hairlines in from the rim, a few more punctures.
+  Whenever the level it shows changes (`menu.tgtLv`) the
   face swaps and the target jolts for a moment (`menu.tgtT`). In a
   room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
   `'solo'`) and a guest's target is too. The **stage** under them
