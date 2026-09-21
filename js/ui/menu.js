@@ -684,6 +684,11 @@ function beginIntro() {
 // deterministic value closes over, so a new world is a new page). It lands
 // back on the lobby (softfall.select, read by js/boot.js), so a
 // roll is one press and not a walk.
+// A page that lands back on the lobby (the die here, pickMap) fades through
+// the lobby's own night (LOBBY_NIGHT, the sky at its darkest), never white:
+// the screen goes dark and comes back up on itself, and js/boot.js clears
+// from the same colour. White is the reroll's from anywhere else.
+const LOBBY_NIGHT = '#04060f';
 function rerollWorld() {
   const m = state.menu;
   if (state.fade) return;
@@ -692,7 +697,7 @@ function rerollWorld() {
   SFX.music.stop(0.45);
   const next = rollSeed();
   state.fade = {
-    a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
+    a: 0, to: 1, spd: 1 / 0.55, color: LOBBY_NIGHT,
     then: () => {
       try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); } catch (e) { }
       location.href = location.pathname + '?seed=' + next + '&map=' + MAP_TYPE;
@@ -2889,7 +2894,7 @@ function pickMap(k) {
   SFX.dodge();
   SFX.music.stop(0.45);
   state.fade = {
-    a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
+    a: 0, to: 1, spd: 1 / 0.55, color: LOBBY_NIGHT,
     then: () => {
       try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); } catch (e) { }
       location.href = location.pathname + '?seed=' + SEED + '&map=' + k;

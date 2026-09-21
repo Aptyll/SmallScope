@@ -1700,7 +1700,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 - **Die** (`drawSeedDie` — named apart from the create screen's `drawDie`, js/ui/chars.js,
   a later file whose declaration would take a same-named one): shows `1 + (SEED % 6)` (faces
   1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on
-  the seed row of the [lobby](#lobby)'s map pop-up. Activating it (`rerollWorld`) starts a whiteout via
+  the seed row of the [lobby](#lobby)'s map pop-up. Activating it (`rerollWorld`) starts a fade (the lobby's night there) via
   `state.fade` (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info
   stack) and then navigates to `?seed=<new>&map=<this shape>` — `SEED` is a const everything
   closes over, so a new world is a new page. Boot checks `sessionStorage['softfall.reroll']` and
@@ -1779,11 +1779,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   a click or Left/Right is `mapStep(±1)`: the picture slides toward the pressed chevron with the
   neighbouring shape's coming in behind it (`menu.mapSlide = {d, k, t}`, clipped to the plate,
   the name already the new one, the lobby's small plate sliding the same way under the slab)
-  while `pickMap` runs its whiteout — a pick is a page: it saves `settings.mapType` and loads
+  while `pickMap` runs its fade to the night — a pick is a page: it saves `settings.mapType` and loads
   `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so js/boot.js
   lands straight back on the lobby — the shape's name under it in white, and the **seed row**
   under that (`SEED_TXT` and the [die](#main-menu-title), gold under the hand; a click is
-  `rerollWorld`). The keyboard walks two rows (`menu.mrow`: the picture, then the seed —
+  `rerollWorld`). Both pages fade through the lobby's own night (`LOBBY_NIGHT`, the sky's
+  darkest) and js/boot.js clears from it, so a pick or a roll never flashes white over this
+  screen — white is the reroll's from anywhere else. The keyboard walks two rows (`menu.mrow`: the picture, then the seed —
   Up/Down; the lit row stands in for the hand while the pointer is off the view), Enter on the
   seed rolls, Enter on the picture closes. The **AI pop-up** (`menu.screen = 'ai'`, off the
   target, host or solo — `beginAiPick`, `aiLayout`/`aiScreenHit`, `renderAiPick`): the target

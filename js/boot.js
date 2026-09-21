@@ -1449,10 +1449,13 @@ try {
   // ...and from a MAP PICK, which is the same page on the same seed in a new
   // shape (pickMap, js/ui/menu.js): it clears onto the screen it was made on,
   // so picking a shape is one press and not a walk back through the menu
+  // (through the lobby's own night, not the white: the screen went dark on
+  // itself and comes back up on itself)
   if (sessionStorage.getItem('softfall.select')) {
     sessionStorage.removeItem('softfall.select');
     if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
       beginLobby(); state.menu.screenT = 1;
+      if (state.fade) state.fade.color = LOBBY_NIGHT;
     }
   }
 } catch (e) { }
