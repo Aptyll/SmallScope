@@ -1744,8 +1744,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   **target**, each `LOBBY_MAP` square with its name under it in plain white — the shape's, the
   level's — gold only while the picture over it is under the hand, when the plate lifts a px:
   each is the way into its own pop-up. The map plate (`drawMapPlate`) holds this seed's own
-  valley in the picked shape ([map shapes](world.md#map-shapes)) — `mapChip` bakes it straight
-  off `mapTerrain` at 1 px a sampled tile with the road's diagonal inked over it. The target
+  valley in the picked shape ([map shapes](world.md#map-shapes)) — `mapChip` bakes it at 1 px a
+  sampled tile straight off the grown `ground` (the ice sheets and holes as rolled, the road as
+  cut; a neighbouring shape, which has no ground yet, off `mapTerrain` with the road's diagonal
+  inked over it) and stamps the camps' glyphs over it (`drawCampIcon` at every `campSites()`
+  tile, inked as the chart inks them). The target
   (`drawLobbyTarget`, `pxDisc` rings in white and the rivals' paint scaled off its width) wears
   `level + 1` arrows — at the rim on NORMAL, the inner ring on HARD, the bullseye on IMPOSSIBLE
   (`TGT_R`, fractions of the disc, and `TGT_ANG`) — which fly in from the upper left over
@@ -1755,9 +1758,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   holds **your character** alone (`drawLobbyStage`): the 48 px model (`SPRITES.portrait`,
   [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at `LOBBY_MODEL` (3×, the create
   screen's size) in your side's paint under a warm pool of light with a gold ring turning on the
-  snow, the class weapon's own tool art at the hand, and **no name and no class under it** — the
-  roster frame carries the name and the figure is the class. A bare **chevron either side of the
-  figure** (`drawChevron`, white, gold and nudged outward under the hand (`menu.chover`), drawn
+  snow, and **no weapon, no name and no class under it** — the roster frame carries the name and
+  the figure is the class. A bare **chevron either side of the figure, in close by its shoulders**
+  (`drawChevron`, white, gold and nudged outward under the hand (`menu.chover`), drawn
   only when the profile holds more than one character) or Up/Down is `lobbyStep(±1)`: it makes
   the neighbouring character active — `activateChar` → `applyCharacter`, so the stage, the kit
   and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;

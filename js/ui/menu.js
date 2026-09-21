@@ -38,7 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - AND EVERY ROLLED SEED IS THREE DIGITS.'],
+  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - THE MAP SHOWS THE ICE AND THE CAMPS, THE FIGURE STANDS UNARMED WITH ITS CHEVRONS IN CLOSE, AND EVERY ROLLED SEED IS THREE DIGITS.'],
   ['3.76', 'THE STEAM BUILD PACKS ONLY WHAT THE GAME PLAYS: THE MUSIC AND THE CODE, NO SAMPLE CLIPS, NO STALE COPY, NO TYPE PACKAGES.'],
   ['3.75', 'CLASS SELECT IS A LEAGUE LOBBY: TEAM PANELS GLUED TO BOTH EDGES, THE MAP LARGE AT THE TOP WITH CHEVRONS THAT SLIDE TO THE NEXT SHAPE AND THE SEED UNDER IT, THREE DIFFICULTY PLATES WITH A TARGET WHOSE ARROWS LAND NEARER THE BULLSEYE THE HARDER THE RIVALS, AND LOCK IN AT THE FOOT THAT BURSTS A RING, DIMS THE TABS AND WEARS THE COUNT.'],
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -1264,7 +1264,7 @@ function lobbyLayout() {
   const body = { x: cx - (bs >> 1), y: loadout.y - 6 - 46 * LOBBY_MODEL, w: bs, h: bs }; // its feet (46 rows down) 6 px over the gear row
   // a chevron either side of the figure swaps to the neighbouring character
   const cy = body.y + 46 * LOBBY_MODEL - 60;
-  const chars = [{ x: body.x - 26, y: cy, w: 12, h: 18, d: -1 }, { x: body.x + body.w + 14, y: cy, w: 12, h: 18, d: 1 }]; // clear of the weapon at the right hand
+  const chars = [{ x: body.x + 4, y: cy, w: 12, h: 18, d: -1 }, { x: body.x + body.w - 16, y: cy, w: 12, h: 18, d: 1 }]; // in close by the shoulders
   return { cx, play, body, loadout, chars, cards, tgt, mapc, mapName, tgtName };
 }
 
@@ -2232,10 +2232,10 @@ function classIcon12(i, you) {
 // active one gold and walking, the others dim and warm under the hand
 // The stage: your character alone in full glory - the 48 px model at
 // LOBBY_MODEL (3x, the create screen's size) inside a warm pool of light
-// with a gold ring turning on the snow, the class weapon's own art at the
-// hand, a chevron either side to swap to the neighbouring character (drawn
-// only when there is one). No name and no class: the roster frame carries
-// the name, and the figure is the class. It wears your side's paint, like
+// with a gold ring turning on the snow, a chevron either side to swap to the
+// neighbouring character (drawn only when there is one). No weapon, no name
+// and no class: the roster frame carries the name, and the figure is the
+// class. It wears your side's paint, like
 // that frame. sw is the swap-pop ease; a lock-in bursts a second ring out
 // from the feet (lockFx) and the light stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
@@ -2277,10 +2277,6 @@ function drawLobbyStage(now, a, sw) {
   const bob = Math.round(Math.sin(now * 1.6));
   ctx.globalAlpha = a;
   ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team)), body.x, body.y + rise + bob, body.w, body.h);
-  // the weapon at the hand: the class tool's own art, big enough to read
-  const L = CLASS_LOADOUT[player.cls] || CLASS_LOADOUT[0];
-  const im = SPRITES[ITEMS[toolType(L.tool)].icon];
-  ctx.drawImage(im, cx + 15 * S, body.y + 25 * S + rise + Math.round(Math.sin(now * 2.2) * 2), 12 * S, 12 * S);
   // the character chevrons: gold under the hand, dim while the pick is locked
   if (PROFILE.chars().length > 1) {
     const counting = m.countT > 0 || m.lockT > 0;
@@ -2843,12 +2839,16 @@ function renderMapPick(now, a) {
 // hello whose shape is not the host's, exactly as it refuses a seed).
 const mapChipCv = [];       // one bake per shape per size, lazily
 
-// This seed's valley in shape k, as a size x size picture: mapTerrain per
-// sampled tile, the road's diagonal inked over it. The same rule genWorld
-// plants from, so the chip is the map and not a drawing of one - what it
-// cannot show is the trails, which are searched over the grown world and
-// not a function of position (layTrails, world.js).
-const MAPC_COL = ['#e7eff8', '#b9dcec', '#3d6b4a', '#c5b7a0']; // snow, ice, wood, the road
+// This seed's valley in shape k, as a size x size picture. The shape this
+// page GREW (MAP_TYPE) reads the grown ground itself - the ice sheets and
+// holes genWorld rolled, the road as cut - so the chip is the map and not a
+// drawing of one; a neighbouring shape (the pop-up's slide) has no ground
+// yet and reads mapTerrain per sampled tile with the road's diagonal inked
+// over it, the same rule genWorld plants from. Neither shows the trails,
+// which are searched over the grown world (layTrails, world.js). Over the
+// ground stand the camps' glyphs (CAMP_SITES - fixed, so the same on every
+// shape), inked the way the chart inks them.
+const MAPC_COL = ['#e7eff8', '#b9dcec', '#3d6b4a', '#c5b7a0', '#7fa8c8']; // snow, ice, wood, the road, an ice hole
 function mapChip(k, size) {
   const key = k + 'x' + size;
   if (mapChipCv[key]) return mapChipCv[key];
@@ -2856,13 +2856,25 @@ function mapChip(k, size) {
   cv.width = cv.height = size;
   const g = cv.getContext('2d');
   const s = roadSpan();
+  const grown = k === MAP_TYPE;
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     const tx = Math.round((x + 0.5) / size * (WORLD - 1)), ty = Math.round((y + 0.5) / size * (WORLD - 1));
-    const u = roadAlong(tx, ty);
-    const t = mapTerrain(k, tx, ty);
-    const road = Math.abs(roadOffS(tx, ty)) < (u > s.u0 && u < s.u1 ? ROAD_HW : ROAD_HW_WOOD) + WORLD / size * 0.5;
-    g.fillStyle = road ? MAPC_COL[3] : MAPC_COL[t === MT_ICE ? 1 : t === MT_FOREST ? 2 : 0];
+    let c;
+    if (grown) {
+      const gr = ground[ty * WORLD + tx];
+      c = gr === 3 ? 3 : gr === 2 ? 4 : gr === 1 ? 1 : mapTerrain(k, tx, ty) === MT_FOREST ? 2 : 0;
+    } else {
+      const u = roadAlong(tx, ty);
+      const t = mapTerrain(k, tx, ty);
+      const road = Math.abs(roadOffS(tx, ty)) < (u > s.u0 && u < s.u1 ? ROAD_HW : ROAD_HW_WOOD) + WORLD / size * 0.5;
+      c = road ? 3 : t === MT_ICE ? 1 : t === MT_FOREST ? 2 : 0;
+    }
+    g.fillStyle = MAPC_COL[c];
     g.fillRect(x, y, 1, 1);
+  }
+  for (const c of campSites()) {
+    const t = campTile(c.u, c.s);
+    drawCampIcon(g, { spec: CAMPS[c.key] }, (t.tx + 0.5) / WORLD * size, (t.ty + 0.5) / WORLD * size, '#2c3448', 'rgba(240,244,250,0.9)');
   }
   mapChipCv[key] = cv;
   return cv;
