@@ -2375,30 +2375,33 @@ function pxDisc(cx, cy, r) {
     ctx.fillRect(cx - hw, cy + dy, hw * 2 + 1, 1);
   }
 }
-// The target - on the lobby beside the map plate, big in the AI pop-up:
-// rings in white and the rivals' paint, and lv + 1 arrows stuck in it - at
-// the rim on NORMAL, the inner ring on HARD, the bullseye on IMPOSSIBLE -
-// "how well they shoot", which is what the level is. size is the disc's
-// width; the rings and the landing radii scale off it. Each arrow flies in
-// from the upper left over m.tgtT (updateTitle zeroes it when the shown
-// level changes), a glint where it lands.
-const TGT_R = [0.62, 0.34, 0];                               // landing radius per level, of the disc's
+// The target - on the lobby beside the map plate, big in the AI pop-up: the
+// practice range's own archery face (bakeTargetFace, js/draw/practice.js -
+// the straw batt in its wooden frame, the red ring, the cream, the red
+// bullseye), baked once per size here, and lv + 1 arrows stuck in it - in
+// the straw on NORMAL, the red ring on HARD, the bullseye on IMPOSSIBLE -
+// "how well they shoot", which is what the level is. size is the face's
+// width; the landing radii are in the face's own units (a 32 px face's
+// pixels, TGT_R) and scale with it. Each arrow flies in from the upper left
+// over m.tgtT (updateTitle zeroes it when the shown level changes), a glint
+// where it lands.
+const TGT_R = [11, 7.8, 0];                                  // landing radius per level, in a 32 px face's px
 const TGT_ANG = [[-2.3], [-2.5, -0.7], [-2.6, -1.4, 0.4]];    // where each arrow sticks
+const tgtFaceCv = {};                                        // one bake per size, lazily
 function drawLobbyTarget(x, y, size, lv, rc, now, a) {
-  const R = (size >> 1) - 1, cx = x + (size >> 1), cy = y + (size >> 1);
+  const R = (size >> 1) - 1, cx = x + (size >> 1), cy = y + (size >> 1), k = size / 32;
   ctx.globalAlpha = a;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; pxDisc(cx + 1, cy + 2, R);
-  const ring = (f) => Math.max(1, Math.round(R * f));
-  for (const [r, c] of [[R, '#0a0e23'], [R - 1, '#f4f7ff'], [ring(0.74), rc], [ring(0.52), '#f4f7ff'], [ring(0.3), rc], [ring(0.12), '#f4f7ff']]) { ctx.fillStyle = c; pxDisc(cx, cy, r); }
+  ctx.drawImage(tgtFaceCv[size] || (tgtFaceCv[size] = bakeTargetFace(size)), x, y);
   const t = state.menu.tgtT;
   for (let j = 0; j <= lv; j++) {
     const u = Math.max(0, Math.min(1, (t - j * 0.12) / 0.26));
     if (u <= 0) continue;
-    const an = TGT_ANG[lv][j], rr = Math.round(R * TGT_R[lv]) + (lv === 2 ? 1 : 0);
+    const an = TGT_ANG[lv][j], rr = Math.round(TGT_R[lv] * k);
     const lx = cx + Math.round(Math.cos(an) * rr), ly = cy + Math.round(Math.sin(an) * rr);
     const fly = Math.round((1 - easeOut(u)) * 28);
     const ax = lx - fly, ay = ly - fly;
-    ctx.fillStyle = '#e8d8b0'; // the shaft, up-left of the tip
+    ctx.fillStyle = '#3a2c1c'; // the shaft, up-left of the tip - dark wood, so it reads on straw and cream
     for (let i = 1; i <= 8; i++) ctx.fillRect(ax - i, ay - i, 1, 1);
     ctx.fillStyle = rc;        // the fletching
     ctx.fillRect(ax - 9, ay - 7, 1, 1); ctx.fillRect(ax - 7, ay - 9, 1, 1);

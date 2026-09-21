@@ -1749,9 +1749,11 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   cut; a neighbouring shape, which has no ground yet, off `mapTerrain` with the road's diagonal
   inked over it) and stamps the camps' glyphs over it (`drawCampIcon` at every `campSites()`
   tile, inked as the chart inks them). The target
-  (`drawLobbyTarget`, `pxDisc` rings in white and the rivals' paint scaled off its width) wears
-  `level + 1` arrows — at the rim on NORMAL, the inner ring on HARD, the bullseye on IMPOSSIBLE
-  (`TGT_R`, fractions of the disc, and `TGT_ANG`) — which fly in from the upper left over
+  (`drawLobbyTarget`: the practice range's own archery face, `bakeTargetFace` from
+  js/draw/practice.js baked once per size — straw batt, wooden frame, red ring, cream, red
+  bullseye) wears `level + 1` arrows — in the straw on NORMAL, the red ring on HARD, the bullseye
+  on IMPOSSIBLE (`TGT_R`, in a 32 px face's pixels scaled with it, and `TGT_ANG`) — which fly in
+  from the upper left over
   `menu.tgtT` whenever the level it shows changes (`menu.tgtLv`), a glint where each lands. In a
   room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
   `'solo'`) and a guest's target is too. The **stage** under them
