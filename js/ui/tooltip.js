@@ -201,14 +201,14 @@ function tipGear(i) {
   return d;
 }
 // a class ability well - the strip's in play (cls omitted: the local player's
-// class, live cooldown, the cast hint), or class select's stage (cls given:
+// class, live cooldown, the cast hint), or the lobby's stage (cls given:
 // the previewed class, before it is ever locked, with nothing castable yet)
 function tipClassAb(i, cls) {
   const c = cls == null ? player.cls : cls;
   const ab = CLASS_AB[c][i];
   const d = { title: ab.name, tcol: '#f4f7ff', kind: CLASSES[c].name + ' ABILITY',
     rows: [], notes: [], icon: classAbIcon(c, i), plate: BAG_WELL, rim: '#35426e' };
-  // in play the cooldown is the LIVE one, level cuts and all; on class select
+  // in play the cooldown is the LIVE one, level cuts and all; on the lobby
   // there is no slot to have levelled anything yet, so it is the base
   d.rows.push(['COOLDOWN', tipSec(cls == null ? abCdOf(player, i) : ab.cd), '#f4f7ff']);
   d.rows.push(['CAST', tipSec(ab.cast), '#f4f7ff']);
@@ -280,7 +280,7 @@ function tipAt(mx, my) {
     const m = state.menu;
     if (m.screen === 'wiki' && m.wikiT >= 1) {
       const h = wikiHit(mx, my);
-      // an ARSENAL row describes its kind; a CLASSES row is class select's
+      // an ARSENAL row describes its kind; a CLASSES row is the lobby's
       // own ability card, read at the base cooldown since nobody has levelled
       return !h ? null : h.kind === 'row' ? tipKind(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls) : null;
     }

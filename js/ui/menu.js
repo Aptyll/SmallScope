@@ -1,6 +1,6 @@
 'use strict';
 // The title screen: the frost-plank menu over the living world, the reroll
-// die, the tutorial and patch-notes panels, class select on its own painted
+// die, the tutorial and patch-notes panels, the lobby on its own painted
 // night with its gear pop-up, and the intro that hands the locked-in class
 // to the eagle.
 // ------------------------------------------------------------ main menu
@@ -13,7 +13,7 @@ const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
 const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
-// seed lives on class select under the map's name (rerollWorld below),
+// seed lives on the lobby under the map's name (rerollWorld below),
 // and the WIKI opens from the plank heading the patch notes (drawPatchWiki).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
 // stacked at the bottom middle of the view, MENU_TXT_PITCH apart with the
@@ -22,11 +22,11 @@ const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // training arena, beginPractice).
 const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
-// MENU_BH at MENU_Y0 in the 270-tall authored frame is where class select's
+// MENU_BH at MENU_Y0 in the 270-tall authored frame is where the lobby's
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 3.76';
+const PATCH_TXT = 'PATCH 3.77';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, IN THE CODE AND THE DOCS ALIKE.'],
   ['3.76', 'THE STEAM BUILD PACKS ONLY WHAT THE GAME PLAYS: THE MUSIC AND THE CODE, NO SAMPLE CLIPS, NO STALE COPY, NO TYPE PACKAGES.'],
   ['3.75', 'CLASS SELECT IS A LEAGUE LOBBY: TEAM PANELS GLUED TO BOTH EDGES, THE MAP LARGE AT THE TOP WITH CHEVRONS THAT SLIDE TO THE NEXT SHAPE AND THE SEED UNDER IT, THREE DIFFICULTY PLATES WITH A TARGET WHOSE ARROWS LAND NEARER THE BULLSEYE THE HARDER THE RIVALS, AND LOCK IN AT THE FOOT THAT BURSTS A RING, DIMS THE TABS AND WEARS THE COUNT.'],
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -336,7 +337,7 @@ function overPatchTag() {
 // the wrapper with Steam asked for (netSteam) the list is Steam's lobbies
 // (steamRooms, js/net/transport-steam.js) in the same shape, with no code
 // plate - a lobby is joined off the list, never read aloud. HOST makes a room on the relay and opens the waiting room (the
-// class-select screen, which every peer then sees as this screen does); a
+// lobby, which every peer then sees as this screen does); a
 // room's plank joins it, the row staying lit until the host's WELCOME
 // arrives, or rattling if the room would not have us.
 const RM_W = 236, RM_H = 24, RM_GAP = 6, RM_MAX = 6;
@@ -350,7 +351,7 @@ function beginRooms() {
   const feed = (rooms, ok) => { m.rooms = rooms.slice(0, RM_MAX); m.roomsOk = ok; };
   roomsFeed = netSteam() ? steamRooms(feed) : wsRooms(netRelay(), feed); // Steam's lobbies under the wrapper, the relay's rooms otherwise
   SFX.place();
-  SFX.music.play('select');
+  SFX.music.play('lobby');
 }
 function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null; } }
 function leaveRooms() {
@@ -378,7 +379,7 @@ function roomsHit() {
 function hostRoom() {
   roomsFeedClose();
   netHost();
-  beginSelect();
+  beginLobby();
 }
 function joinRoom(k) {
   const m = state.menu, r = m.rooms[k];
@@ -414,7 +415,7 @@ function updateRooms(dt) {
   if (m.roomsShake > 0) m.roomsShake = Math.max(0, m.roomsShake - dt);
   // a join answered: the waiting room on a welcome, a rattle on a refusal
   if (NET.role === 'client') {
-    if (NET.welcomed) { roomsFeedClose(); beginSelect(); }
+    if (NET.welcomed) { roomsFeedClose(); beginLobby(); }
     else if (NET.refused || (NET.transport.error && !NET.transport.open)) { netLeave(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
   }
 }
@@ -456,7 +457,7 @@ function drawCodePlate(x, y, code, col, sc) {
 function renderRooms(now, a) {
   const m = state.menu;
   const { host, rows } = roomsLayout();
-  drawSelectBackdrop(now, a);
+  drawLobbyBackdrop(now, a);
   ctx.globalAlpha = a;
   drawMenuButton(host, 'HOST', m.rhover.host || 0, now, m.pressT > 0 && (m.rhover.host || 0) > 0.5);
   drawRelayPip(host.x + host.w + 8, host.y + 10, m.roomsOk, now);
@@ -502,7 +503,7 @@ function renderRooms(now, a) {
 function drawRoomPlate(now, a) {
   if (NET.role === 'solo') return;
   const code = String((NET.transport && (NET.transport.room || NET.transport.lobbyId)) || '');
-  const x = SEL_PAD, y = SEL_HEAD - 20;
+  const x = LOBBY_PAD, y = LOBBY_HEAD - 20;
   ctx.globalAlpha = a;
   drawRelayPip(x, y + 6, !!(NET.transport && NET.transport.open), now);
   if (code && code.length <= 6) drawCodePlate(x + 9, y, code, '#ffd95c', 2); // a relay code; a Steam lobby is joined off the list
@@ -554,7 +555,7 @@ function menuSelect(i) {
 
 function menuActivate(i) {
   SFX.unlock();
-  if (i === 0) beginSelect();
+  if (i === 0) beginLobby();
   else if (i === 1) beginRooms();
   else if (i === 2) beginPractice();
 }
@@ -618,7 +619,7 @@ function menuKey(e) {
   if (state.fade) return; // a reroll is already leaving
   if (m.screen === 'wiki') { if (m.wikiT >= 1) wikiKey(k); return; }
   if (m.screen === 'gear') { if (m.gearT >= 1) gearKey(k); return; }
-  if (m.screen === 'select') { if (m.screenT >= 1 && m.gearT <= 0) selectKey(k); return; }
+  if (m.screen === 'lobby') { if (m.screenT >= 1 && m.gearT <= 0) lobbyKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
@@ -640,7 +641,7 @@ function menuClick() {
   if (state.fade) return;
   if (m.screen === 'wiki') { wikiClick(); return; }
   if (m.screen === 'gear') { gearClick(); return; }
-  if (m.screen === 'select') { selectClick(); return; }
+  if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
@@ -674,10 +675,10 @@ function beginIntro() {
   SFX.music.stop(0.6);
 }
 
-// the die (on the select screen, under the shape's name): whiteout, then
+// the die (on the lobby, under the shape's name): whiteout, then
 // reload on a fresh seed in the same shape (SEED is a const every
 // deterministic value closes over, so a new world is a new page). It lands
-// back on the select screen (softfall.select, read by js/boot.js), so a
+// back on the lobby (softfall.select, read by js/boot.js), so a
 // roll is one press and not a walk.
 function rerollWorld() {
   const m = state.menu;
@@ -712,7 +713,7 @@ function updateTitle(dt) {
   // the waiting room's comings and goings: a card whose kind changed (a bot
   // became a person, or the reverse) flashes and sounds; a guest whose host
   // left is back on the rooms list with a rattle
-  if (NET.role !== 'solo' && (m.screen === 'select' || m.screen === 'gear')) {
+  if (NET.role !== 'solo' && (m.screen === 'lobby' || m.screen === 'gear')) {
     if (!m.cardFx) { m.cardFx = {}; m.cardKind = players.map((p) => isHuman(p)); }
     for (const p of players) {
       const h = isHuman(p);
@@ -749,9 +750,9 @@ function updateTitle(dt) {
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
   m.pwHover = (m.pwHover || 0) + ((overPatchWiki() ? 1 : 0) - (m.pwHover || 0)) * Math.min(1, dt * 14); // the notes' WIKI plank
-  // class select cross-fade and its own hovers; the gear pop-up rides a
+  // lobby cross-fade and its own hovers; the gear pop-up rides a
   // second ease (gearT) over the still-lit select screen
-  const st = m.screen === 'select' || m.screen === 'gear' ? 1 : 0;
+  const st = m.screen === 'lobby' || m.screen === 'gear' ? 1 : 0;
   m.screenT = Math.max(0, Math.min(1, m.screenT + (st ? 1 : -1) * dt / 0.35));
   const gt = m.screen === 'gear' ? 1 : 0;
   m.gearT = Math.max(0, Math.min(1, m.gearT + (gt ? 1 : -1) * dt / 0.3));
@@ -759,7 +760,7 @@ function updateTitle(dt) {
   // it eases in over the same chrome on a clock of its own
   m.wikiT = Math.max(0, Math.min(1, m.wikiT + (m.screen === 'wiki' ? 1 : -1) * dt / 0.35));
   m.cswapT = Math.min(1, m.cswapT + dt / 0.22);
-  const sh = m.screen === 'select' && m.screenT >= 1 ? selectHit() : null;
+  const sh = m.screen === 'lobby' && m.screenT >= 1 ? lobbyHit() : null;
   for (let i = 0; i < PROFILE.CHAR_MAX; i++) {
     // `|| 0`: the seed literal in core.js is two cells; the third slot's
     // hover ease starts from nothing, not from NaN
@@ -1191,8 +1192,8 @@ function drawPatchBar(ox, oy) {
   tri(up, -1); tri(down, 1);
 }
 
-// ---- class select --------------------------------------------------------
-// SINGLEPLAYER goes here (menu.screen = 'select'): ONE screen on its own
+// ---- lobby --------------------------------------------------------
+// SINGLEPLAYER goes here (menu.screen = 'lobby'): ONE screen on its own
 // painted night - never the live world - laid out the way a League lobby is.
 // Two TEAM PANELS stand glued to the screen's edges, your side's on the LEFT
 // and the rivals' on the RIGHT: five frames each, in player order, a frame
@@ -1223,38 +1224,38 @@ function drawPatchBar(ox, oy) {
 // again skipping the rest of it - and at zero lockIn() flies to the eagle
 // (lockT -> beginDrop). Nothing on the screen is instructions: the shapes
 // carry it. m.csel mirrors player.cls (the gear preview reads it).
-const SEL_PANEL_W = 110;               // a team panel's width, glued to its screen edge
-const SEL_FRAME_MAX = 44;              // a roster frame's tallest; a short view shrinks it
-const SEL_FRAME_GAP = 4;
-const SEL_TAB = 24, SEL_TAB_GAP = 4;   // a character tab well and its gap
-const SEL_HEAD = 58;                   // the panels' head: the tabs left, the difficulty right
-const SEL_PAD = 6;                     // the margin off the view's edge
-const SEL_MAP = 56;                    // the map picture at the top centre
-const SEL_LV_W = 58, SEL_LV_H = 13;    // a difficulty plate
-const SEL_TGT = 40;                    // the target beside the plates (its rings scale off it)
+const LOBBY_PANEL_W = 110;               // a team panel's width, glued to its screen edge
+const LOBBY_FRAME_MAX = 44;              // a roster frame's tallest; a short view shrinks it
+const LOBBY_FRAME_GAP = 4;
+const LOBBY_TAB = 24, LOBBY_TAB_GAP = 4;   // a character tab well and its gap
+const LOBBY_HEAD = 58;                   // the panels' head: the tabs left, the difficulty right
+const LOBBY_PAD = 6;                     // the margin off the view's edge
+const LOBBY_MAP = 56;                    // the map picture at the top centre
+const LOBBY_LV_W = 58, LOBBY_LV_H = 13;    // a difficulty plate
+const LOBBY_TGT = 40;                    // the target beside the plates (its rings scale off it)
 const COUNT_T = 5;                     // s: LOCK IN's countdown to the eagle
-function selectLayout() {
-  const cx = Math.round(VIEW_W / 2), pw = SEL_PANEL_W, pad = SEL_PAD;
+function lobbyLayout() {
+  const cx = Math.round(VIEW_W / 2), pw = LOBBY_PANEL_W, pad = LOBBY_PAD;
   // the two panels' frames: five each under the head, filling the height
-  const avail = VIEW_H - SEL_HEAD - pad;
-  const fh = Math.max(26, Math.min(SEL_FRAME_MAX, Math.floor(avail / (MAX_PLAYERS / 2)) - SEL_FRAME_GAP));
+  const avail = VIEW_H - LOBBY_HEAD - pad;
+  const fh = Math.max(26, Math.min(LOBBY_FRAME_MAX, Math.floor(avail / (MAX_PLAYERS / 2)) - LOBBY_FRAME_GAP));
   const cards = [[], []];
   const mineTeam = player ? player.team : 0;
   for (const p of players) {
     const mine = p.team === mineTeam ? 1 : 0;
-    const y = SEL_HEAD + cards[mine].length * (fh + SEL_FRAME_GAP);
+    const y = LOBBY_HEAD + cards[mine].length * (fh + LOBBY_FRAME_GAP);
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
   }
   // the character tabs across your panel's head
   const slots = [];
-  for (let i = 0; i < PROFILE.CHAR_MAX; i++) slots.push({ x: pad + i * (SEL_TAB + SEL_TAB_GAP), y: pad, w: SEL_TAB, h: SEL_TAB, i });
+  for (let i = 0; i < PROFILE.CHAR_MAX; i++) slots.push({ x: pad + i * (LOBBY_TAB + LOBBY_TAB_GAP), y: pad, w: LOBBY_TAB, h: LOBBY_TAB, i });
   // the rivals' difficulty: three plates stacked at their panel's head, the target beside them
   const diff = [];
-  for (let k = 0; k < 3; k++) diff.push({ x: VIEW_W - pw + pad, y: pad + k * (SEL_LV_H + 3), w: SEL_LV_W, h: SEL_LV_H });
-  const tgt = { x: VIEW_W - pad - SEL_TGT + 2, y: pad + 2, w: SEL_TGT, h: SEL_TGT };
+  for (let k = 0; k < 3; k++) diff.push({ x: VIEW_W - pw + pad, y: pad + k * (LOBBY_LV_H + 3), w: LOBBY_LV_W, h: LOBBY_LV_H });
+  const tgt = { x: VIEW_W - pad - LOBBY_TGT + 2, y: pad + 2, w: LOBBY_TGT, h: LOBBY_TGT };
   // the map at the top centre, a chevron either side, its name and the seed row under it
-  const mapc = { x: cx - (SEL_MAP >> 1), y: pad, w: SEL_MAP, h: SEL_MAP };
-  const ay = mapc.y + (SEL_MAP >> 1) - 9;
+  const mapc = { x: cx - (LOBBY_MAP >> 1), y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
+  const ay = mapc.y + (LOBBY_MAP >> 1) - 9;
   const arrows = [{ x: mapc.x - 20, y: ay, w: 12, h: 18, d: -1 }, { x: mapc.x + mapc.w + 8, y: ay, w: 12, h: 18, d: 1 }];
   const name = { x: cx, y: mapc.y + mapc.h + 6 };
   const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
@@ -1271,7 +1272,7 @@ function selectLayout() {
 // snow-crested ridge over a pine line, a lit snow floor, slow snowfall, and
 // the cinematic band. All procedural - hash2/vnoise for the stillness, now
 // for the drift - and everything takes the caller's fade.
-function drawSelectBackdrop(now, a) {
+function drawLobbyBackdrop(now, a) {
   const toy = frameTop();
   const hz = toy + 150; // the horizon the figures stand against
   ctx.globalAlpha = a;
@@ -1341,7 +1342,7 @@ function drawSelectBackdrop(now, a) {
 }
 
 // ---- the gear pop-up (League runes-style) --------------------------------
-// Opened from the select screen's collapsed gear widget (beginGear). The
+// Opened from the lobby's collapsed gear widget (beginGear). The
 // select screen stays lit underneath; the pop-up dims it and floats a panel
 // in two columns. LEFT: the live preview - the chosen class walking in
 // place in its four leather pieces with the class weapon at hand, and under
@@ -1353,7 +1354,7 @@ function drawSelectBackdrop(now, a) {
 // well picks it (pickGear writes straight to player.gear) and the equip
 // plays ON the preview body - a white flash, sparks, the piece's band lit.
 // ESC, Enter, the X, or a click outside the panel closes it; PLAY stays
-// on the select screen behind it. The ledger's labelled rows are the
+// on the lobby behind it. The ledger's labelled rows are the
 // PLAYER-panel text carve-out: comparing numbers is this panel's whole job.
 const GEARP_W = 38, GEARP_G = 4; // a variant well, and the grid gap
 function gearLayout() {
@@ -1883,7 +1884,7 @@ function beginGear() {
   SFX.place();
 }
 function leaveGear() {
-  state.menu.screen = 'select';
+  state.menu.screen = 'lobby';
   SFX.pickup();
 }
 // pre-match variant pick for the local player, full heal like setClass since
@@ -1922,8 +1923,8 @@ function gearClick() {
 // what the pointer is on: 'play', 'gear', 'diff' + k (a difficulty plate),
 // 'slot' + i (a character tab), 'mapl' / 'mapr' (the map's chevrons), 'seed'
 // (the seed row) or null. A guest's room offers gear alone.
-function selectHit() {
-  const { slots, play, loadout, diff, arrows, seed } = selectLayout();
+function lobbyHit() {
+  const { slots, play, loadout, diff, arrows, seed } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(loadout, 3, 2)) return 'gear';
   if (NET.isClient) return null; // a guest's room: the host's plank, the host's difficulty, the host's world, its own character as it came
@@ -1940,18 +1941,18 @@ function selectHit() {
   return null;
 }
 
-function beginSelect() {
+function beginLobby() {
   const m = state.menu;
-  m.screen = 'select';
+  m.screen = 'lobby';
   m.csel = player.cls;
   m.cswapT = 1;
   m.countT = 0; m.countN = -1; // every rival frame face-down again
   m.lockFx = 0; m.mapSlide = null;
   m.tgtLv = settings.aiLevel | 0; m.tgtT = 0; // the target's arrows fly in with the screen
   SFX.place();
-  SFX.music.play('select');
+  SFX.music.play('lobby');
 }
-function leaveSelect() {
+function leaveLobby() {
   if (NET.role !== 'solo') netLeave(); // a host's room closes; a guest walks out of one
   state.menu.screen = 'menu';
   state.menu.countT = 0;
@@ -1960,7 +1961,7 @@ function leaveSelect() {
 }
 // swap the stage to character slot i (js/profile.js): it comes with its own
 // class, so the kit and the loadout follow it
-function selectSlot(i) {
+function lobbySlot(i) {
   const m = state.menu;
   if (m.countT > 0) { SFX.deny(); return; } // locked the moment LOCK IN was pressed
   if (!PROFILE.chars()[i] || i === PROFILE.activeIndex()) return;
@@ -1970,13 +1971,13 @@ function selectSlot(i) {
   SFX.pickup();
 }
 // the keyboard's step through the filled slots
-function selectStep(d) {
+function lobbyStep(d) {
   const n = PROFILE.chars().length;
   if (n < 2) return;
-  selectSlot(((PROFILE.activeIndex() + d) % n + n) % n);
+  lobbySlot(((PROFILE.activeIndex() + d) % n + n) % n);
 }
 // the map's chevrons: the picture slides over to the neighbouring shape
-// (m.mapSlide, drawn by drawSelectMap) while the page's whiteout runs
+// (m.mapSlide, drawn by drawLobbyMap) while the page's whiteout runs
 // (pickMap), so the pick is seen going before the reload lands back here on
 // it. Solo only - in a room the shape is the host's page.
 function mapStep(d) {
@@ -2017,7 +2018,7 @@ function cancelCount() {
 }
 // how many rival frames are face-up: one per tick of the count (the first on
 // the press, the last on ONE), all of them once it has run out, none at rest
-function selectRevealed() {
+function lobbyRevealed() {
   const m = state.menu;
   if (m.countT > 0) return COUNT_T + 1 - Math.ceil(m.countT);
   return m.countN === 0 ? MAX_PLAYERS : 0;
@@ -2038,21 +2039,21 @@ function setAiLevel(k) {
   SFX.pickup();
 }
 
-function selectKey(k) {
+function lobbyKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveSelect(); }
+  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveLobby(); }
   else if (moveDir(k) === 'left') mapStep(-1);
   else if (moveDir(k) === 'right') mapStep(1);
-  else if (moveDir(k) === 'up') selectStep(-1);
-  else if (moveDir(k) === 'down') selectStep(1);
+  else if (moveDir(k) === 'up') lobbyStep(-1);
+  else if (moveDir(k) === 'down') lobbyStep(1);
   else if (k === 'enter' || k === ' ') pressPlay();
 }
 
-function selectClick() {
+function lobbyClick() {
   const m = state.menu;
   if (m.lockT > 0 || m.screenT < 1 || m.gearT > 0) return;
-  const h = selectHit();
+  const h = lobbyHit();
   if (!h) return;
   if (h === 'play') pressPlay();                                    // LOCK IN: lock the pick, start the count
   else if (h === 'gear') { m.pressT = 0.12; beginGear(); }          // the gear widget opens its pop-up
@@ -2060,7 +2061,7 @@ function selectClick() {
   else if (h === 'mapr') mapStep(1);
   else if (h === 'seed') rerollWorld();                             // the die: a fresh seed in this shape
   else if (h.startsWith('diff')) setAiLevel(+h.slice(4));           // a difficulty plate
-  else if (h.startsWith('slot')) selectSlot(+h.slice(4));           // a character tab
+  else if (h.startsWith('slot')) lobbySlot(+h.slice(4));           // a character tab
 }
 
 // The class EMBLEMS: one symbolic 32x32 mark per CLASSES entry - the
@@ -2226,7 +2227,7 @@ function classIcon12(i, you) {
 // stage, lifting under the hand; an empty slot is a dark well with nothing in it
 // a character tab: a small well, the character's 16 px body in it; the
 // active one gold and walking, the others dim and warm under the hand
-function drawSelectSlot(r, hv, chosen, now) {
+function drawLobbySlot(r, hv, chosen, now) {
   const ch = PROFILE.chars()[r.i];
   const lift = chosen || !ch ? 0 : Math.round(hv * 1.5);
   const y = r.y - lift;
@@ -2251,9 +2252,9 @@ function drawSelectSlot(r, hv, chosen, now) {
 // a lock-in bursts a second ring out from the feet (lockFx) and the light
 // stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
-function drawSelectStage(now, a, sw) {
+function drawLobbyStage(now, a, sw) {
   const m = state.menu;
-  const { cx, body } = selectLayout();
+  const { cx, body } = lobbyLayout();
   const feet = body.y + body.h - 4;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;
@@ -2304,7 +2305,7 @@ function drawSelectStage(now, a, sw) {
 // name inward of the body (names are text's job). Yours wears the gold rim;
 // a rival's is face-down - a flat shade of a body, no class to read - until
 // the count turns it, and it flashes white as it does.
-function drawSelectCard(r, mine, hidden, flash) {
+function drawLobbyCard(r, mine, hidden, flash) {
   const p = r.p, side = skin(p.team), me = p === player;
   ctx.fillStyle = 'rgba(4,6,18,0.55)';
   ctx.fillRect(r.x, r.y + 2, r.w + 2, r.h);
@@ -2342,12 +2343,12 @@ function drawSelectCard(r, mine, hidden, flash) {
   drawPixelTextShadow(ctx, nm, nx, r.y + ((r.h - 5) >> 1), col, '#0a0e23');
 }
 
-// The two panels' frames. Rival k turns face-up when selectRevealed() passes
+// The two panels' frames. Rival k turns face-up when lobbyRevealed() passes
 // it. slide is the entrance: each panel rides in from its own edge.
-function drawSelectRosters(now, a, slide) {
+function drawLobbyRosters(now, a, slide) {
   const m = state.menu;
-  const { cards } = selectLayout();
-  const shown = selectRevealed();
+  const { cards } = lobbyLayout();
+  const shown = lobbyRevealed();
   ctx.globalAlpha = a;
   for (let mine = 1; mine >= 0; mine--) {
     const col = cards[mine];
@@ -2356,7 +2357,7 @@ function drawSelectRosters(now, a, slide) {
       const r = col[k];
       const hidden = !mine && k >= shown;
       const flash = !mine && !hidden && m.countT > 0 && (COUNT_T - k) - m.countT < 0.15;
-      drawSelectCard({ x: r.x + dx, y: r.y, w: r.w, h: r.h, p: r.p }, mine, hidden, flash);
+      drawLobbyCard({ x: r.x + dx, y: r.y, w: r.w, h: r.h, p: r.p }, mine, hidden, flash);
     }
   }
 }
@@ -2376,8 +2377,8 @@ function pxDisc(cx, cy, r) {
 // lands.
 const TGT_R = [15, 8, 1];                                    // landing radius per level
 const TGT_ANG = [[-2.3], [-2.5, -0.7], [-2.6, -1.4, 0.4]];    // where each arrow sticks
-function drawSelectTarget(x, y, lv, rc, now, a) {
-  const R = (SEL_TGT >> 1) - 1, cx = x + (SEL_TGT >> 1), cy = y + (SEL_TGT >> 1);
+function drawLobbyTarget(x, y, lv, rc, now, a) {
+  const R = (LOBBY_TGT >> 1) - 1, cx = x + (LOBBY_TGT >> 1), cy = y + (LOBBY_TGT >> 1);
   ctx.globalAlpha = a;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; pxDisc(cx + 1, cy + 2, R);
   for (const [r, c] of [[R, '#0a0e23'], [R - 1, '#f4f7ff'], [R - 5, rc], [R - 9, '#f4f7ff'], [R - 13, rc], [R - 16, '#f4f7ff']]) { ctx.fillStyle = c; pxDisc(cx, cy, r); }
@@ -2403,12 +2404,12 @@ function drawSelectTarget(x, y, lv, rc, now, a) {
 // hard, each carrying its level's name and its tier in pips, the picked one
 // filled in the rivals' paint, the hovered one lifting; the target beside
 // them shows the hovered level's arrows, else the picked one's.
-function drawSelectDiff(now, a, slide) {
+function drawLobbyDiff(now, a, slide) {
   const m = state.menu;
-  const { diff, tgt } = selectLayout();
+  const { diff, tgt } = lobbyLayout();
   const lv = settings.aiLevel | 0;
   const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
+  const hover = m.screenT >= 1 && m.gearT <= 0 ? lobbyHit() : null;
   const hk = hover && hover.startsWith('diff') ? +hover.slice(4) : -1;
   for (let k = 0; k < diff.length; k++) {
     const r = diff[k], hv = m.dhover[k] || 0, on = k === lv, lift = on ? 0 : Math.round(hv);
@@ -2421,7 +2422,7 @@ function drawSelectDiff(now, a, slide) {
     for (let j = 0; j <= k; j++) ctx.fillRect(x + 4 + j * 3, y + 5, 2, 3);
     drawPixelTextShadow(ctx, AI_LEVELS[k].name, x + 15, y + 4, on ? '#f4f7ff' : hv > 0.5 ? '#ffd95c' : '#8fa8d0', '#0a0e23');
   }
-  drawSelectTarget(tgt.x + slide, tgt.y, hk >= 0 ? hk : lv, rc, now, a);
+  drawLobbyTarget(tgt.x + slide, tgt.y, hk >= 0 ? hk : lv, rc, now, a);
 }
 
 // a bare chevron, d = -1 pointing left, 1 right: the arrow grammar, no plate
@@ -2436,11 +2437,11 @@ function drawChevron(x, y, d, col) {
 // host's), the shape's name under it and the seed row under that. A slide
 // in flight (m.mapSlide, mapStep) carries the picture off toward the pressed
 // chevron and the neighbour's in behind it, through a clip the plate's size.
-function drawSelectMap(now, a) {
+function drawLobbyMap(now, a) {
   const m = state.menu;
-  const { mapc: r, arrows, name, seed } = selectLayout();
+  const { mapc: r, arrows, name, seed } = lobbyLayout();
   const solo = NET.role === 'solo';
-  const hover = solo && m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
+  const hover = solo && m.screenT >= 1 && m.gearT <= 0 ? lobbyHit() : null;
   const sl = m.mapSlide;
   ctx.globalAlpha = a;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
@@ -2472,10 +2473,10 @@ function drawSelectMap(now, a) {
 // The countdown on the sunk plank: the whole second left in 2x gold digits
 // where LOCK IN was, white the instant it changes, sinking in alpha through
 // its second.
-function drawSelectCount(a) {
+function drawLobbyCount(a) {
   const m = state.menu;
   if (m.countT <= 0) return;
-  const { play } = selectLayout();
+  const { play } = lobbyLayout();
   const n = Math.ceil(m.countT), frac = m.countT - (n - 1); // 1 fresh -> 0 about to change
   const s = String(n);
   ctx.globalAlpha = a * (0.7 + 0.3 * frac);
@@ -2484,34 +2485,34 @@ function drawSelectCount(a) {
 }
 
 // a (0..1) is the screen's own visibility; the whole surface rides it
-function renderSelect(now, a) {
+function renderLobby(now, a) {
   const m = state.menu;
-  const { slots, play, loadout } = selectLayout();
-  drawSelectBackdrop(now, a);
+  const { slots, play, loadout } = lobbyLayout();
+  drawLobbyBackdrop(now, a);
   ctx.globalAlpha = a;
   // the panels ride in from their edges; then the map, then the stage
   const sw = easeOut(m.cswapT);
   const slide = Math.round((1 - a) * 30);
   const counting = m.countT > 0 || m.lockT > 0;
-  drawSelectRosters(now, a, slide);
-  drawSelectDiff(now, a, slide);
+  drawLobbyRosters(now, a, slide);
+  drawLobbyDiff(now, a, slide);
   for (const r of slots) { // the tabs dim while the pick is locked
     ctx.globalAlpha = a * (counting ? 0.35 : 1);
-    drawSelectSlot({ x: r.x - slide, y: r.y, w: r.w, h: r.h, i: r.i }, m.chover[r.i] || 0, r.i === PROFILE.activeIndex(), now);
+    drawLobbySlot({ x: r.x - slide, y: r.y, w: r.w, h: r.h, i: r.i }, m.chover[r.i] || 0, r.i === PROFILE.activeIndex(), now);
   }
   ctx.globalAlpha = a;
-  drawSelectMap(now, a);
-  drawSelectStage(now, a, sw);
+  drawLobbyMap(now, a);
+  drawLobbyStage(now, a, sw);
   drawRoomPlate(now, a);
   // LOCK IN - the plank is the whole ask; it stays sunk and wears the count
   // once pressed. A guest's room: the plank is the host's, frozen and
   // wearing the host's name - the count comes over it when the host presses
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
+  const hover = m.screenT >= 1 && m.gearT <= 0 ? lobbyHit() : null;
   const pressed = m.pressT > 0 || counting;
   ctx.globalAlpha = a;
   if (!NET.isClient) drawMenuButton(play, counting ? '' : 'LOCK IN', hover === 'play' ? 1 : 0.7, now, pressed);
   else { const hp = players[NET.hostSlot]; drawMenuButton(play, m.countT > 0 ? '' : hp ? hp.name : '', 0, now, m.countT > 0, true); }
-  drawSelectCount(a);
+  drawLobbyCount(a);
   // the collapsed gear widget: the four picked variants in a column at the
   // figure's hand; its pop-up opens off a click (beginGear). Hover lifts it -
   // the this-is-a-button grammar.
@@ -2694,13 +2695,13 @@ function renderGear(now, a) {
 // for) and under that the SEED ROW: the seed's number and its die
 // (rerollWorld), the one other thing that decides which valley this is. The
 // chevrons either side (mapStep) slide the picture over to the neighbouring
-// shape (drawSelectMap draws the slide).
+// shape (drawLobbyMap draws the slide).
 //
 // A pick is a PAGE. The ground is grown once at boot off consts every
 // deterministic value in the game closes over, so the die's own whiteout
 // and reload is the honest way to change it: the pick is written to the
 // profile and the page comes back on ?seed=<this seed>&map=<the pick>, on
-// the same valley in its new shape, standing on the select screen again
+// the same valley in its new shape, standing on the lobby again
 // (softfall.select). Only a SOLO lobby may do it - a host reloading would
 // drop the room, and a guest's world is the host's (netHostHello refuses a
 // hello whose shape is not the host's, exactly as it refuses a seed).
@@ -2731,7 +2732,7 @@ function mapChip(k, size) {
   return cv;
 }
 // the pick: the profile remembers it and the page comes back on this seed in
-// that shape, standing on the select screen again. Picking the shape already
+// that shape, standing on the lobby again. Picking the shape already
 // grown is a no-op - there is nothing to grow.
 function pickMap(k) {
   if (state.fade || k === MAP_TYPE) return;
@@ -2753,7 +2754,7 @@ function pickMap(k) {
 // own clock (wikiT), a tab bar of PAGES under the title (the settings slab's
 // navbar grammar), and under that a content window the open page scrolls
 // through when it outgrows it - wheel, up/down, the rail on the right.
-// It takes the music layer outright the way class select does, not as a hold:
+// It takes the music layer outright the way the lobby does, not as a hold:
 // WHISPERING WOODS loops under it from the moment it opens (beginWiki), and
 // the title track comes back on the way out (leaveWiki).
 // A page is data: WIKI_PAGES is {id, label, build(cw)}, build returning the
@@ -2770,7 +2771,7 @@ function pickMap(k) {
 // and to the gold a kill pays, at levels 1, 6 and 12, read off the same
 // constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD,
 // js/wildlife.js and js/core.js), so the page can never disagree with the
-// game. The CLASSES page is the two classes as class select reads them -
+// game. The CLASSES page is the two classes as the lobby reads them -
 // body, pitch, health and the four stat pips - and their eight abilities
 // with the cooldown, the cast and what each does, off CLASS_AB itself. The
 // WORLD page is the one with no numbers on it: the valley written down - the
@@ -3159,7 +3160,7 @@ function renderWiki(now, a) {
     else if (bl.kind === 'cls') {
       // a class card: the body at 3x on the left (the side you play in), its
       // name and role, the three lines of its pitch, and on the right the
-      // ledger class select reads - health, then the four stats as pips
+      // ledger the lobby reads - health, then the four stats as pips
       const c = CLASSES[bl.cls];
       const spr = SPRITES.champ[bl.cls][skin(player.team)].down[0];
       ctx.drawImage(spr, L.left, y + 2, 48, 48);
@@ -3264,7 +3265,7 @@ function renderTitle(now) {
   const tintA = 0.55 * (1 - easeOut(outQ / 0.45));
   if (tintA > 0.005) drawTitleBackdrop(tintA);
   const out = easeOut(outQ / 0.22);           // menu chrome drops away first
-  const sc = easeInOut(m.screenT);             // class select cross-fade
+  const sc = easeInOut(m.screenT);             // the lobby cross-fade
   const tc = easeInOut(m.wikiT);               // ...and the wiki's own
   const kc = easeInOut(m.charT);               // ...and the character screens'
   const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
@@ -3323,11 +3324,11 @@ function renderTitle(now) {
     ctx.globalAlpha = 1;
   }
 
-  // class select stays fully lit under either of its pop-ups; each rides its
-  // class select stays fully lit under its gear pop-up, which rides its own
+  // lobby stays fully lit under either of its pop-ups; each rides its
+  // lobby stays fully lit under its gear pop-up, which rides its own
   // ease (gearT)
   const gc = easeInOut(state.menu.gearT);
-  if (sc > 0.005) renderSelect(now, sc * (1 - out));
+  if (sc > 0.005) renderLobby(now, sc * (1 - out));
   if (sc > 0.005 && gc > 0.005) renderGear(now, sc * (1 - out) * gc);
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }

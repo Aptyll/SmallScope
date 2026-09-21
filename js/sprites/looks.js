@@ -1,6 +1,6 @@
 'use strict';
 // The 48 px CHARACTER MODEL: the big front-facing figure the create screen,
-// the roster and class select's stage show. In-world bodies stay 16 px
+// the roster and the lobby's stage show. In-world bodies stay 16 px
 // (characters.js paints a character's tone and fringe onto them); this is
 // where the whole look reads - body type, face shape, hair style, beard - as
 // LAYERS stamped in order onto one canvas: body, head, beard, hair, then the

@@ -76,7 +76,7 @@ const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 // sprite key keeps its legacy name; js/sprites.js is never rewritten) plus a
 // kit - the numbers updatePlayer / emitBit / tryDodge read through kitOf(p)
 // instead of the bare constants - plus its four ACTIVE ABILITIES on keys 1-4
-// (CLASS_AB, js/abilities.js). Picked on the class select screen (local) or
+// (CLASS_AB, js/abilities.js). Picked on the lobby screen (local) or
 // hashed from the seed (bots) in initPlayers().
 const CLASSES = [
   {
@@ -154,7 +154,7 @@ function botLook(id) {
 // The local player wears the ACTIVE CHARACTER: its name, its look, and its
 // class (fixed at creation - js/profile.js), whose loadout comes with it.
 // Called from initPlayers and whenever the roster's active slot changes
-// (the character screens, js/ui/chars.js; class select's slot strip). It
+// (the character screens, js/ui/chars.js; the lobby's slot strip). It
 // takes the player to dress so that a lobby can dress a REMOTE human's body
 // the same way from a spec of its own, but the profile's character is only
 // ever this screen's.
@@ -306,7 +306,7 @@ function bagTake(p, type, n) {
 
 // ---- gear ----------------------------------------------------------------
 // Four pieces - helmet, chest, legs, boots - each picked from three variants
-// at class select (that free pick is level 1) and bought to level GEAR_LV_MAX
+// at the lobby (that free pick is level 1) and bought to level GEAR_LV_MAX
 // in-match, from anywhere, per piece. A variant's mod() writes its bonus into
 // the effective kit at the piece's level, so the whole system is one table
 // plus refreshKit(); the sim never reads gear directly. Levels reset with the
@@ -462,7 +462,7 @@ class Player {
     // flag above). Read and written only through the bag helpers, so every
     // caller stays generic over where a kind actually lives.
     this.food = newPouch();             // the pouch: the two meals and the unopened cards, uncapped
-    this.cls = 0;                       // CLASSES index; the select screen sets the local one
+    this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/abilities.js)

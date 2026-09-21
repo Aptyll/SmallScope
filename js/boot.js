@@ -1452,7 +1452,7 @@ try {
   if (sessionStorage.getItem('softfall.select')) {
     sessionStorage.removeItem('softfall.select');
     if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
-      beginSelect(); state.menu.screenT = 1;
+      beginLobby(); state.menu.screenT = 1;
     }
   }
 } catch (e) { }
@@ -1764,7 +1764,7 @@ window.DBG = {
   setSwing: (i, p) => { (p || player).swing = i; },
   getSwing: (p) => (p || player).swing,
   cam: () => ({ x: camX, y: camY }),
-  startGame, beginIntro, beginSelect, lockIn, pressPlay, cancelCount, setAiLevel, selectLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, selectHit,
+  startGame, beginIntro, beginLobby, lockIn, pressPlay, cancelCount, setAiLevel, lobbyLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, lobbyHit,
   // the ESC panel: what the pointer is over, the speaker's plate, the open
   // page's row anchors (already scrolled - a row's y is where it is on
   // screen) and the navbar cells - so a driver can click a dial without

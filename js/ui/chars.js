@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ characters
 // Who you are between matches: the CHARACTER ROSTER (menu.screen 'chars')
-// and the CREATE / CUSTOMIZE screen ('create'), both on class select's
+// and the CREATE / CUSTOMIZE screen ('create'), both on the lobby's
 // painted night, and the character tag bottom-left of the title that opens
 // the roster. The STORE is js/profile.js (three slots, each a name, a class
 // fixed at creation, a look and its lifetime stats) and nothing here touches
@@ -108,7 +108,7 @@ function beginChars() {
   m.ksel = PROFILE.activeIndex();
   m.khover = {};
   SFX.place();
-  SFX.music.play('select');
+  SFX.music.play('lobby');
 }
 function leaveChars() {
   state.menu.screen = 'menu';
@@ -189,7 +189,7 @@ function beginCreate(slot, first) {
   m.khover = {};
   m.screen = m.cscreen = 'create';
   if (!first) SFX.place();
-  SFX.music.play('select');
+  SFX.music.play('lobby');
 }
 // the buffer as it stands would be accepted: what lights the DONE plank
 function nameOk() { return PROFILE.validate(state.menu.nameBuf).ok; }
@@ -351,7 +351,7 @@ function drawWell(r, hv, picked, lift) {
   return y;
 }
 // the 48 px model, S px per pixel, on a pool of light with a gold ring
-// turning on the snow (class select's stage grammar)
+// turning on the snow (the lobby's stage grammar)
 function drawModel(cls, look, team, x, y, S, now, a) {
   const cx = x + 24 * S, feet = y + 46 * S;
   ctx.globalAlpha = a * 0.4;
@@ -441,7 +441,7 @@ function drawCharCard(c, now, a) {
 function renderChars(now, a) {
   const m = state.menu;
   const L = charsLayout();
-  drawSelectBackdrop(now, a);
+  drawLobbyBackdrop(now, a);
   const slide = Math.round((1 - a) * 26);
   for (const c of L.cards) drawCharCard({ x: c.x, y: c.y + slide, w: c.w, h: c.h, i: c.i, quill: { x: c.quill.x, y: c.quill.y + slide, w: c.quill.w, h: c.quill.h }, del: { x: c.del.x, y: c.del.y + slide, w: c.del.w, h: c.del.h } }, now, a);
   ctx.globalAlpha = a;
@@ -485,7 +485,7 @@ function renderCreate(now, a) {
   if (!e) return;
   const L = createLayout();
   const spec = e.spec, team = skin(player.team);
-  drawSelectBackdrop(now, a);
+  drawLobbyBackdrop(now, a);
   const slide = Math.round((1 - a) * 26);
   ctx.globalAlpha = a;
   drawModel(spec.cls, spec.look, team, L.stage.x - slide, L.stage.y, 3, now, a);

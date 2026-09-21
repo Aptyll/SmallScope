@@ -313,7 +313,7 @@
   const MUS_DIR = 'audio/music/';
   const TRACKS = {
     intro: { f: 'Frozen North Run Intro.mp3', loop: true, vol: 1 },
-    select: { f: 'Frozen North Run Class Selection.mp3', loop: true, vol: 1 },
+    lobby: { f: 'Frozen North Run Class Selection.mp3', loop: true, vol: 1 },
     eagle: { f: 'Flying On Eagle.mp3', loop: true, vol: 1 },
     jump: { f: 'Jumping Off Eagle.mp3', loop: false, vol: 1, next: 'foxglove' },
     foxglove: { f: 'Foxglove Drop.mp3', loop: false, vol: 0.85 },

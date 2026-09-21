@@ -160,23 +160,23 @@ const state = {
     // today - the title's items are all live - but a client's lobby still
     // draws the host's name sealed, and the glaze reads them
     iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0,
-    // class select: which screen the menu shows, its cross-fade, the chosen
+    // lobby: which screen the menu shows, its cross-fade, the chosen
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'select' | 'gear' | 'wiki' | 'chars' | 'create'. 'gear' is the
+    // screen: 'menu' | 'lobby' | 'gear' | 'wiki' | 'chars' | 'create'. 'gear' is the
     // pop-up over the still-lit select screen (gearT its ease, grow the
     // keyboard row, gearFxT/gearFxSlot the equip flash); the wiki is a surface
     // of its own on wikiT, with wikiTab the open page (menu.js `the wiki`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
-    // class select's map slide (mapStep: {d, k, t}, null at rest), the lock-in's
+    // lobby's map slide (mapStep: {d, k, t}, null at rest), the lock-in's
     // ring (lockFx, s left), and the difficulty target's arrows: the level they
-    // show and how far into their flight (menu.js `class select`)
+    // show and how far into their flight (menu.js `lobby`)
     mapSlide: null, lockFx: 0, tgtLv: 0, tgtT: 1,
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it
     // ran out); dhover the three difficulty plates' hover eases (menu.js
-    // `class select`)
+    // `lobby`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
     // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the
     // relay's open rooms, whether the relay answered, the row hovers, the
@@ -204,10 +204,10 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // dealt you (skin(), js/player.js); off = the roster's real colours
   teamBlue: true,
   // the rival bots' difficulty: an index into AI_LEVELS (js/ai.js), picked on
-  // class select's notches and remembered; 0 (NORMAL) until someone moves it
+  // lobby's notches and remembered; 0 (NORMAL) until someone moves it
   aiLevel: 0,
   // the shape the valley comes out of the snow in: an index into MAPS
-  // (js/world.js), picked on class select's map chip and remembered. A pick
+  // (js/world.js), picked on the lobby's map chip and remembered. A pick
   // is a page (pickMap, js/ui/menu.js), so what this holds is what the NEXT
   // load grows - MAP_TYPE is what THIS one did.
   mapType: 0,

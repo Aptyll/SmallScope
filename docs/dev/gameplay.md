@@ -853,7 +853,7 @@ cooldown wipes) are the HUD's half and live with it in [rendering.md](rendering.
 The main menu's **WIKI** plank (`m.screen = 'wiki'`, its own `wikiT` ease, ESC back) opens the
 game written down: one surface, a tab bar of **pages**, each a scrolling column of blocks.
 WHISPERING WOODS (`TRACKS.wiki`) loops under it from the moment it opens — an ordinary
-`music.play` the way class select takes the layer, not the counter's hold, because the wiki is
+`music.play` the way the lobby takes the layer, not the counter's hold, because the wiki is
 a surface you sit in rather than a window over a running match; `leaveWiki()` puts `intro` back
 ([Audio](#audio)). The
 page itself — the slab, the tabs, the blocks, the rail — is in
@@ -861,12 +861,12 @@ page itself — the slab, the tabs, the blocks, the rail — is in
 the numbers come from. Every number on a page is read off the constant the sim spends, never
 typed twice, so a retune can never leave the wiki lying.
 
-- **CLASSES** (the page the wiki opens on) — the two classes as class select reads them: the
+- **CLASSES** (the page the wiki opens on) — the two classes as the lobby reads them: the
   body at 3x in the side you play in, the name and role, the three lines of the pitch, and a
   ledger of health and the four stat pips (`CLASSES[c].stats`, `kit.maxHp`); under each, its
   four abilities in key order — the key on a plate, the strip's own 32 px icon in a well
   (`classAbIcon`), the name, COOLDOWN and CAST in the columns (`WIKI_AB_COLS`, off `CLASS_AB`)
-  and the blurb wrapped beneath. A hover raises class select's ability card (`tipClassAb` with
+  and the blurb wrapped beneath. A hover raises the lobby's ability card (`tipClassAb` with
   the class passed, so the base cooldown). The intro names what a skill point does
   (`AB_LV_CD`, `AB_LV_MAX`, [Hero levels](multiplayer.md#hero-levels)).
 - **BEASTS** — the meadow's two kinds and the camps' three, each drawn wearing the frame it wears in the snow; a
@@ -2122,12 +2122,12 @@ variants with a distinct lane, all in the `GEAR` table in the `players` banner:
 The variant pick is free and is **level 1**; in-match gold buys each piece to level `GEAR_LV_MAX`
 (4) for `GEAR_COSTS` 10/20/35 — the second gold sink beside building. Levels reset with the match
 (every boot builds fresh `Player`s). The human picks variants in the **gear pop-up** — opened
-from class select's collapsed gear widget, all 12 variants at once as 32×32 icon wells beside a
+from the lobby's collapsed gear widget, all 12 variants at once as 32×32 icon wells beside a
 live preview and a real-number stat ledger with hover deltas (League runes-style; see
 [Main menu](rendering.md#main-menu-title)); `pickGear()` writes straight to `player.gear`. AI
 players hash all four variants from the seed in `initPlayers()`. **Every variant has its own
 icons**: the 12×12 material-swapped `SPRITES.gearIcons[slot][variant][material]` the HUD and
-the select screen's plaque wear, and the detailed 32×32 `GEAR32` set the pop-up's wells wear —
+the lobby's plaque wear, and the detailed 32×32 `GEAR32` set the pop-up's wells wear —
 a pick is a distinct picture, not a label.
 
 **Worn gear shows on the sprite**: each piece at level 2+ lays a 1 px band of its material across
@@ -2761,7 +2761,7 @@ first room will stand. A room's plank carries its host's name, ten seat pips (fi
 people in them lit in that side's paint - the relay lists a count per side), its four-letter
 code on a plate (the thing a host reads aloud) and a red dot once its match is under way; a room
 on another patch is dimmed and inert with its patch printed where the code would be. HOST makes
-a room on the relay and opens the **waiting room** - the class-select screen, which every peer
+a room on the relay and opens the **waiting room** - the lobby, which every peer
 sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
 your side's roster, a crown over the host's card, a brighter rim on every person's card than a
 bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
@@ -2783,8 +2783,8 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
-`aiLevel` — the rival bots' difficulty plate on class select, an index into `AI_LEVELS` (js/ai.js) —
-`mapType` — the map shape picked with class select's map chevrons, an index into `MAPS` (js/world.js); it is
+`aiLevel` — the rival bots' difficulty plate on the lobby, an index into `AI_LEVELS` (js/ai.js) —
+`mapType` — the map shape picked with the lobby's map chevrons, an index into `MAPS` (js/world.js); it is
 what the NEXT load grows, since a pick is a page ([map shapes](world.md#map-shapes)) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each
@@ -3091,8 +3091,8 @@ victory, the lobby) can never be undone by a release arriving after it. The
 
 | Track | Plays from | Loops |
 | --- | --- | --- |
-| `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveSelect()` back to the menu | yes |
-| `select` — FROZEN NORTH RUN CLASS SELECTION | `beginSelect()`; the gear pop-up keeps it | yes |
+| `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveLobby()` back to the menu | yes |
+| `lobby` — FROZEN NORTH RUN CLASS SELECTION | `beginLobby()`; the gear pop-up keeps it | yes |
 | `eagle` — FLYING ON EAGLE | `beginDrop()` | yes |
 | `jump` — JUMPING OFF EAGLE | `dropJump()` for the local player | no → `foxglove` |
 | `foxglove` — FOXGLOVE DROP | the end of `jump`, via `TRACKS.next` | no → silence |
