@@ -1750,11 +1750,12 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   inked over it) and stamps the camps' glyphs over it (`drawCampIcon` at every `campSites()`
   tile, inked as the chart inks them). The target
   (`drawLobbyTarget`: the practice range's own archery face, `bakeTargetFace` from
-  js/draw/practice.js baked once per size — straw batt, wooden frame, red ring, cream, red
-  bullseye) wears `level + 1` arrows — in the straw on NORMAL, the red ring on HARD, the bullseye
-  on IMPOSSIBLE (`TGT_R`, in a 32 px face's pixels scaled with it, and `TGT_ANG`) — which fly in
-  from the upper left over
-  `menu.tgtT` whenever the level it shows changes (`menu.tgtLv`), a glint where each lands. In a
+  js/draw/practice.js with `bare` set so the rim carries no snow — straw batt, wooden frame, red
+  ring, cream, red bullseye) is **worn by the level** (`wreckTargetFace`, baked once per size and
+  level, every mark laid out in a 32 px face's pixels and scaled): whole on NORMAL, shot through
+  and cracked on HARD, wrecked on IMPOSSIBLE — a bite out of the rim to the sky, the batt split
+  off the bullseye, punctures everywhere. Whenever the level it shows changes (`menu.tgtLv`) the
+  face swaps and the target jolts for a moment (`menu.tgtT`). In a
   room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
   `'solo'`) and a guest's target is too. The **stage** under them
   holds **your character** alone (`drawLobbyStage`): the 48 px model (`SPRITES.portrait`,
@@ -1791,7 +1792,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   Up/Down; the lit row stands in for the hand while the pointer is off the view), Enter on the
   seed rolls, Enter on the picture closes. The **AI pop-up** (`menu.screen = 'ai'`, off the
   target, host or solo — `beginAiPick`, `aiLayout`/`aiScreenHit`, `renderAiPick`): the target
-  `POP_PIC` big on the left wearing the hovered (else the picked) level's arrows, and on the
+  `POP_PIC` big on the left worn as the hovered (else the picked) level wears it, and on the
   right the **three difficulty plates** (`drawDiffPlates`: `LOBBY_LV_W`×`LOBBY_LV_H`, stacked
   easy to hard, each carrying its level's name (`AI_LEVELS`, js/ai.js — NORMAL / HARD /
   IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one

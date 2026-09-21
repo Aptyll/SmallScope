@@ -175,8 +175,8 @@ const state = {
     // `the wiki`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
     // lobby's map slide (mapStep: {d, k, from, t}, null at rest), the lock-in's
-    // ring (lockFx, s left), and the difficulty target's arrows: the level they
-    // show and how far into their flight (menu.js `lobby`)
+    // ring (lockFx, s left), and the difficulty target: the level it wears and
+    // how long since it changed (its jolt, menu.js `lobby`)
     mapSlide: null, lockFx: 0, tgtLv: 0, tgtT: 1,
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it

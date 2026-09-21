@@ -782,9 +782,9 @@ function updateTitle(dt) {
     const target = ah === 'diff' + k ? 1 : 0;
     m.dhover[k] = (m.dhover[k] || 0) + (target - (m.dhover[k] || 0)) * Math.min(1, dt * 14);
   }
-  // the map slide, the lock-in ring, and the target's arrows - which fly in
-  // again whenever the level the target shows changes (the hovered plate's,
-  // else the picked one's)
+  // the map slide, the lock-in ring, and the target's jolt - whenever the
+  // level the target shows changes (the hovered plate's, else the picked
+  // one's) the face it wears changes and the target jolts
   if (m.mapSlide) { m.mapSlide.t = Math.min(1, m.mapSlide.t + dt / 0.35); if (m.mapSlide.t >= 1) m.mapSlide = null; }
   if (m.lockFx > 0) m.lockFx = Math.max(0, m.lockFx - dt);
   const tl = ah && ah.startsWith('diff') ? +ah.slice(4) : settings.aiLevel | 0;
@@ -1960,7 +1960,7 @@ function beginLobby() {
   m.cswapT = 1;
   m.countT = 0; m.countN = -1; // every rival frame face-down again
   m.lockFx = 0; m.mapSlide = null;
-  m.tgtLv = settings.aiLevel | 0; m.tgtT = 0; // the target's arrows fly in with the screen
+  m.tgtLv = settings.aiLevel | 0; m.tgtT = 1; // the target lands with the screen, no jolt
   SFX.place();
   SFX.music.play('lobby');
 }
@@ -2378,38 +2378,69 @@ function pxDisc(cx, cy, r) {
 // The target - on the lobby beside the map plate, big in the AI pop-up: the
 // practice range's own archery face (bakeTargetFace, js/draw/practice.js -
 // the straw batt in its wooden frame, the red ring, the cream, the red
-// bullseye), baked once per size here, and lv + 1 arrows stuck in it - in
-// the straw on NORMAL, the red ring on HARD, the bullseye on IMPOSSIBLE -
-// "how well they shoot", which is what the level is. size is the face's
-// width; the landing radii are in the face's own units (a 32 px face's
-// pixels, TGT_R) and scale with it. Each arrow flies in from the upper left
-// over m.tgtT (updateTitle zeroes it when the shown level changes), a glint
-// where it lands.
-const TGT_R = [11, 7.8, 0];                                  // landing radius per level, in a 32 px face's px
-const TGT_ANG = [[-2.3], [-2.5, -0.7], [-2.6, -1.4, 0.4]];    // where each arrow sticks
-const tgtFaceCv = {};                                        // one bake per size, lazily
-function drawLobbyTarget(x, y, size, lv, rc, now, a) {
-  const R = (size >> 1) - 1, cx = x + (size >> 1), cy = y + (size >> 1), k = size / 32;
+// bullseye, bare of its snow), WORN BY THE LEVEL: whole on NORMAL, shot
+// through and cracked on HARD, wrecked on IMPOSSIBLE - a bite out of the
+// rim, the batt split, punctures everywhere - "what their shooting does to
+// a target", which is what the level is (wreckTargetFace). Baked once per
+// size and level. size is the face's width; every mark is laid out in a 32
+// px face's pixels and scales with it. m.tgtT (updateTitle zeroes it when
+// the shown level changes) jolts the face for a moment as the new one lands.
+const tgtFaceCv = {};                                        // one bake per size and level, lazily
+function wreckTargetFace(size, lv) {
+  const cv = bakeTargetFace(size, true);
+  if (lv <= 0) return cv;
+  const g = cv.getContext('2d');
+  const k = size / 32, cc = size / 2 - 0.5;
+  const put = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
+  const px = (fx, fy) => [Math.round(cc + fx * k), Math.round(cc + fy * k)];
+  // punctures: a dark hole with a torn lip, more and bigger the harder
+  const holes = lv === 1
+    ? [[-6, -3, 1], [4, 5, 1], [-2, 8, 1], [7, -6, 1], [1, -1, 1]]
+    : [[-6, -3, 2], [4, 5, 2], [-2, 8, 1], [7, -6, 2], [1, -1, 2], [-9, 4, 1], [9, 2, 1], [-4, -9, 1], [3, -10, 1], [-1, 3, 1], [6, -1, 1], [-7, 9, 1], [10, -9, 1], [-11, -6, 1]];
+  for (const [fx, fy, r] of holes) {
+    const [hx, hy] = px(fx, fy);
+    const rr = Math.max(1, Math.round(r * k * 0.7));
+    g.fillStyle = '#3a2c1c';
+    for (let dy = -rr - 1; dy <= rr + 1; dy++) for (let dx = -rr - 1; dx <= rr + 1; dx++) if (dx * dx + dy * dy <= (rr + 1) * (rr + 1) && hash2(hx + dx, hy + dy) > 0.35) g.fillRect(hx + dx, hy + dy, 1, 1);
+    g.fillStyle = '#241a12';
+    for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) if (dx * dx + dy * dy <= rr * rr) g.fillRect(hx + dx, hy + dy, 1, 1);
+  }
+  // cracks: jagged dark lines walking out from a hole across the batt
+  const cracks = lv === 1 ? [[-6, -3, -2.6, 7]] : [[-6, -3, -2.6, 9], [4, 5, 0.9, 8], [1, -1, 2.4, 7], [7, -6, -0.6, 6]];
+  for (const [fx, fy, an, len] of cracks) {
+    let [x, y] = px(fx, fy);
+    let a = an;
+    for (let i = 0; i < len * k; i++) {
+      x += Math.cos(a) * 0.9; y += Math.sin(a) * 0.9;
+      a += (hash2(i * 7 + fx * 3, fy * 5 + 1) - 0.5) * 0.9;
+      put(Math.round(x), Math.round(y), i % 3 === 0 ? '#241a12' : '#3a2c1c');
+    }
+  }
+  if (lv >= 2) {
+    // a bite out of the rim, lower right: the frame and the batt torn away
+    // to the sky, a ragged edge of splinters and loose straw around it
+    const bx = cc + 9.5 * k, by = cc + 8.5 * k, br = 6.2 * k;
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const d = Math.hypot(x - bx, y - by) + (hash2(x * 3 + 7, y * 5 + 2) - 0.5) * 1.6 * k;
+      if (d < br) g.clearRect(x, y, 1, 1);
+      else if (d < br + 1.2 * k) put(x, y, hash2(x, y * 3) > 0.5 ? '#241a12' : '#c9b078');
+    }
+    // the batt split top to bottom off the bullseye, a wide dark seam
+    let sx = cc - 1.5 * k;
+    for (let y = Math.round(cc - 12 * k); y < cc + 3 * k; y++) {
+      sx += (hash2(y * 11 + 3, 17) - 0.5) * 0.8;
+      put(Math.round(sx), y, '#241a12'); put(Math.round(sx) + 1, y, '#3a2c1c');
+    }
+  }
+  return cv;
+}
+function drawLobbyTarget(x, y, size, lv, now, a) {
+  const R = (size >> 1) - 1, cx = x + (size >> 1), cy = y + (size >> 1);
+  const key = size + ':' + lv;
+  const t = state.menu.tgtT, jolt = t < 0.22 ? Math.round(Math.sin(t * 60) * (1 - t / 0.22) * 2) : 0;
   ctx.globalAlpha = a;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; pxDisc(cx + 1, cy + 2, R);
-  ctx.drawImage(tgtFaceCv[size] || (tgtFaceCv[size] = bakeTargetFace(size)), x, y);
-  const t = state.menu.tgtT;
-  for (let j = 0; j <= lv; j++) {
-    const u = Math.max(0, Math.min(1, (t - j * 0.12) / 0.26));
-    if (u <= 0) continue;
-    const an = TGT_ANG[lv][j], rr = Math.round(TGT_R[lv] * k);
-    const lx = cx + Math.round(Math.cos(an) * rr), ly = cy + Math.round(Math.sin(an) * rr);
-    const fly = Math.round((1 - easeOut(u)) * 28);
-    const ax = lx - fly, ay = ly - fly;
-    ctx.fillStyle = '#3a2c1c'; // the shaft, up-left of the tip - dark wood, so it reads on straw and cream
-    for (let i = 1; i <= 8; i++) ctx.fillRect(ax - i, ay - i, 1, 1);
-    ctx.fillStyle = rc;        // the fletching
-    ctx.fillRect(ax - 9, ay - 7, 1, 1); ctx.fillRect(ax - 7, ay - 9, 1, 1);
-    ctx.fillRect(ax - 10, ay - 8, 1, 1); ctx.fillRect(ax - 8, ay - 10, 1, 1);
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(ax, ay, 1, 1); // the head
-    const since = t - j * 0.12 - 0.26;
-    if (since >= 0 && since < 0.1) { ctx.fillStyle = '#ffffff'; ctx.fillRect(lx - 1, ly, 3, 1); ctx.fillRect(lx, ly - 1, 1, 3); }
-  }
+  ctx.drawImage(tgtFaceCv[key] || (tgtFaceCv[key] = wreckTargetFace(size, lv)), x + jolt, y);
 }
 // The three difficulty plates (the AI pop-up): stacked easy to hard, each
 // carrying its level's name and its tier in pips, the picked one filled in
@@ -2475,7 +2506,7 @@ function drawLobbyTop(now, a) {
   const shape = mapName(settings.mapType | 0);
   drawPixelTextShadow(ctx, shape, mn.x - (pixelTextWidth(shape) >> 1), mn.y, mh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   const lv = settings.aiLevel | 0;
-  drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, rc, now, a);
+  drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, now, a);
   const level = AI_LEVELS[lv].name;
   drawPixelTextShadow(ctx, level, tn.x - (pixelTextWidth(level) >> 1), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   ctx.globalAlpha = a;
@@ -2757,7 +2788,7 @@ function renderAiPick(now, a) {
   const h = m.popT >= 1 && mouse.inside ? aiScreenHit() : null;
   const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
   const hk = h && h.startsWith('diff') ? +h.slice(4) : -1;
-  drawLobbyTarget(tgt.x, tgt.y + rise, tgt.w, hk >= 0 ? hk : settings.aiLevel | 0, rc, now, a);
+  drawLobbyTarget(tgt.x, tgt.y + rise, tgt.w, hk >= 0 ? hk : settings.aiLevel | 0, now, a);
   drawDiffPlates(diff, rise, rc, a);
   drawPopX(xr, rise, h === 'x');
   ctx.globalAlpha = 1;
