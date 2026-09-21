@@ -38,7 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - THE MAP SHOWS THE ICE AND THE CAMPS, THE FIGURE STANDS UNARMED WITH ITS CHEVRONS IN CLOSE AND OPENS THE HERO POP-UP WHEN CLICKED - GEAR, SIX STAT POINTS TO SPEND ON HEALTH, DAMAGE, ARMOR, WALK OR DODGE (THE BOTS SPEND THE SAME SIX), AND THE FOUR ABILITIES\' CARDS - LOCK IN IS BIGGER, AND EVERY ROLLED SEED IS THREE DIGITS.'],
+  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - THE MAP SHOWS THE ICE AND THE CAMPS, THE FIGURE STANDS UNARMED WITH ITS CHEVRONS IN CLOSE AND OPENS THE HERO POP-UP WHEN CLICKED - GEAR, SIX STAT POINTS TO SPEND ON HEALTH, DAMAGE, ARMOR, WALK OR DODGE (THE BOTS SPEND THE SAME SIX), AND THE GEAR AND THE ABILITIES AS TWO STRIPS WITH CHEVRONS THAT TURN EACH WELL (THE WARRIOR\'S FOUR KEYS EACH CARRY A SECOND OPTION NOW: WAR CRY, WHIRLWIND, HAMSTRING AND SECOND WIND) - LOCK IN IS BIGGER, AND EVERY ROLLED SEED IS THREE DIGITS.'],
   ['3.76', 'THE STEAM BUILD PACKS ONLY WHAT THE GAME PLAYS: THE MUSIC AND THE CODE, NO SAMPLE CLIPS, NO STALE COPY, NO TYPE PACKAGES.'],
   ['3.75', 'CLASS SELECT IS A LEAGUE LOBBY: TEAM PANELS GLUED TO BOTH EDGES, THE MAP LARGE AT THE TOP WITH CHEVRONS THAT SLIDE TO THE NEXT SHAPE AND THE SEED UNDER IT, THREE DIFFICULTY PLATES WITH A TARGET WHOSE ARROWS LAND NEARER THE BULLSEYE THE HARDER THE RIVALS, AND LOCK IN AT THE FOOT THAT BURSTS A RING, DIMS THE TABS AND WEARS THE COUNT.'],
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -1353,38 +1353,48 @@ function drawLobbyBackdrop(now, a) {
 // its four leather pieces with the class weapon at hand, and under it the
 // STAT LEDGER: every number the kit flies out with, real values from the
 // same code the sim reads (heroPreviewKit / baseKit, js/player.js).
-// MIDDLE: the GEAR - all 12 variants as 32px icon wells, four rows of
-// three, one row per piece - the picked one gold-rimmed, the hovered one
-// lifting and writing its stat deltas into the ledger in green/better or
-// red/worse; clicking a well picks it (pickGear writes straight to
-// player.gear) and the equip plays ON the preview body - a white flash,
-// sparks, the piece's band lit. RIGHT: the STAT POINTS - STAT_POINTS to
-// spend a step at a time across STAT_TRACKS (player.js), the unspent ones
-// as a row of pips at the top, each track a labelled row of pips with a
-// minus and a plus plate whose hover writes the step's delta into the
-// ledger the way a well's does (spendPt) - and under them the four class
-// ABILITIES as wells, which raise their ability card on hover (tipClassAb,
-// js/ui/tooltip.js): what the keys will do, read before the eagle; their
-// growth is the match's own (skill points, js/abilities.js), never bought
-// here. ESC, Enter, the X, or a click outside the panel closes it; LOCK IN
-// stays on the lobby behind it. The ledger's and the tracks' labelled rows
-// are the PLAYER-panel text carve-out: comparing numbers is this panel's
-// whole job. The keyboard walks menu.grow down the gear rows and on
-// through the stat rows; Left/Right pick a variant or spend/refund a point.
-const GEARP_W = 38, GEARP_G = 4; // a variant well, and the grid gap
+// MIDDLE: two STRIPS, four wells across each. The GEAR strip is one well
+// a piece (helmet, chest, legs, boots) wearing the picked variant's 32px
+// icon, with a chevron above and below that cycle it through the piece's
+// three (pickGear writes straight to player.gear; the equip plays ON the
+// preview body - a white flash, sparks, the piece's band lit); a hovered
+// chevron writes the would-be variant's stat deltas into the ledger in
+// green/better or red/worse. The ABILITIES strip is one well a key (1-4)
+// wearing the picked option's icon with the key in the corner, a chevron
+// above and below that cycle it through the key's options (abOptions,
+// js/abilities.js - the warrior's keys carry two each, the hunter's one,
+// whose chevrons stand dim; the pick is player.abPick, read by abOf), and
+// a hover on the well raises the option's card (tipClassAb, js/ui/tooltip.js):
+// what the key will do, read before the eagle - its growth is the match's
+// own (skill points), never bought here. RIGHT: the STAT POINTS -
+// STAT_POINTS to spend a step at a time across STAT_TRACKS (player.js), the
+// unspent ones as a row of pips at the top, each track a labelled row of
+// pips with a minus and a plus plate whose hover writes the step's delta
+// into the ledger the way a chevron's does (spendPt). ESC, Backspace, the
+// X, or a click outside the panel closes it; LOCK IN stays on the lobby
+// behind it. The ledger's and the tracks' labelled rows are the
+// PLAYER-panel text carve-out: comparing numbers is this panel's whole job.
+// The keyboard walks menu.grow down the two strips and on through the stat
+// rows; on a strip Left/Right pick the column (menu.gcol) and Enter or
+// Space cycles it, on a track Left/Right refund and spend a point.
+const GEARP_W = 38, GEARP_G = 4;                     // a strip well, and the gap between wells
 const HERO_STAT_W = 96, HERO_ROW_H = 15, HERO_BTN = 9; // the stat column, a track row, a +/- plate
-const HERO_AB = 34;                                  // an ability well
+const HERO_CHEV = 8;                                 // a strip chevron's height (12 wide)
 function heroLayout() {
   const cx = Math.round(VIEW_W / 2);
   const ledW = 118;
-  const gridW = 3 * GEARP_W + 2 * GEARP_G;
+  const gridW = 4 * GEARP_W + 3 * GEARP_G;
   const pw = 8 + ledW + 10 + gridW + 10 + HERO_STAT_W + 8;
   const ph = 212;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
   const gx = px + 8 + ledW + 10, sx = gx + gridW + 10;
-  const rows = GEAR.map((slot, i) => slot.map((_, v) => ({
-    x: gx + v * (GEARP_W + GEARP_G), y: py + 18 + i * (GEARP_W + GEARP_G), w: GEARP_W, h: GEARP_W,
-  })));
+  const strip = (y) => [0, 1, 2, 3].map((i) => {
+    const x = gx + i * (GEARP_W + GEARP_G);
+    return { x, y, w: GEARP_W, h: GEARP_W, i,
+      up: { x: x + ((GEARP_W - 12) >> 1), y: y - HERO_CHEV - 4, w: 12, h: HERO_CHEV },
+      down: { x: x + ((GEARP_W - 12) >> 1), y: y + GEARP_W + 4, w: 12, h: HERO_CHEV } };
+  });
+  const gear = strip(py + 26), abils = strip(py + 26 + GEARP_W + 4 + 2 * HERO_CHEV + 12);
   // the tracks: a row each under the unspent pips, the +/- plates at the row's right edge
   const tracks = STAT_TRACKS.map((t, i) => {
     const y = py + 30 + i * HERO_ROW_H;
@@ -1392,9 +1402,7 @@ function heroLayout() {
       minus: { x: sx + HERO_STAT_W - 2 * HERO_BTN - 3, y: y + 1, w: HERO_BTN, h: HERO_BTN },
       plus: { x: sx + HERO_STAT_W - HERO_BTN, y: y + 1, w: HERO_BTN, h: HERO_BTN } };
   });
-  const ay = py + 30 + STAT_TRACKS.length * HERO_ROW_H + 8;
-  const abils = [0, 1, 2, 3].map((i) => ({ x: sx + (i % 2) * (HERO_AB + 4) + ((HERO_STAT_W - 2 * HERO_AB - 4) >> 1), y: ay + (i >> 1) * (HERO_AB + 4), w: HERO_AB, h: HERO_AB, i }));
-  return { cx, panel: { x: px, y: py, w: pw, h: ph }, rows, tracks, abils,
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, gear, abils, tracks,
     prev: { x: px + 8, y: py + 8, w: ledW, h: 78 },   // the preview well
     led: { x: px + 8, y: py + 92, w: ledW },           // the ledger below it
     name: { x: gx + (gridW >> 1), y: py + 188 },       // the hovered thing's name
@@ -1890,24 +1898,31 @@ function gearIcon32(i, v) {
   }
   return cv;
 }
-// what the pointer is over on the hero pop-up: {row, v} (a variant well),
-// {pt, d} (a track's minus or plus), {ab} (an ability well), 'x', 'panel'
+// what the pointer is over on the hero pop-up: {row} (a gear well) or
+// {row, d} (its chevron, d -1 up / 1 down), {ab} (an ability well) or
+// {ab, d} (its chevron), {pt, d} (a track's minus or plus), 'x', 'panel'
 // (the slab itself - inert, swallows the press), or null (outside: a click
 // closes)
 function heroScreenHit() {
-  const { rows, tracks, abils, panel, xr } = heroLayout();
+  const { gear, abils, tracks, panel, xr } = heroLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(xr, 3, 3)) return 'x';
-  for (let i = 0; i < rows.length; i++) {
-    for (let v = 0; v < rows[i].length; v++) if (over(rows[i][v], 0, 1)) return { row: i, v };
-  }
+  for (const w of gear) { if (over(w.up, 3, 2)) return { row: w.i, d: -1 }; if (over(w.down, 3, 2)) return { row: w.i, d: 1 }; if (over(w, 0, 0)) return { row: w.i }; }
+  for (const w of abils) { if (over(w.up, 3, 2)) return { ab: w.i, d: -1 }; if (over(w.down, 3, 2)) return { ab: w.i, d: 1 }; if (over(w, 0, 0)) return { ab: w.i }; }
   for (const t of tracks) { if (over(t.minus, 1, 2)) return { pt: t.i, d: -1 }; if (over(t.plus, 1, 2)) return { pt: t.i, d: 1 }; }
-  for (const w of abils) if (over(w, 0, 0)) return { ab: w.i };
   return popFrameHit(panel, xr);
+}
+// key i's option turned by d: the next (or the last) of what the key
+// carries; a key with one option has nowhere to turn
+function pickAbility(i, d) {
+  const n = abOptions(player.cls, i).length;
+  if (n < 2) { SFX.deny(); return; }
+  player.abPick[i] = (((player.abPick[i] | 0) + d) % n + n) % n;
+  SFX.pickup();
 }
 
 function beginHero() {
-  state.menu.grow = 0;
+  state.menu.grow = 0; state.menu.gcol = 0;
   openPop('hero');
 }
 function leaveHero() { leavePop(); }
@@ -1937,12 +1952,18 @@ function pickGear(i, v) {
 function heroKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  const N = GEAR.length + STAT_TRACKS.length; // the gear rows, then the stat rows
-  if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') leaveHero();
+  const N = 2 + STAT_TRACKS.length; // the two strips, then the stat rows
+  const gc = m.gcol | 0;
+  if (k === 'escape' || k === 'backspace') leaveHero();
   else if (moveDir(k) === 'up') { m.grow = (m.grow + N - 1) % N; SFX.pickup(); }
   else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % N; SFX.pickup(); }
-  else if (moveDir(k) === 'left') { if (m.grow < GEAR.length) pickGear(m.grow, (player.gear[m.grow] + 2) % 3); else spendPt(m.grow - GEAR.length, -1); }
-  else if (moveDir(k) === 'right') { if (m.grow < GEAR.length) pickGear(m.grow, (player.gear[m.grow] + 1) % 3); else spendPt(m.grow - GEAR.length, 1); }
+  else if (m.grow < 2) {
+    if (moveDir(k) === 'left') { m.gcol = (gc + 3) % 4; SFX.pickup(); }
+    else if (moveDir(k) === 'right') { m.gcol = (gc + 1) % 4; SFX.pickup(); }
+    else if (k === 'enter' || k === ' ') { if (m.grow === 0) pickGear(gc, (player.gear[gc] + 1) % 3); else pickAbility(gc, 1); }
+  }
+  else if (moveDir(k) === 'left') spendPt(m.grow - 2, -1);
+  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') spendPt(m.grow - 2, 1);
 }
 
 function heroClick() {
@@ -1950,10 +1971,10 @@ function heroClick() {
   if (m.lockT > 0 || m.popT < 1) return;
   const h = heroScreenHit();
   if (!h || h === 'x') { leaveHero(); return; } // the X, or anywhere off the panel
-  if (h === 'panel' || h.ab != null) return;    // the slab swallows it; an ability well is a card, not a button
-  if (h.pt != null) { m.grow = GEAR.length + h.pt; spendPt(h.pt, h.d); return; }
-  m.grow = h.row;
-  pickGear(h.row, h.v);
+  if (h === 'panel') return;                    // the slab swallows it
+  if (h.pt != null) { m.grow = 2 + h.pt; spendPt(h.pt, h.d); return; }
+  if (h.row != null) { m.grow = 0; m.gcol = h.row; pickGear(h.row, (player.gear[h.row] + (h.d || 1) + 3) % 3); return; } // a chevron turns it; the well itself turns it forward
+  if (h.ab != null) { m.grow = 1; m.gcol = h.ab; pickAbility(h.ab, h.d || 1); }
 }
 
 // what the pointer is on: 'play', 'hero' (your figure: the hero pop-up),
@@ -2084,7 +2105,7 @@ function lockIn() {
   setClass(player, m.csel);
   SFX.place();
   if (NET.role === 'solo' && (settings.mapType | 0) !== MAP_TYPE) {
-    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear, pts: player.pts })); } catch (e) { }
+    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear, pts: player.pts, abPick: player.abPick })); } catch (e) { }
     location.href = location.pathname + '?seed=' + SEED + '&map=' + (settings.mapType | 0);
     m.lockT = 9; // the old page holds the lobby still until the new one paints
     return;
@@ -2500,6 +2521,14 @@ function drawDiffPlates(diff, rise, rc, a) {
   }
 }
 
+// a bare chevron pointing up (d = -1) or down (1), 12 wide and 8 tall: the
+// strips' turn arrows
+function drawChevronV(x, y, d, col) {
+  ctx.fillStyle = 'rgba(4,6,18,0.55)';
+  for (let i = 0; i < 6; i++) { const dy = d < 0 ? 5 - i : i; ctx.fillRect(x + i + 1, y + dy + 1, 1, 3); ctx.fillRect(x + 11 - i + 1, y + dy + 1, 1, 3); }
+  ctx.fillStyle = col;
+  for (let i = 0; i < 6; i++) { const dy = d < 0 ? 5 - i : i; ctx.fillRect(x + i, y + dy, 1, 3); ctx.fillRect(x + 11 - i, y + dy, 1, 3); }
+}
 // a bare chevron, d = -1 pointing left, 1 right: the arrow grammar, no plate
 function drawChevron(x, y, d, col) {
   ctx.fillStyle = 'rgba(4,6,18,0.55)';
@@ -2674,21 +2703,22 @@ function drawGearPreview(r, now) {
 // left, the twelve wells on the right, the X in the corner
 function renderHero(now, a) {
   const m = state.menu;
-  const { panel, rows, tracks, abils, xr, prev, led, name, pips } = heroLayout();
+  const { panel, gear, abils, tracks, xr, prev, led, name, pips } = heroLayout();
   const rise = Math.round((1 - a) * 12);
   ctx.globalAlpha = a;
   drawPopSlab(panel, rise);
   const gh = m.popT >= 1 && mouse.inside ? heroScreenHit() : null;
   const onWell = gh && gh.row != null, onPt = gh && gh.pt != null, onAb = gh && gh.ab != null;
+  const gearNext = onWell ? (player.gear[gh.row] + (gh.d || 0) + 3) % 3 : -1; // what a hovered chevron would pick
   drawGearPreview({ x: prev.x, y: prev.y + rise, w: prev.w, h: prev.h }, now);
-  // the ledger: the numbers as picked now - and, under a hovered variant or
-  // a hovered +/- plate, what they would BECOME, green where that is better
-  // and red where worse
+  // the ledger: the numbers as picked now - and, under a hovered gear
+  // chevron or a hovered +/- plate, what they would BECOME, green where that
+  // is better and red where worse
   const cur = heroPreviewKit(player.gear, player.pts);
   let hovKit = null;
-  if (onWell && gh.v !== player.gear[gh.row]) {
+  if (onWell && gh.d && gearNext !== player.gear[gh.row]) {
     const picks = player.gear.slice();
-    picks[gh.row] = gh.v;
+    picks[gh.row] = gearNext;
     hovKit = heroPreviewKit(picks, player.pts);
   } else if (onPt && (gh.d > 0 ? ptsSpent(player) < STAT_POINTS : (player.pts[gh.pt] | 0) > 0)) {
     const pts = player.pts.slice();
@@ -2720,22 +2750,52 @@ function renderHero(now, a) {
     }
   }
   ctx.globalAlpha = a;
-  for (let i = 0; i < rows.length; i++) {
-    for (let v = 0; v < rows[i].length; v++) {
-      const r = rows[i][v];
-      drawGearWell({ x: r.x, y: r.y + rise, w: r.w, h: r.h }, i, v,
-        onWell && gh.row === i && gh.v === v,
-        player.gear[i] === v, m.grow === i && player.gear[i] === v, now);
+  // the two strips: a well a piece wearing its pick, a well a key wearing
+  // its option, chevrons above and below (dim where there is nothing to
+  // turn to), the keyboard's column breathing its corner ticks
+  const keyed = !mouse.inside;
+  for (const w of gear) {
+    const v = player.gear[w.i];
+    drawGearWell({ x: w.x, y: w.y + rise, w: w.w, h: w.h }, w.i, v, onWell && gh.row === w.i && !gh.d, true, keyed && m.grow === 0 && (m.gcol | 0) === w.i, now);
+    ctx.globalAlpha = a;
+    for (const [c, d] of [[w.up, -1], [w.down, 1]]) {
+      const hot = onWell && gh.row === w.i && gh.d === d;
+      drawChevronV(c.x, c.y + rise - (hot ? d : 0), d, hot ? '#ffd95c' : '#8fa8d0');
+    }
+  }
+  for (const w of abils) {
+    const n = abOptions(player.cls, w.i).length, k = player.abPick[w.i] | 0;
+    const hot = onAb && gh.ab === w.i && !gh.d, y = w.y + rise - (hot ? 1 : 0);
+    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(w.x + 2, w.y + rise + 2, w.w, w.h);
+    ctx.fillStyle = hot ? '#8fa0c8' : '#c89a3c'; ctx.fillRect(w.x, y, w.w, w.h);
+    ctx.fillStyle = '#1a2142'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
+    ctx.drawImage(classAbIcon(player.cls, w.i, k), w.x + 3, y + 3);
+    drawPixelTextShadow(ctx, String(w.i + 1), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
+    if (keyed && m.grow === 1 && (m.gcol | 0) === w.i) { // keyboard cursor: four corner ticks, breathing
+      ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
+      ctx.fillStyle = '#f4f7ff';
+      ctx.fillRect(w.x - 1, y - 1, 4, 1); ctx.fillRect(w.x - 1, y - 1, 1, 4);
+      ctx.fillRect(w.x + w.w - 3, y - 1, 4, 1); ctx.fillRect(w.x + w.w, y - 1, 1, 4);
+      ctx.fillRect(w.x - 1, y + w.h, 4, 1); ctx.fillRect(w.x - 1, y + w.h - 3, 1, 4);
+      ctx.fillRect(w.x + w.w - 3, y + w.h, 4, 1); ctx.fillRect(w.x + w.w, y + w.h - 3, 1, 4);
+      ctx.globalAlpha = a;
+    }
+    for (const [c, d] of [[w.up, -1], [w.down, 1]]) {
+      const hotc = onAb && gh.ab === w.i && gh.d === d;
+      ctx.globalAlpha = a * (n > 1 ? 1 : 0.3);
+      drawChevronV(c.x, c.y + rise - (hotc && n > 1 ? d : 0), d, hotc && n > 1 ? '#ffd95c' : '#8fa8d0');
       ctx.globalAlpha = a;
     }
   }
-  // the hovered variant's, track's or ability's name (else the focused
-  // row's pick) - the one word the icons earn
-  const focusTrack = m.grow - GEAR.length;
-  const nm = onWell ? GEAR[gh.row][gh.v].name : onPt ? STAT_TRACKS[gh.pt].name : onAb ? CLASS_AB[player.cls][gh.ab].name
-    : focusTrack >= 0 ? STAT_TRACKS[focusTrack].name : GEAR[m.grow][player.gear[m.grow]].name;
+  // the hovered variant's, option's or track's name (else the focused
+  // column's pick) - the one word the icons earn; a hovered chevron names
+  // what it would turn to
+  const focusTrack = m.grow - 2, gc = m.gcol | 0;
+  const abNext = onAb ? abOptions(player.cls, gh.ab)[(((player.abPick[gh.ab] | 0) + (gh.d || 0)) % abOptions(player.cls, gh.ab).length + abOptions(player.cls, gh.ab).length) % abOptions(player.cls, gh.ab).length] : null;
+  const nm = onWell ? GEAR[gh.row][gearNext].name : onAb ? abNext.name : onPt ? STAT_TRACKS[gh.pt].name
+    : focusTrack >= 0 ? STAT_TRACKS[focusTrack].name : m.grow === 1 ? abOf(player, gc).name : GEAR[gc][player.gear[gc]].name;
   drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
-    (onWell && gh.v !== player.gear[gh.row]) || onPt || onAb ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+    (onWell && gh.d) || (onAb && gh.d) || onPt ? '#f4f7ff' : '#ffd95c', '#0a0e23');
   // the stat points: the unspent ones as a row of pips at the top, then a
   // labelled row per track - its spent points as gold pips, a minus and a
   // plus plate at the edge (dim when they can do nothing), the keyboard's
@@ -2773,17 +2833,6 @@ function renderHero(now, a) {
       ctx.fillRect(t.x - 4, y + 4, 2, 1); ctx.fillRect(t.plus.x + t.plus.w + 2, y + 4, 2, 1);
       ctx.globalAlpha = a;
     }
-  }
-  // the four abilities: wells the hand reads a card off, never a button
-  for (const w of abils) {
-    const hot = onAb && gh.ab === w.i, y = w.y + rise - (hot ? 1 : 0);
-    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(w.x + 2, w.y + rise + 2, w.w, w.h);
-    ctx.fillStyle = hot ? '#8fa0c8' : '#2c3560'; ctx.fillRect(w.x, y, w.w, w.h);
-    ctx.fillStyle = '#0f1632'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
-    ctx.globalAlpha = a * (hot ? 1 : 0.8);
-    ctx.drawImage(classAbIcon(player.cls, w.i), w.x + 1, y + 1);
-    ctx.globalAlpha = a;
-    drawPixelTextShadow(ctx, String(w.i + 1), w.x + 2, y + w.h - 8, '#9fb6d8', '#0a0e23'); // the key, a keybind indicator
   }
   drawPopX(xr, rise, gh === 'x');
   ctx.globalAlpha = 1;
@@ -3159,7 +3208,7 @@ const WIKI_PAGES = [
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });
       b.push({ kind: 'head', h: 12, text: 'KEYS 1-4', cols: WIKI_AB_COLS });
-      CLASS_AB[cls].forEach((ab, i) => b.push({ kind: 'ab', h: 36, cls, i, cols: WIKI_AB_COLS }));
+      CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: 36, cls, i, k, cols: WIKI_AB_COLS })));
     });
     return b;
   } },
@@ -3454,15 +3503,15 @@ function renderWiki(now, a) {
     } else if (bl.kind === 'ab') {
       // an ability: its key on a plate, its icon in a well (the strip's
       // own), its name, the two numbers in the columns, and what it does
-      const ab = CLASS_AB[bl.cls][bl.i];
-      const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i;
+      const ab = abOptions(bl.cls, bl.i)[bl.k | 0];
+      const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i && (hit.k | 0) === (bl.k | 0);
       const iy = y + 1, wx = L.left + 10;
       ctx.fillStyle = '#0a0e23'; ctx.fillRect(L.left, iy + 12, 7, 8);
       ctx.fillStyle = '#1c2750'; ctx.fillRect(L.left + 1, iy + 13, 5, 6);
       drawPixelText(ctx, String(bl.i + 1), L.left + 2, iy + 14, '#ffd95c');
       ctx.fillStyle = hot ? '#7a8bb8' : '#0a0e23'; ctx.fillRect(wx - 1, iy - 1, 34, 34);
       ctx.fillStyle = BAG_WELL; ctx.fillRect(wx, iy, 32, 32);
-      ctx.drawImage(classAbIcon(bl.cls, bl.i), wx, iy);
+      ctx.drawImage(classAbIcon(bl.cls, bl.i, bl.k), wx, iy);
       const tx = wx + 37;
       drawPixelTextShadow(ctx, ab.name, tx, y + 4, hot ? '#ffd95c' : '#f4f7ff', '#0a0e23');
       let rx = L.right, firstX = rx;

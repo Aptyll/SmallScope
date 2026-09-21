@@ -169,8 +169,9 @@ const state = {
     // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'chars' | 'create'.
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
-    // grow is the hero pop-up's keyboard row (gear rows, then the stat
-    // rows), gearFxT/gearFxSlot its equip flash,
+    // grow is the hero pop-up's keyboard row (the gear strip, the ability
+    // strip, then the stat rows) and gcol its column on a strip,
+    // gearFxT/gearFxSlot its equip flash,
     // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
     // is a surface of its own on wikiT, with wikiTab the open page (menu.js
     // `the wiki`).
@@ -188,7 +189,7 @@ const state = {
     // relay's open rooms, whether the relay answered, the row hovers, the
     // keyboard row, and the refusal rattle of a room that would not have us
     roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
-    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0 },
+    pop: null, popT: 0, grow: 0, gcol: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from

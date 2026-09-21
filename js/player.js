@@ -486,6 +486,7 @@ class Player {
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like gear and cards, NOT cleared by reset(): a death keeps what was bought
+    this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
     this.cards = [];                    // picked roguelike cards, {rarity,id} - like gear, survives a respawn
     // the one order marker this player has standing (the right-click radial;
     // see the `team flags` banner in js/robots.js): null, or { tx, ty, type,
@@ -575,6 +576,7 @@ class Player {
     // slowed under a net or a crater, mid-reel on the grapple, shielded,
     // or mid-rush
     this.abCd = [0, 0, 0, 0];                      // (abLv, the ranks bought, lives in the constructor: a death keeps them)
+    this.windT = 0; this.windRate = 0;             // SECOND WIND's breath: s left, hp a second (abSecondWind)
     this.castAb = -1; this.castT = 0; this.castMax = 0; // castMax is the wind-up's full length, so a telegraph can read how far along it is (castProg)
     // Every state ANY unit can be under - stun, root, slow and its net
     // drape, the mark, and fire - is written and cleared in one place for

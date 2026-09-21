@@ -293,7 +293,8 @@ a change in `PAD_PLAY` is a row there.
 ## Classes
 
 Every player also carries a class (`p.cls`, an index into `CLASSES` in the `players` banner).
-A class is a look, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`,
+A class is a look, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`, a key carrying
+one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](gameplay.md#class-abilities-keys-1-4);
 [js/abilities.js](../../js/abilities.js) — see [Class abilities](gameplay.md#class-abilities-keys-1-4)).
 The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers

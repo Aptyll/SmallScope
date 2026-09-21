@@ -23,6 +23,12 @@ const AB_KEYS = 4;          // keys 1-4
 // key you can use at all, and how early - is the whole build.
 const AB_LV_MAX = 3;
 const AB_LV_CD = 0.12;
+// the warrior's alternate keys (CLASS_AB_ALT below)
+const CRY_R = 96;           // px: the shout's reach
+const CRY_SLOW_T = 2.5, CRY_SLOW = 0.6, CRY_MARK_T = 4; // slowed to 60% for 2.5 s, marked for 4
+const WHIRL_R = 36, WHIRL_DMG = 7, WHIRL_KB = 120;     // the blade ring
+const HAM_R = 46, HAM_HALF = 1.15, HAM_DMG = 3, HAM_ROOT = 1.4; // the sweep ahead, and the root it leaves
+const WIND_T = 4, WIND_HEAL = 0.3;                     // 30% of max hp back over 4 s
 // hunter
 const PIERCE_WIND = 0.7;    // s the draw is LOCKED before the shot looses itself
 const PIERCE_MUL = 1.5;     // over a fully drawn plain arrow's damage
@@ -157,16 +163,52 @@ const abFx = [];     // {kind: 'wedge'|'ring', x, y, a, r, half, t, col} - where
 // reaches for a key ask it, so a locked ability is dark for a player whoever
 // is driving it.
 function abUnlocked(p, i) { return p.abLv[i] > 0; }
+// ---- the options on a key --------------------------------------------------
+// A key can carry more than one ability: CLASS_AB[cls][i] is its first
+// option and CLASS_AB_ALT[cls][i] the others, picked pre-match in the hero
+// pop-up (p.abPick[i], js/ui/menu.js) - a bot keeps the first, which is the
+// one its hands know (aiCombat, js/ai.js reaches for keys by index). Every
+// reader asks abOf(p, i) for what a key IS on this body; abKeyOf finds the
+// key an ability id is standing on, or -1 when it is not picked at all.
+const CLASS_AB_ALT = [
+  [[], [], [], []], // the hunter's keys carry one option each
+  [ // the warrior's other four
+    [{
+      id: 'cry', name: 'WAR CRY', cd: 16, cast: 0.25,
+      blurb: 'A SHOUT THAT CARRIES. EVERY RIVAL IN EARSHOT IS SLOWED AND MARKED FOR YOUR SIDE TO SEE.',
+      use: (p) => abWarCry(p),
+    }],
+    [{
+      id: 'whirl', name: 'WHIRLWIND', cd: 11, cast: 0.3,
+      blurb: 'SPIN THE BLADE A FULL TURN. EVERYTHING AT ARM\'S LENGTH IS CUT AND THROWN BACK.',
+      use: (p) => abWhirlwind(p),
+    }],
+    [{
+      id: 'ham', name: 'HAMSTRING', cd: 13, cast: 0.25,
+      blurb: 'A LOW SWEEP ACROSS THE SHINS AHEAD. WHOEVER IT CATCHES IS PINNED WHERE THEY STAND.',
+      use: (p) => abHamstring(p),
+    }],
+    [{
+      id: 'wind', name: 'SECOND WIND', cd: 40, cast: 0.4,
+      blurb: 'A BREATH TAKEN MID-FIGHT. A THIRD OF YOUR LIFE COMES BACK OVER FOUR SECONDS.',
+      use: (p) => abSecondWind(p),
+      acol: '#f2937f', activeF: (p) => (p.windT > 0 ? p.windT / WIND_T : 0),
+    }],
+  ],
+];
+function abOptions(cls, i) { return [CLASS_AB[cls][i]].concat(CLASS_AB_ALT[cls] && CLASS_AB_ALT[cls][i] || []); }
+function abOf(p, i) { const o = abOptions(p.cls, i); return o[Math.min(o.length - 1, p.abPick ? p.abPick[i] | 0 : 0)]; }
+function abKeyOf(p, id) { for (let i = 0; i < AB_KEYS; i++) if (abOf(p, i).id === id) return i; return -1; }
 function abReady(p, i) { return p.abLv[i] > 0 && p.abCd[i] <= 0; } // bought AND off cooldown: what a bot reaches for
 function abLvCanBuy(p, i) { return p.skillPts > 0 && p.abLv[i] < AB_LV_MAX; }
-function abCdOf(p, i) { return CLASS_AB[p.cls][i].cd * (1 - AB_LV_CD * (Math.max(1, p.abLv[i]) - 1)); }
+function abCdOf(p, i) { return abOf(p, i).cd * (1 - AB_LV_CD * (Math.max(1, p.abLv[i]) - 1)); }
 function buyAbilityLv(p, i) {
   if (!abLvCanBuy(p, i)) { sfxFor(p, 'deny'); return; }
   p.skillPts--;
   p.abLv[i]++;
   // the first point is the one that changes what you CAN do, so it says so;
   // every one after is a number going up
-  const nm = CLASS_AB[p.cls][i].name;
+  const nm = abOf(p, i).name;
   addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], GEAR_MATS[p.abLv[i] - 1]);
   burst(p.x, p.y - 8, GEAR_MATS[p.abLv[i] - 1], p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
@@ -179,7 +221,7 @@ function buyAbilityLv(p, i) {
 function tryAbility(p, i) {
   if (i < 0 || i >= AB_KEYS || p.dead || p.stunT > 0 || p.fallT > 0 ||
     p.dodgeT > 0 || p.grapT > 0 || p.castT > 0 || p.eatT > 0 || inAir(p) || p.zip >= 0) return; // a meal occupies the hands the same way a cast does; so does a zipline's handle
-  const ab = CLASS_AB[p.cls][i];
+  const ab = abOf(p, i);
   if (!ab) return;
   // a key nobody has spent a point on is not yours yet: the dim well already
   // says so, and the press reddens it the way a bit that will not fit reddens
@@ -252,7 +294,7 @@ function updateAbilities(p, dt) {
   // caster is holding NOW - a bot tracking its target casts like a hand does
   if (p.castT > 0) {
     p.castT -= dt;
-    const ab = CLASS_AB[p.cls][p.castAb];
+    const ab = abOf(p, p.castAb);
     // a cast with a telegraph on the snow keeps facing the aim the whole
     // wind-up - the locked draw, the charge's line, the slam's and the
     // execute's wedge - so the shape and the body agree about where this is
@@ -267,8 +309,14 @@ function updateAbilities(p, dt) {
       p.castAb = -1;
       p.castT = 0;
       p.abCd[i] = abCdOf(p, i);
-      CLASS_AB[p.cls][i].use(p);
+      abOf(p, i).use(p);
     }
+  }
+  // SECOND WIND: the breath, a share of the life back each tick until the clock runs out
+  if (p.windT > 0) {
+    const step = Math.min(dt, p.windT);
+    p.windT -= step;
+    p.hp = Math.min(p.maxHp, p.hp + p.windRate * step);
   }
 }
 
@@ -281,7 +329,7 @@ function abilityMoveMul(p) {
   // a cast halves the walk - except the locked draw, which all but plants the
   // feet: the pierce's cost is standing still where everyone can see the line
   if (p.castT > 0) {
-    const ab = CLASS_AB[p.cls][p.castAb];
+    const ab = abOf(p, p.castAb);
     m *= ab && ab.id === 'pierce' ? PIERCE_SLOW : 0.5;
   }
   if (p.shieldT > 0) m *= 0.4;
@@ -397,7 +445,7 @@ function abGrapple(p) {
   }
   if (!found) {
     // nothing to bite: the throw whiffs, and only a beat is paid for it
-    const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'grap');
+    const i = abKeyOf(p, 'grap');
     if (i >= 0) p.abCd[i] = GRAP_MISS_CD;
     burst(p.x + nx * 14, p.y + ny * 14, '#8b93a8', 3, 25, 0.25, true);
     sfxFor(p, 'deny');
@@ -416,7 +464,7 @@ function abGrapple(p) {
 function grapEnd(p) {
   if (p.grapT <= 0) return;
   p.grapT = 0;
-  const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'grap');
+  const i = abKeyOf(p, 'grap');
   if (i >= 0) p.abCd[i] = abCdOf(p, i);
   burst(p.x, p.y - 2, '#c8d2e4', 4, 30, 0.3, true);
   sfxAt('pickup', p.x, p.y);
@@ -430,7 +478,7 @@ function grapEnd(p) {
 function abSnowCover(p) {
   tryProne(p);
   if (!p.prone) {
-    const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'snow');
+    const i = abKeyOf(p, 'snow');
     if (i >= 0) p.abCd[i] = 0; // the snow refused: nothing is paid
   }
 }
@@ -447,7 +495,7 @@ function abShieldUp(p) {
 function abShieldDown(p, early) {
   if (p.shieldT <= 0 && !early) return;
   p.shieldT = 0;
-  const i = CLASS_AB[p.cls].findIndex((a) => a.id === 'shield');
+  const i = abKeyOf(p, 'shield');
   if (i >= 0) p.abCd[i] = abCdOf(p, i);
   sfxAt('pickup', p.x, p.y);
 }
@@ -605,6 +653,61 @@ function abExecute(p) {
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: EXEC_R, half: EXEC_HALF, t: 0, col: '#e05a4a' });
   burst(p.x + nx * 10, p.y - 2 + ny * 8, '#eef4fb', 8, 45, 0.4, true);
   sfxAt('break_', p.x, p.y);
+}
+
+// ---- warrior: the other four -----------------------------------------------
+// WAR CRY: every rival unit in earshot slowed and marked - the mark is the
+// one both maps read (markUnit), so the shout is a scouting tool as much as
+// a fight one. Nothing is hurt.
+function abWarCry(p) {
+  for (const q of unitsNear(p, p.x, p.y, CRY_R)) {
+    if (q.team === p.team && q !== p) continue;
+    slowUnit(q, CRY_SLOW_T, CRY_SLOW);
+    markUnit(q, CRY_MARK_T);
+    burst(q.x, unitMidY(q), '#f2cc6a', 4, 30, 0.3, true);
+  }
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: CRY_R, t: 0, col: '#f2cc6a' });
+  shakeFor(p, 3);
+  sfxAt('break_', p.x, p.y);
+}
+// WHIRLWIND: the blade round a full turn. Everything alive at arm's length
+// takes the cut and the throw; the buildings in reach take the cut.
+function abWhirlwind(p) {
+  for (const q of unitsHit(p, p.x, p.y, WHIRL_R)) {
+    const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+    const nx = (q.x - p.x) / d, ny = (q.y - p.y) / d;
+    hurtUnit(q, WHIRL_DMG, nx, ny, p, { kb: WHIRL_KB });
+    burst(q.x, unitMidY(q), '#e05a4a', 6, 45, 0.4);
+  }
+  for (const s of structsNear(p, p.x, p.y, WHIRL_R)) hurtStruct(s, WHIRL_DMG, p);
+  if (PRACTICE) abHitDummies(p.x, p.y, WHIRL_R, WHIRL_DMG);
+  abFx.push({ kind: 'ring', x: p.x, y: p.y, r: WHIRL_R, t: 0, col: '#c8d2e4' });
+  burst(p.x, p.y - 4, '#eef4fb', 10, 60, 0.4, true);
+  shakeFor(p, 4);
+  sfxAt('swing', p.x, p.y);
+}
+// HAMSTRING: the low sweep through the wedge ahead - a small cut and the root
+// (rootUnit: the same pin a net's edge leaves), so the body it catches stays
+// for whatever comes next.
+function abHamstring(p) {
+  const a = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
+  const nx = Math.cos(a), ny = Math.sin(a);
+  for (const q of unitsInCone(p, p.x, p.y, a, HAM_R, HAM_HALF)) {
+    hurtUnit(q, HAM_DMG, nx, ny, p, { kb: 0 });
+    if (!q.dead) rootUnit(q, HAM_ROOT);
+    burst(q.x, q.y, '#e05a4a', 5, 35, 0.35);
+  }
+  if (PRACTICE) abHitDummies(p.x + nx * HAM_R * 0.5, p.y + ny * HAM_R * 0.5, HAM_R * 0.5, HAM_DMG);
+  abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: HAM_R, half: HAM_HALF, t: 0, col: '#c8d2e4' });
+  sfxAt('swing', p.x, p.y);
+}
+// SECOND WIND: the breath. The heal is paid out over WIND_T by updateAbilities,
+// so a hit landed in the meantime still counts - it is a lifeline, not a wall.
+function abSecondWind(p) {
+  p.windT = WIND_T;
+  p.windRate = p.maxHp * WIND_HEAL / WIND_T;
+  burst(p.x, p.y - 8, '#f2937f', 8, 40, 0.5, true);
+  sfxAt('place', p.x, p.y);
 }
 
 // the practice dummy takes area hits like everything else: any dummy tile
@@ -793,7 +896,7 @@ function drawAbilityGround(ex, ey, now) {
   // to not be
   for (const p of players) {
     if (!p.active || p.dead || inAir(p) || p.castT <= 0) continue;
-    const ab = CLASS_AB[p.cls][p.castAb];
+    const ab = abOf(p, p.castAb);
     if (!ab) continue;
     const closing = castProg(p);
     const col = closing > 0.75 ? TELE_HOT : TELE_COL;
@@ -921,7 +1024,7 @@ function abilityPose(p) {
     return { dx: 0, dy: -Math.round(4 * Math.sin(Math.PI * (1 - p.hopT / 0.3))), rot: 0 };
   }
   if (p.castT <= 0 || p.castAb < 0) return null;
-  const ab = CLASS_AB[p.cls][p.castAb];
+  const ab = abOf(p, p.castAb);
   const prog = 1 - p.castT / ab.cast;
   switch (ab.id) {
     // the locked draw: leant back off the aim, planted, and it does not move
@@ -1331,16 +1434,161 @@ const AB32 = [
     ],
   ],
 ];
+// ---- the warrior's other four: the alternate option on each key ---------
+// AB32_ALT[cls][key][k] in CLASS_AB_ALT's own order, baked by classAbIcon
+// like the eight above
+const AB32_ALT = [
+  [[], [], [], []],
+  [
+    [[ // WAR CRY: the open mouth, three sound arcs rolling out
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '.......ooooo....................',
+      '.....ooopppooo..................',
+      '....oopppppppoo.................',
+      '....oppprrrpppo.................',
+      '...oopprrrrrppoo................',
+      '...opprrrRrrrppoooooooooooooooo.',
+      '...opprrRRRrrppoWWooggooggooGGo.',
+      '...opprrrRrrrppoWWooggooggooGGo.',
+      '...oopprrrrrppooWWooggooggooGGo.',
+      '....oppprrrpppoWWWogggooggooGGo.',
+      '....oopppppppoWWWooggoogggooGGo.',
+      '.....ooopppooWWWWooggooggooGGoo.',
+      '.......oooooooWWoogggooggooGGo..',
+      '.............oooogggoogggoGGGo..',
+      '...............ogggoogggooGGoo..',
+      '...............oggoooggoooGGo...',
+      '...............ooooogggooGGoo...',
+      '.................oogggooGGGo....',
+      '.................ogggooGGGoo....',
+      '.................oooooGGGGo.....',
+      '....................oGGGGoo.....',
+      '....................oGGGoo......',
+    ]],
+    [[ // WHIRLWIND: two blades curling round the body, the sweep in white
+      '................................',
+      '................................',
+      '................................',
+      '............ooooooooo...........',
+      '.........ooooWWWWWWWoooo........',
+      '........ooWWWsssssssWWWoo.......',
+      '.......ooWWsssssssssssWWoo......',
+      '......ooWWssssooooossssWWoo.....',
+      '.....ooWWsssooooooooosssWWoo....',
+      '....ooWWssoooCCCCCCoooossWWo....',
+      '....oWWssoooCCCCCCCo..oossWo....',
+      '....oWssso.oCCCooooo...osooo....',
+      '...ooWssoo.ooooo.......ooo......',
+      '...oWssso.....ooooo.............',
+      '...oWssoo....oogggoo............',
+      '...ooooo.....oggWggo............',
+      '.............ogWWWgo............',
+      '.............oggWggo.....ooooo..',
+      '.............oogggoo....oossWo..',
+      '..............ooooo.....osssWo..',
+      '.......ooo.......ooooo.oossWoo..',
+      '.....oooso...oooooCCCo.osssWo...',
+      '.....oWssoo..oCCCCCCCooossWWo...',
+      '.....oWWssooooCCCCCCooossWWoo...',
+      '.....ooWWsssooooooooosssWWoo....',
+      '......ooWWssssooooossssWWoo.....',
+      '.......ooWWsssssssssssWWoo......',
+      '........ooWWWsssssssWWWoo.......',
+      '.........ooooWWWWWWWoooo........',
+      '............ooooooooo...........',
+      '................................',
+      '................................',
+    ]],
+    [[ // HAMSTRING: a low blade across two shins, the cut a red arc
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '.........oooo......oooo.........',
+      '.........ohho......ohho.........',
+      '.........ohho......ohho.........',
+      '.........ohho......ohho.....oooo',
+      '.........ohho......ohho...oooggg',
+      '.........ohho......ohho..oogggoo',
+      '.........ohho......ohhooooWWWoo.',
+      '.........ohho....ooohhWWWWsssso.',
+      '.........ohhooooooWWWWsssssssoo.',
+      '.........ohhooWWWWssssssssoooo..',
+      '.....oooooWWWWssssssssooooo.....',
+      '..ooooWWWWssssssssoohhoooroo....',
+      '..oWWWrrrsssssoooooohhoorrro....',
+      '..ossssrrrhhooo....ohhorrroo....',
+      '..osssoorrrnnoo...oonnrrroo.....',
+      '..ooooooorrrrrooooorrrrroo......',
+      '........onrrrrrrrrrrrrrno.......',
+      '........onnnnrrrrrrrnnnno.......',
+      '........oonnnooooooonnnoo.......',
+      '.........ooooo.....ooooo........',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+    ]],
+    [[ // SECOND WIND: a heart, a breath curling up off it
+      '................................',
+      '.....................oooooooooo.',
+      '.................ooooobbbbboobo.',
+      '...............oooWWWbbooobbboo.',
+      '...............oWWWoobWWWooboo..',
+      '..............ooWoooobooWoooo...',
+      '..............oWWo..oboooo......',
+      '..............oWoo..ooo.........',
+      '..........oooooWo.ooooo.........',
+      '........ooorrroWooorrrooo.......',
+      '.......oorppprrWWrrrrrrroo......',
+      '.......orppppprrWrrrrrrrro......',
+      '......oorppppprrrrrrrrrrroo.....',
+      '......orrppppprrrrrrrrrrrro.....',
+      '......orrrppprrrrrrrrrrrrro.....',
+      '......orrrrrrrrrrrrrrrrrrro.....',
+      '......oorrrrrrrrrrrrrrrrroo.....',
+      '.......orrrrrrrrrrrrrrrrro......',
+      '.......oorrrrrrrrrrrrrrroo......',
+      '........ooorrrrrrrrrrrooo.......',
+      '..........ooorrrrrrrooo.........',
+      '............oorrrrroo...........',
+      '.............oorrroo............',
+      '..............ooroo.............',
+      '...............oro..............',
+      '...............oro..............',
+      '...............ooo..............',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+      '................................',
+    ]],
+  ],
+];
 const ab32Cache = new Map();
-// the baked 32x32 icon for class ability (cls, i)
-function classAbIcon(cls, i) {
-  const key = cls + ':' + i;
+// the baked 32x32 icon for class ability (cls, i), option k (0 the first)
+function classAbIcon(cls, i, k) {
+  k = k | 0;
+  const key = cls + ':' + i + ':' + k;
   let cv = ab32Cache.get(key);
   if (!cv) {
     cv = document.createElement('canvas');
     cv.width = cv.height = 32;
     const g = cv.getContext('2d');
-    const rows = AB32[cls][i];
+    const rows = k ? AB32_ALT[cls][i][k - 1] : AB32[cls][i];
     for (let r = 0; r < rows.length; r++) {
       const row = rows[r];
       for (let c = 0; c < row.length; c++) {

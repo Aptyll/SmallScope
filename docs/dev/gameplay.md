@@ -750,7 +750,23 @@ class flies out with.
 Everything in this section lives in **[js/abilities.js](../../js/abilities.js)**, under the
 `class abilities` banner. Keys 1-4 cast the four actives of the player's
 [class](multiplayer.md#classes) — `CLASS_AB[p.cls]`, one row per key, where **what an ability IS
-lives in its table entry** (`cd`, `cast`, `use(p)`), never in an `if` elsewhere. The press goes
+lives in its table entry** (`cd`, `cast`, `use(p)`), never in an `if` elsewhere. **A key can
+carry more than one option**: `CLASS_AB[cls][i]` is its first and `CLASS_AB_ALT[cls][i]` the
+others (`abOptions(cls, i)` lists them), and which one a body carries is `p.abPick[i]`, picked
+before the eagle in the [hero pop-up](rendering.md#the-hero-pop-up)'s ability strip and carried
+through the lock-in page with the gear; **every reader asks `abOf(p, i)`** for what a key is on
+this body, and `abKeyOf(p, id)` for the key an ability id stands on (−1 when it is not picked).
+A bot keeps the first option on every key — the one its hands know, since `aiCombat` reaches
+for keys by index. The hunter's keys carry one option each; the warrior's carry two:
+
+| key | first | other |
+| --- | --- | --- |
+| 1 | SHIELD WALL | **WAR CRY** — every rival unit within `CRY_R` slowed (`CRY_SLOW` for `CRY_SLOW_T`) and marked (`CRY_MARK_T`) for both maps; nothing hurt (`abWarCry`) |
+| 2 | BULL RUSH | **WHIRLWIND** — everything alive within `WHIRL_R` cut for `WHIRL_DMG` and thrown `WHIRL_KB`, buildings cut too (`abWhirlwind`) |
+| 3 | STOMP | **HAMSTRING** — the wedge ahead (`HAM_R`/`HAM_HALF`) cut for `HAM_DMG` and rooted `HAM_ROOT` (`abHamstring`) |
+| 4 | EXECUTE | **SECOND WIND** — `WIND_HEAL` (30%) of max hp back over `WIND_T` (4 s), paid out each tick by `updateAbilities` (`p.windT`/`p.windRate`, `abSecondWind`); the strip's active tell |
+
+The press goes
 through `input.ability` (edge-triggered, like the dodge) into `tryAbility(p, i)`, so a bot casts
 through exactly the key a human presses; `updateAbilities(p, dt)` runs the cooldowns, lands the
 cast, and ages every state an ability leaves on a body; `updateAbilityWorld(dt)` (called from

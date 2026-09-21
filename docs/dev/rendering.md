@@ -1887,24 +1887,29 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   under it the **stat ledger** — one labelled row per number the build can touch (`GEAR_STATS`,
   whose getters take an optional player and are handed none here — every pre-match hero is
   level 1), real values computed by `heroPreviewKit` through the same `baseKit` (js/player.js)
-  the sim's `refreshKit` uses, so the page can never lie. MIDDLE is the **gear**: all 12
-  variants as **32px icon wells** (`drawGearWell`, icons `GEAR32`/`gearIcon32` baked on the
-  ability icons' palette), four rows of three, the picked one gold-rimmed. RIGHT is the **stat
-  points** ([gameplay.md](gameplay.md#stat-points)): the unspent ones as a row of `STAT_POINTS`
-  pips at the top, then a labelled row per `STAT_TRACKS` track — its spent points as gold pips,
-  a minus and a plus plate at the edge, dim when they can do nothing — and under them the four
-  **class abilities** as wells wearing `classAbIcon` with the key in the corner (the
-  keybind-indicator carve-out): a hover raises the ability's card (`tipClassAb`, hooked in
-  `tipAt`), a click does nothing — their growth is the match's own skill points, never bought
-  here. The hovered variant's, track's or ability's name prints once under the grid.
-  **Hovering an unpicked well or a live +/- plate writes its deltas into the ledger** — the
-  current number steps aside dim and the would-be number takes the edge in green (better) or
-  red (worse), covering the whole swap. **Picking plays on the preview body** (`pickGear` →
-  `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch canvas, gold sparks, the
-  changed piece's band lit; a point (`spendPt`) refreshes the kit and heals to full the same
-  way. The keyboard walks `menu.grow` down the four gear rows and on through the five stat rows
-  (corner ticks on a well, end ticks on a track row), Left/Right picking a variant or refunding
-  and spending a point. ESC, Enter, the **X** in the corner, or a click anywhere off the panel
+  the sim's `refreshKit` uses, so the page can never lie. MIDDLE is two **strips**, four
+  wells across each, a bare chevron above and below every well (`drawChevronV`, gold under
+  the hand) that turn it: the **gear strip** — one well a piece wearing the picked variant's
+  32px icon (`drawGearWell`, `GEAR32`/`gearIcon32` baked on the ability icons' palette),
+  gold-rimmed, the chevrons (or a click on the well) cycling the piece's three (`pickGear`) —
+  and the **ability strip** — one well a key wearing the picked option's `classAbIcon` with the
+  key in the corner (the keybind-indicator carve-out), the chevrons cycling the key's options
+  (`pickAbility` → `player.abPick`; [the options on a key](gameplay.md#class-abilities-keys-1-4):
+  the warrior's carry two, the hunter's one, whose chevrons stand dim), and a hover on the well
+  raising the option's card (`tipClassAb`, hooked in `tipAt`) — their growth is the match's own
+  skill points, never bought here. RIGHT is the **stat points** ([gameplay.md](gameplay.md#stat-points)):
+  the unspent ones as a row of `STAT_POINTS` pips at the top, then a labelled row per
+  `STAT_TRACKS` track — its spent points as gold pips, a minus and a plus plate at the edge, dim
+  when they can do nothing. The hovered thing's name prints once under the strips — a hovered
+  chevron names what it would turn to. **Hovering a gear chevron or a live +/- plate writes its
+  deltas into the ledger** — the current number steps aside dim and the would-be number takes
+  the edge in green (better) or red (worse), covering the whole swap. **Picking plays on the
+  preview body** (`pickGear` → `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch
+  canvas, gold sparks, the changed piece's band lit; a point (`spendPt`) refreshes the kit and
+  heals to full the same way. The keyboard walks `menu.grow` down the two strips and on through
+  the five stat rows: on a strip Left/Right pick the column (`menu.gcol`, corner ticks) and
+  Enter or Space turns it, on a track (end ticks) Left/Right refund and spend a point. ESC,
+  Backspace, the **X** in the corner, or a click anywhere off the panel
   close it back to the lobby (`leaveHero`) — LOCK IN (and a running count) stays on the lobby
   behind it. The ledger's and the tracks' labelled rows are the PLAYER-panel text carve-out:
   comparing numbers is this panel's whole job. See [gameplay.md](gameplay.md#gear).

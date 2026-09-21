@@ -1461,7 +1461,7 @@ try {
   }
   // ...and from LOCK IN on a shape this page had not grown (lockIn, js/ui/menu.js):
   // the page came back on this seed in that shape and goes straight to the
-  // eagle, the gear picks and stat points it carried put back on (no profile holds them)
+  // eagle, the gear picks, stat points and ability picks it carried put back on (no profile holds them)
   const dropRaw = sessionStorage.getItem('softfall.drop');
   if (dropRaw) {
     sessionStorage.removeItem('softfall.drop');
@@ -1470,6 +1470,7 @@ try {
         const d = JSON.parse(dropRaw);
         if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
         if (d && Array.isArray(d.pts)) player.pts = d.pts.map((v) => v | 0);
+        if (d && Array.isArray(d.abPick)) player.abPick = d.abPick.map((v) => v | 0);
       } catch (e) { }
       setClass(player, player.cls);
       beginDrop();
