@@ -684,10 +684,11 @@ function beginIntro() {
 // deterministic value closes over, so a new world is a new page). It lands
 // back on the lobby (softfall.select, read by js/boot.js), so a
 // roll is one press and not a walk.
-// A page that lands back on the lobby (the die here, pickMap) fades through
-// the lobby's own night (LOBBY_NIGHT, the sky at its darkest), never white:
-// the screen goes dark and comes back up on itself, and js/boot.js clears
-// from the same colour. White is the reroll's from anywhere else.
+// A page that lands back on the lobby (the die) fades through the lobby's
+// own night (LOBBY_NIGHT, the sky at its darkest), never white: the screen
+// goes dark and comes back up on itself, and js/boot.js clears from the
+// same colour. White is the reroll's from anywhere else. (A map pick is no
+// page at all until LOCK IN: pickMap, lockIn.)
 const LOBBY_NIGHT = '#04060f';
 function rerollWorld() {
   const m = state.menu;
@@ -784,7 +785,7 @@ function updateTitle(dt) {
   // the map slide, the lock-in ring, and the target's arrows - which fly in
   // again whenever the level the target shows changes (the hovered plate's,
   // else the picked one's)
-  if (m.mapSlide) m.mapSlide.t = Math.min(1, m.mapSlide.t + dt / 0.35);
+  if (m.mapSlide) { m.mapSlide.t = Math.min(1, m.mapSlide.t + dt / 0.35); if (m.mapSlide.t >= 1) m.mapSlide = null; }
   if (m.lockFx > 0) m.lockFx = Math.max(0, m.lockFx - dt);
   const tl = ah && ah.startsWith('diff') ? +ah.slice(4) : settings.aiLevel | 0;
   if (tl !== m.tgtLv) { m.tgtLv = tl; m.tgtT = 0; }
@@ -1988,15 +1989,15 @@ function lobbyStep(d) {
   lobbySlot(((PROFILE.activeIndex() + d) % n + n) % n);
 }
 // the map pop-up's chevrons: the picture slides over to the neighbouring
-// shape (m.mapSlide, drawn by renderMapPick) while the page's whiteout runs
-// (pickMap), so the pick is seen going before the reload lands back here on
-// it. Solo only - in a room the shape is the host's page.
+// shape (m.mapSlide, drawn by drawMapPlate) and the pick is made there and
+// then (pickMap) - the screen never leaves. Solo only - in a room the shape
+// is the host's page.
 function mapStep(d) {
   const m = state.menu;
   if (NET.role !== 'solo' || state.fade) return;
   if (m.countT > 0) { SFX.deny(); return; }
-  const n = MAPS.length, k = ((MAP_TYPE + d) % n + n) % n;
-  m.mapSlide = { d, k, t: 0 };
+  const n = MAPS.length, from = settings.mapType | 0, k = ((from + d) % n + n) % n;
+  m.mapSlide = { d, k, from, t: 0 };
   pickMap(k);
 }
 // LOCK IN: the class is locked here and the countdown starts. Gear stays
@@ -2034,13 +2035,24 @@ function lobbyRevealed() {
   if (m.countT > 0) return COUNT_T + 1 - Math.ceil(m.countT);
   return m.countN === 0 ? MAX_PLAYERS : 0;
 }
-// the count's end: the short hold, then the eagle (updateTitle: lockT -> beginDrop)
+// the count's end: the short hold, then the eagle (updateTitle: lockT ->
+// beginDrop). A map pick is spent HERE, not when it is made: a shape is
+// grown at boot (MAP_TYPE), so a pick that is not this page's shape is a
+// page - the lobby stays on screen to the end of the count, then the page
+// comes back on this seed in that shape and js/boot.js goes straight to
+// the eagle (softfall.drop, carrying the gear picks, which no profile holds).
 function lockIn() {
   const m = state.menu;
   if (m.lockT > 0) return;
-  m.lockT = 0.12;
   setClass(player, m.csel);
   SFX.place();
+  if (NET.role === 'solo' && (settings.mapType | 0) !== MAP_TYPE) {
+    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear })); } catch (e) { }
+    location.href = location.pathname + '?seed=' + SEED + '&map=' + (settings.mapType | 0);
+    m.lockT = 9; // the old page holds the lobby still until the new one paints
+    return;
+  }
+  m.lockT = 0.12;
 }
 // the rivals' difficulty: one of AI_LEVELS, remembered with the profile
 function setAiLevel(k) {
@@ -2422,10 +2434,12 @@ function drawChevron(x, y, d, col) {
   ctx.fillStyle = col;
   for (let i = 0; i < 9; i++) { const dx = d < 0 ? 8 - i : i; ctx.fillRect(x + dx, y + i, 3, 1); ctx.fillRect(x + dx, y + 17 - i, 3, 1); }
 }
-// The map plate on its slab: this seed's valley in the picked shape. A slide
-// in flight (m.mapSlide, mapStep) carries the picture off toward the pressed
-// chevron and the neighbour's in behind it, through a clip the plate's size.
-// lift is the hover's pixel.
+// The map plate on its slab: this seed's valley in the PICKED shape
+// (settings.mapType - the one this page grew reads its grown ground, any
+// other the terrain rule: mapChip). A slide in flight (m.mapSlide, mapStep)
+// carries the last pick's picture off toward the pressed chevron and the
+// new one's in behind it, through a clip the plate's size. lift is the
+// hover's pixel.
 function drawMapPlate(r, lift) {
   const sl = state.menu.mapSlide;
   const y = r.y - lift;
@@ -2436,9 +2450,9 @@ function drawMapPlate(r, lift) {
   ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, y + 2, pic, pic); ctx.clip();
   if (sl) {
     const off = Math.round(easeInOut(sl.t) * (pic + 6));
-    ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2 - sl.d * off, y + 2);
+    ctx.drawImage(mapChip(sl.from, pic), r.x + 2 - sl.d * off, y + 2);
     ctx.drawImage(mapChip(sl.k, pic), r.x + 2 + sl.d * (pic + 6 - off), y + 2);
-  } else ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2, y + 2);
+  } else ctx.drawImage(mapChip(settings.mapType | 0, pic), r.x + 2, y + 2);
   ctx.restore();
 }
 // The top centre: the map plate and the target side by side, mirrored about
@@ -2455,7 +2469,7 @@ function drawLobbyTop(now, a) {
   ctx.globalAlpha = a;
   const mh = hover === 'map', th = hover === 'ai';
   drawMapPlate(mapc, mh ? 1 : 0);
-  const shape = mapName(m.mapSlide ? m.mapSlide.k : MAP_TYPE);
+  const shape = mapName(settings.mapType | 0);
   drawPixelTextShadow(ctx, shape, mn.x - (pixelTextWidth(shape) >> 1), mn.y, mh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   const lv = settings.aiLevel | 0;
   drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, rc, now, a);
@@ -2812,7 +2826,7 @@ function renderMapPick(now, a) {
     const hot = h === (ar.d < 0 ? 'mapl' : 'mapr') || (keyed && m.mrow === 0);
     drawChevron(ar.x + (hot ? ar.d : 0), ar.y + rise, ar.d, hot ? '#ffd95c' : '#f4f7ff');
   }
-  const nm = mapName(m.mapSlide ? m.mapSlide.k : MAP_TYPE);
+  const nm = mapName(settings.mapType | 0);
   drawPixelTextShadow(ctx, nm, name.x - (pixelTextWidth(nm) >> 1), name.y + rise, '#f4f7ff', '#0a0e23');
   const sh = h === 'seed' || (keyed && m.mrow === 1) ? 1 : 0;
   ctx.globalAlpha = a * (sh ? 1 : 0.8);
@@ -2884,22 +2898,15 @@ function mapChip(k, size) {
   mapChipCv[key] = cv;
   return cv;
 }
-// the pick: the profile remembers it and the page comes back on this seed in
-// that shape, standing on the lobby again. Picking the shape already
-// grown is a no-op - there is nothing to grow.
+// the pick: a setting the profile remembers, nothing more - the lobby stays
+// where it is showing the picked shape. It is spent at LOCK IN (lockIn): a
+// pick that is not the shape this page grew is a page then, straight into
+// the eagle. Picking the shape already picked is a no-op.
 function pickMap(k) {
-  if (state.fade || k === MAP_TYPE) return;
+  if (k === (settings.mapType | 0)) return;
   settings.mapType = k;
   saveSettings();
-  SFX.dodge();
-  SFX.music.stop(0.45);
-  state.fade = {
-    a: 0, to: 1, spd: 1 / 0.55, color: LOBBY_NIGHT,
-    then: () => {
-      try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); } catch (e) { }
-      location.href = location.pathname + '?seed=' + SEED + '&map=' + k;
-    },
-  };
+  SFX.pickup();
 }
 
 // ---- the wiki: the game written down, one page a subject -----------------

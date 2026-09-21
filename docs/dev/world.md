@@ -110,10 +110,11 @@ plants from it and the class screen's chip draws from it (`mapChip`, js/ui/menu.
 picture on the chip is **this seed's own valley** in that shape and not an illustration of one.
 
 **`MAP_TYPE` is the shape this page grew** — `?map=N`, else the profile's `settings.mapType`,
-read once in js/boot.js after `loadSettings()` and never again. Picking one is a **page**, the
-way a reroll is: the pick is saved, the whiteout runs and the page comes back on
-`?seed=<this seed>&map=<the pick>` standing on the lobby again (`pickMap`, off the lobby's map
-pop-up, [rendering.md](rendering.md#lobby)). Only a **solo** lobby may pick — a host reloading
+read once in js/boot.js after `loadSettings()` and never again (and written back to `settings.mapType`, so the lobby's pick starts as the shape standing). Picking one in the lobby's map
+pop-up (`pickMap`, [rendering.md](rendering.md#lobby)) only saves `settings.mapType` and the
+lobby stays put; the pick is spent at LOCK IN, which is then a **page** the way a reroll is: it
+comes back on `?seed=<this seed>&map=<the pick>` and goes straight to the eagle (`lockIn`,
+js/boot.js's `softfall.drop`). Only a **solo** lobby may pick — a host reloading
 would drop its room, and a guest's world is the host's (`netHostHello` refuses a hello whose map
 is not the host's, exactly as it refuses a seed; `joinRoom` carries `&map=` with `&seed=`).
 

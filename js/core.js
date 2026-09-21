@@ -174,7 +174,7 @@ const state = {
     // is a surface of its own on wikiT, with wikiTab the open page (menu.js
     // `the wiki`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
-    // lobby's map slide (mapStep: {d, k, t}, null at rest), the lock-in's
+    // lobby's map slide (mapStep: {d, k, from, t}, null at rest), the lock-in's
     // ring (lockFx, s left), and the difficulty target's arrows: the level they
     // show and how far into their flight (menu.js `lobby`)
     mapSlide: null, lockFx: 0, tgtLv: 0, tgtT: 1,

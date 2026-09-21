@@ -2785,7 +2785,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
 `aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai.js) —
 `mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/world.js); it is
-what the NEXT load grows, since a pick is a page ([map shapes](world.md#map-shapes)) —
+what the NEXT load grows — LOCK IN reloads onto it when it is not this page's shape ([map shapes](world.md#map-shapes)) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each
 ([the two controllers](multiplayer.md#the-two-controllers)) —

@@ -1378,6 +1378,7 @@ if (PRACTICE) {
     const k = q ? +q[1] : settings.mapType | 0;
     return k >= 0 && k < MAPS.length ? k : 0;
   })();
+  settings.mapType = MAP_TYPE; // the lobby's pick starts as the shape standing (a ?map=N page may differ from the profile's)
   genWorld();
   layPaths();       // ...and the paths a grown shape cuts through its own woods (world.js)
   placeRoad();       // the diagonal lane, and the paths with it (world.js)
@@ -1456,6 +1457,18 @@ try {
     if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
       beginLobby(); state.menu.screenT = 1;
       if (state.fade) state.fade.color = LOBBY_NIGHT;
+    }
+  }
+  // ...and from LOCK IN on a shape this page had not grown (lockIn, js/ui/menu.js):
+  // the page came back on this seed in that shape and goes straight to the
+  // eagle, the gear picks it carried put back on (no profile holds them)
+  const dropRaw = sessionStorage.getItem('softfall.drop');
+  if (dropRaw) {
+    sessionStorage.removeItem('softfall.drop');
+    if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
+      try { const d = JSON.parse(dropRaw); if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0); } catch (e) { }
+      setClass(player, player.cls);
+      beginDrop();
     }
   }
 } catch (e) { }

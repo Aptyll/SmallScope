@@ -1777,15 +1777,15 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   only — `beginMapPick`, `mapLayout`/`mapScreenHit`, `renderMapPick`): the picture `POP_PIC` big
   in the middle with a bare **chevron either side** (`drawChevron`, white, gold under the hand) —
   a click or Left/Right is `mapStep(±1)`: the picture slides toward the pressed chevron with the
-  neighbouring shape's coming in behind it (`menu.mapSlide = {d, k, t}`, clipped to the plate,
-  the name already the new one, the lobby's small plate sliding the same way under the slab)
-  while `pickMap` runs its fade to the night — a pick is a page: it saves `settings.mapType` and loads
-  `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so js/boot.js
-  lands straight back on the lobby — the shape's name under it in white, and the **seed row**
-  under that (`SEED_TXT` and the [die](#main-menu-title), gold under the hand; a click is
-  `rerollWorld`). Both pages fade through the lobby's own night (`LOBBY_NIGHT`, the sky's
-  darkest) and js/boot.js clears from it, so a pick or a roll never flashes white over this
-  screen — white is the reroll's from anywhere else. The keyboard walks two rows (`menu.mrow`: the picture, then the seed —
+  neighbouring shape's coming in behind it (`menu.mapSlide = {d, k, from, t}`, clipped to the
+  plate, the name already the new one, the lobby's small plate sliding the same way under the
+  slab) and `pickMap` saves `settings.mapType` — **the screen never leaves**: the plate shows
+  the picked shape (off `mapTerrain` until it is grown) and the pick is spent at LOCK IN
+  ([below](#lobby-lock-in)) — the shape's name under it in white, and the **seed row** under
+  that (`SEED_TXT` and the [die](#main-menu-title), gold under the hand; a click is
+  `rerollWorld`, which IS a page: it fades through the lobby's own night (`LOBBY_NIGHT`, the
+  sky's darkest) and js/boot.js clears from it, so a roll never flashes white over this screen —
+  white is the reroll's from anywhere else). The keyboard walks two rows (`menu.mrow`: the picture, then the seed —
   Up/Down; the lit row stands in for the hand while the pointer is off the view), Enter on the
   seed rolls, Enter on the picture closes. The **AI pop-up** (`menu.screen = 'ai'`, off the
   target, host or solo — `beginAiPick`, `aiLayout`/`aiScreenHit`, `renderAiPick`): the target
@@ -1810,8 +1810,12 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   (the widget still opens its pop-up, which shuts itself at zero); a character swap or a map step is
   refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
   the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
-  where zero would have (every frame face-up, the gear pop-up shut). At zero, or on that press,
-  `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle ride, below). No
+  where zero would have (every frame face-up, the gear pop-up shut). <a id="lobby-lock-in"></a>At
+  zero, or on that press, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
+  ride, below) — unless the picked shape is not the one this page grew: a shape is grown at boot
+  (`MAP_TYPE`), so `lockIn` then loads `?seed=<this seed>&map=<the pick>` with the gear picks in
+  `sessionStorage['softfall.drop']` (no profile holds them) and js/boot.js puts them back on and
+  calls `beginDrop()` itself; the old page holds the lobby until the new one paints. No
   instructional text anywhere on the screen.
 
 ### The character screens
