@@ -69,12 +69,14 @@ function mulberry32(a) {
 const PRACTICE_SEED = 0x50524143; // 'PRAC'
 
 // one run seed drives every deterministic value: worldgen, per-tile hashes, fx.
-// ?seed=N in the URL replays a world exactly.
+// A rolled seed is always three digits (100..999) - short enough to read off
+// the lobby and say aloud. ?seed=N in the URL replays a world exactly, any N.
+function rollSeed() { return 100 + Math.floor(Math.random() * 900); }
 const SEED = (function () {
   if (PRACTICE) return PRACTICE_SEED;
   const q = /[?&]seed=([0-9]+)/.exec(location.search);
   if (q) return (parseInt(q[1], 10) >>> 0) || 1;
-  return ((Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0) || 1;
+  return rollSeed();
 })();
 const SEED_TXT = 'SEED ' + SEED;
 const rng = mulberry32(SEED);

@@ -648,8 +648,10 @@ live, lingering `DUMMY_METER_LINGER` past the mend so the final read stands, the
 
 ## Determinism and noise
 
-Every run picks a fresh `SEED` at boot from `Date.now() ^ Math.random()`, and **everything random
-derives from it** — there is no other entropy source. `?seed=N` in the URL overrides it, which is
+Every run picks a fresh `SEED` at boot with `rollSeed()` — always **three digits**, 100..999, so
+it reads off the lobby and can be said aloud (the reroll die rolls the same way) — and **everything
+random derives from it**: there is no other entropy source. `?seed=N` in the URL overrides it with
+any N, which is
 how you replay or diff a specific world (and `?practice=1` overrides *that*: the
 [practice arena](#the-practice-arena) pins `SEED` to `PRACTICE_SEED`). `drawTags()` prints `SEED_TXT` as a line of the **info
 stack** on the left edge at the top quarter of the view (drawn after the map, settings, and death
