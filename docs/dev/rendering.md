@@ -1731,7 +1731,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
-  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'diff' + k`, `'slot' + i`,
+  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'diff' + k`, `'charl'`/`'charr'`,
   `'mapl'`/`'mapr'`, `'seed'` or null) are the rect source for both drawing and the mouse.
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
   `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
@@ -1739,12 +1739,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `LOBBY_FRAME_MAX` — the side's paint as a bar down the screen edge, the player's body at 2×
   toward it (1× in a short view) and the name inward of the body, yours gold-rimmed, a rival's
   **face-down** (the body as one flat shade through the scratch canvas) until the countdown
-  turns it. Heading **your** panel are the **character tabs** (`drawLobbySlot`, one `LOBBY_TAB`
-  well per profile slot wearing that character's 16 px body, the active one gold and walking,
-  the others dim and warm on hover (`menu.chover`)); a tab click or Up/Down (`lobbySlot`/
-  `lobbyStep`) make that character active — `activateChar` → `applyCharacter`, so the stage,
-  the kit and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;
-  `menu.cswapT` pops the stage). Heading the **rivals'** panel is the **difficulty**
+  turns it. Your panel's head is empty, level with the rivals'. Heading the **rivals'** panel is the **difficulty**
   (`drawLobbyDiff`): three `LOBBY_LV_W`×`LOBBY_LV_H` plates stacked easy to hard, each carrying its
   level's name (`AI_LEVELS`, js/ai.js — NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the
   picked one filled in the rivals' paint, the hovered one lifting (`menu.dhover`); a click is
@@ -1766,21 +1761,28 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   lands straight back on this screen. In a room the chevrons and the seed row are not drawn and
   not hit — the world is the host's (`NET.role` must be `'solo'`). The **stage** under the map
   holds **your character** alone (`drawLobbyStage`): the 48 px model (`SPRITES.portrait`,
-  [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at 2× in your side's paint under
-  a warm pool of light with a gold ring turning on the snow, the class weapon's own tool art at
-  the hand, the name below with the class in small beside it. **No ability wells and no class
-  picker**: the class came with the character. The **collapsed gear widget** (the four picked
-  variant icons in a column) stands at the figure's right hand, and clicking it opens the gear
-  pop-up. **LOCK IN** is a frost plank at the foot of the view (`MENU_BW`×`MENU_BH`, `LOBBY_PAD`
-  up). Enter, Space or the plank call `pressPlay()` — `setClass` locks the class and the
-  **countdown** starts: `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from
-  the figure's feet across the snow (`menu.lockFx` over `LOCK_FX_T`) and its light stays up, the
-  character tabs dim, the plank sinks and wears the whole second left in 2× gold digits where
-  its label was (`drawLobbyCount`, white the instant it changes, sinking through its second),
+  [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at `LOBBY_MODEL` (3×, the create
+  screen's size) in your side's paint under a warm pool of light with a gold ring turning on the
+  snow, the class weapon's own tool art at the hand, and **no name and no class under it** — the
+  roster frame carries the name and the figure is the class. A bare **chevron either side of the
+  figure** (`drawChevron`, white, gold and nudged outward under the hand (`menu.chover`), drawn
+  only when the profile holds more than one character) or Up/Down is `lobbyStep(±1)`: it makes
+  the neighbouring character active — `activateChar` → `applyCharacter`, so the stage, the kit
+  and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;
+  `menu.cswapT` pops the stage). **No ability wells and no class picker**: the class came with the
+  character. The **collapsed gear widget** (the four picked variant icons in a row) sits under the
+  figure's feet, and clicking it opens the gear pop-up. Under it, at the foot of the view, **LOCK
+  IN** is a bare word in the [main menu](#main-menu-title)'s grammar (`MENU_TXT_SCALE`, white,
+  gold and lifted a px under the hand, sunk a px on the press — no plank). Enter, Space or the
+  word call `pressPlay()` — `setClass` locks the class and the **countdown** starts:
+  `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from the figure's feet across
+  the snow (`menu.lockFx` over `LOCK_FX_T`) and its light stays up, the character chevrons dim,
+  and the word gives its place to the whole second left in 2× gold digits (`drawLobbyCount`,
+  white the instant it changes, sinking through its second),
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
   tick** (`lobbyRevealed()`: the first on the press, the last on ONE, all of them once it has
   run out, and none at rest — a white flash as each turns). Gear stays open through the count
-  (the widget still opens its pop-up, which shuts itself at zero); a tab swap or a map step is
+  (the widget still opens its pop-up, which shuts itself at zero); a character swap or a map step is
   refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
   the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
   where zero would have (every frame face-up, the gear pop-up shut). At zero, or on that press,

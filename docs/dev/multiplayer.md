@@ -327,7 +327,7 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 The local player's class is **fixed on the character** it was created with (js/profile.js; the
 create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
 only way to the other class is another character, and the lobby swaps between the profile's
-three from its character tabs; bots hash theirs — class, look **and** all four gear
+three with the chevrons beside the stage figure; bots hash theirs — class, look **and** all four gear
 variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips

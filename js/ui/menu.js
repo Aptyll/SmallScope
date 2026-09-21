@@ -38,7 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, IN THE CODE AND THE DOCS ALIKE.'],
+  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, AND LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S.'],
   ['3.76', 'THE STEAM BUILD PACKS ONLY WHAT THE GAME PLAYS: THE MUSIC AND THE CODE, NO SAMPLE CLIPS, NO STALE COPY, NO TYPE PACKAGES.'],
   ['3.75', 'CLASS SELECT IS A LEAGUE LOBBY: TEAM PANELS GLUED TO BOTH EDGES, THE MAP LARGE AT THE TOP WITH CHEVRONS THAT SLIDE TO THE NEXT SHAPE AND THE SEED UNDER IT, THREE DIFFICULTY PLATES WITH A TARGET WHOSE ARROWS LAND NEARER THE BULLSEYE THE HARDER THE RIVALS, AND LOCK IN AT THE FOOT THAT BURSTS A RING, DIMS THE TABS AND WEARS THE COUNT.'],
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -761,10 +761,8 @@ function updateTitle(dt) {
   m.wikiT = Math.max(0, Math.min(1, m.wikiT + (m.screen === 'wiki' ? 1 : -1) * dt / 0.35));
   m.cswapT = Math.min(1, m.cswapT + dt / 0.22);
   const sh = m.screen === 'lobby' && m.screenT >= 1 ? lobbyHit() : null;
-  for (let i = 0; i < PROFILE.CHAR_MAX; i++) {
-    // `|| 0`: the seed literal in core.js is two cells; the third slot's
-    // hover ease starts from nothing, not from NaN
-    const target = sh === 'slot' + i ? 1 : 0;
+  for (let i = 0; i < 2; i++) { // the character chevrons' hover eases
+    const target = sh === (i ? 'charr' : 'charl') ? 1 : 0;
     m.chover[i] = (m.chover[i] || 0) + (target - (m.chover[i] || 0)) * Math.min(1, dt * 14);
   }
   // the difficulty notches' hover eases, and PLAY's countdown: a tick per
@@ -1227,8 +1225,8 @@ function drawPatchBar(ox, oy) {
 const LOBBY_PANEL_W = 110;               // a team panel's width, glued to its screen edge
 const LOBBY_FRAME_MAX = 44;              // a roster frame's tallest; a short view shrinks it
 const LOBBY_FRAME_GAP = 4;
-const LOBBY_TAB = 24, LOBBY_TAB_GAP = 4;   // a character tab well and its gap
-const LOBBY_HEAD = 58;                   // the panels' head: the tabs left, the difficulty right
+const LOBBY_HEAD = 58;                   // the panels' head: the difficulty plates and the target, right; the left kept level with it
+const LOBBY_MODEL = 3;                   // the stage model's scale: the 48 px model at 3x, the create screen's size
 const LOBBY_PAD = 6;                     // the margin off the view's edge
 const LOBBY_MAP = 56;                    // the map picture at the top centre
 const LOBBY_LV_W = 58, LOBBY_LV_H = 13;    // a difficulty plate
@@ -1246,9 +1244,6 @@ function lobbyLayout() {
     const y = LOBBY_HEAD + cards[mine].length * (fh + LOBBY_FRAME_GAP);
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
   }
-  // the character tabs across your panel's head
-  const slots = [];
-  for (let i = 0; i < PROFILE.CHAR_MAX; i++) slots.push({ x: pad + i * (LOBBY_TAB + LOBBY_TAB_GAP), y: pad, w: LOBBY_TAB, h: LOBBY_TAB, i });
   // the rivals' difficulty: three plates stacked at their panel's head, the target beside them
   const diff = [];
   for (let k = 0; k < 3; k++) diff.push({ x: VIEW_W - pw + pad, y: pad + k * (LOBBY_LV_H + 3), w: LOBBY_LV_W, h: LOBBY_LV_H });
@@ -1260,11 +1255,16 @@ function lobbyLayout() {
   const name = { x: cx, y: mapc.y + mapc.h + 6 };
   const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
   const seed = { x: cx - (sw >> 1), y: name.y + 10, w: sw, h: 12 };
-  // LOCK IN at the foot; the stage figure stands on the snow above it
-  const play = { x: cx - (MENU_BW >> 1), y: VIEW_H - pad - MENU_BH - 4, w: MENU_BW, h: MENU_BH };
-  const body = { x: cx - 48, y: play.y - 28 - 92, w: 96, h: 96 }; // the 48 px model at 2x, its feet 4 px up
-  const loadout = { x: body.x + body.w + 14, y: body.y + 22, w: 14, h: 4 * 17 - 3 };
-  return { cx, play, body, slots, loadout, cards, diff, tgt, mapc, arrows, name, seed };
+  // LOCK IN, a bare word at the foot; the gear row above it; the stage figure on the snow above that
+  const pw2 = pixelTextWidth('LOCK IN', MENU_TXT_SCALE) + 8;
+  const play = { x: cx - (pw2 >> 1), y: VIEW_H - pad - 7 * MENU_TXT_SCALE - 8, w: pw2, h: 7 * MENU_TXT_SCALE + 4 };
+  const loadout = { x: cx - ((GEAR_SLOTS.length * 17 - 3) >> 1), y: play.y - 8 - 16, w: GEAR_SLOTS.length * 17 - 3, h: 16 };
+  const bs = 48 * LOBBY_MODEL;
+  const body = { x: cx - (bs >> 1), y: loadout.y - 6 - 46 * LOBBY_MODEL, w: bs, h: bs }; // its feet (46 rows down) 6 px over the gear row
+  // a chevron either side of the figure swaps to the neighbouring character
+  const cy = body.y + 46 * LOBBY_MODEL - 60;
+  const chars = [{ x: body.x - 26, y: cy, w: 12, h: 18, d: -1 }, { x: body.x + body.w + 14, y: cy, w: 12, h: 18, d: 1 }]; // clear of the weapon at the right hand
+  return { cx, play, body, loadout, chars, cards, diff, tgt, mapc, arrows, name, seed };
 }
 
 // The screen's own painted night, fully opaque at rest so the live ambient
@@ -1921,14 +1921,14 @@ function gearClick() {
 }
 
 // what the pointer is on: 'play', 'gear', 'diff' + k (a difficulty plate),
-// 'slot' + i (a character tab), 'mapl' / 'mapr' (the map's chevrons), 'seed'
+// 'charl' / 'charr' (the character chevrons), 'mapl' / 'mapr' (the map's chevrons), 'seed'
 // (the seed row) or null. A guest's room offers gear alone.
 function lobbyHit() {
-  const { slots, play, loadout, diff, arrows, seed } = lobbyLayout();
+  const { play, loadout, diff, arrows, seed, chars } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(loadout, 3, 2)) return 'gear';
   if (NET.isClient) return null; // a guest's room: the host's plank, the host's difficulty, the host's world, its own character as it came
-  for (const r of slots) if (over(r, 2, 2)) return 'slot' + r.i;
+  if (PROFILE.chars().length > 1) { if (over(chars[0], 4, 4)) return 'charl'; if (over(chars[1], 4, 4)) return 'charr'; }
   if (over(play, 2, 3)) return 'play';
   for (let k = 0; k < diff.length; k++) if (over(diff[k], 2, 2)) return 'diff' + k;
   // the shape and the seed are picked before a room is opened: a pick is a
@@ -1970,7 +1970,7 @@ function lobbySlot(i) {
   m.cswapT = 0;
   SFX.pickup();
 }
-// the keyboard's step through the filled slots
+// the chevrons' (or Up/Down's) step through the filled slots
 function lobbyStep(d) {
   const n = PROFILE.chars().length;
   if (n < 2) return;
@@ -2061,7 +2061,8 @@ function lobbyClick() {
   else if (h === 'mapr') mapStep(1);
   else if (h === 'seed') rerollWorld();                             // the die: a fresh seed in this shape
   else if (h.startsWith('diff')) setAiLevel(+h.slice(4));           // a difficulty plate
-  else if (h.startsWith('slot')) lobbySlot(+h.slice(4));           // a character tab
+  else if (h === 'charl') lobbyStep(-1);                             // the character chevrons
+  else if (h === 'charr') lobbyStep(1);
 }
 
 // The class EMBLEMS: one symbolic 32x32 mark per CLASSES entry - the
@@ -2227,57 +2228,43 @@ function classIcon12(i, you) {
 // stage, lifting under the hand; an empty slot is a dark well with nothing in it
 // a character tab: a small well, the character's 16 px body in it; the
 // active one gold and walking, the others dim and warm under the hand
-function drawLobbySlot(r, hv, chosen, now) {
-  const ch = PROFILE.chars()[r.i];
-  const lift = chosen || !ch ? 0 : Math.round(hv * 1.5);
-  const y = r.y - lift;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  ctx.fillStyle = chosen ? '#c89a3c' : hv > 0.5 && ch ? '#8fa0c8' : '#2c3560';
-  ctx.fillRect(r.x, y, r.w, r.h);
-  ctx.fillStyle = chosen ? '#1a2142' : '#0f1632';
-  ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
-  if (!ch) return;
-  const a0 = ctx.globalAlpha;
-  ctx.globalAlpha = a0 * (chosen ? 1 : 0.6 + hv * 0.4);
-  const set = SPRITES.champLook(ch.cls, ch.look, skin(player.team));
-  ctx.drawImage(set.down[chosen ? 1 + (Math.floor(now * 4) % 2) : 0], r.x + 4, y + 4);
-  ctx.globalAlpha = a0;
-}
-
-// The stage: your character alone in full glory - the 48 px model at 2x
-// inside a warm pool of light with a gold ring turning on the snow, the
-// class weapon's own art at the hand, the name, the class under it. It
-// wears your side's paint, like your roster frame. sw is the swap-pop ease;
-// a lock-in bursts a second ring out from the feet (lockFx) and the light
-// stays up while the count runs.
+// The stage: your character alone in full glory - the 48 px model at
+// LOBBY_MODEL (3x, the create screen's size) inside a warm pool of light
+// with a gold ring turning on the snow, the class weapon's own art at the
+// hand, a chevron either side to swap to the neighbouring character (drawn
+// only when there is one). No name and no class: the roster frame carries
+// the name, and the figure is the class. It wears your side's paint, like
+// that frame. sw is the swap-pop ease; a lock-in bursts a second ring out
+// from the feet (lockFx) and the light stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
 function drawLobbyStage(now, a, sw) {
   const m = state.menu;
-  const { cx, body } = lobbyLayout();
-  const feet = body.y + body.h - 4;
+  const { cx, body, chars } = lobbyLayout();
+  const S = LOBBY_MODEL, feet = body.y + 46 * S;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;
   ctx.fillStyle = '#04060f';
-  ctx.beginPath(); ctx.ellipse(cx, feet, 24, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx, feet, 12 * S, 5, 0, 0, Math.PI * 2); ctx.fill();
   // the pick's light, and the gold ring turning on the snow
   ctx.globalCompositeOperation = 'lighter';
-  const g = ctx.createRadialGradient(cx, feet - 40, 3, cx, feet - 40, 64);
+  const gr = 32 * S;
+  const g = ctx.createRadialGradient(cx, feet - 20 * S, 3, cx, feet - 20 * S, gr);
   g.addColorStop(0, 'rgba(255,170,80,' + (0.14 * a * sw * lit).toFixed(3) + ')');
   g.addColorStop(1, 'rgba(255,140,60,0)');
-  ctx.fillStyle = g; ctx.fillRect(cx - 66, feet - 106, 132, 132);
+  ctx.fillStyle = g; ctx.fillRect(cx - gr - 2, feet - 20 * S - gr - 2, gr * 2 + 4, gr * 2 + 4);
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = a * sw;
   ctx.fillStyle = lit > 1 ? '#ffd95c' : '#c89a3c';
+  const rr = 16 * S + 2;
   for (let k = 0; k < 24; k += 2) {
     const an = (k / 24) * Math.PI * 2 + now * 0.5;
-    ctx.fillRect(cx + Math.round(Math.cos(an) * 34), feet + Math.round(Math.sin(an) * 6), 2, 1);
+    ctx.fillRect(cx + Math.round(Math.cos(an) * rr), feet + Math.round(Math.sin(an) * 6), 2, 1);
   }
   if (m.lockFx > 0) { // the lock-in: a ring bursting out across the snow
     const u = 1 - m.lockFx / LOCK_FX_T, e = easeOut(u);
     ctx.globalAlpha = a * (1 - u);
     ctx.fillStyle = '#ffd95c';
-    const rx = 34 + e * 70, ry = 6 + e * 13;
+    const rx = rr + e * 90, ry = 6 + e * 13;
     for (let k = 0; k < 40; k++) {
       const an = (k / 40) * Math.PI * 2;
       ctx.fillRect(cx + Math.round(Math.cos(an) * rx), feet + Math.round(Math.sin(an) * ry), 2, 1);
@@ -2291,13 +2278,17 @@ function drawLobbyStage(now, a, sw) {
   // the weapon at the hand: the class tool's own art, big enough to read
   const L = CLASS_LOADOUT[player.cls] || CLASS_LOADOUT[0];
   const im = SPRITES[ITEMS[toolType(L.tool)].icon];
-  ctx.drawImage(im, cx + 30, body.y + 50 + rise + Math.round(Math.sin(now * 2.2) * 2), 24, 24);
-  // the name, and the class in small beside it (the character carries its class)
-  const nm = player.name, cn = CLASSES[player.cls].name;
-  const nw = pixelTextWidth(nm, 2), tw = nw + 6 + pixelTextWidth(cn);
-  const nx = cx - Math.round(tw / 2);
-  drawPixelTextShadow(ctx, nm, nx, feet + 8, '#ffd95c', '#0a0e23', 2);
-  drawPixelTextShadow(ctx, cn, nx + nw + 6, feet + 12, '#9fb6d8', '#0a0e23');
+  ctx.drawImage(im, cx + 15 * S, body.y + 25 * S + rise + Math.round(Math.sin(now * 2.2) * 2), 12 * S, 12 * S);
+  // the character chevrons: gold under the hand, dim while the pick is locked
+  if (PROFILE.chars().length > 1) {
+    const counting = m.countT > 0 || m.lockT > 0;
+    for (let i = 0; i < 2; i++) {
+      const c = chars[i], hv = m.chover[i] || 0;
+      ctx.globalAlpha = a * (counting ? 0.35 : 0.7 + hv * 0.3);
+      drawChevron(c.x + Math.round(hv * 2) * c.d, c.y, c.d, hv > 0.5 ? '#ffd95c' : '#f4f7ff');
+    }
+    ctx.globalAlpha = a;
+  }
 }
 
 // One roster frame, glued to its screen edge: the side's paint as a bar down
@@ -2480,14 +2471,14 @@ function drawLobbyCount(a) {
   const n = Math.ceil(m.countT), frac = m.countT - (n - 1); // 1 fresh -> 0 about to change
   const s = String(n);
   ctx.globalAlpha = a * (0.7 + 0.3 * frac);
-  drawPixelTextShadow(ctx, s, play.x + ((play.w - pixelTextWidth(s, 2)) >> 1), play.y + 10, frac > 0.85 ? '#f4f7ff' : '#ffd95c', '#0a0e23', 2);
+  drawPixelTextOutline(ctx, s, play.x + ((play.w - pixelTextWidth(s, 2)) >> 1), play.y + 2, frac > 0.85 ? '#f4f7ff' : '#ffd95c', 'rgba(8,12,28,0.9)', 2);
   ctx.globalAlpha = a;
 }
 
 // a (0..1) is the screen's own visibility; the whole surface rides it
 function renderLobby(now, a) {
   const m = state.menu;
-  const { slots, play, loadout } = lobbyLayout();
+  const { play, loadout } = lobbyLayout();
   drawLobbyBackdrop(now, a);
   ctx.globalAlpha = a;
   // the panels ride in from their edges; then the map, then the stage
@@ -2496,31 +2487,32 @@ function renderLobby(now, a) {
   const counting = m.countT > 0 || m.lockT > 0;
   drawLobbyRosters(now, a, slide);
   drawLobbyDiff(now, a, slide);
-  for (const r of slots) { // the tabs dim while the pick is locked
-    ctx.globalAlpha = a * (counting ? 0.35 : 1);
-    drawLobbySlot({ x: r.x - slide, y: r.y, w: r.w, h: r.h, i: r.i }, m.chover[r.i] || 0, r.i === PROFILE.activeIndex(), now);
-  }
-  ctx.globalAlpha = a;
   drawLobbyMap(now, a);
   drawLobbyStage(now, a, sw);
   drawRoomPlate(now, a);
-  // LOCK IN - the plank is the whole ask; it stays sunk and wears the count
-  // once pressed. A guest's room: the plank is the host's, frozen and
-  // wearing the host's name - the count comes over it when the host presses
+  // LOCK IN - a bare word at the foot, the main menu's grammar: white, gold
+  // and lifted a px under the hand, sunk a px on the press, and gone while the
+  // count wears its place. A guest's room: the word is the host's name, still
+  // - the count comes over it when the host presses
   const hover = m.screenT >= 1 && m.gearT <= 0 ? lobbyHit() : null;
-  const pressed = m.pressT > 0 || counting;
   ctx.globalAlpha = a;
-  if (!NET.isClient) drawMenuButton(play, counting ? '' : 'LOCK IN', hover === 'play' ? 1 : 0.7, now, pressed);
-  else { const hp = players[NET.hostSlot]; drawMenuButton(play, m.countT > 0 ? '' : hp ? hp.name : '', 0, now, m.countT > 0, true); }
+  if (m.countT <= 0) {
+    const hv = !NET.isClient && hover === 'play' ? 1 : 0;
+    const pressed = !NET.isClient && (m.pressT > 0 || (mouse.down && hover === 'play'));
+    const hp = NET.isClient ? players[NET.hostSlot] : null;
+    const word = NET.isClient ? (hp ? hp.name : '') : 'LOCK IN';
+    const wx = play.x + ((play.w - pixelTextWidth(word, MENU_TXT_SCALE)) >> 1);
+    drawPixelTextOutline(ctx, word, wx, play.y + 2 - hv + (pressed ? 1 : 0), hv ? '#ffd95c' : NET.isClient ? '#9fb6d8' : '#f4f7ff', 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
+  }
   drawLobbyCount(a);
-  // the collapsed gear widget: the four picked variants in a column at the
-  // figure's hand; its pop-up opens off a click (beginGear). Hover lifts it -
-  // the this-is-a-button grammar.
+  // the collapsed gear widget: the four picked variants in a row over LOCK
+  // IN; its pop-up opens off a click (beginGear). Hover lifts it - the
+  // this-is-a-button grammar.
   const lolift = hover === 'gear' ? 1 : 0;
   for (let i = 0; i < GEAR_SLOTS.length; i++) {
-    const x = loadout.x, y = loadout.y + i * 17 - lolift;
+    const x = loadout.x + i * 17, y = loadout.y - lolift;
     ctx.fillStyle = 'rgba(4,6,18,0.55)';
-    ctx.fillRect(x + 1, loadout.y + i * 17 + 2, 14, 16);
+    ctx.fillRect(x + 1, loadout.y + 2, 14, 16);
     ctx.fillStyle = lolift ? '#8fa0c8' : '#35426e';
     ctx.fillRect(x, y, 14, 16);
     ctx.fillStyle = '#0f1632';
