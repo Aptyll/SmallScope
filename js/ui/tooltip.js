@@ -288,7 +288,7 @@ function tipAt(mx, my) {
       return !h ? null : h.kind === 'row' ? tipKind(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls, h.k) : null;
     }
     // the hero pop-up's four ability wells raise the same card
-    if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null && h.d == null ? tipClassAb(h.ab, player.cls, player.abPick[h.ab]) : null; }
+    if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab, player.cls, player.abPick[h.ab]) : null; }
     return null;
   }
   if (state.mode !== 'play') return null;

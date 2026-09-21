@@ -1894,26 +1894,26 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   shows what one more point would make of its number (the would-be value in green at the edge,
   dim when nothing is left to spend) and a click puts a point there (`spendPt`); a row's spent
   points stand as gold pips right after its label (`heroPipX`, `HERO_PIP`) and a click on a
-  pip takes that point back. RIGHT is two **strips**, four
-  wells across each, a bare chevron above and below every well (`drawChevronV`, gold under
-  the hand) that turn it: the **gear strip** — one well a piece wearing the picked variant's
-  32px icon (`drawGearWell`, `GEAR32`/`gearIcon32` baked on the ability icons' palette),
-  gold-rimmed, the chevrons (or a click on the well) cycling the piece's three (`pickGear`) —
-  and the **ability strip** — one well a key wearing the picked option's `classAbIcon` with the
-  key in the corner (the keybind-indicator carve-out), the chevrons cycling the key's options
-  (`pickAbility` → `player.abPick`; [the options on a key](gameplay.md#class-abilities-keys-1-4):
-  the warrior's carry two, the hunter's one, whose chevrons stand dim), and a hover on the well
-  raising the option's card (`tipClassAb`, hooked in `tipAt`) — their growth is the match's own
-  skill points, never bought here. The hovered well's or option's name prints once under the
-  strips — a hovered chevron names what it would turn to. **Hovering a gear chevron or a ledger
-  row writes its deltas into the ledger** — the current number steps aside dim and the would-be
-  number takes the edge in green (better) or red (worse), covering the whole swap. **Picking plays on the
+  pip takes that point back. RIGHT is two **columns** of four wells, every well a button that
+  turns it: the **gear column** — one well a piece wearing the picked variant's 32px icon
+  (`drawGearWell`, `GEAR32`/`gearIcon32` baked on the ability icons' palette), gold-rimmed, a
+  click turning it to the piece's next variant (`pickGear`) — and the **ability column** — one
+  well a key wearing the picked option's `classAbIcon` with the key in the corner (the
+  keybind-indicator carve-out), a click turning it to the key's next option (`pickAbility` →
+  `player.abPick`; [the options on a key](gameplay.md#class-abilities-keys-1-4): the warrior's
+  carry two, the hunter's one, which a click leaves as it is), and a hover raising the option's
+  card (`tipClassAb`, hooked in `tipAt`) — their growth is the match's own skill points, never
+  bought here. The hovered well's name prints once under the columns: what a click would turn
+  it to. **Hovering a gear well or a ledger row writes its deltas into the ledger** — the
+  current number steps aside dim and the would-be number (the NEXT variant's, one more point's)
+  takes the edge in green (better) or red (worse), covering the whole swap — and a click
+  makes it so, the ledger stepping to the new kit as the equip plays. **Picking plays on the
   preview body** (`pickGear` → `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch
   canvas, gold sparks, the changed piece's band lit; a point (`spendPt`) refreshes the kit and
-  heals to full the same way. The keyboard walks `menu.grow` down the two strips and on through
-  the ledger's rows: on a strip Left/Right pick the column (`menu.gcol`, corner ticks) and
-  Enter or Space turns it, on a row (end ticks) Right or Enter spends a point and Left takes
-  one back. ESC,
+  heals to full the same way. The keyboard walks `menu.grow` down the gear column, the ability column
+  and on through the ledger's rows: on a well (corner ticks) Enter, Space or Right turns it and
+  Left turns it back, on a row (end ticks) Right or Enter spends a point and Left takes one
+  back. ESC,
   Backspace, the **X** in the corner, or a click anywhere off the panel
   close it back to the lobby (`leaveHero`) — LOCK IN (and a running count) stays on the lobby
   behind it. The ledger's and the tracks' labelled rows are the PLAYER-panel text carve-out:

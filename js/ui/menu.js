@@ -38,7 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - THE MAP SHOWS THE ICE AND THE CAMPS, THE FIGURE STANDS UNARMED WITH ITS CHEVRONS IN CLOSE AND OPENS THE HERO POP-UP WHEN CLICKED - GEAR, SIX STAT POINTS TO PUT ON ANY ROW OF ITS STAT LEDGER (THE BOTS SPEND THE SAME SIX), AND THE GEAR AND THE ABILITIES AS TWO STRIPS WITH CHEVRONS THAT TURN EACH WELL (THE WARRIOR\'S FOUR KEYS EACH CARRY A SECOND OPTION NOW: WAR CRY, WHIRLWIND, HAMSTRING AND SECOND WIND) - LOCK IN IS BIGGER, AND EVERY ROLLED SEED IS THREE DIGITS.'],
+  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - THE MAP SHOWS THE ICE AND THE CAMPS, THE FIGURE STANDS UNARMED WITH ITS CHEVRONS IN CLOSE AND OPENS THE HERO POP-UP WHEN CLICKED - GEAR, SIX STAT POINTS TO PUT ON ANY ROW OF ITS STAT LEDGER (THE BOTS SPEND THE SAME SIX), AND THE GEAR AND THE ABILITIES AS TWO COLUMNS OF WELLS A CLICK TURNS, THE LEDGER SHOWING THE SWAP BEFORE AND AFTER (THE WARRIOR\'S FOUR KEYS EACH CARRY A SECOND OPTION NOW: WAR CRY, WHIRLWIND, HAMSTRING AND SECOND WIND) - LOCK IN IS BIGGER, AND EVERY ROLLED SEED IS THREE DIGITS.'],
   ['3.76', 'THE STEAM BUILD PACKS ONLY WHAT THE GAME PLAYS: THE MUSIC AND THE CODE, NO SAMPLE CLIPS, NO STALE COPY, NO TYPE PACKAGES.'],
   ['3.75', 'CLASS SELECT IS A LEAGUE LOBBY: TEAM PANELS GLUED TO BOTH EDGES, THE MAP LARGE AT THE TOP WITH CHEVRONS THAT SLIDE TO THE NEXT SHAPE AND THE SEED UNDER IT, THREE DIFFICULTY PLATES WITH A TARGET WHOSE ARROWS LAND NEARER THE BULLSEYE THE HARDER THE RIVALS, AND LOCK IN AT THE FOOT THAT BURSTS A RING, DIMS THE TABS AND WEARS THE COUNT.'],
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -1353,18 +1353,19 @@ function drawLobbyBackdrop(now, a) {
 // its four leather pieces with the class weapon at hand, and under it the
 // STAT LEDGER: every number the kit flies out with, real values from the
 // same code the sim reads (heroPreviewKit / baseKit, js/player.js).
-// MIDDLE: two STRIPS, four wells across each. The GEAR strip is one well
-// a piece (helmet, chest, legs, boots) wearing the picked variant's 32px
-// icon, with a chevron above and below that cycle it through the piece's
-// three (pickGear writes straight to player.gear; the equip plays ON the
-// preview body - a white flash, sparks, the piece's band lit); a hovered
-// chevron writes the would-be variant's stat deltas into the ledger in
-// green/better or red/worse. The ABILITIES strip is one well a key (1-4)
-// wearing the picked option's icon with the key in the corner, a chevron
-// above and below that cycle it through the key's options (abOptions,
+// RIGHT: two COLUMNS of four wells, a click turning any of them. The GEAR
+// column is one well a piece (helmet, chest, legs, boots) wearing the
+// picked variant's 32px icon; a click turns it to the piece's next variant
+// (pickGear writes straight to player.gear; the equip plays ON the preview
+// body - a white flash, sparks, the piece's band lit - and the ledger's
+// numbers step to the new kit's), and a hover writes the NEXT variant's
+// stat deltas into the ledger in green/better or red/worse, so what a click
+// would do to the numbers is read before it is done. The ABILITIES column
+// is one well a key (1-4) wearing the picked option's icon with the key in
+// the corner; a click turns it to the key's next option (abOptions,
 // js/abilities.js - the warrior's keys carry two each, the hunter's one,
-// whose chevrons stand dim; the pick is player.abPick, read by abOf), and
-// a hover on the well raises the option's card (tipClassAb, js/ui/tooltip.js):
+// which a click leaves as it is; the pick is player.abPick, read by abOf),
+// and a hover raises the option's card (tipClassAb, js/ui/tooltip.js):
 // what the key will do, read before the eagle - its growth is the match's
 // own (skill points), never bought here. THE STAT POINTS are spent on the
 // ledger itself: STAT_POINTS to put a step at a time on any row (STAT_TRACKS,
@@ -1377,27 +1378,23 @@ function drawLobbyBackdrop(now, a) {
 // ledger's labelled rows are the
 // PLAYER-panel text carve-out: comparing numbers is this panel's whole job.
 // The keyboard walks menu.grow down the two strips and on through the stat
-// rows; on a strip Left/Right pick the column (menu.gcol) and Enter or
-// Space cycles it, on a ledger row Right or Enter spends a point and Left
-// takes one back.
-const GEARP_W = 38, GEARP_G = 4;                     // a strip well, and the gap between wells
-const HERO_CHEV = 8;                                 // a strip chevron's height (12 wide)
+// whole job. The keyboard walks menu.grow down the gear column, the ability
+// column and the ledger's rows; on a well Enter, Space or Right turns it
+// (Left turns it back), on a ledger row Right or Enter spends a point and
+// Left takes one back.
+const GEARP_W = 38, GEARP_G = 4;                     // a column well, and the gap between wells
+const HERO_COL_GAP = 10;                             // between the two columns
 const HERO_PIP = 4;                                  // a spent point's pip on a ledger row (3 px, 1 gap)
 function heroLayout() {
   const cx = Math.round(VIEW_W / 2);
   const ledW = 118;
-  const gridW = 4 * GEARP_W + 3 * GEARP_G;
-  const pw = 8 + ledW + 10 + gridW + 8;
+  const colsW = 2 * GEARP_W + HERO_COL_GAP;
+  const pw = 8 + ledW + 10 + colsW + 8;
   const ph = 222;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
-  const gx = px + 8 + ledW + 10;
-  const strip = (y) => [0, 1, 2, 3].map((i) => {
-    const x = gx + i * (GEARP_W + GEARP_G);
-    return { x, y, w: GEARP_W, h: GEARP_W, i,
-      up: { x: x + ((GEARP_W - 12) >> 1), y: y - HERO_CHEV - 4, w: 12, h: HERO_CHEV },
-      down: { x: x + ((GEARP_W - 12) >> 1), y: y + GEARP_W + 4, w: 12, h: HERO_CHEV } };
-  });
-  const gear = strip(py + 26), abils = strip(py + 26 + GEARP_W + 4 + 2 * HERO_CHEV + 12);
+  const gx = px + 8 + ledW + 10, ax = gx + GEARP_W + HERO_COL_GAP;
+  const col = (x) => [0, 1, 2, 3].map((i) => ({ x, y: py + 12 + i * (GEARP_W + GEARP_G), w: GEARP_W, h: GEARP_W, i }));
+  const gear = col(gx), abils = col(ax);
   // the ledger: a row a stat, each a track for the points; the unspent pips over it
   const led = { x: px + 8, y: py + 100, w: ledW };
   const stats = GEAR_STATS.map((row, i) => ({ x: led.x, y: led.y + i * 8 - 1, w: led.w, h: 8, i }));
@@ -1405,7 +1402,7 @@ function heroLayout() {
     prev: { x: px + 8, y: py + 8, w: ledW, h: 78 },   // the preview well
     pips: { x: px + 8, y: py + 90 },                   // the unspent points
     led,                                               // the ledger below them
-    name: { x: gx + (gridW >> 1), y: py + 196 },       // the hovered thing's name
+    name: { x: gx + (colsW >> 1), y: py + 190 },       // the hovered well's name
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
 
@@ -1897,17 +1894,16 @@ function gearIcon32(i, v) {
   }
   return cv;
 }
-// what the pointer is over on the hero pop-up: {row} (a gear well) or
-// {row, d} (its chevron, d -1 up / 1 down), {ab} (an ability well) or
-// {ab, d} (its chevron), {pt} (a ledger row: a point goes here) or {pt, d: -1}
+// what the pointer is over on the hero pop-up: {row} (a gear well), {ab}
+// (an ability well), {pt} (a ledger row: a point goes here) or {pt, d: -1}
 // (one of its spent pips: that point comes back), 'x', 'panel' (the slab
 // itself - inert, swallows the press), or null (outside: a click closes)
 function heroScreenHit() {
   const { gear, abils, stats, panel, xr } = heroLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(xr, 3, 3)) return 'x';
-  for (const w of gear) { if (over(w.up, 3, 2)) return { row: w.i, d: -1 }; if (over(w.down, 3, 2)) return { row: w.i, d: 1 }; if (over(w, 0, 0)) return { row: w.i }; }
-  for (const w of abils) { if (over(w.up, 3, 2)) return { ab: w.i, d: -1 }; if (over(w.down, 3, 2)) return { ab: w.i, d: 1 }; if (over(w, 0, 0)) return { ab: w.i }; }
+  for (const w of gear) if (over(w, 0, 1)) return { row: w.i };
+  for (const w of abils) if (over(w, 0, 1)) return { ab: w.i };
   for (const r of stats) {
     if (!over(r, 0, 0)) continue;
     const n = player.pts[r.i] | 0, px0 = heroPipX(r.i);
@@ -1928,7 +1924,7 @@ function pickAbility(i, d) {
 }
 
 function beginHero() {
-  state.menu.grow = 0; state.menu.gcol = 0;
+  state.menu.grow = 0;
   openPop('hero');
 }
 function leaveHero() { leavePop(); }
@@ -1958,18 +1954,12 @@ function pickGear(i, v) {
 function heroKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  const N = 2 + GEAR_STATS.length; // the two strips, then the ledger's rows
-  const gc = m.gcol | 0;
+  const N = 8 + GEAR_STATS.length; // the gear column, the ability column, then the ledger's rows
   if (k === 'escape' || k === 'backspace') leaveHero();
   else if (moveDir(k) === 'up') { m.grow = (m.grow + N - 1) % N; SFX.pickup(); }
   else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % N; SFX.pickup(); }
-  else if (m.grow < 2) {
-    if (moveDir(k) === 'left') { m.gcol = (gc + 3) % 4; SFX.pickup(); }
-    else if (moveDir(k) === 'right') { m.gcol = (gc + 1) % 4; SFX.pickup(); }
-    else if (k === 'enter' || k === ' ') { if (m.grow === 0) pickGear(gc, (player.gear[gc] + 1) % 3); else pickAbility(gc, 1); }
-  }
-  else if (moveDir(k) === 'left') spendPt(m.grow - 2, -1);
-  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') spendPt(m.grow - 2, 1);
+  else if (moveDir(k) === 'left') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 2) % 3); else if (m.grow < 8) pickAbility(m.grow - 4, -1); else spendPt(m.grow - 8, -1); }
+  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 1) % 3); else if (m.grow < 8) pickAbility(m.grow - 4, 1); else spendPt(m.grow - 8, 1); }
 }
 
 function heroClick() {
@@ -1978,9 +1968,9 @@ function heroClick() {
   const h = heroScreenHit();
   if (!h || h === 'x') { leaveHero(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                    // the slab swallows it
-  if (h.pt != null) { m.grow = 2 + h.pt; spendPt(h.pt, h.d); return; } // the row takes a point; a spent pip gives one back
-  if (h.row != null) { m.grow = 0; m.gcol = h.row; pickGear(h.row, (player.gear[h.row] + (h.d || 1) + 3) % 3); return; } // a chevron turns it; the well itself turns it forward
-  if (h.ab != null) { m.grow = 1; m.gcol = h.ab; pickAbility(h.ab, h.d || 1); }
+  if (h.pt != null) { m.grow = 8 + h.pt; spendPt(h.pt, h.d); return; } // the row takes a point; a spent pip gives one back
+  if (h.row != null) { m.grow = h.row; pickGear(h.row, (player.gear[h.row] + 1) % 3); return; } // the well turns to the next variant
+  if (h.ab != null) { m.grow = 4 + h.ab; pickAbility(h.ab, 1); }                               // ...or the next option
 }
 
 // what the pointer is on: 'play', 'hero' (your figure: the hero pop-up),
@@ -2527,14 +2517,6 @@ function drawDiffPlates(diff, rise, rc, a) {
   }
 }
 
-// a bare chevron pointing up (d = -1) or down (1), 12 wide and 8 tall: the
-// strips' turn arrows
-function drawChevronV(x, y, d, col) {
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  for (let i = 0; i < 6; i++) { const dy = d < 0 ? 5 - i : i; ctx.fillRect(x + i + 1, y + dy + 1, 1, 3); ctx.fillRect(x + 11 - i + 1, y + dy + 1, 1, 3); }
-  ctx.fillStyle = col;
-  for (let i = 0; i < 6; i++) { const dy = d < 0 ? 5 - i : i; ctx.fillRect(x + i, y + dy, 1, 3); ctx.fillRect(x + 11 - i, y + dy, 1, 3); }
-}
 // a bare chevron, d = -1 pointing left, 1 right: the arrow grammar, no plate
 function drawChevron(x, y, d, col) {
   ctx.fillStyle = 'rgba(4,6,18,0.55)';
@@ -2715,10 +2697,10 @@ function renderHero(now, a) {
   drawPopSlab(panel, rise);
   const gh = m.popT >= 1 && mouse.inside ? heroScreenHit() : null;
   const onWell = gh && gh.row != null, onPt = gh && gh.pt != null, onAb = gh && gh.ab != null;
-  const gearNext = onWell ? (player.gear[gh.row] + (gh.d || 0) + 3) % 3 : -1; // what a hovered chevron would pick
+  const gearNext = onWell ? (player.gear[gh.row] + 1) % 3 : -1; // what a click on the hovered well would pick
   drawGearPreview({ x: prev.x, y: prev.y + rise, w: prev.w, h: prev.h }, now);
   // the ledger: the numbers as picked now - and, under a hovered gear
-  // chevron or a hovered row, what they would BECOME, green where that is
+  // well or a hovered row, what they would BECOME, green where that is
   // better and red where worse. Every row is a track for the points: the
   // unspent ones stand as pips over the ledger, a row's spent ones as gold
   // pips after its label (a click on one takes it back), and the keyboard's
@@ -2726,7 +2708,7 @@ function renderHero(now, a) {
   const cur = heroPreviewKit(player.gear, player.pts);
   const spent = ptsSpent(player);
   let hovKit = null;
-  if (onWell && gh.d && gearNext !== player.gear[gh.row]) {
+  if (onWell) {
     const picks = player.gear.slice();
     picks[gh.row] = gearNext;
     hovKit = heroPreviewKit(picks, player.pts);
@@ -2740,7 +2722,7 @@ function renderHero(now, a) {
     ctx.fillStyle = n < STAT_POINTS - spent ? '#f4f7ff' : '#2c3560'; ctx.fillRect(pips.x + n * 7, pips.y + rise, 5, 5);
     if (n < STAT_POINTS - spent) { ctx.fillStyle = '#c8d4ee'; ctx.fillRect(pips.x + n * 7 + 1, pips.y + rise + 4, 4, 1); ctx.fillRect(pips.x + n * 7 + 4, pips.y + rise + 1, 1, 4); }
   }
-  const focusRow = m.grow - 2;
+  const focusRow = m.grow - 8;
   for (let i = 0; i < GEAR_STATS.length; i++) {
     const [label, get, fmt, dir] = GEAR_STATS[i];
     const y = led.y + rise + i * 8;
@@ -2780,28 +2762,23 @@ function renderHero(now, a) {
   }
   ctx.globalAlpha = a;
   // the two strips:  ctx.globalAlpha = a;
-  // the two strips: a well a piece wearing its pick, a well a key wearing
-  // its option, chevrons above and below (dim where there is nothing to
-  // turn to), the keyboard's column breathing its corner ticks
+  // the two columns: a well a piece wearing its pick, a well a key wearing
+  // its option, each a button that turns it; the keyboard's well breathing
+  // its corner ticks
   const keyed = !mouse.inside;
   for (const w of gear) {
-    const v = player.gear[w.i];
-    drawGearWell({ x: w.x, y: w.y + rise, w: w.w, h: w.h }, w.i, v, onWell && gh.row === w.i && !gh.d, true, keyed && m.grow === 0 && (m.gcol | 0) === w.i, now);
+    drawGearWell({ x: w.x, y: w.y + rise, w: w.w, h: w.h }, w.i, player.gear[w.i], onWell && gh.row === w.i, true, keyed && m.grow === w.i, now);
     ctx.globalAlpha = a;
-    for (const [c, d] of [[w.up, -1], [w.down, 1]]) {
-      const hot = onWell && gh.row === w.i && gh.d === d;
-      drawChevronV(c.x, c.y + rise - (hot ? d : 0), d, hot ? '#ffd95c' : '#8fa8d0');
-    }
   }
   for (const w of abils) {
-    const n = abOptions(player.cls, w.i).length, k = player.abPick[w.i] | 0;
-    const hot = onAb && gh.ab === w.i && !gh.d, y = w.y + rise - (hot ? 1 : 0);
+    const k = player.abPick[w.i] | 0;
+    const hot = onAb && gh.ab === w.i, y = w.y + rise - (hot ? 1 : 0);
     ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(w.x + 2, w.y + rise + 2, w.w, w.h);
     ctx.fillStyle = hot ? '#8fa0c8' : '#c89a3c'; ctx.fillRect(w.x, y, w.w, w.h);
     ctx.fillStyle = '#1a2142'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
     ctx.drawImage(classAbIcon(player.cls, w.i, k), w.x + 3, y + 3);
     drawPixelTextShadow(ctx, String(w.i + 1), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
-    if (keyed && m.grow === 1 && (m.gcol | 0) === w.i) { // keyboard cursor: four corner ticks, breathing
+    if (keyed && m.grow === 4 + w.i) { // keyboard cursor: four corner ticks, breathing
       ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
       ctx.fillStyle = '#f4f7ff';
       ctx.fillRect(w.x - 1, y - 1, 4, 1); ctx.fillRect(w.x - 1, y - 1, 1, 4);
@@ -2810,21 +2787,16 @@ function renderHero(now, a) {
       ctx.fillRect(w.x + w.w - 3, y + w.h, 4, 1); ctx.fillRect(w.x + w.w, y + w.h - 3, 1, 4);
       ctx.globalAlpha = a;
     }
-    for (const [c, d] of [[w.up, -1], [w.down, 1]]) {
-      const hotc = onAb && gh.ab === w.i && gh.d === d;
-      ctx.globalAlpha = a * (n > 1 ? 1 : 0.3);
-      drawChevronV(c.x, c.y + rise - (hotc && n > 1 ? d : 0), d, hotc && n > 1 ? '#ffd95c' : '#8fa8d0');
-      ctx.globalAlpha = a;
-    }
   }
-  // the hovered variant's or option's name (else the focused column's pick)
-  // - the one word the icons earn; a hovered chevron names what it would
-  // turn to; nothing while the hand is on the ledger, which is labelled
-  const gc = m.gcol | 0;
-  const abNext = onAb ? abOptions(player.cls, gh.ab)[(((player.abPick[gh.ab] | 0) + (gh.d || 0)) % abOptions(player.cls, gh.ab).length + abOptions(player.cls, gh.ab).length) % abOptions(player.cls, gh.ab).length] : null;
-  const nm = onWell ? GEAR[gh.row][gearNext].name : onAb ? abNext.name : onPt || m.grow >= 2 ? '' : m.grow === 1 ? abOf(player, gc).name : GEAR[gc][player.gear[gc]].name;
+  // the hovered well's name - what a click would turn it to - else the
+  // focused well's pick; nothing while the hand is on the ledger, which is
+  // labelled
+  const nOpt = onAb ? abOptions(player.cls, gh.ab).length : 0;
+  const nm = onWell ? GEAR[gh.row][gearNext].name
+    : onAb ? abOptions(player.cls, gh.ab)[((player.abPick[gh.ab] | 0) + 1) % nOpt].name
+    : onPt || m.grow >= 8 ? '' : m.grow >= 4 ? abOf(player, m.grow - 4).name : GEAR[m.grow][player.gear[m.grow]].name;
   if (nm) drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
-    (onWell && gh.d) || (onAb && gh.d) ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+    onWell || (onAb && nOpt > 1) ? '#f4f7ff' : '#ffd95c', '#0a0e23');
   drawPopX(xr, rise, gh === 'x');
   ctx.globalAlpha = 1;
 }
