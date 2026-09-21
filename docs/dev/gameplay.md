@@ -2147,10 +2147,13 @@ wears, and the detailed 32×32 `GEAR32` set the pop-up's wells wear — a pick i
 picture, not a label.
 
 <a id="stat-points"></a>
-**Stat points** are the build's other half, in the same pop-up: `STAT_POINTS` (6) to spend a
-step at a time across `STAT_TRACKS` (js/player.js `stat points`) before the eagle — HEALTH +5,
-DAMAGE +0.5, ARMOR +0.5, WALK +2%, DODGE −0.15 s a point — each track a `mod(k, n)` folded
-into the kit by `refreshKit` after gear, so every kit-reading site picks them up for free.
+**Stat points** are the build's other half, spent on the same pop-up's stat ledger itself:
+`STAT_POINTS` (6) to put a step at a time on **any row** before the eagle. `STAT_TRACKS`
+(js/player.js `stat points`) is one track per ledger row, same names in the same order as
+`GEAR_STATS` — HEALTH +5, DAMAGE +0.5, DRAW ×0.96, RENOCK ×0.95, ARMOR +0.5, WALK +2%, ICE
+SPEED ×1.04, ICE GRIP +0.15, FATIGUE ×0.94, DODGE −0.15 s, HUNTS +10%, FELLS +15%, FOOD +15%,
+SEEN AT −5% a point — each a `mod(k, n)` folded into the kit by `refreshKit` after gear, so
+every kit-reading site picks them up for free.
 `player.pts` holds the spend (`spendPt`, js/ui/menu.js; `ptsSpent` the total); it rides the
 lock-in page with the gear (`softfall.drop`) and no profile keeps it. **The budget is the same
 for everybody** — AI players deal theirs from the seed in `initPlayers()`, a point at a time

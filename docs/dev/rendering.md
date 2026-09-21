@@ -1879,15 +1879,22 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   `menu.khover`, keyed by hit id.
 <a id="the-hero-pop-up"></a>
 - **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
-  still-lit lobby on `menu.popT`): a dim, then a floating panel in three columns
+  still-lit lobby on `menu.popT`): a dim, then a floating panel in two columns
   (`heroLayout()`/`heroScreenHit()`, which answers `{row, v}` a variant well, `{pt, d}` a
-  track's minus or plus, `{ab}` an ability well, `'x'`, `'panel'` or null). LEFT is the **live
-  preview** (`drawGearPreview`): the chosen class walking in place at 4× wearing its four
-  leather bands (every pre-match pick is the free level 1) with the class weapon at hand, and
-  under it the **stat ledger** — one labelled row per number the build can touch (`GEAR_STATS`,
-  whose getters take an optional player and are handed none here — every pre-match hero is
-  level 1), real values computed by `heroPreviewKit` through the same `baseKit` (js/player.js)
-  the sim's `refreshKit` uses, so the page can never lie. MIDDLE is two **strips**, four
+  ledger row (a point goes there) or `{pt, d: -1}` one of its spent pips (that point comes
+  back), `{ab}` an ability well, `'x'`, `'panel'` or null). LEFT is the **live preview**
+  (`drawGearPreview`): the chosen class walking in place at 4× wearing its four leather bands
+  (every pre-match pick is the free level 1) with the class weapon at hand, and under it the
+  **stat ledger** — one labelled row per number the build can touch (`GEAR_STATS`, whose
+  getters take an optional player and are handed none here — every pre-match hero is level 1),
+  real values computed by `heroPreviewKit` through the same `baseKit` (js/player.js) the sim's
+  `refreshKit` uses, so the page can never lie. **The ledger is also where the stat points are
+  spent** ([gameplay.md](gameplay.md#stat-points)): the unspent ones stand as a row of
+  `STAT_POINTS` pips between the preview and the ledger, every row is a track, a hovered row
+  shows what one more point would make of its number (the would-be value in green at the edge,
+  dim when nothing is left to spend) and a click puts a point there (`spendPt`); a row's spent
+  points stand as gold pips right after its label (`heroPipX`, `HERO_PIP`) and a click on a
+  pip takes that point back. RIGHT is two **strips**, four
   wells across each, a bare chevron above and below every well (`drawChevronV`, gold under
   the hand) that turn it: the **gear strip** — one well a piece wearing the picked variant's
   32px icon (`drawGearWell`, `GEAR32`/`gearIcon32` baked on the ability icons' palette),
@@ -1897,18 +1904,16 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   (`pickAbility` → `player.abPick`; [the options on a key](gameplay.md#class-abilities-keys-1-4):
   the warrior's carry two, the hunter's one, whose chevrons stand dim), and a hover on the well
   raising the option's card (`tipClassAb`, hooked in `tipAt`) — their growth is the match's own
-  skill points, never bought here. RIGHT is the **stat points** ([gameplay.md](gameplay.md#stat-points)):
-  the unspent ones as a row of `STAT_POINTS` pips at the top, then a labelled row per
-  `STAT_TRACKS` track — its spent points as gold pips, a minus and a plus plate at the edge, dim
-  when they can do nothing. The hovered thing's name prints once under the strips — a hovered
-  chevron names what it would turn to. **Hovering a gear chevron or a live +/- plate writes its
-  deltas into the ledger** — the current number steps aside dim and the would-be number takes
-  the edge in green (better) or red (worse), covering the whole swap. **Picking plays on the
+  skill points, never bought here. The hovered well's or option's name prints once under the
+  strips — a hovered chevron names what it would turn to. **Hovering a gear chevron or a ledger
+  row writes its deltas into the ledger** — the current number steps aside dim and the would-be
+  number takes the edge in green (better) or red (worse), covering the whole swap. **Picking plays on the
   preview body** (`pickGear` → `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch
   canvas, gold sparks, the changed piece's band lit; a point (`spendPt`) refreshes the kit and
   heals to full the same way. The keyboard walks `menu.grow` down the two strips and on through
-  the five stat rows: on a strip Left/Right pick the column (`menu.gcol`, corner ticks) and
-  Enter or Space turns it, on a track (end ticks) Left/Right refund and spend a point. ESC,
+  the ledger's rows: on a strip Left/Right pick the column (`menu.gcol`, corner ticks) and
+  Enter or Space turns it, on a row (end ticks) Right or Enter spends a point and Left takes
+  one back. ESC,
   Backspace, the **X** in the corner, or a click anywhere off the panel
   close it back to the lobby (`leaveHero`) — LOCK IN (and a running count) stays on the lobby
   behind it. The ledger's and the tracks' labelled rows are the PLAYER-panel text carve-out:

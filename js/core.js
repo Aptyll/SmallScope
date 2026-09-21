@@ -170,7 +170,7 @@ const state = {
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
     // grow is the hero pop-up's keyboard row (the gear strip, the ability
-    // strip, then the stat rows) and gcol its column on a strip,
+    // strip, then the ledger's rows) and gcol its column on a strip,
     // gearFxT/gearFxSlot its equip flash,
     // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
     // is a surface of its own on wikiT, with wikiTab the open page (menu.js

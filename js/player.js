@@ -340,19 +340,31 @@ const GEAR = [
 ];
 // ---- stat points ----------------------------------------------------------
 // The pre-match build's other half: STAT_POINTS points every hero - human
-// or bot - spends across STAT_TRACKS before the eagle, a point a step, in
-// the hero pop-up (js/ui/menu.js). Same shape as a GEAR variant's mod(k, L)
-// with the points spent as L, folded into the kit by refreshKit below, so
-// every kit-reading site picks them up the way it does gear. The budget is
-// the same for everybody (bots deal theirs from the seed in initPlayers),
-// so a spend is a shape, never a head start - the wiki's flatness holds.
+// or bot - spends before the eagle, a point a step, on the STAT LEDGER
+// itself (the hero pop-up, js/ui/menu.js): every row the ledger prices a
+// body with (GEAR_STATS, same names, same order) is a track here, and a
+// point on it is one step of that number. Same shape as a GEAR variant's
+// mod(k, L) with the points spent as L, folded into the kit by refreshKit
+// below, so every kit-reading site picks them up the way it does gear. The
+// budget is the same for everybody (bots deal theirs from the seed in
+// initPlayers), so a spend is a shape, never a head start - the wiki's
+// flatness holds.
 const STAT_POINTS = 6;
 const STAT_TRACKS = [
   { name: 'HEALTH', mod: (k, n) => { k.maxHp += 5 * n; } },
   { name: 'DAMAGE', mod: (k, n) => { k.dmgBase += 0.5 * n; } },
+  { name: 'DRAW', mod: (k, n) => { k.bowCharge *= Math.pow(0.96, n); } },
+  { name: 'RENOCK', mod: (k, n) => { k.nock *= Math.pow(0.95, n); } },
   { name: 'ARMOR', mod: (k, n) => { k.dr += 0.5 * n; } },
   { name: 'WALK', mod: (k, n) => { k.walkMul += 0.02 * n; } },
+  { name: 'ICE SPEED', mod: (k, n) => { k.iceMax *= Math.pow(1.04, n); } },
+  { name: 'ICE GRIP', mod: (k, n) => { k.iceSteer += 0.15 * n; } },
+  { name: 'FATIGUE', mod: (k, n) => { k.fatigue *= Math.pow(0.94, n); } },
   { name: 'DODGE', mod: (k, n) => { k.dodgeCd -= 0.15 * n; } },
+  { name: 'HUNTS', mod: (k, n) => { k.huntMul += 0.1 * n; } },
+  { name: 'FELLS', mod: (k, n) => { k.harvestMul += 0.15 * n; } },
+  { name: 'FOOD', mod: (k, n) => { k.foodMul += 0.15 * n; } },
+  { name: 'SEEN AT', mod: (k, n) => { k.stealth -= 0.05 * n; } },
 ];
 function ptsSpent(p) { let n = 0; for (const v of p.pts) n += v | 0; return n; }
 // ---- roguelike cards ------------------------------------------------------
@@ -482,7 +494,7 @@ class Player {
     this.food = newPouch();             // the pouch: the two meals and the unopened cards, uncapped
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
-    this.pts = [0, 0, 0, 0, 0];         // STAT_POINTS spent per STAT_TRACKS row, pre-match (the hero pop-up)
+    this.pts = STAT_TRACKS.map(() => 0); // STAT_POINTS spent per STAT_TRACKS row (a ledger row each), pre-match (the hero pop-up)
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like gear and cards, NOT cleared by reset(): a death keeps what was bought
