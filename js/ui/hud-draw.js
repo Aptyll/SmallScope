@@ -238,7 +238,7 @@ function drawSweepCover(x, y, w, h, frac, col, edge) {
 const LOCK_DIM = 0.28; // the locked icon's alpha - the meal button's grammar, one shade darker
 let abCdSeen = [0, 0, 0, 0], abReadyFlash = [0, 0, 0, 0];
 function drawClassAbCell(i, now, on) {
-  const p = player, ab = CLASS_AB[p.cls][i];
+  const p = player, ab = abOf(p, i);
   const r = abCellRect(i);
   const cd = p.abCd[i];
   const lock = !abUnlocked(p, i);

@@ -17,7 +17,7 @@ const AI_HUNT = 120;    // px: how far it will go after an animal
 const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 // ---- difficulty ----------------------------------------------------------
 // Every bot plays the same ladder; a PROFILE says how well. The RIVALS run
-// AI_LEVELS[settings.aiLevel] (class select's notches, remembered with the
+// AI_LEVELS[settings.aiLevel] (the lobby's notches, remembered with the
 // profile); your ALLIES run one notch above the rivals (capped at the top)
 // plus the support fields, so your side is always the more competent one
 // and the difficulty is how good the other side is. Nothing in a profile
@@ -586,7 +586,7 @@ function aiThink(p, dt) {
     for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
-  //    ...and gear the same way: the gear pop-up is a menu bought from
+  //    ...and gear the same way: the hero pop-up is a menu bought from
   //    anywhere (gameplay.md), so a purse fat enough to keep a building
   //    float (buyGear re-validates, so a stale order is harmless) is spent on
   //    the cheapest piece here, mid-push or mid-defence alike, rather than

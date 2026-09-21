@@ -741,7 +741,7 @@ over turns that one arrow into three on the very next press; a kit that filled c
 that first find *past* the only projectile, where it does nothing. A `null` in `bits` is a real entry rather than a gap to
 skip: it is the reserved cell, `toolPlan` charges nothing for it, and `giveLoadout` right-aligns
 the row against the tool's own `cap` so the shot stays last whatever the body's size. The tensile
-budgets are sized for it — see [a tool](#a-tool). The gear pop-up's preview
+budgets are sized for it — see [a tool](#a-tool). The hero pop-up's preview
 shows the weapon at the body's side (`drawGearPreview`, js/ui/menu.js) — the other half of what a
 class flies out with.
 
@@ -750,7 +750,23 @@ class flies out with.
 Everything in this section lives in **[js/abilities.js](../../js/abilities.js)**, under the
 `class abilities` banner. Keys 1-4 cast the four actives of the player's
 [class](multiplayer.md#classes) — `CLASS_AB[p.cls]`, one row per key, where **what an ability IS
-lives in its table entry** (`cd`, `cast`, `use(p)`), never in an `if` elsewhere. The press goes
+lives in its table entry** (`cd`, `cast`, `use(p)`), never in an `if` elsewhere. **A key can
+carry more than one option**: `CLASS_AB[cls][i]` is its first and `CLASS_AB_ALT[cls][i]` the
+others (`abOptions(cls, i)` lists them), and which one a body carries is `p.abPick[i]`, picked
+before the eagle in the [hero pop-up](rendering.md#the-hero-pop-up)'s ability strip and carried
+through the lock-in page with the gear; **every reader asks `abOf(p, i)`** for what a key is on
+this body, and `abKeyOf(p, id)` for the key an ability id stands on (−1 when it is not picked).
+A bot keeps the first option on every key — the one its hands know, since `aiCombat` reaches
+for keys by index. The hunter's keys carry one option each; the warrior's carry two:
+
+| key | first | other |
+| --- | --- | --- |
+| 1 | SHIELD WALL | **WAR CRY** — every rival unit within `CRY_R` slowed (`CRY_SLOW` for `CRY_SLOW_T`) and marked (`CRY_MARK_T`) for both maps; nothing hurt (`abWarCry`) |
+| 2 | BULL RUSH | **WHIRLWIND** — everything alive within `WHIRL_R` cut for `WHIRL_DMG` and thrown `WHIRL_KB`, buildings cut too (`abWhirlwind`) |
+| 3 | STOMP | **HAMSTRING** — the wedge ahead (`HAM_R`/`HAM_HALF`) cut for `HAM_DMG` and rooted `HAM_ROOT` (`abHamstring`) |
+| 4 | EXECUTE | **SECOND WIND** — `WIND_HEAL` (30%) of max hp back over `WIND_T` (4 s), paid out each tick by `updateAbilities` (`p.windT`/`p.windRate`, `abSecondWind`); the strip's active tell |
+
+The press goes
 through `input.ability` (edge-triggered, like the dodge) into `tryAbility(p, i)`, so a bot casts
 through exactly the key a human presses; `updateAbilities(p, dt)` runs the cooldowns, lands the
 cast, and ages every state an ability leaves on a body; `updateAbilityWorld(dt)` (called from
@@ -853,7 +869,7 @@ cooldown wipes) are the HUD's half and live with it in [rendering.md](rendering.
 The main menu's **WIKI** plank (`m.screen = 'wiki'`, its own `wikiT` ease, ESC back) opens the
 game written down: one surface, a tab bar of **pages**, each a scrolling column of blocks.
 WHISPERING WOODS (`TRACKS.wiki`) loops under it from the moment it opens — an ordinary
-`music.play` the way class select takes the layer, not the counter's hold, because the wiki is
+`music.play` the way the lobby takes the layer, not the counter's hold, because the wiki is
 a surface you sit in rather than a window over a running match; `leaveWiki()` puts `intro` back
 ([Audio](#audio)). The
 page itself — the slab, the tabs, the blocks, the rail — is in
@@ -861,12 +877,12 @@ page itself — the slab, the tabs, the blocks, the rail — is in
 the numbers come from. Every number on a page is read off the constant the sim spends, never
 typed twice, so a retune can never leave the wiki lying.
 
-- **CLASSES** (the page the wiki opens on) — the two classes as class select reads them: the
+- **CLASSES** (the page the wiki opens on) — the two classes as the lobby reads them: the
   body at 3x in the side you play in, the name and role, the three lines of the pitch, and a
   ledger of health and the four stat pips (`CLASSES[c].stats`, `kit.maxHp`); under each, its
   four abilities in key order — the key on a plate, the strip's own 32 px icon in a well
   (`classAbIcon`), the name, COOLDOWN and CAST in the columns (`WIKI_AB_COLS`, off `CLASS_AB`)
-  and the blurb wrapped beneath. A hover raises class select's ability card (`tipClassAb` with
+  and the blurb wrapped beneath. A hover raises the lobby's ability card (`tipClassAb` with
   the class passed, so the base cooldown). The intro names what a skill point does
   (`AB_LV_CD`, `AB_LV_MAX`, [Hero levels](multiplayer.md#hero-levels)).
 - **BEASTS** — the meadow's two kinds and the camps' three, each drawn wearing the frame it wears in the snow; a
@@ -2121,14 +2137,27 @@ variants with a distinct lane, all in the `GEAR` table in the `players` banner:
 
 The variant pick is free and is **level 1**; in-match gold buys each piece to level `GEAR_LV_MAX`
 (4) for `GEAR_COSTS` 10/20/35 — the second gold sink beside building. Levels reset with the match
-(every boot builds fresh `Player`s). The human picks variants in the **gear pop-up** — opened
-from class select's collapsed gear widget, all 12 variants at once as 32×32 icon wells beside a
+(every boot builds fresh `Player`s). The human picks variants in the **hero pop-up** — opened
+by clicking their figure on the lobby, all 12 variants at once as 32×32 icon wells beside a
 live preview and a real-number stat ledger with hover deltas (League runes-style; see
-[Main menu](rendering.md#main-menu-title)); `pickGear()` writes straight to `player.gear`. AI
-players hash all four variants from the seed in `initPlayers()`. **Every variant has its own
-icons**: the 12×12 material-swapped `SPRITES.gearIcons[slot][variant][material]` the HUD and
-the select screen's plaque wear, and the detailed 32×32 `GEAR32` set the pop-up's wells wear —
-a pick is a distinct picture, not a label.
+[the hero pop-up](rendering.md#the-hero-pop-up)); `pickGear()` writes straight to `player.gear`.
+AI players hash all four variants from the seed in `initPlayers()`. **Every variant has its own
+icons**: the 12×12 material-swapped `SPRITES.gearIcons[slot][variant][material]` the HUD
+wears, and the detailed 32×32 `GEAR32` set the pop-up's wells wear — a pick is a distinct
+picture, not a label.
+
+<a id="stat-points"></a>
+**Stat points** are the build's other half, spent on the same pop-up's stat ledger itself:
+`STAT_POINTS` (6) to put a step at a time on **any row** before the eagle. `STAT_TRACKS`
+(js/player.js `stat points`) is one track per ledger row, same names in the same order as
+`GEAR_STATS` — HEALTH +5, DAMAGE +0.5, DRAW ×0.96, RENOCK ×0.95, ARMOR +0.5, WALK +2%, ICE
+SPEED ×1.04, ICE GRIP +0.15, FATIGUE ×0.94, DODGE −0.15 s, HUNTS +10%, FELLS +15%, FOOD +15%,
+SEEN AT −5% a point — each a `mod(k, n)` folded into the kit by `refreshKit` after gear, so
+every kit-reading site picks them up for free.
+`player.pts` holds the spend (`spendPt`, js/ui/menu.js; `ptsSpent` the total); it rides the
+lock-in page with the gear (`softfall.drop`) and no profile keeps it. **The budget is the same
+for everybody** — AI players deal theirs from the seed in `initPlayers()`, a point at a time
+across the tracks — so a spend is a shape, never a head start, and the arsenal's flatness holds.
 
 **Worn gear shows on the sprite**: each piece at level 2+ lays a 1 px band of its material across
 the shared 16×16 body plan — hat, coat, hips, one mark per foot (`GEAR_MARKS`/`drawGearMarks`,
@@ -2761,11 +2790,11 @@ first room will stand. A room's plank carries its host's name, ten seat pips (fi
 people in them lit in that side's paint - the relay lists a count per side), its four-letter
 code on a plate (the thing a host reads aloud) and a red dot once its match is under way; a room
 on another patch is dimmed and inert with its patch printed where the code would be. HOST makes
-a room on the relay and opens the **waiting room** - the class-select screen, which every peer
+a room on the relay and opens the **waiting room** - the lobby, which every peer
 sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
 your side's roster, a crown over the host's card, a brighter rim on every person's card than a
 bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
-guest sees it minus the difficulty plates, the map chevrons and the character swap (its class came with it), and
+guest sees it minus the two pop-ups off the map plate and the target and the character swap (its class came with it), and
 where LOCK IN would be a frozen plank wearing the host's name: the host's count comes over it and
 the eagle on the host's zero. A guest whose host walks out of the waiting room is back on the
 rooms list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
@@ -2783,9 +2812,9 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
-`aiLevel` — the rival bots' difficulty plate on class select, an index into `AI_LEVELS` (js/ai.js) —
-`mapType` — the map shape picked with class select's map chevrons, an index into `MAPS` (js/world.js); it is
-what the NEXT load grows, since a pick is a page ([map shapes](world.md#map-shapes)) —
+`aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai.js) —
+`mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/world.js); it is
+what the NEXT load grows — LOCK IN reloads onto it when it is not this page's shape ([map shapes](world.md#map-shapes)) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each
 ([the two controllers](multiplayer.md#the-two-controllers)) —
@@ -3091,8 +3120,8 @@ victory, the lobby) can never be undone by a release arriving after it. The
 
 | Track | Plays from | Loops |
 | --- | --- | --- |
-| `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveSelect()` back to the menu | yes |
-| `select` — FROZEN NORTH RUN CLASS SELECTION | `beginSelect()`; the gear pop-up keeps it | yes |
+| `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveLobby()` back to the menu | yes |
+| `lobby` — FROZEN NORTH RUN CLASS SELECTION | `beginLobby()`; the hero pop-up keeps it | yes |
 | `eagle` — FLYING ON EAGLE | `beginDrop()` | yes |
 | `jump` — JUMPING OFF EAGLE | `dropJump()` for the local player | no → `foxglove` |
 | `foxglove` — FOXGLOVE DROP | the end of `jump`, via `TRACKS.next` | no → silence |

@@ -77,7 +77,7 @@ of a body goes through `classSet(p)` (player.js), which asks it. Body type, bear
 never touch the in-world body: it stays 16×16 permanently, and they read on the 48 px model only.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look, team,
-bare)`) is where the whole look reads — the create screen, the roster and class select's
+bare)`) is where the whole look reads — the create screen, the roster and the lobby's
 stage. It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
 neck, shoulders, arms, undershirt `u`, pants, boots), `HEAD[face]` (16 wide at x 16: round,
 square-jawed, narrow — eyes `W`/`e`, nose shade, blush, mouth), `BEARD[beard]` (none, stubble,
@@ -137,8 +137,7 @@ through the same code because the icon is centred on its own half-width.
 The **gear icons** are twelve 12×12 grids, **one per variant** (`gearLongsight` … `gearGhoststep`), each baked once per
 **material** — `GEAR_MAT_PALS`, leather → iron → steel → gold, plus the shared accent chars `w`
 (ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`: the glyph
-says which piece, the material says its level. Drawn by the HUD's gear plates and class select's
-collapsed gear widget; the gear pop-up's wells wear the detailed 32×32 `GEAR32` set instead
+says which piece, the material says its level. Drawn by the HUD's gear plates; the hero pop-up's wells wear the detailed 32×32 `GEAR32` set instead
 (js/ui/menu.js — see [gameplay.md](gameplay.md#gear)). `itemBag` is
 12×12 for the same reason — it sits in the same 18 px HUD well — but shares `ITPAL` with the
 8×8 item icons rather than taking a material palette: it is one object, not four levels of one.

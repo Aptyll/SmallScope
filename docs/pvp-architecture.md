@@ -370,7 +370,7 @@ The same screens and the same protocol ride either transport; only the list and 
    (`LATE` past `LATE_JOIN_T` into a live match, `FULL` with no AI slot left). The body becomes
    `control: 'remote'` and takes the hello's name, look and class; then `welcome`, a `full`, a
    `roster` to everyone and a fresh list entry. There is no team swap, no ready flag and no kick.
-5. **Waiting room.** The class-select screen, which a guest sees without PLAY and with the host's
+5. **Waiting room.** The lobby, which a guest sees without PLAY and with the host's
    name on a frozen plank; the host wears a crown and people a rim. The client builds its bodies
    from the welcome's roster (`initPlayers(roster, slot)`) and updates them in place on each
    `roster`. The host's PLAY count is meant to reach every screen as `count` (broken - Status).

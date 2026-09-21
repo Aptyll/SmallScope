@@ -1,7 +1,7 @@
 'use strict';
 // The title screen: the frost-plank menu over the living world, the reroll
-// die, the tutorial and patch-notes panels, class select on its own painted
-// night with its gear pop-up, and the intro that hands the locked-in class
+// die, the tutorial and patch-notes panels, the lobby on its own painted
+// night with its hero pop-up, and the intro that hands the locked-in class
 // to the eagle.
 // ------------------------------------------------------------ main menu
 // The title screen is a real menu over the living world: the camera drifts
@@ -13,7 +13,7 @@ const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
 const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
-// seed lives on class select under the map's name (rerollWorld below),
+// seed lives on the lobby under the map's name (rerollWorld below),
 // and the WIKI opens from the plank heading the patch notes (drawPatchWiki).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
 // stacked at the bottom middle of the view, MENU_TXT_PITCH apart with the
@@ -22,11 +22,11 @@ const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // training arena, beginPractice).
 const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
-// MENU_BH at MENU_Y0 in the 270-tall authored frame is where class select's
+// MENU_BH at MENU_Y0 in the 270-tall authored frame is where the lobby's
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 3.76';
+const PATCH_TXT = 'PATCH 3.77';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - THE MAP SHOWS THE ICE AND THE CAMPS, THE FIGURE STANDS UNARMED WITH ITS CHEVRONS IN CLOSE AND OPENS THE HERO POP-UP WHEN CLICKED - GEAR, SIX STAT POINTS TO PUT ON ANY ROW OF ITS STAT LEDGER (THE BOTS SPEND THE SAME SIX), AND THE GEAR AND THE ABILITIES AS TWO COLUMNS OF WELLS A CLICK TURNS, THE LEDGER SHOWING THE SWAP BEFORE AND AFTER (THE WARRIOR\'S FOUR KEYS EACH CARRY A SECOND OPTION NOW: WAR CRY, WHIRLWIND, HAMSTRING AND SECOND WIND) - LOCK IN IS BIGGER, AND EVERY ROLLED SEED IS THREE DIGITS.'],
   ['3.76', 'THE STEAM BUILD PACKS ONLY WHAT THE GAME PLAYS: THE MUSIC AND THE CODE, NO SAMPLE CLIPS, NO STALE COPY, NO TYPE PACKAGES.'],
   ['3.75', 'CLASS SELECT IS A LEAGUE LOBBY: TEAM PANELS GLUED TO BOTH EDGES, THE MAP LARGE AT THE TOP WITH CHEVRONS THAT SLIDE TO THE NEXT SHAPE AND THE SEED UNDER IT, THREE DIFFICULTY PLATES WITH A TARGET WHOSE ARROWS LAND NEARER THE BULLSEYE THE HARDER THE RIVALS, AND LOCK IN AT THE FOOT THAT BURSTS A RING, DIMS THE TABS AND WEARS THE COUNT.'],
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -336,7 +337,7 @@ function overPatchTag() {
 // the wrapper with Steam asked for (netSteam) the list is Steam's lobbies
 // (steamRooms, js/net/transport-steam.js) in the same shape, with no code
 // plate - a lobby is joined off the list, never read aloud. HOST makes a room on the relay and opens the waiting room (the
-// class-select screen, which every peer then sees as this screen does); a
+// lobby, which every peer then sees as this screen does); a
 // room's plank joins it, the row staying lit until the host's WELCOME
 // arrives, or rattling if the room would not have us.
 const RM_W = 236, RM_H = 24, RM_GAP = 6, RM_MAX = 6;
@@ -350,7 +351,7 @@ function beginRooms() {
   const feed = (rooms, ok) => { m.rooms = rooms.slice(0, RM_MAX); m.roomsOk = ok; };
   roomsFeed = netSteam() ? steamRooms(feed) : wsRooms(netRelay(), feed); // Steam's lobbies under the wrapper, the relay's rooms otherwise
   SFX.place();
-  SFX.music.play('select');
+  SFX.music.play('lobby');
 }
 function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null; } }
 function leaveRooms() {
@@ -378,7 +379,7 @@ function roomsHit() {
 function hostRoom() {
   roomsFeedClose();
   netHost();
-  beginSelect();
+  beginLobby();
 }
 function joinRoom(k) {
   const m = state.menu, r = m.rooms[k];
@@ -414,7 +415,7 @@ function updateRooms(dt) {
   if (m.roomsShake > 0) m.roomsShake = Math.max(0, m.roomsShake - dt);
   // a join answered: the waiting room on a welcome, a rattle on a refusal
   if (NET.role === 'client') {
-    if (NET.welcomed) { roomsFeedClose(); beginSelect(); }
+    if (NET.welcomed) { roomsFeedClose(); beginLobby(); }
     else if (NET.refused || (NET.transport.error && !NET.transport.open)) { netLeave(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
   }
 }
@@ -456,7 +457,7 @@ function drawCodePlate(x, y, code, col, sc) {
 function renderRooms(now, a) {
   const m = state.menu;
   const { host, rows } = roomsLayout();
-  drawSelectBackdrop(now, a);
+  drawLobbyBackdrop(now, a);
   ctx.globalAlpha = a;
   drawMenuButton(host, 'HOST', m.rhover.host || 0, now, m.pressT > 0 && (m.rhover.host || 0) > 0.5);
   drawRelayPip(host.x + host.w + 8, host.y + 10, m.roomsOk, now);
@@ -502,7 +503,7 @@ function renderRooms(now, a) {
 function drawRoomPlate(now, a) {
   if (NET.role === 'solo') return;
   const code = String((NET.transport && (NET.transport.room || NET.transport.lobbyId)) || '');
-  const x = SEL_PAD, y = SEL_HEAD - 20;
+  const x = LOBBY_PAD, y = LOBBY_HEAD - 20;
   ctx.globalAlpha = a;
   drawRelayPip(x, y + 6, !!(NET.transport && NET.transport.open), now);
   if (code && code.length <= 6) drawCodePlate(x + 9, y, code, '#ffd95c', 2); // a relay code; a Steam lobby is joined off the list
@@ -554,7 +555,7 @@ function menuSelect(i) {
 
 function menuActivate(i) {
   SFX.unlock();
-  if (i === 0) beginSelect();
+  if (i === 0) beginLobby();
   else if (i === 1) beginRooms();
   else if (i === 2) beginPractice();
 }
@@ -617,8 +618,10 @@ function menuKey(e) {
   const k = e.key.toLowerCase();
   if (state.fade) return; // a reroll is already leaving
   if (m.screen === 'wiki') { if (m.wikiT >= 1) wikiKey(k); return; }
-  if (m.screen === 'gear') { if (m.gearT >= 1) gearKey(k); return; }
-  if (m.screen === 'select') { if (m.screenT >= 1 && m.gearT <= 0) selectKey(k); return; }
+  if (m.screen === 'hero') { if (m.popT >= 1) heroKey(k); return; }
+  if (m.screen === 'map') { if (m.popT >= 1) mapKey(k); return; }
+  if (m.screen === 'ai') { if (m.popT >= 1) aiKey(k); return; }
+  if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
@@ -639,8 +642,10 @@ function menuClick() {
   SFX.unlock();
   if (state.fade) return;
   if (m.screen === 'wiki') { wikiClick(); return; }
-  if (m.screen === 'gear') { gearClick(); return; }
-  if (m.screen === 'select') { selectClick(); return; }
+  if (m.screen === 'hero') { heroClick(); return; }
+  if (m.screen === 'map') { mapClick(); return; }
+  if (m.screen === 'ai') { aiClick(); return; }
+  if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
@@ -669,25 +674,31 @@ function beginIntro() {
   state.mode = 'play';
   state.menu.panel = null;
   state.menu.screen = 'menu';
-  state.menu.gearT = 0;
+  state.menu.popT = 0; state.menu.pop = null;
   SFX.dawnChime();
   SFX.music.stop(0.6);
 }
 
-// the die (on the select screen, under the shape's name): whiteout, then
+// the die (on the lobby, under the shape's name): whiteout, then
 // reload on a fresh seed in the same shape (SEED is a const every
 // deterministic value closes over, so a new world is a new page). It lands
-// back on the select screen (softfall.select, read by js/boot.js), so a
+// back on the lobby (softfall.select, read by js/boot.js), so a
 // roll is one press and not a walk.
+// A page that lands back on the lobby (the die) fades through the lobby's
+// own night (LOBBY_NIGHT, the sky at its darkest), never white: the screen
+// goes dark and comes back up on itself, and js/boot.js clears from the
+// same colour. White is the reroll's from anywhere else. (A map pick is no
+// page at all until LOCK IN: pickMap, lockIn.)
+const LOBBY_NIGHT = '#04060f';
 function rerollWorld() {
   const m = state.menu;
   if (state.fade) return;
   m.rolling = 0.6;
   SFX.dodge();
   SFX.music.stop(0.45);
-  const next = ((Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0) || 1;
+  const next = rollSeed();
   state.fade = {
-    a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
+    a: 0, to: 1, spd: 1 / 0.55, color: LOBBY_NIGHT,
     then: () => {
       try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); } catch (e) { }
       location.href = location.pathname + '?seed=' + next + '&map=' + MAP_TYPE;
@@ -712,7 +723,7 @@ function updateTitle(dt) {
   // the waiting room's comings and goings: a card whose kind changed (a bot
   // became a person, or the reverse) flashes and sounds; a guest whose host
   // left is back on the rooms list with a rattle
-  if (NET.role !== 'solo' && (m.screen === 'select' || m.screen === 'gear')) {
+  if (NET.role !== 'solo' && (m.screen === 'lobby' || popOpen())) {
     if (!m.cardFx) { m.cardFx = {}; m.cardKind = players.map((p) => isHuman(p)); }
     for (const p of players) {
       const h = isHuman(p);
@@ -720,7 +731,7 @@ function updateTitle(dt) {
       m.cardKind[p.id] = h;
       if (m.cardFx[p.id] > 0) m.cardFx[p.id] -= dt;
     }
-    if (NET.isClient && NET.refused === 'HOSTGONE') { if (m.screen === 'gear') leaveGear(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
+    if (NET.isClient && NET.refused === 'HOSTGONE') { if (popOpen()) leavePop(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
   } else m.cardFx = null;
   m.t += dt;
   m.camT += dt;
@@ -749,42 +760,41 @@ function updateTitle(dt) {
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
   m.pwHover = (m.pwHover || 0) + ((overPatchWiki() ? 1 : 0) - (m.pwHover || 0)) * Math.min(1, dt * 14); // the notes' WIKI plank
-  // class select cross-fade and its own hovers; the gear pop-up rides a
-  // second ease (gearT) over the still-lit select screen
-  const st = m.screen === 'select' || m.screen === 'gear' ? 1 : 0;
+  // lobby cross-fade and its own hovers; a pop-up (gear, map, ai) rides a
+  // second ease (popT) over the still-lit lobby
+  const st = m.screen === 'lobby' || popOpen() ? 1 : 0;
   m.screenT = Math.max(0, Math.min(1, m.screenT + (st ? 1 : -1) * dt / 0.35));
-  const gt = m.screen === 'gear' ? 1 : 0;
-  m.gearT = Math.max(0, Math.min(1, m.gearT + (gt ? 1 : -1) * dt / 0.3));
+  m.popT = Math.max(0, Math.min(1, m.popT + (popOpen() ? 1 : -1) * dt / 0.3));
+  if (m.popT <= 0) m.pop = null;
   // the wiki is a surface of its own, not a third state of the pick pair -
   // it eases in over the same chrome on a clock of its own
   m.wikiT = Math.max(0, Math.min(1, m.wikiT + (m.screen === 'wiki' ? 1 : -1) * dt / 0.35));
   m.cswapT = Math.min(1, m.cswapT + dt / 0.22);
-  const sh = m.screen === 'select' && m.screenT >= 1 ? selectHit() : null;
-  for (let i = 0; i < PROFILE.CHAR_MAX; i++) {
-    // `|| 0`: the seed literal in core.js is two cells; the third slot's
-    // hover ease starts from nothing, not from NaN
-    const target = sh === 'slot' + i ? 1 : 0;
+  const sh = m.screen === 'lobby' && m.screenT >= 1 ? lobbyHit() : null;
+  for (let i = 0; i < 2; i++) { // the character chevrons' hover eases
+    const target = sh === (i ? 'charr' : 'charl') ? 1 : 0;
     m.chover[i] = (m.chover[i] || 0) + (target - (m.chover[i] || 0)) * Math.min(1, dt * 14);
   }
-  // the difficulty notches' hover eases, and PLAY's countdown: a tick per
-  // whole second, the eagle at zero (the gear pop-up shuts on the way)
+  // the AI pop-up's plates' hover eases, and PLAY's countdown: a tick per
+  // whole second, the eagle at zero (an open pop-up shuts on the way)
+  const ah = m.screen === 'ai' && m.popT >= 1 && mouse.inside ? aiScreenHit() : null;
   for (let k = 0; k < 3; k++) {
-    const target = sh === 'diff' + k ? 1 : 0;
+    const target = ah === 'diff' + k ? 1 : 0;
     m.dhover[k] = (m.dhover[k] || 0) + (target - (m.dhover[k] || 0)) * Math.min(1, dt * 14);
   }
-  // the map slide, the lock-in ring, and the target's arrows - which fly in
-  // again whenever the level the target shows changes (the hovered plate's,
-  // else the picked one's)
-  if (m.mapSlide) m.mapSlide.t = Math.min(1, m.mapSlide.t + dt / 0.35);
+  // the map slide, the lock-in ring, and the target's jolt - whenever the
+  // level the target shows changes (the hovered plate's, else the picked
+  // one's) the face it wears changes and the target jolts
+  if (m.mapSlide) { m.mapSlide.t = Math.min(1, m.mapSlide.t + dt / 0.35); if (m.mapSlide.t >= 1) m.mapSlide = null; }
   if (m.lockFx > 0) m.lockFx = Math.max(0, m.lockFx - dt);
-  const tl = sh && sh.startsWith('diff') ? +sh.slice(4) : settings.aiLevel | 0;
+  const tl = ah && ah.startsWith('diff') ? +ah.slice(4) : settings.aiLevel | 0;
   if (tl !== m.tgtLv) { m.tgtLv = tl; m.tgtT = 0; }
   m.tgtT = Math.min(1, (m.tgtT || 0) + dt);
   if (m.countT > 0) {
     m.countT -= dt;
     const n = Math.max(0, Math.ceil(m.countT));
     if (n < m.countN) { m.countN = n; if (n > 0) SFX.countTick(); }
-    if (m.countT <= 0) { m.countT = 0; if (m.screen === 'gear') leaveGear(); if (!NET.isClient) lockIn(); }
+    if (m.countT <= 0) { m.countT = 0; if (popOpen()) leavePop(); if (!NET.isClient) lockIn(); }
   }
   if (m.lockT > 0) {
     m.lockT -= dt;
@@ -1191,79 +1201,75 @@ function drawPatchBar(ox, oy) {
   tri(up, -1); tri(down, 1);
 }
 
-// ---- class select --------------------------------------------------------
-// SINGLEPLAYER goes here (menu.screen = 'select'): ONE screen on its own
+// ---- lobby --------------------------------------------------------
+// SINGLEPLAYER goes here (menu.screen = 'lobby'): ONE screen on its own
 // painted night - never the live world - laid out the way a League lobby is.
 // Two TEAM PANELS stand glued to the screen's edges, your side's on the LEFT
 // and the rivals' on the RIGHT: five frames each, in player order, a frame
 // wearing the player's body in its team paint with the name beside it (yours
-// gold-rimmed; a rival's face-down until the count turns it). Heading your
-// panel are the CHARACTER TABS (the profile's three, js/profile.js; a filled
-// one wears that character's body, the active one gold, and a click swaps the
-// stage to it - the class comes with the character, fixed at creation, so
-// there is no class picker here); heading theirs is the DIFFICULTY - three
-// plates named after AI_LEVELS (js/ai.js) stacked easy to hard, the picked
-// one in the rivals' paint and remembered with the profile, and beside them a
-// TARGET whose arrows stick nearer the bullseye the harder the level (they
-// fly in again whenever the level it shows changes). At the TOP CENTRE sits
-// the MAP: this seed's own valley in the picked shape as a picture (mapChip,
-// `the map` below), its name under it and the SEED ROW under that (the
-// seed's number and its die - rerollWorld), with a chevron either side that
-// slides the picture over to the neighbouring shape (mapStep -> pickMap: a
-// pick is a page, and the reload lands back here on it). Under the map the
-// STAGE holds YOUR CHARACTER - the 48 px model (js/sprites/looks.js) at 2x
-// under its warm light with the class weapon at hand, its name and class
-// under it - with the COLLAPSED GEAR WIDGET at its right hand (the four
-// picked variants; clicking it opens the gear pop-up - beginGear; ESC, the
-// X, or a click outside close it). LOCK IN is the frost plank at the foot of
-// the view: it locks the pick and starts the COUNTDOWN (pressPlay) - a gold
-// ring bursting off the figure (lockFx), the tabs dimmed, the plank sunk and
-// wearing the whole second left, one rival frame turning face-up per tick,
-// gear still open through it, ESC calling it off (cancelCount), LOCK IN
-// again skipping the rest of it - and at zero lockIn() flies to the eagle
-// (lockT -> beginDrop). Nothing on the screen is instructions: the shapes
-// carry it. m.csel mirrors player.cls (the gear preview reads it).
-const SEL_PANEL_W = 110;               // a team panel's width, glued to its screen edge
-const SEL_FRAME_MAX = 44;              // a roster frame's tallest; a short view shrinks it
-const SEL_FRAME_GAP = 4;
-const SEL_TAB = 24, SEL_TAB_GAP = 4;   // a character tab well and its gap
-const SEL_HEAD = 58;                   // the panels' head: the tabs left, the difficulty right
-const SEL_PAD = 6;                     // the margin off the view's edge
-const SEL_MAP = 56;                    // the map picture at the top centre
-const SEL_LV_W = 58, SEL_LV_H = 13;    // a difficulty plate
-const SEL_TGT = 40;                    // the target beside the plates (its rings scale off it)
+// gold-rimmed; a rival's face-down until the count turns it). At the TOP
+// CENTRE, side by side, stand the MAP PLATE - this seed's own valley in the
+// picked shape as a picture (mapChip, `the map` below) - and the TARGET -
+// the practice range's archery face worn by the rivals' level (whole,
+// cracked, wrecked) - each with its name in plain white under it, and each
+// the way into a POP-UP: the map's (the shape with a chevron either side, the
+// seed row and its die - the map pop-up below) and the AI's (the three
+// plates named after AI_LEVELS, js/ai.js - the AI pop-up below). Under them
+// the STAGE holds YOUR CHARACTER - the 48 px model (js/sprites/looks.js) at
+// LOBBY_MODEL under its warm light, unarmed, no name under it - with a
+// CHEVRON either side that swaps to the neighbouring character (the
+// profile's three, js/profile.js; the class comes with the character, fixed
+// at creation, so there is no class picker here). Clicking the figure opens
+// the HERO POP-UP (gear, stat points, the abilities - `the hero pop-up`
+// above). LOCK IN is a bare word at the foot of the view, big: it locks the
+// pick and starts the COUNTDOWN (pressPlay) - a gold ring bursting off the
+// figure (lockFx), the chevrons dimmed, the count in the word's place, one
+// rival frame turning face-up per tick, the pop-ups still open through it,
+// ESC calling it off (cancelCount), LOCK IN again skipping the rest of it -
+// and at zero lockIn() flies to the eagle (lockT -> beginDrop; a page first
+// when the picked shape is not this one's). Nothing on the screen is
+// instructions: the shapes carry it. A guest's room shows the host's
+// difficulty and world as readouts and the host's name where LOCK IN is.
+const LOBBY_PANEL_W = 110;               // a team panel's width, glued to its screen edge
+const LOBBY_FRAME_MAX = 44;              // a roster frame's tallest; a short view shrinks it
+const LOBBY_FRAME_GAP = 4;
+const LOBBY_HEAD = 58;                   // the panels' head: the difficulty plates and the target, right; the left kept level with it
+const LOBBY_MODEL = 3;                   // the stage model's scale: the 48 px model at 3x, the create screen's size
+const LOBBY_LOCK_SCALE = 3;              // LOCK IN's text scale, and the count's
+const LOBBY_PAD = 6;                     // the margin off the view's edge
+const LOBBY_MAP = 56;                    // the map plate and the target, side by side at the top centre
+const LOBBY_TOP_GAP = 24;                // between them
+const LOBBY_LV_W = 58, LOBBY_LV_H = 13;    // a difficulty plate (the AI pop-up)
+const POP_PIC = 72;                      // the picture in a pop-up: the map, the target
 const COUNT_T = 5;                     // s: LOCK IN's countdown to the eagle
-function selectLayout() {
-  const cx = Math.round(VIEW_W / 2), pw = SEL_PANEL_W, pad = SEL_PAD;
+function lobbyLayout() {
+  const cx = Math.round(VIEW_W / 2), pw = LOBBY_PANEL_W, pad = LOBBY_PAD;
   // the two panels' frames: five each under the head, filling the height
-  const avail = VIEW_H - SEL_HEAD - pad;
-  const fh = Math.max(26, Math.min(SEL_FRAME_MAX, Math.floor(avail / (MAX_PLAYERS / 2)) - SEL_FRAME_GAP));
+  const avail = VIEW_H - LOBBY_HEAD - pad;
+  const fh = Math.max(26, Math.min(LOBBY_FRAME_MAX, Math.floor(avail / (MAX_PLAYERS / 2)) - LOBBY_FRAME_GAP));
   const cards = [[], []];
   const mineTeam = player ? player.team : 0;
   for (const p of players) {
     const mine = p.team === mineTeam ? 1 : 0;
-    const y = SEL_HEAD + cards[mine].length * (fh + SEL_FRAME_GAP);
+    const y = LOBBY_HEAD + cards[mine].length * (fh + LOBBY_FRAME_GAP);
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
   }
-  // the character tabs across your panel's head
-  const slots = [];
-  for (let i = 0; i < PROFILE.CHAR_MAX; i++) slots.push({ x: pad + i * (SEL_TAB + SEL_TAB_GAP), y: pad, w: SEL_TAB, h: SEL_TAB, i });
-  // the rivals' difficulty: three plates stacked at their panel's head, the target beside them
-  const diff = [];
-  for (let k = 0; k < 3; k++) diff.push({ x: VIEW_W - pw + pad, y: pad + k * (SEL_LV_H + 3), w: SEL_LV_W, h: SEL_LV_H });
-  const tgt = { x: VIEW_W - pad - SEL_TGT + 2, y: pad + 2, w: SEL_TGT, h: SEL_TGT };
-  // the map at the top centre, a chevron either side, its name and the seed row under it
-  const mapc = { x: cx - (SEL_MAP >> 1), y: pad, w: SEL_MAP, h: SEL_MAP };
-  const ay = mapc.y + (SEL_MAP >> 1) - 9;
-  const arrows = [{ x: mapc.x - 20, y: ay, w: 12, h: 18, d: -1 }, { x: mapc.x + mapc.w + 8, y: ay, w: 12, h: 18, d: 1 }];
-  const name = { x: cx, y: mapc.y + mapc.h + 6 };
-  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
-  const seed = { x: cx - (sw >> 1), y: name.y + 10, w: sw, h: 12 };
-  // LOCK IN at the foot; the stage figure stands on the snow above it
-  const play = { x: cx - (MENU_BW >> 1), y: VIEW_H - pad - MENU_BH - 4, w: MENU_BW, h: MENU_BH };
-  const body = { x: cx - 48, y: play.y - 28 - 92, w: 96, h: 96 }; // the 48 px model at 2x, its feet 4 px up
-  const loadout = { x: body.x + body.w + 14, y: body.y + 22, w: 14, h: 4 * 17 - 3 };
-  return { cx, play, body, slots, loadout, cards, diff, tgt, mapc, arrows, name, seed };
+  // the map plate and the target side by side at the top centre, mirrored
+  // about the middle, each with its name under it: the shape's, the level's
+  const mapc = { x: cx - (LOBBY_TOP_GAP >> 1) - LOBBY_MAP, y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
+  const tgt = { x: cx + (LOBBY_TOP_GAP >> 1), y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
+  const mapName = { x: mapc.x + (LOBBY_MAP >> 1), y: mapc.y + mapc.h + 6 };
+  const tgtName = { x: tgt.x + (LOBBY_MAP >> 1), y: tgt.y + tgt.h + 6 };
+  // LOCK IN, a bare word at the foot, big; the stage figure on the snow above it
+  const pw2 = pixelTextWidth('LOCK IN', LOBBY_LOCK_SCALE) + 8;
+  const play = { x: cx - (pw2 >> 1), y: VIEW_H - pad - 7 * LOBBY_LOCK_SCALE - 8, w: pw2, h: 7 * LOBBY_LOCK_SCALE + 4 };
+  const bs = 48 * LOBBY_MODEL;
+  const body = { x: cx - (bs >> 1), y: play.y - 22 - 46 * LOBBY_MODEL, w: bs, h: bs }; // its feet (46 rows down) 22 px over the word
+  const figure = { x: body.x + 14 * LOBBY_MODEL, y: body.y + 4 * LOBBY_MODEL, w: 20 * LOBBY_MODEL, h: 42 * LOBBY_MODEL }; // the body itself, the button into the hero pop-up
+  // a chevron either side of the figure swaps to the neighbouring character
+  const cy = body.y + 46 * LOBBY_MODEL - 60;
+  const chars = [{ x: body.x + 4, y: cy, w: 12, h: 18, d: -1 }, { x: body.x + body.w - 16, y: cy, w: 12, h: 18, d: 1 }]; // in close by the shoulders
+  return { cx, play, body, figure, chars, cards, tgt, mapc, mapName, tgtName };
 }
 
 // The screen's own painted night, fully opaque at rest so the live ambient
@@ -1271,7 +1277,7 @@ function selectLayout() {
 // snow-crested ridge over a pine line, a lit snow floor, slow snowfall, and
 // the cinematic band. All procedural - hash2/vnoise for the stillness, now
 // for the drift - and everything takes the caller's fade.
-function drawSelectBackdrop(now, a) {
+function drawLobbyBackdrop(now, a) {
   const toy = frameTop();
   const hz = toy + 150; // the horizon the figures stand against
   ctx.globalAlpha = a;
@@ -1340,53 +1346,80 @@ function drawSelectBackdrop(now, a) {
   ctx.globalAlpha = 1;
 }
 
-// ---- the gear pop-up (League runes-style) --------------------------------
-// Opened from the select screen's collapsed gear widget (beginGear). The
-// select screen stays lit underneath; the pop-up dims it and floats a panel
-// in two columns. LEFT: the live preview - the chosen class walking in
-// place in its four leather pieces with the class weapon at hand, and under
-// it the STAT LEDGER: every number the kit flies out with, real values from
-// the same code the sim reads (gearPreviewKit / baseKit, js/player.js).
-// RIGHT: all 12 variants as 32px icon wells, four rows of three, one row per
-// piece - the picked one gold-rimmed, the hovered one lifting and writing
-// its stat deltas into the ledger in green/better or red/worse. Clicking a
-// well picks it (pickGear writes straight to player.gear) and the equip
-// plays ON the preview body - a white flash, sparks, the piece's band lit.
-// ESC, Enter, the X, or a click outside the panel closes it; PLAY stays
-// on the select screen behind it. The ledger's labelled rows are the
+// ---- the hero pop-up (League runes-style) --------------------------------
+// Opened by clicking your character on the lobby (beginHero). The lobby
+// stays lit underneath; the pop-up dims it and floats a panel in three
+// columns. LEFT: the live preview - the chosen class walking in place in
+// its four leather pieces with the class weapon at hand, and under it the
+// STAT LEDGER: every number the kit flies out with, real values from the
+// same code the sim reads (heroPreviewKit / baseKit, js/player.js).
+// RIGHT: two COLUMNS of four wells, a click turning any of them. The GEAR
+// column is one well a piece (helmet, chest, legs, boots) wearing the
+// picked variant's 32px icon; a click turns it to the piece's next variant
+// (pickGear writes straight to player.gear; the equip plays ON the preview
+// body - a white flash, sparks, the piece's band lit - and the ledger's
+// numbers step to the new kit's), and a hover writes the NEXT variant's
+// stat deltas into the ledger in green/better or red/worse, so what a click
+// would do to the numbers is read before it is done. The ABILITIES column
+// is one well a key (1-4) wearing the picked option's icon with the key in
+// the corner; a click turns it to the key's next option (abOptions,
+// js/abilities.js - the warrior's keys carry two each, the hunter's one,
+// which a click leaves as it is; the pick is player.abPick, read by abOf),
+// and a hover raises the option's card (tipClassAb, js/ui/tooltip.js):
+// what the key will do, read before the eagle - its growth is the match's
+// own (skill points), never bought here. THE STAT POINTS are spent on the
+// ledger itself: STAT_POINTS to put a step at a time on any row (STAT_TRACKS,
+// player.js - one a row), the unspent ones a row of pips between the
+// preview and the ledger. A hovered row shows what one more point would
+// make of it (its would-be number in green), a click spends one there
+// (spendPt); the points on a row stand as gold pips after its label, and
+// clicking a pip takes that point back. ESC, Backspace, the X, or a click
+// outside the panel closes it; LOCK IN stays on the lobby behind it. The
+// ledger's labelled rows are the
 // PLAYER-panel text carve-out: comparing numbers is this panel's whole job.
-const GEARP_W = 38, GEARP_G = 4; // a variant well, and the grid gap
-function gearLayout() {
+// The keyboard walks menu.grow down the two strips and on through the stat
+// whole job. The keyboard walks menu.grow down the gear column, the ability
+// column and the ledger's rows; on a well Enter, Space or Right turns it
+// (Left turns it back), on a ledger row Right or Enter spends a point and
+// Left takes one back.
+const GEARP_W = 38, GEARP_G = 4;                     // a column well, and the gap between wells
+const HERO_COL_GAP = 10;                             // between the two columns
+const HERO_PIP = 4;                                  // a spent point's pip on a ledger row (3 px, 1 gap)
+function heroLayout() {
   const cx = Math.round(VIEW_W / 2);
   const ledW = 118;
-  const gridW = 3 * GEARP_W + 2 * GEARP_G;
-  const pw = 8 + ledW + 10 + gridW + 8;
-  const ph = 212;
+  const colsW = 2 * GEARP_W + HERO_COL_GAP;
+  const pw = 8 + ledW + 10 + colsW + 8;
+  const ph = 222;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
-  const gx = px + 8 + ledW + 10;
-  const rows = GEAR.map((slot, i) => slot.map((_, v) => ({
-    x: gx + v * (GEARP_W + GEARP_G), y: py + 18 + i * (GEARP_W + GEARP_G), w: GEARP_W, h: GEARP_W,
-  })));
-  return { cx, panel: { x: px, y: py, w: pw, h: ph }, rows,
+  const gx = px + 8 + ledW + 10, ax = gx + GEARP_W + HERO_COL_GAP;
+  const col = (x) => [0, 1, 2, 3].map((i) => ({ x, y: py + 12 + i * (GEARP_W + GEARP_G), w: GEARP_W, h: GEARP_W, i }));
+  const gear = col(gx), abils = col(ax);
+  // the ledger: a row a stat, each a track for the points; the unspent pips over it
+  const led = { x: px + 8, y: py + 100, w: ledW };
+  const stats = GEAR_STATS.map((row, i) => ({ x: led.x, y: led.y + i * 8 - 1, w: led.w, h: 8, i }));
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, gear, abils, stats,
     prev: { x: px + 8, y: py + 8, w: ledW, h: 78 },   // the preview well
-    led: { x: px + 8, y: py + 92, w: ledW },           // the ledger below it
-    name: { x: gx + (gridW >> 1), y: py + 188 },       // the hovered variant's name
+    pips: { x: px + 8, y: py + 90 },                   // the unspent points
+    led,                                               // the ledger below them
+    name: { x: gx + (colsW >> 1), y: py + 190 },       // the hovered well's name
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
 
 // The kit these picks would fly out with: the class base plus each variant
-// at the free level 1 - no skills, no cards - exactly what refreshKit hands
-// the sim at lock-in.
-function gearPreviewKit(gear) {
+// at the free level 1 plus the points spent - no skills, no cards - exactly
+// what refreshKit hands the sim at lock-in.
+function heroPreviewKit(gear, pts) {
   const k = baseKit(state.menu.csel);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][gear[i]].mod(k, 1);
+  for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, pts[i] | 0);
   return k;
 }
 // The ledger: one row per number gear can touch. `dir` says which way is
 // better (+1 higher, -1 lower), which is what colours a hovered delta - and
 // the stat sheet's, on the plate that flies into the notice lane when one of
 // these numbers moves (the `stat ledger` block, js/ui/shop.js).
-// A getter takes (kit, player), and the player is OPTIONAL: the gear pop-up
+// A getter takes (kit, player), and the player is OPTIONAL: the hero pop-up
 // prices a pre-match pick where every hero is level 1 and hands it nothing,
 // while anything reading a body mid-match passes it and gets the HERO LEVEL
 // folded in. The two rows a level moves carry it here rather than at their
@@ -1400,7 +1433,7 @@ const GS_NUM = (v) => String(Math.round(v * 10) / 10);
 const GS_LV = (p) => (p ? p.level : 1) - 1; // levels PAST the first: what the growth is paid on
 const GEAR_STATS = [
   ['HEALTH', (k, p) => k.maxHp + LVL_HP * GS_LV(p), GS_INT, 1],
-  ['DAMAGE', (k, p) => k.dmgBase + LVL_DMG * GS_LV(p), GS_INT, 1],
+  ['DAMAGE', (k, p) => k.dmgBase + LVL_DMG * GS_LV(p), GS_NUM, 1], // a stat point adds a half
   ['DRAW', (k) => k.bowCharge, GS_SEC, -1],
   ['RENOCK', (k) => k.nock, GS_SEC, -1],
   ['ARMOR', (k) => k.dr, GS_INT, 1],
@@ -1861,29 +1894,48 @@ function gearIcon32(i, v) {
   }
   return cv;
 }
-// what the pointer is over on the gear pop-up: {row, v}, 'x', 'panel' (the
-// slab itself - inert, swallows the press), or null (outside: a click closes)
-function gearScreenHit() {
-  const { rows, panel, xr } = gearLayout();
-  if (mouse.x >= xr.x - 3 && mouse.x < xr.x + xr.w + 3 && mouse.y >= xr.y - 3 && mouse.y < xr.y + xr.h + 3) return 'x';
-  for (let i = 0; i < rows.length; i++) {
-    for (let v = 0; v < rows[i].length; v++) {
-      const r = rows[i][v];
-      if (mouse.x >= r.x && mouse.x < r.x + r.w && mouse.y >= r.y - 1 && mouse.y < r.y + r.h + 1) return { row: i, v };
-    }
+// what the pointer is over on the hero pop-up: {row} (a gear well), {ab}
+// (an ability well), {pt} (a ledger row: a point goes here) or {pt, d: -1}
+// (one of its spent pips: that point comes back), 'x', 'panel' (the slab
+// itself - inert, swallows the press), or null (outside: a click closes)
+function heroScreenHit() {
+  const { gear, abils, stats, panel, xr } = heroLayout();
+  const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
+  if (over(xr, 3, 3)) return 'x';
+  for (const w of gear) if (over(w, 0, 1)) return { row: w.i };
+  for (const w of abils) if (over(w, 0, 1)) return { ab: w.i };
+  for (const r of stats) {
+    if (!over(r, 0, 0)) continue;
+    const n = player.pts[r.i] | 0, px0 = heroPipX(r.i);
+    if (n > 0 && mouse.x >= px0 - 1 && mouse.x < px0 + n * HERO_PIP) return { pt: r.i, d: -1 };
+    return { pt: r.i, d: 1 };
   }
-  if (mouse.x >= panel.x && mouse.x < panel.x + panel.w && mouse.y >= panel.y && mouse.y < panel.y + panel.h) return 'panel';
-  return null;
+  return popFrameHit(panel, xr);
+}
+// where a ledger row's spent pips start: just after its label
+function heroPipX(i) { const { led } = heroLayout(); return led.x + pixelTextWidth(GEAR_STATS[i][0]) + 4; }
+// key i's option turned by d: the next (or the last) of what the key
+// carries; a key with one option has nowhere to turn
+function pickAbility(i, d) {
+  const n = abOptions(player.cls, i).length;
+  if (n < 2) { SFX.deny(); return; }
+  player.abPick[i] = (((player.abPick[i] | 0) + d) % n + n) % n;
+  SFX.pickup();
 }
 
-function beginGear() {
-  const m = state.menu;
-  m.screen = 'gear';
-  m.grow = 0;
-  SFX.place();
+function beginHero() {
+  state.menu.grow = 0;
+  openPop('hero');
 }
-function leaveGear() {
-  state.menu.screen = 'select';
+function leaveHero() { leavePop(); }
+// a point spent (d = 1) on or refunded (d = -1) from track i, when the
+// budget allows; full heal like a gear pick since nothing has been risked
+function spendPt(i, d) {
+  const n = player.pts[i] | 0;
+  if (d > 0 ? ptsSpent(player) >= STAT_POINTS : n <= 0) { SFX.deny(); return; }
+  player.pts[i] = n + d;
+  refreshKit(player);
+  player.hp = player.maxHp;
   SFX.pickup();
 }
 // pre-match variant pick for the local player, full heal like setClass since
@@ -1899,59 +1951,73 @@ function pickGear(i, v) {
   SFX.pickup();
 }
 
-function gearKey(k) {
+function heroKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') leaveGear();
-  else if (moveDir(k) === 'up') { m.grow = (m.grow + 3) % 4; SFX.pickup(); }
-  else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % 4; SFX.pickup(); }
-  else if (moveDir(k) === 'left') pickGear(m.grow, (player.gear[m.grow] + 2) % 3);
-  else if (moveDir(k) === 'right') pickGear(m.grow, (player.gear[m.grow] + 1) % 3);
+  const N = 8 + GEAR_STATS.length; // the gear column, the ability column, then the ledger's rows
+  if (k === 'escape' || k === 'backspace') leaveHero();
+  else if (moveDir(k) === 'up') { m.grow = (m.grow + N - 1) % N; SFX.pickup(); }
+  else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % N; SFX.pickup(); }
+  else if (moveDir(k) === 'left') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 2) % 3); else if (m.grow < 8) pickAbility(m.grow - 4, -1); else spendPt(m.grow - 8, -1); }
+  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 1) % 3); else if (m.grow < 8) pickAbility(m.grow - 4, 1); else spendPt(m.grow - 8, 1); }
 }
 
-function gearClick() {
+function heroClick() {
   const m = state.menu;
-  if (m.lockT > 0 || m.gearT < 1) return;
-  const h = gearScreenHit();
-  if (!h || h === 'x') { leaveGear(); return; } // the X, or anywhere off the panel
+  if (m.lockT > 0 || m.popT < 1) return;
+  const h = heroScreenHit();
+  if (!h || h === 'x') { leaveHero(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                    // the slab swallows it
-  m.grow = h.row;
-  pickGear(h.row, h.v);
+  if (h.pt != null) { m.grow = 8 + h.pt; spendPt(h.pt, h.d); return; } // the row takes a point; a spent pip gives one back
+  if (h.row != null) { m.grow = h.row; pickGear(h.row, (player.gear[h.row] + 1) % 3); return; } // the well turns to the next variant
+  if (h.ab != null) { m.grow = 4 + h.ab; pickAbility(h.ab, 1); }                               // ...or the next option
 }
 
-// what the pointer is on: 'play', 'gear', 'diff' + k (a difficulty plate),
-// 'slot' + i (a character tab), 'mapl' / 'mapr' (the map's chevrons), 'seed'
-// (the seed row) or null. A guest's room offers gear alone.
-function selectHit() {
-  const { slots, play, loadout, diff, arrows, seed } = selectLayout();
+// what the pointer is on: 'play', 'hero' (your figure: the hero pop-up),
+// 'ai' (the target: the AI pop-up), 'map' (the map plate: the map pop-up),
+// 'charl' / 'charr' (the character chevrons) or null. A guest's room offers
+// the hero pop-up alone.
+function lobbyHit() {
+  const { play, figure, tgt, mapc, chars } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
-  if (over(loadout, 3, 2)) return 'gear';
-  if (NET.isClient) return null; // a guest's room: the host's plank, the host's difficulty, the host's world, its own character as it came
-  for (const r of slots) if (over(r, 2, 2)) return 'slot' + r.i;
+  const swap = PROFILE.chars().length > 1 && !NET.isClient;
+  if (swap) { if (over(chars[0], 4, 4)) return 'charl'; if (over(chars[1], 4, 4)) return 'charr'; }
+  if (over(figure, 0, 0)) return 'hero';
+  if (NET.isClient) return null; // a guest's room: the host's word, the host's difficulty, the host's world, its own character as it came
   if (over(play, 2, 3)) return 'play';
-  for (let k = 0; k < diff.length; k++) if (over(diff[k], 2, 2)) return 'diff' + k;
+  if (over(tgt, 2, 2)) return 'ai';
   // the shape and the seed are picked before a room is opened: a pick is a
   // page, and a host reloading would drop the room under everyone in it
-  if (NET.role === 'solo') {
-    if (over(arrows[0], 3, 3)) return 'mapl';
-    if (over(arrows[1], 3, 3)) return 'mapr';
-    if (over(seed, 3, 2)) return 'seed';
-  }
+  if (NET.role === 'solo' && over(mapc, 2, 2)) return 'map';
   return null;
 }
-
-function beginSelect() {
+// the three pop-ups over the lobby share one ease (menu.popT) and one way
+// out; which is open is menu.pop, kept through the fade so the right one
+// draws on the way out
+function popOpen() { const s = state.menu.screen; return s === 'hero' || s === 'map' || s === 'ai'; }
+function popHit() { const s = state.menu.screen; return s === 'hero' ? heroScreenHit() : s === 'map' ? mapScreenHit() : s === 'ai' ? aiScreenHit() : null; }
+function openPop(which) {
   const m = state.menu;
-  m.screen = 'select';
+  m.screen = which; m.pop = which;
+  SFX.place();
+}
+function leavePop() {
+  state.menu.screen = 'lobby';
+  SFX.pickup();
+}
+
+function beginLobby() {
+  const m = state.menu;
+  m.screen = 'lobby';
   m.csel = player.cls;
   m.cswapT = 1;
   m.countT = 0; m.countN = -1; // every rival frame face-down again
   m.lockFx = 0; m.mapSlide = null;
-  m.tgtLv = settings.aiLevel | 0; m.tgtT = 0; // the target's arrows fly in with the screen
+  m.tgtLv = settings.aiLevel | 0; m.tgtT = 1; // the target lands with the screen, no jolt
   SFX.place();
-  SFX.music.play('select');
+  SFX.music.play('lobby');
 }
-function leaveSelect() {
+function leaveLobby() {
   if (NET.role !== 'solo') netLeave(); // a host's room closes; a guest walks out of one
   state.menu.screen = 'menu';
   state.menu.countT = 0;
@@ -1960,7 +2026,7 @@ function leaveSelect() {
 }
 // swap the stage to character slot i (js/profile.js): it comes with its own
 // class, so the kit and the loadout follow it
-function selectSlot(i) {
+function lobbySlot(i) {
   const m = state.menu;
   if (m.countT > 0) { SFX.deny(); return; } // locked the moment LOCK IN was pressed
   if (!PROFILE.chars()[i] || i === PROFILE.activeIndex()) return;
@@ -1969,22 +2035,22 @@ function selectSlot(i) {
   m.cswapT = 0;
   SFX.pickup();
 }
-// the keyboard's step through the filled slots
-function selectStep(d) {
+// the chevrons' (or Up/Down's) step through the filled slots
+function lobbyStep(d) {
   const n = PROFILE.chars().length;
   if (n < 2) return;
-  selectSlot(((PROFILE.activeIndex() + d) % n + n) % n);
+  lobbySlot(((PROFILE.activeIndex() + d) % n + n) % n);
 }
-// the map's chevrons: the picture slides over to the neighbouring shape
-// (m.mapSlide, drawn by drawSelectMap) while the page's whiteout runs
-// (pickMap), so the pick is seen going before the reload lands back here on
-// it. Solo only - in a room the shape is the host's page.
+// the map pop-up's chevrons: the picture slides over to the neighbouring
+// shape (m.mapSlide, drawn by drawMapPlate) and the pick is made there and
+// then (pickMap) - the screen never leaves. Solo only - in a room the shape
+// is the host's page.
 function mapStep(d) {
   const m = state.menu;
   if (NET.role !== 'solo' || state.fade) return;
   if (m.countT > 0) { SFX.deny(); return; }
-  const n = MAPS.length, k = ((MAP_TYPE + d) % n + n) % n;
-  m.mapSlide = { d, k, t: 0 };
+  const n = MAPS.length, from = settings.mapType | 0, k = ((from + d) % n + n) % n;
+  m.mapSlide = { d, k, from, t: 0 };
   pickMap(k);
 }
 // LOCK IN: the class is locked here and the countdown starts. Gear stays
@@ -1992,13 +2058,13 @@ function mapStep(d) {
 // the eagle comes at zero (updateTitle -> lockIn) - or at once on a SECOND
 // press: a player who has already decided is not made to sit through the
 // count, so LOCK IN again ends it where zero would have (every rival frame
-// face-up, the gear pop-up shut, lockIn).
+// face-up, the hero pop-up shut, lockIn).
 function pressPlay() {
   const m = state.menu;
   if (m.lockT > 0 || NET.isClient) return; // the host's plank
   if (m.countT > 0) {
     m.countT = 0; m.countN = 0;
-    if (m.screen === 'gear') leaveGear();
+    if (popOpen()) leavePop();
     lockIn();
     return;
   }
@@ -2017,18 +2083,30 @@ function cancelCount() {
 }
 // how many rival frames are face-up: one per tick of the count (the first on
 // the press, the last on ONE), all of them once it has run out, none at rest
-function selectRevealed() {
+function lobbyRevealed() {
   const m = state.menu;
   if (m.countT > 0) return COUNT_T + 1 - Math.ceil(m.countT);
   return m.countN === 0 ? MAX_PLAYERS : 0;
 }
-// the count's end: the short hold, then the eagle (updateTitle: lockT -> beginDrop)
+// the count's end: the short hold, then the eagle (updateTitle: lockT ->
+// beginDrop). A map pick is spent HERE, not when it is made: a shape is
+// grown at boot (MAP_TYPE), so a pick that is not this page's shape is a
+// page - the lobby stays on screen to the end of the count, then the page
+// comes back on this seed in that shape and js/boot.js goes straight to
+// the eagle (softfall.drop, carrying the gear picks and the stat points,
+// which no profile holds).
 function lockIn() {
   const m = state.menu;
   if (m.lockT > 0) return;
-  m.lockT = 0.12;
   setClass(player, m.csel);
   SFX.place();
+  if (NET.role === 'solo' && (settings.mapType | 0) !== MAP_TYPE) {
+    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear, pts: player.pts, abPick: player.abPick })); } catch (e) { }
+    location.href = location.pathname + '?seed=' + SEED + '&map=' + (settings.mapType | 0);
+    m.lockT = 9; // the old page holds the lobby still until the new one paints
+    return;
+  }
+  m.lockT = 0.12;
 }
 // the rivals' difficulty: one of AI_LEVELS, remembered with the profile
 function setAiLevel(k) {
@@ -2038,29 +2116,26 @@ function setAiLevel(k) {
   SFX.pickup();
 }
 
-function selectKey(k) {
+function lobbyKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveSelect(); }
-  else if (moveDir(k) === 'left') mapStep(-1);
-  else if (moveDir(k) === 'right') mapStep(1);
-  else if (moveDir(k) === 'up') selectStep(-1);
-  else if (moveDir(k) === 'down') selectStep(1);
+  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveLobby(); }
+  else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the character chevrons
+  else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
   else if (k === 'enter' || k === ' ') pressPlay();
 }
 
-function selectClick() {
+function lobbyClick() {
   const m = state.menu;
-  if (m.lockT > 0 || m.screenT < 1 || m.gearT > 0) return;
-  const h = selectHit();
+  if (m.lockT > 0 || m.screenT < 1 || m.popT > 0) return;
+  const h = lobbyHit();
   if (!h) return;
   if (h === 'play') pressPlay();                                    // LOCK IN: lock the pick, start the count
-  else if (h === 'gear') { m.pressT = 0.12; beginGear(); }          // the gear widget opens its pop-up
-  else if (h === 'mapl') mapStep(-1);                               // the map's chevrons slide to a neighbour shape
-  else if (h === 'mapr') mapStep(1);
-  else if (h === 'seed') rerollWorld();                             // the die: a fresh seed in this shape
-  else if (h.startsWith('diff')) setAiLevel(+h.slice(4));           // a difficulty plate
-  else if (h.startsWith('slot')) selectSlot(+h.slice(4));           // a character tab
+  else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: gear, points, abilities
+  else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
+  else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
+  else if (h === 'charl') lobbyStep(-1);                             // the character chevrons
+  else if (h === 'charr') lobbyStep(1);
 }
 
 // The class EMBLEMS: one symbolic 32x32 mark per CLASSES entry - the
@@ -2226,77 +2301,65 @@ function classIcon12(i, you) {
 // stage, lifting under the hand; an empty slot is a dark well with nothing in it
 // a character tab: a small well, the character's 16 px body in it; the
 // active one gold and walking, the others dim and warm under the hand
-function drawSelectSlot(r, hv, chosen, now) {
-  const ch = PROFILE.chars()[r.i];
-  const lift = chosen || !ch ? 0 : Math.round(hv * 1.5);
-  const y = r.y - lift;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  ctx.fillStyle = chosen ? '#c89a3c' : hv > 0.5 && ch ? '#8fa0c8' : '#2c3560';
-  ctx.fillRect(r.x, y, r.w, r.h);
-  ctx.fillStyle = chosen ? '#1a2142' : '#0f1632';
-  ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
-  if (!ch) return;
-  const a0 = ctx.globalAlpha;
-  ctx.globalAlpha = a0 * (chosen ? 1 : 0.6 + hv * 0.4);
-  const set = SPRITES.champLook(ch.cls, ch.look, skin(player.team));
-  ctx.drawImage(set.down[chosen ? 1 + (Math.floor(now * 4) % 2) : 0], r.x + 4, y + 4);
-  ctx.globalAlpha = a0;
-}
-
-// The stage: your character alone in full glory - the 48 px model at 2x
-// inside a warm pool of light with a gold ring turning on the snow, the
-// class weapon's own art at the hand, the name, the class under it. It
-// wears your side's paint, like your roster frame. sw is the swap-pop ease;
-// a lock-in bursts a second ring out from the feet (lockFx) and the light
-// stays up while the count runs.
+// The stage: your character alone in full glory - the 48 px model at
+// LOBBY_MODEL (3x, the create screen's size) inside a warm pool of light
+// with a gold ring turning on the snow, a chevron either side to swap to the
+// neighbouring character (drawn only when there is one). No weapon, no name
+// and no class: the roster frame carries the name, and the figure is the
+// class. It wears your side's paint, like
+// that frame. sw is the swap-pop ease; a lock-in bursts a second ring out
+// from the feet (lockFx) and the light stays up while the count runs.
 const LOCK_FX_T = 0.7; // s: the lock-in's ring
-function drawSelectStage(now, a, sw) {
+function drawLobbyStage(now, a, sw) {
   const m = state.menu;
-  const { cx, body } = selectLayout();
-  const feet = body.y + body.h - 4;
+  const { cx, body, chars } = lobbyLayout();
+  const S = LOBBY_MODEL, feet = body.y + 46 * S;
   const lit = m.countT > 0 || m.lockT > 0 ? 1.7 : 1;
   ctx.globalAlpha = a * 0.4;
   ctx.fillStyle = '#04060f';
-  ctx.beginPath(); ctx.ellipse(cx, feet, 24, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(cx, feet, 12 * S, 5, 0, 0, Math.PI * 2); ctx.fill();
   // the pick's light, and the gold ring turning on the snow
   ctx.globalCompositeOperation = 'lighter';
-  const g = ctx.createRadialGradient(cx, feet - 40, 3, cx, feet - 40, 64);
+  const gr = 32 * S;
+  const g = ctx.createRadialGradient(cx, feet - 20 * S, 3, cx, feet - 20 * S, gr);
   g.addColorStop(0, 'rgba(255,170,80,' + (0.14 * a * sw * lit).toFixed(3) + ')');
   g.addColorStop(1, 'rgba(255,140,60,0)');
-  ctx.fillStyle = g; ctx.fillRect(cx - 66, feet - 106, 132, 132);
+  ctx.fillStyle = g; ctx.fillRect(cx - gr - 2, feet - 20 * S - gr - 2, gr * 2 + 4, gr * 2 + 4);
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = a * sw;
   ctx.fillStyle = lit > 1 ? '#ffd95c' : '#c89a3c';
+  const rr = 16 * S + 2;
   for (let k = 0; k < 24; k += 2) {
     const an = (k / 24) * Math.PI * 2 + now * 0.5;
-    ctx.fillRect(cx + Math.round(Math.cos(an) * 34), feet + Math.round(Math.sin(an) * 6), 2, 1);
+    ctx.fillRect(cx + Math.round(Math.cos(an) * rr), feet + Math.round(Math.sin(an) * 6), 2, 1);
   }
   if (m.lockFx > 0) { // the lock-in: a ring bursting out across the snow
     const u = 1 - m.lockFx / LOCK_FX_T, e = easeOut(u);
     ctx.globalAlpha = a * (1 - u);
     ctx.fillStyle = '#ffd95c';
-    const rx = 34 + e * 70, ry = 6 + e * 13;
+    const rx = rr + e * 90, ry = 6 + e * 13;
     for (let k = 0; k < 40; k++) {
       const an = (k / 40) * Math.PI * 2;
       ctx.fillRect(cx + Math.round(Math.cos(an) * rx), feet + Math.round(Math.sin(an) * ry), 2, 1);
     }
   }
-  // the body; a swap pops it up through the light
-  const rise = Math.round((1 - sw) * 8);
+  // the body; a swap pops it up through the light, and it lifts under the
+  // hand - it is the way into the hero pop-up
+  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
+  const rise = Math.round((1 - sw) * 8) - (hover === 'hero' ? 2 : 0);
   const bob = Math.round(Math.sin(now * 1.6));
   ctx.globalAlpha = a;
   ctx.drawImage(SPRITES.portrait(player.cls, player.look, skin(player.team)), body.x, body.y + rise + bob, body.w, body.h);
-  // the weapon at the hand: the class tool's own art, big enough to read
-  const L = CLASS_LOADOUT[player.cls] || CLASS_LOADOUT[0];
-  const im = SPRITES[ITEMS[toolType(L.tool)].icon];
-  ctx.drawImage(im, cx + 30, body.y + 50 + rise + Math.round(Math.sin(now * 2.2) * 2), 24, 24);
-  // the name, and the class in small beside it (the character carries its class)
-  const nm = player.name, cn = CLASSES[player.cls].name;
-  const nw = pixelTextWidth(nm, 2), tw = nw + 6 + pixelTextWidth(cn);
-  const nx = cx - Math.round(tw / 2);
-  drawPixelTextShadow(ctx, nm, nx, feet + 8, '#ffd95c', '#0a0e23', 2);
-  drawPixelTextShadow(ctx, cn, nx + nw + 6, feet + 12, '#9fb6d8', '#0a0e23');
+  // the character chevrons: gold under the hand, dim while the pick is locked
+  if (PROFILE.chars().length > 1) {
+    const counting = m.countT > 0 || m.lockT > 0;
+    for (let i = 0; i < 2; i++) {
+      const c = chars[i], hv = m.chover[i] || 0;
+      ctx.globalAlpha = a * (counting ? 0.35 : 0.7 + hv * 0.3);
+      drawChevron(c.x + Math.round(hv * 2) * c.d, c.y, c.d, hv > 0.5 ? '#ffd95c' : '#f4f7ff');
+    }
+    ctx.globalAlpha = a;
+  }
 }
 
 // One roster frame, glued to its screen edge: the side's paint as a bar down
@@ -2304,7 +2367,7 @@ function drawSelectStage(now, a, sw) {
 // name inward of the body (names are text's job). Yours wears the gold rim;
 // a rival's is face-down - a flat shade of a body, no class to read - until
 // the count turns it, and it flashes white as it does.
-function drawSelectCard(r, mine, hidden, flash) {
+function drawLobbyCard(r, mine, hidden, flash) {
   const p = r.p, side = skin(p.team), me = p === player;
   ctx.fillStyle = 'rgba(4,6,18,0.55)';
   ctx.fillRect(r.x, r.y + 2, r.w + 2, r.h);
@@ -2342,12 +2405,12 @@ function drawSelectCard(r, mine, hidden, flash) {
   drawPixelTextShadow(ctx, nm, nx, r.y + ((r.h - 5) >> 1), col, '#0a0e23');
 }
 
-// The two panels' frames. Rival k turns face-up when selectRevealed() passes
+// The two panels' frames. Rival k turns face-up when lobbyRevealed() passes
 // it. slide is the entrance: each panel rides in from its own edge.
-function drawSelectRosters(now, a, slide) {
+function drawLobbyRosters(now, a, slide) {
   const m = state.menu;
-  const { cards } = selectLayout();
-  const shown = selectRevealed();
+  const { cards } = lobbyLayout();
+  const shown = lobbyRevealed();
   ctx.globalAlpha = a;
   for (let mine = 1; mine >= 0; mine--) {
     const col = cards[mine];
@@ -2356,7 +2419,7 @@ function drawSelectRosters(now, a, slide) {
       const r = col[k];
       const hidden = !mine && k >= shown;
       const flash = !mine && !hidden && m.countT > 0 && (COUNT_T - k) - m.countT < 0.15;
-      drawSelectCard({ x: r.x + dx, y: r.y, w: r.w, h: r.h, p: r.p }, mine, hidden, flash);
+      drawLobbyCard({ x: r.x + dx, y: r.y, w: r.w, h: r.h, p: r.p }, mine, hidden, flash);
     }
   }
 }
@@ -2368,60 +2431,90 @@ function pxDisc(cx, cy, r) {
     ctx.fillRect(cx - hw, cy + dy, hw * 2 + 1, 1);
   }
 }
-// The target beside the difficulty plates: rings in white and the rivals'
-// paint, and lv + 1 arrows stuck in it - at the rim on NORMAL, the inner
-// ring on HARD, the bullseye on IMPOSSIBLE - "how well they shoot", which
-// is what the level is. Each arrow flies in from the upper left over m.tgtT
-// (updateTitle zeroes it when the shown level changes), a glint where it
-// lands.
-const TGT_R = [15, 8, 1];                                    // landing radius per level
-const TGT_ANG = [[-2.3], [-2.5, -0.7], [-2.6, -1.4, 0.4]];    // where each arrow sticks
-function drawSelectTarget(x, y, lv, rc, now, a) {
-  const R = (SEL_TGT >> 1) - 1, cx = x + (SEL_TGT >> 1), cy = y + (SEL_TGT >> 1);
+// The target - on the lobby beside the map plate, big in the AI pop-up: the
+// practice range's own archery face (bakeTargetFace, js/draw/practice.js -
+// the straw batt in its wooden frame, the red ring, the cream, the red
+// bullseye, bare of its snow), WORN BY THE LEVEL: whole on NORMAL, shot
+// through and cracked on HARD, wrecked on IMPOSSIBLE - a bite out of the
+// rim, the batt split, punctures everywhere - "what their shooting does to
+// a target", which is what the level is (wreckTargetFace). Baked once per
+// size and level. size is the face's width; every mark is laid out in a 32
+// px face's pixels and scales with it. m.tgtT (updateTitle zeroes it when
+// the shown level changes) jolts the face for a moment as the new one lands.
+const tgtFaceCv = {};                                        // one bake per size and level, lazily
+function wreckTargetFace(size, lv) {
+  const cv = bakeTargetFace(size, true);
+  if (lv <= 0) return cv;
+  const g = cv.getContext('2d');
+  const k = size / 32, cc = size / 2 - 0.5;
+  const put = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
+  const px = (fx, fy) => [Math.round(cc + fx * k), Math.round(cc + fy * k)];
+  // punctures: a dark hole with a torn lip, a few more and bigger the harder
+  const holes = lv === 1
+    ? [[-6, -3, 1], [4, 5, 1], [7, -6, 1]]
+    : [[-6, -3, 1], [4, 5, 2], [7, -6, 1], [-8, 7, 1], [1, -1, 1]];
+  for (const [fx, fy, r] of holes) {
+    const [hx, hy] = px(fx, fy);
+    const rr = Math.max(1, Math.round(r * k * 0.7));
+    g.fillStyle = '#3a2c1c';
+    for (let dy = -rr - 1; dy <= rr + 1; dy++) for (let dx = -rr - 1; dx <= rr + 1; dx++) if (dx * dx + dy * dy <= (rr + 1) * (rr + 1) && hash2(hx + dx, hy + dy) > 0.35) g.fillRect(hx + dx, hy + dy, 1, 1);
+    g.fillStyle = '#241a12';
+    for (let dy = -rr; dy <= rr; dy++) for (let dx = -rr; dx <= rr; dx++) if (dx * dx + dy * dy <= rr * rr) g.fillRect(hx + dx, hy + dy, 1, 1);
+  }
+  // cracks: jagged dark lines walking across the batt, [x, y, bearing,
+  // length, width] in a 32 px face's units - a wide one is a split, a
+  // narrow one a hairline; HARD has one off a hole, IMPOSSIBLE is crazed
+  // through, with one great split top to bottom through the bullseye and
+  // branches running off it and off the rim
+  const crack = (fx, fy, an, len, w) => {
+    let [x, y] = px(fx, fy);
+    let a = an;
+    for (let i = 0; i < len * k; i++) {
+      x += Math.cos(a) * 0.9; y += Math.sin(a) * 0.9;
+      a += (hash2(i * 7 + fx * 3, fy * 5 + 1) - 0.5) * (w > 1 ? 0.5 : 0.9);
+      const rx = Math.round(x), ry = Math.round(y);
+      put(rx, ry, i % 3 === 0 ? '#241a12' : '#3a2c1c');
+      if (w > 1) put(rx + 1, ry, '#3a2c1c');
+      if (w > 2) put(rx - 1, ry, '#241a12');
+    }
+  };
+  if (lv === 1) crack(-6, -3, -2.6, 7, 1);
+  else {
+    crack(-1, -14.5, 1.62, 29, 3);                      // the great split, top to bottom through the bullseye
+    crack(-1, -9, 0.3, 8, 1); crack(0, -4, -0.9, 7, 1); // branches off it
+    crack(0, 2, 2.9, 9, 2); crack(0, 6, 0.5, 8, 1);
+    crack(1, 9, -0.4, 6, 1); crack(-1, 11, 2.5, 5, 1);
+    crack(-12, -6, 0.2, 7, 1); crack(12, 4, 3.4, 8, 1); // hairlines in from the rim
+    crack(-9, 8, -0.7, 6, 1); crack(8, -10, 2.2, 6, 1);
+    crack(4, 5, 0.9, 5, 1); crack(-6, -3, -2.6, 5, 1);  // off the holes
+  }
+  return cv;
+}
+function drawLobbyTarget(x, y, size, lv, now, a) {
+  const R = (size >> 1) - 1, cx = x + (size >> 1), cy = y + (size >> 1);
+  const key = size + ':' + lv;
+  const t = state.menu.tgtT, jolt = t < 0.22 ? Math.round(Math.sin(t * 60) * (1 - t / 0.22) * 2) : 0;
   ctx.globalAlpha = a;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; pxDisc(cx + 1, cy + 2, R);
-  for (const [r, c] of [[R, '#0a0e23'], [R - 1, '#f4f7ff'], [R - 5, rc], [R - 9, '#f4f7ff'], [R - 13, rc], [R - 16, '#f4f7ff']]) { ctx.fillStyle = c; pxDisc(cx, cy, r); }
-  const t = state.menu.tgtT;
-  for (let j = 0; j <= lv; j++) {
-    const u = Math.max(0, Math.min(1, (t - j * 0.12) / 0.26));
-    if (u <= 0) continue;
-    const an = TGT_ANG[lv][j], rr = TGT_R[lv];
-    const lx = cx + Math.round(Math.cos(an) * rr), ly = cy + Math.round(Math.sin(an) * rr);
-    const fly = Math.round((1 - easeOut(u)) * 28);
-    const ax = lx - fly, ay = ly - fly;
-    ctx.fillStyle = '#e8d8b0'; // the shaft, up-left of the tip
-    for (let i = 1; i <= 8; i++) ctx.fillRect(ax - i, ay - i, 1, 1);
-    ctx.fillStyle = rc;        // the fletching
-    ctx.fillRect(ax - 9, ay - 7, 1, 1); ctx.fillRect(ax - 7, ay - 9, 1, 1);
-    ctx.fillRect(ax - 10, ay - 8, 1, 1); ctx.fillRect(ax - 8, ay - 10, 1, 1);
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(ax, ay, 1, 1); // the head
-    const since = t - j * 0.12 - 0.26;
-    if (since >= 0 && since < 0.1) { ctx.fillStyle = '#ffffff'; ctx.fillRect(lx - 1, ly, 3, 1); ctx.fillRect(lx, ly - 1, 1, 3); }
-  }
+  ctx.drawImage(tgtFaceCv[key] || (tgtFaceCv[key] = wreckTargetFace(size, lv)), x + jolt, y);
 }
-// The difficulty at the rivals' panel's head: three plates stacked easy to
-// hard, each carrying its level's name and its tier in pips, the picked one
-// filled in the rivals' paint, the hovered one lifting; the target beside
-// them shows the hovered level's arrows, else the picked one's.
-function drawSelectDiff(now, a, slide) {
+// The three difficulty plates (the AI pop-up): stacked easy to hard, each
+// carrying its level's name and its tier in pips, the picked one filled in
+// the rivals' paint, the hovered one lifting (menu.dhover).
+function drawDiffPlates(diff, rise, rc, a) {
   const m = state.menu;
-  const { diff, tgt } = selectLayout();
   const lv = settings.aiLevel | 0;
-  const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
-  const hk = hover && hover.startsWith('diff') ? +hover.slice(4) : -1;
   for (let k = 0; k < diff.length; k++) {
     const r = diff[k], hv = m.dhover[k] || 0, on = k === lv, lift = on ? 0 : Math.round(hv);
-    const x = r.x + slide, y = r.y - lift;
+    const x = r.x, y = r.y + rise - lift;
     ctx.globalAlpha = a;
-    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, r.y + 2, r.w, r.h);
+    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, r.y + rise + 2, r.w, r.h);
     ctx.fillStyle = on ? rc : hv > 0.5 ? '#8fa0c8' : '#2c3560'; ctx.fillRect(x, y, r.w, r.h);
     ctx.fillStyle = on ? '#3a1622' : '#0f1632'; ctx.fillRect(x + 1, y + 1, r.w - 2, r.h - 2);
     ctx.fillStyle = on ? '#f4f7ff' : hv > 0.5 ? '#c8d4ee' : '#5a6690';
     for (let j = 0; j <= k; j++) ctx.fillRect(x + 4 + j * 3, y + 5, 2, 3);
     drawPixelTextShadow(ctx, AI_LEVELS[k].name, x + 15, y + 4, on ? '#f4f7ff' : hv > 0.5 ? '#ffd95c' : '#8fa8d0', '#0a0e23');
   }
-  drawSelectTarget(tgt.x + slide, tgt.y, hk >= 0 ? hk : lv, rc, now, a);
 }
 
 // a bare chevron, d = -1 pointing left, 1 right: the arrow grammar, no plate
@@ -2431,101 +2524,93 @@ function drawChevron(x, y, d, col) {
   ctx.fillStyle = col;
   for (let i = 0; i < 9; i++) { const dx = d < 0 ? 8 - i : i; ctx.fillRect(x + dx, y + i, 3, 1); ctx.fillRect(x + dx, y + 17 - i, 3, 1); }
 }
-// The map at the top centre: this seed's valley in the picked shape on its
-// plate, a chevron either side (solo only - in a room the shape is the
-// host's), the shape's name under it and the seed row under that. A slide
-// in flight (m.mapSlide, mapStep) carries the picture off toward the pressed
-// chevron and the neighbour's in behind it, through a clip the plate's size.
-function drawSelectMap(now, a) {
-  const m = state.menu;
-  const { mapc: r, arrows, name, seed } = selectLayout();
-  const solo = NET.role === 'solo';
-  const hover = solo && m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
-  const sl = m.mapSlide;
-  ctx.globalAlpha = a;
+// The map plate on its slab: this seed's valley in the PICKED shape
+// (settings.mapType - the one this page grew reads its grown ground, any
+// other the terrain rule: mapChip). A slide in flight (m.mapSlide, mapStep)
+// carries the last pick's picture off toward the pressed chevron and the
+// new one's in behind it, through a clip the plate's size. lift is the
+// hover's pixel.
+function drawMapPlate(r, lift) {
+  const sl = state.menu.mapSlide;
+  const y = r.y - lift;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  ctx.fillStyle = '#2c3560'; ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  ctx.fillStyle = lift ? '#8fa0c8' : '#2c3560'; ctx.fillRect(r.x, y, r.w, r.h);
+  ctx.fillStyle = '#0f1632'; ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
   const pic = r.w - 4;
-  ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, pic, pic); ctx.clip();
+  ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, y + 2, pic, pic); ctx.clip();
   if (sl) {
     const off = Math.round(easeInOut(sl.t) * (pic + 6));
-    ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2 - sl.d * off, r.y + 2);
-    ctx.drawImage(mapChip(sl.k, pic), r.x + 2 + sl.d * (pic + 6 - off), r.y + 2);
-  } else ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2, r.y + 2);
+    ctx.drawImage(mapChip(sl.from, pic), r.x + 2 - sl.d * off, y + 2);
+    ctx.drawImage(mapChip(sl.k, pic), r.x + 2 + sl.d * (pic + 6 - off), y + 2);
+  } else ctx.drawImage(mapChip(settings.mapType | 0, pic), r.x + 2, y + 2);
   ctx.restore();
-  if (solo) for (const ar of arrows) {
-    const hot = hover === (ar.d < 0 ? 'mapl' : 'mapr');
-    drawChevron(ar.x + (hot ? ar.d : 0), ar.y, ar.d, hot ? '#ffd95c' : '#8fa8d0');
-  }
-  const nm = mapName(sl ? sl.k : MAP_TYPE);
-  drawPixelTextShadow(ctx, nm, name.x - (pixelTextWidth(nm) >> 1), name.y, '#ffd95c', '#0a0e23');
-  if (solo) {
-    const sh = hover === 'seed' ? 1 : 0;
-    ctx.globalAlpha = a * (sh ? 1 : 0.8);
-    drawPixelTextShadow(ctx, SEED_TXT, seed.x, seed.y + 3 - sh, sh ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
-    drawSeedDie(seed.x + pixelTextWidth(SEED_TXT) + 6, seed.y - sh, sh, now);
-  }
+}
+// The top centre: the map plate and the target side by side, mirrored about
+// the middle, the shape's name under the one and the level's under the
+// other - plain white, gold only while the picture over it is under the
+// hand (each is the way into its pop-up: the map's shape, seed and die;
+// the rivals' level). In a room the map is a readout (the host's world)
+// and a guest's target is too.
+function drawLobbyTop(now, a) {
+  const m = state.menu;
+  const { mapc, tgt, mapName: mn, tgtName: tn } = lobbyLayout();
+  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
+  const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
+  ctx.globalAlpha = a;
+  const mh = hover === 'map', th = hover === 'ai';
+  drawMapPlate(mapc, mh ? 1 : 0);
+  const shape = mapName(settings.mapType | 0);
+  drawPixelTextShadow(ctx, shape, mn.x - (pixelTextWidth(shape) >> 1), mn.y, mh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
+  const lv = settings.aiLevel | 0;
+  drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, now, a);
+  const level = AI_LEVELS[lv].name;
+  drawPixelTextShadow(ctx, level, tn.x - (pixelTextWidth(level) >> 1), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   ctx.globalAlpha = a;
 }
 
-// The countdown on the sunk plank: the whole second left in 2x gold digits
-// where LOCK IN was, white the instant it changes, sinking in alpha through
-// its second.
-function drawSelectCount(a) {
+// The countdown: the whole second left in gold digits at LOCK IN's own
+// scale where the word was, white the instant it changes, sinking in alpha
+// through its second.
+function drawLobbyCount(a) {
   const m = state.menu;
   if (m.countT <= 0) return;
-  const { play } = selectLayout();
+  const { play } = lobbyLayout();
   const n = Math.ceil(m.countT), frac = m.countT - (n - 1); // 1 fresh -> 0 about to change
   const s = String(n);
   ctx.globalAlpha = a * (0.7 + 0.3 * frac);
-  drawPixelTextShadow(ctx, s, play.x + ((play.w - pixelTextWidth(s, 2)) >> 1), play.y + 10, frac > 0.85 ? '#f4f7ff' : '#ffd95c', '#0a0e23', 2);
+  drawPixelTextOutline(ctx, s, play.x + ((play.w - pixelTextWidth(s, LOBBY_LOCK_SCALE)) >> 1), play.y + 2, frac > 0.85 ? '#f4f7ff' : '#ffd95c', 'rgba(8,12,28,0.9)', LOBBY_LOCK_SCALE);
   ctx.globalAlpha = a;
 }
 
 // a (0..1) is the screen's own visibility; the whole surface rides it
-function renderSelect(now, a) {
+function renderLobby(now, a) {
   const m = state.menu;
-  const { slots, play, loadout } = selectLayout();
-  drawSelectBackdrop(now, a);
+  const { play } = lobbyLayout();
+  drawLobbyBackdrop(now, a);
   ctx.globalAlpha = a;
   // the panels ride in from their edges; then the map, then the stage
   const sw = easeOut(m.cswapT);
   const slide = Math.round((1 - a) * 30);
   const counting = m.countT > 0 || m.lockT > 0;
-  drawSelectRosters(now, a, slide);
-  drawSelectDiff(now, a, slide);
-  for (const r of slots) { // the tabs dim while the pick is locked
-    ctx.globalAlpha = a * (counting ? 0.35 : 1);
-    drawSelectSlot({ x: r.x - slide, y: r.y, w: r.w, h: r.h, i: r.i }, m.chover[r.i] || 0, r.i === PROFILE.activeIndex(), now);
-  }
-  ctx.globalAlpha = a;
-  drawSelectMap(now, a);
-  drawSelectStage(now, a, sw);
+  drawLobbyRosters(now, a, slide);
+  drawLobbyTop(now, a);
+  drawLobbyStage(now, a, sw);
   drawRoomPlate(now, a);
-  // LOCK IN - the plank is the whole ask; it stays sunk and wears the count
-  // once pressed. A guest's room: the plank is the host's, frozen and
-  // wearing the host's name - the count comes over it when the host presses
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? selectHit() : null;
-  const pressed = m.pressT > 0 || counting;
+  // LOCK IN - a bare word at the foot, the main menu's grammar: white, gold
+  // and lifted a px under the hand, sunk a px on the press, and gone while the
+  // count wears its place. A guest's room: the word is the host's name, still
+  // - the count comes over it when the host presses
+  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
   ctx.globalAlpha = a;
-  if (!NET.isClient) drawMenuButton(play, counting ? '' : 'LOCK IN', hover === 'play' ? 1 : 0.7, now, pressed);
-  else { const hp = players[NET.hostSlot]; drawMenuButton(play, m.countT > 0 ? '' : hp ? hp.name : '', 0, now, m.countT > 0, true); }
-  drawSelectCount(a);
-  // the collapsed gear widget: the four picked variants in a column at the
-  // figure's hand; its pop-up opens off a click (beginGear). Hover lifts it -
-  // the this-is-a-button grammar.
-  const lolift = hover === 'gear' ? 1 : 0;
-  for (let i = 0; i < GEAR_SLOTS.length; i++) {
-    const x = loadout.x, y = loadout.y + i * 17 - lolift;
-    ctx.fillStyle = 'rgba(4,6,18,0.55)';
-    ctx.fillRect(x + 1, loadout.y + i * 17 + 2, 14, 16);
-    ctx.fillStyle = lolift ? '#8fa0c8' : '#35426e';
-    ctx.fillRect(x, y, 14, 16);
-    ctx.fillStyle = '#0f1632';
-    ctx.fillRect(x + 1, y + 1, 12, 14);
-    ctx.drawImage(SPRITES.gearIcons[i][player.gear[i]][0], x + 1, y + 2);
+  if (m.countT <= 0) {
+    const hv = !NET.isClient && hover === 'play' ? 1 : 0;
+    const pressed = !NET.isClient && (m.pressT > 0 || (mouse.down && hover === 'play'));
+    const hp = NET.isClient ? players[NET.hostSlot] : null;
+    const word = NET.isClient ? (hp ? hp.name : '') : 'LOCK IN';
+    const wx = play.x + ((play.w - pixelTextWidth(word, LOBBY_LOCK_SCALE)) >> 1);
+    drawPixelTextOutline(ctx, word, wx, play.y + 2 - hv + (pressed ? 1 : 0), hv ? '#ffd95c' : NET.isClient ? '#9fb6d8' : '#f4f7ff', 'rgba(8,12,28,0.9)', LOBBY_LOCK_SCALE);
   }
+  drawLobbyCount(a);
   ctx.globalAlpha = 1;
 }
 
@@ -2604,39 +2689,53 @@ function drawGearPreview(r, now) {
 // the pop-up itself: a dim over the still-lit select screen, then the panel
 // slab rising a few px as it eases in - the preview and its ledger on the
 // left, the twelve wells on the right, the X in the corner
-function renderGear(now, a) {
+function renderHero(now, a) {
   const m = state.menu;
-  const { panel, rows, xr, prev, led, name } = gearLayout();
-  ctx.fillStyle = 'rgba(4,6,18,' + (0.62 * a).toFixed(3) + ')';
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const { panel, gear, abils, stats, xr, prev, led, name, pips } = heroLayout();
   const rise = Math.round((1 - a) * 12);
-  const py = panel.y + rise;
   ctx.globalAlpha = a;
-  // the slab, in the planks' own chrome
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(panel.x + 3, py + 3, panel.w, panel.h);
-  ctx.fillStyle = '#0a0e23'; chamRect(panel.x, py, panel.w, panel.h);
-  ctx.fillStyle = '#10173a'; chamRect(panel.x + 1, py + 1, panel.w - 2, panel.h - 2);
-  ctx.fillStyle = '#35426e';
-  ctx.fillRect(panel.x + 2, py + 1, panel.w - 4, 1); ctx.fillRect(panel.x + 1, py + 2, 1, panel.h - 4);
-  ctx.fillStyle = '#080c1c';
-  ctx.fillRect(panel.x + 2, py + panel.h - 2, panel.w - 4, 1); ctx.fillRect(panel.x + panel.w - 2, py + 2, 1, panel.h - 4);
-  const gh = m.gearT >= 1 && mouse.inside ? gearScreenHit() : null;
+  drawPopSlab(panel, rise);
+  const gh = m.popT >= 1 && mouse.inside ? heroScreenHit() : null;
+  const onWell = gh && gh.row != null, onPt = gh && gh.pt != null, onAb = gh && gh.ab != null;
+  const gearNext = onWell ? (player.gear[gh.row] + 1) % 3 : -1; // what a click on the hovered well would pick
   drawGearPreview({ x: prev.x, y: prev.y + rise, w: prev.w, h: prev.h }, now);
-  // the ledger: the numbers as picked now - and, under a hovered variant,
-  // what they would BECOME, green where that is better and red where worse
-  const cur = gearPreviewKit(player.gear);
+  // the ledger: the numbers as picked now - and, under a hovered gear
+  // well or a hovered row, what they would BECOME, green where that is
+  // better and red where worse. Every row is a track for the points: the
+  // unspent ones stand as pips over the ledger, a row's spent ones as gold
+  // pips after its label (a click on one takes it back), and the keyboard's
+  // row breathes a tick at its ends
+  const cur = heroPreviewKit(player.gear, player.pts);
+  const spent = ptsSpent(player);
   let hovKit = null;
-  if (gh && gh !== 'x' && gh !== 'panel' && gh.v !== player.gear[gh.row]) {
+  if (onWell) {
     const picks = player.gear.slice();
-    picks[gh.row] = gh.v;
-    hovKit = gearPreviewKit(picks);
+    picks[gh.row] = gearNext;
+    hovKit = heroPreviewKit(picks, player.pts);
+  } else if (onPt && (gh.d > 0 ? spent < STAT_POINTS : (player.pts[gh.pt] | 0) > 0)) {
+    const pts = player.pts.slice();
+    pts[gh.pt] = (pts[gh.pt] | 0) + gh.d;
+    hovKit = heroPreviewKit(player.gear, pts);
   }
+  for (let n = 0; n < STAT_POINTS; n++) {
+    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(pips.x + n * 7 + 1, pips.y + rise + 1, 5, 5);
+    ctx.fillStyle = n < STAT_POINTS - spent ? '#f4f7ff' : '#2c3560'; ctx.fillRect(pips.x + n * 7, pips.y + rise, 5, 5);
+    if (n < STAT_POINTS - spent) { ctx.fillStyle = '#c8d4ee'; ctx.fillRect(pips.x + n * 7 + 1, pips.y + rise + 4, 4, 1); ctx.fillRect(pips.x + n * 7 + 4, pips.y + rise + 1, 1, 4); }
+  }
+  const focusRow = m.grow - 8;
   for (let i = 0; i < GEAR_STATS.length; i++) {
     const [label, get, fmt, dir] = GEAR_STATS[i];
     const y = led.y + rise + i * 8;
     const ov = get(cur), nv = hovKit ? get(hovKit) : ov;
     const changed = hovKit && Math.abs(nv - ov) > 1e-9;
-    drawPixelTextShadow(ctx, label, led.x, y, changed ? '#f4f7ff' : '#7a8bb8', '#0a0e23');
+    const onRow = onPt && gh.pt === i, n = player.pts[i] | 0;
+    drawPixelTextShadow(ctx, label, led.x, y, changed || onRow || focusRow === i ? '#f4f7ff' : '#7a8bb8', '#0a0e23');
+    const px0 = heroPipX(i);
+    for (let j = 0; j < n; j++) { // the row's spent points
+      const hotPip = onRow && gh.d < 0;
+      ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(px0 + j * HERO_PIP + 1, y + 3, 3, 3);
+      ctx.fillStyle = hotPip ? '#f4f7ff' : '#ffd95c'; ctx.fillRect(px0 + j * HERO_PIP, y + 2, 3, 3);
+    }
     const vTxt = fmt(ov);
     if (changed) {
       // the current number steps aside dim; the would-be number takes the
@@ -2652,27 +2751,70 @@ function renderGear(now, a) {
       ctx.fillRect(led.x + led.w - nw - 5, y + 3, 1, 1);
       ctx.fillRect(led.x + led.w - nw - 6, y + 4, 1, 1);
     } else {
-      drawPixelTextShadow(ctx, vTxt, led.x + led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#0a0e23');
+      drawPixelTextShadow(ctx, vTxt, led.x + led.w - pixelTextWidth(vTxt), y, onRow && spent >= STAT_POINTS ? '#5a6690' : '#f4f7ff', '#0a0e23');
     }
-  }
-  ctx.globalAlpha = a;
-  for (let i = 0; i < rows.length; i++) {
-    for (let v = 0; v < rows[i].length; v++) {
-      const r = rows[i][v];
-      drawGearWell({ x: r.x, y: r.y + rise, w: r.w, h: r.h }, i, v,
-        gh && gh.row === i && gh.v === v,
-        player.gear[i] === v, m.grow === i && player.gear[i] === v, now);
+    if (focusRow === i && !mouse.inside) { // keyboard cursor on the row: ticks at its ends
+      ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
+      ctx.fillStyle = '#f4f7ff';
+      ctx.fillRect(led.x - 4, y + 3, 2, 1); ctx.fillRect(led.x + led.w + 2, y + 3, 2, 1);
       ctx.globalAlpha = a;
     }
   }
-  // the hovered (else the picked, on the focused row) variant's name - the
-  // one word the icons earn
-  const nm = gh && gh !== 'x' && gh !== 'panel' ? GEAR[gh.row][gh.v].name
-    : GEAR[m.grow][player.gear[m.grow]].name;
-  drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
-    gh && gh !== 'x' && gh !== 'panel' && gh.v !== player.gear[gh.row] ? '#f4f7ff' : '#ffd95c', '#0a0e23');
-  // the X: the one way out that is drawn (ESC and a click outside also close)
-  const hot = gh === 'x';
+  ctx.globalAlpha = a;
+  // the two strips:  ctx.globalAlpha = a;
+  // the two columns: a well a piece wearing its pick, a well a key wearing
+  // its option, each a button that turns it; the keyboard's well breathing
+  // its corner ticks
+  const keyed = !mouse.inside;
+  for (const w of gear) {
+    drawGearWell({ x: w.x, y: w.y + rise, w: w.w, h: w.h }, w.i, player.gear[w.i], onWell && gh.row === w.i, true, keyed && m.grow === w.i, now);
+    ctx.globalAlpha = a;
+  }
+  for (const w of abils) {
+    const k = player.abPick[w.i] | 0;
+    const hot = onAb && gh.ab === w.i, y = w.y + rise - (hot ? 1 : 0);
+    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(w.x + 2, w.y + rise + 2, w.w, w.h);
+    ctx.fillStyle = hot ? '#8fa0c8' : '#c89a3c'; ctx.fillRect(w.x, y, w.w, w.h);
+    ctx.fillStyle = '#1a2142'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
+    ctx.drawImage(classAbIcon(player.cls, w.i, k), w.x + 3, y + 3);
+    drawPixelTextShadow(ctx, String(w.i + 1), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
+    if (keyed && m.grow === 4 + w.i) { // keyboard cursor: four corner ticks, breathing
+      ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
+      ctx.fillStyle = '#f4f7ff';
+      ctx.fillRect(w.x - 1, y - 1, 4, 1); ctx.fillRect(w.x - 1, y - 1, 1, 4);
+      ctx.fillRect(w.x + w.w - 3, y - 1, 4, 1); ctx.fillRect(w.x + w.w, y - 1, 1, 4);
+      ctx.fillRect(w.x - 1, y + w.h, 4, 1); ctx.fillRect(w.x - 1, y + w.h - 3, 1, 4);
+      ctx.fillRect(w.x + w.w - 3, y + w.h, 4, 1); ctx.fillRect(w.x + w.w, y + w.h - 3, 1, 4);
+      ctx.globalAlpha = a;
+    }
+  }
+  // the hovered well's name - what a click would turn it to - else the
+  // focused well's pick; nothing while the hand is on the ledger, which is
+  // labelled
+  const nOpt = onAb ? abOptions(player.cls, gh.ab).length : 0;
+  const nm = onWell ? GEAR[gh.row][gearNext].name
+    : onAb ? abOptions(player.cls, gh.ab)[((player.abPick[gh.ab] | 0) + 1) % nOpt].name
+    : onPt || m.grow >= 8 ? '' : m.grow >= 4 ? abOf(player, m.grow - 4).name : GEAR[m.grow][player.gear[m.grow]].name;
+  if (nm) drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
+    onWell || (onAb && nOpt > 1) ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+  drawPopX(xr, rise, gh === 'x');
+  ctx.globalAlpha = 1;
+}
+// a pop-up's slab in the planks' own chrome, dimming the lobby under it, and
+// its X: the one way out that is drawn (ESC and a click outside also close)
+function drawPopSlab(panel, rise) {
+  const a = ctx.globalAlpha, py = panel.y + rise;
+  ctx.fillStyle = 'rgba(4,6,18,' + (0.62 * a).toFixed(3) + ')';
+  ctx.globalAlpha = 1; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(panel.x + 3, py + 3, panel.w, panel.h);
+  ctx.fillStyle = '#0a0e23'; chamRect(panel.x, py, panel.w, panel.h);
+  ctx.fillStyle = '#10173a'; chamRect(panel.x + 1, py + 1, panel.w - 2, panel.h - 2);
+  ctx.fillStyle = '#35426e';
+  ctx.fillRect(panel.x + 2, py + 1, panel.w - 4, 1); ctx.fillRect(panel.x + 1, py + 2, 1, panel.h - 4);
+  ctx.fillStyle = '#080c1c';
+  ctx.fillRect(panel.x + 2, py + panel.h - 2, panel.w - 4, 1); ctx.fillRect(panel.x + panel.w - 2, py + 2, 1, panel.h - 4);
+}
+function drawPopX(xr, rise, hot) {
   ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
   ctx.fillRect(xr.x, xr.y + rise, xr.w, xr.h);
   ctx.fillStyle = '#0f1632';
@@ -2682,6 +2824,141 @@ function renderGear(now, a) {
     ctx.fillRect(xr.x + 3 + k, xr.y + rise + 3 + k, 1, 1);
     ctx.fillRect(xr.x + xr.w - 4 - k, xr.y + rise + 3 + k, 1, 1);
   }
+}
+// a pop-up's inert hit answers: 'x', 'panel' (the slab swallows the press)
+// or null (outside - a click there closes)
+function popFrameHit(panel, xr) {
+  if (mouse.x >= xr.x - 3 && mouse.x < xr.x + xr.w + 3 && mouse.y >= xr.y - 3 && mouse.y < xr.y + xr.h + 3) return 'x';
+  if (mouse.x >= panel.x && mouse.x < panel.x + panel.w && mouse.y >= panel.y && mouse.y < panel.y + panel.h) return 'panel';
+  return null;
+}
+
+// ---- the AI pop-up ---------------------------------------------------------
+// Off the target on the lobby: the rivals' level. The target big on the left
+// with the hovered (else the picked) level's arrows in it, the three plates
+// stacked on the right (drawDiffPlates), the X. Up/Down move the pick, Enter
+// or Esc close.
+function aiLayout() {
+  const cx = Math.round(VIEW_W / 2);
+  const pw = 10 + POP_PIC + 12 + LOBBY_LV_W + 10, ph = POP_PIC + 24;
+  const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
+  const diff = [];
+  const dy = py + 12 + ((POP_PIC - (3 * LOBBY_LV_H + 6)) >> 1);
+  for (let k = 0; k < 3; k++) diff.push({ x: px + 10 + POP_PIC + 12, y: dy + k * (LOBBY_LV_H + 3), w: LOBBY_LV_W, h: LOBBY_LV_H });
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, tgt: { x: px + 10, y: py + 12, w: POP_PIC, h: POP_PIC }, diff,
+    xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
+}
+function aiScreenHit() {
+  const { diff, panel, xr } = aiLayout();
+  for (let k = 0; k < diff.length; k++) { const r = diff[k]; if (mouse.x >= r.x - 2 && mouse.x < r.x + r.w + 2 && mouse.y >= r.y - 2 && mouse.y < r.y + r.h + 2) return 'diff' + k; }
+  return popFrameHit(panel, xr);
+}
+function beginAiPick() { if (!NET.isClient) openPop('ai'); }
+function aiKey(k) {
+  const m = state.menu;
+  if (m.lockT > 0) return;
+  const lv = settings.aiLevel | 0;
+  if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') leavePop();
+  else if (moveDir(k) === 'up') setAiLevel(Math.max(0, lv - 1));
+  else if (moveDir(k) === 'down') setAiLevel(Math.min(AI_LEVELS.length - 1, lv + 1));
+}
+function aiClick() {
+  const m = state.menu;
+  if (m.lockT > 0 || m.popT < 1) return;
+  const h = aiScreenHit();
+  if (h === null || h === 'x') { leavePop(); return; }
+  if (h === 'panel') return;
+  setAiLevel(+h.slice(4));
+}
+function renderAiPick(now, a) {
+  const m = state.menu;
+  const { panel, tgt, diff, xr } = aiLayout();
+  const rise = Math.round((1 - a) * 12);
+  ctx.globalAlpha = a;
+  drawPopSlab(panel, rise);
+  const h = m.popT >= 1 && mouse.inside ? aiScreenHit() : null;
+  const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
+  const hk = h && h.startsWith('diff') ? +h.slice(4) : -1;
+  drawLobbyTarget(tgt.x, tgt.y + rise, tgt.w, hk >= 0 ? hk : settings.aiLevel | 0, now, a);
+  drawDiffPlates(diff, rise, rc, a);
+  drawPopX(xr, rise, h === 'x');
+  ctx.globalAlpha = 1;
+}
+
+// ---- the map pop-up --------------------------------------------------------
+// Off the map plate on the lobby (solo only): the shape, the seed and the
+// die. The picture big in the middle with a chevron either side (mapStep:
+// the slide, then the page), the shape's name under it, the seed row and
+// the die under that (rerollWorld), the X. The keyboard walks two rows
+// (menu.mrow): the picture (Left/Right step the shape) and the seed (Enter
+// rolls); Enter on the picture, Esc or Backspace close.
+function mapLayout() {
+  const cx = Math.round(VIEW_W / 2);
+  const pw = POP_PIC + 2 * 34 + 20, ph = POP_PIC + 52;
+  const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
+  const pic = { x: cx - (POP_PIC >> 1), y: py + 10, w: POP_PIC, h: POP_PIC };
+  const ay = pic.y + (POP_PIC >> 1) - 9;
+  const arrows = [{ x: pic.x - 24, y: ay, w: 12, h: 18, d: -1 }, { x: pic.x + pic.w + 12, y: ay, w: 12, h: 18, d: 1 }];
+  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, pic, arrows,
+    name: { x: cx, y: pic.y + pic.h + 6 },
+    seed: { x: cx - (sw >> 1), y: pic.y + pic.h + 20, w: sw, h: 12 },
+    xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
+}
+function mapScreenHit() {
+  const { arrows, seed, panel, xr } = mapLayout();
+  const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
+  if (over(arrows[0], 3, 3)) return 'mapl';
+  if (over(arrows[1], 3, 3)) return 'mapr';
+  if (over(seed, 3, 2)) return 'seed';
+  return popFrameHit(panel, xr);
+}
+function beginMapPick() {
+  if (NET.role !== 'solo') return;
+  state.menu.mrow = 0;
+  openPop('map');
+}
+function mapKey(k) {
+  const m = state.menu;
+  if (m.lockT > 0) return;
+  if (k === 'escape' || k === 'backspace') leavePop();
+  else if (moveDir(k) === 'left') { if (m.mrow === 0) mapStep(-1); }
+  else if (moveDir(k) === 'right') { if (m.mrow === 0) mapStep(1); }
+  else if (moveDir(k) === 'down' && m.mrow === 0) { m.mrow = 1; SFX.pickup(); }
+  else if (moveDir(k) === 'up' && m.mrow === 1) { m.mrow = 0; SFX.pickup(); }
+  else if (k === 'enter' || k === ' ') { if (m.mrow === 1) rerollWorld(); else leavePop(); }
+}
+function mapClick() {
+  const m = state.menu;
+  if (m.lockT > 0 || m.popT < 1) return;
+  const h = mapScreenHit();
+  if (h === null || h === 'x') { leavePop(); return; }
+  if (h === 'panel') return;
+  if (h === 'mapl') mapStep(-1);
+  else if (h === 'mapr') mapStep(1);
+  else if (h === 'seed') { m.mrow = 1; rerollWorld(); }
+}
+function renderMapPick(now, a) {
+  const m = state.menu;
+  const { panel, pic, arrows, name, seed, xr } = mapLayout();
+  const rise = Math.round((1 - a) * 12);
+  ctx.globalAlpha = a;
+  drawPopSlab(panel, rise);
+  const h = m.popT >= 1 && mouse.inside ? mapScreenHit() : null;
+  const keyed = m.popT >= 1 && !mouse.inside; // the keyboard's cursor stands in for the hand
+  drawMapPlate({ x: pic.x, y: pic.y + rise, w: pic.w, h: pic.h }, 0);
+  for (const ar of arrows) {
+    const hot = h === (ar.d < 0 ? 'mapl' : 'mapr') || (keyed && m.mrow === 0);
+    drawChevron(ar.x + (hot ? ar.d : 0), ar.y + rise, ar.d, hot ? '#ffd95c' : '#f4f7ff');
+  }
+  const nm = mapName(settings.mapType | 0);
+  drawPixelTextShadow(ctx, nm, name.x - (pixelTextWidth(nm) >> 1), name.y + rise, '#f4f7ff', '#0a0e23');
+  const sh = h === 'seed' || (keyed && m.mrow === 1) ? 1 : 0;
+  ctx.globalAlpha = a * (sh ? 1 : 0.8);
+  drawPixelTextShadow(ctx, SEED_TXT, seed.x, seed.y + rise + 3 - sh, sh ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
+  drawSeedDie(seed.x + pixelTextWidth(SEED_TXT) + 6, seed.y + rise - sh, sh, now);
+  ctx.globalAlpha = a;
+  drawPopX(xr, rise, h === 'x');
   ctx.globalAlpha = 1;
 }
 
@@ -2694,24 +2971,28 @@ function renderGear(now, a) {
 // for) and under that the SEED ROW: the seed's number and its die
 // (rerollWorld), the one other thing that decides which valley this is. The
 // chevrons either side (mapStep) slide the picture over to the neighbouring
-// shape (drawSelectMap draws the slide).
+// shape (drawMapPlate draws the slide).
 //
 // A pick is a PAGE. The ground is grown once at boot off consts every
 // deterministic value in the game closes over, so the die's own whiteout
 // and reload is the honest way to change it: the pick is written to the
 // profile and the page comes back on ?seed=<this seed>&map=<the pick>, on
-// the same valley in its new shape, standing on the select screen again
+// the same valley in its new shape, standing on the lobby again
 // (softfall.select). Only a SOLO lobby may do it - a host reloading would
 // drop the room, and a guest's world is the host's (netHostHello refuses a
 // hello whose shape is not the host's, exactly as it refuses a seed).
 const mapChipCv = [];       // one bake per shape per size, lazily
 
-// This seed's valley in shape k, as a size x size picture: mapTerrain per
-// sampled tile, the road's diagonal inked over it. The same rule genWorld
-// plants from, so the chip is the map and not a drawing of one - what it
-// cannot show is the trails, which are searched over the grown world and
-// not a function of position (layTrails, world.js).
-const MAPC_COL = ['#e7eff8', '#b9dcec', '#3d6b4a', '#c5b7a0']; // snow, ice, wood, the road
+// This seed's valley in shape k, as a size x size picture. The shape this
+// page GREW (MAP_TYPE) reads the grown ground itself - the ice sheets and
+// holes genWorld rolled, the road as cut - so the chip is the map and not a
+// drawing of one; a neighbouring shape (the pop-up's slide) has no ground
+// yet and reads mapTerrain per sampled tile with the road's diagonal inked
+// over it, the same rule genWorld plants from. Neither shows the trails,
+// which are searched over the grown world (layTrails, world.js). Over the
+// ground stand the camps' glyphs (CAMP_SITES - fixed, so the same on every
+// shape), inked the way the chart inks them.
+const MAPC_COL = ['#e7eff8', '#b9dcec', '#3d6b4a', '#c5b7a0', '#7fa8c8']; // snow, ice, wood, the road, an ice hole
 function mapChip(k, size) {
   const key = k + 'x' + size;
   if (mapChipCv[key]) return mapChipCv[key];
@@ -2719,33 +3000,38 @@ function mapChip(k, size) {
   cv.width = cv.height = size;
   const g = cv.getContext('2d');
   const s = roadSpan();
+  const grown = k === MAP_TYPE;
   for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
     const tx = Math.round((x + 0.5) / size * (WORLD - 1)), ty = Math.round((y + 0.5) / size * (WORLD - 1));
-    const u = roadAlong(tx, ty);
-    const t = mapTerrain(k, tx, ty);
-    const road = Math.abs(roadOffS(tx, ty)) < (u > s.u0 && u < s.u1 ? ROAD_HW : ROAD_HW_WOOD) + WORLD / size * 0.5;
-    g.fillStyle = road ? MAPC_COL[3] : MAPC_COL[t === MT_ICE ? 1 : t === MT_FOREST ? 2 : 0];
+    let c;
+    if (grown) {
+      const gr = ground[ty * WORLD + tx];
+      c = gr === 3 ? 3 : gr === 2 ? 4 : gr === 1 ? 1 : mapTerrain(k, tx, ty) === MT_FOREST ? 2 : 0;
+    } else {
+      const u = roadAlong(tx, ty);
+      const t = mapTerrain(k, tx, ty);
+      const road = Math.abs(roadOffS(tx, ty)) < (u > s.u0 && u < s.u1 ? ROAD_HW : ROAD_HW_WOOD) + WORLD / size * 0.5;
+      c = road ? 3 : t === MT_ICE ? 1 : t === MT_FOREST ? 2 : 0;
+    }
+    g.fillStyle = MAPC_COL[c];
     g.fillRect(x, y, 1, 1);
+  }
+  for (const c of campSites()) {
+    const t = campTile(c.u, c.s);
+    drawCampIcon(g, { spec: CAMPS[c.key] }, (t.tx + 0.5) / WORLD * size, (t.ty + 0.5) / WORLD * size, '#2c3448', 'rgba(240,244,250,0.9)');
   }
   mapChipCv[key] = cv;
   return cv;
 }
-// the pick: the profile remembers it and the page comes back on this seed in
-// that shape, standing on the select screen again. Picking the shape already
-// grown is a no-op - there is nothing to grow.
+// the pick: a setting the profile remembers, nothing more - the lobby stays
+// where it is showing the picked shape. It is spent at LOCK IN (lockIn): a
+// pick that is not the shape this page grew is a page then, straight into
+// the eagle. Picking the shape already picked is a no-op.
 function pickMap(k) {
-  if (state.fade || k === MAP_TYPE) return;
+  if (k === (settings.mapType | 0)) return;
   settings.mapType = k;
   saveSettings();
-  SFX.dodge();
-  SFX.music.stop(0.45);
-  state.fade = {
-    a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
-    then: () => {
-      try { sessionStorage.setItem('softfall.reroll', '1'); sessionStorage.setItem('softfall.select', '1'); } catch (e) { }
-      location.href = location.pathname + '?seed=' + SEED + '&map=' + k;
-    },
-  };
+  SFX.pickup();
 }
 
 // ---- the wiki: the game written down, one page a subject -----------------
@@ -2753,7 +3039,7 @@ function pickMap(k) {
 // own clock (wikiT), a tab bar of PAGES under the title (the settings slab's
 // navbar grammar), and under that a content window the open page scrolls
 // through when it outgrows it - wheel, up/down, the rail on the right.
-// It takes the music layer outright the way class select does, not as a hold:
+// It takes the music layer outright the way the lobby does, not as a hold:
 // WHISPERING WOODS loops under it from the moment it opens (beginWiki), and
 // the title track comes back on the way out (leaveWiki).
 // A page is data: WIKI_PAGES is {id, label, build(cw)}, build returning the
@@ -2770,7 +3056,7 @@ function pickMap(k) {
 // and to the gold a kill pays, at levels 1, 6 and 12, read off the same
 // constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD,
 // js/wildlife.js and js/core.js), so the page can never disagree with the
-// game. The CLASSES page is the two classes as class select reads them -
+// game. The CLASSES page is the two classes as the lobby reads them -
 // body, pitch, health and the four stat pips - and their eight abilities
 // with the cooldown, the cast and what each does, off CLASS_AB itself. The
 // WORLD page is the one with no numbers on it: the valley written down - the
@@ -2885,7 +3171,7 @@ const WIKI_PAGES = [
       b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
       b.push({ kind: 'cls', h: 52, cls });
       b.push({ kind: 'head', h: 12, text: 'KEYS 1-4', cols: WIKI_AB_COLS });
-      CLASS_AB[cls].forEach((ab, i) => b.push({ kind: 'ab', h: 36, cls, i, cols: WIKI_AB_COLS }));
+      CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: 36, cls, i, k, cols: WIKI_AB_COLS })));
     });
     return b;
   } },
@@ -3159,7 +3445,7 @@ function renderWiki(now, a) {
     else if (bl.kind === 'cls') {
       // a class card: the body at 3x on the left (the side you play in), its
       // name and role, the three lines of its pitch, and on the right the
-      // ledger class select reads - health, then the four stats as pips
+      // ledger the lobby reads - health, then the four stats as pips
       const c = CLASSES[bl.cls];
       const spr = SPRITES.champ[bl.cls][skin(player.team)].down[0];
       ctx.drawImage(spr, L.left, y + 2, 48, 48);
@@ -3180,15 +3466,15 @@ function renderWiki(now, a) {
     } else if (bl.kind === 'ab') {
       // an ability: its key on a plate, its icon in a well (the strip's
       // own), its name, the two numbers in the columns, and what it does
-      const ab = CLASS_AB[bl.cls][bl.i];
-      const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i;
+      const ab = abOptions(bl.cls, bl.i)[bl.k | 0];
+      const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i && (hit.k | 0) === (bl.k | 0);
       const iy = y + 1, wx = L.left + 10;
       ctx.fillStyle = '#0a0e23'; ctx.fillRect(L.left, iy + 12, 7, 8);
       ctx.fillStyle = '#1c2750'; ctx.fillRect(L.left + 1, iy + 13, 5, 6);
       drawPixelText(ctx, String(bl.i + 1), L.left + 2, iy + 14, '#ffd95c');
       ctx.fillStyle = hot ? '#7a8bb8' : '#0a0e23'; ctx.fillRect(wx - 1, iy - 1, 34, 34);
       ctx.fillStyle = BAG_WELL; ctx.fillRect(wx, iy, 32, 32);
-      ctx.drawImage(classAbIcon(bl.cls, bl.i), wx, iy);
+      ctx.drawImage(classAbIcon(bl.cls, bl.i, bl.k), wx, iy);
       const tx = wx + 37;
       drawPixelTextShadow(ctx, ab.name, tx, y + 4, hot ? '#ffd95c' : '#f4f7ff', '#0a0e23');
       let rx = L.right, firstX = rx;
@@ -3264,7 +3550,7 @@ function renderTitle(now) {
   const tintA = 0.55 * (1 - easeOut(outQ / 0.45));
   if (tintA > 0.005) drawTitleBackdrop(tintA);
   const out = easeOut(outQ / 0.22);           // menu chrome drops away first
-  const sc = easeInOut(m.screenT);             // class select cross-fade
+  const sc = easeInOut(m.screenT);             // the lobby cross-fade
   const tc = easeInOut(m.wikiT);               // ...and the wiki's own
   const kc = easeInOut(m.charT);               // ...and the character screens'
   const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
@@ -3323,12 +3609,14 @@ function renderTitle(now) {
     ctx.globalAlpha = 1;
   }
 
-  // class select stays fully lit under either of its pop-ups; each rides its
-  // class select stays fully lit under its gear pop-up, which rides its own
-  // ease (gearT)
-  const gc = easeInOut(state.menu.gearT);
-  if (sc > 0.005) renderSelect(now, sc * (1 - out));
-  if (sc > 0.005 && gc > 0.005) renderGear(now, sc * (1 - out) * gc);
+  // the lobby stays fully lit under its pop-ups (hero, map, ai), which ride
+  // one ease of their own (popT); m.pop names the one to draw
+  const gc = easeInOut(state.menu.popT);
+  if (sc > 0.005) renderLobby(now, sc * (1 - out));
+  if (sc > 0.005 && gc > 0.005) {
+    const pa = sc * (1 - out) * gc;
+    if (m.pop === 'hero') renderHero(now, pa); else if (m.pop === 'map') renderMapPick(now, pa); else if (m.pop === 'ai') renderAiPick(now, pa);
+  }
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
   if (rc > 0.005) renderRooms(now, rc * (1 - out));

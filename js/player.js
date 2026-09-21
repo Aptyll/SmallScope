@@ -76,7 +76,7 @@ const BOW_NOCK = 0.45;    // WREN's seconds between loosing and the next draw
 // sprite key keeps its legacy name; js/sprites.js is never rewritten) plus a
 // kit - the numbers updatePlayer / emitBit / tryDodge read through kitOf(p)
 // instead of the bare constants - plus its four ACTIVE ABILITIES on keys 1-4
-// (CLASS_AB, js/abilities.js). Picked on the class select screen (local) or
+// (CLASS_AB, js/abilities.js). Picked on the lobby screen (local) or
 // hashed from the seed (bots) in initPlayers().
 const CLASSES = [
   {
@@ -154,7 +154,7 @@ function botLook(id) {
 // The local player wears the ACTIVE CHARACTER: its name, its look, and its
 // class (fixed at creation - js/profile.js), whose loadout comes with it.
 // Called from initPlayers and whenever the roster's active slot changes
-// (the character screens, js/ui/chars.js; class select's slot strip). It
+// (the character screens, js/ui/chars.js; the lobby's slot strip). It
 // takes the player to dress so that a lobby can dress a REMOTE human's body
 // the same way from a spec of its own, but the profile's character is only
 // ever this screen's.
@@ -306,7 +306,7 @@ function bagTake(p, type, n) {
 
 // ---- gear ----------------------------------------------------------------
 // Four pieces - helmet, chest, legs, boots - each picked from three variants
-// at class select (that free pick is level 1) and bought to level GEAR_LV_MAX
+// at the lobby (that free pick is level 1) and bought to level GEAR_LV_MAX
 // in-match, from anywhere, per piece. A variant's mod() writes its bonus into
 // the effective kit at the piece's level, so the whole system is one table
 // plus refreshKit(); the sim never reads gear directly. Levels reset with the
@@ -338,6 +338,35 @@ const GEAR = [
     { name: 'GHOSTSTEP', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k, L) => { k.stealth -= 0.10 * L; } },
   ],
 ];
+// ---- stat points ----------------------------------------------------------
+// The pre-match build's other half: STAT_POINTS points every hero - human
+// or bot - spends before the eagle, a point a step, on the STAT LEDGER
+// itself (the hero pop-up, js/ui/menu.js): every row the ledger prices a
+// body with (GEAR_STATS, same names, same order) is a track here, and a
+// point on it is one step of that number. Same shape as a GEAR variant's
+// mod(k, L) with the points spent as L, folded into the kit by refreshKit
+// below, so every kit-reading site picks them up the way it does gear. The
+// budget is the same for everybody (bots deal theirs from the seed in
+// initPlayers), so a spend is a shape, never a head start - the wiki's
+// flatness holds.
+const STAT_POINTS = 6;
+const STAT_TRACKS = [
+  { name: 'HEALTH', mod: (k, n) => { k.maxHp += 5 * n; } },
+  { name: 'DAMAGE', mod: (k, n) => { k.dmgBase += 0.5 * n; } },
+  { name: 'DRAW', mod: (k, n) => { k.bowCharge *= Math.pow(0.96, n); } },
+  { name: 'RENOCK', mod: (k, n) => { k.nock *= Math.pow(0.95, n); } },
+  { name: 'ARMOR', mod: (k, n) => { k.dr += 0.5 * n; } },
+  { name: 'WALK', mod: (k, n) => { k.walkMul += 0.02 * n; } },
+  { name: 'ICE SPEED', mod: (k, n) => { k.iceMax *= Math.pow(1.04, n); } },
+  { name: 'ICE GRIP', mod: (k, n) => { k.iceSteer += 0.15 * n; } },
+  { name: 'FATIGUE', mod: (k, n) => { k.fatigue *= Math.pow(0.94, n); } },
+  { name: 'DODGE', mod: (k, n) => { k.dodgeCd -= 0.15 * n; } },
+  { name: 'HUNTS', mod: (k, n) => { k.huntMul += 0.1 * n; } },
+  { name: 'FELLS', mod: (k, n) => { k.harvestMul += 0.15 * n; } },
+  { name: 'FOOD', mod: (k, n) => { k.foodMul += 0.15 * n; } },
+  { name: 'SEEN AT', mod: (k, n) => { k.stealth -= 0.05 * n; } },
+];
+function ptsSpent(p) { let n = 0; for (const v of p.pts) n += v | 0; return n; }
 // ---- roguelike cards ------------------------------------------------------
 // Dropped by a sprung chest in the treeline (hitObject's chest branch,
 // js/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
@@ -388,7 +417,7 @@ const CARDS = {
 
 // the class kit plus the gear-free defaults - the fields no class kit
 // carries; a variant's mod() edits them in place. Shared by refreshKit and
-// the gear pop-up's preview ledger (gearPreviewKit, js/menu.js), so the
+// the hero pop-up's preview ledger (heroPreviewKit, js/ui/menu.js), so the
 // numbers that page shows can never drift from the ones the sim reads.
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
@@ -402,6 +431,7 @@ function baseKit(cls) {
 function refreshKit(p) {
   const k = baseKit(p.cls);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
+  for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, p.pts[i] | 0);
   for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
   p.kit = k;
   p.maxHp = levelMaxHp(p);
@@ -462,11 +492,13 @@ class Player {
     // flag above). Read and written only through the bag helpers, so every
     // caller stays generic over where a kind actually lives.
     this.food = newPouch();             // the pouch: the two meals and the unopened cards, uncapped
-    this.cls = 0;                       // CLASSES index; the select screen sets the local one
+    this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
+    this.pts = STAT_TRACKS.map(() => 0); // STAT_POINTS spent per STAT_TRACKS row (a ledger row each), pre-match (the hero pop-up)
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like gear and cards, NOT cleared by reset(): a death keeps what was bought
+    this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
     this.cards = [];                    // picked roguelike cards, {rarity,id} - like gear, survives a respawn
     // the one order marker this player has standing (the right-click radial;
     // see the `team flags` banner in js/robots.js): null, or { tx, ty, type,
@@ -556,6 +588,7 @@ class Player {
     // slowed under a net or a crater, mid-reel on the grapple, shielded,
     // or mid-rush
     this.abCd = [0, 0, 0, 0];                      // (abLv, the ranks bought, lives in the constructor: a death keeps them)
+    this.windT = 0; this.windRate = 0;             // SECOND WIND's breath: s left, hp a second (abSecondWind)
     this.castAb = -1; this.castT = 0; this.castMax = 0; // castMax is the wind-up's full length, so a telegraph can read how far along it is (castProg)
     // Every state ANY unit can be under - stun, root, slow and its net
     // drape, the mark, and fire - is written and cleared in one place for
@@ -620,10 +653,12 @@ function initPlayers(roster, local) {
   roster = roster || defaultRoster(local);
   players.length = 0;
   for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
-  // bots draw their class AND their four gear variants from the seed,
-  // so a replayed world fields the same roster in the same loadouts
+  // bots draw their class, their four gear variants AND their stat points
+  // from the seed, so a replayed world fields the same roster in the same
+  // loadouts
   for (const p of players) if (p.control === 'ai') {
     for (let i = 0; i < GEAR_SLOTS.length; i++) p.gear[i] = Math.floor(hash2(p.id * 29 + i * 13 + 5, 191) * 3) % 3;
+    for (let n = 0; n < STAT_POINTS; n++) p.pts[Math.floor(hash2(p.id * 41 + n * 7 + 11, 223) * STAT_TRACKS.length) % STAT_TRACKS.length]++;
     // floor(hash * N): even over however many classes exist (for two it maps
     // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
     setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too

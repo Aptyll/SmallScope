@@ -110,10 +110,11 @@ plants from it and the class screen's chip draws from it (`mapChip`, js/ui/menu.
 picture on the chip is **this seed's own valley** in that shape and not an illustration of one.
 
 **`MAP_TYPE` is the shape this page grew** — `?map=N`, else the profile's `settings.mapType`,
-read once in js/boot.js after `loadSettings()` and never again. Picking one is a **page**, the
-way a reroll is: the pick is saved, the whiteout runs and the page comes back on
-`?seed=<this seed>&map=<the pick>` standing on the class screen again (`pickMap`,
-[rendering.md](rendering.md#class-select)). Only a **solo** lobby may pick — a host reloading
+read once in js/boot.js after `loadSettings()` and never again (and written back to `settings.mapType`, so the lobby's pick starts as the shape standing). Picking one in the lobby's map
+pop-up (`pickMap`, [rendering.md](rendering.md#lobby)) only saves `settings.mapType` and the
+lobby stays put; the pick is spent at LOCK IN, which is then a **page** the way a reroll is: it
+comes back on `?seed=<this seed>&map=<the pick>` and goes straight to the eagle (`lockIn`,
+js/boot.js's `softfall.drop`). Only a **solo** lobby may pick — a host reloading
 would drop its room, and a guest's world is the host's (`netHostHello` refuses a hello whose map
 is not the host's, exactly as it refuses a seed; `joinRoom` carries `&map=` with `&seed=`).
 
@@ -648,8 +649,10 @@ live, lingering `DUMMY_METER_LINGER` past the mend so the final read stands, the
 
 ## Determinism and noise
 
-Every run picks a fresh `SEED` at boot from `Date.now() ^ Math.random()`, and **everything random
-derives from it** — there is no other entropy source. `?seed=N` in the URL overrides it, which is
+Every run picks a fresh `SEED` at boot with `rollSeed()` — always **three digits**, 100..999, so
+it reads off the lobby and can be said aloud (the reroll die rolls the same way) — and **everything
+random derives from it**: there is no other entropy source. `?seed=N` in the URL overrides it with
+any N, which is
 how you replay or diff a specific world (and `?practice=1` overrides *that*: the
 [practice arena](#the-practice-arena) pins `SEED` to `PRACTICE_SEED`). `drawTags()` prints `SEED_TXT` as a line of the **info
 stack** on the left edge at the top quarter of the view (drawn after the map, settings, and death

@@ -219,14 +219,14 @@ const NOTE_TAILS = {
 // STAT_PULSE seconds as the plate slides home, so the thing you are meant to
 // read is still blinking when your eyes arrive. Green is BETTER and red is
 // WORSE by the row's own `dir`, so a draw time that FELL reads green: the
-// grammar the gear pop-up's hover deltas already teach.
+// grammar the hero pop-up's hover deltas already teach.
 //
 // ONE stats plate is ever up. A second change inside the first one's life
 // drops it and flies a fresh one - the news is what your sheet is NOW, not a
 // stack of what it has been - and a row still inside its own hold comes along
 // on the new plate until that hold runs out.
 //
-// The rows read GEAR_STATS (js/ui/menu.js), the one table the gear pop-up
+// The rows read GEAR_STATS (js/ui/menu.js), the one table the hero pop-up
 // prices a pick from and the character panel spells a body out with, so the
 // three can never disagree about what a stat is, how it prints, or which way
 // is up. Two kit fields have no row in it and so light nothing: killHeal
@@ -240,7 +240,7 @@ const STAT_PULSE = 1.3;  // s the moved rows blink for, arriving
 const STAT_W = 88;       // the longest label ('ICE SPEED', 35 px), its number, and a delta between them
 const STAT_LABEL = '#68769f', STAT_VAL = '#c3d0ee', STAT_LIT = '#f4f7ff';
 const STAT_DOT = '#2b3560';                       // the leader, where a delta is not standing in it
-const STAT_UP = '#8fe08a', STAT_DOWN = '#e0637a'; // better / worse: the gear pop-up's verdict inks
+const STAT_UP = '#8fe08a', STAT_DOWN = '#e0637a'; // better / worse: the hero pop-up's verdict inks
 // The plate's height is every row of the sheet, so it follows GEAR_STATS
 // rather than repeating its length - which is why NOTE_KIND.stats reaches it
 // through a GETTER: the table is built at load time, when GEAR_STATS

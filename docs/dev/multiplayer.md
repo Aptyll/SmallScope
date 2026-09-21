@@ -162,7 +162,7 @@ reserved key or a key two actions share falls back to its default; `schemeActs`/
 are the per-scheme roster and default). **Nothing compares a key
 event against a literal**: `keyIs(e, 'work')`, `keyHeld('slide')`, `moveDir(k)` (the four walk
 binds and the arrows, which every key-driven menu steps on — the title's planks, the death
-planks, the wiki, gear, class select, the settings slab; under CLICK the arrows alone) and
+planks, the wiki, gear, the lobby, the settings slab; under CLICK the arrows alone) and
 `keyBound(k)` ask the live binds, and every keybind indicator names an action and prints
 `keyCap(action)` (`keyCapShort` for a well's corner, where SPACE is SPC; an action the live scheme
 has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
@@ -276,7 +276,7 @@ START are Escape, the dpad and bumpers the arrow keys (which also page the setti
 with one exception, an [end screen](rendering.md#the-emote-bar), where the dpad is the emote bar
 read clockwise from up (`emotePad`, js/ui/screens.js) and the bumpers keep the planks — the
 right stick scrolls the page, and the left stick is a pointer
-over pointer-only surfaces (a panel, the wiki, class select) and the arrow
+over pointer-only surfaces (a panel, the wiki, the lobby) and the arrow
 keys on a repeat clock over the title's plank column and the death planks (`padPointerMode`,
 `padRepeat`). The panels that keep the world running under them — the chart, the counter, the
 sheet (`padPanelMode`) — keep the feet too: WASD walks under them
@@ -293,7 +293,8 @@ a change in `PAD_PLAY` is a row there.
 ## Classes
 
 Every player also carries a class (`p.cls`, an index into `CLASSES` in the `players` banner).
-A class is a look, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`,
+A class is a look, a kit, and **four active abilities on keys 1-4** (`CLASS_AB`, a key carrying
+one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](gameplay.md#class-abilities-keys-1-4);
 [js/abilities.js](../../js/abilities.js) — see [Class abilities](gameplay.md#class-abilities-keys-1-4)).
 The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers
@@ -326,13 +327,13 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 
 The local player's class is **fixed on the character** it was created with (js/profile.js; the
 create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
-only way to the other class is another character, and class select swaps between the profile's
-three from its character tabs; bots hash theirs — class, look **and** all four gear
-variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
-same loadouts. Class select shows that roster as two team panels on the screen's edges — your side left, the
+only way to the other class is another character, and the lobby swaps between the profile's
+three with the chevrons beside the stage figure; bots hash theirs — class, look, all four gear
+variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
+same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
-the rest of the count) — and the three plates
-heading the rivals' panel set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
+the rest of the count) — and the target at the top, whose pop-up's three plates
+set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
@@ -570,7 +571,7 @@ dropped card is a neutral pickup the same way, first-come whichever team gets th
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
 well each rung is played** (the `difficulty` banner at the top of ai.js): the **rivals** run
-`AI_LEVELS[settings.aiLevel]` — NORMAL / HARD / IMPOSSIBLE, class select's plates, remembered
+`AI_LEVELS[settings.aiLevel]` — NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
 with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch up (capped at the
 top) plus the support fields, so your side is always the more competent one and the difficulty
 is how good the *other* side is. `aiProfile(p)` is the one place that choice is made
@@ -720,7 +721,7 @@ The ladder:
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
 12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
    plus a 15-gold float is bought at rung 0 beside the skill point, from anywhere, mid-push or
-   mid-defence alike — the gear pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
+   mid-defence alike — the hero pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the
    shop is human-only except the drag that sells. Then, with a generator's price in hand, build a generator (or, 30% of the

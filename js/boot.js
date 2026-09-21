@@ -1378,6 +1378,7 @@ if (PRACTICE) {
     const k = q ? +q[1] : settings.mapType | 0;
     return k >= 0 && k < MAPS.length ? k : 0;
   })();
+  settings.mapType = MAP_TYPE; // the lobby's pick starts as the shape standing (a ?map=N page may differ from the profile's)
   genWorld();
   layPaths();       // ...and the paths a grown shape cuts through its own woods (world.js)
   placeRoad();       // the diagonal lane, and the paths with it (world.js)
@@ -1449,10 +1450,30 @@ try {
   // ...and from a MAP PICK, which is the same page on the same seed in a new
   // shape (pickMap, js/ui/menu.js): it clears onto the screen it was made on,
   // so picking a shape is one press and not a walk back through the menu
+  // (through the lobby's own night, not the white: the screen went dark on
+  // itself and comes back up on itself)
   if (sessionStorage.getItem('softfall.select')) {
     sessionStorage.removeItem('softfall.select');
     if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
-      beginSelect(); state.menu.screenT = 1;
+      beginLobby(); state.menu.screenT = 1;
+      if (state.fade) state.fade.color = LOBBY_NIGHT;
+    }
+  }
+  // ...and from LOCK IN on a shape this page had not grown (lockIn, js/ui/menu.js):
+  // the page came back on this seed in that shape and goes straight to the
+  // eagle, the gear picks, stat points and ability picks it carried put back on (no profile holds them)
+  const dropRaw = sessionStorage.getItem('softfall.drop');
+  if (dropRaw) {
+    sessionStorage.removeItem('softfall.drop');
+    if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
+      try {
+        const d = JSON.parse(dropRaw);
+        if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
+        if (d && Array.isArray(d.pts)) player.pts = d.pts.map((v) => v | 0);
+        if (d && Array.isArray(d.abPick)) player.abPick = d.abPick.map((v) => v | 0);
+      } catch (e) { }
+      setClass(player, player.cls);
+      beginDrop();
     }
   }
 } catch (e) { }
@@ -1687,7 +1708,7 @@ window.DBG = {
   GEAR, GEAR_SLOTS, GEAR_COSTS, kitOf, refreshKit, gearHit, charLayout, charHit, BAG_CELL,
   gearCost: (i, p) => gearCost(p || player, i),
   buyGear: (i, p) => buyGear(p || player, i),
-  pickGear: (i, v) => pickGear(i, v), gearLayout, gearScreenHit, beginGear,
+  pickGear: (i, v) => pickGear(i, v), spendPt, heroLayout, heroScreenHit, beginHero,
   setGear: (i, v, p) => { const q = p || player; q.gear[i] = v; refreshKit(q); return q.kit; },
   // the match readouts: the log (not drawn - read it here), staged lines
   // without the kills behind them, and the standings (hold TAB in game, or
@@ -1764,7 +1785,7 @@ window.DBG = {
   setSwing: (i, p) => { (p || player).swing = i; },
   getSwing: (p) => (p || player).swing,
   cam: () => ({ x: camX, y: camY }),
-  startGame, beginIntro, beginSelect, lockIn, pressPlay, cancelCount, setAiLevel, selectLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, selectHit,
+  startGame, beginIntro, beginLobby, lockIn, pressPlay, cancelCount, setAiLevel, lobbyLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, lobbyHit,
   // the ESC panel: what the pointer is over, the speaker's plate, the open
   // page's row anchors (already scrolled - a row's y is where it is on
   // screen) and the navbar cells - so a driver can click a dial without

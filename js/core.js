@@ -69,12 +69,14 @@ function mulberry32(a) {
 const PRACTICE_SEED = 0x50524143; // 'PRAC'
 
 // one run seed drives every deterministic value: worldgen, per-tile hashes, fx.
-// ?seed=N in the URL replays a world exactly.
+// A rolled seed is always three digits (100..999) - short enough to read off
+// the lobby and say aloud. ?seed=N in the URL replays a world exactly, any N.
+function rollSeed() { return 100 + Math.floor(Math.random() * 900); }
 const SEED = (function () {
   if (PRACTICE) return PRACTICE_SEED;
   const q = /[?&]seed=([0-9]+)/.exec(location.search);
   if (q) return (parseInt(q[1], 10) >>> 0) || 1;
-  return ((Date.now() ^ Math.floor(Math.random() * 0xFFFFFFFF)) >>> 0) || 1;
+  return rollSeed();
 })();
 const SEED_TXT = 'SEED ' + SEED;
 const rng = mulberry32(SEED);
@@ -160,29 +162,34 @@ const state = {
     // today - the title's items are all live - but a client's lobby still
     // draws the host's name sealed, and the glaze reads them
     iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0,
-    // class select: which screen the menu shows, its cross-fade, the chosen
+    // lobby: which screen the menu shows, its cross-fade, the chosen
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'select' | 'gear' | 'wiki' | 'chars' | 'create'. 'gear' is the
-    // pop-up over the still-lit select screen (gearT its ease, grow the
-    // keyboard row, gearFxT/gearFxSlot the equip flash); the wiki is a surface
-    // of its own on wikiT, with wikiTab the open page (menu.js `the wiki`).
+    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'chars' | 'create'.
+    // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
+    // pop names the one open (kept while it fades out) and popT is its ease;
+    // grow is the hero pop-up's keyboard row (the gear column, the ability
+    // column, then the ledger's rows),
+    // gearFxT/gearFxSlot its equip flash,
+    // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
+    // is a surface of its own on wikiT, with wikiTab the open page (menu.js
+    // `the wiki`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
-    // class select's map slide (mapStep: {d, k, t}, null at rest), the lock-in's
-    // ring (lockFx, s left), and the difficulty target's arrows: the level they
-    // show and how far into their flight (menu.js `class select`)
+    // lobby's map slide (mapStep: {d, k, from, t}, null at rest), the lock-in's
+    // ring (lockFx, s left), and the difficulty target: the level it wears and
+    // how long since it changed (its jolt, menu.js `lobby`)
     mapSlide: null, lockFx: 0, tgtLv: 0, tgtT: 1,
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it
-    // ran out); dhover the three difficulty plates' hover eases (menu.js
-    // `class select`)
+    // ran out); dhover the AI pop-up's three plates' hover eases (menu.js
+    // `lobby`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
     // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the
     // relay's open rooms, whether the relay answered, the row hovers, the
     // keyboard row, and the refusal rattle of a room that would not have us
     roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
-    gearT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, wikiT: 0, wikiTab: 0 },
+    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from
@@ -204,10 +211,10 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // dealt you (skin(), js/player.js); off = the roster's real colours
   teamBlue: true,
   // the rival bots' difficulty: an index into AI_LEVELS (js/ai.js), picked on
-  // class select's notches and remembered; 0 (NORMAL) until someone moves it
+  // lobby's notches and remembered; 0 (NORMAL) until someone moves it
   aiLevel: 0,
   // the shape the valley comes out of the snow in: an index into MAPS
-  // (js/world.js), picked on class select's map chip and remembered. A pick
+  // (js/world.js), picked on the lobby's map chip and remembered. A pick
   // is a page (pickMap, js/ui/menu.js), so what this holds is what the NEXT
   // load grows - MAP_TYPE is what THIS one did.
   mapType: 0,
