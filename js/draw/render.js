@@ -1189,8 +1189,8 @@ function cursorInfo() {
       if (dragSlider) return { kind: 'grab' };
       return { kind: settingsHit() ? 'hand' : 'arrow' };
     }
-    if (m.screen === 'gear') { const gh = m.gearT >= 1 ? gearScreenHit() : null; return { kind: gh && gh !== 'panel' ? 'hand' : 'arrow' }; }
-    if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.gearT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
+    if (popOpen()) { const gh = m.popT >= 1 ? popHit() : null; return { kind: gh !== null && gh !== 'panel' ? 'hand' : 'arrow' }; }
+    if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
     if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
     if (!m.panel && (overCharTag() || overPatchTag())) return { kind: 'hand' }; // the two corner tags

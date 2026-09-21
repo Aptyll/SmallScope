@@ -166,10 +166,13 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'gear' | 'wiki' | 'chars' | 'create'. 'gear' is the
-    // pop-up over the still-lit select screen (gearT its ease, grow the
-    // keyboard row, gearFxT/gearFxSlot the equip flash); the wiki is a surface
-    // of its own on wikiT, with wikiTab the open page (menu.js `the wiki`).
+    // screen: 'menu' | 'lobby' | 'gear' | 'map' | 'ai' | 'wiki' | 'chars' | 'create'.
+    // 'gear', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
+    // pop names the one open (kept while it fades out) and popT is its ease;
+    // grow is the gear's keyboard row, gearFxT/gearFxSlot its equip flash,
+    // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
+    // is a surface of its own on wikiT, with wikiTab the open page (menu.js
+    // `the wiki`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
     // lobby's map slide (mapStep: {d, k, t}, null at rest), the lock-in's
     // ring (lockFx, s left), and the difficulty target's arrows: the level they
@@ -177,14 +180,14 @@ const state = {
     mapSlide: null, lockFx: 0, tgtLv: 0, tgtT: 1,
     // countT: seconds left of PLAY's countdown to the eagle (0 = not counting),
     // countN the last whole second it ticked on (-1 = never pressed, 0 = it
-    // ran out); dhover the three difficulty plates' hover eases (menu.js
+    // ran out); dhover the AI pop-up's three plates' hover eases (menu.js
     // `lobby`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
     // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the
     // relay's open rooms, whether the relay answered, the row hovers, the
     // keyboard row, and the refusal rattle of a room that would not have us
     roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
-    gearT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, wikiT: 0, wikiTab: 0 },
+    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from

@@ -38,7 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, AND EVERY ROLLED SEED IS THREE DIGITS.'],
+  ['3.77', 'CLASS SELECT IS CALLED THE LOBBY NOW, AND YOUR CHARACTER STANDS HIGHER ON ITS STAGE AT THE CREATE SCREEN\'S SIZE WITH NO NAME UNDER IT, A CHEVRON EITHER SIDE SWAPS TO YOUR NEXT CHARACTER IN PLACE OF THE TABS, THE GEAR ROW LIES UNDER ITS FEET, LOCK IN IS A BARE WORD LIKE THE MAIN MENU\'S, THE MAP AND THE TARGET STAND SIDE BY SIDE AT THE TOP WITH THEIR NAMES IN PLAIN WHITE AND EACH OPENS ITS OWN POP-UP - THE SHAPE, THE SEED AND THE DIE OFF THE MAP, THE RIVALS\' LEVEL OFF THE TARGET - AND EVERY ROLLED SEED IS THREE DIGITS.'],
   ['3.76', 'THE STEAM BUILD PACKS ONLY WHAT THE GAME PLAYS: THE MUSIC AND THE CODE, NO SAMPLE CLIPS, NO STALE COPY, NO TYPE PACKAGES.'],
   ['3.75', 'CLASS SELECT IS A LEAGUE LOBBY: TEAM PANELS GLUED TO BOTH EDGES, THE MAP LARGE AT THE TOP WITH CHEVRONS THAT SLIDE TO THE NEXT SHAPE AND THE SEED UNDER IT, THREE DIFFICULTY PLATES WITH A TARGET WHOSE ARROWS LAND NEARER THE BULLSEYE THE HARDER THE RIVALS, AND LOCK IN AT THE FOOT THAT BURSTS A RING, DIMS THE TABS AND WEARS THE COUNT.'],
   ['3.74', 'THE TITLE IS THE PAINTED SOFTFALL OVER THREE PLAIN WORDS AT THE FOOT OF THE SCREEN, NO PLANKS, PILLARS OR FIRE: THE SEED AND ITS DIE MOVED ONTO THE MAP POP-UP UNDER THE SHAPE\'S NAME, THE WIKI OPENS FROM A PLANK AT THE TOP OF THE PATCH NOTES, AND SETTINGS LIVES IN THE ESC PANEL.'],
@@ -618,8 +618,10 @@ function menuKey(e) {
   const k = e.key.toLowerCase();
   if (state.fade) return; // a reroll is already leaving
   if (m.screen === 'wiki') { if (m.wikiT >= 1) wikiKey(k); return; }
-  if (m.screen === 'gear') { if (m.gearT >= 1) gearKey(k); return; }
-  if (m.screen === 'lobby') { if (m.screenT >= 1 && m.gearT <= 0) lobbyKey(k); return; }
+  if (m.screen === 'gear') { if (m.popT >= 1) gearKey(k); return; }
+  if (m.screen === 'map') { if (m.popT >= 1) mapKey(k); return; }
+  if (m.screen === 'ai') { if (m.popT >= 1) aiKey(k); return; }
+  if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
@@ -641,6 +643,8 @@ function menuClick() {
   if (state.fade) return;
   if (m.screen === 'wiki') { wikiClick(); return; }
   if (m.screen === 'gear') { gearClick(); return; }
+  if (m.screen === 'map') { mapClick(); return; }
+  if (m.screen === 'ai') { aiClick(); return; }
   if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
@@ -670,7 +674,7 @@ function beginIntro() {
   state.mode = 'play';
   state.menu.panel = null;
   state.menu.screen = 'menu';
-  state.menu.gearT = 0;
+  state.menu.popT = 0; state.menu.pop = null;
   SFX.dawnChime();
   SFX.music.stop(0.6);
 }
@@ -713,7 +717,7 @@ function updateTitle(dt) {
   // the waiting room's comings and goings: a card whose kind changed (a bot
   // became a person, or the reverse) flashes and sounds; a guest whose host
   // left is back on the rooms list with a rattle
-  if (NET.role !== 'solo' && (m.screen === 'lobby' || m.screen === 'gear')) {
+  if (NET.role !== 'solo' && (m.screen === 'lobby' || popOpen())) {
     if (!m.cardFx) { m.cardFx = {}; m.cardKind = players.map((p) => isHuman(p)); }
     for (const p of players) {
       const h = isHuman(p);
@@ -721,7 +725,7 @@ function updateTitle(dt) {
       m.cardKind[p.id] = h;
       if (m.cardFx[p.id] > 0) m.cardFx[p.id] -= dt;
     }
-    if (NET.isClient && NET.refused === 'HOSTGONE') { if (m.screen === 'gear') leaveGear(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
+    if (NET.isClient && NET.refused === 'HOSTGONE') { if (popOpen()) leavePop(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
   } else m.cardFx = null;
   m.t += dt;
   m.camT += dt;
@@ -750,12 +754,12 @@ function updateTitle(dt) {
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
   m.pwHover = (m.pwHover || 0) + ((overPatchWiki() ? 1 : 0) - (m.pwHover || 0)) * Math.min(1, dt * 14); // the notes' WIKI plank
-  // lobby cross-fade and its own hovers; the gear pop-up rides a
-  // second ease (gearT) over the still-lit select screen
-  const st = m.screen === 'lobby' || m.screen === 'gear' ? 1 : 0;
+  // lobby cross-fade and its own hovers; a pop-up (gear, map, ai) rides a
+  // second ease (popT) over the still-lit lobby
+  const st = m.screen === 'lobby' || popOpen() ? 1 : 0;
   m.screenT = Math.max(0, Math.min(1, m.screenT + (st ? 1 : -1) * dt / 0.35));
-  const gt = m.screen === 'gear' ? 1 : 0;
-  m.gearT = Math.max(0, Math.min(1, m.gearT + (gt ? 1 : -1) * dt / 0.3));
+  m.popT = Math.max(0, Math.min(1, m.popT + (popOpen() ? 1 : -1) * dt / 0.3));
+  if (m.popT <= 0) m.pop = null;
   // the wiki is a surface of its own, not a third state of the pick pair -
   // it eases in over the same chrome on a clock of its own
   m.wikiT = Math.max(0, Math.min(1, m.wikiT + (m.screen === 'wiki' ? 1 : -1) * dt / 0.35));
@@ -765,10 +769,11 @@ function updateTitle(dt) {
     const target = sh === (i ? 'charr' : 'charl') ? 1 : 0;
     m.chover[i] = (m.chover[i] || 0) + (target - (m.chover[i] || 0)) * Math.min(1, dt * 14);
   }
-  // the difficulty notches' hover eases, and PLAY's countdown: a tick per
-  // whole second, the eagle at zero (the gear pop-up shuts on the way)
+  // the AI pop-up's plates' hover eases, and PLAY's countdown: a tick per
+  // whole second, the eagle at zero (an open pop-up shuts on the way)
+  const ah = m.screen === 'ai' && m.popT >= 1 && mouse.inside ? aiScreenHit() : null;
   for (let k = 0; k < 3; k++) {
-    const target = sh === 'diff' + k ? 1 : 0;
+    const target = ah === 'diff' + k ? 1 : 0;
     m.dhover[k] = (m.dhover[k] || 0) + (target - (m.dhover[k] || 0)) * Math.min(1, dt * 14);
   }
   // the map slide, the lock-in ring, and the target's arrows - which fly in
@@ -776,14 +781,14 @@ function updateTitle(dt) {
   // else the picked one's)
   if (m.mapSlide) m.mapSlide.t = Math.min(1, m.mapSlide.t + dt / 0.35);
   if (m.lockFx > 0) m.lockFx = Math.max(0, m.lockFx - dt);
-  const tl = sh && sh.startsWith('diff') ? +sh.slice(4) : settings.aiLevel | 0;
+  const tl = ah && ah.startsWith('diff') ? +ah.slice(4) : settings.aiLevel | 0;
   if (tl !== m.tgtLv) { m.tgtLv = tl; m.tgtT = 0; }
   m.tgtT = Math.min(1, (m.tgtT || 0) + dt);
   if (m.countT > 0) {
     m.countT -= dt;
     const n = Math.max(0, Math.ceil(m.countT));
     if (n < m.countN) { m.countN = n; if (n > 0) SFX.countTick(); }
-    if (m.countT <= 0) { m.countT = 0; if (m.screen === 'gear') leaveGear(); if (!NET.isClient) lockIn(); }
+    if (m.countT <= 0) { m.countT = 0; if (popOpen()) leavePop(); if (!NET.isClient) lockIn(); }
   }
   if (m.lockT > 0) {
     m.lockT -= dt;
@@ -1228,9 +1233,10 @@ const LOBBY_FRAME_GAP = 4;
 const LOBBY_HEAD = 58;                   // the panels' head: the difficulty plates and the target, right; the left kept level with it
 const LOBBY_MODEL = 3;                   // the stage model's scale: the 48 px model at 3x, the create screen's size
 const LOBBY_PAD = 6;                     // the margin off the view's edge
-const LOBBY_MAP = 56;                    // the map picture at the top centre
-const LOBBY_LV_W = 58, LOBBY_LV_H = 13;    // a difficulty plate
-const LOBBY_TGT = 40;                    // the target beside the plates (its rings scale off it)
+const LOBBY_MAP = 56;                    // the map plate and the target, side by side at the top centre
+const LOBBY_TOP_GAP = 24;                // between them
+const LOBBY_LV_W = 58, LOBBY_LV_H = 13;    // a difficulty plate (the AI pop-up)
+const POP_PIC = 72;                      // the picture in a pop-up: the map, the target
 const COUNT_T = 5;                     // s: LOCK IN's countdown to the eagle
 function lobbyLayout() {
   const cx = Math.round(VIEW_W / 2), pw = LOBBY_PANEL_W, pad = LOBBY_PAD;
@@ -1244,17 +1250,12 @@ function lobbyLayout() {
     const y = LOBBY_HEAD + cards[mine].length * (fh + LOBBY_FRAME_GAP);
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
   }
-  // the rivals' difficulty: three plates stacked at their panel's head, the target beside them
-  const diff = [];
-  for (let k = 0; k < 3; k++) diff.push({ x: VIEW_W - pw + pad, y: pad + k * (LOBBY_LV_H + 3), w: LOBBY_LV_W, h: LOBBY_LV_H });
-  const tgt = { x: VIEW_W - pad - LOBBY_TGT + 2, y: pad + 2, w: LOBBY_TGT, h: LOBBY_TGT };
-  // the map at the top centre, a chevron either side, its name and the seed row under it
-  const mapc = { x: cx - (LOBBY_MAP >> 1), y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
-  const ay = mapc.y + (LOBBY_MAP >> 1) - 9;
-  const arrows = [{ x: mapc.x - 20, y: ay, w: 12, h: 18, d: -1 }, { x: mapc.x + mapc.w + 8, y: ay, w: 12, h: 18, d: 1 }];
-  const name = { x: cx, y: mapc.y + mapc.h + 6 };
-  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
-  const seed = { x: cx - (sw >> 1), y: name.y + 10, w: sw, h: 12 };
+  // the map plate and the target side by side at the top centre, mirrored
+  // about the middle, each with its name under it: the shape's, the level's
+  const mapc = { x: cx - (LOBBY_TOP_GAP >> 1) - LOBBY_MAP, y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
+  const tgt = { x: cx + (LOBBY_TOP_GAP >> 1), y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
+  const mapName = { x: mapc.x + (LOBBY_MAP >> 1), y: mapc.y + mapc.h + 6 };
+  const tgtName = { x: tgt.x + (LOBBY_MAP >> 1), y: tgt.y + tgt.h + 6 };
   // LOCK IN, a bare word at the foot; the gear row above it; the stage figure on the snow above that
   const pw2 = pixelTextWidth('LOCK IN', MENU_TXT_SCALE) + 8;
   const play = { x: cx - (pw2 >> 1), y: VIEW_H - pad - 7 * MENU_TXT_SCALE - 8, w: pw2, h: 7 * MENU_TXT_SCALE + 4 };
@@ -1264,7 +1265,7 @@ function lobbyLayout() {
   // a chevron either side of the figure swaps to the neighbouring character
   const cy = body.y + 46 * LOBBY_MODEL - 60;
   const chars = [{ x: body.x - 26, y: cy, w: 12, h: 18, d: -1 }, { x: body.x + body.w + 14, y: cy, w: 12, h: 18, d: 1 }]; // clear of the weapon at the right hand
-  return { cx, play, body, loadout, chars, cards, diff, tgt, mapc, arrows, name, seed };
+  return { cx, play, body, loadout, chars, cards, tgt, mapc, mapName, tgtName };
 }
 
 // The screen's own painted night, fully opaque at rest so the live ambient
@@ -1878,15 +1879,10 @@ function gearScreenHit() {
 }
 
 function beginGear() {
-  const m = state.menu;
-  m.screen = 'gear';
-  m.grow = 0;
-  SFX.place();
+  state.menu.grow = 0;
+  openPop('gear');
 }
-function leaveGear() {
-  state.menu.screen = 'lobby';
-  SFX.pickup();
-}
+function leaveGear() { leavePop(); }
 // pre-match variant pick for the local player, full heal like setClass since
 // nothing has been risked yet. The pick plays on the preview body: gearFxT
 // runs the white flash and the sparkles, gearFxSlot lights the piece's band.
@@ -1912,7 +1908,7 @@ function gearKey(k) {
 
 function gearClick() {
   const m = state.menu;
-  if (m.lockT > 0 || m.gearT < 1) return;
+  if (m.lockT > 0 || m.popT < 1) return;
   const h = gearScreenHit();
   if (!h || h === 'x') { leaveGear(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                    // the slab swallows it
@@ -1920,25 +1916,35 @@ function gearClick() {
   pickGear(h.row, h.v);
 }
 
-// what the pointer is on: 'play', 'gear', 'diff' + k (a difficulty plate),
-// 'charl' / 'charr' (the character chevrons), 'mapl' / 'mapr' (the map's chevrons), 'seed'
-// (the seed row) or null. A guest's room offers gear alone.
+// what the pointer is on: 'play', 'gear', 'ai' (the target: the AI pop-up),
+// 'map' (the map plate: the map pop-up), 'charl' / 'charr' (the character
+// chevrons) or null. A guest's room offers gear alone.
 function lobbyHit() {
-  const { play, loadout, diff, arrows, seed, chars } = lobbyLayout();
+  const { play, loadout, tgt, mapc, chars } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(loadout, 3, 2)) return 'gear';
-  if (NET.isClient) return null; // a guest's room: the host's plank, the host's difficulty, the host's world, its own character as it came
+  if (NET.isClient) return null; // a guest's room: the host's word, the host's difficulty, the host's world, its own character as it came
   if (PROFILE.chars().length > 1) { if (over(chars[0], 4, 4)) return 'charl'; if (over(chars[1], 4, 4)) return 'charr'; }
   if (over(play, 2, 3)) return 'play';
-  for (let k = 0; k < diff.length; k++) if (over(diff[k], 2, 2)) return 'diff' + k;
+  if (over(tgt, 2, 2)) return 'ai';
   // the shape and the seed are picked before a room is opened: a pick is a
   // page, and a host reloading would drop the room under everyone in it
-  if (NET.role === 'solo') {
-    if (over(arrows[0], 3, 3)) return 'mapl';
-    if (over(arrows[1], 3, 3)) return 'mapr';
-    if (over(seed, 3, 2)) return 'seed';
-  }
+  if (NET.role === 'solo' && over(mapc, 2, 2)) return 'map';
   return null;
+}
+// the three pop-ups over the lobby share one ease (menu.popT) and one way
+// out; which is open is menu.pop, kept through the fade so the right one
+// draws on the way out
+function popOpen() { const s = state.menu.screen; return s === 'gear' || s === 'map' || s === 'ai'; }
+function popHit() { const s = state.menu.screen; return s === 'gear' ? gearScreenHit() : s === 'map' ? mapScreenHit() : s === 'ai' ? aiScreenHit() : null; }
+function openPop(which) {
+  const m = state.menu;
+  m.screen = which; m.pop = which;
+  SFX.place();
+}
+function leavePop() {
+  state.menu.screen = 'lobby';
+  SFX.pickup();
 }
 
 function beginLobby() {
@@ -1976,8 +1982,8 @@ function lobbyStep(d) {
   if (n < 2) return;
   lobbySlot(((PROFILE.activeIndex() + d) % n + n) % n);
 }
-// the map's chevrons: the picture slides over to the neighbouring shape
-// (m.mapSlide, drawn by drawLobbyMap) while the page's whiteout runs
+// the map pop-up's chevrons: the picture slides over to the neighbouring
+// shape (m.mapSlide, drawn by renderMapPick) while the page's whiteout runs
 // (pickMap), so the pick is seen going before the reload lands back here on
 // it. Solo only - in a room the shape is the host's page.
 function mapStep(d) {
@@ -1999,7 +2005,7 @@ function pressPlay() {
   if (m.lockT > 0 || NET.isClient) return; // the host's plank
   if (m.countT > 0) {
     m.countT = 0; m.countN = 0;
-    if (m.screen === 'gear') leaveGear();
+    if (popOpen()) leavePop();
     lockIn();
     return;
   }
@@ -2043,24 +2049,20 @@ function lobbyKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
   if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveLobby(); }
-  else if (moveDir(k) === 'left') mapStep(-1);
-  else if (moveDir(k) === 'right') mapStep(1);
-  else if (moveDir(k) === 'up') lobbyStep(-1);
-  else if (moveDir(k) === 'down') lobbyStep(1);
+  else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the character chevrons
+  else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
   else if (k === 'enter' || k === ' ') pressPlay();
 }
 
 function lobbyClick() {
   const m = state.menu;
-  if (m.lockT > 0 || m.screenT < 1 || m.gearT > 0) return;
+  if (m.lockT > 0 || m.screenT < 1 || m.popT > 0) return;
   const h = lobbyHit();
   if (!h) return;
   if (h === 'play') pressPlay();                                    // LOCK IN: lock the pick, start the count
   else if (h === 'gear') { m.pressT = 0.12; beginGear(); }          // the gear widget opens its pop-up
-  else if (h === 'mapl') mapStep(-1);                               // the map's chevrons slide to a neighbour shape
-  else if (h === 'mapr') mapStep(1);
-  else if (h === 'seed') rerollWorld();                             // the die: a fresh seed in this shape
-  else if (h.startsWith('diff')) setAiLevel(+h.slice(4));           // a difficulty plate
+  else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
+  else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
   else if (h === 'charl') lobbyStep(-1);                             // the character chevrons
   else if (h === 'charr') lobbyStep(1);
 }
@@ -2360,24 +2362,26 @@ function pxDisc(cx, cy, r) {
     ctx.fillRect(cx - hw, cy + dy, hw * 2 + 1, 1);
   }
 }
-// The target beside the difficulty plates: rings in white and the rivals'
-// paint, and lv + 1 arrows stuck in it - at the rim on NORMAL, the inner
-// ring on HARD, the bullseye on IMPOSSIBLE - "how well they shoot", which
-// is what the level is. Each arrow flies in from the upper left over m.tgtT
-// (updateTitle zeroes it when the shown level changes), a glint where it
-// lands.
-const TGT_R = [15, 8, 1];                                    // landing radius per level
+// The target - on the lobby beside the map plate, big in the AI pop-up:
+// rings in white and the rivals' paint, and lv + 1 arrows stuck in it - at
+// the rim on NORMAL, the inner ring on HARD, the bullseye on IMPOSSIBLE -
+// "how well they shoot", which is what the level is. size is the disc's
+// width; the rings and the landing radii scale off it. Each arrow flies in
+// from the upper left over m.tgtT (updateTitle zeroes it when the shown
+// level changes), a glint where it lands.
+const TGT_R = [0.62, 0.34, 0];                               // landing radius per level, of the disc's
 const TGT_ANG = [[-2.3], [-2.5, -0.7], [-2.6, -1.4, 0.4]];    // where each arrow sticks
-function drawLobbyTarget(x, y, lv, rc, now, a) {
-  const R = (LOBBY_TGT >> 1) - 1, cx = x + (LOBBY_TGT >> 1), cy = y + (LOBBY_TGT >> 1);
+function drawLobbyTarget(x, y, size, lv, rc, now, a) {
+  const R = (size >> 1) - 1, cx = x + (size >> 1), cy = y + (size >> 1);
   ctx.globalAlpha = a;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; pxDisc(cx + 1, cy + 2, R);
-  for (const [r, c] of [[R, '#0a0e23'], [R - 1, '#f4f7ff'], [R - 5, rc], [R - 9, '#f4f7ff'], [R - 13, rc], [R - 16, '#f4f7ff']]) { ctx.fillStyle = c; pxDisc(cx, cy, r); }
+  const ring = (f) => Math.max(1, Math.round(R * f));
+  for (const [r, c] of [[R, '#0a0e23'], [R - 1, '#f4f7ff'], [ring(0.74), rc], [ring(0.52), '#f4f7ff'], [ring(0.3), rc], [ring(0.12), '#f4f7ff']]) { ctx.fillStyle = c; pxDisc(cx, cy, r); }
   const t = state.menu.tgtT;
   for (let j = 0; j <= lv; j++) {
     const u = Math.max(0, Math.min(1, (t - j * 0.12) / 0.26));
     if (u <= 0) continue;
-    const an = TGT_ANG[lv][j], rr = TGT_R[lv];
+    const an = TGT_ANG[lv][j], rr = Math.round(R * TGT_R[lv]) + (lv === 2 ? 1 : 0);
     const lx = cx + Math.round(Math.cos(an) * rr), ly = cy + Math.round(Math.sin(an) * rr);
     const fly = Math.round((1 - easeOut(u)) * 28);
     const ax = lx - fly, ay = ly - fly;
@@ -2391,29 +2395,23 @@ function drawLobbyTarget(x, y, lv, rc, now, a) {
     if (since >= 0 && since < 0.1) { ctx.fillStyle = '#ffffff'; ctx.fillRect(lx - 1, ly, 3, 1); ctx.fillRect(lx, ly - 1, 1, 3); }
   }
 }
-// The difficulty at the rivals' panel's head: three plates stacked easy to
-// hard, each carrying its level's name and its tier in pips, the picked one
-// filled in the rivals' paint, the hovered one lifting; the target beside
-// them shows the hovered level's arrows, else the picked one's.
-function drawLobbyDiff(now, a, slide) {
+// The three difficulty plates (the AI pop-up): stacked easy to hard, each
+// carrying its level's name and its tier in pips, the picked one filled in
+// the rivals' paint, the hovered one lifting (menu.dhover).
+function drawDiffPlates(diff, rise, rc, a) {
   const m = state.menu;
-  const { diff, tgt } = lobbyLayout();
   const lv = settings.aiLevel | 0;
-  const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? lobbyHit() : null;
-  const hk = hover && hover.startsWith('diff') ? +hover.slice(4) : -1;
   for (let k = 0; k < diff.length; k++) {
     const r = diff[k], hv = m.dhover[k] || 0, on = k === lv, lift = on ? 0 : Math.round(hv);
-    const x = r.x + slide, y = r.y - lift;
+    const x = r.x, y = r.y + rise - lift;
     ctx.globalAlpha = a;
-    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, r.y + 2, r.w, r.h);
+    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, r.y + rise + 2, r.w, r.h);
     ctx.fillStyle = on ? rc : hv > 0.5 ? '#8fa0c8' : '#2c3560'; ctx.fillRect(x, y, r.w, r.h);
     ctx.fillStyle = on ? '#3a1622' : '#0f1632'; ctx.fillRect(x + 1, y + 1, r.w - 2, r.h - 2);
     ctx.fillStyle = on ? '#f4f7ff' : hv > 0.5 ? '#c8d4ee' : '#5a6690';
     for (let j = 0; j <= k; j++) ctx.fillRect(x + 4 + j * 3, y + 5, 2, 3);
     drawPixelTextShadow(ctx, AI_LEVELS[k].name, x + 15, y + 4, on ? '#f4f7ff' : hv > 0.5 ? '#ffd95c' : '#8fa8d0', '#0a0e23');
   }
-  drawLobbyTarget(tgt.x + slide, tgt.y, hk >= 0 ? hk : lv, rc, now, a);
 }
 
 // a bare chevron, d = -1 pointing left, 1 right: the arrow grammar, no plate
@@ -2423,41 +2421,45 @@ function drawChevron(x, y, d, col) {
   ctx.fillStyle = col;
   for (let i = 0; i < 9; i++) { const dx = d < 0 ? 8 - i : i; ctx.fillRect(x + dx, y + i, 3, 1); ctx.fillRect(x + dx, y + 17 - i, 3, 1); }
 }
-// The map at the top centre: this seed's valley in the picked shape on its
-// plate, a chevron either side (solo only - in a room the shape is the
-// host's), the shape's name under it and the seed row under that. A slide
+// The map plate on its slab: this seed's valley in the picked shape. A slide
 // in flight (m.mapSlide, mapStep) carries the picture off toward the pressed
 // chevron and the neighbour's in behind it, through a clip the plate's size.
-function drawLobbyMap(now, a) {
-  const m = state.menu;
-  const { mapc: r, arrows, name, seed } = lobbyLayout();
-  const solo = NET.role === 'solo';
-  const hover = solo && m.screenT >= 1 && m.gearT <= 0 ? lobbyHit() : null;
-  const sl = m.mapSlide;
-  ctx.globalAlpha = a;
+// lift is the hover's pixel.
+function drawMapPlate(r, lift) {
+  const sl = state.menu.mapSlide;
+  const y = r.y - lift;
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  ctx.fillStyle = '#2c3560'; ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  ctx.fillStyle = lift ? '#8fa0c8' : '#2c3560'; ctx.fillRect(r.x, y, r.w, r.h);
+  ctx.fillStyle = '#0f1632'; ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
   const pic = r.w - 4;
-  ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, r.y + 2, pic, pic); ctx.clip();
+  ctx.save(); ctx.beginPath(); ctx.rect(r.x + 2, y + 2, pic, pic); ctx.clip();
   if (sl) {
     const off = Math.round(easeInOut(sl.t) * (pic + 6));
-    ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2 - sl.d * off, r.y + 2);
-    ctx.drawImage(mapChip(sl.k, pic), r.x + 2 + sl.d * (pic + 6 - off), r.y + 2);
-  } else ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2, r.y + 2);
+    ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2 - sl.d * off, y + 2);
+    ctx.drawImage(mapChip(sl.k, pic), r.x + 2 + sl.d * (pic + 6 - off), y + 2);
+  } else ctx.drawImage(mapChip(MAP_TYPE, pic), r.x + 2, y + 2);
   ctx.restore();
-  if (solo) for (const ar of arrows) {
-    const hot = hover === (ar.d < 0 ? 'mapl' : 'mapr');
-    drawChevron(ar.x + (hot ? ar.d : 0), ar.y, ar.d, hot ? '#ffd95c' : '#8fa8d0');
-  }
-  const nm = mapName(sl ? sl.k : MAP_TYPE);
-  drawPixelTextShadow(ctx, nm, name.x - (pixelTextWidth(nm) >> 1), name.y, '#ffd95c', '#0a0e23');
-  if (solo) {
-    const sh = hover === 'seed' ? 1 : 0;
-    ctx.globalAlpha = a * (sh ? 1 : 0.8);
-    drawPixelTextShadow(ctx, SEED_TXT, seed.x, seed.y + 3 - sh, sh ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
-    drawSeedDie(seed.x + pixelTextWidth(SEED_TXT) + 6, seed.y - sh, sh, now);
-  }
+}
+// The top centre: the map plate and the target side by side, mirrored about
+// the middle, the shape's name under the one and the level's under the
+// other - plain white, gold only while the picture over it is under the
+// hand (each is the way into its pop-up: the map's shape, seed and die;
+// the rivals' level). In a room the map is a readout (the host's world)
+// and a guest's target is too.
+function drawLobbyTop(now, a) {
+  const m = state.menu;
+  const { mapc, tgt, mapName: mn, tgtName: tn } = lobbyLayout();
+  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
+  const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
+  ctx.globalAlpha = a;
+  const mh = hover === 'map', th = hover === 'ai';
+  drawMapPlate(mapc, mh ? 1 : 0);
+  const shape = mapName(m.mapSlide ? m.mapSlide.k : MAP_TYPE);
+  drawPixelTextShadow(ctx, shape, mn.x - (pixelTextWidth(shape) >> 1), mn.y, mh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
+  const lv = settings.aiLevel | 0;
+  drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, rc, now, a);
+  const level = AI_LEVELS[lv].name;
+  drawPixelTextShadow(ctx, level, tn.x - (pixelTextWidth(level) >> 1), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   ctx.globalAlpha = a;
 }
 
@@ -2486,15 +2488,14 @@ function renderLobby(now, a) {
   const slide = Math.round((1 - a) * 30);
   const counting = m.countT > 0 || m.lockT > 0;
   drawLobbyRosters(now, a, slide);
-  drawLobbyDiff(now, a, slide);
-  drawLobbyMap(now, a);
+  drawLobbyTop(now, a);
   drawLobbyStage(now, a, sw);
   drawRoomPlate(now, a);
   // LOCK IN - a bare word at the foot, the main menu's grammar: white, gold
   // and lifted a px under the hand, sunk a px on the press, and gone while the
   // count wears its place. A guest's room: the word is the host's name, still
   // - the count comes over it when the host presses
-  const hover = m.screenT >= 1 && m.gearT <= 0 ? lobbyHit() : null;
+  const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
   ctx.globalAlpha = a;
   if (m.countT <= 0) {
     const hv = !NET.isClient && hover === 'play' ? 1 : 0;
@@ -2603,17 +2604,9 @@ function renderGear(now, a) {
   ctx.fillStyle = 'rgba(4,6,18,' + (0.62 * a).toFixed(3) + ')';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   const rise = Math.round((1 - a) * 12);
-  const py = panel.y + rise;
   ctx.globalAlpha = a;
-  // the slab, in the planks' own chrome
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(panel.x + 3, py + 3, panel.w, panel.h);
-  ctx.fillStyle = '#0a0e23'; chamRect(panel.x, py, panel.w, panel.h);
-  ctx.fillStyle = '#10173a'; chamRect(panel.x + 1, py + 1, panel.w - 2, panel.h - 2);
-  ctx.fillStyle = '#35426e';
-  ctx.fillRect(panel.x + 2, py + 1, panel.w - 4, 1); ctx.fillRect(panel.x + 1, py + 2, 1, panel.h - 4);
-  ctx.fillStyle = '#080c1c';
-  ctx.fillRect(panel.x + 2, py + panel.h - 2, panel.w - 4, 1); ctx.fillRect(panel.x + panel.w - 2, py + 2, 1, panel.h - 4);
-  const gh = m.gearT >= 1 && mouse.inside ? gearScreenHit() : null;
+  drawPopSlab(panel, rise);
+  const gh = m.popT >= 1 && mouse.inside ? gearScreenHit() : null;
   drawGearPreview({ x: prev.x, y: prev.y + rise, w: prev.w, h: prev.h }, now);
   // the ledger: the numbers as picked now - and, under a hovered variant,
   // what they would BECOME, green where that is better and red where worse
@@ -2664,8 +2657,24 @@ function renderGear(now, a) {
     : GEAR[m.grow][player.gear[m.grow]].name;
   drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
     gh && gh !== 'x' && gh !== 'panel' && gh.v !== player.gear[gh.row] ? '#f4f7ff' : '#ffd95c', '#0a0e23');
-  // the X: the one way out that is drawn (ESC and a click outside also close)
-  const hot = gh === 'x';
+  drawPopX(xr, rise, gh === 'x');
+  ctx.globalAlpha = 1;
+}
+// a pop-up's slab in the planks' own chrome, dimming the lobby under it, and
+// its X: the one way out that is drawn (ESC and a click outside also close)
+function drawPopSlab(panel, rise) {
+  const a = ctx.globalAlpha, py = panel.y + rise;
+  ctx.fillStyle = 'rgba(4,6,18,' + (0.62 * a).toFixed(3) + ')';
+  ctx.globalAlpha = 1; ctx.fillRect(0, 0, VIEW_W, VIEW_H); ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(panel.x + 3, py + 3, panel.w, panel.h);
+  ctx.fillStyle = '#0a0e23'; chamRect(panel.x, py, panel.w, panel.h);
+  ctx.fillStyle = '#10173a'; chamRect(panel.x + 1, py + 1, panel.w - 2, panel.h - 2);
+  ctx.fillStyle = '#35426e';
+  ctx.fillRect(panel.x + 2, py + 1, panel.w - 4, 1); ctx.fillRect(panel.x + 1, py + 2, 1, panel.h - 4);
+  ctx.fillStyle = '#080c1c';
+  ctx.fillRect(panel.x + 2, py + panel.h - 2, panel.w - 4, 1); ctx.fillRect(panel.x + panel.w - 2, py + 2, 1, panel.h - 4);
+}
+function drawPopX(xr, rise, hot) {
   ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
   ctx.fillRect(xr.x, xr.y + rise, xr.w, xr.h);
   ctx.fillStyle = '#0f1632';
@@ -2675,6 +2684,141 @@ function renderGear(now, a) {
     ctx.fillRect(xr.x + 3 + k, xr.y + rise + 3 + k, 1, 1);
     ctx.fillRect(xr.x + xr.w - 4 - k, xr.y + rise + 3 + k, 1, 1);
   }
+}
+// a pop-up's inert hit answers: 'x', 'panel' (the slab swallows the press)
+// or null (outside - a click there closes)
+function popFrameHit(panel, xr) {
+  if (mouse.x >= xr.x - 3 && mouse.x < xr.x + xr.w + 3 && mouse.y >= xr.y - 3 && mouse.y < xr.y + xr.h + 3) return 'x';
+  if (mouse.x >= panel.x && mouse.x < panel.x + panel.w && mouse.y >= panel.y && mouse.y < panel.y + panel.h) return 'panel';
+  return null;
+}
+
+// ---- the AI pop-up ---------------------------------------------------------
+// Off the target on the lobby: the rivals' level. The target big on the left
+// with the hovered (else the picked) level's arrows in it, the three plates
+// stacked on the right (drawDiffPlates), the X. Up/Down move the pick, Enter
+// or Esc close.
+function aiLayout() {
+  const cx = Math.round(VIEW_W / 2);
+  const pw = 10 + POP_PIC + 12 + LOBBY_LV_W + 10, ph = POP_PIC + 24;
+  const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
+  const diff = [];
+  const dy = py + 12 + ((POP_PIC - (3 * LOBBY_LV_H + 6)) >> 1);
+  for (let k = 0; k < 3; k++) diff.push({ x: px + 10 + POP_PIC + 12, y: dy + k * (LOBBY_LV_H + 3), w: LOBBY_LV_W, h: LOBBY_LV_H });
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, tgt: { x: px + 10, y: py + 12, w: POP_PIC, h: POP_PIC }, diff,
+    xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
+}
+function aiScreenHit() {
+  const { diff, panel, xr } = aiLayout();
+  for (let k = 0; k < diff.length; k++) { const r = diff[k]; if (mouse.x >= r.x - 2 && mouse.x < r.x + r.w + 2 && mouse.y >= r.y - 2 && mouse.y < r.y + r.h + 2) return 'diff' + k; }
+  return popFrameHit(panel, xr);
+}
+function beginAiPick() { if (!NET.isClient) openPop('ai'); }
+function aiKey(k) {
+  const m = state.menu;
+  if (m.lockT > 0) return;
+  const lv = settings.aiLevel | 0;
+  if (k === 'escape' || k === 'backspace' || k === 'enter' || k === ' ') leavePop();
+  else if (moveDir(k) === 'up') setAiLevel(Math.max(0, lv - 1));
+  else if (moveDir(k) === 'down') setAiLevel(Math.min(AI_LEVELS.length - 1, lv + 1));
+}
+function aiClick() {
+  const m = state.menu;
+  if (m.lockT > 0 || m.popT < 1) return;
+  const h = aiScreenHit();
+  if (h === null || h === 'x') { leavePop(); return; }
+  if (h === 'panel') return;
+  setAiLevel(+h.slice(4));
+}
+function renderAiPick(now, a) {
+  const m = state.menu;
+  const { panel, tgt, diff, xr } = aiLayout();
+  const rise = Math.round((1 - a) * 12);
+  ctx.globalAlpha = a;
+  drawPopSlab(panel, rise);
+  const h = m.popT >= 1 && mouse.inside ? aiScreenHit() : null;
+  const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
+  const hk = h && h.startsWith('diff') ? +h.slice(4) : -1;
+  drawLobbyTarget(tgt.x, tgt.y + rise, tgt.w, hk >= 0 ? hk : settings.aiLevel | 0, rc, now, a);
+  drawDiffPlates(diff, rise, rc, a);
+  drawPopX(xr, rise, h === 'x');
+  ctx.globalAlpha = 1;
+}
+
+// ---- the map pop-up --------------------------------------------------------
+// Off the map plate on the lobby (solo only): the shape, the seed and the
+// die. The picture big in the middle with a chevron either side (mapStep:
+// the slide, then the page), the shape's name under it, the seed row and
+// the die under that (rerollWorld), the X. The keyboard walks two rows
+// (menu.mrow): the picture (Left/Right step the shape) and the seed (Enter
+// rolls); Enter on the picture, Esc or Backspace close.
+function mapLayout() {
+  const cx = Math.round(VIEW_W / 2);
+  const pw = POP_PIC + 2 * 34 + 20, ph = POP_PIC + 52;
+  const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
+  const pic = { x: cx - (POP_PIC >> 1), y: py + 10, w: POP_PIC, h: POP_PIC };
+  const ay = pic.y + (POP_PIC >> 1) - 9;
+  const arrows = [{ x: pic.x - 24, y: ay, w: 12, h: 18, d: -1 }, { x: pic.x + pic.w + 12, y: ay, w: 12, h: 18, d: 1 }];
+  const sw = pixelTextWidth(SEED_TXT) + 6 + 11;
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, pic, arrows,
+    name: { x: cx, y: pic.y + pic.h + 6 },
+    seed: { x: cx - (sw >> 1), y: pic.y + pic.h + 20, w: sw, h: 12 },
+    xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
+}
+function mapScreenHit() {
+  const { arrows, seed, panel, xr } = mapLayout();
+  const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
+  if (over(arrows[0], 3, 3)) return 'mapl';
+  if (over(arrows[1], 3, 3)) return 'mapr';
+  if (over(seed, 3, 2)) return 'seed';
+  return popFrameHit(panel, xr);
+}
+function beginMapPick() {
+  if (NET.role !== 'solo') return;
+  state.menu.mrow = 0;
+  openPop('map');
+}
+function mapKey(k) {
+  const m = state.menu;
+  if (m.lockT > 0) return;
+  if (k === 'escape' || k === 'backspace') leavePop();
+  else if (moveDir(k) === 'left') { if (m.mrow === 0) mapStep(-1); }
+  else if (moveDir(k) === 'right') { if (m.mrow === 0) mapStep(1); }
+  else if (moveDir(k) === 'down' && m.mrow === 0) { m.mrow = 1; SFX.pickup(); }
+  else if (moveDir(k) === 'up' && m.mrow === 1) { m.mrow = 0; SFX.pickup(); }
+  else if (k === 'enter' || k === ' ') { if (m.mrow === 1) rerollWorld(); else leavePop(); }
+}
+function mapClick() {
+  const m = state.menu;
+  if (m.lockT > 0 || m.popT < 1) return;
+  const h = mapScreenHit();
+  if (h === null || h === 'x') { leavePop(); return; }
+  if (h === 'panel') return;
+  if (h === 'mapl') mapStep(-1);
+  else if (h === 'mapr') mapStep(1);
+  else if (h === 'seed') { m.mrow = 1; rerollWorld(); }
+}
+function renderMapPick(now, a) {
+  const m = state.menu;
+  const { panel, pic, arrows, name, seed, xr } = mapLayout();
+  const rise = Math.round((1 - a) * 12);
+  ctx.globalAlpha = a;
+  drawPopSlab(panel, rise);
+  const h = m.popT >= 1 && mouse.inside ? mapScreenHit() : null;
+  const keyed = m.popT >= 1 && !mouse.inside; // the keyboard's cursor stands in for the hand
+  drawMapPlate({ x: pic.x, y: pic.y + rise, w: pic.w, h: pic.h }, 0);
+  for (const ar of arrows) {
+    const hot = h === (ar.d < 0 ? 'mapl' : 'mapr') || (keyed && m.mrow === 0);
+    drawChevron(ar.x + (hot ? ar.d : 0), ar.y + rise, ar.d, hot ? '#ffd95c' : '#f4f7ff');
+  }
+  const nm = mapName(m.mapSlide ? m.mapSlide.k : MAP_TYPE);
+  drawPixelTextShadow(ctx, nm, name.x - (pixelTextWidth(nm) >> 1), name.y + rise, '#f4f7ff', '#0a0e23');
+  const sh = h === 'seed' || (keyed && m.mrow === 1) ? 1 : 0;
+  ctx.globalAlpha = a * (sh ? 1 : 0.8);
+  drawPixelTextShadow(ctx, SEED_TXT, seed.x, seed.y + rise + 3 - sh, sh ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
+  drawSeedDie(seed.x + pixelTextWidth(SEED_TXT) + 6, seed.y + rise - sh, sh, now);
+  ctx.globalAlpha = a;
+  drawPopX(xr, rise, h === 'x');
   ctx.globalAlpha = 1;
 }
 
@@ -2687,7 +2831,7 @@ function renderGear(now, a) {
 // for) and under that the SEED ROW: the seed's number and its die
 // (rerollWorld), the one other thing that decides which valley this is. The
 // chevrons either side (mapStep) slide the picture over to the neighbouring
-// shape (drawLobbyMap draws the slide).
+// shape (drawMapPlate draws the slide).
 //
 // A pick is a PAGE. The ground is grown once at boot off consts every
 // deterministic value in the game closes over, so the die's own whiteout
@@ -3316,12 +3460,14 @@ function renderTitle(now) {
     ctx.globalAlpha = 1;
   }
 
-  // lobby stays fully lit under either of its pop-ups; each rides its
-  // lobby stays fully lit under its gear pop-up, which rides its own
-  // ease (gearT)
-  const gc = easeInOut(state.menu.gearT);
+  // the lobby stays fully lit under its pop-ups (gear, map, ai), which ride
+  // one ease of their own (popT); m.pop names the one to draw
+  const gc = easeInOut(state.menu.popT);
   if (sc > 0.005) renderLobby(now, sc * (1 - out));
-  if (sc > 0.005 && gc > 0.005) renderGear(now, sc * (1 - out) * gc);
+  if (sc > 0.005 && gc > 0.005) {
+    const pa = sc * (1 - out) * gc;
+    if (m.pop === 'gear') renderGear(now, pa); else if (m.pop === 'map') renderMapPick(now, pa); else if (m.pop === 'ai') renderAiPick(now, pa);
+  }
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
   if (rc > 0.005) renderRooms(now, rc * (1 - out));

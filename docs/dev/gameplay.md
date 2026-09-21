@@ -2765,7 +2765,7 @@ a room on the relay and opens the **waiting room** - the lobby, which every peer
 sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
 your side's roster, a crown over the host's card, a brighter rim on every person's card than a
 bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
-guest sees it minus the difficulty plates, the map chevrons and the character swap (its class came with it), and
+guest sees it minus the two pop-ups off the map plate and the target and the character swap (its class came with it), and
 where LOCK IN would be a frozen plank wearing the host's name: the host's count comes over it and
 the eagle on the host's zero. A guest whose host walks out of the waiting room is back on the
 rooms list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
@@ -2783,8 +2783,8 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
-`aiLevel` — the rival bots' difficulty plate on the lobby, an index into `AI_LEVELS` (js/ai.js) —
-`mapType` — the map shape picked with the lobby's map chevrons, an index into `MAPS` (js/world.js); it is
+`aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai.js) —
+`mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/world.js); it is
 what the NEXT load grows, since a pick is a page ([map shapes](world.md#map-shapes)) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
 each action is bound to under each

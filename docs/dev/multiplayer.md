@@ -331,8 +331,8 @@ three with the chevrons beside the stage figure; bots hash theirs — class, loo
 variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
-the rest of the count) — and the three plates
-heading the rivals' panel set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
+the rest of the count) — and the target at the top, whose pop-up's three plates
+set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same

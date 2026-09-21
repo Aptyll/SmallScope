@@ -1700,7 +1700,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 - **Die** (`drawSeedDie` — named apart from the create screen's `drawDie`, js/ui/chars.js,
   a later file whose declaration would take a same-named one): shows `1 + (SEED % 6)` (faces
   1–6), cycles faces and jitters while hovered, tumbles while `menu.rolling`. It stands on
-  [lobby](#lobby)'s seed row, under the map. Activating it (`rerollWorld`) starts a whiteout via
+  the seed row of the [lobby](#lobby)'s map pop-up. Activating it (`rerollWorld`) starts a whiteout via
   `state.fade` (`{ a, to, spd, color, then }`, stepped in `update()`, painted after the info
   stack) and then navigates to `?seed=<new>&map=<this shape>` — `SEED` is a const everything
   closes over, so a new world is a new page. Boot checks `sessionStorage['softfall.reroll']` and
@@ -1731,35 +1731,27 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
-  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'diff' + k`, `'charl'`/`'charr'`,
-  `'mapl'`/`'mapr'`, `'seed'` or null) are the rect source for both drawing and the mouse.
+  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'charl'`/`'charr'`
+  or null) are the rect source for both drawing and the mouse.
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
   `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
   player order under a `LOBBY_HEAD` head, each frame as tall as the view allows up to
   `LOBBY_FRAME_MAX` — the side's paint as a bar down the screen edge, the player's body at 2×
   toward it (1× in a short view) and the name inward of the body, yours gold-rimmed, a rival's
   **face-down** (the body as one flat shade through the scratch canvas) until the countdown
-  turns it. Your panel's head is empty, level with the rivals'. Heading the **rivals'** panel is the **difficulty**
-  (`drawLobbyDiff`): three `LOBBY_LV_W`×`LOBBY_LV_H` plates stacked easy to hard, each carrying its
-  level's name (`AI_LEVELS`, js/ai.js — NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the
-  picked one filled in the rivals' paint, the hovered one lifting (`menu.dhover`); a click is
-  `setAiLevel`, which saves the profile's settings. Beside the plates sits the **target**
-  (`drawLobbyTarget`, `LOBBY_TGT` across, `pxDisc` rings in white and the rivals' paint) with
-  `level + 1` arrows stuck in it — at the rim on NORMAL, the inner ring on HARD, the bullseye on
-  IMPOSSIBLE (`TGT_R`/`TGT_ANG`) — which fly in from the upper left over `menu.tgtT` whenever
-  the level it shows changes (`menu.tgtLv`: the hovered plate's, else the picked one's), a glint
-  where each lands. At the **top centre** sits the **map** (`drawLobbyMap`): a `LOBBY_MAP` plate
-  holding this seed's own valley in the picked shape ([map shapes](world.md#map-shapes)) —
-  `mapChip` bakes it straight off `mapTerrain` at 1 px a sampled tile with the road's diagonal
-  inked over it — the shape's name under it and the **seed row** under that (`SEED_TXT` and the
-  [die](#main-menu-title), gold under the hand; a click is `rerollWorld`). A bare **chevron
-  either side** (`drawChevron`, gold under the hand) or Left/Right is `mapStep(±1)`: the picture
-  slides toward the pressed chevron with the neighbouring shape's coming in behind it
-  (`menu.mapSlide = {d, k, t}`, clipped to the plate, the name already the new one) while
-  `pickMap` runs its whiteout — a pick is a page: it saves `settings.mapType` and loads
-  `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so js/boot.js
-  lands straight back on this screen. In a room the chevrons and the seed row are not drawn and
-  not hit — the world is the host's (`NET.role` must be `'solo'`). The **stage** under the map
+  turns it. Both panels' heads are empty, level with each other. At the **top centre**, mirrored
+  about the middle `LOBBY_TOP_GAP` apart (`drawLobbyTop`), stand the **map plate** and the
+  **target**, each `LOBBY_MAP` square with its name under it in plain white — the shape's, the
+  level's — gold only while the picture over it is under the hand, when the plate lifts a px:
+  each is the way into its own pop-up. The map plate (`drawMapPlate`) holds this seed's own
+  valley in the picked shape ([map shapes](world.md#map-shapes)) — `mapChip` bakes it straight
+  off `mapTerrain` at 1 px a sampled tile with the road's diagonal inked over it. The target
+  (`drawLobbyTarget`, `pxDisc` rings in white and the rivals' paint scaled off its width) wears
+  `level + 1` arrows — at the rim on NORMAL, the inner ring on HARD, the bullseye on IMPOSSIBLE
+  (`TGT_R`, fractions of the disc, and `TGT_ANG`) — which fly in from the upper left over
+  `menu.tgtT` whenever the level it shows changes (`menu.tgtLv`), a glint where each lands. In a
+  room the map is a readout (the host's world: `'map'` is hit only when `NET.role` is
+  `'solo'`) and a guest's target is too. The **stage** under them
   holds **your character** alone (`drawLobbyStage`): the 48 px model (`SPRITES.portrait`,
   [sprites.md](sprites.md#looks-a-character-on-the-class-body)) at `LOBBY_MODEL` (3×, the create
   screen's size) in your side's paint under a warm pool of light with a gold ring turning on the
@@ -1771,7 +1763,35 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;
   `menu.cswapT` pops the stage). **No ability wells and no class picker**: the class came with the
   character. The **collapsed gear widget** (the four picked variant icons in a row) sits under the
-  figure's feet, and clicking it opens the gear pop-up. Under it, at the foot of the view, **LOCK
+  figure's feet, and clicking it opens the gear pop-up.
+
+  **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
+  (`menu.popT`, `menu.pop` naming the open one through its fade-out; `popOpen()`/`popHit()`/
+  `openPop`/`leavePop`, and `drawPopSlab`/`drawPopX`/`popFrameHit` for the slab, the X and the
+  inert hits they share; `m.screen` is `'gear'`, `'map'` or `'ai'` while one is open). Esc,
+  Backspace, the X or a click off the slab closes any of them. The **gear pop-up** is
+  [below](#the-gear-pop-up). The **map pop-up** (`menu.screen = 'map'`, off the map plate, solo
+  only — `beginMapPick`, `mapLayout`/`mapScreenHit`, `renderMapPick`): the picture `POP_PIC` big
+  in the middle with a bare **chevron either side** (`drawChevron`, white, gold under the hand) —
+  a click or Left/Right is `mapStep(±1)`: the picture slides toward the pressed chevron with the
+  neighbouring shape's coming in behind it (`menu.mapSlide = {d, k, t}`, clipped to the plate,
+  the name already the new one, the lobby's small plate sliding the same way under the slab)
+  while `pickMap` runs its whiteout — a pick is a page: it saves `settings.mapType` and loads
+  `?seed=<this seed>&map=<the pick>`, leaving `softfall.select` in `sessionStorage` so js/boot.js
+  lands straight back on the lobby — the shape's name under it in white, and the **seed row**
+  under that (`SEED_TXT` and the [die](#main-menu-title), gold under the hand; a click is
+  `rerollWorld`). The keyboard walks two rows (`menu.mrow`: the picture, then the seed —
+  Up/Down; the lit row stands in for the hand while the pointer is off the view), Enter on the
+  seed rolls, Enter on the picture closes. The **AI pop-up** (`menu.screen = 'ai'`, off the
+  target, host or solo — `beginAiPick`, `aiLayout`/`aiScreenHit`, `renderAiPick`): the target
+  `POP_PIC` big on the left wearing the hovered (else the picked) level's arrows, and on the
+  right the **three difficulty plates** (`drawDiffPlates`: `LOBBY_LV_W`×`LOBBY_LV_H`, stacked
+  easy to hard, each carrying its level's name (`AI_LEVELS`, js/ai.js — NORMAL / HARD /
+  IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
+  lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
+  settings, and Enter closes.
+
+  Under the gear row, at the foot of the view, **LOCK
   IN** is a bare word in the [main menu](#main-menu-title)'s grammar (`MENU_TXT_SCALE`, white,
   gold and lifted a px under the hand, sunk a px on the press — no plank). Enter, Space or the
   word call `pressPlay()` — `setClass` locks the class and the **countdown** starts:
@@ -1843,8 +1863,9 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
 - Every plate here shares one grammar (`drawWell`): a dark drop shadow, a slate rim that
   lightens under the hand and goes gold when picked, a navy floor. Hover eases live in
   `menu.khover`, keyed by hit id.
-- **Gear pop-up** (`menu.screen = 'gear'`, easing over the still-lit select screen on
-  `menu.gearT`): a dim, then a floating panel in two columns (`gearLayout()`/`gearScreenHit()`).
+<a id="the-gear-pop-up"></a>
+- **Gear pop-up** (`menu.screen = 'gear'`, easing over the still-lit lobby on
+  `menu.popT`): a dim, then a floating panel in two columns (`gearLayout()`/`gearScreenHit()`).
   LEFT is the **live preview** (`drawGearPreview`): the chosen class walking in place at 4×
   wearing its four leather bands (every pre-match pick is the free level 1) with the class
   weapon at hand, and under it the **stat ledger** — one labelled row per number gear can touch
