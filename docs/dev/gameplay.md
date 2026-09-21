@@ -741,7 +741,7 @@ over turns that one arrow into three on the very next press; a kit that filled c
 that first find *past* the only projectile, where it does nothing. A `null` in `bits` is a real entry rather than a gap to
 skip: it is the reserved cell, `toolPlan` charges nothing for it, and `giveLoadout` right-aligns
 the row against the tool's own `cap` so the shot stays last whatever the body's size. The tensile
-budgets are sized for it — see [a tool](#a-tool). The gear pop-up's preview
+budgets are sized for it — see [a tool](#a-tool). The hero pop-up's preview
 shows the weapon at the body's side (`drawGearPreview`, js/ui/menu.js) — the other half of what a
 class flies out with.
 
@@ -2121,14 +2121,24 @@ variants with a distinct lane, all in the `GEAR` table in the `players` banner:
 
 The variant pick is free and is **level 1**; in-match gold buys each piece to level `GEAR_LV_MAX`
 (4) for `GEAR_COSTS` 10/20/35 — the second gold sink beside building. Levels reset with the match
-(every boot builds fresh `Player`s). The human picks variants in the **gear pop-up** — opened
-from the lobby's collapsed gear widget, all 12 variants at once as 32×32 icon wells beside a
+(every boot builds fresh `Player`s). The human picks variants in the **hero pop-up** — opened
+by clicking their figure on the lobby, all 12 variants at once as 32×32 icon wells beside a
 live preview and a real-number stat ledger with hover deltas (League runes-style; see
-[Main menu](rendering.md#main-menu-title)); `pickGear()` writes straight to `player.gear`. AI
-players hash all four variants from the seed in `initPlayers()`. **Every variant has its own
-icons**: the 12×12 material-swapped `SPRITES.gearIcons[slot][variant][material]` the HUD and
-the lobby's plaque wear, and the detailed 32×32 `GEAR32` set the pop-up's wells wear —
-a pick is a distinct picture, not a label.
+[the hero pop-up](rendering.md#the-hero-pop-up)); `pickGear()` writes straight to `player.gear`.
+AI players hash all four variants from the seed in `initPlayers()`. **Every variant has its own
+icons**: the 12×12 material-swapped `SPRITES.gearIcons[slot][variant][material]` the HUD
+wears, and the detailed 32×32 `GEAR32` set the pop-up's wells wear — a pick is a distinct
+picture, not a label.
+
+<a id="stat-points"></a>
+**Stat points** are the build's other half, in the same pop-up: `STAT_POINTS` (6) to spend a
+step at a time across `STAT_TRACKS` (js/player.js `stat points`) before the eagle — HEALTH +5,
+DAMAGE +0.5, ARMOR +0.5, WALK +2%, DODGE −0.15 s a point — each track a `mod(k, n)` folded
+into the kit by `refreshKit` after gear, so every kit-reading site picks them up for free.
+`player.pts` holds the spend (`spendPt`, js/ui/menu.js; `ptsSpent` the total); it rides the
+lock-in page with the gear (`softfall.drop`) and no profile keeps it. **The budget is the same
+for everybody** — AI players deal theirs from the seed in `initPlayers()`, a point at a time
+across the tracks — so a spend is a shape, never a head start, and the arsenal's flatness holds.
 
 **Worn gear shows on the sprite**: each piece at level 2+ lays a 1 px band of its material across
 the shared 16×16 body plan — hat, coat, hips, one mark per foot (`GEAR_MARKS`/`drawGearMarks`,
@@ -3092,7 +3102,7 @@ victory, the lobby) can never be undone by a release arriving after it. The
 | Track | Plays from | Loops |
 | --- | --- | --- |
 | `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveLobby()` back to the menu | yes |
-| `lobby` — FROZEN NORTH RUN CLASS SELECTION | `beginLobby()`; the gear pop-up keeps it | yes |
+| `lobby` — FROZEN NORTH RUN CLASS SELECTION | `beginLobby()`; the hero pop-up keeps it | yes |
 | `eagle` — FLYING ON EAGLE | `beginDrop()` | yes |
 | `jump` — JUMPING OFF EAGLE | `dropJump()` for the local player | no → `foxglove` |
 | `foxglove` — FOXGLOVE DROP | the end of `jump`, via `TRACKS.next` | no → silence |

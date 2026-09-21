@@ -166,10 +166,11 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'gear' | 'map' | 'ai' | 'wiki' | 'chars' | 'create'.
-    // 'gear', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
+    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'chars' | 'create'.
+    // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
-    // grow is the gear's keyboard row, gearFxT/gearFxSlot its equip flash,
+    // grow is the hero pop-up's keyboard row (gear rows, then the stat
+    // rows), gearFxT/gearFxSlot its equip flash,
     // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
     // is a surface of its own on wikiT, with wikiTab the open page (menu.js
     // `the wiki`).

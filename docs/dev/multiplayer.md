@@ -327,8 +327,8 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 The local player's class is **fixed on the character** it was created with (js/profile.js; the
 create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
 only way to the other class is another character, and the lobby swaps between the profile's
-three with the chevrons beside the stage figure; bots hash theirs — class, look **and** all four gear
-variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
+three with the chevrons beside the stage figure; bots hash theirs — class, look, all four gear
+variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
 the rest of the count) — and the target at the top, whose pop-up's three plates
@@ -720,7 +720,7 @@ The ladder:
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
 12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
    plus a 15-gold float is bought at rung 0 beside the skill point, from anywhere, mid-push or
-   mid-defence alike — the gear pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
+   mid-defence alike — the hero pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the
    shop is human-only except the drag that sells. Then, with a generator's price in hand, build a generator (or, 30% of the

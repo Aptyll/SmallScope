@@ -137,8 +137,7 @@ through the same code because the icon is centred on its own half-width.
 The **gear icons** are twelve 12×12 grids, **one per variant** (`gearLongsight` … `gearGhoststep`), each baked once per
 **material** — `GEAR_MAT_PALS`, leather → iron → steel → gold, plus the shared accent chars `w`
 (ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`: the glyph
-says which piece, the material says its level. Drawn by the HUD's gear plates and the lobby's
-collapsed gear widget; the gear pop-up's wells wear the detailed 32×32 `GEAR32` set instead
+says which piece, the material says its level. Drawn by the HUD's gear plates; the hero pop-up's wells wear the detailed 32×32 `GEAR32` set instead
 (js/ui/menu.js — see [gameplay.md](gameplay.md#gear)). `itemBag` is
 12×12 for the same reason — it sits in the same 18 px HUD well — but shares `ITPAL` with the
 8×8 item icons rather than taking a material palette: it is one object, not four levels of one.

@@ -553,7 +553,7 @@ decay flash grammar, so the thing you are meant to read is still blinking when y
 The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a price
 that wash *is* the arrival, but over fourteen rows it would drown the green ones that are the news,
 so the frame pulses and the rows do the blinking. **Green is better and red is worse**, by the row's
-own `dir`, so a draw time that *fell* reads green — the grammar the gear pop-up's hover deltas
+own `dir`, so a draw time that *fell* reads green — the grammar the hero pop-up's hover deltas
 already teach.
 
 **One stats plate is ever up.** A second change inside the first one's life drops it and flies a
@@ -568,11 +568,11 @@ an unchanged number would be a lie. One cue per batch (`SFX.stat(up)`), never on
 card moves three numbers and is one thing that happened; its direction is the batch's balance, so a
 card that trades health for damage still speaks.
 
-It reads `GEAR_STATS`, the one table the [gear pop-up](#the-character-screens) prices a pick from
+It reads `GEAR_STATS`, the one table the [hero pop-up](#the-hero-pop-up) prices a pick from
 and the [character panel](#the-character-panel-g) spells a body out with, so the three can never
 disagree about what a stat is, how it prints, or which way is up. Two rows carry the **hero level**
 that the kit itself never holds — `levelMaxHp` adds the hp and `emitBit` the damage — so the
-getters take `(kit, player)` and fold it in when a player is passed. The gear pop-up prices a
+getters take `(kit, player)` and fold it in when a player is passed. The hero pop-up prices a
 pre-match pick where every hero is level 1 and passes nothing; everything reading a live body passes
 it. Without that a level-up would move no row at all.
 
@@ -1769,15 +1769,16 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   the neighbouring character active — `activateChar` → `applyCharacter`, so the stage, the kit
   and the loadout follow it (`menu.csel` mirrors `player.cls` for the gear preview;
   `menu.cswapT` pops the stage). **No ability wells and no class picker**: the class came with the
-  character. The **collapsed gear widget** (the four picked variant icons in a row) sits under the
-  figure's feet, and clicking it opens the gear pop-up.
+  character. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
+  body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear, stat points and the
+  abilities. No gear shows on the lobby itself.
 
   **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
   (`menu.popT`, `menu.pop` naming the open one through its fade-out; `popOpen()`/`popHit()`/
   `openPop`/`leavePop`, and `drawPopSlab`/`drawPopX`/`popFrameHit` for the slab, the X and the
-  inert hits they share; `m.screen` is `'gear'`, `'map'` or `'ai'` while one is open). Esc,
-  Backspace, the X or a click off the slab closes any of them. The **gear pop-up** is
-  [below](#the-gear-pop-up). The **map pop-up** (`menu.screen = 'map'`, off the map plate, solo
+  inert hits they share; `m.screen` is `'hero'`, `'map'` or `'ai'` while one is open). Esc,
+  Backspace, the X or a click off the slab closes any of them. The **hero pop-up** is
+  [below](#the-hero-pop-up). The **map pop-up** (`menu.screen = 'map'`, off the map plate, solo
   only — `beginMapPick`, `mapLayout`/`mapScreenHit`, `renderMapPick`): the picture `POP_PIC` big
   in the middle with a bare **chevron either side** (`drawChevron`, white, gold under the hand) —
   a click or Left/Right is `mapStep(±1)`: the picture slides toward the pressed chevron with the
@@ -1800,8 +1801,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
   settings, and Enter closes.
 
-  Under the gear row, at the foot of the view, **LOCK
-  IN** is a bare word in the [main menu](#main-menu-title)'s grammar (`MENU_TXT_SCALE`, white,
+  At the foot of the view, **LOCK
+  IN** is a bare word in the [main menu](#main-menu-title)'s grammar, big (`LOBBY_LOCK_SCALE`, white,
   gold and lifted a px under the hand, sunk a px on the press — no plank). Enter, Space or the
   word call `pressPlay()` — `setClass` locks the class and the **countdown** starts:
   `menu.countT` runs `COUNT_T` (5) seconds; a gold ring bursts out from the figure's feet across
@@ -1811,10 +1812,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
   tick** (`lobbyRevealed()`: the first on the press, the last on ONE, all of them once it has
   run out, and none at rest — a white flash as each turns). Gear stays open through the count
-  (the widget still opens its pop-up, which shuts itself at zero); a character swap or a map step is
+  (the figure still opens its pop-up, which shuts itself at zero); a character swap or a map step is
   refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
   the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
-  where zero would have (every frame face-up, the gear pop-up shut). <a id="lobby-lock-in"></a>At
+  where zero would have (every frame face-up, the hero pop-up shut). <a id="lobby-lock-in"></a>At
   zero, or on that press, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
   ride, below) — unless the picked shape is not the one this page grew: a shape is grown at boot
   (`MAP_TYPE`), so `lockIn` then loads `?seed=<this seed>&map=<the pick>` with the gear picks in
@@ -1876,27 +1877,37 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
 - Every plate here shares one grammar (`drawWell`): a dark drop shadow, a slate rim that
   lightens under the hand and goes gold when picked, a navy floor. Hover eases live in
   `menu.khover`, keyed by hit id.
-<a id="the-gear-pop-up"></a>
-- **Gear pop-up** (`menu.screen = 'gear'`, easing over the still-lit lobby on
-  `menu.popT`): a dim, then a floating panel in two columns (`gearLayout()`/`gearScreenHit()`).
-  LEFT is the **live preview** (`drawGearPreview`): the chosen class walking in place at 4×
-  wearing its four leather bands (every pre-match pick is the free level 1) with the class
-  weapon at hand, and under it the **stat ledger** — one labelled row per number gear can touch
-  (`GEAR_STATS`, whose getters take an optional player and are handed none here — every
-  pre-match hero is level 1), real values computed by `gearPreviewKit` through the same `baseKit`
-  (js/player.js) the sim's `refreshKit` uses, so the page can never lie. RIGHT is all 12
+<a id="the-hero-pop-up"></a>
+- **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
+  still-lit lobby on `menu.popT`): a dim, then a floating panel in three columns
+  (`heroLayout()`/`heroScreenHit()`, which answers `{row, v}` a variant well, `{pt, d}` a
+  track's minus or plus, `{ab}` an ability well, `'x'`, `'panel'` or null). LEFT is the **live
+  preview** (`drawGearPreview`): the chosen class walking in place at 4× wearing its four
+  leather bands (every pre-match pick is the free level 1) with the class weapon at hand, and
+  under it the **stat ledger** — one labelled row per number the build can touch (`GEAR_STATS`,
+  whose getters take an optional player and are handed none here — every pre-match hero is
+  level 1), real values computed by `heroPreviewKit` through the same `baseKit` (js/player.js)
+  the sim's `refreshKit` uses, so the page can never lie. MIDDLE is the **gear**: all 12
   variants as **32px icon wells** (`drawGearWell`, icons `GEAR32`/`gearIcon32` baked on the
-  ability icons' palette), four rows of three: the picked one gold-rimmed, the keyboard focus
-  (`menu.grow`, W/S rows, A/D or Left/Right picks) breathing corner ticks, and the hovered
-  variant's name printed once under the grid. **Hovering an unpicked well writes its deltas
-  into the ledger** — the current number steps aside dim and the would-be number takes the
-  edge in green (better) or red (worse), covering the whole swap (what the old pick gave up
-  too). **Picking plays on the preview body** (`pickGear` → `menu.gearFxT`/`gearFxSlot`): a
-  white flash through the scratch canvas, gold sparks, the changed piece's band lit. ESC,
-  Enter, the **X** in the corner, or a click anywhere off the panel close it back to select
-  (`leaveGear`) — PLAY (and a running count) stays on the lobby behind it. The ledger's labelled rows are
-  the PLAYER-panel text carve-out: comparing numbers is this panel's whole job. See
-  [gameplay.md](gameplay.md#gear).
+  ability icons' palette), four rows of three, the picked one gold-rimmed. RIGHT is the **stat
+  points** ([gameplay.md](gameplay.md#stat-points)): the unspent ones as a row of `STAT_POINTS`
+  pips at the top, then a labelled row per `STAT_TRACKS` track — its spent points as gold pips,
+  a minus and a plus plate at the edge, dim when they can do nothing — and under them the four
+  **class abilities** as wells wearing `classAbIcon` with the key in the corner (the
+  keybind-indicator carve-out): a hover raises the ability's card (`tipClassAb`, hooked in
+  `tipAt`), a click does nothing — their growth is the match's own skill points, never bought
+  here. The hovered variant's, track's or ability's name prints once under the grid.
+  **Hovering an unpicked well or a live +/- plate writes its deltas into the ledger** — the
+  current number steps aside dim and the would-be number takes the edge in green (better) or
+  red (worse), covering the whole swap. **Picking plays on the preview body** (`pickGear` →
+  `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch canvas, gold sparks, the
+  changed piece's band lit; a point (`spendPt`) refreshes the kit and heals to full the same
+  way. The keyboard walks `menu.grow` down the four gear rows and on through the five stat rows
+  (corner ticks on a well, end ticks on a track row), Left/Right picking a variant or refunding
+  and spending a point. ESC, Enter, the **X** in the corner, or a click anywhere off the panel
+  close it back to the lobby (`leaveHero`) — LOCK IN (and a running count) stays on the lobby
+  behind it. The ledger's and the tracks' labelled rows are the PLAYER-panel text carve-out:
+  comparing numbers is this panel's whole job. See [gameplay.md](gameplay.md#gear).
 
 - **Entrance**: `menu.t` staggers the logo and items in at boot.
 - **Menu exit**: `state.intro` counting down from `INTRO_T` (1.6 s) with `state.introLen = INTRO_T`

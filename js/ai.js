@@ -586,7 +586,7 @@ function aiThink(p, dt) {
     for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
-  //    ...and gear the same way: the gear pop-up is a menu bought from
+  //    ...and gear the same way: the hero pop-up is a menu bought from
   //    anywhere (gameplay.md), so a purse fat enough to keep a building
   //    float (buyGear re-validates, so a stale order is harmless) is spent on
   //    the cheapest piece here, mid-push or mid-defence alike, rather than

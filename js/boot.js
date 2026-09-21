@@ -1461,12 +1461,16 @@ try {
   }
   // ...and from LOCK IN on a shape this page had not grown (lockIn, js/ui/menu.js):
   // the page came back on this seed in that shape and goes straight to the
-  // eagle, the gear picks it carried put back on (no profile holds them)
+  // eagle, the gear picks and stat points it carried put back on (no profile holds them)
   const dropRaw = sessionStorage.getItem('softfall.drop');
   if (dropRaw) {
     sessionStorage.removeItem('softfall.drop');
     if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
-      try { const d = JSON.parse(dropRaw); if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0); } catch (e) { }
+      try {
+        const d = JSON.parse(dropRaw);
+        if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
+        if (d && Array.isArray(d.pts)) player.pts = d.pts.map((v) => v | 0);
+      } catch (e) { }
       setClass(player, player.cls);
       beginDrop();
     }
@@ -1703,7 +1707,7 @@ window.DBG = {
   GEAR, GEAR_SLOTS, GEAR_COSTS, kitOf, refreshKit, gearHit, charLayout, charHit, BAG_CELL,
   gearCost: (i, p) => gearCost(p || player, i),
   buyGear: (i, p) => buyGear(p || player, i),
-  pickGear: (i, v) => pickGear(i, v), gearLayout, gearScreenHit, beginGear,
+  pickGear: (i, v) => pickGear(i, v), spendPt, heroLayout, heroScreenHit, beginHero,
   setGear: (i, v, p) => { const q = p || player; q.gear[i] = v; refreshKit(q); return q.kit; },
   // the match readouts: the log (not drawn - read it here), staged lines
   // without the kills behind them, and the standings (hold TAB in game, or

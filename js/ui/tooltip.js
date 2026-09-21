@@ -284,6 +284,8 @@ function tipAt(mx, my) {
       // own ability card, read at the base cooldown since nobody has levelled
       return !h ? null : h.kind === 'row' ? tipKind(h.id) : h.kind === 'ab' ? tipClassAb(h.i, h.cls) : null;
     }
+    // the hero pop-up's four ability wells raise the same card
+    if (m.screen === 'hero' && m.popT >= 1) { const h = heroScreenHit(); return h && h.ab != null ? tipClassAb(h.ab) : null; }
     return null;
   }
   if (state.mode !== 'play') return null;

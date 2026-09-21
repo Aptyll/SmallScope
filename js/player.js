@@ -338,6 +338,23 @@ const GEAR = [
     { name: 'GHOSTSTEP', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k, L) => { k.stealth -= 0.10 * L; } },
   ],
 ];
+// ---- stat points ----------------------------------------------------------
+// The pre-match build's other half: STAT_POINTS points every hero - human
+// or bot - spends across STAT_TRACKS before the eagle, a point a step, in
+// the hero pop-up (js/ui/menu.js). Same shape as a GEAR variant's mod(k, L)
+// with the points spent as L, folded into the kit by refreshKit below, so
+// every kit-reading site picks them up the way it does gear. The budget is
+// the same for everybody (bots deal theirs from the seed in initPlayers),
+// so a spend is a shape, never a head start - the wiki's flatness holds.
+const STAT_POINTS = 6;
+const STAT_TRACKS = [
+  { name: 'HEALTH', mod: (k, n) => { k.maxHp += 5 * n; } },
+  { name: 'DAMAGE', mod: (k, n) => { k.dmgBase += 0.5 * n; } },
+  { name: 'ARMOR', mod: (k, n) => { k.dr += 0.5 * n; } },
+  { name: 'WALK', mod: (k, n) => { k.walkMul += 0.02 * n; } },
+  { name: 'DODGE', mod: (k, n) => { k.dodgeCd -= 0.15 * n; } },
+];
+function ptsSpent(p) { let n = 0; for (const v of p.pts) n += v | 0; return n; }
 // ---- roguelike cards ------------------------------------------------------
 // Dropped by a sprung chest in the treeline (hitObject's chest branch,
 // js/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
@@ -388,7 +405,7 @@ const CARDS = {
 
 // the class kit plus the gear-free defaults - the fields no class kit
 // carries; a variant's mod() edits them in place. Shared by refreshKit and
-// the gear pop-up's preview ledger (gearPreviewKit, js/menu.js), so the
+// the hero pop-up's preview ledger (heroPreviewKit, js/ui/menu.js), so the
 // numbers that page shows can never drift from the ones the sim reads.
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
@@ -402,6 +419,7 @@ function baseKit(cls) {
 function refreshKit(p) {
   const k = baseKit(p.cls);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
+  for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, p.pts[i] | 0);
   for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
   p.kit = k;
   p.maxHp = levelMaxHp(p);
@@ -464,6 +482,7 @@ class Player {
     this.food = newPouch();             // the pouch: the two meals and the unopened cards, uncapped
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
+    this.pts = [0, 0, 0, 0, 0];         // STAT_POINTS spent per STAT_TRACKS row, pre-match (the hero pop-up)
     this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/abilities.js)
     this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like gear and cards, NOT cleared by reset(): a death keeps what was bought
@@ -620,10 +639,12 @@ function initPlayers(roster, local) {
   roster = roster || defaultRoster(local);
   players.length = 0;
   for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
-  // bots draw their class AND their four gear variants from the seed,
-  // so a replayed world fields the same roster in the same loadouts
+  // bots draw their class, their four gear variants AND their stat points
+  // from the seed, so a replayed world fields the same roster in the same
+  // loadouts
   for (const p of players) if (p.control === 'ai') {
     for (let i = 0; i < GEAR_SLOTS.length; i++) p.gear[i] = Math.floor(hash2(p.id * 29 + i * 13 + 5, 191) * 3) % 3;
+    for (let n = 0; n < STAT_POINTS; n++) p.pts[Math.floor(hash2(p.id * 41 + n * 7 + 11, 223) * STAT_TRACKS.length) % STAT_TRACKS.length]++;
     // floor(hash * N): even over however many classes exist (for two it maps
     // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
     setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
