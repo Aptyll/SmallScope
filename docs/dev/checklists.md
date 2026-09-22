@@ -149,9 +149,11 @@ blocked against the page's own folder. Point the driver at the repo's own
   the sampled half and leaves the old synth cues audible. "I hear the menu clicks but no new
   sounds" and "I hear nothing but music" are different faults; do not treat them as one.
 - `SFX.meter()` is the peak on the SOUNDS bus right now. Poll it every 25 ms around a cue and take
-  the maximum: world cues should land at **0.3–0.7**, the synth UI blips at 0.15–0.18. Anything
-  under ~0.12 is inaudible in play (`trim()` levels the files: [Audio](gameplay.md#audio)). The
-  meter costs nothing until first called.
+  the maximum: world cues land at **0.2–0.55**, the synth UI blips at 0.15–0.18, and anything
+  reading 0 never made signal. It proves a cue *fires*, not that it is mixed right — the bank is
+  levelled on loudness, not peak, so two cues at the same rung of the `vol` ladder can sit 0.2
+  apart on this meter and still be as loud as each other ([Audio](gameplay.md#audio)). The meter
+  costs nothing until first called, and `SFX.debug()` prints the `g` every clip was levelled by.
 - `SFX.music.current` names the track the state machine thinks should be sounding, and
   `SFX.music.el(key)` hands out the live `<audio>` element: seek it to `duration - 0.6` to prove
   the `jump → foxglove → silence` chain in seconds instead of nine minutes. `SFX.music.held` is
@@ -501,11 +503,14 @@ off the disk, which is how the game is actually played), add it to `SAMPLES` in
 [js/audio.js](../../js/audio.js) (a key may list several files; one is picked per shot), and write
 the cue as `name() { if (smp('key', {...})) return; ...synth line... }`. **The synth line is not
 optional** — `smp` returns false until the file has decoded, and a cue with nothing behind it is
-silent on the first swing of every session. `trim()` levels the file for you, so pick `vol` as a
-mix against the other cues, not against the file's own loudness — then check it with `SFX.meter()`
-(0.3–0.7 for a world cue) rather than by ear, because these clips arrive 20 dB apart. Set `dur` if
-the clip holds more than one hit; several of the existing files are a whole loop padded to a fixed
-length. **A cue the SIM raises never gates itself** (the CLAUDE.md rule): a world cue is
+silent on the first swing of every session. `trim()` levels the file to `SMP_LUFS` for you, so
+**pick `vol` as a rung on the ladder the other cues already stand on** — a rare big moment near
+0.89, an event worth turning your head for near 0.71, the work you do all match near 0.56, a thing
+that never stops near 0.4 ([Audio](gameplay.md#audio)) — and never against the file's own loudness,
+which the bank has already taken out. Anything that repeats goes **under** anything that happens
+once. `SFX.meter()` proves the cue fires; it does not prove the level, because the bank is levelled
+on loudness and the meter reads peak. Set `dur` if the clip holds more than one hit; several of the
+existing files are a whole loop padded to a fixed length. **A cue the SIM raises never gates itself** (the CLAUDE.md rule): a world cue is
 `sfxAt('cue', x, y, r?, arg?)` — which applies the `nearPlayer` gate, so a remote base cannot spam
 the mix — a cue only one body should hear is `sfxFor(p, 'cue', arg?)`, one cue for the owner and
 another for bystanders is `sfxOwn(p, own, other)`, and a shake is `shakeFor(p, n)` /
