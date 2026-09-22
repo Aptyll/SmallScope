@@ -167,21 +167,82 @@
 
   const bank = {};   // key -> [{ buf, s, d, g }], one entry per file that decoded
   let banked = false;
-  const SMP_PEAK = 0.9;   // every sample is brought to this peak; `vol` mixes from there
-  const SMP_MAXG = 8;     // ...but never louder than this, or a near-silent clip becomes hiss
+  const SMP_LUFS = -18;   // every sample is brought to this LOUDNESS; `vol` mixes from there
+  const SMP_WIN = 0.2;    // ...measured over the loudest this-many seconds of it
+  const SMP_CEIL = 0.98;  // ...unless reaching it would push the clip's peak past here
+  const SMP_MAXG = 8;     // ...and never more gain than this, or a near-silent clip becomes hiss
+
+  // ITU-R BS.1770 K-weighting: a high shelf and a high-pass which together make
+  // a measured number agree with what ears call "as loud as". Designed at the
+  // buffer's own rate rather than copied from the standard's table, which
+  // prints 48kHz only - a context that came up at 44.1kHz would otherwise
+  // measure every clip a shade wrong, and the whole bank is levelled off this.
+  function kShelf(sr) {
+    const A = Math.pow(10, 3.999843853973347 / 40), w = 2 * Math.PI * 1681.974450955533 / sr;
+    const c = Math.cos(w), al = Math.sin(w) / (2 * 0.7071752369554196), sa = 2 * Math.sqrt(A) * al;
+    const a0 = (A + 1) - (A - 1) * c + sa;
+    return [A * ((A + 1) + (A - 1) * c + sa) / a0, -2 * A * ((A - 1) + (A + 1) * c) / a0,
+      A * ((A + 1) + (A - 1) * c - sa) / a0, 2 * ((A - 1) - (A + 1) * c) / a0,
+      ((A + 1) - (A - 1) * c - sa) / a0];
+  }
+  function kHigh(sr) {
+    const w = 2 * Math.PI * 38.13547087602444 / sr;
+    const c = Math.cos(w), al = Math.sin(w) / (2 * 0.5003270373238773), a0 = 1 + al;
+    return [(1 + c) / 2 / a0, -(1 + c) / a0, (1 + c) / 2 / a0, -2 * c / a0, (1 - al) / a0];
+  }
+  // one biquad over src[from..to), written into out[0..to-from)
+  function biq(src, from, to, k, out) {
+    let x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (let i = from; i < to; i++) {
+      const x = src[i], y = k[0] * x + k[1] * x1 + k[2] * x2 - k[3] * y1 - k[4] * y2;
+      x2 = x1; x1 = x; y2 = y1; y1 = y;
+      out[i - from] = y;
+    }
+  }
+  // How loud buf[from..to) is: the loudest SMP_WIN seconds of it, K-weighted,
+  // channels summed the way BS.1770 sums them. A clip SHORTER than the window
+  // still divides by the whole window, because a 60ms tick IS quieter than a
+  // 400ms one of the same density - which is how a pair of ears hears it, and
+  // the reason a levelled bank does not turn every click into a crack.
+  function loudness(buf, from, to) {
+    const n = to - from, sr = buf.sampleRate;
+    if (n < 2) return -99;
+    const sh = kShelf(sr), hi = kHigh(sr);
+    const acc = new Float64Array(n), t1 = new Float32Array(n), t2 = new Float32Array(n);
+    for (let c = 0; c < buf.numberOfChannels; c++) {
+      biq(buf.getChannelData(c), from, to, sh, t1);
+      biq(t1, 0, n, hi, t2);
+      for (let i = 0; i < n; i++) acc[i] += t2[i] * t2[i];
+    }
+    const w = Math.max(1, Math.round(sr * SMP_WIN));
+    let s = 0;
+    for (let i = 0; i < Math.min(w, n); i++) s += acc[i];
+    let best = s;
+    for (let i = w; i < n; i++) { s += acc[i] - acc[i - w]; if (s > best) best = s; }
+    best /= w;
+    return best > 0 ? -0.691 + 10 * Math.log10(best) : -99;
+  }
 
   // Where the sound actually is inside a padded clip, and how loud it is.
   //
   // These files are cut to a fixed length, so an axe hit whose sample opens with
   // 200ms of silence reads as lag: playback starts at `s` and runs for `d`
-  // instead of the whole file. They also arrive at wildly different levels -
-  // measured peaks run from 0.089 (the chewing) to 1.03 (the falling tree), a
-  // 20dB spread - so `g` normalises each one to SMP_PEAK. Without that the quiet
-  // third of the bank is inaudible under the music at any sane master setting,
-  // and no per-cue `vol` can be tuned, because it means something different for
-  // every file. Peak is taken across ALL channels (they are stereo) and the
-  // silence threshold is relative to it, or the quiet clips get their own
-  // content trimmed off as if it were padding.
+  // instead of the whole file. They also arrive at wildly different levels, so
+  // `g` brings each one to SMP_LUFS. Without that the quiet third of the bank is
+  // inaudible under the music at any sane master setting, and no per-cue `vol`
+  // can be tuned, because it means something different for every file.
+  //
+  // LOUDNESS, not peak. A peak is what a sharp click and a sustained howl have
+  // in common and nothing else, so levelling on it left the bank 16dB apart by
+  // ear with every file sitting at the same peak - and it split cues against
+  // themselves: the two gold coins measured 8dB apart and the cue picks one at
+  // random, so the same pickup rang twice as loud every other time. Peak keeps
+  // one job - it caps `g` at SMP_CEIL, so a levelled clip can never clip.
+  //
+  // Peak is taken across ALL channels (they are stereo) and the silence
+  // threshold is relative to it, or the quiet clips get their own content
+  // trimmed off as if it were padding. Loudness is measured over the TRIMMED
+  // window for the same reason - the padding would drag it down.
   function trim(buf) {
     const ch = [];
     for (let c = 0; c < buf.numberOfChannels; c++) ch.push(buf.getChannelData(c));
@@ -189,15 +250,20 @@
     const amp = (i) => { let m = 0; for (const d of ch) { const v = Math.abs(d[i]); if (v > m) m = v; } return m; };
     let peak = 0;
     for (let i = 0; i < n; i++) { const v = amp(i); if (v > peak) peak = v; }
-    const g = peak > 0.0005 ? Math.min(SMP_MAXG, SMP_PEAK / peak) : 1;
     const th = Math.max(0.002, peak * 0.03);
     let a = 0, b = n - 1;
     while (a < n && amp(a) < th) a++;
-    if (a >= n) return { buf, s: 0, d: buf.duration, g }; // silent by this measure: play it whole
+    if (a >= n) return { buf, s: 0, d: buf.duration, g: level(buf, 0, n, peak) }; // silent by this measure: play it whole
     while (b > a && amp(b) < th) b--;
     a = Math.max(0, a - Math.round(sr * 0.005));           // a hair of the attack's run-up
     b = Math.min(n - 1, b + Math.round(sr * 0.06));        // let the tail ring out
-    return { buf, s: a / sr, d: Math.max(0.02, (b - a) / sr), g };
+    return { buf, s: a / sr, d: Math.max(0.02, (b - a) / sr), g: level(buf, a, b + 1, peak) };
+  }
+  // the gain that puts a clip's trimmed window on SMP_LUFS, short of clipping it
+  function level(buf, from, to, peak) {
+    if (peak <= 0.0005) return 1;
+    const L = loudness(buf, from, to);
+    return Math.min(SMP_MAXG, SMP_CEIL / peak, Math.pow(10, (SMP_LUFS - L) / 20));
   }
 
   // how the load went, so a silent game can be told apart from a broken one.
@@ -272,6 +338,19 @@
   // cue (the footstep file is a whole walking loop, the coin rolls for two
   // seconds), so `dur` cuts one hit out of the front and rides a release ramp
   // down over its last 40ms rather than clicking off mid-waveform.
+  //
+  // THE MIX LIVES IN `vol`, and it is one ladder. Every clip leaves the bank at
+  // SMP_LUFS, so the number means the same thing for every cue and reads as a
+  // step down from it: 0.89 is a decibel under, 0.71 three, 0.56 five, 0.4
+  // eight, and a cue that cuts, slows or filters its clip needs a little more
+  // or less to land on the same rung. The rungs from the top: the rare big
+  // moments (a wingbeat, the bird struck, a level, a record, the match lost),
+  // the events worth turning your head for, then the work you do all match -
+  // an axe, a pick, a hammer, gold in the purse - and at the bottom the things
+  // that never stop (a boot, a build's tick, a notch, the wind). Anything that
+  // repeats sits UNDER anything that happens once, whatever it sounds like
+  // close up, because a cue heard two hundred times a match is mixed against
+  // the two hundredth and not the first.
   function smp(key, o) {
     if (muted) return true;                       // silent either way - don't let the synth double up
     if (!ctx || !bank[key] || !bank[key].length) return false;
@@ -428,8 +507,8 @@
     amb.t -= dt;
     if (amb.t > 0) return;
     amb.t = 11 + Math.random() * 15;
-    if (amb.night && Math.random() < 0.4) smp('owl', { vol: 0.34, jitter: 0.05, gap: 0 });
-    else smp('wind', { vol: 0.32, rate: 0.85, jitter: 0.12, lp: 1500, gap: 0 });
+    if (amb.night && Math.random() < 0.4) smp('owl', { vol: 0.63, jitter: 0.05, gap: 0 });
+    else smp('wind', { vol: 0.38, rate: 0.85, jitter: 0.12, lp: 1500, gap: 0 });
   }
 
   let lastT = 0;
@@ -545,32 +624,32 @@
       return p;
     },
 
-    chop() { if (smp('chop', { vol: 0.7, jitter: 0.09, dur: 0.42 })) return; noise(0.08, 0.3, 900); tone(180, 0.06, 'triangle', 0.12, -60); },
-    mine() { if (smp('mine', { vol: 0.7, rate: 1.05, jitter: 0.12, dur: 0.4 })) return; noise(0.06, 0.25, 2200); tone(320, 0.05, 'square', 0.06, -80); },
+    chop() { if (smp('chop', { vol: 0.56, jitter: 0.09, dur: 0.42 })) return; noise(0.08, 0.3, 900); tone(180, 0.06, 'triangle', 0.12, -60); },
+    mine() { if (smp('mine', { vol: 0.57, rate: 1.05, jitter: 0.12, dur: 0.4 })) return; noise(0.06, 0.25, 2200); tone(320, 0.05, 'square', 0.06, -80); },
     // the UI blip: a selection moving, a panel answering. Synth on purpose -
     // menus need a click that is instant and identical every time, and the
     // world's own pickups have coin()/stash() of their own.
     pickup() { tone(660, 0.07, 'square', 0.16); tone(990, 0.09, 'square', 0.16, 0, 0.06); },
     // gold landing in the purse
-    coin() { if (smp('coin', { vol: 0.7, jitter: 0.12, dur: 0.55 })) return; tone(880, 0.06, 'square', 0.07); tone(1320, 0.09, 'triangle', 0.06, 0, 0.05); },
+    coin() { if (smp('coin', { vol: 0.59, jitter: 0.12, dur: 0.55 })) return; tone(880, 0.06, 'square', 0.07); tone(1320, 0.09, 'triangle', 0.06, 0, 0.05); },
     // something going into the backpack
-    stash() { if (smp('stash', { vol: 0.7, jitter: 0.12 })) return; tone(520, 0.06, 'triangle', 0.08); tone(760, 0.08, 'triangle', 0.07, 0, 0.05); },
+    stash() { if (smp('stash', { vol: 0.58, jitter: 0.12 })) return; tone(520, 0.06, 'triangle', 0.08); tone(760, 0.08, 'triangle', 0.07, 0, 0.05); },
     // ...and a SWAP: one item out as another comes in. Two notes CROSSING -
     // the first falling, the second rising under it - so an exchange is told
     // from a plain put-down by ear alone, which is the whole point of it
     // having its own cue: a swap is the one move that hands you something back.
     swap() { tone(780, 0.07, 'triangle', 0.09, -260); tone(430, 0.09, 'triangle', 0.08, 240, 0.05); },
-    swing() { if (smp('whoosh', { vol: 0.6, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
+    swing() { if (smp('whoosh', { vol: 0.56, rate: 1.6, jitter: 0.12, hp: 400, dur: 0.45 })) return; noise(0.07, 0.1, 600); },
     bowDraw() { noise(0.14, 0.06, 350); tone(160, 0.12, 'triangle', 0.04, 60); },
-    dodge() { if (smp('whoosh', { vol: 0.65, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
+    dodge() { if (smp('whoosh', { vol: 0.53, rate: 0.8, jitter: 0.08, lp: 2400, dur: 0.6 })) return; noise(0.16, 0.14, 550); tone(340, 0.12, 'triangle', 0.06, -220); },
     // A BODY MOVED WITHOUT WALKING IT (warpPlayer, js/tools.js). It borrowed
     // the dodge whoosh, which is the sound of air being crossed - the one
     // thing a teleport never does. Nothing else in the game moves a body this
     // way, so it gets the one cue nothing else in the game sounds like.
-    warp() { if (smp('warp', { vol: 0.65, jitter: 0 })) return; tone(880, 0.1, 'sine', 0.08, -700); noise(0.14, 0.12, 2600); tone(180, 0.22, 'triangle', 0.08, 120, 0.04); },
-    arrow() { if (smp('bow', { vol: 0.7, jitter: 0.08, dur: 0.6 })) return; noise(0.09, 0.18, 1800); tone(720, 0.06, 'triangle', 0.07, -260); },
+    warp() { if (smp('warp', { vol: 0.71, jitter: 0 })) return; tone(880, 0.1, 'sine', 0.08, -700); noise(0.14, 0.12, 2600); tone(180, 0.22, 'triangle', 0.08, 120, 0.04); },
+    arrow() { if (smp('bow', { vol: 0.71, jitter: 0.08, dur: 0.6 })) return; noise(0.09, 0.18, 1800); tone(720, 0.06, 'triangle', 0.07, -260); },
     // one boot in the snow. Quiet and heavily jittered - it plays six times a second.
-    step() { smp('step', { vol: 0.45, jitter: 0.15, gap: 0.08, dur: 0.24 }); },
+    step() { smp('step', { vol: 0.4, jitter: 0.15, gap: 0.08, dur: 0.24 }); },
     // the shot rhythm: a dry wooden tick the moment the next arrow is nocked and
     // the bow can be drawn again. Quiet on purpose - it plays after every shot.
     nock() { tone(880, 0.03, 'square', 0.035); tone(1240, 0.03, 'square', 0.025, 0, 0.03); },
@@ -586,13 +665,13 @@
     // the shot out of the snow lands: the bow sample dropped a third under the
     // synth crack and thump, so an ambush never sounds like an ordinary arrow
     ambush() {
-      if (!smp('bow', { vol: 0.8, rate: 0.8, jitter: 0.04, dur: 0.7 })) tone(720, 0.05, 'square', 0.1, -520);
+      if (!smp('bow', { vol: 0.79, rate: 0.8, jitter: 0.04, dur: 0.7 })) tone(720, 0.05, 'square', 0.1, -520);
       noise(0.12, 0.32, 1700); tone(104, 0.2, 'sawtooth', 0.13, -34, 0.02);
     },
     // turret: a hard electric crack with a low thump under it, so it never reads as a bow
     turretFire() { tone(880, 0.05, 'square', 0.07, -520); noise(0.07, 0.2, 2600); tone(230, 0.11, 'triangle', 0.09, -90, 0.02); },
-    hit() { if (smp('impact', { vol: 0.65, rate: 1.1, jitter: 0.1, dur: 0.5 })) return; noise(0.06, 0.25, 800); tone(140, 0.08, 'sawtooth', 0.1, -50); },
-    hurt() { if (smp('oof', { vol: 0.7, jitter: 0.07 })) return; tone(200, 0.18, 'sawtooth', 0.16, -120); noise(0.12, 0.2, 500); },
+    hit() { if (smp('impact', { vol: 0.69, rate: 1.1, jitter: 0.1, dur: 0.5 })) return; noise(0.06, 0.25, 800); tone(140, 0.08, 'sawtooth', 0.1, -50); },
+    hurt() { if (smp('oof', { vol: 0.71, jitter: 0.07 })) return; tone(200, 0.18, 'sawtooth', 0.16, -120); noise(0.12, 0.2, 500); },
     // A GREAT BIRD taking a blow. The eagle used hurt() - a man's winded oof
     // for the objective the whole match is about - so the roost sounded like
     // a person being punched. Its own voice, dropped low, is the difference
@@ -601,45 +680,45 @@
     // and a half up (BIGHURT_RATE) with the chest resonance filtered off
     // underneath, which turns a bovine grunt into something with a beak. The
     // synth line under it climbs the same way.
-    bigHurt() { if (smp('bigHurt', { vol: 0.8, rate: BIGHURT_RATE, jitter: 0.04, hp: 320 })) return; tone(430, 0.22, 'sawtooth', 0.13, -180); noise(0.16, 0.18, 900); },
+    bigHurt() { if (smp('bigHurt', { vol: 0.96, rate: BIGHURT_RATE, jitter: 0.04, hp: 320 })) return; tone(430, 0.22, 'sawtooth', 0.13, -180); noise(0.16, 0.18, 900); },
     // a creature crying out under a hit it survived
-    yelp() { if (smp('yelp', { vol: 0.55, jitter: 0.1, delay: 0.05 })) return; tone(620, 0.12, 'sawtooth', 0.07, -240, 0.05); },
+    yelp() { if (smp('yelp', { vol: 0.63, jitter: 0.1, delay: 0.05 })) return; tone(620, 0.12, 'sawtooth', 0.07, -240, 0.05); },
     // a UI confirmation - a panel opening, a slot returning. The world's own
     // building work is hammer().
     place() { tone(240, 0.06, 'triangle', 0.2); tone(360, 0.08, 'triangle', 0.18, 0, 0.05); },
     // raising, upgrading or finishing a structure: the punctuation
-    hammer() { if (smp('hammer', { vol: 0.7, jitter: 0.1 })) return; tone(240, 0.06, 'triangle', 0.14); tone(360, 0.08, 'triangle', 0.12, 0, 0.05); },
+    hammer() { if (smp('hammer', { vol: 0.56, jitter: 0.1 })) return; tone(240, 0.06, 'triangle', 0.14); tone(360, 0.08, 'triangle', 0.12, 0, 0.05); },
     // one blow of the work still going on, on the site's dust tick. Quieter and
     // shorter than hammer(), and widely jittered, because it repeats for as long
     // as the build takes and must never settle into a rhythm.
-    building() { smp('hammer', { vol: 0.34, rate: 1.15, jitter: 0.22, dur: 0.3, gap: 0.2 }); },
+    building() { smp('hammer', { vol: 0.35, rate: 1.15, jitter: 0.22, dur: 0.3, gap: 0.2 }); },
     // a body arriving out of the sky: the boot sample dropped an octave under a
     // low thump, so a landing reads as weight and not as an arrow connecting
     land() {
-      smp('step', { vol: 0.7, rate: 0.5, jitter: 0.05, lp: 1100, dur: 0.45, gap: 0 });
+      smp('step', { vol: 0.69, rate: 0.5, jitter: 0.05, lp: 1100, dur: 0.45, gap: 0 });
       noise(0.22, 0.24, 420); tone(88, 0.2, 'triangle', 0.09, -22);
     },
     deny() { tone(140, 0.12, 'square', 0.17, -30); },
     // knocking on solid ice: a glassy crack over a dull refusal
     iceKnock() { noise(0.06, 0.3, 3200); tone(1400, 0.08, 'triangle', 0.06, -700); tone(130, 0.12, 'square', 0.07, -25); },
-    break_() { if (smp('timber', { vol: 0.6, rate: 1.4, jitter: 0.1, hp: 180, dur: 0.6 })) return; noise(0.2, 0.3, 700); tone(120, 0.15, 'triangle', 0.12, -60); },
+    break_() { if (smp('timber', { vol: 0.78, rate: 1.4, jitter: 0.1, hp: 180, dur: 0.6 })) return; noise(0.2, 0.3, 700); tone(120, 0.15, 'triangle', 0.12, -60); },
     // an animal going down; a wolf of any size yelps where everything else squeals
     monsterDie(kind) {
-      if (smp(kind === 'wolf' || kind === 'alpha' || kind === 'dire' ? 'yelp' : 'beastDie', { vol: 0.7, jitter: 0.08 })) return;
+      if (smp(kind === 'wolf' || kind === 'alpha' || kind === 'dire' ? 'yelp' : 'beastDie', { vol: 0.71, jitter: 0.08 })) return;
       tone(500, 0.2, 'triangle', 0.12, -350); noise(0.15, 0.15, 3000);
     },
-    eat() { if (smp('chew', { vol: 0.65, jitter: 0.1 })) return; tone(300, 0.05, 'triangle', 0.1); tone(260, 0.05, 'triangle', 0.1, 0, 0.07); },
-    treeFall() { if (smp('timber', { vol: 0.75, jitter: 0.06 })) return; noise(0.35, 0.35, 400); tone(90, 0.3, 'triangle', 0.14, -30); },
+    eat() { if (smp('chew', { vol: 0.56, jitter: 0.1 })) return; tone(300, 0.05, 'triangle', 0.1); tone(260, 0.05, 'triangle', 0.1, 0, 0.07); },
+    treeFall() { if (smp('timber', { vol: 0.89, jitter: 0.06 })) return; noise(0.35, 0.35, 400); tone(90, 0.3, 'triangle', 0.14, -30); },
     // a wingbeat blast - the eagle's gust and its takeoff: the dodge whoosh
     // slowed into a heavy buffet of air over a low push
     gust() {
-      if (smp('whoosh', { vol: 0.85, rate: 0.55, jitter: 0.06, lp: 1600, dur: 0.9 })) return;
+      if (smp('whoosh', { vol: 0.73, rate: 0.55, jitter: 0.06, lp: 1600, dur: 0.9 })) return;
       noise(0.3, 0.32, 500); tone(120, 0.22, 'triangle', 0.09, -55);
     },
     // an eagle hitting the treeline: the timber sample dropped low with a
     // synth blast wave stacked under it (layered on purpose, not a fallback)
     boom() {
-      smp('timber', { vol: 0.9, rate: 0.55, jitter: 0.04 });
+      smp('timber', { vol: 0.86, rate: 0.55, jitter: 0.04 });
       noise(0.5, 0.5, 320); noise(0.2, 0.4, 1100);
       tone(58, 0.5, 'triangle', 0.2, -26); tone(40, 0.75, 'sine', 0.16, -10);
     },
@@ -648,7 +727,7 @@
     // it are the old nightSting, which had been unreferenced since the raider
     // removal - the sting had no event left, and this is the event.
     nightFall() {
-      if (smp('nightfall', { vol: 0.6, jitter: 0 })) return;
+      if (smp('nightfall', { vol: 0.79, jitter: 0 })) return;
       tone(196, 1.2, 'triangle', 0.09, -20);
       tone(147, 1.4, 'triangle', 0.08, -15, 0.15);
     },
@@ -658,7 +737,7 @@
       tone(784, 0.5, 'triangle', 0.07, 0, 0.36);
     },
     levelUp() {
-      if (smp('power', { vol: 0.7, jitter: 0.04 })) return;
+      if (smp('power', { vol: 0.89, jitter: 0.04 })) return;
       tone(523, 0.08, 'square', 0.08); tone(659, 0.08, 'square', 0.08, 0, 0.07); tone(784, 0.16, 'square', 0.09, 0, 0.14); tone(1046, 0.22, 'triangle', 0.08, 0, 0.2);
     },
     // the match won: a four-note fanfare over a held low fifth, capped by a
@@ -677,7 +756,7 @@
     // the defeat song came up under silence where a win got a fanfare. A
     // sting, not a dirge: the song is the mourning, this is the news.
     defeat() {
-      if (smp('defeat', { vol: 0.7, jitter: 0 })) return;
+      if (smp('defeat', { vol: 0.89, jitter: 0 })) return;
       tone(294, 0.5, 'triangle', 0.09, -80);
       tone(196, 0.9, 'triangle', 0.08, -50, 0.12);
     },
@@ -691,31 +770,31 @@
     // A COUNTDOWN TICK - one whole second of the wait gone: the class
     // screen's plank and the range's 3-2-1 alike. Both were the nock blip,
     // which is the sound of a bow being ready and says nothing about time.
-    countTick() { if (smp('count', { vol: 0.6, jitter: 0 })) return; tone(220, 0.1, 'triangle', 0.1, -40); tone(110, 0.16, 'sine', 0.08, -20, 0.02); },
+    countTick() { if (smp('count', { vol: 0.63, jitter: 0 })) return; tone(220, 0.1, 'triangle', 0.1, -40); tone(110, 0.16, 'sine', 0.08, -20, 0.02); },
     // A PANEL, DRAWER OR CHART, and `open` says which way it went - so one
     // call site does the pair: SFX.ui(state.bagOpen) reads as the toggle it
     // follows, and the two halves can never drift apart.
     ui(open) {
-      // the two clips arrive 4 dB apart once trim() has levelled them (the
-      // shut one is a whisper amplified to SMP_MAXG), so the mix is per half
-      if (smp(open ? 'uiOpen' : 'uiShut', { vol: open ? 0.42 : 0.38, jitter: 0 })) return;
+      // one vol for both halves: they arrive matched out of the bank now, the
+      // shut one a whisper carried up to it (its `g` is nearly SMP_MAXG)
+      if (smp(open ? 'uiOpen' : 'uiShut', { vol: 0.5, jitter: 0 })) return;
       tone(open ? 420 : 620, 0.06, 'triangle', 0.09, open ? 170 : -170);
       tone(open ? 620 : 420, 0.09, 'triangle', 0.07, open ? 120 : -120, 0.05);
     },
     // ONE NOTCH of a stepped control - a zoom rung, a build row, a minimap
     // step, a wheel wedge the travel crossed. It fires as fast as a hand can
     // step, so it is quiet and holds its own gap.
-    notch() { if (smp('notch', { vol: 0.22, jitter: 0, gap: 0.05 })) return; tone(1180, 0.025, 'square', 0.03); },
+    notch() { if (smp('notch', { vol: 0.35, jitter: 0, gap: 0.05 })) return; tone(1180, 0.025, 'square', 0.03); },
     // a piece turned on the spot (R over the build ghost): a dial, not a step
-    turn() { if (smp('turn', { vol: 0.4, jitter: 0, dur: 0.45 })) return; tone(520, 0.05, 'square', 0.05, 260); },
+    turn() { if (smp('turn', { vol: 0.45, jitter: 0, dur: 0.45 })) return; tone(520, 0.05, 'square', 0.05, 260); },
     // a radial wheel rolling open under the held key or button
-    wheelUp() { if (smp('wheelUp', { vol: 0.5, jitter: 0 })) return; tone(480, 0.05, 'triangle', 0.06, 200); tone(720, 0.07, 'triangle', 0.05, 160, 0.04); },
+    wheelUp() { if (smp('wheelUp', { vol: 0.56, jitter: 0 })) return; tone(480, 0.05, 'triangle', 0.06, 200); tone(720, 0.07, 'triangle', 0.05, 160, 0.04); },
     // A NEW BEST on any of the practice instruments - the range's round, the
     // parkour's lap. One cue for the one meaning: it was the level-up sample
     // at the bell and the dawn chime at the line, so the same event sounded
     // like two different things twenty tiles apart.
     record() {
-      if (smp('record', { vol: 0.7, jitter: 0 })) return;
+      if (smp('record', { vol: 0.89, jitter: 0 })) return;
       tone(659, 0.1, 'triangle', 0.08); tone(988, 0.14, 'triangle', 0.08, 0, 0.09); tone(1318, 0.3, 'triangle', 0.07, 0, 0.2);
     },
     // The range's consecutive-hit run (agStreak, js/world.js): a milestone
@@ -723,8 +802,8 @@
     // be heard, because the number it tracks is the thing being climbed - and
     // the run lost. Losing five in a row must not sound like losing one, so
     // the break only speaks for a run worth mourning (the call site's rule).
-    runUp(n) { if (smp('runUp', { vol: 0.6, jitter: 0, rate: Math.min(1.5, 1 + (n - 5) * 0.04) })) return; tone(700 + n * 12, 0.12, 'square', 0.07, 300); },
-    runBroke() { if (smp('runBroke', { vol: 0.6, jitter: 0 })) return; tone(300, 0.14, 'sawtooth', 0.09, -140); },
+    runUp(n) { if (smp('runUp', { vol: 0.8, jitter: 0, rate: Math.min(1.5, 1 + (n - 5) * 0.04) })) return; tone(700 + n * 12, 0.12, 'square', 0.07, 300); },
+    runBroke() { if (smp('runBroke', { vol: 0.79, jitter: 0 })) return; tone(300, 0.14, 'sawtooth', 0.09, -140); },
     // YOUR OBJECTIVE IS BEING STRUCK AND YOU CANNOT SEE IT: the one cue in
     // the game that speaks for something off screen, which is why it is a
     // notification and not the bird's own voice (bigHurt, below, is what the
@@ -732,7 +811,7 @@
     // one warning every few seconds - a siege is many blows, not many
     // alarms.
     alarm() {
-      if (smp('alarm', { vol: 0.7, jitter: 0 })) return;
+      if (smp('alarm', { vol: 0.89, jitter: 0 })) return;
       tone(880, 0.12, 'square', 0.08); tone(660, 0.16, 'square', 0.08, 0, 0.14); tone(880, 0.2, 'square', 0.08, 0, 0.3);
     },
     // A NUMBER ON YOUR OWN SHEET MOVED - a hero level, a card drawn, a gear
@@ -749,12 +828,12 @@
     // a status landing on YOUR OWN body, where a number on the strip is not
     // enough: found by a mark (the sweep that says you are on someone's
     // chart) and stunned out of your own hands
-    marked() { if (smp('marked', { vol: 0.55, jitter: 0 })) return; tone(1320, 0.05, 'sine', 0.05); tone(1320, 0.05, 'sine', 0.05, 0, 0.18); },
-    dazed() { if (smp('dazed', { vol: 0.6, jitter: 0 })) return; tone(180, 0.3, 'sawtooth', 0.1, -60); noise(0.2, 0.1, 400); },
+    marked() { if (smp('marked', { vol: 0.71, jitter: 0 })) return; tone(1320, 0.05, 'sine', 0.05); tone(1320, 0.05, 'sine', 0.05, 0, 0.18); },
+    dazed() { if (smp('dazed', { vol: 0.71, jitter: 0 })) return; tone(180, 0.3, 'sawtooth', 0.1, -60); noise(0.2, 0.1, 400); },
     // a worker rolling out of the bay's shutter
-    botOut() { if (smp('botOut', { vol: 0.5, jitter: 0.04, gap: 0.4 })) return; tone(300, 0.07, 'square', 0.05, 200); noise(0.1, 0.08, 1800); },
+    botOut() { if (smp('botOut', { vol: 0.56, jitter: 0.04, gap: 0.4 })) return; tone(300, 0.07, 'square', 0.05, 200); noise(0.1, 0.08, 1800); },
     // the camera handed to another body, watching from nowhere
-    spectate() { if (smp('spectate', { vol: 0.5, jitter: 0, gap: 0.2 })) return; tone(520, 0.2, 'sine', 0.05, -200); },
+    spectate() { if (smp('spectate', { vol: 0.56, jitter: 0, gap: 0.2 })) return; tone(520, 0.2, 'sine', 0.05, -200); },
     // The market moving hard (marketNews, js/shop.js), under the plate that
     // rises with it (the `notices` banner, js/shop.js): a coin dinging
     // on a spike, a sad fall on a crash. Two DIFFERENT clips rather than one
@@ -762,7 +841,7 @@
     // and not as a texture - a spike must never be mistakable for a crash.
     // The synth pair underneath is the fallback, and says the same thing.
     market(up) {
-      if (smp(up ? 'spike' : 'crash', { vol: up ? 0.6 : 0.75, jitter: 0 })) return;
+      if (smp(up ? 'spike' : 'crash', { vol: 0.79, jitter: 0 })) return;
       tone(up ? 700 : 990, 0.07, 'square', 0.06);
       tone(up ? 990 : 700, 0.14, 'triangle', 0.07, 0, 0.06);
     },
@@ -774,21 +853,21 @@
     restock() {
       // both whole: the wagon is 3.3 s and still rolling under the bell,
       // which is the point - the goods arrive, then they are laid out
-      const a = smp('freight', { vol: 0.5, jitter: 0 });
-      const b = smp('restock', { vol: 0.7, jitter: 0, delay: RESTOCK_RING });
+      const a = smp('freight', { vol: 0.56, jitter: 0 });
+      const b = smp('restock', { vol: 0.71, jitter: 0, delay: RESTOCK_RING });
       if (a || b) return;
       tone(240, 0.06, 'triangle', 0.2); tone(360, 0.08, 'triangle', 0.18, 0, 0.05);
       tone(523, 0.1, 'triangle', 0.09, 0, RESTOCK_RING);
       tone(784, 0.18, 'triangle', 0.09, 0, RESTOCK_RING + 0.09);
     },
-    heal() { if (smp('warm', { vol: 0.6, rate: 1.3, jitter: 0.06 })) return; tone(440, 0.1, 'triangle', 0.08); tone(554, 0.12, 'triangle', 0.08, 0, 0.08); },
+    heal() { if (smp('warm', { vol: 0.73, rate: 1.3, jitter: 0.06 })) return; tone(440, 0.1, 'triangle', 0.08); tone(554, 0.12, 'triangle', 0.08, 0, 0.08); },
     splash() { noise(0.28, 0.28, 750); tone(300, 0.22, 'sine', 0.1, -190); noise(0.14, 0.12, 1500, 0.06); },
     // a camp waking: the pack answering, or a rising synth howl that sags at the end
     howl() {
-      if (smp('wolf', { vol: 0.7, jitter: 0.08 })) return;
+      if (smp('wolf', { vol: 0.89, jitter: 0.08 })) return;
       tone(280, 0.55, 'sawtooth', 0.05, 150); tone(430, 0.75, 'triangle', 0.06, -140, 0.1); tone(360, 0.5, 'triangle', 0.035, -110, 0.34);
     },
-    bite() { if (smp('impact', { vol: 0.5, rate: 1.45, jitter: 0.1, gap: 0.05, dur: 0.35 })) return; noise(0.07, 0.32, 1100); tone(210, 0.08, 'sawtooth', 0.11, -110); },
+    bite() { if (smp('impact', { vol: 0.51, rate: 1.45, jitter: 0.1, gap: 0.05, dur: 0.35 })) return; noise(0.07, 0.32, 1100); tone(210, 0.08, 'sawtooth', 0.11, -110); },
     // the rookery going up: three overlapping beats of wings
     wings() { noise(0.09, 0.14, 520); noise(0.09, 0.12, 460, 0.07); noise(0.08, 0.09, 400, 0.15); },
   };

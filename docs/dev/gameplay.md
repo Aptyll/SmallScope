@@ -3013,14 +3013,36 @@ which finds where the sound actually starts and ends inside a clip padded out to
 so an axe hit does not fire 200 ms late.
 
 **`trim()` also levels the bank, and that is not cosmetic.** These files arrive at wildly
-different levels — a 20 dB spread of peaks — so each one gets a gain `g` bringing it to `SMP_PEAK`, capped at `SMP_MAXG` so a
-near-silent clip is not amplified into hiss. Without it the quiet third of the bank is inaudible
-under the music at any sane master setting, *and* no per-cue `vol` can be tuned, because the same
-number means something different for every file. With it, `vol` is a pure mix control: every world
-cue is aimed at **0.3–0.7 peak on the SOUNDS bus**, measured with `SFX.meter()`, against the synth
-UI blips at 0.15–0.18. Peak is taken across **all** channels (the files are stereo) and the
-silence threshold is relative to that peak — an absolute one trims the quiet clips' own content
-off as if it were padding.
+different levels, so each one gets a gain `g` bringing it to **`SMP_LUFS`** — capped at `SMP_MAXG`
+so a near-silent clip is not amplified into hiss, and at `SMP_CEIL` so a lifted clip cannot clip.
+Without it the quiet third of the bank is inaudible under the music at any sane master setting,
+*and* no per-cue `vol` can be tuned, because the same number means something different for every
+file.
+
+**It levels on LOUDNESS, not on peak** — the loudest `SMP_WIN` seconds of the trimmed window,
+K-weighted and summed across channels (ITU-R BS.1770, and `loudness()` designs its two filters at
+the buffer's own rate rather than copying the standard's 48 kHz table). A peak is the one thing a
+sharp click and a sustained howl have in common, so peak levelling left the bank **16 dB apart by
+ear** with every file sitting at the same peak — and split cues against themselves: the two gold
+coins measured 8 dB apart and `smp()` picks one at random, so the same pickup rang twice as loud
+every other time. Peak keeps one job, the `SMP_CEIL` cap. A clip shorter than the window still
+divides by the whole window, because a 60 ms tick *is* quieter than a 400 ms one of the same
+density — without that a levelled bank turns every click into a crack. Peak is taken across **all**
+channels (the files are stereo) and the silence threshold is relative to that peak — an absolute
+one trims the quiet clips' own content off as if it were padding; loudness is measured over the
+**trimmed** window for the same reason, or the padding drags it down.
+
+**`vol` is therefore one ladder, and the same number means the same thing everywhere.** It reads as
+a step down from `SMP_LUFS`: 0.89 is a decibel under, 0.71 three, 0.56 five, 0.4 eight — a cue that
+cuts, slows or filters its clip needs a little more or less to land on the same rung. The rungs,
+from the top: the rare big moments (a wingbeat, the bird struck, a level, a record, the match
+lost), then the events worth turning your head for, then the work you do all match — an axe, a
+pick, a hammer, gold in the purse — and at the bottom the things that never stop (a boot, a
+build's tick, a notch, the wind). **Anything that repeats sits under anything that happens once**,
+whatever it sounds like close up: a cue heard two hundred times a match is mixed against the two
+hundredth and not the first. The whole sampled bank spans about **10 dB**, and no cue's own files
+should sit more than ~2 dB apart — `SFX.debug()` prints every clip's `g` and `SFX.meter()` reads
+the bus, so both are checkable without guessing.
 
 **A failed load must never be quiet about it.** `loadBank()` counts every file into `bankStat`
 (`want`/`got`/`err`), logs one console warning naming the first failure, and `SFX.banked()` reads

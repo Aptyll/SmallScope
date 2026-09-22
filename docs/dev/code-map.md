@@ -15,7 +15,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the songs, the sampled one-shots, the dials behind them | `SFX.music`, `TRACKS`, `SAMPLES`, `smp`, `trim`, `setAmbience` | its own IIFE — see [gameplay.md](gameplay.md#audio) |
+| the songs, the sampled one-shots, the dials behind them | `SFX.music`, `TRACKS`, `SAMPLES`, `smp`, `trim`, `loudness`, `level`, `setAmbience` | its own IIFE — see [gameplay.md](gameplay.md#audio) |
 | BORROWING the music layer and giving it back where it was taken (the trading post's song) | `musicHold`, `musicRelease`, `held`, exposed as `SFX.music.hold`/`release`/`held` | `music` (its one caller: `openShop`/`closeShop`, js/ui/shop.js) |
 | the market's two notification cues, and the one cue built out of two clips | `SFX.market(up)` (till / thud), `SFX.restock()` (the wagon, then the bell `RESTOCK_RING` behind it), the `spike`/`crash`/`freight`/`restock` rows of `SAMPLES` | its own IIFE (their callers: `marketNews`/`shopRestock`, js/ui/shop.js) |
 | the notification layer — nothing in the world making a noise, and none of it jittered | `SFX.countTick`, `SFX.ui(open)`, `SFX.notch`, `SFX.turn`, `SFX.wheelUp`, `SFX.record`, `SFX.runUp(n)`/`SFX.runBroke`, `SFX.alarm`, `SFX.marked`/`SFX.dazed`, `SFX.stat(up)` (a number on your own sheet moved), `SFX.nightFall`, `SFX.warp`, `SFX.spectate`, `SFX.defeat`, `SFX.bigHurt`, `SFX.botOut` | its own IIFE — the `count`…`botOut` rows of `SAMPLES` (who calls each: [gameplay.md](gameplay.md#audio); `SFX.alarm`'s spacing `EAGLE_WARN_GAP`: js/boot.js) |
