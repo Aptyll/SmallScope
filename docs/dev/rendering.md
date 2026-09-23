@@ -2283,12 +2283,39 @@ the other way round:
   that room's whole point is that its light never changes. (It gets no shafts either, for free —
   its clock is pinned nowhere near noon and it has no eagle.)
 
-Then the dusk and dawn tints (unchanged), then the night multiply, then **`litShots`** — the one
+Then [the hour](#the-hour) (`todGrade`), then the night multiply, then **`litShots`** — the one
 light left in the game. A shot carrying a `lit` bit (the CARE ARROW, the WISP, anything a FLAME
 modifier is riding — see [tools and bits](gameplay.md#tools-and-bits)) gets an additive warm
 halo read straight off the live `arrows`, so it warms the night blue rather than cutting a hole
 in it. It is drawn **after** the night grade, which is why it reads at midnight and barely at all
 at noon.
+
+### The hour
+
+**The same place looks like four places across a match — rose dawn, crisp midday, gold dusk, blue
+night — and all four are a colour grade, never a light.** `todGrade` (`the hour`, js/draw/light.js)
+runs after the clouds and before the night multiply, and grades what is already on the frame with
+two fills, a **split tone**:
+
+- a `multiply`, the colour of the **light**: it moves snow at 0.95 a long way and a pine's
+  needles hardly at all, so it lands on what is lit — the drifts and the snow on the canopies;
+- a `screen`, the colour of the **sky in the shade**: it lifts a dark pixel a long way and a white
+  one hardly at all, so it lands in the cast shadows, the cloud shade and the needles.
+
+Warm light over cool shade is what golden hour looks like, and the pair pulls a pixel apart by its
+value where a single wash would only tint the whole frame. The colours come off `TOD_KEYS`,
+keyframes on `state.time` across the whole `CYCLE` (the last row repeats the first, a cycle on):
+rose light over violet shade as the dark lifts, clearing through the morning, clean at midday,
+warming through the afternoon, gold-orange over blue shade at dusk until the dark ramp takes it,
+and white over black — a no-op — through the night, whose own multiply does that half. **Keep the
+dusk multiply's blue channel near 160 or above**: at 118 a blue team's paint goes grey (the eagle
+did). The practice arena is exempt (`PRACTICE`): its light never changes, for its instruments' sake.
+
+**Midday** is clean light, and clean light is contrast: across the noon window (`TOD_NOON` ±
+`TOD_NOON_HALF`, easing over `TOD_NOON_FADE`, gated by `todNoon`) the world buffer is multiplied
+**by itself** at `TOD_CRISP` — one blit — which deepens the needles and the cast shade far more
+than the drifts. With the GPU synced on seed 42 the whole hour, blit included, costs nothing a
+frame time shows.
 
 ### The reflected sky
 
