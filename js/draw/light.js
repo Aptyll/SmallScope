@@ -475,9 +475,99 @@ function drawIceStars(ox, oy, tx0, ty0, tx1, ty1) {
   }
 }
 
+// ---- the hour ----
+// The same place has to look like four places across a match, and all of it
+// is a COLOUR, never a light: nothing here is drawn from a source, it grades
+// what is already on the frame. Two fills carry it, a SPLIT TONE:
+//   - a multiply, which is the colour of the light - it moves snow at 0.95 a
+//     long way and a pine's needles at 0.4 hardly at all, so it lands on
+//     what is lit: the drifts and the snow on the canopies;
+//   - a screen, which is the colour of the sky in the shade - it lifts a
+//     dark pixel a long way and a white one hardly at all, so it lands in the
+//     cast shadows, the cloud shade and the needles.
+// Warm light over cool shade is what golden hour and dawn look like, and
+// the two fills pull a pixel apart by its value, where one wash would only
+// have tinted the whole frame. White and black are no-ops, so the table
+// fades through them, and the night's own multiply (below) takes the frame
+// from dusk to dawn: the hour never has to know about it.
+// Keyframes on state.time across the whole CYCLE (the last row wraps to the
+// first): a rose dawn as the dark lifts, a clearing morning, a clean midday
+// (with TOD_CRISP), a warming afternoon, a gold-orange dusk
+// that burns on into the first of the dark ramp, and nothing through the
+// night. [t, multiply rgb, screen rgb]
+const TOD_KEYS = [
+  [0, [255, 218, 228], [28, 14, 46]],             // dawn: rose light, violet shade
+  [10, [255, 224, 230], [24, 14, 42]],
+  [28, [253, 251, 250], [6, 8, 18]],              // morning, clearing
+  [40, [255, 255, 255], [0, 0, 0]],               // midday: clean
+  [72, [255, 255, 255], [0, 0, 0]],
+  [84, [255, 240, 216], [8, 12, 30]],             // afternoon, warming
+  [96, [255, 212, 164], [16, 24, 62]],            // dusk: gold-orange light, blue shade
+  [101, [255, 206, 160], [16, 22, 58]],
+  [110, [255, 255, 255], [0, 0, 0]],              // the night owns it
+  [155, [255, 255, 255], [0, 0, 0]],
+  [CYCLE, [255, 218, 228], [28, 14, 46]],         // = the first row, a cycle on
+];
+// Midday is clean light, and clean light is contrast: at the top of the day
+// the frame is multiplied by ITSELF at this share, which darkens the needles
+// and the cast shade far more than the drifts - the pale grey-white field
+// gets its depth back without the snow turning grey. One blit of the world
+// buffer onto itself.
+const TOD_CRISP = 0.22;
+const TOD_NOON = DAY_LEN * 0.5;  // the top of the day, where the crisp peaks
+const TOD_NOON_HALF = 26;        // s either side of it it reaches
+const TOD_NOON_FADE = 10;        // ...easing out over the last of those
+
+let todK = 0; // the last key found, so the search is a step or two a frame
+function todMix(t, out) {
+  if (TOD_KEYS[todK][0] > t || TOD_KEYS[todK + 1][0] <= t) {
+    todK = 0;
+    while (TOD_KEYS[todK + 1][0] <= t) todK++;
+  }
+  const a = TOD_KEYS[todK], b = TOD_KEYS[todK + 1];
+  const f = (t - a[0]) / (b[0] - a[0]);
+  for (let c = 0; c < 3; c++) {
+    out[c] = Math.round(a[1][c] + (b[1][c] - a[1][c]) * f);
+    out[c + 3] = Math.round(a[2][c] + (b[2][c] - a[2][c]) * f);
+  }
+  return out;
+}
+// 0..1: how far into the midday window the clock is. The practice arena's
+// clock sits at 0, well outside it.
+function todNoon() {
+  const n = (TOD_NOON_HALF - Math.abs(state.time - TOD_NOON)) / TOD_NOON_FADE;
+  return Math.max(0, Math.min(1, n)) * (1 - state.darkness);
+}
+
+const todRGB = [0, 0, 0, 0, 0, 0];
+function todGrade() {
+  // the practice arena keeps one fixed, neutral hour: its instruments
+  // compare laps, and a rose cast on one of them is a change in the room
+  if (PRACTICE) return;
+  const g = todMix(Math.min(CYCLE - 1e-6, Math.max(0, state.time)), todRGB);
+  if (g[0] + g[1] + g[2] < 762) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = 'rgb(' + g[0] + ',' + g[1] + ',' + g[2] + ')';
+    ctx.fillRect(0, 0, WV_W, WV_H);
+  }
+  if (g[3] + g[4] + g[5] > 3) {
+    ctx.globalCompositeOperation = 'screen';
+    ctx.fillStyle = 'rgb(' + g[3] + ',' + g[4] + ',' + g[5] + ')';
+    ctx.fillRect(0, 0, WV_W, WV_H);
+  }
+  const crisp = todNoon() * TOD_CRISP;
+  if (crisp > 0.01) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = crisp;
+    ctx.drawImage(ctx.canvas, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
+    ctx.globalAlpha = 1;
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
 // ---- the pass ----
 // Day: shafts first, then the cloud that shades them - a shadow falls across
-// a sunbeam, not the other way round. Then the hour's tint, then the night.
+// a sunbeam, not the other way round. Then the hour's grade, then the night.
 //
 // NIGHT IS A COLOUR AND A CLOSING IN, NOT A DARKNESS. What says "night" has
 // to be the HUE and the EDGE, because the one thing it cannot be is the
@@ -582,24 +672,8 @@ function renderLighting(ox, oy, now) {
     if (!PRACTICE && settings.vidClouds) cloudShade(ox, oy, day);
   }
 
-  // dusk warm tint
-  const duskT = state.time > DAY_LEN - 12 && state.time < DAY_LEN + 6 ?
-    1 - Math.abs(state.time - (DAY_LEN - 4)) / 9 : 0;
-  if (duskT > 0) {
-    ctx.globalAlpha = Math.max(0, duskT) * 0.16;
-    ctx.fillStyle = '#ff9a5c';
-    ctx.fillRect(0, 0, WV_W, WV_H);
-    ctx.globalAlpha = 1;
-  }
-  // dawn pink
-  const dawnT = state.time > CYCLE - 10 ? (state.time - (CYCLE - 10)) / 10 :
-    state.time < 8 ? 1 - state.time / 8 : 0;
-  if (dawnT > 0 && dark < 0.8) {
-    ctx.globalAlpha = dawnT * 0.1;
-    ctx.fillStyle = '#ff88aa';
-    ctx.fillRect(0, 0, WV_W, WV_H);
-    ctx.globalAlpha = 1;
-  }
+  // the hour: rose dawn, crisp midday, gold dusk (the hour banner above)
+  todGrade();
 
   // Night. A multiply carries the whole shift: it cools what is there instead
   // of laying an opaque slab over it, so snow stays snow, team colours stay
