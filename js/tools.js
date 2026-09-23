@@ -552,10 +552,29 @@ function bitPut(cell, i, id) {
   cell.bits[i] = id || null;
   return was;
 }
+// A BIT NOBODY PLACED BY HAND LANDS WHERE IT WORKS. A modifier only reaches
+// the shots after it, so a shot takes the LAST free cell and a fitting the
+// first - and a fitting whose first free cell is behind the first shot is
+// slid in AT that shot, the cells between moving back one, so it reaches every
+// shot the row fires. Returns the cell it landed in, -1 when the tool is full.
+function fitBit(cell, id) {
+  const free = cell.bits.indexOf(null);
+  if (free < 0) return -1;
+  if (BITS[id].proj) {
+    const last = cell.bits.lastIndexOf(null);
+    bitPut(cell, last, id);
+    return last;
+  }
+  const shot = cell.bits.findIndex(b => b && BITS[b].proj);
+  if (shot < 0 || free < shot) { bitPut(cell, free, id); return free; }
+  for (let k = free; k > shot; k--) cell.bits[k] = cell.bits[k - 1];
+  cell.bits[shot] = id;
+  return shot;
+}
 
 // ---- a find arms itself ---------------------------------------------------
 // THE PACK IS THE OVERFLOW, NOT THE DESTINATION. A bit picked up off the snow
-// (or bought over the counter) walks into the tool's first free cell, and only
+// (or bought over the counter) walks into the tool where it works (fitBit), and only
 // what the tool cannot hold goes into the grid - so the ordinary way to arm a
 // find is to walk over it, and the drag is what you reach for to ARRANGE a
 // build rather than what you must do to have one. The shelf over the pack
@@ -598,9 +617,9 @@ function fitRoom(p, type) {
 // how many were taken, exactly as bagAdd does.
 function fitAdd(p, type, n) {
   const id = bitIdOf(type);
-  let got = 0, free;
+  let got = 0;
   if (id) for (const cell of autoFitTools(p)) {
-    while (got < n && (free = cell.bits.indexOf(null)) >= 0) { bitPut(cell, free, id); got++; }
+    while (got < n && fitBit(cell, id) >= 0) got++;
   }
   return got + bagAdd(p, type, n - got);
 }
@@ -648,9 +667,10 @@ function shedBits(cell, x, y, hx, hy, p) {
 // A FIND THAT IS STRICTLY BETTER SWAPS ITSELF INTO THE HAND. Two conditions,
 // both hard: the find's TIER is higher than what is held, and its `cap` is at
 // least as big, so nothing already loaded is left with nowhere to sit. Then
-// the bits move across CELL FOR CELL - the row's order IS the build, and a
-// modifier that landed behind the shots it was in front of would be worth
-// nothing - and the old body is treated exactly as the find was: into the
+// the bits move across CELL FOR CELL, right-aligned against the bigger body's
+// cap the way giveLoadout seats a kit - the row's order IS the build, and the
+// new open cells land IN FRONT of the shots, where a find is worth something
+// (fitBit) - and the old body is treated exactly as the find was: into the
 // pack, or into the snow it was lying in if the pack is full.
 //
 // It is the one place the weapon changes with no hand on it, which is why it
@@ -667,7 +687,8 @@ function toolUpgrade(p, cell) {
 // ...and doing it. Returns the body that came off, for the caller to file.
 function takeUpgrade(p, cell) {
   const cur = heldTool(p);
-  for (let i = 0; i < cur.bits.length; i++) { cell.bits[i] = cur.bits[i]; cur.bits[i] = null; }
+  const off = cell.bits.length - cur.bits.length;
+  for (let i = 0; i < cur.bits.length; i++) { cell.bits[off + i] = cur.bits[i]; cur.bits[i] = null; }
   slotPut(p, p.toolSel, cell);
   swapFx(p, cell);
   return cur;
@@ -1146,7 +1167,7 @@ function dropLoot(x, y, tier, chance) {
 // THE SHOT SITS IN THE LAST CELL AND EVERY CELL ABOVE IT IS LEFT EMPTY. The
 // order inside `bits` is the FIRING order, cell 0 first, and a modifier only
 // reaches the shots AFTER it - so holding cell 0 open means the first fitting
-// anybody picks up is auto-fitted there (fitAdd takes the first free cell) and
+// anybody picks up is auto-fitted there (fitBit puts a fitting first) and
 // lands in front of the shot it was always meant to shape. A kit that filled
 // cell 0 would put that first find PAST the only projectile, where it does
 // nothing, and teach the rule backwards on the press that follows. A `null` in
