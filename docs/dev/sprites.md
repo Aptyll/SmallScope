@@ -301,8 +301,8 @@ silver (alpha) or a dark red (dire), each through `mapClips` so every clip is wa
 blows the dire up to 32×26 nearest-neighbour
 (the tail of js/sprites/beasts.js) — each wants its own grid through the concept-art skill one day.
 
-The two camp props are
-`deadTree` (two 16×24 snags on `DTPAL`) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade). The berry bush is
+The three camp props are
+`deadTree` (two 16×24 snags on `DTPAL`) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
 four frames on `BPAL` — `bush`, `bushEmpty`, `bushBud`, `bushRipen` — one silhouette in which only
 the four berry pixels change (ripe, gone, pale `b` buds, dull `d` berries), because the frames are
 a clock the player reads at a glance and a bush that seemed to move would read as a different
@@ -340,7 +340,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | --- | --- | --- |
 | `characters.js` | player, the fish catch, skater, prone, raider, looks, the merchant | `playerTeam`, `champ`, `LOOK`, `champLook`, `player`, `raider` **(dead)**, `merchant` |
 | `looks.js` | bodies, heads, beards, hair, outfits | `portrait`, `MODEL_LAYERS` |
-| `terrain.js` | trees, rocks, gold ore, gold mine, bush, the dead snags, the den | `tree`, `treeAtlas`, `stump`, `rock`, `goldOre` **(dead)**, `mine` **(dead)**, `bush*`, `deadTree`, `den` |
+| `terrain.js` | trees, rocks, gold ore, gold mine, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `rock`, `goldOre` **(dead)**, `mine` **(dead)**, `bush*`, `deadTree`, `den`, `hogHut` |
 | `beasts.js` | imp, rabbit, deer, wolf, the bird, the camps' wolves | `rabbit`, `wolf`, `bird`, `deer`, `imp` **(dead)**, `alpha`, `dire` |
 | `eagle.js` | eagle | `eagle`, `eagleTeam`, `eagleFlash`, `eagleShadow` |
 | `buildings.js` | wall, tiered structures, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret`, `generator`, `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |

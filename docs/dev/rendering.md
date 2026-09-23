@@ -2362,7 +2362,7 @@ pine throws a long leaning slab and a rabbit a sliver. It is not light — nothi
 does not follow the day clock: the shade lies where it lies at night too, under the grade.
 
 - **The scenery's shade is ground.** `CASTERS` names what stands, by object type (pine, dead
-  tree, rock, bush, stump, den, chest, cairn), with its art and where it sits on its tile — the
+  tree, rock, bush, stump, den, chest, cairn, hog hut), with its art and where it sits on its tile — the
   pine's is its *standing* frame (`treeRestFrame`), never the wind's, and its code carries its
   nudge too so the shade lies under the art where it was nudged (every palette row shares one
   silhouette, so the shade is cut from row 0). The boot bake lays it all
