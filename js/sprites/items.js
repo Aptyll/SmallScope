@@ -43,127 +43,109 @@
     '........',
   ];
   // The berry and the fish are LOOPS rather than stamps, and the only item
-  // icons that are: a berry cluster with a sparkle crossing its stalks
-  // (docs/media/new_media3/berries.png, ten frames) and a fish whose fins
-  // work (fish.png, eight), each a 16x16 strip resampled to the 8x8 every
-  // other item icon is and snapped onto its own palette. They are exposed
-  // the way the gold piece is - one LIVE canvas per icon that stepItemIcons
-  // (js/render.js) stamps the frame into - so `SPRITES[ITEMS[type].icon]`
-  // stays one generic read everywhere in the game.
+  // icons that are: a cluster of four berries under two leaves that flap
+  // (docs/media/new_media4/new-berries-spritesheet.png, eight frames) and a
+  // fish whose fins work (docs/media/new_media3/fish.png, eight). The berry
+  // is drawn by hand at the 8x8 every other item icon is, on the sheet's own
+  // colours and to its leaf timing - a 2x2 average of the 16px cluster is
+  // mud - and its body holds still, because the sheet's one-pixel dip is
+  // half a pixel here. They are exposed the way the gold piece is - one LIVE
+  // canvas per icon that stepItemIcons (js/draw/render.js) stamps the frame
+  // into - so `SPRITES[ITEMS[type].icon]` stays one generic read everywhere
+  // in the game.
   const BERPAL = {
     '.': null,
-    'o': '#120a0d', // outline
-    'k': '#421101', // stalk, and the deep rim
-    'd': '#711102', // berry, deepest
-    'D': '#a00001', // berry, shade
-    'r': '#fc0201', // berry
-    'g': '#02b602', // leaf
-    'G': '#1ee302', // leaf, light
-    'y': '#f7ec1c', // the sparkle
-    'w': '#fdfbfb', // highlight
+    'o': '#3e1000', // outline
+    'k': '#4a0501', // the seams between berries, and the stalk
+    'D': '#860005', // berry, shade
+    'r': '#a50006', // berry
+    'h': '#e14c4e', // berry, shine
+    'w': '#fdfcfa', // highlight
+    'g': '#038603', // leaf
+    'G': '#02bc05', // leaf, light
   };
 
   const berry = [
     [
-      'kkgk....',
-      'kgggk...',
-      '.og.kk..',
-      '.d.kk.d.',
-      'DrDkkrrd',
-      'drDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
+      'gG....Gg',
+      'oGGkkGGo',
+      '..owro..',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
     [
-      '.kgk....',
-      'kgggk...',
-      '.og.kk..',
-      '.d.kk.d.',
-      'DrDkkrrd',
-      'drDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
+      '.g....g.',
+      'gGGkkGGg',
+      '..owro..',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
     [
-      '.kg.....',
-      'ggggk...',
-      '.okDdd..',
-      '..dkdyd.',
-      '.rrkdrrD',
-      'krrrrdrd',
-      '.ddrrkd.',
-      '...dd...',
+      '........',
+      'gGGkkGGg',
+      '..owro..',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
     [
-      '.kkk....',
-      'kgggk...',
-      '.kk.kd..',
-      '..drkDd.',
-      '.rrdDrrD',
-      'krDDrDrd',
-      '.dkrrdd.',
-      '...dd...',
+      '........',
+      'oGGkkGGo',
+      'goowroog',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
     [
-      '.kgk....',
-      'kgggk...',
-      '.og.kk..',
-      '.d..k.d.',
-      'DrDkkrrd',
-      'drDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
+      '........',
+      'oGGkkGGo',
+      'goowroog',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
     [
-      'kkgk....',
-      'kgggk...',
-      '.og.kk..',
-      '.d.kk.d.',
-      'DrDkkrrd',
-      'drDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
+      '........',
+      'gGGkkGGg',
+      '..owro..',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
     [
-      'kkgk....',
-      'kgggk...',
-      '.og.kk..',
-      '.d.kk.d.',
-      'DrDkkrrd',
-      'drDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
+      '........',
+      'gGGkkGGg',
+      '..owro..',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
     [
-      '.kg.....',
-      'kgggk...',
-      '.gg.kk..',
-      '.d..k.d.',
-      'Drrkkrrd',
-      'DrDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
+      'Gg....gG',
+      'oGGkkGGo',
+      '..owro..',
+      '.rkDDkr.',
+      'orDkkrDo',
+      '.okhrko.',
+      '..oDDo..',
+      '...oo...',
     ],
-    [
-      '.kgk....',
-      'kgggk...',
-      '.og.kk..',
-      '.d.kk.d.',
-      'DrDkkrrd',
-      'drDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
-    ],
-    [
-      'kkgk....',
-      'kgggk...',
-      '.og.kk..',
-      '.d.kk.d.',
-      'DrDkkrrd',
-      'drDrrDrd',
-      '.ddrrkd.',
-      '...dd...',
-    ]
   ];
 
   // The fish arrived SALMON, and the fish in this game is blue - the market's
