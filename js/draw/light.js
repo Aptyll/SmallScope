@@ -408,10 +408,11 @@ const STAR_CV = bakeSpecks(6, (g, kind, a) => {
 
 // is this screen pixel over unbroken ice? the mask every reflected pixel
 // passes, arms of a cross included - without it a bright star's points spill
-// off the lake onto the snow beside it
+// off the lake onto the snow beside it. Unbroken is the tile (an open hole
+// reflects nothing), ice is the painted pixel (the shore, ground.js)
 function overIce(px, py, ox, oy) {
-  const tx = ((px + ox) / TILE) | 0, ty = ((py + oy) / TILE) | 0;
-  return inWorld(tx, ty) && ground[idx(tx, ty)] === 1;
+  const x = px + ox, y = py + oy, tx = (x / TILE) | 0, ty = (y / TILE) | 0;
+  return inWorld(tx, ty) && ground[idx(tx, ty)] !== 2 && iceAtPx(x, y);
 }
 
 function drawIceStars(ox, oy, tx0, ty0, tx1, ty1) {
@@ -419,12 +420,22 @@ function drawIceStars(ox, oy, tx0, ty0, tx1, ty1) {
   if (night <= 0.03) return;
   const t = state.windT;
 
-  // the mirror: every run of unbroken ice on screen, darkened as one rect
-  ctx.fillStyle = 'rgba(7,13,40,' + (night * STAR_MIRROR).toFixed(3) + ')';
+  // the mirror: every run of unbroken ice no shore crosses, darkened as one
+  // rect, and every tile a shore does cross stamped from its own slot of the
+  // shore's mask (mirrorCv, ground.js), so the dark ends where the ice does
+  const ma = night * STAR_MIRROR;
+  ctx.globalAlpha = ma;
+  for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
+    const s = mirrorSlot[idx(tx, ty)];
+    if (s < 0 || ground[idx(tx, ty)] === 2) continue;
+    ctx.drawImage(mirrorCv, (s % MIRROR_COLS) * TILE, ((s / MIRROR_COLS) | 0) * TILE, TILE, TILE, tx * TILE - ox, ty * TILE - oy, TILE, TILE);
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(7,13,40,' + ma.toFixed(3) + ')';
   for (let ty = ty0; ty <= ty1; ty++) {
     let run = -1;
     for (let tx = tx0; tx <= tx1 + 1; tx++) {
-      const ice = tx <= tx1 && ground[idx(tx, ty)] === 1;
+      const ice = tx <= tx1 && ground[idx(tx, ty)] === 1 && mirrorSlot[idx(tx, ty)] < 0;
       if (ice && run < 0) run = tx;
       else if (!ice && run >= 0) {
         ctx.fillRect(run * TILE - ox, ty * TILE - oy, (tx - run) * TILE, TILE);

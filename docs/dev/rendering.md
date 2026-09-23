@@ -152,7 +152,8 @@ entity draw code must use `ex`/`ey`.
 
 `render()` (js/draw/render.js) runs, in order. **World space** (`ctx = wctx`):
 
-1. ground blit → under-ice fish → ice-crack decals;
+1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](#cast-shadows)) →
+   ground blit → under-ice fish → ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
    one `footprints` array, branching on `f.k`);
@@ -2293,8 +2294,11 @@ and *keeps* it that way. There is no headroom to fix it with. So the ice itself 
 first: every intact tile takes a deep-blue wash scaled by `state.darkness` (`STAR_MIRROR`), which
 is what a frozen lake at night actually looks like from above — a black mirror, darker than the
 snow around it — and it is what gives the stars something to be bright against. Without it the
-whole effect is invisible. Filled in
-horizontal **runs** of adjacent ice, one `fillRect` per run rather than one per tile.
+whole effect is invisible. A tile no shore crosses is filled in horizontal **runs** of adjacent
+ice, one `fillRect` per run rather than one per tile; a tile the shore does cross (ice or snow)
+stamps its own 16 px slot of `mirrorCv` — the ice pixels of the edge test the ground bake read
+([the ice shore](world.md#the-ice-shore), js/draw/ground.js), all in one atlas so the stamps
+batch — so the dark ends where the painted ice does, never on the tile grid.
 
 **The sky.** The stars do not sit *on* the ice, they sit in a sky reflected *in* it, so they are
 anchored neither to the world nor to the screen: the field is sampled at `STAR_PAR` (0.22) of the
@@ -2310,6 +2314,33 @@ It is drawn **early** — right after the visible tile range is computed, above 
 and the crack decals but under everything that walks, so a body standing on the ice covers its own
 reflection — and therefore **under** the night multiply as well. That is deliberate: the same blue
 that cools the snow cools the stars with it, which is what a reflection does.
+
+### Cast shadows
+
+**One sun, top-left, and everything standing on the snow throws its own silhouette down-right**
+(the `cast shadows` banner, js/draw/ground.js). `shadeMask` bakes a frame's shade once: each
+opaque pixel lands `SUN_DX`/`SUN_DY` (0.62, 0.34) per row of height from the art's foot row, so a
+pine throws a long leaning slab and a rabbit a sliver. It is not light — nothing glows — and it
+does not follow the day clock: the shade lies where it lies at night too, under the grade.
+
+- **The scenery's shade is ground.** `CASTERS` names what stands, by object type (pine, dead
+  tree, rock, bush, stump, den, chest, cairn), with its art and where it sits on its tile — the
+  pine's is its *standing* frame (`treeRestFrame`), never the wind's. The boot bake lays it all
+  in `SHADE_CHUNK` squares (`shadeWorld`: every caster's shade unioned opaque, then one
+  `multiply` of `SHADE_TINT` at `SHADE_A`, so overlapping shade is one shade, never a darker
+  one); a single tile repaints through `paintCastShade`, the same union for one tile. A composite
+  onto the 3712 px canvas costs the same for 16 px as for 512, so the per-tile path at boot took
+  five seconds — never bake the map through it.
+- **Nobody has to report a change.** `castAt` remembers the caster each tile's shade was painted
+  with, and `syncCasts` — the first thing `render()` does before the ground blit — compares it
+  with what stands there now over the view plus `CAST_REACH`, and repaints the reach of any that
+  changed, each dirty tile once. A pine felled by an axe, a crater, the spur or a snapshot takes
+  its shade with it, and a new kind of scenery only needs a `CASTERS` entry.
+- **Bodies draw their own each frame** (`drawCastShade(spr, x, y)` before the sprite, a
+  `WeakMap` of shades per frame): players (the standing frame through a roll; none lying prone or
+  in a hole), animals, worker bots and soldiers, merchants (on the snow through a hop) and
+  finished buildings. It is flat `SHADE_BODY` at `SHADE_BODY_A`, which reads the same on the snow
+  as the multiply. Birds, flags, pylons and the practice furniture keep their small flat marks.
 
 ## Drawing a thousand of something
 

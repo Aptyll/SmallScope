@@ -20,9 +20,7 @@ function drawAnimal(a, ex, ey, now) {
   const spr = clipFrame(SPRITES[a.kind][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const py = Math.round(a.y + 4 - spr.height - ey);
-  const sw = rabbit ? 4 : big ? 12 : wolf ? 6 : 7;
-  ctx.fillStyle = 'rgba(110,130,170,0.35)';
-  ctx.fillRect(Math.round(a.x - ex) - sw, Math.round(a.y + 2 - ey), sw * 2, 2);
+    drawCastShade(spr, px, py); // the sun's shade, cut from this frame (ground.js)
   drawSpriteFlash(spr, px, py, a.flash);
   // netted, snared, alight, marked: the same four tells a player wears, at
   // this body's size (drawUnitStates, js/abilities.js)
@@ -73,8 +71,7 @@ function drawRobot(b, ex, ey, now) {
   const bx = Math.round(b.x - 6 - ex);
   const by = Math.round(b.y + 4 - ey) - spr.height - bob; // tread bottom sits at b.y + 4
 
-  ctx.fillStyle = 'rgba(110,130,170,0.35)';
-  ctx.fillRect(bx + 1, Math.round(b.y + 3 - ey), 10, 2);
+  drawCastShade(spr, bx, by + bob); // on the ground under the bob
 
   // one swing animation, two jobs: the harvest tick, or - on an attack flag -
   // the same axe aimed at whatever b.atkAim points to (`worker flags`, robots.js)
@@ -141,8 +138,7 @@ function drawMerchant(b, ex, ey, now) {
   const px = Math.round(b.x - 8 - ex), py = Math.round(b.y + 4 - ey) - spr.height;
   const lift = (b.hopT > 0 ? Math.round(Math.sin(Math.min(1, b.hopT / MERCH_HOP_T) * Math.PI) * 10) : 0) +
     (b.moving ? Math.floor(b.animT / 2) % 2 : 0);
-  ctx.fillStyle = 'rgba(110,130,170,0.35)';
-  ctx.fillRect(px + 5, py + spr.height - 1, 6, 2);
+  drawCastShade(spr, px, py); // stays on the snow through a hop
   drawSpriteFlash(spr, px, py - lift, b.flash);
   // the swing: the worker's wind-up and chop, aimed at the tile in hand
   if (b.tgt && !b.moving && lift === 0) {
@@ -261,8 +257,10 @@ function drawPlayer(p, ex, ey, now) {
   // flat on the snow has nothing to cast one over, and the cover's own dark
   // lower rim is what grounds it instead)
   if (p.fallT <= 0 && !lying) {
-    ctx.fillStyle = 'rgba(110,130,170,0.4)';
-    ctx.fillRect(px + 5, py + 15, 6, 2);
+    // the sun's shade, cut from the frame (ground.js) - the standing one
+    // through a roll, whose spin would smear it - feet on the foot row
+    const ss = p.dodgeT > 0 ? classSet(p)[p.dir][0] : spr;
+    drawCastShade(ss, px, py + 16 - ss.height);
   }
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (lying && local) drawBuryRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3);

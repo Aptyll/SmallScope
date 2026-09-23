@@ -1,8 +1,10 @@
 'use strict';
 // The ground's pixels: hash2/vnoise (the per-tile noise every draw file
 // reads), the prerendered ground canvas and its runtime repaints, the road,
-// and the scenery bakes that ride on it (the pine's wind frame, the chest,
-// the cairn). First of the js/draw/ files: everything after it calls hash2.
+// the lakes' shores, the cast shadows (baked for the scenery, drawn per
+// frame for bodies), and the scenery bakes that ride on it (the pine's wind
+// frame, the chest, the cairn). First of the js/draw/ files: everything
+// after it calls hash2.
 // ------------------------------------------------------------ ground prerender
 const groundCv = document.createElement('canvas');
 groundCv.width = WORLD * TILE; groundCv.height = WORLD * TILE;
@@ -59,9 +61,12 @@ function paintGroundTile(g, tx, ty) {
         if (!inWorld(tx - 1, ty) || ground[idx(tx - 1, ty)] !== 2) chip(0, 0, 0, 1);
         if (!inWorld(tx + 1, ty) || ground[idx(tx + 1, ty)] !== 2) chip(TILE - 1, 0, 0, 1);
       } else if (gv === 1) {
-        quad(g, '#b9dcec', '#c4e3f0');
-        // cracks
-        if (h > 0.55) {
+        // per pixel, against the lake's own ragged edge (the `ice shore`
+        // banner below): the tone, the depth, the bank and any snow the
+        // edge leaves on this tile
+        const inner = paintIceTile(g, tx, ty, px, py);
+        // cracks - only well inside the ice, so none lands on the bank
+        if (inner && h > 0.55) {
           g.fillStyle = '#a3cbe0';
           const n = 2 + ((h * 7) | 0) % 3;
           let lx = px + 3 + ((h * 100) | 0) % 9, ly = py + 3 + ((h * 53) | 0) % 9;
@@ -71,13 +76,7 @@ function paintGroundTile(g, tx, ty) {
             ly += (((h * (29 + i * 5)) | 0) % 3) - 1;
           }
         }
-        if (h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
-        // rim where ice meets snow
-        g.fillStyle = '#d6ecf4';
-        if (!inWorld(tx, ty - 1) || ground[idx(tx, ty - 1)] === 0) g.fillRect(px, py, TILE, 1);
-        if (!inWorld(tx, ty + 1) || ground[idx(tx, ty + 1)] === 0) g.fillRect(px, py + TILE - 1, TILE, 1);
-        if (!inWorld(tx - 1, ty) || ground[idx(tx - 1, ty)] === 0) g.fillRect(px, py, 1, TILE);
-        if (!inWorld(tx + 1, ty) || ground[idx(tx + 1, ty)] === 0) g.fillRect(px + TILE - 1, py, 1, TILE);
+        if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
         // ...and, where a PATH crosses the lake (the paths, js/world.js), the
         // earth spilling over this tile's share of the crossing, rimmed along
         // its own ragged edge rather than along the tile's sides. The diagonal
@@ -107,6 +106,8 @@ function paintGroundTile(g, tx, ty) {
           g.fillStyle = '#b6c2d4';
           g.fillRect(px + ((h * 700) | 0) % 12 + 2, py + ((h * 900) | 0) % 12 + 2, 2, 1);
         }
+        // a lake's edge reaching over onto this snow, and the lip of its bank
+        paintSnowShore(g, tx, ty, px, py);
         // the road (ground 3, and the snow beside it) is painted OVER the
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
@@ -120,6 +121,9 @@ function paintGroundTile(g, tx, ty) {
         const lo = objAt(tx + dx, ty + dy);
         if (lo && lo.type === 'log') paintLog(g, lo.seg, px, py, -dx * TILE, -dy * TILE);
       }
+      // last, over everything lying on the ground: the shade the scenery
+      // standing around this tile throws across it (the `cast shadows` banner)
+      paintCastShade(g, tx, ty, px, py);
 }
 
 // ---- the road's pixels ----------------------------------------------------
@@ -229,9 +233,14 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
 function renderGround() {
   const g = groundCv.getContext('2d');
   g.imageSmoothingEnabled = false;
+  bakeLakes();
+  shadeBulk = true;
   for (let ty = 0; ty < WORLD; ty++) {
     for (let tx = 0; tx < WORLD; tx++) paintGroundTile(g, tx, ty);
   }
+  shadeBulk = false;
+  shadeWorld(g);
+  noteCasts();
 }
 
 // runtime ground change (hole opened / refrozen): repaint the tile plus its
@@ -242,6 +251,383 @@ function repaintGround(tx, ty) {
   for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
     if (inWorld(tx + dx, ty + dy)) paintGroundTile(g, tx + dx, ty + dy);
   }
+}
+
+// ------------------------------------------------------------ the ice shore
+// A lake is a SHAPE, not a run of tiles. Whether a pixel is ice is read off
+// the four tile centres around it (1 for a lake tile - ice or an open hole -
+// 0 for anything else), blended bilinearly and pushed across 0.5 by two
+// octaves of noise, so the edge wanders through the tiles instead of
+// stepping round them. The tile grid still says where the ice IS for every
+// rule in the game; the pixels only say where it looks like it ends, a few
+// pixels either way. The noise never reaches half a unit (amp + amp2 < 1 in
+// every style), which is what keeps a tile whose whole 3x3 is lake solid ice
+// and a tile with no lake in its 3x3 plain snow - so only the band along an
+// edge pays for the per-pixel test.
+//
+// The light comes from the top-left, as it does on the map chart and for
+// every cast shadow: the snow's lip over a lake's north and west sides
+// catches the sun, throws a band of shade (`band` px) onto the ice under it,
+// and the far bank's face is lit.
+//
+// Each lake rolls ONE style for its whole body off its first tile's hash
+// (bakeLakes), so a seed paints the same lakes on every screen and nothing in
+// genWorld rolls for it; FROZEN ISLES, one lake, is one style a seed.
+//   LIP    a soft bank, the edge wandering gently
+//   DEEP   pale shallows at the shore darkening in two steps to the middle
+//          (lakeDepth: tiles in from the edge), the bank's shade a deeper band
+// `w` is the roll's weight. Noise periods are in tiles.
+const ICE_STYLES = [
+  { id: 'lip',   w: 1, amp: 0.42, fr: 0.56, amp2: 0.14, fr2: 0.19, band: 2 },
+  { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
+];
+const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
+const rgbOf = (h) => { const a = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; a.css = h; return a; };
+const ICE_TONE = [rgbOf('#b9dcec'), rgbOf('#c4e3f0')];     // the sheet, in two tones by a dithered low noise
+const ICE_SHALLOW = [rgbOf('#c9e7f3'), rgbOf('#d0ebf5')];  // DEEP: the shelf along the shore
+const ICE_MID = [rgbOf('#a6cde2'), rgbOf('#add2e6')];      // ...the water deepening
+const ICE_DEEP = [rgbOf('#8fbcd8'), rgbOf('#96c1db')];     // ...the middle
+const BANK_SHADE = rgbOf('#9ec5da'), BANK_SHADE_DEEP = rgbOf('#8db6d0'), BANK_SHADE2 = rgbOf('#aacfe2');
+const BANK_LIP = rgbOf('#ffffff'), BANK_FACE = rgbOf('#e0f2f9');
+const SNOW_TONE = [rgbOf('#ebf2fa'), rgbOf('#e7eff8')], SNOW_SPECK = rgbOf('#d5e2f0');
+
+let lakeStyle = null; // per tile: its lake's index into ICE_STYLES, 255 off the ice
+let lakeDepth = null; // per tile: tiles in from the lake's edge (1 = on it), 0 off the ice
+function isLake(tx, ty) {
+  if (!inWorld(tx, ty)) return false;
+  const v = ground[idx(tx, ty)];
+  return v === 1 || v === 2;
+}
+function rollIceStyle(tx, ty) {
+  let r = hash2(tx * 7 + 3, ty * 13 + 5) * ICE_W;
+  for (let s = 0; s < ICE_STYLES.length; s++) if ((r -= ICE_STYLES[s].w) < 0) return s;
+  return 0;
+}
+// label every lake (flood fill, rolled off its first tile in scan order) and
+// sweep its depth in from the edge. Runs once, before the bake: ground only
+// ever flips ice <-> hole at runtime, and both are lake.
+function bakeLakes() {
+  const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
+  lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);
+  for (let i = 0; i < N; i++) {
+    if (lakeStyle[i] !== 255 || !isLake(i % WORLD, (i / WORLD) | 0)) continue;
+    const s = rollIceStyle(i % WORLD, (i / WORLD) | 0);
+    let n = 0; q[n++] = i; lakeStyle[i] = s;
+    while (n) {
+      const j = q[--n], x = j % WORLD, y = (j / WORLD) | 0;
+      for (let k = 0; k < 8; k += 2) {
+        if (!isLake(x + D4[k], y + D4[k + 1])) continue;
+        const a = idx(x + D4[k], y + D4[k + 1]);
+        if (lakeStyle[a] === 255) { lakeStyle[a] = s; q[n++] = a; }
+      }
+    }
+  }
+  // one mirror slot per tile an edge can cross (a lake and a non-lake in its
+  // 3x3), in a single atlas: night's mirror stamps these instead of the tile
+  let slots = 0;
+  mirrorSlot = new Int32Array(N).fill(-1);
+  for (let i = 0; i < N; i++) {
+    const n = lakesAround(i % WORLD, (i / WORLD) | 0);
+    if (n > 0 && n < 9) mirrorSlot[i] = slots++;
+  }
+  mirrorCv.width = MIRROR_COLS * TILE; mirrorCv.height = Math.max(1, Math.ceil(slots / MIRROR_COLS)) * TILE;
+  let head = 0, tail = 0;
+  for (let i = 0; i < N; i++) {
+    const x = i % WORLD, y = (i / WORLD) | 0;
+    if (!isLake(x, y)) continue;
+    for (let k = 0; k < 8; k += 2) if (!isLake(x + D4[k], y + D4[k + 1])) { lakeDepth[i] = 1; q[tail++] = i; break; }
+  }
+  while (head < tail) {
+    const j = q[head++], x = j % WORLD, y = (j / WORLD) | 0, d = lakeDepth[j];
+    for (let k = 0; k < 8; k += 2) {
+      if (!isLake(x + D4[k], y + D4[k + 1])) continue;
+      const a = idx(x + D4[k], y + D4[k + 1]);
+      if (!lakeDepth[a]) { lakeDepth[a] = Math.min(255, d + 1); q[tail++] = a; }
+    }
+  }
+}
+
+// is world pixel (x, y) ice, as painted - the edge test described above
+function iceAtPx(x, y) {
+  const u = (x + 0.5) / TILE - 0.5, v = (y + 0.5) / TILE - 0.5;
+  const i = Math.floor(u), j = Math.floor(v);
+  const a = isLake(i, j), b = isLake(i + 1, j), c = isLake(i, j + 1), d = isLake(i + 1, j + 1);
+  if (a && b && c && d) return true;
+  if (!(a || b || c || d)) return false;
+  const fu = u - i, fv = v - j;
+  const f = (a ? (1 - fu) * (1 - fv) : 0) + (b ? fu * (1 - fv) : 0) + (c ? (1 - fu) * fv : 0) + (d ? fu * fv : 0);
+  const s = ICE_STYLES[lakeStyle[a ? idx(i, j) : b ? idx(i + 1, j) : c ? idx(i, j + 1) : idx(i + 1, j + 1)]];
+  const fr = s.fr * TILE, fr2 = s.fr2 * TILE;
+  return f + (vnoise(x / fr, y / fr) - 0.5) * s.amp + (vnoise(x / fr2 + 50, y / fr2 + 50) - 0.5) * s.amp2 > 0.5;
+}
+// tiles in from the edge at a pixel, blended like the edge (0 off the ice)
+function depthAtPx(x, y) {
+  const u = (x + 0.5) / TILE - 0.5, v = (y + 0.5) / TILE - 0.5;
+  const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+  const at = (a, b) => inWorld(a, b) ? lakeDepth[idx(a, b)] : 0;
+  return at(i, j) * (1 - fu) * (1 - fv) + at(i + 1, j) * fu * (1 - fv) + at(i, j + 1) * (1 - fu) * fv + at(i + 1, j + 1) * fu * fv;
+}
+// the sheet's colour at a pixel (hp: the pixel's own roll)
+function iceTone(x, y, s, hp) {
+  const k = vnoise(x / 37 + 3, y / 29 + 5) + (hp - 0.5) * 0.18 > 0.5 ? 0 : 1;
+  if (s.deep) {
+    const d = depthAtPx(x, y) + (hp - 0.5) * 0.6;
+    if (d < 0.9) return ICE_SHALLOW[k];
+    if (d > 4.2) return ICE_DEEP[k];
+    if (d > 2.4) return ICE_MID[k];
+  }
+  return ICE_TONE[k];
+}
+
+// one tile's edge, and the pixels round it the bank reads: SHORE_M before
+// (the shade band looks up and left), 1 after (the lip and face look down
+// and right)
+const SHORE_M = 3, SHORE_W = TILE + SHORE_M + 1;
+const shoreMask = new Uint8Array(SHORE_W * SHORE_W);
+function fillShoreMask(px, py) {
+  for (let j = 0; j < SHORE_W; j++) for (let i = 0; i < SHORE_W; i++) {
+    shoreMask[j * SHORE_W + i] = iceAtPx(px - SHORE_M + i, py - SHORE_M + j) ? 1 : 0;
+  }
+}
+const iceMk = (i, j) => shoreMask[(j + SHORE_M) * SHORE_W + i + SHORE_M];
+
+// Night's mirror (drawIceStars, light.js) darkens the ice under the reflected
+// sky. A tile no edge crosses is darkened whole; one the edge crosses stamps
+// its own slot of mirrorCv - the ice pixels of the mask the bake just read,
+// in MIRROR_INK - so the dark follows the shore instead of the tiles.
+const MIRROR_COLS = 64, MIRROR_INK = [7, 13, 40];
+const mirrorCv = document.createElement('canvas');
+let mirrorSlot = null; // per tile: its slot in mirrorCv, -1 for none
+const mirrorImg = new ImageData(TILE, TILE);
+function markMirror(tx, ty) {
+  const s = mirrorSlot[idx(tx, ty)], D = mirrorImg.data;
+  for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+    const k = (j * TILE + i) * 4;
+    D[k] = MIRROR_INK[0]; D[k + 1] = MIRROR_INK[1]; D[k + 2] = MIRROR_INK[2]; D[k + 3] = iceMk(i, j) ? 255 : 0;
+  }
+  mirrorCv.getContext('2d').putImageData(mirrorImg, (s % MIRROR_COLS) * TILE, ((s / MIRROR_COLS) | 0) * TILE);
+}
+// the bank at tile pixel (i, j): shade under the lip, the lit far face, the
+// lip itself - or null where the pixel is not on a bank
+function bankAt(i, j, s) {
+  if (iceMk(i, j)) {
+    for (let k = 1; k <= s.band; k++) {
+      if (!iceMk(i, j - k) || (k === 1 && !iceMk(i - 1, j))) return k === 1 ? (s.deep ? BANK_SHADE_DEEP : BANK_SHADE) : BANK_SHADE2;
+    }
+    return !iceMk(i, j + 1) || !iceMk(i + 1, j) ? BANK_FACE : null;
+  }
+  return iceMk(i, j + 1) || iceMk(i + 1, j) ? BANK_LIP : null;
+}
+function lakesAround(tx, ty) {
+  let n = 0;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (isLake(tx + dx, ty + dy)) n++;
+  return n;
+}
+
+// an ice tile, every pixel: returns whether the whole 3x3 is lake (no edge
+// crosses it, so the tile's cracks and glints can go anywhere)
+const iceImg = new ImageData(TILE, TILE);
+function paintIceTile(g, tx, ty, px, py) {
+  const s = ICE_STYLES[lakeStyle[idx(tx, ty)]];
+  const inner = lakesAround(tx, ty) === 9;
+  if (!inner) { fillShoreMask(px, py); markMirror(tx, ty); }
+  const D = iceImg.data;
+  for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+    const x = px + i, y = py + j, hp = hash2(x * 3 + 7, y * 5 + 11);
+    let c;
+    if (inner) c = iceTone(x, y, s, hp);
+    else if (iceMk(i, j)) c = bankAt(i, j, s) || iceTone(x, y, s, hp);
+    else c = bankAt(i, j, s) || (hp > 0.9 ? SNOW_SPECK : SNOW_TONE[vnoise((x >> 3) / 13, (y >> 3) / 13) > 0.5 ? 0 : 1]);
+    const k = (j * TILE + i) * 4;
+    D[k] = c[0]; D[k + 1] = c[1]; D[k + 2] = c[2]; D[k + 3] = 255;
+  }
+  g.putImageData(iceImg, px, py);
+  return inner;
+}
+// a snow tile beside a lake: only the pixels the edge or the lip claims
+function paintSnowShore(g, tx, ty, px, py) {
+  let st = 255;
+  for (let dy = -1; dy <= 1 && st === 255; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (isLake(tx + dx, ty + dy)) { st = lakeStyle[idx(tx + dx, ty + dy)]; break; }
+  }
+  if (st === 255) return;
+  const s = ICE_STYLES[st];
+  fillShoreMask(px, py);
+  markMirror(tx, ty);
+  for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+    const c = iceMk(i, j) ? bankAt(i, j, s) || iceTone(px + i, py + j, s, hash2((px + i) * 3 + 7, (py + j) * 5 + 11)) : bankAt(i, j, s);
+    if (c) { g.fillStyle = c.css; g.fillRect(px + i, py + j, 1, 1); }
+  }
+}
+
+// ------------------------------------------------------------ cast shadows
+// One sun, top-left, for everything standing on the snow: a sprite throws its
+// own silhouette down-right, each row of it landing SUN_DX/SUN_DY per row of
+// height from its foot (shadeMask bakes that once per frame of art).
+//
+// The scenery never moves, so its shade is GROUND: paintCastShade paints it
+// into groundCv with the tile it falls on - every caster within CAST_REACH
+// of the tile, unioned in one scratch tile and then multiplied down by
+// SHADE_TINT at SHADE_A, so two pines' shade overlapping is one shade, not a
+// darker one. What stands is CASTERS, by object type: its art (the pine's
+// standing frame, never the wind's) and where the art sits on its tile.
+// Every tile remembers the caster it was painted with (castAt) and
+// syncCasts - run by render() over the view - repaints a caster's reach the
+// moment what stands on its tile changes, so a felled pine takes its shade
+// with it however it fell (an axe, the spur, a crater, a snapshot) with
+// nothing calling anything.
+//
+// What moves draws its own each frame under its sprite (drawCastShade): the
+// same silhouette in SHADE_BODY, flat and translucent, which reads the same
+// on the snow as the multiply does.
+const SUN_DX = 0.62, SUN_DY = 0.34;        // per row of height: 0.8 of (0.78, 0.42), mid-morning
+const SHADE_A = 0.3, SHADE_TINT = '#465fa5';
+const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
+const CAST_REACH = [-1, -1, 3, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
+const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
+const CASTERS = {
+  tree:     { code: (o, tx, ty) => 1 + treeRestFrame(tx, ty),
+              art: (c) => { const A = SPRITES.treeAtlas; return [A, (c - 1) * A.fw, A.fw, A.fh, -5, -21]; } },
+  deadTree: { code: (o) => 100 + o.variant, art: (c) => whole(SPRITES.deadTree[c - 100], 0, -8) },
+  rock:     { code: (o) => 110 + o.variant, art: (c) => whole(SPRITES.rock[c - 110], 0, 4) },
+  bush:     { code: () => 120, art: () => whole(SPRITES.bush, 0, 4) },
+  stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
+  den:      { code: () => 122, art: () => whole(SPRITES.den, 0, 4) },
+  chest:    { code: () => 123, art: () => whole(CHEST_SPR, 0, TILE - CHEST_SPR.height) },
+  cairn:    { code: () => 124, art: () => whole(CAIRN_SPR, 1, TILE - CAIRN_SPR.height + 1) },
+};
+
+// a frame's shade: an opaque silhouette thrown down-right in `col`, its top
+// row on the art's foot row (cv.oy rows below the art's top); copied at
+// `alpha` when the caller wants it translucent
+const artAlpha = new WeakMap(); // a source canvas's pixels, read back once (the pine atlas holds 48 frames)
+function shadeMask(src, sx, sw, sh, col, alpha) {
+  let px = artAlpha.get(src);
+  if (!px) { px = src.getContext('2d').getImageData(0, 0, src.width, src.height).data; artAlpha.set(src, px); }
+  const op = (i, j) => px[(j * src.width + sx + i) * 4 + 3] > 100;
+  let bot = -1;
+  for (let j = 0; j < sh; j++) for (let i = 0; i < sw; i++) if (op(i, j)) bot = j;
+  if (bot < 0) return null;
+  const cv = document.createElement('canvas');
+  cv.width = sw + Math.ceil(bot * SUN_DX) + 2; cv.height = Math.ceil(bot * SUN_DY) + 3;
+  const g = cv.getContext('2d');
+  g.fillStyle = col;
+  const rw = Math.ceil(SUN_DX) + 1, rh = Math.ceil(SUN_DY) + 1;
+  for (let j = 0; j <= bot; j++) for (let i = 0; i < sw; i++) {
+    if (!op(i, j)) continue;
+    const hgt = bot - j;
+    g.fillRect(Math.round(i + hgt * SUN_DX), Math.round(hgt * SUN_DY), rw, rh);
+  }
+  let out = cv;
+  if (alpha < 1) {
+    out = document.createElement('canvas'); out.width = cv.width; out.height = cv.height;
+    const o = out.getContext('2d'); o.globalAlpha = alpha; o.drawImage(cv, 0, 0);
+  }
+  out.oy = bot;
+  return out;
+}
+const shadeByCode = new Map();
+function shadeFor(C, c) {
+  let m = shadeByCode.get(c);
+  if (m !== undefined) return m;
+  const [src, sx, sw, sh, ax, ay] = C.art(c);
+  m = shadeMask(src, sx, sw, sh, SHADE_TINT, 1);
+  if (m) {
+    m.ax = ax; m.ay = ay + m.oy;
+    if (Math.floor(ax / TILE) < CAST_REACH[0] || Math.floor(m.ay / TILE) < CAST_REACH[1] ||
+        Math.floor((ax + m.width - 1) / TILE) > CAST_REACH[2] || Math.floor((m.ay + m.height - 1) / TILE) > CAST_REACH[3]) {
+      console.warn('cast shadow outruns CAST_REACH', c);
+    }
+  }
+  shadeByCode.set(c, m);
+  return m;
+}
+function castCode(tx, ty) {
+  const o = objects[idx(tx, ty)], C = o && CASTERS[o.type];
+  return C ? C.code(o, tx, ty) : 0;
+}
+const shadeCv = document.createElement('canvas');
+shadeCv.width = TILE; shadeCv.height = TILE;
+const shadeG = shadeCv.getContext('2d');
+let shadeBulk = false; // true through renderGround: the whole map's shade goes down in chunks after the tiles
+function paintCastShade(g, tx, ty, px, py) {
+  if (shadeBulk) return;
+  let any = false;
+  for (let cy = ty - CAST_REACH[3]; cy <= ty - CAST_REACH[1]; cy++) for (let cx = tx - CAST_REACH[2]; cx <= tx - CAST_REACH[0]; cx++) {
+    if (!inWorld(cx, cy)) continue;
+    const o = objects[idx(cx, cy)], C = o && CASTERS[o.type];
+    if (!C) continue;
+    const m = shadeFor(C, C.code(o, cx, cy));
+    if (!m) continue;
+    if (!any) { shadeG.clearRect(0, 0, TILE, TILE); any = true; }
+    shadeG.drawImage(m, cx * TILE + m.ax - px, cy * TILE + m.ay - py);
+  }
+  if (!any) return;
+  g.save();
+  g.globalCompositeOperation = 'multiply'; g.globalAlpha = SHADE_A;
+  g.drawImage(shadeCv, px, py);
+  g.restore();
+}
+// the boot bake's shade: one multiply per SHADE_CHUNK square instead of one
+// per tile - a composite onto the 3712 px canvas costs the same for 16 px as
+// for 512, and forty thousand of them took five seconds
+const SHADE_CHUNK = 512;
+function shadeWorld(g) {
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = SHADE_CHUNK;
+  const c = cv.getContext('2d'), span = SHADE_CHUNK / TILE;
+  for (let y0 = 0; y0 < WORLD * TILE; y0 += SHADE_CHUNK) for (let x0 = 0; x0 < WORLD * TILE; x0 += SHADE_CHUNK) {
+    const tx0 = x0 / TILE, ty0 = y0 / TILE;
+    let any = false;
+    for (let cy = Math.max(0, ty0 - CAST_REACH[3]); cy <= Math.min(WORLD - 1, ty0 + span - 1 - CAST_REACH[1]); cy++) {
+      for (let cx = Math.max(0, tx0 - CAST_REACH[2]); cx <= Math.min(WORLD - 1, tx0 + span - 1 - CAST_REACH[0]); cx++) {
+        const o = objects[idx(cx, cy)], C = o && CASTERS[o.type];
+        if (!C) continue;
+        const m = shadeFor(C, C.code(o, cx, cy));
+        if (!m) continue;
+        if (!any) { c.clearRect(0, 0, SHADE_CHUNK, SHADE_CHUNK); any = true; }
+        c.drawImage(m, cx * TILE + m.ax - x0, cy * TILE + m.ay - y0);
+      }
+    }
+    if (!any) continue;
+    g.save();
+    g.globalCompositeOperation = 'multiply'; g.globalAlpha = SHADE_A;
+    g.drawImage(cv, x0, y0);
+    g.restore();
+  }
+}
+let castAt = null; // per tile: the caster code its reach was last painted with
+function noteCasts() {
+  castAt = new Int16Array(WORLD * WORLD);
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) castAt[idx(tx, ty)] = castCode(tx, ty);
+}
+// every tile whose shade can reach the view: a caster that changed repaints its reach
+// (a crater fells dozens at once: their reaches overlap, so each tile once)
+const castDirty = new Set();
+function syncCasts(tx0, ty0, tx1, ty1) {
+  if (!castAt) return;
+  for (let cy = Math.max(0, ty0 - CAST_REACH[3]); cy <= Math.min(WORLD - 1, ty1 - CAST_REACH[1]); cy++) {
+    for (let cx = Math.max(0, tx0 - CAST_REACH[2]); cx <= Math.min(WORLD - 1, tx1 - CAST_REACH[0]); cx++) {
+      const i = idx(cx, cy), c = castCode(cx, cy);
+      if (c === castAt[i]) continue;
+      castAt[i] = c;
+      for (let y = cy + CAST_REACH[1]; y <= cy + CAST_REACH[3]; y++) for (let x = cx + CAST_REACH[0]; x <= cx + CAST_REACH[2]; x++) {
+        if (inWorld(x, y)) castDirty.add(idx(x, y));
+      }
+    }
+  }
+  if (!castDirty.size) return;
+  const g = groundCv.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  for (const i of castDirty) paintGroundTile(g, i % WORLD, (i / WORLD) | 0);
+  castDirty.clear();
+}
+// a body's shade, under its sprite drawn at (x, y) in the frame being drawn
+const bodyShade = new WeakMap();
+function drawCastShade(spr, x, y) {
+  let m = bodyShade.get(spr);
+  if (m === undefined) { m = shadeMask(spr, 0, spr.width, spr.height, SHADE_BODY, SHADE_BODY_A); bodyShade.set(spr, m); }
+  if (m) ctx.drawImage(m, x, y + m.oy);
 }
 
 // ------------------------------------------------------------ the scenery bakes
@@ -267,12 +653,15 @@ function repaintGround(tx, ty) {
 // windSway() returns 0.
 const TREE_FRAMES = 24;
 const TREE_REST = 2.5; // frames of standing lean a tile keeps through the calm
-function treeFrame(tx, ty) {
+function treeFrame(tx, ty) { return treeLean(tx, ty, windSway(tx, ty)); }
+// the frame it stands in with no wind at all - what its cast shadow is cut from
+function treeRestFrame(tx, ty) { return treeLean(tx, ty, 0); }
+function treeLean(tx, ty, sway) {
   const h = hash2(tx * 3 + 1, ty * 3 + 2) * 2;
   const flip = h >= 1;                        // the mirrored half of the atlas
   const mid = (TREE_FRAMES - 1) / 2;
   const rest = TREE_REST * ((flip ? h - 1 : h) * 2 - 1);
-  let i = Math.round(mid + rest + windSway(tx, ty) * mid);
+  let i = Math.round(mid + rest + sway * mid);
   if (i < 0) i = 0; else if (i > TREE_FRAMES - 1) i = TREE_FRAMES - 1;
   return flip ? TREE_FRAMES * 2 - 1 - i : i;
 }
