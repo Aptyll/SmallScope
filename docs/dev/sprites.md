@@ -199,14 +199,18 @@ alpha**. Two rules come out of that and both matter:
   the palette never had, which reads as blur against hard-edged art at a whole-number zoom.
   Nothing bakes at anything but its own cell size.
 
-**Three item icons are loops rather than stamps**, all three off 16×16 strips in
-`docs/media/new_media3/`, resampled to the **8×8** every other item icon is, so what changed is
-the art and not the fit:
+**Three item icons are loops rather than stamps**, all three off 16×16 strips and all three
+shipped at the **8×8** every other item icon is, so what changed is the art and not the fit. The
+gold and the fish are resampled from `docs/media/new_media3/`; the **berry is drawn by hand**
+from `docs/media/new_media4/new-berries-spritesheet.png`, because a 2×2 average of its
+four-berry cluster is mud. It keeps the sheet's colours and its leaf timing (up, soft, mid, flat,
+flat, mid, mid, up), and its body holds still: the sheet's one-pixel dip would be half a pixel
+at 8×8.
 
 | icon | source | frames | palette | the loop |
 | --- | --- | --- | --- | --- |
 | `itemGold` | `gold_nugget.png` | 8 | `NUGPAL` (14) | a shine crossing the face |
-| `itemBerry` | `berries.png` | 10 | `BERPAL` (9) | a sparkle over the stalks |
+| `itemBerry` | `new-berries-spritesheet.png` | 8 | `BERPAL` (8) | the two leaves flapping |
 | `itemFish` | `fish.png` | 8 | `FIPAL` (10) | the fins working |
 
 The **fish is the one whose palette does not match its sheet**: it arrived salmon and `FIPAL` is
