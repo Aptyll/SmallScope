@@ -83,18 +83,8 @@ function paintGroundTile(g, tx, ty) {
         // road never meets ice on any shape (ROAD_ICE_KEEP); a path does.
         if (roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, true);
       } else {
-        quad(g, '#ebf2fa', '#e7eff8');
-        // dither speckles
-        const n = (h * 4) | 0;
-        g.fillStyle = '#d5e2f0';
-        for (let i = 0; i < n; i++) {
-          g.fillRect(px + ((h * (31 + i * 47)) | 0) % 15, py + ((h * (17 + i * 73)) | 0) % 15, 1, 1);
-        }
-        // sparkles
-        if (h > 0.93) {
-          g.fillStyle = '#ffffff';
-          g.fillRect(px + ((h * 211) | 0) % 14, py + ((h * 131) | 0) % 14, 1, 1);
-        }
+        // the drifts, every pixel (the `snow's pixels` banner below)
+        paintSnowTile(g, px, py);
         // buried grass tufts
         if (h > 0.80 && h < 0.84) {
           g.fillStyle = '#9db8a6';
@@ -112,6 +102,9 @@ function paintGroundTile(g, tx, ty) {
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
       }
+      // the creek (ground 4, its fords 5, its deck 3) is painted OVER whatever
+      // the tile is, per pixel against its wandering banks, like the road
+      if (creekNear(tx, ty)) paintCreek(g, tx, ty, px, py);
       // the felled trunk across a forest road (placeRoad, world.js) lies flat
       // on the ground, so it is ground: baked here over whatever the tile is.
       // A piece's band spills past its tile's corners into the four tiles
@@ -230,13 +223,175 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   }
 }
 
+// ---- the creek's pixels ----------------------------------------------------
+// The creek (the `the creek` group, js/world.js) is look A of
+// docs/media/concepts/creek-concepts-1.png, SNOWBANK CUT: dark open water
+// sunk between snow banks, deepening toward its middle. The sun's shade
+// falls down-right (SUN_DX/SUN_DY, the cast shadows), so the bank the light
+// comes over wears a white lip and throws a band of shade across the water
+// under it, and the far bank shows its pale face - which bank that is comes
+// off the slope of creekAt, so the ring round an island reads the same as
+// the straight run. Faint streaks drift along the current (the bake's are
+// still; drawCreekFlow moves more over them every frame). A FORD tile
+// (ground 5) is a snow-capped boulder in the current, foam heaped on its
+// upstream side. The BRIDGE is look A of bridge-concepts-1.png, PLANK DECK:
+// planks laid across the way on the two diagonals, a stringer down each open
+// side, snow drifted onto the edges and trodden off the middle, a post at
+// each corner and three pilings in the water upstream; the creek comes out
+// from under it in shade. Every pixel is a function of its position alone,
+// so any repaint lays back exactly what the bake laid.
+const CREEK_COL = {
+  deep: '#2c5068', mid: '#335a73', shal: '#3f6c84', shade: '#24435a', under: '#1d3649',
+  glint: '#5d8aa2', glint2: '#88b3c6', lip: '#ffffff', face: '#dbe8f3', faceD: '#c3d5e6', foam: '#dcecf5',
+};
+const STONE_COL = { rim: '#3a3f4f', dark: '#6b7486', mid: '#8a93a4', lit: '#a9b2c1', snow: '#eef4fb', snowL: '#ffffff', wet: '#1f3a4e', foam: '#dcecf5' };
+const DECK_COL = {
+  gap: '#3b2716', a: '#8a6142', b: '#7c5639', c: '#95704f', dark: '#5a3d24', rim: '#2a1c10',
+  snow: '#eef4fb', snowD: '#d3dfec', beam: '#6b4a2a', beamL: '#8f6a48', post: '#4a3218', postL: '#8a6142', cap: '#f4f7ff',
+};
+const CREEK_SUN_X = 0.88, CREEK_SUN_Y = 0.48; // the way the light runs (SUN_DX/SUN_DY, normalised): a bank facing against it is the lit lip
+const DECK_LK = BRIDGE_L * TILE * Math.SQRT2, DECK_WM = BRIDGE_W * TILE * Math.SQRT2; // the deck's half-sizes on the pixel diagonals
+const DECK_C = ((WORLD - 1) / 2 + 0.5) * TILE;  // world px of the crossing
+// does this tile hold any of the creek's pixels (water, bank, deck, post)?
+function creekNear(tx, ty) {
+  if (PRACTICE) return false;
+  return creekAt(tx, ty) < 1.25 || (Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6);
+}
+// a post (s = 2, 5x5, on the deck's corners) or a piling (s = 1, in the
+// water): an upright stub seen from above, its top capped with snow
+function deckPost(ax, ay, s, water) {
+  const m = Math.max(Math.abs(ax), Math.abs(ay));
+  if (m > s) return water && m === s + 1 && ax + ay <= 0 ? CREEK_COL.foam : null; // the current heaps against its upstream face
+  if (m === s) return DECK_COL.rim;
+  return ay < 0 && ax < s - 1 ? DECK_COL.cap : ax + ay < 0 ? DECK_COL.postL : DECK_COL.post;
+}
+function paintCreek(g, tx, ty, px, py) {
+  const deck = Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6;
+  const posts = [];
+  if (deck) {
+    for (const sk of [-1, 1]) for (const sm of [-1, 1]) posts.push([sk * (DECK_LK - 1), sm * (DECK_WM - 1), 2]);
+    for (const k of [-20, 0, 20]) posts.push([k, -DECK_WM - 7, 1]);
+  }
+  for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+    const x = px + i, y = py + j;
+    const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
+    const hp = hash2(x * 7 + 13, y * 11 + 5), dith = BAYER4[(y & 3) * 4 + (x & 3)] + 0.5;
+    let c = null;
+    // the deck's own lattice: k across the creek (along the road), m along it
+    const k = x - y, m = x + y + 1 - 2 * DECK_C;
+    if (deck) {
+      for (const [pk, pm, s] of posts) {
+        const ax = x - Math.round(DECK_C + (pk + pm - 1) / 2), ay = y - Math.round(DECK_C + (pm - 1 - pk) / 2);
+        if (Math.abs(ax) <= s + 1 && Math.abs(ay) <= s + 1) { c = deckPost(ax, ay, s, s === 1); if (c) break; }
+      }
+      if (!c && Math.abs(k) <= DECK_LK && Math.abs(m) <= DECK_WM) {
+        const em = DECK_WM - Math.abs(m), ek = DECK_LK - Math.abs(k);
+        if (em < 2 || ek < 2) c = DECK_COL.rim;
+        else if (em < 8) c = em >= 6 ? DECK_COL.dark : m < 0 ? DECK_COL.beamL : DECK_COL.beam; // the stringer down each open side
+        else {
+          const r = (k + 1000) % 6, tone = hash2(Math.floor((k + 1000) / 6), 17);
+          c = r === 0 ? DECK_COL.gap : tone < 0.33 ? DECK_COL.a : tone < 0.66 ? DECK_COL.b : DECK_COL.c;
+          if (r !== 0 && hp > 0.985) c = DECK_COL.dark; // a nail, a knot
+          const drift = vnoise(x / 4 + 1.3, y / 4 + 2.1) * 0.5 + (Math.abs(m) / DECK_WM) * 0.75;
+          if (drift > 0.93) c = drift > 0.99 ? DECK_COL.snow : DECK_COL.snowD;
+          else if (r === 0 && Math.abs(m) > DECK_WM * 0.55 && hp > 0.4) c = DECK_COL.snowD;
+        }
+      }
+      if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); continue; }
+    }
+    const d = creekAt(fx, fy);
+    if (d > 0.3) continue;
+    const e = -d * TILE, a = CQ.a, n = CQ.n; // px into the water; where along and across it
+    // which bank: the slope of the distance points out of the water, and a
+    // bank facing back against the light is the lit lip
+    let lip = false;
+    if (e < 6) {
+      const gx = creekAt(fx + 0.04, fy) - creekAt(fx - 0.04, fy), gy = creekAt(fx, fy + 0.04) - creekAt(fx, fy - 0.04);
+      lip = gx * CREEK_SUN_X + gy * CREEK_SUN_Y < 0;
+    }
+    if (e > 0) {
+      const depth = Math.min(1, e / 7);
+      c = depth > 0.75 + (dith - 0.5) * 0.3 ? CREEK_COL.deep : depth > 0.3 ? CREEK_COL.mid : CREEK_COL.shal;
+      if (lip && e < 3 + vnoise(a * TILE / 6, 2) * 2) c = CREEK_COL.shade;
+      const fl = vnoise(a * TILE / 11 + 5, n * TILE / 1.6 + 9); // a noise stretched along the current: its peaks are the streaks
+      if (e > 2.5 && fl > 0.8 && hp > 0.15) c = fl > 0.9 ? CREEK_COL.glint2 : CREEK_COL.glint;
+      if (deck && Math.abs(k) <= DECK_LK) {
+        if (m > DECK_WM && m < DECK_WM + (5 + vnoise(k / 6, 7) * 3) * Math.SQRT2) c = CREEK_COL.under; // coming out from under the deck
+        else if (m < -DECK_WM && m > -DECK_WM - 3 && hp > 0.3) c = CREEK_COL.foam;            // ...and heaped against it going in
+      }
+    } else if (e > -2.2) c = lip ? CREEK_COL.lip : (e > -1 ? CREEK_COL.faceD : CREEK_COL.face);
+    else if (!lip && e > -4 && dith > 0.5) c = CREEK_COL.face;
+    if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); }
+  }
+  if (ground[idx(tx, ty)] === 5) paintFordStone(g, tx, ty, px, py);
+}
+// one stepping stone, a rough disc lit from the top-left with snow on its
+// crown, a dark wet ring low-right and foam heaped on its upstream side
+function paintFordStone(g, tx, ty, px, py) {
+  const h = hash2(tx * 3 + 71, ty * 5 + 29);
+  const cx = px + 8 + Math.round((h - 0.5) * 2), cy = py + 8 + Math.round((hash2(tx + 13, ty + 91) - 0.5) * 2);
+  const r = 4.4 + h * 0.9;
+  const f = creekFlow(tx, ty), fdx = f.fdx, fdy = f.fdy;
+  for (let y = py; y < py + TILE; y++) for (let x = px; x < px + TILE; x++) {
+    const dx = x + 0.5 - cx, dy = y + 0.5 - cy, dl = Math.hypot(dx, dy) || 1;
+    const wob = (vnoise((Math.atan2(dy, dx) + 4) * 1.6 + cx, cy) - 0.5) * 1.6;
+    const d = dl - (r + wob);
+    const hp = hash2(x * 7 + 13, y * 11 + 5);
+    let c = null;
+    if (d > 0 && d < 3.2) {
+      const up = -(dx * fdx + dy * fdy) / dl;
+      if (d < 1.3 + Math.max(0, up) * 1.8 && hp > 0.25) c = STONE_COL.foam;
+      if (d < 2.2 && dx + dy > r * 0.6) c = STONE_COL.wet;
+    }
+    if (d <= 0) {
+      const lx = dx / r, ly = dy / r, lit = -(lx * 0.7 + ly * 0.7);
+      if (d > -1) c = STONE_COL.rim;
+      else if (ly < -0.05 + (vnoise(x / 3, y / 3) - 0.5) * 0.6 && lx + ly < 0.5) c = ly < -0.55 ? STONE_COL.snowL : STONE_COL.snow;
+      else c = lit > 0.35 ? STONE_COL.lit : lit > -0.25 ? STONE_COL.mid : STONE_COL.dark;
+    }
+    if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); }
+  }
+}
+// The current, moving: over the still streaks the bake laid, a couple of
+// glints per tile of open creek drift downstream along creekFlow and fade,
+// every frame, for the tiles in view, on the sim's clock (windT). World pass,
+// right after the ground.
+const FLOW_SPD = 16;  // px/s the current carries a glint
+const FLOW_RUN = 20;  // px a glint drifts from appearing to gone
+const FLOW_A = 0.7;   // its alpha at the middle of its run
+function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
+  if (PRACTICE) return;
+  const T = FLOW_RUN / FLOW_SPD, now = state.windT; // the field's own clock, so DBG.step and the wire's echo reproduce it
+  ctx.fillStyle = CREEK_COL.glint2;
+  for (let ty = Math.max(0, ty0); ty <= Math.min(WORLD - 1, ty1); ty++) for (let tx = Math.max(0, tx0); tx <= Math.min(WORLD - 1, tx1); tx++) {
+    if (ground[idx(tx, ty)] !== 4) continue;
+    for (let q = 0; q < 2; q++) {
+      const h = hash2(tx * 7 + q * 131, ty * 13 + 5), h2 = hash2(tx + 57, ty * 3 + q * 17);
+      const t = ((now + h * T * 7) % T) / T;
+      const f = creekFlow(tx - 0.3 + h2 * 0.6, ty - 0.3 + h * 0.6), fdx = f.fdx, fdy = f.fdy;
+      const wx = (tx + 0.2 + h2 * 0.6) * TILE + fdx * (t - 0.5) * FLOW_RUN;
+      const wy = (ty + 0.2 + h * 0.6) * TILE + fdy * (t - 0.5) * FLOW_RUN;
+      if (!creekWet(wx / TILE - 0.5, wy / TILE - 0.5) || CQ.d > -0.15) continue; // only out on the water, clear of the banks
+      ctx.globalAlpha = Math.sin(t * Math.PI) * FLOW_A;
+      const sx = Math.round(wx - ox), sy = Math.round(wy - oy);
+      ctx.fillRect(sx, sy, 1, 1);
+      ctx.fillRect(sx - Math.round(fdx * 1.4), sy - Math.round(fdy * 1.4), 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
 function renderGround() {
   const g = groundCv.getContext('2d');
   g.imageSmoothingEnabled = false;
   bakeLakes();
   shadeBulk = true;
+  const strip = new ImageData(WORLD * TILE, TILE);
   for (let ty = 0; ty < WORLD; ty++) {
+    snowStrip(g, ty, strip);
+    snowBulk = true;
     for (let tx = 0; tx < WORLD; tx++) paintGroundTile(g, tx, ty);
+    snowBulk = false;
   }
   shadeBulk = false;
   shadeWorld(g);
@@ -289,7 +444,6 @@ const ICE_MID = [rgbOf('#a6cde2'), rgbOf('#add2e6')];      // ...the water deepe
 const ICE_DEEP = [rgbOf('#8fbcd8'), rgbOf('#96c1db')];     // ...the middle
 const BANK_SHADE = rgbOf('#9ec5da'), BANK_SHADE_DEEP = rgbOf('#8db6d0'), BANK_SHADE2 = rgbOf('#aacfe2');
 const BANK_LIP = rgbOf('#ffffff'), BANK_FACE = rgbOf('#e0f2f9');
-const SNOW_TONE = [rgbOf('#ebf2fa'), rgbOf('#e7eff8')], SNOW_SPECK = rgbOf('#d5e2f0');
 
 let lakeStyle = null; // per tile: its lake's index into ICE_STYLES, 255 off the ice
 let lakeDepth = null; // per tile: tiles in from the lake's edge (1 = on it), 0 off the ice
@@ -430,14 +584,14 @@ const iceImg = new ImageData(TILE, TILE);
 function paintIceTile(g, tx, ty, px, py) {
   const s = ICE_STYLES[lakeStyle[idx(tx, ty)]];
   const inner = lakesAround(tx, ty) === 9;
-  if (!inner) { fillShoreMask(px, py); markMirror(tx, ty); }
+  if (!inner) { fillShoreMask(px, py); markMirror(tx, ty); snowTile(px, py); }
   const D = iceImg.data;
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const x = px + i, y = py + j, hp = hash2(x * 3 + 7, y * 5 + 11);
     let c;
     if (inner) c = iceTone(x, y, s, hp);
     else if (iceMk(i, j)) c = bankAt(i, j, s) || iceTone(x, y, s, hp);
-    else c = bankAt(i, j, s) || (hp > 0.9 ? SNOW_SPECK : SNOW_TONE[vnoise((x >> 3) / 13, (y >> 3) / 13) > 0.5 ? 0 : 1]);
+    else c = bankAt(i, j, s) || SNOW_INK[snowTone[j * TILE + i]];
     const k = (j * TILE + i) * 4;
     D[k] = c[0]; D[k + 1] = c[1]; D[k + 2] = c[2]; D[k + 3] = 255;
   }
@@ -458,6 +612,200 @@ function paintSnowShore(g, tx, ty, px, py) {
     const c = iceMk(i, j) ? bankAt(i, j, s) || iceTone(px + i, py + j, s, hash2((px + i) * 3 + 7, (py + j) * 5 + 11)) : bankAt(i, j, s);
     if (c) { g.fillStyle = c.css; g.fillRect(px + i, py + j, 1, 1); }
   }
+}
+
+// ------------------------------------------------------------ the snow's pixels
+// Open snow wears a soft relief of wind-laid drifts: long swells stretched
+// along SNOW_ANG, lit on the side facing the sun (top-left, the one the cast
+// shadows fall from) and shaded blue on the lee, in four close tones under a
+// Bayer dither. The valley is not one field of it: a very low noise
+// (SNOW_REGION) lays out regions of three LOOKS - fine drifts, broad swells,
+// and lee-only (bright flat snow with shade only behind each swell) -
+// blended across a soft band, so no seam shows. Every pixel is a function of
+// its world position alone (hash2/vnoise, no rng), so any repaint - a hole,
+// a crater, a cast shade, a felled pine - lays back exactly the snow that
+// was there. Kept quiet on purpose: the darkest tone stays well above
+// SHADE_TINT so a cast shadow still reads over the deepest drift.
+const SNOW_PAL = ['#dfe8f4', '#e8f0f9', '#eef4fb', '#f5f9fd'].map(rgbOf); // lee .. lit
+const SNOW_BASE = 1;                           // the flat snow's tone
+const SNOW_GLINT = rgbOf('#ffffff'), SNOW_GLINT_P = 0.996; // a crystal, only on the lit tone
+const SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG);
+const SNOW_LOOKS = [
+  { sc: 1,   rel: 7, dith: 0.8 },              // fine drifts
+  { sc: 1.8, rel: 8, dith: 0.6 },              // broad swells
+  { sc: 1.5, rel: 9, dith: 0.6, lee: true },   // lee only
+];
+const SNOW_REGION = 22 * TILE;       // world px per step of the region noise
+const SNOW_CUT = [0.41, 0.6];        // region noise thresholds between the looks (~thirds of the map)
+const SNOW_BLEND = 0.05;             // half-width of the blend across each threshold
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => v / 16 - 0.47);
+
+// drift height at a world pixel, for swells sc times the fine look's size
+function snowH(x, y, sc) {
+  const u = x * SNOW_C + y * SNOW_S, v = -x * SNOW_S + y * SNOW_C;
+  return vnoise(u / (70 * sc), v / (26 * sc)) * 0.62 + vnoise(u / (30 * sc) + 9.3, v / (12 * sc) + 4.1) * 0.38;
+}
+const smooth01 = (a, b, t) => { const k = Math.max(0, Math.min(1, (t - a) / (b - a))); return k * k * (3 - 2 * k); };
+// The heights are sampled on a lattice every 2 world px (aligned to the
+// world, not the tile) and read bilinearly, so a tile costs 12x12 samples a
+// look instead of several per pixel - and every tile, a shore tile included,
+// reads the same lattice, so no seam can open.
+const SNOW_LAT = 12;                                  // lattice points a tile reads, per side
+const snowLatH = SNOW_LOOKS.map(() => new Float32Array(SNOW_LAT * SNOW_LAT)); // heights
+const snowLatS = SNOW_LOOKS.map(() => new Float32Array(SNOW_LAT * SNOW_LAT)); // slopes toward the sun
+const snowTone = new Uint8Array(TILE * TILE);         // the tile's pixels: a SNOW_PAL index, 4 = glint
+const latAt = (a, fx, fy) => {
+  const ix = fx | 0, iy = fy | 0, ux = fx - ix, uy = fy - iy, k = iy * SNOW_LAT + ix;
+  const top = a[k] + (a[k + 1] - a[k]) * ux, bot = a[k + SNOW_LAT] + (a[k + SNOW_LAT + 1] - a[k + SNOW_LAT]) * ux;
+  return top + (bot - top) * uy;
+};
+const snowW = new Float32Array(SNOW_LOOKS.length);
+// fill snowTone for the tile whose top-left world pixel is (px, py). The
+// region noise moves over ~22 tiles, so it is read at the tile's four
+// corners (world-aligned too) and blended across the tile.
+function snowTile(px, py) {
+  const X0 = (px >> 1) - 1, Y0 = (py >> 1) - 1; // lattice index of the first point (2 px up-left of the tile)
+  const rq = (x, y) => vnoise(x / SNOW_REGION + 71.3, y / SNOW_REGION + 37.7);
+  const q00 = rq(px, py), q10 = rq(px + TILE, py), q01 = rq(px, py + TILE), q11 = rq(px + TILE, py + TILE);
+  // a look only pays for its heights where its region reaches the tile
+  const qlo = Math.min(q00, q10, q01, q11), qhi = Math.max(q00, q10, q01, q11);
+  const on0 = qlo < SNOW_CUT[0] + SNOW_BLEND, on2 = qhi > SNOW_CUT[1] - SNOW_BLEND;
+  const on1 = qhi > SNOW_CUT[0] - SNOW_BLEND && qlo < SNOW_CUT[1] + SNOW_BLEND;
+  const on = [on0, on1, on2];
+  // each look's slope toward the sun at every lattice point - its height one
+  // point (2 px) down-right less one up-left - pre-scaled by its relief; a
+  // bilinear read of it is exactly the difference of two bilinear heights
+  let only = -1;
+  for (let l = 0; l < SNOW_LOOKS.length; l++) {
+    if (!on[l]) continue;
+    only = only === -1 ? l : -2;
+    const H = snowLatH[l], S = snowLatS[l], L = SNOW_LOOKS[l], k = L.rel * L.sc;
+    for (let b = 0; b < SNOW_LAT; b++) for (let a = 0; a < SNOW_LAT; a++) H[b * SNOW_LAT + a] = snowH((X0 + a) * 2, (Y0 + b) * 2, L.sc);
+    for (let b = 1; b < SNOW_LAT - 1; b++) for (let a = 1; a < SNOW_LAT - 1; a++) {
+      S[b * SNOW_LAT + a] = (H[(b + 1) * SNOW_LAT + a + 1] - H[(b - 1) * SNOW_LAT + a - 1]) * k;
+    }
+  }
+  for (let j = 0; j < TILE; j++) {
+    const v = j / TILE, qa = q00 + (q01 - q00) * v, qb = q10 + (q11 - q10) * v, y = py + j, fy = y / 2 - Y0;
+    for (let i = 0; i < TILE; i++) {
+      const x = px + i, fx = x / 2 - X0;
+      let d = 0, dith = 0;
+      if (only >= 0) { // the whole tile inside one look's region: no blend to weigh
+        const L = SNOW_LOOKS[only], s = latAt(snowLatS[only], fx, fy);
+        d = L.lee ? Math.min(0, s) + 1 : s; dith = L.dith;
+      } else {
+        const q = qa + (qb - qa) * (i / TILE);
+        snowW[0] = on0 ? smooth01(SNOW_CUT[0] + SNOW_BLEND, SNOW_CUT[0] - SNOW_BLEND, q) : 0;
+        snowW[2] = on2 ? smooth01(SNOW_CUT[1] - SNOW_BLEND, SNOW_CUT[1] + SNOW_BLEND, q) : 0;
+        snowW[1] = 1 - snowW[0] - snowW[2];
+        for (let l = 0; l < SNOW_LOOKS.length; l++) {
+          const w = snowW[l];
+          if (w <= 0) continue;
+          const L = SNOW_LOOKS[l], s = latAt(snowLatS[l], fx, fy);
+          d += w * (L.lee ? Math.min(0, s) + 1 : s); dith += w * L.dith;
+        }
+      }
+      const t = Math.round(SNOW_BASE + d + BAYER4[(y & 3) * 4 + (x & 3)] * dith);
+      snowTone[j * TILE + i] = t >= 3 ? (hash2(x * 3 + 7, y * 5 + 11) > SNOW_GLINT_P ? 4 : 3) : t < 0 ? 0 : t;
+    }
+  }
+}
+const SNOW_INK = SNOW_PAL.concat([SNOW_GLINT]);
+// ink snowTone into an ImageData at pixel column ox
+function inkSnow(img, ox) {
+  const D = img.data, W = img.width;
+  for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+    const c = SNOW_INK[snowTone[j * TILE + i]], k = (j * W + ox + i) * 4;
+    D[k] = c[0]; D[k + 1] = c[1]; D[k + 2] = c[2]; D[k + 3] = 255;
+  }
+}
+const snowImg = new ImageData(TILE, TILE);
+let snowBulk = false; // renderGround has already laid this row's snow in one strip
+function paintSnowTile(g, px, py) {
+  if (snowBulk) return;
+  snowTile(px, py);
+  inkSnow(snowImg, 0);
+  g.putImageData(snowImg, px, py);
+}
+// the boot bake's snow: one strip per row of tiles, one putImageData each
+// (per tile, putImageData alone costs the bake half a second)
+function snowStrip(g, ty, strip) {
+  for (let tx = 0; tx < WORLD; tx++) {
+    const gv = ground[idx(tx, ty)];
+    if (gv !== 0 && gv !== 3) continue; // ice and holes paint every pixel of their own
+    snowTile(tx * TILE, ty * TILE);
+    inkSnow(strip, tx * TILE);
+  }
+  g.putImageData(strip, 0, ty * TILE);
+}
+
+// ------------------------------------------------------------ the wind's sweep
+// The wind's sweep (windSweep, the `wind` banner, js/sim.js) drawn: every
+// fifteen seconds a few faint streaks of loose snow drift slowly downwind,
+// each a thin white line of drift over its own soft shadow a few px
+// down-right (the one sun), rolling gently as it goes. The streaks live in
+// the WORLD, not on the screen: the valley is cut into SWEEP_CELL_W x
+// SWEEP_CELL_H cells, each sweep lays one or two streaks in every cell at a
+// spot off the cell and the sweep's number (hash2 - nothing rolls), and each
+// drifts SWEEP_RUN px downwind from there - so a streak stays where it is as
+// the camera pans, and two players looking at the same field see the same
+// snow blowing across it. Each sets off at its own moment and pace and fades
+// in and out along its run, and all of it is only as strong as the day's
+// air. Drawn in the air - over the pines and everything standing, under the
+// eagle and the night grade. Kept faint on purpose: a breath of wind, not a
+// gust.
+const SWEEP_CELL_W = 360, SWEEP_CELL_H = 240; // world px of the grid the streaks are laid on
+const SWEEP_STREAKS = [1, 2];                 // streaks a cell carries each sweep, fewest..most
+const SWEEP_LEN = [40, 80];                   // world px a streak runs, shortest..longest
+const SWEEP_RUN = 420;                        // world px a streak drifts over its run
+const SWEEP_LAG = 0.3;                        // the share of the sweep the latest streak waits to set off
+const SWEEP_WAVE = 18, SWEEP_WAVE_A = 1.5;    // px per radian and px of the drift's roll in the air
+const SWEEP_SHADE_DX = 2, SWEEP_SHADE_DY = 3; // where its shadow falls: down-right, off the one sun
+const SWEEP_SHADE = '#b9c8e0', SWEEP_SHADE_A = 0.35; // multiplied under a streak, at full strength
+const SWEEP_BODY = '#ffffff', SWEEP_BODY_A = 0.5;    // the drift itself, at full strength
+const SWEEP_FULL = 0.6;                       // the air's strength at which a sweep is at full strength
+const SWEEP_STRANDS = [[0, 0, 1], [-16, 4, 0.5]]; // a streak's strands: px behind the head, px down, share of its length
+function drawSweep(ex, ey) {
+  const sw = windSweep();
+  if (!sw) return;
+  const air = Math.min(1, sw.w / SWEEP_FULL), reach = SWEEP_RUN + SWEEP_LEN[1] + 20;
+  // every cell a streak could have drifted into the view from
+  const cx0 = Math.floor((ex - reach) / SWEEP_CELL_W), cx1 = Math.floor((ex + WV_W + reach) / SWEEP_CELL_W);
+  const cy0 = Math.floor((ey - 8) / SWEEP_CELL_H), cy1 = Math.floor((ey + WV_H + 8) / SWEEP_CELL_H);
+  ctx.save();
+  for (let pass = 0; pass < 2; pass++) { // the shadows first, all of them, then the drifts
+    ctx.globalCompositeOperation = pass ? 'source-over' : 'multiply';
+    ctx.fillStyle = pass ? SWEEP_BODY : SWEEP_SHADE;
+    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+      const cell = sw.n * 7919 + cx * 131 + cy * 977; // the cell's roll this sweep
+      const n = SWEEP_STREAKS[0] + ((hash2(cell, 17) * (SWEEP_STREAKS[1] - SWEEP_STREAKS[0] + 1)) | 0);
+      for (let i = 0; i < n; i++) {
+        const h1 = hash2(cell + i * 13, 31), h2 = hash2(cell + i * 13, 47), h3 = hash2(cell + i * 13, 59), h4 = hash2(cell + i * 13, 71);
+        const lag = SWEEP_LAG * h3, span = (1 - SWEEP_LAG) * (0.75 + 0.25 * h2); // its own moment and pace
+        const k = (sw.k - lag) / span;
+        if (k <= 0 || k >= 1) continue;
+        const len = Math.round(SWEEP_LEN[0] + (SWEEP_LEN[1] - SWEEP_LEN[0]) * h2);
+        // where it sets off in the world, and where its head is now
+        const wx0 = cx * SWEEP_CELL_W + h4 * SWEEP_CELL_W, wy = Math.round(cy * SWEEP_CELL_H + h1 * SWEEP_CELL_H);
+        const head = wx0 + sw.dir * SWEEP_RUN * k;
+        if (head + len < ex - 4 || head - len > ex + WV_W + 4) continue;
+        ctx.globalAlpha = Math.sin(Math.PI * k) * air * (pass ? SWEEP_BODY_A : SWEEP_SHADE_A);
+        for (const [bx, by, share] of SWEEP_STRANDS) for (let j = 0, sl = Math.round(len * share); j < sl; j++) {
+          // j counts back from the head: solid for the front half, then flecks thinning out
+          const t = j / sl;
+          if (t > 0.5 && (j % (t > 0.8 ? 4 : 2))) continue;
+          const wx = head - sw.dir * (j - bx), x = Math.round(wx - ex); // trailing upwind of the head; moving, so off the exact camera
+          if (x < -4 || x > WV_W + 4) continue;
+          // the roll rides the ground, so the drift rolls as it runs
+          const y = Math.round(wy + by + Math.round(Math.sin(wx / SWEEP_WAVE + i * 2.1) * SWEEP_WAVE_A) - ey);
+          if (y < -8 || y > WV_H + 8) continue;
+          if (pass) ctx.fillRect(x, y, 1, 1);
+          else ctx.fillRect(x + SWEEP_SHADE_DX * sw.dir, y + SWEEP_SHADE_DY, 1, 1);
+        }
+      }
+    }
+  }
+  ctx.restore();
 }
 
 // ------------------------------------------------------------ cast shadows

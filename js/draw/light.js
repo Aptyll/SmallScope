@@ -368,15 +368,14 @@ function godRays(ox, oy, day) {
 // bright against. Filled in horizontal RUNS of adjacent ice, one rect per run
 // instead of one per tile.
 //
-// **The sky.** The stars do not sit on the ice, they sit in a sky reflected in
-// it, so they are anchored neither to the world nor to the screen: the field is
-// sampled at STAR_PAR of the camera's offset, so it slides against the ground
-// as you walk - a long way off, moving slowly, which is the whole read of a
-// reflection. The loop therefore runs over SKY CELLS and asks what tile each
-// one landed on, not over tiles; a star only draws where it fell on unbroken
-// ice, so the field is cut to the shape of the lake and an ice hole is a gap in
-// it. Each twinkles on its own rate, and the whole reflection ripples a pixel
-// sideways on a slow wave, because ice is not a perfect mirror.
+// **The sky.** The stars are anchored to the WORLD, not to the camera: a star
+// sits at one place on the lake, so it stays put as the view pans over it and
+// two players looking at the same stretch of ice see the same stars. The loop
+// runs over SKY CELLS - a grid laid over the world - and asks what tile each
+// one landed on; a star only draws where it fell on unbroken ice, so the field
+// is cut to the shape of the lake and an ice hole is a gap in it. Each
+// twinkles on its own rate, and the whole reflection ripples a pixel sideways
+// on a slow wave, because ice is not a perfect mirror.
 //
 // Drawn early - above the fish and the cracks, under everything that walks, so
 // a body standing on the ice covers its own reflection - and therefore under
@@ -384,7 +383,6 @@ function godRays(ox, oy, day) {
 const STAR_MIRROR = 0.46;  // how far the darkness sinks intact ice toward black
 const STAR_CELL = 13;      // px between sky cells
 const STAR_DENS = 0.55;    // share of cells holding a star
-const STAR_PAR = 0.22;     // how much of the camera's motion the sky takes: the parallax
 const STAR_BRIGHT = 0.90;  // above this a star is big enough to throw a cross
 const STAR_RIPPLE = 1.4;   // px the reflection wanders sideways in the ice
 
@@ -444,11 +442,10 @@ function drawIceStars(ox, oy, tx0, ty0, tx1, ty1) {
     }
   }
 
-  // the sky over it. The camera only moves the field by STAR_PAR of what it
-  // moves the ground, which is the parallax; everything else is per-star.
-  const skx = ox * STAR_PAR, sky = oy * STAR_PAR;
-  const c0 = Math.floor(skx / STAR_CELL) - 1, c1 = Math.ceil((skx + WV_W) / STAR_CELL) + 1;
-  const d0 = Math.floor(sky / STAR_CELL) - 1, d1 = Math.ceil((sky + WV_H) / STAR_CELL) + 1;
+  // the sky over it: sky cells on a grid fixed to the world, so a star moves
+  // with the ice under it and never with the camera
+  const c0 = Math.floor(ox / STAR_CELL) - 1, c1 = Math.ceil((ox + WV_W) / STAR_CELL) + 1;
+  const d0 = Math.floor(oy / STAR_CELL) - 1, d1 = Math.ceil((oy + WV_H) / STAR_CELL) + 1;
   for (let cy = d0; cy <= d1; cy++) {
     // the ice's own shimmer: one slow wave down the field, so the whole
     // reflection breathes sideways rather than every star wobbling alone
@@ -457,8 +454,8 @@ function drawIceStars(ox, oy, tx0, ty0, tx1, ty1) {
       const h = hash2(cx * 3 + 11, cy * 5 + 7);
       if (h > STAR_DENS) continue;
       const q = h / STAR_DENS; // 0..1 across the stars, so every dial gets a spread
-      const px = Math.round(cx * STAR_CELL - skx + q * (STAR_CELL - 2)) + rip;
-      const py = Math.round(cy * STAR_CELL - sky + hash2(cx + 61, cy + 29) * (STAR_CELL - 2));
+      const px = Math.round(cx * STAR_CELL - ox + q * (STAR_CELL - 2)) + rip;
+      const py = Math.round(cy * STAR_CELL - oy + hash2(cx + 61, cy + 29) * (STAR_CELL - 2));
       if (px < 0 || py < 0 || px >= WV_W || py >= WV_H) continue;
       // what is under it: only unbroken ice reflects, open water does not
       if (!overIce(px, py, ox, oy)) continue;

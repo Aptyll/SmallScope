@@ -38,7 +38,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 | what the game *is* — the pillars, and what it deliberately is not | [docs/dev/game.md](docs/dev/game.md) |
 | **a name or any sentence a player reads**: the setting's premise, the valley's reason for what a match does, the fixed words, the voice | [docs/dev/lore.md](docs/dev/lore.md) |
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
-| worldgen, tiles, ground, **the three map shapes and the paths a grown one cuts**, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
+| worldgen, tiles, ground, **the three map shapes and the paths a grown one cuts**, **the creek and its bridge and fords**, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |
 | players, classes and kits, the input struct, **the two controllers** (keyboard, gamepad), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
 | **online play**: host and clients, the snapshot and the wire, the relay, Steam lobbies (`js/net/`, `app/server.js`, `desktop/`) | [docs/pvp-architecture.md](docs/pvp-architecture.md) |
@@ -165,6 +165,8 @@ lives in `docs/dev/*.md` beside the code it protects.
   `STRUCT_DR` damps a player's damage, and only a player's (a bot names itself and keeps its
   own number). An area effect asks `structsNear`, the `unitsNear` for walls; anything shot dies
   on a wall already, so a bit sieges from the arrow loop's solid-tile branch and nowhere else.
+- **Open water is `waterAt(tx, ty)`** — an ice hole (ground 2) or the creek (4) — never a bare
+  `=== 2`: every walker, route, spawn and climb-out asks it, and a new one missing the creek walks on water.
 - **Anything that walks to a goal routes there** through `navTo`/`navStep` (the `pathfinding`
   banner), never by steering straight at it, and **drops the goal when they return `ok = false`**
   (no route, or pinned) — there are no stuck timers; a caller that ignores `ok` stands still forever.

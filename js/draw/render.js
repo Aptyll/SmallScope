@@ -126,6 +126,8 @@ function render() {
   // since the ground last painted it (the `cast shadows` banner, ground.js)
   syncCasts(Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
   ctx.drawImage(groundCv, ox, oy, WV_W, WV_H, 0, 0, WV_W, WV_H);
+  // the creek's current, drifting over the still water the bake laid (ground.js)
+  drawCreekFlow(ox, oy, Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
 
   // fish: silhouettes drifting under the thin ice, crisp in open holes
   for (const f of fish) {
@@ -670,6 +672,7 @@ function render() {
       Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / 0.9);
   }
 
+  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim.js)
   drawDropAir(ex, ey, now); // the eagle, its rider and anyone falling from it
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
@@ -1077,7 +1080,7 @@ function drawHitboxes(ox, oy, ex, ey) {
   for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
     const px = tx * TILE - ox, py = ty * TILE - oy;
     if (isSolidTile(tx, ty)) hbBox(px, py, TILE, TILE, HB_SOLID);
-    else if (inWorld(tx, ty) && ground[idx(tx, ty)] === 2) hbBox(px, py, TILE, TILE, HB_WATER);
+    else if (waterAt(tx, ty)) hbBox(px, py, TILE, TILE, HB_WATER);
   }
 
   // players: the body circle everything is pushed out of, and the hurt circle

@@ -326,7 +326,7 @@ function landPlayer(p) {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
       const tx = ftx + dx, ty = fty + dy;
-      if (!inWorld(tx, ty) || objAt(tx, ty) || ground[idx(tx, ty)] === 2) continue;
+      if (!inWorld(tx, ty) || objAt(tx, ty) || waterAt(tx, ty)) continue;
       const dd = dx * dx + dy * dy;
       if (dd < bd) { bd = dd; best = { tx, ty }; }
     }
@@ -681,7 +681,7 @@ function eagleCrash(e) {
   for (let dy = -TR; dy <= TR; dy++) for (let dx = -TR; dx <= TR; dx++) {
     const tx = ctx0 + dx, ty = cty0 + dy;
     if (!inWorld(tx, ty) || Math.hypot(dx, dy) > EAGLE_TILE_R) continue;
-    if (!objAt(tx, ty) && ground[idx(tx, ty)] !== 2) placeObj(tx, ty, 'eagle', { team: e.team });
+    if (!objAt(tx, ty) && !waterAt(tx, ty)) placeObj(tx, ty, 'eagle', { team: e.team });
   }
   eagleBoomFx(e, 1);
   // felt everywhere, hardest close by: three rings, the widest reaching every screen
@@ -1380,7 +1380,8 @@ if (PRACTICE) {
   })();
   settings.mapType = MAP_TYPE; // the lobby's pick starts as the shape standing (a ?map=N page may differ from the profile's)
   genWorld();
-  layPaths();       // ...and the paths a grown shape cuts through its own woods (world.js)
+  placeCreek();     // the creek down the cross-diagonal, its bridge, islands and fords (world.js)
+  layPaths();       // ...and the paths a grown shape cuts through its own woods, forded where they cross it (world.js)
   placeRoad();       // the diagonal lane, and the paths with it (world.js)
   placeZips();       // ...and each side's cable along it (world.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
@@ -1633,6 +1634,7 @@ window.DBG = {
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the roost's road out: the felling front, or fire the whole lane at once
   spurs, roadNest, roadSpan, roadDist, roadMainDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the two distances, and where a bird would land
+  creekAt, creekFlow, creekWet, bridgeAt, creekIsles, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the deck, the islands and the fixed fords
   zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (world.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
   planLane, laneStep: (team, dt) => { const e = state.drop.eagles[team]; if (e.lane) laneStep(e, dt == null ? 99 : dt); return e.lane; },
   hurtEagle: (team, dmg, src) => { const e = state.drop.eagles[team]; hurtEagle(e, dmg == null ? 25 : dmg, src); return e; },

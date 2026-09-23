@@ -153,7 +153,9 @@ entity draw code must use `ex`/`ey`.
 `render()` (js/draw/render.js) runs, in order. **World space** (`ctx = wctx`):
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](#cast-shadows)) →
-   ground blit → under-ice fish → ice-crack decals;
+   ground blit → **the creek's current** (`drawCreekFlow`, js/draw/ground.js: glints drifting
+   downstream over the still water the bake laid, on the field's clock) → under-ice fish →
+   ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
    one `footprints` array, branching on `f.k`);
@@ -179,7 +181,8 @@ entity draw code must use `ex`/`ey`.
     → `drawTurretFx` (each turret's charging aim line and muzzle flash) → turret tracers;
 12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → floaters
     (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
-13. `drawDropAir` (the eagle, its shadow, the rider and every faller, while `state.drop`
+13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy — [the wind field](#the-wind-field))
+    → `drawDropAir` (the eagle, its shadow, the rider and every faller, while `state.drop`
     exists) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
     over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
     js/draw/zipline.js);
@@ -2336,11 +2339,10 @@ stamps its own 16 px slot of `mirrorCv` — the ice pixels of the edge test the 
 ([the ice shore](world.md#the-ice-shore), js/draw/ground.js), all in one atlas so the stamps
 batch — so the dark ends where the painted ice does, never on the tile grid.
 
-**The sky.** The stars do not sit *on* the ice, they sit in a sky reflected *in* it, so they are
-anchored neither to the world nor to the screen: the field is sampled at `STAR_PAR` (0.22) of the
-camera's offset, so it slides against the ground as you walk — a long way off, moving slowly,
-which is the whole read of a reflection. The loop therefore runs over **sky cells** and asks what
-tile each one landed on, not over tiles. A star draws only where it fell on **unbroken** ice
+**The sky.** The stars are anchored to the **world**, never to the camera: a star sits at one place
+on the lake, so it stays put as the view pans over it and two players looking at the same stretch
+of ice see the same stars. The loop runs over **sky cells** — a `STAR_CELL` grid laid over the
+world — and asks what tile each one landed on. A star draws only where it fell on **unbroken** ice
 (`ground` 1 — `overIce()`, which every reflected pixel passes, the arms of a bright star's cross
 included), so the field is cut to the shape of the lake and **an ice hole is a hole in the stars
 too**. Each twinkles on its own rate, and the whole reflection ripples a pixel sideways on a slow
@@ -2517,6 +2519,24 @@ weather moves reads it rather than keeping a clock of its own:
   a cycle wide. Measured over 2000 tiles (about what the widest view holds), the field costs
   **0.084 ms a frame** — 0.5 % of a 60 fps budget, and this is the one number here that *is* safe to take from a headless run,
   because it is V8 arithmetic rather than the rasteriser.
+- `windSweep()` is the **sweep**: every `SWEEP_EVERY` (15 s) the air lifts a little loose snow and
+  drifts it slowly across the view — two or three faint streaks taking `SWEEP_T` (7 s) to cross,
+  gone well before the next. A breath of wind, deliberately not a gust. It is an event on the
+  field's own clock, not weather of its own: it starts on each multiple of `SWEEP_EVERY` of
+  `windT`, blows the way the veer ran **when it set off** (held to the end, since the veer can cross
+  still air mid-sweep and a streak must not jump sides), and is only as strong as `state.wind`
+  (none under `SWEEP_MIN`), so it fades out over dusk with everything else. `drawSweep` (the
+  `wind's sweep` banner, js/draw/ground.js) draws it in the air, after the y-sorted pass and under
+  the eagle and the night grade: each streak is a thin line of white drift and a shorter strand
+  behind it, breaking into flecks at the tail and rolling gently as it runs, over a faint shadow
+  **multiplied** a few px down-right — white on white snow says little, so the shadow carries it
+  there and the white carries it over the woods. The streaks live in the **world**, never on the
+  screen: the valley is cut into `SWEEP_CELL_W`×`SWEEP_CELL_H` cells, each sweep lays one or two
+  streaks in every cell at a spot off the cell and the sweep's number (`hash2`, nothing rolls), and
+  each drifts `SWEEP_RUN` px downwind from there at its own moment and pace, fading in and out
+  along its run — so a streak stays put as the camera pans, and two players over the same field
+  see the same snow blowing across it. A moving thing, it is placed off the exact camera
+  (`ex`/`ey`). It costs well under a millisecond a frame while it is on and nothing otherwise.
 
 On a GTX 1060 at 886×498 over the treeline the whole pass is inside measurement noise of not
 running at all — see [What this pass costs](#what-this-pass-costs). Do not profile this in a

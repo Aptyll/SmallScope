@@ -298,7 +298,7 @@ const WARP_MAX = 14;       // ...and the most a very long jump may stamp
 const warps = []; // live flashes: {spr, x0, y0, x1, y1, n, col, t}
 function warpPlayer(p, x, y) {
   let tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
-  if (!inWorld(tx, ty) || isSolidTile(tx, ty) || ground[idx(tx, ty)] === 2) {
+  if (!inWorld(tx, ty) || isSolidTile(tx, ty) || waterAt(tx, ty)) {
     const t = nearestDryTile(x, y, p);
     tx = t.tx; ty = t.ty;
     x = tx * TILE + 8; y = ty * TILE + 8;

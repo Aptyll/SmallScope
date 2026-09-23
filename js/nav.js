@@ -5,10 +5,10 @@
 // strict = treat open water as a wall for players too (a shove must never
 // dunk someone; only their own movement can)
 function moveEntity(e, dx, dy, r, strict) {
-  // only players can enter open water holes (they fall in - see updatePlayer);
-  // animals and robots treat those tiles as walls
+  // only players can enter open water - an ice hole or the creek (they fall
+  // in - see updatePlayer); animals and robots treat those tiles as walls
   const solid = e instanceof Player && !strict ? isSolidTile :
-    (tx, ty) => isSolidTile(tx, ty) || (inWorld(tx, ty) && ground[idx(tx, ty)] === 2);
+    (tx, ty) => isSolidTile(tx, ty) || waterAt(tx, ty);
   let blockedX = false, blockedY = false;
   // X axis
   if (dx !== 0) {
@@ -176,7 +176,7 @@ const NAV_DX = [1, -1, 0, 0, 1, 1, -1, -1];
 const NAV_DY = [0, 0, 1, -1, 1, -1, 1, -1];
 const NAV_COST = [1, 1, 1, 1, Math.SQRT2, Math.SQRT2, Math.SQRT2, Math.SQRT2];
 function walkable(tx, ty) {
-  return inWorld(tx, ty) && !isSolidTile(tx, ty) && ground[idx(tx, ty)] !== 2;
+  return inWorld(tx, ty) && !isSolidTile(tx, ty) && !waterAt(tx, ty);
 }
 function navH(tx, ty, gx, gy) {
   const dx = Math.abs(tx - gx), dy = Math.abs(ty - gy);

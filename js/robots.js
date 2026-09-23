@@ -360,7 +360,7 @@ function freeTileNear(tx, ty, rMax) {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
       const x = tx + dx, y = ty + dy;
-      if (inWorld(x, y) && !objAt(x, y) && ground[idx(x, y)] !== 2) return { tx: x, ty: y };
+      if (inWorld(x, y) && !objAt(x, y) && !waterAt(x, y)) return { tx: x, ty: y };
     }
   }
   return null;
@@ -399,7 +399,7 @@ function spawnMerchant(e) {
   const R = Math.ceil(BOOM_STUMP_R2) + 1, ctx0 = Math.floor(e.x / TILE), cty0 = Math.floor(e.y / TILE);
   for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
     const tx = ctx0 + dx, ty = cty0 + dy, o = objAt(tx, ty);
-    if (!inWorld(tx, ty) || ground[idx(tx, ty)] === 2 || (o && o.type !== 'stump')) continue;
+    if (!inWorld(tx, ty) || waterAt(tx, ty) || (o && o.type !== 'stump')) continue;
     const px = dx + 0.5 - (e.x / TILE - ctx0), py = dy + 0.5 - (e.y / TILE - cty0); // tiles, roost-relative
     const d = Math.hypot(px, py);
     const along = px * lx + py * ly, lat = px * -ly + py * lx, site = { tx, ty, d, along, lat, ang: Math.atan2(lat, along) };

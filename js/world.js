@@ -167,6 +167,17 @@ function isSolidTile(tx, ty) {
   return !!(d && d.solid);
 }
 
+// open water on a tile: a carved ice hole (ground 2) or the creek (ground 4,
+// the `the creek` group below). The one read for "nothing walks in here":
+// every walker but a player treats it as a wall (moveEntity), no route
+// crosses it (walkable), nothing spawns, lands or climbs out onto it. A
+// player may step in, and plunges (updatePlayer).
+function waterAt(tx, ty) {
+  if (!inWorld(tx, ty)) return false;
+  const g = ground[idx(tx, ty)];
+  return g === 2 || g === 4;
+}
+
 // the fish net on a tile, if one stands there - the single read that says
 // "this open water is planked over": the dawn refreeze skips it, the plunge
 // check skips it, and drawing it is a flat pass
@@ -840,6 +851,7 @@ function placeRoad() {
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (!onRoad(tx, ty)) continue;
     const i = idx(tx, ty);
+    if (ground[i] === 4 || ground[i] === 5) continue; // the creek runs under the lane (its deck is laid already), and a path stops at its water
     ground[i] = 3; // the lane is never ice (genWorld keeps it ROAD_ICE_KEEP away); a PATH crossing a frozen lake is
 
     objects[i] = null; // only worldgen's scenery stands here yet: a pine of the woods it cuts through, a rock, a bush
@@ -851,7 +863,7 @@ function placeRoad() {
   const mark = (u, side, out, type, extra) => {
     const e = roadEdgeAt(u, side) + out;
     const tx = Math.round(u + side * e / Math.SQRT2), ty = Math.round(WORLD - 1 - u + side * e / Math.SQRT2);
-    if (!inWorld(tx, ty) || ground[idx(tx, ty)] === 2) return null;
+    if (!inWorld(tx, ty) || waterAt(tx, ty)) return null;
     const o = objects[idx(tx, ty)];
     if (o && !laneFells(o)) return null;
     return placeObj(tx, ty, type, extra);
@@ -860,7 +872,10 @@ function placeRoad() {
     mark(s.u0 + 2, side, ROAD_POLE_OUT, 'banner', { team: 0 }); // RED roosts bottom-left (game.md)
     mark(s.u1 - 2, side, ROAD_POLE_OUT, 'banner', { team: 1 });
   }
-  const um = Math.round((s.u0 + s.u1) / 2); // the centre: one cairn on the centreline
+  // the centre: one cairn on the centreline - at the bridgehead when the
+  // middle falls on the bridge, never on its deck
+  let um = Math.round((s.u0 + s.u1) / 2);
+  while (Math.abs(creekP(um, WORLD - 1 - um)) < BRIDGE_L + 1.5) um += um < (WORLD - 1) / 2 ? -1 : 1;
   if (!objects[idx(um, WORLD - 1 - um)]) placeObj(um, WORLD - 1 - um, 'cairn');
   // the felled trunk across each forest road, ROAD_LOG_IN past its junction:
   // one `log` per tile along the cross-diagonal, the pieces touching corner
@@ -870,7 +885,7 @@ function placeRoad() {
     const uc = Math.round(roadNest(team).u + (team === 0 ? -1 : 1) * ROAD_LOG_IN);
     for (let k = -ROAD_LOG_HALF; k <= ROAD_LOG_HALF; k++) {
       const tx = uc + k, ty = WORLD - 1 - uc + k;
-      if (!inWorld(tx, ty) || ground[idx(tx, ty)] === 2) continue;
+      if (!inWorld(tx, ty) || waterAt(tx, ty)) continue;
       objects[idx(tx, ty)] = null;
       placeObj(tx, ty, 'log', { seg: k === -ROAD_LOG_HALF ? 0 : k === ROAD_LOG_HALF ? 2 : 1 });
     }
@@ -958,6 +973,18 @@ function addPathRoute(path) {
     const j = Math.min(path.length - 1, i + PATH_SEG);
     addPathSeg(path[i][0], path[i][1], path[j][0], path[j][1]);
   }
+  // ...and wherever it crosses the creek (the `the creek` group below), a
+  // ford of stepping stones at the middle of the crossing: placeRoad paves
+  // the path up to the water and leaves the water be
+  const wetOrFord = (t) => waterAt(t[0], t[1]) || ground[idx(t[0], t[1])] === 5;
+  for (let i = 0; i < path.length; i++) {
+    if (!wetOrFord(path[i])) continue;
+    let j = i;
+    while (j + 1 < path.length && wetOrFord(path[j + 1])) j++;
+    const m = path[(i + j) >> 1];
+    if (ground[idx(m[0], m[1])] === 4) creekFord(m[0], m[1]);
+    i = j;
+  }
 }
 function indexPaths() {
   if (!paths.length) return;
@@ -1006,7 +1033,7 @@ function pathCost(tx, ty, block, cut) {
   const o = lane < 0 ? null : objects[i];
   const wall = !!o && isSolidTile(tx, ty);
   if (wall && (!cut || !laneFells(o))) return -1;
-  let c = g === 1 ? PATH_ICE : 1;
+  let c = g === 1 ? PATH_ICE : g === 4 ? CREEK_COST : 1; // the creek is crossed, briefly; a ford (5) is dry ground
   if (wall) c += PATH_WOOD;
   if (lane < ROAD_HW + 1) c += PATH_LANE;
   return c;
@@ -1104,6 +1131,205 @@ function layPaths() {
   indexPaths();
 }
 
+// ---- the creek ------------------------------------------------------------
+// One creek that never freezes runs the whole map, world edge to world edge,
+// down the CROSS-diagonal (tx = ty) - the top-left corner to the
+// bottom-right, the road's opposite - so it cuts the valley into RED's half
+// and BLUE's, the roosts one either side, and it meets the road once, at the
+// middle, where the waves meet. Like the road it comes from beyond and goes
+// on past us: through the border woods too, where the pines stand to the
+// water's edge.
+//
+// It is GROUND 4, open water: every walker but a player treats it as a wall,
+// no route crosses it (waterAt), and a player who steps in plunges exactly as
+// into an ice hole (updatePlayer) - a roll does not carry over it, and the
+// scramble out is back onto the bank they went in from (nearestDryTile). The
+// ways over, all of them ground that walks like snow:
+//   - the BRIDGE: the road crosses on a timber deck (ground 3, so to every
+//     rule it is road) the lane's width, with open sides - shoved off one,
+//     you are in the creek;
+//   - the ISLANDS: the two camps on the mirror line (the DIRE HOLLOW and the
+//     ALPHA STONE) stand on islands the creek parts round and joins again
+//     below, each reached by a FORD from either half;
+//   - an outer FORD on each stretch between an island and the treeline;
+//   - a ford wherever a grown shape's path crosses (addPathRoute).
+// A ford is a row of stepping stones (ground 5) along one tile row across
+// the water, so it is always four-connected and nobody's feet cut a corner
+// through the current.
+//
+// Geometry, in tiles, off the road's own frame: `w` along the creek is
+// roadOffS (+ downstream, toward the bottom-right) and `p` across it is
+// (fx - fy) / SQRT2 (+ toward the top-right, BLUE's half). creekAt measures
+// any point - a tile centre for the ground array, a pixel for the bake
+// (paintCreek, js/draw/ground.js) - against the wandering banks, so what a
+// tile IS and what it LOOKS like agree to within the bank, as the road's do.
+// Pure position noise: nothing rolls, so no seed reshuffles - but it writes
+// ground after genWorld, so every seed's ground hash moves (placeCreek).
+const CREEK_HW = 1.05;       // tiles either side of the creek's line the water runs: about two tiles across
+const CREEK_HW_RAG = 0.22;   // ...that each bank wanders on the position noise
+const CREEK_WANDER = 2.5;    // tiles the line itself wanders off the cross-diagonal, either way
+const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the bridge, an island or a ford
+const CREEK_REACH = CREEK_WANDER + CREEK_HW + CREEK_HW_RAG + 0.4; // the farthest a bank ever stands off the diagonal
+const CREEK_COST = 6;        // what a tile of creek costs a path's route (pathCost): it crosses, and short
+const CREEK_ISLE = 1.2;      // tiles of dry island between a path's end at an island camp (r + PATH_CAMP) and the water
+const CREEK_FORD_GAP = 14;   // tiles of creek an outer ford needs between an island and the treeline
+const BRIDGE_L = 2.0;        // tiles the deck runs either side of the creek's line, along the road
+const BRIDGE_W = ROAD_HW + 0.35; // ...and either side of the road's centreline, along the creek: the lane's width
+function creekP(fx, fy) { return (fx - fy) / Math.SQRT2; }
+// the islands: every camp site on the mirror line, with the radius of the
+// water's centre round it - out past the ground a path to it stops on
+let creekIslesC = null;
+function creekIsles() {
+  if (creekIslesC) return creekIslesC;
+  creekIslesC = [];
+  for (const site of campSites()) {
+    if (Math.abs(site.u - (WORLD - 1) / 2) > 0.01) continue;
+    const t = campTile(site.u, site.s);
+    creekIslesC.push({ tx: t.tx, ty: t.ty, w: roadOffS(t.tx, t.ty), R: CAMPS[site.key].r + PATH_CAMP + CREEK_ISLE + CREEK_HW });
+  }
+  return creekIslesC;
+}
+// 0 at the bridge, an island or a ford, easing to 1 CREEK_CALM tiles out:
+// the wander and the banks' rag are held still where the water must meet a
+// fixed thing square
+function creekCalm(w) {
+  let k = 1;
+  const at = (w0, r) => { const t = Math.max(0, Math.min(1, (Math.abs(w - w0) - r) / CREEK_CALM)); k = Math.min(k, t * t * (3 - 2 * t)); };
+  at(0, BRIDGE_W + 1);
+  for (const I of creekIsles()) at(I.w, I.R + 1);
+  for (const f of creekOuterFords()) at(f.w, 1);
+  return k;
+}
+function creekMid(w) {
+  return ((vnoise(w * 0.045 + 7.3, 3.1) - 0.5) * 2 * CREEK_WANDER + (vnoise(w * 0.21 + 1.7, 8.7) - 0.5) * 0.5) * creekCalm(w);
+}
+function creekHW(w, side) {
+  return CREEK_HW + (vnoise(w * 0.13 + side * 31.7, 5.5) - 0.5) * 2 * CREEK_HW_RAG * creekCalm(w);
+}
+// Signed distance (tiles) from the nearer bank: negative in the water. Also
+// leaves where the point is in CQ, so a caller asking for more than the
+// distance does not pay twice: `a` along the water (tiles), `n` across it
+// (signed, from the water's own centre), and `isle` - the island whose ring
+// it is on, or -1 for the creek's line.
+const CQ = { d: 99, a: 0, n: 0, isle: -1, fdx: 0, fdy: 0 };
+function creekAt(fx, fy) {
+  const q = CQ;
+  q.d = 99; q.isle = -1;
+  if (PRACTICE) return 99;
+  const isles = creekIsles();
+  let inIsle = false;
+  for (let k = 0; k < isles.length; k++) {
+    const I = isles[k], dx = fx - I.tx, dy = fy - I.ty;
+    if (Math.abs(dx) > I.R + 3 || Math.abs(dy) > I.R + 3) continue;
+    const r = Math.hypot(dx, dy) || 1e-6;
+    if (r < I.R) inIsle = true;
+    const e = Math.abs(r - I.R) - CREEK_HW;
+    if (e < q.d) { q.d = e; q.isle = k; q.a = Math.atan2(dy, dx) * I.R; q.n = r - I.R; }
+  }
+  if (!inIsle) {
+    const p = creekP(fx, fy);
+    if (Math.abs(p) - CREEK_REACH < q.d) {
+      const w = roadOffS(fx, fy), n = p - creekMid(w);
+      const e = n < 0 ? -n - creekHW(w, -1) : n - creekHW(w, 1);
+      if (e < q.d) { q.d = e; q.isle = -1; q.a = w; q.n = n; }
+    }
+  }
+  return q.d;
+}
+// the way the current runs at a point (CQ.fdx/fdy, a unit vector): along
+// the line, bent by its wander; round an island, the ring's tangent - both
+// arms run downstream, top-left to bottom-right
+function creekFlow(fx, fy) {
+  creekAt(fx, fy);
+  const q = CQ;
+  if (q.isle >= 0) {
+    const I = creekIsles()[q.isle], dx = fx - I.tx, dy = fy - I.ty, r = Math.hypot(dx, dy) || 1;
+    let x = -dy / r, y = dx / r;
+    if (x + y < 0) { x = -x; y = -y; }
+    q.fdx = x; q.fdy = y;
+  } else {
+    const w = roadOffS(fx, fy), s = creekMid(w + 0.5) - creekMid(w - 0.5), l = Math.hypot(1 + s, 1 - s);
+    q.fdx = (1 + s) / l; q.fdy = (1 - s) / l;
+  }
+  return q;
+}
+// the deck: a rectangle on the two diagonals round the crossing, the lane's
+// width along the creek and BRIDGE_L either way across it. Continuous tile
+// coordinates; the bake reads it per pixel and the ground array per tile.
+function bridgeAt(fx, fy) {
+  if (PRACTICE) return false;
+  return Math.abs(creekP(fx, fy)) <= BRIDGE_L && Math.abs(roadOffS(fx, fy)) <= BRIDGE_W;
+}
+// in the water, as drawn: what the plunge asks of the feet, so nobody goes
+// in off a pixel of bank or off the deck's overhang
+function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !bridgeAt(fx, fy); }
+// the outer fords: on the diagonal, halfway between an island's ring (or the
+// bridge, on a side with no island) and where the border woods close over
+// the creek - where the stretch is long enough to want one
+let creekFordsC = null;
+function creekOuterFords() {
+  if (creekFordsC) return creekFordsC;
+  creekFordsC = [];
+  for (const dir of [-1, 1]) {
+    let t = dir < 0 ? 0 : WORLD - 1;
+    while (t >= 0 && t <= WORLD - 1 && Math.min(t, WORLD - 1 - t) < borderDepth(t, t)) t -= dir;
+    const wT = roadOffS(t, t);
+    let wIn = dir * (BRIDGE_W + 1);
+    for (const I of creekIsles()) if (Math.sign(I.w) === dir && Math.abs(I.w) + I.R > Math.abs(wIn)) wIn = I.w + dir * (I.R + CREEK_HW);
+    if ((wT - wIn) * dir < CREEK_FORD_GAP) continue;
+    const w = (wT + wIn) / 2, c = (w * Math.SQRT2 + WORLD - 1) / 2;
+    creekFordsC.push({ w, x: c, y: c });
+  }
+  return creekFordsC;
+}
+// a row of stepping stones across the water through (fx, fy): the nearest
+// creek tile on that tile row and the whole run of water it sits in, and a
+// tile of open ground cleared past either end so a ford never ends in a pine
+function creekFord(fx, fy) {
+  const ty = Math.round(fy);
+  let tx = Math.round(fx);
+  const wet = (x) => inWorld(x, ty) && (ground[idx(x, ty)] === 4 || ground[idx(x, ty)] === 5);
+  if (!wet(tx)) {
+    const k = [1, -1, 2, -2, 3, -3].find((d) => wet(tx + d));
+    if (k === undefined) return;
+    tx += k;
+  }
+  let x0 = tx, x1 = tx;
+  while (wet(x0 - 1)) x0--;
+  while (wet(x1 + 1)) x1++;
+  for (let x = x0; x <= x1; x++) ground[idx(x, ty)] = 5;
+  for (const x of [x0 - 1, x1 + 1]) {
+    const o = objAt(x, ty);
+    if (o && laneFells(o)) objects[idx(x, ty)] = null;
+  }
+}
+// Runs at boot right after genWorld() (js/boot.js), before the paths and the
+// road: the water fells whatever grew on it (its banks keep their pines), the
+// deck is laid bank to bank, each island is cleared to open ground, and the
+// fixed fords go down. A path's own fords follow in layPaths (addPathRoute).
+function placeCreek() {
+  if (PRACTICE) return;
+  creekIslesC = null; creekFordsC = null;
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    const i = idx(tx, ty);
+    if (bridgeAt(tx, ty)) { ground[i] = 3; objects[i] = null; continue; }
+    if (creekAt(tx, ty) >= 0) continue;
+    ground[i] = 4;
+    objects[i] = null;
+  }
+  for (const I of creekIsles()) {
+    const R = Math.ceil(I.R);
+    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+      const o = objAt(I.tx + dx, I.ty + dy);
+      if (o && Math.hypot(dx, dy) < I.R - CREEK_HW && laneFells(o)) objects[idx(I.tx + dx, I.ty + dy)] = null;
+    }
+    // a ford from each half: where the ring runs along the diagonal, level with the camp
+    creekFord(I.tx + I.R / Math.SQRT2, I.ty - I.R / Math.SQRT2);
+    creekFord(I.tx - I.R / Math.SQRT2, I.ty + I.R / Math.SQRT2);
+  }
+  for (const f of creekOuterFords()) creekFord(f.x, f.y);
+}
+
 // ------------------------------------------------------------ zipline
 // THE ZIPLINE: one cable per team, strung on pylons from just outside its
 // base's wall ring, down beside the spur and along the road's own verge, to
@@ -1175,7 +1401,7 @@ function placeZips() {
       let tx = Math.round(t.x), ty = Math.round(t.y);
       for (const k of [0, 1, -1, 2, -2]) {
         const qx = tx + k, qy = ty - k;
-        if (!inWorld(qx, qy) || ground[idx(qx, qy)] === 2) continue;
+        if (!inWorld(qx, qy) || waterAt(qx, qy)) continue;
         const o = objects[idx(qx, qy)];
         if (o && !laneFells(o)) continue;
         placeObj(qx, qy, 'pylon', { team });

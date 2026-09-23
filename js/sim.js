@@ -668,6 +668,8 @@ function updatePlay(dt) {
   resolveContests(); // the drop pickups queued above
 }
 
+const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water it would never walk into
+
 // One player's step - movement, tools, timers. A human, an AI fill and (later)
 // a network peer all run exactly this; only who wrote p.input differs.
 function updatePlayer(p, dt) {
@@ -893,9 +895,13 @@ function updatePlayer(p, dt) {
       p.vy = diry * sp;
     }
 
+    // a bot never wades into open water on its own feet - only a shove
+    // (knockback past WADE_SHOVE) or already standing in it lets it in
+    const wade = p.control !== 'ai' || Math.hypot(p.kbx, p.kby) > WADE_SHOVE ||
+      waterAt(Math.floor(p.x / TILE), Math.floor((p.y + 4) / TILE));
     const mv = moveEntity(p,
       (p.vx + p.kbx) * dt,
-      (p.vy + p.kby) * dt, PLAYER_R);
+      (p.vy + p.kby) * dt, PLAYER_R, !wade);
     if (mv.blockedX) p.vx = 0; // a wall kills that axis instead of grinding
     if (mv.blockedY) p.vy = 0;
   }
@@ -903,13 +909,19 @@ function updatePlayer(p, dt) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
   p.y = Math.max(8, Math.min(WORLD * TILE - 8, p.y));
 
-  // carved ice holes: standing over open water plunges you in (an active
-  // dodge roll carries across the gap)
-  if (p.fallT <= 0 && p.dodgeT <= 0) {
+  // open water: standing over a carved ice hole plunges you in (an active
+  // dodge roll carries across the one-tile gap), and so does the creek - two
+  // tiles of current no roll clears, so a roll goes in with you. The creek
+  // asks the feet against its banks as drawn (creekWet), so nobody goes in
+  // off a pixel of snow or off the deck's overhang.
+  if (p.fallT <= 0) {
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
+    const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
     // a net is planked over its hole: you stand on it, and that is how the
     // catch comes out of it (see updateStructures' net branch)
-    if (inWorld(htx, hty) && ground[idx(htx, hty)] === 2 && !netAt(htx, hty)) {
+    if ((g === 2 && p.dodgeT <= 0 && !netAt(htx, hty)) ||
+      (g === 4 && creekWet(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5))) {
+      p.dodgeT = 0; p.rollHit.length = 0; // a roll ends in the water
       p.fallT = HOLE_FALL_T;
       p.fallRipT = 0;
       p.vx = p.vy = 0;
@@ -925,7 +937,7 @@ function updatePlayer(p, dt) {
       sfxAt('splash', p.x, p.y);
       burst(p.x, p.y + 4, '#3a6080', 10, 55, 0.5, true);
       burst(p.x, p.y + 2, '#ddf1f8', 8, 60, 0.5, true);
-      damagePlayer(p, HOLE_FALL_DMG, 0, 0, null, 'ice');
+      damagePlayer(p, HOLE_FALL_DMG, 0, 0, null, g === 4 ? 'creek' : 'ice');
     }
   }
 
@@ -1298,6 +1310,28 @@ function windSway(tx, ty) {
   const u = (a - WIND_SOFT) / (1 - WIND_SOFT);
   const c = WIND_SOFT + (1 - WIND_SOFT) * u / (1 + u);
   return s < 0 ? -c : c;
+}
+
+// The SWEEP: every SWEEP_EVERY seconds the air lifts a little loose snow and
+// drifts it slowly downwind over the valley - a few faint streaks laid in the
+// world, gone again well before the next (drawSweep, js/draw/ground.js). Not a gust and not weather
+// of its own: it rides the field's clock (windT), runs the way the air is
+// running (windDir), and is only as strong as the day's air (windAmp), so it
+// fades out over dusk with everything else.
+const SWEEP_EVERY = 15;  // s from one sweep to the next
+const SWEEP_T = 7;       // s a sweep takes to drift across
+const SWEEP_MIN = 0.1;   // no sweep while the field is weaker than this
+// the sweep on now: { k: 0..1 across, n: which one (its streaks' seed), dir: +1
+// blowing right, -1 left, w: the air's strength behind it }, or null. Its way
+// is the veer's at the moment it set off, held to the end: the veer can cross
+// still air in mid-sweep, and a streak must not jump to the other side.
+function windSweep() {
+  if (state.wind < SWEEP_MIN) return null;
+  const n = Math.floor(state.windT / SWEEP_EVERY);
+  const k = (state.windT - n * SWEEP_EVERY) / SWEEP_T;
+  if (k >= 1) return null;
+  const dir = wsin(n * SWEEP_EVERY * (Math.PI * 2 / WIND_VEER)) < 0 ? -1 : 1; // windVeer's sign then
+  return { k, n, dir, w: state.wind };
 }
 // ------------------------------------------------------------ fx updates
 // Snow lives in the world, not on the glass: a flake has a world position,

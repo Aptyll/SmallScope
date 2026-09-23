@@ -430,7 +430,7 @@ function aiOpenSides(tx, ty) {
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
     if (!dx && !dy) continue;
     const nx = tx + dx, ny = ty + dy;
-    if (inWorld(nx, ny) && !isSolidTile(nx, ny) && ground[idx(nx, ny)] !== 2) n++;
+    if (inWorld(nx, ny) && !isSolidTile(nx, ny) && !waterAt(nx, ny)) n++;
   }
   return n;
 }
@@ -978,7 +978,7 @@ function aiThink(p, dt) {
       for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
         if (!dx && !dy) continue;
         const nx = st.tx + dx, ny = st.ty + dy;
-        if (!inWorld(nx, ny) || isSolidTile(nx, ny) || ground[idx(nx, ny)] === 2) continue;
+        if (!inWorld(nx, ny) || isSolidTile(nx, ny) || waterAt(nx, ny)) continue;
         const o2 = aiOpenSides(nx, ny);
         if (o2 > bs) { bs = o2; bx = nx; by = ny; }
       }

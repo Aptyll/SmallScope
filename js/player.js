@@ -798,7 +798,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
 }
 
 // what the log says when nobody gets the credit
-const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', wolf: 'WENT TO THE WOLVES', dire: 'FED THE DIRE WOLF', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE' };
+const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', dire: 'FED THE DIRE WOLF', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE' };
 // ...and what the line says when there IS credit but no arrow: `cause` is
 // read for the verb too, so a worker's axe doesn't get written up as a shot
 const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
