@@ -500,7 +500,7 @@ const CASTERS = {
   rock:     { code: (o) => 110 + o.variant, art: (c) => whole(SPRITES.rock[c - 110], 0, 4) },
   bush:     { code: () => 120, art: () => whole(SPRITES.bush, 0, 4) },
   stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
-  den:      { code: () => 122, art: () => whole(SPRITES.den, 0, 4) },
+  den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   chest:    { code: () => 123, art: () => whole(CHEST_SPR, 0, TILE - CHEST_SPR.height) },
   cairn:    { code: () => 124, art: () => whole(CAIRN_SPR, 1, TILE - CAIRN_SPR.height + 1) },
 };

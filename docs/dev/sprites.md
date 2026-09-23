@@ -302,7 +302,7 @@ blows the dire up to 32×26 nearest-neighbour
 (the tail of js/sprites/beasts.js) — each wants its own grid through the concept-art skill one day.
 
 The two camp props are
-`deadTree` (two 16×24 snags on `DTPAL`) and `den` (one 16×12 mound on `DNPAL`, drawn at `py + 4` like a rock). The berry bush is
+`deadTree` (two 16×24 snags on `DTPAL`) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade). The berry bush is
 four frames on `BPAL` — `bush`, `bushEmpty`, `bushBud`, `bushRipen` — one silhouette in which only
 the four berry pixels change (ripe, gone, pale `b` buds, dull `d` berries), because the frames are
 a clock the player reads at a glance and a bush that seemed to move would read as a different

@@ -60,7 +60,10 @@ const OBJECTS = {
   // rolls the card. Any tool opens it, so `needs` stays null.
   chest:    { solid: true,  tool: 'axe',  needs: null,   verb: 'OPEN', lift: 12, auto: true,
               mm: [242, 204, 100], map: CH_CHEST },
-  den:      { solid: true,  mm: [92, 86, 100] },
+  // a camp's cave (the wolf den and the dire hollow): inert scenery, two
+  // tiles wide - `w` stamps a `part` filler per extra tile, east of the
+  // anchor (placeCamps), so both tiles are solid and read back as the den
+  den:      { solid: true,  w: 2, mm: [92, 86, 100] },
   // the practice arena's target (the `practice arena` banner below): any tool
   // hits it, it never falls, and it mends itself between combos. E swings,
   // every bit and the roll's tackle all land through hitDummy (js/actions.js).
@@ -108,8 +111,8 @@ const OBJECTS = {
   // pass; the swing itself lands in hitObject's eagle branch (hurtEagle).
   eagle:    { solid: true,  tool: 'axe',  needs: null,   verb: 'STRIKE', lift: 16, auto: true,
               mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED, map: chEagle },
-  // a multi-tile building's filler tiles: solid, and structOf() has resolved
-  // them to their anchor long before either map sees one
+  // a multi-tile building's (or a wide prop's) filler tiles: solid, and
+  // structOf() has resolved them to their anchor long before either map sees one
   part:     { solid: true },
 };
 // A picked bush regrows on its own clock (`regrow`, counted down with the
@@ -574,6 +577,64 @@ function placeChests() {
   };
   take(edge, CHEST_COUNT - nBury);
   if (nBury) take(deep, CHEST_COUNT);
+}
+
+// Rocks: they stand in the open snow just out from the border forest, a
+// band ROCK_BAND_MIN..ROCK_BAND_MAX tiles (walked, 4-way) from its nearest
+// pine - a border pine, one standing on borderDepth's side of the line, so a
+// grown shape's inner woods draw no band of their own - never touching a
+// pine and never in a camp's clearing -
+// so the ore is out at the valley's rim and the middle stays open ground.
+// genWorld still rolls its own rock passes (the interior scatter and a grown
+// shape's top-up): taking their rng() calls out would reshuffle every seed,
+// so they run as they always did and placeRocks lifts what they stood before
+// placing its own, on its own stream (rkRng) AFTER the camps and the chests.
+const ROCK_COUNT = 120;       // rocks a world stands
+const ROCK_BAND_MIN = 2;      // tiles out from the border's pines the band starts...
+const ROCK_BAND_MAX = 8;      // ...and ends
+const ROCK_BAND_GROW = 8;     // a shape whose rim cannot hold them (FROZEN ISLES: the rim is lake) widens the band by this...
+const ROCK_BAND_LIMIT = 40;   // ...a step at a time, out to here
+const ROCK_SPACING = 3;       // min tiles between two rocks
+function placeRocks() {
+  for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'rock') objects[i] = null;
+  const rkRng = mulberry32((SEED ^ 0x524f434b) >>> 0);
+  // distance from the border pines, flooded out across everything else
+  const dist = new Int16Array(WORLD * WORLD).fill(-1), q = [];
+  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
+    const o = objects[idx(tx, ty)];
+    if (o && o.type === 'tree' && Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) < borderDepth(tx, ty)) { dist[idx(tx, ty)] = 0; q.push(idx(tx, ty)); }
+  }
+  for (let h = 0; h < q.length; h++) {
+    const i = q[h], x = i % WORLD, y = (i / WORLD) | 0, d = dist[i] + 1;
+    if (d > ROCK_BAND_LIMIT) continue;
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
+      if (!inWorld(nx, ny) || dist[idx(nx, ny)] >= 0) continue;
+      dist[idx(nx, ny)] = d; q.push(idx(nx, ny));
+    }
+  }
+  const band = [];
+  for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 1; tx++) {
+    const i = idx(tx, ty);
+    if (objects[i] || ground[i] !== 0 || dist[i] < ROCK_BAND_MIN) continue;
+    let touches = false;
+    for (let dy = -1; dy <= 1 && !touches; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const o = objAt(tx + dx, ty + dy);
+      if (o && o.type === 'tree') { touches = true; break; }
+    }
+    if (touches || camps.some((C) => Math.hypot(tx - C.tx, ty - C.ty) <= C.r + 2)) continue;
+    band.push({ tx, ty, d: dist[i] });
+  }
+  // the band as drawn first; only what it cannot hold goes further in
+  const placed = [];
+  for (let hi = ROCK_BAND_MAX; hi <= ROCK_BAND_LIMIT && placed.length < ROCK_COUNT; hi += ROCK_BAND_GROW) {
+    const cands = band.filter((c) => c.d <= hi);
+    for (let tries = 0; tries < ROCK_COUNT * 20 && placed.length < ROCK_COUNT && cands.length; tries++) {
+      const c = cands[Math.floor(rkRng() * cands.length)];
+      if (objects[idx(c.tx, c.ty)] || placed.some((q) => Math.hypot(q.tx - c.tx, q.ty - c.ty) < ROCK_SPACING)) continue;
+      placed.push(c);
+      placeObj(c.tx, c.ty, 'rock', { hp: 5, variant: rkRng() < 0.5 ? 0 : 1 });
+    }
+  }
 }
 
 // ---- the road -------------------------------------------------------------
@@ -1341,8 +1402,7 @@ const CAMPS = {
     r: 5, mark: '#d8c0c4',
     icon: [[2, 3, 3, 3], [1, 4, 5, 2], [0, 1, 1, 2], [2, 0, 1, 2], [4, 0, 1, 2], [6, 1, 1, 2]], // paw print
     kind: 'wolf', pop: 4, repop: 60,
-    props: [[0, 0, 'den'],
-      [-3, -2, 'rock', 0], [3, -2, 'rock', 1], [-4, 1, 'rock', 1], [4, 1, 'rock', 0], [-2, 3, 'rock', 0], [2, 3, 'rock', 1]],
+    props: [[0, 0, 'den']],
     spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
   },
   buff: {
@@ -1350,7 +1410,7 @@ const CAMPS = {
     r: 4, mark: '#c2a6ff',
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 120,
-    props: [[0, 0, 'cairn'], [-3, -2, 'rock', 0], [3, -2, 'rock', 1], [-2, 3, 'rock', 1], [2, 3, 'rock', 0]],
+    props: [[0, 0, 'cairn']],
     spots: [[0, 2]],
   },
   epic: {
@@ -1360,8 +1420,7 @@ const CAMPS = {
     kind: 'dire', pop: 1, repop: 300,
     props: [[0, 0, 'den'],
       [-4, -3, 'deadTree', 0], [4, -3, 'deadTree', 1], [-5, 1, 'deadTree', 1], [5, 1, 'deadTree', 0],
-      [-3, 4, 'deadTree', 0], [3, 4, 'deadTree', 1], [0, -5, 'deadTree', 1],
-      [-2, -3, 'rock', 1], [2, -3, 'rock', 0], [-4, 2, 'rock', 0], [4, 2, 'rock', 1]],
+      [-3, 4, 'deadTree', 0], [3, 4, 'deadTree', 1], [0, -5, 'deadTree', 1]],
     spots: [[0, 3]],
   },
 };
@@ -1379,7 +1438,10 @@ const CAMP_EDGE = 72;
 const CAMP_SITES = [
   { key: 'resource', u: 90, s: -25 },  // one den each side of the road, out from the lane mouth
   { key: 'resource', u: 90, s: 25 },
-  { key: 'buff', u: 104, s: 44 },      // the alpha, on the bottom-right side, nearer the middle and further out
+  // THREE CAMPS A SIDE OF THE ROAD, six in all: a mirrored pair of dens on
+  // each side, and one contested camp on the mirror line to finish each side
+  // - the dire wolf top-left, the alpha bottom-right, facing it across the road
+  { key: 'buff', u: (WORLD - 1) / 2, s: 44 },  // the alpha, bottom-right of the middle, on the mirror line
   { key: 'epic', u: (WORLD - 1) / 2, s: -40 }, // the dire wolf, top-left of the middle, on the mirror line
 ];
 function campTile(u, s) {
@@ -1419,9 +1481,14 @@ function placeCamps() {
     camps.push(C);
     clearCamp(C);
     for (const [dx, dy, type, variant] of spec.props) {
-      const extra = type === 'rock' ? { hp: 5, variant } : type === 'deadTree' ? { hp: 3, variant } : {};
+      const extra = type === 'deadTree' ? { hp: 3, variant } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
-      placeObj(C.tx + dx, C.ty + dy, type, extra);
+      const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
+      // a prop wider than a tile (OBJECTS' w) fills the rest with parts, as a building does
+      for (let k = 1; k < (OBJECTS[type].w || 1); k++) {
+        const x = C.tx + dx + k, y = C.ty + dy;
+        objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
+      }
     }
   }
 }

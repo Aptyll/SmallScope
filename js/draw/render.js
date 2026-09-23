@@ -346,7 +346,7 @@ function render() {
     const wk = workTarget(fadeP);
     if (wk) fadeWkO = wk.o;
     if (mouse.inside && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel && !state.drag)
-      hovO = objAt(Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE));
+      hovO = structOf(objAt(Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE)));
     const ptx = Math.floor(fadeP.x / TILE), pty = Math.floor(fadeP.y / TILE);
     for (let sy = pty - 2; sy <= pty + 2; sy++) for (let sx = ptx - 2; sx <= ptx + 2; sx++) {
       const so = inWorld(sx, sy) ? objects[idx(sx, sy)] : null;
@@ -405,8 +405,8 @@ function render() {
       if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py - 8, now);
       drawSpriteFlash(spr, px + sh, py - 8, o.flash);
     } else if (o.type === 'den') {
-      drawSpriteFlash(SPRITES.den, px + sh, py + 4, o.flash);
-      if (o === hovO) drawCampClock(o, px + 8, py + 1); // a cleared camp's respawn clock, under the pointer
+      drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
+      if (o === hovO) drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock, under the pointer
     } else if (o.type === 'rock') {
       const spr = SPRITES.rock[o.variant];
       if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);

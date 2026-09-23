@@ -1251,8 +1251,11 @@
     '.....ssssss.....',
   ];
 
-  // The wolf den's mouth: a snow-capped rock mound with a black throat and a
-  // picked-over bone at the lip. 16x12, drawn at py+4 like a rock.
+  // The wolf den: A ROCK MAW of docs/media/concepts/den-concepts-1.png - a
+  // snow-capped boulder hill grown into a cave, icicle fangs over a wide black
+  // mouth, bones at the lip. 32x21 over its two tiles (OBJECTS.den's w: the
+  // anchor and a part to its right), the lip row on the tiles' foot, so it is
+  // drawn at py - 4. The WOLF DEN and the DIRE HOLLOW both stand one.
   const DNPAL = {
     '.': null,
     'o': '#2b3040', // outline
@@ -1260,23 +1263,35 @@
     'Y': '#99a1b6', // rock light
     'v': '#5a6176', // rock dark
     'k': '#12151f', // the dark inside
+    'K': '#232838', // ...and its rim
+    'i': '#dcecff', // icicle fangs
     'b': '#e6e2d4', // bone
+    'B': '#b9b2a0', // bone shade
     'w': '#eef4fb', // snow
     's': '#c9dcee', // snow shade
   };
   const den = [
-    '................',
-    '.....owwwwo.....',
-    '...oowwwwwwoo...',
-    '..owwwwwwwwwwo..',
-    '.oswwwwwwwwwwso.',
-    'oYsswyyyyywsssYo',
-    'oYyyyokkkoyyyyYo',
-    'oYyyokkkkkoyyyYo',
-    'ovyyokkkkkoyyyvo',
-    'ovvyokkkkkoyyvvo',
-    '.ovvokkkkkovvvo.',
-    '..ooobkkkboooo..',
+    '............oooooo..............',
+    '..........oowwwwwwoo.ooo........',
+    '......oowwwwwwwwwwwwowwwoo......',
+    '.....owwwwwwwwwwwwwwwwwwwwo.....',
+    '....owwwwwwwwwwwwwwwwwwwwwwo....',
+    '...ossswwwwwwwwwwwwwwwwwwssso...',
+    '..oYysssswwwwwsssswwwwssssyYYo..',
+    '..oYyyyyssssssoooossssssyyyyYo..',
+    '.oYyyyyyyyyooKKKKKKooyyyyyyyyYo.',
+    '.oYyyyyyyyoiKiKkkKiKioyyyyyyyYo.',
+    '.oyyyyyyyoKikiKkkKikiKoyyyyyyyo.',
+    'oYyyyyyyoKkkkikkkkikkkKoyyyyyyYo',
+    'oYyyyyyoKkkkkkkkkkkkkkkKoyyyyyvo',
+    'ovyyyyyokkkkkkkkkkkkkkkkoyyyyvvo',
+    'ovyyYyyokkkkkkkkkkkkkkkkoyyyvvvo',
+    'ovvyyyyokkkkkkkkkkkkkkkkoyYyvvvo',
+    'ovvvyyyokkkkkkkkkkkkkkkkoyyvvvvo',
+    '.ovvvyyokkkkkkkkkkkkkkkkoyvvvvo.',
+    '.ovvvvvokkkkkkkkkkkkkkkkovvvvvo.',
+    '..ooovvoKkkkkkkkkkkkkkkKovvooo..',
+    '.....ooobBKkkkkkkkkkKBbooo......',
   ];
   // The forest's palettes: TSPAL run through colour filters in OKLCH, never
   // redrawn (docs/media/concepts/tree-filters-2.png picked B, C and D). The

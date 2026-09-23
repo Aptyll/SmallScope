@@ -202,13 +202,13 @@ lives in `docs/dev/*.md` beside the code it protects.
   anything only one of them can get (a work swing, a build, a drop, a fish) goes through
   `contest()`, which picks the winner from (SEED, player id, `state.tick`).
 - **Never add or remove an `rng()` call inside `genWorld()`** — it reshuffles every existing seed
-  (the chests roll on their own `chRng`; the camps roll nothing; a **map shape** grows its
+  (the chests and rocks roll on their own `chRng`/`rkRng`; the camps roll nothing; a **map shape** grows its
   interior on `vnoise` alone and adds rolls only at the very end, behind `mapGrown`). Use
   `hash2`/`vnoise` per tile, never before the `SEED` const.
 - **At most one object per tile.** Create with `placeObj`, read with `objAt`, and route structures
   through `placeStruct`/`destroyStructure` so the `structures` registry stays in sync. A building with
-  `w`/`h` in `STRUCTS` (the bot bay, 3×2) fills its other tiles with `part` objects pointing at the
-  anchor — **read one off a tile with `structOf(objAt(...))`**, create/remove only via
+  `w`/`h` in `STRUCTS` (the bot bay, 3×2), or a `w` in `OBJECTS` (the den), fills its other tiles
+  with `part` objects pointing at the anchor — **read one off a tile with `structOf(objAt(...))`**, create/remove only via
   `createStruct`/`removeStruct`. **What a type *is* lives in its `OBJECTS`/`STRUCTS` entry, never
   in an `if`** — generic code asks the table: [checklists](docs/dev/checklists.md#common-changes).
 

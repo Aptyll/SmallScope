@@ -1385,6 +1385,7 @@ if (PRACTICE) {
   placeZips();       // ...and each side's cable along it (world.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeChests();     // ...then the caches take their trees (objects only, no ground)
+  placeRocks();      // ...and the rocks move out to the rim on their own stream (world.js)
   spawnAnimals();
   spawnFish();
   stockCamps();      // the monsters go in once the world is standing

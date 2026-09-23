@@ -163,8 +163,8 @@ rather than twin it, but **a human's flag is the side's whole plan**: while it s
 bot on the team lifts its own and follows it. [Team flags](gameplay.md#team-flags),
 [Robots](gameplay.md#robots), [Bots](multiplayer.md#bots).
 
-**The camps are the jungle, and the jungle is symmetric.** Seven fixed sites mirrored across the
-road so both teams walk the same distance: four **WOLF DENS** that pay gold, two **ALPHA STONES**
+**The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
+road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, one **ALPHA STONE**
 whose kill wears a buff, and one **DIRE HOLLOW** whose dire wolf pays and bloods the whole team.
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and heals — and every site sits well off the road, so the lane is never a
