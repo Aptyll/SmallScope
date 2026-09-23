@@ -43,7 +43,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the pines' bend frames, rocks, gold ore, the gold mine, the bush at each stage | by banner | `trees`, `rocks`, `gold ore`, `gold mine (32x32, occupies 2x2 tiles)`, `bush` |
+| the pines' bend frames and their nine palettes (`treePals`, filtered from `TSPAL`), rocks, gold ore, the gold mine, the bush at each stage | by banner | `trees`, `rocks`, `gold ore`, `gold mine (32x32, occupies 2x2 tiles)`, `bush` |
 
 ## js/sprites/beasts.js (legacy IIFE)
 
@@ -368,7 +368,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a lake's ragged shore, its bank, the two lake styles and which one each lake rolled, the depth in from the shore, the night mirror's shore masks | `ICE_STYLES`, `bakeLakes` (`lakeStyle`/`lakeDepth`, rolled by `rollIceStyle`), `iceAtPx` (the edge test), `depthAtPx`, `iceTone`, `bankAt`, `paintIceTile`, `paintSnowShore`, `mirrorCv`/`mirrorSlot`/`markMirror` | `the ice shore` (the mirror drawn: `drawIceStars`, js/draw/light.js) |
 | cast shadows: the sun's direction, what casts (by object type), a frame's shade, the scenery's baked into the ground, a changed caster's repaint, a body's drawn per frame | `SUN_DX`/`SUN_DY`, `SHADE_*`, `CASTERS`, `CAST_REACH`, `shadeMask`/`shadeFor`, `paintCastShade`, `shadeWorld` (the boot bake, in chunks), `castAt`/`syncCasts` (called by `render()` before the ground blit), `drawCastShade` (bodies.js, the building pass in render.js) | `cast shadows` |
 | the treasure chest's and the road cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
-| which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's) | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST` | `the scenery bakes` |
+| which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's); its atlas row (palette variant, forest-depth tone) and the nudge off its tile centre | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST`, `treeCell`, `treeTone`/`woody`/`TREE_TONES`, `treeNudgeX`/`treeNudgeY`/`TREE_NUDGE_X`/`TREE_NUDGE_Y` | `the scenery bakes` |
 
 ## js/draw/practice.js
 

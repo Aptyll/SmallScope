@@ -22,12 +22,13 @@ function drawSpriteFlash(spr, x, y, flash) {
 // source rect instead of by swapping canvases - measured on a GTX 1060, the
 // pines cost 97 fps as sixteen canvases and 199 as one.
 function drawFrameFlash(atlas, fi, x, y, flash) {
-  const w = atlas.fw, h = atlas.fh, sx = fi * w;
-  ctx.drawImage(atlas, sx, 0, w, h, x, y, w, h);
+  const w = atlas.fw, h = atlas.fh, cols = atlas.cols || Infinity;
+  const sx = (fi % cols) * w, sy = Math.floor(fi / cols) * h;
+  ctx.drawImage(atlas, sx, sy, w, h, x, y, w, h);
   if (flash > 0) {
     sctx.clearRect(0, 0, 64, 64);
     sctx.globalCompositeOperation = 'source-over';
-    sctx.drawImage(atlas, sx, 0, w, h, 0, 0, w, h);
+    sctx.drawImage(atlas, sx, sy, w, h, 0, 0, w, h);
     sctx.globalCompositeOperation = 'source-in';
     sctx.fillStyle = 'rgba(255,255,255,0.8)';
     sctx.fillRect(0, 0, 64, 64);
@@ -370,19 +371,22 @@ function render() {
       // trunk on the tile's centre line and hangs the canopy over the tile
       // above. How far over it is leaning - and whether it draws mirrored - is
       // the WIND's business, not the tree's: see treeFrame() in
-      // js/draw-world.js, which hands back an index into the one 48-frame
-      // atlas texture, never a per-frame canvas. The handful
+      // js/draw/ground.js, which hands back a column of the one atlas
+      // texture, never a per-frame canvas. The handful
       // surrounding the viewed hero take the occluder fade (consts above
       // render()); the globalAlpha flip only ever touches those few, so the
       // thousand-pine atlas batch stays whole.
-      const fi = treeFrame(d.tx, d.ty);
+      // which palette row (variant, forest-depth tone) and where on the tile
+      // it stands are the tile's too: treeCell / treeNudgeX/Y, js/draw/ground.js
+      const fi = treeCell(d.tx, d.ty, treeFrame(d.tx, d.ty));
+      const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty);
       // the hero's own work target: full ink under the gold rim, so the tree
       // the cursor is on is its OWN state - not a faded pine quietly
       // borrowing the normal look, which read as the tree blending away the
       // moment the cursor left it
       if (fadeP && o === fadeWkO) {
-        const fw = SPRITES.treeAtlas.fw, fh = SPRITES.treeAtlas.fh;
-        drawTargetRim(SPRITES.treeAtlas, fi * fw, 0, fw, fh, px - 5 + sh, py - 21, now);
+        const A = SPRITES.treeAtlas, fw = A.fw, fh = A.fh;
+        drawTargetRim(A, (fi % A.cols) * fw, Math.floor(fi / A.cols) * fh, fw, fh, artX, artY, now);
       }
       let fa = 1;
       if (fadeP && o !== fadeWkO) {
@@ -394,7 +398,7 @@ function render() {
         }
       }
       if (fa < 1) ctx.globalAlpha = fa;
-      drawFrameFlash(SPRITES.treeAtlas, fi, px - 5 + sh, py - 21, o.flash);
+      drawFrameFlash(SPRITES.treeAtlas, fi, artX, artY, o.flash);
       if (fa < 1) ctx.globalAlpha = 1;
     } else if (o.type === 'deadTree') {
       const spr = SPRITES.deadTree[o.variant];
