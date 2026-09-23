@@ -121,7 +121,9 @@ function render() {
   // WIDER than the canvas, and culling to the canvas would eat the edges.
   ctx = wctx;
 
-  // ground
+  // ground - after repainting the shade of anything standing that changed
+  // since the ground last painted it (the `cast shadows` banner, ground.js)
+  syncCasts(Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
   ctx.drawImage(groundCv, ox, oy, WV_W, WV_H, 0, 0, WV_W, WV_H);
 
   // fish: silhouettes drifting under the thin ice, crisp in open holes
@@ -429,7 +431,6 @@ function render() {
       // the combo readout, above the bar's slot so neither ever covers the other
       drawDummyMeter(o, px + 8, dy - 10);
     } else if (o.type === 'cairn') {
-      ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + TILE - 2, 12, 2);
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
       if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the alpha stone's clock
     } else if (o.type === 'pylon') {
@@ -527,6 +528,7 @@ function render() {
           ctx.drawImage(SPRITES.scaffold[2], px, py);
         }
       } else {
+        drawCastShade(spr, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
         drawSpriteFlash(spr, sx + sh, sy, o.flash);
         if (o.type === 'spawner') drawBayOverlay(o, sx + sh, sy, now);
         if (o.type === 'barracks') drawBarracksOverlay(o, sx + sh, sy, now);

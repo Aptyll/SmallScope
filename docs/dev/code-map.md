@@ -365,8 +365,10 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | ground painting and runtime repaints | `paintGroundTile`, `renderGround`, `repaintGround`, `hash2`, `vnoise` | `ground prerender` |
 | the road's pixels: the overlay and its colours, the ruts, the felled trunk across each forest end | `paintRoadOverlay` + `ROAD_COL_*`, `roadRutAt`/`roadRutCache`, `paintLog`/`LOG_COL` (under `paintGroundTile`) | `the road's pixels` (the geometry they read: `the road`, world.js) |
+| a lake's ragged shore, its bank, the two lake styles and which one each lake rolled, the depth in from the shore, the night mirror's shore masks | `ICE_STYLES`, `bakeLakes` (`lakeStyle`/`lakeDepth`, rolled by `rollIceStyle`), `iceAtPx` (the edge test), `depthAtPx`, `iceTone`, `bankAt`, `paintIceTile`, `paintSnowShore`, `mirrorCv`/`mirrorSlot`/`markMirror` | `the ice shore` (the mirror drawn: `drawIceStars`, js/draw/light.js) |
+| cast shadows: the sun's direction, what casts (by object type), a frame's shade, the scenery's baked into the ground, a changed caster's repaint, a body's drawn per frame | `SUN_DX`/`SUN_DY`, `SHADE_*`, `CASTERS`, `CAST_REACH`, `shadeMask`/`shadeFor`, `paintCastShade`, `shadeWorld` (the boot bake, in chunks), `castAt`/`syncCasts` (called by `render()` before the ground blit), `drawCastShade` (bodies.js, the building pass in render.js) | `cast shadows` |
 | the treasure chest's and the road cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
-| which bend frame a pine is wearing, and whether it draws mirrored (off the wind field) | `treeFrame`, `TREE_FRAMES`/`TREE_REST` | `the scenery bakes` |
+| which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's) | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST` | `the scenery bakes` |
 
 ## js/draw/practice.js
 
@@ -423,7 +425,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | one baked speck (mote, star, flake) at a quantised brightness, and the atlas behind it | `bakeSpecks`, `drawSpeck`, `SPECK_*` | `light & weather` › `specks` |
 | drifting cloud shadows, and the tileable noise they are baked from | `cloudShade`, `cloudLayer`, `bakeCloud`, `pnoise`, `CLOUD_*` | `light & weather` › `cloud shadows` |
 | whether the sun shafts are up at all (the drop window, and noon), and the shafts themselves | `rayLight`, `godRays`, `RAY_*` | `light & weather` › `god rays` |
-| the ice's night mirror + the parallax stars in it, and the "is this pixel on unbroken ice" mask | `drawIceStars`, `overIce`, `STAR_*` | `light & weather` › `the reflected sky` |
+| the ice's night mirror + the parallax stars in it, and the "is this pixel on unbroken ice" mask (the painted shore's, `iceAtPx`) | `drawIceStars`, `overIce`, `STAR_*` | `light & weather` › `the reflected sky` |
 | the night colour, a lit shot's halo, snow (world-space flakes, see `fx updates`), vignette | `renderLighting`, `NIGHT_TINT`/`NIGHT_DEEP`/`NIGHT_DEEP_A`, `litShots`, `renderWeather`, `renderVignettes`/`vigGrd` | `light & weather` › `the pass` |
 | the night RIM: the world-space vignette that closes the view in rather than dimming the middle | `nightEdge`, `NIGHT_EDGE`, `nvGrd` | `light & weather` › `the pass` |
 | **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk` | `light & weather` › `ink over the world` |

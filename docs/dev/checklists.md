@@ -211,9 +211,12 @@ generically, the same rule buildings answer through `ownsStruct`.
 What is still per-type and has to be written by hand: the sprite branch in the flat pass or the
 `draws` y-sort in `render()` (the draw *order* is one ordered function on purpose — see
 [rendering.md](rendering.md)), what a swing actually **does** to it in `hitObject()` (its
-particles, its sounds, what it leaves behind), and a pass of its own in `renderLighting` if it
+particles, its sounds, what it leaves behind), a `CASTERS` entry in js/draw/ground.js if it
+stands up off the snow (its art and where it sits, so its shade is baked and follows it —
+[cast shadows](rendering.md#cast-shadows)), and a pass of its own in `renderLighting` if it
 glows — there is no light registry to add it to
-([rendering](rendering.md#light-and-weather)). A **building**
+([rendering](rendering.md#light-and-weather)). A new thing that **walks** draws
+`drawCastShade(spr, x, y)` under its sprite instead of a flat rect. A **building**
 is not an object type: it is a `STRUCTS` entry in [js/structures.js](../../js/structures.js),
 which carries the same `mm`/`map` pair and gets solidity, both maps and the E prompt for free.
 

@@ -88,7 +88,39 @@ stable per tile.
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-fishing) and
   their dawn refreeze, a spur's and a roost pad's paving ([the road](#the-road)), and the
-  practice arena's track rolls.
+  practice arena's track rolls. The bake also lays the scenery's
+  [cast shadows](rendering.md#cast-shadows), and `render()` repaints a caster's reach itself
+  when what stands on a tile changes, so felling or placing scenery calls nothing.
+
+### The ice shore
+
+**A lake is a shape, not a run of tiles** (the `the ice shore` banner, js/draw/ground.js). The
+tile grid still says where the ice is for every rule — slipping, cracking, fish, the maps — and
+only the pixels wander: `iceAtPx(x, y)` blends the four tile centres round a pixel (1 for a
+*lake* tile, ice or open hole, 0 for anything else) and pushes the blend across 0.5 with two
+octaves of `vnoise`. Every style's noise stays under half a unit, so a tile whose 3x3 is all
+lake is solid ice and one with no lake in its 3x3 is untouched snow, and only the band along an
+edge pays for the per-pixel test (`paintIceTile` for an ice tile, `paintSnowShore` for the snow
+beside one). The light comes from the top-left, as for [cast shadows](rendering.md#cast-shadows)
+and the map chart: the snow's lip over a lake's north and west sides is lit white and throws a
+band of shade on the ice under it, and the far bank's face is lit pale.
+
+**Each lake rolls one of two styles** (`ICE_STYLES`) for its whole body: `bakeLakes` labels
+every lake by flood fill and rolls it off its first tile's `hash2` (`rollIceStyle`, weighted by
+`w`), and sweeps each tile's depth in from the shore (`lakeDepth`, 1 on the edge). It rolls no
+`rng()`, runs once before the bake, and is the same for a seed on every screen; the ground
+array only ever flips ice ↔ hole at runtime and both are lake, so it never needs redoing.
+FROZEN ISLES, being one lake, is one style per seed.
+
+| Style | Edge | The ice |
+| --- | --- | --- |
+| **LIP** (`w` 1) | gentle wander, 2 px shade band | the sheet's two tones on a dithered low noise |
+| **DEEP** (`w` 2) | gentle wander, 3 px deeper band | pale shallows along the shore, then two steps darker to the middle, off `lakeDepth` |
+
+The looks are A and B of `docs/media/concepts/shore-shadow-concepts-1.png`, DEEP (B) being
+the pick, hence its double weight; C (a drifted, cracked edge) was cut as too noisy. Cracks and glints (the tile's own hash) only go on
+a tile whose 3x3 is all lake, so none lands on a bank. Where a [path](#the-paths) crosses a lake, `paintRoadOverlay` still paints over the
+shore. Night's mirror follows the same edge ([the reflected sky](rendering.md#the-reflected-sky)).
 
 ## Map shapes
 
