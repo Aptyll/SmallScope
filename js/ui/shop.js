@@ -577,10 +577,11 @@ function noteFrame(x, y, w, h, col) {
 
 // ------------------------------------------------------------ the counter's stock
 // Twelve offers in four sections, rolled off the same pools the world drops
-// from and turned over every two minutes. An offer is not a single item: it is
-// a LINE the counter is running, so it can be bought from as many times as
-// gold and bag room allow until the stock turns over. That is what makes the
-// clock matter - what is on the counter is a window, not a queue.
+// from and turned over every two minutes. An offer is ONE item: buying it
+// empties its well (its stock entry goes null) until the next shipment fills
+// all twelve again. Both counters and every player share the one stock, so a
+// buy is contested (shopBuy) - what is on the counter is gone the moment
+// somebody gets to it first, and the clock says when more arrives.
 const SHOP_RESTOCK = 120; // s between turnovers
 const SHOP_COLS = 3;      // offers in every section
 // Cards are rolled by rarity, not by name: an unopened card is what changes
@@ -711,32 +712,39 @@ function sellValue(s) {
 function shopDeny(p) { sfxFor(p, 'deny'); }
 function shopNoRoom(p) { if (p === player) bagDenied(); }
 
-// A LINE off the counter. Reached through runCmd (input.cmd {kind:'shop'}), so
-// the HUD click, a bot and anything later all buy the same way - and it
+// One offer off the counter. Reached through runCmd (input.cmd {kind:'shop'}),
+// so the HUD click, a bot and anything later all buy the same way - and it
 // re-validates the reach itself, exactly as buyGear re-validates its cost, so
-// a stale order from a player that has since walked away is harmless. Nothing is
-// contested: the stock is a window, not a queue, and two players at the same
-// counter cannot take the same thing from each other.
+// a stale order from a player that has since walked away is harmless. The
+// offer is a single item every player at either counter is reaching for, so
+// the take is CONTESTED on its well: two buyers in one step get one winner and
+// the loser keeps its gold. The checks run twice - up front so a refusal is
+// heard on the click, and again inside the claim, where the stock is re-read.
 function shopBuy(p, sec, i) {
+  if (!shopCanBuy(p, sec, i)) return false;
+  const id = shopOffer(sec, i).id;
+  contest('shop:' + sec + ':' + i, p, () => {
+    const o = shopOffer(sec, i);
+    if (!o || o.id !== id || !shopCanBuy(p, sec, i)) return;
+    // room BEFORE money: nothing is ever paid for that cannot be carried. A
+    // bought BIT arms itself the way a found one does (fitAdd, js/tools.js) - the
+    // tool's free cells first, the pack with what is left - so a purchase made to
+    // fill a hole in the build is already in the build when you walk away.
+    if (o.kind === 'tool') {
+      if (!bagPut(p, makeTool(o.id))) { shopNoRoom(p); return; }
+    } else if (!fitAdd(p, o.type, 1)) { shopNoRoom(p); return; }
+    pay({ gold: o.price }, p);
+    market.stock[sec][i] = null; // sold: the well stands empty until the next shipment
+    noteSeen(p, o.type); // bought counts as held: the tech tree opens on it
+    shopFx(p, '-' + o.price, RES_COLORS.gold);
+    sfxFor(p, 'coin');
+  });
+  return true;
+}
+// the offer is still on the counter, the body is at one, and the purse covers it
+function shopCanBuy(p, sec, i) {
   const o = shopOffer(sec, i);
-  if (!o || !merchNear(p)) { shopDeny(p); return false; }
-  const cost = { gold: o.price };
-  if (!canAfford(cost, p)) { shopDeny(p); return false; }
-  // room BEFORE money: nothing is ever paid for that cannot be carried. A
-  // bought BIT arms itself the way a found one does (fitAdd, js/tools.js) - the
-  // tool's free cells first, the pack with what is left - so a purchase made to
-  // fill a hole in the build is already in the build when you walk away.
-  if (o.kind === 'tool') {
-    const cell = makeTool(o.id);
-    if (!bagPut(p, cell)) { shopNoRoom(p); return false; }
-  } else if (!fitAdd(p, o.type, 1)) {
-    shopNoRoom(p);
-    return false;
-  }
-  pay(cost, p);
-  noteSeen(p, o.type); // bought counts as held: the tech tree opens on it
-  shopFx(p, '-' + o.price, RES_COLORS.gold);
-  sfxFor(p, 'coin');
+  if (!o || !merchNear(p) || !canAfford({ gold: o.price }, p)) { shopDeny(p); return false; }
   return true;
 }
 
@@ -1824,7 +1832,7 @@ function tipShop(h) {
       : o.kind === 'bit' ? tipBit(o.id)
       : tipStack({ type: o.type, n: 1 });
     d.rows.unshift(['PRICE', o.price + ' GOLD', player.inv.gold >= o.price ? RES_COLORS.gold : '#e0637a']);
-    d.notes.push(['CLICK TO BUY ONE', TIP_DIM]);
+    d.notes.push(['CLICK TO BUY', TIP_DIM]);
     return d;
   }
   if (h.kind === 'sell') {

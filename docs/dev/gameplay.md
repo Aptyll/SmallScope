@@ -1797,12 +1797,14 @@ inside it is drawn afterwards, so the buyer is paying for the odds.
 | MODIFIERS | 3 | the `proj: false` bits, distinct |
 | CARDS | 3 | `rollCardRarity(SHOP_CARD_ODDS)` — kinder than a chest's `CHEST_ODDS`, since a counter you chose to walk to should beat a box you tripped over |
 
-**An offer is a LINE, not a single item**: it can be bought from as often as gold and bag room
-allow until the counter turns over, every `SHOP_RESTOCK` (120 s), announced in the feed, on a
+**An offer is a single item**: buying it empties its well (its `market.stock` entry goes `null`,
+drawn as a flat empty well that takes no click) until the counter turns over, every
+`SHOP_RESTOCK` (120 s), and the new shipment fills all twelve again — announced in the feed, on a
 plate under the minimap and over a cue of its own (below), and counted down by the
-[restock road](#the-restock-road) along the slab's bottom rail. That is what makes the clock matter — what is on the counter
-is a *window*, not a queue — and it is also why nothing here is [contested](multiplayer.md#contested-orders):
-two players at one counter cannot take the same thing from each other.
+[restock road](#the-restock-road) along the slab's bottom rail. The stock is shared by both
+counters and every player, so a buy is [contested](multiplayer.md#contested-orders) on its well
+(`shop:<section>:<i>`): two buyers in one step get one winner and the loser keeps its gold. That is
+what makes the clock matter: what is on the counter is gone once somebody gets there first.
 
 Everything rolls on `mktRng`, the market's **own** stream seeded off `SEED` (the chests' `chRng`
 pattern): the same seed is the same market on every machine, and a busy shop can never shift a loot

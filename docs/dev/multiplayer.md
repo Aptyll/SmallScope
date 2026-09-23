@@ -564,7 +564,9 @@ tile), fish catches (`autoFish`, keyed by fish index — nothing refuses one, si
 pouch), drop pickups (keyed by drop index — every player standing on a drop
 claims it *if they have room for it*, and the magnet pulls it toward the nearest such player,
 so a full bag hands the pickup on rather than sitting on it, and only food is never refused — a
-dropped card is a neutral pickup the same way, first-come whichever team gets there).
+dropped card is a neutral pickup the same way, first-come whichever team gets there), shop buys
+(`shopBuy`, keyed by the counter's well — one stock serves both counters, and a bought offer is
+gone until the restock).
 
 ## Bots
 
