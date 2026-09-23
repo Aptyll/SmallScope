@@ -452,8 +452,13 @@ line there, between the two (and a matching `runCmd()` branch), regardless of ho
 shipwreck: { name, tag,           // what both maps and the arrival toast print
              r, mark, icon,       // footprint radius in tiles; map ink; the glyph as [x,y,w,h] rects in a 7x7 box
              kind, pop, repop,    // the monster kind and how many; seconds after the last dies before all are back
-             props, spots }       // [dx, dy, type, variant] to stamp (the 0,0 one is the anchor); [dx, dy] a monster stands on
+             props, spots,        // [dx, dy, type, variant] to stamp (the 0,0 one is the anchor); [dx, dy] a monster stands on
+             woods }              // optional: the site is IN the border forest (the hog hut) - no path, no CAMP_EDGE
 ```
+
+A camp with no monster (the HOG HUT) is `kind: null, pop: 0`: nothing stocks it, its clock never
+runs, and what it offers is its `props` — a `chest` there is stamped with `{ hp: 1 }` like
+`placeChests`' own.
 
 The site is written **once, for the RED half**, in road coordinates (`u` along the diagonal, `s`
 off it) and mirrored for BLUE by `campSites()` — never write both halves by hand, and never a

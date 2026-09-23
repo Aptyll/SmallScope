@@ -851,6 +851,7 @@ const CASTERS = {
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },
   chest:    { code: () => 123, art: () => whole(CHEST_SPR, 0, TILE - CHEST_SPR.height) },
   cairn:    { code: () => 124, art: () => whole(CAIRN_SPR, 1, TILE - CAIRN_SPR.height + 1) },
+  hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
 };
 
 // a frame's shade: an opaque silhouette thrown down-right in `col`, its top

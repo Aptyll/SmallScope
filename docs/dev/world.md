@@ -40,7 +40,7 @@ stable per tile.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `rack`, `cairn`, `log`,
-  `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `part`; the `STRUCTS` table's: `wall`,
+  `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`; the `STRUCTS` table's: `wall`,
   `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `cairn`/`banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
@@ -48,9 +48,11 @@ stable per tile.
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
-  exist only inside [camps](#camps) (`cairn` is a camp's anchor too); `chest` is a
-  [treasure chest](#treasure-chests) standing where a border tree stood. `part` is the filler a multi-tile building (or a prop
-  with a `w` in `OBJECTS`, the den) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
+  exist only inside [camps](#camps) (`cairn` is a camp's anchor too), and so does `hut` (the HOG
+  HUT: solid, inert, 2×2 by `OBJECTS.hut.w`/`h`, its parts stamped east and north so the anchor is
+  the front row, drawing the whole building); `chest` is a [treasure chest](#treasure-chests)
+  standing where a border tree stood, or round a hog hut. `part` is the filler a multi-tile building (or a prop
+  with a `w`/`h` in `OBJECTS`, the den and the hut) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
   building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
   is here" read (right-click, cursor, wheel, orders).
 - Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. Deleting is
@@ -203,7 +205,9 @@ diagonal a path is nowhere near.
 
 1. **one route** from a side's junction on the road to the rival's;
 2. **a branch** off it to every camp, stopping `PATH_CAMP` tiles past the ground `clearCamp` will
-   clear, so the woods can never wall a camp in and the clearing never eats the path's end.
+   clear, so the woods can never wall a camp in and the clearing never eats the path's end —
+   except a `woods` camp (the HOG HUT), which is buried in the border forest on purpose and gets
+   no branch.
 
 Each is a **Dijkstra over the tiles** on a cost field (`pathCost`) where **wood is a wall, not a
 price**: open snow 1, the frozen lake `PATH_ICE`, a tile of [the creek](#the-creek) `CREEK_COST` (a ford's
@@ -242,7 +246,8 @@ a shoreline, not a muddy shoulder.
 Verified on seeds 42, 7 and 1234: the strict search finds the main route on both grown shapes
 without the axe (212–232 tiles, 61–83 of its ~95 segments more than `ROAD_HW + 2` off the
 diagonal, so it really is cross-country), and on the finished world a walker **chopping nothing**
-reaches the rival's junction and all six camps on all three shapes.
+reaches the rival's junction and every camp in the valley on all three shapes (the hog huts are
+walled in by design: [camps](#camps)).
 
 ## Rocks
 
@@ -273,7 +278,9 @@ On a shape that grows its own woods ([map shapes](#map-shapes)) `CHEST_BURIED` (
 held back for a **buried** one instead — a pine with no open ground touching it and more pines
 two tiles off on all four sides, so the only way to that cache is to chop one down. OPEN FIELD's
 wood is one treeline and everything in it is on the inner edge, so OPEN FIELD buries none and
-rolls exactly the draws it always did.
+rolls exactly the draws it always did. No tree within a `woods` camp's `r + 4` is a candidate:
+the rim of a [hog hut](#camps)'s clearing is not the forest's inner edge, and the hut brings its
+own three chests (camp `props`, stamped by `placeCamps` with the same `{ hp: 1 }`).
 Selection rolls on its own `mulberry32(SEED ^ 0x43484553)` stream (`chRng`) so it
 can never perturb the shared `rng` stream and terrain stays bit-identical for an existing seed
 (chests place after the camps and touch only `objects`, never `ground`). A chest is solid, gold
@@ -507,7 +514,7 @@ The jungle: named places at **fixed, mirrored sites** where neutral monsters sta
 a team is choosing between while the eagle is still in the air, and the places it walks out of
 its base for. They live in the `camps` banner of [world.js](../../js/world.js) and in the
 module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
-Three kinds, one reward each:
+Four kinds, one reward each:
 
 - **WOLF DEN** (`resource`, r 5, ×4) — a `den` in an open clearing and a pack of 4
   wolves. Gold per head (`YIELD.wolf`), the biggest steady payout on the map. Back 60 s after
@@ -519,6 +526,12 @@ Three kinds, one reward each:
   **dire wolf**: a 2× body with a wall of hp. The kill pays the killer
   `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, bloods the whole team for 120 s, and
   writes the feed. Back in 300 s.
+- **HOG HUT** (`hut`, r 4, ×6) — no monster: a log hut (`hut`, a 2×2
+  footprint; `SPRITES.hogHut`, eight frames of chimney smoke) with **three chests** round it, in
+  a clearing buried in the **border forest** (`woods`). No path leads there: it is reached with
+  an axe, and the chests are why that is worth doing. They are ordinary
+  [chests](#treasure-chests) and never come back; `pop` 0 means nothing restocks and the anchor
+  wears no clock.
 
 **One entry in `CAMPS` is one kind of camp**, and that entry plus its site is the whole feature —
 no map, chart or HUD code knows a camp by name:
@@ -534,6 +547,7 @@ no map, chart or HUD code knows a camp by name:
 | `repop` | seconds after the **last** one dies before the whole camp is back — a camp is cleared or it is not; nothing trickles |
 | `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** `renderGround()` bakes; the prop at `0, 0` is the anchor and carries `site` |
 | `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
+| `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it and `placeChests` keeps off its rim |
 
 ### Placement
 
@@ -546,7 +560,8 @@ mirror and is placed once: the alpha and the epic are contested at equal reach f
 **Three camps a side of the road, six in all**: a mirrored pair of dens on each side, finished
 by one midline camp — the dire hollow top-left, the alpha stone bottom-right, facing it across
 the road. A mirrored pair always lands on one side (the mirror keeps `s`), so a side can only
-grow by a pair or by a midline site. `campTile(u,
+grow by a pair or by a midline site. The six **hog huts** stand apart from that count, out in the
+border woods: two mirrored pairs by the far corners and one halfway along an edge. `campTile(u,
 s)` is the conversion back to a tile. The layout as shipped:
 
 | Camp | RED-half site (u, s) | Tiles | Mirror |
@@ -555,6 +570,12 @@ s)` is the conversion back to a tile. The layout as shipped:
 | WOLF DEN | 90, +25 | 108, 159 | 159, 108 |
 | ALPHA STONE | 115.5, +44 | 147, 147 | — |
 | DIRE HOLLOW | 115.5, −40 | 87, 87 | — |
+| HOG HUT | 100.5, −114 | 20, 50 | 50, 20 |
+| HOG HUT | 100.5, +114 | 181, 211 | 211, 181 |
+| HOG HUT | 63, −61 | 20, 125 | 125, 20 |
+
+The huts are 20 tiles in from the world's edge: the two far corners (top-left and bottom-right)
+hold one of each side's, and each side has one more halfway along an edge of its own half.
 
 The two midline sites sit on the cross-diagonal, which is [the creek](#the-creek)'s line: each
 stands on an island the creek parts round, with a ford to it from either half.
@@ -565,7 +586,9 @@ before `placeChests()`), then
 strength, never past it, when `DBG` calls it by hand). Every site sits at least `CAMP_EDGE`
 (72) tiles from the world's edge — past the deepest treeline the border noise grows
 (`BORDER_MAX`, 70) — and `placeCamps` throws if one does not, so a site can never be moved into
-the woods by accident. Terrain still comes from the seed: **`clearCamp()` clears everything
+the woods by accident. A `woods` camp is the rule turned round: its whole clearing (`r + 2`) must
+end inside `BORDER_MIN` (30), the shallowest treeline any seed grows, so it is buried in pines on
+every seed (and stays `r + 4` off the edge itself). Terrain still comes from the seed: **`clearCamp()` clears everything
 inside `r + 2` of the centre** — a pine, a rock, a bush goes, ice becomes snow — so a camp is the
 same clearing on every seed, and the props then stamp the same on every seed. (A camp on a
 seed's forest bay is therefore a clearing cut into its edge, and a river running under one

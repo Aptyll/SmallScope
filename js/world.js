@@ -64,6 +64,11 @@ const OBJECTS = {
   // tiles wide - `w` stamps a `part` filler per extra tile, east of the
   // anchor (placeCamps), so both tiles are solid and read back as the den
   den:      { solid: true,  w: 2, mm: [92, 86, 100] },
+  // the HOG HUT camp's building (CAMPS.hut below): 2x2, the anchor its
+  // bottom-left tile - `h` stamps the parts NORTH of it, so the anchor is
+  // the front row the y-sort reads - drawing the whole 35x35 sprite
+  // (SPRITES.hogHut) centred over the pair. Inert to E like the den.
+  hut:      { solid: true,  w: 2, h: 2, mm: [134, 97, 69] },
   // the practice arena's target (the `practice arena` banner below): any tool
   // hits it, it never falls, and it mends itself between combos. E swings,
   // every bit and the roll's tackle all land through hitDummy (js/actions.js).
@@ -557,9 +562,13 @@ function placeChests() {
   const chRng = mulberry32((SEED ^ 0x43484553) >>> 0);
   const SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const edge = [], deep = [];
+  // a camp dug into the woods (CAMPS.hut) brings its own chests, and the rim
+  // of its clearing is not the forest's inner edge: no cache stands on it
+  const dug = camps.filter((C) => C.spec.woods);
   for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 1; tx++) {
     const o = objects[idx(tx, ty)];
     if (!o || o.type !== 'tree') continue;
+    if (dug.some((C) => Math.hypot(tx - C.tx, ty - C.ty) <= C.r + 4)) continue;
     // the forest's inner edge: at least one cardinal neighbour is open snow
     if (SIDES.some(([dx, dy]) => !objects[idx(tx + dx, ty + dy)] &&
       ground[idx(tx + dx, ty + dy)] === 0)) edge.push({ tx, ty });
@@ -1104,7 +1113,7 @@ function layPaths() {
   // snow afterwards and would eat a path that ran through one
   const block = campSites().map((site) => {
     const t = campTile(site.u, site.s);
-    return { tx: t.tx, ty: t.ty, r: CAMPS[site.key].r + PATH_CAMP };
+    return { tx: t.tx, ty: t.ty, r: CAMPS[site.key].r + PATH_CAMP, woods: CAMPS[site.key].woods };
   });
   // the STRICT search first - the shortest way through the clear ground - and
   // the axe only if this shape left no clear way at all, because a route is
@@ -1115,8 +1124,10 @@ function layPaths() {
   if (!main) return;
   addPathRoute(main);
   // a branch to each camp: off the route's nearest point, out to the rim of
-  // the ground clearCamp will clear, and no further
+  // the ground clearCamp will clear, and no further - but none to a camp in
+  // the border woods (CAMPS.hut), which is meant to be dug out with an axe
   for (const c of block) {
+    if (c.woods) continue;
     let sx = -1, sy = -1, bd = Infinity;
     for (const pt of main) {
       const d = Math.hypot(pt[0] - c.tx, pt[1] - c.ty);
@@ -1618,10 +1629,14 @@ function zipStep(p, dt, mx, my, len) {
 //               back - a camp is cleared or it is not; nothing trickles
 //   props       what stands in it: [dx, dy, type, extra] off the centre
 //   spots       where each monster stands, [dx, dy] off the centre
+//   woods       the site is IN the border forest, not the open valley:
+//               placeCamps checks it is, and layPaths cuts no branch to it
 //
 // resource: the pack - gold per head, the biggest steady payout on the map
 // buff:     one alpha - the kill wears ALPHA'S BLOOD (campBuff, wildlife.js)
 // epic:     the dire wolf - the whole team is paid and blooded for the kill
+// hut:      no monster - three chests round a hut buried in the treeline,
+//           worth the chopping it takes to reach
 const CAMPS = {
   resource: {
     name: 'WOLF DEN', tag: 'THE PACK PAYS IN GOLD',
@@ -1649,6 +1664,14 @@ const CAMPS = {
       [-3, 4, 'deadTree', 0], [3, 4, 'deadTree', 1], [0, -5, 'deadTree', 1]],
     spots: [[0, 3]],
   },
+  hut: {
+    name: 'HOG HUT', tag: 'THE STOVE IS STILL WARM',
+    r: 4, mark: '#c9925a', woods: true,
+    icon: [[3, 0, 1, 1], [2, 1, 3, 1], [1, 2, 5, 1], [0, 3, 7, 1], [1, 4, 5, 1], [1, 5, 2, 2], [4, 5, 2, 2]], // a hut
+    kind: null, pop: 0, repop: 0,
+    props: [[0, 0, 'hut'], [-2, -1, 'chest'], [3, -1, 'chest'], [0, 2, 'chest']],
+    spots: [],
+  },
 };
 // Where the camps are, for the RED half of the map (u < WORLD / 2), in the
 // road's coordinates (roadAlong / roadOffS): `u` tiles along the diagonal
@@ -1659,7 +1682,10 @@ const CAMPS = {
 // once: the epic is contested at equal reach from either roost. Every site
 // sits at least CAMP_EDGE tiles from the world's edge, past the deepest
 // treeline the border noise grows (BORDER_MAX, 70), and clear of the road by
-// more than the pack's ground.
+// more than the pack's ground. A `woods` camp is the exception, and the
+// other way round: its whole clearing (r + 2) must sit inside BORDER_MIN,
+// the shallowest treeline any seed grows, so it is buried in pines on every
+// seed and reached with an axe.
 const CAMP_EDGE = 72;
 const CAMP_SITES = [
   { key: 'resource', u: 90, s: -25 },  // one den each side of the road, out from the lane mouth
@@ -1669,6 +1695,10 @@ const CAMP_SITES = [
   // - the dire wolf top-left, the alpha bottom-right, facing it across the road
   { key: 'buff', u: (WORLD - 1) / 2, s: 44 },  // the alpha, bottom-right of the middle, on the mirror line
   { key: 'epic', u: (WORLD - 1) / 2, s: -40 }, // the dire wolf, top-left of the middle, on the mirror line
+  // the hog huts, 20 tiles in from the world's edge, deep in the border woods
+  { key: 'hut', u: 100.5, s: -114 },   // by the top-left corner, on the left edge
+  { key: 'hut', u: 100.5, s: 114 },    // by the bottom-right corner, on the bottom edge
+  { key: 'hut', u: 63, s: -61 },       // halfway up the left edge
 ];
 function campTile(u, s) {
   return { tx: Math.round(u + s / Math.SQRT2), ty: Math.round(WORLD - 1 - u + s / Math.SQRT2) };
@@ -1702,17 +1732,21 @@ function placeCamps() {
   for (const site of campSites()) {
     const spec = CAMPS[site.key];
     const t = campTile(site.u, site.s);
-    if (Math.min(t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty) < CAMP_EDGE) throw new Error('camp ' + site.key + ' too near the edge');
+    const edge = Math.min(t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty);
+    if (spec.woods ? edge + spec.r + 2 > BORDER_MIN || edge < spec.r + 4 : edge < CAMP_EDGE) throw new Error('camp ' + site.key + (spec.woods ? ' not in the woods' : ' too near the edge'));
     const C = { key: site.key, spec, name: spec.name, tag: spec.tag, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
     camps.push(C);
     clearCamp(C);
     for (const [dx, dy, type, variant] of spec.props) {
-      const extra = type === 'deadTree' ? { hp: 3, variant } : {};
+      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
       const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
-      // a prop wider than a tile (OBJECTS' w) fills the rest with parts, as a building does
-      for (let k = 1; k < (OBJECTS[type].w || 1); k++) {
-        const x = C.tx + dx + k, y = C.ty + dy;
+      // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a
+      // building does: east of the anchor, and north of it, so the anchor stays
+      // the footprint's front row
+      for (let j = 0; j < (OBJECTS[type].h || 1); j++) for (let k = 0; k < (OBJECTS[type].w || 1); k++) {
+        if (!j && !k) continue;
+        const x = C.tx + dx + k, y = C.ty + dy - j;
         objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
       }
     }

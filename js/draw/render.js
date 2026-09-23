@@ -95,6 +95,7 @@ function drawTargetRim(src, sx, sy, w, h, x, y, now) {
 // 1px silhouette rim (treeFadeSil, stamped by drawPlayer, draw-world.js)
 // whose strength runs on the same distances, so the body pops off the
 // canopy over it and the rim dissolves as the hero steps into the open.
+const HUT_FR = 140; // ms a frame of the hog hut's chimney smoke
 const TREE_FADE_A = 0.35; // alpha floor on the adjacent ring
 const TREE_FADE_R0 = 24; // fully faded inside this trunk distance (world px)
 const TREE_FADE_R1 = 52; // back to opaque beyond this
@@ -409,6 +410,13 @@ function render() {
     } else if (o.type === 'den') {
       drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
       if (o === hovO) drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock, under the pointer
+    } else if (o.type === 'hut') {
+      // the HOG HUT (CAMPS.hut, world.js): the anchor is the front-left tile
+      // of its 2x2 footprint and draws the whole building centred over the
+      // pair, its chimney smoking through HUT_FR ms a frame; its three
+      // `part` tiles resolve to it above and draw nothing of their own
+      const fr = SPRITES.hogHut, spr = fr[Math.floor(now * 1000 / HUT_FR) % fr.length];
+      drawSpriteFlash(spr, px + sh + TILE - (spr.width >> 1), py + TILE - spr.height, o.flash);
     } else if (o.type === 'rock') {
       const spr = SPRITES.rock[o.variant];
       if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);
