@@ -215,7 +215,15 @@ in the pre-pass.
 
 A **tree** is 27×37 and draws at `(px - 5, py - 21)` — bottom-aligned on its own tile, trunk on
 the tile's centre line, canopy overhanging the tile above (which the `draws`
-loop's existing 1-tile top margin and 2-tile bottom margin already cover). How far over it is
+loop's existing 1-tile top margin and 2-tile bottom margin already cover) — **nudged** off that
+line by `treeNudgeX`/`treeNudgeY` (up to 2 px across, 1 px up or down, off the tile's `hash2`) so
+the forest does not stand on the tile grid. Only the art moves: the tile, its collision and its
+chop reach stay put, and the sprite, its cast shade (`CASTERS.tree`), the work-target rim and the
+hit flash all read the nudge. The atlas **row** it draws from is the tile's too (`treeCell`): a
+palette variant off the hash, a third of the forest each, and a **tone** for its depth in the
+forest (`treeTone`: 0 if any of its 8 neighbours is open, 2 if the ring two out is forest too, 1
+between; a dead snag and the world's border count as forest). It is read live, so felling a pine
+lightens the ones it opens up. None of it is world state — no `rng`, nothing on the wire. How far over it is
 leaning comes from `treeFrame(tx, ty)` off the [wind field](#the-wind-field), never
 from a clock of its own, and it is blitted out of **one atlas texture** rather than a per-frame
 canvas — see [Drawing a thousand of something](#drawing-a-thousand-of-something), which is the
@@ -2325,7 +2333,9 @@ does not follow the day clock: the shade lies where it lies at night too, under 
 
 - **The scenery's shade is ground.** `CASTERS` names what stands, by object type (pine, dead
   tree, rock, bush, stump, den, chest, cairn), with its art and where it sits on its tile — the
-  pine's is its *standing* frame (`treeRestFrame`), never the wind's. The boot bake lays it all
+  pine's is its *standing* frame (`treeRestFrame`), never the wind's, and its code carries its
+  nudge too so the shade lies under the art where it was nudged (every palette row shares one
+  silhouette, so the shade is cut from row 0). The boot bake lays it all
   in `SHADE_CHUNK` squares (`shadeWorld`: every caster's shade unioned opaque, then one
   `multiply` of `SHADE_TINT` at `SHADE_A`, so overlapping shade is one shade, never a darker
   one); a single tile repaints through `paintCastShade`, the same union for one tile. A composite
@@ -2358,10 +2368,11 @@ the sixteen-frame pine that preceded today's twenty-four):
 
 Sprite **area is irrelevant** (a sprite two and a half times the size cost 3 fps). What
 costs is the state change. So `SPRITES.treeAtlas` lays all twenty-four bend frames side by side in
-one canvas — and then all twenty-four again mirrored, forty-eight in all, because half the forest
-draws flipped and a wider atlas is still **one** texture —
-with `fw`/`fh` riding on it, and `drawFrameFlash(atlas, frame, x, y, flash)` — the
-atlas-aware twin of `drawSpriteFlash` — blits a source rect out of it. `SPRITES.tree` still exists
+one canvas — and then all twenty-four again mirrored, forty-eight columns, because half the forest
+draws flipped — and stacks **nine rows** of those, one per palette (three variants × three forest
+depth tones, [sprites.md](sprites.md)), because a bigger atlas is still **one** texture. `fw`/`fh`/`cols`
+ride on it, a cell index is `column + row × cols`, and `drawFrameFlash(atlas, cell, x, y, flash)`
+— the atlas-aware twin of `drawSpriteFlash` — blits a source rect out of it. `SPRITES.tree` still exists
 because the atlas is baked from it, but nothing draws through it.
 
 **Anything new that the world can hold hundreds of has to do the same**, or it will quietly cost
@@ -2466,11 +2477,10 @@ weather moves reads it rather than keeping a clock of its own:
   **ladder** of leans, not a cycle of phases ([sprites.md](sprites.md)) — 0 thrown fully left, 23
   fully right, the middle upright — so the map is direct: `round(11.5 + sway * 11.5)`, **clamped**
   rather than wrapped, because at the end of its travel a crown stops rather than snapping back the
-  other way. Every frame being the same tree now, two things off the tile's `hash2` keep a stand
-  from reading as one stamp repeated: half the forest draws **mirrored** (the second 24 frames of
+  other way. Off the tile's `hash2`, half the forest draws **mirrored** (the second 24 columns of
   the atlas — a mirrored tree's ladder runs backwards, hence the reversed index), and each tree
   keeps a **standing lean** of up to `TREE_REST` frames, which is what it is still wearing after
-  dark.
+  dark; its palette row and its nudge are the tile's too ([the pass order](#render-pass-order)).
 - `wsin` is a 256-entry sine table, and it is why the field can afford to be six waves: `windSway`
   is read once per visible pine per frame and does eight lookups (the two skewed envelope waves
   cost two each), not eight `Math.sin` calls, and its answer is quantised to twenty-four frames, so

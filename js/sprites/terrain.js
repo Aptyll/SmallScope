@@ -23,7 +23,9 @@
   };
 
   // The living pine: one tree in 24 bend frames, 27x37 on its own palette
-  // (TPAL above still dresses the stump it leaves). Wider and taller than the
+  // (TPAL above still dresses the stump it leaves). TSPAL is the SOURCE the
+  // forest's palettes are filtered from (treePals, below the frames) - no
+  // pine draws in it as is. Wider and taller than the
   // 16x24 pine it replaced, so it draws at (px - 5, py - 21) - base on the
   // tile's bottom edge, canopy overhanging the tile above. Which frame a tree
   // wears is not its own business: treeFrame() in js/draw-world.js reads it off
@@ -1276,8 +1278,77 @@
     '.ovvokkkkkovvvo.',
     '..ooobkkkboooo..',
   ];
-  // baked once, up here, because both the array and the atlas below need it
-  const treeSpr = treeSway.map((f) => bake(f, TSPAL));
+  // The forest's palettes: TSPAL run through colour filters in OKLCH, never
+  // redrawn (docs/media/concepts/tree-filters-2.png picked B, C and D). The
+  // drawn pine's contrast ran from a near-black outline to near-white snow,
+  // which made it read as a foreground object; each variant lowers that
+  // contrast first and keeps the colour (a grey pine turns to mud under the
+  // night grade). B: a dark muted green outline, the needle darks lifted, the
+  // snow a soft blue-grey. C: B with the needles' hue shifted by value -
+  // shadows toward teal, lights toward yellow-green. D: C at 80% colour with
+  // a muted trunk. Each of the three comes in three TONES for how deep in the
+  // forest a tree stands (treeTone, js/draw/ground.js): the deep as filtered,
+  // the ring inside the edge lighter, the edge lighter again. Nine pines in
+  // ten stand deep, so the deep tone IS the picked look and the edge is what
+  // moves - darkening the deep instead would darken the whole forest.
+  const TREE_ROLE = { o: 'outline', k: 'needle', d: 'needle', g: 'needle', h: 'needle', G: 'needle', L: 'needle', l: 'needle', m: 'needle', s: 'snow', S: 'snow', w: 'snow', U: 'trunk', u: 'trunk' };
+  const TREE_TONES = [0.07, 0.035, 0]; // needle L shift: edge, inner ring, deep
+  const treePals = (() => {
+    const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    const gam = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c, 1 / 2.4) - 0.055);
+    const toLch = (hex) => {
+      const [r, g, b] = [1, 3, 5].map((i) => lin(parseInt(hex.slice(i, i + 2), 16) / 255));
+      const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+      const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+      const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+      const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+      const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+      return { L: 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s, C: Math.hypot(A, B), h: (Math.atan2(B, A) * 180 / Math.PI + 360) % 360 };
+    };
+    const toHex = ({ L, C, h }) => {
+      const A = C * Math.cos(h * Math.PI / 180), B = C * Math.sin(h * Math.PI / 180);
+      const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+      const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+      const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+      return '#' + [4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+        -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+        -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s]
+        .map((c) => Math.round(Math.max(0, Math.min(1, gam(c))) * 255).toString(16).padStart(2, '0')).join('');
+    };
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const lerpH = (a, b, t) => (a + (((b - a + 540) % 360) - 180) * t + 360) % 360;
+    // each filter maps (role, lch, the role's L range before it ran) to lch
+    const outline = (r, c) => r !== 'outline' ? c : { L: 0.37, C: 0.045, h: 168 };
+    const liftDarks = (r, c, st) => r !== 'needle' ? c : { ...c, L: 0.40 + (c.L - st.needle.min) * (st.needle.max - 0.40) / (st.needle.max - st.needle.min) };
+    const softSnow = (r, c, st) => r !== 'snow' ? c : { L: 0.80 + (c.L - st.snow.min) * 0.10 / (st.snow.max - st.snow.min), C: 0.028, h: 235 };
+    const hueShift = (r, c, st) => { if (r !== 'needle') return c; const t = (c.L - st.needle.min) / (st.needle.max - st.needle.min); return { ...c, h: lerpH(c.h, lerpH(195, 128, t), 0.6) }; };
+    const colour = (k) => (r, c) => r !== 'needle' ? c : { ...c, C: c.C * k };
+    const trunk = (r, c) => r !== 'trunk' ? c : { L: lerp(c.L, 0.50, 0.4), C: c.C * 0.65, h: c.h };
+    const tone = (d) => (r, c) => r !== 'needle' ? c : { ...c, L: c.L + d };
+    const run = (filters) => {
+      const lch = {};
+      for (const k in TREE_ROLE) lch[k] = toLch(TSPAL[k]);
+      for (const f of filters) {
+        const st = {};
+        for (const role of ['needle', 'snow']) {
+          const Ls = Object.keys(lch).filter((k) => TREE_ROLE[k] === role).map((k) => lch[k].L);
+          st[role] = { min: Math.min(...Ls), max: Math.max(...Ls) };
+        }
+        for (const k in lch) lch[k] = f(TREE_ROLE[k], lch[k], st);
+      }
+      const pal = { '.': null };
+      for (const k in lch) pal[k] = toHex(lch[k]);
+      return pal;
+    };
+    const B = [outline, liftDarks, softSnow], C = B.concat([hueShift]), D = C.concat([colour(0.8), trunk]);
+    const out = [];
+    for (const v of [B, C, D]) for (const t of TREE_TONES) out.push(run(v.concat([tone(t)])));
+    return out; // row = variant * 3 + tone
+  })();
+  // baked once, up here, because both the array and the atlas below need it:
+  // one run of 24 frames per palette row
+  const treeRows = treePals.map((pal) => treeSway.map((f) => bake(f, pal)));
+  const treeSpr = treeRows[2]; // variant B, deep tone (the filtered look itself) - the pine a single frame stands for
 
   Object.assign(SPRITES, {
     // 24 bend frames, not 2 variants: treeFrame() picks one off the wind wave.
@@ -1289,23 +1360,24 @@
     // cannot be batched: on a GTX 1060 the sixteen separate canvases cost 97
     // fps against 199 for the same sprites drawn from a single source. So the
     // frames are laid out side by side and render() blits sub-rects of this.
-    // FORTY-EIGHT of them: the second run of 24 is the first run mirrored, and
-    // treeFrame() sends half the forest into it off the tile's hash. Now that
-    // every frame is one tree rather than sixteen variants, that mirror is the
-    // only thing left keeping a stand from reading as one stamp repeated - and
-    // it is free, because a wider atlas is still a single texture. A mirrored
-    // tree leans the other way, so the ladder runs backwards over there and
-    // treeFrame() reverses the index when it crosses.
-    // `fw`/`fh` ride on the canvas so the caller needs no second constant.
+    // FORTY-EIGHT columns: the second run of 24 is the first run mirrored, and
+    // treeFrame() sends half the forest into it off the tile's hash. A
+    // mirrored tree leans the other way, so the ladder runs backwards over
+    // there and treeFrame() reverses the index when it crosses.
+    // Each ROW is one palette (treePals above: three variants x three forest
+    // depth tones, row = variant * 3 + tone), each holding the same 48 frames,
+    // so the whole forest - every variant, every tone - is still one texture.
+    // A cell index is column + row * cols (treeCell, js/draw/ground.js).
+    // `fw`/`fh`/`cols` ride on the canvas so the caller needs no second constant.
     treeAtlas: (() => {
-      const fr = treeSpr.concat(treeSpr.map(flipH));
-      const fw = fr[0].width, fh = fr[0].height;
+      const cols = treeSpr.length * 2;
+      const fw = treeSpr[0].width, fh = treeSpr[0].height;
       const c = document.createElement('canvas');
-      c.width = fw * fr.length; c.height = fh;
+      c.width = fw * cols; c.height = fh * treeRows.length;
       const g = c.getContext('2d');
       g.imageSmoothingEnabled = false;
-      fr.forEach((f, i) => g.drawImage(f, i * fw, 0));
-      c.fw = fw; c.fh = fh;
+      treeRows.forEach((row, r) => row.concat(row.map(flipH)).forEach((f, i) => g.drawImage(f, i * fw, r * fh)));
+      c.fw = fw; c.fh = fh; c.cols = cols;
       return c;
     })(),
     stump: bake(stump, TPAL),

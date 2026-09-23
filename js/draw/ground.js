@@ -486,8 +486,16 @@ const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
 const CAST_REACH = [-1, -1, 3, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
 const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
 const CASTERS = {
-  tree:     { code: (o, tx, ty) => 1 + treeRestFrame(tx, ty),
-              art: (c) => { const A = SPRITES.treeAtlas; return [A, (c - 1) * A.fw, A.fw, A.fh, -5, -21]; } },
+  // a pine's code is its standing frame AND its nudge (treeNudgeX/Y), so a
+  // shade is cut once per pair and lands under the art where it was nudged;
+  // every palette row has the same silhouette, so the art is row 0's
+  tree:     { code: (o, tx, ty) => 1000 + treeRestFrame(tx, ty) + SPRITES.treeAtlas.cols *
+                ((treeNudgeX(tx, ty) + TREE_NUDGE_X) * (TREE_NUDGE_Y * 2 + 1) + treeNudgeY(tx, ty) + TREE_NUDGE_Y),
+              art: (c) => {
+                const A = SPRITES.treeAtlas, f = (c - 1000) % A.cols, n = Math.floor((c - 1000) / A.cols);
+                const nx = Math.floor(n / (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_X, ny = n % (TREE_NUDGE_Y * 2 + 1) - TREE_NUDGE_Y;
+                return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny];
+              } },
   deadTree: { code: (o) => 100 + o.variant, art: (c) => whole(SPRITES.deadTree[c - 100], 0, -8) },
   rock:     { code: (o) => 110 + o.variant, art: (c) => whole(SPRITES.rock[c - 110], 0, 4) },
   bush:     { code: () => 120, art: () => whole(SPRITES.bush, 0, 4) },
@@ -665,6 +673,43 @@ function treeLean(tx, ty, sway) {
   if (i < 0) i = 0; else if (i > TREE_FRAMES - 1) i = TREE_FRAMES - 1;
   return flip ? TREE_FRAMES * 2 - 1 - i : i;
 }
+
+// Which of the atlas's palette rows a pine wears, and where on its tile it
+// stands - all off the tile, at draw time, so none of it is world state: no
+// rng, no snapshot, nothing a client could disagree with.
+//
+// The ROW is a variant (B, C or D of docs/media/concepts/tree-filters-2.png,
+// a third of the forest each off the tile's hash) and a TONE for how deep in
+// the forest the tree stands: 0 lighter on the edge (an open tile among its 8
+// neighbours), 2 darker deep inside (every tile two rings out is forest too),
+// 1 between. It is read live, so felling a pine brightens the ones it opens.
+// A stand is anything woody - a dead snag walls a forest in like a pine - and
+// the world's border counts as forest.
+const TREE_TONES = 3;
+function woody(tx, ty) {
+  if (!inWorld(tx, ty)) return true;
+  const o = objects[idx(tx, ty)];
+  return !!o && (o.type === 'tree' || o.type === 'deadTree');
+}
+function treeTone(tx, ty) {
+  for (let y = ty - 1; y <= ty + 1; y++) for (let x = tx - 1; x <= tx + 1; x++) if (!woody(x, y)) return 0;
+  for (let x = tx - 2; x <= tx + 2; x++) if (!woody(x, ty - 2) || !woody(x, ty + 2)) return 1;
+  for (let y = ty - 1; y <= ty + 1; y++) if (!woody(tx - 2, y) || !woody(tx + 2, y)) return 1;
+  return 2;
+}
+// the cell in SPRITES.treeAtlas: column (treeFrame's lean) + palette row
+function treeCell(tx, ty, col) {
+  const v = Math.floor(hash2(tx * 5 + 3, ty * 7 + 1) * 3);
+  return col + (v * TREE_TONES + treeTone(tx, ty)) * SPRITES.treeAtlas.cols;
+}
+// The nudge that breaks the grid: up to TREE_NUDGE_X px either side of the
+// tile's centre line and TREE_NUDGE_Y up or down. Only the art moves - the
+// tree's tile, its collision and its chop reach stay where they are - so the
+// sprite, its cast shade (CASTERS.tree), the work-target rim and the hit
+// flash all read it from here.
+const TREE_NUDGE_X = 2, TREE_NUDGE_Y = 1;
+function treeNudgeX(tx, ty) { return Math.floor(hash2(tx * 11 + 5, ty * 13 + 9) * (TREE_NUDGE_X * 2 + 1)) - TREE_NUDGE_X; }
+function treeNudgeY(tx, ty) { return Math.floor(hash2(tx * 17 + 2, ty * 19 + 4) * (TREE_NUDGE_Y * 2 + 1)) - TREE_NUDGE_Y; }
 
 // The treasure chest's sprite bakes HERE, from its own grid - js/sprites.js
 // is byte-fragile (BOM, mangled-byte repair) and is never rewritten, so a
