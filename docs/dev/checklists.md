@@ -582,7 +582,7 @@ Code that is dead **on purpose** is the next section.
 
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
   one is within `AI_HUNT`, never the alpha under level 6 or the dire wolf at all, and nothing in
-  `aiSituation` weighs a camp against the road — so the alpha stones and the dire hollow are the
+  `aiSituation` weighs a camp against the road — so the alpha stone and the dire hollow are the
   human's until an objective rung learns them ([Bots](multiplayer.md#bots)).
 - **The alpha and the dire wolf wear placeholder sprites** (3.20): the wolf's grids washed and,
   for the dire, doubled ([sprites.md](sprites.md)). Each wants its own concept sheet.

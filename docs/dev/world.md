@@ -43,10 +43,11 @@ stable per tile.
   [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
   [the practice arena](#the-practice-arena). `deadTree` (a 3 hp snag, chopped like a
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
-  that carries its `site` — the camp record — so a hover can wear the camp's clock)
+  two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
+  carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
   exist only inside [camps](#camps) (`cairn` is a camp's anchor too); `chest` is a
-  [treasure chest](#treasure-chests) standing where a border tree stood. `part` is the filler a multi-tile building leaves on
-  every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
+  [treasure chest](#treasure-chests) standing where a border tree stood. `part` is the filler a multi-tile building (or a prop
+  with a `w` in `OBJECTS`, the den) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
   building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
   is here" read (right-click, cursor, wheel, orders).
 - Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. Deleting is
@@ -155,7 +156,8 @@ retries read what stands on a tile, and before the ore and the berries, whose ro
 pure position noise and draws no `rng()` at all, and the only `rng()` calls a shape adds — the
 ore and berry **top-up** (`MAP_ROCKS`/`MAP_BUSHES`, which put a grown shape back to OPEN FIELD's
 own strength, since most of the two scatter loops now land in wood or on the lake) — sit at the
-very end of `genWorld` behind `mapGrown(MAP_TYPE)`. Verified: OPEN FIELD's ground, objects,
+very end of `genWorld` behind `mapGrown(MAP_TYPE)` (the rocks they stand are lifted again by
+[`placeRocks`](#rocks), which moves every rock to the rim). Verified: OPEN FIELD's ground, objects,
 animals and fish hash bit-identical to the shape before the shapes existed, on seeds 42, 7, 55,
 999 and 1234.
 
@@ -221,7 +223,26 @@ a shoreline, not a muddy shoulder.
 Verified on seeds 42, 7 and 1234: the strict search finds the main route on both grown shapes
 without the axe (212–232 tiles, 61–83 of its ~95 segments more than `ROAD_HW + 2` off the
 diagonal, so it really is cross-country), and on the finished world a walker **chopping nothing**
-reaches the rival's junction and all seven camps on all three shapes.
+reaches the rival's junction and all six camps on all three shapes.
+
+## Rocks
+
+`placeRocks()` (the `world` banner, js/world.js) runs at boot after `placeChests()` and stands
+**every rock in the world in a band of open snow just out from the border forest**: 2–8 tiles
+(`ROCK_BAND_MIN`/`ROCK_BAND_MAX`, walked 4-way) from the nearest **border** pine — one on
+`borderDepth`'s side of the line, so a grown shape's inner woods draw no band of their own —
+never touching a pine, never inside a camp's clearing (`r + 2`), `ROCK_SPACING` (3) apart,
+`ROCK_COUNT` (120) of them. So the ore is out at the valley's rim and the middle stays open
+ground; no camp stands a rock. A shape whose rim cannot hold them (FROZEN ISLES, whose rim is
+lake) widens the band `ROCK_BAND_GROW` (8) tiles at a time, out to `ROCK_BAND_LIMIT` (40), so
+they land as near the rim as that shape allows — there, that is mostly the road's verges by
+the roosts.
+
+genWorld's own rock passes — the interior scatter and a grown shape's top-up (`MAP_ROCKS`) —
+still run and still roll: taking their `rng()` calls out would reshuffle every seed
+([determinism](#determinism-and-noise)). `placeRocks` lifts every rock they stood first, then
+places its own on a stream of its own, `mulberry32(SEED ^ 0x524f434b)` (`rkRng`), touching only
+`objects`, so terrain stays bit-identical for an existing seed.
 
 ## Treasure chests
 
@@ -388,14 +409,14 @@ its base for. They live in the `camps` banner of [world.js](../../js/world.js) a
 module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
 Three kinds, one reward each:
 
-- **WOLF DEN** (`resource`, r 5, ×4) — a `den` mouth ringed by six boulders and a pack of 4
+- **WOLF DEN** (`resource`, r 5, ×4) — a `den` in an open clearing and a pack of 4
   wolves. Gold per head (`YIELD.wolf`), the biggest steady payout on the map. Back 60 s after
   the last one dies.
-- **ALPHA STONE** (`buff`, r 4, ×2) — a `cairn` with four boulders and one **alpha**. The kill
+- **ALPHA STONE** (`buff`, r 4, ×1) — a `cairn` and one **alpha**. The kill
   wears **ALPHA'S BLOOD** for 90 s ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)).
   Back in 120 s.
-- **DIRE HOLLOW** (`epic`, r 6, ×1) — a `den` in a ring of seven `deadTree` snags and four
-  boulders, and the **dire wolf**: a 2× body with a wall of hp. The kill pays the killer
+- **DIRE HOLLOW** (`epic`, r 6, ×1) — a `den` in a ring of seven `deadTree` snags, and the
+  **dire wolf**: a 2× body with a wall of hp. The kill pays the killer
   `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, bloods the whole team for 120 s, and
   writes the feed. Back in 300 s.
 
@@ -421,14 +442,18 @@ no map, chart or HUD code knows a camp by name:
 tiles off the centreline (+ toward the bottom-right half) — and `campSites()` mirrors every
 entry across the map's middle (`u → WORLD − 1 − u`, same `s`) for BLUE, so **both teams walk the
 same distance to the same camp**. A site *on* the middle (`u = (WORLD − 1) / 2`) is its own
-mirror and is placed once: the epic is contested at equal reach from either roost. `campTile(u,
+mirror and is placed once: the alpha and the epic are contested at equal reach from either roost.
+**Three camps a side of the road, six in all**: a mirrored pair of dens on each side, finished
+by one midline camp — the dire hollow top-left, the alpha stone bottom-right, facing it across
+the road. A mirrored pair always lands on one side (the mirror keeps `s`), so a side can only
+grow by a pair or by a midline site. `campTile(u,
 s)` is the conversion back to a tile. The layout as shipped:
 
 | Camp | RED-half site (u, s) | Tiles | Mirror |
 | --- | --- | --- | --- |
 | WOLF DEN | 90, −25 | 72, 123 | 123, 72 |
 | WOLF DEN | 90, +25 | 108, 159 | 159, 108 |
-| ALPHA STONE | 104, +44 | 135, 158 | 158, 135 |
+| ALPHA STONE | 115.5, +44 | 147, 147 | — |
 | DIRE HOLLOW | 115.5, −40 | 87, 87 | — |
 
 `placeCamps()` runs as worldgen's last ground pass (boot: after `placeRoad()` and `placeZips()`,
@@ -707,7 +732,8 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
   perturb the main `rng`'s worldgen prefix. `fxRng` (`SEED ^ 0x9e3779b9`) feeds resize-driven
   snowflake top-ups in `fitFlakes()`, so window size / resolution changes cannot move the world
   (the boot-time 70 flakes still draw from `rng`, unchanged). `chRng` (`SEED ^ 0x43484553`) feeds
-  the [treasure chests](#treasure-chests)' placement. The [camps](#camps) roll nothing at all -
+  the [treasure chests](#treasure-chests)' placement, and `rkRng` (`SEED ^ 0x524f434b`) the
+  [rocks](#rocks)'. The [camps](#camps) roll nothing at all -
   their sites are written down - and their clearings are the one boot pass that writes `ground`
   after `genWorld`, so a seed's ground hash includes them.
 - `SEED` is a `const` in the rng banner and `hash2` closes over it, so nothing may call `hash2`
