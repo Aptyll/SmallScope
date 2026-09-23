@@ -47,6 +47,7 @@ guild sells — not from a new faction or a new magic.
 | fish and berry prices swing all day | the market is the guild's, not the companies' |
 | robots, turrets, generators and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | one straight road, corner to corner | the works' haul road, older than everything but the machines |
+| a creek down the other diagonal that never freezes | the works' old outfall, still running warm under the snow |
 | camps are neutral until hit | the wolves were here first and have no opinion about claims |
 | WORN, KEEN, GILDED | the condition salvage comes out of the snow in |
 | the wind dies at dusk and night is a colour | the valley goes blue and quiet; the claim does not stop for it |

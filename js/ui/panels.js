@@ -214,7 +214,7 @@ const CHART_DARK = '#0f1632'; // the minimap's own dark: every mark's rim on the
 const CHART_INK_TXT = '#ffd95c'; // the header's ink: the gold every slab titles in
 let chartBuiltAt = -1e9;
 
-function chartGround(i) { const g = ground[i]; return g === 2 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW; }
+function chartGround(i) { const g = ground[i]; return g === 2 || g === 4 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW; } // the creek inks as open water, its fords as gaps
 // the stipple: canopy bumps on a checker lattice, a diagonal sheen across
 // the ice, a sparse grain on the parchment
 function chartGrain(c, px, py) {

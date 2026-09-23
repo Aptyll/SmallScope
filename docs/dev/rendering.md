@@ -153,7 +153,9 @@ entity draw code must use `ex`/`ey`.
 `render()` (js/draw/render.js) runs, in order. **World space** (`ctx = wctx`):
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](#cast-shadows)) →
-   ground blit → under-ice fish → ice-crack decals;
+   ground blit → **the creek's current** (`drawCreekFlow`, js/draw/ground.js: glints drifting
+   downstream over the still water the bake laid, on the field's clock) → under-ice fish →
+   ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
    one `footprints` array, branching on `f.k`);

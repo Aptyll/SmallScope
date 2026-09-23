@@ -102,6 +102,9 @@ function paintGroundTile(g, tx, ty) {
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
       }
+      // the creek (ground 4, its fords 5, its deck 3) is painted OVER whatever
+      // the tile is, per pixel against its wandering banks, like the road
+      if (creekNear(tx, ty)) paintCreek(g, tx, ty, px, py);
       // the felled trunk across a forest road (placeRoad, world.js) lies flat
       // on the ground, so it is ground: baked here over whatever the tile is.
       // A piece's band spills past its tile's corners into the four tiles
@@ -218,6 +221,164 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
     }
     if (c) { g.fillStyle = c; g.fillRect(px + i, py + j, 1, 1); }
   }
+}
+
+// ---- the creek's pixels ----------------------------------------------------
+// The creek (the `the creek` group, js/world.js) is look A of
+// docs/media/concepts/creek-concepts-1.png, SNOWBANK CUT: dark open water
+// sunk between snow banks, deepening toward its middle. The sun's shade
+// falls down-right (SUN_DX/SUN_DY, the cast shadows), so the bank the light
+// comes over wears a white lip and throws a band of shade across the water
+// under it, and the far bank shows its pale face - which bank that is comes
+// off the slope of creekAt, so the ring round an island reads the same as
+// the straight run. Faint streaks drift along the current (the bake's are
+// still; drawCreekFlow moves more over them every frame). A FORD tile
+// (ground 5) is a snow-capped boulder in the current, foam heaped on its
+// upstream side. The BRIDGE is look A of bridge-concepts-1.png, PLANK DECK:
+// planks laid across the way on the two diagonals, a stringer down each open
+// side, snow drifted onto the edges and trodden off the middle, a post at
+// each corner and three pilings in the water upstream; the creek comes out
+// from under it in shade. Every pixel is a function of its position alone,
+// so any repaint lays back exactly what the bake laid.
+const CREEK_COL = {
+  deep: '#2c5068', mid: '#335a73', shal: '#3f6c84', shade: '#24435a', under: '#1d3649',
+  glint: '#5d8aa2', glint2: '#88b3c6', lip: '#ffffff', face: '#dbe8f3', faceD: '#c3d5e6', foam: '#dcecf5',
+};
+const STONE_COL = { rim: '#3a3f4f', dark: '#6b7486', mid: '#8a93a4', lit: '#a9b2c1', snow: '#eef4fb', snowL: '#ffffff', wet: '#1f3a4e', foam: '#dcecf5' };
+const DECK_COL = {
+  gap: '#3b2716', a: '#8a6142', b: '#7c5639', c: '#95704f', dark: '#5a3d24', rim: '#2a1c10',
+  snow: '#eef4fb', snowD: '#d3dfec', beam: '#6b4a2a', beamL: '#8f6a48', post: '#4a3218', postL: '#8a6142', cap: '#f4f7ff',
+};
+const CREEK_SUN_X = 0.88, CREEK_SUN_Y = 0.48; // the way the light runs (SUN_DX/SUN_DY, normalised): a bank facing against it is the lit lip
+const DECK_LK = BRIDGE_L * TILE * Math.SQRT2, DECK_WM = BRIDGE_W * TILE * Math.SQRT2; // the deck's half-sizes on the pixel diagonals
+const DECK_C = ((WORLD - 1) / 2 + 0.5) * TILE;  // world px of the crossing
+// does this tile hold any of the creek's pixels (water, bank, deck, post)?
+function creekNear(tx, ty) {
+  if (PRACTICE) return false;
+  return creekAt(tx, ty) < 1.25 || (Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6);
+}
+// a post (s = 2, 5x5, on the deck's corners) or a piling (s = 1, in the
+// water): an upright stub seen from above, its top capped with snow
+function deckPost(ax, ay, s, water) {
+  const m = Math.max(Math.abs(ax), Math.abs(ay));
+  if (m > s) return water && m === s + 1 && ax + ay <= 0 ? CREEK_COL.foam : null; // the current heaps against its upstream face
+  if (m === s) return DECK_COL.rim;
+  return ay < 0 && ax < s - 1 ? DECK_COL.cap : ax + ay < 0 ? DECK_COL.postL : DECK_COL.post;
+}
+function paintCreek(g, tx, ty, px, py) {
+  const deck = Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6;
+  const posts = [];
+  if (deck) {
+    for (const sk of [-1, 1]) for (const sm of [-1, 1]) posts.push([sk * (DECK_LK - 1), sm * (DECK_WM - 1), 2]);
+    for (const k of [-20, 0, 20]) posts.push([k, -DECK_WM - 7, 1]);
+  }
+  for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+    const x = px + i, y = py + j;
+    const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
+    const hp = hash2(x * 7 + 13, y * 11 + 5), dith = BAYER4[(y & 3) * 4 + (x & 3)] + 0.5;
+    let c = null;
+    // the deck's own lattice: k across the creek (along the road), m along it
+    const k = x - y, m = x + y + 1 - 2 * DECK_C;
+    if (deck) {
+      for (const [pk, pm, s] of posts) {
+        const ax = x - Math.round(DECK_C + (pk + pm - 1) / 2), ay = y - Math.round(DECK_C + (pm - 1 - pk) / 2);
+        if (Math.abs(ax) <= s + 1 && Math.abs(ay) <= s + 1) { c = deckPost(ax, ay, s, s === 1); if (c) break; }
+      }
+      if (!c && Math.abs(k) <= DECK_LK && Math.abs(m) <= DECK_WM) {
+        const em = DECK_WM - Math.abs(m), ek = DECK_LK - Math.abs(k);
+        if (em < 2 || ek < 2) c = DECK_COL.rim;
+        else if (em < 8) c = em >= 6 ? DECK_COL.dark : m < 0 ? DECK_COL.beamL : DECK_COL.beam; // the stringer down each open side
+        else {
+          const r = (k + 1000) % 6, tone = hash2(Math.floor((k + 1000) / 6), 17);
+          c = r === 0 ? DECK_COL.gap : tone < 0.33 ? DECK_COL.a : tone < 0.66 ? DECK_COL.b : DECK_COL.c;
+          if (r !== 0 && hp > 0.985) c = DECK_COL.dark; // a nail, a knot
+          const drift = vnoise(x / 4 + 1.3, y / 4 + 2.1) * 0.5 + (Math.abs(m) / DECK_WM) * 0.75;
+          if (drift > 0.93) c = drift > 0.99 ? DECK_COL.snow : DECK_COL.snowD;
+          else if (r === 0 && Math.abs(m) > DECK_WM * 0.55 && hp > 0.4) c = DECK_COL.snowD;
+        }
+      }
+      if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); continue; }
+    }
+    const d = creekAt(fx, fy);
+    if (d > 0.3) continue;
+    const e = -d * TILE, a = CQ.a, n = CQ.n; // px into the water; where along and across it
+    // which bank: the slope of the distance points out of the water, and a
+    // bank facing back against the light is the lit lip
+    let lip = false;
+    if (e < 6) {
+      const gx = creekAt(fx + 0.04, fy) - creekAt(fx - 0.04, fy), gy = creekAt(fx, fy + 0.04) - creekAt(fx, fy - 0.04);
+      lip = gx * CREEK_SUN_X + gy * CREEK_SUN_Y < 0;
+    }
+    if (e > 0) {
+      const depth = Math.min(1, e / 7);
+      c = depth > 0.75 + (dith - 0.5) * 0.3 ? CREEK_COL.deep : depth > 0.3 ? CREEK_COL.mid : CREEK_COL.shal;
+      if (lip && e < 3 + vnoise(a * TILE / 6, 2) * 2) c = CREEK_COL.shade;
+      const fl = vnoise(a * TILE / 11 + 5, n * TILE / 1.6 + 9); // a noise stretched along the current: its peaks are the streaks
+      if (e > 2.5 && fl > 0.8 && hp > 0.15) c = fl > 0.9 ? CREEK_COL.glint2 : CREEK_COL.glint;
+      if (deck && Math.abs(k) <= DECK_LK) {
+        if (m > DECK_WM && m < DECK_WM + (5 + vnoise(k / 6, 7) * 3) * Math.SQRT2) c = CREEK_COL.under; // coming out from under the deck
+        else if (m < -DECK_WM && m > -DECK_WM - 3 && hp > 0.3) c = CREEK_COL.foam;            // ...and heaped against it going in
+      }
+    } else if (e > -2.2) c = lip ? CREEK_COL.lip : (e > -1 ? CREEK_COL.faceD : CREEK_COL.face);
+    else if (!lip && e > -4 && dith > 0.5) c = CREEK_COL.face;
+    if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); }
+  }
+  if (ground[idx(tx, ty)] === 5) paintFordStone(g, tx, ty, px, py);
+}
+// one stepping stone, a rough disc lit from the top-left with snow on its
+// crown, a dark wet ring low-right and foam heaped on its upstream side
+function paintFordStone(g, tx, ty, px, py) {
+  const h = hash2(tx * 3 + 71, ty * 5 + 29);
+  const cx = px + 8 + Math.round((h - 0.5) * 2), cy = py + 8 + Math.round((hash2(tx + 13, ty + 91) - 0.5) * 2);
+  const r = 4.4 + h * 0.9;
+  const f = creekFlow(tx, ty), fdx = f.fdx, fdy = f.fdy;
+  for (let y = py; y < py + TILE; y++) for (let x = px; x < px + TILE; x++) {
+    const dx = x + 0.5 - cx, dy = y + 0.5 - cy, dl = Math.hypot(dx, dy) || 1;
+    const wob = (vnoise((Math.atan2(dy, dx) + 4) * 1.6 + cx, cy) - 0.5) * 1.6;
+    const d = dl - (r + wob);
+    const hp = hash2(x * 7 + 13, y * 11 + 5);
+    let c = null;
+    if (d > 0 && d < 3.2) {
+      const up = -(dx * fdx + dy * fdy) / dl;
+      if (d < 1.3 + Math.max(0, up) * 1.8 && hp > 0.25) c = STONE_COL.foam;
+      if (d < 2.2 && dx + dy > r * 0.6) c = STONE_COL.wet;
+    }
+    if (d <= 0) {
+      const lx = dx / r, ly = dy / r, lit = -(lx * 0.7 + ly * 0.7);
+      if (d > -1) c = STONE_COL.rim;
+      else if (ly < -0.05 + (vnoise(x / 3, y / 3) - 0.5) * 0.6 && lx + ly < 0.5) c = ly < -0.55 ? STONE_COL.snowL : STONE_COL.snow;
+      else c = lit > 0.35 ? STONE_COL.lit : lit > -0.25 ? STONE_COL.mid : STONE_COL.dark;
+    }
+    if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); }
+  }
+}
+// The current, moving: over the still streaks the bake laid, a couple of
+// glints per tile of open creek drift downstream along creekFlow and fade,
+// every frame, for the tiles in view, on the sim's clock (windT). World pass,
+// right after the ground.
+const FLOW_SPD = 16;  // px/s the current carries a glint
+const FLOW_RUN = 20;  // px a glint drifts from appearing to gone
+const FLOW_A = 0.7;   // its alpha at the middle of its run
+function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
+  if (PRACTICE) return;
+  const T = FLOW_RUN / FLOW_SPD, now = state.windT; // the field's own clock, so DBG.step and the wire's echo reproduce it
+  ctx.fillStyle = CREEK_COL.glint2;
+  for (let ty = Math.max(0, ty0); ty <= Math.min(WORLD - 1, ty1); ty++) for (let tx = Math.max(0, tx0); tx <= Math.min(WORLD - 1, tx1); tx++) {
+    if (ground[idx(tx, ty)] !== 4) continue;
+    for (let q = 0; q < 2; q++) {
+      const h = hash2(tx * 7 + q * 131, ty * 13 + 5), h2 = hash2(tx + 57, ty * 3 + q * 17);
+      const t = ((now + h * T * 7) % T) / T;
+      const f = creekFlow(tx - 0.3 + h2 * 0.6, ty - 0.3 + h * 0.6), fdx = f.fdx, fdy = f.fdy;
+      const wx = (tx + 0.2 + h2 * 0.6) * TILE + fdx * (t - 0.5) * FLOW_RUN;
+      const wy = (ty + 0.2 + h * 0.6) * TILE + fdy * (t - 0.5) * FLOW_RUN;
+      if (!creekWet(wx / TILE - 0.5, wy / TILE - 0.5) || CQ.d > -0.15) continue; // only out on the water, clear of the banks
+      ctx.globalAlpha = Math.sin(t * Math.PI) * FLOW_A;
+      const sx = Math.round(wx - ox), sy = Math.round(wy - oy);
+      ctx.fillRect(sx, sy, 1, 1);
+      ctx.fillRect(sx - Math.round(fdx * 1.4), sy - Math.round(fdy * 1.4), 1, 1);
+    }
+  }
+  ctx.globalAlpha = 1;
 }
 
 function renderGround() {

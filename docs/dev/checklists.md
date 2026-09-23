@@ -472,6 +472,8 @@ give it a surface branch in `updatePlayer()`'s momentum block (steer/decay/targe
 the template; a ground that should walk like snow needs none, because only ice and holes are
 special-cased — [the road](world.md#the-road), `3`, is the live example of one that walks like
 snow and is not snow), and
+if it is **open water** make `waterAt()` (world.js) say so — every walker, route, spawn and
+climb-out asks that and nothing else ([the creek](world.md#the-creek), `4`, is the live example);
 remember `genWorld()`'s `free()` helper treats "ground must be 0" as the placement rule — as do
 `tryProne` (snow to dig into) and the footprint emitter. Check `fishWater()` too: it names the
 swimmable grounds outright.

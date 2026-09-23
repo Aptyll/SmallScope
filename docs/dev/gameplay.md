@@ -161,13 +161,19 @@ a contact gets a 0.3 bounce (`UNIT_BOUNCE`). Players carry `vx/vy`; animals and 
 their knockback (their walk is a direction re-chosen each tick), and an idle animal/robot applies
 its knockback too, so a shoved deer actually moves.
 
+**Open water takes a player and nobody else.** A player walks into an ice hole or
+[the creek](world.md#the-creek) and plunges; an animal or a robot meets a wall there. A **bot**'s
+own walk is strict too (`moveEntity(…, strict)` in `updatePlayer`) unless it is already standing
+in water or a shove past `WADE_SHOVE` (40 px/s of knockback) is carrying it, so a bot never wades
+in by itself and still goes in off the bridge when it is knocked off.
+
 ## Pathfinding
 
 Everything that walks to a goal on its own — robots, bots, hunting wolves and patrolling
 ones, prey both fleeing and grazing, any future enemy — routes through the `pathfinding` banner
 rather than steering straight at it.
 `findPath(sx, sy, gx, gy, reach, budget)` is grid A* over the tile map: a tile is `walkable()`
-when it is in-world, not `isSolidTile`, and not open water (ground 2); eight-connected with no
+when it is in-world, not `isSolidTile`, and not open water (`waterAt`: an ice hole or the creek); eight-connected with no
 corner cutting (a diagonal needs both orthogonal neighbours open, so a unit of radius ≤ 5 never
 clips a tree walking centre to centre); octile heuristic; typed-array scores stamped by a
 generation counter so nothing is cleared between searches; a binary heap; no `rng`, so it is

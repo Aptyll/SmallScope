@@ -25,7 +25,10 @@ stable per tile.
   spokes and the keep-clear rules hang off them — which is why `RING_N` is frozen at
   six instead of tracking `MAX_PLAYERS`: the roster's size must not reshape terrain.
 - `ground` — `Uint8Array(WORLD²)`: `0` snow, `1` ice, `2` open-water hole (runtime-only, see
-  [Ice holes and fishing](#ice-holes-and-fishing)), `3` the road ([The road](#the-road)). Ice is **mechanically slippery** (see
+  [Ice holes and fishing](#ice-holes-and-fishing)), `3` the road ([The road](#the-road)), `4` the
+  creek's open water and `5` a ford's stepping stone ([The creek](#the-creek)). **Open water is
+  `waterAt(tx, ty)`** — a hole or the creek — the one read every walker, route, spawn and climb-out
+  asks; a new check against `=== 2` alone is a hole the creek does not have. Ice is **mechanically slippery** (see
   [Momentum movement](gameplay.md#momentum-movement-players-only)), and worldgen carves it as a travel
   network: 14 frozen lakes plus winding ~5-tile-wide rivers (`carveRiver` in `genWorld()`) —
   a spoke from each ring point to the central clearing and a ring linking each point to its
@@ -173,6 +176,10 @@ animals and fish hash bit-identical to the shape before the shapes existed, on s
 
 What a shape changes downstream, without a line of its own anywhere:
 
+- **the creek** ([below](#the-creek)) runs the same diagonal on every shape, and cuts an open
+  channel through a grown shape's woods and FROZEN ISLES' lake alike; a shape's paths ford it
+  where they cross;
+
 - **the camps** stay at their fixed mirrored [sites](#camps) — `clearCamp` cuts the same clearing
   out of whatever grew there, so a camp on THICKET is a clearing in the woods;
 - **the chests** ([below](#treasure-chests)) keep `CHEST_BURIED` of their number back for a pine
@@ -192,15 +199,17 @@ them, nothing grows on one, a building stands on one and nobody digs into one. O
 (`PATH_HW` against `ROAD_HW`) and without the ruts, which `paintRoadOverlay` measures off the
 diagonal a path is nowhere near.
 
-`layPaths()` runs at boot **between `genWorld()` and `placeRoad()`** and lays:
+`layPaths()` runs at boot **between `placeCreek()` and `placeRoad()`** and lays:
 
 1. **one route** from a side's junction on the road to the rival's;
 2. **a branch** off it to every camp, stopping `PATH_CAMP` tiles past the ground `clearCamp` will
    clear, so the woods can never wall a camp in and the clearing never eats the path's end.
 
 Each is a **Dijkstra over the tiles** on a cost field (`pathCost`) where **wood is a wall, not a
-price**: open snow 1, the frozen lake `PATH_ICE`, a tile inside the road's corridor `PATH_LANE`,
-and **anything standing refused outright**. So what a route *is*, is **the shortest way between
+price**: open snow 1, the frozen lake `PATH_ICE`, a tile of [the creek](#the-creek) `CREEK_COST` (a ford's
+stones 1), a tile inside the road's corridor `PATH_LANE`, and **anything standing refused
+outright**. So a route crosses the creek short and square, or takes a ford already there, and
+wherever it crosses open water `addPathRoute` lays a ford of its own at the middle of the crossing. So what a route *is*, is **the shortest way between
 the two roosts through the ground that is already clear** — the gaps the noise left, threaded,
 never a line driven through a stand. A bush is not a wall (it is walked past, and the paving
 takes it like the lane does), and the lane's own tiles read as clear whatever stands on them,
@@ -302,7 +311,8 @@ ask the same function, so what a tile *is* and what it *looks like* agree to wit
 **It never meets ice**: `genWorld`'s carve rules keep every pond and river `ROAD_ICE_KEEP` tiles
 off its edge and taper a river to nothing on its way in (the tile world, above), and a
 [shape](#map-shapes)'s lake reads the same keep-out, so the lane is dry from end to end on every
-shape and the ice network lives further out on the map. A **path** is the one thing that crosses
+shape and the ice network lives further out on the map. The one water it meets is
+[the creek](#the-creek), at the middle, and it crosses that on a bridge. A **path** is the one thing that crosses
 ice ([the paths](#the-paths)).
 
 **The nests sit beside it, not on it.** `roadNest(team)` picks each side's **junction** on the
@@ -331,7 +341,9 @@ then, the way to a bird is one straight sightline down its spur.
 the bottom-left gate, 1 at the top-right — the practice gate's own flag object, which paints
 its cloth in `TEAMS[skin(team)]`'s coat and both maps in that side's ink, and *fells* what stands
 on its spot, since the gate stands in the treeline, but gives way to a rock or a bush); one
-**`cairn`** on the centreline at the map's centre, solid cover where the two waves meet; and the
+**`cairn`** on the centreline at the map's centre — stepped out along the lane to the
+bridgehead when the centre falls on [the creek](#the-creek)'s deck — solid cover where the two
+waves meet; and the
 **`log`** across each forest end — `ROAD_LOG_HALF` (2) pieces either side of the centreline along
 the cross-diagonal, five tiles touching corner to corner so nothing squeezes between them, each
 carrying `seg` (0 the up-left end, 1 the trunk, 2 the down-right end), solid, and a pine on the
@@ -342,13 +354,15 @@ js/draw/ground.js and drawn in `render()`'s object pass; the pole is `drawBanner
 paints its four neighbours' pieces too, shifted, because the trunk is wider than the diagonal it
 runs on and spills past a tile's corners.
 
-`placeRoad()` runs at boot **right after `genWorld()`** (then `placeZips()`, `placeCamps()`,
+`placeRoad()` runs at boot **after `placeCreek()` and `layPaths()`** (then `placeZips()`, `placeCamps()`,
 `placeChests()` — js/boot.js), on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
 exactly the rule `diagEnd` (boot.js) flies the eagles by, so the gates are where each line's
 mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
 run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone,
-the pines of the woods it cuts through are felled (there is no ice to meet - see above).
+the pines of the woods it cuts through are felled (there is no ice to meet - see above) - but a
+tile of the creek or a ford is left as it is, so the creek runs on under the lane (its deck is
+already laid) and a path stops at the water.
 `roadAlong`/`roadOffS`/`roadOff`/`roadPoint` are the geometry —
 the diagonal is `tx + ty = WORLD - 1`, `u` running from the bottom-left corner, `roadOffS` signed
 toward the bottom-right side — taking a tile index or a continuous tile coordinate alike;
@@ -371,6 +385,82 @@ and then the field. The drifts and the mud are placed on a low-frequency `clump`
 pixel, not on a per-pixel roll, so the melt reads as patches rather than sand. The whole bake
 costs ~0.2 s at boot on top of the ground's own; a spur's paving repaints three tiles round each
 tile it lays, a few tiles a frame for the seconds the front takes.
+
+## The creek
+
+**One creek that never freezes runs the whole map, world edge to world edge, down the
+cross-diagonal** (`tx = ty`, the top-left corner to the bottom-right — the road's opposite), the
+`the creek` group of [js/world.js](../../js/world.js). It cuts the valley into RED's half and
+BLUE's with a roost on each side, meets the road once, at the middle where the waves meet, and
+comes from beyond and goes on past us like the road: through the border woods too, where the
+pines stand to the water's edge and there is no bank to walk along. Look A of
+`docs/media/concepts/creek-concepts-1.png` (SNOWBANK CUT) and, for the bridge, look A of
+`bridge-concepts-1.png` (PLANK DECK).
+
+**It is open water**, ground `4`: to every walker but a player a wall (`moveEntity`), to every
+route a gap (`walkable`), and nothing spawns, lands or climbs out onto it (`waterAt`). A player
+who steps in **plunges exactly as into an ice hole** ([falling in](#ice-holes-and-fishing)) — but
+a roll does not carry over it (two tiles of current, where a hole is one), and the scramble out is
+onto the bank they went in from: `nearestDryTile` keeps to the same side of the water (creekAt's
+`n`). A bot never wades in on its own feet — its walk is strict unless a shove past `WADE_SHOVE`
+(sim.js) is carrying it — so the creek punishes a bot the way it punishes a player: by being
+pushed off the bridge. The death line is `WENT IN THE CREEK`.
+
+**The ways over**, all of them ground that walks like snow:
+
+- **the bridge** — the road crosses on a timber deck the lane's width (`BRIDGE_W` either side of
+  the centreline along the creek, `BRIDGE_L` either side of the creek's line along the road),
+  ground `3`, so to every rule it is road (the waves march over it, a building may stand on it).
+  Its sides are open: shoved off one, you are in the water;
+- **the islands** — the two camps on the mirror line, the DIRE HOLLOW and the ALPHA STONE, stand on
+  islands the creek parts round and joins again below: a ring of water `r + PATH_CAMP +
+  CREEK_ISLE + CREEK_HW` from the camp's centre, its dry ground cleared of scenery, and a **ford**
+  from each half where the ring runs along the diagonal level with the camp — so both are still
+  contested from both sides;
+- **an outer ford** (`creekOuterFords`) on each stretch between an island and the treeline, at
+  its middle, where the stretch is `CREEK_FORD_GAP` or more;
+- **a path's ford** wherever a grown shape's path crosses ([the paths](#the-paths)).
+
+A **ford** (`creekFord`) is the whole run of water along one tile row through its point, made
+ground `5` — a row, so it is always four-connected and nobody's feet cut a corner through the
+current — with any pine on the tile past either end felled, so a ford never ends in a wall. On
+OPEN FIELD a seed has six: two per island and the two outer ones.
+
+**Geometry**, in tiles, off the road's own frame: `w` along the creek is `roadOffS` (+ downstream,
+toward the bottom-right) and `p` across it is `creekP` (+ toward the top-right, BLUE's half).
+The line wanders `CREEK_WANDER` off the diagonal on the position noise (`creekMid`) and each bank
+`CREEK_HW_RAG` off `CREEK_HW` (`creekHW`); `creekCalm` eases both to nothing within
+`CREEK_CALM` of the bridge, an island and an outer ford, so the water meets each square.
+`creekAt(fx, fy)` is the signed distance to the nearer bank (negative in the water) and leaves
+where the point is in `CQ` — along (`a`), across (`n`) and which island's ring (`isle`, -1 for
+the line) — `creekFlow` the way the current runs there, `bridgeAt` the deck, and `creekWet` the
+plunge test: in the water as drawn and off the deck, so nobody goes in off a pixel of bank or off
+the deck's overhang. The ground array (a tile's centre) and the bake (a pixel) ask the same
+functions, so they agree to within the bank, as the road's do.
+
+`placeCreek()` runs at boot **right after `genWorld()`**, before the paths and the road: the
+water fells whatever grew on it, the deck is laid bank to bank, each island is cleared, and the
+fixed fords go down. Pure position noise — nothing rolls, so no seed reshuffles — but it writes
+`ground` after genWorld, so every seed's ground hash includes it
+([determinism](#determinism-and-noise)). Not under `PRACTICE`. `DBG` exposes `creekAt`,
+`creekFlow`, `creekWet`, `bridgeAt`, `creekIsles`, `creekOuterFords`, `waterAt` and `CQ`.
+
+**Its pixels** (the `the creek's pixels` group, js/draw/ground.js): `paintGroundTile` hands every
+tile `creekNear` to `paintCreek`, which paints per pixel over whatever the tile is — dark water
+deepening toward the middle, the bank the light comes over (read off the slope of `creekAt`, so
+the island rings read like the straight run) wearing a white lip and throwing a band of shade on
+the water, the far bank its pale face, still streaks stretched along the current, the plank deck
+(planks on the pixel diagonals, a stringer down each open side, snow drifted to the edges, a post
+at each corner, three pilings upstream) with the water coming out from under it in shade, and a
+ford tile's snow-capped stone (`paintFordStone`) with foam heaped on its upstream side. Both maps
+ink the creek as open water and its fords as gaps. `drawCreekFlow`, right after the ground blit,
+drifts a couple of glints per tile of open creek downstream every frame on the field's clock
+(`windT`), so `DBG.step` and the wire's echo reproduce it.
+
+Verified on seeds 42, 7 and 1234 across the shapes: every ford runs bank to bank with open ground
+at both ends; the two junctions reach each other and every camp from both halves; a route across
+the water only ever steps on the deck or a ford; three minutes of bots and waves put nobody in the
+creek on their own feet, while a shove off the deck dunks a bot.
 
 ## The zipline
 
@@ -465,6 +555,9 @@ s)` is the conversion back to a tile. The layout as shipped:
 | WOLF DEN | 90, +25 | 108, 159 | 159, 108 |
 | ALPHA STONE | 115.5, +44 | 147, 147 | — |
 | DIRE HOLLOW | 115.5, −40 | 87, 87 | — |
+
+The two midline sites sit on the cross-diagonal, which is [the creek](#the-creek)'s line: each
+stands on an island the creek parts round, with a ford to it from either half.
 
 `placeCamps()` runs as worldgen's last ground pass (boot: after `placeRoad()` and `placeZips()`,
 before `placeChests()`), then
@@ -744,8 +837,9 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
   (the boot-time 70 flakes still draw from `rng`, unchanged). `chRng` (`SEED ^ 0x43484553`) feeds
   the [treasure chests](#treasure-chests)' placement, and `rkRng` (`SEED ^ 0x524f434b`) the
   [rocks](#rocks)'. The [camps](#camps) roll nothing at all -
-  their sites are written down - and their clearings are the one boot pass that writes `ground`
-  after `genWorld`, so a seed's ground hash includes them.
+  their sites are written down - and neither does [the creek](#the-creek); the creek and the
+  camps' clearings are the boot passes that write `ground` after `genWorld`, so a seed's ground
+  hash includes them.
 - `SEED` is a `const` in the rng banner and `hash2` closes over it, so nothing may call `hash2`
   before that line runs. Everything that does — `genWorld`, `renderGround`, the panel bakes — is
   further down in boot order.
@@ -802,7 +896,9 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   `p.fallT` runs `HOLE_FALL_T` (1.1 s) of floundering — no movement, tools, dodge, or
   slide (`clickAction`, `tryWork`, and `tryDodge` all check `fallT`). `drawPlayer` clips
   the sprite to the waterline with ripple rects. The climb-out teleports to
-  `nearestDryTile()` with brief i-frames. An **active dodge roll crosses holes safely**
+  `nearestDryTile()` with brief i-frames. [The creek](#the-creek) plunges the same way, off the same check (`creekWet` on a ground-`4`
+  tile), with the death line `WENT IN THE CREEK`. An **active dodge roll crosses holes safely**
+  (a hole, not the creek)
   (the fall check skips while `dodgeT > 0`). Every player falls in; `die(p)` and `Player.reset()`
   clear `fallT`. **A hole with a net on it is planked over** and the check skips it (`netAt`) —
   that tile is walked across like any other, which is how the catch changes hands.

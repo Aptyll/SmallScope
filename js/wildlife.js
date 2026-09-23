@@ -195,7 +195,7 @@ function spawnPrey(kind, bushes, clear) {
       tx = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
       ty = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
     }
-    if (!inWorld(tx, ty) || objects[idx(tx, ty)] || Math.hypot(tx - cx, ty - cy) <= 14) continue;
+    if (!inWorld(tx, ty) || objects[idx(tx, ty)] || waterAt(tx, ty) || Math.hypot(tx - cx, ty - cy) <= 14) continue;
     const x = (tx + 0.5) * TILE, y = (ty + 0.5) * TILE;
     if (clear && players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - x, p.y - y) < PREY_CLEAR)) continue;
     const a = makeAnimal(kind, x, y);
