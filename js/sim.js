@@ -1299,6 +1299,28 @@ function windSway(tx, ty) {
   const c = WIND_SOFT + (1 - WIND_SOFT) * u / (1 + u);
   return s < 0 ? -c : c;
 }
+
+// The SWEEP: every SWEEP_EVERY seconds the air lifts a little loose snow and
+// drifts it slowly downwind over the valley - a few faint streaks laid in the
+// world, gone again well before the next (drawSweep, js/draw/ground.js). Not a gust and not weather
+// of its own: it rides the field's clock (windT), runs the way the air is
+// running (windDir), and is only as strong as the day's air (windAmp), so it
+// fades out over dusk with everything else.
+const SWEEP_EVERY = 15;  // s from one sweep to the next
+const SWEEP_T = 7;       // s a sweep takes to drift across
+const SWEEP_MIN = 0.1;   // no sweep while the field is weaker than this
+// the sweep on now: { k: 0..1 across, n: which one (its streaks' seed), dir: +1
+// blowing right, -1 left, w: the air's strength behind it }, or null. Its way
+// is the veer's at the moment it set off, held to the end: the veer can cross
+// still air in mid-sweep, and a streak must not jump to the other side.
+function windSweep() {
+  if (state.wind < SWEEP_MIN) return null;
+  const n = Math.floor(state.windT / SWEEP_EVERY);
+  const k = (state.windT - n * SWEEP_EVERY) / SWEEP_T;
+  if (k >= 1) return null;
+  const dir = wsin(n * SWEEP_EVERY * (Math.PI * 2 / WIND_VEER)) < 0 ? -1 : 1; // windVeer's sign then
+  return { k, n, dir, w: state.wind };
+}
 // ------------------------------------------------------------ fx updates
 // Snow lives in the world, not on the glass: a flake has a world position,
 // drifts in world px, and scrolls with the camera like everything else. The

@@ -670,6 +670,7 @@ function render() {
       Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / 0.9);
   }
 
+  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim.js)
   drawDropAir(ex, ey, now); // the eagle, its rider and anyone falling from it
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);

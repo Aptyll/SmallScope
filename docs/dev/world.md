@@ -92,6 +92,16 @@ stable per tile.
   practice arena's track rolls. The bake also lays the scenery's
   [cast shadows](rendering.md#cast-shadows), and `render()` repaints a caster's reach itself
   when what stands on a tile changes, so felling or placing scenery calls nothing.
+- **Open snow wears soft drifts** (the `snow's pixels` banner, js/draw/ground.js): swells laid
+  along the wind (`SNOW_ANG`), lit on the sun's side and shaded on the lee in four close tones
+  (`SNOW_PAL`) under a Bayer dither, with a rare white glint on the lit tone. A low noise
+  (`SNOW_REGION`, ~22 tiles a step, cut at `SNOW_CUT` into thirds of the map) lays out regions of
+  three `SNOW_LOOKS` — fine drifts, broad swells, lee-only — blended across `SNOW_BLEND`. Every
+  pixel is a function of its world position alone (the heights on a world-aligned 2 px lattice),
+  so any repaint lays back exactly the snow the bake laid, a lake-shore tile reads the same
+  lattice, and nothing rolls. Kept subtle on purpose: the lee tone stays well above a cast
+  shadow. The boot bake lays each row's snow in one strip (`snowStrip`) — `putImageData` per tile
+  alone would cost it half a second.
 
 ### The ice shore
 
