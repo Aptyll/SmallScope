@@ -463,7 +463,7 @@ function dragDrop(mx, my) {
 
 // ---- one click sends it to the other side -------------------------------
 // Every well here has exactly ONE sensible destination, so the CLICK is the
-// whole move: a bit in the grid loads into the weapon's first free cell, a
+// whole move: a bit in the grid loads into the weapon where it works (fitBit), a
 // bit on the shelf comes back to the pack, a tool in the grid trades places
 // with the weapon in hand, and the weapon well stows what it holds in the
 // pack the way a bit does. That completes the grammar the backpack already
@@ -497,11 +497,10 @@ function sendBagCell(i) {
   const id = bitIdOf(s.type);
   if (!id) return false;            // a card: nowhere else to be
   const cell = heldTool(player);
-  const free = cell ? cell.bits.indexOf(null) : -1;
-  if (free < 0) { toolDenied(); return true; } // no weapon, or every cell loaded
-  bitPut(cell, free, id);
+  const at = cell ? fitBit(cell, id) : -1;
+  if (at < 0) { toolDenied(); return true; } // no weapon, or every cell loaded
   if (--s.n <= 0) player.bag[i] = null;
-  hudFx('place', 'bit', free, player.toolSel); // the cell it landed in lights, not the one it left
+  hudFx('place', 'bit', at, player.toolSel); // the cell it landed in lights, not the one it left
   return true;
 }
 // a bit cell of the shelf: back into the pack, topping up a stack of

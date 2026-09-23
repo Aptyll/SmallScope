@@ -558,7 +558,7 @@ item rides the cursor, which is free, because what was on it is what just went i
 
 **A plain click is the whole move**, because every one of these wells has exactly one sensible
 destination (`sendBagCell` / `sendBitCell` / `sendSlot`): a **bit** in the grid loads into the
-weapon's first free cell, a **bit** in the column comes back to the pack (merging its own stack,
+weapon where it works (`fitBit`, [below](#where-tools-and-bits-come-from)), a **bit** in the column comes back to the pack (merging its own stack,
 `bagAdd`), a **tool** in the grid trades places with the weapon in hand, and the **weapon well**
 stows what it holds in the pack the way a bit does. It is the backpack's own grammar — clicking a
 cell *uses* what is in it, a berry by eating it and a card by drawing from it.
@@ -641,8 +641,11 @@ bit, and only kinds at or under the given tier are in the pool.
 | a sprung chest | `CHEST_TOOL` 0.75 | up to 2 |
 
 **A found bit arms itself.** The pack is the overflow, not the destination: a bit walked over
-(or bought over the counter) goes into the tool's first free cell, and only what the tool cannot
-hold lands in the grid — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
+(or bought over the counter) goes into a free cell of the tool, and only what the tool cannot
+hold lands in the grid. **Where it lands is where it works** (`fitBit`): a shot takes the *last*
+free cell and a fitting the *first*, and a fitting whose first free cell is behind the first shot
+is slid in *at* that shot, the cells between moving back one — so a found modifier always reaches
+every shot the row fires, never lands behind them doing nothing — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
 is why a FULL pack with an empty bit cell still magnetises a drop and still claims it. The drop
 pickup (js/sim.js) and `shopBuy` (js/ui/shop.js) both go through the pair, so the ordinary way to
 arm a find is to walk over it, and the drag is what you reach for to ARRANGE a build rather than
@@ -659,9 +662,9 @@ comes out **empty** — its bits are the next thing to find.
 **And a strictly better body takes the build with it.** A tool walked over swaps itself straight
 into the hand when two things are true at once: its **tier is higher** than the one held, and its
 `cap` is **at least as big**, so nothing already loaded is left with nowhere to sit
-(`toolUpgrade`). Then `takeUpgrade` moves the bits across **cell for cell** — the row's order *is*
-the build, and a modifier that landed behind the shots it used to sit in front of would be worth
-nothing — and the old body is treated exactly as the find was a moment earlier: into the pack, or
+(`toolUpgrade`). Then `takeUpgrade` moves the bits across **cell for cell, right-aligned** against
+the new body's `cap` the way `giveLoadout` seats a kit — the row's order *is* the build, and the
+new open cells land *in front of* the shots, where the next find is worth something — and the old body is treated exactly as the find was a moment earlier: into the pack, or
 into the snow it was lying in if the pack is full. That last part is why a **full pack is still
 room** for an upgrade (`roomFor`, the drop loop): the pickup is an exchange, not an addition.
 
@@ -735,8 +738,8 @@ its edge — the one **melee** body ([the cut](#the-cut-a-melee-tool) below).
 
 **The shot sits in the LAST cell and every cell above it is left empty.** A modifier only reaches
 the shots *after* it ([a bit](#a-bit)), so holding cell 0 open
-means the first fitting anybody picks up is auto-fitted there (`fitAdd` takes the first free cell,
-and `botFitLoadout` does the same for a bot) and lands in front of the shot — a SPLITTER walked
+means the first fitting anybody picks up is auto-fitted there (`fitBit` puts a fitting in the first
+free cell, and `botFitLoadout` sorts fittings forward for a bot) and lands in front of the shot — a SPLITTER walked
 over turns that one arrow into three on the very next press; a kit that filled cell 0 would put
 that first find *past* the only projectile, where it does nothing. A `null` in `bits` is a real entry rather than a gap to
 skip: it is the reserved cell, `toolPlan` charges nothing for it, and `giveLoadout` right-aligns
