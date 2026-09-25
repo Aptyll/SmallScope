@@ -1261,11 +1261,11 @@ function cursorInfo() {
     }
     if (m.panel === 'saves' && m.panelT >= 1 && !m.closing) return { kind: savesHit() ? 'hand' : 'arrow' };
     if (popOpen()) { const gh = m.popT >= 1 ? popHit() : null; return { kind: gh !== null && gh !== 'panel' ? 'hand' : 'arrow' }; }
+    if (m.screen === 'notes') return { kind: m.notesT >= 1 && notesHit(mouse.x, mouse.y) ? 'hand' : 'arrow' };
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
     if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
     if (!m.panel && (overCharTag() || overPatchTag())) return { kind: 'hand' }; // the two corner tags
-    if (overPatchWiki()) return { kind: 'hand' }; // the notes' WIKI plank
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }

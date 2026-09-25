@@ -150,13 +150,13 @@ const state = {
   // what a click lays. Null while it is closed.
   build: null,
   // main menu (mode === 'title'): keyboard selection, per-item hover eases,
-  // the open sub-panel ('settings' | 'help' | 'patch' | null) and its slide progress
+  // the open sub-panel ('settings' | 'help' | 'saves' | null) and its slide progress
   // one hover ease per MENU_ITEMS entry. That length is a coupling to a
   // table in a file that loads later, so the ease loop tops up a missing
   // cell rather than trusting it - a short array turned into NaN and
   // silently deleted a row when a fifth plank arrived.
   menu: { sel: 0, hover: [0, 0, 0], t: 0,
-    panel: null, panelT: 0, closing: false, patchScroll: 0, // patchScroll: px the notes are scrolled
+    panel: null, panelT: 0, closing: false,
     // the character screens (js/ui/chars.js): charT their ease (screen
     // 'chars' is the roster, 'create' the create/customize screen), cedit
     // the create screen's unsaved buffer ({ slot, spec, first } - slot -1 is
@@ -175,7 +175,7 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'chars' | 'create'.
+    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'chars' | 'create'.
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
     // grow is the hero pop-up's keyboard row (the gear column, the ability
@@ -183,7 +183,9 @@ const state = {
     // gearFxT/gearFxSlot its equip flash,
     // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
     // is a surface of its own on wikiT, with wikiTab the open page (menu.js
-    // `the wiki`).
+    // `the wiki`), wikiFrom the screen Esc takes it back to; the patch notes
+    // are one too, on notesT, notesSel the group the keys have picked
+    // (menu.js `patch notes`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
     // lobby's map slide (mapStep: {d, k, from, t}, null at rest), the lock-in's
     // ring (lockFx, s left), and the difficulty target: the level it wears and
@@ -198,7 +200,7 @@ const state = {
     // relay's open rooms, whether the relay answered, the row hovers, the
     // keyboard row, and the refusal rattle of a room that would not have us
     roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
-    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0 },
+    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0, wikiFrom: null, notesT: 0, notesSel: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from

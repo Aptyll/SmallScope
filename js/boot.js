@@ -1420,7 +1420,6 @@ renderGround();
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
 buildHelpPanel();
-buildPatchPanel();
 camX = player.x - WV_W / 2;
 camY = player.y - WV_H / 2;
 // practice boots straight onto the snow: no title, no eagle. The other nine

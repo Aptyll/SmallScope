@@ -355,7 +355,7 @@ Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `D
 ## UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases (every frost slab — these three and the patch notes — is `bakeFrostSlab()`, js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
+labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases (every frost slab — these three — is `bakeFrostSlab()`, js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
 after the panel is rebuilt. They are declared in js/canvas.js and reassigned by `relayout()`
@@ -664,9 +664,23 @@ half and ends on whether this profile has ever held one. `tipCell(s)` picks the 
 whatever a bag or shelf cell holds, and `tipSend(d, txt)` adds the one free line saying what a
 click on that well would do.
 
+### The patch notes screen
+
+`m.screen = 'notes'` (js/ui/menu.js `patch notes`), opened from the `PATCH_TXT` tag and eased in
+on its own `notesT` like the wiki. It is the whole view: a dark veil over the world, PATCH NOTES
+in gold over the gold rule at `NOTES_TOP`, and one column (`NOTES_W_MAX` = 440, narrowing with
+the view) of folding groups. First the HIGHLIGHTS: `PATCH_DIGEST`, hand-written, the patches since
+`DIGEST_FROM` condensed into short lines by what a player notices, each with its patch dim on the
+right. Then EVERY PATCH: `PATCH_NOTES` folded by tenth (`NOTES_GROUPS`, built off the list, so a
+new patch needs nothing here). A group is a chevron and its name; a click or Enter on the keys'
+pick folds it (`notesOpen`, session only; the digest starts open). Only whole rows draw, never
+one cut by the window's edge; a hairline rail with a gold thumb shows the scroll (wheel, Up/Down,
+a click on the rail pages). The WIKI is one dim word in the top-right corner, gold and underlined
+under the pointer like the patch tag; the wiki's Esc comes back here.
+
 ### The wiki screen
 
-`m.screen = 'wiki'`, entered from the WIKI plank heading the patch notes panel and eased in on its own `wikiT`
+`m.screen = 'wiki'`, entered from the WIKI word in the [patch notes](#the-patch-notes-screen)' top-right corner (Esc goes back to them, `menu.wikiFrom`) and eased in on its own `wikiT`
 (the chrome ducks under it the way it does under the lobby). One surface: the title and its
 gold rule, then a translucent frost slab (`drawMenuSlab`, up to `WIKI_W_MAX` = 400 wide,
 `WIKI_H` = 200 tall, centred, narrowing with the view) with a **tab bar** of pages under its top
@@ -1703,7 +1717,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
-  there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from the plank heading
+  there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from a word in the corner of
   the patch notes, settings are the ESC panel's in play, and the seed lives on
   [lobby](#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
   above the view's foot. **`menu.hover` has one cell per item** and its length is
@@ -1749,15 +1763,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
   slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is
-  baked at boot (`buildHelpPanel`) but nothing on the title opens it; PATCH
-  NOTES is `patchPanelCv`, opened by clicking the `PATCH_TXT` tag bottom-right (`patchTagRect` /
-  `overPatchTag`; the tag turns gold with an underline on hover): the frame is baked once, a
-  **WIKI plank** heads it (`patchWikiRect` / `overPatchWiki` / `drawPatchWiki` — the title's own
-  frost plank, `PW_H` tall under the slab's title, easing on `menu.pwHover`; a click closes the
-  panel and `beginWiki`), the
-  entries (newest first, word-wrapped) into `patchNotesCv` as tall as they need, and render blits
-  the `PN_H` window under the plank at `menu.patchScroll`. Past one window a pixel scrollbar appears (`drawPatchBar`:
-  iron rail, gilt thumb, ice nubs) — wheel, Up/Down, the nubs (step) and the track (page) move it.
+  baked at boot (`buildHelpPanel`) but nothing on the title opens it. The `PATCH_TXT` tag
+  bottom-right (`patchTagRect` / `overPatchTag`; gold with an underline on hover) opens the
+  [patch notes screen](#the-patch-notes-screen).
   The **character tag** bottom-left (`charTagRect` / `overCharTag` / `drawCharTag`, js/ui/chars.js,
   the mirror of the patch tag: the active character's in-world body, its name and a quill that
   gilds on hover) opens the [character screens](#the-character-screens) below.

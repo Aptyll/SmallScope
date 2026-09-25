@@ -1,6 +1,6 @@
 'use strict';
 // The title screen: the frost-plank menu over the living world, the reroll
-// die, the tutorial and patch-notes panels, the lobby on its own painted
+// die, the tutorial panel, the patch notes, the lobby on its own painted
 // night with its hero pop-up, and the intro that hands the locked-in class
 // to the eagle.
 // ------------------------------------------------------------ main menu
@@ -14,7 +14,7 @@ const PANEL_SLIDE_T = 0.32;
 const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
 // seed lives on the lobby under the map's name (rerollWorld below),
-// and the WIKI opens from the plank heading the patch notes (drawPatchWiki).
+// and the WIKI opens from the word in the patch notes' corner (renderNotes).
 // The items are plain words at MENU_TXT_SCALE - white, the picked one gold -
 // stacked at the bottom middle of the view, MENU_TXT_PITCH apart with the
 // last one's foot MENU_BOTTOM above the edge; no plank, slab or frame around
@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.02';
+const PATCH_TXT = 'PATCH 4.03';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.03', 'THE PATCH NOTES FILL THE SCREEN: THE LATEST CHANGES SIT ON TOP IN SHORT FOLDING GROUPS, EVERY PATCH IS FOLDED BY TENTHS UNDER THEM, AND THE WIKI IS ONE WORD IN THE CORNER.'],
   ['4.02', 'THE MERCHANT WORKS AT HOME NOW: NO MORE WALLS OR TURRETS, HE CLEARS THE WOODS BEHIND YOUR BIRD AND TURNS THE TIMBER INTO UP TO THREE BARRACKS WHOSE WAVES MARCH OUT TO THE ROAD, AND HE STILL SELLS WHEREVER HE IS WORKING.'],
   ['4.01', 'HEALTH BAR SEGMENTS ARE ALL THE SAME WIDTH NOW, SO EVERY BAR SPLITS EVENLY FROM END TO END.'],
   ['4.00', 'THE FORGE IS A ROCK DUMP NOW: THROW ANY ORE YOU HAVE INTO YOUR WEAPON IN ANY AMOUNT, STONE FOR ONE POINT, FROSTGLASS FOR FOUR AND SUNSTONE FOR FIFTEEN, AND IT LEVELS UP EVERY TIME ITS BAR FILLS, WITH NO TOP LEVEL.'],
@@ -623,7 +624,6 @@ function leavePractice() {
 function openMenuPanel(kind) {
   const m = state.menu;
   m.panel = kind; m.panelT = 0; m.closing = false;
-  m.patchScroll = 0;
   SFX.place();
 }
 function closeMenuPanel() {
@@ -648,6 +648,7 @@ function menuKey(e) {
   const k = e.key.toLowerCase();
   if (state.fade) return; // a reroll is already leaving
   if (m.screen === 'wiki') { if (m.wikiT >= 1) wikiKey(k); return; }
+  if (m.screen === 'notes') { if (m.notesT >= 1) notesKey(k); return; }
   if (m.screen === 'hero') { if (m.popT >= 1) heroKey(k); return; }
   if (m.screen === 'map') { if (m.popT >= 1) mapKey(k); return; }
   if (m.screen === 'ai') { if (m.popT >= 1) aiKey(k); return; }
@@ -658,8 +659,6 @@ function menuKey(e) {
   if (m.panel) {
     if (m.panel === 'saves') { if (menuPanelReady()) savesKey(k); return; } // its own keys, BACK included (js/ui/saves.js)
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
-    else if (m.panel === 'patch' && moveDir(k) === 'up') patchScrollBy(-8);
-    else if (m.panel === 'patch' && moveDir(k) === 'down') patchScrollBy(8);
     else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
     return;
   }
@@ -673,6 +672,7 @@ function menuClick() {
   SFX.unlock();
   if (state.fade) return;
   if (m.screen === 'wiki') { wikiClick(); return; }
+  if (m.screen === 'notes') { notesClick(); return; }
   if (m.screen === 'hero') { heroClick(); return; }
   if (m.screen === 'map') { mapClick(); return; }
   if (m.screen === 'ai') { aiClick(); return; }
@@ -683,13 +683,12 @@ function menuClick() {
   if (m.panel) {
     if (!menuPanelReady()) return;
     if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
-    if (m.panel === 'patch' && overMenuPanel()) { patchPanelClick(mouse.x - SET_X, mouse.y - SET_Y); return; }
     if (m.panel === 'saves' && overMenuPanel()) { savesClick(); return; }
     if (!overMenuPanel()) closeMenuPanel();
     return;
   }
   if (overCharTag()) { beginChars(); return; }
-  if (overPatchTag()) { openMenuPanel('patch'); return; }
+  if (overPatchTag()) { beginNotes(); return; }
   const h = menuHit();
   if (h < 0) return;
   m.sel = h;
@@ -791,7 +790,6 @@ function updateTitle(dt) {
     // cell would go NaN here and take its whole row off the screen
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
-  m.pwHover = (m.pwHover || 0) + ((overPatchWiki() ? 1 : 0) - (m.pwHover || 0)) * Math.min(1, dt * 14); // the notes' WIKI plank
   // lobby cross-fade and its own hovers; a pop-up (gear, map, ai) rides a
   // second ease (popT) over the still-lit lobby
   const st = m.screen === 'lobby' || popOpen() ? 1 : 0;
@@ -801,6 +799,7 @@ function updateTitle(dt) {
   // the wiki is a surface of its own, not a third state of the pick pair -
   // it eases in over the same chrome on a clock of its own
   m.wikiT = Math.max(0, Math.min(1, m.wikiT + (m.screen === 'wiki' ? 1 : -1) * dt / 0.35));
+  m.notesT = Math.max(0, Math.min(1, (m.notesT || 0) + (m.screen === 'notes' ? 1 : -1) * dt / 0.35)); // the patch notes, the same way
   m.cswapT = Math.min(1, m.cswapT + dt / 0.22);
   const sh = m.screen === 'lobby' && m.screenT >= 1 ? lobbyHit() : null;
   for (let i = 0; i < 2; i++) { // the character chevrons' hover eases
@@ -1125,112 +1124,215 @@ function buildHelpPanel() {
   drawPixelText(g, hint, Math.round((SET_W - pixelTextWidth(hint)) / 2), 190, '#5a6690');
 }
 
-// the patch notes: the slab frame is baked once (patchPanelCv), the entries -
-// version in gold, sentence word-wrapped beside it, newest first - into a
-// canvas as tall as they need (patchNotesCv), and render blits the PN_H-px
-// window at menu.patchScroll through the frame. When the entries outgrow the
-// window a scrollbar appears on the right: wheel, up/down keys, clicking the
-// nubs or the track all move it.
-// the WIKI plank heads the notes: the title's own frost plank (drawMenuButton)
-// centred under the slab's title, and the notes window starts under it. A
-// click closes the panel and opens the wiki screen. Panel-space px, like
-// patchPanelClick's; its hover ease is menu.pwHover.
-const PW_H = 20;
-function patchWikiRect() { return { x: (SET_W - MENU_BW) >> 1, y: 20, w: MENU_BW, h: PW_H }; }
-const PN_Y = 20 + PW_H + 6, PN_H = SET_H - (20 + PW_H + 6) - 18; // the window: below the plank, above the hint
-function overPatchWiki() {
-  if (!menuPanelReady() || state.menu.panel !== 'patch') return false;
-  const r = patchWikiRect(), px = mouse.x - SET_X, py = mouse.y - SET_Y;
-  return px >= r.x - 2 && px < r.x + r.w + 2 && py >= r.y - 2 && py < r.y + r.h + 2;
-}
-function drawPatchWiki(ox, oy, now) {
-  const m = state.menu, r = patchWikiRect();
-  const pressed = overPatchWiki() && mouse.down;
-  drawMenuButton({ x: ox + r.x, y: oy + r.y, w: r.w, h: r.h, i: -1 }, 'WIKI', m.pwHover || 0, now, pressed, false);
-}
-const PN_BAR_X = SET_W - 13, PN_BAR_W = 6;
-const patchPanelCv = document.createElement('canvas');
-patchPanelCv.width = SET_W; patchPanelCv.height = SET_H;
-const patchNotesCv = document.createElement('canvas');
-function buildPatchPanel() {
-  const g = patchPanelCv.getContext('2d');
-  bakeFrostSlab(g, SET_W, SET_H, 'PATCH NOTES');
-  // the back hint is drawn live under the notes (renderTitle): it names the controller in hand
-  // lay the entries out once to learn the height, then paint them
-  const x0 = 14, x1 = 40, maxW = PN_BAR_X - 6 - x1;
+// ------------------------------------------------------------ patch notes
+// Clicking the PATCH_TXT tag opens the notes as a screen of their own
+// (menu.screen = 'notes', eased on notesT like the wiki): the whole view
+// under a dark veil, PATCH NOTES in gold over the gold rule, and under it
+// one column of folding groups. The first run of groups is the DIGEST -
+// PATCH_DIGEST, written by hand: the recent patches condensed into short
+// lines by what a player notices, each with the patch it came in. Below it
+// every patch in PATCH_NOTES, folded into its tenth (4.00 - 4.02, 3.90 -
+// 3.99, ...), built off the list itself so a new patch needs no line here.
+// A group is a chevron and its name; a click (or Enter on the
+// keys' pick) folds it. The WIKI is one word in the top-right corner that
+// gilds and underlines under the pointer; Esc leaves the wiki back here.
+// Which groups are open lives in notesOpen for the session only.
+const PATCH_DIGEST = [
+  ['THE VALLEY', [
+    ['SIX HOG HUTS HIDE IN THE BORDER WOODS, THREE CHESTS AROUND EACH', '3.87'],
+    ['A CREEK THAT NEVER FREEZES SPLITS THE VALLEY, BRIDGED AT THE ROAD', '3.86'],
+    ['THE WOLF DEN IS A ROCK MAW, AND THERE ARE SIX CAMPS', '3.85'],
+    ['A FISHING SHACK, A ROWBOAT IN THE ICE, AND A SLED YOU CAN RIDE', '3.98'],
+    ['ROCKS COME IN THREE KINDS, AND ALL OF THEM GIVE ORE', '3.96'],
+    ['LAKES HAVE SHORES, REEDS AND CRACKS', '3.93'],
+  ]],
+  ['WEATHER AND SNOW', [
+    ['EVERY DAY HAS ITS OWN WEATHER, FROM CALM TO GROUND BLIZZARD', '3.89'],
+    ['THE DAY HAS HOURS: A ROSE DAWN, A BRIGHT MIDDAY, A GOLD DUSK', '3.84'],
+    ['DEEP DRIFTS SLOW ANYONE WADING THROUGH THEM', '3.94'],
+    ['THE SNOW PACKS INTO PATHS WHERE PEOPLE WALK', '3.92'],
+    ['GUSTS SHAKE SNOW OFF THE PINES', '3.90'],
+    ['THE FOREST IS SOFTER AND OFF THE GRID', '3.83'],
+    ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '3.79'],
+  ]],
+  ['FIGHTING AND TRADE', [
+    ['THE MERCHANT WORKS AT HOME AND RAISES BARRACKS', '4.02'],
+    ['THE FORGE TAKES ANY ORE, AND YOUR WEAPON LEVELS WITHOUT END', '4.00'],
+    ['HEALTH BARS ARE CUT INTO EVEN SEGMENTS', '3.99'],
+    ['EACH SHOP OFFER SELLS ONCE UNTIL THE NEXT RESTOCK', '3.81'],
+    ['A FOUND FITTING LANDS IN FRONT OF THE SHOTS IT SHAPES', '3.80'],
+    ['THE PIERCING SHOT FLIES TWICE AS FAR', '3.73'],
+  ]],
+  ['MENUS AND CONTROLS', [
+    ['THE PATCH NOTES FILL THE SCREEN AND FOLD', '4.03'],
+    ['A SOLO MATCH SAVES MID-FIGHT', '3.97'],
+    ['A MOUSE SCHEME FOR ONE HAND', '3.91'],
+    ['TEAM COLOURS FOR COLOUR-BLIND EYES', '3.88'],
+    ['CLASS SELECT IS A LOBBY WITH BOTH TEAMS ON SCREEN', '3.75'],
+    ['YOUR STAT SHEET FLIES IN WHEN A NUMBER MOVES', '3.72'],
+    ['THE END SCREENS HAVE EMOTES, AND A LOBBY SHOWS EVERY RECORD', '3.70'],
+  ]],
+  ['SOUND AND SPEED', [
+    ['NEW MUSIC, AND EVERY SOUND LEVELLED BY LOUDNESS', '3.78'],
+    ['AN FPS CAP, AND A QUARTER OF EACH FRAME BACK', '3.71'],
+    ['THE STEAM BUILD CARRIES ONLY WHAT THE GAME PLAYS', '3.76'],
+  ]],
+];
+const DIGEST_FROM = '3.68'; // the oldest patch the digest covers, printed beside HIGHLIGHTS
+const NOTES_W_MAX = 440;
+const NOTES_TOP = 12; // the title's top edge: the screen is the whole view, so it hugs the top
+// the groups, digest first: {id, name, items: [{text, v}], digest}
+const NOTES_GROUPS = (() => {
+  const out = PATCH_DIGEST.map(([name, items]) => ({ id: 'd:' + name, name, digest: true,
+    items: items.map(([text, v]) => ({ text, v })) }));
+  let g = null;
+  for (const [v, text] of PATCH_NOTES) {
+    const tenth = v.slice(0, v.length - 1); // '3.87' -> '3.8'
+    if (!g || g.tenth !== tenth) { g = { id: 'p:' + tenth, tenth, items: [] }; out.push(g); }
+    g.items.push({ text, v });
+  }
+  for (const x of out) if (!x.digest) x.name = x.items[x.items.length - 1].v + ' - ' + x.items[0].v;
+  return out;
+})();
+const notesOpen = new Set(PATCH_DIGEST.map(([name]) => 'd:' + name)); // the digest starts open
+let notesScroll = 0, notesWrapW = 0;
+const notesWrapped = new Map(); // item -> its lines, at notesWrapW
+// everything the screen positions, in VIEW px: the column, the window, the
+// WIKI word, and each row with the y it draws at before the scroll
+function notesLayout() {
+  const cx = Math.round(VIEW_W / 2);
+  const w = Math.min(NOTES_W_MAX, VIEW_W - 40), x = cx - (w >> 1);
+  const winY = NOTES_TOP + 30, winH = VIEW_H - 22 - winY;
+  const textW = w - 60;
+  if (textW !== notesWrapW) { notesWrapW = textW; notesWrapped.clear(); }
   const rows = [];
   let y = 0;
-  for (const [v, text] of PATCH_NOTES) {
-    const lines = [];
-    let line = '';
-    for (const word of text.split(' ')) {
-      const next = line ? line + ' ' + word : word;
-      if (pixelTextWidth(next) > maxW && line) { lines.push(line); line = word; } else line = next;
+  const cap = (text, right) => { rows.push({ kind: 'cap', text, right, y, h: 9 }); y += 16; };
+  cap('HIGHLIGHTS', DIGEST_FROM + ' - ' + PATCH_NOTES[0][0]);
+  NOTES_GROUPS.forEach((g, gi) => {
+    if (!g.digest && gi && NOTES_GROUPS[gi - 1].digest) { y += 8; cap('EVERY PATCH', ''); }
+    rows.push({ kind: 'group', g, gi, y, h: 7 }); y += 12;
+    if (!notesOpen.has(g.id)) return;
+    for (const it of g.items) {
+      let lines = notesWrapped.get(it);
+      if (!lines) { lines = wikiWrap(it.text, textW); notesWrapped.set(it, lines); }
+      rows.push({ kind: 'item', it, lines, digest: g.digest, y, h: lines.length * 8 - 1 }); y += lines.length * 8 + 3;
     }
-    if (line) lines.push(line);
-    rows.push({ v, lines, y });
-    y += lines.length * 8 + 4;
-  }
-  patchNotesCv.width = SET_W; patchNotesCv.height = Math.max(PN_H, y);
-  const n = patchNotesCv.getContext('2d');
-  for (const r of rows) {
-    drawPixelText(n, r.v, x0, r.y, '#ffd95c');
-    r.lines.forEach((l, i) => drawPixelText(n, l, x1, r.y + i * 8, '#9fb6d8'));
-  }
+    y += 4;
+  });
+  const maxScroll = Math.max(0, y - winH);
+  notesScroll = Math.max(0, Math.min(maxScroll, notesScroll));
+  const wt = 'WIKI', ww = pixelTextWidth(wt);
+  const wiki = { x: VIEW_W - 12 - ww, y: NOTES_TOP + 3, w: ww, h: 5, text: wt };
+  const rail = { x: x + w + 6, y: winY, w: 2, h: winH };
+  const th = Math.max(8, Math.round(rail.h * winH / Math.max(winH, y)));
+  const thumb = { x: rail.x, y: rail.y + Math.round((rail.h - th) * (maxScroll ? notesScroll / maxScroll : 0)), w: 2, h: th };
+  return { cx, x, w, winY, winH, rows, maxScroll, wiki, rail, thumb };
 }
-function patchScrollMax() { return Math.max(0, patchNotesCv.height - PN_H); }
-function patchScrollBy(d) {
+// what is under (mx, my): the WIKI word, a group's header, the rail, or nothing
+function notesHit(mx, my) {
+  const L = notesLayout(), r = L.wiki;
+  if (mx >= r.x - 4 && mx < r.x + r.w + 4 && my >= r.y - 4 && my < r.y + r.h + 4) return { kind: 'wiki' };
+  if (L.maxScroll && mx >= L.rail.x - 3 && mx < L.rail.x + L.rail.w + 3 && my >= L.winY && my < L.winY + L.winH) return { kind: 'rail', y: my };
+  if (my < L.winY || my >= L.winY + L.winH || mx < L.x || mx >= L.x + L.w) return null;
+  for (const row of L.rows) {
+    if (row.kind !== 'group') continue;
+    const ry = L.winY + row.y - notesScroll;
+    if (my >= ry - 2 && my < ry + 11) return { kind: 'group', gi: row.gi };
+  }
+  return null;
+}
+function beginNotes() {
   const m = state.menu;
-  m.patchScroll = Math.max(0, Math.min(patchScrollMax(), m.patchScroll + d));
+  m.screen = 'notes'; m.notesSel = 0; m.keyNav = false;
+  notesScroll = 0;
+  SFX.place();
 }
-// the scrollbar's pieces in panel space: nubs at both ends, the track between
-function patchBarLayout() {
-  const track = { x: PN_BAR_X, y: PN_Y + 6, w: PN_BAR_W, h: PN_H - 12 };
-  const max = patchScrollMax();
-  const th = Math.max(8, Math.round(track.h * PN_H / patchNotesCv.height));
-  const ty = track.y + Math.round((track.h - th) * (max ? state.menu.patchScroll / max : 0));
-  return {
-    track, thumb: { x: PN_BAR_X, y: ty, w: PN_BAR_W, h: th },
-    up: { x: PN_BAR_X, y: PN_Y, w: PN_BAR_W, h: 5 }, down: { x: PN_BAR_X, y: PN_Y + PN_H - 5, w: PN_BAR_W, h: 5 },
-  };
+function leaveNotes() { state.menu.screen = 'menu'; SFX.pickup(); }
+function notesScrollBy(d) { notesScroll += d; notesLayout(); }
+function notesToggle(gi) {
+  const g = NOTES_GROUPS[gi];
+  if (notesOpen.has(g.id)) { notesOpen.delete(g.id); SFX.pickup(); } else { notesOpen.add(g.id); SFX.place(); }
 }
-// a click inside the slab (panel-space px): nubs step, the track pages
-function patchPanelClick(px, py) {
-  if (overPatchWiki()) { closeMenuPanel(); beginWiki(); return; }
-  if (!patchScrollMax()) return;
-  const { track, thumb, up, down } = patchBarLayout();
-  const inR = (r) => px >= r.x - 2 && px < r.x + r.w + 2 && py >= r.y && py < r.y + r.h;
-  if (inR(up)) patchScrollBy(-8);
-  else if (inR(down)) patchScrollBy(8);
-  else if (inR(track)) patchScrollBy(py < thumb.y ? -PN_H : py >= thumb.y + thumb.h ? PN_H : 0);
+// the keys walk the groups: the pick lights, the window follows it, Enter folds it
+function notesKey(k) {
+  const m = state.menu;
+  if (k === 'escape' || k === 'backspace') { leaveNotes(); return; }
+  const d = moveDir(k) === 'up' ? -1 : moveDir(k) === 'down' ? 1 : 0;
+  if (d) {
+    if (m.keyNav) m.notesSel = Math.max(0, Math.min(NOTES_GROUPS.length - 1, m.notesSel + d));
+    m.keyNav = true;
+    const L = notesLayout(), row = L.rows.find((r) => r.kind === 'group' && r.gi === m.notesSel);
+    if (row.y - notesScroll < 20) notesScroll = row.y - 20;
+    else if (row.y - notesScroll > L.winH - 40) notesScroll = row.y - L.winH + 40;
+    notesLayout();
+  } else if (k === 'enter' || k === ' ') { m.keyNav = true; notesToggle(m.notesSel); }
 }
-// iron rail, gilt thumb with grip notches, ice nubs - on the main ctx at the slab's origin
-function drawPatchBar(ox, oy) {
-  if (!patchScrollMax()) return;
-  const { track, thumb, up, down } = patchBarLayout();
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(ox + track.x - 1, oy + track.y - 1, track.w + 2, track.h + 2);
-  ctx.fillStyle = '#1c2750'; ctx.fillRect(ox + track.x, oy + track.y, track.w, track.h);
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(ox + track.x + 2, oy + track.y, 2, track.h); // a groove down the rail
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(ox + thumb.x - 1, oy + thumb.y - 1, thumb.w + 2, thumb.h + 2);
-  ctx.fillStyle = '#c89a3c'; ctx.fillRect(ox + thumb.x, oy + thumb.y, thumb.w, thumb.h);
-  ctx.fillStyle = '#ffd95c'; ctx.fillRect(ox + thumb.x, oy + thumb.y, thumb.w, 1); ctx.fillRect(ox + thumb.x, oy + thumb.y, 1, thumb.h);
-  ctx.fillStyle = '#8a6a2a'; ctx.fillRect(ox + thumb.x, oy + thumb.y + thumb.h - 1, thumb.w, 1); ctx.fillRect(ox + thumb.x + thumb.w - 1, oy + thumb.y, 1, thumb.h);
-  ctx.fillStyle = '#0a0e23';
-  for (let i = 3; i < thumb.h - 2; i += 3) ctx.fillRect(ox + thumb.x + 2, oy + thumb.y + i, 2, 1);
-  // nubs: ice triangles pointing out of the rail, rows widen away from the tip
-  const tri = (r, dir) => {
-    const cx = ox + r.x + (r.w >> 1), tip = oy + (dir < 0 ? r.y + 1 : r.y + r.h - 2);
-    for (let i = 0; i < 3; i++) {
-      const yy = tip + (dir < 0 ? i : -i);
-      ctx.fillStyle = '#0a0e23'; ctx.fillRect(cx - i - 1, yy, 2 * i + 3, 1);
+function notesClick() {
+  const m = state.menu;
+  if (m.notesT < 1) return;
+  const h = notesHit(mouse.x, mouse.y);
+  if (!h) return;
+  if (h.kind === 'wiki') { m.wikiFrom = 'notes'; beginWiki(); }
+  else if (h.kind === 'group') { m.notesSel = h.gi; notesToggle(h.gi); }
+  else if (h.kind === 'rail') { const L = notesLayout(); notesScrollBy(h.y < L.thumb.y ? -L.winH : h.y >= L.thumb.y + L.thumb.h ? L.winH : 0); }
+}
+// a chevron: right when folded, down when open, 5 px across
+function drawNotesChevron(x, y, open, col) {
+  ctx.fillStyle = col;
+  for (let i = 0; i < 3; i++) {
+    if (open) ctx.fillRect(x + i, y + 1 + i, 5 - i * 2, 1);
+    else ctx.fillRect(x + 1 + i, y + i, 1, 5 - i * 2);
+  }
+}
+function renderNotes(now, a) {
+  const m = state.menu, L = notesLayout();
+  const lift = Math.round((1 - a) * 20);
+  ctx.globalAlpha = a;
+  ctx.fillStyle = 'rgba(6,10,24,0.86)'; ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  const t0 = 'PATCH NOTES';
+  drawPixelTextShadow(ctx, t0, Math.round((VIEW_W - pixelTextWidth(t0, 2)) / 2), NOTES_TOP - lift, '#ffd95c', '#3c2a1e', 2);
+  drawGoldRule(L.cx, NOTES_TOP + 15 - lift, Math.round(pixelTextWidth(t0, 2) / 2) + 8, a);
+  const hit = m.notesT >= 1 && mouse.inside && !m.keyNav ? notesHit(mouse.x, mouse.y) : null;
+  // the WIKI word: dim, gold and underlined under the pointer, like the patch tag
+  const wr = L.wiki, whot = hit && hit.kind === 'wiki';
+  drawPixelTextShadow(ctx, wr.text, wr.x, wr.y, whot ? '#ffd95c' : '#7a8bb8', 'rgba(8,12,28,0.9)');
+  if (whot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(wr.x, wr.y + 7, wr.w, 1); }
+  // only whole rows: one cut through its letters at the window's edge reads as a glitch
+  const right = L.x + L.w;
+  for (const row of L.rows) {
+    const y = L.winY + row.y - notesScroll + lift;
+    if (y < L.winY || y + row.h > L.winY + L.winH) continue;
+    if (row.kind === 'cap') {
+      drawPixelTextShadow(ctx, row.text, L.x, y, TIP_LABEL, '#0a0e23');
+      if (row.right) drawPixelTextShadow(ctx, row.right, right - pixelTextWidth(row.right), y, TIP_LABEL, '#0a0e23');
+      ctx.fillStyle = '#2c3a68'; ctx.fillRect(L.x, y + 8, L.w, 1);
+    } else if (row.kind === 'group') {
+      const g = row.g, open = notesOpen.has(g.id);
+      const hot = (hit && hit.kind === 'group' && hit.gi === row.gi) || (m.keyNav && m.notesSel === row.gi);
+      const col = hot ? '#ffd95c' : open ? '#f4f7ff' : '#9fb6d8';
+      drawNotesChevron(L.x + (hot ? 1 : 0), y, open, col);
+      drawPixelTextShadow(ctx, g.name, L.x + 10, y, col, '#0a0e23');
+    } else {
+      // a digest line: the text indented, its patch dim on the right; a
+      // patch: its number in gold where the digest's text starts
+      const it = row.it;
+      if (row.digest) {
+        ctx.fillStyle = '#5a6690'; ctx.fillRect(L.x + 11, y + 2, 1, 1);
+        row.lines.forEach((l, i) => drawPixelTextShadow(ctx, l, L.x + 16, y + i * 8, '#cfe0ff', '#0a0e23'));
+        drawPixelTextShadow(ctx, it.v, right - pixelTextWidth(it.v), y, '#5a6690', '#0a0e23');
+      } else {
+        drawPixelTextShadow(ctx, it.v, L.x + 10, y, '#c89a3c', '#0a0e23');
+        row.lines.forEach((l, i) => drawPixelTextShadow(ctx, l, L.x + 36, y + i * 8, '#9fb6d8', '#0a0e23'));
+      }
     }
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(cx, tip + (dir < 0 ? -1 : 1), 1, 1);
-    for (let i = 0; i < 3; i++) {
-      const yy = tip + (dir < 0 ? i : -i);
-      ctx.fillStyle = i === 0 ? '#f4f7ff' : '#b8cce6'; ctx.fillRect(cx - i, yy, 2 * i + 1, 1);
-    }
-  };
-  tri(up, -1); tri(down, 1);
+  }
+  if (L.maxScroll) { // a hairline rail and a gold thumb, no nubs
+    ctx.fillStyle = '#1c2750'; ctx.fillRect(L.rail.x, L.rail.y, L.rail.w, L.rail.h);
+    ctx.fillStyle = '#c89a3c'; ctx.fillRect(L.thumb.x, L.thumb.y, L.thumb.w, L.thumb.h);
+  }
+  drawBackHint(ctx, VIEW_W / 2, VIEW_H - 13);
+  ctx.globalAlpha = 1;
 }
 
 // ---- lobby --------------------------------------------------------
@@ -3067,7 +3169,7 @@ function pickMap(k) {
 }
 
 // ---- the wiki: the game written down, one page a subject -----------------
-// Entered from the WIKI plank. One surface eased in over the chrome on its
+// Entered from the WIKI word in the patch notes' corner. One surface eased in over the chrome on its
 // own clock (wikiT), a tab bar of PAGES under the title (the settings slab's
 // navbar grammar), and under that a content window the open page scrolls
 // through when it outgrows it - wheel, up/down, the rail on the right.
@@ -3306,7 +3408,8 @@ function beginWiki() {
   SFX.music.play('wiki', { in: 0.6, out: 0.5 }); // WHISPERING WOODS, from the moment it opens
 }
 function leaveWiki() {
-  state.menu.screen = 'menu';
+  state.menu.screen = state.menu.wikiFrom || 'menu'; // the notes' WIKI word comes back to the notes
+  state.menu.wikiFrom = null;
   SFX.pickup();
   SFX.music.play('intro', { in: 0.6, out: 0.5 }); // ...and the title takes its own back
 }
@@ -3584,9 +3687,10 @@ function renderTitle(now) {
   const out = easeOut(outQ / 0.22);           // menu chrome drops away first
   const sc = easeInOut(m.screenT);             // the lobby cross-fade
   const tc = easeInOut(m.wikiT);               // ...and the wiki's own
+  const nc = easeInOut(m.notesT);              // ...and the patch notes'
   const kc = easeInOut(m.charT);               // ...and the character screens'
   const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
-  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, kc, rc); // chrome ducks under a panel or any full screen
+  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc); // chrome ducks under a panel or any full screen
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
@@ -3649,6 +3753,7 @@ function renderTitle(now) {
     const pa = sc * (1 - out) * gc;
     if (m.pop === 'hero') renderHero(now, pa); else if (m.pop === 'map') renderMapPick(now, pa); else if (m.pop === 'ai') renderAiPick(now, pa);
   }
+  if (nc > 0.005) renderNotes(now, nc * (1 - out));
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
   if (rc > 0.005) renderRooms(now, rc * (1 - out));
@@ -3658,13 +3763,7 @@ function renderTitle(now) {
     const slide = Math.round((1 - easeOut(m.panelT)) * (VIEW_H - SET_Y + 6));
     if (m.panel === 'settings') renderSettings(now, { bare: true, slide });
     else if (m.panel === 'saves') renderSaves(now, { bare: true, slide });
-    else if (m.panel === 'patch') {
-      ctx.drawImage(patchPanelCv, SET_X, SET_Y + slide);
-      ctx.drawImage(patchNotesCv, 0, m.patchScroll, SET_W, PN_H, SET_X, SET_Y + slide + PN_Y, SET_W, PN_H);
-      drawPatchBar(SET_X, SET_Y + slide);
-      drawPatchWiki(SET_X, SET_Y + slide, now);
-      drawBackHint(ctx, SET_X + SET_W / 2, SET_Y + slide + 190);
-    } else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
+    else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
   }
 }
 
