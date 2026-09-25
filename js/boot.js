@@ -1788,6 +1788,11 @@ window.DBG = {
   setSwing: (i, p) => { (p || player).swing = i; },
   getSwing: (p) => (p || player).swing,
   cam: () => ({ x: camX, y: camY }),
+  // the day's weather: weather('blizzard') pins one (fading to it like a dawn
+  // would; weather() lets the day decide again), wx the dials in force now,
+  // weatherOf(day) what a day rolls on this seed
+  weather: (name) => { state.wxForce = name && WEATHERS[name] ? name : null; },
+  get wx() { return state.wx; }, weatherOf,
   startGame, beginIntro, beginLobby, lockIn, pressPlay, cancelCount, setAiLevel, lobbyLayout, AI_LEVELS, AI_ALLIES, aiProfile, setClass, CLASSES, menu: state.menu, menuHit, menuClick, menuKey, lobbyHit,
   // the ESC panel: what the pointer is over, the speaker's plate, the open
   // page's row anchors (already scrolled - a row's y is where it is on
