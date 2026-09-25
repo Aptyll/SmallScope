@@ -552,7 +552,17 @@ function todGrade() {
     ctx.fillStyle = 'rgb(' + g[3] + ',' + g[4] + ',' + g[5] + ')';
     ctx.fillRect(0, 0, WV_W, WV_H);
   }
-  const crisp = todNoon() * TOD_CRISP;
+  // a clear frosty day: the whole day cooled a touch and held at the noon
+  // crisp from dawn to dusk (the `frost glints` banner below)
+  const frost = state.wx.frost;
+  if (frost > 0.01) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = frost;
+    ctx.fillStyle = FROST_TINT;
+    ctx.fillRect(0, 0, WV_W, WV_H);
+    ctx.globalAlpha = 1;
+  }
+  const crisp = Math.max(todNoon() * TOD_CRISP, frost * FROST_CRISP * (1 - state.darkness));
   if (crisp > 0.01) {
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = crisp;
@@ -560,6 +570,44 @@ function todGrade() {
     ctx.globalAlpha = 1;
   }
   ctx.globalCompositeOperation = 'source-over';
+}
+
+// ---- frost glints ----
+// A clear frosty day (state.wx.frost, the `weather` banner, js/sim.js) is the
+// one weather with nothing falling, so what it shows instead is the cold on
+// the ground: the day's grade cooled by FROST_TINT and held at FROST_CRISP
+// from dawn to dusk (todGrade), the cloud shadows thinned by FROST_CLEAR, and
+// the open snow catching glints - single pixels on a grid fixed to the world,
+// each flashing briefly on its own slow clock, brighter as the dark comes
+// down. They are stamped after the night grade (renderLighting), since white
+// on the day's white snow says nothing and the night's blue is what makes a
+// glint catch; they keep to bare snow tiles, so no pine or prop wears one.
+const FROST_TINT = '#e6eefc';  // multiplied over the whole frame on a frosty day
+const FROST_CRISP = 0.16;      // the noon self-multiply held all day
+const FROST_CLEAR = 0.8;       // how much of the cloud shadow a frosty day clears
+const GLINT_CELL = 11;         // world px of the grid a glint is laid on
+const GLINT_DENS = 0.22;       // share of cells holding a glint
+const GLINT_SHARP = 0.78;      // the flash is the top of a sine past this, so it is brief
+const BLIZ_HAZE = '#e8eef8', BLIZ_HAZE_A = 0.10; // a blizzard's milky frame at full air
+function drawFrostGlint(ox, oy) {
+  const frost = state.wx.frost;
+  if (frost <= 0.02) return;
+  const t = state.windT, glow = frost * (0.3 + 0.7 * state.darkness);
+  const c0 = Math.floor(ox / GLINT_CELL), c1 = Math.ceil((ox + WV_W) / GLINT_CELL);
+  const d0 = Math.floor(oy / GLINT_CELL), d1 = Math.ceil((oy + WV_H) / GLINT_CELL);
+  for (let cy = d0; cy <= d1; cy++) for (let cx = c0; cx <= c1; cx++) {
+    const h = hash2(cx * 5 + 19, cy * 3 + 41);
+    if (h > GLINT_DENS) continue;
+    const q = h / GLINT_DENS;
+    const v = Math.sin(t * (0.7 + q * 1.9) + q * 83);
+    if (v < GLINT_SHARP) continue;
+    const wx = cx * GLINT_CELL + hash2(cx + 7, cy + 91) * (GLINT_CELL - 1);
+    const wy = cy * GLINT_CELL + hash2(cx + 53, cy + 17) * (GLINT_CELL - 1);
+    const tx = (wx / TILE) | 0, ty = (wy / TILE) | 0;
+    if (!inWorld(tx, ty) || ground[idx(tx, ty)] !== 0 || objAt(tx, ty)) continue; // bare snow only
+    const a = glow * (v - GLINT_SHARP) / (1 - GLINT_SHARP);
+    drawSpeck(STAR_CV, q > 0.6 ? 3 : 0, a, Math.round(wx - ox), Math.round(wy - oy));
+  }
 }
 
 // ---- the pass ----
@@ -666,11 +714,20 @@ function renderLighting(ox, oy, now) {
     // are a quality of the light, but a cloud shadow drifting over the
     // dummy's meter or the parkour's ice would change what the instruments
     // are measuring between one lap and the next.
-    if (!PRACTICE && settings.vidClouds) cloudShade(ox, oy, day);
+    if (!PRACTICE && settings.vidClouds) cloudShade(ox, oy, day * (1 - FROST_CLEAR * state.wx.frost));
   }
 
   // the hour: rose dawn, crisp midday, gold dusk (the hour banner above)
   todGrade();
+  // a ground blizzard's day is milky: the snow it lifts pales the whole frame
+  // a little, and only as far as the air is actually blowing
+  const haze = state.wx.drift * state.wind * BLIZ_HAZE_A;
+  if (haze > 0.005) {
+    ctx.globalAlpha = haze;
+    ctx.fillStyle = BLIZ_HAZE;
+    ctx.fillRect(0, 0, WV_W, WV_H);
+    ctx.globalAlpha = 1;
+  }
 
   // Night. A multiply carries the whole shift: it cools what is there instead
   // of laying an opaque slab over it, so snow stays snow, team colours stay
@@ -690,6 +747,9 @@ function renderLighting(ox, oy, now) {
     ctx.globalAlpha = 1;
     nightEdge(dark * NIGHT_EDGE);
   }
+  // a frosty day's glints ride over the grade: white on the day's white snow
+  // says nothing, and at night the blue it sits in is what makes it catch
+  if (settings.vidStars) drawFrostGlint(ox, oy);
 
   litShots(ox, oy, now, dark);
   // ...and last, the readouts the grade was never allowed to touch
@@ -733,11 +793,18 @@ function renderWeather(ex, ey) {
   // after it, so the field is one world view wide however far the camera is
   // in - WV * zoomCur always covers the canvas, since sizeWorldView ceils
   const z = zoomCur;
-  for (const f of flakes) {
+  // the day's weather says how much of the field is falling (state.wx.snow):
+  // flakes past that share of the array are not drawn, and the one on the
+  // edge is drawn at the fraction left, so a dawn fade thins the snow flake
+  // by flake instead of all of it dimming at once
+  const fall = flakes.length * state.wx.snow;
+  for (let i = 0; i < flakes.length && i < fall; i++) {
+    const f = flakes[i];
     const sx = ((((f.x - ex) % WV_W) + WV_W) % WV_W) * z;
     const sy = ((((f.y - ey) % WV_H) + WV_H) % WV_H) * z;
     const s = Math.max(1, Math.min(SPECK_CELL, Math.round(f.size * z)));
-    drawSpeck(FLAKE_CV, s - 1, f.rest > 0 ? f.a * (f.rest / FLAKE_REST) : f.a,
+    const edge = fall - i < 1 ? fall - i : 1;
+    drawSpeck(FLAKE_CV, s - 1, (f.rest > 0 ? f.a * (f.rest / FLAKE_REST) : f.a) * edge,
       Math.round(sx), Math.round(sy));
   }
 }

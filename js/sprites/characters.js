@@ -690,7 +690,7 @@
       left: [flipH(bakeSpan(pnSideIdle, pal)), flipH(bakeSpan(pnSideA, pal)), flipH(bakeSpan(pnSideB, pal))],
     },
   });
-  const teamPlayers = TEAM_SKINS.map((t) => playerSet(teamPlayerPal(t)));
+  const teamPlayers = [];
   const skaterSet = (pal) => {
     const sp = Object.assign({}, pal, SKPAL_EXTRA);
     return {
@@ -708,7 +708,7 @@
     };
   };
   // champ[c][team] - one full pose set per champion per team colour
-  const champPlayers = [teamPlayers, TEAM_SKINS.map((t) => skaterSet(teamPlayerPal(t)))];
+  const champPlayers = [teamPlayers, []];
 
   // ---------------------------------------------------------------- looks
   // A CHARACTER's paint on the class body: its skin tone (k/K/x) and, on the
@@ -879,7 +879,19 @@
       right: f(merchSide, merchFeet.side), left: f(merchSide, merchFeet.side).map(flipH),
     };
   };
-  const teamMerchants = TEAM_SKINS.map((t) => merchantSet(merchantPal(t)));
+  const teamMerchants = [];
+  // every team-painted set above, (re)baked into the SAME arrays so a repaint
+  // (setTeamPal, js/sprites/core.js) reaches every holder; a cached look is
+  // thrown away and rebakes on its next ask
+  SPR.onTeams(() => {
+    TEAM_SKINS.forEach((t, i) => {
+      teamPlayers[i] = playerSet(teamPlayerPal(t));
+      champPlayers[1][i] = skaterSet(teamPlayerPal(t));
+      teamMerchants[i] = merchantSet(merchantPal(t));
+    });
+    SPRITES.player = teamPlayers[0];
+    lookCache.clear();
+  });
 
   Object.assign(SPRITES, {
     playerTeam: teamPlayers,

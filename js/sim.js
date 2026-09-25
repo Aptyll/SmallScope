@@ -1150,6 +1150,64 @@ function updatePlayer(p, dt) {
   }
 }
 
+// ------------------------------------------------------------ weather
+// Every day of a match has one weather, rolled off the world seed and the
+// day's number (hash2 - nothing rolls on a stream), so every client that knows
+// the day knows the sky and the wire carries nothing new. A weather is only a
+// row of DIALS the air already reads: how much of the snow is falling, how
+// hard the wind blows and how far its gusts swing, how strong the loose-snow
+// sweep is, how much ground blizzard skims the drifts (drawDrift,
+// js/draw/ground.js), and how much frost is on the light (todGrade and
+// drawFrostGlint, js/draw/light.js). state.wx holds the dials in force and
+// eases them from where they were to the new day's row over WX_FADE seconds,
+// so the dawn that changes the sky fades it in instead of snapping it. Night
+// still stills the air whatever the day rolled: windAmp squares the daylight
+// under every row.
+const WEATHERS = {
+  // snow: share of the flakes falling; wind: the field's strength; gust: how
+  // far its envelope swings; sweep: the 15 s sweep; drift: the ground
+  // blizzard; frost: the clear cold's grade and glints
+  calm:     { snow: 0.4,  wind: 0.35, gust: 0.6,  sweep: 0, drift: 0, frost: 0 },
+  snow:     { snow: 1,    wind: 1,    gust: 1,    sweep: 1, drift: 0, frost: 0 },
+  blizzard: { snow: 0.22, wind: 1.6,  gust: 1.35, sweep: 0, drift: 1, frost: 0 },
+  frost:    { snow: 0,    wind: 0.3,  gust: 0.6,  sweep: 0, drift: 0, frost: 1 },
+};
+const WX_DIALS = ['snow', 'wind', 'gust', 'sweep', 'drift', 'frost'];
+// how often each weather comes up; the shares sum to 1
+const WX_ODDS = [['snow', 0.35], ['calm', 0.25], ['frost', 0.2], ['blizzard', 0.2]];
+const WX_FADE = 5; // s the dawn takes to turn one day's weather into the next
+// The day's weather by name. The practice arena keeps today's ordinary snow:
+// it has one fixed hour, and a blizzard over its instruments would change
+// what they measure.
+function weatherOf(day) {
+  if (PRACTICE) return 'snow';
+  let h = hash2(day * 7 + 3, 0x3a7f), k = 0;
+  while (k < WX_ODDS.length - 1 && h >= WX_ODDS[k][1]) h -= WX_ODDS[k++][1];
+  return WX_ODDS[k][0];
+}
+// THE READ for any other system the weather should reach (the ground's drifts,
+// trampled snow, the ice): the dials in force this frame - name, snow, wind,
+// gust, sweep, drift, frost, each 0..1 but wind (to 1.6) and gust (to 1.35) -
+// already mid-fade at a dawn. Read it, never write it; a reader that wants the
+// wind itself takes state.wind / windGust, which carry these dials already.
+function weatherNow() { return state.wx; }
+// Steps the dials; updateFx runs it above the wind. The first step of a page
+// snaps to the day's row - a match opens on its weather, it does not fade in.
+function stepWeather(dt) {
+  const wx = state.wx, name = state.wxForce || weatherOf(state.day);
+  if (name !== wx.name) {
+    const first = wx.name === null;
+    wx.from = {};
+    for (const d of WX_DIALS) wx.from[d] = wx[d];
+    wx.name = name; wx.k = first ? 1 : 0;
+  }
+  if (wx.k >= 1 && !wx.from) return;
+  wx.k = Math.min(1, wx.k + dt / WX_FADE);
+  const to = WEATHERS[name], e = wx.k * wx.k * (3 - 2 * wx.k);
+  for (const d of WX_DIALS) wx[d] = wx.from[d] + (to[d] - wx.from[d]) * e;
+  if (wx.k >= 1) wx.from = null;
+}
+
 // ------------------------------------------------------------ wind
 // One wind field, and everything the weather moves reads it: the snow's drift,
 // and how far over every pine on the field is leaning (treeFrame,
@@ -1162,6 +1220,12 @@ function updatePlayer(p, dt) {
 // same place and the pattern over the treeline never repeats. It dies with the
 // light: windAmp() squares the daylight, so the air goes still over dusk and by
 // full dark every tree is standing in its own rest pose.
+//
+// THE SHARED WIND is three reads, and anything new the air should move takes
+// them rather than a clock of its own: state.windDir (which way, -1..1),
+// state.wind (how hard, 0..1, the day's weather already in it) and
+// windGust(tx, ty) (the gust passing over that tile right now). windSway() is
+// what a pine makes of the three.
 //
 // What the field hands back is a SIGNED LEAN, not a phase - a pine's frames are
 // a ladder from thrown-left to thrown-right - and that is what lets a gust read
@@ -1268,10 +1332,13 @@ function wskew(a) { return wsin(a + WIND_SKEW * wsin(a)); }
 // The field's strength right now, 0..1; updateFx parks it in state.wind. Two
 // swells on coprime periods rather than one, so the day's weather rises and
 // falls without ever settling into a rhythm you could count.
+// The day's weather scales it (state.wx.wind) and it is clamped at 1, so a
+// blizzard spends most of its day at full strength rather than past it.
 function windAmp() {
   const day = 1 - state.darkness, t = state.windT;
-  return day * day * (0.52 + 0.30 * wsin(t * (Math.PI * 2 / WIND_SWELL))
+  const a = day * day * state.wx.wind * (0.52 + 0.30 * wsin(t * (Math.PI * 2 / WIND_SWELL))
     + 0.18 * wsin(t * (Math.PI * 2 / WIND_SWELL2) + 1.7));
+  return a > 1 ? 1 : a;
 }
 
 // Which way the air is running right now, -1..1. Stepped once per frame in
@@ -1290,17 +1357,19 @@ function windVeer() {
 // Both halves ride the SAME envelope, which is the whole point - trees ahead of
 // a gust standing up, trees inside it laid over and thrashing, trees behind it
 // easing back - instead of the forest rustling on one clock.
-// The gust passing over a tile right now, WIND_LULL..WIND_GUST_PEAK: where
-// this corner of the field is in the envelope, arriving fast and letting go
-// slow; the smoothstep widens the calm and squares up the shoulders, so the
-// eye reads a front with an inside and an outside. It is not scaled by
-// state.wind - a reader multiplies the two. A pine's lean reads it below, and
-// the snow it sheds reads its crest (shedStep, js/shed.js).
+// The gust over a tile right now: WIND_LULL in the calm between gusts, up to
+// WIND_GUST_PEAK in the heart of one (the day's weather widens or narrows that
+// swing, state.wx.gust). Where this corner of the field is in the gust,
+// arriving fast and letting go slow; the smoothstep widens the calm and
+// squares up the shoulders, so the eye reads a front with an inside and an
+// outside. It is not scaled by state.wind - a reader multiplies the two. A
+// pine's lean reads it below, and the snow it sheds reads its crest
+// (shedStep, js/shed.js).
 function windGust(tx, ty) {
   const t = state.windT;
   const e = 0.5 + 0.5 * (WIND_G1A * wskew(tx * WIND_G1X + ty * WIND_G1Y + t * WIND_G1S)
     + WIND_G2A * wskew(tx * WIND_G2X + ty * WIND_G2Y + t * WIND_G2S));
-  return WIND_LULL + (WIND_GUST_PEAK - WIND_LULL) * (e * e * (3 - 2 * e));
+  return WIND_LULL + (WIND_GUST_PEAK - WIND_LULL) * state.wx.gust * (e * e * (3 - 2 * e));
 }
 
 function windSway(tx, ty) {
@@ -1400,6 +1469,7 @@ function updateFx(dt) {
   // the wind steps here, above everything that reads it: it is fx, so it runs
   // in every mode, and it runs on the SIM clock so DBG.step reproduces a gust
   state.windT += dt;
+  stepWeather(dt);
   state.wind = windAmp();
   state.windDir = windVeer();
   // the sun's shafts are an EVENT, not a constant: this is what is left of the
@@ -1419,8 +1489,9 @@ function updateFx(dt) {
     const dy = f.spd * dt;
     f.y += dy; f.h -= dy;
     // the same field the pines read: the sway is the flake's own, the drift
-    // is the wind's, so snow falls almost straight down once the air stills
-    f.x += Math.sin(now * f.sway + f.ph) * (3 + 7 * state.wind) * dt + (1 + 13 * state.wind) * dt;
+    // is the wind's and runs the way the pines lean, so snow falls almost
+    // straight down once the air stills or while the veer crosses the middle
+    f.x += Math.sin(now * f.sway + f.ph) * (3 + 7 * state.wind) * dt + state.windDir * (1 + 13 * state.wind) * dt;
     if (f.h <= 0) f.rest = FLAKE_REST;
   }
   for (let i = particles.length - 1; i >= 0; i--) {
