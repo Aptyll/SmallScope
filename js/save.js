@@ -291,12 +291,16 @@ function saveApply(rec) {
 // clock rather than the match: the snowfall (updateFx sways it on performance.now, and
 // tops it up off fxRng, so it is never saved at all) and so an ember's tint,
 // the one draw that stream lends the sim (actions.js).
+// what a draw pass keeps on a body, eased on the frame's own clock (the
+// wade's look, js/draw/depth.js): the match never reads it, and a page that
+// rendered a different count of frames holds different numbers
+const SAVE_FRAME_KEYS = new Set(['wadeAt', 'wadeV', 'wadeDX', 'wadeDY', 'wadeMv']);
 function saveHash() {
   const b = saveCapture().body;
   b.rng = [b.rng[0], b.rng[2]];
   delete b.view; // the camera is this screen's, and a load eases it in
   b.particles = b.particles.map((q) => { const o = Object.assign({}, q); delete o.color; return o; });
-  const s = JSON.stringify(b);
+  const s = JSON.stringify(b, (k, v) => SAVE_FRAME_KEYS.has(k) ? undefined : v);
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); }
   return { hash: (h >>> 0).toString(16), len: s.length, tick: state.tick };

@@ -2998,10 +2998,10 @@ that throws something away - writing over a kept slot, or loading over the match
 arms the card first (gold rim, the verb's arrow over the thumbnail, `SV_ARM_T`), and a second
 press does it. The arrows walk the cards and, from the navbar, turn the verb.
 
-**The proof** (`DBG.saveHash`: a hash of everything a save carries, less the camera and two
-things that run on the wall clock rather than the match - the snowfall, which `updateFx` sways on
-`performance.now` and tops up off `fxRng`, and so an ember's tint, the one draw that stream lends
-the sim). Step a match on a frozen page, `saveMatch`, keep stepping and hash; `loadSave` it onto a
+**The proof** (`DBG.saveHash`: a hash of everything a save carries, less the camera and what
+runs on the frame's clock rather than the match's - the snowfall, which `updateFx` sways on
+`performance.now` and tops up off `fxRng`, so an ember's tint, the one draw that stream lends the
+sim, and the wade's look a draw pass eases on each body, `SAVE_FRAME_KEYS`). Step a match on a frozen page, `saveMatch`, keep stepping and hash; `loadSave` it onto a
 page frozen from its first frame, step the same counts and hash: the two must agree at every
 count, across all three shapes, from a save made in the eagle's ride, early in play with the local
 human idle, and deep in a ten-bot match with hundreds of buildings and robots standing.
