@@ -1885,9 +1885,9 @@ clears the hold, so a track that takes the layer for its own reason — a victor
 never be undone by a release arriving after it. See the `music` banner, js/audio.js.
 
 The merchant **stands still and faces you** while its counter is open (`shopServing`, read by
-`updateMerchant`): it drops the gate, the felling and the loiter for as long as the sale takes.
+`updateMerchant`): it drops the bays, the felling and the loiter for as long as the sale takes.
 It is gated on the OPEN PANEL rather than on proximity because everybody lands at the roost
-together, and a merchant that stopped for anyone standing near it would never raise its gate.
+together, and a merchant that stopped for anyone standing near it would never raise its first bay.
 
 ### The forge
 
@@ -2577,8 +2577,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   turret's own team, anything dead, and any player still `inAir` on the eagle. It needs no line of
   sight: a bolt flies **over the world** (`solid: false`, the wisp's own flag, so the arrow loop's
   solid-tile branch skips it) — over walls, pines and the turret's own mount — and never sieges a
-  building, so a gun behind a wall of its own is a gun and not a prop, and the merchant's ring of
-  walls stands *outside* its turrets. Range alone limits a mark. With
+  building, so a gun behind a wall of its own is a gun and not a prop. Range alone limits a mark. With
   no mark it sweeps ±1.15 rad at a third of its traverse, so a live turret never reads as a prop.
   A bolt is an ordinary entry in `arrows` tagged `kind: 'bolt'`, so it inherits arrow collision,
   friendly fire and kill credit for free — it just draws differently and flies at `BOLT_SPD` (250)
@@ -2590,13 +2589,13 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   completion, then 4 s apart; a lost bot takes 12 s to replace (`respawnT`/`respawnTotal`).
   `makeRobot` spawns at `structMouth()` (the ring around the footprint if that is blocked) with an
   exhaust puff. **Barracks** (`barracks`): the wave bay, **never on the wheel** — not in
-  `STRUCT_ORDER`; each [merchant](#the-merchant) raises one in the woods behind its roost, and
+  `STRUCT_ORDER`; each [merchant](#the-merchant) raises up to three in the back woods behind its roost, and
   `fixed: true` refuses the manage wheel's upgrade and demolish, so nobody pulls it down for the
   refund. It wears the bay's 3×2 grid (`art: 'spawner'`, read by `structSprite`) under its own
   overlay (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave
   clock on the flank in the side's paint, the beacon amber while a column is leaving). Every
   `waveT` (30 s) it queues a **wave** — `wave` (5) soldiers, one more per `grow` (180 s) it has
-  stood, never more than `cap` (24) of its soldiers alive at once — and the queue leaves the door
+  stood, never more than `cap` (24) of its **side's** soldiers alive at once, every bay's queue and column counted — and the queue leaves the door
   one every `BARRACKS_ROLL` (0.5 s), so a wave reads as a column. Its `cost` (40) is only what a
   wrecker is paid half of: breaking one stalls the waves until the merchant rebuilds it
   ([Soldiers](#soldiers-the-waves)). `drawBayOverlay()` draws everything live on top of the baked sprite: the next bot
@@ -2729,9 +2728,9 @@ it may have flown. `updateSoldier` is four rungs, first hit wins:
    `ROBOT_ATK_CD`, `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line);
 2. the rival **bird** inside six tiles: the nearest roost tile (`aiEagleTile`), and
    `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtEagle` — ahead of any
-   building, since the gate's whole stump ring stands within a step of the roost;
-3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a gate turret, a
-   wall across the gap, the rival barracks): `hurtStruct` through the same `robotStrike`;
+   building, since whatever a side builds round its bird stands within a step of it;
+3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
+   wall across the spur, a rival bay): `hurtStruct` through the same `robotStrike`;
 4. the **march**: the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
    route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
    roost through its lane.
@@ -2754,48 +2753,46 @@ team-cloth crown and the white beard, seated on the bird's neck in flight (`MERC
 [sprites.md](sprites.md)'s own 16 × 18 grids, built so it never reads as a player on either side,
 with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; the bird wears `PERCH`) — who climbs
 down the moment it roosts (`spawnMerchant`, called
-from `eagleCrash`, the `merchant` banner in js/robots.js) and works the roost for its side, in
-order — with one job that jumps the queue the moment it is due: `MERCH_BAY_T` (30 s) after the
-landing it raises the **barracks** ([base building](#base-building)) in the woods `MERCH_BAY_BACK`
-(8) tiles out from the roost on the **bay's bearing** (`merchBayDir`: of the two back corners, ±135° off the spur's axis, the one pointing nearer the world's edge — deeper into the corner's woods, mirrored for both sides — outside the outer wall ring, at the corner the walls leave open): `merchBaySite` picks the nearest 3×2 placement to
-that point whose footprint is dry land holding nothing the axe cannot take, `merchBayBlocker`
-hands it every pine, snag and rock on the footprint and a `MERCH_BAY_RING` (1) ring round it,
-and the stumps on the footprint alone, felled at `MERCH_BAY_SWING` (0.34 s — the spur's pace, so
-the bay is up before the second minute) through `merchFell` (the rim's swing, factored out — it
-leaves the tile empty, and the merchant puts a stump back everywhere but the footprint itself:
-its axe always leaves a site), and then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the
-door sets the site (`createStruct`, nobody pays). Wrecked, `b.bay` no longer resolves and the
-clock restarts at `MERCH_BAY_REBUILD` (45 s); the clearing is already made, so the second build
-is the hammering alone. Otherwise: the **defence**, off the crash's two stump rings
-([the crash](rendering.md#eagle-drop-mode-drop): the middle ring out to `BOOM_STUMP_R`, the outer
-to `BOOM_STUMP_R2`), every stump read by its bearing off the spur's axis (`e.laneDir`, from the
-crater to the junction; 0 is toward the road) — `createStruct` a **turret** on the middle-ring
-stump nearest each of the four `MERCH_CORNERS` bearings (±45°, ±135°), so four guns cover every
-angle from inside; then a **wall** on every tile of the one-tile band at `MERCH_WALL_R` (5.4, the
-middle of the outer stump ring) — stump or bare ground alike, since a wall needs no stump and a
-one-tile circle's tiles touch at least corner to corner, which a body cannot pass — but the spur's
-gap (`MERCH_GATE_GAP` either side of the centreline on the road side — over `SPUR_HW`, so the paved
-track is never walled) and `MERCH_BAY_GAP` (0.35 rad, about four tiles at the ring) round the bay's
-bearing, round the ring in bearing order so the wall goes up as one — a **closed** ring outside the
-guns with two ways through, the road's and the merchant's own past its bay, skipped from the start
-so it is never walled in waiting for the bay, and its way out to fell and build beyond the walls
-(the crash clears every rock and bush out to the outer ring as well, so nothing the merchant
-cannot build on ever sits in the band)
-(`b.plan`, built in that order, `MERCH_BUILD_T` of hammering each, a site skipped while a body
-stands on it and retried last when no route reaches it); then the **rim**: every pine within
-`MERCH_CLEAR_R` (7.2 tiles — one ring past `BOOM_STUMP_R2`) of the roost felled to a **stump** at
-`MERCH_SWING_T` a swing, **paying no gold** (like the crater and the spur — the same free start
-for both sides), picking the nearest pine to itself that still has an open side to stand on and
-keeping a timed `b.avoids` list of trunks no route reached (without it the pick flips forever
-between two walled-in trees); then it keeps to its post at the head of the spur, a step or two either way — **and keeps shop there**: that post is
-[the counter](#the-merchants-counter), open to either team, and it stands still and faces its
-customer for as long as one is being served.
+from `eagleCrash`, the `merchant` banner in js/robots.js) and works **home** for its side, never
+toward the fight. It raises no walls and no guns (both stay on the build list for players). Its
+one job outside the counter is **home production**: it fells the **back woods** and raises the
+**bot bays** there. A pine or snag it fells is a **log** in its own stock (`b.wood`, no gold, like
+the crater and the spur). The back woods are every pine inside `MERCH_BACK_R` (13 tiles) of the
+roost whose bearing off the spur's axis (`e.laneDir`, 0 toward the road) is at least
+`MERCH_BACK_ARC` (90°): the half facing away from the road. `merchBackPine` picks the one nearest
+the roost first (the merchant's own distance breaks near ties) that still has an open side to
+stand on, so the clearing grows out from home as one front. Each falls to a **stump** at
+`MERCH_SWING_T` a swing, and a timed `b.avoids` list keeps trunks no route reached out of the
+pick (without it the pick flips forever between two walled-in trees).
+
+The **bays** (the barracks, [base building](#base-building)) jump that queue whenever one is due.
+The first is due `MERCH_BAY_T` (30 s) after the landing and is free; each after it costs
+`MERCH_BAY_WOOD` (40) logs, up to `MERCH_BAYS` (3), which lands them at about 1:00, 2:00 and
+3:45 of match time. They fan round the back of the roost `MERCH_BAY_BACK` (8) tiles out, on the
+slots `merchBaySlots` lists in order: the first corner (`merchBayDir`: of the two back corners,
+±135° off the spur's axis, the one pointing nearer the world's edge, mirrored for both sides),
+straight back, then the other corner. `merchNextBay` takes the first slot with no bay standing on
+it, and `merchBaySite` the nearest 3×2 placement to that slot's point whose footprint is dry land
+holding nothing the axe cannot take. `merchBayBlocker` hands it every pine, snag and rock on the
+footprint and a `MERCH_BAY_RING` (1) ring round it, and the stumps on the footprint alone, felled
+at `MERCH_BAY_SWING` (0.34 s) through `merchFell` (the axe always leaves a stump everywhere but
+the footprint itself). Then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the door,
+with the merchant wholly off the footprint so the bay never goes up round it, sets the site
+(`createStruct`, nobody pays gold). A wrecked bay drops out of `b.bays` and holds the next raise
+`MERCH_BAY_REBUILD` (45 s); the first bay of an empty yard is always free again, so a side is
+never out of waves. The waves find the road themselves ([Soldiers](#soldiers-the-waves)): every
+soldier's route starts at its own spur's junction.
+
+With nothing due and the back woods felled, it keeps to its post at the head of the spur, a step or
+two either way. **Wherever it is, it keeps shop**: it is [the counter](#the-merchants-counter),
+open to either team, and it stands still and faces its customer for as long as one is being
+served.
 
 It is a unit in `robots` with `merchant: true` and `kind: 'merchant'`: the same
 `separateUnits` (player radius and mass — `unitRadius`/`UNIT_MASS.merchant`) and y-sorted draw a
 worker rides, dispatched to `updateMerchant`/`drawMerchant` off the flag after `updateRobot`'s
-shared status/stun handling. The gate's owner is the team's first player (kill credit for the
-turrets' bolts). `owner` is -1, so it reads no flag and no flag ever recalls it.
+shared status/stun handling. A bay's owner is the team's first player (`createStruct` needs
+one). `owner` is -1, so it reads no flag and no flag ever recalls it.
 
 **It cannot be hurt, and it has no `hp` field at all rather than a large one.** `unitAlive`
 (js/actions.js) answers false for a merchant, and that one function is the gate every target

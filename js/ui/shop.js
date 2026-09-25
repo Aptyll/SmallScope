@@ -1,8 +1,8 @@
 'use strict';
 // THE MERCHANT'S COUNTER: the one place gold turns into goods and goods turn
 // back into gold. Each eagle's driver (the `merchant` banner, js/robots.js)
-// climbs down at the crash, raises the gate, fells the rim and then keeps to
-// the lane mouth - and standing beside it there opens this.
+// climbs down at the crash, fells its back woods and raises the bot bays,
+// and keeps to the lane mouth between jobs - and standing beside it opens this.
 //
 // BOTH counters serve EVERYBODY. Your own roost's merchant is the near one and
 // the rival's is a walk through their base, but neither asks whose side you
@@ -671,7 +671,7 @@ function inReach(p, b) {
 }
 // The other way round: the player whose counter is OPEN on this merchant, or
 // null. updateMerchant (js/robots.js) asks it every frame and drops
-// everything - the gate, the felling, the loiter - while somebody is being
+// everything - the bays, the felling, the loiter - while somebody is being
 // served: a shopkeeper does not walk off mid-sale, and a counter that strolled
 // away from its own customer would shut itself in their face while they read
 // the prices.

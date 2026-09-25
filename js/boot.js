@@ -22,12 +22,12 @@
 // button - a pad's A) hops them off (hopOff, under the HOP OFF indicator
 // drawHopPrompt raises, which wears the button of the controller in hand). A profile's
 // very first flight is exactly that ride - its manual jump is refused - so a
-// new player's first ground is the roost, beside the merchant and the gate.
+// new player's first ground is the roost, beside the merchant at the head of the spur.
 // state.drop outlives mode 'drop' - and the whole match: past the
 // line's end each bird banks off the road into the woods beside it
 // (roadNest, world.js) and blows a crater in the trees, its MERCHANT (the
 // driver on its neck - the `merchant` banner, js/robots.js) hops off to fell
-// the rim and raise a gate, a SPUR of pines falls one by one from the crater
+// its back woods and raise the bot bays, a SPUR of pines falls one by one from the crater
 // straight back to the road and is paved behind the front (the parkour
 // roll's felling front), and the bird sits there as its team's OBJECTIVE - guarding
 // itself with a wing gust and calming back down (preen regen) between scares.
@@ -124,8 +124,8 @@ const EAGLE_CINE_T = 3.2;   // s the camera holds the takeoff before the end scr
 const RUFFLE_T = 0.45;      // s of the resting idle's wing shuffle (frame 1 only - a full
                             // spread is the gust telegraph, and the idle must never wear it)
 const BOOM_R = 3.6;         // tiles of trees the impact clears outright - and paves: the roost stands on packed earth, one ground with its spur and the road (the pad, addPad)
-const BOOM_STUMP_R = 4.8;   // ...the MIDDLE ring beyond snapped to stumps: the merchant's turret sites (robots.js)...
-const BOOM_STUMP_R2 = 6.0;  // ...and the OUTER ring beyond that: its wall sites - two layers, so the walls stand outside the guns
+const BOOM_STUMP_R = 4.8;   // ...the MIDDLE ring beyond snapped to stumps: build sites round the bird...
+const BOOM_STUMP_R2 = 6.0;  // ...and the OUTER ring beyond that - two layers, so a side can stand guns inside a wall
 const BOOM_LIFE = 0.9;      // seconds the impact shockwave rings run
 // where the five riders sit, in the bird's own frame (x along the heading,
 // y across the wings, unscaled sprite px): one on its back, two on the inner

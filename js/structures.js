@@ -52,17 +52,18 @@ const STRUCTS = {
   spawner: { name: 'BOT BAY', blurb: 'ROLLS OUT BOTS THAT DIG GOLD FOR YOU. THEY WORK WHERE YOUR FLAG SAYS.', w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 45 }, hp: 220, buildT: 16, bots: 3, botHp: 24 },
   ]},
-  // THE BARRACKS: the wave bay each merchant raises in the woods behind its
-  // roost MERCH_BAY_T after the landing (the `merchant` banner, robots.js).
+  // THE BARRACKS: the wave bays each merchant raises in the back woods
+  // behind its roost, the first MERCH_BAY_T after the landing and up to
+  // MERCH_BAYS for its logs (the `merchant` banner, robots.js).
   // Never on the wheel (not in STRUCT_ORDER), nobody's to upgrade or pull
   // down (`fixed`), and it wears the bay's own 3x2 grid (`art`). Every
   // `waveT` seconds it queues a WAVE of soldiers (the `soldiers` banner,
   // robots.js) that march the road to the rival bird: `wave` of them at
   // first, one more for every `grow` seconds it has stood. Its cost is what a
   // wrecker is paid half of - breaking one stalls the waves until the
-  // merchant walks back and raises it again. `cap` is the most of its
-  // soldiers alive at once: a side nobody fights back against does not
-  // fill the map, it waits for its column to spend itself.
+  // merchant walks back and raises it again. `cap` is the most of a SIDE's
+  // soldiers alive at once, every bay counted: a side nobody fights back
+  // against does not fill the map, it waits for its column to spend itself.
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 5, waveT: 30, grow: 180, botHp: 30, cap: 24 },
   ]},
@@ -305,10 +306,9 @@ function turretMuzzle(o) {
   return { x: pv.x + c * r, y: pv.y + sn * r, nx: c, ny: sn };
 }
 // A bolt flies OVER the world - walls, pines, the roost's own tiles
-// (`solid: false`, fireBolt) - so a turret needs no line of sight: the
-// merchant stands its guns inside a ring of walls (the two stump rings,
-// eagleCrash) and they cover the ground beyond it, and a player's turret
-// behind a wall of its own is a gun and not a prop. Range alone limits it.
+// (`solid: false`, fireBolt) - so a turret needs no line of sight: a
+// player's turret behind a wall of its own is a gun and not a prop. Range
+// alone limits it.
 // a valid mark is an enemy player (never one still on the eagle) or worker
 // bot - unitAlive (js/actions.js) is the one gate, so a merchant is never one
 function turretFoe(o, tg) {
@@ -479,8 +479,9 @@ function updateStructures(dt) {
       o.waveT -= dt;
       if (o.waveT <= 0) {
         o.waveT = t.waveT;
-        let alive = o.queue;
-        for (const b of robots) if (b.kind === 'soldier' && b.home === o && !b.dead) alive++;
+        let alive = 0; // the cap is the SIDE's: every bay of the team queued or out, so more bays refill a column faster but never fill the map
+        for (const q of structures) if (q.type === 'barracks' && q.team === o.team) alive += q.queue;
+        for (const b of robots) if (b.kind === 'soldier' && b.team === o.team && !b.dead) alive++;
         o.queue += Math.max(0, Math.min(t.cap - alive, t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
       }
       o.rollT -= dt;

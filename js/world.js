@@ -756,7 +756,7 @@ const ROAD_NEST_MAX = 40;   // ...and at most: roadNest walks inward until the n
 const ROAD_NEST_OFF = 13;   // tiles off the centreline, to the bird's own right, the nest itself sits
 const ROAD_LOG_IN = 10;     // u past the junction the felled trunk lies across the road
 const ROAD_LOG_HALF = 2;    // tiles of trunk either side of the centreline along the cross-diagonal: five pieces, a little over the forest road's width
-const SPUR_HW = 1.25;       // tiles either side of a spur's centreline that are felled and paved - under MERCH_GATE_GAP (robots.js), so the gate's stumps stay off the track
+const SPUR_HW = 1.25;       // tiles either side of a spur's centreline that are felled and paved - so the paved track stays clear of the crash's stumps
 // the diagonal in tile space: tx + ty = WORLD - 1, `u` running 0 at the
 // bottom-left corner to WORLD - 1 at the top-right. All three take a tile
 // index (the tile's centre) or a continuous tile coordinate alike.
@@ -1386,7 +1386,7 @@ function placeCreek() {
 
 // ------------------------------------------------------------ zipline
 // THE ZIPLINE: one cable per team, strung on pylons from just outside its
-// base's wall ring, down beside the spur and along the road's own verge, to
+// base's outer stump ring, down beside the spur and along the road's own verge, to
 // a terminus ZIP_MID_GAP road-units short of the centre cairn - so the
 // middle stretch where the waves meet is cable-free and is always walked
 // into. The walk out of a base is dead time with no decisions in it; the
@@ -1420,7 +1420,7 @@ const ZIP_HOVER = 6;       // px the pointer may sit off the DRAWN cable (the tr
 const ZIP_ALT = 8;         // px the riding body hangs above its own shadow (the draw)
 const ZIP_H = 31;          // px above the ground track the cable itself hangs at a pylon: one row under the crossarm's top (PYLON_H, js/draw/zipline.js)
 const ZIP_SAG = 3;         // px a span sags at its middle
-const ZIP_BASE_OUT = 7.5;  // tiles from the crater the base pylon stands: outside the outer stump ring (BOOM_STUMP_R2) and the wall ring (MERCH_WALL_R), so the ring closes under it
+const ZIP_BASE_OUT = 7.5;  // tiles from the crater the base pylon stands: outside the outer stump ring (BOOM_STUMP_R2)
 const ZIP_SPUR_OFF = 1.9;  // tiles the spur leg stands off the spur's own axis (over SPUR_HW: never on the track), toward the front
 const zips = [];           // [team] -> { team, pts: [{x, y}] (body positions, base -> front), cum: [px along at each point], len }
 // a point `s` tiles off the diagonal at u, signed like roadOffS (+ toward the
