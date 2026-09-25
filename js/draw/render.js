@@ -250,6 +250,8 @@ function render() {
   // covers the fish under it and the cracks in it, and under everything that
   // walks - a body standing on the ice covers its own reflection
   if (settings.vidStars) drawIceStars(ox, oy, tx0, ty0, tx1, ty1);
+  // the weather on the ice: blown snow, a frosty night's glints and cracks, fresh dust (lakes.js)
+  drawLakeSky(ox, oy, tx0, ty0, tx1, ty1);
 
   // flat objects first (stumps)
   for (let ty = ty0; ty <= ty1; ty++) {

@@ -160,7 +160,9 @@ entity draw code must use `ex`/`ey`.
 3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
    one `footprints` array, branching on `f.k`);
 4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
-   it covers the fish and the cracks, and under everything that walks);
+   it covers the fish and the cracks, and under everything that walks) → **the weather on the
+   ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
+   and cracks, fresh dust while it snows - [the wind's leavings](world.md#the-winds-leavings));
 5. flat objects (stumps, and **fish nets** via `drawNet`);
 6. `drawFlagRings` (your side's flag rings, and the ring a held flag wheel previews) →
    `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (craters,

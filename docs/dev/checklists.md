@@ -587,6 +587,10 @@ re-wrap or re-indent one, and keep them pure ASCII (there is no BOM any more).
 Open gaps between what the game does and what it is meant to: prune an entry once it is fixed.
 Code that is dead **on purpose** is the next section.
 
+- **js/draw/lakes.js reads stand-ins for two layers still being built**: the deep snow layer's
+  depth map and prevailing wind (`snowDepthAt`, `deepSnowAt`, `rollPrevailing` fall back to
+  `DEPTH_STAND` and the snow's swell axis) and the weather's dials (`lakeSky` falls back to frost
+  with the night, no blizzard, no snowfall). Wire each to the real thing when it lands on main.
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
   one is within `AI_HUNT`, never the alpha under level 6 or the dire wolf at all, and nothing in
   `aiSituation` weighs a camp against the road — so the alpha stone and the dire hollow are the
