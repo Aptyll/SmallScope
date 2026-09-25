@@ -95,6 +95,10 @@ const state = {
   // clock, wind its strength 0..1 - full by day, nothing at all by full dark -
   // and windDir which quarter it is running from, -1..1, veering over minutes
   wind: 0.7, windT: 0, windDir: 1,
+  // the day's weather (the `weather` banner, js/sim.js): the dials the air is
+  // running on now, eased toward the day's row at dawn; wxForce is DBG's pin
+  wx: { name: null, from: null, k: 1, snow: 1, wind: 1, gust: 1, sweep: 1, drift: 0, frost: 0 },
+  wxForce: null,
   // seconds of sun shafts still owed after the eagle drop (landPlayer sets it,
   // updateFx counts it down, rayLight reads it - js/draw-world.js)
   rayT: 0,
