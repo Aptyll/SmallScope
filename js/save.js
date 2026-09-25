@@ -52,6 +52,7 @@ const SAVE_ROOTS = [
   ['fish', ...saveArr(fish)], ['holes', ...saveArr(holes)], ['camps', ...saveArr(camps)],
   ['craters', ...saveArr(craters)], ['nets', ...saveArr(nets)], ['abFx', ...saveArr(abFx)],
   ['warps', ...saveArr(warps)], ['swaps', ...saveArr(swaps)], ['slashes', ...saveArr(slashes)],
+  ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceCracks', () => iceCracks, (v) => { iceCracks.clear(); for (const [k, x] of v) iceCracks.set(k, x); }],
   ['market', () => market, (v) => Object.assign(market, v)],
   ['rng', () => [rng.s, fxRng.s, mktRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; mktRng.s = v[2]; }],

@@ -226,7 +226,7 @@ happened* and must arrive identical every time.
 
 ### The game files (core.js … boot.js, with js/draw/ and js/ui/)
 
-Forty-seven files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
+Forty-nine files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
 organized only by `// ------ name` banners; find any function by its banner in
 [code-map.md](code-map.md).
 

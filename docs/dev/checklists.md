@@ -632,6 +632,9 @@ Code that is dead **on purpose** is the next section.
   `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`
   say, while every body stands still; the match clock under the minimap ticks on behind the
   panel.
+- **A loaded match's snow is untrodden.** The trampled-snow field (`trPack`/`trChurn`,
+  js/draw/trample.js) is visual and not in `SAVE_ROOTS`, so the paths a match packed are gone
+  after a load and refill from there; the match itself plays out the same.
 
 ## Intentional dead code
 
