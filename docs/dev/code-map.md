@@ -405,7 +405,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the snow's depth as this file reads it (the deep snow layer's map, or its stand-ins), the prevailing wind | `snowDepthAt`, `deepSnowAt`, `DRIFT_MID`, `DEPTH_STAND`, `rollPrevailing` (`LW_X`/`LW_Y`) | `the snow's depth` |
+| the snow's depth as this file reads it (js/depth.js's map), the prevailing wind | `snowDepthAt`, `deepSnowAt`, `DRIFT_MID`/`DEEP_TOP`, `rollPrevailing` (`LW_X`/`LW_Y`, off `driftWind`) | `the snow's depth` |
 | every lake's label and area, which count as big | `bakeLakeBodies` (`lakeId`/`lakeTiles`), `BIG_LAKE`, `bigLakeAt` | `lake bodies` |
 | the per-tile pixel lists the bake fills and every tile paint stamps, their inks, where nothing may land | `bakeDressing` (called by `renderGround` after `bakeLakes`), `paintDressing` (under `paintGroundTile`), `dressPx`/`crackPx`, `stampAt`, `DRESS_INK`, `dressFree` | `the dressing's stamps` |
 | the mid band drawn: the piles in the lee of a pine, a rock, the hut, and the skirt round a deep drift | `bakeDrifts` (reads `leeDepth`/`driftsDepth` per pixel), `DRIFT_FADE` | `drifts in the lee` |
