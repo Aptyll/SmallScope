@@ -1129,7 +1129,8 @@ has cleared the bow, `a.flown`), drift back at 8 px/s and
 fade from `ARROW_TRAIL_A` (0.7) over `ARROW_TRAIL_LIFE` (0.22 s), leaving a tail that thins out
 behind the shot. The particle draw pass is what makes that possible: a particle's
 `maxLife` is the seconds it spends fading (`burst` uses 0.4) and its optional `alpha` caps how
-opaque it ever gets. Particles draw before the arrows, so a trail always sits under its own shaft.
+opaque it ever gets; an optional `dx` is a steady sideways px/s the damping never takes (`burst`'s
+`drift`: the wind carrying a pine's snow). Particles draw before the arrows, so a trail always sits under its own shaft.
 Switching tools, opening an overlay, or dying drops the draw without firing (and clears
 `fireArmed` with it); `BOW_CHARGE` (0.9 s) is a full draw.
 

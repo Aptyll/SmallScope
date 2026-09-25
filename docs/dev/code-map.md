@@ -316,9 +316,15 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a shot meeting everything its step CROSSED, in the order it met it: the swept disc, the tile walk (roost, dummy, wall), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `shotContacts`, `shotHits` | `the shot's sweep` |
 | the clock paying every player on the ground a coin, silently | `TRICKLE_GOLD`/`TRICKLE_T` (the tick is in `updatePlay`'s player loop) | `passive income` |
 | the zoom ease itself (runs first thing in `update`) | `applyZoom` | `update` |
-| the one wind field: its strength, which way it is running, and the signed lean at a tile; the slow sweep of loose snow across the world every 15 s | `windAmp`, `windVeer`, `windSway`, `wsin`/`wskew`, `WIND_*`; `windSweep`, `SWEEP_EVERY`/`SWEEP_T`/`SWEEP_MIN` (drawn: `drawSweep`, js/draw/ground.js) | `wind` |
+| the one wind field: its strength, which way it is running, the gust over a tile (`windGust`) and the signed lean at a tile; the slow sweep of loose snow across the world every 15 s | `windAmp`, `windVeer`, `windGust`, `windSway`, `wsin`/`wskew`, `WIND_*`; `windSweep`, `SWEEP_EVERY`/`SWEEP_T`/`SWEEP_MIN` (drawn: `drawSweep`, js/draw/ground.js) | `wind` |
 | particles, floaters, footprints, drops, world-space snow flakes | `updateFx`, `makeFlake`, `fitFlakes` | `fx updates` |
 | the belly-crawl drag furrow: emitted in `updatePlayer`, drawn as the `f.k === 3` branch | `footprints`, `p.trailD` | `update` (the draw branch: `render`, js/draw/render.js) |
+
+## js/shed.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| snow knocked off a pine's crown: the gust draws round each human, the wait and the rest that stagger it, the cap, and the blow (axe or shot) that always sheds | `SHED_*`, `shedStep` (called from `updatePlay`, sim.js), `shedHit` (called from `chopTree`, actions.js, and the arrow loop's wall branch, sim.js), `shedPuff` | `snow off the pines` (the read: `windGust`, sim.js; the puff: `burst`, core.js) |
 
 ## js/net/events.js
 

@@ -423,6 +423,7 @@ function updatePlay(dt) {
   if (!PRACTICE) updateMarket(dt); // fish/berry prices and the merchants' stock (js/shop.js)
   updateAbilityWorld(dt); // craters and nets in flight
   if (state.drop) updateDrop(dt);
+  shedStep(dt); // the gusts knocking snow off the pines (js/shed.js)
 
   // Shots in flight. Everything a tool fires rides this one array, whatever
   // bit it came out of - steerBit() is where the bit's flight path gets to
@@ -489,6 +490,7 @@ function updatePlay(dt) {
         // its siege, which is the whole of the trade and needs no second flag.
         const st = structOf(objAt(h.tx, h.ty));
         if (structFoe(sideOf(a), st)) hurtStruct(st, a.dmg, players[a.owner]);
+        else shedHit(objAt(h.tx, h.ty)); // a shot into a pine knocks its crown's snow loose (js/shed.js)
         burst(hx, hy, '#cfd8e8', 3, 25, 0.25, true);
         if (a.burn > 0) burst(hx, hy, '#ff9440', 7, 50, 0.5);
       } else if (h.k === 'player' && abShieldBlocks(t, nx, ny)) {
@@ -1288,16 +1290,24 @@ function windVeer() {
 // Both halves ride the SAME envelope, which is the whole point - trees ahead of
 // a gust standing up, trees inside it laid over and thrashing, trees behind it
 // easing back - instead of the forest rustling on one clock.
+// The gust passing over a tile right now, WIND_LULL..WIND_GUST_PEAK: where
+// this corner of the field is in the envelope, arriving fast and letting go
+// slow; the smoothstep widens the calm and squares up the shoulders, so the
+// eye reads a front with an inside and an outside. It is not scaled by
+// state.wind - a reader multiplies the two. A pine's lean reads it below, and
+// the snow it sheds reads its crest (shedStep, js/shed.js).
+function windGust(tx, ty) {
+  const t = state.windT;
+  const e = 0.5 + 0.5 * (WIND_G1A * wskew(tx * WIND_G1X + ty * WIND_G1Y + t * WIND_G1S)
+    + WIND_G2A * wskew(tx * WIND_G2X + ty * WIND_G2Y + t * WIND_G2S));
+  return WIND_LULL + (WIND_GUST_PEAK - WIND_LULL) * (e * e * (3 - 2 * e));
+}
+
 function windSway(tx, ty) {
   const w = state.wind;
   if (w <= WIND_STILL) return 0;
   const t = state.windT;
-  // where this corner of the field is in the gust, 0..1, arriving fast and
-  // letting go slow; the smoothstep widens the calm and squares up the
-  // shoulders, so the eye reads a front with an inside and an outside
-  const e = 0.5 + 0.5 * (WIND_G1A * wskew(tx * WIND_G1X + ty * WIND_G1Y + t * WIND_G1S)
-    + WIND_G2A * wskew(tx * WIND_G2X + ty * WIND_G2Y + t * WIND_G2S));
-  const gust = WIND_LULL + (WIND_GUST_PEAK - WIND_LULL) * (e * e * (3 - 2 * e));
+  const gust = windGust(tx, ty);
   // the rustle: three crossing ripples on a wandering phase
   const bend = WIND_WARP * wsin(tx * WIND_WX + ty * WIND_WY + t * WIND_WS);
   const r = WIND_R1A * wsin(tx * WIND_R1X + ty * WIND_R1Y + t * WIND_R1S + bend)
@@ -1418,7 +1428,7 @@ function updateFx(dt) {
     p.life -= dt;
     if (p.life <= 0) { particles.splice(i, 1); continue; }
     p.vy += (p.grav || 0) * dt;
-    p.x += p.vx * dt; p.y += p.vy * dt;
+    p.x += (p.vx + (p.dx || 0)) * dt; p.y += p.vy * dt;
     p.vx *= Math.pow(0.1, dt);
   }
   for (let i = floaters.length - 1; i >= 0; i--) {

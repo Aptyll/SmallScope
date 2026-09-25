@@ -340,13 +340,18 @@ function ambushFx(x, y) {
   sfxAt('ambush', x, y);
 }
 
-function burst(x, y, color, n, spd, life, grav) {
-  evPush('burst', [x, y, color, n, spd, life, grav]);
+// `grav` true is the usual toss (a kick up, then a 90 px/s/s fall); a NUMBER
+// is a fall that strength with no kick, for things that drift down rather
+// than fly. `drift` is a steady sideways px/s the damping never takes (the
+// wind carrying a pine's snow, js/shed.js).
+function burst(x, y, color, n, spd, life, grav, drift) {
+  evPush('burst', [x, y, color, n, spd, life, grav, drift]);
   for (let i = 0; i < n; i++) {
     const a = rng() * Math.PI * 2, s = rand(0.3, 1) * (spd || 40);
     particles.push({
-      x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7 - (grav ? 20 : 0),
-      life: rand(0.5, 1) * (life || 0.5), maxLife: 0.4, color, size: rng() < 0.3 ? 2 : 1, grav: grav ? 90 : 0,
+      x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7 - (grav === true ? 20 : 0),
+      life: rand(0.5, 1) * (life || 0.5), maxLife: 0.4, color, size: rng() < 0.3 ? 2 : 1,
+      grav: grav === true ? 90 : grav || 0, dx: drift || 0,
     });
   }
 }
