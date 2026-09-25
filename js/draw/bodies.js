@@ -35,7 +35,7 @@ function drawAnimal(a, ex, ey, now) {
   // deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
   // each is one, spent on the run and on the dash. Over the frame, the stun
   // stars or the noticed mark, never both.
-  const bw = rabbit ? 8 : big ? 24 : wolf ? 12 : 16;
+  const bw = rabbit ? 8 : big ? 24 : wolf ? 11 : 17; // widths that split into even segments (hpSegCount)
   const bx = Math.round(a.x - ex - bw / 2); // the bars' own left column (drawHealthBar's x)
   drawHealthBar(a.x - ex, py - 8, a.hp, a.maxHp, bw);
   if (wolf) drawHealthBar(a.x - ex, py - 5, a.threat, 1, bw, undefined, THREAT_COL);
