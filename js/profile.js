@@ -1,6 +1,7 @@
 // The local player profile: who you are between matches.
 //
-// One object under one localStorage key, and THE ONLY PLACE THE GAME TOUCHES
+// One object under one localStorage key (and the saved matches beside it,
+// under keys of their own - see putSave), and THE ONLY PLACE THE GAME TOUCHES
 // STORAGE. Everything else - game.js included - goes through window.PROFILE, so
 // putting the profile on a server later is a change to this file and nothing
 // else: swap the private read()/write() pair for requests, keep the surface
@@ -13,6 +14,8 @@
 // and removed; v2 turned the one name into the character slots).
 (function () {
   const KEY = 'softfall.profile';
+  const SAVES_KEY = 'softfall.saves'; // the saved matches' index: { slot: meta }
+  const SAVE_KEY = 'softfall.save.';  // + slot: one saved match's body
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
   const DEFAULT_NAME = 'WANDERER'; // what a corrupt save falls back to mid-session
@@ -349,6 +352,36 @@
       profile.tech.seen.length = 0;
       profile.tech.done.length = 0;
       saveNow();
+    },
+
+    // ---- saved matches ------------------------------------------------------
+    // A save is a whole solo match frozen mid-play (js/save.js builds and
+    // reads it; this file only keeps it). The slots' METAS - what the lists
+    // print: hero, level, clock, when, the thumbnail - live together under
+    // one index key, so a list never opens a body; each BODY is its own key,
+    // because a body is the big one and a quota refusal must cost one slot,
+    // not the whole index.
+    saveMetas() {
+      try { const m = JSON.parse(localStorage.getItem(SAVES_KEY)); return m && typeof m === 'object' ? m : {}; } catch (e) { return {}; }
+    },
+    saveBody(slot) {
+      try { return localStorage.getItem(SAVE_KEY + slot); } catch (e) { return null; }
+    },
+    // false when storage refused it (full, or blocked): the old slot stands
+    putSave(slot, meta, body) {
+      try {
+        localStorage.setItem(SAVE_KEY + slot, body);
+        const m = this.saveMetas(); m[slot] = meta;
+        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
+        return true;
+      } catch (e) { return false; }
+    },
+    dropSave(slot) {
+      try {
+        localStorage.removeItem(SAVE_KEY + slot);
+        const m = this.saveMetas(); delete m[slot];
+        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
+      } catch (e) { }
     },
 
     flush,

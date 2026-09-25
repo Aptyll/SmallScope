@@ -79,6 +79,8 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/chars.js](../../js/ui/chars.js) | ~580 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
+| [js/save.js](../../js/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
+| [js/ui/saves.js](../../js/ui/saves.js) | ~280 | shared scope, no `window.*` export | the SAVES slab (the slot cards, the SAVE/LOAD navbar, the arm-then-confirm press) and the HUD's saved mark |
 | [js/boot.js](../../js/boot.js) | ~1840 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.
@@ -224,7 +226,7 @@ happened* and must arrive identical every time.
 
 ### The game files (core.js … boot.js, with js/draw/ and js/ui/)
 
-Forty-three files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
+Fifty-three files of flat top-level code (see [Shared global scope](#shared-global-scope)), each
 organized only by `// ------ name` banners; find any function by its banner in
 [code-map.md](code-map.md).
 
@@ -249,8 +251,10 @@ and `BOW_CHARGE`/`BOW_NOCK`/`DODGE_SPEED`/`SLIDE_MIN` (player.js, because the `C
 does). Each one says so in a comment; if you move a block and the console shows a
 `ReferenceError` naming a constant on load, this is why.
 
-`softfall.reroll` is the only storage key touched outside profile.js; sessionStorage by design
-(write in menu.js, read in boot.js — survives the reload, not the tab).
+The storage keys touched outside profile.js are all sessionStorage hand-offs to the next page:
+`softfall.reroll`, `softfall.select` and `softfall.drop` (written in menu.js), and `softfall.load`
+(a saved match on its way in, written in save.js); boot.js reads each — they survive the reload,
+not the tab.
 
 Their only deliberate `window.*` export is `DBG`, the debug surface at the end of boot.js: live
 singletons plus the helpers that stage a scene without playing to it. Read the object literal

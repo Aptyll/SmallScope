@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 3.96';
+const PATCH_TXT = 'PATCH 3.97';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.97', 'A SOLO MATCH SAVES NOW, MID-FIGHT, ARROWS STILL IN THE AIR: FIVE SLOTS AND THREE AUTOSAVES UNDER SAVES ON THE ESC PANEL, AND CONTINUE OR LOAD GAME ON THE TITLE PICKS IT UP EXACTLY WHERE IT STOOD.'],
   ['3.96', 'ROCKS ARE TWICE THE SIZE AND COME IN THREE KINDS - PLAIN STONE, A FROSTGLASS SPIRE AND A RARE SUNSTONE OBELISK - THAT YOU MINE BY HOLDING E WHILE THEY CRACK, AND THE ORE THEY GIVE TAKES YOUR WEAPON FROM +1 TO +5 ON THE MERCHANT\'S NEW FORGE TAB.'],
   ['3.95', 'A TIDY-UP WITH NOTHING NEW ON SCREEN: THE LAKES AND THE LOW DRIFTS NOW READ THE DEEP SNOW STRAIGHT FROM ITS OWN MAP.'],
   ['3.94', 'DEEP SNOW PILES UP IN LONG DRIFTS IN THE LEE OF THE TREELINE, THE STANDS, THE ROCKS AND THE BUSHES, ALL LEANING WITH THE MAP\'S PREVAILING WIND: THEY STAND RAISED AND BRIGHT WITH A DARK LIP, AND ANYONE WADING THROUGH ONE SINKS TO THE SHINS, WALKS AT SEVENTY PERCENT, ROLLS A LITTLE SHORTER AND CANNOT START A SLIDE IN IT.'],
@@ -572,11 +573,16 @@ function menuSelect(i) {
   SFX.pickup();
 }
 
+// by the word, not the place: a profile with a saved match stacks CONTINUE
+// and LOAD GAME into the list (js/boot.js), which moves the rest down
 function menuActivate(i) {
   SFX.unlock();
-  if (i === 0) beginLobby();
-  else if (i === 1) beginRooms();
-  else if (i === 2) beginPractice();
+  const it = MENU_ITEMS[i];
+  if (it === 'CONTINUE') loadSave(saveNewest());
+  else if (it === 'LOAD GAME') openSavesTitle();
+  else if (it === 'SINGLEPLAYER') beginLobby();
+  else if (it === 'MULTIPLAYER') beginRooms();
+  else if (it === 'PRACTICE TOOL') beginPractice();
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
@@ -645,6 +651,7 @@ function menuKey(e) {
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
+    if (m.panel === 'saves') { if (menuPanelReady()) savesKey(k); return; } // its own keys, BACK included (js/ui/saves.js)
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
     else if (m.panel === 'patch' && moveDir(k) === 'up') patchScrollBy(-8);
     else if (m.panel === 'patch' && moveDir(k) === 'down') patchScrollBy(8);
@@ -672,6 +679,7 @@ function menuClick() {
     if (!menuPanelReady()) return;
     if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
     if (m.panel === 'patch' && overMenuPanel()) { patchPanelClick(mouse.x - SET_X, mouse.y - SET_Y); return; }
+    if (m.panel === 'saves' && overMenuPanel()) { savesClick(); return; }
     if (!overMenuPanel()) closeMenuPanel();
     return;
   }
@@ -3644,6 +3652,7 @@ function renderTitle(now) {
   if (m.panel) {
     const slide = Math.round((1 - easeOut(m.panelT)) * (VIEW_H - SET_Y + 6));
     if (m.panel === 'settings') renderSettings(now, { bare: true, slide });
+    else if (m.panel === 'saves') renderSaves(now, { bare: true, slide });
     else if (m.panel === 'patch') {
       ctx.drawImage(patchPanelCv, SET_X, SET_Y + slide);
       ctx.drawImage(patchNotesCv, 0, m.patchScroll, SET_W, PN_H, SET_X, SET_Y + slide + PN_Y, SET_W, PN_H);

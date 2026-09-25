@@ -1348,6 +1348,9 @@ function startGame() {
 
 PROFILE.load();   // the profile carries the settings, so it is read first
 loadSettings();
+// a profile with a saved match opens on CONTINUE (the newest) and has LOAD
+// GAME under SINGLEPLAYER (js/ui/saves.js); menuActivate goes by the word
+if (!PRACTICE && saveNewest()) { MENU_ITEMS.unshift('CONTINUE'); MENU_ITEMS.splice(2, 0, 'LOAD GAME'); }
 mendBinds(); // the profile's key binds made whole (input.js)
 // ...and the tech tree, which decides what this profile's world may drop.
 // Must run after PROFILE.load() and before initPlayers()/any swing.
@@ -1407,6 +1410,11 @@ initPlayers();
 // ...and a page reloaded onto a room's seed to join it (joinRoom, js/ui/menu.js)
 // walks straight into the rooms screen with that join under way
 const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search); return j ? j[1].toUpperCase() : null; })();
+// a saved match (js/save.js): the valley as it grew is the baseline every
+// save is written against, and a load that reloaded onto its seed puts the
+// match back now - after the world stands, before the bake paints it
+if (!PRACTICE) saveBaseline();
+const LOADED_AT_BOOT = !PRACTICE && !NET.isClient && saveBootLoad();
 renderGround();
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
@@ -1480,6 +1488,10 @@ try {
     }
   }
 } catch (e) { }
+
+// ...and a saved match put back at boot (saveBootLoad above) comes up out of
+// the dark, whatever the page was about to show
+if (LOADED_AT_BOOT) saveBootEnter();
 
 // debug/dev harness: lets external tooling step frames & stage scenes
 window.DBG = {
@@ -1832,6 +1844,8 @@ window.DBG = {
   },
   layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_CX, MM_CY }),
   hideUI: false,
+  // saved matches (js/save.js): the record, the hash the replay proof compares, a slot by hand
+  saveCapture, saveApply, saveHash, saveMatch, loadSave, saveList, autoSave,
   step: (dt, n) => { for (let i = 0; i < (n || 1); i++) { update(dt || TICK_DT); } render(); },
 };
 
@@ -1940,6 +1954,7 @@ function loop(nowMs) {
     }
     if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     render();
+    saveAutoTick(); // a timed autosave, off the match clock (js/save.js)
   }
   if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
   else watchHidden();

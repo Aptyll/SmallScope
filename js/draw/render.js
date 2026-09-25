@@ -141,8 +141,12 @@ let treeFadeSil = 0; // this frame's silhouette-rim strength, set beside the y-s
 function render() {
   const now = performance.now() / 1000;
   stepItemIcons(now * 1000); // the animated item icons, before anything reads one
-  const shx = settings.shake && state.shake > 0.2 ? Math.round(rand(-state.shake, state.shake)) : 0;
-  const shy = settings.shake && state.shake > 0.2 ? Math.round(rand(-state.shake, state.shake)) : 0;
+  // the shake's jitter comes off fxRng, never the sim's rng: a frame is not a
+  // step, and a draw off the main stream here made how many frames a screen
+  // happened to render change the match (a saved one replayed differently)
+  const shk = (s) => Math.round(-s + fxRng() * 2 * s);
+  const shx = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
+  const shy = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
   const ox = Math.round(camX) + shx;
   const oy = Math.round(camY) + shy;
   // exact (unrounded) camera for MOVING entities. Screen pos must be
@@ -758,6 +762,7 @@ function render() {
   // (see the tooltips banner, ui.js)
   tipResolve();
   renderUI(now);
+  drawSaveFlash(); // a save just landed (js/ui/saves.js): drawn in the drop too, which renderUI skips
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (PRACTICE && state.mode === 'play') drawAgameUI(now);
@@ -1252,6 +1257,7 @@ function cursorInfo() {
       if (dragSlider) return { kind: 'grab' };
       return { kind: settingsHit() ? 'hand' : 'arrow' };
     }
+    if (m.panel === 'saves' && m.panelT >= 1 && !m.closing) return { kind: savesHit() ? 'hand' : 'arrow' };
     if (popOpen()) { const gh = m.popT >= 1 ? popHit() : null; return { kind: gh !== null && gh !== 'panel' ? 'hand' : 'arrow' }; }
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
     if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
