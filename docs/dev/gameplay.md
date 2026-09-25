@@ -3002,10 +3002,9 @@ press does it. The arrows walk the cards and, from the navbar, turn the verb.
 things that run on the wall clock rather than the match - the snowfall, which `updateFx` sways on
 `performance.now` and tops up off `fxRng`, and so an ember's tint, the one draw that stream lends
 the sim). Step a match on a frozen page, `saveMatch`, keep stepping and hash; `loadSave` it onto a
-page frozen from its first frame, step the same counts and hash. Verified on seeds 42, 7, 1234,
-99, 5 across all three shapes, saved in the eagle's ride, early in play with the local human idle,
-and six to seven minutes in with all ten seats bots (up to 300 buildings and 100 robots): the
-hashes agree at +1, +60, +600, +1800 and +3600 steps.
+page frozen from its first frame, step the same counts and hash: the two must agree at every
+count, across all three shapes, from a save made in the eagle's ride, early in play with the local
+human idle, and deep in a ten-bot match with hundreds of buildings and robots standing.
 
 ## Settings
 
