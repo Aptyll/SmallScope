@@ -481,7 +481,11 @@ asks it; its bands:
   (ground 0) only, so a runtime paving or a hole takes it away. It slows every walker
   ([Deep snow](gameplay.md#deep-snow)) and is drawn raised (`deepTone`, below).
 - **MID** (`DEPTH_MID` 0.25 up to deep) is a drift you see and do not wade: a drift's skirt
-  round its core, and the whole of a small drift whose `amp` never reaches deep.
+  round its core, the whole of a small drift whose `amp` never reaches deep, and the **lee pad**
+  every standing thing out in the open holds (`layLees`/`leeDepth`, `leeCell`): the same shape a
+  tile or two long downwind of a pine on the forest's edge, a rock, a bush, a stump, a snag, a
+  den or a hut, at most `LEE_AMP` (0.42) tall. Forest floor (`LEE_WOODS` breakers among its eight
+  neighbours) gets none.
 - **Shallow** is the rest, down to a dusting in the hollows (`hollowDepth`, low on the
   position noise, capped at `DRIFT_HOLLOW` 0.2, so a hollow is never a drift). The field says
   nothing about the ground under it, so it reads over ice too.

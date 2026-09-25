@@ -34,9 +34,12 @@ const DRIFT_HOLLOW = 0.2;   // the deepest a hollow's dusting gets: under DEPTH_
 const DRIFT_FAIR = 1.25;    // the most deep snow one side's half may hold, as a multiple of the other's
 const DRIFT_WIND_ARC = 0.4; // rad either side of the creek's line the prevailing wind may blow
 const DRIFT_RAG = 0.16;     // how far a drift's edge wanders either way, as a share of its width
+const LEE_AMP = 0.42;       // the tallest pad of snow in one object's own lee: the MID band, never DEPTH_DEEP
+const LEE_WOODS = 4;        // breakers among its eight neighbours past which an object is forest floor and gets no pad
 const DRIFT_RAG_STEP = 0.25; // tiles along a drift per sample of its edge's wander
 const drifts = [];          // { x, y, dx, dy, head, len, wid, amp, bend, rag } in tile space
 let driftCell = null;       // per tile: the drifts whose skirt reaches it (null for none)
+let leeCell = null;         // per tile: the lee pads (below) that reach it (null for none)
 const driftWind = { ang: 0, dx: 1, dy: 0 }; // the prevailing wind, blowing toward (dx, dy)
 
 // ---- the shape --------------------------------------------------------------
@@ -71,7 +74,15 @@ function hollowDepth(fx, fy) {
 // THE map: how deep the snow lies at a tile-space point (tile + 0.5 is a
 // tile's centre), 0 to 1. Static for the match; say nothing about what the
 // ground is - deepAt is the one that asks.
-function snowDepth(fx, fy) { return Math.max(hollowDepth(fx, fy), driftsDepth(fx, fy)); }
+function snowDepth(fx, fy) { return Math.max(hollowDepth(fx, fy), leeDepth(fx, fy), driftsDepth(fx, fy)); }
+// the small pad of snow in the lee of each standing thing (layLees)
+function leeDepth(fx, fy) {
+  const tx = Math.floor(fx), ty = Math.floor(fy);
+  const L = leeCell && inWorld(tx, ty) ? leeCell[idx(tx, ty)] : null;
+  let d = 0;
+  if (L) for (let k = 0; k < L.length; k++) { const e = driftDepth(L[k], fx, fy); if (e > d) d = e; }
+  return d;
+}
 // ...the drifts' share of it alone: the only share that reaches DEPTH_DEEP
 // (a hollow tops out at DRIFT_HOLLOW), so what asks after the deep band
 // alone skips the hollows' noise
@@ -231,6 +242,37 @@ function layDrifts() {
   for (const D of drifts) for (const q of driftTiles(D, 0.2)) {
     const i = idx(q.tx, q.ty);
     (driftCell[i] || (driftCell[i] = [])).push(D);
+  }
+  layLees();
+}
+// Every standing thing out in the open - a pine on the treeline's edge or in
+// a stand's fringe, a rock, a bush, a stump, a snag, a den, a hut - holds a
+// small pad of snow in its own lee along driftWind: the same drift shape at a
+// tile or two long and LEE_AMP tall, so it lives in the MID band and never
+// slows anybody. Forest floor (LEE_WOODS breakers round it) gets none: the
+// canopy covers it anyway, and a pad per pine would cost the bake for nothing.
+function layLees() {
+  leeCell = new Array(WORLD * WORLD).fill(null);
+  if (PRACTICE) return;
+  const wx = driftWind.dx, wy = driftWind.dy;
+  for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 1; tx++) {
+    const o = objects[idx(tx, ty)];
+    if (!o || !(driftBreak(tx, ty) || o.type === 'stump')) continue;
+    let n = 0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && driftBreak(tx + dx, ty + dy)) n++;
+    if (n >= LEE_WOODS) continue;
+    const h = hash2(tx * 13 + 7, ty * 11 + 3);
+    const D = {
+      x: tx + 0.5 + wx * 0.5, y: ty + 0.5 + wy * 0.5, dx: wx, dy: wy,
+      len: 1.5 + h, wid: 0.8 + 0.3 * h, head: 0.5, amp: LEE_AMP * (0.8 + 0.2 * h), bend: 0, rag: null,
+    };
+    const k = Math.ceil((D.len + D.head) / DRIFT_RAG_STEP) + 2;
+    D.rag = new Float32Array(k * 2);
+    for (let s = 0; s < 2; s++) for (let i = 0; i < k; i++) D.rag[s * k + i] = (vnoise(i * 0.4 + tx * 1.9, s * 5.3 + ty * 1.1) - 0.5) * 2;
+    for (const q of driftTiles(D, 0)) {
+      const i = idx(q.tx, q.ty);
+      (leeCell[i] || (leeCell[i] = [])).push(D);
+    }
   }
 }
 
