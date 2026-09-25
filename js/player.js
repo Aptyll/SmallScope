@@ -577,6 +577,7 @@ class Player {
     this.readyFlash = 0; this.dryT = 0;            // HUD tells: renocked / pressed empty
     this.dodgeT = 0; this.dodgeVX = 0; this.dodgeVY = 0; this.dodgeDustT = 0;
     this.dodgeCharges = DODGE_CHARGES; this.dodgeRegenT = 0;
+    this.wade = 0; // how deep in the snow (wadeStep, js/depth.js)
     this.rollHit = [];                             // what this roll has already swiped (once each)
     this.stamGhost = 0; this.stamGhostT = 0;      // spent-stamina ghost
     this.sliding = false; this.slideT = 0; this.trailD = 0; this.slideDustT = 0;

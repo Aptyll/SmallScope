@@ -1009,6 +1009,7 @@ function douseUnit(e) { e.burnT = 0; e.burnDps = 0; e.burnTick = 0; e.burnBy = -
 // and a worker bot call this from their own update, so the two halves of the
 // world can never drift on how long a net holds.
 function updateUnitStatus(e, dt) {
+  wadeStep(e, dt); // how deep in the snow it stands (js/depth.js)
   if (e.rootT > 0) e.rootT = Math.max(0, e.rootT - dt);
   if (e.markT > 0) e.markT = Math.max(0, e.markT - dt);
   if (e.netT > 0) e.netT = Math.max(0, e.netT - dt);
@@ -1024,7 +1025,7 @@ function updateUnitStatus(e, dt) {
 function unitMoveMul(e) {
   if (!e || e instanceof Player) return 1;
   if (e.rootT > 0) return 0;
-  return e.slowT > 0 ? e.slowMul : 1;
+  return (e.slowT > 0 ? e.slowMul : 1) * wadeMul(e); // ...and deep snow drags every walker alike
 }
 // every timed state a fresh body starts with none of, on any kind of unit
 function clearUnitStatus(e) {

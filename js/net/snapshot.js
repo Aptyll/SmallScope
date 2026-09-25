@@ -41,6 +41,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   // pass reads: a client neither steps nor shows these, and each is a few
   // bytes per body per snapshot. The echo harness runs WITHOUT them, so
   // adding a name here is proven harmless or caught as pixels
+  'wade', 'wadeX', 'wadeY', 'wadePuffT', 'wadeAt', 'wadeV', 'wadeDX', 'wadeDY', 'wadeMv', // the wade: each machine eases its own (js/depth.js, js/draw/depth.js)
   'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'eatFxT', 'burnTick', 'fishCd', 'catchT', 'dryT', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeT', 'fleeGoal', 'goal',
   'avoidT', 'madT', 'madX', 'madY', 'baySite', 'bayDir']);
