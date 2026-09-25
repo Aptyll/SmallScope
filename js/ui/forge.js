@@ -2,36 +2,38 @@
 // ------ the forge tab
 // The merchant's counter has two faces, picked by the two tab plates in its
 // sign row: the SHOP (js/ui/shop.js) and the FORGE, where ore from the rocks
-// (js/mining.js) takes a weapon up a level. The FORGE face swaps the stock,
-// the market and the sell strip for one bench and keeps everything else - the
-// awning, the purse, the restock road - so it reads as the same counter.
+// is dumped into a weapon (the rules: the forge banner, js/mining.js). The
+// FORGE face swaps the stock, the market and the sell strip for one bench and
+// keeps everything else - the awning, the purse, the restock road - so it
+// reads as the same counter.
 //
-// The bench, left to right: the WEAPON well, a "+", the ORE well, an arrow,
-// and the PREVIEW board - the level and the two numbers the next one moves,
-// old against new - over the plate that forges it. Under the bench is the
-// LADDER, the five levels as plates, each with the ore it costs, lit up to
-// the level the weapon in the well has reached - the whole price list in one
-// row, so which ore to go and mine is read off the bench.
+// The bench, left to right: the WEAPON well, a "+", the PILE well, an arrow,
+// and the PREVIEW board - the level and the two numbers the pile moves, old
+// against new - over the plate that forges it. Under the wells runs the
+// weapon's FORGE BAR: its points toward the next level, and the pile's share
+// lit on top of it. Under the bench, one ORE plate per kind: what one piece is
+// worth, how many are in the pile and how many you carry.
 //
-// Both wells are filled the same three ways: DRAG a weapon or an ore from the
-// pack or the shelf onto one (dragDrop, js/ui/strip.js), CLICK a weapon or an
-// ore in the pack while this face is up (sendBagCell / sendSlot), or click the
-// well itself - the weapon well steps through what you carry, the ore well
-// takes the ore the next level needs. Nothing leaves the pack for it: a well
-// holds a pointer to the cell (the weapon) or a kind (the ore), and the
-// forging order spends straight out of the bag, so a weapon in the well can
-// still be worn and closing the counter loses nothing. The ore well takes only
-// the ore the next level costs - anything else is refused where it is dropped.
+// The pile is any ore, any amount, in any order - a dump, not a recipe. It
+// fills by a DRAG of a stack onto the pile well or its kind's plate
+// (dragDrop, js/ui/strip.js), a CLICK on an ore stack in the pack (sendBagCell),
+// a click on a kind's plate (all of that kind in, or out again), or a click on
+// the pile well itself (every ore you carry in, or the pile emptied). The
+// weapon well fills the same ways and its own click steps through what you
+// carry. Nothing leaves the pack for either: the weapon well holds a pointer
+// to the cell and the pile only counts (state.forgePile, clamped to what you
+// carry every frame), and the order spends straight out of the bag, so
+// closing the counter loses nothing.
 //
-// The preview board and the ladder are the panel carve-out of CLAUDE.md's UI
-// rule: an upgrade is a comparison of numbers, and no shape says x1.12 > x1.18.
+// The preview, the bar's numbers and the plates' counts are the panel
+// carve-out of CLAUDE.md's UI rule: a dump is a sum, and no shape says x1.12 > x1.18.
 const FORGE_INK = '#ff9a3c';   // the forge's own colour: a level reached, a forged number
 const FORGE_INK_D = '#7a3a12';
 const FORGE_GO = '#4f9c55', FORGE_GO_L = '#8fe08a';
 const FORGE_SIGN = 'FORGE';
 const FORGE_WELL = 54;         // the two wells, square
-const FORGE_PIP_W = 6, FORGE_PIP_GAP = 2;
-const FORGE_STEP_H = 40;       // one plate of the ladder
+const FORGE_KIND_H = 40;       // one ore plate under the bench
+const FORGE_ORES = ['ironstone', 'frostglass', 'sunstone']; // the plates' order: commonest first
 
 // the anvil on the FORGE tab (the SHOP tab wears the coin)
 const FORGE_ANVIL = SPRITES.forgeAnvil = bakeGrid([
@@ -45,7 +47,7 @@ const FORGE_ANVIL = SPRITES.forgeAnvil = bakeGrid([
 ], { '.': null, o: '#241a12', L: '#c4cad8', y: '#6c7486' }, 11);
 
 // is this shopHit answer one of the bench's own
-const FORGE_KINDS = new Set(['fWeapon', 'fOre', 'fGo', 'fStep']);
+const FORGE_KINDS = new Set(['fWeapon', 'fOre', 'fGo', 'fKind']);
 function forgeKind(h) { return !!h && FORGE_KINDS.has(h.kind); }
 function forgeTabOpen() { return shopOpen() && state.shopTab === 'forge'; }
 
@@ -67,31 +69,33 @@ function forgeFind() {
   if (c && c.type === s.type) { s.cell = c; return { cell: c, where: s.where, i: s.i }; }
   return null; // gone for now (sold, thrown, mid-snapshot): the well shows empty and keeps looking
 }
-// ...and the ore well: a kind, and only while it is still the kind the next
-// level costs - a level forged, or a different weapon put in, empties it
-function forgeOreIn(cell) {
-  const c = cell && forgeCost(cell);
-  if (state.forgeOre && (!c || c.item !== state.forgeOre)) state.forgeOre = null;
-  return state.forgeOre;
+// The pile, never more than you carry: a stack sold, thrown or spent by the
+// last forge shrinks it here, so the preview and the order can never ask for
+// ore that is not in the pack.
+function forgePileNow() {
+  const pile = state.forgePile || (state.forgePile = {});
+  for (const k of FORGE_ORES) pile[k] = Math.max(0, Math.min(pile[k] || 0, bagCount(player, k)));
+  return pile;
 }
+function pileCount(pile) { let n = 0; for (const k of FORGE_ORES) n += pile[k] || 0; return n; }
 function forgeSelect(cell, where, i) {
   state.forgeSel = { cell, where, i, type: cell.type };
-  forgeOreIn(cell);
   SFX.place();
 }
-// Something put into a well - by a drop, by a click in the pack or on the
+// ore onto the pile: `n` more of a kind, or every piece of it with n omitted
+function forgeAdd(type, n) {
+  const pile = forgePileNow(), have = bagCount(player, type);
+  if (!have || pile[type] >= have) { SFX.deny(); return; }
+  pile[type] = Math.min(have, pile[type] + (n === undefined ? have : n));
+  SFX.place();
+}
+// Something put onto the bench - by a drop, by a click in the pack or on the
 // shelf. `which` is the well it was aimed at, or null for "wherever it goes".
 // Returns whether it was taken.
 function forgePut(cell, where, i, which) {
   if (!cell) return false;
-  if (toolIdOf(cell.type) && which !== 'fOre') { forgeSelect(cell, where, i); return true; }
-  if (isOre(cell.type) && which !== 'fWeapon') {
-    const f = forgeFind(), c = f && forgeCost(f.cell);
-    if (!c || c.item !== cell.type) { forgeRefuse(); return true; } // the ladder shows which one
-    state.forgeOre = cell.type;
-    SFX.place();
-    return true;
-  }
+  if (toolIdOf(cell.type) && which !== 'fOre' && which !== 'fKind') { forgeSelect(cell, where, i); return true; }
+  if (isOre(cell.type) && which !== 'fWeapon') { forgeAdd(cell.type, cell.n); return true; }
   SFX.deny();
   return which != null;
 }
@@ -109,18 +113,19 @@ function forgeCarried() {
 // room the stock, the market and the sell strip take on the SHOP face.
 function forgeLayout(L) {
   const x = L.head.x, w = L.head.w, top = L.panel.y + SHOP_HEAD + 6;
-  const by = top + 10, wy = by + 8;
+  const by = top + 10, wy = by + 6;
   const weapon = { x: x + 12, y: wy, w: FORGE_WELL, h: FORGE_WELL };
   const ore = { x: weapon.x + FORGE_WELL + 22, y: wy, w: FORGE_WELL, h: FORGE_WELL };
   const px = ore.x + FORGE_WELL + 26;
   const view = { x: px, y: wy, w: x + w - 8 - px, h: FORGE_WELL - 22 };
   const go = { x: px, y: wy + FORGE_WELL - 18, w: view.w, h: 18 };
-  const steps = [], sw = Math.floor((w - 4 * 5) / 5), sy = by + FORGE_WELL + 38;
-  for (let k = 0; k < FORGE_MAX; k++) steps.push({ x: x + k * (sw + 5), y: sy, w: sw, h: FORGE_STEP_H });
+  const kinds = [], kw = Math.floor((w - 2 * 6) / 3), ky = by + FORGE_WELL + 38;
+  for (let k = 0; k < FORGE_ORES.length; k++) kinds.push({ type: FORGE_ORES[k], x: x + k * (kw + 6), y: ky, w: kw, h: FORGE_KIND_H });
   return {
     head: { x, y: top, w, h: 8 },
-    board: { x: x - 2, y: by, w: w + 4, h: FORGE_WELL + 30 },
-    weapon, ore, view, go, steps,
+    board: { x: x - 2, y: by, w: w + 4, h: FORGE_WELL + 28 },
+    bar: { x: weapon.x, y: wy + FORGE_WELL + 7, w: x + w - 8 - weapon.x, h: 8 },
+    weapon, ore, view, go, kinds,
     plus: { x: weapon.x + FORGE_WELL + 7, y: wy + (FORGE_WELL >> 1) - 4 },
     arrow: { x: ore.x + FORGE_WELL + 8, y: wy + (FORGE_WELL >> 1) - 4 },
   };
@@ -137,7 +142,7 @@ function forgeHit(L, mx, my) {
   if (hitR(F.weapon, mx, my)) return { kind: 'fWeapon' };
   if (hitR(F.ore, mx, my)) return { kind: 'fOre' };
   if (hitR(F.go, mx, my)) return { kind: 'fGo' };
-  for (let k = 0; k < F.steps.length; k++) if (hitR(F.steps[k], mx, my)) return { kind: 'fStep', lvl: k + 1 };
+  for (const k of F.kinds) if (hitR(k, mx, my)) return { kind: 'fKind', type: k.type };
   return null;
 }
 function forgeClick(h) {
@@ -145,7 +150,7 @@ function forgeClick(h) {
     if (state.shopTab !== h.tab) { state.shopTab = h.tab; SFX.place(); }
     return;
   }
-  const f = forgeFind();
+  const f = forgeFind(), pile = forgePileNow();
   if (h.kind === 'fWeapon') {
     const all = forgeCarried();
     if (!all.length) { SFX.deny(); return; }
@@ -154,42 +159,48 @@ function forgeClick(h) {
     forgeSelect(n.cell, n.where, n.i);
     return;
   }
+  // the pile well: everything you carry in, or - with a pile on it - emptied
   if (h.kind === 'fOre') {
-    const c = f && forgeCost(f.cell);
-    if (!c || !bagCount(player, c.item)) { forgeRefuse(); return; }
-    state.forgeOre = c.item;
-    SFX.place();
+    if (pileCount(pile)) { for (const k of FORGE_ORES) pile[k] = 0; SFX.pickup(); return; }
+    let any = false;
+    for (const k of FORGE_ORES) { pile[k] = bagCount(player, k); if (pile[k]) any = true; }
+    if (any) SFX.place(); else SFX.deny();
+    return;
+  }
+  // a kind's plate: all of it in, or all of it out again
+  if (h.kind === 'fKind') {
+    if (pile[h.type] && pile[h.type] >= bagCount(player, h.type)) { pile[h.type] = 0; SFX.pickup(); }
+    else forgeAdd(h.type);
     return;
   }
   if (h.kind === 'fGo') {
-    if (!f || !f.where || !forgeOreIn(f.cell) || !forgeReady(player, f.cell)) { SFX.deny(); return; }
+    const give = {};
+    for (const k of FORGE_ORES) if (pile[k]) give[k] = pile[k];
+    if (!f || !f.where || !forgeReady(player, f.cell, give)) { SFX.deny(); return; }
     SFX.unlock();
-    player.input.cmd = { kind: 'shop', act: 'forge', where: f.where, i: f.i };
+    player.input.cmd = { kind: 'shop', act: 'forge', where: f.where, i: f.i, pile: give };
+    for (const k of FORGE_ORES) pile[k] = 0; // it is in the weapon now (or back in the pack if the order is refused)
   }
 }
-// a carried cell let go over the bench: it goes into the well it was aimed
-// at and then straight home, because a well only points at what is in the pack
+// a carried cell let go over the bench: it goes onto the well it was aimed
+// at and then straight home, because the bench only points at the pack
 function forgeDrop(h) {
   const d = state.drag;
   if (!d) return;
-  if (h.kind === 'fWeapon' || h.kind === 'fOre') {
+  if (h.kind === 'fWeapon' || h.kind === 'fOre' || h.kind === 'fKind') {
     const where = d.from.k === 'bag' ? 'bag' : d.from.k === 'slot' ? 'tool' : null;
     dragReturn();
     // back home it is findable: where it came from, or wherever dragReturn found room
     if (toolIdOf(d.cell.type)) {
       const f = forgeCarried().find((c) => c.cell === d.cell);
-      if (f) forgeSelect(f.cell, f.where, f.i);
+      if (f && h.kind === 'fWeapon') forgeSelect(f.cell, f.where, f.i);
+      else SFX.deny();
     } else forgePut(d.cell, where, d.from.i, h.kind);
     return;
   }
   dragReturn();
 }
-function forgeReset() { state.forgeSel = null; state.forgeOre = null; }
-// the ore well refusing: a buzz, and the well and the ladder's next plate
-// flash red for FORGE_NO s, so the ore it wanted is pointed at
-const FORGE_NO = 0.5;
-function forgeRefuse() { SFX.deny(); state.forgeNoT = performance.now() / 1000 + FORGE_NO; }
-function forgeNo(now) { return state.forgeNoT > now; }
+function forgeReset() { state.forgeSel = null; state.forgePile = null; }
 
 // ---- drawing -------------------------------------------------------------
 function drawShopTabs(L, h) {
@@ -212,110 +223,124 @@ function drawShopTabs(L, h) {
 function drawForge(L, h, now) {
   const F = L.forge;
   const f = forgeFind(), cell = f && f.cell;
-  const lv = toolLvl(cell), cost = cell && forgeCost(cell), ore = forgeOreIn(cell);
+  const pile = forgePileNow(), add = pilePts(pile);
+  const fp = toolFp(cell), lv = forgeLvlOf(fp), nfp = fp + add, nlv = forgeLvlOf(nfp);
   drawShopHeading(F.head, 'FORGE', true);
   const b = F.board;
   ctx.fillStyle = SHOP_BOARD; ctx.fillRect(b.x, b.y, b.w, b.h);
   ctx.fillStyle = '#070a1e'; ctx.fillRect(b.x, b.y, b.w, 1); ctx.fillRect(b.x, b.y, 1, b.h);
   ctx.fillStyle = '#182148'; ctx.fillRect(b.x, b.y + b.h - 1, b.w, 1); ctx.fillRect(b.x + b.w - 1, b.y, 1, b.h);
 
-  // THE WEAPON WELL, in its tier's plate, the weapon at 3x, the five level
-  // pips under it
-  // the well a drag in hand would be taken by lights up: any weapon, and the
-  // ore the next level costs
+  // the well a drag in hand would be taken by lights up: a weapon's, or the pile's for any ore
   const dt = state.drag && state.drag.cell.type;
-  const dragK = dt && (toolIdOf(dt) ? 'fWeapon' : cost && dt === cost.item ? 'fOre' : null);
+  const dragK = dt && (toolIdOf(dt) ? 'fWeapon' : isOre(dt) ? 'fOre' : null);
+
+  // THE WEAPON WELL, in its tier's plate, the weapon at 4x
   forgeWell(F.weapon, cell && cell.type, !!h && h.kind === 'fWeapon', dragK === 'fWeapon', now);
   if (cell) drawItemIcon(cell.type, F.weapon, F.weapon.y, null, 4);
   else forgeGhost(F.weapon, SPRITES[ITEMS[(heldTool(player) || { type: toolType('shortbow') }).type].icon], 4);
-  const pw = FORGE_MAX * FORGE_PIP_W + (FORGE_MAX - 1) * FORGE_PIP_GAP;
-  const px0 = F.weapon.x + ((FORGE_WELL - pw) >> 1), py = F.weapon.y + FORGE_WELL + 4;
-  for (let k = 0; k < FORGE_MAX; k++) {
-    const x = px0 + k * (FORGE_PIP_W + FORGE_PIP_GAP);
-    const next = !!cost && k === lv;
-    ctx.fillStyle = '#070a1e'; ctx.fillRect(x, py, FORGE_PIP_W, 3);
-    ctx.fillStyle = k < lv ? FORGE_INK : next && Math.sin(now * 6) > 0 ? FORGE_INK_D : '#232c52';
-    ctx.fillRect(x + 1, py + 1, FORGE_PIP_W - 2, 1);
-  }
   if (lv) forgeMark(F.weapon, F.weapon.y, lv);
 
   drawPixelTextShadow(ctx, '+', F.plus.x, F.plus.y, SHOP_LABEL, SHOP_BG, 2);
 
-  // THE ORE WELL: the ore the next level costs, ghosted until one is put in,
-  // with have / need under it
-  const oreIcon = cost && SPRITES[ITEMS[cost.item].icon];
-  const no = forgeNo(now);
-  forgeWell(F.ore, ore, !!h && h.kind === 'fOre', dragK === 'fOre', now, no);
-  if (ore) drawItemIcon(ore, F.ore, F.ore.y, null, 5);
-  else if (oreIcon) forgeGhost(F.ore, oreIcon, 5);
-  if (cost) {
-    const have = bagCount(player, cost.item), txt = have + '/' + cost.n;
-    drawPixelTextShadow(ctx, txt, F.ore.x + ((FORGE_WELL - pixelTextWidth(txt)) >> 1), F.ore.y + FORGE_WELL + 3,
-      have >= cost.n ? '#f4f7ff' : '#e0637a', SHOP_BG);
+  // THE PILE WELL: each kind in it as a stacked icon with its count, the
+  // richest on top; the ghost of a stone while it is empty
+  forgeWell(F.ore, null, !!h && h.kind === 'fOre', dragK === 'fOre', now);
+  const inPile = FORGE_ORES.filter((k) => pile[k]);
+  if (!inPile.length) forgeGhost(F.ore, SPRITES[ITEMS.ironstone.icon], 5);
+  for (let j = 0; j < inPile.length; j++) {
+    const k = inPile[j], im = SPRITES[ITEMS[k].icon], sz = inPile.length === 1 ? 40 : 24;
+    const ox = inPile.length === 1 ? 7 : [4, 26, 15][j], oy = inPile.length === 1 ? 7 : [4, 4, 26][j];
+    ctx.drawImage(im, F.ore.x + ox, F.ore.y + oy, sz, sz);
+    const n = String(pile[k]);
+    drawPixelTextOutline(ctx, n, F.ore.x + ox + sz - pixelTextWidth(n), F.ore.y + oy + sz - 5, '#f4f7ff', '#0f1632');
   }
 
-  // the arrow to the preview: lit once both wells are ready
-  const ready = !!f && !!f.where && !!ore && forgeReady(player, cell);
+  // the arrow to the preview: lit once there is a weapon and a pile
+  const give = {};
+  for (const k of FORGE_ORES) if (pile[k]) give[k] = pile[k];
+  const ready = !!f && !!f.where && forgeReady(player, cell, give);
   forgeArrow(F.arrow.x, F.arrow.y, ready ? FORGE_INK : '#35426e');
 
-  // THE PREVIEW: +N > +N+1, then the two numbers it moves
+  // THE FORGE BAR: the points toward the next level in the forge's colour,
+  // the pile's share lit green on top - wrapping round as often as the pile
+  // would level the weapon, with the level it ends on at the far end
+  const r = F.bar;
+  ctx.fillStyle = '#070a1e'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = '#141c3c'; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  if (cell) {
+    const iw = r.w - 2, cur = Math.round(iw * forgeBar(fp));
+    if (nlv > lv) {
+      // the pile levels it: the whole bar green to the new level's own fill
+      ctx.fillStyle = FORGE_GO; ctx.fillRect(r.x + 1, r.y + 1, iw, r.h - 2);
+      ctx.fillStyle = FORGE_GO_L; ctx.fillRect(r.x + 1, r.y + 1, Math.round(iw * forgeBar(nfp)), r.h - 2);
+    } else {
+      ctx.fillStyle = FORGE_INK; ctx.fillRect(r.x + 1, r.y + 1, cur, r.h - 2);
+      if (add) { ctx.fillStyle = FORGE_GO_L; ctx.fillRect(r.x + 1 + cur, r.y + 1, Math.round(iw * forgeBar(nfp)) - cur, r.h - 2); }
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.18)'; ctx.fillRect(r.x + 1, r.y + 1, iw, 1); // the bar's lit top edge
+    const lt = '+' + lv, rt = '+' + (nlv + 1);
+    const pts = (nfp - forgeCum(nlv)) + '/' + forgeNeed(nlv);
+    drawPixelTextOutline(ctx, lt, r.x + 3, r.y + 2, lv ? FORGE_INK : '#c3d0ee', '#0f1632');
+    drawPixelTextOutline(ctx, rt, r.x + r.w - 3 - pixelTextWidth(rt), r.y + 2, '#c3d0ee', '#0f1632');
+    drawPixelTextOutline(ctx, pts, r.x + ((r.w - pixelTextWidth(pts)) >> 1), r.y + 2, '#f4f7ff', '#0f1632');
+  }
+
+  // THE PREVIEW: +N > +M, then the two numbers the pile moves
   const v = F.view;
   ctx.fillStyle = '#070a1e'; ctx.fillRect(v.x, v.y, v.w, v.h);
   ctx.fillStyle = '#141c3c'; ctx.fillRect(v.x + 1, v.y + 1, v.w - 2, v.h - 2);
   if (cell) {
     const T = TOOLS[toolIdOf(cell.type)];
-    const nx = cost ? Object.assign({}, cell, { lvl: lv + 1 }) : cell;
     const up = T.up === 'rof'
-      ? ['RATE', tipSec(T.rof * toolRofMul(cell) * TOOL_ROF_STEP), tipSec(T.rof * toolRofMul(nx) * TOOL_ROF_STEP)]
-      : ['TENSILE', String(toolTensile(cell)), String(toolTensile(nx))];
-    const rows = [['DAMAGE', 'X' + toolDmgMul(cell).toFixed(2), 'X' + toolDmgMul(nx).toFixed(2)], up];
+      ? ['RATE', tipSec(T.rof * forgeRofAt(cell, lv) * TOOL_ROF_STEP), tipSec(T.rof * forgeRofAt(cell, nlv) * TOOL_ROF_STEP)]
+      : ['TENSILE', String(forgeTensileAt(cell, lv)), String(forgeTensileAt(cell, nlv))];
+    const rows = [['DAMAGE', 'X' + forgeDmgAt(lv).toFixed(2), 'X' + forgeDmgAt(nlv).toFixed(2)], up];
     for (let k = 0; k < rows.length; k++) {
       const [lab, a, c] = rows[k], y = v.y + 5 + k * 9;
       drawPixelText(ctx, lab, v.x + 4, y, SHOP_LABEL);
-      if (!cost) { drawPixelText(ctx, a, v.x + v.w - 4 - pixelTextWidth(a), y, FORGE_INK); continue; }
+      if (nlv === lv) { drawPixelText(ctx, a, v.x + v.w - 4 - pixelTextWidth(a), y, lv ? FORGE_INK : '#c3d0ee'); continue; }
       const cw = pixelTextWidth(c);
       drawPixelText(ctx, c, v.x + v.w - 4 - cw, y, FORGE_GO_L);
       drawPixelText(ctx, '>', v.x + v.w - 10 - cw, y, '#5a6a99');
       drawPixelText(ctx, a, v.x + v.w - 14 - cw - pixelTextWidth(a), y, '#c3d0ee');
     }
-    const lvT = cost ? '+' + lv + ' > +' + (lv + 1) : '+' + lv;
-    drawPixelText(ctx, lvT, v.x + 4, v.y + v.h - 9, cost ? '#c3d0ee' : FORGE_INK);
+    const lvT = nlv > lv ? '+' + lv + ' > +' + nlv : '+' + lv;
+    drawPixelText(ctx, lvT, v.x + 4, v.y + v.h - 9, nlv > lv ? FORGE_GO_L : lv ? FORGE_INK : '#c3d0ee');
     const nm = T.name;
     drawPixelText(ctx, nm, v.x + v.w - 4 - pixelTextWidth(nm), v.y + v.h - 9, TOOL_TIERS[T.tier].ink);
   }
 
   // THE PLATE THAT FORGES IT: green and lifting on hover when it will take,
-  // dark when it will not, gilded and still at the top
+  // dark when it will not; it carries the points the pile is worth
   const g = F.go, hot = !!h && h.kind === 'fGo' && ready;
-  const gy = g.y - (hot ? 1 : 0), top = !!cell && !cost;
+  const gy = g.y - (hot ? 1 : 0);
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(g.x + 2, g.y + 2, g.w, g.h);
-  ctx.fillStyle = top ? FORGE_INK : ready ? (hot ? FORGE_GO_L : '#2f6a38') : '#232c52';
+  ctx.fillStyle = ready ? (hot ? FORGE_GO_L : '#2f6a38') : '#232c52';
   ctx.fillRect(g.x, gy, g.w, g.h);
-  ctx.fillStyle = top ? '#3a1d08' : ready ? FORGE_GO : '#141c3c';
+  ctx.fillStyle = ready ? FORGE_GO : '#141c3c';
   ctx.fillRect(g.x + 1, gy + 1, g.w - 2, g.h - 2);
-  const gt = top ? 'MAX' : '+' + (lv + 1);
-  const gw = pixelTextWidth(gt) + (top ? 0 : 9), gx = g.x + ((g.w - gw) >> 1);
-  const ink = top ? FORGE_INK : ready ? '#f4f7ff' : '#5a6a99';
-  if (!top) forgeUpArrow(gx, gy + 6, ink);
-  drawPixelText(ctx, gt, gx + (top ? 0 : 9), gy + 7, ink);
+  const gt = '+' + add, gw = pixelTextWidth(gt) + 9, gx = g.x + ((g.w - gw) >> 1);
+  const ink = ready ? '#f4f7ff' : '#5a6a99';
+  forgeUpArrow(gx, gy + 6, ink);
+  drawPixelText(ctx, gt, gx + 9, gy + 7, ink);
 
-  // THE LADDER: every level, the ore it costs, lit up to the level reached
-  for (let k = 0; k < F.steps.length; k++) {
-    const s = F.steps[k], c = FORGE_COST[k + 1];
-    const done = !!cell && k < lv, next = !!cost && k === lv;
-    const hotS = !!h && h.kind === 'fStep' && h.lvl === k + 1;
-    const pulse = next && no && Math.sin(now * 20) > 0;
-    ctx.fillStyle = pulse ? '#e0637a' : done ? FORGE_INK : next ? '#8fa0c8' : hotS ? '#5a6a99' : '#232c52';
-    ctx.fillRect(s.x, s.y, s.w, s.h);
-    ctx.fillStyle = done ? '#3a1d08' : '#0f1632';
-    ctx.fillRect(s.x + 1, s.y + 1, s.w - 2, s.h - 2);
-    drawPixelText(ctx, '+' + (k + 1), s.x + 4, s.y + 4, done ? FORGE_INK : next ? '#f4f7ff' : '#5a6a99');
-    const im = SPRITES[ITEMS[c.item].icon];
-    ctx.globalAlpha = done || next || !cell ? 1 : 0.5;
-    ctx.drawImage(im, s.x + 4, s.y + s.h - 28, 24, 24);
+  // THE ORE PLATES: each kind, what a piece is worth, and in the pile / carried
+  for (const s of F.kinds) {
+    const k = s.type, have = bagCount(player, k), n = pile[k] || 0;
+    const hotS = !!h && h.kind === 'fKind' && h.type === k, lift = hotS && have ? 1 : 0;
+    const y = s.y - lift, K = ROCK_KINDS[ITEMS[k].ore];
+    ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(s.x + 2, s.y + 2, s.w, s.h);
+    ctx.fillStyle = n ? K.chip : hotS ? '#8fa0c8' : dragK === 'fOre' && dt === k ? FORGE_INK : '#232c52';
+    ctx.fillRect(s.x, y, s.w, s.h);
+    ctx.fillStyle = '#0f1632'; ctx.fillRect(s.x + 1, y + 1, s.w - 2, s.h - 2);
+    ctx.globalAlpha = have ? 1 : 0.35;
+    ctx.drawImage(SPRITES[ITEMS[k].icon], s.x + 6, y + 8, 24, 24);
     ctx.globalAlpha = 1;
-    const n = 'X' + c.n;
-    drawPixelText(ctx, n, s.x + s.w - 5 - pixelTextWidth(n), s.y + s.h - 11, done ? FORGE_INK : '#c3d0ee');
+    const worth = 'X' + FORGE_PTS[k];
+    drawPixelText(ctx, worth, s.x + s.w - 5 - pixelTextWidth(worth), y + 6, FORGE_INK);
+    const cnt = n + '/' + have;
+    drawPixelText(ctx, cnt, s.x + s.w - 5 - pixelTextWidth(cnt), y + s.h - 11, n ? '#f4f7ff' : have ? '#c3d0ee' : '#5a6a99');
   }
 }
 // a well of the bench: the item's tier plate when one is in it, the empty
@@ -356,30 +381,30 @@ function forgeMark(r, y, lv) {
 
 // ---- tooltips ------------------------------------------------------------
 function tipForge(h) {
-  const f = forgeFind(), cell = f && f.cell;
+  const f = forgeFind(), cell = f && f.cell, pile = forgePileNow();
   if (h.kind === 'fWeapon') {
     if (cell) { const d = tipTool(cell); d.notes.push(['CLICK FOR THE NEXT WEAPON', TIP_DIM]); return d; }
     return { title: 'WEAPON', tcol: TIP_DIM, kind: 'THE FORGE', rows: [], plate: BAG_WELL, rim: '#35426e',
       notes: [['DRAG A WEAPON HERE', TIP_DIM]] };
   }
-  const stepTip = (lvl) => {
-    const c = FORGE_COST[lvl];
-    const d = { title: '+' + lvl, tcol: FORGE_INK, kind: 'THE FORGE', rows: [], notes: [],
-      icon: SPRITES[ITEMS[c.item].icon], plate: BAG_WELL, rim: '#35426e' };
-    const have = bagCount(player, c.item);
-    d.rows.push(['COSTS', c.n + ' ' + ITEMS[c.item].name, '#f4f7ff']);
-    d.rows.push(['CARRIED', String(have), have >= c.n ? '#8fe08a' : '#e0637a']);
-    d.rows.push(['DAMAGE', 'X' + (1 + FORGE_DMG * lvl).toFixed(2), FORGE_INK]);
-    return d;
-  };
-  if (h.kind === 'fStep') return stepTip(h.lvl);
-  const cost = cell && forgeCost(cell);
-  if (!cost) return null;
-  if (h.kind === 'fOre') {
-    const d = stepTip(toolLvl(cell) + 1);
-    d.title = ITEMS[cost.item].name;
+  if (h.kind === 'fKind') {
+    const k = h.type;
+    const d = { title: ITEMS[k].name, tcol: ROCK_KINDS[ITEMS[k].ore].chip, kind: 'THE FORGE', rows: [], notes: [],
+      icon: SPRITES[ITEMS[k].icon], plate: BAG_WELL, rim: '#35426e' };
+    d.rows.push(['WORTH', FORGE_PTS[k] + (FORGE_PTS[k] === 1 ? ' POINT' : ' POINTS'), FORGE_INK]);
+    d.rows.push(['IN THE PILE', String(pile[k] || 0), '#f4f7ff']);
+    d.rows.push(['CARRIED', String(bagCount(player, k)), '#f4f7ff']);
     return d;
   }
-  if (h.kind === 'fGo') return stepTip(toolLvl(cell) + 1);
-  return null;
+  const add = pilePts(pile);
+  const d = { title: 'THE PILE', tcol: FORGE_INK, kind: 'THE FORGE', rows: [], notes: [],
+    icon: SPRITES[ITEMS.ironstone.icon], plate: BAG_WELL, rim: '#35426e' };
+  for (const k of FORGE_ORES) if (pile[k]) d.rows.push([ITEMS[k].name, pile[k] + ' X ' + FORGE_PTS[k], '#f4f7ff']);
+  d.rows.push(['POINTS', String(add), FORGE_INK]);
+  if (cell) {
+    const fp = toolFp(cell), lv = forgeLvlOf(fp), nlv = forgeLvlOf(fp + add);
+    d.rows.push(['LEVEL', nlv > lv ? '+' + lv + ' > +' + nlv : '+' + lv, nlv > lv ? '#8fe08a' : '#f4f7ff']);
+  }
+  if (h.kind === 'fOre') d.notes.push([pileCount(pile) ? 'CLICK TO EMPTY IT' : 'CLICK TO DUMP ALL YOUR ORE', TIP_DIM]);
+  return d;
 }

@@ -194,67 +194,96 @@ function tickRock(o, dt) {
 }
 
 // ------ the forge
-// What the ore is FOR: the merchant's second tab (js/ui/forge.js) takes a
-// weapon and the ore its next level costs and hands the weapon back one
-// level up, +1 to +FORGE_MAX. The level lives on the tool's own cell (`lvl`,
-// beside its `bits`), so it goes wherever the tool goes - the shelf, the bag,
-// the snow, a bot's hands - and a rebuilt tool would lose it, which is one
-// more reason a tool is never rebuilt from its type.
+// What the ore is FOR: the merchant's second tab (js/ui/forge.js) is a DUMP.
+// Any ore, any amount, in any order, goes into a weapon and is counted as
+// forge points (FORGE_PTS: the rarer the rock, the more a piece is worth);
+// the points fill the weapon's bar, and every time it fills the weapon is a
+// level up and the next bar is a little longer (forgeNeed). There is no top
+// level and no recipe - a weapon is exactly as forged as the ore you have
+// thrown at it - and what a level ADDS tapers instead (forgeSum), so a pile
+// of five hundred stones makes a weapon strong and never absurd.
+//
+// The points live on the tool's own cell (`fp`, beside its `bits`), so they
+// go wherever the tool goes - the shelf, the bag, the snow, the wire, a save -
+// and a rebuilt tool would lose them, which is one more reason a tool is never
+// rebuilt from its type. The level is always read off them (toolLvl).
 //
 // Every level adds damage (into the press's envelope before any fitting,
-// toolPlan, js/tools.js) and one more point of the stat the body's TOOLS row
-// names as its `up`: 'rof' draws the bow quicker, 'tensile' lets one press
-// spend more weight.
-const FORGE_MAX = 5;
-const FORGE_DMG = 0.06;     // damage per level, as a share of the body's own
-const FORGE_ROF = 0.05;     // share of the cycle each level takes off an 'rof' body
-const FORGE_TENSILE = 1;    // weight each level adds to a 'tensile' body's budget
-// what reaching each level costs, indexed by the level reached: STONE's ore
-// buys the first two, FROSTGLASS the middle two and a SUNSTONE the last - so
-// the top level is one of the map's two corner rocks, fought for
-const FORGE_COST = [null,
-  { item: 'ironstone', n: 5 }, { item: 'ironstone', n: 10 },
-  { item: 'frostglass', n: 3 }, { item: 'frostglass', n: 5 },
-  { item: 'sunstone', n: 1 }];
+// toolPlan, js/tools.js) and some of the stat the body's TOOLS row names as
+// its `up`: 'rof' draws the bow quicker, 'tensile' lets one press spend more
+// weight.
+const FORGE_PTS = { ironstone: 1, frostglass: 4, sunstone: 15 }; // what one piece of each ore is worth
+const FORGE_NEED = 5;       // points from +0 to +1...
+const FORGE_NEED_UP = 3;    // ...and each bar after is this much longer (+1 to +2 is 8, then 11, 14...)
+const FORGE_TAPER = 0.9;    // each level adds this share of what the one before it added
+const FORGE_DMG = 0.06;     // damage the FIRST level adds, as a share of the body's own (tops out at x1.6)
+const FORGE_ROF = 0.04;     // share of the cycle the first level takes off an 'rof' body (tops out at 40%)
+const FORGE_TENSILE = 1;    // weight the first level adds to a 'tensile' body's budget (tops out at +10)
+const FORGE_GOLD = 2;       // gold a forge point is worth at the counter (cellValue, js/ui/shop.js)
 
-function toolLvl(cell) { return (cell && cell.lvl) || 0; }
+// the points a bar of level `l` holds, and the total from +0 to +l
+function forgeNeed(l) { return FORGE_NEED + FORGE_NEED_UP * l; }
+function forgeCum(l) { return FORGE_NEED * l + FORGE_NEED_UP * l * (l - 1) / 2; }
+// the points on a cell (a weapon from the fixed-recipe forge carries only a
+// `lvl`, and is worth the points that level costs now)
+function toolFp(cell) { return !cell ? 0 : cell.fp !== undefined ? cell.fp : cell.lvl ? forgeCum(cell.lvl) : 0; }
+function forgeLvlOf(fp) { let l = 0; while (forgeCum(l + 1) <= fp) l++; return l; }
+function toolLvl(cell) { return forgeLvlOf(toolFp(cell)); }
+// how full the bar toward the next level is, 0..1
+function forgeBar(fp) { const l = forgeLvlOf(fp); return (fp - forgeCum(l)) / forgeNeed(l); }
+// what `l` levels add, in units of what the first one adds: 1 + 0.9 + 0.81...
+function forgeSum(l) { return (1 - Math.pow(FORGE_TAPER, l)) / (1 - FORGE_TAPER); }
 function toolUp(cell) { return TOOLS[toolIdOf(cell.type)].up; }
-function toolDmgMul(cell) { return 1 + FORGE_DMG * toolLvl(cell); }
-function toolRofMul(cell) { return toolUp(cell) === 'rof' ? 1 - FORGE_ROF * toolLvl(cell) : 1; }
-function toolTensile(cell) {
-  return TOOLS[toolIdOf(cell.type)].tensile + (toolUp(cell) === 'tensile' ? FORGE_TENSILE * toolLvl(cell) : 0);
+// the three stats at a level, so the bench can preview a level the cell is not at yet
+function forgeDmgAt(l) { return 1 + FORGE_DMG * forgeSum(l); }
+function forgeRofAt(cell, l) { return toolUp(cell) === 'rof' ? 1 - FORGE_ROF * forgeSum(l) : 1; }
+function forgeTensileAt(cell, l) {
+  return TOOLS[toolIdOf(cell.type)].tensile + (toolUp(cell) === 'tensile' ? Math.round(FORGE_TENSILE * forgeSum(l)) : 0);
 }
-// the ore the NEXT level costs, or null at the top
-function forgeCost(cell) { return toolLvl(cell) < FORGE_MAX ? FORGE_COST[toolLvl(cell) + 1] : null; }
-// what the levels on a tool cost at the counter's own ore prices - a forged
-// weapon sells for its ore too (cellValue, js/ui/shop.js)
-function forgeWorth(cell) {
-  let v = 0;
-  for (let l = 1; l <= toolLvl(cell); l++) v += itemValue(FORGE_COST[l].item) * FORGE_COST[l].n;
-  return v;
-}
+function toolDmgMul(cell) { return forgeDmgAt(toolLvl(cell)); }
+function toolRofMul(cell) { return forgeRofAt(cell, toolLvl(cell)); }
+function toolTensile(cell) { return forgeTensileAt(cell, toolLvl(cell)); }
+// the points a pile is worth: { ironstone: n, frostglass: n, sunstone: n }
+function pilePts(pile) { let v = 0; for (const k in FORGE_PTS) v += FORGE_PTS[k] * ((pile && pile[k]) || 0); return v; }
+// a forged weapon sells for its points too (cellValue, js/ui/shop.js)
+function forgeWorth(cell) { return toolFp(cell) * FORGE_GOLD; }
 // the tool cell an order names: 'tool' is the weapon shelf, 'bag' the pack
 function forgeCell(p, where, i) {
   const c = where === 'tool' ? p.tools && p.tools[i] : where === 'bag' ? p.bag[i] : null;
   return c && toolIdOf(c.type) ? c : null;
 }
-// can p take this cell up a level here and now - the one test the panel's
-// confirm plate and the order itself both ask
-function forgeReady(p, cell) {
-  const c = cell && forgeCost(cell);
-  return !!c && !!merchNear(p) && bagCount(p, c.item) >= c.n;
+// can p dump this pile into this cell here and now - the one test the
+// bench's forge plate and the order itself both ask. A pile is whole numbers
+// of ore p is carrying, and at least one piece.
+function forgeReady(p, cell, pile) {
+  if (!cell || !pile || !merchNear(p)) return false;
+  let n = 0;
+  for (const k in FORGE_PTS) {
+    const c = pile[k] || 0;
+    if (c < 0 || c !== Math.floor(c) || c > bagCount(p, k)) return false;
+    n += c;
+  }
+  return n > 0;
 }
 // The order (shopCmd, js/ui/shop.js, act 'forge'). Nothing is contested: the
 // weapon and the ore are both the player's own, so there is no one to race.
-function forgeTool(p, where, i) {
+function forgeTool(p, where, i, pile) {
   const cell = forgeCell(p, where, i);
-  if (!forgeReady(p, cell)) { shopDeny(p); return false; }
-  const c = forgeCost(cell);
-  bagTake(p, c.item, c.n);
-  cell.lvl = toolLvl(cell) + 1;
-  sfxFor(p, 'levelUp');
-  const col = ROCK_KINDS[ITEMS[c.item].ore].chip;
-  addFloater(p.x, p.y - 20, '+' + cell.lvl, col);
+  if (!forgeReady(p, cell, pile)) { shopDeny(p); return false; }
+  const was = toolLvl(cell);
+  let best = null;
+  for (const k in FORGE_PTS) {
+    if (!pile[k]) continue;
+    bagTake(p, k, pile[k]);
+    best = k;                          // the rarest ore in the pile colours the sparks
+  }
+  cell.fp = toolFp(cell) + pilePts(pile);
+  delete cell.lvl;                     // the points are the record now
+  const lv = toolLvl(cell), col = ROCK_KINDS[ITEMS[best].ore].chip;
   burst(p.x, p.y - 8, col, 10, 50, 0.5);
+  if (lv > was) {
+    sfxFor(p, 'levelUp');
+    addFloater(p.x, p.y - 20, '+' + lv, col);
+  } else sfxFor(p, 'place');
   return true;
 }

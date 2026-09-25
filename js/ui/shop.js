@@ -699,7 +699,7 @@ function cellValue(s) {
   if (!s) return 0;
   let v = itemValue(s.type) * s.n;
   if (s.bits) for (const b of s.bits) if (b) v += BITS[b].price;
-  if (s.lvl) v += forgeWorth(s);
+  if (s.bits) v += forgeWorth(s);
   return v;
 }
 // ...and what the merchant hands over for it
@@ -841,7 +841,7 @@ function shopCmd(p, c) {
   else if (c.act === 'trade') shopTrade(p, c.good, c.dir);
   else if (c.act === 'sell') shopSellCell(p, c.i);
   else if (c.act === 'sellAll') shopSellAll(p);
-  else if (c.act === 'forge') forgeTool(p, c.where, c.i);
+  else if (c.act === 'forge') forgeTool(p, c.where, c.i, c.pile);
 }
 
 // ------------------------------------------------------------ the shop panel

@@ -40,7 +40,8 @@ function saveArr(a) { return [() => a, (v) => { a.length = 0; for (const x of v)
 // state's own UI keys are this screen's and never the match's: a load opens
 // with every panel shut
 const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'bagOpen', 'charOpen', 'shop', 'drag', 'dragPend',
-  'settingsOpen', 'rebind', 'wheel', 'build', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake']);
+  'settingsOpen', 'rebind', 'wheel', 'build', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake',
+  'shopTab', 'forgeSel', 'forgePile']); // the forge's bench (js/ui/forge.js); a weapon's points ride its own cell
 const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },
     (v) => Object.assign(state, v)],
