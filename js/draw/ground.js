@@ -920,7 +920,7 @@ function drawDrift(ex, ey) {
 const SUN_DX = 0.62, SUN_DY = 0.34;        // per row of height: 0.8 of (0.78, 0.42), mid-morning
 const SHADE_A = 0.3, SHADE_TINT = '#465fa5';
 const SHADE_BODY = '#3e59a7', SHADE_BODY_A = 0.3;
-const CAST_REACH = [-1, -1, 3, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
+const CAST_REACH = [-1, -1, 4, 2];          // tiles a caster's shade can land on from its own: x0, y0, x1, y1 (shadeFor checks)
 const whole = (cv, x, y) => [cv, 0, cv.width, cv.height, x, y];
 const CASTERS = {
   // a pine's code is its standing frame AND its nudge (treeNudgeX/Y), so a
@@ -943,6 +943,7 @@ const CASTERS = {
   chest:    { code: () => 123, art: () => whole(CHEST_SPR, 0, TILE - CHEST_SPR.height) },
   cairn:    { code: () => 124, art: () => whole(CAIRN_SPR, 1, TILE - CAIRN_SPR.height + 1) },
   hut:      { code: () => 125, art: () => { const s = SPRITES.hogHut[0]; return whole(s, TILE - (s.width >> 1), TILE - s.height); } },
+  stall:    { code: () => 126, art: () => { const s = SPRITES.teamBuild[0].stall; return whole(s, 0, TILE - s.height); } }, // one silhouette for both sides
 };
 
 // a frame's shade: an opaque silhouette thrown down-right in `col`, its top

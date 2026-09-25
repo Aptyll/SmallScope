@@ -17,9 +17,9 @@ WARRIOR — a human's is the one their **character** was made with) and is **dro
 diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
 its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
 always top-right, each to its own right of the road — and becomes its team's **objective**; its
-**merchant** climbs down and works home, never toward the fight: it fells the back woods behind
-the bird and raises the bot bays there, and it is a shop for anybody at all who walks up to it,
-wherever it is working; idle, it keeps to the head of the **spur**, the track of felled pines
+**merchant** climbs down and works home, never toward the fight: it pitches a market stall beside
+the spur's head, a shop for anybody at all who walks up to it, then fells the back woods behind
+the bird and raises the bot bays there; idle, it keeps to the head of the **spur**, the track of felled pines
 that opens from the crater straight back to the road. **The road** runs the map's
 whole diagonal, world edge to world edge: one straight, dry packed-earth lane, there from
 worldgen and readable from anywhere, with the nests beside it, so the way to a bird is one

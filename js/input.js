@@ -742,7 +742,8 @@ function ckPoint() {
 // unitUnder (unitAlive refuses it), and here it is a counter to walk to
 function merchUnder(wx, wy) {
   for (const b of robots) if (b.merchant && !b.dead && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
-  return null;
+  const o = structOf(objAt(Math.floor(wx / TILE), Math.floor(wy / TILE))); // ...or its stall, by any tile of it
+  return o && o.type === 'stall' ? o : null;
 }
 function ckRightPress() {
   if ((state.mode !== 'play' && state.mode !== 'drop') || state.settingsOpen) return;
@@ -771,7 +772,7 @@ function ckRightPress() {
     const t = unitUnder(player, wx, wy);
     if (t) { ckOrder({ kind: 'chase', t }, t.x, t.y + 2, 'foe'); ck.lock = t; return; }
     const m = merchUnder(wx, wy);
-    if (m) { ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, m.x, m.y + 2, 'work'); return; }
+    if (m) { const c = counterPt(m); ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, c.x, c.y + 2, 'work'); return; }
     const o = structOf(objAt(tx, ty));
     if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team) { ckOrder({ kind: 'use', what: 'manage', o, tx, ty }, wx, wy, 'work'); return; }
     if (o && LANDMARKS[o.type] && LANDMARKS[o.type].ride) { ckOrder({ kind: 'use', what: 'sled', o, tx, ty }, wx, wy, 'work'); return; } // walk to the sled and get on
@@ -858,7 +859,8 @@ function ckUse(p, o, walk, r) {
     else if (k !== 'agbell' || agame.phase === 'off') state.wheel = { kind: k, tx: near.tx, ty: near.ty, seg: -1, ax: mouse.x, ay: mouse.y };
     return;
   }
-  if (walk(k === 'shop' ? o.o.x : cx, k === 'shop' ? o.o.y : cy, k === 'shop' ? 0 : WORK_REACH) < 0) ck.order = null;
+  const shopPt = k === 'shop' ? counterPt(o.o) : null;
+  if (walk(shopPt ? shopPt.x : cx, shopPt ? shopPt.y : cy, shopPt ? 0 : WORK_REACH) < 0) ck.order = null;
 }
 // one step of the scheme, for sampleHumanInput: what the orders and the
 // lock make of the walk, the aim, the fire and the work this step. smx/smy

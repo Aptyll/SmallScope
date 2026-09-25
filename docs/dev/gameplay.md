@@ -1826,8 +1826,9 @@ holds, because that pickup is an exchange.
 
 ## The merchant's counter
 
-**Each eagle's merchant is a shop, and both shops serve everybody.** Walk up to either team's
-[merchant](#the-merchant), press **E**, and its counter opens — the **SHOP**: twelve
+**Each eagle's merchant keeps a shop, and both shops serve everybody.** Walk up to either team's
+**stall** (the market stall its [merchant](#the-merchant) pitches beside the spur's head) or to the
+merchant itself, press **E**, and the counter opens — the **SHOP**: twelve
 offers rolled off the tool, bit and card pools, a **sell strip** anything in the pack can be
 dragged onto with a **SELL ALL** button at its end, a live **fish and berry market**, and a
 [restock road](#the-restock-road) counting down to the next turnover. The whole feature is
@@ -1847,8 +1848,9 @@ at all and draws no health bar.
 
 ### Opening it
 
-`merchNear(p)` is the resolver — the nearest merchant within `SHOP_REACH` (34 px) of a body,
-either team's — and the `E SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
+`merchNear(p)` is the resolver — the nearest **counter** within `SHOP_REACH` (34 px) of a body,
+either team's, where a counter is a merchant's body or its stall (`stallUp`), each measured from
+`counterPt` (the body itself, or the middle of the stall's front edge) — and the `E SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
 prompt the practice armory's `E ARM` uses. **A merchant in reach owns E outright**: unlike the
 armory, the roll die and the bell — which all stand aside for a real
 [work target](#the-swing-tools-e) — the counter is taken *first*, ahead of the swing and ahead of
@@ -1884,10 +1886,11 @@ bars it covered rather than the whole song. Any ordinary `music.play`/`music.sto
 clears the hold, so a track that takes the layer for its own reason — a victory, the lobby — can
 never be undone by a release arriving after it. See the `music` banner, js/audio.js.
 
-The merchant **stands still and faces you** while its counter is open (`shopServing`, read by
-`updateMerchant`): it drops the bays, the felling and the loiter for as long as the sale takes.
-It is gated on the OPEN PANEL rather than on proximity because everybody lands at the roost
-together, and a merchant that stopped for anyone standing near it would never raise its first bay.
+The merchant **stands still and faces you** while a counter is open on its own body (`shopServing`,
+read by `updateMerchant`): it drops the bays, the felling and the loiter for as long as the sale
+takes. A counter open at the **stall** holds nobody, so its keeper goes on working. It is gated on
+the OPEN PANEL rather than on proximity because everybody lands at the roost together, and a
+merchant that stopped for anyone standing near it would never raise its stall.
 
 ### The forge
 
@@ -2755,8 +2758,19 @@ with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; 
 down the moment it roosts (`spawnMerchant`, called
 from `eagleCrash`, the `merchant` banner in js/robots.js) and works **home** for its side, never
 toward the fight. It raises no walls and no guns (both stay on the build list for players). Its
-one job outside the counter is **home production**: it fells the **back woods** and raises the
-**bot bays** there. A pine or snag it fells is a **log** in its own stock (`b.wood`, no gold, like
+first job is its **stall**, and after that **home production**: it fells the **back woods** and
+raises the **bot bays** there.
+
+**The stall** (`OBJECTS.stall`, world.js) is the shop players walk to. The moment the merchant is
+off the bird it looks for a 3×2 site (`merchStallSite`) about `MERCH_STALL_OUT` (4.6) tiles from
+the roost at `MERCH_STALL_ANG` (0.9 rad) either side of the spur's axis: beside the track's head,
+where everybody lands and respawns, never on the track itself (`SPUR_HW` and a tile more), dry
+land holding nothing the axe cannot take. It clears and hammers it exactly as a bay (the shared
+`raise` inside `updateMerchant`), and `pitchStall` sets it: the anchor is the front-left tile (the
+row the y-sort reads, like the hut's), parts east and north, and the ground under its shade is
+repainted. It carries its `team` and nothing else: no `tool`, no hp and no place in `structures`,
+so nothing swings at it, shoots it or sieges it. It goes up once, about twenty seconds after the
+landing, and until then the merchant's own body is the only counter. A pine or snag it fells is a **log** in its own stock (`b.wood`, no gold, like
 the crater and the spur). The back woods are every pine inside `MERCH_BACK_R` (13 tiles) of the
 roost whose bearing off the spur's axis (`e.laneDir`, 0 toward the road) is at least
 `MERCH_BACK_ARC` (90°): the half facing away from the road. `merchBackPine` picks the one nearest
@@ -2784,9 +2798,9 @@ never out of waves. The waves find the road themselves ([Soldiers](#soldiers-the
 soldier's route starts at its own spur's junction.
 
 With nothing due and the back woods felled, it keeps to its post at the head of the spur, a step or
-two either way. **Wherever it is, it keeps shop**: it is [the counter](#the-merchants-counter),
-open to either team, and it stands still and faces its customer for as long as one is being
-served.
+two either way. **Wherever it is, it keeps shop** too: its own body is a
+[counter](#the-merchants-counter) as well as its stall, open to either team, and it stands still
+and faces a customer served at its body for as long as the sale takes.
 
 It is a unit in `robots` with `merchant: true` and `kind: 'merchant'`: the same
 `separateUnits` (player radius and mass — `unitRadius`/`UNIT_MASS.merchant`) and y-sorted draw a

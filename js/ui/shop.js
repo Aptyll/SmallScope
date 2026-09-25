@@ -652,33 +652,49 @@ function shopOffer(sec, i) {
 // ways, no spread at all. A spread would kill the only thing the market is
 // for - buy low, hold, sell high - and there is nothing to protect, since the
 // price does the taking all by itself.
-const SHOP_REACH = 34; // px from a merchant's body the counter is open
+const SHOP_REACH = 34; // px from a counter the shop is open
 
-// the merchant whose counter this player is standing at, or null. Either team's:
-// both counters serve everybody.
+// A COUNTER is either of two things: the merchant's own body, or the STALL
+// it pitches beside the roost (OBJECTS.stall, world.js; updateMerchant,
+// robots.js). Both open the same shop. `counterPt` is where each one is
+// measured from - the body itself, or the middle of the stall's counter
+// edge, a step in front of its front row.
+function counterPt(c) {
+  return c.merchant ? c : { x: (c.tx + 1.5) * TILE, y: (c.ty + 1) * TILE + 4 };
+}
+// a stall still standing (objAt answers it off its own anchor tile)
+function stallUp(s) { return !!s && objAt(s.tx, s.ty) === s; }
+// the counter this player is standing at, or null. Either team's: both
+// merchants and both stalls serve everybody.
 function merchNear(p) {
   let best = null, bd = SHOP_REACH + PLAYER_R;
   for (const b of robots) {
-    if (!b.merchant || b.dead || b.hopT > 0) continue; // mid-hop it is still climbing down
-    const d = Math.hypot(b.x - p.x, b.y - p.y);
-    if (d < bd) { bd = d; best = b; }
+    if (!b.merchant || b.dead) continue;
+    for (const c of [b.hopT > 0 ? null : b, stallUp(b.stall) ? b.stall : null]) { // mid-hop it is still climbing down
+      if (!c) continue;
+      const pt = counterPt(c), d = Math.hypot(pt.x - p.x, pt.y - p.y);
+      if (d < bd) { bd = d; best = c; }
+    }
   }
   return best;
 }
 // still standing at THIS counter - the check that shuts the panel when you walk off
-function inReach(p, b) {
-  return !!b && !b.dead && Math.hypot(b.x - p.x, b.y - p.y) <= SHOP_REACH + PLAYER_R;
+function inReach(p, c) {
+  if (!c || c.dead || (!c.merchant && !stallUp(c))) return false;
+  const pt = counterPt(c);
+  return Math.hypot(pt.x - p.x, pt.y - p.y) <= SHOP_REACH + PLAYER_R;
 }
 // The other way round: the player whose counter is OPEN on this merchant, or
 // null. updateMerchant (js/robots.js) asks it every frame and drops
 // everything - the bays, the felling, the loiter - while somebody is being
 // served: a shopkeeper does not walk off mid-sale, and a counter that strolled
 // away from its own customer would shut itself in their face while they read
-// the prices.
+// the prices. A counter open at its STALL holds nobody: the stall stays put,
+// so its keeper goes on working.
 //
 // It is the OPEN PANEL and not mere proximity on purpose. Everybody lands at
 // the roost together, so a merchant that stopped for anyone standing near it
-// would never get its gate up at all.
+// would never get its stall up at all.
 // The local player is the only one that can open a counter today; when other
 // players can, this is the one place that has to learn about them.
 function shopServing(b) {
