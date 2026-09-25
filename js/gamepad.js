@@ -34,8 +34,9 @@ const PAD_IDLE = 30;                      // s since its last input before a pad
 const PAD_PLAY = { 0: 'dodge', 1: 'ab2', 2: 'work', 3: 'ab1', 4: 'ab3', 5: 'ab4', 9: 'Escape', 10: 'bag', 12: 'char', 14: 'berry', 15: 'fish' };
 // Over a menu or a panel: A takes (whatever the pointer is on, or the
 // selection where a menu is key-driven - padTake), B, BACK and START back
-// out, the dpad and the bumpers are the arrow keys every menu already answers.
-const PAD_MENU = { 1: 'Escape', 8: 'Escape', 9: 'Escape', 4: 'ArrowLeft', 5: 'ArrowRight',
+// out, the dpad and the bumpers are the arrow keys every menu already answers,
+// and X is Delete (the saves grid's X on the picked card, js/ui/saves.js).
+const PAD_MENU = { 1: 'Escape', 2: 'Delete', 8: 'Escape', 9: 'Escape', 4: 'ArrowLeft', 5: 'ArrowRight',
   12: 'ArrowUp', 13: 'ArrowDown', 14: 'ArrowLeft', 15: 'ArrowRight' };
 
 const pad = {

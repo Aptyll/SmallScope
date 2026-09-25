@@ -309,7 +309,8 @@ panel (`padMenuMode`: any mode but play and the drop, or play with a panel up) t
 (`PAD_MENU`): A *takes* — the thing under the pointer if the hand cursor is showing over a
 pointer surface, and always Enter over a key-driven menu (the idle mouse may be resting on
 another plank than the dpad picked), which every such menu answers (`padTake`) — B / BACK /
-START are Escape, the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
+START are Escape, X is Delete (the [saves grid](gameplay.md#saved-matches)'s X on the picked
+card), the dpad and bumpers the arrow keys (which also page the settings slab's tabs:
 `settingsKey`, js/ui/panels.js, reached from both the title's slide-in and the in-match slab) —
 with one exception, an [end screen](rendering.md#the-emote-bar), where the dpad is the emote bar
 read clockwise from up (`emotePad`, js/ui/screens.js) and the bumpers keep the planks — the

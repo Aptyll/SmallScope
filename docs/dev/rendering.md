@@ -1711,9 +1711,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `state.menu`:
 
 - **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL —
-  all three live from the first boot; a profile holding a [saved match](gameplay.md#saved-matches)
-  gets CONTINUE on top and LOAD GAME under SINGLEPLAYER, spliced in at boot, which is why
-  `menuActivate` dispatches on the word and never the index; PRACTICE TOOL's activation is `beginPractice()` (the
+  all three live from the first boot, and nothing else: a [saved match](gameplay.md#saved-matches)
+  is picked up from the lobby's SAVES plate; `menuActivate` dispatches on the word; PRACTICE TOOL's activation is `beginPractice()` (the
   reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
@@ -1759,7 +1758,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   puts it back on the lobby.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
-  zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake), and the `'saves'` kind is LOAD GAME's slab via `renderSaves` the same way (js/ui/saves.js; it takes its own keys, BACK included)
+  zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake)
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
   slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is
@@ -1776,7 +1775,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
-  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'charl'`/`'charr'`
+  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'saves'`, `'charl'`/`'charr'`
   or null) are the rect source for both drawing and the mouse.
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
   `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
@@ -1784,11 +1783,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   `LOBBY_FRAME_MAX` — the side's paint as a bar down the screen edge, the player's body at 2×
   toward it (1× in a short view) and the name inward of the body, yours gold-rimmed, a rival's
   **face-down** (the body as one flat shade through the scratch canvas) until the countdown
-  turns it. Both panels' heads are empty, level with each other. At the **top centre**, mirrored
-  about the middle `LOBBY_TOP_GAP` apart (`drawLobbyTop`), stand the **map plate** and the
-  **target**, each `LOBBY_MAP` square with its name under it in plain white — the shape's, the
-  level's — gold only while the picture over it is under the hand, when the plate lifts a px:
-  each is the way into its own pop-up. The map plate (`drawMapPlate`) holds this seed's own
+  turns it. Both panels' heads are empty, level with each other. At the **top centre**, a row
+  centred `LOBBY_TOP_GAP` apart (`drawLobbyTop`), stand the **map plate** and the
+  **target** — and, while a solo profile holds a save (`lobbySavesShown`), the **SAVES plate**
+  after them (`drawSavesPlate`, js/ui/saves.js: the newest save's picture on a fanned stack of
+  cards, its name under it) — each `LOBBY_MAP` square with its name under it in plain white — the
+  shape's, the level's, the save's — gold only while the picture over it is under the hand, when
+  the plate lifts a px: each is the way into its own pop-up. The map plate (`drawMapPlate`) holds this seed's own
   valley in the picked shape ([map shapes](world.md#map-shapes)) — `mapChip` bakes it at 1 px a
   sampled tile straight off the grown `ground` (the ice sheets and holes as rolled, the road as
   cut; a neighbouring shape, which has no ground yet, off `mapTerrain` with the road's diagonal
@@ -1818,10 +1819,12 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear, stat points and the
   abilities. No gear shows on the lobby itself.
 
-  **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
+  **Four pop-ups** open over the still-lit lobby, one at a time, on one shared ease
   (`menu.popT`, `menu.pop` naming the open one through its fade-out; `popOpen()`/`popHit()`/
   `openPop`/`leavePop`, and `drawPopSlab`/`drawPopX`/`popFrameHit` for the slab, the X and the
-  inert hits they share; `m.screen` is `'hero'`, `'map'` or `'ai'` while one is open). Esc,
+  inert hits they share; `m.screen` is `'hero'`, `'map'`, `'ai'` or `'saves'` while one is open).
+  The **saves pop-up** is the [saves grid](gameplay.md#saved-matches) (`beginSavesPick`,
+  `renderSaves(now, { pop })`). Esc,
   Backspace, the X or a click off the slab closes any of them. The **hero pop-up** is
   [below](#the-hero-pop-up). The **map pop-up** (`menu.screen = 'map'`, off the map plate, solo
   only — `beginMapPick`, `mapLayout`/`mapScreenHit`, `renderMapPick`): the picture `POP_PIC` big

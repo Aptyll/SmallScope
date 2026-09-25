@@ -1259,7 +1259,7 @@ function cursorInfo() {
       if (dragSlider) return { kind: 'grab' };
       return { kind: settingsHit() ? 'hand' : 'arrow' };
     }
-    if (m.panel === 'saves' && m.panelT >= 1 && !m.closing) return { kind: savesHit() ? 'hand' : 'arrow' };
+    if (m.screen === 'saves' && savesCarrying()) return { kind: 'grab' }; // a save card in the hand
     if (popOpen()) { const gh = m.popT >= 1 ? popHit() : null; return { kind: gh !== null && gh !== 'panel' ? 'hand' : 'arrow' }; }
     if (m.screen === 'notes') return { kind: m.notesT >= 1 && notesHit(mouse.x, mouse.y) ? 'hand' : 'arrow' };
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
@@ -1273,7 +1273,7 @@ function cursorInfo() {
   if (state.mode === 'drop') return { kind: state.mapOpen && mapCloseHit() ? 'hand' : 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {
-    if (dragSlider) return { kind: 'grab' };
+    if (dragSlider || savesCarrying()) return { kind: 'grab' };
     return { kind: settingsHit() ? 'hand' : 'arrow' };
   }
   if (state.mapOpen) return { kind: mapCloseHit() ? 'hand' : 'arrow' };
