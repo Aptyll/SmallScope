@@ -312,6 +312,8 @@ function keyPress(e) {
     // rider passes the counter and every trunk at 220 px/s (zipToggle,
     // world.js, through the hop intent the step reads for every player)
     if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; } // ...and walking to it, the key calls the walk off
+    // ...and riding a sled, the key gets off it (sledToggle, js/landmarks.js)
+    if (player.sled) { player.input.jump = true; return; }
     // The merchant's counter is a PANEL, not a held wheel, so the key that
     // opened it shuts it - whatever else has come into reach meanwhile.
     if (state.shop) { closeShop(); return; }
@@ -329,6 +331,8 @@ function keyPress(e) {
     // ...then a ZIPLINE overhead: under your own side's cable the key clips
     // on (the cap over the cable says so - drawZipHint, js/ui/wheel.js), and
     // the trunk beside it is still chopped from one step further out
+    // ...a SLED at your feet: the key gets on (the cap over it - drawSledHint, js/ui/wheel.js)
+    if (sledNear(player)) { player.input.jump = true; return; }
     if (zipNear(player)) { player.input.jump = true; return; }
     // ...or the pointer on your own cable out of reach: the same intent, and
     // the step walks the body there and clips on (zipWalkStart, world.js)
@@ -705,10 +709,11 @@ const CK_LOCK_R = 240;    // px a lock holds to (the leash); a rival's cover sho
 const CK_HOLD_BOW = 90;   // px a bow chases to before it stands (a blade: its own reach)
 const CK_AUTO_DRAW = 0.7; // the auto-attack looses at this fraction of the full draw (AI_LEVELS' NORMAL)
 const CK_ARRIVE = 5;      // px from a goal that counts as arrived
+const CK_SLED_DEAD = 16;  // px round the rider inside which the pointer lets the sled coast (ckStep)
 const CK_MARK_T = 0.6;    // s the click ring lives on the snow
 const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
 // order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
-//        | {kind:'use', what:'manage'|'shop'|'rack'|'pkdie'|'agbell', o, tx, ty}
+//        | {kind:'use', what:'manage'|'shop'|'rack'|'pkdie'|'agbell'|'sled', o, tx, ty}
 // lock: the unit the tool is on; stand: that lock is the LEFT press's (the
 // MOUSE scheme's), which aims and auto-attacks but never walks the body;
 // arm: A pressed, the next left press lays the attack-move; follow: the
@@ -756,7 +761,7 @@ function ckRightPress() {
   // walk off; a press ON your own drawn cable (zipUnder, world.js - the
   // strand the hover lights) clips on under it or walks there and clips on
   // (a press anywhere else is the walk it always was)
-  else if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; }
+  else if (player.zip >= 0 || player.zipWalk || player.sled) { player.input.jump = true; return; }
   else if (zipUnder(player.team, wx, wy)) { ckClear(); SFX.unlock(); player.input.jump = true; return; }
   SFX.unlock();
   if (!pt.far && !player.aboard) {
@@ -766,6 +771,7 @@ function ckRightPress() {
     if (m) { ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, m.x, m.y + 2, 'work'); return; }
     const o = structOf(objAt(tx, ty));
     if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team) { ckOrder({ kind: 'use', what: 'manage', o, tx, ty }, wx, wy, 'work'); return; }
+    if (o && LANDMARKS[o.type] && LANDMARKS[o.type].ride) { ckOrder({ kind: 'use', what: 'sled', o, tx, ty }, wx, wy, 'work'); return; } // walk to the sled and get on
     if (o && (o.type === 'rack' || o.type === 'pkdie' || o.type === 'agbell')) { ckOrder({ kind: 'use', what: o.type, o, tx, ty }, wx, wy, 'work'); return; }
     if (workTargetAt(player, tx, ty)) { ckOrder({ kind: 'work', tx, ty }, tx * TILE + 8, ty * TILE + 8, 'work'); return; }
   }
@@ -833,6 +839,13 @@ function ckUse(p, o, walk, r) {
   const cx = o.tx * TILE + 8, cy = o.ty * TILE + 8;
   r.aimX = p.input.aimX = cx; r.aimY = p.input.aimY = cy; // manageNear reads the aim
   const k = o.what;
+  // a sled: in reach, the hop intent gets on (sledToggle); gone meanwhile, the order is dropped
+  if (k === 'sled') {
+    if (objAt(o.tx, o.ty) !== o.o) { ck.order = null; return; }
+    if (sledNear(p) === o.o) { ck.order = null; p.input.jump = true; return; }
+    if (walk(cx, cy, 8) < 0) ck.order = null;
+    return;
+  }
   const near = k === 'manage' ? (manageNear(p) === o.o ? o.o : null) : k === 'shop' ? (merchNear(p) === o.o ? o.o : null)
     : k === 'rack' ? rackNear(p) : k === 'pkdie' ? pkDieNear(p) : agBellNear(p);
   if (near) {
@@ -854,6 +867,14 @@ function ckStep(p, dt, smx, smy) {
   // seated on the roost: the right press was the hop (updateDrop reads the work intent)
   if (p.aboard) { r.work = ck.hop; return r; }
   ck.hop = false;
+  // riding a sled, the sled runs at the pointer (sledStep carves toward it);
+  // the right press is the hop off (ckRightPress)
+  if (p.sled) {
+    const dx = r.aimX - p.x, dy = r.aimY - p.y, d = Math.hypot(dx, dy);
+    if (d > CK_SLED_DEAD) { r.mx = dx / d; r.my = dy / d; }
+    ck.order = null;
+    return r;
+  }
   if (ck.mark && ck.mark.t > 0) ck.mark.t -= dt;
   // falling off the roost: there is no route from mid-air (the seat is over
   // the bird's own solid tiles, and navTo would hand the goal back as

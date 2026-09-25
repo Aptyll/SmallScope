@@ -411,7 +411,7 @@ function updatePlay(dt) {
     // the leap is the one act a rider can take: read here, before the air
     // skips the body, so a remote hand's press lands like a local one
     // ...and on the ground the same intent is the zipline's (zipToggle, world.js)
-    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p)) zipToggle(p); }
+    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p) && !sledToggle(p)) zipToggle(p); } // ...a sled's first (js/landmarks.js)
     if (!p.active || inAir(p)) continue;
     if (p.control === 'ai') updateAI(p, dt);
     updatePlayer(p, dt);
@@ -584,6 +584,7 @@ function updatePlay(dt) {
   // structures + their robots
   updateStructures(dt);
   updateRespawns(dt);
+  updateLandmarks(dt); // a broken sled's spot counting down to a new one (js/landmarks.js)
   for (const b of robots) updateRobot(b, dt);
   for (let i = robots.length - 1; i >= 0; i--) if (robots[i].dead) robots.splice(i, 1);
 
@@ -853,6 +854,9 @@ function updatePlayer(p, dt) {
     // nothing under it stops a rider - and sets the velocity the exit keeps
     // (zipStep/zipEnd, world.js). Knockback decays above and is never spent.
     zipStep(p, dt, mx, my, len);
+  } else if (p.sled) {
+    // THE SLED: its own steer and speed, and its clock (sledStep, js/landmarks.js)
+    sledStep(p, dt, mx, my, len);
   } else {
     const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
     // every cap an ability may drag on (root, net, crater, cast, shield),
@@ -1033,7 +1037,7 @@ function updatePlayer(p, dt) {
     }
     while (footprints.length > 800) footprints.shift();
   }
-  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && !p.prone && p.zip < 0) { // a rider's feet are off the snow
+  if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && !p.prone && p.zip < 0 && !p.sled) { // a rider's feet are off the snow
     p.animT += dt * 9 * (1 - 0.35 * p.wade); // a wading stride is a slower one
     p.footT -= dt;
     if (p.footT <= 0) {
@@ -1054,7 +1058,7 @@ function updatePlayer(p, dt) {
   // marks overlap into continuous lines) and kick up snow spray. Snow gets
   // two-tone carved grooves (k:1, lip offset toward the outer side); ice gets
   // thin frosted skate scratches (k:2).
-  if (p.sliding && spNow > TRAIL_MIN) {
+  if (p.sled ? spNow > SLED_TRAIL : p.sliding && spNow > TRAIL_MIN) { // a sled's runners cut the same grooves
     p.trailD -= spNow * dt;
     const nx = -p.vy / spNow, ny = p.vx / spNow;
     const k = onIce ? 2 : 1;
@@ -1127,7 +1131,7 @@ function updatePlayer(p, dt) {
   }
   if (!inp.fire) p.fireArmed = false;
   if (p.fireArmed && !p.charging && p.nockT <= 0 && armed && p.fallT <= 0 && (p.swingT <= 0 || p.autoSwing) &&
-    p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.eatT <= 0 && p.zip < 0) { // ...and both hands on a zipline's handle // a body mid-ability has no hand free for the draw (a meal is already cancelled by the press above); an auto swing is never in the way
+    p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.eatT <= 0 && p.zip < 0 && !p.sled) { // ...and both hands on a zipline's handle // a body mid-ability has no hand free for the draw (a meal is already cancelled by the press above); an auto swing is never in the way
     p.charging = true;
     p.chargeT = 0;
     sfxAt('bowDraw', p.x, p.y);

@@ -81,6 +81,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the gear icons, the heart, the cursors | by banner | `gear icons`, `heart`, `cursors` |
 
+## js/sprites/landmarks.js (legacy IIFE)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the sled, the shack and the boat, on one palette | `LMPAL`, `sled`, `shack`, `boat` | `landmarks` |
+
 ## js/core.js
 
 | Looking for | Start at | Banner |
@@ -184,6 +190,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | how deep the snow lies anywhere: the map, its bands, the prevailing wind, the drift list and per-tile index, the lee pad behind every standing thing | `snowDepth`/`snowDepthPx`, `driftsDepth`, `hollowDepth`, `leeDepth`/`layLees`/`leeCell`/`LEE_AMP`, `DEPTH_DEEP`/`DEPTH_MID`, `driftWind`, `drifts`, `driftCell`, `driftDepth` (one drift's shape) | `snow depth` |
 | laying the drifts: what breaks the wind, what a drift may lie on or bury, the keep-outs, the fair split between the halves | `layDrifts` (boot.js, after worldgen), `driftBreak`, `driftBury`, `driftFree`, `driftTiles`, the `DRIFT_*` constants | `snow depth` |
 | the slowdown: the wade every unit eases, what it leaves of a walk, and its tuning | `wadeStep` (from `updateUnitStatus`, actions.js), `wadeMul` (`walkMax` in `updatePlayer`, sim.js; `unitMoveMul`, actions.js), `DEEP_WALK`/`DEEP_DODGE`/`DEEP_SLIDE`/`DEEP_SLIDE_BAR`/`DEEP_EASE` | `snow depth` |
+
+## js/landmarks.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what a landmark is, where it may stand, and the pass that stands them | `LANDMARKS`, `LM_WHERE`, `lmFoot`, `lmIceDepth`, `lmClear`, `landmarks`, `placeLandmarks`, `lmStand` | `landmarks` |
+| the sled's ride: getting on and off, the steer, the break, the spot's respawn | `SLED_*`, `sledNear`, `sledToggle`, `sledStart`, `sledEnd`, `sledStep`, `sledSurfaceMul`, `updateLandmarks` | `landmarks` (the `the sled` group) |
 
 ## js/nav.js
 
@@ -419,6 +432,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the treasure chest's and the road cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
 | which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's); its atlas row (palette variant, forest-depth tone) and the nudge off its tile centre | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST`, `treeCell`, `treeTone`/`woody`/`TREE_TONES`, `treeNudgeX`/`treeNudgeY`/`TREE_NUDGE_X`/`TREE_NUDGE_Y` | `the scenery bakes` |
 
+## js/draw/landmarks.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a landmark on its tiles and its shade, and the sled under a rider with its clock | `lmArtPos`, `drawLandmark` (from `render()`'s object pass), the `CASTERS` loop, `drawSledRide` (from `drawPlayer`) | `landmarks` |
+
 ## js/draw/lakes.js
 
 | Looking for | Start at | Banner |
@@ -526,7 +545,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | radial menu geometry and hit math | `wheelSpan`, `wheelAng`, `wheelOptions`, `wheelLayout`, `resolveWheel`, `wheelOnOwnFlag`, `WHEEL_*` | `radial wheel` |
 | brackets, the E prompt (never over what the hands take on their own, never under an open counter, and never over a work target at one - the `E SHOP` cap wins there and `drawWorkHint` stops on it), the fish brackets, wheel pixels, the command a pick runs | `drawSelection`, `drawWorkHint`, `drawFishHint`, `renderWheel`, `drawWheelHub`, `drawWheelStick`, `runCmd` | `selection, hints & wheel` |
-| the `E SHOP` cap over a merchant in reach (it returns whether it drew: the merchant owns E in that bubble), the bare cap over a zipline's cable while the body stands under its own side's (`zipNear`, world.js - the key's next claim after the merchant's), and the arena's three caps | `drawShopHint`, `drawZipHint`, `drawBellHint`, `drawPkHint`, `drawRackHint` | `selection, hints & wheel` (the resolver behind the shop's: `merchNear`, js/ui/shop.js) |
+| the `E SHOP` cap over a merchant in reach (it returns whether it drew: the merchant owns E in that bubble), the bare cap over a sled at the body's feet (`sledNear`, js/landmarks.js - the key's next claim after the merchant's), the bare cap over a zipline's cable while the body stands under its own side's (`zipNear`, world.js - the claim after that), and the arena's three caps | `drawShopHint`, `drawSledHint`, `drawZipHint`, `drawBellHint`, `drawPkHint`, `drawRackHint` | `selection, hints & wheel` (the resolver behind the shop's: `merchNear`, js/ui/shop.js) |
 | a keybind indicator: the key cap (the bound key's face, hover and listening states), the cap + verb prompt and its footprint, the action -> pad glyph table, the glyph worn while a pad is in hand, and the ESC BACK / CLOSE line under a slab | `drawKeyCap`, `drawKeyPrompt`, `promptW`, `PAD_BIND`, `padBindW`, `drawPadBind`, `drawBackHint`, `pixDisc`/`pixRing` (the scanline disc and ring every pad glyph is built from) (the flight HUD's two: `drawDropBind`, boot.js; the glyph pictures: `drawPadGlyph`, js/ui/panels.js) | `selection, hints & wheel` |
 | the build list and its ghost: the hammer plate under the shelf that names the key and opens it, the one toggle, the rows hung under it (the corner's 1x space: `cornerFoot` is the drawer's live foot they hang from) and their hit tests, a piece's icon, what the ghost snaps to and whether it can stand, the draws - and the piece the pointer wears | `BUILD_X`/`BUILD_TAB_H`/`BUILD_ROW`/`BUILD_W`, `BUILD_OK`/`BUILD_NO`/`BUILD_LIT`, `buildTabUp`, `cornerFoot`, `buildCapW`, `buildTabRect`, `buildTabHit`, `buildRowRect`, `buildFootMax`, `buildListHit`, `toggleBuild` (T in `keyPress` and a press on the plate in `pointerPress`, input.js), `buildIcon`, `buildGhostAt`, `drawBuildGhost`, `drawBuildTab`, `drawBuildList` (both drawn by `drawCorner`, js/ui/hud-draw.js), `drawBuildCursor` (off `cursorInfo`'s `piece`, js/draw/render.js) | `selection, hints & wheel` › `the build list and its ghost` (the placement rule it asks: `canPlaceAt`, structures.js) |
 

@@ -1390,6 +1390,7 @@ if (PRACTICE) {
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeChests();     // ...then the caches take their trees (objects only, no ground)
   placeRocks();      // ...and the rocks move out to the rim on their own stream (world.js)
+  placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
   spawnAnimals();
   spawnFish();
   stockCamps();      // the monsters go in once the world is standing
@@ -1651,6 +1652,7 @@ window.DBG = {
   spurs, roadNest, roadSpan, roadDist, roadMainDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the two distances, and where a bird would land
   creekAt, creekFlow, creekWet, bridgeAt, creekIsles, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the deck, the islands and the fixed fords
   zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (world.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
+  landmarks, LANDMARKS, sledNear, sledToggle, sledEnd, // the story landmarks (landmarks.js): every one stood, the table, and the sled's ride
   planLane, laneStep: (team, dt) => { const e = state.drop.eagles[team]; if (e.lane) laneStep(e, dt == null ? 99 : dt); return e.lane; },
   hurtEagle: (team, dmg, src) => { const e = state.drop.eagles[team]; hurtEagle(e, dmg == null ? 25 : dmg, src); return e; },
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),

@@ -40,7 +40,8 @@ stable per tile.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `rack`, `cairn`, `log`,
-  `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`; the `STRUCTS` table's: `wall`,
+  `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
+  [story landmarks](#story-landmarks)' `sled`, `shack` and `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
   `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `cairn`/`banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
@@ -345,6 +346,43 @@ tier is found. The tile empties with
 it, leaving a one-tile notch in the treeline where the cache was dug out. The sprite bakes in
 [js/draw/ground.js](../../js/draw/ground.js) (`CHEST_SPR`, under the `the scenery bakes` banner) rather than
 in the byte-fragile grid files under js/sprites/.
+
+## Story landmarks
+
+Three bits of scenery that suggest someone was here before the match: an abandoned **sled**
+beside a road or path, an ice-fishing **shack** on a lake's ice by its shore, and a **boat**
+frozen out in a lake. They are the `landmarks` banner in [js/landmarks.js](../../js/landmarks.js),
+and **a landmark is data**: one `LANDMARKS` entry (its footprint `w`×`h`, `solid`, the `where`
+rule, `count`, `mirror`, `spacing`, its `art` key and `foot`, `mm`) and one sprite in
+`SPRITES.landmark` (js/sprites/landmarks.js). The file turns each entry into an `OBJECTS` row
+at load (no `tool`, so E never works one), the object pass draws any of them through one branch
+(`drawLandmark`, js/draw/landmarks.js), and their shade is a `CASTERS` entry made from the same
+table. The anchor is the footprint's front-left tile, with the `part` tiles stamped east and
+north the way the hog hut's are.
+
+| Landmark | Footprint | Blocks | Where (`LM_WHERE`) | Count |
+| --- | --- | --- | --- | --- |
+| sled | 1×1 | no, and it is ridden ([gameplay](gameplay.md#the-sled)) | `path`: open snow with a road or path tile within 2 | 2, one in each side's half |
+| shack | 2×2 | yes | `shore`: every tile ice 1 or 2 tiles in from the shore, with ice at least `LM_LAKE_DEEP` (4) deep within 5 tiles, so it is a lake and not a river | up to 2 |
+| boat | 3×1 | yes | `lake`: every tile ice at least 4 deep | up to 2 |
+
+`placeLandmarks()` runs at boot straight after `placeRocks()`. It works out each ice tile's
+distance from the shore itself (`lmIceDepth`), because the painter's `lakeDepth` is baked later,
+by the draw. Then, kind by kind in table order, it lists every anchor its rule allows, shuffles
+the list on its own stream (`mulberry32(SEED ^ 0x4c4d524b)`, so no `rng()` is drawn and every
+seed keeps its terrain) and takes anchors until it has `count`, skipping any too close to one
+already placed (`spacing` for the same kind, `LM_GAP` for any other). Every anchor also has to
+pass `lmClear`: the footprint must be empty with nothing solid round it, at least `LM_CAMP_GAP`
+tiles outside every camp's clearing and `LM_ROOST_GAP` tiles outside the roost disc (the eagles
+land there and the merchant builds there), and, for a ridden kind, at least `LM_ZIP_GAP` px from
+either zipline, so pressing E beside a sled can never mean the cable. A `mirror` kind searches
+only the bottom-left side's half (`tx < ty`) and places each pick along with its reflection
+`(ty, tx)`, the camps' mirror, because both sides should get the same chance at a thing
+players use. A seed without room for one places fewer and throws nothing. The `landmarks` array
+keeps each placed landmark (`{ key, tx, ty, t }`), and a sled's `home` field points into it.
+
+The request asked for sleds at the foot of slopes. The valley has no height, so the sleds
+stand by the roads instead.
 
 ## The road
 
