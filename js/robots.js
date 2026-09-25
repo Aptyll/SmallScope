@@ -421,7 +421,7 @@ function merchBayDir(e) {
 // back, the other corner - a fan round the back of the roost, all of it in
 // the back woods and none of it toward the road
 function merchBaySlots(b) {
-  const a = b.bayDir.ang;
+  const a = (b.bayDir || (b.bayDir = merchBayDir(b.roost))).ang; // bayDir never crosses the wire (SNAP_SKIP): read afresh when a snapshot left it behind
   return [a, Math.PI, -a].map((ang) => merchBearing(b.roost, ang));
 }
 // where the next bay goes: the first slot with no bay standing on it that
