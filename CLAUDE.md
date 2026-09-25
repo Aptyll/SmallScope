@@ -38,7 +38,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 | what the game *is* — the pillars, and what it deliberately is not | [docs/dev/game.md](docs/dev/game.md) |
 | **a name or any sentence a player reads**: the setting's premise, the valley's reason for what a match does, the fixed words, the voice | [docs/dev/lore.md](docs/dev/lore.md) |
 | camera, zoom, a draw pass, HUD, baked panels, cursor, lighting, the main menu | [docs/dev/rendering.md](docs/dev/rendering.md) |
-| worldgen, tiles, ground, **the three map shapes and the paths a grown one cuts**, **the creek and its bridge and fords**, determinism/RNG, day/night, ice holes and fish, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
+| worldgen, tiles, ground, **the three map shapes and the paths a grown one cuts**, **the creek and its bridge and fords**, determinism/RNG, day/night, ice holes and fish, the lee drifts and the lakes' dressing, the camps and their fixed mirrored sites | [docs/dev/world.md](docs/dev/world.md) |
 | movement, tools and bits, the draw and the cycle, the class abilities, dodge, wildlife, economy, the merchant's shop and the fish/berry market, building, robots, settings, audio | [docs/dev/gameplay.md](docs/dev/gameplay.md) |
 | players, classes and kits, the input struct, **the two controllers** (keyboard, gamepad), teams, AI bots, contested orders, PvP | [docs/dev/multiplayer.md](docs/dev/multiplayer.md) |
 | **online play**: host and clients, the snapshot and the wire, the relay, Steam lobbies (`js/net/`, `app/server.js`, `desktop/`) | [docs/pvp-architecture.md](docs/pvp-architecture.md) |
@@ -53,7 +53,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 Five legacy files — `profile.js`, `font.js`, the generated `sfxdata.js` and `logodata.js`, `audio.js` — and the
 ten sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (`core.js`
 makes `SPRITES`, the other nine `Object.assign` their keys into it); after them the game code is
-**flat top-level classic scripts sharing one global scope** — forty-eight files, `core.js`
+**flat top-level classic scripts sharing one global scope** — forty-nine files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
@@ -77,7 +77,7 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs-with-jsdraw-and-jsui).
 
-The game code is organized only by `// ------ name` banners inside its forty-eight files.
+The game code is organized only by `// ------ name` banners inside its forty-nine files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 

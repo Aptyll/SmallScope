@@ -77,6 +77,7 @@ function paintGroundTile(g, tx, ty) {
           }
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
+        paintDressing(g, tx, ty, px, py); // long cracks, reeds, the downwind bank (js/draw/lakes.js)
         // ...and, where a PATH crosses the lake (the paths, js/world.js), the
         // earth spilling over this tile's share of the crossing, rimmed along
         // its own ragged edge rather than along the tile's sides. The diagonal
@@ -98,6 +99,9 @@ function paintGroundTile(g, tx, ty) {
         }
         // a lake's edge reaching over onto this snow, and the lip of its bank
         paintSnowShore(g, tx, ty, px, py);
+        // the drifts in the lee of what stands, a lake's downwind bank, the
+        // tip of a reed rooted below (js/draw/lakes.js)
+        paintDressing(g, tx, ty, px, py);
         // the road (ground 3, and the snow beside it) is painted OVER the
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
@@ -385,6 +389,7 @@ function renderGround() {
   const g = groundCv.getContext('2d');
   g.imageSmoothingEnabled = false;
   bakeLakes();
+  bakeDressing(); // the drifts and the lakes' dressing (js/draw/lakes.js)
   shadeBulk = true;
   const strip = new ImageData(WORLD * TILE, TILE);
   for (let ty = 0; ty < WORLD; ty++) {
@@ -590,8 +595,8 @@ function paintIceTile(g, tx, ty, px, py) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const x = px + i, y = py + j, hp = hash2(x * 3 + 7, y * 5 + 11);
     let c;
-    if (inner) c = iceTone(x, y, s, hp);
-    else if (iceMk(i, j)) c = bankAt(i, j, s) || iceTone(x, y, s, hp);
+    if (inner) c = dustIce(x, y, iceTone(x, y, s, hp));
+    else if (iceMk(i, j)) c = bankAt(i, j, s) || dustIce(x, y, iceTone(x, y, s, hp));
     else c = bankAt(i, j, s) || SNOW_INK[snowTone[j * TILE + i]];
     const k = (j * TILE + i) * 4;
     D[k] = c[0]; D[k + 1] = c[1]; D[k + 2] = c[2]; D[k + 3] = 255;
@@ -610,7 +615,7 @@ function paintSnowShore(g, tx, ty, px, py) {
   fillShoreMask(px, py);
   markMirror(tx, ty);
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
-    const c = iceMk(i, j) ? bankAt(i, j, s) || iceTone(px + i, py + j, s, hash2((px + i) * 3 + 7, (py + j) * 5 + 11)) : bankAt(i, j, s);
+    const c = iceMk(i, j) ? bankAt(i, j, s) || dustIce(px + i, py + j, iceTone(px + i, py + j, s, hash2((px + i) * 3 + 7, (py + j) * 5 + 11))) : bankAt(i, j, s);
     if (c) { g.fillStyle = c.css; g.fillRect(px + i, py + j, 1, 1); }
   }
 }
