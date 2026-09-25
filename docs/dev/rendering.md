@@ -164,7 +164,8 @@ entity draw code must use `ex`/`ey`.
    blizzard day's low streaks, [the day's weather](#the-days-weather));
 5. flat objects (stumps, and **fish nets** via `drawNet`);
 6. `drawFlagRings` (your side's flag rings, and the ring a held flag wheel previews) →
-   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (craters,
+   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
+   scheme's range preview) → `drawAbilityGround` (craters,
    the piercing shot's telegraph) → item drops;
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets and your side's flags, sorted by feet Y; empty player slots draw as team-tinted
@@ -1639,7 +1640,9 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   the list's rows are a **hand**), or over a finished building of your side's that E manages
   (`dim` beyond the 60 px reach, except under the CLICK scheme, where the press walks there);
   **reticle** — everywhere else in play.
-- Reticle `mode` (table `RETICLE`): **idle** white cross; **amove** red ring — the CLICK scheme's
+- Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's
+  readied ability, dim while it cannot cast ([the mouse scheme](multiplayer.md#the-mouse-scheme));
+  **amove** red ring — the CLICK scheme's
   A is armed and the next left press lays the attack-move
   ([the click scheme](multiplayer.md#the-click-scheme); its rings on the snow are
   `drawClickMarks`, js/draw/marks.js); **lock** gold ring — E will work

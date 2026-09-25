@@ -2904,9 +2904,9 @@ red × when it is off. While muted all three sound dials draw grey rather than g
 (`drawSliderRow`'s `dim`), so what the speaker silences reads off the page without a word of
 text. **N** still toggles the same flag from anywhere.
 
-**The CONTROLS page is itself tabbed** — WASD, CLICK, GAMEPAD (`CTRL_TABS`, each cell
+**The CONTROLS page is itself tabbed** — WASD, CLICK, MOUSE, GAMEPAD (`CTRL_TABS`, each cell
 naming its listing in `ctrl`), one listing per controller, since a pad puts the
-same verbs somewhere else — and the keyboard's listing is **two cells, one per scheme**: the
+same verbs somewhere else — and the keyboard's listing is **three cells, one per scheme**: the
 cell in gold is the scheme in force (`ctrlCellNow`), and a click on the other makes it the
 live scheme (`settings.scheme`, dropping every order the click scheme held) as well as opening
 its listing, so there is no SCHEME row and no words to switch. Its sub-navbar is
