@@ -141,8 +141,12 @@ let treeFadeSil = 0; // this frame's silhouette-rim strength, set beside the y-s
 function render() {
   const now = performance.now() / 1000;
   stepItemIcons(now * 1000); // the animated item icons, before anything reads one
-  const shx = settings.shake && state.shake > 0.2 ? Math.round(rand(-state.shake, state.shake)) : 0;
-  const shy = settings.shake && state.shake > 0.2 ? Math.round(rand(-state.shake, state.shake)) : 0;
+  // the shake's jitter comes off fxRng, never the sim's rng: a frame is not a
+  // step, and a draw off the main stream here made how many frames a screen
+  // happened to render change the match (a saved one replayed differently)
+  const shk = (s) => Math.round(-s + fxRng() * 2 * s);
+  const shx = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
+  const shy = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
   const ox = Math.round(camX) + shx;
   const oy = Math.round(camY) + shy;
   // exact (unrounded) camera for MOVING entities. Screen pos must be
