@@ -83,7 +83,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/save.js](../../js/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
-| [js/ui/saves.js](../../js/ui/saves.js) | ~280 | shared scope, no `window.*` export | the SAVES slab (the slot cards, the SAVE/LOAD navbar, the arm-then-confirm press) and the HUD's saved mark |
+| [js/ui/saves.js](../../js/ui/saves.js) | ~545 | shared scope, no `window.*` export | the SAVES grid (the slot cards, the SAVE/LOAD navbar, the arm-then-confirm press, a card's delete, name and carry), the lobby's SAVES plate and the HUD's saved mark |
 | [js/boot.js](../../js/boot.js) | ~1840 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.

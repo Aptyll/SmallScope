@@ -324,11 +324,15 @@ function saveMeta() {
     elapsed: state.elapsed, day: state.day, when: Date.now(), seed: SEED, map: MAP_TYPE, thumb: saveThumb(),
   };
 }
+// the name a card wears: the player's (named in the saves grid, js/ui/saves.js),
+// else the day it was kept on
+function saveTitleOf(m) { return m.named && m.title ? m.title : 'DAY ' + (m.day || 1); }
 // every filled slot's meta, keyed by slot
 function saveList() { return PROFILE.saveMetas(); }
-// the newest save of all, or null: what CONTINUE loads
+// the newest save of all, or null: what the lobby's saves plate shows. Off
+// the saves grid's cached read (js/ui/saves.js), since the lobby asks every frame.
 function saveNewest() {
-  const m = saveList();
+  const m = savesMetas();
   let best = null;
   for (const k in m) if (!best || m[k].when > m[best].when) best = k;
   return best;
@@ -361,6 +365,8 @@ function saveMatch(slot) {
   saveBusy = true;
   const meta = saveMeta(), json = JSON.stringify(saveCapture());
   meta.auto = slot[0] === 'a';
+  const old = PROFILE.saveMetas()[slot];
+  if (old && old.named) { meta.title = old.title; meta.named = true; } // a slot the player named keeps its name when written over
   return saveZip(json).catch(() => json).then((body) => {
     saveBusy = false;
     const ok = PROFILE.putSave(slot, meta, body);
@@ -402,18 +408,27 @@ function loadSave(slot) {
   if (!m || !body || state.fade || saveBusy) return false;
   saveBusy = true;
   SFX.music.stop(0.45);
-  let ready = null; // the unpacked body, once it is
+  let ready; // the unpacked body once it is (null: it would not), or the page's go once the dark is down
+  const go = (json) => {
+    if (json === null) { // the body would not unpack: back out of the dark, nothing lost
+      saveBusy = false;
+      state.fade = { a: 1, to: 0, spd: 1 / 0.45, color: '#04060f', then: null };
+      SFX.deny();
+      return;
+    }
+    try { sessionStorage.setItem('softfall.load', json); } catch (e) { go(null); return; }
+    // the character that played it becomes the active one, so what the match
+    // adds to a lifetime tally lands on the right card (js/profile.js)
+    const ci = PROFILE.chars().findIndex((c) => c.name === m.name && c.cls === m.cls);
+    if (ci >= 0) PROFILE.setActive(ci);
+    location.href = location.pathname + '?seed=' + m.seed + '&map=' + m.map;
+  };
   state.fade = {
     a: 0, to: 1, spd: 1 / 0.45, color: '#04060f',
-    then: () => {
-      const go = (json) => {
-        try { sessionStorage.setItem('softfall.load', json); } catch (e) { return; }
-        location.href = location.pathname + '?seed=' + m.seed + '&map=' + m.map;
-      };
-      if (ready) go(ready); else ready = go;
-    },
+    then: () => { if (ready !== undefined) go(ready); else ready = go; },
   };
-  saveUnzip(body).then((json) => { if (typeof ready === 'function') ready(json); else ready = json; });
+  const done = (json) => { if (ready === go) go(json); else ready = json; };
+  saveUnzip(body).then(done, () => done(null));
   return true;
 }
 // boot's half (js/boot.js): true when a saved match was put back on this page

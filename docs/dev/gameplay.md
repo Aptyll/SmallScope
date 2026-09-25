@@ -3033,7 +3033,7 @@ canvases are nobody's state and are dropped (a console warning names the path if
 
 **The flow.** `saveMatch(slot)` takes the match synchronously on the step it was pressed, gzips it
 (`CompressionStream`, base64 behind a `z`: 20-130 KB a save against 300 KB-1 MB of JSON) and hands
-it to `PROFILE.putSave` - the metas (hero, level, clock, when, a 40 px minimap thumbnail) under one
+it to `PROFILE.putSave` - the metas (hero, level, clock, when, name, a 40 px minimap thumbnail) under one
 index key so a list never opens a body, each body under its own. `loadSave(slot)` fades out,
 unpacks the body into `sessionStorage` (`softfall.load`) and reloads onto the saved seed and
 shape; boot calls `saveBootLoad` after the world stands and **before `renderGround`**, so the bake
@@ -3050,15 +3050,33 @@ frame loop after the steps) and on the way into the ESC panel or the pause plate
 `SAVE_AUTO_GAP` (15 s). A save that lands flashes a gold down-arrow beside the match clock under
 the minimap (`drawSaveFlash`).
 
-**The screens** (js/ui/saves.js). One slab on the settings slab's frost: five manual cards over
-the autosave ring, each its match at a glance - the thumbnail, how long ago (`NOW`/`12M`/`5H`/`3D`),
-the class emblem and level, the match clock in gold; an empty manual card is a +, an autosave
-wears two chasing arrows. The navbar picks the verb. In a match it opens off the ESC panel's
-**SAVES** plank with SAVE and LOAD; on the title it is the menu panel **LOAD GAME** opens, LOAD
-alone, and **CONTINUE** (top of the title list whenever a save exists) loads the newest. A press
-that throws something away - writing over a kept slot, or loading over the match you are in -
-arms the card first (gold rim, the verb's arrow over the thumbnail, `SV_ARM_T`), and a second
-press does it. The arrows walk the cards and, from the navbar, turn the verb.
+**The screens** (js/ui/saves.js). One grid: five manual cards over the autosave ring, each its
+match at a glance - the thumbnail with the match clock (gold) and how long ago
+(`NOW`/`12M`/`5H`/`3D`) on its foot, the save's **name** (`saveTitleOf`: the player's, else
+`DAY n`), the class emblem and level; an empty manual card is a +, an autosave wears two chasing
+arrows. In a match it opens on the settings slab's frost off the ESC panel's **SAVES** plank, the
+navbar picking SAVE or LOAD. In the **solo lobby** it is a pop-up off the **SAVES plate** - a third
+plate beside the map and the target, there only while the profile holds a save: the newest save's
+picture on a fanned stack of cards, its name under it, a play arrow over it under the hand - LOAD
+alone, the newest card lit when it opens (`beginSavesPick`), so Enter picks the last match back up.
+The title list itself carries nothing about saves. A press that throws something away - writing
+over a kept slot, or loading over the match you are in - arms the card first (gold rim, the verb's
+arrow over the thumbnail, `SV_ARM_T`), and a second press does it. The arrows walk the cards and,
+from the navbar, turn the verb.
+
+Every kept card has three handles, whatever the verb. The **X** in its corner (out under the hand,
+or on the picked card; Delete, a pad's X) arms it red, and a second press deletes it
+(`savesDelete`). Its **name** is typed over in place - a click on it (the pencil shows beside it) or
+F2, up to `SV_NAME_MAX` letters, digits and single spaces, Enter keeping it and Escape dropping it;
+an emptied name falls back to the day, and a slot the player named keeps its name when written
+over (`meta.named`). While a name is typed it owns the keyboard (`savesEditKey`, routed first in
+`keyPress`). And the card can be **carried**: pressed and moved `SV_DRAG_PX` it rides the pointer,
+the slot it left dark, and dropped on another manual slot the two trade places (Shift with Left or
+Right steps a manual card one slot along); an autosave dropped on an EMPTY manual slot is kept
+there and stops being one. The ring keeps the order it was written in, so nothing lands on it, and
+the slot under a carried card rims gold where it may land and red where it may not
+(`savesCanMove`, `PROFILE.swapSaves`). A load makes the character that played the save the active
+one, so what the match adds to a lifetime tally lands on the right card.
 
 **The proof** (`DBG.saveHash`: a hash of everything a save carries, less the camera and what
 runs on the frame's clock rather than the match's - the snowfall, which `updateFx` sways on
@@ -3167,12 +3185,12 @@ button; ESC and the pad's B still fold the slab — and, in a match only, the wa
 LEAVE MATCH in a match and LEAVE PRACTICE in [practice](world.md#the-practice-arena) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
 leave, so it centres CLOSE alone). A solo match hangs **SAVES** between the two (while `canSave()`:
-the [saves slab](#saved-matches)). `settingsHit()` answers `'close'` (→ `settingsClose`: the
+the [saves grid](#saved-matches)). `settingsHit()` answers `'close'` (→ `settingsClose`: the
 in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`),
 `'saves'` (→ `openSaves`, js/ui/saves.js) and
 `'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on this
 seed, or `leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
-title world); `leavePlankRect()` is the LEAVE plank, `null` on the title. While the saves slab is
+title world); `leavePlankRect()` is the LEAVE plank, `null` on the title. While the saves grid is
 up it stands in the panel's place: `renderSettings`, `settingsHit`, `settingsMouseDown` and
 `settingsKey` each hand straight to it, and Escape backs out of it before it folds the panel.
 

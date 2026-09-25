@@ -727,17 +727,18 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the grown valley every save is written against, and the tile objects that are always written | `saveBaseline`, `saveSum`, `saveBase` (its `live` set) | `saved matches` |
 | the object graph: the `$` tags, the static rows written as names, the classes rebuilt | `saveEncode`, `saveDecode`, `saveStatics`, `SAVE_CLASSES` | `saved matches` |
 | the match as a record and back, and the proof's hash | `saveCapture`, `saveApply`, `saveHash` (`DBG.saveHash`) | `saved matches` |
-| who may save, a slot's card, the newest, packing | `canSave`, `saveMeta`, `saveList`, `saveNewest`, `saveZip`/`saveUnzip`, `saveMatch` (the storage: `PROFILE.saveMetas`/`saveBody`/`putSave`/`dropSave`, js/profile.js) | `saved matches` |
+| who may save, a slot's card and its name, the newest, packing | `canSave`, `saveMeta`, `saveTitleOf`, `saveList`, `saveNewest`, `saveZip`/`saveUnzip`, `saveMatch` (the storage: `PROFILE.saveMetas`/`saveBody`/`putSave`/`putSaveMeta`/`swapSaves`/`dropSave`, js/profile.js) | `saved matches` |
 | the autosave ring: the timer, the pause's save, the gap | `SAVE_AUTO_T`, `SAVE_AUTO_GAP`, `autoSave`, `saveAutoTick` (from `loop`, boot.js; the pause's: the Escape and pause keys, `keyPress`, input.js) | `saved matches` |
-| a load: the fade and the hand-off, boot's two halves | `loadSave`, `saveBootLoad` (before `renderGround`), `saveBootEnter`, `saveBootView` | `saved matches` |
+| a load: the fade and the hand-off (and the save's character made active), boot's two halves | `loadSave`, `saveBootLoad` (before `renderGround`), `saveBootEnter`, `saveBootView` | `saved matches` |
 
 ## js/ui/saves.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the slab's state, the way in (the ESC panel's SAVES plank; the title's LOAD GAME) and out | `saveUi`, `savesUp`, `openSaves`/`closeSaves`, `openSavesTitle`, `savesBack` (the hand-offs: `renderSettings`/`settingsHit`/`settingsMouseDown`/`settingsKey`/`footPlanks`, panels.js; `menuKey`/`menuClick`/`renderTitle`, menu.js) | `saves screen` |
-| where the cards sit, which ones the verb can act on, the press and the arm before it, the keys | `savesCards`, `savesLive`, `savesLayout`, `savesHit`, `savesAct`, `SV_ARM_T`, `savesClick`, `savesKey` | `saves screen` |
-| the pixels: a slot's thumbnail, a card, the autosave glyph, the verb's arrow, the slab; the HUD's saved mark | `saveThumb`, `drawSaveCard`, `drawAutoGlyph`, `drawVerbArrow`, `renderSaves`, `drawSaveFlash` (called after `renderUI`, render.js) | `saves screen` |
+| the grid's state, the way in (the ESC panel's SAVES plank; the lobby's SAVES plate) and out | `saveUi`, `savesUp`, `savesInLobby`, `openSaves`/`closeSaves`, `beginSavesPick`, `savesBack` (the hand-offs: `renderSettings`/`settingsHit`/`settingsMouseDown`/`settingsKey`/`footPlanks`, panels.js; `popOpen`/`popHit`/`menuKey`/`menuClick`/`renderTitle`, `lobbyHit`/`lobbyClick`/`drawLobbyTop`, menu.js) | `saves screen` |
+| where the cards sit, which ones the verb can act on, the press and the arm before it, the keys | `savesFrame`, `savesCards`, `savesLive`, `savesLayout`, `savesHit`, `savesAct`, `SV_ARM_T`, `savesClick`, `savesRelease` (from `pointerRelease`, input.js), `savesKey` | `saves screen` |
+| a card's handles: delete, the name typed in place, carrying it to another slot | `svDelRect`/`savesDelete`, `svNameRect`/`savesEditStart`/`savesEditEnd`/`savesEditKey` (routed first in `keyPress`, input.js), `SV_NAME_MAX`, `savesDragTick`/`savesCarrying`/`savesCanMove`/`savesMove`, `SV_DRAG_PX` (storage: `PROFILE.putSaveMeta`/`swapSaves`, profile.js; the name: `saveTitleOf`, save.js) | `saves screen` |
+| the pixels: a slot's thumbnail, a card, the autosave glyph, the verb's arrow, the X and the pencil, the grid, the lobby's plate; the HUD's saved mark | `saveThumb`, `drawSaveCard`, `drawThumbBadge`, `drawAutoGlyph`, `drawVerbArrow`, `drawSaveX`, `drawSavePencil`, `renderSaves`, `drawSavesPlate`, `drawSaveFlash` (called after `renderUI`, render.js) | `saves screen` |
 
 ## js/boot.js
 
