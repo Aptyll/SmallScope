@@ -565,7 +565,7 @@ function aiThink(p, dt) {
   // bird under half nerve), which no order overrides. An ATTACK covering the
   // rival bird and a DEFEND covering its own are folded straight into
   // pushE/defend, so the push and defend rungs play them with everything
-  // they know (the lane, the gate's turrets, the archer's station); every
+  // they know (the lane, the defenders' turrets, the archer's station); every
   // other order is walked by the flag rung (5a).
   const fl = servedFlag(p);
   const order = fl && fl.owner !== p.id ? fl : null;
@@ -822,7 +822,7 @@ function aiThink(p, dt) {
     // the roost sits in the corner's forest at the end of its lane, and the
     // lane is the only way in: off it, the walk is aiToRoost's (gate, mouth,
     // lane); on it, the class decides the approach
-    // the roost's gate carries turrets: any bot in the lane takes those down
+    // a turret the defenders raised by the lane: any bot in it takes those down
     // first with E (STRUCT_HIT_DMG a swing, 10 of it once STRUCT_DR has taken
     // its cut), exactly as a hand would, since
     // a bot standing off the bird under bolt fire never gets a draw finished
@@ -880,8 +880,8 @@ function aiThink(p, dt) {
       ai.pushCd = 10;
     } else {
       // the archer's station: AI_HOLD out from the bird ON THE LANE'S AXIS,
-      // where the gate's gap leaves the line to the roost open (off the axis
-      // its walls eat the shot), outside the gust
+      // where the spur keeps the line to the roost open (off the axis a
+      // wall the defenders raised may eat the shot), outside the gust
       const sx = e.x + e.laneDir.x * AI_HOLD, sy = e.y + e.laneDir.y * AI_HOLD;
       const ux = (e.x - p.x) / (d || 1), uy = (e.y - p.y) / (d || 1);
       aimAt(e.x, e.y - 8);

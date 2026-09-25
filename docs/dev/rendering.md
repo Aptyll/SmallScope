@@ -2023,7 +2023,7 @@ faller's arc reads `p.dropAlt`), steerable like any fall, landing on the nearest
 the roost. A profile that has **never jumped**
 (`PROFILE.hasDropped()`, the drop-side gate of the `state.drop.firstFlight` flag) gets exactly
 that ride with the jump refused — `dropJump` denies the local player's manual leap outright, so a
-new player's first ground is the roost, beside the merchant and the gate, and the brief is always
+new player's first ground is the roost, beside the merchant, and the brief is always
 the lesson. The first hop or any real jump (`PROFILE.markDropped`) retires the refusal for good.
 A jumper free-falls for `FALL_T` (1.3 s), steering with WASD/arrows at
 `DRIFT_SPD` (130 px/s, ~10 tiles over the fall) — `sampleHumanInput` keeps the movement axis alive in mode `drop` while zeroing
@@ -2082,10 +2082,9 @@ reads as a turn, and the roosting bird faces the way it came down. `eagleCrash` 
 within `BOOM_R` (3.6 tiles) outright and **paves the disc** (the pad: every snow tile in it turns
 to ground `3` that frame and `addPad` registers it with the road, [world.md](world.md#the-road),
 so the roost stands on the same packed earth as its spur and the road), snaps **two rings** to
-stumps — the middle out to `BOOM_STUMP_R` (4.8), the merchant's turret sites, and the outer out to
-`BOOM_STUMP_R2` (6.0), where its wall ring runs, so the walls stand outside the guns — and clears
-every rock and bush out to the outer ring outright, so nothing sits in the wall's band that a wall
-cannot replace —
+stumps — the middle out to `BOOM_STUMP_R` (4.8) and the outer out to `BOOM_STUMP_R2` (6.0), two layers of
+build sites round the bird, so a side can stand guns inside a wall — and clears every rock and
+bush out to the outer ring outright, so the whole disc is ground a side can build on —
 **paying no gold**, a crater of free fells would warp the economy at minute one — plants the
 **roost hitbox** (`eagle` objects on the open tiles within `EAGLE_TILE_R`, solid to walkers and a
 rival-only E target; `eagleFlee` clears them again at liftoff), plans the **lane** and drops off
@@ -2113,8 +2112,8 @@ band from the blast's rim (`BOOM_R`) to the road with its distance out (`pave`),
 grows at the front's own pace on the bake, both maps and every `onRoad` read alike. The spur is
 done when the front is inside the road (`roadMainDist`; `LANE_MAX` (60) is only a safety) and
 `e.lane` drops when the last event and the last tile are spent. Pure reads, so a seed's spur is
-always the same spur; the merchant's gate and post read `e.laneDir` too, so the gate flanks the
-track that was actually cut. `laneStep` runs from `updateEagle`'s `down` branch. The grounded bird
+always the same spur; the merchant's post, its back woods and its bays read `e.laneDir` too, so
+they sit round the track that was actually cut. `laneStep` runs from `updateEagle`'s `down` branch. The grounded bird
 is the team's **objective**, and its hp pool is its
 **nerve**: `EAGLE_HP` (2000, sized as a siege, because the bots go for it),
 spooked down a flat `EAGLE_ARROW_DMG` (12) per rival arrow through `hurtEagle` (the sim.js arrow

@@ -562,7 +562,7 @@ few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
 `RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
 through `nearestDryTile`, the same spiral a hole is climbed out of) and calls `p.reset(false)`,
 the transient-clear a fresh landing gets, i-frames included — so the way back into the match is
-the road everyone walked out on, past the merchant and the gate. A bird still in the air (a player
+the road everyone walked out on, past the merchant. A bird still in the air (a player
 shot in the seconds between its own landing and the bird's) has nowhere to set anyone down, so
 the timer holds at zero until it roosts; a bird that has fled mid-timer is left to
 `eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `reset()` never
@@ -704,7 +704,7 @@ The ladder:
    block): it overrides the defend, guard, push and escort reads below — the one exception the
    **alarm** (its own bird under `AI_ALARM_HP`), which no order overrides — and an ATTACK whose
    ring covers the rival bird, or a DEFEND whose ring covers its own, is folded straight into
-   `pushE`/`defend` so rungs 6 and 8 play them with everything they know (the lane, the gate's
+   `pushE`/`defend` so rungs 6 and 8 play them with everything they know (the lane, the defenders'
    turrets, the archer's station). Every other order this rung walks: outside `AI_FLAG_IN` of
    the flag it goes there (on the roost budget — a ring in a corner's woods is a walk into
    trees), and a flag it cannot route to is left to the ladder; inside, ATTACK breaks the
@@ -749,11 +749,11 @@ The ladder:
    from the junction, toward the field) → junction (`e.mouth`) → spur → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. In the
-   spur, the roost's **gate turrets come down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
+   spur, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
    standing off the bird under bolt fire never finishes a draw), then a hunter takes its
-   station `AI_HOLD` (96 px) out **on the spur's axis**, where the gate's gap leaves the line to
-   the roost open (off the axis its walls eat the shot) and outside the gust, and looses at the
+   station `AI_HOLD` (96 px) out **on the spur's axis**, where the spur keeps the line to
+   the roost open (off the axis a wall the defenders raised may eat the shot) and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until
    the side outnumbers them: a pusher inside `AI_ROOST_R` of the rival bird whose side has more

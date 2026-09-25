@@ -17,14 +17,16 @@ WARRIOR — a human's is the one their **character** was made with) and is **dro
 diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
 its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
 always top-right, each to its own right of the road — and becomes its team's **objective**; its
-**merchant** climbs down to raise the base's first defence (four guns inside a closed ring of walls), then
-keeps shop at the head of the **spur** — the track of felled pines that opens from the crater
-straight back to the road — for anybody at all who walks up to it. **The road** runs the map's
+**merchant** climbs down and works home, never toward the fight: it fells the back woods behind
+the bird and raises the bot bays there, and it is a shop for anybody at all who walks up to it,
+wherever it is working; idle, it keeps to the head of the **spur**, the track of felled pines
+that opens from the crater straight back to the road. **The road** runs the map's
 whole diagonal, world edge to world edge: one straight, dry packed-earth lane, there from
 worldgen and readable from anywhere, with the nests beside it, so the way to a bird is one
 sightline down its spur ([the road](world.md#the-road)). Half a minute after landing each
-merchant raises a **barracks** behind its bird: every thirty seconds it marches a **wave** of
-soldier bots down the road at the rival bird, one soldier more every three minutes. Both sides
+merchant raises a **barracks** (a bot bay) behind its bird, and two more as its logs pay for them:
+every thirty seconds each one marches a **wave** of soldier bots out to the road and down it at the
+rival bird, one soldier more every three minutes, a side's live soldiers capped across its bays. Both sides
 get the same waves, so with nobody on the road the two columns meet in the middle and grind —
 which side's wave gets through is decided by who walks out to it. **Drive off the rival eagle
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
@@ -135,8 +137,8 @@ you walk to a body to get it. [Gear](gameplay.md#gear).
 
 **Your eagle is your life.** The bird that carried the team in crashes into its corner's trees at
 the end of its line and roosts there, armoured in team colour — the crater it blows (packed earth,
-one ground with the spur and the road), the spur its landing cuts back to the road and the guns
-and walls its merchant raises are the team's starting base, an
+one ground with the spur and the road), the spur its landing cuts back to the road and the bays its
+merchant raises in the back woods are the team's starting base, an
 easier opening for a new player who can help fortify before walking out. Its hp pool is its **nerve**:
 hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
 and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly
@@ -182,9 +184,9 @@ wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutr
 **The road is where the match is fought.** The waves are the match's clock: a column that is not
 met on the road reaches the rival bird, and a scrapped soldier pays its killer gold (and so XP)
 on the spot — so the lane is where the fighting, the pushing and the paying are, and a base is
-something to walk *out* of. A raid that wrecks the barracks stalls a side's waves until its
+something to walk *out* of. A raid that wrecks a barracks thins a side's waves until its
 merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side's
-cable runs from outside its wall ring along the road's verge to short of the middle, and any body
+cable runs from outside its crater's stump rings along the road's verge to short of the middle, and any body
 of that team under it clips on with E, rides either way at three times a walk, and lets go
 anywhere — hands on the handle, still a target, dropped by a stun or a net, and the last stretch
 into the fight always walked. [The road](world.md#the-road), [the zipline](world.md#the-zipline),

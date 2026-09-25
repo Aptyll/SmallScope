@@ -424,7 +424,7 @@ bottom-right — the two nests mirror through the map's centre like the camps. P
 per team; a seed's nests are where they always are. The bird lands there
 ([eagle drop](rendering.md#eagle-drop-mode-drop)) and its felling front cuts a **spur** from the
 crater straight back to the junction, **paved behind it** into a track `SPUR_HW` (1.25) tiles
-either side of its centreline — under `MERCH_GATE_GAP`, so the gate's stumps stay off it — and
+either side of its centreline, so the crash's stumps stay off it, and
 registered in `spurs` (`addSpur(team, jx, jy, cx, cy, end)`: the junction, the unit direction
 toward the crater, the length to the blast's rim, and `paved`, measured back from the crater end
 as the front advances); the crater itself is a **pad** in the same registry (`addPad(team, cx, cy,
@@ -625,8 +625,7 @@ untouched. Not under `PRACTICE`. The points, base to front:
 
 1. the **base pylon**, `ZIP_BASE_OUT` (7.5) tiles from the crater along the spur's axis (the crash
    point by the crash's own rule, `findCrashPoint`) and `ZIP_SPUR_OFF` (1.9) tiles off that axis
-   toward the front — outside the outer stump ring and the merchant's wall ring, so the ring closes
-   under the cable, and over `SPUR_HW` so the track is never blocked;
+   toward the front — outside the outer stump ring, and over `SPUR_HW` so the track is never blocked;
 2. the **verge pylon** where the spur meets the road, `ZIP_SPUR_OFF` along the road from the
    junction and `roadEdgeAt(u, side) + ZIP_OUT` (0.6) tiles off the centreline on the bird's own
    right (`roadNest(team).side` — the two cables sit on opposite verges and mirror through the
