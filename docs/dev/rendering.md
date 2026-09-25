@@ -1106,7 +1106,9 @@ read the same two golds, so "full draw" is one colour everywhere).
 building — **painted by side** (`barCol`): the team's `mark` through `skin()`, so it is blue over
 you and your allies and red over rivals on your screen, and neutral gold (`BAR_NEUTRAL`, the WoW
 grammar) over wildlife, the practice dummy and anything handed no team (under a colour-blind
-palette a rival's fill is cut every third column, `foeCue`); `col` overrides the side
+palette a rival's bar wears a raised dark cap on its right end, `foeCue`). Health reads in **fixed
+chunks**: a dark tick every `HP_SEG` hp across fill and track, the chunk stepping up its ladder
+(10, 25, 50...) until ticks sit `HP_SEG_PX` apart, so a bigger pool shows more segments. `col` overrides the side
 for the bars that are not health, every one hung under the health bar the way a player's stamina is
 (3 rows down, sharing a frame wall; **health is always the top bar**, at the same height on every
 animal): a camp monster's leash (`THREAT_COL` red, bare track at rest:

@@ -81,9 +81,22 @@ const NOCK_COL = '#6f7ca8', EAT_COL = '#8fe08a'; // reloading; eating (the heal 
 const THREAT_COL = '#ff6a6a'; // a wolf's threat bar: the red it already wears on the debug overlay
 function barCol(team) { return team === undefined || team === null ? BAR_NEUTRAL : TEAMS[skin(team)].mark; }
 
+// Health reads in fixed CHUNKS: a dark tick every HP_SEG hp, counted from the
+// empty end, across the fill and the bare track alike - so a bigger pool is
+// more segments and a hit's cost is countable at a glance. A pool too big
+// for its bar steps the chunk up this ladder until ticks sit HP_SEG_PX apart
+// (a level-12 hero ticks every 50, a dire wolf every 100); under one chunk
+// a bar is one segment. Only health is chunked: a bar passing `col` is a
+// meter (a threat, a jink, a regrow clock), not hp.
+const HP_SEG = [10, 25, 50, 100, 250, 500], HP_SEG_PX = 3;
+const HP_TICK = '#141a30', HP_CAP = '#0c122a';
+function hpSegStep(maxHp, w) {
+  for (const s of HP_SEG) if (w * s / maxHp >= HP_SEG_PX) return s;
+  return 0;
+}
 // small overhead bar shared by every living unit, in its side's colour
 // (barCol - pass nothing for a thing with no side); col overrides it for a
-// bar that is not health at all (a wolf's threat)
+// bar that is not health at all (a wolf's threat, a regrow clock)
 function drawHealthBar(cxp, topY, hp, maxHp, w, team, col) {
   const x = Math.round(cxp - w / 2), y = Math.round(topY);
   const frac = Math.max(0, Math.min(1, hp / maxHp));
@@ -96,11 +109,22 @@ function drawHealthBar(cxp, topY, hp, maxHp, w, team, col) {
   // (a wolf's threat at rest, a spent jink) is bare track, not a false one
   const fw = frac > 0 ? Math.max(1, Math.round(w * frac)) : 0;
   ctx.fillRect(x, y, fw, 2);
-  // a rival's bar under a colour-blind palette is cut every third column
-  // (foeCue, js/player.js), so the side reads without its hue
-  if (!col && foeCue(team)) {
-    ctx.fillStyle = '#3a3448';
-    for (let i = 2; i < fw; i += 3) ctx.fillRect(x + i, y, 1, 2);
+  if (col) return;
+  const step = hpSegStep(maxHp, w);
+  if (step) {
+    ctx.fillStyle = HP_TICK;
+    // a sliver past the last tick narrower than 2 px reads as a smudge, so it has none
+    for (let v = step; v < maxHp; v += step) {
+      const i = Math.round(w * v / maxHp);
+      if (i >= w - 1) break;
+      ctx.fillRect(x + i, y, 1, 2);
+    }
+  }
+  // a rival's bar under a colour-blind palette wears a raised dark cap on its
+  // right end (foeCue, js/player.js), so the side reads by outline alone
+  if (foeCue(team)) {
+    ctx.fillStyle = HP_CAP;
+    ctx.fillRect(x + w, y - 2, 2, 5);
   }
 }
 

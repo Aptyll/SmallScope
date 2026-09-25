@@ -449,8 +449,8 @@ red-green eyes, vermilion against cyan for blue-yellow eyes, pale gold against d
 contrast ([sprites](sprites.md)). Each chip on the row is its palette, yours beside theirs, so a
 player picks the pair they can tell apart. Any palette but the default also turns on the rival's
 **shape cue** (`foeCue(team)`, js/player.js): a rival is a cross on both maps and on the lobby
-graph's line head (`drawMapUnit`'s `foe`, `drawMapCross`), and its health bar is cut every third
-column (`drawHealthBar`), so the sides part in greyscale. The names stay RED and BLUE.
+graph's line head (`drawMapUnit`'s `foe`, `drawMapCross`), and its health bar wears a raised dark
+cap on its right end (`drawHealthBar`), so the sides part in greyscale. The names stay RED and BLUE.
 
 A team colour drives both **characters** and **buildings**:
 

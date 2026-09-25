@@ -20,7 +20,7 @@ function drawCampIcon(g, C, x, y, col, rim) {
 function drawCampClock(o, cx, topY) {
   const C = o.site;
   if (!C || campPop(C) > 0) return;
-  drawHealthBar(cx, topY, C.spec.repop - C.repopT, C.spec.repop, 12);
+  drawHealthBar(cx, topY, C.spec.repop - C.repopT, C.spec.repop, 12, undefined, BAR_NEUTRAL);
 }
 
 // ---- what a flag looks like ---------------------------------------------
