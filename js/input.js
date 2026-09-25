@@ -1033,7 +1033,7 @@ function msKitPick(w, seg) {
 // nothing on screen scrolls.
 function panelScrollBy(d) {
   if (state.mode === 'title') {
-    if (state.menu.panel === 'patch') patchScrollBy(d);
+    if (state.menu.screen === 'notes' && state.menu.notesT >= 1) notesScrollBy(d);
     else if (state.menu.panel === 'settings') settingsScrollBy(d);
     else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) wikiScrollBy(d);
     else return false;
@@ -1047,7 +1047,7 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 canvas.addEventListener('auxclick', (e) => { if (e.button === 1 || e.button === 3 || e.button === 4) e.preventDefault(); });
 canvas.addEventListener('wheel', (e) => {
   if (state.mode === 'title') {
-    if (state.menu.panel === 'patch') { e.preventDefault(); patchScrollBy(e.deltaY > 0 ? 16 : -16); }
+    if (state.menu.screen === 'notes' && state.menu.notesT >= 1) { e.preventDefault(); notesScrollBy(e.deltaY > 0 ? 16 : -16); }
     else if (state.menu.panel === 'settings') { e.preventDefault(); settingsScrollBy(e.deltaY > 0 ? 14 : -14); }
     else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) { e.preventDefault(); wikiScrollBy(e.deltaY > 0 ? 14 : -14); }
     return;
