@@ -149,17 +149,20 @@ every paint of a tile stamps (`paintDressing`, called from `paintGroundTile` und
 creek and the cast shade). So a repaint lays back exactly what the bake laid, a reed rooted in the
 tile below still pokes into this one, and a hole that refreezes gets its crack back.
 
-- **One snow depth, three bands.** The deep snow layer owns one seeded depth map; its deepest band
-  slows a walker, and this file draws the two below it: the mid band (from `DRIFT_MID`) as drifts,
+- **One snow depth, three bands.** The deep snow layer owns one seeded depth map (`snowDepth`,
+  `DEPTH_MID`/`DEPTH_DEEP`, `deepAt`, `driftWind`); its deepest band slows a walker, and this
+  file draws the two below it: the mid band (from `DRIFT_MID()`) as drifts,
   the shallow band as dust and banks. It reads the map only through `snowDepthAt`/`deepSnowAt`
   and the prevailing wind through `rollPrevailing` (`LW_X`/`LW_Y`, downwind), and draws nothing on
-  a tile the deep band owns, so a pile that looks deep is always deep snow.
+  a tile the deep band owns, so a pile that looks deep is always deep snow. Nothing is stamped on
+  a tile an object stands on (a landmark on the ice covers its own).
 - **Drifts in the lee** of each `DRIFT_BY` thing (a pine, a rock, the hut): a flat tongue about a
   tile long, root at its foot, tapering downwind, sunward rim lit and a pixel of shade past its
   lee. Nothing piles on forest floor (`DRIFT_CROWD`), the road, the creek or ice.
 - **Dust** on every lake (`dustIce`, called on each ice pixel in the shore painters): sparse
   grains in streaks along the prevailing wind, heavier near the downwind shore, each only pulling
-  the ice a little toward snow. `dustScuff(x, y)` is the hook trampled snow sets to clear it.
+  the ice a little toward snow. Trampled snow's `trampleAt(x, y)` thins it where feet have been, and
+  it calls `iceDustInvalidate` over a changed rect so those tiles repaint.
 - **The downwind bank**: a few px of face, lit crest and lee along each lake's downwind shore
   (`bakeBanks`), starting a pixel past the shore's own lip, its width off the shore's depth.
 - **Long cracks** through big lakes (`bakeCracks`/`walkCrack`): dark lines with a pale lip,
@@ -170,7 +173,7 @@ tile below still pokes into this one, and a hole that refreezes gets its crack b
 - **The weather on the ice**, every frame (`drawLakeSky`, after the reflected stars in `render()`):
   streaks of blown snow drifting across big lakes with the live wind, more in a blizzard; a frosty
   night's glints and its long cracks darkening again; falling snow laying fresh grains from
-  `dustCv`. The dials come in through `lakeSky()` alone.
+  `dustCv`. The dials come in through `lakeSky()` alone, off `weatherNow()`.
 
 ## Map shapes
 

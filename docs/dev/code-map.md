@@ -387,7 +387,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the bank on a lake's downwind shore | `bakeBanks`, `BANK_W`, `SUN_TO_X`/`SUN_TO_Y` | `the downwind bank` |
 | the long cracks on a big lake | `bakeCracks`, `walkCrack`, `crackLine`, `CRACK_*` | `long cracks` |
 | the frozen reeds along a shore | `bakeReeds`, `reedClump`, `REED_*` | `frozen reeds` |
-| the dust on the ice, and the hook that scuffs it | `dustIce` (called on each ice pixel by `paintIceTile`/`paintSnowShore`), `iceDust`, `dustLee`/`bakeDustLee`, `DUST_*`, `dustScuff` | `dust on the ice` |
+| the dust on the ice, and the hook that scuffs it | `dustIce` (called on each ice pixel by `paintIceTile`/`paintSnowShore`), `iceDust`, `dustLee`/`bakeDustLee`, `DUST_*`, `trodden` (reads `trampleAt`), `iceDustInvalidate` (trampled snow calls it) | `dust on the ice` |
 | the weather on the ice every frame: the dials, blown streaks over big lakes, a frosty night's glints and cracks, fresh dust | `lakeSky`, `drawLakeSky` (called by `render()` after `drawIceStars`), `LSTREAK_*`, `GLINT_*`, `CRACK_FROST*`, `dustCv`/`DUST_VARS`/`DUST_LEVELS` | `the weather on the ice` |
 
 ## js/draw/practice.js

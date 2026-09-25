@@ -18,24 +18,26 @@
 // lake's downwind shore. Read only through the doors below, so the shapes
 // always agree: no drift is ever drawn on a tile the deep band owns (it
 // draws its own), so nothing that looks deep walks shallow.
-// Until the deep snow layer lands these read its stand-ins: the prevailing
-// wind on the snow's own swell axis (SNOW_ANG) with the seed picking which
-// way it blows, a middling depth on open snow and a thin one on the ice.
-const DRIFT_MID = 0.35;       // depth from which a drift piles in a lee (the deep band starts higher)
-const DEPTH_STAND = [0.55, 0.2]; // the stand-in depths: open snow, ice
+// The map is js/depth.js's (snowDepth at a tile-space point, DEPTH_MID /
+// DEPTH_DEEP its bands, deepAt the slowing test, driftWind the prevailing
+// wind). Until it lands these read stand-ins: the prevailing wind on the
+// snow's own swell axis (SNOW_ANG) with the seed picking which way it
+// blows, a middling depth on open snow and a thin one on the ice.
+const DEPTH_STAND = [0.4, 0.15]; // the stand-in depths: open snow, ice
+const DRIFT_MID = () => (typeof DEPTH_MID === 'number' ? DEPTH_MID : 0.25); // depth from which a drift piles in a lee
+const DEEP_TOP = () => (typeof DEPTH_DEEP === 'number' ? DEPTH_DEEP : 0.6);
 function snowDepthAt(tx, ty) {
   if (!inWorld(tx, ty)) return 0;
-  if (typeof snowDepth === 'function') return snowDepth(tx, ty);
+  if (typeof snowDepth === 'function') return snowDepth(tx + 0.5, ty + 0.5);
   return isLake(tx, ty) ? DEPTH_STAND[1] : DEPTH_STAND[0];
 }
 function deepSnowAt(tx, ty) {
-  return typeof SNOW_DEEP === 'number' && snowDepthAt(tx, ty) >= SNOW_DEEP;
+  return typeof deepAt === 'function' && deepAt((tx + 0.5) * TILE, (ty + 0.5) * TILE);
 }
-const DEEP_TOP = () => (typeof SNOW_DEEP === 'number' ? SNOW_DEEP : 1);
 // the prevailing wind: the way it blows TOWARD, one answer for the map
 let LW_X = 1, LW_Y = 0;
 function rollPrevailing() {
-  if (typeof PREVAIL_X === 'number') { LW_X = PREVAIL_X; LW_Y = PREVAIL_Y; return; }
+  if (typeof driftWind === 'object' && driftWind) { LW_X = driftWind.dx; LW_Y = driftWind.dy; return; }
   const s = hash2(911, 353) < 0.5 ? -1 : 1;
   LW_X = SNOW_C * s; LW_Y = SNOW_S * s;
 }
@@ -130,7 +132,7 @@ function paintDressing(g, tx, ty, px, py) {
 // is this world pixel free for the dressing: not the road's band, not the
 // creek, not a tile the deep band owns
 function dressFree(tx, ty) {
-  return inWorld(tx, ty) && ground[idx(tx, ty)] !== 3 && !creekNear(tx, ty)
+  return inWorld(tx, ty) && ground[idx(tx, ty)] !== 3 && !creekNear(tx, ty) && !objAt(tx, ty)
     && roadDist(tx, ty) >= ROAD_SHOULDER + 1.2 && !deepSnowAt(tx, ty);
 }
 
@@ -166,8 +168,8 @@ function bakeDrifts() {
     const lx = Math.round((cx + LW_X * TILE * 0.8 * w) / TILE - 0.5), ly = Math.round((cy + LW_Y * TILE * 0.8) / TILE - 0.5);
     if (!inWorld(lx, ly) || isLake(lx, ly) || !dressFree(lx, ly) || standsAt(lx, ly)) continue;
     const dep = snowDepthAt(lx, ly);
-    if (dep < DRIFT_MID) continue;
-    const m = Math.min(1, (dep - DRIFT_MID) / Math.max(0.01, top - DRIFT_MID));
+    if (dep < DRIFT_MID()) continue;
+    const m = Math.min(1, (dep - DRIFT_MID()) / Math.max(0.01, top - DRIFT_MID()));
     const L = sz * (DRIFT_LEN[0] + (DRIFT_LEN[1] - DRIFT_LEN[0]) * m), hw = sz * (DRIFT_HW[0] + (DRIFT_HW[1] - DRIFT_HW[0]) * m) * (w > 1 ? 1.4 : 1);
     const root = DRIFT_ROOT * sz, reach = root + L + hw + 2;
     const x0 = Math.floor(cx - reach), x1 = Math.ceil(cx + reach), y0 = Math.floor(cy - reach), y1 = Math.ceil(cy + reach);
@@ -299,6 +301,7 @@ function walkCrack(x, y, a, len, gen, id, key) {
   }
 }
 function crackLine(x0, y0, x1, y1, gen) {
+  if (objAt(x0 >> 4, y0 >> 4) || objAt(x1 >> 4, y1 >> 4)) return; // under a landmark standing on the ice
   const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
   let e = dx + dy;
   for (;;) {
@@ -366,9 +369,9 @@ function reedClump(x, y, key) {
 // the wind drops what it carried. A grain only lightens the ice under it -
 // the shine and the sheet's two tones show through - and most of the ice
 // carries none, so a lake still reads as slippery. Its amount rides the
-// shallow band's depth on the ice. `dustScuff(x, y)`, when set, clears the
-// grains where feet have scuffed them (trampled snow owns what scuffs; it
-// sets the hook and repaints the tiles).
+// shallow band's depth on the ice. Feet scuff it: trampled snow's
+// `trampleAt(x, y)` (0..1, refilling as snow falls) thins the grains, and
+// it calls iceDustInvalidate over what changed so those tiles repaint.
 const DUST_LONG = 26, DUST_WIDE = 4; // px per step of the dust's noise along and across the wind
 const DUST_BASE = 0.1;        // the share of the noise that reads as dust on bare ice
 const DUST_DEPTH = 0.25;      // ...added at the shallow band's full depth
@@ -377,7 +380,16 @@ const DUST_LEE_PX = 10;
 const DUST_GRAIN = 0.5;       // how much each pixel's own roll breaks the streaks into grains
 const DUST_MIX = [0, 0.28, 0.5]; // how far a grain pulls the ice toward the snow
 const DUST_SNOW = rgbOf('#f2f7fc');
-let dustScuff = null;
+const DUST_TRAMPLE = 0.9;      // how much a fully trodden spot takes off the amount
+const trodden = (x, y) => (typeof trampleAt === 'function' ? trampleAt(x, y) : 0);
+// repaint the ice in a rect of world px whose trampling changed (called by trampled snow)
+function iceDustInvalidate(x0, y0, x1, y1) {
+  if (!lakeId) return;
+  const g = groundCv.getContext('2d');
+  for (let ty = Math.max(0, y0 >> 4); ty <= Math.min(WORLD - 1, y1 >> 4); ty++)
+    for (let tx = Math.max(0, x0 >> 4); tx <= Math.min(WORLD - 1, x1 >> 4); tx++)
+      if (ground[idx(tx, ty)] === 1 || (lakeId[idx(tx, ty)] < 0 && lakesAround(tx, ty) > 0)) paintGroundTile(g, tx, ty);
+}
 let dustLee = null;           // per tile: a lake tile whose shore is near enough downwind to heap dust
 function bakeDustLee() {
   dustLee = new Uint8Array(WORLD * WORLD);
@@ -391,10 +403,10 @@ function bakeDustLee() {
 const dustCache = new Map();
 let dustK = -1, dustAmt = 0; // the last tile's amount, since a tile's pixels ask in a row
 function iceDust(x, y) {
-  if (dustScuff && dustScuff(x, y)) return 0;
   const k = idx(x >> 4, y >> 4);
-  if (k !== dustK) { dustK = k; dustAmt = DUST_BASE + DUST_DEPTH * Math.min(1, snowDepthAt(x >> 4, y >> 4) / DRIFT_MID); }
-  let amt = dustAmt;
+  if (k !== dustK) { dustK = k; dustAmt = DUST_BASE + DUST_DEPTH * Math.min(1, snowDepthAt(x >> 4, y >> 4) / DRIFT_MID()); }
+  let amt = dustAmt - DUST_TRAMPLE * trodden(x, y);
+  if (amt <= 0) return 0;
   if (dustLee[k] && !iceAtPx(Math.round(x + LW_X * DUST_LEE_PX), Math.round(y + LW_Y * DUST_LEE_PX))) amt += DUST_LEE;
   // the grain's own roll first: most pixels can't reach dust whatever the streak says
   const g = hash2(x * 7 + 3, y * 11 + 5) * DUST_GRAIN;
@@ -426,8 +438,11 @@ function dustIce(x, y, c) {
 // fresh dusting that the wind carries off again. The weather's dials come in
 // through lakeSky() alone.
 function lakeSky() {
-  const w = typeof weatherDials === 'function' ? weatherDials() : null;
-  if (w) return { blizzard: w.blizzard || 0, frost: w.frost || 0, snow: w.snow || 0 };
+  // weatherNow() (the `weather` banner, sim.js): `drift` is the ground
+  // blizzard, `frost` the clear cold, `snow` the share of flakes falling
+  // (a calm day's 0.4 lays nothing new)
+  const w = typeof weatherNow === 'function' ? weatherNow() : null;
+  if (w) return { blizzard: w.drift || 0, frost: (w.frost || 0) * (0.35 + 0.65 * state.darkness), snow: Math.max(0, ((w.snow || 0) - 0.4) / 0.6) };
   // the stand-in until the weather lands: frost comes with the night
   return { blizzard: 0, frost: state.darkness * 0.6, snow: 0 };
 }
@@ -459,7 +474,7 @@ function drawLakeSky(ox, oy, tx0, ty0, tx1, ty1) {
   if (sky.snow > 0.05) {
     const lv = Math.min(DUST_LEVELS - 1, Math.floor(sky.snow * DUST_LEVELS));
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
-      if (!openIce(tx, ty) || (dustScuff && dustScuff(tx * TILE + 8, ty * TILE + 8))) continue;
+      if (!openIce(tx, ty) || trodden(tx * TILE + 8, ty * TILE + 8) > 0.5) continue;
       const v = (hash2(tx * 3 + 1, ty * 5 + 2) * DUST_VARS) | 0;
       ctx.drawImage(dustCv, v * TILE, lv * TILE, TILE, TILE, tx * TILE - ox, ty * TILE - oy, TILE, TILE);
     }
