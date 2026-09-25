@@ -200,7 +200,7 @@ function drawNet(o, px, py, now) {
     ctx.fillStyle = '#c9dded'; ctx.fillRect(fx + 1, fy + 1, 2, 1);
     ctx.fillStyle = '#101d2c'; ctx.fillRect(fx + 1, fy, 1, 1);
   }
-  if (o.hp < o.maxHp) drawHealthBar(px + sh + 8, py - 5, o.hp, o.maxHp, 12, o.team); // + sh: rides the shudder, like every other building bar
+  if (o.hp < o.maxHp) drawHealthBar(px + sh + 8, py - 5, o.hp, o.maxHp, 11, o.team); // + sh: rides the shudder, like every other building bar
 }
 const NET_FISH_AT = [[3, 4], [8, 8], [4, 11]]; // where a held fish lies in the mesh
 
@@ -234,5 +234,5 @@ function drawTiledStruct(o, px, py, sh, now) {
       }
     }
   }
-  if (!o.building && o.hp < o.maxHp) drawHealthBar(px + sh + (w * TILE >> 1), py + TILE - spr.height - 5, o.hp, o.maxHp, 16, o.team);
+  if (!o.building && o.hp < o.maxHp) drawHealthBar(px + sh + (w * TILE >> 1), py + TILE - spr.height - 5, o.hp, o.maxHp, 17, o.team);
 }
