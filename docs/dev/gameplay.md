@@ -1894,38 +1894,49 @@ together, and a merchant that stopped for anyone standing near it would never ra
 The counter's second face (the anvil tab; `state.shopTab`, the `the forge tab` banner of
 [js/ui/forge.js](../../js/ui/forge.js)) swaps the stock, the market and the sell strip for one
 bench, and the rules live beside the ore in the `the forge` banner of
-[js/mining.js](../../js/mining.js). A weapon's level is `lvl` on its own cell beside `bits`, so it
-goes wherever the tool goes — the shelf, the pack, the snow, the wire — and a rebuilt tool would
-lose it. Every level adds `FORGE_DMG` (6%) of damage into the press's envelope before any fitting
-(`toolPlan`, and the PIERCING SHOT's `pierceMods`), and one more step of the body's `up` stat:
-`FORGE_ROF` (5%) off the cycle, or `FORGE_TENSILE` (+1) on the budget. So a +5 weapon hits for
-×1.30, and a bow fires a quarter faster or a sling swings 5 more weight.
+[js/mining.js](../../js/mining.js). **It is a dump, not a recipe**: any ore, in any amount and any
+order, goes into a weapon as forge points (`FORGE_PTS`: IRONSTONE 1, FROSTGLASS 4, SUNSTONE 15),
+the points fill the weapon's bar, and each time it fills the weapon is a level up and the next
+bar is `FORGE_NEED_UP` (3) longer (`forgeNeed`: 5, 8, 11, 14...; `forgeCum` is the total). There is
+no top level. The points are `fp` on the weapon's own cell beside `bits`, so they go wherever the
+tool goes — the shelf, the pack, the snow, the wire, a save — and a rebuilt tool would lose them;
+the level is always read off them (`toolLvl`). A weapon from the fixed-recipe forge carries a bare
+`lvl`, which `toolFp` reads as the points that level costs.
 
-| level | costs (`FORGE_COST`) |
-| --- | --- |
-| +1 / +2 | 5 / 10 IRONSTONE |
-| +3 / +4 | 3 / 5 FROSTGLASS |
-| +5 | 1 SUNSTONE |
+**What a level adds tapers** (`forgeSum`: each level adds `FORGE_TAPER`, 0.9, of what the one
+before it added), so a pile of five hundred stones makes a weapon strong and never absurd:
+damage into the press's envelope before any fitting (`toolPlan`, and the PIERCING SHOT's
+`pierceMods`), and some of the body's `up` stat — cycle off an `rof` body, weight on a `tensile`
+one.
 
-The prices follow the rocks: STONE is everywhere, FROSTGLASS is far from the roosts, and the two
-SUNSTONEs are the corners neither side owns, so the top level is fought for. A forged weapon
-sells for its ore as well as its body (`forgeWorth` in `cellValue`), so nothing spent at the
-bench is quietly lost at the sell strip.
+| level | points in all | damage | `rof` cycle | `tensile` |
+| --- | --- | --- | --- | --- |
+| +5 | 55 | ×1.25 | ×0.84 | +4 |
+| +10 | 185 | ×1.39 | ×0.74 | +7 |
+| +17 | 493 | ×1.50 | ×0.67 | +8 |
+| limit | | ×1.60 (`FORGE_DMG` 6% first) | ×0.60 (`FORGE_ROF` 4% first) | +10 (`FORGE_TENSILE` 1 first) |
 
-**The bench**, left to right: the WEAPON well with five level pips under it, the ORE well with
-have / need under it, and the preview (the level and the two numbers it moves, old > new) over
-the plate that forges it — green when it will take, dark when it will not, MAX at the top. Under
-it the LADDER: the five levels as plates, each with its ore and count, lit up to the level the
-weapon in the well has reached. Both wells fill three ways: a **drag** from the pack or the shelf
-(`forgeDrop`, from `dragDrop`), a **click** on a weapon or ore in the pack or on the shelf while
-this face is up (`forgePut`, from `sendBagCell`/`sendSlot`), or a click on the well itself (the
-weapon well steps through what you carry, the ore well takes the ore the next level needs).
-Nothing leaves the pack for it: the weapon well holds a pointer to the cell (`state.forgeSel`,
-found again each frame, by the cell or by where it was and what it is for a client whose pack
-the snapshot rebuilds) and the ore well a kind; the ore well takes only the ore the next level
-costs, and refuses anything else with a buzz and a red flash on the ladder's next plate. The
-plate sends `input.cmd` `{kind: 'shop', act: 'forge', where, i}`, and `forgeTool` re-checks the
-reach and the ore, spends it (`bagTake`) and raises `lvl`. The bots do not forge.
+A forged weapon sells for its points as well as its body (`forgeWorth`, `FORGE_GOLD` 2 a point,
+in `cellValue`), so nothing spent at the bench is quietly lost at the sell strip.
+
+**The bench**, left to right: the WEAPON well, the PILE well (each kind in it as a stacked icon
+with its count), and the preview (the level and the two numbers the pile moves, old > new) over
+the plate that forges it, which carries the pile's points — green when it will take, dark when it
+will not. Under the wells runs the weapon's FORGE BAR: its points toward the next level, the
+pile's share lit green on top (the whole bar green when the pile levels it), the level at each end
+and the points in the middle. Under the bench, one ORE plate per kind: what a piece is worth, and
+in the pile / carried. The pile fills by a **drag** of a stack onto the pile well or its kind's
+plate (`forgeDrop`, from `dragDrop`), a **click** on an ore stack in the pack while this face is up
+(`forgePut`, from `sendBagCell`), a click on a kind's plate (all of it in, or out again) or a click
+on the pile well (every ore you carry in, or the pile emptied); the weapon well fills by the same
+drag and click, and its own click steps through what you carry. Nothing leaves the pack for
+either: the weapon well holds a pointer to the cell (`state.forgeSel`, found again each frame, by
+the cell or by where it was and what it is for a client whose pack the snapshot rebuilds) and
+the pile only counts (`state.forgePile`, clamped to what you carry every frame by
+`forgePileNow`). Both are this screen's and stay out of a save (`SAVE_STATE_SKIP`, js/save.js).
+The plate sends `input.cmd` `{kind: 'shop', act: 'forge', where, i, pile}`, and `forgeTool`
+re-checks the reach and that every count is whole and carried (`forgeReady`), spends the pile
+(`bagTake`) and adds its points. The bots do not forge.
 
 A forged weapon wears `+N` in the forge's colour (`FORGE_INK`) on its well's top-left corner —
 the shelf, the pack, the bench (`forgeMark`) — and its tooltip title carries it too, with the
