@@ -85,7 +85,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the one exception to that: `state` reads it at load, so it cannot live in a later file | `FISH_SPAWN_T` | `constants` (the rest of the shoal: `fish`, wildlife.js) |
 | determinism: the seeded stream every world draw comes from | `mulberry32`, `SEED`, `rng` | `rng` (`hash2`/`vnoise`: `ground prerender`, js/draw/ground.js; `treeRare`: `world`, world.js) |
 | the singletons | `state`, `settings`, `perf` | `state` (`players`/`player` + the entity arrays: `players`, player.js) |
-| settings persistence and the minimap-size helpers | `saveSettings`, `loadSettings`, `mmScale`, `applyMinimapSize` | `state` |
+| settings persistence, the team palette, and the minimap-size helpers | `saveSettings`, `loadSettings`, `applyTeamPal`, `mmScale`, `applyMinimapSize` | `state` |
 | `relayout()` — the resize pair's second half | `relayout` | `state` (`fitCanvas`: `canvas`, canvas.js — still the resize pair) |
 | floaters, particles, drops, cost math, and the HUD's four-character count (`999` › `1.2K` › `340K` › `1.2M`) | `addFloater`, `burst`, `spawnDrop` (returns the drop), `canAfford`, `NUM_SUFFIX`/`shortNum` | `helpers` |
 | a thing put down ON PURPOSE: the heading a throw carries, and the three seconds it refuses the hand that threw it | `TOSS_SPEED`, `TOSS_LOCK_T`, `flingDrop`, `lockDrop`, `dropLocked` (set by `throwCell`, js/ui/bag.js, and `shedBits`, js/tools.js; read by the drop loop in `updatePlay` sim.js and the drop draw pass, js/draw/render.js) | `helpers` |
@@ -107,6 +107,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | players, teams, classes + kits, hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `kitOf`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyCharacter(p?)`, `contest` | `players` |
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
 | the numbers a player is made of: the player count and teams, walk/roll/slide speeds, hero levels, and the two bow baselines a kit is written against | `MAX_PLAYERS`, `TEAM_COUNT`, `PVP`, `PLAYER_SPEED`/`PLAYER_R`, `ICE_MAX`/`SLIDE_MIN`/`SLIDE_EXIT`/`TRAIL_MIN`/`SNOW_TRAIL_*`, `LEVEL_*`/`LVL_*`, `DODGE_*`, `BOW_CHARGE`/`BOW_NOCK` | `players` (above `CLASSES`, which reads some of them at load time) |
+| which preset a team wears on this screen, and whether a rival wears its colour-blind shape cue | `TEAMS`, `skin`, `foeCue` | top of the file |
 | the entity arrays and the local aliases | `animals`…`camps`, `players`, `player`, `inv` | `players` (the banner's tail) |
 | the item table and the two carry stores: the bag's cells, and the uncapped POUCH (`p.food`) every `pouch` kind lives in - count, room, add, take, and putting an instanced cell (a loaded tool) in whole | `ITEMS`, `BAG_CAP`, `isPouch`, `bagCount`, `bagUsed`, `bagRoom`, `bagAdd`, `bagTake`, `bagPut` | `players` › `inventory` (the tool and bit rows register themselves from tools.js) |
 | the gear table, the effective kit, buying a piece level | `GEAR`, `GEAR_SLOTS`, `GEAR_COSTS`, `baseKit`, `refreshKit`, `gearCost`, `buyGear` | `players` › `gear` |
@@ -316,9 +317,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a shot meeting everything its step CROSSED, in the order it met it: the swept disc, the tile walk (roost, dummy, wall), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `shotContacts`, `shotHits` | `the shot's sweep` |
 | the clock paying every player on the ground a coin, silently | `TRICKLE_GOLD`/`TRICKLE_T` (the tick is in `updatePlay`'s player loop) | `passive income` |
 | the zoom ease itself (runs first thing in `update`) | `applyZoom` | `update` |
-| the one wind field: its strength, which way it is running, and the signed lean at a tile; the slow sweep of loose snow across the world every 15 s | `windAmp`, `windVeer`, `windSway`, `wsin`/`wskew`, `WIND_*`; `windSweep`, `SWEEP_EVERY`/`SWEEP_T`/`SWEEP_MIN` (drawn: `drawSweep`, js/draw/ground.js) | `wind` |
+| the day's weather: the four rows of dials, how often each comes up, what a day rolls, and the dawn fade between them | `WEATHERS`, `WX_DIALS`, `WX_ODDS`, `WX_FADE`, `weatherOf`, `weatherNow` (the read for other systems), `stepWeather` (the dials in force: `state.wx`, core.js; the pin: `DBG.weather`) | `weather` |
+| the one wind field: its strength, which way it is running, the gust over a tile, and the signed lean at a tile; the slow sweep of loose snow across the world every 15 s | `windAmp`, `windVeer`, `windGust`, `windSway`, `wsin`/`wskew`, `WIND_*`; `windSweep`, `SWEEP_EVERY`/`SWEEP_T`/`SWEEP_MIN` (drawn: `drawSweep`, js/draw/ground.js) | `wind` |
 | particles, floaters, footprints, drops, world-space snow flakes | `updateFx`, `makeFlake`, `fitFlakes` | `fx updates` |
 | the belly-crawl drag furrow: emitted in `updatePlayer`, drawn as the `f.k === 3` branch | `footprints`, `p.trailD` | `update` (the draw branch: `render`, js/draw/render.js) |
+
+## js/shed.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| snow knocked off a pine's crown: the gust draws round each human, the wait and the rest that stagger it, the cap, and the blow (axe or shot) that always sheds | `SHED_*`, `shedStep` (called from `updatePlay`, sim.js), `shedHit` (called from `chopTree`, actions.js, and the arrow loop's wall branch, sim.js), `shedPuff` | `snow off the pines` (the read: `windGust`, sim.js; the puff: `burst`, core.js) |
 
 ## js/net/events.js
 
@@ -372,6 +380,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a lake's ragged shore, its bank, the two lake styles and which one each lake rolled, the depth in from the shore, the night mirror's shore masks | `ICE_STYLES`, `bakeLakes` (`lakeStyle`/`lakeDepth`, rolled by `rollIceStyle`), `iceAtPx` (the edge test), `depthAtPx`, `iceTone`, `bankAt`, `paintIceTile`, `paintSnowShore`, `mirrorCv`/`mirrorSlot`/`markMirror` | `the ice shore` (the mirror drawn: `drawIceStars`, js/draw/light.js) |
 | open snow's drifts: the tones, the three looks and their regions, the height lattice, a tile's tones, the boot bake's row strip | `SNOW_PAL`, `SNOW_LOOKS`, `SNOW_REGION`/`SNOW_CUT`/`SNOW_BLEND`, `snowH`, `snowTile` (fills `snowTone`; the ice shore reads it too), `paintSnowTile`, `snowStrip`/`snowBulk` (called by `renderGround`) | `the snow's pixels` |
 | the sweep's streaks: the world grid they are laid on, how many, how far they drift, how long, their strands, the shadow and the drift | `drawSweep` (called by `render()` before `drawDropAir`), `SWEEP_CELL_W`/`SWEEP_CELL_H`/`SWEEP_RUN`/`SWEEP_STREAKS`/`SWEEP_LEN`/`SWEEP_LAG`/`SWEEP_STRANDS`/`SWEEP_SHADE`/`SWEEP_BODY`/`SWEEP_FULL` | `the wind's sweep` (when one blows: `windSweep`, sim.js) |
+| a blizzard day's low streaks: their grid, their loops, speeds and lengths, and the one atlas they are drawn off | `drawDrift` (called by `render()` after `drawIceStars`), `blowAtlas`, `BLOW_*` | `the ground blizzard` |
 | cast shadows: the sun's direction, what casts (by object type), a frame's shade, the scenery's baked into the ground, a changed caster's repaint, a body's drawn per frame | `SUN_DX`/`SUN_DY`, `SHADE_*`, `CASTERS`, `CAST_REACH`, `shadeMask`/`shadeFor`, `paintCastShade`, `shadeWorld` (the boot bake, in chunks), `castAt`/`syncCasts` (called by `render()` before the ground blit), `drawCastShade` (bodies.js, the building pass in render.js) | `cast shadows` |
 | the treasure chest's and the road cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
 | which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's); its atlas row (palette variant, forest-depth tone) and the nudge off its tile centre | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST`, `treeCell`, `treeTone`/`woody`/`TREE_TONES`, `treeNudgeX`/`treeNudgeY`/`TREE_NUDGE_X`/`TREE_NUDGE_Y` | `the scenery bakes` |
@@ -430,7 +439,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the camp glyph both maps stamp, and the respawn clock a hovered anchor wears | `drawCampIcon`, `drawCampClock` | `the camp glyph both maps and the drop chart stamp` (its `CAMPS` spec: `camps`, world.js) |
 | what a flag looks like: the order's glyph (at any scale), the map pennant, the ring an order covers (every standing one and the held wheel's preview), the planted banner, and a map's pennant-with-ring | `drawFlagIcon`, `drawFlagPennant`, `drawFlagRing`, `drawFlagRings`, `drawFlag`, `drawFlagMark` | `what a flag looks like` (what they read, `FLAG_TYPES`/`FLAG_R`: `team flags`, robots.js; the wheel's pick: `wheelLayout`, js/ui/wheel.js) |
-| what a body looks like on either map: the square in its side's ink (a player one step bigger than a robot), the watched body's white heart in its side's ring, the bird diamond | `drawMapDot`, `drawMapUnit`, `drawMapYou`, `drawMapBird` | `what a body looks like on a map` (its two callers: `renderMinimap` js/ui/minimap.js, `renderWorldMap` js/ui/panels.js) |
+| what a body looks like on either map: the square in its side's ink (a player one step bigger than a robot), the watched body's white heart in its side's ring, the bird diamond, and a rival's cross under a colour-blind palette | `drawMapDot`, `drawMapUnit`, `drawMapCross`, `drawMapYou`, `drawMapBird` | `what a body looks like on a map` (its two callers: `renderMinimap` js/ui/minimap.js, `renderWorldMap` js/ui/panels.js) |
 
 ## js/draw/light.js
 
@@ -441,6 +450,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | whether the sun shafts are up at all (the drop window, and noon), and the shafts themselves | `rayLight`, `godRays`, `RAY_*` | `light & weather` › `god rays` |
 | the ice's night mirror + the parallax stars in it, and the "is this pixel on unbroken ice" mask (the painted shore's, `iceAtPx`) | `drawIceStars`, `overIce`, `STAR_*` | `light & weather` › `the reflected sky` |
 | the hour's colour grade (rose dawn, crisp midday, gold dusk: a warm multiply over a cool screen off keyframes on `state.time`, and the noon self-multiply) | `todGrade`, `todMix`, `todNoon`, `TOD_KEYS`/`TOD_CRISP`/`TOD_NOON*` | `light & weather` › `the hour` |
+| a clear frosty day: its cool grade and all-day crisp (applied in `todGrade`), the cloud it clears, the glints on bare snow, and a blizzard's milky haze | `FROST_TINT`/`FROST_CRISP`/`FROST_CLEAR`, `drawFrostGlint`, `GLINT_*`, `BLIZ_HAZE`/`BLIZ_HAZE_A` | `light & weather` › `frost glints` |
 | the night colour, a lit shot's halo, snow (world-space flakes, see `fx updates`), vignette | `renderLighting`, `NIGHT_TINT`/`NIGHT_DEEP`/`NIGHT_DEEP_A`, `litShots`, `renderWeather`, `renderVignettes`/`vigGrd` | `light & weather` › `the pass` |
 | the night RIM: the world-space vignette that closes the view in rather than dimming the middle | `nightEdge`, `NIGHT_EDGE`, `nvGrd` | `light & weather` › `the pass` |
 | **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk` | `light & weather` › `ink over the world` |
