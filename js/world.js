@@ -75,6 +75,13 @@ const OBJECTS = {
   // the front row the y-sort reads - drawing the whole 35x35 sprite
   // (SPRITES.hogHut) centred over the pair. Inert to E like the den.
   hut:      { solid: true,  w: 2, h: 2, mm: [134, 97, 69] },
+  // the merchant's STALL (pitched by updateMerchant, robots.js): 3x2 laid
+  // out like the hut (anchor bottom-left, parts east and north), carrying
+  // its `team` and its `merch`. No `tool` and no hp: nothing swings at it,
+  // nothing shoots it, and it is in no `structures` list for a wave to
+  // siege - the counter is as untouchable as its keeper. E in front of it
+  // opens the shop (merchNear, js/ui/shop.js).
+  stall:    { solid: true,  w: 3, h: 2, mm: (o) => mmTeam(o) },
   // the practice arena's target (the `practice arena` banner below): any tool
   // hits it, it never falls, and it mends itself between combos. E swings,
   // every bit and the roll's tackle all land through hitDummy (js/actions.js).

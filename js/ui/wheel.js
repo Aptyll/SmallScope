@@ -410,7 +410,8 @@ function drawShopHint(ox, oy) {
   if (!b) return false;
   const verb = 'SHOP';
   const totalW = promptW(verb, 'work');
-  drawKeyPrompt(Math.round(b.x - ox - totalW / 2), Math.round(b.y - 44 - oy), verb, keyHeld('work'));
+  const pt = counterPt(b), lift = b.merchant ? 44 : 50; // a stall's cap clears its awning
+  drawKeyPrompt(Math.round(pt.x - ox - totalW / 2), Math.round(pt.y - lift - oy), verb, keyHeld('work'));
   return true;
 }
 

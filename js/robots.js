@@ -299,15 +299,16 @@ function updateRobot(b, dt) {
 // ------------------------------------------------------------ merchant
 // Each eagle is DRIVEN by its team's merchant - the figure on the bird's neck
 // in flight (drawEagle, js/boot.js) - who climbs down the moment it roosts
-// and works HOME for its side, never toward the fight: it fells the back
+// and works HOME for its side, never toward the fight: it pitches its
+// market STALL beside the spur's head (the shop players walk to), then fells the back
 // woods (the half of the roost facing away from the spur and the road) from
 // the roost outward, every pine and snag a log in its own stock (`wood`),
 // and raises the BOT BAYS (the barracks) on that cleared home ground - the
 // first on a clock, each after it for MERCH_BAY_WOOD logs, up to MERCH_BAYS -
 // whose waves walk themselves out to the road and march it (the `soldiers`
-// banner below). It raises no walls and no guns. Between swings it is the
-// SHOP (the `shop` banner, js/ui/shop.js): walk up to either team's merchant
-// and E opens its counter, wherever it is working.
+// banner below). It raises no walls and no guns. Its stall and its own body
+// are both counters (the `shop` banner, js/ui/shop.js): walk up to either
+// team's and E opens the shop.
 //
 // It is a unit in `robots` with `merchant: true`: the same separation and
 // draw pipelines a worker rides, dispatched to updateMerchant/drawMerchant by
@@ -326,6 +327,8 @@ const MERCH_BUILD_T = 0.9;   // s the hammer's wind-up reads as (drawMerchant)
 const MERCH_BACK_R = 13;     // tiles from the roost the back woods' felling reaches
 const MERCH_BACK_ARC = Math.PI / 2; // rad off the spur's axis a pine must sit to be the back woods': the half facing away from the road
 const MERCH_HOP_T = 0.55;    // s of the hop off the bird
+const MERCH_STALL_OUT = 4.6; // tiles from the roost the stall's centre sits: at the paved crater's edge, in its stump rings, so its front opens onto the clearing
+const MERCH_STALL_ANG = 0.9; // rad either side of the spur's axis it looks for a site: beside the track's head, never on it
 const MERCH_THINK = 0.35;    // s between job picks
 // the bot bays (STRUCTS.barracks): MERCH_BAY_T after the landing the merchant
 // clears a site MERCH_BAY_BACK tiles out from the roost - the footprint to
@@ -367,6 +370,7 @@ function spawnMerchant(e) {
     x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE, // no hp: nothing can hurt it (unitAlive)
     roost: e, tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
     bays: [], bayT: MERCH_BAY_T, baySite: null, wood: 0, // the bot bays standing, the clock to the next, where it goes; the logs in stock
+    stall: null, stallT: 0, stallSite: null, // the shop it pitches first (OBJECTS.stall), the clock to asking again for a site, where
     hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
     atkAim: null, atkCd: 0, mad: null, madT: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
@@ -402,6 +406,47 @@ function merchFell(b, t) {
 function merchBearing(e, ang) {
   const lx = e.laneDir.x, ly = e.laneDir.y;
   return { x: lx * Math.cos(ang) - ly * Math.sin(ang), y: ly * Math.cos(ang) + lx * Math.sin(ang), ang };
+}
+// where the stall goes: a 3x2 site (top-left, like a bay's) about
+// MERCH_STALL_OUT tiles from the roost at MERCH_STALL_ANG either side of the
+// spur's axis - beside the track's head, where everybody lands and respawns,
+// and off the track itself (SPUR_HW and a tile more) so the way in is never
+// shut. Dry land holding nothing the axe cannot take; the nearer side wins.
+function merchStallSite(b) {
+  const e = b.roost, lx = e.laneDir.x, ly = e.laneDir.y;
+  const offSpur = (x, y) => {
+    const px = x + 0.5 - e.x / TILE, py = y + 0.5 - e.y / TILE;
+    return px * lx + py * ly <= 0 || Math.abs(px * -ly + py * lx) >= SPUR_HW + 1;
+  };
+  const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
+    if (!inWorld(x, y) || waterAt(x, y) || (ground[idx(x, y)] !== 0 && ground[idx(x, y)] !== 3) || !offSpur(x, y)) return false;
+    const o = objAt(x, y);
+    return !o || laneFells(o) || o.type === 'stump';
+  });
+  let best = null, bd = 1e9;
+  for (const ang of [MERCH_STALL_ANG, -MERCH_STALL_ANG]) {
+    const d = merchBearing(e, ang);
+    const cx = e.x / TILE + d.x * MERCH_STALL_OUT - 1.5, cy = e.y / TILE + d.y * MERCH_STALL_OUT - 1;
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const tx = Math.round(cx) + dx, ty = Math.round(cy) + dy;
+      const dd = Math.hypot(tx - cx, ty - cy);
+      if (dd < bd && fits(tx, ty)) { bd = dd; best = { tx, ty }; }
+    }
+  }
+  return best;
+}
+// set the stall on its site: the anchor is the FRONT-left tile (the row the
+// y-sort reads, like the hut's), parts east and north of it; then the
+// ground under its shade is repainted (CASTERS.stall, js/draw/ground.js)
+function pitchStall(b, s) {
+  const o = placeObj(s.tx, s.ty + 1, 'stall', { team: b.team });
+  for (let j = 0; j < 2; j++) for (let k = 0; k < 3; k++) {
+    if (!j && !k) continue;
+    const x = s.tx + k, y = s.ty + 1 - j;
+    objects[idx(x, y)] = { type: 'part', tx: x, ty: y, of: o, flash: 0, shake: 0 };
+  }
+  for (let y = s.ty - 1; y <= s.ty + 4; y++) for (let x = s.tx - 1; x <= s.tx + 7; x += 2) if (inWorld(x, y)) repaintGround(x, y);
+  return o;
 }
 // the first bay's bearing: one of the two BACK corners (+-135 deg off the
 // spur's axis), the one pointing nearer the world's edge - deeper into the
@@ -531,11 +576,67 @@ function updateMerchant(b, dt) {
     return false;
   };
   for (let i = b.avoids.length - 1; i >= 0; i--) if ((b.avoids[i].t -= dt) <= 0) b.avoids.splice(i, 1);
+  // ---- raising a 3x2 site: fell what stands on it, then hammer it up ----
+  // Shared by the stall and the bays. The woods on the footprint and a
+  // MERCH_BAY_RING round it are felled (no gold; the axe leaves a stump
+  // everywhere but the footprint), a stump on the footprint kicked out,
+  // then the site is hammered up from the tile below its middle - wholly
+  // off the footprint, or it goes up round the merchant and entombs it -
+  // and `set()` makes it. `fail(t)` is a walk that found no route.
+  const raise = (s, set, fail) => {
+    const o = merchBayBlocker(b, s);
+    if (o) {
+      const px = o.tx * TILE + 8, py = o.ty * TILE + 8;
+      if (Math.hypot(px - b.x, py - b.y) > 20) {
+        if (walkToward(px, py, 1) < 0) { b.avoids.push({ o, t: 12 }); fail(3); } // walled off: try again shortly
+        b.workT = 0;
+      } else {
+        b.tgt = o;
+        b.workT += dt;
+        if (b.workT >= MERCH_BAY_SWING) {
+          b.workT = 0;
+          if (o.type === 'stump') { objects[idx(o.tx, o.ty)] = null; burst(px, py, '#eef4fb', 6, 40, 0.4, true); b.tgt = null; }
+          else if (merchFell(b, o) && !merchOnBay(s, o.tx, o.ty)) objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
+        }
+      }
+      return;
+    }
+    const mx = (s.tx + 1.5) * TILE, my = (s.ty + 2) * TILE + 8;
+    if (Math.hypot(mx - b.x, my - b.y) > 14 || b.y - PLAYER_R < (s.ty + 2) * TILE) {
+      if (walkToward(mx, my, 0) < 0) fail(6);
+      b.workT = 0;
+    } else if (footprint('barracks', s.tx, s.ty).some(([x, y]) => unitOn(x, y))) {
+      b.workT = 0; // somebody standing on the site: wait for them to step off
+    } else {
+      b.tgt = { type: 'stump', tx: s.tx + 1, ty: s.ty + 1 }; // the hammer's aim (drawMerchant reads the type for its timing)
+      b.workT += dt;
+      if (b.workT >= MERCH_BAY_HAMMER) {
+        b.workT = 0; b.tgt = null;
+        set();
+        burst(mx, my - 8, '#eef4fb', 10, 45, 0.45, true);
+        sfxAt('hammer', mx, my);
+      }
+    }
+  };
+  // ---- the stall: the first job off the bird ---------------------------
+  // The shop the players walk to (OBJECTS.stall, world.js): pitched beside
+  // the spur's head, where everybody lands and respawns. It is never
+  // wrecked, so it goes up once; until it does, the merchant's own body is
+  // the only counter (it stays one after, too).
+  if (!b.stall && b.stallT > 0) b.stallT -= dt;
+  if (!b.stall && b.stallT <= 0) {
+    if (!b.stallSite) b.stallSite = merchStallSite(b);
+    const s = b.stallSite;
+    if (!s) b.stallT = 8; // nowhere to stand it right now: ask again
+    else {
+      raise(s, () => { b.stall = pitchStall(b, s); b.stallSite = null; }, (t) => { b.stallSite = null; b.stallT = t; });
+      return finish();
+    }
+  }
   // ---- the bot bays: the first due MERCH_BAY_T after the landing, each
   // after it once MERCH_BAY_WOOD logs are in stock, ahead of the felling
-  // whenever one is due - the waves are the match's clock. The woods on the
-  // site are felled, a stump on it kicked out, then the site is hammered up
-  // from its doorstep. A wreck stalls the next one MERCH_BAY_REBUILD.
+  // whenever one is due - the waves are the match's clock. A wreck stalls
+  // the next one MERCH_BAY_REBUILD.
   const standing = b.bays.filter((o) => structOf(objAt(o.tx, o.ty)) === o);
   if (standing.length < b.bays.length) { b.bays = standing; b.bayT = Math.max(b.bayT, MERCH_BAY_REBUILD); }
   if (b.bays.length < MERCH_BAYS) b.bayT -= dt;
@@ -544,42 +645,11 @@ function updateMerchant(b, dt) {
     const s = b.baySite;
     if (!s) b.bayT = 8; // nowhere to stand it right now: ask again
     else {
-      const o = merchBayBlocker(b, s);
-      if (o) {
-        const px = o.tx * TILE + 8, py = o.ty * TILE + 8;
-        if (Math.hypot(px - b.x, py - b.y) > 20) {
-          if (walkToward(px, py, 1) < 0) { b.avoids.push({ o, t: 12 }); b.bayT = 3; } // walled off: try again shortly
-          b.workT = 0;
-        } else {
-          b.tgt = o;
-          b.workT += dt;
-          if (b.workT >= MERCH_BAY_SWING) {
-            b.workT = 0;
-            if (o.type === 'stump') { objects[idx(o.tx, o.ty)] = null; burst(px, py, '#eef4fb', 6, 40, 0.4, true); b.tgt = null; }
-            else if (merchFell(b, o) && !merchOnBay(s, o.tx, o.ty)) objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 }; // the merchant's axe always leaves a stump: the footprint alone is cleared to the ground
-          }
-        }
-        return finish();
-      }
-      // the site is clear: hammer it up from the tile below the door - wholly
-      // off the footprint, or the bay goes up round the merchant and entombs it
-      const mx = (s.tx + 1.5) * TILE, my = (s.ty + 2) * TILE + 8;
-      if (Math.hypot(mx - b.x, my - b.y) > 14 || b.y - PLAYER_R < (s.ty + 2) * TILE) {
-        if (walkToward(mx, my, 0) < 0) { b.baySite = null; b.bayT = 6; }
-        b.workT = 0;
-      } else if (footprint('barracks', s.tx, s.ty).some(([x, y]) => unitOn(x, y))) {
-        b.workT = 0; // somebody standing on the site: wait for them to step off
-      } else {
-        b.tgt = { type: 'stump', tx: s.tx + 1, ty: s.ty + 1 }; // the hammer's aim (drawMerchant reads the type for its timing)
-        b.workT += dt;
-        if (b.workT >= MERCH_BAY_HAMMER) {
-          b.workT = 0; b.tgt = null; b.baySite = null;
-          if (b.bays.length) b.wood -= MERCH_BAY_WOOD; // the first of an empty yard is the eagle's gift
-          b.bays.push(createStruct(s.tx, s.ty, 'barracks', 0, owner, true)); // the eagle's own: nobody pays gold
-          burst(mx, my - 8, '#eef4fb', 10, 45, 0.45, true);
-          sfxAt('hammer', mx, my);
-        }
-      }
+      raise(s, () => {
+        b.baySite = null;
+        if (b.bays.length) b.wood -= MERCH_BAY_WOOD; // the first of an empty yard is the eagle's gift
+        b.bays.push(createStruct(s.tx, s.ty, 'barracks', 0, owner, true)); // the eagle's own: nobody pays gold
+      }, (t) => { if (t === 6) b.baySite = null; b.bayT = t; });
       return finish();
     }
   }

@@ -530,6 +530,57 @@
     '........',
   ];
 
+  // The merchant's STALL (OBJECTS.stall, world.js; pitched by updateMerchant,
+  // robots.js): D "STALL AND SHELVES" of docs/media/concepts/tent-concepts-2.png,
+  // Noah's pick - a snowy awning in the side's stripes (the one team piece)
+  // over two shelves of goods, a lantern, a scale and a planked counter.
+  // 48 wide over its 3x2 footprint, the art rising above it like a pine.
+  const stall = [
+    '....oo....oo....oo....oo....oo....oo....oo......',
+    '..oossoooossoooossoooossoooossoooossoooossoooo..',
+    '.osssssssssssssssssssssssssssssssssssssssssssso.',
+    '.ooSoSooSoSooSoSooSoSooSoSooSoSooSoSooSoSooSoSo.',
+    'oyyyyccccyyyyccccyyyyccccyyyyccccyyyyccccyyyycco',
+    'oyyyyccccyyyyccccyyyyccccyyyyccccyyyyccccyyyycco',
+    'oyyyyccccyyyyccccyyyyccccyyyyccccyyyyccccyyyycco',
+    'oyyyyccccyyyyccccyyyyccccyyyyccccyyyyccccyyyycco',
+    'oyyyyccccyyyyccccyyyyccccyyyyccccyyyyccccyyyycco',
+    'oyyyyccccyyyyccccyyyyccccyyyyccccyyyyccccyyyycco',
+    'ottttCCCCttttCCCCttttCCCCttttCCCCttttCCCCttttCCo',
+    '.ottWoCCooatooCCoottooCCoottooCCoottooCCoottWoCo',
+    '..owWdddddaddddddddddddddddddddddddddddddddwWoo.',
+    '..owWCCCClllCCCCCCCCppppppCCCCnnCnnCnnCCCCCwWo..',
+    '..owWCCCalLlaCaaCCCppppppppCCCfFCfFCfFCCCCCwWo..',
+    '..owWCCCjllljCjjCCCpppPppppCCCfFCfFCfFCCCCCwWo..',
+    '..owWCCCJaaajCJjCCCppppppppCCCfFCfFCfFCCCCCwWo..',
+    '..owWCCCjjCjjCjjCCCPppppppPCCCffCffCffCCCCCwWo..',
+    '..owWCwwwwwwwwwwwwwwwwwwwwwwwwfwwfwwfwwwwwCwWo..',
+    '..owWCWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWCwWo..',
+    '..owWCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCwWo..',
+    '..owWCCCCCCCCCCCCCCCCCCCCCCCCakCakCakCakCCCwWo..',
+    '..owWCCCCBbCCaaaaaaaggCCggCCCkkCkkCkkCkkCCCwWo..',
+    '..owWCCCbbbbaaabaCaaaGGgGGGCCkkCkkCkkCkkCCCwWo..',
+    '..owWCwwwwwwwwwwawwwwwwwoowwwwwwwwwwwwwwwwCwWo..',
+    '..owWCWWWWWWWWWWaWWWWWWWfFWWWWWWWWWWWWWWWWCwWo..',
+    '..owWCCBbCCCCCCCaCCCCCCCfFCCCCCCCCCCCggCCggwWo..',
+    '.oowWCbbbbCCCCCCaCCCCCCCfFCCCCCCCCCCgGGGgGGGWoo.',
+    'oRRRRRRRRRRRRRRRRRRRRRRRffRRRRRRRRRRRRRRRRRRRRRo',
+    'orrrrrrrrrrrrrrrrrrrrrrrfrrrrrrrrrrrrrrrrrrrrrro',
+    '.oWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWo.',
+    '.oWwwwwwwwwwwwwWwwwwwwwwwwwwwwwWwwwwwwwwwwwwwWo.',
+    '.oWwwwwwwwwwwwwWwwwwwwwwwwwwwwwWwwwwwwwwwwwwwWo.',
+    '.oWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWo.',
+    '.oWwwwwwwwwwwwwWwwwwwwwwwwwwwwwWwwwwwwwwwwwwwWo.',
+    '.oWwwwwwwwwwwwwWwwwwwwwwwwwwwwwWwwwwwwwwwwwwwWo.',
+    '.oWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWo.',
+    '..oooooooooooooooooooooooooooooooooooooooooooo..',
+  ];
+  const STALLPAL = { o: '#2e2440', c: '#e6d8b8', C: '#c9b38a', d: '#9c8563', n: '#3a2c3a', w: '#7a5a3e', W: '#5a3f2b',
+    s: '#f4f7ff', S: '#d6e0ee', g: '#f2cc6a', G: '#c99a3c', f: '#8fa6b8', F: '#b8cad8', b: '#8a2a4a', B: '#c24a6a',
+    R: '#9b7550', r: '#7d5a3a', k: '#a8b0c4', a: '#4a4a5a', j: '#7fb0c8', J: '#b8dcef', p: '#a0724a', P: '#7a5236',
+    l: '#f2cc6a', L: '#fff2b0' };
+  const stallPal = (t) => Object.assign({}, STALLPAL, { y: t.coat, Y: t.coatL, t: t.coatD });
+
   const bayTeamPal = (t) => Object.assign({}, BAYPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const teamRobotPal = (t) => Object.assign({}, BOTPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const TIER_PALS = [WPAL, WPAL_STONE, WPAL_GOLD];
@@ -541,6 +592,7 @@
       generator: TIER_PALS.map((b) => bake(generator, teamBuildPal(b, t))),
       spawner: [bake(bay, bayTeamPal(t))],
       net: [bake(net, teamBuildPal(NETPAL, t))],
+      stall: bake(stall, stallPal(t)), // the merchant's shop (render.js reads SPRITES.teamBuild[skin(team)].stall)
       // wheel glyphs for sprites too big to be their own icon
       icon: {
         spawner: bake(bayIcon, bayTeamPal(t)), turret: bake(turretIcon, teamBuildPal(WPAL, t)),

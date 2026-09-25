@@ -136,6 +136,13 @@ off the concept sheet in `docs/media/concepts/merchant-concepts-2.png` (the `con
 in `.claude/skills/` is how a sheet is made and picked). Nothing on it is a player's coat or hat,
 so the side reads off the crown, the nameplate and the bar (no prone poses — it never lies down).
 
+**The merchant's stall** (`stall` in js/sprites/buildings.js, baked per side inside `SPR.onTeams`
+as `SPRITES.teamBuild[skin(team)].stall` under `stallPal`) is **48 × 38** over its 3×2 footprint:
+a snowy awning in the side's stripes (`y`/`t`, the one team ink) over two shelves of goods, a
+lantern, a scale and a planked counter. It is look **D** off
+`docs/media/concepts/tent-concepts-2.png` (round 1, `tent-concepts-1.png`, picked the market stall
+shape; round 2 grew it).
+
 **The swing tool icons** (`itemBow`/`itemAxe`/`itemPick`) are 8×8 grids sharing `AXPAL`, drawn at **1×** by
 `drawHeldTool()` (inside a translate/rotate, resolved through `SPRITES[t.icon]` from the
 `SWING_TOOLS` table) and by `drawRobot()` for a bot's swing — E picks the tool, there is no tool

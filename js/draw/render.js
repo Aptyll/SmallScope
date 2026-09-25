@@ -469,6 +469,11 @@ function render() {
       // `part` tiles resolve to it above and draw nothing of their own
       const fr = SPRITES.hogHut, spr = fr[Math.floor(now * 1000 / HUT_FR) % fr.length];
       drawSpriteFlash(spr, px + sh + TILE - (spr.width >> 1), py + TILE - spr.height, o.flash);
+    } else if (o.type === 'stall') {
+      // the merchant's shop (OBJECTS.stall): the anchor is the front-left tile
+      // and draws the whole 48-wide stall up off the front row
+      const spr = SPRITES.teamBuild[skin(o.team)].stall;
+      drawSpriteFlash(spr, px + sh, py + TILE - spr.height, o.flash);
     } else if (LANDMARKS[o.type]) {
       drawLandmark(o, px + sh, py); // the sled, the shack, the boat (js/draw/landmarks.js); their parts draw nothing
     } else if (o.type === 'rock') {
