@@ -691,7 +691,7 @@ function itemValue(type) {
   const b = bitIdOf(type); if (b) return BITS[b].price;
   const r = CARD_TYPE_RARITY[type]; if (r) return CARD_PRICE[r];
   if (isGood(type)) return marketPrice(type);
-  return 0;
+  return (ITEMS[type] && ITEMS[type].price) || 0; // a kind priced on its own ITEMS row (an ore, js/mining.js)
 }
 // a whole bag cell at asking price - a tool carries its loaded bits, and they
 // are worth what they are worth, so a loaded weapon is never sold as an empty one

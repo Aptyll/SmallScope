@@ -168,6 +168,15 @@ function tipStack(s) {
     d.notes.push([s.type === 'berry' ? 'Q OR CLICK TO EAT' : 'F OR CLICK TO EAT', TIP_DIM]);
     return d;
   }
+  if (isOre(s.type)) {
+    // an ore: its name in its rock's colour, what kind of rock it came out of
+    const K = ROCK_KINDS[ITEMS[s.type].ore];
+    const d = tipBase(s.type, ITEMS[s.type].name, K.key.toUpperCase() + ' ORE');
+    d.tcol = RES_COLORS[s.type];
+    d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
+    d.rows.push(['FROM', K.name, '#f4f7ff']);
+    return d;
+  }
   const d = tipBase(s.type, s.type.toUpperCase(), 'ITEM');
   d.rows.push(['CARRIED', String(s.n), '#f4f7ff']);
   return d;

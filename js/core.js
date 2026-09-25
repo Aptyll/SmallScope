@@ -39,8 +39,8 @@ const FISH_SPAWN_T = 11;   // seconds between new fish while the shoal is health
 const YIELD = {
   treeHit: 0,   treeFall: 1,            // 3 hp tree  -> 1 gold, slow and safe (TREE_HP, js/world.js)
   treeRare: 3,                          // rare-tree jackpot on top of the fall payout (1 pine in 12: four trees' worth)
-  rockHit: 0,   rockBreak: 3,           // 5 hp rock  -> 3 gold, better per swing than a pine, and a find 1 in 5
   deadTreeHit: 0, deadTreeFall: 1,      // 3 hp snag  -> 1 gold, the rookery's cover; leaves a stump
+  // (a rock pays by its kind, with its ore: ROCK_KINDS, js/mining.js)
   rabbit: { coins: 2, each: 5 },        // 10 gold + a berry, but it bolts
   deer:   { coins: 3, each: 6 },        // 18 gold, the big mobile target
   wolf:   { coins: 3, each: 8 },        // 24 gold, a den's four: the resource camp, and it bites back once woken

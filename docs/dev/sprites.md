@@ -308,6 +308,17 @@ the four berry pixels change (ripe, gone, pale `b` buds, dull `d` berries), beca
 a clock the player reads at a glance and a bush that seemed to move would read as a different
 plant ([the regrow stages](world.md#the-tile-world)).
 
+The **rocks** ([js/sprites/rocks.js](../../js/sprites/rocks.js)) are look B, STANDING CRAGS, of
+[rock-concepts-1.png](../media/concepts/rock-concepts-1.png) (A snow boulders, B standing crags,
+C strata ledge), one outline per kind so the kind reads without its colour: STONE is two leaning
+slabs (32×22), a FROSTGLASS SPIRE is ice prisms thrust through the slabs (32×29), a SUNSTONE a
+black obelisk seamed with amber and ringed with amber shards (32×35), each on `RKPAL` with its
+32-wide rubble. The grids came off a generator (faceted stone lit from the upper left, prisms in
+three faces) and are kept verbatim; the crack overlays are baked from them at load (`cracks`, a
+seeded walk down the body, dark on stone and white on crystal) and so are the glint sites
+(`glints`, every third of the brightest crystal and amber pixels). The three ore icons are 8×8
+grids baked beside their code in js/mining.js (`ORE_ICONS`): a lump, a shard and a cut gem.
+
 Anything drawn through `drawSpriteFlash()` must stay within **64×64**: it recolours through a
 shared 64×64 scratch canvas and a larger sprite clips ([rendering.md](rendering.md#render-pass-order)).
 
@@ -340,7 +351,8 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | --- | --- | --- |
 | `characters.js` | player, the fish catch, skater, prone, raider, looks, the merchant | `playerTeam`, `champ`, `LOOK`, `champLook`, `player`, `raider` **(dead)**, `merchant` |
 | `looks.js` | bodies, heads, beards, hair, outfits | `portrait`, `MODEL_LAYERS` |
-| `terrain.js` | trees, rocks, gold ore, gold mine, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `rock`, `goldOre` **(dead)**, `mine` **(dead)**, `bush*`, `deadTree`, `den`, `hogHut` |
+| `terrain.js` | trees, gold ore, gold mine, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `goldOre` **(dead)**, `mine` **(dead)**, `bush*`, `deadTree`, `den`, `hogHut` |
+| `rocks.js` | the three rock kinds, their rubble, the channel's cracks, the glint sites | `rock[kind]`, `rockSpent[kind]`, `rockCracks[kind][stage]`, `rockGlints[kind]` |
 | `beasts.js` | imp, rabbit, deer, wolf, the bird, the camps' wolves | `rabbit`, `wolf`, `bird`, `deer`, `imp` **(dead)**, `alpha`, `dire` |
 | `eagle.js` | eagle | `eagle`, `eagleTeam`, `eagleFlash`, `eagleShadow` |
 | `buildings.js` | wall, tiered structures, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret`, `generator`, `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |

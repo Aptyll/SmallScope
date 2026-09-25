@@ -120,18 +120,26 @@ function workTargetAt(p, tx, ty) {
     if (STRUCTS[st.type]) { if (!ownsStruct(st, p)) t = SWING_AXE; }
     else {
       // scenery answers from its OBJECTS entry: `tool` is what E reaches for,
-      // and `ready` (the bush's berries) is what decides it is worth reaching.
-      // An object carrying a `team` (a roosting eagle's hitbox tiles) is a
-      // rival-only target, the same rule a building answers above.
-      const d = OBJECTS[o.type];
-      if (d && d.tool && (!d.ready || d.ready(o)) &&
-        (o.team === undefined || o.team !== p.team)) t = d.tool === 'pick' ? SWING_PICK : SWING_AXE;
+      // and `ready` (the bush's berries, a rock's rubble) is what decides it
+      // is worth reaching. An object carrying a `team` (a roosting eagle's
+      // hitbox tiles) is a rival-only target, the same rule a building
+      // answers above. A two-tile rock's `part` answers for the rock.
+      const d = OBJECTS[st.type];
+      if (d && d.tool && (!d.ready || d.ready(st)) &&
+        (st.team === undefined || st.team !== p.team)) t = d.tool === 'pick' ? SWING_PICK : SWING_AXE;
     }
   } else if (ground[idx(tx, ty)] === 1) t = SWING_PICK;
   if (t < 0) return null;
   // tile-based, not a radius: only the ring of tiles around the one you stand on
   const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
   const near = Math.max(Math.abs(tx - ptx), Math.abs(ty - pty)) <= WORK_REACH;
+  // scenery wider than a tile (a rock) is the target as a whole, from its
+  // anchor, and in reach while any tile of it is
+  const so = o && structOf(o), w = so && !STRUCTS[so.type] && OBJECTS[so.type] && OBJECTS[so.type].w;
+  if (w) {
+    const dx = ptx < so.tx ? so.tx - ptx : Math.max(0, ptx - (so.tx + w - 1));
+    return { o: so, tx: so.tx, ty: so.ty, tool: t, near: Math.max(dx, Math.abs(pty - so.ty)) <= WORK_REACH };
+  }
   return { o, tx, ty, tool: t, near };
 }
 
@@ -164,8 +172,11 @@ function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
     p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.zip >= 0) return; // both hands are on the ability, on the meal, or on the zipline's handle
   if (p.prone) { risePlayer(p); return; } // no swinging an axe on your belly: E stands you up
+  if (p.mineO) return; // the pick is already at a rock (updateMine, js/mining.js)
   const t = workTarget(p);
   if (!t || !t.near) return;
+  // a rock is not swung at: the key held on it is a channel
+  if (t.o && t.o.type === 'rock') { startMine(p, t.o); return; }
   if (p.charging) { p.charging = false; p.chargeT = 0; } // work drops the draw
   p.fireArmed = false;                                     // ...and the held button has to be pressed again
   p.autoSwing = false;
@@ -253,6 +264,7 @@ function tryDodge(p) {
     p.rootT > 0 || p.rushT > 0) return; // a trap pins the roll too, and a charge is already a dash
   risePlayer(p); // a roll is the fast way out of the snow, and it costs a charge
   breakEat(p);   // ...and out of a meal: the roll is the one way YOU end your own channel
+  breakMine(p);  // ...or the pick's at a rock (js/mining.js)
   if (p.grapT > 0) grapEnd(p); // rolling off the rope: the reel's speed feeds the dash below
   if (p.zip >= 0) zipEnd(p, false); // ...and off the zipline's handle the same way
   let dx = p.input.mx, dy = p.input.my;
@@ -326,8 +338,9 @@ function rollTackle(p, sp, nx, ny) {
 
 // The other half of a tackle into scenery. A building on another team takes
 // the hit for real - it has an hp pool and a body to break. A tree or a rock
-// has neither: its `hp` is a chop count sitting behind a tool gate, so being
-// run into shakes it and dumps its snow and nothing more.
+// has neither (a pine's `hp` is a chop count behind a tool gate, a rock is
+// mined by a channel), so being run into shakes it and dumps its snow and
+// nothing more.
 function tackleObject(o, dmg, p) {
   if (!o) return;
   o.flash = 0.1;
@@ -556,22 +569,6 @@ function hitObject(o, p) {
   o.shake = 0.22;
   if (o.type === 'tree' || o.type === 'deadTree') {
     chopTree(o, p);
-  } else if (o.type === 'rock') {
-    o.hp--;
-    sfxAt('mine', ox, oy);
-    awardGold(p, YIELD.rockHit, ox, oy);
-    burst(ox, oy - 4, '#a8b0c4', 6, 45, 0.4, true);
-    if (o.hp <= 0) {
-      objects[idx(o.tx, o.ty)] = null;
-      sfxAt('break_', ox, oy);
-      shakeFor(p, 2);
-      awardGold(p, Math.round(YIELD.rockBreak * kitOf(p).harvestMul), ox, oy - 6);
-      burst(ox, oy - 4, '#8b93a8', 12, 55, 0.6, true);
-      // the common source: a rock is where a bottom-tier tool or bit was
-      // buried, and it is what makes mining worth doing after the gold stops
-      // being the point (js/tools.js)
-      dropLoot(ox, oy - 4, 0, ROCK_DROP);
-    }
   } else if (o.type === 'eagle') {
     // the roost: a rival's E swing is the melee siege on the objective. The
     // own-team case can still land here through a stale swing lock, so the
@@ -905,6 +902,7 @@ function stunUnit(e, t) {
     e.sliding = false;
     e.castT = 0; e.castAb = -1;                    // the cast is knocked out of the hands
     breakEat(e);                                   // ...and so is the meal (js/core.js)
+    breakMine(e);                                  // ...and the pick at a rock (js/mining.js)
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
     if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; }
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown

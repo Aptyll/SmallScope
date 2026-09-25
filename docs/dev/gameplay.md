@@ -239,8 +239,8 @@ The two **starting** bodies are sized against their class's shot plus one fittin
 ([starting loadouts](#starting-loadouts)), so nobody's first pickup can truncate the weapon they
 are already holding: the SHORTBOW's 9 carries an ARROW (2) under any modifier in the table, the
 LONGSWORD's 10 a BARBED SHOT (5) under a modifier of 5. The two weight-6 fire modifiers (PYRE,
-CINDER BURST) still overrun the longsword — both are tier 2, so they come out of a chest or the
-shop rather than off a rock, and by then the truncation is a decision.
+CINDER BURST) still overrun the longsword — both are tier 2, so they come out of a chest, a
+SUNSTONE or the shop rather than off a plain stone, and by then the truncation is a decision.
 
 A tool is **instanced**: its bag cell *is* the tool, `bits` array and all (`makeTool`), so it is
 moved between bag, slot and drop rather than rebuilt from its type name — see the hard rule in
@@ -642,7 +642,7 @@ bit, and only kinds at or under the given tier are in the pool.
 
 | source | chance | tier |
 | --- | --- | --- |
-| a broken rock | `ROCK_DROP` 0.2 | 0 |
+| a mined rock | its kind's `loot`: STONE 0.2, FROSTGLASS 0.5, SUNSTONE 1 | its `lootTier`: 0 / 1 / 2 |
 | a felled tree | `TREE_DROP` 0.04 | 0 |
 | a sprung chest | `CHEST_TOOL` 0.75 | up to 2 |
 
@@ -946,7 +946,7 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
 - **The hands work on their own** (`autoWork(p)`, js/actions.js — `updatePlayer` calls it every
   step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
-  tree, a berried bush, a rock, a chest, a rival's roosting eagle — and **any building on the
+  tree, a berried bush, a chest, a rival's roosting eagle — and **any building on the
   other team** (`autoToolFor`, resolving a footprint tile through `structOf` and refusing your
   own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
@@ -969,9 +969,11 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   no verb (bright inside catch reach, dim outside).
 - **E = work** (`tryWork(p)`, auto-repeating every swing cooldown while held — `updatePlayer`
   calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
-  It is what reaches **bare ice** (cracking toward a hole) and **the practice dummy** —
-  the two things not marked `auto` — and it still works anything else if you insist. It resolves `workTarget(p)`: the tile that player is
-  aiming at, if it holds a tree or a dead tree (→ axe), rock (→ pick), a berried bush (→ axe), or
+  It is what reaches **bare ice** (cracking toward a hole), **the practice dummy** and **a rock**
+  — the three things not marked `auto` — and it still works anything else if you insist. On a
+  rock it is not a swing but a channel: [Mining a rock](#mining-a-rock). It resolves `workTarget(p)`: the tile that player is
+  aiming at, if it holds a tree or a dead tree (→ axe), a standing rock — either of its two tiles,
+  in reach while either is (→ pick), a berried bush (→ axe), or
   is bare ice with no object (→ pick, cracking toward a fishing hole); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
@@ -988,10 +990,11 @@ Whenever `workTarget()` is non-null, `near`, **and not something the hands take 
 (`autoToolFor(t.o, player) >= 0` nulls it — and tools aren't blocked, the bow drawn or a cable
 ridden), `drawWorkHint()` — called right after `drawSelection` in the overlay pass — floats a
 key prompt over the target: a pixel key-cap wearing the work key (**E** until rebound) plus the
-verb. Since every tree, rock, bush, chest and rival building is `auto`, the only prompts that
-show in play are **CRACK ICE** over bare ice and **HIT** over the practice dummy; the verb and the
-lift are still read off the `OBJECTS` entry (`verb`, `lift`: 33 for a pine, 20 for a dead tree,
-28 for the dummy, 10–12 for the short ones, 8 over bare ice), and the building branch — BREAK,
+verb. Since every tree, bush, chest and rival building is `auto`, the only prompts that
+show in play are **CRACK ICE** over bare ice, **HIT** over the practice dummy and **MINE** over a
+standing rock; the verb and the lift are still read off the `OBJECTS` entry (`verb`, `lift`: 33
+for a pine, 20 for a dead tree, 28 for the dummy, 10–12 for the short ones, a rock's by its kind,
+8 over bare ice), a two-tile rock takes it on its middle (`w`), and the building branch — BREAK,
 clearing the sprite and centred on the footprint — stays for a building that is ever not `auto`.
 A merchant and a zipline in reach claim the cap first (`drawShopHint`, `drawZipHint`). The cap
 visibly presses (face drops a pixel, highlight gone, label goes gold) while the local player's
@@ -999,7 +1002,7 @@ visibly presses (face drops a pixel, highlight gone, label goes gold) while the 
 If the prompt would overlap the player sprite (an adjacent target) it flips under the tile
 instead. Since it only appears in reach, it doubles as the "you're close enough" signal.
 
-`hitObject()` keeps its hard tool gating (trees need the axe, rocks the pick, with
+`hitObject()` keeps its hard tool gating (trees need the axe, with
 `SFX.deny` + a `NEEDS AXE`/`NEEDS PICKAXE` floater) as a safety net: `tryWork` and `autoWork`
 always pick the right tool, so normal play never reaches it; buildings are not gated
 at all, since the axe is the only tool E ever brings out for one.
@@ -1208,8 +1211,8 @@ takes everything inside `ROLL_HIT_R` (7px) of the roller's own radius and splits
   A wall only counts when it is taken head-on — the speed actually driven into the axis
   `moveEntity` refused has to clear `TACKLE_MIN` (120 px/s), so brushing past a pine at a run is
   free and dashing straight into one is not. `tackleObject` puts real damage into an **enemy
-  building** (it has an hp pool); a tree or a rock only shudders, because its `hp` is a chop count
-  behind a tool gate and a shoulder is not an axe. Fish are under the ice and are in none of it — and
+  building** (it has an hp pool); a tree or a rock only shudders, because a pine's `hp` is a chop
+  count behind a tool gate, a rock is mined by a channel, and a shoulder is neither. Fish are under the ice and are in none of it — and
   nor is a **fish net**, which is not solid, so a roll crosses one without a contact at all.
 
 **Everything scales with the speed the roll is actually carrying** — `rollPow` runs from the
@@ -1650,8 +1653,9 @@ perched) is the only height in the game, subtracted by `animalHitY` and the curs
 Every player owns a wallet **and** a bag. `p.inv` is `{ gold }` — currency only, no ceiling —
 while everything you *carry* lives in `p.bag`, the slot array described in
 [Inventory and the backpack](#inventory-and-the-backpack). (`inv` is an alias for the local
-player's wallet.) **Gold is the only resource** — there is no wood or stone —
-and berries/fish are consumables ([Food](#food-the-meal-is-a-channel)), never spent on anything. The whole economy is the
+player's wallet.) **Gold is the only currency.** The one other thing the world pays out is
+**ore**, which only a mined rock gives up and which is carried in the bag
+([Mining a rock](#mining-a-rock)); berries/fish are consumables ([Food](#food-the-meal-is-a-channel)), never spent on anything. The whole economy is the
 `YIELD` table in the constants banner of [js/core.js](../../js/core.js) - the one tuning table
 with no single owner - which gives every source a different **yield profile**
 rather than a different resource (the League model: one number, many ways to earn it):
@@ -1662,7 +1666,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | tree (`TREE_HP` 3, js/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
 | dead tree (3 hp) | `deadTreeFall` 1 | a tree, but only in the dire hollow's ring |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
-| rock (5 hp) | `rockBreak` 3 | better per swing than a pine, back-loaded, and 1 in 5 hides a tier-0 tool or bit |
+| rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | a channel of 2 / 3 / 4 s on E, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 (+1 berry) | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
@@ -2028,6 +2032,7 @@ numbers.
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | C, or clicking the strip's card button — draws one at random (see [Roguelike cards](#roguelike-cards)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
 | `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
+| `ironstone`/`frostglass`/`sunstone` | `itemOre_<key>` | bag, stack `ORE_STACK` 99 | nothing yet but the counter, which buys it at half its `price` (2 / 12 / 40); see [Mining a rock](#mining-a-rock) |
 
 An unopened card is an ordinary `ITEMS` entry (`pouch: true`) — one per rarity, since a white
 card and a gold card are not interchangeable — which is what makes the drop pickup and the
@@ -2133,6 +2138,45 @@ as the overhead tells do (`alpha: 1 - concealOf(p)`).
 **Bots eat through the same one path** (rung 1 of `aiThink`, the ladder `updateAI` wraps — which is why it reads `foe` before the
 burrow rung): a bot only starts a meal with no rival inside `AI_EAT_R` (110 px), because standing
 there chewing under fire is not patience, it is a free kill.
+
+## Mining a rock
+
+Rocks come in three kinds (`ROCK_KINDS`, the `rocks and ore` banner of
+[js/mining.js](../../js/mining.js)), each with its own outline so the kind reads by shape before
+colour: **STONE**, a pair of leaning slabs; **FROSTGLASS SPIRE**, ice prisms through the slabs;
+**SUNSTONE**, a black obelisk seamed with amber. Where each stands is [world.md](world.md#rocks).
+Every rock is two tiles wide (`OBJECTS.rock.w`), and either tile answers for the whole rock.
+
+**A rock is a channel on the work key, never a swing, and never the hands'.** Holding E (or the
+CLICK scheme's right button, whose work order holds `input.work` for you) on a standing rock in
+reach calls `startMine` from `tryWork`: one miner per rock (`rockMiner`; two in one step are
+[contested](multiplayer.md#contested-orders) on `mine:<tile>`), and a second body gets the deny.
+`updateMine` (beside `updateEat` in `updatePlayer`) runs it:
+
+| kind | `mine` | `gold` | `ore` | `loot` / `lootTier` | `regrow` |
+| --- | --- | --- | --- | --- | --- |
+| STONE | 2 s | 3 | 3–5 IRONSTONE | 0.2 / 0 | 120 s |
+| FROSTGLASS SPIRE | 3 s | 8 | 1–2 FROSTGLASS | 0.5 / 1 | 180 s |
+| SUNSTONE | 4 s | 20 | 1 SUNSTONE | 1 / 2 | 300 s |
+
+The pick bites every `MINE_STRIKE` (0.5 s, the E swing's own animation with nothing landing),
+the rock cracks in thirds and a bar fills over it in the kind's colour (`o.crack`, drawn by
+`drawRock`, js/draw/render.js). **Anything that is not standing still at the rock with the key
+held drops it**, and the progress goes with it: letting go, a walk input past `MINE_MOVE`, the
+rock out of reach, a stun, a fall, a roll, a meal, a cast or a zipline in `updateMine` itself,
+and from their own side `breakMine` beside every `breakEat` — a hit (`damagePlayer`), a stun
+(`stunUnit`), a roll (`tryDodge`), the fire button's press, the ice, the zipline — plus an
+ability key (`tryAbility`) and death. The meal's rule, for the meal's reason: a rival can see
+you kneeling at a rock and take it away.
+
+When it lands (`finishMine`) the rock pays its `gold` through `awardGold` (times `harvestMul`,
+so it is XP too), throws its ore onto the snow one piece at a time toward the miner
+(`ORE_FLING`) for the [drop pickup](#inventory-and-the-backpack), rolls its find
+(`dropLoot`), and lies as **rubble** (`o.regrow`, `SPRITES.rockSpent`) — still solid, not
+offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
+grows it back. The bots mine through the same key (the harvest rung, holding E on a rock
+until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
+landing's lane take a rock off the map whole (`fellScenery`, js/world.js).
 
 ## Gear
 

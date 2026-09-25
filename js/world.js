@@ -47,7 +47,13 @@ const OBJECTS = {
               mm: [52, 100, 82],   map: CH_FOREST },
   deadTree: { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 20, auto: true,
               mm: [138, 128, 116], map: CH_FOREST },
-  rock:     { solid: true,  tool: 'pick', needs: 'pick', verb: 'MINE', lift: 10, auto: true,
+  // a rock (ROCK_KINDS, js/mining.js): two tiles wide, the anchor its west
+  // tile and a `part` on the east one (placeRocks), mined by a CHANNEL on the
+  // work key and never by the hands - so not `auto`, and E's prompt shows
+  // over it. `ready` is the rubble: a mined rock is not offered until it
+  // has grown back. `lift` clears its kind's height.
+  rock:     { solid: true,  w: 2, tool: 'pick', needs: 'pick', verb: 'MINE', lift: (o) => ROCK_KINDS[o.kind].lift + 12,
+              ready: (o) => rockReady(o),
               mm: [122, 131, 153] },
   // a picked bush is still a bush: `ready` is what decides whether E offers it
   // (a bush is on the minimap and off the chart: one tile of anything is
@@ -605,16 +611,26 @@ function placeChests() {
 // grown shape's inner woods draw no band of their own - never touching a
 // pine and never in a camp's clearing -
 // so the ore is out at the valley's rim and the middle stays open ground.
+// Every rock is two tiles wide (OBJECTS.rock's w): both tiles must be open
+// snow, and the east one takes a `part` pointing at the anchor.
 // genWorld still rolls its own rock passes (the interior scatter and a grown
 // shape's top-up): taking their rng() calls out would reshuffle every seed,
 // so they run as they always did and placeRocks lifts what they stood before
 // placing its own, on its own stream (rkRng) AFTER the camps and the chests.
-const ROCK_COUNT = 120;       // rocks a world stands
+//
+// The kind (ROCK_KINDS, js/mining.js) goes by where the rock stands. The
+// two roosts sit in opposite corners, so the other two corners are the
+// ground furthest from both: the rock nearest each of them is a SUNSTONE,
+// and ROCK_RARE of the rest are FROSTGLASS, drawn from the ROCK_RARE_SHARE of
+// the rim furthest from its nearer roost. Everything else is STONE.
+const ROCK_COUNT = 100;       // rocks a world stands
+const ROCK_RARE = 18;         // ...this many of them frostglass
+const ROCK_RARE_SHARE = 0.4;  // ...out of this share of them furthest from a roost
 const ROCK_BAND_MIN = 2;      // tiles out from the border's pines the band starts...
 const ROCK_BAND_MAX = 8;      // ...and ends
 const ROCK_BAND_GROW = 8;     // a shape whose rim cannot hold them (FROZEN ISLES: the rim is lake) widens the band by this...
 const ROCK_BAND_LIMIT = 40;   // ...a step at a time, out to here
-const ROCK_SPACING = 3;       // min tiles between two rocks
+const ROCK_SPACING = 4;       // min tiles between two rocks' anchors
 function placeRocks() {
   for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'rock') objects[i] = null;
   const rkRng = mulberry32((SEED ^ 0x524f434b) >>> 0);
@@ -632,17 +648,21 @@ function placeRocks() {
       dist[idx(nx, ny)] = d; q.push(idx(nx, ny));
     }
   }
-  const band = [];
-  for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 1; tx++) {
+  // a tile a rock may cover: open snow, holding nothing, touching no pine
+  const open = (tx, ty) => {
     const i = idx(tx, ty);
-    if (objects[i] || ground[i] !== 0 || dist[i] < ROCK_BAND_MIN) continue;
-    let touches = false;
-    for (let dy = -1; dy <= 1 && !touches; dy++) for (let dx = -1; dx <= 1; dx++) {
+    if (objects[i] || ground[i] !== 0 || dist[i] < ROCK_BAND_MIN) return false;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
       const o = objAt(tx + dx, ty + dy);
-      if (o && o.type === 'tree') { touches = true; break; }
+      if (o && o.type === 'tree') return false;
     }
-    if (touches || camps.some((C) => Math.hypot(tx - C.tx, ty - C.ty) <= C.r + 2)) continue;
-    band.push({ tx, ty, d: dist[i] });
+    return true;
+  };
+  const band = [];
+  for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 2; tx++) {
+    if (!open(tx, ty) || !open(tx + 1, ty)) continue;
+    if (camps.some((C) => Math.hypot(tx + 0.5 - C.tx, ty - C.ty) <= C.r + 2.5)) continue;
+    band.push({ tx, ty, d: dist[idx(tx, ty)] });
   }
   // the band as drawn first; only what it cannot hold goes further in
   const placed = [];
@@ -650,11 +670,34 @@ function placeRocks() {
     const cands = band.filter((c) => c.d <= hi);
     for (let tries = 0; tries < ROCK_COUNT * 20 && placed.length < ROCK_COUNT && cands.length; tries++) {
       const c = cands[Math.floor(rkRng() * cands.length)];
-      if (objects[idx(c.tx, c.ty)] || placed.some((q) => Math.hypot(q.tx - c.tx, q.ty - c.ty) < ROCK_SPACING)) continue;
+      if (objects[idx(c.tx, c.ty)] || objects[idx(c.tx + 1, c.ty)] || placed.some((q) => Math.hypot(q.tx - c.tx, q.ty - c.ty) < ROCK_SPACING)) continue;
       placed.push(c);
-      placeObj(c.tx, c.ty, 'rock', { hp: 5, variant: rkRng() < 0.5 ? 0 : 1 });
+      const o = placeObj(c.tx, c.ty, 'rock', { kind: 0, regrow: 0, crack: 0, miner: -1 });
+      objects[idx(c.tx + 1, c.ty)] = { type: 'part', tx: c.tx + 1, ty: c.ty, of: o, flash: 0, shake: 0 };
+      c.o = o;
     }
   }
+  // the kinds: a sunstone by each unowned corner, then frostglass far from the roosts
+  const roostD = (c) => Math.min(Math.hypot(c.tx, WORLD - 1 - c.ty), Math.hypot(WORLD - 1 - c.tx, c.ty));
+  for (const [cx, cy] of [[0, 0], [WORLD - 1, WORLD - 1]]) {
+    let best = null, bd = 1e9;
+    for (const c of placed) { const d = Math.hypot(c.tx - cx, c.ty - cy); if (c.o.kind === 0 && d < bd) { bd = d; best = c; } }
+    if (best) best.o.kind = 2;
+  }
+  const far = placed.filter((c) => c.o.kind === 0).sort((a, b) => roostD(b) - roostD(a));
+  const pool = far.slice(0, Math.max(ROCK_RARE, Math.round(far.length * ROCK_RARE_SHARE)));
+  for (let n = 0; n < ROCK_RARE && pool.length; n++) pool.splice(Math.floor(rkRng() * pool.length), 1)[0].o.kind = 1;
+}
+// Taking a piece of scenery off the map at runtime (a crater, the landing's
+// lane, the merchant's axe): the whole footprint goes, so a two-tile rock
+// never leaves half of itself behind. Returns what stood there, or null.
+function fellScenery(tx, ty) {
+  const o = structOf(objAt(tx, ty));
+  if (!o) return null;
+  for (let k = 0; k < (OBJECTS[o.type] && OBJECTS[o.type].w || 1); k++) {
+    if (structOf(objAt(o.tx + k, o.ty)) === o) objects[idx(o.tx + k, o.ty)] = null;
+  }
+  return o;
 }
 
 // ---- the road -------------------------------------------------------------
@@ -1553,6 +1596,7 @@ function zipStart(p, near) {
   if (p.grapT > 0) grapEnd(p);      // off the rope and onto the handle
   risePlayer(p);                    // up out of the snow first
   breakEat(p);                      // the meal is over: both hands are on the handle
+  breakMine(p);                     // ...and so is the pick
   cancelCatch(p);
   if (p.charging) { p.charging = false; p.chargeT = 0; }
   p.fireArmed = false;

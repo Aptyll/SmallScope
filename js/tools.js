@@ -1115,11 +1115,12 @@ function noteSeen(p, type) {
 // ---- loot: what the world pays out --------------------------------------
 // Tools and bits are found FIRST and bought SECOND - the merchant's counter
 // (js/shop.js) rotates a handful of them every couple of minutes, and this
-// is the other, older way in. A broken rock is the common source and
-// a felled tree the rare one, both rolling on the shared rng at the moment the
-// swing lands (never inside genWorld - see the seed rule in CLAUDE.md). Only
-// the bottom tier lies around loose; the good stuff is in the chests.
-const ROCK_DROP = 0.2;   // 1 in 5 broken rocks
+// is the other, older way in. A mined rock is the common source (its kind's
+// `loot` and `lootTier`, ROCK_KINDS in js/mining.js - a stone turns up the
+// bottom tier, a sunstone always turns up something) and a felled tree the
+// rare one, all rolling on the shared rng at the moment the work lands (never
+// inside genWorld - see the seed rule in CLAUDE.md). The best of it is in
+// the chests.
 const TREE_DROP = 0.04;  // 1 in 25 felled trees
 const CHEST_TOOL = 0.75; // ...and three in four sprung chests, at the TOP tier
 const LOOT_TOOL = 0.3;   // this share of any of those is a tool, the rest bits

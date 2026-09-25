@@ -583,6 +583,8 @@ class Player {
     this.swing = SWING_BOW;                        // held SWING_TOOLS index (bow at rest)
     this.autoSwing = false;                        // the swing in flight was the hands' own (autoWork), so a draw may begin under it
     this.fishCd = 0;                               // the automatic catch's clock (autoFish, js/tools.js)
+    this.mineO = null; this.mineT = 0;             // the rock this body is channelling at, and how long (js/mining.js)
+    this.mineStrikeT = 0; this.mineDenyT = 0;      // ...the next bite of the pick, and the deny's own throttle
     // the class abilities (keys 1-4, js/abilities.js): per-key cooldowns, the
     // cast in progress, and every timed state one can leave on a body -
     // slowed under a net or a crater, mid-reel on the grapple, shielded,
@@ -787,6 +789,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   }
   risePlayer(p); // nobody stays buried through a hit: the cover is blown with the body
   breakEat(p);   // ...and the meal goes with it - that is what makes the channel a channel
+  breakMine(p);  // ...and so does the pick at a rock (js/mining.js)
   cancelCatch(p); // ...and the hoist: a fish over your head is a hit you did not see coming
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
   // times a second for as long as it runs
@@ -854,6 +857,7 @@ function die(p, src, cause) {
   p.swingT = p.swingCd = 0;
   // whatever ability the body was mid-way through dies with it, and the meal
   p.eatT = 0; p.eatType = null;
+  breakMine(p);
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
   p.castSlam = false; p.hopT = 0; p.grapT = 0;

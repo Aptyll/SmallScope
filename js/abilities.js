@@ -227,6 +227,7 @@ function tryAbility(p, i) {
   // says so, and the press reddens it the way a bit that will not fit reddens
   // the tool well (abDenied, js/ui.js)
   if (!abUnlocked(p, i)) { if (p === player) abDenied(i); return; }
+  breakMine(p); // an ability is the hands off the pick (js/mining.js)
   // THE SLAM: the shield key while the wall is up, or mid-charge. A charge
   // stops on the spot (the body it carried is slammed where it stands) and
   // the wind-up begins from there; without a wall up the slam is the shield's
@@ -433,7 +434,8 @@ function abGrapple(p) {
       const tx = ctx2 + ox, ty = cty + oy;
       if (!inWorld(tx, ty)) continue;
       const o = objects[idx(tx, ty)];
-      if (!o || (o.type !== 'tree' && o.type !== 'deadTree' && o.type !== 'rock')) continue;
+      const so = structOf(o); // a rock's east tile is the rock too
+      if (!so || (so.type !== 'tree' && so.type !== 'deadTree' && so.type !== 'rock')) continue;
       const cx2 = tx * TILE + 8, cy2 = ty * TILE + 8;
       // the assist: perpendicular distance of the trunk to the aim ray
       const along = (cx2 - p.x) * nx + (cy2 - p.y) * ny;
