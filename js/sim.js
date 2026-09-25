@@ -757,7 +757,7 @@ function updatePlayer(p, dt) {
   // shift-slide: only engages above walking speed; keeps momentum, drops the tools
   const wantSlide = inp.slide && p.dodgeT <= 0 && !p.prone; // nothing glides on its belly
   const kit = kitOf(p);
-  if (!p.sliding && wantSlide && sp > kit.slideMin) {
+  if (!p.sliding && wantSlide && sp > kit.slideMin && p.wade <= DEEP_SLIDE_BAR) { // nobody launches a slide out of a drift
     p.sliding = true;
   }
   if (p.sliding && (!wantSlide || sp < SLIDE_EXIT)) p.sliding = false;
@@ -793,7 +793,10 @@ function updatePlayer(p, dt) {
     // so whatever speed the dash reached is carried out for the surface to spend
     p.dodgeT -= dt;
     const vx0 = p.vx, vy0 = p.vy;
-    const mv = moveEntity(p, p.vx * dt, p.vy * dt, PLAYER_R);
+    // deep snow shortens the roll's travel, not its speed: what it hits for
+    // and what it carries out are the dash's own
+    const rm = 1 - (1 - DEEP_DODGE) * p.wade;
+    const mv = moveEntity(p, p.vx * dt * rm, p.vy * dt * rm, PLAYER_R);
     if (mv.blockedX) p.vx = 0; // a wall still kills that axis - see below for when it costs more
     if (mv.blockedY) p.vy = 0;
     // A wall taken head-on is a tackle, not a graze: only the speed actually
@@ -859,7 +862,7 @@ function updatePlayer(p, dt) {
     // penalty, nothing to stack. Getting back up costs a moment of it too.
     const walkMax = (p.prone ? PRONE_SPEED
       : p.riseT > 0 ? PLAYER_SPEED * kit.walkMul * 0.45
-        : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul; // STRIDER lengthens the stride
+        : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul * wadeMul(p); // STRIDER lengthens the stride; deep snow drags (js/depth.js)
 
     if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
       // plain snow walking: near-instant vector approach, tuned so it feels
@@ -877,7 +880,7 @@ function updatePlayer(p, dt) {
         // snow friction ramps with slide fatigue: early glide is cheap, the
         // tail drops off hard so slides end decisively
         steer = 1.7; target = 0;
-        decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT);
+        decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT) * (1 + (DEEP_SLIDE - 1) * p.wade); // a drift eats a slide
       } else if (onIce) {
         const cap = ICE_MAX * kit.iceMax * chargeMul * abMul;
         if (len > 0) { steer = kit.iceSteer; target = cap; decay = sp < cap ? 1.1 : 0.35; }
@@ -1028,7 +1031,7 @@ function updatePlayer(p, dt) {
     while (footprints.length > 800) footprints.shift();
   }
   if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && !p.prone && p.zip < 0) { // a rider's feet are off the snow
-    p.animT += dt * 9;
+    p.animT += dt * 9 * (1 - 0.35 * p.wade); // a wading stride is a slower one
     p.footT -= dt;
     if (p.footT <= 0) {
       p.footT = 0.16;
