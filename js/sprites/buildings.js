@@ -533,18 +533,21 @@
   const bayTeamPal = (t) => Object.assign({}, BAYPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const teamRobotPal = (t) => Object.assign({}, BOTPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const TIER_PALS = [WPAL, WPAL_STONE, WPAL_GOLD];
-  const teamBuild = TEAM_SKINS.map((t) => ({
-    wall: TIER_PALS.map((b) => bake(wall, teamBuildPal(b, t))),
-    turret: TIER_PALS.map((b) => bake(turret, teamBuildPal(b, t))),
-    generator: TIER_PALS.map((b) => bake(generator, teamBuildPal(b, t))),
-    spawner: [bake(bay, bayTeamPal(t))],
-    net: [bake(net, teamBuildPal(NETPAL, t))],
-    // wheel glyphs for sprites too big to be their own icon
-    icon: {
-      spawner: bake(bayIcon, bayTeamPal(t)), turret: bake(turretIcon, teamBuildPal(WPAL, t)),
-    },
+  const teamBuild = [], teamRobots = [];
+  SPR.onTeams(() => TEAM_SKINS.forEach((t, i) => {
+    teamBuild[i] = {
+      wall: TIER_PALS.map((b) => bake(wall, teamBuildPal(b, t))),
+      turret: TIER_PALS.map((b) => bake(turret, teamBuildPal(b, t))),
+      generator: TIER_PALS.map((b) => bake(generator, teamBuildPal(b, t))),
+      spawner: [bake(bay, bayTeamPal(t))],
+      net: [bake(net, teamBuildPal(NETPAL, t))],
+      // wheel glyphs for sprites too big to be their own icon
+      icon: {
+        spawner: bake(bayIcon, bayTeamPal(t)), turret: bake(turretIcon, teamBuildPal(WPAL, t)),
+      },
+    };
+    teamRobots[i] = [bake(botA, teamRobotPal(t)), bake(botB, teamRobotPal(t))];
   }));
-  const teamRobots = TEAM_SKINS.map((t) => [bake(botA, teamRobotPal(t)), bake(botB, teamRobotPal(t))]);
 
   Object.assign(SPRITES, {
     teamBuild: teamBuild,

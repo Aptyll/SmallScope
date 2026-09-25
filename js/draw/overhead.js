@@ -94,7 +94,14 @@ function drawHealthBar(cxp, topY, hp, maxHp, w, team, col) {
   ctx.fillStyle = col || barCol(team);
   // a living thing's last sliver of hp is still a pixel; an empty charge
   // (a wolf's threat at rest, a spent jink) is bare track, not a false one
-  ctx.fillRect(x, y, frac > 0 ? Math.max(1, Math.round(w * frac)) : 0, 2);
+  const fw = frac > 0 ? Math.max(1, Math.round(w * frac)) : 0;
+  ctx.fillRect(x, y, fw, 2);
+  // a rival's bar under a colour-blind palette is cut every third column
+  // (foeCue, js/player.js), so the side reads without its hue
+  if (!col && foeCue(team)) {
+    ctx.fillStyle = '#3a3448';
+    for (let i = 2; i < fw; i += 3) ctx.fillRect(x + i, y, 1, 2);
+  }
 }
 
 // The level plate: a 7-tall badge hard against a bar backing's LEFT column

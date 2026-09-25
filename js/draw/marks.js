@@ -181,7 +181,19 @@ function drawMapDot(g, x, y, size, col, rim) {
   g.fillStyle = rim; g.fillRect(x0 - 1, y0 - 1, size + 2, size + 2);
   g.fillStyle = col; g.fillRect(x0, y0, size, size);
 }
-function drawMapUnit(g, x, y, col, rim, k, bot) { drawMapDot(g, x, y, bot ? k : k + 1, col, rim); }
+// a rival under a colour-blind palette wears a cross (foeCue, js/player.js)
+function drawMapUnit(g, x, y, col, rim, k, bot, foe) {
+  if (foe) drawMapCross(g, x, y, bot ? k : k + 1, col, rim);
+  else drawMapDot(g, x, y, bot ? k : k + 1, col, rim);
+}
+// a plus whose arms are `size` thick and 3 x size long, rimmed all round
+function drawMapCross(g, x, y, size, col, rim) {
+  const len = size * 3, x0 = Math.round(x) - (size >> 1), y0 = Math.round(y) - (size >> 1), a = x0 - size, b = y0 - size;
+  g.fillStyle = rim;
+  g.fillRect(x0 - 1, b - 1, size + 2, len + 2); g.fillRect(a - 1, y0 - 1, len + 2, size + 2);
+  g.fillStyle = col;
+  g.fillRect(x0, b, size, len); g.fillRect(a, y0, len, size);
+}
 function drawMapYou(g, x, y, col, rim, k) {
   drawMapDot(g, x, y, k + 3, col, rim);
   const x0 = Math.round(x) - ((k + 1) >> 1), y0 = Math.round(y) - ((k + 1) >> 1);
