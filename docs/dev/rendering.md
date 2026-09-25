@@ -2550,6 +2550,19 @@ weather moves reads it rather than keeping a clock of its own:
   along its run — so a streak stays put as the camera pans, and two players over the same field
   see the same snow blowing across it. A moving thing, it is placed off the exact camera
   (`ex`/`ey`). It costs well under a millisecond a frame while it is on and nothing otherwise.
+- The **snow off the pines** reads the crest of `windGust`
+  ([js/shed.js](../../js/shed.js), the `snow off the pines` banner). The sim raises that puff and
+  `burst` carries it to every screen, so it is a gameplay-side event with no pass of its own:
+  each human in the match has `SHED_DRAWS` (36) random tiles a second drawn from about a view
+  round them (a bot draws none, nothing is scanned), and a draw landing on a pine at
+  `SHED_CREST` of the peak, while `state.wind` is at least `SHED_WIND`, sheds with a chance of
+  `SHED_P` × `state.wind` after a random wait of up to `SHED_DELAY`, then rests `SHED_REST` s.
+  At most `SHED_LIVE` gust puffs are in the air at once. The draws, the wait and the rest are
+  what ripple a front through a stand instead of the whole stand letting go on one frame. A blow
+  (the axe in `chopTree`, a shot the arrow loop's wall branch stops in a pine) always sheds, a
+  few flakes more, whatever the rest or the cap. A puff is `burst`'s numeric `grav` (a slow fall
+  with no toss) and `drift` (the wind's sideways px/s): a few white pixels opening off the crown
+  and carried downwind as they fall.
 
 ### The day's weather
 

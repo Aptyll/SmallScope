@@ -322,6 +322,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | particles, floaters, footprints, drops, world-space snow flakes | `updateFx`, `makeFlake`, `fitFlakes` | `fx updates` |
 | the belly-crawl drag furrow: emitted in `updatePlayer`, drawn as the `f.k === 3` branch | `footprints`, `p.trailD` | `update` (the draw branch: `render`, js/draw/render.js) |
 
+## js/shed.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| snow knocked off a pine's crown: the gust draws round each human, the wait and the rest that stagger it, the cap, and the blow (axe or shot) that always sheds | `SHED_*`, `shedStep` (called from `updatePlay`, sim.js), `shedHit` (called from `chopTree`, actions.js, and the arrow loop's wall branch, sim.js), `shedPuff` | `snow off the pines` (the read: `windGust`, sim.js; the puff: `burst`, core.js) |
+
 ## js/net/events.js
 
 | Looking for | Start at | Banner |
