@@ -23,7 +23,7 @@ const TEAMS = SPRITES.teams; // the 2 colour presets (RED, BLUE), baked into the
 function skin(team) { return settings.teamBlue && player && player.team === 0 ? 1 - team : team; }
 // The rival's SHAPE cue: under any colour-blind palette (settings.teamPal, not
 // 'def') a rival's minimap dot is a cross (drawMapUnit, js/draw/marks.js) and
-// its health bar is cut into segments (drawHealthBar, js/draw/overhead.js),
+// its health bar wears a raised dark cap on its right end (drawHealthBar, js/draw/overhead.js),
 // so the two sides still part in greyscale. Paint only, like skin().
 function foeCue(team) { return settings.teamPal !== 'def' && team != null && !!player && team !== player.team; }
 

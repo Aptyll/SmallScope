@@ -3369,7 +3369,7 @@ function drawWikiBeast(bs, cx, baseY, level, now) {
   ctx.drawImage(spr, px, py);
   const wolf = isCampKind(bs.kind); // a camp monster's second bar is its leash
   const bx = Math.round(cx - bs.bw / 2);
-  drawHealthBar(cx, py - 8, 1, 1, bs.bw);
+  drawHealthBar(cx, py - 8, ANIMAL_HP[bs.kind], ANIMAL_HP[bs.kind], bs.bw); // full, chunked the way the world chunks it
   if (wolf) drawHealthBar(cx, py - 5, 0.6, 1, bs.bw, undefined, THREAT_COL);
   else drawHealthBar(cx, py - 5, 1, 1, bs.bw, undefined, STAM_COL);
   drawLevelBadge(bx - 1, py - 9, level);
