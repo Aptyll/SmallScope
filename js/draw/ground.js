@@ -411,6 +411,7 @@ function repaintGround(tx, ty) {
   for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
     if (inWorld(tx + dx, ty + dy)) paintGroundTile(g, tx + dx, ty + dy);
   }
+  trampleGroundChanged(tx, ty); // the trample re-reads what its pixels stand on (js/draw/trample.js)
 }
 
 // ------------------------------------------------------------ the ice shore

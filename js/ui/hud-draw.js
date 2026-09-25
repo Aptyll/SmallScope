@@ -255,6 +255,7 @@ function drawClassAbCell(i, now, on) {
   }
   const rim = red ? '#c2465a'
     : lock ? (on ? '#4a5480' : '#232c52')
+    : ms.ready === i ? '#ffd95c' // readied under the MOUSE scheme: the next left press casts it
     : casting ? '#f4f7ff'
     : act > 0 ? (Math.sin(now * 9) > 0 ? ab.acol : '#35426e')
     : now < abReadyFlash[i] ? '#f4f7ff'

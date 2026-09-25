@@ -381,7 +381,7 @@ const DUST_GRAIN = 0.5;       // how much each pixel's own roll breaks the strea
 const DUST_MIX = [0, 0.28, 0.5]; // how far a grain pulls the ice toward the snow
 const DUST_SNOW = rgbOf('#f2f7fc');
 const DUST_TRAMPLE = 0.9;      // how much a fully trodden spot takes off the amount
-const trodden = (x, y) => (typeof trampleAt === 'function' ? trampleAt(x, y) : 0);
+const trodden = (x, y) => trampleAt(x, y);
 // repaint the ice in a rect of world px whose trampling changed (called by trampled snow)
 function iceDustInvalidate(x0, y0, x1, y1) {
   if (!lakeId) return;

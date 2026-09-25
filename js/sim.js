@@ -132,6 +132,7 @@ function update(dt) {
   if (NET.isClient) {
     if (state.mode !== 'title') sampleHumanInput(player, dt);
     netClientStep(dt);
+    trampleStep(dt); // the trampled snow reads what the client draws (js/draw/trample.js)
     if (state.mode === 'title') updateTitle(dt); // the waiting room is the title's: its eases and hovers run here too
   } else if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
     !state.paused && !state.settingsOpen) {
@@ -140,6 +141,7 @@ function update(dt) {
     evInStep = true; // the step's cosmetics are the sim's: recorded for a host's clients (js/net/events.js)
     updatePlay(dt);
     evInStep = false;
+    trampleStep(dt); // visual only: it runs beside the step, never records (js/draw/trample.js)
     netHostFlush();
   } else if (state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') {
     sampleHumanInput(player, dt); // still drops a held draw when an overlay opens

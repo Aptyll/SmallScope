@@ -157,8 +157,11 @@ entity draw code must use `ex`/`ey`.
    downstream over the still water the bake laid, on the field's clock) → under-ice fish →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
-3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
-   one `footprints` array, branching on `f.k`);
+3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
+   bodies walked and fought, drawn from pooled 128 px chunk canvases repainted only when their
+   grid moved - see [trampled snow](gameplay.md#trampled-snow)) → footprints (walking prints, slide
+   grooves, skate scratches and belly-crawl furrows share the one `footprints` array, branching on
+   `f.k` - the crisp, short-lived detail over the trample);
 4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
    it covers the fish and the cracks, and under everything that walks) → `drawDrift` (a
    blizzard day's low streaks, [the day's weather](#the-days-weather)) → **the weather on the
@@ -166,7 +169,8 @@ entity draw code must use `ex`/`ey`.
    and cracks, fresh dust while it snows - [the wind's leavings](world.md#the-winds-leavings));
 5. flat objects (stumps, and **fish nets** via `drawNet`);
 6. `drawFlagRings` (your side's flag rings, and the ring a held flag wheel previews) →
-   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (craters,
+   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
+   scheme's range preview) → `drawAbilityGround` (craters,
    the piercing shot's telegraph) → item drops;
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets and your side's flags, sorted by feet Y; empty player slots draw as team-tinted
@@ -1641,7 +1645,9 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   the list's rows are a **hand**), or over a finished building of your side's that E manages
   (`dim` beyond the 60 px reach, except under the CLICK scheme, where the press walks there);
   **reticle** — everywhere else in play.
-- Reticle `mode` (table `RETICLE`): **idle** white cross; **amove** red ring — the CLICK scheme's
+- Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's
+  readied ability, dim while it cannot cast ([the mouse scheme](multiplayer.md#the-mouse-scheme));
+  **amove** red ring — the CLICK scheme's
   A is armed and the next left press lays the attack-move
   ([the click scheme](multiplayer.md#the-click-scheme); its rings on the snow are
   `drawClickMarks`, js/draw/marks.js); **lock** gold ring — E will work
