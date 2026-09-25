@@ -934,7 +934,9 @@ const CASTERS = {
                 return [A, f * A.fw, A.fw, A.fh, -5 + nx, -21 + ny];
               } },
   deadTree: { code: (o) => 100 + o.variant, art: (c) => whole(SPRITES.deadTree[c - 100], 0, -8) },
-  rock:     { code: (o) => 110 + o.variant, art: (c) => whole(SPRITES.rock[c - 110], 0, 4) },
+  // a rock's code is its kind and whether it stands or lies as rubble (drawRock, render.js)
+  rock:     { code: (o) => 130 + o.kind * 2 + (rockReady(o) ? 0 : 1),
+              art: (c) => { const k = (c - 130) >> 1, s = (c & 1 ? SPRITES.rockSpent : SPRITES.rock)[k]; return whole(s, 0, TILE - s.height + 1); } },
   bush:     { code: () => 120, art: () => whole(SPRITES.bush, 0, 4) },
   stump:    { code: () => 121, art: () => whole(SPRITES.stump, 0, 4) },
   den:      { code: () => 122, art: () => whole(SPRITES.den, 0, -4) },

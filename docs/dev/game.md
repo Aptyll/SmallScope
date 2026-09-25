@@ -63,12 +63,14 @@ nothing in it is at stake. See [the practice arena](world.md#the-practice-arena)
 with a rate of fire, a number of bit cells and a weight it is strong enough to throw. What comes
 out of it is the **bits** loaded into it, fired in order and then round again: a plain arrow, a
 log that arcs down and flattens whoever it lands on, a wisp that circles you lighting the dark,
-or a modifier that rewrites every shot on that tool at once. Both are **found first** — in broken
+or a modifier that rewrites every shot on that tool at once. Both are **found first** — in mined
 rocks, in felled trees, and at the top tier in the treeline's chests — so the weapon you finish a
 match with is one the map handed you a piece at a time. The other way in is the **merchant's
 counter**, which puts a rotating handful of them behind a price: gold you earned somewhere else,
 spent on the twelve things that happen to be on the counter this minute, never on the one thing
-you wanted. A find loads itself into the tool while it has a free cell, and the **shelf** over
+you wanted. The same counter's **forge** spends the ore the rocks give up on the body itself,
+five levels of damage and rate or strength, the last of them a sunstone from a corner nobody
+owns. A find loads itself into the tool while it has a free cell, and the **shelf** over
 the backpack shows the build at all times, to be rebuilt mid-fight.
 [Tools and bits](gameplay.md#tools-and-bits), [the counter](gameplay.md#the-merchants-counter).
 

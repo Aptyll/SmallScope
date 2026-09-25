@@ -666,7 +666,7 @@ function updatePlay(dt) {
     if (o.type === 'bush' && o.berries === 0) {
       o.regrow -= dt;
       if (o.regrow <= 0) o.berries = 2;
-    }
+    } else if (o.type === 'rock') tickRock(o, dt); // the rubble growing back (js/mining.js)
   }
 
   resolveContests(); // the drop pickups queued above
@@ -729,6 +729,8 @@ function updatePlayer(p, dt) {
   // ...and the meal's clock beside it: the channel landing its heal, and the
   // one cooldown a berry and a fish share (js/core.js)
   updateEat(p, dt);
+  // ...and the pick's: a rock's channel, held on the work key (js/mining.js)
+  updateMine(p, dt);
 
   // input - or the walk to the zipline holding the stick for the player
   // (zipWalkStep, world.js: any input of their own ends it), which leaves
@@ -938,6 +940,7 @@ function updatePlayer(p, dt) {
       if (p.grapT > 0) grapEnd(p);                          // the rope goes slack with you
       p.castT = 0; p.castAb = -1; p.shieldT = 0;           // and so does whatever was being cast
       breakEat(p);                                         // the meal goes in the water with you
+      breakMine(p);                                        // ...and the rock is left where it stood
       p.prone = false; p.hide = 0; p.riseT = 0; // crawled off the edge: no cover in the water
       if (p.charging) { p.charging = false; p.chargeT = 0; }
       p.fireArmed = false;
@@ -1118,6 +1121,7 @@ function updatePlayer(p, dt) {
     // other escape; E and the ability keys stay refused instead, because those
     // spend a cooldown a stray press should not.
     breakEat(p);
+    breakMine(p); // ...and the pick at a rock, the same way (js/mining.js)
     p.fireArmed = true;
     if (!armed && p.dryT <= 0) dryFire(p);
   }

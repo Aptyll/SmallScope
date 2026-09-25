@@ -187,16 +187,6 @@ function updateRobot(b, dt) {
         if (dry) flushBirds(campAt(ox, oy), { x: ox, y: oy }); // the flock loses its perch (dormant: see the birds banner, wildlife.js)
         b.tgt = null;
       }
-    } else {
-      t.hp--;
-      b.carry += YIELD.rockHit;
-      sfxAt('mine', ox, oy);
-      burst(ox, oy - 4, '#a8b0c4', 3, 35, 0.35, true);
-      if (t.hp <= 0) {
-        objects[idx(t.tx, t.ty)] = null;
-        b.carry += YIELD.rockBreak;
-        b.tgt = null;
-      }
     }
   };
 
@@ -224,7 +214,7 @@ function updateRobot(b, dt) {
   const homeRun = () => { const d = walkToward(hx, hy); if (d >= 0 && d < 14) deposit(); };
   // anything a worker will cut, anywhere near a point, that no sibling has
   const cutNear = (cx, cy, r) => nearestObj(cx, cy, r, (o) =>
-    (o.type === 'tree' || o.type === 'deadTree' || o.type === 'rock') && o !== b.avoid && !objTaken(b, o));
+    (o.type === 'tree' || o.type === 'deadTree') && o !== b.avoid && !objTaken(b, o));
 
   // close on a foe and swing at it. `leash` (px, measured from lx/ly) is what
   // keeps a worker on a defensive job from being kited off it.
@@ -263,7 +253,7 @@ function updateRobot(b, dt) {
   if (!fl) {
     if (b.carry >= 8) homeRun();
     else if (!gather(() => nearestObj(hx, hy, 8, (o) =>
-      (o.type === 'tree' || o.type === 'rock') && o !== b.avoid))) {
+      o.type === 'tree' && o !== b.avoid))) {
       if (b.carry > 0) homeRun(); else wander();
     }
   } else if (type === 'attack') {
@@ -440,7 +430,7 @@ function merchFell(b, t) {
   sfxAt(t.type === 'rock' ? 'mine' : 'chop', px, py);
   burst(px, py - 10, '#eef4fb', 3, 35, 0.4, true);
   if (t.hp > 0) return false;
-  objects[idx(t.tx, t.ty)] = null;
+  fellScenery(t.tx, t.ty); // a rock's east tile goes with it
   burst(px, py - 8, '#eef4fb', 8, 45, 0.5, true);
   burst(px, py - 8, t.type === 'tree' ? '#2f5c4b' : t.type === 'rock' ? '#9aa4b4' : '#6b5a48', 5, 45, 0.5, true);
   sfxAt(t.type === 'rock' ? 'break_' : 'treeFall', px, py);
@@ -493,7 +483,7 @@ function merchOnBay(s, x, y) { return x >= s.tx && x < s.tx + 3 && y >= s.ty && 
 function merchBayBlocker(b, s) {
   let best = null, bd = 1e9;
   for (let y = s.ty - MERCH_BAY_RING; y < s.ty + 2 + MERCH_BAY_RING; y++) for (let x = s.tx - MERCH_BAY_RING; x < s.tx + 3 + MERCH_BAY_RING; x++) {
-    const o = objAt(x, y);
+    const o = structOf(objAt(x, y)); // a rock's east tile is the rock
     if (!o || !(laneFells(o) || (o.type === 'stump' && merchOnBay(s, x, y))) || b.avoids.some((a) => a.o === o)) continue;
     const d = Math.hypot(x * TILE + 8 - b.x, y * TILE + 8 - b.y);
     if (d < bd) { bd = d; best = o; }

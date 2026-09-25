@@ -278,6 +278,8 @@ const RES_COLORS = {
   // card rarities - kept out of the amber family so a "gold" card drop never
   // reads as a currency floater; must match CARD_PALS in sprites.js
   cardWhite: '#d9dfe8', cardGreen: '#5fd18a', cardBlue: '#4a90e2', cardPurple: '#a259e6', cardGold: '#e8a33d',
+  // the three ores (js/mining.js), their rocks' own inks
+  ironstone: '#c4cad8', frostglass: '#8fd4f4', sunstone: '#f4bc44',
 };
 // audio/screen gating: is this happening near the local listener?
 function nearPlayer(x, y, r) { return !!player && Math.hypot(player.x - x, player.y - y) < (r || 180); }

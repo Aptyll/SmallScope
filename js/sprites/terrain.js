@@ -1,6 +1,6 @@
 'use strict';
 // The ground's furniture: the pine and its 24 wind frames (and the one atlas
-// every pine on screen draws from), stumps, rocks, ore, the mine, the berry
+// every pine on screen draws from), stumps, the dead gold ore and mine, the berry
 // bush's four states, the camps' dead snags, the wolf den and the hog hut.
 (() => {
   const { bake, flipH } = SPR;
@@ -1012,43 +1012,6 @@
     '................',
   ];
 
-  // ---------------------------------------------------------------- rocks
-  const RPAL = {
-    '.': null,
-    'o': '#3a3f52', // outline
-    'y': '#8b93a8', // rock mid
-    'Y': '#a8b0c4', // rock light
-    'v': '#666d84', // rock dark
-    'w': '#eef4fb',
-    'W': '#ffffff',
-    's': '#c9dcee',
-  };
-
-  const rock1 = [
-    '................',
-    '.....owwWo......',
-    '....owwwwso.....',
-    '...oYwwYyyo.....',
-    '..oYYyyyyyvo....',
-    '..oYyyyyvvvo....',
-    '..oyyyvyvvvo....',
-    '...ovvvvvvo.....',
-    '....ssssss......',
-  ];
-
-  const rock2 = [
-    '................',
-    '......oWwo......',
-    '....owwwwwso....',
-    '...oYwwwYyyo....',
-    '..oYYwYyyyyvo...',
-    '..oYYyyyyvvvo...',
-    '..oYyyyvyvvvo...',
-    '..oyyvvvvvvvo...',
-    '...ovvvvvvvo....',
-    '....sssssss.....',
-  ];
-
   // ---------------------------------------------------------------- gold ore
   const GOPAL = {
     '.': null,
@@ -1723,7 +1686,6 @@
       return c;
     })(),
     stump: bake(stump, TPAL),
-    rock: [bake(rock1, RPAL), bake(rock2, RPAL)],
     goldOre: bake(goldOre, GOPAL),
     mine: bake(mine, MIPAL),
     bush: bake(bush, BPAL),

@@ -662,9 +662,10 @@ function eagleCrash(e) {
     const o = objAt(tx, ty);
     if (!o) continue;
     const ox = tx * TILE + 8, oy = ty * TILE + 8;
-    if (o.type === 'rock' || o.type === 'bush') { // shattered or flattened outright, out to the outer ring: a rock in the wall's band would leave a hole in it
-      objects[idx(tx, ty)] = null;
-      burst(ox, oy - 6, o.type === 'rock' ? '#9aa4b4' : '#88b090', 6, 50, 0.45, true);
+    const so = structOf(o); // a rock's east tile is the rock
+    if (so.type === 'rock' || so.type === 'bush') { // shattered or flattened outright, out to the outer ring: a rock in the wall's band would leave a hole in it
+      fellScenery(tx, ty);
+      burst(ox, oy - 6, so.type === 'rock' ? '#9aa4b4' : '#88b090', 6, 50, 0.45, true);
       continue;
     }
     if (o.type !== 'tree' && o.type !== 'deadTree') continue;
@@ -735,7 +736,7 @@ function eagleCrash(e) {
 // inside the road (roadMainDist) - LANE_MAX is only a safety. Pays no gold,
 // like the crater; leaves no stumps, because a road is a road. Pure reads -
 // the spur a seed gets is the spur it always gets.
-function laneFells(o) { return !!o && (o.type === 'tree' || o.type === 'deadTree' || o.type === 'rock'); }
+function laneFells(o) { o = structOf(o); return !!o && (o.type === 'tree' || o.type === 'deadTree' || o.type === 'rock'); } // a rock's east tile is the rock
 function planLane(e) {
   const hx = e.laneDir.x, hy = e.laneDir.y, ox = (e.x - 8) / TILE, oy = (e.y - 8) / TILE; // the crater, tile-index space
   const ev = [], pave = [], seen = new Set();
@@ -777,10 +778,9 @@ function laneStep(e, dt) {
     const ev = L.ev[L.next++]; spent++;
     const o = objects[ev.i];
     if (!laneFells(o)) continue; // already felled by hand, or grown into something else
-    if (ev.k === 2) { o.shake = 0.55; continue; }
+    if (ev.k === 2) { structOf(o).shake = 0.55; continue; }
     const tx = ev.i % WORLD, ty = (ev.i / WORLD) | 0, px = tx * TILE + 8, py = ty * TILE + 8;
-    objects[ev.i] = null;
-    if (o.type === 'rock') {
+    if (fellScenery(tx, ty).type === 'rock') { // the whole rock, whichever of its two tiles the lane met
       burst(px, py - 6, '#9aa4b4', 6, 50, 0.45, true); // the rock shatters
       burst(px, py - 4, '#f4f7ff', 4, 40, 0.4, true);
       if (L.sfxT > 0.3) { L.sfxT = 0; sfxAt('break_', px, py, 320); }
