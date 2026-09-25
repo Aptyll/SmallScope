@@ -124,6 +124,41 @@ function drawClickMarks(ex, ey, now) {
     ctx.restore();
   }
 }
+// The MOUSE scheme's RANGE PREVIEW (the `mouse only` banner, input.js): the
+// ground an ability covers, from the body toward where it would be cast -
+// the lit wedge of a held action wheel toward its press point, or a readied
+// well toward the pointer. The row's own `aim` (CLASS_AB) says the shape: a
+// line out to its reach, a cone, or a ring round the body. Gold when it
+// will cast, grey while it cannot. A place like the click rings, so it
+// scales with the tile.
+function drawCastPreview(ex, ey, now) {
+  if (!msOn() || player.dead || !player.active) return;
+  const w = state.wheel;
+  let i = -1, tx = mouseWX(), ty = mouseWY();
+  if (w && w.kind === 'kit') { const L = wheelLayout(); i = L.seg >= 0 ? kitAb(MS_WHEEL[L.seg]) : -1; tx = w.wx; ty = w.wy; }
+  else if (!w && ms.ready >= 0 && !overHud(mouse.x, mouse.y)) i = ms.ready;
+  if (i < 0) return;
+  const a = abOf(player, i).aim;
+  if (!a) return;
+  const col = abReady(player, i) ? '#ffd95c' : '#8fa4c8';
+  const px = player.x - ex, py = player.y - ey;
+  const ang = Math.atan2(ty - player.y, tx - player.x);
+  const shape = (g) => {
+    g.beginPath();
+    if (a.ring) g.arc(px, py, a.ring, 0, Math.PI * 2);
+    else if (a.cone) { g.moveTo(px, py); g.arc(px, py, a.cone, ang - a.half, ang + a.half); g.closePath(); }
+    else { g.moveTo(px, py); g.lineTo(px + Math.cos(ang) * a.line, py + Math.sin(ang) * a.line); }
+    g.stroke();
+  };
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.lineDashOffset = -((now * 8) % 6);
+  ctx.translate(0, 1); ctx.strokeStyle = '#0f1632'; shape(ctx);
+  ctx.translate(0, -1); ctx.strokeStyle = col; shape(ctx);
+  ctx.restore();
+}
 // The planted flag itself, in the world pass (y-sorted with the entities): a
 // pole at the tile's centre and a dark banner on it carrying the SAME order
 // icon the wheel offered, inked in the team's colour - so what the side was

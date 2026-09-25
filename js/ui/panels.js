@@ -583,17 +583,17 @@ const SET_FOOT_Y = SET_H - 23, SET_PLANK_W = 88, SET_PLANK_H = 18, SET_PLANK_GAP
 
 // The CONTROLS page is itself tabbed - one listing per controller, since a
 // pad puts the same verbs somewhere else, and the keyboard's
-// listing is one cell per SCHEME (WASD / CLICK), so picking the scheme IS
+// listing is one cell per SCHEME (WASD / CLICK / MOUSE), so picking the scheme IS
 // picking the listing: the cell in force wears the navbar's gold. Its navbar
 // sits pinned at the top of the content window and only the listing scrolls.
 // The tab opens on the controller in hand (ctrlTabNow) until a click picks one.
 const CTRL_TABS = [{ id: 'wasd', ctrl: 'keys', label: 'WASD' }, { id: 'click', ctrl: 'keys', label: 'CLICK' },
-  { id: 'pad', ctrl: 'pad', label: 'GAMEPAD' }];
+  { id: 'mouse', ctrl: 'keys', label: 'MOUSE' }, { id: 'pad', ctrl: 'pad', label: 'GAMEPAD' }];
 const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
 let ctrlTab = null;
 function ctrlTabNow() { return ctrlTab || (padActive() ? 'pad' : 'keys'); }
 // the navbar cell that is lit: the listing open, and for the keyboard the scheme in force
-function ctrlCellNow() { const c = ctrlTabNow(); return c === 'keys' ? (settings.scheme === 'click' ? 'click' : 'wasd') : c; }
+function ctrlCellNow() { const c = ctrlTabNow(); return c === 'keys' ? settings.scheme : c; }
 
 // Everything positioned inside the panel comes from here: the navbar cells,
 // the open page's rows (each carrying its y in view space, pre-scroll), the
@@ -792,9 +792,12 @@ function drawToolPrimer(g, y0) {
 // DBG.keyRows all read it, so a click can never disagree with a pixel.
 // The listing is the live SCHEME's (settings.scheme: the WASD scheme, or
 // the CLICK scheme of the `click to move` banner, input.js) - the scheme is
-// picked on the CONTROLS navbar (CTRL_TABS), where WASD and CLICK are two
+// picked on the CONTROLS navbar (CTRL_TABS), where WASD, CLICK and MOUSE are
 // cells of the keyboard's. Under CLICK the walk keys and the harvest key are
-// the right button's, so those rows are the mouse's fixed words instead.
+// the right button's, so those rows are the mouse's fixed words instead;
+// MOUSE adds the middle button's action wheel, and its dodge and slide caps
+// print the side buttons (MB4, MB5). No column runs past KEY_ROWS_N's eight,
+// so MOUSE leaves the debug '.' off its listing (the key still works).
 const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
@@ -807,6 +810,12 @@ const KEY_ROWS = {
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
     ['berry', 'fish', 'flag', 'card', 'bag', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+  ],
+  mouse: [
+    [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
+      'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
+    ['stop', 'berry', 'fish', 'flag', 'card', 'bag', 'char', 'build'],
+    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
