@@ -107,7 +107,16 @@ the torso band (the rows the head sits in, which hold still across the frames) r
 the bird already has and the silhouette is untouched (`eagleFlash` is the same trick in all
 white, for the downed objective's hit flash):
 
-- `playerTeam[team]` — coat/hat/trim swapped; `SPRITES.player` *is* `playerTeam[0]`.
+**The presets can be repainted live.** `TEAM_PALETTES` holds four versions of the pair (`def`,
+and `rg`/`by`/`hc` for colour-blind eyes, picked by `settings.teamPal`); `TEAM_SKINS` holds the
+one in force. Every file that bakes from it registers its team bakes with `SPR.onTeams(fn)`,
+which runs them at load and again when `SPRITES.setTeamPal(id)` copies a palette into the two
+`TEAM_SKINS` objects in place (about 9 ms). The bakes fill the same arrays each time and the
+look and portrait caches are cleared, so every reader of `SPRITES.*`/`TEAMS` sees the new paint
+on its next frame. A new team-painted set must bake inside an `onTeams` callback, or it keeps the
+colours it was born with.
+
+- `playerTeam[team]` — coat/hat/trim swapped; `SPRITES.player` *is* `playerTeam[0]` (the repaint re-points it).
 - `teamBuild[team][type][tier]` — the tier material with the `k`/`K`/`e` accents repainted, so
   tier still reads as tier.
 - `robotTeam[team]`.

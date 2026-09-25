@@ -593,7 +593,7 @@ function hudPress(mx, my) {
   }
   const sh = stripHit(mx, my);
   if (sh) {
-    if (sh.kind === 'ab') player.input.ability = sh.i; // click-to-cast: the well IS the key
+    if (sh.kind === 'ab') { if (msOn()) msWell(sh.i); else player.input.ability = sh.i; } // click-to-cast: the well IS the key (under MOUSE it readies - msWell)
     else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat / useCard)
     return true;
   }

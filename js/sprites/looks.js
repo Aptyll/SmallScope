@@ -357,6 +357,7 @@
   // head-and-shoulders read while a face is being chosen is the same model.
   const PORTRAIT_KEEP = 512;
   const cache = new Map();
+  SPR.onTeams(() => cache.clear()); // a repaint (setTeamPal) rebakes every model on its next ask
   function portrait(cls, look, team, bare) {
     const key = cls + '|' + team + '|' + (bare ? 1 : 0) + '|' + [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face].join(',');
     let c = cache.get(key);

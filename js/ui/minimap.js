@@ -148,14 +148,14 @@ function renderMinimap(now) {
     if (r.dead) continue;
     const dx = (r.x / TILE - ptx) * s, dy = (r.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
-    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(r.team)].mark, '#0f1632', 1, true);
+    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(r.team)].mark, '#0f1632', 1, true, foeCue(r.team));
   }
   for (const p of players) {
     if (p === vp || !p.active || p.dead || inAir(p)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // a falcon-marked rival stays on it
     const dx = (p.x / TILE - ptx) * s, dy = (p.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
-    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, '#0f1632', 1, false);
+    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, '#0f1632', 1, false, foeCue(p.team));
   }
   // flags on your side, as the same pennant and ring the chart draws: where
   // the side was sent is exactly the kind of thing you check without opening

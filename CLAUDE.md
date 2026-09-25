@@ -53,7 +53,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 Five legacy files — `profile.js`, `font.js`, the generated `sfxdata.js` and `logodata.js`, `audio.js` — and the
 ten sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (`core.js`
 makes `SPRITES`, the other nine `Object.assign` their keys into it); after them the game code is
-**flat top-level classic scripts sharing one global scope** — forty-six files, `core.js`
+**flat top-level classic scripts sharing one global scope** — forty-eight files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
@@ -77,7 +77,7 @@ them; `core.js` keeps only the numbers with no one owner. A const is invisible t
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs-with-jsdraw-and-jsui).
 
-The game code is organized only by `// ------ name` banners inside its forty-six files.
+The game code is organized only by `// ------ name` banners inside its forty-eight files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 
@@ -137,9 +137,10 @@ lives in `docs/dev/*.md` beside the code it protects.
 - **Nothing on the map emits light; night is a colour and a rim, never a darkness in the middle** —
   [`renderLighting`](docs/dev/rendering.md#light-and-weather) grades the finished world frame (the
   dark lives at `NIGHT_EDGE`), so a new glowing thing adds a pass there, not a registry.
-- **Anything the weather moves reads `windSway(tx, ty)`**, never a clock of its own: one field
-  (the `wind` banner, js/sim.js — waves summed on crossing bearings under a gust envelope) drives
-  the snow and every pine's frame, and it dies at dusk.
+- **Anything the weather moves reads the one wind** — `state.windDir`, `state.wind`,
+  `windGust(tx, ty)`, and a pine's `windSway(tx, ty)` — never a clock of its own: one field (the
+  `wind` banner, js/sim.js) drives the snow, the streaks and every pine's frame, the day's weather
+  (`state.wx`) scales it, and it dies at dusk.
 - **A sprite the world holds hundreds of draws from ONE texture** — a `drawImage` whose source
   canvas differs from the last cannot be batched, and one atlas doubled the pines' frame rate:
   [rendering](docs/dev/rendering.md#drawing-a-thousand-of-something).
