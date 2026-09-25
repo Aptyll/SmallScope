@@ -132,6 +132,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the zoom wheel, the listeners | the `addEventListener` block | `input` |
 | folding keys, mouse and both sticks into the local player's struct | `sampleHumanInput` | `input` |
 | the CLICK scheme: its state and constants, the right press and its release, the armed left press, what an order does per step (the walk, the chase and lock, the auto-attack, a use), who an attack-move takes, how far the tool reaches | `ck`, `CK_*`, `ckOn`/`ckClear`/`ckOrder`, `ckPoint`, `merchUnder`, `ckRightPress`/`ckRightRelease`, `ckArmedPress`, `ckSees`, `ckAcquire`, `ckReach`/`ckHoldR`, `ckUse`, `ckStep` (the rings: `drawClickMarks`, js/draw/marks.js; the armed reticle: `cursorInfo`, render.js; the scheme's listing and the navbar cell that picks it: `KEY_ROWS`/`ctrlCellNow`, js/ui/panels.js) | `click to move` |
+| the MOUSE scheme (CLICK for one hand): its state, the side buttons as keys, the middle button's action wheel and its pick, readying a well and casting it, the left press's lock | `MS_WHEEL`, `ms`, `msOn`/`msClear`, `msAims`, `msCast`, `msWell`, `msLeftPress`, `msWheelPress`/`msWheelRelease`, `msKitPick`, `sideButton` (the wheel's wedges and label: `drawKitWedge`/`kitLabel`/`kitAb`, js/ui/wheel.js; the range preview: `drawCastPreview`, js/draw/marks.js, reading each row's `aim`, `CLASS_AB` js/abilities.js; the readied well's rim: `drawClassAbCell`, js/ui/hud-draw.js; the `cast` reticle: `cursorInfo`, render.js) | `mouse only` |
 
 ## js/gamepad.js
 
@@ -325,9 +326,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a shot meeting everything its step CROSSED, in the order it met it: the swept disc, the tile walk (roost, dummy, wall), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `shotContacts`, `shotHits` | `the shot's sweep` |
 | the clock paying every player on the ground a coin, silently | `TRICKLE_GOLD`/`TRICKLE_T` (the tick is in `updatePlay`'s player loop) | `passive income` |
 | the zoom ease itself (runs first thing in `update`) | `applyZoom` | `update` |
-| the one wind field: its strength, which way it is running, and the signed lean at a tile; the slow sweep of loose snow across the world every 15 s | `windAmp`, `windVeer`, `windSway`, `wsin`/`wskew`, `WIND_*`; `windSweep`, `SWEEP_EVERY`/`SWEEP_T`/`SWEEP_MIN` (drawn: `drawSweep`, js/draw/ground.js) | `wind` |
+| the day's weather: the four rows of dials, how often each comes up, what a day rolls, and the dawn fade between them | `WEATHERS`, `WX_DIALS`, `WX_ODDS`, `WX_FADE`, `weatherOf`, `weatherNow` (the read for other systems), `stepWeather` (the dials in force: `state.wx`, core.js; the pin: `DBG.weather`) | `weather` |
+| the one wind field: its strength, which way it is running, the gust over a tile, and the signed lean at a tile; the slow sweep of loose snow across the world every 15 s | `windAmp`, `windVeer`, `windGust`, `windSway`, `wsin`/`wskew`, `WIND_*`; `windSweep`, `SWEEP_EVERY`/`SWEEP_T`/`SWEEP_MIN` (drawn: `drawSweep`, js/draw/ground.js) | `wind` |
 | particles, floaters, footprints, drops, world-space snow flakes | `updateFx`, `makeFlake`, `fitFlakes` | `fx updates` |
 | the belly-crawl drag furrow: emitted in `updatePlayer`, drawn as the `f.k === 3` branch | `footprints`, `p.trailD` | `update` (the draw branch: `render`, js/draw/render.js) |
+
+## js/shed.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| snow knocked off a pine's crown: the gust draws round each human, the wait and the rest that stagger it, the cap, and the blow (axe or shot) that always sheds | `SHED_*`, `shedStep` (called from `updatePlay`, sim.js), `shedHit` (called from `chopTree`, actions.js, and the arrow loop's wall branch, sim.js), `shedPuff` | `snow off the pines` (the read: `windGust`, sim.js; the puff: `burst`, core.js) |
 
 ## js/net/events.js
 
@@ -385,12 +393,35 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | ground painting and runtime repaints | `paintGroundTile`, `renderGround`, `repaintGround`, `hash2`, `vnoise` | `ground prerender` |
 | the road's pixels: the overlay and its colours, the ruts, the felled trunk across each forest end | `paintRoadOverlay` + `ROAD_COL_*`, `roadRutAt`/`roadRutCache`, `paintLog`/`LOG_COL` (under `paintGroundTile`) | `the road's pixels` (the geometry they read: `the road`, world.js) |
 | the creek's pixels: the water, its lit lip and pale far bank, the still streaks, a ford's stone, the plank deck with its posts and pilings, and the current's moving glints | `CREEK_COL`/`STONE_COL`/`DECK_COL`, `CREEK_SUN_X`/`CREEK_SUN_Y`, `DECK_LK`/`DECK_WM`/`DECK_C`, `creekNear`, `paintCreek` (under `paintGroundTile`), `deckPost`, `paintFordStone`, `drawCreekFlow` (called by `render()` right after the ground blit) + `FLOW_SPD`/`FLOW_RUN`/`FLOW_A` | `the creek's pixels` (the geometry they read: `the creek`, world.js) |
-| a lake's ragged shore, its bank, the two lake styles and which one each lake rolled, the depth in from the shore, the night mirror's shore masks | `ICE_STYLES`, `bakeLakes` (`lakeStyle`/`lakeDepth`, rolled by `rollIceStyle`), `iceAtPx` (the edge test), `depthAtPx`, `iceTone`, `bankAt`, `paintIceTile`, `paintSnowShore`, `mirrorCv`/`mirrorSlot`/`markMirror` | `the ice shore` (the mirror drawn: `drawIceStars`, js/draw/light.js) |
+| a lake's ragged shore, its bank (the downwind bank, dust, cracks and reeds laid over it: js/draw/lakes.js), the two lake styles and which one each lake rolled, the depth in from the shore, the night mirror's shore masks | `ICE_STYLES`, `bakeLakes` (`lakeStyle`/`lakeDepth`, rolled by `rollIceStyle`), `iceAtPx` (the edge test), `depthAtPx`, `iceTone`, `bankAt`, `paintIceTile`, `paintSnowShore`, `mirrorCv`/`mirrorSlot`/`markMirror` | `the ice shore` (the mirror drawn: `drawIceStars`, js/draw/light.js) |
 | open snow's drifts: the tones, the three looks and their regions, the height lattice, a tile's tones, the boot bake's row strip | `SNOW_PAL`, `SNOW_LOOKS`, `SNOW_REGION`/`SNOW_CUT`/`SNOW_BLEND`, `snowH`, `snowTile` (fills `snowTone`; the ice shore reads it too), `paintSnowTile`, `snowStrip`/`snowBulk` (called by `renderGround`) | `the snow's pixels` |
 | the sweep's streaks: the world grid they are laid on, how many, how far they drift, how long, their strands, the shadow and the drift | `drawSweep` (called by `render()` before `drawDropAir`), `SWEEP_CELL_W`/`SWEEP_CELL_H`/`SWEEP_RUN`/`SWEEP_STREAKS`/`SWEEP_LEN`/`SWEEP_LAG`/`SWEEP_STRANDS`/`SWEEP_SHADE`/`SWEEP_BODY`/`SWEEP_FULL` | `the wind's sweep` (when one blows: `windSweep`, sim.js) |
+| a blizzard day's low streaks: their grid, their loops, speeds and lengths, and the one atlas they are drawn off | `drawDrift` (called by `render()` after `drawIceStars`), `blowAtlas`, `BLOW_*` | `the ground blizzard` |
 | cast shadows: the sun's direction, what casts (by object type), a frame's shade, the scenery's baked into the ground, a changed caster's repaint, a body's drawn per frame | `SUN_DX`/`SUN_DY`, `SHADE_*`, `CASTERS`, `CAST_REACH`, `shadeMask`/`shadeFor`, `paintCastShade`, `shadeWorld` (the boot bake, in chunks), `castAt`/`syncCasts` (called by `render()` before the ground blit), `drawCastShade` (bodies.js, the building pass in render.js) | `cast shadows` |
 | the treasure chest's and the road cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
 | which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's); its atlas row (palette variant, forest-depth tone) and the nudge off its tile centre | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST`, `treeCell`, `treeTone`/`woody`/`TREE_TONES`, `treeNudgeX`/`treeNudgeY`/`TREE_NUDGE_X`/`TREE_NUDGE_Y` | `the scenery bakes` |
+
+## js/draw/lakes.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the snow's depth as this file reads it (the deep snow layer's map, or its stand-ins), the prevailing wind | `snowDepthAt`, `deepSnowAt`, `DRIFT_MID`, `DEPTH_STAND`, `rollPrevailing` (`LW_X`/`LW_Y`) | `the snow's depth` |
+| every lake's label and area, which count as big | `bakeLakeBodies` (`lakeId`/`lakeTiles`), `BIG_LAKE`, `bigLakeAt` | `lake bodies` |
+| the per-tile pixel lists the bake fills and every tile paint stamps, their inks, where nothing may land | `bakeDressing` (called by `renderGround` after `bakeLakes`), `paintDressing` (under `paintGroundTile`), `dressPx`/`crackPx`, `stampAt`, `DRESS_INK`, `dressFree` | `the dressing's stamps` |
+| the mid band drawn: the piles in the lee of a pine, a rock, the hut, and the skirt round a deep drift | `bakeDrifts` (reads `leeDepth`/`driftsDepth` per pixel), `DRIFT_FADE` | `drifts in the lee` |
+| the bank on a lake's downwind shore | `bakeBanks`, `BANK_W`, `SUN_TO_X`/`SUN_TO_Y` | `the downwind bank` |
+| the long cracks on a big lake | `bakeCracks`, `walkCrack`, `crackLine`, `CRACK_*` | `long cracks` |
+| the frozen reeds along a shore | `bakeReeds`, `reedClump`, `REED_*` | `frozen reeds` |
+| the dust on the ice, and the hook that scuffs it | `dustIce` (called on each ice pixel by `paintIceTile`/`paintSnowShore`), `iceDust`, `dustLee`/`bakeDustLee`, `DUST_*`, `trodden` (reads `trampleAt`), `iceDustInvalidate` (trampled snow calls it) | `dust on the ice` |
+| the weather on the ice every frame: the dials, blown streaks over big lakes, a frosty night's glints and cracks, fresh dust | `lakeSky`, `drawLakeSky` (called by `render()` after `drawIceStars`), `LSTREAK_*`, `GLINT_*`, `CRACK_FROST*`, `dustCv`/`DUST_VARS`/`DUST_LEVELS` | `the weather on the ice` |
+
+## js/draw/trample.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the trampled snow: the grid (4 px cells), what stamps it (a walk, a slide, a crawl, a roll, a knockback, a blow, a death), the refill and the snowfall seam the weather feeds, which pixels trample (snow, ice, nothing) | `trPack`/`trChurn`, `trStamp`, `trBody`, `trampleStep` (called by `update()`, sim.js, beside the step on a host and after `netClientStep` on a client), `trRefill`, `trampleSnowfall`/`TR_SNOW_LIGHT`, `trMask`, `trampleGroundChanged` (called by `repaintGround`), `TR_*` | `trampled snow` |
+| trampled ice thinning the lakes' dust: the read they take, the per-tile scan, the repaint queue handed to `iceDustInvalidate` | `trampleAt`, `trDustLayer`, `trDustScan`, `trDustSync`, `trDustSig`/`trDustQ`/`trDustHot` | `the dust on the ice` |
+| its pixels: the pressed bands, the churned clods, the frost scuffed into ice, the chunk canvases and their pool | `TR_PACK_COL`/`TR_PIT`/`TR_LUMP`/`TR_FROST`, `trPaint`, `drawTrample` (called by `render()` right before the footprints), `trEvict` | `the trample's pixels` |
 
 ## js/draw/practice.js
 
@@ -449,6 +480,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | whether the sun shafts are up at all (the drop window, and noon), and the shafts themselves | `rayLight`, `godRays`, `RAY_*` | `light & weather` › `god rays` |
 | the ice's night mirror + the parallax stars in it, and the "is this pixel on unbroken ice" mask (the painted shore's, `iceAtPx`) | `drawIceStars`, `overIce`, `STAR_*` | `light & weather` › `the reflected sky` |
 | the hour's colour grade (rose dawn, crisp midday, gold dusk: a warm multiply over a cool screen off keyframes on `state.time`, and the noon self-multiply) | `todGrade`, `todMix`, `todNoon`, `TOD_KEYS`/`TOD_CRISP`/`TOD_NOON*` | `light & weather` › `the hour` |
+| a clear frosty day: its cool grade and all-day crisp (applied in `todGrade`), the cloud it clears, the glints on bare snow, and a blizzard's milky haze | `FROST_TINT`/`FROST_CRISP`/`FROST_CLEAR`, `drawFrostGlint`, `GLINT_*`, `BLIZ_HAZE`/`BLIZ_HAZE_A` | `light & weather` › `frost glints` |
 | the night colour, a lit shot's halo, snow (world-space flakes, see `fx updates`), vignette | `renderLighting`, `NIGHT_TINT`/`NIGHT_DEEP`/`NIGHT_DEEP_A`, `litShots`, `renderWeather`, `renderVignettes`/`vigGrd` | `light & weather` › `the pass` |
 | the night RIM: the world-space vignette that closes the view in rather than dimming the middle | `nightEdge`, `NIGHT_EDGE`, `nvGrd` | `light & weather` › `the pass` |
 | **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk` | `light & weather` › `ink over the world` |
@@ -577,7 +609,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the TAB standings, the event log (kept, not drawn) | `logEvent`, `events`, `scoreGroups`, `renderScoreboard` | `scoreboard & log` |
 | the M map: the chart's class map, its flatten and its resample into the slot, the inks and rims and stipple, the marks, the header's day and CLOSE plank, and the chart point -> world tile inverse a map order needs | `buildMapPanel`, `buildWorldMapImg` (throttled to `MM_REBUILD` ticks), `chartGround`, `chartGrain`, `chartSpan`, `CHART_INK`/`CHART_RIM`/`CHART_LIT`/`CHART_GRAIN`/`CHART_NEED`/`CHART_DARK`, `MAP_HEAD_Y`/`MAP_HEAD_H`, `mapAlloc` (the buffers and the bake at the slab's current size), `drawFrostButton`, `mapCloseRect`/`mapCloseHit` (read by `pointerPress`, input.js, and the cursor), `renderWorldMap`, `mapTileAt` | `world map (M)` (the class a tile files under comes from `objChart(o)`: `world`, world.js; the marks: `drawMap*`, js/draw/marks.js) |
 | the ESC menu: its tabbed pages, their rows (a choice row's `val`/`pick`), the scroll, the keys that page and scroll it, the layout every reader shares | `SET_TABS`, `settingsLayout`, `settingsScrollBy`, `settingsTabBy`, `settingsKey`, `setTab`/`setScroll`, `buildSettingsPanel`, `settingsHit`, `settingsMouseDown`, `renderSettings` | `settings menu (ESC)` |
-| the CONTROLS page's listings (keyboard / gamepad) in three columns, its pinned sub-navbar of three cells (WASD and CLICK are the keyboard's, and pick the scheme), which opens by default, the pad glyphs, the live pad readout under the GAMEPAD listing | `CTRL_COL_X`, `PAD_READ_Y`/`PAD_READ_H`, `drawPadReadout`, `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`/`ctrlCellNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`, `drawPadGlyph` | `settings menu (ESC)` |
+| the CONTROLS page's listings (keyboard / gamepad) in three columns, its pinned sub-navbar of four cells (WASD, CLICK and MOUSE are the keyboard's, and pick the scheme), which opens by default, the pad glyphs, the live pad readout under the GAMEPAD listing | `CTRL_COL_X`, `PAD_READ_Y`/`PAD_READ_H`, `drawPadReadout`, `CTRL_TABS`, `CTRL_TAB_H`, `ctrlTab`/`ctrlTabNow`/`ctrlCellNow`, `ctrlCvs`, `bakeCtrlKeys`/`bakeCtrlPad`, `drawPadGlyph` | `settings menu (ESC)` |
 | the KEYBOARD listing's live caps - the rows, their layout, the draw, and the `'key:<action>'` / `'keyreset'` hits | `KEY_ROWS`, `KEY_ROW_H`/`KEY_ROWS_Y`/`KEYS_PRIMER_Y`, `keyRowsLayout`, `drawKeyRows` (the click: `settingsMouseDown`; the listen itself: `rebindStart`, input.js) | `settings menu (ESC)` |
 | the slab's foot planks: CLOSE, and in a match LEAVE PRACTICE or LEAVE MATCH beside it | `SET_FOOT_Y`/`SET_PLANK_*`, `footPlanks`, `leavePlankRect`, `settingsClose` (the clicks: `closeMenuPanel`/`leavePractice`, js/ui/menu.js; `toLobby`, js/ui/screens.js) | `settings menu (ESC)` |
 | the CONTROLS page's weapon primer: the worked build it draws and the marks it borrows from the HUD | `PRIMER`, `PR_CELL`/`PR_GAP`/`PR_X`/`PR_TX`, `drawToolPrimer` (baked once into `ctrlCvs.keys`) | `settings menu (ESC)` › beside `bakeCtrlKeys` |
