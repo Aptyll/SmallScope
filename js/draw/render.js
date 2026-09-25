@@ -371,9 +371,10 @@ function render() {
   }
 
   for (const d of draws) {
-    if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawPlayer(d.p, ex, ey, now); continue; }
-    if (d.a) { drawAnimal(d.a, ex, ey, now); continue; }
-    if (d.r) { drawRobot(d.r, ex, ey, now); continue; }
+    // a body in deep snow is drawn sunk to the shins (drawWading, js/draw/depth.js)
+    if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawWading(d.p, ex, ey, now, () => drawPlayer(d.p, ex, ey, now)); continue; }
+    if (d.a) { drawWading(d.a, ex, ey, now, () => drawAnimal(d.a, ex, ey, now)); continue; }
+    if (d.r) { drawWading(d.r, ex, ey, now, () => drawRobot(d.r, ex, ey, now)); continue; }
     if (d.f) { drawFlag(d.f, ex, ey, now); continue; }
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
     const o = d.o;

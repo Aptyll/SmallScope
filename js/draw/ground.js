@@ -635,7 +635,7 @@ function paintSnowShore(g, tx, ty, px, py) {
 const SNOW_PAL = ['#dfe8f4', '#e8f0f9', '#eef4fb', '#f5f9fd'].map(rgbOf); // lee .. lit
 const SNOW_BASE = 1;                           // the flat snow's tone
 const SNOW_GLINT = rgbOf('#ffffff'), SNOW_GLINT_P = 0.996; // a crystal, only on the lit tone
-const SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG);
+let SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG); // a match turns it onto the seed's prevailing wind (layDrifts, js/depth.js)
 const SNOW_LOOKS = [
   { sc: 1,   rel: 7, dith: 0.8 },              // fine drifts
   { sc: 1.8, rel: 8, dith: 0.6 },              // broad swells
@@ -691,6 +691,7 @@ function snowTile(px, py) {
       S[b * SNOW_LAT + a] = (H[(b + 1) * SNOW_LAT + a + 1] - H[(b - 1) * SNOW_LAT + a - 1]) * k;
     }
   }
+  const deep = driftCell && driftCell[idx(px / TILE, py / TILE)]; // a deep drift reaches this tile (js/depth.js)
   for (let j = 0; j < TILE; j++) {
     const v = j / TILE, qa = q00 + (q01 - q00) * v, qb = q10 + (q11 - q10) * v, y = py + j, fy = y / 2 - Y0;
     for (let i = 0; i < TILE; i++) {
@@ -712,11 +713,12 @@ function snowTile(px, py) {
         }
       }
       const t = Math.round(SNOW_BASE + d + BAYER4[(y & 3) * 4 + (x & 3)] * dith);
-      snowTone[j * TILE + i] = t >= 3 ? (hash2(x * 3 + 7, y * 5 + 11) > SNOW_GLINT_P ? 4 : 3) : t < 0 ? 0 : t;
+      const tone = t >= 3 ? (hash2(x * 3 + 7, y * 5 + 11) > SNOW_GLINT_P ? 4 : 3) : t < 0 ? 0 : t;
+      snowTone[j * TILE + i] = deep ? deepTone(x, y, tone) : tone;
     }
   }
 }
-const SNOW_INK = SNOW_PAL.concat([SNOW_GLINT]);
+const SNOW_INK = SNOW_PAL.concat([SNOW_GLINT], DEEP_PAL.map(rgbOf)); // 5.. deep snow (js/draw/depth.js)
 // ink snowTone into an ImageData at pixel column ox
 function inkSnow(img, ox) {
   const D = img.data, W = img.width;

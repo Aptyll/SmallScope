@@ -1392,6 +1392,7 @@ if (PRACTICE) {
   spawnFish();
   stockCamps();      // the monsters go in once the world is standing
 }
+layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/depth.js)
 initPlayers();
 // the match's role for this screen (js/net/net.js): ?net=host&room=R hosts a
 // room on the dev server's relay, ?net=client&room=R joins it; nothing else
@@ -1493,6 +1494,8 @@ window.DBG = {
   // the map shape this page grew, the table behind it, the rule one IS, and
   // the paths it cut: DBG.mapTerrain(k, tx, ty) answers for any shape
   MAPS, mapTerrain, mapName, mapGrown, paths, pathDist,
+  // the snow's depth (js/depth.js): the map, the deep band, the drifts and the wind that laid them
+  snowDepth, deepAt, drifts, driftWind,
   get MAP_TYPE() { return MAP_TYPE; },
   // the practice arena: whether this boot is one, the dummy's live record,
   // the spawn tile, the shared hit paths, the archery targets, the parkour

@@ -176,7 +176,7 @@ function lmStand(key, tx, ty) {
 // direction is held and coasts down when it is not. The caps sit between a
 // walk (PLAYER_SPEED 72) and the zipline (220): SLED_SNOW is 1.6 walks, and
 // on ice it runs past a skater's ICE_MAX (150), where a sled belongs. Deep
-// snow (the deep-snow map, when this build has one) bogs it down.
+// snow (deepAt, js/depth.js) bogs it down to SLED_DEEP of the cap.
 const SLED_T = 15;           // s a ride lasts before the sled gives out
 const SLED_WARN = 3;         // s before the end it starts to rattle and flash
 const SLED_DMG = 0.1;        // of the rider's max health the burst takes (never the last point)
@@ -205,9 +205,10 @@ function sledNear(p) {
   }
   return best;
 }
-// the snow's grip on the sled: the deep-snow map's deepest band, if this build has one: the cap's share
+// the snow's grip on the sled: the cap's share left in the deep band (deepAt,
+// js/depth.js, asked at the feet in world px)
 function sledSurfaceMul(p) {
-  return typeof deepAt === 'function' && deepAt(p.x, p.y + 4) ? SLED_DEEP : 1; // the feet, in world px (js/drifts.js)
+  return deepAt(p.x, p.y + 4) ? SLED_DEEP : 1;
 }
 // the hop intent on the ground, before the zipline's: riding, it gets off;
 // beside a sled, it gets on. True when the sled took the press.
