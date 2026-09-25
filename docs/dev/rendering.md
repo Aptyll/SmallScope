@@ -389,7 +389,8 @@ body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 o
 every worker, soldier and merchant standing is drawn, none of them hides; the watched body
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
 of its side's ink, never a colour of its own that would read as a third team; the bird diamond
-is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. **The slab is
+is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. Under a
+colour-blind palette a rival's square is a cross instead (`foeCue`, [teams and colours](multiplayer.md#teams-and-colours)). **The slab is
 the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
 px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
@@ -1089,7 +1090,8 @@ read the same two golds, so "full draw" is one colour everywhere).
 — every player (in `drawPlayer`), animals (in `drawAnimal`), robots (in `drawRobot`), a hurt
 building — **painted by side** (`barCol`): the team's `mark` through `skin()`, so it is blue over
 you and your allies and red over rivals on your screen, and neutral gold (`BAR_NEUTRAL`, the WoW
-grammar) over wildlife, the practice dummy and anything handed no team; `col` overrides the side
+grammar) over wildlife, the practice dummy and anything handed no team (under a colour-blind
+palette a rival's fill is cut every third column, `foeCue`); `col` overrides the side
 for the bars that are not health, every one hung under the health bar the way a player's stamina is
 (3 rows down, sharing a frame wall; **health is always the top bar**, at the same height on every
 animal): a camp monster's leash (`THREAT_COL` red, bare track at rest:

@@ -186,11 +186,15 @@
   // 64x64 drawSpriteFlash scratch, so it gets a baked silhouette instead)
   const EGFLASH = Object.keys(EGPAL).reduce((o, k) => (o[k] = k === '.' ? null : '#f4f7ff', o), {});
 
+  const eagleTeam = [];
+  SPR.onTeams(() => TEAM_SKINS.forEach((t, i) => {
+    eagleTeam[i] = [bake(armorize(eagleSpread), eagleTeamPal(t)),
+      bake(armorize(eagleMid), eagleTeamPal(t)), bake(armorize(eagleBack), eagleTeamPal(t))];
+  }));
+
   Object.assign(SPRITES, {
     eagle: [bake(eagleSpread, EGPAL), bake(eagleMid, EGPAL), bake(eagleBack, EGPAL)],
-    // eagleTeam[team] - the same three flap frames in that team's armour
-    eagleTeam: TEAM_SKINS.map((t) => [bake(armorize(eagleSpread), eagleTeamPal(t)),
-      bake(armorize(eagleMid), eagleTeamPal(t)), bake(armorize(eagleBack), eagleTeamPal(t))]),
+    eagleTeam, // eagleTeam[team] - the same three flap frames in that team's armour
     eagleFlash: bake(eagleBack, EGFLASH), // the downed pose, all white, for the hit flash
     eagleShadow: bake(eagleSpread, EGSHADOW),
   });
