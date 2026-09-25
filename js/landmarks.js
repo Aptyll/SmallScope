@@ -205,9 +205,9 @@ function sledNear(p) {
   }
   return best;
 }
-// the stick's grip on the deep-snow map, if this build has one: the cap's share
-function sledSurfaceMul(tx, ty) {
-  return typeof deepSnowAt === 'function' && deepSnowAt(tx, ty) ? SLED_DEEP : 1;
+// the snow's grip on the sled: the deep-snow map's deepest band, if this build has one: the cap's share
+function sledSurfaceMul(p) {
+  return typeof deepAt === 'function' && deepAt(p.x, p.y + 4) ? SLED_DEEP : 1; // the feet, in world px (js/drifts.js)
 }
 // the hop intent on the ground, before the zipline's: riding, it gets off;
 // beside a sled, it gets on. True when the sled took the press.
@@ -265,7 +265,7 @@ function sledStep(p, dt, mx, my, len) {
   p.sliding = false;
   const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
   const onIce = inWorld(tx, ty) && ground[idx(tx, ty)] === 1;
-  const cap = (onIce ? SLED_ICE : SLED_SNOW) * sledSurfaceMul(tx, ty) * abilityMoveMul(p);
+  const cap = (onIce ? SLED_ICE : SLED_SNOW) * sledSurfaceMul(p) * abilityMoveMul(p);
   let sp = Math.hypot(p.vx, p.vy);
   let hx = s.hx, hy = s.hy;
   if (len > 0) {

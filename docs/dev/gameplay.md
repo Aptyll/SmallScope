@@ -147,7 +147,7 @@ surface's cap at `SLED_PUSH` while a direction is held and coasts down when noth
 (`SLED_COAST` on snow, `SLED_COAST_ICE` on ice). The caps are `SLED_SNOW` 115 px/s (1.6 times
 `PLAYER_SPEED`) and `SLED_ICE` 170 (above a skater's `ICE_MAX` of 150), times
 `abilityMoveMul`, and times `SLED_DEEP` in deep snow once this build has a deep-snow map
-(`sledSurfaceMul` asks `deepSnowAt(tx, ty)` only if that function exists). A wall stops the axis
+(`sledSurfaceMul` asks `deepAt` at the feet only if that function exists). A wall stops the axis
 it blocks, open water plunges the rider as usual (and the sled breaks), and the runners cut the
 slide's grooves past `SLED_TRAIL`. On the click scheme the sled runs toward the pointer (`ckStep`)
 and the right press is the hop off. A rider's hands are full, so `p.sled` joins the `p.zip >= 0`
