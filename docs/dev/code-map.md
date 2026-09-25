@@ -718,6 +718,26 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the way in off either ceremony, the way back, and the controls: the headings that sort, the graph's tabs, the two planks | `openScores`, `scoresBack`, `scoresHit`, `scoresSort`, `scoresActivate`, `scoresKey`, `scoresClick` (the four one-line hand-offs: `deadActivate`/`renderDead`/`deadKey`/`deadClick`, js/ui/screens.js; the door: `toLobby`, same file) | `the way in` |
 | the pixels: the head, the sortable headings, the two blocks, the tabs, the planks, and the lead-shaded graph | `SC_*`, `scoreNum`, `scoreNumSmall`, `renderScores`, `drawScoreGraph` | `the pixels` |
 
+## js/save.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what a save carries: the roots, `state`'s UI keys it leaves behind, the three streams' positions | `SAVE_ROOTS`, `saveArr`, `SAVE_STATE_SKIP` (the streams' `.s`: `mulberry32`, core.js) | `saved matches` |
+| the grown valley every save is written against, and the tile objects that are always written | `saveBaseline`, `saveSum`, `saveBase` (its `live` set) | `saved matches` |
+| the object graph: the `$` tags, the static rows written as names, the classes rebuilt | `saveEncode`, `saveDecode`, `saveStatics`, `SAVE_CLASSES` | `saved matches` |
+| the match as a record and back, and the proof's hash | `saveCapture`, `saveApply`, `saveHash` (`DBG.saveHash`) | `saved matches` |
+| who may save, a slot's card, the newest, packing | `canSave`, `saveMeta`, `saveList`, `saveNewest`, `saveZip`/`saveUnzip`, `saveMatch` (the storage: `PROFILE.saveMetas`/`saveBody`/`putSave`/`dropSave`, js/profile.js) | `saved matches` |
+| the autosave ring: the timer, the pause's save, the gap | `SAVE_AUTO_T`, `SAVE_AUTO_GAP`, `autoSave`, `saveAutoTick` (from `loop`, boot.js; the pause's: the Escape and pause keys, `keyPress`, input.js) | `saved matches` |
+| a load: the fade and the hand-off, boot's two halves | `loadSave`, `saveBootLoad` (before `renderGround`), `saveBootEnter`, `saveBootView` | `saved matches` |
+
+## js/ui/saves.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the slab's state, the way in (the ESC panel's SAVES plank; the title's LOAD GAME) and out | `saveUi`, `savesUp`, `openSaves`/`closeSaves`, `openSavesTitle`, `savesBack` (the hand-offs: `renderSettings`/`settingsHit`/`settingsMouseDown`/`settingsKey`/`footPlanks`, panels.js; `menuKey`/`menuClick`/`renderTitle`, menu.js) | `saves screen` |
+| where the cards sit, which ones the verb can act on, the press and the arm before it, the keys | `savesCards`, `savesLive`, `savesLayout`, `savesHit`, `savesAct`, `SV_ARM_T`, `savesClick`, `savesKey` | `saves screen` |
+| the pixels: a slot's thumbnail, a card, the autosave glyph, the verb's arrow, the slab; the HUD's saved mark | `saveThumb`, `drawSaveCard`, `drawAutoGlyph`, `drawVerbArrow`, `renderSaves`, `drawSaveFlash` (called after `renderUI`, render.js) | `saves screen` |
+
 ## js/boot.js
 
 | Looking for | Start at | Banner |

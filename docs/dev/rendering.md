@@ -1694,7 +1694,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `state.menu`:
 
 - **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL —
-  all three live from the first boot; PRACTICE TOOL's activation is `beginPractice()` (the
+  all three live from the first boot; a profile holding a [saved match](gameplay.md#saved-matches)
+  gets CONTINUE on top and LOAD GAME under SINGLEPLAYER, spliced in at boot, which is why
+  `menuActivate` dispatches on the word and never the index; PRACTICE TOOL's activation is `beginPractice()` (the
   reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
   the column as the first live way in; MULTIPLAYER opens the rooms screen;
@@ -1740,7 +1742,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   puts it back on the lobby.
 - **Panels** slide up from the bottom edge over the still-visible world (`menu.panel`,
   `menu.panelT` over `PANEL_SLIDE_T`, `menu.closing` on the way out); the menu chrome ducks to
-  zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake)
+  zero alpha underneath. The `'settings'` kind is the existing panel via `renderSettings(now, { bare, slide })` (nothing on the title opens it since the SETTINGS plank went; the code stays for the ESC panel's sake), and the `'saves'` kind is LOAD GAME's slab via `renderSaves` the same way (js/ui/saves.js; it takes its own keys, BACK included)
   (no dim, no minimap preview, translated by `slide`) — its widgets only take input once
   `menuPanelReady()`, so a click can never land on a half-slid row, and clicking outside the
   slab closes it. The help panel (`helpPanelCv`, controls + the rules of the frostlands) is

@@ -53,7 +53,7 @@ Read the relevant one **before** working in that area — they carry the detail 
 Five legacy files — `profile.js`, `font.js`, the generated `sfxdata.js` and `logodata.js`, `audio.js` — and the
 eleven sprite files under `js/sprites/` keep their IIFEs and expose fixed `window` globals (`core.js`
 makes `SPRITES`, the other ten `Object.assign` their keys into it); after them the game code is
-**flat top-level classic scripts sharing one global scope** — fifty-three files, `core.js`
+**flat top-level classic scripts sharing one global scope** — fifty-five files, `core.js`
 through `boot.js`, with everything that draws under `js/draw/` (the world) and `js/ui/` (the HUD
 and the screens) (the tag `pre-split` keeps the one-file history).
 [index.html](index.html) loads them in a fixed order and they communicate **only through
@@ -61,23 +61,25 @@ globals**, so each file's globals must exist before the next loads. The file tab
 shared-scope mechanism: [architecture](docs/dev/architecture.md).
 
 **`js/profile.js` is the only file that touches `localStorage`** — the local player profile (up to
-three characters - name, class, look, lifetime stats - the kinds it has held, and the settings).
+three characters - name, class, look, lifetime stats - the kinds it has held, the settings, and the
+saved matches).
 Everything else goes through `PROFILE`, so putting the profile on a server stays a one-file change;
 never read or write a storage key directly. **A match reads nothing back out of a profile but the
-character's name, class and look**: the whole arsenal is unlocked for everybody, so `LOOT_POOL` is
+character's name, class and look** (and a saved match, loaded whole): the whole arsenal is unlocked for everybody, so `LOOT_POOL` is
 the same on a first flight as on a five-hundredth ([the wiki](docs/dev/gameplay.md#the-wiki)).
 
 All game state lives in module-scope singletons (`state`, `settings`, `players`) and the entity
 arrays beside them; `player`/`inv` are the **local player only**, carried goods are `player.bag` and
 the two meals are the uncapped `player.food` pouch — both reached only through the `bag*` helpers.
-The full list: [code-map](docs/dev/code-map.md#jsplayerjs).
+The full list: [code-map](docs/dev/code-map.md#jsplayerjs). **A new mutable global the sim reads joins
+`SAVE_ROOTS`** (js/save.js), or a loaded save silently forgets it: [saves](docs/dev/gameplay.md#saved-matches).
 
 A feature's **tuning constants live in the file that owns the feature**, above the code that reads
 them; `core.js` keeps only the numbers with no one owner. A const is invisible to files that load
 before its own, so anything read at *load time* must be declared no later:
 [architecture](docs/dev/architecture.md#the-game-files-corejs--bootjs-with-jsdraw-and-jsui).
 
-The game code is organized only by `// ------ name` banners inside its fifty-three files.
+The game code is organized only by `// ------ name` banners inside its fifty-five files.
 **Keep every banner honest**, and find any function by its banner in
 [docs/dev/code-map.md](docs/dev/code-map.md) — read it before grepping blind.
 

@@ -631,6 +631,18 @@ Code that is dead **on purpose** is the next section.
   still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
 
+- **A loaded match counts its lifetime stats again.** The profile's per-character stats
+  (`PROFILE.addKill`/`addDay`/`addWin`...) are written as they happen, so replaying a stretch
+  from an older save adds its kills, days and a win a second time. The saves themselves are
+  exact; only the lifetime tally is not rewound ([saved matches](gameplay.md#saved-matches)).
+- **The day clock turns under the ESC panel and the pause plate.** `update` advances
+  `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`
+  say, while every body stands still; the match clock under the minimap ticks on behind the
+  panel.
+- **A loaded match's snow is untrodden.** The trampled-snow field (`trPack`/`trChurn`,
+  js/draw/trample.js) is visual and not in `SAVE_ROOTS`, so the paths a match packed are gone
+  after a load and refill from there; the match itself plays out the same.
+
 ## Intentional dead code
 
 Kept on purpose — do not "clean up", and a verbatim code move carries it along.

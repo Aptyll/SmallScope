@@ -392,10 +392,14 @@ function keyPress(e) {
     else if (state.shop) closeShop();
     else if (state.charOpen) { state.charOpen = false; SFX.ui(false); }
     else if (state.bagOpen) { state.bagOpen = false; SFX.ui(false); } // the drawer slides back up
-    else { state.settingsOpen = !state.settingsOpen; dragSlider = null; state.wheel = null; SFX.ui(state.settingsOpen); }
+    else {
+      state.settingsOpen = !state.settingsOpen; dragSlider = null; state.wheel = null; SFX.ui(state.settingsOpen);
+      saveUi.open = false;
+      if (state.settingsOpen) autoSave(); // the way into the pause menu autosaves (js/save.js)
+    }
   }
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
-  if (keyIs(e, 'pause')) { state.paused = !state.paused; SFX.ui(state.paused); } // the PAUSED plate is a surface like any other
+  if (keyIs(e, 'pause')) { state.paused = !state.paused; SFX.ui(state.paused); if (state.paused) autoSave(); } // the PAUSED plate is a surface like any other
 }
 window.addEventListener('keyup', (e) => {
   const k = keyName(e);
