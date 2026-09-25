@@ -629,7 +629,7 @@ function paintSnowShore(g, tx, ty, px, py) {
 const SNOW_PAL = ['#dfe8f4', '#e8f0f9', '#eef4fb', '#f5f9fd'].map(rgbOf); // lee .. lit
 const SNOW_BASE = 1;                           // the flat snow's tone
 const SNOW_GLINT = rgbOf('#ffffff'), SNOW_GLINT_P = 0.996; // a crystal, only on the lit tone
-const SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG);
+let SNOW_ANG = -0.33, SNOW_C = Math.cos(SNOW_ANG), SNOW_S = Math.sin(SNOW_ANG); // a match turns it onto the seed's prevailing wind (layDrifts, js/depth.js)
 const SNOW_LOOKS = [
   { sc: 1,   rel: 7, dith: 0.8 },              // fine drifts
   { sc: 1.8, rel: 8, dith: 0.6 },              // broad swells

@@ -155,6 +155,9 @@ function layDrifts() {
   // the road would bury one roost's approach and leave the other bare.
   const a = Math.PI / 4 + (hash2(9011, 373) - 0.5) * 2 * DRIFT_WIND_ARC + (hash2(17, 9901) < 0.5 ? Math.PI : 0);
   driftWind.ang = a; driftWind.dx = Math.cos(a); driftWind.dy = Math.sin(a);
+  // ...and the ground's swells (SNOW_ANG, js/draw/ground.js) lie along it, so
+  // every texture the snow wears leans the one way; the bake reads them after
+  SNOW_ANG = a; SNOW_C = driftWind.dx; SNOW_S = driftWind.dy;
   const wx = driftWind.dx, wy = driftWind.dy;
   // every obstacle with open snow in its lee, scored by how much wind it breaks:
   // the solid tiles in the half-disc upwind of it
