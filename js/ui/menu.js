@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 3.98';
+const PATCH_TXT = 'PATCH 3.99';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['3.99', 'EVERY HEALTH BAR IS CUT INTO SEGMENTS NOW - HEROES, BOTS, ANIMALS AND BUILDINGS - SO A BIGGER HEALTH POOL SHOWS MORE OF THEM, AND UNDER A COLOUR-BLIND PALETTE A RIVAL\'S BAR WEARS A DARK CAP ON ITS RIGHT END INSTEAD.'],
   ['3.98', 'THE VALLEY HAS STORY LANDMARKS: AN ICE-FISHING SHACK BY A LAKE SHORE, A ROWBOAT FROZEN OUT ON THE ICE, AND AN OLD SLED BY THE ROAD ON EACH SIDE THAT YOU CAN JUMP ON WITH E AND RIDE FOR FIFTEEN SECONDS BEFORE IT FALLS APART UNDER YOU.'],
   ['3.97', 'A SOLO MATCH SAVES NOW, MID-FIGHT, ARROWS STILL IN THE AIR: FIVE SLOTS AND THREE AUTOSAVES UNDER SAVES ON THE ESC PANEL, AND CONTINUE OR LOAD GAME ON THE TITLE PICKS IT UP EXACTLY WHERE IT STOOD.'],
   ['3.96', 'ROCKS ARE TWICE THE SIZE AND COME IN THREE KINDS - PLAIN STONE, A FROSTGLASS SPIRE AND A RARE SUNSTONE OBELISK - THAT YOU MINE BY HOLDING E WHILE THEY CRACK, AND THE ORE THEY GIVE TAKES YOUR WEAPON FROM +1 TO +5 ON THE MERCHANT\'S NEW FORGE TAB.'],
@@ -3369,7 +3370,7 @@ function drawWikiBeast(bs, cx, baseY, level, now) {
   ctx.drawImage(spr, px, py);
   const wolf = isCampKind(bs.kind); // a camp monster's second bar is its leash
   const bx = Math.round(cx - bs.bw / 2);
-  drawHealthBar(cx, py - 8, 1, 1, bs.bw);
+  drawHealthBar(cx, py - 8, ANIMAL_HP[bs.kind], ANIMAL_HP[bs.kind], bs.bw); // full, chunked the way the world chunks it
   if (wolf) drawHealthBar(cx, py - 5, 0.6, 1, bs.bw, undefined, THREAT_COL);
   else drawHealthBar(cx, py - 5, 1, 1, bs.bw, undefined, STAM_COL);
   drawLevelBadge(bx - 1, py - 9, level);

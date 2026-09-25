@@ -550,7 +550,7 @@ function render() {
       // hovered while regrowing: the clock itself, the neutral unit bar over
       // the plant filling toward ripe - the frames say roughly, a look asks
       // exactly. A ripe bush wears the rim instead, and says pick me.
-      if (o.berries <= 0 && o === hovO) drawHealthBar(px + 8, py + 1, BUSH_REGROW - o.regrow, BUSH_REGROW, 12);
+      if (o.berries <= 0 && o === hovO) drawHealthBar(px + 8, py + 1, BUSH_REGROW - o.regrow, BUSH_REGROW, 12, undefined, BAR_NEUTRAL);
     } else if (STRUCTS[o.type] && STRUCTS[o.type].tiled) {
       drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
     } else if (STRUCTS[o.type]) {
