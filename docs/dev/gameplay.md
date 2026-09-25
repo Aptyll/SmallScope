@@ -142,9 +142,10 @@ peer and nothing goes over the wire; a jump of over 40 px (a landing, a respawn)
 between.
 
 Fresh snow refills every cell **linearly**, the way snowfall fills a hollow: `TR_FILL` a second at
-light snow, scaled by `trampleSnowfall()` (0 calm .. 1 blizzard; `TR_SNOW_LIGHT` until the weather
-feeds it), churn `TR_FILL_CHURN` times faster. One pass (~0.1) is gone in about ninety seconds; a
-hard-packed route (1.0) lasts a quarter of an hour of no traffic.
+light snow (`TR_SNOW_LIGHT`), scaled by `trampleSnowfall()`: the day's falling snow plus its ground
+blizzard off `weatherNow()` (see [the day's weather](rendering.md#the-days-weather)), so a clear frost day refills at 0.3x and a snow day
+or a blizzard at ~2.3x; churn refills `TR_FILL_CHURN` times faster. At light snow one pass (~0.1) is
+gone in about ninety seconds and a hard-packed route (1.0) lasts a quarter of an hour of no traffic.
 
 Each pixel asks what it stands on, the way the bake painted it (`trMask`): snow packs through three
 pressed shades and throws clods where churned; **ice** is the lakes' dust layer's to

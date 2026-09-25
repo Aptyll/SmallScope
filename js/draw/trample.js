@@ -30,7 +30,7 @@ const TR_DEATH = 0.7;                       // a body going down
 const TR_FILL = 0.0011;                     // pack refilled per second at light snow
 const TR_FILL_CHURN = 1.6;                  // churned snow slumps back faster than packed snow lifts
 const TR_REFILL_T = 1.5;                    // s between refill passes over one chunk
-const TR_SNOW_LIGHT = 0.35;                 // the snowfall level (0 calm .. 1 blizzard) until weather sets one
+const TR_SNOW_LIGHT = 0.35;                 // the snowfall the refill is tuned at (light snow), and the level before any weather
 const TR_POOL = 72;                         // chunk canvases kept at most
 const TR_BUILDS = 2;                        // chunk repaints a frame may spend
 const TR_REPAINT = 12;                      // frames a chunk waits between repaints
@@ -42,9 +42,15 @@ const trLive = [];                                      // chunk indices holding
 const trSeen = new WeakMap();                           // body -> { x, y, d, hp, dead }
 let trTurn = 0, trFrame = 0, trCanvases = 0;
 
-// How hard it is snowing, 0 (calm) .. 1 (blizzard): the one seam the
-// weather feeds. Calm still refills slowly (wind drift); a blizzard ~2.3x.
-function trampleSnowfall() { return TR_SNOW_LIGHT; }
+// How much new snow is landing, 0 .. 1, off the day's weather (weatherNow,
+// sim.js): the flakes falling plus what a ground blizzard blows along the
+// surface, which fills a hollow just as surely. Clear frost adds nothing and
+// only the wind's slow drift refills (0.3x light snow); a snow day or a
+// blizzard runs ~2.3x.
+function trampleSnowfall() {
+  const wx = typeof weatherNow === 'function' && weatherNow();
+  return wx ? Math.min(1, wx.snow + wx.drift * 0.8) : TR_SNOW_LIGHT;
+}
 function trFillMul() { return (0.3 + 2 * trampleSnowfall()) / (0.3 + 2 * TR_SNOW_LIGHT); }
 
 function trChunk(ci) {
