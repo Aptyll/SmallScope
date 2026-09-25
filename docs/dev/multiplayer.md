@@ -153,10 +153,12 @@ verb — the four walk keys, the four abilities, dodge, slide, harvest, the two 
 draw, the inventory drawer, the sheet, the build list and its rotate, the map, the standings, mute,
 pause, and the CLICK
 scheme's three of its own (attack-move, stop, the held flag wheel) — with the key each starts on
-per scheme (`key` on WASD, `ck` on CLICK; an action with neither is not on that scheme), in the
-order the CONTROLS page lists them. **The keyboard has two schemes and each keeps its own map**
-(`settings.scheme`, `SCHEMES`): `settings.binds` is the WASD scheme's (action id → key name) and
-`settings.bindsClick` the CLICK scheme's, `binds()` whichever is live, both saved with the
+per scheme (`key` on WASD, `ck` on CLICK, `ms` on MOUSE where it differs from `ck`; an action
+with none is not on that scheme), in the
+order the CONTROLS page lists them. **The keyboard has three schemes and each keeps its own map**
+(`settings.scheme`, `SCHEMES`): `settings.binds` is the WASD scheme's (action id → key name),
+`settings.bindsClick` the CLICK scheme's and `settings.bindsMouse` the MOUSE scheme's,
+`binds()` whichever is live, all saved with the
 profile and made whole by `mendBinds` after `loadSettings` (a bind an action never had, a
 reserved key or a key two actions share falls back to its default; `schemeActs`/`schemeKey`
 are the per-scheme roster and default). **Nothing compares a key
@@ -167,7 +169,7 @@ planks, the wiki, gear, the lobby, the settings slab; under CLICK the arrows alo
 `keyCap(action)` (`keyCapShort` for a well's corner, where SPACE is SPC; an action the live scheme
 has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
 Enter and the arrows walk the menus (the arrows always walk the body too), F3 and `.` are the
-debug flips, the mouse buttons are the mouse's, and `keyReserved` refuses those and the
+debug flips, the three main mouse buttons are the mouse's, and `keyReserved` refuses those and the
 browser's F row to a bind. A pad button names an *action* (`PAD_PLAY`):
 the key event it builds carries it (`e.act`, which `keyIs` reads
 before the key) and its held state is `actHeld`'s (which `keyHeld` reads beside `keys`), so a
@@ -176,7 +178,7 @@ and its verb — a pad on the CLICK scheme still works with X, because X names `
 
 **Rebinding** is a cap on the CONTROLS page's KEYBOARD listing
 ([the panel](gameplay.md#settings); the listing is the live scheme's, and the CONTROLS navbar's
-WASD / CLICK cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels.js): a click sets it listening (`state.rebind` is the action,
+WASD / CLICK / MOUSE cells are the scheme switch, `CTRL_TABS`/`KEY_ROWS`, panels.js): a click sets it listening (`state.rebind` is the action,
 `rebindStart`), the next key down is its key (`rebindKey`, first thing in `keyPress`), Escape calls
 it off, a reserved key is refused with the deny cue, and a key another action holds **swaps** —
 that action takes the old key (`setBind`) — so every action always has one key of its own and no
@@ -238,6 +240,42 @@ bot fills, once per step from `sampleHumanInput`.
 - **What the eye gets** (`drawClickMarks`, js/draw/marks.js): a ring blooms and fades where the
   order landed — white for a walk, gold for a job, red for a fight (`CK_COL`) — and a breathing
   ring in the foe's ink sits under a locked target's feet. Nothing is written.
+
+### The MOUSE scheme
+
+The keyboard's third scheme (`settings.scheme = 'mouse'`; the `mouse only` banner, input.js) is
+**CLICK for one hand**: `ckOn()` is true under it too, so every CLICK gesture above stands, and
+what CLICK leaves on the keyboard moves onto the mouse. The keys still work; nothing needs them.
+
+- **The side buttons are keys.** `sideButton` names the back button `'Mouse4'` and forward
+  `'Mouse5'` and presses them through `keyPress`/`keyRelease`, so they bind, rebind (a listening
+  cap takes a side press) and hold like any key, on any scheme. MOUSE starts the **dodge** on
+  back and the **slide** on forward (`ms` on `KEY_ACTIONS`); the caps print MB4 and MB5. The
+  listeners swallow both buttons' browser back and forward.
+- **A left press on a foe takes the lock** as it draws (`msLeftPress`, `ck.stand`): the loose
+  goes to the body, CLICK's assist, and the auto-attack keeps working it from where you stand.
+  A stand lock never walks (the chase is the right button's) and a new order drops it; a left
+  press at open snow lets it go.
+- **Holding the middle button opens the ACTION WHEEL** at the pointer (`msWheelPress`, wheel
+  kind `'kit'`, `MS_WHEEL`): the four abilities clockwise from the top, the two meals, the flag.
+  The travel picks and the release performs (`msKitPick`). An ability casts at the point the
+  press was made, not where the flick ended: `ms.castAt` holds the aim through the whole
+  wind-up (`ckStep`), since the effect lands at the aim held at its end. The flag wedge stands
+  the flag wheel up on that tile (`w.stand`), and the next press of any button picks from it.
+  Over the chart the middle button opens the flag wheel directly.
+- **A click on an ability well readies it** (`msWell`, `ms.ready`) where the key would cast: the
+  well's rim goes gold, the pointer wears the `cast` reticle, the next left press on the world
+  casts there, and a right press (the walk), Escape or the well again puts it down. The scroll
+  wheel walks the readied ability along the wells while one is up (the zoom waits, as it does
+  for the build list). Only a row whose `aim` is a line or a cone readies (`msAims`); the rest
+  cast at once, and a skill point in hand buys, as the key does.
+- **A grapple cast off the mouse reels to its end** (`ms.reel` stands in for the held key;
+  any right press lets go).
+- **What the eye gets:** `drawCastPreview` (js/draw/marks.js) draws the ground the lit wedge or
+  the readied ability covers, from the body toward its cast point, off the row's own `aim`
+  (`CLASS_AB`, js/abilities.js: a `line`, a `cone` with its `half`, or a `ring` round the body),
+  gold when it will cast and grey while it cannot. The wheel's wedges wear the strip's icons,
+  dark while locked, waiting or out of stock (`drawKitWedge`, js/ui/wheel.js).
 
 **The gamepad** (`padPoll`, once per frame from `loop()` — the API has no stick events. Which
 pad, out of everything the browser lists, is `padFind`: one with a button down or its left stick

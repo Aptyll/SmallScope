@@ -1814,6 +1814,8 @@ window.DBG = {
   get binds() { return binds(); }, // the live scheme's map
   // the CLICK scheme (input.js): its state, the two presses and the pickers
   ck, ckOn, ckClear, ckRightPress, ckRightRelease, ckArmedPress, ckReach: (p) => ckReach(p || player),
+  // the MOUSE scheme (input.js, the `mouse only` banner): its state and presses
+  ms, msOn, msWell, msWheelPress, msWheelRelease, pointerPress, pointerRelease,
   ckAcquire: (p) => ckAcquire(p || player), ckSees: (t, p) => ckSees(p || player, t), unitUnder, mmWorldAt,
   // the entry points a pad presses through, and their held state
   keyPress, keyRelease, actHeld, settingsLayout,

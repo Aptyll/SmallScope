@@ -274,6 +274,9 @@ function render() {
   // the CLICK scheme's rings: where the last order landed, and the lock's
   // ring under its target
   drawClickMarks(ex, ey, now);
+  // ...and the MOUSE scheme's range preview: what a wedge or a readied
+  // ability would cover
+  drawCastPreview(ex, ey, now);
 
   // what the abilities left flat on the snow - craters, and the piercing
   // shot's telegraph line - then drops (all under entities)
@@ -1269,6 +1272,9 @@ function cursorInfo() {
   // the CLICK scheme's armed attack-move: the pointer is the order waiting to
   // be laid, and reads as one wherever it is
   if (ckOn() && ck.arm) return ret('amove', false);
+  // the MOUSE scheme's readied ability: the pointer is where the next left
+  // press casts it, dim while it cannot
+  if (ms.ready >= 0) return ret('cast', !abReady(player, ms.ready));
   // the build list up: a hand over its rows, the hammer over the world -
   // wearing the picked piece (drawBuildCursor, js/ui/wheel.js) wherever a
   // press would lay it, and dim where the ghost cannot stand
@@ -1312,6 +1318,7 @@ const RETICLE = {
   ice:  { col: '#a8e0f8', gap: 3, diag: true },
   bow:  { col: '#ffd95c', gap: 6, diag: true },
   amove: { col: '#ff6a5c', gap: 4, diag: true }, // the CLICK scheme's armed attack-move
+  cast: { col: '#ffd95c', gap: 5, diag: true },  // the MOUSE scheme's readied ability
 };
 let lastCssCursor = null;
 
