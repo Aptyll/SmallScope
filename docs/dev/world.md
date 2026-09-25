@@ -469,6 +469,56 @@ at both ends; the two junctions reach each other and every camp from both halves
 the water only ever steps on the deck or a ford; three minutes of bots and waves put nobody in the
 creek on their own feet, while a shove off the deck dunks a bot.
 
+## Snow depth
+
+One map of how deep the snow lies, `snowDepth(fx, fy)` (tile space, 0..1; `snowDepthPx` for
+world px), in [js/depth.js](../../js/depth.js). It is static for the match and a pure function
+of the seed and the scenery worldgen stood up (`hash2`/`vnoise`, **no `rng()`**), so every
+client lays the same map and no seed's world moves. Anything that cares how deep the snow is
+asks it; its bands:
+
+- **DEEP** (`>= DEPTH_DEEP`, 0.6) is gameplay: `deepAt(x, y)` is true there on open snow
+  (ground 0) only, so a runtime paving or a hole takes it away. It slows every walker
+  ([Deep snow](gameplay.md#deep-snow)) and is drawn raised (`deepTone`, below).
+- **MID** (`DEPTH_MID` 0.25 up to deep) is a drift you see and do not wade: a drift's skirt
+  round its core, and the whole of a small drift whose `amp` never reaches deep.
+- **Shallow** is the rest, down to a dusting in the hollows (`hollowDepth`, low on the
+  position noise, capped at `DRIFT_HOLLOW` 0.2, so a hollow is never a drift). The field says
+  nothing about the ground under it, so it reads over ice too.
+
+The depth is the tallest **drift** at a point (`drifts`, indexed per tile in `driftCell`),
+over the hollows. `layDrifts()` runs at boot once every worldgen pass has stood its scenery up
+(after `placeRocks`, before `renderGround`; under `PRACTICE` it lays none):
+
+- **The wind.** `driftWind` is the seed's prevailing wind, within `DRIFT_WIND_ARC` of the
+  creek's line and either way along it, so the upwind treeline is one the creek cuts in two.
+- **Where.** Every wind-breaker (`driftBreak`: anything solid worldgen stood - pine, snag,
+  rock, chest, den, hut - and the berry bushes, which trap snow like a hedge) with open snow
+  in its lee is a candidate, scored by how many breakers stand in the half-disc upwind of it,
+  so the treeline and a stand beat a lone rock. A low noise over the valley keeps only some
+  regions, so drifts come in groups with open lanes between them.
+- **Shape.** A drift (`driftDepth`) has a rounded crest against its breaker and a tail
+  tapering downwind, bent a little and with an edge wandering on a pre-sampled noise (`rag`);
+  depth falls off across it as 1 - q², so its deep core is the inner part of a wider skirt.
+  Length follows the open run in its lee (a rock or a bush may be buried, a pine stops it) and
+  size follows shelter.
+- **Keep-outs** (`driftFree`): the road and paths (`DRIFT_KEEP_ROAD`), the centre clearing,
+  both roost corners' woods (`ROOST_R + DRIFT_KEEP_ROOST`), every camp's clearing
+  (`DRIFT_KEEP_CAMP`), and anything within `DRIFT_KEEP_WET` of ice, a hole, the creek or a
+  ford. A drift whose skirt runs into one is shortened and narrowed, never cut.
+- **Spacing and share.** Crests stand `DRIFT_HEAD` apart, deep cores `DRIFT_GAP`; drifts are
+  taken best first until the deep band covers `DEEP_COVER` of the interior's open snow or the
+  candidates run out (OPEN FIELD and THICKET land near 3-4.5%: there is only so much shelter).
+  **Fair shares:** neither side's half of the valley (split on the creek's line) keeps more
+  than `DRIFT_FAIR` times the other's deep snow; the richer half gives up its weakest drifts.
+  FROZEN ISLES grows none on the seeds checked, its snow being all lake shore.
+
+The deep band's pixels are baked into the ground: `snowTile` (js/draw/ground.js) hands every
+pixel of a tile with a `driftCell` entry to `deepTone` (js/draw/depth.js), which reads the same
+`driftsDepth` the sim does - a white crest and a thin outline on the sunlit edge, a smooth bright
+top with faint wind ripples, a two-pixel dark lip where it faces away, and a shade thrown
+down-right, longest at the tall crest. Its colours are `DEEP_PAL`, appended to `SNOW_INK`.
+
 ## The zipline
 
 One cable per team along the road, the `zipline` banner of [js/world.js](../../js/world.js): a

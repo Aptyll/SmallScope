@@ -168,6 +168,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the roll station: the die, its held wheel, random tracks, the carving-front sweep | `PK_DIFFS`/`PK_DIFF`, `PK_CX`/`PK_CY`/`PK_RX`/`PK_RY`/`PK_APRON`, `PK_DIE`, `pkTiles`, `pkGenPath`, `pkPlanCarve`/`pkIceTile`, `pkRoll`, `pkAngKey`/`pkAnimStep`/`pkAnim`/`PK_ANIM_T`/`PK_WARN`, `pkDieNear`, `pkWheelPick` (the wheel: kind `'pkdie'` in keydown/keyup input.js, `wheelOptions`/`renderWheel`/`runCmd` js/ui/wheel.js; the `E ROLL` cap: `drawPkHint`, js/ui/wheel.js) | `practice arena` › `the roll station: one die, one held wheel` (the carve and the generator sit below `genPracticeWorld`; pixels: `drawPkDie` + `PK_PIP_*`, js/draw/practice.js) |
 | the armory: taking a tool off the practice rack, and who counts as beside it | `rackEquip`, `rackNear` (the E-held wheel: keydown/keyup in input.js; kind `'rack'` in `wheelOptions` / `runCmd`, js/ui/wheel.js; the `E ARM` cap: `drawRackHint` / `drawKeyPrompt`, js/ui/wheel.js) | `practice arena` |
 
+## js/depth.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| how deep the snow lies anywhere: the map, its bands, the prevailing wind, the drift list and per-tile index | `snowDepth`/`snowDepthPx`, `driftsDepth`, `hollowDepth`, `DEPTH_DEEP`/`DEPTH_MID`, `driftWind`, `drifts`, `driftCell`, `driftDepth` (one drift's shape) | `snow depth` |
+| laying the drifts: what breaks the wind, what a drift may lie on or bury, the keep-outs, the fair split between the halves | `layDrifts` (boot.js, after worldgen), `driftBreak`, `driftBury`, `driftFree`, `driftTiles`, the `DRIFT_*` constants | `snow depth` |
+| the slowdown: the wade every unit eases, what it leaves of a walk, and its tuning | `wadeStep` (from `updateUnitStatus`, actions.js), `wadeMul` (`walkMax` in `updatePlayer`, sim.js; `unitMoveMul`, actions.js), `DEEP_WALK`/`DEEP_DODGE`/`DEEP_SLIDE`/`DEEP_SLIDE_BAR`/`DEEP_EASE` | `snow depth` |
+
 ## js/nav.js
 
 | Looking for | Start at | Banner |
@@ -361,6 +369,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the Steam transport under the wrapper: the lobby, the reliable and unreliable channels and their framing, the lobby's data as the room's listing, the feed of lobbies | `STEAM_LIST_T`, `steamRooms`, `STEAM_CHUNK`, `STEAM_UNREL`, `STEAM_LOSSY_PARTS`, `STEAM_FRAME_HDR`, `STEAM_MAGIC`, `STEAM_PENDING`, `STEAM_LOBBY_MAX`, `steamFrames`, `steamTransport` (`send`, `receive`, `receiveFrame`, `roomData`) | `steam transport` |
+
+## js/draw/depth.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a deep drift's pixels: crest, lip, outline, cast shade, the ripples on its top | `DEEP_PAL`, `deepTone` (called per pixel by `snowTile`, ground.js) | `deep snow's look` |
+| a body sunk to the shins in it, and the collar round the cut | `drawWading` (wraps `drawPlayer`/`drawAnimal`/`drawRobot` in `render()`), `wadeLook`, `wadeWidth`, `WADE_SINK`/`WADE_CUT` | `deep snow's look` |
 
 ## js/draw/ground.js
 

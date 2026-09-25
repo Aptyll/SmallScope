@@ -685,6 +685,7 @@ function snowTile(px, py) {
       S[b * SNOW_LAT + a] = (H[(b + 1) * SNOW_LAT + a + 1] - H[(b - 1) * SNOW_LAT + a - 1]) * k;
     }
   }
+  const deep = driftCell && driftCell[idx(px / TILE, py / TILE)]; // a deep drift reaches this tile (js/depth.js)
   for (let j = 0; j < TILE; j++) {
     const v = j / TILE, qa = q00 + (q01 - q00) * v, qb = q10 + (q11 - q10) * v, y = py + j, fy = y / 2 - Y0;
     for (let i = 0; i < TILE; i++) {
@@ -706,11 +707,12 @@ function snowTile(px, py) {
         }
       }
       const t = Math.round(SNOW_BASE + d + BAYER4[(y & 3) * 4 + (x & 3)] * dith);
-      snowTone[j * TILE + i] = t >= 3 ? (hash2(x * 3 + 7, y * 5 + 11) > SNOW_GLINT_P ? 4 : 3) : t < 0 ? 0 : t;
+      const tone = t >= 3 ? (hash2(x * 3 + 7, y * 5 + 11) > SNOW_GLINT_P ? 4 : 3) : t < 0 ? 0 : t;
+      snowTone[j * TILE + i] = deep ? deepTone(x, y, tone) : tone;
     }
   }
 }
-const SNOW_INK = SNOW_PAL.concat([SNOW_GLINT]);
+const SNOW_INK = SNOW_PAL.concat([SNOW_GLINT], DEEP_PAL.map(rgbOf)); // 5.. deep snow (js/draw/depth.js)
 // ink snowTone into an ImageData at pixel column ox
 function inkSnow(img, ox) {
   const D = img.data, W = img.width;
