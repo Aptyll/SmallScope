@@ -190,6 +190,9 @@ function render() {
   // parkour's start/finish line, painted flat on the carved ice
   if (PRACTICE) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); }
 
+  // the trampled snow: the match's slow record, under the crisp prints (js/draw/trample.js)
+  drawTrample(ox, oy);
+
   // footprints + slide trails
   for (const f of footprints) {
     if (f.k === 1) {
@@ -250,6 +253,10 @@ function render() {
   // covers the fish under it and the cracks in it, and under everything that
   // walks - a body standing on the ice covers its own reflection
   if (settings.vidStars) drawIceStars(ox, oy, tx0, ty0, tx1, ty1);
+  // a blizzard day's low streaks, on the ground under everything that stands
+  drawDrift(ex, ey);
+  // the weather on the ice: blown snow, a frosty night's glints and cracks, fresh dust (lakes.js)
+  drawLakeSky(ox, oy, tx0, ty0, tx1, ty1);
 
   // flat objects first (stumps)
   for (let ty = ty0; ty <= ty1; ty++) {
@@ -269,6 +276,9 @@ function render() {
   // the CLICK scheme's rings: where the last order landed, and the lock's
   // ring under its target
   drawClickMarks(ex, ey, now);
+  // ...and the MOUSE scheme's range preview: what a wedge or a readied
+  // ability would cover
+  drawCastPreview(ex, ey, now);
 
   // what the abilities left flat on the snow - craters, and the piercing
   // shot's telegraph line - then drops (all under entities)
@@ -1266,6 +1276,9 @@ function cursorInfo() {
   // the CLICK scheme's armed attack-move: the pointer is the order waiting to
   // be laid, and reads as one wherever it is
   if (ckOn() && ck.arm) return ret('amove', false);
+  // the MOUSE scheme's readied ability: the pointer is where the next left
+  // press casts it, dim while it cannot
+  if (ms.ready >= 0) return ret('cast', !abReady(player, ms.ready));
   // the build list up: a hand over its rows, the hammer over the world -
   // wearing the picked piece (drawBuildCursor, js/ui/wheel.js) wherever a
   // press would lay it, and dim where the ghost cannot stand
@@ -1309,6 +1322,7 @@ const RETICLE = {
   ice:  { col: '#a8e0f8', gap: 3, diag: true },
   bow:  { col: '#ffd95c', gap: 6, diag: true },
   amove: { col: '#ff6a5c', gap: 4, diag: true }, // the CLICK scheme's armed attack-move
+  cast: { col: '#ffd95c', gap: 5, diag: true },  // the MOUSE scheme's readied ability
 };
 let lastCssCursor = null;
 

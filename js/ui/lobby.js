@@ -472,10 +472,8 @@ function drawScoreGraph(r, ac) {
       lx = x; ly = y;
     }
     // the head of the line, so which side ended where reads without counting
-    ctx.fillStyle = SC_LIT;
-    ctx.fillRect(lx - 1, ly - 1, 3, 3);
-    ctx.fillStyle = col;
-    ctx.fillRect(lx, ly, 1, 1);
+    // (a cross for the rival's under a colour-blind palette, as on the minimap)
+    drawMapUnit(ctx, lx, ly, col, SC_LIT, 1, true, foeCue(s.t));
   }
   // the scale, and nothing else: the match clock is already in the head, and
   // a fact printed twice is a fact that drifts in one of the two places

@@ -70,7 +70,7 @@ function shakeAt(x, y, n, r) {
 function evPlay(ev) {
   const a = ev.a;
   switch (ev.k) {
-    case 'burst': burst(a[0], a[1], a[2], a[3], a[4], a[5], a[6]); break;
+    case 'burst': burst(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]); break;
     case 'float': addFloater(a[0], a[1], a[2], a[3]); break;
     case 'dmg': addDmgFloater(a[0], a[1], a[2], a[3], a[4]); break;
     case 'sfx': if (nearPlayer(a[1], a[2], a[3])) SFX[a[0]](a[4]); break;

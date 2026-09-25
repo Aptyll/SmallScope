@@ -594,6 +594,11 @@ Code that is dead **on purpose** is the next section.
 - **No bot rides a sled.** `sledToggle` takes a bot's hop intent like anyone's, but nothing in
   `updateAI` ever walks to a sled or presses for one, so the [sled](gameplay.md#the-sled) is
   for human players only.
+- **js/draw/lakes.js reads stand-ins for the deep snow layer until it lands**: the deep snow layer's
+  depth map and prevailing wind (`snowDepthAt`, `deepSnowAt`, `rollPrevailing` fall back to
+  `DEPTH_STAND` and the snow's swell axis until js/depth.js lands). They already read the real
+  names, and `bakeDrifts` draws nothing without the map, so the drifts behind what stands appear
+  only once js/depth.js is on main; delete the fallbacks then.
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
   one is within `AI_HUNT`, never the alpha under level 6 or the dire wolf at all, and nothing in
   `aiSituation` weighs a camp against the road — so the alpha stone and the dire hollow are the

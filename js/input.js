@@ -31,7 +31,7 @@ function keyName(e) {
 const KEY_LABEL = { ' ': 'SPACE', Shift: 'SHIFT', Control: 'CTRL', Alt: 'ALT', Meta: 'META', Tab: 'TAB', Escape: 'ESC', Enter: 'ENTER',
   Backspace: 'BKSP', CapsLock: 'CAPS', Delete: 'DEL', Insert: 'INS', Home: 'HOME', End: 'END', PageUp: 'PGUP', PageDown: 'PGDN',
   ArrowUp: 'UP', ArrowDown: 'DOWN', ArrowLeft: 'LEFT', ArrowRight: 'RIGHT', ';': 'SEMI', "'": 'QUOTE', '[': 'LBRKT', ']': 'RBRKT',
-  '\\': 'BSLSH', '=': 'EQUAL', '`': 'TILDE', '*': 'STAR' };
+  '\\': 'BSLSH', '=': 'EQUAL', '`': 'TILDE', '*': 'STAR', Mouse4: 'MB4', Mouse5: 'MB5' };
 const GLYPH_OK = /^[A-Z0-9\-+.,:!?\/%()<>]$/;
 let kbLayout = null; // navigator.keyboard's code -> printed-face map, where the browser has one
 function readKbLayout() {
@@ -75,13 +75,20 @@ function keyLabel(k) {
 // binds() is whichever is live. CLICK's defaults are the genre's: QWER the
 // abilities (R the big one), A the attack-move, S the stop, D and F the two
 // meals, G the ping wheel, C the sheet.
+//
+// THE THIRD SCHEME, MOUSE (the `mouse only` banner below), is CLICK for one
+// hand: the same actions and the same keys (`ms` is only where it differs
+// from `ck`), with the dodge and the slide on the mouse's two side buttons.
+// A side button is a KEY here - 'Mouse4' (the back button) and 'Mouse5'
+// (forward) are names like 'Shift', pressed through keyPress by
+// pointerPress - so any action on any scheme can be rebound onto one.
 const KEY_ACTIONS = [
   { id: 'up', verb: 'MOVE UP', key: 'w' }, { id: 'left', verb: 'MOVE LEFT', key: 'a' },
   { id: 'down', verb: 'MOVE DOWN', key: 's' }, { id: 'right', verb: 'MOVE RIGHT', key: 'd' },
   { id: 'ab1', verb: 'ABILITY 1', key: '1', ck: 'q' }, { id: 'ab2', verb: 'ABILITY 2', key: '2', ck: 'w' },
   { id: 'ab3', verb: 'ABILITY 3', key: '3', ck: 'e' }, { id: 'ab4', verb: 'ABILITY 4', key: '4', ck: 'r' },
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
-  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift' }, { id: 'work', verb: 'HARVEST', key: 'e' },
+  { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
   { id: 'flag', verb: 'FLAG WHEEL', ck: 'g' },
   { id: 'card', verb: 'DRAW CARD', key: 'c', ck: 'z' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
@@ -92,14 +99,21 @@ const KEY_ACTIONS = [
 ];
 const KEY_ACT = {};
 for (const a of KEY_ACTIONS) KEY_ACT[a.id] = a;
-const SCHEMES = ['wasd', 'click'];
-function schemeKey(a, scheme) { return (scheme || settings.scheme) === 'click' ? a.ck : a.key; } // the action's default on a scheme, or undefined
+const SCHEMES = ['wasd', 'click', 'mouse'];
+function schemeKey(a, scheme) { // the action's default on a scheme, or undefined
+  const s = scheme || settings.scheme;
+  return s === 'mouse' ? (a.ms !== undefined ? a.ms : a.ck) : s === 'click' ? a.ck : a.key;
+}
 function schemeActs(scheme) { return KEY_ACTIONS.filter((a) => schemeKey(a, scheme)); }       // the actions a scheme has
-function binds() { return settings.scheme === 'click' ? settings.bindsClick : settings.binds; } // the live map
+function binds() { return settings.scheme === 'mouse' ? settings.bindsMouse : settings.scheme === 'click' ? settings.bindsClick : settings.binds; } // the live map
 // keys no bind may take: the fixed jobs above, and the browser's F row
 function keyReserved(k) { return k === 'Escape' || k === 'Enter' || k === 'Backspace' || k === '.' || k === 'Meta' || /^(Arrow|F\d)/.test(k); }
-settings.binds = {}; settings.bindsClick = {};
-for (const a of KEY_ACTIONS) { if (a.key) settings.binds[a.id] = a.key; if (a.ck) settings.bindsClick[a.id] = a.ck; }
+settings.binds = {}; settings.bindsClick = {}; settings.bindsMouse = {};
+for (const a of KEY_ACTIONS) {
+  if (a.key) settings.binds[a.id] = a.key;
+  if (a.ck) settings.bindsClick[a.id] = a.ck;
+  if (schemeKey(a, 'mouse')) settings.bindsMouse[a.id] = schemeKey(a, 'mouse');
+}
 // a loaded profile's binds made whole (boot.js, after loadSettings): a bind an
 // action never had, a reserved key or a key two actions share falls back to
 // the default
@@ -116,6 +130,7 @@ function mendBinds() {
   };
   settings.binds = mend(settings.binds, 'wasd');
   settings.bindsClick = mend(settings.bindsClick, 'click');
+  settings.bindsMouse = mend(settings.bindsMouse, 'mouse');
   if (!SCHEMES.includes(settings.scheme)) settings.scheme = 'wasd';
 }
 // an action's key ('work' -> 'e'), or the bare name of a key that is no
@@ -369,6 +384,7 @@ function keyPress(e) {
     // a carried item goes back first, then an open wheel: both are gestures
     // half-finished, and Escape is how either is thought better of
     if (ck.arm) ck.arm = false; // an armed attack-move is the lightest gesture to think better of
+    else if (ms.ready >= 0) ms.ready = -1; // ...and so is a readied ability (the `mouse only` banner)
     else if (state.drag) { dragReturn(); state.dragPend = null; }
     else if (state.wheel) state.wheel = null;
     else if (state.build) { state.build = null; SFX.ui(false); }
@@ -450,12 +466,16 @@ canvas.addEventListener('mousedown', (e) => {
   mouse.inside = true;
   mouse.src = 'mouse';
   // Middle click is also the browser's autoscroll, which only a
-  // preventDefault on the PRESS suppresses.
-  if (e.button === 1) e.preventDefault();
+  // preventDefault on the PRESS suppresses; the two side buttons are its
+  // back and forward, suppressed on the press and the release both
+  if (e.button === 1 || e.button === 3 || e.button === 4) e.preventDefault();
   pointerPress(e.button);
 });
-// a button went down at the pointer: 0 left, 1 middle, 2 right
+// a button went down at the pointer: 0 left, 1 middle, 2 right, 3 and 4
+// the side buttons (back, forward), which are KEYS - 'Mouse4' and 'Mouse5' -
+// pressed through keyPress, so they bind, rebind and hold like any key
 function pointerPress(button) {
+  if (button === 3 || button === 4) { sideButton(button, true); return; }
   if (button === 2) {
     if (ckOn()) { ckRightPress(); return; } // the CLICK scheme: the right button is the hand
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
@@ -468,13 +488,14 @@ function pointerPress(button) {
     openFlagWheel();
     return;
   }
-  if (button === 1) return; // the middle button is nobody's
+  if (button === 1) { if (msOn()) msWheelPress(); return; } // the middle button is the MOUSE scheme's action wheel, and nobody else's
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
   if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) player.input.jump = true; else if (mapCloseHit()) state.mapOpen = false; return; }
   if (state.mode === 'dead') { SFX.unlock(); deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
+  if (state.wheel && state.wheel.stand) { resolveWheel(); state.wheel = null; return; } // a standing flag wheel: this press picks
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // the chart's CLOSE plank; the rest of the slab swallows the press
@@ -506,15 +527,25 @@ function pointerPress(button) {
   // pressing on the world while carrying something: the release throws it,
   // and nothing is fired
   if (state.drag) return;
+  if (msOn() && msLeftPress()) return; // a readied ability casts here instead of the tool
   mouse.down = true;
   clickAction(player);
 }
-window.addEventListener('mouseup', (e) => { pointerRelease(e.button); });
+window.addEventListener('mouseup', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); pointerRelease(e.button); });
+// a side button as the key it is named for: held in `keys` like the
+// keyboard's own, and pressed and released through the same two entry points
+function sideButton(button, down) {
+  const k = button === 3 ? 'Mouse4' : 'Mouse5';
+  keys[k.toLowerCase()] = down;
+  if (down) keyPress({ key: k, repeat: false, char: '' });
+  else keyRelease({ key: k, char: '' });
+}
 // ...and came back up
 function pointerRelease(button) {
+  if (button === 3 || button === 4) { sideButton(button, false); return; }
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
-  if (button === 1) return;
+  if (button === 1) { if (msOn()) msWheelRelease(); return; }
   // a carried item is put down (or thrown), and an armed press that never
   // travelled resolves as the plain click it was - both before the tool's own
   // release, so a drag never also looses a shot
@@ -679,13 +710,15 @@ const CK_MARK_T = 0.6;    // s the click ring lives on the snow
 const CK_COL = { move: '#f4f7ff', work: '#ffd95c', foe: '#ff6a5c' }; // the ring: a walk, a job, a fight
 // order: {kind:'move'|'amove', x, y} | {kind:'work', tx, ty} | {kind:'chase', t}
 //        | {kind:'use', what:'manage'|'shop'|'rack'|'pkdie'|'agbell'|'sled', o, tx, ty}
-// lock: the unit the tool is on; arm: A pressed, the next left press lays
-// the attack-move; follow: the right button is down over open ground; hop:
-// a right press while seated on the roost; mark: the last ring on the snow
-const ck = { order: null, lock: null, arm: false, follow: false, hop: false, mark: null };
-function ckOn() { return settings.scheme === 'click'; }
-function ckClear() { ck.order = null; ck.lock = null; ck.arm = false; ck.follow = false; ck.hop = false; }
-function ckOrder(o, mx, my, kind) { ck.order = o; ck.lock = null; ck.mark = { x: mx, y: my, t: CK_MARK_T, col: CK_COL[kind] }; }
+// lock: the unit the tool is on; stand: that lock is the LEFT press's (the
+// MOUSE scheme's), which aims and auto-attacks but never walks the body;
+// arm: A pressed, the next left press lays the attack-move; follow: the
+// right button is down over open ground; hop: a right press while seated on
+// the roost; mark: the last ring on the snow
+const ck = { order: null, lock: null, stand: false, arm: false, follow: false, hop: false, mark: null };
+function ckOn() { return settings.scheme === 'click' || settings.scheme === 'mouse'; } // MOUSE is CLICK with more on the mouse
+function ckClear() { ck.order = null; ck.lock = null; ck.stand = false; ck.arm = false; ck.follow = false; ck.hop = false; msClear(); }
+function ckOrder(o, mx, my, kind) { ck.order = o; ck.lock = null; ck.stand = false; ck.mark = { x: mx, y: my, t: CK_MARK_T, col: CK_COL[kind] }; }
 // where a press landed, in the world: the chart's tile, the disc's point,
 // or the ground under the pointer - null over the HUD or off the map. `far`
 // says it came off a map, where only a walk can be meant.
@@ -707,10 +740,12 @@ function merchUnder(wx, wy) {
 function ckRightPress() {
   if ((state.mode !== 'play' && state.mode !== 'drop') || state.settingsOpen) return;
   // a wheel a walk opened (manage, the armory, the die, the bell) stands
-  // until a press picks; the flag wheel is G's, and G's release plants it
-  if (state.wheel) { if (state.wheel.kind !== 'flag') { resolveWheel(); state.wheel = null; } return; }
+  // until a press picks; the flag wheel is G's, and G's release plants it -
+  // unless the action wheel stood it up, when this press picks too
+  if (state.wheel) { if (state.wheel.kind !== 'flag' || state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
   if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
   ck.arm = false;
+  ms.ready = -1; // a readied ability is put down by the walk, League's grammar
   if (player.dead) return;
   const pt = ckPoint();
   if (!pt) return;
@@ -849,7 +884,7 @@ function ckStep(p, dt, smx, smy) {
   // the held right button drags a walk's goal under the pointer
   if (ck.follow && ck.order && ck.order.kind === 'move' && !state.mapOpen && !overHud(mouse.x, mouse.y)) { ck.order.x = mouseWX(); ck.order.y = mouseWY(); }
   // the lock: dropped the moment the target is dead, gone or out of sight
-  if (ck.lock && !ckSees(p, ck.lock)) { ck.lock = null; if (ck.order && ck.order.kind === 'chase') ck.order = null; }
+  if (ck.lock && !ckSees(p, ck.lock)) { ck.lock = null; ck.stand = false; if (ck.order && ck.order.kind === 'chase') ck.order = null; }
   // an attack-move takes the first foe it sees on the way
   if (!ck.lock && ck.order && ck.order.kind === 'amove') ck.lock = ckAcquire(p);
   const o = ck.order, t = ck.lock;
@@ -858,7 +893,7 @@ function ckStep(p, dt, smx, smy) {
   // map or into a corner's forest, so it spends the bots' roost budget on
   // the search (a search that runs out still hands back a first leg)
   const walk = (x, y, reach) => { const n = navTo(p, x, y, PLAYER_R, reach || 0, dt, NAV_BUDGET * 4); if (!n.ok) return -1; r.mx = n.dx; r.my = n.dy; return n.d; };
-  if (o && !t) {
+  if (o && (!t || ck.stand)) {
     if (o.kind === 'move' || o.kind === 'amove') {
       const d = walk(o.x, o.y, 0);
       if (d < 0 || d < CK_ARRIVE) ck.order = null;
@@ -879,7 +914,7 @@ function ckStep(p, dt, smx, smy) {
     const d = Math.hypot(t.x - p.x, t.y - p.y);
     const reach = ckReach(p), hold = ckHoldR(p, reach);
     r.aimX = t.x; r.aimY = ty;
-    if (d > hold && !smx && !smy) walk(t.x, t.y, 0);
+    if (d > hold && !smx && !smy && !ck.stand) walk(t.x, t.y, 0); // a left press's lock never walks
     // the auto-attack: the hand off the button, a clear flight, the target
     // inside the tool's reach - draw to the auto-draw and loose (the same
     // held-then-dropped intent a bot fires by)
@@ -889,9 +924,102 @@ function ckStep(p, dt, smx, smy) {
   // grammar): for that one step the aim is the pointer, and an auto-draw
   // holds a step rather than loose at it
   if (inp.ability >= 0 && t) { r.aimX = mouseWX(); r.aimY = mouseWY(); if (r.fire !== null) r.fire = p.charging; }
+  // ...and one cast off the MOUSE scheme's wheel or a readied well casts at
+  // the point it was laid on, held through the whole wind-up (the effect
+  // lands at the aim held at its end - updateAbilities)
+  if (ms.castAt) {
+    if (inp.ability >= 0 || p.castT > 0) { r.aimX = ms.castAt.x; r.aimY = ms.castAt.y; if (r.fire !== null) r.fire = p.charging; }
+    else ms.castAt = null;
+  }
+  if (ms.reel && inp.ability < 0 && p.castT <= 0 && p.grapT <= 0) ms.reel = false; // the reel it held is over
   // the roll goes where the pointer is - one rule, with no walk keys to read
   if (inp.dodge) { const dx = mouseWX() - p.x, dy = mouseWY() - p.y, l = Math.hypot(dx, dy); if (l > 1) { r.mx = dx / l; r.my = dy / l; } }
   return r;
+}
+
+// ------------------------------------------------------------ mouse only
+// THE THIRD SCHEME (settings.scheme 'mouse'): CLICK for one hand. Every
+// CLICK gesture stands - ckOn() is true here too, so the right button walks,
+// works, chases and holds to follow - and what CLICK leaves on the keyboard
+// moves onto the mouse:
+// - the SIDE BUTTONS are the dodge (back) and the slide (forward): keys named
+//   'Mouse4' and 'Mouse5' (sideButton), rebindable like any other;
+// - a LEFT press on a foe takes the lock as it draws (ck.stand), so the loose
+//   goes to the body - CLICK's assist - and the auto-attack keeps working it
+//   from where you stand; it never walks, which is the right button's job;
+// - HOLDING THE MIDDLE BUTTON opens the ACTION WHEEL at the pointer: the four
+//   abilities, the two meals and the flag (MS_WHEEL). The travel picks and
+//   the release performs. An ability casts at the point the press was made,
+//   not where the flick ended (ms.castAt, held through the wind-up - ckStep),
+//   and the flag wedge stands the flag wheel up on that tile for the next
+//   press to pick (w.stand);
+// - a click on an ABILITY WELL readies it (ms.ready) where a key would cast:
+//   the snow shows its reach from the body toward the pointer
+//   (drawCastPreview, js/draw/marks.js), the next left press on the world
+//   casts there, a right press, Escape or the well again puts it down, and
+//   the scroll wheel walks it along the wells. A row with no `aim` on
+//   CLASS_AB (a self-cast, or a ring round the body) casts at once, and a
+//   skill point in hand buys, exactly as the key does.
+// Nothing here reaches the sim but the input struct, as for CLICK.
+const MS_WHEEL = ['ab1', 'ab2', 'ab3', 'ab4', 'berry', 'fish', 'flag'];
+// ready: the readied well, -1 none; castAt: the world point a mouse cast
+// aims at until it lands; reel: a grapple cast off the mouse, reeling to its
+// end with no key to hold (inp.grapple, sampleHumanInput)
+const ms = { ready: -1, castAt: null, reel: false };
+function msOn() { return settings.scheme === 'mouse'; }
+function msClear() { ms.ready = -1; ms.castAt = null; ms.reel = false; }
+// does ability i want a direction - a line or a cone off the body? Only
+// those are worth readying; the rest cast the moment they are asked for
+function msAims(i) { const a = abOf(player, i).aim; return !!(a && (a.line || a.cone)); }
+function msCast(i, wx, wy) {
+  SFX.unlock();
+  player.input.ability = i;
+  ms.castAt = { x: wx, y: wy };
+  ms.reel = abOf(player, i).id === 'grap';
+  ms.ready = -1;
+}
+// a click on ability well i (hudPress, js/ui/strip.js)
+function msWell(i) {
+  if (abLvCanBuy(player, i) || !msAims(i)) { player.input.ability = i; return; }
+  ms.ready = ms.ready === i ? -1 : i;
+  SFX.notch();
+}
+// a left press on the world, before the tool sees it: true when it was a cast
+function msLeftPress() {
+  const wx = mouseWX(), wy = mouseWY();
+  if (ms.ready >= 0) { msCast(ms.ready, wx, wy); return true; }
+  const t = unitUnder(player, wx, wy);
+  if (t && ckSees(player, t)) { ck.lock = t; ck.stand = true; }
+  else if (ck.stand) { ck.lock = null; ck.stand = false; } // a shot at open snow lets the last one go
+  return false;
+}
+function msWheelPress() {
+  if (state.mode !== 'play' || state.settingsOpen || player.dead) return;
+  if (state.wheel) { if (state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
+  if (state.mapOpen) { openFlagWheel(); return; } // over the chart, a flag is the one thing the wheel can mean
+  if (overHud(mouse.x, mouse.y)) return;
+  const wx = mouseWX(), wy = mouseWY(), tx = Math.floor(wx / TILE), ty = Math.floor(wy / TILE);
+  if (!inWorld(tx, ty)) return;
+  ms.ready = -1;
+  SFX.unlock();
+  SFX.wheelUp();
+  state.wheel = { kind: 'kit', tx, ty, wx, wy, seg: -1, ax: mouse.x, ay: mouse.y, sx: mouse.x, sy: mouse.y };
+}
+function msWheelRelease() {
+  const w = state.wheel;
+  if (!w || w.stand) return;
+  if (w.kind === 'kit') { const seg = wheelLayout().seg; state.wheel = null; msKitPick(w, seg); return; }
+  if (w.kind === 'flag') { resolveWheel(); state.wheel = null; } // the chart's flag wheel the press opened
+}
+// the action wheel's pick: an ability cast at the press point, a meal, or
+// the flag wheel stood up on the press's tile
+function msKitPick(w, seg) {
+  if (seg < 0) return;
+  const id = MS_WHEEL[seg];
+  if (id === 'berry') player.input.eatBerry = true;
+  else if (id === 'fish') player.input.eatFish = true;
+  else if (id === 'flag') { SFX.wheelUp(); state.wheel = { kind: 'flag', tx: w.tx, ty: w.ty, seg: -1, ax: mouse.x, ay: mouse.y, stand: true }; }
+  else msCast(+id.slice(2) - 1, w.wx, w.wy);
 }
 
 // whichever scrolling page is up walks by d px - the wheel listener below
@@ -909,8 +1037,8 @@ function panelScrollBy(d) {
   return false;
 }
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-// the middle button does nothing in-game, and nothing of it should reach the page either
-canvas.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
+// the middle button and the side buttons are the game's, and nothing of them should reach the page
+canvas.addEventListener('auxclick', (e) => { if (e.button === 1 || e.button === 3 || e.button === 4) e.preventDefault(); });
 canvas.addEventListener('wheel', (e) => {
   if (state.mode === 'title') {
     if (state.menu.panel === 'patch') { e.preventDefault(); patchScrollBy(e.deltaY > 0 ? 16 : -16); }
@@ -923,6 +1051,13 @@ canvas.addEventListener('wheel', (e) => {
   // over the open ESC panel the wheel walks the open settings page
   if (state.settingsOpen) { settingsScrollBy(e.deltaY > 0 ? 14 : -14); return; }
   if (state.mapOpen || state.wheel) return;
+  // a readied ability (the MOUSE scheme): the wheel walks it along the four
+  // wells, as it walks the build list's rows - the camera's zoom waits
+  if (ms.ready >= 0) {
+    ms.ready = (ms.ready + (e.deltaY > 0 ? 1 : -1) + AB_KEYS) % AB_KEYS;
+    SFX.notch();
+    return;
+  }
   // the build list up: the wheel walks its rows (the camera's zoom waits)
   if (state.build) {
     const n = BUILD_ORDER.length;
@@ -981,7 +1116,7 @@ function sampleHumanInput(p, dt) {
   if (state.mode === 'play' && state.mapOpen && !state.paused && !state.settingsOpen) {
     inp.mx = mx; inp.my = my;
     inp.slide = keyHeld('slide');
-    inp.grapple = keyHeld('ab3'); // a reel in progress keeps answering the held key
+    inp.grapple = keyHeld('ab3') || ms.reel; // a reel in progress keeps answering the held key (or the mouse's cast)
     inp.fire = inp.work = false;
     inp.eatBerry = inp.eatFish = inp.useCard = false;
     inp.ability = -1;
@@ -1017,7 +1152,7 @@ function sampleHumanInput(p, dt) {
   // the grapple reels only while its own key - ability 3's - is held: the one
   // HELD ability input, read by updatePlayer's grapple branch; releasing it
   // lets go early
-  inp.grapple = keyHeld('ab3');
+  inp.grapple = keyHeld('ab3') || ms.reel; // ...or, cast off the mouse, reels to its end (msCast)
   inp.work = (keyHeld('work') || !!(c && c.work)) && !state.wheel && !state.shop; // the counter swallows the work key the way a wheel does
   if (c && c.fire !== null) inp.fire = c.fire; // the auto-attack's own edges, with the hand off the button
   if (state.wheel) { inp.fire = false; inp.dodge = false; inp.ability = -1; } // the wheel swallows the shot

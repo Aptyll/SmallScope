@@ -96,20 +96,24 @@ const TELE_HOT = '#ffd95c'; // ...and the last quarter of it, when it is about t
 // One row per key. `use(p)` is the whole effect, fired when the cast lands -
 // what an ability IS lives here, never in an `if` somewhere else. `cast` is
 // the seconds the body spends performing it (the pose is abilityPose below).
+// `aim` is the ground it covers, for the MOUSE scheme's range preview
+// (drawCastPreview, js/draw/marks.js): a `line` of that many px toward the
+// aim, a `cone` of radius r and `half` rad either side of it, or a `ring`
+// of radius r round the body; a row without one aims at nothing.
 const CLASS_AB = [
   [ // HUNTER - bow, distance control, the ground between
     {
-      id: 'pierce', name: 'PIERCING SHOT', cd: 12, cast: PIERCE_WIND,
+      id: 'pierce', name: 'PIERCING SHOT', cd: 12, cast: PIERCE_WIND, aim: { line: PIERCE_RANGE },
       blurb: 'LOCK A FULL DRAW, THEN LOOSE. THE SHOT GOES THROUGH EVERYONE ON THE LINE. EVERY MODIFIER ON YOUR TOOL RIDES IT.',
       use: (p) => abPierce(p),
     },
     {
-      id: 'net', name: 'NET SHOT', cd: 15, cast: 0.18,
+      id: 'net', name: 'NET SHOT', cd: 15, cast: 0.18, aim: { line: NET_RANGE },
       blurb: 'A WEIGHTED NET THAT TANGLES. THE RECOIL KICKS YOU BACKWARD.',
       use: (p) => abNetShot(p),
     },
     {
-      id: 'grap', name: 'GRAPPLE', cd: 8, cast: 0.12,
+      id: 'grap', name: 'GRAPPLE', cd: 8, cast: 0.12, aim: { line: GRAP_RANGE },
       blurb: 'HOOK A TREE OR A ROCK. HOLD TO REEL IN, LET GO TO KEEP THE SPEED.',
       use: (p) => abGrapple(p),
     },
@@ -132,17 +136,17 @@ const CLASS_AB = [
       acol: '#f2cc6a', activeF: (p) => (p.shieldT > 0 ? p.shieldT / SHIELD_T : 0),
     },
     {
-      id: 'rush', name: 'BULL RUSH', cd: 12, cast: 0.3,
+      id: 'rush', name: 'BULL RUSH', cd: 12, cast: 0.3, aim: { line: RUSH_SPD * RUSH_T },
       blurb: 'CHARGE A LINE. THE FIRST RIVAL HIT IS CARRIED AND SLAMMED.',
       use: (p) => abRush(p),
     },
     {
-      id: 'stomp', name: 'STOMP', cd: 14, cast: 0.28,
+      id: 'stomp', name: 'STOMP', cd: 14, cast: 0.28, aim: { ring: STOMP_R },
       blurb: 'LEAP AND SLAM THE SNOW. THE CRATER SLOWS WHOEVER CROSSES IT.',
       use: (p) => abStomp(p),
     },
     {
-      id: 'exec', name: 'EXECUTE', cd: 18, cast: 0.55,
+      id: 'exec', name: 'EXECUTE', cd: 18, cast: 0.55, aim: { cone: EXEC_R, half: EXEC_HALF },
       blurb: 'A HEAVY OVERHEAD CUT. THE LESS LIFE THEY HAVE LEFT, THE HARDER IT LANDS.',
       use: (p) => abExecute(p),
     },
@@ -174,17 +178,17 @@ const CLASS_AB_ALT = [
   [[], [], [], []], // the hunter's keys carry one option each
   [ // the warrior's other four
     [{
-      id: 'cry', name: 'WAR CRY', cd: 16, cast: 0.25,
+      id: 'cry', name: 'WAR CRY', cd: 16, cast: 0.25, aim: { ring: CRY_R },
       blurb: 'A SHOUT THAT CARRIES. EVERY RIVAL IN EARSHOT IS SLOWED AND MARKED FOR YOUR SIDE TO SEE.',
       use: (p) => abWarCry(p),
     }],
     [{
-      id: 'whirl', name: 'WHIRLWIND', cd: 11, cast: 0.3,
+      id: 'whirl', name: 'WHIRLWIND', cd: 11, cast: 0.3, aim: { ring: WHIRL_R },
       blurb: 'SPIN THE BLADE A FULL TURN. EVERYTHING AT ARM\'S LENGTH IS CUT AND THROWN BACK.',
       use: (p) => abWhirlwind(p),
     }],
     [{
-      id: 'ham', name: 'HAMSTRING', cd: 13, cast: 0.25,
+      id: 'ham', name: 'HAMSTRING', cd: 13, cast: 0.25, aim: { cone: HAM_R, half: HAM_HALF },
       blurb: 'A LOW SWEEP ACROSS THE SHINS AHEAD. WHOEVER IT CATCHES IS PINNED WHERE THEY STAND.',
       use: (p) => abHamstring(p),
     }],

@@ -157,13 +157,20 @@ entity draw code must use `ex`/`ey`.
    downstream over the still water the bake laid, on the field's clock) → under-ice fish →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
-3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
-   one `footprints` array, branching on `f.k`);
+3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
+   bodies walked and fought, drawn from pooled 128 px chunk canvases repainted only when their
+   grid moved - see [trampled snow](gameplay.md#trampled-snow)) → footprints (walking prints, slide
+   grooves, skate scratches and belly-crawl furrows share the one `footprints` array, branching on
+   `f.k` - the crisp, short-lived detail over the trample);
 4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
-   it covers the fish and the cracks, and under everything that walks);
+   it covers the fish and the cracks, and under everything that walks) → `drawDrift` (a
+   blizzard day's low streaks, [the day's weather](#the-days-weather)) → **the weather on the
+   ice** (`drawLakeSky`, js/draw/lakes.js: blown streaks over big lakes, a frosty night's glints
+   and cracks, fresh dust while it snows - [the wind's leavings](world.md#the-winds-leavings));
 5. flat objects (stumps, and **fish nets** via `drawNet`);
 6. `drawFlagRings` (your side's flag rings, and the ring a held flag wheel previews) →
-   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawAbilityGround` (craters,
+   `drawClickMarks` (the CLICK scheme's order and lock rings) → `drawCastPreview` (the MOUSE
+   scheme's range preview) → `drawAbilityGround` (craters,
    the piercing shot's telegraph) → item drops;
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets and your side's flags, sorted by feet Y; empty player slots draw as team-tinted
@@ -181,7 +188,8 @@ entity draw code must use `ex`/`ey`.
     → `drawTurretFx` (each turret's charging aim line and muzzle flash) → turret tracers;
 12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → floaters
     (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
-13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy — [the wind field](#the-wind-field))
+13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
+    weather lets it — [the wind field](#the-wind-field))
     → `drawDropAir` (the eagle, its shadow, the rider and every faller, while `state.drop`
     exists) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
     over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
@@ -298,8 +306,11 @@ body, `SFX.levelUp` for the local player (`SFX.pickup` for anyone else in earsho
 Flakes are **world-space**, not a screen overlay, and the zoom reaches them the way it reaches
 everything else in the world. Each entry of `flakes` (the block at the top of the `fx updates`
 banner) has a world `x/y` and drifts in world px — `spd` down, its own sine sway plus the
-[wind field](#the-wind-field)'s drift, so snow blows sideways in a gust and falls almost straight
-down once the air stills at night.
+[wind field](#the-wind-field)'s drift, which runs the way `state.windDir` does, so snow blows
+sideways in a gust, the way the pines lean, and falls almost straight down once the air stills at
+night. How much of the field falls is the day's weather's (`state.wx.snow`, [the day's
+weather](#the-days-weather)): `renderWeather` draws only that share of the array, the flake on
+the edge at the fraction left, so a dawn fade thins the snow flake by flake.
 
 The field is **one world view** in size, not one screen, and that is what makes the zoom read:
 
@@ -389,7 +400,8 @@ body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 o
 every worker, soldier and merchant standing is drawn, none of them hides; the watched body
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
 of its side's ink, never a colour of its own that would read as a third team; the bird diamond
-is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. **The slab is
+is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. Under a
+colour-blind palette a rival's square is a cross instead (`foeCue`, [teams and colours](multiplayer.md#teams-and-colours)). **The slab is
 the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
 px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
@@ -1089,7 +1101,8 @@ read the same two golds, so "full draw" is one colour everywhere).
 — every player (in `drawPlayer`), animals (in `drawAnimal`), robots (in `drawRobot`), a hurt
 building — **painted by side** (`barCol`): the team's `mark` through `skin()`, so it is blue over
 you and your allies and red over rivals on your screen, and neutral gold (`BAR_NEUTRAL`, the WoW
-grammar) over wildlife, the practice dummy and anything handed no team; `col` overrides the side
+grammar) over wildlife, the practice dummy and anything handed no team (under a colour-blind
+palette a rival's fill is cut every third column, `foeCue`); `col` overrides the side
 for the bars that are not health, every one hung under the health bar the way a player's stamina is
 (3 rows down, sharing a frame wall; **health is always the top bar**, at the same height on every
 animal): a camp monster's leash (`THREAT_COL` red, bare track at rest:
@@ -1632,7 +1645,9 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   the list's rows are a **hand**), or over a finished building of your side's that E manages
   (`dim` beyond the 60 px reach, except under the CLICK scheme, where the press walks there);
   **reticle** — everywhere else in play.
-- Reticle `mode` (table `RETICLE`): **idle** white cross; **amove** red ring — the CLICK scheme's
+- Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's
+  readied ability, dim while it cannot cast ([the mouse scheme](multiplayer.md#the-mouse-scheme));
+  **amove** red ring — the CLICK scheme's
   A is armed and the next left press lays the attack-move
   ([the click scheme](multiplayer.md#the-click-scheme); its rings on the snow are
   `drawClickMarks`, js/draw/marks.js); **lock** gold ring — E will work
@@ -2448,9 +2463,13 @@ weather moves reads it rather than keeping a clock of its own:
 - `state.windT` is its clock, stepped in `updateFx` — the **sim** clock, not wall time, so
   `DBG.step` reproduces a gust, a shaft and a twinkle exactly. Every animated thing in this
   section runs off it.
+- **The shared wind is three reads**, and anything new the air should move takes them rather
+  than a clock of its own: `state.windDir` (which way), `state.wind` (how hard) and
+  `windGust(tx, ty)` (the gust over that tile now). `windSway` below is what a pine makes of them.
 - `state.wind` is the field's strength, 0..1: `windAmp()` **squares the daylight**, so the air
-  goes still across dusk and is dead calm by full dark. Two swells on coprime periods
-  (`WIND_SWELL`, `WIND_SWELL2`) ride under that, so the day's weather never settles into a rhythm.
+  goes still across dusk and is dead calm by full dark, and scales by the day's weather
+  (`state.wx.wind`), clamped at 1. Two swells on coprime periods (`WIND_SWELL`, `WIND_SWELL2`)
+  ride under that, so a day's air never settles into a rhythm.
 - `state.windDir` is which way the air is running, −1..1 — one answer for the whole map, because a
   prevailing wind is a property of the day and not of a tile. `windVeer()` steps it beside the
   strength: a sine on `WIND_VEER` (47 s) overdriven into its clamp by `WIND_VEER_HOLD`, so the air
@@ -2486,7 +2505,8 @@ weather moves reads it rather than keeping a clock of its own:
     together, which is what turns the plaid a plain sum of sines gives into wandering fronts.
   - **a gust envelope**: two waves an order of magnitude longer than the ripples (~56 and ~66
     tiles against ~18) on crossing bearings, summed and smoothstepped, running between `WIND_LULL`
-    and `WIND_GUST_PEAK`. The sum is what makes a gust a *patch* of field rather than a stripe of
+    and `WIND_GUST_PEAK` (the day's weather widens or narrows that swing, `state.wx.gust`); it is
+    `windGust(tx, ty)`, the one piece of the field other systems read directly. The sum is what makes a gust a *patch* of field rather than a stripe of
     it; the smoothstep widens the calm between gusts and squares up their shoulders. Both ends are
     set against the **view**, not the world: a screen is barely wider than one gust, so the floor
     cannot sit near zero (a player parked in a lull would be watching a dead forest) and the peak
@@ -2525,7 +2545,8 @@ weather moves reads it rather than keeping a clock of its own:
   field's own clock, not weather of its own: it starts on each multiple of `SWEEP_EVERY` of
   `windT`, blows the way the veer ran **when it set off** (held to the end, since the veer can cross
   still air mid-sweep and a streak must not jump sides), and is only as strong as `state.wind`
-  (none under `SWEEP_MIN`), so it fades out over dusk with everything else. `drawSweep` (the
+  (none under `SWEEP_MIN`) times the day's `state.wx.sweep`, so it fades out over dusk with
+  everything else and blows only on an ordinary snowy day. `drawSweep` (the
   `wind's sweep` banner, js/draw/ground.js) draws it in the air, after the y-sorted pass and under
   the eagle and the night grade: each streak is a thin line of white drift and a shorter strand
   behind it, breaking into flecks at the tail and rolling gently as it runs, over a faint shadow
@@ -2537,6 +2558,61 @@ weather moves reads it rather than keeping a clock of its own:
   along its run — so a streak stays put as the camera pans, and two players over the same field
   see the same snow blowing across it. A moving thing, it is placed off the exact camera
   (`ex`/`ey`). It costs well under a millisecond a frame while it is on and nothing otherwise.
+- The **snow off the pines** reads the crest of `windGust`
+  ([js/shed.js](../../js/shed.js), the `snow off the pines` banner). The sim raises that puff and
+  `burst` carries it to every screen, so it is a gameplay-side event with no pass of its own:
+  each human in the match has `SHED_DRAWS` (36) random tiles a second drawn from about a view
+  round them (a bot draws none, nothing is scanned), and a draw landing on a pine at
+  `SHED_CREST` of the peak, while `state.wind` is at least `SHED_WIND`, sheds with a chance of
+  `SHED_P` × `state.wind` after a random wait of up to `SHED_DELAY`, then rests `SHED_REST` s.
+  At most `SHED_LIVE` gust puffs are in the air at once. The draws, the wait and the rest are
+  what ripple a front through a stand instead of the whole stand letting go on one frame. A blow
+  (the axe in `chopTree`, a shot the arrow loop's wall branch stops in a pine) always sheds, a
+  few flakes more, whatever the rest or the cap. A puff is `burst`'s numeric `grav` (a slow fall
+  with no toss) and `drift` (the wind's sideways px/s): a few white pixels opening off the crown
+  and carried downwind as they fall.
+
+### The day's weather
+
+Every day of a match rolls one of four weathers (the `weather` banner, js/sim.js) off the seed
+and `state.day` with `hash2`, so every client that knows the day (the snapshot already carries it)
+knows the sky, and the wire carries nothing new. `weatherOf(day)` names it off `WX_ODDS`; the
+practice arena always gets `snow`. A weather is only a row of **dials** in `WEATHERS` that the
+passes above already read:
+
+| dial | read by | calm | snow | blizzard | frost |
+| --- | --- | --- | --- | --- | --- |
+| `snow`, the share of the flakes falling | `renderWeather` | 0.4 | 1 | 0.22 | 0 |
+| `wind`, the field's strength | `windAmp` | 0.35 | 1 | 1.6 | 0.3 |
+| `gust`, the envelope's swing | `windGust` | 0.6 | 1 | 1.35 | 0.6 |
+| `sweep`, the 15 s sweep | `drawSweep` | 0 | 1 | 0 | 0 |
+| `drift`, the ground blizzard | `drawDrift`, the haze | 0 | 0 | 1 | 0 |
+| `frost`, the clear cold | `todGrade`, `cloudShade`, `drawFrostGlint` | 0 | 0 | 0 | 1 |
+
+`state.wx` holds the dials in force, and **`weatherNow()` is how any other system reads them** (read-only; a reader that wants the wind takes `state.wind`/`windGust`, which already carry them). `stepWeather` (from `updateFx`, above the wind) eases them
+from wherever they were to the new day's row over `WX_FADE` (5 s) on a smoothstep, so the dawn
+that changes the weather fades it in; the first step of a page snaps instead, so a match opens on
+its weather. **The air still dies at dusk under every row** — the dials scale `windAmp`, which
+squares the daylight, so a blizzard's night is as still as any other.
+
+- **The ground blizzard** (`drawDrift`, the `the ground blizzard` banner, js/draw/ground.js) is
+  low, fast streaks skimming the snow, drawn on the ground under everything that stands. Laid in
+  the world like the sweep's: a `BLOW_CELL_W`×`BLOW_CELL_H` grid, `BLOW_PER` streaks a cell, each
+  on a loop of its own length (`BLOW_LIFE`), born at a spot off the cell and its loop's number,
+  running `BLOW_SPD` downwind and gone. Its way is the veer's at its birth; its brightness is the
+  field's strength times the gust over its cell, so a gust crossing the valley reads as a brighter
+  band. Every streak is one `drawImage` off one baked atlas (`blowAtlas`, a row per length, way and
+  pass). `renderLighting` also lays a milky `BLIZ_HAZE` over a blowing blizzard's frame.
+- **The clear frosty day** has nothing falling; the cold is on the light instead. `todGrade`
+  multiplies `FROST_TINT` over the frame and holds the noon crisp at `FROST_CRISP` from dawn to
+  dusk, `cloudShade` loses `FROST_CLEAR` of its shadow, and `drawFrostGlint` (js/draw/light.js)
+  flashes single-pixel glints on bare snow tiles (a `GLINT_CELL` world grid, brief flashes past
+  `GLINT_SHARP` of a slow sine), stamped **after the night grade**, because white on the day's
+  white snow says nothing and the night's blue is what makes a glint catch. It rides the ICE STARS
+  toggle (`settings.vidStars`).
+
+`DBG.weather('blizzard')` pins a weather (fading to it like a dawn; `DBG.weather()` hands it back
+to the day), `DBG.wx` reads the dials and `DBG.weatherOf(day)` what a day rolls on this seed.
 
 On a GTX 1060 at 886×498 over the treeline the whole pass is inside measurement noise of not
 running at all — see [What this pass costs](#what-this-pass-costs). Do not profile this in a

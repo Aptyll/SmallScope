@@ -129,6 +129,31 @@ it in under a second) and shift on landing carves a slide; a body coming down ov
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every
 walk the ladder orders ([bots](multiplayer.md#bots)); the waves never will.
 
+## Trampled snow
+
+Visual only (js/draw/trample.js). A grid of 4 px cells over the world holds how **packed** and how
+**churned** each patch is. `trampleStep` looks at every body on the snow each frame the world moves
+(players off the eagle and off a zipline, every animal but a bird, every robot) and stamps a disc
+the size of the body every `TR_STEP` px it travels: a walk packs `TR_WALK`, a slide and a crawl
+their own amounts (read off `p.sliding`/`p.prone`, the same state the footprint emitter reads), a
+roll or a knockback past `TR_SHOVE_V` churns, and a drop in hp or a body going down churns a wider
+disc. It reads only what a client already draws (positions, hp, `kbx`/`kby`), so it runs on every
+peer and nothing goes over the wire; a jump of over 40 px (a landing, a respawn) stamps nothing
+between.
+
+Fresh snow refills every cell **linearly**, the way snowfall fills a hollow: `TR_FILL` a second at
+light snow (`TR_SNOW_LIGHT`), scaled by `trampleSnowfall()`: the day's falling snow plus its ground
+blizzard off `weatherNow()` (see [the day's weather](rendering.md#the-days-weather)), so a clear frost day refills at 0.3x and a snow day
+or a blizzard at ~2.3x; churn refills `TR_FILL_CHURN` times faster. At light snow one pass (~0.1) is
+gone in about ninety seconds and a hard-packed route (1.0) lasts a quarter of an hour of no traffic.
+
+Each pixel asks what it stands on, the way the bake painted it (`trMask`): snow packs through three
+pressed shades and throws clods where churned; **ice** is the lakes' dust layer's to
+show: it reads `trampleAt(x, y)` per pixel and thins under it, and
+`trDustSync` hands it (`iceDustInvalidate`) the lake tiles whose trample moved, so the dust comes
+back as the trample refills - on a build without that layer, ice takes sparse frost scuffs instead; open water, the creek, its deck and the road's earth
+take nothing. The footprints and slide trails draw over it as the crisp detail.
+
 ### The sled
 
 The [story landmarks](world.md#story-landmarks)' sled is the one you can ride (the `the sled` group,
@@ -1168,7 +1193,8 @@ has cleared the bow, `a.flown`), drift back at 8 px/s and
 fade from `ARROW_TRAIL_A` (0.7) over `ARROW_TRAIL_LIFE` (0.22 s), leaving a tail that thins out
 behind the shot. The particle draw pass is what makes that possible: a particle's
 `maxLife` is the seconds it spends fading (`burst` uses 0.4) and its optional `alpha` caps how
-opaque it ever gets. Particles draw before the arrows, so a trail always sits under its own shaft.
+opaque it ever gets; an optional `dx` is a steady sideways px/s the damping never takes (`burst`'s
+`drift`: the wind carrying a pine's snow). Particles draw before the arrows, so a trail always sits under its own shaft.
 Switching tools, opening an overlay, or dying drops the draw without firing (and clears
 `fireArmed` with it); `BOW_CHARGE` (0.9 s) is a full draw.
 
@@ -2860,6 +2886,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 
 `settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
+`teamPal` — the TEAM COLOURS row: `def` or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
 `aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai.js) —
@@ -2941,9 +2968,9 @@ red × when it is off. While muted all three sound dials draw grey rather than g
 (`drawSliderRow`'s `dim`), so what the speaker silences reads off the page without a word of
 text. **N** still toggles the same flag from anywhere.
 
-**The CONTROLS page is itself tabbed** — WASD, CLICK, GAMEPAD (`CTRL_TABS`, each cell
+**The CONTROLS page is itself tabbed** — WASD, CLICK, MOUSE, GAMEPAD (`CTRL_TABS`, each cell
 naming its listing in `ctrl`), one listing per controller, since a pad puts the
-same verbs somewhere else — and the keyboard's listing is **two cells, one per scheme**: the
+same verbs somewhere else — and the keyboard's listing is **three cells, one per scheme**: the
 cell in gold is the scheme in force (`ctrlCellNow`), and a click on the other makes it the
 live scheme (`settings.scheme`, dropping every order the click scheme held) as well as opening
 its listing, so there is no SCHEME row and no words to switch. Its sub-navbar is

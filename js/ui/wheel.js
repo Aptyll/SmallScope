@@ -36,6 +36,9 @@ function wheelOptions() {
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
   if (w.kind === 'pkdie' || w.kind === 'agbell') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
+  // the MOUSE scheme's action wheel: the four abilities clockwise from the
+  // top, then the two meals and the flag (MS_WHEEL, js/input.js)
+  if (w.kind === 'kit') return MS_WHEEL.map((id) => ({ id }));
   // upgrade is always the wedge straight up and demolish always the last one,
   // so a type's extra option would land between them instead of displacing
   // either (none has one today; the Keep's card craft did)
@@ -82,6 +85,9 @@ function wheelLayout() {
 function resolveWheel() {
   const w = state.wheel;
   const L = wheelLayout();
+  // the action wheel performs its own pick (msKitPick, js/input.js); only its
+  // own release stands the flag wheel up, so any other close drops that wedge
+  if (w.kind === 'kit') { if (L.seg >= 0 && MS_WHEEL[L.seg] !== 'flag') msKitPick(w, L.seg); return; }
   if (L.seg < 0) {
     // released in the hub = cancel - except a flag wheel held over your own
     // flag, whose hub IS the flag (drawWheelHub): releasing there lifts it
@@ -553,6 +559,8 @@ function renderWheel(now) {
         ctx.fillRect(rix - 9, riy - 9, 18, 1); ctx.fillRect(rix - 9, riy + 8, 18, 1);
         ctx.fillRect(rix - 9, riy - 9, 1, 18); ctx.fillRect(rix + 8, riy - 9, 1, 18);
       }
+    } else if (w.kind === 'kit') {
+      drawKitWedge(opt.id, Math.round(ix), Math.round(iy), hovered);
     } else {
       const label = opt.id === 'upgrade' ? 'UP' : opt.id === 'demolish' ? 'DEL' : 'CARD';
       drawPixelTextOutline(ctx, label,
@@ -587,6 +595,8 @@ function renderWheel(now) {
     } else if (w.kind === 'agbell') {
       label = 'RING ' + opt.id.toUpperCase();
       color = PK_PIP_COL[PK_DIFFS.indexOf(opt.id)];
+    } else if (w.kind === 'kit') {
+      ({ label, color } = kitLabel(opt.id));
     } else if (opt.id === 'upgrade') {
       if (!o || o.tier >= STRUCTS[o.type].tiers.length - 1) { label = 'MAX TIER'; color = '#9fb6d8'; }
       else {
@@ -604,6 +614,36 @@ function renderWheel(now) {
   drawPixelTextOutline(ctx, label,
     Math.round(Math.max(2, Math.min(VIEW_W - lw - 2, L.cx - lw / 2))),
     Math.round(L.cy + WHEEL_R + WHEEL_PAD + 6), color, '#0f1632');
+}
+
+// ---- the action wheel's wedges ------------------------------------------
+// The MOUSE scheme's wheel (msWheelPress, js/input.js) wears what the strip
+// wears: an ability's own icon at half size, dark where it cannot cast yet
+// (locked or waiting), a meal's bag icon, dark with none in the bag, and
+// the flag's pennant in the side's ink.
+function kitAb(id) { return /^ab\d$/.test(id) ? +id[2] - 1 : -1; }
+function drawKitWedge(id, x, y, hot) {
+  const i = kitAb(id);
+  if (i >= 0) {
+    ctx.globalAlpha = abReady(player, i) ? 1 : 0.4;
+    ctx.drawImage(classAbIcon(player.cls, i), x - 8, y - 8, 16, 16);
+    ctx.globalAlpha = 1;
+    return;
+  }
+  if (id === 'flag') { drawFlagPennant(ctx, x - 2, y + 4, hot ? '#ffd95c' : TEAMS[skin(player.team)].mark); return; }
+  const im = SPRITES[ITEMS[id].icon];
+  ctx.globalAlpha = bagCount(player, id) > 0 ? 1 : 0.4;
+  ctx.drawImage(im, x - (im.width >> 1), y - (im.height >> 1));
+  ctx.globalAlpha = 1;
+}
+// the line under the wheel: the ability's name (gold when it will cast), the
+// meal's verb with the count in the bag, or the flag wheel's own verb
+function kitLabel(id) {
+  const i = kitAb(id);
+  if (i >= 0) return { label: abOf(player, i).name, color: abReady(player, i) ? '#ffd95c' : '#7a8bb8' };
+  if (id === 'flag') return { label: KEY_ACT.flag.verb, color: '#ffd95c' };
+  const n = bagCount(player, id);
+  return { label: KEY_ACT[id].verb + ' ' + n, color: n > 0 ? '#ffd95c' : '#7a8bb8' };
 }
 
 // ---- the build list and its ghost -----------------------------------------

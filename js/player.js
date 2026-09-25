@@ -21,6 +21,11 @@ const TEAMS = SPRITES.teams; // the 2 colour presets (RED, BLUE), baked into the
 // robotTeam, merchant) and the two maps' eagle colours. Bot names are
 // computed from it live (Player.name), so RED-3 turns BLUE-3 with the toggle.
 function skin(team) { return settings.teamBlue && player && player.team === 0 ? 1 - team : team; }
+// The rival's SHAPE cue: under any colour-blind palette (settings.teamPal, not
+// 'def') a rival's minimap dot is a cross (drawMapUnit, js/draw/marks.js) and
+// its health bar is cut into segments (drawHealthBar, js/draw/overhead.js),
+// so the two sides still part in greyscale. Paint only, like skin().
+function foeCue(team) { return settings.teamPal !== 'def' && team != null && !!player && team !== player.team; }
 
 // Players. Every combatant in the match - the local human, the AI fills,
 // and (later) network peers - is a Player in `players`, so anything written

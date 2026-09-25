@@ -124,6 +124,41 @@ function drawClickMarks(ex, ey, now) {
     ctx.restore();
   }
 }
+// The MOUSE scheme's RANGE PREVIEW (the `mouse only` banner, input.js): the
+// ground an ability covers, from the body toward where it would be cast -
+// the lit wedge of a held action wheel toward its press point, or a readied
+// well toward the pointer. The row's own `aim` (CLASS_AB) says the shape: a
+// line out to its reach, a cone, or a ring round the body. Gold when it
+// will cast, grey while it cannot. A place like the click rings, so it
+// scales with the tile.
+function drawCastPreview(ex, ey, now) {
+  if (!msOn() || player.dead || !player.active) return;
+  const w = state.wheel;
+  let i = -1, tx = mouseWX(), ty = mouseWY();
+  if (w && w.kind === 'kit') { const L = wheelLayout(); i = L.seg >= 0 ? kitAb(MS_WHEEL[L.seg]) : -1; tx = w.wx; ty = w.wy; }
+  else if (!w && ms.ready >= 0 && !overHud(mouse.x, mouse.y)) i = ms.ready;
+  if (i < 0) return;
+  const a = abOf(player, i).aim;
+  if (!a) return;
+  const col = abReady(player, i) ? '#ffd95c' : '#8fa4c8';
+  const px = player.x - ex, py = player.y - ey;
+  const ang = Math.atan2(ty - player.y, tx - player.x);
+  const shape = (g) => {
+    g.beginPath();
+    if (a.ring) g.arc(px, py, a.ring, 0, Math.PI * 2);
+    else if (a.cone) { g.moveTo(px, py); g.arc(px, py, a.cone, ang - a.half, ang + a.half); g.closePath(); }
+    else { g.moveTo(px, py); g.lineTo(px + Math.cos(ang) * a.line, py + Math.sin(ang) * a.line); }
+    g.stroke();
+  };
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  ctx.lineDashOffset = -((now * 8) % 6);
+  ctx.translate(0, 1); ctx.strokeStyle = '#0f1632'; shape(ctx);
+  ctx.translate(0, -1); ctx.strokeStyle = col; shape(ctx);
+  ctx.restore();
+}
 // The planted flag itself, in the world pass (y-sorted with the entities): a
 // pole at the tile's centre and a dark banner on it carrying the SAME order
 // icon the wheel offered, inked in the team's colour - so what the side was
@@ -181,7 +216,19 @@ function drawMapDot(g, x, y, size, col, rim) {
   g.fillStyle = rim; g.fillRect(x0 - 1, y0 - 1, size + 2, size + 2);
   g.fillStyle = col; g.fillRect(x0, y0, size, size);
 }
-function drawMapUnit(g, x, y, col, rim, k, bot) { drawMapDot(g, x, y, bot ? k : k + 1, col, rim); }
+// a rival under a colour-blind palette wears a cross (foeCue, js/player.js)
+function drawMapUnit(g, x, y, col, rim, k, bot, foe) {
+  if (foe) drawMapCross(g, x, y, bot ? k : k + 1, col, rim);
+  else drawMapDot(g, x, y, bot ? k : k + 1, col, rim);
+}
+// a plus whose arms are `size` thick and 3 x size long, rimmed all round
+function drawMapCross(g, x, y, size, col, rim) {
+  const len = size * 3, x0 = Math.round(x) - (size >> 1), y0 = Math.round(y) - (size >> 1), a = x0 - size, b = y0 - size;
+  g.fillStyle = rim;
+  g.fillRect(x0 - 1, b - 1, size + 2, len + 2); g.fillRect(a - 1, y0 - 1, len + 2, size + 2);
+  g.fillStyle = col;
+  g.fillRect(x0, b, size, len); g.fillRect(a, y0, len, size);
+}
 function drawMapYou(g, x, y, col, rim, k) {
   drawMapDot(g, x, y, k + 3, col, rim);
   const x0 = Math.round(x) - ((k + 1) >> 1), y0 = Math.round(y) - ((k + 1) >> 1);

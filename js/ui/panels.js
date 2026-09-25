@@ -371,12 +371,12 @@ function renderWorldMap(now) {
   const mx = (x) => MAP_X + Math.round((x / TILE) * MAP_S), my = (y) => MAP_Y + Math.round((y / TILE) * MAP_S);
   for (const r of robots) {
     if (r.dead) continue;
-    drawMapUnit(ctx, mx(r.x), my(r.y), TEAMS[skin(r.team)].mark, CHART_DARK, 2, true);
+    drawMapUnit(ctx, mx(r.x), my(r.y), TEAMS[skin(r.team)].mark, CHART_DARK, 2, true, foeCue(r.team));
   }
   for (const p of players) {
     if (p === vp || !p.active || p.dead || inAir(p)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // buried: off the map, same as the minimap - unless falcon-marked
-    drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false);
+    drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false, foeCue(p.team));
   }
   // the ziplines: each side's cable as a thread in its ink along the verge,
   // the minimap's own line at the chart's scale
@@ -519,6 +519,13 @@ const SET_TABS = [
     { id: 'tipFollow', label: 'TOOLTIP', kind: 'toggle', on: 'FOLLOWS POINTER', off: 'BOTTOM LEFT' },
     // BLUE always, or the roster's colour (skin, player.js)
     { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle', on: 'ALWAYS BLUE', off: 'AS DEALT' },
+    // the two sides' paint for colour-blind eyes (TEAM_PALETTES, js/sprites/
+    // core.js): each chip IS its palette, yours beside theirs, so a player
+    // picks the pair they can tell apart by looking. Any but the first also
+    // puts the rival's shape cue on (foeCue, js/player.js)
+    { id: 'teamPal', label: 'TEAM COLOURS', kind: 'swatch',
+      opts: [{ id: 'def' }, { id: 'rg' }, { id: 'by' }, { id: 'hc' }],
+      val: () => settings.teamPal, pick: (v) => { settings.teamPal = v; applyTeamPal(); } },
   ] },
   { id: 'video', label: 'VIDEO', rows: [
     { id: 'quality', label: 'QUALITY', kind: 'choice',
@@ -576,17 +583,17 @@ const SET_FOOT_Y = SET_H - 23, SET_PLANK_W = 88, SET_PLANK_H = 18, SET_PLANK_GAP
 
 // The CONTROLS page is itself tabbed - one listing per controller, since a
 // pad puts the same verbs somewhere else, and the keyboard's
-// listing is one cell per SCHEME (WASD / CLICK), so picking the scheme IS
+// listing is one cell per SCHEME (WASD / CLICK / MOUSE), so picking the scheme IS
 // picking the listing: the cell in force wears the navbar's gold. Its navbar
 // sits pinned at the top of the content window and only the listing scrolls.
 // The tab opens on the controller in hand (ctrlTabNow) until a click picks one.
 const CTRL_TABS = [{ id: 'wasd', ctrl: 'keys', label: 'WASD' }, { id: 'click', ctrl: 'keys', label: 'CLICK' },
-  { id: 'pad', ctrl: 'pad', label: 'GAMEPAD' }];
+  { id: 'mouse', ctrl: 'keys', label: 'MOUSE' }, { id: 'pad', ctrl: 'pad', label: 'GAMEPAD' }];
 const CTRL_TAB_H = 13; // the band the sub-navbar takes off the content window
 let ctrlTab = null;
 function ctrlTabNow() { return ctrlTab || (padActive() ? 'pad' : 'keys'); }
 // the navbar cell that is lit: the listing open, and for the keyboard the scheme in force
-function ctrlCellNow() { const c = ctrlTabNow(); return c === 'keys' ? (settings.scheme === 'click' ? 'click' : 'wasd') : c; }
+function ctrlCellNow() { const c = ctrlTabNow(); return c === 'keys' ? settings.scheme : c; }
 
 // Everything positioned inside the panel comes from here: the navbar cells,
 // the open page's rows (each carrying its y in view space, pre-scroll), the
@@ -602,9 +609,9 @@ function settingsLayout() {
   let y = clipY0 + 6;
   for (const r of tab.rows) {
     const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on, off: r.off };
-    if (r.kind === 'choice') {
+    if (r.kind === 'choice' || r.kind === 'swatch') {
       let x = SL_X;
-      row.opts = r.opts.map(o => { const w = pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
+      row.opts = r.opts.map(o => { const w = r.kind === 'swatch' ? SWATCH_W : pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
     }
     rows.push(row); y += 14;
   }
@@ -785,9 +792,12 @@ function drawToolPrimer(g, y0) {
 // DBG.keyRows all read it, so a click can never disagree with a pixel.
 // The listing is the live SCHEME's (settings.scheme: the WASD scheme, or
 // the CLICK scheme of the `click to move` banner, input.js) - the scheme is
-// picked on the CONTROLS navbar (CTRL_TABS), where WASD and CLICK are two
+// picked on the CONTROLS navbar (CTRL_TABS), where WASD, CLICK and MOUSE are
 // cells of the keyboard's. Under CLICK the walk keys and the harvest key are
-// the right button's, so those rows are the mouse's fixed words instead.
+// the right button's, so those rows are the mouse's fixed words instead;
+// MOUSE adds the middle button's action wheel, and its dodge and slide caps
+// print the side buttons (MB4, MB5). No column runs past KEY_ROWS_N's eight,
+// so MOUSE leaves the debug '.' off its listing (the key still works).
 const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
@@ -800,6 +810,12 @@ const KEY_ROWS = {
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
     ['berry', 'fish', 'flag', 'card', 'bag', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+  ],
+  mouse: [
+    [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
+      'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
+    ['stop', 'berry', 'fish', 'flag', 'card', 'bag', 'char', 'build'],
+    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
@@ -1029,7 +1045,7 @@ function settingsHit() {
     const y = r.y - L.scroll;
     // 14px pitch, so the bands must not overlap or a click lands on two rows
     if (my < y - 3 || my > y + 10) continue;
-    if (r.kind === 'choice') {
+    if (r.kind === 'choice' || r.kind === 'swatch') {
       for (const o of r.opts) if (mx >= o.x - 2 && mx < o.x + o.w + 4) return 'c:' + r.id + ':' + o.id;
       return null;
     }
@@ -1103,6 +1119,20 @@ function drawMuteBtn(hot) {
     ctx.fillRect(x + 4, y + 2, 1, 1); ctx.fillRect(x + 5, y + 3, 1, 1); ctx.fillRect(x + 6, y + 4, 1, 1);
     ctx.fillRect(x + 6, y + 2, 1, 1); ctx.fillRect(x + 4, y + 4, 1, 1);
   }
+}
+
+// one TEAM COLOURS chip: your side's mark beside the rival's, in the palette
+// it names (not the one in force), framed gold while it is the pick and
+// lifted a row under the pointer
+const SWATCH_W = 22;
+function drawSwatch(o, y, on, hot) {
+  const pal = SPRITES.teamPalettes[o.id], x = o.x, top = y - 1 - (hot && !on ? 1 : 0), h = 9;
+  ctx.fillStyle = on ? '#ffd95c' : hot ? '#cfe0ff' : '#0a0e23';
+  ctx.fillRect(x - 1, top - 1, SWATCH_W + 2, h + 2);
+  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, top, SWATCH_W, h);
+  const half = (SWATCH_W - 3) >> 1;
+  ctx.fillStyle = pal[1].mark; ctx.fillRect(x + 1, top + 1, half, h - 2);
+  ctx.fillStyle = pal[0].mark; ctx.fillRect(x + SWATCH_W - 1 - half, top + 1, half, h - 2);
 }
 
 function drawToggleRow(y, on, onTxt, offTxt) {
@@ -1186,6 +1216,9 @@ function renderSettings(now, opts) {
           const col = cur === o.id ? '#ffd95c' : hit === 'c:' + r.id + ':' + o.id ? '#f4f7ff' : '#7a8bb8';
           drawPixelTextShadow(ctx, o.label, o.x, y, col, 'rgba(8,12,28,0.9)');
         }
+      } else if (r.kind === 'swatch') {
+        const cur = r.val();
+        for (const o of r.opts) drawSwatch(o, y, cur === o.id, hit === 'c:' + r.id + ':' + o.id);
       }
     }
     if (setTab === 'audio') drawMuteBtn(hit === 'mute');

@@ -521,7 +521,7 @@ function chopTree(o, p) {
   awardGold(p, dead ? YIELD.deadTreeHit : YIELD.treeHit, ox, oy);
   burst(ox, oy - 10, '#eef4fb', dead ? 5 : 6, 40, 0.5, true);
   burst(ox, oy - 12, dead ? '#6b5a48' : '#3f7a5c', 3, 30, 0.4, true);
-  if (o.hp > 0) return;
+  if (o.hp > 0) { shedHit(o); return; } // the blow shakes the crown (js/shed.js); a fell has its own snow
   objects[idx(o.tx, o.ty)] = { type: 'stump', tx: o.tx, ty: o.ty, flash: 0, shake: 0 };
   sfxAt('treeFall', ox, oy);
   shakeFor(p, dead ? 2 : 2.5);

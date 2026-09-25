@@ -77,6 +77,7 @@ function paintGroundTile(g, tx, ty) {
           }
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
+        paintDressing(g, tx, ty, px, py); // long cracks, reeds, the downwind bank (js/draw/lakes.js)
         // ...and, where a PATH crosses the lake (the paths, js/world.js), the
         // earth spilling over this tile's share of the crossing, rimmed along
         // its own ragged edge rather than along the tile's sides. The diagonal
@@ -98,6 +99,9 @@ function paintGroundTile(g, tx, ty) {
         }
         // a lake's edge reaching over onto this snow, and the lip of its bank
         paintSnowShore(g, tx, ty, px, py);
+        // the drifts in the lee of what stands, a lake's downwind bank, the
+        // tip of a reed rooted below (js/draw/lakes.js)
+        paintDressing(g, tx, ty, px, py);
         // the road (ground 3, and the snow beside it) is painted OVER the
         // snow per pixel, against its ragged edge - never per tile
         if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
@@ -385,6 +389,7 @@ function renderGround() {
   const g = groundCv.getContext('2d');
   g.imageSmoothingEnabled = false;
   bakeLakes();
+  bakeDressing(); // the drifts and the lakes' dressing (js/draw/lakes.js)
   shadeBulk = true;
   const strip = new ImageData(WORLD * TILE, TILE);
   for (let ty = 0; ty < WORLD; ty++) {
@@ -406,6 +411,7 @@ function repaintGround(tx, ty) {
   for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
     if (inWorld(tx + dx, ty + dy)) paintGroundTile(g, tx + dx, ty + dy);
   }
+  trampleGroundChanged(tx, ty); // the trample re-reads what its pixels stand on (js/draw/trample.js)
 }
 
 // ------------------------------------------------------------ the ice shore
@@ -589,8 +595,8 @@ function paintIceTile(g, tx, ty, px, py) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const x = px + i, y = py + j, hp = hash2(x * 3 + 7, y * 5 + 11);
     let c;
-    if (inner) c = iceTone(x, y, s, hp);
-    else if (iceMk(i, j)) c = bankAt(i, j, s) || iceTone(x, y, s, hp);
+    if (inner) c = dustIce(x, y, iceTone(x, y, s, hp));
+    else if (iceMk(i, j)) c = bankAt(i, j, s) || dustIce(x, y, iceTone(x, y, s, hp));
     else c = bankAt(i, j, s) || SNOW_INK[snowTone[j * TILE + i]];
     const k = (j * TILE + i) * 4;
     D[k] = c[0]; D[k + 1] = c[1]; D[k + 2] = c[2]; D[k + 3] = 255;
@@ -609,7 +615,7 @@ function paintSnowShore(g, tx, ty, px, py) {
   fillShoreMask(px, py);
   markMirror(tx, ty);
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
-    const c = iceMk(i, j) ? bankAt(i, j, s) || iceTone(px + i, py + j, s, hash2((px + i) * 3 + 7, (py + j) * 5 + 11)) : bankAt(i, j, s);
+    const c = iceMk(i, j) ? bankAt(i, j, s) || dustIce(px + i, py + j, iceTone(px + i, py + j, s, hash2((px + i) * 3 + 7, (py + j) * 5 + 11))) : bankAt(i, j, s);
     if (c) { g.fillStyle = c.css; g.fillRect(px + i, py + j, 1, 1); }
   }
 }
@@ -767,8 +773,9 @@ const SWEEP_FULL = 0.6;                       // the air's strength at which a s
 const SWEEP_STRANDS = [[0, 0, 1], [-16, 4, 0.5]]; // a streak's strands: px behind the head, px down, share of its length
 function drawSweep(ex, ey) {
   const sw = windSweep();
-  if (!sw) return;
-  const air = Math.min(1, sw.w / SWEEP_FULL), reach = SWEEP_RUN + SWEEP_LEN[1] + 20;
+  if (!sw || state.wx.sweep <= 0.01) return;
+  // the day's weather sets how much of it there is (state.wx.sweep)
+  const air = Math.min(1, sw.w / SWEEP_FULL) * state.wx.sweep, reach = SWEEP_RUN + SWEEP_LEN[1] + 20;
   // every cell a streak could have drifted into the view from
   const cx0 = Math.floor((ex - reach) / SWEEP_CELL_W), cx1 = Math.floor((ex + WV_W + reach) / SWEEP_CELL_W);
   const cy0 = Math.floor((ey - 8) / SWEEP_CELL_H), cy1 = Math.floor((ey + WV_H + 8) / SWEEP_CELL_H);
@@ -802,6 +809,86 @@ function drawSweep(ex, ey) {
           if (pass) ctx.fillRect(x, y, 1, 1);
           else ctx.fillRect(x + SWEEP_SHADE_DX * sw.dir, y + SWEEP_SHADE_DY, 1, 1);
         }
+      }
+    }
+  }
+  ctx.restore();
+}
+
+// ------------------------------------------------------------ the ground blizzard
+// A blizzard day's snow (state.wx.drift, the `weather` banner, js/sim.js) is
+// not falling, it is BLOWING: low, fast streaks of loose snow skimming the
+// drifts downwind, continuously, under everything that stands. Laid in the
+// world like the sweep's (a BLOW_CELL_W x BLOW_CELL_H grid, nothing rolls):
+// each cell carries BLOW_PER streaks, and each streak lives on a loop of its
+// own length - born at a spot off the cell and its loop's number, running
+// BLOW_SPD px/s downwind for one loop, gone, and born again somewhere else.
+// Its way is the veer's at its birth, held for its short life, so the
+// streaks turn round with the pines without one ever jumping sides. The
+// field's strength and the gust over the streak's cell scale how bright it
+// is, so a gust crossing the valley reads as a brighter band of blowing snow.
+const BLOW_CELL_W = 130, BLOW_CELL_H = 18; // world px of the grid: wide and shallow, so the streaks run in rows
+const BLOW_PER = 3;                         // streaks a cell carries at once
+const BLOW_LIFE = [0.7, 1.4];               // s a streak lives, shortest..longest
+const BLOW_SPD = [170, 280];                // world px/s at full air, slowest..fastest
+const BLOW_LEN = [14, 44];                  // world px long, shortest..longest
+const BLOW_A = 0.9, BLOW_SHADE_A = 0.6;    // the streak and its shadow a px under it, at full strength
+// Every streak is one drawImage off ONE baked atlas (the pines' rule: a
+// thousand of something batch only off a single texture) - a row per length
+// (BLOW_STEP apart), way and pass, each two px tall: the shadow's line, and
+// the streak's head cap over its body with the tail breaking into flecks.
+const BLOW_STEP = 2;
+let blowCv = null;
+function blowAtlas() {
+  if (blowCv) return blowCv;
+  const n = Math.round((BLOW_LEN[1] - BLOW_LEN[0]) / BLOW_STEP) + 1;
+  blowCv = document.createElement('canvas');
+  blowCv.width = BLOW_LEN[1]; blowCv.height = n * 8;
+  const g = blowCv.getContext('2d');
+  for (let li = 0; li < n; li++) for (let d = 0; d < 2; d++) {
+    const w = BLOW_LEN[0] + li * BLOW_STEP, y = (li * 2 + d) * 4;
+    const at = (x) => (d ? w - 1 - x : x); // x counts back from the head, which leads downwind
+    g.fillStyle = SWEEP_SHADE;
+    g.fillRect(0, y + 1, w, 1);
+    g.fillStyle = SWEEP_BODY;
+    const body = Math.round(w * 0.55), cap = Math.round(w * 0.2);
+    for (let x = 0; x < w; x++) {
+      if (x >= body && (x - body) % (x > w * 0.8 ? 4 : 2)) continue; // the tail breaks into flecks
+      g.fillRect(at(x), y + 3, 1, 1);
+      if (x >= 1 && x <= cap) g.fillRect(at(x), y + 2, 1, 1); // the head is thicker: snow lifted off the crust
+    }
+  }
+  return blowCv;
+}
+function drawDrift(ex, ey) {
+  const d = state.wx.drift * Math.min(1, state.wind / SWEEP_FULL);
+  if (d <= 0.02) return;
+  const A = blowAtlas();
+  const t = state.windT, reach = BLOW_SPD[1] * BLOW_LIFE[1] + BLOW_LEN[1];
+  const cx0 = Math.floor((ex - reach) / BLOW_CELL_W), cx1 = Math.floor((ex + WV_W + reach) / BLOW_CELL_W);
+  const cy0 = Math.floor((ey - 4) / BLOW_CELL_H), cy1 = Math.floor((ey + WV_H + 4) / BLOW_CELL_H);
+  const spd = 0.6 + 0.4 * Math.min(1, state.wind); // a lull slows the snow as well as thinning it
+  ctx.save();
+  for (let pass = 0; pass < 2; pass++) { // the shadows first, then the snow
+    ctx.globalCompositeOperation = pass ? 'source-over' : 'multiply';
+    for (let cy = cy0; cy <= cy1; cy++) for (let cx = cx0; cx <= cx1; cx++) {
+      const g = Math.min(1, windGust((cx + 0.5) * BLOW_CELL_W / TILE, (cy + 0.5) * BLOW_CELL_H / TILE)); // the gust over the cell
+      for (let i = 0; i < BLOW_PER; i++) {
+        const id = cx * 131 + cy * 977 + i * 7919;
+        const h0 = hash2(id, 83), life = BLOW_LIFE[0] + (BLOW_LIFE[1] - BLOW_LIFE[0]) * h0;
+        const u = t / life + hash2(id, 89), n = Math.floor(u), k = u - n; // which loop, and how far through it
+        const h1 = hash2(id + n * 37, 97), h2 = hash2(id + n * 37, 101), h3 = hash2(id + n * 37, 103);
+        const born = (t - k * life) * (Math.PI * 2 / WIND_VEER);
+        const dir = wsin(born) < 0 ? -1 : 1; // windVeer's sign at its birth
+        const li = Math.round((BLOW_LEN[1] - BLOW_LEN[0]) * h2 / BLOW_STEP), w = BLOW_LEN[0] + li * BLOW_STEP;
+        const wx0 = (cx + h1) * BLOW_CELL_W, wy = Math.round((cy + h3) * BLOW_CELL_H);
+        const head = wx0 + dir * (BLOW_SPD[0] + (BLOW_SPD[1] - BLOW_SPD[0]) * h2) * spd * life * k;
+        const x0 = Math.round((dir > 0 ? head - w : head) - ex); // moving, so off the exact camera
+        if (x0 + w < 0 || x0 > WV_W) continue;
+        const y = wy - Math.round(ey);
+        if (y < -2 || y > WV_H + 2) continue;
+        ctx.globalAlpha = Math.sin(Math.PI * k) * d * g * (pass ? BLOW_A : BLOW_SHADE_A);
+        ctx.drawImage(A, 0, (li * 2 + (dir > 0 ? 1 : 0)) * 4 + pass * 2, w, 2, x0, y - 1 + (pass ? 0 : 1), w, 2);
       }
     }
   }
