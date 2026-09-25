@@ -614,7 +614,7 @@ function render() {
         // bar holding still over a wall that is rocking is a bar centred on
         // nothing. drawBayOverlay is handed `sx + sh` and has always done this.
         if (o.type !== 'spawner' && o.type !== 'barracks' && o.hp < o.maxHp) {
-          drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, Math.max(12, Math.min(24, spr.width - 4)), o.team);
+          drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, evenBarW(Math.max(12, Math.min(24, spr.width - 4))), o.team);
         }
       }
     }

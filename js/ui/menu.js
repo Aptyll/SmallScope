@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.00';
+const PATCH_TXT = 'PATCH 4.01';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.01', 'HEALTH BAR SEGMENTS ARE ALL THE SAME WIDTH NOW, SO EVERY BAR SPLITS EVENLY FROM END TO END.'],
   ['4.00', 'THE FORGE IS A ROCK DUMP NOW: THROW ANY ORE YOU HAVE INTO YOUR WEAPON IN ANY AMOUNT, STONE FOR ONE POINT, FROSTGLASS FOR FOUR AND SUNSTONE FOR FIFTEEN, AND IT LEVELS UP EVERY TIME ITS BAR FILLS, WITH NO TOP LEVEL.'],
   ['3.99', 'EVERY HEALTH BAR IS CUT INTO SEGMENTS NOW - HEROES, BOTS, ANIMALS AND BUILDINGS - SO A BIGGER HEALTH POOL SHOWS MORE OF THEM, AND UNDER A COLOUR-BLIND PALETTE A RIVAL\'S BAR WEARS A DARK CAP ON ITS RIGHT END INSTEAD.'],
   ['3.98', 'THE VALLEY HAS STORY LANDMARKS: AN ICE-FISHING SHACK BY A LAKE SHORE, A ROWBOAT FROZEN OUT ON THE ICE, AND AN OLD SLED BY THE ROAD ON EACH SIDE THAT YOU CAN JUMP ON WITH E AND RIDE FOR FIFTEEN SECONDS BEFORE IT FALLS APART UNDER YOU.'],
@@ -3103,11 +3104,11 @@ const wikiScroll = {};        // px scrolled per page id
 const WIKI_BEASTS = [
   { kind: 'rabbit', name: 'RABBIT', bw: 8,
     line: () => 'BOLTS AT ' + FLEE_SIGHT.rabbit + ' PX. ONE JINK CHARGE EVERY ' + RABBIT_DODGE_CD + ' S. DROPS A BERRY.' },
-  { kind: 'deer', name: 'DEER', bw: 16,
+  { kind: 'deer', name: 'DEER', bw: 17,
     line: () => 'BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
-  { kind: 'wolf', name: 'WOLF', bw: 12,
+  { kind: 'wolf', name: 'WOLF', bw: 11,
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
-  { kind: 'alpha', name: 'ALPHA', bw: 12,
+  { kind: 'alpha', name: 'ALPHA', bw: 11,
     line: () => 'ONE A STONE. BITES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE KILL WEARS X' + CAMP_BUFF_DMG + ' DMG, X' + CAMP_BUFF_SPD + ' WALK ' + CAMP_BUFF_T + ' S.' },
   { kind: 'dire', name: 'DIRE WOLF', bw: 24,
     line: () => 'ONE HOLLOW. BITES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
