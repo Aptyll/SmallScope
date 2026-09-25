@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.03';
+const PATCH_TXT = 'PATCH 4.04';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.04', 'THE MERCHANT PITCHES A MARKET STALL BESIDE YOUR BIRD THE MOMENT HE LANDS, AND WALKING UP TO THE STALL AND PRESSING E OPENS THE SHOP.'],
   ['4.03', 'THE PATCH NOTES FILL THE SCREEN: THE LATEST CHANGES SIT ON TOP IN SHORT FOLDING GROUPS, EVERY PATCH IS FOLDED BY TENTHS UNDER THEM, AND THE WIKI IS ONE WORD IN THE CORNER.'],
   ['4.02', 'THE MERCHANT WORKS AT HOME NOW: NO MORE WALLS OR TURRETS, HE CLEARS THE WOODS BEHIND YOUR BIRD AND TURNS THE TIMBER INTO UP TO THREE BARRACKS WHOSE WAVES MARCH OUT TO THE ROAD, AND HE STILL SELLS WHEREVER HE IS WORKING.'],
   ['4.01', 'HEALTH BAR SEGMENTS ARE ALL THE SAME WIDTH NOW, SO EVERY BAR SPLITS EVENLY FROM END TO END.'],
@@ -1156,6 +1157,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '3.79'],
   ]],
   ['FIGHTING AND TRADE', [
+    ['THE MERCHANT PITCHES A MARKET STALL, AND THE SHOP OPENS THERE', '4.04'],
     ['THE MERCHANT WORKS AT HOME AND RAISES BARRACKS', '4.02'],
     ['THE FORGE TAKES ANY ORE, AND YOUR WEAPON LEVELS WITHOUT END', '4.00'],
     ['HEALTH BARS ARE CUT INTO EVEN SEGMENTS', '3.99'],
