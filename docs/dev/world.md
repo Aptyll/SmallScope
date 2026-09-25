@@ -296,8 +296,10 @@ walled in by design: [camps](#camps)).
 **every rock in the world in a band of open snow just out from the border forest**: 2–8 tiles
 (`ROCK_BAND_MIN`/`ROCK_BAND_MAX`, walked 4-way) from the nearest **border** pine — one on
 `borderDepth`'s side of the line, so a grown shape's inner woods draw no band of their own —
-never touching a pine, never inside a camp's clearing (`r + 2`), `ROCK_SPACING` (3) apart,
-`ROCK_COUNT` (120) of them. So the ore is out at the valley's rim and the middle stays open
+never touching a pine, never inside a camp's clearing (`r + 2`), `ROCK_SPACING` (4) apart,
+`ROCK_COUNT` (100) of them. Every rock is **two tiles wide** (`OBJECTS.rock.w`): both tiles must
+be open snow in the band, and the east one takes a `part` pointing at the anchor, the den's
+filler. So the ore is out at the valley's rim and the middle stays open
 ground; no camp stands a rock. A shape whose rim cannot hold them (FROZEN ISLES, whose rim is
 lake) widens the band `ROCK_BAND_GROW` (8) tiles at a time, out to `ROCK_BAND_LIMIT` (40), so
 they land as near the rim as that shape allows — there, that is mostly the road's verges by
@@ -308,6 +310,17 @@ still run and still roll: taking their `rng()` calls out would reshuffle every s
 ([determinism](#determinism-and-noise)). `placeRocks` lifts every rock they stood first, then
 places its own on a stream of its own, `mulberry32(SEED ^ 0x524f434b)` (`rkRng`), touching only
 `objects`, so terrain stays bit-identical for an existing seed.
+
+**The kind** ([Mining a rock](gameplay.md#mining-a-rock)) goes by where the rock stands. The two
+roosts are in opposite corners, so the other two corners are the ground furthest from both: the
+rock nearest each of them is a **SUNSTONE** (two a map, on the contested flanks). Of the rest,
+`ROCK_RARE` (18) are **FROSTGLASS SPIRES**, drawn on `rkRng` from the `ROCK_RARE_SHARE` (40%) of
+the rim furthest from its nearer roost; everything else is **STONE**. Verified on seed 42: 80 /
+18 / 2, the sunstones at tiles (40, 37) and (178, 164).
+
+A rock is only ever taken off the map whole: `fellScenery(tx, ty)` clears every tile of the
+footprint from either of them, and the three runtime clears that reach scenery (the crash's
+ring, the landing's lane, the merchant's axe) go through it.
 
 ## Treasure chests
 

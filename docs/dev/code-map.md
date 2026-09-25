@@ -43,7 +43,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the pines' bend frames and their nine palettes (`treePals`, filtered from `TSPAL`), rocks, gold ore, the gold mine, the bush at each stage | by banner | `trees`, `rocks`, `gold ore`, `gold mine (32x32, occupies 2x2 tiles)`, `bush` |
+| the pines' bend frames and their nine palettes (`treePals`, filtered from `TSPAL`), gold ore, the gold mine, the bush at each stage | by banner | `trees`, `gold ore`, `gold mine (32x32, occupies 2x2 tiles)`, `bush` |
+
+## js/sprites/rocks.js (legacy IIFE)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the three rock kinds' grids and their rubble, the crack overlays the channel draws, the glint sites | `RKPAL`, `common`/`rare`/`legendary` and their `*Spent`, `cracks`, `glints` → `SPRITES.rock`/`rockSpent`/`rockCracks`/`rockGlints` | the file's head |
 
 ## js/sprites/beasts.js (legacy IIFE)
 
@@ -163,7 +169,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | is this tile a bare hole (the one site left), and which wheel table a pad's build wheel gets on it; the net on a tile | `buildSiteAt`, `buildOptionsAt`, `netAt` | `world` (the two `*_ORDER` tables: `structures`, structures.js) |
 | a footprint, turned or not: its width and height off the OBJECT (or a bare type, unturned), its tiles, its centre, its mouth, and the anchor a big piece ordered by one tile fits round | `structW`, `structH`, `structOf`, `footprint`, `structCenter`, `structMouth`, `findSite` | `world` |
 | what a pine takes to fell, everywhere one is planted (the border, the practice forest, the regrowth) | `TREE_HP` (above `treeRare`) | `world` (what the fell pays: `YIELD`, core.js) |
-| the rocks: lifting what genWorld stood and standing them in a band out from the border forest | `placeRocks`, `ROCK_COUNT`/`ROCK_BAND_MIN`/`ROCK_BAND_MAX`/`ROCK_BAND_GROW`/`ROCK_BAND_LIMIT`/`ROCK_SPACING` | `world` |
+| the rocks: lifting what genWorld stood, standing them two tiles wide in a band out from the border forest, and which kind each is | `placeRocks`, `ROCK_COUNT`/`ROCK_RARE`/`ROCK_RARE_SHARE`/`ROCK_BAND_MIN`/`ROCK_BAND_MAX`/`ROCK_BAND_GROW`/`ROCK_BAND_LIMIT`/`ROCK_SPACING` | `world` |
+| taking scenery off the map at runtime, the whole footprint (a two-tile rock) | `fellScenery` | `world` (its callers: the crash and the lane, boot.js; `merchFell`, robots.js) |
 | treasure chests: where they take their trees, and what one pays | `placeChests`, `CHEST_COUNT`/`CHEST_SPACING`/`CHEST_GOLD_*`/`CHEST_ODDS`/`CHEST_BURIED` (the share a grown shape digs in deep) | `world` (opening: `hitObject`'s chest branch, actions.js; sprite: `CHEST_SPR`, js/draw/ground.js) |
 | the road: its tuning, its geometry on the diagonal, each side's nest and junction, the spur registry a crash paves into, laying it, the march's waypoints | `ROAD_*`, `SPUR_HW`, `roadSpan`, `roadAlong`/`roadOffS`/`roadOff`/`roadPoint`, `roadHW`, `roadEdgeAt`, `roadMainDist`, `spurs`/`addSpur`/`addPad`/`spurDist`, `roadDist`, `onRoad`, `roadNestDeep`/`roadNest`, `placeRoad` (called at boot, boot.js), `roadWaypoints` | `world` › `the road` (pixels: `paintRoadOverlay` + `ROAD_COL_*`, `paintLog`/`LOG_COL` under `paintGroundTile`, `CAIRN_SPR`, js/draw/ground.js; `bannerCloth`, js/draw/practice.js; the maps: `updateMinimap`, js/ui/minimap.js, `buildWorldMapImg`, js/ui/panels.js; the paving: `laneStep`, boot.js) |
 | the **creek**: its tuning, its geometry on the cross-diagonal, the islands round the two midline camps, the bridge deck, the fixed fords and a path's, laying it at boot, the distance to its banks and the current, the plunge test | `CREEK_*`, `BRIDGE_L`/`BRIDGE_W`, `creekP`, `creekIsles`, `creekCalm`, `creekMid`, `creekHW`, `CQ`/`creekAt`, `creekFlow`, `bridgeAt`, `creekWet`, `creekOuterFords`, `creekFord`, `placeCreek` (called at boot right after `genWorld`, boot.js; a path's fords: `addPathRoute`, `the paths`) | `world` › `the creek` (pixels: `paintCreek`/`paintFordStone`/`drawCreekFlow`, js/draw/ground.js; the plunge: `updatePlayer`, sim.js; the climb-out: `nearestDryTile`, actions.js; a bot's walk: `WADE_SHOVE`, sim.js) |
@@ -286,7 +293,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | what a shot does where it LANDS, and the two that do anything | `BIT_IMPACT`, `bitImpact`, `AXE_CHOP_R`, `WARP_BACK` | `tools & bits` › `what a bit does where it lands` (called from the arrow update: `update`, sim.js) |
 | the teleport itself: the jump, and the silhouettes it strings across it | `warpPlayer`, `updateWarps`, `warps`, `WARP_FLASH_T`/`WARP_STEP`/`WARP_MAX` | `tools & bits` › `the teleport` (drawn by `drawWarps`, js/draw/render.js; aged in `updateFx`, sim.js) |
 | how hard a shot shoves what it hits | `kb` on each `BITS` row (`HIT_KB` player.js, `ROBOT_KB` robots.js, `o.kbMul` in `hurtUnit`) | `tools & bits` (beside `BITS`) |
-| where tools and bits come from, and how often | `dropLoot`, `LOOT_POOL`, `rebuildLootPool`, `ROCK_DROP`, `TREE_DROP`, `CHEST_TOOL`, `LOOT_TOOL` | `tools & bits` › `loot` (its callers: `hitObject`, actions.js) |
+| where tools and bits come from, and how often | `dropLoot`, `LOOT_POOL`, `rebuildLootPool`, `TREE_DROP`, `CHEST_TOOL`, `LOOT_TOOL` | `tools & bits` › `loot` (its callers: `hitObject`, actions.js; `finishMine`, js/mining.js, at a rock kind's `loot`) |
 | the arsenal's kinds and their lineage on paper, all of it unlocked; the "held one" pip | `TECH`, `TECH_BY_ID`, `noteSeen` | `tools & bits` › `the tech tree` (storage: `PROFILE.techSeen`, profile.js; the page that lists them: `the wiki`, js/ui/menu.js) |
 | what each class flies in with | `CLASS_LOADOUT`, `giveLoadout` | `tools & bits` › `starting loadouts` (the weapon rides the hero pop-up's preview: `drawGearPreview`, js/ui/menu.js) |
 | a bot putting its loot to work, having no shelf and no pointer | `botFitLoadout` | `tools & bits` › `a bot fitting what it has found` (called from `updateAI`: `ai`, ai.js) |
@@ -296,6 +303,17 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | **a better body taking the hand and the build with it**: whether a find would swap, doing it (bits move cell for cell, right-aligned), and the tell it raises | `toolUpgrade`, `takeUpgrade`, `swapFx`, `SWAP_T`/`SWAP_RISE`/`swaps`, `updateSwaps` (called from the drop pickup in `updatePlay` sim.js; drawn by `drawSwaps`, js/draw/render.js) | `tools & bits` › `a better body takes the build with it` |
 | what the last press SPENT — or, on a swap, the whole row — lit on the shelf and fading | `BIT_LIT_T`, `bitLit` (`{cell, cells, t, col}`; cell -1 is the tool well), `bitLitAt` (clamped), `bitLitCol` (set in `fireTool` and `swapFx`, aged in `updateFx`, sim.js) | `tools & bits` › `what a tool fires` |
 | how big a stack of bits a cell holds | `BIT_STACK` (read by the `ITEMS` registration at the foot of the file) | `tools & bits` › `items: one bag entry per kind` |
+
+## js/mining.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the three rock kinds: channel, gold, ore, find, regrow, glint | `ROCK_KINDS` | `rocks and ore` |
+| the ores as carried items, their icons and prices | `ORE_ICONS`/`ORE_PAL`/`ORE_PRICE`, `ORE_STACK`, `isOre` (the rows go into `ITEMS`; the tooltip: `tipStack`, js/ui/tooltip.js; the price: `itemValue`, js/ui/shop.js) | `rocks and ore` |
+| the mining channel: its start, tick, bite, landing and drop | `startMine` (from `tryWork`, actions.js), `updateMine` (from `updatePlayer`, sim.js), `mineStrike`, `finishMine`, `breakMine` (beside every `breakEat`), `MINE_STRIKE`/`MINE_MOVE`/`ORE_FLING` | `rocks and ore` |
+| is a rock standing, who is at it, is it in reach, and the rubble growing back | `rockReady`, `rockMiner`, `mineReach`, `rockCx`/`rockCy`, `tickRock` (the object timers, sim.js) | `rocks and ore` (the draw: `drawRock`, js/draw/render.js; the shade: `CASTERS.rock`, js/draw/ground.js) |
+| a weapon's forge level and what it adds: damage on every body, then rate of fire or tensile by the body's `TOOLS` row `up` | `FORGE_MAX`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`, `toolLvl` (`cell.lvl`), `toolUp`, `toolDmgMul` (read by `toolPlan`, tools.js, and `pierceMods`, abilities.js), `toolRofMul` (`toolRof`, tools.js), `toolTensile` (`toolPlan`, `toolOver`, `botFitLoadout`, tools.js, and the tooltip) | `the forge` |
+| what each level costs, what a forged weapon sells for, and the order that forges it | `FORGE_COST`, `forgeCost`, `forgeWorth` (`cellValue`, js/ui/shop.js), `forgeCell`, `forgeReady`, `forgeTool` (from `shopCmd` act `forge`, js/ui/shop.js) | `the forge` (the bench: js/ui/forge.js) |
 
 ## js/abilities.js
 
@@ -424,7 +442,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the snow's depth as this file reads it (the deep snow layer's map, or its stand-ins), the prevailing wind | `snowDepthAt`, `deepSnowAt`, `DRIFT_MID`, `DEPTH_STAND`, `rollPrevailing` (`LW_X`/`LW_Y`) | `the snow's depth` |
+| the snow's depth as this file reads it (js/depth.js's map), the prevailing wind | `snowDepthAt`, `deepSnowAt`, `DRIFT_MID`/`DEEP_TOP`, `rollPrevailing` (`LW_X`/`LW_Y`, off `driftWind`) | `the snow's depth` |
 | every lake's label and area, which count as big | `bakeLakeBodies` (`lakeId`/`lakeTiles`), `BIG_LAKE`, `bigLakeAt` | `lake bodies` |
 | the per-tile pixel lists the bake fills and every tile paint stamps, their inks, where nothing may land | `bakeDressing` (called by `renderGround` after `bakeLakes`), `paintDressing` (under `paintGroundTile`), `dressPx`/`crackPx`, `stampAt`, `DRESS_INK`, `dressFree` | `the dressing's stamps` |
 | the mid band drawn: the piles in the lee of a pine, a rock, the hut, and the skirt round a deep drift | `bakeDrifts` (reads `leeDepth`/`driftsDepth` per pixel), `DRIFT_FADE` | `drifts in the lee` |
@@ -511,6 +529,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | render pass order | `render` | `render` |
 | the occluder fade: the visibility pocket around the viewed hero, and its silhouette rim | `TREE_FADE_A`/`TREE_FADE_R0`/`TREE_FADE_R1`, `treeFadeSil`, the tree branch of the y-sorted pass | `render` (the rim stamp: `drawPlayer`, js/draw/bodies.js) |
 | the work-target rim: gold outline on the hovered tree/dead tree/rock/berried bush/chest | `drawTargetRim`, the `o === fadeWkO` stamps in the y-sorted pass | `render` |
+| a rock as drawn: its kind or its rubble, the channel's cracks and bar, its glint | `drawRock`, `ROCK_GLINT_T`/`ROCK_GLINT_NIGHT` | `render` (above `drawTargetRim`; the art: js/sprites/rocks.js) |
 | the F3 readout: fps, coords, seed | `drawTags` | `render` |
 | the `.` overlay: hitboxes, the model centre column, and its 1px ring/box/line rasterisers | `drawHitboxes`, `hbRing`, `hbBox`, `hbDot`, `hbLine`, `hbMid`, `HB_*` | `debug overlays` |
 | the `.` overlay's routes: waypoints + goal tile, a bird's perch line, a fish's heading arrow | `drawNavPaths`, `hbArrow` | `debug overlays` |
@@ -620,6 +639,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | its pixels | `drawShopPanel`, `drawShopSign`, `drawShopHeading`, `drawShopSection`, `drawShopWell`, `drawSellWell`, `drawSellAll`, `drawMarketCard`, `drawMarketGraph`, `drawTradePlate`, `drawTradeArrow`, `drawTrend` | `the shop panel` › `drawing` (the `E SHOP` cap over the body: `drawShopHint`, js/ui/wheel.js) |
 | the TRADING POST's own chrome: the timber frame and its iron brackets, the team-striped awning with its snow, scallops and icicles, the counter edge, and the two lanterns flanking the sign | `shopChromeCv` (baked once a side, keyed by team), `drawShopLantern`, `SHOP_WOOD_*`/`SHOP_CLOTH_*`/`SHOP_SNOW*`/`SHOP_LAMP*`/`SHOP_IRON*`/`SHOP_SIGN` | `the shop panel` › `drawing` |
 | what the pointer is on there, in the shared descriptor shape | `tipShop` | `the shop panel` › `tooltips` (`tipBase`/`tipTool`/`tipBit`/`tipStack`: `tooltips`, js/ui/tooltip.js) |
+
+## js/ui/forge.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the SHOP / FORGE tab plates in the counter's sign row, and which face is up | `forgeTabs` (into `shopLayout`'s `L.tabs`), `drawShopTabs`, `state.shopTab`, `forgeTabOpen`, `FORGE_SIGN` (the sign board's word, `drawShopSign`), `FORGE_ANVIL` | `the forge tab` |
+| the bench: its geometry, what the pointer is on, a click, a drop | `forgeLayout` (into `L.forge`), `forgeHit`/`forgeKind` (from `shopHit`), `forgeClick` (from `shopClick`), `forgeDrop` (from `dragDrop`, js/ui/strip.js) | `the forge tab` |
+| what is in the two wells, and filling them from the pack or the shelf | `state.forgeSel` (a pointer to the weapon's cell) + `forgeFind`, `state.forgeOre` (a kind) + `forgeOreIn`, `forgeSelect`, `forgePut` (also from `sendBagCell`/`sendSlot`, js/ui/strip.js), `forgeCarried`, `forgeRefuse`/`forgeNo`, `forgeReset` (from `closeShop`) | `the forge tab` |
+| drawing it, and the `+N` a forged weapon wears in every well | `drawForge` (from `drawShopPanel`), `forgeWell`, `forgeGhost`, `forgeArrow`, `forgeUpArrow`, `FORGE_WELL`/`FORGE_STEP_H`/`FORGE_INK`, `forgeMark` (also `drawBag`, js/ui/bag.js; `drawShelf`, js/ui/hud-draw.js) | `the forge tab` |
+| the bench's tooltips | `tipForge` (from `tipShop`, js/ui/shop.js) | `the forge tab` |
 
 ## js/ui/panels.js
 

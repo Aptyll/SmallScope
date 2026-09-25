@@ -70,6 +70,43 @@ function stepItemIcons(nowMs) {
 // and stamps the eight neighbours, the same rim grammar as the hero
 // silhouette and drawPixelTextOutline. Call it right before drawing the
 // object itself so the rim sits under the body.
+// A rock (ROCK_KINDS, js/mining.js) from its anchor at (x, y): two tiles
+// wide, feet on the tile's bottom edge, so a taller kind stands up into the
+// row behind it the way a pine does. Rubble while it regrows; under a
+// channel, its cracks by thirds and a bar over it filling in the kind's own
+// colour; and now and then a glint off one of its crystal's brightest
+// pixels - rarer at night, never on plain stone. A glint is a reflection,
+// not a light: it is drawn here, under the night grade, like the rock.
+const ROCK_GLINT_T = 0.32;   // s a glint lasts
+const ROCK_GLINT_NIGHT = 2.5; // ...and how much longer the wait between two is after dark
+function drawRock(o, x, y, rim, now) {
+  const K = ROCK_KINDS[o.kind];
+  if (!rockReady(o)) {
+    const r = SPRITES.rockSpent[o.kind];
+    drawSpriteFlash(r, x, y + TILE - r.height + 1, o.flash);
+    return;
+  }
+  const spr = SPRITES.rock[o.kind], top = y + TILE - spr.height + 1;
+  if (rim) drawTargetRim(spr, 0, 0, spr.width, spr.height, x, top, now);
+  drawSpriteFlash(spr, x, top, o.flash);
+  if (o.crack > 0) {
+    ctx.drawImage(SPRITES.rockCracks[o.kind][Math.min(2, Math.floor(o.crack * 3))], x, top);
+    const w = 20, bx = x + ((spr.width - w) >> 1), by = top - 5;
+    ctx.fillStyle = '#1a1c28'; ctx.fillRect(bx - 1, by - 1, w + 2, 4);
+    ctx.fillStyle = '#3a3f52'; ctx.fillRect(bx, by, w, 2);
+    ctx.fillStyle = K.chip; ctx.fillRect(bx, by, Math.round(w * o.crack), 2);
+  }
+  const G = SPRITES.rockGlints[o.kind];
+  if (!K.glint || !G.length) return;
+  const every = K.glint * (state.time < DAY_LEN ? 1 : ROCK_GLINT_NIGHT);
+  const t = now + hash2(o.tx, o.ty) * every, ph = t % every;
+  if (ph > ROCK_GLINT_T) return;
+  const [gx, gy] = G[Math.floor(t / every) % G.length], r = ph < ROCK_GLINT_T / 2 ? 2 : 1;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(x + gx - r, top + gy, r * 2 + 1, 1);
+  ctx.fillRect(x + gx, top + gy - r, 1, r * 2 + 1);
+}
+
 function drawTargetRim(src, sx, sy, w, h, x, y, now) {
   sctx.clearRect(0, 0, 64, 64);
   sctx.globalCompositeOperation = 'source-over';
@@ -431,9 +468,7 @@ function render() {
     } else if (LANDMARKS[o.type]) {
       drawLandmark(o, px + sh, py); // the sled, the shack, the boat (js/draw/landmarks.js); their parts draw nothing
     } else if (o.type === 'rock') {
-      const spr = SPRITES.rock[o.variant];
-      if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);
-      drawSpriteFlash(spr, px + sh, py + 4, o.flash);
+      drawRock(o, px + sh, py, fadeP && o === fadeWkO, now);
     } else if (o.type === 'chest') {
       if (fadeP && o === fadeWkO) drawTargetRim(CHEST_SPR, 0, 0, CHEST_SPR.width, CHEST_SPR.height, px + sh, py + TILE - CHEST_SPR.height, now);
       drawSpriteFlash(CHEST_SPR, px + sh, py + TILE - CHEST_SPR.height, o.flash);

@@ -196,9 +196,10 @@ function drawWorkHint(ox, oy) {
   // for the short ones. A building is drawn up from its footprint's bottom
   // edge and can be taller than its tiles, so clear its own sprite instead.
   const lift = isStruct ? structSprite(st).height - structH(st) * TILE + 12 :
-    t.o ? ((d && d.lift) || 10) : 8;
-  // a multi-tile building takes the prompt on its centre, not the tile you aimed at
-  const hx = isStruct ? (st.tx + structW(st) / 2) * TILE : t.tx * TILE + 8;
+    t.o ? ((d && (typeof d.lift === 'function' ? d.lift(t.o) : d.lift)) || 10) : 8;
+  // a multi-tile building takes the prompt on its centre, not the tile you aimed at,
+  // and so does scenery wider than a tile (a rock: its OBJECTS `w`)
+  const hx = isStruct ? (st.tx + structW(st) / 2) * TILE : t.tx * TILE + ((d && d.w) || 1) * 8;
   const hty = isStruct ? st.ty * TILE : t.ty * TILE;
   const hby = isStruct ? (st.ty + structH(st)) * TILE : t.ty * TILE + TILE;
   const pressed = !!player.input.work;

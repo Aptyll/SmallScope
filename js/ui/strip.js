@@ -445,7 +445,12 @@ function dragDrop(mx, my) {
   // its end - because the strip is one full-width target with an item on the
   // cursor and only becomes two controls once your hand is empty.
   const sp = shopHit(mx, my);
-  if (sp) { if (sp.kind === 'sell' || sp.kind === 'sellAll') shopDropSell(); else dragReturn(); return; }
+  if (sp) {
+    if (sp.kind === 'sell' || sp.kind === 'sellAll') shopDropSell();
+    else if (sp.kind === 'fWeapon' || sp.kind === 'fOre') forgeDrop(sp); // the bench (js/ui/forge.js)
+    else dragReturn();
+    return;
+  }
   const fh = shelfHit(mx, my);
   if (fh) {
     if (fh.kind === 'bit') dragDropBit(SHELF_SLOT, fh.i);
@@ -485,6 +490,8 @@ function dragDrop(mx, my) {
 function sendBagCell(i) {
   const s = player.bag[i];
   if (!s) return false;
+  // with the counter's FORGE face up, a weapon or an ore goes onto the bench
+  if (forgeTabOpen() && (isToolCell(s) || isOre(s.type))) return forgePut(s, 'bag', i, null);
   if (isToolCell(s)) {
     // the swap is one move each way: what was in hand lands in the cell the
     // tool just left, so the grid never grows or loses a row
@@ -519,6 +526,7 @@ function sendBitCell(s, i) {
 function sendSlot(i) {
   const cell = player.tools[i];
   if (!cell) return false;
+  if (forgeTabOpen()) return forgePut(cell, 'tool', i, null); // onto the bench, not into the pack
   if (!bagPut(player, cell)) { bagDenied(); return true; } // put it down before lifting it
   slotPut(player, i, null);
   hudFx('place', 'slot', i);

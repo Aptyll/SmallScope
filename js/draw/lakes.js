@@ -18,29 +18,20 @@
 // lake's downwind shore. Read only through the doors below, so the shapes
 // always agree: no drift is ever drawn on a tile the deep band owns (it
 // draws its own), so nothing that looks deep walks shallow.
-// The map is js/depth.js's (snowDepth at a tile-space point, DEPTH_MID /
+// The map is js/depth.js's: snowDepth at a tile-space point, DEPTH_MID and
 // DEPTH_DEEP its bands, deepAt the slowing test, driftWind the prevailing
-// wind). Until it lands these read stand-ins: the prevailing wind on the
-// snow's own swell axis (SNOW_ANG) with the seed picking which way it
-// blows, a middling depth on open snow and a thin one on the ice.
-const DEPTH_STAND = [0.4, 0.15]; // the stand-in depths: open snow, ice
-const DRIFT_MID = () => (typeof DEPTH_MID === 'number' ? DEPTH_MID : 0.25); // depth from which a drift piles in a lee
-const DEEP_TOP = () => (typeof DEPTH_DEEP === 'number' ? DEPTH_DEEP : 0.6);
+// wind.
+const DRIFT_MID = () => DEPTH_MID;  // depth from which a drift piles in a lee
+const DEEP_TOP = () => DEPTH_DEEP;
 function snowDepthAt(tx, ty) {
-  if (!inWorld(tx, ty)) return 0;
-  if (typeof snowDepth === 'function') return snowDepth(tx + 0.5, ty + 0.5);
-  return isLake(tx, ty) ? DEPTH_STAND[1] : DEPTH_STAND[0];
+  return inWorld(tx, ty) ? snowDepth(tx + 0.5, ty + 0.5) : 0;
 }
 function deepSnowAt(tx, ty) {
-  return typeof deepAt === 'function' && deepAt((tx + 0.5) * TILE, (ty + 0.5) * TILE);
+  return deepAt((tx + 0.5) * TILE, (ty + 0.5) * TILE);
 }
 // the prevailing wind: the way it blows TOWARD, one answer for the map
 let LW_X = 1, LW_Y = 0;
-function rollPrevailing() {
-  if (typeof driftWind === 'object' && driftWind) { LW_X = driftWind.dx; LW_Y = driftWind.dy; return; }
-  const s = hash2(911, 353) < 0.5 ? -1 : 1;
-  LW_X = SNOW_C * s; LW_Y = SNOW_S * s;
-}
+function rollPrevailing() { LW_X = driftWind.dx; LW_Y = driftWind.dy; }
 
 // ------------------------------------------------------------ lake bodies
 // Every lake (ice and holes, as the shore reads it) labelled by flood fill
@@ -150,7 +141,7 @@ function dressFree(tx, ty) {
 // a tile something stands on.
 const DRIFT_FADE = 0.06;      // depth over DEPTH_MID across which a pile's edge dithers in
 function bakeDrifts() {
-  if (typeof leeCell === 'undefined' || !leeCell) return; // no depth map on this build
+  if (!leeCell) return; // no depth map laid (the practice arena)
   const mid = DRIFT_MID(), top = DEEP_TOP();
   const band = (x, y) => { // 0 outside the mid band, else how far in (0..1]
     const fx = x / TILE, fy = y / TILE, d = Math.max(leeDepth(fx, fy), driftsDepth(fx, fy));

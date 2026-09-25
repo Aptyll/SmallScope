@@ -261,10 +261,14 @@ nearest pine's position on the same ramp, computed beside the y-sort and stamped
 (the current frame tinted black on the scratch canvas, blitted at the eight neighbours, the same
 rim grammar as `drawPixelTextOutline`) — so the body pops off the canopy over it and the rim
 dissolves as the hero steps into the open; a lying body keeps its stealth read bare. Only that
-handful of pines ever flips `globalAlpha`, so the atlas batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (rock, bush,
+handful of pines ever flips `globalAlpha`, so the atlas batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
-sit at `py - 4`, the lip on the foot of its two tiles.
+sit at `py - 4`, the lip on the foot of its two tiles. A **rock** (`drawRock`) stands on the foot of its two tiles like
+the den, as tall as its kind: its rubble while it regrows, its cracks and a bar over it under a
+channel, and now and then a glint (a `+` of white, `ROCK_GLINT_T`) off one of its crystal's or
+amber's brightest pixels (`SPRITES.rockGlints`) every `glint` s of its kind, `ROCK_GLINT_NIGHT`
+times rarer after dark — a reflection, drawn under the grade, never a light. Plain stone never glints.
 
 The **fish net** is the one building that is not in `draws` at all. It lies flat on its hole and
 gets walked over, so y-sorting it would put it in front of the player standing on it: `drawNet`
