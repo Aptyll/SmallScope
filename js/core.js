@@ -95,6 +95,10 @@ const state = {
   // clock, wind its strength 0..1 - full by day, nothing at all by full dark -
   // and windDir which quarter it is running from, -1..1, veering over minutes
   wind: 0.7, windT: 0, windDir: 1,
+  // the day's weather (the `weather` banner, js/sim.js): the dials the air is
+  // running on now, eased toward the day's row at dawn; wxForce is DBG's pin
+  wx: { name: null, from: null, k: 1, snow: 1, wind: 1, gust: 1, sweep: 1, drift: 0, frost: 0 },
+  wxForce: null,
   // seconds of sun shafts still owed after the eagle drop (landPlayer sets it,
   // updateFx counts it down, rayLight reads it - js/draw-world.js)
   rayT: 0,
@@ -210,6 +214,10 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/player.js); off = the roster's real colours
   teamBlue: true,
+  // which of TEAM_PALETTES (js/sprites/core.js) the two sides wear: 'def',
+  // or a repaint for colour-blind eyes - 'rg', 'by', 'hc'. applyTeamPal
+  // puts it on the sprites; the COLOURS row on the GAME page picks it
+  teamPal: 'def',
   // the rival bots' difficulty: an index into AI_LEVELS (js/ai.js), picked on
   // lobby's notches and remembered; 0 (NORMAL) until someone moves it
   aiLevel: 0,
@@ -261,10 +269,14 @@ const perf = { fps: 0, frames: 0, acc: 0 };
 // save under the old 'softfall.settings' key is folded in by PROFILE.load()
 // before this ever runs, so the mmZoom migration below still sees it.
 function saveSettings() { PROFILE.putSettings(settings); }
+// repaint both sides in settings.teamPal: rebakes every team sprite in place
+// (SPRITES.setTeamPal), a no-op when the palette is already on
+function applyTeamPal() { SPRITES.setTeamPal(settings.teamPal); }
 function loadSettings() {
   try {
     const s = PROFILE.settings(); // null when this profile has never saved any
     if (s) Object.assign(settings, s);
+    applyTeamPal();
     // a save from before the minimap ladder grew: its mmZoom indexes the old
     // six-rung array, so carry it across instead of silently rescaling the
     // disc under someone who had already set it where they wanted it
