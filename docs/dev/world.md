@@ -156,9 +156,11 @@ tile below still pokes into this one, and a hole that refreezes gets its crack b
   and the prevailing wind through `rollPrevailing` (`LW_X`/`LW_Y`, downwind), and draws nothing on
   a tile the deep band owns, so a pile that looks deep is always deep snow. Nothing is stamped on
   a tile an object stands on (a landmark on the ice covers its own).
-- **Drifts in the lee** of each `DRIFT_BY` thing (a pine, a rock, the hut): a flat tongue about a
-  tile long, root at its foot, tapering downwind, sunward rim lit and a pixel of shade past its
-  lee. Nothing piles on forest floor (`DRIFT_CROWD`), the road, the creek or ice.
+- **Drifts in the lee**: the map's mid band drawn per pixel (`bakeDrifts`, reading `leeDepth` and
+  `driftsDepth`) - the pads the map lays behind a pine, a rock or the hut, and the skirt round each
+  deep drift - as a low flat pile, sunward rim lit and a pixel of shade past its lee. Its shape is
+  the map's, so it ends where the deep band's own look begins. Nothing on ice, the road, the
+  creek or a tile something stands on.
 - **Dust** on every lake (`dustIce`, called on each ice pixel in the shore painters): sparse
   grains in streaks along the prevailing wind, heavier near the downwind shore, each only pulling
   the ice a little toward snow. Trampled snow's `trampleAt(x, y)` thins it where feet have been, and

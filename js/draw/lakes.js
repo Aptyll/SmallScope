@@ -137,75 +137,42 @@ function dressFree(tx, ty) {
 }
 
 // ------------------------------------------------------------ drifts in the lee
-// Snow piles on the downwind side of what stands - a pine, a rock, a hut: a
-// low, flat tongue about a tile long hugging the thing's foot and tapering
-// downwind, its sunward rim lit and a pixel of shade along its lee. Kept
-// well below the deep band's look (no raised lip, no deep shadow), so a
-// drift never reads as snow that slows you. Its size is the thing's
-// (DRIFT_BY) and how far into the mid band the snow downwind of it lies;
-// where the deep band owns that tile, there is no drift at all.
-const DRIFT_BY = { tree: 1, deadTree: 0.75, rock: 0.85, bush: 0.6, stump: 0.5, den: 1.2, chest: 0.5, cairn: 0.55, hut: 1.8 };
-const DRIFT_LEN = [14, 26];   // px a drift runs downwind at the mid band's bottom..top, for a size-1 thing
-const DRIFT_HW = [4, 7];       // px of its half-width at the root, likewise
-const DRIFT_ROOT = 5;         // px downwind of the foot's centre it starts
-const DRIFT_CROWD = 4;        // standing things in a 3x3 past which it is forest floor, and nothing piles
-function standsAt(tx, ty) {
-  const o = objAt(tx, ty);
-  return !!o && (o.type === 'part' || DRIFT_BY[o.type] !== undefined || !!STRUCTS[o.type]);
-}
+// The mid band of the depth map, drawn: every pixel where the snow lies at
+// least DEPTH_MID deep but short of the deep band is a low, flat pile - the
+// pads the map lays in the lee of a pine, a rock or the hut, and the skirt
+// round each deep drift. The shape IS the map's (leeDepth/driftsDepth read
+// per pixel, not per tile, since a pad is smaller than a tile), so a pile
+// is exactly where the map says the snow is, and it stops where the deep
+// band's own look begins. Its sunward rim is lit and a pixel of shade lies
+// past its lee; its thin edge is dithered into the field. Kept well below
+// the deep band's look (no raised lip, no deep shadow), so it never reads
+// as snow that slows you. Nothing is drawn on ice, the road, the creek or
+// a tile something stands on.
+const DRIFT_FADE = 0.06;      // depth over DEPTH_MID across which a pile's edge dithers in
 function bakeDrifts() {
-  const H = new Map(); // tile index -> Uint8Array(256) of pile height, the max of every tongue
-  const top = DEEP_TOP();
+  if (typeof leeCell === 'undefined' || !leeCell) return; // no depth map on this build
+  const mid = DRIFT_MID(), top = DEEP_TOP();
+  const band = (x, y) => { // 0 outside the mid band, else how far in (0..1]
+    const fx = x / TILE, fy = y / TILE, d = Math.max(leeDepth(fx, fy), driftsDepth(fx, fy));
+    return d < mid || d >= top ? 0 : Math.min(1, (d - mid) / DRIFT_FADE + 0.01);
+  };
+  const H = new Float32Array((TILE + 2) * (TILE + 2)), W = TILE + 2;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
-    const o = objects[idx(tx, ty)];
-    if (!o || DRIFT_BY[o.type] === undefined) continue;
-    let crowd = 0;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if ((dx || dy) && standsAt(tx + dx, ty + dy)) crowd++;
-    if (crowd >= DRIFT_CROWD) continue;
-    const d = OBJECTS[o.type] || {}, w = d.w || 1, sz = DRIFT_BY[o.type];
-    // the foot's centre: the footprint's middle column, its front row
-    const cx = tx * TILE + (w * TILE) / 2, cy = ty * TILE + TILE - 4;
-    const lx = Math.round((cx + LW_X * TILE * 0.8 * w) / TILE - 0.5), ly = Math.round((cy + LW_Y * TILE * 0.8) / TILE - 0.5);
-    if (!inWorld(lx, ly) || isLake(lx, ly) || !dressFree(lx, ly) || standsAt(lx, ly)) continue;
-    const dep = snowDepthAt(lx, ly);
-    if (dep < DRIFT_MID()) continue;
-    const m = Math.min(1, (dep - DRIFT_MID()) / Math.max(0.01, top - DRIFT_MID()));
-    const L = sz * (DRIFT_LEN[0] + (DRIFT_LEN[1] - DRIFT_LEN[0]) * m), hw = sz * (DRIFT_HW[0] + (DRIFT_HW[1] - DRIFT_HW[0]) * m) * (w > 1 ? 1.4 : 1);
-    const root = DRIFT_ROOT * sz, reach = root + L + hw + 2;
-    const x0 = Math.floor(cx - reach), x1 = Math.ceil(cx + reach), y0 = Math.floor(cy - reach), y1 = Math.ceil(cy + reach);
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-      const rx = x + 0.5 - cx, ry = y + 0.5 - cy;
-      const u = rx * LW_X + ry * LW_Y - root, v = -rx * LW_Y + ry * LW_X;
-      // a round head at the root, tapering to a point downwind
-      const t = u / L;
-      if (t > 1 || u < -hw) continue;
-      const half = t < 0 ? Math.sqrt(Math.max(0, hw * hw - u * u)) : hw * Math.pow(1 - t, 0.65);
-      const wob = (vnoise(x / 5 + 17, y / 5 + 3) - 0.5) * 1.6;
-      const e = half + wob - Math.abs(v);
-      if (e <= 0) continue;
-      const h = Math.min(255, Math.round(Math.min(1, e / 2.5) * (1 - Math.max(0, t) * 0.6) * 255));
-      const k = idx(x >> 4, y >> 4);
-      if (!inWorld(x >> 4, y >> 4)) continue;
-      let a = H.get(k);
-      if (!a) H.set(k, a = new Uint8Array(TILE * TILE));
-      const p = (y & 15) * TILE + (x & 15);
-      if (h > a[p]) a[p] = h;
-    }
-  }
-  // heights to ink: the body, its sunward rim, the shade a pixel past its
-  // lee; the thin tail dithered out into the field so it has no hard end
-  const hAt = (x, y) => { const a = H.get(idx(x >> 4, y >> 4)); return a ? a[(y & 15) * TILE + (x & 15)] : 0; };
-  for (const [k, a] of H) {
-    const tx = k % WORLD, ty = (k / WORLD) | 0;
-    if (!dressFree(tx, ty)) continue;
+    const k = idx(tx, ty);
+    if (!leeCell[k] && !driftCell[k]) continue;
+    if (ground[k] !== 0 || !dressFree(tx, ty)) continue;
     const edge = lakesAround(tx, ty) > 0;
-    for (let p = 0; p < TILE * TILE; p++) {
-      const x = tx * TILE + (p & 15), y = ty * TILE + (p >> 4), h = a[p];
+    // the tile's band and a pixel round it, for the rim and the shade
+    for (let j = 0; j < W; j++) for (let i = 0; i < W; i++) H[j * W + i] = band(tx * TILE + i - 1, ty * TILE + j - 1);
+    for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
+      const x = tx * TILE + i, y = ty * TILE + j, h = H[(j + 1) * W + i + 1];
       if (edge && iceAtPx(x, y)) continue;
+      const up = H[j * W + i + 1], left = H[(j + 1) * W + i];
       if (h) {
-        if (h < 90 && BAYER4[(y & 3) * 4 + (x & 3)] + 0.47 > h / 90) continue;
-        stampAt(dressPx, x, y, !hAt(x, y - 1) || !hAt(x - 1, y) ? 7 : !hAt(x, y + 1) || !hAt(x + 1, y) ? 9 : 6);
-      } else if (hAt(x, y - 1) > 90 || hAt(x - 1, y - 1) > 90) {
+        if (h < 1 && BAYER4[(y & 3) * 4 + (x & 3)] + 0.47 > h) continue;
+        const down = H[(j + 2) * W + i + 1], right = H[(j + 1) * W + i + 2];
+        stampAt(dressPx, x, y, !up || !left ? 7 : !down || !right ? 9 : 6);
+      } else if (up >= 1 || H[j * W + i] >= 1) {
         stampAt(dressPx, x, y, 8);
       }
     }
