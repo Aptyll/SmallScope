@@ -572,11 +572,16 @@ function menuSelect(i) {
   SFX.pickup();
 }
 
+// by the word, not the place: a profile with a saved match stacks CONTINUE
+// and LOAD GAME into the list (js/boot.js), which moves the rest down
 function menuActivate(i) {
   SFX.unlock();
-  if (i === 0) beginLobby();
-  else if (i === 1) beginRooms();
-  else if (i === 2) beginPractice();
+  const it = MENU_ITEMS[i];
+  if (it === 'CONTINUE') loadSave(saveNewest());
+  else if (it === 'LOAD GAME') openSavesTitle();
+  else if (it === 'SINGLEPLAYER') beginLobby();
+  else if (it === 'MULTIPLAYER') beginRooms();
+  else if (it === 'PRACTICE TOOL') beginPractice();
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
@@ -645,6 +650,7 @@ function menuKey(e) {
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
+    if (m.panel === 'saves') { if (menuPanelReady()) savesKey(k); return; } // its own keys, BACK included (js/ui/saves.js)
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
     else if (m.panel === 'patch' && moveDir(k) === 'up') patchScrollBy(-8);
     else if (m.panel === 'patch' && moveDir(k) === 'down') patchScrollBy(8);
@@ -672,6 +678,7 @@ function menuClick() {
     if (!menuPanelReady()) return;
     if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
     if (m.panel === 'patch' && overMenuPanel()) { patchPanelClick(mouse.x - SET_X, mouse.y - SET_Y); return; }
+    if (m.panel === 'saves' && overMenuPanel()) { savesClick(); return; }
     if (!overMenuPanel()) closeMenuPanel();
     return;
   }
@@ -3644,6 +3651,7 @@ function renderTitle(now) {
   if (m.panel) {
     const slide = Math.round((1 - easeOut(m.panelT)) * (VIEW_H - SET_Y + 6));
     if (m.panel === 'settings') renderSettings(now, { bare: true, slide });
+    else if (m.panel === 'saves') renderSaves(now, { bare: true, slide });
     else if (m.panel === 'patch') {
       ctx.drawImage(patchPanelCv, SET_X, SET_Y + slide);
       ctx.drawImage(patchNotesCv, 0, m.patchScroll, SET_W, PN_H, SET_X, SET_Y + slide + PN_Y, SET_W, PN_H);

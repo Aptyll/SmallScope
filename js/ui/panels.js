@@ -642,6 +642,7 @@ function settingsTabBy(d) {
 // and the in-match ESC slab both route here): the arrows page and scroll.
 // True when the key was the panel's, so the caller drops it.
 function settingsKey(k) {
+  if (savesUp()) return savesKey(k);
   const d = moveDir(k);
   if (d === 'left') settingsTabBy(-1);
   else if (d === 'right') settingsTabBy(1);
@@ -998,14 +999,15 @@ function muteBtnRect() {
 // fresh title world; in a match LEAVE MATCH - toLobby() (js/screens.js), the
 // death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
+// A solo match hangs SAVES between them (the saves slab, js/ui/saves.js).
 function footPlanks() {
-  const n = state.settingsOpen ? 2 : 1, y = SET_Y + SET_FOOT_Y;
+  const ids = state.settingsOpen ? (canSave() ? ['close', 'saves', 'leave'] : ['close', 'leave']) : ['close'];
+  const n = ids.length, y = SET_Y + SET_FOOT_Y;
   const x0 = SET_X + Math.round((SET_W - (SET_PLANK_W * n + SET_PLANK_GAP * (n - 1))) / 2);
-  const r = [{ id: 'close', label: 'CLOSE', x: x0, y, w: SET_PLANK_W, h: SET_PLANK_H }];
-  if (n === 2) r.push({ id: 'leave', label: PRACTICE ? 'LEAVE PRACTICE' : 'LEAVE MATCH', x: x0 + SET_PLANK_W + SET_PLANK_GAP, y, w: SET_PLANK_W, h: SET_PLANK_H });
-  return r;
+  const label = { close: 'CLOSE', saves: 'SAVES', leave: PRACTICE ? 'LEAVE PRACTICE' : 'LEAVE MATCH' };
+  return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (SET_PLANK_W + SET_PLANK_GAP), y, w: SET_PLANK_W, h: SET_PLANK_H }));
 }
-function leavePlankRect() { return footPlanks()[1] || null; }
+function leavePlankRect() { return footPlanks().find((l) => l.id === 'leave') || null; }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
 // slide-in closes the way its own ESC does (closeMenuPanel, js/menu.js)
 function settingsClose() {
@@ -1020,6 +1022,7 @@ function settingsClose() {
 // 'c:<row>:<opt>' for a choice row's word (QUALITY), or
 // 'key:<action>' for a keyboard cap and 'keyreset' for the word under them.
 function settingsHit() {
+  if (savesUp()) return savesHit(); // the saves slab stands in the ESC panel's place (js/ui/saves.js)
   const mx = mouse.x, my = mouse.y;
   const L = settingsLayout();
   for (const t of L.tabs)
@@ -1057,6 +1060,7 @@ function settingsHit() {
 
 function settingsMouseDown() {
   SFX.unlock();
+  if (savesUp()) { savesClick(); return; }
   const hit = settingsHit();
   // a listening cap: any press but its own calls it off first
   if (state.rebind && hit !== 'key:' + state.rebind) state.rebind = null;
@@ -1077,6 +1081,7 @@ function settingsMouseDown() {
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || hit === 'hud') { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'close') { settingsClose(); return; }
   if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
+  if (hit === 'saves') { openSaves(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');
     const row = settingsLayout().rows.find(r => r.id === rid);
@@ -1158,6 +1163,7 @@ function toggleVal(id) { return id === 'cursor' ? settings.pixelCursor : !!setti
 // opts.slide (px): draw the panel shifted down by that much - the main menu
 // slides it in over the living world and skips the dim + minimap preview
 function renderSettings(now, opts) {
+  if (savesUp()) { renderSaves(now, opts); return; } // the saves slab stands in its place (js/ui/saves.js)
   if (dragSlider && mouse.down) applySliderDrag();
   const slide = opts && opts.slide ? Math.round(opts.slide) : 0;
   if (!opts || !opts.bare) {

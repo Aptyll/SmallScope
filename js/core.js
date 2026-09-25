@@ -50,13 +50,18 @@ const YIELD = {
 };
 
 // ------------------------------------------------------------ rng
+// The stream's whole state is the one integer on the function (`.s`), not a
+// closed-over local, so a saved match (js/save.js) can write it down and put
+// it back: a loaded game draws the very next number the saved one would have.
 function mulberry32(a) {
-  return function () {
-    a |= 0; a = (a + 0x6D2B79F5) | 0;
+  const r = function () {
+    const a = r.s = (r.s + 0x6D2B79F5) | 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  r.s = a | 0;
+  return r;
 }
 // Practice mode: ?practice=1 (the PRACTICE const above WORLD) boots the
 // training arena (the `practice arena` banner, js/world.js) instead of a
