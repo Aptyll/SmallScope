@@ -383,6 +383,37 @@
         localStorage.setItem(SAVES_KEY, JSON.stringify(m));
       } catch (e) { }
     },
+    // a slot's card rewritten in place (its name), the body untouched
+    putSaveMeta(slot, meta) {
+      try {
+        const m = this.saveMetas();
+        if (!m[slot]) return false;
+        m[slot] = meta;
+        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
+        return true;
+      } catch (e) { return false; }
+    },
+    // two slots trade places, either of them possibly empty (the list's
+    // reordering): bodies first, then the index in one write. The two
+    // bodies are held while they move, so a refusal halfway (storage full)
+    // puts both back as they were and the swap simply did not happen.
+    swapSaves(a, b) {
+      let ba = null, bb = null;
+      const put = (k, v) => { if (v !== null) localStorage.setItem(SAVE_KEY + k, v); else localStorage.removeItem(SAVE_KEY + k); };
+      try {
+        ba = localStorage.getItem(SAVE_KEY + a); bb = localStorage.getItem(SAVE_KEY + b);
+        const m = this.saveMetas(), ma = m[a], mb = m[b];
+        localStorage.removeItem(SAVE_KEY + a); localStorage.removeItem(SAVE_KEY + b);
+        put(a, bb); put(b, ba);
+        if (mb) m[a] = mb; else delete m[a];
+        if (ma) m[b] = ma; else delete m[b];
+        localStorage.setItem(SAVES_KEY, JSON.stringify(m));
+        return true;
+      } catch (e) {
+        try { localStorage.removeItem(SAVE_KEY + a); localStorage.removeItem(SAVE_KEY + b); put(a, ba); put(b, bb); } catch (e2) { }
+        return false;
+      }
+    },
 
     flush,
   };

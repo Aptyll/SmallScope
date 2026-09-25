@@ -245,6 +245,8 @@ function keyPress(e) {
   // the create screen owns the keyboard while it is up: its letters are the
   // name, not shortcuts, and F3 / '.' below would fire on keys the field ignores
   if (state.mode === 'title' && state.menu.screen === 'create') { createKey(e); return; }
+  // ...and so does a save's name while it is typed (js/ui/saves.js)
+  if (saveUi.edit) { if (savesUp()) { savesEditKey(e); return; } saveUi.edit = null; }
   // F3 flips the info stack in any mode, minecraft-style (the browser's own
   // F3 find bar is suppressed above)
   if (e.key === 'F3') { settings.info = !settings.info; saveSettings(); return; }
@@ -547,6 +549,7 @@ function sideButton(button, down) {
 // ...and came back up
 function pointerRelease(button) {
   if (button === 3 || button === 4) { sideButton(button, false); return; }
+  if (button === 0 && saveUi.press) savesRelease(); // a save card let go of: the click, or the drop (js/ui/saves.js)
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   if (button === 1) { if (msOn()) msWheelRelease(); return; }

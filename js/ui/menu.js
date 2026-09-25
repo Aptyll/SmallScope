@@ -579,14 +579,11 @@ function menuSelect(i) {
   SFX.pickup();
 }
 
-// by the word, not the place: a profile with a saved match stacks CONTINUE
-// and LOAD GAME into the list (js/boot.js), which moves the rest down
+// by the word, not the place
 function menuActivate(i) {
   SFX.unlock();
   const it = MENU_ITEMS[i];
-  if (it === 'CONTINUE') loadSave(saveNewest());
-  else if (it === 'LOAD GAME') openSavesTitle();
-  else if (it === 'SINGLEPLAYER') beginLobby();
+  if (it === 'SINGLEPLAYER') beginLobby();
   else if (it === 'MULTIPLAYER') beginRooms();
   else if (it === 'PRACTICE TOOL') beginPractice();
 }
@@ -652,12 +649,12 @@ function menuKey(e) {
   if (m.screen === 'hero') { if (m.popT >= 1) heroKey(k); return; }
   if (m.screen === 'map') { if (m.popT >= 1) mapKey(k); return; }
   if (m.screen === 'ai') { if (m.popT >= 1) aiKey(k); return; }
+  if (m.screen === 'saves') { if (m.popT >= 1) savesKey(k); return; } // its own keys, the X included (js/ui/saves.js)
   if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
-    if (m.panel === 'saves') { if (menuPanelReady()) savesKey(k); return; } // its own keys, BACK included (js/ui/saves.js)
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
     else if (m.panel === 'settings') settingsKey(k); // the arrows page and scroll it (js/panels.js)
     return;
@@ -676,6 +673,7 @@ function menuClick() {
   if (m.screen === 'hero') { heroClick(); return; }
   if (m.screen === 'map') { mapClick(); return; }
   if (m.screen === 'ai') { aiClick(); return; }
+  if (m.screen === 'saves') { if (m.popT >= 1 && !m.lockT) savesClick(); return; }
   if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
@@ -683,7 +681,6 @@ function menuClick() {
   if (m.panel) {
     if (!menuPanelReady()) return;
     if (m.panel === 'settings' && overMenuPanel()) { mouse.down = true; settingsMouseDown(); return; }
-    if (m.panel === 'saves' && overMenuPanel()) { savesClick(); return; }
     if (!overMenuPanel()) closeMenuPanel();
     return;
   }
@@ -1388,12 +1385,14 @@ function lobbyLayout() {
     const y = LOBBY_HEAD + cards[mine].length * (fh + LOBBY_FRAME_GAP);
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
   }
-  // the map plate and the target side by side at the top centre, mirrored
-  // about the middle, each with its name under it: the shape's, the level's
-  const mapc = { x: cx - (LOBBY_TOP_GAP >> 1) - LOBBY_MAP, y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
-  const tgt = { x: cx + (LOBBY_TOP_GAP >> 1), y: pad, w: LOBBY_MAP, h: LOBBY_MAP };
-  const mapName = { x: mapc.x + (LOBBY_MAP >> 1), y: mapc.y + mapc.h + 6 };
-  const tgtName = { x: tgt.x + (LOBBY_MAP >> 1), y: tgt.y + tgt.h + 6 };
+  // the map plate and the target side by side at the top centre, each with
+  // its name under it: the shape's, the level's - and when a solo profile
+  // has a saved match, the SAVES plate beside them, the three centred as a row
+  const nt = lobbySavesShown() ? 3 : 2, x0 = cx - ((nt * LOBBY_MAP + (nt - 1) * LOBBY_TOP_GAP) >> 1);
+  const plate = (i) => ({ x: x0 + i * (LOBBY_MAP + LOBBY_TOP_GAP), y: pad, w: LOBBY_MAP, h: LOBBY_MAP });
+  const under = (r) => ({ x: r.x + (LOBBY_MAP >> 1), y: r.y + r.h + 6 });
+  const mapc = plate(0), tgt = plate(1), savc = nt > 2 ? plate(2) : null;
+  const mapName = under(mapc), tgtName = under(tgt), savName = savc ? under(savc) : null;
   // LOCK IN, a bare word at the foot, big; the stage figure on the snow above it
   const pw2 = pixelTextWidth('LOCK IN', LOBBY_LOCK_SCALE) + 8;
   const play = { x: cx - (pw2 >> 1), y: VIEW_H - pad - 7 * LOBBY_LOCK_SCALE - 8, w: pw2, h: 7 * LOBBY_LOCK_SCALE + 4 };
@@ -1403,8 +1402,10 @@ function lobbyLayout() {
   // a chevron either side of the figure swaps to the neighbouring character
   const cy = body.y + 46 * LOBBY_MODEL - 60;
   const chars = [{ x: body.x + 4, y: cy, w: 12, h: 18, d: -1 }, { x: body.x + body.w - 16, y: cy, w: 12, h: 18, d: 1 }]; // in close by the shoulders
-  return { cx, play, body, figure, chars, cards, tgt, mapc, mapName, tgtName };
+  return { cx, play, body, figure, chars, cards, tgt, mapc, mapName, tgtName, savc, savName };
 }
+// the SAVES plate stands only where a match can be picked up: solo, with one kept
+function lobbySavesShown() { return NET.role === 'solo' && !!saveNewest(); }
 
 // The screen's own painted night, fully opaque at rest so the live ambient
 // world is never the backdrop here: a starfield under two aurora ribbons, a
@@ -2112,7 +2113,7 @@ function heroClick() {
 // 'charl' / 'charr' (the character chevrons) or null. A guest's room offers
 // the hero pop-up alone.
 function lobbyHit() {
-  const { play, figure, tgt, mapc, chars } = lobbyLayout();
+  const { play, figure, tgt, mapc, savc, chars } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   const swap = PROFILE.chars().length > 1 && !NET.isClient;
   if (swap) { if (over(chars[0], 4, 4)) return 'charl'; if (over(chars[1], 4, 4)) return 'charr'; }
@@ -2123,13 +2124,14 @@ function lobbyHit() {
   // the shape and the seed are picked before a room is opened: a pick is a
   // page, and a host reloading would drop the room under everyone in it
   if (NET.role === 'solo' && over(mapc, 2, 2)) return 'map';
+  if (savc && over({ x: savc.x, y: savc.y - 6, w: savc.w, h: savc.h + 6 }, 2, 2)) return 'saves'; // its fanned cards stand a little over the plate
   return null;
 }
-// the three pop-ups over the lobby share one ease (menu.popT) and one way
+// the four pop-ups over the lobby share one ease (menu.popT) and one way
 // out; which is open is menu.pop, kept through the fade so the right one
 // draws on the way out
-function popOpen() { const s = state.menu.screen; return s === 'hero' || s === 'map' || s === 'ai'; }
-function popHit() { const s = state.menu.screen; return s === 'hero' ? heroScreenHit() : s === 'map' ? mapScreenHit() : s === 'ai' ? aiScreenHit() : null; }
+function popOpen() { const s = state.menu.screen; return s === 'hero' || s === 'map' || s === 'ai' || s === 'saves'; }
+function popHit() { const s = state.menu.screen; return s === 'hero' ? heroScreenHit() : s === 'map' ? mapScreenHit() : s === 'ai' ? aiScreenHit() : s === 'saves' ? savesHit() : null; }
 function openPop(which) {
   const m = state.menu;
   m.screen = which; m.pop = which;
@@ -2268,6 +2270,7 @@ function lobbyClick() {
   else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: gear, points, abilities
   else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
   else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
+  else if (h === 'saves') { m.pressT = 0.12; beginSavesPick(); }    // the saves plate: the kept matches (js/ui/saves.js)
   else if (h === 'charl') lobbyStep(-1);                             // the character chevrons
   else if (h === 'charr') lobbyStep(1);
 }
@@ -2687,7 +2690,7 @@ function drawMapPlate(r, lift) {
 // and a guest's target is too.
 function drawLobbyTop(now, a) {
   const m = state.menu;
-  const { mapc, tgt, mapName: mn, tgtName: tn } = lobbyLayout();
+  const { mapc, tgt, savc, mapName: mn, tgtName: tn, savName: sn } = lobbyLayout();
   const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
   const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
   ctx.globalAlpha = a;
@@ -2699,6 +2702,12 @@ function drawLobbyTop(now, a) {
   drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, now, a);
   const level = AI_LEVELS[lv].name;
   drawPixelTextShadow(ctx, level, tn.x - (pixelTextWidth(level) >> 1), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
+  if (savc) {
+    const sh = hover === 'saves';
+    drawSavesPlate(savc, sh ? 1 : 0);
+    const nm = saveTitleOf(savesMetas()[saveNewest()]);
+    drawPixelTextShadow(ctx, nm, sn.x - (pixelTextWidth(nm) >> 1), sn.y, sh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
+  }
   ctx.globalAlpha = a;
 }
 
@@ -3745,13 +3754,14 @@ function renderTitle(now) {
     ctx.globalAlpha = 1;
   }
 
-  // the lobby stays fully lit under its pop-ups (hero, map, ai), which ride
+  // the lobby stays fully lit under its pop-ups (hero, map, ai, saves), which ride
   // one ease of their own (popT); m.pop names the one to draw
   const gc = easeInOut(state.menu.popT);
   if (sc > 0.005) renderLobby(now, sc * (1 - out));
   if (sc > 0.005 && gc > 0.005) {
     const pa = sc * (1 - out) * gc;
     if (m.pop === 'hero') renderHero(now, pa); else if (m.pop === 'map') renderMapPick(now, pa); else if (m.pop === 'ai') renderAiPick(now, pa);
+    else if (m.pop === 'saves') renderSaves(now, { pop: pa });
   }
   if (nc > 0.005) renderNotes(now, nc * (1 - out));
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
@@ -3762,7 +3772,6 @@ function renderTitle(now) {
   if (m.panel) {
     const slide = Math.round((1 - easeOut(m.panelT)) * (VIEW_H - SET_Y + 6));
     if (m.panel === 'settings') renderSettings(now, { bare: true, slide });
-    else if (m.panel === 'saves') renderSaves(now, { bare: true, slide });
     else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
   }
 }

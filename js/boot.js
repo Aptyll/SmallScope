@@ -1348,9 +1348,6 @@ function startGame() {
 
 PROFILE.load();   // the profile carries the settings, so it is read first
 loadSettings();
-// a profile with a saved match opens on CONTINUE (the newest) and has LOAD
-// GAME under SINGLEPLAYER (js/ui/saves.js); menuActivate goes by the word
-if (!PRACTICE && saveNewest()) { MENU_ITEMS.unshift('CONTINUE'); MENU_ITEMS.splice(2, 0, 'LOAD GAME'); }
 mendBinds(); // the profile's key binds made whole (input.js)
 // ...and the tech tree, which decides what this profile's world may drop.
 // Must run after PROFILE.load() and before initPlayers()/any swing.
