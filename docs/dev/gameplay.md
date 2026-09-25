@@ -129,6 +129,45 @@ it in under a second) and shift on landing carves a slide; a body coming down ov
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every
 walk the ladder orders ([bots](multiplayer.md#bots)); the waves never will.
 
+### The sled
+
+The [story landmarks](world.md#story-landmarks)' sled is the one you can ride (the `the sled` group,
+js/landmarks.js). **Getting on** uses the same hop intent as the zipline: E beside a sled
+(`sledNear`, within `SLED_REACH` of its tile), the click scheme's right press on it (a `use` order
+that walks there first, `ckUse`), or a pad's work button. `updatePlay` hands the intent to
+`sledToggle` before `zipToggle`. `sledStart` refuses the same bodies `zipStart` does, plus a
+rooted one. It lifts the sled off its tile, puts it under the body as `p.sled` (`{ t, home, hx,
+hy, face }`, declared in `reset()`), and sends it off the way the body faces. A bare cap over the
+sled (`drawSledHint`, js/ui/wheel.js) shows which key does it.
+
+**The ride** is its own branch of `updatePlayer`'s movement ladder, after the zipline's
+(`sledStep`). It steers like a slide carrying speed: the heading turns toward the stick at
+`SLED_STEER` (2.6 rad/s, between a slide's 1.7 and a walk's 4.5), and the speed rises toward the
+surface's cap at `SLED_PUSH` while a direction is held and coasts down when nothing is
+(`SLED_COAST` on snow, `SLED_COAST_ICE` on ice). The caps are `SLED_SNOW` 115 px/s (1.6 times
+`PLAYER_SPEED`) and `SLED_ICE` 170 (above a skater's `ICE_MAX` of 150), times
+`abilityMoveMul`, and times `SLED_DEEP` in deep snow once this build has a deep-snow map
+(`sledSurfaceMul` asks `deepSnowAt(tx, ty)` only if that function exists). A wall stops the axis
+it blocks, open water plunges the rider as usual (and the sled breaks), and the runners cut the
+slide's grooves past `SLED_TRAIL`. On the click scheme the sled runs toward the pointer (`ckStep`)
+and the right press is the hop off. A rider's hands are full, so `p.sled` joins the `p.zip >= 0`
+gates in `tryWork`, `autoWork`, `tryAbility`, the bow draw, `autoFish`, `tryProne` and
+`drawWorkHint`.
+
+**It always breaks.** `SLED_T` (15 s) after getting on, `sledEnd(p, true)` bursts it into
+splinters, takes `SLED_DMG` (10%) of the rider's max health through `hurtUnit` (never the last
+point, so it never kills) and shoves them back along their heading at `SLED_KB` of a normal
+blow's shove. For the last `SLED_WARN` (3 s) the sled rattles a pixel and flashes on a beat
+that speeds up, and the bar under it (its clock) flickers. Getting off early (E again, a dodge),
+being hit (any blow in `damagePlayer` except damage over time), a stun, a root, a net, the water
+or a death all end it with `sledEnd(p, false)`: it breaks, nobody is hurt, and the rider keeps
+their speed for the surface to use up, the way a hop off the zipline does. Either way the spot's
+clock (`landmarks[home].t`) starts at `SLED_BACK` (120 s), and `updateLandmarks` stands a new
+sled there once it runs out, as soon as the tile is empty and nobody is standing on it. The
+ride runs in the sim, and `p.sled` is a plain field the snapshot carries, so every screen sees
+the same ride. The body draws in its standing pose with the sled over its legs
+(`drawSledRide`, js/draw/landmarks.js). Bots never get on one ([known drift](checklists.md#known-drift)).
+
 ## Unit collisions
 
 Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5 — a merchant takes it

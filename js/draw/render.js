@@ -417,6 +417,8 @@ function render() {
       // `part` tiles resolve to it above and draw nothing of their own
       const fr = SPRITES.hogHut, spr = fr[Math.floor(now * 1000 / HUT_FR) % fr.length];
       drawSpriteFlash(spr, px + sh + TILE - (spr.width >> 1), py + TILE - spr.height, o.flash);
+    } else if (LANDMARKS[o.type]) {
+      drawLandmark(o, px + sh, py); // the sled, the shack, the boat (js/draw/landmarks.js); their parts draw nothing
     } else if (o.type === 'rock') {
       const spr = SPRITES.rock[o.variant];
       if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);

@@ -208,6 +208,10 @@ need no edit — none of them names a type any more. An object *instance* carryi
 (the roosting eagles' hitbox tiles) is a rival-only E target — `workTarget()` applies that
 generically, the same rule buildings answer through `ownsStruct`.
 
+**Adding a story landmark** is none of that: one `LANDMARKS` entry in
+[js/landmarks.js](../../js/landmarks.js) and one grid in js/sprites/landmarks.js. A new placement
+rule is one more `LM_WHERE` function: [world.md](world.md#story-landmarks).
+
 What is still per-type and has to be written by hand: the sprite branch in the flat pass or the
 `draws` y-sort in `render()` (the draw *order* is one ordered function on purpose — see
 [rendering.md](rendering.md)), what a swing actually **does** to it in `hitObject()` (its
@@ -587,6 +591,9 @@ re-wrap or re-indent one, and keep them pure ASCII (there is no BOM any more).
 Open gaps between what the game does and what it is meant to: prune an entry once it is fixed.
 Code that is dead **on purpose** is the next section.
 
+- **No bot rides a sled.** `sledToggle` takes a bot's hop intent like anyone's, but nothing in
+  `updateAI` ever walks to a sled or presses for one, so the [sled](gameplay.md#the-sled) is
+  for human players only.
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
   one is within `AI_HUNT`, never the alpha under level 6 or the dire wolf at all, and nothing in
   `aiSituation` weighs a camp against the road — so the alpha stone and the dire hollow are the

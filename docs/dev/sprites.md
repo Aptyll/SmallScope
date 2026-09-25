@@ -322,11 +322,18 @@ the ability icons (`AB32`/`AB32_PAL`, js/abilities.js) and the gear-variant icon
 js/ui/menu.js) bake lazily beside their drawers, and `GEAR32` deliberately shares `AB32_PAL` so
 every big icon in the game speaks one palette.
 
+**The story landmarks** (`landmarks.js`, one palette `LMPAL`) are A, C and E of
+`docs/media/concepts/landmarks-concepts-1.png`: the slat sled (22×11, facing right; `sledL` is its
+`flipH` for a rider going left), the ice-fishing shack (34×32 over a 2×2 footprint) and the rowboat
+(50×24 over 3×1). The paint on the shack and the hull is a weathered rust, never a saturated red,
+because red and blue are the teams' inks. The other three candidates live only in the sheet. How they stand on their tiles:
+[world.md](world.md#story-landmarks).
+
 ## The shape of a sprite file
 
 `js/sprites/core.js` loads first and makes two globals: the empty `SPRITES` registry and `SPR`,
 the helpers every art file shares — `bake`, `spansOf`, `bakeSpan`, `flipH`, `bakeClips`, `mapClips`,
-`liveIcon`, `wash`, `double`, the `TEAM_SKINS` table and `teamBuildPal`. Each of the eight art files
+`liveIcon`, `wash`, `double`, the `TEAM_SKINS` table and `teamBuildPal`. Each of the nine art files
 is a private IIFE with the same skeleton: destructure what it needs off `SPR`, its palettes and
 grids under `// ---- name` banners, the set builders, and at the bottom one
 `Object.assign(SPRITES, { ... })` naming every key it owns. Nothing reads another file's grid, so
@@ -345,6 +352,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | `eagle.js` | eagle | `eagle`, `eagleTeam`, `eagleFlash`, `eagleShadow` |
 | `buildings.js` | wall, tiered structures, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret`, `generator`, `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
 | `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
+| `landmarks.js` | landmarks | `landmark` (`sled`, `sledL`, `shack`, `boat`) |
 | `icons.js` | gear icons, heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
 
 The grids are **pure ASCII and byte-fragile**: `bake()` sizes each canvas from `rows[0].length`

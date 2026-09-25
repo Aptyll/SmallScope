@@ -25,6 +25,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sprites/buildings.js](../../js/sprites/buildings.js) | ~560 | → `SPRITES` | wall/turret/generator/spawner in three tiers and each side's fittings, the net, scaffold, bay, worker bots, spikes, fire, torch |
 | [js/sprites/items.js](../../js/sprites/items.js) | ~750 | → `SPRITES` | goods and their icons: wood, stone, bag, the three animated goods and their live icons, the sack, the crate, the cards, the axe/bow/pick |
 | [js/sprites/icons.js](../../js/sprites/icons.js) | ~340 | → `SPRITES` | HUD art: the gear glyphs in four materials, the hearts, the cursor set |
+| [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~120 | → `SPRITES` | the story landmarks: the sled (and its mirror for a rider going left), the ice-fishing shack, the frozen boat |
 | [js/sfxdata.js](../../js/sfxdata.js) | ~60 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/audio.js](../../js/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/logodata.js](../../js/logodata.js) | ~6 | `LOGO_PNG` | **generated** — the title logo as a PNG data URL |
@@ -34,6 +35,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/input.js](../../js/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
 | [js/gamepad.js](../../js/gamepad.js) | ~320 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
 | [js/world.js](../../js/world.js) | ~2030 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the camps at their fixed mirrored sites, and the practice training grounds |
+| [js/landmarks.js](../../js/landmarks.js) | ~310 | shared scope, no `window.*` export | the story landmarks: the `LANDMARKS` table (each entry becomes an `OBJECTS` row), their seeded placement, and the sled's ride |
 | [js/nav.js](../../js/nav.js) | ~320 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
 | [js/wildlife.js](../../js/wildlife.js) | ~910 | shared scope, no `window.*` export | prey, the fish shoal, the camps' monsters (and the dormant flock) |
 | [js/structures.js](../../js/structures.js) | ~530 | shared scope, no `window.*` export | the `STRUCTS` table, building/upgrading/wrecking, and the per-type building sim |
@@ -49,6 +51,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/net/transport-ws.js](../../js/net/transport-ws.js) | ~90 | shared scope, no `window.*` export | the transport for tabs on one machine: the dev server's relay over a WebSocket, JSON frames, a client redialing every `WS_RETRY` s with the same uid |
 | [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~190 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - a joiner reloading onto the lobby's seed |
 | [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the chest, the cairn) - first of the draw files, every other one calls `hash2` |
+| [js/draw/landmarks.js](../../js/draw/landmarks.js) | ~45 | shared scope, no `window.*` export | a landmark's pixels and cast shade, and the sled under its rider with its clock |
 | [js/draw/practice.js](../../js/draw/practice.js) | ~740 | shared scope, no `window.*` export | the practice arena's pixels only: the dummy and its meter, the training grounds, the ice parkour, the roll station, the archery track and the range bell |
 | [js/draw/zipline.js](../../js/draw/zipline.js) | ~110 | shared scope, no `window.*` export | the zipline's pixels: the pylon bakes (one per team skin), the cable pass `drawZips` and a rider's handle and rope `drawZipHandle` (the thing itself: the `zipline` banner, world.js) |
 | [js/draw/overhead.js](../../js/draw/overhead.js) | ~200 | shared scope, no `window.*` export | the one arrow body, and the frame every unit wears over its head: health bar, level badge, sense mark, stun stars, the build reveal |
@@ -171,8 +174,8 @@ See [Intentional dead code](checklists.md#intentional-dead-code) before deleting
 ### js/sprites/
 
 Literal ASCII grids paired with palette objects, baked to offscreen canvases by `bake()` at load.
-Nine files: `core.js` loads first and makes the empty `window.SPRITES` registry and `window.SPR`
-(the bake helpers); each of the eight art files is a **private IIFE** that ends with
+Ten files: `core.js` loads first and makes the empty `window.SPRITES` registry and `window.SPR`
+(the bake helpers); each of the nine art files is a **private IIFE** that ends with
 `Object.assign(SPRITES, { ... })` for the keys it owns - the same move js/tools.js makes for its
 tool and bit art - so they load in any order after core and nothing reads another file's grid.
 Team colours, classes and building tiers are all palette swaps of shared grids, which

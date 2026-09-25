@@ -235,7 +235,7 @@ function drawPlayer(p, ex, ey, now) {
   const set = lying ? classSet(p).prone[p.dir] : classSet(p)[p.dir];
   let frame = 0;
   if (lying) frame = p.moving ? 1 + (Math.floor(p.crawlT) % 2) : 0;
-  else if (p.moving && p.zip < 0) frame = 1 + (Math.floor(p.animT) % 2); // a zipline's rider hangs still
+  else if (p.moving && p.zip < 0 && !p.sled) frame = 1 + (Math.floor(p.animT) % 2); // a zipline's rider hangs still, a sled's sits
   // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
   // is - the rope and handle over its head are the cable pass's (drawZips)
   const zl = p.zip >= 0 ? ZIP_ALT : 0;
@@ -327,7 +327,7 @@ function drawPlayer(p, ex, ey, now) {
     // axe bobbing over a body on its belly reads as a floating axe. A body
     // mid-cast (or holding the shield, or charging) has no hand free for it.
     const held = state.mode !== 'title' && (!lying || p.charging) && catchF < 0 &&
-      p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
+      p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0 && !p.sled; // ...or holding a zipline's handle, or a sled's sides
     const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
     if (toolBehind) drawHeldTool(p, px, py);
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
@@ -343,6 +343,7 @@ function drawPlayer(p, ex, ey, now) {
     // gear marks sit at fixed points on the standing body plan, so the prone
     // poses skip them rather than stripe a shoulder across someone's hip
     if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0) drawGearMarks(p, ax, ay);
+    if (p.sled) drawSledRide(p, px, py, now); // the sled over the legs: the body sits in it (js/draw/landmarks.js)
     ctx.globalAlpha = 1;
     if (held && !toolBehind) drawHeldTool(p, px, py);
     // what an ability left ON this body - shield, net, jaws, fury, mark -
