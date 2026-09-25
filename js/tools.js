@@ -336,6 +336,10 @@ function updateWarps(dt) {
 // fetches half of those too, so nothing is ever quietly emptied for gold. `art` picks the 12x12 silhouette, which is baked
 // once per tier - so a tool's shape says which family it is and its colour
 // says how good it is, the way GEAR_MATS tints one gear icon across levels.
+// `up` is the second stat the forge raises on it beside damage, 'rof' or
+// 'tensile' (the forge, js/mining.js): the three plain bows draw quicker,
+// and the sling, the sword and the horn bow - the bodies whose budget is
+// what stops a build - swing more of it.
 //
 // TENSILE AND CAP ARE THE TWO HALVES OF A TOOL. `cap` is how much you may
 // hang on it and `tensile` is how much of that it can actually swing in one
@@ -350,17 +354,17 @@ function updateWarps(dt) {
 // a fitting of 5 - the two tier-2 fire fittings weigh 6 and still overrun it,
 // which is a decision and a reason to want a bigger body.
 const TOOLS = {
-  shortbow: { name: 'SHORTBOW',    tier: 0, price: 30,  rof: 55, cap: 2, tensile: 9,  art: 'bow' },
-  sling:    { name: 'SLING',       tier: 0, price: 26,  rof: 26, cap: 2, tensile: 10, art: 'sling' },
+  shortbow: { name: 'SHORTBOW',    tier: 0, price: 30,  rof: 55, cap: 2, tensile: 9,  art: 'bow', up: 'rof' },
+  sling:    { name: 'SLING',       tier: 0, price: 26,  rof: 26, cap: 2, tensile: 10, art: 'sling', up: 'tensile' },
   // the one MELEE body: `melee` is what makes a press a CUT rather than a
   // shot (slashTool below) - `reach` px of blade at full draw, `half` rad of
   // sweep to either side of the aim. Every bit still loads and still counts:
   // what is fitted is what the edge is worth, and a modifier under it
   // rewrites the cut the way it rewrites a shot.
-  longsword:{ name: 'LONGSWORD',   tier: 0, price: 28,  rof: 30, cap: 2, tensile: 10, art: 'sword', melee: { reach: 28, half: 1.05 } },
-  recurve:  { name: 'RECURVE BOW', tier: 1, price: 85,  rof: 40, cap: 3, tensile: 13, art: 'recurve' },
-  hornbow:  { name: 'HORN BOW',    tier: 1, price: 72,  rof: 34, cap: 4, tensile: 15, art: 'bow' },
-  longbow:  { name: 'LONGBOW',     tier: 2, price: 170, rof: 28, cap: 5, tensile: 22, art: 'recurve' },
+  longsword:{ name: 'LONGSWORD',   tier: 0, price: 28,  rof: 30, cap: 2, tensile: 10, art: 'sword', up: 'tensile', melee: { reach: 28, half: 1.05 } },
+  recurve:  { name: 'RECURVE BOW', tier: 1, price: 85,  rof: 40, cap: 3, tensile: 13, art: 'recurve', up: 'rof' },
+  hornbow:  { name: 'HORN BOW',    tier: 1, price: 72,  rof: 34, cap: 4, tensile: 15, art: 'bow', up: 'tensile' },
+  longbow:  { name: 'LONGBOW',     tier: 2, price: 170, rof: 28, cap: 5, tensile: 22, art: 'recurve', up: 'rof' },
 };
 const TOOL_SLOTS = 1;        // ONE weapon slot: the class weapon, on the shelf top-left
 const TOOL_ROF_STEP = 1 / 60; // a tool's `rof` is counted in game steps of this length
@@ -417,7 +421,7 @@ function toolLoad(cell) {
 // ...and whether that is more than one press can spend. This is the "!" over
 // the well (drawOverWarn, js/ui.js): the build still fires, it just stops
 // partway along the row, and the shelf's budget track says where.
-function toolOver(cell) { return toolLoad(cell) > TOOLS[toolIdOf(cell.type)].tensile; }
+function toolOver(cell) { return toolLoad(cell) > toolTensile(cell); }
 // a fresh shot envelope: what a press starts with before a single modifier
 // has touched it. The damage TYPE is 'blunt' until a fire modifier says
 // otherwise (DMG_TYPES, js/actions.js).
@@ -462,17 +466,18 @@ function bitMods(id) {
 // fitting reaches which shot is read off the same pass that fires them and can
 // never claim a rule the press does not follow.
 function toolPlan(cell) {
-  const T = TOOLS[toolIdOf(cell.type)];
   const m = newMods();
   const mi = [];
-  const plan = { shots: [], spent: [], used: 0, cut: -1, load: 0, tensile: T.tensile };
+  const tens = toolTensile(cell);
+  m.dmgMul *= toolDmgMul(cell);        // the forge's damage is in the envelope before any fitting touches it
+  const plan = { shots: [], spent: [], used: 0, cut: -1, load: 0, tensile: tens };
   for (let i = 0; i < cell.bits.length; i++) {
     const id = cell.bits[i];
     if (!id) continue;                 // a gap costs nothing and stops nothing
     const b = BITS[id];
     plan.load += b.weight;             // the load is the WHOLE column: it is what the "!" reads
     if (plan.cut >= 0) continue;       // past the cut: still carried, never fired
-    if (plan.used + b.weight > T.tensile) { plan.cut = i; continue; }
+    if (plan.used + b.weight > tens) { plan.cut = i; continue; }
     plan.used += b.weight;
     plan.spent.push(i);                // ...and what it spent it ON, for the shelf to light
 
@@ -489,9 +494,10 @@ function peekBit(cell) {
   return s.length ? s[0].i : -1;
 }
 // seconds between shots: the tool's own rate, quickened by everything that
-// already quickens a renock (QUICKDRAW, QUICK HANDS, the renock cards)
+// already quickens a renock (QUICKDRAW, QUICK HANDS, the renock cards) and
+// by the forge on a body whose `up` is its rate
 function toolRof(p, cell) {
-  return TOOLS[toolIdOf(cell.type)].rof * TOOL_ROF_STEP * (kitOf(p).nock / BOW_NOCK);
+  return TOOLS[toolIdOf(cell.type)].rof * toolRofMul(cell) * TOOL_ROF_STEP * (kitOf(p).nock / BOW_NOCK);
 }
 // The cycle a press starts, for THIS player right now: the held tool's rate,
 // or bare hands' (`kit.nock`) with no tool up. The one number every readout of
@@ -1213,7 +1219,7 @@ function giveLoadout(p) {
 function botFitLoadout(p) {
   const cur = heldTool(p);
   if (cur) {
-    const tens = TOOLS[toolIdOf(cur.type)].tensile;
+    const tens = toolTensile(cur);
     let load = toolLoad(cur);
     for (let i = 0; i < p.bag.length; i++) {
       const s = p.bag[i];

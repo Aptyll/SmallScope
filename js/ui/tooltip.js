@@ -53,12 +53,14 @@ const TIP_KB = (kb) => 'x' + (Math.round((kb === undefined ? 1 : kb) * 10) / 10)
 // that cut are now the entire build.
 function tipTool(cell) {
   const id = toolIdOf(cell.type), T = TOOLS[id];
-  const d = tipBase(cell.type, T.name, TOOL_TIERS[T.tier].name + ' TOOL');
+  const lv = toolLvl(cell);
+  const d = tipBase(cell.type, T.name + (lv ? ' +' + lv : ''), TOOL_TIERS[T.tier].name + ' TOOL');
   const plan = toolPlan(cell);
-  const over = plan.load > T.tensile;
-  d.rows.push(['RATE OF FIRE', tipSec(T.rof * TOOL_ROF_STEP), '#f4f7ff']);
+  const over = plan.load > plan.tensile;
+  if (lv) d.rows.push(['FORGED DAMAGE', 'x' + toolDmgMul(cell).toFixed(2), FORGE_INK]);
+  d.rows.push(['RATE OF FIRE', tipSec(T.rof * toolRofMul(cell) * TOOL_ROF_STEP), lv && T.up === 'rof' ? FORGE_INK : '#f4f7ff']);
   d.rows.push(['BIT SLOTS', bitsIn(cell) + '/' + T.cap, '#f4f7ff']);
-  d.rows.push(['TENSILE', String(T.tensile), '#f2cc6a']);
+  d.rows.push(['TENSILE', String(plan.tensile), lv && T.up === 'tensile' ? FORGE_INK : '#f2cc6a']);
   d.rows.push(['LOADED WEIGHT', String(plan.load), over ? '#e0637a' : '#f4f7ff']);
   d.rows.push(['SHOTS A PRESS', String(plan.shots.length), plan.shots.length ? '#8fe08a' : '#e0637a']);
   const lead = plan.shots.length ? plan.shots[0].i : -1;
@@ -334,7 +336,7 @@ function tipAt(mx, my) {
     const d = tipBase(cell.type, 'EMPTY BIT CELL', TOOL_TIERS[T.tier].name + ' TOOL');
     d.icon = null; d.tcol = TIP_DIM;
     d.notes.push(['A FOUND BIT LANDS HERE ON ITS OWN', TIP_DIM]);
-    d.notes.push(['THIS PRESS SPENDS ' + toolPlan(cell).used + ' OF ' + T.tensile, '#f2cc6a']);
+    d.notes.push(['THIS PRESS SPENDS ' + toolPlan(cell).used + ' OF ' + toolTensile(cell), '#f2cc6a']);
     return d;
   }
   const abb = abBuyHit(mx, my);

@@ -359,6 +359,7 @@ function abilityMoveMul(p) {
 function pierceMods(p) {
   const m = newMods();
   const cell = heldTool(p);
+  if (cell) m.dmgMul *= toolDmgMul(cell); // the weapon's forge level, as a press carries it (toolPlan)
   if (cell) for (const id of cell.bits) {
     const b = id ? BITS[id] : null;
     if (b && !b.proj && b.mod) b.mod(m);

@@ -699,6 +699,7 @@ function cellValue(s) {
   if (!s) return 0;
   let v = itemValue(s.type) * s.n;
   if (s.bits) for (const b of s.bits) if (b) v += BITS[b].price;
+  if (s.lvl) v += forgeWorth(s);
   return v;
 }
 // ...and what the merchant hands over for it
@@ -840,6 +841,7 @@ function shopCmd(p, c) {
   else if (c.act === 'trade') shopTrade(p, c.good, c.dir);
   else if (c.act === 'sell') shopSellCell(p, c.i);
   else if (c.act === 'sellAll') shopSellAll(p);
+  else if (c.act === 'forge') forgeTool(p, c.where, c.i);
 }
 
 // ------------------------------------------------------------ the shop panel
@@ -969,6 +971,7 @@ function openShop(b) {
 function closeShop() {
   if (!state.shop) return;
   state.shop = null;
+  forgeReset();
   SFX.pickup();
   SFX.music.release({ in: 0.8, out: 0.5 });
 }
@@ -1035,7 +1038,7 @@ function shopLayout() {
   // widening the road never walks it into the market cards.
   const laneY = y + SHOP_H - SHOP_FOOT - SHOP_LANE_H;
   const sellY = laneY - SHOP_SELL_GAP - SHOP_SELL_H;
-  return {
+  const L = {
     panel: { x, y, w: SHOP_W, h: SHOP_H },
     head: { x: cx, y: y + 11, w: cw, h: 11 }, // the sign row, hung off the awning's hem
     mkt: { x: cx, y: mkY, w: cw, h: 8 },
@@ -1050,10 +1053,14 @@ function shopLayout() {
     lane: { x: cx, y: laneY, w: cw, h: SHOP_LANE_H },
     xr: { x: x + SHOP_W - SHOP_PAD - 11, y: y + 11, w: 11, h: 11 },
   };
+  L.tabs = forgeTabs(L);      // the SHOP / FORGE plates beside the portrait (js/ui/forge.js)
+  L.forge = forgeLayout(L);   // ...and the bench the FORGE face stands in this room
+  return L;
 }
 
 // 'x' | 'panel' | { kind:'buy', sec, i } | { kind:'sell' } | { kind:'sellAll' } |
-// { kind:'trade', id, dir } | { kind:'good', id } | null.
+// { kind:'trade', id, dir } | { kind:'good', id } | { kind:'tab', tab } | the
+// FORGE face's own (forgeHit, js/ui/forge.js) | null.
 // Shared by the click, the cursor and the tooltip, so the three can never
 // disagree about what the pointer is on.
 function shopHit(mx, my) {
@@ -1061,6 +1068,8 @@ function shopHit(mx, my) {
   const L = shopLayout(), p = L.panel;
   if (mx < p.x || mx >= p.x + p.w || my < p.y || my >= p.y + p.h) return null;
   if (hitR(L.xr, mx, my)) return 'x';
+  for (const t of L.tabs) if (hitR(t, mx, my)) return { kind: 'tab', tab: t.tab };
+  if (state.shopTab === 'forge') return forgeHit(L, mx, my) || 'panel';
   for (const s of L.secs) {
     for (let i = 0; i < s.wells.length; i++) {
       if (hitR(s.wells[i], mx, my) && shopOffer(s.id, i)) return { kind: 'buy', sec: s.id, i };
@@ -1081,6 +1090,7 @@ function hitR(r, mx, my) { return mx >= r.x && mx < r.x + r.w && my >= r.y && my
 function shopClick(h) {
   if (!h) return false;
   if (h === 'x') { closeShop(); return true; }
+  if (h.kind === 'tab' || forgeKind(h)) { forgeClick(h); return true; }
   if (h.kind === 'buy') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'buy', sec: h.sec, i: h.i }; return true; }
   if (h.kind === 'trade') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'trade', good: h.id, dir: h.dir }; return true; }
   // SELL ALL goes through input.cmd like the buys rather than resolving on the
@@ -1223,12 +1233,16 @@ function drawShopPanel(now) {
   ctx.drawImage(shopChromeCv(ti), P.x, P.y); // the frame, the awning and the counter edge
 
   drawShopSign(L, ti, now);
+  drawShopTabs(L, h);
 
-  for (const s of L.secs) drawShopSection(s, h, now);
-  drawShopHeading(L.mkt, 'MARKET', true);
-  for (const c of L.cards) drawMarketCard(c, h, now);
-  drawSellWell(L.well, h, now);
-  drawSellAll(L.all, h, now);
+  if (state.shopTab === 'forge') drawForge(L, h, now);
+  else {
+    for (const s of L.secs) drawShopSection(s, h, now);
+    drawShopHeading(L.mkt, 'MARKET', true);
+    for (const c of L.cards) drawMarketCard(c, h, now);
+    drawSellWell(L.well, h, now);
+    drawSellAll(L.all, h, now);
+  }
   drawShopLane(L.lane, now);
 
   // the X: the drawn way out (ESC, E and walking away all close too)
@@ -1264,7 +1278,8 @@ function drawShopSign(L, ti, now) {
   // It hangs a few px HIGHER than the portrait and the purse beside it and is
   // deeper than both, so the shop's own name is the thing the eye lands on
   // when the slab opens rather than one plate in a row of three.
-  const sc = SHOP_SIGN_SC, tw = pixelTextWidth(SHOP_SIGN, sc);
+  const sign = state.shopTab === 'forge' ? FORGE_SIGN : SHOP_SIGN;
+  const sc = SHOP_SIGN_SC, tw = pixelTextWidth(sign, sc);
   const bw = tw + 22, bx = P.x + ((P.w - bw) >> 1), bh = sc * 5 + 8, by = R.y - 3;
   ctx.fillStyle = SHOP_IRON;
   ctx.fillRect(bx + 6, by - 4, 1, 4); ctx.fillRect(bx + bw - 7, by - 4, 1, 4);
@@ -1278,7 +1293,7 @@ function drawShopSign(L, ti, now) {
   // reads as a nailed-up sign rather than as an empty frame around a word
   ctx.fillStyle = SHOP_LAMP_D;
   ctx.fillRect(bx + 5, by + (bh >> 1) - 1, 2, 2); ctx.fillRect(bx + bw - 7, by + (bh >> 1) - 1, 2, 2);
-  drawPixelTextShadow(ctx, SHOP_SIGN, bx + ((bw - tw) >> 1), by + 4, '#f2cc6a', '#1c1208', sc);
+  drawPixelTextShadow(ctx, sign, bx + ((bw - tw) >> 1), by + 4, '#f2cc6a', '#1c1208', sc);
   drawShopLantern(bx - 14, by + 1, now, 0);
   drawShopLantern(bx + bw + 9, by + 1, now, 1.9);
 
@@ -1824,7 +1839,8 @@ function drawMarketGraph(r, id, col) {
 // (tipBase and friends, js/ui.js) - so an offer describes itself with exactly
 // the rows the same item shows in the pack, plus what it costs.
 function tipShop(h) {
-  if (!h || h === 'x' || h === 'panel') return null;
+  if (!h || h === 'x' || h === 'panel' || h.kind === 'tab') return null;
+  if (forgeKind(h)) return tipForge(h);
   if (h.kind === 'buy') {
     const o = shopOffer(h.sec, h.i);
     if (!o) return null;

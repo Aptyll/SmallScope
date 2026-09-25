@@ -192,3 +192,69 @@ function tickRock(o, dt) {
   o.regrow = 0;
   burst(rockCx(o), rockCy(o) - 6, '#eef4fb', 6, 35, 0.5, true);
 }
+
+// ------ the forge
+// What the ore is FOR: the merchant's second tab (js/ui/forge.js) takes a
+// weapon and the ore its next level costs and hands the weapon back one
+// level up, +1 to +FORGE_MAX. The level lives on the tool's own cell (`lvl`,
+// beside its `bits`), so it goes wherever the tool goes - the shelf, the bag,
+// the snow, a bot's hands - and a rebuilt tool would lose it, which is one
+// more reason a tool is never rebuilt from its type.
+//
+// Every level adds damage (into the press's envelope before any fitting,
+// toolPlan, js/tools.js) and one more point of the stat the body's TOOLS row
+// names as its `up`: 'rof' draws the bow quicker, 'tensile' lets one press
+// spend more weight.
+const FORGE_MAX = 5;
+const FORGE_DMG = 0.06;     // damage per level, as a share of the body's own
+const FORGE_ROF = 0.05;     // share of the cycle each level takes off an 'rof' body
+const FORGE_TENSILE = 1;    // weight each level adds to a 'tensile' body's budget
+// what reaching each level costs, indexed by the level reached: STONE's ore
+// buys the first two, FROSTGLASS the middle two and a SUNSTONE the last - so
+// the top level is one of the map's two corner rocks, fought for
+const FORGE_COST = [null,
+  { item: 'ironstone', n: 5 }, { item: 'ironstone', n: 10 },
+  { item: 'frostglass', n: 3 }, { item: 'frostglass', n: 5 },
+  { item: 'sunstone', n: 1 }];
+
+function toolLvl(cell) { return (cell && cell.lvl) || 0; }
+function toolUp(cell) { return TOOLS[toolIdOf(cell.type)].up; }
+function toolDmgMul(cell) { return 1 + FORGE_DMG * toolLvl(cell); }
+function toolRofMul(cell) { return toolUp(cell) === 'rof' ? 1 - FORGE_ROF * toolLvl(cell) : 1; }
+function toolTensile(cell) {
+  return TOOLS[toolIdOf(cell.type)].tensile + (toolUp(cell) === 'tensile' ? FORGE_TENSILE * toolLvl(cell) : 0);
+}
+// the ore the NEXT level costs, or null at the top
+function forgeCost(cell) { return toolLvl(cell) < FORGE_MAX ? FORGE_COST[toolLvl(cell) + 1] : null; }
+// what the levels on a tool cost at the counter's own ore prices - a forged
+// weapon sells for its ore too (cellValue, js/ui/shop.js)
+function forgeWorth(cell) {
+  let v = 0;
+  for (let l = 1; l <= toolLvl(cell); l++) v += itemValue(FORGE_COST[l].item) * FORGE_COST[l].n;
+  return v;
+}
+// the tool cell an order names: 'tool' is the weapon shelf, 'bag' the pack
+function forgeCell(p, where, i) {
+  const c = where === 'tool' ? p.tools && p.tools[i] : where === 'bag' ? p.bag[i] : null;
+  return c && toolIdOf(c.type) ? c : null;
+}
+// can p take this cell up a level here and now - the one test the panel's
+// confirm plate and the order itself both ask
+function forgeReady(p, cell) {
+  const c = cell && forgeCost(cell);
+  return !!c && !!merchNear(p) && bagCount(p, c.item) >= c.n;
+}
+// The order (shopCmd, js/ui/shop.js, act 'forge'). Nothing is contested: the
+// weapon and the ore are both the player's own, so there is no one to race.
+function forgeTool(p, where, i) {
+  const cell = forgeCell(p, where, i);
+  if (!forgeReady(p, cell)) { shopDeny(p); return false; }
+  const c = forgeCost(cell);
+  bagTake(p, c.item, c.n);
+  cell.lvl = toolLvl(cell) + 1;
+  sfxFor(p, 'levelUp');
+  const col = ROCK_KINDS[ITEMS[c.item].ore].chip;
+  addFloater(p.x, p.y - 20, '+' + cell.lvl, col);
+  burst(p.x, p.y - 8, col, 10, 50, 0.5);
+  return true;
+}

@@ -751,15 +751,15 @@ function drawToolPrimer(g, y0) {
   // this build actually spends of it
   const b0 = rect(0), bN = rect(n - 1);
   const bx = b0.x + 1, by = rowY + PR_CELL + 1, bw = bN.x + bN.w - b0.x - 2;
-  let fill = Math.round(bw * Math.min(1, plan.used / T.tensile));
-  if (plan.load > T.tensile) fill = Math.min(fill, bw - 3);
+  let fill = Math.round(bw * Math.min(1, plan.used / plan.tensile));
+  if (plan.load > plan.tensile) fill = Math.min(fill, bw - 3);
   g.fillStyle = '#0f1632';
   g.fillRect(bx - 1, by, bw + 2, 5);
   g.fillStyle = TOOL_TIERS[T.tier].ink;
   g.fillRect(bx, by + 1, fill, 3);
   g.fillStyle = '#c2465a';
   g.fillRect(bx + fill, by + 1, bw - fill, 3);
-  drawPixelText(g, T.name + ' - STRENGTH ' + T.tensile + ', SPENDS ' + plan.used,
+  drawPixelText(g, T.name + ' - STRENGTH ' + plan.tensile + ', SPENDS ' + plan.used,
     PR_TX, rowY + 28, '#f2cc6a');
 
   // and the three rules the picture alone cannot say

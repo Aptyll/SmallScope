@@ -228,6 +228,7 @@ a `melee` block: [the cut](#the-cut-a-melee-tool)):
 | `cap` | how many bit cells it has (2–5) |
 | `tensile` | **the weight budget one press has to spend on those cells** — reset at the top of every activation and spent bottom-up, and the first cell that would push the running total past it ends the press there ([firing](#firing)) |
 | `tier` / `art` | which of the three `TOOL_TIERS` palettes it wears, and which 12×12 silhouette (`bow`, `sling`, `sword`, `recurve`) |
+| `up` | the second stat [the forge](#the-forge) raises beside damage: `rof` (SHORTBOW, RECURVE, LONGBOW) or `tensile` (SLING, LONGSWORD, HORN BOW) |
 
 `cap` and `tensile` are the two halves of a tool: **cap is how much you may hang on it, tensile
 how much of that it can swing at once.** The tiers grow the two together at roughly four weight a
@@ -1737,7 +1738,8 @@ offers rolled off the tool, bit and card pools, a **sell strip** anything in the
 dragged onto with a **SELL ALL** button at its end, a live **fish and berry market**, and a
 [restock road](#the-restock-road) counting down to the next turnover. The whole feature is
 [js/ui/shop.js](../../js/ui/shop.js) — the `market`, `the counter's stock`, `buying and selling` and
-`the shop panel` banners.
+`the shop panel` banners. Two tab plates beside the portrait turn the same slab to its other face,
+[the FORGE](#the-forge), where ore takes a weapon up a level.
 
 The post is the **shop**; the MARKET is one corner of it, under its own rule on the panel, and it
 is the only corner whose prices move. That is why the slab is not itself called a market —
@@ -1792,6 +1794,48 @@ The merchant **stands still and faces you** while its counter is open (`shopServ
 `updateMerchant`): it drops the gate, the felling and the loiter for as long as the sale takes.
 It is gated on the OPEN PANEL rather than on proximity because everybody lands at the roost
 together, and a merchant that stopped for anyone standing near it would never raise its gate.
+
+### The forge
+
+The counter's second face (the anvil tab; `state.shopTab`, the `the forge tab` banner of
+[js/ui/forge.js](../../js/ui/forge.js)) swaps the stock, the market and the sell strip for one
+bench, and the rules live beside the ore in the `the forge` banner of
+[js/mining.js](../../js/mining.js). A weapon's level is `lvl` on its own cell beside `bits`, so it
+goes wherever the tool goes — the shelf, the pack, the snow, the wire — and a rebuilt tool would
+lose it. Every level adds `FORGE_DMG` (6%) of damage into the press's envelope before any fitting
+(`toolPlan`, and the PIERCING SHOT's `pierceMods`), and one more step of the body's `up` stat:
+`FORGE_ROF` (5%) off the cycle, or `FORGE_TENSILE` (+1) on the budget. So a +5 weapon hits for
+×1.30, and a bow fires a quarter faster or a sling swings 5 more weight.
+
+| level | costs (`FORGE_COST`) |
+| --- | --- |
+| +1 / +2 | 5 / 10 IRONSTONE |
+| +3 / +4 | 3 / 5 FROSTGLASS |
+| +5 | 1 SUNSTONE |
+
+The prices follow the rocks: STONE is everywhere, FROSTGLASS is far from the roosts, and the two
+SUNSTONEs are the corners neither side owns, so the top level is fought for. A forged weapon
+sells for its ore as well as its body (`forgeWorth` in `cellValue`), so nothing spent at the
+bench is quietly lost at the sell strip.
+
+**The bench**, left to right: the WEAPON well with five level pips under it, the ORE well with
+have / need under it, and the preview (the level and the two numbers it moves, old > new) over
+the plate that forges it — green when it will take, dark when it will not, MAX at the top. Under
+it the LADDER: the five levels as plates, each with its ore and count, lit up to the level the
+weapon in the well has reached. Both wells fill three ways: a **drag** from the pack or the shelf
+(`forgeDrop`, from `dragDrop`), a **click** on a weapon or ore in the pack or on the shelf while
+this face is up (`forgePut`, from `sendBagCell`/`sendSlot`), or a click on the well itself (the
+weapon well steps through what you carry, the ore well takes the ore the next level needs).
+Nothing leaves the pack for it: the weapon well holds a pointer to the cell (`state.forgeSel`,
+found again each frame, by the cell or by where it was and what it is for a client whose pack
+the snapshot rebuilds) and the ore well a kind; the ore well takes only the ore the next level
+costs, and refuses anything else with a buzz and a red flash on the ladder's next plate. The
+plate sends `input.cmd` `{kind: 'shop', act: 'forge', where, i}`, and `forgeTool` re-checks the
+reach and the ore, spends it (`bagTake`) and raises `lvl`. The bots do not forge.
+
+A forged weapon wears `+N` in the forge's colour (`FORGE_INK`) on its well's top-left corner —
+the shelf, the pack, the bench (`forgeMark`) — and its tooltip title carries it too, with the
+forged numbers in that colour.
 
 ### The stock, and what it costs
 
@@ -2176,7 +2220,8 @@ so it is XP too), throws its ore onto the snow one piece at a time toward the mi
 offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
 grows it back. The bots mine through the same key (the harvest rung, holding E on a rock
 until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
-landing's lane take a rock off the map whole (`fellScenery`, js/world.js).
+landing's lane take a rock off the map whole (`fellScenery`, js/world.js). What the ore is for
+is [the forge](#the-forge).
 
 ## Gear
 

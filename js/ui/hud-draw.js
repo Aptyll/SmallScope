@@ -552,6 +552,7 @@ function drawShelf(now) {
   if (cell) {
     tierShine(t, t.y, cell.type, now);
     drawItemIcon(cell.type, t, t.y, null, 2);
+    forgeMark(t, t.y, toolLvl(cell)); // its forge level, in the corner the "!" leaves (js/ui/forge.js)
     if (p.nockT > 0) {
       drawSweepCover(t.x + 1, t.y + 1, t.w - 2, t.h - 2,
         Math.min(1, p.nockT / Math.max(0.01, toolCycle(p))), CD_SWEEP, CD_EDGE);
@@ -655,10 +656,10 @@ function drawShelf(now) {
   // "!" over the strip's well is shouting, said where the build is.
   const b0 = shelfCellRect(0), bN = shelfCellRect(cell.bits.length - 1);
   const bx = b0.x + 1, by = b0.y + b0.h + 1, bw = bN.x + bN.w - b0.x - 2;
-  const over = plan.load > T.tensile;
+  const over = plan.load > plan.tensile;
   ctx.fillStyle = '#0f1632';
   ctx.fillRect(bx - 1, by, bw + 2, SHELF_BAR);
-  let fill = Math.round(bw * Math.min(1, plan.used / T.tensile));
+  let fill = Math.round(bw * Math.min(1, plan.used / plan.tensile));
   if (over) fill = Math.min(fill, bw - 3); // always leave the overrun showing
   ctx.fillStyle = TOOL_TIERS[T.tier].ink;
   ctx.fillRect(bx, by + 1, fill, SHELF_BAR - 2);

@@ -289,6 +289,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the ores as carried items, their icons and prices | `ORE_ICONS`/`ORE_PAL`/`ORE_PRICE`, `ORE_STACK`, `isOre` (the rows go into `ITEMS`; the tooltip: `tipStack`, js/ui/tooltip.js; the price: `itemValue`, js/ui/shop.js) | `rocks and ore` |
 | the mining channel: its start, tick, bite, landing and drop | `startMine` (from `tryWork`, actions.js), `updateMine` (from `updatePlayer`, sim.js), `mineStrike`, `finishMine`, `breakMine` (beside every `breakEat`), `MINE_STRIKE`/`MINE_MOVE`/`ORE_FLING` | `rocks and ore` |
 | is a rock standing, who is at it, is it in reach, and the rubble growing back | `rockReady`, `rockMiner`, `mineReach`, `rockCx`/`rockCy`, `tickRock` (the object timers, sim.js) | `rocks and ore` (the draw: `drawRock`, js/draw/render.js; the shade: `CASTERS.rock`, js/draw/ground.js) |
+| a weapon's forge level and what it adds: damage on every body, then rate of fire or tensile by the body's `TOOLS` row `up` | `FORGE_MAX`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`, `toolLvl` (`cell.lvl`), `toolUp`, `toolDmgMul` (read by `toolPlan`, tools.js, and `pierceMods`, abilities.js), `toolRofMul` (`toolRof`, tools.js), `toolTensile` (`toolPlan`, `toolOver`, `botFitLoadout`, tools.js, and the tooltip) | `the forge` |
+| what each level costs, what a forged weapon sells for, and the order that forges it | `FORGE_COST`, `forgeCost`, `forgeWorth` (`cellValue`, js/ui/shop.js), `forgeCell`, `forgeReady`, `forgeTool` (from `shopCmd` act `forge`, js/ui/shop.js) | `the forge` (the bench: js/ui/forge.js) |
 
 ## js/abilities.js
 
@@ -570,6 +572,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | its pixels | `drawShopPanel`, `drawShopSign`, `drawShopHeading`, `drawShopSection`, `drawShopWell`, `drawSellWell`, `drawSellAll`, `drawMarketCard`, `drawMarketGraph`, `drawTradePlate`, `drawTradeArrow`, `drawTrend` | `the shop panel` › `drawing` (the `E SHOP` cap over the body: `drawShopHint`, js/ui/wheel.js) |
 | the TRADING POST's own chrome: the timber frame and its iron brackets, the team-striped awning with its snow, scallops and icicles, the counter edge, and the two lanterns flanking the sign | `shopChromeCv` (baked once a side, keyed by team), `drawShopLantern`, `SHOP_WOOD_*`/`SHOP_CLOTH_*`/`SHOP_SNOW*`/`SHOP_LAMP*`/`SHOP_IRON*`/`SHOP_SIGN` | `the shop panel` › `drawing` |
 | what the pointer is on there, in the shared descriptor shape | `tipShop` | `the shop panel` › `tooltips` (`tipBase`/`tipTool`/`tipBit`/`tipStack`: `tooltips`, js/ui/tooltip.js) |
+
+## js/ui/forge.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the SHOP / FORGE tab plates in the counter's sign row, and which face is up | `forgeTabs` (into `shopLayout`'s `L.tabs`), `drawShopTabs`, `state.shopTab`, `forgeTabOpen`, `FORGE_SIGN` (the sign board's word, `drawShopSign`), `FORGE_ANVIL` | `the forge tab` |
+| the bench: its geometry, what the pointer is on, a click, a drop | `forgeLayout` (into `L.forge`), `forgeHit`/`forgeKind` (from `shopHit`), `forgeClick` (from `shopClick`), `forgeDrop` (from `dragDrop`, js/ui/strip.js) | `the forge tab` |
+| what is in the two wells, and filling them from the pack or the shelf | `state.forgeSel` (a pointer to the weapon's cell) + `forgeFind`, `state.forgeOre` (a kind) + `forgeOreIn`, `forgeSelect`, `forgePut` (also from `sendBagCell`/`sendSlot`, js/ui/strip.js), `forgeCarried`, `forgeRefuse`/`forgeNo`, `forgeReset` (from `closeShop`) | `the forge tab` |
+| drawing it, and the `+N` a forged weapon wears in every well | `drawForge` (from `drawShopPanel`), `forgeWell`, `forgeGhost`, `forgeArrow`, `forgeUpArrow`, `FORGE_WELL`/`FORGE_STEP_H`/`FORGE_INK`, `forgeMark` (also `drawBag`, js/ui/bag.js; `drawShelf`, js/ui/hud-draw.js) | `the forge tab` |
+| the bench's tooltips | `tipForge` (from `tipShop`, js/ui/shop.js) | `the forge tab` |
 
 ## js/ui/panels.js
 
