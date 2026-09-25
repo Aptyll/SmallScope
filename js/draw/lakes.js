@@ -441,10 +441,9 @@ function lakeSky() {
   // weatherNow() (the `weather` banner, sim.js): `drift` is the ground
   // blizzard, `frost` the clear cold, `snow` the share of flakes falling
   // (a calm day's 0.4 lays nothing new)
-  const w = typeof weatherNow === 'function' ? weatherNow() : null;
-  if (w) return { blizzard: w.drift || 0, frost: (w.frost || 0) * (0.35 + 0.65 * state.darkness), snow: Math.max(0, ((w.snow || 0) - 0.4) / 0.6) };
-  // the stand-in until the weather lands: frost comes with the night
-  return { blizzard: 0, frost: state.darkness * 0.6, snow: 0 };
+  const w = weatherNow();
+  if (!w) return { blizzard: 0, frost: 0, snow: 0 }; // before the first step
+  return { blizzard: w.drift || 0, frost: (w.frost || 0) * (0.35 + 0.65 * state.darkness), snow: Math.max(0, ((w.snow || 0) - 0.4) / 0.6) };
 }
 const LSTREAK_CELL = 72;      // world px of the grid the lake streaks are laid on
 const LSTREAK_LEN = [28, 72]; // px a streak runs, shortest..longest
