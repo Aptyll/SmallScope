@@ -1183,6 +1183,12 @@ function weatherOf(day) {
   while (k < WX_ODDS.length - 1 && h >= WX_ODDS[k][1]) h -= WX_ODDS[k++][1];
   return WX_ODDS[k][0];
 }
+// THE READ for any other system the weather should reach (the ground's drifts,
+// trampled snow, the ice): the dials in force this frame - name, snow, wind,
+// gust, sweep, drift, frost, each 0..1 but wind (to 1.6) and gust (to 1.35) -
+// already mid-fade at a dawn. Read it, never write it; a reader that wants the
+// wind itself takes state.wind / windGust, which carry these dials already.
+function weatherNow() { return state.wx; }
 // Steps the dials; updateFx runs it above the wind. The first step of a page
 // snaps to the day's row - a match opens on its weather, it does not fade in.
 function stepWeather(dt) {

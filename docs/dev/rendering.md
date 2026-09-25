@@ -2566,7 +2566,7 @@ passes above already read:
 | `drift`, the ground blizzard | `drawDrift`, the haze | 0 | 0 | 1 | 0 |
 | `frost`, the clear cold | `todGrade`, `cloudShade`, `drawFrostGlint` | 0 | 0 | 0 | 1 |
 
-`state.wx` holds the dials in force. `stepWeather` (from `updateFx`, above the wind) eases them
+`state.wx` holds the dials in force, and **`weatherNow()` is how any other system reads them** (read-only; a reader that wants the wind takes `state.wind`/`windGust`, which already carry them). `stepWeather` (from `updateFx`, above the wind) eases them
 from wherever they were to the new day's row over `WX_FADE` (5 s) on a smoothstep, so the dawn
 that changes the weather fades it in; the first step of a page snaps instead, so a match opens on
 its weather. **The air still dies at dusk under every row** — the dials scale `windAmp`, which
