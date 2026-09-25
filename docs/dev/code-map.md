@@ -386,6 +386,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the treasure chest's and the road cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
 | which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's); its atlas row (palette variant, forest-depth tone) and the nudge off its tile centre | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST`, `treeCell`, `treeTone`/`woody`/`TREE_TONES`, `treeNudgeX`/`treeNudgeY`/`TREE_NUDGE_X`/`TREE_NUDGE_Y` | `the scenery bakes` |
 
+## js/draw/trample.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the trampled snow: the grid (4 px cells), what stamps it (a walk, a slide, a crawl, a roll, a knockback, a blow, a death), the refill and the snowfall seam the weather feeds, which pixels trample (snow, ice, nothing) | `trPack`/`trChurn`, `trStamp`, `trBody`, `trampleStep` (called by `update()`, sim.js, beside the step on a host and after `netClientStep` on a client), `trRefill`, `trampleSnowfall`/`TR_SNOW_LIGHT`, `trMask`, `trampleGroundChanged` (called by `repaintGround`), `TR_*` | `trampled snow` |
+| trampled ice thinning the lakes' dust: the read they take, the per-tile scan, the repaint queue handed to `iceDustInvalidate` | `trampleAt`, `trDustLayer`, `trDustScan`, `trDustSync`, `trDustSig`/`trDustQ`/`trDustHot` | `the dust on the ice` |
+| its pixels: the pressed bands, the churned clods, the frost scuffed into ice, the chunk canvases and their pool | `TR_PACK_COL`/`TR_PIT`/`TR_LUMP`/`TR_FROST`, `trPaint`, `drawTrample` (called by `render()` right before the footprints), `trEvict` | `the trample's pixels` |
+
 ## js/draw/practice.js
 
 | Looking for | Start at | Banner |

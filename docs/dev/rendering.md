@@ -157,8 +157,11 @@ entity draw code must use `ex`/`ey`.
    downstream over the still water the bake laid, on the field's clock) → under-ice fish →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
-3. footprints (walking prints, slide grooves, skate scratches and belly-crawl furrows share the
-   one `footprints` array, branching on `f.k`);
+3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
+   bodies walked and fought, drawn from pooled 128 px chunk canvases repainted only when their
+   grid moved - see [trampled snow](gameplay.md#trampled-snow)) → footprints (walking prints, slide
+   grooves, skate scratches and belly-crawl furrows share the one `footprints` array, branching on
+   `f.k` - the crisp, short-lived detail over the trample);
 4. **the stars reflected in the ice** (`drawIceStars`, `settings.vidStars` — on the surface, so
    it covers the fish and the cracks, and under everything that walks) → `drawDrift` (a
    blizzard day's low streaks, [the day's weather](#the-days-weather));

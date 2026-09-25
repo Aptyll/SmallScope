@@ -190,6 +190,9 @@ function render() {
   // parkour's start/finish line, painted flat on the carved ice
   if (PRACTICE) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); }
 
+  // the trampled snow: the match's slow record, under the crisp prints (js/draw/trample.js)
+  drawTrample(ox, oy);
+
   // footprints + slide trails
   for (const f of footprints) {
     if (f.k === 1) {
