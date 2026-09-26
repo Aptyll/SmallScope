@@ -354,7 +354,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the frame sim: momentum, day/night, timers | `update`, `updatePlay`, `updatePlayer` | `update` |
 | the disc an arrow lands in round a body | `ARROW_HIT_R` (above `updatePlay`) | `update` |
-| a shot meeting everything its step CROSSED, in the order it met it: the swept disc, the tile walk (roost, dummy, wall), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `shotContacts`, `shotHits` | `the shot's sweep` |
+| a shot meeting everything its step CROSSED, in the order it met it: the swept disc and box, the tile walk (roost, dummy, wall), every standing building by its drawn shape (the art's opaque box, a turret's head disc), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `sweepBox`, `artBox`/`structShotBox` (also drawn by `drawHitboxes`), `shotContacts`, `shotHits` | `the shot's sweep` |
 | the clock paying every player on the ground a coin, silently | `TRICKLE_GOLD`/`TRICKLE_T` (the tick is in `updatePlay`'s player loop) | `passive income` |
 | the zoom ease itself (runs first thing in `update`) | `applyZoom` | `update` |
 | the day's weather: the four rows of dials, how often each comes up, what a day rolls, and the dawn fade between them | `WEATHERS`, `WX_DIALS`, `WX_ODDS`, `WX_FADE`, `weatherOf`, `weatherNow` (the read for other systems), `stepWeather` (the dials in force: `state.wx`, core.js; the pin: `DBG.weather`) | `weather` |
@@ -487,7 +487,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the turret's rotating gun, its bolts, its aim line and muzzle flash | `drawTurretHead`, `drawBolt`, `drawTurretFx`, `paintRimmed`, `TUR_METAL`/`TUR_RIM` | `the turret's rotating half, the bay, the net and the tiled struct` |
-| the bay's overlay, the fish net's draw, a tiered piece's sprite and a tiled building's draw (one tile of art per footprint tile) | `drawBayOverlay`, `drawNet`/`NET_FISH_AT`, `structSprite`, `drawTiledStruct` | `the turret's rotating half` (the file's one banner; what they read: `STRUCTS`, structures.js) |
+| the bay's overlay, the fish net's draw, a tiered piece's sprite and where it is laid (read by the draw and the shot's sweep), a tiled building's draw (one tile of art per footprint tile) | `drawBayOverlay`, `drawNet`/`NET_FISH_AT`, `structSprite`, `structArtOff`, `drawTiledStruct` | `the turret's rotating half` (the file's one banner; what they read: `STRUCTS`, structures.js) |
 
 ## js/draw/bodies.js
 

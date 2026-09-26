@@ -560,9 +560,8 @@ function render() {
       drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
     } else if (STRUCTS[o.type]) {
       const spr = structSprite(o);
-      const sy = py + structH(o) * TILE - spr.height; // skirt on the footprint's bottom edge
-      // a sprite wider than its footprint (the 32x32 turret on one tile) centres over it
-      const sx = px + ((structW(o) * TILE - spr.width) >> 1);
+      const off = structArtOff(o, spr); // skirt on the footprint's bottom edge, centred over its width
+      const sx = px + off.x, sy = py + off.y;
       if (o.building) {
         const p = o.buildT / o.buildTotal;
         if (spr.width > 16) {
@@ -1183,10 +1182,17 @@ function drawHitboxes(ox, oy, ex, ey) {
 
   // buildings: the centre of the FOOTPRINT, which is what the sprite centres
   // itself over (`sx` in the structure draw) whether it is wider than its
-  // tiles or not - so it is the line the damage bar has to sit on too
+  // tiles or not - so it is the line the damage bar has to sit on too. And
+  // the shape a shot meets it by (structShotBox, sim.js): the drawn art's box
+  // and, on a turret, the head's disc - past the cyan footprint wherever the
+  // art stands past it
   for (const o of structures) {
     const w = structW(o) * TILE, h = structH(o) * TILE;
     hbMid(o.tx * TILE + w / 2 - ox, o.ty * TILE - 24 - oy, o.ty * TILE + h - oy);
+    const b = structShotBox(o);
+    if (!b) continue;
+    hbBox(b.x0 - ox, b.y0 - oy, b.x1 - b.x0, b.y1 - b.y0, HB_HURT);
+    if (b.hr) hbRing(b.hx - ox, b.hy - oy, b.hr, HB_HURT);
   }
 
   // an arrow is a point: it is the tile under that point that stops it, and

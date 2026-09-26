@@ -386,16 +386,25 @@ function aiZipWorth(p, x, y) {
   return feet - ride >= ZIP_AI_GAIN ? { z, d0: nb.d, d1: ng.d } : null;
 }
 
-// the camp monster nearest of those already hunting this bot. A camp is
+// the camp monster nearest of those in a fight this bot is in. A camp is
 // neutral until hit (updateCampMonster, wildlife.js), so one standing by
-// is nothing to a bot - only a quarry's monsters are, and any of them in
-// AI_SIGHT is the fight it is in
-function aiNearestWolf(p) {
-  let best = null, bd = AI_SIGHT;
+// is nothing to a bot - only a hunting one is: one hunting this bot, in
+// AI_SIGHT, or (an ally minding the human, `ward`) one hunting anybody on
+// its side inside AI_ANCHOR_R of the human, noticed from AI_ANCHOR_D - the
+// human is the anchor, exactly as for a rival at rung 3, so a dire wolf you
+// wake is a dire wolf your side comes to. "Anybody on its side" because every
+// hit re-aims the camp at the latest hitter: the first helper to land one
+// takes it off the human, and the rest must not drop out when it does
+function aiNearestWolf(p, ward) {
+  let best = null, bd = Infinity;
   for (const a of animals) {
-    if (a.dead || !isCampKind(a.kind) || a.target !== p) continue;
+    if (!unitAlive(a) || !isCampKind(a.kind) || !a.target) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
-    if (d < bd) { bd = d; best = a; }
+    if (d >= bd) continue;
+    const mine = a.target === p && d < AI_SIGHT;
+    const helps = ward && a.target.team === p.team && d < AI_ANCHOR_D &&
+      Math.hypot(a.x - ward.x, a.y - ward.y) < AI_ANCHOR_R;
+    if (mine || helps) { bd = d; best = a; }
   }
   return best;
 }
@@ -646,7 +655,8 @@ function aiThink(p, dt) {
   //    feet, with the cooldown in hand. `hideT` doubles as the give-up: a
   //    plant that will not take burns it four times as fast and ends in the
   //    lockout.
-  const wolf = foe ? null : aiNearestWolf(p);
+  // (its own bird under threat comes before the human's camp fight)
+  const wolf = foe ? null : aiNearestWolf(p, defend ? null : ward);
   if (p.prone) ai.hideT -= dt;
   const btx = Math.floor(p.x / TILE), bty = Math.floor((p.y + 4) / TILE);
   const canBury = p.cls === 0 && abReady(p, 3) && !p.sliding && p.dodgeT <= 0 &&
@@ -744,7 +754,10 @@ function aiThink(p, dt) {
   }
 
   // 4. a camp it has woken hunts back: a bot with a monster on it fights
-  //    its way out, shooting the nearest one and giving ground while it does
+  //    its way out, shooting the nearest one and giving ground while it does.
+  //    An ally helping the human's camp fight (aiNearestWolf) has no monster
+  //    coming to it, so it walks in to its own range first - a blade to arm's
+  //    length, a bow to ~90 px with the line open
   if (wolf) {
     if (p.zip >= 0) inp.jump = true; // off the zipline first
     const d = Math.hypot(wolf.x - p.x, wolf.y - p.y);
@@ -752,7 +765,8 @@ function aiThink(p, dt) {
     aimAt(wolf.x, wolf.y - 4);
     const away = Math.atan2(p.y - wolf.y, p.x - wolf.x);
     const melee = aiMelee(p);
-    if (d < 64 && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground
+    if (wolf.target !== p && (melee ? d > AI_MELEE_D : d > 90 || !clear)) { if (steerTo(wolf.x, wolf.y, 0) < 0) { inp.mx = 0; inp.my = 0; } }
+    else if (d < 64 && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground
     inp.fire = clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < kitOf(p).bowCharge * 0.7;
     if (d < 30 && p.dodgeCharges > 0 && rng() < dt * 3) inp.dodge = true;
     ai.tgt = null;
