@@ -284,6 +284,71 @@ function sweepDisc(x0, y0, dx, dy, cx, cy, r) {
   const s = (-b - Math.sqrt(disc)) / A;
   return s <= 1 ? s : -1;               // ...or meets it past the end of this step
 }
+// The same for a box: the fraction of the step at which it first enters, or
+// -1. A step that STARTS inside meets it at 0 only while it is closing on the
+// centre - a shot into the building you hug dies on it, one away flies clear
+// (the tile walk's own first-step rule, shotContacts).
+function sweepBox(x0, y0, dx, dy, b) {
+  if (x0 > b.x0 && x0 < b.x1 && y0 > b.y0 && y0 < b.y1) {
+    return ((b.x0 + b.x1) / 2 - x0) * dx + ((b.y0 + b.y1) / 2 - y0) * dy > 0 ? 0 : -1;
+  }
+  let t0 = 0, t1 = 1;
+  if (dx) {
+    let p = (b.x0 - x0) / dx, q = (b.x1 - x0) / dx;
+    if (p > q) { const t = p; p = q; q = t; }
+    if (p > t0) t0 = p;
+    if (q < t1) t1 = q;
+  } else if (x0 <= b.x0 || x0 >= b.x1) return -1;
+  if (dy) {
+    let p = (b.y0 - y0) / dy, q = (b.y1 - y0) / dy;
+    if (p > q) { const t = p; p = q; q = t; }
+    if (p > t0) t0 = p;
+    if (q < t1) t1 = q;
+  } else if (y0 <= b.y0 || y0 >= b.y1) return -1;
+  return t0 <= t1 ? t0 : -1;
+}
+
+// A STANDING BUILDING stops a shot wherever it is DRAWN, not only on the
+// footprint tiles the walk asks: its art stands on the footprint's bottom
+// edge and may rise past the top (the bay's roof) or overhang the sides (the
+// turret's mount, 32 px on one tile), and a turret's head is rasterised above
+// its tile at the pivot (drawTurretHead) - so a shot through any of that flew
+// through the building. Its shape is the box its sprite's opaque pixels cover
+// where the draw lays them (structArtOff), the footprint included, plus for a
+// type with a `head` (STRUCTS) a disc that wide round turretPivot. Null for a
+// site still going up, which is its footprint alone (the art is not up yet),
+// and for a building a shot never meets (the net lies flat on the water).
+// The `.` overlay draws exactly this (drawHitboxes).
+const artBoxes = new WeakMap(); // sprite canvas -> the box its opaque pixels cover, read once
+function artBox(spr) {
+  let b = artBoxes.get(spr);
+  if (b) return b;
+  const px = spr.getContext('2d').getImageData(0, 0, spr.width, spr.height).data;
+  b = { x0: spr.width, y0: spr.height, x1: 0, y1: 0 };
+  for (let y = 0; y < spr.height; y++) for (let x = 0; x < spr.width; x++) {
+    if (!px[(y * spr.width + x) * 4 + 3]) continue;
+    if (x < b.x0) b.x0 = x;
+    if (x + 1 > b.x1) b.x1 = x + 1;
+    if (y < b.y0) b.y0 = y;
+    if (y + 1 > b.y1) b.y1 = y + 1;
+  }
+  artBoxes.set(spr, b);
+  return b;
+}
+function structShotBox(o) {
+  if (o.building || !isSolidTile(o.tx, o.ty)) return null;
+  const fx = o.tx * TILE, fy = o.ty * TILE;
+  const b = { x0: fx, y0: fy, x1: fx + structW(o) * TILE, y1: fy + structH(o) * TILE, hr: 0, hx: 0, hy: 0 };
+  // a `tiled` piece wears one tile of art per footprint tile: its footprint is its art
+  if (!STRUCTS[o.type].tiled) {
+    const spr = structSprite(o), a = artBox(spr), off = structArtOff(o, spr);
+    b.x0 = Math.min(b.x0, fx + off.x + a.x0); b.x1 = Math.max(b.x1, fx + off.x + a.x1);
+    b.y0 = Math.min(b.y0, fy + off.y + a.y0); b.y1 = Math.max(b.y1, fy + off.y + a.y1);
+  }
+  const hr = STRUCTS[o.type].head;
+  if (hr) { const pv = turretPivot(o); b.hr = hr; b.hx = pv.x; b.hy = pv.y; }
+  return b;
+}
 
 // Everything one shot's step meets, in the order it meets it: `{ s, k, t }`,
 // `s` the fraction of the step, `k` what was met ('eagle' 'dummy' 'wall'
@@ -347,6 +412,24 @@ function shotContacts(a, x0, y0, dx, dy) {
       shotHits.push({ s, k: 'wall', tx, ty }); stop = s; break;
     }
   }
+  const lx = Math.min(x0, x0 + dx), hx = Math.max(x0, x0 + dx);
+  const ly = Math.min(y0, y0 + dy), hy = Math.max(y0, y0 + dy);
+  // ...and every standing building by the shape it is DRAWN in (structShotBox,
+  // above) where that reaches past the footprint the walk asked: the first
+  // one the step meets ends it, cutting off whatever the walk met beyond it.
+  // It rides as its anchor tile, so the wall branch sieges it like any other.
+  if (a.solid !== false) for (const o of structures) {
+    const b = structShotBox(o);
+    if (!b) continue;
+    const bx0 = b.hr ? Math.min(b.x0, b.hx - b.hr) : b.x0, bx1 = b.hr ? Math.max(b.x1, b.hx + b.hr) : b.x1;
+    const by0 = b.hr ? Math.min(b.y0, b.hy - b.hr) : b.y0, by1 = b.hr ? Math.max(b.y1, b.hy + b.hr) : b.y1;
+    if (bx1 < lx || bx0 > hx || by1 < ly || by0 > hy) continue;
+    let s = sweepBox(x0, y0, dx, dy, b);
+    if (b.hr) { const sh = sweepDisc(x0, y0, dx, dy, b.hx, b.hy, b.hr); if (sh >= 0 && (s < 0 || sh < s)) s = sh; }
+    if (s < 0 || s >= stop) continue;
+    for (let i = shotHits.length - 1; i >= 0; i--) if (shotHits[i].s > s) shotHits.splice(i, 1);
+    shotHits.push({ s, k: 'wall', tx: o.tx, ty: o.ty }); stop = s;
+  }
   // ...the archery targets: the shot meets the FACE, wherever its habit has
   // carried it - ptFace is the same geometry the draw uses, and the hit disc
   // scales with the target's size (ptHitR)
@@ -361,8 +444,6 @@ function shotContacts(a, x0, y0, dx, dy) {
   // never the shooter, who is not a target of their own tool at any weight.
   // A pierce skips whoever it has already cut (a.pierceHit), so a slow
   // overlap never pays twice.
-  const lx = Math.min(x0, x0 + dx), hx = Math.max(x0, x0 + dx);
-  const ly = Math.min(y0, y0 + dy), hy = Math.max(y0, y0 + dy);
   const pad = a.reach || 0;
   for (const t of players) {
     if ((a.team === t.team && !a.ff) || t.id === a.owner) continue;

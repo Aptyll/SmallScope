@@ -442,6 +442,9 @@ fillers through `structOf()` first, so the anchor's entry colours the whole buil
 `STRUCTS` entry is automatically solid for free, and only a genuinely new *non-`STRUCTS`* scenery
 type needs a line there. `hitObject()`, the draws pass (via `structSprite`), construction,
 ownership and refunds already dispatch on `STRUCTS[o.type]` too — no per-type work there, and
+a shot meets the grid's own opaque box (`structShotBox`, js/sim.js), so taller art is a taller
+target for free; only a part drawn outside the grid (the turret's head) declares its reach
+(`head`) — and
 nothing to add unless the type does something once built (a functional tick branch in
 `updateStructures()`, e.g. the generator's payout timer or the bay's roll-out).
 **The manage wheel is a separate, hand-built list, not generic over `STRUCT_ORDER`**:
@@ -598,7 +601,8 @@ Code that is dead **on purpose** is the next section.
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
   one is within `AI_HUNT`, never the alpha under level 6 or the dire wolf at all, and nothing in
   `aiSituation` weighs a camp against the road — so the alpha stone and the dire hollow are the
-  human's until an objective rung learns them ([Bots](multiplayer.md#bots)).
+  human's to start (the allies join a camp fight the human is in, rung 4) until an objective rung
+  learns them ([Bots](multiplayer.md#bots)).
 - **The alpha and the dire wolf wear placeholder sprites** (3.20): the wolf's grids washed and,
   for the dire, doubled ([sprites.md](sprites.md)). Each wants its own concept sheet.
 - **The music is the Steam download**: the nine tracks in `audio/music/` are 39 MB of the

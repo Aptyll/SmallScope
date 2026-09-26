@@ -213,6 +213,13 @@ function structSprite(o) {
   const art = (S && (S.tiled || S.art)) || o.type;
   return set ? set[art][o.tier] : SPRITES[art][o.tier];
 }
+// where a building's sprite is laid, in px from its footprint's top-left: the
+// skirt on the footprint's bottom edge, centred over its width (a sprite
+// wider than its footprint - the 32x32 turret on one tile - overhangs both
+// sides). The draw and the shot's sweep (structShotBox, sim.js) both read it.
+function structArtOff(o, spr) {
+  return { x: (structW(o) * TILE - spr.width) >> 1, y: structH(o) * TILE - spr.height };
+}
 // A `tiled` building (the long wall): each footprint tile wears the named
 // type's own tile of art, so a piece turned by R is two wall tiles either
 // way and no art has to turn. The scaffold stages and the sprite go on per

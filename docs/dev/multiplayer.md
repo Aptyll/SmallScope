@@ -694,9 +694,14 @@ The ladder:
    `ambushReady()` check a human gets, since `concealOf` discounts a moving mound and
    `ambushReady` refuses a moving shot outright.
 4. **a camp on it** — the nearest camp monster already hunting this bot, inside `AI_SIGHT`: shoot it and give
-   ground under 64 px, dodge under 30. A camp is neutral until hit, so a bot only ever fights one it woke
-   itself - through the hunt rung, which takes a den's wolves like any animal but never the dire wolf
-   (nor the alpha under level 6).
+   ground under 64 px, dodge under 30. A camp is neutral until hit, so a bot wakes one itself only
+   through the hunt rung, which takes a den's wolves like any animal but never the dire wolf
+   (nor the alpha under level 6). **An ally joins the human's camp fight**: a monster hunting
+   anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D` (the human is
+   the anchor, as at rung 3; its own bird under threat comes first), which it walks in on - a
+   blade to arm's length, a bow to 90 px with the line open - since that monster is not coming
+   to it. Every hit re-aims the camp at the latest hitter, so the helpers keep on whichever of
+   the side it is chasing.
 5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
    this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.
 5a. **the order** — a [flag](gameplay.md#team-flags) somebody else on the side planted that

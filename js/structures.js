@@ -33,8 +33,11 @@ const STRUCTS = {
     { cost: { gold: 22 }, hp: 280, buildT: 3.6 },
     { cost: { gold: 55 }, hp: 600, buildT: 3.6 },
   ]},
-  // traverse = rad/s the head swings; aim = seconds held on target before it fires
-  turret: { name: 'TURRET', blurb: 'SHOOTS THE NEAREST ENEMY IN RANGE. IT FIRES OVER WALLS AND TREES.', mm: mmTeam, map: chTeam, tiers: [
+  // traverse = rad/s the head swings; aim = seconds held on target before it fires.
+  // head = px round turretPivot the gun's casemate stands, above the tile: a
+  // shot through it lands (structShotBox, sim.js) - the barrel past it is a
+  // stick a shot flies by
+  turret: { name: 'TURRET', blurb: 'SHOOTS THE NEAREST ENEMY IN RANGE. IT FIRES OVER WALLS AND TREES.', head: 6, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 10 }, hp: 50,  buildT: 8,   range: 60, dmg: 6,  rate: 1.0,  traverse: 2.2, aim: 0.55 },
     { cost: { gold: 25 }, hp: 90,  buildT: 4.8, range: 76, dmg: 9,  rate: 0.8,  traverse: 3.0, aim: 0.45 },
     { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 92, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35 },

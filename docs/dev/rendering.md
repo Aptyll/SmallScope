@@ -1270,7 +1270,8 @@ Colour carries the kind, so there is nothing to label: **cyan** a wall to everyo
 so a multi-tile building boxes each of its footprint tiles), **blue** open water — a wall to
 animals and robots, a hole a player falls into — **green** the body circle
 `moveEntity`/`separateUnits` push apart, plus a dot on the anchor point itself, **red** the circle
-an arrow is tested against, **violet** a walk-over pickup or a click target, **gold** a projectile
+an arrow is tested against (on a standing building, the box of its drawn art and a turret head's
+ring — `structShotBox`, past the cyan footprint wherever the art stands past it), **violet** a walk-over pickup or a click target, **gold** a projectile
 (a point, never a circle), **pink** the model's own centre column (`hbMid`).
 
 Every shape is read from the expression the sim uses, never a copy of the number — an overlay that

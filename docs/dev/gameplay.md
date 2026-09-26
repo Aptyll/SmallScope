@@ -586,7 +586,12 @@ through `hurtStruct`, `STRUCT_DR` (60 %) off like any player blow — so a bit t
 **A shot meets everything its step crossed, then one blow.** A step is a *segment*, never a point:
 `shotContacts` (js/sim.js, `the shot's sweep`) lists what the segment met in the order it met
 it — the tiles it entered (a grid DDA) up to the first that ends it (a rival roost, the practice
-dummy, a solid tile), a target face, and every body whose hit disc it crossed (`sweepDisc`): the
+dummy, a solid tile), every **standing building by the shape it is drawn in** — `structShotBox`,
+the box its sprite's opaque pixels cover where the draw lays it (`structArtOff`, so the bay's roof
+6 px over its footprint and the turret's mount 2 px past each side stop a shot), plus a
+turret's head as a disc of the entry's `head` (6 px) round `turretPivot`, the barrel past it a
+stick a shot flies by; a site still going up is its footprint alone — a target face, and every
+body whose hit disc it crossed (`sweepDisc`, and `sweepBox` for the building's box): the
 `ARROW_HIT_R` (10 px) disc at a player's chest, `ROBOT_HIT_R` (7) about `robotHitY` for a chassis,
 `animalHitR` about `animalHitY` for a body that may be up on its own altitude, each widened by the
 bit's `reach`. So speed never skips a hit — three SPEEDUPs throw a shot 43 px a step, wider than a
@@ -1726,11 +1731,16 @@ seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, app
 at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
 goes out with the body on death. There is no HUD element for it: the ring is the read.
 
-**Bots and camps.** A bot fights only a camp that is already hunting it (`aiNearestWolf` answers
-a monster whose `target` is that bot, inside `AI_SIGHT`); it will pull a den on its own through
+**Bots and camps.** A bot fights a camp that is already hunting it (`aiNearestWolf` answers
+a monster whose `target` is that bot, inside `AI_SIGHT`) — and an **ally** also fights one hunting
+anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D`, walking in to
+its own range first, unless its own bird is under threat: the human is the camp fight's anchor
+the way it is a rival's ([Bots](multiplayer.md#bots), rung 4), so a dire wolf you wake is one
+your side comes to. It is *anybody on its side* because every hit re-aims the camp, and the
+helpers must not drop out when one of them takes it off you. A bot will pull a den on its own through
 the hunt rung like any other animal, and never the dire wolf (or the alpha below level 6), which
 a lone bot would die to. No bot walks *to* a camp deliberately yet — see
-[checklists.md](checklists.md#intentional-dead-code).
+[checklists.md](checklists.md#known-drift).
 
 ### Birds: the flock (dormant)
 
@@ -2616,7 +2626,8 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   - the **E swing**, `hitObject()`'s structure branch, **contested** with everything else E does
     (it runs inside `swingHit`'s `contest('work:' + idx)`);
   - **every bit a tool fires**, in the arrow update's solid-tile branch (js/sim.js): a shot
-    that dies on a wall sieges it first. A bit whose `solid` is `false`
+    that dies on a wall sieges it first — anywhere on the building's drawn shape, the turret's
+    head included ([the sweep](#flight-paths), `structShotBox`). A bit whose `solid` is `false`
     (the care arrow, the wisp, the hook) passes through buildings without touching them — that
     is the trade for passing walls, and it needs no second flag;
   - the **abilities**: the stomp's ring, the shield's slam and the execute (their wedge, through
