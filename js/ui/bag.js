@@ -604,9 +604,9 @@ function drawBag(now) {
   // THE DRAWER, sliding out from under the tab: clipped to the screen below
   // the tab's bottom edge, so it emerges rather than fades. The strip's own
   // plain plate (drawHudFrame), its free corners cut. No cast shadow: the
-  // cells already carry the depth. A ring inside the line says the one state
-  // the grid cannot: amber means no cell is left free, and a refusal reddens
-  // line and ring both.
+  // cells already carry the depth. The edge inside the line says the one
+  // state the grid cannot: amber means no cell is left free, and a refusal
+  // reddens line and edge both.
   if (bagEase > 0) {
     const f = bagFrameRect();
     const lift = Math.round((1 - easeOut(bagEase)) * (f.h + 3));

@@ -910,16 +910,17 @@ that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
 ### The hud frame
 
 `drawHudFrame(x, y, w, h, o)` is the one plate the strip, the pack and the team rail stand on,
-kept **plain and minimal** on purpose (the bevel and the snow cap came off in 4.16): the wells
-cover most of the ground and already carry the depth, and a plate looked at for an hour has to
-stay quiet. Two pixel layers: the **silhouette** (`HUD_INK`, the xp bar's own ink) with its top
-corners cut two pixels and the corners that meet a screen edge left square (a notch of world
-there reads as a hole; `o.corners`), and the **ground** (`o.bg`, `AB_BG` by default). `o.tab` is
-a block rising off the top edge and flush with the right side — the pouch block's — and the
-frame draws the two as **one silhouette**: the outline steps up around the tab and the ground
-runs through the seam. `o.lit`/`o.ink` are what a widget's states colour (the drawer's full
-amber, a refusal's red): `o.lit` is a ring just inside the outline, and a plate at rest has none.
-Every margin inside the outline is three pixels — line, ring, ground — which is what `AB_PAD` and
+drawn the way League's and Dota's HUDs get their contrast, kept simple (4.18): a dark outline
+(`HUD_INK`), one bright line just inside it (`HUD_EDGE`, cold steel, kept apart from the drawer's amber and red states), and a
+solid dark ground (`o.bg`, `AB_BG` by default). The outline holds the plate apart from bright
+snow at noon, the bright line holds it apart from the forest at night, and the ground keeps every
+well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
+both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world
+there reads as a hole; `o.corners`). `o.tab` is a block rising off the top edge and flush with
+the right side — the pouch block's — and the frame draws the two as **one silhouette**: outline
+and edge step up around the tab and the ground runs through the seam. `o.lit`/`o.ink` are what a
+widget's states colour (the drawer's full amber, a refusal's red): `o.lit` repaints the edge.
+Every margin inside the outline is three pixels — line, edge, ground — which is what `AB_PAD` and
 `BAG_PAD` are, so a well sits the same distance from the edge on every side of every widget. The
 [drawer](#the-backpack) wears it with only its two free (right) corners cut — it is flush with
 the view's left edge.

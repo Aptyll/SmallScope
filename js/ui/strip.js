@@ -60,23 +60,27 @@ const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
 const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
 const AB_BG = '#0d1229';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
-// The strip, the pack and the team rail stand on one plain plate, kept
-// minimal on purpose (4.16: the bevel and the snow cap went): a plate that
-// is looked at for an hour has to stay quiet, and the wells on it already
-// carry the depth. Two layers, all pixels, nothing soft:
+// The strip, the pack and the team rail stand on one plate, drawn the way
+// League's and Dota's HUDs get their contrast, kept simple: a dark outline,
+// a thin bright line just inside it, and a solid dark ground. The outline
+// is what holds the plate apart from bright snow at noon, the bright line
+// what holds it apart from the forest at night, and the ground keeps every
+// well on it readable over both. No bevel, no snow, no ornament: a plate
+// looked at for an hour has to stay quiet. Three layers, all pixels:
 //   * the SILHOUETTE, one dark line (the xp bar's own ink) with its top
 //     corners cut two pixels, so the plate sits on the snow as a shape and
 //     not a rectangle - the bottom corners stay square where they meet the
 //     screen's edge, since a notch of world there reads as a hole;
-//   * the GROUND inside it, one opaque colour.
+//   * the EDGE, one bright line just inside it, following the same cuts;
+//   * the GROUND inside that, one opaque colour.
 // `tab` is a block rising off the top edge and flush with the right side
-// (the pouch block's): the outline steps up around it as ONE silhouette and
-// the ground runs through the seam. `ink` and `lit` are what a widget's
-// state colours (the pack's full amber, a refusal's red): `lit` rings the
-// inside of the outline, and a plate at rest has no ring. Every margin
-// inside the outline is three pixels - line, ring, ground - which is what
-// AB_PAD and BAG_PAD are.
+// (the pouch block's): outline and edge step up around it as ONE
+// silhouette and the ground runs through the seam. `ink` and `lit` are what
+// a widget's state colours (the pack's full amber, a refusal's red): `lit`
+// repaints the edge. Every margin inside the outline is three pixels -
+// line, edge, ground - which is what AB_PAD and BAG_PAD are.
 const HUD_INK = '#05070f';   // the silhouette
+const HUD_EDGE = '#7f93bf';  // the bright line inside it: cold steel, apart from the pack's amber and red states
 const HUD_LIT = '#35426e';   // a quiet slate: the waiting part of a dead chip's rim (rail.js)
 const HUD_FROST = '#b8cce6'; // the tick under your own rail chip
 // a rect with its corners cut two pixels where `c` says so
@@ -93,23 +97,18 @@ function drawHudFrame(x, y, w, h, o) {
   o = o || {};
   const c = o.corners || { tl: true, tr: true, bl: false, br: false };
   const t = o.tab || null, tc = { tl: true, tr: true, bl: false, br: false };
-  // the silhouette, then the ground - the tab's run down INTO the plate so
-  // the seam between the two is ground, never line
+  // outline, edge, ground, each laid over the last one pixel in; the tab's
+  // edge stops on the plate's own top edge and its ground runs down INTO
+  // the plate's, so the seam between the two is ground, never line
   ctx.fillStyle = o.ink || HUD_INK;
   chamCut(x, y, w, h, c);
   if (t) chamCut(t.x, t.y, t.w, y - t.y + 3, tc);
-  ctx.fillStyle = o.bg || AB_BG;
+  ctx.fillStyle = o.lit || HUD_EDGE;
   chamCut(x + 1, y + 1, w - 2, h - 2, c);
-  if (t) chamCut(t.x + 1, t.y + 1, t.w - 2, y - t.y + 2, tc);
-  // a state's ring, just inside the line (never with a tab: only the pack
-  // wears a state)
-  if (o.lit && !t) {
-    ctx.fillStyle = o.lit;
-    ctx.fillRect(x + 2, y + 1, w - 4, 1);
-    ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
-    ctx.fillRect(x + 1, y + 2, 1, h - 4);
-    ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
-  }
+  if (t) chamCut(t.x + 1, t.y + 1, t.w - 2, y - t.y + 1, tc);
+  ctx.fillStyle = o.bg || AB_BG;
+  chamCut(x + 2, y + 2, w - 4, h - 4, c);
+  if (t) chamCut(t.x + 2, t.y + 2, t.w - 4, y - t.y + 2, tc);
 }
 // The weapon well's half of the refusal the backpack already has: a bit that
 // will not fit in the tool reddens and shakes the WELL, exactly as one that
