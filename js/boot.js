@@ -11,7 +11,7 @@
 // the pass mid-route is a clean fly-by (mode 'drop'). The view zooms out to
 // DROP_ZOOM, the flight path is dotted across the snow itself (M raises the
 // world map for the wider read), and a rider jumps with Space/Enter/E/click -
-// but only inside the JUMP WINDOW: the line's last DROP_LOCK_T seconds, gold
+// but only inside the JUMP WINDOW: the line's last DROP_LOCK_T seconds, pale
 // on the flight bar and on the dotted line both (bots jump at their own
 // hashed fraction of the window). A jumper free-falls for FALL_T onto the
 // nearest open tile, which becomes its spawn tile (the bot brain's home); the
@@ -238,6 +238,13 @@ function drawSeated(set, dir, x, y, sc, frame) {
   const spr = set[dir][frame || 0];
   const w = spr.width, keep = spr.height - 3;
   ctx.drawImage(spr, 0, 0, w, keep, Math.round(x - w * sc / 2), Math.round(y - (keep - 2) * sc), Math.round(w * sc), Math.round(keep * sc));
+}
+// ...and the name over a seated body, in its side's paint, two clear rows
+// over the head drawSeated just drew - a tag (drawNameTag), so a wing of
+// riders sorts its names out instead of stamping them on each other
+function seatedName(set, dir, x, y, sc, name, team) {
+  const top = Math.round(y - (set[dir][0].height - 5) * sc);
+  drawNameTag(name, centreTextX(x, name), top - 8, TEAMS[skin(team)].mark);
 }
 // a seat's world position on a bird right now: the seat offset rotated by the
 // heading, off the bird's centre, at the bird's current scale
@@ -1064,6 +1071,7 @@ function drawEagle(e, ex, ey, now) {
       const dx = MERCH_SEAT[0] * S, dy = MERCH_SEAT[1] * S;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
       drawSeated(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS);
+      seatedName(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS, 'MERCH', e.team);
     }
     for (let pass = 0; pass < 2; pass++) for (const p of players) {
       if (!p.active || !p.aboard || p.team !== e.team || (p === player) !== (pass === 1)) continue;
@@ -1071,6 +1079,7 @@ function drawEagle(e, ex, ey, now) {
       const dx = st[0] * S, dy = st[1] * S;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
       drawSeated(classSet(p), rd, rx, ry, RS);
+      seatedName(classSet(p), rd, rx, ry, RS, p.name, p.team);
     }
     // where a jump right now would land: a pulsing ring under the bird -
     // only while the jump window is open and never on the scripted first flight,
@@ -1146,7 +1155,9 @@ function drawEagle(e, ex, ey, now) {
         if (!p.active || !p.aboard || p.team !== e.team) continue;
         const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
         const dx = st[0] * S, dy = st[1] * S;
-        drawSeated(classSet(p), rd, sx + dx * hc - dy * hs, sy + breath + dx * hs + dy * hc, 1);
+        const rx = sx + dx * hc - dy * hs, ry = sy + breath + dx * hs + dy * hc;
+        drawSeated(classSet(p), rd, rx, ry, 1);
+        seatedName(classSet(p), rd, rx, ry, 1, p.name, p.team);
       }
       if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
         const ph = (now * 1.2) % 1;
@@ -1168,7 +1179,7 @@ function drawEagle(e, ex, ey, now) {
       ctx.fillStyle = '#3a3448'; ctx.fillRect(bx, by, bw, 3);
       ctx.fillStyle = TEAMS[skin(e.team)].mark;
       ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), 3);
-      drawWorldText('PERCH', centreTextX(sx, 'PERCH'), by - 8, TEAMS[skin(e.team)].mark); // two clear rows over the frame, as a player's tag sits
+      drawNameTag('PERCH', centreTextX(sx, 'PERCH', 2), by - 13, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -
@@ -1189,8 +1200,8 @@ function drawEagle(e, ex, ey, now) {
 }
 
 // the ride's HUD: the flight bar (the line as a shape - flown part filled,
-// jump window gold, a bird diamond riding the head), the first-flight
-// countdown, and the keybind indicators. The wider read is the M map now.
+// the jump window pale, a white head line riding it), its JUMP key, and the
+// keybind indicators. The wider read is the M map now.
 // The flight bar's own clock. The bar moved only when the sim did - a
 // 60 Hz step, or a 15 Hz snapshot on a client - and in whole UI pixels,
 // 12 of them a second at the common scale, so the head crept in 3-device-px
@@ -1203,6 +1214,21 @@ const FLIGHT_TRACK = '#1a2240';    // the line still to fly
 const FLIGHT_SHUT = '#3c4a74';     // the jump window while the door is locked
 const FLIGHT_OPEN = '#e8f0ff';     // ...and open
 const FLIGHT_KEY_SHUT = '#5d6b92'; // the JUMP indicator while locked
+const FLIGHT_DENY_T = 0.6;         // s the refusal holds - the bag's own (bagFlash)
+// A press of the jump in flight, from any device - a key or the pad
+// (keyPress), the click, the mouse scheme's press (input.js): the step
+// performs it (dropJump). A press the door will refuse (the lock, or the
+// scripted first flight) also reddens and shakes the flight bar, the bag's
+// refusal (bagDenied) on this plate. Raised here on the pressing screen: a
+// refusal flash is the client's own (the rule in js/net/events.js).
+let flightDenyAt = -1e9; // performance seconds of the last refused press
+function dropPress() {
+  player.input.jump = true;
+  const d = state.drop;
+  if (!d || !player.aboard) return;
+  const e = d.eagles[player.team];
+  if (e.state === 'fly' && (d.firstFlight || e.t < e.dur - DROP_LOCK_T)) flightDenyAt = performance.now() / 1000;
+}
 const flightShown = { e: null, t: 0, seenT: 0, seenAt: 0, gap: 0 };
 function flightShownT(e, now) {
   const f = flightShown;
@@ -1227,7 +1253,14 @@ function renderDropUI(now) {
     // is the jump window - the lock is taught by the shape, not a sentence -
     // and it pulses bright the moment the door opens.
     const bw = 120 * ts, bh = 6 * ts, bxx = cxm - Math.round(bw / 2), byy = 14 * ts;
-    drawHudFrame(bxx - 3, byy - 3, bw + 6, bh + 6, { corners: FLIGHT_BAR_CUT });
+    // a refused press: the whole plate - frame, track, number and key as one -
+    // shakes a pixel either way and goes the bag's refusal red
+    const red = now - flightDenyAt < FLIGHT_DENY_T;
+    ctx.save();
+    if (red) ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
+    drawHudFrame(bxx - 3, byy - 3, bw + 6, bh + 6, red
+      ? { corners: FLIGHT_BAR_CUT, bg: BAG_BG_RED, ink: '#7a2436', lit: '#c2465a' }
+      : { corners: FLIGHT_BAR_CUT });
     ctx.fillStyle = FLIGHT_TRACK;
     ctx.fillRect(bxx, byy, bw, bh);
     // the first flight is scripted (dropJump shuts the door), so it shows
@@ -1250,10 +1283,11 @@ function renderDropUI(now) {
     ctx.fillRect(bxx + fx - 1, byy - 2, 2, bh + 4);
     // seconds left beside the plate, white once the window is open
     drawPixelTextOutline(ctx, Math.ceil(left) + 'S', bxx + bw + 7 * ts, byy + Math.round(bh / 2) - 3 * ts,
-      open && door ? '#f4f7ff' : '#9fb6d8', '#0f1632', ts);
+      red ? '#c2465a' : open && door ? '#f4f7ff' : '#9fb6d8', '#0f1632', ts);
     // the jump's keybind indicator under the plate: dim while the door is
-    // shut, lit once it opens
-    if (door) drawDropBind('dodge', 'JUMP', cxm, byy + bh + 9 * ts, open ? '#f4f7ff' : FLIGHT_KEY_SHUT, ts, true);
+    // shut, lit once it opens, red with the plate on a refused press
+    if (door) drawDropBind('dodge', 'JUMP', cxm, byy + bh + 9 * ts, red ? '#c2465a' : open ? '#f4f7ff' : FLIGHT_KEY_SHUT, ts, true);
+    ctx.restore();
   } else {
     drawDropBind('move', 'DRIFT', cxm, 10 * ts, '#f4f7ff', ts, true);
   }

@@ -34,8 +34,8 @@ writing a word a player reads. Before working in an area, read its doc: [code-ma
    the status setters. Areas: `unitsNear`/`structsNear`. Targets: `unitAlive`. Sight: `seenAt`.
    Gold: `gainGold`. Water: `waterAt`. Walking: `navTo`/`navStep`, dropping the goal on `ok = false`.
    Team colour: `skin(team)`. Keys: `keyPress`/`keyRelease`, asked by action with `keyIs`. Tiles:
-   `placeObj`/`placeStruct`. World text: `drawWorldText`. Ground edits: `repaintGround`. A new walker
-   joins `separateUnits`. Loops over `players` skip `inAir(p)`.
+   `placeObj`/`placeStruct`. World text: `drawWorldText`, names over bodies `drawNameTag`.
+   Ground edits: `repaintGround`. A new walker joins `separateUnits`. Loops over `players` skip `inAir(p)`.
 2. **The sim never reads the local machine.** Player actions read `p.input`, never `keys`/`mouse`;
    single-winner actions go through `contest()`; sim sounds and shakes use `sfxAt`/`sfxFor`/`shakeFor`.
    A client never runs the sim, so anything else is dead online.

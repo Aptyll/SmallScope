@@ -690,10 +690,43 @@ function drawWorldText(text, x, y, color, scale, alpha) {
   // to take away. So the alpha standing at queue time is folded in here; an
   // explicit one (a floater's own fade) multiplies it.
   worldInk.push(text, x, y, color, scale || 1,
-    (alpha === undefined ? 1 : alpha) * ctx.globalAlpha);
+    (alpha === undefined ? 1 : alpha) * ctx.globalAlpha, false);
+}
+// A NAME over a body - a player's, a rider's, the merchant's, the bird's
+// PERCH - is world text that must never sit on another name: bodies crowd
+// (a wing of riders, a fight at a door) and two tags stamped on each other
+// read as neither. So a name is queued as a tag, and the flush sorts the
+// tags out before it stamps: the lowest on screen (the nearest body) keeps
+// its place, and one that would touch a placed tag climbs to clear it.
+// Only tags move; a floater or a mark keeps where it was put.
+function drawNameTag(text, x, y, color, scale) {
+  if (ctx !== wctx) { drawWorldText(text, x, y, color, scale); return; }
+  worldInk.push(text, x, y, color, scale || 1, ctx.globalAlpha, true);
+}
+const TAG_GAP = 1;      // px kept clear between two tags' outlines
+const TAG_CLIMB = 8;    // most climbs one tag makes before it settles where it is
+function settleNameTags() {
+  const tags = [];
+  for (let i = 0; i < worldInk.length; i += 7) if (worldInk[i + 6]) tags.push(i);
+  if (tags.length < 2) return;
+  tags.sort((a, b) => worldInk[b + 2] - worldInk[a + 2] || a - b);
+  const placed = []; // [x0, y0, x1, y1] outline boxes, outline included
+  for (const i of tags) {
+    const sc = worldInk[i + 4], x0 = worldInk[i + 1] - 1, x1 = x0 + pixelTextWidth(worldInk[i], sc) + 2;
+    const h = 5 * sc + 2; // the glyph rows and the outline above and below
+    let y0 = worldInk[i + 2] - 1;
+    for (let n = 0; n < TAG_CLIMB; n++) {
+      const hit = placed.find((r) => x0 < r[2] + TAG_GAP && x1 + TAG_GAP > r[0] && y0 < r[3] + TAG_GAP && y0 + h + TAG_GAP > r[1]);
+      if (!hit) break;
+      y0 = hit[1] - TAG_GAP - h;
+    }
+    placed.push([x0, y0, x1, y0 + h]);
+    worldInk[i + 2] = y0 + 1;
+  }
 }
 function flushWorldInk() {
-  for (let i = 0; i < worldInk.length; i += 6) {
+  settleNameTags();
+  for (let i = 0; i < worldInk.length; i += 7) {
     ctx.globalAlpha = worldInk[i + 5];
     drawPixelTextOutline(ctx, worldInk[i], worldInk[i + 1], worldInk[i + 2],
       worldInk[i + 3], '#0f1632', worldInk[i + 4]);
