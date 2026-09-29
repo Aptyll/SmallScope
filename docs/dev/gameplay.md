@@ -1743,19 +1743,22 @@ hunting speed, the body's radius and mass, and `big` for the dire's 2× sprite).
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
-| alpha | 70 (+8) | 12 (+2) | 15 px / 1.2 s / 90 | r 4.5, mass 2.5 | `YIELD.alpha` 40, and the killer wears ALPHA'S BLOOD |
+| alpha | 320 (+25) | 20 (+3) | 15 px / 1.3 s / 90 | r 4.5, mass 2.5 | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
 | dire | 320 (+25) | 22 (+3) | 22 px / 1.4 s / 80 | r 9, mass 5, a 2× sprite a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
 
-Every payout grows `ANIMAL_LV_GOLD` a level like any kill ([Wildlife](#wildlife)). The dire's
-teammate share goes through `awardGold` at each teammate's own feet (so a bot's gear purchase can
+The alpha and the dire wolf are the two midline camps' kinds (`teamPay` in their `MONSTER` rows),
+and [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two bodies,
+the same hp and near the same bite a second and paid the same, the alpha small and quick, the
+dire wolf big, slow and long in the reach. Every payout grows `ANIMAL_LV_GOLD` a level like any
+kill ([Wildlife](#wildlife)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's gear purchase can
 eat it the same tick — the XP is what is guaranteed), to every active teammate who is not dead
 or in the air; the blood goes to every active teammate regardless.
 
 **ALPHA'S BLOOD** (`campBuff(p, t)`, the constants above the `camp monsters` banner): `p.buffT`
 seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, applied in
 `hurtUnit` — a shot, a roll and a stomp alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
-`abilityMoveMul`). The alpha's kill wears it `CAMP_BUFF_T` (90 s), the dire's bloods the team
-`CAMP_BUFF_EPIC_T` (120 s), and a fresh grant only ever extends what is left. It is worn as an
+`abilityMoveMul`). Either midline kill bloods the killer's whole team for `CAMP_BUFF_EPIC_T`
+(120 s), and a fresh grant only ever extends what is left. It is worn as an
 **amber ring of twelve pips around the feet** (`drawBuffRing`, js/draw/bodies.js) that loses a pip
 at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
 goes out with the body on death. There is no HUD element for it: the ring is the read.
@@ -1767,8 +1770,8 @@ its own range first, unless its own bird is under threat: the human is the camp 
 the way it is a rival's ([Bots](multiplayer.md#bots), rung 4), so a dire wolf you wake is one
 your side comes to. It is *anybody on its side* because every hit re-aims the camp, and the
 helpers must not drop out when one of them takes it off you. A bot will pull a den on its own through
-the hunt rung like any other animal, and never the dire wolf (or the alpha below level 6), which
-a lone bot would die to. No bot walks *to* a camp deliberately yet — see
+the hunt rung like any other animal, and never the alpha or the dire wolf (`teamPay`), which a
+lone bot would die to. No bot walks *to* a camp deliberately yet — see
 [checklists.md](checklists.md#known-drift).
 
 ### Birds: the flock (dormant)

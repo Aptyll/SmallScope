@@ -1735,7 +1735,7 @@ function zipStep(p, dt, mx, my, len) {
 //               placeCamps checks it is, and layPaths cuts no branch to it
 //
 // resource: the pack - gold per head, the biggest steady payout on the map
-// buff:     one alpha - the kill wears ALPHA'S BLOOD (campBuff, wildlife.js)
+// buff:     one alpha - paid as the dire wolf is (MONSTER's teamPay, wildlife.js)
 // epic:     the dire wolf - the whole team is paid and blooded for the kill
 // hut:      no monster - three chests round a hut buried in the treeline,
 //           worth the chopping it takes to reach
@@ -1752,7 +1752,7 @@ const CAMPS = {
     name: 'ALPHA STONE', tag: 'ITS BLOOD RUNS HOT',
     r: 4, mark: '#c2a6ff',
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
-    kind: 'alpha', pop: 1, repop: 120,
+    kind: 'alpha', pop: 1, repop: 300,
     props: [[0, 0, 'cairn']],
     spots: [[0, 2]],
   },

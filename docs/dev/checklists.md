@@ -600,7 +600,7 @@ Code that is dead **on purpose** is the next section.
   `updateAI` ever walks to a sled or presses for one, so the [sled](gameplay.md#the-sled) is
   for human players only.
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
-  one is within `AI_HUNT`, never the alpha under level 6 or the dire wolf at all, and nothing in
+  one is within `AI_HUNT`, never the alpha or the dire wolf, and nothing in
   `aiSituation` weighs a camp against the road — so the alpha stone and the dire hollow are the
   human's to start (the allies join a camp fight the human is in, rung 4) until an objective rung
   learns them ([Bots](multiplayer.md#bots)).
