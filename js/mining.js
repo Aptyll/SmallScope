@@ -13,9 +13,9 @@
 // where it stood as rubble - it is still solid - and grows back after its
 // kind's `regrow`.
 //
-// The three kinds are placed by placeRocks (js/world.js): STONE along the
-// whole rim, FROSTGLASS on the stretches of it furthest from both roosts,
-// and one SUNSTONE by each of the two corners neither side owns.
+// The three kinds are placed by placeRocks (js/world.js) in its clusters
+// (ROCK_CLUSTERS): STONE nearer home, and a SUNSTONE and a FROSTGLASS a side
+// out at each of the two corners neither side owns.
 //
 //   mine    - seconds of pick from nothing to broken
 //   gold    - paid on the spot (awardGold, so it is XP too), before harvestMul
