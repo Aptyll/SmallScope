@@ -218,9 +218,14 @@ function renderMinimap(now) {
   ctx.globalAlpha = 1;
 
   // beneath the minimap, the elapsed play-time alone, centred on the disc's
-  // axis so the two read as one column. (The alive count that used to share the row
-  // went in 3.23: a match no longer ends on bodies, so it was a number that
-  // decided nothing.)
+  // axis so the two read as one column - but only with no team rail up: a
+  // match's clock sits between the two kill totals there (drawRailScore,
+  // rail.js), and one clock is enough. (The alive count that used to share
+  // the row went in 3.23: a match no longer ends on bodies, so it was a
+  // number that decided nothing.)
+  if (!mmClockShown()) return;
   const clock = clockTxt(state.elapsed);
   drawPixelTextOutline(ctx, clock, Math.round(MM_CX - pixelTextWidth(clock) / 2), MM_CY + MM_R + 9, '#f4f7ff', '#0f1632');
 }
+// whether the clock hangs under the disc: only where the rail is not up
+function mmClockShown() { return !railLayout(); }

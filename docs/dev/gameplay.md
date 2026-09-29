@@ -3097,8 +3097,8 @@ are covered by the autosave alone.
 **Slots.** Five manual slots (`m0`-`m4`) and an autosave ring of three (`a0`-`a2`, the oldest
 overwritten): an autosave every `SAVE_AUTO_T` (120 s) of match clock (`saveAutoTick`, from the
 frame loop after the steps) and on the way into the ESC panel or the pause plate, never two inside
-`SAVE_AUTO_GAP` (15 s). A save that lands flashes a gold down-arrow beside the match clock under
-the minimap (`drawSaveFlash`).
+`SAVE_AUTO_GAP` (15 s). A save that lands flashes a gold down-arrow under the minimap, beside the match
+clock where that hangs there (`drawSaveFlash`).
 
 **The screens** (js/ui/saves.js). One grid: five manual cards over the autosave ring, each its
 match at a glance - the thumbnail with the match clock (gold) and how long ago

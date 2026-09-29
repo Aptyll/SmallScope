@@ -603,10 +603,10 @@ function drawBag(now) {
   const t = bagTabRect();
   // THE DRAWER, sliding out from under the tab: clipped to the screen below
   // the tab's bottom edge, so it emerges rather than fades. The strip's own
-  // chrome (drawHudFrame), every corner cut and no snow cap - it lives under
-  // the shelf, not under the sky. No cast shadow: the cells already carry
-  // the depth. The light says the one state the grid cannot: amber means no
-  // cell is left free, and a refusal reddens line and light both.
+  // plain plate (drawHudFrame), its free corners cut. No cast shadow: the
+  // cells already carry the depth. A ring inside the line says the one state
+  // the grid cannot: amber means no cell is left free, and a refusal reddens
+  // line and ring both.
   if (bagEase > 0) {
     const f = bagFrameRect();
     const lift = Math.round((1 - easeOut(bagEase)) * (f.h + 3));
@@ -616,7 +616,7 @@ function drawBag(now) {
     drawHudFrame(f.x, f.y, f.w, f.h, {
       bg: red ? BAG_BG_RED : BAG_BG, ink: red ? '#7a2436' : null,
       lit: red ? '#c2465a' : full ? '#c9922f' : null,
-      corners: { tl: false, tr: true, bl: false, br: true }, cap: false, seed: 47, // flush left: only the free corners cut
+      corners: { tl: false, tr: true, bl: false, br: true }, // flush left: only the free corners cut
     });
     for (let i = 0; i < player.bagCap; i++) {
       const r = bagCellRect(i), s = player.bag[i];
