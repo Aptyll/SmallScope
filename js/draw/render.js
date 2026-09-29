@@ -164,8 +164,10 @@ function render() {
   // WIDER than the canvas, and culling to the canvas would eat the edges.
   ctx = wctx;
 
-  // ground - after repainting the shade of anything standing that changed
-  // since the ground last painted it (the `cast shadows` banner, ground.js)
+  // ground - after baking any chunk of it the view reaches for the first time
+  // (the lazy bake, ground.js) and repainting the shade of anything standing
+  // that changed since the ground last painted it (the `cast shadows` banner)
+  groundView(ox, oy, ox + WV_W, oy + WV_H);
   syncCasts(Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
   ctx.drawImage(groundCv, ox, oy, WV_W, WV_H, 0, 0, WV_W, WV_H);
   // the creek's current, drifting over the still water the bake laid (ground.js)

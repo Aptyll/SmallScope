@@ -1413,7 +1413,7 @@ const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(locat
 // match back now - after the world stands, before the bake paints it
 if (!PRACTICE) saveBaseline();
 const LOADED_AT_BOOT = !PRACTICE && !NET.isClient && saveBootLoad();
-renderGround();
+prepGround(); // the ground bakes lazily from here, view first (js/draw/ground.js)
 mapAlloc(); // the map slab's buffers and bake, at the size relayout() gave it
 buildSettingsPanel();
 buildHelpPanel();

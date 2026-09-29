@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.06';
+const PATCH_TXT = 'PATCH 4.07';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.07', 'THE GAME OPENS THREE TIMES FASTER: THE SNOW NOW PAINTS ITSELF AROUND YOU INSTEAD OF ALL AT ONCE BEFORE THE FIRST FRAME.'],
   ['4.06', 'YOUR BOTS NOW JOIN YOU WHEN YOU FIGHT THE DIRE WOLF OR ANY CAMP, AND ARROWS HIT A BUILDING WHEREVER IT IS DRAWN, THE TURRET\'S GUN HEAD INCLUDED.'],
   ['4.05', 'THE MERCHANT PITCHES A MARKET STALL BESIDE YOUR BIRD THE MOMENT HE LANDS, AND WALKING UP TO THE STALL AND PRESSING E OPENS THE SHOP.'],
   ['4.04', 'SAVED GAMES MOVED OFF THE TITLE INTO THE SINGLEPLAYER LOBBY: A SAVES PLATE BESIDE THE MAP OPENS THEM WITH YOUR LATEST ONE LIT, AND ANY SAVE CAN NOW BE NAMED, DELETED WITH ITS X, OR DRAGGED INTO ANOTHER SLOT.'],
