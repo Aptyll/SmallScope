@@ -290,12 +290,14 @@ function keyPress(e) {
   // HUD and not an overlay, so unlike the map and ESC it neither stops the
   // sim nor swallows anything but its own clicks.
   if (keyIs(e, 'bag')) { state.bagOpen = !state.bagOpen; SFX.ui(state.bagOpen); }
-  // THE BUILD LIST (the `build list` group, js/ui/wheel.js): T opens it
-  // under the hammer plate and T again closes it (so do a click on the
-  // plate, Escape and the right button); while it is up the ghost under the
-  // pointer is what a left-click lays, the wheel walks the rows, and R turns
-  // a piece that turns. toggleBuild says when it may open.
-  if (keyIs(e, 'build') && !e.repeat) toggleBuild();
+  // THE BUILD LIST (the `build list` group, js/ui/wheel.js): a tap of T
+  // opens it over the build well on the last piece and a tap again closes it
+  // (so do a click on the well, Escape and the right button); holding T
+  // opens the piece wheel, and the release on a wedge opens the list on that
+  // piece (buildKeyRelease). While it is up the ghost under the pointer is
+  // what a left-click lays, the wheel walks the rows, and R turns a piece
+  // that turns.
+  if (keyIs(e, 'build') && !e.repeat) buildKeyPress();
   if (keyIs(e, 'rotate') && !e.repeat && state.build) { state.build.rot ^= 1; SFX.turn(); }
   // The work key at the practice rack: the press opens the armory wheel over
   // it, the pointer picks, and RELEASING it takes - the right-click wheel's
@@ -347,7 +349,7 @@ function keyPress(e) {
       // swings at (manageNear, structures.js)
       const mg = manageNear(player);
       const rk = mg ? null : rackNear(player);
-      if (mg) { SFX.unlock(); state.wheel = { kind: 'manage', tx: mg.tx, ty: mg.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
+      if (mg) { SFX.unlock(); state.wheel = { kind: 'manage', tx: mg.tx, ty: mg.ty, site: mg.building, seg: -1, ax: mouse.x, ay: mouse.y }; }
       else if (rk) { SFX.unlock(); state.wheel = { kind: 'rack', tx: rk.tx, ty: rk.ty, seg: -1, ax: mouse.x, ay: mouse.y }; }
       else {
         // the parkour die: holding the key beside it opens the roll wheel -
@@ -412,6 +414,8 @@ function keyRelease(e) {
   // letting go of the flag key with the wheel it held up plants the pick (or
   // lifts from the hub), exactly as the pad's R3 and the right button do
   if (keyIs(e, 'flag') && state.wheel && state.wheel.kind === 'flag') { resolveWheel(); state.wheel = null; return; }
+  // letting go of the build key: a tap toggles the list, a hold picks off the piece wheel
+  if (keyIs(e, 'build')) { buildKeyRelease(); return; }
   // letting go of the work key with a wheel it held up (armory, roll die or
   // range bell) takes what the pointer is on (or cancels from the hub),
   // exactly as releasing the right button does
@@ -430,10 +434,11 @@ window.addEventListener('blur', () => {
   state.rebind = null; // a cap left listening would eat the first key back
   state.dragPend = null;
   if (state.drag) dragReturn();
-  // an E-held wheel (armory, roll die or range bell) is a held gesture too:
+  // an E-held wheel (armory, roll die or range bell) - or the build key's
+  // piece wheel - is a held gesture too:
   // its keyup is lost with the focus, so it closes (choosing nothing)
   // instead of sticking open
-  if (state.wheel && (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage')) state.wheel = null;
+  if (state.wheel && (state.wheel.kind === 'rack' || state.wheel.kind === 'pkdie' || state.wheel.kind === 'agbell' || state.wheel.kind === 'manage' || state.wheel.kind === 'piece')) state.wheel = null;
   // ...and so is the flag wheel G holds, and a held right button's follow
   if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
 });
@@ -513,10 +518,13 @@ function pointerPress(button) {
   // presses over the rest of the HUD go on to it as ever
   if (state.build) {
     const row = buildListHit(mouse.x, mouse.y);
-    if (row >= 0) { SFX.unlock(); state.build.sel = row; return; }
+    if (row >= 0) { SFX.unlock(); buildPick(row); return; }
     if (!overHud(mouse.x, mouse.y)) {
       const g = buildGhostAt();
-      if (g && g.can.ok) { SFX.unlock(); player.input.cmd = { kind: 'build', tx: g.tx, ty: g.ty, id: g.type, rot: g.rot }; }
+      // a `line` piece waits for the release: a drag lays the run, a click the one
+      if (STRUCTS[g.type].line) { SFX.unlock(); state.build.drag = { tx: g.tx, ty: g.ty }; return; }
+      const c = buildOrder(g);
+      if (c) { SFX.unlock(); player.input.cmd = c; }
       else SFX.deny();
       return;
     }
@@ -553,6 +561,15 @@ function pointerRelease(button) {
   if (button === 2 && ckOn()) { ckRightRelease(); return; }
   if (button === 2 && state.wheel) { resolveWheel(); state.wheel = null; return; }
   if (button === 1) { if (msOn()) msWheelRelease(); return; }
+  // the release that ends a wall's drag lays the run the ghost shows (a
+  // press and release on one tile is the single piece)
+  if (button === 0 && state.build && state.build.drag) {
+    const c = buildOrder(buildGhostAt());
+    state.build.drag = null;
+    if (c) player.input.cmd = c;
+    else SFX.deny();
+    return;
+  }
   // a carried item is put down (or thrown), and an armed press that never
   // travelled resolves as the plain click it was - both before the tool's own
   // release, so a drag never also looses a shot
@@ -668,12 +685,12 @@ function openWheelNear(p, ax, ay) {
   if (!inWorld(tx, ty)) { SFX.deny(); return false; }
   const o = structOf(objAt(tx, ty));
   let kind = null;
-  if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === p.team) kind = 'manage';
+  if (o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && o.team === p.team) kind = 'manage'; // a site too: its wheel is the demolish alone
   else if (buildOptionsAt(tx, ty).some((t) => canPlaceAt(t, tx, ty, 0, p).ok || findSite(t, tx, ty))) kind = 'build';
   if (!kind) { SFX.deny(); return false; }
   SFX.unlock();
   SFX.wheelUp();
-  state.wheel = { kind, tx, ty, seg: -1, ax, ay };
+  state.wheel = { kind, tx, ty, site: kind === 'manage' && o.building, seg: -1, ax, ay };
   return true;
 }
 
@@ -774,7 +791,7 @@ function ckRightPress() {
     const m = merchUnder(wx, wy);
     if (m) { const c = counterPt(m); ckOrder({ kind: 'use', what: 'shop', o: m, tx, ty }, c.x, c.y + 2, 'work'); return; }
     const o = structOf(objAt(tx, ty));
-    if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team) { ckOrder({ kind: 'use', what: 'manage', o, tx, ty }, wx, wy, 'work'); return; }
+    if (o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && o.team === player.team) { ckOrder({ kind: 'use', what: 'manage', o, tx, ty }, wx, wy, 'work'); return; }
     if (o && LANDMARKS[o.type] && LANDMARKS[o.type].ride) { ckOrder({ kind: 'use', what: 'sled', o, tx, ty }, wx, wy, 'work'); return; } // walk to the sled and get on
     if (o && (o.type === 'rack' || o.type === 'pkdie' || o.type === 'agbell')) { ckOrder({ kind: 'use', what: o.type, o, tx, ty }, wx, wy, 'work'); return; }
     if (workTargetAt(player, tx, ty)) { ckOrder({ kind: 'work', tx, ty }, tx * TILE + 8, ty * TILE + 8, 'work'); return; }
@@ -856,7 +873,7 @@ function ckUse(p, o, walk, r) {
     ck.order = null;
     SFX.unlock();
     if (k === 'shop') openShop(near);
-    else if (k !== 'agbell' || agame.phase === 'off') state.wheel = { kind: k, tx: near.tx, ty: near.ty, seg: -1, ax: mouse.x, ay: mouse.y };
+    else if (k !== 'agbell' || agame.phase === 'off') state.wheel = { kind: k, tx: near.tx, ty: near.ty, site: k === 'manage' && near.building, seg: -1, ax: mouse.x, ay: mouse.y };
     return;
   }
   const shopPt = k === 'shop' ? counterPt(o.o) : null;
@@ -1070,7 +1087,7 @@ canvas.addEventListener('wheel', (e) => {
   // the build list up: the wheel walks its rows (the camera's zoom waits)
   if (state.build) {
     const n = BUILD_ORDER.length;
-    state.build.sel = (state.build.sel + (e.deltaY > 0 ? 1 : -1) + n) % n;
+    buildPick((state.build.sel + (e.deltaY > 0 ? 1 : -1) + n) % n);
     SFX.notch();
     return;
   }

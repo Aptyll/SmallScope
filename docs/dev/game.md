@@ -156,11 +156,13 @@ own from anywhere. [Eagle drop](rendering.md#eagle-drop-mode-drop),
 card**, drawn at random on a key from the pouch without pausing the sim, and a picked card is
 baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#roguelike-cards).
 
-**T is the build list, and the ghost under the pointer is what a click lays.** Any open snow or
-road tile within reach takes a piece — a wall, a long wall R turns, a turret, a generator, a bot
-bay — snapped to the tile grid, the footprint rimmed white where it can stand and red where it
-cannot, and the list stays up so a wall is a run. Holding E beside a building of your own manages
-it. **An ice hole is the one site left**: break the ice twice and the hole it leaves takes the one
+**T is the build list, and the ghost under the pointer is what a click lays.** A tap opens it on
+the last piece and holding T flicks a piece off a wheel. Any open snow or road tile within reach
+takes a piece — a wall, a long wall R turns, a turret, a generator, a bot bay — snapped to the
+tile grid, the footprint rimmed white where it can stand, red where it cannot and grey where the
+purse cannot pay, and the list stays up; a wall is dragged out as a run. Standing by a site of
+your side's speeds it. Holding E beside a building of your own manages it: upgrade, repair, or
+demolish — a site still going up comes back at its whole price. **An ice hole is the one site left**: break the ice twice and the hole it leaves takes the one
 `water` building — a **fish net**, laid flat and walked *on* rather than into — over a live fish
 population that walkers on the ice and nets draw down and a trickle refills.
 [Base building](gameplay.md#base-building), [Ice holes and fishing](world.md#ice-holes-and-fishing).

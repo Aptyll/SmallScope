@@ -22,9 +22,10 @@
 // than a number anywhere. What is loaded stays out of the resting well - the
 // shelf over the backpack is where the build is read and edited.
 //
-// The strip proper is FIVE wells: [ WEAPON ][1][2][3][4] - the weapon leads
-// and the class abilities follow in key order, each wearing its 32px icon
-// (classAbIcon, js/abilities.js). On the right end the two MEAL buttons
+// The strip proper is FIVE wells: [1][2][3][4][T] - the class abilities in
+// key order, each wearing its 32px icon (classAbIcon, js/abilities.js), then
+// the BUILD well (the `build list` group, js/ui/wheel.js), whose column of
+// pieces stands over it while the list is open. On the right end the two MEAL buttons
 // stack: berry over fish, half-height cells (two of them + the gap = one
 // well, so the pair sits flush with the wells), each wearing its item
 // icon, its count and its key letter, and both wiping on the one shared
@@ -54,7 +55,8 @@ const FOOD_SQ = 24;                          // a pouch cell: a square
 const POUCH_GAP = 2;                         // between neighbouring squares
 const POUCH_W = FOOD_SQ * 2 + POUCH_GAP;     // the block: two columns...
 const POUCH_H = POUCH_W;                     // ...and two rows
-const AB_W = AB_N * AB_CELL + AB_N * AB_GAP + POUCH_W; // four wells, four gaps, the pouch block
+// THE BUILD WELL ends the wells (buildTabRect, js/ui/wheel.js): the fifth, after ability 4
+const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W; // four ability wells, the build well, their gaps, the pouch block
 const AB_PAD = 3, AB_XP = 5, AB_SEGS = 10; // AB_PAD: the frame's outline, its lit line and one px of ground (drawHudFrame); AB_SEGS: xp bar notches
 const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
 const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
@@ -367,10 +369,8 @@ function cornerClaim() { return Math.round(CORNER_CLAIM * hudSc()); }
 // ...and how far DOWN it reaches with the drawer open: the other half of the
 // room a panel pinned off the corner has to miss, for a view too NARROW to
 // stand one beside it. This one is measured live off the drawer, which sits
-// under the plate and so moves with the lines over the row. The build list's
-// hammer plate hangs under the drawer and is always up, so it is inside the
-// reach; the column under it is a gesture, and is not.
-function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h + 2 + BUILD_TAB_H) * hudSc()); }
+// under the plate and so moves with the lines over the row.
+function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h + 2) * hudSc()); }
 // the tool the shelf is showing, or null with the weapon well empty
 function shelfCell() { return player.tools[SHELF_SLOT] || null; }
 // ...and whether the shelf is on screen and answering the pointer at all: the

@@ -659,14 +659,15 @@ function hurtStruct(o, dmg, p, bot) {
   shakeFor(p, 1);
   if (o.hp <= 0) {
     const name = STRUCTS[o.type].name;
-    // the wreck pays out like a demolition, straight to whoever broke it
+    // the wreck pays out half of what was spent, straight to whoever broke it
     destroyStructure(o, true, p);
     if (p) logEvent(p.name + ' WRECKED A ' + name, p);
   }
 }
 
 // `p` is who gets the refund gold - the demolishing owner or the wrecker.
-// With nobody to pay (refund true, p null) the rubble is just rubble.
+// refund is true for the half, 'own' for a demolish by the building's side
+// (structRefund, structures.js). With nobody to pay the rubble is just rubble.
 function destroyStructure(o, refund, p) {
   // a net going down tips its catch back out onto the ice - the fish in it
   // were never the owner's, and wrecking one should not delete them
@@ -678,11 +679,9 @@ function destroyStructure(o, refund, p) {
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
   burst(ox, oy, '#eef4fb', 6, 40, 0.5, true);
-  if (refund && STRUCTS[o.type] && p) {
-    // 50% of everything paid across tiers, paid out on the spot
-    const c = cumulativeCost(o.type, o.tier);
-    awardGold(p, Math.floor((c.gold || 0) / 2), ox, oy);
-  }
+  // paid out on the spot: half of everything spent (structRefund), or the
+  // whole price of an owner's own site still going up
+  if (refund && STRUCTS[o.type] && p) awardGold(p, structRefund(o, refund === 'own'), ox, oy);
 }
 
 // ------------------------------------------------------------ status effects

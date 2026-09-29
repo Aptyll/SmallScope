@@ -1512,7 +1512,7 @@ function cursorInfo() {
   }
   // one of your own buildings (E manages it) outranks tool hints; beyond the
   // 60px reach it dims - not under CLICK, where the press walks there
-  if (o && STRUCTS[o.type] && !o.building && !STRUCTS[o.type].fixed && o.team === player.team) {
+  if (o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && o.team === player.team) {
     const far = Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > 60;
     return { kind: 'hammer', dim: far && !ckOn() };
   }
