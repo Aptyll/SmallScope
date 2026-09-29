@@ -527,7 +527,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a clear frosty day: its cool grade and all-day crisp (applied in `todGrade`), the cloud it clears, the glints on bare snow, and a blizzard's milky haze | `FROST_TINT`/`FROST_CRISP`/`FROST_CLEAR`, `drawFrostGlint`, `GLINT_*`, `BLIZ_HAZE`/`BLIZ_HAZE_A` | `light & weather` › `frost glints` |
 | the night colour, a lit shot's halo, snow (world-space flakes, see `fx updates`), vignette | `renderLighting`, `NIGHT_TINT`/`NIGHT_DEEP`/`NIGHT_DEEP_A`, `litShots`, `renderWeather`, `renderVignettes`/`vigGrd` | `light & weather` › `the pass` |
 | the night RIM: the world-space vignette that closes the view in rather than dimming the middle | `nightEdge`, `NIGHT_EDGE`, `nvGrd` | `light & weather` › `the pass` |
-| **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk`; a name is a tag that never lands on another name: `drawNameTag`, `settleNameTags` (run by the flush), `TAG_GAP`/`TAG_CLIMB` | `light & weather` › `ink over the world` |
+| **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk`; the riders' names on a wing, the one text that never lands on another (ground names overlap): `drawNameTag`, `settleNameTags` (run by the flush), `TAG_GAP`/`TAG_CLIMB` | `light & weather` › `ink over the world` |
 
 ## js/draw/render.js
 

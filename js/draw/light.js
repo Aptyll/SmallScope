@@ -692,13 +692,14 @@ function drawWorldText(text, x, y, color, scale, alpha) {
   worldInk.push(text, x, y, color, scale || 1,
     (alpha === undefined ? 1 : alpha) * ctx.globalAlpha, false);
 }
-// A NAME over a body - a player's, a rider's, the merchant's, the bird's
-// PERCH - is world text that must never sit on another name: bodies crowd
-// (a wing of riders, a fight at a door) and two tags stamped on each other
-// read as neither. So a name is queued as a tag, and the flush sorts the
-// tags out before it stamps: the lowest on screen (the nearest body) keeps
-// its place, and one that would touch a placed tag climbs to clear it.
-// Only tags move; a floater or a mark keeps where it was put.
+// A name that must never sit on another name. On the ground names overlap
+// the way League's do - a crowd's tags stacked into a tower read worse than
+// a pile - but a wing of riders is seated a few pixels apart for the whole
+// ride, and their names stamped on each other would read as none of them
+// (seatedName, boot.js). So those are queued as tags, and the flush sorts
+// the tags out before it stamps: the lowest on screen keeps its place, and
+// one that would touch a placed tag climbs to clear it. Only tags move;
+// every other world text keeps where it was put.
 function drawNameTag(text, x, y, color, scale) {
   if (ctx !== wctx) { drawWorldText(text, x, y, color, scale); return; }
   worldInk.push(text, x, y, color, scale || 1, ctx.globalAlpha, true);

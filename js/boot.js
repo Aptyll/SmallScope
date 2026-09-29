@@ -1185,7 +1185,7 @@ function drawEagle(e, ex, ey, now) {
       const segs = hpSegCount(e.maxHp, bw), seg = (bw + 1) / segs;
       ctx.fillStyle = HP_TICK;
       for (let k = 1; k < segs; k++) ctx.fillRect(bx + k * seg - 1, by, 1, 3);
-      drawNameTag('PERCH', centreTextX(sx, 'PERCH', 2), by - 13, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
+      drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - 13, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -

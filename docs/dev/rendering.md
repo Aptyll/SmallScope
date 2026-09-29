@@ -1240,12 +1240,13 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   and `renderLighting` stamps the queue after the night grade — draw the outline in place and
   the tint sinks a team colour into blue snow. The queue itself:
   [Light and weather](#light-and-weather). Sites: floaters (damage numbers, gold, `LEVEL n`),
-  the noticed `!` (`drawSenseMark`). Called from a UI pass (the wiki's animal page) it draws
-  the outline where it stands. **A name over a body goes through `drawNameTag`** instead - a
-  player's tag, a rider's and the driver's on the wing (`seatedName`), `MERCH`, the roost's
-  `PERCH` (2x) - the same queue, marked as a tag: before stamping, `settleNameTags` keeps the
-  lowest tag on screen where it is and climbs any tag that would touch a placed one until it
-  clears (`TAG_GAP`, at most `TAG_CLIMB` climbs), so a crowd's names stack instead of overprinting.
+  the overhead name tags, `MERCH`, the roost's `PERCH` (2x), the noticed `!` (`drawSenseMark`).
+  Called from a UI pass (the wiki's animal page) it draws the outline where it stands. Names on
+  the ground **overlap**, as League's do: a crowd's tags stacked into a tower read worse. The one
+  exception is **a wing of riders** (`seatedName`: every rider and the driver in flight), queued
+  through `drawNameTag` - the same queue, marked as a tag: before stamping, `settleNameTags` keeps
+  the lowest tag on screen where it is and climbs any tag that would touch a placed one until it
+  clears (`TAG_GAP`, at most `TAG_CLIMB` climbs).
 - **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
   and the drawer's counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), `state.msg`, the DAY headline's bake,
   the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`
