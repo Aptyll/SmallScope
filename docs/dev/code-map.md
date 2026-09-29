@@ -414,14 +414,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| a deep drift's pixels: crest, lip, outline, cast shade, the ripples on its top | `DEEP_PAL`, `deepTone` (called per pixel by `snowTile`, ground.js) | `deep snow's look` |
+| a deep drift's pixels: crest, lip, outline, cast shade, the ripples on its top | `DEEP_PAL`, `deepTone` (called per pixel by `snowTile`, ground.js), `deepPx`/`deepIn` + the tile's depth window `DEEP_WIN`/`deepWin`/`deepTileOpen`/`deepTileClose` | `deep snow's look` |
 | a body sunk to the shins in it, and the collar round the cut | `drawWading` (wraps `drawPlayer`/`drawAnimal`/`drawRobot` in `render()`), `wadeLook`, `wadeWidth`, `WADE_SINK`/`WADE_CUT` | `deep snow's look` |
 
 ## js/draw/ground.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| ground painting and runtime repaints; the lazy bake in chunks (boot's prep, the view's chunks, the idle fill) | `paintGroundTile`, `repaintGround`, `hash2`, `vnoise`; `GROUND_CHUNK`/`GROUND_CN`/`GROUND_IDLE_MS`, `groundDone`/`groundLeft`/`groundBaked`, `prepGround` (called at boot), `bakeGroundChunk`, `groundView` (called by `render()` before the ground blit), `groundNext`/`groundIdle`/`groundIdleArm`, `renderGround` (the whole map now) | `ground prerender` |
+| ground painting and runtime repaints; the lazy bake in chunks (boot's prep, the view's chunks, the idle fill) | `paintGroundTile`, `repaintGround`, `hash2`, `vnoise`; `GROUND_CHUNK`/`GROUND_CN`/`GROUND_IDLE_MS`, `groundDone`/`groundLeft`/`groundBaked`, the pixel pen `penDot`/`penFlush` (every single-pixel painter's fills), `prepGround` (called at boot), `bakeGroundChunk`, `groundView` (called by `render()` before the ground blit), `groundNext`/`groundIdle`/`groundIdleArm`, `renderGround` (the whole map now) | `ground prerender` |
 | the road's pixels: the overlay and its colours, the ruts, the felled trunk across each forest end | `paintRoadOverlay` + `ROAD_COL_*`, `roadRutAt`/`roadRutCache`, `paintLog`/`LOG_COL` (under `paintGroundTile`) | `the road's pixels` (the geometry they read: `the road`, world.js) |
 | the creek's pixels: the water, its lit lip and pale far bank, the still streaks, a ford's stone, the plank deck with its posts and pilings, and the current's moving glints | `CREEK_COL`/`STONE_COL`/`DECK_COL`, `CREEK_SUN_X`/`CREEK_SUN_Y`, `DECK_LK`/`DECK_WM`/`DECK_C`, `creekNear`, `paintCreek` (under `paintGroundTile`), `deckPost`, `paintFordStone`, `drawCreekFlow` (called by `render()` right after the ground blit) + `FLOW_SPD`/`FLOW_RUN`/`FLOW_A` | `the creek's pixels` (the geometry they read: `the creek`, world.js) |
 | a lake's ragged shore, its bank (the downwind bank, dust, cracks and reeds laid over it: js/draw/lakes.js), the two lake styles and which one each lake rolled, the depth in from the shore, the night mirror's shore masks | `ICE_STYLES`, `bakeLakes` (`lakeStyle`/`lakeDepth`, rolled by `rollIceStyle`), `iceAtPx` (the edge test), `depthAtPx`, `iceTone`, `bankAt`, `paintIceTile`, `paintSnowShore`, `mirrorCv`/`mirrorSlot`/`markMirror` | `the ice shore` (the mirror drawn: `drawIceStars`, js/draw/light.js) |

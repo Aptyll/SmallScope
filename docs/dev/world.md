@@ -99,7 +99,10 @@ stable per tile.
   everything now, for a test. Every tile paints only inside its own 16 px, from the world as it
   stands, so `paintGroundTile` skips a tile whose chunk is not baked yet (`groundBaked`): that
   chunk's bake paints it as it is by then, and a chunk bake lays exactly what per-tile repaints
-  would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
+  would. A painter that colours single pixels dots them through the pixel pen (`penDot`, flushed
+  by `penFlush` before it returns), which draws each run of same-ink pixels along a row in one
+  `fillRect` — a million single ones were a third of the bake, and a run lays exactly what its
+  pixels would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-fishing) and
   their dawn refreeze, a spur's and a roost pad's paving ([the road](#the-road)), and the
@@ -623,6 +626,8 @@ pixel of a tile with a `driftCell` entry to `deepTone` (js/draw/depth.js), which
 `driftsDepth` the sim does - a white crest and a thin outline on the sunlit edge, a smooth bright
 top with faint wind ripples, a two-pixel dark lip where it faces away, and a shade thrown
 down-right, longest at the tall crest. Its colours are `DEEP_PAL`, appended to `SNOW_INK`.
+A pixel reads its neighbours' depths up to four pixels away, so `snowTile` opens a window over
+its tile (`deepTileOpen`) and `deepPx` works each depth in it out once.
 
 ## The zipline
 

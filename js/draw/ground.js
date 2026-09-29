@@ -23,6 +23,24 @@ let groundLeft = GROUND_CN * GROUND_CN;
 function groundBaked(tx, ty) {
   return groundDone[((ty / GROUND_CHUNK) | 0) * GROUND_CN + ((tx / GROUND_CHUNK) | 0)] === 1;
 }
+// the pixel pen: the tile painters colour one pixel at a time, and a
+// fillRect costs the same for one pixel as for a row of them (a million
+// single ones were a third of the bake), so penDot holds a run of same-ink
+// pixels going right along one row and penFlush draws it in one fillRect. A
+// run's pixels are distinct and land in the order they were dotted, so the
+// result is exactly the single fillRects' - translucent inks too. A painter
+// that dots flushes before it returns.
+let penG = null, penC = '', penX = 0, penY = 0, penN = 0;
+function penDot(g, c, x, y) {
+  if (penN && c === penC && y === penY && x === penX + penN && g === penG) { penN++; return; }
+  if (penN) penFlush();
+  penG = g; penC = c; penX = x; penY = y; penN = 1;
+}
+function penFlush() {
+  if (!penN) return;
+  penG.fillStyle = penC; penG.fillRect(penX, penY, penN, 1);
+  penN = 0;
+}
 
 function hash2(x, y) {
   let h = (x * 374761393 + y * 668265263 + SEED) | 0;
@@ -130,8 +148,8 @@ function paintGroundTile(g, tx, ty) {
       // A piece's band spills past its tile's corners into the four tiles
       // beside it (the trunk is wider than the diagonal it runs on), so a
       // tile paints its neighbours' pieces too, shifted, and its own last.
-      for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1], [0, 0]]) {
-        const lo = objAt(tx + dx, ty + dy);
+      for (let n = 0; n < 10; n += 2) {
+        const dx = LOG_NBR[n], dy = LOG_NBR[n + 1], lo = objAt(tx + dx, ty + dy);
         if (lo && lo.type === 'log') paintLog(g, lo.seg, px, py, -dx * TILE, -dy * TILE);
       }
       // last, over everything lying on the ground: the shade the scenery
@@ -171,6 +189,7 @@ const ROAD_COL_SNOW = '#e7eff8';                       // snow melting in over t
 // against the packed earth like every other thing on the ground, and a soft
 // shadow falls off its lower flank.
 const LOG_COL = { rim: '#2a1c10', dark: '#4a3218', mid: '#6b4a2a', light: '#8a6142', face: '#c9a070', ring: '#7a5634', snow: '#f4f7ff', snowD: '#d8e4f2' };
+const LOG_NBR = [0, -1, -1, 0, 1, 0, 0, 1, 0, 0]; // dx, dy: the four neighbours whose piece can spill onto a tile, then its own last
 // ox/oy shift the piece's own frame: 0 for the tile it stands on, +-TILE
 // when a neighbour paints the part of it that spills over the tile edge
 function paintLog(g, seg, px, py, ox, oy) {
@@ -184,9 +203,9 @@ function paintLog(g, seg, px, py, ox, oy) {
     const h = hash2(seg * 16 + lx, ly); // this pixel's own roll, the same every bake
     // the lower-side stubs of two lopped branches on the trunk piece
     const stub = seg === 1 && (Math.abs(a - 9) <= 1 || Math.abs(a - 21) <= 1) && t >= 6 && t <= 8 + (Math.abs(a - 9) <= 1 ? 1 : 0);
-    if (stub) { g.fillStyle = t === 6 ? LOG_COL.mid : t === 7 ? LOG_COL.dark : LOG_COL.rim; g.fillRect(px + x, py + y, 1, 1); continue; }
+    if (stub) { penDot(g, t === 6 ? LOG_COL.mid : t === 7 ? LOG_COL.dark : LOG_COL.rim, px + x, py + y); continue; }
     if ((t === 6 || t === 7) && Math.abs(t - 6) < half - 3) { // the shadow off the lower flank
-      g.fillStyle = 'rgba(40,60,100,0.22)'; g.fillRect(px + x, py + y, 1, 1);
+      penDot(g, 'rgba(40,60,100,0.22)', px + x, py + y);
       continue;
     }
     if (t < -half || t > half) continue;
@@ -200,8 +219,9 @@ function paintLog(g, seg, px, py, ox, oy) {
     } else if (t === 0) c = h < 0.5 ? LOG_COL.light : LOG_COL.snowD;
     else if (t <= 2) c = h < 0.08 ? LOG_COL.rim : h < 0.35 ? LOG_COL.dark : LOG_COL.mid; // bark grain, a knot now and then
     else c = h < 0.3 ? LOG_COL.mid : LOG_COL.dark;
-    g.fillStyle = c; g.fillRect(px + x, py + y, 1, 1);
+    penDot(g, c, px + x, py + y);
   }
+  penFlush();
 }
 const roadRutCache = new Map();
 function roadRutAt(u) {
@@ -239,8 +259,9 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
       if (clump - hp * 0.2 < k * k * 0.55 - 0.05) c = d < 0.45 ? ROAD_COL_B : ROAD_COL_MUD;
       else if (clump < 0.45 + k * 0.3 && hp > 0.35) c = ROAD_COL_GREY;
     }
-    if (c) { g.fillStyle = c; g.fillRect(px + i, py + j, 1, 1); }
+    if (c) penDot(g, c, px + i, py + j);
   }
+  penFlush();
 }
 
 // ---- the creek's pixels ----------------------------------------------------
@@ -317,7 +338,7 @@ function paintCreek(g, tx, ty, px, py) {
           else if (r === 0 && Math.abs(m) > DECK_WM * 0.55 && hp > 0.4) c = DECK_COL.snowD;
         }
       }
-      if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); continue; }
+      if (c) { penDot(g, c, x, y); continue; }
     }
     const d = creekAt(fx, fy);
     if (d > 0.3) continue;
@@ -341,8 +362,9 @@ function paintCreek(g, tx, ty, px, py) {
       }
     } else if (e > -2.2) c = lip ? CREEK_COL.lip : (e > -1 ? CREEK_COL.faceD : CREEK_COL.face);
     else if (!lip && e > -4 && dith > 0.5) c = CREEK_COL.face;
-    if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); }
+    if (c) penDot(g, c, x, y);
   }
+  penFlush();
   if (ground[idx(tx, ty)] === 5) paintFordStone(g, tx, ty, px, py);
 }
 // one stepping stone, a rough disc lit from the top-left with snow on its
@@ -369,8 +391,9 @@ function paintFordStone(g, tx, ty, px, py) {
       else if (ly < -0.05 + (vnoise(x / 3, y / 3) - 0.5) * 0.6 && lx + ly < 0.5) c = ly < -0.55 ? STONE_COL.snowL : STONE_COL.snow;
       else c = lit > 0.35 ? STONE_COL.lit : lit > -0.25 ? STONE_COL.mid : STONE_COL.dark;
     }
-    if (c) { g.fillStyle = c; g.fillRect(x, y, 1, 1); }
+    if (c) penDot(g, c, x, y);
   }
+  penFlush();
 }
 // The current, moving: over the still streaks the bake laid, a couple of
 // glints per tile of open creek drift downstream along creekFlow and fade,
@@ -683,8 +706,9 @@ function paintSnowShore(g, tx, ty, px, py) {
   markMirror(tx, ty);
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const c = iceMk(i, j) ? bankAt(i, j, s) || dustIce(px + i, py + j, iceTone(px + i, py + j, s, hash2((px + i) * 3 + 7, (py + j) * 5 + 11))) : bankAt(i, j, s);
-    if (c) { g.fillStyle = c.css; g.fillRect(px + i, py + j, 1, 1); }
+    if (c) penDot(g, c.css, px + i, py + j);
   }
+  penFlush();
 }
 
 // ------------------------------------------------------------ the snow's pixels
@@ -787,6 +811,7 @@ function snowTile(px, py) {
     }
   }
   const deep = driftCell && driftCell[idx(px / TILE, py / TILE)]; // a deep drift reaches this tile (js/depth.js)
+  if (deep) deepTileOpen(px, py); // its depths, each worked out once (js/draw/depth.js)
   for (let j = 0; j < TILE; j++) {
     const v = j / TILE, qa = q00 + (q01 - q00) * v, qb = q10 + (q11 - q10) * v, y = py + j, fy = y / 2 - Y0;
     for (let i = 0; i < TILE; i++) {
@@ -812,6 +837,7 @@ function snowTile(px, py) {
       snowTone[j * TILE + i] = deep ? deepTone(x, y, tone) : tone;
     }
   }
+  deepTileClose();
 }
 const SNOW_INK = SNOW_PAL.concat([SNOW_GLINT], DEEP_PAL.map(rgbOf)); // 5.. deep snow (js/draw/depth.js)
 // ink snowTone into an ImageData at pixel column ox

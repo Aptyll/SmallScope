@@ -113,12 +113,8 @@ function bakeDressing() {
 function paintDressing(g, tx, ty, px, py) {
   const a = dressPx && dressPx.get(idx(tx, ty));
   if (!a) return;
-  let ink = -1;
-  for (const p of a) {
-    const c = p >> 8;
-    if (c !== ink) { ink = c; g.fillStyle = DRESS_INK[c]; }
-    g.fillRect(px + (p & 15), py + ((p >> 4) & 15), 1, 1);
-  }
+  for (const p of a) penDot(g, DRESS_INK[p >> 8], px + (p & 15), py + ((p >> 4) & 15)); // the pixel pen (ground.js)
+  penFlush();
 }
 // is this world pixel free for the dressing: not the road's band, not the
 // creek, not a tile the deep band owns

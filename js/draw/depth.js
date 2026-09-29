@@ -23,19 +23,39 @@ const DEEP_PAL = [
 const DEEP_T0 = 5;           // DEEP_PAL[0]'s index in SNOW_INK
 const DEEP_SHADE_PX = 4;     // the longest shade a drift throws, at full height
 const DEEP_RIPPLE = 7;       // px between the wind ripples across a drift's top
-const deepPx = (x, y) => driftsDepth(x / TILE, y / TILE); // the deep band's depth at a world px
-const deepIn = (x, y) => deepPx(x + 0.5, y + 0.5) >= DEPTH_DEEP;
+// the depth at world pixel (x, y)'s centre. deepTone reads each pixel's
+// neighbours up to DEEP_SHADE_PX up-left and two down-right, so a tile alone
+// asked for each depth about six times: snowTile opens a window over its own
+// tile (deepTileOpen) and each depth in it is worked out once
+const DEEP_WIN = TILE + DEEP_SHADE_PX + 2;
+const deepWin = new Float64Array(DEEP_WIN * DEEP_WIN);
+let deepX0 = 0, deepY0 = 0, deepOpen = false;
+function deepTileOpen(px, py) { deepX0 = px - DEEP_SHADE_PX; deepY0 = py - DEEP_SHADE_PX; deepWin.fill(NaN); deepOpen = true; }
+function deepTileClose() { deepOpen = false; }
+function deepPx(x, y) {
+  if (deepOpen) {
+    const i = x - deepX0, j = y - deepY0;
+    if (i >= 0 && j >= 0 && i < DEEP_WIN && j < DEEP_WIN) {
+      const k = j * DEEP_WIN + i;
+      let d = deepWin[k];
+      if (d !== d) d = deepWin[k] = driftsDepth((x + 0.5) / TILE, (y + 0.5) / TILE);
+      return d;
+    }
+  }
+  return driftsDepth((x + 0.5) / TILE, (y + 0.5) / TILE);
+}
+const deepIn = (x, y) => deepPx(x, y) >= DEPTH_DEEP;
 // the tone for world pixel (x, y) given the plain snow's tone t, on a tile
 // whose driftCell is not empty
 function deepTone(x, y, t) {
-  const d = deepPx(x + 0.5, y + 0.5);
+  const d = deepPx(x, y);
   if (d < DEPTH_DEEP) {
     // off the drift: the fine line round its sunlit side, so the edge
     // reads even where white meets white...
     if (deepIn(x + 1, y + 1) || deepIn(x + 1, y) || deepIn(x, y + 1)) return DEEP_T0 + 7;
     // ...else in its shade? A taller drift throws a longer one
     for (let k = 1; k <= DEEP_SHADE_PX; k++) {
-      const e = deepPx(x - k + 0.5, y - k + 0.5);
+      const e = deepPx(x - k, y - k);
       if (e >= DEPTH_DEEP && (e - DEPTH_DEEP) * 2.5 * DEEP_SHADE_PX + 1 >= k) return DEEP_T0 + 6;
     }
     return t;
@@ -44,7 +64,7 @@ function deepTone(x, y, t) {
   if (!deepIn(x + 1, y + 1) || !deepIn(x + 1, y) && !deepIn(x, y + 1)) return DEEP_T0 + 4; // the lip
   if (!deepIn(x + 2, y + 2)) return DEEP_T0 + 5;
   // the top: lit by its slope toward the sun, barely dithered - smoother than the snow round it
-  const s = (deepPx(x + 2.5, y + 2.5) - deepPx(x - 1.5, y - 1.5)) * 9 + BAYER4[(y & 3) * 4 + (x & 3)] * 0.35;
+  const s = (deepPx(x + 2, y + 2) - deepPx(x - 2, y - 2)) * 9 + BAYER4[(y & 3) * 4 + (x & 3)] * 0.35;
   // wind ripples: faint lines across the drift, on the lee tone
   const u = x * driftWind.dx + y * driftWind.dy, v = -x * driftWind.dy + y * driftWind.dx;
   const r = u / DEEP_RIPPLE + vnoise(v / 11, u / 23) * 1.6;
