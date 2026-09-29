@@ -3,9 +3,10 @@
 // (flying, stuck, held), the overhead frame - health bar, level badge, the
 // sense mark, stun stars - and the build reveal a structure grows in under.
 // ---- the arrow body, shared, and the frame over every unit's head ---------
-// One silhouette for every shaft in the game: the flying arrow (render.js)
-// rasterises ARROW_BODY
-// (js/actions.js) through this pair. hx/hy is the tip's exact (unrounded) screen position,
+// The arrow's silhouette, and the one rasteriser every shaft in the game goes
+// through: the flying arrow (render.js) rasterises ARROW_BODY (js/actions.js)
+// through this pair, and a bit that flies as a shaft of its own (the bodies a
+// bit flies as, render.js) hands in its own map. hx/hy is the tip's exact (unrounded) screen position,
 // i0..i1 the stretch of the body to draw (a buried head is skipped by raising
 // i0), cT/cD the team feather and its dark edge, cB the bit collar, cG an
 // optional shaft override (0 = the master's gold).
@@ -21,16 +22,20 @@
 // onto the same diagonal offset) and the two vanes stay mirrored at every
 // bearing. At the four cardinals all of this degenerates to plain rounding,
 // so straight shots are pixel-identical to the old spine-offset draw.
-function arrowBodyPx(out, hx, hy, nx, ny, i0, i1, cT, cD, cB, cG) {
+// `body`/`ink` default to the arrow: a bit that flies as a shaft of its own
+// (the barbed shot, the hook, the lance) hands in its own map, parsed by
+// shaftBody below, and the colours its own letters mean.
+function arrowBodyPx(out, hx, hy, nx, ny, i0, i1, cT, cD, cB, cG, body, ink) {
+  body = body || ARROW_BODY; ink = ink || ARROW_INK;
   const ax = nx < 0 ? -nx : nx, ay = ny < 0 ? -ny : ny, domX = ax >= ay;
   const maxA = domX ? ax : ay;
   const sx = nx < 0 ? -1 : 1, sy = ny < 0 ? -1 : 1;
   const X0 = Math.round(hx), Y0 = Math.round(hy);
   const qxs = -ny < 0 ? -1 : 1, qys = nx < 0 ? -1 : 1; // signs of the perpendicular (-ny, nx)
-  for (let k = 0; k < ARROW_BODY.length; k += 3) {
-    const i = ARROW_BODY[k];
+  for (let k = 0; k < body.length; k += 3) {
+    const i = body[k];
     if (i < i0 || i > i1) continue;
-    const j = ARROW_BODY[k + 1], key = ARROW_BODY[k + 2];
+    const j = body[k + 1], key = body[k + 2];
     const s = Math.round(i * maxA);
     let px, py, ox, oy;
     if (domX) { px = X0 - sx * s; py = Math.round(hy - ny * (s / ax)); }
@@ -40,8 +45,23 @@ function arrowBodyPx(out, hx, hy, nx, ny, i0, i1, cT, cD, cB, cG) {
     else      { ox = js * qxs * aj; oy = js * qys * Math.round(aj * ax / ay); }
     out.push(px + ox, py + oy,
       key === 'T' ? cT : key === 'D' ? cD : key === 'B' ? cB :
-      key === 'G' ? (cG || ARROW_INK.G) : ARROW_INK[key]);
+      key === 'G' ? (cG || ink.G) : ink[key]);
   }
+}
+// A shaft map in ARROW_MAP's language (i along the flight from the tip, j
+// across it from the middle row) as the flat [i, j, key] triples arrowBodyPx
+// walks, sorted by `pri` - its keys from fill to structure, so where a
+// diagonal lands two pixels on one cell the structural one is painted last
+// and wins, exactly as ARROW_BODY is sorted in js/actions.js.
+function shaftBody(rows, pri) {
+  const px = [], mid = (rows.length - 1) >> 1;
+  for (let r = 0; r < rows.length; r++)
+    for (let i = 0; i < rows[r].length; i++)
+      if (rows[r][i] !== '.') px.push([i, r - mid, rows[r][i]]);
+  px.sort((a, b) => pri.indexOf(a[2]) - pri.indexOf(b[2]));
+  const out = [];
+  for (const p of px) out.push(p[0], p[1], p[2]);
+  return out;
 }
 // rim first - a plus-shaped dilation of every pixel, so the whole body wears
 // a 1px dark edge whatever direction it lies - then the colours over it

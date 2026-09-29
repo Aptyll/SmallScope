@@ -59,7 +59,7 @@ const TIER_SHINE = 2; // the tier whose plate animates
 //
 // Four optional fields under those: `reach` is extra px on every hit test (a
 // body wider than a shaft's tip - the fist and the axe), `body` names the
-// silhouette the shots pass draws it with (BIT_BODY, js/render.js; absent =
+// silhouette the shots pass draws it with (BIT_BODY, js/draw/render.js; absent =
 // the arrow), `impact` what it DOES where it lands on something rather than
 // simply running out (BIT_IMPACT below), and `bot: false` marks a bit no AI
 // player can read, the way the paths it cannot aim are already left alone.
@@ -112,17 +112,17 @@ const BITS = {
   barb: {
     name: 'BARBED SHOT', blurb: 'A HEAVY SHAFT. SLOW, AND IT HITS HARDER.', price: 16, tier: 0, proj: true,
     weight: 5, path: 'line', solid: true, ff: false, kb: 1.2,
-    life: 1, speed: 250, dmg: 12, col: '#cfd8e8',
+    life: 1, speed: 250, dmg: 12, col: '#cfd8e8', body: 'barb',
   },
   hook: {
     name: 'HOOKSHOT', blurb: 'FLIES OUT AND COMES BACK.', price: 14, tier: 0, proj: true,
     weight: 3, path: 'boomer', solid: false, ff: false, kb: 0.5,
-    life: 1.5, speed: 260, dmg: 7, col: '#9fc4dd',
+    life: 1.5, speed: 260, dmg: 7, col: '#9fc4dd', body: 'hook',
   },
   care: {
     name: 'CARE ARROW', blurb: 'FAST, PASSES WALLS, LIGHTS THE SNOW.', price: 42, tier: 1, proj: true,
     weight: 4, path: 'line', solid: false, ff: false, kb: 0.8,
-    life: 0.7, speed: 430, dmg: 13, col: '#ffe6a8', lit: 34,
+    life: 0.7, speed: 430, dmg: 13, col: '#ffe6a8', lit: 34, body: 'care',
   },
   wisp: {
     name: 'WISP', blurb: 'CIRCLES YOU, LIGHTING THE DARK.', price: 34, tier: 1, proj: true,
@@ -137,7 +137,7 @@ const BITS = {
   lance: {
     name: 'ICE LANCE', blurb: 'HEAVY, FLAT AND VERY FAST.', price: 110, tier: 2, proj: true,
     weight: 7, path: 'line', solid: true, ff: false, kb: 1.6,
-    life: 1.1, speed: 380, dmg: 26, col: '#bfe6ff',
+    life: 1.1, speed: 380, dmg: 26, col: '#bfe6ff', body: 'lance',
   },
   // The closing line: three bits that are not archery at all. Each one is
   // about ARRIVING - the fist at arm's length, the axe in the treeline, the
@@ -334,7 +334,7 @@ function updateWarps(dt) {
 // the merchant's asking price (js/shop.js)
 // and half of it what one fetches sold back - a tool sold with bits in it
 // fetches half of those too, so nothing is ever quietly emptied for gold. `art` picks the 12x12 silhouette, which is baked
-// once per tier - so a tool's shape says which family it is and its colour
+// once per tier - so a tool's shape says which weapon it is and its colour
 // says how good it is, the way GEAR_MATS tints one gear icon across levels.
 // `up` is the second stat the forge raises on it beside damage, 'rof' or
 // 'tensile' (the forge, js/mining.js): the three plain bows draw quicker,
@@ -363,8 +363,8 @@ const TOOLS = {
   // rewrites the cut the way it rewrites a shot.
   longsword:{ name: 'LONGSWORD',   tier: 0, price: 28,  rof: 30, cap: 2, tensile: 10, art: 'sword', up: 'tensile', melee: { reach: 28, half: 1.05 } },
   recurve:  { name: 'RECURVE BOW', tier: 1, price: 85,  rof: 40, cap: 3, tensile: 13, art: 'recurve', up: 'rof' },
-  hornbow:  { name: 'HORN BOW',    tier: 1, price: 72,  rof: 34, cap: 4, tensile: 15, art: 'bow', up: 'tensile' },
-  longbow:  { name: 'LONGBOW',     tier: 2, price: 170, rof: 28, cap: 5, tensile: 22, art: 'recurve', up: 'rof' },
+  hornbow:  { name: 'HORN BOW',    tier: 1, price: 72,  rof: 34, cap: 4, tensile: 15, art: 'horn', up: 'tensile' },
+  longbow:  { name: 'LONGBOW',     tier: 2, price: 170, rof: 28, cap: 5, tensile: 22, art: 'long', up: 'rof' },
 };
 const TOOL_SLOTS = 1;        // ONE weapon slot: the class weapon, on the shelf top-left
 const TOOL_ROF_STEP = 1 / 60; // a tool's `rof` is counted in game steps of this length
@@ -1274,13 +1274,15 @@ function botFitLoadout(p) {
 // chest bakes beside its draw pass. Tools are 12x12 (they sit in a HUD well
 // and in a hand); bits are 8x8 like every other carried item.
 //
-// A tool's SHAPE says which family it is and its PALETTE says its tier, so
-// three silhouettes cover five tools across three tiers - the way one gear
-// icon covers four materials. Tier colour lands on 'm' (the metal/limb) and
-// 'M' (its highlight); the grip and string stay the same on every tier.
-// 'm' is the shaded side of the limb and 'M' its lit side, so the two together
-// are both the silhouette and its own rim; 's' is the string and the shaft it
-// looses, 'W' the head. Only m and M change per tier.
+// A tool's SHAPE says which weapon it is and its PALETTE says its tier: every
+// tool has a silhouette of its own, and every art is baked in all three tier
+// palettes, the way one gear icon covers four materials. Tier colour lands on
+// 'm' (the limb or the metal) and 'M' (its lit side), so what somebody holds
+// reads its tier off their sprite from across the snow; everything else stays
+// the same on every tier - the grip (g/G), the string (q, dim so the limbs
+// are the silhouette), the arrow nocked on it (s, fletched h, headed e/W) and
+// the horn bow's ears (h/H). A bow is drawn the way it is held: string toward
+// the archer, belly and arrowhead toward the target.
 const TOOL_ART_PAL = [
   { m: '#6b4a30', M: '#a3794f' }, // WORN: wood
   { m: '#3f7aa0', M: '#bfe6ff' }, // KEEN: frost steel
@@ -1288,42 +1290,76 @@ const TOOL_ART_PAL = [
 ];
 // which way each art's BUSINESS END points as drawn (radians, 0 = +x): the
 // bows' arrowhead is on the right, the sword's point on the left, the sling's
-// stone at the top. drawHeldTool (js/draw-world.js) rotates the icon by the
+// stone at the top. drawHeldTool (js/draw/bodies.js) rotates the icon by the
 // difference between this and the hand's facing (or the aim, mid-draw), so a
 // weapon always points where its owner does and never into them.
-const TOOL_FWD = { bow: 0, recurve: 0, sword: Math.PI, sling: -Math.PI / 2 };
+const TOOL_FWD = { bow: 0, recurve: 0, horn: 0, long: 0, sword: Math.PI, sling: -Math.PI / 2 };
 const TOOL_ART = {
-  bow: [ // a plain D-bow: limbs bowing left, string taut, arrow nocked right
-    '........mM..',
-    '......mM.s..',
-    '....mM...s..',
-    '..mM.....s..',
-    '.mM......s..',
-    '.mM.sssssssW',
-    '.mM......s..',
-    '..mM.....s..',
-    '....mM...s..',
-    '......mM.s..',
-    '........mM..',
+  // SHORTBOW: a small plain D, seven px of limb - the short one
+  bow: [
+    '............',
+    '............',
+    '....mM......',
+    '...q..mM....',
+    '...q....Gge.',
+    '..hqsssssssW',
+    '...q....Gge.',
+    '...q..mM....',
+    '....mM......',
+    '............',
+    '............',
     '............',
   ],
-  recurve: [ // the same bow with the limb tips flicked back the other way
-    '.........Mm.',
-    '........mM..',
-    '......mM.s..',
-    '....mM...s..',
-    '...mM....s..',
-    '..mM.ssssssW',
-    '...mM....s..',
-    '....mM...s..',
-    '......mM.s..',
-    '........mM..',
-    '.........Mm.',
+  // RECURVE BOW: longer, and the tips flick FORWARD past where the string
+  // meets them - the curl the bow is named for
+  recurve: [
+    '.....mM.....',
+    '...qM.......',
+    '...q.mM.....',
+    '...q...mM...',
+    '...q....Gge.',
+    '..hqsssssssW',
+    '...q....Gge.',
+    '...q...mM...',
+    '...q.mM.....',
+    '...qM.......',
+    '.....mM.....',
     '............',
   ],
-  sword: [ // the longsword laid flat, point LEFT (drawn rotated a + PI onto the
-    // aim like the bows, whose arc faces -x): a white point, the lit edge
-    // over the shaded flat in steel (e/E, the two keys only this art uses),
+  // HORN BOW: the composite - limbs bulging forward either side of a grip
+  // set back between them, and horn ears swept BACK past the string
+  horn: [
+    '............',
+    '..Hh........',
+    '...qmMM.....',
+    '...q...mMM..',
+    '...q...Gg.e.',
+    '..hqsssssssW',
+    '...q...Gg.e.',
+    '...q...mMM..',
+    '...qmMM.....',
+    '..Hh........',
+    '............',
+    '............',
+  ],
+  // LONGBOW: the whole height of the icon in a shallow D, the longest arrow
+  long: [
+    '..mM........',
+    '..q.mM......',
+    '..q..mM.....',
+    '..q...mM....',
+    '..q....Gg.e.',
+    'hhqssssssssW',
+    '..q....Gg.e.',
+    '..q...mM....',
+    '..q..mM.....',
+    '..q.mM......',
+    '..mM........',
+    '............',
+  ],
+  sword: [ // the longsword laid flat, point LEFT (TOOL_FWD PI turns it onto the
+    // aim): a white point, the lit edge over the shaded flat in steel (e/E -
+    // the bows' arrowheads borrow e),
     // the cross-guard in the tier's metal, a wooden grip and a dark pommel
     '............',
     '............',
@@ -1384,99 +1420,117 @@ const TOOL_HELD_ART = {
     '......................',
   ],
 };
-// 8x8 bit glyphs. Each says what the bit DOES by shape - a head and fletching
-// for the plain arrow, a spiral for the wisp, a chevron stack for SPEEDUP -
-// because the plate behind it is already spending the colour on tier.
+// 8x8 bit glyphs. Each says what the bit DOES by shape, because the plate
+// behind it is already spending the colour on tier. The two kinds speak two
+// grammars: a SHOT is drawn as the thing that flies, tip to the upper right
+// (the way every shot icon points, so a column of them reads as one family),
+// and a FITTING is drawn as the thing it does to the shots after it - which is
+// why none of them is a shaft on its own.
 const BIT_ART = {
+  // ARROW: the plain shaft - a steel head, a tan shaft, cream fletching
   arrow: [
-    '.......s', '......ss', '.....sSs', '....sSs.',
-    '..fsSs..', '.ffSs...', 'ff.s....', 'f.......',
+    '.....Ssx', '......ss', '.....t.S', '....t...',
+    '.hht....', '.htv....', '.tvv....', 't.......',
   ],
+  // BARBED SHOT: the same arrow grown barbs down the shaft, a heavier dark
+  // wood behind them - the barbs are what makes it hit harder
   barb: [
-    '......ss', '.....sSs', '..s.sSs.', '.sSssS..',
-    '..sSSs..', '.ssSs...', 'fs.s....', 'f.......',
+    '.....Ssx', '......ss', '....Ss.S', '....wS..',
+    '..Sw....', '.hwS....', 'hwh.....', 'w.......',
   ],
+  // HOOKSHOT: a shot that goes out, turns and comes home - the loop is the
+  // flight path and the head is on the way back
   hook: [
-    '..sss...', '.so.os..', 'so...os.', 'so......',
-    'so...ss.', '.so.sSs.', '..sssSs.', '.....ss.',
+    '..ssss..', '.s....s.', '.......s', '.......s',
+    '.x.....s', 'xs....s.', 'sssssS..', '.s......',
   ],
+  // CARE ARROW: a gold arrow whose head is a light, glinting where it is
   care: [
-    '...gg...', '..gGGg..', '.gG..Gg.', 'gG.gg.Gg',
-    'gG.gg.Gg', '.gG..Gg.', '..gGGg..', '...gg...',
+    '.....G.G', '....hhx.', '.....hhG', '....g.h.',
+    '.hhg....', '.hgv....', '.gvv....', 'g.......',
   ],
+  // WISP: a bright mote dragging a curled tail - it goes round, not out
   wisp: [
-    '...ii...', '..i..i..', '.i.ii.i.', 'i.iIi.i.',
-    'i.iii.i.', '.i....i.', '..i..i..', '...ii...',
+    '.....i..', '....ixi.', '...ixxxi', '..i.ixi.',
+    '.I...i..', '.I......', '..I.....', '...bb...',
   ],
+  // THROWING LOG: a cut log, bark along it and the rings on its end
   log: [
-    '..wwww..', '.wWWWWw.', 'wWvvvvWw', 'wWvWWvWw',
-    'wWvWWvWw', 'wWvvvvWw', '.wWWWWw.', '..wwww..',
+    '........', '....vvv.', 'wwwvWvWv', 'WWWvvWvv',
+    'WWWvWvWv', 'wwwwvvv.', '........', '........',
   ],
+  // ICE LANCE: an icicle - a lit face, a shaded face, a white spine, no
+  // fletching at all
   lance: [
-    '.......i', '......iI', '.....iI.', '....iI..',
-    '...iI...', '..iI....', '.iI.....', 'iI......',
+    '......ix', '.....ixI', '....ixI.', '...ixI..',
+    '..ixI...', '.ixI....', '.iI.....', 'I.......',
   ],
+  // BIG FIST: a fist thrown to the right - knuckles on the leading edge,
+  // the thumb folded under, the cuff behind and two lines of speed
+  fist: [
+    '........', '.wwKKK..', '.wKKKkK.', 's.wKKKKK',
+    '.wKKkkkK', 's.wKKKKK', '.wKkkkK.', '..KKKK..',
+  ],
+  // BIG AXE: a broad head on a long haft, the edge leading
+  axe: [
+    '...SSs..', '..SSssx.', '...SSsx.', '...wSSx.',
+    '..wW.S..', '.wW.....', 'wW......', 'W.......',
+  ],
+  // TELEPORT REQUEST: a way through somewhere, and the dotted line you take
+  // to it - deliberately not a shaft, because what it does is not shooting
+  warp: [
+    '....UUU.', '...UuuuU', '...UuxuU', '...UuuuU',
+    '....UUU.', '..P.....', '.u......', 'P.......',
+  ],
+  // SPEEDUP: fast-forward, pointing the way the row fires
   speedup: [
-    '..n...n.', '.nGn.nGn', 'nGn.nGn.', 'Gn...Gn.',
-    'nGn.nGn.', '.nGn.nGn', '..n...n.', '........',
+    'Ln..Ln..', '.Ln..Ln.', '..Ln..Ln', '...n...n',
+    '..nN..nN', '.nN..nN.', 'nN..nN..', '........',
   ],
+  // SPLITTER: one shaft coming apart into three tips
   fan: [
-    '......sS', '.....s..', '....s...', 'sssssssS',
-    '....s...', '.....s..', '......sS', '........',
+    '......sx', '.....s..', '....s...', 'ssssssSx',
+    '....s...', '.....s..', '......sx', '........',
   ],
+  // FLAME: one tongue of fire, white at the heart
   flame: [
-    '...f....', '..fFf...', '.fFFFf..', 'fFFhFFf.',
-    'fFhhhFf.', 'fFFhFFf.', '.fFFFf..', '..fff...',
+    '...f....', '...ff...', '..fFf...', '..fFFf.f',
+    '.fFhFFff', '.fFhhFf.', '.fFhhFf.', '..fFFf..',
   ],
+  // DUPLICATE: the same arrow, twice
   twin: [
-    '..pp.pp.', '.pPp.pPp', '.pPp.pPp', '.pPp.pPp',
-    '.pPp.pPp', '.pPp.pPp', '.pPp.pPp', '..pp.pp.',
+    '.....p..', 'pPPPPPpx', '.....p..', '........',
+    '.....p..', 'pPPPPPpx', '.....p..', '........',
   ],
+  // HEFT: a weight - the bar in the fitting's gold
   heft: [
-    '..oooo..', '.oggggo.', 'ogGGGGgo', 'ogGhhGgo',
-    'ogGhhGgo', 'ogGGGGgo', '.oggggo.', '..oooo..',
+    '........', 'SS....SS', 'sS....sS', 'sSggggsS',
+    'sSggggsS', 'sS....sS', 'SS....SS', '........',
   ],
+  // LONGSHOT: a head at the far end of a long dashed flight
   longshot: [
-    '........', '......iI', '.....iII', 'iiiiiiII',
-    '.....iII', '......iI', '........', '........',
+    '........', '.....I..', '.....iI.', 'I.I.iiix',
+    'I.I.iiix', '.....iI.', '.....I..', '........',
   ],
-  // PYRE: FLAME's one tongue grown into a banked fire - a deep red body with
-  // a white heart, standing on two logs, so the escalation reads at a glance
+  // PYRE: FLAME's one tongue grown into a banked fire - a red rim and a white
+  // heart, standing on two logs, so the escalation reads at a glance
   pyre: [
-    '...F....', '..FhF...', '.RFhFR..', 'RFhhhFR.',
-    'RFhhhFR.', '.RFhFR..', '.wWWWw..', '..wWw...',
+    '..R..f..', '.Rf.fF..', '.RfFfFR.', 'RfFhFfFR',
+    'RfFhhFfR', '.RFhhFR.', 'wWwWWwWw', '.w....w.',
   ],
-  // CINDER BURST: a hot centre throwing sparks to every corner - the
+  // CINDER BURST: a white-hot impact throwing embers to every side - the
   // multiplying line's ending, said in fire
   cinder: [
-    'f...f...', '.f.f..f.', '..FfF...', '.FfhfF.f',
-    '..FfF...', '.f.f....', 'f..f..f.', '....f...',
-  ],
-  // BIG FIST: a hand closed and thrown to the right - the knuckles are the
-  // jagged right edge, the fold line is where the fingers close, and the cuff
-  // is the dark leather down the left
-  fist: [
-    '..KKKK..', '.KKKKKK.', 'wKKkKKKK', 'wKKkKKK.',
-    'wKKkKKKK', 'wKKkKKK.', '.KKKKKK.', '..KKKK..',
-  ],
-  // BIG AXE: a bearded head on a haft, the edge to the right
-  axe: [
-    'W.......', 'WSs.....', 'wSSSs...', 'wSSSSSs.',
-    'wSSSs...', 'wSs.....', 'W.......', 'W.......',
-  ],
-  // TELEPORT REQUEST: two halves of somewhere else, pinching onto a core -
-  // deliberately not a shaft, because what it does is not shooting
-  warp: [
-    '.u....u.', 'uU...uU.', '.uU.uU..', '..uUUu..',
-    '..uUUu..', '.uU.uU..', 'uU...uU.', '.u....u.',
+    'f..f..f.', '.F.F.F..', '..fFf...', 'fFFhFFf.',
+    '..fFf...', '.F.F.F..', 'f..f..f.', '........',
   ],
 };
 const BIT_PAL = {
-  '.': null, o: '#241a12', s: '#cfd8e8', S: '#8b93a8',
+  '.': null, o: '#241a12', s: '#cfd8e8', S: '#8b93a8', x: '#ffffff',
   f: '#ff9440', F: '#ffd95c', h: '#fff2c0', R: '#ff5a2a',
-  w: '#6b4a30', W: '#a3794f', v: '#d9ad72',
-  i: '#8fd8ff', I: '#4a90e2', g: '#f2cc6a', G: '#ffe08a',
-  n: '#5fd18a', p: '#a259e6', P: '#d6b6ff',
+  w: '#6b4a30', W: '#a3794f', v: '#d9ad72', t: '#d09549',
+  i: '#8fd8ff', I: '#4a90e2', b: '#5a647a', g: '#f2cc6a', G: '#ffe08a',
+  n: '#5fd18a', N: '#2f9e5e', L: '#b8f5a8', p: '#a259e6', P: '#d6b6ff',
   K: '#e8b98a', k: '#b8845c',   // a fist: knuckles and the shade off them
   u: '#8f4ad6', U: '#c58fff',   // ...and the two violets nothing else in the world wears
 };
@@ -1498,8 +1552,8 @@ function bakeGrid(rows, pal, w) {
 // special case for the new items
 for (const art in TOOL_ART) {
   for (let t = 0; t < TOOL_TIERS.length; t++) {
-    const pal = Object.assign({ '.': null, o: '#241a12', s: '#e8dcb4', W: '#ffffff', g: '#6b4a30', G: '#a3794f', e: '#c8d2e4', E: '#8b93a8' },
-      TOOL_ART_PAL[t]);
+    const pal = Object.assign({ '.': null, o: '#241a12', s: '#e8dcb4', W: '#ffffff', g: '#6b4a30', G: '#a3794f', e: '#c8d2e4', E: '#8b93a8',
+      q: '#9a917c', h: '#efe3c4', H: '#b39a6e' }, TOOL_ART_PAL[t]);
     SPRITES['toolArt_' + art + '_' + t] = bakeGrid(TOOL_ART[art], pal, 12);
     if (TOOL_HELD_ART[art]) SPRITES['toolHeld_' + art + '_' + t] = bakeGrid(TOOL_HELD_ART[art], pal, TOOL_HELD_ART[art][0].length);
   }

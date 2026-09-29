@@ -158,11 +158,15 @@ says which piece, the material says its level. Drawn by the HUD's gear plates; t
 12×12 for the same reason — it sits in the same 18 px HUD well — but shares `ITPAL` with the
 8×8 item icons rather than taking a material palette: it is one object, not four levels of one.
 
-The five **roguelike card** icons take the gear icons' trick the other way round: one shared 8×8
-`itemCard` silhouette (a card face with a sparkle pip), baked five times through `CARD_PALS` —
-White/Green/Blue/Purple/Gold — where the rarity itself is the only colour that changes (`C`), so
-`itemCardWhite`…`itemCardGold` are five palette swaps of one grid, the same relationship `GEAR_MATS`
-has to a single gear icon.
+The five **roguelike card** icons are one card back — the full 8 px of height, lit along its top
+and left edge (`L`), shaded along its bottom and right (`c`), inside a dark rim that holds it off
+white snow — in the rarity's colour (`C`, the same five hexes as `RES_COLORS`), with the rarity
+**counted** on it the way a die counts: one pip on White, two on Green, three, four, five on Gold
+(`E`, dark on the pale White card and white on the rest). The count is what tells the five apart
+under any palette, so colour is never the only thing carrying a rarity; Purple and Gold also throw
+a glint off the corner (`x`). `itemCards` holds the five grids (the pips differ, so they are five
+grids on one `CARD_PAL`, not one grid swapped five ways), baked as `itemCardWhite`…`itemCardGold`.
+The strip's card button fans three of those same icons (`cardFanCv`, js/ui/hud-draw.js).
 
 **The pine is twenty-four bend frames of one tree**, and the first of the imported sprites — the
 others are the gold sack, the three animated goods and both prey, below:
@@ -343,7 +347,7 @@ js/draw/ground.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGr
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
 below), so a sprite that belongs to a drawer can live beside it. Tool art goes further and follows the gear icons'
-trick — one 12×12 silhouette per family, baked once per **tier** through `TOOL_ART_PAL`, so shape
+trick — one 12×12 silhouette per weapon, baked once per **tier** through `TOOL_ART_PAL`, so shape
 says which weapon and palette says how good it is. The two detailed 32×32 icon sets do the same:
 the ability icons (`AB32`/`AB32_PAL`, js/abilities.js) and the gear-variant icons (`GEAR32`,
 js/ui/menu.js) bake lazily beside their drawers, and `GEAR32` deliberately shares `AB32_PAL` so

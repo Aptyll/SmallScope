@@ -280,7 +280,7 @@ function removeStruct(o) {
 const RES_COLORS = {
   gold: '#f2cc6a', berry: '#f2707a', fish: '#7ac0e8',
   // card rarities - kept out of the amber family so a "gold" card drop never
-  // reads as a currency floater; must match CARD_PALS in sprites.js
+  // reads as a currency floater; must match CARD_PALS in js/sprites/items.js
   cardWhite: '#d9dfe8', cardGreen: '#5fd18a', cardBlue: '#4a90e2', cardPurple: '#a259e6', cardGold: '#e8a33d',
   // the three ores (js/mining.js), their rocks' own inks
   ironstone: '#c4cad8', frostglass: '#8fd4f4', sunstone: '#f4bc44',
