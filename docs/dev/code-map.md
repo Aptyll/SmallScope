@@ -85,7 +85,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the sled, the shack and the boat, on one palette | `LMPAL`, `sled`, `shack`, `boat` | `landmarks` |
+| the sled and the boat, on one palette | `LMPAL`, `sled`, `boat` | `landmarks` |
 
 ## js/core.js
 

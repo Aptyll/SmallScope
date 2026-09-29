@@ -1,6 +1,6 @@
 'use strict';
-// The valley's story landmarks - an abandoned sled, an ice-fishing shack, a
-// boat frozen into a lake: scenery placed from the seed where it makes sense,
+// The valley's story landmarks - an abandoned sled and a boat frozen into a
+// lake: scenery placed from the seed where it makes sense,
 // and the sled's ride.
 // ------------------------------------------------------------ landmarks
 // A landmark is one entry here, one sprite (SPRITES.landmark, js/sprites/
@@ -9,7 +9,7 @@
 // placeLandmarks stands it where its `where` rule allows.
 //   w, h     the footprint in tiles; the anchor is the front-left tile and the
 //            parts are stamped east and north of it, as the hog hut's are
-//   solid    blocks a walker (the shack and the boat) or not (the sled)
+//   solid    blocks a walker (the boat) or not (the sled)
 //   where    a LM_WHERE rule: which tiles an anchor may take
 //   count    how many a map stands, if the seed finds room for them
 //   mirror   stood in pairs, one in each side's half, reflected across the
@@ -21,7 +21,6 @@
 //   mm       the minimap's colour
 const LANDMARKS = {
   sled:  { w: 1, h: 1, solid: false, where: 'path',  count: 2, mirror: true, spacing: 40, art: 'sled',  foot: 0, ride: true, mm: [163, 121, 79] },
-  shack: { w: 2, h: 2, solid: true,  where: 'shore', count: 2, spacing: 50, art: 'shack', foot: 2, mm: [142, 90, 72] },
   boat:  { w: 3, h: 1, solid: true,  where: 'lake',  count: 2, spacing: 50, art: 'boat',  foot: 3, mm: [142, 90, 72] },
 };
 const LM_GAP = 14;       // tiles between any two landmarks, whatever their kind
@@ -46,14 +45,6 @@ const LM_WHERE = {
     for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
       if (!dx && !dy) continue;
       if (inWorld(tx + dx, ty + dy) && ground[idx(tx + dx, ty + dy)] === 3) return true;
-    }
-    return false;
-  },
-  // on a lake's ice along its shore, with deep ice close by (a lake, not a river)
-  shore: (tx, ty, L, depth) => {
-    for (const [x, y] of lmFoot(tx, ty, L)) { const d = depth[idx(x, y)]; if (d < 1 || d > 2) return false; }
-    for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
-      if (inWorld(tx + dx, ty + dy) && depth[idx(tx + dx, ty + dy)] >= LM_LAKE_DEEP) return true;
     }
     return false;
   },

@@ -41,7 +41,7 @@ stable per tile.
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `rack`, `cairn`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
-  [story landmarks](#story-landmarks)' `sled`, `shack` and `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
+  [story landmarks](#story-landmarks)' `sled` and `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
   `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `cairn`/`banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
@@ -362,9 +362,8 @@ in the byte-fragile grid files under js/sprites/.
 
 ## Story landmarks
 
-Three bits of scenery that suggest someone was here before the match: an abandoned **sled**
-beside a road or path, an ice-fishing **shack** on a lake's ice by its shore, and a **boat**
-frozen out in a lake. They are the `landmarks` banner in [js/landmarks.js](../../js/landmarks.js),
+Two bits of scenery that suggest someone was here before the match: an abandoned **sled**
+beside a road or path and a **boat** frozen out in a lake. They are the `landmarks` banner in [js/landmarks.js](../../js/landmarks.js),
 and **a landmark is data**: one `LANDMARKS` entry (its footprint `w`×`h`, `solid`, the `where`
 rule, `count`, `mirror`, `spacing`, its `art` key and `foot`, `mm`) and one sprite in
 `SPRITES.landmark` (js/sprites/landmarks.js). The file turns each entry into an `OBJECTS` row
@@ -376,7 +375,6 @@ north the way the hog hut's are.
 | Landmark | Footprint | Blocks | Where (`LM_WHERE`) | Count |
 | --- | --- | --- | --- | --- |
 | sled | 1×1 | no, and it is ridden ([gameplay](gameplay.md#the-sled)) | `path`: open snow with a road or path tile within 2 | 2, one in each side's half |
-| shack | 2×2 | yes | `shore`: every tile ice 1 or 2 tiles in from the shore, with ice at least `LM_LAKE_DEEP` (4) deep within 5 tiles, so it is a lake and not a river | up to 2 |
 | boat | 3×1 | yes | `lake`: every tile ice at least 4 deep | up to 2 |
 
 `placeLandmarks()` runs at boot straight after `placeRocks()`. It works out each ice tile's
@@ -511,7 +509,8 @@ pines stand to the water's edge and there is no bank to walk along. Look A of
 **It is open water**, ground `4`: to every walker but a player a wall (`moveEntity`), to every
 route a gap (`walkable`), and nothing spawns, lands or climbs out onto it (`waterAt`). A player
 who steps in **plunges exactly as into an ice hole** ([falling in](#ice-holes-and-fishing)) — but
-a roll does not carry over it (two tiles of current, where a hole is one), and the scramble out is
+a dodge roll carries over it as it does over a hole: the roll's ~60 px clears the two tiles of
+current only when started at the bank, and a roll that runs out over the water goes in. The scramble out is
 onto the bank they went in from: `nearestDryTile` keeps to the same side of the water (creekAt's
 `n`). A bot never wades in on its own feet — its walk is strict unless a shove past `WADE_SHOVE`
 (sim.js) is carrying it — so the creek punishes a bot the way it punishes a player: by being
@@ -1079,9 +1078,8 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   slide (`clickAction`, `tryWork`, and `tryDodge` all check `fallT`). `drawPlayer` clips
   the sprite to the waterline with ripple rects. The climb-out teleports to
   `nearestDryTile()` with brief i-frames. [The creek](#the-creek) plunges the same way, off the same check (`creekWet` on a ground-`4`
-  tile), with the death line `WENT IN THE CREEK`. An **active dodge roll crosses holes safely**
-  (a hole, not the creek)
-  (the fall check skips while `dodgeT > 0`). Every player falls in; `die(p)` and `Player.reset()`
+  tile), with the death line `WENT IN THE CREEK`. An **active dodge roll crosses open water safely**
+  (the fall check skips while `dodgeT > 0`): any hole, and the creek when the roll starts at its bank. Every player falls in; `die(p)` and `Player.reset()`
   clear `fallT`. **A hole with a net on it is planked over** and the check skips it (`netAt`) —
   that tile is walked across like any other, which is how the catch changes hands.
 - **Everyone else avoids water**: `moveEntity` treats hole tiles as solid for every entity
