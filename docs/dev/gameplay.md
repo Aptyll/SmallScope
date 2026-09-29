@@ -225,14 +225,14 @@ match keeps the spots' clocks and a ride in progress. The body draws in its stan
 ## Unit collisions
 
 Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5 — a merchant takes it
-too — deer 5, rabbit 2.5, a camp monster its `MONSTER` row's `r`: wolf and alpha 4.5, the dire wolf 9;
+too — deer 5, rabbit 2.5, a camp monster its `MONSTER` row's `r`: the wolf 4.5, either bear 9;
 everything else, worker bots and wave soldiers included, 3 — `unitRadius`). **Birds are the exception**: they fly, so `separateUnits()`
 skips them entirely and they have no `UNIT_MASS` entry. Tile collision stays per-mover in
 `moveEntity`; unit-vs-unit is a separate relaxation pass, `separateUnits()` in the
 `movement & collision` banner, that `updatePlay` runs once after every player, animal and robot
 has stepped. For each overlapping pair it splits the overlap by inverse mass (`UNIT_MASS`:
 player 3, merchant 3, deer 2.2, soldier 1, robot 0.7, rabbit 0.5; a camp monster's mass is its
-`MONSTER` row — wolf 2, alpha 2.5, dire wolf 5 — read through `unitMass`; a player shoves a rabbit
+`MONSTER` row — wolf 2, either bear 5 — read through `unitMass`; a player shoves a rabbit
 aside and barely notices, two players split it evenly). Every
 push goes through `moveEntity(…, strict)`, which treats open water as a wall even for players
 (a shove never dunks anyone), and **any push a wall refuses is handed to the other unit** — the
@@ -242,8 +242,8 @@ Two passes settle piles; the pass is deterministic (fixed order, no `rng`).
 
 **A live dodge roll is the one exception to any of it.** `separateUnits` skips a pair outright
 when one side is a player mid-roll and the other is *small* — every player, every robot, and
-every animal but a deer and the dire wolf (`MONSTER[kind].big`) — because the roll goes through
-them and [swipes them](#the-roll-is-a-hit) instead of shoving them. A deer and a dire wolf keep
+every animal but a deer and a bear (`MONSTER[kind].big`, asked through `isBigBeast`) — because the roll goes through
+them and [swipes them](#the-roll-is-a-hit) instead of shoving them. A deer and a bear keep
 their mass and their contact, which is what makes running into one a tackle rather than a pass.
 
 Momentum: on the first pass a unit closing on the contact loses only its *share* of the
@@ -1587,7 +1587,8 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | --- | --- | --- |
 | `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
 | `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
-| `wolf` / `alpha` / `dire` | `idle`, `run` | `updateCampMonster` |
+| `wolf` | `idle`, `run` | `updateCampMonster` |
+| `alpha` / `dire` (the bears) | `idle`, `run`, `bite` | `updateCampMonster` |
 | `bird` | `idle` perched, `fly` | `updateBird` |
 
 **The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
@@ -1688,10 +1689,12 @@ They are not shown on the minimap or world map.
 
 ### Camp monsters: neutral until hit
 
-The [camps](world.md#camps) keep three kinds of wolf — the **wolf** (a den's 4), the **alpha**
-(the stone's 1) and the **dire wolf** (the hollow's 1) — one `MONSTER` row each (wildlife.js:
-the bite and what it grows a level, the reach, the seconds between one body's bites, the
-hunting speed, the body's radius and mass, and `big` for the dire's 2× sprite). All three run
+The [camps](world.md#camps) keep three kinds — the **wolf** (a den's 4), the **black bear**
+(`alpha`, the stone's 1) and the **brown bear** (`dire`, the den on RED's bank, 1) — one `MONSTER`
+row each (wildlife.js: the bite and what it grows a level, the reach, the seconds between one
+body's bites, the hunting speed, the body's radius and mass, `big` for a bear's big body, and
+`cause`, the death line a bite writes). The kind keys are the old wolves' and stay so saves
+still load. All three run
 `updateCampMonster()`:
 
 - **Neutral.** There is no sight and no threat bar filling on a linger: a player can stand at
@@ -1714,7 +1717,9 @@ hunting speed, the body's radius and mass, and `big` for the dire's 2× sprite).
   it cannot route to (out on a hole) it holds and faces. Bites do the row's `bite` plus `lvBite`
   for every level past the monster's first, inside `reach`, every `cd` seconds *per body*,
   through `damagePlayer(t, dmg, dx, dy, null, cause)` — `'wolf'` (`WENT TO THE WOLVES`) for the
-  pack and the alpha, `'dire'` (`FED THE DIRE WOLF`) for the hollow's. **Nothing caps the
+  pack, `'bear'` (`MET A BEAR`) for either bear. A bear's bite also puts it on its `bite` clip
+  (the rear-up and swipe), which the sim holds for `BITE_FRAMES` before it runs or stands
+  again. **Nothing caps the
   pack** ([i-frames](#i-frames-only-something-deliberate-grants-them)):
   four wolves on you is four bites a second, ~36 hp/s at level 1. `cd` is the only dial on it.
 - **Off duty** it patrols its camp on routed legs from the same `wanderGoal` the prey graze with
@@ -1725,13 +1730,12 @@ hunting speed, the body's radius and mass, and `big` for the dire's 2× sprite).
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
-| alpha | 320 (+25) | 20 (+3) | 15 px / 1.3 s / 90 | r 4.5, mass 2.5 | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
-| dire | 320 (+25) | 22 (+3) | 22 px / 1.4 s / 80 | r 9, mass 5, a 2× sprite a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
+| alpha (black bear) | 320 (+25) | 22 (+3) | 22 px / 1.4 s / 80 | r 9, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
+| dire (brown bear) | 320 (+25) | 22 (+3) | 22 px / 1.4 s / 80 | r 9, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
 
-The alpha and the dire wolf are the two midline camps' kinds (`teamPay` in their `MONSTER` rows),
-and [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two bodies,
-the same hp and near the same bite a second and paid the same, the alpha small and quick, the
-dire wolf big, slow and long in the reach. Every payout grows `ANIMAL_LV_GOLD` a level like any
+The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
+[the creek](world.md#the-creek) bends so each side owns one: they are one fight in two coats,
+the same row, the same hp and the same pay. Every payout grows `ANIMAL_LV_GOLD` a level like any
 kill ([Wildlife](#wildlife)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's gear purchase can
 eat it the same tick — the XP is what is guaranteed), to every active teammate who is not dead
 or in the air; the blood goes to every active teammate regardless.
@@ -1749,10 +1753,10 @@ goes out with the body on death. There is no HUD element for it: the ring is the
 a monster whose `target` is that bot, inside `AI_SIGHT`) — and an **ally** also fights one hunting
 anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D`, walking in to
 its own range first, unless its own bird is under threat: the human is the camp fight's anchor
-the way it is a rival's ([Bots](multiplayer.md#bots), rung 4), so a dire wolf you wake is one
+the way it is a rival's ([Bots](multiplayer.md#bots), rung 4), so a bear you wake is one
 your side comes to. It is *anybody on its side* because every hit re-aims the camp, and the
 helpers must not drop out when one of them takes it off you. A bot will pull a den on its own through
-the hunt rung like any other animal, and never the alpha or the dire wolf (`teamPay`), which a
+the hunt rung like any other animal, and never a bear (`teamPay`), which a
 lone bot would die to. No bot walks *to* a camp deliberately yet — see
 [checklists.md](checklists.md#known-drift).
 
@@ -1783,14 +1787,14 @@ rather than a different resource (the League model: one number, many ways to ear
 | --- | --- | --- |
 | the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse and the pace a level comes at for a player who never farms |
 | tree (`TREE_HP` 3, js/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
-| dead tree (3 hp) | `deadTreeFall` 1 | a tree, but only in the dire hollow's ring |
+| dead tree (3 hp) | `deadTreeFall` 1 | a tree, but only in the brown bear den's ring |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
 | rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 (+1 berry) | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
-| alpha | `alpha` 4 coins × 10 → 40 | the stone's one; the kill wears ALPHA'S BLOOD |
-| dire wolf | `dire` 6 coins × 15 → 90 | the hollow's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
+| black bear | `alpha` 6 coins × 15 → 90 | the stone's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
+| brown bear | `dire` 6 coins × 15 → 90 | the den's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | generator | `tiers[tier].pay` every `period` s: 1/15, 1/10, 2/12 — 4 / 6 / 10 a minute | passive income, deposited to its owner; sized under the clock's own 15 so a farm of them never out-trickles the trickle |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a **top-tier** tool or bit | ~14 caches along the treeline, one free E press — the only source of the best weapons |
@@ -2703,7 +2707,7 @@ nearest tree/rock within 8 tiles of the bay's mouth (`structMouth`, also where t
 (`nearestObj`, the predicate generalisation of `nearestBerryBush`), work it in 0.9 s ticks into a
 `carry` gold count (same `YIELD` numbers as `hitObject`, tree-fall leaves a stump and pays the
 jackpot — banked in the carry rather than paid on the spot), and walk home to deposit into their
-owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (the dire hollow's ring: quicker,
+owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (the brown bear den's ring: quicker,
 `YIELD.deadTree*`, and felling one calls `flushBirds`), because a flag can be planted on one.
 Robots drive on `navStep` ([Pathfinding](#pathfinding): reach 1 to a tree, rock or building,
 reach 0 to a body or home) and are solid to players and animals (see

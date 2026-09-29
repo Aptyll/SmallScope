@@ -702,9 +702,9 @@
     // knocking on solid ice: a glassy crack over a dull refusal
     iceKnock() { noise(0.06, 0.3, 3200); tone(1400, 0.08, 'triangle', 0.06, -700); tone(130, 0.12, 'square', 0.07, -25); },
     break_() { if (smp('timber', { vol: 0.78, rate: 1.4, jitter: 0.1, hp: 180, dur: 0.6 })) return; noise(0.2, 0.3, 700); tone(120, 0.15, 'triangle', 0.12, -60); },
-    // an animal going down; a wolf of any size yelps where everything else squeals
+    // an animal going down; a wolf yelps where everything else squeals
     monsterDie(kind) {
-      if (smp(kind === 'wolf' || kind === 'alpha' || kind === 'dire' ? 'yelp' : 'beastDie', { vol: 0.71, jitter: 0.08 })) return;
+      if (smp(kind === 'wolf' ? 'yelp' : 'beastDie', { vol: 0.71, jitter: 0.08 })) return;
       tone(500, 0.2, 'triangle', 0.12, -350); noise(0.15, 0.15, 3000);
     },
     eat() { if (smp('chew', { vol: 0.56, jitter: 0.1 })) return; tone(300, 0.05, 'triangle', 0.1); tone(260, 0.05, 'triangle', 0.1, 0, 0.07); },

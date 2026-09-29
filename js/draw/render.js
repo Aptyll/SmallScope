@@ -533,7 +533,7 @@ function render() {
       drawDummyMeter(o, px + 8, dy - 10);
     } else if (o.type === 'cairn') {
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
-      if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the alpha stone's clock
+      if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the black bear stone's clock
     } else if (o.type === 'pylon') {
       drawPylon(o, px + sh, py); // a zipline's post (js/draw/zipline.js); the cable itself is drawZips, below
     } else if (o.type === 'banner') {

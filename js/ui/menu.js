@@ -3255,10 +3255,10 @@ const WIKI_BEASTS = [
     line: () => 'BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
   { kind: 'wolf', name: 'WOLF', bw: 11,
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
-  { kind: 'alpha', name: 'ALPHA', bw: 11,
-    line: () => 'ONE A STONE. BITES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
-  { kind: 'dire', name: 'DIRE WOLF', bw: 24,
-    line: () => 'ONE HOLLOW. BITES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
+  { kind: 'alpha', name: 'BLACK BEAR', bw: 24,
+    line: () => 'ONE A STONE. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
+  { kind: 'dire', name: 'BROWN BEAR', bw: 24,
+    line: () => 'ONE A DEN. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (lv - 1); }
@@ -3335,7 +3335,7 @@ const WIKI_WORLD = [
   { name: 'THE ROAD', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
     text: 'ONE STRAIGHT LANE FROM CORNER TO CORNER, PACKED HARD BY WHATEVER THE WORKS HAULED ALONG IT. BOTH BIRDS ROOST BESIDE IT AND BOTH COLUMNS MARCH DOWN IT, SO EVERYTHING IN SOFTFALL ENDS UP ON THE ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
   { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
-    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE ALPHAS KEEP TO THEIR STONES AND THE DIRE WOLF TO ITS HOLLOW, AND A COMPANY THAT BRINGS IT DOWN WALKS TALLER FOR A WHILE.' },
+    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BLACK BEAR KEEPS TO ITS STONE AND THE BROWN BEAR TO ITS DEN, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
   { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
     text: 'THE ONLY THING THE VALLEY PAYS IN, AND THE ONLY THING THAT TEACHES. A SCOUT WHO HAS EARNED A LOT OF IT HAS DONE A LOT, AND THAT IS ALL A LEVEL IS. NOBODY HERE HAS EVER FOUND A USE FOR A SECOND CURRENCY.' },
 ];

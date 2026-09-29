@@ -538,9 +538,9 @@ current — with any pine on the tile past either end felled, so a ford never en
 OPEN FIELD the bends run most of the way to the treeline, so a seed often has no outer ford and
 the way to the rival's camp is the bridge (or a roll).
 
-**The bends** (`creekBends`, `creekBend`): the two camps on the mirror line, the DIRE HOLLOW and the
-ALPHA STONE, each have the creek swing round them in a half-loop, so each falls on one side's
-bank: the upstream one (the dire hollow, top-left) to RED, the downstream one (the alpha stone,
+**The bends** (`creekBends`, `creekBend`): the two camps on the mirror line, the BROWN BEAR DEN and the
+BLACK BEAR STONE, each have the creek swing round them in a half-loop, so each falls on one side's
+bank: the upstream one (the brown bear, top-left) to RED, the downstream one (the black bear,
 bottom-right) to BLUE. At the camp the line stands `R = r + PATH_CAMP + CREEK_BEND_GAP +
 CREEK_HW` off the diagonal and eases back over `L = R × CREEK_BEND_LONG` either way along it as
 `R (1 − t²)²`, flat where it rejoins the diagonal and never nearer the camp than `R` (that needs
@@ -687,11 +687,11 @@ Four kinds, one reward each:
 - **WOLF DEN** (`resource`, r 5, ×4) — a `den` in an open clearing and a pack of 4
   wolves. Gold per head (`YIELD.wolf`), the biggest steady payout on the map. Back 60 s after
   the last one dies.
-- **ALPHA STONE** (`buff`, r 4, ×1) — a `cairn` and one **alpha**, the dire wolf's match on the
-  other bank: the same hp, the same pay, the whole team blooded for 120 s
+- **BLACK BEAR STONE** (`buff`, r 4, ×1) — a `cairn` and one **black bear** (kind `alpha`), the
+  brown bear's match on the other bank, the same body: the same hp, the same pay, the whole team blooded for 120 s
   ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)). Back in 300 s.
-- **DIRE HOLLOW** (`epic`, r 6, ×1) — a `den` in a ring of seven `deadTree` snags, and the
-  **dire wolf**: a 2× body with a wall of hp. The kill pays the killer
+- **BROWN BEAR DEN** (`epic`, r 6, ×1) — a `den` in a ring of seven `deadTree` snags, and the
+  **brown bear** (kind `dire`): a big body with a wall of hp. The kill pays the killer
   `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, bloods the whole team for 120 s, and
   writes the feed. Back in 300 s.
 - **HOG HUT** (`hut`, r 4, ×6) — no monster: a log hut (`hut`, a 2×2
@@ -727,7 +727,7 @@ same distance to the same camp**. A site *on* the middle (`u = (WORLD − 1) / 2
 mirror and is placed once, at equal reach from either roost; [the creek](#the-creek)'s bends
 then give one to each side's bank.
 **Three camps a side of the road, six in all**: a mirrored pair of dens on each side, finished
-by one midline camp — the dire hollow top-left, the alpha stone bottom-right, facing it across
+by one midline camp — the brown bear den top-left, the black bear stone bottom-right, facing it across
 the road. A mirrored pair always lands on one side (the mirror keeps `s`), so a side can only
 grow by a pair or by a midline site. The six **hog huts** stand apart from that count, out in the
 border woods: two mirrored pairs by the far corners and one halfway along an edge. `campTile(u,
@@ -737,8 +737,8 @@ s)` is the conversion back to a tile. The layout as shipped:
 | --- | --- | --- | --- |
 | WOLF DEN | 90, −25 | 72, 123 | 123, 72 |
 | WOLF DEN | 90, +25 | 108, 159 | 159, 108 |
-| ALPHA STONE | 115.5, +44 | 147, 147 | — |
-| DIRE HOLLOW | 115.5, −40 | 87, 87 | — |
+| BLACK BEAR STONE | 115.5, +44 | 147, 147 | — |
+| BROWN BEAR DEN | 115.5, −40 | 87, 87 | — |
 | HOG HUT | 100.5, −114 | 20, 50 | 50, 20 |
 | HOG HUT | 100.5, +114 | 181, 211 | 211, 181 |
 | HOG HUT | 63, −61 | 20, 125 | 125, 20 |
@@ -747,7 +747,7 @@ The huts are 20 tiles in from the world's edge: the two far corners (top-left an
 hold one of each side's, and each side has one more halfway along an edge of its own half.
 
 The two midline sites sit on the cross-diagonal, which is [the creek](#the-creek)'s line: the
-creek bends round each, so the dire hollow stands on RED's bank and the alpha stone on BLUE's.
+creek bends round each, so the brown bear den stands on RED's bank and the black bear stone on BLUE's.
 
 `placeCamps()` runs as worldgen's last ground pass (boot: after `placeRoad()` and `placeZips()`,
 before `placeChests()`), then
@@ -779,7 +779,7 @@ pack never trickles back; cleared, it counts down; and due, it **holds at zero**
 any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward for a while and it
 still grows back, the moment the intruder leaves — then every slot is refilled at once. **The
 anchor prop wears the clock**: `drawCampClock` (js/draw/marks.js) draws the neutral unit bar over
-a hovered den mouth or alpha stone, the picked bush's own read
+a hovered den mouth or the black bear's stone, the picked bush's own read
 ([rendering.md](rendering.md#render-pass-order)), filling toward the camp's return while it is
 empty and nothing at all while anything in it lives; a full bar holding is a camp that is due
 and waiting for you to go.

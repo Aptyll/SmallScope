@@ -112,7 +112,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 - **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk or a card for the
   person it makes you** (STRIDER, FORAGER, WINTER'S CHILD).
 - **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
-  is what is in it: WOLF DEN, ALPHA STONE, DIRE HOLLOW.
+  is what is in it: WOLF DEN, BLACK BEAR STONE, BROWN BEAR DEN.
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,
   [js/profile.js](../../js/profile.js)).
 - The rules are for new names. Not every shipped name follows them, and one that does not is not
