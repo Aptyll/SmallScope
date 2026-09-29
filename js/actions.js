@@ -172,11 +172,8 @@ function tryWork(p) {
   if (p.swingCd > 0 || p.fallT > 0 || p.dodgeT > 0 || p.stunT > 0 ||
     p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.eatT > 0 || p.zip >= 0 || p.sled) return; // both hands are on the ability, on the meal, on the zipline's handle or on the sled
   if (p.prone) { risePlayer(p); return; } // no swinging an axe on your belly: E stands you up
-  if (p.mineO) return; // the pick is already at a rock (updateMine, js/mining.js)
   const t = workTarget(p);
   if (!t || !t.near) return;
-  // a rock is not swung at: the key held on it is a channel
-  if (t.o && t.o.type === 'rock') { startMine(p, t.o); return; }
   if (p.charging) { p.charging = false; p.chargeT = 0; } // work drops the draw
   p.fireArmed = false;                                     // ...and the held button has to be pressed again
   p.autoSwing = false;
@@ -264,7 +261,6 @@ function tryDodge(p) {
     p.rootT > 0 || p.rushT > 0) return; // a trap pins the roll too, and a charge is already a dash
   risePlayer(p); // a roll is the fast way out of the snow, and it costs a charge
   breakEat(p);   // ...and out of a meal: the roll is the one way YOU end your own channel
-  breakMine(p);  // ...or the pick's at a rock (js/mining.js)
   if (p.grapT > 0) grapEnd(p); // rolling off the rope: the reel's speed feeds the dash below
   if (p.zip >= 0) zipEnd(p, false); // ...and off the zipline's handle the same way
   if (p.sled) sledEnd(p, false);    // ...and off a sled, which breaks (js/landmarks.js)
@@ -903,7 +899,6 @@ function stunUnit(e, t) {
     e.sliding = false;
     e.castT = 0; e.castAb = -1;                    // the cast is knocked out of the hands
     breakEat(e);                                   // ...and so is the meal (js/core.js)
-    breakMine(e);                                  // ...and the pick at a rock (js/mining.js)
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
     if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; }
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown

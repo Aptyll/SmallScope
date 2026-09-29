@@ -1,21 +1,23 @@
 'use strict';
 // ------ rocks and ore
-// A rock is mined by a CHANNEL, not by swings: hold the work key on it and
-// the pick bites every MINE_STRIKE while the rock cracks in three stages
-// and a bar fills over it. Walking, letting go of the key, a hit, a stun, a
-// roll, a shot or an ability drops it, and the progress goes with it - the
-// meal's rule (js/core.js), for the same reason: a rival can see you
-// kneeling at a rock and take it away. What a rock pays when the channel
-// lands is its kind's row below: gold on the spot, ORE that bursts out of it
-// onto the snow for the pickup to take into the bag, and a roll at a find
-// (dropLoot, js/tools.js). A mined rock stays where it stood as rubble - it
-// is still solid - and grows back after its kind's `regrow`.
+// A rock mines ITSELF: stand within MINE_R of it and the pick bites every
+// MINE_STRIKE while the rock cracks in three stages and a bar fills over it.
+// No key is held and nothing the hands do stops it - walk, shoot, roll, eat,
+// cast, the bar keeps filling. Only a rival's blow knocks the pick off: the
+// bar stops for MINE_HIT_HOLD and, like a rock nobody is at, slowly closes
+// back up (MINE_DECAY) rather than dropping to nothing, so the next pick -
+// yours, or whoever steps up while you are busy - starts from what is left.
+// What a rock pays when the bar fills is its kind's row below: gold on the
+// spot, ORE that bursts out of it onto the snow for the pickup to take into
+// the bag, and a roll at a find (dropLoot, js/tools.js). A mined rock stays
+// where it stood as rubble - it is still solid - and grows back after its
+// kind's `regrow`.
 //
 // The three kinds are placed by placeRocks (js/world.js) in its clusters
 // (ROCK_CLUSTERS): STONE nearer home, and a SUNSTONE and a FROSTGLASS a side
 // out at each of the two corners neither side owns.
 //
-//   mine    - seconds of channel
+//   mine    - seconds of pick from nothing to broken
 //   gold    - paid on the spot (awardGold, so it is XP too), before harvestMul
 //   ore     - how many of `item` burst out, [min, max]
 //   loot    - the chance of a find, at `lootTier` or below
@@ -31,8 +33,12 @@ const ROCK_KINDS = [
   { key: 'legendary', name: 'SUNSTONE',         item: 'sunstone',   mine: 4, gold: 20, ore: [1, 1], loot: 1,   lootTier: 2,
     regrow: 300, glint: 1.2, chip: '#f4bc44', lift: 24 },
 ];
-const MINE_STRIKE = 0.5;   // s between the pick's bites while the channel runs
-const MINE_MOVE = 0.25;    // a walk input past this is walking, and walking drops the channel
+const MINE_STRIKE = 0.5;   // s between the pick's bites while it works
+const MINE_R = 40;         // px from the rock's middle (rockCx/rockCy) the pick works inside
+const MINE_DECAY = 0.35;   // s of pick the cracks close per s while nobody works the rock
+const MINE_HIT_HOLD = 1.5; // s a rival's blow keeps the pick off every rock
+const MINE_STREAM_T = 0.4; // s the motes a bite pulls off the rock take to reach the miner
+const MINE_MOVE = 0.25;    // a walk input past this is walking: the pick bites without the swing drawn
 const ORE_STACK = 99;      // one bag cell holds this many of one ore
 const ORE_FLING = 45;      // px/s the ore leaves the rock at, toward whoever mined it
 
@@ -85,81 +91,112 @@ ROCK_KINDS.forEach((K, k) => {
   ITEMS[K.item] = { icon, stack: ORE_STACK, ore: k, price: ORE_PRICE[K.item],
     name: K.item.toUpperCase() };
 });
+// the rock's progress as colour rising up its body: each kind's silhouette
+// flooded with its chip colour (drawRock, js/draw/render.js)
+SPRITES.rockFill = ROCK_KINDS.map((K, k) => {
+  const s = SPRITES.rock[k], c = document.createElement('canvas');
+  c.width = s.width; c.height = s.height;
+  const g = c.getContext('2d');
+  g.drawImage(s, 0, 0);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = K.chip; g.fillRect(0, 0, c.width, c.height);
+  return c;
+});
 function isOre(type) { return !!(ITEMS[type] && ITEMS[type].ore !== undefined); }
 
 // a rock that is standing (not rubble): the one thing the channel will start on
 function rockReady(o) { return !(o.regrow > 0); }
 // the middle of a rock's two-tile footprint, where its puffs and floaters go
+// and what MINE_R is measured from
 function rockCx(o) { return (o.tx + (OBJECTS.rock.w || 1) / 2) * TILE; }
 function rockCy(o) { return o.ty * TILE + 8; }
-// the channel holds while ANY tile of the footprint is in the ring round
-// you - the same reach workTargetAt (js/actions.js) offers the rock at
-function mineReach(p, o) {
-  const t = workTargetAt(p, o.tx, o.ty);
-  return !!t && t.o === o && t.near;
-}
+function mineReach(p, o) { return Math.hypot(p.x - rockCx(o), p.y - rockCy(o)) <= MINE_R; }
 // who is at the rock right now, if anyone is - a miner who left the match or
-// dropped the channel without it being written back holds nothing
+// let go without it being written back holds nothing
 function rockMiner(o) {
   if (o.miner === undefined || o.miner < 0) return null;
   const q = players.find((pl) => pl.id === o.miner);
   return q && q.active && !q.dead && q.mineO === o ? q : null;
 }
-
-// The work key on a standing rock (tryWork, js/actions.js). One miner per
-// rock: a second body gets the deny, and two starting in the same step are
-// contested (contest, js/player.js) so exactly one of them has it.
-function startMine(p, o) {
-  if (p.mineO === o) return;
-  if (!rockReady(o) || rockMiner(o)) { if (!(p.mineDenyT > 0)) { sfxFor(p, 'deny'); p.mineDenyT = 0.6; } return; }
-  contest('mine:' + idx(o.tx, o.ty), p, () => {
-    if (!rockReady(o) || rockMiner(o) || objects[idx(o.tx, o.ty)] !== o) return;
-    if (p.charging) { p.charging = false; p.chargeT = 0; } // the bow comes down for the pick
-    p.fireArmed = false;
-    p.autoSwing = false;
-    cancelCatch(p);
-    p.mineO = o; p.mineT = 0; p.mineStrikeT = 0;
-    o.miner = p.id; o.crack = 0;
-  });
+// the nearest standing rock nobody else is at, within r (MINE_R) of the body
+function mineFree(p, r = MINE_R) {
+  const R = Math.ceil(r / TILE) + 1, ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
+  let best = null, bd = r;
+  for (let ty = pty - R; ty <= pty + R; ty++) for (let tx = ptx - R; tx <= ptx + R; tx++) {
+    if (!inWorld(tx, ty)) continue;
+    const o = objects[idx(tx, ty)];
+    if (!o || o.type !== 'rock' || o.tx !== tx || o.ty !== ty || !rockReady(o) || rockMiner(o)) continue;
+    const d = Math.hypot(p.x - rockCx(o), p.y - rockCy(o));
+    if (d <= bd) { best = o; bd = d; }
+  }
+  return best;
+}
+// can the pick work at all this step: a body in the air, in the water, on
+// the zipline's handle or on a sled has no feet by a rock, and a stun holds
+// the bar still (it neither fills nor closes: the rock is still yours)
+function mineIdle(p) {
+  return p.dead || p.mineHoldT > 0 || p.fallT > 0 || p.stunT > 0 || inAir(p) || p.zip >= 0 || p.sled;
 }
 
-// The channel ticking, every step for every player (updatePlayer, beside
-// the meal). Anything that is not "standing still at the rock holding the
-// key" drops it; the hit, the stun, the roll, the shot and the ability drop
-// it from their own side through breakMine as well.
+// The pick, every step for every player (updatePlayer, beside the meal).
+// One miner per rock: a body in reach of a free one takes it, and two
+// reaching it in the same step are contested (contest, js/player.js) so
+// exactly one of them has it. Stepping out of MINE_R lets go.
 function updateMine(p, dt) {
-  if (p.mineDenyT > 0) p.mineDenyT -= dt;
-  const o = p.mineO;
-  if (!o) return;
-  const inp = p.input;
-  if (p.dead || !inp.work || Math.hypot(inp.mx, inp.my) > MINE_MOVE || objects[idx(o.tx, o.ty)] !== o ||
-    !rockReady(o) || !mineReach(p, o) || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.castT > 0 ||
-    p.eatT > 0 || p.prone || inAir(p) || p.zip >= 0) { breakMine(p); return; }
-  const K = ROCK_KINDS[o.kind];
-  p.mineT += dt;
-  o.crack = Math.min(1, p.mineT / K.mine);
+  if (p.mineHoldT > 0) p.mineHoldT -= dt;
+  let o = p.mineO;
+  if (o && (p.dead || p.fallT > 0 || inAir(p) || p.zip >= 0 || p.sled || objects[idx(o.tx, o.ty)] !== o ||
+    !rockReady(o) || !mineReach(p, o))) { breakMine(p); o = null; }
+  if (mineIdle(p)) return;
+  if (!o) {
+    const f = mineFree(p);
+    if (f) contest('mine:' + idx(f.tx, f.ty), p, () => {
+      if (p.mineO || !rockReady(f) || rockMiner(f) || objects[idx(f.tx, f.ty)] !== f) return;
+      p.mineO = f; p.mineStrikeT = MINE_STRIKE; // the first bite lands a beat after arriving
+      f.miner = p.id; f.crack = f.crack || 0;   // ...on whatever the last pick left
+    });
+    return;
+  }
+  const K = ROCK_KINDS[o.kind], was = o.crack || 0;
+  o.crack = Math.min(1, was + dt / K.mine);
+  // a crack stage breaking open: a chunk off the face, the rock blinking white
+  if (o.crack < 1 && Math.floor(o.crack * 3) > Math.floor(was * 3)) {
+    o.flash = 0.1; o.shake = 0.2;
+    shakeFor(p, 1);
+    burst(rockCx(o), rockCy(o) - 6, K.chip, 8, 55, 0.5, true);
+  }
   p.mineStrikeT -= dt;
   if (p.mineStrikeT <= 0) mineStrike(p, o, K);
-  if (p.mineT >= K.mine) finishMine(p, o, K);
+  if (o.crack >= 1) finishMine(p, o, K);
 }
-// one bite of the pick: the swing drawn as E's own (swingHitDone, so the
-// swing lands on nothing), the rock shivering, chips off its face
+// one bite of the pick: the rock shivering, chips off its face, and - only
+// on a body standing with its hands free - the E swing drawn at it (swingHitDone,
+// so it lands on nothing, and no swingCd: E and the bow stay yours)
 function mineStrike(p, o, K) {
   p.mineStrikeT = MINE_STRIKE;
   const cx = rockCx(o), cy = rockCy(o), dx = cx - p.x, dy = cy - p.y;
-  p.swing = SWING_PICK;
-  p.swingT = 0.18; p.swingCd = MINE_STRIKE; p.swingHitDone = true;
-  p.swingDir = Math.atan2(dy, dx);
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else p.dir = dy > 0 ? 'down' : 'up';
+  if (Math.hypot(p.input.mx, p.input.my) <= MINE_MOVE && !p.charging && !(p.swingT > 0) &&
+    !(p.castT > 0) && !(p.eatT > 0) && !(p.dodgeT > 0) && !p.prone) {
+    p.swing = SWING_PICK;
+    p.swingT = 0.18; p.swingHitDone = true;
+    p.swingDir = Math.atan2(dy, dx);
+    if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
+    else p.dir = dy > 0 ? 'down' : 'up';
+  }
   o.shake = 0.12;
+  o.flash = Math.max(o.flash || 0, 0.04); // every bite blinks the rock
   sfxAt('mine', cx, cy);
-  burst(cx + rand(-8, 8), cy - 4 - rand(0, K.lift), K.chip, 4, 40, 0.35, true);
+  // where the pick lands: chips off the face, a white spark, and motes of the
+  // kind's colour pulled off the rock into the miner
+  const hx = cx + rand(-8, 8), hy = cy - 4 - rand(0, K.lift);
+  burst(hx, hy, K.chip, 4, 40, 0.35, true);
+  burst(hx, hy, '#f4fbff', 3, 70, 0.18, false);
+  streamTo(hx, hy, p.x, p.y - 6, K.chip, 3, MINE_STREAM_T);
 }
-// the channel landing: the rock goes to rubble and pays out
+// the bar full: the rock goes to rubble and pays out
 function finishMine(p, o, K) {
   const cx = rockCx(o), cy = rockCy(o);
-  p.mineO = null; p.mineT = 0;
+  p.mineO = null;
   o.miner = -1; o.crack = 0; o.regrow = K.regrow;
   o.flash = 0.15; o.shake = 0.3;
   sfxAt('break_', cx, cy);
@@ -174,18 +211,26 @@ function finishMine(p, o, K) {
   for (let i = 0; i < n; i++) flingDrop(spawnDrop(cx + rand(-6, 6), cy + 2, K.item, 1), (p.x - cx) / d * ORE_FLING, (p.y - cy) / d * ORE_FLING);
   dropLoot(cx, cy - 4, K.lootTier, K.loot);
 }
-// The channel dropped, from every side that can drop one. Progress is lost:
-// the cracks close and the next channel starts from nothing.
+// Letting go of the rock: out of reach, off your feet, dead. The progress
+// stays on the rock and closes slowly (tickRock) until a pick is back at it.
 function breakMine(p) {
   const o = p.mineO;
   if (!o) return;
-  p.mineO = null; p.mineT = 0;
-  if (o.miner === p.id) { o.miner = -1; o.crack = 0; }
+  p.mineO = null;
+  if (o.miner === p.id) o.miner = -1;
   burst(rockCx(o), rockCy(o) - 4, '#eef4fb', 4, 30, 0.35, true);
 }
+// A rival's blow (damagePlayer, js/player.js): the pick comes off the rock
+// and stays off for MINE_HIT_HOLD
+function mineHit(p) {
+  breakMine(p);
+  p.mineHoldT = MINE_HIT_HOLD;
+}
 
-// the rubble growing back (the object timers, js/sim.js)
+// the object timers (js/sim.js): the cracks closing on a rock nobody is at,
+// and the rubble growing back
 function tickRock(o, dt) {
+  if (o.crack > 0 && !rockMiner(o)) o.crack = Math.max(0, o.crack - MINE_DECAY * dt / ROCK_KINDS[o.kind].mine);
   if (!(o.regrow > 0)) return;
   o.regrow -= dt;
   if (o.regrow > 0) return;

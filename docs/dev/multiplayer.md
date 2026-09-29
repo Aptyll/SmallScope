@@ -792,8 +792,8 @@ The ladder:
    itself is put to work between the loot and spend rungs: every 2.5 s `botFitLoadout`
    (js/tools.js) loads found bits into the tool being fired.
 13. **harvest** — walk to a tree/chest/berried bush or a standing rock nobody is at within
-   `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle - a rock's channel is held
-   through, since a let-go key throws it away.
+   `AI_FORAGE` (12 tiles) and hold E at the profile's `work` duty cycle - at a rock it just stands,
+   key up, since the rock mines itself.
 14. **roam** — wander between its landing site and the map centre.
 
 **The two birds.** `aiSituation()` (the `the two birds` sub-banner) is what every bot knows

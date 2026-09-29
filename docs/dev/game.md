@@ -110,10 +110,10 @@ visual effect: everything that decides it can see a player goes through one func
 lives inside it. It is a class ability (the hunter's key 4); a warrior never hides.
 [Prone](gameplay.md#prone-under-the-snow).
 
-**E is the one verb for the world.** The same key harvests a tree, mines a rock, breaks an
+**E is the one verb for the world.** The same key harvests a tree, breaks an
 enemy building, and strikes a rival's grounded eagle — and the axe and pick it swings are never
-selected, they come out on their own for whatever is under the cursor.
-[The swing tools](gameplay.md#the-swing-tools-e).
+selected, they come out on their own for whatever is under the cursor. A rock needs no key at all: it
+mines itself for whoever stands by it. [The swing tools](gameplay.md#the-swing-tools-e).
 
 **Gold is the only currency, and gold is also XP.** No wood, no stone — one number earned many
 ways, each source with its own yield profile, and it pays itself: gold is never a pickup on the

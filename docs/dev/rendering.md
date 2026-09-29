@@ -266,8 +266,8 @@ handful of pines ever flips `globalAlpha`, so the atlas batch below stays whole.
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
 sit at `py - 4`, the lip on the foot of its two tiles. A **rock** (`drawRock`) stands on the foot of its two tiles like
-the den, as tall as its kind: its rubble while it regrows, its cracks and a bar over it under a
-channel, and now and then a glint (a `+` of white, `ROCK_GLINT_T`) off one of its crystal's or
+the den, as tall as its kind: its rubble while it regrows, its cracks and a bar over it while it is
+being mined (and closing back up) with the kind's colour risen up its body as far as the bar has come (`SPRITES.rockFill`), a ring of the pick's reach under it (`drawMineRing`), and now and then a glint (a `+` of white, `ROCK_GLINT_T`) off one of its crystal's or
 amber's brightest pixels (`SPRITES.rockGlints`) every `glint` s of its kind, `ROCK_GLINT_NIGHT`
 times rarer after dark — a reflection, drawn under the grade, never a light. Plain stone never glints.
 

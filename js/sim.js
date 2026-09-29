@@ -811,7 +811,7 @@ function updatePlayer(p, dt) {
   // ...and the meal's clock beside it: the channel landing its heal, and the
   // one cooldown a berry and a fish share (js/core.js)
   updateEat(p, dt);
-  // ...and the pick's: a rock's channel, held on the work key (js/mining.js)
+  // ...and the pick's: the rock in reach mining itself (js/mining.js)
   updateMine(p, dt);
 
   // input - or the walk to the zipline holding the stick for the player
@@ -1207,7 +1207,6 @@ function updatePlayer(p, dt) {
     // other escape; E and the ability keys stay refused instead, because those
     // spend a cooldown a stray press should not.
     breakEat(p);
-    breakMine(p); // ...and the pick at a rock, the same way (js/mining.js)
     p.fireArmed = true;
     if (!armed && p.dryT <= 0) dryFire(p);
   }

@@ -1077,11 +1077,10 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   no verb (bright inside catch reach, dim outside).
 - **E = work** (`tryWork(p)`, auto-repeating every swing cooldown while held — `updatePlayer`
   calls it whenever `p.input.work` is set, and a held E always beats the hands' own choice).
-  It is what reaches **bare ice** (cracking toward a hole), **the practice dummy** and **a rock**
-  — the three things not marked `auto` — and it still works anything else if you insist. On a
-  rock it is not a swing but a channel: [Mining a rock](#mining-a-rock). It resolves `workTarget(p)`: the tile that player is
-  aiming at, if it holds a tree or a dead tree (→ axe), a standing rock — either of its two tiles,
-  in reach while either is (→ pick), a berried bush (→ axe), or
+  It is what reaches **bare ice** (cracking toward a hole) and **the practice dummy** — the
+  things not marked `auto` — and it still works anything else if you insist. A rock is not E's:
+  it mines itself for whoever stands by it ([Mining a rock](#mining-a-rock)). It resolves `workTarget(p)`: the tile that player is
+  aiming at, if it holds a tree or a dead tree (→ axe), a berried bush (→ axe), or
   is bare ice with no object (→ pick, cracking toward a fishing hole); and `near` = the tile is
   within `WORK_REACH` (1) tiles, Chebyshev, of the tile the player stands on — i.e. the 3×3
   ring around you, never a second row, regardless of where in your tile you stand. Out of reach or nothing workable, E
@@ -1342,7 +1341,7 @@ takes everything inside `ROLL_HIT_R` (7px) of the roller's own radius and splits
   `moveEntity` refused has to clear `TACKLE_MIN` (120 px/s), so brushing past a pine at a run is
   free and dashing straight into one is not. `tackleObject` puts real damage into an **enemy
   building** (it has an hp pool); a tree or a rock only shudders, because a pine's `hp` is a chop
-  count behind a tool gate, a rock is mined by a channel, and a shoulder is neither. Fish are under the ice and are in none of it — and
+  count behind a tool gate, a rock mines itself for whoever stands by it, and a shoulder is neither. Fish are under the ice and are in none of it — and
   nor is a **fish net**, which is not solid, so a roll crosses one without a contact at all.
 
 **Everything scales with the speed the roll is actually carrying** — `rollPow` runs from the
@@ -1801,7 +1800,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | tree (`TREE_HP` 3, js/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
 | dead tree (3 hp) | `deadTreeFall` 1 | a tree, but only in the dire hollow's ring |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
-| rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | a channel of 2 / 3 / 4 s on E, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
+| rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 (+1 berry) | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
@@ -2339,11 +2338,12 @@ colour: **STONE**, a pair of leaning slabs; **FROSTGLASS SPIRE**, ice prisms thr
 **SUNSTONE**, a black obelisk seamed with amber. Where each stands is [world.md](world.md#rocks).
 Every rock is two tiles wide (`OBJECTS.rock.w`), and either tile answers for the whole rock.
 
-**A rock is a channel on the work key, never a swing, and never the hands'.** Holding E (or the
-CLICK scheme's right button, whose work order holds `input.work` for you) on a standing rock in
-reach calls `startMine` from `tryWork`: one miner per rock (`rockMiner`; two in one step are
-[contested](multiplayer.md#contested-orders) on `mine:<tile>`), and a second body gets the deny.
-`updateMine` (beside `updateEat` in `updatePlayer`) runs it:
+**A rock mines itself: no key, just standing by it.** Every step `updateMine` (beside `updateEat`
+in `updatePlayer`) looks for the nearest standing rock within `MINE_R` (40 px of its middle,
+`rockCx`/`rockCy`) that nobody else is at (`mineFree`, `rockMiner`) and takes it: one miner per
+rock, two in one step [contested](multiplayer.md#contested-orders) on `mine:<tile>`. The bar
+fills for as long as the miner stays inside the ring, whatever they do there - walk, shoot,
+roll, eat, cast:
 
 | kind | `mine` | `gold` | `ore` | `loot` / `lootTier` | `regrow` |
 | --- | --- | --- | --- | --- | --- |
@@ -2351,23 +2351,29 @@ reach calls `startMine` from `tryWork`: one miner per rock (`rockMiner`; two in 
 | FROSTGLASS SPIRE | 3 s | 8 | 1–2 FROSTGLASS | 0.5 / 1 | 180 s |
 | SUNSTONE | 4 s | 20 | 1 SUNSTONE | 1 / 2 | 300 s |
 
-The pick bites every `MINE_STRIKE` (0.5 s, the E swing's own animation with nothing landing),
-the rock cracks in thirds and a bar fills over it in the kind's colour (`o.crack`, drawn by
-`drawRock`, js/draw/render.js). **Anything that is not standing still at the rock with the key
-held drops it**, and the progress goes with it: letting go, a walk input past `MINE_MOVE`, the
-rock out of reach, a stun, a fall, a roll, a meal, a cast or a zipline in `updateMine` itself,
-and from their own side `breakMine` beside every `breakEat` — a hit (`damagePlayer`), a stun
-(`stunUnit`), a roll (`tryDodge`), the fire button's press, the ice, the zipline — plus an
-ability key (`tryAbility`) and death. The meal's rule, for the meal's reason: a rival can see
-you kneeling at a rock and take it away.
+The pick bites every `MINE_STRIKE` (0.5 s): the rock shivers and blinks white, chips and a
+white spark fly off where the pick lands, three motes of the kind's colour stream into the miner
+over `MINE_STREAM_T` (`streamTo`, core.js), and on a body standing with its hands free the E
+swing's own animation plays at it with nothing landing and no cooldown spent. The rock cracks in
+thirds (each new crack a chunk burst, a bigger blink and a small shake) while the kind's colour
+rises up its body from the foot (`SPRITES.rockFill`) and a bar fills over it (`o.crack`, the
+progress itself, drawn by `drawRock`, js/draw/render.js, for every screen); a ring of `MINE_R`
+lies on the snow in the kind's colour round the rock your pick is at, and faint round a free
+one within reach of a step (`drawMineRing`). **Only a rival's blow knocks the pick off**:
+`damagePlayer` calls `mineHit` for a hit from anyone not on your team (a wolf included; a
+teammate, a fall or the cold do nothing), which lets go and keeps that body off every rock for
+`MINE_HIT_HOLD` (1.5 s). A stun holds the bar still. Stepping out of the ring, dying, the water,
+the air, the zipline or a sled let go (`breakMine`). **Progress is never thrown away**: a rock
+nobody is at closes back up at `MINE_DECAY` (0.35 s of pick per s, `tickRock`), and the next pick
+at it, yours or a rival's, starts from what is left.
 
 When it lands (`finishMine`) the rock pays its `gold` through `awardGold` (times `harvestMul`,
 so it is XP too), throws its ore onto the snow one piece at a time toward the miner
 (`ORE_FLING`) for the [drop pickup](#inventory-and-the-backpack), rolls its find
 (`dropLoot`), and lies as **rubble** (`o.regrow`, `SPRITES.rockSpent`) — still solid, not
 offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
-grows it back. The bots mine through the same key (the harvest rung, holding E on a rock
-until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
+grows it back. The bots mine by the same rule (the harvest rung walks them beside a rock and
+they stand there, key up, until it breaks); the worker bots leave rocks alone, and the merchant's axe, a crater and the
 landing's lane take a rock off the map whole (`fellScenery`, js/world.js). What the ore is for
 is [the forge](#the-forge).
 
