@@ -1873,8 +1873,10 @@ at all and draws no health bar.
 ### Opening it
 
 `merchNear(p)` is the resolver — the nearest **counter** within `SHOP_REACH` (34 px) of a body,
-either team's, where a counter is a merchant's body or its stall (`stallUp`), each measured from
-`counterPt` (the body itself, or the middle of the stall's front edge) — and the `E SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
+either team's, where a counter is a merchant's body or its stall (`stallUp`), each measured by
+`counterDist` (from the body itself, or from the nearest edge of the stall's footprint, so its back
+and sides count as well as its front; the cap and a click's walk go to `counterPt`, the middle of
+the stall's front edge) — and the `E SHOP` cap over it (`drawShopHint`, js/ui/wheel.js) is the same proximity
 prompt the practice armory's `E ARM` uses. **A merchant in reach owns E outright**: unlike the
 armory, the roll die and the bell — which all stand aside for a real
 [work target](#the-swing-tools-e) — the counter is taken *first*, ahead of the swing and ahead of
