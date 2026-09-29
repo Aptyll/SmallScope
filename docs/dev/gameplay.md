@@ -3088,17 +3088,19 @@ clock where that hangs there (`drawSaveFlash`).
 match at a glance - the thumbnail with the match clock (gold) and how long ago
 (`NOW`/`12M`/`5H`/`3D`) on its foot, the save's **name** (`saveTitleOf`: the player's, else
 `DAY n`), the class emblem and level; an empty manual card is a +, an autosave wears two chasing
-arrows. In a match it opens on the settings slab's frost off the ESC panel's **SAVES** plank, the
-navbar picking SAVE or LOAD. In the **solo lobby** it is a pop-up off the **SAVES plate** - a third
+arrows. There is no verb to pick: each card says its own (`svVerb`). A press on an empty manual
+card (+) saves the match into it; a press on a kept card loads it; nothing writes over a kept
+card (its X clears the slot, then its + takes the new save). In a match it opens on the settings
+slab off the ESC panel's one **SAVES** button, which is there only while `canSave()` (a solo match:
+never practice or online). In the **solo lobby** it is a pop-up off the **SAVES plate** - a third
 plate beside the map and the target, there only while the profile holds a save: the newest save's
 picture on a fanned stack of cards, its name under it, a play arrow over it under the hand - LOAD
-alone, the newest card lit when it opens (`beginSavesPick`), so Enter picks the last match back up.
-The title list itself carries nothing about saves. A press that throws something away - writing
-over a kept slot, or loading over the match you are in - arms the card first (gold rim, the verb's
-arrow over the thumbnail, `SV_ARM_T`), and a second press does it. The arrows walk the cards and,
-from the navbar, turn the verb.
+only (an empty card does nothing with no match to keep), the newest card lit when it opens (`beginSavesPick`), so Enter picks the last match back up.
+The title list itself carries nothing about saves. Loading over the match you are in arms the
+card first (gold rim, the play arrow over the thumbnail, `SV_ARM_T`), and a second press does it.
+The arrows walk the cards.
 
-Every kept card has three handles, whatever the verb. The **X** in its corner (out under the hand,
+Every kept card has three handles beside its press. The **X** in its corner (out under the hand,
 or on the picked card; Delete, a pad's X) arms it red, and a second press deletes it
 (`savesDelete`). Its **name** is typed over in place - a click on it (the pencil shows beside it) or
 F2, up to `SV_NAME_MAX` letters, digits and single spaces, Enter keeping it and Escape dropping it;
@@ -3175,8 +3177,8 @@ There is no fullscreen control in the ESC menu (players use F11); a `fullscreenc
 browser toggles it.
 
 **The panel is a flat, solid slab** (`bakeFlatSlab`: an ink outline, one quiet steel line, a flat
-night ground, never see-through) headed like the patch notes: its name big and gold over the gold
-rule (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a switch (gold track, knob
+night ground, never see-through) headed like the patch notes: its name big and gold with no rule
+under it (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a switch (gold track, knob
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
@@ -3187,8 +3189,8 @@ outgrow it, which is what lets the slab hold any number of future settings: the 
 (`SET_W`/`SET_H`, canvas.js), and 226 fits under the 240-row floor `fitCanvas()` keeps, so it can never get taller. The wheel over the
 open panel scrolls the open page (both the in-match ESC slab and the title's slide-in — the
 title also takes W/S and the arrows), a 1 px thumb on the right edge appears only when a page
-overflows, and the open page's name wears gold with a gold underline while the others sit dim
-until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (js/ui/panels.js) off
+overflows, and the open page's name wears gold with a 1 px gold line under the word alone
+(`drawNavCell`, the CONTROLS sub-navbar the same) while the others sit dim until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (js/ui/panels.js) off
 the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` anchors all read the
 same function, so a click can never disagree with a pixel. Rows keep the **14 px pitch**;
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can

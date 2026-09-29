@@ -512,14 +512,19 @@ function bakeFlatSlab(g, w, h) {
   g.fillStyle = SLAB_EDGE; cham(1, 1, w - 2, h - 2);
   g.fillStyle = SLAB_BG; cham(2, 2, w - 4, h - 4);
 }
-// the slab's head: its name big and gold over the gold rule, as the patch
-// notes head their screen (renderNotes, js/ui/menu.js)
+// the slab's head: its name big and gold, as the patch notes head their
+// screen (renderNotes, js/ui/menu.js), with no rule under it
 function drawSlabHead(title, y) {
-  const cx = SET_X + (SET_W >> 1), tw = pixelTextWidth(title, 2);
-  drawPixelTextShadow(ctx, title, Math.round(cx - tw / 2), y + 5, '#ffd95c', '#3c2a1e', 2);
-  const a = ctx.globalAlpha;
-  drawGoldRule(cx, y + 18, Math.round(tw / 2) + 8, a);
-  ctx.globalAlpha = a;
+  const tw = pixelTextWidth(title, 2);
+  drawPixelTextShadow(ctx, title, Math.round(SET_X + (SET_W - tw) / 2), y + 6, '#ffd95c', '#3c2a1e', 2);
+}
+// a navbar cell: its word centred in the cell, the open one gold with a
+// hairline under the word alone (never the whole cell), the rest dim until hovered
+function drawNavCell(t, active, hot) {
+  const tw = pixelTextWidth(t.label), tx = Math.round(t.x + (t.w - tw) / 2);
+  drawPixelTextShadow(ctx, t.label, tx, t.y, active ? '#ffd95c' : hot ? '#cfe0ff' : '#7a8bb8', 'rgba(8,12,28,0.9)');
+  if (active) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(tx, t.y + 8, tw, 1); }
+  return tx + tw;
 }
 // a flat button on the slab's foot: the slab's own line round a raised
 // ground, the line and the word going gold under the pointer
@@ -611,8 +616,8 @@ function vidPreset() {
 let setTab = 'game';                                        // the open page
 let setDrop = null;  // the dropdown row whose list hangs open, or null
 const setScroll = { game: 0, video: 0, audio: 0, controls: 0 }; // px scrolled per page
-const SET_TAB_Y = 27;      // navbar baseline, panel-local (the head's big title and gold rule sit above)
-const SET_CONTENT_Y = 43;  // content window top
+const SET_TAB_Y = 24;      // navbar baseline, panel-local (the head's big title sits above)
+const SET_CONTENT_Y = 40;  // content window top
 const SET_CONTENT_B = SET_H - 24; // ... and bottom (the foot's buttons sit below)
 // The foot: a CLOSE button (the one way out that is a button - ESC and the
 // pad's B still close it), and in a match or practice LEAVE
@@ -1256,12 +1261,7 @@ function renderSettings(now, opts) {
   const L = settingsLayout();
   // the navbar: the open page's name in gold over a gold underline, the rest
   // dim until hovered - the underline is the whole "you are here"
-  for (const t of L.tabs) {
-    const active = t.id === setTab;
-    const col = active ? '#ffd95c' : hit === 'tab:' + t.id ? '#cfe0ff' : '#7a8bb8';
-    drawPixelTextShadow(ctx, t.label, Math.round(t.x + (t.w - pixelTextWidth(t.label)) / 2), t.y, col, 'rgba(8,12,28,0.9)');
-    if (active) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(t.x + 4, t.y + 8, t.w - 8, 1); }
-  }
+  for (const t of L.tabs) drawNavCell(t, t.id === setTab, hit === 'tab:' + t.id);
   ctx.fillStyle = '#2c3a68';
   ctx.fillRect(SET_X + 10, L.clipY0 - 3, SET_W - 20, 1);
   // the open page, clipped to the content window and shifted by its scroll
@@ -1279,12 +1279,8 @@ function renderSettings(now, opts) {
     // the keyboard, the scheme in force), the rest dim until hovered; a green
     // pip on GAMEPAD while one is in hand
     for (const t of L.ctabs) {
-      const active = t.id === L.cell;
-      const col = active ? '#ffd95c' : hit === 'ctab:' + t.id ? '#cfe0ff' : '#7a8bb8';
-      const tw = pixelTextWidth(t.label), tx = Math.round(t.x + (t.w - tw) / 2);
-      drawPixelTextShadow(ctx, t.label, tx, t.y, col, 'rgba(8,12,28,0.9)');
-      if (active) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(t.x + 4, t.y + 8, t.w - 8, 1); }
-      if (t.id === 'pad' && padActive()) { ctx.fillStyle = '#8fe08a'; ctx.fillRect(tx + tw + 3, t.y + 1, 2, 2); }
+      const end = drawNavCell(t, t.id === L.cell, hit === 'ctab:' + t.id);
+      if (t.id === 'pad' && padActive()) { ctx.fillStyle = '#8fe08a'; ctx.fillRect(end + 3, t.y + 1, 2, 2); }
     }
   } else {
     for (const r of L.rows) {

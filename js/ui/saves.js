@@ -1,16 +1,17 @@
 // ------------------------------------------------------------ saves screen
 // The SAVES grid: one grid of slot cards - the five manual slots on top, the
 // autosave ring under them. It stands in two places. In a match it opens off
-// the ESC panel's SAVES plank on the settings slab's frost (bakeFrostSlab,
-// js/ui/panels.js) with both verbs, SAVE and LOAD, on its navbar. In the solo
-// lobby it is a pop-up off the SAVES plate at the top (js/ui/menu.js) with
-// LOAD alone, the newest card lit when it opens: the way back into a match.
-// A card is its match at a glance: the minimap where you stood with the
-// match clock and how long ago it was kept on it, the save's name, your
-// class and level. An empty manual card is a +. A press that would throw
-// something away - writing over a kept slot, or loading over the match you
-// are in - arms the card first (it glows gold and wears the verb's arrow),
-// and a second press does it.
+// the ESC panel's one SAVES button, on the settings slab (bakeFlatSlab,
+// js/ui/panels.js). In the solo lobby it is a pop-up off the SAVES plate at
+// the top (js/ui/menu.js), the newest card lit when it opens: the way back
+// into a match.
+// There is no verb to pick: each card says its own (svVerb). An empty manual
+// card is a + and a press SAVES the match into it; a kept card is its match
+// at a glance - the minimap where you stood with the match clock and how long
+// ago it was kept on it, the save's name, your class and level - and a press
+// LOADS it. Nothing writes over a kept card: to reuse a slot, its X clears it
+// and its + takes the new save. Loading over the match you are in arms the
+// card first (it glows gold and wears the play arrow), and a second press does it.
 // Every kept card also carries its own three handles, whatever the verb: the
 // X in its corner deletes it (armed red first, then gone), its name is typed
 // over in place (the pencil beside it), and the card itself can be carried
@@ -28,8 +29,7 @@ const SV_POP_PAD = 12;                     // the lobby pop-up's margin round th
 
 const saveUi = {
   open: false,     // the grid is up over the ESC panel (in a match; the lobby uses menu.screen)
-  tab: 'save',     // 'save' | 'load'
-  row: 0, col: 0,  // the keys' pick: row -1 the navbar, 0 manual, 1 auto
+  row: 0, col: 0,  // the keys' pick: row 0 manual, 1 auto
   keyNav: false,   // the keys made the pick (it lights until the pointer moves)
   armed: null, armAt: 0, armDel: false, // the slot waiting on its second press, when (s), and whether the press deletes
   stamp: null,     // { slot, at, ok } - the card a save or a move just landed on
@@ -50,25 +50,24 @@ function savesUp() {
   return state.mode === 'play' && state.settingsOpen && saveUi.open;
 }
 function savesMetas() { if (!saveUi.metas) saveUi.metas = saveList(); return saveUi.metas; }
-function savesReset(tab) {
+function savesReset() {
   const u = saveUi;
-  u.tab = tab; u.row = 0; u.col = 0; u.keyNav = false;
+  u.row = 0; u.col = 0; u.keyNav = false;
   u.armed = null; u.armDel = false; u.stamp = null; u.metas = null; u.press = null; u.edit = null;
 }
 // in a match: the ESC panel's SAVES plank
-function openSaves() { savesReset('save'); saveUi.open = true; SFX.place(); }
+function openSaves() { savesReset(); saveUi.open = true; SFX.place(); }
 function closeSaves() { savesEditEnd(true); saveUi.open = false; saveUi.armed = null; saveUi.press = null; SFX.pickup(); }
 // in the lobby: the SAVES plate. The newest card comes up lit, so the one
 // you were last playing is a press of Enter (or a click) away.
 function beginSavesPick() {
   if (NET.role !== 'solo' || !saveNewest()) return;
-  savesReset('load');
+  savesReset();
   const c = savesCards().find((k) => k.slot === saveNewest());
   if (c) { saveUi.row = c.row; saveUi.col = c.col; saveUi.keyNav = true; }
   openPop('saves');
 }
 
-function savesTabs() { return savesInLobby() ? [] : [{ id: 'save', label: 'SAVE' }, { id: 'load', label: 'LOAD' }]; }
 
 // where the grid stands: in the lobby a pop-up slab of its own, centred, with
 // an X; in a match the settings slab's content window
@@ -79,7 +78,9 @@ function savesFrame() {
     const px = Math.round((VIEW_W - pw) / 2), py = Math.round((VIEW_H - ph) / 2);
     return { x0: px + SV_POP_PAD, y0: py + 16, panel: { x: px, y: py, w: pw, h: ph }, xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
   }
-  return { x0: SET_X + Math.round((SET_W - gw) / 2), y0: SET_Y + SET_CONTENT_Y + 2, panel: null, xr: null };
+  // centred between the head and the foot's BACK (no navbar: the cards carry the verbs)
+  const top = SET_TAB_Y - 2, room = SET_FOOT_Y - 4 - top;
+  return { x0: SET_X + Math.round((SET_W - gw) / 2), y0: SET_Y + top + Math.max(0, (room - gh) >> 1), panel: null, xr: null };
 }
 // the cards where they sit: row 0 the manual slots, row 1 the autosaves
 // newest first, centred under them
@@ -98,30 +99,30 @@ function savesCards() {
     x: ax + i * (SV_CW + SV_GAP), y: y0 + SV_CH + SV_GAP, w: SV_CW, h: SV_CH }));
   return cards;
 }
-// a card the open verb can act on: SAVE writes the manual slots, LOAD reads a kept one
-function savesLive(c) { return saveUi.tab === 'save' ? c.row === 0 : !!c.meta; }
+// what a press on the card does: a kept card LOADS, an empty manual card
+// SAVES the match into it (in a match; the lobby has no match to keep), and an
+// empty autosave does nothing
+function svVerb(c) { return c.meta ? 'load' : c.row === 0 && !savesInLobby() ? 'save' : null; }
+function savesLive(c) { return !!svVerb(c); }
 // a kept card's handles: the X in its top-right corner, and its name's strip
 function svDelRect(c) { return { x: c.x + c.w - 8, y: c.y + 1, w: 7, h: 7 }; }
 function svNameRect(c) { return { x: c.x + 2, y: c.y + 46, w: c.w - 4, h: 10 }; }
 
 function savesLayout() {
-  const tabs = savesTabs(), F = savesFrame(), cw = Math.floor((SET_W - 24) / 2);
-  const tx0 = SET_X + Math.round((SET_W - cw * tabs.length) / 2);
+  const F = savesFrame();
   return {
-    tabs: tabs.map((t, i) => ({ id: t.id, label: t.label, x: tx0 + i * cw, y: SET_Y + SET_TAB_Y, w: cw, h: 9 })),
     cards: savesCards(),
     back: F.panel ? null : { id: 'back', x: SET_X + Math.round((SET_W - SET_PLANK_W) / 2), y: SET_Y + SET_FOOT_Y, w: SET_PLANK_W, h: SET_PLANK_H },
     panel: F.panel, xr: F.xr,
   };
 }
 
-// what is under the pointer: 'tab:<id>', 'del:<slot>', 'name:<slot>',
+// what is under the pointer: 'del:<slot>', 'name:<slot>',
 // 'card:<slot>', 'back', and in the lobby 'x', 'panel' (the slab swallows the
 // press) or null (off the slab: a press there closes it)
 function savesHit() {
   const mx = mouse.x, my = mouse.y, L = savesLayout();
   const inR = (r, px, py) => mx >= r.x - px && mx < r.x + r.w + px && my >= r.y - py && my < r.y + r.h + py;
-  for (const t of L.tabs) if (t.id !== saveUi.tab && inR(t, 0, 3)) return 'tab:' + t.id;
   for (const c of L.cards) {
     if (!inR(c, 0, 0)) continue;
     if (c.meta && inR(svDelRect(c), 1, 1)) return 'del:' + c.slot;
@@ -136,21 +137,17 @@ function savesHit() {
 function savesCardAt(x, y) { return savesLayout().cards.find((c) => x >= c.x && x < c.x + c.w && y >= c.y && y < c.y + c.h) || null; }
 
 function savesBack() { savesEditEnd(true); saveUi.press = null; if (savesInLobby()) leavePop(); else closeSaves(); }
-function savesTab(id) {
-  if (id === saveUi.tab) return;
-  saveUi.tab = id; saveUi.armed = null; SFX.pickup();
-}
-// the press on a card: the verb, or the arm before a verb that throws something away
+// the press on a card: its verb, or the arm before a load that throws the match away
 function savesAct(c) {
   if (!c || !savesLive(c)) return;
   const now = savesNow(), u = saveUi;
-  const risky = u.tab === 'save' ? !!c.meta : !savesInLobby();
+  const verb = svVerb(c), risky = verb === 'load' && !savesInLobby();
   if (risky && !(u.armed === c.slot && !u.armDel && now - u.armAt < SV_ARM_T)) {
     u.armed = c.slot; u.armDel = false; u.armAt = now; SFX.pickup();
     return;
   }
   u.armed = null;
-  if (u.tab === 'load') { SFX.place(); loadSave(c.slot); return; }
+  if (verb === 'load') { SFX.place(); loadSave(c.slot); return; }
   saveMatch(c.slot).then((ok) => {
     u.metas = null;
     u.stamp = { slot: c.slot, at: savesNow(), ok };
@@ -234,7 +231,6 @@ function savesClick() {
   if (u.edit && h !== 'name:' + u.edit.slot) savesEditEnd(true);
   if (!h || h === 'panel') { u.armed = null; if (!h && savesInLobby()) savesBack(); return; }
   if (h === 'back' || h === 'x') { savesBack(); return; }
-  if (h.startsWith('tab:')) { savesTab(h.slice(4)); return; }
   const slot = h.slice(h.indexOf(':') + 1);
   if (h.startsWith('del:')) { savesDelete(slot); return; }
   if (h.startsWith('name:')) { if (!u.edit) savesEditStart(slot); return; }
@@ -265,8 +261,7 @@ function savesRelease() {
 }
 function savesCarrying() { return !!(saveUi.press && saveUi.press.drag); }
 
-// The arrows walk the cards (and, in a match, up onto the navbar, where left
-// and right turn the verb); enter or space is the press; escape is BACK.
+// The arrows walk the cards; enter or space is the press; escape is BACK.
 // Delete is the X, F2 the name, and Shift with Left or Right carries a
 // manual card one slot along. True when the key was the grid's.
 function savesKey(k) {
@@ -282,24 +277,22 @@ function savesKey(k) {
   }
   if (!d && k !== 'enter' && k !== ' ') return false;
   if (!u.keyNav) { u.keyNav = true; if (d) return true; } // the first key lights the pick where it stands
-  const minRow = savesTabs().length ? -1 : 0;
   if ((d === 'left' || d === 'right') && keys.shift && u.row === 0) {
     const c = picked(), to = u.col + (d === 'left' ? -1 : 1);
     if (!c || !c.meta || to < 0 || to >= rowLen(0)) { SFX.deny(); return true; }
     if (savesMove(c.slot, 'm' + to)) u.col = to;
     return true;
   }
-  if (d === 'up') u.row = Math.max(minRow, u.row - 1);
+  if (d === 'up') u.row = Math.max(0, u.row - 1);
   else if (d === 'down') u.row = Math.min(1, u.row + 1);
   else if (d === 'left' || d === 'right') {
     const s = d === 'left' ? -1 : 1;
-    if (u.row < 0) { const t = savesTabs(), i = t.findIndex((x) => x.id === u.tab); savesTab(t[(i + s + t.length) % t.length].id); return true; }
     u.col += s;
-  } else if (u.row >= 0) {
+  } else {
     savesAct(picked());
     return true;
   }
-  if (u.row >= 0) u.col = Math.max(0, Math.min(rowLen(u.row) - 1, u.col));
+  u.col = Math.max(0, Math.min(rowLen(u.row) - 1, u.col));
   SFX.pickup();
   return true;
 }
@@ -343,18 +336,11 @@ function drawAutoGlyph(x, y, col) {
   ctx.fillRect(x + 2, y + 6, 3, 1); ctx.fillRect(x + 1, y + 5, 1, 1); ctx.fillRect(x, y + 3, 1, 2); ctx.fillRect(x + 1, y + 4, 2, 1);
   ctx.fillRect(x + 1, y + 1, 1, 1); ctx.fillRect(x + 5, y + 5, 1, 1);
 }
-// the verb's arrow over an armed card: down into the slot for SAVE, out to
-// the right (play) for LOAD
-function drawVerbArrow(cx, cy, save, col) {
+// the play arrow over a card armed to load, pointing out to the right
+function drawVerbArrow(cx, cy, col) {
   ctx.fillStyle = col;
-  if (save) {
-    ctx.fillRect(cx - 1, cy - 7, 3, 8);
-    for (let i = 0; i < 5; i++) ctx.fillRect(cx - 4 + i, cy + i - 1, 9 - i * 2, 1);
-    ctx.fillRect(cx - 6, cy + 6, 13, 2);
-  } else {
-    for (let i = 0; i < 7; i++) ctx.fillRect(cx - 4, cy - 6 + i, 1 + i, 1);
-    for (let i = 0; i < 6; i++) ctx.fillRect(cx - 4, cy + 1 + i, 6 - i, 1);
-  }
+  for (let i = 0; i < 7; i++) ctx.fillRect(cx - 4, cy - 6 + i, 1 + i, 1);
+  for (let i = 0; i < 6; i++) ctx.fillRect(cx - 4, cy + 1 + i, 6 - i, 1);
 }
 // an X, n px square, t px thick: the card's delete handle and its armed mark
 function drawSaveX(x, y, n, t, col) {
@@ -423,7 +409,7 @@ function drawSaveCard(c, hv, now, hit, at) {
       ctx.fillStyle = del ? 'rgba(40,8,14,0.72)' : 'rgba(6,10,24,0.72)'; ctx.fillRect(tx, ty, SAVE_THUMB, SAVE_THUMB);
       ctx.globalAlpha = aCard * (0.7 + 0.3 * p);
       if (del) drawSaveX(tx + SAVE_THUMB / 2 - 7, ty + SAVE_THUMB / 2 - 7, 15, 3, '#e0533a');
-      else drawVerbArrow(tx + SAVE_THUMB / 2, ty + SAVE_THUMB / 2, u.tab === 'save', '#ffd95c');
+      else drawVerbArrow(tx + SAVE_THUMB / 2, ty + SAVE_THUMB / 2, '#ffd95c');
       ctx.globalAlpha = aCard;
     }
     // the X in the corner: out while the card is under the hand, picked, or armed to go
@@ -433,8 +419,8 @@ function drawSaveCard(c, hv, now, hit, at) {
       ctx.fillStyle = hot ? '#e0533a' : '#0a0e23'; ctx.fillRect(r.x, r.y - lift, r.w, r.h);
       drawSaveX(r.x + 1, r.y + 1 - lift, 5, 1, hot ? '#f4f7ff' : '#8fa8d0');
     }
-  } else if (c.row === 0 && u.tab === 'save') {
-    // an empty manual slot: a + that warms under the pointer (SAVE writes it at once)
+  } else if (svVerb(c) === 'save') {
+    // an empty manual slot: a + that warms under the pointer (a press saves into it at once)
     const cx = x + Math.round(w / 2), cy = y + Math.round(h / 2);
     ctx.fillStyle = live && hv > 0.5 ? '#ffd95c' : '#4a5480';
     ctx.fillRect(cx - 6, cy - 1, 13, 3); ctx.fillRect(cx - 1, cy - 6, 3, 13);
@@ -480,13 +466,6 @@ function renderSaves(ms, opts) {
   const hit = still && mouse.inside ? savesHit() : null;
   if (hit && hit !== 'panel' && (mouse.x !== u.mx || mouse.y !== u.my)) u.keyNav = false; // the hand takes the pick back by moving, not by resting
   u.mx = mouse.x; u.my = mouse.y;
-  for (const t of L.tabs) {
-    const active = t.id === u.tab;
-    const col = active ? '#ffd95c' : hit === 'tab:' + t.id || (u.keyNav && u.row < 0) ? '#cfe0ff' : '#7a8bb8';
-    drawPixelTextShadow(ctx, t.label, Math.round(t.x + (t.w - pixelTextWidth(t.label)) / 2), t.y, col, 'rgba(8,12,28,0.9)');
-    if (active) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(t.x + 4, t.y + 8, t.w - 8, 1); }
-  }
-  if (L.tabs.length) { ctx.fillStyle = '#2c3a68'; ctx.fillRect(SET_X + 10, SET_Y + SET_CONTENT_Y - 3, SET_W - 20, 1); }
   const carry = savesCarrying() ? u.press.slot : null;
   const over = carry ? savesCardAt(mouse.x, mouse.y) : null;
   let held = null;
