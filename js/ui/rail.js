@@ -31,7 +31,7 @@ const RAIL_GAP = 2;                 // the air between two chips
 const RAIL_SEP = 4;                 // the air between a side's chips and the score well, and inside the well
 const RAIL_KILL_W = 14;             // a kill total's cell: two digits at 2x
 const RAIL_CLOCK_W = 19;            // the clock's cell: M:SS up to MM:SS at 1x
-const RAIL_Y = 3;                   // the plate's top edge: off the screen's own
+const RAIL_Y = MM_GAP;              // the plate's top edge: level with the minimap's outline
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it
@@ -91,11 +91,11 @@ function railLayout() {
   row(1, x);
   return { x: x0, w, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, clock: clk };
 }
-// the size the rail is drawn at: the HUD SIZE dial snapped to a whole number
-// (never under 1 - a 12px emblem at 0.8 drops two of its rows, where a 34px
-// well shrugs it off), capped where the plate would reach the view's edge
+// the size the rail is drawn at: the one HUD scale every widget shares
+// (hudSc, whole device pixels, so a 12px emblem never drops a row), capped
+// on the same grid where the plate would reach the view's edge
 function railSc(L) {
-  return Math.min(Math.max(1, Math.round(hudSc())), (VIEW_W - 2 * 4) / (L.w + 2));
+  return Math.min(hudSc(), hudSnapDown((VIEW_W - 2 * 4) / (L.w + 2)));
 }
 // the rail's bottom edge in view px (0 while there is no rail): what the
 // top-centre headlines - the camp plate and DAY N - hang under
@@ -221,5 +221,5 @@ function drawRailScaled(now, slide) {
   drawRail(now, L);
   ctx.restore();
   ctx = o;
-  ctx.drawImage(railScaleCv, Math.round(VIEW_W / 2 - (VIEW_W / 2 - bx) * s), slideY, Math.round(bw * s), Math.round(bh * s));
+  ctx.drawImage(railScaleCv, hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s), slideY, bw * s, bh * s);
 }

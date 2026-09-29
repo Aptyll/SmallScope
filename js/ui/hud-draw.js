@@ -460,9 +460,9 @@ function drawHudScaled(now, slideY) {
   ctx.restore();
   ctx = o;
   ctx.drawImage(hudScaleCv,
-    Math.round(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
-    Math.round(VIEW_H - (VIEW_H - by) * s) + slideY,
-    Math.round(bw * s), Math.round(bh * s));
+    hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
+    hudPx(VIEW_H - (VIEW_H - by) * s) + slideY,
+    bw * s, bh * s); // whole device pixels: hudSc snaps to them
 }
 
 // THE CORNER - the shelf, the drawer under it, and the hammer plate and build
@@ -499,15 +499,14 @@ function drawCornerScaled(now, slideX) {
   ctx.clearRect(0, 0, bw, bh);
   drawCorner(now);
   ctx = o;
-  ctx.drawImage(cornerScaleCv, slideX, 0, Math.round(bw * s), Math.round(bh * s));
+  ctx.drawImage(cornerScaleCv, slideX, 0, bw * s, bh * s); // whole device pixels: hudSc snaps to them
 }
 
-// ONE WELL OF THE SHELF: its drop shadow, the tier rim and the plate inside
-// it. `rim` overrides the tier's own, which is how the cut's red, the
-// refusal's and a hovered fitting's reach are all said in one place.
+// ONE WELL OF THE SHELF: the tier rim and the plate inside it, sunk in the
+// shelf's own plate (no drop shadow: the plate is the ground now). `rim`
+// overrides the tier's own, which is how the cut's red, the refusal's and a
+// hovered fitting's reach are all said in one place.
 function shelfWell(r, type, lit, rim) {
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
   const tp = type ? tierPlate(type, lit) : { plate: BAG_WELL, rim: lit ? '#8fa0c8' : '#2c3560' };
   ctx.fillStyle = rim || tp.rim;
   ctx.fillRect(r.x, r.y, r.w, r.h);
@@ -538,6 +537,10 @@ function drawShelf(now) {
   const cell = shelfCell();
   const hov = mouse.inside ? shelfHit(mouse.x, mouse.y) : null;
   const hovBit = hov && hov.kind === 'bit' ? hov.i : -1;
+  // the plate the row stands on, flush with the view's left edge (so only
+  // its right corners are cut), under everything the shelf draws
+  const pl = shelfPlateRect();
+  drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: false, tr: true, bl: false, br: !(bagEase > 0) } }); // squared where the open drawer continues it
   // the tool leads the row, in the tier plate it wears in every other well.
   // This is the weapon's one well now, so it carries every tell the strip's
   // used to: the refusal red (toolFlash) when a bit will not fit, the
@@ -581,7 +584,7 @@ function drawShelf(now) {
   const rails = shelfRails(cell, plan);
   rails.forEach((rail, d) => {
     const from = shelfCellRect(rail.i), to = shelfCellRect(rail.hits[rail.hits.length - 1]);
-    const y = from.y - 3 - d * SHELF_RAIL, cx = from.x + (SHELF_CELL >> 1);
+    const y = from.y - AB_PAD - 2 - d * SHELF_RAIL, cx = from.x + (SHELF_CELL >> 1); // clear of the plate's top line
     const w = to.x + (SHELF_CELL >> 1) - cx + 1;
     const hot = hovBit === rail.i || rail.hits.indexOf(hovBit) >= 0;
     const lit = bitLitAt(cell, rail.i);

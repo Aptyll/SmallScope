@@ -775,7 +775,7 @@ shake the tool well and the meal buttons refuse in (`abDenied`, aged in `updateF
 `toolFlash`/`foodFlash`); a cooldown is NOT that refusal, because the sweep already says when it
 comes home. The ASK lives off the well: while a
 skill point is unspent and the key has room a **floating buy plate** bobs in the open screen
-above the well
+above the well, `AB_BUY_AIR` clear of the strip's line at the bottom of its bob, shadow included
 (`abBuyRect`, a fixed hit rect the drawn bob stays inside; `abBuyHit` gates it on `abLvCanBuy`
 AND `hudHome()`, so the plate's existence IS the appears-then-goes ask; `drawAbBuyPlate` draws it
 under the same two gates
@@ -866,7 +866,7 @@ that is money must never read as a count of something carried.
 ### The team rail
 
 `drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plain plate
-(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (3), Dota's top bar kept clean and minimal.
+(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (`MM_GAP`, level with the minimap's outline), Dota's top bar kept clean and minimal.
 **Your side's chips on the left**, the rival's on the right, and between them a sunk **score
 panel** (`drawRailScore`, a flat `BAG_WELL` fill): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
 one clock a match shows), the rival's total, each total at 2× in its side's `mark`
@@ -900,16 +900,15 @@ DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when t
 the practice arena, or a match with an empty side — `railSides` is null, nothing draws, and the
 clock goes back under the minimap: `mmClockShown`), and
 the two notes step under the spectate control as well while it is up (`noteY`).
-**Its scale is a whole number**: `railSc` rounds the HUD SIZE dial and never goes under 1 (a 12px
-emblem at 0.8 drops two of its rows, where a 34px well shrugs it off), capped where the plate
-would reach the view's edge;
+**Its scale is the HUD's one scale**: `railSc` is `hudSc()` (whole device pixels, so a 12px
+emblem never drops a row), capped on the same grid where the plate would reach the view's edge;
 the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through
 it. A known overlap: a longbow carrying five modifier bits stacks five rails above the shelf row
 that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
 
 ### The hud frame
 
-`drawHudFrame(x, y, w, h, o)` is the one plate the strip, the pack and the team rail stand on,
+`drawHudFrame(x, y, w, h, o)` is the one plate the strip, the weapon shelf, the pack and the team rail stand on,
 drawn the way League's and Dota's HUDs get their contrast, kept simple (4.18): a dark outline
 (`HUD_INK`), one bright line just inside it (`HUD_EDGE`, cold steel, kept apart from the drawer's amber and red states), and a
 solid dark ground (`o.bg`, `AB_BG` by default). The outline holds the plate apart from bright
@@ -938,8 +937,12 @@ bakes the widget into `hudScaleCv` and blits it scaled about the strip's anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
 the same anchor via `stripMouse` first, so a click can never land beside its pixel. **`hudSc()`
-caps the dial** at the size where the strip would outgrow the view, so past that point the
-slider simply stops growing it rather than pushing its ends off the screen. **The top-left corner
+snaps the dial to whole device pixels** (`hudSnap`: one HUD pixel is always a whole number of
+canvas pixels, so the default 0.8 on a 2× canvas draws at 1×, where it used to draw every pixel
+1.6 wide and its lines one or two wide by chance) **and caps it** on the same grid
+(`hudSnapDown`) at the size where the strip would outgrow the view, so past that point the
+slider simply stops growing it rather than pushing its ends off the screen. The strip, the corner
+and the team rail all scale by this one number, and a bake lands on the device grid (`hudPx`). **The top-left corner
 scales with the same dial**: `drawCornerScaled` bakes the shelf, the drawer and the
 [build list](gameplay.md#base-building)'s hammer plate and column under them at 1× (`drawCorner`)
 and blits them about the top-left corner (sized by `CORNER_REACH` and the column's reach under
@@ -963,8 +966,14 @@ and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
 frame under it sits flush with the view's edge) and grown rightward, so the tool cell — and the
 drawer's arrow under it — never move whatever the build does, and a fitting's rail is what climbs
 into the open screen above them; the SHIFT plate hangs off the row's right end (`shelfRowRight`).
-It is **not a panel**: bare wells with their own drop shadows (`shelfWell`), so the corner
-stays world everywhere between them and only a cell itself answers `shelfHit`.
+It stands on the [hud frame](#the-hud-frame) like the strip and the rail: `shelfPlateRect`, flush
+with the view's left edge (only its right corners cut), round the row, the budget track and the
+drawer's tab, never narrower than the drawer (`BAG_W`) so the two stand as one column, its bottom
+line the one the open drawer's frame takes over (the plate's lower-right corner squares while the
+drawer is out). The wells (`shelfWell`) sit in it with no drop shadow; a cell answers
+`shelfHit`, and the ground between them answers `shelfPlateHit` so a click on the plate never
+falls through to the world (`overHud`, and the right button's wheel gate). The rails climb from
+two pixels above the plate's top line.
 
 **The tool cell is the weapon's one well** (the head of `drawShelf`), and it carries no words:
 

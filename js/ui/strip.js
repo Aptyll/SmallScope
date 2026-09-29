@@ -127,7 +127,7 @@ function hudStripRect() {
 // How far the strip drops to be AWAY: its own height plus the pouch block's
 // tab standing over it, so the whole widget clears the bottom edge rather
 // than leaving a sliver of tab over a cinematic.
-const HUD_SLIDE = AB_H + POUCH_RISE + 5; // ...its outline, and the snow on top of it
+const HUD_SLIDE = AB_H + POUCH_RISE + 5; // ...and its outline over it
 // How far the HUD has slid in: 0 while it is away below the screen, 1 once it
 // is home. The intro rides it up (renderUI) - and a ceremony PINS it there,
 // because the drop brief's camera branch holds state.intro for the whole
@@ -145,13 +145,23 @@ function hudHome() { return hudInT() >= 1; }
 // widget scaled about its bottom-centre anchor; stripMouse maps the pointer
 // back through that anchor, so every hit test below converts first and the
 // rects themselves never move.
-// The size the HUD is actually drawn at: the dial, CAPPED at the size where
+// The size the HUD is actually drawn at: the dial SNAPPED so one HUD pixel is
+// a whole number of device pixels (hudSnap), then CAPPED at the size where
 // the strip would outgrow the view, so past that point the slider simply
-// stops growing it rather than pushing its ends off the screen.
+// stops growing it rather than pushing its ends off the screen. The snap is
+// what keeps the HUD's pixels exact: at 0.8 on a 2x canvas every HUD pixel
+// was 1.6 device pixels, so a 1px line drew one or two wide depending on
+// where it fell, and the strip and the shelf stood at a different size from
+// the team rail, which already rounded. Every HUD widget scales by this one
+// number (drawHudScaled, drawCornerScaled, drawRailScaled).
+function hudSnap(s) { return Math.max(1, Math.round(s * devScale)) / devScale; }
+function hudSnapDown(s) { return Math.max(1, Math.floor(s * devScale + 1e-6)) / devScale; }
 function hudSc() {
-  const want = settings.hudScale || 0.8;
-  return Math.min(want, (VIEW_W - 8) / (AB_W + 6));
+  return Math.min(hudSnap(settings.hudScale || 0.8), hudSnapDown((VIEW_W - 8) / (AB_W + 6)));
 }
+// a view coordinate put on the device grid, where a scaled HUD bake has to
+// land for its pixels to stay whole
+function hudPx(v) { return Math.round(v * devScale) / devScale; }
 function stripMouse(mx, my) {
   const s = hudSc();
   if (s === 1) return { x: mx, y: my };
@@ -223,9 +233,12 @@ function abDenied(i) {
 // (the bob is drawn, never hit-tested) and 3px taller than the plate so the
 // bob's whole travel stays inside it.
 const AB_BUY = 14;
+const AB_BUY_AIR = 3; // open screen between the plate's lowest bob (its shadow too) and the strip's outline
 function abBuyRect(i) {
   const r = abCellRect(i);
-  return { x: r.x + ((r.w - AB_BUY) >> 1), y: r.y - AB_BUY - 6, w: AB_BUY, h: AB_BUY + 3 };
+  // the drawn plate sits 2 under the rect's top, bobs 1 either way and casts
+  // 2 more of shadow: all of it stays AB_BUY_AIR clear of the strip's line
+  return { x: r.x + ((r.w - AB_BUY) >> 1), y: r.y - AB_PAD - AB_BUY_AIR - AB_BUY - 5, w: AB_BUY, h: AB_BUY + 3 };
 }
 // which ability's plate the pointer is on, or -1. A plate only EXISTS while
 // a skill point is waiting and the key has room (abLvCanBuy), so the hit
@@ -275,9 +288,12 @@ function stripHit(mx, my) {
 // so one tool is read in one place, the way Noita's wand or Terraria's held
 // item is.
 //
-// It is NOT a panel. Bare wells with their own drop shadows, so the corner
-// stays world everywhere between them and only a cell itself ever swallows
-// a click.
+// It stands on the hud frame, like the strip and the rail (4.18): one plate
+// flush with the view's left edge, around the row, the budget track and the
+// drawer's tab, so the corner reads as part of the same HUD rather than
+// cells loose on the snow. The plate swallows its own clicks
+// (shelfPlateHit), and when the drawer opens its frame takes over the
+// plate's bottom line, so the two read as one stack.
 //
 // Pinned by its TOP to shelfRowY, under the sky, and grown rightward from SHELF_X: the
 // budget track and the row keep their pixels whatever the build does, and a
@@ -287,7 +303,24 @@ const SHELF_BAR = 4;                  // the budget track, under the row
 const SHELF_RAIL = 3;                 // what one modifier's rail costs above it
 const SHELF_SLOT = 0;                 // the weapon slot it edits (TOOL_SLOTS is 1)
 const SHELF_X = BAG_PAD;              // the tool cell's left edge: the drawer's first cell sits under it, its frame flush with the view's edge
-function shelfRowY() { return 18; } // the row's top: room for five rails above it
+function shelfRowY() { return 18; } // the row's top: room for five rails above the plate
+// the plate under the row: the hud frame's margin round the cells, down past
+// the drawer's tab to a bottom line the open drawer's frame shares, and never
+// narrower than that drawer, so a short row and the open pack stand as one
+// column with one right edge
+function shelfPlateRect() {
+  const t = bagTabRect(), x = SHELF_X - AB_PAD, y = shelfRowY() - AB_PAD;
+  return { x, y, w: Math.max(shelfRowRight() + AB_PAD - x, BAG_W), h: t.y + t.h + 2 - y };
+}
+// whether the pointer is on that plate - the shelf's cells and the tab
+// answer for themselves; this is the ground between them, which takes the
+// click so it never falls through to the world
+function shelfPlateHit(mx, my) {
+  if (!shelfUp()) return false;
+  ({ x: mx, y: my } = cornerMouse(mx, my));
+  const r = shelfPlateRect();
+  return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
+}
 // how far in from the left edge the corner widget can reach: the widest row
 // (a five-bit longbow) and the SHIFT plate off its end - what the intro
 // slide and the bake are sized by, so neither jumps when the tool changes
@@ -301,7 +334,7 @@ const CORNER_REACH = SHELF_X + 6 * SHELF_CELL + 5 * SHELF_GAP + 80;
 // changed the row mid-trade would walk out from under the pointer. The SHIFT
 // plate CORNER_REACH allows for is left out of it - that is a hover hint,
 // not a widget, and 80 px of room for one is 80 px the counter would lose.
-const CORNER_CLAIM = Math.max(BAG_W, SHELF_X + 6 * SHELF_CELL + 5 * SHELF_GAP);
+const CORNER_CLAIM = Math.max(BAG_W, SHELF_X + 6 * SHELF_CELL + 5 * SHELF_GAP + AB_PAD); // ...and the plate's margin past it
 function cornerClaim() { return Math.round(CORNER_CLAIM * hudSc()); }
 // ...and how far DOWN it reaches with the drawer open: the other half of the
 // room a panel pinned off the corner has to miss, for a view too NARROW to

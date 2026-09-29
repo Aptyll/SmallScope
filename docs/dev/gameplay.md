@@ -615,8 +615,8 @@ reaches along, so the row reads the way the press resolves. It is the whole of w
 about the arsenal — one tool, read in one place; the bottom strip has no weapon well — with the
 [inventory drawer](rendering.md#the-backpack) shut under it.
 
-It is **not a panel**: bare wells with their own drop shadows, so the corner stays world
-everywhere between them and only a cell itself swallows a click. It is pinned by its TOP to the
+It stands on the same plate as the rest of the HUD, which swallows a click anywhere on it
+(`shelfPlateHit`). It is pinned by its TOP to the
 corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
 read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
@@ -3181,7 +3181,7 @@ and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) 
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
 saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**) needs no apply
+it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**, drawn at the nearest whole-device-pixel size by `hudSc`) needs no apply
 call: the hud strip, the pack and the shelf read it live every frame
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
