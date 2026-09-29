@@ -2998,7 +2998,8 @@ banner, js/ui/screens.js): `state.mode = 'dead'`, every local overlay closed, an
 to a dim with two planks — **SPECTATE** and **LOBBY** — for `'lost'` (permanent), to
 [the victory screen](rendering.md#the-end-screens), whose planks are **KEEP PLAYING** and
 **LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
-at all — `endMatch` puts the view on an ally (`state.deadView = 'spec'`, `specNext` keeping to
+at all — `endMatch` puts the view on an ally (`viewPlayer` holds it on the body until its
+[fall](rendering.md#going-down) is over) (`state.deadView = 'spec'`, `specNext` keeping to
 the side's own through `specOk`), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
 the live countdown, and [the replay window](rendering.md#replay-the-last-four-seconds) opens large
 over the view with a close box on its corner (or ESC), so the death is watched first and the ally
@@ -3110,17 +3111,19 @@ clock where that hangs there (`drawSaveFlash`).
 match at a glance - the thumbnail with the match clock (gold) and how long ago
 (`NOW`/`12M`/`5H`/`3D`) on its foot, the save's **name** (`saveTitleOf`: the player's, else
 `DAY n`), the class emblem and level; an empty manual card is a +, an autosave wears two chasing
-arrows. In a match it opens on the settings slab's frost off the ESC panel's **SAVES** plank, the
-navbar picking SAVE or LOAD. In the **solo lobby** it is a pop-up off the **SAVES plate** - a third
+arrows. There is no verb to pick: each card says its own (`svVerb`). A press on an empty manual
+card (+) saves the match into it; a press on a kept card loads it; nothing writes over a kept
+card (its X clears the slot, then its + takes the new save). In a match it opens on the settings
+slab off the ESC panel's one **SAVES** button, which is there only while `canSave()` (a solo match:
+never practice or online). In the **solo lobby** it is a pop-up off the **SAVES plate** - a third
 plate beside the map and the target, there only while the profile holds a save: the newest save's
 picture on a fanned stack of cards, its name under it, a play arrow over it under the hand - LOAD
-alone, the newest card lit when it opens (`beginSavesPick`), so Enter picks the last match back up.
-The title list itself carries nothing about saves. A press that throws something away - writing
-over a kept slot, or loading over the match you are in - arms the card first (gold rim, the verb's
-arrow over the thumbnail, `SV_ARM_T`), and a second press does it. The arrows walk the cards and,
-from the navbar, turn the verb.
+only (an empty card does nothing with no match to keep), the newest card lit when it opens (`beginSavesPick`), so Enter picks the last match back up.
+The title list itself carries nothing about saves. Loading over the match you are in arms the
+card first (gold rim, the play arrow over the thumbnail, `SV_ARM_T`), and a second press does it.
+The arrows walk the cards.
 
-Every kept card has three handles, whatever the verb. The **X** in its corner (out under the hand,
+Every kept card has three handles beside its press. The **X** in its corner (out under the hand,
 or on the picked card; Delete, a pad's X) arms it red, and a second press deletes it
 (`savesDelete`). Its **name** is typed over in place - a click on it (the pencil shows beside it) or
 F2, up to `SV_NAME_MAX` letters, digits and single spaces, Enter keeping it and Escape dropping it;
@@ -3196,16 +3199,21 @@ call: the hud strip, the pack and the shelf read it live every frame
 There is no fullscreen control in the ESC menu (players use F11); a `fullscreenchange` listener still refits the canvas when the
 browser toggles it.
 
+**The panel is a flat, solid slab** (`bakeFlatSlab`: an ink outline, one quiet steel line, a flat
+night ground, never see-through) headed like the patch notes: its name big and gold with no rule
+under it (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a switch (gold track, knob
+right when on), and the row under the pointer lifts as a band with its name white.
+
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
 (minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
-inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..198) when its rows
+inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
 (`SET_W`/`SET_H`, canvas.js), and 226 fits under the 240-row floor `fitCanvas()` keeps, so it can never get taller. The wheel over the
 open panel scrolls the open page (both the in-match ESC slab and the title's slide-in — the
 title also takes W/S and the arrows), a 1 px thumb on the right edge appears only when a page
-overflows, and the open page's name wears gold with a gold underline while the others sit dim
-until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (js/ui/panels.js) off
+overflows, and the open page's name wears gold with a 1 px gold line under the word alone
+(`drawNavCell`, the CONTROLS sub-navbar the same) while the others sit dim until hovered. Everything inside the panel is laid out by **`settingsLayout()`** (js/ui/panels.js) off
 the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` anchors all read the
 same function, so a click can never disagree with a pixel. Rows keep the **14 px pitch**;
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can
@@ -3243,8 +3251,8 @@ is every frame the screen offers. Last sits **COLOUR BLIND**, the team palettes
 ([colour-blind palettes](multiplayer.md#teams-and-colours)) named by what each is for: OFF,
 PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its palette's chip.
 
-**The foot is planks, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
-frost planks drawn by the title's own `drawMenuButton`: **CLOSE** — the one way out that is a
+**The foot is buttons, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
+flat buttons (`drawFlatButton`, their line and word gold under the pointer): **CLOSE** — the one way out that is a
 button; ESC and the pad's B still fold the slab — and, in a match only, the way out beside it,
 LEAVE, out of the match or out of [practice](world.md#the-practice-arena) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
