@@ -2232,7 +2232,7 @@ scale and `alt` walk from the roost's numbers to the flight's over `FLEE_LIFT_T`
 returning and diverging as the ground falls away, wingbeats at full panic — and fades over the
 last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) draws the
 **flight bar**, top centre: the whole line as one track, the flown part filled in team colour
-under the chart-style bird diamond, the **jump window as a gold stretch** (dim while locked,
+under the chart-style bird diamond (the head glides a device pixel at a time on `flightShownT`, a render-side clock that carries the flight's time on between sim steps or snapshots, never backwards and never more than one update's gap ahead), the **jump window as a gold stretch** (dim while locked,
 pulsing bright once open — the lock is taught by the bar's shape, no sentence), seconds left as a
 number beside it (gold once open); `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
 the ride's wider read is the **M map** (`renderWorldMap` also runs in mode `drop`, where it
