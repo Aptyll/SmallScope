@@ -1073,12 +1073,13 @@ function drawEagle(e, ex, ey, now) {
       drawSeated(classSet(p), rd, rx, ry, RS);
     }
     // where a jump right now would land: a pulsing ring under the bird -
-    // only while the jump window is open, or it promises a jump the lock refuses
-    if (player.aboard && player.team === e.team && state.mode === 'drop' &&
+    // only while the jump window is open and never on the scripted first flight,
+    // or it promises a jump the lock refuses
+    if (player.aboard && player.team === e.team && state.mode === 'drop' && !state.drop.firstFlight &&
       e.state === 'fly' && e.t >= e.dur - DROP_LOCK_T) {
       const ph = (now * 1.2) % 1;
       ctx.globalAlpha = 0.8 - ph * 0.6;
-      ctx.strokeStyle = '#ffd95c';
+      ctx.strokeStyle = FLIGHT_OPEN; // the flight bar's open window
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(sx, sy + alt, 6 + ph * 12, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
