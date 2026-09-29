@@ -1253,6 +1253,20 @@ where a full outline reads heavy. Checked at noon on open snow and at
 full night. Either kind fades evenly under a `globalAlpha` (the cache stamps one opaque image),
 so the choice between them is only weight: a rim over the world, a shadow on a panel.
 
+## Going down
+
+A body that drops does not blink out: for `DOWN_T` (0.6 s) the `going down` banner
+(js/draw/bodies.js) plays one of two falls in its place, after a white flash (`DOWN_FLASH`).
+**Frozen**: the frame turns to ice (`DOWN_ICE`, by each pixel's own lightness), a crack
+(`DOWN_CRACK`) sets, then it breaks into 3×3 shards that fly out and fall. **Blown away**: a pixel
+at a time from the hat down, each one drifting downwind and up and paling to snow. Which one is
+`hash2(id, deaths)`, so every screen and the recap see the same fall. It is drawn only:
+`trackDowns(now)`, once a frame before the draw list, starts a fall on the edge of `p.dead` as this
+machine sees it (so a client plays it too; a body already dead when first seen, a loaded save or a
+late join, gets none) and `drawDown` draws it from the y-sorted pass. `die()` still throws its
+team-colour burst over the flash. While the local player's own fall runs, `viewPlayer()` stays on
+it, the replay keeps recording and the recap waits; then the view hands over to an ally.
+
 ## Damage feedback
 
 `addDmgFloater(x, y, amount, taken)` pushes a combat damage number into the shared `floaters`
@@ -1546,7 +1560,7 @@ and the bots still farming must not move the numbers while they are being read.
 
 ## Replay: the last four seconds
 
-The `replay` banner keeps a rolling four seconds of what was on screen and plays it back while you
+The `replay` banner keeps a rolling four seconds of the world and plays it back while you
 are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
 
 - **The recap**, on a **death** (a respawn wait or an elimination, once `deadReady()` — half a
@@ -1564,12 +1578,14 @@ are **dead** or **paused**, in one of two shapes (`rpFull()`/`rpRect()`):
 Never over [the end screens](#the-end-screens).
 It records pixels, not state, so it costs nothing to keep and re-renders nothing to play.
 
-**Where each draws.** The recap draws in the game canvas: the capture is **one sample per game
-px** (`RP_CAP_W`×`RP_CAP_H`, 640×360, is the frame itself), and drawn back at the frame's size
-under the `devScale` transform, nearest-neighbour, every capture px lands on one game px — at a
-1080p or 1440p fullscreen the UI layer and a zoom-1 world come back pixel for pixel. A window
-whose view outgrows the cap gets the clipped capture scaled by one fraction on both axes and a
-dark sliver. The corner window cannot do that: 160×90 *game* px hold a sixteenth of the view,
+**Where each draws.** The recap draws in the game canvas: the capture is the **world layer**
+(`worldCv`, one sample per world px, before the blit scales it), and each frame keeps the device
+px per world px it was blitted at live (`rpFK`). Drawn back from the same top-left corner at that
+same scale, nearest-neighbour, every world px lands on the same k×k block of device px it had
+live, so the recap is **pixel for pixel at any resting zoom**, zoomed in or not. Only a view wider
+than the cap (`RP_CAP_W`×`RP_CAP_H`, 640×360 world px, i.e. zoomed out past the default) is
+reduced. The snowfall and the vignettes draw after the blit and the HUD after the capture, so
+none of them is in it. The corner window cannot do that: 160×90 *game* px hold a sixteenth of the view,
 and the detail is gone before anything is drawn. The same corner of the *screen* is
 `RP_W * devScale` px across (480 device px at a 1080p fullscreen's 3×), so its frame goes to its
 own canvas, `#replay` (z-order above `#game`, `pointer-events: none`), positioned over the
@@ -1589,16 +1605,16 @@ whatever element goes fullscreen.
 **The ring.** `replayTick(now)` runs once per frame from the pass order above and owns the clock
 (one `Math.min(0.05, …)` delta feeds both the capture cadence and the playhead). While
 `replayLive()` — mode `play`, the local player alive, and no overlay freezing the sim, i.e. exactly
-the condition `update()` steps on — it blits the finished canvas into slot `rpHead` of one atlas
-canvas every `1/RP_FPS` s and wraps. `RP_SECS` 4 × `RP_FPS` 30 = `RP_N` 120 slots, `RP_COLS` 12
-across; `RP_RATE` 0.5 is the playback speed.
+the condition `update()` steps on, and on through the local player's own
+[fall](#going-down) (`goingDown`) so the recap ends on it — it blits the finished world layer into
+slot `rpHead` of one atlas canvas every `1/RP_FPS` s and wraps. `RP_SECS` 4 × `RP_FPS` 30 = `RP_N`
+120 slots, `RP_COLS` 12 across; `RP_RATE` 1 plays it back in real time. `replayShowing()` holds the
+recap back until the fall is over.
 
-**Capture resolution is the frame's.** `rpTarget()` is the view in game px, clipped by the memory
-cap (`RP_CAP_W`×`RP_CAP_H`, 640×360) and never an upscale. The canvas holds `devScale` device px
-per game px, so every capture is a reduction by exactly that whole number (`rpAtx` keeps
-smoothing on: nearest would sample one device px in nine and strobe an arrow in flight), and a
-UI pixel or a zoom-1 world pixel — one uniform block of device px — comes back as itself, which
-is what makes the recap **pixel for pixel** (see *Where each draws*, above).
+**Capture resolution is the world's.** `rpTarget()` is the world view (`WV_W`×`WV_H`) in world
+px, reduced only past the memory cap and never an upscale, plus the device px each captured px
+covered on screen. At the default zoom and closer it is a 1:1 copy; past the cap `rpAtx` keeps
+smoothing on for the reduction (nearest would strobe an arrow in flight).
 
 **A resize does not cost frames.** Each slot records the size it was captured at (`rpFW`/`rpFH`),
 so a change in view or zoom changes what the *next* frames look like and leaves the banked ones
@@ -1618,8 +1634,8 @@ pass. Canvas-to-canvas stays on the GPU; `getImageData`/`toDataURL` would stall 
 capture, so neither is used, and nothing is allocated per frame.
 
 **Playback.** `replayShowing()` decides; every fresh open restarts at the oldest frame. The
-playhead advances `RP_FPS * RP_RATE` frames a second, so the four seconds take eight to watch and
-then loop at 15 fps on screen. The window wears the standard `#35426e` frost rim with a gold
+playhead advances `RP_FPS * RP_RATE` frames a second, so the four seconds take four to watch and
+then loop at 30 fps on screen. The window wears the standard `#35426e` frost rim with a gold
 playhead sweeping the bottom — no label and no "REPLAY" string: a looping window under a sweeping
 playhead is what a recording looks like. Because the overlay is a DOM layer it is **not** covered
 by anything the game canvas draws, so `renderReplay()` hides it outright when the window is down

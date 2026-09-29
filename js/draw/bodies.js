@@ -713,3 +713,90 @@ function drawHeldTool(p, px, py) {
   ctx.drawImage(icon, -half, -half);
   ctx.restore();
 }
+
+// ---- going down -----------------------------------------------------------
+// A body that drops does not blink out. For DOWN_T it either FREEZES - a
+// white flash, ice, a crack, then 3x3 shards that fly and fall - or is BLOWN
+// AWAY, a pixel at a time from the hat down, each one paling to snow as the
+// wind takes it. Which of the two is hash2(id, deaths), so every screen, and
+// the recap that ends on it, sees the same fall. Drawn only: the sim let the
+// body go in die() (player.js), and this keys off the edge of p.dead as this
+// machine sees it, so a client that never runs the sim plays it too.
+const DOWN_T = 0.6;                   // s, the whole fall
+const DOWN_FLASH = 0.06;              // s of white before either one starts
+const DOWN_ICE = ['#2c4a7a', '#4f7fb8', '#86b6e4', '#c6e6fb', '#f4fbff']; // dark to light, by the pixel's own lightness
+const DOWN_CRACK = [[8, 3], [7, 4], [7, 5], [8, 6], [9, 7], [9, 8], [8, 9], [6, 7], [5, 8], [10, 5], [11, 4]];
+const downs = new Map();              // player -> the fall it is on
+const downWas = new Map();            // player -> dead as of the last frame
+const downPxOf = new WeakMap();       // frame -> its opaque pixels, read once
+
+function downPixels(spr) {
+  let px = downPxOf.get(spr);
+  if (px) return px;
+  sctx.clearRect(0, 0, 32, 32);
+  sctx.globalCompositeOperation = 'source-over';
+  sctx.drawImage(spr, 0, 0);
+  const d = sctx.getImageData(0, 0, spr.width, spr.height).data;
+  px = [];
+  for (let y = 0; y < spr.height; y++) for (let x = 0; x < spr.width; x++) {
+    const i = (y * spr.width + x) * 4;
+    if (!d[i + 3]) continue;
+    const lum = (0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2]) / 256;
+    px.push({ x, y, col: 'rgb(' + d[i] + ',' + d[i + 1] + ',' + d[i + 2] + ')', ice: DOWN_ICE[Math.min(4, (lum * 5) | 0)] });
+  }
+  downPxOf.set(spr, px);
+  return px;
+}
+
+// once a frame, before the draw list: start a fall on every body that went
+// down since the last frame, and let finished ones go. A body already dead
+// when this machine first saw it (a loaded save, a late join) gets none.
+function trackDowns(now) {
+  for (const p of players) {
+    if (p.dead && downWas.get(p) === false && p.active)
+      downs.set(p, { t0: now, x: p.x, y: p.y, spr: classSet(p)[p.dir][0], wind: hash2(p.id, p.deaths) < 0.5, k: p.deaths });
+    if (!p.dead) downs.delete(p);
+    downWas.set(p, p.dead);
+  }
+  for (const [p, d] of downs) if (now - d.t0 >= DOWN_T) downs.delete(p);
+}
+function goingDown(p) { return downs.has(p); }
+
+function drawDown(p, ex, ey, now) {
+  const d = downs.get(p), t = now - d.t0;
+  const ox = Math.round(d.x - 8 - ex), oy = Math.round(d.y - 12 - ey);
+  const px = downPixels(d.spr), h = d.spr.height;
+  const dot = (col, x, y) => { ctx.fillStyle = col; ctx.fillRect(Math.round(x), Math.round(y), 1, 1); };
+  if (t < DOWN_FLASH) { for (const q of px) dot('#ffffff', ox + q.x, oy + q.y); return; }
+  if (d.wind) {
+    // head first: a pixel lets go by its row, give or take a little, and
+    // drifts downwind and up, colour to pale to white, then gone
+    const tt = t - DOWN_FLASH, dir = hash2(p.id + 7, d.k) < 0.5 ? -1 : 1;
+    px.forEach((q, i) => {
+      const r1 = hash2(i, d.k), r2 = hash2(i + 101, d.k);
+      const q0 = (q.y / h) * 0.26 + r1 * 0.04;
+      if (tt < q0) { dot(q.col, ox + q.x, oy + q.y); return; }
+      const a = tt - q0;
+      if (a > 0.24) return;
+      dot(a < 0.05 ? q.col : a < 0.12 ? '#c6d6ee' : '#ffffff',
+        ox + q.x + dir * a * (60 + r2 * 50), oy + q.y - a * (18 + r1 * 20) + Math.sin(a * 30 + i) * 1.2);
+    });
+    return;
+  }
+  // frozen: ice, the crack once it has set, then the shards
+  const SHATTER = 0.32;
+  if (t < SHATTER) {
+    for (const q of px) dot(q.ice, ox + q.x, oy + q.y);
+    if (t > 0.2) for (const [cx, cy] of DOWN_CRACK) if (px.some(q => q.x === cx && q.y === cy)) dot('#ffffff', ox + cx, oy + cy);
+    return;
+  }
+  const tt = t - SHATTER, w = d.spr.width;
+  for (const q of px) {
+    const bx = (q.x / 3) | 0, by = (q.y / 3) | 0;
+    const vx = (bx * 3 + 1.5 - w / 2) * 5 + (hash2(bx, by + d.k * 16) - 0.5) * 20;
+    const vy = -30 - hash2(by, bx + d.k * 16) * 30;
+    const y = oy + q.y + vy * tt + 220 * tt * tt;
+    if (y > oy + h + 1 || tt > 0.26) continue; // a shard that has reached the snow is gone, and the last of them with the fall
+    dot(q.ice, ox + q.x + vx * tt, y);
+  }
+}
