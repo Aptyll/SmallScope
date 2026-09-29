@@ -533,8 +533,8 @@ depends on `teamEagleDown(p.team)` alone: the wait and the return of
 `updatePlayer` just zeroes a dead player's intents either way. Only the local player's **elimination**
 takes the full death overlay with it (`endMatch('lost')`); a respawn-pending local death gets the
 lighter `endMatch('respawning')` wait instead — same `state.mode = 'dead'` machinery (so the
-replay window and the TAB scoreboard still work), but no dim and no planks: the camera goes to an
-ally, one countdown line sits over it, and the replay of the death opens large over the view until
+replay window and the TAB scoreboard still work), but no dim and no planks: once the body's
+[fall](rendering.md#going-down) is over the camera goes to an ally (the wheel still zooms it), one countdown line sits over it, and the replay of the death opens large over the view until
 it is closed. An elimination offers spectating any living player through
 `viewPlayer()`/`specNext()` (a wait keeps to the side's own, `specOk`), or the way out to the
 title — which for an **elimination** goes
