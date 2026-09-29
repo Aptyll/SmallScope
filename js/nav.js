@@ -7,8 +7,8 @@
 function moveEntity(e, dx, dy, r, strict) {
   // only players can enter open water - an ice hole or the creek (they fall
   // in - see updatePlayer); animals and robots treat those tiles as walls
-  const solid = e instanceof Player && !strict ? isSolidTile :
-    (tx, ty) => isSolidTile(tx, ty) || waterAt(tx, ty);
+  const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e) :
+    (tx, ty) => isSolidTile(tx, ty, e) || waterAt(tx, ty); // e: its own side's gates stand open
   let blockedX = false, blockedY = false;
   // X axis
   if (dx !== 0) {
@@ -120,7 +120,8 @@ function separateUnits() {
 // of radius <= 5 walking tile centre to tile centre never clips a tree.
 // Deterministic: fixed neighbour order, stable heap, no rng.
 //
-//   findPath(sx, sy, gx, gy, reach, budget) -> [[x, y], ...] | null
+//   findPath(sx, sy, gx, gy, reach, budget, e) -> [[x, y], ...] | null
+//     e (optional) is the walker, whose own side's gates stand open
 //     world-space waypoints (tile centres, start excluded), done when a tile
 //     within `reach` (Chebyshev) of the goal tile is reached - reach 1 lets a
 //     robot path to a tree it cannot stand on. A search that runs out of
@@ -175,25 +176,26 @@ function heapPop() {
 const NAV_DX = [1, -1, 0, 0, 1, 1, -1, -1];
 const NAV_DY = [0, 0, 1, -1, 1, -1, 1, -1];
 const NAV_COST = [1, 1, 1, 1, Math.SQRT2, Math.SQRT2, Math.SQRT2, Math.SQRT2];
-function walkable(tx, ty) {
-  return inWorld(tx, ty) && !isSolidTile(tx, ty) && !waterAt(tx, ty);
+// e (optional): who walks it - its own side's gates stand open (isSolidTile)
+function walkable(tx, ty, e) {
+  return inWorld(tx, ty) && !isSolidTile(tx, ty, e) && !waterAt(tx, ty);
 }
 function navH(tx, ty, gx, gy) {
   const dx = Math.abs(tx - gx), dy = Math.abs(ty - gy);
   return dx > dy ? dx + dy * (Math.SQRT2 - 1) : dy + dx * (Math.SQRT2 - 1);
 }
-function findPath(sx, sy, gx, gy, reach, budget) {
+function findPath(sx, sy, gx, gy, reach, budget, e) {
   reach = reach || 0;
   budget = budget || NAV_BUDGET;
   let stx = Math.floor(sx / TILE), sty = Math.floor(sy / TILE);
   const gtx = Math.floor(gx / TILE), gty = Math.floor(gy / TILE);
   if (!inWorld(gtx, gty)) return null;
-  if (!reach && !walkable(gtx, gty)) return null;
+  if (!reach && !walkable(gtx, gty, e)) return null;
   // a unit shoved half into a wall starts from the nearest open tile instead
-  if (!walkable(stx, sty)) {
+  if (!walkable(stx, sty, e)) {
     let found = false;
     for (let k = 0; k < 8 && !found; k++) {
-      if (walkable(stx + NAV_DX[k], sty + NAV_DY[k])) { stx += NAV_DX[k]; sty += NAV_DY[k]; found = true; }
+      if (walkable(stx + NAV_DX[k], sty + NAV_DY[k], e)) { stx += NAV_DX[k]; sty += NAV_DY[k]; found = true; }
     }
     if (!found) return null;
   }
@@ -216,8 +218,8 @@ function findPath(sx, sy, gx, gy, reach, budget) {
     const g = navG[n];
     for (let k = 0; k < 8; k++) {
       const nx = tx + NAV_DX[k], ny = ty + NAV_DY[k];
-      if (!walkable(nx, ny)) continue;
-      if (k >= 4 && !(walkable(tx + NAV_DX[k], ty) && walkable(tx, ty + NAV_DY[k]))) continue;
+      if (!walkable(nx, ny, e)) continue;
+      if (k >= 4 && !(walkable(tx + NAV_DX[k], ty, e) && walkable(tx, ty + NAV_DY[k], e))) continue;
       const m = idx(nx, ny);
       if (navDone[m] === navGen) continue;
       const ng = g + NAV_COST[k];
@@ -237,26 +239,26 @@ function findPath(sx, sy, gx, gy, reach, budget) {
 
 // can a circle of radius r slide from (x0,y0) to (x1,y1) without touching a
 // wall or a hole? the same four-corner test moveEntity makes, every 4 px
-function navLineClear(x0, y0, x1, y1, r) {
+function navLineClear(x0, y0, x1, y1, r, e) {
   const dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy);
   const steps = Math.ceil(d / 4) || 1;
   for (let i = 1; i <= steps; i++) {
     const x = x0 + dx * i / steps, y = y0 + dy * i / steps;
     const tx0 = Math.floor((x - r) / TILE), tx1 = Math.floor((x + r) / TILE);
     const ty0 = Math.floor((y - r) / TILE), ty1 = Math.floor((y + r) / TILE);
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (!walkable(tx, ty)) return false;
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (!walkable(tx, ty, e)) return false;
   }
   return true;
 }
 // string-pull: keep only the waypoints the unit cannot see past (bounded
 // look-ahead so a long route stays cheap)
-function navSmooth(path, x, y, r) {
+function navSmooth(path, x, y, r, e) {
   const out = [];
   let i = 0, fx = x, fy = y;
   while (i < path.length) {
     let j = i;
     for (let k = i + 1; k < path.length && k <= i + 10; k++) {
-      if (navLineClear(fx, fy, path[k][0], path[k][1], r)) j = k;
+      if (navLineClear(fx, fy, path[k][0], path[k][1], r, e)) j = k;
     }
     out.push(path[j]);
     fx = path[j][0]; fy = path[j][1];
@@ -281,11 +283,11 @@ function navTo(e, gx, gy, r, reach, dt, budget) {
   if (!nav.path && nav.fail && nav.replanT > 0 && moved <= 1 && nav.reach === reach) return { dx: 0, dy: 0, d: far, ok: false };
   if (!nav.path || moved > 1 || nav.replanT <= 0 || nav.reach !== reach) {
     nav.gtx = gtx; nav.gty = gty; nav.reach = reach; nav.replanT = NAV_REPLAN; nav.i = 0;
-    if (navLineClear(e.x, e.y, gx, gy, r)) {
+    if (navLineClear(e.x, e.y, gx, gy, r, e)) {
       nav.path = [[gx, gy]];
     } else {
-      const p = findPath(e.x, e.y, gx, gy, reach, budget);
-      nav.path = p ? navSmooth(p, e.x, e.y, r) : null;
+      const p = findPath(e.x, e.y, gx, gy, reach, budget, e);
+      nav.path = p ? navSmooth(p, e.x, e.y, r, e) : null;
       if (nav.path && !nav.path.length) nav.path = [[gx, gy]]; // already within reach
     }
     if (!nav.path) { nav.fail = true; return { dx: 0, dy: 0, d: far, ok: false }; }

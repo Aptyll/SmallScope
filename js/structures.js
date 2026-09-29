@@ -18,7 +18,8 @@
 // split at '. ' and must fit the tooltip's width): the build list's hover
 // (tipStruct, js/ui/tooltip.js) prints it under the numbers.
 const STRUCTS = {
-  wall: { name: 'WALL', blurb: 'NOTHING WALKS THROUGH IT. MOST SHOTS STOP ON IT.', mm: mmTeam, map: chTeam, tiers: [
+  // `line`: a drag over the world lays a straight run of it (buildLine)
+  wall: { name: 'WALL', blurb: 'NOTHING WALKS THROUGH IT. MOST SHOTS STOP ON IT.', line: true, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 5 },  hp: 60,  buildT: 4   },
     { cost: { gold: 12 }, hp: 140, buildT: 2.4 },
     { cost: { gold: 30 }, hp: 300, buildT: 2.4 },
@@ -32,6 +33,14 @@ const STRUCTS = {
     { cost: { gold: 9 },  hp: 120, buildT: 6   },
     { cost: { gold: 22 }, hp: 280, buildT: 3.6 },
     { cost: { gold: 55 }, hp: 600, buildT: 3.6 },
+  ]},
+  // THE GATE: a wall piece its own side walks through and nobody else does -
+  // `gate` is the whole difference, read by isSolidTile (world.js) with the
+  // walker in hand. Shots stop on it like any wall, whoever fired them.
+  gate: { name: 'GATE', blurb: 'YOUR SIDE WALKS THROUGH IT. NOTHING ELSE DOES.', gate: true, mm: mmTeam, map: chTeam, tiers: [
+    { cost: { gold: 7 },  hp: 60,  buildT: 4   },
+    { cost: { gold: 16 }, hp: 140, buildT: 2.4 },
+    { cost: { gold: 36 }, hp: 300, buildT: 2.4 },
   ]},
   // traverse = rad/s the head swings; aim = seconds held on target before it fires.
   // head = px round turretPivot the gun's casemate stands, above the tile: a
@@ -85,10 +94,15 @@ const STRUCTS = {
 // are the pad's (openWheelNear, input.js): a wheel over the
 // facing tile offers the land list on land and the net over a hole. The
 // barracks is the merchant's alone and on none of them.
-const BUILD_ORDER = ['wall', 'longwall', 'turret', 'generator', 'spawner', 'net'];
-const STRUCT_ORDER = ['wall', 'longwall', 'turret', 'generator', 'spawner'];
+const BUILD_ORDER = ['wall', 'longwall', 'gate', 'turret', 'generator', 'spawner', 'net'];
+const STRUCT_ORDER = ['wall', 'longwall', 'gate', 'turret', 'generator', 'spawner'];
 const WATER_STRUCT_ORDER = ['net'];
 const BUILD_REACH = 64;    // px from the builder to the nearest tile of what it lays
+const BUILD_LINE_MAX = 12; // tiles one drag can lay: more than the reach ever lets stand
+const CREW_BOOST = 0.5;    // a site rises this much faster for each of its side standing in BUILD_REACH...
+const CREW_MAX = 3;        // ...counting this many at most
+const REPAIR_SHARE = 0.5;  // a repair costs this share of the tier's price, scaled by the hp missing
+const REPAIR_RATE = 0.25;  // ...and mends this share of max hp a second, hits or not
 const BARRACKS_ROLL = 0.5; // s between the soldiers of one wave leaving the door
 
 // fish nets: a building laid over an open hole that fishes it on its own
@@ -105,6 +119,28 @@ function cumulativeCost(type, tier) {
     for (const k in c) total[k] = (total[k] || 0) + c[k];
   }
   return total;
+}
+
+// THE RUN A DRAG LAYS: from the press's tile along whichever axis the pointer
+// travelled further, never more than BUILD_LINE_MAX tiles. The ghost draws
+// these tiles and runCmd lays them, so the two can never disagree.
+function buildLine(tx, ty, tx2, ty2) {
+  const dx = tx2 - tx, dy = ty2 - ty;
+  const n = Math.min(BUILD_LINE_MAX - 1, Math.max(Math.abs(dx), Math.abs(dy)));
+  const sx = Math.abs(dx) >= Math.abs(dy) ? Math.sign(dx) : 0, sy = sx ? 0 : Math.sign(dy);
+  const out = [];
+  for (let i = 0; i <= n; i++) out.push([tx + sx * i, ty + sy * i]);
+  return out;
+}
+// A dragged run, for any player: every tile of it that can stand is laid
+// as its own contested order, in order from the press, so a purse that runs
+// out stops the run where it runs out (placeStruct re-asks the price when
+// its claim wins) and a tile that cannot stand is simply skipped.
+function placeLine(p, c) {
+  if (!STRUCTS[c.id] || !STRUCTS[c.id].line) return;
+  for (const [x, y] of buildLine(c.tx, c.ty, c.tx2, c.ty2)) {
+    if (canPlaceAt(c.id, x, y, 0, p).ok) placeStruct(x, y, c.id, p, 0);
+  }
 }
 
 // Can `type` stand with its anchor on (tx, ty), turned `rot`, laid by p?
@@ -146,13 +182,14 @@ function canPlaceAt(type, tx, ty, rot, p) {
   if (p && near > BUILD_REACH) return { ok: false, why: 'far' };
   return { ok: true, why: null };
 }
-// one of p's own FINISHED buildings to manage (upgrade / demolish - the
-// barracks is `fixed` and refuses both, so it is nobody's to open): the one
+// one of p's own buildings to manage (upgrade / repair / demolish, or only
+// the demolish while it is still going up - the barracks is `fixed` and
+// refuses all of it, so it is nobody's to open): the one
 // under p's aim if it is in reach, else the nearest in reach. What holding
 // E beside a building opens (keyPress, input.js) and the pad's wheel falls
 // back to (openWheelNear).
 function manageNear(p) {
-  const own = (o) => o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && !o.building && ownsStruct(o, p) && o.team !== undefined;
+  const own = (o) => o && STRUCTS[o.type] && !STRUCTS[o.type].fixed && ownsStruct(o, p) && o.team !== undefined;
   const at = structOf(objAt(Math.floor(p.input.aimX / TILE), Math.floor(p.input.aimY / TILE)));
   const reach = (o) => { const c = structCenter(o); return Math.hypot(c.x - p.x, c.y - p.y) <= 60 + (structW(o) + structH(o)) * 4; };
   if (own(at) && reach(at)) return at;
@@ -220,6 +257,7 @@ function createStruct(tx, ty, type, tier, p, building, rot) {
   // it fill and empty a fish at a time instead of all at once
   if (type === 'net') { o.fish = 0; o.catchT = NET_CATCH_T; o.takeT = 0; }
   o.sparkT = 0;
+  o.mend = 0; // hp a paid repair has still to put back (startRepair)
   structures.push(o);
   return o;
 }
@@ -258,10 +296,42 @@ function startUpgrade(o, p) {
   burst(o.tx * TILE + 8, o.ty * TILE + 8, '#eef4fb', 8, 40, 0.4, true);
 }
 
+// WHAT A REPAIR COSTS: REPAIR_SHARE of the standing tier's price, scaled by
+// the share of hp still missing once any mend already paid for lands - at
+// least 1 while anything is missing, 0 with nothing to mend
+function repairCost(o) {
+  const miss = o.maxHp - o.hp - (o.mend || 0);
+  if (miss <= 0) return 0;
+  const g = STRUCTS[o.type].tiers[o.tier].cost.gold || 0;
+  return Math.max(1, Math.ceil(g * REPAIR_SHARE * miss / o.maxHp));
+}
+// The manage wheel's repair: pay repairCost and the building mends at
+// REPAIR_RATE until it is whole (updateStructures). Hits still land while it
+// mends; they just have more to take back.
+function startRepair(o, p) {
+  p = p || player;
+  const deny = (msg, t) => { sfxFor(p, 'deny'); if (p === player && msg) showMsg(msg, t); };
+  if (o.building || !ownsStruct(o, p) || STRUCTS[o.type].fixed) { deny(); return; }
+  const g = repairCost(o);
+  if (g <= 0) { deny(); return; }
+  if (!canAfford({ gold: g }, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return; }
+  pay({ gold: g }, p);
+  o.mend = o.maxHp - o.hp;
+  sfxAt('hammer', o.tx * TILE + 8, o.ty * TILE + 8);
+}
+// WHAT TAKING A BUILDING DOWN PAYS: half of everything spent across its
+// tiers - except a site of your own still going up for the first time, which
+// hands its whole price back, so a misplaced piece costs nothing but the
+// walk. A wreck (an enemy's blow) is always the half.
+function structRefund(o, own) {
+  const g = cumulativeCost(o.type, o.tier).gold || 0;
+  return own && o.building && o.tier === 0 ? g : Math.floor(g / 2);
+}
+
 function demolishStruct(o, p) {
   // a `fixed` building (the barracks) is the eagle's, not the wallet's: nobody pulls it down for the refund
   if (!ownsStruct(o, p || player) || STRUCTS[o.type].fixed) { sfxFor(p || player, 'deny'); return; }
-  destroyStructure(o, true, p || player);
+  destroyStructure(o, 'own', p || player); // 'own': a site still going up comes back whole (structRefund)
 }
 
 function removeStruct(o) {
@@ -352,6 +422,18 @@ function fireBolt(o, t, pv) {
   sfxAt('turretFire', pv.x, pv.y);
 }
 
+// how many of a site's side stand within BUILD_REACH of it, alive and on
+// the ground - each one speeds it (CREW_BOOST)
+function buildCrew(o) {
+  const c = structCenter(o);
+  let n = 0;
+  for (const q of players) {
+    if (!q.active || q.dead || inAir(q) || q.team !== o.team) continue;
+    if (Math.hypot(q.x - c.x, q.y - c.y) <= BUILD_REACH) n++;
+  }
+  return n;
+}
+
 function updateStructures(dt) {
   for (let i = tracers.length - 1; i >= 0; i--) {
     tracers[i].t -= dt;
@@ -359,11 +441,20 @@ function updateStructures(dt) {
   }
   for (const o of structures) {
     const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
-    if (o.building) {
-      o.buildT += dt;
-      // SC2-style: hp grows from the 30% floor toward max as the site rises
-      o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.7 * dt / o.buildTotal);
+    if (o.mend > 0 && !o.building) {
+      // a repair paid for: whole again at REPAIR_RATE, a puff every so often
+      const h = Math.min(o.mend, o.maxHp * REPAIR_RATE * dt, o.maxHp - o.hp);
+      o.hp += h; o.mend = o.hp >= o.maxHp ? 0 : o.mend - h;
       o.dustT -= dt;
+      if (o.dustT <= 0) { o.dustT = 0.5; burst(ox, oy, '#eef4fb', 2, 25, 0.3, true); }
+    }
+    if (o.building) {
+      // AoE-style: every one of its side standing in reach speeds the site
+      const crew = Math.min(CREW_MAX, buildCrew(o)), k = 1 + CREW_BOOST * crew;
+      o.buildT += dt * k;
+      // SC2-style: hp grows from the 30% floor toward max as the site rises
+      o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.7 * dt * k / o.buildTotal);
+      o.dustT -= dt * k;
       const big = structW(o) > 1 || structH(o) > 1;
       if (o.dustT <= 0) {
         o.dustT = 0.8;
