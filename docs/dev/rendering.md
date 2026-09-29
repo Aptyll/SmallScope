@@ -478,7 +478,7 @@ empty world.
 
 | Where | What | Function |
 | --- | --- | --- |
-| top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the small white arrow of the **inventory drawer**, shut until B or the arrow | `drawShelf`, `drawBag` |
+| top left | the **weapon shelf**: the tool in hand and its bit cells, shots left and fittings right, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
 | top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one plate, every player in the match as a 14px chip with a hp bar, your side left (you first, a frost tick under your bar) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
@@ -675,8 +675,9 @@ leader between them — the PLAYER panel's ledger, which is where that pattern a
 free lines under those. The panel sizes itself to its widest line (capped at `TIP_MAXW`), so a
 short tooltip is a short panel.
 
-The builders, one per kind: `tipTool` (rate of fire, bit slots, max weight, then the loaded bits in
-**firing order** with `>` on the one up next), `tipBit` (damage, weight, speed, lifespan, flight —
+The builders, one per kind: `tipTool` (forged damage, rate of fire, bit slots, tensile, loaded weight, the
+full draw at that weight and the shots a press puts up, then the loaded bits, and a line when the
+built-in arrow is the shot or the load slows the draw), `tipBit` (damage, weight, speed, lifespan, flight —
 then only the flags that are *true*, because four rows of NO would drown the three that matter),
 `tipStack` (a meal), `tipCards` (the hand, a row per rarity), `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipGear`, `tipClassAb` (a strip
@@ -737,7 +738,7 @@ the open page is `menu.wikiTab`. A new page is one table entry and one builder.
 sprite, on a low snow mound — so the page teaches the frame by showing it, and a change to the
 frame in the world changes it on the page. A camp monster's leash bar is shown part-filled, since bare
 track says nothing. An ARSENAL row is the kind's icon on
-the tier plate a bag cell wears (`tierPlate`, `modPlate`, `tierShine`), rimmed and lifted a pixel
+the tier plate a bag cell wears (`tierPlate`, `modPlate`), rimmed and lifted a pixel
 under the pointer, the blue pip for `PROFILE.techSeen`, its name in the tier's ink, a dotted
 leader to its numbers. A WORLD entry's figures (`drawWikiFig`) are whatever sprites its `fig()`
 returns at draw time — so they wear the side you play through `skin` — stood left to right on
@@ -775,7 +776,7 @@ shake the tool well and the meal buttons refuse in (`abDenied`, aged in `updateF
 `toolFlash`/`foodFlash`); a cooldown is NOT that refusal, because the sweep already says when it
 comes home. The ASK lives off the well: while a
 skill point is unspent and the key has room a **floating buy plate** bobs in the open screen
-above the well
+above the well, `AB_BUY_AIR` clear of the strip's line at the bottom of its bob, shadow included
 (`abBuyRect`, a fixed hit rect the drawn bob stays inside; `abBuyHit` gates it on `abLvCanBuy`
 AND `hudHome()`, so the plate's existence IS the appears-then-goes ask; `drawAbBuyPlate` draws it
 under the same two gates
@@ -866,7 +867,7 @@ that is money must never read as a count of something carried.
 ### The team rail
 
 `drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plain plate
-(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (3), Dota's top bar kept clean and minimal.
+(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (`MM_GAP`, level with the minimap's outline), Dota's top bar kept clean and minimal.
 **Your side's chips on the left**, the rival's on the right, and between them a sunk **score
 panel** (`drawRailScore`, a flat `BAG_WELL` fill): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
 one clock a match shows), the rival's total, each total at 2× in its side's `mark`
@@ -900,26 +901,25 @@ DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when t
 the practice arena, or a match with an empty side — `railSides` is null, nothing draws, and the
 clock goes back under the minimap: `mmClockShown`), and
 the two notes step under the spectate control as well while it is up (`noteY`).
-**Its scale is a whole number**: `railSc` rounds the HUD SIZE dial and never goes under 1 (a 12px
-emblem at 0.8 drops two of its rows, where a 34px well shrugs it off), capped where the plate
-would reach the view's edge;
+**Its scale is the HUD's one scale**: `railSc` is `hudSc()` (whole device pixels, so a 12px
+emblem never drops a row), capped on the same grid where the plate would reach the view's edge;
 the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through
-it. A known overlap: a longbow carrying five modifier bits stacks five rails above the shelf row
-that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
+it.
 
 ### The hud frame
 
-`drawHudFrame(x, y, w, h, o)` is the one plate the strip, the pack and the team rail stand on,
-kept **plain and minimal** on purpose (the bevel and the snow cap came off in 4.16): the wells
-cover most of the ground and already carry the depth, and a plate looked at for an hour has to
-stay quiet. Two pixel layers: the **silhouette** (`HUD_INK`, the xp bar's own ink) with its top
-corners cut two pixels and the corners that meet a screen edge left square (a notch of world
-there reads as a hole; `o.corners`), and the **ground** (`o.bg`, `AB_BG` by default). `o.tab` is
-a block rising off the top edge and flush with the right side — the pouch block's — and the
-frame draws the two as **one silhouette**: the outline steps up around the tab and the ground
-runs through the seam. `o.lit`/`o.ink` are what a widget's states colour (the drawer's full
-amber, a refusal's red): `o.lit` is a ring just inside the outline, and a plate at rest has none.
-Every margin inside the outline is three pixels — line, ring, ground — which is what `AB_PAD` and
+`drawHudFrame(x, y, w, h, o)` is the one plate the strip, the weapon shelf, the pack and the team rail stand on,
+drawn the way League's and Dota's HUDs get their contrast, kept simple (4.18): a dark outline
+(`HUD_INK`), one bright line just inside it (`HUD_EDGE`, cold steel, kept apart from the drawer's amber and red states), and a
+solid dark ground (`o.bg`, `AB_BG` by default). The outline holds the plate apart from bright
+snow at noon, the bright line holds it apart from the forest at night, and the ground keeps every
+well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
+both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world
+there reads as a hole; `o.corners`). `o.tab` is a block rising off the top edge and flush with
+the right side — the pouch block's — and the frame draws the two as **one silhouette**: outline
+and edge step up around the tab and the ground runs through the seam. `o.lit`/`o.ink` are what a
+widget's states colour (the drawer's full amber, a refusal's red): `o.lit` repaints the edge.
+Every margin inside the outline is three pixels — line, edge, ground — which is what `AB_PAD` and
 `BAG_PAD` are, so a well sits the same distance from the edge on every side of every widget. The
 [drawer](#the-backpack) wears it with only its two free (right) corners cut — it is flush with
 the view's left edge.
@@ -937,8 +937,12 @@ bakes the widget into `hudScaleCv` and blits it scaled about the strip's anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
 the same anchor via `stripMouse` first, so a click can never land beside its pixel. **`hudSc()`
-caps the dial** at the size where the strip would outgrow the view, so past that point the
-slider simply stops growing it rather than pushing its ends off the screen. **The top-left corner
+snaps the dial to whole device pixels** (`hudSnap`: one HUD pixel is always a whole number of
+canvas pixels, so the default 0.8 on a 2× canvas draws at 1×, where it used to draw every pixel
+1.6 wide and its lines one or two wide by chance) **and caps it** on the same grid
+(`hudSnapDown`) at the size where the strip would outgrow the view, so past that point the
+slider simply stops growing it rather than pushing its ends off the screen. The strip, the corner
+and the team rail all scale by this one number, and a bake lands on the device grid (`hudPx`). **The top-left corner
 scales with the same dial**: `drawCornerScaled` bakes the shelf, the drawer and the
 [build list](gameplay.md#base-building)'s hammer plate and column under them at 1× (`drawCorner`)
 and blits them about the top-left corner (sized by `CORNER_REACH` and the column's reach under
@@ -952,29 +956,32 @@ point is spent nowhere else, and nothing else on the strip is ever bought.
 
 ### The weapon shelf
 
-**The one weapon, top-left, on screen at all times**: the tool in hand at the left end of a
-row (`shelfCellRect(-1)`, at `SHELF_X`/`shelfRowY()`) and its bit cells running right in firing
-order, which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
+**The one weapon, top-left, on screen at all times**: the tool in hand in the big well at the left
+end of a row (`shelfCellRect(-1)`, `SHELF_CELL` = `HUD_CELL`, 34) and its bit cells running right
+in smaller wells (`SHELF_ITEM` 26, `SHELF_GAP` 3 apart, `SHELF_WGAP` 5 off the weapon, centred on
+its height), which is the one place the [whole of a press](gameplay.md#toolplan-one-activation-in-one-pass)
 is on screen at once — and the whole of what the HUD says about the arsenal, since the strip
-has no weapon well and everything else carried is in [the drawer](#the-backpack) under this
-row. `SHELF_CELL` (`HUD_CELL`, 34), `SHELF_GAP` 2, pinned by its TOP to `shelfRowY()` (18)
-and its LEFT to `SHELF_X` (`BAG_PAD`, so the drawer's
-frame under it sits flush with the view's edge) and grown rightward, so the tool cell — and the
-drawer's arrow under it — never move whatever the build does, and a fitting's rail is what climbs
-into the open screen above them; the SHIFT plate hangs off the row's right end (`shelfRowRight`).
-It is **not a panel**: bare wells with their own drop shadows (`shelfWell`), so the corner
-stays world everywhere between them and only a cell itself answers `shelfHit`.
+has no weapon well and everything else carried is in [the drawer](#the-backpack) under this row.
+The bigger well is what says "this holds the others". The cells are always **shots on the left,
+fittings on the right**, empty cells between (`sortBits`, [firing](gameplay.md#toolplan-one-activation-in-one-pass)),
+so the row reads the same way on every build.
+
+It stands on the [hud frame](#the-hud-frame): `shelfPlateRect`, flush with the view's left edge
+(only its right corners cut), its top level with the minimap's (`SHELF_TOP` = `MM_GAP`), `SHELF_PAD`
+(4) of ground round the row and hugging it on the right (`shelfRowRight`). The row is pinned by
+its LEFT and grows rightward, so the weapon well never moves; the SHIFT plate (`drawShiftHint`)
+hangs off the row's right end. The plate grows **upward** by
+`SHELF_LINE` (4) for every fitting loaded (`shelfLines`, `shelfRowY`), which is where the lines
+live: on the plate, never over the world. The wells (`shelfWell`) sit in it with no drop shadow;
+a cell answers `shelfHit`, and the ground between them answers `shelfPlateHit` so a click on the
+plate never falls through to the world (`overHud`, and the right button's wheel gate).
 
 **The tool cell is the weapon's one well** (the head of `drawShelf`), and it carries no words:
 
-- the **plate** behind the icon is the tool's tier colour — the same colour it wears in every
-  other well it ever sits in, so a tier is stated once (`tierPlate`; `tierShine` sweeps a
-  highlight across the top tier's plate) — and the 12px tool art is drawn doubled, so the tool
-  reads at the ability icons' size;
-- the **rim** is that tier, quiet at rest and brightened to the tier's ink on hover — the ability
-  wells' own grammar. There is one weapon slot (`TOOL_SLOTS`), so there is no "selected" tell;
-- a tool that cannot answer the button (`!toolReady(p)`) goes **dry red** — the only resting
-  state that leaves the tier colour;
+- its **rim** is the tool's rarity (dim green, bright blue, bright gold — `tierPlate`, the same
+  1px rim it wears in every other well), brightened on hover, and the 12px tool art is drawn
+  doubled so the tool reads at the ability icons' size. There is one weapon slot (`TOOL_SLOTS`),
+  so there is no "selected" tell;
 - the **[cooldown sweep](#the-cooldown-sweep)** turns once through exactly `toolCycle` off
   `p.nockT`, so the rate of fire is the speed of the hand rather than a number — and the veil
   clearing IS the bow being ready, since nothing else gates the draw
@@ -982,34 +989,21 @@ stays world everywhere between them and only a cell itself answers `shelfHit`.
 - the one *event*: a **red band all the way round and the pack's own 1px shake** for `toolFlash`
   seconds when a bit has nowhere to go in the tool
   ([one click sends it](gameplay.md#the-weapon-shelf)) — `toolDenied()`, the twin of `bagDenied()`
-  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language
-  and the one that is full is the one that answers;
-- the **"!"** when the build weighs more than a press can spend (below).
+  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language;
+- the forge's `+N` in its corner.
 
-Five marks, no words, all off `toolPlan`:
+Two marks, no words, all off `toolPlan`:
 
-- the **row** is the press, left to right out of the tool: cell 0 leaves first;
-- every cell carries its **weight** as pips along its bottom — on modifiers too, since a fitting
-  costs the press what a shot does, and the [hatched plate](gameplay.md#tiers-and-how-a-find-reads) is what still
-  tells the two kinds apart;
-- every cell **past the cut** (the first one the budget could not reach) goes red-rimmed and
-  washed out: it is carried, not thrown. Dead weight is a property of where a bit *sits*, never
-  of the bit;
-- a **rail** over the row runs from each fitting to the last shot it reaches, in that fitting's
-  own colour, with a blip over every shot on the way that it is really in the envelope of
-  (`shelfRails`, off each shot's `mods`) — the forward-only rule drawn rather than written.
-  Rails stack upward with the LAST modifier nearest the row, which is what keeps them untangled:
-  a rail's stem drops to its own cell through rails that all start further right, so no stem ever
-  crosses a line. Each gets a 1 px dark seat, for the reason world text is outlined. Hovering
-  either end lights the pair — the rail, and the shots it lands on, rimmed in its colour;
-- the **gold bar** in the gap left of a cell is the lead shot: what the next press puts in the
-  air first, and what the aim line on the ground is drawn for. On cell 0 that gap is between the
-  tool and its first bit, which reads as the tool feeding it;
-- under the bit cells the **budget** is a track filled in the tier's own ink to what this press
-  spends of the tool's tensile, its tail left red when the row weighs more than the tool can
-  swing.
-
-That, and nothing written down, is the whole of "bow tensile strength".
+- every bit cell's **rim** is its rarity, and a fitting's ground is **hatched** in that same
+  colour, inset 2px so the rim stays one clean line (`modPlate`). Weight has no mark on a cell: a
+  heavy build shows as a longer draw on the [overhead bar](gameplay.md#the-draw);
+- one **line** per fitting, in that fitting's own colour (`shelfRails`, off each shot's `mods`):
+  a node on top of the fitting, a stem up to its own lane, a rounded corner, a run left over the
+  shots, and a drop with an arrowhead into **every** shot it powers — the weapon well itself when
+  the built-in arrow is the shot. Lanes stack with the leftmost fitting lowest, and each line lands
+  on a shot at its own x (`SHELF_LINE_STEP` apart), so no two lines ever share a pixel and none is
+  hidden. Each gets a 1px dark seat, for the reason world text is outlined. Hovering a cell dims
+  every line that does not touch it.
 
 And **two events**, both on the one flash: `bitLit` is `{ cell, cells, t, col }` — the tool the
 flash belongs to (held by *reference*, so changing weapons cannot leave a flash on somebody else's
@@ -1017,35 +1011,29 @@ cells), which of its cells are lit, how long is left and in what colour. `bitLit
 clamps, so a flash may outlive `BIT_LIT_T`; `bitLitCol` answers the colour. Both live in
 js/tools.js, aged in `updateFx` beside the refusal reds, and both are the **local player's alone**.
 
-- **A press** lights every cell it SPENT — the shots and the fittings that shaped them — white,
-  fading over `BIT_LIT_T` (0.3 s), rails included (`fireTool`). A build is fired far more often
-  than it is edited, so the press itself is where the row is learned.
+- **A press** lights every loaded cell white, fading over `BIT_LIT_T` (0.3 s), lines included
+  (`fireTool`). A build is fired far more often than it is edited, so the press itself is where
+  the row is learned.
 - **A [tool swap](gameplay.md#where-tools-and-bits-come-from)** lights the WHOLE row — cell **-1**,
   the tool well, and every loaded bit — in the new tier's own ink for `SWAP_T` (1.1 s)
   (`swapFx`). The tool cell is the tell: a press never lights it, so a lit tool means one thing
   only, which is that the body itself just changed under you.
-
-**A tool carrying more than one press can swing wears a "!"** (`drawOverWarn`, js/ui/hud-draw.js) in the
-top-right corner of the shelf's tool cell (`toolOver(cell)`, `drawShelf`) — and, baked still, on
-the CONTROLS page's weapon primer (`drawToolPrimer`, js/ui/panels.js); a spare in the drawer does not wear it — a gold
-triangle with a dark stroke, bobbing a pixel so the eye catches it on a row that is otherwise
-still. It is a warning and not a refusal: the build still fires along the row as far as the
-budget reaches, and the shelf's budget track is where you go to see exactly where it stops.
 
 ### The backpack
 
 **A drawer under the weapon shelf, shut until asked for**. The HUD shows one weapon —
 [the shelf](#the-weapon-shelf) — and everything else a player carries is in here: the spare
 tools a walk turns up and the bits no tool had a cell for. It is **invisible by default**: the
-pack key (B; L3 on a pad) or a click on the **arrow** under the tool cell (`bagTabRect` is the
-band it sits in and answers from: a plain small white chevron, rimmed a pixel dark like every
-mark over the world, no plate, pointing the way the drawer will go) sets `state.bagOpen`, the
+pack key (B; L3 on a pad) or a click on the **tab** under the weapon well (`bagTabRect`: a small
+`BAG_TAB_W`×`BAG_TAB_H` [hud frame](#the-hud-frame) of its own, `BAG_TAB_AIR` (4) clear of the
+shelf's plate and centred under the weapon, holding a small chevron pointing the way the drawer
+will go) sets `state.bagOpen`, the
 same again or ESC clears it, and the merchant's counter
 holds it open while it is up because a sale is a drag out of it. `bagOpenNow()` is the one
 answer everything reads; `bagEase` chases it on wall time over `BAG_SLIDE_T` (0.15 s,
 `updateFx`), and the drawer draws sliding out from under the tab, clipped to the screen below
 the tab's bottom edge so it emerges rather than fades. It answers the pointer only once fully
-open; the arrow's band always answers. `endMatch` shuts it.
+open; the tab always answers. `endMatch` shuts it.
 
 While that counter is up the **corner is drawn out of the counter's wash** — the whole frame goes
 dark under `shopScrim` and the shelf and this drawer are two of the four things left lit above it
@@ -1053,12 +1041,12 @@ dark under `shopScrim` and the shelf and this drawer are two of the four things 
 in that case and before it otherwise. The corner's own reach is `cornerClaim()` across and `cornerBottom()` down, which is
 what the counter's slab is pinned clear of.
 
-The frame (`bagFrameRect()`, flush with the view's left edge a px under the arrow's band, its
-first cell on the tool cell's own left edge, `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
+The frame (`bagFrameRect()`, flush with the view's left edge `BAG_TAB_AIR` under the tab,
+`BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
 `BAG_COLS` 6): the tools and bits a build is made of, in the small `BAG_CELL` cells
 ([the hud frame](#the-hud-frame) has the size and the why).
 There is no numbers row — the two meals, the gold and the cards are the
-[strip's pouch block](#the-hud-strip). The arrow never moves; its colour is its only state — gold
+[strip's pouch block](#the-hud-strip). The tab never moves; its arrow's colour is its only state — gold
 under the pointer, **amber** when no cell is free, red on a refusal (`bagDenied()`, aged in
 `updateFx`, which also reddens and shakes the open drawer for `bagFlash` seconds).
 

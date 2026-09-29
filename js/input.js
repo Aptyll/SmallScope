@@ -488,7 +488,7 @@ function pointerPress(button) {
     if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y)) return; // no wheel through the HUD
+        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any tile on the map is a place to plant a flag on (building is the
     // list on T, managing is E beside your own building)
     openFlagWheel();
@@ -927,7 +927,7 @@ function ckStep(p, dt, smx, smy) {
     // the auto-attack: the hand off the button, a clear flight, the target
     // inside the tool's reach - draw to the auto-draw and loose (the same
     // held-then-dropped intent a bot fires by)
-    if (!mouse.down) r.fire = reach > 0 && d <= reach && aiLineClear(p, t.x, ty) && p.chargeT < kitOf(p).bowCharge * CK_AUTO_DRAW;
+    if (!mouse.down) r.fire = reach > 0 && d <= reach && aiLineClear(p, t.x, ty) && p.chargeT < drawTime(p) * CK_AUTO_DRAW;
   } else if (!mouse.down) r.fire = false;
   // an ability casts at the POINTER, never at the lock (the skillshot's
   // grammar): for that one step the aim is the pointer, and an auto-draw

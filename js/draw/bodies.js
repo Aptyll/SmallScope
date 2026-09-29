@@ -476,7 +476,7 @@ function drawPlayer(p, ex, ey, now) {
     ctx.fillStyle = eating ? EAT_COL
       : !drawing ? (p.readyFlash > 0 ? DRAW_FULL_COL : NOCK_COL)
       : frac < 1 ? DRAW_COL
-      : p.chargeT < kitOf(p).bowCharge + DRAW_FULL_FLASH ? '#ffffff' : DRAW_FULL_COL;
+      : p.chargeT < drawTime(p) + DRAW_FULL_FLASH ? '#ffffff' : DRAW_FULL_COL;
     ctx.fillRect(x, y, Math.max(1, Math.round(14 * frac)), 2);
   }
   ctx.globalAlpha = 1;

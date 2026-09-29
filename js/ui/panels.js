@@ -673,36 +673,30 @@ ctrlCvs.pad.width = SET_W; ctrlCvs.pad.height = PAD_READ_Y + PAD_READ_H;
 
 // THE WEAPON PRIMER: the one thing about the left button a new player cannot
 // work out by pressing it, drawn rather than explained. It is a real HORN BOW
-// carrying a real overload - ARROW 2, FLAME 4, ARROW 2, THROWING LOG 8 against
-// a tensile of 15 - so every number on it is the game's own arithmetic
-// (toolPlan, js/tools.js) and the picture cannot drift from the weapon.
+// with a real build - two ARROWs and a FLAME - so every mark on it is the
+// game's own arithmetic (toolPlan, sortBits, js/tools.js) and the picture
+// cannot drift from the weapon.
 //
-// It is the SHELF, drawn at rest: the same row in the same order, the tool at
-// the left end, the hatch on the modifier, the weight pips, the gold bar on
-// the lead shot, the FLAME's rail reaching forward over the shot it is riding
-// (shelfRails, js/ui.js), the budget track under the lot and the "!" on a tool
-// carrying more than it can swing. That is the whole point of the page: what
-// is learned here is recognised in the corner of the screen.
+// It is the SHELF, drawn at rest: the tool at the left end, the shots on the
+// left of its row and the modifier on the right with the free cell between,
+// the hatch on the modifier, and the FLAME's line running to every shot it
+// powers (shelfRails, js/ui/strip.js). That is the whole point of the page:
+// what is learned here is recognised in the corner of the screen.
 const PRIMER = {
   tool: 'hornbow',
-  // cell 0 first, exactly as the row reads left to right and the press spends
-  bits: ['arrow', 'flame', 'arrow', 'log'],
-  notes: [
-    'ARROW 2 - FIRES FIRST, PLAIN',
-    'FLAME 4 - EVERY SHOT AFTER IT BURNS',
-    'ARROW 2 - FIRES TOO, AND IT BURNS',
-    'THROWING LOG 8 - ONLY 7 LEFT, SO IT SITS',
-  ],
+  bits: ['flame', 'arrow', 'arrow'], // loaded in any order: the row sorts itself
+  notes: { arrow: 'ARROW - FIRES, AND IT BURNS', flame: 'FLAME - EVERY SHOT BURNS' },
 };
 const PR_CELL = 18, PR_GAP = 2, PR_X = 22, PR_TX = 16; // the row's cells, and the notes stacked under it
 function drawToolPrimer(g, y0) {
   const T = TOOLS[PRIMER.tool];
   const cell = makeTool(PRIMER.tool);
   for (let i = 0; i < PRIMER.bits.length; i++) cell.bits[i] = PRIMER.bits[i];
+  sortBits(cell);
   const plan = toolPlan(cell);
-  const n = PRIMER.bits.length;
+  const n = cell.bits.length;
   // cell -1 is the tool, at the row's left end - the shelf's own order
-  const rowY = y0 + 16;
+  const rowY = y0 + 22;
   const rect = (i) => ({ x: PR_X + (i + 1) * (PR_CELL + PR_GAP), y: rowY, w: PR_CELL, h: PR_CELL });
   const mid = PR_CELL >> 1;
 
@@ -710,71 +704,50 @@ function drawToolPrimer(g, y0) {
   g.fillRect(12, y0 - 5, SET_W - 24, 1);
   drawPixelText(g, 'THE WEAPON', 16, y0 - 1, '#ffd95c');
 
-  // THE RAILS, off the same reader the shelf uses: the FLAME reaches the one
-  // arrow that fires after it, and nothing before it
+  // THE LINES, off the same reader the shelf uses: the FLAME runs left to
+  // every shot in the tool, with a tick down into each
   shelfRails(cell, plan).forEach((rail, d) => {
-    const from = rect(rail.i), to = rect(rail.hits[rail.hits.length - 1]);
-    const y = rowY - 3 - d * SHELF_RAIL, x0 = from.x + mid;
+    const x0 = rect(rail.i).x + mid, first = rect(rail.hits[0]).x + mid, y = rowY - 4 - d * 3;
     g.fillStyle = rail.col;
-    g.fillRect(x0, y, to.x + mid - x0 + 1, 1);
-    g.fillRect(x0, y, 1, rowY - y);
-    for (const j of rail.hits) g.fillRect(rect(j).x + mid - 1, y - 1, 3, 2);
+    g.fillRect(first, y, x0 - first + 1, 1);
+    g.fillRect(x0, y, 1, rowY - y - 1);
+    for (const j of rail.hits) g.fillRect(rect(j).x + mid, y, 1, rowY - y - 1);
   });
 
-  // the tool at the head of the row, wearing the "!" its load has earned
+  // the tool at the head of the row
   const tr = rect(-1);
   g.fillStyle = TOOL_TIERS[T.tier].rim;
   g.fillRect(tr.x, tr.y, tr.w, tr.h);
   g.fillStyle = TOOL_TIERS[T.tier].plate;
   g.fillRect(tr.x + 1, tr.y + 1, tr.w - 2, tr.h - 2);
   drawItemIcon(toolType(PRIMER.tool), tr, tr.y, g);
-  drawOverWarn(tr, tr.y, 0, g);
 
+  let line = 0;
+  const said = new Set();
   for (let i = 0; i < n; i++) {
-    const id = PRIMER.bits[i], b = BITS[id];
+    const id = cell.bits[i], b = id && BITS[id];
     const r = rect(i);
-    const dead = plan.cut >= 0 && i >= plan.cut;
-    const tp = TOOL_TIERS[b.tier];
-    g.fillStyle = dead ? '#c2465a' : tp.rim;
+    const tp = b ? TOOL_TIERS[b.tier] : { rim: '#2c3560', plate: '#080b1c' };
+    g.fillStyle = tp.rim;
     g.fillRect(r.x, r.y, r.w, r.h);
     g.fillStyle = tp.plate;
     g.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-    if (dead) g.globalAlpha = 0.45;
+    if (!b) continue;
     modPlate(bitType(id), r, r.y, PR_CELL, g);
-    drawItemIcon(bitType(id), r, r.y - 2, g);
-    g.fillStyle = dead ? '#e0637a' : '#f2cc6a';                // weight, as pips
-    for (let k = 0; k < b.weight && k < 8; k++) g.fillRect(r.x + 2 + k * 2, r.y + r.h - 3, 1, 2);
-    g.globalAlpha = 1;
-    // the note for this cell, stacked under the row in the bit's own colour -
-    // in firing order, so the list reads as the row does
-    drawPixelText(g, PRIMER.notes[i], PR_TX, rowY + 40 + i * 9, dead ? '#e0637a' : b.col);
+    drawItemIcon(bitType(id), r, r.y, g);
+    // the note for each kind, stacked under the row in the bit's own colour,
+    // in the row's own order
+    if (said.has(id)) continue;
+    said.add(id);
+    drawPixelText(g, PRIMER.notes[id], PR_TX, rowY + 28 + line++ * 9, b.col);
   }
 
-  // the gold bar on the lead shot: the press starts here
-  const lead = rect(plan.shots[0].i);
-  g.fillStyle = '#f2cc6a';
-  g.fillRect(lead.x - PR_GAP, lead.y, PR_GAP, lead.h);
-
-  // the budget track under the bit cells: what the tool can swing, and what
-  // this build actually spends of it
-  const b0 = rect(0), bN = rect(n - 1);
-  const bx = b0.x + 1, by = rowY + PR_CELL + 1, bw = bN.x + bN.w - b0.x - 2;
-  let fill = Math.round(bw * Math.min(1, plan.used / plan.tensile));
-  if (plan.load > plan.tensile) fill = Math.min(fill, bw - 3);
-  g.fillStyle = '#0f1632';
-  g.fillRect(bx - 1, by, bw + 2, 5);
-  g.fillStyle = TOOL_TIERS[T.tier].ink;
-  g.fillRect(bx, by + 1, fill, 3);
-  g.fillStyle = '#c2465a';
-  g.fillRect(bx + fill, by + 1, bw - fill, 3);
-  drawPixelText(g, T.name + ' - STRENGTH ' + plan.tensile + ', SPENDS ' + plan.used,
-    PR_TX, rowY + 28, '#f2cc6a');
-
-  // and the three rules the picture alone cannot say
-  const foot = rowY + 40 + n * 9 + 4;
-  drawPixelText(g, 'THE ! IS THE TOOLS OVERLOAD - THE RED IS WHAT SITS', PR_TX, foot, '#9fb6d8');
-  drawPixelText(g, 'ONE CLICK FIRES EVERY BIT THE TOOL CAN AFFORD', PR_TX, foot + 9, '#cfe0f2');
-  drawPixelText(g, 'TWO OF ONE MODIFIER COMPOUND - 2X AND 2X IS 4X', PR_TX, foot + 18, '#8fe08a');
+  // and the rules the picture alone cannot say
+  const foot = rowY + 28 + line * 9 + 4;
+  drawPixelText(g, 'ONE CLICK FIRES EVERYTHING LOADED', PR_TX, foot, '#cfe0f2');
+  drawPixelText(g, 'EVERY MODIFIER SHAPES EVERY SHOT', PR_TX, foot + 9, '#8fd8ff');
+  drawPixelText(g, 'A HEAVIER LOAD TAKES LONGER TO DRAW', PR_TX, foot + 18, '#f2cc6a');
+  drawPixelText(g, 'NO SHOT LOADED - IT FIRES A PLAIN ARROW', PR_TX, foot + 27, '#8fe08a');
 }
 
 // THE KEYBOARD LISTING IS LIVE, NOT BAKED: every rebindable verb sits beside

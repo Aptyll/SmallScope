@@ -319,22 +319,14 @@ a `melee` block: [the cut](#the-cut-a-melee-tool)):
 | --- | --- |
 | `rof` | game steps between shots. `toolRof(p, cell)` turns it into seconds and scales it by `kit.nock / BOW_NOCK`, so every card that shortens `kit.nock` (QUICKDRAW, QUICK HANDS, FLETCHER'S TOUCH, RELENTLESS) quickens it |
 | `cap` | how many bit cells it has (2–5) |
-| `tensile` | **the weight budget one press has to spend on those cells** — reset at the top of every activation and spent bottom-up, and the first cell that would push the running total past it ends the press there ([firing](#firing)) |
+| `tensile` | **how much weight it draws at the normal speed**: a loaded weight past `DRAW_EASE` (half) of it lengthens the pull to full power ([the draw](#the-draw)). Nothing is ever cut: every loaded bit fires |
 | `tier` / `art` | which of the three `TOOL_TIERS` palettes it wears, and which 12×12 silhouette (`bow`, `sling`, `sword`, `recurve`) |
 | `up` | the second stat [the forge](#the-forge) raises beside damage: `rof` (SHORTBOW, RECURVE, LONGBOW) or `tensile` (SLING, LONGSWORD, HORN BOW) |
 
 `cap` and `tensile` are the two halves of a tool: **cap is how much you may hang on it, tensile
-how much of that it can swing at once.** The tiers grow the two together at roughly four weight a
-cell — SHORTBOW 9/2, SLING 10/2, LONGSWORD 10/2, RECURVE 13/3, HORN BOW 15/4, LONGBOW 22/5 — so a build that fits
-its cap and busts its budget is not refused, it is *truncated*, and the weapon well wears a
-[**"!"**](rendering.md#the-weapon-shelf) to say so.
-
-The two **starting** bodies are sized against their class's shot plus one fitting on top of it
-([starting loadouts](#starting-loadouts)), so nobody's first pickup can truncate the weapon they
-are already holding: the SHORTBOW's 9 carries an ARROW (2) under any modifier in the table, the
-LONGSWORD's 10 a BARBED SHOT (5) under a modifier of 5. The two weight-6 fire modifiers (PYRE,
-CINDER BURST) still overrun the longsword — both are tier 2, so they come out of a chest, a
-SUNSTONE or the shop rather than off a plain stone, and by then the truncation is a decision.
+how much of that it pulls easily.** The tiers grow the two together at roughly four weight a
+cell — SHORTBOW 9/2, SLING 10/2, LONGSWORD 10/2, RECURVE 13/3, HORN BOW 15/4, LONGBOW 22/5 — so a
+heavy build on a light body is never refused or cut short, it is only *slower to pull*.
 
 A tool is **instanced**: its bag cell *is* the tool, `bits` array and all (`makeTool`), so it is
 moved between bag, slot and drop rather than rebuilt from its type name — see the hard rule in
@@ -348,9 +340,9 @@ The one exception is a tool that lands in the snow, which arrives bare:
 
 One entry in the `BITS` table, and there are two kinds of them, told apart by `proj`.
 
-**Every bit has a `weight`**, projectile and modifier alike, because weight is what a press
-*spends* out of the tool's tensile budget. A heavy bit is expensive, and what it costs is
-whatever is stacked after it.
+**Every bit has a `weight`**, projectile and modifier alike. The weights add up to the tool's
+load (`toolLoad`), and a load heavy for the body's tensile makes the pull to full power longer
+([the draw](#the-draw)). A heavy bit costs time, never a shot.
 
 A **projectile bit** is one shot: `path` (how it flies), `solid` (whether a wall stops it), `ff`
 (whether it will hurt your own side), `kb`
@@ -383,19 +375,16 @@ becomes N in a spread), `dup` (the whole fan fired again), `lit`, and the fire q
 
 Two rules govern it, and both are load-bearing:
 
-- **It applies forward and only forward.** A modifier changes every projectile *after* it in the
-  list and none before it, so where a modifier sits is the whole of what it is worth and a FLAME
-  in the LAST cell sets nothing alight. Once a press has reached one it stays in the envelope for
-  the rest of that press — there is no per-shot expiry. That is why both classes fly in with their
-  one shot in the LAST cell and the cell in front of it empty, so the first fitting they pick up
-  auto-fits where it can reach ([starting loadouts](#starting-loadouts)). The shelf draws that
-  reach as a **rail** running forward off the fitting ([the shelf](#the-weapon-shelf)).
+- **It applies to every shot.** Where a modifier sits means nothing: it changes every projectile
+  the tool fires, the built-in arrow included when nothing else is loaded. There is no wrong place
+  to put one and no way to waste one. The shelf draws that reach as a **line** from the fitting
+  into each shot ([the shelf](#the-weapon-shelf)).
 - **It compounds with whatever is already there.** Every `mod` composes with the value it is
   handed — `*=` a multiplier, `+=` a quantity — and must never `=` or `Math.max` it. Two SPEEDUPs are
   four times the speed, two SPLITTERs nine shots, two FLAMEs twice as long at twice the rate
   (which is exactly a PYRE). **Every modifier added from here follows that rule**; the only field
   that is set rather than composed is `m.type`, because a damage type is a category and not a
-  magnitude. `toolPlan` walking forward rather than folding a set is what makes it possible.
+  magnitude.
 
 Eight exist: SPEEDUP, SPLITTER, DUPLICATE, HEFT, LONGSHOT, and the three that carry fire.
 
@@ -453,9 +442,8 @@ is the teleport's whole rule: a request that hits nothing takes you nowhere.
 
 ### Firing
 
-**One press is the whole tool, resolved in one frame.** Nothing cycles between presses: a press
-spends the tensile budget up the column and everything it can afford leaves together, so a tool
-whose budget covers all of it fires all of it at once.
+**One press is the whole tool, resolved in one frame.** Nothing cycles between presses and
+nothing is left behind: every loaded shot leaves together, each wearing every loaded modifier.
 
 `fireTool(p)` is the one entry point — the falling edge of `input.fire`, for every player alike:
 
@@ -463,30 +451,33 @@ whose budget covers all of it fires all of it at once.
 2. No tool on the selected slot → `dryFire(p)` and stop. (A fish underfoot never takes the
    press — the catch is `autoFish`'s, [the swing tools](#the-swing-tools-e).)
 3. `toolPlan(cell)` — the one function the whole weapon runs on, below.
-4. No shots in the plan → `dryFire`. Otherwise a blade hands the plan to `slashTool`
+4. A blade hands the plan to `slashTool`
    ([the cut](#the-cut-a-melee-tool)) and anything else runs `emitBit` for each shot plus one
    `sfxAt('arrow', …)`; then `p.nockT = toolRof(p, cell)` ([the cycle](#the-cycle)) and
    `risePlayer` (the shot is what breaks cover).
 
 #### `toolPlan`: one activation, in one pass
 
-`toolPlan(cell)` walks the cells from 0 up and returns `{ shots, used, cut, load, tensile, spent }`
-(`spent` is the cells the press paid for — what `fireTool` flashes on the shelf). It is
+`toolPlan(cell)` walks the cells once and returns `{ shots, load, tensile, spent }`
+(`spent` is every loaded cell — what `fireTool` flashes on the shelf). It is
 the *only* place the arithmetic lives, and the press, the [aim line](#the-draw) and the
 [shelf](rendering.md#the-weapon-shelf) all read it — so the three can never disagree about what
 the button is about to do.
 
-- An empty cell costs nothing and stops nothing.
-- Otherwise the cell's weight is added to `load` (the whole row's weight, which is what the
-  "!" reads) and, while the press is still running, tested against the budget: if
-  `used + weight > tensile` the walk records `cut` and fires nothing further. Everything before
-  the cut has already gone.
-- A projectile inside the budget is pushed onto `shots` **with a snapshot of the envelope as it
-  stands right now**; a modifier inside the budget folds into the envelope for everything after.
+- **Order means nothing.** Every modifier folds into one envelope, and every projectile is
+  pushed onto `shots` with a copy of the whole of it (`mods` lists the modifier cells that power
+  it, which is what the shelf's lines draw). A SPLITTER beside two ARROWs fans both.
+- Every loaded cell's weight is added to `load`, which only slows [the draw](#the-draw).
+- **No shot loaded still fires.** A tool with only modifiers, or with nothing, fires the built-in
+  `TOOL_BASE_SHOT` (a plain ARROW, `i` -1, `base`) wearing whatever modifiers are there. It takes
+  no cell, cannot be dropped or sold, and steps aside the moment a real shot is loaded.
 
-`peekBit(cell)` is `shots[0].i` — the lead shot, which is what the column's caret marks and what
-the aim line is drawn for. `toolLoad(cell)` and `toolOver(cell)` are the column's weight and
-whether it exceeds the budget.
+`peekBit(cell)` is `shots[0].id` — the lead shot, what the aim line is drawn for.
+`toolLoad(cell)` is the row's weight.
+
+The cells keep themselves in order: `sortBits(cell)` puts projectiles on the left, modifiers on
+the right and empty cells between, and `bitPut` runs it on every placement, so the row a player
+sees is always shots then fittings however the bits went in.
 
 `emitBit` is where the player is folded back in: the bit's own damage leads, the class kit's
 `dmgBase`/`dmgPow`, the kit's speed bonus (`spdDmg`) and the hero level add to it, **the draw
@@ -497,12 +488,11 @@ envelope the aim line measures. The shot goes into the `arrows` array carrying
 `path`, `solid`, `ff`, `kb`, `reach`, `body`, `impact`, `type`, `burn`, `burnDps`, `cinder`,
 `lit` and `col` beside its position, velocity, damage, owner and team.
 
-`toolReady(p)` is the only refusal besides the cycle: an empty slot, and a tool whose budget
-reaches no projectile at all (nothing loaded, only modifiers, or a first cell already too heavy
-for the body), are both dry, and `updatePlayer` refuses the draw on both the same way
-(`dryFire`, the slack-string tell).
+`toolReady(p)` is the only refusal besides the cycle: an empty weapon slot is dry, and
+`updatePlayer` refuses the draw on it (`dryFire`, the slack-string tell). A tool in hand always
+fires.
 
-Every bit a press can afford leaves in the **same frame**, so no two of them may be stacked inside
+Every bit a press fires leaves in the **same frame**, so no two of them may be stacked inside
 one another: each bit past the first is nudged `SHOT_SKEW` (0.05 rad) off the aim, alternating
 sides, and a DUPLICATE's repeats `DUP_SKEW` (0.07) — per *bit* and per *repeat*, never per arm of
 a SPLITTER's fan, which already spreads its own arms `FAN_SPREAD` (0.16) apart. Where arm *k* of
@@ -609,27 +599,26 @@ the whole roster.
 
 ### The weapon shelf
 
-**The build is on screen at all times, top-left** — the tool at the left end of
-a row and its bit cells running right in **firing order**, which is also the direction a fitting
-reaches along, so the row reads the way the press resolves. It is the whole of what the HUD says
+**The build is on screen at all times, top-left** — the tool in a bigger well at the left end of
+a row, then its bit cells: **shots on the left, fittings on the right**, empty cells between
+(`sortBits`). The order is kept for the player and means nothing to the press. It is the whole of what the HUD says
 about the arsenal — one tool, read in one place; the bottom strip has no weapon well — with the
 [inventory drawer](rendering.md#the-backpack) shut under it.
 
-It is **not a panel**: bare wells with their own drop shadows, so the corner stays world
-everywhere between them and only a cell itself swallows a click. It is pinned by its TOP to the
+It stands on the same plate as the rest of the HUD, which swallows a click anywhere on it
+(`shelfPlateHit`). It is pinned by its TOP to the
 corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
 read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
 js/ui/hud-draw.js and js/ui/strip.js, scaled about the top-left corner at the strip's HUD SIZE
 ([rendering.md](rendering.md#the-hud-strip)).
 
-Five marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: the ROW is
-the press left to right; a cell **past the cut** is red-rimmed and washed out; **weight** is pips
-along a cell's bottom edge; a **rail** over the row runs from each fitting to the last shot it
-reaches, blipping over every shot it is really in the envelope of; and the **gold bar** in the gap
-left of a cell is the lead shot. And two events on the one flash (`bitLit`/`bitLitAt`/`bitLitCol`,
+Two marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: a box's
+**rim colour** is its rarity (and a hatched ground is a fitting), and one **line** per fitting runs
+over the row from it into every shot it powers (the tool well itself when the built-in arrow is
+the shot). And two events on the one flash (`bitLit`/`bitLitAt`/`bitLitCol`,
 js/tools.js, aged in `updateFx`): every cell the last press SPENT flashes white and fades over
-`BIT_LIT_T` (0.3 s), its rails with it, so the left button teaches the row it is firing — and a
+`BIT_LIT_T` (0.3 s), its lines with it, so the left button teaches the row it is firing — and a
 [tool swap](#where-tools-and-bits-come-from) lights the **whole** row, the tool well included, in
 the new tier's ink for `SWAP_T` (1.1 s).
 
@@ -747,17 +736,15 @@ bit, and only kinds at or under the given tier are in the pool.
 
 **A found bit arms itself.** The pack is the overflow, not the destination: a bit walked over
 (or bought over the counter) goes into a free cell of the tool, and only what the tool cannot
-hold lands in the grid. **Where it lands is where it works** (`fitBit`): a shot takes the *last*
-free cell and a fitting the *first*, and a fitting whose first free cell is behind the first shot
-is slid in *at* that shot, the cells between moving back one — so a found modifier always reaches
-every shot the row fires, never lands behind them doing nothing — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
+hold lands in the grid. **Anywhere it lands, it works** (`fitBit`): it takes a free cell and
+`sortBits` seats it on its own side — a shot at the end of the shots, a fitting at the front of
+the fittings — and since every fitting powers every shot, a find is never wasted — `fitAdd(p, type, n)`, with `fitRoom(p, type)` the room it counts, which
 is why a FULL pack with an empty bit cell still magnetises a drop and still claims it. The drop
 pickup (js/sim.js) and `shopBuy` (js/ui/shop.js) both go through the pair, so the ordinary way to
 arm a find is to walk over it, and the drag is what you reach for to ARRANGE a build rather than
 what you must do to have one — which is half of why the [shelf](#the-weapon-shelf) is on screen
 at all times: a bit that loaded itself has to be seen loading itself. It fills a free cell
-whatever the tensile budget says (a bit the press cannot afford is drawn red on the shelf and
-sent back to the pack with one click, so the pickup never has to guess what you meant by it),
+whatever the load (a heavy build only pulls slower, and one click sends a bit back to the pack),
 and a **bot is left out** — `botFitLoadout` does this for them on its own timer and is choosier
 about it, so a pickup that shoved a bit into a bot's tool would only make it a worse shot.
 
@@ -767,9 +754,8 @@ comes out **empty** — its bits are the next thing to find.
 **And a strictly better body takes the build with it.** A tool walked over swaps itself straight
 into the hand when two things are true at once: its **tier is higher** than the one held, and its
 `cap` is **at least as big**, so nothing already loaded is left with nowhere to sit
-(`toolUpgrade`). Then `takeUpgrade` moves the bits across **cell for cell, right-aligned** against
-the new body's `cap` the way `giveLoadout` seats a kit — the row's order *is* the build, and the
-new open cells land *in front of* the shots, where the next find is worth something — and the old body is treated exactly as the find was a moment earlier: into the pack, or
+(`toolUpgrade`). Then `takeUpgrade` moves the bits across and `sortBits` lays them out again,
+shots left and fittings right, the new open cells between them — and the old body is treated exactly as the find was a moment earlier: into the pack, or
 into the snow it was lying in if the pack is full. That last part is why a **full pack is still
 room** for an upgrade (`roomFor`, the drop loop): the pickup is an exchange, not an addition.
 
@@ -800,27 +786,26 @@ The pool a roll draws from is the whole table at or under that tier — `LOOT_PO
 ### Tiers, and how a find reads
 
 `TOOL_TIERS` is a colour and nothing else in the sim: what a tier buys you is written into each
-tool's own numbers. The tier is stated in **one** place and the same way everywhere — the plate
-behind the icon, in every well the item ever sits in (bag cell, weapon slot, bit cell, drag ghost,
-loadout card) — which is why nothing on screen has to say "TIER 2". `tierPlate(type)` is that
-lookup and `itemTier(type)` the raw index. The top tier is the only one that moves: `tierShine`
-sweeps a highlight across its plate.
+tool's own numbers. The three read worse to better as **dim green, bright blue, bright gold**
+(WORN, KEEN, GILDED). The tier is stated in **one** place and the same way everywhere — the 1px
+rim round a dark plate, in every well the item ever sits in (bag cell, weapon slot, bit cell, drag
+ghost, loadout card) — which is why nothing on screen has to say "TIER 2". `tierPlate(type)` is
+that lookup and `itemTier(type)` the raw index. Nothing shines or moves.
 
 **Which of the two kinds of bit it is is stated on that same plate**, by `modPlate` (js/ui/hud-draw.js),
 called wherever a bit sits — the grid, the column, the cursor, the counter's wells, a tech node,
 the tooltip's own icon plate. A **projectile** keeps the flat square plate every carried item
-wears: it is a thing you fire. A **modifier** gets its plate hatched in the bit's own colour and
-its corners cut back — it never flies, it is fitted *into* the tool — so the two are told apart
-across a whole grid without recognising a single glyph. Colour is already spent on tier, which is
-why the difference has to be texture and silhouette. The column then adds what only it knows: a
-projectile's `weight` as gold pips along the cell's bottom (red when this tool cannot throw it), a
-modifier's colour as a bar, because it has no weight at all. The 8×8 glyph (`BIT_ART`, js/tools.js)
+wears: it is a thing you fire. A **modifier** gets its plate hatched, inset 2px so the rim stays
+one clean line, in its rarity's colour — it never flies, it is fitted *into* the tool — so the two
+are told apart across a whole grid without recognising a single glyph. Colour is already spent on
+tier, which is why the difference has to be texture. Weight has no mark on a cell; it shows as the
+length of the draw. The 8×8 glyph (`BIT_ART`, js/tools.js)
 then says what the bit *does*, in the same two grammars: a **shot** is drawn as the thing that
 flies, tip to the upper right like every other shot icon (the arrow; the barbed shaft; the
 return loop of the hookshot; the gold arrow with a light for a head; the comet wisp; the cut
 log; the icicle; the fist thrown with speed lines; the axe; the portal and the dotted line to
-it), and a **fitting** as what it does to the shots after it, never a lone shaft (fast-forward
-chevrons pointing the way the row fires; one shaft coming apart into three tips; the same arrow
+it), and a **fitting** as what it does to the shots, never a lone shaft (fast-forward
+chevrons; one shaft coming apart into three tips; the same arrow
 twice; a dumbbell; a head at the end of a long dashed flight; a flame, a banked fire on logs, an
 impact throwing embers). On the ground a find glints in its tier's colour so it is
 told from a berry at a distance. A tool's **shape** says which weapon it is and its **palette**
@@ -834,8 +819,8 @@ three tier palettes — the same trick `GEAR_MATS` plays with one gear icon acro
 A bot has no shelf and no pointer, so `botFitLoadout(p)` (called from step 8 of the ladder,
 `aiThink` — `updateAI` is only its wrapper — on
 a 2.5 s timer) does by hand what a person does with a drag: push loose bits into the tool it is
-firing **while they still fit inside its tensile budget**, sort the build so its modifiers sit
-before the shots they are meant to change (a stable sort, no rng), and put a spare tool into an
+firing **while the load stays inside its tensile** (so its draw keeps its speed), `sortBits` the
+row as a person's is sorted, and put a spare tool into an
 empty weapon slot — or over a strictly worse body, which then takes the bag cell the new one came out of. It
 only takes bits that fly *toward* what they were aimed at; a bot cannot read a boomerang or an
 orbit and leaves those for someone who can.
@@ -850,15 +835,9 @@ weapon slot is bare, so nobody is set down with nothing to fire. Each class flie
 nothing else**: the HUNTER a SHORTBOW loaded ARROW, the WARRIOR a LONGSWORD with a BARBED SHOT on
 its edge — the one **melee** body ([the cut](#the-cut-a-melee-tool) below).
 
-**The shot sits in the LAST cell and every cell above it is left empty.** A modifier only reaches
-the shots *after* it ([a bit](#a-bit)), so holding cell 0 open
-means the first fitting anybody picks up is auto-fitted there (`fitBit` puts a fitting in the first
-free cell, and `botFitLoadout` sorts fittings forward for a bot) and lands in front of the shot — a SPLITTER walked
-over turns that one arrow into three on the very next press; a kit that filled cell 0 would put
-that first find *past* the only projectile, where it does nothing. A `null` in `bits` is a real entry rather than a gap to
-skip: it is the reserved cell, `toolPlan` charges nothing for it, and `giveLoadout` right-aligns
-the row against the tool's own `cap` so the shot stays last whatever the body's size. The tensile
-budgets are sized for it — see [a tool](#a-tool). The hero pop-up's preview
+**The shot sits in the first cell and the rest are left open** (`giveLoadout` runs `sortBits`),
+so the first fitting anybody picks up has somewhere to go — a SPLITTER walked over turns that one
+arrow into three on the very next press. The hero pop-up's preview
 shows the weapon at the body's side (`drawGearPreview`, js/ui/menu.js) — the other half of what a
 class flies out with.
 
@@ -947,7 +926,7 @@ HUNTER — bow, distance control, the ground between:
 
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
-| 1 | **PIERCING SHOT** | 12 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow ×`PIERCE_MUL` 1.5, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — wherever it sits in the row, and whatever the tensile budget says, since the pierce is the class's shot and not a press — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
+| 1 | **PIERCING SHOT** | 12 s | locks a full draw for `PIERCE_WIND` (0.7 s) — the body plants (`PIERCE_SLOW` ×0.15 walk), the pose leans back and holds, and a thin dashed **telegraph line** is drawn on the ground along the live aim for BOTH sides, gold-flaring as the loose nears. Then the shot fires itself: one enhanced arrow (a full-draw plain arrow ×`PIERCE_MUL` 1.5, `PIERCE_SPD` 380, `PIERCE_RANGE` 520) that **goes through every body on the line** (`a.pierce`/`a.pierceHit`, the arrow loop in js/sim.js) — only a raised shield or the world stops it. **It wears every modifier on the tool in hand** (`pierceMods`) — folded into one envelope and spent as a press spends one: `pierceFlight` is `shotFlight` at full draw, so SPEEDUP and LONGSHOT stretch the reach as well as the speed; HEFT and SPLITTER scale the damage after the multiplier; the fire and CINDER BURST ride it; SPLITTER fans it and DUPLICATE repeats it (`armOff`), every arm a pierce of its own. The telegraph draws that flight, one line per fan arm, each to where the world stops it (`teleLen`). The loose is the unmissable cue: `SFX.nock` snap + a white flash on the arrowhead |
 | 2 | **NET SHOT** | 15 s | a weighted net down a line (`nets`): first rival hit takes 4 and is **slowed** (`p.slowT`/`slowMul` ×0.4, 2 s, the drape drawn on them); the recoil kicks the hunter backward with an animated hop (`p.hopT`) |
 | 3 | **GRAPPLE** | 8 s | throws a hook down the aim ray: the first **tree, dead tree or rock** within `GRAP_RANGE` (170 px) and `GRAP_ASSIST` of the line (the aim assist) anchors it, and the body is reeled straight at it at `GRAP_REEL` (260 px/s — over `SLIDE_MIN`, so shift on release carves a slide). The reel runs **while key 3 is held** (`input.grapple`, the one held ability input); releasing, arriving, a wall or a stun lets go through `grapEnd`, which KEEPS the momentum and starts the cooldown — a long ride and an instant release cost the same. A hook that catches nothing costs `GRAP_MISS_CD` (1 s) |
 | 4 | **SNOW COVER** | 60 s | the burrow ([Prone](#prone-under-the-snow), which only this key opens): the cast kneels and calls `tryProne`, the 60 s clock is paid **on the way under**, and the key again — like every other way back up — rises free. A kneel the snow refuses (still moving, sliding, no snow underfoot) refunds the clock. The well's active tell drains with `p.hide` as the cover builds |
@@ -1139,10 +1118,9 @@ first ([flight paths](#flight-paths)) — or at the end of the bit's life.
 cleared on release and at every point that cancels a draw (`tryWork`, falling in a hole, a meal,
 an ability cast, clipping onto the zipline, an
 overlay opening in `sampleHumanInput`, `die`), and the draw begins on the first
-step where it is set *and* `nockT <= 0` *and* `toolReady(p)` (a tool whose budget reaches at
-least one projectile). Requiring a fresh press instead
+step where it is set *and* `nockT <= 0` *and* `toolReady(p)` (a tool in hand). Requiring a fresh press instead
 would deadlock every controller that simply holds the button down — which is every bot:
-`aiThink` sets `inp.fire = chargeT < bowCharge * k`, so after a shot it goes straight back to
+`aiThink` sets `inp.fire = chargeT < drawTime(p) * k`, so after a shot it goes straight back to
 true and no second edge ever arrives. `p.chargeT` is the raw seconds held and is **never
 clamped** — every reader takes `drawPow(p)` (0..1) off it, and the meter's white blink at the
 peak needs to see the hold run past the full draw.
@@ -1158,8 +1136,7 @@ the well's wipe, the reticle's corner marks and the overhead slate bar — so no
 cooldown a different length from the one running; a new readout divides by it too, never by the
 bare `kit.nock`.
 
-Three indicators carry it, and none is a word (the shelf's tool cell also reddens its rim
-when the tool cannot answer — a tensile budget that reaches no shot):
+Three indicators carry it, and none is a word:
 
 - **The weapon well** (the shelf's tool cell, `drawShelf`) — the top-down cooldown wipe, the same cover every
   ability well cools by, over exactly `toolCycle`. When the wipe is gone, the bow is ready.
@@ -1182,7 +1159,7 @@ tool by itself to `CK_AUTO_DRAW` (0.7 — the same fraction a NORMAL bot looses 
 is off the button, through this same curve and the same cycle: the auto-attack is a bot's loose
 and nothing more, a floor under the hand's own draw, never a second weapon.
 
-`drawPow(p)` — `chargeT` over the kit's `bowCharge`, clamped 0..1 — scales the shot three ways
+`drawPow(p)` — `chargeT` over `drawTime(p)`, clamped 0..1 — scales the shot three ways
 at once, each on a straight line from a floor to the bit's own number (the `the draw` banner,
 js/tools.js):
 
@@ -1197,10 +1174,15 @@ modifiers' envelope folded in and the range curve applied through the life, so a
 short* rather than only arriving late. It is the one envelope: `emitBit` fires through it and
 `drawAimLine` measures it, which is what lets the line on the ground grow out of the bow as the
 string comes back. A plain arrow off the shortbow: 60 px and 4 damage at a tap, 272 px and 17 at
-full. **That curve is the whole punishment for spamming the button** — short, slow and weak, with
+full.
+
+**Weight is the length of the pull.** `drawTime(p)` is the kit's `bowCharge` times
+`toolDrawMul(cell)`: 1 while the load is at most `DRAW_EASE` (half) of the tool's tensile, then
+`DRAW_LOAD` (0.6) longer per full tensile beyond it. A heavy build fires everything it carries,
+only later. The overhead bar, the aim line and the bots all read `drawTime`, never `bowCharge`. **That curve is the whole punishment for spamming the button** — short, slow and weak, with
 the cycle still to run before the next — dealt by the shot itself rather than by a counter, so
 what a player sees (a stubby line, a pale meter) is exactly what they get. Bots read the same
-curve: `aiThink` holds to `bowCharge × k` before loosing.
+curve: `aiThink` holds to `drawTime(p) × k` before loosing.
 
 A shot in flight is drawn in its own pass (using `ex`/`ey`), and **what it looks like in the air
 says what it does**. A bit may name a **body** of its own and `BIT_BODY` (the `the bodies a bit
@@ -3181,7 +3163,7 @@ and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) 
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
 saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**) needs no apply
+it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**, drawn at the nearest whole-device-pixel size by `hudSc`) needs no apply
 call: the hud strip, the pack and the shelf read it live every frame
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
@@ -3283,15 +3265,14 @@ letter, a bumper a flat pill, a trigger a tall one, a stick a ring, the dpad a c
 pressed arm lit) beside its verb — moving and fighting, the abilities and the kit, then the
 match's buttons with the menu set under a rule — and its live readout under them. The bindings themselves: [the two controllers](multiplayer.md#the-two-controllers).
 
-The primer is a **real HORN BOW carrying a real overload** — ARROW 2, FLAME 4, ARROW 2, THROWING
-LOG 8 against a tensile of 15 — run through `toolPlan` at bake time, so every number on it is the
-game's own arithmetic and the picture cannot drift from the weapon. The cells, the hatch on the
-modifier, the weight pips, the rail, the gold lead bar, the budget track and the "!" are the **same marks** the shelf and
-the weapon well draw in play (`modPlate` / `drawOverWarn`, js/ui/hud-draw.js, both of which take the context
-to paint so a bake can borrow them) — that is the whole point: what is learned here is recognised
-there. A gold arrow up the left edge is the firing order, each cell is annotated in its own bit's
-colour with the log's cell red and washed out, and two lines close it: one press fires every bit
-the tool can afford, and two of one modifier compound. The title screen's TUTORIAL panel carries
+The primer is a **real HORN BOW** — FLAME, ARROW, ARROW — sorted by `sortBits` and run through
+`toolPlan` at bake time, so the picture cannot drift from the weapon: the shots sit left, the
+flame right, and its line reaches both arrows. The cells, the hatch on the modifier and the lines
+are the **same marks** the shelf draws in play (`modPlate`, js/ui/hud-draw.js, takes the context
+to paint so a bake can borrow it) — what is learned here is recognised there. Each kind gets one
+note in its own colour, and four lines close it: one click fires everything loaded, every
+modifier shapes every shot, a heavier load takes longer to draw, and with no shot loaded it fires
+a plain arrow. The title screen's TUTORIAL panel carries
 the same keys under `1-4 CLASS ABILITIES`.
 
 `settings.info` (one INFO DISPLAY toggle row in the ESC menu, **or F3**, minecraft-style — the

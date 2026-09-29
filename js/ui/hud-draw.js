@@ -51,52 +51,38 @@ function drawXpBar(now, x, y) {
     ctx.fillRect(tx, gy, 1, gh);
   }
 }
-// The tier plate behind an item's icon, wherever that icon sits: a bag cell,
-// a weapon slot, a bit cell, the drag ghost. This is the ONLY place a tier is
-// stated, and it is stated the same way everywhere, which is what lets a find
-// be read at a glance without a rarity word anywhere on screen.
+// The tier behind an item's icon, wherever that icon sits: a bag cell, the
+// weapon well, a bit cell, the drag ghost. This is the ONLY place a tier is
+// stated, and it is stated the same way everywhere - a dark well with a 1px
+// rim in the tier's colour, dim green, blue, gold, brighter as it gets better
+// (TOOL_TIERS, js/tools.js) - which is what lets a find be read at a glance
+// without a rarity word anywhere on screen. Nothing on it moves.
 function tierPlate(type, lit) {
   const t = itemTier(type);
   if (t < 0) return { plate: BAG_WELL, rim: lit ? '#8fa0c8' : '#35426e' };
   const T = TOOL_TIERS[t];
   return { plate: T.plate, rim: lit ? T.ink : T.rim };
 }
-// the gilded tier is the one that moves: a 2px highlight sweeping the plate
-function tierShine(r, y, type, now) {
-  if (itemTier(type) !== TIER_SHINE) return;
-  const span = r.w + r.h;
-  const s = ((now * 26) % (span + 18)) - 9;
-  ctx.save();
-  ctx.beginPath(); ctx.rect(r.x + 1, y + 1, r.w - 2, r.h - 2); ctx.clip();
-  ctx.globalAlpha = 0.35;
-  ctx.fillStyle = '#fff2c0';
-  for (let k = 0; k < 2; k++) {
-    for (let dy = 0; dy < r.h; dy++) ctx.fillRect(r.x + Math.round(s + k - dy), y + dy, 1, 1);
-  }
-  ctx.globalAlpha = 1;
-  ctx.restore();
-}
 // The one thing that tells the two kinds of BIT apart wherever either one
-// sits - the bag grid, the tool's column, the cursor, the counter, the tech
-// tree. A PROJECTILE is a thing you fire, and it keeps the flat square plate
-// every other carried item wears. A MODIFIER never flies: it is fitted INTO
-// the tool and rewrites every shot on it, so its plate is hatched in the
-// bit's own colour and cut back at the corners - a fitting rather than a
-// card. Colour is already spent on TIER, which is why the difference has to
-// be the plate's texture and silhouette: those still read across a whole grid
-// at a glance, without recognising a single glyph on it. Called on the drawn
-// plate, under the icon; (y, h) are the plate's own, since a hovered cell
-// lifts and the counter's plate is shorter than its well. `g` is the context
-// to paint - the live HUD's unless a bake hands its own, which is what lets
-// the CONTROLS page's primer stamp this exact mark into a static diagram.
+// sits - the bag grid, the tool's row, the cursor, the counter, the tech
+// tree. A PROJECTILE is a thing you fire, and it keeps the flat plate every
+// other carried item wears. A MODIFIER never flies: it is fitted INTO the
+// tool and shapes every shot on it, so its plate is hatched - in its TIER's
+// colour, the same one its rim wears, so a well says its rarity once. The
+// hatch stops a px inside the rim, so the rim stays one clean line. Called on
+// the drawn plate, under the icon; (y, h) are the plate's own, since a
+// hovered cell lifts and the counter's plate is shorter than its well. `g` is
+// the context to paint - the live HUD's unless a bake hands its own, which is
+// what lets the CONTROLS page's primer stamp this exact mark into a static
+// diagram.
 function modPlate(type, r, y, h, g) {
   const id = type && bitIdOf(type);
   if (!id || !BITS[id] || BITS[id].proj) return;
   g = g || ctx;
   h = h || r.h;
-  const x0 = r.x + 1, y0 = y + 1, x1 = r.x + r.w - 1, y1 = y + h - 1;
+  const x0 = r.x + 2, y0 = y + 2, x1 = r.x + r.w - 2, y1 = y + h - 2;
   g.globalAlpha = 0.35;
-  g.fillStyle = BITS[id].col;
+  g.fillStyle = TOOL_TIERS[BITS[id].tier].rim;
   for (let d = 1 - h; d < r.w; d += 4) { // 1px diagonals, four apart
     for (let k = 0; k < h; k++) {
       const px = r.x + d + k, py = y + k;
@@ -104,36 +90,6 @@ function modPlate(type, r, y, h, g) {
     }
   }
   g.globalAlpha = 1;
-  g.fillStyle = '#0a0e23';
-  for (const [cx, sx] of [[r.x, 1], [r.x + r.w - 1, -1]]) {
-    for (const [cy, sy] of [[y, 1], [y + h - 1, -1]]) {
-      g.fillRect(cx, cy, 1, 1); g.fillRect(cx + sx, cy, 1, 1); g.fillRect(cx, cy + sy, 1, 1);
-    }
-  }
-}
-// "!" OVER A TOOL CARRYING MORE THAN ONE PRESS CAN SWING. The build is not
-// broken - it fires along the row as far as the tensile budget reaches and
-// stops - so this is a warning and not a refusal, and the SHELF's budget track
-// is where you go to see exactly where it stops. A triangle, because a warning
-// triangle is the one glyph nobody has to be taught; it rides the well's
-// top-right corner and bobs a pixel, so the eye catches it on a strip that is
-// otherwise still.
-// Drawn wherever a loaded tool is: the weapon well and the pack's own grid.
-function drawOverWarn(r, y, now, g) {
-  g = g || ctx;
-  // IN the well's top-right corner, over the rim and clear of the tool's own
-  // art, rather than floating above it: the strip's wells are packed shoulder
-  // to shoulder under the buy plates' travel, and a warning drawn into that
-  // air is a warning something else lands on
-  const h = 5, cx = r.x + r.w - 5, y0 = y - 1 + (Math.sin(now * 5) > 0 ? 0 : 1);
-  g.fillStyle = '#0a0e23';                          // the dark seat, one px proud all round
-  for (let d = 0; d <= h; d++) g.fillRect(cx - d, y0 - 1 + d, 1 + d * 2, 1);
-  g.fillRect(cx - h, y0 + h, 1 + h * 2, 1);
-  g.fillStyle = '#ffd95c';
-  for (let d = 0; d < h; d++) g.fillRect(cx - d, y0 + d, 1 + d * 2, 1);
-  g.fillStyle = '#241a12';                          // the stroke, and its dot
-  g.fillRect(cx, y0 + 1, 1, 2);
-  g.fillRect(cx, y0 + 4, 1, 1);
 }
 
 // an item icon centred in a cell of any size (tools are 12x12, everything
@@ -460,9 +416,9 @@ function drawHudScaled(now, slideY) {
   ctx.restore();
   ctx = o;
   ctx.drawImage(hudScaleCv,
-    Math.round(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
-    Math.round(VIEW_H - (VIEW_H - by) * s) + slideY,
-    Math.round(bw * s), Math.round(bh * s));
+    hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
+    hudPx(VIEW_H - (VIEW_H - by) * s) + slideY,
+    bw * s, bh * s); // whole device pixels: hudSc snaps to them
 }
 
 // THE CORNER - the shelf, the drawer under it, and the hammer plate and build
@@ -499,66 +455,63 @@ function drawCornerScaled(now, slideX) {
   ctx.clearRect(0, 0, bw, bh);
   drawCorner(now);
   ctx = o;
-  ctx.drawImage(cornerScaleCv, slideX, 0, Math.round(bw * s), Math.round(bh * s));
+  ctx.drawImage(cornerScaleCv, slideX, 0, bw * s, bh * s); // whole device pixels: hudSc snaps to them
 }
 
-// ONE WELL OF THE SHELF: its drop shadow, the tier rim and the plate inside
-// it. `rim` overrides the tier's own, which is how the cut's red, the
-// refusal's and a hovered fitting's reach are all said in one place.
+// ONE WELL OF THE SHELF: the tier rim and the dark well inside it, one px
+// all round, sunk in the shelf's own plate. `rim` overrides the tier's own,
+// which is how the refusal's red and a hovered fitting's reach are said in
+// one place.
 function shelfWell(r, type, lit, rim) {
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
   const tp = type ? tierPlate(type, lit) : { plate: BAG_WELL, rim: lit ? '#8fa0c8' : '#2c3560' };
   ctx.fillStyle = rim || tp.rim;
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = tp.plate;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
 }
-// THE SHELF, DRAWN - the whole of the weapon's arithmetic on screen at once,
-// and on screen the WHOLE match now, so every mark on it has to survive being
-// looked at for an hour rather than for the second a hover lasted.
-//
-// Five marks, no words:
-//   * the ROW is the press, left to right out of the tool: cell 0 leaves first.
-//   * a cell PAST the cut - the first the tensile budget could not reach - is
-//     red-rimmed and washed out, because it is carried and never thrown.
-//   * WEIGHT is pips along a cell's bottom edge, on both kinds, because a
-//     fitting costs a press exactly what a shot does.
-//   * a RAIL over the row runs from each fitting to the last shot it reaches,
-//     in that fitting's own colour, blipping over every shot on the way that
-//     it is really in the envelope of - the forward-only rule, drawn. Hover
-//     either end and the pair lights: the rail, and the cells it lands on.
-//   * the GOLD BAR in the gap left of a cell is the LEAD SHOT: what the next
-//     press puts in the air first, and what the aim line on the ground is for.
+// THE SHELF, DRAWN - the weapon and everything loaded in it, on screen the
+// whole match, so every mark on it has to survive being looked at for an
+// hour rather than for the second a hover lasted. Three marks, no words:
+//   * the WEAPON is the big well at the left end; its bits are the smaller
+//     wells after it, shots on the left and modifiers on the right, so what
+//     flies and what shapes it are told apart by where they sit.
+//   * the TIER is the rim's colour (tierPlate), a MODIFIER's well is hatched
+//     in that colour too (modPlate).
+//   * a LINE over the row runs from each modifier to every shot it powers, in
+//     the modifier's own colour, with an arrowhead into each - into the
+//     weapon well itself when no shot is loaded, since that is where the
+//     plain shot comes from. Every line lands on a shot at its own x, so none
+//     ever sits on another. Hover a cell and the lines that touch it stay
+//     lit while the rest dim.
 // ...and one event: every cell the last press SPENT flashes white and fades
-// (bitLitAt, js/tools.js), its rails with it, so the left button teaches the
+// (bitLitAt, js/tools.js), its lines with it, so the left button teaches the
 // row it is firing.
+const SHELF_LINE_STEP = 4; // px between two lines landing on the same shot
 function drawShelf(now) {
   if (!shelfUp()) return;
   const cell = shelfCell();
   const hov = mouse.inside ? shelfHit(mouse.x, mouse.y) : null;
   const hovBit = hov && hov.kind === 'bit' ? hov.i : -1;
-  // the tool leads the row, in the tier plate it wears in every other well.
-  // This is the weapon's one well now, so it carries every tell the strip's
-  // used to: the refusal red (toolFlash) when a bit will not fit, the
-  // dry-bow red when the tool cannot answer the button, and the SWEEP - the
-  // rate of fire, the same hand the ability wells turn (drawSweepCover), so
-  // the two clocks a press waits on read in one shape
-  const p = player, t = shelfCellRect(-1), red = toolFlash > 0, dry = !!cell && !toolReady(p);
+  // the plate the row stands on, flush with the view's left edge (so only
+  // its right corners are cut), under everything the shelf draws
+  const pl = shelfPlateRect();
+  drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: false, tr: true, bl: false, br: true } });
+  // the tool leads the row in its own bigger well. This is the weapon's one
+  // well, so it carries every tell the strip's used to: the refusal red
+  // (toolFlash) when a bit will not fit, and the SWEEP - the rate of fire,
+  // the same hand the ability wells turn (drawSweepCover), so the two clocks a
+  // press waits on read in one shape
+  const p = player, t = shelfCellRect(-1), red = toolFlash > 0;
   ctx.save();
   if (red) ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
-  shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool', red ? '#c2465a' : dry ? '#7e3346' : null);
+  shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool', red ? '#c2465a' : null);
   if (cell) {
-    tierShine(t, t.y, cell.type, now);
     drawItemIcon(cell.type, t, t.y, null, 2);
-    forgeMark(t, t.y, toolLvl(cell)); // its forge level, in the corner the "!" leaves (js/ui/forge.js)
+    forgeMark(t, t.y, toolLvl(cell)); // its forge level, top-left (js/ui/forge.js)
     if (p.nockT > 0) {
       drawSweepCover(t.x + 1, t.y + 1, t.w - 2, t.h - 2,
         Math.min(1, p.nockT / Math.max(0.01, toolCycle(p))), CD_SWEEP, CD_EDGE);
     }
-    // the same "!" the pack's grid wears, in the one place the budget track
-    // below can say exactly where the press runs out
-    if (toolOver(cell)) drawOverWarn(t, t.y, now);
     // ...and the tool's own share of the row flash: a press never lights this
     // cell, so a lit TOOL means one thing only - the body itself just changed
     // under you (swapFx, js/tools.js)
@@ -573,60 +526,51 @@ function drawShelf(now) {
   drawWellLit(t, 'slot', SHELF_SLOT); // ...and the pulse a weapon landing here wears
   ctx.restore();
   if (!cell) return;
-  const T = TOOLS[toolIdOf(cell.type)], plan = toolPlan(cell);
-  const lead = plan.shots.length ? plan.shots[0].i : -1;
+  const plan = toolPlan(cell);
 
-  // THE RAILS, drawn before the cells so a cell's own rim closes over the stem
-  // that climbs to it. One per fitting that reaches anything.
-  const rails = shelfRails(cell, plan);
+  // THE LINES, drawn before the cells so a cell's own rim closes over the
+  // tip of each arrowhead. The modifier nearest the shots takes the line
+  // nearest the row; every line runs LEFT from its stem to the first shot.
+  const rails = shelfRails(cell, plan), rowY = shelfRowY();
+  const cx = (i) => { const r = shelfCellRect(i); return r.x + (r.w >> 1); };
+  // where line d lands on shot j: the lines that reach j, spread
+  // SHELF_LINE_STEP apart about its centre, the nearer ones on the left
+  const land = (j, d) => {
+    const at = [];
+    rails.forEach((r, k) => { if (r.hits.indexOf(j) >= 0) at.push(k); });
+    return cx(j) + Math.round((at.indexOf(d) - (at.length - 1) / 2) * SHELF_LINE_STEP);
+  };
   rails.forEach((rail, d) => {
-    const from = shelfCellRect(rail.i), to = shelfCellRect(rail.hits[rail.hits.length - 1]);
-    const y = from.y - 3 - d * SHELF_RAIL, cx = from.x + (SHELF_CELL >> 1);
-    const w = to.x + (SHELF_CELL >> 1) - cx + 1;
-    const hot = hovBit === rail.i || rail.hits.indexOf(hovBit) >= 0;
+    const y = rowY - 3 - d * SHELF_LINE, x0 = cx(rail.i), y0 = shelfCellRect(rail.i).y;
+    const first = rail.hits[0], xl = land(first, d);
+    const hot = hovBit < 0 || hovBit === rail.i || rail.hits.indexOf(hovBit) >= 0;
     const lit = bitLitAt(cell, rail.i);
-    const blip = (j, dx, dy, bw, bh) => {
-      ctx.fillRect(shelfCellRect(j).x + (SHELF_CELL >> 1) + dx, y + dy, bw, bh);
-    };
-    // A 1px line hanging over the snow needs a seat under it, the same reason
-    // world text is outlined: the rail is a thread over a busy background.
-    // Three px tall, which is exactly the rail pitch, so seats abut and never
-    // swallow the line above.
-    ctx.fillStyle = '#0a0e23';
-    ctx.fillRect(cx - 1, y - 1, w + 2, 3);
-    ctx.fillRect(cx - 1, y, 3, from.y - y);
-    for (const j of rail.hits) blip(j, -2, -1, 5, 3);
-    ctx.globalAlpha = hot ? 1 : 0.8 + 0.2 * lit;
+    ctx.globalAlpha = hot ? 1 : 0.35;
     ctx.fillStyle = lit > 0.4 ? bitLitCol() : rail.col;
-    ctx.fillRect(cx, y, w, 1);          // the run
-    ctx.fillRect(cx, y, 1, from.y - y); // ...and the stem down to its own cell
-    // a blip over every shot the fitting is riding, and nothing at all over
-    // the ones it never reached
-    for (const j of rail.hits) blip(j, -1, -1, 3, 2);
+    ctx.fillRect(x0 - 1, y0 - 2, 3, 2);           // a node on the modifier
+    ctx.fillRect(x0, y + 2, 1, y0 - y - 4);       // its stem
+    ctx.fillRect(x0 - 1, y + 1, 1, 1);            // the rounded corner
+    ctx.fillRect(xl + 2, y, x0 - xl - 3, 1);      // the run, left
+    for (const j of rail.hits) {
+      const tx = land(j, d), ty = shelfCellRect(j).y, end = j === first;
+      if (end) ctx.fillRect(tx + 1, y + 1, 1, 1); else ctx.fillRect(tx, y, 1, 1);
+      ctx.fillRect(tx, y + (end ? 2 : 1), 1, ty - y - (end ? 5 : 4));
+      ctx.fillRect(tx - 1, ty - 3, 3, 1); ctx.fillRect(tx, ty - 2, 1, 1); // the arrowhead
+    }
     ctx.globalAlpha = 1;
   });
 
   for (let i = 0; i < cell.bits.length; i++) {
-    const r = shelfCellRect(i), id = cell.bits[i], b = id && BITS[id];
-    // dead weight is not a property of the bit, it is a property of where the
-    // bit SITS: everything from the cut on is carried, not thrown
-    const dead = b && plan.cut >= 0 && i >= plan.cut;
-    // the other end of the rail: a hovered FITTING rims every shot it reaches
+    const r = shelfCellRect(i), id = cell.bits[i];
+    // the other end of a line: a hovered FITTING rims every shot it powers
     // in its own colour, so the question is answered from either end
     const hovId = hovBit >= 0 ? cell.bits[hovBit] : null;
     const reached = hovId && !BITS[hovId].proj &&
       plan.shots.some((s) => s.i === i && s.mods.indexOf(hovBit) >= 0);
-    shelfWell(r, id && bitType(id), hovBit === i, dead ? '#c2465a' : reached ? BITS[hovId].col : null);
-    if (b) {
-      if (dead) ctx.globalAlpha = 0.45; // ...and it is washed out with it
+    shelfWell(r, id && bitType(id), hovBit === i, reached ? BITS[hovId].col : null);
+    if (id) {
       modPlate(bitType(id), r, r.y);
-      tierShine(r, r.y, bitType(id), now);
-      drawItemIcon(bitType(id), r, r.y - 2, null, 2); // up a little, clear of the pips
-      // WEIGHT, as pips, on both kinds - a fitting costs the press what a
-      // shot does, and the hatched plate is what says which kind it is
-      ctx.fillStyle = dead ? '#e0637a' : '#f2cc6a';
-      for (let k = 0; k < b.weight && k < 8; k++) ctx.fillRect(r.x + 2 + k * 4, r.y + r.h - 5, 2, 3);
-      ctx.globalAlpha = 1;
+      drawItemIcon(bitType(id), r, r.y, null, 2);
     }
     const lit = bitLitAt(cell, i);
     if (lit > 0) { // what the last press spent, still glowing - or the whole row, on a swap
@@ -636,35 +580,6 @@ function drawShelf(now) {
       ctx.globalAlpha = 1;
     }
     drawWellLit(r, 'bit', i, SHELF_SLOT); // ...and a bit that just landed here
-  }
-
-  // THE LEAD SHOT, a gold bar standing in the gap to its left: the press
-  // starts HERE. On cell 0 that gap is between the tool and its first bit,
-  // which reads as the tool feeding it.
-  if (lead >= 0) {
-    const r = shelfCellRect(lead);
-    ctx.fillStyle = '#0a0e23';
-    ctx.fillRect(r.x - SHELF_GAP - 1, r.y - 1, SHELF_GAP + 1, r.h + 2);
-    ctx.fillStyle = Math.sin(now * 6) > 0 ? '#fff2c0' : '#f2cc6a';
-    ctx.fillRect(r.x - SHELF_GAP, r.y, SHELF_GAP, r.h);
-  }
-
-  // THE BUDGET: a track under the bit cells, filled in the tier's own ink to
-  // what this press spends of the tool's strength. A row carrying more than
-  // the tool can swing leaves the tail of the track red - the same fact the
-  // "!" over the strip's well is shouting, said where the build is.
-  const b0 = shelfCellRect(0), bN = shelfCellRect(cell.bits.length - 1);
-  const bx = b0.x + 1, by = b0.y + b0.h + 1, bw = bN.x + bN.w - b0.x - 2;
-  const over = plan.load > plan.tensile;
-  ctx.fillStyle = '#0f1632';
-  ctx.fillRect(bx - 1, by, bw + 2, SHELF_BAR);
-  let fill = Math.round(bw * Math.min(1, plan.used / plan.tensile));
-  if (over) fill = Math.min(fill, bw - 3); // always leave the overrun showing
-  ctx.fillStyle = TOOL_TIERS[T.tier].ink;
-  ctx.fillRect(bx, by + 1, fill, SHELF_BAR - 2);
-  if (over) {
-    ctx.fillStyle = '#c2465a';
-    ctx.fillRect(bx + fill, by + 1, bw - fill, SHELF_BAR - 2);
   }
 }
 
@@ -706,7 +621,6 @@ function drawDragGhost(now) {
   ctx.fillStyle = tp.plate;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   modPlate(d.cell.type, r, r.y);
-  tierShine(r, r.y, d.cell.type, now);
   drawItemIcon(d.cell.type, r, r.y);
   ctx.globalAlpha = 1;
   if (d.cell.n > 1) {

@@ -47,33 +47,28 @@ const TIP_PATH = { line: 'STRAIGHT', orbit: 'ORBIT', boomer: 'BOOMERANG', lob: '
 // (see BITS, js/tools.js), so it prints as one - 'x1' is the ordinary shove
 const TIP_KB = (kb) => 'x' + (Math.round((kb === undefined ? 1 : kb) * 10) / 10);
 // A TOOL: the numbers that are the whole of what a tool is, and then what is
-// loaded in it - which is the other half of "what will this do". The list is
-// the FIRING ORDER, cell 1 first, with each bit's weight beside it and the
-// line where the press runs out of strength marked, because that order and
-// that cut are now the entire build.
+// loaded in it - which is the other half of "what will this do". The list
+// reads as the row does, shots then modifiers, each bit's weight beside it,
+// because the weight is what the draw pays for (toolDrawMul).
 function tipTool(cell) {
   const id = toolIdOf(cell.type), T = TOOLS[id];
   const lv = toolLvl(cell);
   const d = tipBase(cell.type, T.name + (lv ? ' +' + lv : ''), TOOL_TIERS[T.tier].name + ' TOOL');
   const plan = toolPlan(cell);
-  const over = plan.load > plan.tensile;
+  const slow = toolDrawMul(cell) > 1;
   if (lv) d.rows.push(['FORGED DAMAGE', 'x' + toolDmgMul(cell).toFixed(2), FORGE_INK]);
   d.rows.push(['RATE OF FIRE', tipSec(T.rof * toolRofMul(cell) * TOOL_ROF_STEP), lv && T.up === 'rof' ? FORGE_INK : '#f4f7ff']);
   d.rows.push(['BIT SLOTS', bitsIn(cell) + '/' + T.cap, '#f4f7ff']);
   d.rows.push(['TENSILE', String(plan.tensile), lv && T.up === 'tensile' ? FORGE_INK : '#f2cc6a']);
-  d.rows.push(['LOADED WEIGHT', String(plan.load), over ? '#e0637a' : '#f4f7ff']);
-  d.rows.push(['SHOTS A PRESS', String(plan.shots.length), plan.shots.length ? '#8fe08a' : '#e0637a']);
-  const lead = plan.shots.length ? plan.shots[0].i : -1;
+  d.rows.push(['LOADED WEIGHT', String(plan.load), '#f4f7ff']);
+  d.rows.push(['FULL DRAW', tipSec(kitOf(player).bowCharge * toolDrawMul(cell)), slow ? '#ffd95c' : '#f4f7ff']);
+  d.rows.push(['SHOTS A PRESS', String(plan.shots.length), '#8fe08a']);
   for (let i = 0; i < cell.bits.length; i++) {
     const b = cell.bits[i] && BITS[cell.bits[i]];
-    if (!b) continue;
-    const dead = plan.cut >= 0 && i >= plan.cut;
-    d.notes.push([(i === lead ? '> ' : '  ') + (i + 1) + ' ' + b.name + ' ' + b.weight +
-      (dead ? ' - NO STRENGTH LEFT' : ''),
-      dead ? '#e0637a' : i === lead ? '#f2cc6a' : b.col]);
+    if (b) d.notes.push(['  ' + b.name + ' ' + b.weight, b.col]);
   }
-  if (!bitsIn(cell)) d.notes.push(['  NO BITS LOADED', TIP_DIM]);
-  else if (over) d.notes.push(['IT CARRIES MORE THAN IT CAN SWING', '#ffd95c']);
+  if (plan.shots[0].base) d.notes.push(['NO SHOT LOADED - FIRES A PLAIN ARROW', TIP_DIM]);
+  if (slow) d.notes.push(['HEAVY - IT TAKES LONGER TO DRAW', '#ffd95c']);
   return d;
 }
 // A BIT: every property the shot carries, because that is exactly the list a
@@ -98,8 +93,7 @@ function tipBit(id) {
     if (b.impact === 'warp') d.notes.push(['LAND IT ON ANYTHING AND YOU ARE THERE', '#c58fff']);
     if (b.impact === 'chop') d.notes.push(['CHOPS EVERY TREE IT LANDS AMONG', '#8fe08a']);
   } else {
-    // a fitting costs the press exactly what a shot does: that is the whole
-    // reason where you put one is a decision and not a formality
+    // a fitting weighs what a shot does, and the draw pays for both
     d.rows.push(['WEIGHT', String(b.weight), '#f2cc6a']);
     // A fire modifier is chosen on two numbers - how long the burn runs and
     // how hard it bites - so it prints them, the same reason the projectile
@@ -112,7 +106,7 @@ function tipBit(id) {
       if (m.cinder > 0) d.rows.push(['EMBER RING', String(m.cinder), '#ffb347']);
     }
     // the two rules a modifier lives by, and neither is guessable from the art
-    d.notes.push(['CHANGES ONLY THE SHOTS AFTER IT', '#8fd8ff']);
+    d.notes.push(['CHANGES EVERY SHOT YOUR WEAPON FIRES', '#8fd8ff']);
     d.notes.push(['A SECOND ONE COMPOUNDS WITH THIS', '#8fe08a']);
     if (m.type === 'fire') d.notes.push(['FIRE KEEPS BURNING WHATEVER IT LANDS ON', '#ff9440']);
   }
@@ -336,7 +330,7 @@ function tipAt(mx, my) {
     const d = tipBase(cell.type, 'EMPTY BIT CELL', TOOL_TIERS[T.tier].name + ' TOOL');
     d.icon = null; d.tcol = TIP_DIM;
     d.notes.push(['A FOUND BIT LANDS HERE ON ITS OWN', TIP_DIM]);
-    d.notes.push(['THIS PRESS SPENDS ' + toolPlan(cell).used + ' OF ' + toolTensile(cell), '#f2cc6a']);
+    d.notes.push(['LOADED ' + toolLoad(cell) + ' OF ' + toolTensile(cell) + ' TENSILE', '#f2cc6a']);
     return d;
   }
   const abb = abBuyHit(mx, my);
