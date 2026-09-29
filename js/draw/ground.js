@@ -8,6 +8,21 @@
 // ------------------------------------------------------------ ground prerender
 const groundCv = document.createElement('canvas');
 groundCv.width = WORLD * TILE; groundCv.height = WORLD * TILE;
+// The bake is lazy, in GROUND_CHUNK squares - the whole map at once kept the
+// first frame waiting a second and a half. Boot readies only what the painter
+// reads (prepGround); render() bakes any chunk the view reaches before it
+// blits (groundView); idle time bakes the rest, nearest the camera first
+// (groundIdle). A tile paints only inside its own 16 px and from the world as
+// it stands, so a repaint landing in a chunk not yet baked is skipped: that
+// chunk's bake paints the tile as it is by then.
+const GROUND_CHUNK = 16;                            // tiles per side of a bake chunk
+const GROUND_CN = Math.ceil(WORLD / GROUND_CHUNK);  // chunks per side
+const GROUND_IDLE_MS = 4;                           // an idle slice bakes another chunk while it has this long left
+const groundDone = new Uint8Array(GROUND_CN * GROUND_CN);
+let groundLeft = GROUND_CN * GROUND_CN;
+function groundBaked(tx, ty) {
+  return groundDone[((ty / GROUND_CHUNK) | 0) * GROUND_CN + ((tx / GROUND_CHUNK) | 0)] === 1;
+}
 
 function hash2(x, y) {
   let h = (x * 374761393 + y * 668265263 + SEED) | 0;
@@ -24,9 +39,10 @@ function vnoise(x, y) {
   return a + (b - a) * sx + (c - a) * sy + (a - b - c + d) * sx * sy;
 }
 
-// paints one tile into the pre-rendered ground canvas; used by the boot-time
-// full render and by repaintGround() when a tile changes at runtime (ice holes)
+// paints one tile into the pre-rendered ground canvas; used by a chunk bake
+// and by repaintGround() when a tile changes at runtime (ice holes)
 function paintGroundTile(g, tx, ty) {
+      if (!groundBaked(tx, ty)) return; // its chunk's bake will paint it (the lazy bake, above)
       const px = tx * TILE, py = ty * TILE;
       const gv = ground[idx(tx, ty)];
       const h = hash2(tx, ty);
@@ -385,22 +401,73 @@ function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
   ctx.globalAlpha = 1;
 }
 
-function renderGround() {
-  const g = groundCv.getContext('2d');
-  g.imageSmoothingEnabled = false;
+// boot, once the world stands: what every tile paint reads, and the idle
+// bake set going. Nothing is painted yet.
+function prepGround() {
   bakeLakes();
   bakeDressing(); // the drifts and the lakes' dressing (js/draw/lakes.js)
+  noteCasts();
+  groundIdleArm();
+}
+// bake one chunk: its snow a row strip at a time, every tile over it, then its
+// scenery's shade in one multiply
+function bakeGroundChunk(c) {
+  if (groundDone[c]) return;
+  groundDone[c] = 1; groundLeft--;
+  const g = groundCv.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  const tx0 = (c % GROUND_CN) * GROUND_CHUNK, ty0 = ((c / GROUND_CN) | 0) * GROUND_CHUNK;
+  const tx1 = Math.min(WORLD, tx0 + GROUND_CHUNK), ty1 = Math.min(WORLD, ty0 + GROUND_CHUNK);
+  snowLatOpen(tx0, ty0, tx1, ty1);
+  const strip = new ImageData((tx1 - tx0) * TILE, TILE);
   shadeBulk = true;
-  const strip = new ImageData(WORLD * TILE, TILE);
-  for (let ty = 0; ty < WORLD; ty++) {
-    snowStrip(g, ty, strip);
+  for (let ty = ty0; ty < ty1; ty++) {
+    snowStrip(g, ty, tx0, tx1, strip);
     snowBulk = true;
-    for (let tx = 0; tx < WORLD; tx++) paintGroundTile(g, tx, ty);
+    for (let tx = tx0; tx < tx1; tx++) paintGroundTile(g, tx, ty);
     snowBulk = false;
   }
   shadeBulk = false;
-  shadeWorld(g);
-  noteCasts();
+  snowLatClose();
+  shadeChunk(g, tx0, ty0, tx1, ty1);
+}
+// every chunk the world-px rect reaches, baked now (render(), before the blit)
+function groundView(x0, y0, x1, y1) {
+  if (!groundLeft) return;
+  const S = GROUND_CHUNK * TILE;
+  const c0 = Math.max(0, Math.floor(x0 / S)), c1 = Math.min(GROUND_CN - 1, Math.floor((x1 - 1) / S));
+  const r0 = Math.max(0, Math.floor(y0 / S)), r1 = Math.min(GROUND_CN - 1, Math.floor((y1 - 1) / S));
+  for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) bakeGroundChunk(r * GROUND_CN + c);
+}
+// the whole map now (a test's full bake; boot never needs it)
+function renderGround() {
+  for (let c = 0; c < GROUND_CN * GROUND_CN; c++) bakeGroundChunk(c);
+}
+// the unbaked chunk nearest the middle of the view, -1 once all are baked
+function groundNext() {
+  const S = GROUND_CHUNK * TILE, mx = (camX + WV_W / 2) / S - 0.5, my = (camY + WV_H / 2) / S - 0.5;
+  let best = -1, bd = Infinity;
+  for (let c = 0; c < GROUND_CN * GROUND_CN; c++) {
+    if (groundDone[c]) continue;
+    const dx = c % GROUND_CN - mx, dy = ((c / GROUND_CN) | 0) - my, d = dx * dx + dy * dy;
+    if (d < bd) { bd = d; best = c; }
+  }
+  return best;
+}
+function groundIdle(dl) {
+  do {
+    const c = groundNext();
+    if (c < 0) return;
+    bakeGroundChunk(c);
+  } while (dl.timeRemaining() > GROUND_IDLE_MS);
+  groundIdleArm();
+}
+// a slice of idle time for the next chunks; the timeout keeps the bake moving
+// through a match that leaves the frame no idle at all
+function groundIdleArm() {
+  if (!groundLeft) return;
+  if (window.requestIdleCallback) requestIdleCallback(groundIdle, { timeout: 250 });
+  else setTimeout(() => groundIdle({ timeRemaining: () => 0 }), 16);
 }
 
 // runtime ground change (hole opened / refrozen): repaint the tile plus its
@@ -666,6 +733,22 @@ const latAt = (a, fx, fy) => {
   return top + (bot - top) * uy;
 };
 const snowW = new Float32Array(SNOW_LOOKS.length);
+// a chunk bake's heights, shared: a tile reads a SNOW_LAT square of lattice
+// points for its own TILE / 2, so its neighbours read the same points round
+// its rim and a tile alone works out each height about twice. Through a bake
+// (snowLatOpen .. snowLatClose) each look keeps its heights over the whole
+// chunk, worked out the first time a tile asks, and a tile copies them.
+const LAT_STEP = TILE >> 1, LAT_RIM = SNOW_LAT - LAT_STEP;       // lattice points per tile; the extra a tile reads
+const LAT_N = (GROUND_CHUNK * LAT_STEP + LAT_RIM) ** 2;
+const latVal = SNOW_LOOKS.map(() => new Float32Array(LAT_N));   // per look: its height at each point
+const latHas = SNOW_LOOKS.map(() => new Uint8Array(LAT_N));     // ...and whether it is worked out yet
+let latX0 = 0, latY0 = 0, latW = 0, latH = 0;                    // the open window in lattice points (latW 0: none)
+function snowLatOpen(tx0, ty0, tx1, ty1) {
+  latX0 = tx0 * LAT_STEP - 1; latY0 = ty0 * LAT_STEP - 1;
+  latW = (tx1 - tx0) * LAT_STEP + LAT_RIM; latH = (ty1 - ty0) * LAT_STEP + LAT_RIM;
+  for (const h of latHas) h.fill(0);
+}
+function snowLatClose() { latW = 0; }
 // fill snowTone for the tile whose top-left world pixel is (px, py). The
 // region noise moves over ~22 tiles, so it is read at the tile's four
 // corners (world-aligned too) and blended across the tile.
@@ -682,11 +765,23 @@ function snowTile(px, py) {
   // point (2 px) down-right less one up-left - pre-scaled by its relief; a
   // bilinear read of it is exactly the difference of two bilinear heights
   let only = -1;
+  const shared = latW && X0 >= latX0 && Y0 >= latY0 && X0 + SNOW_LAT <= latX0 + latW && Y0 + SNOW_LAT <= latY0 + latH;
   for (let l = 0; l < SNOW_LOOKS.length; l++) {
     if (!on[l]) continue;
     only = only === -1 ? l : -2;
     const H = snowLatH[l], S = snowLatS[l], L = SNOW_LOOKS[l], k = L.rel * L.sc;
-    for (let b = 0; b < SNOW_LAT; b++) for (let a = 0; a < SNOW_LAT; a++) H[b * SNOW_LAT + a] = snowH((X0 + a) * 2, (Y0 + b) * 2, L.sc);
+    if (shared) {
+      const V = latVal[l], D = latHas[l];
+      for (let b = 0; b < SNOW_LAT; b++) {
+        const r = (Y0 + b - latY0) * latW + X0 - latX0;
+        for (let a = 0; a < SNOW_LAT; a++) {
+          if (!D[r + a]) { V[r + a] = snowH((X0 + a) * 2, (Y0 + b) * 2, L.sc); D[r + a] = 1; }
+          H[b * SNOW_LAT + a] = V[r + a];
+        }
+      }
+    } else {
+      for (let b = 0; b < SNOW_LAT; b++) for (let a = 0; a < SNOW_LAT; a++) H[b * SNOW_LAT + a] = snowH((X0 + a) * 2, (Y0 + b) * 2, L.sc);
+    }
     for (let b = 1; b < SNOW_LAT - 1; b++) for (let a = 1; a < SNOW_LAT - 1; a++) {
       S[b * SNOW_LAT + a] = (H[(b + 1) * SNOW_LAT + a + 1] - H[(b - 1) * SNOW_LAT + a - 1]) * k;
     }
@@ -728,23 +823,23 @@ function inkSnow(img, ox) {
   }
 }
 const snowImg = new ImageData(TILE, TILE);
-let snowBulk = false; // renderGround has already laid this row's snow in one strip
+let snowBulk = false; // bakeGroundChunk has already laid this row's snow in one strip
 function paintSnowTile(g, px, py) {
   if (snowBulk) return;
   snowTile(px, py);
   inkSnow(snowImg, 0);
   g.putImageData(snowImg, px, py);
 }
-// the boot bake's snow: one strip per row of tiles, one putImageData each
+// a chunk bake's snow: one strip per row of its tiles, one putImageData each
 // (per tile, putImageData alone costs the bake half a second)
-function snowStrip(g, ty, strip) {
-  for (let tx = 0; tx < WORLD; tx++) {
+function snowStrip(g, ty, tx0, tx1, strip) {
+  for (let tx = tx0; tx < tx1; tx++) {
     const gv = ground[idx(tx, ty)];
-    if (gv !== 0 && gv !== 3) continue; // ice and holes paint every pixel of their own
+    if (gv === 1 || gv === 2) continue; // ice and holes paint every pixel of their own; the creek lies over snow like the road
     snowTile(tx * TILE, ty * TILE);
-    inkSnow(strip, tx * TILE);
+    inkSnow(strip, (tx - tx0) * TILE);
   }
-  g.putImageData(strip, 0, ty * TILE);
+  g.putImageData(strip, tx0 * TILE, ty * TILE);
 }
 
 // ------------------------------------------------------------ the wind's sweep
@@ -998,7 +1093,7 @@ function castCode(tx, ty) {
 const shadeCv = document.createElement('canvas');
 shadeCv.width = TILE; shadeCv.height = TILE;
 const shadeG = shadeCv.getContext('2d');
-let shadeBulk = false; // true through renderGround: the whole map's shade goes down in chunks after the tiles
+let shadeBulk = false; // true through a chunk bake: its shade goes down in one multiply after its tiles
 function paintCastShade(g, tx, ty, px, py) {
   if (shadeBulk) return;
   let any = false;
@@ -1017,33 +1112,29 @@ function paintCastShade(g, tx, ty, px, py) {
   g.drawImage(shadeCv, px, py);
   g.restore();
 }
-// the boot bake's shade: one multiply per SHADE_CHUNK square instead of one
-// per tile - a composite onto the 3712 px canvas costs the same for 16 px as
-// for 512, and forty thousand of them took five seconds
-const SHADE_CHUNK = 512;
-function shadeWorld(g) {
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = SHADE_CHUNK;
-  const c = cv.getContext('2d'), span = SHADE_CHUNK / TILE;
-  for (let y0 = 0; y0 < WORLD * TILE; y0 += SHADE_CHUNK) for (let x0 = 0; x0 < WORLD * TILE; x0 += SHADE_CHUNK) {
-    const tx0 = x0 / TILE, ty0 = y0 / TILE;
-    let any = false;
-    for (let cy = Math.max(0, ty0 - CAST_REACH[3]); cy <= Math.min(WORLD - 1, ty0 + span - 1 - CAST_REACH[1]); cy++) {
-      for (let cx = Math.max(0, tx0 - CAST_REACH[2]); cx <= Math.min(WORLD - 1, tx0 + span - 1 - CAST_REACH[0]); cx++) {
-        const o = objects[idx(cx, cy)], C = o && CASTERS[o.type];
-        if (!C) continue;
-        const m = shadeFor(C, C.code(o, cx, cy));
-        if (!m) continue;
-        if (!any) { c.clearRect(0, 0, SHADE_CHUNK, SHADE_CHUNK); any = true; }
-        c.drawImage(m, cx * TILE + m.ax - x0, cy * TILE + m.ay - y0);
-      }
+// a chunk bake's shade: one multiply for the chunk instead of one per tile -
+// a composite onto the 3712 px canvas costs the same for 16 px as for 256,
+// and forty thousand of them took five seconds
+const shadeChunkCv = document.createElement('canvas');
+shadeChunkCv.width = shadeChunkCv.height = GROUND_CHUNK * TILE;
+function shadeChunk(g, tx0, ty0, tx1, ty1) {
+  const c = shadeChunkCv.getContext('2d'), x0 = tx0 * TILE, y0 = ty0 * TILE;
+  let any = false;
+  for (let cy = Math.max(0, ty0 - CAST_REACH[3]); cy <= Math.min(WORLD - 1, ty1 - 1 - CAST_REACH[1]); cy++) {
+    for (let cx = Math.max(0, tx0 - CAST_REACH[2]); cx <= Math.min(WORLD - 1, tx1 - 1 - CAST_REACH[0]); cx++) {
+      const o = objects[idx(cx, cy)], C = o && CASTERS[o.type];
+      if (!C) continue;
+      const m = shadeFor(C, C.code(o, cx, cy));
+      if (!m) continue;
+      if (!any) { c.clearRect(0, 0, shadeChunkCv.width, shadeChunkCv.height); any = true; }
+      c.drawImage(m, cx * TILE + m.ax - x0, cy * TILE + m.ay - y0);
     }
-    if (!any) continue;
-    g.save();
-    g.globalCompositeOperation = 'multiply'; g.globalAlpha = SHADE_A;
-    g.drawImage(cv, x0, y0);
-    g.restore();
   }
+  if (!any) return;
+  g.save();
+  g.globalCompositeOperation = 'multiply'; g.globalAlpha = SHADE_A;
+  g.drawImage(shadeChunkCv, x0, y0);
+  g.restore();
 }
 let castAt = null; // per tile: the caster code its reach was last painted with
 function noteCasts() {

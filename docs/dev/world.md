@@ -89,9 +89,17 @@ stable per tile.
   `hitObject()` only when the tree actually falls, on top of the normal payout. Being a position hash rather than an `rng()`
   draw, the roll is the same whenever it is asked — `DBG.treeRare(tx, ty)` reports it for any
   tile, occupied or not.
-- **The ground is baked once.** `renderGround()` (js/draw/ground.js) pre-renders the whole
-  ground to one offscreen canvas at boot and the frame loop blits the camera window out of it;
-  the per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
+- **The ground is baked once, lazily.** The whole ground lives in one offscreen canvas and the
+  frame loop blits the camera window out of it, but nothing is painted at boot: `prepGround()`
+  (js/draw/ground.js) readies what the painter reads (`bakeLakes`, `bakeDressing`, `noteCasts`),
+  `render()` bakes every `GROUND_CHUNK` (16-tile) square the view reaches before its blit
+  (`groundView` → `bakeGroundChunk`), and idle time bakes the rest nearest the camera first
+  (`groundIdle`, a `requestIdleCallback` whose timeout keeps it moving through a busy match) —
+  the whole map at once kept the first frame waiting a second and a half. `renderGround()` bakes
+  everything now, for a test. Every tile paints only inside its own 16 px, from the world as it
+  stands, so `paintGroundTile` skips a tile whose chunk is not baked yet (`groundBaked`): that
+  chunk's bake paints it as it is by then, and a chunk bake lays exactly what per-tile repaints
+  would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-fishing) and
   their dawn refreeze, a spur's and a roost pad's paving ([the road](#the-road)), and the
@@ -107,8 +115,10 @@ stable per tile.
   pixel is a function of its world position alone (the heights on a world-aligned 2 px lattice),
   so any repaint lays back exactly the snow the bake laid, a lake-shore tile reads the same
   lattice, and nothing rolls. Kept subtle on purpose: the lee tone stays well above a cast
-  shadow. The boot bake lays each row's snow in one strip (`snowStrip`) — `putImageData` per tile
-  alone would cost it half a second.
+  shadow. A chunk bake lays each row of its snow in one strip (`snowStrip`) — `putImageData` per
+  tile alone would cost the map half a second — under every tile but ice and holes (the road and
+  the creek lie over snow), and shares the height lattice across the chunk (`snowLatOpen`: a
+  tile reads a 12-point square for its own 8, so alone it works out each height about twice).
 
 ### The ice shore
 
@@ -144,7 +154,7 @@ shore. Night's mirror follows the same edge ([the reflected sky](rendering.md#th
 
 **Scenery the wind lays, all in [js/draw/lakes.js](../../js/draw/lakes.js), and none of it a
 rule**: no walker, route or slide reads it, and the ice's shine shows through everything laid on
-it, so a lake still reads as slippery. `bakeDressing` runs in `renderGround` right after
+it, so a lake still reads as slippery. `bakeDressing` runs in `prepGround` right after
 `bakeLakes`: it labels every lake with its area (`lakeTiles`; `BIG_LAKE` tiles makes one big) and
 works cracks, reeds, banks and drifts out **once** into per-tile pixel lists (`dressPx`), which
 every paint of a tile stamps (`paintDressing`, called from `paintGroundTile` under the road, the
@@ -583,7 +593,7 @@ asks it; its bands:
 
 The depth is the tallest **drift** at a point (`drifts`, indexed per tile in `driftCell`),
 over the hollows. `layDrifts()` runs at boot once every worldgen pass has stood its scenery up
-(after `placeRocks`, before `renderGround`; under `PRACTICE` it lays none):
+(after `placeRocks`, before `prepGround`; under `PRACTICE` it lays none):
 
 - **The wind.** `driftWind` is the seed's prevailing wind, within `DRIFT_WIND_ARC` of the
   creek's line and either way along it, so the upwind treeline is one the creek cuts in two.
@@ -689,7 +699,7 @@ no map, chart or HUD code knows a camp by name:
 | `icon` | the glyph itself: `[x, y, w, h]` rects inside a 7×7 box, stamped by `drawCampIcon()` with a dark rim pass so it reads on parchment, snow and forest alike |
 | `kind` / `pop` | the monster kind (`MONSTER`, wildlife.js) and how many the camp holds (`a.home === C` is the backref) |
 | `repop` | seconds after the **last** one dies before the whole camp is back — a camp is cleared or it is not; nothing trickles |
-| `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** `renderGround()` bakes; the prop at `0, 0` is the anchor and carries `site` |
+| `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** the ground bakes; the prop at `0, 0` is the anchor and carries `site` |
 | `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
 | `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it and `placeChests` keeps off its rim |
 
@@ -1008,7 +1018,7 @@ in `title` mode the main menu prints the seed instead, next to the reroll die.
   camps' clearings are the boot passes that write `ground` after `genWorld`, so a seed's ground
   hash includes them.
 - `SEED` is a `const` in the rng banner and `hash2` closes over it, so nothing may call `hash2`
-  before that line runs. Everything that does — `genWorld`, `renderGround`, the panel bakes — is
+  before that line runs. Everything that does — `genWorld`, the ground bake, the panel bakes — is
   further down in boot order.
 
 ## Day/night

@@ -2400,12 +2400,12 @@ does not follow the day clock: the shade lies where it lies at night too, under 
   tree, rock, bush, stump, den, chest, cairn, hog hut), with its art and where it sits on its tile — the
   pine's is its *standing* frame (`treeRestFrame`), never the wind's, and its code carries its
   nudge too so the shade lies under the art where it was nudged (every palette row shares one
-  silhouette, so the shade is cut from row 0). The boot bake lays it all
-  in `SHADE_CHUNK` squares (`shadeWorld`: every caster's shade unioned opaque, then one
+  silhouette, so the shade is cut from row 0). Each chunk bake lays its own
+  in one go (`shadeChunk`: every caster's shade unioned opaque, then one
   `multiply` of `SHADE_TINT` at `SHADE_A`, so overlapping shade is one shade, never a darker
   one); a single tile repaints through `paintCastShade`, the same union for one tile. A composite
-  onto the 3712 px canvas costs the same for 16 px as for 512, so the per-tile path at boot took
-  five seconds — never bake the map through it.
+  onto the 3712 px canvas costs the same for 16 px as for 256, so the per-tile path over the whole
+  map took five seconds — never bake the map through it.
 - **Nobody has to report a change.** `castAt` remembers the caster each tile's shade was painted
   with, and `syncCasts` — the first thing `render()` does before the ground blit — compares it
   with what stands there now over the view plus `CAST_REACH`, and repaints the reach of any that

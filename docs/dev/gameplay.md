@@ -3047,7 +3047,7 @@ canvases are nobody's state and are dropped (a console warning names the path if
 it to `PROFILE.putSave` - the metas (hero, level, clock, when, name, a 40 px minimap thumbnail) under one
 index key so a list never opens a body, each body under its own. `loadSave(slot)` fades out,
 unpacks the body into `sessionStorage` (`softfall.load`) and reloads onto the saved seed and
-shape; boot calls `saveBootLoad` after the world stands and **before `renderGround`**, so the bake
+shape; boot calls `saveBootLoad` after the world stands and **before `prepGround`**, so the bake
 paints the saved valley, then `saveBootEnter` once boot is done (the saved camera, the fade up
 from dark, the match's music; no HUD slide, whose ease would move the camera and pop the day's
 headline).

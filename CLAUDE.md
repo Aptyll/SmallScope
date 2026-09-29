@@ -134,8 +134,8 @@ lives in `docs/dev/*.md` beside the code it protects.
   the outline is the right call; `Shadow` is for panels and planks. White pixel text on white
   snow with only a drop shadow is unreadable.
 - **Runtime ground change?** Call `repaintGround(tx, ty)` — it repaints the tile plus its four
-  neighbours into the prerendered ground canvas. Never call `renderGround()` per frame; it bakes
-  the entire 3712×3712 world and is a boot-time cost.
+  neighbours into the prerendered ground canvas (a chunk not baked yet skips it). Never call
+  `renderGround()` in a frame; it bakes the whole 3712×3712 world at once, which the lazy bake spreads.
 - **Nothing on the map emits light; night is a colour and a rim, never a darkness in the middle** —
   [`renderLighting`](docs/dev/rendering.md#light-and-weather) grades the finished world frame (the
   dark lives at `NIGHT_EDGE`), so a new glowing thing adds a pass there, not a registry.
