@@ -656,11 +656,21 @@ const SHOP_REACH = 34; // px from a counter the shop is open
 
 // A COUNTER is either of two things: the merchant's own body, or the STALL
 // it pitches beside the roost (OBJECTS.stall, world.js; updateMerchant,
-// robots.js). Both open the same shop. `counterPt` is where each one is
-// measured from - the body itself, or the middle of the stall's counter
-// edge, a step in front of its front row.
+// robots.js). Both open the same shop. `counterPt` is where each one's cap
+// sits and where a click walks you to - the body itself, or the middle of the
+// stall's counter edge, a step in front of its front row.
 function counterPt(c) {
   return c.merchant ? c : { x: (c.tx + 1.5) * TILE, y: (c.ty + 1) * TILE + 4 };
+}
+// how far a body stands from a counter: from the merchant's body, or from the
+// nearest edge of the stall's whole footprint, so its back and sides are in
+// reach as well as its front (the anchor is the front-left tile and the
+// footprint runs north and east of it - pitchStall, robots.js)
+function counterDist(p, c) {
+  if (c.merchant) return Math.hypot(c.x - p.x, c.y - p.y);
+  const d = OBJECTS.stall, x0 = c.tx * TILE, x1 = (c.tx + d.w) * TILE;
+  const y0 = (c.ty + 1 - d.h) * TILE, y1 = (c.ty + 1) * TILE;
+  return Math.hypot(Math.max(x0 - p.x, 0, p.x - x1), Math.max(y0 - p.y, 0, p.y - y1));
 }
 // a stall still standing (objAt answers it off its own anchor tile)
 function stallUp(s) { return !!s && objAt(s.tx, s.ty) === s; }
@@ -672,7 +682,7 @@ function merchNear(p) {
     if (!b.merchant || b.dead) continue;
     for (const c of [b.hopT > 0 ? null : b, stallUp(b.stall) ? b.stall : null]) { // mid-hop it is still climbing down
       if (!c) continue;
-      const pt = counterPt(c), d = Math.hypot(pt.x - p.x, pt.y - p.y);
+      const d = counterDist(p, c);
       if (d < bd) { bd = d; best = c; }
     }
   }
@@ -681,8 +691,7 @@ function merchNear(p) {
 // still standing at THIS counter - the check that shuts the panel when you walk off
 function inReach(p, c) {
   if (!c || c.dead || (!c.merchant && !stallUp(c))) return false;
-  const pt = counterPt(c);
-  return Math.hypot(pt.x - p.x, pt.y - p.y) <= SHOP_REACH + PLAYER_R;
+  return counterDist(p, c) <= SHOP_REACH + PLAYER_R;
 }
 // The other way round: the player whose counter is OPEN on this merchant, or
 // null. updateMerchant (js/robots.js) asks it every frame and drops
