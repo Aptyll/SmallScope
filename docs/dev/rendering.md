@@ -182,7 +182,8 @@ entity draw code must use `ex`/`ey`.
    `drawAgRings`;
 10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
     dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (bolts branch to
-    `drawBolt`, a bit with a `body` to `BIT_BODY`);
+    `drawBolt`, a bit with a `body` to `BIT_BODY`, the rest to `drawShaft`; then
+    `drawShotFire` on any shot that is burning);
 11. `drawWarps` (the silhouettes a teleport strung across its jump) → **`drawSwaps`**
     ([the tool swap](#the-tool-swap)) → `drawAbilityAir` (the spinning net, the grapple's rope)
     → `drawTurretFx` (each turret's charging aim line and muzzle flash) → turret tracers;
@@ -853,8 +854,8 @@ to draw), the button that was asked takes the well's red band and the pack's 1px
 `bagDenied()`/`toolDenied()`. The shared food clock (`drawFoodClock`) sweeps both meal squares
 together and lifts the one being chewed white; the card button has no clock. A kind you have
 none of keeps its seat but dims to 0.35, so the block never rearranges. The **card button**'s
-icon is three cards fanned — white, green, blue, each a step up and over from the last
-(`cardFanCv`) — and its count is every rarity together; hover raises `tipCards`, one row per
+icon is three of the card icons themselves fanned — a white, a blue and a gold, each a step up
+and over from the last (`cardFanCv`) — and its count is every rarity together; hover raises `tipCards`, one row per
 rarity held in that rarity's ink, which is the only place the hand is read by kind. The **gold
 plate** (`drawGoldCell`, `goldCellRect`) wears the same rim as its three neighbours, so the
 block is one symmetrical thing, but it is a readout, not a button — no key cap, no hover, no

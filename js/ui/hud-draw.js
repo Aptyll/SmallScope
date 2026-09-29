@@ -338,21 +338,19 @@ function drawAbBuyPlate(i, now, hot) {
 function cardTotal(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
 // the card button's refusal: nothing to draw
 function cardDenied() { foodDenied('card'); }
-// THE CARD ICON: three cards fanned - white, green and blue, each a step up
-// and over from the last - baked once at 16x16, the size a doubled 8px item
-// icon draws at, so the four squares carry art of one size. Three different
-// colours, because the button holds every rarity at once and the fan is
-// what says "a hand" rather than "a card".
+// THE CARD ICON: three of the card icons themselves fanned - a white, a blue
+// and a gold, each a step up and over from the last, the gold's glint on top
+// - baked once at 16x16, the size a doubled 8px item icon draws at, so the
+// four squares carry art of one size. Three rarities, because the button
+// holds every rarity at once and the fan is what says "a hand" rather than
+// "a card"; the real icons, so the hand is visibly made of what it draws.
 const cardFanCv = (() => {
   const cv = document.createElement('canvas');
   cv.width = cv.height = 16;
   const g = cv.getContext('2d');
-  const cards = [['#d9dfe8', '#8a94a8', 0, 5], ['#5fd18a', '#2f7a4b', 4, 2], ['#4a90e2', '#245390', 8, 0]];
-  for (const [face, edge, dx, dy] of cards) {
-    g.fillStyle = '#0a0e23'; g.fillRect(dx, dy, 8, 11);       // the rim
-    g.fillStyle = face; g.fillRect(dx + 1, dy + 1, 6, 9);      // the face
-    g.fillStyle = edge; g.fillRect(dx + 3, dy + 4, 2, 3);      // its pip
-  }
+  g.drawImage(SPRITES.itemCardWhite, -1, 7);
+  g.drawImage(SPRITES.itemCardBlue, 3, 4);
+  g.drawImage(SPRITES.itemCardGold, 7, 1);
   return cv;
 })();
 // ONE POUCH SQUARE, the block's whole grammar - the ability well's, smaller:

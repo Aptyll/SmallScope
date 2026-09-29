@@ -581,7 +581,7 @@ bots (never on the shooter, at any weight), and `a.cinder` lights a ring around 
 ended. **That solid-tile branch is also the one place a shot sieges**: when the tile that stopped
 it is a rival's building (`structFoe(sideOf(a), structOf(objAt(…)))`) the shot's damage goes
 through `hurtStruct`, `STRUCT_DR` (60 %) off like any player blow — so a bit that passes walls
-(`solid: false`) pays for that with its siege, and needs no second flag. A burning shot trails fire instead of team colour and bursts embers where it lands.
+(`solid: false`) pays for that with its siege, and needs no second flag. A burning shot trails fire instead of team colour, burns on its head in flight ([the draw](#the-draw)) and bursts embers where it lands.
 
 **A shot meets everything its step crossed, then one blow.** A step is a *segment*, never a point:
 `shotContacts` (js/sim.js, `the shot's sweep`) lists what the segment met in the order it met
@@ -814,11 +814,20 @@ its corners cut back — it never flies, it is fitted *into* the tool — so the
 across a whole grid without recognising a single glyph. Colour is already spent on tier, which is
 why the difference has to be texture and silhouette. The column then adds what only it knows: a
 projectile's `weight` as gold pips along the cell's bottom (red when this tool cannot throw it), a
-modifier's colour as a bar, because it has no weight at all. On the ground a find glints in its tier's colour so it is
-told from a berry at a distance. A tool's **shape** says which family it is and its **palette**
-says its tier, so four 12×12 silhouettes (`TOOL_ART`: bow, sling, sword, recurve) cover six tools
-across three tiers — the same trick
-`GEAR_MATS` plays with one gear icon across four materials.
+modifier's colour as a bar, because it has no weight at all. The 8×8 glyph (`BIT_ART`, js/tools.js)
+then says what the bit *does*, in the same two grammars: a **shot** is drawn as the thing that
+flies, tip to the upper right like every other shot icon (the arrow; the barbed shaft; the
+return loop of the hookshot; the gold arrow with a light for a head; the comet wisp; the cut
+log; the icicle; the fist thrown with speed lines; the axe; the portal and the dotted line to
+it), and a **fitting** as what it does to the shots after it, never a lone shaft (fast-forward
+chevrons pointing the way the row fires; one shaft coming apart into three tips; the same arrow
+twice; a dumbbell; a head at the end of a long dashed flight; a flame, a banked fire on logs, an
+impact throwing embers). On the ground a find glints in its tier's colour so it is
+told from a berry at a distance. A tool's **shape** says which weapon it is and its **palette**
+says its tier: six 12×12 silhouettes (`TOOL_ART`: bow, recurve, horn, long, sword, sling — one a
+tool, every bow its own: the short plain D, the recurve's forward-flicked tips, the horn bow's
+swept-back ears either side of a set-back grip, the full-height gold longbow), each baked in all
+three tier palettes — the same trick `GEAR_MATS` plays with one gear icon across four materials.
 
 ### Bots
 
@@ -1194,16 +1203,34 @@ the cycle still to run before the next — dealt by the shot itself rather than 
 what a player sees (a stubby line, a pale meter) is exactly what they get. Bots read the same
 curve: `aiThink` holds to `bowCharge × k` before loosing.
 
-A shot in flight is drawn in its own pass (using `ex`/`ey`). A bit may name a **body** of its own
-and `BIT_BODY` (js/draw/render.js) is the only place those names mean anything, so a new silhouette is
-one row in `BITS` and one row there rather than an `if` in the shots pass: `tumble` is a spinning
-5×5 block (`drawTumbler`, the log), `mote` a breathing rimmed core with no bearing at all
-(`drawMote`, the wisp), `fist` and `axe` are ASCII maps in the arrow's own language stamped as a
-**block** rather than a spine (`FIST_MAP`/`AXE_MAP` → `drawSwungBody`, rimmed by `paintRimmed` —
-the fist's jagged leading edge is its knuckles, the axe is a four-px wedge on a six-px haft), and
-`warp` is not a shape at all: three bars snapping to fresh angles every `WARP_FLICK` (0.03 s)
-over a white core, so the thing crossing the snow visibly does not obey it. Everything else is
-**the one arrow body**: `ARROW_MAP`
+A shot in flight is drawn in its own pass (using `ex`/`ey`), and **what it looks like in the air
+says what it does**. A bit may name a **body** of its own and `BIT_BODY` (the `the bodies a bit
+flies as` banner, js/draw/render.js) is the only place those names mean anything, so a new
+silhouette is one row in `BITS` and one row there rather than an `if` in the shots pass. Each is
+handed the tip both rounded and exact, and a shaft rasterises from the exact one.
+
+| `body` | bit | what flies |
+| --- | --- | --- |
+| `barb` | BARBED SHOT | the arrow's head with two pairs of barbs swept back down a dark, heavier shaft (`BARB_BODY`) |
+| `lance` | ICE LANCE | an icicle five px deep: white spine, a lit face and a shaded one, no fletching, the side's wrap on its butt (`LANCE_BODY`) |
+| `care` | CARE ARROW | the arrow in gold (`CARE_INK`) with a four-armed glint breathing on its tip (`drawCare`) |
+| `hook` | HOOKSHOT | a grapple - prongs swept back, the shank in the bit's colour, the side's eye at the butt - on a twisted cord back to the thrower's hands (`drawHook`), which shortens as the boomerang comes home |
+| `tumble` | THROWING LOG | a 9×5 cut log, bark and pale end grain, turning end over end (`LOG_MAP` → `drawTumbler`) |
+| `mote` | WISP | a round core breathing between 5 and 7 px, white at its heart, dragging a comet's tail back along the ring it sweeps (`drawMote`) |
+| `fist`, `axe` | BIG FIST, BIG AXE | ASCII maps stamped as a **block** rather than a spine (`FIST_MAP`/`AXE_MAP` → `drawSwungBody`) — the fist's jagged leading edge is its knuckles, the axe a four-px wedge on a six-px haft |
+| `warp` | TELEPORT REQUEST | not a shape at all: three bars snapping to fresh angles every `WARP_FLICK` (0.03 s) over a white core, so the thing crossing the snow visibly does not obey it |
+
+The shafts (`barb`, `lance`, `care`, `hook`) are maps in `ARROW_MAP`'s own language, parsed by
+`shaftBody` (js/draw/overhead.js) and rasterised by the arrow's own DDA through `drawShaft`, so
+they are as clean on a diagonal as the arrow and keep the team's T/D on their tails. Everything
+that turns as a block (the log, the fist, the axe) goes through `stampTurned`, which samples
+*back* from every pixel into the map, so it is solid at every angle — stamping each cell forward
+leaves holes on the diagonals that the rim fills with dark. All of them wear `paintRimmed`'s or
+`paintArrowPx`'s 1 px dark edge. **A burning shot burns on its head** whatever it flies as:
+`drawShotFire` licks a tongue of fire back off the tip — a white-gold heart, an orange body, a
+red rim that keeps it off white snow — climbing as it trails and flickering every `FIRE_FLICK`,
+longer the hotter the burn (5 px on a FLAME, 7 on a PYRE, 9 on both), with a CINDER BURST's
+shot spitting sparks round its head. Everything else is **the one arrow body**: `ARROW_MAP`
 (js/actions.js), an ASCII master parsed once into `ARROW_BODY` — a white tip, a tapered flint
 head, a 1 px collar in the bit's own `col` (the bit is readable from the collar; the shaft never
 recolours), a single-gold shaft, and swept swallow-tail feathers in `TEAMS[a.team].mark` edged
@@ -1259,9 +1286,12 @@ js/draw/overhead.js).
 The weapon is also drawn **on the player** by `drawHeldTool()` (called from `drawPlayer()`): at
 rest the hands hold the tool on the *selected slot*, in its own tier colour, so what someone is
 carrying reads off their sprite from across the snow — and an empty slot reads as empty hands.
-It is carried at the hand while idle/walking (mirrored via a `scale(-1,1)` transform for `left`,
-drawn *before* the body sprite for `up` so it's occluded, 1px walk bob), and rotated toward the
-mouse while drawn — the bow art fires along −x (arc on the left), so aim rotation is `a + PI`.
+It is carried at the leading hand while idle/walking (turned to the facing, drawn *before* the
+body sprite for `up` so it's occluded, 1px walk bob), and rotated toward the mouse while drawn.
+Every art says which way its business end points as drawn (`TOOL_FWD`, js/tools.js) and the hand
+turns it by the facing or the aim minus that: a bow's arrowhead is at +x, drawn the way a bow is
+held — string toward the archer, belly toward the target — the sword's point at −x, the sling's
+stone up.
 A melee swing sweeps the axe or pick's icon along the swing arc instead, and a swing running
 under a draw (an automatic one — `autoWork`) draws **both**: the sweep first, the drawn weapon
 on top, since the shot about to leave is the thing to read.

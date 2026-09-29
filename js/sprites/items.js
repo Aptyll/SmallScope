@@ -259,24 +259,45 @@
     ]
   ];
 
-  // Roguelike cards: one shared silhouette (a card face with a sparkle pip),
-  // five palettes - the rarity IS the card's colour, the way GEAR_MATS tints
-  // one gear icon across levels instead of drawing four. 'C' carries the
-  // rarity hex, 'G' is a shared white sparkle, 'o' a shared dark rim.
-  const itemCard = [
-    '........',
-    '.oooooo.',
-    '.oCCCCo.',
-    '.oCCCCo.',
-    '.oCGGCo.',
-    '.oCGGCo.',
-    '.oCCCCo.',
-    '.oooooo.',
-  ];
-  const CARD_PAL = (hex) => ({ '.': null, 'o': '#141c30', 'C': hex, 'G': '#ffffff' });
+  // Roguelike cards: one card back, the full height of the icon, in the
+  // rarity's colour - lit along its top and left edge ('L'), shaded along its
+  // bottom and right ('c'), inside a dark rim ('o') that holds it off white
+  // snow - with the rarity COUNTED on it as a die counts: one pip on a white,
+  // two on a green, three, four, five on a gold ('E', dark on the pale white
+  // card and white on the rest). The count is what tells the five apart under
+  // any palette, so the colour is never the only thing carrying it; the top
+  // two also throw a glint off the corner ('x').
+  const itemCards = {
+    white: [
+      '.oooooo.', '.oLLLCo.', '.oLCCco.', '.oCEEco.',
+      '.oCEEco.', '.oCCcco.', '.occcco.', '.oooooo.',
+    ],
+    green: [
+      '.oooooo.', '.oLLLCo.', '.oECCco.', '.oCCCco.',
+      '.oCCCco.', '.oCCCEo.', '.occcco.', '.oooooo.',
+    ],
+    blue: [
+      '.oooooo.', '.oLLLCo.', '.oECCco.', '.oCEEco.',
+      '.oCEEco.', '.oCCCEo.', '.occcco.', '.oooooo.',
+    ],
+    purple: [
+      '.oooooox', '.oLLLCo.', '.oECCEo.', '.oCCCco.',
+      '.oCCCco.', '.oECCEo.', '.occcco.', '.oooooo.',
+    ],
+    gold: [
+      '.oooooox', '.oLLLCo.', '.oECCEo.', '.oCEEco.',
+      '.oCEEco.', '.oECCEo.', '.occcco.', '.oooooo.',
+    ],
+  };
+  // C is the rarity's own hex - RES_COLORS in js/structures.js reads the same
+  // five, so a card's floater is its card's colour
+  const CARD_PAL = (C, L, c, E) => ({ '.': null, o: '#141c30', x: '#ffffff', C, L, c, E });
   const CARD_PALS = {
-    white: CARD_PAL('#d9dfe8'), green: CARD_PAL('#5fd18a'), blue: CARD_PAL('#4a90e2'),
-    purple: CARD_PAL('#a259e6'), gold: CARD_PAL('#e8a33d'),
+    white:  CARD_PAL('#d9dfe8', '#ffffff', '#9aa4b8', '#4a5470'),
+    green:  CARD_PAL('#5fd18a', '#b0f0c4', '#2f8a56', '#ffffff'),
+    blue:   CARD_PAL('#4a90e2', '#a4ccff', '#2a5a9e', '#ffffff'),
+    purple: CARD_PAL('#a259e6', '#dcbcff', '#6a2fa8', '#ffffff'),
+    gold:   CARD_PAL('#e8a33d', '#ffdc8e', '#a8661a', '#ffffff'),
   };
 
   // The backpack's own glyph: 12x12 like a gear icon, because it sits in the
@@ -718,11 +739,11 @@
     goldSack: sack.map((f) => bake(f, SACKPAL)),
     // the same 16px stamp, but for the plate that is about STOCK not price
     crate: bake(crate, CRATE_PAL),
-    itemCardWhite: bake(itemCard, CARD_PALS.white),
-    itemCardGreen: bake(itemCard, CARD_PALS.green),
-    itemCardBlue: bake(itemCard, CARD_PALS.blue),
-    itemCardPurple: bake(itemCard, CARD_PALS.purple),
-    itemCardGold: bake(itemCard, CARD_PALS.gold),
+    itemCardWhite: bake(itemCards.white, CARD_PALS.white),
+    itemCardGreen: bake(itemCards.green, CARD_PALS.green),
+    itemCardBlue: bake(itemCards.blue, CARD_PALS.blue),
+    itemCardPurple: bake(itemCards.purple, CARD_PALS.purple),
+    itemCardGold: bake(itemCards.gold, CARD_PALS.gold),
     itemAxe: bake(itemAxe, AXPAL),
     itemBow: bake(itemBow, AXPAL),
     itemPick: bake(itemPick, AXPAL),

@@ -253,9 +253,9 @@ pack and weapon, and the loot pools all pick it up
 with no other edit. Both need a `price`, or the merchant sells it for nothing and buys it back
 for nothing ([the counter](gameplay.md#the-merchants-counter) - half the price is what it fetches,
 and a tool carries its loaded bits into that sum). A **tool** needs `rof`/`cap`/`tensile`/`tier`
-and an `art` key — reuse one of
-the four 12×12 silhouettes in `TOOL_ART` (bow, recurve, sword, sling; each baked once per tier)
-or add a fifth, with its heading in `TOOL_FWD`. `tensile`
+and an `art` key — every tool has a 12×12 silhouette of its own in `TOOL_ART` (bow, recurve,
+horn, long, sword, sling; each baked once per tier), so add one, with its heading in `TOOL_FWD`,
+and draw a bow the way it is held (string toward the archer, arrowhead at +x). `tensile`
 is the **weight budget one press spends**, not a ceiling on one bit: price it against `cap` at
 roughly four weight a cell, or the tool either cannot fire what it holds or never has to choose.
 `tier` and `cap` together also decide what a find does when it is walked over: a higher tier with
@@ -274,7 +274,8 @@ one path is the only one in the game handing the next person to walk over it a f
 
 **Every bit needs a `weight`**, both kinds, because weight is what the press spends. A
 **projectile bit** also needs `path`/`solid`/`ff`/`kb`/`life`/`speed`/`dmg`/`col` and an
-8×8 grid in `BIT_ART` — `kb` being KNOCKBACK, a *multiplier* on the shove that kind of body
+8×8 grid in `BIT_ART` (the icon grammar: [tiers, and how a find reads](gameplay.md#tiers-and-how-a-find-reads))
+— `kb` being KNOCKBACK, a *multiplier* on the shove that kind of body
 takes anyway, where 1 is the ordinary blow and a missing one means the same
 ([knockback](gameplay.md#knockback-one-number-thrown-at-three-weights)); a **modifier bit** needs
 `proj: false` and a `mod(m)` that edits the envelope `toolPlan` walks forward.

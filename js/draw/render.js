@@ -672,22 +672,19 @@ function render() {
   // the body trails ARROW_LEN px behind it.
   for (const a of arrows) {
     if (a.kind === 'bolt') { drawBolt(a, ex, ey); continue; }
-    const vd = Math.hypot(a.vx, a.vy) || 1;
-    const nx = a.vx / vd, ny = a.vy / vd;
     const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
     if (hx < -22 || hx > WV_W + 22 || hy < -22 || hy > WV_H + 22) continue;
-    // Not everything a tool fires is a shaft. A log tumbles as a block, a
-    // conjured mote is a glow with no bearing at all, a fist and an axe are
-    // swung bodies and a teleport request is not a shape at all - so a bit
-    // may name a BODY of its own (`body`, js/tools.js) and the table below is
-    // where that name is answered. Everything else is the arrow silhouette,
-    // wearing the bit's own colour on the collar behind the head.
+    // Not every bit flies as the plain arrow: a bit may name a BODY of its
+    // own (`body`, js/tools.js) - a barbed or an icy shaft, a grapple on its
+    // cord, a tumbling log, a mote with no bearing at all, a swung fist or
+    // axe, a teleport request that is not a shape - and BIT_BODY (the bodies
+    // a bit flies as, below) is where that name is answered. Everything else
+    // is the arrow, wearing the bit's own colour on the collar behind the head.
     const bd = a.body && BIT_BODY[a.body];
-    if (bd) { bd(a, hx, hy, now); continue; }
-    ARROW_PX.length = 0;
-    arrowBodyPx(ARROW_PX, a.x - ex, a.y - ey, nx, ny, 0, ARROW_LEN,
-      TEAMS[skin(a.team)].mark, TEAMS[skin(a.team)].coatD, a.col || ARROW_INK.G, 0);
-    paintArrowPx(ARROW_PX);
+    if (bd) bd(a, hx, hy, now, a.x - ex, a.y - ey);
+    else drawShaft(a, a.x - ex, a.y - ey);
+    // ...and whatever it flies as, a shot carrying fire burns on its head
+    if (a.burn > 0) drawShotFire(a, hx, hy, now);
   }
 
   drawWarps(ex, ey); // the silhouettes a teleport request strung across its jump
@@ -807,49 +804,155 @@ function render() {
   if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI) drawCursor(cur, now);
 }
 
-// the info stack (settings.info - the INFO row in the ESC menu, or F3, the
-// minecraft reflex): fps, the framed player's tile coordinates, and the run
-// seed as one vertical list on the left edge at the top quarter of the view,
-// clear of the berry/fish counters above it, above every overlay. In title
-// only the fps line shows - nobody stands anywhere yet, and the menu prints
-// the seed itself with the reroll die.
-// A thrown log: a 5x5 block spinning about its own centre as it arcs. Drawn
-// as four rotated corner runs rather than a sprite, so it reads at any angle
-// the way the arrow body does, and rimmed for the same reason.
-function drawTumbler(a, hx, hy) {
-  const s = a.t * 9;
-  const c = Math.cos(s), n = Math.sin(s);
-  const put = (col, r) => {
-    ctx.fillStyle = col;
-    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
-      ctx.fillRect(Math.round(hx + dx * c - dy * n), Math.round(hy + dx * n + dy * c), 1, 1);
-    }
-  };
-  put(ARROW_RIM, 3);
-  put(a.col || '#a3794f', 2);
-  ctx.fillStyle = '#d9ad72';
-  ctx.fillRect(Math.round(hx - c - n), Math.round(hy - n + c), 1, 1);
+// ---- the bodies a bit flies as -------------------------------------------
+// What a shot looks like in the air says what it IS: the plain arrow is the
+// one shared body (ARROW_MAP, js/actions.js), and every bit that does
+// something else names a body of its own (`body` on BITS, js/tools.js) that
+// BIT_BODY at the foot of this section answers. Each is handed the shot, its
+// tip rounded (hx, hy) and exact (x, y) in world-view px, and the clock.
+//
+// A small map TURNED to any angle by inverse sampling: every pixel in the box
+// it can reach asks which map cell it falls in, so a spinning body has no
+// holes at any angle (stamping each cell forward leaves gaps on the
+// diagonals). Writes into `body`, the pixel map paintRimmed takes.
+function stampTurned(body, rows, ink, cx, cy, ang) {
+  const h = rows.length, w = rows[0].length;
+  const c = Math.cos(ang), s = Math.sin(ang);
+  const R = Math.ceil(Math.hypot(w, h) / 2);
+  const X = Math.round(cx), Y = Math.round(cy);
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
+    const col = Math.round(dx * c + dy * s + (w - 1) / 2);
+    const row = Math.round(-dx * s + dy * c + (h - 1) / 2);
+    if (row < 0 || row >= h || col < 0 || col >= w || rows[row][col] === '.') continue;
+    body.set((X + dx) + ',' + (Y + dy), ink[rows[row][col]]);
+  }
 }
-// A conjured mote: no bearing, so no shaft - a rimmed core that breathes, and
-// the one shot whose light in the dark is the point of it
+// THROWING LOG: a cut log turning end over end as it arcs - bark down its
+// length, the pale cut wood at both ends, so it reads as timber and not as
+// a crate at every angle it passes through.
+const LOG_MAP = [
+  '.wwwwwww.',
+  'vWWwWWWWv',
+  'vWWWWWwWv',
+  'vWwWWWWWv',
+  '.wwwwwww.',
+];
+const LOG_INK = { w: '#6b4a30', W: '#a3794f', v: '#e0bb85' };
+function drawTumbler(a, hx, hy) {
+  const body = new Map();
+  stampTurned(body, LOG_MAP, LOG_INK, hx, hy, a.t * 9);
+  paintRimmed(body);
+}
+// WISP: a conjured mote - a round core that breathes between five and seven
+// px across, white at its heart, dragging a comet's tail back along the ring
+// it is sweeping, so it reads as going ROUND rather than as a dot. The tail
+// is two px thick where it leaves the core and thins to the deeper blue.
 function drawMote(a, hx, hy, now) {
-  const r = 2 + Math.round(Math.abs(Math.sin(now * 7 + a.ox)) );
-  ctx.fillStyle = ARROW_RIM;
-  ctx.fillRect(hx - r, hy - r + 1, r * 2 + 1, r * 2 - 1);
-  ctx.fillRect(hx - r + 1, hy - r, r * 2 - 1, r * 2 + 1);
-  ctx.fillStyle = a.col || '#8fd8ff';
-  ctx.fillRect(hx - r + 1, hy - r + 1, r * 2 - 1, r * 2 - 1);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(hx, hy, 1, 1);
+  const r = 2 + Math.round(Math.abs(Math.sin(now * 7 + a.ox)));
+  const vd = Math.hypot(a.vx, a.vy) || 1, nx = a.vx / vd, ny = a.vy / vd;
+  const col = a.col || '#8fd8ff';
+  const body = new Map();
+  for (let k = r + 5; k > r; k--) {
+    const tx = hx - nx * k, ty = hy - ny * k, c = k > r + 3 ? '#4a90e2' : col;
+    body.set(Math.round(tx) + ',' + Math.round(ty), c);
+    if (k <= r + 2) body.set(Math.round(tx - ny) + ',' + Math.round(ty + nx), c);
+  }
+  for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+    const d2 = dx * dx + dy * dy;
+    if (d2 <= r * r + r) body.set((hx + dx) + ',' + (hy + dy), d2 <= 2 ? '#e8f8ff' : col);
+  }
+  body.set(hx + ',' + hy, '#ffffff');
+  paintRimmed(body);
+}
+
+// ---- the shafts ----------------------------------------------------------
+// The bits that fly as a SHAFT but not as the plain arrow: maps in ARROW_MAP's
+// own language, rasterised by the same DDA (arrowBodyPx, js/draw/overhead.js)
+// so every one of them is as clean on a diagonal as the arrow is. T/D are
+// still the team's feather and its edge and B the bit's own colour, so whose
+// shot it is keeps reading off the tail.
+function drawShaft(a, x, y, body, ink, more) {
+  const vd = Math.hypot(a.vx, a.vy) || 1;
+  ARROW_PX.length = 0;
+  arrowBodyPx(ARROW_PX, x, y, a.vx / vd, a.vy / vd, 0, ARROW_LEN,
+    TEAMS[skin(a.team)].mark, TEAMS[skin(a.team)].coatD, a.col || ARROW_INK.G, 0, body, ink);
+  if (more) more(ARROW_PX);
+  paintArrowPx(ARROW_PX);
+}
+// BARBED SHOT: the arrow's head with two pairs of barbs swept back down a
+// dark, heavier shaft - what makes it hit harder is on the front of it
+const BARB_BODY = shaftBody([
+  '.............DDD',
+  '...F..F....TTTD.',
+  '..F..F...TTTTT..',
+  'WFFFFFBwwwww....',
+  '..F..F...TTTTT..',
+  '...F..F....TTTD.',
+  '.............DDD',
+], 'wTDFBW');
+const BARB_INK = { W: '#ffffff', F: '#9aa3b8', w: '#7a5234' };
+// ICE LANCE: an icicle - no fletching, a white spine, a lit face and a
+// shaded one, widest a third of the way back, with the side's wrap on its
+// butt. Five px deep against the arrow's three of shaft: it is the heavy one.
+const LANCE_BODY = shaftBody([
+  '....iiii........',
+  '..iiiiiiiicc.TD.',
+  'WxxxxxxccccccTTD',
+  '..IIIIIIIIII.TD.',
+  '....IIII........',
+], 'IciTDxW');
+const LANCE_INK = { W: '#ffffff', x: '#f0faff', i: '#bfe6ff', c: '#8fd8ff', I: '#4a90e2' };
+// CARE ARROW: the arrow in gold with a light for a head - a four-armed glint
+// on the tip that breathes, the shot whose whole point is that it is lit
+const CARE_INK = { W: '#ffffff', F: '#fff2c0', G: '#f2cc6a' };
+function drawCare(a, hx, hy, now, x, y) {
+  drawShaft(a, x, y, ARROW_BODY, CARE_INK, (px) => {
+    const n = Math.sin(now * 16 + a.ox) > 0 ? 2 : 1;
+    for (let k = 1; k <= n; k++) {
+      const c = k === 1 ? '#fff2c0' : '#ffe08a';
+      px.push(hx + k, hy, c, hx - k, hy, c, hx, hy + k, c, hx, hy - k, c);
+    }
+    px.push(hx, hy, '#ffffff');
+  });
+}
+// HOOKSHOT: a grapple - prongs swept back off the crown, the shank in the
+// bit's colour and the side's eye at the butt - on a cord back to the hands
+// that threw it. The cord is the tell for what the path does: it goes out on
+// a line and comes home on it, the cord shortening as it is reeled in.
+const HOOK_BODY = shaftBody([
+  '..FW........',
+  '.F........T.',
+  'FBBBBGGGGT.T',
+  '.F........T.',
+  '..FW........',
+], 'GTBFW');
+const HOOK_INK = { W: '#ffffff', F: '#c8d2e4', G: '#a3794f' };
+const HOOK_EYE = 11;   // i of the eye the cord is tied to
+const HOOK_SLACK = 5;  // px of cord left out of the hands, so it never crosses the body
+function drawHook(a, hx, hy, now, x, y) {
+  const o = players[a.owner];
+  if (o && o.active && !o.dead && !inAir(o)) {
+    const vd = Math.hypot(a.vx, a.vy) || 1;
+    const tx = x - a.vx / vd * HOOK_EYE, ty = y - a.vy / vd * HOOK_EYE;
+    const fx = o.x - (a.x - x), fy = o.y - BOW_Y - (a.y - y);
+    const dx = tx - fx, dy = ty - fy, d = Math.hypot(dx, dy);
+    // a twisted cord: two browns swapping every two px
+    for (let s = HOOK_SLACK; s < d; s++) {
+      ctx.fillStyle = (s >> 1) & 1 ? '#6b4a30' : '#b08a5a';
+      ctx.fillRect(Math.round(fx + dx * s / d), Math.round(fy + dy * s / d), 1, 1);
+    }
+  }
+  drawShaft(a, x, y, HOOK_BODY, HOOK_INK);
 }
 
 // ---- the swung bodies ----------------------------------------------------
 // The BIG FIST and the BIG AXE are ASCII maps in the arrow's own language -
-// i runs 0 (the leading edge) back along the flight, j across it - but they
-// are drawn as a BLOCK rather than a spine, because they are wide bodies
-// rather than shafts: every cell is stamped at its own offset and the whole
-// map wears one dark rim (paintRimmed, js/draw-world.js), so the shape reads
-// at any bearing without the DDA a one-pixel-thin shaft needs.
+// a column runs 0 (the leading edge) back along the flight, a row across it -
+// but they are drawn as a BLOCK rather than a spine, because they are wide
+// bodies rather than shafts: the map is turned onto the bearing by
+// stampTurned (inverse sampled, so it is solid at every angle, where a
+// forward stamp of each cell left holes on the diagonals that the rim filled
+// with dark) and wears one dark rim (paintRimmed, js/draw/structs.js).
 // The leading edge ALTERNATES between i 0 and i 1 down the rows: that jagged
 // front is the knuckles, and it is the whole reason the shape reads as a fist
 // rather than as a rock. `k` is the fold the fingers close on, `w` the cuff.
@@ -878,25 +981,14 @@ const BIT_INK = {
   K: '#e8b98a', k: '#b8845c', w: '#6b4a30',                  // the fist
   W: '#f4f7ff', s: '#cfd8e8', S: '#8b93a8', h: '#a3794f',    // ...and the axe
 };
-// [i, j, key] triples, parsed once per map the way ARROW_BODY is
-function bitBody(rows) {
-  const out = [];
-  const mid = (rows.length - 1) >> 1;
-  for (let r = 0; r < rows.length; r++)
-    for (let i = 0; i < rows[r].length; i++)
-      if (rows[r][i] !== '.') out.push(i, r - mid, rows[r][i]);
-  return out;
-}
-const FIST_BODY = bitBody(FIST_MAP), AXE_BODY = bitBody(AXE_MAP);
-function drawSwungBody(a, hx, hy, px) {
-  const vd = Math.hypot(a.vx, a.vy) || 1;
-  const nx = a.vx / vd, ny = a.vy / vd, qx = -ny, qy = nx;
+// the map's middle rides (w - 1) / 2 px behind the tip, so its leading edge
+// is where the sim tests; both maps are mirror-symmetric across the flight,
+// so which way the rows run does not matter
+function drawSwungBody(a, x, y, rows) {
+  const vd = Math.hypot(a.vx, a.vy) || 1, nx = a.vx / vd, ny = a.vy / vd;
+  const back = (rows[0].length - 1) / 2;
   const body = new Map();
-  for (let k = 0; k < px.length; k += 3) {
-    const i = px[k], j = px[k + 1];
-    body.set(Math.round(hx - nx * i + qx * j) + ',' + Math.round(hy - ny * i + qy * j),
-      BIT_INK[px[k + 2]]);
-  }
+  stampTurned(body, rows, BIT_INK, x - nx * back, y - ny * back, Math.atan2(-ny, -nx));
   paintRimmed(body);
 }
 // TELEPORT REQUEST: not a shape at all. Three bars snap to a fresh set of
@@ -918,15 +1010,60 @@ function drawWarpShot(a, hx, hy) {
   body.set(hx + ',' + hy, '#ffffff');
   paintRimmed(body);
 }
+
+// ---- fire riding a shot --------------------------------------------------
+// A shot a FLAME, PYRE or CINDER BURST reached is ALIGHT, and says so on its
+// head rather than only in the embers it trails: a tongue of fire licks back
+// off the tip - three px wide at its belly, a white-gold heart inside an
+// orange body inside a red rim (the rim is what keeps it off white snow),
+// tapering to a red point that climbs as it trails the way a flame does -
+// and every FIRE_FLICK s each px of its edge shifts. A hotter fire is a
+// longer tongue: n grows with the burn a second, so a PYRE (twice a FLAME's)
+// throws twice the fire. A CINDER BURST's shot spits sparks round its head,
+// the embers it is going to throw where it lands.
+const FIRE_FLICK = 0.06;
+function drawShotFire(a, hx, hy, now) {
+  const vd = Math.hypot(a.vx, a.vy) || 1, nx = a.vx / vd, ny = a.vy / vd;
+  const heat = Math.max(1, Math.min(3, Math.round(a.burnDps / BURN_DPS)));
+  const n = 3 + heat * 2;                     // 5 a FLAME, 7 a PYRE, 9 both
+  const q = Math.floor(now / FIRE_FLICK) + Math.round(a.ox * 7);
+  const px = new Map();
+  for (let k = 1; k <= n; k++) {
+    const f = k / n;
+    const half = f < 0.75 ? 1 : 0;            // three wide through the belly, one at the point
+    const lift = (k * 0.45) | 0;              // it climbs as it trails
+    for (let w = -half - 1; w <= half + 1; w++) {
+      // the edge flickers: the outermost px on each side comes and goes
+      const edge = Math.abs(w) > half, side = w !== 0;
+      if (edge && ((q + k * 3 + (w > 0 ? 5 : 0)) % 4) !== 0) continue;
+      const col = side ? (f < 0.5 ? '#ff7a2a' : '#e0381a')
+        : f < 0.34 ? '#fff2c0' : f < 0.6 ? '#ffd95c' : f < 0.85 ? '#ff9440' : '#e0381a';
+      px.set(Math.round(hx - nx * k - ny * w) + ',' + (Math.round(hy - ny * k + nx * w) - lift), col);
+    }
+  }
+  for (const [k, col] of px) { const i = k.indexOf(','); ctx.fillStyle = col; ctx.fillRect(+k.slice(0, i), +k.slice(i + 1), 1, 1); }
+  if (a.cinder > 0) {
+    for (let e = 0; e < 3; e++) {
+      const h = (q * 13 + e * 29) & 63;
+      ctx.fillStyle = e ? '#ffd95c' : '#ff9440';
+      ctx.fillRect(hx + (h & 7) - 4, hy + (h >> 3) - 5, 1, 1);
+    }
+  }
+}
+
 // Which body a bit flies as. A kind names one in its own table row (`body`,
 // js/tools.js) and this is the only place those names mean anything - so a
 // new silhouette is one row there and one row here, never an `if` in the
-// shots pass.
+// shots pass. No `body` is the plain arrow.
 const BIT_BODY = {
   tumble: drawTumbler,
   mote: drawMote,
-  fist: (a, hx, hy) => drawSwungBody(a, hx, hy, FIST_BODY),
-  axe: (a, hx, hy) => drawSwungBody(a, hx, hy, AXE_BODY),
+  barb: (a, hx, hy, now, x, y) => drawShaft(a, x, y, BARB_BODY, BARB_INK),
+  lance: (a, hx, hy, now, x, y) => drawShaft(a, x, y, LANCE_BODY, LANCE_INK),
+  care: drawCare,
+  hook: drawHook,
+  fist: (a, hx, hy, now, x, y) => drawSwungBody(a, x, y, FIST_MAP),
+  axe: (a, hx, hy, now, x, y) => drawSwungBody(a, x, y, AXE_MAP),
   warp: drawWarpShot,
 };
 
@@ -1002,6 +1139,12 @@ function drawSwaps(ex, ey) {
   ctx.globalAlpha = 1;
 }
 
+// the info stack (settings.info - the INFO row in the ESC menu, or F3, the
+// minecraft reflex): fps, the framed player's tile coordinates, and the run
+// seed as one vertical list on the left edge at the top quarter of the view,
+// clear of the berry/fish counters above it, above every overlay. In title
+// only the fps line shows - nobody stands anywhere yet, and the menu prints
+// the seed itself with the reroll die.
 function drawTags() {
   if (!settings.info) return;
   // two columns: a dim label, then the value on one shared x so the numbers
