@@ -1,8 +1,8 @@
 'use strict';
 // Everything with four legs or wings: the imp, the rabbit, the deer, the wolf,
-// the bird, and the camps' alpha and dire wolf derived from the wolf.
+// the bird. The camps' two bears are js/sprites/bears.js.
 (() => {
-  const { bake, flipH, bakeClips, mapClips, wash, double } = SPR;
+  const { bake, flipH, bakeClips, mapClips } = SPR;
 
   // ---------------------------------------------------------------- imp
   const IPAL = {
@@ -1272,17 +1272,4 @@
     deer: { right: deerSet, left: mapClips(deerSet, flipH) },
     imp: [bake(imp1, IPAL), bake(imp2, IPAL)],
   });
-
-  // ---------------------------------------------------------------- the camps' wolves
-  // PLACEHOLDER LOOKS, derived from the wolf rather than drawn: the buff
-  // camp's ALPHA is the same grids washed toward silver, the epic camp's
-  // DIRE WOLF is them washed toward a dark red and doubled to 32x26 with
-  // nearest-neighbour, so it reads as twice the animal at any zoom. Each
-  // wants its own grid one day (the concept-art skill); until then
-  // drawAnimal (draw-world.js) treats them as a wolf with a bigger frame.
-  const W = window.SPRITES.wolf;
-  const alphaSkin = (s) => wash(s, '#dfe6f4', 0.45);
-  const direSkin = (s) => double(wash(s, '#5a1e2c', 0.5));
-  window.SPRITES.alpha = { right: mapClips(W.right, alphaSkin), left: mapClips(W.left, alphaSkin) };
-  window.SPRITES.dire = { right: mapClips(W.right, direSkin), left: mapClips(W.left, direSkin) };
 })();

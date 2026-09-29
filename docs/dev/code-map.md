@@ -24,7 +24,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the `SPR` helpers every sprite file bakes with (`bake`, `flipH`, `bakeClips`/`mapClips`, `wash`, `double`), and the team palettes | its head; `teams` | `teams` |
+| the `SPR` helpers every sprite file bakes with (`bake`, `flipH`, `bakeClips`/`mapClips`), and the team palettes | its head; `teams` | `teams` |
 
 ## js/sprites/characters.js (legacy IIFE)
 
@@ -55,7 +55,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the imp, the rabbit, the deer, the wolf, the camps' wolves, and the clip sets built from them | by banner (`bakeClips` at the foot) | `imp`, `rabbit`, `deer`, `wolf`, `the camps' wolves` |
+| the imp, the rabbit, the deer, the wolf, and the clip sets built from them | by banner (`bakeClips` at the foot) | `imp`, `rabbit`, `deer`, `wolf` |
+
+## js/sprites/bears.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the brown bear (`dire`) and black bear (`alpha`) clips; never edit, rebake with app/bake-bears/bake.py (the rig: rig.py paints and bands, bear.py lays out and poses, anim.py walks and swipes) | `BROWN`/`BLACK`, `BROWN_PAL`/`BLACK_PAL` | - |
 
 ## js/sprites/eagle.js (legacy IIFE)
 
@@ -216,7 +222,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the tuning for everything wild: the prey's bolt, the deer's sprint and the rabbit's jink, the holes cut down to the fish, the shoal itself, the pack, the flock | `FLEE_SIGHT`/`FLEE_TIME`/`PREY_SPD`/`PREY_RUN`, `DEER_WALK_MUL`/`DEER_RUN_MUL`/`DEER_EASE_T`, `DEER_SPRINT`/`DEER_SPRINT_T`/`DEER_SPRINT_REGEN`, `RABBIT_DODGE_*`, `ICE_HOLE_HITS`, `HOLE_FALL_DMG`/`HOLE_FALL_T`, `FISH_CATCH_R`, `FISH_MAX`/`FISH_MIN`/`FISH_SPAWN_FAST`/`FISH_EMERGE_*`, `MONSTER`, `CAMP_GROUND`/`CAMP_LEASH_T`/`CAMP_REGEN_T`, `BIRD_*` | the top of `animals` (the prey), `fish` (the ice and shoal half) and above `camp monsters` (the three wolves, and the dormant flock); `FISH_SPAWN_T` alone stays in core.js |
 | an animal taking a hit from anything (arrow or roll): flee/wake, floater, knockback, kill credit | `hurtAnimal` | `animals` |
 | where an animal walks next: the graze/patrol goal, and the bolt away from a player | `wanderGoal`, `preyWander`, `fleeGoal` | `animals` |
-| a camp monster: neutral until hit, the camp waking on the hitter, the leash bar that holds on the camp's ground and drains off it, the heal at home, the bite | `isCampKind`, `wakeCamp`, `updateCampMonster` | `camp monsters` |
+| a camp monster: neutral until hit, the camp waking on the hitter, the leash bar that holds on the camp's ground and drains off it, the heal at home, the bite | `MONSTER`, `isCampKind`, `isBigBeast`, `wakeCamp`, `updateCampMonster`, `BITE_FRAMES` (a bear's swipe clip held) | `camp monsters` |
 | ALPHA'S BLOOD: the midline kills' team payout and buff | `CAMP_BUFF_EPIC_T`/`CAMP_BUFF_DMG`/`CAMP_BUFF_SPD`, `EPIC_TEAM_GOLD`, `campBuff` (above the banner); the grants in `animalDies` | `animals`/`camp monsters` (what it does: `hurtUnit`, actions.js; `abilityMoveMul`, abilities.js; the tick, `updateAbilities`, abilities.js; the ring: `drawBuffRing`, js/draw/bodies.js) |
 | the flock: the flush, the circuit, the perch | `flushBirds`, `updateBird` | `birds` |
 | fish shoal and ice holes | `updateFish`, `fishClear`, `fishWater`, `spawnFish` | `fish` |
@@ -494,7 +500,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | drawing players / animals / robots / the merchant / held tool | `drawPlayer`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
-| the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
+| the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js and bears.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
 | ALPHA'S BLOOD worn: the amber ring of pips around a blooded player's feet | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
 | a body going down: the frozen shatter or the wind, picked by `hash2(id, deaths)`, started off the edge of `p.dead` | `DOWN_T`, `trackDowns` (from `render()` before the draw list), `goingDown` (also held by `viewPlayer` and the replay), `drawDown` | `going down` |
 | the snow over a buried body, its row spans, and the bury meter | `drawSnowCover`, `poseBounds`, `poseSpans`, `drawBuryRing` | - |

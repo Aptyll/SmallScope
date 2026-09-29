@@ -42,8 +42,8 @@ A settings toggle (MY TEAM) shows the roster's real colours instead.
 corner through the woods and all, so the two roosts sit on opposite halves: it meets the road once,
 at the middle where the waves meet, under a timber bridge with open sides, and elsewhere it is
 crossed only at stepping-stone fords, or by a dodge roll from the bank. It swings round the two
-midline camps in a half-loop each, so each side owns one on its own bank: the dire hollow is RED's,
-the alpha stone BLUE's. Anyone who steps in plunges as through the ice, and a bot shoved off the
+midline camps in a half-loop each, so each side owns one on its own bank: the brown bear den is RED's,
+the black bear stone BLUE's. Anyone who steps in plunges as through the ice, and a bot shoved off the
 bridge goes in like anybody. [The creek](world.md#the-creek).
 
 The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest border and an interior
@@ -177,7 +177,7 @@ bot on the team lifts its own and follows it. [Team flags](gameplay.md#team-flag
 
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
-**ALPHA STONE** and one **DIRE HOLLOW**, one on each side's bank of the creek, whose kill pays and
+**BLACK BEAR STONE** and one **BROWN BEAR DEN**, one on each side's bank of the creek, whose kill pays and
 bloods the whole team the same either way.
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and heals — and every site sits well off the road, so the lane is never a
