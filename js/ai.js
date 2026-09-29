@@ -1016,7 +1016,8 @@ function aiThink(p, dt) {
   // 10. harvest: walk to a tree/rock/berry bush/chest and hold E on it
   // (a stripped bush stops being work, so drop it the moment it empties)
   if (ai.tgt && (objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt ||
-    (ai.tgt.type === 'bush' && ai.tgt.berries <= 0) || (ai.tgt.type === 'rock' && !rockReady(ai.tgt)))) ai.tgt = null;
+    (ai.tgt.type === 'bush' && ai.tgt.berries <= 0) ||
+    (ai.tgt.type === 'rock' && (!rockReady(ai.tgt) || (rockMiner(ai.tgt) && rockMiner(ai.tgt) !== p))))) ai.tgt = null;
   ai.avoidT -= dt;
   if (ai.avoidT <= 0) ai.avoid = null;
   // (under a DEFEND or GATHER order the work is bounded to the order's ring)
@@ -1036,9 +1037,9 @@ function aiThink(p, dt) {
     const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
     if (Math.max(Math.abs(t.tx - ptx), Math.abs(t.ty - pty)) <= WORK_REACH) {
       // the E key at the profile's duty cycle - a slow side rests between
-      // swings, which is what sets how fast it levels. A rock is a channel
-      // that a let-go key throws away, so it is held until the rock breaks.
-      inp.work = t.type === 'rock' || prof.work >= 1 || (state.tick % 120) < 120 * prof.work;
+      // swings, which is what sets how fast it levels. A rock takes no key:
+      // standing by it is the mining (updateMine, js/mining.js).
+      inp.work = t.type !== 'rock' && (prof.work >= 1 || (state.tick % 120) < 120 * prof.work);
       return;
     }
     // route to any tile within WORK_REACH of it, whichever side is open;

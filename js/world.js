@@ -48,12 +48,10 @@ const OBJECTS = {
   deadTree: { solid: true,  tool: 'axe',  needs: 'axe',  verb: 'CHOP', lift: 20, auto: true,
               mm: [138, 128, 116], map: CH_FOREST },
   // a rock (ROCK_KINDS, js/mining.js): two tiles wide, the anchor its west
-  // tile and a `part` on the east one (placeRocks), mined by a CHANNEL on the
-  // work key and never by the hands - so not `auto`, and E's prompt shows
-  // over it. `ready` is the rubble: a mined rock is not offered until it
-  // has grown back. `lift` clears its kind's height.
-  rock:     { solid: true,  w: 2, tool: 'pick', needs: 'pick', verb: 'MINE', lift: (o) => ROCK_KINDS[o.kind].lift + 12,
-              ready: (o) => rockReady(o),
+  // tile and a `part` on the east one (placeRocks). It mines itself for
+  // whoever stands by it (updateMine), so it has no `tool`: E never reaches
+  // for it and the hands never swing at it.
+  rock:     { solid: true,  w: 2,
               mm: [122, 131, 153] },
   // a picked bush is still a bush: `ready` is what decides whether E offers it
   // (a bush is on the minimap and off the chart: one tile of anything is
@@ -1603,7 +1601,6 @@ function zipStart(p, near) {
   if (p.grapT > 0) grapEnd(p);      // off the rope and onto the handle
   risePlayer(p);                    // up out of the snow first
   breakEat(p);                      // the meal is over: both hands are on the handle
-  breakMine(p);                     // ...and so is the pick
   cancelCatch(p);
   if (p.charging) { p.charging = false; p.chargeT = 0; }
   p.fireArmed = false;

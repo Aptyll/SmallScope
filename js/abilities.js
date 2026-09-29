@@ -231,7 +231,6 @@ function tryAbility(p, i) {
   // says so, and the press reddens it the way a bit that will not fit reddens
   // the tool well (abDenied, js/ui.js)
   if (!abUnlocked(p, i)) { if (p === player) abDenied(i); return; }
-  breakMine(p); // an ability is the hands off the pick (js/mining.js)
   // THE SLAM: the shield key while the wall is up, or mid-charge. A charge
   // stops on the spot (the body it carried is slammed where it stands) and
   // the wind-up begins from there; without a wall up the slam is the shield's
