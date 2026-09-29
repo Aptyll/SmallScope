@@ -1240,8 +1240,13 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   and `renderLighting` stamps the queue after the night grade — draw the outline in place and
   the tint sinks a team colour into blue snow. The queue itself:
   [Light and weather](#light-and-weather). Sites: floaters (damage numbers, gold, `LEVEL n`),
-  the overhead name tags, a roost's `PERCH` tag, the noticed `!` (`drawSenseMark`). Called from
-  a UI pass (the wiki's animal page) it draws the outline where it stands.
+  the overhead name tags, `MERCH`, the roost's `PERCH` (2x), the noticed `!` (`drawSenseMark`).
+  Called from a UI pass (the wiki's animal page) it draws the outline where it stands. Names on
+  the ground **overlap**, as League's do: a crowd's tags stacked into a tower read worse. The one
+  exception is **a wing of riders** (`seatedName`: every rider and the driver in flight), queued
+  through `drawNameTag` - the same queue, marked as a tag: before stamping, `settleNameTags` keeps
+  the lowest tag on screen where it is and climbs any tag that would touch a placed one until it
+  clears (`TAG_GAP`, at most `TAG_CLIMB` climbs).
 - **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
   and the drawer's counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), `state.msg`, the DAY headline's bake,
   the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`
@@ -2189,7 +2194,7 @@ until `FLEE_T`, when it is `gone` and draws nothing ever again.
 Drawing: `drawDropAir` (above the world, below lighting) first dots **the flight path across the
 snow itself** while mode is `drop` — each flying bird's whole line dashed in its team colour, dots
 crawling toward the end so the line reads as a direction, with your own bird's jump window overlaid
-in gold that brightens and pulses once the lock opens — then runs `drawEagle` per bird — the
+in the flight bar's window colours (`FLIGHT_SHUT`, then `FLIGHT_OPEN` pulsing once the lock opens; never on the scripted first flight) — then runs `drawEagle` per bird — the
 `SPRITES.eagleShadow` silhouette `alt` px below and up to 10 px right of the body (`alt` is
 `DROP_ALT` 56 px in flight, converging to 0 down the dive so shadow and bird meet at the crash
 point), the bird itself in its team's armour (`SPRITES.eagleTeam[team]` cycling spread → mid →
@@ -2211,8 +2216,8 @@ rather than stands, the hem meeting the feathers at the seat point, lifted a pix
 downstroke; **world-sized** — `riderScale(e)` is the bird's own perspective, `eagleScale / 2`:
 1× on the roosting bird, 1.5× in flight because the bird itself is 1.5× bigger up there, so a
 body never changes size against the feathers under it; the merchant on the neck the same way; the
-local player drawn last), and a pulsing gold landing ring
-under the human's own bird — only while the jump window is open, so the ring never promises a jump
+local player drawn last; every rider and the driver wear their name in their side's paint, `seatedName`), and a pulsing landing ring
+in `FLIGHT_OPEN` under the human's own bird — only while the jump window is open and never on the scripted first flight, so the ring never promises a jump
 the lock refuses — then every faller: a `sin` **hop** off the wing
 over the first quarter of the fall, then the shrink from `p.dropSc` (the seat's size as it left)
 to 1× along
@@ -2224,17 +2229,21 @@ frames as a settle animation), then **rests**, breathing a ±1 px bob with a win
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
 the gust's telegraph, so the idle can never cry wolf), flashing via the baked
 all-white `SPRITES.eagleFlash` when hit (it is taller than the 64×64 `drawSpriteFlash` scratch),
-with its team-colour hp bar up **from the moment it roosts** — the bar is the objective's
+with its team-colour hp bar (`PERCH_BAR_W`, in even segments like every hp bar, `hpSegCount`) up **from the moment it roosts** — the bar is the objective's
 introduction, anchored to the bird's rotated extent, under a `PERCH` nameplate in the same paint (its
 driver wears `MERCH`: the side's two named bodies, named the same way). A gust windup draws wings thrown open
 (frame 0) lifted 2 px: the spread IS the telegraph, no text. A `flee` bird climbs back out —
 scale and `alt` walk from the roost's numbers to the flight's over `FLEE_LIFT_T`, the shadow
 returning and diverging as the ground falls away, wingbeats at full panic — and fades over the
 last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) draws the
-**flight bar**, top centre: the whole line as one track, the flown part filled in team colour
-under the chart-style bird diamond (the head glides a device pixel at a time on `flightShownT`, a render-side clock that carries the flight's time on between sim steps or snapshots, never backwards and never more than one update's gap ahead), the **jump window as a gold stretch** (dim while locked,
-pulsing bright once open — the lock is taught by the bar's shape, no sentence), seconds left as a
-number beside it (gold once open); `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
+**flight bar**, top centre: a steel plate (`drawHudFrame`, all four corners cut) round the whole
+line as one track, the flown part filled in team colour with a white head line riding its front
+(the head glides a device pixel at a time on `flightShownT`, a render-side clock that carries the flight's time on between sim steps or snapshots, never backwards and never more than one update's gap ahead), the **jump window as a pale stretch** (`FLIGHT_SHUT` while locked,
+`FLIGHT_OPEN` pulsing once open — the lock is taught by the bar's shape, no sentence), seconds left as a
+number beside it (white once open), and the jump's keybind indicator under it (`SPACE - JUMP`, dim
+while locked, white once open). The scripted first flight shows neither window nor key. A press the
+door refuses (`dropPress`, input.js's three drop sites) turns the plate, number and key the bag's
+refusal red and shakes them a pixel either way as one for `FLIGHT_DENY_T`; `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
 the ride's wider read is the **M map** (`renderWorldMap` also runs in mode `drop`, where it
 draws each flying bird's line dashed in team colour with the bird diamond riding it; M/Esc are
 handled in input.js's drop branch, the map swallows the jump click, and the sim keeps running
