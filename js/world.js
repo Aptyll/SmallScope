@@ -64,7 +64,7 @@ const OBJECTS = {
   // rolls the card. Any tool opens it, so `needs` stays null.
   chest:    { solid: true,  tool: 'axe',  needs: null,   verb: 'OPEN', lift: 12, auto: true,
               mm: [242, 204, 100], map: CH_CHEST },
-  // a camp's cave (the wolf den and the dire hollow): inert scenery, two
+  // a camp's cave (the wolf den and the brown bear den): inert scenery, two
   // tiles wide - `w` stamps a `part` filler per extra tile, east of the
   // anchor (placeCamps), so both tiles are solid and read back as the den
   den:      { solid: true,  w: 2, mm: [92, 86, 100] },
@@ -1285,10 +1285,10 @@ function layPaths() {
 // the water, so it is always four-connected and nobody's feet cut a corner
 // through the current.
 //
-// The BENDS: the two camps on the mirror line (the DIRE HOLLOW and the ALPHA
-// STONE) each have the creek swing round them in a half-loop, so each falls
-// on one side's bank: the upstream one (the dire hollow) to RED, the
-// downstream one (the alpha stone) to BLUE. The line is point-symmetric
+// The BENDS: the two camps on the mirror line (the BROWN BEAR DEN and the
+// BLACK BEAR STONE) each have the creek swing round them in a half-loop, so
+// each falls on one side's bank: the upstream one (the brown bear) to RED,
+// the downstream one (the black bear) to BLUE. The line is point-symmetric
 // about the bridge, as the roosts are. The other side reaches its rival's
 // camp over the bridge or the outer ford past it.
 //
@@ -1739,8 +1739,8 @@ function zipStep(p, dt, mx, my, len) {
 //               placeCamps checks it is, and layPaths cuts no branch to it
 //
 // resource: the pack - gold per head, the biggest steady payout on the map
-// buff:     one alpha - paid as the dire wolf is (MONSTER's teamPay, wildlife.js)
-// epic:     the dire wolf - the whole team is paid and blooded for the kill
+// buff:     the black bear - the brown bear's match, paid as it is (MONSTER's teamPay, wildlife.js)
+// epic:     the brown bear - the whole team is paid and blooded for the kill
 // hut:      no monster - three chests round a hut buried in the treeline,
 //           worth the chopping it takes to reach
 const CAMPS = {
@@ -1753,7 +1753,7 @@ const CAMPS = {
     spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
   },
   buff: {
-    name: 'ALPHA STONE', tag: 'ITS BLOOD RUNS HOT',
+    name: 'BLACK BEAR STONE', tag: 'ITS BLOOD RUNS HOT',
     r: 4, mark: '#c2a6ff',
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 300,
@@ -1761,7 +1761,7 @@ const CAMPS = {
     spots: [[0, 2]],
   },
   epic: {
-    name: 'DIRE HOLLOW', tag: 'THE DIRE WOLF SLEEPS HERE',
+    name: 'BROWN BEAR DEN', tag: 'THE BROWN BEAR SLEEPS HERE',
     r: 6, mark: '#ffb04a',
     icon: [[3, 0, 1, 7], [0, 3, 7, 1], [1, 1, 1, 1], [5, 1, 1, 1], [1, 5, 1, 1], [5, 5, 1, 1]], // a star
     kind: 'dire', pop: 1, repop: 300,
@@ -1798,9 +1798,9 @@ const CAMP_SITES = [
   { key: 'resource', u: 90, s: 25 },
   // THREE CAMPS A SIDE OF THE ROAD, six in all: a mirrored pair of dens on
   // each side, and one contested camp on the mirror line to finish each side
-  // - the dire wolf top-left, the alpha bottom-right, facing it across the road
-  { key: 'buff', u: (WORLD - 1) / 2, s: 44 },  // the alpha, bottom-right of the middle, on the mirror line
-  { key: 'epic', u: (WORLD - 1) / 2, s: -40 }, // the dire wolf, top-left of the middle, on the mirror line
+  // - the brown bear top-left, the black bear bottom-right, facing it across the road
+  { key: 'buff', u: (WORLD - 1) / 2, s: 44 },  // the black bear, bottom-right of the middle, on the mirror line
+  { key: 'epic', u: (WORLD - 1) / 2, s: -40 }, // the brown bear, top-left of the middle, on the mirror line
   // the hog huts, 20 tiles in from the world's edge, deep in the border woods
   { key: 'hut', u: 100.5, s: -114 },   // by the top-left corner, on the left edge
   { key: 'hut', u: 100.5, s: 114 },    // by the bottom-right corner, on the bottom edge

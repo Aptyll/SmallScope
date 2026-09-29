@@ -51,8 +51,9 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   zero or more times per frame (`TICK_DT = 1/60`, at most `TICK_MAX` steps), then `render()` once.
   It is 1/60 because `TOOL_ROF_STEP` counts rate of fire in 1/60 steps and every integrator was
   tuned there; a coarser network tick is a snapshot cadence (`SNAP_EVERY`), never a sim one.
-  Practice and the title step the same way. The leftover fraction is banked, not rendered: there is
-  no render interpolation between steps.
+  Practice and the title step the same way. The leftover fraction is banked, and only the drop is
+  drawn in between steps (`tweenIn`: the camera, both birds, riders and fallers, restored by
+  `tweenOut` before anything else reads them); ground play draws each step as it is.
 - **No slot is the local human by construction.** `initPlayers(roster, local)` takes the roster and
   the local slot, `player = players[localId]`, `beginDrop` seats by slot, `applyCharacter(p)` takes a
   target, `skin()` reads `player.team`. `?local=N` and `DBG.setLocal(N)` seat the local player
@@ -436,8 +437,9 @@ The numbers are stable - code comments cite them (js/boot.js cites risk 3) - so 
 its line.
 
 1. **The fixed step's presentation.** The sim's feel did not change at 1/60; what remains is that
-   a screen above 60 Hz repeats a sim state on the frames between steps, and a heavy stall plays
-   a moment of slow motion instead of a jump. Render interpolation would remove the first.
+   a screen above 60 Hz repeats a sim state on the frames between steps (except during the drop,
+   which `tweenIn` draws in between), and a heavy stall plays a moment of slow motion instead of
+   a jump. Render interpolation of ground play would remove the first.
 2. **The snapshot is never quite complete.** Reflection carries every field, so the live risk is
    the reverse: a name added to `SNAP_SKIP` that a draw pass does read renders stale on a client,
    and a new entity ARRAY (a kind not in `SNAP_KINDS`, a singleton not in `snapSingles`) is not

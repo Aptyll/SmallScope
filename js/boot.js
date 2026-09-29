@@ -11,7 +11,7 @@
 // the pass mid-route is a clean fly-by (mode 'drop'). The view zooms out to
 // DROP_ZOOM, the flight path is dotted across the snow itself (M raises the
 // world map for the wider read), and a rider jumps with Space/Enter/E/click -
-// but only inside the JUMP WINDOW: the line's last DROP_LOCK_T seconds, gold
+// but only inside the JUMP WINDOW: the line's last DROP_LOCK_T seconds, pale
 // on the flight bar and on the dotted line both (bots jump at their own
 // hashed fraction of the window). A jumper free-falls for FALL_T onto the
 // nearest open tile, which becomes its spawn tile (the bot brain's home); the
@@ -91,6 +91,9 @@ const EAGLE_SETTLE_T = 0.6; // seconds of wing-fold after the impact, into the r
 // answer the hit (the two birds, ai.js). At 60 a swing two warriors emptied the
 // nerve in the fifty seconds between two harness marks, before anyone came
 const EAGLE_HP = 2000;
+const PERCH_BAR_W = 63;   // px: the roost's hp bar...
+const PERCH_BAR_H = 5;    // ...its height...
+const PERCH_BAR_SEGS = 8; // ...and its blocks: (PERCH_BAR_W + 1) must divide by this
 const EAGLE_WORK_DMG = 20;  // what one rival E swing chips off the roosting bird
 const EAGLE_ARROW_DMG = 12; // what one rival arrow chips, whatever it would do to a body
 const EAGLE_TILE_R = 1.6;   // tiles around the roost marked solid - the hitbox arrows AND walkers test
@@ -238,6 +241,13 @@ function drawSeated(set, dir, x, y, sc, frame) {
   const spr = set[dir][frame || 0];
   const w = spr.width, keep = spr.height - 3;
   ctx.drawImage(spr, 0, 0, w, keep, Math.round(x - w * sc / 2), Math.round(y - (keep - 2) * sc), Math.round(w * sc), Math.round(keep * sc));
+}
+// ...and the name over a seated body, in its side's paint, two clear rows
+// over the head drawSeated just drew - a tag (drawNameTag), so a wing of
+// riders sorts its names out instead of stamping them on each other
+function seatedName(set, dir, x, y, sc, name, team) {
+  const top = Math.round(y - (set[dir][0].height - 5) * sc);
+  drawNameTag(name, centreTextX(x, name), top - 8, TEAMS[skin(team)].mark);
 }
 // a seat's world position on a bird right now: the seat offset rotated by the
 // heading, off the bird's centre, at the bird's current scale
@@ -926,8 +936,9 @@ function drawDropAir(ex, ey, now) {
   if (!d) return;
   // the flight path itself, dotted over the snow in each team's colour - the
   // world-space chart. The dots crawl toward the line's end so it reads as a
-  // direction, and your own bird's jump window rides it in gold, brightening
-  // the moment the lock opens.
+  // direction, and your own bird's jump window rides it in the flight bar's
+  // pale window colour, brightening the moment the lock opens (never on the
+  // scripted first flight, which has no door).
   if (state.mode === 'drop') for (const e of d.eagles) {
     if (e.state !== 'fly') continue;
     ctx.save();
@@ -940,10 +951,10 @@ function drawDropAir(ex, ey, now) {
     ctx.moveTo(e.x0 - ex, e.y0 - ey);
     ctx.lineTo(e.x1 - ex, e.y1 - ey);
     ctx.stroke();
-    if (e.team === player.team && player.aboard) {
+    if (e.team === player.team && player.aboard && !d.firstFlight) {
       const open = e.t >= e.dur - DROP_LOCK_T;
       ctx.globalAlpha = open ? 0.65 + 0.25 * Math.sin(now * 6) : 0.3;
-      ctx.strokeStyle = '#ffd95c';
+      ctx.strokeStyle = open ? FLIGHT_OPEN : FLIGHT_SHUT; // the flight bar's own window colours
       ctx.beginPath();
       ctx.moveTo(e.x0 + (e.x1 - e.x0) * e.jumpOpen - ex, e.y0 + (e.y1 - e.y0) * e.jumpOpen - ey);
       ctx.lineTo(e.x0 + (e.x1 - e.x0) * e.jumpEnd - ex, e.y0 + (e.y1 - e.y0) * e.jumpEnd - ey);
@@ -1063,6 +1074,7 @@ function drawEagle(e, ex, ey, now) {
       const dx = MERCH_SEAT[0] * S, dy = MERCH_SEAT[1] * S;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
       drawSeated(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS);
+      seatedName(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS, 'MERCH', e.team);
     }
     for (let pass = 0; pass < 2; pass++) for (const p of players) {
       if (!p.active || !p.aboard || p.team !== e.team || (p === player) !== (pass === 1)) continue;
@@ -1070,14 +1082,16 @@ function drawEagle(e, ex, ey, now) {
       const dx = st[0] * S, dy = st[1] * S;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
       drawSeated(classSet(p), rd, rx, ry, RS);
+      seatedName(classSet(p), rd, rx, ry, RS, p.name, p.team);
     }
     // where a jump right now would land: a pulsing ring under the bird -
-    // only while the jump window is open, or it promises a jump the lock refuses
-    if (player.aboard && player.team === e.team && state.mode === 'drop' &&
+    // only while the jump window is open and never on the scripted first flight,
+    // or it promises a jump the lock refuses
+    if (player.aboard && player.team === e.team && state.mode === 'drop' && !state.drop.firstFlight &&
       e.state === 'fly' && e.t >= e.dur - DROP_LOCK_T) {
       const ph = (now * 1.2) % 1;
       ctx.globalAlpha = 0.8 - ph * 0.6;
-      ctx.strokeStyle = '#ffd95c';
+      ctx.strokeStyle = FLIGHT_OPEN; // the flight bar's open window
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.arc(sx, sy + alt, 6 + ph * 12, 0, Math.PI * 2); ctx.stroke();
       ctx.globalAlpha = 1;
@@ -1144,7 +1158,9 @@ function drawEagle(e, ex, ey, now) {
         if (!p.active || !p.aboard || p.team !== e.team) continue;
         const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
         const dx = st[0] * S, dy = st[1] * S;
-        drawSeated(classSet(p), rd, sx + dx * hc - dy * hs, sy + breath + dx * hs + dy * hc, 1);
+        const rx = sx + dx * hc - dy * hs, ry = sy + breath + dx * hs + dy * hc;
+        drawSeated(classSet(p), rd, rx, ry, 1);
+        seatedName(classSet(p), rd, rx, ry, 1, p.name, p.team);
       }
       if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
         const ph = (now * 1.2) % 1;
@@ -1161,12 +1177,19 @@ function drawEagle(e, ex, ey, now) {
       // Anchored to the bird's rotated extent, not the unrotated box, so it
       // hugs the sprite whatever way the dive left it pointing.
       const vh = Math.abs(w / 2 * Math.sin(e.heading)) + Math.abs(h / 2 * Math.cos(e.heading));
-      const bw = 40, bx = sx - bw / 2, by = sy - Math.round(vh) - 7;
-      ctx.fillStyle = '#0f1632'; ctx.fillRect(bx - 1, by - 1, bw + 2, 5);
-      ctx.fillStyle = '#3a3448'; ctx.fillRect(bx, by, bw, 3);
+      // in even health segments like every hp bar, but big and few: the
+      // objective's bar reads from across the clearing, so PERCH_BAR_SEGS
+      // is set here rather than asked of hpSegCount (which would split
+      // EAGLE_HP into a comb of 2 px blocks)
+      const bw = PERCH_BAR_W, bh = PERCH_BAR_H, bx = Math.round(sx - bw / 2), by = sy - Math.round(vh) - 5 - bh;
+      ctx.fillStyle = '#0f1632'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+      ctx.fillStyle = '#3a3448'; ctx.fillRect(bx, by, bw, bh);
       ctx.fillStyle = TEAMS[skin(e.team)].mark;
-      ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), 3);
-      drawWorldText('PERCH', centreTextX(sx, 'PERCH'), by - 8, TEAMS[skin(e.team)].mark); // two clear rows over the frame, as a player's tag sits
+      ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), bh);
+      const segs = PERCH_BAR_SEGS, seg = (bw + 1) / segs;
+      ctx.fillStyle = HP_TICK;
+      for (let k = 1; k < segs; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
+      drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - 15, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -
@@ -1187,8 +1210,8 @@ function drawEagle(e, ex, ey, now) {
 }
 
 // the ride's HUD: the flight bar (the line as a shape - flown part filled,
-// jump window gold, a bird diamond riding the head), the first-flight
-// countdown, and the keybind indicators. The wider read is the M map now.
+// the jump window pale, a white head line riding it), its JUMP key, and the
+// keybind indicators. The wider read is the M map now.
 // The flight bar's own clock. The bar moved only when the sim did - a
 // 60 Hz step, or a 15 Hz snapshot on a client - and in whole UI pixels,
 // 12 of them a second at the common scale, so the head crept in 3-device-px
@@ -1196,6 +1219,26 @@ function drawEagle(e, ex, ey, now) {
 // updates, never more than about one update's gap past the last value seen
 // (so a pause or a stalled wire holds it within a frame) and never
 // backwards. Render-only: the sim's e.t is untouched.
+const FLIGHT_BAR_CUT = { tl: true, tr: true, bl: true, br: true }; // all four corners cut
+const FLIGHT_TRACK = '#1a2240';    // the line still to fly
+const FLIGHT_SHUT = '#3c4a74';     // the jump window while the door is locked
+const FLIGHT_OPEN = '#e8f0ff';     // ...and open
+const FLIGHT_KEY_SHUT = '#5d6b92'; // the JUMP indicator while locked
+const FLIGHT_DENY_T = 0.6;         // s the refusal holds - the bag's own (bagFlash)
+// A press of the jump in flight, from any device - a key or the pad
+// (keyPress), the click, the mouse scheme's press (input.js): the step
+// performs it (dropJump). A press the door will refuse (the lock, or the
+// scripted first flight) also reddens and shakes the flight bar, the bag's
+// refusal (bagDenied) on this plate. Raised here on the pressing screen: a
+// refusal flash is the client's own (the rule in js/net/events.js).
+let flightDenyAt = -1e9; // performance seconds of the last refused press
+function dropPress() {
+  player.input.jump = true;
+  const d = state.drop;
+  if (!d || !player.aboard) return;
+  const e = d.eagles[player.team];
+  if (e.state === 'fly' && (d.firstFlight || e.t < e.dur - DROP_LOCK_T)) flightDenyAt = performance.now() / 1000;
+}
 const flightShown = { e: null, t: 0, seenT: 0, seenAt: 0, gap: 0 };
 function flightShownT(e, now) {
   const f = flightShown;
@@ -1215,34 +1258,46 @@ function renderDropUI(now) {
     const me = d.eagles[player.team];
     const left = Math.max(0, me.dur - me.t);
     const open = me.t >= me.dur - DROP_LOCK_T;
-    // the flight bar, top centre: the whole line as a track. The gold stretch
+    // the flight bar, top centre: a steel HUD plate (drawHudFrame, the
+    // strip's own frame) round the whole line as a track. The pale stretch
     // is the jump window - the lock is taught by the shape, not a sentence -
     // and it pulses bright the moment the door opens.
     const bw = 120 * ts, bh = 6 * ts, bxx = cxm - Math.round(bw / 2), byy = 14 * ts;
-    ctx.fillStyle = 'rgba(12,18,42,0.85)';
-    ctx.fillRect(bxx - 2 * ts, byy - 2 * ts, bw + 4 * ts, bh + 4 * ts);
-    ctx.fillStyle = '#3a3448';
+    // a refused press: the whole plate - frame, track, number and key as one -
+    // shakes a pixel either way and goes the bag's refusal red
+    const red = now - flightDenyAt < FLIGHT_DENY_T;
+    ctx.save();
+    if (red) ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
+    drawHudFrame(bxx - 3, byy - 3, bw + 6, bh + 6, red
+      ? { corners: FLIGHT_BAR_CUT, bg: BAG_BG_RED, ink: '#7a2436', lit: '#c2465a' }
+      : { corners: FLIGHT_BAR_CUT });
+    ctx.fillStyle = FLIGHT_TRACK;
     ctx.fillRect(bxx, byy, bw, bh);
-    const wx0 = bxx + Math.round(bw * me.jumpOpen), wx1 = bxx + Math.round(bw * me.jumpEnd);
-    ctx.fillStyle = open ? '#ffd95c' : '#8a742e';
-    if (open) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(now * 6);
-    ctx.fillRect(wx0, byy, Math.max(2, wx1 - wx0), bh);
-    ctx.globalAlpha = 1;
-    // flown so far, in team colour, with the chart's bird diamond on the head
-    // on device pixels, not UI pixels: the head glides a device pixel at a
-    // time (whole device pixels, so every edge stays crisp)
+    // the first flight is scripted (dropJump shuts the door), so it shows
+    // no window and no key: nothing on screen offers a jump it would refuse
+    const door = !d.firstFlight;
+    if (door) {
+      const wx0 = bxx + Math.round(bw * me.jumpOpen), wx1 = bxx + Math.round(bw * me.jumpEnd);
+      ctx.fillStyle = open ? FLIGHT_OPEN : FLIGHT_SHUT;
+      if (open) ctx.globalAlpha = 0.75 + 0.25 * Math.sin(now * 6);
+      ctx.fillRect(wx0, byy, Math.max(2, wx1 - wx0), bh);
+      ctx.globalAlpha = 1;
+    }
+    // flown so far, in team colour, a white head line riding its front. On
+    // device pixels, not UI pixels: the head glides a device pixel at a time
+    // (whole device pixels, so every edge stays crisp)
     const fx = Math.round(bw * Math.min(1, flightShownT(me, now) / me.dur) * devScale) / devScale;
     ctx.fillStyle = TEAMS[skin(player.team)].mark;
     ctx.fillRect(bxx, byy, fx, bh);
-    const mxx = bxx + fx, myy = byy + Math.round(bh / 2);
-    ctx.fillStyle = '#241a10';
-    ctx.fillRect(mxx - 3 * ts, myy - ts, 7 * ts, 3 * ts); ctx.fillRect(mxx - ts, myy - 3 * ts, 3 * ts, 7 * ts);
     ctx.fillStyle = '#f4f7ff';
-    ctx.fillRect(mxx - 2 * ts, myy, 5 * ts, ts); ctx.fillRect(mxx, myy - 2 * ts, ts, 5 * ts);
-    // seconds left beside the track: a number, gold once the window is open
-    const t2 = Math.ceil(left) + 'S';
-    drawPixelTextOutline(ctx, t2, bxx + bw + 6 * ts, byy + Math.round(bh / 2) - 3 * ts,
-      open ? '#ffd95c' : '#cfe0ff', '#0f1632', ts);
+    ctx.fillRect(bxx + fx - 1, byy - 2, 2, bh + 4);
+    // seconds left beside the plate, white once the window is open
+    drawPixelTextOutline(ctx, Math.ceil(left) + 'S', bxx + bw + 7 * ts, byy + Math.round(bh / 2) - 3 * ts,
+      red ? '#c2465a' : open && door ? '#f4f7ff' : '#9fb6d8', '#0f1632', ts);
+    // the jump's keybind indicator under the plate: dim while the door is
+    // shut, lit once it opens, red with the plate on a refused press
+    if (door) drawDropBind('dodge', 'JUMP', cxm, byy + bh + 9 * ts, red ? '#c2465a' : open ? '#f4f7ff' : FLIGHT_KEY_SHUT, ts, true);
+    ctx.restore();
   } else {
     drawDropBind('move', 'DRIFT', cxm, 10 * ts, '#f4f7ff', ts, true);
   }
@@ -1895,6 +1950,54 @@ const TICK_MAX = 3;
 const TICK_SLACK = TICK_DT * 0.25;
 let tickAcc = 0;
 
+// THE DROP'S IN-BETWEEN FRAMES. A screen faster than 60 Hz draws two or
+// three frames per step, and without this every one of them repeated the
+// last step's camera and bird, so the ride juddered however fast the screen.
+// Before each step tweenMark notes where the ride's movers stand; render
+// then draws them part of the way from there to where the step put them,
+// by how far the clock has got toward the next step (tickAcc), and
+// tweenOut puts the sim's own values back before anything else reads them.
+// Render-only: no step ever sees an in-between value. The drop alone - the
+// camera, both birds and everyone aboard or falling - because it is the one
+// scene where the whole screen rides one smooth line; ground play still
+// draws each step as it is. A jump bigger than TWEEN_SNAP (the intro's
+// cut, a landing) is drawn where it lands, never smeared across it.
+const TWEEN_SNAP = 48; // px a mover may cover in one step and still be drawn in between
+const tween = { on: false, cx: 0, cy: 0, was: [], now: [] };
+function tweenMark() {
+  tween.on = state.mode === 'drop' && !!state.drop;
+  if (!tween.on) return;
+  tween.cx = camX; tween.cy = camY;
+  tween.was.length = 0;
+  for (const e of state.drop.eagles) tween.was.push(e, e.x, e.y, true);
+  for (const p of players) if (p.active && inAir(p)) tween.was.push(p, p.x, p.y, false);
+}
+function tweenIn() {
+  tween.now.length = 0;
+  if (!tween.on || state.mode !== 'drop') return;
+  // shown a quarter step behind the clock, so a 60 Hz screen, whose frames
+  // land about on the steps (TICK_SLACK), always draws at about 0.25
+  const a = Math.max(0, Math.min(1, (tickAcc + TICK_SLACK) / TICK_DT));
+  const mix = (o, n) => Math.abs(n - o) > TWEEN_SNAP ? n : o + (n - o) * a;
+  tween.now.push(null, camX, camY);
+  camX = mix(tween.cx, camX); camY = mix(tween.cy, camY);
+  const w = tween.was;
+  for (let i = 0; i < w.length; i += 4) {
+    const b = w[i];
+    if (!w[i + 3] && !inAir(b)) continue; // a player who landed this step: drawn where it stands
+    tween.now.push(b, b.x, b.y);
+    b.x = mix(w[i + 1], b.x); b.y = mix(w[i + 2], b.y);
+  }
+}
+function tweenOut() {
+  const n = tween.now;
+  for (let i = 0; i < n.length; i += 3) {
+    if (n[i] === null) { camX = n[i + 1]; camY = n[i + 2]; }
+    else { n[i].x = n[i + 1]; n[i].y = n[i + 2]; }
+  }
+  n.length = 0;
+}
+
 // A HIDDEN TAB does not get animation frames, and its timers are held to a
 // beat a second - which is fine for one screen and the end of the match for
 // nine others when that screen is the host (docs/pvp-architecture.md, risk
@@ -1965,12 +2068,14 @@ function loop(nowMs) {
     tickAcc += dt;
     let n = 0;
     while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX) {
+      tweenMark();
       update(TICK_DT);
       tickAcc -= TICK_DT;
       n++;
     }
     if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
-    render();
+    tweenIn();
+    try { render(); } finally { tweenOut(); } // the sim's values back, whatever render does
     saveAutoTick(); // a timed autosave, off the match clock (js/save.js)
   }
   if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead

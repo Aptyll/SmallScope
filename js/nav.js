@@ -63,7 +63,7 @@ function separateUnits() {
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
   for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, m: UNIT_MASS.player, vel: true, small: true, roll: p.dodgeT > 0 });
   // birds fly: they are the one unit nothing collides with
-  // ...and a roll passes through everything but a deer and the dire wolf (MONSTER.big)
+  // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
   for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), m: unitMass(a), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
   for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the

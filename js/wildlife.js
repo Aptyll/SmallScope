@@ -29,7 +29,7 @@ function animalLevel() {
 }
 // what a hit knocks off a body: its own coat, so a puff says which beast
 // took the blow. Both prey are warm brown since the new sheets landed.
-const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#c9d2e4', dire: '#4a3040', bird: '#cfd6e4' };
+const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '#3b3b53', dire: '#6a4326', bird: '#cfd6e4' };
 // Prey: how close a player gets before it bolts, how long it runs, and the two
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
@@ -97,8 +97,8 @@ const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
-  alpha: { idle: 0, run: 8 },
-  dire: { idle: 0, run: 7 },
+  alpha: { idle: 0, run: 7, bite: 12 },
+  dire: { idle: 0, run: 7, bite: 12 },
   bird: { idle: 0, fly: 14 },
 };
 // A clip change restarts the loop, so a sit-up always begins on the frame it
@@ -145,7 +145,7 @@ function makeAnimal(kind, x, y) {
 // The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
 // shot's whole step against it (sweepDisc, js/sim.js), widened by the shot's
 // own `reach` (the fist, the axe; js/tools.js); the aim line asks animalHit.
-function animalHitR(a) { return a.kind === 'bird' ? 5 : a.kind === 'dire' ? 14 : 8; }
+function animalHitR(a) { return a.kind === 'bird' ? 5 : isBigBeast(a) ? 14 : 8; }
 function animalHitY(a) { return a.y - (a.alt || 0) - 3; }
 function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < animalHitR(a); }
 
@@ -721,16 +721,12 @@ function animalDies(a) {
     burst(a.x, a.y - 5, '#6f778c', 12, 50, 0.55);
     burst(a.x, a.y - 5, '#e04a54', 8, 45, 0.5);
     addFloater(a.x, a.y - 26, 'WOLF DOWN', '#f2cc6a');
-  } else if (a.kind === 'alpha') {
-    burst(a.x, a.y - 5, '#c9d2e4', 14, 55, 0.6);
-    burst(a.x, a.y - 5, '#ffb04a', 10, 45, 0.5);
-    addFloater(a.x, a.y - 26, 'ALPHA DOWN', '#ffb04a');
-  } else if (a.kind === 'dire') {
-    burst(a.x, a.y - 8, '#4a3040', 20, 60, 0.7);
+  } else if (isBigBeast(a)) {
+    burst(a.x, a.y - 8, HIT_PUFF[a.kind], 20, 60, 0.7);
     burst(a.x, a.y - 8, '#ffb04a', 14, 55, 0.6);
-    addFloater(a.x, a.y - 34, 'DIRE WOLF DOWN', '#ffb04a');
+    addFloater(a.x, a.y - 34, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
   }
-  // a midline camp's kill (the alpha's and the dire wolf's, one side's each
+  // a midline camp's kill (the black bear's and the brown bear's, one side's each
   // and paid the same): the whole team is paid and blooded, wherever they
   // are, and the feed says who did it - the kills that are news to both sides
   if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) {
@@ -750,24 +746,28 @@ function animalDies(a) {
 }
 
 // The camps' monsters (the places themselves are the CAMPS table in the
-// camps banner, world.js): three kinds of wolf, one per camp type, and all
+// camps banner, world.js): the den's wolves and the two midline bears, all
 // of them NEUTRAL - nothing in the world hunts a player who has not hit it.
 // What each is, in one row: the bite and what it grows a level (the level:
 // animalLevel, the animals banner), the reach of a bite, the seconds between
 // ONE monster's bites (nothing caps a PACK - a hit grants no i-frames, so
 // four wolves on you is four bites a second), the hunting speed, and the
-// body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - the
-// dire wolf is a 2x sprite and a body a roll does NOT pass through - and
+// body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - a
+// bear is a big sprite and a body a roll does NOT pass through - and
 // `teamPay` for the two midline camps' ones, whose kill pays and bloods the
 // killer's whole team (animalDies) and names it in the feed as `feed`. The creek gives one to each side's bank
-// (creekBends, world.js), so the two are one fight in two bodies: the same
-// hp (ANIMAL_HP) and near the same bite a second, the pay the same.
+// (creekBends, world.js), so the two are one fight in two coats: the brown
+// bear (`dire`, RED's bank) and the black bear (`alpha`, BLUE's) have the
+// same row, the same hp (ANIMAL_HP) and the same pay. `cause` is the
+// DEATH_CAUSE a bite writes (player.js).
 const MONSTER = {
-  wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 20, lvBite: 3, reach: 15, cd: 1.3, spd: 90, r: 4.5, mass: 2.5, big: false, teamPay: true, feed: 'ALPHA' }, // a midline camp's: the dire wolf's hp and bite a second, small and quick
-  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   mass: 5,   big: true,  teamPay: true, feed: 'DIRE WOLF' }, // a midline camp's: a wall of hp, and a bite that takes a quarter of you
+  wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
+  alpha: { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', cause: 'bear' }, // the same bear on the other bank
 };
 function isCampKind(k) { return !!MONSTER[k]; }
+function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }
+const BITE_FRAMES = 6;     // the bears' bite clip (js/sprites/bears.js): the sim holds it this many frames
 const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
 const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
@@ -775,7 +775,7 @@ const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from n
 // a midline camp's kill wears: CAMP_BUFF_DMG on every blow the player lands
 // (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
 // abilities.js), worn as the amber ring under the feet that empties as it
-// runs out (drawPlayer, draw-world.js). The alpha and the dire wolf pay
+// runs out (drawPlayer, draw-world.js). The two bears pay
 // EVERY player on the killer's team EPIC_TEAM_GOLD and blood the whole team
 // for CAMP_BUFF_EPIC_T - the kills in the game that pay people who were not
 // there, which is what makes them worth walking to as five.
@@ -853,7 +853,8 @@ function updateCampMonster(a, dt) {
     moving = n.ok;
     if (d < M.reach && a.biteCd <= 0) {
       a.biteCd = M.cd;
-      damagePlayer(t, M.bite + M.lvBite * (a.level - 1), a.mvx, a.mvy, null, a.kind === 'dire' ? 'dire' : 'wolf');
+      damagePlayer(t, M.bite + M.lvBite * (a.level - 1), a.mvx, a.mvy, null, M.cause);
+      if (ANIM_CLIPS[a.kind].bite) setClip(a, 'bite'); // a bear rears and swipes; the blow lands as it starts
       burst(a.x + a.mvx * 6, a.y - 4, '#e04a54', M.big ? 9 : 5, 40, 0.35);
       sfxAt('bite', a.x, a.y);
     }
@@ -877,7 +878,8 @@ function updateCampMonster(a, dt) {
   }
 
   if (moving && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
-  setClip(a, moving ? 'run' : 'idle');   // a wolf has the two: standing, and coming for you
+  if (a.clip === 'bite' && a.animT < BITE_FRAMES) { stepClip(a, dt); return; } // a swipe plays out whole
+  setClip(a, moving ? 'run' : 'idle');   // standing, and coming for you
   stepClip(a, dt, moving ? (t ? 1.5 : 0.75) : 0);
 }
 

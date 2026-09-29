@@ -76,7 +76,7 @@ const CRATER_T = 4;         // ...and how long it slows rivals crossing it
 const CRATER_SLOW = 0.55;
 // the EXECUTE: a slow overhead cut whose worth is the target's MISSING life -
 // the finisher the other three keys set up. A whole body of life missing is
-// EXEC_MISSING of it again on top of the base, capped so a dire wolf at a
+// EXEC_MISSING of it again on top of the base, capped so a bear at a
 // sliver is not a one-line kill.
 const EXEC_R = 30;
 const EXEC_HALF = 0.75;     // rad either side of the aim: narrower than the sword

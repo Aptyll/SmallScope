@@ -80,28 +80,6 @@ window.SPR = (() => {
   }
 
 
-  // a tinted copy and a nearest-neighbour 2x copy: the placeholder camp
-  // wolves (js/sprites/beasts.js) are the wolf through these
-  function wash(src, col, amt) {
-    const c = document.createElement('canvas');
-    c.width = src.width; c.height = src.height;
-    const g = c.getContext('2d');
-    g.drawImage(src, 0, 0);
-    g.globalCompositeOperation = 'source-atop';
-    g.globalAlpha = amt;
-    g.fillStyle = col;
-    g.fillRect(0, 0, c.width, c.height);
-    return c;
-  }
-  function double(src) {
-    const c = document.createElement('canvas');
-    c.width = src.width * 2; c.height = src.height * 2;
-    const g = c.getContext('2d');
-    g.imageSmoothingEnabled = false;
-    g.drawImage(src, 0, 0, c.width, c.height);
-    return c;
-  }
-
   // ---------------------------------------------------------------- teams
   // Two team presets, RED vs BLUE. A team's colour drives its CHARACTERS
   // (coat, hat, trim), its BUILDINGS (fittings + glow accent, painted over the
@@ -173,5 +151,5 @@ window.SPR = (() => {
     TEAM_SKINS.forEach((t, i) => Object.assign(t, TEAM_PALETTES[id][i]));
     for (const fn of teamBakes) fn();
   };
-  return { bake, spansOf, bakeSpan, flipH, bakeClips, mapClips, liveIcon, wash, double, TEAM_SKINS, teamBuildPal, onTeams };
+  return { bake, spansOf, bakeSpan, flipH, bakeClips, mapClips, liveIcon, TEAM_SKINS, teamBuildPal, onTeams };
 })();

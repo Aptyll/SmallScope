@@ -24,7 +24,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the `SPR` helpers every sprite file bakes with (`bake`, `flipH`, `bakeClips`/`mapClips`, `wash`, `double`), and the team palettes | its head; `teams` | `teams` |
+| the `SPR` helpers every sprite file bakes with (`bake`, `flipH`, `bakeClips`/`mapClips`), and the team palettes | its head; `teams` | `teams` |
 
 ## js/sprites/characters.js (legacy IIFE)
 
@@ -55,7 +55,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the imp, the rabbit, the deer, the wolf, the camps' wolves, and the clip sets built from them | by banner (`bakeClips` at the foot) | `imp`, `rabbit`, `deer`, `wolf`, `the camps' wolves` |
+| the imp, the rabbit, the deer, the wolf, and the clip sets built from them | by banner (`bakeClips` at the foot) | `imp`, `rabbit`, `deer`, `wolf` |
+
+## js/sprites/bears.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the brown bear (`dire`) and black bear (`alpha`) clips; never edit, rebake with app/bake-bears/bake.py (the rig: rig.py paints and bands, bear.py lays out and poses, anim.py walks and swipes) | `BROWN`/`BLACK`, `BROWN_PAL`/`BLACK_PAL` | - |
 
 ## js/sprites/eagle.js (legacy IIFE)
 
@@ -216,7 +222,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the tuning for everything wild: the prey's bolt, the deer's sprint and the rabbit's jink, the holes cut down to the fish, the shoal itself, the pack, the flock | `FLEE_SIGHT`/`FLEE_TIME`/`PREY_SPD`/`PREY_RUN`, `DEER_WALK_MUL`/`DEER_RUN_MUL`/`DEER_EASE_T`, `DEER_SPRINT`/`DEER_SPRINT_T`/`DEER_SPRINT_REGEN`, `RABBIT_DODGE_*`, `ICE_HOLE_HITS`, `HOLE_FALL_DMG`/`HOLE_FALL_T`, `FISH_CATCH_R`, `FISH_MAX`/`FISH_MIN`/`FISH_SPAWN_FAST`/`FISH_EMERGE_*`, `MONSTER`, `CAMP_GROUND`/`CAMP_LEASH_T`/`CAMP_REGEN_T`, `BIRD_*` | the top of `animals` (the prey), `fish` (the ice and shoal half) and above `camp monsters` (the three wolves, and the dormant flock); `FISH_SPAWN_T` alone stays in core.js |
 | an animal taking a hit from anything (arrow or roll): flee/wake, floater, knockback, kill credit | `hurtAnimal` | `animals` |
 | where an animal walks next: the graze/patrol goal, and the bolt away from a player | `wanderGoal`, `preyWander`, `fleeGoal` | `animals` |
-| a camp monster: neutral until hit, the camp waking on the hitter, the leash bar that holds on the camp's ground and drains off it, the heal at home, the bite | `isCampKind`, `wakeCamp`, `updateCampMonster` | `camp monsters` |
+| a camp monster: neutral until hit, the camp waking on the hitter, the leash bar that holds on the camp's ground and drains off it, the heal at home, the bite | `MONSTER`, `isCampKind`, `isBigBeast`, `wakeCamp`, `updateCampMonster`, `BITE_FRAMES` (a bear's swipe clip held) | `camp monsters` |
 | ALPHA'S BLOOD: the midline kills' team payout and buff | `CAMP_BUFF_EPIC_T`/`CAMP_BUFF_DMG`/`CAMP_BUFF_SPD`, `EPIC_TEAM_GOLD`, `campBuff` (above the banner); the grants in `animalDies` | `animals`/`camp monsters` (what it does: `hurtUnit`, actions.js; `abilityMoveMul`, abilities.js; the tick, `updateAbilities`, abilities.js; the ring: `drawBuffRing`, js/draw/bodies.js) |
 | the flock: the flush, the circuit, the perch | `flushBirds`, `updateBird` | `birds` |
 | fish shoal and ice holes | `updateFish`, `fishClear`, `fishWater`, `spawnFish` | `fish` |
@@ -494,7 +500,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | drawing players / animals / robots / the merchant / held tool | `drawPlayer`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
-| the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
+| the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js and bears.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
 | ALPHA'S BLOOD worn: the amber ring of pips around a blooded player's feet | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
 | a body going down: the frozen shatter or the wind, picked by `hash2(id, deaths)`, started off the edge of `p.dead` | `DOWN_T`, `trackDowns` (from `render()` before the draw list), `goingDown` (also held by `viewPlayer` and the replay), `drawDown` | `going down` |
 | the snow over a buried body, its row spans, and the bury meter | `drawSnowCover`, `poseBounds`, `poseSpans`, `drawBuryRing` | - |
@@ -521,7 +527,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a clear frosty day: its cool grade and all-day crisp (applied in `todGrade`), the cloud it clears, the glints on bare snow, and a blizzard's milky haze | `FROST_TINT`/`FROST_CRISP`/`FROST_CLEAR`, `drawFrostGlint`, `GLINT_*`, `BLIZ_HAZE`/`BLIZ_HAZE_A` | `light & weather` › `frost glints` |
 | the night colour, a lit shot's halo, snow (world-space flakes, see `fx updates`), vignette | `renderLighting`, `NIGHT_TINT`/`NIGHT_DEEP`/`NIGHT_DEEP_A`, `litShots`, `renderWeather`, `renderVignettes`/`vigGrd` | `light & weather` › `the pass` |
 | the night RIM: the world-space vignette that closes the view in rather than dimming the middle | `nightEdge`, `NIGHT_EDGE`, `nvGrd` | `light & weather` › `the pass` |
-| **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk` | `light & weather` › `ink over the world` |
+| **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk`; the riders' names on a wing, the one text that never lands on another (ground names overlap): `drawNameTag`, `settleNameTags` (run by the flush), `TAG_GAP`/`TAG_CLIMB` | `light & weather` › `ink over the world` |
 
 ## js/draw/render.js
 
@@ -745,11 +751,11 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the twin eagle rides down the fixed corner-to-corner diagonal, the wing seats and the merchant's neck seat, the jump window and its lock, a bot's treeline-safe forced drop, riding the landing and the E hop off the roost, free fall, landing, the flight bar, the dotted path, the wind trail, the zoomed-out view | `diagEnd` (and the corner's `mouth` it returns; `e.mouth` itself is the spur's junction, `roadNest`, world.js), `makeEagleRoute`, `forestDepth`, `lastOpenU`, `makeEagles`, `eagleScale`, `riderScale`, `riderDir`, `drawSeated`, `seatPos`, `MERCH_SEAT`, `beginDrop`, `dropJump`, `landPlayer`, `handOver`, `landAboard`, `hopOff`, `HOP_FALL_T`/`HOP_ALT`, `drawHopPrompt`, `updateDrop`, `updateEagle`, `drawDropAir`, `flightShown`/`flightShownT` (the flight bar's render-side clock), `TRAIL_T`/`TRAIL_STEP`/`TRAIL_RIM`/`TRAIL_TIP`/`TRAIL_TIP_AMP`/`TRAIL_BACK`/`TRAIL_BACK_AMP`, `drawEagleTrail`, `drawEagle`, `renderDropUI` | `eagle drop` |
+| the twin eagle rides down the fixed corner-to-corner diagonal, the wing seats and the merchant's neck seat, the jump window and its lock, a bot's treeline-safe forced drop, riding the landing and the E hop off the roost, free fall, landing, the flight bar, the dotted path, the wind trail, the zoomed-out view | `diagEnd` (and the corner's `mouth` it returns; `e.mouth` itself is the spur's junction, `roadNest`, world.js), `makeEagleRoute`, `forestDepth`, `lastOpenU`, `makeEagles`, `eagleScale`, `riderScale`, `riderDir`, `drawSeated`, `seatPos`, `MERCH_SEAT`, `beginDrop`, `dropJump`, `landPlayer`, `handOver`, `landAboard`, `hopOff`, `HOP_FALL_T`/`HOP_ALT`, `drawHopPrompt`, `updateDrop`, `updateEagle`, `drawDropAir`, `flightShown`/`flightShownT` (the flight bar's render-side clock), `FLIGHT_BAR_CUT`/`FLIGHT_TRACK`/`FLIGHT_SHUT`/`FLIGHT_OPEN`/`FLIGHT_KEY_SHUT` (the bar's paint, which the path's window and the landing ring share), `dropPress`/`flightDenyAt`/`FLIGHT_DENY_T` (a jump press from any device, and the bar's red shake when the door refuses it), `seatedName` (a rider's and the driver's name over the wing), `TRAIL_T`/`TRAIL_STEP`/`TRAIL_RIM`/`TRAIL_TIP`/`TRAIL_TIP_AMP`/`TRAIL_BACK`/`TRAIL_BACK_AMP`, `drawEagleTrail`, `drawEagle`, `renderDropUI` | `eagle drop` |
 | the drop brief: the roost tour a landing ridden to the crash opens on - the phase machine (a beat, the rival roost, then your own to finish), the camera's aim, the two headlines, the DAY 1 it hands back to | `state.dropBrief` (core.js), `BRIEF_WAIT`/`BRIEF_HOLD`/`BRIEF_HOLD_OURS`/`BRIEF_GO_MIN`/`BRIEF_MAX_T`, `endBrief`, `dropBriefTarget`, `drawDropBrief` (the glide: the camera banner, sim.js; the control zeroing: `sampleHumanInput`, input.js) | `eagle drop` |
 | the banking dive off the road onto the nest, the tree-shattering impact, the SPUR it fells straight back to the road pine by pine and paves behind the front, and the roosting objective: its wing-gust defense, its preen regen, and the driven-off ceremony that ends the match | `beginDive` (the bank: `e.diveH0`/`e.diveTurn`), `CRASH_DEPTH`/`MIN_CRASH_TREES`, `findCrashPoint`, `eagleCrash` (sets `e.laneDir`, the spur's direction toward `e.mouth`, and registers `e.spur`), `LANE_R`/`LANE_SPD`/`LANE_WARN`/`LANE_DELAY`/`LANE_MAX`, `laneFells`, `planLane` (the `pave` list), `laneStep` (the paving), `eagleBoomFx`, `eagleGust`, `eagleGustFx`, `hurtEagle`, `eagleFlee`, `eagleFleeResolve`, `teamEagleDown` (the driver it drops off: `spawnMerchant`, robots.js) | `eagle drop` |
 | boot order, `DBG` | `startGame`, `window.DBG` | `boot` |
 | the match between screens: the sim's recorded cosmetics, roles, host and client, the snapshot, its delta and bytes, the two transports | not here: the five [js/net/](#jsneteventsjs) sections above, in load order | - |
 | a hidden tab's frames: a worker's clock drives loop() while the page is hidden, rAF when it is not | `hiddenTimer`, `hiddenTick`, `watchHidden` | `the fixed step` |
-| the fixed step: the rAF loop banks each frame's time and steps the sim in whole 1/60 s slices (up to three a frame, the rest dropped; a quarter-slice of slack so a 60 Hz screen steps once a frame), polls the pad once a frame before them, renders once after | `TICK_DT`, `TICK_MAX`, `TICK_SLACK`, `tickAcc`, `loop` (`padPoll`, js/gamepad.js) | `the fixed step` |
+| the fixed step: the rAF loop banks each frame's time and steps the sim in whole 1/60 s slices (up to three a frame, the rest dropped; a quarter-slice of slack so a 60 Hz screen steps once a frame), polls the pad once a frame before them, renders once after | `TICK_DT`, `TICK_MAX`, `TICK_SLACK`, `tickAcc`, `loop` (`padPoll`, js/gamepad.js); the drop drawn in between steps (camera, birds, riders and fallers, render-only): `tween`, `tweenMark`, `tweenIn`, `tweenOut`, `TWEEN_SNAP` | `the fixed step` |
 | the FPS cap: a frame under `settings.fpsCap` is skipped whole before the bank is touched, so the sim still steps every slice it is owed; a due clock advanced a period per frame taken holds the average exactly, and resyncs after a stall | `capDue`, `capSkips` | `the fixed step` |

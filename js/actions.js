@@ -780,8 +780,8 @@ function unitUnder(src, wx, wy) {
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
     if (!unitAlive(a)) continue;
-    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : a.kind === 'dire' ? 17 : a.kind === 'wolf' || a.kind === 'alpha' ? 9 : 13;
-    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : a.kind === 'dire' ? 28 : a.kind === 'wolf' || a.kind === 'alpha' ? 14 : 22;
+    const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : isBigBeast(a) ? 17 : a.kind === 'wolf' ? 9 : 13;
+    const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : isBigBeast(a) ? 24 : a.kind === 'wolf' ? 14 : 22;
     const by = a.y + 4 - (a.alt || 0); // birds ride their alt
     if (Math.abs(wx - a.x) <= hw && wy >= by - h && wy <= by) return a;
   }

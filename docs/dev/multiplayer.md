@@ -577,7 +577,7 @@ the wait is the entire cost ([death keeps everything](gameplay.md#death-and-resp
 
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
-there is no `src` (`DEATH_CAUSE`, js/player.js: `ice`, `wolf` — a den's pack or the alpha — `dire`,
+there is no `src` (`DEATH_CAUSE`, js/player.js: `ice`, `wolf` — a den's pack — `bear`,
 `tackle`, `eagle`, `fire`, `soldier`; an unnamed one reads WENT DOWN). A death with an `src` other than
 the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours
 (`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
@@ -585,7 +585,7 @@ without one it writes the cause's line — `"<victim> FELL THROUGH THE ICE"` —
 player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
 The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels come too
-fast to be news — a wrecked building, a scrapped worker, the dire wolf's slayer, each eagle
+fast to be news — a wrecked building, a scrapped worker, a bear's slayer, each eagle
 landing, coming under attack and being driven off, a peer joining or leaving, and the market's
 spikes, crashes and restocks. `logEvent(txt, p, o)` is the whole interface (`o` a palette for a line
 no player owns); the log is not drawn
@@ -696,8 +696,8 @@ The ladder:
    `ambushReady` refuses a moving shot outright.
 4. **a camp on it** — the nearest camp monster already hunting this bot, inside `AI_SIGHT`: shoot it and give
    ground under 64 px, dodge under 30. A camp is neutral until hit, so a bot wakes one itself only
-   through the hunt rung, which takes a den's wolves like any animal but never the dire wolf
-   or the alpha. **An ally joins the human's camp fight**: a monster hunting
+   through the hunt rung, which takes a den's wolves like any animal but never a
+   bear. **An ally joins the human's camp fight**: a monster hunting
    anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D` (the human is
    the anchor, as at rung 3; its own bird under threat comes first), which it walks in on - a
    blade to arm's length, a bow to 90 px with the line open - since that monster is not coming

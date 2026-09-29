@@ -262,7 +262,7 @@ function keyPress(e) {
     // repeat guard keeps a held key from machine-gunning that deny.
     if (keyIs(e, 'map')) { state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); return; }
     if (e.key === 'Escape') { if (state.mapOpen) SFX.ui(false); state.mapOpen = false; return; }
-    if ((keyIs(e, 'dodge') || e.key === 'Enter' || keyIs(e, 'work')) && !e.repeat) player.input.jump = true; // the step performs it (updatePlay)
+    if ((keyIs(e, 'dodge') || e.key === 'Enter' || keyIs(e, 'work')) && !e.repeat) dropPress(); // the step performs it (updatePlay)
     return;
   }
   if (state.mode === 'dead') { deadKey(e.key.toLowerCase()); return; }
@@ -502,7 +502,7 @@ function pointerPress(button) {
   if (button === 1) { if (msOn()) msWheelPress(); return; } // the middle button is the MOUSE scheme's action wheel, and nobody else's
   if (button !== 0) return;
   if (state.mode === 'title') { menuClick(); return; }
-  if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) player.input.jump = true; else if (mapCloseHit()) state.mapOpen = false; return; }
+  if (state.mode === 'drop') { SFX.unlock(); if (!state.mapOpen) dropPress(); else if (mapCloseHit()) state.mapOpen = false; return; }
   if (state.mode === 'dead') { SFX.unlock(); deadClick(); return; }
   if (state.mode !== 'play') return;
   if (ckOn() && ck.arm) { ckArmedPress(); return; } // an armed attack-move: this press lays it
@@ -776,7 +776,7 @@ function ckRightPress() {
   if (!pt) return;
   const { wx, wy, tx, ty } = pt;
   // riding or seated: the press is the hop, and the walk waits for the landing
-  if (state.mode === 'drop') { player.input.jump = true; if (player.aboard) return; }
+  if (state.mode === 'drop') { dropPress(); if (player.aboard) return; }
   else if (player.aboard) ck.hop = true;
   // on a zipline the press lets go of it, and walking to one it calls the
   // walk off; a press ON your own drawn cable (zipUnder, world.js - the

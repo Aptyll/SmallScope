@@ -331,7 +331,7 @@ new class needs written:
 1. a `CLASSES` entry ([js/player.js](../../js/player.js)) — `name` and the `kit` numbers are
    the load-bearing halves;
 2. the full sprite set in the byte-fragile [js/sprites/characters.js](../../js/sprites/characters.js)
-   (a beast goes in beasts.js, a building in buildings.js, an item in items.js, terrain in
+   (a beast goes in beasts.js, the bears in bears.js by rebaking, a building in buildings.js, an item in items.js, terrain in
    terrain.js, HUD art in icons.js), registered by adding its key to that file's
    `Object.assign(SPRITES, {...})` at the bottom —
    4 directions × 3 frames plus the 5-pose prone set, baked into `SPRITES.champ[c]` per team
@@ -600,12 +600,13 @@ Code that is dead **on purpose** is the next section.
   `updateAI` ever walks to a sled or presses for one, so the [sled](gameplay.md#the-sled) is
   for human players only.
 - **No bot walks to a camp on purpose** (3.20): a bot pulls a den only through the hunt rung when
-  one is within `AI_HUNT`, never the alpha or the dire wolf, and nothing in
-  `aiSituation` weighs a camp against the road — so the alpha stone and the dire hollow are the
+  one is within `AI_HUNT`, never a bear, and nothing in
+  `aiSituation` weighs a camp against the road — so the two bear camps are the
   human's to start (the allies join a camp fight the human is in, rung 4) until an objective rung
   learns them ([Bots](multiplayer.md#bots)).
-- **The alpha and the dire wolf wear placeholder sprites** (3.20): the wolf's grids washed and,
-  for the dire, doubled ([sprites.md](sprites.md)). Each wants its own concept sheet.
+- **The bears keep the old wolves' kind keys** (`alpha`, `dire`) so saves and the net wire still
+  load them; the names a player reads are the bears'. **A bear's camp still howls** when woken
+  (`SFX.howl`): there is no bear sound yet.
 - **The music is the Steam download**: the nine tracks in `audio/music/` are 39 MB of the
   game's 44 MB, encoded at 184–256 kbps. Re-encoding them to 128 kbps (ffmpeg, `-b:a 128k`,
   or `-q:a 5` VBR) would cut the music to roughly 26 MB; the code reads the files by name in
