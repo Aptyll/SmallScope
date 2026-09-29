@@ -11,6 +11,7 @@ rules.
 node app/server.js          # static server + screenshot sink + the match relay on http://localhost:8471
 node app/bake-sfx.js       # audio/sfx/*.mp3 -> js/sfxdata.js; rerun after changing a clip
 node app/bake-logo.js      # docs/media/logos/mainMenuSoftfall.png -> js/logodata.js; rerun after replacing it
+node app/check-globals.js  # the one lint: a name two files declare breaks the shared scope - run before every push
 cd desktop && npm install && npm start   # the Windows wrapper: Electron (+ Steam behind a flag) - the ONE place with packages
 cd desktop && npm run build              # the portable zip a version tag also builds and attaches to a Release
 ```
@@ -18,7 +19,7 @@ cd desktop && npm run build              # the portable zip a version tag also b
 **Double-clicking [index.html](index.html) has to work** — nothing may depend on being served. A
 `file://` page cannot `fetch` its own folder, which is why `app/bake-sfx.js` inlines the sound
 effects (its output is committed); an asset loaded any other way is silently dead off the disk.
-No package manager, dependencies, tests or linter: edit a file under `js/` and reload.
+No package manager, dependencies or tests: edit a file under `js/` and reload.
 
 **The game ships on Steam for a desktop: keyboard and mouse, and a gamepad (Steam Deck).** Phone
 and touch support was deleted — never add a touch
