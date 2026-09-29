@@ -8,8 +8,10 @@ Rebase the current branch onto origin/main and push it.
    - Any other file: keep both sides' intent.
    Remove every conflict marker. `git add` the file.
    Run `for f in $(git ls-files 'js/*.js'); do node --check "$f" || exit 1; done` (every file under `js/`, subfolders included). On failure: stop mid-rebase. Report the file and the error.
+   Run `node app/check-globals.js`. On failure: stop mid-rebase. Report its output.
    `git rebase --continue`.
 4. If a conflict cannot be resolved: stop mid-rebase. Report the file.
 5. Never `git rebase --abort`. Never `git reset --hard`.
-6. `git push --force-with-lease`. Never `--force`.
-7. Report each resolution in one line: `<file>: <what was kept>`.
+6. Once the rebase is done, conflicts or not, run `node app/check-globals.js`: a clean rebase is exactly where two branches' same-named globals meet. On failure: do not push. Report its output (each collision names both files and lines).
+7. `git push --force-with-lease`. Never `--force`.
+8. Report each resolution in one line: `<file>: <what was kept>`.
