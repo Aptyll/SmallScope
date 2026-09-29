@@ -1055,6 +1055,14 @@ canvas.addEventListener('wheel', (e) => {
     else if (state.menu.screen === 'wiki' && state.menu.wikiT >= 1) { e.preventDefault(); wikiScrollBy(e.deltaY > 0 ? 14 : -14); }
     return;
   }
+  // dead and watching somebody (a respawn wait, or SPECTATE after the end):
+  // the wheel zooms the camera on them, as it does in play. Not over the
+  // recap, the planks or either end screen - there is no camera to move
+  if (state.mode === 'dead') {
+    e.preventDefault();
+    if (state.deadView === 'spec' && !endScreen() && !replayFull() && !state.mapOpen) wheelZoom(e);
+    return;
+  }
   if (state.mode !== 'play') return;
   e.preventDefault();
   // over the open ESC panel the wheel walks the open settings page
@@ -1074,12 +1082,17 @@ canvas.addEventListener('wheel', (e) => {
     SFX.notch();
     return;
   }
-  // scroll up = closer. One notch = one device pixel per world pixel, which
-  // is the finest step that still lands on a pixel-exact zoom.
+  wheelZoom(e);
+}, { passive: false });
+
+// scroll up = closer. One notch = one device pixel per world pixel, which
+// is the finest step that still lands on a pixel-exact zoom. The one zoom:
+// what you pick while dead is still yours when you are back.
+function wheelZoom(e) {
   const k0 = kWant;
   kWant = Math.max(kMin(), Math.min(kMax(), kWant + (e.deltaY > 0 ? -1 : 1)));
   if (kWant !== k0) SFX.notch(); // ...and nothing at the ends of the range, where the notch does nothing
-}, { passive: false });
+}
 
 // The local human's controller: keyboard + mouse folded into the same input
 // struct an AI writes, once per sim step. Pause and the settings panel zero it

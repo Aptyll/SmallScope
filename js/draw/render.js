@@ -394,7 +394,9 @@ function render() {
       draws.push({ y: (o.ty + structH(o)) * TILE, o, tx: o.tx, ty: o.ty });
     }
   }
+  trackDowns(now); // a body that just dropped goes down in place (the `going down` banner, js/draw/bodies.js)
   for (const p of players) {
+    if (goingDown(p)) { draws.push({ y: p.y + 8, down: p }); continue; }
     if (p.dead || inAir(p)) continue; // airborne players draw in drawDropAir
     draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
   }
@@ -440,6 +442,7 @@ function render() {
 
   for (const d of draws) {
     // a body in deep snow is drawn sunk to the shins (drawWading, js/draw/depth.js)
+    if (d.down) { drawDown(d.down, ex, ey, now); continue; }
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawWading(d.p, ex, ey, now, () => drawPlayer(d.p, ex, ey, now)); continue; }
     if (d.a) { drawWading(d.a, ex, ey, now, () => drawAnimal(d.a, ex, ey, now)); continue; }
     if (d.r) { drawWading(d.r, ex, ey, now, () => drawRobot(d.r, ex, ey, now)); continue; }

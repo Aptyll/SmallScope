@@ -3,19 +3,22 @@
 // overlay and spectating, and the victory and defeat ceremonies that share
 // one composition.
 // ------------------------------------------------------------ replay
-// A rolling four seconds of what was on screen, kept as pixels rather than as
-// state, played back while you are dead or paused. A DEATH gets the RECAP:
+// A rolling four seconds of the world, kept as pixels rather than as state,
+// played back while you are dead or paused. A DEATH gets the RECAP:
 // the whole frame, the way a goal replays - the ally view (a respawn wait)
 // or the elimination's planks wait underneath until its close box, ESC or a
 // pad's B puts it away, and the RESPAWNING IN Ns
 // line and the ESC BACK prompt draw over it. PAUSE gets the WINDOW: the
 // bottom-left corner at RP_W x RP_H, under the pause planks.
 //
-// The recap draws in the game canvas: the capture is one sample per GAME
-// px (RP_CAP_W x RP_CAP_H is the frame itself), and blown back up under the
-// devScale transform it lands one capture px on one game px - at a 1080p or
-// 1440p fullscreen the UI layer and a zoom-1 world come back pixel for
-// pixel, nothing resampled. The corner window cannot do that: its 160x90
+// The capture is the WORLD LAYER itself (worldCv, one sample per world px,
+// before the blit scales it), with the k it was blitted at, so the recap
+// draws it back at that same k and every world px lands on the same k x k
+// block of device px it had live - pixel-exact at any resting zoom, zoomed
+// in or not. Only a view wider than the cap (zoomed out past RP_CAP_W world
+// px) is reduced. The snowfall and the vignettes draw after the blit, and
+// the HUD after the capture, so none of the three is in it. The corner
+// window cannot be exact: its 160x90
 // canvas px hold a sixteenth of the view, and the detail is gone before it
 // is drawn. The same corner of the SCREEN is RP_W*devScale wide (480 device
 // px at a 1080p fullscreen's 3x), so the window's frame goes to its own
@@ -30,16 +33,15 @@
 const RP_W = 160, RP_H = 90;    // the pause window in the corner, in GAME px: 16:9, a quarter of the view
 const RP_CLOSE = 12;            // the recap's close box, on the frame's top-right corner
 const RP_SECS = 4;              // seconds held
-const RP_FPS = 30;              // frames captured per second -> 15fps on screen at RP_RATE
-const RP_RATE = 0.5;            // playback speed
+const RP_FPS = 30;              // frames captured per second, and played back at
+const RP_RATE = 1;              // playback speed: real time
 const RP_N = RP_SECS * RP_FPS;  // slots in the ring
 const RP_COLS = 12;             // atlas grid; RP_N / RP_COLS rows
 const RP_PAD = 4;               // inset from the bottom-left corner
 // the biggest slot the ring will ever allocate, and so the memory ceiling:
-// RP_CAP_W * RP_CAP_H * 4 * RP_N bytes (640x360 -> 110 MB). It is the frame
-// at one sample per game px - what the recap draws back at exactly - so a
-// 1080p or 1440p fullscreen captures every game px it shows; a window that
-// renders more rows than the frame loses the excess.
+// RP_CAP_W * RP_CAP_H * 4 * RP_N bytes (640x360 -> 110 MB). In world px: the
+// default zoom and every zoom closer fit whole; zoomed further out, the
+// view is reduced to fit.
 const RP_CAP_W = 640, RP_CAP_H = 360;
 
 // the device-resolution layer: sized and placed over the window's rect by
@@ -55,6 +57,7 @@ let rpAt = null, rpAtx = null;
 let rpSW = 0, rpSH = 0;                  // current slot size
 const rpFW = new Int16Array(RP_N);       // per-frame captured size (0 = empty slot)
 const rpFH = new Int16Array(RP_N);
+const rpFK = new Float32Array(RP_N);     // per-frame device px per captured px, as it was blitted live
 
 let rpHead = 0;     // slot the next capture goes in
 let rpCount = 0;    // slots filled, <= RP_N
@@ -64,13 +67,12 @@ let rpLast = 0;     // previous render's clock; the delta for both timers
 let rpOpen = false; // was the window up last frame (a fresh open restarts the loop)
 let rpVis = false, rpAlpha = -1, rpOvW = 0, rpOvH = 0; // last state pushed to the overlay
 
-// What to capture at, this frame: the view at one sample per game px,
-// clipped by the memory ceiling. The canvas holds devScale device px per
-// game px, so this is always a reduction, never an upscale - blowing the
-// view up would cost memory and add no detail the recap could show.
+// What to capture at, this frame: the world view at one sample per world
+// px, reduced only past the memory ceiling - and the device px each captured
+// px covered on screen, which is what the recap draws it back at
 function rpTarget() {
-  const s = Math.min(1, RP_CAP_W / VIEW_W, RP_CAP_H / VIEW_H);
-  return [Math.max(1, Math.round(VIEW_W * s)), Math.max(1, Math.round(VIEW_H * s))];
+  const s = Math.min(1, RP_CAP_W / WV_W, RP_CAP_H / WV_H);
+  return [Math.max(1, Math.round(WV_W * s)), Math.max(1, Math.round(WV_H * s)), zoomCur * devScale / s];
 }
 
 function rpSlotAt(i, sw, sh) { return [(i % RP_COLS) * sw, ((i / RP_COLS) | 0) * sh]; }
@@ -103,21 +105,22 @@ function rpEnsure(w, h) {
 }
 
 // Recording runs exactly while the local player is alive and the sim is
-// stepping - the same condition update() plays on. The overlays that freeze
+// stepping - the same condition update() plays on - and on through its own
+// fall (goingDown, js/draw/bodies.js), so the recap ends on it. The overlays that freeze
 // the sim would otherwise pack the ring with copies of one still frame, and
 // death freezes the strip on the four seconds that led to it. The map does
 // not freeze anything, and the capture point is above its dim, so the ring
 // keeps banking clean world frames while the chart is up.
 function replayLive() {
-  return state.mode === 'play' && !state.paused && !state.settingsOpen &&
-    player.active && !player.dead;
+  if (state.paused || state.settingsOpen || !player.active) return false;
+  return goingDown(player) || (state.mode === 'play' && !player.dead);
 }
 
 // up on a death until it is closed (a respawn wait or an elimination, once
 // its half second of dim has landed - the recap) and on pause (the corner
 // window); never under a full-screen panel
 function replayShowing() {
-  if (!rpCount || window.DBG.hideUI || state.mapOpen || state.settingsOpen) return false;
+  if (!rpCount || window.DBG.hideUI || state.mapOpen || state.settingsOpen || goingDown(player)) return false;
   if (state.paused) return true;
   // not over an end screen: both are compositions, and the frame is theirs
   if (state.mode !== 'dead' || endScreen() || !deadReady()) return false;
@@ -169,15 +172,15 @@ function replayTick(now) {
     // carry the remainder so the cadence averages out, but never bank more
     // than one period of debt: below RP_FPS that would spiral
     rpAcc = Math.min(rpAcc - 1 / RP_FPS, 1 / RP_FPS);
-    const [cw, ch] = rpTarget();
+    const [cw, ch, ck] = rpTarget();
     rpEnsure(cw, ch);
     const [sx, sy] = rpSlotAt(rpHead, rpSW, rpSH);
     // the slot may be wider than this frame (a shrunk view after a resize):
     // clear it so the last tenant does not fringe the new one
     rpAtx.fillStyle = '#06091a';
     rpAtx.fillRect(sx, sy, rpSW, rpSH);
-    rpAtx.drawImage(canvas, sx, sy, cw, ch);
-    rpFW[rpHead] = cw; rpFH[rpHead] = ch;
+    rpAtx.drawImage(worldCv, 0, 0, WV_W, WV_H, sx, sy, cw, ch);
+    rpFW[rpHead] = cw; rpFH[rpHead] = ch; rpFK[rpHead] = ck;
     rpHead = (rpHead + 1) % RP_N;
     if (rpCount < RP_N) rpCount++;
     return;
@@ -203,7 +206,7 @@ function rpOverlay(on, a) {
 // close box in its top-right corner and the ESC prompt at its foot. The
 // window: the strip on a frost plate with the playhead on the bottom rim.
 // No label either way - a looping picture under a sweeping playhead is what
-// a recording looks like, the half speed reads itself, and a box with a
+// a recording looks like, and a box with a
 // cross in it is how a picture closes.
 function renderReplay() {
   if (!replayShowing()) { rpOverlay(false, 1); return; }
@@ -216,13 +219,11 @@ function renderReplay() {
     rpOverlay(false, 1); // the recap is the canvas's own
     ctx.fillStyle = '#06091a';
     ctx.fillRect(0, 0, w, h);
-    // one capture px per game px wherever the frame fits the cap (nearest,
-    // so it comes back pixel for pixel); a frame the cap clipped is scaled
-    // up by the same fraction on both axes and the sliver it leaves is dark
+    // the world frame back at the k it was blitted at live, from the same
+    // top-left corner, nearest: the same block of device px per world px
     if (fw) {
-      const s = Math.min(w / fw, h / fh);
-      const dw = Math.round(fw * s), dh = Math.round(fh * s);
-      ctx.drawImage(rpAt, sx, sy, fw, fh, Math.round((w - dw) / 2), Math.round((h - dh) / 2), dw, dh);
+      const k = rpFK[slot] / devScale;
+      ctx.drawImage(rpAt, sx, sy, fw, fh, 0, 0, fw * k, fh * k);
     }
     // the playhead, two px along the bottom edge
     ctx.fillStyle = '#0a0e23';
@@ -312,6 +313,7 @@ function endScreen() {
 }
 
 function viewPlayer() {
+  if (goingDown(player)) return player; // your own fall is watched through before the view hands over
   const q = state.spec >= 0 ? players[state.spec] : null;
   return q && q.active && !q.dead ? q : player;
 }

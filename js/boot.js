@@ -1189,6 +1189,22 @@ function drawEagle(e, ex, ey, now) {
 // the ride's HUD: the flight bar (the line as a shape - flown part filled,
 // jump window gold, a bird diamond riding the head), the first-flight
 // countdown, and the keybind indicators. The wider read is the M map now.
+// The flight bar's own clock. The bar moved only when the sim did - a
+// 60 Hz step, or a 15 Hz snapshot on a client - and in whole UI pixels,
+// 12 of them a second at the common scale, so the head crept in 3-device-px
+// hops. This carries the flight's time on by the frame's own clock between
+// updates, never more than about one update's gap past the last value seen
+// (so a pause or a stalled wire holds it within a frame) and never
+// backwards. Render-only: the sim's e.t is untouched.
+const flightShown = { e: null, t: 0, seenT: 0, seenAt: 0, gap: 0 };
+function flightShownT(e, now) {
+  const f = flightShown;
+  if (f.e !== e || e.t < f.seenT) { f.e = e; f.t = f.seenT = e.t; f.seenAt = now; f.gap = 0; return e.t; }
+  if (e.t !== f.seenT) { f.gap = Math.min(0.25, now - f.seenAt); f.seenT = e.t; f.seenAt = now; }
+  const reach = e.t + Math.min(now - f.seenAt, f.gap * 1.5);
+  f.t = Math.max(f.t, Math.min(reach, e.dur));
+  return f.t;
+}
 function renderDropUI(now) {
   const d = state.drop;
   if (!d || window.DBG.hideUI) return;
@@ -1213,7 +1229,9 @@ function renderDropUI(now) {
     ctx.fillRect(wx0, byy, Math.max(2, wx1 - wx0), bh);
     ctx.globalAlpha = 1;
     // flown so far, in team colour, with the chart's bird diamond on the head
-    const fx = Math.round(bw * me.prog);
+    // on device pixels, not UI pixels: the head glides a device pixel at a
+    // time (whole device pixels, so every edge stays crisp)
+    const fx = Math.round(bw * Math.min(1, flightShownT(me, now) / me.dur) * devScale) / devScale;
     ctx.fillStyle = TEAMS[skin(player.team)].mark;
     ctx.fillRect(bxx, byy, fx, bh);
     const mxx = bxx + fx, myy = byy + Math.round(bh / 2);
