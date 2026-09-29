@@ -265,8 +265,9 @@ in by itself and still goes in off the bridge when it is knocked off.
 Everything that walks to a goal on its own — robots, bots, hunting wolves and patrolling
 ones, prey both fleeing and grazing, any future enemy — routes through the `pathfinding` banner
 rather than steering straight at it.
-`findPath(sx, sy, gx, gy, reach, budget)` is grid A* over the tile map: a tile is `walkable()`
-when it is in-world, not `isSolidTile`, and not open water (`waterAt`: an ice hole or the creek); eight-connected with no
+`findPath(sx, sy, gx, gy, reach, budget, e)` is grid A* over the tile map: a tile is `walkable()`
+when it is in-world, not `isSolidTile` for the walker `e` (its own side's gates stand open; `navTo`
+passes the unit, `navLineClear`/`navSmooth` carry it on), and not open water (`waterAt`: an ice hole or the creek); eight-connected with no
 corner cutting (a diagonal needs both orthogonal neighbours open, so a unit of radius ≤ 5 never
 clips a tree walking centre to centre); octile heuristic; typed-array scores stamped by a
 generation counter so nothing is cleared between searches; a binary heap; no `rng`, so it is
@@ -2476,30 +2477,41 @@ and the floater.
 ## Base building
 
 **T opens the build list, and the ghost under the pointer is what a click lays.** The way in is
-on screen all match: the **hammer plate** (`drawBuildTab`) under the weapon shelf's drawer
-arrow — the build key's cap (the pad's dpad-down glyph while one is in hand) beside the hammer
-the pointer turns into — and a click on it does what T does (`toggleBuild`, the one toggle both
-call). The list (`drawBuildList`, the `build list` group in
-[js/ui/wheel.js](../../js/ui/wheel.js)) is a column hanging from the plate, one row a piece in
-`BUILD_ORDER` — wall, long wall, turret, generator, bot bay, fish net — each row its icon and its
+on screen all match: the **build well** (`drawBuildTab`), the ability strip's fifth well after
+ability 4 — the hammer the pointer turns into, doubled, with the build key's cap (the pad's
+dpad-down glyph while one is in hand) in the corner an ability well prints its key in. **A tap
+of T** or a click on the well opens the list on the **last piece picked** (`toggleBuild`, the one
+toggle both call; `buildLast`), and a tap again puts it away. **Holding T** past `PIECE_HOLD`
+opens the **piece wheel** over the pointer (`buildKeyPress`: the wheel kind `piece`, every piece
+round the ring on the manage wheel's grammar, drawn only once the hold is a hold so a tap never
+flashes it), and the release on a wedge opens the list on that piece (`buildKeyRelease`); a hold
+let go in the hub changes nothing. The list (`drawBuildList`, the `build list` group in
+[js/ui/wheel.js](../../js/ui/wheel.js)) is a column standing over the well, one row a piece in
+`BUILD_ORDER` — wall, long wall, gate, turret, generator, bot bay, fish net — each row its icon and its
 price (gold's colour while the purse covers it, red while not), the picked row rimmed gold and
-the plate with it. Plate and column are the **top-left corner's**: drawn in its 1× space at the
-HUD SIZE (`drawCorner`, js/ui/hud-draw.js), hit tested through `cornerMouse`, and hung off the
-drawer's live foot (`cornerFoot`), so an open pack pushes them down rather than covering them.
+the well with it. Well and column are the **strip's**: drawn in its 1× space at the HUD SIZE
+(`drawHudStrip`, js/ui/hud-draw.js, whose bake grows by `buildHeadroom` while the column is up),
+hit tested through `stripMouse`, the column's foot clear of the pouch tab it overhangs.
 The mouse wheel walks the rows (the camera's zoom waits), a click on a row picks it, a **hover on
 a row prints what the piece is for** (`tipStruct`, js/ui/tooltip.js: the price, health, build
 time and the type's own numbers, then its `STRUCTS` `blurb`), and **R turns a piece that turns**:
 the picked row wears the rotate key's cap. In the world the picked piece rides the pointer as a
 **ghost** (`drawBuildGhost`, the world pass): its own art, faint, snapped to the tile grid with
 its footprint centred on the tile under the pointer, rimmed in the standard bright ink where it
-can stand and the danger red where it cannot, and a **dot at every tile corner inside
-`BUILD_REACH`** (64 px) of the builder, so the snap and the reach read as one thing without a
-number. **The pointer wears the piece too** — the hammer cursor with the picked piece's icon on
-the picked row's gold under it (`drawBuildCursor`, dim with the hammer where the ghost cannot
-stand), wherever a press would lay it — so the mode is read where the eye is: a left press over
-the world lays or refuses, and never fires. A left-click lays the ghost and **the list stays up**
-for the next piece — a wall is a run, not a piece. T again, the plate, Escape or the right button
-put it away; a red ghost refuses with the deny cue and nothing else. Rust is the reference.
+can stand, the danger red where it cannot and **grey where it could but the purse cannot pay**
+(`BUILD_BROKE`), and a **dot at every tile corner inside `BUILD_REACH`** (64 px) of the builder,
+so the snap and the reach read as one thing without a number. **The pointer wears the piece too**
+— the hammer cursor with the picked piece's icon on the picked row's gold under it
+(`drawBuildCursor`, dim with the hammer where the ghost cannot stand), wherever a press would lay
+it — so the mode is read where the eye is: a left press over the world lays or refuses, and never
+fires. A left-click lays the ghost and **the list stays up** for the next piece. **A piece marked
+`line` (the wall) is laid by a drag**: the press remembers its tile, the ghost becomes the run
+from it along whichever axis the pointer travelled further (`buildLine`, at most `BUILD_LINE_MAX`
+tiles, each tile its own colour, going grey where the purse gives out), and the release sends the
+run as one order (`buildOrder`: `tx2`/`ty2` on the `build` cmd) that `placeLine` lays tile by
+tile, each its own contested `placeStruct`, skipping what cannot stand; a press and release on
+one tile is the single piece. T tapped, the well, Escape or the right button put the list away;
+a red ghost refuses with the deny cue and nothing else. Rust is the reference.
 
 **One placement rule.** `canPlaceAt(type, tx, ty, rot, p)` (structures.js) is what the ghost's
 colour, the click, the pad's wheel, `findSite` and the AI all ask, so none of them can offer a
@@ -2520,11 +2532,23 @@ of the named type's own grid (`drawTiledStruct`, js/draw/structs.js; `structSpri
 way it resolves `art`). Today that is the **long wall** alone — two wall tiles laid as one piece
 for a little under two walls, 2×1 or 1×2, hurt and upgraded as one — and the bay stays 3×2.
 
-**Managing is E.** Holding E beside one of your own *finished* buildings (`manageNear`: the one
+**The gate** (`STRUCTS.gate`, the `gate` flag) is a one-tile wall piece its own side walks
+through and nobody else does: `isSolidTile(tx, ty, e)` answers open for a walker `e` of the gate's
+team, and `moveEntity` and the pathfinder pass the walker, so a side's players and bots route
+through their own gates while rivals, wildlife and every shot meet a wall (shots and the maps ask
+without a walker). It is hurt, upgraded and wrecked like a wall, and laid one at a time (no
+`line`), so a dragged wall with a gate in it is two gestures.
+
+**Managing is E.** Holding E beside one of your own buildings (`manageNear`: the one
 under the aim in reach, else the nearest in reach; never the barracks, which is `fixed`) opens
-the **manage wheel** on the practice rack's grammar — upgrade straight up, demolish last — and
-the release takes. This list is *not* generic over a table (`wheelOptions()` hand-builds it), so
-a type's own extra order would go between the two; no type has one. E never swings at a
+the **manage wheel** on the practice rack's grammar — upgrade straight up, **repair** between,
+demolish last — and the release takes. A **site still going up** offers the demolish alone (the
+wheel's `site`, fixed when it opens so the wedges never shift under the pointer). This list is
+*not* generic over a table (`wheelOptions()` hand-builds it). **Repair** (`startRepair`) pays
+`repairCost` — `REPAIR_SHARE` of the standing tier's price scaled by the share of hp missing, at
+least 1 — and the building mends at `REPAIR_RATE` of its max hp a second (`o.mend`, spent in
+`updateStructures`) whether or not it is being hit; the wheel's label says the price, or FULL
+HEALTH. E never swings at a
 building of your own (`workTarget`), which is what leaves the key free to open it. The right
 button is the [flag wheel](#team-flags) everywhere.
 
@@ -2599,7 +2623,10 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
 - **Ownership**: a building wears its team's palette (`structSprite`), and `ownsStruct(o, p)`
   means only its side can open the manage wheel, upgrade or demolish it. Stumps are neutral.
 - **Construction**: `updateStructures()` (called from `updatePlay`, iterating only the
-  `structures` registry) advances `buildT`, grows hp toward max, and puffs dust; the draws pass
+  `structures` registry) advances `buildT`, grows hp toward max, and puffs dust — **faster for
+  every one of the site's side standing within `BUILD_REACH`** (`buildCrew`: `CREW_BOOST` a head,
+  up to `CREW_MAX`, the dust quickening with it), so helping is standing there; it also spends a
+  paid repair (`o.mend`); the draws pass
   shows `SPRITES.scaffold[0|1]` under 2/3 progress, then the real sprite under the `scaffold[2]`
   lattice. A sprite wider than 16 px — the bay — builds differently: the first 12% of the timer
   shows only a staked-out foundation pad over the footprint, then the sprite rises bottom-up behind
@@ -2680,10 +2707,13 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   wall through one call rather than a tile loop per ability, and a 3×2 bay is caught by whichever
   of its six tiles the ring actually crosses. `structFoe(src, s)` is its `unitFoe`: never your
   own, never a neutral, and PVP has nothing to say about it, because a wall is not a body.
-- Demolish refunds **50% of the cumulative cost across tiers** (`cumulativeCost`), paid to the
-  demolisher on the spot through `awardGold` — 23 gold for a fully-upgraded wall. `demolishStruct()` →
-  `destroyStructure(o, true, p)` is the live path for that, reached from `runCmd` for the wheel's
-  demolish order. `canAfford`/`pay`/`costText` are generic over every `inv` key. Demolishing is
+- Demolish refunds **50% of the cumulative cost across tiers** (`cumulativeCost`, `structRefund`),
+  paid to the demolisher on the spot through `awardGold` — 23 gold for a fully-upgraded wall —
+  except **a site still going up for the first time, which hands its whole price back**, so a
+  misplaced piece costs nothing but the walk (an upgrade under way is still the half). A wreck
+  always pays the wrecker the half. `demolishStruct()` → `destroyStructure(o, 'own', p)` is the
+  live path for that, reached from `runCmd` for the wheel's demolish order (the one order a site
+  takes); the manage wheel's label shows the refund. `canAfford`/`pay`/`costText` are generic over every `inv` key. Demolishing is
   **not** guarded beyond that — no confirmation dialog exists anywhere in this game.
 - **Every damaged building wears an hp bar** (`drawHealthBar`, centred on the sprite, `sy - 5`),
   drawn only once `hp < maxHp` so an untouched base stays clean — and never while `building`, when

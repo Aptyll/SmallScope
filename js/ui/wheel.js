@@ -26,6 +26,8 @@ function wheelOptions() {
   // special-cased either - wheelSpan(1) is the whole circle, so any direction
   // out of the hub picks it and the hub still cancels.
   if (w.kind === 'build') return buildOptionsAt(w.tx, w.ty).map((type) => ({ id: type }));
+  // the build key's piece wheel: every buildable, in the list's own order
+  if (w.kind === 'piece') return BUILD_ORDER.map((type) => ({ id: type }));
   // the flag wheel: the four orders, attack straight up (the `team flags`
   // banner, robots.js)
   if (w.kind === 'flag') return FLAG_ORDER.map((id) => ({ id }));
@@ -40,9 +42,11 @@ function wheelOptions() {
   // top, then the two meals and the flag (MS_WHEEL, js/input.js)
   if (w.kind === 'kit') return MS_WHEEL.map((id) => ({ id }));
   // upgrade is always the wedge straight up and demolish always the last one,
-  // so a type's extra option would land between them instead of displacing
-  // either (none has one today; the Keep's card craft did)
-  return [{ id: 'upgrade' }, { id: 'demolish' }];
+  // with repair between them. A site still going up (w.site, fixed when the
+  // wheel opened so the wedges never shift under the pointer) offers the
+  // demolish alone - the whole circle, its whole price back.
+  if (w.site) return [{ id: 'demolish' }];
+  return [{ id: 'upgrade' }, { id: 'repair' }, { id: 'demolish' }];
 }
 
 // The whole geometry, in two lines: every wedge is span wide, and wedge i is
@@ -88,6 +92,9 @@ function resolveWheel() {
   // the action wheel performs its own pick (msKitPick, js/input.js); only its
   // own release stands the flag wheel up, so any other close drops that wedge
   if (w.kind === 'kit') { if (L.seg >= 0 && MS_WHEEL[L.seg] !== 'flag') msKitPick(w, L.seg); return; }
+  // the piece wheel is the build key's alone: its release (buildKeyRelease)
+  // is the only thing that picks from it, so any other close picks nothing
+  if (w.kind === 'piece') return;
   if (L.seg < 0) {
     // released in the hub = cancel - except a flag wheel held over your own
     // flag, whose hub IS the flag (drawWheelHub): releasing there lifts it
@@ -111,7 +118,10 @@ function runCmd(p, c) {
   if (c.kind === 'ability') { buyAbilityLv(p, c.i); return; } // an ability level: a skill point, from anywhere
   if (c.kind === 'shop') { shopCmd(p, c); return; } // the merchant's counter (js/shop.js) - it checks its own reach
 
-  if (c.kind === 'build') { placeStruct(c.tx, c.ty, c.id, p, c.rot); return; } // rot: the list's R (a wheel's order is unturned)
+  if (c.kind === 'build') {
+    if (c.tx2 !== undefined) { placeLine(p, c); return; } // a dragged run (the list's `line` pieces)
+    placeStruct(c.tx, c.ty, c.id, p, c.rot); return; // rot: the list's R (a wheel's order is unturned)
+  }
   // the flag: per-player state, planted anywhere on the map (no reach, no
   // contest); id null is the lift (the `team flags` banner, js/robots.js)
   if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return; }
@@ -119,10 +129,13 @@ function runCmd(p, c) {
   if (c.kind === 'pkdie') { pkWheelPick(p, c); return; } // the parkour roll die (js/world.js)
   if (c.kind === 'agbell') { agRing(p, c); return; } // the archery range's bell (js/world.js)
   const o = structOf(objAt(c.tx, c.ty));
-  if (!o || !STRUCTS[o.type] || o.building || !ownsStruct(o, p)) return;
+  if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
-  if (c.kind === 'upgrade') startUpgrade(o, p);
-  else if (c.kind === 'demolish') demolishStruct(o, p);
+  // a site still going up takes only the demolish (its whole price back)
+  if (c.kind === 'demolish') demolishStruct(o, p);
+  else if (o.building) return;
+  else if (c.kind === 'upgrade') startUpgrade(o, p);
+  else if (c.kind === 'repair') startRepair(o, p);
 }
 
 // ------------------------------------------------------------ selection, hints & wheel
@@ -481,8 +494,9 @@ function drawWheelHub(L) {
 }
 
 function renderWheel(now) {
-  const L = wheelLayout();
   const w = state.wheel;
+  if (!pieceWheelShown(w)) return; // the build key still reads as a tap
+  const L = wheelLayout();
   // backing disc
   ctx.fillStyle = 'rgba(6,10,24,0.6)';
   ctx.beginPath();
@@ -510,7 +524,7 @@ function renderWheel(now) {
     }
     const ix = L.cx + Math.cos(opt.ang) * WHEEL_RING;
     const iy = L.cy + Math.sin(opt.ang) * WHEEL_RING;
-    if (w.kind === 'build') {
+    if (w.kind === 'build' || w.kind === 'piece') {
       const affordable = canAfford(STRUCTS[opt.id].tiers[0].cost);
       const tb = SPRITES.teamBuild[skin(player.team)];
       const art = STRUCTS[opt.id].tiled || STRUCTS[opt.id].art || opt.id; // a piece wearing another's tile (the long wall)
@@ -564,7 +578,7 @@ function renderWheel(now) {
     } else if (w.kind === 'kit') {
       drawKitWedge(opt.id, Math.round(ix), Math.round(iy), hovered);
     } else {
-      const label = opt.id === 'upgrade' ? 'UP' : opt.id === 'demolish' ? 'DEL' : 'CARD';
+      const label = opt.id === 'upgrade' ? 'UP' : opt.id === 'demolish' ? 'DEL' : opt.id === 'repair' ? 'FIX' : 'CARD';
       drawPixelTextOutline(ctx, label,
         Math.round(ix - pixelTextWidth(label) / 2), Math.round(iy - 2),
         hovered ? '#ffd95c' : '#9fb6d8', '#0f1632');
@@ -581,7 +595,7 @@ function renderWheel(now) {
   if (L.seg >= 0) {
     const opt = L.opts[L.seg];
     const o = structOf(objAt(w.tx, w.ty));
-    if (w.kind === 'build') {
+    if (w.kind === 'build' || w.kind === 'piece') {
       const t0 = STRUCTS[opt.id].tiers[0];
       label = STRUCTS[opt.id].name + ' : ' + costText(t0.cost);
       color = canAfford(t0.cost) ? '#ffd95c' : '#ff8a7a';
@@ -606,8 +620,13 @@ function renderWheel(now) {
         label = 'UPGRADE : ' + costText(t.cost);
         color = canAfford(t.cost) ? '#ffd95c' : '#ff8a7a';
       }
+    } else if (opt.id === 'repair') {
+      const g = o ? repairCost(o) : 0;
+      if (g <= 0) { label = 'FULL HEALTH'; color = '#9fb6d8'; }
+      else { label = 'REPAIR : ' + costText({ gold: g }); color = canAfford({ gold: g }) ? '#ffd95c' : '#ff8a7a'; }
     } else if (opt.id === 'demolish') {
-      label = 'DEMOLISH'; color = '#ff8a7a';
+      // what it pays back, so a site's whole refund reads before the release
+      label = 'DEMOLISH' + (o ? ' : +' + structRefund(o, true) : ''); color = '#ff8a7a';
     }
   }
   // centred under the wheel, but never off the edge: the wheel sits where the
@@ -649,89 +668,118 @@ function kitLabel(id) {
 }
 
 // ---- the build list and its ghost -----------------------------------------
-// THE HAMMER PLATE sits under the weapon shelf the whole match: the build
-// key's cap (or the pad's button) beside the hammer the pointer turns into
-// over the world, so the way in is on screen before anyone asks. T or a click
-// on it opens a column of every buildable (BUILD_ORDER, structures.js)
-// hanging under it, one row a piece: its icon and its price, the picked row
-// lit, a price you cannot pay in red - and, on a piece that turns, the rotate
-// key's cap. The wheel walks the rows, a click picks one, and a hover prints
+// THE BUILD WELL ends the ability strip, after the four abilities (the
+// strip's fifth well, stripCellRect(AB_N)): the hammer the pointer turns into
+// over the world, with the build key's cap in the corner an ability well
+// prints its key in, so the way in sits with the other keys pressed in a
+// fight. A TAP of T (or a click on the well) opens a column of every
+// buildable (BUILD_ORDER, structures.js) standing over the well, the last
+// piece picked already lit; a tap again puts it away. HOLDING T opens the
+// PIECE WHEEL over the pointer - every buildable round the ring, the manage
+// wheel's own grammar - and the release on a wedge picks it and opens the
+// list on it (keyRelease, js/input.js), so the hand never leaves WASD. In the
+// column, one row a piece: its icon and its price, the picked row lit, a
+// price you cannot pay in red - and, on a piece that turns, the rotate key's
+// cap. The mouse wheel walks the rows, a click picks one, and a hover prints
 // what the piece is for (tipStruct, js/ui/tooltip.js).
 //
-// Plate and column are the CORNER's: laid out in its 1x space, drawn inside
-// drawCornerScaled (js/ui/hud-draw.js) at the HUD SIZE the dial holds, hit
-// tested through cornerMouse, and hung off the drawer's live foot, so an open
-// pack pushes them down rather than being covered by them.
+// Well and column are the STRIP's: laid out in its 1x space, drawn inside
+// drawHudScaled (js/ui/hud-draw.js) at the HUD SIZE the dial holds and hit
+// tested through stripMouse. The column's foot clears the pouch tab beside
+// the well, so it never covers a meal.
 //
 // The world under the pointer carries the GHOST: the piece's own art, faint,
 // snapped to the tile grid with its footprint rimmed in the standard bright
-// ink where it can stand and the danger red where it cannot (canPlaceAt - one
-// rule for the colour, the click and the AI), and a dot at every tile corner
-// inside the builder's reach, so the snap and the reach read as one thing
-// without a number. The pointer itself wears the picked piece
-// (drawBuildCursor), so the mode is read where the eye is: a press over the
-// world lays, and never fires. A click lays the ghost and the list stays up
-// for the next piece: a wall is a run, not a piece.
-const BUILD_X = 4;           // the column's left edge: flush with the tool cell (SHELF_X, declared below - a literal, since this is read at load)
-const BUILD_TAB_H = 14;      // the hammer plate's height: the cap and the 11-row hammer, a px of air round both
+// ink where it can stand, the danger red where it cannot (canPlaceAt - one
+// rule for the colour, the click and the AI) and grey where it could but the
+// purse cannot pay, and a dot at every tile corner inside the builder's
+// reach, so the snap and the reach read as one thing without a number. The
+// pointer itself wears the picked piece (drawBuildCursor), so the mode is
+// read where the eye is: a press over the world lays, and never fires. A
+// click lays the ghost and the list stays up for the next piece - and on a
+// `line` piece (the wall) a DRAG lays a straight run (buildLine), its ghost
+// the whole run, going grey where the purse gives out.
 const BUILD_ROW = 20;        // a row's pitch
 const BUILD_W = 62;          // a row's width: icon, price, the rotate cap
 const BUILD_OK = '#f4f7ff', BUILD_NO = '#ff8a7a'; // the ghost's two answers (the flag's own pair, robots.js)
-const BUILD_LIT = '#ffd95c'; // the picked row's rim, the open plate's and the pointer's piece: one gold says "this one"
-// whether the plate is up: the corner's own gate, and never from the roost
-// seat, where the build key answers nothing
-function buildTabUp() { return shelfUp() && !player.aboard; }
-// the corner's live foot in 1x: the arrow's plate, or the drawer itself
-// while it is out - measured off the same slide drawBag draws it at
-function cornerFoot() {
-  const t = bagTabRect();
-  let y = t.y + t.h;
-  if (bagEase > 0) {
-    const f = bagFrameRect();
-    y = Math.max(y, f.y + f.h - Math.round((1 - easeOut(bagEase)) * (f.h + 3)));
-  }
-  return y;
+const BUILD_BROKE = '#7a8bb8'; // ...and the third: it could stand, but the purse cannot pay (the strip's dim ink)
+const BUILD_LIT = '#ffd95c'; // the picked row's rim, the open well's and the pointer's piece: one gold says "this one"
+const PIECE_HOLD = 0.18;     // s the build key is held before its press is a hold (the wheel) and not a tap (the list)
+let buildLast = 0;           // the row the list opens on: the last piece picked (a screen's habit, not the sim's)
+// whether the well answers the pointer: the strip's own gate, and never from
+// the roost seat, where the build key answers nothing
+function buildTabUp() {
+  return state.mode === 'play' && !player.dead && !player.aboard && !state.paused &&
+    !state.mapOpen && !state.settingsOpen && !state.wheel && !window.DBG.hideUI;
 }
-// the key's footprint on the plate: the bound key's cap, or the pad's glyph
-function buildCapW() { return padActive() && PAD_BIND.build ? padBindW('build') : pixelTextWidth(keyCap('build')) + 6; }
-// the plate: under the corner's foot, on the tool cell's own left edge and
-// at least its width, grown for a long key name
-function buildTabRect() {
-  return { x: SHELF_X, y: cornerFoot() + 2, w: Math.max(SHELF_CELL, buildCapW() + 3 + 12 + 8), h: BUILD_TAB_H };
-}
+// the well: the strip's fifth, after the four abilities
+function buildTabRect() { return stripCellRect(AB_N); }
 function buildTabHit(mx, my) {
   if (!buildTabUp()) return false;
-  ({ x: mx, y: my } = cornerMouse(mx, my));
+  ({ x: mx, y: my } = stripMouse(mx, my));
   const r = buildTabRect();
   return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
 }
+// row i of the column over the well, top to bottom in BUILD_ORDER, its foot
+// clear of the strip's top edge and of the pouch tab it overhangs
 function buildRowRect(i) {
-  const t = buildTabRect();
-  return { x: BUILD_X, y: t.y + t.h + 3 + i * BUILD_ROW, w: BUILD_W, h: BUILD_ROW - 2 };
+  const w = buildTabRect(), foot = Math.min(w.y - AB_PAD, pouchTabRect().y) - 3;
+  return { x: w.x, y: foot - (BUILD_ORDER.length - i) * BUILD_ROW + 2, w: BUILD_W, h: BUILD_ROW - 2 };
 }
-// the lowest the plate and the column can ever reach - the drawer fully out
-// under them - which is what the corner's bake is sized by
-function buildFootMax() { const f = bagFrameRect(); return f.y + f.h + 2 + BUILD_TAB_H + 3 + BUILD_ORDER.length * BUILD_ROW; }
+// how far over the strip's top edge the open column reaches - what the
+// strip's scaled bake has to leave room for (drawHudScaled)
+function buildHeadroom() { return state.build ? hudStripRect().y - buildRowRect(0).y + 2 : 0; }
 function buildListHit(mx, my) {
   if (!state.build || !buildTabUp()) return -1;
-  ({ x: mx, y: my } = cornerMouse(mx, my));
+  ({ x: mx, y: my } = stripMouse(mx, my));
   for (let i = 0; i < BUILD_ORDER.length; i++) {
     const r = buildRowRect(i);
     if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return i;
   }
   return -1;
 }
-// THE ONE WAY THE LIST OPENS AND SHUTS - the build key (keyPress, input.js)
-// and a click on the plate (pointerPress) alike. Not over the map or the
-// slab, not dead, not seated on the roost. Opening it lifts the drawer, so
-// the column hangs straight under the shelf.
-function toggleBuild() {
-  if (state.mapOpen || state.settingsOpen || player.dead || player.aboard) return false;
+// may the list open at all: not over the map or the slab, not dead, not
+// seated on the roost
+function buildCanOpen() { return !state.mapOpen && !state.settingsOpen && !player.dead && !player.aboard; }
+// THE ONE WAY THE LIST OPENS AND SHUTS - a tap of the build key (keyRelease,
+// js/input.js) and a click on the well alike; it opens on the last piece
+// picked. `sel` opens it on that row instead (the piece wheel's pick), and
+// never shuts it.
+function toggleBuild(sel) {
+  if (!buildCanOpen()) return false;
   SFX.unlock();
-  if (state.build) state.build = null;
-  else { state.build = { sel: 0, rot: 0 }; state.wheel = null; state.bagOpen = false; }
+  if (state.build && sel === undefined) state.build = null;
+  else {
+    if (sel !== undefined) buildLast = sel;
+    state.build = { sel: buildLast, rot: state.build ? state.build.rot : 0 };
+    state.wheel = null; state.bagOpen = false;
+  }
   SFX.ui(!!state.build);
   return true;
+}
+// the list's picked row, remembered as the one it opens on next time
+function buildPick(i) { state.build.sel = buildLast = i; state.build.drag = null; }
+// THE BUILD KEY'S PRESS opens the piece wheel over the pointer at once, but
+// draws nothing until PIECE_HOLD has passed (renderWheel), so a tap never
+// flashes a wheel; its release decides (buildKeyRelease).
+function buildKeyPress() {
+  if (!buildCanOpen() || state.mode !== 'play' || state.wheel) return;
+  SFX.unlock();
+  const x = mouse.inside ? mouse.x : VIEW_W / 2, y = mouse.inside ? mouse.y : VIEW_H / 2;
+  state.wheel = { kind: 'piece', seg: -1, ax: x, ay: y, sx: x, sy: y, t0: performance.now() / 1000 };
+}
+// a piece wheel is still a tap until PIECE_HOLD has passed
+function pieceWheelShown(w) { return w.kind !== 'piece' || performance.now() / 1000 - w.t0 >= PIECE_HOLD; }
+// ...and its release: a wedge picks that piece and opens the list on it; a
+// tap toggles the list (on the last piece); a hold let go in the hub is the
+// wheel's cancel, and changes nothing
+function buildKeyRelease() {
+  const w = state.wheel;
+  if (!w || w.kind !== 'piece') return;
+  const seg = wheelLayout().seg, tap = !pieceWheelShown(w);
+  state.wheel = null;
+  if (seg >= 0) toggleBuild(seg);
+  else if (tap) toggleBuild();
 }
 // A PIECE'S ICON as one canvas, cached per paint: its own 16x16 (or the
 // dedicated one a big sprite keeps in `icon`), a tiled piece its tile twice,
@@ -755,7 +803,8 @@ function buildIcon(type) {
 }
 // what the ghost is right now: the picked piece, turned or not, anchored so
 // its footprint sits centred on the tile under the pointer, and whether it
-// can stand there. Null with no list up.
+// can stand there. Mid-drag it is the run from the press's tile instead
+// (`line`: the tiles, each with its own answer). Null with no list up.
 function buildGhostAt() {
   const b = state.build;
   if (!b) return null;
@@ -764,7 +813,29 @@ function buildGhostAt() {
   const f = { type, rot };
   const w = structW(f), h = structH(f);
   const tx = Math.floor(mouseWX() / TILE) - (w >> 1), ty = Math.floor(mouseWY() / TILE) - (h >> 1);
-  return { type, rot, tx, ty, w, h, can: canPlaceAt(type, tx, ty, rot, player) };
+  const g = { type, rot, tx, ty, w, h, can: canPlaceAt(type, tx, ty, rot, player) };
+  if (b.drag && STRUCTS[type].line) {
+    const cost = STRUCTS[type].tiers[0].cost.gold || 0;
+    let purse = player.inv.gold;
+    g.line = buildLine(b.drag.tx, b.drag.ty, tx, ty).map(([x, y]) => {
+      const can = canPlaceAt(type, x, y, 0, player);
+      const paid = can.ok && purse >= cost;
+      if (paid) purse -= cost;
+      return { tx: x, ty: y, can, paid };
+    });
+    g.can = { ok: g.line.some((t) => t.can.ok), why: null };
+  }
+  return g;
+}
+// the order a left press or a drag's release sends for the ghost: one piece,
+// or the run (tx2/ty2, laid by placeLine) - null when nothing of it can stand
+function buildOrder(g) {
+  if (!g || !g.can.ok) return null;
+  if (g.line) {
+    const a = g.line[0], z = g.line[g.line.length - 1];
+    return { kind: 'build', tx: a.tx, ty: a.ty, tx2: z.tx, ty2: z.ty, id: g.type, rot: 0 };
+  }
+  return { kind: 'build', tx: g.tx, ty: g.ty, id: g.type, rot: g.rot };
 }
 // the world half: the reach dots and the ghost, in the world pass beside drawSelection
 function drawBuildGhost(ox, oy, now) {
@@ -776,46 +847,49 @@ function drawBuildGhost(ox, oy, now) {
     if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > BUILD_REACH) continue;
     ctx.fillRect(tx * TILE - ox, ty * TILE - oy, 1, 1);
   }
-  if (!mouse.inside || overHud(mouse.x, mouse.y)) return; // the plate and the column are HUD (overHud)
+  if (!mouse.inside || (overHud(mouse.x, mouse.y) && !state.build.drag)) return; // the well and the column are HUD (overHud)
   const g = buildGhostAt();
-  const col = g.can.ok ? BUILD_OK : BUILD_NO;
-  const px = g.tx * TILE - ox, py = g.ty * TILE - oy, fw = g.w * TILE, fh = g.h * TILE;
   const spr = structSprite({ type: g.type, tier: 0, team: player.team, rot: g.rot });
-  if (spr) {
-    ctx.globalAlpha = g.can.ok ? 0.55 : 0.3;
-    if (STRUCTS[g.type].tiled) { for (let dy = 0; dy < g.h; dy++) for (let dx = 0; dx < g.w; dx++) ctx.drawImage(spr, px + dx * TILE, py + dy * TILE + TILE - spr.height); }
-    else ctx.drawImage(spr, px + ((fw - spr.width) >> 1), py + fh - spr.height);
-    ctx.globalAlpha = 1;
+  const afford = canAfford(STRUCTS[g.type].tiers[0].cost);
+  const pieces = g.line || [{ tx: g.tx, ty: g.ty, can: g.can, paid: afford }];
+  for (const t of pieces) {
+    const col = !t.can.ok ? BUILD_NO : t.paid ? BUILD_OK : BUILD_BROKE;
+    const px = t.tx * TILE - ox, py = t.ty * TILE - oy, fw = g.w * TILE, fh = g.h * TILE;
+    if (spr) {
+      ctx.globalAlpha = t.can.ok && t.paid ? 0.55 : 0.3;
+      if (STRUCTS[g.type].tiled) { for (let dy = 0; dy < g.h; dy++) for (let dx = 0; dx < g.w; dx++) ctx.drawImage(spr, px + dx * TILE, py + dy * TILE + TILE - spr.height); }
+      else ctx.drawImage(spr, px + ((fw - spr.width) >> 1), py + fh - spr.height);
+      ctx.globalAlpha = 1;
+    }
+    // the footprint's rim, dark under the colour, so it reads on snow and ice alike
+    const rim = (c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h); };
+    rim('rgba(15,22,50,0.9)', px + 1, py + 1, fw, fh);
+    rim(col, px, py, fw, fh);
   }
-  // the footprint's rim, dark under the colour, so it reads on snow and ice alike
-  const rim = (c, x, y, w, h) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1); ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h); };
-  rim('rgba(15,22,50,0.9)', px + 1, py + 1, fw, fh);
-  rim(col, px, py, fw, fh);
 }
-// The plate, in the corner's 1x space: a well with the shelf's own drop
-// shadow, the key's cap and the hammer. Its states are colour and a pixel:
-// the rim lightens and the hammer lifts under the pointer, the cap drops
-// while the key is held, and the rim goes the picked row's gold while the
-// list is open - the column hangs from a lit plate.
+// The well, in the strip's 1x space: an ability well's grammar - the hammer
+// doubled in the middle, the build key's cap (the pad's glyph while one is in
+// hand) in the bottom-left corner. Its states are colour and a pixel: the rim
+// lightens and the hammer lifts under the pointer, the cap drops while the
+// key is held, and the rim goes the picked row's gold while the list is
+// open - the column stands on a lit well.
 function drawBuildTab(now) {
-  if (!buildTabUp()) return;
   const r = buildTabRect(), open = !!state.build;
   const hot = mouse.inside && buildTabHit(mouse.x, mouse.y);
-  ctx.fillStyle = 'rgba(4,6,18,0.55)';
-  ctx.fillRect(r.x + 2, r.y + 2, r.w, r.h);
-  ctx.fillStyle = open ? BUILD_LIT : hot ? '#8fa0c8' : '#2c3560';
+  ctx.fillStyle = open ? BUILD_LIT : hot ? '#8fa0c8' : '#35426e';
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = open ? '#141c3c' : BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const cw = buildCapW(), cx = r.x + ((r.w - (cw + 3 + 12)) >> 1);
-  if (padActive() && PAD_BIND.build) drawPadBind(ctx, cx, r.y + 2, 'build', 1, keyHeld('build'));
-  else drawKeyCap(ctx, cx, r.y + 2, keyCap('build'), keyHeld('build'), hot ? 1 : 0, now);
-  ctx.drawImage(SPRITES.cursor.hammer, cx + cw + 3, r.y + 2 - (hot ? 1 : 0));
+  const hm = SPRITES.cursor.hammer, hw = hm.width * 2, hh = hm.height * 2;
+  ctx.drawImage(hm, r.x + ((r.w - hw) >> 1), r.y + ((r.h - hh) >> 1) - 2 - (hot ? 1 : 0), hw, hh);
+  const held = keyHeld('build');
+  if (padActive() && PAD_BIND.build) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, 'build', 2, false);
+  else drawPixelTextOutline(ctx, keyCapShort('build'), r.x + 3, r.y + r.h - 13 + (held ? 1 : 0), '#f4f7ff', '#0f1632', 2);
 }
-// The column of rows, in the corner's 1x space under the plate
+// The column of rows, in the strip's 1x space over the well
 function drawBuildList(now) {
   const b = state.build;
-  if (!b || !buildTabUp()) return;
+  if (!b || state.mode !== 'play' || player.dead || player.aboard) return;
   for (let i = 0; i < BUILD_ORDER.length; i++) {
     const type = BUILD_ORDER[i], S = STRUCTS[type], sel = i === b.sel;
     const r = buildRowRect(i);

@@ -143,6 +143,12 @@ lantern, a scale and a planked counter. It is look **D** off
 `docs/media/concepts/tent-concepts-2.png` (round 1, `tent-concepts-1.png`, picked the market stall
 shape; round 2 grew it).
 
+**The gate** (`gate` in js/sprites/buildings.js, baked per side and tier inside `SPR.onTeams` as
+`SPRITES.teamBuild[skin(team)].gate` under `gatePal`, the tier palette plus the side's coat as
+`y`/`Y`/`t`) is a 16 × 16 wall piece: a snowy beam on two posts with the grille hauled up under it in
+the side's colour and the passage open below. It is look **C**, "raised portcullis", off
+`docs/media/concepts/gate-concepts-1.png`.
+
 **The swing tool icons** (`itemBow`/`itemAxe`/`itemPick`) are 8×8 grids sharing `AXPAL`, drawn at **1×** by
 `drawHeldTool()` (inside a translate/rotate, resolved through `SPRITES[t.icon]` from the
 `SWING_TOOLS` table) and by `drawRobot()` for a bot's swing — E picks the tool, there is no tool

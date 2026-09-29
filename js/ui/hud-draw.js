@@ -375,20 +375,22 @@ function drawHudStrip(now) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
     drawAbBuyPlate(i, now, bhov === i);
   }
+  drawBuildTab(now);
   for (let i = 0; i < FOOD_BTNS.length; i++) {
     drawFoodCell(i, now, hov && hov.kind === 'food' && hov.i === i);
   }
   drawGoldCell();
   drawXpBar(now, R.x, R.y + AB_PAD + AB_CELL + AB_PAD);
+  drawBuildList(now); // last: the open column stands over the pouch tab's shoulder
 }
 // The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
 // everything draws straight to the frame as it always did; any other size
 // bakes the widget at 1x into hudScaleCv and blits it scaled about the strip's
 // bottom-centre anchor - uictx's smoothing is off, so the art scales
 // nearest-neighbour instead of every fillRect going soft under a fractional
-// transform. The bake's headroom covers the buy plates' bob and the purse tab,
-// and nothing taller: the build lives on the pack's own shelf, which scales
-// with the corner it stands in (drawCornerScaled).
+// transform. The bake's headroom covers the buy plates' bob and the purse tab
+// - and, while the build list is open, the column standing over the build
+// well (buildHeadroom, js/ui/wheel.js).
 const HUD_BAKE_HEAD = 26;
 const hudScaleCv = document.createElement('canvas');
 const hudScaleCtx = hudScaleCv.getContext('2d');
@@ -402,7 +404,8 @@ function drawHudScaled(now, slideY) {
     return;
   }
   const R = hudStripRect();
-  const bx = R.x - 3, by = R.y - HUD_BAKE_HEAD, bw = R.w + 6, bh = R.h + HUD_BAKE_HEAD;
+  const head = Math.max(HUD_BAKE_HEAD, buildHeadroom());
+  const bx = R.x - 3, by = R.y - head, bw = Math.max(R.w + 6, buildTabRect().x + BUILD_W + 1 - bx), bh = R.h + head;
   if (hudScaleCv.width !== bw || hudScaleCv.height !== bh) {
     hudScaleCv.width = bw; hudScaleCv.height = bh;
     hudScaleCtx.imageSmoothingEnabled = false; // resizing resets ctx state; the tool well's 2x art must stay chunky
@@ -421,19 +424,16 @@ function drawHudScaled(now, slideY) {
     bw * s, bh * s); // whole device pixels: hudSc snaps to them
 }
 
-// THE CORNER - the shelf, the drawer under it, and the hammer plate and build
-// list under that (js/ui/wheel.js) - at the same HUD SIZE, scaled about the
+// THE CORNER - the shelf and the drawer under it - at the same HUD SIZE, scaled about the
 // TOP-LEFT corner so the tool cell stays put in it. The same deal as
 // drawHudScaled: at 1x straight to the frame, otherwise a 1x bake blitted
 // with smoothing off. The bake is sized to the widget's reach (CORNER_REACH,
-// the list hanging under the open drawer) so nothing of it is left behind.
+// the open drawer) so nothing of it is left behind.
 const cornerScaleCv = document.createElement('canvas');
 const cornerScaleCtx = cornerScaleCv.getContext('2d');
 function drawCorner(now) {
   drawShelf(now);
   drawBag(now);
-  drawBuildTab(now);
-  drawBuildList(now);
 }
 function drawCornerScaled(now, slideX) {
   const s = hudSc();
@@ -445,7 +445,7 @@ function drawCornerScaled(now, slideX) {
     return;
   }
   const f = bagFrameRect();
-  const bw = Math.max(CORNER_REACH, f.x + f.w + 4), bh = Math.max(f.y + f.h + 6, buildFootMax() + 4);
+  const bw = Math.max(CORNER_REACH, f.x + f.w + 4), bh = f.y + f.h + 6;
   if (cornerScaleCv.width !== bw || cornerScaleCv.height !== bh) {
     cornerScaleCv.width = bw; cornerScaleCv.height = bh;
     cornerScaleCtx.imageSmoothingEnabled = false;

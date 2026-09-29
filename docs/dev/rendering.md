@@ -945,11 +945,12 @@ which also carries a setting across to a screen with other notches; the slider's
 between them with a tick under the track at each. A size off the grid would draw every pixel,
 say, 1.6 canvas pixels wide and its lines one or two wide by chance. The strip, the corner
 and the team rail all scale by this one number, and a bake lands on the device grid (`hudPx`). **The top-left corner
-scales with the same dial**: `drawCornerScaled` bakes the shelf, the drawer and the
-[build list](gameplay.md#base-building)'s hammer plate and column under them at 1× (`drawCorner`)
-and blits them about the top-left corner (sized by `CORNER_REACH` and the column's reach under
-the open drawer, `buildFootMax`), and `bagHit`, `shelfHit`, `buildTabHit` and `buildListHit` map
-the pointer back through `cornerMouse`. While the slider's knob is in hand,
+scales with the same dial**: `drawCornerScaled` bakes the shelf and the drawer at 1× (`drawCorner`)
+and blits them about the top-left corner (sized by `CORNER_REACH` and the open drawer), and
+`bagHit` and `shelfHit` map the pointer back through `cornerMouse`. The
+[build list](gameplay.md#base-building)'s well and column are the strip's: its bake grows by
+`buildHeadroom` while the column stands over the well, and `buildTabHit` and `buildListHit` map
+the pointer back through `stripMouse`. While the slider's knob is in hand,
 `renderSettings` draws the strip and the corner live over the slab — the minimap slider's
 preview grammar.
 
@@ -1695,8 +1696,8 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over the world while the build list
   is up (`dim` where the ghost cannot stand, and wearing the picked piece as `piece` wherever a
-  press would lay it — `drawBuildCursor` puts its icon under the hotspot; the hammer plate and
-  the list's rows are a **hand**), or over a finished building of your side's that E manages
+  press would lay it — `drawBuildCursor` puts its icon under the hotspot; the build well and
+  the list's rows are a **hand**), or over a building of your side's that E manages
   (`dim` beyond the 60 px reach, except under the CLICK scheme, where the press walks there);
   **reticle** — everywhere else in play.
 - Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's
