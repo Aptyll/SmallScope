@@ -306,17 +306,27 @@ walled in by design: [camps](#camps)).
 ## Rocks
 
 `placeRocks()` (the `world` banner, js/world.js) runs at boot after `placeChests()` and stands
-**every rock in the world in a band of open snow just out from the border forest**: 2–8 tiles
-(`ROCK_BAND_MIN`/`ROCK_BAND_MAX`, walked 4-way) from the nearest **border** pine — one on
-`borderDepth`'s side of the line, so a grown shape's inner woods draw no band of their own —
-never touching a pine, never inside a camp's clearing (`r + 2`), `ROCK_SPACING` (4) apart,
-`ROCK_COUNT` (100) of them. Every rock is **two tiles wide** (`OBJECTS.rock.w`): both tiles must
-be open snow in the band, and the east one takes a `part` pointing at the anchor, the den's
-filler. So the ore is out at the valley's rim and the middle stays open
-ground; no camp stands a rock. A shape whose rim cannot hold them (FROZEN ISLES, whose rim is
-lake) widens the band `ROCK_BAND_GROW` (8) tiles at a time, out to `ROCK_BAND_LIMIT` (40), so
-they land as near the rim as that shape allows — there, that is mostly the road's verges by
-the roosts.
+**the rocks in a few clusters, mining spots a player goes to**, each on the open snow just out
+from the border forest: 2–8 tiles (`ROCK_BAND_MIN`/`ROCK_BAND_MAX`, walked 4-way) from the nearest
+**border** pine — one on `borderDepth`'s side of the line, so a grown shape's inner woods draw no
+band of their own — never touching a pine, never inside a camp's clearing (`r + 2`),
+`ROCK_SPACING` apart, within `ROCK_CLUSTER_R` of the cluster's centre. Every rock is **two tiles
+wide** (`OBJECTS.rock.w`): both tiles must be open snow in the band, and the east one takes a
+`part` pointing at the anchor, the den's filler. So the ore is out at the valley's rim and the
+middle stays open ground; no camp stands a rock.
+
+**`ROCK_CLUSTERS`** says where: each entry is a heading from the valley's centre, `turn` degrees
+off RED's roost toward the top-left corner (+) or the bottom-right (−), and a `kinds` list, one
+per rock a side stands there. The centre is RED's rim anchor nearest that heading whose mirror
+`(ty, tx)` fits too and with room round both for the cluster (`ROCK_CLUSTER_SLACK`: first within
+25° with room to spare, then further round), and each side fills its own spot with the same
+kinds; a side that got fewer leaves the other its count, so **both sides always have the same
+rocks**. A cluster turned 90° (a corner neither side owns) straddles the creek, each side's share
+on its own bank, unless it had to slide far enough round to be two spots. As shipped: a side
+cluster of five STONE each way at ±50° (four spots) and a corner cluster at each unowned corner
+of one SUNSTONE, one FROSTGLASS and one STONE a side: 32 rocks, fewer on a cramped seed (seed 9:
+30). A shape whose rim cannot hold a cluster (FROZEN ISLES, whose rim is lake) widens the band
+`ROCK_BAND_GROW` (8) tiles at a time, out to `ROCK_BAND_LIMIT` (40).
 
 genWorld's own rock passes — the interior scatter and a grown shape's top-up (`MAP_ROCKS`) —
 still run and still roll: taking their `rng()` calls out would reshuffle every seed
@@ -324,12 +334,8 @@ still run and still roll: taking their `rng()` calls out would reshuffle every s
 places its own on a stream of its own, `mulberry32(SEED ^ 0x524f434b)` (`rkRng`), touching only
 `objects`, so terrain stays bit-identical for an existing seed.
 
-**The kind** ([Mining a rock](gameplay.md#mining-a-rock)) goes by where the rock stands. The two
-roosts are in opposite corners, so the other two corners are the ground furthest from both: the
-rock nearest each of them is a **SUNSTONE** (two a map, on the contested flanks). Of the rest,
-`ROCK_RARE` (18) are **FROSTGLASS SPIRES**, drawn on `rkRng` from the `ROCK_RARE_SHARE` (40%) of
-the rim furthest from its nearer roost; everything else is **STONE**. Verified on seed 42: 80 /
-18 / 2, the sunstones at tiles (40, 37) and (178, 164).
+**The kind** ([Mining a rock](gameplay.md#mining-a-rock)) is the cluster's `kinds` list: the
+SUNSTONE and FROSTGLASS SPIRE are out at the contested corners, the plain STONE nearer home.
 
 A rock is only ever taken off the map whole: `fellScenery(tx, ty)` clears every tile of the
 footprint from either of them, and the three runtime clears that reach scenery (the crash's
@@ -522,43 +528,47 @@ pushed off the bridge. The death line is `WENT IN THE CREEK`.
   the centreline along the creek, `BRIDGE_L` either side of the creek's line along the road),
   ground `3`, so to every rule it is road (the waves march over it, a building may stand on it).
   Its sides are open: shoved off one, you are in the water;
-- **the islands** — the two camps on the mirror line, the DIRE HOLLOW and the ALPHA STONE, stand on
-  islands the creek parts round and joins again below: a ring of water `r + PATH_CAMP +
-  CREEK_ISLE + CREEK_HW` from the camp's centre, its dry ground cleared of scenery, and a **ford**
-  from each half where the ring runs along the diagonal level with the camp — so both are still
-  contested from both sides;
-- **an outer ford** (`creekOuterFords`) on each stretch between an island and the treeline, at
+- **an outer ford** (`creekOuterFords`) on each stretch between a bend and the treeline, at
   its middle, where the stretch is `CREEK_FORD_GAP` or more;
 - **a path's ford** wherever a grown shape's path crosses ([the paths](#the-paths)).
 
 A **ford** (`creekFord`) is the whole run of water along one tile row through its point, made
 ground `5` — a row, so it is always four-connected and nobody's feet cut a corner through the
 current — with any pine on the tile past either end felled, so a ford never ends in a wall. On
-OPEN FIELD a seed has six: two per island and the two outer ones.
+OPEN FIELD the bends run most of the way to the treeline, so a seed often has no outer ford and
+the way to the rival's camp is the bridge (or a roll).
+
+**The bends** (`creekBends`, `creekBend`): the two camps on the mirror line, the DIRE HOLLOW and the
+ALPHA STONE, each have the creek swing round them in a half-loop, so each falls on one side's
+bank: the upstream one (the dire hollow, top-left) to RED, the downstream one (the alpha stone,
+bottom-right) to BLUE. At the camp the line stands `R = r + PATH_CAMP + CREEK_BEND_GAP +
+CREEK_HW` off the diagonal and eases back over `L = R × CREEK_BEND_LONG` either way along it as
+`R (1 − t²)²`, flat where it rejoins the diagonal and never nearer the camp than `R` (that needs
+`L ≥ 2R`). The line is point-symmetric about the bridge, as the roosts are, so both sides reach
+their own camp dry-shod and the other's over the bridge, a ford or a roll.
 
 **Geometry**, in tiles, off the road's own frame: `w` along the creek is `roadOffS` (+ downstream,
 toward the bottom-right) and `p` across it is `creekP` (+ toward the top-right, BLUE's half).
-The line wanders `CREEK_WANDER` off the diagonal on the position noise (`creekMid`) and each bank
-`CREEK_HW_RAG` off `CREEK_HW` (`creekHW`); `creekCalm` eases both to nothing within
-`CREEK_CALM` of the bridge, an island and an outer ford, so the water meets each square.
-`creekAt(fx, fy)` is the signed distance to the nearer bank (negative in the water) and leaves
-where the point is in `CQ` — along (`a`), across (`n`) and which island's ring (`isle`, -1 for
-the line) — `creekFlow` the way the current runs there, `bridgeAt` the deck, and `creekWet` the
+The line is the bends plus a wander of `CREEK_WANDER` on the position noise (`creekMid`) and each
+bank `CREEK_HW_RAG` off `CREEK_HW` (`creekHW`); `creekCalm` eases the wander and the rag to nothing
+within `CREEK_CALM` of the bridge, the middle half of a bend and an outer ford, so the water meets
+each square. `creekAt(fx, fy)` is the signed distance to the nearer bank (negative in the water)
+and leaves where the point is in `CQ` — along (`a`) and across (`n`, + toward BLUE's half) —
+`creekFlow` the way the current runs there, `bridgeAt` the deck, and `creekWet` the
 plunge test: in the water as drawn and off the deck, so nobody goes in off a pixel of bank or off
 the deck's overhang. The ground array (a tile's centre) and the bake (a pixel) ask the same
 functions, so they agree to within the bank, as the road's do.
 
 `placeCreek()` runs at boot **right after `genWorld()`**, before the paths and the road: the
-water fells whatever grew on it, the deck is laid bank to bank, each island is cleared, and the
-fixed fords go down. Pure position noise — nothing rolls, so no seed reshuffles — but it writes
+water fells whatever grew on it, the deck is laid bank to bank, and the fixed fords go down. Pure position noise — nothing rolls, so no seed reshuffles — but it writes
 `ground` after genWorld, so every seed's ground hash includes it
 ([determinism](#determinism-and-noise)). Not under `PRACTICE`. `DBG` exposes `creekAt`,
-`creekFlow`, `creekWet`, `bridgeAt`, `creekIsles`, `creekOuterFords`, `waterAt` and `CQ`.
+`creekFlow`, `creekWet`, `bridgeAt`, `creekBends`, `creekOuterFords`, `waterAt` and `CQ`.
 
 **Its pixels** (the `the creek's pixels` group, js/draw/ground.js): `paintGroundTile` hands every
 tile `creekNear` to `paintCreek`, which paints per pixel over whatever the tile is — dark water
 deepening toward the middle, the bank the light comes over (read off the slope of `creekAt`, so
-the island rings read like the straight run) wearing a white lip and throwing a band of shade on
+the bends read like the straight run) wearing a white lip and throwing a band of shade on
 the water, the far bank its pale face, still streaks stretched along the current, the plank deck
 (planks on the pixel diagonals, a stringer down each open side, snow drifted to the edges, a post
 at each corner, three pilings upstream) with the water coming out from under it in shade, and a
@@ -714,7 +724,8 @@ no map, chart or HUD code knows a camp by name:
 tiles off the centreline (+ toward the bottom-right half) — and `campSites()` mirrors every
 entry across the map's middle (`u → WORLD − 1 − u`, same `s`) for BLUE, so **both teams walk the
 same distance to the same camp**. A site *on* the middle (`u = (WORLD − 1) / 2`) is its own
-mirror and is placed once: the alpha and the epic are contested at equal reach from either roost.
+mirror and is placed once, at equal reach from either roost; [the creek](#the-creek)'s bends
+then give one to each side's bank.
 **Three camps a side of the road, six in all**: a mirrored pair of dens on each side, finished
 by one midline camp — the dire hollow top-left, the alpha stone bottom-right, facing it across
 the road. A mirrored pair always lands on one side (the mirror keeps `s`), so a side can only
@@ -735,8 +746,8 @@ s)` is the conversion back to a tile. The layout as shipped:
 The huts are 20 tiles in from the world's edge: the two far corners (top-left and bottom-right)
 hold one of each side's, and each side has one more halfway along an edge of its own half.
 
-The two midline sites sit on the cross-diagonal, which is [the creek](#the-creek)'s line: each
-stands on an island the creek parts round, with a ford to it from either half.
+The two midline sites sit on the cross-diagonal, which is [the creek](#the-creek)'s line: the
+creek bends round each, so the dire hollow stands on RED's bank and the alpha stone on BLUE's.
 
 `placeCamps()` runs as worldgen's last ground pass (boot: after `placeRoad()` and `placeZips()`,
 before `placeChests()`), then

@@ -41,9 +41,10 @@ A settings toggle (MY TEAM) shows the roster's real colours instead.
 **The creek splits the valley.** One creek that never freezes runs the other diagonal, corner to
 corner through the woods and all, so the two roosts sit on opposite halves: it meets the road once,
 at the middle where the waves meet, under a timber bridge with open sides, and elsewhere it is
-crossed only at a handful of stepping-stone fords — two onto each of the islands the dire hollow
-and the alpha stone stand on. Anyone who steps in plunges as through the ice, and a bot shoved off
-the bridge goes in like anybody. [The creek](world.md#the-creek).
+crossed only at stepping-stone fords, or by a dodge roll from the bank. It swings round the two
+midline camps in a half-loop each, so each side owns one on its own bank: the dire hollow is RED's,
+the alpha stone BLUE's. Anyone who steps in plunges as through the ice, and a bot shoved off the
+bridge goes in like anybody. [The creek](world.md#the-creek).
 
 The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest border and an interior
 threaded by frozen lakes and rivers, and **what that interior is, is a pick**: OPEN FIELD's wide

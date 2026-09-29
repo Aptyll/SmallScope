@@ -610,12 +610,12 @@ function placeChests() {
   if (nBury) take(deep, CHEST_COUNT);
 }
 
-// Rocks: they stand in the open snow just out from the border forest, a
-// band ROCK_BAND_MIN..ROCK_BAND_MAX tiles (walked, 4-way) from its nearest
-// pine - a border pine, one standing on borderDepth's side of the line, so a
-// grown shape's inner woods draw no band of their own - never touching a
-// pine and never in a camp's clearing -
-// so the ore is out at the valley's rim and the middle stays open ground.
+// Rocks: they stand in CLUSTERS, a few mining spots a player goes to, each
+// on the open snow just out from the border forest - a band ROCK_BAND_MIN..
+// ROCK_BAND_MAX tiles (walked, 4-way) from its nearest pine, a border pine,
+// one standing on borderDepth's side of the line, so a grown shape's inner
+// woods draw no band of their own - never touching a pine and never in a
+// camp's clearing, so the middle stays open ground.
 // Every rock is two tiles wide (OBJECTS.rock's w): both tiles must be open
 // snow, and the east one takes a `part` pointing at the anchor.
 // genWorld still rolls its own rock passes (the interior scatter and a grown
@@ -623,19 +623,34 @@ function placeChests() {
 // so they run as they always did and placeRocks lifts what they stood before
 // placing its own, on its own stream (rkRng) AFTER the camps and the chests.
 //
-// The kind (ROCK_KINDS, js/mining.js) goes by where the rock stands. The
-// two roosts sit in opposite corners, so the other two corners are the
-// ground furthest from both: the rock nearest each of them is a SUNSTONE,
-// and ROCK_RARE of the rest are FROSTGLASS, drawn from the ROCK_RARE_SHARE of
-// the rim furthest from its nearer roost. Everything else is STONE.
-const ROCK_COUNT = 100;       // rocks a world stands
-const ROCK_RARE = 18;         // ...this many of them frostglass
-const ROCK_RARE_SHARE = 0.4;  // ...out of this share of them furthest from a roost
+// Where the clusters go (ROCK_CLUSTERS): each is a direction from the
+// valley's centre, turned `turn` degrees off RED's roost toward the
+// top-left corner (+) or the bottom-right (-), and it stands on the rim
+// that way. The centre is mirrored (ty, tx), the camps' mirror, and each
+// side stands the same kinds round its own, so BLUE has the same spot: a side cluster (turned
+// less than 90) is two spots, one per side, and a corner cluster (turned
+// 90, one of the two corners neither side owns) is one spot, each side's
+// share of it on its own bank of the creek. `kinds` goes down the rocks
+// a side stands there, in order (ROCK_KINDS, js/mining.js): the sunstone
+// and the frostglass are out at the contested corners, the plain stone
+// nearer home.
+const ROCK_CLUSTERS = [
+  { turn: 50,  kinds: [0, 0, 0, 0, 0] },
+  { turn: -50, kinds: [0, 0, 0, 0, 0] },
+  { turn: 90,  kinds: [2, 1, 0] },
+  { turn: -90, kinds: [2, 1, 0] },
+];
+const ROCK_CLUSTER_R = 6;     // tiles from a cluster's centre its rocks stand within
+// how far off its heading a cluster's centre may slide to find room (the
+// cosine), and how many rocks more than it stands that room must hold:
+// tried in order, so a cramped rim takes a spot further round, and a shape
+// with no dry rim that way (FROZEN ISLES) the nearest that has one
+const ROCK_CLUSTER_SLACK = [[Math.cos(25 * Math.PI / 180), 2], [Math.cos(45 * Math.PI / 180), 0], [Math.cos(70 * Math.PI / 180), 0], [-1, 0]];
 const ROCK_BAND_MIN = 2;      // tiles out from the border's pines the band starts...
 const ROCK_BAND_MAX = 8;      // ...and ends
-const ROCK_BAND_GROW = 8;     // a shape whose rim cannot hold them (FROZEN ISLES: the rim is lake) widens the band by this...
+const ROCK_BAND_GROW = 8;     // a shape whose rim cannot hold a cluster (FROZEN ISLES: the rim is lake) widens the band by this...
 const ROCK_BAND_LIMIT = 40;   // ...a step at a time, out to here
-const ROCK_SPACING = 4;       // min tiles between two rocks' anchors
+const ROCK_SPACING = 3;       // min tiles between two rocks' anchors
 function placeRocks() {
   for (let i = 0; i < objects.length; i++) if (objects[i] && objects[i].type === 'rock') objects[i] = null;
   const rkRng = mulberry32((SEED ^ 0x524f434b) >>> 0);
@@ -655,6 +670,7 @@ function placeRocks() {
   }
   // a tile a rock may cover: open snow, holding nothing, touching no pine
   const open = (tx, ty) => {
+    if (!inWorld(tx, ty)) return false;
     const i = idx(tx, ty);
     if (objects[i] || ground[i] !== 0 || dist[i] < ROCK_BAND_MIN) return false;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -663,35 +679,87 @@ function placeRocks() {
     }
     return true;
   };
-  const band = [];
-  for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 2; tx++) {
-    if (!open(tx, ty) || !open(tx + 1, ty)) continue;
-    if (camps.some((C) => Math.hypot(tx + 0.5 - C.tx, ty - C.ty) <= C.r + 2.5)) continue;
-    band.push({ tx, ty, d: dist[idx(tx, ty)] });
-  }
-  // the band as drawn first; only what it cannot hold goes further in
+  // an anchor a rock may take, `hi` tiles out at most: both tiles open, out of the camps
+  const fits = (tx, ty, hi) => open(tx, ty) && open(tx + 1, ty) && dist[idx(tx, ty)] <= hi &&
+    !camps.some((C) => Math.hypot(tx + 0.5 - C.tx, ty - C.ty) <= C.r + 2.5);
   const placed = [];
-  for (let hi = ROCK_BAND_MAX; hi <= ROCK_BAND_LIMIT && placed.length < ROCK_COUNT; hi += ROCK_BAND_GROW) {
-    const cands = band.filter((c) => c.d <= hi);
-    for (let tries = 0; tries < ROCK_COUNT * 20 && placed.length < ROCK_COUNT && cands.length; tries++) {
-      const c = cands[Math.floor(rkRng() * cands.length)];
-      if (objects[idx(c.tx, c.ty)] || objects[idx(c.tx + 1, c.ty)] || placed.some((q) => Math.hypot(q.tx - c.tx, q.ty - c.ty) < ROCK_SPACING)) continue;
-      placed.push(c);
-      const o = placeObj(c.tx, c.ty, 'rock', { kind: 0, regrow: 0, crack: 0, miner: -1 });
-      objects[idx(c.tx + 1, c.ty)] = { type: 'part', tx: c.tx + 1, ty: c.ty, of: o, flash: 0, shake: 0 };
-      c.o = o;
+  const clear = (tx, ty) => !placed.some((c) => Math.hypot(c.tx - tx, c.ty - ty) < ROCK_SPACING);
+  const stand = (tx, ty, kind) => {
+    const o = placeObj(tx, ty, 'rock', { kind, regrow: 0, crack: 0, miner: -1 });
+    objects[idx(tx + 1, ty)] = { type: 'part', tx: tx + 1, ty, of: o, flash: 0, shake: 0 };
+    placed.push({ tx, ty });
+  };
+  // the halves: RED's below the mirror line (tx < ty), BLUE's above it, a
+  // rock's two tiles wholly on its own side
+  const half = (tx, ty, side) => side ? tx > ty : tx + 1 < ty;
+  const c0 = (WORLD - 1) / 2, rx = -Math.SQRT1_2, ry = Math.SQRT1_2; // toward RED's roost
+  for (const K of ROCK_CLUSTERS) {
+    // RED's roost direction turned toward the top-left corner (+) or the bottom-right (-)
+    const a = Math.abs(K.turn) * Math.PI / 180, cn = K.turn > 0 ? -Math.SQRT1_2 : Math.SQRT1_2;
+    const vx = rx * Math.cos(a) + cn * Math.sin(a), vy = ry * Math.cos(a) + cn * Math.sin(a);
+    // the centre: RED's rim anchor nearest the heading, whose mirror fits too
+    // and with room round both for the cluster (a spot where the rim is a
+    // thin strip between the pines and a lake holds too few). A corner
+    // cluster straddles the line, so its centre is on it - unless it had to
+    // slide far enough round to be two spots, one per side.
+    const corner = Math.abs(K.turn) >= 90;
+    // how many rocks a centre can hold, ROCK_SPACING apart
+    const room = (kx, ky, side, hi) => {
+      const got = [];
+      for (let ty = Math.floor(ky) - ROCK_CLUSTER_R; ty <= ky + ROCK_CLUSTER_R; ty++) for (let tx = Math.floor(kx) - ROCK_CLUSTER_R; tx <= kx + ROCK_CLUSTER_R; tx++) {
+        if (inWorld(tx, ty) && Math.hypot(tx - kx, ty - ky) <= ROCK_CLUSTER_R && half(tx, ty, side) && fits(tx, ty, hi) &&
+          clear(tx, ty) && got.every((g) => Math.hypot(g.tx - tx, g.ty - ty) >= ROCK_SPACING)) got.push({ tx, ty });
+      }
+      return got.length;
+    };
+    let best = null;
+    for (const [slide, spare] of ROCK_CLUSTER_SLACK) for (let hi = ROCK_BAND_MAX; hi <= ROCK_BAND_LIMIT && !best; hi += ROCK_BAND_GROW) {
+      const heads = [];
+      for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 2; tx++) {
+        const ox = tx - c0, oy = ty - c0, l = Math.hypot(ox, oy) || 1, cosA = (ox * vx + oy * vy) / l;
+        if (cosA > slide && half(tx, ty, 0) && fits(tx, ty, hi) && fits(ty, tx, hi)) heads.push({ tx, ty, cosA });
+      }
+      heads.sort((u, v) => v.cosA - u.cosA);
+      for (const h of heads) {
+        const m = (h.tx + h.ty) / 2;
+        h.straddle = corner && Math.abs(h.tx - h.ty) <= 2 * ROCK_CLUSTER_R;
+        const ok = h.straddle ? room(m, m, 0, hi) >= K.kinds.length + spare && room(m, m, 1, hi) >= K.kinds.length + spare
+          : room(h.tx, h.ty, 0, hi) >= K.kinds.length + spare && room(h.ty, h.tx, 1, hi) >= K.kinds.length + spare;
+        if (ok) { best = h; break; }
+      }
+    }
+    if (!best) continue;
+    const m = (best.tx + best.ty) / 2, stood = [[], []];
+    for (const side of [0, 1]) {
+      const kx = best.straddle ? m : side ? best.ty : best.tx, ky = best.straddle ? m : side ? best.tx : best.ty;
+      let n = 0;
+      // each side fills its own spot with the same kinds, reaching further
+      // in only when the rim near the centre cannot hold them
+      for (let hi = ROCK_BAND_MAX; hi <= ROCK_BAND_LIMIT && n < K.kinds.length; hi += ROCK_BAND_GROW) {
+        const cand = [];
+        const R = Math.ceil(ROCK_CLUSTER_R);
+        for (let ty = Math.floor(ky) - R; ty <= ky + R; ty++) for (let tx = Math.floor(kx) - R; tx <= kx + R; tx++) {
+          if (inWorld(tx, ty) && Math.hypot(tx - kx, ty - ky) <= ROCK_CLUSTER_R && half(tx, ty, side) && fits(tx, ty, hi)) cand.push({ tx, ty });
+        }
+        // shuffled first, then in reading order for any a crowded shuffle left out
+        const order = cand.slice();
+        for (let i = cand.length - 1; i > 0; i--) { const j = Math.floor(rkRng() * (i + 1)); const t = cand[i]; cand[i] = cand[j]; cand[j] = t; }
+        for (const c of cand.concat(order)) {
+          if (n >= K.kinds.length) break;
+          if (!fits(c.tx, c.ty, hi) || !clear(c.tx, c.ty)) continue;
+          stand(c.tx, c.ty, K.kinds[n++]);
+          stood[side].push(placed[placed.length - 1]);
+        }
+      }
+    }
+    // a side that got fewer leaves the other its count, never more: the
+    // last-stood (plainest) go
+    const keep = Math.min(stood[0].length, stood[1].length);
+    for (const st of stood) for (const c of st.slice(keep)) {
+      objects[idx(c.tx, c.ty)] = objects[idx(c.tx + 1, c.ty)] = null;
+      placed.splice(placed.indexOf(c), 1);
     }
   }
-  // the kinds: a sunstone by each unowned corner, then frostglass far from the roosts
-  const roostD = (c) => Math.min(Math.hypot(c.tx, WORLD - 1 - c.ty), Math.hypot(WORLD - 1 - c.tx, c.ty));
-  for (const [cx, cy] of [[0, 0], [WORLD - 1, WORLD - 1]]) {
-    let best = null, bd = 1e9;
-    for (const c of placed) { const d = Math.hypot(c.tx - cx, c.ty - cy); if (c.o.kind === 0 && d < bd) { bd = d; best = c; } }
-    if (best) best.o.kind = 2;
-  }
-  const far = placed.filter((c) => c.o.kind === 0).sort((a, b) => roostD(b) - roostD(a));
-  const pool = far.slice(0, Math.max(ROCK_RARE, Math.round(far.length * ROCK_RARE_SHARE)));
-  for (let n = 0; n < ROCK_RARE && pool.length; n++) pool.splice(Math.floor(rkRng() * pool.length), 1)[0].o.kind = 1;
 }
 // Taking a piece of scenery off the map at runtime (a crater, the landing's
 // lane, the merchant's axe): the whole footprint goes, so a two-tile rock
@@ -1207,14 +1275,18 @@ function layPaths() {
 //   - the BRIDGE: the road crosses on a timber deck (ground 3, so to every
 //     rule it is road) the lane's width, with open sides - shoved off one,
 //     you are in the creek;
-//   - the ISLANDS: the two camps on the mirror line (the DIRE HOLLOW and the
-//     ALPHA STONE) stand on islands the creek parts round and joins again
-//     below, each reached by a FORD from either half;
-//   - an outer FORD on each stretch between an island and the treeline;
+//   - an outer FORD on each stretch between a bend and the treeline;
 //   - a ford wherever a grown shape's path crosses (addPathRoute).
 // A ford is a row of stepping stones (ground 5) along one tile row across
 // the water, so it is always four-connected and nobody's feet cut a corner
 // through the current.
+//
+// The BENDS: the two camps on the mirror line (the DIRE HOLLOW and the ALPHA
+// STONE) each have the creek swing round them in a half-loop, so each falls
+// on one side's bank: the upstream one (the dire hollow) to RED, the
+// downstream one (the alpha stone) to BLUE. The line is point-symmetric
+// about the bridge, as the roosts are. The other side reaches its rival's
+// camp over the bridge or the outer ford past it.
 //
 // Geometry, in tiles, off the road's own frame: `w` along the creek is
 // roadOffS (+ downstream, toward the bottom-right) and `p` across it is
@@ -1227,89 +1299,82 @@ function layPaths() {
 const CREEK_HW = 1.05;       // tiles either side of the creek's line the water runs: about two tiles across
 const CREEK_HW_RAG = 0.22;   // ...that each bank wanders on the position noise
 const CREEK_WANDER = 2.5;    // tiles the line itself wanders off the cross-diagonal, either way
-const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the bridge, an island or a ford
-const CREEK_REACH = CREEK_WANDER + CREEK_HW + CREEK_HW_RAG + 0.4; // the farthest a bank ever stands off the diagonal
+const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the bridge, a bend or a ford
+const CREEK_REACH = CREEK_WANDER + CREEK_HW + CREEK_HW_RAG + 0.4; // the farthest a bank ever stands off the line's bend
 const CREEK_COST = 6;        // what a tile of creek costs a path's route (pathCost): it crosses, and short
-const CREEK_ISLE = 1.2;      // tiles of dry island between a path's end at an island camp (r + PATH_CAMP) and the water
-const CREEK_FORD_GAP = 14;   // tiles of creek an outer ford needs between an island and the treeline
+const CREEK_BEND_GAP = 1.2;  // tiles of dry bank between a path's end at a bend's camp (r + PATH_CAMP) and the water
+const CREEK_BEND_LONG = 2.2; // a bend runs this many times its reach along the creek either way (2 or more keeps the camp clear)
+const CREEK_FORD_GAP = 14;   // tiles of creek an outer ford needs between a bend and the treeline
 const BRIDGE_L = 2.0;        // tiles the deck runs either side of the creek's line, along the road
 const BRIDGE_W = ROAD_HW + 0.35; // ...and either side of the road's centreline, along the creek: the lane's width
 function creekP(fx, fy) { return (fx - fy) / Math.SQRT2; }
-// the islands: every camp site on the mirror line, with the radius of the
-// water's centre round it - out past the ground a path to it stops on
-let creekIslesC = null;
-function creekIsles() {
-  if (creekIslesC) return creekIslesC;
-  creekIslesC = [];
+// the bends: every camp site on the mirror line, with how far the water's
+// centre swings off the diagonal at the camp (R, out past the ground a path
+// to it stops on), how far along it the swing runs either way (L) and which
+// way it swings (side: + toward BLUE's half, which leaves the camp RED's)
+let creekBendsC = null;
+function creekBends() {
+  if (creekBendsC) return creekBendsC;
+  creekBendsC = [];
   for (const site of campSites()) {
     if (Math.abs(site.u - (WORLD - 1) / 2) > 0.01) continue;
-    const t = campTile(site.u, site.s);
-    creekIslesC.push({ tx: t.tx, ty: t.ty, w: roadOffS(t.tx, t.ty), R: CAMPS[site.key].r + PATH_CAMP + CREEK_ISLE + CREEK_HW });
+    const t = campTile(site.u, site.s), w = roadOffS(t.tx, t.ty);
+    const R = CAMPS[site.key].r + PATH_CAMP + CREEK_BEND_GAP + CREEK_HW;
+    creekBendsC.push({ tx: t.tx, ty: t.ty, w, R, L: R * CREEK_BEND_LONG, side: w < 0 ? 1 : -1 });
   }
-  return creekIslesC;
+  return creekBendsC;
 }
-// 0 at the bridge, an island or a ford, easing to 1 CREEK_CALM tiles out:
+// the line's swing off the diagonal at w: R (1 - t^2)^2 over each bend, flat
+// at both ends so it leaves the diagonal smoothly, and never nearer the camp
+// than R while L >= 2R
+function creekBend(w) {
+  let p = 0;
+  for (const B of creekBends()) {
+    const t = (w - B.w) / B.L;
+    if (t > -1 && t < 1) p += B.side * B.R * (1 - t * t) * (1 - t * t);
+  }
+  return p;
+}
+// 0 at the bridge, a bend's camp or a ford, easing to 1 CREEK_CALM tiles out:
 // the wander and the banks' rag are held still where the water must meet a
 // fixed thing square
 function creekCalm(w) {
   let k = 1;
   const at = (w0, r) => { const t = Math.max(0, Math.min(1, (Math.abs(w - w0) - r) / CREEK_CALM)); k = Math.min(k, t * t * (3 - 2 * t)); };
   at(0, BRIDGE_W + 1);
-  for (const I of creekIsles()) at(I.w, I.R + 1);
+  for (const B of creekBends()) at(B.w, B.L / 2);
   for (const f of creekOuterFords()) at(f.w, 1);
   return k;
 }
 function creekMid(w) {
-  return ((vnoise(w * 0.045 + 7.3, 3.1) - 0.5) * 2 * CREEK_WANDER + (vnoise(w * 0.21 + 1.7, 8.7) - 0.5) * 0.5) * creekCalm(w);
+  return creekBend(w) + ((vnoise(w * 0.045 + 7.3, 3.1) - 0.5) * 2 * CREEK_WANDER + (vnoise(w * 0.21 + 1.7, 8.7) - 0.5) * 0.5) * creekCalm(w);
 }
 function creekHW(w, side) {
   return CREEK_HW + (vnoise(w * 0.13 + side * 31.7, 5.5) - 0.5) * 2 * CREEK_HW_RAG * creekCalm(w);
 }
 // Signed distance (tiles) from the nearer bank: negative in the water. Also
 // leaves where the point is in CQ, so a caller asking for more than the
-// distance does not pay twice: `a` along the water (tiles), `n` across it
-// (signed, from the water's own centre), and `isle` - the island whose ring
-// it is on, or -1 for the creek's line.
-const CQ = { d: 99, a: 0, n: 0, isle: -1, fdx: 0, fdy: 0 };
+// distance does not pay twice: `a` along the water (tiles) and `n` across it
+// (signed, from the water's own centre, + toward BLUE's half).
+const CQ = { d: 99, a: 0, n: 0, fdx: 0, fdy: 0 };
 function creekAt(fx, fy) {
   const q = CQ;
-  q.d = 99; q.isle = -1;
+  q.d = 99;
   if (PRACTICE) return 99;
-  const isles = creekIsles();
-  let inIsle = false;
-  for (let k = 0; k < isles.length; k++) {
-    const I = isles[k], dx = fx - I.tx, dy = fy - I.ty;
-    if (Math.abs(dx) > I.R + 3 || Math.abs(dy) > I.R + 3) continue;
-    const r = Math.hypot(dx, dy) || 1e-6;
-    if (r < I.R) inIsle = true;
-    const e = Math.abs(r - I.R) - CREEK_HW;
-    if (e < q.d) { q.d = e; q.isle = k; q.a = Math.atan2(dy, dx) * I.R; q.n = r - I.R; }
-  }
-  if (!inIsle) {
-    const p = creekP(fx, fy);
-    if (Math.abs(p) - CREEK_REACH < q.d) {
-      const w = roadOffS(fx, fy), n = p - creekMid(w);
-      const e = n < 0 ? -n - creekHW(w, -1) : n - creekHW(w, 1);
-      if (e < q.d) { q.d = e; q.isle = -1; q.a = w; q.n = n; }
-    }
-  }
+  const p = creekP(fx, fy), w = roadOffS(fx, fy);
+  if (Math.abs(p - creekBend(w)) - CREEK_REACH >= q.d) return q.d;
+  const n = p - creekMid(w);
+  q.d = n < 0 ? -n - creekHW(w, -1) : n - creekHW(w, 1);
+  q.a = w; q.n = n;
   return q.d;
 }
 // the way the current runs at a point (CQ.fdx/fdy, a unit vector): along
-// the line, bent by its wander; round an island, the ring's tangent - both
-// arms run downstream, top-left to bottom-right
+// the line, bent by its bends and its wander, top-left to bottom-right
 function creekFlow(fx, fy) {
   creekAt(fx, fy);
   const q = CQ;
-  if (q.isle >= 0) {
-    const I = creekIsles()[q.isle], dx = fx - I.tx, dy = fy - I.ty, r = Math.hypot(dx, dy) || 1;
-    let x = -dy / r, y = dx / r;
-    if (x + y < 0) { x = -x; y = -y; }
-    q.fdx = x; q.fdy = y;
-  } else {
-    const w = roadOffS(fx, fy), s = creekMid(w + 0.5) - creekMid(w - 0.5), l = Math.hypot(1 + s, 1 - s);
-    q.fdx = (1 + s) / l; q.fdy = (1 - s) / l;
-  }
+  const w = roadOffS(fx, fy), s = creekMid(w + 0.5) - creekMid(w - 0.5), l = Math.hypot(1 + s, 1 - s);
+  q.fdx = (1 + s) / l; q.fdy = (1 - s) / l;
   return q;
 }
 // the deck: a rectangle on the two diagonals round the crossing, the lane's
@@ -1322,8 +1387,8 @@ function bridgeAt(fx, fy) {
 // in the water, as drawn: what the plunge asks of the feet, so nobody goes
 // in off a pixel of bank or off the deck's overhang
 function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !bridgeAt(fx, fy); }
-// the outer fords: on the diagonal, halfway between an island's ring (or the
-// bridge, on a side with no island) and where the border woods close over
+// the outer fords: on the diagonal, halfway between a bend's end (or the
+// bridge, on a side with no bend) and where the border woods close over
 // the creek - where the stretch is long enough to want one
 let creekFordsC = null;
 function creekOuterFords() {
@@ -1334,7 +1399,7 @@ function creekOuterFords() {
     while (t >= 0 && t <= WORLD - 1 && Math.min(t, WORLD - 1 - t) < borderDepth(t, t)) t -= dir;
     const wT = roadOffS(t, t);
     let wIn = dir * (BRIDGE_W + 1);
-    for (const I of creekIsles()) if (Math.sign(I.w) === dir && Math.abs(I.w) + I.R > Math.abs(wIn)) wIn = I.w + dir * (I.R + CREEK_HW);
+    for (const B of creekBends()) if (Math.sign(B.w) === dir && Math.abs(B.w) + B.L > Math.abs(wIn)) wIn = B.w + dir * B.L;
     if ((wT - wIn) * dir < CREEK_FORD_GAP) continue;
     const w = (wT + wIn) / 2, c = (w * Math.SQRT2 + WORLD - 1) / 2;
     creekFordsC.push({ w, x: c, y: c });
@@ -1364,27 +1429,16 @@ function creekFord(fx, fy) {
 }
 // Runs at boot right after genWorld() (js/boot.js), before the paths and the
 // road: the water fells whatever grew on it (its banks keep their pines), the
-// deck is laid bank to bank, each island is cleared to open ground, and the
-// fixed fords go down. A path's own fords follow in layPaths (addPathRoute).
+// deck is laid bank to bank, and the fixed fords go down. A path's own fords follow in layPaths (addPathRoute).
 function placeCreek() {
   if (PRACTICE) return;
-  creekIslesC = null; creekFordsC = null;
+  creekBendsC = null; creekFordsC = null;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     const i = idx(tx, ty);
     if (bridgeAt(tx, ty)) { ground[i] = 3; objects[i] = null; continue; }
     if (creekAt(tx, ty) >= 0) continue;
     ground[i] = 4;
     objects[i] = null;
-  }
-  for (const I of creekIsles()) {
-    const R = Math.ceil(I.R);
-    for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) {
-      const o = objAt(I.tx + dx, I.ty + dy);
-      if (o && Math.hypot(dx, dy) < I.R - CREEK_HW && laneFells(o)) objects[idx(I.tx + dx, I.ty + dy)] = null;
-    }
-    // a ford from each half: where the ring runs along the diagonal, level with the camp
-    creekFord(I.tx + I.R / Math.SQRT2, I.ty - I.R / Math.SQRT2);
-    creekFord(I.tx - I.R / Math.SQRT2, I.ty + I.R / Math.SQRT2);
   }
   for (const f of creekOuterFords()) creekFord(f.x, f.y);
 }
