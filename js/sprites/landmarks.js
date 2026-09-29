@@ -1,9 +1,9 @@
 'use strict';
-// The story landmarks' art (LANDMARKS, js/landmarks.js): the abandoned sled,
-// the ice-fishing shack and the boat frozen into a lake. One palette for all
-// three, weathered wood and a faded rust paint - never a saturated red or
-// blue, which are the teams' inks, so nothing here reads as anybody's.
-// Picked from docs/media/concepts/landmarks-concepts-1.png: A, C and E.
+// The story landmarks' art (LANDMARKS, js/landmarks.js): the abandoned sled
+// and the boat frozen into a lake. One palette for both, weathered wood and a
+// faded rust paint - never a saturated red or blue, which are the teams' inks,
+// so nothing here reads as anybody's.
+// Picked from docs/media/concepts/landmarks-concepts-1.png: A and E.
 (() => {
   const { bake, flipH } = SPR;
 
@@ -20,7 +20,7 @@
     'L': '#fbfdff', // snow lit
     'r': '#9a6450', // the sled's rail, faded rust
     'R': '#6e4638', // ...its shade
-    'p': '#8e5a48', // weathered rust paint (the shack, the hull)
+    'p': '#8e5a48', // weathered rust paint (the hull)
     'P': '#a8715a', // ...lit
     'q': '#634036', // ...shade
     'i': '#5f6677', // iron
@@ -45,43 +45,6 @@
     '.oooDooooDooooDooooio.',
     'oiiIiiiiiiIiiiiiiiio..',
     '.oooooooooooooooooo...',
-  ];
-  // C, RED SHANTY (in rust, not red): a plywood box under a slab of snow, a
-  // stovepipe, a frosted window and a plank door, banked in snow at the
-  // foot. 34x32 over a 2x2 footprint.
-  const shack = [
-    '......................oiiiiio.....',
-    '.......................oIiio......',
-    '.......................oIiio......',
-    '..ooooooooooooooooooooooIiiooooo..',
-    '.oLLLLLLLLLLLLLLLLLLLLLLIiiLLLLLo.',
-    'oLLLLLLLLLLLLLLLLLLLLLLLssSLLLLLLo',
-    'oLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLo',
-    'osssssssssssssssssssssssssssssssso',
-    'osssssssssssssssssssssssssssssssso',
-    'osssssssssssssssssssssssssssssssso',
-    'oSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSo',
-    'oSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSo',
-    'oDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDo',
-    '.ooqBBqqqBqqqqBBqqBqqqqqqqBqqBBoo.',
-    '..oqqBqqqqqqqqqBqqqqqqqqqqqqqBqo..',
-    '..oqPpppqPpppqPpppqPpppqPpppqPpo..',
-    '..oqPppDDDDDDqPpppqPDDDDDDDpqPpo..',
-    '..oqPppDBBbbDqPpppqPDWWdWWDpqPpo..',
-    '..oqPppDBbDbDqPpppqPDwwdwwDpqPpo..',
-    '..oqPppDbbbbDqPpppqPDwwdwwDpqPpo..',
-    '..oqPppDDDDDDqPpppqPDwwdwwDpqPpo..',
-    '..oqPpppqPpppqPpppqPDwwdwwDpqPpo..',
-    '..oqPpppqPpppqPpppqPDwwdwIDpqPpo..',
-    'o.oqPpppqPpppqPpppqPDwwdwwDpqPpo..',
-    'sooqPpppqPpppqPpppqPDwwdwwDpqPsso.',
-    'SssqPpppqPpppqPpppqPDwwdwwDpssSSso',
-    'SSSsssppqPpppqPpppqPDwwdwwssSSSSSs',
-    'SSSSSSsssssppsssppqPDwwsssSSSSSSSS',
-    'SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS',
-    'SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS',
-    'oSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSo',
-    '.oooooooooooooooooooooooooooooooo.',
   ];
   // E, ROWBOAT: the hull listing toward the bow, snow drifted into the stern,
   // one oar left standing in its rowlock, and a ring of heaved ice where the
@@ -115,6 +78,6 @@
 
   const sledR = bake(sled, LMPAL);
   Object.assign(SPRITES, {
-    landmark: { sled: sledR, sledL: flipH(sledR), shack: bake(shack, LMPAL), boat: bake(boat, LMPAL) },
+    landmark: { sled: sledR, sledL: flipH(sledR), boat: bake(boat, LMPAL) },
   });
 })();

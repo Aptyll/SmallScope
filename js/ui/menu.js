@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.11';
+const PATCH_TXT = 'PATCH 4.12';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.12', 'THE ICE-FISHING SHACK IS GONE FROM THE LAKES, AND A DODGE ROLL NOW CARRIES YOU OVER THE CREEK IF YOU START IT AT THE BANK.'],
   ['4.11', 'THE NOTES CLAUDE WORKS FROM ARE CUT TO A QUARTER OF THEIR LENGTH AND POINT TO WHERE THE DETAIL LIVES.'],
   ['4.10', 'EVERY CHANGE NOW RUNS THE NAME CHECK ON ITS WAY IN, SO A CLASH IS STOPPED BEFORE IT CAN BREAK A BUILD.'],
   ['4.09', 'A NEW CHECK CATCHES TWO PIECES OF THE GAME CLAIMING THE SAME NAME BEFORE THEY EVER REACH YOU.'],
@@ -1147,7 +1148,8 @@ const PATCH_DIGEST = [
     ['SIX HOG HUTS HIDE IN THE BORDER WOODS, THREE CHESTS AROUND EACH', '3.87'],
     ['A CREEK THAT NEVER FREEZES SPLITS THE VALLEY, BRIDGED AT THE ROAD', '3.86'],
     ['THE WOLF DEN IS A ROCK MAW, AND THERE ARE SIX CAMPS', '3.85'],
-    ['A FISHING SHACK, A ROWBOAT IN THE ICE, AND A SLED YOU CAN RIDE', '3.98'],
+    ['ROLL OVER THE CREEK FROM ITS BANK', '4.12'],
+    ['A ROWBOAT IN THE ICE, AND A SLED YOU CAN RIDE', '3.98'],
     ['ROCKS COME IN THREE KINDS, AND ALL OF THEM GIVE ORE', '3.96'],
     ['LAKES HAVE SHORES, REEDS AND CRACKS', '3.93'],
   ]],

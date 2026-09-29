@@ -1201,7 +1201,7 @@ function layPaths() {
 //
 // It is GROUND 4, open water: every walker but a player treats it as a wall,
 // no route crosses it (waterAt), and a player who steps in plunges exactly as
-// into an ice hole (updatePlayer) - a roll does not carry over it, and the
+// into an ice hole (updatePlayer) - a roll started at the bank carries over it, and the
 // scramble out is back onto the bank they went in from (nearestDryTile). The
 // ways over, all of them ground that walks like snow:
 //   - the BRIDGE: the road crosses on a timber deck (ground 3, so to every
