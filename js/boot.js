@@ -1443,9 +1443,11 @@ if (PRACTICE) {
   state.introFrom = { x: camX, y: camY };
   state.intro = HUD_IN_T; state.introLen = HUD_IN_T;
 } else if (!PROFILE.hasChar()) {
-  // a fresh install: the first thing seen is the create screen, opened on a
-  // pre-rolled character (js/ui/chars.js) - the title menu is behind it
-  beginCreate(-1, true);
+  // a fresh install: the profile is given one rolled character per class and
+  // the title comes up as for anybody else - the creator is one click on the
+  // character tag or the lobby's figure away, never a gate in front of play
+  PROFILE.seedChars();
+  applyCharacter();
 }
 if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) { beginRooms(); state.menu.rsel = -2; netJoin(JOIN_AT_BOOT); }
 // landing from a reroll: the whiteout the die left behind clears to the new world

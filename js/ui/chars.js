@@ -174,7 +174,7 @@ function updateChars(dt) {
 
 // ---- the create screen --------------------------------------------------
 // slot -1 makes a new character (pre-rolled); a slot index edits that one -
-// its class shown but not for turning. `first` is the fresh install: no
+// its class shown but not for turning. `first` is a roster emptied by a delete: no
 // CANCEL, and DONE lands on the title menu.
 function beginCreate(slot, first) {
   const m = state.menu;

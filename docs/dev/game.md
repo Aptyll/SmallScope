@@ -209,8 +209,9 @@ into the fight always walked. [The road](world.md#the-road), [the zipline](world
 - **Not an account.** The player profile is up to three **characters** — each a name, a class
   fixed when it was made, a look (body type, skin tone, hair, beard, face) and its own lifetime
   numbers — plus a record of which kinds you have held, in the browser. No passwords, no sign-in,
-  nothing to log into. A fresh install opens the create screen **before** the title on a
-  pre-rolled name and look, so PLAY is one press away and nobody is stopped at a blank form. **A
+  nothing to log into. A fresh install opens on the **title**, with one rolled character per
+  class already made (`PROFILE.seedChars`), so PLAY is one press away, the other class is one
+  step of the lobby's chevrons, and the creator is something to open, never a gate. **A
   character is paint, never power**: a match reads its name, class and look and nothing else —
   everything about a match is decided inside that match, and the arsenal is unlocked for
   everybody alike. See [architecture.md](architecture.md#profilejs) and

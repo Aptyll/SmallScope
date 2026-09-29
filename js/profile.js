@@ -242,6 +242,24 @@
     rollChar(cls) {
       return mendChar({ name: randomName(), cls: typeof cls === 'number' ? cls : Math.floor(Math.random() * CLASS_N), look: randomLook() });
     },
+    // A fresh install's crew: one character per class, each with its own rolled
+    // name and look, the first class active. Boot calls it when the profile is
+    // empty, so a new player starts on the title with somebody to play and
+    // tries the other class with one step of the lobby's chevrons. Returns
+    // false (and writes nothing) on a profile that already has a character.
+    seedChars() {
+      if (profile.chars.length) return false;
+      const used = new Set();
+      for (let cls = 0; cls < CLASS_N && profile.chars.length < CHAR_MAX; cls++) {
+        const c = mendChar({ name: randomName(), cls, look: randomLook(), stats: null });
+        while (used.has(c.name)) c.name = randomName();
+        used.add(c.name);
+        profile.chars.push(c);
+      }
+      profile.active = 0;
+      saveNow();
+      return true;
+    },
     // Make a character from a spec ({ name, cls, look }) into the next free
     // slot and make it active. Returns validate()'s result for the name, or
     // { ok: false, why: 'FULL' }; on failure nothing is written.

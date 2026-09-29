@@ -133,11 +133,13 @@ file is a save file.
   `softfall.settings` key is folded in once and removed; a v1 save's `name` + `stats` become its
   first character). Boot calls it
   **before `loadSettings()`**, which reads `PROFILE.settings()`. **A fresh install has no
-  character** (`hasChar()` false) and boot opens the create screen before the title.
+  character** (`hasChar()` false): boot calls `seedChars()` (one rolled character per class,
+  the first active, saved at once) and `applyCharacter()`, and the title comes up as usual.
 - **The character calls**: `chars()`, `activeIndex()`, `char()`, `rollChar(cls)` (a fresh
   unsaved spec with a random name and look), `createChar(spec)` (into the next free slot, made
   active; `{ ok: false, why: 'FULL' }` past three), `updateChar(i, spec)` (name and look only —
-  the class in the spec is ignored), `deleteChar(i)`, `setActive(i)`. `LOOK_N` and `CLASS_N`
+  the class in the spec is ignored), `deleteChar(i)`, `setActive(i)`, `seedChars()` (a fresh install's crew; `false` and no
+  write on a profile that has a character). `LOOK_N` and `CLASS_N`
   are exported so js/sprites/looks.js can assert its tables against them at load.
 - **`PROFILE.validate(raw)`** is the one name validator: trimmed, uppercased, `A-Z0-9` only, 16
   characters, and a basic profanity list matched after the obvious digit-for-letter swaps are

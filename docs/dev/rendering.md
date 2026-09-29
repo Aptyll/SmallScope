@@ -1894,8 +1894,9 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   (`charsKey`).
 - **The create screen** opens on `menu.cedit = { slot, spec, first }` — slot −1 is a **new
   character pre-rolled** by `PROFILE.rollChar` (a winter word and a random look), a slot index
-  is that character's copy for editing, and `first` is the fresh install (js/boot.js opens it
-  before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
+  is that character's copy for editing, and `first` marks a profile left with nobody (the roster
+  opens it when its last character is deleted): no CANCEL, and DONE lands on the title menu. A
+  fresh install never sees it first: boot seeds a character per class and opens the title.
   Two columns centred as one block (`createLayout`), sharing a top line and a foot. Left, the
   stage: the model at 3× (`drawModel`, the lobby's light and ring), the 16 px body at 2×
   walking on a snow pad by its feet (what the snow will show), and the **name field** centred

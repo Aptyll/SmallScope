@@ -110,8 +110,8 @@ declare victory. The affordances:
   set axes and buttons, and call `padPoll(1/60)` before each `update` — the [two
   controllers](multiplayer.md#the-two-controllers) list what each does.
 - **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a profile with no
-  character boots straight into the create screen on a pre-rolled character (boot.js calls
-  `beginCreate(-1, true)`), and its `dropped` flag comes back false, so the next ride runs the
+  character boots onto the title with one rolled character per class (boot.js calls
+  `PROFILE.seedChars()`), and its `dropped` flag comes back false, so the next ride runs the
   scripted first flight and its [drop brief](rendering.md#eagle-drop-mode-drop). `DBG.PROFILE`
   is the store; `DBG.beginChars()` opens the roster and `DBG.beginCreate(slot)` the create /
   customize screen (`-1` a new character), driven by `createHit`/`charsHit`, `createKey`,
