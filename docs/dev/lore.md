@@ -124,7 +124,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
 store copy; a trailer's cards.
 
 **It never goes in:** the HUD, a hint, a tooltip's body (that carve-out is for numbers —
-[the UI rule](../../CLAUDE.md#ui-rule-show-dont-label)), or anything between a player and PLAY:
+[the UI rule](rendering.md#show-dont-label)), or anything between a player and PLAY:
 no crawl, no cutscene, no codex to unlock. The snow never has to explain itself, and the fiction
 is for whoever goes looking.
 
