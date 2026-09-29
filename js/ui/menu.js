@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.13';
+const PATCH_TXT = 'PATCH 4.14';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.14', 'THE TEAM BAR AT THE TOP IS ONE SCOREBOARD: EACH SIDE\'S KILLS AND THE MATCH CLOCK SIT BETWEEN THE TEAMS, EVERY PLAYER HAS A SMALL HEALTH BAR, AND A FALLEN PLAYER\'S OUTLINE FILLS BACK IN AS THEIR RESPAWN COMES.'],
   ['4.13', 'ROCKS MINE THEMSELVES: STAND NEAR ONE AND ITS BAR FILLS WHILE YOU WALK, SHOOT OR FIGHT, ONLY A RIVAL\'S HIT STOPS IT, AND THE PROGRESS SLOWLY FADES INSTEAD OF RESETTING.'],
   ['4.12', 'THE ICE-FISHING SHACK IS GONE FROM THE LAKES, AND A DODGE ROLL NOW CARRIES YOU OVER THE CREEK IF YOU START IT AT THE BANK.'],
   ['4.11', 'THE NOTES CLAUDE WORKS FROM ARE CUT TO A QUARTER OF THEIR LENGTH AND POINT TO WHERE THE DETAIL LIVES.'],
@@ -1174,6 +1175,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '3.73'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['THE TOP BAR KEEPS SCORE: KILLS, THE CLOCK, EVERYONE\'S HEALTH', '4.14'],
     ['THE PATCH NOTES FILL THE SCREEN AND FOLD', '4.03'],
     ['A SOLO MATCH SAVES MID-FIGHT', '3.97'],
     ['A MOUSE SCHEME FOR ONE HAND', '3.91'],
