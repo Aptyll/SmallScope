@@ -382,9 +382,9 @@ function shotContacts(a, x0, y0, dx, dy) {
       if (s > 1) break;
     }
     ask = false;
-    // the grounded eagles are the objectives: the roost's own hitbox tiles
-    // ARE the hit test, so anywhere a walker collides, an arrow damages - a
-    // radius around the bird's centre missed the block's corners. Asked
+    // the factories are the objectives: their own footprint tiles ARE the
+    // hit test, so anywhere a walker collides, an arrow damages - a radius
+    // around the centre would miss the building's corners. Asked
     // BEFORE solidity, which would eat the shot; a friendly arrow falls
     // through to it and dies on the tile like any other miss.
     const o = objAt(tx, ty);

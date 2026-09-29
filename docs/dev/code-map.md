@@ -68,6 +68,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the twin eagle's frames | by banner | `eagle` |
+| what each bird skin IS: id, name, rarity, price in coins (its art: `SPRITES.warBirds`/`birdSkinIcon`, warbirds.js) | `BIRD_SKINS` | the file's head, above the IIFE |
+
+## js/sprites/warbirds.js (IIFE)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what each war eagle wears, by its `BIRD_SKINS` id (eagle.js), and where its merchant sits | `LOOKS`, `MERCH_SEAT_WAR` | `palettes` |
+| the plates a bird is built from, the wingbeat that bends them | `wing`, `tail`, `helm`, `body`, `beat`, `BEATS` | `plates` |
+| painting a frame at a heading: cel tones, shrink to pixels, lines, outline | `paint`, `fill`, `facingTone`, `FLY`, `SIZE` | `painter` |
+| the per-heading frame cache, the skins screen's cards, and what the drawers ask | `frame`, `shadow`, `icons`, `TURNS`, `SPRITES.warBirds` (`has`), `SPRITES.birdSkinIcon` (who wears which: `birdSkinFor`, js/ui/skins.js) | `cache` |
 
 ## js/sprites/factory.js (generated)
 
@@ -709,6 +719,17 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the create / customize screen: the pre-rolled buffer, the option rows (a cell per choice, each a crop of the model wearing it), the class pair and its lock, the die, the name field, DONE / CANCEL, the keyboard | `CH_ROWS`/`CH_HEAD`/`CH_TORSO`/`CH_CELL`/`CH_PLATE`/`CH_ROW_N`, `createLayout`, `rowCells`, `beginCreate`, `createCommit`/`createCancel`, `setLook`/`cycleLook`/`shuffleLook`, `createHit`, `createKey`, `createClick`, `updateCreate`, `nameOk`, `renderCreate`, `drawModel`, `drawLookCell`, `drawDie`/`DIE_FACES`/`DIE_T`, `drawWell`, `NAME_SHAKE_T` | `characters` › `the create screen` (the store: `PROFILE`, profile.js; the model: `SPRITES.portrait`, js/sprites/looks.js) |
 | the character tag bottom-left of the title screen | `charTagRect`, `overCharTag`, `drawCharTag` (the player that wears it: `applyCharacter`, player.js) | `characters` › `the character tag` |
 
+## js/ui/skins.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the catalogue: the navbar's categories, the rarity colours, the placeholder scout / weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one) | `birdSkinFor` (asked by `drawEagle`, boot.js), `birdSkinRow`, `skinOwned` | `skins` › `the catalogue` |
+| what a finished match pays | `COINS_MATCH`, `COINS_WIN`, `payMatchCoins` (its caller: `endMatch`, player.js) | `skins` › `the catalogue` |
+| a card's picture: the eagle's own icon or today's bird turned, a placeholder washed in its tint, a trail's streak | `skinArt` (the eagle's: `SPRITES.birdSkinIcon`, warbirds.js), `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
+| the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
+| the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
+
 ## js/ui/screens.js
 
 | Looking for | Start at | Banner |
@@ -757,7 +778,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the twin eagle rides down the fixed corner-to-corner diagonal, the wing seats and the merchant's neck seat, the jump window and its lock, a bot's treeline-safe forced drop, free fall (and the circle's steered fall, `p.dropAim`), landing, the flight bar, the dotted path, the wind trail, the zoomed-out view | `diagEnd` (and the corner's `mouth` it returns; `e.mouth` itself is the spur's junction, `roadNest`, world.js), `makeEagleRoute`, `forestDepth`, `lastOpenU`, `makeEagles`, `RIDER_SCALE`/`riderScale`, `riderDir`, `drawSeated`, `birdPose`, `seatPos`, `MERCH_SEAT`, `beginDrop`, `dropJump`, `landPlayer`, `handOver`, `updateDrop`, `updateEagle`, `drawDropAir`, `flightShown`/`flightShownT` (the flight bar's render-side clock), `FLIGHT_BAR_CUT`/`FLIGHT_TRACK`/`FLIGHT_SHUT`/`FLIGHT_OPEN`/`FLIGHT_KEY_SHUT` (the bar's paint, which the path's window and the landing ring share), `dropPress`/`flightDenyAt`/`FLIGHT_DENY_T` (a jump press from any device, and the bar's red shake when the door refuses it), `seatedName` (a rider's and the driver's name over the wing), `TRAIL_T`/`TRAIL_STEP`/`TRAIL_RIM`/`TRAIL_TIP`/`TRAIL_TIP_AMP`/`TRAIL_BACK`/`TRAIL_BACK_AMP`, `drawEagleTrail`, `drawEagle`, `renderDropUI` | `eagle drop` |
+| the twin eagle rides down the fixed corner-to-corner diagonal, the wing seats and the merchant's neck seat, the jump window and its lock, a bot's treeline-safe forced drop, free fall (and the circle's steered fall, `p.dropAim`), landing, the flight bar, the dotted path, the wind trail, the zoomed-out view | `diagEnd` (and the corner's `mouth` it returns; `e.mouth` itself is the spur's junction, `roadNest`, world.js), `makeEagleRoute`, `forestDepth`, `lastOpenU`, `makeEagles`, `RIDER_SCALE`/`riderScale`, `riderDir`, `drawSeated`, `birdPose`, `seatPos`, `MERCH_SEAT`, `beginDrop`, `dropJump`, `landPlayer`, `handOver`, `updateDrop`, `updateEagle`, `drawDropAir`, `flightShown`/`flightShownT` (the flight bar's render-side clock), `FLIGHT_BAR_CUT`/`FLIGHT_TRACK`/`FLIGHT_SHUT`/`FLIGHT_OPEN`/`FLIGHT_KEY_SHUT` (the bar's paint, which the path's window and the landing ring share), `dropPress`/`flightDenyAt`/`FLIGHT_DENY_T` (a jump press from any device, and the bar's red shake when the door refuses it), `seatedName` (a rider's and the driver's name over the wing), `TRAIL_T`/`TRAIL_STEP`/`TRAIL_RIM`/`TRAIL_TIP`/`TRAIL_TIP_AMP`/`TRAIL_BACK`/`TRAIL_BACK_AMP`, `drawEagleTrail`, `drawEagle` (a war eagle skin through `birdSkinFor`), `renderDropUI` | `eagle drop` |
 | the drop brief: the factory tour a carried-home landing opens on - the phase machine (a beat, the rival factory, then your own to finish), the camera's aim, the two headlines, the DAY 1 it hands back to | `state.dropBrief` (core.js), `BRIEF_WAIT`/`BRIEF_HOLD`/`BRIEF_HOLD_OURS`/`BRIEF_GO_MIN`/`BRIEF_MAX_T`, `endBrief`, `dropBriefTarget`, `drawDropBrief` (the glide: the camera banner, sim.js; the control zeroing: `sampleHumanInput`, input.js) | `eagle drop` |
 | the bird's way home past the line's end (the bank onto a circle round its factory, the crew and the merchant set down, then out over the treeline and gone), the factory built at takeoff (its clearing, its walls, the SPUR cleared and paved straight back to the road), and the live objective: its hp, its self-repair, its hp bar, and the fall ceremony that ends the match | `CIRCLE_R`/`CIRCLE_SPD`/`CIRCLE_MIN`/`CIRCLE_DROP`/`CIRCLE_OUT`, `beginCircle` (`e.circ`), `circleBankAt`, `birdAt`, `circleDrop`, `airShown`/`airShownT` (the bird's render-side clock), `CRASH_DEPTH`/`MIN_CRASH_TREES`, `findCrashPoint`, `buildFactory` (sets `e.crash`, `e.laneDir` - the spur's direction toward `e.mouth` - and registers `e.spur`/`e.pad`), `FACTORY_TX`/`FACTORY_TY`, `LANE_R`/`LANE_MAX`, `laneFells`, `clearSpur`, `FACTORY_HP`/`FACTORY_WORK_DMG`/`FACTORY_ARROW_DMG`/`FACTORY_REPAIR_DELAY`/`FACTORY_REPAIR_RATE`/`FACTORY_WARN_GAP`, `hurtFactory`, `factoryFall`, `factoryBoomFx`, `COLLAPSE_T`, `factoryFallResolve`, `teamFactoryDown`, `drawFactory`, `FACTORY_BAR_*` (the driver it sets down: `spawnMerchant`, robots.js) | `eagle drop` |
 | boot order, `DBG` | `startGame`, `window.DBG` | `boot` |

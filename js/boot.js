@@ -889,36 +889,41 @@ function drawEagleTrail(e, ex, ey, S, now) {
 
 // one bird in its team's armour, on its line and then on its way home and
 // out (birdPose, on the smoothed clock airShownT), until it is off the map.
-// The sprite sits at the bird's point with its shadow DROP_ALT below it.
+// The sprite sits at the bird's point with its shadow DROP_ALT below it. A
+// war eagle skin (birdSkinFor, read here only: the sim never asks) is
+// painted at its heading, so it draws unrotated.
 function drawEagle(e, ex, ey, now) {
   if (e.away) return;
   const frames = SPRITES.eagleTeam[skin(e.team)];
   const bp = birdPose(e, e.state === 'fly' ? undefined : airShownT(e, now));
   const sx = Math.round(bp.x - ex), sy = Math.round(bp.y - ey);
   const alt = DROP_ALT, S = EAGLE_SCALE;
-  const spr = frames[[0, 1, 2, 1][Math.floor(e.flap * 7) % 4]];
-  const w = spr.width * S, h = spr.height * S;
+  const fi = [0, 1, 2, 1][Math.floor(e.flap * 7) % 4];
+  const worn = birdSkinFor(e.team), war = SPRITES.warBirds.has(worn) ? worn : null;
+  const spr = war ? SPRITES.warBirds.frame(war, skin(e.team), bp.h, fi) : frames[fi];
+  const k = war ? 1 : S, w = spr.width * k, h = spr.height * k; // a war frame is already flight-sized
   drawEagleTrail(e, ex, ey, S, now); // before the cull: the trail hangs behind a bird already off the frame
   if (sx < -w - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + 40) return;
   const bob = Math.round(Math.sin(now * 2.4 + e.team * 2.1) * 3);
   ctx.save();
   ctx.translate(sx + 10, sy + alt);
-  ctx.rotate(bp.h);
-  ctx.drawImage(SPRITES.eagleShadow, -w / 2, -h / 2, w, h);
+  if (!war) ctx.rotate(bp.h);
+  ctx.drawImage(war ? SPRITES.warBirds.shadow(war, bp.h) : SPRITES.eagleShadow, -Math.round(w / 2), -Math.round(h / 2), w, h);
   ctx.restore();
   ctx.save();
   ctx.translate(sx, sy + bob);
-  ctx.rotate(bp.h);
-  ctx.drawImage(spr, -w / 2, -h / 2, w, h);
+  if (!war) ctx.rotate(bp.h);
+  ctx.drawImage(spr, -Math.round(w / 2), -Math.round(h / 2), w, h);
   ctx.restore();
   // every rider seated on its wing, facing the way the bird flies, at the
   // bird's own perspective size (riderScale); the local player draws last so
   // it is never under a teammate. A wingbeat lifts the whole crew a pixel.
   const hc = Math.cos(bp.h), hs = Math.sin(bp.h);
   const RS = riderScale(), rd = riderDir(bp.h);
-  const beat = frames.indexOf(spr) === 0 ? -1 : 0; // the downstroke (spread frame) rides high
+  const beat = fi === 0 ? -1 : 0; // the downstroke (spread frame) rides high
   if (!e.merchant) { // the driver first, on the neck: the team's merchant, who climbs down at the circle
-    const dx = MERCH_SEAT[0] * S, dy = MERCH_SEAT[1] * S;
+    const ms = war ? SPRITES.warBirds.merchSeat : MERCH_SEAT; // behind the war helm, not on it
+    const dx = ms[0] * S, dy = ms[1] * S;
     const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
     drawSeated(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS);
     seatedName(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS, 'MERCH', e.team);
@@ -1377,7 +1382,7 @@ window.DBG = {
   // the local profile: the store itself and the character screens (js/ui/chars.js),
   // so a driver can open the roster or the create screen and read back what it accepts
   PROFILE, beginChars, leaveChars, beginCreate, createCommit, createCancel, createKey, createHit, charsHit,
-  createLayout, charsLayout, nameOk, charTagRect, overCharTag, applyCharacter, activateChar,
+  createLayout, charsLayout, nameOk, charTagRect, overCharTag, applyCharacter, activateChar, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
@@ -1491,6 +1496,8 @@ window.DBG = {
   birdAt, birdPose, // where a bird is past its line's end, and anywhere
   // the two objectives: read them, chip one, or fell one outright without a siege
   get eagles() { return state.drop && state.drop.eagles; },
+  // the war eagle skins' painter (js/sprites/warbirds.js); wear one with PROFILE.wear('bird', id)
+  warBirds: SPRITES.warBirds,
   // the paint: which preset a team wears on this screen (settings.teamBlue), and the two merchants
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the factory's road out and the rest of the road system

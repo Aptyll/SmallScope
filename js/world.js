@@ -809,11 +809,11 @@ function fellScenery(tx, ty) {
 // THE NESTS sit beside it, not on it: each bird flies the road home and
 // banks off to its own right into the woods (roadNest - RED's to the
 // top-left side of the bottom-left corner's road, BLUE's to the bottom-right
-// of the top-right's, mirrored through the centre like the camps), and its
-// crash cuts a SPUR from the crater straight back to the road, paved behind
-// the felling front (planLane/laneStep, boot.js) into a narrower track
+// of the top-right's, mirrored through the centre like the camps), and the
+// factory standing there has a SPUR cleared from its clearing straight back
+// to the road, paved at takeoff (clearSpur, boot.js) into a narrower track
 // (SPUR_HW) that joins the road at the JUNCTION. So from the road the way to
-// a bird is one straight sightline down its spur. roadDist is the min over
+// a factory is one straight sightline down its spur. roadDist is the min over
 // the diagonal AND the paved spurs (the `spurs` registry below), so the
 // ground bake, the ice rules and every `onRoad` read see one road system.
 // The waves (the `soldiers` banner, robots.js) march its waypoints from
@@ -864,17 +864,16 @@ function roadMainDist(fx, fy) {
   const o = roadOffS(fx, fy);
   return Math.abs(o) - roadEdgeAt(roadAlong(fx, fy), o < 0 ? -1 : 1);
 }
-// THE SPURS: one per roost, cut and paved by the bird's own felling front
-// (planLane/laneStep, boot.js) from the crater back to the road. Continuous
-// tile-index coordinates (an integer is a tile's centre, like planLane's):
+// THE SPURS: one per roost, cleared and paved at takeoff (clearSpur,
+// boot.js) from the factory's clearing back to the road. Continuous
+// tile-index coordinates (an integer is a tile's centre):
 // the junction on the road's centreline, the unit direction toward the
-// crater, the track's length (it stops `end` tiles short of the crater, at
-// the rim of the blast) and how much is paved so far, measured back from
-// the crater end - the front walks crater -> road, so the paved stretch is
-// [len - paved, len]. A spur is only a road where it is paved: spurDist
-// answers 99 for the unpaved rest, so the bake, the maps and onRoad all
-// turn to earth exactly as the front passes. A team crashing twice on one
-// page (a rematch) re-registers its spur (and its pad, addPad) in place.
+// factory, the track's length (it stops `end` tiles short of the factory, at
+// the clearing's rim) and how much is paved, measured back from the
+// factory end, so the paved stretch is [len - paved, len]. A spur is only a
+// road where it is paved: spurDist answers 99 for any unpaved rest (clearSpur
+// paves it whole). A team building twice on one page (a rematch)
+// re-registers its spur (and its pad, addPad) in place.
 const spurs = [];
 function addSpur(team, jx, jy, cx, cy, end) {
   const dx = cx - jx, dy = cy - jy, L = Math.hypot(dx, dy) || 1;
@@ -883,8 +882,8 @@ function addSpur(team, jx, jy, cx, cy, end) {
   if (i >= 0) spurs[i] = sp; else spurs.push(sp);
   return sp;
 }
-// THE PADS: the blown disc under each roost, packed earth from the crash
-// (eagleCrash, boot.js) - the same registry, so a pad is a road to every
+// THE PADS: the cleared disc under each factory, packed earth from takeoff
+// (buildFactory, boot.js) - the same registry, so a pad is a road to every
 // reader, and the spur starts at its rim
 function addPad(team, cx, cy, r) {
   const sp = { team, pad: true, x: cx, y: cy, hw: r, paved: 1 };

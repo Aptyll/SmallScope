@@ -40,7 +40,7 @@ guild sells — not from a new faction or a new magic.
 | two identical sides on a mirrored map | two companies after the same claim; neither is the villain |
 | every seed is a new map | every winter's snow redraws the valley |
 | gold in pines and rocks, tools and bits inside them, chests at the treeline | the works are under everything: the pines grew up through them, the rocks are their rubble, the crates never shipped |
-| gold is the only currency, and gold is also XP | the valley pays in one thing, and a scout who has earned a lot of it has done a lot |
+| gold is the only currency in a match, and gold is also XP (the coins that buy skins are outside the valley) | the valley pays in one thing, and a scout who has earned a lot of it has done a lot |
 | nobody dies; a scout comes back at the factory with everything; the wait grows with level | valley law; they are carried back, and the better the scout, the longer the company sits them first |
 | the factory patches itself between hits, and when it falls its whole side goes home | the factory is the claim; without it there is nothing to work |
 | only a factory falling ends a match | the claim |

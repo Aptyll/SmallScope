@@ -1797,7 +1797,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   [patch notes screen](#the-patch-notes-screen).
   The **character tag** bottom-left (`charTagRect` / `overCharTag` / `drawCharTag`, js/ui/chars.js,
   the mirror of the patch tag: the active character's in-world body, its name and a quill that
-  gilds on hover) opens the [character screens](#the-character-screens) below.
+  gilds on hover) opens the [character screens](#the-character-screens) below. The **coin tag**
+  top-right (`coinTagRect` / `overCoinTag` / `drawCoinTag`, js/ui/skins.js: the steel coin and
+  the purse, gold with an underline on hover) opens the [skins screen](#the-skins-screen).
   Any open panel ducks the logo to zero alpha.
 <a id="lobby"></a>
 - **Lobby** (`menu.screen = 'lobby'`, entered by SINGLEPLAYER via `beginLobby`): ONE
@@ -2016,6 +2018,34 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
 The map and the seed die on it are driven the same way through the globals `mapStep`, `rerollWorld` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
 `DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
 
+### The skins screen
+
+On the lobby's painted night like the character screens, in [js/ui/skins.js](../../js/ui/skins.js)
+(`menu.screen = 'skins'`, `beginSkins`/`leaveSkins`, its own ease `menu.skinT`). `skinsLayout()`
+is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
+
+- **The navbar** over the grid's left edge is one tab per `SKIN_TABS` category (SCOUT, EAGLE,
+  WEAPON, TRAIL; `drawSkinTab`): an 8x8 glyph and the word, slate at rest, pale under the hand,
+  white on the open tab (`menu.skTab`, the eagle at boot) with a 1 px line as wide as the word.
+  A click, Q/E, or up off the grid's top row then left/right (`menu.skNav`) turns it. The purse
+  (coin + number) sits over the grid's right edge.
+- **A card per row of the open tab**, `SK_COLS` across (`drawSkinCard`): the picture (`skinArt`)
+  on a low radial glow of its rarity's colour (`SKIN_RARITY`) at the largest whole scale its
+  `SK_ART_H` box holds, capped at `SK_ART_MAX`, still at rest and moving under the hand, on the
+  worn card and on a picked one; under a hairline the name and, opposite it, the price (coin +
+  number, red when the purse is short) or a tick on the skin worn; a 2 px bar of the rarity's
+  colour along the foot. Rims are slate, lighter under the hand, bright steel on the worn and the
+  picked card. The scout, weapon and trail tables are placeholders: today's portrait or bow
+  washed in the row's tint, or a streak in its two colours, and nothing in a match wears them.
+- **A press** (`skinPress`) on an owned card wears it; on a card for sale it picks it
+  (`menu.skPick`) and its price plate lights and pulses; a second press on the same card buys it
+  and wears it (`PROFILE.buy`, the card flashes white, the purse flashes, `SFX.coin`). A short
+  purse shakes the plate (`SFX.deny`). A click off the cards or Esc drops the pick; Esc with
+  nothing picked leaves. The arrows walk `menu.skSel` over the grid, Enter presses.
+- **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
+  local player's company wears the skin worn, the other company the free first row (skins are
+  not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
+
 ## Eagle drop (mode `drop`)
 
 Everything in the `eagle drop` banner. `beginDrop()` (from `lockIn`, or `startGame`/`DBG.beginDrop`)
@@ -2182,7 +2212,10 @@ the latter on `airShownT` — a render-side clock that carries `e.airT` on betwe
 snapshots, never backwards and never more than one update's gap ahead — until `e.away`): the
 `SPRITES.eagleShadow` silhouette `DROP_ALT` (56) px below and 10 px right of the body, the bird
 itself in its team's armour (`SPRITES.eagleTeam[team]` cycling spread → mid → back → mid, rotated
-to its heading, at `EAGLE_SCALE` 3×, bobbing 3 px), under it the **wind trail**
+to its heading, at `EAGLE_SCALE` 3×, bobbing 3 px; a side whose bird wears a war eagle skin
+(`birdSkinFor(team)` names one `SPRITES.warBirds.has`) draws `SPRITES.warBirds.frame` and `.shadow` instead, **unrotated**, since each frame is
+painted at its heading, at its own flight size, with the merchant on
+`SPRITES.warBirds.merchSeat` behind the helm), under it the **wind trail**
 (`drawEagleTrail`, drawn before the bird's own cull because it hangs behind a bird already off
 the frame): **one continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back
 along the flown line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on
