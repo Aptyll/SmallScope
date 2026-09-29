@@ -61,7 +61,7 @@ const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above
 const AB_BG = '#0d1229';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
 // The strip, the pack and the team rail stand on one plain plate, kept
-// minimal on purpose (4.15: the bevel and the snow cap went): a plate that
+// minimal on purpose (4.16: the bevel and the snow cap went): a plate that
 // is looked at for an hour has to stay quiet, and the wells on it already
 // carry the depth. Two layers, all pixels, nothing soft:
 //   * the SILHOUETTE, one dark line (the xp bar's own ink) with its top

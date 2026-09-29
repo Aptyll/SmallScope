@@ -910,7 +910,7 @@ that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
 ### The hud frame
 
 `drawHudFrame(x, y, w, h, o)` is the one plate the strip, the pack and the team rail stand on,
-kept **plain and minimal** on purpose (the bevel and the snow cap came off in 4.15): the wells
+kept **plain and minimal** on purpose (the bevel and the snow cap came off in 4.16): the wells
 cover most of the ground and already carry the depth, and a plate looked at for an hour has to
 stay quiet. Two pixel layers: the **silhouette** (`HUD_INK`, the xp bar's own ink) with its top
 corners cut two pixels and the corners that meet a screen edge left square (a notch of world
