@@ -158,7 +158,8 @@ baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#rogu
 
 **T is the build list, and the ghost under the pointer is what a click lays.** A tap opens it on
 the last piece and holding T flicks a piece off a wheel. Any open snow or road tile within reach
-takes a piece — a wall, a long wall R turns, a turret, a generator, a bot bay — snapped to the
+takes a piece — a wall, a long wall R turns, a gate only your side walks through, a turret, a
+generator, a bot bay — snapped to the
 tile grid, the footprint rimmed white where it can stand, red where it cannot and grey where the
 purse cannot pay, and the list stays up; a wall is dragged out as a run. Standing by a site of
 your side's speeds it. Holding E beside a building of your own manages it: upgrade, repair, or

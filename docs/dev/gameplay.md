@@ -265,8 +265,9 @@ in by itself and still goes in off the bridge when it is knocked off.
 Everything that walks to a goal on its own — robots, bots, hunting wolves and patrolling
 ones, prey both fleeing and grazing, any future enemy — routes through the `pathfinding` banner
 rather than steering straight at it.
-`findPath(sx, sy, gx, gy, reach, budget)` is grid A* over the tile map: a tile is `walkable()`
-when it is in-world, not `isSolidTile`, and not open water (`waterAt`: an ice hole or the creek); eight-connected with no
+`findPath(sx, sy, gx, gy, reach, budget, e)` is grid A* over the tile map: a tile is `walkable()`
+when it is in-world, not `isSolidTile` for the walker `e` (its own side's gates stand open; `navTo`
+passes the unit, `navLineClear`/`navSmooth` carry it on), and not open water (`waterAt`: an ice hole or the creek); eight-connected with no
 corner cutting (a diagonal needs both orthogonal neighbours open, so a unit of radius ≤ 5 never
 clips a tree walking centre to centre); octile heuristic; typed-array scores stamped by a
 generation counter so nothing is cleared between searches; a binary heap; no `rng`, so it is
@@ -2482,7 +2483,7 @@ round the ring on the manage wheel's grammar, drawn only once the hold is a hold
 flashes it), and the release on a wedge opens the list on that piece (`buildKeyRelease`); a hold
 let go in the hub changes nothing. The list (`drawBuildList`, the `build list` group in
 [js/ui/wheel.js](../../js/ui/wheel.js)) is a column standing over the well, one row a piece in
-`BUILD_ORDER` — wall, long wall, turret, generator, bot bay, fish net — each row its icon and its
+`BUILD_ORDER` — wall, long wall, gate, turret, generator, bot bay, fish net — each row its icon and its
 price (gold's colour while the purse covers it, red while not), the picked row rimmed gold and
 the well with it. Well and column are the **strip's**: drawn in its 1× space at the HUD SIZE
 (`drawHudStrip`, js/ui/hud-draw.js, whose bake grows by `buildHeadroom` while the column is up),
@@ -2526,6 +2527,13 @@ or a bare type name, unturned; `footprint(type, tx, ty, rot)`), and that is the 
 of the named type's own grid (`drawTiledStruct`, js/draw/structs.js; `structSprite` resolves `tiled` the
 way it resolves `art`). Today that is the **long wall** alone — two wall tiles laid as one piece
 for a little under two walls, 2×1 or 1×2, hurt and upgraded as one — and the bay stays 3×2.
+
+**The gate** (`STRUCTS.gate`, the `gate` flag) is a one-tile wall piece its own side walks
+through and nobody else does: `isSolidTile(tx, ty, e)` answers open for a walker `e` of the gate's
+team, and `moveEntity` and the pathfinder pass the walker, so a side's players and bots route
+through their own gates while rivals, wildlife and every shot meet a wall (shots and the maps ask
+without a walker). It is hurt, upgraded and wrecked like a wall, and laid one at a time (no
+`line`), so a dragged wall with a gate in it is two gestures.
 
 **Managing is E.** Holding E beside one of your own buildings (`manageNear`: the one
 under the aim in reach, else the nearest in reach; never the barracks, which is `fixed`) opens

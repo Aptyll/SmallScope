@@ -66,6 +66,29 @@
     'ssssssssssssssss',
   ];
 
+  // THE GATE: a wall piece its own side walks through (STRUCTS.gate). Concept
+  // round 1 pick C, "raised portcullis" (docs/media/concepts/gate-concepts-1.png):
+  // a snowy beam on two posts, the grille hauled up under it in the side's
+  // coat (y/Y/t, gatePal below), the passage open underneath.
+  const gate = [
+    '.Ww..........wW.',
+    'owwowwwwwwwwowwo',
+    'oUUUUUUUUUUUUUUo',
+    'ovvvvvvvvvvvvvvo',
+    'ouUvttttttttvUuo',
+    'ouUvoYoYYoYovUuo',
+    'ouUvoyoyyoyovUuo',
+    'ouUvyyyyyyyyvUuo',
+    'ouUvoyoyyoyovUuo',
+    'ouUv.t.tt.t.vUuo',
+    'ouUv........vUuo',
+    'ouUv........vUuo',
+    'ouUv........vUuo',
+    'ovUv........vUvo',
+    'ovvo........ovvo',
+    'ssssssssssssssss',
+  ];
+
   // ------------------------------------------------- tiered structures
   // One 16x16 grid per building, baked with WPAL / WPAL_STONE / WPAL_GOLD.
   // wheel glyph only: the live turret is the 32x32 mount below, too big for a segment
@@ -584,10 +607,12 @@
   const bayTeamPal = (t) => Object.assign({}, BAYPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const teamRobotPal = (t) => Object.assign({}, BOTPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const TIER_PALS = [WPAL, WPAL_STONE, WPAL_GOLD];
+  const gatePal = (b, t) => Object.assign(teamBuildPal(b, t), { y: t.coat, Y: t.coatL, t: t.coatD });
   const teamBuild = [], teamRobots = [];
   SPR.onTeams(() => TEAM_SKINS.forEach((t, i) => {
     teamBuild[i] = {
       wall: TIER_PALS.map((b) => bake(wall, teamBuildPal(b, t))),
+      gate: TIER_PALS.map((b) => bake(gate, gatePal(b, t))),
       turret: TIER_PALS.map((b) => bake(turret, teamBuildPal(b, t))),
       generator: TIER_PALS.map((b) => bake(generator, teamBuildPal(b, t))),
       spawner: [bake(bay, bayTeamPal(t))],

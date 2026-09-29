@@ -169,10 +169,14 @@ function objChart(o) {
 // what the minimap paints an object whose entry has no `mm` at all
 const MM_UNKNOWN = [188, 200, 218];
 
-function isSolidTile(tx, ty) {
+// `e`, when given, is who is walking: a `gate` stands open to its own side
+// and to nobody else (the rest of the world - shots, wildlife, the maps -
+// asks without one and meets a wall).
+function isSolidTile(tx, ty, e) {
   if (!inWorld(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
   if (!o) return false;
+  if (e && o.team !== undefined && e.team === o.team && STRUCTS[o.type] && STRUCTS[o.type].gate) return false;
   // Two tables, no list: any STRUCTS entry (wall/turret/generator/spawner/
   // keep/...) is solid for free, and everything else answers from its OBJECTS
   // entry - so neither a new building nor a new kind of scenery ever needs

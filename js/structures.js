@@ -34,6 +34,14 @@ const STRUCTS = {
     { cost: { gold: 22 }, hp: 280, buildT: 3.6 },
     { cost: { gold: 55 }, hp: 600, buildT: 3.6 },
   ]},
+  // THE GATE: a wall piece its own side walks through and nobody else does -
+  // `gate` is the whole difference, read by isSolidTile (world.js) with the
+  // walker in hand. Shots stop on it like any wall, whoever fired them.
+  gate: { name: 'GATE', blurb: 'YOUR SIDE WALKS THROUGH IT. NOTHING ELSE DOES.', gate: true, mm: mmTeam, map: chTeam, tiers: [
+    { cost: { gold: 7 },  hp: 60,  buildT: 4   },
+    { cost: { gold: 16 }, hp: 140, buildT: 2.4 },
+    { cost: { gold: 36 }, hp: 300, buildT: 2.4 },
+  ]},
   // traverse = rad/s the head swings; aim = seconds held on target before it fires.
   // head = px round turretPivot the gun's casemate stands, above the tile: a
   // shot through it lands (structShotBox, sim.js) - the barrel past it is a
@@ -86,8 +94,8 @@ const STRUCTS = {
 // are the pad's (openWheelNear, input.js): a wheel over the
 // facing tile offers the land list on land and the net over a hole. The
 // barracks is the merchant's alone and on none of them.
-const BUILD_ORDER = ['wall', 'longwall', 'turret', 'generator', 'spawner', 'net'];
-const STRUCT_ORDER = ['wall', 'longwall', 'turret', 'generator', 'spawner'];
+const BUILD_ORDER = ['wall', 'longwall', 'gate', 'turret', 'generator', 'spawner', 'net'];
+const STRUCT_ORDER = ['wall', 'longwall', 'gate', 'turret', 'generator', 'spawner'];
 const WATER_STRUCT_ORDER = ['net'];
 const BUILD_REACH = 64;    // px from the builder to the nearest tile of what it lays
 const BUILD_LINE_MAX = 12; // tiles one drag can lay: more than the reach ever lets stand
