@@ -68,7 +68,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the twin eagle's frames | by banner | `eagle` |
-| what each bird skin IS: id, name, price in coins (its art: `SPRITES.warBirds`) | `BIRD_SKINS` | the file's head, above the IIFE |
+| what each bird skin IS: id, name, price in coins (its art: `SPRITES.birdSkin`/`birdSkinIcon`) | `BIRD_SKINS` | the file's head, above the IIFE |
 
 ## js/sprites/buildings.js (legacy IIFE)
 
@@ -708,7 +708,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one), the id handed to the war birds' draw, a skin's bird for a card | `birdSkinFor`, `birdSkinRow`, `skinOwned`, `syncBirdPick` (`SPRITES.warBirds.pick`), `birdSkinArt` | `skins` (the table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one), a skin's flap frames for a card | `birdSkinFor`, `birdSkinRow`, `skinOwned`, `birdSkinFrames` | `skins` (the table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
 | the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
 | the skins screen: the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
 

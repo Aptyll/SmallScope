@@ -49,35 +49,12 @@ function birdSkinFor(team) {
   const r = birdSkinRow(id);
   return skinOwned(r) ? r.id : BIRD_SKINS[0].id;
 }
-// the war birds' draw (js/sprites/warbirds.js) reads the skin worn from
-// SPRITES.warBirds.pick (null = the free one), and itself puts it on your
-// company's bird only: set at boot (js/boot.js) and on every wear
-function syncBirdPick() {
-  const r = birdSkinRow(PROFILE.worn('bird'));
-  if (SPRITES.warBirds) SPRITES.warBirds.pick = r.price > 0 && skinOwned(r) ? r.id : null;
-}
-// A card's bird, nose-up: the war bird's own painted frame when it has one
-// (SPRITES.warBirds.frame, cropped to its pixels once and cached), else
-// today's flap frames turned nose-up. Returns { img, sx, sy, w, h, turn }.
-const skinArtCache = {};
-function birdSkinArt(id, t, f) {
-  const wb = SPRITES.warBirds;
-  if (wb && wb.frame && id !== BIRD_SKINS[0].id) {
-    const key = id + ':' + t + ':' + f;
-    if (!skinArtCache[key]) {
-      const cv = wb.frame(id, t, -Math.PI / 2, f);
-      const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
-      let x0 = cv.width, y0 = cv.height, x1 = -1, y1 = -1;
-      for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) {
-        if (d[(y * cv.width + x) * 4 + 3] < 8) continue;
-        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
-      }
-      skinArtCache[key] = x1 < 0 ? null : { img: cv, sx: x0, sy: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, turn: false };
-    }
-    if (skinArtCache[key]) return skinArtCache[key];
-  }
-  const spr = SPRITES.eagleTeam[t][[0, 1, 2, 1][f % 4]];
-  return { img: spr, sx: 0, sy: 0, w: spr.height, h: spr.width, turn: true }; // today's bird flies along +x
+// a skin's flap frames facing up the screen, in palette set t (skin(team)):
+// the skin's own art when it has some, else today's bird turned nose-up
+function birdSkinFrames(id, t) {
+  const own = SPRITES.birdSkinIcon && SPRITES.birdSkinIcon[id];
+  if (own && own[t]) return own[t];
+  return SPRITES.eagleTeam[t];
 }
 
 // ---- the coin tag -----------------------------------------------------------
@@ -145,13 +122,11 @@ function skinPress(i) {
   if (skinOwned(r)) {
     m.skPick = -1;
     if (PROFILE.wear('bird', i === 0 ? null : r.id)) SFX.place(); else SFX.pickup();
-    syncBirdPick();
     return;
   }
   if (m.skPick !== i) { m.skPick = i; SFX.pickup(); return; }
   if (!PROFILE.buy(r.id, r.price)) { m.skDeny = SK_SHAKE_T; SFX.deny(); return; }
   PROFILE.wear('bird', r.id);
-  syncBirdPick();
   m.skPick = -1;
   m.skFlash = SK_FLASH_T; m.skFlashI = i;
   SFX.coin();
@@ -207,23 +182,22 @@ function drawSkinCard(c, now, a) {
   ctx.fillStyle = worn ? '#18203f' : '#0f1632';
   ctx.fillRect(c.x + 1, y + 1, c.w - 2, c.h - 2);
   // the bird, turned nose-up, at the largest whole scale its box holds
+  const frames = birdSkinFrames(r.id, skin(player.team));
   const beat = hv > 0.5 || worn || picked;
-  const art = birdSkinArt(r.id, skin(player.team), beat ? Math.floor(now * 6 + c.i) % 4 : 0);
-  // a whole scale that fits the box; a bird bigger than the box at 1x is
-  // clipped to it rather than shrunk off the pixel grid
-  const bw = art.w, bh = art.h, boxW = c.w - 8, boxH = SK_ART_H - 8;
-  const S = Math.max(1, Math.floor(Math.min(boxW / bw, boxH / bh)));
+  const spr = frames[beat ? [0, 1, 2, 1][Math.floor(now * 6 + c.i) % 4] : 0];
+  const own = SPRITES.birdSkinIcon && SPRITES.birdSkinIcon[r.id];
+  const bw = own ? spr.width : spr.height, bh = own ? spr.height : spr.width; // today's bird flies along +x
+  const S = Math.max(1, Math.floor(Math.min((c.w - 8) / bw, (SK_ART_H - 8) / bh)));
   const bx = c.x + Math.round((c.w - bw * S) / 2), by = y + 4 + Math.round((SK_ART_H - bh * S) / 2);
-  ctx.save();
-  ctx.beginPath(); ctx.rect(c.x + 1, y + 1, c.w - 2, SK_ART_H + 2); ctx.clip();
   ctx.globalAlpha = a * (owned ? 1 : 0.85);
-  if (!art.turn) ctx.drawImage(art.img, art.sx, art.sy, bw, bh, bx, by, bw * S, bh * S);
+  if (own) ctx.drawImage(spr, bx, by, bw * S, bh * S);
   else {
+    ctx.save();
     ctx.translate(bx + (bw * S) / 2, by + (bh * S) / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.drawImage(art.img, -(art.img.width * S) / 2, -(art.img.height * S) / 2, art.img.width * S, art.img.height * S);
+    ctx.drawImage(spr, -(spr.width * S) / 2, -(spr.height * S) / 2, spr.width * S, spr.height * S);
+    ctx.restore();
   }
-  ctx.restore();
   ctx.globalAlpha = a;
   // the foot: a hairline, the name, and the price or the tick
   const fy = y + c.h - 18;
