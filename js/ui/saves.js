@@ -470,9 +470,10 @@ function renderSaves(ms, opts) {
     if (!savesPanelCv) {
       savesPanelCv = document.createElement('canvas');
       savesPanelCv.width = SET_W; savesPanelCv.height = SET_H;
-      bakeFrostSlab(savesPanelCv.getContext('2d'), SET_W, SET_H, 'SAVES');
+      bakeFlatSlab(savesPanelCv.getContext('2d'), SET_W, SET_H);
     }
     ctx.drawImage(savesPanelCv, SET_X, SET_Y + dy);
+    ctx.save(); ctx.translate(0, dy); drawSlabHead('SAVES', SET_Y); ctx.restore();
     still = !dy;
   }
   ctx.save(); ctx.translate(0, dy);
@@ -501,7 +502,7 @@ function renderSaves(ms, opts) {
       ctx.fillRect(c.x - 2, c.y - 2, 1, c.h + 4); ctx.fillRect(c.x + c.w + 1, c.y - 2, 1, c.h + 4);
     }
   }
-  if (L.back) drawMenuButton(L.back, 'BACK', hit === 'back' ? 1 : 0, ms, false, false);
+  if (L.back) drawFlatButton(L.back, 'BACK', hit === 'back' ? 1 : 0);
   if (L.xr) drawPopX(L.xr, 0, hit === 'x');
   if (held) drawSaveCard(held, 1, now, null, { x: Math.round(mouse.x - (u.press.x - held.x)), y: Math.round(mouse.y - (u.press.y - held.y)) - 3 });
   ctx.restore();

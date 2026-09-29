@@ -496,6 +496,41 @@ function bakeFrostSlab(g, w, h, title) {
   g.fillRect(tx0 - 30, 10, 2, 3); g.fillRect(tx0 + tw + 28, 10, 2, 3);
 }
 
+// The flat slab the ESC settings panel and the SAVES slab in its place stand
+// on: solid, never see-through - an ink silhouette, one quiet steel line and a
+// flat night ground, the HUD frame's grammar (drawHudFrame, js/ui/strip.js)
+// at a menu's volume. No mottling, bevel or corner crystals: the head
+// (drawSlabHead) and the rows carry it, the patch notes' look on a plate.
+const SLAB_INK = '#05070f', SLAB_EDGE = '#34437a', SLAB_BG = '#0d1229';
+function bakeFlatSlab(g, w, h) {
+  const cham = (x, y, ww, hh) => {
+    g.fillRect(x + 2, y, ww - 4, hh);
+    g.fillRect(x, y + 2, ww, hh - 4);
+    g.fillRect(x + 1, y + 1, ww - 2, hh - 2);
+  };
+  g.fillStyle = SLAB_INK; cham(0, 0, w, h);
+  g.fillStyle = SLAB_EDGE; cham(1, 1, w - 2, h - 2);
+  g.fillStyle = SLAB_BG; cham(2, 2, w - 4, h - 4);
+}
+// the slab's head: its name big and gold over the gold rule, as the patch
+// notes head their screen (renderNotes, js/ui/menu.js)
+function drawSlabHead(title, y) {
+  const cx = SET_X + (SET_W >> 1), tw = pixelTextWidth(title, 2);
+  drawPixelTextShadow(ctx, title, Math.round(cx - tw / 2), y + 5, '#ffd95c', '#3c2a1e', 2);
+  const a = ctx.globalAlpha;
+  drawGoldRule(cx, y + 18, Math.round(tw / 2) + 8, a);
+  ctx.globalAlpha = a;
+}
+// a flat button on the slab's foot: the slab's own line round a raised
+// ground, the line and the word going gold under the pointer
+function drawFlatButton(r, label, hv) {
+  const hot = hv > 0.5;
+  ctx.fillStyle = SLAB_INK; chamRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = hot ? '#c89a3c' : SLAB_EDGE; chamRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  ctx.fillStyle = hot ? '#1c2656' : '#141c3c'; chamRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4);
+  drawPixelText(ctx, label, Math.round(r.x + (r.w - pixelTextWidth(label)) / 2), r.y + ((r.h - 5) >> 1), hot ? '#ffd95c' : '#cfe0ff');
+}
+
 // The panel is TABBED: a navbar under the title splits the rows into pages,
 // and each page scrolls independently when its rows outgrow the content
 // window - which is what makes the slab, pinned at 320x226 under the 240-row
@@ -576,13 +611,13 @@ function vidPreset() {
 let setTab = 'game';                                        // the open page
 let setDrop = null;  // the dropdown row whose list hangs open, or null
 const setScroll = { game: 0, video: 0, audio: 0, controls: 0 }; // px scrolled per page
-const SET_TAB_Y = 20;      // navbar baseline, panel-local
-const SET_CONTENT_Y = 36;  // content window top
-const SET_CONTENT_B = SET_H - 28; // ... and bottom (the foot's planks sit below)
-// The foot: a CLOSE plank (the one way out that is a button - ESC and the
+const SET_TAB_Y = 27;      // navbar baseline, panel-local (the head's big title and gold rule sit above)
+const SET_CONTENT_Y = 43;  // content window top
+const SET_CONTENT_B = SET_H - 24; // ... and bottom (the foot's buttons sit below)
+// The foot: a CLOSE button (the one way out that is a button - ESC and the
 // pad's B still close it), and in a match or practice LEAVE
 // beside it; the title's slide-in has nothing to leave, so it hangs CLOSE alone
-const SET_FOOT_Y = SET_H - 23, SET_PLANK_W = 88, SET_PLANK_H = 18, SET_PLANK_GAP = 12;
+const SET_FOOT_Y = SET_H - 19, SET_PLANK_W = 72, SET_PLANK_H = 13, SET_PLANK_GAP = 8;
 
 // The CONTROLS page is itself tabbed - one listing per controller, since a
 // pad puts the same verbs somewhere else, and the keyboard's
@@ -665,8 +700,8 @@ function settingsKey(k) {
 
 function buildSettingsPanel() {
   const g = setPanelCv.getContext('2d');
-  bakeFrostSlab(g, SET_W, SET_H, 'SETTINGS');
-  // the foot's planks are drawn live (renderSettings): they lift on hover
+  bakeFlatSlab(g, SET_W, SET_H);
+  // the head and the foot's buttons are drawn live (renderSettings)
 }
 
 // The CONTROLS page: three listings, one per controller, blitted into the
@@ -978,7 +1013,7 @@ function muteBtnRect() {
   return r ? { x: SET_MUTE_X, y: r.y - L.scroll - 1, w: 9, h: 9 } : null;
 }
 
-// The foot's planks (the title's own drawMenuButton, js/menu.js): CLOSE, and
+// The foot's buttons (drawFlatButton): CLOSE, and
 // in a match the way out beside it (the ESC panel is the one menu a match or
 // the arena has). In practice LEAVE is leavePractice()
 // (js/menu.js), the reroll's whiteout onto a bare URL, so leaving lands on a
@@ -1179,11 +1214,13 @@ function drawDropList(r, scroll, hit) {
   }
 }
 
+// a toggle is a switch: a gold track with its knob right when on, a dark
+// one with its knob left when off, the state's word beside it
 function drawToggleRow(y, on, onTxt, offTxt) {
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(SL_X, y - 1, 9, 9);
-  ctx.fillStyle = '#121a3a'; ctx.fillRect(SL_X + 1, y, 7, 7);
-  if (on) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(SL_X + 2, y + 1, 5, 5); }
-  drawPixelTextShadow(ctx, on ? (onTxt || 'ON') : (offTxt || 'OFF'), SL_X + 14, y,
+  ctx.fillStyle = '#0a0e23'; ctx.fillRect(SL_X, y - 1, 15, 9);
+  ctx.fillStyle = on ? '#8a6a24' : '#1c2750'; ctx.fillRect(SL_X + 1, y, 13, 7);
+  ctx.fillStyle = on ? '#ffd95c' : '#7a8bb8'; ctx.fillRect(SL_X + (on ? 8 : 2), y + 1, 5, 5);
+  drawPixelTextShadow(ctx, on ? (onTxt || 'ON') : (offTxt || 'OFF'), SL_X + 20, y,
     on ? '#cfe0ff' : '#7a8bb8', 'rgba(8,12,28,0.9)');
 }
 
@@ -1213,6 +1250,7 @@ function renderSettings(now, opts) {
   }
   if (slide) { ctx.save(); ctx.translate(0, slide); }
   ctx.drawImage(setPanelCv, SET_X, SET_Y);
+  drawSlabHead('SETTINGS', SET_Y);
   const off = SFX.isMuted();
   const hit = slide ? null : settingsHit(); // the menu's slide-in is not hoverable mid-flight
   const L = settingsLayout();
@@ -1252,7 +1290,10 @@ function renderSettings(now, opts) {
     for (const r of L.rows) {
       const y = r.y - L.scroll;
       if (y < L.clipY0 - 12 || y > L.clipY1 + 4) continue;
-      drawPixelText(ctx, r.label, SET_X + 14, y, '#cfe0ff');
+      // the row under the pointer lifts as a whole: a band behind it, its name white
+      const on = hit && !setDrop && (hit === r.id || hit.startsWith('c:' + r.id + ':') || hit === 'drop:' + r.id) || setDrop === r.id;
+      if (on) { ctx.fillStyle = '#161e40'; ctx.fillRect(SET_X + 8, y - 3, SET_W - 16, 13); }
+      drawPixelText(ctx, r.label, SET_X + 14, y, on ? '#f4f7ff' : '#cfe0ff');
       if (r.kind === 'slider') drawSliderById(r.id, y, r.id === 'vol' || r.id === 'music' || r.id === 'sfx' ? off : false);
       else if (r.kind === 'toggle') drawToggleRow(y, toggleVal(r.id), r.on, r.off);
       else if (r.kind === 'choice') {
@@ -1277,9 +1318,8 @@ function renderSettings(now, opts) {
     const ty = L.clipY0 + Math.round((h - th) * (L.scroll / L.maxScroll));
     ctx.fillStyle = '#4a5480'; ctx.fillRect(x + 1, ty, 1, th);
   }
-  // the foot: CLOSE, and in a match the exit beside it, on the same frost
-  // plank the title menu is made of (drawMenuButton, js/menu.js)
-  for (const l of footPlanks()) drawMenuButton(l, l.label, hit === l.id ? 1 : 0, now, false, false);
+  // the foot: CLOSE, and in a match the exit beside it, as flat buttons
+  for (const l of footPlanks()) drawFlatButton(l, l.label, hit === l.id ? 1 : 0);
   if (slide) ctx.restore();
   // live strip preview while the HUD SIZE knob is in hand - the minimap
   // slider's grammar. Only during the drag, and drawn last: the strip's home

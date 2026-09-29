@@ -3174,10 +3174,15 @@ call: the hud strip, the pack and the shelf read it live every frame
 There is no fullscreen control in the ESC menu (players use F11); a `fullscreenchange` listener still refits the canvas when the
 browser toggles it.
 
+**The panel is a flat, solid slab** (`bakeFlatSlab`: an ink outline, one quiet steel line, a flat
+night ground, never see-through) headed like the patch notes: its name big and gold over the gold
+rule (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a switch (gold track, knob
+right when on), and the row under the pointer lifts as a band with its name white.
+
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
 (minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
-inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 36..198) when its rows
+inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
 (`SET_W`/`SET_H`, canvas.js), and 226 fits under the 240-row floor `fitCanvas()` keeps, so it can never get taller. The wheel over the
 open panel scrolls the open page (both the in-match ESC slab and the title's slide-in — the
@@ -3221,8 +3226,8 @@ is every frame the screen offers. Last sits **COLOUR BLIND**, the team palettes
 ([colour-blind palettes](multiplayer.md#teams-and-colours)) named by what each is for: OFF,
 PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its palette's chip.
 
-**The foot is planks, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
-frost planks drawn by the title's own `drawMenuButton`: **CLOSE** — the one way out that is a
+**The foot is buttons, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
+flat buttons (`drawFlatButton`, their line and word gold under the pointer): **CLOSE** — the one way out that is a
 button; ESC and the pad's B still fold the slab — and, in a match only, the way out beside it,
 LEAVE, out of the match or out of [practice](world.md#the-practice-arena) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
