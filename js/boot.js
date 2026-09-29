@@ -1380,13 +1380,13 @@ if (PRACTICE) {
   })();
   settings.mapType = MAP_TYPE; // the lobby's pick starts as the shape standing (a ?map=N page may differ from the profile's)
   genWorld();
-  placeCreek();     // the creek down the cross-diagonal, its bridge, islands and fords (world.js)
+  placeCreek();     // the creek down the cross-diagonal, its bridge, bends and fords (world.js)
   layPaths();       // ...and the paths a grown shape cuts through its own woods, forded where they cross it (world.js)
   placeRoad();       // the diagonal lane, and the paths with it (world.js)
   placeZips();       // ...and each side's cable along it (world.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeChests();     // ...then the caches take their trees (objects only, no ground)
-  placeRocks();      // ...and the rocks move out to the rim on their own stream (world.js)
+  placeRocks();      // ...and the rocks move out to their clusters on the rim, on their own stream (world.js)
   placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
   spawnAnimals();
   spawnFish();
@@ -1646,7 +1646,7 @@ window.DBG = {
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the roost's road out: the felling front, or fire the whole lane at once
   spurs, roadNest, roadSpan, roadDist, roadMainDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the two distances, and where a bird would land
-  creekAt, creekFlow, creekWet, bridgeAt, creekIsles, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the deck, the islands and the fixed fords
+  creekAt, creekFlow, creekWet, bridgeAt, creekBends, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the deck, the bends and the fixed fords
   zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (world.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
   landmarks, LANDMARKS, sledNear, sledToggle, sledEnd, // the story landmarks (landmarks.js): every one stood, the table, and the sled's ride
   planLane, laneStep: (team, dt) => { const e = state.drop.eagles[team]; if (e.lane) laneStep(e, dt == null ? 99 : dt); return e.lane; },

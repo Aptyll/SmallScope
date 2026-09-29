@@ -271,8 +271,8 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
 // falls down-right (SUN_DX/SUN_DY, the cast shadows), so the bank the light
 // comes over wears a white lip and throws a band of shade across the water
 // under it, and the far bank shows its pale face - which bank that is comes
-// off the slope of creekAt, so the ring round an island reads the same as
-// the straight run. Faint streaks drift along the current (the bake's are
+// off the slope of creekAt, so a bend round a camp reads the same as the
+// straight run. Faint streaks drift along the current (the bake's are
 // still; drawCreekFlow moves more over them every frame). A FORD tile
 // (ground 5) is a snow-capped boulder in the current, foam heaped on its
 // upstream side. The BRIDGE is look A of bridge-concepts-1.png, PLANK DECK:
