@@ -156,7 +156,7 @@ function updateMarket(dt) {
 // roost), then what it is about (the good's own item icon beside the
 // price it landed on, both at the SAME scale - an 8 px icon against a 10 px
 // number reads as a footnote to it, and these two are one reading - or NEW
-// STOCK for a turnover, or the NERVE the bird has left), then one glyph
+// STOCK for a turnover, or the HP the factory has left), then one glyph
 // carrying WHICH WAY - an arrow up or
 // an arrow down. A stock plate has no tail: its crate has already said which
 // kind of news this is, so the headline takes that room instead. The plate's
@@ -347,12 +347,12 @@ const NOTE_KIND = {
   crash: { bg: '#3a1420', edge: '#e0637a', fg: '#ff9a8a', mark: null, tail: 'down',
     tp: { '.': null, a: '#a83c50', h: '#ff9a8a' } },
   stock: { bg: '#2a2340', edge: '#c9a227', fg: '#f2cc6a', mark: 'crate', tail: null },
-  // YOUR ROOST IS BEING STRUCK AND YOU ARE SOMEWHERE ELSE (hurtEagle,
+  // YOUR FACTORY IS BEING STRUCK AND YOU ARE SOMEWHERE ELSE (hurtFactory,
   // js/boot.js, in the same beat as SFX.alarm). Its own alarm red - hotter
   // than a crash's rose, because a price falling costs you gold and this
   // costs you the match - and the falling tail, since what the number on it
-  // says is the nerve the bird has left.
-  roost: { bg: '#3a1414', edge: '#d0453a', fg: '#ff9a8a', glyph: 'bird', tail: 'down',
+  // says is the hp the factory has left.
+  roost: { bg: '#3a1414', edge: '#d0453a', fg: '#ff9a8a', glyph: 'factory', tail: 'down',
     tp: { '.': null, a: '#a83c50', h: '#ff9a8a' } },
   // A NUMBER ON YOUR OWN SHEET MOVED (the `stat ledger` block below): the
   // same card, grown to seat the ledger and drawing its own body instead of
@@ -369,22 +369,21 @@ const NOTE_KIND = {
 // SIDE'S ink - which is the whole reason to stamp one instead of baking a
 // sprite, since a baked sprite cannot be recoloured per team.
 //
-// The BIRD is a soaring raptor from below - head, swept wings, tail - and not
-// the maps' 7 px objective diamond blown up: at 2x that diamond reads as a
-// medical PLUS, and its cousin the arrow tail is already on the far end of
-// this same plate. A mark has to be the thing, not a marker for it.
+// The FACTORY is the building itself in silhouette - its drum, its two
+// chimneys, the hall and its three doors - and not the maps' small objective
+// block blown up. A mark has to be the thing, not a marker for it.
 const NOTE_MARKS = {
-  bird: [
-    '.......hh.......',
+  factory: [
     '......hhhh......',
-    '......hhhh......',
-    '.hh...hhhh...hh.',
-    '.hhhh.hhhh.hhhh.',
-    '..hhhhhhhhhhhh..',
-    '...hhhhhhhhhh...',
-    '.......hh.......',
-    '......hhhh......',
-    '.......hh.......',
+    '.....hhhhhh.....',
+    '.hh..hhhhhh..hh.',
+    '.hh..hhhhhh..hh.',
+    'hhhhhhhhhhhhhhhh',
+    'hhhhhhhhhhhhhhhh',
+    'hhhhhhhhhhhhhhhh',
+    'hh..hhhhhhhh..hh',
+    'hh..hhh..hhh..hh',
+    'hh..hhh..hhh..hh',
   ],
 };
 

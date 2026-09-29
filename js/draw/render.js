@@ -384,8 +384,8 @@ function render() {
     for (let tx = tx0; tx <= tx1; tx++) {
       let o = objects[idx(tx, ty)];
       // stumps and nets are both drawn flat, above, and never y-sorted; an
-      // eagle's hitbox tiles have no pixels of their own (drawEagle draws the bird)
-      if (!o || o.type === 'stump' || o.type === 'net' || o.type === 'eagle') continue;
+      // factory's wall tiles have no pixels of their own (drawFactory draws the building)
+      if (!o || o.type === 'stump' || o.type === 'net' || o.type === 'factory') continue;
       if (o.type === 'part') {
         o = o.of;
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
@@ -802,7 +802,6 @@ function render() {
   if (state.mode === 'drop') renderDropUI(now);
   // the drop brief's roost headlines (updateDrop's tour, js/boot.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
-  else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
   // the M map works mid-flight too: the ride's wider read lives here now
   if ((state.mode === 'play' || state.mode === 'drop') && state.mapOpen) renderWorldMap(now);
   // after the chart: a flag wheel opens over it too (pinned to the press point)

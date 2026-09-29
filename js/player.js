@@ -509,7 +509,7 @@ class Player {
     // see the `team flags` banner in js/robots.js): null, or { tx, ty, type,
     // owner }. NOT cleared by reset() - an order outlives the hand that gave it.
     this.flag = null;
-    this.eliminated = false;            // its bird was driven off: no coming back - see die()/eagleFleeResolve
+    this.eliminated = false;            // its factory fell: no coming back - see die()/factoryFallResolve
     this.respawnT = 0;                  // seconds left on an active respawn countdown
     this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
     this.trickleT = 0;                  // s toward the next passive coin (TRICKLE_T, js/sim.js)
@@ -522,15 +522,16 @@ class Player {
     this.deaths = 0;                    // times this body went down
     this.dmgOut = 0;                    // damage dealt to RIVAL players, counted after their DR
     this.dmgIn = 0;                     // damage taken from anything at all, counted after this body's DR
-    this.dmgBird = 0;                   // nerve knocked off the rival eagle (hurtEagle, boot.js)
+    this.dmgBird = 0;                   // hp knocked off the rival factory (hurtFactory, boot.js)
     this.dmgStruct = 0;                 // damage dealt to rival buildings, after STRUCT_DR (hurtStruct, actions.js)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
     this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
     this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)
-    this.dropAlt = 0;                   // px the fall started from: the flight's DROP_ALT, or a hop's HOP_ALT off the roost
+    this.dropAlt = 0;                   // px the fall started from: the flight's DROP_ALT
     this.dropSc = 1;                    // the body's drawn scale as it left the seat (riderScale), shrinking to 1 as it falls
+    this.dropAim = null;                // where a fall the circle forced is steered in to (circleDrop, boot.js), or null
     this.dropU = 1;                     // route fraction at which an bot jumps
     // bot brain (unused by a human player): current job, give-up timers and the
     // short blacklists that keep a bot from re-picking work it cannot reach
@@ -809,7 +810,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
 }
 
 // what the log says when nobody gets the credit
-const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', eagle: 'LOST THEIR EAGLE', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE' };
+const DEATH_CAUSE = { ice: 'FELL THROUGH THE ICE', creek: 'WENT IN THE CREEK', wolf: 'WENT TO THE WOLVES', bear: 'MET A BEAR', tackle: 'RAN INTO SOMETHING SOLID', factory: 'LOST THEIR FACTORY', fire: 'BURNED IN THE SNOW', soldier: 'FELL TO THE WAVE' };
 // ...and what the line says when there IS credit but no arrow: `cause` is
 // read for the verb too, so a worker's axe doesn't get written up as a shot
 const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
@@ -896,7 +897,7 @@ function die(p, src, cause) {
     : p.name + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
   // the bird is the way back - a side whose objective has fallen is out,
   // however its players go down after that
-  if (!teamEagleDown(p.team)) p.respawnT = respawnTime(p);
+  if (!teamFactoryDown(p.team)) p.respawnT = respawnTime(p);
   else p.eliminated = true;
   if (p === player) { if (!PRACTICE) PROFILE.addDeath(); endMatch(p.eliminated ? 'lost' : 'respawning'); }
   else {
@@ -912,9 +913,9 @@ function die(p, src, cause) {
 function updateRespawns(dt) {
   for (const p of players) {
     if (!p.active || !p.dead || p.eliminated) continue;
-    // the bird left mid-timer: eagleFleeResolve puts the whole side out at
+    // the factory fell mid-timer: factoryFallResolve puts the whole side out at
     // the end of the ceremony, so the timer simply stops meaning anything
-    if (teamEagleDown(p.team)) continue;
+    if (teamFactoryDown(p.team)) continue;
     p.respawnT -= dt;
     if (p.respawnT > 0) continue;
     // a bird still in the air has nowhere to set anyone down: hold at zero
@@ -926,9 +927,9 @@ function updateRespawns(dt) {
   }
 }
 
-// brings a downed player back at its team's bird: p.reset(false) is the exact
-// full-clear a fresh eagle landing gets (same 3 s i-frames), anchored
-// RESPAWN_OUT px down the lane from the roost - the nearest tile a body can
+// brings a downed player back at its team's factory: p.reset(false) is the exact
+// full-clear a fresh landing gets (same 3 s i-frames), anchored
+// RESPAWN_OUT px down the lane from the factory centre - the nearest tile a body can
 // stand on there - so the way back into the match is the road everyone
 // else walked out on.
 const RESPAWN_OUT = 40;
@@ -957,11 +958,11 @@ function respawnPlayer(p) {
 // players still in the match (riding the eagle counts: it is about to land)
 function aliveCount() { let n = 0; for (const p of players) if (p.active && !p.dead) n++; return n; }
 
-// a team is still "in the match" while its bird has not been driven off and
+// a team is still "in the match" while its factory stands and
 // anyone on it is still in - note !eliminated, not !dead: a wiped team
-// is waiting on its bird, not out, so the objective is the only way to win
+// is waiting on its factory, not out, so the objective is the only way to win
 function teamInMatch(team) {
-  if (teamEagleDown(team)) return false; // the objective: a fallen eagle takes its whole side out
+  if (teamFactoryDown(team)) return false; // the objective: a fallen factory takes its whole side out
   return players.some((q) => q.active && q.team === team && !q.eliminated);
 }
 
@@ -987,7 +988,7 @@ function checkLastStanding() {
   // practice has no rivals and no ending - an empty roster must not read as a win
   if (PRACTICE) return;
   // state.eagleCine: the driven-off ceremony is playing - the screens wait
-  // for it (eagleFleeResolve re-runs this once the camera has had its moment)
+  // for it (factoryFallResolve re-runs this once the camera has had its moment)
   if (state.over || state.eagleCine || player.eliminated || rivalTeamsInMatch(player) > 0) return;
   endMatch('won');
 }

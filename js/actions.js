@@ -121,8 +121,8 @@ function workTargetAt(p, tx, ty) {
     else {
       // scenery answers from its OBJECTS entry: `tool` is what E reaches for,
       // and `ready` (the bush's berries, a rock's rubble) is what decides it
-      // is worth reaching. An object carrying a `team` (a roosting eagle's
-      // hitbox tiles) is a rival-only target, the same rule a building
+      // is worth reaching. An object carrying a `team` (a factory's
+      // footprint tiles) is a rival-only target, the same rule a building
       // answers above. A two-tile rock's `part` answers for the rock.
       const d = OBJECTS[st.type];
       if (d && d.tool && (!d.ready || d.ready(st)) &&
@@ -201,14 +201,14 @@ function startSwing(p, t) {
 }
 
 // The hands work on their own. Whatever an OBJECTS entry marks `auto` (a
-// tree, a dead tree, a berried bush, a rock, a chest, a rival's roosting
-// eagle) and any building on the other team is swung at the moment it is in
+// tree, a dead tree, a berried bush, a rock, a chest, a rival's
+// factory) and any building on the other team is swung at the moment it is in
 // WORK_REACH, with no key held: the closest such tile in the ring around the
 // player, nearest tile centre first. Fish are the same idea on ice (autoFish,
 // js/tools.js). E keeps its day job for what is left - bare ice and the
 // practice dummy - and a held E always wins the hands.
 // Whether a tile is the hands' business, and with which tool (-1 = not). A
-// rival's building or roosting eagle answers with AUTO_PRIO_FOE, a chest with
+// rival's building or factory answers with AUTO_PRIO_FOE, a chest with
 // AUTO_PRIO_PRIZE, scenery with 0: at equal distance the fight and the prize
 // beat the pine beside them (autoTarget ranks by prio first, then distance).
 const AUTO_PRIO_FOE = 2, AUTO_PRIO_PRIZE = 1;
@@ -566,13 +566,13 @@ function hitObject(o, p) {
   o.shake = 0.22;
   if (o.type === 'tree' || o.type === 'deadTree') {
     chopTree(o, p);
-  } else if (o.type === 'eagle') {
+  } else if (o.type === 'factory') {
     // the roost: a rival's E swing is the melee siege on the objective. The
     // own-team case can still land here through a stale swing lock, so the
     // gate workTarget applies is re-checked before any damage.
     const e = state.drop && state.drop.eagles[o.team];
     if (!e || e.state !== 'down' || p.team === o.team) { sfxAt('deny', ox, oy); return; }
-    hurtEagle(e, EAGLE_WORK_DMG, p, ox, oy); // the puff lands on the struck tile
+    hurtFactory(e, FACTORY_WORK_DMG, p, ox, oy); // the puff lands on the struck tile
     sfxAt('chop', ox, oy);
   } else if (o.type === 'dummy') {
     hitDummy(o, DUMMY_WORK_DMG, ox, oy - 10);

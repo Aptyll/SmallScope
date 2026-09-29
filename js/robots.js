@@ -360,10 +360,10 @@ function freeTileNear(tx, ty, rMax) {
   return null;
 }
 
-// the crash: the driver climbs down on the lane side of the roost (eagleCrash, js/boot.js)
+// the circle: the driver climbs down on the lane side of the factory (circleDrop, js/boot.js)
 function spawnMerchant(e) {
-  const lx = e.laneDir.x, ly = e.laneDir.y; // the spur's own direction: from the crater to its junction on the road (eagleCrash)
-  const wx = e.x + lx * (EAGLE_TILE_R + 1.4) * TILE, wy = e.y + ly * (EAGLE_TILE_R + 1.4) * TILE;
+  const lx = e.laneDir.x, ly = e.laneDir.y; // the spur's own direction: from the factory to its junction on the road (buildFactory)
+  const wx = e.x + lx * (FACTORY_TX + 1.4) * TILE, wy = e.y + ly * (FACTORY_TX + 1.4) * TILE;
   const at = freeTileNear(Math.floor(wx / TILE), Math.floor(wy / TILE), 6) || { tx: Math.floor(e.x / TILE), ty: Math.floor(e.y / TILE) };
   const b = {
     merchant: true, bot: true, kind: 'merchant', team: e.team, owner: -1, home: null,
@@ -676,7 +676,7 @@ function updateMerchant(b, dt) {
     return finish();
   }
   // ---- done: keep to the mouth of the lane, a step or two either way ----
-  const postX = e.x + e.laneDir.x * (EAGLE_TILE_R + 1.6) * TILE, postY = e.y + e.laneDir.y * (EAGLE_TILE_R + 1.6) * TILE;
+  const postX = e.x + e.laneDir.x * (FACTORY_TX + 1.6) * TILE, postY = e.y + e.laneDir.y * (FACTORY_TX + 1.6) * TILE;
   if (b.moveT > 0) {
     b.moveT -= dt;
     moving = true;
@@ -718,18 +718,18 @@ function updateMerchant(b, dt) {
 // allowed to FIGHT and nothing else: no flag reads it (owner -1), no tree
 // tempts it, and it swings the worker's own axe (robotStrike) at any rival
 // unit inside SOLDIER_AGGRO, any rival building inside SOLDIER_SIEGE (a
-// turret or wall in its way, their bays), and then the bird itself,
-// SOLDIER_EAGLE_DMG a swing through hurtEagle - which is why two waves
+// turret or wall in its way, their bays), and then the factory itself,
+// SOLDIER_EAGLE_DMG a swing through hurtFactory - which is why two waves
 // meeting on the road grind each other down until somebody breaks the tie.
 // It carries a SOLDIER_BOUNTY paid to whoever scraps it (robotDies), and it
-// takes every hit, state and gust like any other body. Its route is the
+// takes every hit and state like any other body. Its route is the
 // road's waypoints from its own spur's junction to the rival's
 // (roadWaypoints), then the rival's spur to the roost: a waypoint it cannot reach is skipped, not
 // waited on, so a wave never stands still on a blocked tile.
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
-const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
+const SOLDIER_EAGLE_DMG = 8;   // hp one swing takes off the rival factory (a hand's E swing is FACTORY_WORK_DMG, 20)
 const SOLDIER_BOUNTY = 4;      // gold (and so xp) a scrapped soldier pays its killer
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 
@@ -769,16 +769,16 @@ function updateSoldier(b, dt) {
     if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) busy = walkToward(pt.x, pt.y, 0) >= 0;
     else { swing(pt, () => robotStrike(b, foe, pt)); busy = true; }
   }
-  // 2. the rival bird, once the road has brought it close: a swing on the
-  //    nearest roost tile (hurtEagle) - ahead of any building, since what
-  //    a side builds round its bird stands within a step of it
+  // 2. the rival factory, once the road has brought it close: a swing on the
+  //    nearest factory tile (hurtFactory) - ahead of any building, since what
+  //    a side builds round its factory stands within a step of it
   if (!busy && roost && Math.hypot(roost.x - b.x, roost.y - b.y) < 6 * TILE) {
     const t = aiEagleTile(roost, b);
     if (t) {
       const pt = { x: t.tx * TILE + 8, y: t.ty * TILE + 8 };
       if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH + 6) busy = walkToward(pt.x, pt.y, 1) >= 0;
       else {
-        swing(pt, () => { sfxAt('swing', b.x, b.y); hurtEagle(roost, SOLDIER_EAGLE_DMG, null, pt.x, pt.y); });
+        swing(pt, () => { sfxAt('swing', b.x, b.y); hurtFactory(roost, SOLDIER_EAGLE_DMG, null, pt.x, pt.y); });
         busy = true;
       }
     }

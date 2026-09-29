@@ -73,8 +73,8 @@ declare victory. The affordances:
     one. `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
-- **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until
-  `DBG.merchants.length` is 2 and the mode is `play`, step out the `state.dropBrief`, `hopOff()`,
+- **The counter needs a merchant, and a merchant needs its factory**: `startGame()`, step until
+  `DBG.merchants.length` is 2 and the mode is `play`, step out the `state.dropBrief`,
   then `warp` beside `DBG.merchants[i]` — it is a working NPC and wanders off its post, so re-warp
   before each check unless a counter is open (an open counter pins it: `shopServing`). `DBG.openShop()`,
   `shopHit(x, y)`, `shopBuy/shopSellCell/shopTrade` and `shopLayout()` drive the panel without a
@@ -199,13 +199,13 @@ is in reach — `autoWork`; without it the thing waits for E, as only bare ice a
 rival building needs no flag — `autoToolFor` asks `STRUCTS` and `ownsStruct`), `needs` (the tool a swing must already be holding,
 null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
 paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
-under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
+under, each a constant or a function of the object, as a factory's side is; leave `map`
 out for anything that stands alone on its tile — a bush, a rock, a stump — since at the chart's
 scale a speck is noise, and read [rendering](rendering.md#ui-panels-are-baked-once) for what the
 chart does with a class). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
 gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
 need no edit — none of them names a type any more. An object *instance* carrying a `team` field
-(the roosting eagles' hitbox tiles) is a rival-only E target — `workTarget()` applies that
+(the factories' footprint tiles) is a rival-only E target — `workTarget()` applies that
 generically, the same rule buildings answer through `ownsStruct`.
 
 **Adding a story landmark** is none of that: one `LANDMARKS` entry in
@@ -555,16 +555,16 @@ already current, so it is safe to call from a state change that repeats.
 | File | The numbers |
 | --- | --- |
 | js/core.js | the `YIELD` table (every gold payout, the one table still in core.js); `useCard`'s random draw |
-| js/player.js | `RESPAWN_BASE`/`RESPAWN_LV` (the wait for the bird, beside `die()`) and `KILL_BOUNTY`; the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP`/`LVL_HP`/`LVL_DMG` — sized against the harness, see [multiplayer.md](multiplayer.md#bots)); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/player.js | `RESPAWN_BASE`/`RESPAWN_LV` (the wait for the factory, beside `die()`) and `KILL_BOUNTY`; the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP`/`LVL_HP`/`LVL_DMG` — sized against the harness, see [multiplayer.md](multiplayer.md#bots)); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/world.js | the chests (`CHEST_*` above `placeChests()`: count, spacing, payout, and `CHEST_ODDS`, a chest's card rarity roll); `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
 | js/structures.js | `STRUCTS` costs/HP/build times (plus turret range/dmg/rate, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the bay's roll-out cadence is inline in `updateStructures()`'s spawner branch); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
-| js/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
+| js/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the factory damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/actions.js | `WORK_REACH` and the roll/prone blocks |
 | js/tools.js | the `TOOLS` and `BITS` tables; the loot rates (`TREE_DROP`/`CHEST_TOOL`/`LOOT_TOOL`); the flight-path constants beside `steerBit`; the damage roll in `emitBit()` |
 | js/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING`, the forge's `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`/`FORGE_GOLD` (and each body's `up`, `TOOLS` in js/tools.js) |
 | js/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_LEVELS`' `push`/`guard`, `AI_ALLY_PUSH`, `AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`) |
 | js/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk); `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
-| js/boot.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |
+| js/boot.js | the factory's siege (`FACTORY_HP`/`FACTORY_WORK_DMG`/`FACTORY_ARROW_DMG`/`FACTORY_REPAIR_DELAY`/`FACTORY_REPAIR_RATE`); the bird's circle (`CIRCLE_*`) |
 | js/draw/ground.js | the road's colours, `ROAD_COL_*` beside `paintRoadOverlay` |
 | js/draw/light.js | the `CLOUD_*` / `RAY_*` / `NIGHT_*` / `STAR_*` blocks in the `light & weather` banner (including `RAY_AFTER` / `RAY_NOON_HALF`, which decide how long the sun shafts are up for) |
 
@@ -619,8 +619,8 @@ Code that is dead **on purpose** is the next section.
 - **No bot targets a worker bot on purpose.** `aiNearestEnemy` (js/ai.js) takes players and a
   rival wave's soldiers; a worker only falls to a shot meant for somebody else, though every
   weapon, ability and the roll land on it like any other body.
-- **Fire stops at buildings and the bird.** A structure (`hurtStruct`) and the roosting eagle
-  (`hurtEagle`) are not units: a flaming shot does its impact damage and neither burns. Deliberate,
+- **Fire stops at buildings and the factory.** A structure (`hurtStruct`) and the factory
+  (`hurtFactory`) are not units: a flaming shot does its impact damage and neither burns. Deliberate,
   but it is the obvious next place fire could go — it would need a burn clock and a draw pass on
   each.
 - **The AI does not play around the new states.** `updateAI` reads no `burnT`, `netT` or `rootT`,

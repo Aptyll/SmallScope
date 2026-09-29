@@ -17,11 +17,12 @@ stop, and an older **works** went under whole — its gold, its tools, its machi
 every winter, and the valley comes out from under it a different shape each time.
 
 Each winter two **companies** fly a crew of five **scouts** in on an armoured **eagle** to dig
-the works back out. Valley law is one line long: **a claim stands while its bird holds its
-roost.** So nobody comes to Softfall to kill anybody. A scout who goes down is carried back to
-the roost and sent out again, and a company wins the valley by scaring the other bird off its
-ground. The **merchants** are a guild of their own — one rides in with each bird and raises its
-base, then sells to any purse that walks up. The **machines** are the works' own, woken with
+the works back out. Each company works its claim from a **factory** standing in its corner's
+woods; the eagle circles it, sets the crew down and flies on out of the valley. Valley law is one
+line long: **a claim stands while its factory stands.** So nobody comes to Softfall to kill
+anybody. A scout who goes down is carried back to the factory and sent out again, and a company
+wins the valley by bringing the other's factory down. The **merchants** are a guild of their own —
+one rides in with each crew and raises its base, then sells to any purse that walks up. The **machines** are the works' own, woken with
 gold, each doing the one thing it remembers.
 
 It is a **rivalry under a law, never a war of good and evil.** That is the fiction's half of
@@ -40,9 +41,10 @@ guild sells — not from a new faction or a new magic.
 | every seed is a new map | every winter's snow redraws the valley |
 | gold in pines and rocks, tools and bits inside them, chests at the treeline | the works are under everything: the pines grew up through them, the rocks are their rubble, the crates never shipped |
 | gold is the only currency, and gold is also XP | the valley pays in one thing, and a scout who has earned a lot of it has done a lot |
-| nobody dies; a scout comes back at the roost with everything; the wait grows with level | valley law; they are carried back, and the better the scout, the longer the company sits them first |
-| the eagle's hp is nerve, it gusts at a crowd, it is driven off and never killed | a bird is brave only up to a point |
-| only a bird leaving ends a match | the claim |
+| nobody dies; a scout comes back at the factory with everything; the wait grows with level | valley law; they are carried back, and the better the scout, the longer the company sits them first |
+| the factory patches itself between hits, and when it falls its whole side goes home | the factory is the claim; without it there is nothing to work |
+| only a factory falling ends a match | the claim |
+| the eagle never lands: it drops the crew and leaves | it is hired to fly, not to stay |
 | the merchant raises your base, sells to both sides and cannot be hurt | the counter is its own guild; nobody lays a hand on one |
 | fish and berry prices swing all day | the market is the guild's, not the companies' |
 | robots, turrets, generators and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
@@ -68,10 +70,9 @@ sentences.
 | --- | --- | --- |
 | **scout** | a player's character | hero, champion, soldier, unit |
 | **company** | a team, in a sentence | faction, army, clan, nation |
-| **the bird**, **the eagle** | the objective | mount, base, core |
-| **roost** | where the bird sits, and the base round it | nest, camp, spawn |
-| **nerve** | the eagle's health | hp, life |
-| **driven off**, **leaves** | the eagle lost | killed, destroyed, dead |
+| **the factory** | the objective | nexus, base, core, HQ |
+| **the eagle**, **the bird** | what flies the crew in | mount, ship |
+| **falls**, **brought down** | the factory lost | killed, destroyed, dead |
 | **goes down**, **carried back** | a scout's death and return | dies, killed, corpse, respawn |
 | **the works** | whatever is buried | ruins, ancients, the old ones |
 | **the counter**, **the merchant** | the shop and its keeper | vendor, store, trader |
@@ -111,7 +112,7 @@ The game already has a voice; new lines match it. `THE BOW IS THE ARGUMENT: KEEP
   proper nouns but SOFTFALL, no apostrophe-fantasy, no real places, brands or dates.
 - **A kind is named for what it is or does** (THROWING LOG, HOOKSHOT); **a perk or a card for the
   person it makes you** (STRIDER, FORAGER, WINTER'S CHILD).
-- **A place is THE and a plain noun** — THE ROAD, THE ROOST, THE WORKS, THE COUNTER — and a camp
+- **A place is THE and a plain noun** — THE ROAD, THE FACTORY, THE WORKS, THE COUNTER — and a camp
   is what is in it: WOLF DEN, BLACK BEAR STONE, BROWN BEAR DEN.
 - **A person is a winter word**: a tree, a weather, a small animal, a bird (`NAME_POOL`,
   [js/profile.js](../../js/profile.js)).

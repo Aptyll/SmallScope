@@ -6,7 +6,7 @@
 // movement axis, aim point, fire / work / slide / dodge and the odd build
 // order - so it can never do anything a player couldn't. The brain is a small
 // priority ladder, re-picked a few times a second: eat, fight, wolves, defend
-// the bird, push the rival bird, escort, hunt, loot, spend, harvest, roam -
+// the factory, push the rival factory, escort, hunt, loot, spend, harvest, roam -
 // and a PROFILE (the difficulty banner below) says how well each rung is
 // played. Every walk goes through steerTo(), which routes
 // around obstacles (see pathfinding) and reports an unreachable goal as -1 -
@@ -43,19 +43,19 @@ const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 //   push    { t, n } - after t s, the side's first n bots go for the rival
 //           eagle (the objective rung), one more every AI_ESCALATE s after
 //           that, so a stalemate always breaks
-//   guard   how many of the next bots stand by their own bird from 0.6 t on
+//   guard   how many of the next bots stand by their own factory from 0.6 t on
 //   support allies only: escort the human and join their fights and pushes
 //   relentless  IMPOSSIBLE's rivals only: never give ground - a bow closes
 //           in instead of backing off when crowded, a blocked line is walked
 //           in through the open at any range, a camp on it is fought where it
 //           stands - which with push {0, 99}, guard 0 and flee 0 is a side
-//           that rushes your bird from the first second, everyone, and never
+//           that rushes your factory from the first second, everyone, and never
 //           stops fighting; the only thing that turns one home is its own
-//           bird under half nerve while it is LOSING the race (the pusher
+//           factory under half its hp while it is LOSING the race (the pusher
 //           rule below). Allies never inherit it (AI_ALLIES)
-// What is NOT in a profile: answering a hit on its own bird. At every level
+// What is NOT in a profile: answering a hit on its own factory. At every level
 // a struck roost, or a rival seen standing off it, is answered from anywhere
-// on the map by as many bots as the threat calls for (the two birds, below)
+// on the map by as many bots as the threat calls for (the two factories, below)
 // - the difficulty is how well they fight when they get there, never
 // whether they come.
 const AI_LEVELS = [
@@ -65,26 +65,26 @@ const AI_LEVELS = [
 ];
 // your allies at each rival level: the next notch up, supportive, one of
 // them on guard, and on the objective on their own clock - late on NORMAL,
-// so that a player who goes for the bird decides the match and one who
+// so that a player who goes for the factory decides the match and one who
 // never does is still carried to it; earlier as the rivals push earlier.
 // The clocks are set for a match that ends round fifteen minutes when the
 // human sits it out (the harness, multiplayer.md): an ally push takes two
-// to three minutes to drive a bird off, so NORMAL's leaves at twelve
+// to three minutes to bring a factory down, so NORMAL's leaves at twelve
 const AI_ALLY_PUSH = [{ t: 720, n: 2 }, { t: 480, n: 3 }, { t: 420, n: 3 }];
 // (an ally borrows the notch's hands, never IMPOSSIBLE's recklessness: it
 // keeps a guard, a clock and a flee point of its own, so the human's side
-// is still the one that holds its bird)
+// is still the one that holds its factory)
 const AI_ALLIES = AI_LEVELS.map((_, i) => Object.assign({}, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)],
   { name: 'ALLY', support: true, push: AI_ALLY_PUSH[i], guard: 1, relentless: false, flee: Math.max(0.2, AI_LEVELS[Math.min(AI_LEVELS.length - 1, i + 1)].flee) }));
-const AI_GUARD_R = 160;   // px a guard lets itself drift from its bird before walking back
+const AI_GUARD_R = 160;   // px a guard lets itself drift from its factory before walking back
 const AI_ESCALATE = 120;  // s after push.t per extra pusher a side commits
 // how many of a side push right now: push.n, growing past push.t
 function aiPushers(prof) { return state.elapsed < prof.push.t ? 0 : prof.push.n + Math.floor((state.elapsed - prof.push.t) / AI_ESCALATE); }
 const AI_AIM_T = 0.4;     // s between aim scatter re-rolls
 const AI_ABIL_T = 0.5;    // s between ability rolls
-const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is noticed from
+const AI_ANCHOR_R = 260;  // px round an anchor (its factory, the human) a rival is noticed from
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
-const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
+const AI_HOLD = 96;       // px a hunter holds off the rival factory at
 const AI_GATE = 128;      // px up the road from a spur's junction where a walk to a roost stages
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
@@ -99,28 +99,28 @@ function aiProfile(p) {
   const lv = Math.max(0, Math.min(AI_LEVELS.length - 1, settings.aiLevel | 0));
   return player && p.team === player.team ? AI_ALLIES[lv] : AI_LEVELS[lv];
 }
-// the two objectives as a bot sees them: a roosting bird, or null
+// the two objectives as a bot sees them: a standing factory, or null
 function aiRivalEagle(p) { const e = state.drop && state.drop.eagles[1 - p.team]; return e && e.state === 'down' ? e : null; }
 function aiOwnEagle(p) { const e = state.drop && state.drop.eagles[p.team]; return e && e.state === 'down' ? e : null; }
-// ---- the two birds --------------------------------------------------------
-// What every bot knows about the objective - both birds, all match: where
-// each roosts, how its nerve stands, when it was last hit, and who is AT it:
+// ---- the two factories --------------------------------------------------
+// What every bot knows about the objective - both factories, all match: where
+// each stands, how its hp stands, when it was last hit, and who is AT it:
 // the rivals standing off it (each through seenAt, so a buried archer is
 // buried for the whole side) and the friends already there. Read once per
 // sim step and shared by all ten players, so a hit on a roost is news on the
-// far side of the map the same tick - a bird under attack is answered from
-// anywhere, and a bird that is winning the race is not abandoned for one
+// far side of the map the same tick - a factory under attack is answered from
+// anywhere, and a factory that is winning the race is not abandoned for one
 // that is losing it. `threat` is the one word the ladder asks.
-const AI_ROOST_R = 240;   // px round a bird inside which a body counts as at it
-const AI_DEFEND_T = 8;    // s after a hit on its bird a side still counts it as under attack
-const AI_JOIN_HP = 0.6;   // a rival bird under this much nerve, with friends on it, is a siege to join
-const AI_ALARM_HP = 0.5;  // its own bird under this much nerve: EVERYONE comes home, pushers included
-const AI_SIEGE_R = 48;    // px: a rival closer than this pulls a besieging pusher off the bird
-// how many of a side a threat on its bird calls home: one more than the
+const AI_ROOST_R = 240;   // px round a factory inside which a body counts as at it
+const AI_DEFEND_T = 8;    // s after a hit on its factory a side still counts it as under attack
+const AI_JOIN_HP = 0.6;   // a rival factory under this much hp, with friends on it, is a siege to join
+const AI_ALARM_HP = 0.5;  // its own factory under this much hp: EVERYONE comes home, pushers included
+const AI_SIEGE_R = 48;    // px: a rival closer than this pulls a besieging pusher off the factory
+// how many of a side a threat on its factory calls home: one more than the
 // attackers seen there, and never fewer than two (a hit with nobody in sight
 // is an archer standing off it). The rest go on with the match - a side
 // that empties the whole map for one arrow is a side that never pushes -
-// until the nerve is under AI_ALARM_HP, when the number is everyone.
+// until its hp is under AI_ALARM_HP, when the number is everyone.
 function aiDefendersWanted(s) { return s.hp < AI_ALARM_HP ? 99 : Math.max(2, s.attackers + 1); }
 let aiSitTick = -1, aiSit = null;
 function aiSituation() {
@@ -149,7 +149,7 @@ function aiSituation() {
   return aiSit;
 }
 // p's place among its side's living bots (the human is never counted):
-// the profile's push.n lowest go for the rival bird, the guard next stand by
+// the profile's push.n lowest go for the rival factory, the guard next stand by
 // their own, and the rest farm, build and (allies) escort
 function aiRank(p) {
   let n = 0;
@@ -161,11 +161,11 @@ function aiRank(p) {
   return 99;
 }
 // the objective rung's gate: after push.t the side's push.n lowest bots go
-// for the rival bird; an ally also goes whenever the human is already on
+// for the rival factory; an ally also goes whenever the human is already on
 // it, so a push you start is a push your side joins; and ANY bot joins a
-// siege its side already has going once the rival bird is under AI_JOIN_HP
-// - unless its own bird is under attack, which is where it is wanted
-// (`theirs`/`mine` are the aiSituation reads for the two birds)
+// siege its side already has going once the rival factory is under AI_JOIN_HP
+// - unless its own factory is under attack, which is where it is wanted
+// (`theirs`/`mine` are the aiSituation reads for the two factories)
 function aiWantsPush(p, prof, theirs, mine) {
   if (!theirs) return null;
   const e = theirs.e;
@@ -174,7 +174,7 @@ function aiWantsPush(p, prof, theirs, mine) {
   return aiRank(p) < aiPushers(prof) ? e : null;
 }
 // the guard's gate: from 0.6 push.t on, the prof.guard bots after the
-// pushers stand by their own bird
+// pushers stand by their own factory
 function aiOnGuard(p, prof) {
   const e = aiOwnEagle(p);
   if (!e || !prof.guard || state.elapsed < prof.push.t * 0.6) return null;
@@ -183,14 +183,14 @@ function aiOnGuard(p, prof) {
 }
 // the staging point of a roost: AI_GATE px up the road from the spur's
 // junction (e.mouth) toward the field, on the road itself, so the way in is
-// always road -> junction -> spur -> bird (roadNest/roadPoint, world.js)
+// always road -> junction -> spur -> factory (roadNest/roadPoint, world.js)
 function aiLaneGate(e) {
   return roadPoint(roadNest(e.team).u + (e.team === 0 ? 1 : -1) * AI_GATE / (TILE * Math.SQRT2));
 }
 // Walk toward a roost the way its lane allows: from the field to the gate,
-// in through the mouth, then down the lane to the bird (reach tiles off it).
+// in through the mouth, then down the lane to the factory (reach tiles off it).
 // Returns steerTo's distance, or -1 for no route this frame. A route straight
-// at a bird from the field runs the pathfinder out in the border's trees and
+// at a factory from the field runs the pathfinder out in the border's trees and
 // leaves the bot wedged in a pocket - which is what this exists to prevent.
 function aiToRoost(p, e, steerTo, reach) {
   if (aiInLane(p, e)) return steerTo(e.x, e.y, reach, AI_ROOST_BUDGET);
@@ -201,9 +201,9 @@ function aiToRoost(p, e, steerTo, reach) {
   if (dg > 40 && dm > AI_GATE * 0.75) return steerTo(g.x, g.y, 2, AI_ROOST_BUDGET);
   return steerTo(e.mouth.x, e.mouth.y, 1, AI_ROOST_BUDGET);
 }
-// is p inside a roost's lane - the band from the bird out to the lane's
-// mouth on the treeline - or at the bird itself? Off it, the way to the
-// roost is the mouth (aiInLane is asked before every walk to a bird).
+// is p inside a roost's lane - the band from the factory out to the lane's
+// mouth on the treeline - or at the factory itself? Off it, the way to the
+// roost is the mouth (aiInLane is asked before every walk to a factory).
 function aiInLane(p, e) {
   const vx = e.mouth.x - e.x, vy = e.mouth.y - e.y, L2 = vx * vx + vy * vy || 1;
   const px = p.x - e.x, py = p.y - e.y;
@@ -211,13 +211,13 @@ function aiInLane(p, e) {
   const perp = Math.abs(px * vy - py * vx) / Math.sqrt(L2);
   return (t >= -0.1 && t <= 1.08 && perp < 40) || Math.hypot(px, py) < 90;
 }
-// the eagle hitbox tile nearest p (a warrior's E target on a push)
+// the factory footprint tile nearest p (a warrior's E target on a push)
 function aiEagleTile(e, p) {
   let best = null, bd = 1e9;
   const cx0 = Math.floor(e.x / TILE), cy0 = Math.floor(e.y / TILE);
   for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
     const o = inWorld(cx0 + dx, cy0 + dy) ? objects[idx(cx0 + dx, cy0 + dy)] : null;
-    if (!o || o.type !== 'eagle' || o.team !== e.team) continue;
+    if (!o || o.type !== 'factory' || o.team !== e.team) continue;
     const d = Math.hypot(o.tx * TILE + 8 - p.x, o.ty * TILE + 8 - p.y);
     if (d < bd) { bd = d; best = o; }
   }
@@ -227,7 +227,7 @@ function aiEagleTile(e, p) {
 // ---- the flag ---------------------------------------------------------------
 // A bot's flag is the ladder's own decision made visible (the `team flags`
 // banner, robots.js): ai.want is what the last tick decided - DEFEND at its
-// bird, ATTACK at the rival's, GATHER where it works - and this flies it.
+// factory, ATTACK at the rival's, GATHER where it works - and this flies it.
 // Coordination is one flag a plan, not one a bot: a teammate already flying
 // the same order over the same ground is JOINED (ai.join) instead of
 // twinned, a bot with nothing of its own to fly helps at the side's nearest
@@ -266,7 +266,7 @@ function aiFlagSync(p, dt) {
   plantFlag(p, Math.floor(w.x / TILE), Math.floor(w.y / TILE), w.type);
 }
 // Would an idle bot go and help at a teammate's flag? An ATTACK from
-// anywhere - unless it is one of the side's guards, who keep the bird - so
+// anywhere - unless it is one of the side's guards, who keep the factory - so
 // a push one bot starts is a push the free hands join; a GATHER only when it
 // is near (a workplace is one bot's, and four bots crossing the map to
 // share a tree is a side that has stopped farming); a DEFEND never - the
@@ -302,8 +302,8 @@ function aiEscorts(p) {
 }
 
 // The rival p goes for: within its profile's sight, plus anyone near an
-// ANCHOR it is minding - its own bird under attack, the human it escorts,
-// the rival bird it is pushing - so a defender finds the archer standing off
+// ANCHOR it is minding - its own factory under attack, the human it escorts,
+// the rival factory it is pushing - so a defender finds the archer standing off
 // its roost and an ally joins the fight the human is in. Every candidate
 // still resolves through seenAt: a buried rival is buried for everyone.
 // is the weapon in hand a blade? A bot with one fights at arm's length
@@ -339,7 +339,7 @@ function aiNearestEnemy(p, prof, anchors) {
   return best;
 }
 // the head of its side's wave on the road: the own soldier nearest the
-// rival bird that is still on the march (outside AI_ROOST_R of it) and near
+// rival factory that is still on the march (outside AI_ROOST_R of it) and near
 // enough to be worth walking with - a push rides its wave (rung 5c)
 const AI_PACK = 5;       // relentless pushers that must be together at the rally (their cable's end) before the pack goes on
 const AI_PACK_R = 200;   // px round the rally a pusher counts as at it (bodies milling at a point stand 70-150 px apart)
@@ -532,12 +532,12 @@ function aiThink(p, dt) {
   if (ai.aimT <= 0) { ai.aimT = AI_AIM_T; ai.aox = rand(-1, 1) * prof.aim; ai.aoy = rand(-1, 1) * prof.aim; }
   ai.abilT -= dt;
   if (ai.abilT <= 0) { ai.abilT = AI_ABIL_T; ai.abilOk = rng() < prof.abil; }
-  // what it is minding, off the shared read of both birds: its own bird
+  // what it is minding, off the shared read of both factories: its own factory
   // under attack - answered from anywhere on the map by as many as the
   // threat calls for (aiDefendersWanted), a bot already at the roost holding
-  // its station, and once the nerve is under AI_ALARM_HP by everyone, the
-  // one exception a pusher whose side is WINNING the race (the rival bird
-  // lower still), who presses on - the rival bird it is due to push, and
+  // its station, and once its hp is under AI_ALARM_HP by everyone, the
+  // one exception a pusher whose side is WINNING the race (the rival factory
+  // lower still), who presses on - the rival factory it is due to push, and
   // (an ally) the human it escorts
   const sit = aiSituation();
   const mine = sit[p.team], theirs = sit[1 - p.team];
@@ -557,10 +557,10 @@ function aiThink(p, dt) {
   // ---- the flag (the `team flags` banner, robots.js) ---------------------
   // What the ladder decides is what its own flag says: aiFlagSync flies last
   // tick's decision (or joins a teammate already flying it), and this tick's
-  // is written for the next read - DEFEND at its bird when it is answering a
-  // threat, ATTACK at the rival bird when it is pushing, GATHER where it
+  // is written for the next read - DEFEND at its factory when it is answering a
+  // threat, ATTACK at the rival factory when it is pushing, GATHER where it
   // works (the harvest rung, below).
-  // (a guard's station is not flown: standing by the bird with nothing on it
+  // (a guard's station is not flown: standing by the factory with nothing on it
   // is a routine, not a plan, and a DEFEND there would call the side home)
   aiFlagSync(p, dt);
   if (defend) ai.want = { type: 'defend', x: own.x, y: own.y };
@@ -570,8 +570,8 @@ function aiThink(p, dt) {
   // teammate's (the side's whole plan while it stands) or a teammate's it
   // joined. It is the side's plan over the bot's own: the defend, guard,
   // push and escort reads give way to it, the one exception the alarm (its
-  // bird under half nerve), which no order overrides. An ATTACK covering the
-  // rival bird and a DEFEND covering its own are folded straight into
+  // factory under half its hp), which no order overrides. An ATTACK covering the
+  // rival factory and a DEFEND covering its own are folded straight into
   // pushE/defend, so the push and defend rungs play them with everything
   // they know (the lane, the defenders' turrets, the archer's station); every
   // other order is walked by the flag rung (5a).
@@ -620,7 +620,7 @@ function aiThink(p, dt) {
   // turns on it (a slow side keeps chopping while you line up the shot)
   ai.seeT = foe ? ai.seeT + dt : Math.max(0, ai.seeT - dt * 2);
   // the siege: a pusher AT the rival roost whose side outnumbers the
-  // defenders there keeps hitting the bird and leaves the fight to its
+  // defenders there keeps hitting the factory and leaves the fight to its
   // friends - defenders come back from sixty pixels away every few seconds,
   // and a push that turns to meet each one never lands a swing - unless a
   // rival is at arm's length (AI_SIEGE_R), which is a rival it cannot ignore
@@ -630,10 +630,10 @@ function aiThink(p, dt) {
   const rally = order && order.type === 'rally';
   // the CHARGE: a relentless side on its push fights only what is at arm's
   // length the whole way - a wave on the road, an archer standing off, a
-  // defender at the roost are all walked past for the bird (the siege rule,
+  // defender at the roost are all walked past for the factory (the siege rule,
   // from the first step and whatever the numbers); what closes to
   // AI_SIEGE_R is fought where it stands, and nothing else slows the rush
-  // (...away from home: a respawn at its own besieged bird fights what is
+  // (...away from home: a respawn at its own besieged factory fights what is
   // there with everything it sees before it rides out again)
   const charge = prof.relentless && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
   const engage = foe && ai.seeT >= prof.react && !((siege || rally || charge) && foeD > AI_SIEGE_R) ? foe : null;
@@ -654,7 +654,7 @@ function aiThink(p, dt) {
   //    feet, with the cooldown in hand. `hideT` doubles as the give-up: a
   //    plant that will not take burns it four times as fast and ends in the
   //    lockout.
-  // (its own bird under threat comes before the human's camp fight)
+  // (its own factory under threat comes before the human's camp fight)
   const wolf = foe ? null : aiNearestWolf(p, defend ? null : ward);
   if (p.prone) ai.hideT -= dt;
   const btx = Math.floor(p.x / TILE), bty = Math.floor((p.y + 4) / TILE);
@@ -778,7 +778,7 @@ function aiThink(p, dt) {
   if (p.prone) { inp.fire = false; return; }
 
   // 5a. the order: a flag somebody else on the side planted (the block above
-  //     the ladder). An attack on the rival bird and a defend at its own
+  //     the ladder). An attack on the rival factory and a defend at its own
   //     were folded into pushE/defend and are played below; this walks the
   //     rest. Outside the ring: get there (a flag in a corner's woods is a
   //     walk into trees, hence the roost budget), and a ring it cannot
@@ -807,8 +807,8 @@ function aiThink(p, dt) {
   }
   const bound = order && !defend && !pushE && (order.type === 'defend' || order.type === 'gather') ? order : null;
 
-  // 5b. its bird is under attack: get to it. Rung 3 takes over on arrival -
-  //     the bird is an anchor, so the archer standing off it is in sight.
+  // 5b. its factory is under attack: get to it. Rung 3 takes over on arrival -
+  //     the factory is an anchor, so the archer standing off it is in sight.
   if (defend) {
     const d = Math.hypot(defend.x - p.x, defend.y - p.y);
     if (d > 80) { // home through its own lane, like a push
@@ -816,18 +816,18 @@ function aiThink(p, dt) {
     } else { inp.fire = false; ai.tgt = null; return; } // on station: wait for them to show
   }
 
-  // 5b'. on guard: stand by its own bird, and go on down the ladder (working
-  //      what is near) while it is within AI_GUARD_R of it. The bird is its
+  // 5b'. on guard: stand by its own factory, and go on down the ladder (working
+  //      what is near) while it is within AI_GUARD_R of it. The factory is its
   //      anchor, so a rival standing off the roost is rung 3's the moment
   //      they show.
   if (guardE && Math.hypot(guardE.x - p.x, guardE.y - p.y) > AI_GUARD_R) {
     if (aiToRoost(p, guardE, steerTo, 4) >= 0) { aimAt(guardE.x, guardE.y); inp.fire = false; ai.tgt = null; return; }
   }
 
-  // 5c. the objective: drive off the rival bird. A hunter holds AI_HOLD off
-  //     it - outside the gust - and looses at the roost; a warrior walks up
-  //     to a roost tile and swings E on it, gust and all, exactly as a hand
-  //     does. Defenders in sight are rung 3's business (the bird anchors
+  // 5c. the objective: bring down the rival factory. A hunter holds AI_HOLD off
+  //     it and looses at the roost; a warrior walks up
+  //     to a roost tile and swings E on it, exactly as a hand
+  //     does. Defenders in sight are rung 3's business (the factory anchors
   //     them). A roost it cannot route to is left for a while (pushCd).
   if (pushE) {
     const e = pushE;
@@ -838,7 +838,7 @@ function aiThink(p, dt) {
     // a turret the defenders raised by the lane: any bot in it takes those down
     // first with E (STRUCT_HIT_DMG a swing, 10 of it once STRUCT_DR has taken
     // its cut), exactly as a hand would, since
-    // a bot standing off the bird under bolt fire never gets a draw finished
+    // a bot standing off the factory under bolt fire never gets a draw finished
     const tur = aiInLane(p, e) ? nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; }) : null;
     // the wave is the push: off the rival's lane, a pusher walks with the
     // head of its side's column rather than ahead of it alone
@@ -892,20 +892,19 @@ function aiThink(p, dt) {
       }
       ai.pushCd = 10;
     } else {
-      // the archer's station: AI_HOLD out from the bird ON THE LANE'S AXIS,
-      // where the spur keeps the line to the roost open (off the axis a
-      // wall the defenders raised may eat the shot), outside the gust
+      // the archer's station: AI_HOLD out from the factory ON THE LANE'S
+      // AXIS, where the spur keeps the line to it open (off the axis a wall
+      // the defenders raised may eat the shot)
       const sx = e.x + e.laneDir.x * AI_HOLD, sy = e.y + e.laneDir.y * AI_HOLD;
       const ux = (e.x - p.x) / (d || 1), uy = (e.y - p.y) / (d || 1);
       aimAt(e.x, e.y - 8);
-      // the roost tiles are solid, so the line is read to just short of them
+      // the factory's tiles are solid, so the line is read to just short of them
       const clear = aiLineClear(p, e.x - ux * 40, e.y - uy * 40);
       const ds = Math.hypot(sx - p.x, sy - p.y);
       if (ds > 14) {
         if (steerTo(sx, sy, 0, AI_ROOST_BUDGET) < 0) { ai.pushCd = 10; }
         else { inp.fire = d < 170 && clear && p.chargeT < drawTime(p) * prof.draw; ai.tgt = null; return; }
       } else {
-        if (d < GUST_BLAST_R + 16) { inp.mx = -ux; inp.my = -uy; } // out of the gust's reach
         inp.fire = clear && p.chargeT < drawTime(p) * prof.draw;
         ai.tgt = null;
         return;

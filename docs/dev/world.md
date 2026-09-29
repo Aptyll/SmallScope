@@ -11,7 +11,7 @@ stable per tile.
   76 instead — see [the practice arena](#the-practice-arena)). The forest border is
   `BORDER_MIN`/`BORDER_MAX` (30–70, avg ~50) tiles deep round an interior ~132 tiles
   across — open on OPEN FIELD, and grown over by the other two [map shapes](#map-shapes). The two **roost corners** —
-  bottom-left and top-right, where the eagles always come down
+  bottom-left and top-right, where the factories always stand
   ([eagle drop](rendering.md#eagle-drop-mode-drop)) — are forested to `ROOST_R` (68 tiles from the
   corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
@@ -40,7 +40,7 @@ stable per tile.
 - `objects` — flat `Array(WORLD*WORLD)`, **at most one object per tile**. Every object is
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `rack`, `cairn`, `log`,
-  `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
+  `pylon`, `pkdie`, `agbell`, `stump`, `factory`, `hut`, `part`, and the
   [story landmarks](#story-landmarks)' `sled` and `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
   `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `cairn`/`banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
@@ -338,8 +338,8 @@ places its own on a stream of its own, `mulberry32(SEED ^ 0x524f434b)` (`rkRng`)
 SUNSTONE and FROSTGLASS SPIRE are out at the contested corners, the plain STONE nearer home.
 
 A rock is only ever taken off the map whole: `fellScenery(tx, ty)` clears every tile of the
-footprint from either of them, and the three runtime clears that reach scenery (the crash's
-ring, the landing's lane, the merchant's axe) go through it.
+footprint from either of them, and the three runtime clears that reach scenery (the factory
+site's ring, its spur, the merchant's axe) go through it.
 
 ## Treasure chests
 
@@ -438,18 +438,18 @@ measure (`forestDepth`) *and* inside the roost disc's arc, with `MIN_CRASH_TREES
 (boot.js's crash rule — the deepest, densest candidate stands in if none qualifies). RED (team 0)
 flies down to the bottom-left and its right is the top-left side (`roadOffS < 0`); BLUE's is the
 bottom-right — the two nests mirror through the map's centre like the camps. Pure reads, cached
-per team; a seed's nests are where they always are. The bird lands there
-([eagle drop](rendering.md#eagle-drop-mode-drop)) and its felling front cuts a **spur** from the
-crater straight back to the junction, **paved behind it** into a track `SPUR_HW` (1.25) tiles
-either side of its centreline, so the crash's stumps stay off it, and
+per team; a seed's nests are where they always are. The factory stands there
+([eagle drop](rendering.md#eagle-drop-mode-drop)), and at takeoff a **spur** is cleared from its
+clearing straight back to the junction and **paved** into a track `SPUR_HW` (1.25) tiles
+either side of its centreline, so the clearing's stumps stay off it, and
 registered in `spurs` (`addSpur(team, jx, jy, cx, cy, end)`: the junction, the unit direction
-toward the crater, the length to the blast's rim, and `paved`, measured back from the crater end
-as the front advances); the crater itself is a **pad** in the same registry (`addPad(team, cx, cy,
-r)`, a disc of `BOOM_R`, paved whole the frame the bird lands — `eagleCrash`, boot.js), so the
-roost, the spur and the road are one ground. `spurDist` answers 99 where a spur is not yet paved,
+toward the clearing, the length to the clearing's rim, and `paved`, measured back from the clearing end,
+set whole at once); the clearing itself is a **pad** in the same registry (`addPad(team, cx, cy,
+r)`, a disc of `BOOM_R`, paved whole at takeoff — `buildFactory`/`clearSpur`, boot.js), so the
+factory, the spur and the road are one ground. `spurDist` answers 99 where a spur is not yet paved,
 and `roadDist(fx, fy)` is the min of `roadMainDist` and every spur and pad, so the bake, both maps
-and every `onRoad` read see one road system that grows exactly as the front passes. From the road,
-then, the way to a bird is one straight sightline down its spur.
+and every `onRoad` read see one road system. From the road,
+then, the way to a factory is one straight sightline down its spur.
 
 **Its furniture** is placed with it, off the same ragged edge (`mark` in `placeRoad`,
 `ROAD_POLE_OUT` (0.9) tiles past it): two **`banner`** poles at each gate carrying a `team` (0 at
@@ -647,8 +647,8 @@ a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at ea
 `roadEdgeAt`, `findCrashPoint`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
 untouched. Not under `PRACTICE`. The points, base to front:
 
-1. the **base pylon**, `ZIP_BASE_OUT` (7.5) tiles from the crater along the spur's axis (the crash
-   point by the crash's own rule, `findCrashPoint`) and `ZIP_SPUR_OFF` (1.9) tiles off that axis
+1. the **base pylon**, `ZIP_BASE_OUT` (7.5) tiles from the factory along the spur's axis (its
+   site by the site's own rule, `findCrashPoint`) and `ZIP_SPUR_OFF` (1.9) tiles off that axis
    toward the front — outside the outer stump ring, and over `SPUR_HW` so the track is never blocked;
 2. the **verge pylon** where the spur meets the road, `ZIP_SPUR_OFF` along the road from the
    junction and `roadEdgeAt(u, side) + ZIP_OUT` (0.6) tiles off the centreline on the bird's own

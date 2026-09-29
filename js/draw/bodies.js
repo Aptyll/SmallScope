@@ -128,8 +128,8 @@ function drawRobot(b, ex, ey, now) {
 // (b.y + 8 in the sort, the feet on the player's own foot row),
 // with the worker's axe swing over whatever it is felling or setting, the hop
 // off the bird as a lift, the shared tells, and a MERCH nameplate in the
-// side's paint - a name, the one text a body over the world gets (the bird it
-// drives wears PERCH the same way, drawEagle in boot.js). NO HEALTH BAR: it
+// side's paint - a name, the one text a body over the world gets (the factory
+// it serves wears FACTORY the same way, drawFactory in boot.js). NO HEALTH BAR: it
 // has no health to draw (the `merchant` banner, js/robots.js), and a full bar
 // that can never move would promise a fight that is not on offer.
 function drawMerchant(b, ex, ey, now) {

@@ -25,7 +25,7 @@
 // the saved valley and not the fresh one.
 
 // ---- tuning ---------------------------------------------------------------
-const SAVE_V = 1;           // the body's shape; a body of another shape is refused, never half-read
+const SAVE_V = 2;           // the body's shape; a body of another shape is refused, never half-read
 const SAVE_MANUAL = 5;      // manual slots: m0..m4
 const SAVE_AUTO = 3;        // autosaves kept, newest first: a0..a2
 const SAVE_AUTO_T = 120;    // s of live match between autosaves

@@ -672,6 +672,8 @@
     turretFire() { tone(880, 0.05, 'square', 0.07, -520); noise(0.07, 0.2, 2600); tone(230, 0.11, 'triangle', 0.09, -90, 0.02); },
     hit() { if (smp('impact', { vol: 0.69, rate: 1.1, jitter: 0.1, dur: 0.5 })) return; noise(0.06, 0.25, 800); tone(140, 0.08, 'sawtooth', 0.1, -50); },
     hurt() { if (smp('oof', { vol: 0.71, jitter: 0.07 })) return; tone(200, 0.18, 'sawtooth', 0.16, -120); noise(0.12, 0.2, 500); },
+    // NO CALLER since the factory replaced the roosting bird as the
+    // objective (its blows are 'hit'); kept for the bird's own voice.
     // A GREAT BIRD taking a blow. The eagle used hurt() - a man's winded oof
     // for the objective the whole match is about - so the roost sounded like
     // a person being punched. Its own voice, dropped low, is the difference
@@ -709,6 +711,8 @@
     },
     eat() { if (smp('chew', { vol: 0.56, jitter: 0.1 })) return; tone(300, 0.05, 'triangle', 0.1); tone(260, 0.05, 'triangle', 0.1, 0, 0.07); },
     treeFall() { if (smp('timber', { vol: 0.89, jitter: 0.06 })) return; noise(0.35, 0.35, 400); tone(90, 0.3, 'triangle', 0.14, -30); },
+    // NO CALLER since the bird stopped roosting (it had the gust); kept
+    // for its flight.
     // a wingbeat blast - the eagle's gust and its takeoff: the dodge whoosh
     // slowed into a heavy buffet of air over a low push
     gust() {
@@ -806,8 +810,8 @@
     runBroke() { if (smp('runBroke', { vol: 0.79, jitter: 0 })) return; tone(300, 0.14, 'sawtooth', 0.09, -140); },
     // YOUR OBJECTIVE IS BEING STRUCK AND YOU CANNOT SEE IT: the one cue in
     // the game that speaks for something off screen, which is why it is a
-    // notification and not the bird's own voice (bigHurt, below, is what the
-    // blow sounds like when you are standing there). The caller holds it to
+    // notification and not the blow itself (the factory's 'hit', hurtFactory in
+    // boot.js, is what the blow sounds like when you are standing there). The caller holds it to
     // one warning every few seconds - a siege is many blows, not many
     // alarms.
     alarm() {

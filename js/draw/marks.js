@@ -234,6 +234,14 @@ function drawMapYou(g, x, y, col, rim, k) {
   const x0 = Math.round(x) - ((k + 1) >> 1), y0 = Math.round(y) - ((k + 1) >> 1);
   g.fillStyle = '#ffffff'; g.fillRect(x0, y0, k + 1, k + 1);
 }
+// a factory on either map: a squat hall with its drum standing up out of it
+function drawMapFactory(g, x, y, col, rim) {
+  const gx = Math.round(x), gy = Math.round(y);
+  g.fillStyle = rim;
+  g.fillRect(gx - 4, gy - 2, 9, 5); g.fillRect(gx - 1, gy - 4, 3, 2);
+  g.fillStyle = col;
+  g.fillRect(gx - 3, gy - 1, 7, 3); g.fillRect(gx, gy - 3, 1, 2);
+}
 function drawMapBird(g, x, y, col, rim) {
   const gx = Math.round(x), gy = Math.round(y);
   g.fillStyle = rim;

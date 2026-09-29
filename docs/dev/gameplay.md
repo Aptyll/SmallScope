@@ -910,7 +910,7 @@ next kind of neutral fauna pushed into `animals` is in range of all eight on the
 with no edit here. A **structure** is not a unit, so it takes no state — but a rival's building
 takes the *damage* of every blow with an area, through `hurtStruct` (`STRUCT_DR` off): the SLAM and
 the EXECUTE sweep `structsInCone`, the STOMP `structsNear`, the BULL RUSH's wall slam and the NET
-SHOT's line check `structFoe` on what stopped them. The roosting eagle is an objective with its
+SHOT's line check `structFoe` on what stopped them. The factory is an objective with its
 own damage path, and takes none of it.
 
 **A cast is a performance**: `p.castT` runs the ability's `cast` seconds, the body visibly does
@@ -1034,7 +1034,7 @@ selected slot — the moment a swing ends. Two verbs, two inputs:
   `input.fire`); `updatePlayer` starts the draw on the rising edge and fires on the falling one.
 - **The hands work on their own** (`autoWork(p)`, js/actions.js — `updatePlayer` calls it every
   step `p.input.work` is *not* set). Whatever an `OBJECTS` entry marks `auto` — a tree, a dead
-  tree, a berried bush, a chest, a rival's roosting eagle — and **any building on the
+  tree, a berried bush, a chest, a rival's factory — and **any building on the
   other team** (`autoToolFor`, resolving a footprint tile through `structOf` and refusing your
   own via `ownsStruct`, exactly as `workTarget` does) is swung at the moment it is inside
   `WORK_REACH`, no key held: `autoTarget(p)` takes the nearest such tile in the ring around
@@ -1429,7 +1429,7 @@ Two rules make the burn behave like fire rather than like a stream of small arro
 
 Where fire comes from: the three **fire modifier bits**
 ([tools and bits](#tools-and-bits)) — FLAME, PYRE, CINDER BURST. Nothing else on the map is on fire:
-the roosting eagle is an objective with its own damage path, not a unit, and takes no status at all.
+the factory is an objective with its own damage path, not a unit, and takes no status at all.
 
 ## Prone: under the snow
 
@@ -1757,7 +1757,7 @@ goes out with the body on death. There is no HUD element for it: the ring is the
 **Bots and camps.** A bot fights a camp that is already hunting it (`aiNearestWolf` answers
 a monster whose `target` is that bot, inside `AI_SIGHT`) — and an **ally** also fights one hunting
 anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D`, walking in to
-its own range first, unless its own bird is under threat: the human is the camp fight's anchor
+its own range first, unless its own factory is under threat: the human is the camp fight's anchor
 the way it is a rival's ([Bots](multiplayer.md#bots), rung 4), so a bear you wake is one
 your side comes to. It is *anybody on its side* because every hit re-aims the camp, and the
 helpers must not drop out when one of them takes it off you. A bot will pull a den on its own through
@@ -2801,9 +2801,9 @@ it may have flown. `updateSoldier` is four rungs, first hit wins:
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
    column walk past): close and swing (`robotStrike`, the worker's own `ROBOT_DMG` every
    `ROBOT_ATK_CD`, `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line);
-2. the rival **bird** inside six tiles: the nearest roost tile (`aiEagleTile`), and
-   `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtEagle` — ahead of any
-   building, since whatever a side builds round its bird stands within a step of it;
+2. the rival **factory** inside six tiles: the nearest footprint tile (`aiEagleTile`), and
+   `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtFactory` — ahead of any
+   building, since whatever a side builds round its factory stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
    wall across the spur, a rival bay): `hurtStruct` through the same `robotStrike`;
 4. the **march**: the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
@@ -2814,11 +2814,10 @@ It is allowed to fight and nothing else — no tree tempts it, no flag recalls i
 meeting on the road therefore grind each other down (they are rival units to each other), which
 is the stalemate a player breaks by walking out. It takes every hit, state and sweep like any
 other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the robot path rather
-than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
-and buffets it like a player (`updateEagle`/`eagleGust`), a turret marks it, and it dies through
+than the animal one — a soldier carries a `kind` too), a turret marks it, and it dies through
 `robotDies` carrying a `SOLDIER_BOUNTY` (4 gold, through `awardGold`, so the kill levels too) for
 whoever scraps it — no feed line, five a wave. The cap on a barracks' live soldiers is
-`STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
+`STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their factory and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#bots)).
 
 ### The merchant
@@ -2826,9 +2825,9 @@ sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#b
 Each eagle is **driven** by its team's merchant — the old trader in the wide fur hat with the
 team-cloth crown and the white beard, seated on the bird's neck in flight (`MERCH_SEAT`, `drawEagle`; the look is
 [sprites.md](sprites.md)'s own 16 × 18 grids, built so it never reads as a player on either side,
-with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; the bird wears `PERCH`) — who climbs
-down the moment it roosts (`spawnMerchant`, called
-from `eagleCrash`, the `merchant` banner in js/robots.js) and works **home** for its side, never
+with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`) — who is set down
+by the factory with the crew as the bird circles it (`spawnMerchant`, called
+from `circleDrop`, the `merchant` banner in js/robots.js) and works **home** for its side, never
 toward the fight. It raises no walls and no guns (both stay on the build list for players). Its
 first job is its **stall**, and after that **home production**: it fells the **back woods** and
 raises the **bot bays** there.
@@ -2913,7 +2912,7 @@ through no `contest()`: it is per-player state, not an act in the world.
 | order | the crew, inside the ring | an AI teammate, inside the ring |
 | --- | --- | --- |
 | **ATTACK** | kill every rival unit and break every rival building in it (`flagFoe`: units first, a player through `seenAt`, a rival wave's soldiers included), chasing no further than `ROBOT_LEASH` past the rim; nothing left → hold the flag | a ring over the rival bird is a **push** (rung 8, the lane and the archer's station and all); anywhere else, break the nearest rival building with E and hold the ground when none is left — rivals in sight are rung 3's, the ring anchors them |
-| **DEFEND** | hold the flag in a ring of posts and swing at whatever enters, never following out of the rim | a ring over its own bird is the **defend** rung (6); anywhere else, stand on the ring and go on down the ladder — hunt, loot, spend, harvest bounded to the ring, and stand where it would have roamed |
+| **DEFEND** | hold the flag in a ring of posts and swing at whatever enters, never following out of the rim | a ring over its own factory is the **defend** rung (6); anywhere else, stand on the ring and go on down the ladder — hunt, loot, spend, harvest bounded to the ring, and stand where it would have roamed |
 | **GATHER** | cut and mine everything in the ring, nearest the flag first (`cutNear`), banking a load at home at 8+ | walk in, then harvest bounded to the ring |
 | **RALLY** | come and stand (a load is banked only if home is right there) | come and stand, fighting only a rival inside `AI_SIEGE_R` on the way — a rally is a disengage |
 
@@ -2927,10 +2926,10 @@ stands; else the teammate's flag a bot has joined; else its own.** That first cl
 of command: *a human's flag is the side's plan.* While it stands every bot on the team lifts its
 own flag (`aiFlagSync`) and walks to the human's from anywhere on the map — the defend, guard,
 push and escort reads all give way to it — and every worker on the side (an AI teammate's bays
-included, through `flagOf`) reads it. The one thing no order overrides is the **alarm**: a bird
-under half its nerve calls everyone home regardless. Bots fly flags of their own, but **a bot's
+included, through `flagOf`) reads it. The one thing no order overrides is the **alarm**: a factory
+under half its hp calls everyone home regardless. Bots fly flags of their own, but **a bot's
 flag is never a decision of its own — it is the ladder's decision made visible**: DEFEND at its
-bird when it is walking home to a threat, ATTACK at the rival bird when it is pushing, GATHER
+factory when it is walking home to a threat, ATTACK at the rival factory when it is pushing, GATHER
 where it works (a guard's routine station flies nothing). Coordination is *one flag a plan, not
 one a bot*: a bot plants nothing a teammate is already flying over the same ground
 (`teamFlagAt`) — it joins that flag (`ai.join`) — and a bot with nothing of its own to fly helps
@@ -2984,10 +2983,10 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
 
 ## Death and respawn
 
-Death is a walk back, never the end: while your team's eagle still roosts (`teamEagleDown`, the
+Death is a walk back, never the end: while your team's factory stands (`teamFactoryDown`, the
 eagle-drop banner in js/boot.js) going down costs a **timer and nothing else**, and you are
-set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
-eagle has been driven off every death on that side is permanent, and that is the only way anyone
+set down again at the factory ([Respawn at the factory](multiplayer.md#respawn-at-the-factory)); once the
+factory has fallen every death on that side is permanent, and that is the only way anyone
 is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw,
 momentum and zipline handle either way. **Death keeps everything**: the wallet, the pouch, the
 bag, the weapon and the build loaded into it, the unopened cards, the gear, the skill ranks, the
@@ -3001,12 +3000,12 @@ so a kill still levels the killer and taking the fight is still worth it — whi
 death (ice, wolves, or the killer already dead) pays nobody. `die` also credits the kill (and
 heals the killer if their kit carries `killHeal`, off a card) and writes the log line — see
 [Kills and the event log](multiplayer.md#kills-and-the-event-log) — then asks
-`teamEagleDown(p.team)`: with the eagle still roosting, `p.respawnT` starts counting down
-(`respawnTime(p)`, `updateRespawns` — see [Respawn at the bird](multiplayer.md#respawn-at-the-bird)
-for the whole path); with it driven off, `p.eliminated = true`, the permanent path. Either way
+`teamFactoryDown(p.team)`: with the factory still standing, `p.respawnT` starts counting down
+(`respawnTime(p)`, `updateRespawns` — see [Respawn at the factory](multiplayer.md#respawn-at-the-factory)
+for the whole path); with it fallen, `p.eliminated = true`, the permanent path. Either way
 `checkLastStanding()` asks whether every **rival team** is now gone, which ends the match as a
-win — a team-level question a kill can never answer, since a side is in the match while its bird
-roosts ([PvP](multiplayer.md#pvp)).
+win — a team-level question a kill can never answer, since a side is in the match while its factory
+stands ([PvP](multiplayer.md#pvp)).
 
 Either way the local player's overlay goes up through `endMatch('lost' | 'won' | 'respawning')`
 (js/player.js, the `damage & death` banner; the screens it raises are the `death & spectate`
@@ -3026,7 +3025,7 @@ you stop watching it, not the instant you go down. LOBBY on **either** ceremony 
 screen's LOBBY is the door out.
 `'respawning'` needs no state of its own beyond `state.rpClosed` (reset by every `endMatch`):
 once `p.respawnT` hits 0, `respawnPlayer(p)` snaps `state.mode` back to `'play'` the same
-one-line way `'KEEP PLAYING'` already does, lands the local player at its bird, and replays the HUD
+one-line way `'KEEP PLAYING'` already does, lands the local player at its factory, and replays the HUD
 slide-in a fresh eagle landing gets. A win *or* an elimination also freezes what its screen will
 print (`endSnapshot()` on `state.end`: gold, kills, level, clock, team, class, the kit, and the
 placing and killer only the loss prints) because the match keeps running underneath and a total
@@ -3432,7 +3431,7 @@ one trims the quiet clips' own content off as if it were padding; loudness is me
 **`vol` is therefore one ladder, and the same number means the same thing everywhere.** It reads as
 a step down from `SMP_LUFS`: 0.89 is a decibel under, 0.71 three, 0.56 five, 0.4 eight — a cue that
 cuts, slows or filters its clip needs a little more or less to land on the same rung. The rungs,
-from the top: the rare big moments (a wingbeat, the bird struck, a level, a record, the match
+from the top: the rare big moments (a wingbeat, the factory struck, a level, a record, the match
 lost), then the events worth turning your head for, then the work you do all match — an axe, a
 pick, a hammer, gold in the purse — and at the bottom the things that never stop (a boot, a
 build's tick, a notch, the wind). **Anything that repeats sits under anything that happens once**,
@@ -3501,13 +3500,13 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 | `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's four (manage, rack, roll die, range bell) the press opened |
 | `record()` | a new BEST | `agEndRound` and the parkour line (js/world.js) — one cue for one meaning, on both instruments |
 | `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim.js) when a run of that length ends in the snow |
-| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/boot.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
+| `alarm()` | **your factory is being struck and you cannot see it** | `hurtFactory` (js/boot.js) when the factory is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `FACTORY_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
 | `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
 | `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim.js), `dawnChime`'s opposite number |
 | `warp()` | a body moved without walking it | `warpPlayer` (js/tools.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |
 | `spectate()` | the camera handed to another body | `specNext` (js/ui/screens.js) |
 | `defeat()` | the match lost | `endMatch` (js/player.js) — the sting the defeat song comes up under, as `victory()` is the win's |
-| `bigHurt()` | a great bird taking a blow | `hurtEagle` within earshot — never `hurt()`, a man's winded oof. The clip is a bull at rest, so it plays `BIGHURT_RATE` (1.5) up with a 320 Hz highpass under it — pitch and the chest resonance are what separate a beast in a field from something with a beak |
+| `bigHurt()` | a great bird taking a blow | **no caller** since the factory replaced the roosting bird (its blows are `hit()`); kept for the bird's own voice — never `hurt()`, a man's winded oof. The clip is a bull at rest, so it plays `BIGHURT_RATE` (1.5) up with a 320 Hz highpass under it — pitch and the chest resonance are what separate a beast in a field from something with a beak |
 | `botOut()` | a machine rolling out of the bay | the spawner's shutter (js/structures.js), through `sfxAt` |
 
 **Never borrow a cue** for a new event: a borrowed cue teaches the ear the wrong thing — an

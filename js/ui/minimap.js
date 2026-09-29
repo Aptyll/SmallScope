@@ -183,13 +183,13 @@ function renderMinimap(now) {
     ctx.stroke();
     ctx.restore();
   }
-  // the downed eagles: both objectives, always on the disc - keeping yours
-  // alive (and finding theirs) is the match
+  // the two factories: both objectives, always on the disc - keeping yours
+  // standing (and finding theirs) is the match
   if (state.drop) for (const e of state.drop.eagles) {
     if (e.state !== 'down') continue;
     const dx = (e.x / TILE - ptx) * s, dy = (e.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, '#0f1632');
+    drawMapFactory(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, '#0f1632');
   }
   // the camps, glyph only - a name would not fit inside the disc (the
   // world map and the arrival toast are where they are read by name)

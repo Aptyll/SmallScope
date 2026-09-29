@@ -76,9 +76,9 @@ function statFreeze() {
       dmg: q.dmgOut, siege: q.dmgBird + q.dmgStruct, gold: q.xp,
       hGold: q.hGold.slice(), hDmg: q.hDmg.slice(),
     })),
-    // which sides are still standing at the whistle: a side whose bird has
-    // been driven off is out, and a lone side left standing wears the crest
-    down: [0, 1].map((t) => teamEagleDown(t)),
+    // which sides are still standing at the whistle: a side whose factory has
+    // fallen is out, and a lone side left standing wears the crest
+    down: [0, 1].map((t) => teamFactoryDown(t)),
   };
 }
 

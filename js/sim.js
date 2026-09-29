@@ -168,14 +168,14 @@ function update(dt) {
       camY += (ty - camY) * Math.min(1, dt * 9);
     }
   } else if (state.drop && (state.eagleCine ||
-      (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'flee')))) {
-    // the match is decided: every eye goes to the bird that broke. The camera
-    // glides over and holds it centred while the takeoff plays out - the end
-    // screens wait for it (eagleFleeResolve, js/boot.js), then rise over the
-    // escape still flying underneath. League-style. Only KEEP PLAYING (mode
+      (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'fall')))) {
+    // the match is decided: every eye goes to the factory that fell. The
+    // camera glides over and holds it centred while the collapse plays out -
+    // the end screens wait for it (factoryFallResolve, js/boot.js), then rise
+    // over the rubble still smoking underneath. League-style. Only KEEP PLAYING (mode
     // back to 'play' with no ceremony) hands the camera back early.
     const ec = state.eagleCine ? state.drop.eagles[state.eagleCine.team]
-      : state.drop.eagles.find((q) => q.state === 'flee');
+      : state.drop.eagles.find((q) => q.state === 'fall');
     camX += (ec.x - WV_W / 2 - camX) * Math.min(1, dt * 3.5);
     camY += (ec.y - WV_H / 2 - camY) * Math.min(1, dt * 3.5);
   } else if (state.drop && state.dropBrief) {
@@ -388,8 +388,8 @@ function shotContacts(a, x0, y0, dx, dy) {
     // BEFORE solidity, which would eat the shot; a friendly arrow falls
     // through to it and dies on the tile like any other miss.
     const o = objAt(tx, ty);
-    if (state.drop && o && o.type === 'eagle' && o.team !== a.team) {
-      shotHits.push({ s, k: 'eagle', t: o }); stop = s; break;
+    if (state.drop && o && o.type === 'factory' && o.team !== a.team) {
+      shotHits.push({ s, k: 'factory', t: o }); stop = s; break;
     }
     // the practice dummy: nearly three tiles tall on one solid tile, so a
     // shot through the torso or head tiles (one and two above the base)
@@ -548,8 +548,8 @@ function updatePlay(dt) {
     // or the world itself stops it; any other shot ends on the first.
     if (!dead) for (const h of shotContacts(a, x0, y0, dx, dy)) {
       const t = h.t, hx = x0 + dx * h.s, hy = y0 + dy * h.s;
-      if (h.k === 'eagle') {
-        hurtEagle(state.drop.eagles[t.team], EAGLE_ARROW_DMG, players[a.owner], hx, hy); // a flat spook, not the body damage
+      if (h.k === 'factory') {
+        hurtFactory(state.drop.eagles[t.team], FACTORY_ARROW_DMG, players[a.owner], hx, hy); // a flat chip, not the body damage
         if (a.ambush) ambushFx(hx, hy);
         dead = true;
       } else if (h.k === 'dummy') {

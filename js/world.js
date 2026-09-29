@@ -39,7 +39,7 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 const CH_SNOW = 0, CH_FOREST = 1, CH_ROAD = 2, CH_ICE = 3, CH_HOLE = 4, CH_CHEST = 5,
       CH_RED = 6, CH_BLUE = 7, CH_EAGLE_RED = 8, CH_EAGLE_BLUE = 9;
 const chTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_BLUE : CH_RED;   // a side's building
-const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE : CH_EAGLE_RED; // its bird, its gate
+const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE : CH_EAGLE_RED; // its factory, its gate
 const OBJECTS = {
   // lift 33: the pine's canopy reaches 21 px above its own tile (drawn at
   // py - 21), and the prompt clears it by the same 12 px everything else gets
@@ -92,7 +92,7 @@ const OBJECTS = {
   // plain solid follower the draw pass skips.
   // the parkour gate's flag - and, carrying a `team`, the two pennant poles
   // at each of the road's mouths (placeRoad), which paint the maps in that
-  // side's ink the way a roosting eagle does
+  // side's ink the way a factory does
   banner:   { solid: true,
               mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
               map: (o) => o.team === undefined ? null : chEagle(o) },
@@ -121,11 +121,11 @@ const OBJECTS = {
   // resolves through agBellNear (the practice arena banner below).
   agbell:   { solid: true,  mm: [216, 158, 74] },
   stump:    { solid: false, mm: [188, 200, 218] },
-  // a roosting team eagle's hitbox tiles (placed by eagleCrash, js/boot.js):
-  // solid to walkers and a work target for RIVAL E swings only - workTarget
-  // reads the `team` an object carries. Drawn by drawEagle, never the object
-  // pass; the swing itself lands in hitObject's eagle branch (hurtEagle).
-  eagle:    { solid: true,  tool: 'axe',  needs: null,   verb: 'STRIKE', lift: 16, auto: true,
+  // a team factory's walls (placed by buildFactory, js/boot.js): solid to
+  // walkers and a work target for RIVAL E swings only - workTarget reads the
+  // `team` an object carries. Drawn by drawFactory, never the object pass;
+  // the swing itself lands in hitObject's factory branch (hurtFactory).
+  factory:  { solid: true,  tool: 'axe',  needs: null,   verb: 'STRIKE', lift: 16, auto: true,
               mm: (o) => skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED, map: chEagle },
   // a multi-tile building's (or a wide prop's) filler tiles: solid, and
   // structOf() has resolved them to their anchor long before either map sees one
@@ -141,9 +141,9 @@ const OBJECTS = {
 const BUSH_REGROW = 70;   // s from a pick to the next two berries
 const BUSH_BUD_T = 35;    // s left when the buds show
 const BUSH_RIPEN_T = 12;  // s left when the berries come in dull
-// the minimap's team inks: a roosting bird (and the road-mouth pennant) in
+// the minimap's team inks: a factory (and the road-mouth pennant) in
 // the side's bright mark, its buildings a step deeper, so a base is a shape
-// in its colour with the bird lit at the middle
+// in its colour with the factory lit at the middle
 const MM_EAGLE_RED = [224, 85, 72], MM_EAGLE_BLUE = [106, 168, 232];
 const MM_TEAM_RED = [172, 68, 60], MM_TEAM_BLUE = [78, 128, 188];
 const mmTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? MM_TEAM_BLUE : MM_TEAM_RED; // STRUCTS' mm (structures.js)
@@ -286,10 +286,10 @@ for (let i = 0; i < RING_N; i++) {
 }
 
 const BORDER_MIN = 30, BORDER_MAX = 70; // forest boundary depth range (avg ~50)
-// The two ROOST corners - bottom-left and top-right, where the eagles always
-// come down (makeEagleRoute, boot.js) - are forested to ROOST_R outright: a
+// The two ROOST corners - bottom-left and top-right, where the factories always
+// stand (buildFactory, boot.js) - are forested to ROOST_R outright: a
 // quarter-disc of woods UNIONED with the noise border, so whatever the seed
-// grew there the corner holds one solid block for the bird to bury itself in,
+// grew there the corner holds one solid block for the factory clearing,
 // and the treeline its lane cuts to is at least the disc's arc (ROOST_R along
 // the diagonal is ROOST_R / sqrt 2 ~ 48 tiles in). The union only ever ADDS
 // trees: past the disc the border keeps every seed's own noise, and the arc

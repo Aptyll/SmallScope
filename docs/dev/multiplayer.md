@@ -68,7 +68,7 @@ fire          bow held: rising edge draws, falling edge looses. The rising edge
 work          E held (with it clear, the hands still take a tree, a bush or a fish in reach: autoWork/autoFish)
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
-jump          edge-triggered: the leap off the eagle, or the hop off the roost -
+jump          edge-triggered: the leap off the eagle -
               the ride's one act (dropJump, js/boot.js; read at the top of
               updatePlay's player loop, before the air skips the body) - and
               on the ground the zipline's: clip on under your side's cable,
@@ -293,9 +293,7 @@ where the fault is. The one thing it cannot fix: a driver that turns the pad int
 scroll wheel (Steam Input's desktop layout, DS4Windows and the like) reaches the page as pointer
 motion, clicks and wheel ticks — aim, shots and zoom — while the Gamepad API may see nothing;
 the readout shows exactly that (the name row stays dim), and the cure is the driver's setting,
-not the game's. In play every button is a key (`PAD_PLAY`): A rolls (and hops
-off a landed eagle: `updateDrop` reads the roll intent beside E's work, so the jump button is the
-way off the roost), X works,
+not the game's. In play every button is a key (`PAD_PLAY`): A rolls, X works,
 Y / B / LB / RB are abilities 1-4 in strip order (LB held is the grapple), START the ESC slab,
 L3 the inventory drawer, dpad up the sheet, dpad left/right the two meals. Four are gestures: RT is the draw
 (held, released fires — the same falling edge as the button), LT the slide, R3 holds the flag
@@ -435,7 +433,7 @@ map markers, death bursts and the eagles' armour.
 
 **The paint is per screen, the team is not.** Every colour lookup goes through
 `skin(team)` (js/player.js) — `TEAMS[skin(p.team)]`, `SPRITES.champ[cls][skin(team)]`,
-`eagleTeam`/`teamBuild`/`robotTeam`/`merchant[skin(...)]`, the two maps' eagle marks — and with
+`eagleTeam`/`teamBuild`/`robotTeam`/`merchant[skin(...)]`, `SPRITES.factory[skin(...)]`, the two maps' factory marks — and with
 `settings.teamBlue` (the default, the ESC menu's MY TEAM row) it returns the BLUE preset for the
 local player's side and RED for the rival side whatever indices the roster dealt, so allies are
 always blue and enemies always red on your screen (a second human on the other team would see the
@@ -504,32 +502,30 @@ team rule, through `hurtRobot` (see [Robots](gameplay.md#robots)). Shooting one 
 its income and hands the gold it was carrying to whoever downed it, so a base's economy can be
 raided without ever touching the base; the feed says so, but a worker is never a kill on the scoreboard.
 
-**So is a rival's grounded eagle** — tested before tile solidity (its own roost tiles are solid,
-and would otherwise eat the shot), same team rule, through `hurtEagle` (the `eagle drop` banner in
-js/boot.js): a rival arrow landing on **any roost tile** spooks the bird `EAGLE_ARROW_DMG` (12) off
-its `EAGLE_HP` (2000) pool — a flat chip, whatever the arrow would do to a body, so archers
+**So is a rival's factory** — tested before tile solidity (its own footprint tiles are solid,
+and would otherwise eat the shot), same team rule, through `hurtFactory` (the `eagle drop` banner in
+js/boot.js): a rival arrow landing on **any factory tile** chips `FACTORY_ARROW_DMG` (12) off
+its `FACTORY_HP` (2000) pool — a flat chip, whatever the arrow would do to a body, so archers
 standing off it take minutes and the side has time to answer — the
 tiles are the one hit test walkers, arrows and E all share, so there is no corner an arrow can
-strike without damage — a rival **E swing** chips `EAGLE_WORK_DMG` (20: a hundred swings, about a
-minute for a lone warrior under the gust) through `hitObject`'s eagle
-branch (the roost tiles are `eagle` objects, a rival-only work target — `workTarget` reads the
-`team` they carry), and at zero the bird is **driven off**: `eagleFlee` lifts it away over the
-treeline while every camera pans to watch (`state.eagleCine`, the driven-off ceremony), and
-`EAGLE_CINE_T` later `eagleFleeResolve` takes the whole owning side out of the match (see
+strike without damage — a rival **E swing** chips `FACTORY_WORK_DMG` (20: a hundred swings, about a
+minute for a lone warrior) through `hitObject`'s factory
+branch (the footprint tiles are `factory` objects, a rival-only work target — `workTarget` reads the
+`team` they carry), and at zero the factory **falls**: `factoryFall` brings its walls down
+while every camera pans to watch (`state.eagleCine`, the fall ceremony), and
+`EAGLE_CINE_T` later `factoryFallResolve` takes the whole owning side out of the match (see
 [Death and respawn](gameplay.md#death-and-respawn) and the eagle-drop section in
 [rendering.md](rendering.md#eagle-drop-mode-drop)). Friendly arrows pass over it; a friendly
-swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes it rear
-(wings spread for `GUST_WIND_T` — the telegraph) and **gust**, throwing every rival in
-`GUST_BLAST_R` into a `GUST_STUN` tumble with no damage — the trigger resolves through
-`seenAt`, like every other watcher — and after `PREEN_DELAY` unhit it preens `PREEN_RATE`
-hp/s back.
+swing is refused. It has no defence of its own: after `FACTORY_REPAIR_DELAY` unhit it repairs
+`FACTORY_REPAIR_RATE` hp/s back. It is only a target once the bird has left its line
+(`e.state` `down`); while the crew is still flying in it stands but takes nothing.
 
 `die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
 bag, weapon and build all stay, and the credited killer is paid a flat `KILL_BOUNTY` (12) via
 `awardGold` — an uncredited death pays nobody (gold is never a physical drop). What happens next
-depends on `teamEagleDown(p.team)` alone: the wait and the return of
-[Respawn at the bird](#respawn-at-the-bird) while the team's eagle still roosts, or
-`p.eliminated = true`, the permanent path, once it has been driven off;
+depends on `teamFactoryDown(p.team)` alone: the wait and the return of
+[Respawn at the factory](#respawn-at-the-factory) while the team's factory stands, or
+`p.eliminated = true`, the permanent path, once it has fallen;
 `updatePlayer` just zeroes a dead player's intents either way. Only the local player's **elimination**
 takes the full death overlay with it (`endMatch('lost')`); a respawn-pending local death gets the
 lighter `endMatch('respawning')` wait instead — same `state.mode = 'dead'` machinery (so the
@@ -542,18 +538,18 @@ through [the defeat screen](rendering.md#the-end-screens) first (`openDefeat()`,
 calls `toLobby()`), because a lost match ends when you stop watching it rather than when you go
 down. Every death runs `checkLastStanding()`, which ends the match as a win once no **rival
 team** is left — `rivalTeamsInMatch()`/`teamInMatch()` read the same other-team rule `enemyOf`
-does, and **a team is in the match while its eagle roosts**: `teamInMatch` asks
-`teamEagleDown(team)` first, so a fled eagle takes the side out whatever else it still holds
-(`eagleFlee` in js/boot.js is what puts every player down at liftoff), and a side with every player
-dead and waiting on its bird is not out — kills never end a match, only the bird does. **The
+does, and **a team is in the match while its factory stands**: `teamInMatch` asks
+`teamFactoryDown(team)` first, so a fallen factory takes the side out whatever else it still holds
+(`factoryFallResolve` in js/boot.js is what puts every player down after the ceremony), and a side with every player
+dead and waiting on its factory is not out — kills never end a match, only the factory does. **The
 match keeps simulating while you are out** — `update()` runs `updatePlay` in both `play` and
 `dead` mode; only pause and the settings panel stop the world (the map does not). Full detail:
 [Death and respawn](gameplay.md#death-and-respawn).
 
-### Respawn at the bird
+### Respawn at the factory
 
-The team's roosting eagle is the way back, and the only thing
-that takes a player out for good is that eagle being driven off. `updateRespawns(dt)` (called from
+The team's standing factory is the way back, and the only thing
+that takes a player out for good is that factory falling. `updateRespawns(dt)` (called from
 `updatePlay` beside `updateStructures`) counts down every `p.dead && !p.eliminated` player's
 `p.respawnT` — `respawnTime(p)`: `RESPAWN_BASE` (1 s) plus `RESPAWN_LV` (2 s) per hero level —
 3 s at level 1, 5 s at level 2, 25 s at the `LEVEL_MAX` of 12, and nothing off the match clock:
@@ -561,13 +557,13 @@ gold is XP and the table only climbs, so the level *is* the clock. An early deat
 nothing and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
-`RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
+`RESPAWN_OUT` (40 px) down the spur from the factory's centre (`e.laneDir`; the nearest standable tile there
 through `nearestDryTile`, the same spiral a hole is climbed out of) and calls `p.reset(false)`,
 the transient-clear a fresh landing gets, i-frames included — so the way back into the match is
-the road everyone walked out on, past the merchant. A bird still in the air (a player
-shot in the seconds between its own landing and the bird's) has nowhere to set anyone down, so
-the timer holds at zero until it roosts; a bird that has fled mid-timer is left to
-`eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `reset()` never
+the road everyone walked out on, past the merchant. While the bird is still on its line (a player
+shot in the seconds between its own landing and the factory going live) the timer holds at zero
+until `e.state` is `down`; a factory that falls mid-timer is left to
+`factoryFallResolve`, which puts the whole side out at the end of the ceremony. `reset()` never
 touches `p.cards` (picked roguelike cards), gear, skill ranks, level, xp, the wallet, the pouch or
 the bag, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
 over again when every slot is bare), so the whole player survives every respawn within a match —
@@ -578,15 +574,15 @@ the wait is the entire cost ([death keeps everything](gameplay.md#death-and-resp
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
 there is no `src` (`DEATH_CAUSE`, js/player.js: `ice`, `wolf` — a den's pack — `bear`,
-`tackle`, `eagle`, `fire`, `soldier`; an unnamed one reads WENT DOWN). A death with an `src` other than
+`tackle`, `factory`, `fire`, `soldier`; an unnamed one reads WENT DOWN). A death with an `src` other than
 the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours
 (`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
 without one it writes the cause's line — `"<victim> FELL THROUGH THE ICE"` — in the victim's. **Any new way to hurt a
 player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
 The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels come too
-fast to be news — a wrecked building, a scrapped worker, a bear's slayer, each eagle
-landing, coming under attack and being driven off, a peer joining or leaving, and the market's
+fast to be news — a wrecked building, a scrapped worker, a bear's slayer, your factory
+coming under attack and each factory falling, a peer joining or leaving, and the market's
 spikes, crashes and restocks. `logEvent(txt, p, o)` is the whole interface (`o` a palette for a line
 no player owns); the log is not drawn
 ([rendering.md](rendering.md#scoreboard-and-event-log)). `DBG.logEvent`/`DBG.events` stage lines
@@ -650,12 +646,12 @@ pushers rally at their own zipline's end, the last fast ground before the fight,
 respawn rides straight back to the rally and the roost is hit by a wave of them every time
 rather than one body at a time into the guns. On the push it **charges**: only what closes to
 `AI_SIEGE_R` is fought, the whole way — a wave on the road, an archer standing off, a defender
-at the roost are all walked past for the bird (the siege rule from the first step, whatever the
-numbers) — except at its own besieged bird, where a respawn fights everything it sees before it
+at the roost are all walked past for the factory (the siege rule from the first step, whatever the
+numbers) — except at its own besieged factory, where a respawn fights everything it sees before it
 rides out again. The one thing that turns it home is the pusher rule every level has: its own
-bird under `AI_ALARM_HP` while it is *losing* the race. What is **not** in a profile: answering
-a hit on its own bird — at every level the side answers from anywhere on the map
-(`aiDefendersWanted`, **the two birds**, below); the difficulty is how well they fight when
+factory under `AI_ALARM_HP` while it is *losing* the race. What is **not** in a profile: answering
+a hit on its own factory — at every level the side answers from anywhere on the map
+(`aiDefendersWanted`, **the two factories**, below); the difficulty is how well they fight when
 they get there, never whether they come.
 
 The ladder:
@@ -673,7 +669,7 @@ The ladder:
    free — tryAbility's snow toggle).
 3. **fight** — a rival within the profile's `sight` (`aiNearestEnemy`, filtered through `seenAt()`
    so a buried one is simply not there — plus anyone within `AI_ANCHOR_R` of an **anchor** the bot
-   is minding, noticed from up to `AI_ANCHOR_D`: its own bird under attack, the rival bird it is
+   is minding, noticed from up to `AI_ANCHOR_D`: its own factory under attack, the rival factory it is
    pushing, the human it escorts — so a defender finds the archer standing off its roost and an
    ally joins the fight you are in; and a rival **wave's soldiers** in the same sight, with no cover
    to see through, a player in the same sight preferred by a small margin —
@@ -699,7 +695,7 @@ The ladder:
    through the hunt rung, which takes a den's wolves like any animal but never a
    bear. **An ally joins the human's camp fight**: a monster hunting
    anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D` (the human is
-   the anchor, as at rung 3; its own bird under threat comes first), which it walks in on - a
+   the anchor, as at rung 3; its own factory under threat comes first), which it walks in on - a
    blade to arm's length, a bow to 90 px with the line open - since that monster is not coming
    to it. Every hit re-aims the camp at the latest hitter, so the helpers keep on whichever of
    the side it is chasing.
@@ -709,8 +705,8 @@ The ladder:
    this bot serves (`servedFlag`): a human teammate's, which is the side's whole plan while it
    stands, or a teammate's it joined. Read before the ladder (`aiFlagSync`, then the `order`
    block): it overrides the defend, guard, push and escort reads below — the one exception the
-   **alarm** (its own bird under `AI_ALARM_HP`), which no order overrides — and an ATTACK whose
-   ring covers the rival bird, or a DEFEND whose ring covers its own, is folded straight into
+   **alarm** (its own factory under `AI_ALARM_HP`), which no order overrides — and an ATTACK whose
+   ring covers the rival factory, or a DEFEND whose ring covers its own, is folded straight into
    `pushE`/`defend` so rungs 6 and 8 play them with everything they know (the lane, the defenders'
    turrets, the archer's station). Every other order this rung walks: outside `AI_FLAG_IN` of
    the flag it goes there (on the roost budget — a ring in a corner's woods is a walk into
@@ -719,8 +715,8 @@ The ladder:
    in sight are rung 3's — the ring is an anchor), RALLY stands (and on the way only a rival
    inside `AI_SIEGE_R` is fought: a rally is a disengage), DEFEND and GATHER go on down the
    ladder with the harvest bounded to the ring and the roam replaced by standing. **A bot's own
-   flag is the ladder made visible**: rung 6 answering a threat flies DEFEND at its bird, rung 8
-   pushing flies ATTACK at the rival bird, rung 13 flies GATHER where it works (`ai.want`, read
+   flag is the ladder made visible**: rung 6 answering a threat flies DEFEND at its factory, rung 8
+   pushing flies ATTACK at the rival factory, rung 13 flies GATHER where it works (`ai.want`, read
    every `AI_FLAG_T` and kept `AI_FLAG_DROP` past its last reason; a guard's station, rung 7,
    is a routine and flies nothing). It plants nothing a
    teammate is already flying over the same ground — it joins that flag (`ai.join`) — and a bot
@@ -730,41 +726,41 @@ The ladder:
    RALLY from anywhere). A human's flag pulls every own flag down.
    Planting goes through `plantFlag` directly rather than `input.cmd`: a flag is per-player
    state, not an act in the world, and the human's radial ends in the same function.
-6. **defend** — its own bird under `threat` on the shared read (**the two birds**, below): as
+6. **defend** — its own factory under `threat` on the shared read (**the two factories**, below): as
    many bots as `aiDefendersWanted` calls home walk to it (`aiToRoost`, below) from wherever on the map they are,
-   farming, escorting or guarding, and stand 80 px off — the bird anchors rung 3, so the
+   farming, escorting or guarding, and stand 80 px off — the factory anchors rung 3, so the
    attackers are in sight on arrival — while a bot already inside `AI_ROOST_R` holds its station
    and the rest go on with the match (a side that empties the map for one arrow is a side that
-   never pushes). Under `AI_ALARM_HP` (half its nerve) everyone comes, pushers included, the one
-   exception a pusher whose side is winning the race — the rival bird lower still — who presses on.
+   never pushes). Under `AI_ALARM_HP` (half its hp) everyone comes, pushers included, the one
+   exception a pusher whose side is winning the race — the rival factory lower still — who presses on.
 7. **guard** — from 0.6 × `push.t` on, the profile's `guard` bots (1 / 2 / 0 — a relentless side keeps none; allies 1) after
-   the pushers in player order (`aiRank`) stand by their own bird, going on down the ladder to work
-   what is near while inside `AI_GUARD_R` of it. The bird is their anchor.
+   the pushers in player order (`aiRank`) stand by their own factory, going on down the ladder to work
+   what is near while inside `AI_GUARD_R` of it. The factory is their anchor.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
    side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
-   stalemate always breaks (`aiPushers`), go for the rival bird — an ally goes whenever
+   stalemate always breaks (`aiPushers`), go for the rival factory — an ally goes whenever
    **the human is already on it** (inside `AI_ROOST_R`), so a push you start is a push your side
-   joins — and **any** bot joins a siege its side has going once the rival bird is under
-   `AI_JOIN_HP` (0.6) with friends at it, unless its own bird is under threat, which is where it
+   joins — and **any** bot joins a siege its side has going once the rival factory is under
+   `AI_JOIN_HP` (0.6) with friends at it, unless its own factory is under threat, which is where it
    is wanted. **The wave is the push**: off the rival's lane, a pusher walks with the head of its
-   own side's column on the road (`aiWaveHead` — the own soldier nearest the rival bird that is
+   own side's column on the road (`aiWaveHead` — the own soldier nearest the rival factory that is
    still on the march, within `AI_WAVE_D`) rather than ahead of it alone, closing to `AI_WAVE_R`
    of it and going on from there; with no column out it walks as it always did. (A relentless
    side's grouping is its pack at the zipline's end instead — the profile, above.)
    The walk is `aiToRoost`: the roost sits in its corner's woods at the end of its spur and the
    spur is the only way in, so off it the route is road → `aiLaneGate` (`AI_GATE` px up the road
-   from the junction, toward the field) → junction (`e.mouth`) → spur → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
-   `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
+   from the junction, toward the field) → junction (`e.mouth`) → spur → factory, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
+   `navTo`'s optional last argument); a route straight at the factory runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. In the
    spur, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
-   standing off the bird under bolt fire never finishes a draw), then a hunter takes its
+   standing off the factory under bolt fire never finishes a draw), then a hunter takes its
    station `AI_HOLD` (96 px) out **on the spur's axis**, where the spur keeps the line to
    the roost open (off the axis a wall the defenders raised may eat the shot) and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until
-   the side outnumbers them: a pusher inside `AI_ROOST_R` of the rival bird whose side has more
-   bodies there than the defenders (the `siege` read, above rung 3) keeps hitting the bird and
+   the side outnumbers them: a pusher inside `AI_ROOST_R` of the rival factory whose side has more
+   bodies there than the defenders (the `siege` read, above rung 3) keeps hitting the factory and
    leaves the fight to its friends, turning only for a rival inside `AI_SIEGE_R` (48 px),
    because defenders come back from sixty pixels away every few seconds and a push that turns
    to meet each one never lands a swing. A roost it cannot route to is left for `ai.pushCd`
@@ -797,19 +793,19 @@ The ladder:
    key up, since the rock mines itself.
 14. **roam** — wander between its landing site and the map centre.
 
-**The two birds.** `aiSituation()` (the `the two birds` sub-banner) is what every bot knows
+**The two factories.** `aiSituation()` (the `the two factories` sub-banner) is what every bot knows
 about the objective, both sides of it, all match — read once per sim step (cached on
-`state.tick`) and shared by all ten players: for each roosting bird its position, its nerve as a
-fraction of `EAGLE_HP`, how long since it was last hit, and who is **at** it inside `AI_ROOST_R`
+`state.tick`) and shared by all ten players: for each standing factory its position, its hp as a
+fraction of `FACTORY_HP`, how long since it was last hit, and who is **at** it inside `AI_ROOST_R`
 (240 px) — `defenders` (its own side) and `attackers` (rivals, each resolved through `seenAt`, so
 a buried archer is buried for the whole side — plus a rival **wave** at the roost counted at half
 strength, so a five-column calls three defenders home rather than the whole side) — with `human`
 set when the local player is among the attackers. `threat` is the one word the ladder asks — hit inside `AI_DEFEND_T` (8 s) or an
 attacker seen — and `aiDefendersWanted` is how many it calls home (one more than the attackers,
 at least two, everyone under `AI_ALARM_HP`). A hit on a roost is therefore news on the far side of the map the same tick,
-which is what lets rung 6 answer from anywhere and rungs 6 and 8 weigh one bird against the
+which is what lets rung 6 answer from anywhere and rungs 6 and 8 weigh one factory against the
 other. Nothing in it lets a bot do what a hand cannot: a human reads the same facts off the
-map's eagle marks and the bird's nerve bar.
+map's factory marks and the factory's hp bar.
 
 Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the bot's own player
 ([gameplay.md](gameplay.md#pathfinding)) — it routes around trees, rocks, buildings and water,
@@ -851,10 +847,10 @@ out, ten to twenty at the tails, which is what the ally clocks are set for. Wher
 last measured (seed 42 unless said): NORMAL resolves on the ally push at 17–21 min (seeds 42,
 99, 7), a few minutes long of the target, so the ally clocks are the next thing to tune; HARD is
 an ally win at about 12:35; relentless IMPOSSIBLE's pack of five goes at about 5:15 and takes
-the allied bird to **15 % nerve** by six minutes, then bleeds to the levelled allies (a rusher
+the allied factory to **15 % hp** by six minutes, then bleeds to the levelled allies (a rusher
 never farms: level 5–6 against 12), who win at about 16:30 — the dive, not the race, is what the
 level is for, and with a hand rather than a bot on the human's side that dive is the match. A
-`push.t` of 0 never touches the bird, and a four-minute pack of four reaches 36 % and loses.
+`push.t` of 0 never touches the factory, and a four-minute pack of four reaches 36 % and loses.
 
 ## Online play
 
@@ -887,7 +883,7 @@ what the rest of the code needs to know is this:
   rival-grade bots; `aiSituation`'s `human` flag, `aiRank`'s skip and the escort's ward are the
   host's `player` alone — a remote human is counted at a roost but starts no ally push and gets no
   escort. A human flag does lead its side for either kind (`isHuman`). Notices (`raiseNotice`) and
-  the own-bird alarm are raised on the host's screen only.
+  the own-factory alarm are raised on the host's screen only.
 - **What the step gates on `p === player`, a client does for itself.** The profile's lifetime
   stats, `markDropped` and the leap's hard music cut never run on a client's screen, so
   `netClientStats` (js/net/net.js) reads them off its snapshot body each step: `xp` climbing is gold,
@@ -899,15 +895,15 @@ what the rest of the code needs to know is this:
 Nowhere, until they land: every active player boards **its team's** eagle in `beginDrop()` — RED
 and BLUE fly the map's one diagonal (a fixed `EAGLE_FLIGHT_T` 10 s each) in opposite directions,
 RED from the top-right corner down to the bottom-left, BLUE the reverse, so the two sides salt
-themselves along it from opposite ends and each roosts in its own fixed corner — and gets its
+themselves along it from opposite ends toward their own factory in a fixed corner — and gets its
 `spawn` from `landPlayer()`, the
 nearest open tile to where it jumped. Jumping only unlocks over the line's **last `DROP_LOCK_T`
 (4 s)**: bots jump at a hashed fraction of that window (never past its end, the last open
 ground before the corner's treeline — no bot is ever force-dropped in the trees), the human where
 they press Space — drifting with WASD on the way down — or **not at all**: a human who never
-jumps rides the dive and the crash on the bird's back, sits through the
-[drop brief](rendering.md#the-drop-brief) (the camera tour of both roosts), then hops off the
-roost with E under the E - HOP OFF indicator. A profile's first flight is exactly that ride with
+jumps rides on as the bird circles its factory and is set down on the factory's clearing a quarter
+of the way round (`circleDrop`), then sits through the
+[drop brief](rendering.md#the-drop-brief) (the camera tour of both factories). A profile's first flight is exactly that ride with
 the manual leap refused — scripted onboarding — and a real jump is the opt-out for everyone
 after. That tile is what the bot brain
 treats as "home". There are no spawn pockets, no starter rings, and no guaranteed resources near

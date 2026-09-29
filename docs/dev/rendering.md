@@ -73,8 +73,7 @@ Consequences a new pass has to respect:
   the world view is *wider* than the canvas, and culling to the canvas eats the edges.
 - `worldCv` is allocated at the most zoomed-out size (`ZOOM_FLOOR`) once per
   canvas size, and each frame uses the `WV_W`×`WV_H` corner — never resize it per frame.
-- Anything **UI-layer but anchored to a world point** (the radial wheel, the HOP OFF key cap over the
-  roost, the archery round's off-screen markers, the gamepad's aim pointer) converts through `wToSX`/`wToSY`, and
+- Anything **UI-layer but anchored to a world point** (the radial wheel, the archery round's off-screen markers, the gamepad's aim pointer) converts through `wToSX`/`wToSY`, and
   keeps its own pixel size.
 - **A pointer position becomes a world position only through `mouseWX()`/`mouseWY()`**
   (`mouse / zoomCur + cam`). Aim, hover, the work target and the right-click tile all read them,
@@ -207,9 +206,7 @@ sits here, not at the end of `render()`, so the strip holds no HUD, no dim and n
 itself) → `tipResolve` ([the hover tooltip](#the-hover-tooltip)'s one answer for the frame) →
 `renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
 `renderDropUI` (mode `drop` only: the flight bar, keybind indicators) → `drawDropBrief` (mode
-`play`, only while [the drop brief](#the-drop-brief) holds a roost) or `drawHopPrompt` (mode
-`play`, the local player still seated on its roost: the HOP OFF key cap — E, or the pad's A disc
-while one is in hand) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
+`play`, only while [the drop brief](#the-drop-brief) holds a factory) → `renderWorldMap` (the M map, in `play` and `drop`) → `renderWheel` (the radial menu — after
 the chart, because a flag wheel opens over it) → `renderSettings` → `renderTitle` (the main
 menu, also during the play intro) → `renderReplay` (the replay window: the whole frame on a
 death, the corner on pause — **before** the death overlay, whose countdown and ESC prompt draw
@@ -412,8 +409,8 @@ texture (canopy dots, pine glyphs) reads as studs or clutter at this scale — s
 grain of a drawn thing without the noise of one. No grid: a single
 bush, rock or stump has no class and shows the ground, because at that scale a speck is noise;
 the buried chests keep theirs, a gold speck being a thing worth walking to. A side's buildings
-and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
-reads as a shape in its colour with the bird bright at its heart. The sim keeps stepping under
+and its factory are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
+reads as a shape in its colour with the factory bright at its heart. The sim keeps stepping under
 it and the local player keeps walking
 ([the M map does not pause](gameplay.md#the-m-map-does-not-pause)), so every live part — the
 camera rect, every body's mark, the watched body's heart — moves while the chart is open; the
@@ -425,8 +422,8 @@ or a tree felled behind the parchment shows up on it within half a second.
 body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 on the disc), and
 every worker, soldier and merchant standing is drawn, none of them hides; the watched body
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
-of its side's ink, never a colour of its own that would read as a third team; the bird diamond
-is an objective, roosted or flying. Each sits on a 1 px rim in the map's own dark. Under a
+of its side's ink, never a colour of its own that would read as a third team; the factory block
+is the objective and the bird diamond marks a bird in flight. Each sits on a 1 px rim in the map's own dark. Under a
 colour-blind palette a rival's square is a cross instead (`foeCue`, [teams and colours](multiplayer.md#teams-and-colours)). **The slab is
 the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()` (canvas.js, from
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
@@ -529,9 +526,8 @@ A kind may name a **stamped** mark instead of a blitted one — `NOTE_KIND[k].gl
 never grows an `if` per kind. `renderNotices` stamps it with `stampGrid` (js/ui/screens.js),
 filling `h` with your side's ink through `skin(player.team)` over a dark rim — the reason to
 stamp rather than bake, since a baked sprite cannot be recoloured per team. The `roost` plate's
-is `bird`: a soaring raptor from below (head, swept wings, tail), **not** the maps' objective
-diamond — `drawMapBird(g, x, y, col, rim)` is one 7 px size only, and blown up to 2× it reads
-as a medical plus beside the arrow tail on the same plate. Its text is the **nerve the bird has
+is `factory`: the building in silhouette (drum, two chimneys, the hall and its doors), **not** the maps'
+small objective block blown up — a mark has to be the thing, not a marker for it. Its text is the **hp the factory has
 left**, as a percent, under the falling tail — the plate says what happened where the cue
 (`SFX.alarm`) only turned your head, which is the market's own split between a ding and a number.
 
@@ -886,7 +882,7 @@ own grammar:
   respawnTime(p)` of the way, exactly as an ability well waits, and `drawRimSweep` draws the rim
   back in behind the hand: from twelve clockwise to the hand in the side's `mark`, the rest in
   `HUD_LIT` slate, so the colour returns round the chip as the wait runs out; the bar is bare;
-- **out**: `eliminated`, or dead with no countdown (its bird already driven off) — the rim dark,
+- **out**: `eliminated`, or dead with no countdown (its factory already fallen) — the rim dark,
   the emblem at `LOCK_DIM`.
 
 No names on the plate: under the pointer a chip's rim goes white and the
@@ -1241,7 +1237,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   and `renderLighting` stamps the queue after the night grade — draw the outline in place and
   the tint sinks a team colour into blue snow. The queue itself:
   [Light and weather](#light-and-weather). Sites: floaters (damage numbers, gold, `LEVEL n`),
-  the overhead name tags, `MERCH`, the roost's `PERCH` (2x), the noticed `!` (`drawSenseMark`).
+  the overhead name tags, `MERCH`, the factory's `FACTORY` (2x), the noticed `!` (`drawSenseMark`).
   Called from a UI pass (the wiki's animal page) it draws the outline where it stands. Names on
   the ground **overlap**, as League's do: a crowd's tags stacked into a tower read worse. The one
   exception is **a wing of riders** (`seatedName`: every rider and the driver in flight), queued
@@ -2024,16 +2020,17 @@ The map and the seed die on it are driven the same way through the globals `mapS
 
 Everything in the `eagle drop` banner. `beginDrop()` (from `lockIn`, or `startGame`/`DBG.beginDrop`)
 puts every active player aboard **its team's bird** (`p.aboard`) and builds
-`state.drop = { eagles: [red, blue] }` via `makeEagles()`: one base line from `makeEagleRoute()` —
-**the map's diagonal, fixed for every match and seed**: RED (team 0) flies it from the top-right
-corner down to roost in the **bottom-left** woods, BLUE the reverse to the **top-right**. Each end
-is `diagEnd()`, the point `EAGLE_END` (2) tiles inside that corner's treeline as the seed grew it
-on the diagonal — the **last wooded tile** out from the corner, so a bay in the border short of it
-is still forest on the corner side (pure reads of `borderDepth` — no `rng()`, no `hash2`) — so the
-dive past it always has forest to land in; both corners are guaranteed woods anyway by the
+`state.drop = { eagles: [red, blue] }` via `makeEagles()` — one record per side, holding its bird
+**and its factory** — then `buildFactory` stands both factories (below) before anyone lands. The
+base line comes from `makeEagleRoute()` — **the map's diagonal, fixed for every match and seed**:
+RED (team 0) flies it from the top-right corner toward its factory in the **bottom-left** woods,
+BLUE the reverse toward the **top-right**. Each end is `diagEnd()`, the point `EAGLE_END` (2)
+tiles inside that corner's treeline as the seed grew it on the diagonal — the **last wooded tile**
+out from the corner, so a bay in the border short of it is still forest on the corner side (pure
+reads of `borderDepth` — no `rng()`, no `hash2`); both corners are guaranteed woods anyway by the
 [roost disc](world.md#the-tile-world). `diagEnd` also returns the corner's **mouth** — the first
 open tile past that last pine, the road's gate on the diagonal (`roadSpan`, the same rule) — kept
-for the record; what `makeEagles` hands each bird as `e.mouth` is its spur's **junction**
+for the record; what `makeEagles` hands each side as `e.mouth` is its spur's **junction**
 (`roadNest(team)`, [the road](world.md#the-road)): the point on the road's centreline its spur
 aims at, and the way in for every walker. The two birds fly it in **opposite directions**, each shifted
 `EAGLE_LANE` (2.5 tiles) along its own right-hand perpendicular so the mid-route pass over the
@@ -2041,202 +2038,174 @@ map's centre is a fly-by, ~5 tiles apart, never a collision. `beginDrop` sets mo
 the world zoom to `DROP_ZOOM` around its centre and starts the menu exit. Every rider gets a
 **wing seat** (`p.seat`, dealt per team in `beginDrop`; `seatPos`
 rotates the `EAGLE_SEATS` offsets — one on the back, two inner wings, two out on the primaries —
-by the heading, and the human sits seat 0 of their own bird); the team's **merchant** rides the
-neck (`MERCH_SEAT`, drawn by `drawEagle` ahead of the riders — see
-[the merchant](gameplay.md#the-merchant)). Every flight takes exactly
+by the bird's heading (`birdPose`), and the human sits seat 0 of their own bird); the team's
+**merchant** rides the neck (`MERCH_SEAT`, drawn by `drawEagle` ahead of the riders — see
+[the merchant](gameplay.md#the-merchant)). Every flight down the line takes exactly
 `EAGLE_FLIGHT_T` (10 s) — each bird derives `e.spd` from its own line's length — and jumping is
 **locked until the line's last `DROP_LOCK_T` (4 s)**: `dropJump` refuses (and `SFX.deny`s) an
 unforced jump before then. The window's far end is `e.jumpEnd` from `lastOpenU` — the last point
 on the line still over open ground (`borderDepth` + `DROP_EDGE_MARGIN` tiles clear), so **a forced
 drop never lands in the treeline**; `e.jumpOpen` is the lock's fraction, clamped under it.
 `updateDrop` (called from `updatePlay`, so pause stops it) runs
-`updateEagle` per bird, keeps every rider glued to its seat (`seatPos` at `eagleScale(e)`, the
-bird's drawn size — 3× in flight, 2× on the ground), and force-drops each **AI** player at its
-`p.dropU`, a hashed fraction of the jump window (scattered ±4 tiles off the line). **A human is
-never force-dropped**: press Space/Enter/E/click inside the window and you jump (`dropJump` —
-the fall starts **from the seat**, so the leap visibly leaves the wing); never press it and you
-**ride the landing** — `beginDive` throws only bots, the dive comes down with you on its back
-(`drawEagle` draws the seated riders through the dive and at rest), and `eagleCrash` calls
-`landAboard`: `handOver` flips mode `drop` → `play` (the zoom, the camera, the HUD slide-in a
-jump's `landPlayer` does), the ride's song is interrupted the way a jump interrupts it, and the
-[drop brief](#the-drop-brief) opens with you still seated. When it hands back, the bird wears
-the flight's gold landing ring again and `drawHopPrompt` raises the **HOP OFF** keybind
-indicator (an E key cap — the pad's A disc while one is in hand — bobbing over the bird, one word
-beside it); `p.input.work` or `p.input.dodge` (E, or the roll button: a pad's A) while seated on a
-`down` bird calls `hopOff` (while seated, E is only that: the merchant standing beside the roost
-never opens its counter over the hop, `keyPress`'s aboard guard in input.js) — a short low step off the wing (`HOP_FALL_T`, `HOP_ALT` — every
-faller's arc reads `p.dropAlt`), steerable like any fall, landing on the nearest open tile beside
-the roost. A profile that has **never jumped**
+`updateEagle` per side, keeps every rider glued to its seat (`seatPos` at `EAGLE_SCALE`, the
+bird's drawn size), and force-drops each **AI** player at its `p.dropU`, a hashed fraction of the
+jump window (scattered ±4 tiles off the line). **A human is never force-dropped on the line**:
+press Space/Enter/E/click inside the window and you jump (`dropJump` — the fall starts **from the
+seat**, so the leap visibly leaves the wing); never press it and the bird **carries you home**.
+At the line's end `beginCircle` plans its way home (`e.circ`, plain numbers): a bank off the line
+(`circleBankAt`, one cubic leaving along the line's heading) onto a **circle** of `CIRCLE_R`
+(7 tiles) round its factory, joined on a tangent — of the two, the one that turns it least — flown
+at `CIRCLE_SPD` (0.8) of the line's speed; at least `CIRCLE_MIN` (1.2π) round and on until its
+heading points away from the world's centre, then straight out over the treeline. `birdAt(e, T)`
+is the whole path as a function of `T`, the seconds past the line's end (`e.airT`), so every
+screen draws the same bird from the same clock. `CIRCLE_DROP` (π/2) round, `circleDrop` sets
+everyone still aboard down — a forced `dropJump` each, **steered in** to its own spot on the spur
+side of the pad (`p.dropAim`, fanned across it by seat; `updateDrop` walks the faller there over
+the rest of the fall instead of the drift) — and `spawnMerchant` stands the merchant beside them.
+The bird never lands: `CIRCLE_OUT` (12 tiles) past the world's edge it is `e.away` and draws
+nothing again. A human set down by the circle lands into the [drop brief](#the-drop-brief). A
+manual jump is open all the way round the circle too. A profile that has **never jumped**
 (`PROFILE.hasDropped()`, the drop-side gate of the `state.drop.firstFlight` flag) gets exactly
 that ride with the jump refused — `dropJump` denies the local player's manual leap outright, so a
-new player's first ground is the roost, beside the merchant, and the brief is always
-the lesson. The first hop or any real jump (`PROFILE.markDropped`) retires the refusal for good.
+new player's first ground is its own factory, beside the merchant, and the brief is always the
+lesson. Any real or circle drop (`PROFILE.markDropped`) retires the refusal for good.
 A jumper free-falls for `FALL_T` (1.3 s), steering with WASD/arrows at
 `DRIFT_SPD` (130 px/s, ~10 tiles over the fall) — `sampleHumanInput` keeps the movement axis alive in mode `drop` while zeroing
 everything else; `landPlayer` then spirals out (up to 80 tiles) to the nearest tile with no object
 and no water hole, which becomes `p.spawn` — the bot brain's home tile (a respawn moves it to the
-roost) — with 2 s of i-frames and a snow
-burst. Only the human's landing changes mode: `play` (closing the M map if it was up),
-`applyZoom(0, true)` back to the player's own zoom centred on the landing, `shake`, and the
-landing intro above.
+factory) — with 2 s of i-frames and a snow
+burst. Only the human's landing changes mode: `handOver` flips `drop` → `play` (closing the M map
+if it was up), `applyZoom(0, true)` back to the player's own zoom centred on the landing, `shake`,
+and the landing intro above.
 
 ### The drop brief
 
-A local player that **rode the landing** — the scripted first flight always, or a veteran who
-never jumped (a real jump is the opt-out) — sits through a camera tour of the two objectives
-before the hop. `landAboard` (from `eagleCrash`) sets `state.dropBrief` (`{ ph, t, total }`),
-and `updateDrop` runs the phases, rival first and your own last so the final word lands where
-you are sitting: **`wait`** holds the crash you are in for `BRIEF_WAIT` (1 s); **`theirs-go`**
-glides the camera across the map to the rival bird — the sim camera (js/sim.js) follows
-`dropBriefTarget()` with the driven-off ceremony's own lerp, so a bird still finishing its dive
-is *tracked* and the crash lands on screen — and holds until it is down; **`theirs`** holds
-`BRIEF_HOLD` (3 s) under a two-line headline (`drawDropBrief`, baked opaque and faded as a
-canvas, the dayPop grammar, on a **dark plate** — `BAG_BG` at `BRIEF_PLATE_A` 0.82 with the
-team's colour as a 1 px rule top and bottom, because the roost is pines edge to edge and an
-outline alone smeared into the needles) across the **top** of the view (`VIEW_H * 0.08`): `THEIR EAGLE` in
-the rival's paint at **three times** the drop HUD's text scale over `DRIVE IT OFF TO WIN` at one
-— the once the win condition is ever written down, the headline carve-out, and deliberately no
-third line; **`ours-go`**/**`ours`** glide home and finish on your own roost for
-`BRIEF_HOLD_OURS` (4 s) under `YOUR EAGLE` / `LOSE IT, LOSE THE MATCH`, then clear through
-`endBrief()`, which also pops the `DAY 1` headline the landing owes (the camera banner in sim.js
-holds it back while the brief has the top of the screen) — and from there the E - HOP OFF
-indicator (above) is the way down. While it runs
-`sampleHumanInput`
-zeroes the controls exactly as the ceremony does, the M toggle is refused, `player.invuln` is
-held up so nobody dies watching the lesson, and the match runs on underneath — the world is the
-backdrop, not paused. `BRIEF_MAX_T` (24 s) is the safety rail, and `state.eagleCine` (or leaving
-mode `play`) outranks and clears it.
+A local player **the bird carried home** — the scripted first flight always, or a veteran who
+never jumped (a real jump is the opt-out) — lands into a camera tour of the two objectives.
+`landPlayer` sets `state.dropBrief` (`{ ph, t, total }`) when the landing came from the circle
+(`p.dropAim`), and `updateDrop` runs the phases, rival first and your own last so the final word
+lands where you are standing: **`wait`** holds your landing for `BRIEF_WAIT` (1 s);
+**`theirs-go`** glides the camera across the map to the rival factory — the sim camera (js/sim.js)
+follows `dropBriefTarget()` with the fall ceremony's own lerp — and holds until it is live;
+**`theirs`** holds `BRIEF_HOLD` (3 s) under a two-line headline (`drawDropBrief`, baked opaque
+and faded as a canvas, the dayPop grammar, on a **dark plate** — `BAG_BG` at `BRIEF_PLATE_A` 0.82
+with the team's colour as a 1 px rule top and bottom, because the factory stands in pines edge to
+edge and an outline alone smeared into the needles) across the **top** of the view
+(`VIEW_H * 0.08`): `THEIR FACTORY` in the rival's paint at **three times** the drop HUD's text
+scale over `BRING IT DOWN TO WIN` at one — the once the win condition is ever written down, the
+headline carve-out, and deliberately no third line; **`ours-go`**/**`ours`** glide home and finish
+on your own factory for `BRIEF_HOLD_OURS` (4 s) under `YOUR FACTORY` / `LOSE IT, LOSE THE MATCH`,
+then clear through `endBrief()`, which also pops the `DAY 1` headline the landing owes (the camera
+banner in sim.js holds it back while the brief has the top of the screen). While it runs
+`sampleHumanInput` zeroes the controls exactly as the ceremony does, the M toggle is refused,
+`player.invuln` is held up so nobody dies watching the lesson, and the match runs on underneath —
+the world is the backdrop, not paused. `BRIEF_MAX_T` (24 s) is the safety rail, and
+`state.eagleCine` (or leaving mode `play`) outranks and clears it.
 
-**`state.drop` outlives the whole match** — it never goes null, because the roosts are the
-objectives. A bird's life is `fly → dive → down → flee → gone` (`e.state`): at the end of its line
-`beginDive` throws any remaining rider and `findCrashPoint` lands on the side's **nest** —
-`roadNest(team)` ([the road](world.md#the-road)): `ROAD_NEST_OFF` (13) tiles off the road's
+### The factory
+
+**`state.drop` outlives the whole match** — it never goes null, because the factories are the
+objectives. A side's life is `fly → down → fall → gone` (`e.state`): `fly` while its bird is on
+the line (the factory already standing, not yet a target), `down` from the line's end (the
+factory is **live**, `e.x`/`e.y` its centre from then on), `fall` for its collapse and `gone` for
+the rubble. `buildFactory` (from `beginDrop`) puts it on the side's **nest** — `findCrashPoint`
+reads `roadNest(team)` ([the road](world.md#the-road)): `ROAD_NEST_OFF` (13) tiles off the road's
 centreline to the bird's own right, at the first junction inward from the gate where the spot is
 deep (`roadNestDeep`: ≥`CRASH_DEPTH` (14) tiles inside the treeline by the border's own measure,
 `forestDepth` = `borderDepth` − edge distance, **and** as far inside the corner's
 [roost disc](world.md#the-tile-world), since `forestDepth` only knows the nearest world edge)
 **and** whose 7×7 still holds ≥`MIN_CRASH_TREES` (40 of 49 — the border is solid, so fewer means
-an edge or a bay) — the roost sits a proper way **inside** the woods with trees all round it,
+an edge or a bay) — so the factory sits a proper way **inside** the woods with trees all round it,
 never on the tree edge, RED's to the top-left side of its road, BLUE's to the bottom-right,
-mirrored through the map's centre; should the spot have changed since worldgen the nearest tile
-round it that still qualifies takes the impact, the blast ring always off the road (pure reads —
-no `rng()`, no `hash2` — so a seed always buries its birds in the same trees). The stoop runs
-`EAGLE_DIVE_T` (1.4 s, `u²`-eased, wingbeats quickening, speed motes streaming) and **banks**: the
-heading turns from the line's to the crash's bearing over the first part of the dive
-(`e.diveH0`/`e.diveTurn`, set by `beginDive`), so the turn off the road into the nest's woods
-reads as a turn, and the roosting bird faces the way it came down. `eagleCrash` then clears every tree
-within `BOOM_R` (3.6 tiles) outright and **paves the disc** (the pad: every snow tile in it turns
-to ground `3` that frame and `addPad` registers it with the road, [world.md](world.md#the-road),
-so the roost stands on the same packed earth as its spur and the road), snaps **two rings** to
-stumps — the middle out to `BOOM_STUMP_R` (4.8) and the outer out to `BOOM_STUMP_R2` (6.0), two layers of
-build sites round the bird, so a side can stand guns inside a wall — and clears every rock and
-bush out to the outer ring outright, so the whole disc is ground a side can build on —
-**paying no gold**, a crater of free fells would warp the economy at minute one — plants the
-**roost hitbox** (`eagle` objects on the open tiles within `EAGLE_TILE_R`, solid to walkers and a
-rival-only E target; `eagleFlee` clears them again at liftoff), plans the **lane** and drops off
-the **merchant** (below), and fires `eagleBoomFx` (snow + team-colour
-bursts, hanging feathers, a radial dust ring, two shockwave rings squashed flat over `BOOM_LIFE`
-so they read as a blast wave along the ground, never a halo), distance-scaled `state.shake`,
-`SFX.boom()` (the timber sample dropped low under a synth blast, layered on purpose) and a
-`HAS LANDED` line in the event log (`logEvent`) — the landing is a landing, not a wound: the bird takes **no damage**
-from its own dive. **The spur** (`planLane`/`laneStep`, `e.lane = { t, ev, next, pave, paved }`):
-from the crater along `e.laneDir` — set by `eagleCrash` as the unit vector from the crash to
-`e.mouth`, its **junction on the road's centreline** (`roadNest`), back the way the bird came only
-if the junction is somehow under it — to the road's edge, every pine (and rock: `laneFells`)
-within `LANE_R` (= `SPUR_HW`, 1.25 tiles — the paved track's own half-width) of the centreline
-becomes two events timed by its distance along the spur, so a **felling front** walks out from the
-roost at `LANE_SPD` (3.5 tiles/s) starting `LANE_DELAY` after the impact: each pine **shudders
-`LANE_WARN` (0.5 s) ahead of the front** (`o.shake`, the parkour roll's own tell, decayed by
-sim.js's object-timer loop), then goes down in needles and snow with a throttled `SFX.treeFall`
-(a rock shatters to `SFX.break_`). It is the parkour's `pkAnimStep` grammar without the ice — a
-watched transition, never a blink — and it pays nothing and leaves no stumps: a road is a road.
-**Behind the front the band is paved**: `eagleCrash` registers the spur with the road
-(`addSpur`, `e.spur`, [the road](world.md#the-road)), `planLane` lists every snow tile of the
-band from the blast's rim (`BOOM_R`) to the road with its distance out (`pave`), and each
-`laneStep` turns the tiles the front has passed to ground `3`, lifts any stump off them, advances
-`e.spur.paved` and repaints the ground three tiles round each (`paintGroundTile`), so the track
-grows at the front's own pace on the bake, both maps and every `onRoad` read alike. The spur is
-done when the front is inside the road (`roadMainDist`; `LANE_MAX` (60) is only a safety) and
-`e.lane` drops when the last event and the last tile are spent. Pure reads, so a seed's spur is
-always the same spur; the merchant's post, its back woods and its bays read `e.laneDir` too, so
-they sit round the track that was actually cut. `laneStep` runs from `updateEagle`'s `down` branch. The grounded bird
-is the team's **objective**, and its hp pool is its
-**nerve**: `EAGLE_HP` (2000, sized as a siege, because the bots go for it),
-spooked down a flat `EAGLE_ARROW_DMG` (12) per rival arrow through `hurtEagle` (the sim.js arrow
-loop tests the roost tiles themselves — *before* tile solidity, which would eat the shot — so the
-arrow hitbox is exactly the collision box, corners included) and `EAGLE_WORK_DMG` (20) per rival
-E swing (via `hitObject`'s eagle branch) — a lone warrior's E drives it off in about a minute under
-the gust (a hundred swings, twelve gusts, 53 s), a pair in half that, but arrows alone take
-minutes. **Every blow is audible, and one of the two cues carries off screen**: within earshot it
-is the bird's own `SFX.bigHurt`, and out of earshot,
-for your OWN bird only, `SFX.alarm` instead, at most one per `EAGLE_WARN_GAP` (9 s) — a siege is a
-hundred blows and one piece of news. It is not helpless: a rival inside `GUST_R` (64 — wide enough to cover a swing from the
-next tile out past the roost's 3×3; resolved through `seenAt`, like every
-watcher) makes it rear — wings thrown open for
-`GUST_WIND_T`, the whole telegraph — then `eagleGust` throws every rival in `GUST_BLAST_R` back at
-`GUST_KB` with a `GUST_STUN` tumble and `risePlayer` (wind strips the snow off a buried body), on
-a `GUST_CD` cooldown, dealing **no damage** — the objective punishes face-tanking, it never earns
-kills. Left unhit for `PREEN_DELAY` it **preens**, recovering `PREEN_RATE` hp/s — the refilling
-bar is the whole announcement, so chip damage must be pressed home. At zero nerve the bird is
-**driven off, not killed**, and liftoff starts the **driven-off ceremony**, League-style:
-`eagleFlee` clears the roost tiles, blasts the takeoff downdraft (`eagleGustFx` writ large,
-`SFX.gust`), logs `WAS DRIVEN OFF` and sets `state.eagleCine` — the camera (its banner in
-js/sim.js) glides to the fleeing bird and holds it centred, `sampleHumanInput` zeroes the local
-controls exactly as pause does, `hurtEagle` refuses a second flee, and `checkLastStanding` waits.
-`EAGLE_CINE_T` (3.2 s) after liftoff, `eagleFleeResolve` (ticked from `updateDrop`) puts the
-owning side down permanently (`die(p, null, 'eagle')` / `teamEagleDown`, which `die`,
-`updateRespawns` and `teamInMatch` all gate on — see [multiplayer.md](multiplayer.md#pvp)) and the
-victory or defeat screen rises **over the escape still flying underneath** — the camera stays on
-the bird through mode `dead` and only KEEP PLAYING (back to mode `play`) takes it back early. The
-takeoff itself: over `FLEE_LIFT_T` the bird turns from wherever the dive left it pointing to
-`fleeTo` (away from the world's centre, shortest arc) while climbing; then it flies at `FLEE_SPD`
-until `FLEE_T`, when it is `gone` and draws nothing ever again.
+mirrored through the map's centre (pure reads — no `rng()`, no `hash2` — so a seed always puts
+its factories in the same trees; landmarks keep clear of the same spot at worldgen). It clears
+every tree within `BOOM_R` (3.6 tiles) outright and **paves the disc** (the pad: every snow tile
+in it turns to ground `3` and `addPad` registers it with the road, [world.md](world.md#the-road),
+so the factory stands on the same packed earth as its spur and the road), cuts **two rings** to
+stumps — the middle out to `BOOM_STUMP_R` (4.8) and the outer out to `BOOM_STUMP_R2` (6.0), two
+layers of build sites round the factory, so a side can stand guns inside a wall — and clears every
+rock and bush out to the outer ring, so the whole disc is ground a side can build on — **paying no
+gold**, a clearing of free fells would warp the economy at minute one. It stands the **walls**
+(`factory` objects on the `FACTORY_TX`×`FACTORY_TY` footprint round the centre tile, 5×3 tiles:
+solid to walkers and a rival-only E target; `factoryFall` clears them again) and cuts **the
+spur** at once (`clearSpur`): from the site along `e.laneDir` — the unit vector to `e.mouth`, its
+**junction on the road's centreline**, back up the line only if the junction is somehow under it —
+to the road's edge, every pine and rock (`laneFells`) within `LANE_R` (= `SPUR_HW`, 1.25 tiles —
+the paved track's own half-width) of the centreline is cleared and every snow tile of the band
+from the clearing's rim to the road is **paved** (ground `3`, any stump lifted, the ground
+repainted three tiles round, `e.spur.paved` set to its whole length on the road registry,
+`addSpur`), so the bake, both maps and every `onRoad` read see the whole track. The spur ends
+inside the road (`roadMainDist`; `LANE_MAX` (60) is only a safety). All of it is quiet — no dust,
+no sound: the factory has always been there. Pure reads, so a seed's spur is always the same
+spur; the merchant's post, its back woods and its bays read `e.laneDir` too.
+
+The live factory is the team's **objective**: `FACTORY_HP` (2000, sized as a siege, because the
+bots go for it), chipped a flat `FACTORY_ARROW_DMG` (12) per rival arrow through `hurtFactory`
+(the sim.js arrow loop tests the wall tiles themselves — *before* tile solidity, which would eat
+the shot — so the arrow hitbox is exactly the collision box) and `FACTORY_WORK_DMG` (20) per rival
+E swing (via `hitObject`'s factory branch) — a lone warrior's E brings it down in a little over a
+minute, a pair in half that, arrows alone take minutes. **Every blow is audible, and one of the
+two cues carries off screen**: within earshot it is the blow landing (`SFX.hit`), and out of
+earshot, for your OWN factory only, `SFX.alarm` instead, at most one per `FACTORY_WARN_GAP` (9 s)
+— a siege is a hundred blows and one piece of news. Left unhit for `FACTORY_REPAIR_DELAY` (6 s) it
+**patches itself**, recovering `FACTORY_REPAIR_RATE` (8) hp/s with steam off its crucible — the
+refilling bar is the whole announcement, so chip damage must be pressed home. At zero hp it
+**falls**, and the fall starts the **fall ceremony**, League-style: `factoryFall` clears the
+walls (the rubble is walkable), throws `factoryBoomFx` (brick dust, snow and the side's colours,
+a radial dust ring, two shockwave rings squashed flat over `BOOM_LIFE`), `SFX.boom`, logs
+`HAS FALLEN` and sets `state.eagleCine` — the camera (its banner in js/sim.js) glides to the
+factory and holds it centred, `sampleHumanInput` zeroes the local controls exactly as pause does,
+`hurtFactory` refuses a second fall, and `checkLastStanding` waits. `EAGLE_CINE_T` (3.2 s) after
+the fall, `factoryFallResolve` (ticked from `updateDrop`) puts the owning side down permanently
+(`die(p, null, 'factory')` / `teamFactoryDown`, which `die`, `updateRespawns` and `teamInMatch`
+all gate on — see [multiplayer.md](multiplayer.md#pvp)) and the victory or defeat screen rises
+**over the rubble smoking underneath** — the camera stays on it through mode `dead` and only KEEP
+PLAYING (back to mode `play`) takes it back early.
 
 Drawing: `drawDropAir` (above the world, below lighting) first dots **the flight path across the
 snow itself** while mode is `drop` — each flying bird's whole line dashed in its team colour, dots
 crawling toward the end so the line reads as a direction, with your own bird's jump window overlaid
-in the flight bar's window colours (`FLIGHT_SHUT`, then `FLIGHT_OPEN` pulsing once the lock opens; never on the scripted first flight) — then runs `drawEagle` per bird — the
-`SPRITES.eagleShadow` silhouette `alt` px below and up to 10 px right of the body (`alt` is
-`DROP_ALT` 56 px in flight, converging to 0 down the dive so shadow and bird meet at the crash
-point), the bird itself in its team's armour (`SPRITES.eagleTeam[team]` cycling spread → mid →
-back → mid, rotated to its heading, at `EAGLE_SCALE` 3× walking down to `EAGLE_REST_SCALE` 2×
-through the dive, bobbing 3 px in level flight), under it the **wind trail** (`drawEagleTrail`,
-drawn before the bird's own cull because it hangs behind a bird already off the frame): **one
-continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the flown
-line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —
-the wing's reach and set follow the flap continuously (`TRAIL_TIP`±`TRAIL_TIP_AMP`,
+in the flight bar's window colours (`FLIGHT_SHUT`, then `FLIGHT_OPEN` pulsing once the lock opens;
+never on the scripted first flight) — then `drawFactory` per side and `drawEagle` per bird.
+**The factory** is the baked building (`SPRITES.factory[team]`, [js/sprites/factory.js](../../js/sprites/factory.js),
+generated by `app/bake-factory/bake.py` — concept A, the furnace, a **placeholder** until the
+final art is picked — its banding and crucible glow painted from `TEAM_SKINS`, so every
+colour-blind palette repaints it) stood with its footprint's centre (`FACTORY_OX`/`FACTORY_OY`)
+on the site, drawn from takeoff on. It flashes the baked all-white `SPRITES.factoryFlash` when
+hit; while it falls it shakes and sinks `COLLAPSE_T` (1.6 s) into its own dust (the rows gone
+under are simply not drawn), then shows `SPRITES.factoryFallen`, the broken hall. Live, it wears
+its team-colour hp bar (`FACTORY_BAR_W` x `FACTORY_BAR_H`, in `FACTORY_BAR_SEGS` even segments:
+bigger and fewer than a body's, so it reads across the clearing) over the building, **up from the
+moment it is live** — the bar is the objective's introduction — under a `FACTORY` nameplate in the
+same paint. **The bird** (`drawEagle`, from `birdPose` on the line and `birdAt` on its way home,
+the latter on `airShownT` — a render-side clock that carries `e.airT` on between sim steps or
+snapshots, never backwards and never more than one update's gap ahead — until `e.away`): the
+`SPRITES.eagleShadow` silhouette `DROP_ALT` (56) px below and 10 px right of the body, the bird
+itself in its team's armour (`SPRITES.eagleTeam[team]` cycling spread → mid → back → mid, rotated
+to its heading, at `EAGLE_SCALE` 3×, bobbing 3 px), under it the **wind trail**
+(`drawEagleTrail`, drawn before the bird's own cull because it hangs behind a bird already off
+the frame): **one continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back
+along the flown line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on
+that beat — the wing's reach and set follow the flap continuously (`TRAIL_TIP`±`TRAIL_TIP_AMP`,
 `TRAIL_BACK`±`TRAIL_BACK_AMP`) and the body's bob — so the ribbon waves with the wingbeat and
 hangs where it was torn while the bird flies on and the snow rushes away under it. It is solid
 at the tip and fades to nothing at its tail: one linear gradient along the ribbon, a 3 px white
-over a 5 px `TRAIL_RIM` dark line so white air reads over snow, the whole thing fading through
-the stoop. Pure reads of the flight clock (`e.t`, `e.spd`, `e.flap`) — no particles, no sim step,
-the same trail at any dt. Then **every rider seated on its wing** (`drawSeated`:
-the pose set's direction picked by the heading's dominant axis — `riderDir`, so a crew flying
-down-left shows its profiles — the bottom three rows tucked into the plumage so a body sits
-rather than stands, the hem meeting the feathers at the seat point, lifted a pixel on the
-downstroke; **world-sized** — `riderScale(e)` is the bird's own perspective, `eagleScale / 2`:
-1× on the roosting bird, 1.5× in flight because the bird itself is 1.5× bigger up there, so a
-body never changes size against the feathers under it; the merchant on the neck the same way; the
-local player drawn last; every rider and the driver wear their name in their side's paint, `seatedName`), and a pulsing landing ring
-in `FLIGHT_OPEN` under the human's own bird — only while the jump window is open and never on the scripted first flight, so the ring never promises a jump
-the lock refuses — then every faller: a `sin` **hop** off the wing
-over the first quarter of the fall, then the shrink from `p.dropSc` (the seat's size as it left)
-to 1× along
-`alt = p.dropAlt·(1 − q²)` with a widening shadow. The faller cull is against `WV_*`, the world
-pass rule — against `VIEW_*`, fallers in the far half of the zoomed-out frame vanish mid-air. A
-`down` bird casts **no shadow** — it is on the ground, and a dark
-copy under it read as a second bird — and folds its wings over `EAGLE_SETTLE_T` (the three
-frames as a settle animation), then **rests**, breathing a ±1 px bob with a wing-shuffle idle
-every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
-the gust's telegraph, so the idle can never cry wolf), flashing via the baked
-all-white `SPRITES.eagleFlash` when hit (it is taller than the 64×64 `drawSpriteFlash` scratch),
-with its team-colour hp bar (`PERCH_BAR_W` x `PERCH_BAR_H`, in `PERCH_BAR_SEGS` even segments: bigger and fewer than a body's, so it reads across the clearing) up **from the moment it roosts** — the bar is the objective's
-introduction, anchored to the bird's rotated extent, under a `PERCH` nameplate in the same paint (its
-driver wears `MERCH`: the side's two named bodies, named the same way). A gust windup draws wings thrown open
-(frame 0) lifted 2 px: the spread IS the telegraph, no text. A `flee` bird climbs back out —
-scale and `alt` walk from the roost's numbers to the flight's over `FLEE_LIFT_T`, the shadow
-returning and diverging as the ground falls away, wingbeats at full panic — and fades over the
-last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) draws the
+over a 5 px `TRAIL_RIM` dark line so white air reads over snow; it lives on the line only and
+fades out over the bank. Pure reads of the flight clock (`e.t`, `e.spd`, `e.flap`) — no
+particles, no sim step, the same trail at any dt. Then **every rider seated on its wing**
+(`drawSeated`: the pose set's direction picked by the heading's dominant axis — `riderDir`, so a
+crew flying down-left shows its profiles — the bottom three rows tucked into the plumage so a
+body sits rather than stands, the hem meeting the feathers at the seat point, lifted a pixel on
+the downstroke; `RIDER_SCALE` 1.5× because the bird itself is that much nearer the camera, so a
+body never changes size against the feathers under it; the merchant on the neck the same way
+until `circleDrop` sets it down; the local player drawn last; every rider and the driver wear
+their name in their side's paint, `seatedName`), and a pulsing landing ring in `FLIGHT_OPEN`
+under the human's own bird — only while a jump would be taken and never on the scripted first
+flight, so the ring never promises a jump the lock refuses — then every faller: a `sin` **hop**
+off the wing over the first quarter of the fall, then the shrink from `p.dropSc` (the seat's size
+as it left) to 1× along `alt = p.dropAlt·(1 − q²)` with a widening shadow. The faller cull is
+against `WV_*`, the world pass rule — against `VIEW_*`, fallers in the far half of the zoomed-out
+frame vanish mid-air. `renderDropUI` (mode `drop` only) draws the
 **flight bar**, top centre: a steel plate (`drawHudFrame`, all four corners cut) round the whole
 line as one track, the flown part filled in team colour with a white head line riding its front
 (the head glides a device pixel at a time on `flightShownT`, a render-side clock that carries the flight's time on between sim steps or snapshots, never backwards and never more than one update's gap ahead), the **jump window as a pale stretch** (`FLIGHT_SHUT` while locked,
@@ -2246,10 +2215,11 @@ while locked, white once open). The scripted first flight shows neither window n
 door refuses (`dropPress`, input.js's three drop sites) turns the plate, number and key the bag's
 refusal red and shakes them a pixel either way as one for `FLIGHT_DENY_T`; `WASD - DRIFT` while falling; and an `M - MAP` keybind indicator bottom right (`drawDropBind`: both wear the pad's left stick and BACK pill while a pad is in hand) —
 the ride's wider read is the **M map** (`renderWorldMap` also runs in mode `drop`, where it
-draws each flying bird's line dashed in team colour with the bird diamond riding it; M/Esc are
-handled in input.js's drop branch, the map swallows the jump click, and the sim keeps running
-under it). Text scale follows the view (2× when tall). Once `down`, both objectives are marked on
-the minimap disc and the M map as the same bird diamond in team colour.
+draws each flying bird's line dashed in team colour with the bird diamond riding it, and both
+factories as their block; M/Esc are handled in input.js's drop branch, the map swallows the jump
+click, and the sim keeps running under it). Text scale follows the view (2× when tall). Once
+live, both factories are marked on the minimap disc and the M map as the same factory block
+(`drawMapFactory`) in team colour.
 
 Airborne players (`inAir(p)`: aboard or `dropT > 0`) are skipped by `updatePlayer`/`updateAI`, arrows,
 drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map.
@@ -2279,7 +2249,7 @@ it is what turns night into dusk. `NIGHT_EDGE` then takes the light back at the 
 nobody is reading anything. Those four numbers are what to re-measure after retuning it.
 
 **The grade dims what the world *is*, never what the game is *saying*.** A name tag, the MERCH /
-PERCH caps and a damage floater are HUD that happens to be pinned to a body, and a `multiply`
+FACTORY caps and a damage floater are HUD that happens to be pinned to a body, and a `multiply`
 lands on the ink and on the snow under it alike — so a coloured readout converges on its own
 background exactly as fast as that background cools. Pre-brightening the ink cannot fix it: the
 tint's red channel is half its blue, so a RED team's tag loses its hue before it regains its

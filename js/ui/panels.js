@@ -391,11 +391,12 @@ function renderWorldMap(now) {
     ctx.stroke();
     ctx.restore();
   }
-  // the eagles as bird diamonds in team colour: the two roosted objectives,
-  // and mid-flight (the M map is the ride's chart) each bird on its own line,
+  // the two factories in team colour, standing from takeoff, and mid-flight
+  // (the M map is the ride's chart) each bird as a diamond on its own line,
   // dashed across the parchment
   if (state.drop) for (const e of state.drop.eagles) {
-    if (e.state === 'fly' || e.state === 'dive') {
+    if (e.crash && (e.state === 'fly' || e.state === 'down')) drawMapFactory(ctx, mx(e.crash.x), my(e.crash.y), TEAMS[skin(e.team)].mark, CHART_DARK);
+    if (e.state === 'fly') {
       ctx.save();
       ctx.strokeStyle = TEAMS[skin(e.team)].mark;
       ctx.setLineDash([3, 2]);
@@ -404,8 +405,8 @@ function renderWorldMap(now) {
       ctx.lineTo(MAP_X + (e.x1 / TILE) * MAP_S, MAP_Y + (e.y1 / TILE) * MAP_S);
       ctx.stroke();
       ctx.restore();
-    } else if (e.state !== 'down') continue;
-    drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK);
+      drawMapBird(ctx, mx(e.x), my(e.y), TEAMS[skin(e.team)].mark, CHART_DARK);
+    }
   }
 
   // flags, your side's only: the same pennant and ring the minimap draws,
@@ -964,7 +965,7 @@ function drawPadReadout(x0, y0) {
   // the match's own buttons and the menu set (under a rule) on the right;
   // every row is [glyph kind, its label, the verb]
   const cols = [
-    [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
+    [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE'], ['face', 'X', 'HARVEST'],
       ['stick', 'R3', 'HOLD: FLAG WHEEL'], ['dpad', 'D', 'HOLD: BUILD WHEEL']],
     [['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH'],
       ['stick', 'R3', 'DRAW CARD'], ['stick', 'L3', 'INVENTORY'], ['dpad', 'U', 'CHARACTER']],

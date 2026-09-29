@@ -14,23 +14,24 @@ Ten players in `players` — **people and AI: every seat nobody takes is a bot's
 online lobby ([online play](multiplayer.md#online-play)) — across **two teams of five, RED vs
 BLUE** (players alternate). Everyone plays one of **two classes** (the ranged HUNTER, the melee
 WARRIOR — a human's is the one their **character** was made with) and is **dropped in by their team's armoured eagle** — the two birds fly the map's one
-diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. At the end of
-its line each eagle banks off the road into its **corner's** woods — RED always bottom-left, BLUE
-always top-right, each to its own right of the road — and becomes its team's **objective**; its
-**merchant** climbs down and works home, never toward the fight: it pitches a market stall beside
-the spur's head, a shop for anybody at all who walks up to it, then fells the back woods behind
-the bird and raises the bot bays there; idle, it keeps to the head of the **spur**, the track of felled pines
-that opens from the crater straight back to the road. **The road** runs the map's
-whole diagonal, world edge to world edge: one straight, dry packed-earth lane, there from
-worldgen and readable from anywhere, with the nests beside it, so the way to a bird is one
+diagonal in opposite directions and pass mid-route; nobody starts at a spawn camp. Each team
+defends a **factory** standing in its **corner's** woods — RED always bottom-left, BLUE always
+top-right, each to its own right of the road — its team's **objective**. At the end of its line
+each eagle circles its factory, sets down anyone still aboard, and flies on off the map; it never
+lands. Its **merchant** climbs down with them and works home, never toward the fight: it pitches a
+market stall beside the spur's head, a shop for anybody at all who walks up to it, then fells the
+back woods behind the factory and raises the bot bays there; idle, it keeps to the head of the
+**spur**, the paved track from the factory's clearing straight back to the road. **The road** runs
+the map's whole diagonal, world edge to world edge: one straight, dry packed-earth lane, there
+from worldgen and readable from anywhere, with the nests beside it, so the way to a factory is one
 sightline down its spur ([the road](world.md#the-road)). Half a minute after landing each
-merchant raises a **barracks** (a bot bay) behind its bird, and two more as its logs pay for them:
+merchant raises a **barracks** (a bot bay) behind its factory, and two more as its logs pay for them:
 every thirty seconds each one marches a **wave** of soldier bots out to the road and down it at the
-rival bird, one soldier more every three minutes, a side's live soldiers capped across its bays. Both sides
+rival factory, one soldier more every three minutes, a side's live soldiers capped across its bays. Both sides
 get the same waves, so with nobody on the road the two columns meet in the middle and grind —
-which side's wave gets through is decided by who walks out to it. **Drive off the rival eagle
+which side's wave gets through is decided by who walks out to it. **Bring down the rival factory
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
-down at their own bird.
+down at their own factory.
 
 **Your side is always blue.** Whatever team index the roster dealt you, your allies are painted
 BLUE and your enemies RED — nameplates, arrows, armour, buildings, map marks, bot names, all of
@@ -111,7 +112,7 @@ lives inside it. It is a class ability (the hunter's key 4); a warrior never hid
 [Prone](gameplay.md#prone-under-the-snow).
 
 **E is the one verb for the world.** The same key harvests a tree, breaks an
-enemy building, and strikes a rival's grounded eagle — and the axe and pick it swings are never
+enemy building, and strikes a rival's factory — and the axe and pick it swings are never
 selected, they come out on their own for whatever is under the cursor. A rock needs no key at all: it
 mines itself for whoever stands by it. [The swing tools](gameplay.md#the-swing-tools-e).
 
@@ -136,20 +137,19 @@ pop-up is a menu, and a piece levels through four materials. The counter is the 
 on purpose: it sells what changes the way you *play* rather than what you survive, and it makes
 you walk to a body to get it. [Gear](gameplay.md#gear).
 
-**Your eagle is your life.** The bird that carried the team in crashes into its corner's trees at
-the end of its line and roosts there, armoured in team colour — the crater it blows (packed earth,
-one ground with the spur and the road), the spur its landing cuts back to the road and the bays its
-merchant raises in the back woods are the team's starting base, an
-easier opening for a new player who can help fortify before walking out. Its hp pool is its **nerve**:
-hits spook it, it calms back down between scares, it defends its own ground with a wing gust —
-and when its nerve breaks it is **driven off**, not killed: every camera pans to watch it fly
-away, and its whole side falls with it as it goes. **It is also the way back**: a player who
-goes down waits out a timer and is set down again at the roost with everything it had — wallet, bag, weapon and build;
-death costs the wait and the walk, League-style, and a kill pays its
-taker a flat bounty. The bird is the **only objective** and the one way a
-match ends, which is why both teams always have somewhere worth walking to — and why every bot
-on the map knows where both birds are and what is happening at them, and answers a hit on its
-own from anywhere. [Eagle drop](rendering.md#eagle-drop-mode-drop),
+**Your factory is your life.** Each team's factory stands in its corner's trees from the first
+second, in team colour — its clearing (packed earth, one ground with the spur and the road), the
+spur back to the road and the bays its merchant raises in the back woods are the team's starting
+base, an easier opening for a new player who can help fortify before walking out. It has an hp
+pool that patches itself slowly between hits, and when it runs out the factory **falls**: every
+camera pans to watch it come down, League's nexus, and its whole side falls with it. **It is also
+the way back**: a player who goes down waits out a timer and is set down again at the factory
+with everything it had — wallet, bag, weapon and build; death costs the wait and the walk,
+League-style, and a kill pays its taker a flat bounty. The factory is the **only objective** and
+the one way a match ends, which is why both teams always have somewhere worth walking to — and
+why every bot on the map knows where both factories are and what is happening at them, and
+answers a hit on its own from anywhere. The factory's look is a placeholder (concept A, the
+furnace) until its final art is picked. [Eagle drop](rendering.md#eagle-drop-mode-drop),
 [Death and respawn](gameplay.md#death-and-respawn), [Bots](multiplayer.md#bots).
 
 **Roguelike cards come out of the treeline's chests.** A sprung chest drops a **rarity-rolled
@@ -187,7 +187,7 @@ they leave its ground and heals — and every site sits well off the road, so th
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutral-until-hit).
 
 **The road is where the match is fought.** The waves are the match's clock: a column that is not
-met on the road reaches the rival bird, and a scrapped soldier pays its killer gold (and so XP)
+met on the road reaches the rival factory, and a scrapped soldier pays its killer gold (and so XP)
 on the spot — so the lane is where the fighting, the pushing and the paying are, and a base is
 something to walk *out* of. A raid that wrecks a barracks thins a side's waves until its
 merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side's
@@ -202,8 +202,8 @@ into the fight always walked. [The road](world.md#the-road), [the zipline](world
 
 - **Not a resource tree.** One currency, deliberately. A proposal that adds a second resource is
   proposing a different game.
-- **Not a deathmatch.** Kills never win a match and never end one — only the bird does. Death
-  costs a wait that grows with your level and the walk back from your roost, never what you
+- **Not a deathmatch.** Kills never win a match and never end one — only the factory does. Death
+  costs a wait that grows with your level and the walk back from your factory, never what you
   carried; the stake is the time a wiped side hands the other, and the objective is the only place
   a death is ever permanent.
 - **Not a solo survival game.** Every mechanic runs per player off `p.input` — a hand's, a bot's

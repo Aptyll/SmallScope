@@ -309,8 +309,7 @@ function netClientStats() {
     if (me.dead && !w.dead) PROFILE.addDeath();
     if (w.aboard && !me.aboard) {
       PROFILE.markDropped();
-      const e = state.drop && state.drop.eagles[me.team];
-      if (e && e.state !== 'down') SFX.music.play('jump', { out: 0.1, in: 0.05 });
+      SFX.music.play('jump', { out: 0.1, in: 0.05 });
     }
   }
   NET.was = { p: me, xp: me.xp, kills: me.kills, dead: me.dead, aboard: me.aboard };

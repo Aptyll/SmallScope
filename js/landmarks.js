@@ -25,7 +25,7 @@ const LANDMARKS = {
 };
 const LM_GAP = 14;       // tiles between any two landmarks, whatever their kind
 const LM_CAMP_GAP = 8;   // tiles past a camp's clearing (r + 2) nothing stands
-const LM_ROOST_GAP = 16; // tiles past the roost disc (ROOST_R) nothing stands: the eagles land, the merchant builds there
+const LM_ROOST_GAP = 16; // tiles past the roost disc (ROOST_R) nothing stands: the factories stand and the merchants build there
 const LM_ZIP_GAP = 48;   // px from either side's cable a sled keeps, so E beside it is never the zipline's
 const LM_LAKE_DEEP = 4;  // tiles in from the shore that make a lake, not a river (the rivers are ~5 wide: 3 at most)
 
