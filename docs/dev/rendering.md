@@ -377,7 +377,7 @@ Anything else that wants words is a design bug.
 ## UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases (every frost slab — these three — is `bakeFrostSlab()`, js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
+labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases (the map and help slabs are frost slabs, `bakeFrostSlab()`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
 after the panel is rebuilt. They are declared in js/canvas.js and reassigned by `relayout()`
