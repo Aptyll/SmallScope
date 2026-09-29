@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.25';
+const PATCH_TXT = 'PATCH 4.26';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.26', 'PERCH\'S HEALTH BAR IS TALLER WITH EIGHT BIG BLOCKS, AND SITS A LITTLE FURTHER UNDER ITS NAME.'],
   ['4.25', 'THE EAGLE RIDE IS SMOOTH ON ANY SCREEN: A STEEL FLIGHT BAR WITH THE JUMP KEY UNDER IT, A RED SHAKE WHEN YOU JUMP TOO EARLY, NO JUMP SHOWN ON YOUR FIRST FLIGHT, EVERY RIDER AND DRIVER NAMED IN TEAM COLOUR ON THE WING AND A BIGGER PERCH WITH A SEGMENTED BAR.'],
   ['4.24', 'BEARS NOW HOLD THE TWO BIG CAMPS: A BROWN BEAR IN ITS DEN ON RED\'S BANK AND A BLACK BEAR WITH ANTLERS AT ITS STONE ON BLUE\'S, EACH THE SAME BIG FIGHT FOR THE SAME PAY, AND BOTH REAR UP AND SWIPE WHEN THEY STRIKE.'],
   ['4.23', 'THE FLIGHT BAR AT THE TOP GLIDES SMOOTHLY AS THE EAGLE FLIES INSTEAD OF HOPPING, ONLINE TOO.'],

@@ -2229,7 +2229,7 @@ frames as a settle animation), then **rests**, breathing a ±1 px bob with a win
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
 the gust's telegraph, so the idle can never cry wolf), flashing via the baked
 all-white `SPRITES.eagleFlash` when hit (it is taller than the 64×64 `drawSpriteFlash` scratch),
-with its team-colour hp bar (`PERCH_BAR_W`, in even segments like every hp bar, `hpSegCount`) up **from the moment it roosts** — the bar is the objective's
+with its team-colour hp bar (`PERCH_BAR_W` x `PERCH_BAR_H`, in `PERCH_BAR_SEGS` even segments: bigger and fewer than a body's, so it reads across the clearing) up **from the moment it roosts** — the bar is the objective's
 introduction, anchored to the bird's rotated extent, under a `PERCH` nameplate in the same paint (its
 driver wears `MERCH`: the side's two named bodies, named the same way). A gust windup draws wings thrown open
 (frame 0) lifted 2 px: the spread IS the telegraph, no text. A `flee` bird climbs back out —

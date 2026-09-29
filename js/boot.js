@@ -91,7 +91,9 @@ const EAGLE_SETTLE_T = 0.6; // seconds of wing-fold after the impact, into the r
 // answer the hit (the two birds, ai.js). At 60 a swing two warriors emptied the
 // nerve in the fifty seconds between two harness marks, before anyone came
 const EAGLE_HP = 2000;
-const PERCH_BAR_W = 63;   // px: the roost's hp bar, a width that splits into 16 even segments
+const PERCH_BAR_W = 63;   // px: the roost's hp bar...
+const PERCH_BAR_H = 5;    // ...its height...
+const PERCH_BAR_SEGS = 8; // ...and its blocks: (PERCH_BAR_W + 1) must divide by this
 const EAGLE_WORK_DMG = 20;  // what one rival E swing chips off the roosting bird
 const EAGLE_ARROW_DMG = 12; // what one rival arrow chips, whatever it would do to a body
 const EAGLE_TILE_R = 1.6;   // tiles around the roost marked solid - the hitbox arrows AND walkers test
@@ -1175,17 +1177,19 @@ function drawEagle(e, ex, ey, now) {
       // Anchored to the bird's rotated extent, not the unrotated box, so it
       // hugs the sprite whatever way the dive left it pointing.
       const vh = Math.abs(w / 2 * Math.sin(e.heading)) + Math.abs(h / 2 * Math.cos(e.heading));
-      // in even health segments like every hp bar (hpSegCount, overhead.js):
-      // PERCH_BAR_W is picked so its width splits into them
-      const bw = PERCH_BAR_W, bx = Math.round(sx - bw / 2), by = sy - Math.round(vh) - 7;
-      ctx.fillStyle = '#0f1632'; ctx.fillRect(bx - 1, by - 1, bw + 2, 5);
-      ctx.fillStyle = '#3a3448'; ctx.fillRect(bx, by, bw, 3);
+      // in even health segments like every hp bar, but big and few: the
+      // objective's bar reads from across the clearing, so PERCH_BAR_SEGS
+      // is set here rather than asked of hpSegCount (which would split
+      // EAGLE_HP into a comb of 2 px blocks)
+      const bw = PERCH_BAR_W, bh = PERCH_BAR_H, bx = Math.round(sx - bw / 2), by = sy - Math.round(vh) - 5 - bh;
+      ctx.fillStyle = '#0f1632'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+      ctx.fillStyle = '#3a3448'; ctx.fillRect(bx, by, bw, bh);
       ctx.fillStyle = TEAMS[skin(e.team)].mark;
-      ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), 3);
-      const segs = hpSegCount(e.maxHp, bw), seg = (bw + 1) / segs;
+      ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), bh);
+      const segs = PERCH_BAR_SEGS, seg = (bw + 1) / segs;
       ctx.fillStyle = HP_TICK;
-      for (let k = 1; k < segs; k++) ctx.fillRect(bx + k * seg - 1, by, 1, 3);
-      drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - 13, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
+      for (let k = 1; k < segs; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
+      drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - 15, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -
