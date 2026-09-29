@@ -164,6 +164,11 @@ const state = {
     // back to), nameBuf/nameShake its name field and refusal rattle, crow the
     // keyboard row, ksel the roster's keyboard slot, khover the hover eases
     // keyed by hit id
+    // the skins screen (js/ui/skins.js): skinT its ease, skSel the keyboard's
+    // card, skPick the card for sale picked for a second press to buy,
+    // skHover the cards' hover eases, skDeny the short purse's shake, skFlash
+    // the buy's flash over card skFlashI
+    skinT: 0, skSel: 0, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
     charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameSel: false, nameShake: 0, dieT: 0, crow: 0, ksel: 0, khover: {},
     moved: false, keyNav: false, dieT: 0, rolling: 0, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
     // a sealed plank's knock (drawMenuButton's frozen glaze cracks from
@@ -175,7 +180,7 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'chars' | 'create'.
+    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'chars' | 'create' | 'skins'.
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
     // grow is the hero pop-up's keyboard row (the gear column, the ability

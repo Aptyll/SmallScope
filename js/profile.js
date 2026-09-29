@@ -25,6 +25,11 @@
   // js/sprites/looks.js, which asserts its tables against these counts at
   // load; this file only stores and repairs the numbers.
   const LOOK_N = { sex: 2, tone: 6, hair: 6, hairCol: 8, beard: 4, face: 3 };
+  // the coins a profile starts with: the cosmetics' purse, kept outside every
+  // match (a match's gold never reaches it). What a coin buys is the skins
+  // screen's table (js/ui/skins.js); this file only keeps the count and ids.
+  const START_COINS = 100;
+  const ID_MAX = 24; // a cosmetic id is a short word; anything longer is junk from a hand edit
 
   // A fresh character comes PRE-ROLLED, not blank: the create screen opens on
   // one of these winter words and a random look, so a player who wants the
@@ -116,6 +121,13 @@
       // from before the unlock (PATCH 2.08) had bought; it is still carried
       // through so a veteran's record is not thrown away, and nothing reads it.
       tech: { seen: [], done: [] },
+      // the cosmetics' purse and what it bought: coins, the owned ids, and
+      // per slot ('bird') the id worn. A free cosmetic is never written to
+      // `owned`, and an id the game no longer has is kept but never worn
+      // (birdSkinFor, js/ui/skins.js, falls back to the free one).
+      coins: START_COINS,
+      owned: [],
+      worn: {},
       // null, not {} - game.js reads a null here as "nothing was ever saved"
       // and skips its own settings migration, which a bare {} would trigger
       settings: null,
@@ -208,6 +220,15 @@
           }
         }
         if (s.settings && typeof s.settings === 'object') profile.settings = s.settings;
+        // a profile from before the purse arrives without it and keeps the
+        // START_COINS blank() gave it, like a fresh one
+        if (typeof s.coins === 'number' && isFinite(s.coins)) profile.coins = Math.max(0, Math.floor(s.coins));
+        if (Array.isArray(s.owned)) {
+          for (const id of s.owned) if (typeof id === 'string' && id.length <= ID_MAX && profile.owned.indexOf(id) < 0) profile.owned.push(id);
+        }
+        if (s.worn && typeof s.worn === 'object') {
+          for (const k in s.worn) if (typeof s.worn[k] === 'string' && s.worn[k].length <= ID_MAX) profile.worn[k] = s.worn[k];
+        }
       } else {
         // no profile yet: adopt the settings the player already had
         try {
@@ -334,6 +355,33 @@
     addMatch() { this.stats().matches++; scheduleSave(); }, // one per eagle takeoff (beginDrop)
     addKill() { this.stats().kills++; scheduleSave(); },    // a rival the local player downed (die, js/player.js)
     addDeath() { this.stats().deaths++; scheduleSave(); },  // the local player downed
+
+    // ---- cosmetics ----------------------------------------------------------
+    // The purse and the wardrobe. Prices and what an id IS live in the
+    // callers' tables (BIRD_SKINS, js/sprites/eagle.js); every write here is
+    // a moment, not a trickle, so each saves through at once.
+    coins() { return profile.coins; },
+    owns(id) { return profile.owned.indexOf(id) >= 0; },
+    // spend `price` on `id`: false, and nothing written, when it is already
+    // owned or the purse is short
+    buy(id, price) {
+      price = Math.max(0, Math.floor(price) || 0);
+      if (typeof id !== 'string' || !id || id.length > ID_MAX || this.owns(id) || profile.coins < price) return false;
+      profile.coins -= price;
+      profile.owned.push(id);
+      saveNow();
+      return true;
+    },
+    // the id worn in a slot, or null for the slot's free default
+    worn(slot) { return profile.worn[slot] || null; },
+    wear(slot, id) {
+      if (profile.worn[slot] === id) return false;
+      if (id) profile.worn[slot] = id; else delete profile.worn[slot];
+      saveNow();
+      return true;
+    },
+    // DBG only: set the purse (a staged screenshot, a test of the short purse)
+    setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 
     // ---- tech tree ----------------------------------------------------------
     // Ids in and out; what a node IS lives in js/tools.js. This file only

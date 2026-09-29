@@ -1602,7 +1602,7 @@ window.DBG = {
   // the local profile: the store itself and the character screens (js/ui/chars.js),
   // so a driver can open the roster or the create screen and read back what it accepts
   PROFILE, beginChars, leaveChars, beginCreate, createCommit, createCancel, createKey, createHit, charsHit,
-  createLayout, charsLayout, nameOk, charTagRect, overCharTag, applyCharacter, activateChar,
+  createLayout, charsLayout, nameOk, charTagRect, overCharTag, applyCharacter, activateChar, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,

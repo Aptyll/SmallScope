@@ -81,6 +81,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1210 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
 | [js/ui/menu.js](../../js/ui/menu.js) | ~3210 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, the lobby, the hero pop-up, the tech tree screen, `PATCH_TXT` |
 | [js/ui/chars.js](../../js/ui/chars.js) | ~580 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
+| [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/save.js](../../js/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
@@ -150,13 +151,20 @@ file is a save file.
   `addDay` at each dawn the local player is still in), `addKill`/`addDeath` from `die()`, so
   writes are batched behind an 800 ms timer and flushed on `pagehide` / `visibilitychange`;
   the character calls and `putSettings` write through immediately.
+- **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a
+  profile from before the purse gets it too), `owned` holds the ids bought (a free cosmetic is
+  never written there) and `worn` maps a slot (`'bird'`) to the id worn. `buy(id, price)` spends
+  and records in one write or does nothing; `wear(slot, id)` (null for the free default) writes
+  through. Prices and what an id is live in the callers' tables (`BIRD_SKINS`,
+  js/sprites/eagle.js); an id the game no longer has is kept but never worn. No match writes
+  here: a match's gold never becomes coins.
 - **The tech lists are ids and nothing else.** `markSeen` coalesces (it fires from a pickup) and is
   the only writer: `tech.done` is carried through load and save untouched and read by nothing
   (the whole arsenal is unlocked). `load()` copies only strings and de-duplicates, so a
   hand-edited save cannot put a number or a repeat into the lists. What a node *is* lives in
   js/tools.js — this file only remembers.
 
-The screens and the title-screen tag are js/ui/chars.js; the local player takes a character on
+The character screens and the title's character tag are js/ui/chars.js, the skins screen and the coin tag js/ui/skins.js; the local player takes a character on
 through `applyCharacter()` (js/player.js).
 
 ### font.js

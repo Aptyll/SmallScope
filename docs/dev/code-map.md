@@ -68,6 +68,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the twin eagle's frames | by banner | `eagle` |
+| what each bird skin IS: id, name, price in coins (its art: `SPRITES.birdSkin`/`birdSkinIcon`) | `BIRD_SKINS` | the file's head, above the IIFE |
 
 ## js/sprites/buildings.js (legacy IIFE)
 
@@ -702,6 +703,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | both screens' draws: the icon grids, a well, the 48 px model, the ledger, a card, an option cell, the die, the two renders | `CH_ICON_PAL` and the `CH_*` grids under it, `drawWell`, `drawModel`, `drawLedger`, `drawCharCard`, `renderChars`, `drawLookCell`, `drawDie`/`DIE_FACES`, `renderCreate` | `characters` › `pixels` |
 | the create / customize screen: the pre-rolled buffer, the option rows (a cell per choice, each a crop of the model wearing it), the class pair and its lock, the die, the name field, DONE / CANCEL, the keyboard | `CH_ROWS`/`CH_HEAD`/`CH_TORSO`/`CH_CELL`/`CH_PLATE`/`CH_ROW_N`, `createLayout`, `rowCells`, `beginCreate`, `createCommit`/`createCancel`, `setLook`/`cycleLook`/`shuffleLook`, `createHit`, `createKey`, `createClick`, `updateCreate`, `nameOk`, `renderCreate`, `drawModel`, `drawLookCell`, `drawDie`/`DIE_FACES`/`DIE_T`, `drawWell`, `NAME_SHAKE_T` | `characters` › `the create screen` (the store: `PROFILE`, profile.js; the model: `SPRITES.portrait`, js/sprites/looks.js) |
 | the character tag bottom-left of the title screen | `charTagRect`, `overCharTag`, `drawCharTag` (the player that wears it: `applyCharacter`, player.js) | `characters` › `the character tag` |
+
+## js/ui/skins.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one), a skin's flap frames for a card | `birdSkinFor`, `birdSkinRow`, `skinOwned`, `birdSkinFrames` | `skins` (the table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
+| the skins screen: the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
 
 ## js/ui/screens.js
 

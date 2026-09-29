@@ -1801,7 +1801,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   [patch notes screen](#the-patch-notes-screen).
   The **character tag** bottom-left (`charTagRect` / `overCharTag` / `drawCharTag`, js/ui/chars.js,
   the mirror of the patch tag: the active character's in-world body, its name and a quill that
-  gilds on hover) opens the [character screens](#the-character-screens) below.
+  gilds on hover) opens the [character screens](#the-character-screens) below. The **coin tag**
+  top-right (`coinTagRect` / `overCoinTag` / `drawCoinTag`, js/ui/skins.js: the steel coin and
+  the purse, gold with an underline on hover) opens the [skins screen](#the-skins-screen).
   Any open panel ducks the logo to zero alpha.
 <a id="lobby"></a>
 - **Lobby** (`menu.screen = 'lobby'`, entered by SINGLEPLAYER via `beginLobby`): ONE
@@ -2019,6 +2021,27 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
 `lobbyLayout`, `lobbyHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
 The map and the seed die on it are driven the same way through the globals `mapStep`, `rerollWorld` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
 `DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
+
+### The skins screen
+
+On the lobby's painted night like the character screens, in [js/ui/skins.js](../../js/ui/skins.js)
+(`menu.screen = 'skins'`, `beginSkins`/`leaveSkins`, its own ease `menu.skinT`). `skinsLayout()`
+is the one rect source for the draw, the hit test (`skinsHit`) and the cursor. The headline
+BIRD sits over the grid's left edge and the purse (coin + number at 2x) over its right.
+
+- **A card per `BIRD_SKINS` row**, `SK_COLS` across (`drawSkinCard`): the bird in your company's
+  colour turned nose-up at the largest whole scale its `SK_ART_H` box holds, still at rest and
+  flapping under the hand, on the worn card and on a picked one; under a hairline the name and,
+  opposite it, the price (coin + number, red when the purse is short) or a tick on the skin worn.
+  Rims are slate, lighter under the hand, bright steel on the worn and the picked card.
+- **A press** (`skinPress`) on an owned card wears it; on a card for sale it picks it
+  (`menu.skPick`) and its price plate lights and pulses; a second press on the same card buys it
+  and wears it (`PROFILE.buy`, the card flashes white, the purse flashes, `SFX.coin`). A short
+  purse shakes the plate (`SFX.deny`). A click off the cards or Esc drops the pick; Esc with
+  nothing picked leaves. The arrows walk `menu.skSel` over the grid, Enter presses.
+- **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
+  local player's company wears the skin worn, the other company the free first row (skins are
+  not sent over the wire). It is read at draw time and never by the sim.
 
 ## Eagle drop (mode `drop`)
 
