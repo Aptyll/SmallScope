@@ -981,7 +981,7 @@ grace), `checkLastStanding()` never fires, and the profile is never written — 
 `PROFILE.addGold` and the pinned clock means `addDay` can never fire — with two deliberate
 exceptions: a record parkour lap (`PROFILE.setBestLap`) and a record archery round
 (`PROFILE.setBestRange`, both above). The way out is the ESC
-slab's LEAVE PRACTICE plank ([settings](gameplay.md#settings)).
+slab's LEAVE plank ([settings](gameplay.md#settings)).
 
 The **dummy** is an `OBJECTS` entry (`solid`, any tool, verb HIT) with one solid tile and a
 26×42 sprite (`DUMMY_SPR`, baked in js/draw/practice.js). Every way of hurting it
