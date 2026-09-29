@@ -1407,7 +1407,6 @@ function drawShopWell(r, o, hot, now) {
   ctx.fillStyle = tp.plate;
   ctx.fillRect(r.x + 1, y + 1, r.w - 2, iconH - 1);
   modPlate(o.type, r, y, iconH);
-  if (!dear) tierShine({ x: r.x, y: r.y, w: r.w, h: iconH }, y, o.type, now); // nothing you cannot buy shines
   // The icon at SHOP_ICON px, whichever grid it was drawn on (shopIconCv).
   const im = SPRITES[ITEMS[o.type].icon];
   if (im) {

@@ -1552,7 +1552,7 @@ window.DBG = {
   TOOL_TIERS, TOOL_SLOTS, makeTool, toolType, bitType, bitMods, newMods, fitAdd,
   // toolPlan is the whole press resolved without firing it: what the budget
   // reaches, through which envelope, and where it runs out (`cut`)
-  toolPlan, toolLoad, toolOver,
+  toolPlan, toolLoad, toolDrawMul, drawTime, sortBits,
   toolRof, toolCycle, peekBit, toolReady, dropLoot, giveLoadout, CLASS_LOADOUT,
   // a thing put down on purpose: the throw (out of the pack, along the
   // cursor), the lock that keeps it out of the thrower's own hands, and the
@@ -1631,6 +1631,7 @@ window.DBG = {
   equip: (slot, id, bits, p) => {
     const q = p || player, cell = makeTool(id);
     (bits || []).forEach((b, i) => { if (i < cell.bits.length) cell.bits[i] = b; });
+    sortBits(cell);
     q.tools[slot] = cell;
     return cell;
   },

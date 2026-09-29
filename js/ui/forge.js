@@ -353,7 +353,6 @@ function forgeWell(r, type, hot, wants, now, no) {
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = type ? tp.plate : '#171f45';
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  if (type) tierShine(r, r.y, type, now);
 }
 function forgeGhost(r, im, k) {
   if (!im) return;
@@ -373,7 +372,7 @@ function forgeUpArrow(x, y, col) {
 }
 // The level a weapon carries, wherever the weapon is drawn in a well - the
 // shelf, the pack, the bench: "+N" in the forge's colour on the well's
-// top-left corner, the corner the "!" (drawOverWarn) leaves free.
+// top-left corner.
 function forgeMark(r, y, lv) {
   if (!lv) return;
   drawPixelTextOutline(ctx, '+' + lv, r.x + 2, y + 2, FORGE_INK, '#0f1632');

@@ -29,7 +29,7 @@ const AI_FORAGE = 12;   // tiles: how far from itself it looks for work
 //   react   s a rival stays noticed before the bot turns on it
 //   aim     px of scatter on the aim point, re-rolled every AI_AIM_T
 //   lead    0..1 of the target's motion it aims ahead by (flight time)
-//   draw    fraction of bowCharge it looses at (a short draw is a weak shot)
+//   draw    fraction of the full draw (drawTime) it looses at (a short draw is a weak shot)
 //   dodge   x the chance per second it rolls when hurt
 //   abil    chance each AI_ABIL_T tick that a ready ability is spent
 //   flee    hp fraction under which it hides (hunter) / gives ground
@@ -695,7 +695,7 @@ function aiThink(p, dt) {
       // no strafing on your belly: concealOf discounts a mound that is moving,
       // and ambushReady refuses a moving shot outright. Hold still, let them
       // walk in, and spend the arrow at full draw.
-      inp.fire = clear && p.chargeT < kitOf(p).bowCharge * 0.95;
+      inp.fire = clear && p.chargeT < drawTime(p) * 0.95;
       ai.tgt = null;
       return;
     }
@@ -746,7 +746,7 @@ function aiThink(p, dt) {
     const planted = prof.strafe >= 1 || (state.tick % 120) >= 120 * prof.strafe;
     if (planted && prof.strafe < 1) { inp.mx = 0; inp.my = 0; }
     // draw, then loose at the profile's draw - a blade only once they are under it
-    inp.fire = planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < kitOf(p).bowCharge * prof.draw;
+    inp.fire = planted && clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * prof.draw;
     if (p.hp < p.maxHp * 0.45 && p.dodgeCharges > 0 && rng() < dt * 2 * prof.dodge) inp.dodge = true;
     ai.tgt = null;
     return;
@@ -766,7 +766,7 @@ function aiThink(p, dt) {
     const melee = aiMelee(p);
     if (wolf.target !== p && (melee ? d > AI_MELEE_D : d > 90 || !clear)) { if (steerTo(wolf.x, wolf.y, 0) < 0) { inp.mx = 0; inp.my = 0; } }
     else if (d < 64 && !melee && !prof.relentless) { inp.mx = Math.cos(away); inp.my = Math.sin(away); } // a bow keeps its distance; a blade (or a relentless side) stands its ground
-    inp.fire = clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < kitOf(p).bowCharge * 0.7;
+    inp.fire = clear && (!melee || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * 0.7;
     if (d < 30 && p.dodgeCharges > 0 && rng() < dt * 3) inp.dodge = true;
     ai.tgt = null;
     return;
@@ -903,10 +903,10 @@ function aiThink(p, dt) {
       const ds = Math.hypot(sx - p.x, sy - p.y);
       if (ds > 14) {
         if (steerTo(sx, sy, 0, AI_ROOST_BUDGET) < 0) { ai.pushCd = 10; }
-        else { inp.fire = d < 170 && clear && p.chargeT < kitOf(p).bowCharge * prof.draw; ai.tgt = null; return; }
+        else { inp.fire = d < 170 && clear && p.chargeT < drawTime(p) * prof.draw; ai.tgt = null; return; }
       } else {
         if (d < GUST_BLAST_R + 16) { inp.mx = -ux; inp.my = -uy; } // out of the gust's reach
-        inp.fire = clear && p.chargeT < kitOf(p).bowCharge * prof.draw;
+        inp.fire = clear && p.chargeT < drawTime(p) * prof.draw;
         ai.tgt = null;
         return;
       }
@@ -939,7 +939,7 @@ function aiThink(p, dt) {
       ai.huntTgt = null; ai.huntT = 0;
     } else {
       aimAt(prey.x, prey.y - 3);
-      inp.fire = clear && p.chargeT < kitOf(p).bowCharge * 0.8;
+      inp.fire = clear && p.chargeT < drawTime(p) * 0.8;
       ai.tgt = null;
       return;
     }

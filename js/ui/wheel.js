@@ -672,7 +672,7 @@ function kitLabel(id) {
 // (drawBuildCursor), so the mode is read where the eye is: a press over the
 // world lays, and never fires. A click lays the ghost and the list stays up
 // for the next piece: a wall is a run, not a piece.
-const BUILD_X = 3;           // the column's left edge: flush with the tool cell (SHELF_X, declared below - a literal, since this is read at load)
+const BUILD_X = 4;           // the column's left edge: flush with the tool cell (SHELF_X, declared below - a literal, since this is read at load)
 const BUILD_TAB_H = 14;      // the hammer plate's height: the cap and the 11-row hammer, a px of air round both
 const BUILD_ROW = 20;        // a row's pitch
 const BUILD_W = 62;          // a row's width: icon, price, the rotate cap
@@ -681,8 +681,8 @@ const BUILD_LIT = '#ffd95c'; // the picked row's rim, the open plate's and the p
 // whether the plate is up: the corner's own gate, and never from the roost
 // seat, where the build key answers nothing
 function buildTabUp() { return shelfUp() && !player.aboard; }
-// the corner's live foot in 1x: the drawer's arrow band, or the drawer
-// itself while it is out - measured off the same slide drawBag draws it at
+// the corner's live foot in 1x: the arrow's plate, or the drawer itself
+// while it is out - measured off the same slide drawBag draws it at
 function cornerFoot() {
   const t = bagTabRect();
   let y = t.y + t.h;

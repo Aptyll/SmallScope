@@ -927,7 +927,7 @@ function ckStep(p, dt, smx, smy) {
     // the auto-attack: the hand off the button, a clear flight, the target
     // inside the tool's reach - draw to the auto-draw and loose (the same
     // held-then-dropped intent a bot fires by)
-    if (!mouse.down) r.fire = reach > 0 && d <= reach && aiLineClear(p, t.x, ty) && p.chargeT < kitOf(p).bowCharge * CK_AUTO_DRAW;
+    if (!mouse.down) r.fire = reach > 0 && d <= reach && aiLineClear(p, t.x, ty) && p.chargeT < drawTime(p) * CK_AUTO_DRAW;
   } else if (!mouse.down) r.fire = false;
   // an ability casts at the POINTER, never at the lock (the skillshot's
   // grammar): for that one step the aim is the pointer, and an auto-draw

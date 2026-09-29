@@ -40,7 +40,8 @@ const BAG_GAP = 2;     // between neighbouring cells
 const BAG_PAD = 3;     // frame edge to the first cell: line, light, ground (drawHudFrame)
 const BAG_COLS = 6;    // the drawer is six columns wide (BAG_CAP 12: two rows)
 const BAG_W = BAG_PAD * 2 + BAG_COLS * BAG_CELL + (BAG_COLS - 1) * BAG_GAP;
-const BAG_TAB_H = 7;   // the band under the tool cell the arrow sits in, and answers the pointer from
+const BAG_TAB_W = 21, BAG_TAB_H = 10; // the arrow's own small plate under the weapon well: the arrow, and the frame's margin round it
+const BAG_TAB_AIR = 4;  // px of air between the shelf's plate and the tab, and between the tab and the open drawer
 const BAG_SLIDE_T = 0.15; // s the drawer takes to drop or lift; updateFx eases it
 let bagEase = 0;       // 0 shut .. 1 open, on wall time
 const BAG_BG = '#0d1229';     // the whole frame
@@ -66,16 +67,19 @@ function bagGridH() {
 // counter's sell well (js/shop.js). Everything that lays it out or hit-tests
 // it asks this, never state.bagOpen; bagEase chases the answer.
 function bagOpenNow() { return state.bagOpen || shopOpen(); }
-// the handle's band, under the shelf's tool cell and level with the budget
-// track beside it: the arrow is drawn in its middle, and the whole band
-// answers the pointer so a small mark is not a small target
-function bagTabRect() { return { x: SHELF_X, y: shelfRowY() + SHELF_CELL + 1, w: SHELF_CELL, h: BAG_TAB_H }; }
-// the drawer, fully open: flush with the view's left edge, its top a px
-// under the arrow's band, its first cell on the tool cell's own left edge
+// the arrow's plate: its own small frame, centred under the weapon well and
+// clear of the shelf's plate, so the way into the pack is a thing of its own
+// rather than a band inside the weapon's frame
+function bagTabRect() {
+  const p = shelfPlateRect();
+  return { x: SHELF_X + ((SHELF_CELL - BAG_TAB_W + 1) >> 1), y: p.y + p.h + BAG_TAB_AIR, w: BAG_TAB_W, h: BAG_TAB_H };
+}
+// the drawer, fully open: flush with the view's left edge, its top clear of
+// the arrow's plate
 function bagFrameRect() {
   const t = bagTabRect();
   const h = BAG_PAD * 2 + bagGridH(); // pad, the grid, pad
-  return { x: SHELF_X - BAG_PAD, y: t.y + t.h + 1, w: BAG_W, h };
+  return { x: 0, y: t.y + t.h + BAG_TAB_AIR, w: BAG_W, h };
 }
 // cell i of the inventory grid
 function bagCellRect(i) {
@@ -611,7 +615,7 @@ function drawBag(now) {
     const f = bagFrameRect();
     const lift = Math.round((1 - easeOut(bagEase)) * (f.h + 3));
     ctx.save();
-    ctx.beginPath(); ctx.rect(-8, t.y + t.h + 1, VIEW_W + 16, VIEW_H); ctx.clip();
+    ctx.beginPath(); ctx.rect(-8, t.y + t.h, VIEW_W + 16, VIEW_H); ctx.clip();
     ctx.translate(shake, -lift);
     drawHudFrame(f.x, f.y, f.w, f.h, {
       bg: red ? BAG_BG_RED : BAG_BG, ink: red ? '#7a2436' : null,
@@ -632,7 +636,6 @@ function drawBag(now) {
       const wl = { x: r.x, y, w: r.w, h: r.h }; // the plate's own rect, which a lift raises a pixel
       if (!s) { drawWellLit(wl, 'bag', i); continue; }
       modPlate(s.type, r, y);
-      tierShine(r, y, s.type, now);
       // the icon sits high in the cell so the count can have the bottom
       // right corner without its outline eating the cell's own rim
       drawItemIcon(s.type, r, y - 2);
@@ -655,15 +658,15 @@ function drawBag(now) {
     }
     ctx.restore();
   }
-  // THE ARROW: the drawer's handle, a plain small chevron under the tool
-  // cell with no plate behind it - white, rimmed a pixel dark so it reads on
-  // snow the way every mark over the world does - pointing the way the
+  // THE ARROW: the drawer's handle, a small chevron on its own plate under
+  // the weapon well (every corner cut: it floats), pointing the way the
   // drawer will go, down to open and up to shut. Nothing moves: its colour is
   // its only state - gold under the pointer, amber when no cell is free, red
   // on a refusal - so it stays the quietest thing in the corner.
+  drawHudFrame(t.x, t.y, t.w, t.h, { corners: { tl: true, tr: true, bl: true, br: true } });
   const onTab = hov && hov.kind === 'tab';
   const col = red ? '#e0637a' : onTab ? '#ffd95c' : full ? '#c9922f' : '#f4f7ff';
-  const ax = t.x + (t.w >> 1), ay = t.y + 2; // the arrow's centre column and top row
+  const ax = t.x + (t.w >> 1), ay = t.y + 3; // the arrow's centre column and top row
   const stamp = (ox, oy, c) => {
     ctx.fillStyle = c;
     for (let d = 0; d < 4; d++) {
