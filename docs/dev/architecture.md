@@ -26,7 +26,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sprites/buildings.js](../../js/sprites/buildings.js) | ~560 | → `SPRITES` | wall/turret/generator/spawner in three tiers and each side's fittings, the net, scaffold, bay, worker bots, spikes, fire, torch |
 | [js/sprites/items.js](../../js/sprites/items.js) | ~750 | → `SPRITES` | goods and their icons: wood, stone, bag, the three animated goods and their live icons, the sack, the crate, the cards, the axe/bow/pick |
 | [js/sprites/icons.js](../../js/sprites/icons.js) | ~340 | → `SPRITES` | HUD art: the gear glyphs in four materials, the hearts, the cursor set |
-| [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~120 | → `SPRITES` | the story landmarks: the sled (and its mirror for a rider going left), the ice-fishing shack, the frozen boat |
+| [js/sprites/landmarks.js](../../js/sprites/landmarks.js) | ~120 | → `SPRITES` | the story landmarks: the sled (and its mirror for a rider going left), the frozen boat |
 | [js/sfxdata.js](../../js/sfxdata.js) | ~60 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/audio.js](../../js/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/logodata.js](../../js/logodata.js) | ~6 | `LOGO_PNG` | **generated** — the title logo as a PNG data URL |

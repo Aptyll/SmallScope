@@ -1003,18 +1003,19 @@ function updatePlayer(p, dt) {
   p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
   p.y = Math.max(8, Math.min(WORLD * TILE - 8, p.y));
 
-  // open water: standing over a carved ice hole plunges you in (an active
-  // dodge roll carries across the one-tile gap), and so does the creek - two
-  // tiles of current no roll clears, so a roll goes in with you. The creek
-  // asks the feet against its banks as drawn (creekWet), so nobody goes in
-  // off a pixel of snow or off the deck's overhang.
+  // open water: standing over a carved ice hole plunges you in, and so does
+  // the creek. An active dodge roll carries over both: a hole's one tile
+  // easily, the creek's two only from its bank, so a roll that runs out over
+  // the current goes in. The creek asks the feet against its banks as drawn
+  // (creekWet), so nobody goes in off a pixel of snow or off the deck's
+  // overhang.
   if (p.fallT <= 0) {
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
     // a net is planked over its hole: you stand on it, and that is how the
     // catch comes out of it (see updateStructures' net branch)
     if ((g === 2 && p.dodgeT <= 0 && !netAt(htx, hty)) ||
-      (g === 4 && creekWet(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5))) {
+      (g === 4 && p.dodgeT <= 0 && creekWet(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5))) {
       p.dodgeT = 0; p.rollHit.length = 0; // a roll ends in the water
       p.fallT = HOLE_FALL_T;
       p.fallRipT = 0;
