@@ -37,6 +37,7 @@ const MINE_STRIKE = 0.5;   // s between the pick's bites while it works
 const MINE_R = 40;         // px from the rock's middle (rockCx/rockCy) the pick works inside
 const MINE_DECAY = 0.35;   // s of pick the cracks close per s while nobody works the rock
 const MINE_HIT_HOLD = 1.5; // s a rival's blow keeps the pick off every rock
+const MINE_STREAM_T = 0.4; // s the motes a bite pulls off the rock take to reach the miner
 const MINE_MOVE = 0.25;    // a walk input past this is walking: the pick bites without the swing drawn
 const ORE_STACK = 99;      // one bag cell holds this many of one ore
 const ORE_FLING = 45;      // px/s the ore leaves the rock at, toward whoever mined it
@@ -89,6 +90,17 @@ ROCK_KINDS.forEach((K, k) => {
   SPRITES[icon] = bakeGrid(ORE_ICONS[K.item], ORE_PAL, 8);
   ITEMS[K.item] = { icon, stack: ORE_STACK, ore: k, price: ORE_PRICE[K.item],
     name: K.item.toUpperCase() };
+});
+// the rock's progress as colour rising up its body: each kind's silhouette
+// flooded with its chip colour (drawRock, js/draw/render.js)
+SPRITES.rockFill = ROCK_KINDS.map((K, k) => {
+  const s = SPRITES.rock[k], c = document.createElement('canvas');
+  c.width = s.width; c.height = s.height;
+  const g = c.getContext('2d');
+  g.drawImage(s, 0, 0);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = K.chip; g.fillRect(0, 0, c.width, c.height);
+  return c;
 });
 function isOre(type) { return !!(ITEMS[type] && ITEMS[type].ore !== undefined); }
 
@@ -145,8 +157,14 @@ function updateMine(p, dt) {
     });
     return;
   }
-  const K = ROCK_KINDS[o.kind];
-  o.crack = Math.min(1, (o.crack || 0) + dt / K.mine);
+  const K = ROCK_KINDS[o.kind], was = o.crack || 0;
+  o.crack = Math.min(1, was + dt / K.mine);
+  // a crack stage breaking open: a chunk off the face, the rock blinking white
+  if (o.crack < 1 && Math.floor(o.crack * 3) > Math.floor(was * 3)) {
+    o.flash = 0.1; o.shake = 0.2;
+    shakeFor(p, 1);
+    burst(rockCx(o), rockCy(o) - 6, K.chip, 8, 55, 0.5, true);
+  }
   p.mineStrikeT -= dt;
   if (p.mineStrikeT <= 0) mineStrike(p, o, K);
   if (o.crack >= 1) finishMine(p, o, K);
@@ -166,8 +184,14 @@ function mineStrike(p, o, K) {
     else p.dir = dy > 0 ? 'down' : 'up';
   }
   o.shake = 0.12;
+  o.flash = Math.max(o.flash || 0, 0.04); // every bite blinks the rock
   sfxAt('mine', cx, cy);
-  burst(cx + rand(-8, 8), cy - 4 - rand(0, K.lift), K.chip, 4, 40, 0.35, true);
+  // where the pick lands: chips off the face, a white spark, and motes of the
+  // kind's colour pulled off the rock into the miner
+  const hx = cx + rand(-8, 8), hy = cy - 4 - rand(0, K.lift);
+  burst(hx, hy, K.chip, 4, 40, 0.35, true);
+  burst(hx, hy, '#f4fbff', 3, 70, 0.18, false);
+  streamTo(hx, hy, p.x, p.y - 6, K.chip, 3, MINE_STREAM_T);
 }
 // the bar full: the rock goes to rubble and pays out
 function finishMine(p, o, K) {

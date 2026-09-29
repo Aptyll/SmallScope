@@ -376,6 +376,17 @@ function burst(x, y, color, n, spd, life, grav, drift) {
   }
 }
 
+// a thin stream of motes from one point to another, each arriving as it
+// fades (the ore's pull toward whoever is mining it, js/mining.js)
+function streamTo(x0, y0, x1, y1, color, n, life) {
+  evPush('stream', [x0, y0, x1, y1, color, n, life]);
+  for (let i = 0; i < n; i++) {
+    const t = rand(0.7, 1) * (life || 0.4), sx = x0 + rand(-5, 5), sy = y0 + rand(-6, 2);
+    particles.push({ x: sx, y: sy, vx: (x1 - sx) / t, vy: (y1 - sy) / t, life: t, maxLife: 0.15,
+      color, size: 1, grav: 0, dx: 0 });
+  }
+}
+
 // n = how much the pickup is worth. type is always an ITEMS key now (berry,
 // fish, a card) - gold is paid on the spot through awardGold, never dropped.
 // `it` is the instanced cell an item with state of its own travels as - a
