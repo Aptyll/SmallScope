@@ -12,7 +12,7 @@
 //
 // Each kind has three more things baked beside it:
 //   rockSpent[k]  - the rubble it leaves while it regrows (ROCK_KINDS, js/mining.js)
-//   rockCracks[k] - three overlays the mining channel draws in stages
+//   rockCracks[k] - three overlays drawn in stages as a rock is mined
 //   rockGlints[k] - the pixels a glint may flash on (the crystal's and the
 //                   amber's brightest), which the draw pass picks among
 (() => {

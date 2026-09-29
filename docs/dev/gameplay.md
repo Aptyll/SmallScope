@@ -2351,10 +2351,13 @@ roll, eat, cast:
 | FROSTGLASS SPIRE | 3 s | 8 | 1–2 FROSTGLASS | 0.5 / 1 | 180 s |
 | SUNSTONE | 4 s | 20 | 1 SUNSTONE | 1 / 2 | 300 s |
 
-The pick bites every `MINE_STRIKE` (0.5 s): the rock shivers and chips fly, and on a body
-standing with its hands free the E swing's own animation plays at it with nothing landing and
-no cooldown spent. The rock cracks in thirds and a bar fills over it in the kind's colour
-(`o.crack`, the progress itself, drawn by `drawRock`, js/draw/render.js); a ring of `MINE_R`
+The pick bites every `MINE_STRIKE` (0.5 s): the rock shivers and blinks white, chips and a
+white spark fly off where the pick lands, three motes of the kind's colour stream into the miner
+over `MINE_STREAM_T` (`streamTo`, core.js), and on a body standing with its hands free the E
+swing's own animation plays at it with nothing landing and no cooldown spent. The rock cracks in
+thirds (each new crack a chunk burst, a bigger blink and a small shake) while the kind's colour
+rises up its body from the foot (`SPRITES.rockFill`) and a bar fills over it (`o.crack`, the
+progress itself, drawn by `drawRock`, js/draw/render.js, for every screen); a ring of `MINE_R`
 lies on the snow in the kind's colour round the rock your pick is at, and faint round a free
 one within reach of a step (`drawMineRing`). **Only a rival's blow knocks the pick off**:
 `damagePlayer` calls `mineHit` for a hit from anyone not on your team (a wolf included; a

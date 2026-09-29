@@ -103,6 +103,16 @@ function drawRock(o, x, y, now) {
   const spr = SPRITES.rock[o.kind], top = y + TILE - spr.height + 1;
   drawSpriteFlash(spr, x, top, o.flash);
   if (o.crack > 0) {
+    // the kind's colour rising up the body from its foot as the bar fills,
+    // its top row lit full (SPRITES.rockFill, js/mining.js)
+    const F = SPRITES.rockFill[o.kind], fh = Math.round(F.height * o.crack), fy = F.height - fh;
+    if (fh > 0) {
+      ctx.globalAlpha = 0.4;
+      ctx.drawImage(F, 0, fy, F.width, fh, x, top + fy, F.width, fh);
+      ctx.globalAlpha = 0.9;
+      ctx.drawImage(F, 0, fy, F.width, 1, x, top + fy, F.width, 1);
+      ctx.globalAlpha = 1;
+    }
     ctx.drawImage(SPRITES.rockCracks[o.kind][Math.min(2, Math.floor(o.crack * 3))], x, top);
     const w = 20, bx = x + ((spr.width - w) >> 1), by = top - 5;
     ctx.fillStyle = '#1a1c28'; ctx.fillRect(bx - 1, by - 1, w + 2, 4);
