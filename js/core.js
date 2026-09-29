@@ -44,8 +44,8 @@ const YIELD = {
   rabbit: { coins: 2, each: 5 },        // 10 gold + a berry, but it bolts
   deer:   { coins: 3, each: 6 },        // 18 gold, the big mobile target
   wolf:   { coins: 3, each: 8 },        // 24 gold, a den's four: the resource camp, and it bites back once woken
-  alpha:  { coins: 4, each: 10 },       // 40 gold, the buff camp's one - and the kill wears its blood (campBuff, js/wildlife.js)
-  dire:   { coins: 6, each: 15 },       // 90 gold to the killer, the epic camp's one - and EPIC_TEAM_GOLD to every teammate besides
+  alpha:  { coins: 6, each: 15 },       // the dire wolf's pay, the other midline camp's (the two are one side's each and pay the same)
+  dire:   { coins: 6, each: 15 },       // 90 gold to the killer, a midline camp's one - and EPIC_TEAM_GOLD to every teammate besides
   bird:   { coins: 2, each: 4 },        // 8 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
 };
 

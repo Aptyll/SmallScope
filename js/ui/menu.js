@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.16';
+const PATCH_TXT = 'PATCH 4.17';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.17', 'THE ALPHA STONE NOW PAYS WHAT THE DIRE HOLLOW DOES, SINCE EACH SIDE OWNS ONE: THE ALPHA IS AS TOUGH AS THE DIRE WOLF, AND EITHER KILL PAYS THE WHOLE TEAM GOLD AND TWO MINUTES OF BLOOD.'],
   ['4.16', 'THE TEAM BAR AT THE TOP IS ONE SCOREBOARD: EACH SIDE\'S KILLS AND THE MATCH CLOCK SIT BETWEEN THE TEAMS, EVERY PLAYER HAS A SMALL HEALTH BAR, A FALLEN PLAYER\'S OUTLINE FILLS BACK IN AS THEIR RESPAWN COMES, AND THE WHOLE HUD DROPS ITS SNOW TRIM FOR PLAIN, QUIET PLATES.'],
   ['4.15', 'THE CREEK NO LONGER RINGS THE DIRE HOLLOW AND THE ALPHA STONE: IT SWINGS ROUND EACH IN A HALF-LOOP, SO THE DIRE HOLLOW IS ON RED\'S BANK AND THE ALPHA STONE ON BLUE\'S, AND THE HUNDRED ROCKS ARE NOW ABOUT THIRTY IN A FEW MINING SPOTS, WITH THE SUNSTONE AND FROSTGLASS OUT AT THE TWO CONTESTED CORNERS.'],
   ['4.14', 'A ROCK FILLS WITH ITS OWN COLOUR FROM THE GROUND UP AS IT IS MINED, AND EVERY BITE OF THE PICK SPARKS, BLINKS AND PULLS A STREAM OF ORE DUST INTO THE MINER.'],
@@ -1152,7 +1153,7 @@ const PATCH_DIGEST = [
     ['SIX HOG HUTS HIDE IN THE BORDER WOODS, THREE CHESTS AROUND EACH', '3.87'],
     ['A CREEK THAT NEVER FREEZES SPLITS THE VALLEY, BRIDGED AT THE ROAD', '3.86'],
     ['THE WOLF DEN IS A ROCK MAW, AND THERE ARE SIX CAMPS', '3.85'],
-    ['THE CREEK BENDS SO EACH SIDE OWNS ONE BIG CAMP', '4.15'],
+    ['THE CREEK BENDS SO EACH SIDE OWNS ONE BIG CAMP, AND BOTH PAY THE SAME', '4.17'],
     ['ROCKS STAND IN A FEW MINING SPOTS, THE RAREST AT THE CORNERS', '4.15'],
     ['ROLL OVER THE CREEK FROM ITS BANK', '4.12'],
     ['A ROWBOAT IN THE ICE, AND A SLED YOU CAN RIDE', '3.98'],
@@ -3241,7 +3242,7 @@ const WIKI_BEASTS = [
   { kind: 'wolf', name: 'WOLF', bw: 11,
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
   { kind: 'alpha', name: 'ALPHA', bw: 11,
-    line: () => 'ONE A STONE. BITES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE KILL WEARS X' + CAMP_BUFF_DMG + ' DMG, X' + CAMP_BUFF_SPD + ' WALK ' + CAMP_BUFF_T + ' S.' },
+    line: () => 'ONE A STONE. BITES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
   { kind: 'dire', name: 'DIRE WOLF', bw: 24,
     line: () => 'ONE HOLLOW. BITES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];

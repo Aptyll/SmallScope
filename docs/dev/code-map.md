@@ -217,7 +217,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | an animal taking a hit from anything (arrow or roll): flee/wake, floater, knockback, kill credit | `hurtAnimal` | `animals` |
 | where an animal walks next: the graze/patrol goal, and the bolt away from a player | `wanderGoal`, `preyWander`, `fleeGoal` | `animals` |
 | a camp monster: neutral until hit, the camp waking on the hitter, the leash bar that holds on the camp's ground and drains off it, the heal at home, the bite | `isCampKind`, `wakeCamp`, `updateCampMonster` | `camp monsters` |
-| ALPHA'S BLOOD: the kill's buff and the epic's team payout | `CAMP_BUFF_T`/`CAMP_BUFF_EPIC_T`/`CAMP_BUFF_DMG`/`CAMP_BUFF_SPD`, `EPIC_TEAM_GOLD`, `campBuff` (above the banner); the grants in `animalDies` | `animals`/`camp monsters` (what it does: `hurtUnit`, actions.js; `abilityMoveMul`, abilities.js; the tick, `updateAbilities`, abilities.js; the ring: `drawBuffRing`, js/draw/bodies.js) |
+| ALPHA'S BLOOD: the midline kills' team payout and buff | `CAMP_BUFF_EPIC_T`/`CAMP_BUFF_DMG`/`CAMP_BUFF_SPD`, `EPIC_TEAM_GOLD`, `campBuff` (above the banner); the grants in `animalDies` | `animals`/`camp monsters` (what it does: `hurtUnit`, actions.js; `abilityMoveMul`, abilities.js; the tick, `updateAbilities`, abilities.js; the ring: `drawBuffRing`, js/draw/bodies.js) |
 | the flock: the flush, the circuit, the perch | `flushBirds`, `updateBird` | `birds` |
 | fish shoal and ice holes | `updateFish`, `fishClear`, `fishWater`, `spawnFish` | `fish` |
 | where new fish come from, and why one is invisible until it is under the ice | `spawnEmerger`, `buildEmergeSites`, `fishVis`, `f.born`/`f.vis`, `FISH_MAX`/`FISH_MIN`, `state.fishT` | `fish` |

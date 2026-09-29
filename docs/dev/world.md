@@ -687,9 +687,9 @@ Four kinds, one reward each:
 - **WOLF DEN** (`resource`, r 5, ×4) — a `den` in an open clearing and a pack of 4
   wolves. Gold per head (`YIELD.wolf`), the biggest steady payout on the map. Back 60 s after
   the last one dies.
-- **ALPHA STONE** (`buff`, r 4, ×1) — a `cairn` and one **alpha**. The kill
-  wears **ALPHA'S BLOOD** for 90 s ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)).
-  Back in 120 s.
+- **ALPHA STONE** (`buff`, r 4, ×1) — a `cairn` and one **alpha**, the dire wolf's match on the
+  other bank: the same hp, the same pay, the whole team blooded for 120 s
+  ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)). Back in 300 s.
 - **DIRE HOLLOW** (`epic`, r 6, ×1) — a `den` in a ring of seven `deadTree` snags, and the
   **dire wolf**: a 2× body with a wall of hp. The kill pays the killer
   `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, bloods the whole team for 120 s, and

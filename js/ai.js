@@ -413,10 +413,9 @@ function aiNearestAnimal(p) {
   let best = null, bd = AI_HUNT;
   for (const a of animals) {
     // birds fly: no route on the ground catches a flushed flock. The two
-    // big camp kinds are never a hunt: a lone bot pulling the dire wolf
-    // dies to it, and the alpha is a fight for a bot with some levels
+    // midline camps' kinds are never a hunt: a lone bot pulling one dies to it
     if (a.dead || a.kind === 'bird' || a === p.ai.huntAvoid) continue;
-    if (a.kind === 'dire' || (a.kind === 'alpha' && p.level < 6)) continue;
+    if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) continue;
     const d = Math.hypot(a.x - p.x, a.y - p.y);
     if (d < bd) { bd = d; best = a; }
   }

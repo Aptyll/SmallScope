@@ -9,7 +9,7 @@
 // what they are: things you shoot. (Birds - updateBird - are DORMANT: the
 // rookery went with the landmarks, and nothing spawns one; the kind's code
 // stays for a camp that wants a flock - checklists.md, Known drift.)
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 70, dire: 320, bird: 3 };
+const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 320, dire: 320, bird: 3 };
 // Every animal wears a hero-style level, dealt ONCE at spawn (makeAnimal) from
 // the table's average hero level (animalLevel) and never raised after: what
 // grows with it is hp, ANIMAL_LV_HP a level over ANIMAL_HP, and a monster's
@@ -20,7 +20,7 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 70, dire: 320, bird: 3
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Gold is XP, so the loop feeds itself, but at a tenth a
 // level it is a slope, not a farm.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 8, dire: 25, bird: 0 };
+const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 25, dire: 25, bird: 0 };
 const ANIMAL_LV_GOLD = 0.1;
 function animalLevel() {
   let n = 0, s = 0;
@@ -722,27 +722,28 @@ function animalDies(a) {
     burst(a.x, a.y - 5, '#e04a54', 8, 45, 0.5);
     addFloater(a.x, a.y - 26, 'WOLF DOWN', '#f2cc6a');
   } else if (a.kind === 'alpha') {
-    // the buff camp's kill: the killer wears ALPHA'S BLOOD (the constants
-    // above the camp monsters banner)
     burst(a.x, a.y - 5, '#c9d2e4', 14, 55, 0.6);
     burst(a.x, a.y - 5, '#ffb04a', 10, 45, 0.5);
     addFloater(a.x, a.y - 26, 'ALPHA DOWN', '#ffb04a');
-    if (hunter && !hunter.dead) campBuff(hunter, CAMP_BUFF_T);
   } else if (a.kind === 'dire') {
-    // the epic kill: the whole team is paid and blooded, wherever they are,
-    // and the feed says who did it - the one kill that is news to both sides
     burst(a.x, a.y - 8, '#4a3040', 20, 60, 0.7);
     burst(a.x, a.y - 8, '#ffb04a', 14, 55, 0.6);
     addFloater(a.x, a.y - 34, 'DIRE WOLF DOWN', '#ffb04a');
+  }
+  // a midline camp's kill (the alpha's and the dire wolf's, one side's each
+  // and paid the same): the whole team is paid and blooded, wherever they
+  // are, and the feed says who did it - the kills that are news to both sides
+  if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) {
     if (hunter) {
       for (const q of players) {
         if (!q.active || q.team !== hunter.team) continue;
         if (q !== hunter && !q.dead && !inAir(q)) awardGold(q, EPIC_TEAM_GOLD, q.x, q.y);
         campBuff(q, CAMP_BUFF_EPIC_T);
       }
-      logEvent(hunter.name + ' SLEW THE DIRE WOLF', hunter);
+      logEvent(hunter.name + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
     }
-  } else if (a.kind === 'bird') {
+  }
+  if (a.kind === 'bird') {
     burst(a.x, a.y - a.alt, '#cfd6e4', 9, 40, 0.5, true);
     flushBirds(a.home, a); // the rest of the flock does not stay to watch
   }
@@ -756,25 +757,28 @@ function animalDies(a) {
 // ONE monster's bites (nothing caps a PACK - a hit grants no i-frames, so
 // four wolves on you is four bites a second), the hunting speed, and the
 // body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - the
-// dire wolf is a 2x sprite and a body a roll does NOT pass through.
+// dire wolf is a 2x sprite and a body a roll does NOT pass through - and
+// `teamPay` for the two midline camps' ones, whose kill pays and bloods the
+// killer's whole team (animalDies) and names it in the feed as `feed`. The creek gives one to each side's bank
+// (creekBends, world.js), so the two are one fight in two bodies: the same
+// hp (ANIMAL_HP) and near the same bite a second, the pay the same.
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 12, lvBite: 2, reach: 15, cd: 1.2, spd: 90, r: 4.5, mass: 2.5, big: false }, // the buff camp's one: hits harder, can be outrun on a slide
-  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   mass: 5,   big: true },  // the epic: a wall of hp, and a bite that takes a quarter of you
+  alpha: { bite: 20, lvBite: 3, reach: 15, cd: 1.3, spd: 90, r: 4.5, mass: 2.5, big: false, teamPay: true, feed: 'ALPHA' }, // a midline camp's: the dire wolf's hp and bite a second, small and quick
+  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   mass: 5,   big: true,  teamPay: true, feed: 'DIRE WOLF' }, // a midline camp's: a wall of hp, and a bite that takes a quarter of you
 };
 function isCampKind(k) { return !!MONSTER[k]; }
 const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
 const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
 // The kills' rewards past the gold (YIELD, core.js). ALPHA'S BLOOD is what
-// the buff camp's kill wears: CAMP_BUFF_DMG on every blow the player lands
+// a midline camp's kill wears: CAMP_BUFF_DMG on every blow the player lands
 // (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
-// abilities.js) for CAMP_BUFF_T seconds, worn as the amber ring under the
-// feet that empties as it runs out (drawPlayer, draw-world.js). The dire
-// wolf pays EVERY player on the killer's team EPIC_TEAM_GOLD and bloods the
-// whole team for CAMP_BUFF_EPIC_T - the one kill in the game that pays
-// people who were not there, which is what makes it worth walking to as five.
-const CAMP_BUFF_T = 90;
+// abilities.js), worn as the amber ring under the feet that empties as it
+// runs out (drawPlayer, draw-world.js). The alpha and the dire wolf pay
+// EVERY player on the killer's team EPIC_TEAM_GOLD and blood the whole team
+// for CAMP_BUFF_EPIC_T - the kills in the game that pay people who were not
+// there, which is what makes them worth walking to as five.
 const CAMP_BUFF_EPIC_T = 120;
 const CAMP_BUFF_DMG = 1.25;
 const CAMP_BUFF_SPD = 1.15;
