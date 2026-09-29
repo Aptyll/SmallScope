@@ -130,8 +130,8 @@ wheel is zoom only (over the minimap it steps the disc's zoom instead).
 **Mouse coords are divided by `scale` on the way in**, landing in screen space. Round positions
 when drawing (`Math.round`) or sprites smear across subpixels.
 
-**Canvas size changed → `fitCanvas()` then `relayout()`** (the
-[CLAUDE.md](../../CLAUDE.md#hard-rules) rule; both listeners live in canvas.js). `relayout()`
+**Canvas size changed → `fitCanvas()` then `relayout()`** (both
+resize paths do it; both listeners live in canvas.js). `relayout()`
 (js/core.js) recomputes everything positioned off `VIEW_W`/`VIEW_H`, in this order:
 `applyMinimapSize()` (the disc's anchors), `fitMapSlab()` (the chart's size, below), the
 map/settings panel positions (`PANEL_X/Y`, `MAP_X/Y`, `SET_X/Y`, `SL_X`, `SET_MUTE_X`),
@@ -352,6 +352,27 @@ the player's camera.
 Drawn after `renderLighting` (never graded) and before the vignettes and HUD. `DBG.flakes` and
 `DBG.cam()` expose the array and the exact camera.
 
+## Show, don't label
+
+The HUD and screens speak through shape, colour and hover state: an icon beside a number, an arrow
+that is clickable, a colour that carries the team, a plank that lifts on hover, never "CLICK OR
+ARROWS TO SWAP" or "PLAYERS LEFT: 5". A control must read as what it does by its shape and hover
+state alone; a hint sentence is a sign to build the affordance instead. Text is for names, numbers,
+headlines (a death, a camp) and five deliberate carve-outs:
+
+- **Keybind indicators** (`'ESC BACK'`, a "1" in a slot's corner). They name an *action*, print
+  whatever key it is bound to (`keyCap`, input.js) and wear the pad's button while one is in hand
+  (`PAD_BIND`, ui/wheel.js), so a new one goes through `drawKeyPrompt`/`drawPadBind`.
+- **The settings, PLAYER, gear, character and shop panels'** labelled rows.
+- **The instruments**: the practice room's (the dummy meter, the parkour lap clock, the archery
+  round's readouts and their BEST / LAST plates), the merchant's two price graphs with their
+  high/low, and the [stat sheet](#the-stat-ledger-your-sheet-as-a-notice). An instrument's whole job is comparing numbers.
+- **The [hover tooltip](#the-hover-tooltip)** (`tipAt`/`tipPos`/`drawTooltip`, ui/tooltip.js), because
+  comparing a tool's rate of fire against a bit's weight is comparing numbers, and no shape does
+  that. It is a carve-out, not a licence: the well still has to read at a glance without it.
+
+Anything else that wants words is a design bug.
+
 ## UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
@@ -528,7 +549,7 @@ shaded bottom one for the bevel, an opaque dark base under the kind's wash, a 1 
 accent (`noteFrame`), a sunken well behind the mark, and the kind's ink **draining along the base**
 as the plate's own remaining life — the only place its 8 s is written down, and it is written as a
 length. Text is the `drawPixelTextShadow` font, because the whole plate fades and an outline
-stamped under a `globalAlpha` goes blotchy ([CLAUDE.md](../../CLAUDE.md#hard-rules)). `NOTE_KIND`
+stamped under a `globalAlpha` goes blotchy ([text over the world](#text-over-the-world)). `NOTE_KIND`
 holds the three palettes and is handed straight to `logEvent` as its colour override, so the plate
 and the feed line can never disagree about which way a price went.
 
@@ -613,7 +634,7 @@ them in: both are already within a few pixels of `fitCanvas`'s 240-row floor.
 ### The hover tooltip
 
 One panel saying what the pointer is on — the fifth deliberate carve-out from
-show-don't-label ([CLAUDE.md](../../CLAUDE.md#ui-rule-show-dont-label) holds the why). Every well
+[show-don't-label](#show-dont-label). Every well
 still has to read at a glance with the panel shut, which is what the tier plates, the shelf's
 pips and the cooldown sweeps are for.
 
@@ -1506,7 +1527,7 @@ recap bow out under it the way they do under the two ceremonies.
 `skin()` like everything else, so your side is BLUE here too), five rows to a block under a team
 strip carrying that side's totals. Six columns - **LV K D DMG SIEGE GOLD** - and each heading is
 the sort control: click it to order both blocks by it, click it again to flip, and the heading
-wears the arrow. This is the [instrument carve-out](../../CLAUDE.md) of the show-don't-label rule
+wears the arrow. This is the [instrument carve-out](#show-dont-label) of the show-don't-label rule
 and the only thing on the screen that earns printed headings; everything else reads as a shape -
 the side is a colour, the class is `classIcon12`'s emblem, your own row sits on a lit plate, and
 **the row's fill IS the bar**: each row is tinted across its own width by its share of the biggest
@@ -1628,7 +1649,7 @@ Two readouts of the **match** rather than of the world, in the `scoreboard & log
 last, and `logEvent(txt, p, o?)` is the one interface every caller speaks — `p` is the player the
 line is *about* and supplies its colours (plate `coatD`, edge `mark`, ink `playerTint(p)`), `o`
 overrides them for a line nobody owns. No feed draws them: a scrolling column of sentences on
-the play surface is what the [UI rule](../../CLAUDE.md#ui-rule-show-dont-label) forbids, and the
+the play surface is what the [UI rule](#show-dont-label) forbids, and the
 bottom-left corner is the tooltip's alone. The ring is the match's record (`DBG.events`), so a
 readout — a kill toast, a recap — lands on it for free. What gets logged lives in
 [multiplayer.md](multiplayer.md#kills-and-the-event-log).

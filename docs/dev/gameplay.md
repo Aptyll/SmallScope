@@ -725,7 +725,7 @@ change what the gesture turns out to be.
 
 The pack advertises the gesture rather than expecting you to know it: `drawShiftHint` floats a
 **SHIFT key cap** (the world prompts' own `drawKeyPrompt`, the keybind-indicator carve-out of
-[CLAUDE.md](../../CLAUDE.md)'s UI rule) over the pack's top-right corner whenever the pointer is
+the [UI rule](rendering.md#show-dont-label)) over the pack's top-right corner whenever the pointer is
 on a well with somewhere to send what it holds, and the verb on it is that **destination** —
 `LOAD` for a bit in the grid, `STOW` for a bit on the shelf or the tool on the weapon,
 `HOLD` for a tool in the grid — so the plate teaches which way the transfer goes rather than
@@ -2159,7 +2159,7 @@ else on the panel is labelled with a verb: a market card's two trade plates say 
 *arrangement* — coin into item is a buy, item into coin is a sale — and the price is stated once,
 big, because it is the same number both ways. The
 section headings (TOOLS / BITS / MODIFIERS / CARDS) and the graphs' own numbers are this panel's
-share of [CLAUDE.md](../../CLAUDE.md)'s carve-out, for the reason the practice instruments have
+share of the [instruments carve-out](rendering.md#show-dont-label), for the reason the practice instruments have
 one: reading a market **is** reading numbers, and no shape compares a price today against a price
 yesterday. Hovering anything on it describes it in the ordinary tooltip — an offer with a PRICE
 row on top of the rows that item shows anywhere else, a good with its day's change and its
@@ -2282,7 +2282,7 @@ presses that spend a cooldown, which a stray keypress should not be able to thro
 *not* break the burrow — you can eat lying in the snow — and its crumbs fade with the cover exactly
 as the overhead tells do (`alpha: 1 - concealOf(p)`).
 
-**It reads without a word of it** ([UI rule](../../CLAUDE.md#ui-rule-show-dont-label)):
+**It reads without a word of it** ([UI rule](rendering.md#show-dont-label)):
 
 - the **overhead frame** carries the channel in the same slot as the bow-draw meter, filled in the
   heal green — gold = drawing, slate = reloading, **green = eating** — so a rival can see the meal
@@ -3320,7 +3320,7 @@ of them on the first `ensure()`.
 
 **The bytes come from [js/sfxdata.js](../../js/sfxdata.js), not from the network.** That file is
 generated — `node app/bake-sfx.js` writes every clip in `audio/sfx/` into it as base64 — and it exists
-because **double-clicking `index.html` has to work** (CLAUDE.md, Commands): a `file://` page is
+because **double-clicking `index.html` has to work** (CLAUDE.md, Run and verify): a `file://` page is
 allowed neither `fetch` nor XHR against its own folder, and an unloaded bank falls back to synth
 without a sound of complaint.
 `bytes(f)` prefers the inline data and falls back to `fetch` for a clip that is in the folder but

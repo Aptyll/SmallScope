@@ -984,7 +984,7 @@ back to `DUMMY_HP` after `DUMMY_RESET_T` seconds unhit, with a shimmer for the a
 respawn, runs the archery round (`agUpdate`), and times the parkour laps.
 
 Over the dummy's head hangs its **damage meter** — LAST HIT / DPS / TOTAL for the combo in
-progress (an instrument, CLAUDE.md's carve-out). `hitDummy` keeps the ledger (`mLast`/`mTotal`/`mT0`/`mT1` on the object; a
+progress (an instrument, the [carve-out](rendering.md#show-dont-label)). `hitDummy` keeps the ledger (`mLast`/`mTotal`/`mT0`/`mT1` on the object; a
 hit after the mend window starts it over), DPS is total over first-to-last hit floored at one
 second, and `drawDummyMeter` (js/draw/practice.js) draws the plate — visible only while a combo is
 live, lingering `DUMMY_METER_LINGER` past the mend so the final read stands, then fading.

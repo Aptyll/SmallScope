@@ -170,7 +170,7 @@ others are the gold sack, the three animated goods and both prey, below:
 `TSPAL` (fourteen colours, `bake`d like everything else), and then **sheared** into its other
 frames. It draws at
 `(px - 5, py - 21)` with its trunk on the tile's centre line, and **through `SPRITES.treeAtlas`,
-never through `SPRITES.tree`** (the CLAUDE.md one-texture rule;
+never through `SPRITES.tree`** (the one-texture rule;
 [rendering.md](rendering.md#drawing-a-thousand-of-something)).
 
 The array is a **ladder, not a cycle**: index 0 is the tree thrown fully left, 23 fully right, 11

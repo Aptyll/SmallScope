@@ -175,7 +175,7 @@ an outlined string under a fade therefore fades evenly, and the rim colour need 
 opaque. The cache is dropped whole at `CACHE_MAX` (2048) strings — a clock retires one a
 second, never thousands.
 
-**Which one to use is a rendering rule, not a taste call** (the CLAUDE.md hard rule): a rim
+**Which one to use is a rendering rule, not a taste call** ([rendering](rendering.md#text-over-the-world)): a rim
 over the world, a shadow on a panel. The site-by-site list:
 [rendering.md](rendering.md#text-over-the-world).
 
