@@ -519,13 +519,6 @@ const SET_TABS = [
     { id: 'tipFollow', label: 'TOOLTIP', kind: 'toggle', on: 'FOLLOWS POINTER', off: 'BOTTOM LEFT' },
     // BLUE always, or the roster's colour (skin, player.js)
     { id: 'teamBlue', label: 'MY TEAM', kind: 'toggle', on: 'ALWAYS BLUE', off: 'AS DEALT' },
-    // the two sides' paint for colour-blind eyes (TEAM_PALETTES, js/sprites/
-    // core.js): each chip IS its palette, yours beside theirs, so a player
-    // picks the pair they can tell apart by looking. Any but the first also
-    // puts the rival's shape cue on (foeCue, js/player.js)
-    { id: 'teamPal', label: 'TEAM COLOURS', kind: 'swatch',
-      opts: [{ id: 'def' }, { id: 'rg' }, { id: 'by' }, { id: 'hc' }],
-      val: () => settings.teamPal, pick: (v) => { settings.teamPal = v; applyTeamPal(); } },
   ] },
   { id: 'video', label: 'VIDEO', rows: [
     { id: 'quality', label: 'QUALITY', kind: 'choice',
@@ -543,6 +536,15 @@ const SET_TABS = [
     { id: 'vidStars', label: 'ICE STARS', kind: 'toggle' },
     { id: 'vidSnow', label: 'SNOWFALL', kind: 'toggle' },
     { id: 'vidVig', label: 'VIGNETTE', kind: 'toggle' },
+    // the two sides' paint for colour-blind eyes (TEAM_PALETTES, js/sprites/
+    // core.js), named by the colour blindness each palette is for. Every
+    // entry wears its palette's chip, yours beside theirs, so a player can
+    // also just pick the pair they tell apart. Any but OFF also puts the
+    // rival's shape cue on (foeCue, js/player.js)
+    { id: 'teamPal', label: 'COLOUR BLIND', kind: 'drop',
+      opts: [{ id: 'def', label: 'OFF' }, { id: 'rg', label: 'PROTANOPIA / DEUTERANOPIA' },
+        { id: 'by', label: 'TRITANOPIA' }, { id: 'hc', label: 'ACHROMATOPSIA' }],
+      val: () => settings.teamPal, pick: (v) => { settings.teamPal = v; applyTeamPal(); } },
   ] },
   { id: 'audio', label: 'AUDIO', rows: [
     { id: 'vol', label: 'MASTER', kind: 'slider' },
@@ -572,12 +574,13 @@ function vidPreset() {
 }
 
 let setTab = 'game';                                        // the open page
+let setDrop = null;  // the dropdown row whose list hangs open, or null
 const setScroll = { game: 0, video: 0, audio: 0, controls: 0 }; // px scrolled per page
 const SET_TAB_Y = 20;      // navbar baseline, panel-local
 const SET_CONTENT_Y = 36;  // content window top
 const SET_CONTENT_B = SET_H - 28; // ... and bottom (the foot's planks sit below)
 // The foot: a CLOSE plank (the one way out that is a button - ESC and the
-// pad's B still close it), and in a match LEAVE MATCH / LEAVE PRACTICE
+// pad's B still close it), and in a match or practice LEAVE
 // beside it; the title's slide-in has nothing to leave, so it hangs CLOSE alone
 const SET_FOOT_Y = SET_H - 23, SET_PLANK_W = 88, SET_PLANK_H = 18, SET_PLANK_GAP = 12;
 
@@ -609,9 +612,15 @@ function settingsLayout() {
   let y = clipY0 + 6;
   for (const r of tab.rows) {
     const row = { id: r.id, label: r.label, kind: r.kind, y, val: r.val, pick: r.pick, on: r.on, off: r.off };
-    if (r.kind === 'choice' || r.kind === 'swatch') {
+    if (r.kind === 'choice') {
       let x = SL_X;
-      row.opts = r.opts.map(o => { const w = r.kind === 'swatch' ? SWATCH_W : pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
+      row.opts = r.opts.map(o => { const w = pixelTextWidth(o.label); const q = { id: o.id, label: o.label, x, w }; x += w + 8; return q; });
+    } else if (r.kind === 'drop') {
+      // the closed box as wide as its longest entry, the list hung under it
+      // (pre-scroll y, like the row's)
+      const w = DROP_TXT_X + Math.max(...r.opts.map(o => pixelTextWidth(o.label))) + 12;
+      row.box = { x: SL_X, y: y - 2, w, h: 11 };
+      row.opts = r.opts.map((o, i) => ({ id: o.id, label: o.label, x: SL_X, y: y + 10 + i * DROP_ROW_H, w, h: DROP_ROW_H }));
     }
     rows.push(row); y += 14;
   }
@@ -636,6 +645,7 @@ function settingsScrollBy(d) {
 function settingsTabBy(d) {
   const i = SET_TABS.findIndex(t => t.id === setTab);
   setTab = SET_TABS[(i + d + SET_TABS.length) % SET_TABS.length].id;
+  setDrop = null;
   SFX.pickup();
 }
 // the keys the open slab answers wherever it is up (the title's slide-in
@@ -643,6 +653,7 @@ function settingsTabBy(d) {
 // True when the key was the panel's, so the caller drops it.
 function settingsKey(k) {
   if (savesUp()) return savesKey(k);
+  if (setDrop && k === 'escape') { setDrop = null; SFX.pickup(); return true; } // ESC folds an open list before the panel
   const d = moveDir(k);
   if (d === 'left') settingsTabBy(-1);
   else if (d === 'right') settingsTabBy(1);
@@ -950,8 +961,10 @@ function applySliderDrag() {
     settings.mmR = Math.round(16 + t * 18);
     applyMinimapSize();
   } else if (dragSlider === 'hud') {
-    // 0.75x-1.5x in 0.05 steps; the strip reads it live (hudSc, ui.js)
-    settings.hudScale = Math.round((0.75 + t * 0.75) * 20) / 20;
+    // the knob steps notch to notch - only sizes the HUD can draw crisp on
+    // this screen (hudSizes, js/ui/strip.js); the strip reads it live
+    const S = hudSizes();
+    settings.hudScale = S[Math.round(t * (S.length - 1))];
   }
 }
 
@@ -967,9 +980,9 @@ function muteBtnRect() {
 
 // The foot's planks (the title's own drawMenuButton, js/menu.js): CLOSE, and
 // in a match the way out beside it (the ESC panel is the one menu a match or
-// the arena has). In practice that is LEAVE PRACTICE - leavePractice()
+// the arena has). In practice LEAVE is leavePractice()
 // (js/menu.js), the reroll's whiteout onto a bare URL, so leaving lands on a
-// fresh title world; in a match LEAVE MATCH - toLobby() (js/screens.js), the
+// fresh title world; in a match it is toLobby() (js/screens.js), the
 // death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
 // A solo match hangs SAVES between them (the saves slab, js/ui/saves.js).
@@ -977,13 +990,14 @@ function footPlanks() {
   const ids = state.settingsOpen ? (canSave() ? ['close', 'saves', 'leave'] : ['close', 'leave']) : ['close'];
   const n = ids.length, y = SET_Y + SET_FOOT_Y;
   const x0 = SET_X + Math.round((SET_W - (SET_PLANK_W * n + SET_PLANK_GAP * (n - 1))) / 2);
-  const label = { close: 'CLOSE', saves: 'SAVES', leave: PRACTICE ? 'LEAVE PRACTICE' : 'LEAVE MATCH' };
+  const label = { close: 'CLOSE', saves: 'SAVES', leave: 'LEAVE' };
   return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (SET_PLANK_W + SET_PLANK_GAP), y, w: SET_PLANK_W, h: SET_PLANK_H }));
 }
 function leavePlankRect() { return footPlanks().find((l) => l.id === 'leave') || null; }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
 // slide-in closes the way its own ESC does (closeMenuPanel, js/menu.js)
 function settingsClose() {
+  setDrop = null;
   if (state.settingsOpen) { state.settingsOpen = false; dragSlider = null; state.rebind = null; saveSettings(); SFX.pickup(); }
   else closeMenuPanel();
 }
@@ -998,6 +1012,12 @@ function settingsHit() {
   if (savesUp()) return savesHit(); // the saves slab stands in the ESC panel's place (js/ui/saves.js)
   const mx = mouse.x, my = mouse.y;
   const L = settingsLayout();
+  // an open dropdown list takes the whole pointer: one of its entries, or nothing
+  if (setDrop) {
+    const r = L.rows.find(q => q.id === setDrop);
+    if (r) for (const o of r.opts) { const y = o.y - L.scroll; if (mx >= o.x && mx < o.x + o.w && my >= y && my < y + o.h) return 'd:' + r.id + ':' + o.id; }
+    return null;
+  }
   for (const t of L.tabs)
     if (t.id !== setTab && mx >= t.x && mx < t.x + t.w && my >= t.y - 3 && my < t.y + t.h + 3) return 'tab:' + t.id;
   if (setTab === 'controls') for (const t of L.ctabs)
@@ -1021,7 +1041,8 @@ function settingsHit() {
     const y = r.y - L.scroll;
     // 14px pitch, so the bands must not overlap or a click lands on two rows
     if (my < y - 3 || my > y + 10) continue;
-    if (r.kind === 'choice' || r.kind === 'swatch') {
+    if (r.kind === 'drop') return mx >= r.box.x - 2 && mx < r.box.x + r.box.w + 2 ? 'drop:' + r.id : null;
+    if (r.kind === 'choice') {
       for (const o of r.opts) if (mx >= o.x - 2 && mx < o.x + o.w + 4) return 'c:' + r.id + ':' + o.id;
       return null;
     }
@@ -1037,10 +1058,22 @@ function settingsMouseDown() {
   const hit = settingsHit();
   // a listening cap: any press but its own calls it off first
   if (state.rebind && hit !== 'key:' + state.rebind) state.rebind = null;
+  // an open list: a click on an entry picks it, any click anywhere folds it
+  if (setDrop) {
+    setDrop = null;
+    if (hit) {
+      const [, rid, oid] = hit.split(':');
+      const row = settingsLayout().rows.find(r => r.id === rid);
+      if (row && row.pick) row.pick(oid);
+      SFX.place(); saveSettings();
+    } else SFX.pickup();
+    return;
+  }
   if (!hit) return;
   if (hit.startsWith('key:')) { const a = hit.slice(4); if (state.rebind === a) { state.rebind = null; SFX.pickup(); } else rebindStart(a); return; }
   if (hit === 'keyreset') { resetBinds(); SFX.place(); return; }
   if (hit.startsWith('tab:')) { setTab = hit.slice(4); SFX.pickup(); return; }
+  if (hit.startsWith('drop:')) { setDrop = hit.slice(5); SFX.pickup(); return; }
   // a controls cell opens its listing; a scheme cell (WASD / CLICK) also
   // makes that scheme the one in force, and every order the click scheme
   // held is dropped with it (its binds are its own and stay)
@@ -1068,11 +1101,17 @@ function settingsMouseDown() {
 }
 
 // dim: the fill and the readout go grey. The three sound dials pass it while
-// muted, so the speaker's state reads off every track it silences at a glance
-function drawSliderRow(y, t, txt, dim) {
+// muted, so the speaker's state reads off every track it silences at a glance.
+// notches: a stepped dial's stops, one tick under the track at each, so the
+// knob's jumps read as stops rather than as a stuck knob
+function drawSliderRow(y, t, txt, dim, notches) {
   ctx.fillStyle = '#0a0e23'; ctx.fillRect(SL_X - 1, y + 1, SL_W + 2, 5);
   ctx.fillStyle = '#2c3a68'; ctx.fillRect(SL_X, y + 2, SL_W, 3);
   ctx.fillStyle = dim ? '#4a5480' : '#ffd95c'; ctx.fillRect(SL_X, y + 2, Math.round(t * SL_W), 3);
+  if (notches > 1) {
+    ctx.fillStyle = '#4a5480';
+    for (let i = 0; i < notches; i++) ctx.fillRect(SL_X + Math.round(i / (notches - 1) * SL_W), y + 6, 1, 2);
+  }
   const kx = SL_X + Math.round(t * SL_W);
   ctx.fillStyle = '#0a0e23'; ctx.fillRect(kx - 2, y - 1, 5, 9);
   ctx.fillStyle = dim ? '#7a8bb8' : '#f4f7ff'; ctx.fillRect(kx - 1, y, 3, 7);
@@ -1099,18 +1138,45 @@ function drawMuteBtn(hot) {
   }
 }
 
-// one TEAM COLOURS chip: your side's mark beside the rival's, in the palette
-// it names (not the one in force), framed gold while it is the pick and
-// lifted a row under the pointer
-const SWATCH_W = 22;
-function drawSwatch(o, y, on, hot) {
-  const pal = SPRITES.teamPalettes[o.id], x = o.x, top = y - 1 - (hot && !on ? 1 : 0), h = 9;
-  ctx.fillStyle = on ? '#ffd95c' : hot ? '#cfe0ff' : '#0a0e23';
-  ctx.fillRect(x - 1, top - 1, SWATCH_W + 2, h + 2);
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, top, SWATCH_W, h);
-  const half = (SWATCH_W - 3) >> 1;
-  ctx.fillStyle = pal[1].mark; ctx.fillRect(x + 1, top + 1, half, h - 2);
-  ctx.fillStyle = pal[0].mark; ctx.fillRect(x + SWATCH_W - 1 - half, top + 1, half, h - 2);
+// A palette's chip: your side's mark beside the rival's, in the palette it
+// names (not the one in force) - the colour-blind entries' picture of what
+// each one paints
+function drawPalChip(id, x, y) {
+  const pal = SPRITES.teamPalettes[id];
+  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, 13, 7);
+  ctx.fillStyle = pal[1].mark; ctx.fillRect(x + 1, y + 1, 5, 5);
+  ctx.fillStyle = pal[0].mark; ctx.fillRect(x + 7, y + 1, 5, 5);
+}
+
+// A dropdown row: a box that shows the entry in force (chip and name) over a
+// caret, and when open, the list of every entry hung under it - drawn over
+// the rest of the page, outside its clip, so it can never be cut off. The
+// steel edge lights under the pointer and while the list is open.
+const DROP_TXT_X = 19, DROP_ROW_H = 11;
+function drawDropCaret(x, y, up) {
+  ctx.fillStyle = '#9fb6d8';
+  for (let i = 0; i < 3; i++) ctx.fillRect(x + i, y + (up ? 2 - i : i), 5 - i * 2, 1);
+}
+function drawDropBox(r, y, hot, open) {
+  const b = r.box, top = b.y + (y - r.y);
+  ctx.fillStyle = hot || open ? '#7f93bf' : '#0a0e23'; ctx.fillRect(b.x - 1, top - 1, b.w + 2, b.h + 2);
+  ctx.fillStyle = hot && !open ? '#1f2b5c' : '#121a3a'; ctx.fillRect(b.x, top, b.w, b.h);
+  const cur = r.opts.find(o => o.id === r.val()) || r.opts[0];
+  drawPalChip(cur.id, b.x + 2, top + 2);
+  drawPixelText(ctx, cur.label, b.x + DROP_TXT_X, y, '#f4f7ff');
+  drawDropCaret(b.x + b.w - 8, top + 4, open);
+}
+function drawDropList(r, scroll, hit) {
+  const o0 = r.opts[0], top = o0.y - scroll, h = r.opts.length * DROP_ROW_H;
+  ctx.fillStyle = '#7f93bf'; ctx.fillRect(o0.x - 1, top, o0.w + 2, h + 1);
+  ctx.fillStyle = '#121a3a'; ctx.fillRect(o0.x, top, o0.w, h);
+  const cur = r.val();
+  for (const o of r.opts) {
+    const y = o.y - scroll, hot = hit === 'd:' + r.id + ':' + o.id;
+    if (hot) { ctx.fillStyle = '#1f2b5c'; ctx.fillRect(o.x, y, o.w, o.h); }
+    drawPalChip(o.id, o.x + 2, y + 2);
+    drawPixelText(ctx, o.label, o.x + DROP_TXT_X, y + 3, cur === o.id ? '#ffd95c' : hot ? '#f4f7ff' : '#9fb6d8');
+  }
 }
 
 function drawToggleRow(y, on, onTxt, offTxt) {
@@ -1127,7 +1193,7 @@ function drawSliderById(id, y, off) {
   else if (id === 'music') drawSliderRow(y, settings.musicVol, String(Math.round(settings.musicVol * 100)), off);
   else if (id === 'sfx') drawSliderRow(y, settings.sfxVol, String(Math.round(settings.sfxVol * 100)), off);
   else if (id === 'map') drawSliderRow(y, (settings.mmR - 16) / 18, 'R' + settings.mmR);
-  else if (id === 'hud') drawSliderRow(y, (hudSc() - 0.75) / 0.75, String(Math.round(hudSc() * 100)));
+  else if (id === 'hud') { const n = hudSizes().length; drawSliderRow(y, n > 1 ? hudStep() / (n - 1) : 1, String(Math.round(hudSc() * 100)), false, n); }
 }
 
 // one toggle row's state, by row id
@@ -1195,14 +1261,13 @@ function renderSettings(now, opts) {
           const col = cur === o.id ? '#ffd95c' : hit === 'c:' + r.id + ':' + o.id ? '#f4f7ff' : '#7a8bb8';
           drawPixelTextShadow(ctx, o.label, o.x, y, col, 'rgba(8,12,28,0.9)');
         }
-      } else if (r.kind === 'swatch') {
-        const cur = r.val();
-        for (const o of r.opts) drawSwatch(o, y, cur === o.id, hit === 'c:' + r.id + ':' + o.id);
-      }
+      } else if (r.kind === 'drop') drawDropBox(r, y, hit === 'drop:' + r.id, setDrop === r.id);
     }
     if (setTab === 'audio') drawMuteBtn(hit === 'mute');
   }
   ctx.restore();
+  const dropRow = setDrop && setTab !== 'controls' ? L.rows.find(r => r.id === setDrop) : null;
+  if (dropRow) drawDropList(dropRow, L.scroll, hit);
   // the scroll track: only there when the page outgrows the window, thumb
   // position IS the affordance - grab the wheel, not a widget
   if (L.maxScroll > 0) {

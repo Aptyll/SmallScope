@@ -1055,7 +1055,7 @@ function endMatch(how) {
   state.deadHover = [0, 0];
   state.mapOpen = false;
   state.bagOpen = false;
-  state.settingsOpen = false;
+  state.settingsOpen = false; setDrop = null;
   state.wheel = null;
   state.build = null;
   state.deadTimer = 0;

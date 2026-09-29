@@ -931,17 +931,19 @@ purpose — `BAG_CELL` (18) with the art at 1× — because a spare is glanced a
 read all match.
 
 The whole widget — plate, wells and buy plates — draws at the **HUD SIZE**
-the ESC panel's GAME slider holds (`settings.hudScale`, 0.75×–1.5×, default 0.8×). All geometry stays in 1×
+the ESC panel's GAME slider holds (`settings.hudScale`, default 1×). All geometry stays in 1×
 strip space: at 1× everything draws straight to the frame, and at any other size `drawHudScaled`
 bakes the widget into `hudScaleCv` and blits it scaled about the strip's anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
-the same anchor via `stripMouse` first, so a click can never land beside its pixel. **`hudSc()`
-snaps the dial to whole device pixels** (`hudSnap`: one HUD pixel is always a whole number of
-canvas pixels, so the default 0.8 on a 2× canvas draws at 1×, where it used to draw every pixel
-1.6 wide and its lines one or two wide by chance) **and caps it** on the same grid
-(`hudSnapDown`) at the size where the strip would outgrow the view, so past that point the
-slider simply stops growing it rather than pushing its ends off the screen. The strip, the corner
+the same anchor via `stripMouse` first, so a click can never land beside its pixel. **The dial has
+notches, not a range** (`hudSizes`): every size from `HUD_MIN` to `HUD_MAX` (0.5× to 1.5×) at which
+one HUD pixel is a whole number of canvas pixels, and none past the size where the strip would
+outgrow the view (`hudSnapDown`). So a 2× canvas offers 50 / 100 / 150, a 3× canvas 67 / 100 / 133,
+a 4× canvas quarter steps. `hudSc()` draws at the notch nearest the stored value (`hudStep`),
+which also carries a setting across to a screen with other notches; the slider's knob steps
+between them with a tick under the track at each. A size off the grid would draw every pixel,
+say, 1.6 canvas pixels wide and its lines one or two wide by chance. The strip, the corner
 and the team rail all scale by this one number, and a bake lands on the device grid (`hudPx`). **The top-left corner
 scales with the same dial**: `drawCornerScaled` bakes the shelf, the drawer and the
 [build list](gameplay.md#base-building)'s hammer plate and column under them at 1× (`drawCorner`)

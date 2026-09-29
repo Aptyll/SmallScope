@@ -3149,7 +3149,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 
 `settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
-`teamPal` — the TEAM COLOURS row: `def` or a colour-blind palette (`rg`, `by`, `hc`), same section —
+`teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
 `aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai.js) —
@@ -3165,7 +3165,7 @@ and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) 
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
 saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, 0.75–1.5, default **0.8**, drawn at the nearest whole-device-pixel size by `hudSc`) needs no apply
+it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, default **1**; it steps between the screen's crisp sizes from 0.5 to 1.5, `hudSizes`, and a stored value draws at the nearest one, `hudSc`) needs no apply
 call: the hud strip, the pack and the shelf read it live every frame
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
@@ -3188,14 +3188,20 @@ the row tables in `SET_TABS` — draw, hit test and the `DBG.settingsRows` ancho
 same function, so a click can never disagree with a pixel. Rows keep the **14 px pitch**;
 `settingsHit()`'s bands are `y-3 .. y+10`, touching but never overlapping, so one click can
 never land on two rows. It answers a row id, `'mute'`, `'close'`, `'leave'`, `'tab:<id>'`, `'ctab:<id>'`
-(a CONTROLS sub-tab) or `'c:<row>:<opt>'` (a choice row's word). A **choice row** carries its
+(a CONTROLS sub-tab), `'c:<row>:<opt>'` (a choice row's word), `'drop:<row>'` (a dropdown's box) or
+`'d:<row>:<opt>'` (an entry of the open list). A **choice row** carries its
 own `val()` and `pick(id)` in `SET_TABS` — QUALITY's are the preset macro — so the draw (the word in force wears gold), the hit and
 the click all read one table. A **toggle row** whose two states have names of their own carries
 them there too, as `on`/`off` (CURSOR's PIXEL / BROWSER, TOOLTIP's FOLLOWS POINTER / BOTTOM LEFT,
 MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plain toggle's row id
-**is** its `settings` key, which is the whole of what its click does.
+**is** its `settings` key, which is the whole of what its click does. A **dropdown row** (`kind: 'drop'`)
+carries `val`/`pick` like a choice row; its box shows the entry in force and a click hangs the
+list under it (`setDrop`), drawn over the page outside its clip. While the list is open it takes
+the whole pointer: a click on an entry picks it, any click folds it, and ESC folds it before the panel.
+The HUD SIZE slider steps notch to notch (a tick under the track at each): only the sizes
+`hudSizes` finds crisp on this screen ([rendering](rendering.md#the-hud-strip)).
 
-**The VIDEO page** holds one QUALITY row and five toggles, every one a cosmetic-only render
+**The VIDEO page** holds one QUALITY row, five toggles and the COLOUR BLIND dropdown, every one a cosmetic-only render
 pass a weak GPU can shed (they read at draw time; nothing the sim computes changes):
 CLOUD SHADOWS (`vidClouds` — `cloudShade`'s two full-view multiply fills, the one pass that
 costs every daytime frame), SUN SHAFTS (`vidRays` — `godRays` and its motes), ICE STARS
@@ -3211,12 +3217,14 @@ whose words are numbers because the row is an instrument — `settings.fpsCap`, 
 `capSkips` (js/boot.js, [the fixed step](code-map.md#jsbootjs)) reads at the top of every
 animation frame: a frame under the cap is skipped whole, its time banked into the next, so
 the sim still takes every 1/60 s step it is owed and only the presentation thins. UNLIMITED
-is every frame the screen offers.
+is every frame the screen offers. Last sits **COLOUR BLIND**, the team palettes
+([colour-blind palettes](multiplayer.md#teams-and-colours)) named by what each is for: OFF,
+PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA, each entry beside its palette's chip.
 
 **The foot is planks, not a hint.** Under the content window (`SET_FOOT_Y`, `footPlanks`) sit
 frost planks drawn by the title's own `drawMenuButton`: **CLOSE** — the one way out that is a
 button; ESC and the pad's B still fold the slab — and, in a match only, the way out beside it,
-LEAVE MATCH in a match and LEAVE PRACTICE in [practice](world.md#the-practice-arena) (the ESC
+LEAVE, out of the match or out of [practice](world.md#the-practice-arena) (the ESC
 slab is the one menu either has, so its exit lives there; the title's slide-in has nothing to
 leave, so it centres CLOSE alone). A solo match hangs **SAVES** between the two (while `canSave()`:
 the [saves grid](#saved-matches)). `settingsHit()` answers `'close'` (→ `settingsClose`: the

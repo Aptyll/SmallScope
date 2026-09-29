@@ -217,13 +217,13 @@ const state = {
 // volume is the master dial; musicVol and sfxVol sit under it (SFX.setVolume /
 // setMusicVolume / setSfxVolume). A save written before the split simply has
 // neither key and keeps the defaults - no version bump needed.
-const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 0.8, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
+const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/player.js); off = the roster's real colours
   teamBlue: true,
   // which of TEAM_PALETTES (js/sprites/core.js) the two sides wear: 'def',
   // or a repaint for colour-blind eyes - 'rg', 'by', 'hc'. applyTeamPal
-  // puts it on the sprites; the COLOURS row on the GAME page picks it
+  // puts it on the sprites; the COLOUR BLIND dropdown on the VIDEO page picks it
   teamPal: 'def',
   // the rival bots' difficulty: an index into AI_LEVELS (js/ai.js), picked on
   // lobby's notches and remembered; 0 (NORMAL) until someone moves it

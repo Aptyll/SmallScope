@@ -444,11 +444,12 @@ the toggle); the human's profile name is stored. Nothing in the rules reads `ski
 `enemyOf`, `PVP`, ownership and the eagles' `team` fields are untouched — so the toggle is purely
 what colour things are drawn.
 
-**Colour-blind palettes.** The GAME page's TEAM COLOURS row (`settings.teamPal`, applied by
+**Colour-blind palettes.** The VIDEO page's COLOUR BLIND dropdown (`settings.teamPal`, applied by
 `applyTeamPal`, js/core.js) repaints both presets from `TEAM_PALETTES`: orange against blue for
 red-green eyes, vermilion against cyan for blue-yellow eyes, pale gold against dark blue for high
-contrast ([sprites](sprites.md)). Each chip on the row is its palette, yours beside theirs, so a
-player picks the pair they can tell apart. Any palette but the default also turns on the rival's
+contrast ([sprites](sprites.md)). Its entries name the colour blindness each is for (OFF,
+PROTANOPIA / DEUTERANOPIA, TRITANOPIA, ACHROMATOPSIA), each beside a chip of its palette, yours
+beside theirs, so a player can also just pick the pair they tell apart. Any palette but the default also turns on the rival's
 **shape cue** (`foeCue(team)`, js/player.js): a rival is a cross on both maps and on the lobby
 graph's line head (`drawMapUnit`'s `foe`, `drawMapCross`), and its health bar wears a raised dark
 cap on its right end (`drawHealthBar`), so the sides part in greyscale. The names stay RED and BLUE.

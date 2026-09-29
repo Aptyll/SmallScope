@@ -145,20 +145,37 @@ function hudHome() { return hudInT() >= 1; }
 // widget scaled about its bottom-centre anchor; stripMouse maps the pointer
 // back through that anchor, so every hit test below converts first and the
 // rects themselves never move.
-// The size the HUD is actually drawn at: the dial SNAPPED so one HUD pixel is
-// a whole number of device pixels (hudSnap), then CAPPED at the size where
-// the strip would outgrow the view, so past that point the slider simply
-// stops growing it rather than pushing its ends off the screen. The snap is
-// what keeps the HUD's pixels exact: at 0.8 on a 2x canvas every HUD pixel
-// was 1.6 device pixels, so a 1px line drew one or two wide depending on
-// where it fell, and the strip and the shelf stood at a different size from
-// the team rail, which already rounded. Every HUD widget scales by this one
-// number (drawHudScaled, drawCornerScaled, drawRailScaled).
-function hudSnap(s) { return Math.max(1, Math.round(s * devScale)) / devScale; }
+// The size the HUD is actually drawn at is one of the dial's NOTCHES
+// (hudSizes): every size from HUD_MIN to HUD_MAX at which one HUD pixel is a
+// whole number of device pixels, and none past the size where the strip would
+// outgrow the view. Whole device pixels are what keep the HUD's pixels exact:
+// at 0.8 on a 2x canvas every HUD pixel was 1.6 device pixels, so a 1px line
+// drew one or two wide depending on where it fell. So the notches depend on
+// the screen - 50 / 100 / 150 on a 2x canvas, 67 / 100 / 133 on a 3x, quarter
+// steps on a 4x - and the stored dial lands on the notch nearest it (hudStep),
+// which also carries a setting across to a screen with other notches. Every
+// HUD widget scales by this one number (drawHudScaled, drawCornerScaled,
+// drawRailScaled).
+const HUD_MIN = 0.5, HUD_MAX = 1.5;
 function hudSnapDown(s) { return Math.max(1, Math.floor(s * devScale + 1e-6)) / devScale; }
-function hudSc() {
-  return Math.min(hudSnap(settings.hudScale || 0.8), hudSnapDown((VIEW_W - 8) / (AB_W + 6)));
+let hudSizesKey = '', hudSizesList = [1];
+function hudSizes() {
+  const key = devScale + ':' + VIEW_W;
+  if (key === hudSizesKey) return hudSizesList;
+  const cap = hudSnapDown((VIEW_W - 8) / (AB_W + 6)), out = [];
+  const k0 = Math.max(1, Math.ceil(HUD_MIN * devScale - 1e-6)), k1 = Math.floor(HUD_MAX * devScale + 1e-6);
+  for (let k = k0; k <= k1; k++) if (k / devScale <= cap + 1e-6) out.push(k / devScale);
+  if (!out.length) out.push(cap);
+  hudSizesKey = key; hudSizesList = out;
+  return out;
 }
+function hudStep() {
+  const S = hudSizes(), want = settings.hudScale || 1;
+  let best = 0;
+  for (let i = 1; i < S.length; i++) if (Math.abs(S[i] - want) < Math.abs(S[best] - want) - 1e-6) best = i;
+  return best;
+}
+function hudSc() { return hudSizes()[hudStep()]; }
 // a view coordinate put on the device grid, where a scaled HUD bake has to
 // land for its pixels to stay whole
 function hudPx(v) { return Math.round(v * devScale) / devScale; }

@@ -108,7 +108,7 @@ window.SPR = (() => {
   // tier material) and its EAGLE's armour, so a side reads as one side at a
   // glance. The game code reads the names/markers back out of SPRITES.teams -
   // TEAM_PALETTES is the only place the team palette is written down.
-  // TEAM_PALETTES are the COLOURS row's four answers (settings.teamPal): the
+  // TEAM_PALETTES are the COLOUR BLIND dropdown's four answers (settings.teamPal): the
   // same two presets repainted for a player who cannot tell the default pair
   // apart. Slot 0 is the side your screen paints as the rival, slot 1 yours
   // (skin(), js/player.js). RED-GREEN is orange against blue (the pair both

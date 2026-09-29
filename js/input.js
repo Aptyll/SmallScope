@@ -395,7 +395,7 @@ function keyPress(e) {
     else if (state.charOpen) { state.charOpen = false; SFX.ui(false); }
     else if (state.bagOpen) { state.bagOpen = false; SFX.ui(false); } // the drawer slides back up
     else {
-      state.settingsOpen = !state.settingsOpen; dragSlider = null; state.wheel = null; SFX.ui(state.settingsOpen);
+      state.settingsOpen = !state.settingsOpen; dragSlider = null; setDrop = null; state.wheel = null; SFX.ui(state.settingsOpen);
       saveUi.open = false;
       if (state.settingsOpen) autoSave(); // the way into the pause menu autosaves (js/save.js)
     }
