@@ -1040,7 +1040,9 @@ function drawEagleTrail(e, ex, ey, S, now) {
 
 // one bird in its team's armour, whatever its state. In the air the sprite
 // sits at (x, y) with the shadow `alt` px below it; the dive walks that gap
-// to zero so shadow and bird meet exactly at the crash point.
+// to zero so shadow and bird meet exactly at the crash point. A war eagle
+// skin (birdSkinFor, read here only: the sim never asks) is painted at its
+// heading, so it draws unrotated.
 function drawEagle(e, ex, ey, now) {
   const frames = SPRITES.eagleTeam[skin(e.team)];
   const sx = Math.round(e.x - ex), sy = Math.round(e.y - ey);
@@ -1049,29 +1051,33 @@ function drawEagle(e, ex, ey, now) {
     const fall = u * u; // gravity: slow tip-over, hard finish
     const alt = DROP_ALT * (1 - fall);
     const S = EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * fall; // 3x down to the roost's 2x
-    const spr = frames[[0, 1, 2, 1][Math.floor(e.flap * (7 + 6 * u)) % 4]]; // wingbeats quicken into the stoop
-    const w = spr.width * S, h = spr.height * S;
+    const fi = [0, 1, 2, 1][Math.floor(e.flap * (7 + 6 * u)) % 4]; // wingbeats quicken into the stoop
+    const worn = birdSkinFor(e.team), war = SPRITES.warBirds.has(worn) ? worn : null;
+    const spr = war ? SPRITES.warBirds.frame(war, skin(e.team), e.heading, fi) : frames[fi];
+    // a war frame is already flight-sized (FLY): it shrinks by S / EAGLE_SCALE into the dive
+    const k = war ? S / EAGLE_SCALE : S, w = spr.width * k, h = spr.height * k;
     drawEagleTrail(e, ex, ey, S, now); // before the cull: the trail hangs behind a bird already off the frame
     if (sx < -w - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + 40) return;
     const bob = e.state === 'fly' ? Math.round(Math.sin(now * 2.4 + e.team * 2.1) * 3) : 0;
     ctx.save();
     ctx.translate(sx + Math.round(10 * (1 - fall)), sy + alt);
-    ctx.rotate(e.heading);
-    ctx.drawImage(SPRITES.eagleShadow, -w / 2, -h / 2, w, h);
+    if (!war) ctx.rotate(e.heading);
+    ctx.drawImage(war ? SPRITES.warBirds.shadow(war, e.heading) : SPRITES.eagleShadow, -Math.round(w / 2), -Math.round(h / 2), w, h);
     ctx.restore();
     ctx.save();
     ctx.translate(sx, sy + bob);
-    ctx.rotate(e.heading);
-    ctx.drawImage(spr, -w / 2, -h / 2, w, h);
+    if (!war) ctx.rotate(e.heading);
+    ctx.drawImage(spr, -Math.round(w / 2), -Math.round(h / 2), w, h);
     ctx.restore();
     // every rider seated on its wing, facing the way the bird flies, at the
     // bird's own perspective size (riderScale); the local player draws last so
     // it is never under a teammate. A wingbeat lifts the whole crew a pixel.
     const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
     const RS = riderScale(e), rd = riderDir(e);
-    const beat = frames.indexOf(spr) === 0 ? -1 : 0; // the downstroke (spread frame) rides high
+    const beat = fi === 0 ? -1 : 0; // the downstroke (spread frame) rides high
     { // the driver first, on the neck: the team's merchant, who climbs down at the crash
-      const dx = MERCH_SEAT[0] * S, dy = MERCH_SEAT[1] * S;
+      const ms = war ? SPRITES.warBirds.merchSeat : MERCH_SEAT; // behind the war helm, not on it
+      const dx = ms[0] * S, dy = ms[1] * S;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
       drawSeated(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS);
       seatedName(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS, 'MERCH', e.team);
@@ -1716,6 +1722,8 @@ window.DBG = {
   hopOff: (p) => hopOff(p || player), // E off the roost for a rider who rode the landing (refused while the brief runs)
   // the two objectives: read them, chip one, or fell one outright without a siege
   get eagles() { return state.drop && state.drop.eagles; },
+  // the war eagle skins' painter (js/sprites/warbirds.js); wear one with PROFILE.wear('bird', id)
+  warBirds: SPRITES.warBirds,
   // the paint: which preset a team wears on this screen (settings.teamBlue), and the two merchants
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the roost's road out: the felling front, or fire the whole lane at once

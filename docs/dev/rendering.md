@@ -2048,7 +2048,7 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   nothing picked leaves. The arrows walk `menu.skSel` over the grid, Enter presses.
 - **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
   local player's company wears the skin worn, the other company the free first row (skins are
-  not sent over the wire). It is read at draw time and never by the sim.
+  not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
 
 ## Eagle drop (mode `drop`)
 
@@ -2230,7 +2230,10 @@ in the flight bar's window colours (`FLIGHT_SHUT`, then `FLIGHT_OPEN` pulsing on
 `DROP_ALT` 56 px in flight, converging to 0 down the dive so shadow and bird meet at the crash
 point), the bird itself in its team's armour (`SPRITES.eagleTeam[team]` cycling spread → mid →
 back → mid, rotated to its heading, at `EAGLE_SCALE` 3× walking down to `EAGLE_REST_SCALE` 2×
-through the dive, bobbing 3 px in level flight), under it the **wind trail** (`drawEagleTrail`,
+through the dive, bobbing 3 px in level flight; a side whose bird wears a war eagle skin
+(`birdSkinFor(team)` names one `SPRITES.warBirds.has`) draws `SPRITES.warBirds.frame` and `.shadow` instead, **unrotated**, since each frame is
+painted at its heading, at `S / EAGLE_SCALE` of its flight size, with the merchant on
+`SPRITES.warBirds.merchSeat` behind the helm; the roost and the flee still draw the plain eagle), under it the **wind trail** (`drawEagleTrail`,
 drawn before the bird's own cull because it hangs behind a bird already off the frame): **one
 continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the flown
 line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —

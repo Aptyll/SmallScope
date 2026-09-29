@@ -6,7 +6,8 @@
 // and the purse (js/profile.js) - an id kept in a profile, a name, a rarity
 // (SKIN_RARITY, js/ui/skins.js: the card's colour) and a price in coins. The
 // first row is free and is what every bird wears by default. The art per id
-// is SPRITES.birdSkin (a skin without it flies as today's bird).
+// is SPRITES.warBirds and its cards SPRITES.birdSkinIcon (js/sprites/warbirds.js);
+// a skin without any flies as today's bird.
 const BIRD_SKINS = [
   { id: 'classic', name: 'CLASSIC', rarity: 'common', price: 0 },
   { id: 'helm', name: 'GREAT HELM', rarity: 'common', price: 100 },
