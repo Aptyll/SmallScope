@@ -63,7 +63,7 @@ function stepItemIcons(nowMs) {
 }
 
 // The work-target rim: the hero's hovered workable object (tree, dead tree,
-// rock, berried bush, chest) draws under a 1px pulsing gold outline - the
+// berried bush, chest) draws under a 1px pulsing gold outline - the
 // buy plates' two golds on the same beat, so "you can act on this" reads in
 // its standing ink, and the target never blends into the occluder fade's
 // pocket below. The sprite (or atlas frame) tints through the scratch canvas
@@ -79,7 +79,21 @@ function stepItemIcons(nowMs) {
 // not a light: it is drawn here, under the night grade, like the rock.
 const ROCK_GLINT_T = 0.32;   // s a glint lasts
 const ROCK_GLINT_NIGHT = 2.5; // ...and how much longer the wait between two is after dark
-function drawRock(o, x, y, rim, now) {
+// The pick's reach, flat on the snow under the rock: in the kind's colour
+// round the rock your pick is at, and faint round a free one close enough
+// to step into (MINE_RING_NEAR past MINE_R, js/mining.js)
+const MINE_RING_NEAR = 24;
+function drawMineRing(ox, oy) {
+  const v = viewPlayer();
+  if (!v || v.dead) return;
+  const o = v.mineO || mineFree(v, MINE_R + MINE_RING_NEAR);
+  if (!o) return;
+  ctx.save();
+  ctx.globalAlpha = v.mineO ? 0.8 : 0.45;
+  hbRing(rockCx(o) - ox, rockCy(o) - oy, MINE_R, v.mineO ? ROCK_KINDS[o.kind].chip : '#c4cad8');
+  ctx.restore();
+}
+function drawRock(o, x, y, now) {
   const K = ROCK_KINDS[o.kind];
   if (!rockReady(o)) {
     const r = SPRITES.rockSpent[o.kind];
@@ -87,7 +101,6 @@ function drawRock(o, x, y, rim, now) {
     return;
   }
   const spr = SPRITES.rock[o.kind], top = y + TILE - spr.height + 1;
-  if (rim) drawTargetRim(spr, 0, 0, spr.width, spr.height, x, top, now);
   drawSpriteFlash(spr, x, top, o.flash);
   if (o.crack > 0) {
     ctx.drawImage(SPRITES.rockCracks[o.kind][Math.min(2, Math.floor(o.crack * 3))], x, top);
@@ -316,6 +329,8 @@ function render() {
   // your side's flag rings - the ground each order covers - flat on the snow
   // under everything that walks it, and the ring a held flag wheel previews
   drawFlagRings(ox, oy, now);
+  // ...and the pick's reach round a rock (drawMineRing, beside drawRock)
+  drawMineRing(ox, oy);
   // the CLICK scheme's rings: where the last order landed, and the lock's
   // ring under its target
   drawClickMarks(ex, ey, now);
@@ -479,7 +494,7 @@ function render() {
     } else if (LANDMARKS[o.type]) {
       drawLandmark(o, px + sh, py); // the sled, the boat (js/draw/landmarks.js); their parts draw nothing
     } else if (o.type === 'rock') {
-      drawRock(o, px + sh, py, fadeP && o === fadeWkO, now);
+      drawRock(o, px + sh, py, now);
     } else if (o.type === 'chest') {
       if (fadeP && o === fadeWkO) drawTargetRim(CHEST_SPR, 0, 0, CHEST_SPR.width, CHEST_SPR.height, px + sh, py + TILE - CHEST_SPR.height, now);
       drawSpriteFlash(CHEST_SPR, px + sh, py + TILE - CHEST_SPR.height, o.flash);

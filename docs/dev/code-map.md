@@ -308,10 +308,10 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the three rock kinds: channel, gold, ore, find, regrow, glint | `ROCK_KINDS` | `rocks and ore` |
+| the three rock kinds: mining time, gold, ore, find, regrow, glint | `ROCK_KINDS` | `rocks and ore` |
 | the ores as carried items, their icons and prices | `ORE_ICONS`/`ORE_PAL`/`ORE_PRICE`, `ORE_STACK`, `isOre` (the rows go into `ITEMS`; the tooltip: `tipStack`, js/ui/tooltip.js; the price: `itemValue`, js/ui/shop.js) | `rocks and ore` |
-| the mining channel: its start, tick, bite, landing and drop | `startMine` (from `tryWork`, actions.js), `updateMine` (from `updatePlayer`, sim.js), `mineStrike`, `finishMine`, `breakMine` (beside every `breakEat`), `MINE_STRIKE`/`MINE_MOVE`/`ORE_FLING` | `rocks and ore` |
-| is a rock standing, who is at it, is it in reach, and the rubble growing back | `rockReady`, `rockMiner`, `mineReach`, `rockCx`/`rockCy`, `tickRock` (the object timers, sim.js) | `rocks and ore` (the draw: `drawRock`, js/draw/render.js; the shade: `CASTERS.rock`, js/draw/ground.js) |
+| the pick that mines a rock on its own: taking the nearest free rock in reach, its tick, bite, landing, letting go and a rival's blow | `updateMine` (from `updatePlayer`, sim.js), `mineFree`, `mineIdle`, `mineStrike`, `finishMine`, `breakMine`, `mineHit` (from `damagePlayer`, player.js), `MINE_R`/`MINE_HIT_HOLD`/`MINE_STRIKE`/`MINE_MOVE`/`ORE_FLING` | `rocks and ore` |
+| is a rock standing, who is at it, is it in reach, and the timers: the cracks closing on a rock nobody is at (`MINE_DECAY`) and the rubble growing back | `rockReady`, `rockMiner`, `mineReach`, `rockCx`/`rockCy`, `tickRock` (the object timers, sim.js) | `rocks and ore` (the draw: `drawRock`, js/draw/render.js; the shade: `CASTERS.rock`, js/draw/ground.js) |
 | a weapon's forge points and level, and what a level adds: damage on every body, then rate of fire or tensile by the body's `TOOLS` row `up`, tapering | `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`, `forgeNeed`/`forgeCum`/`forgeBar`/`forgeLvlOf`, `toolFp` (`cell.fp`; a bare `lvl` reads as its points), `toolLvl`, `toolUp`, `forgeSum`, `forgeDmgAt`/`forgeRofAt`/`forgeTensileAt` (the bench's preview), `toolDmgMul` (read by `toolPlan`, tools.js, and `pierceMods`, abilities.js), `toolRofMul` (`toolRof`, tools.js), `toolTensile` (`toolPlan`, `toolOver`, `botFitLoadout`, tools.js, and the tooltip) | `the forge` |
 | what a pile is worth, what a forged weapon sells for, and the order that dumps a pile into it | `pilePts`, `forgeWorth`/`FORGE_GOLD` (`cellValue`, js/ui/shop.js), `forgeCell`, `forgeReady`, `forgeTool` (from `shopCmd` act `forge`, js/ui/shop.js) | `the forge` (the bench: js/ui/forge.js) |
 
@@ -528,8 +528,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | render pass order | `render` | `render` |
 | the occluder fade: the visibility pocket around the viewed hero, and its silhouette rim | `TREE_FADE_A`/`TREE_FADE_R0`/`TREE_FADE_R1`, `treeFadeSil`, the tree branch of the y-sorted pass | `render` (the rim stamp: `drawPlayer`, js/draw/bodies.js) |
-| the work-target rim: gold outline on the hovered tree/dead tree/rock/berried bush/chest | `drawTargetRim`, the `o === fadeWkO` stamps in the y-sorted pass | `render` |
-| a rock as drawn: its kind or its rubble, the channel's cracks and bar, its glint | `drawRock`, `ROCK_GLINT_T`/`ROCK_GLINT_NIGHT` | `render` (above `drawTargetRim`; the art: js/sprites/rocks.js) |
+| the work-target rim: gold outline on the hovered tree/dead tree/berried bush/chest | `drawTargetRim`, the `o === fadeWkO` stamps in the y-sorted pass | `render` |
+| a rock as drawn: its kind or its rubble, the cracks and bar of its progress, its glint, and the ring of the pick's reach on the snow | `drawRock`, `drawMineRing`/`MINE_RING_NEAR`, `ROCK_GLINT_T`/`ROCK_GLINT_NIGHT` | `render` (above `drawTargetRim`; the art: js/sprites/rocks.js) |
 | the F3 readout: fps, coords, seed | `drawTags` | `render` |
 | the `.` overlay: hitboxes, the model centre column, and its 1px ring/box/line rasterisers | `drawHitboxes`, `hbRing`, `hbBox`, `hbDot`, `hbLine`, `hbMid`, `HB_*` | `debug overlays` |
 | the `.` overlay's routes: waypoints + goal tile, a bird's perch line, a fish's heading arrow | `drawNavPaths`, `hbArrow` | `debug overlays` |
