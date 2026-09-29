@@ -2976,7 +2976,8 @@ banner, js/ui/screens.js): `state.mode = 'dead'`, every local overlay closed, an
 to a dim with two planks — **SPECTATE** and **LOBBY** — for `'lost'` (permanent), to
 [the victory screen](rendering.md#the-end-screens), whose planks are **KEEP PLAYING** and
 **LOBBY**, for `'won'`, or, for `'respawning'` (temporary), to **the wait**: no dim and no planks
-at all — `endMatch` puts the view on an ally (`state.deadView = 'spec'`, `specNext` keeping to
+at all — `endMatch` puts the view on an ally (`viewPlayer` holds it on the body until its
+[fall](rendering.md#going-down) is over) (`state.deadView = 'spec'`, `specNext` keeping to
 the side's own through `specOk`), one line — **RESPAWNING IN Ns** at 3× in the upper band — reads
 the live countdown, and [the replay window](rendering.md#replay-the-last-four-seconds) opens large
 over the view with a close box on its corner (or ESC), so the death is watched first and the ally
