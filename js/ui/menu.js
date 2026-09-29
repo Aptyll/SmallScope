@@ -3521,8 +3521,9 @@ function drawWikiBeast(bs, cx, baseY, level, now) {
   const spr = SPRITES[bs.kind].right.idle[0];
   wikiMound(cx, baseY, 26);
   ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bs.bw ? bs.bw >> 1 : 3), baseY, bs.bw || 6, 2);
-  const px = cx - (spr.width >> 1), py = baseY + 2 - spr.height;
-  ctx.drawImage(spr, px, py);
+  const px = cx - (spr.width >> 1), py0 = baseY + 2 - spr.height;
+  ctx.drawImage(spr, px, py0);
+  const py = py0 + (spr.top || 0); // the bars on the standing body, as drawAnimal hangs them
   const wolf = isCampKind(bs.kind); // a camp monster's second bar is its leash
   const bx = Math.round(cx - bs.bw / 2);
   drawHealthBar(cx, py - 8, ANIMAL_HP[bs.kind], ANIMAL_HP[bs.kind], bs.bw); // full, chunked the way the world chunks it
