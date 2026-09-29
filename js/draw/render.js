@@ -1449,7 +1449,8 @@ function cursorInfo() {
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
     if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
-    if (!m.panel && (overCharTag() || overPatchTag())) return { kind: 'hand' }; // the two corner tags
+    if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
+    if (!m.panel && (overCharTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }

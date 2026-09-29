@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.28';
+const PATCH_TXT = 'PATCH 4.29';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.29', 'COINS AND SKINS: EVERY PLAYER STARTS WITH 100 COINS, SHOWN TOP RIGHT OF THE TITLE, AND EARNS 10 MORE EACH MATCH, 25 FOR A WIN. CLICK THEM TO OPEN THE SKINS SCREEN: SCOUT, EAGLE, WEAPON AND TRAIL TABS, EACH SKIN WITH A RARITY COLOUR. SCOUT, WEAPON AND TRAIL SKINS ARE PREVIEWS FOR NOW.'],
   ['4.28', 'THE BEARS COME ALIVE: THEY BREATHE STANDING STILL, WALK THEIR CAMP, GALLOP WHEN THEY CHARGE AND ROAR WHEN YOU WAKE THEM, AND A SWIPE NOW STANDS THE BEAR UP ON ITS HIND LEGS FIRST, SO STEP BACK BEFORE THE PAW COMES DOWN. THEY ALSO NO LONGER GET STUCK RUNNING IN PLACE BESIDE A TREE.'],
   ['4.27', 'BUILDING IS QUICKER: TAP T FOR YOUR LAST PIECE OR HOLD IT FOR A WHEEL OF PIECES, THE BUILD BUTTON SITS AFTER YOUR ABILITIES, DRAG TO LAY A WALL LINE, A NEW GATE LETS ONLY YOUR SIDE THROUGH, A GHOST YOU CANNOT PAY FOR GOES GREY, TAKING DOWN A PIECE STILL GOING UP GIVES ALL ITS GOLD BACK, E CAN REPAIR, AND TEAMMATES STANDING BY SPEED A BUILD.'],
   ['4.26', 'PERCH\'S HEALTH BAR IS TALLER WITH EIGHT BIG BLOCKS, AND SITS A LITTLE FURTHER UNDER ITS NAME.'],
@@ -677,6 +678,7 @@ function menuKey(e) {
   if (m.screen === 'saves') { if (m.popT >= 1) savesKey(k); return; } // its own keys, the X included (js/ui/saves.js)
   if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
+  if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
@@ -701,6 +703,7 @@ function menuClick() {
   if (m.screen === 'saves') { if (m.popT >= 1 && !m.lockT) savesClick(); return; }
   if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
+  if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
   if (m.panel) {
@@ -710,6 +713,7 @@ function menuClick() {
     return;
   }
   if (overCharTag()) { beginChars(); return; }
+  if (overCoinTag()) { beginSkins(); return; }
   if (overPatchTag()) { beginNotes(); return; }
   const h = menuHit();
   if (h < 0) return;
@@ -802,6 +806,8 @@ function updateTitle(dt) {
   m.charT = Math.max(0, Math.min(1, m.charT + (m.screen === 'chars' || m.screen === 'create' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'chars') updateChars(dt);
   else if (m.screen === 'create') updateCreate(dt);
+  m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
+  if (m.screen === 'skins') updateSkins(dt);
   m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'rooms') updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
@@ -1197,6 +1203,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '3.73'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['EARN COINS EVERY MATCH AND SPEND THEM ON SKINS', '4.29'],
     ['HOLD T FOR A WHEEL OF PIECES, DRAG WALLS, REPAIR WITH E', '4.27'],
     ['THE EAGLE RIDE GLIDES, NAMES EVERY RIDER AND SHOWS THE JUMP KEY', '4.25'],
     ['YOUR DEATH REPLAYS AT FULL SPEED, AND THE WHEEL ZOOMS WHILE YOU WAIT', '4.21'],
@@ -3744,7 +3751,8 @@ function renderTitle(now) {
   const nc = easeInOut(m.notesT);              // ...and the patch notes'
   const kc = easeInOut(m.charT);               // ...and the character screens'
   const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
-  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc); // chrome ducks under a panel or any full screen
+  const bc = easeInOut(m.skinT);               // ...and the skins screen's
+  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc); // chrome ducks under a panel or any full screen
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
@@ -3796,6 +3804,7 @@ function renderTitle(now) {
     drawPixelTextShadow(ctx, PATCH_TXT, pr.x, pr.y, phot ? '#ffd95c' : '#5a6690', 'rgba(15,22,50,0.9)');
     if (phot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(pr.x, pr.y + 7, pr.w, 1); }
     drawCharTag(now); // the active character and its quill, opposite corner
+    drawCoinTag();    // the purse, top-right: the way into the skins screen
     ctx.globalAlpha = 1;
   }
 
@@ -3812,6 +3821,7 @@ function renderTitle(now) {
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
   if (rc > 0.005) renderRooms(now, rc * (1 - out));
+  if (bc > 0.005) renderSkins(now, bc * (1 - out));
 
   // sub-panels slide up from the bottom edge over the still-visible world
   if (m.panel) {

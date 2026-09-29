@@ -1,6 +1,20 @@
 'use strict';
 // The eagle: three flap frames, each side's armour over them, the hit flash
 // and the shadow it drags across the snow.
+
+// The bird's skins: what each one IS for the skins screen (js/ui/skins.js)
+// and the purse (js/profile.js) - an id kept in a profile, a name, a rarity
+// (SKIN_RARITY, js/ui/skins.js: the card's colour) and a price in coins. The
+// first row is free and is what every bird wears by default. The art per id
+// is SPRITES.birdSkin (a skin without it flies as today's bird).
+const BIRD_SKINS = [
+  { id: 'classic', name: 'CLASSIC', rarity: 'common', price: 0 },
+  { id: 'helm', name: 'GREAT HELM', rarity: 'common', price: 100 },
+  { id: 'beak', name: 'BEAK GUARD', rarity: 'common', price: 100 },
+  { id: 'horned', name: 'HORNED', rarity: 'rare', price: 200 },
+  { id: 'crested', name: 'CRESTED', rarity: 'rare', price: 200 },
+  { id: 'ironclad', name: 'IRONCLAD', rarity: 'epic', price: 400 },
+];
 (() => {
   const { bake, TEAM_SKINS } = SPR;
 

@@ -1049,6 +1049,8 @@ function endMatch(how) {
   // respawn wait is not an ending and freezes nothing.
   if (how !== 'respawning') statFreeze();
   if (awardWin) PROFILE.addWin();
+  // the coins: once per ending, on the same edges as the win and the loss sting
+  if (awardWin || firstLoss) payMatchCoins(awardWin);
   state.mode = 'dead';
   state.deadView = 'menu';
   state.deadSel = 0;

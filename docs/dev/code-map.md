@@ -68,6 +68,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the twin eagle's frames | by banner | `eagle` |
+| what each bird skin IS: id, name, rarity, price in coins (its art: `SPRITES.birdSkin`/`birdSkinIcon`) | `BIRD_SKINS` | the file's head, above the IIFE |
 
 ## js/sprites/buildings.js (legacy IIFE)
 
@@ -702,6 +703,17 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | both screens' draws: the icon grids, a well, the 48 px model, the ledger, a card, an option cell, the die, the two renders | `CH_ICON_PAL` and the `CH_*` grids under it, `drawWell`, `drawModel`, `drawLedger`, `drawCharCard`, `renderChars`, `drawLookCell`, `drawDie`/`DIE_FACES`, `renderCreate` | `characters` › `pixels` |
 | the create / customize screen: the pre-rolled buffer, the option rows (a cell per choice, each a crop of the model wearing it), the class pair and its lock, the die, the name field, DONE / CANCEL, the keyboard | `CH_ROWS`/`CH_HEAD`/`CH_TORSO`/`CH_CELL`/`CH_PLATE`/`CH_ROW_N`, `createLayout`, `rowCells`, `beginCreate`, `createCommit`/`createCancel`, `setLook`/`cycleLook`/`shuffleLook`, `createHit`, `createKey`, `createClick`, `updateCreate`, `nameOk`, `renderCreate`, `drawModel`, `drawLookCell`, `drawDie`/`DIE_FACES`/`DIE_T`, `drawWell`, `NAME_SHAKE_T` | `characters` › `the create screen` (the store: `PROFILE`, profile.js; the model: `SPRITES.portrait`, js/sprites/looks.js) |
 | the character tag bottom-left of the title screen | `charTagRect`, `overCharTag`, `drawCharTag` (the player that wears it: `applyCharacter`, player.js) | `characters` › `the character tag` |
+
+## js/ui/skins.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the catalogue: the navbar's categories, the rarity colours, the placeholder scout / weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one) | `birdSkinFor`, `birdSkinRow`, `skinOwned` | `skins` › `the catalogue` |
+| what a finished match pays | `COINS_MATCH`, `COINS_WIN`, `payMatchCoins` (its caller: `endMatch`, player.js) | `skins` › `the catalogue` |
+| a card's picture: the eagle's own icon or today's bird turned, a placeholder washed in its tint, a trail's streak | `skinArt`, `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
+| the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
+| the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
 
 ## js/ui/screens.js
 
