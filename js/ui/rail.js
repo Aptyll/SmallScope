@@ -3,13 +3,14 @@
 // and the anchors (railBottom, headlineY, noteY) the screens hang under it.
 // ---- the team rail: the roster along the top edge ----------------------
 // THE TEAM RAIL (3.33, joined into one scoreboard in 4.14): every player in
-// the match along the top centre, Dota's top bar in the frostlands' chrome.
-// ONE plate on the hud frame's chrome: your side's chips on the left, the
-// rival's on the right, and between them the score - your side's kill total,
-// the match clock, the rival's total - on a sunk well, each total in its
+// the match along the top centre, Dota's top bar kept clean and minimal.
+// ONE plain plate (the hud frame's outline and flat ground, no bevel, no
+// snow): your side's chips on the left, the rival's on the right, and
+// between them the score - your side's kill total, the match clock, the
+// rival's total - on a darker panel, each total in its
 // side's mark. A CHIP per player: the class emblem at 12px (CLASS12,
 // js/menu.js) in a rim painted by side through skin(), a thin hp bar under it
-// in the same colour (drawHealthBar's segments at chip width), and you at
+// in the same colour (one solid run, no segments), and you at
 // the head of your side with a frost tick under your bar - there, not loud.
 // A dead player's chip goes under the wells' slate with the hand walking
 // round it until the bird sets them down again (drawSweepCover - the one
@@ -24,17 +25,18 @@
 // rides the intro slide down from above with the minimap, and stays up while
 // you are dead - the side's state is exactly what a spectator reads.
 const RAIL_CHIP = 14;               // a chip: the 12px emblem and its 1px rim
-const RAIL_BAR = 4;                 // the hp bar under a chip: its dark backing round a 2px track
+const RAIL_BAR = 4;                 // the hp bar under a chip: 1px air, the 2px bar, 1px air
 const RAIL_BODY = RAIL_CHIP + RAIL_BAR;
 const RAIL_GAP = 2;                 // the air between two chips
 const RAIL_SEP = 4;                 // the air between a side's chips and the score well, and inside the well
 const RAIL_KILL_W = 14;             // a kill total's cell: two digits at 2x
 const RAIL_CLOCK_W = 19;            // the clock's cell: M:SS up to MM:SS at 1x
-const RAIL_Y = 3;                   // the plate's top edge: room for the snow cap
+const RAIL_Y = 3;                   // the plate's top edge: off the screen's own
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it
 const RAIL_YOU = HUD_FROST;         // the tick under your own bar
+const RAIL_TRACK = '#1e2544';       // an hp bar's empty track
 // the roster: your side then the rival's, each by id, you at the head of
 // yours. Null unless both sides have a body - the practice arena has no rail.
 function railSides() {
@@ -155,21 +157,26 @@ function drawRailChip(c, now, on) {
   ctx.drawImage(classIcon12(p.cls, false), c.x + 1, c.y + 1);
   ctx.globalAlpha = 1;
   if (wait) drawSweepCover(c.x + 1, c.y + 1, c.w - 2, c.h - 2, left, CD_SWEEP, CD_EDGE);
-  // the hp bar hangs off the chip's foot, its backing meeting the rim
-  drawHealthBar(c.x + c.w / 2, c.y + c.h + 1, p.dead ? 0 : p.hp, p.maxHp, c.w, p.team);
+  // the hp bar hangs off the chip's foot: one solid run of the side's
+  // colour on a dark track, no segments - a glance, not a count
+  const by = c.y + c.h + 1, frac = p.dead ? 0 : Math.max(0, Math.min(1, p.hp / p.maxHp));
+  ctx.fillStyle = RAIL_TRACK;
+  ctx.fillRect(c.x, by, c.w, 2);
+  if (frac > 0) {
+    ctx.fillStyle = tm.mark;
+    ctx.fillRect(c.x, by, Math.max(1, Math.round(c.w * frac)), 2);
+  }
   if (p === player) {
     ctx.fillStyle = RAIL_YOU;
     ctx.fillRect(c.x + c.w / 2 - 2, c.y + RAIL_BODY, 4, 1);
   }
 }
-// the score well: a sunk plate between the two sides, the kill totals in
+// the score well: a darker panel between the two sides, the kill totals in
 // their sides' marks and the match clock between them
 function drawRailScore(L) {
   const wl = L.well;
-  ctx.fillStyle = HUD_INK;
-  ctx.fillRect(wl.x, wl.y, wl.w, wl.h);
   ctx.fillStyle = BAG_WELL;
-  ctx.fillRect(wl.x + 1, wl.y + 1, wl.w - 2, wl.h - 2);
+  ctx.fillRect(wl.x, wl.y, wl.w, wl.h);
   const ky = wl.y + Math.round((wl.h - 10) / 2);
   for (const s of L.score) {
     const t = String(s.n);
@@ -181,7 +188,8 @@ function drawRailScore(L) {
 function drawRail(now, L) {
   const hov = mouse.inside ? railHit(mouse.x, mouse.y) : null;
   const pl = L.plate;
-  drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: true, tr: true, bl: true, br: true }, seed: 41 });
+  // a plain plate: the outline and one flat ground, no bevel, no snow
+  drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: true, tr: true, bl: true, br: true }, lit: AB_BG, shade: AB_BG, cap: false });
   drawRailScore(L);
   for (const c of L.chips) drawRailChip(c, now, hov && hov.p === c.p);
 }

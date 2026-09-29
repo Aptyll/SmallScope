@@ -865,16 +865,16 @@ that is money must never read as a count of something carried.
 
 ### The team rail
 
-`drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plate
-(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (3), Dota's top bar in the frostlands' chrome.
+`drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plain plate
+(`drawHudFrame` with its bevel flattened and no snow cap) centred on `VIEW_W` at `RAIL_Y` (3), Dota's top bar kept clean and minimal.
 **Your side's chips on the left**, the rival's on the right, and between them a sunk **score
-well** (`drawRailScore`): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
+panel** (`drawRailScore`, a flat `BAG_WELL` fill): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
 one clock a match shows), the rival's total, each total at 2× in its side's `mark`
 (`railKills` sums `p.kills` over every player who wore the side's colour). A **chip** per active
 player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the class's 12×12 emblem
 (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`, never a shrink of it)
 on the `BAG_WELL` ground in a rim painted by side through `skin()`, with a **hp bar** hung off its
-foot (`drawHealthBar` at chip width: the side's colour, the even segments, the colour-blind cap).
+foot: one solid 2px run of the side's `mark` on a `RAIL_TRACK` groove, deliberately unsegmented.
 `railSides` orders each side by id and puts **you first**, marked by a 4 px `RAIL_YOU` frost tick
 under your bar, nothing louder: your emblem is the same as anyone's. A chip's state, in the wells'
 own grammar:
