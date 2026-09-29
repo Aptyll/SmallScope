@@ -2030,7 +2030,8 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor. T
 BIRD sits over the grid's left edge and the purse (coin + number at 2x) over its right.
 
 - **A card per `BIRD_SKINS` row**, `SK_COLS` across (`drawSkinCard`): the bird in your company's
-  colour turned nose-up at the largest whole scale its `SK_ART_H` box holds, still at rest and
+  colour turned nose-up (`birdSkinArt`: the war bird's own frame cropped to its pixels, or
+  today's bird turned) at the largest whole scale its `SK_ART_H` box holds, clipped rather than shrunk, still at rest and
   flapping under the hand, on the worn card and on a picked one; under a hairline the name and,
   opposite it, the price (coin + number, red when the purse is short) or a tick on the skin worn.
   Rims are slate, lighter under the hand, bright steel on the worn and the picked card.
@@ -2041,7 +2042,8 @@ BIRD sits over the grid's left edge and the purse (coin + number at 2x) over its
   nothing picked leaves. The arrows walk `menu.skSel` over the grid, Enter presses.
 - **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
   local player's company wears the skin worn, the other company the free first row (skins are
-  not sent over the wire). It is read at draw time and never by the sim.
+  not sent over the wire). `syncBirdPick` hands the id worn to the war birds' draw as
+  `SPRITES.warBirds.pick` at boot and on every wear. Both are paint, never read by the sim.
 
 ## Eagle drop (mode `drop`)
 

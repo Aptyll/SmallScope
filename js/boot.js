@@ -1467,6 +1467,7 @@ if (PRACTICE) {
 }
 layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/depth.js)
 initPlayers();
+syncBirdPick(); // the skin worn, onto the war birds' draw (js/ui/skins.js)
 // the match's role for this screen (js/net/net.js): ?net=host&room=R hosts a
 // room on the dev server's relay, ?net=client&room=R joins it; nothing else
 // (and any file:// page) is solo. A lobby hands the role in instead, later.
