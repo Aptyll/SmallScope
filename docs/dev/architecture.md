@@ -153,11 +153,13 @@ file is a save file.
   the character calls and `putSettings` write through immediately.
 - **The purse and the wardrobe are ids and a count.** `coins` starts at `START_COINS` (a
   profile from before the purse gets it too), `owned` holds the ids bought (a free cosmetic is
-  never written there) and `worn` maps a slot (`'bird'`) to the id worn. `buy(id, price)` spends
-  and records in one write or does nothing; `wear(slot, id)` (null for the free default) writes
-  through. Prices and what an id is live in the callers' tables (`BIRD_SKINS`,
-  js/sprites/eagle.js); an id the game no longer has is kept but never worn. No match writes
-  here: a match's gold never becomes coins.
+  never written there; the key is `slot:id`, bare for the bird's) and `worn` maps a slot
+  (`'bird'`, `'scout'`, ...) to the id worn. `buy(key, price)` spends and records in one write or
+  does nothing; `wear(slot, id)` (null for the free default) writes through; `addCoins(n)` is a
+  finished match's pay (`payMatchCoins`, js/ui/skins.js, from `endMatch`). Prices and what an id
+  is live in the callers' tables (`SKIN_TABS`, js/ui/skins.js, and `BIRD_SKINS`,
+  js/sprites/eagle.js); an id the game no longer has is kept but never worn. A match's gold
+  never becomes coins.
 - **The tech lists are ids and nothing else.** `markSeen` coalesces (it fires from a pickup) and is
   the only writer: `tech.done` is carried through load and save untouched and read by nothing
   (the whole arsenal is unlocked). `load()` copies only strings and de-duplicates, so a

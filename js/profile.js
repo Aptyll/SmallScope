@@ -380,6 +380,8 @@
       saveNow();
       return true;
     },
+    // a finished match's pay (payMatchCoins, js/ui/skins.js): a moment, so it saves through
+    addCoins(n) { n = Math.floor(n) || 0; if (n > 0) { profile.coins += n; saveNow(); } },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 

@@ -68,7 +68,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the twin eagle's frames | by banner | `eagle` |
-| what each bird skin IS: id, name, price in coins (its art: `SPRITES.birdSkin`/`birdSkinIcon`) | `BIRD_SKINS` | the file's head, above the IIFE |
+| what each bird skin IS: id, name, rarity, price in coins (its art: `SPRITES.birdSkin`/`birdSkinIcon`) | `BIRD_SKINS` | the file's head, above the IIFE |
 
 ## js/sprites/buildings.js (legacy IIFE)
 
@@ -708,9 +708,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one), a skin's flap frames for a card | `birdSkinFor`, `birdSkinRow`, `skinOwned`, `birdSkinFrames` | `skins` (the table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| the catalogue: the navbar's categories, the rarity colours, the placeholder scout / weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one) | `birdSkinFor`, `birdSkinRow`, `skinOwned` | `skins` › `the catalogue` |
+| what a finished match pays | `COINS_MATCH`, `COINS_WIN`, `payMatchCoins` (its caller: `endMatch`, player.js) | `skins` › `the catalogue` |
+| a card's picture: the eagle's own icon or today's bird turned, a placeholder washed in its tint, a trail's streak | `skinArt`, `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
 | the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
-| the skins screen: the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
+| the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
 
 ## js/ui/screens.js
 
