@@ -1,61 +1,60 @@
 # CLAUDE.md
 
-Softfall: a browser-canvas, top-down pixel-art winter team battle (ten players, two teams, drive off
-the rival eagle), wrapped in Electron for Steam. Read [game.md](docs/dev/game.md) before proposing a
-feature, [lore.md](docs/dev/lore.md) before writing any word a player reads, and the matching deep doc
-before working in an area: [code-map](docs/dev/code-map.md) (which banner owns a thing),
-[architecture](docs/dev/architecture.md), [rendering](docs/dev/rendering.md), [world](docs/dev/world.md),
-[gameplay](docs/dev/gameplay.md), [multiplayer](docs/dev/multiplayer.md), [sprites](docs/dev/sprites.md),
-[checklists](docs/dev/checklists.md), [online play](docs/pvp-architecture.md); a new look goes through
-the `concept-art` skill first.
+Softfall: a top-down pixel-art winter team battle in a browser canvas, wrapped in Electron for Steam.
+Ten players (bots fill empty seats) in two teams of HUNTERs and WARRIORs drive off the rival eagle.
+Read [game.md](docs/dev/game.md) before proposing a feature and [lore.md](docs/dev/lore.md) before
+writing a word a player reads. Before working in an area, read its doc: [code-map](docs/dev/code-map.md)
+(which file and banner owns a thing), [architecture](docs/dev/architecture.md),
+[rendering](docs/dev/rendering.md), [world](docs/dev/world.md), [gameplay](docs/dev/gameplay.md),
+[multiplayer](docs/dev/multiplayer.md), [online play](docs/pvp-architecture.md),
+[sprites](docs/dev/sprites.md), [checklists](docs/dev/checklists.md). New art starts with the `concept-art` skill.
 
 ## Run and verify
 
-- `node app/server.js` serves the game, the screenshot sink and the match relay on :8471. Rerun
-  `node app/bake-sfx.js` / `bake-logo.js` after changing a clip or the logo. `desktop/` (npm) is the only place with packages.
+- `node app/server.js` serves the game on :8471. `node app/check-globals.js` before every push.
+  `app/bake-*.js` regenerate the inlined sound and logo. Only `desktop/` (Electron) has packages.
 - Double-clicking `index.html` must work: nothing may `fetch` or depend on being served.
-- No build, tests or linter. Verify in the browser (headless Chromium works): `window.DBG`, `?seed=N`,
-  `POST /shot`, `.` for hitboxes ([checklists](docs/dev/checklists.md#verifying-a-change)).
+- There are no tests. Verify in the browser (headless Chromium works) with `window.DBG`, `?seed=N`,
+  `POST /shot` and `.` for hitboxes: [how](docs/dev/checklists.md#verifying-a-change).
 - Keyboard, mouse and gamepad only. Never add touch or mobile support.
 
 ## Code shape
 
-- Flat classic scripts sharing one global scope, loaded in a fixed order by `index.html`; a global
-  must exist before the next file loads. Tuning constants sit in the file that owns the feature.
+- Classic scripts sharing one global scope, loaded in `index.html`'s order: a global must exist
+  before the file that reads it loads. A feature's tuning constants sit in the file that owns it.
 - Keep every `// ------ name` banner honest; find code through code-map before grepping.
-- Only `js/profile.js` touches `localStorage`. A match reads only name, class and look from a profile.
-- New mutable sim state joins `SAVE_ROOTS` (js/save.js). New team-painted sprites bake inside `SPR.onTeams`.
 - What a type *is* lives in its `OBJECTS`/`STRUCTS` entry, never in an `if`.
+- New mutable sim state joins `SAVE_ROOTS` (js/save.js). New team-painted sprites bake inside `SPR.onTeams`.
+- Only `js/profile.js` touches `localStorage`.
 
-## Hard rules (each breaks something that looks unrelated)
+## Hard rules
 
-- Canvas resized: `fitCanvas()` then `relayout()`. Layout uses `VIEW_W`/`VIEW_H`, never 640/360.
-- Zoom scales the world, never the UI, and rests on a whole-number `kWant`. Cross spaces only via `mouseWX`/`wToSX`.
-- Screen position is `round(world - camera)`, rounded once: movers use exact `ex`/`ey`.
-- World text goes through `drawWorldText`. Ground changed at runtime: `repaintGround`, never `renderGround`.
-- Nothing emits light; night is a grade in `renderLighting`. Weather motion reads the one wind (`windGust`, `windSway`).
-- Sprites drawn by the hundred come from one atlas texture.
-- A new walker joins `separateUnits` and `UNIT_MASS`. Target pickers ask `unitAlive`.
-- Hits go through `hurtUnit` / `hurtStruct` and the status setters; areas sweep `unitsNear`/`structsNear`.
-- Sim-side sound and shake use `sfxAt`/`sfxFor`/`shakeFor`, never a local-screen check.
-- Open water is `waterAt`. Walkers route with `navTo`/`navStep` and drop the goal on `ok = false`.
-- Loops over `players` skip `inAir(p)`; nothing shoves a zipline rider.
-- Gold goes through `gainGold` (the merchant's `tradeGold` excepted).
-- A tool is an instance: move it, never rebuild it from its type; a snow drop calls `shedBits`.
-- Visibility asks `seenAt`. Team colour indexes by `skin(team)`, rules by bare `p.team`.
-- Keys live in `keyPress`/`keyRelease`, asked by action (`keyIs`), never a literal key or a listener.
-- Player actions read `p.input`, never `keys`/`mouse`; single-winner actions go through `contest()`.
-- Never add or remove an `rng()` call in `genWorld()`. One object per tile via `placeObj`/`placeStruct`.
+1. **Go through the shared function, never around it.** Each one is where every case is handled, so
+   a copy silently skips wildlife, bots, stealth or the other team. Hits: `hurtUnit`/`hurtStruct` and
+   the status setters. Areas: `unitsNear`/`structsNear`. Targets: `unitAlive`. Sight: `seenAt`.
+   Gold: `gainGold`. Water: `waterAt`. Walking: `navTo`/`navStep`, dropping the goal on `ok = false`.
+   Team colour: `skin(team)`. Keys: `keyPress`/`keyRelease`, asked by action with `keyIs`. Tiles:
+   `placeObj`/`placeStruct`. World text: `drawWorldText`. Ground edits: `repaintGround`. A new walker
+   joins `separateUnits`. Loops over `players` skip `inAir(p)`.
+2. **The sim never reads the local machine.** Player actions read `p.input`, never `keys`/`mouse`;
+   single-winner actions go through `contest()`; sim sounds and shakes use `sfxAt`/`sfxFor`/`shakeFor`.
+   A client never runs the sim, so anything else is dead online.
+3. **Never shift the seed.** Never add or remove an `rng()` call inside `genWorld()`.
+4. **A tool is an instance.** Move it between bag, slot and drop; never rebuild it from its type.
+   A tool dropped in the snow calls `shedBits` first.
+5. **Pixels stay exact.** Zoom scales the world, never the UI, and rests on a whole `kWant`. Screen
+   position is `round(world - camera)`, rounded once. Layout reads `VIEW_W`/`VIEW_H`, never 640/360.
 
-## UI rule: show, don't label
+## UI: show, don't label
 
-Communicate with icons, colour and hover state, not hint sentences. Text is for names, numbers,
-headlines and the carve-outs listed in [rendering](docs/dev/rendering.md#show-dont-label).
+Speak through icons, colour and hover state, not hint sentences. Text is for names, numbers,
+headlines and the carve-outs in [rendering](docs/dev/rendering.md#show-dont-label).
 
 ## Git and docs
 
-- Never commit to main. Branch `<name>/<topic>`, run `/sync` before pushing, merge by PR.
-- The PR's last commit bumps `PATCH_TXT` (js/ui/menu.js) by 0.01 over main, tops `PATCH_NOTES` with one
-  uppercase sentence, and is named `PATCH x.yy — ...`. Player-facing work also adds a `PATCH_DIGEST` line.
-- A change that makes a doc line false fixes the doc in the same PR. Write what the code does now.
-- Keep this file near 50 lines; detail belongs in `docs/dev/`.
+- Never commit to main. Branch, run `/sync` before pushing, merge by PR.
+- The last commit bumps `PATCH_TXT` (js/ui/menu.js) by 0.01 over main, tops `PATCH_NOTES` with one
+  uppercase sentence and is named `PATCH x.yy — ...`. Player-facing work adds a `PATCH_DIGEST` line.
+- A change that makes a doc line false fixes it in the same PR. Write what the code does now.
+- This file holds only rules that break silently. Name functions, never counts, sizes or file lists;
+  those live in `docs/dev/` and go stale here.

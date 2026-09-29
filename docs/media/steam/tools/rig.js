@@ -82,7 +82,7 @@ async function resize(c, w, h) {
   await c.send('Emulation.setDeviceMetricsOverride', { width: w, height: h, deviceScaleFactor: 1, mobile: false });
   // The page's own resize listener is a queued event and the override returns
   // before it has run, so the driver refits by hand once the window really is
-  // the new size - fitCanvas then relayout, the pair CLAUDE.md requires.
+  // the new size - fitCanvas then relayout, the pair rendering.md requires.
   for (let i = 0; i < 40; i++) {
     const [iw, ih] = JSON.parse(await c.eval('JSON.stringify([window.innerWidth, window.innerHeight])'));
     if (iw === w && ih === h) {

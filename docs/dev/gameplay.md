@@ -3320,7 +3320,7 @@ of them on the first `ensure()`.
 
 **The bytes come from [js/sfxdata.js](../../js/sfxdata.js), not from the network.** That file is
 generated — `node app/bake-sfx.js` writes every clip in `audio/sfx/` into it as base64 — and it exists
-because **double-clicking `index.html` has to work** (CLAUDE.md, Commands): a `file://` page is
+because **double-clicking `index.html` has to work** (CLAUDE.md, Run and verify): a `file://` page is
 allowed neither `fetch` nor XHR against its own folder, and an unloaded bank falls back to synth
 without a sound of complaint.
 `bytes(f)` prefers the inline data and falls back to `fetch` for a clip that is in the folder but
