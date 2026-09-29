@@ -137,7 +137,7 @@ function tipCards() {
 // back (the scoreboard's own countdown), or OUT for one that is not coming back
 function tipRail(c) {
   const p = c.p, cls = CLASSES[p.cls];
-  const d = { title: p.name, tcol: playerTint(p), kind: cls.name, icon: classIcon12(p.cls, p === player),
+  const d = { title: p.name, tcol: playerTint(p), kind: cls.name, icon: classIcon12(p.cls, false),
     plate: BAG_WELL, rim: TEAMS[skin(p.team)].mark, rows: [['LEVEL', String(p.level), '#cfe0ff']], notes: [] };
   if (p.dead) d.rows.push(['RESPAWN', p.eliminated || p.respawnT <= 0 ? 'OUT' : Math.ceil(p.respawnT) + ' S', '#8f9cc4']);
   return d;
