@@ -80,7 +80,7 @@ declare victory. The affordances:
   `shopHit(x, y)`, `shopBuy/shopSellCell/shopTrade` and `shopLayout()` drive the panel without a
   pointer; `DBG.marketStep(n)` walks the prices n moves on, so a spike is one call rather than
   three days of waiting, and it ticks the restock clock with them. The news it cuts is a
-  [plate under the minimap](rendering.md#notices-the-plates-under-the-minimap) as well as a
+  [plate top right](rendering.md#notices-the-plates-top-right) as well as a
   feed line: `DBG.notices` is the live stack, `DBG.noteRect(k)` where slot `k` sits,
   `DBG.raiseNotice(kind, txt, good)` raises one without moving a price, and
   `DBG.shopRestock(true)` turns the counter over *loudly* (bare, it is the quiet boot roll).
@@ -198,12 +198,12 @@ reaching *right now* — the bush's berries), `auto` (the hands go to it on thei
 is in reach — `autoWork`; without it the thing waits for E, as only bare ice and the dummy do; a
 rival building needs no flag — `autoToolFor` asks `STRUCTS` and `ownsStruct`), `needs` (the tool a swing must already be holding,
 null = any), `verb` and `lift` (the E key prompt, which an `auto` type never shows), and `mm`/`map` (what each of the two maps
-paints it — `mm` an `[r, g, b]` for the minimap disc, `map` a `CH_*` class the chart files it
+paints it — `mm` an `[r, g, b]` for a save slot's thumbnail, `map` a `CH_*` class both maps file it
 under, each a constant or a function of the object, as a roosting eagle's side is; leave `map`
 out for anything that stands alone on its tile — a bush, a rock, a stump — since at the chart's
 scale a speck is noise, and read [rendering](rendering.md#ui-panels-are-baked-once) for what the
 chart does with a class). `isSolidTile()`, `workTarget()`, `autoTarget()`, `hitObject()`'s tool
-gate, `drawWorkHint()`, `updateMinimap()` and `buildWorldMapImg()` all read that one entry and
+gate, `drawWorkHint()`, `updateMinimap()` and `chartClasses()` all read that one entry and
 need no edit — none of them names a type any more. An object *instance* carrying a `team` field
 (the roosting eagles' hitbox tiles) is a rival-only E target — `workTarget()` applies that
 generically, the same rule buildings answer through `ownsStruct`.
@@ -438,7 +438,7 @@ type's tile on every footprint tile (`tiled: 'wall'`, the long wall) needs no gr
 `rotates`; anything else with art of its own needs a grid baked into the per-team `teamBuild` sets
 (see [sprites.md](sprites.md)), and both
 maps colour it from the entry's `mm`/`map` — every building wears its side's ink (`mmTeam`/`chTeam`,
-world.js), and `updateMinimap`/`buildWorldMapImg` resolve a multi-tile footprint's `part`
+world.js), and `updateMinimap`/`chartClasses` resolve a multi-tile footprint's `part`
 fillers through `structOf()` first, so the anchor's entry colours the whole building. `isSolidTile()` is now generic (`!!STRUCTS[o.type] || ...`) — a new
 `STRUCTS` entry is automatically solid for free, and only a genuinely new *non-`STRUCTS`* scenery
 type needs a line there. `hitObject()`, the draws pass (via `structSprite`), construction,
@@ -480,7 +480,7 @@ card, its sprite set in `SPRITES[kind]`, the cursor's hover box in `cursorInfo` 
 overlay's sizes in js/draw/render.js, `animalHitR`'s radius if it is not 8, and — if it can hurt a player
 — a `DEATH_CAUSE` key; a kind that does *not* fight needs its own `updateAnimal` branch).
 
-**Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `buildWorldMapImg()`,
+**Adding a ground type** — extend `paintGroundTile()`, `updateMinimap()`, and `chartGround()`,
 give it a surface branch in `updatePlayer()`'s momentum block (steer/decay/target rates — ice is
 the template; a ground that should walk like snow needs none, because only ice and holes are
 special-cased — [the road](world.md#the-road), `3`, is the live example of one that walks like
@@ -642,7 +642,7 @@ Code that is dead **on purpose** is the next section.
   exact; only the lifetime tally is not rewound ([saved matches](gameplay.md#saved-matches)).
 - **The day clock turns under the ESC panel and the pause plate.** `update` advances
   `state.time`/`state.elapsed` in play and drop whatever `state.paused`/`state.settingsOpen`
-  say, while every body stands still; the match clock under the minimap ticks on behind the
+  say, while every body stands still; the match clock over the minimap ticks on behind the
   panel.
 - **A loaded match's snow is untrodden.** The trampled-snow field (`trPack`/`trChurn`,
   js/draw/trample.js) is visual and not in `SAVE_ROOTS`, so the paths a match packed are gone

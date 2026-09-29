@@ -221,10 +221,6 @@ const scratch = document.createElement('canvas');
 scratch.width = 64; scratch.height = 64; // the biggest thing that flashes is the 48x38 bay
 const sctx = scratch.getContext('2d');
 
-// offscreen minimap canvas (1px per world tile)
-let MM_R = 24;                   // minimap radius in px (1px = 1 tile)
-let MM_CX = VIEW_W - 35;         // minimap center (applyMinimapSize, core.js, sets the real ones)
-let MM_CY = 35;
 
 // Panel layout anchors. These live here rather than in the map/settings
 // sections because relayout() assigns them on every canvas resize —
@@ -265,6 +261,7 @@ const SL_W = 100;  // slider track
 // in panels.js, off SET_X/SET_Y/SL_X alone.
 let SET_MUTE_X = SL_X - 14; // the speaker button: 9x9, hard against the master track
 
+// the per-tile terrain picture a save slot wears (updateMinimap, saveThumb)
 const mmCv = document.createElement('canvas');
 mmCv.width = WORLD; mmCv.height = WORLD;
 const mmCtx = mmCv.getContext('2d');

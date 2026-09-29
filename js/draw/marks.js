@@ -198,7 +198,7 @@ function drawFlagMark(g, x, y, f, col, rim, s) {
 }
 
 // ---- what a body looks like on a map ------------------------------------
-// ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap disc (renderMinimap, ui.js)
+// ONE GRAMMAR FOR BOTH MAPS (3.32). The minimap (renderMinimap, minimap.js)
 // and the parchment chart (renderWorldMap, panels.js) draw every moving thing
 // through these three, so a shape learnt on one is read on the other:
 //   a SQUARE in the side's ink is a body, and its size says which - a player

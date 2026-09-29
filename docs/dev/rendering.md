@@ -125,7 +125,7 @@ what `beginDrop`/`landPlayer` use. The eagle ride forces `DROP_ZOOM` (the max-ou
 of world) for as long as mode is `drop`; landing returns to whatever the player had set.
 `DBG.setK(k, snap)` sets the rung directly, `DBG.setZoom(z, snap)` lands on the nearest rung,
 and `DBG.getZoom()` reports `k`, `devScale`, `exact` and the whole `rungs` ladder. The scroll
-wheel is zoom only (over the minimap it steps the disc's zoom instead).
+wheel is zoom only.
 
 **Mouse coords are divided by `scale` on the way in**, landing in screen space. Round positions
 when drawing (`Math.round`) or sprites smear across subpixels.
@@ -133,7 +133,7 @@ when drawing (`Math.round`) or sprites smear across subpixels.
 **Canvas size changed → `fitCanvas()` then `relayout()`** (both
 resize paths do it; both listeners live in canvas.js). `relayout()`
 (js/core.js) recomputes everything positioned off `VIEW_W`/`VIEW_H`, in this order:
-`applyMinimapSize()` (the disc's anchors), `fitMapSlab()` (the chart's size, below), the
+`fitMapSlab()` (the chart's size, below), the
 map/settings panel positions (`PANEL_X/Y`, `MAP_X/Y`, `SET_X/Y`, `SL_X`, `SET_MUTE_X`),
 `fitFlakes()` (see [Snow](#snow)), `renderBars()` (re-bakes the pillarbox frame) and
 `layoutReplay()`. Those panel `let`s are **declared together in js/canvas.js** (the file after
@@ -422,7 +422,7 @@ or a tree felled behind the parchment shows up on it within half a second.
 
 **One grammar for both maps** (`drawMapDot`/`drawMapUnit`/`drawMapYou`/`drawMapBird`, the
 `what a body looks like on a map` group in js/draw/marks.js): a square in its side's ink is a
-body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 on the disc), and
+body — a player one step bigger than a robot (3 vs 2 px on the chart, 2 vs 1 on the minimap), and
 every worker, soldier and merchant standing is drawn, none of them hides; the watched body
 (`viewPlayer()`: you, or whoever the camera rides) is a player's square gone white inside a ring
 of its side's ink, never a colour of its own that would read as a third team; the bird diamond
@@ -438,62 +438,58 @@ the day at 2× in the slabs' title gold on the left, and on the right the `CLOSE
 `drawFrostButton`, a plate in the slab's own grammar (its stone bound in its dark, lifting off its
 shadow on hover, the label going gold), hit through `mapCloseRect`/`mapCloseHit` in `pointerPress`
 (play and drop alike; the cursor is a hand over it) — with no compass (the chart is north-up, as
-the world is), no key (the marks are the minimap's own), no clock (the rail or the disc wears it) and no
+the world is), no key (the marks are the minimap's own), no clock (the rail or the minimap wears it) and no
 title. Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
-The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
-`MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is
-px per tile — an eased `mmCur` chasing `MM_ZOOMS[settings.mmZoom]` (0.25 … 4 over twelve rungs,
-index 5 = the 1:1 baseline) on the same `ZOOM_EASE` the camera uses, so both zooms under one
-hand feel like one control. A save written before `settings.v` indexes the old six-rung ladder
-and is carried across by `MM_MIGRATE` on load. Stepped by the
-scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-empts the camera
-zoom in the wheel handler and is saved with the settings. Every marker drawn over it (robots, players,
-camp glyphs, your side's [flags](gameplay.md#team-flags) with their rings) multiplies its tile
-offset by `s`. The disc sits on an opaque `#0f1632`
-backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no
-hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;
-there is no halo or second ring outside it. `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
-game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
-backing, rims and the day/night band one pixel at a time (pixel-centre distance test, optional
-clockwise angle span), and the map view is clipped by `mmMask(r)` — a cached pixel disc
-composited with `destination-in` on the `mmView` scratch canvas — instead of `clip()`.
-**But `mmRing` must never run per frame**: it is a per-pixel `hypot`/`atan2` loop issuing a
-`fillRect` per lit pixel (~1.6 ms a frame when it did). The static chrome (outline, silhouette,
-the ring's track) is baked per `MM_R` alone in `mmChrome`, and the day/night arcs plus the dusk tick per `(MM_R, progress step)` in `mmArcBand` — the
-cycle quantised to `MM_ARC_STEPS` (512), about a pixel of arc per step, so the band repaints
-every couple of real seconds. Only the progress tip, the centre dot and the markers are
-per-frame fills. The terrain image is throttled the same way: `updateMinimap()`'s full
-`WORLD²` sweep (a `structOf` call per tile) reruns at most every `MM_REBUILD` (30) sim ticks —
-at one map pixel per tile, a build or a cut ice hole arriving half a second late is invisible.
+**The minimap is the chart at a HUD plate's size**, League's square in the bottom corner: the
+whole valley, never a scrolling window, so there is no zoom (the wheel over it zooms the camera
+as anywhere else). Its picture is the chart's own - `chartClasses()` (the class of every tile and
+the flatten, shared and throttled to `MM_REBUILD`) inked by `inkChart(W, …)` at `mmSide()` px
+square into `mmSquare`'s buffer, re-inked at most every `MM_REBUILD` ticks - so each pixel is
+the highest class of the few tiles under it and a road, a building or a bird is never averaged
+away. `mmRect()` places it, live every call because the HUD SIZE dial moves the strip without a
+relayout: a `drawHudFrame` plate `MM_IN` (3 px) round the map with a 2 px day/night band along
+its top (`MM_BAND`), flush to the bottom edge and to its side's edge (`settings.mmCorner`,
+`'right'` by default), the one corner toward the middle cut; when the strip at its HUD SIZE
+reaches under it, the plate stands on the strip's shoulder instead (`lift`, both inner corners
+cut). The size is `settings.mmSide` (the MINIMAP SIZE dial, one of `MM_SIDES`, 80 to 160 px,
+default 112). Over the map, clipped to it by a whole-pixel `rect()`: League's white box for the
+camera's view, the ziplines, the camps as glyphs in the chart's quiet ink, every body in the
+one grammar at the small size, your side's [flags](gameplay.md#team-flags) with their rings, the
+downed eagles, and the watched body's heart last. Night tints it as it tints the chart. The band
+is the elapsed day in gold then the night in blue, a tick where dusk falls and a bright pixel at
+now. `overMinimap()` is the plate's rect and has **no hover state**. `mmWorldAt` is the map's
+inverse projection, for the CLICK scheme's walk across it. `updateMinimap()` still sweeps the
+`WORLD²` per-tile `mmCv` (throttled the same way), but only a save slot's thumbnail
+(`saveThumb`) reads it now.
 
 ## The HUD corners
 
-`renderUI()` owns three corners, the top edge and one strip, and every one of them is positioned off
+`renderUI()` owns all four corners, the top edge and one strip, and every one of them is positioned off
 `VIEW_W`/`VIEW_H` (never a literal), so a resize needs nothing from them. **The top left is
 the weapon**: the one tool in hand and the bits loaded into it, with the inventory drawer
 shut under it — the corner a Noita wand or a Terraria held item lives in — while every number
 you own (berries, fish, gold, cards) is on the **hud strip's right end**. The bottom right is
-empty world.
+the minimap.
 
 | Where | What | Function |
 | --- | --- | --- |
 | top left | the **weapon shelf**: the tool in hand and its bit cells, shots left and fittings right, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
-| top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
-| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
+| top right | the **notice lane**, `MM_GAP` (4 px) off the top and right edges: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
+| bottom right (or left: `settings.mmCorner`) | the square **minimap** and its day/night band on a HUD plate flush to the corner (`mmRect`), the clock centred over it while no team rail is up (`mmClockShown`) | `renderMinimap` |
 | top centre | the **team rail**: one plate, every player in the match as a 14px chip with a hp bar, your side left (you first, a frost tick under your bar) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
-Every widget slides **its own size** away for the landing intro — the minimap up by
-`MM_R * 2 + 40`, the rail up by `RAIL_SLIDE`, the strip down by
+Every widget slides **its own size** away for the landing intro — the minimap down by
+its own height plus 4, the rail up by `RAIL_SLIDE`, the strip down by
 `HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the top-left corner left by `CORNER_REACH` (the widest
 row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
 tool cell would leave a longbow's row parked over the cinematic.
 
-### Notices: the plates under the minimap
+### Notices: the plates top right
 
 The HUD's corner for news from where you are NOT — the `notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
 raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
@@ -514,7 +510,8 @@ what it is about, then one 8×8 glyph carrying which way — an arrow up or an a
 otherwise), the lane **sums** the heights above a slot rather than counting a pitch, a plate slides
 its own width clear of the edge, and the newest shoves the stack down by *its* own height. Nothing
 in the lane is special-cased for the tall one. `noteLaneFloor()` is where the lane stops — the top
-of the hud strip's tab at the HUD SIZE the dial holds — and a plate that would cross it is not
+of the hud strip's tab at the HUD SIZE the dial holds, or the minimap plate's top (and its clock)
+when it stands in the right corner — and a plate that would cross it is not
 drawn, which on a short view drops the **oldest** news and keeps the newest.
 
 The mark is the kind's own (`NOTE_KIND[k].mark`, a `SPRITES` key or null), 16×16 in a sunken well:
@@ -554,9 +551,8 @@ stamped under a `globalAlpha` goes blotchy ([text over the world](#text-over-the
 holds the three palettes and is handed straight to `logEvent` as its colour override, so the plate
 and the feed line can never disagree about which way a price went.
 
-`noteRect(k)` places slot `k` off `MM_*` — right edge flush with the disc's own, `NOTE_GAP` (18 px)
-under its rim, so the column follows the minimap wherever the size dial and the view put it and
-never lands on the clock. **The newest plate is slot `k = 0`**, hard under the disc, and its
+`noteRect(k)` places slot `k` in the top-right corner, `MM_GAP` off the top and right edges, level
+with the rail. **The newest plate is slot `k = 0`**, hard in the corner, and its
 arrival pushes the stack down: it flies in `NOTE_SLIDE` (30 px) off the right edge over `NOTE_IN`
 (0.55 s) while the plates below ease down a whole `NOTE_PITCH` on that same curve. They are drawn
 **oldest first** so the newest lands on top of the stack it is shoving.
@@ -583,17 +579,17 @@ panels, and the end screens own the frame outright. Each kind carries its own cu
 
 The answer to *what did that DO?* — the `stat ledger` block in
 [js/ui/shop.js](../../js/ui/shop.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
-a [notice](#notices-the-plates-under-the-minimap) kind. A hero level, a card drawn on C and a gear
+a [notice](#notices-the-plates-top-right) kind. A hero level, a card drawn on C and a gear
 buy all rewrite the kit silently: the floater over the body names the *thing* taken and never the
 *number* it moved, so until this plate the only place to read the change was the character panel — a
 key press and a pause in the middle of a fight.
 
 **It does not stand on the HUD, it arrives.** A change flies the sheet in off the right edge into
-the lane under the disc on the same ease, the same white frame pulse and the same lane as a price
+the lane in the top-right corner on the same ease, the same white frame pulse and the same lane as a price
 plate, holds `NOTE_LIFE` (8 s), and rides back out the way it came — and it **shoves** whatever
 plate was in the lane down under it exactly as a price plate does. When nothing has changed there is
 nothing on screen at all. The only thing about it that is not a price plate is its **size**
-(`STAT_W` 88 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
+(`STAT_W` 88 wide, `statPlateH()` tall), and every plate is right-aligned on the lane's right
 edge, so the wider one still reads as the same lane.
 
 **Every row of the sheet is on it, dim, and the rows that moved are lit**: label and number to
@@ -815,10 +811,9 @@ two. `drawFoodClock` passes `CD_EDGE` only at `w >= 12`; below that a cell turns
 veil**, because at that size the hand's stroke lands ACROSS the berry and reads as a scratch on
 the fruit rather than as a clock over it.
 
-Two things it does not do the obvious way. It is **rasterised a pixel at a time**, for the reason
-`mmRing` rasterises every curve of the minimap ([UI panels are baked once](#ui-panels-are-baked-once)):
+Two things it does not do the obvious way. It is **rasterised a pixel at a time**:
 a canvas path anti-aliases, and a soft diagonal across a 32px well is blur on a screen where every
-other edge is hard. Unlike the minimap's chrome this one **cannot be baked** — the hand moves every
+other edge is hard. It **cannot be baked** — the hand moves every
 frame — so it stays cheap on size: the well is 32×32 (1024 angle tests), each row is walked once
 and its covered pixels coalesced into ONE `fillRect` per run instead of one per pixel, and only
 a well actually on cooldown is walked at all (about 30 µs a well).
@@ -867,7 +862,7 @@ that is money must never read as a count of something carried.
 ### The team rail
 
 `drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plain plate
-(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (`MM_GAP`, level with the minimap's outline), Dota's top bar kept clean and minimal.
+(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (`MM_GAP`, level with the shelf and the notice lane), Dota's top bar kept clean and minimal.
 **Your side's chips on the left**, the rival's on the right, and between them a sunk **score
 panel** (`drawRailScore`, a flat `BAG_WELL` fill): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
 one clock a match shows), the rival's total, each total at 2× in its side's `mark`
@@ -899,7 +894,7 @@ the intro slide up by `RAIL_SLIDE`, and **stays up while you are dead** — the 
 what a spectator reads, so the spectate control (`specLayout`, js/ui/screens.js), the camp plate and the
 DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when there is no rail:
 the practice arena, or a match with an empty side — `railSides` is null, nothing draws, and the
-clock goes back under the minimap: `mmClockShown`), and
+clock goes back over the minimap: `mmClockShown`), and
 the two notes step under the spectate control as well while it is up (`noteY`).
 **Its scale is the HUD's one scale**: `railSc` is `hudSc()` (whole device pixels, so a 12px
 emblem never drops a row), capped on the same grid where the plate would reach the view's edge;
@@ -969,7 +964,7 @@ fittings on the right**, empty cells between (`sortBits`, [firing](gameplay.md#t
 so the row reads the same way on every build.
 
 It stands on the [hud frame](#the-hud-frame): `shelfPlateRect`, flush with the view's left edge
-(only its right corners cut), its top level with the minimap's (`SHELF_TOP` = `MM_GAP`), `SHELF_PAD`
+(only its right corners cut), its top level with the rail's (`SHELF_TOP` = `MM_GAP`), `SHELF_PAD`
 (4) of ground round the row and hugging it on the right (`shelfRowRight`). The row is pinned by
 its LEFT and grows rightward, so the weapon well never moves; the SHIFT plate (`drawShiftHint`)
 hangs off the row's right end. The plate grows **upward** by
@@ -1243,7 +1238,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   the overhead name tags, a roost's `PERCH` tag, the noticed `!` (`drawSenseMark`). Called from
   a UI pass (the wiki's animal page) it draws the outline where it stands.
 - **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
-  and the drawer's counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), `state.msg`, the DAY headline's bake,
+  and the drawer's counts, the clock over the minimap (the rail's clock is on its own well, `drawPixelText`), `state.msg`, the DAY headline's bake,
   the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`
   (js/ui/wheel.js) itself.
 
@@ -1353,8 +1348,8 @@ that shows the world. `drawCampIcon(g, C, x, y, col, rim)` is the shared stamp: 
 `icon` rects inside a 7×7 box, drawn once inflated by 1 px in a rim colour and once in the ink,
 so the same glyph reads on the chart, on snow and over forest.
 
-- **The minimap** (`renderMinimap`) draws the glyph for any camp inside the disc, in the
-  spec's `mark` over a dark rim. No name — `WOLF DEN` is wider than the whole disc (48 px at the default `settings.mmR` of 24).
+- **The minimap** (`renderMinimap`) draws every camp's glyph in the chart's quiet ink (dark over a
+  pale rim). No name — a name at the plate's size would cover the camps round it.
 - **The M map** (`renderWorldMap`) draws the glyph plus the name in map ink under it — over it
   instead when a name already inked would run into it, since two sites sit a label's width
   apart — clamped
@@ -1994,7 +1989,7 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   The DAY 1 headline fires when that intro ends.
 
 `DBG` exposes `menu`, `menuHit`, `menuClick`, `menuKey`, `settingsHit`, `beginIntro`, `beginLobby`,
-`lobbyLayout`, `lobbyHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` and `MM_CX`/`MM_CY` anchors) for driving all of this headlessly.
+`lobbyLayout`, `lobbyHit`, `pressPlay`, `cancelCount`, `setAiLevel`, `lockIn` and `layout()` (the live `VIEW_W`/`VIEW_H`, `SET_X`/`SET_Y`, `SL_X`, `PANEL_X`/`PANEL_Y` anchors, and `mm`, the minimap's `mmRect()`) for driving all of this headlessly.
 The map and the seed die on it are driven the same way through the globals `mapStep`, `rerollWorld` and `pickMap` (which navigates), with `DBG.MAP_TYPE`,
 `DBG.MAPS` and `DBG.mapTerrain` reading back what a shape is.
 
@@ -2223,7 +2218,7 @@ the ride's wider read is the **M map** (`renderWorldMap` also runs in mode `drop
 draws each flying bird's line dashed in team colour with the bird diamond riding it; M/Esc are
 handled in input.js's drop branch, the map swallows the jump click, and the sim keeps running
 under it). Text scale follows the view (2× when tall). Once `down`, both objectives are marked on
-the minimap disc and the M map as the same bird diamond in team colour.
+the minimap and the M map as the same bird diamond in team colour.
 
 Airborne players (`inAir(p)`: aboard or `dropT > 0`) are skipped by `updatePlayer`/`updateAI`, arrows,
 drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map.

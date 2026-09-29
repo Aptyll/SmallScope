@@ -149,9 +149,9 @@ const MM_TEAM_RED = [172, 68, 60], MM_TEAM_BLUE = [78, 128, 188];
 const mmTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? MM_TEAM_BLUE : MM_TEAM_RED; // STRUCTS' mm (structures.js)
 const MM_BANNER = [214, 88, 76]; // the practice gate's own red
 
-// What stands on a tile, on each map: objMapColor is the `mm` colour the
-// minimap disc paints it (an [r, g, b]), objChart the CH_* class the
-// parchment chart files it under. One lookup each across both tables, so
+// What stands on a tile, on each map: objMapColor is the `mm` colour a save
+// slot's thumbnail paints it (an [r, g, b]), objChart the CH_* class the
+// chart and the minimap file it under. One lookup each across both tables, so
 // neither map carries a list of type names and a new type is coloured by its
 // own entry alone. null = nothing here to paint, and the caller shows the
 // ground underneath instead.

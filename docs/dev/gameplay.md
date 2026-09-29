@@ -1988,7 +1988,7 @@ inside it is drawn afterwards, so the buyer is paying for the odds.
 **An offer is a single item**: buying it empties its well (its `market.stock` entry goes `null`,
 drawn as a flat empty well that takes no click) until the counter turns over, every
 `SHOP_RESTOCK` (120 s), and the new shipment fills all twelve again — announced in the feed, on a
-plate under the minimap and over a cue of its own (below), and counted down by the
+plate in the top-right notice lane and over a cue of its own (below), and counted down by the
 [restock road](#the-restock-road) along the slab's bottom rail. The stock is shared by both
 counters and every player, so a buy is [contested](multiplayer.md#contested-orders) on its well
 (`shop:<section>:<i>`): two buyers in one step get one winner and the loser keeps its gold. That is
@@ -2068,8 +2068,8 @@ A headline goes to **two places at once**, and a restock's does too:
 - the **event log** (not drawn; `DBG.events`) — `FISH SPIKE 34G`, `BERRIES CRASH 2G`,
   `THE MERCHANTS RESTOCK` — the match's own record, where everything else that happened to
   somebody already is;
-- a **plate top-right under the minimap** — the `notices` banner in js/ui/shop.js, drawn by
-  `renderNotices` ([the plates](rendering.md#notices-the-plates-under-the-minimap)) —
+- a **plate top-right** — the `notices` banner in js/ui/shop.js, drawn by
+  `renderNotices` ([the plates](rendering.md#notices-the-plates-top-right)) —
   because a price is not something that happened to a player: it is the state of the world you are
   about to sell your bag into, and it has to arrive on screen, where the clock is.
 
@@ -2104,7 +2104,7 @@ not:
 | --- | --- | --- |
 | **beside** | `cornerClaim() + 6` still leaves the slab inside the frame | `x = max(centred, cornerClaim() + 6)`, `y = 4`. It keeps the centre whenever the view is wide enough for both, so on the ordinary 640×360 frame this is a nudge of 28 px |
 | **under** | it does not, but the slab clears both the frame's bottom and the deepest tooltip below the drawer | centred across, `y = cornerBottom() + 6`. A **tall, narrow** frame (a portrait monitor's 360×640), where nothing fits beside the 336-wide slab |
-| **neither** | both fail | `x` at the view's right rim, `y = 4` — the minimap's rim goes under it |
+| **neither** | both fail | `x` at the view's right rim, `y = 4` — over the notice lane |
 
 The width claim is the corner's **fixed** reach — the widest row a tool could ever grow to — and
 not the live `shelfRowRight()`, because the row grows with the tool in hand and a slab that slid
@@ -2941,8 +2941,8 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
   rival, and neither is the puff it lands with — `plantFlag`'s burst is the local side's only), on
   all three surfaces.
 - **Both maps**, through the shared `drawFlagMark()`: the pennant in the team's colour with the
-  ring it covers about it at that map's px per tile — a disc on the minimap (clipped to the disc,
-  so a flag just off its edge shows as its rim) and the same on the chart, with the glyph over it.
+  ring it covers about it at that map's px per tile — a disc on the minimap (clipped to the map's
+  square) and the same on the chart, with the glyph over it.
 
 ## Death and respawn
 
@@ -3081,7 +3081,7 @@ are covered by the autosave alone.
 **Slots.** Five manual slots (`m0`-`m4`) and an autosave ring of three (`a0`-`a2`, the oldest
 overwritten): an autosave every `SAVE_AUTO_T` (120 s) of match clock (`saveAutoTick`, from the
 frame loop after the steps) and on the way into the ESC panel or the pause plate, never two inside
-`SAVE_AUTO_GAP` (15 s). A save that lands flashes a gold down-arrow under the minimap, beside the match
+`SAVE_AUTO_GAP` (15 s). A save that lands flashes a gold down-arrow over the minimap, beside the match
 clock where that hangs there (`drawSaveFlash`).
 
 **The screens** (js/ui/saves.js). One grid: five manual cards over the autosave ring, each its
@@ -3147,7 +3147,7 @@ click and with no code plate, since a lobby id is not for reading aloud. Which r
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
-`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
+`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmSide`, `mmCorner`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
@@ -3164,8 +3164,8 @@ offers ([the fixed step](code-map.md#jsbootjs)) —
 and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) persists
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
-saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, default **1**; it steps between the screen's crisp sizes from 0.5 to 1.5, `hudSizes`, and a stored value draws at the nearest one, `hudSc`) needs no apply
+saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `mmSide` (the MINIMAP SIZE slider, one of `MM_SIDES`, default **112**) and `mmCorner` (`'right'`)
+need no apply: `mmRect()` reads them live. `hudScale` (the HUD SIZE slider, default **1**; it steps between the screen's crisp sizes from 0.5 to 1.5, `hudSizes`, and a stored value draws at the nearest one, `hudSc`) needs no apply
 call: the hud strip, the pack and the shelf read it live every frame
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
@@ -3308,9 +3308,9 @@ route every walker is following with the tile it is heading for; the next press 
 has no ESC-menu row, only the `. HITBOX` line in the CONTROLS block; the rest is in
 [Debug overlays](rendering.md#debug-overlays-hitboxes-and-routes).
 
-Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There
+Over the minimap `renderMinimap()` prints the elapsed clock alone, centred on the plate. There
 is no alive count: a match does not end on bodies (`aliveCount()`, js/player.js, has no caller
-but `DBG`). Under the disc runs the notice lane, and the **stat sheet** flies into it whenever a
+but `DBG`). In the top-right corner runs the notice lane, and the **stat sheet** flies into it whenever a
 number on yours moves - every row of your sheet, the moved ones lit and blinking, gone again in
 eight seconds: [rendering.md](rendering.md#the-stat-ledger-your-sheet-as-a-notice).
 
@@ -3450,12 +3450,12 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 | --- | --- | --- |
 | `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/world.js) — never the `nock` blip, which is the sound of a bow being ready |
 | `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
-| `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
+| `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
 | `turn()` | a piece turned on the spot | R over the build ghost |
 | `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's four (manage, rack, roll die, range bell) the press opened |
 | `record()` | a new BEST | `agEndRound` and the parkour line (js/world.js) — one cue for one meaning, on both instruments |
 | `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim.js) when a run of that length ends in the snow |
-| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/boot.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
+| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/boot.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice top right ([the plates](rendering.md#notices-the-plates-top-right)) and a feed line, so the ear turns your head and the corner says what happened |
 | `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
 | `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim.js), `dawnChime`'s opposite number |
 | `warp()` | a body moved without walking it | `warpPlayer` (js/tools.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |

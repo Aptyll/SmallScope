@@ -35,14 +35,6 @@ function applyZoom(dt, snap) {
   sizeWorldView();
   camX += (ow - WV_W) / 2;
   camY += (oh - WV_H) / 2;
-  // the minimap rides the same ease off the same constant, so both zooms
-  // under one hand feel like one control
-  const mw = mmWant();
-  if (snap || mmCur < 0) mmCur = mw;
-  else {
-    mmCur += (mw - mmCur) * k;
-    if (Math.abs(mw - mmCur) < 0.0008) mmCur = mw;
-  }
   return zPrev;
 }
 
@@ -1623,7 +1615,7 @@ function updateFx(dt) {
     f.t += dt;
     if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : 9)) footprints.splice(i, 1);
   }
-  ageNotices(dt); // the market's plates under the minimap age here too (js/shop.js)
+  ageNotices(dt); // the market's plates top right age here too (js/shop.js)
   updateStatLedger(dt); // ...and the stat sheet that flies into that lane when a number moves (js/ui/shop.js)
 }
 

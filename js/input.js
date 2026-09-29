@@ -1074,14 +1074,6 @@ canvas.addEventListener('wheel', (e) => {
     SFX.notch();
     return;
   }
-  // over the minimap the wheel zooms the minimap instead of the camera
-  if (overMinimap()) {
-    const mz = settings.mmZoom | 0;
-    settings.mmZoom = Math.max(0, Math.min(MM_ZOOMS.length - 1, mz + (e.deltaY > 0 ? -1 : 1)));
-    if (settings.mmZoom !== mz) SFX.notch();
-    saveSettings();
-    return;
-  }
   // scroll up = closer. One notch = one device pixel per world pixel, which
   // is the finest step that still lands on a pixel-exact zoom.
   const k0 = kWant;

@@ -307,7 +307,7 @@ function stripHit(mx, my) {
 // Noita's wand or Terraria's held item is.
 //
 // It stands on the hud frame, like the strip and the rail (4.18): one plate
-// flush with the view's left edge and level with the minimap's top, hugging
+// flush with the view's left edge and level with the rail's top, hugging
 // the row. The plate swallows its own clicks (shelfPlateHit). Over the row,
 // INSIDE the plate, one line per modifier runs to every shot it powers; the
 // plate grows down by a line's pitch for each, so the row sits under them.
@@ -317,7 +317,7 @@ const SHELF_GAP = 3;           // the air between two bit cells
 const SHELF_WGAP = 5;          // ...and between the weapon and its first bit
 const SHELF_PAD = 4;           // the plate's ground round the row
 const SHELF_LINE = 4;          // what one modifier's line costs over the row
-const SHELF_TOP = MM_GAP;      // the plate's top edge: level with the minimap's and the rail's
+const SHELF_TOP = MM_GAP;      // the plate's top edge: level with the rail's and the notice lane's
 const SHELF_SLOT = 0;          // the weapon slot it edits (TOOL_SLOTS is 1)
 const SHELF_X = SHELF_PAD;     // the weapon well's left edge: the plate's ground in from the view's edge
 const SHELF_MAX_BITS = 5;      // the widest body's cap (LONGBOW): what the corner reserves room for

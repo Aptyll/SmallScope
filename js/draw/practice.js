@@ -604,12 +604,12 @@ function drawAgMarkers() {
     if (!(s > 0) || s === Infinity) continue;
     let mx = Math.max(x0, Math.min(x1, px + dx * s)), my = Math.max(y0, Math.min(y1, py + dy * s));
     if (my < plateB + 4 && Math.abs(mx - cxm) < (plateW >> 1) + 6) my = plateB + 4;
-    // the minimap (top-right, with its clock row underneath): a marker inside
-    // its square slides along the edge it is on - down past the clock row if
-    // it came off the right edge, left past the disc if it came off the top
-    const mq = MM_R + 8;
-    if (Math.abs(mx - MM_CX) < mq && my < MM_CY + mq + 12) {
-      if (mx >= x1 - 1) my = Math.max(my, MM_CY + mq + 12); else mx = MM_CX - mq - 1;
+    // the minimap plate (a bottom corner, with its clock row over it): a
+    // marker inside it slides along the edge it is on - up past the clock row
+    // if it came off the side edge, sideways past the plate if off the bottom
+    const M = mmRect(), mt = M.y - (mmClockShown() ? 12 : 0) - 5;
+    if (mx > M.x - 5 && mx < M.x + M.w + 5 && my > mt) {
+      if (mx <= x0 + 1 || mx >= x1 - 1) my = mt; else mx = M.left ? M.x + M.w + 5 : M.x - 5;
     }
     // the hud strip (bottom-centre), at the HUD SIZE it is drawn at
     const R = hudStripRect(), hs = hudSc(), top = VIEW_H - (R.h + 4) * hs;

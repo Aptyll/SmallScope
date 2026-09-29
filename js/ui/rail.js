@@ -22,7 +22,7 @@
 // the minimap's job.
 // It scales with the HUD SIZE dial about its top-centre anchor
 // (drawRailScaled), capped so the plate clears the view's edge (railSc),
-// rides the intro slide down from above with the minimap, and stays up while
+// rides the intro slide down from above, and stays up while
 // you are dead - the side's state is exactly what a spectator reads.
 const RAIL_CHIP = 14;               // a chip: the 12px emblem and its 1px rim
 const RAIL_BAR = 4;                 // the hp bar under a chip: 1px air, the 2px bar, 1px air
@@ -31,7 +31,7 @@ const RAIL_GAP = 2;                 // the air between two chips
 const RAIL_SEP = 4;                 // the air between a side's chips and the score well, and inside the well
 const RAIL_KILL_W = 14;             // a kill total's cell: two digits at 2x
 const RAIL_CLOCK_W = 19;            // the clock's cell: M:SS up to MM:SS at 1x
-const RAIL_Y = MM_GAP;              // the plate's top edge: level with the minimap's outline
+const RAIL_Y = MM_GAP;              // the plate's top edge: level with the shelf and the notice lane
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it

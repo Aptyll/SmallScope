@@ -190,8 +190,7 @@ function mapAlloc() {
   mapCv.width = mapCv.height = MAP_W;
   mapImg = mapCtx.createImageData(MAP_W, MAP_W);
   chartOut = new Uint8Array(MAP_W * MAP_W);
-  chartSpan = [];
-  for (let p = 0; p < MAP_W; p++) chartSpan.push([Math.floor(p / MAP_S), Math.min(WORLD - 1, Math.floor((p + 1) / MAP_S - 1e-6))]);
+  chartSpan = chartSpans(MAP_W);
   chartBuiltAt = -1e9;
   buildMapPanel();
 }
@@ -223,10 +222,14 @@ function chartGrain(c, px, py) {
   return false;
 }
 
-function buildWorldMapImg() {
-  if (state.tick - chartBuiltAt < MM_REBUILD && state.tick >= chartBuiltAt) return;
-  chartBuiltAt = state.tick;
-  const N = WORLD, cls = chartCls, tmp = chartTmp, out = chartOut, W = MAP_W;
+// The chart's classes, shared by the chart and the minimap: every tile's
+// class, then the flatten that keeps a lone tree or ice chip off a map this
+// small. Rerun at most every MM_REBUILD ticks, whichever map asks first.
+let chartClsAt = -1e9;
+function chartClasses() {
+  if (state.tick - chartClsAt < MM_REBUILD && state.tick >= chartClsAt) return;
+  chartClsAt = state.tick;
+  const N = WORLD, cls = chartCls, tmp = chartTmp;
   for (let i = 0; i < N * N; i++) {
     const o = structOf(objects[i]); // resolves a multi-tile building's 'part' fillers to the anchor
     const c = o ? objChart(o) : null;
@@ -249,11 +252,22 @@ function buildWorldMapImg() {
     const three = (c) => CHART_NEED[c] && (a === c) + (b === c) + (u === c) + (d === c) >= 3;
     if (three(a)) cls[i] = a; else if (three(u)) cls[i] = u;
   }
-  // resample: each chart pixel is the highest class of the tiles it covers
+}
+// the tiles [t0, t1] each pixel of a W px square map covers on either axis
+function chartSpans(W) {
+  const s = W / WORLD, span = [];
+  for (let p = 0; p < W; p++) span.push([Math.floor(p / s), Math.min(WORLD - 1, Math.floor((p + 1) / s - 1e-6))]);
+  return span;
+}
+// the classes inked into a W px square: resample, then paint into img and put
+// it on g. Both maps wear this one picture at their own size.
+function inkChart(W, span, out, img, g) {
+  const N = WORLD, cls = chartCls;
+  // resample: each map pixel is the highest class of the tiles it covers
   for (let py = 0; py < W; py++) {
-    const [ty0, ty1] = chartSpan[py];
+    const [ty0, ty1] = span[py];
     for (let px = 0; px < W; px++) {
-      const [tx0, tx1] = chartSpan[px];
+      const [tx0, tx1] = span[px];
       let best = 0;
       for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) { const c = cls[ty * N + tx]; if (c > best) best = c; }
       out[py * W + px] = best;
@@ -261,7 +275,7 @@ function buildWorldMapImg() {
   }
   // paint: the flat ink, its stipple, then the lit rim toward the light and
   // the inked rim away from it (a strip one pixel wide takes the ink)
-  const dd = mapImg.data;
+  const dd = img.data;
   for (let py = 0; py < W; py++) for (let px = 0; px < W; px++) {
     const i = py * W + px, c = out[i];
     let ink = CHART_GRAIN[c] && chartGrain(c, px, py) ? CHART_GRAIN[c] : CHART_INK[c];
@@ -273,7 +287,13 @@ function buildWorldMapImg() {
     const j = i * 4;
     dd[j] = ink[0]; dd[j + 1] = ink[1]; dd[j + 2] = ink[2]; dd[j + 3] = 255;
   }
-  mapCtx.putImageData(mapImg, 0, 0);
+  g.putImageData(img, 0, 0);
+}
+function buildWorldMapImg() {
+  if (state.tick - chartBuiltAt < MM_REBUILD && state.tick >= chartBuiltAt) return;
+  chartBuiltAt = state.tick;
+  chartClasses();
+  inkChart(MAP_W, chartSpan, chartOut, mapImg, mapCtx);
 }
 
 const panelCv = document.createElement('canvas');
@@ -958,8 +978,7 @@ function applySliderDrag() {
     settings.sfxVol = Math.round(t * 20) / 20;
     SFX.setSfxVolume(settings.sfxVol);
   } else if (dragSlider === 'map') {
-    settings.mmR = Math.round(16 + t * 18);
-    applyMinimapSize();
+    settings.mmSide = MM_SIDES[Math.round(t * (MM_SIDES.length - 1))];
   } else if (dragSlider === 'hud') {
     // the knob steps notch to notch - only sizes the HUD can draw crisp on
     // this screen (hudSizes, js/ui/strip.js); the strip reads it live
@@ -1192,7 +1211,7 @@ function drawSliderById(id, y, off) {
   if (id === 'vol') drawSliderRow(y, settings.volume, String(Math.round(settings.volume * 100)), off);
   else if (id === 'music') drawSliderRow(y, settings.musicVol, String(Math.round(settings.musicVol * 100)), off);
   else if (id === 'sfx') drawSliderRow(y, settings.sfxVol, String(Math.round(settings.sfxVol * 100)), off);
-  else if (id === 'map') drawSliderRow(y, (settings.mmR - 16) / 18, 'R' + settings.mmR);
+  else if (id === 'map') drawSliderRow(y, MM_SIDES.indexOf(mmSide()) / (MM_SIDES.length - 1), String(mmSide()), false, MM_SIDES.length);
   else if (id === 'hud') { const n = hudSizes().length; drawSliderRow(y, n > 1 ? hudStep() / (n - 1) : 1, String(Math.round(hudSc() * 100)), false, n); }
 }
 

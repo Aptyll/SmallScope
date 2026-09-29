@@ -89,7 +89,7 @@ function marketNews(id) {
   r.pop = 3;
   const k = up ? 'spike' : 'crash';
   logEvent(GOODS[id].name + (up ? ' SPIKE ' : ' CRASH ') + now + 'G', null, NOTE_KIND[k]);
-  raiseNotice(k, now + 'G', id); // ...and the plate under the minimap
+  raiseNotice(k, now + 'G', id); // ...and the plate top right
   SFX.market(up);
 }
 
@@ -145,7 +145,7 @@ function updateMarket(dt) {
 // PLAYERS. A price is not something that happened to a player: it is the state of
 // the world you are about to sell your bag into, and it has to arrive where
 // the other things you glance at mid-fight are. So it also raises a PLATE,
-// top-right, hard under the minimap beside the clock.
+// top-right, in the notice lane.
 //
 // One shape, four notices, read left to right with no sentence in it: the
 // MARK of what the news IS (the merchant's GOLD SACK, SPRITES.goldSack,
@@ -181,7 +181,6 @@ const NOTE_FR = 0.11;    // s per frame of the sack's six
 // and the rest is the air that keeps the price off the arrow.
 const NOTE_W = 78, NOTE_H = 22;
 const NOTE_AIR = 4;      // the air between two plates in the lane
-const NOTE_GAP = 18;     // below the disc's clock, which ends 14px under it
 const notices = [];      // {kind, txt, good, t}; ageNotices runs the clock
 // A PLATE IS ITS KIND'S SIZE. Every kind but one is the 78x22 card the
 // market's prices are read off; the STATS kind is the same card grown to seat
@@ -205,7 +204,7 @@ const NOTE_TAILS = {
 // pause in the middle of a fight.
 //
 // It is a NOTICE and nothing else: it does not stand on the HUD, it ARRIVES.
-// A change flies the sheet in off the right edge into the lane under the disc
+// A change flies the sheet in off the right edge into the top-right lane
 // on the same ease, the same white pulse and the same lane as a price, holds
 // NOTE_LIFE, and rides back out the way it came - and it SHOVES whatever plate
 // was in the lane down under it exactly as a price plate does. The only thing
@@ -406,10 +405,10 @@ function ageNotices(dt) {
   }
 }
 
-// The slot a plate rests in, newest first: k = 0 sits under the disc's clock
-// row, and every plate is RIGHT-ALIGNED on the disc's own right edge, so a
-// taller or wider one still reads as the same lane. Off MM_* so the lane
-// follows the minimap wherever the size dial and the view put it. The y is a
+// The slot a plate rests in, newest first: k = 0 sits in the top-right
+// corner MM_GAP off both edges, level with the rail, and every plate is
+// RIGHT-ALIGNED on that edge, so a taller or wider one still reads as the
+// same lane. The y is a
 // SUM of what stands above the slot rather than k * a pitch, because the
 // stats plate is not the height of a price.
 function noteKindAt(k) {
@@ -418,17 +417,20 @@ function noteKindAt(k) {
 }
 function noteRect(k) {
   const K = noteKindAt(k), w = noteW(K);
-  let y = MM_CY + MM_R + NOTE_GAP;
+  let y = MM_GAP;
   for (let j = 0; j < k; j++) y += notePitch(noteKindAt(j));
-  return { x: MM_CX + MM_R - w, y, w, h: noteH(K) };
+  return { x: VIEW_W - MM_GAP - w, y, w, h: noteH(K) };
 }
 // The lane's floor: the top of the hud strip's own tab, at whatever HUD SIZE
-// the dial holds. Three plates of a price's height never came near it, but the
+// the dial holds, or the minimap plate's top when it stands in the right corner. Three plates of a price's height never came near it, but the
 // stats sheet is five of them, so on a short view the lane can reach the
 // bottom edge - and a plate drawn half under the strip is worse than one not
 // drawn. renderNotices lays them newest first and stops here, which drops the
 // OLDEST news: the right one to lose.
-function noteLaneFloor() { return VIEW_H - Math.round((AB_H + POUCH_RISE) * hudSc()) - 4; }
+function noteLaneFloor() {
+  const f = VIEW_H - Math.round((AB_H + POUCH_RISE) * hudSc()) - 4, R = mmRect();
+  return R.left ? f : Math.min(f, R.y - (mmClockShown() ? 12 : 0) - 4);
+}
 
 // Drawn from renderUI (js/ui.js) after the counter and the character sheet:
 // news that arrives mid-trade must not hide behind the thing it is about.

@@ -124,8 +124,7 @@ function drawItemIcon(type, r, y, g, k) {
 // pixels every clock on screen is turning, with the eye already on three
 // bigger ones beside it.
 //
-// Rasterised A PIXEL AT A TIME for the reason every minimap curve is
-// (mmRing): canvas paths anti-alias, and a soft diagonal across a 32px well
+// Rasterised A PIXEL AT A TIME: canvas paths anti-alias, and a soft diagonal across a 32px well
 // is blur on a screen where every other edge is hard. Each row is walked once
 // and its covered pixels are coalesced into ONE fillRect per run, so a
 // sweeping well costs a few dozen draws rather than a thousand - and only a

@@ -24,8 +24,8 @@ function renderUI(now) {
   const out = state.mode === 'dead'; // the local wallet is moot once you are out
 
   ctx.save();
-  ctx.translate(0, Math.round(-slide * (MM_R * 2 + 40)));
-  // minimap with day/night ring
+  ctx.translate(0, Math.round(slide * (mmRect().h + 4)));
+  // the minimap plate, bottom corner, riding up with the strip
   renderMinimap(now);
   ctx.restore();
 
@@ -76,7 +76,7 @@ function renderUI(now) {
   // the character panel (G): over the HUD, under the toasts and the tooltip
   if (!out && state.charOpen && !player.dead) drawCharPanel(now);
 
-  // the news plates, top-right under the minimap (the `notices` banner,
+  // the news plates, top-right (the `notices` banner,
   // js/ui/shop.js): the market's three and the roost under attack. Above the
   // counter and the sheet on purpose: a price
   // that moved while you were standing at the shop is exactly the news that

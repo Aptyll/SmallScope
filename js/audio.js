@@ -781,9 +781,9 @@
       tone(open ? 420 : 620, 0.06, 'triangle', 0.09, open ? 170 : -170);
       tone(open ? 620 : 420, 0.09, 'triangle', 0.07, open ? 120 : -120, 0.05);
     },
-    // ONE NOTCH of a stepped control - a zoom rung, a build row, a minimap
-    // step, a wheel wedge the travel crossed. It fires as fast as a hand can
-    // step, so it is quiet and holds its own gap.
+    // ONE NOTCH of a stepped control - a zoom rung, a build row, a wheel
+    // wedge the travel crossed. It fires as fast as a hand can step, so it
+    // is quiet and holds its own gap.
     notch() { if (smp('notch', { vol: 0.35, jitter: 0, gap: 0.05 })) return; tone(1180, 0.025, 'square', 0.03); },
     // a piece turned on the spot (R over the build ghost): a dial, not a step
     turn() { if (smp('turn', { vol: 0.45, jitter: 0, dur: 0.45 })) return; tone(520, 0.05, 'square', 0.05, 260); },

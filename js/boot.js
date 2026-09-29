@@ -852,7 +852,7 @@ function hurtEagle(e, dmg, src, hx, hy) {
       && state.elapsed - (e.warnT === undefined ? -99 : e.warnT) >= EAGLE_WARN_GAP) {
     e.warnT = state.elapsed;
     // ...and the news arrives where the other things you glance at mid-fight
-    // do: a plate top-right under the minimap, on the market's own grammar
+    // do: a plate top-right, on the market's own grammar
     // (the `notices` banner, js/ui/shop.js) - your side's bird diamond, the
     // NERVE it has left as a number, and the falling tail. The cue turns your
     // head and the plate says what happened, which is the market's split too;
@@ -1604,7 +1604,7 @@ window.DBG = {
   market, GOODS, MKT_STEP, MKT_HIST, MKT_DAYS, SHOP_RESTOCK, marketPrice, marketHist,
   marketStep: (n) => { for (let i = 0; i < (n || 1); i++) updateMarket(MKT_STEP); return MKT_ORDER.map(marketPrice); },
   shopRestock: (loud) => shopRestock(!loud), shopOffer, itemValue, cellValue, sellValue,
-  // the market's plates under the minimap: the live stack, where a slot lands,
+  // the market's plates top right: the live stack, where a slot lands,
   // and a way to raise one without waiting for the walk to do it
   notices, noteRect, NOTE_KIND, raiseNotice,
   merchNear: (p) => merchNear(p || player),
@@ -1798,7 +1798,7 @@ window.DBG = {
   setK: (k, snap) => { kWant = Math.max(kMin(), Math.min(kMax(), k | 0)); if (snap) applyZoom(0, true); },
   getZoom: () => ({ want: zoomWantOf(), applied: zoomCur, k: kWant, devScale, exact: Math.abs(zoomCur * devScale - Math.round(zoomCur * devScale)) < 1e-6,
     rungs: (() => { const r = []; for (let k = kMin(); k <= kMax(); k++) r.push(+(k / devScale).toFixed(4)); return r; })(),
-    wv: [WV_W, WV_H], mm: mmScale() }),
+    wv: [WV_W, WV_H] }),
   setSwing: (i, p) => { (p || player).swing = i; },
   getSwing: (p) => (p || player).swing,
   cam: () => ({ x: camX, y: camY }),
@@ -1841,7 +1841,7 @@ window.DBG = {
     return { tab: setTab, tabs: L.tabs, rows, scroll: L.scroll, maxScroll: L.maxScroll,
       x: SL_X, w: SL_W, panel: { x: SET_X, y: SET_Y, w: SET_W, h: SET_H } };
   },
-  layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_CX, MM_CY }),
+  layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, mm: mmRect() }),
   hideUI: false,
   // saved matches (js/save.js): the record, the hash the replay proof compares, a slot by hand
   saveCapture, saveApply, saveHash, saveMatch, loadSave, saveList, autoSave,

@@ -486,8 +486,8 @@ toward the bottom-right side — taking a tile index or a continuous tile coordi
 walk ([Soldiers](gameplay.md#soldiers-the-waves)). Not under `PRACTICE` (`roadMainDist` answers
 99 and no spur is ever registered).
 
-Both maps paint it: a tan stroke on the minimap, a brown ink line down the parchment
-(`updateMinimap`, `buildWorldMapImg`) — from the ground array, so a paved spur appears on both as
+Both maps paint it as the chart's brown ink line (`chartClasses`), and a save's thumbnail as a tan
+stroke (`updateMinimap`) — from the ground array, so a paved spur appears on both as
 it is laid. In the world it is **painted over the snow per pixel**, not per tile:
 `paintGroundTile` paints every road tile, and every snow tile within `ROAD_SHOULDER` (1.4) + 1.2
 tiles of the edge, as snow first and then hands it to `paintRoadOverlay` (the `the road's pixels`
