@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.27';
+const PATCH_TXT = 'PATCH 4.28';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.28', 'THE BEARS COME ALIVE: THEY BREATHE STANDING STILL, WALK THEIR CAMP, GALLOP WHEN THEY CHARGE AND ROAR WHEN YOU WAKE THEM, AND A SWIPE NOW STANDS THE BEAR UP ON ITS HIND LEGS FIRST, SO STEP BACK BEFORE THE PAW COMES DOWN. THEY ALSO NO LONGER GET STUCK RUNNING IN PLACE BESIDE A TREE.'],
   ['4.27', 'BUILDING IS QUICKER: TAP T FOR YOUR LAST PIECE OR HOLD IT FOR A WHEEL OF PIECES, THE BUILD BUTTON SITS AFTER YOUR ABILITIES, DRAG TO LAY A WALL LINE, A NEW GATE LETS ONLY YOUR SIDE THROUGH, A GHOST YOU CANNOT PAY FOR GOES GREY, TAKING DOWN A PIECE STILL GOING UP GIVES ALL ITS GOLD BACK, E CAN REPAIR, AND TEAMMATES STANDING BY SPEED A BUILD.'],
   ['4.26', 'PERCH\'S HEALTH BAR IS TALLER WITH EIGHT BIG BLOCKS, AND SITS A LITTLE FURTHER UNDER ITS NAME.'],
   ['4.25', 'THE EAGLE RIDE IS SMOOTH ON ANY SCREEN: A STEEL FLIGHT BAR WITH THE JUMP KEY UNDER IT, A RED SHAKE WHEN YOU JUMP TOO EARLY, NO JUMP SHOWN ON YOUR FIRST FLIGHT, EVERY RIDER AND DRIVER NAMED IN TEAM COLOUR ON THE WING AND A BIGGER PERCH WITH A SEGMENTED BAR.'],
@@ -1165,6 +1166,7 @@ const PATCH_DIGEST = [
     ['THE WOLF DEN IS A ROCK MAW, AND THERE ARE SIX CAMPS', '3.85'],
     ['THE CREEK BENDS SO EACH SIDE OWNS ONE BIG CAMP, AND BOTH PAY THE SAME', '4.17'],
     ['A BROWN BEAR AND A BLACK BEAR HOLD THE TWO BIG CAMPS', '4.24'],
+    ['A BEAR STANDS UP BEFORE IT SWIPES: STEP BACK', '4.28'],
     ['ROCKS STAND IN A FEW MINING SPOTS, THE RAREST AT THE CORNERS', '4.15'],
     ['ROLL OVER THE CREEK FROM ITS BANK', '4.12'],
     ['A ROWBOAT IN THE ICE, AND A SLED YOU CAN RIDE', '3.98'],
@@ -3524,8 +3526,9 @@ function drawWikiBeast(bs, cx, baseY, level, now) {
   const spr = SPRITES[bs.kind].right.idle[0];
   wikiMound(cx, baseY, 26);
   ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bs.bw ? bs.bw >> 1 : 3), baseY, bs.bw || 6, 2);
-  const px = cx - (spr.width >> 1), py = baseY + 2 - spr.height;
-  ctx.drawImage(spr, px, py);
+  const px = cx - (spr.width >> 1), py0 = baseY + 2 - spr.height;
+  ctx.drawImage(spr, px, py0);
+  const py = py0 + (spr.top || 0); // the bars on the standing body, as drawAnimal hangs them
   const wolf = isCampKind(bs.kind); // a camp monster's second bar is its leash
   const bx = Math.round(cx - bs.bw / 2);
   drawHealthBar(cx, py - 8, ANIMAL_HP[bs.kind], ANIMAL_HP[bs.kind], bs.bw); // full, chunked the way the world chunks it

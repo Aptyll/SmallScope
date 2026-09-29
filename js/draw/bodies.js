@@ -23,8 +23,11 @@ function drawAnimal(a, ex, ey, now) {
     drawCastShade(spr, px, py); // the sun's shade, cut from this frame (ground.js)
   drawSpriteFlash(spr, px, py, a.flash);
   // netted, snared, alight, marked: the same four tells a player wears, at
-  // this body's size (drawUnitStates, js/abilities.js)
-  drawUnitStates(a, px, py, spr.width, spr.height, now);
+  // this body's size (drawUnitStates, js/abilities.js). `top` (a bear's
+  // frames) is the headroom its rear-up needs over the standing head: the
+  // tells and the bars sit on the standing body, not on the box
+  const ty = py + (spr.top || 0);
+  drawUnitStates(a, px, ty, spr.width, spr.height - (spr.top || 0), now);
   // The player's frame, on a beast: health on top, always, the second bar
   // hung 3 rows under it the way a player's stamina hangs under the health,
   // the two sharing a wall, and the level badge on the left spanning both -
@@ -37,12 +40,12 @@ function drawAnimal(a, ex, ey, now) {
   // stars or the noticed mark, never both.
   const bw = rabbit ? 8 : big ? 24 : wolf ? 11 : 17; // widths that split into even segments (hpSegCount)
   const bx = Math.round(a.x - ex - bw / 2); // the bars' own left column (drawHealthBar's x)
-  drawHealthBar(a.x - ex, py - 8, a.hp, a.maxHp, bw);
-  if (wolf) drawHealthBar(a.x - ex, py - 5, a.threat, 1, bw, undefined, THREAT_COL);
-  else drawHealthBar(a.x - ex, py - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
-  drawLevelBadge(bx - 1, py - 9, a.level);
-  if (a.stunT > 0) drawStunStars(Math.round(a.x - ex), py - 13, a, 4);
-  else if (a.senseT > 0) drawSenseMark(Math.round(a.x - ex), py - 16, a, wolf ? THREAT_COL : STAM_COL);
+  drawHealthBar(a.x - ex, ty - 8, a.hp, a.maxHp, bw);
+  if (wolf) drawHealthBar(a.x - ex, ty - 5, a.threat, 1, bw, undefined, THREAT_COL);
+  else drawHealthBar(a.x - ex, ty - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
+  drawLevelBadge(bx - 1, ty - 9, a.level);
+  if (a.stunT > 0) drawStunStars(Math.round(a.x - ex), ty - 13, a, 4);
+  else if (a.senseT > 0) drawSenseMark(Math.round(a.x - ex), ty - 16, a, wolf ? THREAT_COL : STAM_COL);
 }
 
 // The only thing in the world that leaves the ground: the sprite lifts off

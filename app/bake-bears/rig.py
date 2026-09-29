@@ -3,19 +3,21 @@
 import numpy as np, math
 
 SS = 8
-CW, CH = 48, 32          # 1x canvas
-OX, OY = 6, 4            # where the reference crop origin sits in the canvas
+CW, CH = 60, 46          # 1x canvas: room for the rear-up above and the swipe out front
+OX, OY = 12, 16          # where the reference crop origin sits in the canvas
 
 PAL = {                  # measured from the reference (k-means on 5px cells)
     'D0': (43, 30, 30), 'D1': (71, 45, 35), 'M3': (106, 67, 38),
     'L6': (149, 98, 60), 'H8': (187, 136, 91), 'G7': (137, 109, 102),
     'EY': (214, 160, 102),
+    'SM': (250, 252, 255), 'SD': (58, 66, 96),   # the swipe's claw trail: white slashes, ink edges so they read on snow
 }
 # the antlered bear in the reference is the same sprite recoloured: map band by band
 PAL_DARK = {
     'D0': (35, 36, 39), 'D1': (49, 51, 61), 'M3': (59, 59, 83),
     'L6': (89, 87, 117), 'H8': (89, 87, 117), 'G7': (124, 118, 113),
     'EY': (198, 163, 118), 'BN': (188, 169, 165), 'BS': (124, 118, 113),
+    'SM': (250, 252, 255), 'SD': (58, 66, 96),
 }
 RAMPS = {
     'fur':  ['D0', 'D1', 'M3', 'L6', 'H8'],

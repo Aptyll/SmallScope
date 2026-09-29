@@ -33,14 +33,15 @@ RUNE = pix(['.##.', '#..#', '#..#', '.##.'])
 def pose(P=None, dark=False):
     P = dict(P or {})
     bx, by = P.get('bx', 0.0), P.get('by', 0.0)          # body offset
-    tilt = P.get('tilt', 0.0)                             # body pitch around (20,13)
+    tilt = P.get('tilt', 0.0)                             # body pitch around `piv`
+    piv = P.get('piv', (20.0, 13.0))                      # (29, 15): the hind hips, for a rear-up
     hump = P.get('hump', 0.0)                             # shoulder rise
     hx, hy, ha = P.get('hx', 0.0), P.get('hy', 0.0), P.get('ha', 0.0)
     jaw = P.get('jaw', 0.0)
     feet = P.get('feet', {})
     pr = []
     def B(x, y):  # body-frame point to world
-        x, y = rot(x, y, 20, 13, tilt)
+        x, y = rot(x, y, piv[0], piv[1], tilt)
         return x + bx, y + by
     # torso: shoulder hump, middle, rump, belly, chest
     for (x, y, rx, ry, a, sd, lay, lf) in [
@@ -89,4 +90,29 @@ def pose(P=None, dark=False):
     add(6.0, 17.2, 2.2, 1.6, 'muz', 3.04, fur=0.2, sd=42, lift=0.3)
     add(4.6, 15.4, 0.55, 0.55, 'eye', 3.1, fur=0)
     add(8.6, 15.4, 0.55, 0.55, 'eye', 3.1, fur=0)
+    for arc in P.get('smear', []):   # claw trail: three parallel arcs, bright at the paw end
+        pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), px=smear_px(*arc)))
+    for (x, y) in P.get('dust', []):  # snow kicked up where the paw lands
+        pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), px=[(int(round(x)) + dx, int(round(y)) + dy, c) for dx, dy, c in DUST]))
     return pr
+
+DUST = [(-3, 0, 'SD'), (-2, -1, 'SM'), (2, -1, 'SM'), (3, 0, 'SD'), (-4, -2, 'SD'), (4, -2, 'SD'), (0, -2, 'SD')]
+
+def smear_px(p0, p1, p2, span=1.0):
+    """a quadratic arc p0 -> p1 (control) -> p2 in crop coords, drawn as three
+    claw lines 1.3 px apart; `span` keeps only the last part (a fading trail)"""
+    out = {}
+    for k in (-1.5, -0.5, 0.5, 1.5):
+        for i in range(41):
+            t = 1 - span + span * i / 40
+            x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0]
+            y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]
+            dx = 2 * (1 - t) * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0])
+            dy = 2 * (1 - t) * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1])
+            n = math.hypot(dx, dy) or 1
+            px, py = x - dy / n * 1.0 * k, y + dx / n * 1.0 * k
+            q = (int(round(px)), int(round(py)))
+            if i < 8 and abs(k) > 1: continue               # the tail thins to the two slashes
+            col = 'SD' if abs(k) > 1 or i < 8 else 'SM'    # two white slashes inside an ink edge
+            if out.get(q) != 'SM': out[q] = col
+    return [(x, y, c) for (x, y), c in out.items()]

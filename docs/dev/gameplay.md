@@ -1589,7 +1589,7 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
 | `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
 | `wolf` | `idle`, `run` | `updateCampMonster` |
-| `alpha` / `dire` (the bears) | `idle`, `run`, `bite` | `updateCampMonster` |
+| `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `swipe`, `roar` | `updateCampMonster` |
 | `bird` | `idle` perched, `fly` | `updateBird` |
 
 **The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
@@ -1701,7 +1701,8 @@ still load. All three run
 - **Neutral.** There is no sight and no threat bar filling on a linger: a player can stand at
   the mouth of a den and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
   stomp, anything through `hurtUnit` — and it wakes the *camp*: `wakeCamp(w, hitter)` hands the
-  hitter to every monster of the same camp at a full leash bar and plays `SFX.howl()`. Every
+  hitter to every monster of the same camp at a full leash bar and plays `SFX.howl()`; a bear that
+  was not already hunting first plays its `roar` clip, planted, for `BEAR_ROAR_FRAMES`. Every
   further hit re-aims the camp at the latest hitter, which is how a team takes turns tanking
   it.
 - **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
@@ -1718,9 +1719,12 @@ still load. All three run
   it cannot route to (out on a hole) it holds and faces. Bites do the row's `bite` plus `lvBite`
   for every level past the monster's first, inside `reach`, every `cd` seconds *per body*,
   through `damagePlayer(t, dmg, dx, dy, null, cause)` — `'wolf'` (`WENT TO THE WOLVES`) for the
-  pack, `'bear'` (`MET A BEAR`) for either bear. A bear's bite also puts it on its `bite` clip
-  (the rear-up and swipe), which the sim holds for `BITE_FRAMES` before it runs or stands
-  again. **Nothing caps the
+  pack, `'bear'` (`MET A BEAR`) for either bear. **A bear's blow is telegraphed**: in reach it
+  stands up on its `swipe` clip, planted, and the blow (`monsterBite`) lands only as the clip
+  crosses `BEAR_STRIKE`, on a quarry still inside `reach × BEAR_SWIPE_REACH` - so the stand-up is
+  the tell and a step back dodges it. A bear walks its patrol on `walk` and gallops the hunt on
+  `run`, and moves through the tiles on its `foot` box (5), not its 9 px body, which is wider
+  than a tile and jammed on the first tree beside its route. **Nothing caps the
   pack** ([i-frames](#i-frames-only-something-deliberate-grants-them)):
   four wolves on you is four bites a second, ~36 hp/s at level 1. `cd` is the only dial on it.
 - **Off duty** it patrols its camp on routed legs from the same `wanderGoal` the prey graze with
