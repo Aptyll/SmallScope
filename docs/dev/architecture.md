@@ -327,3 +327,12 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.
 - **`app/bake-logo.js`** — reads `docs/media/logos/mainMenuSoftfall.png`, writes `js/logodata.js`
   (`--probe` prints the key's box without writing).
+- **`app/check-globals.js`** — the shared scope's lint, run before every push (exit 1 on a
+  problem; `--list` prints every name it found as JSON). It reads the scripts in `index.html`'s
+  order and takes each file's depth-0 declarations (`const`/`let`/`var` with destructuring,
+  `function`, `class`) plus every `window.X =`, with a small tokenizer that skips strings,
+  templates, comments and regex literals. It reports a `const`/`let`/`class` a second file also
+  declares (**LOAD ERROR**: the later script throws when it loads and every global after it is
+  missing), a `function`/`var` declared twice (**OVERRIDE**: the later one silently replaces the
+  earlier everywhere), and a js file `index.html` never loads or loads twice. Git merges both
+  kinds of collision cleanly and `node --check` passes each file alone, so nothing else catches them.
