@@ -2,7 +2,7 @@
 // The team rail: every player in the match as a chip along the top edge,
 // and the anchors (railBottom, headlineY, noteY) the screens hang under it.
 // ---- the team rail: the roster along the top edge ----------------------
-// THE TEAM RAIL (3.33, joined into one scoreboard in 4.14): every player in
+// THE TEAM RAIL (3.33, joined into one scoreboard in 4.15): every player in
 // the match along the top centre, Dota's top bar kept clean and minimal.
 // ONE plain plate (the hud frame's outline and flat ground, no bevel, no
 // snow): your side's chips on the left, the rival's on the right, and
