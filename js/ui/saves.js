@@ -531,15 +531,16 @@ function drawSavesPlate(r, lift) {
 }
 
 // the HUD's mark that a save just landed (an autosave above all, which
-// nobody asked for): the slot's down-arrow, gold, beside the match clock
-// under the minimap - it pops in and fades over SAVE_FLASH_T
+// nobody asked for): the slot's down-arrow, gold, under the minimap - beside
+// the clock where that hangs there (mmClockShown, js/ui/minimap.js), on the
+// disc's axis where the rail holds it - it pops in and fades over SAVE_FLASH_T
 function drawSaveFlash() {
   if (state.mode === 'title' || window.DBG.hideUI) return;
   const t = (performance.now() - saveFlashAt) / 1000;
   if (t < 0 || t > SAVE_FLASH_T) return;
   const a0 = ctx.globalAlpha;
   ctx.globalAlpha = Math.min(1, t / 0.12) * Math.min(1, (SAVE_FLASH_T - t) / 0.5);
-  const cx = Math.round(MM_CX - pixelTextWidth(clockTxt(state.elapsed)) / 2 - 10), cy = MM_CY + MM_R + 11;
+  const cx = mmClockShown() ? Math.round(MM_CX - pixelTextWidth(clockTxt(state.elapsed)) / 2 - 10) : MM_CX, cy = MM_CY + MM_R + 11;
   const pop = t < 0.2 ? Math.round((0.2 - t) * 10) : 0;
   ctx.fillStyle = '#0f1632'; ctx.fillRect(cx - 7, cy - 8 - pop, 15, 17);
   drawVerbArrow(cx, cy - pop, true, '#ffd95c');

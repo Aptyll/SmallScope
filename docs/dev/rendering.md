@@ -438,7 +438,7 @@ the day at 2× in the slabs' title gold on the left, and on the right the `CLOSE
 `drawFrostButton`, a plate in the slab's own grammar (its stone bound in its dark, lifting off its
 shadow on hover, the label going gold), hit through `mapCloseRect`/`mapCloseHit` in `pointerPress`
 (play and drop alike; the cursor is a hand over it) — with no compass (the chart is north-up, as
-the world is), no key (the marks are the minimap's own), no clock (the disc wears it) and no
+the world is), no key (the marks are the minimap's own), no clock (the rail or the disc wears it) and no
 title. Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
 The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
@@ -480,8 +480,8 @@ empty world.
 | --- | --- | --- |
 | top left | the **weapon shelf**: the tool in hand and its bit cells in firing order, always up — and under its tool cell the small white arrow of the **inventory drawer**, shut until B or the arrow | `drawShelf`, `drawBag` |
 | top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
-| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it, and the market's plates under that | `renderMinimap`, `renderNotices` |
-| top centre | the **team rail**: every player in the match as a 14px chip on two plates, your side left (you first, your emblem white) and the rival right, each chip only *up* / *waiting* / *out* — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
+| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
+| top centre | the **team rail**: one plate, every player in the match as a 14px chip with a hp bar, your side left (you first, a frost tick under your bar) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
@@ -865,38 +865,43 @@ that is money must never read as a count of something carried.
 
 ### The team rail
 
-`drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster
-along the top edge: two [hud frame](#the-hud-frame) plates, `RAIL_MID` (10) px apart, centred on
-`VIEW_W` at `RAIL_Y` (3) — **your side on the left** and the rival's on the right, a 14px
-**chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) — the class's
-12×12 emblem (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`, never a shrink
-of it) on the `BAG_WELL` ground in a rim painted by side through `skin()`. `railSides` orders
-each side by id and puts **you first**, with your emblem baked white — the maps' own "you"
-(`drawMapYou`). A chip carries exactly one bit, in the wells' own grammar:
+`drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plate
+(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (3), Dota's top bar in the frostlands' chrome.
+**Your side's chips on the left**, the rival's on the right, and between them a sunk **score
+well** (`drawRailScore`): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
+one clock a match shows), the rival's total, each total at 2× in its side's `mark`
+(`railKills` sums `p.kills` over every player who wore the side's colour). A **chip** per active
+player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the class's 12×12 emblem
+(`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`, never a shrink of it)
+on the `BAG_WELL` ground in a rim painted by side through `skin()`, with a **hp bar** hung off its
+foot (`drawHealthBar` at chip width: the side's colour, the even segments, the colour-blind cap).
+`railSides` orders each side by id and puts **you first**, marked by a 4 px `RAIL_YOU` frost tick
+under your bar, nothing louder: your emblem is the same as anyone's. A chip's state, in the wells'
+own grammar:
 
-- **up**: the side's `mark` rim, the emblem lit;
+- **up**: the side's `mark` rim, the emblem lit, the bar full or not;
 - **waiting**: a dead player with `respawnT` running — `drawSweepCover` lays the `CD_SWEEP`
   slate over the emblem with the `CD_EDGE` hand walking round from twelve, `respawnT /
-  respawnTime(p)` of the way, exactly as an ability well waits; the rim goes to the cooldown's
-  dark blue;
+  respawnTime(p)` of the way, exactly as an ability well waits, and `drawRimSweep` draws the rim
+  back in behind the hand: from twelve clockwise to the hand in the side's `mark`, the rest in
+  `HUD_LIT` slate, so the colour returns round the chip as the wait runs out; the bar is bare;
 - **out**: `eliminated`, or dead with no countdown (its bird already driven off) — the rim dark,
   the emblem at `LOCK_DIM`.
 
-No hp, no name, no number: "three of us are up, two of them are down for a while" is read by
-counting lit chips and glancing at the hands. Under the pointer a chip's rim goes white and the
+No names on the plate: under the pointer a chip's rim goes white and the
 [tooltip](#the-hover-tooltip) carries the words (`tipRail`, through `railHit` in `tipAt`): the
 name in `playerTint`, the class, the level, and the countdown or OUT while the body is down — the
-scoreboard's own line. The rival's plate is League's death timer made a hand (the references are
-in rail.js's header); *where* anyone is stays the minimap's job.
+scoreboard's own line. *Where* anyone is stays the minimap's job.
 
 It is drawn straight after the minimap in `renderUI` (under the counter's wash with it), rides
 the intro slide up by `RAIL_SLIDE`, and **stays up while you are dead** — the side's state is
 what a spectator reads, so the spectate control (`specLayout`, js/ui/screens.js), the camp plate and the
 DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when there is no rail:
-the practice arena, or a match with an empty side — `railSides` is null and nothing draws), and
+the practice arena, or a match with an empty side — `railSides` is null, nothing draws, and the
+clock goes back under the minimap: `mmClockShown`), and
 the two notes step under the spectate control as well while it is up (`noteY`).
 **Its scale is a whole number**: `railSc` rounds the HUD SIZE dial and never goes under 1 (a 12px
-emblem at 0.8 drops two of its rows, where a 34px well shrugs it off), capped where the plates
+emblem at 0.8 drops two of its rows, where a 34px well shrugs it off), capped where the plate
 would reach the view's edge;
 the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through
 it. A known overlap: a longbow carrying five modifier bits stacks five rails above the shelf row
@@ -1254,7 +1259,7 @@ passes never overlap on the target. Which call reaches it depends on the pass:
   the overhead name tags, a roost's `PERCH` tag, the noticed `!` (`drawSenseMark`). Called from
   a UI pass (the wiki's animal page) it draws the outline where it stands.
 - **In a UI pass** call `drawPixelTextOutline` directly: the radial-wheel labels, the strip's
-  and the drawer's counts, the clock under the minimap, `state.msg`, the DAY headline's bake,
+  and the drawer's counts, the clock under the minimap (the rail's clock is on its own well, `drawPixelText`), `state.msg`, the DAY headline's bake,
   the info stack, and the drop-UI text. A keybind prompt's verb is outlined by `drawKeyPrompt`
   (js/ui/wheel.js) itself.
 

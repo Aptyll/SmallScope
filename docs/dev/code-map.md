@@ -554,7 +554,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the minimap (and the disc's inverse projection, for a walk ordered on it) | `renderMinimap`, `mmWorldAt`, `updateMinimap` (throttled to `MM_REBUILD` ticks), `mmChrome`/`mmArcBand` (the disc's baked chrome and cached day/night arc band), `mmMask`/`mmRing`/`mmView` | `minimap` (the disc's per-tile colour comes from `objMapColor(o)`: `world`, world.js; the marks over it: `drawMap*`, js/draw/marks.js) |
+| the minimap (and the disc's inverse projection, for a walk ordered on it) | `renderMinimap`, `mmClockShown` (the clock under the disc, only while no team rail is up), `mmWorldAt`, `updateMinimap` (throttled to `MM_REBUILD` ticks), `mmChrome`/`mmArcBand` (the disc's baked chrome and cached day/night arc band), `mmMask`/`mmRing`/`mmView` | `minimap` (the disc's per-tile colour comes from `objMapColor(o)`: `world`, world.js; the marks over it: `drawMap*`, js/draw/marks.js) |
 
 ## js/ui/bag.js
 
@@ -599,7 +599,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the team rail, top centre: the roster as 14px chips on two plates, your side then the rival's, you first in white; a chip is one bit - up, waiting (the wells' slate and hand over the respawn) or out (dark) - its whole-number scale about the top-centre anchor, the pointer's map back through it, the hover hit, and the bottom edge the top-centre headlines and the spectate control hang under | `RAIL_CHIP`/`RAIL_GAP`/`RAIL_MID`/`RAIL_Y`/`RAIL_PAD`/`RAIL_H`/`RAIL_SLIDE`, `railSides`, `railPlateW`, `railLayout`, `railSc`, `railBottom`, `headlineY`/`noteY`, `railMouse`, `railHit`, `drawRailChip`, `drawRail`, `railScaleCv`, `drawRailScaled` (the tooltip: `tipRail`, js/ui/tooltip.js; the emblems: `CLASS12`/`classIcon12`, js/ui/menu.js; its reader off the HUD: `specLayout`, js/ui/screens.js) | `the team rail: the roster along the top edge` |
+| the team rail, top centre: one plate, the roster as 14px chips with a hp bar each, your side then the rival's, you first with a frost tick under your bar, and the score well between them (the two kill totals and the match clock); a chip is up, waiting (the wells' slate and hand over the respawn, the rim drawn back in behind the hand) or out (dark) - its whole-number scale about the top-centre anchor, the pointer's map back through it, the hover hit, and the bottom edge the top-centre headlines and the spectate control hang under | `RAIL_CHIP`/`RAIL_BAR`/`RAIL_BODY`/`RAIL_GAP`/`RAIL_SEP`/`RAIL_KILL_W`/`RAIL_CLOCK_W`/`RAIL_Y`/`RAIL_PAD`/`RAIL_H`/`RAIL_SLIDE`/`RAIL_YOU`, `railSides`, `railKills`, `railChipsW`, `railLayout`, `railSc`, `railBottom`, `headlineY`/`noteY`, `railMouse`, `railHit`, `drawRimSweep`, `drawRailChip`, `drawRailScore`, `drawRail`, `railScaleCv`, `drawRailScaled` (the tooltip: `tipRail`, js/ui/tooltip.js; the emblems: `CLASS12`/`classIcon12`, js/ui/menu.js; its reader off the HUD: `specLayout`, js/ui/screens.js) | `the team rail: the roster along the top edge` |
 
 ## js/ui/tooltip.js
 
