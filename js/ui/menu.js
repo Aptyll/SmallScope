@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.23';
+const PATCH_TXT = 'PATCH 4.24';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.24', 'BEARS NOW HOLD THE TWO BIG CAMPS: A BROWN BEAR IN ITS DEN ON RED\'S BANK AND A BLACK BEAR WITH ANTLERS AT ITS STONE ON BLUE\'S, EACH THE SAME BIG FIGHT FOR THE SAME PAY, AND BOTH REAR UP AND SWIPE WHEN THEY STRIKE.'],
   ['4.23', 'THE FLIGHT BAR AT THE TOP GLIDES SMOOTHLY AS THE EAGLE FLIES INSTEAD OF HOPPING, ONLINE TOO.'],
   ['4.22', 'THE SETTINGS MENU IS A FLAT SOLID PANEL WITH A BIG GOLD TITLE, TABS UNDERLINED UNDER THE WORD ONLY, SWITCHES FOR TOGGLES, A LIFT UNDER THE ROW YOU POINT AT AND FLAT BUTTONS AT ITS FOOT. SAVES IS ONE BUTTON AND ONE GRID: PRESS AN EMPTY SLOT TO SAVE, PRESS A SAVE TO LOAD IT.'],
   ['4.21', 'GOING DOWN IS A MOMENT NOW: A BODY EITHER FREEZES AND SHATTERS OR IS BLOWN AWAY ON THE WIND, THE REPLAY OF YOUR DEATH ENDS ON IT AND PLAYS AT FULL SPEED, SHARP AT ANY ZOOM, AND THE MOUSE WHEEL ZOOMS WHILE YOU WATCH A TEAMMATE.'],
@@ -1160,6 +1161,7 @@ const PATCH_DIGEST = [
     ['A CREEK THAT NEVER FREEZES SPLITS THE VALLEY, BRIDGED AT THE ROAD', '3.86'],
     ['THE WOLF DEN IS A ROCK MAW, AND THERE ARE SIX CAMPS', '3.85'],
     ['THE CREEK BENDS SO EACH SIDE OWNS ONE BIG CAMP, AND BOTH PAY THE SAME', '4.17'],
+    ['A BROWN BEAR AND A BLACK BEAR HOLD THE TWO BIG CAMPS', '4.24'],
     ['ROCKS STAND IN A FEW MINING SPOTS, THE RAREST AT THE CORNERS', '4.15'],
     ['ROLL OVER THE CREEK FROM ITS BANK', '4.12'],
     ['A ROWBOAT IN THE ICE, AND A SLED YOU CAN RIDE', '3.98'],
@@ -3255,10 +3257,10 @@ const WIKI_BEASTS = [
     line: () => 'BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
   { kind: 'wolf', name: 'WOLF', bw: 11,
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
-  { kind: 'alpha', name: 'ALPHA', bw: 11,
-    line: () => 'ONE A STONE. BITES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
-  { kind: 'dire', name: 'DIRE WOLF', bw: 24,
-    line: () => 'ONE HOLLOW. BITES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
+  { kind: 'alpha', name: 'BLACK BEAR', bw: 24,
+    line: () => 'ONE A STONE. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
+  { kind: 'dire', name: 'BROWN BEAR', bw: 24,
+    line: () => 'ONE A DEN. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (lv - 1); }
@@ -3335,7 +3337,7 @@ const WIKI_WORLD = [
   { name: 'THE ROAD', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
     text: 'ONE STRAIGHT LANE FROM CORNER TO CORNER, PACKED HARD BY WHATEVER THE WORKS HAULED ALONG IT. BOTH BIRDS ROOST BESIDE IT AND BOTH COLUMNS MARCH DOWN IT, SO EVERYTHING IN SOFTFALL ENDS UP ON THE ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
   { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
-    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE ALPHAS KEEP TO THEIR STONES AND THE DIRE WOLF TO ITS HOLLOW, AND A COMPANY THAT BRINGS IT DOWN WALKS TALLER FOR A WHILE.' },
+    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BLACK BEAR KEEPS TO ITS STONE AND THE BROWN BEAR TO ITS DEN, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
   { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
     text: 'THE ONLY THING THE VALLEY PAYS IN, AND THE ONLY THING THAT TEACHES. A SCOUT WHO HAS EARNED A LOT OF IT HAS DONE A LOT, AND THAT IS ALL A LEVEL IS. NOBODY HERE HAS EVER FOUND A USE FOR A SECOND CURRENCY.' },
 ];

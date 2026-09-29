@@ -16,7 +16,7 @@ function drawAnimal(a, ex, ey, now) {
   if (a.kind === 'bird') { drawBird(a, ex, ey, now); return; }
   const rabbit = a.kind === 'rabbit';
   const wolf = isCampKind(a.kind); // a camp monster: wears the leash bar in threat red
-  const big = a.kind === 'dire';   // the 2x sprite: everything about its frame is wider
+  const big = isBigBeast(a);       // a bear: everything about its frame is wider
   const spr = clipFrame(SPRITES[a.kind][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const py = Math.round(a.y + 4 - spr.height - ey);
@@ -215,7 +215,7 @@ const FRAME_DX = 3;
 // ALPHA'S BLOOD, worn: an amber ring of pips around the feet, rimmed dark
 // so it reads on snow, that loses a pip at a time as the buff runs out -
 // the ring IS the timer, and a full ring on a rival is the warning. The
-// longest buff (the dire wolf's) fills every pip; the alpha's starts short.
+// longest buff (a bear's) fills every pip.
 const BUFF_RING = 12;                // pips round the ring
 const BUFF_COL = '#ffb04a';          // the epic camp's own map ink
 function drawBuffRing(p, cx, cy, now) {

@@ -132,3 +132,6 @@ docs/media/steam/tools/logo-full.png
 desktop/node_modules/
 desktop/app/
 desktop/dist/
+
+# python bytecode (app/bake-bears)
+__pycache__/

@@ -13,7 +13,7 @@ function drawCampIcon(g, C, x, y, col, rim) {
   for (const [rx, ry, rw, rh] of C.spec.icon) g.fillRect(x0 + rx, y0 + ry, rw, rh);
 }
 // A cleared camp's respawn clock, worn by its anchor prop (the den's mouth,
-// the alpha stone - the one carrying `site`) under the pointer: the same
+// the black bear stone - the one carrying `site`) under the pointer: the same
 // neutral bar a picked bush wears, filling toward the camp coming back
 // (updateCamps, world.js) - full and holding is a camp that is due and
 // waiting for you to leave. A camp with anything alive in it wears none.

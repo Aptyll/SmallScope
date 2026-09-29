@@ -12,7 +12,7 @@ writing a word a player reads. Before working in an area, read its doc: [code-ma
 ## Run and verify
 
 - `node app/server.js` serves the game on :8471. `/sync` runs `node app/check-globals.js`, the one lint.
-  `app/bake-*.js` regenerate the inlined sound and logo. Only `desktop/` (Electron) has packages.
+  `app/bake-*` regenerate the inlined sound, logo and bears. Only `desktop/` (Electron) has packages.
 - Double-clicking `index.html` must work: nothing may `fetch` or depend on being served.
 - There are no tests. Verify in the browser (headless Chromium works) with `window.DBG`, `?seed=N`,
   `POST /shot` and `.` for hitboxes: [how](docs/dev/checklists.md#verifying-a-change).
