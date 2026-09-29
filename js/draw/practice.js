@@ -540,7 +540,7 @@ function drawAgame(ex, ey, now) {
 // diagonals - the same two masks turned) baked once with a 1px dark rim, in
 // the round's gold; the tip rests AG_MARK_INSET px in from the edge, and a
 // marker that would land under the TIME/SCORE plate drops beneath it, one
-// that would land on the minimap steps off its disc, and one that would land
+// that would land on the minimap steps off its plate, and one that would land
 // on the hud strip rises above it - the chrome is never covered.
 const AG_MARK_INSET = 6;
 const AG_MARK_SIDE = [   // pointing east; turned clockwise for S, W, N

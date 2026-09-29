@@ -153,7 +153,7 @@ function renderScoreboard() {
 // off its shadow on hover like every plank in the game, pressed through
 // pointerPress like every other; M and Escape still close it). No compass
 // (the chart is north-up, as the world is), no key (the marks are the
-// minimap's own, learnt there), no clock (the disc wears it), no title. The
+// minimap's own, learnt there), no clock (the rail or the minimap wears it), no title. The
 // slab fits the view (fitMapSlab, canvas.js) and mapAlloc follows it - the
 // chart's buffers and the slab's bake are remade when MAP_W changes.
 
@@ -567,6 +567,10 @@ function drawFlatButton(r, label, hv) {
 const SET_TABS = [
   { id: 'game', label: 'GAME', rows: [
     { id: 'map', label: 'MINIMAP SIZE', kind: 'slider' },
+    // which bottom corner the minimap stands in (mmRect, js/ui/minimap.js)
+    { id: 'mmCorner', label: 'MINIMAP SIDE', kind: 'choice',
+      opts: [{ id: 'left', label: 'LEFT' }, { id: 'right', label: 'RIGHT' }],
+      val: () => settings.mmCorner === 'left' ? 'left' : 'right', pick: (v) => { settings.mmCorner = v; } },
     { id: 'hud', label: 'HUD SIZE', kind: 'slider' },
     { id: 'shake', label: 'SCREEN SHAKE', kind: 'toggle' },
     // the pad's rumble when an item is grabbed, placed or

@@ -449,8 +449,8 @@ square into `mmSquare`'s buffer, re-inked at most every `MM_REBUILD` ticks - so 
 the highest class of the few tiles under it and a road, a building or a bird is never averaged
 away. `mmRect()` places it, live every call because the HUD SIZE dial moves the strip without a
 relayout: a `drawHudFrame` plate `MM_IN` (3 px) round the map with a 2 px day/night band along
-its top (`MM_BAND`), flush to the bottom edge and to its side's edge (`settings.mmCorner`,
-`'right'` by default), the one corner toward the middle cut; when the strip at its HUD SIZE
+its top (`MM_BAND`), flush to the bottom edge and to its side's edge (`settings.mmCorner`, the
+GAME page's MINIMAP SIDE row, `'right'` by default), the one corner toward the middle cut; when the strip at its HUD SIZE
 reaches under it, the plate stands on the strip's shoulder instead (`lift`, both inner corners
 cut). The size is `settings.mmSide` (the MINIMAP SIZE dial, one of `MM_SIDES`, 80 to 160 px,
 default 112). Over the map, clipped to it by a whole-pixel `rect()`: League's white box for the
@@ -646,7 +646,8 @@ row on the ESC panel's GAME page (`settings.tipFollow`, default **on**):
   right edge, and both axes clamp `TIP_EDGE` (4 px) inside the view, so a hover in any corner reads.
 - **FIXED** parks it bottom **left**, the corner the pointer is furthest from while it hovers the
   backpack, the weapon shelf or a wiki row — so the panel can never cover the well beside the one
-  being read, and nothing else lives in that corner.
+  being read. When MINIMAP SIDE puts the minimap in that corner, the panel stands on the plate's
+  shoulder instead (over its clock, when one hangs there).
 
 `DBG.tipRect()` returns the rect the
 panel is painted at this frame, which is how the two modes are read without eyeballing pixels.

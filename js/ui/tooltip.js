@@ -386,7 +386,11 @@ function tipSize(d) {
 const TIP_GAP = 11;   // clear air between pointer and panel, sideways
 const TIP_EDGE = 4;   // closest the panel comes to any view edge
 function tipPos(w, h) {
-  if (!settings.tipFollow) return { x: TIP_EDGE, y: VIEW_H - 8 - h };
+  if (!settings.tipFollow) {
+    // parked bottom left - on the minimap plate's shoulder when it holds that corner
+    const M = mmRect();
+    return { x: TIP_EDGE, y: (M.left ? M.y - (mmClockShown() ? 12 : 0) - 4 : VIEW_H - 8) - h };
+  }
   const mx = Math.round(mouse.x), my = Math.round(mouse.y);
   let x = mx + TIP_GAP;
   if (x + w > VIEW_W - TIP_EDGE) x = mx - TIP_GAP - w;

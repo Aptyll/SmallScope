@@ -3167,7 +3167,8 @@ offers ([the fixed step](code-map.md#jsbootjs)) —
 and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) persists
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
-saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `mmSide` (the MINIMAP SIZE slider, one of `MM_SIDES`, default **112**) and `mmCorner` (`'right'`)
+saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `mmSide` (the MINIMAP SIZE slider, one of `MM_SIDES`, default **112**) and `mmCorner` (the
+MINIMAP SIDE row, `'left'` or `'right'`, default `'right'`)
 need no apply: `mmRect()` reads them live. `hudScale` (the HUD SIZE slider, default **1**; it steps between the screen's crisp sizes from 0.5 to 1.5, `hudSizes`, and a stored value draws at the nearest one, `hudSc`) needs no apply
 call: the hud strip, the pack and the shelf read it live every frame
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
@@ -3183,7 +3184,7 @@ under it (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a s
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
+(minimap size, minimap side, hud size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
