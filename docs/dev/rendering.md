@@ -866,7 +866,7 @@ that is money must never read as a count of something carried.
 ### The team rail
 
 `drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plain plate
-(`drawHudFrame` with its bevel flattened and no snow cap) centred on `VIEW_W` at `RAIL_Y` (3), Dota's top bar kept clean and minimal.
+(`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (3), Dota's top bar kept clean and minimal.
 **Your side's chips on the left**, the rival's on the right, and between them a sunk **score
 panel** (`drawRailScore`, a flat `BAG_WELL` fill): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
 one clock a match shows), the rival's total, each total at 2× in its side's `mark`
@@ -909,26 +909,20 @@ that reach `x` ≈ 270 at a 1.25 HUD, under the rail's leftmost chips.
 
 ### The hud frame
 
-`drawHudFrame(x, y, w, h, o)` is the one plate the strip and the pack stand on: the frostlands'
-chrome — the settings slab's chamfered corners and bevel (`bakeFrostSlab`, js/ui/panels.js) and the
-menu planks' snow cap (`drawMenuButton`, js/ui/menu.js) — at a combat surface's volume, with none of
-their mottling, rivets or icicles, because the wells cover most of the ground and a plate looked
-at for an hour has to stay quiet. Four pixel layers: the **silhouette** (`HUD_INK`, the xp bar's
-own ink) with its top corners cut two pixels and the corners that meet a screen edge left
-square (a notch of world there reads as a hole; `o.corners`); the **ground** (`o.bg`, `AB_BG`
-by default); the **bevel** — `HUD_LIT` along the top and left, `HUD_SHADE` along the bottom
-and right; and the **snow cap** — a ragged one-to-two pixel drift on every top edge the sky
-reaches, with the odd frost pixel sunk into the lit line under it, deterministic off `o.seed`
-through `hash2` so it never shimmers (`o.cap: 1` keeps it one pixel for an edge something
-already stands on, `false` drops it). `o.tab` is a block rising off the top edge and flush
-with the right side — the pouch block's — and the frame draws the two as **one silhouette**:
-the outline steps up around the tab, the ground runs through the seam, and the lit line turns
-the inside corner and climbs it. `o.lit`/`o.ink` are what a widget's states colour (the drawer's
-full amber, a refusal's red). Every margin inside the outline is three pixels — line, light,
-ground — which is what `AB_PAD` and `BAG_PAD` are, so a well sits the same distance from the
-edge on every side of both widgets. The [drawer](#the-backpack) wears it with only its two free
-(right) corners cut — it is flush with the view's left edge — and no cap: it lives under the
-shelf, not under the sky.
+`drawHudFrame(x, y, w, h, o)` is the one plate the strip, the pack and the team rail stand on,
+kept **plain and minimal** on purpose (the bevel and the snow cap came off in 4.15): the wells
+cover most of the ground and already carry the depth, and a plate looked at for an hour has to
+stay quiet. Two pixel layers: the **silhouette** (`HUD_INK`, the xp bar's own ink) with its top
+corners cut two pixels and the corners that meet a screen edge left square (a notch of world
+there reads as a hole; `o.corners`), and the **ground** (`o.bg`, `AB_BG` by default). `o.tab` is
+a block rising off the top edge and flush with the right side — the pouch block's — and the
+frame draws the two as **one silhouette**: the outline steps up around the tab and the ground
+runs through the seam. `o.lit`/`o.ink` are what a widget's states colour (the drawer's full
+amber, a refusal's red): `o.lit` is a ring just inside the outline, and a plate at rest has none.
+Every margin inside the outline is three pixels — line, ring, ground — which is what `AB_PAD` and
+`BAG_PAD` are, so a well sits the same distance from the edge on every side of every widget. The
+[drawer](#the-backpack) wears it with only its two free (right) corners cut — it is flush with
+the view's left edge.
 
 **One well size for the HUD**: the strip's wells and the shelf's cells are `HUD_CELL` (34)
 square, and every item icon in them is drawn doubled (`drawItemIcon`'s `k`), so a tool reads at
@@ -1076,7 +1070,7 @@ so a find is read at a glance without a rarity word anywhere; a tool also counts
 as pips along the bottom, in the corner a stack number would have used.
 
 - **One background, one frame, no internal line.** Every part of the drawer is the same opaque
-  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears (free corners cut, no cap).
+  `BAG_BG` inside the [hud frame](#the-hud-frame) the strip wears (free corners cut).
 - **Depth comes from the cells, not from panels.** Three tones say it without a line: a filled
   cell recesses to `BAG_WELL` *below* the frame's ground, an empty one sits *above* it at
   `#171f45`, and the ground itself is between — occupied / free / frame.

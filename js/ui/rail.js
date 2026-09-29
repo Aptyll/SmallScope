@@ -188,8 +188,7 @@ function drawRailScore(L) {
 function drawRail(now, L) {
   const hov = mouse.inside ? railHit(mouse.x, mouse.y) : null;
   const pl = L.plate;
-  // a plain plate: the outline and one flat ground, no bevel, no snow
-  drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: true, tr: true, bl: true, br: true }, lit: AB_BG, shade: AB_BG, cap: false });
+  drawHudFrame(pl.x, pl.y, pl.w, pl.h, { corners: { tl: true, tr: true, bl: true, br: true } });
   drawRailScore(L);
   for (const c of L.chips) drawRailChip(c, now, hov && hov.p === c.p);
 }

@@ -60,33 +60,25 @@ const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
 const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
 const AB_BG = '#0d1229';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
-// The strip and the pack are the frostlands' own chrome, at a combat
-// surface's volume: the settings slab's chamfered corners and bevel
-// (bakeFrostSlab, js/panels.js) and the menu planks' snow cap
-// (drawMenuButton, js/menu.js), with none of their mottling, rivets or
-// icicles - the wells cover most of the ground, and a plate that is looked
-// at for an hour has to stay quiet. Four layers, all pixels, nothing soft:
+// The strip, the pack and the team rail stand on one plain plate, kept
+// minimal on purpose (4.15: the bevel and the snow cap went): a plate that
+// is looked at for an hour has to stay quiet, and the wells on it already
+// carry the depth. Two layers, all pixels, nothing soft:
 //   * the SILHOUETTE, one dark line (the xp bar's own ink) with its top
 //     corners cut two pixels, so the plate sits on the snow as a shape and
 //     not a rectangle - the bottom corners stay square where they meet the
 //     screen's edge, since a notch of world there reads as a hole;
-//   * the GROUND inside it, one opaque colour;
-//   * the BEVEL: an icy line along the top and left, a deep one along the
-//     bottom and right, the slab's light from the top-left;
-//   * the SNOW CAP: a ragged one-to-two pixel drift resting on every top
-//     edge, with a frost pixel here and there sunk into the lit line under
-//     it - deterministic (hash2 off the seed), so it never shimmers.
+//   * the GROUND inside it, one opaque colour.
 // `tab` is a block rising off the top edge and flush with the right side
-// (the pouch block's): the outline steps up around it as ONE silhouette,
-// the ground runs through the seam, and the lit line turns the inside
-// corner rather than stopping at it. `lit` and `ink` are what a widget's
-// state colours (the pack's full amber, a refusal's red). Every margin
-// inside the outline is three pixels - line, light, ground - which is what
+// (the pouch block's): the outline steps up around it as ONE silhouette and
+// the ground runs through the seam. `ink` and `lit` are what a widget's
+// state colours (the pack's full amber, a refusal's red): `lit` rings the
+// inside of the outline, and a plate at rest has no ring. Every margin
+// inside the outline is three pixels - line, ring, ground - which is what
 // AB_PAD and BAG_PAD are.
 const HUD_INK = '#05070f';   // the silhouette
-const HUD_LIT = '#35426e';   // the icy light along the top and left
-const HUD_SHADE = '#070a18'; // the shade along the bottom and right
-const HUD_SNOW = '#f4f7ff', HUD_FROST = '#b8cce6';
+const HUD_LIT = '#35426e';   // a quiet slate: the waiting part of a dead chip's rim (rail.js)
+const HUD_FROST = '#b8cce6'; // the tick under your own rail chip
 // a rect with its corners cut two pixels where `c` says so
 function chamCut(x, y, w, h, c) {
   ctx.fillRect(x + 2, y, w - 4, h);
@@ -101,41 +93,22 @@ function drawHudFrame(x, y, w, h, o) {
   o = o || {};
   const c = o.corners || { tl: true, tr: true, bl: false, br: false };
   const t = o.tab || null, tc = { tl: true, tr: true, bl: false, br: false };
-  const ink = o.ink || HUD_INK, lit = o.lit || HUD_LIT, shade = o.shade || HUD_SHADE, seed = (o.seed || 1) * 13;
   // the silhouette, then the ground - the tab's run down INTO the plate so
   // the seam between the two is ground, never line
-  ctx.fillStyle = ink;
+  ctx.fillStyle = o.ink || HUD_INK;
   chamCut(x, y, w, h, c);
   if (t) chamCut(t.x, t.y, t.w, y - t.y + 3, tc);
   ctx.fillStyle = o.bg || AB_BG;
   chamCut(x + 1, y + 1, w - 2, h - 2, c);
   if (t) chamCut(t.x + 1, t.y + 1, t.w - 2, y - t.y + 2, tc);
-  // the bevel: light from the top-left, shade to the bottom-right; with a
-  // tab the top light runs to the inside corner and climbs it
-  ctx.fillStyle = lit;
-  if (t) {
-    ctx.fillRect(x + 2, y + 1, t.x - x - 1, 1);
-    ctx.fillRect(t.x + 1, t.y + 2, 1, y - t.y);
-    ctx.fillRect(t.x + 2, t.y + 1, t.w - 4, 1);
-  } else ctx.fillRect(x + 2, y + 1, w - 4, 1);
-  ctx.fillRect(x + 1, y + 2, 1, h - 4);
-  ctx.fillStyle = shade;
-  ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
-  const rt = t ? t.y + 2 : y + 2;
-  ctx.fillRect(x + w - 2, rt, 1, y + h - 2 - rt);
-  // the snow cap, on every top edge the sky can reach
-  if (o.cap !== false) {
-    const segs = t ? [[x + 2, t.x - 1, y], [t.x + 2, t.x + t.w - 3, t.y]] : [[x + 2, x + w - 3, y]];
-    const tall = o.cap === 1 ? 0 : 1; // a one-px cap for an edge something already stands on
-    for (const [x0, x1, top] of segs) {
-      for (let px = x0; px <= x1; px++) {
-        const hb = hash2(px * 3 + 5, seed);
-        const sh = 1 + (hb > 0.6 ? tall : 0);
-        ctx.fillStyle = HUD_SNOW;
-        ctx.fillRect(px, top - sh, 1, sh);
-        if (hb > 0.3 && hb < 0.42) { ctx.fillStyle = HUD_FROST; ctx.fillRect(px, top + 1, 1, 1); }
-      }
-    }
+  // a state's ring, just inside the line (never with a tab: only the pack
+  // wears a state)
+  if (o.lit && !t) {
+    ctx.fillStyle = o.lit;
+    ctx.fillRect(x + 2, y + 1, w - 4, 1);
+    ctx.fillRect(x + 2, y + h - 2, w - 4, 1);
+    ctx.fillRect(x + 1, y + 2, 1, h - 4);
+    ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
   }
 }
 // The weapon well's half of the refusal the backpack already has: a bit that
