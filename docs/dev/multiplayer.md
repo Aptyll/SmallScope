@@ -823,7 +823,7 @@ the cable toward the exit while it rides (the goal re-read every think, so a rid
 mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
 A ride no rung wanted this think is let go of at once (`ai.zipUsed`, `updateAI`), so a bot
 never coasts to the terminus by accident, and rungs 3 and 4 let go before they fight: nobody
-rides past an enemy holding the handle (roost to cairn is about 12.5 s by the cable against
+rides past an enemy holding the handle (roost to the map's centre is about 12.5 s by the cable against
 23 s on foot, seed 42). The -1, not a
 timer, is what makes a bot drop a goal: harvest puts the target on `ai.avoid` for 12 s, hunt on
 `ai.huntAvoid`, loot lets the drop lie, spend backs off for 15 s, a push on `ai.pushCd`, roam

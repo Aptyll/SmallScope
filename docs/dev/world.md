@@ -41,15 +41,15 @@ stable per tile.
   `{ type, tx, ty, hp, flash, shake, ...extra }`. The `OBJECTS` table's types: `tree`,
   `deadTree`, `rock`, `bush`, `chest`, `den`, `dummy`, `banner`, `rack`, `cairn`, `log`,
   `pylon`, `pkdie`, `agbell`, `stump`, `eagle`, `hut`, `part`, and the
-  [story landmarks](#story-landmarks)' `sled` and `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
-  `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `cairn`/`banner`/`log` are
+  [story landmarks](#story-landmarks)' `boat` (added from `LANDMARKS`); the `STRUCTS` table's: `wall`,
+  `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
   [the practice arena](#the-practice-arena). `deadTree` (a 3 hp snag, chopped like a
   tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
-  exist only inside [camps](#camps) (`cairn` is a camp's anchor too), and so does `hut` (the HOG
+  exist only inside [camps](#camps) (`cairn` is the BLACK BEAR STONE's anchor), and so does `hut` (the HOG
   HUT: solid, inert, 2×2 by `OBJECTS.hut.w`/`h`, its parts stamped east and north so the anchor is
   the front row, drawing the whole building); `chest` is a [treasure chest](#treasure-chests)
   standing where a border tree stood, or round a hog hut. `part` is the filler a multi-tile building (or a prop
@@ -368,8 +368,7 @@ in the byte-fragile grid files under js/sprites/.
 
 ## Story landmarks
 
-Two bits of scenery that suggest someone was here before the match: an abandoned **sled**
-beside a road or path and a **boat** frozen out in a lake. They are the `landmarks` banner in [js/landmarks.js](../../js/landmarks.js),
+Scenery that suggests someone was here before the match: a **boat** frozen out in a lake. They are the `landmarks` banner in [js/landmarks.js](../../js/landmarks.js),
 and **a landmark is data**: one `LANDMARKS` entry (its footprint `w`×`h`, `solid`, the `where`
 rule, `count`, `mirror`, `spacing`, its `art` key and `foot`, `mm`) and one sprite in
 `SPRITES.landmark` (js/sprites/landmarks.js). The file turns each entry into an `OBJECTS` row
@@ -380,7 +379,6 @@ north the way the hog hut's are.
 
 | Landmark | Footprint | Blocks | Where (`LM_WHERE`) | Count |
 | --- | --- | --- | --- | --- |
-| sled | 1×1 | no, and it is ridden ([gameplay](gameplay.md#the-sled)) | `path`: open snow with a road or path tile within 2 | 2, one in each side's half |
 | boat | 3×1 | yes | `lake`: every tile ice at least 4 deep | up to 2 |
 
 `placeLandmarks()` runs at boot straight after `placeRocks()`. It works out each ice tile's
@@ -391,15 +389,11 @@ seed keeps its terrain) and takes anchors until it has `count`, skipping any too
 already placed (`spacing` for the same kind, `LM_GAP` for any other). Every anchor also has to
 pass `lmClear`: the footprint must be empty with nothing solid round it, at least `LM_CAMP_GAP`
 tiles outside every camp's clearing and `LM_ROOST_GAP` tiles outside the roost disc (the eagles
-land there and the merchant builds there), and, for a ridden kind, at least `LM_ZIP_GAP` px from
-either zipline, so pressing E beside a sled can never mean the cable. A `mirror` kind searches
+land there and the merchant builds there). A `mirror` kind (none today) searches
 only the bottom-left side's half (`tx < ty`) and places each pick along with its reflection
 `(ty, tx)`, the camps' mirror, because both sides should get the same chance at a thing
 players use. A seed without room for one places fewer and throws nothing. The `landmarks` array
-keeps each placed landmark (`{ key, tx, ty, t }`), and a sled's `home` field points into it.
-
-The request asked for sleds at the foot of slopes. The valley has no height, so the sleds
-stand by the roads instead.
+keeps each placed landmark (`{ key, tx, ty }`) for the spacing check.
 
 ## The road
 
@@ -455,16 +449,13 @@ then, the way to a bird is one straight sightline down its spur.
 `ROAD_POLE_OUT` (0.9) tiles past it): two **`banner`** poles at each gate carrying a `team` (0 at
 the bottom-left gate, 1 at the top-right — the practice gate's own flag object, which paints
 its cloth in `TEAMS[skin(team)]`'s coat and both maps in that side's ink, and *fells* what stands
-on its spot, since the gate stands in the treeline, but gives way to a rock or a bush); one
-**`cairn`** on the centreline at the map's centre — stepped out along the lane to the
-bridgehead when the centre falls on [the creek](#the-creek)'s deck — solid cover where the two
-waves meet; and the
+on its spot, since the gate stands in the treeline, but gives way to a rock or a bush); and the
 **`log`** across each forest end — `ROAD_LOG_HALF` (2) pieces either side of the centreline along
 the cross-diagonal, five tiles touching corner to corner so nothing squeezes between them, each
 carrying `seg` (0 the up-left end, 1 the trunk, 2 the down-right end), solid, and a pine on the
 verge gives way to its ends. All inert to E (no `tool`). The shoulders are otherwise bare: a
-lane's edge is not a thing to look at. Their pixels: `CAIRN_SPR` baked beside `CHEST_SPR` in
-js/draw/ground.js and drawn in `render()`'s object pass; the pole is `drawBanner`; the trunk is
+lane's edge is not a thing to look at, and the centre where the waves meet is open ground.
+Their pixels: the pole is `drawBanner`; the trunk is
 **ground** — `paintLog` under `paintGroundTile` bakes each piece flat (`LOG_COL`), and a tile
 paints its four neighbours' pieces too, shifted, because the trunk is wider than the diagonal it
 runs on and spills past a tile's corners.
@@ -655,7 +646,7 @@ untouched. Not under `PRACTICE`. The points, base to front:
    right (`roadNest(team).side` — the two cables sit on opposite verges and mirror through the
    centre like the nests and camps);
 3. a pylon every `ZIP_SPAN` (10) u along the same verge to the **terminus** at `ZIP_MID_GAP`
-   (20) u short of the centre cairn — a stub of a span at the end joins the one before it — so the
+   (20) u short of the road's centre — a stub of a span at the end joins the one before it — so the
    middle stretch where the waves meet is cable-free.
 
 A pylon's tile is the nearest along the road (u, u±1, u±2) that is dry and holds nothing but

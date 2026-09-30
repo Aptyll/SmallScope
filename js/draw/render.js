@@ -505,7 +505,7 @@ function render() {
       const spr = SPRITES.teamBuild[skin(o.team)].stall;
       drawSpriteFlash(spr, px + sh, py + TILE - spr.height, o.flash);
     } else if (LANDMARKS[o.type]) {
-      drawLandmark(o, px + sh, py); // the sled, the boat (js/draw/landmarks.js); their parts draw nothing
+      drawLandmark(o, px + sh, py); // the boat (js/draw/landmarks.js); their parts draw nothing
     } else if (o.type === 'rock') {
       drawRock(o, px + sh, py, now);
     } else if (o.type === 'chest') {

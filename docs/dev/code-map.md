@@ -107,7 +107,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the sled and the boat, on one palette | `LMPAL`, `sled`, `boat` | `landmarks` |
+| the boat and its palette | `LMPAL`, `boat` | `landmarks` |
 
 ## js/core.js
 
@@ -218,7 +218,6 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | what a landmark is, where it may stand, and the pass that stands them | `LANDMARKS`, `LM_WHERE`, `lmFoot`, `lmIceDepth`, `lmClear`, `landmarks`, `placeLandmarks`, `lmStand` | `landmarks` |
-| the sled's ride: getting on and off, the steer, the break, the spot's respawn | `SLED_*`, `sledNear`, `sledToggle`, `sledStart`, `sledEnd`, `sledStep`, `sledSurfaceMul`, `updateLandmarks` | `landmarks` (the `the sled` group) |
 
 ## js/nav.js
 
@@ -451,14 +450,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the sweep's streaks: the world grid they are laid on, how many, how far they drift, how long, their strands, the shadow and the drift | `drawSweep` (called by `render()` before `drawDropAir`), `SWEEP_CELL_W`/`SWEEP_CELL_H`/`SWEEP_RUN`/`SWEEP_STREAKS`/`SWEEP_LEN`/`SWEEP_LAG`/`SWEEP_STRANDS`/`SWEEP_SHADE`/`SWEEP_BODY`/`SWEEP_FULL` | `the wind's sweep` (when one blows: `windSweep`, sim.js) |
 | a blizzard day's low streaks: their grid, their loops, speeds and lengths, and the one atlas they are drawn off | `drawDrift` (called by `render()` after `drawIceStars`), `blowAtlas`, `BLOW_*` | `the ground blizzard` |
 | cast shadows: the sun's direction, what casts (by object type), a frame's shade, the scenery's baked into the ground, a changed caster's repaint, a body's drawn per frame | `SUN_DX`/`SUN_DY`, `SHADE_*`, `CASTERS`, `CAST_REACH`, `shadeMask`/`shadeFor`, `paintCastShade`, `shadeChunk` (a chunk bake's), `castAt`/`syncCasts` (called by `render()` before the ground blit), `drawCastShade` (bodies.js, the building pass in render.js) | `cast shadows` |
-| the treasure chest's and the road cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
+| the treasure chest's and the cairn's baked sprites | `CHEST_SPR`, `CAIRN_SPR` | `the scenery bakes` (drawn in the y-sorted pass, js/draw/render.js; the dummy's twin `DUMMY_SPR`: js/draw/practice.js) |
 | which bend frame a pine is wearing, and whether it draws mirrored (off the wind field); the frame it stands in with no wind (its shadow's); its atlas row (palette variant, forest-depth tone) and the nudge off its tile centre | `treeFrame`, `treeRestFrame`, `treeLean`, `TREE_FRAMES`/`TREE_REST`, `treeCell`, `treeTone`/`woody`/`TREE_TONES`, `treeNudgeX`/`treeNudgeY`/`TREE_NUDGE_X`/`TREE_NUDGE_Y` | `the scenery bakes` |
 
 ## js/draw/landmarks.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| a landmark on its tiles and its shade, and the sled under a rider with its clock | `lmArtPos`, `drawLandmark` (from `render()`'s object pass), the `CASTERS` loop, `drawSledRide` (from `drawPlayer`) | `landmarks` |
+| a landmark on its tiles and its shade | `lmArtPos`, `drawLandmark` (from `render()`'s object pass), the `CASTERS` loop | `landmarks` |
 
 ## js/draw/lakes.js
 
@@ -569,7 +568,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | radial menu geometry and hit math | `wheelSpan`, `wheelAng`, `wheelOptions`, `wheelLayout`, `resolveWheel`, `wheelOnOwnFlag`, `WHEEL_*` | `radial wheel` |
 | brackets, the E prompt (never over what the hands take on their own, never under an open counter, and never over a work target at one - the `E SHOP` cap wins there and `drawWorkHint` stops on it), the fish brackets, wheel pixels, the command a pick runs | `drawSelection`, `drawWorkHint`, `drawFishHint`, `renderWheel`, `drawWheelHub`, `drawWheelStick`, `runCmd` | `selection, hints & wheel` |
-| the `E SHOP` cap over a merchant in reach (it returns whether it drew: the merchant owns E in that bubble), the bare cap over a sled at the body's feet (`sledNear`, js/landmarks.js - the key's next claim after the merchant's), the bare cap over a zipline's cable while the body stands under its own side's (`zipNear`, world.js - the claim after that), and the arena's three caps | `drawShopHint`, `drawSledHint`, `drawZipHint`, `drawBellHint`, `drawPkHint`, `drawRackHint` | `selection, hints & wheel` (the resolver behind the shop's: `merchNear`, js/ui/shop.js) |
+| the `E SHOP` cap over a merchant in reach (it returns whether it drew: the merchant owns E in that bubble), the bare cap over a zipline's cable while the body stands under its own side's (`zipNear`, world.js - the key's next claim after the merchant's), and the arena's three caps | `drawShopHint`, `drawZipHint`, `drawBellHint`, `drawPkHint`, `drawRackHint` | `selection, hints & wheel` (the resolver behind the shop's: `merchNear`, js/ui/shop.js) |
 | a keybind indicator: the key cap (the bound key's face, hover and listening states), the cap + verb prompt and its footprint, the action -> pad glyph table, the glyph worn while a pad is in hand, and the ESC BACK / CLOSE line under a slab | `drawKeyCap`, `drawKeyPrompt`, `promptW`, `PAD_BIND`, `padBindW`, `drawPadBind`, `drawBackHint`, `pixDisc`/`pixRing` (the scanline disc and ring every pad glyph is built from) (the flight HUD's two: `drawDropBind`, boot.js; the glyph pictures: `drawPadGlyph`, js/ui/panels.js) | `selection, hints & wheel` |
 | the build list and its ghost: the build well ending the ability strip that names the key and opens it, the one toggle and the last piece it opens on, the build key's tap-or-hold (the piece wheel), the rows standing over the well (the strip's 1x space) and their hit tests, a piece's icon, what the ghost snaps to and whether it can stand or be paid for, a wall's dragged run and the order it sends, the draws - and the piece the pointer wears | `BUILD_ROW`/`BUILD_W`, `BUILD_OK`/`BUILD_NO`/`BUILD_BROKE`/`BUILD_LIT`, `PIECE_HOLD`, `buildLast`, `buildTabUp`, `buildTabRect` (`stripCellRect(AB_N)`), `buildTabHit`, `buildRowRect`, `buildHeadroom`, `buildListHit`, `buildCanOpen`, `toggleBuild` (a tap of T and a press on the well in `pointerPress`, input.js), `buildPick`, `buildKeyPress`/`pieceWheelShown`/`buildKeyRelease` (T's press and release, `keyPress`/`keyRelease`), `buildIcon`, `buildGhostAt`, `buildOrder` (a press or a drag's release, `pointerPress`/`pointerRelease`), `drawBuildGhost`, `drawBuildTab`, `drawBuildList` (both drawn by `drawHudStrip`, js/ui/hud-draw.js), `drawBuildCursor` (off `cursorInfo`'s `piece`, js/draw/render.js) | `selection, hints & wheel` › `the build list and its ghost` (the placement rule it asks: `canPlaceAt`, structures.js) |
 

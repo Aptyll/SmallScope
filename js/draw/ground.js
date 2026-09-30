@@ -1295,9 +1295,8 @@ const CHEST_SPR = (() => {
   });
   return c;
 })();
-// The road's centre cairn (placeRoad, world.js), baked here like the chest:
-// a heap of river stones under snow, the one solid thing on the road, where
-// the two waves meet.
+// The cairn (the BLACK BEAR STONE camp's anchor, CAMPS in world.js), baked
+// here like the chest: a heap of river stones under snow.
 const CAIRN_SPR = (() => {
   const pal = { o: '#2a2e3a', G: '#9aa2b2', g: '#737b8c', d: '#596072', s: '#f4f7ff', S: '#d8e4f2' };
   const rows = [

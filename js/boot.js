@@ -1787,7 +1787,7 @@ window.DBG = {
   spurs, roadNest, roadSpan, roadDist, roadMainDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the two distances, and where a bird would land
   creekAt, creekFlow, creekWet, bridgeAt, creekBends, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the deck, the bends and the fixed fords
   zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (world.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
-  landmarks, LANDMARKS, sledNear, sledToggle, sledEnd, // the story landmarks (landmarks.js): every one stood, the table, and the sled's ride
+  landmarks, LANDMARKS, // the story landmarks (landmarks.js): every one stood, and the table
   planLane, laneStep: (team, dt) => { const e = state.drop.eagles[team]; if (e.lane) laneStep(e, dt == null ? 99 : dt); return e.lane; },
   hurtEagle: (team, dmg, src) => { const e = state.drop.eagles[team]; hurtEagle(e, dmg == null ? 25 : dmg, src); return e; },
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),

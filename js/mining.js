@@ -132,10 +132,10 @@ function mineFree(p, r = MINE_R) {
   return best;
 }
 // can the pick work at all this step: a body in the air, in the water, on
-// the zipline's handle or on a sled has no feet by a rock, and a stun holds
+// or on the zipline's handle has no feet by a rock, and a stun holds
 // the bar still (it neither fills nor closes: the rock is still yours)
 function mineIdle(p) {
-  return p.dead || p.mineHoldT > 0 || p.fallT > 0 || p.stunT > 0 || inAir(p) || p.zip >= 0 || p.sled;
+  return p.dead || p.mineHoldT > 0 || p.fallT > 0 || p.stunT > 0 || inAir(p) || p.zip >= 0;
 }
 
 // The pick, every step for every player (updatePlayer, beside the meal).
@@ -145,7 +145,7 @@ function mineIdle(p) {
 function updateMine(p, dt) {
   if (p.mineHoldT > 0) p.mineHoldT -= dt;
   let o = p.mineO;
-  if (o && (p.dead || p.fallT > 0 || inAir(p) || p.zip >= 0 || p.sled || objects[idx(o.tx, o.ty)] !== o ||
+  if (o && (p.dead || p.fallT > 0 || inAir(p) || p.zip >= 0 || objects[idx(o.tx, o.ty)] !== o ||
     !rockReady(o) || !mineReach(p, o))) { breakMine(p); o = null; }
   if (mineIdle(p)) return;
   if (!o) {
