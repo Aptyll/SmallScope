@@ -102,6 +102,15 @@ function playMatch(opts) {
   let cellsMapped = false;
   let ticks = 0, winner = null, reason = 'timeout', error = null;
 
+  // the terrain as the minimap paints it (1 px per tile, updateMinimap),
+  // taken once at the landing - the dashboard's Bot Lab draws a replay on it
+  let terrain = null;
+  const grabMap = () => {
+    g.run('mmBuiltAt = -1e9; updateMinimap();');
+    const d = g.run('mmImg.data'), n = W * W, rgb = Buffer.alloc(n * 3);
+    for (let i = 0; i < n; i++) { rgb[i * 3] = d[i * 4]; rgb[i * 3 + 1] = d[i * 4 + 1]; rgb[i * 3 + 2] = d[i * 4 + 2]; }
+    terrain = { w: W, h: W, rgb: rgb.toString('base64') };
+  };
   const mapCells = () => {
     // a cell counts as ground to cover when most of its tiles can be walked
     for (let cy = 0; cy < CW; cy++) for (let cx = 0; cx < CW; cx++) {
@@ -159,7 +168,7 @@ function playMatch(opts) {
       if (L.state.over === 'respawning' && L.state.mode === 'dead') L.state.mode = 'play';
       G.update(T);
       ticks++;
-      if (!cellsMapped && L.state.mode === 'play') mapCells();
+      if (!cellsMapped && L.state.mode === 'play') { mapCells(); if (o.map !== false) grabMap(); }
       if (ticks % sampleTicks === 0) sample();
       const down = [0, 1].map((t) => G.teamEagleDown(t));
       if (down[0] || down[1]) {
@@ -186,6 +195,7 @@ function playMatch(opts) {
     date: new Date().toISOString(),
     patch: String(L.PATCH_TXT || '').replace(/^PATCH\s*/, ''),
     runner: 'node',
+    world: W * TILE,
     seed: o.seed, shape: g.run('MAP_TYPE'), shapeName: g.run('MAPS[MAP_TYPE].name'),
     setup: o.kind === 'level'
       ? { kind: 'level', level: o.level, levelName: levels[o.level].name, proxy: levels[o.proxy].name }
@@ -197,6 +207,7 @@ function playMatch(opts) {
     cells: { size: CELL, open: cellOpen.reduce((a, b) => a + b, 0), seen: cellSeen.reduce((a, b, i) => a + (b && cellOpen[i] ? 1 : 0), 0) },
   };
   if (o.seats) log.setup.seats = o.seats;
+  if (terrain) log.map = terrain;
   log.fun = funScore(log);
   return log;
 }

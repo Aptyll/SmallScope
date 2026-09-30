@@ -122,6 +122,13 @@ async function main() {
     while (next < queue.length) {
       const job = queue[next++];
       const log = await playChild(job);
+      // the terrain is the same for every match on one seed and shape: once per folder
+      if (log.map) {
+        log.mapFile = 'map-' + log.seed + '-' + log.shape + '.json';
+        const mf = path.join(out, log.mapFile);
+        if (!fs.existsSync(mf)) fs.writeFileSync(mf, JSON.stringify(log.map));
+        delete log.map;
+      }
       fs.writeFileSync(path.join(out, log.id + '.json'), JSON.stringify(log));
       summary.write(JSON.stringify(summaryOf(log)) + '\n');
       logs.push(log);

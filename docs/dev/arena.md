@@ -16,7 +16,7 @@ node app/arena/match.js '{"seed":42,"maxMin":3}' > one.json   # one match, its l
 (`MAPS` index), `--max` (minutes before a timeout, default 40), `--every` (sample pitch in s,
 default 2), `--jobs` (parallel matches, default one per core), `--out` (default
 `arena-out/<date>`, gitignored), `--quiet`. It writes `<out>/<id>.json` per match,
-`<out>/summary.jsonl` (one line per match without the samples) and `<out>/aggregate.json` (the
+`<out>/summary.jsonl` (one line per match without the samples), `<out>/map-<seed>-<shape>.json` (the terrain as the minimap paints it, once per seed and shape) and `<out>/aggregate.json` (the
 means per setup), and prints a table.
 
 From a script: `require('./app/arena/match').playMatch(opts)` plays one match in the calling
