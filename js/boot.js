@@ -64,7 +64,7 @@ const LANE_WARN = 0.5;      // s a pine shudders on its feet before it goes down
 const LANE_DELAY = 0.8;     // s after the impact before the first pine shudders
 const LANE_MAX = 60;        // tiles the spur may run at most (the nest is ROAD_NEST_OFF off the road: this is a safety)
 // the WIND TRAIL: the air the bird tears in level flight - ONE continuous
-// ribbon off each wingtip, laid along the flown (swayed) path where the tip actually
+// ribbon off each wingtip, laid along the flown line where the tip actually
 // was and fading out toward its tail (drawEagleTrail - pure reads of the
 // flight clock, no particles)
 const TRAIL_T = 1.1;        // s of flight a ribbon reaches back
@@ -79,14 +79,13 @@ const EAGLE_REST_SCALE = 2; // ...settling to 2x once it roosts (the dive walks 
 // the riders are WORLD-SIZED: 1x on the roosting bird, and in flight exactly
 // as much bigger as the bird itself is for being nearer the camera (3/2), so
 // a body never changes size against the feathers under it - riderScale(e)
-const EAGLE_LANE = 2.5 * TILE; // each bird keeps this far to its own right of the shared line
-// the flight's SWAY off that lane (eagleSway): a slow lean either way, and a
-// swing wide to its own right for the pass, so the two birds cross side by
-// side with clear sky between their wingtips (each is ~180 px across)
-const SWAY_A = 3 * TILE;      // px: the lean off the lane either way
-const SWAY_PASS = 4.5 * TILE; // px: the swing wide for the pass, at the line's middle
-const SWAY_PASS_W = 0.2;      // of the line: how far either side of the middle that swing reaches
-const SWAY_BANK = 0.35;       // bank per radian of turn per line length (eagleBank; 1 is the full roll)
+// each bird keeps this far to its own right of the shared line, so the two
+// pass side by side with clear sky between their wingtips (a war eagle is
+// ~180 px across in flight)
+const EAGLE_LANE = 6.5 * TILE;
+// the LEAN: flying its straight line, a bird rolls slowly and subtly left
+// and right (eagleLean; render only, the war eagles' plates)
+const LEAN_ROLL = 12 * Math.PI / 180, LEAN_T = 7; // the most it leans, and the seconds of one full left-right sway
 const EAGLE_BEAT_HZ = 1;      // wingbeats a second in level flight (the classic's four frames each, a war eagle's stroke)
 // the WING DIP as the birds pass: each rolls its right wing down and back
 // once, slowly, over DIP_W of the line from DIP_U0 (eagleDip; render only)
@@ -185,7 +184,7 @@ function forestDepth(tx, ty) {
 function lastOpenU(e) {
   const n = Math.ceil(e.len / TILE);
   for (let i = n; i >= 0; i--) {
-    const q = eaglePathAt(e, i / n); // the swayed path the bird really flies
+    const q = eaglePathAt(e, i / n);
     const tx = Math.floor(q.x / TILE), ty = Math.floor(q.y / TILE);
     if (!inWorld(tx, ty)) continue;
     const edge = Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty);
@@ -194,36 +193,17 @@ function lastOpenU(e) {
   return 0.5;
 }
 
-// The SWAY: px off the lane to the bird's own right at line fraction u. The
-// lean is two slow waves over the line, their phase per seed and side
-// (hash2 - no rng()), eased to nothing at both ends and through the pass, so
-// the takeoff and the dive sit where the line put them (lastOpenU walks the
-// swayed path for the jump window's end); the pass is one smooth swing wide,
-// peaking as the birds meet.
-function eagleSway(e, u) {
-  const m = (u - 0.5) / SWAY_PASS_W;
-  const pass = Math.abs(m) < 1 ? Math.cos(m * Math.PI / 2) ** 2 : 0;
-  const lean = Math.sin(u * Math.PI * 4 + hash2(e.team * 17 + 3, 41) * Math.PI * 2) * Math.sin(u * Math.PI) * (1 - pass);
-  return SWAY_A * lean + SWAY_PASS * pass;
-}
-// the flown path at line fraction u: where the bird is and which way it
-// points (the lane's heading turned by the sway's slope). The sim flies it
-// (updateEagle); the wind trail and the dotted path draw it.
+// the flown line at fraction u: where the bird is and which way it points.
+// The sim flies it (updateEagle); lastOpenU walks it.
 function eaglePathAt(e, u) {
-  const h = Math.atan2(e.y1 - e.y0, e.x1 - e.x0), c = Math.cos(h), s = Math.sin(h);
-  const L = eagleSway(e, u), du = 0.002;
-  const slope = (eagleSway(e, Math.min(1, u + du)) - eagleSway(e, Math.max(0, u - du))) / ((Math.min(1, u + du) - Math.max(0, u - du)) * e.len);
-  return { x: e.x0 + c * u * e.len - s * L, y: e.y0 + s * u * e.len + c * L, h: h + Math.atan(slope) };
+  return { x: e.x0 + (e.x1 - e.x0) * u, y: e.y0 + (e.y1 - e.y0) * u, h: Math.atan2(e.y1 - e.y0, e.x1 - e.x0) };
 }
-// how hard the bird banks at line fraction u: -1 (left wing down) .. 1
-// (right), from how fast the path turns there. Render only (the war eagles
-// roll their plates, warbirds.js); a pure read, the same on every screen.
-function eagleBank(e, u) {
-  const du = 0.01, a = eaglePathAt(e, Math.max(0, u - du)).h, b = eaglePathAt(e, Math.min(1, u + du)).h;
-  let d = b - a;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return Math.max(-1, Math.min(1, d / (Math.min(1, u + du) - Math.max(0, u - du)) * SWAY_BANK));
+// the lean at flight time t, in radians of roll (+ is the right wing down):
+// a slow sine, its phase per seed and side (hash2 - no rng()), eased in off
+// the takeoff. Render only, a pure read, the same on every screen.
+function eagleLean(e, t) {
+  const ease = Math.min(1, t / LEAN_T);
+  return LEAN_ROLL * ease * Math.sin(2 * Math.PI * (t / LEAN_T + hash2(e.team * 17 + 3, 41)));
 }
 // the pass's wing dip at line fraction u, in radians of roll: up to DIP_ROLL
 // and back on a smooth ease, never past edge-on. Render only, a pure read.
@@ -512,8 +492,8 @@ function updateEagle(e, dt) {
     e.t += dt;
     const dist = Math.min(e.spd * e.t, e.len);
     e.prog = Math.min(1, dist / e.len);
-    const at = eaglePathAt(e, e.prog); // the lane, swayed (eagleSway)
-    e.x = at.x; e.y = at.y; e.heading = at.h;
+    const at = eaglePathAt(e, e.prog);
+    e.x = at.x; e.y = at.y;
     if (e.prog >= 1) beginDive(e);
   } else if (e.state === 'dive') {
     e.diveT += dt;
@@ -995,15 +975,9 @@ function drawDropAir(ex, ey, now) {
     ctx.lineDashOffset = -((now * 30) % 14);
     ctx.globalAlpha = 0.4;
     ctx.strokeStyle = TEAMS[skin(e.team)].mark;
-    // the swayed path as a polyline (eaglePathAt), fine enough to read as a curve
     const path = (u0, u1) => {
-      const n = Math.max(2, Math.ceil((u1 - u0) * 64));
-      ctx.beginPath();
-      for (let i = 0; i <= n; i++) {
-        const q = eaglePathAt(e, u0 + (u1 - u0) * i / n);
-        if (i === 0) ctx.moveTo(q.x - ex, q.y - ey); else ctx.lineTo(q.x - ex, q.y - ey);
-      }
-      ctx.stroke();
+      const a = eaglePathAt(e, u0), b = eaglePathAt(e, u1);
+      ctx.beginPath(); ctx.moveTo(a.x - ex, a.y - ey); ctx.lineTo(b.x - ex, b.y - ey); ctx.stroke();
     };
     path(0, 1);
     if (e.team === player.team && player.aboard && !d.firstFlight) {
@@ -1039,7 +1013,7 @@ function drawDropAir(ex, ey, now) {
 }
 
 // The WIND TRAIL: level flight tears the air. ONE continuous ribbon streams
-// off each wingtip: sampled every TRAIL_STEP px back along the swayed path
+// off each wingtip: sampled every TRAIL_STEP px back along the flown line
 // for TRAIL_T seconds of flight, each sample where the tip actually WAS on
 // that beat (the wing's reach and set follow the flap continuously -
 // TRAIL_TIP/TRAIL_TIP_AMP, TRAIL_BACK/TRAIL_BACK_AMP - and the body's bob),
@@ -1052,6 +1026,7 @@ function drawDropAir(ex, ey, now) {
 const TRAIL_TIP = 19, TRAIL_TIP_AMP = 2;   // sprite px across to the wingtip, and the gentle swing the flap puts on it (the tip itself moves 4, the air behind it half that)
 const TRAIL_BACK = -8, TRAIL_BACK_AMP = 3; // ...and how far back along the body it sits, and its swing
 function drawEagleTrail(e, ex, ey, S, now) {
+  const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
   const dive = e.state === 'dive' ? Math.min(1, e.diveT / EAGLE_DIVE_T) : 0;
   if (dive >= 1) return;
   const T = e.t + (e.state === 'dive' ? e.diveT : 0);   // the flight clock: e.t stops at the line's end
@@ -1063,9 +1038,8 @@ function drawEagleTrail(e, ex, ey, S, now) {
     const t = head - age, d = Math.min(e.spd * t, e.len);
     const ph = Math.cos((e.flap - (T - t)) * EAGLE_BEAT_HZ * 2 * Math.PI); // the flap cycle: spread -> top -> spread, EAGLE_BEAT_HZ a second
     const lat = side * (TRAIL_TIP + TRAIL_TIP_AMP * ph) * S, back = (TRAIL_BACK + TRAIL_BACK_AMP * ph) * S;
-    const q = eaglePathAt(e, d / e.len), hc = Math.cos(q.h), hs = Math.sin(q.h); // the swayed path, not the straight lane
-    out.x = q.x + hc * back - hs * lat - ex;
-    out.y = q.y + hs * back + hc * lat - ey + Math.round(Math.sin((now - age) * 2.4 + e.team * 2.1) * 3);
+    out.x = e.x0 + hc * (d + back) - hs * lat - ex;
+    out.y = e.y0 + hs * (d + back) + hc * lat - ey + Math.round(Math.sin((now - age) * 2.4 + e.team * 2.1) * 3);
   };
   const a = { x: 0, y: 0 }, b = { x: 0, y: 0 };
   ctx.save();
@@ -1092,8 +1066,8 @@ function drawEagleTrail(e, ex, ey, S, now) {
 
 // A war eagle's frames paint on first use (~10 ms each), so the ones a bird
 // is about to need are queued ahead (SPRITES.warBirds.warm, painted a few ms
-// a frame by tick): every heading, bank and beat left on its flight, then its
-// roost pose. Render only; once per bird and skin.
+// a frame by tick): every stroke and roll left on its flight, in order, then
+// the stoop's headings and its roost pose. Render only; once per bird, skin and state.
 const warBirdWarmed = new WeakMap();
 const strokeAt = (flap) => Math.floor(flap * EAGLE_BEAT_HZ * SPRITES.warBirds.STROKE_N) % SPRITES.warBirds.STROKE_N;
 function warmWarBird(e, id) {
@@ -1102,11 +1076,11 @@ function warmWarBird(e, id) {
   warBirdWarmed.set(e, key);
   const WB = SPRITES.warBirds, t = skin(e.team);
   if (e.state === 'fly') for (let s = 0; e.t + s <= e.dur; s += 1 / 60) { // the very frames the rest of the flight draws, in order
-    const u = Math.min(1, (e.t + s) / e.dur), q = eaglePathAt(e, u);
-    WB.warmFlight(id, t, q.h, strokeAt(e.flap + s), eagleBank(e, u), eagleDip(e, u));
+    const u = Math.min(1, (e.t + s) / e.dur);
+    WB.warmFlight(id, t, e.heading, strokeAt(e.flap + s), eagleLean(e, e.t + s) + eagleDip(e, u));
   }
-  if (e.state === 'dive') for (let i = 0; i <= 16; i++) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.diveH0 + e.diveTurn * i / 16, fi, 0);
-  if (e.state === 'dive' || e.state === 'down') for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, 0, WB.REST);
+  if (e.state === 'dive') for (let i = 0; i <= 16; i++) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.diveH0 + e.diveTurn * i / 16, fi);
+  if (e.state === 'dive' || e.state === 'down') for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, WB.REST);
 }
 
 // one bird in its team's armour, whatever its state. In the air the sprite
@@ -1125,11 +1099,11 @@ function drawEagle(e, ex, ey, now) {
     const alt = DROP_ALT * (1 - fall);
     const S = EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * fall; // 3x down to the roost's 2x
     const fi = [0, 1, 2, 1][Math.floor(e.flap * EAGLE_BEAT_HZ * (4 + 9 * u)) % 4]; // wingbeats quicken into the stoop
-    // a war eagle in level flight: its smooth stroke, leaning into the
-    // sway's bends and dipping a wing as the birds pass; the stoop beats hard
+    // a war eagle in level flight: its smooth stroke, leaning slowly side to
+    // side and dipping a wing as the birds pass; the stoop beats hard
     const level = war && e.state === 'fly', ks = level ? strokeAt(e.flap) : 0;
-    const bank = level ? eagleBank(e, e.prog) : 0, dip = level ? eagleDip(e, e.prog) : 0;
-    const spr = level ? WB.flight(war, skin(e.team), e.heading, ks, bank, dip) : war ? WB.frame(war, skin(e.team), e.heading, fi, 0) : frames[fi];
+    const roll = level ? eagleLean(e, e.t) + eagleDip(e, e.prog) : 0;
+    const spr = level ? WB.flight(war, skin(e.team), e.heading, ks, roll) : war ? WB.frame(war, skin(e.team), e.heading, fi) : frames[fi];
     // a war frame is already flight-sized (FLY): the stoop shrinks it to the roost's REST
     const k = war ? 1 - (1 - WB.REST / WB.FLY) * fall : S, w = spr.width * k, h = spr.height * k;
     // the shadow lies on the snow at the bird's TRUE size - the roost's, not
@@ -1154,7 +1128,7 @@ function drawEagle(e, ex, ey, now) {
     const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
     const RS = riderScale(e), rd = riderDir(e);
     const beat = (level ? Math.cos(2 * Math.PI * ks / WB.STROKE_N) > 0.5 : fi === 0) ? -1 : 0; // the downstroke (spread) rides high
-    const span = level ? Math.cos(WB.rollOf(bank, dip)) : 1; // a rolled wing is narrower: its riders sit in with it
+    const span = Math.cos(roll); // a rolled wing is narrower: its riders sit in with it
     { // the driver first, on the neck: the team's merchant, who climbs down at the crash
       const ms = war ? WB.merchSeat : MERCH_SEAT; // behind the war helm, not on it
       const dx = ms[0] * S, dy = ms[1] * S;
@@ -1220,7 +1194,7 @@ function drawEagle(e, ex, ey, now) {
     const fi = e.restT < EAGLE_SETTLE_T
       ? Math.min(2, Math.floor(e.restT / EAGLE_SETTLE_T * 3)) : (winding ? 0 : (ruffling ? 1 : 2));
     // a war eagle roosts painted at REST (today's bird's footprint), unrotated
-    const spr = war ? WB.frame(war, skin(e.team), e.heading, fi, 0, WB.REST) : frames[fi];
+    const spr = war ? WB.frame(war, skin(e.team), e.heading, fi, WB.REST) : frames[fi];
     const w = war ? spr.width : spr.width * S, h = war ? spr.height : spr.height * S;
     if (sx > -w - 70 && sy > -h - 70 && sx < WV_W + w + 70 && sy < WV_H + h + 70) {
       // no cast shadow at rest: the bird is ON the ground, and a dark copy
