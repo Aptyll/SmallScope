@@ -1217,7 +1217,8 @@ sprites are.
 It drops 6 rows for a [prone](gameplay.md#prone-under-the-snow) pose, which starts that much
 lower in the same 16×16 cell — bars floating over a head that is not there look broken; it lifts
 4 rows while a caught fish is hoisted (the hoist holds the fish where the plate would sit), and
-by the lift + 5 for a zipline rider, so the frame rises with the body and clears the handle. And
+by the lift + 5 for a zipline rider, so the frame rises with the body and clears the handle; a
+worn skin body (the IRON SCOUT) lifts it to its own head, `top` rows under its frame's top. And
 its alpha fades with
 `concealOf(p)`: name tag, both bars, the level badge and the draw meter that says a shot is coming
 all go with the cover, weighted so you keep a readable copy of your own (×0.55), your side keeps
@@ -2039,8 +2040,10 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   worn card and on a picked one; under a hairline the name and, opposite it, the price (coin +
   number, red when the purse is short) or a tick on the skin worn; a 2 px bar of the rarity's
   colour along the foot. Rims are slate, lighter under the hand, bright steel on the worn and the
-  picked card. The scout, weapon and trail tables are placeholders: today's portrait or bow
-  washed in the row's tint, or a streak in its two colours, and nothing in a match wears them.
+  picked card. The weapon and trail tables and every tinted scout row are placeholders: today's
+  portrait or bow washed in the row's tint, or a streak in its two colours, and nothing in a match
+  wears them. The IRON SCOUT row is real: its card is the robot's own 64 px `icon`, and a match
+  wears it (below).
 - **A press** (`skinPress`) on an owned card wears it; on a card for sale it picks it
   (`menu.skPick`) and its price plate lights and pulses; a second press on the same card buys it
   and wears it (`PROFILE.buy`, the card flashes white, the purse flashes, `SFX.coin`). A short
@@ -2049,6 +2052,8 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
 - **A skin is paint on this screen only.** `birdSkinFor(team)` is the drawer's one question: the
   local player's company wears the skin worn, the other company the free first row (skins are
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
+  `scoutBody(p)` is the same for a player: only the local player wears the scout skin worn, as a
+  body of its own (the IRON SCOUT, [sprites](sprites.md)), and every other player the class body.
 
 ## Eagle drop (mode `drop`)
 
