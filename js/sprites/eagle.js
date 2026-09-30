@@ -211,6 +211,7 @@ const BIRD_SKINS = [
     eagle: [bake(eagleSpread, EGPAL), bake(eagleMid, EGPAL), bake(eagleBack, EGPAL)],
     eagleTeam, // eagleTeam[team] - the same three flap frames in that team's armour
     eagleFlash: bake(eagleBack, EGFLASH), // the downed pose, all white, for the hit flash
-    eagleShadow: bake(eagleSpread, EGSHADOW),
+    // the shadow per flap frame, so the one on the snow beats with the wings
+    eagleShadows: [bake(eagleSpread, EGSHADOW), bake(eagleMid, EGSHADOW), bake(eagleBack, EGSHADOW)],
   });
 })();

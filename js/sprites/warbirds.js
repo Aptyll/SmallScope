@@ -117,7 +117,7 @@
       const u = i / 4 - 0.5, a = Math.PI + rad(56) * u, L = 24 - 3 * Math.abs(u) * 2, wd = 4.2, x0 = -12;
       const dx = Math.cos(a), dy = Math.sin(a), px = -dy, py = dx, tx = x0 + dx * L, ty = dy * L;
       T.push(P([[x0 + px * wd, py * wd, 1], [tx + px * wd, ty + py * wd, 1], [tx + dx * 2.5, ty + dy * 2.5, 1], [tx - px * wd, ty - py * wd, 1], [x0 - px * wd, -py * wd, 1]],
-        'tail', 0.5 + (0.5 - Math.abs(u)) * 0.02, i === 2 ? 2 : 1, { seam: true }));
+        'tail', 0.5 + (0.5 - Math.abs(u)) * 0.02, i === 2 ? 2 : 1, { seam: true, tail: true }));
     }
     return T;
   }
@@ -207,6 +207,32 @@
     }));
   }
 
+  // the pose on top of the wingbeat: the tail and the bird's bank. The tail
+  // dips on the downstroke and lifts on the upstroke; in a turn it swings
+  // behind the bend and fans out, and the bank rolls every plate about the
+  // body's long axis, the inside wing down. The camera looks straight down,
+  // so a roll shows as the span narrowing and the two wings taking the light
+  // differently - the plates' tones read the rolled plate (`lit`), while the
+  // shape only narrows, never lifts up the screen (ZK would stretch one bank
+  // and squash the other). bank: -1 (hard left) .. 1 (right)
+  const TAIL_PITCH = [-1.4, 0.2, 1.6]; // tail tip's lift per beat, bird units
+  const TAIL_YAW = rad(16), TAIL_FAN = 0.2, BANK_ROLL = rad(24);
+  function pose(parts, fi, bank) {
+    const r = bank * BANK_ROLL, cr = Math.cos(r), sr = Math.sin(r);
+    const ty = bank * TAIL_YAW, ct = Math.cos(ty), st = Math.sin(ty), fan = 1 + Math.abs(bank) * TAIL_FAN, tp = TAIL_PITCH[fi];
+    const roll = ([x, y, z]) => [x, y * cr + z * sr, z * cr - y * sr];
+    return parts.map((p) => {
+      let pts = p.pts, lit = null;
+      if (p.tail) pts = pts.map(([x, y, z]) => {
+        const dx = x + 12, k = Math.min(1, Math.max(0, -dx) / 26), yy = y * (1 + (fan - 1) * k); // 0 at the root, 1 at the tip
+        return [-12 + dx * ct - yy * st, dx * st + yy * ct, z + tp * k];
+      });
+      if (r) { lit = pts.map(roll); pts = pts.map(([x, y, z]) => [x, y * cr, z]); }
+      const cull = p.cull && r ? roll(p.cull) : p.cull;
+      return pts === p.pts && cull === p.cull ? p : Object.assign({}, p, { pts, cull, lit });
+    });
+  }
+
   function plates(cfg) {
     const w = wing(cfg);
     return tail().concat(w, mirror(w), body(cfg), helm(cfg));
@@ -216,7 +242,8 @@
   const SS = 4;           // subpixels a side
   const ZK = 0.55;        // how far height lifts a point up the screen
   const L0 = [-0.45, -0.55, 0.70], LN = Math.hypot(...L0), LIGHT = L0.map((v) => v / LN);
-  const FLY = 1.5;        // painted at the flight's size: the roost's world px x 3/2
+  const FLY = 1.5;        // painted at the flight's size: screen px per bird unit
+  const REST = 0.8;       // ...and at the roost's: today's bird's footprint on the ground
   const SIZE = 216;       // frame canvas, the bird's centre in the middle
   const ICON_FLY = 0.85;  // the skins screen's card: 1x fits its art box
   const ICON_SIZE = 128;  // its canvas, before the crop: a third of the pixels to paint
@@ -270,20 +297,21 @@
         if ((nx * s + ny * c) * ZK + nz <= 0.05) continue;
       }
       fill(ids, SW, SH, p.pts.map((q) => proj(q).map((v) => v * SS)), i);
-      tones[i] = p.tone == null ? facingTone(p.pts, c, s) : p.tone;
+      tones[i] = p.tone == null ? facingTone(p.lit || p.pts, c, s) : p.tone;
     }
     // shrink: the part holding most of each cell, if the cell is half full;
     // a thin part (a slit, a strap) keeps a cell it holds a third of
-    const best = new Int32Array(W * H).fill(-1), cnt = new Map();
+    const best = new Int32Array(W * H).fill(-1), cnt = new Int32Array(parts.length), seen = [];
     for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-      cnt.clear(); let full = 0;
+      seen.length = 0; let full = 0;
       for (let v = 0; v < SS; v++) for (let u = 0; u < SS; u++) {
         const id = ids[(y * SS + v) * SW + x * SS + u];
-        if (id >= 0) { full++; cnt.set(id, (cnt.get(id) || 0) + 1); }
+        if (id >= 0) { full++; if (!cnt[id]++) seen.push(id); }
       }
       if (!full) continue;
       let b = -1, bc = 0, kb = -1, kl = -Infinity;
-      for (const [id, n] of cnt) {
+      for (const id of seen) {
+        const n = cnt[id]; cnt[id] = 0;
         if (n > bc) { b = id; bc = n; }
         if (parts[id].keep && n >= SS * SS * 0.3 && parts[id].layer > kl) { kb = id; kl = parts[id].layer; }
       }
@@ -332,21 +360,65 @@
   }
 
   // ---------------------------------------------------------------- cache
-  // 32 headings round the circle: a bird circling its factory turns through
-  // every one, and 11 degrees off is too little to see
-  const TURNS = 32;
+  // 64 headings round the circle, so a bird swaying off its line turns in
+  // steps too small to see, and five banks (level, half, full either way).
+  // A frame paints on first use, or ahead of it from the warm queue.
+  const TURNS = 64;
   const turnOf = (hd) => ((Math.round(hd / (2 * Math.PI) * TURNS) % TURNS) + TURNS) % TURNS;
-  let frames = new Map(), shadows = new Map();
-  SPR.onTeams(() => { frames = new Map(); }); // the colour-blind palettes repaint the team plates
+  const bankOf = (bank) => Math.max(-2, Math.min(2, Math.round((bank || 0) * 2))) / 2;
+  let frames = new Map(), queue = [];
+  SPR.onTeams(() => { frames = new Map(); queue = []; }); // the colour-blind palettes repaint the team plates
+  const keyOf = (id, team, t, fi, b, fly) => id + '|' + team + '|' + t + '|' + fi + '|' + b + '|' + fly;
 
-  function frame(id, team, hd, fi) {
-    const cfg = LOOKS[id], t = turnOf(hd), key = id + '|' + team + '|' + t + '|' + fi;
+  // one frame: skin `id` in palette set `team`, flying `hd`, beat `fi` (0
+  // spread, 1 mid, 2 back), banked `bank`, at `fly` screen px per bird unit
+  // (FLY in flight, REST at the roost)
+  function frame(id, team, hd, fi, bank, fly) {
+    const cfg = LOOKS[id], t = turnOf(hd), b = bankOf(bank), f = fly || FLY, key = keyOf(id, team, t, fi, b, f);
     let cv = frames.get(key);
     if (!cv) {
-      cv = paint(beat(plates(cfg), fi), palette(cfg, team), t * 2 * Math.PI / TURNS, FLY, SIZE);
+      cv = paint(pose(beat(plates(cfg), fi), fi, b), palette(cfg, team), t * 2 * Math.PI / TURNS, f, SIZE);
       frames.set(key, cv);
     }
     return cv;
+  }
+  // paint frames before they are needed: warm() queues one, tick(ms) paints
+  // queued ones for up to ms each call (drawEagle's frame budget)
+  function warm(id, team, hd, fi, bank, fly) {
+    const key = keyOf(id, team, turnOf(hd), fi, bankOf(bank), fly || FLY);
+    if (!frames.has(key) && !queue.some((q) => q.key === key)) queue.push({ key, a: [id, team, hd, fi, bank, fly] });
+  }
+  function tick(ms) {
+    const t0 = performance.now();
+    while (queue.length && performance.now() - t0 < ms) frame(...queue.shift().a);
+  }
+  // a frame's flat copy, drawn fresh into one scratch canvas per kind (it is
+  // drawn at once, so no copy is kept): the soft shadow on the snow, one wash
+  // in the ground's shade, and the all-white hit flash
+  const scratch = {};
+  function wash(src, kind) {
+    const cv = scratch[kind] || (scratch[kind] = document.createElement('canvas'));
+    if (cv.width !== src.width || cv.height !== src.height) { cv.width = src.width; cv.height = src.height; }
+    const g = cv.getContext('2d');
+    g.globalCompositeOperation = 'copy';
+    g.drawImage(src, 0, 0);
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = kind === 'shadow' ? 'rgba(40,60,100,0.30)' : '#f4f7ff';
+    g.fillRect(0, 0, cv.width, cv.height);
+    return cv;
+  }
+  // how far the painted bird reaches above and below the frame's centre, in
+  // canvas px: what the roost's nameplate hangs over
+  const reaches = new WeakMap();
+  function reach(src) {
+    let r = reaches.get(src);
+    if (!r) {
+      const d = src.getContext('2d').getImageData(0, 0, src.width, src.height).data;
+      let y0 = src.height, y1 = -1;
+      for (let y = 0; y < src.height; y++) for (let x = 0; x < src.width; x++) if (d[(y * src.width + x) * 4 + 3]) { if (y < y0) y0 = y; y1 = y; break; }
+      reaches.set(src, r = { up: src.height / 2 - y0, down: y1 + 1 - src.height / 2 });
+    }
+    return r;
   }
   // the skins screen's card art: the wingbeat nose-up at ICON_FLY (spread,
   // mid, back, mid, so a card can loop it), cropped to one box so the bird
@@ -355,7 +427,7 @@
     const key = id + '|' + team + '|icon';
     let set = frames.get(key);
     if (set) return set;
-    const cfg = LOOKS[id], full = [0, 1, 2].map((fi) => paint(beat(plates(cfg), fi), palette(cfg, team), -Math.PI / 2, ICON_FLY, ICON_SIZE));
+    const cfg = LOOKS[id], full = [0, 1, 2].map((fi) => paint(pose(beat(plates(cfg), fi), fi, 0), palette(cfg, team), -Math.PI / 2, ICON_FLY, ICON_SIZE));
     const N = ICON_SIZE;
     let x0 = N, y0 = N, x1 = -1, y1 = -1;
     for (const cv of full) {
@@ -375,26 +447,12 @@
     frames.set(key, set);
     return set;
   }
-  // the soft shadow on the snow: the spread frame's silhouette, one flat wash
-  function shadow(id, hd) {
-    const t = turnOf(hd), key = id + '|' + t;
-    let cv = shadows.get(key);
-    if (!cv) {
-      const src = frame(id, 0, hd, 0);
-      cv = document.createElement('canvas'); cv.width = src.width; cv.height = src.height;
-      const g = cv.getContext('2d');
-      g.drawImage(src, 0, 0);
-      g.globalCompositeOperation = 'source-in';
-      g.fillStyle = 'rgba(40,60,100,0.30)';
-      g.fillRect(0, 0, cv.width, cv.height);
-      shadows.set(key, cv);
-    }
-    return cv;
-  }
-
   // which skin a bird wears is birdSkinFor (js/ui/skins.js); drawEagle asks
   // has(id) and draws today's eagle for any id without a look here
-  SPRITES.warBirds = { has: (id) => !!LOOKS[id], frame, shadow, FLY, merchSeat: MERCH_SEAT_WAR };
+  SPRITES.warBirds = {
+    has: (id) => !!LOOKS[id], frame, warm, tick, reach, FLY, REST, merchSeat: MERCH_SEAT_WAR,
+    shadow: (src) => wash(src, 'shadow'), flash: (src) => wash(src, 'flash'),
+  };
   // the skins screen's cards: SPRITES.birdSkinIcon[id][skin(team)], painted
   // the first time a card asks
   SPRITES.birdSkinIcon = {};
