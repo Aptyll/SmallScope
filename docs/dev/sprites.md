@@ -131,14 +131,14 @@ CLAUDE.md hard rule), never the bare team.
 **The war eagles** (`warbirds.js`) are the drop bird's cosmetic skins and have **no grids**: each
 is flat plates in bird space (x forward, y toward the right wing, z up), seen from above, one cel
 tone per plate from the way it faces a fixed light, filled at 4× and shrunk to whole pixels, then
-given inner lines, lit edges and one ink outline. `frame(id, team, heading, beat, bank, size)` paints a frame
+given inner lines, lit edges and one ink outline. `frame(id, team, heading, beat, size)` paints a frame
 at one of 64 headings, so the bird is never rotated on screen, and the helm's walls draw only
 while they face the camera (the visor toward you, the back of the helm away). Level flight
 beats `stroke`, one smooth shallow stroke in `STROKE_N` phases (`flight(id, team, heading, phase,
-bank, dip)`; the upstroke reuses the downstroke's poses); the stoop, the flee and the roost use
-the three harder `BEATS`. `pose` bends the beat further: the tail pitches with the wing, a bank
-(−1..1, in half steps) yaws and fans the tail into the turn, and the roll (the bank's plus the
-pass's dip, in `DIP_STEP` steps) narrows the span and relights the plates as if rolled. Frames
+roll)`; the upstroke reuses the downstroke's poses); the stoop, the flee and the roost use
+the three harder `BEATS`. `pose` bends the beat further: the tail pitches with the wing, and a
+roll (the flight's lean plus the pass's dip, in `ROLL_STEP` steps) narrows the span, relights
+the plates as if rolled, and twists and fans the tail a little after it. Frames
 paint at `FLY` in the air and `REST` (today's bird's footprint) at the roost, on first use or
 ahead of it (`warm`/`warmFlight` queue, `tick(ms)` paints within a budget; about 11 ms each) and
 the least recently drawn go past `KEEP`; `shadow` and

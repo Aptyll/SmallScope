@@ -2071,14 +2071,9 @@ open tile past that last pine, the road's gate on the diagonal (`roadSpan`, the 
 for the record; what `makeEagles` hands each bird as `e.mouth` is its spur's **junction**
 (`roadNest(team)`, [the road](world.md#the-road)): the point on the road's centreline its spur
 aims at, and the way in for every walker. The two birds fly it in **opposite directions**, each shifted
-`EAGLE_LANE` (2.5 tiles) along its own right-hand perpendicular. Neither flies its lane straight:
-`eaglePathAt(e, u)` offsets it to the bird's right by `eagleSway` — a lean of up to `SWAY_A`
-(3 tiles) either way in two slow waves whose phase is per seed and side (`hash2`, no `rng()`),
-eased to nothing at both ends, and through the middle `SWAY_PASS_W` of the line one smooth swing
-`SWAY_PASS` (4.5 tiles) wide to the right, so the pass over the map's centre is a clear fly-by
-(~14 tiles apart at the meeting), never a collision. The heading follows the path's slope, the
-sim flies it (`updateEagle`), and `lastOpenU` walks it too; it is a pure function of the line,
-so no state is saved or sent. `beginDrop` sets mode `drop`, snaps
+`EAGLE_LANE` (6.5 tiles) along its own right-hand perpendicular, so the mid-route pass over the
+map's centre is a clear fly-by, ~13 tiles apart with sky between the wingtips, never a collision.
+Each flies its lane dead straight (`eaglePathAt(e, u)`, the point and heading at fraction u). `beginDrop` sets mode `drop`, snaps
 the world zoom to `DROP_ZOOM` around its centre and starts the menu exit. Every rider gets a
 **wing seat** (`p.seat`, dealt per team in `beginDrop`; `seatPos`
 rotates the `EAGLE_SEATS` offsets — one on the back, two inner wings, two out on the primaries —
@@ -2235,7 +2230,7 @@ until `FLEE_T`, when it is `gone` and draws nothing ever again.
 
 Drawing: `drawDropAir` (above the world, below lighting) first dots **the flight path across the
 snow itself** while mode is `drop` — each flying bird's whole line dashed in its team colour, dots
-crawling toward the end so the line reads as a direction, the swayed path as a polyline, with your own bird's jump window overlaid
+crawling toward the end so the line reads as a direction, with your own bird's jump window overlaid
 in the flight bar's window colours (`FLIGHT_SHUT`, then `FLIGHT_OPEN` pulsing once the lock opens; never on the scripted first flight) — then runs `drawEagle` per bird — the
 shadow `alt` px below and up to 10 px right of the body (`alt` is
 `DROP_ALT` 56 px in flight, converging to 0 down the dive so shadow and bird meet at the crash
@@ -2247,16 +2242,18 @@ through the dive, bobbing 3 px in level flight; a side whose bird wears a war ea
 (`birdSkinFor(team)` names one `SPRITES.warBirds.has`) draws `SPRITES.warBirds.flight` in level
 flight and `.frame` (the three hard beats) in the stoop, **unrotated**, since each frame is
 painted at its heading: in level flight a smooth, shallow stroke (`strokeAt`, `EAGLE_BEAT_HZ`),
-**banked** into the sway's bends (`eagleBank`, from how fast the path turns, × `SWAY_BANK`) with
-the tail yawing and fanning to match, and as the birds pass a slow **wing dip** (`eagleDip`: a
-roll up to `DIP_ROLL` 50° and back over `DIP_W` of the line from `DIP_U0`, never edge-on) with
-the wing riders drawn in toward the body by the roll's cosine; shrinking to `REST` of its
+**leaning** slowly and subtly side to side on its straight line (`eagleLean`: a roll of up to
+`LEAN_ROLL` 12° either way, one sway every `LEAN_T` 7 s, its phase per seed and side through
+`hash2`, eased in off the takeoff) with the tail twisting a little after it, and as the birds
+pass a slow **wing dip** on top (`eagleDip`: up to `DIP_ROLL` 50° and back over `DIP_W` of the
+line from `DIP_U0`, never edge-on), the wing riders drawn in toward the body by the roll's
+cosine — pure reads of the flight clock, nothing saved or sent; shrinking to `REST` of its
 flight size through the dive, with the merchant on `SPRITES.warBirds.merchSeat` behind the helm;
 the flee and the roost draw it too, and `warmWarBird` queues, in order, every frame the rest of
 the flight will draw (about a hundred) so they paint ahead, a few ms a frame, `SPRITES.warBirds.tick`), under it the **wind trail** (`drawEagleTrail`,
 drawn before the bird's own cull because it hangs behind a bird already off the frame): **one
-continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the swayed
-path (`eaglePathAt`) for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —
+continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the flown
+line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —
 the wing's reach and set follow the flap continuously (`TRAIL_TIP`±`TRAIL_TIP_AMP`,
 `TRAIL_BACK`±`TRAIL_BACK_AMP`) and the body's bob — so the ribbon waves with the wingbeat and
 hangs where it was torn while the bird flies on and the snow rushes away under it. It is solid
