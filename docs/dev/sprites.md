@@ -133,11 +133,15 @@ is flat plates in bird space (x forward, y toward the right wing, z up), seen fr
 tone per plate from the way it faces a fixed light, filled at 4× and shrunk to whole pixels, then
 given inner lines, lit edges and one ink outline. `frame(id, team, heading, beat, bank, size)` paints a frame
 at one of 64 headings, so the bird is never rotated on screen, and the helm's walls draw only
-while they face the camera (the visor toward you, the back of the helm away). `pose` bends the
-beat further: the tail pitches with the wingbeat, and a bank (−1..1, in half steps) narrows the
-span, relights the plates as if rolled, and yaws and fans the tail into the turn. Frames paint at
-`FLY` in the air and `REST` (today's bird's footprint) at the roost, on first use or ahead of it
-(`warm` queues, `tick(ms)` paints within a budget; about 11 ms each) and are kept; `shadow` and
+while they face the camera (the visor toward you, the back of the helm away). Level flight
+beats `stroke`, one smooth shallow stroke in `STROKE_N` phases (`flight(id, team, heading, phase,
+bank, dip)`; the upstroke reuses the downstroke's poses); the stoop, the flee and the roost use
+the three harder `BEATS`. `pose` bends the beat further: the tail pitches with the wing, a bank
+(−1..1, in half steps) yaws and fans the tail into the turn, and the roll (the bank's plus the
+pass's dip, in `DIP_STEP` steps) narrows the span and relights the plates as if rolled. Frames
+paint at `FLY` in the air and `REST` (today's bird's footprint) at the roost, on first use or
+ahead of it (`warm`/`warmFlight` queue, `tick(ms)` paints within a budget; about 11 ms each) and
+the least recently drawn go past `KEEP`; `shadow` and
 `flash` wash a frame into one scratch canvas each, and `reach` measures how far it stands up and
 down from its centre (the roost's hp bar). The team plates read `TEAM_SKINS`, so the cache clears
 in an `onTeams` callback. `LOOKS` says what each wears by its `BIRD_SKINS` id (eagle.js, with the

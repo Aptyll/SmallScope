@@ -2242,14 +2242,18 @@ shadow `alt` px below and up to 10 px right of the body (`alt` is
 point) at the bird's **true ground size** — the roost's, not the nearer-the-camera flight size —
 and beating with the same wings (`SPRITES.eagleShadows[beat]`, or `SPRITES.warBirds.shadow` of
 the very frame drawn), the bird itself in its team's armour (`SPRITES.eagleTeam[team]` cycling spread → mid →
-back → mid, rotated to its heading, at `EAGLE_SCALE` 3× walking down to `EAGLE_REST_SCALE` 2×
+back → mid `EAGLE_BEAT_HZ` (1) times a second, quickening through the stoop, rotated to its heading, at `EAGLE_SCALE` 3× walking down to `EAGLE_REST_SCALE` 2×
 through the dive, bobbing 3 px in level flight; a side whose bird wears a war eagle skin
-(`birdSkinFor(team)` names one `SPRITES.warBirds.has`) draws `SPRITES.warBirds.frame` instead, **unrotated**, since each frame is
-painted at its heading, **banked** into the sway's bends (`eagleBank`, from how fast the path
-turns, × `SWAY_BANK`) with the tail yawing and fanning to match, shrinking to `REST` of its
+(`birdSkinFor(team)` names one `SPRITES.warBirds.has`) draws `SPRITES.warBirds.flight` in level
+flight and `.frame` (the three hard beats) in the stoop, **unrotated**, since each frame is
+painted at its heading: in level flight a smooth, shallow stroke (`strokeAt`, `EAGLE_BEAT_HZ`),
+**banked** into the sway's bends (`eagleBank`, from how fast the path turns, × `SWAY_BANK`) with
+the tail yawing and fanning to match, and as the birds pass a slow **wing dip** (`eagleDip`: a
+roll up to `DIP_ROLL` 50° and back over `DIP_W` of the line from `DIP_U0`, never edge-on) with
+the wing riders drawn in toward the body by the roll's cosine; shrinking to `REST` of its
 flight size through the dive, with the merchant on `SPRITES.warBirds.merchSeat` behind the helm;
-the flee and the roost draw it too, and `warmWarBird` queues the frames the bird is about to need
-so they paint a few ms a frame ahead, `SPRITES.warBirds.tick`), under it the **wind trail** (`drawEagleTrail`,
+the flee and the roost draw it too, and `warmWarBird` queues, in order, every frame the rest of
+the flight will draw (about a hundred) so they paint ahead, a few ms a frame, `SPRITES.warBirds.tick`), under it the **wind trail** (`drawEagleTrail`,
 drawn before the bird's own cull because it hangs behind a bird already off the frame): **one
 continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the swayed
 path (`eaglePathAt`) for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —

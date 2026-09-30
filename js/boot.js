@@ -87,6 +87,10 @@ const SWAY_A = 3 * TILE;      // px: the lean off the lane either way
 const SWAY_PASS = 4.5 * TILE; // px: the swing wide for the pass, at the line's middle
 const SWAY_PASS_W = 0.2;      // of the line: how far either side of the middle that swing reaches
 const SWAY_BANK = 0.35;       // bank per radian of turn per line length (eagleBank; 1 is the full roll)
+const EAGLE_BEAT_HZ = 1;      // wingbeats a second in level flight (the classic's four frames each, a war eagle's stroke)
+// the WING DIP as the birds pass: each rolls its right wing down and back
+// once, slowly, over DIP_W of the line from DIP_U0 (eagleDip; render only)
+const DIP_ROLL = 50 * Math.PI / 180, DIP_U0 = 0.41, DIP_W = 0.18;
 const EAGLE_DIVE_T = 1.4;   // seconds from the end of the line to the treeline impact
 const EAGLE_SETTLE_T = 0.6; // seconds of wing-fold after the impact, into the resting pose
 // The grounded objective's NERVE: hits spook it, at zero it flees. Sized as a
@@ -220,6 +224,12 @@ function eagleBank(e, u) {
   while (d > Math.PI) d -= Math.PI * 2;
   while (d < -Math.PI) d += Math.PI * 2;
   return Math.max(-1, Math.min(1, d / (Math.min(1, u + du) - Math.max(0, u - du)) * SWAY_BANK));
+}
+// the pass's wing dip at line fraction u, in radians of roll: up to DIP_ROLL
+// and back on a smooth ease, never past edge-on. Render only, a pure read.
+function eagleDip(e, u) {
+  const t = Math.max(0, Math.min(1, (u - DIP_U0) / DIP_W));
+  return DIP_ROLL * Math.sin(Math.PI * t * t * (3 - 2 * t));
 }
 
 // two birds on the one line, flying it opposite ways: team 0 start-to-end,
@@ -1051,7 +1061,7 @@ function drawEagleTrail(e, ex, ey, S, now) {
   // a sample's point on the ribbon: the tip's world position `age` seconds ago
   const at = (side, age, out) => {
     const t = head - age, d = Math.min(e.spd * t, e.len);
-    const ph = Math.cos((e.flap - (T - t)) * 7 * Math.PI / 2); // the flap cycle: spread -> mid -> back -> mid over four beats of 1/7 s
+    const ph = Math.cos((e.flap - (T - t)) * EAGLE_BEAT_HZ * 2 * Math.PI); // the flap cycle: spread -> top -> spread, EAGLE_BEAT_HZ a second
     const lat = side * (TRAIL_TIP + TRAIL_TIP_AMP * ph) * S, back = (TRAIL_BACK + TRAIL_BACK_AMP * ph) * S;
     const q = eaglePathAt(e, d / e.len), hc = Math.cos(q.h), hs = Math.sin(q.h); // the swayed path, not the straight lane
     out.x = q.x + hc * back - hs * lat - ex;
@@ -1085,14 +1095,15 @@ function drawEagleTrail(e, ex, ey, S, now) {
 // a frame by tick): every heading, bank and beat left on its flight, then its
 // roost pose. Render only; once per bird and skin.
 const warBirdWarmed = new WeakMap();
+const strokeAt = (flap) => Math.floor(flap * EAGLE_BEAT_HZ * SPRITES.warBirds.STROKE_N) % SPRITES.warBirds.STROKE_N;
 function warmWarBird(e, id) {
   const key = id + '|' + e.state;
   if (warBirdWarmed.get(e) === key) return;
   warBirdWarmed.set(e, key);
   const WB = SPRITES.warBirds, t = skin(e.team);
-  if (e.state === 'fly') for (let u = e.prog; u <= 1; u += 1 / 256) {
-    const q = eaglePathAt(e, u), b = eagleBank(e, u);
-    for (let fi = 0; fi < 3; fi++) WB.warm(id, t, q.h, fi, b);
+  if (e.state === 'fly') for (let s = 0; e.t + s <= e.dur; s += 1 / 60) { // the very frames the rest of the flight draws, in order
+    const u = Math.min(1, (e.t + s) / e.dur), q = eaglePathAt(e, u);
+    WB.warmFlight(id, t, q.h, strokeAt(e.flap + s), eagleBank(e, u), eagleDip(e, u));
   }
   if (e.state === 'dive') for (let i = 0; i <= 16; i++) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.diveH0 + e.diveTurn * i / 16, fi, 0);
   if (e.state === 'dive' || e.state === 'down') for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, 0, WB.REST);
@@ -1113,9 +1124,12 @@ function drawEagle(e, ex, ey, now) {
     const fall = u * u; // gravity: slow tip-over, hard finish
     const alt = DROP_ALT * (1 - fall);
     const S = EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * fall; // 3x down to the roost's 2x
-    const fi = [0, 1, 2, 1][Math.floor(e.flap * (7 + 6 * u)) % 4]; // wingbeats quicken into the stoop
-    const bank = war && e.state === 'fly' ? eagleBank(e, e.prog) : 0; // leaning into the sway's bends
-    const spr = war ? WB.frame(war, skin(e.team), e.heading, fi, bank) : frames[fi];
+    const fi = [0, 1, 2, 1][Math.floor(e.flap * EAGLE_BEAT_HZ * (4 + 9 * u)) % 4]; // wingbeats quicken into the stoop
+    // a war eagle in level flight: its smooth stroke, leaning into the
+    // sway's bends and dipping a wing as the birds pass; the stoop beats hard
+    const level = war && e.state === 'fly', ks = level ? strokeAt(e.flap) : 0;
+    const bank = level ? eagleBank(e, e.prog) : 0, dip = level ? eagleDip(e, e.prog) : 0;
+    const spr = level ? WB.flight(war, skin(e.team), e.heading, ks, bank, dip) : war ? WB.frame(war, skin(e.team), e.heading, fi, 0) : frames[fi];
     // a war frame is already flight-sized (FLY): the stoop shrinks it to the roost's REST
     const k = war ? 1 - (1 - WB.REST / WB.FLY) * fall : S, w = spr.width * k, h = spr.height * k;
     // the shadow lies on the snow at the bird's TRUE size - the roost's, not
@@ -1139,7 +1153,8 @@ function drawEagle(e, ex, ey, now) {
     // it is never under a teammate. A wingbeat lifts the whole crew a pixel.
     const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
     const RS = riderScale(e), rd = riderDir(e);
-    const beat = fi === 0 ? -1 : 0; // the downstroke (spread frame) rides high
+    const beat = (level ? Math.cos(2 * Math.PI * ks / WB.STROKE_N) > 0.5 : fi === 0) ? -1 : 0; // the downstroke (spread) rides high
+    const span = level ? Math.cos(WB.rollOf(bank, dip)) : 1; // a rolled wing is narrower: its riders sit in with it
     { // the driver first, on the neck: the team's merchant, who climbs down at the crash
       const ms = war ? WB.merchSeat : MERCH_SEAT; // behind the war helm, not on it
       const dx = ms[0] * S, dy = ms[1] * S;
@@ -1150,7 +1165,7 @@ function drawEagle(e, ex, ey, now) {
     for (let pass = 0; pass < 2; pass++) for (const p of players) {
       if (!p.active || !p.aboard || p.team !== e.team || (p === player) !== (pass === 1)) continue;
       const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
-      const dx = st[0] * S, dy = st[1] * S;
+      const dx = st[0] * S, dy = st[1] * S * span;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
       drawSeated(classSet(p), rd, rx, ry, RS);
       seatedName(classSet(p), rd, rx, ry, RS, p.name, p.team);

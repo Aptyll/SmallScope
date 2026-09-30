@@ -194,8 +194,20 @@
   // the three wingbeat frames, as the old sprite's: spread (the downstroke),
   // mid, back - the wing hinges up at the shoulder and the hand sweeps back
   const BEATS = [{ up: -6, fold: 0 }, { up: 14, fold: 0.3 }, { up: 32, fold: 0.8 }];
-  function beat(parts, fi) {
-    const { up, fold } = BEATS[fi], th = rad(up), c = Math.cos(th), s = Math.sin(th);
+  const beat = (parts, fi) => bend(parts, BEATS[fi].up, BEATS[fi].fold);
+  // level flight's wingbeat: one smooth stroke cut into STROKE_N phases,
+  // shallower than the three beats above (those are the stoop's, the
+  // flee's and the roost's). Phase 0 is the spread, STROKE_N / 2 the top.
+  const STROKE_N = 10, STROKE_UP = [-2, 20], STROKE_FOLD = 0.2;
+  function stroke(parts, k) {
+    const q = (1 - Math.cos(2 * Math.PI * k / STROKE_N)) / 2; // 0 spread .. 1 top
+    return bend(parts, STROKE_UP[0] + (STROKE_UP[1] - STROKE_UP[0]) * q, STROKE_FOLD * q);
+  }
+  // the tail's lift for a wing raised `up` degrees: it dips on the
+  // downstroke and lifts on the upstroke (TAIL_PITCH at the three beats)
+  const tailPitch = (up) => -1.4 + 3 * (up + 6) / 38;
+  function bend(parts, up, fold) {
+    const th = rad(up), c = Math.cos(th), s = Math.sin(th);
     return parts.map((p) => !p.wing ? p : Object.assign({}, p, {
       pts: p.pts.map(([x, y, z]) => {
         let ay = Math.abs(y), sg = Math.sign(y) || 1;
@@ -207,19 +219,20 @@
     }));
   }
 
-  // the pose on top of the wingbeat: the tail and the bird's bank. The tail
-  // dips on the downstroke and lifts on the upstroke; in a turn it swings
-  // behind the bend and fans out, and the bank rolls every plate about the
-  // body's long axis, the inside wing down. The camera looks straight down,
+  // the pose on top of the wingbeat: the tail and the bird's roll. The tail
+  // lifts `tp`; in a turn (`bank`) it swings behind the bend and fans out;
+  // the roll - the bank's plus any `dip` (radians, the pass's wing dip) -
+  // turns every plate about the body's long axis, the inside wing down. The camera looks straight down,
   // so a roll shows as the span narrowing and the two wings taking the light
   // differently - the plates' tones read the rolled plate (`lit`), while the
   // shape only narrows, never lifts up the screen (ZK would stretch one bank
   // and squash the other). bank: -1 (hard left) .. 1 (right)
-  const TAIL_PITCH = [-1.4, 0.2, 1.6]; // tail tip's lift per beat, bird units
+  const TAIL_PITCH = BEATS.map((b) => tailPitch(b.up)); // tail tip's lift per beat, bird units
   const TAIL_YAW = rad(16), TAIL_FAN = 0.2, BANK_ROLL = rad(24);
-  function pose(parts, fi, bank) {
-    const r = bank * BANK_ROLL, cr = Math.cos(r), sr = Math.sin(r);
-    const ty = bank * TAIL_YAW, ct = Math.cos(ty), st = Math.sin(ty), fan = 1 + Math.abs(bank) * TAIL_FAN, tp = TAIL_PITCH[fi];
+  const rollOf = (bank, dip) => (bank || 0) * BANK_ROLL + (dip || 0);
+  function pose(parts, tp, bank, dip) {
+    const r = rollOf(bank, dip), cr = Math.cos(r), sr = Math.sin(r);
+    const ty = bank * TAIL_YAW, ct = Math.cos(ty), st = Math.sin(ty), fan = 1 + Math.abs(bank) * TAIL_FAN;
     const roll = ([x, y, z]) => [x, y * cr + z * sr, z * cr - y * sr];
     return parts.map((p) => {
       let pts = p.pts, lit = null;
@@ -361,36 +374,51 @@
 
   // ---------------------------------------------------------------- cache
   // 64 headings round the circle, so a bird swaying off its line turns in
-  // steps too small to see, and five banks (level, half, full either way).
-  // A frame paints on first use, or ahead of it from the warm queue.
-  const TURNS = 64;
+  // steps too small to see, five banks (level, half, full either way) and
+  // the pass's dip in DIP_STEP steps. A frame paints on first use, or ahead
+  // of it from the warm queue, and the least recently drawn go once there
+  // are more than KEEP (a flight wants about a hundred; each is SIZE^2 x 4 bytes).
+  const TURNS = 64, DIP_STEP = rad(10), KEEP = 200;
   const turnOf = (hd) => ((Math.round(hd / (2 * Math.PI) * TURNS) % TURNS) + TURNS) % TURNS;
   const bankOf = (bank) => Math.max(-2, Math.min(2, Math.round((bank || 0) * 2))) / 2;
+  const dipOf = (dip) => Math.round((dip || 0) / DIP_STEP);
   let frames = new Map(), queue = [];
   SPR.onTeams(() => { frames = new Map(); queue = []; }); // the colour-blind palettes repaint the team plates
-  const keyOf = (id, team, t, fi, b, fly) => id + '|' + team + '|' + t + '|' + fi + '|' + b + '|' + fly;
-
-  // one frame: skin `id` in palette set `team`, flying `hd`, beat `fi` (0
-  // spread, 1 mid, 2 back), banked `bank`, at `fly` screen px per bird unit
-  // (FLY in flight, REST at the roost)
-  function frame(id, team, hd, fi, bank, fly) {
-    const cfg = LOOKS[id], t = turnOf(hd), b = bankOf(bank), f = fly || FLY, key = keyOf(id, team, t, fi, b, f);
+  function cached(key, make) {
     let cv = frames.get(key);
-    if (!cv) {
-      cv = paint(pose(beat(plates(cfg), fi), fi, b), palette(cfg, team), t * 2 * Math.PI / TURNS, f, SIZE);
-      frames.set(key, cv);
-    }
+    if (cv) frames.delete(key); // re-set below: the Map's order is the draw order
+    else cv = make();
+    frames.set(key, cv);
+    if (frames.size > KEEP) frames.delete(frames.keys().next().value);
     return cv;
   }
-  // paint frames before they are needed: warm() queues one, tick(ms) paints
-  // queued ones for up to ms each call (drawEagle's frame budget)
-  function warm(id, team, hd, fi, bank, fly) {
-    const key = keyOf(id, team, turnOf(hd), fi, bankOf(bank), fly || FLY);
-    if (!frames.has(key) && !queue.some((q) => q.key === key)) queue.push({ key, a: [id, team, hd, fi, bank, fly] });
+  // the key and the painter for each kind of frame: `beat` fi (0 spread, 1
+  // mid, 2 back - the stoop, the flee, the roost) at `fly` screen px per
+  // bird unit (FLY in flight, REST at the roost), or level flight's stroke
+  // phase k with the pass's dip
+  function beatJob(id, team, hd, fi, bank, fly) {
+    const t = turnOf(hd), b = bankOf(bank), f = fly || FLY;
+    return { key: [id, team, t, fi, b, f].join('|'),
+      make: () => paint(pose(beat(plates(LOOKS[id]), fi), TAIL_PITCH[fi], b), palette(LOOKS[id], team), t * 2 * Math.PI / TURNS, f, SIZE) };
   }
+  function strokeJob(id, team, hd, k, bank, dip) {
+    k = Math.min(k, STROKE_N - k); // the upstroke passes through the downstroke's poses
+    const t = turnOf(hd), b = bankOf(bank), d = dipOf(dip), q = (1 - Math.cos(2 * Math.PI * k / STROKE_N)) / 2;
+    return { key: [id, team, t, 's' + k, b, d].join('|'),
+      make: () => paint(pose(stroke(plates(LOOKS[id]), k), tailPitch(STROKE_UP[0] + (STROKE_UP[1] - STROKE_UP[0]) * q), b, d * DIP_STEP),
+        palette(LOOKS[id], team), t * 2 * Math.PI / TURNS, FLY, SIZE) };
+  }
+  // one frame: skin `id` in palette set `team`, flying `hd`, banked `bank`
+  function frame(id, team, hd, fi, bank, fly) { const j = beatJob(id, team, hd, fi, bank, fly); return cached(j.key, j.make); }
+  function flight(id, team, hd, k, bank, dip) { const j = strokeJob(id, team, hd, k, bank, dip); return cached(j.key, j.make); }
+  // paint frames before they are needed: warm()/warmFlight() queue one,
+  // tick(ms) paints queued ones for up to ms each call (drawEagle's budget)
+  function want(j) { if (!frames.has(j.key) && !queue.some((q) => q.key === j.key)) queue.push(j); }
+  const warm = (...a) => want(beatJob(...a));
+  const warmFlight = (...a) => want(strokeJob(...a));
   function tick(ms) {
     const t0 = performance.now();
-    while (queue.length && performance.now() - t0 < ms) frame(...queue.shift().a);
+    while (queue.length && performance.now() - t0 < ms) { const j = queue.shift(); cached(j.key, j.make); }
   }
   // a frame's flat copy, drawn fresh into one scratch canvas per kind (it is
   // drawn at once, so no copy is kept): the soft shadow on the snow, one wash
@@ -427,7 +455,7 @@
     const key = id + '|' + team + '|icon';
     let set = frames.get(key);
     if (set) return set;
-    const cfg = LOOKS[id], full = [0, 1, 2].map((fi) => paint(pose(beat(plates(cfg), fi), fi, 0), palette(cfg, team), -Math.PI / 2, ICON_FLY, ICON_SIZE));
+    const cfg = LOOKS[id], full = [0, 1, 2].map((fi) => paint(pose(beat(plates(cfg), fi), TAIL_PITCH[fi], 0), palette(cfg, team), -Math.PI / 2, ICON_FLY, ICON_SIZE));
     const N = ICON_SIZE;
     let x0 = N, y0 = N, x1 = -1, y1 = -1;
     for (const cv of full) {
@@ -450,7 +478,7 @@
   // which skin a bird wears is birdSkinFor (js/ui/skins.js); drawEagle asks
   // has(id) and draws today's eagle for any id without a look here
   SPRITES.warBirds = {
-    has: (id) => !!LOOKS[id], frame, warm, tick, reach, FLY, REST, merchSeat: MERCH_SEAT_WAR,
+    has: (id) => !!LOOKS[id], frame, flight, warm, warmFlight, tick, reach, rollOf, FLY, REST, STROKE_N, merchSeat: MERCH_SEAT_WAR,
     shadow: (src) => wash(src, 'shadow'), flash: (src) => wash(src, 'flash'),
   };
   // the skins screen's cards: SPRITES.birdSkinIcon[id][skin(team)], painted
