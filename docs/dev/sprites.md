@@ -393,11 +393,10 @@ the ability icons (`AB32`/`AB32_PAL`, js/abilities.js) and the gear-variant icon
 js/ui/menu.js) bake lazily beside their drawers, and `GEAR32` deliberately shares `AB32_PAL` so
 every big icon in the game speaks one palette.
 
-**The story landmarks** (`landmarks.js`, one palette `LMPAL`) are A and E of
-`docs/media/concepts/landmarks-concepts-1.png`: the slat sled (22×11, facing right; `sledL` is its
-`flipH` for a rider going left) and the rowboat (50×24 over 3×1). The paint on the hull is a
-weathered rust, never a saturated red, because red and blue are the teams' inks. The other four
-candidates (C, the ice-fishing shack, stood in the game until 4.12) live only in the sheet. How they stand on their tiles:
+**The story landmarks** (`landmarks.js`, palette `LMPAL`) are E of
+`docs/media/concepts/landmarks-concepts-1.png`: the rowboat (50×24 over 3×1). The paint on the hull is a
+weathered rust, never a saturated red, because red and blue are the teams' inks. The other
+candidates (C, the ice-fishing shack, stood in the game until 4.12; A, the slat sled, until 4.32) live only in the sheet. How they stand on their tiles:
 [world.md](world.md#story-landmarks).
 
 ## The shape of a sprite file
@@ -427,7 +426,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | `warbirds.js` | palettes, plates, painter, cache | `warBirds` (no grids: painted in code, below) |
 | `buildings.js` | wall, tiered structures, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret`, `generator`, `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
 | `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
-| `landmarks.js` | landmarks | `landmark` (`sled`, `sledL`, `boat`) |
+| `landmarks.js` | landmarks | `landmark` (`boat`) |
 | `icons.js` | gear icons, heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
 
 The grids are **pure ASCII and byte-fragile**: `bake()` sizes each canvas from `rows[0].length`

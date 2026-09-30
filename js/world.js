@@ -97,9 +97,9 @@ const OBJECTS = {
               mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
               map: (o) => o.team === undefined ? null : chEagle(o) },
   rack:     { solid: true,  mm: [168, 132, 92] },
-  // the road's furniture (the `the road` group below): the cairn at the
-  // map's centre, solid cover where the two waves meet. Inert to E (no
-  // `tool`); its pixels are CAIRN_SPR in render()'s object pass (draw-world.js).
+  // the BLACK BEAR STONE camp's anchor (CAMPS.buff's props): a heap of
+  // stones, solid. Inert to E (no `tool`); its pixels are CAIRN_SPR in
+  // render()'s object pass (js/draw/render.js).
   cairn:    { solid: true,  mm: [150, 156, 170] },
   // the felled trunk across each forest road's far end (placeRoad): one
   // piece per tile along the cross-diagonal, `seg` 0/1/2 the up-left end,
@@ -805,7 +805,7 @@ function fellScenery(tx, ty) {
 // over ROAD_ICE_TAPER first), so the lane is dry end to end and the ice
 // network lives further out. A rock or a bush on it is gone. Every camp site
 // (CAMP_SITES) is written well off its centreline, so the wolves are never
-// on it. One cairn stands at its centre.
+// on it. Its centre is open ground.
 // THE NESTS sit beside it, not on it: each bird flies the road home and
 // banks off to its own right into the woods (roadNest - RED's to the
 // top-left side of the bottom-left corner's road, BLUE's to the bottom-right
@@ -1001,11 +1001,6 @@ function placeRoad() {
     mark(s.u0 + 2, side, ROAD_POLE_OUT, 'banner', { team: 0 }); // RED roosts bottom-left (game.md)
     mark(s.u1 - 2, side, ROAD_POLE_OUT, 'banner', { team: 1 });
   }
-  // the centre: one cairn on the centreline - at the bridgehead when the
-  // middle falls on the bridge, never on its deck
-  let um = Math.round((s.u0 + s.u1) / 2);
-  while (Math.abs(creekP(um, WORLD - 1 - um)) < BRIDGE_L + 1.5) um += um < (WORLD - 1) / 2 ? -1 : 1;
-  if (!objects[idx(um, WORLD - 1 - um)]) placeObj(um, WORLD - 1 - um, 'cairn');
   // the felled trunk across each forest road, ROAD_LOG_IN past its junction:
   // one `log` per tile along the cross-diagonal, the pieces touching corner
   // to corner so nothing squeezes between them; a pine on the verge gives
@@ -1450,7 +1445,7 @@ function placeCreek() {
 // ------------------------------------------------------------ zipline
 // THE ZIPLINE: one cable per team, strung on pylons from just outside its
 // base's outer stump ring, down beside the spur and along the road's own verge, to
-// a terminus ZIP_MID_GAP road-units short of the centre cairn - so the
+// a terminus ZIP_MID_GAP road-units short of the road's centre - so the
 // middle stretch where the waves meet is cable-free and is always walked
 // into. The walk out of a base is dead time with no decisions in it; the
 // fight is not; the cable compresses exactly the first and stops at the
@@ -1474,7 +1469,7 @@ function placeCreek() {
 // on its tile like the road's own furniture and refuses anything else. Its
 // pixels and the cable pass are js/draw/zipline.js. Waves never ride: the
 // march is the match's clock. Bots ride it through steerTo (aiZipWorth, js/ai.js).
-const ZIP_MID_GAP = 20;    // u short of the centre cairn the front terminus stands
+const ZIP_MID_GAP = 20;    // u short of the road's centre the front terminus stands
 const ZIP_OUT = 0.6;       // tiles past the ragged road edge the cable runs - the shoulder, never the lane
 const ZIP_SPAN = 10;       // u between pylons along the road (about 226 px)
 const ZIP_SPD = 220;       // px/s - 3x walk, under GRAP_REEL (260) so the hook stays the fastest thing in the game
