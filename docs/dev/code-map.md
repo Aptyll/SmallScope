@@ -63,6 +63,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the brown bear (`dire`) and black bear (`alpha`) clips; never edit, rebake with app/bake-bears/bake.py (the rig: rig.py paints and bands, bear.py lays out and poses, anim.py walks and swipes) | `BROWN`/`BLACK`, `BROWN_PAL`/`BLACK_PAL` | - |
 
+## js/sprites/robot.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the IRON SCOUT skin (`robotSkin[skin(team)]`: `down`/`up`/`right`/`left` × `idle`/`run`, `top`, `foot`, `icon`); never edit, rebake with app/bake-robot/bake.py (the rig: rig.py) | `GRIDS`, `ICON`, `BASE`, `TOP`/`FOOT` | - |
+
 ## js/sprites/eagle.js (legacy IIFE)
 
 | Looking for | Start at | Banner |
@@ -509,7 +515,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| drawing players / animals / robots / the merchant / held tool | `drawPlayer`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
+| drawing players / animals / robots / the merchant / held tool; a worn skin body standing in for the class body (its clock, the held tool and ability marks grown about the feet) | `drawPlayer`, `ROBOT_IDLE_FPS`, `WORN_SC`, `atFeet`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
 | the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js and bears.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
 | ALPHA'S BLOOD worn: the amber ring of pips around a blooded player's feet | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
 | a body going down: the frozen shatter or the wind, picked by `hash2(id, deaths)`, started off the edge of `p.dead` | `DOWN_T`, `trackDowns` (from `render()` before the draw list), `goingDown` (also held by `viewPlayer` and the replay), `drawDown` | `going down` |
@@ -717,10 +723,11 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the catalogue: the navbar's categories, the rarity colours, the placeholder scout / weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
+| the catalogue: the navbar's categories, the rarity colours, the scout table (placeholders but the IRON SCOUT, whose `body` names its sprites), the placeholder weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
 | which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one) | `birdSkinFor` (asked by `drawEagle`, boot.js), `birdSkinRow`, `skinOwned` | `skins` › `the catalogue` |
+| which body a player wears on this screen (only you wear your scout skin; everyone else the class body) | `scoutBody` (asked by `drawPlayer`, js/draw/bodies.js), `SK_TAB_SCOUT` | `skins` › `the catalogue` |
 | what a finished match pays | `COINS_MATCH`, `COINS_WIN`, `payMatchCoins` (its caller: `endMatch`, player.js) | `skins` › `the catalogue` |
-| a card's picture: the eagle's own icon or today's bird turned, a placeholder washed in its tint, a trail's streak | `skinArt` (the eagle's: `SPRITES.birdSkinIcon`, warbirds.js), `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
+| a card's picture: the eagle's own icon or today's bird turned, a scout body's own `icon`, a placeholder washed in its tint, a trail's streak | `skinArt` (the eagle's: `SPRITES.birdSkinIcon`, warbirds.js), `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
 | the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
 | the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
 

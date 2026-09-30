@@ -232,6 +232,21 @@ function drawBuffRing(p, cx, cy, now) {
   }
 }
 
+// A worn body (scoutBody, js/ui/skins.js) stands in for the class body while
+// upright: its idle breathes on the clock at ROBOT_IDLE_FPS, its run steps on
+// the stride. It is twice a player's height, so what the class body wears at
+// its hands and over itself (the held tool, an ability's shield or net) is
+// drawn at WORN_SC about the feet to fit it. The sim's body is the same.
+const ROBOT_IDLE_FPS = 5;
+const WORN_SC = 2;
+function atFeet(x, y, sc, fn) {
+  if (sc === 1) { fn(); return; }
+  ctx.save();
+  ctx.translate(x, y); ctx.scale(sc, sc); ctx.translate(-x, -y);
+  fn();
+  ctx.restore();
+}
+
 function drawPlayer(p, ex, ey, now) {
   const local = p === player;
   const lying = p.prone;
@@ -248,6 +263,13 @@ function drawPlayer(p, ex, ey, now) {
   // which is what `sy` below pays for
   const catchF = !lying && p.fallT <= 0 && p.dodgeT <= 0 ? catchFrame(p) : -1;
   if (catchF >= 0) spr = classSet(p).catch[catchF];
+  // ...or the worn body: lying and the catch keep the class body, which has
+  // the only poses for them
+  const rb = !lying && catchF < 0 ? scoutBody(p) : null;
+  if (rb) {
+    const c = rb[p.dir];
+    spr = frame > 0 ? c.run[Math.floor(p.animT) % c.run.length] : c.idle[Math.floor(now * ROBOT_IDLE_FPS) % c.idle.length];
+  }
   // the crawl inches: the second frame sits one pixel further along the facing
   // than the first, so the body hauls itself forward instead of flapping in
   // place. Baking two shifted copies of every grid would have said the same
@@ -256,24 +278,30 @@ function drawPlayer(p, ex, ey, now) {
   const iy = lying && frame === 2 ? (p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0) : 0;
   const px = Math.round(p.x - 8 - ex) + ix;
   const py = Math.round(p.y - 12 - ey) + iy;
+  // where the frame's top-left sits: a class frame fills the 16x16 cell (a
+  // taller one keeps its feet on the cell's floor); a worn body is centred on
+  // the cell with its soles on the cell's bottom row
+  const bx = rb ? px + 8 - (spr.width >> 1) : px;
+  const by = rb ? py + 15 - rb.foot : py + 16 - spr.height;
+  const wsc = rb ? WORN_SC : 1, fx0 = px + 8, fy0 = py + 16; // what the hands hold grows about the feet
   // shadow (not while swimming in a hole, and not while lying down - a body
   // flat on the snow has nothing to cast one over, and the cover's own dark
   // lower rim is what grounds it instead)
   if (p.fallT <= 0 && !lying) {
     // the sun's shade, cut from the frame (ground.js) - the standing one
     // through a roll, whose spin would smear it - feet on the foot row
-    const ss = p.dodgeT > 0 ? classSet(p)[p.dir][0] : spr;
-    drawCastShade(ss, px, py + 16 - ss.height);
+    const ss = p.dodgeT > 0 ? (rb ? rb[p.dir].idle[0] : classSet(p)[p.dir][0]) : spr;
+    drawCastShade(ss, bx, rb ? by : py + 16 - ss.height);
   }
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (lying && local) drawBuryRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3);
 
   if (p.fallT > 0) {
     // plunged through the ice: quick sink, only the head above the waterline
-    const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40));
+    const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40)) * wsc;
     ctx.save();
-    ctx.beginPath(); ctx.rect(px - 2, py - 8, 20, 20); ctx.clip();
-    drawSpriteFlash(spr, px, py + sink, p.hurtT > 0.12 ? 1 : 0);
+    ctx.beginPath(); ctx.rect(bx - 2, by - 8, spr.width + 4, py + 12 - (by - 8)); ctx.clip();
+    drawSpriteFlash(spr, bx, by + sink, p.hurtT > 0.12 ? 1 : 0);
     ctx.restore();
     // ripple rings at the waterline
     ctx.fillStyle = 'rgba(207,228,242,0.75)';
@@ -287,12 +315,13 @@ function drawPlayer(p, ex, ey, now) {
       p.dodgeVY < 0 ? -1 : 1;
     const vd = Math.hypot(p.dodgeVX, p.dodgeVY) || 1;
     const nx = p.dodgeVX / vd, ny = p.dodgeVY / vd;
-    const rollSpr = classSet(p)[p.dir][0];
+    const rollSpr = rb ? rb[p.dir].idle[0] : classSet(p)[p.dir][0];
+    const rw = rollSpr.width >> 1, rh = rb ? (rb.foot + 1 - rb.top) >> 1 : 8, ry0 = rb ? rb.foot + 1 - rh : 8;
     const spin = (a, gx, gy) => {
       ctx.save();
-      ctx.translate(Math.round(px + 8 + gx), Math.round(py + 8 + gy));
+      ctx.translate(Math.round(px + 8 + gx), Math.round(py + 16 - rh + gy)); // spun about the body's middle
       ctx.rotate(a);
-      ctx.drawImage(rollSpr, -8, -8);
+      ctx.drawImage(rollSpr, -rw, -ry0);
       ctx.restore();
     };
     ctx.globalAlpha = 0.12; spin(sgn * (prog - 0.14) * Math.PI * 2, -nx * 11, -ny * 11);
@@ -304,7 +333,7 @@ function drawPlayer(p, ex, ey, now) {
     // js/abilities.js), so an ability visibly happens to the model
     const pose = state.mode !== 'title' ? abilityPose(p) : null;
     const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl;
-    const sy = ay + (16 - spr.height); // a taller frame (the hoist) keeps its feet
+    const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
     // deep in the treeline the viewed hero wears a black 1px rim so the body
     // pops off the faded canopy - treeFadeSil (render.js) is the occluder
     // fade's silhouette strength, 0 in the open, so the rim dissolves as the
@@ -321,7 +350,7 @@ function drawPlayer(p, ex, ey, now) {
       sctx.fillRect(0, 0, 64, 64);
       ctx.globalAlpha = treeFadeSil;
       for (let ry = -1; ry <= 1; ry++) for (let rx = -1; rx <= 1; rx++) {
-        if (rx || ry) ctx.drawImage(scratch, 0, 0, 16, spr.height, ax + rx, sy + ry, 16, spr.height);
+        if (rx || ry) ctx.drawImage(scratch, 0, 0, spr.width, spr.height, sx + rx, sy + ry, spr.width, spr.height);
       }
       ctx.globalAlpha = 1;
     }
@@ -332,26 +361,27 @@ function drawPlayer(p, ex, ey, now) {
     const held = state.mode !== 'title' && (!lying || p.charging) && catchF < 0 &&
       p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0 && !p.sled; // ...or holding a zipline's handle, or a sled's sides
     const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
-    if (toolBehind) drawHeldTool(p, px, py);
+    if (toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py));
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
     if (pose && pose.rot) {
       ctx.save();
-      ctx.translate(ax + 8, ay + 8);
+      const hw = spr.width >> 1, hh = rb ? rb.foot + 1 - ((rb.foot + 1 - rb.top) >> 1) : 8; // about the body's middle
+      ctx.translate((rb ? sx : ax) + hw, (rb ? sy : ay) + hh);
       ctx.rotate(pose.rot);
-      drawSpriteFlash(spr, -8, -8, p.hurtT > 0.12 ? 1 : 0);
+      drawSpriteFlash(spr, -hw, -hh, p.hurtT > 0.12 ? 1 : 0);
       ctx.restore();
     } else {
-      drawSpriteFlash(spr, ax, sy, p.hurtT > 0.12 ? 1 : 0);
+      drawSpriteFlash(spr, sx, sy, p.hurtT > 0.12 ? 1 : 0);
     }
     // gear marks sit at fixed points on the standing body plan, so the prone
     // poses skip them rather than stripe a shoulder across someone's hip
-    if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0) drawGearMarks(p, ax, ay);
+    if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0 && !rb) drawGearMarks(p, ax, ay);
     if (p.sled) drawSledRide(p, px, py, now); // the sled over the legs: the body sits in it (js/draw/landmarks.js)
     ctx.globalAlpha = 1;
-    if (held && !toolBehind) drawHeldTool(p, px, py);
+    if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py));
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/abilities.js)
-    if (state.mode !== 'title') drawAbilityOnPlayer(p, ax, ay, now);
+    if (state.mode !== 'title') atFeet(fx0, fy0, wsc, () => drawAbilityOnPlayer(p, ax, ay, now));
     if (zl) drawZipHandle(p, Math.round(p.x - ex), sy, ey); // the handle over the head and the rope up to the cable (js/draw/zipline.js)
     // and the snow goes on last, over body and bow alike
     if (lying && p.hide > 0) {
@@ -378,7 +408,8 @@ function drawPlayer(p, ex, ey, now) {
   // the whole stack hangs off one y so it can drop with the body: a prone
   // pose starts ~6 rows lower in the same 16x16 cell, and bars floating where
   // a head no longer is look broken
-  const hy = py + (lying ? 6 : 0) - (catchF === 2 ? 4 : 0) - (zl ? zl + 5 : 0); // the hoist holds the fish where the plate would sit; a rider's frame rises with it and clears the handle
+  const hy = py + (lying ? 6 : 0) - (catchF === 2 ? 4 : 0) - (zl ? zl + 5 : 0) + // the hoist holds the fish where the plate would sit; a rider's frame rises with it and clears the handle
+    (rb ? by + rb.top - py : 0); // ...and a worn body's frame sits on its taller head
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;

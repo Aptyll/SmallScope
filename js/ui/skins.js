@@ -47,10 +47,13 @@ const SK_TICK = ['......ww', '.....ww.', 'w...ww..', 'ww.ww...', '.www....', '..
 const SK_TICK_PAL = { w: '#cfe0ff' };
 
 // ---- the catalogue ----------------------------------------------------------
-// PLACEHOLDERS: the scout, weapon and trail skins below have no art of their
-// own yet and are not worn in a match - a card shows today's picture washed
-// in the skin's `tint` (a trail, a streak in its two `cols`). The bird's
-// table is real and lives with its art (BIRD_SKINS, js/sprites/eagle.js).
+// PLACEHOLDERS: the weapon and trail skins below, and every scout skin with a
+// `tint`, have no art of their own yet and are not worn in a match - a card
+// shows today's picture washed in the skin's `tint` (a trail, a streak in its
+// two `cols`). A scout row with a `body` is real: it names a whole body in
+// SPRITES (the robot: SPRITES.robotSkin, js/sprites/robot.js) that the local
+// player wears in a match (scoutBody). The bird's table is real and lives with
+// its art (BIRD_SKINS, js/sprites/eagle.js).
 // Every table's first row is free and is the slot's default; an id is what
 // a profile keeps, so it never changes.
 const SCOUT_SKINS = [
@@ -59,7 +62,7 @@ const SCOUT_SKINS = [
   { id: 'frost', name: 'FROSTBITE', rarity: 'rare', price: 200, tint: '#8fd4ff' },
   { id: 'ember', name: 'EMBERWALK', rarity: 'rare', price: 200, tint: '#e0603a' },
   { id: 'aurora', name: 'AURORA', rarity: 'epic', price: 400, tint: '#6ae0c0' },
-  { id: 'gilded', name: 'GILDED EXILE', rarity: 'legend', price: 800, tint: '#ffc84a' },
+  { id: 'robot', name: 'IRON SCOUT', rarity: 'legend', price: 800, body: 'robotSkin' },
 ];
 const WEAPON_SKINS = [
   { id: 'plain', name: 'BARE WOOD', rarity: 'common', price: 0 },
@@ -87,7 +90,8 @@ const SKIN_TABS = [
   { id: 'weapon', name: 'WEAPON', slot: 'weapon', rows: WEAPON_SKINS, glyph: ['...wwww.', '..w..ww.', '.w..w.w.', 'w..w..w.', 'w.w...w.', 'ww....w.', 'wwwwww..', '........'] },
   { id: 'trail', name: 'TRAIL', slot: 'trail', rows: TRAIL_SKINS, glyph: ['...w....', '..www.w.', '...w....', '......w.', '.w...www', 'www...w.', '.w......', '........'] },
 ];
-const SK_TAB_BIRD = 1; // SKIN_TABS' eagle, the one tab a match already reads
+const SK_TAB_BIRD = 1; // SKIN_TABS' eagle and scout, the two tabs a match reads
+const SK_TAB_SCOUT = 0;
 
 // the row an id names in a table, the free one for anything it does not have
 function skinRow(rows, id) {
@@ -111,6 +115,15 @@ function skinOwned(r) { return skinHas(SKIN_TABS[SK_TAB_BIRD], r); } // a bird r
 // other screens yet). Always a BIRD_SKINS id.
 function birdSkinFor(team) {
   return player && team === player.team ? skinWorn(SKIN_TABS[SK_TAB_BIRD]).id : BIRD_SKINS[0].id;
+}
+// The body a player wears on this screen: the local player's worn scout
+// skin, when it has a body of its own (SPRITES[body][skin(team)]), else null
+// and the class body. A skin is not sent to the other screens yet, so every
+// other player wears the class body here.
+function scoutBody(p) {
+  if (p !== player) return null;
+  const r = skinWorn(SKIN_TABS[SK_TAB_SCOUT]);
+  return r.body && SPRITES[r.body] ? SPRITES[r.body][skin(p.team)] : null;
 }
 // what a finished match pays (endMatch, js/player.js, on its first ending
 // only); practice pays nothing
@@ -166,7 +179,8 @@ function skinArt(tab, r, t, f) {
   if (tab.id === 'scout') key += ':' + player.cls + ':' + JSON.stringify(player.look); // the scout you are
   let cv = skinArtCache.get(key);
   if (!cv) {
-    if (tab.id === 'scout') cv = washed(SPRITES.portrait(player.cls, player.look, t), r.tint);
+    if (tab.id === 'scout' && r.body) cv = SPRITES[r.body][t].icon;
+    else if (tab.id === 'scout') cv = washed(SPRITES.portrait(player.cls, player.look, t), r.tint);
     else if (tab.id === 'weapon') cv = washed(SPRITES.itemBow, r.tint);
     else cv = trailArt(r.cols, f);
     skinArtCache.set(key, cv);
