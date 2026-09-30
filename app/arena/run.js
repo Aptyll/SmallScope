@@ -74,6 +74,11 @@ function line(log) {
 const HEAD = [pad('match', 22), pad('end', 7), pad('W', 2), pad('min', 5), pad('K', 4), pad('fun', 4),
   ...['close', 'swings', 'comebk', 'length', 'action', 'busy', 'spread', 'variety'].map((x) => pad(x, 6))].join(' ');
 
+// which setup a log belongs to, for one aggregate row each
+function groupKey(l) {
+  return !l.setup ? 'crash' : l.setup.kind === 'level' ? l.setup.levelName : l.setup.a + ' v ' + l.setup.b;
+}
+
 // the mean of every number a group of logs shares, for the table's foot and aggregate.json
 function aggregate(logs) {
   const ok = logs.filter((l) => l.result.reason !== 'error');
@@ -82,7 +87,7 @@ function aggregate(logs) {
   const parts = {};
   for (const k of Object.keys((ok[0] && ok[0].fun.parts) || {})) parts[k] = r2(mean((l) => l.fun.parts[k]));
   const raw = {};
-  for (const k of ['leadChanges', 'longestLull', 'idleShare', 'minutes', 'winnerWorstDeficit', 'winnerNerve']) raw[k] = r2(mean((l) => l.fun.raw[k] || 0));
+  for (const k of ['leadChanges', 'longestLull', 'idleShare', 'minutes', 'winnerWorstDeficit', 'winnerLowNerve']) raw[k] = r2(mean((l) => l.fun.raw[k] || 0));
   const acts = {};
   for (const k of ['fight', 'siege', 'work', 'move']) acts[k] = r2(mean((l) => (l.fun.raw.actShare || {})[k] || 0));
   return {
@@ -127,10 +132,7 @@ async function main() {
   summary.end();
   // one aggregate per setup, so a sweep over levels reads as rows
   const groups = {};
-  for (const l of logs) {
-    const key = !l.setup ? 'crash' : l.setup.kind === 'level' ? l.setup.levelName : l.setup.a + ' v ' + l.setup.b;
-    (groups[key] = groups[key] || []).push(l);
-  }
+  for (const l of logs) (groups[groupKey(l)] = groups[groupKey(l)] || []).push(l);
   const agg = {};
   for (const k in groups) agg[k] = aggregate(groups[k]);
   fs.writeFileSync(path.join(out, 'aggregate.json'), JSON.stringify(agg, null, 2));
@@ -140,4 +142,4 @@ async function main() {
 }
 
 if (require.main === module) main();
-module.exports = { playChild, aggregate, summaryOf };
+module.exports = { playChild, aggregate, summaryOf, groupKey };

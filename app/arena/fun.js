@@ -41,13 +41,15 @@ function funScore(log) {
   const raw = {};
   const parts = {};
   if (!S.length) return { score: 0, parts, raw, weights: FUN_WEIGHTS };
-  const last = S[S.length - 1];
   const win = log.result.winner;
-  const nerveEnd = last.eagles.map((e) => Math.max(0, e[0]) / e[1]);
 
-  // close: how near the loser came
-  parts.close = win == null ? 1 - Math.abs(nerveEnd[0] - nerveEnd[1]) : 1 - nerveEnd[win];
-  raw.winnerNerve = win == null ? null : Math.round(nerveEnd[win] * 100) / 100;
+  // close: how near the loser came - the lowest the winner's bird fell at
+  // any point (it regains its nerve between assaults, so the end says little)
+  const nerve = (e) => (e[2] === 'down' || e[2] === 'flee' || e[2] === 'gone' ? Math.max(0, e[0]) / e[1] : 1);
+  const low = [1, 1];
+  for (const s of S) s.eagles.forEach((e, t) => { low[t] = Math.min(low[t], nerve(e)); });
+  parts.close = win == null ? 1 - Math.abs(low[0] - low[1]) : 1 - low[win];
+  raw.winnerLowNerve = win == null ? null : Math.round(low[win] * 100) / 100;
 
   // the lead line, smoothed; swings and the comeback read it
   const lead = S.map((s) => leadAt(s, pk, seats));

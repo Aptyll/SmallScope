@@ -35,6 +35,7 @@ fifteen-minute match is three to five minutes of one core.
 | `app/arena/match.js` | `playMatch`: seats, the drop, the step loop, sampling, the kill and bird watchers, the log |
 | `app/arena/fun.js` | `funScore`: the eight parts and the score, `FUN_WEIGHTS` and the tuning constants |
 | `app/arena/run.js` | the batch: a queue of matches over child processes, the files, the table, `aggregate` |
+| `app/arena/rescore.js` | a run folder scored again with today's fun.js |
 
 ## Is it the real game?
 
@@ -88,18 +89,21 @@ bird driven off), per-player finals and `fun`.
 
 `act`, what a body did over a sample window, is read off the sim so it means the same for every
 brain: `dead`, `fight` (dealt or took damage), `siege` (hurt the bird or a building), `work`
-(earned gold), `move` (went more than a tile, or rode), else `idle`. `goal` is
+(earned more gold than the window's passive income, the clock's trickle plus one), `move` (went
+more than a tile, or rode), else `idle`. `goal` is
 `p.ai.thought.goal` when a brain writes one, else null.
 
 ## The fun score
 
 Eight parts in 0..1 and a weighted mean out of 100 (`FUN_WEIGHTS`, fun.js). It is a proxy for
 fun, built to move when matches get more or less interesting; the raw numbers behind each part
-ride along in `fun.raw`, so read those before trusting the squash.
+ride along in `fun.raw`, so read those before trusting the squash. `node app/arena/rescore.js <run folder>`
+scores a folder of logs again with today's fun.js without replaying anything, which is how the
+weights are tuned.
 
 | Part | Weight | 1.0 means | Measured |
 | --- | --- | --- | --- |
-| `close` | 2 | the loser nearly won | 1 minus the winner's bird nerve at the end (a timeout: 1 minus the nerve gap) |
+| `close` | 2 | the loser nearly won | 1 minus the lowest the winner's bird fell all match (it regains nerve between assaults, so the end says little); a timeout: 1 minus the gap between the two lows |
 | `swings` | 2 | the lead changed hands | lead changes, up to 3. The lead is `leadAt`: 0.6 x the nerve gap + 0.2 x the kill gap + 0.2 x the gold gap, averaged over 30 s, dead zone 0.05 |
 | `comeback` | 1 | the winner was well behind once | the winner's worst deficit on that lead line, full at 0.3 |
 | `length` | 1 | 12 to 18 minutes | falling to 0 at 5 and 30 |

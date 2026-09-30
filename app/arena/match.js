@@ -86,7 +86,11 @@ function playMatch(opts) {
   const T = L.TICK_DT;
   const maxTicks = Math.round(o.maxMin * 60 / T);
   const sampleTicks = Math.max(1, Math.round(o.sampleEvery / T));
-  const pKeys = ['x', 'y', 'hp', 'maxHp', 'dead', 'level', 'gold', 'dmg', 'siege', 'kills', 'deaths', 'act', 'goal'];
+  const pKeys = ['x', 'y', 'hp', 'maxHp', 'dead', 'level', 'gold', 'dmg', 'hurt', 'siege', 'kills', 'deaths', 'act', 'goal'];
+  // gold that comes whatever a body does - the clock's trickle (TRICKLE_*,
+  // js/sim.js) and a side's generators - is not work: a window has to earn
+  // more than this before it counts
+  const passive = g.run('TRICKLE_GOLD * Math.ceil(' + o.sampleEvery + ' / TRICKLE_T)') + 1;
   const samples = [];
   const act = L.players.map(() => ({ fight: 0, siege: 0, work: 0, move: 0, idle: 0, dead: 0 }));
   const goals = L.players.map(() => ({}));
@@ -122,7 +126,7 @@ function playMatch(opts) {
       else if (p.dead) a = 'dead';
       else if (p.dmgOut > q.dmgOut || p.dmgIn > q.dmgIn) a = 'fight';
       else if (siege > q.siege) a = 'siege';
-      else if (p.xp > q.xp) a = 'work';
+      else if (p.xp - q.xp > passive) a = 'work';
       else if (moved > TILE || p.aboard || G.inAir(p)) a = 'move';
       else a = 'idle';
       if (a) act[i][a] += o.sampleEvery;
@@ -136,7 +140,7 @@ function playMatch(opts) {
       }
       q.x = p.x; q.y = p.y; q.dmgOut = p.dmgOut; q.dmgIn = p.dmgIn; q.siege = siege; q.xp = p.xp;
       return [Math.round(p.x), Math.round(p.y), Math.round(p.hp), Math.round(p.maxHp), p.dead ? 1 : 0, p.level,
-        Math.round(p.xp), Math.round(p.dmgOut), Math.round(siege), p.kills, p.deaths, a, goal];
+        Math.round(p.xp), Math.round(p.dmgOut), Math.round(p.dmgIn), Math.round(siege), p.kills, p.deaths, a, goal];
     });
     for (const e of L.state.drop.eagles) {
       if (e.state !== 'down') continue;
