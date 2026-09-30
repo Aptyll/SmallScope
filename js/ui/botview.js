@@ -32,7 +32,7 @@ function botThought(p) {
   if (p.dead) return Object.assign(botGuess(p), { guess: false }); // a body down thinks nothing, whatever it last wrote
   const t = th.target, r = t && t.ref;
   return {
-    goal: th.goal, why: th.why || '', guess: false, ref: r || null,
+    goal: th.goal, why: th.why || '', guess: false, ref: r || null, kind: t && t.kind ? String(t.kind).toUpperCase() : '',
     x: r ? r.x : t ? t.x : null, y: r ? r.y : t ? t.y : null,
     role: th.role || '', mood: th.mood || '', plan: th.plan || '',
     options: th.options || null, skill: th.skill || null, src: th.src || '',
@@ -43,26 +43,36 @@ function botThought(p) {
 // clock, its roam point. Read in the ladder's order, top rung first.
 function botGuess(p) {
   const ai = p.ai, inp = p.input;
-  const g = (goal, why, x, y, ref) => ({ goal, why, x: x === undefined ? null : x, y: y === undefined ? null : y,
-    ref: ref || null, guess: true, role: '', mood: '', plan: '', options: null, skill: null, src: '' });
+  const g = (goal, why, x, y, ref, kind) => ({ goal, why, x: x === undefined ? null : x, y: y === undefined ? null : y,
+    ref: ref || null, kind: kind || '', guess: true, role: '', mood: '', plan: '', options: null, skill: null, src: '' });
   if (p.dead) return g('DEAD', '');
   if (p.eatT > 0) return g('EAT', 'HURT');
   if (p.prone && ai.hideT > 0) return g('HIDE', 'OUTMATCHED');
   if (inp.fire || p.charging) {
     const q = botAimed(p);
-    if (q) return g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e);
+    if (q) return g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e, q.kind);
   }
   const w = ai.want;
-  if (w && w.type === 'defend') return g('DEFEND', 'BIRD HIT', w.x, w.y);
-  if (w && w.type === 'attack') return g(ai.packGo ? 'PUSH' : 'RALLY', ai.packGo ? 'PACK READY' : 'PUSH TIME', w.x, w.y);
-  if (ai.huntTgt && !ai.huntTgt.dead) return g('HUNT', 'FOOD', ai.huntTgt.x, ai.huntTgt.y, ai.huntTgt);
-  if (ai.tgt) {
-    const x = ai.tgt.tx * TILE + TILE / 2, y = ai.tgt.ty * TILE + TILE / 2;
-    return g(ai.tgt.type === 'rock' ? 'MINE' : 'GATHER', String(ai.tgt.type || '').toUpperCase(), x, y);
+  if (w && w.type === 'defend') return g('DEFEND', 'BIRD HIT', w.x, w.y, null, 'BIRD');
+  if (w && w.type === 'attack') return g(ai.packGo ? 'PUSH' : 'RALLY', ai.packGo ? 'PACK READY' : 'PUSH TIME', w.x, w.y, null, 'BIRD');
+  // a rival noticed for longer than the level's reaction (`seeT`, the
+  // ladder's own clock and its engage rule) is a fight between shots too, so
+  // the guess holds FIGHT instead of flickering with the trigger
+  if (ai.seeT > 0 && ai.seeT >= aiProfile(p).react) {
+    const q = botAimed(p);
+    return q ? g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e, q.kind) : g('FIGHT', 'RIVAL SEEN');
   }
-  if (ai.roam > 0) return g('ROAM', 'NOTHING NEAR', ai.wx, ai.wy);
+  if (ai.huntTgt && !ai.huntTgt.dead) return g('HUNT', 'FOOD', ai.huntTgt.x, ai.huntTgt.y, ai.huntTgt, 'ANIMAL');
+  if (ai.tgt) {
+    const x = ai.tgt.tx * TILE + TILE / 2, y = ai.tgt.ty * TILE + TILE / 2, what = String(ai.tgt.type || '').toUpperCase();
+    return g(ai.tgt.type === 'rock' ? 'MINE' : 'GATHER', what, x, y, null, what);
+  }
+  if (ai.roam > 0) return g('ROAM', 'NOTHING NEAR', ai.wx, ai.wy, null, 'POINT');
   return g('IDLE', '');
 }
+// how long ago (in sim ticks) a bot last changed its mind: the view flashes
+// a fresh goal white, so a change of plan is seen as it happens
+function botChangedAgo(p) { const t = BOTLOG.changed.get(p.id); return t === undefined ? 1e9 : state.tick - t; }
 // what a firing bot is shooting at: the body nearest its aim point
 function botAimed(p) {
   const ax = p.input.aimX, ay = p.input.aimY;
@@ -87,7 +97,7 @@ function botAimed(p) {
 const BOTLOG_SAMPLE = 1;       // s between position samples
 const BOTLOG_CAP = 60000;      // events + samples kept per match before the oldest go
 const BOTLOG_MATCHES = 50;     // finished-match summaries kept this session
-const BOTLOG = { seed: SEED, t: -1, sampleT: 0, events: [], samples: [], goals: new Map(), time: new Map(), matches: [], last: null };
+const BOTLOG = { seed: SEED, t: -1, sampleT: 0, events: [], samples: [], goals: new Map(), time: new Map(), changed: new Map(), matches: [], last: null };
 function botLogReset() {
   if (BOTLOG.last) {
     BOTLOG.matches.push(BOTLOG.last);
@@ -95,7 +105,7 @@ function botLogReset() {
   }
   BOTLOG.seed = SEED; BOTLOG.t = -1; BOTLOG.sampleT = 0;
   BOTLOG.events = []; BOTLOG.samples = [];
-  BOTLOG.goals.clear(); BOTLOG.time.clear(); BOTLOG.last = null;
+  BOTLOG.goals.clear(); BOTLOG.time.clear(); BOTLOG.changed.clear(); BOTLOG.last = null;
 }
 function botLogStep(dt) {
   const t = state.elapsed;
@@ -112,6 +122,7 @@ function botLogStep(dt) {
     tm[th.goal] = (tm[th.goal] || 0) + dt;
     if (BOTLOG.goals.get(p.id) !== th.goal) {
       BOTLOG.goals.set(p.id, th.goal);
+      BOTLOG.changed.set(p.id, state.tick);
       botLogPush(BOTLOG.events, { t: +t.toFixed(2), id: p.id, goal: th.goal, why: th.why, guess: th.guess,
         x: Math.round(p.x), y: Math.round(p.y), tx: th.x === null ? null : Math.round(th.x), ty: th.y === null ? null : Math.round(th.y) });
     }
@@ -155,6 +166,10 @@ const BOT_ROW = 9;
 const BOT_BAR_W = 44;          // the goal-time bar at a row's right end
 const BOT_EDGE = '#5b6678', BOT_BG = 'rgba(12,16,24,0.92)', BOT_INK = '#d6dde8', BOT_DIM = '#7d8699';
 const BOT_SHADOW = 'rgba(6,8,14,0.9)';
+const BOT_FLASH = 18;          // ticks a fresh goal is drawn white before it takes its colour
+// each level's ink in the table, dim to hot (AI_LEVELS / AI_ALLIES, ai.js)
+const BOT_LEVEL_COL = { NORMAL: '#8f9cb3', HARD: '#c7d3e6', IMPOSSIBLE: '#ff7a7a', ALLY: '#7fb8e0' };
+function botLevelCol(name) { return BOT_LEVEL_COL[name] || BOT_DIM; }
 function botViewStep() { botView = (botView + 1) % BOT_VIEW_MODES; }
 
 // the world pass (render.js, beside the debug routes): a dotted line from
@@ -188,14 +203,15 @@ function drawBotTags() {
     if (mouse.inside && d < hd) { hd = d; botHover = p; }
     const th = botThought(p);
     const w = th.goal + (th.guess ? '?' : '');
-    drawPixelTextOutline(ctx, w, sx - Math.round(pixelTextWidth(w) / 2), sy + Math.round(BOT_TAG_DY * zoomCur), botGoalCol(th.goal), BOT_SHADOW);
+    const col = botChangedAgo(p) < BOT_FLASH ? '#ffffff' : botGoalCol(th.goal);
+    drawPixelTextOutline(ctx, w, sx - Math.round(pixelTextWidth(w) / 2), sy + Math.round(BOT_TAG_DY * zoomCur), col, BOT_SHADOW);
   }
 }
 // ...and over it: the table and the hovered bot's card
 function drawBotView() {
   if (!botView) return;
-  if (botView > 1) drawBotPanel();
-  if (botHover) drawBotCard(botHover);
+  const row = botView > 1 ? drawBotPanel() : null;
+  if (botHover) drawBotCard(botHover, row);
 }
 
 function botFrame(x, y, w, h) {
@@ -224,20 +240,31 @@ function botBar(tm, x, y, w) {
   }
 }
 
-// the card on the hovered bot: who, level, goal and why, and whatever the
-// brain has written of its role, mood, plan and the options it weighed
-function drawBotCard(p) {
+// the card on the hovered bot: who, level, goal and why, what it is after
+// and how far, and whatever the brain has written of its role, mood, plan
+// and the options it weighed. Beside the bot when the pointer is on it in
+// the world, beside the row when the pointer is on the table (`row`: the
+// row's left edge and middle), so a bot off screen still has its card.
+function drawBotCard(p, row) {
   const th = botThought(p);
   const lines = [];
-  lines.push([p.name, playerTint(p), th.src && th.src !== 'native' ? th.src.toUpperCase().slice(0, 10) : botLevel(p), BOT_DIM]);
+  const lv = th.src && th.src !== 'native' ? th.src.toUpperCase().slice(0, 10) : botLevel(p);
+  lines.push([p.name, playerTint(p), lv, th.src && th.src !== 'native' ? BOT_DIM : botLevelCol(lv)]);
   lines.push([th.goal + (th.guess ? '?' : ''), botGoalCol(th.goal), th.why, BOT_INK]);
+  if (th.x !== null) lines.push([th.kind || 'TARGET', BOT_DIM, Math.round(Math.hypot(th.x - p.x, th.y - p.y) / TILE) + ' TILES', BOT_INK]);
   if (th.role || th.mood) lines.push([th.role, BOT_INK, th.mood, BOT_DIM]);
   if (th.plan) lines.push(['PLAN', BOT_DIM, th.plan, BOT_INK]);
-  lines.push(['HP', BOT_DIM, Math.round(p.hp) + '/' + Math.round(p.maxHp), BOT_INK]);
+  lines.push(['HP', BOT_DIM, Math.max(0, Math.round(p.hp)) + '/' + Math.round(p.maxHp), BOT_INK]);
   const opts = th.options ? th.options.slice(0, 4) : [];
-  const w = 104, h = 5 + lines.length * 8 + opts.length * 8 + (opts.length ? 2 : 0);
-  let x = Math.round(wToSX(p.x)) + 12, y = Math.round(wToSY(p.y)) - Math.round(h / 2);
-  if (x + w > VIEW_W - 2) x = Math.round(wToSX(p.x)) - 12 - w;
+  let w = 104;
+  for (const [a, , b] of lines) w = Math.max(w, pixelTextWidth(a || '') + pixelTextWidth(b || '') + 14);
+  const h = 5 + lines.length * 8 + opts.length * 8 + (opts.length ? 2 : 0);
+  let x, y;
+  if (row) { x = row.x - w - 3; y = row.y - Math.round(h / 2); }
+  else {
+    x = Math.round(wToSX(p.x)) + 12; y = Math.round(wToSY(p.y)) - Math.round(h / 2);
+    if (x + w > VIEW_W - 2) x = Math.round(wToSX(p.x)) - 12 - w;
+  }
   x = Math.max(2, x); y = Math.max(2, Math.min(VIEW_H - h - 2, y));
   botFrame(x, y, w, h);
   let ry = y + 3;
@@ -258,10 +285,13 @@ function drawBotCard(p) {
 
 // the table: every bot, grouped by side, with its level, goal, record and
 // how it has spent the match; under it one line per level (the difficulty
-// read), this match and the session's finished ones
+// read), this match and the session's finished ones. The pointer on a row
+// is the pointer on that bot (its line goes solid, its card opens beside
+// the row): returns where that card hangs, or null.
 function drawBotPanel() {
   const bots = players.filter(botIsBot);
-  if (!bots.length) return;
+  if (!bots.length) return null;
+  let rowAt = null;
   const sides = [0, 1].map((t) => bots.filter((p) => p.team === t)).filter((g) => g.length);
   const lv = botLevelRows(bots);
   const h = 17 + bots.length * BOT_ROW + (sides.length - 1) * 3 + 6 + lv.length * 8 + 3;
@@ -281,11 +311,15 @@ function drawBotPanel() {
     ctx.fillRect(x + 3, ry, 2, g.length * BOT_ROW - 2);
     for (const p of g) {
       const th = botThought(p), dim = p.dead ? 0.5 : 1;
+      if (mouse.inside && mouse.x >= x + 6 && mouse.x < x + BOT_PANEL_W - 3 && mouse.y >= ry - 1 && mouse.y < ry - 1 + BOT_ROW) {
+        botHover = p; rowAt = { x, y: ry + 3 };
+      }
       if (p === botHover) { ctx.fillStyle = 'rgba(214,221,232,0.08)'; ctx.fillRect(x + 6, ry - 1, BOT_PANEL_W - 9, BOT_ROW); }
       ctx.globalAlpha = dim;
       botText(p.name, x + 8, ry, playerTint(p));
-      botTextR(botLevel(p)[0], x + C_LV, ry, BOT_DIM);
-      botText(th.goal + (th.guess ? '?' : ''), x + C_GOAL, ry, botGoalCol(th.goal));
+      const lv = botLevel(p);
+      botTextR(lv[0], x + C_LV, ry, botLevelCol(lv));
+      botText(th.goal + (th.guess ? '?' : ''), x + C_GOAL, ry, botChangedAgo(p) < BOT_FLASH ? '#ffffff' : botGoalCol(th.goal));
       botTextR(String(p.kills), x + C_K, ry, BOT_INK);
       botTextR(String(p.deaths), x + C_D, ry, BOT_INK);
       botBar(BOTLOG.time.get(p.id) || {}, x + BOT_PANEL_W - 4 - BOT_BAR_W, ry + 1, BOT_BAR_W);
@@ -297,12 +331,15 @@ function drawBotPanel() {
   ctx.fillStyle = '#2a3242'; ctx.fillRect(x + 3, ry - 1, BOT_PANEL_W - 6, 1);
   ry += 3;
   for (const r of lv) {
-    botText(r.name, x + 8, ry, BOT_INK);
+    botText(r.name, x + 8, ry, botLevelCol(r.name));
     botTextR(r.n + (r.past ? '+' + r.past : ''), x + C_LV, ry, BOT_DIM);
     botText('K ' + r.k.toFixed(1) + '  D ' + r.d.toFixed(1), x + C_GOAL, ry, BOT_INK);
     botTextR(Math.round(r.dmg) + ' DMG', x + BOT_PANEL_W - 4, ry, BOT_DIM);
     ry += 8;
   }
+  // the table covers the world under it: a pointer on it names no bot there
+  if (!rowAt && mouse.x >= x && mouse.x < x + BOT_PANEL_W && mouse.y >= y && mouse.y < y + h) botHover = null;
+  return rowAt;
 }
 // per level: bots this match and in the session's finished matches, and
 // their average kills, deaths and damage over all of them

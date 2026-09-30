@@ -13,12 +13,12 @@ const APP = path.join(HERE, 'app');   // the game's files, copied for the packag
 const DIST = path.join(HERE, 'dist');
 const NAME = 'Softfall';
 
-// the game: the page, the code, the music. Nothing from docs/, app/ or the wrapper's own
+// the game: the page (and the bot lab's, F6), the code, the music. Nothing from docs/, app/ or the wrapper's own
 // node_modules, and of audio/ only the streamed tracks - the sample clips are baked into
 // js/sfxdata.js already, and audio/new_sfx_to_use holds clips the game does not play yet
 fs.rmSync(APP, { recursive: true, force: true });
 fs.mkdirSync(path.join(APP, 'audio'), { recursive: true });
-for (const f of ['index.html', 'LICENSE']) fs.copyFileSync(path.join(ROOT, f), path.join(APP, f));
+for (const f of ['index.html', 'botlab.html', 'LICENSE']) fs.copyFileSync(path.join(ROOT, f), path.join(APP, f));
 fs.cpSync(path.join(ROOT, 'js'), path.join(APP, 'js'), { recursive: true });
 fs.cpSync(path.join(ROOT, 'audio', 'music'), path.join(APP, 'audio', 'music'), { recursive: true, filter: (src) => fs.statSync(src).isDirectory() || /\.mp3$/i.test(src) });
 
