@@ -392,7 +392,7 @@ function renderWorldMap(now) {
     ctx.restore();
   }
   // the eagles as bird diamonds in team colour: the two roosted objectives,
-  // and mid-flight (the M map is the ride's chart) each bird on its own line,
+  // and mid-flight (the M map is the ride's chart) each bird on its own path,
   // dashed across the parchment
   if (state.drop) for (const e of state.drop.eagles) {
     if (e.state === 'fly' || e.state === 'dive') {
@@ -400,8 +400,10 @@ function renderWorldMap(now) {
       ctx.strokeStyle = TEAMS[skin(e.team)].mark;
       ctx.setLineDash([3, 2]);
       ctx.beginPath();
-      ctx.moveTo(MAP_X + (e.x0 / TILE) * MAP_S, MAP_Y + (e.y0 / TILE) * MAP_S);
-      ctx.lineTo(MAP_X + (e.x1 / TILE) * MAP_S, MAP_Y + (e.y1 / TILE) * MAP_S);
+      for (let i = 0; i <= 32; i++) { // the swayed path it really flies (eaglePathAt)
+        const q = eaglePathAt(e, i / 32);
+        ctx[i ? 'lineTo' : 'moveTo'](MAP_X + (q.x / TILE) * MAP_S, MAP_Y + (q.y / TILE) * MAP_S);
+      }
       ctx.stroke();
       ctx.restore();
     } else if (e.state !== 'down') continue;
