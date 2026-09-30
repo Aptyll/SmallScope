@@ -83,13 +83,7 @@ const EAGLE_REST_SCALE = 2; // ...settling to 2x once it roosts (the dive walks 
 // pass side by side with clear sky between their wingtips (a war eagle is
 // ~180 px across in flight)
 const EAGLE_LANE = 6.5 * TILE;
-// the LEAN: flying its straight line, a bird rolls slowly and subtly left
-// and right (eagleLean; render only, the war eagles' plates)
-const LEAN_ROLL = 12 * Math.PI / 180, LEAN_T = 7; // the most it leans, and the seconds of one full left-right sway
 const EAGLE_BEAT_HZ = 1;      // wingbeats a second in level flight (the classic's four frames each, a war eagle's stroke)
-// the WING DIP as the birds pass: each rolls its right wing down and back
-// once, slowly, over DIP_W of the line from DIP_U0 (eagleDip; render only)
-const DIP_ROLL = 50 * Math.PI / 180, DIP_U0 = 0.41, DIP_W = 0.18;
 const EAGLE_DIVE_T = 1.4;   // seconds from the end of the line to the treeline impact
 const EAGLE_SETTLE_T = 0.6; // seconds of wing-fold after the impact, into the resting pose
 // The grounded objective's NERVE: hits spook it, at zero it flees. Sized as a
@@ -197,19 +191,6 @@ function lastOpenU(e) {
 // The sim flies it (updateEagle); lastOpenU walks it.
 function eaglePathAt(e, u) {
   return { x: e.x0 + (e.x1 - e.x0) * u, y: e.y0 + (e.y1 - e.y0) * u, h: Math.atan2(e.y1 - e.y0, e.x1 - e.x0) };
-}
-// the lean at flight time t, in radians of roll (+ is the right wing down):
-// a slow sine, its phase per seed and side (hash2 - no rng()), eased in off
-// the takeoff. Render only, a pure read, the same on every screen.
-function eagleLean(e, t) {
-  const ease = Math.min(1, t / LEAN_T);
-  return LEAN_ROLL * ease * Math.sin(2 * Math.PI * (t / LEAN_T + hash2(e.team * 17 + 3, 41)));
-}
-// the pass's wing dip at line fraction u, in radians of roll: up to DIP_ROLL
-// and back on a smooth ease, never past edge-on. Render only, a pure read.
-function eagleDip(e, u) {
-  const t = Math.max(0, Math.min(1, (u - DIP_U0) / DIP_W));
-  return DIP_ROLL * Math.sin(Math.PI * t * t * (3 - 2 * t));
 }
 
 // two birds on the one line, flying it opposite ways: team 0 start-to-end,
@@ -1066,8 +1047,8 @@ function drawEagleTrail(e, ex, ey, S, now) {
 
 // A war eagle's frames paint on first use (~10 ms each), so the ones a bird
 // is about to need are queued ahead (SPRITES.warBirds.warm, painted a few ms
-// a frame by tick): every stroke and roll left on its flight, in order, then
-// the stoop's headings and its roost pose. Render only; once per bird, skin and state.
+// a frame by tick): its level flight's stroke, then the stoop's headings and
+// its roost pose. Render only; once per bird, skin and state.
 const warBirdWarmed = new WeakMap();
 const strokeAt = (flap) => Math.floor(flap * EAGLE_BEAT_HZ * SPRITES.warBirds.STROKE_N) % SPRITES.warBirds.STROKE_N;
 function warmWarBird(e, id) {
@@ -1075,10 +1056,7 @@ function warmWarBird(e, id) {
   if (warBirdWarmed.get(e) === key) return;
   warBirdWarmed.set(e, key);
   const WB = SPRITES.warBirds, t = skin(e.team);
-  if (e.state === 'fly') for (let s = 0; e.t + s <= e.dur; s += 1 / 60) { // the very frames the rest of the flight draws, in order
-    const u = Math.min(1, (e.t + s) / e.dur);
-    WB.warmFlight(id, t, e.heading, strokeAt(e.flap + s), eagleLean(e, e.t + s) + eagleDip(e, u));
-  }
+  if (e.state === 'fly') for (let k = 0; k < WB.STROKE_N; k++) WB.warmFlight(id, t, e.heading, k);
   if (e.state === 'dive') for (let i = 0; i <= 16; i++) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.diveH0 + e.diveTurn * i / 16, fi);
   if (e.state === 'dive' || e.state === 'down') for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, WB.REST);
 }
@@ -1099,11 +1077,9 @@ function drawEagle(e, ex, ey, now) {
     const alt = DROP_ALT * (1 - fall);
     const S = EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * fall; // 3x down to the roost's 2x
     const fi = [0, 1, 2, 1][Math.floor(e.flap * EAGLE_BEAT_HZ * (4 + 9 * u)) % 4]; // wingbeats quicken into the stoop
-    // a war eagle in level flight: its smooth stroke, leaning slowly side to
-    // side and dipping a wing as the birds pass; the stoop beats hard
+    // a war eagle in level flight beats its smooth stroke; the stoop beats hard
     const level = war && e.state === 'fly', ks = level ? strokeAt(e.flap) : 0;
-    const roll = level ? eagleLean(e, e.t) + eagleDip(e, e.prog) : 0;
-    const spr = level ? WB.flight(war, skin(e.team), e.heading, ks, roll) : war ? WB.frame(war, skin(e.team), e.heading, fi) : frames[fi];
+    const spr = level ? WB.flight(war, skin(e.team), e.heading, ks) : war ? WB.frame(war, skin(e.team), e.heading, fi) : frames[fi];
     // a war frame is already flight-sized (FLY): the stoop shrinks it to the roost's REST
     const k = war ? 1 - (1 - WB.REST / WB.FLY) * fall : S, w = spr.width * k, h = spr.height * k;
     // the shadow lies on the snow at the bird's TRUE size - the roost's, not
@@ -1128,7 +1104,6 @@ function drawEagle(e, ex, ey, now) {
     const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
     const RS = riderScale(e), rd = riderDir(e);
     const beat = (level ? Math.cos(2 * Math.PI * ks / WB.STROKE_N) > 0.5 : fi === 0) ? -1 : 0; // the downstroke (spread) rides high
-    const span = Math.cos(roll); // a rolled wing is narrower: its riders sit in with it
     { // the driver first, on the neck: the team's merchant, who climbs down at the crash
       const ms = war ? WB.merchSeat : MERCH_SEAT; // behind the war helm, not on it
       const dx = ms[0] * S, dy = ms[1] * S;
@@ -1139,7 +1114,7 @@ function drawEagle(e, ex, ey, now) {
     for (let pass = 0; pass < 2; pass++) for (const p of players) {
       if (!p.active || !p.aboard || p.team !== e.team || (p === player) !== (pass === 1)) continue;
       const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
-      const dx = st[0] * S, dy = st[1] * S * span;
+      const dx = st[0] * S, dy = st[1] * S;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
       drawSeated(classSet(p), rd, rx, ry, RS);
       seatedName(classSet(p), rd, rx, ry, RS, p.name, p.team);
