@@ -2241,16 +2241,11 @@ back → mid `EAGLE_BEAT_HZ` (1) times a second, quickening through the stoop, r
 through the dive, bobbing 3 px in level flight; a side whose bird wears a war eagle skin
 (`birdSkinFor(team)` names one `SPRITES.warBirds.has`) draws `SPRITES.warBirds.flight` in level
 flight and `.frame` (the three hard beats) in the stoop, **unrotated**, since each frame is
-painted at its heading: in level flight a smooth, shallow stroke (`strokeAt`, `EAGLE_BEAT_HZ`),
-**leaning** slowly and subtly side to side on its straight line (`eagleLean`: a roll of up to
-`LEAN_ROLL` 12° either way, one sway every `LEAN_T` 7 s, its phase per seed and side through
-`hash2`, eased in off the takeoff) with the tail twisting a little after it, and as the birds
-pass a slow **wing dip** on top (`eagleDip`: up to `DIP_ROLL` 50° and back over `DIP_W` of the
-line from `DIP_U0`, never edge-on), the wing riders drawn in toward the body by the roll's
-cosine — pure reads of the flight clock, nothing saved or sent; shrinking to `REST` of its
+painted at its heading: in level flight a smooth, shallow stroke (`strokeAt`, `EAGLE_BEAT_HZ`)
+with the tail dipping and lifting with it, flying dead level; shrinking to `REST` of its
 flight size through the dive, with the merchant on `SPRITES.warBirds.merchSeat` behind the helm;
-the flee and the roost draw it too, and `warmWarBird` queues, in order, every frame the rest of
-the flight will draw (about a hundred) so they paint ahead, a few ms a frame, `SPRITES.warBirds.tick`), under it the **wind trail** (`drawEagleTrail`,
+the flee and the roost draw it too, and `warmWarBird` queues the frames the bird is about to
+need (the stroke's, then the stoop's and the roost's) so they paint ahead, a few ms a frame, `SPRITES.warBirds.tick`), under it the **wind trail** (`drawEagleTrail`,
 drawn before the bird's own cull because it hangs behind a bird already off the frame): **one
 continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the flown
 line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —

@@ -219,31 +219,14 @@
     }));
   }
 
-  // the pose on top of the wingbeat: the tail and the bird's roll. The tail
-  // lifts `tp`; the roll `r` (radians, + is the right wing down: the flight's
-  // lean and the pass's dip) turns every plate about the body's long axis,
-  // and the tail twists a little after it and fans. The camera looks
-  // straight down, so a roll shows as the span narrowing and the two wings
-  // taking the light differently - the plates' tones read the rolled plate
-  // (`lit`), while the shape only narrows, never lifts up the screen (ZK
-  // would stretch one side and squash the other)
-  const TAIL_PITCH = BEATS.map((b) => tailPitch(b.up)); // tail tip's lift per beat, bird units
-  const TAIL_YAW = rad(8), TAIL_FAN = 0.2, TAIL_ROLL = rad(24); // the tail's twist and fan at TAIL_ROLL of roll or more
-  function pose(parts, tp, r) {
-    r = r || 0;
-    const cr = Math.cos(r), sr = Math.sin(r), w = Math.max(-1, Math.min(1, r / TAIL_ROLL));
-    const ty = w * TAIL_YAW, ct = Math.cos(ty), st = Math.sin(ty), fan = 1 + Math.abs(w) * TAIL_FAN;
-    const roll = ([x, y, z]) => [x, y * cr + z * sr, z * cr - y * sr];
-    return parts.map((p) => {
-      let pts = p.pts, lit = null;
-      if (p.tail) pts = pts.map(([x, y, z]) => {
-        const dx = x + 12, k = Math.min(1, Math.max(0, -dx) / 26), yy = y * (1 + (fan - 1) * k); // 0 at the root, 1 at the tip
-        return [-12 + dx * ct - yy * st, dx * st + yy * ct, z + tp * k];
-      });
-      if (r) { lit = pts.map(roll); pts = pts.map(([x, y, z]) => [x, y * cr, z]); }
-      const cull = p.cull && r ? roll(p.cull) : p.cull;
-      return pts === p.pts && cull === p.cull ? p : Object.assign({}, p, { pts, cull, lit });
-    });
+  // the pose on top of the wingbeat: the tail lifts `tp` (bird units at its
+  // tip, easing in from the root), dipping on the downstroke and lifting on
+  // the upstroke
+  const TAIL_PITCH = BEATS.map((b) => tailPitch(b.up)); // tail tip's lift per beat
+  function pose(parts, tp) {
+    return parts.map((p) => !p.tail ? p : Object.assign({}, p, {
+      pts: p.pts.map(([x, y, z]) => [x, y, z + tp * Math.min(1, Math.max(0, -(x + 12)) / 26)]), // 0 at the root, 1 at the tip
+    }));
   }
 
   function plates(cfg) {
@@ -310,7 +293,7 @@
         if ((nx * s + ny * c) * ZK + nz <= 0.05) continue;
       }
       fill(ids, SW, SH, p.pts.map((q) => proj(q).map((v) => v * SS)), i);
-      tones[i] = p.tone == null ? facingTone(p.lit || p.pts, c, s) : p.tone;
+      tones[i] = p.tone == null ? facingTone(p.pts, c, s) : p.tone;
     }
     // shrink: the part holding most of each cell, if the cell is half full;
     // a thin part (a slit, a strap) keeps a cell it holds a third of
@@ -373,14 +356,12 @@
   }
 
   // ---------------------------------------------------------------- cache
-  // 64 headings round the circle, so a bird swaying off its line turns in
-  // steps too small to see, and
-  // the roll in ROLL_STEP steps. A frame paints on first use, or ahead
-  // of it from the warm queue, and the least recently drawn go once there
-  // are more than KEEP (a flight wants about a hundred; each is SIZE^2 x 4 bytes).
-  const TURNS = 64, ROLL_STEP = rad(4), KEEP = 200;
+  // 64 headings round the circle, so the stoop's turn steps too small to
+  // see. A frame paints on first use, or ahead of it from the warm queue, and
+  // the least recently drawn go once there are more than KEEP (a flight and
+  // its stoop want about sixty; each is SIZE^2 x 4 bytes).
+  const TURNS = 64, KEEP = 96;
   const turnOf = (hd) => ((Math.round(hd / (2 * Math.PI) * TURNS) % TURNS) + TURNS) % TURNS;
-  const rollStep = (r) => Math.round((r || 0) / ROLL_STEP);
   let frames = new Map(), queue = [];
   SPR.onTeams(() => { frames = new Map(); queue = []; }); // the colour-blind palettes repaint the team plates
   function cached(key, make) {
@@ -394,22 +375,22 @@
   // the key and the painter for each kind of frame: `beat` fi (0 spread, 1
   // mid, 2 back - the stoop, the flee, the roost) at `fly` screen px per
   // bird unit (FLY in flight, REST at the roost), or level flight's stroke
-  // phase k, rolled `roll` radians
+  // phase k
   function beatJob(id, team, hd, fi, fly) {
     const t = turnOf(hd), f = fly || FLY;
     return { key: [id, team, t, fi, f].join('|'),
       make: () => paint(pose(beat(plates(LOOKS[id]), fi), TAIL_PITCH[fi]), palette(LOOKS[id], team), t * 2 * Math.PI / TURNS, f, SIZE) };
   }
-  function strokeJob(id, team, hd, k, roll) {
+  function strokeJob(id, team, hd, k) {
     k = Math.min(k, STROKE_N - k); // the upstroke passes through the downstroke's poses
-    const t = turnOf(hd), r = rollStep(roll), q = (1 - Math.cos(2 * Math.PI * k / STROKE_N)) / 2;
-    return { key: [id, team, t, 's' + k, r].join('|'),
-      make: () => paint(pose(stroke(plates(LOOKS[id]), k), tailPitch(STROKE_UP[0] + (STROKE_UP[1] - STROKE_UP[0]) * q), r * ROLL_STEP),
+    const t = turnOf(hd), q = (1 - Math.cos(2 * Math.PI * k / STROKE_N)) / 2;
+    return { key: [id, team, t, 's' + k].join('|'),
+      make: () => paint(pose(stroke(plates(LOOKS[id]), k), tailPitch(STROKE_UP[0] + (STROKE_UP[1] - STROKE_UP[0]) * q)),
         palette(LOOKS[id], team), t * 2 * Math.PI / TURNS, FLY, SIZE) };
   }
   // one frame: skin `id` in palette set `team`, flying `hd`
   function frame(id, team, hd, fi, fly) { const j = beatJob(id, team, hd, fi, fly); return cached(j.key, j.make); }
-  function flight(id, team, hd, k, roll) { const j = strokeJob(id, team, hd, k, roll); return cached(j.key, j.make); }
+  function flight(id, team, hd, k) { const j = strokeJob(id, team, hd, k); return cached(j.key, j.make); }
   // paint frames before they are needed: warm()/warmFlight() queue one,
   // tick(ms) paints queued ones for up to ms each call (drawEagle's budget)
   function want(j) { if (!frames.has(j.key) && !queue.some((q) => q.key === j.key)) queue.push(j); }
