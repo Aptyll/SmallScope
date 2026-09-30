@@ -371,8 +371,8 @@ three with the chevrons beside the stage figure; bots hash theirs — class, loo
 variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
-the rest of the count) — and the target at the top, whose pop-up's three plates
-set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
+the rest of the count) — and the target at the top, whose pop-up's four plates
+set `settings.aiLevel` (`AI_LEVELS`, js/ai-skill.js: EASY / NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
@@ -621,19 +621,22 @@ gone until the restock).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
-well each rung is played** (the `difficulty` banner at the top of ai.js): the **rivals** run
-`AI_LEVELS[settings.aiLevel]` — NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
+well each rung is played** (the `difficulty` banner, js/ai-skill.js): the **rivals** run
+`AI_LEVELS[settings.aiLevel]` — EASY / NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
 with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch up (capped at the
 top) plus the support fields, so your side is always the more competent one and the difficulty
 is how good the *other* side is. `aiProfile(p)` is the one place that choice is made
 (`p.ai.prof` overrides it for a staged bot — `DBG`, the calibration harness). Every field is a
-worse or better use of the same input struct: `sight` (147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
-cover still works), `react` (0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
-`aim` (30 / 8 / 0 px of scatter, re-rolled every `AI_AIM_T`), `lead` (0 / 0.5 / 1 of the
-target's motion), `draw` (0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
-weak shot), `dodge` (×0.5 / 1 / 2), `abil` (0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
-ready ability is spent), `flee` (0.5 / 0.35 / 0 hp it hides at), `work` (0.5 / 0.8 / 1 duty
-cycle of the E key while harvesting — its level pace), `strafe` (0.45 / 0.8 / 1 of each 2 s it
+worse or better use of the same input struct (numbers EASY / NORMAL / HARD / IMPOSSIBLE; the
+banner has the whole table): `sight` (120 / 147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
+cover still works), `react` (1.1 / 0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
+the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `turn`, `aim`, `fresh`,
+`drawVar`, `slip`), `lead` (0 / 0 / 0.5 / 1 of the
+target's read motion), `draw` (0.6 / 0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
+weak shot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
+ready ability is spent), `flee` (0.55 / 0.5 / 0.35 / 0 hp it hides at), `work` (0.4 / 0.5 / 0.8 / 1 duty
+cycle of the E key while harvesting — its level pace), the **choice** knobs the team brain reads
+(`judge`, `focus`, `team`, `think`, `memory` — what each means is in the banner), `strafe` (0.3 / 0.45 / 0.8 / 1 of each 2 s it
 keeps moving in a fight; the rest it PLANTS — stands, draws and shoots, the only time a slow side
 fires, so stopping is the tell and the moment a new player hits it — and under 1 it circles that
 much less, walking in straighter), `pick`
@@ -657,6 +660,25 @@ bird under `AI_ALARM_HP` while it is *losing* the race. What is **not** in a pro
 a hit on its own bird — at every level the side answers from anywhere on the map
 (`aiDefendersWanted`, **the two birds**, below); the difficulty is how well they fight when
 they get there, never whether they come.
+
+**The skill layer** (the `skill` banner, js/ai-skill.js) is the hands between what the ladder
+decides and the input it writes, so an easy bot misses the way a person does rather than at
+random. Its state is `p.ai.sk` (`skillOf`, made on first use; the banner lists every field for
+the dashboard). `skillNotice` is the **eyes**: a rival inside `cone` degrees of where the bot is
+aiming is noticed at the full rate, one outside it at `rear` × (so a flank works on EASY and not
+on HARD), and a hit keeps it watching every side for `AI_ALERT_T` (2 s). `skillAim` is the
+**read**: the bot's picture of its target (`sk.px`/`sk.pvx`) trails the truth with a time
+constant of `perceive` s, `lead` is taken off that read, and the **wobble** is a smooth drift
+(mean-reverting over `AI_WOBBLE_T`) of `aim` px at bow range, wider the farther the target, the
+faster either body moves, and `fresh` × on a new target settling over `AI_SETTLE` — the first
+shot at a new rival is the worst. `skillDraw` rolls each draw's release off `draw` ± `drawVar`.
+`skillSlip` is the **lapse**: `slip` times a minute of fighting it freezes, looses early or walks
+straight in for a moment. `skillHands` runs after the whole think (`updateAI`): the crosshair
+swings to wherever the ladder aimed at `turn` rad/s round the bot, and in a fight a drawn shot is
+held until it is within `AI_AIM_ON` of the wish — a body cutting across a slow hand is a shot that
+comes late, not a shot that goes wide. **Scripted seats** (the bot API) all play with one pair of
+hands, `AI_LADDER_HANDS` (HARD's `turn` and `aim`), through the same `skillHands`, so a ladder
+ranks decisions rather than aim; its `hands` flag adds the wobble and the held draw to every aim.
 
 The ladder:
 
@@ -833,7 +855,7 @@ prefilter on work; a build site still wants `>= 3` open sides. Keep the -1 branc
 extend the ladder — a goal that is never dropped is a bot that stands still forever.
 
 **Calibrating a level** is done bot-vs-bot, headless, in the served page: make the local player a
-bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[0]` for a middling player who
+bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[1]` (NORMAL) for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
 `sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
 `DBG.step(dt, n)` runs `n` steps and one render; the bots' strafe and work clocks count ticks, so

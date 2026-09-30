@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.35';
+const PATCH_TXT = 'PATCH 4.36';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.36', 'BOTS PLAY WITH HANDS NOW: THEY WATCH WHERE THEY AIM, READ A MOVING TARGET A BEAT LATE, SWING THEIR AIM ACROSS, SETTLE ON A NEW TARGET AND SLIP NOW AND THEN, AND A NEW EASY LEVEL SITS BELOW NORMAL.'],
   ['4.35', 'THE EAGLES FLY LEVEL: NO MORE LEANING OR WING DIPS, JUST A STRAIGHT, STEADY FLIGHT.'],
   ['4.34', 'THE SLEDS ARE GONE, AND SO IS THE CAIRN IN THE MIDDLE OF THE ROAD: THE CENTRE WHERE THE TWO SIDES MEET IS OPEN GROUND.'],
   ['4.33', 'THE EAGLES FLY STRAIGHT AGAIN, FURTHER APART SO THEY PASS WITH CLEAR SKY BETWEEN THEM, AND A WAR EAGLE NOW JUST LEANS SLOWLY LEFT AND RIGHT AS IT GOES.'],
@@ -1198,6 +1199,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '3.79'],
   ]],
   ['FIGHTING AND TRADE', [
+    ['A NEW EASY LEVEL, AND BOTS THAT AIM AND MISS LIKE PEOPLE', '4.36'],
     ['A GATE IN YOUR WALL THAT ONLY YOUR SIDE WALKS THROUGH', '4.27'],
     ['A BODY FREEZES AND SHATTERS OR BLOWS AWAY ON THE WIND WHEN IT GOES DOWN', '4.21'],
     ['THE MARKET STALL OPENS FROM ANY SIDE', '4.19'],
@@ -1433,7 +1435,7 @@ const LOBBY_LOCK_SCALE = 3;              // LOCK IN's text scale, and the count'
 const LOBBY_PAD = 6;                     // the margin off the view's edge
 const LOBBY_MAP = 56;                    // the map plate and the target, side by side at the top centre
 const LOBBY_TOP_GAP = 24;                // between them
-const LOBBY_LV_W = 58, LOBBY_LV_H = 13;    // a difficulty plate (the AI pop-up)
+const LOBBY_LV_W = 61, LOBBY_LV_H = 13;    // a difficulty plate (the AI pop-up)
 const POP_PIC = 72;                      // the picture in a pop-up: the map, the target
 const COUNT_T = 5;                     // s: LOCK IN's countdown to the eagle
 function lobbyLayout() {
@@ -2650,8 +2652,8 @@ function wreckTargetFace(size, lv) {
   const put = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
   const px = (fx, fy) => [Math.round(cc + fx * k), Math.round(cc + fy * k)];
   // punctures: a dark hole with a torn lip, a few more and bigger the harder
-  const holes = lv === 1
-    ? [[-6, -3, 1], [4, 5, 1], [7, -6, 1]]
+  const holes = lv === 1 ? [[4, 5, 1]]
+    : lv === 2 ? [[-6, -3, 1], [4, 5, 1], [7, -6, 1]]
     : [[-6, -3, 1], [4, 5, 2], [7, -6, 1], [-8, 7, 1], [1, -1, 1]];
   for (const [fx, fy, r] of holes) {
     const [hx, hy] = px(fx, fy);
@@ -2678,7 +2680,8 @@ function wreckTargetFace(size, lv) {
       if (w > 2) put(rx - 1, ry, '#241a12');
     }
   };
-  if (lv === 1) crack(-6, -3, -2.6, 7, 1);
+  if (lv === 1) return cv;                              // NORMAL: the one hole, no crack
+  if (lv === 2) crack(-6, -3, -2.6, 7, 1);
   else {
     crack(-1, -14.5, 1.62, 29, 3);                      // the great split, top to bottom through the bullseye
     crack(-1, -9, 0.3, 8, 1); crack(0, -4, -0.9, 7, 1); // branches off it
@@ -2713,7 +2716,7 @@ function drawDiffPlates(diff, rise, rc, a) {
     ctx.fillStyle = on ? '#3a1622' : '#0f1632'; ctx.fillRect(x + 1, y + 1, r.w - 2, r.h - 2);
     ctx.fillStyle = on ? '#f4f7ff' : hv > 0.5 ? '#c8d4ee' : '#5a6690';
     for (let j = 0; j <= k; j++) ctx.fillRect(x + 4 + j * 3, y + 5, 2, 3);
-    drawPixelTextShadow(ctx, AI_LEVELS[k].name, x + 15, y + 4, on ? '#f4f7ff' : hv > 0.5 ? '#ffd95c' : '#8fa8d0', '#0a0e23');
+    drawPixelTextShadow(ctx, AI_LEVELS[k].name, x + 6 + AI_LEVELS.length * 3, y + 4, on ? '#f4f7ff' : hv > 0.5 ? '#ffd95c' : '#8fa8d0', '#0a0e23');
   }
 }
 
@@ -3049,8 +3052,9 @@ function aiLayout() {
   const pw = 10 + POP_PIC + 12 + LOBBY_LV_W + 10, ph = POP_PIC + 24;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
   const diff = [];
-  const dy = py + 12 + ((POP_PIC - (3 * LOBBY_LV_H + 6)) >> 1);
-  for (let k = 0; k < 3; k++) diff.push({ x: px + 10 + POP_PIC + 12, y: dy + k * (LOBBY_LV_H + 3), w: LOBBY_LV_W, h: LOBBY_LV_H });
+  const n = AI_LEVELS.length;
+  const dy = py + 12 + ((POP_PIC - (n * LOBBY_LV_H + (n - 1) * 3)) >> 1);
+  for (let k = 0; k < n; k++) diff.push({ x: px + 10 + POP_PIC + 12, y: dy + k * (LOBBY_LV_H + 3), w: LOBBY_LV_W, h: LOBBY_LV_H });
   return { cx, panel: { x: px, y: py, w: pw, h: ph }, tgt: { x: px + 10, y: py + 12, w: POP_PIC, h: POP_PIC }, diff,
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
