@@ -87,6 +87,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/save.js](../../js/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
 | [js/ui/saves.js](../../js/ui/saves.js) | ~545 | shared scope, no `window.*` export | the SAVES grid (the slot cards, each carrying its own verb, the arm-then-confirm load, a card's delete, name and carry), the lobby's SAVES plate and the HUD's saved mark |
+| [js/ui/botview.js](../../js/ui/botview.js) | ~400 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
 | [js/boot.js](../../js/boot.js) | ~1840 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.

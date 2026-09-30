@@ -227,7 +227,7 @@ const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, src: '
 // dead on a pad. `e` is {key, repeat, char}: key the game's NAME for the key
 // (keyName above), char what it typed (the name editor's letters) - a real
 // KeyboardEvent translated, or the object a pad builds.
-const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3']);
+const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3', 'F4', 'F6']);
 window.addEventListener('keydown', (e) => {
   const k = keyName(e);
   // Tab is held to read the scoreboard (scoreboardOpen()), so it must never
@@ -254,6 +254,10 @@ function keyPress(e) {
   // F3 and for the same reason: what it draws is as true of the title
   // screen's living world and of a spectated match as it is of your own feet
   if (e.key === '.') { settings.hitbox = settings.hitbox ? 0 : 2; saveSettings(); return; }
+  // F4 steps the bot dev view (off, the map, the map and the table) and F6
+  // opens its out-of-game page, in any mode for the same reason (js/ui/botview.js)
+  if (e.key === 'F4') { botViewStep(); return; }
+  if (e.key === 'F6') { openBotLab(); return; }
   if (state.mode === 'title') { menuKey(e); return; }
   if (state.mode === 'drop') {
     // the map key raises the world map mid-flight, Esc puts it away; the map

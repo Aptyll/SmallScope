@@ -501,6 +501,7 @@ function updatePlay(dt) {
       if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
     }
   }
+  botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, build orders and fish claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
   if (!PRACTICE) updateMarket(dt); // fish/berry prices and the merchants' stock (js/shop.js)
