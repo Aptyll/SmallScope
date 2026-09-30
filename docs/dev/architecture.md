@@ -336,6 +336,9 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   reach it (`netRelay`, js/net/net.js). It answers **Range requests**, which is why music seeks work
   when served; a plain 200 makes an `<audio>` element treat a multi-MB mp3 as an unbounded stream.
   Its single `ROOT` const carries the static root, the traversal guard and the shot sink alike.
+- **`app/arena/`** — bot-vs-bot matches with no browser: boots the game's scripts in Node with a
+  stub page, plays whole matches in parallel processes, writes match logs and a fun score per
+  match ([arena.md](arena.md)).
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.
 - **`app/bake-bears/bake.py`** — Python (needs numpy): paints and poses the two camp bears, writes `js/sprites/bears.js`.
 - **`app/bake-robot/bake.py`** — Python (needs numpy and pillow): paints and poses the IRON SCOUT skin from its faceted rig (rig.py), writes `js/sprites/robot.js`.
