@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Softfall Bot Lab</title>
+<!-- The bot dev view's out-of-game page (docs/dev/botview.md). F6 in the game
+     opens it as a window of the game's own, which sends it every bot's thought
+     a few times a second; opened on its own it reviews saved logs. One file,
+     no fetch: it works double-clicked, like index.html. -->
+<style>
+  :root {
+    --bg: #0b0f16; --panel: #121822; --edge: #2c3544; --edge-hi: #5b6678;
+    --ink: #d6dde8; --dim: #7d8699; --faint: #1c2230;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+    font: 12px/1.4 ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace; }
+  header { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--edge); }
+  header h1 { font-size: 13px; letter-spacing: 2px; margin: 0; font-weight: 600; }
+  #src { color: var(--dim); }
+  #src.live::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; background: #7bd88f; vertical-align: 1px; }
+  .sp { flex: 1; }
+  button, label.btn { background: var(--panel); color: var(--ink); border: 1px solid var(--edge-hi); padding: 3px 10px;
+    font: inherit; cursor: pointer; }
+  button:hover, label.btn:hover { border-color: var(--ink); }
+  button[aria-pressed="true"] { border-color: var(--ink); background: #1b2230; }
+  main { display: grid; grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.1fr); gap: 12px; padding: 12px;
+    height: calc(100% - 42px); }
+  .box { border: 1px solid var(--edge); background: var(--panel); min-height: 0; display: flex; flex-direction: column; }
+  .box > .hd { display: flex; gap: 6px; padding: 6px 8px; border-bottom: 1px solid var(--edge); align-items: center; }
+  .box > .bd { flex: 1; overflow: auto; min-height: 0; }
+  #mapWrap { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  #map { image-rendering: pixelated; max-width: 100%; max-height: 100%; background: #0e131b; }
+  #card { position: absolute; pointer-events: none; background: rgba(12,16,24,0.95); border: 1px solid var(--edge-hi);
+    padding: 5px 8px; display: none; white-space: nowrap; }
+  #scrub { display: none; gap: 8px; align-items: center; padding: 6px 8px; border-top: 1px solid var(--edge); }
+  #scrub input { flex: 1; accent-color: #7d8699; }
+  table { border-collapse: collapse; width: 100%; }
+  th { color: var(--dim); font-weight: normal; text-align: left; position: sticky; top: 0; background: var(--panel); }
+  th, td { padding: 2px 6px; white-space: nowrap; }
+  td.n, th.n { text-align: right; }
+  tr.sel td { background: #1b2230; }
+  tr.team td:first-child { border-left: 2px solid var(--tc); }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: #161d29; }
+  .bar { display: flex; width: 90px; height: 6px; background: var(--faint); }
+  .bar i { display: block; height: 6px; }
+  .dead { opacity: 0.45; }
+  .muted { color: var(--dim); }
+  .sec { color: var(--dim); padding: 8px 6px 2px; letter-spacing: 1px; }
+  #empty { color: var(--dim); padding: 24px; }
+  #legend { display: flex; flex-wrap: wrap; gap: 4px 10px; padding: 6px 8px; border-top: 1px solid var(--edge); color: var(--dim); }
+  #legend span::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px; background: var(--c); vertical-align: 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>BOT LAB</h1>
+  <span id="src">no game</span>
+  <span class="sp"></span>
+  <label class="btn">OPEN LOGS<input id="open" type="file" accept=".json,.jsonl,application/json" multiple hidden></label>
+  <button id="save" disabled>SAVE LOG</button>
+</header>
+<main>
+  <section class="box">
+    <div class="hd"><span id="clock" class="muted">0:00</span><span class="sp"></span><span id="seed" class="muted"></span></div>
+    <div id="mapWrap"><canvas id="map" width="640" height="640"></canvas><div id="card"></div></div>
+    <div id="scrub"><button id="play">PLAY</button><input id="t" type="range" min="0" max="0" step="1" value="0"><span id="tl" class="muted"></span></div>
+    <div id="legend"></div>
+  </section>
+  <section class="box">
+    <div class="hd">
+      <button data-tab="bots" aria-pressed="true">BOTS</button>
+      <button data-tab="feed" aria-pressed="false">FEED</button>
+      <button data-tab="stats" aria-pressed="false">STATS</button>
+    </div>
+    <div class="bd" id="pane"><div id="empty">Press F6 in the game to watch bots live, or open saved logs (a botlog, match logs, a run folder's summary.jsonl).</div></div>
+  </section>
+</main>
+<script>
+'use strict';
+// the goal colours: the same table as BOT_GOALS (js/ui/botview.js); the
+// match log's activities (match-log.md `act`) borrow the nearest goal's
+const GOALS = {
+  DEFEND: '#6fa8ff', GUARD: '#8fb4d9', PUSH: '#ff8a5c', RALLY: '#ffb36b', FIGHT: '#ff5a5a',
+  FLEE: '#ffd166', HIDE: '#9aa3b5', EAT: '#7bd88f', WOLF: '#ff7a9a', HUNT: '#c9a26b',
+  ESCORT: '#7fe0e0', LOOT: '#e0c3ff', BUILD: '#d9b38c', GATHER: '#a8d672', MINE: '#b7c0cc',
+  SPEND: '#d9b38c', SHOP: '#d9b38c', FORGE: '#d9b38c', FOLLOW: '#7fe0e0',
+  ROAM: '#7d8699', IDLE: '#5d6578', DEAD: '#454b5a',
+  SIEGE: '#ff8a5c', WORK: '#a8d672', MOVE: '#7d8699',
+};
+const TEAM_COL = ['#e0575b', '#4f8fe0']; // team 0 red, team 1 blue, as the roster deals them
+const WORLD_PX = 3712;                   // WORLD * TILE today, for a log that does not say
+const gc = (g) => GOALS[g] || '#c8d0e0';
+const tc = (b) => b.col || TEAM_COL[b.team]; // the game's own paint when live, red/blue by index in a log
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const mmss = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+
+// ---- state. A MATCH is one normalised shape whatever file it came from:
+// { id, from, seed, len, world, winner, fun, bots: [{ id, name, team, col,
+// level, kills, deaths, dmgOut, siege, time }], timeKind: 'goal' | 'act',
+// events: [{ t, id, goal, why, guess } | { t, text }], at(t) -> bodies | null,
+// raw (the file's own object, for SAVE) }
+const S = { live: false, frame: null, liveLog: null, matches: [], cur: null, sel: -1, tab: 'bots', mapImg: null, world: WORLD_PX, playing: false };
+
+// ---- the link to the game (openBotLab / botLabPump, js/ui/botview.js)
+const game = window.opener;
+window.addEventListener('message', (e) => {
+  const m = e.data;
+  if (!m || !game || e.source !== game) return;
+  if (m.kind === 'botlab-log') {
+    S.liveLog = m.log; S.world = m.log.world || S.world;
+    if (m.log.map) { const im = new Image(); im.onload = () => { S.mapImg = im; draw(); }; im.src = m.log.map; }
+    if (m.save) download(m.log, 'botlog-' + m.log.seed + '-' + mmss(m.log.len).replace(':', 'm') + '.json');
+  } else if (m.kind === 'botlab-frame') {
+    // the game's clock ran backward: a new match - ask for its log afresh
+    if (S.frame && m.t < S.frame.t - 1) game.postMessage({ kind: 'botlab-hello' }, '*');
+    S.live = true; S.frame = m;
+    if (S.liveLog) {
+      const ev = S.liveLog.events, last = ev.length ? ev[ev.length - 1].t : -1;
+      for (const x of m.events) if (x.t > last) ev.push(x);
+      if (ev.length > 60000) ev.splice(0, ev.length - 60000);
+    }
+    if (!S.cur) watchLive();
+    $('src').textContent = 'live'; $('src').className = 'live';
+    $('save').disabled = false;
+    if (S.cur === 'live') { draw(); if (S.tab !== 'stats') table(); }
+  }
+});
+if (game) game.postMessage({ kind: 'botlab-hello' }, '*');
+setInterval(() => {
+  if (S.live && (!game || game.closed)) { S.live = false; $('src').textContent = 'game closed'; $('src').className = ''; }
+}, 1000);
+function watchLive() { S.cur = 'live'; S.playing = false; $('scrub').style.display = 'none'; }
+
+// ---- saving and loading
+$('save').onclick = () => {
+  if (S.cur === 'live' && game && !game.closed) game.postMessage({ kind: 'botlab-save' }, '*');
+  else if (S.cur && S.cur.raw) download(S.cur.raw, (S.cur.id || 'match') + '.json');
+};
+function download(obj, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(obj)], { type: 'application/json' }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('open').onchange = async (e) => {
+  const before = S.matches.length;
+  for (const f of e.target.files) {
+    try {
+      const txt = await f.text();
+      const objs = f.name.endsWith('.jsonl') ? txt.split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l)) : [JSON.parse(txt)];
+      for (const o of objs.flatMap((x) => Array.isArray(x) ? x : [x])) S.matches.push(...normalise(o, f.name));
+    } catch (err) { alert(f.name + ': ' + err.message); }
+  }
+  e.target.value = '';
+  const first = S.matches.slice(before).find((m) => m.at);
+  if (first && S.cur !== 'live') open(first);
+  $('save').disabled = !S.matches.length && !S.live;
+  draw(); table();
+};
+
+// ---- normalising what a file holds into matches
+function normalise(o, file) {
+  if (!o || typeof o !== 'object') return [];
+  if (o.kind === 'softfall-botlog') return fromBotlog(o, file);
+  if (o.log && typeof o.log === 'object') {           // a ladder record: { id, seed, shape, a, b, winner, ticks, log }
+    return normalise(o.log, file).map((m) => Object.assign(m, { id: o.id || m.id, winner: o.winner != null ? o.winner : m.winner, ladder: { a: o.a, b: o.b } }));
+  }
+  if (o.v === 1 && o.seats) return [fromMatchLog(o, file)];  // match-log.md v1, a match file or a summary.jsonl line
+  return [];
+}
+// the game's own recorder (botLogExport, js/ui/botview.js): goal changes with
+// their why and target, a sample a second, and the session's finished matches
+function fromBotlog(l, file) {
+  const bots = l.bots.map((b) => ({ id: b.id, name: b.name, team: b.team, col: b.col, level: b.level, kills: b.kills, deaths: b.deaths,
+    dmgOut: b.dmgOut, siege: (b.dmgBird | 0) + (b.dmgStruct | 0), time: b.time || {} }));
+  const main = { id: 'botlog-' + l.seed, from: file, seed: l.seed, len: l.len, world: l.world || WORLD_PX, winner: null, fun: null,
+    bots, timeKind: 'goal', events: l.events, raw: l, map: null };
+  if (l.map) { const im = new Image(); im.onload = () => { main.map = im; draw(); }; im.src = l.map; }
+  main.at = (t) => botlogAt(l, bots, t);
+  const past = (l.matches || []).map((m, i) => ({ id: 'botlog-' + m.seed + '-' + (i + 1), from: file + ' (earlier)', seed: m.seed, len: m.len,
+    world: l.world, winner: null, fun: null, timeKind: 'goal', events: [], at: null, raw: null,
+    bots: m.bots.map((b) => ({ id: b.id, name: b.name, team: b.team, col: b.col, level: b.level, kills: b.kills, deaths: b.deaths,
+      dmgOut: b.dmgOut, siege: (b.dmgBird | 0) + (b.dmgStruct | 0), time: b.time || {} })) }));
+  return [main, ...past];
+}
+function botlogAt(l, bots, t) {
+  const by = new Map(bots.map((b) => [b.id, Object.assign({}, b, { x: null, y: null, hp: 0, goal: 'IDLE', why: '', tx: null, ty: null, time: {} })]));
+  for (const s of l.samples) { if (s.t > t) break; const o = by.get(s.id); if (o) { o.x = s.x; o.y = s.y; o.hp = s.hp; } }
+  const prev = new Map();
+  for (const ev of l.events) {
+    if (ev.t > t) break;
+    const o = by.get(ev.id); if (!o) continue;
+    const p = prev.get(ev.id);
+    if (p) o.time[p.goal] = (o.time[p.goal] || 0) + (ev.t - p.t);
+    prev.set(ev.id, ev);
+    Object.assign(o, { goal: ev.goal, why: ev.why, guess: ev.guess, tx: ev.tx, ty: ev.ty });
+    if (o.x === null) { o.x = ev.x; o.y = ev.y; }
+  }
+  for (const [id, p] of prev) { const o = by.get(id); o.time[p.goal] = (o.time[p.goal] || 0) + (t - p.t); }
+  return { bots: [...by.values()], birds: [] };
+}
+// the fun-tests runner's match file (match-log.md v1). Its per-seat time is
+// the brain's goals once a brain writes them, else the sim's activities.
+function fromMatchLog(o, file) {
+  const fin = new Map((o.players || []).map((p) => [p.id, p]));
+  const seats = o.seats.filter((s) => s.ctrl !== 'none');
+  const hasGoals = [...fin.values()].some((p) => p.goals && Object.keys(p.goals).length);
+  const up = (m) => { const r = {}; for (const k in m || {}) r[k.toUpperCase()] = m[k]; return r; };
+  const bots = seats.map((s) => {
+    const p = fin.get(s.id) || {};
+    return { id: s.id, name: s.name || 'SEAT ' + s.id, team: s.team, level: s.ctrl === 'scripted' ? (s.bot || 'SCRIPT') : s.ctrl === 'human' ? 'HUMAN' : (s.prof || '?'),
+      kills: p.kills | 0, deaths: p.deaths | 0, dmgOut: p.dmg | 0, siege: p.siege | 0, time: hasGoals ? (p.goals || {}) : up(p.acts) };
+  });
+  const name = new Map(bots.map((b) => [b.id, b.name]));
+  const events = (o.events || []).map((e) => ({ t: e.t, text:
+    e.k === 'kill' ? (e.a >= 0 ? name.get(e.a) : 'the world') + ' took down ' + name.get(e.v) + (e.cause ? ' (' + e.cause + ')' : '') :
+    e.k === 'bird' ? (e.team ? 'blue' : 'red') + ' bird at ' + e.hp + ' nerve' + (e.by >= 0 ? ', last hit ' + name.get(e.by) : '') :
+    e.k === 'flee' ? (e.team ? 'blue' : 'red') + ' bird driven off' : e.k }));
+  const r = o.result || {};
+  const m = { id: o.id, from: file, seed: o.seed, len: r.time || 0, world: o.world || WORLD_PX, winner: r.winner, fun: o.fun ? o.fun.score : null,
+    bots, timeKind: hasGoals ? 'goal' : 'act', events, raw: o, at: null };
+  if (o.samples && o.samples.length) {
+    const ki = (k) => o.pKeys.indexOf(k);
+    const K = { x: ki('x'), y: ki('y'), hp: ki('hp'), dead: ki('dead'), kills: ki('kills'), deaths: ki('deaths'), dmg: ki('dmg'), act: ki('act'), goal: ki('goal') };
+    m.at = (t) => {
+      let s = o.samples[0];
+      for (const x of o.samples) { if (x.t > t) break; s = x; }
+      return { bots: bots.map((b) => {
+        const row = s.p[b.id] || [];
+        const goal = (row[K.goal] || row[K.act] || 'idle').toUpperCase();
+        return Object.assign({}, b, { x: row[K.x], y: row[K.y], hp: row[K.hp], dead: !!row[K.dead], kills: row[K.kills], deaths: row[K.deaths],
+          dmgOut: row[K.dmg], goal, guess: !row[K.goal], why: '', tx: null, ty: null, time: null });
+      }), birds: [] };
+    };
+  }
+  return m;
+}
+
+// ---- the replay
+function open(m) {
+  S.cur = m; S.sel = -1; S.playing = false; $('play').textContent = 'PLAY';
+  S.world = m.world || WORLD_PX;
+  $('scrub').style.display = m.at ? 'flex' : 'none';
+  $('t').max = Math.ceil(m.len || 0); $('t').value = Math.ceil(m.len || 0);
+  draw(); table();
+}
+$('t').oninput = () => { draw(); if (S.tab !== 'stats') table(); };
+$('play').onclick = () => {
+  S.playing = !S.playing; $('play').textContent = S.playing ? 'PAUSE' : 'PLAY';
+  if (S.playing && +$('t').value >= +$('t').max) $('t').value = 0;
+};
+setInterval(() => {
+  if (!S.playing) return;
+  const t = $('t'); t.value = Math.min(+t.max, +t.value + 1);
+  if (+t.value >= +t.max) { S.playing = false; $('play').textContent = 'PLAY'; }
+  draw(); if (S.tab !== 'stats') table();
+}, 100);
+// what the map and the BOTS / FEED tabs show right now
+function current() {
+  if (S.cur === 'live') {
+    if (!S.frame) return null;
+    return { t: S.frame.t, bots: S.frame.bots, birds: S.frame.birds, humans: S.frame.humans, events: S.liveLog ? S.liveLog.events : S.frame.events, id: 'live', seed: S.frame.seed };
+  }
+  const m = S.cur;
+  if (!m) return null;
+  const t = m.at ? +$('t').value : m.len;
+  const at = m.at ? m.at(t) : { bots: m.bots.map((b) => Object.assign({ x: null, goal: '', why: '' }, b)), birds: [] };
+  return { t, bots: at.bots, birds: at.birds, humans: [], events: m.events.filter((e) => e.t <= t), id: m.id, seed: m.seed };
+}
+
+// ---- the map
+const cv = $('map'), g = cv.getContext('2d');
+let hits = [];
+function draw() {
+  const c = current();
+  const W = cv.width, k = W / (S.world || WORLD_PX);
+  g.imageSmoothingEnabled = false;
+  g.fillStyle = '#0e131b'; g.fillRect(0, 0, W, W);
+  const img = S.cur === 'live' ? S.mapImg : S.cur && S.cur.map;
+  if (img) { g.globalAlpha = 0.7; g.drawImage(img, 0, 0, W, W); g.globalAlpha = 1; }
+  hits = [];
+  if (!c) return;
+  $('clock').textContent = mmss(c.t);
+  $('seed').textContent = (c.id === 'live' ? '' : c.id + '  ') + 'seed ' + c.seed;
+  $('tl').textContent = S.cur !== 'live' && S.cur && S.cur.at ? mmss(c.t) + ' / ' + mmss(S.cur.len) : '';
+  for (const e of c.birds) {
+    const x = Math.round(e.x * k), y = Math.round(e.y * k);
+    g.strokeStyle = tc(e); g.lineWidth = 2; g.strokeRect(x - 6, y - 6, 12, 12);
+  }
+  for (const h of c.humans) {
+    if (h.dead) continue;
+    g.fillStyle = '#ffffff'; g.fillRect(Math.round(h.x * k) - 3, Math.round(h.y * k) - 3, 6, 6);
+  }
+  for (const b of c.bots) {
+    if (b.x == null || b.dead || b.air) continue;
+    const x = Math.round(b.x * k), y = Math.round(b.y * k), sel = b.id === S.sel;
+    if (b.tx != null) {
+      const tx = Math.round(b.tx * k), ty = Math.round(b.ty * k);
+      g.strokeStyle = gc(b.goal); g.lineWidth = sel ? 2 : 1; g.setLineDash(sel ? [] : [2, 3]);
+      g.beginPath(); g.moveTo(x + 0.5, y + 0.5); g.lineTo(tx + 0.5, ty + 0.5); g.stroke(); g.setLineDash([]);
+      g.beginPath(); g.arc(tx + 0.5, ty + 0.5, sel ? 5 : 3, 0, Math.PI * 2); g.stroke();
+    }
+    g.fillStyle = tc(b); g.fillRect(x - 3, y - 3, 7, 7);
+    g.fillStyle = gc(b.goal); g.fillRect(x - 1, y - 1, 3, 3);
+    if (sel) { g.strokeStyle = '#d6dde8'; g.lineWidth = 1; g.strokeRect(x - 5.5, y - 5.5, 12, 12); }
+    hits.push({ b, x, y });
+  }
+}
+function pickAt(ev) {
+  const r = cv.getBoundingClientRect(), sx = cv.width / r.width;
+  const mx = (ev.clientX - r.left) * sx, my = (ev.clientY - r.top) * sx;
+  let best = null, bd = 12;
+  for (const h of hits) { const d = Math.hypot(h.x - mx, h.y - my); if (d < bd) { bd = d; best = h; } }
+  return best;
+}
+cv.onmousemove = (ev) => {
+  const h = pickAt(ev), card = $('card');
+  if (!h) { card.style.display = 'none'; return; }
+  const b = h.b;
+  card.innerHTML = '<b style="color:' + tc(b) + '">' + esc(b.name) + '</b> <span class="muted">' + esc(b.level) + '</span><br>' +
+    '<span style="color:' + gc(b.goal) + '">' + esc(b.goal) + (b.guess ? '?' : '') + '</span> <span class="muted">' + esc(b.why) + '</span>' +
+    (b.role || b.mood ? '<br>' + esc(b.role) + ' <span class="muted">' + esc(b.mood) + '</span>' : '') +
+    (b.plan ? '<br><span class="muted">plan</span> ' + esc(b.plan) : '') +
+    (b.options ? b.options.slice(0, 4).map((o) => '<br><span style="color:' + gc(o.goal) + '">' + esc(o.goal) + '</span> ' + (+o.score).toFixed(2)).join('') : '');
+  const wrap = $('mapWrap').getBoundingClientRect();
+  card.style.display = 'block';
+  card.style.left = Math.min(wrap.width - 180, ev.clientX - wrap.left + 14) + 'px';
+  card.style.top = (ev.clientY - wrap.top + 10) + 'px';
+};
+cv.onmouseleave = () => { $('card').style.display = 'none'; };
+cv.onclick = (ev) => { const h = pickAt(ev); S.sel = h ? h.b.id : -1; draw(); table(); };
+
+// ---- the right pane
+for (const b of document.querySelectorAll('[data-tab]')) b.onclick = () => {
+  S.tab = b.dataset.tab;
+  for (const o of document.querySelectorAll('[data-tab]')) o.setAttribute('aria-pressed', String(o === b));
+  table();
+};
+function bar(tm, w) {
+  let sum = 0; for (const k in tm) sum += tm[k];
+  const st = w ? ' style="width:' + w + 'px"' : '';
+  if (!sum) return '<span class="bar"' + st + '></span>';
+  const order = Object.keys(GOALS).concat(Object.keys(tm).filter((k) => !GOALS[k])).filter((k) => tm[k]);
+  return '<span class="bar"' + st + ' title="' + esc(order.map((k) => k + ' ' + Math.round(100 * tm[k] / sum) + '%').join('  ')) + '">' +
+    order.map((k) => '<i style="width:' + (100 * tm[k] / sum).toFixed(1) + '%;background:' + gc(k) + '"></i>').join('') + '</span>';
+}
+function table() {
+  const pane = $('pane');
+  if (S.tab === 'stats') { pane.innerHTML = stats(); wire(pane); return; }
+  const c = current();
+  if (!c) return;
+  if (S.tab === 'feed') {
+    const names = new Map(c.bots.map((b) => [b.id, b]));
+    const ev = (S.sel >= 0 ? c.events.filter((e) => e.id === S.sel) : c.events).slice(-300).reverse();
+    pane.innerHTML = '<table><thead><tr><th class="n">TIME</th><th>BOT</th><th>GOAL</th><th>WHY</th></tr></thead><tbody>' +
+      ev.map((e) => {
+        if (e.text) return '<tr><td class="n muted">' + mmss(e.t) + '</td><td colspan="3">' + esc(e.text) + '</td></tr>';
+        const b = names.get(e.id) || { name: '#' + e.id, team: 0 };
+        return '<tr data-id="' + e.id + '"><td class="n muted">' + mmss(e.t) + '</td><td style="color:' + tc(b) + '">' + esc(b.name) +
+          '</td><td style="color:' + gc(e.goal) + '">' + esc(e.goal) + (e.guess ? '?' : '') + '</td><td class="muted">' + esc(e.why) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+  } else {
+    const bots = c.bots.slice().sort((a, b) => a.team - b.team || a.id - b.id);
+    pane.innerHTML = '<table><thead><tr><th>BOT</th><th>LEVEL</th><th>' + (S.cur !== 'live' && S.cur && S.cur.timeKind === 'act' ? 'DOING' : 'GOAL') +
+      '</th><th>WHY</th><th class="n">HP</th><th class="n">K</th><th class="n">D</th><th class="n">DMG</th><th>TIME SPENT</th></tr></thead><tbody>' +
+      bots.map((b) => '<tr data-id="' + b.id + '" class="team' + (b.id === S.sel ? ' sel' : '') + (b.dead ? ' dead' : '') + '" style="--tc:' + tc(b) + '">' +
+        '<td style="color:' + tc(b) + '">' + esc(b.name) + '</td><td class="muted">' + esc(b.level) + '</td>' +
+        '<td style="color:' + gc(b.goal) + '">' + esc(b.goal) + (b.guess ? '?' : '') + '</td><td class="muted">' + esc(b.why) + '</td>' +
+        '<td class="n">' + (b.hp == null ? '' : Math.max(0, b.hp | 0)) + '</td><td class="n">' + (b.kills | 0) + '</td><td class="n">' + (b.deaths | 0) + '</td><td class="n">' + (b.dmgOut | 0) + '</td>' +
+        '<td>' + bar(b.time || (S.cur && S.cur.bots ? (S.cur.bots.find((x) => x.id === b.id) || {}).time : {}) || {}) + '</td></tr>').join('') + '</tbody></table>';
+  }
+  wire(pane);
+}
+function wire(pane) {
+  for (const tr of pane.querySelectorAll('tbody tr[data-id]')) tr.onclick = () => { const id = +tr.dataset.id; S.sel = S.sel === id ? -1 : id; draw(); table(); };
+  for (const tr of pane.querySelectorAll('tbody tr[data-m]')) tr.onclick = () => {
+    const i = +tr.dataset.m;
+    if (i < 0) watchLive(); else open(S.matches[i]);
+    S.tab = 'bots';
+    for (const o of document.querySelectorAll('[data-tab]')) o.setAttribute('aria-pressed', String(o.dataset.tab === 'bots'));
+    draw(); table();
+  };
+}
+// every match we know of: the live one, the game's finished ones this
+// session, and everything loaded
+function allMatches() {
+  const out = [];
+  if (S.live && S.frame) out.push({ i: -1, m: { id: 'live', from: 'game', len: S.frame.t, winner: null, fun: null, timeKind: 'goal',
+    bots: S.frame.bots.map((b) => Object.assign({ siege: 0 }, b)), at: true } });
+  if (S.liveLog) for (const x of fromBotlog(S.liveLog, 'game').slice(1)) out.push({ i: null, m: x });
+  S.matches.forEach((m, i) => out.push({ i, m }));
+  return out;
+}
+function stats() {
+  const ms = allMatches();
+  if (!ms.length) return '<div id="empty">No matches yet.</div>';
+  const by = new Map();
+  for (const { m } of ms) for (const b of m.bots) {
+    let r = by.get(b.level);
+    if (!r) by.set(b.level, r = { level: b.level, n: 0, k: 0, d: 0, dmg: 0, siege: 0, goal: {}, act: {} });
+    r.n++; r.k += b.kills | 0; r.d += b.deaths | 0; r.dmg += b.dmgOut | 0; r.siege += b.siege | 0;
+    const into = m.timeKind === 'act' ? r.act : r.goal;
+    for (const g in b.time || {}) into[g] = (into[g] || 0) + b.time[g];
+  }
+  const rows = [...by.values()];
+  for (const r of rows) r.time = Object.keys(r.goal).length ? r.goal : r.act;
+  const funs = ms.map((x) => x.m.fun).filter((f) => f != null);
+  // each goal's (or activity's) share of all the time logged, biggest first
+  const shares = (head, maps) => {
+    const sum = {};
+    for (const mp of maps) for (const g in mp) sum[g] = (sum[g] || 0) + mp[g];
+    let tot = 0; for (const g in sum) tot += sum[g];
+    if (!tot) return '';
+    return '<div class="sec">' + head + '</div><table><tbody>' + Object.keys(sum).sort((a, b) => sum[b] - sum[a]).map((g) =>
+      '<tr><td style="color:' + gc(g) + '">' + esc(g) + '</td><td class="n">' + Math.round(100 * sum[g] / tot) + '%</td><td><span class="bar" style="width:200px"><i style="width:' +
+      (100 * sum[g] / tot).toFixed(1) + '%;background:' + gc(g) + '"></i></span></td></tr>').join('') + '</tbody></table>';
+  };
+  return '<div class="sec">BY LEVEL  ' + ms.length + ' match' + (ms.length > 1 ? 'es' : '') +
+    (funs.length ? '  fun ' + Math.round(funs.reduce((a, b) => a + b, 0) / funs.length) : '') + '</div>' +
+    '<table><thead><tr><th>LEVEL</th><th class="n">BOTS</th><th class="n">K</th><th class="n">D</th><th class="n">K/D</th><th class="n">DMG</th><th class="n">SIEGE</th><th>TIME SPENT</th></tr></thead><tbody>' +
+    rows.map((r) => '<tr><td>' + esc(r.level) + '</td><td class="n">' + r.n + '</td><td class="n">' + (r.k / r.n).toFixed(1) + '</td><td class="n">' + (r.d / r.n).toFixed(1) +
+      '</td><td class="n">' + (r.k / Math.max(1, r.d)).toFixed(2) + '</td><td class="n">' + Math.round(r.dmg / r.n) + '</td><td class="n">' + Math.round(r.siege / r.n) +
+      '</td><td>' + bar(r.time) + '</td></tr>').join('') +
+    '</tbody></table>' + shares('GOALS', rows.map((r) => r.goal)) + shares('ACTIVITY', rows.map((r) => r.act)) + '<div class="sec">MATCHES</div><table><thead><tr><th>MATCH</th><th>FROM</th><th class="n">LENGTH</th><th>WINNER</th><th class="n">FUN</th><th class="n">KILLS</th></tr></thead><tbody>' +
+    ms.map(({ i, m }) => '<tr' + (i !== null && m.at ? ' data-m="' + i + '"' : '') + (m === S.cur || (i === -1 && S.cur === 'live') ? ' class="sel"' : '') + '><td>' + esc(m.id) +
+      '</td><td class="muted">' + esc(m.from || '') + '</td><td class="n">' + mmss(m.len || 0) + '</td><td style="color:' + (m.winner == null ? 'inherit' : TEAM_COL[m.winner]) + '">' +
+      (m.winner == null ? '<span class="muted">none</span>' : m.winner ? 'blue' : 'red') + '</td><td class="n">' + (m.fun == null ? '' : m.fun) + '</td><td class="n">' +
+      m.bots.reduce((s, b) => s + (b.kills | 0), 0) + '</td></tr>').join('') + '</tbody></table>';
+}
+
+// the legend under the map
+$('legend').innerHTML = Object.keys(GOALS).filter((k) => !['SIEGE', 'WORK', 'MOVE'].includes(k)).map((k) => '<span style="--c:' + GOALS[k] + '">' + k + '</span>').join('');
+draw();
+</script>
+</body>
+</html>

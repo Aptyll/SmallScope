@@ -770,6 +770,7 @@ function render() {
   // the two debug views, above the lighting on purpose - see the banner
   if (settings.hitbox > 1 || window.DBG.showPaths) drawNavPaths(ox, oy, ex, ey);
   drawHitboxes(ox, oy, ex, ey);
+  drawBotLines(ex, ey); // F4: a line from each bot to what it is after (js/ui/botview.js)
 
   // Back to the screen, and the only place the two pixel spaces meet. The
   // blit is done in DEVICE pixels (identity transform) at k = zoom * devScale
@@ -790,6 +791,7 @@ function render() {
 
   renderWeather(ex, ey);
   renderVignettes();
+  if (!window.DBG.hideUI) drawBotTags(); // F4: each bot's goal under its feet, under the HUD (js/ui/botview.js)
   replayTick(now); // banks the finished world frame - must stay above renderUI
   // what the pointer is on, resolved ONCE per frame, before the UI draws
   // (see the tooltips banner, ui.js)
@@ -816,6 +818,7 @@ function render() {
   if (state.mode === 'dead') renderDead(now);
   // the tooltip owns the bottom-left corner while it is up; it draws in every
   // mode, since the tech tree on the title screen is read through it too
+  if (!window.DBG.hideUI) drawBotView(); // F4: the table and the hovered bot's card (js/ui/botview.js)
   if (!window.DBG.hideUI && !endScreen()) drawTooltip();
   if (scoreboardOpen()) renderScoreboard();
   if (!window.DBG.hideUI) drawTags();

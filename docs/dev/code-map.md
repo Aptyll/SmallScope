@@ -774,6 +774,15 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a card's handles: delete, the name typed in place, carrying it to another slot | `svDelRect`/`savesDelete`, `svNameRect`/`savesEditStart`/`savesEditEnd`/`savesEditKey` (routed first in `keyPress`, input.js), `SV_NAME_MAX`, `savesDragTick`/`savesCarrying`/`savesCanMove`/`savesMove`, `SV_DRAG_PX` (storage: `PROFILE.putSaveMeta`/`swapSaves`, profile.js; the name: `saveTitleOf`, save.js) | `saves screen` |
 | the pixels: a slot's thumbnail, a card, the autosave glyph, the verb's arrow, the X and the pencil, the grid, the lobby's plate; the HUD's saved mark | `saveThumb`, `drawSaveCard`, `drawThumbBadge`, `drawAutoGlyph`, `drawVerbArrow`, `drawSaveX`, `drawSavePencil`, `renderSaves`, `drawSavesPlate`, `drawSaveFlash` (called after `renderUI`, render.js) | `saves screen` |
 
+## js/ui/botview.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what a bot is thinking, read one way for every caller: the brain's `p.ai.thought` when it wrote one, else a guess off the ladder's state (marked `guess`, drawn with a `?`), the goal colours, a firing bot's target | `botThought`, `botGuess`, `botAimed`, `BOT_GOALS`/`botGoalCol`, `botIsBot`, `botLevel` | `bot thoughts` |
+| the recorder: every goal change, a sample a second, the seconds each bot spent on each goal, a finished match's summary, the export the page saves | `BOTLOG`, `botLogStep` (from `updatePlay`, sim.js), `botLogReset`, `botRow`, `botMatchSummary`, `botLogExport` | `bot recorder` |
+| F4's two layers: the line to each bot's target (world pass, after `drawHitboxes`), the goal under each bot, the hovered bot's card, the table with its per-level footer | `botView`/`botViewStep` (F4 in `keyPress`, input.js), `drawBotLines`, `drawBotTags` (under the HUD), `drawBotView` (over it; all three called from `render`, render.js), `drawBotCard`, `drawBotPanel`, `botLevelRows`, `botBar` | `bot view` |
+| F6: the out-of-game page opened as this window's child, its hello and save requests, the frames it is sent | `openBotLab`, `botLabPump`, `BOTLAB_T` (the page: [botlab.html](../../botlab.html)) | `bot lab link` |
+
 ## js/boot.js
 
 | Looking for | Start at | Banner |
