@@ -360,8 +360,9 @@ can never perturb the shared `rng` stream and terrain stays bit-identical for an
 on both maps (its `mm`/`map` entry), and one free E press (`OPEN`, `needs: null`) springs it —
 `hitObject`'s chest branch pays `CHEST_GOLD_MIN`–`CHEST_GOLD_MAX` (8–20) gold on the spot, drops one
 card rolled from `CHEST_ODDS` (those constants beside `placeChests`) and, `CHEST_TOOL` (0.75,
-js/tools.js) of the time, a **top-tier** tool or bit through `dropLoot` — the one place the top
-tier is found. The tile empties with
+js/tools.js) of the time, a tool or bit of any tier up to the top through `dropLoot` — the same
+roll a SUNSTONE rock makes every time it breaks
+([where tools and bits come from](gameplay.md#where-tools-and-bits-come-from)). The tile empties with
 it, leaving a one-tile notch in the treeline where the cache was dug out. The sprite bakes in
 [js/draw/ground.js](../../js/draw/ground.js) (`CHEST_SPR`, under the `the scenery bakes` banner) rather than
 in the byte-fragile grid files under js/sprites/.

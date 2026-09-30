@@ -818,7 +818,7 @@ const scenes = [
       const c = __M.tile(W.lane.tx, W.lane.ty);
       // Three buried caches out of the treeline, stood in a row on open snow
       // in front of it so each spill reads: gold straight into the purse, a
-      // card, and the one place a TOP-tier tool or bit is found (hitObject's
+      // card, and a tool or bit rolled up to the TOP tier (hitObject's
       // chest branch, js/actions.js). A chest is an AUTO target, so the hands
       // spring each one the moment it is in reach.
       const row = [-6, -1, 4];

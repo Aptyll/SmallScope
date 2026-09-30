@@ -586,8 +586,8 @@ function hitObject(o, p) {
   } else if (o.type === 'chest') {
     // a buried cache in the treeline (placeChests, js/world.js): one free E
     // press springs it - gold straight into the purse, a card drop rolled
-    // from CHEST_ODDS, and the one place a TOP-tier tool or bit is found (a
-    // rock and a felled tree only ever pay out the bottom tier). The tile
+    // from CHEST_ODDS, and a tool or bit rolled up to the TOP tier - the same
+    // roll a sunstone makes (a felled tree only pays the bottom tier). The tile
     // opens with it, so a sprung chest leaves a gap in the forest wall.
     objects[idx(o.tx, o.ty)] = null;
     sfxAt('stash', ox, oy);

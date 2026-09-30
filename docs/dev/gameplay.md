@@ -266,7 +266,8 @@ the throw and the refusal flash work on tools and bits with no storage code of t
 **There is ONE weapon slot** (`p.tools`, `TOOL_SLOTS` = 1 — the array and the drag plumbing stay
 generic over it), and the left button fires it. Keys 1-4 belong to the
 [class abilities](#class-abilities-keys-1-4). The slot holds a **tool**; a tool holds
-**bits**; the bits are what actually fly. Both are found in the world, never bought, and both are
+**bits**; the bits are what actually fly. Both are found in the world or bought at
+[the counter](#the-merchants-counter), and both are
 carried items you can drag around — so the weapon is a thing a player assembles rather than a
 thing they are issued.
 
@@ -695,6 +696,15 @@ bit, and only kinds at or under the given tier are in the pool.
 | a felled tree | `TREE_DROP` 0.04 | 0 |
 | a sprung chest | `CHEST_TOOL` 0.75 | up to 2 |
 
+**The tier is a ceiling, not a floor.** The kind is picked evenly from everything at or under it
+(`LOOT_POOL`, [the wiki](#the-wiki)), so a roll at tier 2 mostly turns up tier-0 and tier-1 kinds,
+and the top tier is the smaller share of what it can give. A SUNSTONE and a chest roll that same
+pool, and the rock always rolls where the chest rolls `CHEST_TOOL` of the time, so **a SUNSTONE
+turns up a top-tier kind more often than a chest does** — and grows back
+([Mining a rock](#mining-a-rock)), where a chest is gone for the match. What only a chest pays is
+its card ([Roguelike cards](#roguelike-cards)). The [counter](#the-merchants-counter) sells every
+tier beside all of them.
+
 **A found bit arms itself.** The pack is the overflow, not the destination: a bit walked over
 (or bought over the counter) goes into a free cell of the tool, and only what the tool cannot
 hold lands in the grid. **Anywhere it lands, it works** (`fitBit`): it takes a free cell and
@@ -709,8 +719,8 @@ whatever the load (a heavy build only pulls slower, and one click sends a bit ba
 and a **bot is left out** — `botFitLoadout` does this for them on its own timer and is choosier
 about it, so a pickup that shoved a bit into a bot's tool would only make it a worse shot.
 
-So the bottom tier lies around loose and the good stuff is in the treeline's chests. A found tool
-comes out **empty** — its bits are the next thing to find.
+So the bottom tier lies around loose in the stone and the pines, the middle tier in the frostglass,
+and the top tier in the sunstone and the chests. A found tool comes out **empty** — its bits are the next thing to find.
 
 **And a strictly better body takes the build with it.** A tool walked over swaps itself straight
 into the hand when two things are true at once: its **tier is higher** than the one held, and its
@@ -1762,7 +1772,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | brown bear | `dire` 6 coins × 15 → 90 | the den's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | generator | `tiers[tier].pay` every `period` s: 1/15, 1/10, 2/12 — 4 / 6 / 10 a minute | passive income, deposited to its owner; sized under the clock's own 15 so a farm of them never out-trickles the trickle |
-| chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a **top-tier** tool or bit | ~14 caches along the treeline, one free E press — the only source of the best weapons |
+| chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
 | a sale at [the counter](#the-merchants-counter) | half a made thing's price, or the live market price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
 The table is sized so that a

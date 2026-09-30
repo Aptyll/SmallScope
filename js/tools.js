@@ -1125,10 +1125,11 @@ function noteSeen(p, type) {
 // `loot` and `lootTier`, ROCK_KINDS in js/mining.js - a stone turns up the
 // bottom tier, a sunstone always turns up something) and a felled tree the
 // rare one, all rolling on the shared rng at the moment the work lands (never
-// inside genWorld - see the seed rule in CLAUDE.md). The best of it is in
-// the chests.
+// inside genWorld - see the seed rule in CLAUDE.md). A tier is a ceiling:
+// a sunstone and a chest both roll up to the top, and the sunstone always
+// rolls, so it turns up the top tier more often than a chest does.
 const TREE_DROP = 0.04;  // 1 in 25 felled trees
-const CHEST_TOOL = 0.75; // ...and three in four sprung chests, at the TOP tier
+const CHEST_TOOL = 0.75; // ...and three in four sprung chests, up to the TOP tier
 const LOOT_TOOL = 0.3;   // this share of any of those is a tool, the rest bits
 // Every kind at or under `tier`, split into the two pools. The whole arsenal
 // is unlocked, so this is one list per tier built at boot rather than a filter
