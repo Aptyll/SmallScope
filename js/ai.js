@@ -599,13 +599,12 @@ function aiThink(p, dt) {
   // slower for one outside the cone it is watching (skillNotice)
   const noticeRate = skillNotice(p, prof, foe);
   ai.seeT = foe ? ai.seeT + dt * noticeRate : Math.max(0, ai.seeT - dt * 2);
-  // the siege: a pusher AT the rival roost whose side outnumbers the
-  // defenders there keeps hitting the bird and leaves the fight to its
-  // friends - defenders come back from sixty pixels away every few seconds,
-  // and a push that turns to meet each one never lands a swing - unless a
+  // the siege: a pusher AT the rival roost keeps hitting the bird and leaves
+  // the fight to its friends, however many defenders there are - they
+  // respawn at their bird, so a push that turns to meet each one never
+  // lands a swing (and no push ever outnumbers them for long) - unless a
   // rival is at arm's length (AI_SIEGE_R), which is a rival it cannot ignore
-  const siege = pushE && theirs && theirs.attackers > theirs.defenders &&
-    Math.hypot(theirs.e.x - p.x, theirs.e.y - p.y) < AI_ROOST_R;
+  const siege = pushE && theirs && Math.hypot(theirs.e.x - p.x, theirs.e.y - p.y) < AI_ROOST_R;
   // a RALLY is a disengage: on the way to one only a rival at arm's length is fought
   const rally = order && order.type === 'rally';
   // the CHARGE: a relentless side on its push fights only what is at arm's

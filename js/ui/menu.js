@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.68';
+const PATCH_TXT = 'PATCH 4.69';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.69', 'A BOT THAT REACHES YOUR BIRD KEEPS HITTING IT INSTEAD OF TURNING TO FIGHT EVERY DEFENDER, SO YOU HAVE TO STOP IT YOURSELF.'],
   ['4.68', 'A BEAR ROARS WHEN YOU WAKE IT, INSTEAD OF HOWLING LIKE A WOLF.'],
   ['4.67', 'BOTS MEET A PUSH AT HOME INSTEAD OF IN THE MIDDLE, AND WHEN THEY BEAT IT THEY ALL COUNTER-PUSH AT ONCE.'],
   ['4.66', 'BOTS STOP DITHERING AND STOP OVERBUILDING: THEY BUY A GENERATOR ONLY WHILE IT CAN STILL PAY ITSELF OFF, ANSWER YOUR FLAG ONE AT A TIME (ONE STAYS HOME AND SAYS GUARDING WHEN YOUR BIRD IS HIT), AND PUSHERS WALK PAST A WAVE FIGHT INSTEAD OF STALLING IN IT.'],
