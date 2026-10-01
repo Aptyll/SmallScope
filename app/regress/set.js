@@ -8,7 +8,7 @@
 // `maxMin` cuts a match at that many minutes of match clock; a cut match is
 // a 'timeout' with no winner, and its numbers still compare (fun, kills,
 // damage, nerve) patch against patch. `level` is an AI_LEVELS index (js/ai-skill.js: 0 EASY, 1 NORMAL, 2 HARD,
-// 3 IMPOSSIBLE; EASY arrived in 4.53, which moved every key up one).
+// 3 IMPOSSIBLE; EASY arrived in 4.54, which moved every key up one).
 
 const MATCHES = [
   { seed: 1, shape: 0, kind: 'level', level: 1, maxMin: 6 },   // OPEN FIELD, NORMAL
