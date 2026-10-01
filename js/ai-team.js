@@ -112,6 +112,7 @@ const AI_GRUDGE_N = 2;      // times a bot downs the same rival in a match befor
 const AI_GRUDGE_T = 90;     // s a grudge lasts: the side's stalker job goes to it, on its mark
 const AI_BRACE_N = 2;       // rivals seen on the side's half that make a push worth bracing for
 const AI_BRACE_T = 4;       // s a sighting counts toward a brace
+const AI_GUARD_HOT = 60;    // s since its bird was last hit that a side keeps all its profile's guards home
 const AI_BRACE_HOLD = 8;    // s the side stays braced after the last sighting
 const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the judge)
 
@@ -170,10 +171,14 @@ function aiPlan(team) {
     T.braceT = Math.max(0, T.braceT - AI_PLAN_T);
     if (T.braceT <= 0 && theirs && aiDownCount(1 - team) > aiDownCount(team)) T.winT = AI_WINDOW_MIN;
   }
+  // (the profile's guards stay home only while the bird has been hit in the
+  // last AI_GUARD_HOT; a quiet bird keeps one, and a brace calls home as many
+  // pushers as there are rivals coming, the rest pressing on)
   let nPush = aiPushers(prof);
-  let nGuard = state.elapsed >= prof.push.t * 0.6 ? prof.guard : 0;
+  const hot = mine && mine.hitT < AI_GUARD_HOT;
+  let nGuard = state.elapsed >= prof.push.t * 0.6 ? (hot ? prof.guard : Math.min(prof.guard, 1)) : 0;
   if (T.winT > 0) nPush = Math.max(nPush, bots.length - nGuard);
-  else if (T.braceT > 0) { nGuard += nPush; nPush = 0; }
+  else if (T.braceT > 0) { const home = Math.min(nPush, T.braceN); nGuard += home; nPush -= home; }
   nPush = Math.min(nPush, bots.length);
   const want = [];
   for (let i = 0; i < nPush; i++) want.push('pusher');
