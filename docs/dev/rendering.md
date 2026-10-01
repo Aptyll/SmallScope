@@ -1280,14 +1280,21 @@ it, the replay keeps recording and the recap waits; then the view hands over to 
 
 ## Damage feedback
 
-`addDmgFloater(x, y, amount, taken)` pushes a combat damage number into the shared `floaters`
-array: **gold** for damage dealt (arrows, whoever fired them), **red `-N`** for damage the local
-player takes (`damagePlayer`). Numbers of 10+
-render at 2× scale, and each gets a small random x-drift so rapid repeat hits stay readable.
-Floater entries carry optional `vx`/`scale`/`rise` fields honored by the floaters render pass;
-plain `addFloater` entries default to the old look. Units also flash white on hit via
-`drawSpriteFlash` (0.8-alpha overlay). Hits on **structures** intentionally get no numbers;
-structures show flash, shake, and damage cracks instead.
+Combat damage is **one running total per body**, never a number per hit. `tallyHit(u, amount)`
+(js/core.js, called by `damagePlayer`, `hurtAnimal`, `hurtRobot`, the building blows and the
+dummy) adds the hit to `u.tallyN` and stamps `u.tallyTick` with `state.tick`; a hit after
+`TALLY_HOLD` (1 s) of quiet starts a new total. Both are fields on the body, so a save and a
+snapshot carry them and a client fades a total on the host's tick. The total stands **hard
+against the frame's right edge** (past the colour-blind cap or the stun plate when one is up),
+centred on the health bar, in **that bar's colour** (`barCol`: a blue player's damage is blue, a
+beast's gold), holds `TALLY_HOLD`, then fades over `TALLY_FADE`. Its size is `TALLY_SC` (1.25)
+world px per font px, and `TALLY_POP_SC` (1.5) for the `TALLY_POP` instant a hit adds to it,
+which no world pixel can take: so `drawHealthBar(…, u)` and a player's frame only **queue** it
+(`queueTally`, with the frame's alpha), and `drawTallies(kPx)` stamps the queue on the screen
+right after the world blit, as the world-1x outlined number scaled whole into device px, crisp
+at any zoom and under the HUD. A player who goes down gets no `NAME DOWN` in the air: the feed
+says it and the fall shows it. Units also flash white on hit via `drawSpriteFlash` (0.8-alpha
+overlay).
 
 ## Debug overlays: hitboxes and routes
 

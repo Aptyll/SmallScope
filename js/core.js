@@ -350,19 +350,19 @@ function addFloater(x, y, txt, color) {
   floaters.push({ x, y, txt, color: color || '#ffffff', t: 0 });
 }
 
-// combat damage numbers: gold for damage the player's side deals, red '-N'
-// for damage taken. Heavy hits (10+) render at 2x; a little random drift
-// keeps rapid repeat hits from stacking into one unreadable pile.
-function addDmgFloater(x, y, amount, taken, crit) {
-  evPush('dmg', [x, y, amount, taken, crit]);
+// Combat damage is ONE running total per body, worn beside its health bar
+// (drawTally, js/draw/overhead.js) in that bar's colour: each hit adds to it,
+// and a hit after TALLY_HOLD s of quiet starts a new one. A number per hit,
+// rising out of the body, buried a bear under its own fight. The total and
+// the tick of its last hit live on the body, so a save and a snapshot carry
+// them like any other field, and the tick is the sim's, so a client fades it
+// exactly as the host does.
+const TALLY_HOLD = 1.0;  // s a total stands after its last hit (and the gap that starts a new one)
+function tallyHit(u, amount) {
   const n = Math.max(1, Math.round(amount));
-  floaters.push({
-    x: x + rand(-3, 3), y,
-    txt: taken ? '-' + n : String(n),
-    // a crit keeps the red-taken / gold-dealt language and runs hotter inside it
-    color: taken ? (crit ? '#ff9a6a' : '#ff6a5a') : (crit ? '#fff0b0' : '#ffd95c'),
-    t: 0, vx: rand(-9, 9), scale: crit || n >= 10 ? 2 : 1, rise: crit ? 27 : 20,
-  });
+  if (!u.tallyN || (state.tick - u.tallyTick) * TICK_DT > TALLY_HOLD) u.tallyN = 0;
+  u.tallyN += n;
+  u.tallyTick = state.tick;
 }
 
 // an ambush arrow landing, on whatever it lands on: a gold flare over the

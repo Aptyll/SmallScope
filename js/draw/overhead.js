@@ -129,13 +129,63 @@ function evenBarW(w) {
   while (w > 5 && !hpSegCount(HP_SEG * 2, w)) w--;
   return w;
 }
+// ---- the running damage total beside the bar ----
+// A body's hits since its last quiet (tallyHit, js/core.js) stand as one
+// number hard against its frame's right edge, centred on the health bar, in
+// that bar's colour - a blue player's damage is blue, a beast's gold - and
+// one beat bigger for the instant a hit adds to it. It holds TALLY_HOLD s
+// after the last hit, then fades over TALLY_FADE.
+// The size is 1.25 world px per font px, a step no world pixel can take, so
+// a frame drawer only QUEUES it (queueTally) with the body's frame alpha,
+// and drawTallies stamps the queue on the screen after the world is blitted:
+// the world-1x outlined number scaled whole into device px, crisp at any
+// zoom, under the HUD.
+const TALLY_FADE = 0.3, TALLY_POP = 0.08; // s
+const TALLY_SC = 1.25, TALLY_POP_SC = 1.5; // world px per font px, resting and the instant a hit lands
+const tallyQueue = [];
+const tallyInk = new Map(); // 'text|colour' -> the outlined number at world 1x
+function queueTally(u, rx, cy, col) {
+  if (!u.tallyN || ctx !== wctx) return; // a UI pass (the wiki's beasts) has no fight to total
+  const age = (state.tick - u.tallyTick) * TICK_DT;
+  if (age > TALLY_HOLD + TALLY_FADE || age < 0) return;
+  const a = age < TALLY_HOLD ? 1 : 1 - (age - TALLY_HOLD) / TALLY_FADE;
+  tallyQueue.push(u.tallyN, rx, cy, col, a * ctx.globalAlpha, age < TALLY_POP);
+}
+function tallyImg(txt, col) {
+  const key = txt + '|' + col;
+  let c = tallyInk.get(key);
+  if (c) return c;
+  if (tallyInk.size > 256) tallyInk.clear();
+  c = document.createElement('canvas');
+  c.width = pixelTextWidth(txt) + 2; c.height = 7;
+  drawPixelTextOutline(c.getContext('2d'), txt, 1, 1, col, '#0f1632');
+  tallyInk.set(key, c);
+  return c;
+}
+// on the screen canvas at the identity transform, k device px per world px
+function drawTallies(k) {
+  for (let i = 0; i < tallyQueue.length; i += 6) {
+    const img = tallyImg(String(tallyQueue[i]), tallyQueue[i + 3]);
+    const s = Math.max(1, Math.round(k * (tallyQueue[i + 5] ? TALLY_POP_SC : TALLY_SC)));
+    ctx.globalAlpha = tallyQueue[i + 4];
+    ctx.drawImage(img, Math.round(tallyQueue[i + 1] * k), Math.round(tallyQueue[i + 2] * k - img.height * s / 2), img.width * s, img.height * s);
+  }
+  ctx.globalAlpha = 1;
+  tallyQueue.length = 0;
+}
+
 // small overhead bar shared by every living unit, in its side's colour
 // (barCol - pass nothing for a thing with no side); col overrides it for a
 // bar that is not health at all (a wolf's threat, a regrow clock). In the
 // world it is a plate (overheadPlate, js/draw/light.js): stamped over the
 // grade, in the bodies' order, never cut by what stands in front of it.
-function drawHealthBar(cxp, topY, hp, maxHp, w, team, col) {
-  overheadPlate(() => healthBarPx(cxp, topY, hp, maxHp, w, team, col));
+// `u`, the body the bar is over, hangs its running damage total off the
+// bar's right end (queueTally); a player's frame hangs its own.
+function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u) {
+  overheadPlate(() => {
+    healthBarPx(cxp, topY, hp, maxHp, w, team, col);
+    if (u) queueTally(u, Math.round(cxp - w / 2) + w + 1 + (foeCue(team) ? 1 : 0), Math.round(topY) + 1, barCol(team));
+  });
 }
 function healthBarPx(cxp, topY, hp, maxHp, w, team, col) {
   const x = Math.round(cxp - w / 2), y = Math.round(topY);
@@ -250,7 +300,7 @@ function drawBarracksOverlay(o, px, sy, now) {
   ctx.fillStyle = '#1c2130'; ctx.fillRect(px + 44, sy - 4, 2, 5); ctx.fillRect(px + 42, sy - 7, 6, 4);
   ctx.fillStyle = o.queue > 0 ? (Math.floor(now * 4) % 2 ? '#ff9a3c' : '#7a3a1c') : '#6c7486';
   ctx.fillRect(px + 43, sy - 6, 4, 2);
-  if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team);
+  if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team, undefined, o);
 }
 
 // Everything the bay animates or reports, drawn over the baked sprite. Bay

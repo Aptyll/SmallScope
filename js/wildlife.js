@@ -162,7 +162,7 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   if (isCampKind(a.kind)) wakeCamp(a, players[owner]);
   else if (a.kind === 'bird') flushBirds(a.home, a);
   else { a.fleeT = a.kind === 'rabbit' ? 1.4 : 2.2; a.alertT = 0; } // a hit rabbit goes NOW; it does not stop to sit up
-  addDmgFloater(a.x, a.y - (a.alt || 0) - 12, dmg, false, ambush);
+  tallyHit(a, dmg); // an ambush still lands with its own flare and crack (ambushFx, below)
   a.kbx = nx * kb; a.kby = ny * kb;
   burst(a.x, a.y - (a.alt || 0) - 4, HIT_PUFF[a.kind] || '#8f582f', 6, 40, 0.4);
   if (ambush) ambushFx(a.x, a.y - (a.alt || 0) - 4);

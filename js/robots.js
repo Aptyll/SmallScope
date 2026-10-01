@@ -63,7 +63,7 @@ function hurtRobot(b, dmg, nx, ny, src) {
   b.hp -= dmg;
   b.flash = 0.12;
   b.kbx = nx * ROBOT_KB; b.kby = ny * ROBOT_KB;
-  addDmgFloater(b.x, b.y - 12, dmg);
+  tallyHit(b, dmg);
   burst(b.x, b.y - 2, '#c3c9d3', 6, 45, 0.35, true);
   burst(b.x, b.y - 2, '#ffb347', 3, 40, 0.3, true); // sparks off the plating
   sfxAt('hit', b.x, b.y);

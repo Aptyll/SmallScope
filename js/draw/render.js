@@ -528,7 +528,7 @@ function render() {
       const dx = px + sh + ((TILE - DUMMY_SPR.width) >> 1);
       const dy = py + TILE - DUMMY_SPR.height;
       drawSpriteFlash(DUMMY_SPR, dx, dy, o.flash);
-      if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20);
+      if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20, undefined, undefined, o);
       // the combo readout, above the bar's slot so neither ever covers the other
       drawDummyMeter(o, px + 8, dy - 10);
     } else if (o.type === 'cairn') {
@@ -648,7 +648,7 @@ function render() {
         // bar holding still over a wall that is rocking is a bar centred on
         // nothing. drawBayOverlay is handed `sx + sh` and has always done this.
         if (o.type !== 'spawner' && o.type !== 'barracks' && o.hp < o.maxHp) {
-          drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, evenBarW(Math.max(12, Math.min(24, spr.width - 4))), o.team);
+          drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, evenBarW(Math.max(12, Math.min(24, spr.width - 4))), o.team, undefined, o);
         }
       }
     }
@@ -792,6 +792,9 @@ function render() {
 
   renderWeather(ex, ey);
   renderVignettes();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  drawTallies(kPx); // the running damage totals the frames queued, crisp at any zoom (js/draw/overhead.js)
+  ctx.setTransform(devScale, 0, 0, devScale, 0, 0);
   if (!window.DBG.hideUI) drawBotTags(); // F4: each bot's goal under its feet, under the HUD (js/ui/botview.js)
   replayTick(now); // banks the finished world frame - must stay above renderUI
   // what the pointer is on, resolved ONCE per frame, before the UI draws
