@@ -198,6 +198,10 @@ function aiPlan(team) {
     roles[q.id] = r; order.push(q.id);
   }
   for (const q of free) { roles[q.id] = 'gatherer'; order.push(q.id); }
+  // the order aiRank reads: pushers, then guards, then everyone else (a
+  // grudge's stalker is handed out first, but never ranks ahead of them)
+  const pri = (id) => (roles[id] === 'pusher' ? 0 : roles[id] === 'guard' ? 1 : 2);
+  order.sort((a, b) => pri(a) - pri(b));
   T.roles = roles; T.order = order;
   // the stance, the one word the dashboard shows for the side
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
