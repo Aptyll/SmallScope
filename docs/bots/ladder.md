@@ -46,11 +46,18 @@ ladder-data/
   logs/<id>.json   the full match log (the format the bot lab reads; F6 in the game, or botlab.html)
   bots/<id>.js     the files you entered
   ladder.html      the standings page: open it straight off the disk
+  standings.json   the same numbers as the page, for scripts and agents
 ```
 
-The page shows the standings with each bot's rating over its matches, a head-to-head table
-(row's win % against the column), and every match with its log. Click a bot to see only its
-matches.
+The page: the standings (rating, its trend, the last five results, record, fun, errors), a card
+for the bot you click (peak rating, best and worst matchup) with the match list narrowed to it, a
+head-to-head table (each row's wins-losses-draws against each column), and every match with its
+log. HOW TO READ, top right, explains every column; every header also explains itself on hover.
+A bot whose code throws is flagged with its error count.
+
+**For scripts and agents:** read `standings.json`, or the `#ladder-data` JSON block inside the
+page; a comment at the top of the page lists every field. `rows` is the standings, best first;
+`history` is every match, oldest first; `glossary` is what each column means.
 
 ## Trust
 
