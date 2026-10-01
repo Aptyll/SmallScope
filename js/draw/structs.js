@@ -1,18 +1,83 @@
 'use strict';
-// A building's pixels: the turret's rotating half and its bolts, the bay
-// and barracks overlays, the net, and structSprite/drawTiledStruct - how a
-// tiered or multi-tile STRUCTS entry finds its sprite and lays it down.
-// ---- the turret's rotating half, the bay, the net and the tiled struct ----
-// The grid stops at the collar; the housing and barrel are rasterised pixel by
-// pixel at the live angle and dilated into a 1px dark rim - the same trick the
-// arrows use - so the gun stays crisp and readable at any bearing over snow.
-const TUR_METAL = [
-  { d: '#6b4a30', m: '#8a6142', l: '#a3794f' }, // tier 1: iron-banded timber
-  { d: '#666d84', m: '#8b93a8', l: '#a8b0c4' }, // tier 2: stone grey
-  { d: '#b9884f', m: '#d8a850', l: '#f2cc6a' }, // tier 3: gilt
+// A building's pixels: the turret's sling and its rocks, the bay and barracks
+// overlays, the net, and structSprite/drawTiledStruct - how a tiered or
+// multi-tile STRUCTS entry finds its sprite and lays it down.
+// ---- the turret's sling, its rocks, the bay, the net and the tiled struct ----
+// The BASE is baked per tier (js/sprites/buildings.js); the SLING above it is
+// not baked at all - it is rasterised pixel by pixel at the live bearing and
+// dilated into a 1px dark rim, the same trick the arrows use - so the fork
+// stays crisp and readable at any bearing over snow, and a baked grid cannot
+// lock it to one angle.
+//
+// IT IS A PART TABLE, not a wall of loops. Each row of SLING is one piece: `k`
+// its shape, `c` its ink, `mir` mirrors it across the throw's line (a fork has
+// two arms, and one row draws both), `when` names a state flag the piece needs.
+// Coordinates are sling-local px - `f` ALONG the throw, 0 at the pivot and +
+// toward the mark, `s` ACROSS it, - to the left, which is the lit side - and a
+// coordinate given as a STRING is read out of the frame's state instead, so the
+// whole ANIMATION is the four numbers slingState() works out and the table
+// itself never moves. Retuning the fork is editing a row; adding a piece is
+// adding one.
+const SL_MOUTH = 6;     // px along the throw the loaded pouch rests at, low in the fork
+const SL_DRAW = 9;      // ...and px it is drawn back over a full draw
+const SL_FLY = 5;       // ...and px past the rest it is flung on the release
+const SL_FLARE = [7, 7, 9];   // px the fork's arms spread either side, one per tier
+// One row per piece of the sling, read top to bottom (later writes win, so the
+// table paints back to front). `k` is the shape, `c` the ink, `mir` mirrors the
+// row across the throw's line (a fork has two arms, and one row draws both),
+// `when` names a state flag the piece needs and `from` the first TIER it
+// appears at - which is the whole of how the three forks differ: tier 1 is a
+// bare stick, tier 2 binds and paints it, tier 3 ties and crowns it.
+// Coordinates are sling-local px: `f` ALONG the throw (0 at the pivot, + toward
+// the mark), `s` ACROSS it (- to the left, which is the lit side). A
+// coordinate given as a STRING is read out of the frame's state instead (a
+// leading '-' negates it), so the whole ANIMATION and the per-tier GEOMETRY are
+// the numbers slingState() works out and the table itself never moves.
+const SLING = [
+  // the TURNTABLE: the timber deck the whole fork stands on and turns with
+  { k: 'ell', f: -1, s: 0, af: 5, as: 4, c: 'lit' },
+  { k: 'box', f0: 1, f1: 2, s0: -4, s1: 4, c: 'lit' },           // the deck's front lip, lit
+  { k: 'box', f0: -6, f1: -5, s0: -3, s1: 3, c: 'team' },        // a stripe of the side's coat at the back
+  { k: 'dot', f: -5, s: 0, c: 'mark' },                          // ...with its own ink in it
+  { k: 'dot', f: 0, s: -3, c: 'ironL', mir: true },              // two bolts through the deck
+  // TIER 2 up: an iron rim round the deck's shoulder
+  { k: 'seg', f0: -5, s0: 4, f1: 2, s1: 3, c: 'iron', mir: true, from: 1 },
+  // TIER 3: the rim carries on round the back, and the deck is studded
+  { k: 'seg', f0: -5, s0: 4, f1: -6, s1: 1, c: 'iron', mir: true, from: 2 },
+  { k: 'dot', f: -2, s: 3, c: 'trim', mir: true, from: 2 },
+  // the STANCHION: the block the arms rise out of
+  { k: 'box', f0: 2, f1: 5, s0: -2, s1: 2, c: 'lit' },
+  { k: 'box', f0: 3, f1: 5, s0: -2, s1: -2, c: 'trim' },         // its lit edge
+  { k: 'box', f0: 2, f1: 2, s0: -2, s1: 2, c: 'team', from: 1 }, // a painted collar at its foot
+  // the ARMS: two timbers flaring out to the fork's mouth, whose reach is the
+  // tier's own (TUR_MOUTH, js/structures.js - the rock leaves from exactly there)
+  { k: 'seg', f0: 3, s0: 2, f1: 'af', s1: 'as', c: 'lit', w: 1, mir: true },
+  { k: 'dot', f: 'mf', s: 'ms', c: 'team', mir: true, from: 1 }, // a wrap halfway up each arm
+  { k: 'dot', f: 'mf1', s: 'ms', c: 'mark', mir: true, from: 2 },
+  { k: 'dot', f: 'mf1', s: 'ms1', c: 'cord', mir: true, from: 2 },  // the lashing's loose end
+  { k: 'box', f0: 'af1', f1: 'af', s0: 'as1', s1: 'as', c: 'ironL', mir: true }, // the binding at each tip
+  { k: 'dot', f: 'af', s: 'as', c: 'iron', mir: true },          // ...and its shadowed corner
+  { k: 'dot', f: 'af1', s: 'fs', c: 'trim', mir: true, from: 2 }, // TIER 3: a carved finial past it
+  { k: 'dot', f: 'af2', s: 'fs', c: 'iron', mir: true, from: 2 },
+  // THE SLING: two cords off the tips down to the pouch, and the stone in it
+  { k: 'seg', f0: 'af1', s0: 'as1', f1: 'pf', s1: 0, c: 'cord', mir: true },
+  { k: 'box', f0: 'pf', f1: 'pf', s0: -1, s1: 1, c: 'hide' },
+  { k: 'box', f0: 'pf1', f1: 'pf2', s0: -1, s1: 0, c: 'stone', when: 'loaded' },
+  { k: 'dot', f: 'pf1', s: -1, c: 'stoneL', when: 'loaded' },
+  { k: 'dot', f: 'pf2', s: 0, c: 'stoneD', when: 'loaded' },
 ];
+// One row a tier, and the base under it climbs the same three timbers
+// (TUR_PALS, js/sprites/buildings.js): pine, oak, tarred oak.
+const SLING_WOOD = [
+  { wood: '#8a6142', woodL: '#a3794f', woodD: '#6b4a30', cord: '#cfc6a8', hide: '#7a5a3e' },
+  { wood: '#7a5636', woodL: '#966e46', woodD: '#5a3f28', cord: '#ddd4b6', hide: '#6b4a30' },
+  { wood: '#5f4028', woodL: '#7d5638', woodD: '#412a1a', cord: '#eee2bc', hide: '#4e3421' },
+];
+const ROCK_INK = { l: '#c9d0e2', m: '#98a0b4', d: '#6b7286' };
+const TUR_ARC = 22;    // dashes the aim arc is walked in
+const TUR_LET = 0.55;  // of o.rec the cords are still drawn snapping across the mouth
 const TUR_RIM = '#0d1226';
-// shared by the head and its bolts: plus-dilate the pixel map into a dark rim,
+// shared by the sling and its rocks: plus-dilate the pixel map into a dark rim,
 // paint the rim, then the body over it
 function paintRimmed(body) {
   const rim = new Set();
@@ -25,87 +90,146 @@ function paintRimmed(body) {
   for (const k of rim) { const i = k.indexOf(','); ctx.fillRect(+k.slice(0, i), +k.slice(i + 1), 1, 1); }
   for (const [k, col] of body) { const i = k.indexOf(','); ctx.fillStyle = col; ctx.fillRect(+k.slice(0, i), +k.slice(i + 1), 1, 1); }
 }
+// What this frame's sling looks like. The pouch is the whole of the animation:
+// it slides BACK along the throw as the sling loads (o.chg), is flung out past
+// the fork's mouth on the release (o.rec, one timer for both the snap and the
+// flash), and is home a breath later with the next stone in it.
+function slingState(o) {
+  const chg = o.chg || 0, rec = o.rec || 0;
+  const tier = Math.min(SLING_WOOD.length - 1, o.tier || 0);
+  const pf = Math.round(rec > 0 ? SL_MOUTH + SL_FLY * rec : SL_MOUTH - SL_DRAW * chg);
+  // the fork: as long as the tier throws from (TUR_MOUTH) and as wide as the
+  // tier is built, with the mid-arm wrap and the finial placed off those two
+  const af = TUR_MOUTH[tier], as = SL_FLARE[tier];
+  const mf = Math.round(3 + (af - 3) * 0.55), ms = Math.round(2 + (as - 2) * 0.55);
+  return {
+    tier: tier,
+    wood: SLING_WOOD[tier],
+    tm: TEAMS[skin(o.team === undefined ? 0 : o.team)],
+    af: af, af1: af - 1, af2: af - 2, as: as, as1: as - 1, fs: as + 1,
+    mf: mf, mf1: mf + 1, ms: ms, ms1: ms + 1,
+    pf: pf, pf1: pf + 1, pf2: pf + 2,
+    loaded: rec <= 0,      // the stone is in the pouch until it is thrown
+    ready: chg > 0.97,     // ...and the cords go the side's own colour, taut
+  };
+}
+// a part's ink, by role and by which side of the throw the pixel is on: the
+// timber and the team band are both lit from the left, like the rest of the art
+function slingInk(st, role, sd) {
+  const W = st.wood, tm = st.tm;
+  switch (role) {
+    case 'lit': return sd <= -2 ? W.woodL : sd >= 2 ? W.woodD : W.wood;
+    case 'team': return sd <= -2 ? tm.coatL : sd >= 2 ? tm.coatD : tm.coat;
+    case 'trim': return tm.trim;
+    case 'mark': return tm.mark;
+    case 'iron': return tm.fit;
+    case 'ironL': return tm.fitL;
+    case 'cord': return st.ready ? tm.glow : W.cord;
+    case 'hide': return W.hide;
+    case 'stone': return ROCK_INK.m;
+    case 'stoneL': return ROCK_INK.l;
+    case 'stoneD': return ROCK_INK.d;
+  }
+  return null;
+}
+// one row of SLING laid down, `m` +1 for the piece and -1 for its mirror
+function slingPart(p, st, put, m) {
+  const n = (v) => (typeof v !== 'string' ? v : v.charAt(0) === '-' ? -st[v.slice(1)] : st[v]);
+  const ink = (sd) => slingInk(st, p.c, sd);
+  if (p.k === 'dot') { const sd = n(p.s) * m; put(n(p.f), sd, ink(sd)); return; }
+  if (p.k === 'box') {
+    for (let f = n(p.f0); f <= n(p.f1); f++) for (let j = n(p.s0); j <= n(p.s1); j++) {
+      const sd = j * m;
+      put(f, sd, ink(sd));
+    }
+    return;
+  }
+  if (p.k === 'ell') {
+    const cf = n(p.f), cs = n(p.s);
+    for (let f = -p.af; f <= p.af; f++) for (let j = -p.as; j <= p.as; j++) {
+      if ((f * f) / (p.af * p.af) + (j * j) / (p.as * p.as) > 1) continue;
+      const sd = cs + j * m;
+      put(cf + f, sd, ink(sd));
+    }
+    return;
+  }
+  if (p.k === 'seg') {
+    // a straight run between two sling-local points, `w` px of extra thickness
+    // laid toward the centre line so an arm reads as a timber and not a hair
+    const f0 = n(p.f0), s0 = n(p.s0) * m, f1 = n(p.f1), s1 = n(p.s1) * m;
+    const steps = Math.max(1, Math.round(Math.max(Math.abs(f1 - f0), Math.abs(s1 - s0))));
+    for (let i = 0; i <= steps; i++) {
+      const u = i / steps, f = Math.round(f0 + (f1 - f0) * u), sd = Math.round(s0 + (s1 - s0) * u);
+      put(f, sd, ink(sd));
+      for (let k = 1; k <= (p.w || 0); k++) put(f, sd - Math.sign(sd) * k, ink(sd));
+    }
+  }
+}
 function drawTurretHead(o, cx, cy) {
   const ang = o.ang || 0, ca = Math.cos(ang), sa = Math.sin(ang);
-  const tm = TEAMS[skin(o.team === undefined ? 0 : o.team)];
-  const M = TUR_METAL[Math.min(TUR_METAL.length - 1, o.tier)];
-  const rec = -(o.rec || 0) * 3;   // recoil slides the barrel back through the mantlet
-  const chg = o.chg || 0;
+  const st = slingState(o);
   const body = new Map();
-  // f runs along the barrel, sd across it; every point rotates about the pivot.
-  // Later writes win, so this paints back-to-front: casemate, then the plate the
-  // barrel comes through, then the barrel itself.
+  // every point rotates about the pivot; later writes win, so the table paints
+  // back to front all on its own
   const put = (f, sd, c) => {
-    body.set(Math.round(cx + f * ca - sd * sa) + ',' + Math.round(cy + f * sa + sd * ca), c);
+    if (c) body.set(Math.round(cx + f * ca - sd * sa) + ',' + Math.round(cy + f * sa + sd * ca), c);
   };
-  // casemate: a rounded armour shell, lit from the top like the rest of the art
-  for (let f = -5; f <= 4; f++) for (let sd = -4; sd <= 4; sd++) {
-    if (((f + 0.5) * (f + 0.5)) / 26 + (sd * sd) / 18 > 1) continue;
-    put(f, sd, sd <= -3 ? tm.coatL : sd >= 3 ? tm.coatD : tm.coat);
+  for (const p of SLING) {
+    if (p.from !== undefined && st.tier < p.from) continue;
+    if (p.when && !st[p.when]) continue;
+    slingPart(p, st, put, 1);
+    if (p.mir) slingPart(p, st, put, -1);
   }
-  for (let f = -4; f <= 1; f++) put(f, -3, tm.trim);                    // hull highlight
-  for (const rv of [[-3, -1], [-3, 1], [0, -2], [0, 2]]) put(rv[0], rv[1], tm.coatD); // rivets
-  // vision slit: team colour at rest, hot white the instant the shot is ready
-  const eye = chg > 0.99 ? '#ffffff' : chg > 0.45 ? tm.glow : tm.mark;
-  for (let f = -3; f <= 0; f++) put(f, -2, eye);
-  for (let f = -6; f <= -5; f++) for (let sd = -2; sd <= 2; sd++) put(f, sd, M.d); // breech block
-  for (let f = 2; f <= 5; f++) for (let sd = -3; sd <= 3; sd++) {       // mantlet plate
-    put(f, sd, sd <= -2 ? M.l : sd >= 2 ? M.d : M.m);
-  }
-  // barrel: light top edge, dark underside, so it reads as round at any bearing
-  for (let f = 5; f <= 16; f++) for (let sd = -2; sd <= 2; sd++) {
-    put(f + rec, sd, sd === -2 ? M.l : sd === 2 ? M.d : M.m);
-  }
-  for (let f = 13; f <= 16; f++) for (let sd = -3; sd <= 3; sd++) {     // muzzle brake
-    put(f + rec, sd, sd <= -2 ? M.l : sd >= 2 ? M.d : M.m);
-  }
-  put(14 + rec, -3, M.d); put(14 + rec, 3, M.d);                        // brake slots
-  for (let sd = -1; sd <= 1; sd++) put(16 + rec, sd, '#131a2e');        // the bore, looking down it
   paintRimmed(body);
 }
-// a turret bolt: a stubby bright slug with a halo, deliberately nothing like an arrow
-function drawBolt(a, ex, ey) {
-  const vd = Math.hypot(a.vx, a.vy) || 1;
-  const nx = a.vx / vd, ny = a.vy / vd, qx = -ny, qy = nx;
+// A TURRET'S ROCK: a lump of stone tumbling end over end, on the throwing
+// log's own stamp-and-rim pass (stampTurned, js/draw/render.js) - it is the
+// one shot in the game whose body is NOT pointed along its flight, because a
+// rock in the air does not care which way it is going. Whose rock it is reads
+// off the trail of motes behind it, as it does for every other shot.
+const ROCK_MAP = [
+  '.mWm.',
+  'mWWWm',
+  'dWWWm',
+  '.ddm.',
+];
+function drawSlungRock(a, ex, ey) {
   const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
-  if (hx < -16 || hx > WV_W + 16 || hy < -16 || hy > WV_H + 16) return;
-  const tm = TEAMS[skin(a.team)];
-  ctx.globalAlpha = 0.28;                       // soft halo under the rim
-  ctx.fillStyle = tm.mark;
-  ctx.fillRect(hx - 3, hy, 7, 1); ctx.fillRect(hx, hy - 3, 1, 7);
-  ctx.globalAlpha = 1;
+  if (hx < -12 || hx > WV_W + 12 || hy < -12 || hy > WV_H + 12) return;
   const body = new Map();
-  const put = (i, j, c) => {
-    body.set(Math.round(hx - nx * i + qx * j) + ',' + Math.round(hy - ny * i + qy * j), c);
-  };
-  put(4, 0, tm.coatD); put(3, 0, tm.mark); put(2, 0, tm.mark);
-  put(1, -1, tm.mark); put(1, 1, tm.mark);
-  put(1, 0, '#ffffff'); put(0, 0, '#ffffff');   // hot core at the nose
+  stampTurned(body, ROCK_MAP, { W: ROCK_INK.l, m: ROCK_INK.m, d: ROCK_INK.d }, hx, hy,
+    (a.spin || 0) + a.t * 7);
   paintRimmed(body);
 }
-// aim line and muzzle flash, over the world so they read against the mount
+// The aim arc and the release, over the world so they read against the base.
 function drawTurretFx(ex, ey, now) {
   for (const o of structures) {
     if (o.type !== 'turret' || o.building) continue;
     const tm = TEAMS[skin(o.team === undefined ? 0 : o.team)];
-    const m = turretMuzzle(o);
+    const pv = turretPivot(o), m = turretMouth(o);
     const mx = Math.round(m.x - ex), my = Math.round(m.y - ey);
-    if (mx < -90 || my < -90 || mx > WV_W + 90 || my > WV_H + 90) continue;
-    if (o.tgt && o.chg > 0.02) {
-      // a dashed line crawling out to the mark, brightening and tightening as it locks
-      const tx = o.tgt.x - ex, ty = turretAimY(o.tgt) - ey;
-      const dx = tx - mx, dy = ty - my, d = Math.hypot(dx, dy) || 1;
-      const nx = dx / d, ny = dy / d;
+    if (mx < -180 || my < -180 || mx > WV_W + 180 || my > WV_H + 180) continue;
+    const goal = turretGoal(o);
+    if (goal && o.chg > 0.02) {
+      // THE ARC THE ROCK WILL FLY, dashed and crawling outward, brightening as
+      // the sling loads: a straight line to the mark would be a lie about a
+      // lob. And the reticle sits on where this throw is GOING, not on the
+      // mark - a throw that has already rolled a miss (turretRoll) aims beside
+      // its target, and this is the game saying so before the stone goes.
+      const la = turretLaunch(pv, goal.x, goal.y);
       const hot = o.chg > 0.99;
+      const crawl = Math.floor(now * 14);
       ctx.globalAlpha = 0.25 + 0.6 * o.chg;
-      for (let q = (now * 30) % 6; q < d - 2; q += 6) {
-        for (let k = 0; k < 3 && q + k < d - 2; k++) {
-          const x = Math.round(mx + nx * (q + k)), y = Math.round(my + ny * (q + k));
-          ctx.fillStyle = TUR_RIM; ctx.fillRect(x, y + 1, 1, 1);   // shadow, so it reads on snow
-          ctx.fillStyle = hot ? '#ffffff' : tm.mark; ctx.fillRect(x, y, 1, 1);
-        }
+      for (let i = 3; i < TUR_ARC; i++) {
+        if ((i + crawl) % 3 === 0) continue;
+        const t2 = la.T * i / TUR_ARC;
+        const x = Math.round(pv.x + la.vx * t2 - ex);
+        const y = Math.round(pv.y + la.vy * t2 + ROCK_FALL * t2 * t2 / 2 - ey);
+        ctx.fillStyle = TUR_RIM; ctx.fillRect(x, y + 1, 1, 1);   // shadow, so it reads on snow
+        ctx.fillStyle = hot ? '#ffffff' : tm.mark; ctx.fillRect(x, y, 1, 1);
       }
-      const r = Math.round(8 - 4 * o.chg), rx = Math.round(tx), ry = Math.round(ty);
+      const r = Math.round(8 - 4 * o.chg);
+      const rx = Math.round(goal.x - ex), ry = Math.round(goal.y - ey);
       for (let pass = 0; pass < 2; pass++) {
         ctx.fillStyle = pass ? (hot ? '#ffffff' : tm.mark) : TUR_RIM;
         const oy2 = pass ? 0 : 1;
@@ -116,19 +240,22 @@ function drawTurretFx(ex, ey, now) {
       }
       ctx.globalAlpha = 1;
     }
-    if (o.mz > 0) {
-      // the shot: a four-point star at the barrel tip for a couple of frames
-      const a2 = o.mz / TUR_MZ, L = Math.round(3 + 5 * a2), h = Math.max(1, L >> 1);
-      ctx.globalAlpha = Math.min(1, a2);
-      ctx.fillStyle = tm.mark;
-      ctx.fillRect(mx - L, my, L * 2 + 1, 1);
-      ctx.fillRect(mx, my - L, 1, L * 2 + 1);
-      for (let k = 1; k <= h; k++) {
-        ctx.fillRect(mx - k, my - k, 1, 1); ctx.fillRect(mx + k, my - k, 1, 1);
-        ctx.fillRect(mx - k, my + k, 1, 1); ctx.fillRect(mx + k, my + k, 1, 1);
-      }
+    if (o.rec > TUR_LET) {
+      // THE RELEASE: the cords snap taut across the fork's mouth for a couple
+      // of frames. No flash - a sling has nothing to flash with, and the snap
+      // between the two tips is the whole picture.
+      const k = (o.rec - TUR_LET) / (1 - TUR_LET);
+      const qx = -m.ny, qy = m.nx;
+      const sp = SL_FLARE[Math.min(SL_FLARE.length - 1, o.tier || 0)] - 2;
+      ctx.globalAlpha = Math.min(1, k);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(mx - 1, my - 1, 3, 3);
+      for (let j = -sp; j <= sp; j++) {
+        ctx.fillRect(Math.round(m.x + qx * j - ex), Math.round(m.y + qy * j - ey), 1, 1);
+      }
+      ctx.fillStyle = tm.glow;
+      for (const s2 of [-sp - 1, sp + 1]) {
+        ctx.fillRect(Math.round(m.x + qx * s2 - ex), Math.round(m.y + qy * s2 - ey), 1, 1);
+      }
       ctx.globalAlpha = 1;
     }
   }

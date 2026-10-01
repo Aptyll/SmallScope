@@ -181,12 +181,13 @@ entity draw code must use `ex`/`ey`.
 9. `PRACTICE` only: `drawParkour` (the lap clock and BEST/LAST plate), `drawAgame`,
    `drawAgRings`;
 10. construction progress bars → particles → `drawAimLine` (the bow's) → `drawZipGuide` (the
-    dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (bolts branch to
-    `drawBolt`, a bit with a `body` to `BIT_BODY`, the rest to `drawShaft`; then
+    dotted walk to the hovered zipline, js/draw/zipline.js) → arrows (a turret's rocks branch to
+    `drawSlungRock`, a bit with a `body` to `BIT_BODY`, the rest to `drawShaft`; then
     `drawShotFire` on any shot that is burning);
 11. `drawWarps` (the silhouettes a teleport strung across its jump) → **`drawSwaps`**
     ([the tool swap](#the-tool-swap)) → `drawAbilityAir` (the spinning net, the grapple's rope)
-    → `drawTurretFx` (each turret's charging aim line and muzzle flash) → turret tracers;
+    → `drawTurretFx` (each turret's dashed aim **arc** and the cords snapping on the release)
+    → turret tracers;
 12. `drawSlashes` (the sword's sweeps) → swing arcs (one per swinging player) → floaters
     (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
 13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
@@ -1305,8 +1306,8 @@ Colour carries the kind, so there is nothing to label: **cyan** a wall to everyo
 so a multi-tile building boxes each of its footprint tiles), **blue** open water — a wall to
 animals and robots, a hole a player falls into — **green** the body circle
 `moveEntity`/`separateUnits` push apart, plus a dot on the anchor point itself, **red** the circle
-an arrow is tested against (on a standing building, the box of its drawn art and a turret head's
-ring — `structShotBox`, past the cyan footprint wherever the art stands past it), **violet** a walk-over pickup or a click target, **gold** a projectile
+an arrow is tested against (on a standing building, the box of its drawn art and a turret
+turntable's ring — `structShotBox`, past the cyan footprint wherever the art stands past it), **violet** a walk-over pickup or a click target, **gold** a projectile
 (a point, never a circle), **pink** the model's own centre column (`hbMid`).
 
 Every shape is read from the expression the sim uses, never a copy of the number — an overlay that

@@ -49,14 +49,21 @@ const STRUCTS = {
     { cost: { gold: 16 }, hp: 140, buildT: 2.4 },
     { cost: { gold: 36 }, hp: 300, buildT: 2.4 },
   ]},
-  // traverse = rad/s the head swings; aim = seconds held on target before it fires.
-  // head = px round turretPivot the gun's casemate stands, above the tile: a
-  // shot through it lands (structShotBox, sim.js) - the barrel past it is a
-  // stick a shot flies by
-  turret: { name: 'TURRET', blurb: 'SHOOTS THE NEAREST ENEMY IN RANGE. IT FIRES OVER WALLS AND TREES.', head: 6, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 10 }, hp: 50,  buildT: 8,   range: 60, dmg: 6,  rate: 1.0,  traverse: 2.2, aim: 0.55 },
-    { cost: { gold: 25 }, hp: 90,  buildT: 4.8, range: 76, dmg: 9,  rate: 0.8,  traverse: 3.0, aim: 0.45 },
-    { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 92, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35 },
+  // THE TURRET: a SLINGSHOT on a timber base. Each tier is its own wooden
+  // grid (js/sprites/buildings.js) - the upgrade is more timber, never a
+  // change of material - and the fork above it is rasterised live at the
+  // launch bearing (the `turret gunnery` banner below).
+  // traverse = rad/s the fork swings; aim = seconds held on the launch bearing
+  // before it lets go; acc = the share of throws that go where they are aimed,
+  // the rest landing ROCK_MISS px off it. range grows the most per tier: the
+  // upgrade a defender buys is reach.
+  // head = px round turretPivot the fork's turntable stands, above the tile: a
+  // shot through it lands (structShotBox, sim.js) - the arms past it are
+  // sticks a shot flies by
+  turret: { name: 'TURRET', blurb: 'SLINGS ROCKS AT WHATEVER IS HOSTILE IN RANGE. IT THROWS OVER WALLS AND TREES.', head: 6, mm: mmTeam, map: chTeam, tiers: [
+    { cost: { gold: 10 }, hp: 50,  buildT: 8,   range: 64,  dmg: 6,  rate: 1.0,  traverse: 2.2, aim: 0.55, acc: 0.6 },
+    { cost: { gold: 25 }, hp: 90,  buildT: 4.8, range: 92,  dmg: 9,  rate: 0.8,  traverse: 3.0, aim: 0.45, acc: 0.8 },
+    { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 124, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35, acc: 0.9 },
   ]},
   generator: { name: 'GENERATOR', blurb: 'PAYS YOU GOLD FOR AS LONG AS IT STANDS.', ramp: 1.5, mm: mmTeam, map: chTeam, tiers: [
     // 4 / 6 / 10 gold a minute against the clock's own 15 (TRICKLE_*, js/sim.js):
@@ -273,7 +280,7 @@ function createStruct(tx, ty, type, tier, p, building, rot) {
   }
   // ang: where the barrel points. tgt/chg: the mark and how locked on it is.
   // rec/mz: recoil slide and muzzle flash. scan: the idle sweep's phase.
-  if (type === 'turret') { o.cd = 0; o.ang = -Math.PI / 2; o.tgt = null; o.chg = 0; o.rec = 0; o.mz = 0; o.scan = 0; }
+  if (type === 'turret') { o.cd = 0; o.ang = -Math.PI / 2; o.tgt = null; o.tgtK = null; o.off = null; o.chg = 0; o.rec = 0; o.scan = 0; }
   if (type === 'generator') o.payT = 0;
   if (type === 'spawner') { o.bots = []; o.respawnT = o.respawnTotal = 1; o.door = 1; }
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
@@ -388,69 +395,173 @@ const RES_COLORS = {
 function nearPlayer(x, y, r) { return !!player && Math.hypot(player.x - x, player.y - y) < (r || 180); }
 
 // ---- turret gunnery ------------------------------------------------------
-// turret gunnery. The head is NOT baked into the sprite (see js/sprites.js) - it
-// is rasterised at the live angle, pivoting on sprite-local (16, 14).
-const TUR_PIVOT_Y = -4;   // px: the pivot, relative to the anchor tile's top edge
-const TUR_BARREL = 16;    // px from pivot to muzzle
-const TUR_LOCK = 0.14;    // rad: inside this of the mark, the shot starts charging
-const TUR_MZ = 0.09;      // muzzle flash duration
-const BOLT_SPD = 250;     // px/s
-const BOLT_LIFE = 1.1;
+// A turret is a SLINGSHOT: a timber fork on a turntable that lobs a rock. The
+// BASE is baked per tier (js/sprites/buildings.js); the fork is NOT baked at
+// all - drawTurretHead rasterises it at the live bearing (js/draw/structs.js),
+// because a baked grid would lock it to one angle.
+//
+// And that bearing is the LAUNCH bearing, never the bearing to the mark. A
+// sling LOBS: the rock leaves with a lift on it and sags onto the target, so
+// the arms stand ABOVE what they are throwing at and the throw leaves exactly
+// along them. turretLaunch is the one solve behind both - the tick swings the
+// fork onto the bearing it returns and fireRock throws along the velocity it
+// returns - so what a raider sees the arms pointing at is where the rock goes.
+const TUR_PIVOT_Y = -4;   // px: the fork's pivot, relative to the anchor tile's top edge
+// px from pivot to the fork's mouth, where the rock leaves - ONE PER TIER, and
+// the draw reads this same row for how long to make the arms (slingState,
+// js/draw/structs.js), so the stone can never leave anywhere but the fork
+const TUR_MOUTH = [12, 13, 15];
+const TUR_LOCK = 0.14;    // rad: inside this of the launch bearing, the draw starts
+const TUR_SNAP = 0.14;    // s the pouch takes to snap forward again after a release
+const ROCK_SPD = 190;     // px/s the rock covers the ground at, whatever the range
+const ROCK_FALL = 240;    // px/s^2 it sags by in flight - the whole of the arc
+const ROCK_MISS = [14, 26]; // px a MISSED throw lands off the mark, at a random bearing
+const ROCK_SPLASH = 7;    // px round where a rock lands that takes the thump
 
-// The head pivots above the tile, so every bearing, range and sight line is
+// The fork pivots above the tile, so every bearing, range and sight line is
 // measured from there rather than from the footprint's centre.
 function turretPivot(o) { return { x: (o.tx + 0.5) * TILE, y: o.ty * TILE + TUR_PIVOT_Y }; }
-// players carry an `input` struct, worker bots do not - aim at the body of each
-function turretAimY(tg) { return tg.input ? tg.y - BOW_Y : tg.y - 4; }
-function turretMuzzle(o) {
+// where the rock leaves: the fork's mouth, on the launch bearing
+function turretMouth(o) {
   const pv = turretPivot(o), c = Math.cos(o.ang || 0), sn = Math.sin(o.ang || 0);
-  const r = TUR_BARREL - (o.rec || 0) * 3;
+  const r = TUR_MOUTH[Math.min(TUR_MOUTH.length - 1, o.tier || 0)];
   return { x: pv.x + c * r, y: pv.y + sn * r, nx: c, ny: sn };
 }
-// A bolt flies OVER the world - walls, pines, the roost's own tiles
-// (`solid: false`, fireBolt) - so a turret needs no line of sight: a
-// player's turret behind a wall of its own is a gun and not a prop. Range
-// alone limits it.
-// a valid mark is an enemy player (never one still on the eagle) or worker
-// bot - unitAlive (js/actions.js) is the one gate, so a merchant is never one
-function turretFoe(o, tg) {
-  return unitAlive(tg) && tg.team !== o.team;
-}
-function turretHolds(o, tg, range, pv) {
-  return turretFoe(o, tg) &&
-    Math.hypot(tg.x - pv.x, turretAimY(tg) - pv.y) <= (tg instanceof Player ? seenAt(tg, range) : range);
-}
-function turretMark(o, range, pv) {
-  let best = null, bd = range;
-  const test = (tg) => {
-    if (!turretFoe(o, tg)) return;
-    const d = Math.hypot(tg.x - pv.x, turretAimY(tg) - pv.y);
-    // GHOSTSTEP - and a body buried in the snow - shrink the ring this target
-    // is acquired (and held) inside
-    if (d > (tg instanceof Player ? seenAt(tg, range) : range)) return;
-    if (d < bd) { bd = d; best = tg; }
-  };
-  for (const p of players) test(p);
-  for (const b of robots) test(b);
-  return best;
-}
-// the shot leaves the barrel tip and rides the normal arrow pipeline, so it
-// hits players and animals, respects friendly fire, and credits the owner -
-// but it passes the world (`solid: false`, the wisp's own flag: the arrow
-// loop's solid-tile branch skips it), so it clears the wall in front of the
-// gun, the pines, and the turret's own mount, and never sieges a building
-function fireBolt(o, t, pv) {
-  const m = turretMuzzle(o), team = o.team === undefined ? 0 : o.team;
-  arrows.push({
-    kind: 'bolt', x: m.x, y: m.y, solid: false,
-    vx: m.nx * BOLT_SPD, vy: m.ny * BOLT_SPD,
-    t: 0, life: BOLT_LIFE, dmg: t.dmg, pow: 1,
-    owner: o.owner === undefined ? 0 : o.owner, team: team, trailD: 0,
-  });
-  burst(m.x, m.y, TEAMS[skin(team)].mark, 4, 60, 0.22, true);
-  sfxAt('turretFire', pv.x, pv.y);
+// THE THROW, solved once and read by everything: the velocity that carries a
+// rock from `pv` onto (ax, ay) at ROCK_SPD over the ground while ROCK_FALL
+// pulls it down, the seconds that takes, and the bearing it leaves on. The
+// flight is an exact parabola (no drag, one constant sag - the `sling` path,
+// steerBit in js/tools.js), so `T` IS the rock's life: a throw that runs out
+// of life is a throw that has ARRIVED, which is what rockLands reads.
+function turretLaunch(pv, ax, ay) {
+  const dx = ax - pv.x, dy = ay - pv.y;
+  const T = Math.max(0.12, Math.hypot(dx, dy) / ROCK_SPD);
+  const vx = dx / T, vy = dy / T - ROCK_FALL * T / 2;
+  return { vx: vx, vy: vy, T: T, ang: Math.atan2(vy, vx), ax: ax, ay: ay };
 }
 
+// WHAT A TURRET THROWS AT, in this order: a rival PLAYER, then a rival worker
+// or soldier bot, then a HOSTILE CREATURE that is hunting somebody (a camp
+// monster with a quarry - it belongs to no side, so it is every turret's
+// problem), and last a rival BUILDING, which is not going anywhere and is
+// never worth turning off a body for. Inside a rank the nearest wins.
+const TUR_RANK = { player: 0, robot: 1, beast: 2, struct: 3 };
+// The aim point on a mark - low on a body, a building's centre - and null the
+// instant it stops being one. turretMark and turretHolds both ask THIS, so a
+// mark is acquired and held on one rule: unitAlive (js/actions.js) gates every
+// body, so a merchant is never a mark and nor is a player still on the eagle;
+// structFoe gates every building; and a beast is a mark only while it is
+// actually hunting, so the meadow is never shot at.
+function turretAim(o, tg, k) {
+  if (!tg) return null;
+  const team = o.team === undefined ? 0 : o.team;
+  if (k === 'struct') {
+    if (!structFoe({ team: team, id: -1 }, tg) || objAt(tg.tx, tg.ty) !== tg) return null;
+    return structCenter(tg);
+  }
+  if (!unitAlive(tg)) return null;
+  // A LOB COMES DOWN ON A BODY, so every kind is aimed low on it rather than at
+  // a chest: it is the point rockLands measures its thump from (unitsHit takes
+  // a body at its feet), and a throw aimed a head higher would land clean over
+  // everyone. A beast up on its own altitude is aimed where it is drawn.
+  if (k === 'beast') return isCampKind(tg.kind) && tg.target ? { x: tg.x, y: tg.y - (tg.alt || 0) - 4 } : null;
+  if (tg.team === team) return null;
+  return { x: tg.x, y: tg.y - 4 };
+}
+// GHOSTSTEP - and a body buried in the snow - shrink the ring a PLAYER is
+// acquired and held inside; nothing else hides from a sling.
+function turretReach(tg, k, range) { return k === 'player' ? seenAt(tg, range) : range; }
+function turretHolds(o, tg, k, range, pv) {
+  const at = turretAim(o, tg, k);
+  return !!at && Math.hypot(at.x - pv.x, at.y - pv.y) <= turretReach(tg, k, range);
+}
+// the best mark in range as `{ tg, k }`, or null: the lowest TUR_RANK first
+// and the nearest of that rank
+function turretMark(o, range, pv) {
+  let best = null, bk = null, br = 9, bd = 0;
+  const test = (tg, k) => {
+    const r = TUR_RANK[k];
+    if (r > br) return;
+    const at = turretAim(o, tg, k);
+    if (!at) return;
+    const d = Math.hypot(at.x - pv.x, at.y - pv.y);
+    if (d > turretReach(tg, k, range)) return;
+    if (r < br || d < bd) { br = r; bd = d; best = tg; bk = k; }
+  };
+  for (const p of players) test(p, 'player');
+  for (const b of robots) test(b, 'robot');
+  for (const a of animals) test(a, 'beast');
+  for (const s of structures) test(s, 'struct');
+  return best ? { tg: best, k: bk } : null;
+}
+// THE MISS, rolled the moment the draw begins rather than at the release, and
+// carried as px off the mark (o.off): the fork then aims at the wrong place for
+// the whole of the draw and the aim arc draws it, so a throw that is going to
+// miss SAYS SO before it goes - which is what an accuracy number is worth to
+// the player standing in front of it.
+function turretRoll(o, t) {
+  if (rng() < (t.acc === undefined ? 1 : t.acc)) { o.off = { x: 0, y: 0 }; return; }
+  const a = rng() * Math.PI * 2, d = rand(ROCK_MISS[0], ROCK_MISS[1]);
+  o.off = { x: Math.cos(a) * d, y: Math.sin(a) * d };
+}
+// where this turret is throwing right now: the mark's aim point plus the miss
+// it has already rolled. Null with no mark. The draw asks it too (drawTurretFx).
+function turretGoal(o) {
+  const at = turretAim(o, o.tgt, o.tgtK);
+  if (!at) return null;
+  const f = o.off || { x: 0, y: 0 };
+  return { x: at.x + f.x, y: at.y + f.y };
+}
+
+// The rock leaves the pouch and rides the normal arrow pipeline, so it hits
+// players, bots and beasts, respects friendly fire and credits the owner - but
+// it passes the WORLD (`solid: false`, the wisp's own flag: the arrow loop's
+// solid-tile branch and its building sweep both skip it), so it clears the wall
+// in front of the fork, the pines and the turret's own base. That is the whole
+// reason a rock LANDS rather than ending on a wall: rockLands, below, is where
+// a throw reaches a building, and it is the only door it has to one.
+// The arms snap to the exact launch bearing as it goes, so the rock leaves
+// along the fork and not a fourteenth of a radian off it.
+function fireRock(o, t, pv) {
+  const goal = turretGoal(o);
+  if (!goal) return;
+  const la = turretLaunch(pv, goal.x, goal.y);
+  o.ang = la.ang;
+  const m = turretMouth(o), team = o.team === undefined ? 0 : o.team;
+  arrows.push({
+    kind: 'rock', path: 'sling', x: m.x, y: m.y, solid: false,
+    vx: la.vx, vy: la.vy, fall: ROCK_FALL,
+    t: 0, life: la.T, dmg: t.dmg, pow: 1, kb: 1, spin: rng() * Math.PI * 2,
+    land: { x: la.ax, y: la.ay },
+    owner: o.owner === undefined ? 0 : o.owner, team: team, trailD: 0,
+  });
+  burst(m.x, m.y, '#cfd8e8', 3, 50, 0.2, true);
+  sfxAt('turretFire', pv.x, pv.y);
+}
+// WHERE A ROCK COMES DOWN. A throw that ran its whole life ARRIVED - the life
+// is the time of flight turretLaunch solved for - so it is put exactly on the
+// point it was thrown at and the ground round it takes the thump: every rival
+// building through hurtStruct and every body through hurtUnit, both by way of
+// the shared area lists, so a rock can never quietly skip a side of the world.
+// The splash is a few px wide: this is a rock landing, not a blast.
+// A rock that STRUCK something on the way in spent itself there and only puffs,
+// because the body it hit has already taken the damage.
+function rockLands(a) {
+  // one that STRUCK bursts where it struck - the arrow loop has already put it
+  // on the contact - and takes nothing else: the body it hit took the damage
+  if (a.struck) { burst(a.x, a.y, '#a8b0c4', 3, 45, 0.35, true); return; }
+  if (a.land) { a.x = a.land.x; a.y = a.land.y; }
+  burst(a.x, a.y, '#a8b0c4', 6, 45, 0.35, true);
+  burst(a.x, a.y, '#eef4fb', 4, 40, 0.4, true);
+  sfxAt('rockLand', a.x, a.y);
+  const src = sideOf(a), vd = Math.hypot(a.vx, a.vy) || 1;
+  for (const s of structsNear(src, a.x, a.y, ROCK_SPLASH)) hurtStruct(s, a.dmg, players[a.owner]);
+  // no `kb`: the thump names no shove of its own, so each kind takes the one
+  // it always takes (hurtUnit, js/actions.js) scaled by the rock's own kbMul
+  for (const t of unitsHit(src, a.x, a.y, ROCK_SPLASH)) {
+    hurtUnit(t, a.dmg, a.vx / vd, a.vy / vd, players[a.owner], { kbMul: a.kb });
+  }
+}
 // how many of a site's side stand within BUILD_REACH of it, alive and on
 // the ground - each one speeds it (CREW_BOOST)
 function buildCrew(o) {
@@ -529,14 +640,24 @@ function updateStructures(dt) {
     const t = STRUCTS[o.type].tiers[o.tier];
     if (o.type === 'turret') {
       o.cd -= dt;
-      o.rec = Math.max(0, o.rec - dt * 7);
-      o.mz = Math.max(0, o.mz - dt);
+      o.rec = Math.max(0, o.rec - dt / TUR_SNAP);  // the pouch snapping forward again
       const pv = turretPivot(o);
-      if (o.tgt && !turretHolds(o, o.tgt, t.range, pv)) o.tgt = null;
-      if (!o.tgt) o.tgt = turretMark(o, t.range, pv);
+      // A HELD MARK IS KEPT while it holds - a sling that jumped to whichever
+      // body was a pixel nearer would swing forever and never finish a draw -
+      // but a BETTER-RANKED one takes it the moment it arrives: a wall is
+      // never worth throwing at while a raider is standing there.
+      const m = turretMark(o, t.range, pv);
+      const held = o.tgt && turretHolds(o, o.tgt, o.tgtK, t.range, pv);
+      if (!held || (m && TUR_RANK[m.k] < TUR_RANK[o.tgtK])) {
+        o.tgt = m && m.tg; o.tgtK = m && m.k;
+        turretRoll(o, t); // a fresh mark is a fresh roll of the accuracy
+      }
       let want, rate = t.traverse;
-      if (o.tgt) {
-        want = Math.atan2(turretAimY(o.tgt) - pv.y, o.tgt.x - pv.x);
+      const goal = turretGoal(o);
+      if (goal) {
+        // the LAUNCH bearing, never the bearing to the mark: the fork stands
+        // ABOVE what it is throwing at, because the rock sags onto it
+        want = turretLaunch(pv, goal.x, goal.y).ang;
       } else {
         // idle sweep, at a third of the traverse: a live turret should never
         // read as a dead prop, and the sweep telegraphs its arc to a raider
@@ -549,14 +670,15 @@ function updateStructures(dt) {
       while (da < -Math.PI) da += Math.PI * 2;
       const step = rate * dt;
       o.ang += Math.max(-step, Math.min(step, da));  // swing, never snap
-      if (o.tgt && Math.abs(da) < TUR_LOCK) {
+      if (goal && Math.abs(da) < TUR_LOCK) {
         o.chg = Math.min(1, o.chg + dt / t.aim);
         if (o.chg >= 1 && o.cd <= 0) {
-          fireBolt(o, t, pv);
-          o.cd = t.rate; o.chg = 0; o.rec = 1; o.mz = TUR_MZ;
+          fireRock(o, t, pv);
+          o.cd = t.rate; o.chg = 0; o.rec = 1;
+          turretRoll(o, t); // ...and the next throw rolls a miss of its own
         }
       } else {
-        o.chg = Math.max(0, o.chg - dt * 2.5); // lost the lock: bleed the charge
+        o.chg = Math.max(0, o.chg - dt * 2.5); // lost the bearing: ease the draw back down
       }
     } else if (o.type === 'generator') {
       o.payT -= dt;

@@ -94,7 +94,8 @@ const TOOL_TIERS = [
 //
 // `path` is one of: 'line' straight | 'orbit' circling the shooter |
 // 'boomer' out and curving back | 'lob' a heavy throw that arcs down |
-// 'curve' a scything arc, the way a thrown axe goes.
+// 'curve' a scything arc, the way a thrown axe goes | 'sling' one clean sag
+// onto a solved point, which is how a turret lobs its rock (js/structures.js).
 //
 // The swung pair's flight, in seconds - declared above the table because the
 // table reads it at LOAD time (PYRE_T and the rest sit under it, read inside
@@ -1013,6 +1014,11 @@ function steerBit(a, dt) {
     a.vy = a.vy * Math.pow(LOB_DRAG, dt) + LOB_FALL * dt;
     return;
   }
+  // A SLUNG ROCK: no drag and one constant sag (`a.fall`, the thrower's own -
+  // ROCK_FALL, js/structures.js), so the flight is an exact parabola that lands
+  // on the point turretLaunch solved for. Its life IS that flight's length, so
+  // running out of life means arriving, and rockLands is what happens then.
+  if (a.path === 'sling') { a.vy += (a.fall || 0) * dt; return; }
   if (a.path === 'curve') {
     // a scythe: the bearing sweeps steadily one way, so the head carves an arc
     // out of the bearing it was thrown on instead of holding it

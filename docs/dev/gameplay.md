@@ -324,7 +324,7 @@ js/player.js), a worker at `ROBOT_KB` (40, js/robots.js), an animal on a curve o
 (25–70) — and one number written on a bit has to mean the same thing thrown at any of them. It
 rides to `hurtUnit` as `o.kbMul`, which scales whatever shove that kind takes; `o.kb` beside it
 is still the absolute px/s an *ability* picks for a particular blow. A shot with no `kb` at all
-(a turret bolt) takes the ordinary shove, ×1.
+(a turret's rock, whose thump names none either) takes the ordinary shove, ×1.
 
 The spread across the table is the point of the number: a WISP barely nudges (×0.3), an ARROW is
 the baseline (×1), an ICE LANCE staggers (×1.6), a THROWING LOG flattens (×2.4) and a BIG FIST
@@ -490,8 +490,8 @@ only presses fire once the target is under the edge (`aiMelee`, js/ai.js).
 ### Flight paths
 
 `steerBit(a, dt)` runs once per shot per sim step **before** the step is integrated, so the path
-owns the velocity and the trail, the hit tests and the drawn body just follow it. A turret bolt
-carries no `path` and falls straight through.
+owns the velocity and the trail, the hit tests and the drawn body just follow it. A turret's rock
+rides `sling`.
 
 | `path` | what it does |
 | --- | --- |
@@ -540,9 +540,10 @@ through `hurtStruct`, `STRUCT_DR` (60 %) off like any player blow — so a bit t
 it — the tiles it entered (a grid DDA) up to the first that ends it (a rival roost, the practice
 dummy, a solid tile), every **standing building by the shape it is drawn in** — `structShotBox`,
 the box its sprite's opaque pixels cover where the draw lays it (`structArtOff`, so the bay's roof
-6 px over its footprint and the turret's mount 2 px past each side stop a shot), plus a
-turret's head as a disc of the entry's `head` (6 px) round `turretPivot`, the barrel past it a
-stick a shot flies by; a site still going up is its footprint alone — a target face, and every
+6 px over its footprint and the turret's timber base up to 2 px past each side — the tier-3
+plinth; tier 1 sits inside its tile — stop a shot), plus a
+turret's head as a disc of the entry's `head` (6 px) round `turretPivot`, the sling's arms past it
+sticks a shot flies by; a site still going up is its footprint alone — a target face, and every
 body whose hit disc it crossed (`sweepDisc`, and `sweepBox` for the building's box): the
 `ARROW_HIT_R` (10 px) disc at a player's chest, `ROBOT_HIT_R` (7) about `robotHitY` for a chassis,
 `animalHitR` about `animalHitY` for a body that may be up on its own altitude, each widened by the
@@ -1434,7 +1435,7 @@ those, never `p.hide` directly**:
   `range × kit.stealth × (1 − PRONE_CUT × conceal)`, floored at `PRONE_SNIFF` (22 px) whenever
   there is any cover at all — **nothing hides at arm's length**. A bot's sight is its profile's
   (`AI_LEVELS`, js/ai-skill.js: EASY 120, NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
-  22 (the floor), 22, 28 and 37, and a tier-3 turret's 92 down to 22.
+  22 (the floor), 22, 28 and 37, and a tier-3 turret's 124 down to 22.
 
 **Every watcher resolves through `seenAt`, and a new one must too.** Today's callers: a bot's
 target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai.js), a turret
@@ -2532,8 +2533,9 @@ below); the pick is laid on that
 tile, a big one fitted round it by `findSite`, and a building of the player's own on that tile
 opens its manage wheel instead.
 
-All the data lives in the `STRUCTS` table: three tiers for wall/long wall/turret/generator (the
-wood → stone → gold *look* is just the sprite palette) and **one each for the bay and the net**,
+All the data lives in the `STRUCTS` table: three tiers for wall/long wall/turret/generator (for
+the wall, the long wall and the generator the wood → stone → gold *look* is just the sprite
+palette; the turret is the exception — three timber grids of its own) and **one each for the bay and the net**,
 each with a gold `cost`, `hp`, `buildT`, and per-type stats. A `water: true` entry (only the net)
 goes on a hole instead of snow, and that flag — never the type name — is what `canPlaceAt`,
 `isSolidTile` and the dawn refreeze each read; see [Fish nets](world.md#fish-nets).
@@ -2613,19 +2615,58 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   yellow progress bar renders above every site (centred over the roof for a big one). Sites are
   solid from placement. A big building y-sorts by the bottom of its footprint and sits its snow
   skirt on that edge.
-- **Turret**: picks the nearest enemy player or worker bot inside `tiers[tier].range`, swings the
-  gun onto it at `traverse` rad/s (2.2 / 3.0 / 3.8 — it never snaps), and once the bearing is
-  inside `TUR_LOCK` (0.14 rad) charges for `aim` seconds (0.55 / 0.45 / 0.35) before firing a
-  **bolt** every `rate` seconds. Losing the bearing bleeds the charge back down rather than
-  cancelling it. Targeting runs through `turretMark`/`turretHolds`, which reject anything on the
-  turret's own team, anything dead, and any player still `inAir` on the eagle. It needs no line of
-  sight: a bolt flies **over the world** (`solid: false`, the wisp's own flag, so the arrow loop's
-  solid-tile branch skips it) — over walls, pines and the turret's own mount — and never sieges a
-  building, so a gun behind a wall of its own is a gun and not a prop. Range alone limits a mark. With
-  no mark it sweeps ±1.15 rad at a third of its traverse, so a live turret never reads as a prop.
-  A bolt is an ordinary entry in `arrows` tagged `kind: 'bolt'`, so it inherits arrow collision,
-  friendly fire and kill credit for free — it just draws differently and flies at `BOLT_SPD` (250)
-  from the muzzle (`turretMuzzle`).
+- **Turret**: a **slingshot on a timber base** that lobs rocks.
+
+  **What it throws at**, in this order of preference (`TUR_RANK`, nearest inside a rank):
+  a rival **player** → a rival **worker or soldier bot** → a **hostile creature hunting somebody**
+  (a camp monster with a `target`; it belongs to no side, so it is every turret's problem) → a
+  rival **building**. A held mark is kept while it holds — a sling that jumped to whichever body
+  was a pixel nearer would swing forever and never finish a draw — but a **better-ranked one takes
+  it the moment it arrives**, so a turret chewing a wall turns on the raider who walks up.
+  `turretAim(o, tg, k)` is the single gate: it returns the aim point on a mark, or null the instant
+  it stops being one. It rejects anything `unitAlive` rejects (dead, a merchant, a player still
+  `inAir` on the eagle), anything on the turret's own team, a building `structFoe` rejects, and a
+  beast that is not actually hunting — so the meadow is never shot at. `turretMark` and
+  `turretHolds` both ask it, which is why acquiring and holding cannot drift apart. A **player's**
+  ring is `seenAt(tg, range)`, so GHOSTSTEP and a buried body shrink it; nothing else hides.
+
+  **The throw is solved, once, by `turretLaunch(pv, ax, ay)`**: the velocity that carries a rock
+  from the pivot onto the aim point at `ROCK_SPD` (190 px/s over the ground) while `ROCK_FALL`
+  (240 px/s²) pulls it down, the seconds that takes, and the bearing it leaves on. The flight is an
+  exact parabola — no drag, one constant sag (the `sling` [path](#flight-paths)) — so **its life IS
+  its time of flight**, and a rock that runs out of life has *arrived*. The sag is slight and grows
+  with the range: ~3 px off the chord at 64, ~12 px at 124.
+
+  **The fork points along the THROW, not at the mark.** The tick swings `o.ang` toward
+  `turretLaunch(...).ang` at `traverse` rad/s (2.2 / 3.0 / 3.8 — it never snaps), so the arms stand
+  visibly *above* what they are throwing at, and `fireRock` throws along that same solve (snapping
+  `o.ang` to it exactly as it lets go). With no mark the fork sweeps ±1.15 rad at a third of its
+  traverse, so a live turret never reads as a prop.
+
+  **Accuracy is rolled when the draw BEGINS, not at the release** (`turretRoll`): on a hit it aims
+  true, on a miss it carries `o.off`, 14–26 px at a random bearing, for the whole of the draw.
+  `acc` is 0.6 / 0.8 / 0.9 by tier. Because the fork and the dashed aim arc both read `turretGoal`
+  (the aim point **plus** that offset), a throw that is going to miss *says so before it goes* —
+  which is what the number is worth to the player standing in front of it.
+
+  Once the bearing is inside `TUR_LOCK` (0.14 rad) it draws for `aim` seconds (0.55 / 0.45 / 0.35)
+  and lets go every `rate` seconds; losing the bearing eases the draw back down rather than
+  cancelling it. `o.rec` is the one release timer (`TUR_SNAP`, 0.14 s): it drives both the pouch
+  snapping forward and the cords drawn across the mouth.
+
+  **It needs no line of sight.** A rock flies **over the world** (`solid: false`, the wisp's own
+  flag — the arrow loop's solid-tile branch *and* its building sweep both skip it), over walls,
+  pines and the turret's own base, so a sling behind a wall of its own is a weapon and not a prop.
+  Range alone limits a mark: `range` grows the hardest of any tier stat, 64 → 92 → 124, because
+  reach is what the upgrade buys.
+
+  **A rock is an ordinary entry in `arrows`** tagged `kind: 'rock'`, so bodies it crosses in flight
+  take it through the usual pipeline, with friendly fire and kill credit for free. But flying over
+  the world means it never *meets* a building — so when a rock's life ends, `rockLands` puts it
+  exactly on the point it was thrown at and the ground there takes the thump: every rival building
+  inside `ROCK_SPLASH` (7 px) through `hurtStruct` and every body through `hurtUnit`, by way of
+  `structsNear`/`unitsHit`. **That landing is the only door a rock has to a building.** A rock that
+  already struck something on the way in spent itself there and only puffs.
   **Generator**: deposits `tiers[tier].pay` gold every `period` seconds straight into its
   **owner's** wallet (`awardGold` — the `+N` floater rises at the generator, but there is
   nothing to collect and no pile to cap). **Bot bay** (`spawner`):
@@ -2658,9 +2699,11 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
     (it runs inside `swingHit`'s `contest('work:' + idx)`);
   - **every bit a tool fires**, in the arrow update's solid-tile branch (js/sim.js): a shot
     that dies on a wall sieges it first — anywhere on the building's drawn shape, the turret's
-    head included ([the sweep](#flight-paths), `structShotBox`). A bit whose `solid` is `false`
+    turntable included ([the sweep](#flight-paths), `structShotBox`). A bit whose `solid` is `false`
     (the care arrow, the wisp, the hook) passes through buildings without touching them — that
     is the trade for passing walls, and it needs no second flag;
+  - a **turret's rock LANDING** (`rockLands`, js/structures.js), which is how a piece that flies
+    over the world reaches a building at all — see [Turret](#the-buildings) above;
   - the **abilities**: the stomp's ring, the shield's slam and the execute (their wedge, through
     `structsInCone`), the charge's slam into whatever it was driven into, the net, and the
     piercing shot, which rides the arrows array like any bit — and the sword's cut, whose wedge
@@ -2749,7 +2792,7 @@ and the roll, all of them through `hurtUnit`. `robotDies(b, src)`
 is what keeps shooting a loaded worker on its way home worth the arrows — and logs
 `<NAME> SCRAPPED A WORKER` to the feed. A downed worker is not a downed player, so it never touches
 the kill count. `updateRobot`'s own `hp <= 0` check routes through the same function (with no
-`src`, so the wreck goes unclaimed). Turret bolts ride the arrow pipeline, so a turret's mark
+`src`, so the wreck goes unclaimed). A turret's rocks ride the arrow pipeline, so a turret's mark
 dies to them; a rival's **worker on an attack flag** melees one; a rival's abilities and roll catch
 one like any other body; nothing else — a player's E swing, wildlife, the AI's target
 picker — goes after a worker.
@@ -2855,7 +2898,7 @@ one). `owner` is -1, so it reads no flag and no flag ever recalls it.
 
 **It cannot be hurt, and it has no `hp` field at all rather than a large one.** `unitAlive`
 (js/actions.js) answers false for a merchant, and that one function is the gate every target
-picker in the game asks (CLAUDE.md's `unitAlive` rule; here also a turret's `turretFoe`, a
+picker in the game asks (CLAUDE.md's `unitAlive` rule; here also a turret's `turretAim`, a
 worker's `robotFoeUnit` and a flag's `flagFoe`) — so
 it is invisible to every weapon in the world rather than merely immune to one of them. It draws no
 health bar either: a full bar that could never move would promise a fight that is not on offer.

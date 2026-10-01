@@ -61,7 +61,8 @@ stable per tile.
   registry stays in sync — it routes tiered types through `removeStruct`).
 - `wall`, `longwall`, `turret`, `generator`, `spawner` are the **structures** any open snow or road tile takes (see
   [Base building](gameplay.md#base-building)). Each carries `{ tier, maxHp, building, buildT,
-  buildTotal, dustT, sparkT }` plus per-type fields (turret `cd`; generator `payT`; spawner `mode`,
+  buildTotal, dustT, sparkT }` plus per-type fields (turret `cd`, `ang`, `tgt`/`tgtK`, `off`,
+  `chg`, `rec`, `scan`; generator `payT`; spawner `mode`,
   `bots`, `respawnT`/`respawnTotal`, `door`), and every live one is also referenced from the module-scope `structures`
   array so `updateStructures()` never scans the 53,824-tile grid. (`updatePlay` does: one
   unconditional pass over all of `objects` every step, ticking `flash`/`shake` and bush regrow —
