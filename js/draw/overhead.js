@@ -140,16 +140,29 @@ function evenBarW(w) {
 // and drawTallies stamps the queue on the screen after the world is blitted:
 // the world-1x outlined number scaled whole into device px, crisp at any
 // zoom, under the HUD.
+// A body that DIES takes its frame with it, and a one-shot would show no
+// number at all, so each frame's last spot is kept (tallySpot, in world px)
+// and a dead body's total - its killing blow the last hit in it - rises
+// TALLY_RISE px from there and fades out over TALLY_DEATH s.
 const TALLY_FADE = 0.3, TALLY_POP = 0.08; // s
 const TALLY_SC = 1.25, TALLY_POP_SC = 1.5; // world px per font px, resting and the instant a hit lands
+const TALLY_DEATH = 0.9, TALLY_RISE = 12;   // s a dead body's total floats, and how far up
 const tallyQueue = [];
 const tallyInk = new Map(); // 'text|colour' -> the outlined number at world 1x
+const tallySpot = new Map(); // body -> { x, y, col, a, f }: where its frame last hung a total, and on which frame
+let tallyFrame = 0;
 function queueTally(u, rx, cy, col) {
   if (!u.tallyN || ctx !== wctx) return; // a UI pass (the wiki's beasts) has no fight to total
   const age = (state.tick - u.tallyTick) * TICK_DT;
   if (age > TALLY_HOLD + TALLY_FADE || age < 0) return;
   const a = age < TALLY_HOLD ? 1 : 1 - (age - TALLY_HOLD) / TALLY_FADE;
   tallyQueue.push(u.tallyN, rx, cy, col, a * ctx.globalAlpha, age < TALLY_POP);
+  tallySpot.set(u, { x: rx + camX, y: cy + camY, col, a: ctx.globalAlpha, f: tallyFrame });
+}
+// a player dropped in the step before any frame showed its total (a
+// one-shot): its spot is where drawPlayer's frame would have hung it
+function tallyFall(p) {
+  if (p.tallyN && !tallySpot.has(p)) tallySpot.set(p, { x: p.x + FRAME_DX + 8, y: p.y - 18, col: barCol(p.team), a: 1, f: -1 });
 }
 function tallyImg(txt, col) {
   const key = txt + '|' + col;
@@ -164,6 +177,17 @@ function tallyImg(txt, col) {
 }
 // on the screen canvas at the identity transform, k device px per world px
 function drawTallies(k) {
+  // the dead first, under the living: a body whose frame hung a total last
+  // frame and hangs none now floats it off if it died, and is forgotten if
+  // it only left the view or the total ran out
+  for (const [u, s] of tallySpot) {
+    if (s.f === tallyFrame) continue;
+    const age = (state.tick - u.tallyTick) * TICK_DT;
+    if (!(u.dead || u.hp <= 0) || !u.tallyN || age < 0 || age > TALLY_DEATH) { tallySpot.delete(u); continue; }
+    tallyQueue.unshift(u.tallyN, s.x - camX, s.y - camY - Math.round(age / TALLY_DEATH * TALLY_RISE), s.col,
+      s.a * Math.min(1, 2 * (1 - age / TALLY_DEATH)), false); // full for the first half, then out
+  }
+  tallyFrame++;
   for (let i = 0; i < tallyQueue.length; i += 6) {
     const img = tallyImg(String(tallyQueue[i]), tallyQueue[i + 3]);
     const s = Math.max(1, Math.round(k * (tallyQueue[i + 5] ? TALLY_POP_SC : TALLY_SC)));

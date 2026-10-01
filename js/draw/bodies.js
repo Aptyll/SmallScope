@@ -801,8 +801,10 @@ function downPixels(spr) {
 // when this machine first saw it (a loaded save, a late join) gets none.
 function trackDowns(now) {
   for (const p of players) {
-    if (p.dead && downWas.get(p) === false && p.active)
+    if (p.dead && downWas.get(p) === false && p.active) {
       downs.set(p, { t0: now, x: p.x, y: p.y, spr: classSet(p)[p.dir][0], wind: hash2(p.id, p.deaths) < 0.5, k: p.deaths });
+      tallyFall(p); // a one-shot never wore its total: it floats off from where the frame stood
+    }
     if (!p.dead) downs.delete(p);
     downWas.set(p, p.dead);
   }
