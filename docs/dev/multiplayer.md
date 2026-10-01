@@ -747,8 +747,8 @@ wears a bear's blood, and stays open at least `AI_WINDOW_MIN` (12 s): every bot 
 pushes while it lasts, as a rush (no column to walk with, no regroup). The **brace**
 (`aiBrace`): `AI_BRACE_N` (2) rivals seen inside the side's half in the last `AI_BRACE_T` (4 s),
 the deepest of them further along the line between the birds than the side's own deepest
-pusher is, and the side meets them at home: its pushers turn guard until `AI_BRACE_HOLD` (8 s)
-after the last such sighting. Of two pushes that cross, the one further on keeps going. A
+pusher is, and the side meets them at home: as many of its pushers as there are rivals coming
+turn guard (the rest press on) until `AI_BRACE_HOLD` (8 s) after the last such sighting. Of two pushes that cross, the one further on keeps going. A
 brace that ends with more rivals down than own bots opens the window: the counter. The plan's order (what `aiRank` reads) is always pushers, then guards,
 then the rest. The fight rung holds a rival it was just fighting `AI_COMMIT_T` past the edge of
 its sight (`aiHoldFoe`), and a bot that turns to back off keeps backing off `AI_FLEE_HOLD`, so a
@@ -848,14 +848,20 @@ The ladder:
    state, not an act in the world, and the human's radial ends in the same function.
 6. **defend** — its own bird under `threat` on the shared read (**the two birds**, below): as
    many bots as `aiDefendersWanted` calls home walk to it (`aiToRoost`, below) from wherever on the map they are,
-   farming, escorting or guarding, and stand 80 px off — the bird anchors rung 3, so the
-   attackers are in sight on arrival — while a bot already inside `AI_ROOST_R` holds its station
+   farming, escorting or guarding, and sweep round it 70 px out, looking outward, never standing
+   still — the bird anchors rung 3, so the attackers are in sight on arrival — while a bot already inside `AI_ROOST_R` holds its station
    and the rest go on with the match (a side that empties the map for one arrow is a side that
    never pushes). Under `AI_ALARM_HP` (half its nerve) everyone comes, pushers included, the one
    exception a pusher whose side is winning the race — the rival bird lower still — who presses on.
-7. **guard** — from 0.6 × `push.t` on, the plan's guards (`T.nGuard`: the profile's `guard` bots, 1 / 2 / 0 — a relentless side keeps none; allies 1 — and the pushers too in a brace) after
-   the pushers in the plan's order (`aiRank`, the team brain above) stand by their own bird, going on down the ladder to work
-   what is near while inside `AI_GUARD_R` of it. The bird is their anchor.
+7. **guard** — from 0.6 × `push.t` on, the plan's guards (`T.nGuard`: the profile's `guard` bots, 1 / 2 / 0 — a relentless side keeps none; allies 1 — but at most one
+   unless the bird was hit in the last `AI_GUARD_HOT` (60 s), and the braced pushers) after
+   the pushers in the plan's order (`aiRank`, the team brain above) keep their own bird, as
+   proactive defenders, not sentries: a guard raises the side's turrets along the spur
+   (`aiFortSite`: `AI_FORT_N` (3), in pairs either side of its axis on tiles with three open
+   sides, then a tier at a time once the purse holds twice the price), and for `AI_PATROL_OUT`
+   (14 s) of every `AI_PATROL_T` (40 s) walks out past the spur's junction `AI_PATROL_D` (360 px)
+   up the road to see who is coming (the brace reads what it sees). Otherwise it goes on down
+   the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
    side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
    stalemate always breaks (`aiPushers`; the plan's `T.nPush`, so more in a window and none in a

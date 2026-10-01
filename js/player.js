@@ -564,10 +564,10 @@ class Player {
       // rolled on and the roll, guarding its guard holding the bird past an
       // attack flag, answered/answerAt/answerKind/answerKey the human flag it last
       // answered and when its ON IT is due (aiAnswerFlag), band its range band
-      // in a fight (aiRangeBand), packT how long it has waited at the rally, scout/scoutN
+      // in a fight (aiRangeBand), fortCd the wait before its next turret job, packT how long it has waited at the rally, scout/scoutN
       // the scout's point and step along its beat, thought what it is doing
       // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, obeyFor: null, obeyOk: true, guarding: false, scoutCd: 0, answered: null, answerAt: 0, answerKind: null, answerKey: "", band: null,
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, downs: {}, grudge: null, obeyFor: null, obeyOk: true, guarding: false, scoutCd: 0, answered: null, answerAt: 0, answerKind: null, answerKey: "", band: null, fortCd: 0,
     };
     this.reset(true);
   }

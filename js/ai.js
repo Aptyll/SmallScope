@@ -24,6 +24,10 @@ const AI_ANCHOR_R = 260;  // px round an anchor (its bird, the human) a rival is
 const AI_ANCHOR_D = 420;  // ...but never from farther than this
 const AI_HOLD = 96;       // px a hunter holds off the rival bird at (outside its gust)
 const AI_GATE = 128;      // px up the road from a spur's junction where a walk to a roost stages
+const AI_FORT_N = 3;      // turrets a side's guards keep standing along its spur
+const AI_PATROL_T = 40;   // s of a guard's cycle...
+const AI_PATROL_OUT = 14; // ...the first of which it spends scouting out up the road
+const AI_PATROL_D = 360;  // px up the road from the spur's junction the scouting walk reaches
 const AI_ROOST_BUDGET = NAV_BUDGET * 4; // A* expansions a walk into a roost's forest may spend
 const AI_ESCORT = 120;    // px an escort lets the human get away before it follows
 const AI_ESCORT_R = 400;  // px past which the human is too far to escort
@@ -137,6 +141,33 @@ function aiInLane(p, e) {
   const t = (px * vx + py * vy) / L2;
   const perp = Math.abs(px * vy - py * vx) / Math.sqrt(L2);
   return (t >= -0.1 && t <= 1.08 && perp < 40) || Math.hypot(px, py) < 90;
+}
+// The next turret job for a guard of the bird e, or null: { tx, ty, n } to
+// raise one more of the side's AI_FORT_N along the spur - pairs either side
+// of its axis, out from the bird, on a tile with three open sides so the
+// lane is never walled in - or { tx, ty, up } to raise one of them a tier
+// once they all stand and the purse holds twice the price (gear comes first)
+function aiFortSite(p, e) {
+  if (!e.mouth) return null;
+  let n = 0, low = null;
+  for (const o of structures) {
+    if (o.type !== 'turret' || o.team !== p.team || Math.hypot(o.tx * TILE + 8 - e.x, o.ty * TILE + 8 - e.y) > AI_ROOST_R * 1.5) continue;
+    n++;
+    if (!o.building && o.tier < STRUCTS.turret.tiers.length - 1 && (!low || o.tier < low.tier)) low = o;
+  }
+  if (n < AI_FORT_N) {
+    if (p.inv.gold < buildCost('turret', p).gold) return null;
+    const L = Math.max(1, Math.hypot(e.mouth.x - e.x, e.mouth.y - e.y));
+    const ux = (e.mouth.x - e.x) / L, uy = (e.mouth.y - e.y) / L;
+    for (const t of [0.55, 0.75, 0.4, 0.9]) for (const side of [-1, 1]) for (const off of [40, 56]) {
+      const tx = Math.floor((e.x + (e.mouth.x - e.x) * t - uy * off * side) / TILE);
+      const ty = Math.floor((e.y + (e.mouth.y - e.y) * t + ux * off * side) / TILE);
+      if (canPlaceAt('turret', tx, ty, 0, p).ok && aiOpenSides(tx, ty) >= 3) return { tx, ty, n };
+    }
+    return null;
+  }
+  if (low && p.inv.gold >= STRUCTS.turret.tiers[low.tier + 1].cost.gold * 2) return { tx: low.tx, ty: low.ty, up: true };
+  return null;
 }
 // the eagle hitbox tile nearest p (a warrior's E target on a push)
 function aiEagleTile(e, p) {
@@ -843,7 +874,41 @@ function aiThink(p, dt) {
     const d = Math.hypot(defend.x - p.x, defend.y - p.y);
     if (d > 80) { // home through its own lane, like a push
       if (aiToRoost(p, defend, steerTo, 3) >= 0) { aimAt(defend.x, defend.y); inp.fire = false; ai.tgt = null; return; }
-    } else { inp.fire = false; ai.tgt = null; return; } // on station: wait for them to show
+    } else { // on station: sweep round the bird looking out, never stand and wait
+      const a = state.elapsed * 1.3 + p.id;
+      steerTo(defend.x + Math.cos(a) * 70, defend.y + Math.sin(a) * 70, 1);
+      aimAt(defend.x + Math.cos(a) * 140, defend.y + Math.sin(a) * 140);
+      inp.fire = false; ai.tgt = null; return;
+    }
+  }
+
+  // 5b''. a guard is a proactive defender, never a sentry: it raises its
+  //       side's turrets along the spur (AI_FORT_N, then their tiers once the
+  //       purse is deep), and for AI_PATROL_OUT of every AI_PATROL_T walks
+  //       out past the spur's junction and up the road to see who is coming
+  //       (what it sees is the side's, aiLook - the brace reads it); the rest
+  //       of the time it works what is near the bird (the rungs below)
+  if (guardE) {
+    ai.fortCd = (ai.fortCd || 0) - dt;
+    const fort = ai.fortCd > 0 ? null : aiFortSite(p, guardE);
+    if (fort) {
+      const fx = fort.tx * TILE + 8, fy = fort.ty * TILE + 8, d = Math.hypot(fx - p.x, fy - p.y);
+      aiNote(p, 'BUILD', fort.up ? 'TURRET UP' : 'TURRET ' + (fort.n + 1) + ' OF ' + AI_FORT_N, { x: fx, y: fy });
+      if (d > 48 || d < 16) { // walk up to it - or off the very tile
+        const tx = d < 16 ? guardE.x : fx, ty = d < 16 ? guardE.y : fy;
+        if (steerTo(tx, ty, 1, AI_ROOST_BUDGET) >= 0) { aimAt(fx, fy); inp.fire = false; ai.tgt = null; return; }
+        ai.fortCd = 15; // no way to it: leave it a while
+      } else {
+        inp.cmd = fort.up ? { kind: 'upgrade', tx: fort.tx, ty: fort.ty, id: 'upgrade' } : { kind: 'build', tx: fort.tx, ty: fort.ty, id: 'turret' };
+        ai.fortCd = 2; aimAt(fx, fy); inp.fire = false; ai.tgt = null; return;
+      }
+    }
+    if ((state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT && guardE.mouth) {
+      const u = roadNest(guardE.team).u + (guardE.team === 0 ? 1 : -1) * AI_PATROL_D / (TILE * Math.SQRT2);
+      const pt = roadPoint(u);
+      aiNote(p, 'GUARD', 'SCOUTING', pt);
+      if (steerTo(pt.x, pt.y, 3, AI_ROOST_BUDGET) >= 0) { aimAt(pt.x, pt.y); inp.fire = false; ai.tgt = null; return; }
+    }
   }
 
   // 5b'. on guard: stand by its own bird, and go on down the ladder (working
