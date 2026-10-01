@@ -369,6 +369,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the waves as a bot sees them: a rival soldier in sight is a target, its own column's head is what a pusher walks with | `aiNearestEnemy` (its `robots` loop), `aiWaveHead`, `AI_WAVE_R`/`AI_WAVE_D` (the `head` read in rung 5c of `updateAI`) | `ai` |
 | an ally at your side: the escorts, the anchors that let it join your fight and your push | `aiEscorts`, `AI_ESCORT`/`AI_ESCORT_R`, `AI_ANCHOR_R`/`AI_ANCHOR_D` | `ai` › `difficulty` |
 
+## js/ai-team.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a bot's temperament and what it moves; the decision knobs read off the profile with their defaults | `AI_MOODS`, `aiMood`, `aiKnob`/`AI_KNOB_DEFAULT`, `aiJudge`, `aiFlee` | `team brain` |
+| the side's plan: who pushes, guards, scouts, stalks or hunts the bear, the stance, the window, the focus, the plan's order (`aiRank`, ai.js) | `AI_ROLES`, `aiTeams`, `aiTeamNew`, `aiPlan`, `aiRole`, `aiPlanRank`, `AI_PLAN_T`, `AI_WINDOW_*` | `team brain` |
+| what the side has seen and who is calling: sightings, calls for help, the stalker's pick, the odds and the fall-back, the scout's beat | `aiLook`/`aiSaw`, `aiCall`, `aiHumanCall`, `aiHelpCall`, `aiStalkTarget`, `aiOdds`, `aiFallBack`/`aiFallBackTo`, `aiScoutPoint`, `aiForget` | `team brain` |
+| the bear party | `aiSideBear`, `aiBearJob`, `AI_BEAR_*` | `team brain` |
+| what a bot is doing and why, for the dashboard | `aiNote` (`p.ai.thought`) | `team brain` |
+
 ## js/bots/api.js
 
 | Looking for | Start at | Banner |
