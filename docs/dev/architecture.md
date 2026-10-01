@@ -346,6 +346,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
 - **`app/ladder/`** — the offline bot ladder on top of the arena: bot files play rated matches
   (Elo), every record and log kept in `ladder-data/`, and a standings page written beside them
   ([docs/bots/ladder.md](../bots/ladder.md)). `core.js` holds the rules alone, for an online ladder later.
+- **`app/regress/`** — the patch check: a fixed set of short arena matches replayed on every patch,
+  the runs diffed and flagged, and the ladder's history cut into one season per patch ([regress.md](regress.md)).
 - **`app/bake-bots.js`** — reads `bots/*.js`, writes `js/bots/lib.js` (the example bots as source text).
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.
 - **`app/bake-bears/bake.py`** — Python (needs numpy): paints and poses the two camp bears, writes `js/sprites/bears.js`.

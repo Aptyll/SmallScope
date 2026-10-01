@@ -17,8 +17,14 @@ node app/ladder/ladder.js retire mybot                # stop scheduling a bot (-
 ```
 
 `run` flags: `--matches` (default 4), `--jobs` (matches at once, default one per core), `--max`
-(minutes before a match is called a draw, default 30). Every command takes `--dir` (default
-`ladder-data/`, which git ignores). The example bots in `bots/` are always on the ladder.
+(minutes before a match is called a draw, default 30). Results are rated in the order the matches
+were planned, so `--jobs` never changes a rating. Every command takes `--dir` (default
+`ladder-data/`, which git ignores). The example bots in `bots/` join the ladder on their own;
+`retire` takes any bot off, examples included.
+
+`add` refuses an id that is already on the ladder with a different file: pass `--replace` to
+make the file that bot's next revision, or `--id` to enter it as a new bot. An id is letters,
+digits, `-` and `_`. An entry whose file has gone missing is kept but not scheduled.
 
 A full match takes a few minutes of one core; `run` prints each result as it lands, then the
 table, then the path of the standings page.
@@ -47,6 +53,7 @@ ladder-data/
   bots/<id>.js     the files you entered
   ladder.html      the standings page: open it straight off the disk
   standings.json   the same numbers as the page, for scripts and agents
+  standings.js     the same numbers and the entered files, for the game's BOT LADDER screen
 ```
 
 The page is drawn more than written: each bot's rating as a bar, its trend as a small line, its
@@ -62,8 +69,11 @@ page; a comment at the top of the page lists every field. `rows` is the standing
 
 ## Trust
 
-On your computer a bot file runs inside the match process with your computer's rights. **Enter
-only files you trust.** The online ladder will run each bot in its own sandboxed process (below).
+Each bot file runs sealed in a Node vm context of its own: it cannot see the game, the other
+bots, `require`, or the disk, and each think gets 50 ms of CPU. That stops a bot reading what
+its player could not see, and stops honest mistakes. It is not a hardened jail (Node says so
+of its vm), so **enter only files you trust.** The online ladder will run each bot in its own
+process (below).
 
 ## Going online
 
@@ -73,7 +83,7 @@ files or processes in it. Going online changes where things run, not what a bot 
 
 1. **A server runs the matches.** The same arena runner, on a server, plays the queue.
 2. **Bots run sandboxed.** Each seat's bot runs in its own isolated process or container and
-   talks to the match over a socket: a third transport beside `inline` and `worker`
+   talks to the match over a socket: a transport beside the game's `worker` and the arena's `vm`
    (`BOT_TRANSPORTS`, js/bots/api.js), carrying the same messages. Lockstep keeps a match exact.
 3. **Records go in a database** instead of `ladder-data/`: the same `history.jsonl` records and
    logs, served to a web version of the standings page.

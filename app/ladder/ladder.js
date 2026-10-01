@@ -16,7 +16,7 @@
 // the author's guide is docs/bots/ladder.md. No packages.
 //
 // TRUST: a bot file runs inside the match process with this computer's
-// rights (the arena loads it inline). Enter only files you trust; an online
+// rights (the arena runs it in a Node vm context: sealed from the game, not a hardened jail). Enter only files you trust; an online
 // ladder runs each bot in its own sandboxed process instead (docs/bots/ladder.md).
 
 const fs = require('fs');
@@ -73,19 +73,25 @@ function store(dir) {
     sources() {
       const out = {};
       const ex = path.join(ROOT, 'bots');
-      for (const f of fs.readdirSync(ex)) if (f.endsWith('.js')) out[f.slice(0, -3)] = { src: fs.readFileSync(path.join(ex, f), 'utf8'), from: 'builtin' };
-      for (const f of fs.readdirSync(P('bots'))) if (f.endsWith('.js')) out[f.slice(0, -3)] = { src: fs.readFileSync(P('bots', f), 'utf8'), from: 'file' };
+      const take = (d, f, from) => { const id = f.slice(0, -3); if (f.endsWith('.js') && core.idOk(id)) out[id] = { src: fs.readFileSync(path.join(d, f), 'utf8'), from }; };
+      for (const f of fs.readdirSync(ex)) take(ex, f, 'builtin');
+      for (const f of fs.readdirSync(P('bots'))) take(P('bots'), f, 'file');
       return out;
     },
   };
 }
 // bring the entries in line with the files: new files enter, changed files
-// count a revision and keep their rating
+// count a revision and keep their rating, and an entry whose file is gone is
+// marked missing (kept, never scheduled) until the file comes back
 function sync(ladder, sources) {
   for (const [id, { src, from }] of Object.entries(sources)) {
-    const h = hashOf(src), meta = metaOf(src), e = ladder.entries[id];
+    const h = hashOf(src), meta = metaOf(src), e = Object.hasOwn(ladder.entries, id) ? ladder.entries[id] : null;
     if (!e) ladder.entries[id] = core.newEntry(id, Object.assign({ hash: h, from }, meta, { name: meta.name || id }));
     else if (e.hash !== h) Object.assign(e, meta, { name: meta.name || id, hash: h, rev: e.rev + 1 });
+  }
+  for (const id of Object.keys(ladder.entries)) {
+    if (Object.hasOwn(sources, id)) delete ladder.entries[id].missing;
+    else ladder.entries[id].missing = true;
   }
 }
 
@@ -96,17 +102,22 @@ function cmdAdd(S, args) {
   const src = fs.readFileSync(file, 'utf8');
   if (!/defineBot\s*\(/.test(src)) throw new Error('add: ' + file + ' never calls defineBot({ ... })');
   const id = String(args.id || path.basename(file, '.js')).toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  if (!id) throw new Error('add: no usable id; pass --id');
+  if (!core.idOk(id)) throw new Error('add: "' + id + '" is not a usable id; pass --id');
+  const had = S.sources()[id];
+  if (had && had.src !== src && !args.replace) {
+    throw new Error('add: ' + id + ' is already on the ladder (' + (had.from === 'builtin' ? 'an example bot' : 'an entered file') +
+      '); pass --replace to make this its next revision, or --id to enter it as a new bot');
+  }
   fs.writeFileSync(S.botPath(id), src);
   const ladder = S.load();
-  const was = ladder.entries[id];
+  const was = Object.hasOwn(ladder.entries, id);
   sync(ladder, S.sources());
   S.save(ladder);
   const e = ladder.entries[id];
   console.log((was ? 'updated ' : 'entered ') + id + ' (' + e.name + ' rev ' + e.rev + ', rating ' + e.rating + ')');
 }
 function cmdRetire(S, args) {
-  const ladder = S.load(), e = ladder.entries[args._[1]];
+  const ladder = S.load(), e = Object.hasOwn(ladder.entries, args._[1]) ? ladder.entries[args._[1]] : null;
   if (!e) throw new Error('retire: no entry ' + args._[1]);
   e.retired = !args.undo;
   S.save(ladder);
@@ -130,27 +141,37 @@ async function cmdRun(S, args) {
   sync(ladder, sources);
   if (Object.values(ladder.entries).filter((e) => !e.retired).length < 2) console.log('(one entry: it plays itself, unrated)');
   // schedule the whole batch up front from today's ratings, so the plan is a
-  // pure function of the ladder; results are folded in as each match ends
+  // pure function of the ladder; results are folded in in plan order, however
+  // the matches finish, so --jobs never changes a rating
   const plan = core.pairings(ladder, total, shapes);
   ladder.n += plan.length;
   S.save(ladder);
   console.log('playing ' + plan.length + ' matches, ' + jobs + ' at a time, up to ' + maxMin + ' min each');
-  let next = 0;
+  let next = 0, folded = 0;
+  const done = [];
+  const fold = () => {
+    for (; folded < plan.length && done[folded]; folded++) {
+      const m = plan[folded], { log, secs } = done[folded];
+      ladder = S.load();
+      const rec = core.applyResult(ladder, m, log, 'logs/' + m.id + '.json');
+      S.save(ladder);
+      S.record(rec, log);
+      done[folded] = true; // the log is written: let it go
+      const win = rec.winner ? rec.winner + ' wins' : rec.reason === 'error' ? 'ERROR ' + String(rec.error).slice(0, 80) : 'draw';
+      console.log(m.id + '  ' + m.team0 + ' vs ' + m.team1 + '  ' + win + ' (' + rec.reason + ', ' + Math.round(rec.time / 60) + ' min, fun ' + rec.fun + ')  '
+        + rec.team0.id + ' ' + rec.team0.before + '->' + rec.team0.after + ', ' + rec.team1.id + ' ' + rec.team1.before + '->' + rec.team1.after
+        + '  [' + secs + ' s]');
+    }
+  };
   const worker = async () => {
     while (next < plan.length) {
-      const m = plan[next++];
+      const k = next++, m = plan[k];
       const bots = { [m.team0]: sources[m.team0].src, [m.team1]: sources[m.team1].src };
       const t0 = Date.now();
       const log = await playChild({ seed: m.seed, shape: m.shape, maxMin, n: m.n, bots, seats: core.seatsOf(m) });
       log.setup = Object.assign({}, log.setup, { kind: 'ladder', a: m.team0, b: m.team1 });
-      ladder = S.load(); // another finished match may have moved the ratings
-      const rec = core.applyResult(ladder, m, log, 'logs/' + m.id + '.json');
-      S.save(ladder);
-      S.record(rec, log);
-      const win = rec.winner ? rec.winner + ' wins' : rec.reason === 'error' ? 'ERROR ' + String(rec.error).slice(0, 80) : 'draw';
-      console.log(m.id + '  ' + m.team0 + ' vs ' + m.team1 + '  ' + win + ' (' + rec.reason + ', ' + Math.round(rec.time / 60) + ' min, fun ' + rec.fun + ')  '
-        + rec.team0.id + ' ' + rec.team0.before + '->' + rec.team0.after + ', ' + rec.team1.id + ' ' + rec.team1.before + '->' + rec.team1.after
-        + '  [' + Math.round((Date.now() - t0) / 1000) + ' s]');
+      done[k] = { log, secs: Math.round((Date.now() - t0) / 1000) };
+      fold();
     }
   };
   await Promise.all(Array.from({ length: jobs }, worker));

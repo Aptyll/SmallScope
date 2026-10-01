@@ -20,6 +20,10 @@ function rngOf(n) {
   };
 }
 
+// a usable entry id: short, plain, and never a name every object already has
+// ('constructor', '__proto__'), which would read as an entry that is there
+function idOk(id) { return /^[a-z0-9_-]{1,40}$/.test(id) && !(id in Object.prototype); }
+
 function newEntry(id, meta) {
   return Object.assign({ id, name: id, author: '', version: '', hash: '', rev: 1, from: 'file',
     rating: RATING_START, games: 0, w: 0, l: 0, d: 0, added: new Date().toISOString() }, meta || {});
@@ -36,7 +40,7 @@ function rate(ra, rb, sa) {
 // of the PAIR_SPREAD nearest to it in rating (never itself while there is
 // anyone else), on a fresh seed and shape, sides alternating by the match number
 function pairings(ladder, count, shapes) {
-  const ids = Object.keys(ladder.entries).filter((id) => !ladder.entries[id].retired);
+  const ids = Object.keys(ladder.entries).filter((id) => !ladder.entries[id].retired && !ladder.entries[id].missing);
   if (!ids.length) return [];
   const games = Object.fromEntries(ids.map((id) => [id, ladder.entries[id].games]));
   const out = [];
@@ -135,4 +139,4 @@ function standings(ladder, history) {
   return rows;
 }
 
-module.exports = { RATING_START, RATING_K, PAIR_SPREAD, rngOf, newEntry, expected, rate, pairings, seatsOf, applyResult, standings };
+module.exports = { RATING_START, RATING_K, PAIR_SPREAD, rngOf, idOk, newEntry, expected, rate, pairings, seatsOf, applyResult, standings };

@@ -141,3 +141,6 @@ __pycache__/
 
 # The offline bot ladder's data: ratings, history, logs, entered bot files (app/ladder/)
 ladder-data/
+
+# The patch check's runs: one folder per patch (app/regress/)
+regress-data/

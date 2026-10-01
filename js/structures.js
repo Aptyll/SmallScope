@@ -137,10 +137,12 @@ function buildLine(tx, ty, tx2, ty2) {
 // out stops the run where it runs out (placeStruct re-asks the price when
 // its claim wins) and a tile that cannot stand is simply skipped.
 function placeLine(p, c) {
-  if (!STRUCTS[c.id] || !STRUCTS[c.id].line) return;
+  if (!STRUCTS[c.id] || !STRUCTS[c.id].line) return false;
+  let any = false;
   for (const [x, y] of buildLine(c.tx, c.ty, c.tx2, c.ty2)) {
-    if (canPlaceAt(c.id, x, y, 0, p).ok) placeStruct(x, y, c.id, p, 0);
+    if (canPlaceAt(c.id, x, y, 0, p).ok && placeStruct(x, y, c.id, p, 0) === true) any = true;
   }
+  return any;
 }
 
 // Can `type` stand with its anchor on (tx, ty), turned `rot`, laid by p?
@@ -211,16 +213,16 @@ function placeStruct(tx, ty, type, p, rot) {
   p = p || player;
   const deny = (msg, t) => { sfxFor(p, 'deny'); if (p === player && msg) showMsg(msg, t); };
   const S = STRUCTS[type];
-  if (!S || !inWorld(tx, ty)) { deny(); return; }
+  if (!S || !inWorld(tx, ty)) { deny(); return 'ground'; }
   rot = S.rotates && rot ? 1 : 0;
   let can = canPlaceAt(type, tx, ty, rot, p);
   if (!can.ok && can.why !== 'far' && (structW(type) > 1 || structH(type) > 1)) {
     const a = findSite(type, tx, ty);
     if (a) { tx = a.tx; ty = a.ty; rot = 0; can = canPlaceAt(type, tx, ty, rot, p); }
   }
-  if (!can.ok) { deny(); return; } // the ghost already said so, in red
+  if (!can.ok) { deny(); return can.why || false; } // the ghost already said so, in red
   const t0 = S.tiers[0];
-  if (!canAfford(t0.cost, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return; }
+  if (!canAfford(t0.cost, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return 'gold'; }
   const cxp = (tx + structW({ type, rot }) / 2) * TILE, cyp = (ty + structH({ type, rot }) / 2) * TILE;
   contest('site:' + idx(tx, ty), p, () => {
     if (!canPlaceAt(type, tx, ty, rot, p).ok) return; // somebody's build landed on it first
@@ -230,6 +232,7 @@ function placeStruct(tx, ty, type, p, rot) {
     sfxAt('hammer', cxp, cyp);
     burst(cxp, cyp, '#eef4fb', 8, 40, 0.4, true);
   });
+  return true; // ordered (a rival's order on the same tile can still land first)
 }
 
 // The one place a building object is made (placeStruct and DBG.buildStruct):
@@ -281,10 +284,10 @@ function rollCardRarity(odds) {
 function startUpgrade(o, p) {
   p = p || player;
   const deny = (msg, t) => { sfxFor(p, 'deny'); if (p === player && msg) showMsg(msg, t); };
-  if (o.building || !ownsStruct(o, p) || STRUCTS[o.type].fixed) { deny(); return; }
-  if (o.tier >= STRUCTS[o.type].tiers.length - 1) { deny('MAX TIER', 1.4); return; }
+  if (o.building || !ownsStruct(o, p) || STRUCTS[o.type].fixed) { deny(); return false; }
+  if (o.tier >= STRUCTS[o.type].tiers.length - 1) { deny('MAX TIER', 1.4); return 'max'; }
   const t = STRUCTS[o.type].tiers[o.tier + 1];
-  if (!canAfford(t.cost, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return; }
+  if (!canAfford(t.cost, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return 'gold'; }
   pay(t.cost, p);
   o.tier++;
   o.maxHp = t.hp;
@@ -294,6 +297,7 @@ function startUpgrade(o, p) {
   o.dustT = 0;
   sfxAt('hammer', o.tx * TILE + 8, o.ty * TILE + 8);
   burst(o.tx * TILE + 8, o.ty * TILE + 8, '#eef4fb', 8, 40, 0.4, true);
+  return true;
 }
 
 // WHAT A REPAIR COSTS: REPAIR_SHARE of the standing tier's price, scaled by
@@ -311,13 +315,14 @@ function repairCost(o) {
 function startRepair(o, p) {
   p = p || player;
   const deny = (msg, t) => { sfxFor(p, 'deny'); if (p === player && msg) showMsg(msg, t); };
-  if (o.building || !ownsStruct(o, p) || STRUCTS[o.type].fixed) { deny(); return; }
+  if (o.building || !ownsStruct(o, p) || STRUCTS[o.type].fixed) { deny(); return false; }
   const g = repairCost(o);
-  if (g <= 0) { deny(); return; }
-  if (!canAfford({ gold: g }, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return; }
+  if (g <= 0) { deny(); return 'max'; }
+  if (!canAfford({ gold: g }, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return 'gold'; }
   pay({ gold: g }, p);
   o.mend = o.maxHp - o.hp;
   sfxAt('hammer', o.tx * TILE + 8, o.ty * TILE + 8);
+  return true;
 }
 // WHAT TAKING A BUILDING DOWN PAYS: half of everything spent across its
 // tiers - except a site of your own still going up for the first time, which
@@ -330,8 +335,9 @@ function structRefund(o, own) {
 
 function demolishStruct(o, p) {
   // a `fixed` building (the barracks) is the eagle's, not the wallet's: nobody pulls it down for the refund
-  if (!ownsStruct(o, p || player) || STRUCTS[o.type].fixed) { sfxFor(p || player, 'deny'); return; }
+  if (!ownsStruct(o, p || player) || STRUCTS[o.type].fixed) { sfxFor(p || player, 'deny'); return false; }
   destroyStructure(o, 'own', p || player); // 'own': a site still going up comes back whole (structRefund)
+  return true;
 }
 
 function removeStruct(o) {
