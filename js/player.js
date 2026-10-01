@@ -559,10 +559,14 @@ class Player {
       // player it is shooting (the side's focus tally), focusT/focusOk the
       // focus roll, lastFoe/lastFoeT the rival it last fought and when (the
       // commit window, aiHoldFoe), fleeT until when a fall-back holds, buildType
-      // the building it means to put up next, packT how long it has waited at the rally, scout/scoutN
+      // the building it means to put up next, downs/grudge who it has downed
+      // and the mark it holds a grudge on, obeyFor/obeyOk the human flag it
+      // rolled on and the roll, guarding its guard holding the bird past an
+      // attack flag, answered/answerAt/answerKind the human flag it last
+      // answered and when its ON IT is due (aiAnswerFlag), packT how long it has waited at the rally, scout/scoutN
       // the scout's point and step along its beat, thought what it is doing
       // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, buildType: null,
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, buildType: null, downs: {}, grudge: null, obeyFor: null, obeyOk: true, guarding: false, scoutCd: 0, answered: null, answerAt: 0, answerKind: null,
     };
     this.reset(true);
   }
@@ -892,6 +896,7 @@ function die(p, src, cause) {
   if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
   if (killer) {
     killer.kills++;
+    if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai-team.js)
     if (!killer.dead) awardGold(killer, KILL_BOUNTY, killer.x, killer.y); // the bounty, not the victim's purse
     if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
