@@ -1292,7 +1292,10 @@ world px per font px, and `TALLY_POP_SC` (1.5) for the `TALLY_POP` instant a hit
 which no world pixel can take: so `drawHealthBar(…, u)` and a player's frame only **queue** it
 (`queueTally`, with the frame's alpha), and `drawTallies(kPx)` stamps the queue on the screen
 right after the world blit, as the world-1x outlined number scaled whole into device px, crisp
-at any zoom and under the HUD. A player who goes down gets no `NAME DOWN` in the air: the feed
+at any zoom and under the HUD. A body that **dies** loses its frame, so `queueTally` also keeps
+each body's last spot (`tallySpot`, world px) and `drawTallies` floats a dead body's total
+`TALLY_RISE` px up from there, fading over `TALLY_DEATH`. A one-shot never hung a frame, so
+`trackDowns` calls `tallyFall(p)` to seed the spot where the frame would have stood. A player who goes down gets no `NAME DOWN` in the air: the feed
 says it and the fall shows it. Units also flash white on hit via `drawSpriteFlash` (0.8-alpha
 overlay).
 
