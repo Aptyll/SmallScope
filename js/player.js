@@ -841,16 +841,17 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 const KILL_BOUNTY = 12;   // gold (and so xp) a downed rival pays its killer
 
 // The wait for the bird to set a downed player back down: a read of the
-// hero's level alone - 3 s at level 1, 5 s at level 2, 25 s at LEVEL_MAX -
-// so an early death costs almost nothing and a late one costs real match,
-// which is what makes a wiped side late (everyone high) a real window on a
-// roost its defenders otherwise come back to sixty pixels from the bird
-// every few seconds. Nothing off the match clock: the level IS the clock,
-// since gold is XP and the table only climbs. With nothing else lost on a
-// death, this wait is the WHOLE penalty.
-const RESPAWN_BASE = 1;   // s
-const RESPAWN_LV = 2;     // s more per hero level
-function respawnTime(p) { return RESPAWN_BASE + RESPAWN_LV * p.level; }
+// hero's level alone, shaped like League's (its base wait runs 10 s to
+// 52.5 s over 18 levels, flat early, steepest mid-game). Early, levels 1-5
+// (about the first four minutes), a death is a few seconds and the fighting
+// goes on; mid-game, 6-9, it starts to cost; from 10 a death is a real hole
+// in the side, which is what makes a wiped side late a real window on a
+// roost whose defenders otherwise come back sixty pixels from the bird.
+// Nothing off the match clock: the level IS the clock, since gold is XP and
+// the table only climbs. With nothing else lost on a death, this wait is the
+// WHOLE penalty.
+const RESPAWN_WAIT = [5, 6, 7, 9, 11, 14, 18, 23, 29, 36, 43, 50]; // s, by hero level 1..LEVEL_MAX
+function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.level)) - 1]; }
 
 // A player goes down two ways. While its team's bird still roosts (or is
 // still flying in) it is temporary: p.dead is set (out of the world right

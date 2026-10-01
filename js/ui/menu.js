@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.70';
+const PATCH_TXT = 'PATCH 4.71';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.71', 'RESPAWNS GROW WITH YOUR LEVEL: 5 SECONDS AT LEVEL 1, 50 AT LEVEL 12, SO EARLY DEATHS PUT YOU STRAIGHT BACK IN THE FIGHT AND LATE ONES COST YOUR SIDE.'],
   ['4.70', 'HEALTH BARS LOOK THE SAME IN ANY LIGHT: NIGHT, SUN RAYS, PINES AND OTHER BODIES NO LONGER DRAW OVER THEM, AND A NEARER FIGHTER\'S NAME AND BARS SIT CLEANLY OVER A FARTHER ONE\'S.'],
   ['4.69', 'A BOT THAT REACHES YOUR BIRD KEEPS HITTING IT INSTEAD OF TURNING TO FIGHT EVERY DEFENDER, SO YOU HAVE TO STOP IT YOURSELF.'],
   ['4.68', 'A BEAR ROARS WHEN YOU WAKE IT, INSTEAD OF HOWLING LIKE A WOLF.'],
@@ -1248,6 +1249,7 @@ const PATCH_DIGEST = [
     ['YOUR BOTS CALL OUT WHAT THEY SEE, WITH AN ICON AND A PING', '4.45'],
     ['YOUR BOTS ANSWER YOUR FLAG ONE AT A TIME, AND BUILD ONLY WHAT STILL PAYS', '4.66'],
     ['BOTS MEET A PUSH AT HOME, THEN COUNTER', '4.67'],
+    ['RESPAWNS GROW WITH LEVEL: 5 S AT LEVEL 1, 50 S AT LEVEL 12', '4.71'],
     ['A GATE IN YOUR WALL THAT ONLY YOUR SIDE WALKS THROUGH', '4.27'],
     ['A BODY FREEZES AND SHATTERS OR BLOWS AWAY ON THE WIND WHEN IT GOES DOWN', '4.21'],
     ['THE MARKET STALL OPENS FROM ANY SIDE', '4.19'],

@@ -558,10 +558,10 @@ match keeps simulating while you are out** — `update()` runs `updatePlay` in b
 The team's roosting eagle is the way back, and the only thing
 that takes a player out for good is that eagle being driven off. `updateRespawns(dt)` (called from
 `updatePlay` beside `updateStructures`) counts down every `p.dead && !p.eliminated` player's
-`p.respawnT` — `respawnTime(p)`: `RESPAWN_BASE` (1 s) plus `RESPAWN_LV` (2 s) per hero level —
-3 s at level 1, 5 s at level 2, 25 s at the `LEVEL_MAX` of 12, and nothing off the match clock:
-gold is XP and the table only climbs, so the level *is* the clock. An early death costs almost
-nothing and a late one costs real match, which is what makes a wiped side late in a game (everyone
+`p.respawnT` — `respawnTime(p)`: the hero level's entry in `RESPAWN_WAIT`, shaped like League's
+base wait — 5 / 6 / 7 / 9 / 11 s for levels 1-5, 14 / 18 / 23 / 29 s for 6-9, 36 / 43 / 50 s for
+10 to the `LEVEL_MAX` of 12 — and nothing off the match clock: gold is XP and the table only
+climbs, so the level *is* the clock. An early death costs a few seconds and a late one costs real match, which is what makes a wiped side late in a game (everyone
 high) a real window on a roost its defenders otherwise come back to from sixty pixels away every
 few seconds. At zero it calls `respawnPlayer(p)`, which puts `p.spawn`
 `RESPAWN_OUT` (40 px) down the spur from the bird (`e.laneDir`; the nearest standable tile there
