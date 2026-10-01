@@ -240,12 +240,12 @@
 // ROAM aside; a match log's activities (match-log.md `act`) sit in the kind
 // they belong to.
 const KINDS = [
-  { k: 'PUSH', col: '#d55181', word: 'PUSHING', goals: ['PUSH', 'RALLY', 'SIEGE'] },
+  { k: 'PUSH', col: '#d55181', word: 'PUSHING', goals: ['PUSH', 'RALLY', 'REGROUP', 'SIEGE'] },
   { k: 'RETREAT', col: '#c98500', word: 'FALLING BACK', goals: ['FLEE', 'HIDE'] },
-  { k: 'DEFEND', col: '#9085e9', word: 'DEFENDING', goals: ['DEFEND', 'GUARD', 'ESCORT', 'FOLLOW'] },
-  { k: 'FIGHT', col: '#d95926', word: 'FIGHTING', goals: ['FIGHT', 'WOLF'] },
+  { k: 'DEFEND', col: '#9085e9', word: 'DEFENDING', goals: ['DEFEND', 'GUARD', 'ESCORT', 'FOLLOW', 'HELP'] },
+  { k: 'FIGHT', col: '#d95926', word: 'FIGHTING', goals: ['FIGHT', 'WOLF', 'STALK'] },
   { k: 'FARM', col: '#3b8f72', word: 'FARMING', goals: ['GATHER', 'MINE', 'HUNT', 'EAT', 'LOOT', 'BUILD', 'SPEND', 'SHOP', 'FORGE', 'WORK'] },
-  { k: 'ROAM', col: '#3a4150', word: 'ROAMING', goals: ['ROAM', 'IDLE', 'MOVE'] },
+  { k: 'ROAM', col: '#3a4150', word: 'ROAMING', goals: ['ROAM', 'IDLE', 'MOVE', 'SCOUT', 'ORDER'] },
 ];
 const KIND_OF = {};
 for (const K of KINDS) { KIND_OF[K.k] = K; for (const g of K.goals) KIND_OF[g] = K; }
@@ -823,8 +823,9 @@ function detail(c) {
 // to a side's business (KEY_GOALS) and everything the picked bot decides
 // (ALL: every goal change). A bot flipping between two goals is one line.
 // A line picks its bot and jumps the replay there.
-const KEY_GOALS = ['PUSH', 'RALLY', 'DEFEND', 'GUARD', 'ESCORT', 'FLEE', 'HIDE', 'SIEGE'];
-const FLIP_S = 8;              // s between changes that still count as one flip-flop
+const KEY_GOALS = ['PUSH', 'RALLY', 'REGROUP', 'DEFEND', 'GUARD', 'ESCORT', 'HELP', 'FLEE', 'HIDE', 'SIEGE'];
+const FEED_SCAN = 20000;        // goal changes the feed reads back through, newest first
+const FLIP_S = 15;             // s between changes that still count as one flip-flop
 function feed(c) {
   const sel = S.sel;
   const key = [c.id, c.kills.length, c.birdEv.length, c.events.length, sel, S.feedAll].join(':');
@@ -834,14 +835,18 @@ function feed(c) {
   for (const k of c.kills) items.push({ t: k.t, kind: 'kill', a: k.a, v: k.v });
   for (const e of c.birdEv) items.push(e);
   // goal changes, newest first, folded per bot: a run of three or more changes
-  // among two goals, each within FLIP_S of the next, is one flip line
+  // among two goals, each within FLIP_S of the next, is one flip line. The
+  // fold reads every change and the filter comes after, so a flip shows the
+  // pair it really is, even when only one of the two is a key goal
   const runs = new Map(), goals = [];
-  const close = (r) => { if (r.evs.length >= 3) goals.push({ t: r.evs[0].t, kind: 'flip', id: r.id, goals: r.goals.sort(), n: r.evs.length }); else for (const e of r.evs) goals.push(e); };
+  const keep = (x) => S.feedAll || x.id === sel || (x.kind === 'flip' ? x.goals.some((g) => KEY_GOALS.includes(g)) : KEY_GOALS.includes(x.goal));
+  const close = (r) => {
+    if (r.evs.length >= 3) { const f = { t: r.evs[0].t, kind: 'flip', id: r.id, goals: r.goals.sort(), n: r.evs.length }; if (keep(f)) goals.push(f); }
+    else for (const e of r.evs) if (keep(e)) goals.push(e);
+  };
   const evs = c.events;
-  for (let i = evs.length - 1, n = 0; i >= 0 && n < FEED_MAX * 4; i--) {
+  for (let i = evs.length - 1; i >= 0 && i >= evs.length - FEED_SCAN; i--) {
     const e = evs[i];
-    if (!(S.feedAll || e.id === sel || KEY_GOALS.includes(e.goal))) continue;
-    n++;
     const g = { t: e.t, kind: 'goal', id: e.id, goal: e.goal, why: e.why, guess: e.guess };
     const r = runs.get(e.id), last = r && r.evs[r.evs.length - 1];
     if (r && last.t - e.t <= FLIP_S && (r.goals.includes(e.goal) || r.goals.length < 2)) {
@@ -868,8 +873,7 @@ function feed(c) {
         (e.kind === 'flee' ? '<b style="color:' + s.col + '">GONE</b>' : pct + '%') + (e.by >= 0 ? '<span class="muted">' + ICON.kill + '</span>' + name(e.by) : '');
     } else if (e.kind === 'flip') {
       who = e.id; mine = e.id === sel;
-      body = name(e.id) + '<span class="muted">' + ICON.to + '</span>' + e.goals.map((g) => word(g)).join('<span class="muted" data-tip="flipping between the two">' + ICON.flip + '</span>') +
-        '<span class="muted">x' + e.n + '</span>';
+      body = name(e.id) + '<span class="muted">x' + e.n + '</span>' + e.goals.map((g) => word(g)).join('<span class="muted" data-tip="flipping between the two">' + ICON.flip + '</span>');
     } else {
       who = e.id; mine = e.id === sel;
       body = name(e.id) + '<span class="muted">' + ICON.to + '</span>' + word(e.goal, e.guess) + '<span class="wy">' + esc(e.why || '') + '</span>';

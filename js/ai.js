@@ -149,17 +149,10 @@ function aiSituation() {
   return aiSit;
 }
 // p's place among its side's living bots (the human is never counted):
-// the profile's push.n lowest go for the rival bird, the guard next stand by
-// their own, and the rest farm, build and (allies) escort
-function aiRank(p) {
-  let n = 0;
-  for (const q of players) {
-    if (!q.active || q.dead || inAir(q) || q.team !== p.team || q.control !== 'ai' || q === player) continue;
-    if (q === p) return n;
-    n++;
-  }
-  return 99;
-}
+// the profile's push.n first go for the rival bird, the guard next stand by
+// their own, and the rest farm, build and (allies) escort. The order is the
+// side's plan (aiPlanRank, js/ai-team.js): the jobs go by mood, not by seat
+function aiRank(p) { return aiPlanRank(p); }
 // the objective rung's gate: after push.t the side's push.n lowest bots go
 // for the rival bird; an ally also goes whenever the human is already on
 // it, so a push you start is a push your side joins; and ANY bot joins a
@@ -275,7 +268,7 @@ function aiFlagSync(p, dt) {
 // anywhere (a human's only, and a human's flag is served regardless).
 function aiHelps(p, f) {
   if (f.type === 'attack') return !aiOnGuard(p, aiProfile(p));
-  if (f.type === 'gather') return Math.hypot(f.tx * TILE + 8 - p.x, f.ty * TILE + 8 - p.y) < AI_FLAG_HELP;
+  if (f.type === 'gather') return aiRole(p) === 'gatherer' && Math.hypot(f.tx * TILE + 8 - p.x, f.ty * TILE + 8 - p.y) < AI_FLAG_HELP; // (a scout, stalker or slayer has a job of its own: the team brain)
   return f.type === 'rally';
 }
 // the nearest tile of a building's footprint to p, as a work target (E on
@@ -343,6 +336,8 @@ function aiNearestEnemy(p, prof, anchors) {
 // enough to be worth walking with - a push rides its wave (rung 5c)
 const AI_PACK = 5;       // relentless pushers that must be together at the rally (their cable's end) before the pack goes on
 const AI_PACK_R = 200;   // px round the rally a pusher counts as at it (bodies milling at a point stand 70-150 px apart)
+const AI_REGROUP = 2;    // pushers every other side meets at the rally before going in (the team brain)
+const AI_REGROUP_T = 15; // s one waits there before it goes in alone
 const AI_WAVE_R = 80;    // px a pusher keeps to the column's head
 const AI_WAVE_D = 640;   // px past which the column is too far behind to wait for
 function aiWaveHead(p, e) {
@@ -486,9 +481,14 @@ function updateAI(p, dt) {
 function aiThink(p, dt) {
   const inp = p.input, ai = p.ai;
   inp.mx = 0; inp.my = 0; inp.work = false; inp.slide = false;
-  if (p.dead || p.fallT > 0) { inp.fire = false; return; }
+  if (p.dead || p.fallT > 0) { inp.fire = false; aiNote(p, 'IDLE', p.dead ? 'DOWN' : 'IN THE ICE', null); return; }
   resolveCardForBot(p);
   const prof = aiProfile(p);
+  // the side's shared mind (js/ai-team.js): the plan and p's job in it, what
+  // p can see put on the side's board, and a hurt human heard as a call
+  const T = aiPlan(p.team), role = aiRole(p);
+  aiLook(p, prof);
+  if (T.hcT !== state.tick) { T.hcT = state.tick; aiHumanCall(p.team); }
 
   // walk the route to (x, y) - reach 1 stops beside a tile it cannot stand
   // on, which is exactly WORK_REACH - and return the straight-line distance,
@@ -532,6 +532,8 @@ function aiThink(p, dt) {
   if (ai.aimT <= 0) { ai.aimT = AI_AIM_T; ai.aox = rand(-1, 1) * prof.aim; ai.aoy = rand(-1, 1) * prof.aim; }
   ai.abilT -= dt;
   if (ai.abilT <= 0) { ai.abilT = AI_ABIL_T; ai.abilOk = rng() < prof.abil; }
+  ai.focusT -= dt; // ...and the focus roll: this plan, does it join the side's target?
+  if (ai.focusT <= 0) { ai.focusT = AI_PLAN_T; ai.focusOk = rng() < aiKnob(prof, 'focus'); }
   // what it is minding, off the shared read of both birds: its own bird
   // under attack - answered from anywhere on the map by as many as the
   // threat calls for (aiDefendersWanted), a bot already at the roost holding
@@ -584,6 +586,12 @@ function aiThink(p, dt) {
     guardE = null;
     ward = null;
   }
+  // a teammate's call for help it would answer (the team brain): a bot with
+  // somewhere it must be - the push, its bird, a flag, a guard's post - does
+  // not leave it for one
+  const call = !pushE && !defend && !order && !guardE && role !== 'pusher' ? aiHelpCall(p) : null;
+  const caller = call ? players[call.id] : null;
+  ai.helping = call ? call.id : -1;
 
   // 0. spend a free skill point before the ladder - waiting on it is leaving
   //    growth on the table. Lowest ability level first, so the kit rises
@@ -614,7 +622,19 @@ function aiThink(p, dt) {
   //    chewing under fire is not patience, it is a free kill. `foe` is read
   //    here rather than at rung 2 because this rung is the first to need it.
   // (an order's ground is an anchor too: a rival on it is found on arrival)
-  const foe = aiNearestEnemy(p, prof, [defend || guardE, pushE, ward, order ? { x: flX, y: flY } : null]);
+  // (and a teammate it is answering is one: the fight it walks into is found)
+  let foe = aiNearestEnemy(p, prof, [defend || guardE, pushE, ward, order ? { x: flX, y: flY } : null, caller]);
+  // focus fire: on the focus roll, the rival most of the side is already
+  // shooting is the one it takes, when it can see them
+  const fq = foe && ai.focusOk && T.focus >= 0 ? players[T.focus] : null;
+  if (fq && fq !== foe && enemyOf(p, fq)) {
+    const d = Math.hypot(fq.x - p.x, fq.y - p.y);
+    if (d < prof.sight && d < seenAt(fq, prof.sight)) foe = fq;
+  }
+  // ...and a rival it was just fighting is held a little past the edge of
+  // its sight (aiHoldFoe, the team brain), so a strafe across the line does
+  // not flip the bot between the fight and whatever it was doing before
+  foe = aiHoldFoe(p, prof, foe);
   const foeD = foe ? Math.hypot(foe.x - p.x, foe.y - p.y) : Infinity;
   // the reaction: a rival stays noticed prof.react seconds before the bot
   // turns on it (a slow side keeps chopping while you line up the shot)
@@ -641,6 +661,7 @@ function aiThink(p, dt) {
     if (p.hp < p.maxHp * 0.5 && bagCount(p, 'fish') > 0) inp.eatFish = true;
     else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
   }
+  if (p.eatT > 0) aiNote(p, 'EAT', 'LOW HP', null);
 
   // 2. the burrow - a hunter's alone now, cast as SNOW COVER (key 4) with its
   //    own 60 s clock on the way under. Decided before the ladder because two
@@ -655,7 +676,9 @@ function aiThink(p, dt) {
   //    plant that will not take burns it four times as fast and ends in the
   //    lockout.
   // (its own bird under threat comes before the human's camp fight)
-  const wolf = foe ? null : aiNearestWolf(p, defend ? null : ward);
+  // (and a bear party's bear, once the party has formed - the team brain)
+  const bj = !foe && !defend && !pushE && !order ? aiBearJob(p, dt) : null;
+  const wolf = foe ? null : aiNearestWolf(p, defend ? null : ward) || (bj && bj.fight) || null;
   if (p.prone) ai.hideT -= dt;
   const btx = Math.floor(p.x / TILE), bty = Math.floor((p.y + 4) / TILE);
   const canBury = p.cls === 0 && abReady(p, 3) && !p.sliding && p.dodgeT <= 0 &&
@@ -664,7 +687,7 @@ function aiThink(p, dt) {
   if (wolf) down = false;
   else if (foe) down = p.prone && Math.hypot(foe.x - p.x, foe.y - p.y) > 48;
   else if (p.prone) down = ai.hideT > 0 && p.hp < p.maxHp * 0.9;
-  else if (p.hp < p.maxHp * prof.flee && ai.hideCd <= 0 && canBury) down = true;
+  else if (p.hp < p.maxHp * aiFlee(p, prof) && ai.hideCd <= 0 && canBury) down = true; // (the mood moves the point)
   if (down !== p.prone) {
     inp.ability = 3;                                  // snow cover: the burrow's one door, in and out
     if (p.prone) ai.hideCd = 18;                      // back up: no re-burrowing for a while
@@ -674,7 +697,7 @@ function aiThink(p, dt) {
     // stop dead and let the momentum bleed off; tryProne refuses a body that
     // is still moving. Somewhere that never takes gives up and locks out.
     ai.hideT -= dt * 4;
-    if (ai.hideT > 0) { inp.fire = false; return; }
+    if (ai.hideT > 0) { inp.fire = false; aiNote(p, 'HIDE', 'LOW HP', null); return; }
     ai.hideCd = 12;
   }
 
@@ -683,9 +706,11 @@ function aiThink(p, dt) {
   //    lead, abilities go on the ability roll, the draw is loosed at the
   //    profile's fraction, the dodge at its rate - and a slow side stands
   //    still for part of every strafe, which is when it gets hit.
+  ai.foeId = engage && engage instanceof Player ? engage.id : -1;
   if (engage) {
     const foe = engage;
     const d = foeD;
+    aiNote(p, 'FIGHT', siege ? 'AT THEIR BIRD' : foe === fq ? 'FOCUS FIRE' : caller ? 'HELPING ' + caller.name.slice(0, 11) : 'IN SIGHT', foe);
     if (p.zip >= 0) inp.jump = true; // off the zipline first: nobody fights holding the handle
     const tf = prof.lead > 0 ? d / 300 * prof.lead : 0; // s of flight it leads by
     aimAt(foe.x + foe.vx * tf + ai.aox, foe.y - 6 + foe.vy * tf + ai.aoy);
@@ -696,6 +721,24 @@ function aiThink(p, dt) {
       // and ambushReady refuses a moving shot outright. Hold still, let them
       // walk in, and spend the arrow at full draw.
       inp.fire = clear && p.chargeT < drawTime(p) * 0.95;
+      aiNote(p, 'HIDE', 'AMBUSH', foe);
+      ai.tgt = null;
+      return;
+    }
+    // the numbers (the team brain): hurt or outnumbered, it calls the side;
+    // losing by the judge's reading, it gives ground toward a friend and
+    // keeps shooting over its shoulder - which pulls the chase into its side.
+    // Nobody backs off its own bird, a siege or a charge.
+    const odds = aiOdds(p, foe, prof);
+    if (p.hp < p.maxHp * 0.6 || odds.them > odds.us) aiCall(p, foe);
+    const atHome = defend && Math.hypot(defend.x - p.x, defend.y - p.y) < AI_ROOST_R;
+    if (!atHome && !siege && !charge && (state.elapsed < ai.fleeT || aiFallBack(p, prof, foe, odds))) {
+      if (state.elapsed >= ai.fleeT) ai.fleeT = state.elapsed + AI_FLEE_HOLD; // once it turns, it means it for a moment
+      const to = aiFallBackTo(p, foe);
+      aiNote(p, 'FLEE', odds.them > odds.us ? odds.them + 'V' + odds.us : 'LOW HP', to);
+      if (steerTo(to.x, to.y, 3) < 0) { inp.mx = -Math.cos(Math.atan2(foe.y - p.y, foe.x - p.x)); inp.my = -Math.sin(Math.atan2(foe.y - p.y, foe.x - p.x)); }
+      inp.fire = clear && !aiMelee(p) && p.chargeT < drawTime(p) * prof.draw;
+      if (d < 60 && p.dodgeCharges > 0 && rng() < dt * 2 * prof.dodge) inp.dodge = true;
       ai.tgt = null;
       return;
     }
@@ -758,6 +801,7 @@ function aiThink(p, dt) {
   //    coming to it, so it walks in to its own range first - a blade to arm's
   //    length, a bow to ~90 px with the line open
   if (wolf) {
+    aiNote(p, bj && wolf === bj.fight ? 'HUNT' : 'WOLF', bj && wolf === bj.fight ? 'THE BEAR' : wolf.target === p ? 'ON ME' : 'HELPING', wolf);
     if (p.zip >= 0) inp.jump = true; // off the zipline first
     const d = Math.hypot(wolf.x - p.x, wolf.y - p.y);
     const clear = aiLineClear(p, wolf.x, wolf.y - 4);
@@ -775,7 +819,7 @@ function aiThink(p, dt) {
   // 5. lying low with nothing in sight: hold still and let the snow finish.
   //    Everything below this rung walks somewhere, and a bot crawling to a
   //    berry bush at PRONE_SPEED is a bot that has stopped playing.
-  if (p.prone) { inp.fire = false; return; }
+  if (p.prone) { inp.fire = false; aiNote(p, 'HIDE', 'LYING LOW', null); return; }
 
   // 5a. the order: a flag somebody else on the side planted (the block above
   //     the ladder). An attack on the rival bird and a defend at its own
@@ -787,8 +831,12 @@ function aiThink(p, dt) {
   //     holds the ground when nothing is left; RALLY stands; DEFEND and
   //     GATHER go on down the ladder, with the work bounded to the ring.
   if (order && !defend && !pushE) {
+    aiNote(p, order.type === 'rally' ? 'RALLY' : 'ORDER', order.type.toUpperCase() + ' FLAG', { x: flX, y: flY });
     const d = Math.hypot(flX - p.x, flY - p.y);
-    if (d > AI_FLAG_IN) {
+    // (a DEFEND or GATHER is worked anywhere in its ring, so only leaving the
+    // ring walks it back - at AI_FLAG_IN a tree near the rim had it walking
+    // to the work and back to the flag every other tick)
+    if (d > ((order.type === 'defend' || order.type === 'gather') ? FLAG_R * 0.95 : AI_FLAG_IN)) {
       if (steerTo(flX, flY, 3, AI_ROOST_BUDGET) >= 0) { aimAt(flX, flY); inp.fire = false; ai.tgt = null; return; }
     } else if (order.type === 'attack') {
       const st = enemyStructNear(p.team, flX, flY, FLAG_R);
@@ -810,6 +858,7 @@ function aiThink(p, dt) {
   // 5b. its bird is under attack: get to it. Rung 3 takes over on arrival -
   //     the bird is an anchor, so the archer standing off it is in sight.
   if (defend) {
+    aiNote(p, 'DEFEND', alarm ? 'BIRD HURT' : 'BIRD HIT', defend);
     const d = Math.hypot(defend.x - p.x, defend.y - p.y);
     if (d > 80) { // home through its own lane, like a push
       if (aiToRoost(p, defend, steerTo, 3) >= 0) { aimAt(defend.x, defend.y); inp.fire = false; ai.tgt = null; return; }
@@ -821,6 +870,7 @@ function aiThink(p, dt) {
   //      anchor, so a rival standing off the roost is rung 3's the moment
   //      they show.
   if (guardE && Math.hypot(guardE.x - p.x, guardE.y - p.y) > AI_GUARD_R) {
+    aiNote(p, 'GUARD', 'BACK TO POST', guardE);
     if (aiToRoost(p, guardE, steerTo, 4) >= 0) { aimAt(guardE.x, guardE.y); inp.fire = false; ai.tgt = null; return; }
   }
 
@@ -832,6 +882,7 @@ function aiThink(p, dt) {
   if (pushE) {
     const e = pushE;
     const d = Math.hypot(e.x - p.x, e.y - p.y);
+    aiNote(p, 'PUSH', T.stance === 'WINDOW' ? 'THEY ARE DOWN' : theirs && theirs.hp < AI_JOIN_HP ? 'BIRD IS WEAK' : 'OUR TURN', e);
     // the roost sits in the corner's forest at the end of its lane, and the
     // lane is the only way in: off it, the walk is aiToRoost's (gate, mouth,
     // lane); on it, the class decides the approach
@@ -844,6 +895,7 @@ function aiThink(p, dt) {
     // head of its side's column rather than ahead of it alone
     const head = aiInLane(p, e) || prof.relentless ? null : aiWaveHead(p, e); // (a relentless side's grouping is the pack below, not the column's pace)
     if (head && Math.hypot(head.x - p.x, head.y - p.y) > AI_WAVE_R) {
+      aiNote(p, 'PUSH', 'WITH THE WAVE', head);
       if (steerTo(head.x, head.y, 2) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; }
     }
     // a relentless side hits as a PACK, never a trickle: off the rival's
@@ -856,19 +908,30 @@ function aiThink(p, dt) {
     // goes on however the others fare, until it dies or is called home -
     // a pack that re-counts itself every step falls back to the rally the
     // moment one body steps out of the ring.
-    if (prof.relentless && !aiInLane(p, e) && !ai.packGo) {
+    // Every other side REGROUPS the same way (the team brain): its pushers
+    // (the plan's, js/ai-team.js) meet at the rally until AI_REGROUP of them
+    // are there, and go on together - or alone once one has waited
+    // AI_REGROUP_T, so a push is never held hostage by a bot that went home.
+    // A column on the road is grouping enough: walking with the wave skips it.
+    if ((prof.relentless || !head) && !aiInLane(p, e) && !ai.packGo) {
       const z = zips[p.team], end = z ? z.pts[z.pts.length - 1] : null;
       if (end) {
         let alive = 0, here = 0;
         for (const q of players) {
           if (!q.active || q.dead || inAir(q) || q.team !== p.team || q.control !== 'ai') continue;
+          if (!prof.relentless && q !== p && aiRole(q) !== 'pusher') continue;
           alive++;
           if (Math.hypot(q.x - end.x, q.y - end.y) < AI_PACK_R) here++;
         }
         const dEnd = Math.hypot(end.x - p.x, end.y - p.y);
-        if (here >= Math.min(AI_PACK, alive)) ai.packGo = true;
-        else if (dEnd > AI_PACK_R * 0.3) { if (steerTo(end.x, end.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; } }
-        else { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; } // at the rally: wait for the side
+        const need = Math.min(prof.relentless ? AI_PACK : AI_REGROUP, alive);
+        if (dEnd <= AI_PACK_R) ai.packT += dt; else ai.packT = 0;
+        if (here >= need || (!prof.relentless && ai.packT > AI_REGROUP_T)) ai.packGo = true;
+        else {
+          aiNote(p, 'REGROUP', 'PACK ' + here + '/' + need, end);
+          if (dEnd > AI_PACK_R * 0.3) { if (steerTo(end.x, end.y, 2, AI_ROOST_BUDGET) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; } }
+          else { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; } // at the rally: wait for the side
+        }
       }
     }
     if (!aiInLane(p, e)) {
@@ -920,7 +983,44 @@ function aiThink(p, dt) {
   if (ward && aiEscorts(p)) {
     const d = Math.hypot(ward.x - p.x, ward.y - p.y);
     if (d > AI_ESCORT && d < AI_ESCORT_R) {
+      aiNote(p, 'ESCORT', 'STAY CLOSE', ward);
       if (steerTo(ward.x, ward.y, 4) >= 0) { aimAt(ward.x, ward.y); inp.fire = false; ai.tgt = null; return; }
+    }
+  }
+
+  // 5e. a teammate's call for help (the team brain): go to them. The caller
+  //     is an anchor, so the rival they are fighting is rung 3's on arrival.
+  if (caller && Math.hypot(caller.x - p.x, caller.y - p.y) > 48) {
+    aiNote(p, 'HELP', caller.name.slice(0, 13) + ' CALLED', caller);
+    if (steerTo(caller.x, caller.y, 3) >= 0) { aimAt(caller.x, caller.y); inp.fire = false; ai.tgt = null; return; }
+  }
+
+  // 5f. the side's two roaming jobs (the plan, js/ai-team.js), for a bot
+  //     nothing above has claimed. The STALKER walks to where the side last
+  //     saw a rival alone - on arrival they are rung 3's, and a spot found
+  //     empty is struck off; with nobody alone it works like anybody else.
+  //     The SCOUT walks its beat - the middle, the far road short of the
+  //     rival lane - and everything it sees goes on the side's board.
+  if (bj && bj.meet) { // the bear party forming, off the bear's reach
+    aiNote(p, 'REGROUP', 'BEAR PARTY ' + bj.here + '/' + AI_BEAR_N, bj.meet);
+    if (steerTo(bj.meet.x, bj.meet.y, 2) >= 0) { aimAt(bj.meet.x, bj.meet.y); inp.fire = false; ai.tgt = null; return; }
+  }
+  if (!order && !pushE && !defend && !guardE) {
+    if (role === 'stalker') {
+      const s = aiStalkTarget(p, prof);
+      if (s) {
+        const q = players[s.id];
+        aiNote(p, 'STALK', (q ? q.name.slice(0, 12) : 'RIVAL') + ' ALONE', s);
+        const d = steerTo(s.x, s.y, 2);
+        if (d >= 0 && d > 28) { aimAt(s.x, s.y); inp.fire = false; ai.tgt = null; return; }
+        s.t = -1e9; // there and nobody: the side forgets the spot
+      }
+    } else if (role === 'scout') {
+      if (!ai.scout) ai.scout = aiScoutPoint(p);
+      aiNote(p, 'SCOUT', 'WATCHING', ai.scout);
+      const d = steerTo(ai.scout.x, ai.scout.y);
+      if (d >= 0 && d > 24) { aimAt(p.x + inp.mx * 40, p.y + inp.my * 40); inp.fire = false; ai.tgt = null; return; }
+      ai.scoutN = (ai.scoutN || 0) + 1; ai.scout = null; // there, or no way there: the next point on the beat
     }
   }
 
@@ -929,6 +1029,7 @@ function aiThink(p, dt) {
   if (ai.huntAvoidT > 0) { ai.huntAvoidT -= dt; if (ai.huntAvoidT <= 0) ai.huntAvoid = null; }
   const prey = aiNearestAnimal(p);
   if (prey) {
+    aiNote(p, 'HUNT', 'MEAT IS GOLD', prey);
     if (prey !== ai.huntTgt) { ai.huntTgt = prey; ai.huntT = 0; }
     ai.huntT += dt;
     const clear = aiLineClear(p, prey.x, prey.y - 3);
@@ -947,13 +1048,15 @@ function aiThink(p, dt) {
   inp.fire = false;
 
   // 7. loot on the ground is neutral and first-come: pick up what is close.
-  let loot = null, ld = 72;
+  let loot = null, ld = 72 * aiMood(p).greed; // (a greedy bot walks further for it)
   for (const d of drops) {
     if (d.t < 0.35) continue;
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < ld) { ld = dd; loot = d; }
   }
+  if (loot && bound && !inFlag(bound, loot.x, loot.y)) loot = null; // (an order's ring bounds the loot as it does the work)
   if (loot && ai.lootT < 4) {
+    aiNote(p, 'LOOT', 'ON THE GROUND', loot);
     ai.lootT += dt; aimAt(loot.x, loot.y);
     if (steerTo(loot.x, loot.y) < 0) ai.lootT = 4; // no way to it: let it lie
     return;
@@ -968,21 +1071,25 @@ function aiThink(p, dt) {
 
   // 9. spend the purse (gear went at rung 0, from anywhere): a stump to
   //    build on, then its own work to upgrade
-  const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold ? (rng() < 0.3 ? 'spawner' : 'generator') : null;
+  // (what it means to build is picked once and kept until it builds or gives
+  // up - re-rolled every tick it flipped between a site and no site)
+  if (!ai.buildType) ai.buildType = rng() < 0.3 ? 'spawner' : 'generator';
+  const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold ? ai.buildType : null;
   if (ai.buildT <= 0 && wantType) {
     const st = aiBuildSite(p, wantType);
     if (st) {
       const sx = st.tx * TILE + 8, sy = st.ty * TILE + 8;
       const d = Math.hypot(sx - p.x, sy - p.y);
+      aiNote(p, 'BUILD', wantType.toUpperCase(), { x: sx, y: sy });
       if (d > 40) {
         // a site it cannot route to must not pin it there
-        if (steerTo(sx, sy) < 0) { ai.buildT = 15; ai.spendT = 0; }
+        if (steerTo(sx, sy) < 0) { ai.buildT = 15; ai.spendT = 0; ai.buildType = null; }
         return;
       }
       if (d > 16) { // clear of the site: order it
         ai.spendT = 0;
         inp.cmd = { kind: 'build', tx: st.tx, ty: st.ty, id: wantType };
-        ai.buildT = 12;
+        ai.buildT = 12; ai.buildType = null;
         return;
       }
       // standing on the site: step off toward the openest neighbouring tile
@@ -997,7 +1104,7 @@ function aiThink(p, dt) {
       }
       steerTo((bx + 0.5) * TILE, (by + 0.5) * TILE);
       ai.spendT += dt;
-      if (ai.spendT > 3) { ai.buildT = 15; ai.spendT = 0; } // wedged: go do something else
+      if (ai.spendT > 3) { ai.buildT = 15; ai.spendT = 0; ai.buildType = null; } // wedged: go do something else
       return;
     }
   }
@@ -1005,6 +1112,7 @@ function aiThink(p, dt) {
     const up = nearestObj(p.x, p.y, 3, (o) => STRUCTS[o.type] && !o.building &&
       o.team === p.team && o.tier < STRUCTS[o.type].tiers.length - 1 && canAfford(STRUCTS[o.type].tiers[o.tier + 1].cost, p));
     if (up) {
+      aiNote(p, 'BUILD', 'UPGRADE', up);
       inp.cmd = { kind: 'upgrade', tx: up.tx, ty: up.ty, id: 'upgrade' };
       ai.buildT = 10;
       return;
@@ -1016,20 +1124,22 @@ function aiThink(p, dt) {
   // (a stripped bush stops being work, so drop it the moment it empties)
   if (ai.tgt && (objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt ||
     (ai.tgt.type === 'bush' && ai.tgt.berries <= 0) ||
-    (ai.tgt.type === 'rock' && (!rockReady(ai.tgt) || (rockMiner(ai.tgt) && rockMiner(ai.tgt) !== p))))) ai.tgt = null;
+    (ai.tgt.type === 'rock' && (!rockReady(ai.tgt) || (rockMiner(ai.tgt) && rockMiner(ai.tgt) !== p))))) { ai.tgt = null; ai.thinkT = 0; } // (finished: look for the next at once)
   ai.avoidT -= dt;
   if (ai.avoidT <= 0) ai.avoid = null;
   // (under a DEFEND or GATHER order the work is bounded to the order's ring)
   if (ai.tgt && bound && !inFlag(bound, ai.tgt.tx * TILE + 8, ai.tgt.ty * TILE + 8)) ai.tgt = null;
   if (!ai.tgt && ai.thinkT <= 0) {
     ai.thinkT = 0.6;
-    ai.tgt = nearestObj(p.x, p.y, AI_FORAGE, (o) => o !== ai.avoid &&
+    ai.tgt = nearestObj(p.x, p.y, Math.round(AI_FORAGE * aiMood(p).greed), (o) => o !== ai.avoid &&
       (o.type === 'tree' || o.type === 'chest' || (o.type === 'rock' && rockReady(o) && !rockMiner(o)) ||
         (o.type === 'bush' && o.berries > 0)) &&
-      aiOpenSides(o.tx, o.ty) >= 1 && (!bound || inFlag(bound, o.tx * TILE + 8, o.ty * TILE + 8)));
+      aiOpenSides(o.tx, o.ty) >= 1 && (!bound || inFlag(bound, o.tx * TILE + 8, o.ty * TILE + 8)) &&
+      (!guardE || Math.hypot(o.tx * TILE + 8 - guardE.x, o.ty * TILE + 8 - guardE.y) < AI_GUARD_R * 0.85)); // (a guard works inside its leash)
   }
   if (ai.tgt) {
     const t = ai.tgt;
+    aiNote(p, t.type === 'rock' ? 'MINE' : 'GATHER', bound ? 'FLAG SAYS' : t.type.toUpperCase(), t);
     // its own flag says where it works - unless it is already working under someone else's
     if (!order) ai.want = { type: 'gather', x: t.tx * TILE + 8, y: t.ty * TILE + 8 };
     aimAt(t.tx * TILE + 8, t.ty * TILE + 8);
@@ -1052,14 +1162,20 @@ function aiThink(p, dt) {
 
   // 11. nothing to do: roam between its camp and the middle of the map -
   //     unless an order has it on its ring, where nothing to do is standing
-  if (bound) { inp.fire = false; return; }
+  if (bound) { inp.fire = false; aiNote(p, 'IDLE', 'ON THE FLAG', null); return; }
+  // a guard or an escort with nothing to do holds its post (roaming off the
+  // edge of its leash had it flipping between its rung and this every few ticks)
+  if (guardE) { inp.fire = false; aimAt(guardE.x, guardE.y); aiNote(p, 'GUARD', 'ON POST', guardE); return; }
+  if (ward && aiEscorts(p) && Math.hypot(ward.x - p.x, ward.y - p.y) < AI_ESCORT_R) { inp.fire = false; aimAt(ward.x, ward.y); aiNote(p, 'ESCORT', 'BY THEIR SIDE', ward); return; }
+  aiNote(p, 'ROAM', 'NOTHING NEAR', { x: ai.wx, y: ai.wy });
   ai.roam -= dt;
   if (ai.roam <= 0) {
     ai.roam = rand(3, 7);
     const toward = rng() < 0.5 ? { x: cx * TILE, y: cy * TILE } :
       { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
-    ai.wx = toward.x + rand(-14, 14) * TILE;
-    ai.wy = toward.y + rand(-14, 14) * TILE;
+    const w = aiMood(p).roam; // (a wild bot wanders wider)
+    ai.wx = toward.x + rand(-14, 14) * TILE * w;
+    ai.wy = toward.y + rand(-14, 14) * TILE * w;
   }
   const rd = steerTo(ai.wx, ai.wy);
   if (rd < 20) ai.roam = 0; // arrived, or no route (a point in the treeline): pick another

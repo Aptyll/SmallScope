@@ -16,9 +16,8 @@ const logs = [];
 for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.json') && n !== 'aggregate.json' && !n.startsWith('map-')).sort()) {
   const file = path.join(dir, f);
   const log = JSON.parse(fs.readFileSync(file, 'utf8'));
-  if (!log.samples) continue;
-  if (log.result.reason !== 'error') log.fun = funScore(log);
-  fs.writeFileSync(file, JSON.stringify(log));
+  // a crashed match has no samples to score, but it still counts in the run
+  if (log.samples && log.result.reason !== 'error') { log.fun = funScore(log); fs.writeFileSync(file, JSON.stringify(log)); }
   logs.push(log);
 }
 fs.writeFileSync(path.join(dir, 'summary.jsonl'), logs.map((l) => JSON.stringify(summaryOf(l))).join('\n') + '\n');

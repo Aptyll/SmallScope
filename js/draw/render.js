@@ -767,6 +767,7 @@ function render() {
   drawDropAir(ex, ey, now); // the eagle, its rider and anyone falling from it
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
+  drawCallouts(ex, ey); // the bots' calls, above the night like all world text (js/draw/callouts.js)
   // the two debug views, above the lighting on purpose - see the banner
   if (settings.hitbox > 1 || window.DBG.showPaths) drawNavPaths(ox, oy, ex, ey);
   drawHitboxes(ox, oy, ex, ey);

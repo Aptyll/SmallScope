@@ -40,9 +40,10 @@ surface draws a guessed goal with a trailing `?`, so a guess never passes for th
 shot at game is the hunt it belongs to (HUNT), at a wolf WOLF, at a rival, a soldier or a bear
 FIGHT.
 
-A goal is coloured by what it is for, six kinds: PUSH (push, rally, siege), RETREAT (flee, hide),
-DEFEND (defend, guard, escort, follow) and FIGHT (fight, wolf) are loud; FARM (gather, mine, hunt,
-eat, loot, build, spend, shop, forge) and ROAM (roam, idle) are quiet, because they are most of any
+A goal is coloured by what it is for, six kinds: PUSH (push, rally, regroup, siege), RETREAT (flee,
+hide), DEFEND (defend, guard, escort, follow, help) and FIGHT (fight, wolf, stalk) are loud; FARM
+(gather, mine, hunt, eat, loot, build, spend, shop, forge) and ROAM (roam, idle, scout, order) are
+quiet, because they are most of any
 match and a fight or a push is what the eye should find. The six were checked as a set on the page's
 panel for colour-blind separation in their stacking order, and none is a side's red or blue.
 `BOT_GOALS` files each goal word in the game; the page's `KINDS` files the same words (and the
@@ -109,7 +110,7 @@ middle, the red side down the right, and the whole match along the bottom.
 - The picked bot (the edge column's top): goal and why, how long held, role, mood and plan, the
   options the brain weighed as bars, how it has spent the match, health and record.
 - FEED: kills, each bird's nerve every tenth it loses, every bot turning to a side's business
-  (`KEY_GOALS`: push, rally, defend, retreat...) and the picked bot's every goal; ALL adds every
+  (`KEY_GOALS`: push, rally, regroup, defend, help, retreat...) and the picked bot's every goal; ALL adds every
   goal change. A bot flipping among two goals (three changes or more, each within `FLIP_S`) is one
   line with a count. A line picks its bot and jumps the replay there.
 - The timeline, top to bottom: a lane per bird, full while it is whole and dipping as it is hurt;

@@ -169,6 +169,7 @@ function renderMinimap(now) {
     drawFlagMark(ctx, MM_CX + dx, MM_CY + dy + 3, q.flag, TEAMS[skin(q.team)].mark, undefined, s);
     ctx.restore();
   }
+  if (callouts.length) drawCalloutsMap(ptx, pty, s, vp); // the bots' calls, pulsing where they are about (js/draw/callouts.js)
   // the ziplines, each a thread in its side's ink along the road's verge
   // (the chart strokes the same lines): where the fast way out runs
   for (const z of zips) {
