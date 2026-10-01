@@ -236,6 +236,18 @@ function aiEscorts(p) {
 // is the weapon in hand a blade? A bot with one fights at arm's length
 // (AI_MELEE_D px) instead of at a bow's 70
 const AI_MELEE_D = 18;
+// Which band of `edges` (ascending px) distance d is in - 0 inside the first
+// edge, edges.length past the last - holding the band it was in (`band`)
+// until d is AI_BAND_HYS px past that band's own edge, so a body sitting on
+// an edge does not swap moves every tick
+const AI_BAND_HYS = 6;
+function aiRangeBand(band, d, edges) {
+  let b = 0;
+  while (b < edges.length && d > edges[b]) b++;
+  if (band === undefined || band === null || band === b) return b;
+  if (b > band) return d > edges[b - 1] + AI_BAND_HYS ? b : (b > band + 1 ? b - 1 : band);
+  return d < edges[b] - AI_BAND_HYS ? b : (b < band - 1 ? b + 1 : band);
+}
 function aiMelee(p) { const c = heldTool(p); return !!c && !!TOOLS[toolIdOf(c.type)].melee; }
 function aiNearestEnemy(p, prof, anchors) {
   let best = null, bs = Infinity;
@@ -744,8 +756,12 @@ function aiThink(p, dt) {
     // a blade holds at arm's length and circles there; a bow holds ~70px:
     // close in when far, back off when crowded, strafe in between
     // (a relentless bow never backs off when crowded: it circles in close)
-    const turn = melee ? (d > AI_MELEE_D ? 0.15 * side : Math.PI / 2 * side * prof.strafe)
-      : d > 85 ? 0.3 * side : d < 50 && !prof.relentless ? Math.PI * 0.85 * side : Math.PI / 2 * side * prof.strafe;
+    // (the range bands hold AI_BAND_HYS px past their edge: on an edge it
+    // swapped close-in for circle every other tick, and the walk - and the
+    // facing that follows it - flickered between the two)
+    ai.band = aiRangeBand(ai.band, d, melee ? [AI_MELEE_D] : [50, 85]);
+    const turn = melee ? (ai.band > 0 ? 0.15 * side : Math.PI / 2 * side * prof.strafe)
+      : ai.band > 1 ? 0.3 * side : ai.band < 1 && !prof.relentless ? Math.PI * 0.85 * side : Math.PI / 2 * side * prof.strafe;
     inp.mx = Math.cos(a + turn); inp.my = Math.sin(a + turn);
     // a slow side plants its feet to shoot: the standing part of each 2 s is
     // the only part it draws and looses in (a draw cut off by the walk goes
