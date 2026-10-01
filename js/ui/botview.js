@@ -89,22 +89,23 @@ function botAimed(p) {
 
 // ------------------------------------------------------------ bot recorder
 // Every goal change and a once-a-second sample of every bot, plus the time
-// each bot has spent on each goal - read by the table below and sent to the
-// out-of-game page. Stepped from updatePlay (sim.js) after the bots think; it
+// each bot has spent on each goal, every kill and the birds' nerve - read by
+// the table below and sent to the out-of-game page. Stepped from updatePlay (sim.js) after the bots think; it
 // writes nothing the sim reads, so it is no part of a save or the wire.
 // A match is over when the clock runs backward (a new one began): its last
 // summary joins `matches`, the session's history.
 const BOTLOG_SAMPLE = 1;       // s between position samples
 const BOTLOG_CAP = 60000;      // events + samples kept per match before the oldest go
 const BOTLOG_MATCHES = 50;     // finished-match summaries kept this session
-const BOTLOG = { seed: SEED, t: -1, sampleT: 0, events: [], samples: [], goals: new Map(), time: new Map(), changed: new Map(), matches: [], last: null };
+const BOTLOG = { seed: SEED, t: -1, sampleT: 0, events: [], samples: [], kills: [], birds: [], seen: new Map(),
+  goals: new Map(), time: new Map(), changed: new Map(), matches: [], last: null };
 function botLogReset() {
   if (BOTLOG.last) {
     BOTLOG.matches.push(BOTLOG.last);
     if (BOTLOG.matches.length > BOTLOG_MATCHES) BOTLOG.matches.shift();
   }
   BOTLOG.seed = SEED; BOTLOG.t = -1; BOTLOG.sampleT = 0;
-  BOTLOG.events = []; BOTLOG.samples = [];
+  BOTLOG.events = []; BOTLOG.samples = []; BOTLOG.kills = []; BOTLOG.birds = []; BOTLOG.seen.clear();
   BOTLOG.goals.clear(); BOTLOG.time.clear(); BOTLOG.changed.clear(); BOTLOG.last = null;
 }
 function botLogStep(dt) {
@@ -126,22 +127,51 @@ function botLogStep(dt) {
       botLogPush(BOTLOG.events, { t: +t.toFixed(2), id: p.id, goal: th.goal, why: th.why, guess: th.guess,
         x: Math.round(p.x), y: Math.round(p.y), tx: th.x === null ? null : Math.round(th.x), ty: th.y === null ? null : Math.round(th.y) });
     }
-    if (sample) botLogPush(BOTLOG.samples, { t: Math.round(t), id: p.id, x: Math.round(p.x), y: Math.round(p.y), hp: Math.round(p.hp), goal: th.goal });
+    if (sample) botLogPush(BOTLOG.samples, { t: Math.round(t), id: p.id, x: Math.round(p.x), y: Math.round(p.y), hp: Math.round(p.hp),
+      mhp: Math.round(p.maxHp), k: p.kills, d: p.deaths, goal: th.goal });
   }
+  botLogKills(t);
+  if (sample && state.drop) botLogPush(BOTLOG.birds, { t: Math.round(t), e: state.drop.eagles.map((e) => [Math.round(Math.max(0, e.hp)), Math.round(e.maxHp), e.state]) });
   // the summary kept current, so the one a new match files is the old match's
   // own (by the time the clock runs backward the players are already reset)
   if (sample) BOTLOG.last = botMatchSummary();
+}
+// who went down since the last step, credited to whoever's kill count rose
+// with it (die, js/player.js, does both at once); -1 when nobody's did
+function botLogKills(t) {
+  let downs = null, up = null;
+  for (const p of players) {
+    if (!p.active) continue;
+    const was = BOTLOG.seen.get(p.id);
+    if (!was) { BOTLOG.seen.set(p.id, { dead: p.dead, kills: p.kills }); continue; }
+    if (p.dead && !was.dead) (downs || (downs = [])).push(p);
+    if (p.kills > was.kills) (up || (up = [])).push(p);
+    was.dead = p.dead; was.kills = p.kills;
+  }
+  if (downs) for (const v of downs) {
+    const i = up ? up.findIndex((a) => a !== v) : -1;
+    const a = i >= 0 ? up.splice(i, 1)[0] : null;
+    botLogPush(BOTLOG.kills, { t: +t.toFixed(1), a: a ? a.id : -1, v: v.id, x: Math.round(v.x), y: Math.round(v.y) });
+  }
 }
 function botLogPush(list, e) { list.push(e); if (list.length > BOTLOG_CAP) list.splice(0, list.length - BOTLOG_CAP); }
 // one bot's line in a table: who, at what level, what it did and how it spent its time
 function botRow(p) {
   return {
-    id: p.id, name: p.name, team: p.team, col: TEAMS[skin(p.team)].mark, level: botLevel(p), cls: p.cls || '',
+    id: p.id, name: p.name, team: p.team, col: TEAMS[skin(p.team)].mark, level: botLevel(p), cls: botCls(p),
     role: (p.ai.thought && p.ai.thought.role) || '',
     kills: p.kills, deaths: p.deaths, dmgOut: Math.round(p.dmgOut), dmgBird: Math.round(p.dmgBird),
     dmgStruct: Math.round(p.dmgStruct), gold: p.hGold.length ? p.hGold[p.hGold.length - 1] : 0,
     time: Object.assign({}, BOTLOG.time.get(p.id) || {}),
   };
+}
+function botCls(p) { return CLASSES[p.cls] ? CLASSES[p.cls].name : ''; }
+// each team's paint on this screen, by team index: the page puts BLUE on the left
+function botSides() { return [0, 1].map((t) => ({ name: TEAMS[skin(t)].name, col: TEAMS[skin(t)].mark })); }
+// the seats nobody's brain drives (the local player, a remote one)
+function botPeople() {
+  return players.filter((p) => p.active && p.control !== 'ai').map((p) => ({ id: p.id, name: p.name, team: p.team, col: TEAMS[skin(p.team)].mark,
+    cls: botCls(p), x: Math.round(p.x), y: Math.round(p.y), hp: Math.round(p.hp), maxHp: Math.round(p.maxHp), dead: p.dead, kills: p.kills, deaths: p.deaths }));
 }
 function botMatchSummary() {
   return { seed: BOTLOG.seed, len: Math.round(BOTLOG.t), bots: players.filter(botIsBot).map(botRow) };
@@ -150,7 +180,8 @@ function botMatchSummary() {
 // minimap's terrain (1 px a tile) to draw it on (docs/dev/botview.md)
 function botLogExport() {
   return { kind: 'softfall-botlog', v: 1, seed: BOTLOG.seed, len: Math.round(BOTLOG.t), world: WORLD * TILE, map: mmCv.toDataURL(),
-    bots: players.filter(botIsBot).map(botRow), events: BOTLOG.events, samples: BOTLOG.samples, matches: BOTLOG.matches };
+    sides: botSides(), bots: players.filter(botIsBot).map(botRow), people: botPeople(), events: BOTLOG.events, samples: BOTLOG.samples,
+    kills: BOTLOG.kills, birds: BOTLOG.birds, matches: BOTLOG.matches };
 }
 
 // ------------------------------------------------------------ bot view
@@ -386,14 +417,14 @@ function botLabPump() {
   for (const p of players) {
     if (!botIsBot(p)) continue;
     const th = botThought(p);
-    bots.push({ id: p.id, name: p.name, team: p.team, col: TEAMS[skin(p.team)].mark, level: botLevel(p), x: Math.round(p.x), y: Math.round(p.y),
+    bots.push({ id: p.id, name: p.name, team: p.team, col: TEAMS[skin(p.team)].mark, level: botLevel(p), cls: botCls(p), x: Math.round(p.x), y: Math.round(p.y),
       hp: Math.round(p.hp), maxHp: Math.round(p.maxHp), dead: p.dead, air: inAir(p),
       goal: th.goal, why: th.why, guess: th.guess, tx: th.x === null ? null : Math.round(th.x), ty: th.y === null ? null : Math.round(th.y),
       role: th.role, mood: th.mood, plan: th.plan, options: th.options, kills: p.kills, deaths: p.deaths, dmgOut: Math.round(p.dmgOut),
       time: BOTLOG.time.get(p.id) || {} });
   }
-  const humans = players.filter((p) => p.active && p.control !== 'ai').map((p) => ({ id: p.id, name: p.name, team: p.team, col: TEAMS[skin(p.team)].mark, x: Math.round(p.x), y: Math.round(p.y), dead: p.dead }));
-  const birds = state.drop ? state.drop.eagles.map((e) => ({ team: e.team, col: TEAMS[skin(e.team)].mark, x: Math.round(e.x), y: Math.round(e.y), state: e.state, hp: e.hp })) : [];
-  botLab.postMessage({ kind: 'botlab-frame', t: +state.elapsed.toFixed(2), seed: SEED, bots, humans, birds,
-    events: BOTLOG.events.slice(-40) }, '*');
+  const birds = state.drop ? state.drop.eagles.map((e) => ({ team: e.team, col: TEAMS[skin(e.team)].mark, x: Math.round(e.x), y: Math.round(e.y),
+    state: e.state, hp: Math.round(Math.max(0, e.hp)), max: Math.round(e.maxHp) })) : [];
+  botLab.postMessage({ kind: 'botlab-frame', t: +state.elapsed.toFixed(2), seed: SEED, sides: botSides(), bots, humans: botPeople(), birds,
+    events: BOTLOG.events.slice(-40), kills: BOTLOG.kills.slice(-20) }, '*');
 }

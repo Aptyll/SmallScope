@@ -42,50 +42,69 @@ The page keeps its own copy of the table (`GOALS`), so a new colour goes in both
 
 `botLogStep` runs in `updatePlay` after every player has stepped. Per bot it keeps the seconds spent
 on each goal, every goal change (`{ t, id, goal, why, guess, x, y, tx, ty }`) and a sample a second
-(`{ t, id, x, y, hp, goal }`). When the match clock runs backward a new match has begun, and the old
-one's summary joins `BOTLOG.matches` (the session's last 50). None of it is sim state: it is in no
-save and on no wire.
+(`{ t, id, x, y, hp, mhp, k, d, goal }`). For everyone it keeps the kills (`{ t, a, v, x, y }`: a
+body that went down this step, credited to whoever's kill count rose with it, `a = -1` for nobody),
+and a sample a second of both birds (`{ t, e: [[hp, maxHp, state]] }` by team). When the match clock
+runs backward a new match has begun, and the old one's summary joins `BOTLOG.matches` (the
+session's last 50). None of it is sim state: it is in no save and on no wire.
 
 `botLogExport()` is what the page saves: `{ kind: 'softfall-botlog', v: 1, seed, len, world, map,
-bots, events, samples, matches }`, where `map` is the minimap's terrain as a PNG data URL (one
-pixel a tile) and `world` the map's width in world pixels.
+sides, bots, people, events, samples, kills, birds, matches }`, where `map` is the minimap's
+terrain as a PNG data URL (one pixel a tile), `world` the map's width in world pixels, `sides` each
+team's paint on this screen (`{ name, col }` by team index) and `people` the seats no brain drives.
 
 ## The page
 
 [botlab.html](../../botlab.html) is one file with no fetch, so it works double-clicked. Opened with
-F6 it says hello, the game answers with its log, and then sends a frame of every bot's thought
-four times a second (`BOTLAB_T`) by `postMessage`; SAVE LOG asks the game for a fresh export and
-downloads it. The desktop build ships the page beside index.html (desktop/build.js). Opened on
-its own, OPEN LOGS (or a drop anywhere on the page) takes any mix of:
+F6 it says hello, the game answers with its log, and then sends a frame of every bot's thought,
+the birds, the people and the latest kills four times a second (`BOTLAB_T`) by `postMessage`;
+SAVE asks the game for a fresh export and downloads it. The desktop build ships the page beside
+index.html (desktop/build.js). Opened on its own it shows its two ways in (F6 in the game, or
+OPEN), and OPEN (or a drop anywhere on the page) takes any mix of:
 
 - a saved botlog (the game's recorder, with its terrain and its session's earlier matches);
 - match files from the fun-tests runner (`match-log.md` v1: `{ v: 1, seats, samples, events,
   players, fun }`), whose per-seat time is the brain's goals once they exist, else the sim's
-  activities (`act`);
+  activities (`act`), with the run folder's terrain file (`map-<seed>-<shape>.json`) picked
+  up by name when it is opened alongside (or the log's own inline `map`);
 - a run folder's `summary.jsonl` (stats only, no replay);
 - a ladder record `{ id, seed, shape, a, b, winner, ticks, log }` carrying either of the above.
 
 A match loaded twice (a run's match file and its `summary.jsonl` line) counts once, the
 replayable copy kept. A match file's sides are painted the way its seat names are: seat 0's side
-blue (the game's `settings.teamBlue`). Match files carry no terrain, so their map is bare.
+blue (the game's `settings.teamBlue`). The header's picker switches between the live game and
+every loaded match that replays.
 
-The map draws each bot's last 20 s of path (`TRAIL_S`), its target line and its goal as the dot's
-centre. The wheel zooms at the pointer, a drag pans, a double-click shows the whole map, and F
-follows the selected bot. A replay has a scrubber, PLAY and a speed (1x to 30x).
+**MATCH** is laid out like the game's own screen: the blue side down the left, the map in the
+middle, the red side down the right, and the whole match along the bottom.
 
-The tabs:
+- Each side's strip: a pip per seat (dark once down), its kills, and its bird's nerve as a bar;
+  WON on the winner once a replay reaches the end. The clock sits between them.
+- A card per seat: name, level, kills and deaths, the goal in its colour (a guess with `?`) and
+  why, health, and how long it has held the goal. Hover a card to light the bot on the map and
+  its lane; click to pick it.
+- The map: terrain dimmed so the marks carry, each bot's last 20 s of path (`TRAIL_S`), its target
+  line, its goal as the dot's centre, the birds with a ring of their nerve (live only: a log has
+  no bird positions), and a cross where someone fell, fading over `KILL_S`. HEAT (H) shades
+  where each side has stood up to now. The wheel zooms at the pointer, a drag pans, a
+  double-click shows the whole map, F follows the picked bot; names show when zoomed or hovered.
+- The picked bot (the edge column's top): goal and why, how long held, role, mood and plan, the
+  options the brain weighed as bars, how it has spent the match, health and record.
+- FEED: kills, each bird's nerve every tenth it loses, every bot turning to a side's business
+  (`KEY_GOALS`: push, rally, defend, retreat...) and the picked bot's every goal; ALL adds every
+  goal change. A bot flipping among two goals (three changes or more, each within `FLIP_S`) is one
+  line with a count. A line picks its bot and jumps the replay there.
+- The timeline: a lane per bird with its nerve as a band, then a lane per bot with its goal (or
+  activity) coloured across the match, kills as white ticks on the killer's lane, a minute grid
+  and the replay's cursor. Click or drag to scrub, click a name to pick the bot, hover for the goal,
+  its why and its span. The legend lists the goals this match used by share of time; hover one
+  to light it everywhere, click to keep it lit. PLAY and a speed (1x to 30x) drive a replay.
 
-- **BOTS**: every bot now (live) or at the scrubber's time (a replay): level, goal and why, HP,
-  record, and its time bar. Click a row or a bot on the map to select it; its line goes solid and
-  the FEED narrows to it.
-- **TIMELINE**: one lane per bot, its goal (or activity) coloured across the whole match, kills
-  as white ticks on the killer's lane, and the cursor at the scrubber. Click to jump there and pick
-  the bot.
-- **FEED**: goal changes, newest first; for a match file, its kills and bird events. Click a line
-  to jump the replay to it.
-- **STATS**: every match known (live, the session's finished ones, everything loaded): per level
-  bots, kills, deaths, K/D, damage and siege per bot; the share of time per goal and, separately,
-  per activity; and a match list with length, winner and fun score. Click a match to replay it.
+**COMPARE** puts every known match side by side (live, the session's finished ones, everything
+loaded): matches, average length and fun, kills per match and wins by side; per level, kills,
+K/D, damage and siege per bot as bars, and how each level spends its time; the fun score's parts
+averaged (`FUN_PARTS`, what the fun-tests scorer measures); and the match list, sortable, with
+length, winner, fun and kills as bars. Click a match to watch it.
 
-Keys: space plays, the arrows step a second (shift: ten), Home / End jump, Esc lets go of the
-selected bot, F follows it, 1-4 pick the tabs.
+Keys: space plays, the arrows step a second (shift: ten), Home / End jump, up / down pick the next
+bot, Esc lets go, F follows, H heat, 1 / 2 the views. Everything else is on hover.
