@@ -760,6 +760,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
 | the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
 
+## js/ui/story.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the three lines under an end screen's tally: the record the sim keeps (who downed whom, each bird's worst moment and who stood by it), how the lines are picked for the local player, and how they are printed | `storyOf`, `storyDown` (called from the down block in js/player.js), `storyBirdHit` (called from `hurtEagle`, js/boot.js), `storyLines`, `drawStoryLines` (called after `drawEndTally` by `renderVictory`/`renderDefeat`); `state.story` rides `SNAP_STATE` | `match story` |
+
 ## js/ui/screens.js
 
 | Looking for | Start at | Banner |
