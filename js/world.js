@@ -1706,7 +1706,7 @@ function zipStep(p, dt, mx, my, len) {
   p.x = q.x; p.y = q.y;
   p.vx = q.tx * ZIP_SPD * p.zipDir; p.vy = q.ty * ZIP_SPD * p.zipDir;
   p.sliding = false;
-  if (Math.abs(p.vx) > Math.abs(p.vy)) p.dir = p.vx > 0 ? 'right' : 'left'; else p.dir = p.vy > 0 ? 'down' : 'up';
+  faceToward(p, p.vx, p.vy);
   if (p.zipD <= 0 || p.zipD >= z.len) { p.zipD = Math.max(0, Math.min(z.len, p.zipD)); zipEnd(p, false); }
 }
 

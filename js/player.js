@@ -581,7 +581,7 @@ class Player {
     this.x = (this.spawn.tx + 0.5) * TILE;
     this.y = (this.spawn.ty + 0.5) * TILE;
     this.vx = 0; this.vy = 0;
-    this.dir = 'down'; this.moving = false; this.animT = 0;
+    this.dir = 'down'; this.faceT = 0; this.moving = false; this.animT = 0;
     this.hp = this.maxHp;
     this.dead = false;
     this.charging = false; this.chargeT = 0;      // bow draw state
@@ -706,6 +706,24 @@ function initPlayers(roster, local) {
 function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
 // riding the eagle or falling from it: not in the world yet, nothing can touch it
 function inAir(p) { return p.aboard || p.dropT > 0; }
+
+// ---- facing --------------------------------------------------------------
+// The one way a body turns (faceToward). Near a diagonal the facing it
+// already has wins until the other axis leads by FACE_BIAS, so a walk or an
+// aim along 45 degrees no longer flicks between two sprites every frame. An
+// action aimed at something - a shot, a slash, a cast, a rush, a roll -
+// passes `hold`: the body keeps that facing for FACE_HOLD (p.faceT) and the
+// walk cannot turn it straight back on the next frame, which read as the
+// body blinking. A draw or a raised shield still turns it every step.
+const FACE_BIAS = 1.25;
+const FACE_HOLD = 0.15; // s
+function faceToward(p, dx, dy, hold) {
+  if (!dx && !dy) return;
+  const ax = Math.abs(dx), ay = Math.abs(dy);
+  const wide = p.dir === 'left' || p.dir === 'right' ? ax * FACE_BIAS >= ay : ax > ay * FACE_BIAS;
+  p.dir = wide ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  if (hold) p.faceT = FACE_HOLD;
+}
 
 // ---- being seen ---------------------------------------------------------
 // How buried a player reads to anything hunting for it. `p.hide` is the cover

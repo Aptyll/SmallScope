@@ -190,10 +190,7 @@ function startSwing(p, t) {
   // the body faces the tile - unless a draw is running, which owns the facing
   // (updatePlayer turns it to the aim every step): an auto swing under a draw
   // is the arm, not the body, so the aim never flicks
-  if (!p.charging) {
-    if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-    else p.dir = dy > 0 ? 'down' : 'up';
-  }
+  if (!p.charging) faceToward(p, dx, dy);
   p.swingT = 0.18;
   p.swingCd = 0.34;
   p.swingHitDone = false;
@@ -287,8 +284,7 @@ function tryDodge(p) {
   if (p.dodgeRegenT <= 0) p.dodgeRegenT = kitOf(p).dodgeCd; // DANCER shortens the refill
   p.invuln = Math.max(p.invuln, DODGE_T + 0.05);
   p.kbx = p.kby = 0;
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else if (dy !== 0) p.dir = dy > 0 ? 'down' : 'up';
+  faceToward(p, dx, dy, true);
   burst(p.x, p.y + 4, '#dfe8f4', 6, 40, 0.35, true);
   sfxAt('dodge', p.x, p.y);
 }

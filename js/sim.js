@@ -835,10 +835,7 @@ function updatePlayer(p, dt) {
   if (len > 0) {
     mx /= len; my /= len;
     if (!auto) { p.lastMx = mx; p.lastMy = my; } // kept across the stop: the zipline's clip-on reads it (zipStart, world.js)
-    if (p.swingT <= 0) {
-      if (Math.abs(mx) > Math.abs(my)) p.dir = mx > 0 ? 'right' : 'left';
-      else p.dir = my > 0 ? 'down' : 'up';
-    }
+    if (p.swingT <= 0 && p.faceT <= 0) faceToward(p, mx, my);
   }
 
   p.kbx = (p.kbx || 0) * Math.pow(0.01, dt);
@@ -1238,12 +1235,11 @@ function updatePlayer(p, dt) {
   // the hold run PAST the full draw
   if (p.charging) {
     p.chargeT += dt;
-    const adx = inp.aimX - p.x, ady = inp.aimY - p.y;
-    if (Math.abs(adx) > Math.abs(ady)) p.dir = adx > 0 ? 'right' : 'left';
-    else p.dir = ady > 0 ? 'down' : 'up';
+    faceToward(p, inp.aimX - p.x, inp.aimY - p.y);
   }
 
   p.hurtT = Math.max(0, p.hurtT - dt);
+  p.faceT = Math.max(0, p.faceT - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
   // gentle regen in daylight (HEARTHWEAVE keeps the hearth lit after dark)

@@ -851,8 +851,7 @@ function emitBit(p, b, id, m, amb, seq) {
       ang: a, spd, ox: p.x, oy: p.y - BOW_Y,
     });
   }
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else p.dir = dy > 0 ? 'down' : 'up';
+  faceToward(p, dx, dy, true);
 }
 
 // ---- the cut -------------------------------------------------------------
@@ -899,8 +898,7 @@ function slashTool(p, cell, plan, melee, amb) {
   }
   slashes.push({ x: p.x, y: p.y - 2, a, r, half: melee.half, t: 0, hit: targets.length > 0 });
   p.slashT = SLASH_T; p.slashA = a; p.slashHalf = melee.half; // the hand swings the blade through the same arc (drawHeldTool)
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else p.dir = dy > 0 ? 'down' : 'up';
+  faceToward(p, dx, dy, true);
   if (targets.length) { shakeFor(p, 2); for (const t of targets) shakeFor(t, 2); }
   sfxAt('swing', p.x, p.y); if (targets.length) sfxAt('hit', p.x, p.y);
 }
