@@ -84,7 +84,7 @@ function lmClear(tx, ty, L) {
     const o = objects[idx(x, y)];
     if (o && isSolidTile(x, y)) return false;
   }
-  for (const C of camps) if (Math.hypot(tx - C.tx, ty - C.ty) < C.r + 2 + LM_CAMP_GAP) return false;
+  for (const C of camps) if (campNear(C, tx, ty, 2 + LM_CAMP_GAP)) return false;
   const roost = ROOST_R + LM_ROOST_GAP;
   if (Math.hypot(tx, WORLD - 1 - ty) < roost || Math.hypot(WORLD - 1 - tx, ty) < roost) return false;
   return true;

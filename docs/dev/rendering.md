@@ -253,7 +253,7 @@ a bare bush never rims because `workTarget`'s `ready` gate already refuses it �
 bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
 filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
 beside `fadeWkO` at any reach, since a look asks nothing of the legs). A hovered **camp anchor**
-(a den's mouth, the black bear's stone) wears the same bar the same way — over the prop, filling toward the camp's return off its
+(a wolf den's mouth; the bears' river camps have none) wears the same bar the same way — over the prop, filling toward the camp's return off its
 respawn clock (`o.site.repopT`, `drawCampClock`, [world.md](world.md#runtime)) while the camp is cleared, nothing
 while anything in it lives. A hovered tree
 also holds full ink against the fade, and a mid-shake chop lifts a faded neighbour back to

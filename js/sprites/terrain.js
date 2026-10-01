@@ -1218,7 +1218,7 @@
   // snow-capped boulder hill grown into a cave, icicle fangs over a wide black
   // mouth, bones at the lip. 32x21 over its two tiles (OBJECTS.den's w: the
   // anchor and a part to its right), the lip row on the tiles' foot, so it is
-  // drawn at py - 4. The WOLF DEN and the BROWN BEAR DEN both stand one.
+  // drawn at py - 4. Every WOLF DEN stands one.
   const DNPAL = {
     '.': null,
     'o': '#2b3040', // outline

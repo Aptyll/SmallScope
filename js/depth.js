@@ -123,7 +123,7 @@ function driftFree(tx, ty) {
   if (Math.hypot(tx - cx, ty - cy) < CENTER_R + 4) return false;
   if (Math.hypot(tx, ty - (WORLD - 1)) < ROOST_R + DRIFT_KEEP_ROOST) return false;
   if (Math.hypot(tx - (WORLD - 1), ty) < ROOST_R + DRIFT_KEEP_ROOST) return false;
-  for (const C of camps) if (Math.hypot(tx - C.tx, ty - C.ty) < C.r + 2 + DRIFT_KEEP_CAMP) return false;
+  for (const C of camps) if (campNear(C, tx, ty, 2 + DRIFT_KEEP_CAMP)) return false;
   for (let dy = -DRIFT_KEEP_WET; dy <= DRIFT_KEEP_WET; dy++) for (let dx = -DRIFT_KEEP_WET; dx <= DRIFT_KEEP_WET; dx++) {
     const g = inWorld(tx + dx, ty + dy) ? ground[idx(tx + dx, ty + dy)] : 0;
     if (g === 1 || g === 2 || g === 4 || g === 5) return false;

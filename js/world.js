@@ -97,8 +97,9 @@ const OBJECTS = {
               mm: (o) => o.team === undefined ? MM_BANNER : skin(o.team) ? MM_EAGLE_BLUE : MM_EAGLE_RED,
               map: (o) => o.team === undefined ? null : chEagle(o) },
   rack:     { solid: true,  mm: [168, 132, 92] },
-  // the BLACK BEAR STONE camp's anchor (CAMPS.buff's props): a heap of
-  // stones, solid. Inert to E (no `tool`); its pixels are CAIRN_SPR in
+  // the BLACK BEAR STONE camp's old anchor: a heap of stones, solid. No
+  // camp stamps one since the bears moved to the river (CAMPS' `river`);
+  // kept so a save from before still loads what stood in it. Inert to E (no `tool`); its pixels are CAIRN_SPR in
   // render()'s object pass (js/draw/render.js).
   cairn:    { solid: true,  mm: [150, 156, 170] },
   // the felled trunk across each forest road's far end (placeRoad): one
@@ -685,7 +686,7 @@ function placeRocks() {
   };
   // an anchor a rock may take, `hi` tiles out at most: both tiles open, out of the camps
   const fits = (tx, ty, hi) => open(tx, ty) && open(tx + 1, ty) && dist[idx(tx, ty)] <= hi &&
-    !camps.some((C) => Math.hypot(tx + 0.5 - C.tx, ty - C.ty) <= C.r + 2.5);
+    !camps.some((C) => campNear(C, tx + 0.5, ty, 2.5));
   const placed = [];
   const clear = (tx, ty) => !placed.some((c) => Math.hypot(c.tx - tx, c.ty - ty) < ROCK_SPACING);
   const stand = (tx, ty, kind) => {
@@ -1281,7 +1282,7 @@ function layPaths() {
 // through the current.
 //
 // The BENDS: the two camps on the mirror line (the BROWN BEAR DEN and the
-// BLACK BEAR STONE) each have the creek swing round them in a half-loop, so
+// BLACK BEAR STONE, whose bears walk the bend's bank: riverPath) each have the creek swing round them in a half-loop, so
 // each falls on one side's bank: the upstream one (the brown bear) to RED,
 // the downstream one (the black bear) to BLUE. The line is point-symmetric
 // about the bridge, as the roosts are. The other side reaches its rival's
@@ -1732,10 +1733,17 @@ function zipStep(p, dt, mx, my, len) {
 //   spots       where each monster stands, [dx, dy] off the centre
 //   woods       the site is IN the border forest, not the open valley:
 //               placeCamps checks it is, and layPaths cuts no branch to it
+//   river       the camp is a stretch of RIVERBANK, not a den: no props and
+//               no spots - its one monster walks `river` tiles of its own bank
+//               either way along the creek's bend round the site, up and
+//               down, and stops at the water to fish (riverPath; the walk,
+//               updateCampMonster, wildlife.js)
 //
 // resource: the pack - gold per head, the biggest steady payout on the map
-// buff:     the black bear - the brown bear's match, paid as it is (MONSTER's teamPay, wildlife.js)
-// epic:     the brown bear - the whole team is paid and blooded for the kill
+// buff:     the black bear - the brown bear's match, paid as it is (MONSTER's teamPay, wildlife.js);
+//           it walks BLUE's bank of the downstream bend
+// epic:     the brown bear - the whole team is paid and blooded for the kill;
+//           it walks RED's bank of the upstream bend
 // hut:      no monster - three chests round a hut buried in the treeline,
 //           worth the chopping it takes to reach
 const CAMPS = {
@@ -1749,21 +1757,19 @@ const CAMPS = {
   },
   buff: {
     name: 'BLACK BEAR STONE', tag: 'ITS BLOOD RUNS HOT',
-    r: 4, mark: '#c2a6ff',
+    r: 4, mark: '#c2a6ff', river: 9,
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 300,
-    props: [[0, 0, 'cairn']],
-    spots: [[0, 2]],
+    props: [],
+    spots: [],
   },
   epic: {
-    name: 'BROWN BEAR DEN', tag: 'THE BROWN BEAR SLEEPS HERE',
-    r: 6, mark: '#ffb04a',
+    name: 'BROWN BEAR DEN', tag: 'THE BROWN BEAR FISHES HERE',
+    r: 6, mark: '#ffb04a', river: 9,
     icon: [[3, 0, 1, 7], [0, 3, 7, 1], [1, 1, 1, 1], [5, 1, 1, 1], [1, 5, 1, 1], [5, 5, 1, 1]], // a star
     kind: 'dire', pop: 1, repop: 300,
-    props: [[0, 0, 'den'],
-      [-4, -3, 'deadTree', 0], [4, -3, 'deadTree', 1], [-5, 1, 'deadTree', 1], [5, 1, 'deadTree', 0],
-      [-3, 4, 'deadTree', 0], [3, 4, 'deadTree', 1], [0, -5, 'deadTree', 1]],
-    spots: [[0, 3]],
+    props: [],
+    spots: [],
   },
   hut: {
     name: 'HOG HUT', tag: 'THE STOVE IS STILL WARM',
@@ -1813,6 +1819,42 @@ function campSites() {
   return out;
 }
 
+// A river camp's stretch (CAMPS' `river`): one point a tile along the creek,
+// on the camp's own side of the water (the bend swings the water away from
+// the site, creekBends), RIVER_BANK tiles of dry snow back from the bank, and
+// beside each the water's edge it fishes at (wx, wy). Pure position: the
+// creek's line, never the rng.
+const RIVER_BANK = 0.6; // tiles between the bear's line and the water's nominal bank
+const RIVER_REACH = 0.35; // tiles into the water from its bank that the scoop lands (wx, wy)
+const RIVER_BAND = 2;   // tiles either side of the line that are the camp's ground (campNear)
+function riverPath(C) {
+  const B = creekBends().find((b) => b.tx === C.tx && b.ty === C.ty), out = [];
+  if (!B) return out;
+  // (w along, p across) back to tile coordinates (creekP, roadOffS)
+  const at = (w, p) => ({ tx: ((w + p) * Math.SQRT2 + WORLD - 1) / 2, ty: ((w - p) * Math.SQRT2 + WORLD - 1) / 2 });
+  for (let k = -C.spec.river; k <= C.spec.river; k++) {
+    const w = B.w + k, m = creekMid(w);
+    const bank = at(w, m - B.side * (CREEK_HW + CREEK_HW_RAG + RIVER_BANK)), edge = at(w, m - B.side * (CREEK_HW - RIVER_REACH));
+    out.push({ tx: bank.tx, ty: bank.ty, x: (bank.tx + 0.5) * TILE, y: (bank.ty + 0.5) * TILE, wx: (edge.tx + 0.5) * TILE, wy: (edge.ty + 0.5) * TILE });
+  }
+  return out;
+}
+// where the maps stamp a camp's glyph, in tile coordinates: its site, or the
+// middle of a river camp's stretch of bank
+function campMark(C) {
+  const q = C.path && C.path[C.path.length >> 1];
+  return q ? { tx: q.tx, ty: q.ty } : { tx: C.tx, ty: C.ty };
+}
+// whether tile coordinates (tx, ty) are within `pad` tiles of a camp's
+// ground: its round clearing, and a river camp's stretch of bank too. Every
+// keep-out and the camp's own reach (campAt, the leash) ask this, so the
+// bank counts wherever the clearing does.
+function campNear(C, tx, ty, pad) {
+  if (Math.hypot(tx - C.tx, ty - C.ty) <= C.r + pad) return true;
+  if (C.path) for (const q of C.path) if (Math.hypot(tx - q.tx, ty - q.ty) <= RIVER_BAND + pad) return true;
+  return false;
+}
+
 // the ground a camp stands on: everything inside r + 2 of the centre is
 // cleared - a pine, a rock, a bush goes, ice becomes snow - so a camp is the
 // same clearing on every seed, and what the props then stamp is the same too
@@ -1838,6 +1880,13 @@ function placeCamps() {
     const C = { key: site.key, spec, name: spec.name, tag: spec.tag, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
     camps.push(C);
     clearCamp(C);
+    if (spec.river) { // the bank it walks: nothing standing on the line or a tile either side of it
+      C.path = riverPath(C);
+      for (const q of C.path) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const x = Math.round(q.tx) + dx, y = Math.round(q.ty) + dy;
+        if (inWorld(x, y) && objects[idx(x, y)] && ground[idx(x, y)] !== 4) objects[idx(x, y)] = null;
+      }
+    }
     for (const [dx, dy, type, variant] of spec.props) {
       const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
@@ -1856,8 +1905,10 @@ function placeCamps() {
 
 // one monster into its slot - the slot's own tile, or the nearest free one
 function spawnCampMonster(C, i) {
-  const [dx, dy] = C.spec.spots[i % C.spec.spots.length];
-  let tx = C.tx + dx, ty = C.ty + dy;
+  // a river camp's monster comes back in the middle of its stretch
+  const q = C.path && C.path[C.path.length >> 1];
+  const [dx, dy] = q || !C.spec.spots.length ? [0, 0] : C.spec.spots[i % C.spec.spots.length]; // a save from before the river keeps no path: the old site
+  let tx = q ? Math.round(q.tx) : C.tx + dx, ty = q ? Math.round(q.ty) : C.ty + dy;
   if (objAt(tx, ty)) {
     let found = null;
     for (let r = 1; r <= C.r && !found; r++) for (let oy = -r; oy <= r && !found; oy++) for (let ox = -r; ox <= r && !found; ox++) {
@@ -1888,7 +1939,7 @@ function campPop(C) {
 // the camp a world position is standing in, if any
 function campAt(x, y) {
   const tx = x / TILE - 0.5, ty = y / TILE - 0.5;
-  for (const C of camps) if (Math.hypot(tx - C.tx, ty - C.ty) <= C.r) return C;
+  for (const C of camps) if (campNear(C, tx, ty, 0)) return C;
   return null;
 }
 

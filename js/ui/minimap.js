@@ -195,7 +195,8 @@ function renderMinimap(now) {
   // the camps, glyph only - a name would not fit inside the disc (the
   // world map and the arrival toast are where they are read by name)
   for (const L of camps) {
-    const dx = (L.tx + 0.5 - ptx) * s, dy = (L.ty + 0.5 - pty) * s;
+    const m = campMark(L);
+    const dx = (m.tx + 0.5 - ptx) * s, dy = (m.ty + 0.5 - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
     drawCampIcon(ctx, L, MM_CX + dx, MM_CY + dy, L.spec.mark, '#0f1632');
   }

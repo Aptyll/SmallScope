@@ -45,17 +45,18 @@ stable per tile.
   `longwall`, `turret`, `generator`, `spawner`, `barracks`, `net`. `banner`/`log` are
   [the road](#the-road)'s furniture (`banner` is also the practice gate's flag), `pylon`
   [the zipline](#the-zipline)'s, and `dummy`/`rack`/`pkdie`/`agbell` exist only in
-  [the practice arena](#the-practice-arena). `deadTree` (a 3 hp snag, chopped like a
-  tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `den` (solid, inert scenery
+  [the practice arena](#the-practice-arena). `den` (solid, inert scenery
   two tiles wide — `OBJECTS.den.w`, so `placeCamps` fills the tile east of it with a `part` — that
   carries its `site`, the camp record, so a hover on either tile can wear the camp's clock)
-  exist only inside [camps](#camps) (`cairn` is the BLACK BEAR STONE's anchor), and so does `hut` (the HOG
+  exists only inside [camps](#camps) (the wolf dens), and so does `hut` (the HOG
   HUT: solid, inert, 2×2 by `OBJECTS.hut.w`/`h`, its parts stamped east and north so the anchor is
   the front row, drawing the whole building); `chest` is a [treasure chest](#treasure-chests)
   standing where a border tree stood, or round a hog hut. `part` is the filler a multi-tile building (or a prop
   with a `w`/`h` in `OBJECTS`, the den and the hut) leaves on every footprint tile but its anchor (`{ type: 'part', of: <building> }`): solid, coloured like its
   building on both maps, ignored by work swings, and resolved by `structOf()` for every "what building
-  is here" read (right-click, cursor, wheel, orders).
+  is here" read (right-click, cursor, wheel, orders). `deadTree` (a 3 hp snag, chopped like a
+  tree for `YIELD.deadTreeHit`/`deadTreeFall`, leaves a stump) and `cairn` stand nowhere since the
+  bears moved to the river (4.82): no camp stamps them, and their types and art are kept unused.
 - Index with `idx(tx, ty)`, read safely with `objAt`, create with `placeObj`. Deleting is
   `objects[idx] = null` (structures should go through `destroyStructure` so the `structures`
   registry stays in sync — it routes tiered types through `removeStruct`).
@@ -538,7 +539,8 @@ bottom-right) to BLUE. At the camp the line stands `R = r + PATH_CAMP + CREEK_BE
 CREEK_HW` off the diagonal and eases back over `L = R × CREEK_BEND_LONG` either way along it as
 `R (1 − t²)²`, flat where it rejoins the diagonal and never nearer the camp than `R` (that needs
 `L ≥ 2R`). The line is point-symmetric about the bridge, as the roosts are, so both sides reach
-their own camp dry-shod and the other's over the bridge, a ford or a roll.
+their own camp dry-shod and the other's over the bridge, a ford or a roll. Each bear lives on the
+camp's side of its own bend, walking the water's edge ([river camps](#river-camps)).
 
 **Geometry**, in tiles, off the road's own frame: `w` along the creek is `roadOffS` (+ downstream,
 toward the bottom-right) and `p` across it is `creekP` (+ toward the top-right, BLUE's half).
@@ -680,11 +682,12 @@ Four kinds, one reward each:
 - **WOLF DEN** (`resource`, r 5, ×4) — a `den` in an open clearing and a pack of 4
   wolves. Gold per head (`YIELD.wolf`), the biggest steady payout on the map. Back 60 s after
   the last one dies.
-- **BLACK BEAR STONE** (`buff`, r 4, ×1) — a `cairn` and one **black bear** (kind `alpha`), the
-  brown bear's match on the other bank, the same body: the same hp, the same pay, the whole team blooded for 120 s
+- **BLACK BEAR STONE** (`buff`, r 4, ×1) — a [river camp](#river-camps): no props, one **black
+  bear** (kind `alpha`) walking BLUE's bank of the downstream bend. The brown bear's match, the same
+  body: the same hp, the same pay, the whole team blooded for 120 s
   ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)). Back in 300 s.
-- **BROWN BEAR DEN** (`epic`, r 6, ×1) — a `den` in a ring of seven `deadTree` snags, and the
-  **brown bear** (kind `dire`): a big body with a wall of hp. The kill pays the killer
+- **BROWN BEAR DEN** (`epic`, r 6, ×1) — a [river camp](#river-camps): no props, the **brown
+  bear** (kind `dire`) walking RED's bank of the upstream bend: a big body with a wall of hp. The kill pays the killer
   `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, bloods the whole team for 120 s, and
   writes the feed. Back in 300 s.
 - **HOG HUT** (`hut`, r 4, ×6) — no monster: a log hut (`hut`, a 2×2
@@ -709,6 +712,7 @@ no map, chart or HUD code knows a camp by name:
 | `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** the ground bakes; the prop at `0, 0` is the anchor and carries `site` |
 | `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
 | `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it and `placeChests` keeps off its rim |
+| `river` | the camp is a **stretch of riverbank**, not a den: tiles of bank either way along the creek's bend round the site that its monster walks ([river camps](#river-camps)); `props` and `spots` are empty |
 
 ### Placement
 
@@ -752,10 +756,27 @@ the woods by accident. A `woods` camp is the rule turned round: its whole cleari
 end inside `BORDER_MIN` (30), the shallowest treeline any seed grows, so it is buried in pines on
 every seed (and stays `r + 4` off the edge itself). Terrain still comes from the seed: **`clearCamp()` clears everything
 inside `r + 2` of the centre** — a pine, a rock, a bush goes, ice becomes snow — so a camp is the
-same clearing on every seed, and the props then stamp the same on every seed. (A camp on a
+same clearing on every seed, and the props then stamp the same on every seed. A river camp also
+fells everything on its bank ([river camps](#river-camps)). (A camp on a
 seed's forest bay is therefore a clearing cut into its edge, and a river running under one
 gets a snow bridge.) The clearing is the one pass that writes `ground` after `genWorld`
 ([determinism](#determinism-and-noise)), and nothing in a camp draws a random number.
+
+### River camps
+
+The two bear camps (`river` in `CAMPS`) have no den, no props and no fixed spot. At
+`placeCamps` each lays `C.path` with `riverPath(C)`: one point a tile, `river` (9) tiles either
+way along the creek from its bend's apex, on the camp's own side of the water and `RIVER_BANK`
+(0.6) tiles back from the bank, each carrying the spot `RIVER_REACH` (0.35) tiles into the water
+its scoop lands in (`wx`, `wy`). Pure
+position off `creekBends`/`creekMid`: nothing rolls. Everything standing on the line or a tile
+either side of it is felled. The bear spawns, and comes back, at the stretch's middle; the walk
+and the fishing are [gameplay.md](gameplay.md#camp-monsters-neutral-until-hit)'s.
+
+`campNear(C, tx, ty, pad)` is every question about a camp's ground: inside `C.r + pad` of the
+site, or for a river camp within `RIVER_BAND` (2) + `pad` of any point of its bank. `campAt`, the
+leash, the rocks, the drifts and the landmarks all keep off or count the bank through it.
+`campMark(C)` is where both maps stamp the glyph: the site, or the middle of a river camp's bank.
 
 ### Runtime
 
@@ -771,8 +792,8 @@ enough to be shown: a camp with anything alive in it holds the clock at `repop` 
 pack never trickles back; cleared, it counts down; and due, it **holds at zero** for as long as
 any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward for a while and it
 still grows back, the moment the intruder leaves — then every slot is refilled at once. **The
-anchor prop wears the clock**: `drawCampClock` (js/draw/marks.js) draws the neutral unit bar over
-a hovered den mouth or the black bear's stone, the picked bush's own read
+anchor prop wears the clock** (a river camp has no anchor, so the bears' clock is not shown in the world): `drawCampClock` (js/draw/marks.js) draws the neutral unit bar over
+a hovered den mouth, the picked bush's own read
 ([rendering.md](rendering.md#render-pass-order)), filling toward the camp's return while it is
 empty and nothing at all while anything in it lives; a full bar holding is a camp that is due
 and waiting for you to go.

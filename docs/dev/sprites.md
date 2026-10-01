@@ -369,7 +369,7 @@ snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the a
 | `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **19×19** |
 | `wolf` | `idle` 1, `run` 2 | — | 16×13 |
 | `bird` | `idle` 1 (perched), `fly` 2 | — | 9×6 / 9×5 |
-| `dire` / `alpha` (the bears) | `idle` 6, `walk` 8, `run` 6, `swipe` 10, `roar` 8 | a painted rig | 48×38 |
+| `dire` / `alpha` (the bears) | `idle` 6, `walk` 8, `run` 6, `swipe` 10, `roar` 8, `fish` 12 | a painted rig | 48×38 |
 
 Both are [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
 than a 16 px player and the stag more than twice one. The **rabbit ships at 11×12**, deliberately
@@ -393,7 +393,8 @@ wearing its antlers and back runes as exact 1× stickers on their bones. Both ar
 left, so `right` is the `flipH` there, and every frame of both shares one 48×38 box, centred on the standing bear, so the feet
 never jump between clips. The box's headroom is for the rear-up; each frame carries `top`, the
 empty rows over the standing head, and `drawAnimal` hangs the bars and tells from there. The
-swipe's claw trail is baked into its frames (`SM`/`SD`, white slashes with an ink edge). Change the rig and rebake; never edit the grids.
+swipe's claw trail is baked into its frames (`SM`/`SD`, white slashes with an ink edge), and so is the
+`fish` clip's catch (`FISH_PX` in bear.py, `FL`/`FM` silver inked in `SD`). Change the rig and rebake; never edit the grids.
 
 The **IRON SCOUT** scout skin (`SPRITES.robotSkin`, js/sprites/robot.js) is generated the same
 way by `app/bake-robot/bake.py` (Python with numpy and pillow): rig.py paints a lean robot as
