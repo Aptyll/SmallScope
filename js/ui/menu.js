@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.73';
+const PATCH_TXT = 'PATCH 4.74';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.74', 'A SWORD BOT HUNTING AN ANIMAL WALKS INTO REACH BEFORE IT SWINGS, INSTEAD OF SWINGING AT THE AIR FROM ACROSS THE SNOW.'],
   ['4.73', 'BOTS NEVER SWING A BLADE AT THE AIR: THEY HOLD THE SWING UNTIL WHAT THEY ARE FIGHTING IS IN REACH, SO A FIGHT NO LONGER OPENS WITH A ROW OF MISSES.'],
   ['4.72', 'BODIES IN A FIGHT GIVE EACH OTHER ROOM: A CROWD THAT STOPS PUSHING DRIFTS APART INSTEAD OF STANDING IN ONE PILE, SO YOU CAN TELL WHO IS WHO.'],
   ['4.71', 'RESPAWNS GROW WITH YOUR LEVEL: 5 SECONDS AT LEVEL 1, 50 AT LEVEL 12, SO EARLY DEATHS PUT YOU STRAIGHT BACK IN THE FIGHT AND LATE ONES COST YOUR SIDE.'],

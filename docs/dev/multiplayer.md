@@ -902,7 +902,8 @@ The ladder:
    (`ai.scoutCd`). Neither job holds a bot with nothing to do:
    they fall through to the rungs below.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
-   outruns a walk). Birds are excluded: they fly, and no ground route catches a flushed flock.
+   outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
+   and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
 12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
    plus a 15-gold float is bought at rung 0 beside the skill point, from anywhere, mid-push or
