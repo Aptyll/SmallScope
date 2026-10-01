@@ -56,6 +56,11 @@ function createWindow() {
     },
   });
   win.setMenuBarVisibility(false);
+  // a window the page opens (F6, the Bot Lab) is this one's child, and the
+  // app goes with this one: closing the game quits it (and Steam's "playing")
+  // whatever else is still open
+  win.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { parent: win, autoHideMenuBar: true, backgroundColor: '#0b0f16' } }));
+  win.on('closed', () => { win = null; app.quit(); });
   const query = {};
   if (args.seed) query.seed = args.seed;
   if (args.net) query.net = args.net;

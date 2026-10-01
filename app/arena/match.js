@@ -202,7 +202,7 @@ function playMatch(opts) {
   // or answered nothing usable, so a ladder can flag a broken entry
   for (const s of seats) {
     const r = s.ctrl === 'scripted' && G.BOTS.rt.get(s.id);
-    if (r) { s.errors = r.errN; s.late = r.late; s.thinks = r.thinks; }
+    if (r) { s.errors = r.errN; s.late = r.late; s.thinks = r.thinks; if (r.dead) s.dead = true; } // dead: its sandbox died (sandbox.js)
   }
   const kindName = o.kind === 'level' ? levels[o.level].name.toLowerCase() : levels[o.a].name.toLowerCase() + '-v-' + levels[o.b].name.toLowerCase();
   const log = {

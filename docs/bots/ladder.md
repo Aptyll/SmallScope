@@ -69,8 +69,10 @@ page; a comment at the top of the page lists every field. `rows` is the standing
 
 ## Trust
 
-Each bot file runs sealed in a Node vm context of its own: it cannot see the game, the other
-bots, `require`, or the disk, and each think gets 50 ms of CPU. That stops a bot reading what
+Each bot file runs sealed in a Node vm context of its own, inside a thread of its own: it cannot
+see the game, the other bots, `require`, or the disk; each think gets 50 ms of CPU and the bot
+64 MB of memory. A bot whose thread dies (out of memory) loses the match by forfeit (`F` on the
+page), so crashing never dodges a loss. That stops a bot reading what
 its player could not see, and stops honest mistakes. It is not a hardened jail (Node says so
 of its vm), so **enter only files you trust.** The online ladder will run each bot in its own
 process (below).
