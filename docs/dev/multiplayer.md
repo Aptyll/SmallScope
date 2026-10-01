@@ -632,8 +632,9 @@ and a `think` stored as `p.ai.thought`. It runs inline (the examples baked from 
 js/bots/lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
 harness registers in `BOT_TRANSPORTS`; a headless runner steps only while `botPending()` is
 false, so a seed and the same files replay exactly. The live half of a seat (`botRt`) is never
-saved: a save keeps `p.botId` and the first step after a load reopens the program. The author's
-contract: [docs/bots/](../bots/README.md).
+saved: a save keeps `p.botId` and the first step after a load reopens the program. In a solo match
+the title's BOT LADDER screen can seat one on the whole rival side (`ladderSeat`, js/ui/ladder.js,
+at the drop). The author's contract: [docs/bots/](../bots/README.md).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
