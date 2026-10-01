@@ -52,24 +52,51 @@ function moveEntity(e, dx, dy, r, strict) {
 // that component is handed to the other unit as knockback, and a lighter
 // unit gets a small bounce off a heavier one. Two relaxation passes settle
 // piles. Deterministic: fixed iteration order, no rng.
+// ROOM: past the hard circle every body keeps a soft ring of personal space
+// (unitSpace, UNIT_SPACE x its radius), an ellipse taller than it is wide
+// because a body is drawn standing up and its frame rides over its head. A
+// pair inside each other's rooms drifts apart a share of the way per second
+// (UNIT_ROOM_RATE): a slow nudge on position only, never on momentum, so
+// anyone walking, swinging or chasing goes straight through it to contact,
+// and only a crowd that has stopped pushing spreads out into a readable fight.
 // a camp monster's mass and radius are its MONSTER row (wildlife.js), read at call time
 const UNIT_MASS = { player: 3, deer: 2.2, rabbit: 0.5, robot: 0.7, soldier: 1, merchant: 3 };
 const UNIT_BOUNCE = 0.3; // restitution for the lighter side of a contact
+const UNIT_SPACE = 1.6;     // a body's room: this x its hard radius (players 7.2, so 14.4 px between two)
+const UNIT_SPACE_TALL = 4 / 3; // ...and that much farther apart one above the other (19.2 px for two players)
+const UNIT_ROOM_RATE = 8;   // share of the room overlap closed per second (at most 43 px/s between two players; a walk is ~73)
 // the merchant (robots.js) is a player-sized body in the robots list, so it takes a player's radius
 function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 5 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : 3; }
+function unitSpace(e) { return unitRadius(e) * UNIT_SPACE; }
 function unitMass(e) { return MONSTER[e.kind] ? MONSTER[e.kind].mass : UNIT_MASS[e.kind]; }
-function separateUnits() {
+function separateUnits(dt) {
   const us = [];
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
-  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, m: UNIT_MASS.player, vel: true, small: true, roll: p.dodgeT > 0 });
+  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, vel: true, small: true, roll: p.dodgeT > 0 });
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
-  for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), m: unitMass(a), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
-  for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, vel: false, small: true });
+  for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
+  for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
   const vx = (u) => u.vel ? u.e.vx + u.e.kbx : u.e.kbx;
   const vy = (u) => u.vel ? u.e.vy + u.e.kby : u.e.kby;
+  // the rooms first, gently, then the hard passes, which get the last word
+  // (a room's nudge never leaves two bodies overlapping)
+  const roomStep = Math.min(1, UNIT_ROOM_RATE * dt);
+  for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++) {
+    const a = us[i], b = us[j];
+    if (a.roll || b.roll) continue; // a roll keeps its line
+    const dx = b.e.x - a.e.x, dy = (b.e.y - a.e.y) / UNIT_SPACE_TALL;
+    const room = a.s + b.s;
+    if (Math.abs(dx) >= room || Math.abs(dy) >= room) continue;
+    const d = Math.hypot(dx, dy);
+    if (d >= room || d < 0.01) continue; // a dead-centre stack is the hard pass's to part
+    const push = (room - d) * roomStep, sa = b.m / (a.m + b.m);
+    const nx = dx / d, ny = dy * UNIT_SPACE_TALL / d; // back to world space: the tall axis moves farther
+    moveEntity(a.e, -nx * push * sa, -ny * push * sa, a.r, true);
+    moveEntity(b.e, nx * push * (1 - sa), ny * push * (1 - sa), b.r, true);
+  }
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++) {
       const a = us[i], b = us[j];

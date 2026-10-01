@@ -677,7 +677,7 @@ function updatePlay(dt) {
   for (let i = robots.length - 1; i >= 0; i--) if (robots[i].dead) robots.splice(i, 1);
 
   // everyone has stepped: push overlapping units apart (players, animals, robots)
-  separateUnits();
+  separateUnits(dt);
 
   // drops
   for (let i = drops.length - 1; i >= 0; i--) {

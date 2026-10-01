@@ -188,7 +188,7 @@ Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5 — 
 too — deer 5, rabbit 2.5, a camp monster its `MONSTER` row's `r`: the wolf 4.5, either bear 9;
 everything else, worker bots and wave soldiers included, 3 — `unitRadius`). **Birds are the exception**: they fly, so `separateUnits()`
 skips them entirely and they have no `UNIT_MASS` entry. Tile collision stays per-mover in
-`moveEntity`; unit-vs-unit is a separate relaxation pass, `separateUnits()` in the
+`moveEntity`; unit-vs-unit is a separate relaxation pass, `separateUnits(dt)` in the
 `movement & collision` banner, that `updatePlay` runs once after every player, animal and robot
 has stepped. For each overlapping pair it splits the overlap by inverse mass (`UNIT_MASS`:
 player 3, merchant 3, deer 2.2, soldier 1, robot 0.7, rabbit 0.5; a camp monster's mass is its
@@ -199,6 +199,16 @@ push goes through `moveEntity(…, strict)`, which treats open water as a wall e
 player's share is tried first, so a small unit can never pin a player in a corner: the pinner
 is the one that gets moved (a rabbit wedged between you and a rock squirts out sideways).
 Two passes settle piles; the pass is deterministic (fixed order, no `rng`).
+
+**Room.** Past the hard circle every body keeps a soft ring of personal space, `unitSpace` (its
+radius x `UNIT_SPACE`, 1.6: a player's is 7.2, so two players settle 14.4 px apart side by side),
+measured as an ellipse `UNIT_SPACE_TALL` (4/3) times taller than wide, because a body is drawn
+standing up with its frame over its head (19.2 px one above the other). Before the hard passes,
+`separateUnits(dt)` nudges each pair inside each other's rooms apart by `UNIT_ROOM_RATE` (8) of the
+overlap per second, split by mass, through `moveEntity(…, strict)`. It moves position only, never
+`vx/vy` or knockback, and peaks at 43 px/s between two players against a ~73 px/s walk, so anyone
+walking, chasing or swinging still reaches contact; only a crowd that has stopped pushing spreads out.
+A live roll skips the rooms entirely, and the hard passes run after them and get the last word.
 
 **A live dodge roll is the one exception to any of it.** `separateUnits` skips a pair outright
 when one side is a player mid-roll and the other is *small* — every player, every robot, and
