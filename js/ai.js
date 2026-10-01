@@ -268,7 +268,7 @@ function aiFlagSync(p, dt) {
 // anywhere (a human's only, and a human's flag is served regardless).
 function aiHelps(p, f) {
   if (f.type === 'attack') return !aiOnGuard(p, aiProfile(p));
-  if (f.type === 'gather') return Math.hypot(f.tx * TILE + 8 - p.x, f.ty * TILE + 8 - p.y) < AI_FLAG_HELP;
+  if (f.type === 'gather') return aiRole(p) === 'gatherer' && Math.hypot(f.tx * TILE + 8 - p.x, f.ty * TILE + 8 - p.y) < AI_FLAG_HELP; // (a scout, stalker or slayer has a job of its own: the team brain)
   return f.type === 'rally';
 }
 // the nearest tile of a building's footprint to p, as a work target (E on
@@ -631,6 +631,10 @@ function aiThink(p, dt) {
     const d = Math.hypot(fq.x - p.x, fq.y - p.y);
     if (d < prof.sight && d < seenAt(fq, prof.sight)) foe = fq;
   }
+  // ...and a rival it was just fighting is held a little past the edge of
+  // its sight (aiHoldFoe, the team brain), so a strafe across the line does
+  // not flip the bot between the fight and whatever it was doing before
+  foe = aiHoldFoe(p, prof, foe);
   const foeD = foe ? Math.hypot(foe.x - p.x, foe.y - p.y) : Infinity;
   // the reaction: a rival stays noticed prof.react seconds before the bot
   // turns on it (a slow side keeps chopping while you line up the shot)
@@ -728,7 +732,8 @@ function aiThink(p, dt) {
     const odds = aiOdds(p, foe, prof);
     if (p.hp < p.maxHp * 0.6 || odds.them > odds.us) aiCall(p, foe);
     const atHome = defend && Math.hypot(defend.x - p.x, defend.y - p.y) < AI_ROOST_R;
-    if (!atHome && !siege && !charge && aiFallBack(p, prof, foe, odds)) {
+    if (!atHome && !siege && !charge && (state.elapsed < ai.fleeT || aiFallBack(p, prof, foe, odds))) {
+      if (state.elapsed >= ai.fleeT) ai.fleeT = state.elapsed + AI_FLEE_HOLD; // once it turns, it means it for a moment
       const to = aiFallBackTo(p, foe);
       aiNote(p, 'FLEE', odds.them > odds.us ? odds.them + 'V' + odds.us : 'LOW HP', to);
       if (steerTo(to.x, to.y, 3) < 0) { inp.mx = -Math.cos(Math.atan2(foe.y - p.y, foe.x - p.x)); inp.my = -Math.sin(Math.atan2(foe.y - p.y, foe.x - p.x)); }
@@ -828,7 +833,10 @@ function aiThink(p, dt) {
   if (order && !defend && !pushE) {
     aiNote(p, order.type === 'rally' ? 'RALLY' : 'ORDER', order.type.toUpperCase() + ' FLAG', { x: flX, y: flY });
     const d = Math.hypot(flX - p.x, flY - p.y);
-    if (d > AI_FLAG_IN) {
+    // (a DEFEND or GATHER is worked anywhere in its ring, so only leaving the
+    // ring walks it back - at AI_FLAG_IN a tree near the rim had it walking
+    // to the work and back to the flag every other tick)
+    if (d > ((order.type === 'defend' || order.type === 'gather') ? FLAG_R * 0.95 : AI_FLAG_IN)) {
       if (steerTo(flX, flY, 3, AI_ROOST_BUDGET) >= 0) { aimAt(flX, flY); inp.fire = false; ai.tgt = null; return; }
     } else if (order.type === 'attack') {
       const st = enemyStructNear(p.team, flX, flY, FLAG_R);
@@ -1046,6 +1054,7 @@ function aiThink(p, dt) {
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < ld) { ld = dd; loot = d; }
   }
+  if (loot && bound && !inFlag(bound, loot.x, loot.y)) loot = null; // (an order's ring bounds the loot as it does the work)
   if (loot && ai.lootT < 4) {
     aiNote(p, 'LOOT', 'ON THE GROUND', loot);
     ai.lootT += dt; aimAt(loot.x, loot.y);
@@ -1062,7 +1071,10 @@ function aiThink(p, dt) {
 
   // 9. spend the purse (gear went at rung 0, from anywhere): a stump to
   //    build on, then its own work to upgrade
-  const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold ? (rng() < 0.3 ? 'spawner' : 'generator') : null;
+  // (what it means to build is picked once and kept until it builds or gives
+  // up - re-rolled every tick it flipped between a site and no site)
+  if (!ai.buildType) ai.buildType = rng() < 0.3 ? 'spawner' : 'generator';
+  const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold ? ai.buildType : null;
   if (ai.buildT <= 0 && wantType) {
     const st = aiBuildSite(p, wantType);
     if (st) {
@@ -1071,13 +1083,13 @@ function aiThink(p, dt) {
       aiNote(p, 'BUILD', wantType.toUpperCase(), { x: sx, y: sy });
       if (d > 40) {
         // a site it cannot route to must not pin it there
-        if (steerTo(sx, sy) < 0) { ai.buildT = 15; ai.spendT = 0; }
+        if (steerTo(sx, sy) < 0) { ai.buildT = 15; ai.spendT = 0; ai.buildType = null; }
         return;
       }
       if (d > 16) { // clear of the site: order it
         ai.spendT = 0;
         inp.cmd = { kind: 'build', tx: st.tx, ty: st.ty, id: wantType };
-        ai.buildT = 12;
+        ai.buildT = 12; ai.buildType = null;
         return;
       }
       // standing on the site: step off toward the openest neighbouring tile
@@ -1092,7 +1104,7 @@ function aiThink(p, dt) {
       }
       steerTo((bx + 0.5) * TILE, (by + 0.5) * TILE);
       ai.spendT += dt;
-      if (ai.spendT > 3) { ai.buildT = 15; ai.spendT = 0; } // wedged: go do something else
+      if (ai.spendT > 3) { ai.buildT = 15; ai.spendT = 0; ai.buildType = null; } // wedged: go do something else
       return;
     }
   }
@@ -1112,7 +1124,7 @@ function aiThink(p, dt) {
   // (a stripped bush stops being work, so drop it the moment it empties)
   if (ai.tgt && (objects[idx(ai.tgt.tx, ai.tgt.ty)] !== ai.tgt ||
     (ai.tgt.type === 'bush' && ai.tgt.berries <= 0) ||
-    (ai.tgt.type === 'rock' && (!rockReady(ai.tgt) || (rockMiner(ai.tgt) && rockMiner(ai.tgt) !== p))))) ai.tgt = null;
+    (ai.tgt.type === 'rock' && (!rockReady(ai.tgt) || (rockMiner(ai.tgt) && rockMiner(ai.tgt) !== p))))) { ai.tgt = null; ai.thinkT = 0; } // (finished: look for the next at once)
   ai.avoidT -= dt;
   if (ai.avoidT <= 0) ai.avoid = null;
   // (under a DEFEND or GATHER order the work is bounded to the order's ring)
@@ -1122,7 +1134,8 @@ function aiThink(p, dt) {
     ai.tgt = nearestObj(p.x, p.y, Math.round(AI_FORAGE * aiMood(p).greed), (o) => o !== ai.avoid &&
       (o.type === 'tree' || o.type === 'chest' || (o.type === 'rock' && rockReady(o) && !rockMiner(o)) ||
         (o.type === 'bush' && o.berries > 0)) &&
-      aiOpenSides(o.tx, o.ty) >= 1 && (!bound || inFlag(bound, o.tx * TILE + 8, o.ty * TILE + 8)));
+      aiOpenSides(o.tx, o.ty) >= 1 && (!bound || inFlag(bound, o.tx * TILE + 8, o.ty * TILE + 8)) &&
+      (!guardE || Math.hypot(o.tx * TILE + 8 - guardE.x, o.ty * TILE + 8 - guardE.y) < AI_GUARD_R * 0.85)); // (a guard works inside its leash)
   }
   if (ai.tgt) {
     const t = ai.tgt;
@@ -1150,6 +1163,10 @@ function aiThink(p, dt) {
   // 11. nothing to do: roam between its camp and the middle of the map -
   //     unless an order has it on its ring, where nothing to do is standing
   if (bound) { inp.fire = false; aiNote(p, 'IDLE', 'ON THE FLAG', null); return; }
+  // a guard or an escort with nothing to do holds its post (roaming off the
+  // edge of its leash had it flipping between its rung and this every few ticks)
+  if (guardE) { inp.fire = false; aimAt(guardE.x, guardE.y); aiNote(p, 'GUARD', 'ON POST', guardE); return; }
+  if (ward && aiEscorts(p) && Math.hypot(ward.x - p.x, ward.y - p.y) < AI_ESCORT_R) { inp.fire = false; aimAt(ward.x, ward.y); aiNote(p, 'ESCORT', 'BY THEIR SIDE', ward); return; }
   aiNote(p, 'ROAM', 'NOTHING NEAR', { x: ai.wx, y: ai.wy });
   ai.roam -= dt;
   if (ai.roam <= 0) {

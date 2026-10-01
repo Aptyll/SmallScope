@@ -82,7 +82,7 @@ const AI_ROLES = {
 };
 const AI_PLAN_T = 2;        // s between a side's re-plans
 const AI_SCOUT_AT = 45;     // s into the match the side sends its scout out
-const AI_STALK_AT = 150;    // s into the match the side lets a stalker off the leash
+const AI_STALK_AT = 90;     // s into the match the side lets a stalker off the leash
 const AI_KEEP = 2;          // fit a bot's current role is worth over a better-suited teammate's
 const AI_WINDOW_DOWN = 2;   // more rivals down than own: the side's free hands go for the bird
 const AI_WINDOW_MIN = 12;   // s a window, once opened, stays open (a respawn does not snap it shut)
@@ -99,6 +99,7 @@ const AI_CALL_R = 340;      // px a call reaches at help 1 (x the mood's help)
 const AI_CALL_N = 2;        // helpers a call wants; more stay on their own work
 const AI_STALK_R = 560;     // px a stalker goes for a sighting from
 const AI_ALONE_R = 180;     // px: a rival with no other rival sighting this close is alone
+const AI_FLEE_HOLD = 1.5;  // s a bot that turned to back off keeps backing off before the judge reads the numbers again
 const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the judge)
 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
@@ -109,10 +110,11 @@ function aiTeamNew() {
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
 // the side's bots, the way aiRank has always counted them: living, on the
-// ground, driven by the brain, never the local player
+// ground, driven by the brain (a bot FILE's seat plays its own plan,
+// js/bots/api.js), never the local player
 function aiSideBots(team) {
   const out = [];
-  for (const q of players) if (q.active && !q.dead && !inAir(q) && q.team === team && q.control === 'ai' && q !== player) out.push(q);
+  for (const q of players) if (q.active && !q.dead && !inAir(q) && q.team === team && q.control === 'ai' && !q.botId && q !== player) out.push(q);
   return out;
 }
 // how many of a side are down (dead and coming back, or out for good)
@@ -203,6 +205,22 @@ function aiPlan(team) {
   T.focus = fb;
   return T;
 }
+// The commit window: a rival p was fighting stays its foe for AI_COMMIT_T
+// after it slips out of sight, as long as it is inside AI_COMMIT_R x the
+// sight (through seenAt - a rival that went to ground is still gone).
+// Without it a strafe across the edge of sight flips a bot between the
+// fight and its last job every few ticks.
+const AI_COMMIT_T = 1.5;  // s
+const AI_COMMIT_R = 1.25; // x the profile's sight
+function aiHoldFoe(p, prof, foe) {
+  const ai = p.ai, f = ai.lastFoe;
+  if (!foe && f && state.elapsed - ai.lastFoeT < AI_COMMIT_T && (f instanceof Player ? enemyOf(p, f) : unitAlive(f) && f.team !== p.team)) {
+    const r = prof.sight * AI_COMMIT_R, d = Math.hypot(f.x - p.x, f.y - p.y);
+    if (d < r && (!(f instanceof Player) || d < seenAt(f, r))) return f;
+  }
+  if (foe) { ai.lastFoe = foe; ai.lastFoeT = state.elapsed; }
+  return foe;
+}
 // the side's bear: the living teamPay camp monster nearest its own bird
 function aiSideBear(team) {
   const e = state.drop && state.drop.eagles[team];
@@ -267,7 +285,7 @@ function aiCall(p, foe) {
   const T = aiTeams[p.team];
   const fid = foe && foe.id !== undefined && players[foe.id] === foe ? foe.id : -1;
   for (const c of T.calls) if (c.id === p.id) { c.x = p.x; c.y = p.y; c.t = state.elapsed; c.foe = fid; return; }
-  T.calls.push({ id: p.id, x: p.x, y: p.y, t: state.elapsed, foe: fid, n: 0 });
+  T.calls.push({ id: p.id, x: p.x, y: p.y, t: state.elapsed, foe: fid, kind: 'help' });
 }
 // the call p would answer: open, near enough for its mood, not its own, not
 // already answered by AI_CALL_N others (p's own answer is not counted

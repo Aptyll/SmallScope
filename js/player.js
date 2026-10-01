@@ -554,10 +554,12 @@ class Player {
       // the team brain (js/ai-team.js): mood its temperament's key (dealt on
       // first read), helping the teammate whose call it answers, foeId the
       // player it is shooting (the side's focus tally), focusT/focusOk the
-      // focus roll, packT how long it has waited at the rally, scout/scoutN
+      // focus roll, lastFoe/lastFoeT the rival it last fought and when (the
+      // commit window, aiHoldFoe), fleeT until when a fall-back holds, buildType
+      // the building it means to put up next, packT how long it has waited at the rally, scout/scoutN
       // the scout's point and step along its beat, thought what it is doing
       // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null,
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, buildType: null,
     };
     this.reset(true);
   }
