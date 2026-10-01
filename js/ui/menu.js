@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.60';
+const PATCH_TXT = 'PATCH 4.61';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.61', 'A BOT STANDING BESIDE ITS GOAL, THE BIRD OR A TREE, IS TOLD IT ARRIVED INSTEAD OF THAT ITS ROUTE FAILED.'],
   ['4.60', 'BOT LADDER ON THE TITLE: EVERY LADDER BOT WITH ITS FACE, EMBLEM, RATING AND FORM, AND FIGHT TO TAKE ON ANY OF THEM.'],
   ['4.59', 'A BOT FILE CAN NO LONGER READ THE REAL CLOCK OR RUN THE MATCH OUT OF MEMORY, AND A BOT THAT CRASHES LOSES BY FORFEIT.'],
   ['4.58', 'YOUR BOTS SAY IT WHEN THEY ANSWER YOUR FLAG: ON IT, OR GUARDING FOR THE ONE THAT STAYS ON THE BIRD, AND A RIVAL WITH A GRUDGE TELLS YOU: YOU AGAIN.'],

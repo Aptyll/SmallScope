@@ -93,6 +93,7 @@ obs = {
     food: { berry, fish, ... },            // the pouch: meals and unopened cards
     charging, chargeT,     // the draw in progress
     nav,                   // your last goTo: 'ok' | 'arrived' | 'fail' | null
+                           // 'arrived' also beside a goal no path enters (a bird, a tree); 'fail' = no route
     lastCmd: { kind, tick, ok, why } | null,  // what came of your latest order
     atShop,                // standing at a merchant's counter
   },
