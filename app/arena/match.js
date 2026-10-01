@@ -14,6 +14,7 @@
 // One page per process, so one match per process (run.js forks).
 
 const { bootGame } = require('./headless');
+const { vmTransport } = require('./sandbox');
 const { funScore } = require('./fun');
 
 const SETUPS = ['level', 'versus'];
@@ -46,9 +47,13 @@ function playMatch(opts) {
   else for (const p of L.players) p.ai.prof = levels[p.team === 0 ? o.a : o.b];
   // bot files (js/bots/api.js, docs/bots/): `bots` adds programs to the
   // library ({ id: source text }) beside the baked examples, `seats` says who
-  // plays where ({ seat: id }) - all inline, so a seed and the same files are
-  // one exact replay. `beforeDrop(G)` is the raw hook for anything else.
-  for (const id in o.bots || {}) G.botLibAdd(id, o.bots[id], 'inline');
+  // plays where ({ seat: id }). Every file runs sealed in a vm context of its
+  // own (sandbox.js), the baked examples too, so no seat can read the game
+  // and a seed and the same files are one exact replay. `beforeDrop(G)` is
+  // the raw hook for anything else.
+  G.BOTS.transports.vm = vmTransport(G);
+  for (const e of G.BOTS.lib.values()) e.run = 'vm';
+  for (const id in o.bots || {}) G.botLibAdd(id, o.bots[id], 'vm');
   for (const seat in o.seats || {}) G.BOTS.assign(+seat, o.seats[seat]);
   if (typeof o.beforeDrop === 'function') o.beforeDrop(G);
   const profName = (p) => (p.ai.prof ? p.ai.prof.name : G.aiProfile(p).name);

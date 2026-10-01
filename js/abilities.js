@@ -207,7 +207,7 @@ function abReady(p, i) { return p.abLv[i] > 0 && p.abCd[i] <= 0; } // bought AND
 function abLvCanBuy(p, i) { return p.skillPts > 0 && p.abLv[i] < AB_LV_MAX; }
 function abCdOf(p, i) { return abOf(p, i).cd * (1 - AB_LV_CD * (Math.max(1, p.abLv[i]) - 1)); }
 function buyAbilityLv(p, i) {
-  if (!abLvCanBuy(p, i)) { sfxFor(p, 'deny'); return; }
+  if (!abLvCanBuy(p, i)) { sfxFor(p, 'deny'); return p.skillPts > 0 ? 'max' : 'points'; }
   p.skillPts--;
   p.abLv[i]++;
   // the first point is the one that changes what you CAN do, so it says so;
@@ -216,6 +216,7 @@ function buyAbilityLv(p, i) {
   addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], GEAR_MATS[p.abLv[i] - 1]);
   burst(p.x, p.y - 8, GEAR_MATS[p.abLv[i] - 1], p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
+  return true;
 }
 
 // ---- casting -------------------------------------------------------------

@@ -448,7 +448,7 @@ function gearCost(p, i) { return p.gearLv[i] >= GEAR_LV_MAX ? null : { gold: GEA
 // new hp on the spot, the way a hero level does.
 function buyGear(p, i) {
   const cost = gearCost(p, i);
-  if (!cost || !canAfford(cost, p)) { sfxFor(p, 'deny'); return; }
+  if (!cost || !canAfford(cost, p)) { sfxFor(p, 'deny'); return cost ? 'gold' : 'max'; }
   pay(cost, p);
   p.gearLv[i]++;
   const oldMax = p.maxHp;
@@ -457,6 +457,7 @@ function buyGear(p, i) {
   addFloater(p.x, p.y - 18, GEAR[i][p.gear[i]].name + ' ' + p.gearLv[i], GEAR_MATS[p.gearLv[i] - 1]);
   burst(p.x, p.y - 8, GEAR_MATS[p.gearLv[i] - 1], 8, 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
+  return true;
 }
 // one frame of intent - the whole interface between a controller and the sim
 function makeInput() {
@@ -515,6 +516,8 @@ class Player {
     this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
     this.trickleT = 0;                  // s toward the next passive coin (TRICKLE_T, js/sim.js)
     this.kills = 0;                     // rivals downed; scoreboard only, survives death
+    this.lastDeath = null;              // { by, cause, tick } of the latest death: the kill feed's line, as data (js/bots/api.js)
+    this.lastCmd = null;                // { kind, tick, ok, why } of the latest order run (runCmd)
     // The rest of the match record, for the post-game lobby (js/ui/lobby.js).
     // Every one of them is a running total for the WHOLE match: a death
     // clears nothing here, and reset() leaves them alone the way it leaves
@@ -883,6 +886,7 @@ function die(p, src, cause) {
   // kill credit and the feed line: the killer's colours if there is one,
   // otherwise the victim's, since the victim is who the line is about
   const killer = src && src !== p ? src : null;
+  p.lastDeath = { by: killer && players.includes(killer) ? killer.id : -1, cause: cause || null, tick: state.tick };
   // an item on the cursor goes back in the bag, so it is still there when the
   // body comes back instead of vanishing with the hand that was holding it
   if (p === player && state.drag) { dragReturn(); state.dragPend = null; }

@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.48';
+const PATCH_TXT = 'PATCH 4.49';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.49', 'BOT FILES RUN SEALED OFF FROM THE GAME, AND NOW SEE ABILITY NAMES, GEAR LEVELS, THE MAP, THE KILL FEED, THE MERCHANTS AND WHAT CAME OF EACH ORDER.'],
   ['4.48', 'HEADLESS BOT MATCHES STOP A BOT STUCK IN A LOOP INSTEAD OF HANGING THE WHOLE BATCH, AND CRASHED MATCHES STAY COUNTED IN A RUN.'],
   ['4.47', 'BOTS PLAY AS A TEAM: EACH HAS A MOOD AND A JOB, THEY SHARE WHAT THEY SEE, COME WHEN A FRIEND CALLS, BACK OFF WHEN OUTNUMBERED, TAKE THEIR BEAR TOGETHER AND PUSH WHILE THE RIVALS ARE DOWN.'],
   ['4.46', 'A THINKING NOTE ON HOW THE BOTS FIT STEAM NOW LIVES IN THE DOCS.'],
