@@ -7,6 +7,7 @@ that player's screen and maps show. Bots on one side can talk to each other, and
 what it is thinking, so you can watch it reason in the game's bot view (F4) and the bot lab.
 
 - **[API reference](api.md)**: every field a bot reads and writes, the timing, the team channel.
+- **[The ladder](ladder.md)**: rated matches between bot files, and the road to an online ladder.
 - **[Example bots](../../bots/)**: `starter.js` (the template), `pack.js` (teamwork over `say`),
   `keeper.js` (gathering, buying, defending).
 
@@ -49,10 +50,11 @@ Today bots run offline, on your own computer, two ways:
    Then press F4 to see every bot's goal and target on the map.
 
 2. **Headless, bot against bot**, in Node (no browser), with the arena runner (`app/arena/`,
-   arriving with the match tests): `playMatch({ seed, bots: { mine: src }, seats: { 1: 'mine' } })`.
+   [docs/dev/arena.md](../dev/arena.md)): `playMatch({ seed, bots: { mine: src }, seats: { 1: 'mine' } })`.
 
-The ladder (ratings and match history between bot files) comes next and gets its own page here
-once it lands.
+3. **On the ladder**, rated against every other bot file: `node app/ladder/ladder.js add mybot.js`,
+   then `node app/ladder/ladder.js run`. See [ladder.md](ladder.md).
+
 
 ## Rules a bot lives by
 
@@ -61,11 +63,12 @@ once it lands.
 - **What a player sees, nothing more.** Rivals show up near any of your side, the way the minimap
   shows them, and a rival buried in the snow drops off it. Both birds are always known.
 - **The same hands for everyone.** On the ladder every seat's crosshair turns at the same speed
-  and wobbles the same, so the ladder ranks decisions, not aim.
+  and wobbles the same, so the ladder ranks decisions, not aim (this arrives with the difficulty
+  work; until then aim is exact).
 - **Ten thinks a second.** An answer that is late is not waited for in a live game; the seat
   keeps what it held.
-- **A broken bot stands still.** A throw is counted and shown on the ladder page; the seat keeps
-  its last act.
+- **A broken bot stands still.** A throw is caught and counted (`BOTS.rt` in the page's console);
+  the seat keeps its last act.
 
 ## How it is built (and where it is going)
 

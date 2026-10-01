@@ -158,9 +158,9 @@ ROAM WOLF`; any other word shows plain. Target kinds: `player`, `soldier`, `bird
 ## Hands
 
 Every scripted seat aims with the same hands: the crosshair swings toward your `aim` at a fixed
-speed (10 rad/s) with a small drifting wobble, as well as the game's HARD bots
-(`skillHands` with `AI_LADDER_HANDS`, js/ai-skill.js), and a drawn shot is held until the
-crosshair is on your `aim`. `aim` is where you *want* to aim; lead a moving target yourself.
+speed with a small wobble, about as well as the game's HARD bots (`skillHands`, which arrives
+with the difficulty work; until it does, the crosshair lands exactly on `aim`). `aim` is where
+you *want* to aim; lead a moving target yourself.
 
 ## Versioning
 
