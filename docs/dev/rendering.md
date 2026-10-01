@@ -1177,7 +1177,7 @@ bars), health at `py - 7`, that meter at
 the stamina bar), and the player's name tag in team colour at `py - 18`, a clear row above the meter's
 frame — **every** player, the local one included: the name is the profile's
 ([architecture.md](architecture.md#profilejs)), and yours is what the rest of the table reads over
-your head, so hiding it from you alone would make it the one label in the game you cannot check. The backings are translucent, so each plate paints only its own rows - no overlap.
+your head, so hiding it from you alone would make it the one label in the game you cannot check. Every frame is one **opaque** ink, `BAR_FRAME` (the name outline's `#0f1632`), over one track grey, `BAR_TRACK`: a see-through backing came out a different colour on snow, on a pine and on another body's frame.
 
 **The frame is centred on the body, and the bars pay for it (`FRAME_DX`).** Horizontally the frame
 is a 6 px level plate hard against the 16 px bar backing — 22 px at one digit; the plate sizes
@@ -2367,7 +2367,14 @@ tint's red channel is half its blue, so a RED team's tag loses its hue before it
 value whatever it is drawn in. So world text is **held back** instead — `drawWorldText` queues
 the glyphs (`worldInk`) and `flushWorldInk` stamps them at the **end of `renderLighting`**, above
 the tint, the depth wash and the rim. It is the same carve-out the two debug overlays get, for
-the same reason. Queue order is draw order, so a nearer body's tag still covers a farther one's;
+the same reason. **The frames over a body are held back the same way**: `overheadPlate(fn)` queues
+one closure per body (`worldPlates`, with the `globalAlpha` and transform standing at the call -
+a buried body's fade, a wader's sink), and `flushPlates`, first thing in `flushWorldInk`, runs
+them in draw order. A player's whole frame (bars, level plate, stun plate, meter and name), a
+beast's, every `drawHealthBar` (robots, buildings, the regrow clocks) and the roost's PERCH bar
+go through it, so a bar is the same pixels in any light and nothing standing in front of a body
+(a pine, another body, a god ray, a cloud's edge) cuts into it; a nearer body's whole frame
+covers a farther one's, the way League's plates pile. Queue order is draw order, so a nearer body's tag still covers a farther one's;
 the queue only applies while `ctx === wctx`, so a UI pass that reuses one of those drawers (the
 wiki's animal page raises a sense mark of its own) draws where it stands. Everything else over
 the world — bodies, shots, ground decals — goes **under** the grade, which is what keeps night a
