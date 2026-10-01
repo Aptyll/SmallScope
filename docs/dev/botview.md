@@ -32,6 +32,11 @@ p.ai.thought = { goal, why, target: { x, y, kind, ref, id } | null,
   role, mood, plan, options: [{ goal, score }], skill, src, t }
 ```
 
+`skill` is written by the skill layer (`skillHands`, js/ai-skill.js) onto any thought a brain
+has written: `{ level, react, aim, off, rate, slip }` - the profile's name and reaction time,
+the aim wobble in px right now, how far the crosshair trails the wish (px), the notice rate
+(under 1: a rival outside its cone) and the lapse in play, if any.
+
 `botThought(p)` is the one reader. Until a bot has a thought, `botGuess` reads the goal off the
 ladder's own marks (a shot in flight, `want`, a rival noticed past the level's reaction time
 (`seeT`, the ladder's engage rule), `huntTgt`, `tgt`, `hideT`, `roam`) and marks it `guess`; every surface draws a guessed goal with a trailing `?`, so a guess never passes for the

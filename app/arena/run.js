@@ -2,13 +2,13 @@
 // A batch of headless bot-vs-bot matches in parallel, one process each, every
 // log written to a folder with a summary line per match and a table at the end.
 //
-//   node app/arena/run.js --seeds 1-20 --level 0 --out arena-out/normal
-//   node app/arena/run.js --seeds 1-8 --level 0,1,2 --jobs 4
-//   node app/arena/run.js --seeds 1-8 --kind versus --a 1 --b 0
+//   node app/arena/run.js --seeds 1-20 --level 1 --out arena-out/normal
+//   node app/arena/run.js --seeds 1-8 --level 0,1,2,3 --jobs 4
+//   node app/arena/run.js --seeds 1-8 --kind versus --a 2 --b 1
 //
 // Flags: --seeds a-b or a,b,c (default 1-4); --level n[,n] (the game's sides
-// at that difficulty, default 0); --kind level|versus (--a/--b: each side's
-// AI_LEVELS index); --proxy n (the profile seat 0 plays in 'level', default 0);
+// at that difficulty, default 1 = NORMAL); --kind level|versus (--a/--b: each side's
+// AI_LEVELS index, default 1); --proxy n (the profile seat 0 plays in 'level', default 1 = NORMAL);
 // --shape n (MAPS index, default 0); --max min (timeout, default 40);
 // --every s (sample pitch, default 2); --jobs n (default: cores); --out dir
 // (default arena-out/<date>; refused if it already holds a run, unless --force);
@@ -126,7 +126,9 @@ async function main() {
   const a = parseArgs(process.argv.slice(2));
   const seeds = parseList(a.seeds, [1, 2, 3, 4]);
   const kind = a.kind === 'versus' ? 'versus' : 'level';
-  const levels = kind === 'level' ? parseList(a.level, [0]) : [0];
+  const NORMAL = 1; // AI_LEVELS: EASY, NORMAL, HARD, IMPOSSIBLE (js/ai-skill.js)
+  const num = (v) => v === undefined || v === true ? NORMAL : +v;
+  const levels = kind === 'level' ? parseList(a.level, [NORMAL]) : [NORMAL];
   const jobs = Math.max(1, +a.jobs || os.cpus().length);
   const out = path.resolve(a.out && a.out !== true ? a.out : path.join('arena-out', new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')));
   // a folder holds one run: its aggregate and rescore read every log in it
@@ -138,7 +140,7 @@ async function main() {
   const queue = [];
   let n = 0;
   for (const level of levels) for (const seed of seeds) {
-    queue.push({ seed, level, kind, a: +a.a || 0, b: +a.b || 0, proxy: +a.proxy || 0, shape: +a.shape || 0,
+    queue.push({ seed, level, kind, a: num(a.a), b: num(a.b), proxy: num(a.proxy), shape: +a.shape || 0,
       maxMin: +a.max || 40, sampleEvery: +a.every || 2, wallSec: +a.wall || 0, n: n++ });
   }
   const t0 = Date.now();

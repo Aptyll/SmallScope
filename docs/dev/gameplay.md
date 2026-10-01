@@ -1433,8 +1433,8 @@ those, never `p.hide` directly**:
 - `seenAt(p, range)` = the distance a watcher with plain sight `range` actually notices p from:
   `range × kit.stealth × (1 − PRONE_CUT × conceal)`, floored at `PRONE_SNIFF` (22 px) whenever
   there is any cover at all — **nothing hides at arm's length**. A bot's sight is its profile's
-  (`AI_LEVELS`, js/ai.js: NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
-  22, 28 and 37, and a tier-3 turret's 92 down to 22.
+  (`AI_LEVELS`, js/ai-skill.js: EASY 120, NORMAL 147, HARD 200, IMPOSSIBLE 267 px), so full cover takes those to
+  22 (the floor), 22, 28 and 37, and a tier-3 turret's 92 down to 22.
 
 **Every watcher resolves through `seenAt`, and a new one must too.** Today's callers: a bot's
 target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai.js), a turret
@@ -3163,7 +3163,7 @@ remembered with the settings (`settings.relay`), else the page's own host.
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
 left ([the hover tooltip](rendering.md#the-hover-tooltip)) —
-`aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai.js) —
+`aiLevel` — the rival bots' level, picked in the lobby's AI pop-up, an index into `AI_LEVELS` (js/ai-skill.js), NORMAL until moved (a settings save from before EASY is moved up one, `loadSettings`) —
 `mapType` — the map shape picked in the lobby's map pop-up, an index into `MAPS` (js/world.js); it is
 what the NEXT load grows — LOCK IN reloads onto it when it is not this page's shape ([map shapes](world.md#map-shapes)) —
 `scheme` — the keyboard scheme, `'wasd'` or `'click'` — with `binds` / `bindsClick`, the key
