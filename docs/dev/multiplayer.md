@@ -695,7 +695,9 @@ aimed at `hand` px/s (250 / 400 / 700 / at once), as an **offset from the body**
 screen that follows its player, so a rival circling at arm's length is as easy to track as one
 far off, and a flick from the tree it was chopping to a rival takes a beat - and in a fight a
 drawn shot is held until the crosshair is within `AI_AIM_ON` (8 px) of the wish: the shot comes
-late, not wide. (An angular limit was tried first and made every close fight unwinnable: a
+late, not wide. A **blade** never swings at the air (`skillBlade`, every native bot, every rung): no
+draw starts while the wish is more than its full reach + `AI_BLADE_CLOSE` away, and a drawn one is held
+while the wish is out of reach at that draw (`slashReach`), for `AI_BLADE_HOLD` at most. (An angular limit was tried first and made every close fight unwinnable: a
 rusher circling at 15 px sweeps faster than any sane turn rate.) **Scripted seats** (the bot API) all play with one pair of
 hands, `AI_LADDER_HANDS` (HARD's `hand` and `aim`), through the same `skillHands`, so a ladder
 ranks decisions rather than aim; its `hands` flag adds the wobble and the held draw to every aim.

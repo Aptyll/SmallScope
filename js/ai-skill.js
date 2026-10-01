@@ -126,6 +126,7 @@ function aiProfile(p) {
 //   draw      this shot's release point; slipT/slipKind the lapse in play
 //   lost      { x, y, t } the last rival it lost sight of, t s ago
 //   engaged   the fight rung had its hands this tick
+//   holdT     s a drawn blade has been held for a target out of its reach
 //   view      the few numbers the dev view shows, kept on p.ai.thought.skill
 //             when a brain has written a thought: { level, react, aim (the
 //             wobble now, px), off (px the crosshair trails), rate, slip }
@@ -133,9 +134,11 @@ const AI_SETTLE = 0.6;     // s the fresh-target wobble takes to settle (time co
 const AI_WOBBLE_T = 0.5;   // s the wobble's drift takes to wander back to centre
 const AI_ALERT_T = 2;      // s a hit keeps a bot watching every side
 const AI_AIM_ON = 8;       // px off the wish inside which a drawn shot may go
+const AI_BLADE_CLOSE = 24; // px past a blade's full reach it may start a draw, closing in while it draws
+const AI_BLADE_HOLD = 1.5; // s a drawn blade waits for its target to come back in reach before it lets go
 function skillOf(p) {
   return p.ai.sk || (p.ai.sk = { tgt: null, px: 0, py: 0, pvx: 0, pvy: 0, ex: 0, ey: 0, settle: 1, cx: 0, cy: 0, aa: 0, off: 0, wishX: 0, wishY: 0, outX: NaN, outY: NaN,
-    alertT: 0, rate: 1, draw: 0, drawing: false, slipT: 0, slipKind: null, lost: null, engaged: false });
+    alertT: 0, rate: 1, draw: 0, drawing: false, slipT: 0, slipKind: null, lost: null, engaged: false, holdT: 0 });
 }
 // a standard normal off the sim's stream (Box-Muller)
 function skillGauss() { return Math.sqrt(-2 * Math.log(1 - rng())) * Math.cos(2 * Math.PI * rng()); }
@@ -250,4 +253,19 @@ function skillHands(p, prof, dt) {
     th.skill = v;
   }
   if ((sk.engaged || prof.hands) && p.charging && !inp.fire && sk.off > AI_AIM_ON) inp.fire = true;
+  if (!prof.hands) skillBlade(p, sk, inp, dt);
+}
+// a blade cuts only what is inside its reach at this draw (slashReach), so a
+// bot never swings at the air: it starts a draw only once the wish is near
+// enough to close on while drawing, and holds a drawn one while the wish is
+// out of reach - for AI_BLADE_HOLD at most, then it lets go like a hand that
+// gave up. Every bot, every level, every rung (a camp, prey, a rival); a
+// scripted seat's release is its own to call
+function skillBlade(p, sk, inp, dt) {
+  const cell = heldTool(p), m = cell && TOOLS[toolIdOf(cell.type)].melee;
+  if (!m || !p.charging) sk.holdT = 0;
+  if (!m) return;
+  const wd = Math.hypot(sk.wishX - p.x, sk.wishY - p.y);
+  if (!p.charging) { if (inp.fire && wd > m.reach + AI_BLADE_CLOSE) inp.fire = false; return; }
+  if (!inp.fire && wd > slashReach(m, drawPow(p)) && sk.holdT < AI_BLADE_HOLD) { inp.fire = true; sk.holdT += dt; }
 }
