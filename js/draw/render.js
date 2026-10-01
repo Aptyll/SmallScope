@@ -699,7 +699,7 @@ function render() {
   // readable over snow. a.x/a.y is the TIP - the point the sim tests - and
   // the body trails ARROW_LEN px behind it.
   for (const a of arrows) {
-    if (a.kind === 'bolt') { drawBolt(a, ex, ey); continue; }
+    if (a.kind === 'rock') { drawSlungRock(a, ex, ey); continue; }
     const hx = Math.round(a.x - ex), hy = Math.round(a.y - ey);
     if (hx < -22 || hx > WV_W + 22 || hy < -22 || hy > WV_H + 22) continue;
     // Not every bit flies as the plain arrow: a bit may name a BODY of its

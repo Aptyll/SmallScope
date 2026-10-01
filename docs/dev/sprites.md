@@ -14,7 +14,7 @@ local player only and over an unchanged sim body. The raider set
 edit changes both — but nothing reads it (dead, [Intentional dead code](checklists.md#intentional-dead-code)).
 
 **The tiered structures** use the same trick: one grid each (`wall` and `generator` 16×16,
-`turret` a 32×32 mount — **The turret is half grid, half raster**, below)
+the turret three 32×32 timber bases — **The turret is half grid, half raster**, below)
 baked with `WPAL` / `WPAL_STONE` / `WPAL_GOLD` — a grid edit changes all three
 tiers, and the palettes share the extra `k`/`K` (iron fitting) and `e` (glow) chars, which is also
 what a building's team paint rides on (see below). A sprite too tall for a 16×16 wheel wedge gets
@@ -304,14 +304,53 @@ on the plate whose news is a **turnover** rather than a price (`NOTE_KIND.stock.
 [the plates](rendering.md#notices-the-plates-under-the-minimap)): same 16×16 stamp, same
 sunken well, so the column reads as one column whichever kind lands in it.
 
-**The turret is half grid, half raster.** `turret` is a **32×32** mount — collar, column, plinth
-and snow skirt — whose top 16 rows are deliberately empty. The rotating housing and barrel are not
-baked at all: `drawTurretHead()` in js/draw/structs.js rasterises them pixel by pixel at the live bearing and
-dilates the result into a 1px dark rim, exactly as the arrows do, because a baked grid would lock
-the gun to one angle. The pivot is sprite-local **(16, 14)**, just above the collar. Two knock-ons:
-the sprite is wider than its one-tile footprint, so the draw pass centres it (`sx` in the structure
-branch of `render()`); and a 32px sprite is too big for a radial-wheel segment, so `turretIcon` (a
-16×16 cannon) is baked into `teamBuild[team].icon.turret`, the same escape hatch the bay uses.
+**The turret is half grid, half raster, and it is THREE grids.** Its base is timber at every
+tier — the upgrade is more of it, never a change of material — so unlike every other tiered
+building it does not reuse one grid under three palettes. `turretT1`/`turretT2`/`turretT3`
+(`turretBases`) are **32×32** each: a **sawn stump**, the **same stump carved**, and a **carved
+pedestal** that has left the forest behind. They are baked through three timber palettes of their
+own (`TUR_PALS`: pine, oak, tarred oak).
+
+**The SILHOUETTE carries the tier, not the detail**, because at 16 px a tier has to read from
+across the snow before any of its carving does. Tier 1 **tapers** to roots with gaps between them;
+tier 2 is **straight-sided** on its roots under a snow rim; tier 3 is an **I** — a wide cornice on
+two painted corner posts, a narrow shaft, a stepped plinth, and no roots at all. They widen with
+it too: 16, 18 and 20 px on a 16 px footprint.
+
+**And the turret wears more of its side than any other building**, because it is the one piece
+that shoots back. `turretPal` extends `teamBuildPal`: besides the shared fittings `k`/`K` and glow
+`e`, the grids carry the side's **coat** as `y`/`Y`/`t` (the gate's own three letters) and its
+**mark** as `m`, the brightest ink a side owns — so every tier has a painted band with its own
+emblem cut into it, and the flat `SPRITES.turret` set is baked through team 0's palette so none of
+those letters can come out transparent.
+
+The top 16 rows of each are deliberately empty: that is where the **sling** goes, and the sling is
+not baked at all. `drawTurretHead()` in js/draw/structs.js rasterises it pixel by pixel at the live
+bearing and dilates the result into a 1px dark rim, exactly as the arrows do, because a baked grid
+would lock the fork to one angle. The pivot is sprite-local **(16, 12)**, just above the collar.
+
+**The sling is a part table, not a wall of loops.** `SLING` is one row per piece — `k` its shape
+(`ell`/`box`/`seg`/`dot`), `c` its ink role, `mir` mirroring it across the throw's line so one
+row draws both arms, `when` naming a state flag it needs, and `from` the first **tier** it appears
+at — in sling-local px: `f` **along** the throw (0 at the pivot, + toward the mark), `s` **across**
+it (− to the left, the lit side). A coordinate written as a *string* is read out of the frame's
+state instead (a leading `-` negates it), so the whole animation **and the per-tier geometry** are
+the numbers `slingState()` works out and the table itself never moves.
+
+`from` is the whole of how the three forks differ: tier 1 is a bare stick, tier 2 binds and paints
+it (an iron rim round the deck, a collar on the stanchion, a wrap halfway up each arm), tier 3
+ties and crowns it (the rim carried round the back, deck studs, the side's mark on the wraps, a
+lashing's loose end, and a carved finial past each tip). The fork also grows: its reach is
+**`TUR_MOUTH` (12 / 13 / 15 px, js/structures.js — the row the SIM reads for where the rock
+leaves)**, so the arms can never be drawn anywhere but where the stone actually goes, and its
+spread is `SL_FLARE` (7 / 7 / 9). `slingInk()` resolves a role against the tier's timber
+(`SLING_WOOD`, which climbs with `TUR_PALS`) and the side's palette. Retuning the fork is editing
+a row; adding a piece is adding one.
+
+Two knock-ons: the sprite is wider than its one-tile footprint, so the draw pass centres it (`sx`
+in the structure branch of `render()`); and a 32px sprite is too big for a radial-wheel segment, so
+`turretIcon` (a 16×16 sling on a post, the same silhouette as the SLING a player carries) is baked
+into `teamBuild[team].icon.turret`, the same escape hatch the bay uses.
 
 **Wildlife is side-view only, and its frames are named CLIPS.** `SPRITES[kind][dir]` is an
 **object**, not a flat list: one array per behaviour, every kind carrying at least `idle` — the
@@ -431,7 +470,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | `robot.js` | none: generated by app/bake-robot/bake.py | `robotSkin` (the IRON SCOUT skin, per team) |
 | `eagle.js` | eagle | `eagle`, `eagleTeam`, `eagleFlash`, `eagleShadows` |
 | `warbirds.js` | palettes, plates, painter, cache | `warBirds` (no grids: painted in code, below) |
-| `buildings.js` | wall, tiered structures, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret`, `generator`, `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
+| `buildings.js` | wall, tiered structures, the turret's three timber bases, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret` (`turretT1`/`T2`/`T3` through `TUR_PALS` and `turretPal`), `generator`, `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
 | `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |
 | `icons.js` | gear icons, heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |

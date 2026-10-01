@@ -864,7 +864,7 @@ The ladder:
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. In the
    spur, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
-   standing off the bird under bolt fire never finishes a draw), then a hunter takes its
+   standing off the bird under a turret's rocks never finishes a draw), then a hunter takes its
    station `AI_HOLD` (96 px) out **on the spur's axis**, where the spur keeps the line to
    the roost open (off the axis a wall the defenders raised may eat the shot) and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
