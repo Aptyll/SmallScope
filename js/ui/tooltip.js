@@ -250,6 +250,7 @@ function tipStruct(type) {
     d.rows.push(['DAMAGE', String(t.dmg), '#e0637a']);
     d.rows.push(['FIRES EVERY', tipSec(t.rate), '#f4f7ff']);
     d.rows.push(['RANGE', String(t.range), '#f4f7ff']);
+    if (t.acc) d.rows.push(['ACCURACY', Math.round(t.acc * 100) + '%', '#f4f7ff']);
   }
   if (t.pay) d.rows.push(['GOLD A MINUTE', String(Math.round(t.pay * 60 / t.period)), RES_COLORS.gold]);
   if (t.bots) {

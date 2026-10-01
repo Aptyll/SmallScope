@@ -1,7 +1,8 @@
 'use strict';
-// What a player builds and what a bay rolls out: the wall, turret, generator
-// and spawner in three tier materials and each side's fittings, the net, the
-// scaffold, the bot bay and its worker bots, spikes, fire and the torch.
+// What a player builds and what a bay rolls out: the wall, generator and
+// spawner in three tier materials and each side's fittings, the turret's three
+// timber bases, the net, the scaffold, the bot bay and its worker bots, spikes,
+// fire and the torch.
 (() => {
   const { bake, TEAM_SKINS, teamBuildPal } = SPR;
 
@@ -90,31 +91,82 @@
   ];
 
   // ------------------------------------------------- tiered structures
-  // One 16x16 grid per building, baked with WPAL / WPAL_STONE / WPAL_GOLD.
-  // wheel glyph only: the live turret is the 32x32 mount below, too big for a segment
+  // One 16x16 grid each for the wall, the gate and the generator, baked with
+  // WPAL / WPAL_STONE / WPAL_GOLD. The TURRET is the exception: three grids of
+  // its own in three timbers, below.
+  // the wheel glyph: the sling over a stump in the side's own paint. The live
+  // bases are the three 32x32 grids below, far too big for a wheel segment.
   const turretIcon = [
     '................',
-    '.....okkko......',
-    '....okKKKko.....',
-    '...okKuuKkkkkko.',
-    '...okKueKkkkkKo.',
-    '...okKuuKkkkkko.',
-    '....okKKKko.....',
-    '.....okkko......',
-    '.....ouUvo......',
-    '.....ouUvo......',
-    '....oouUvoo.....',
-    '....ouuUUvo.....',
-    '...oouuUUvoo....',
-    '...ouuuUUuvo....',
-    '...ovvvvvvvvo...',
+    '..o..........o..',
+    '..oK........Ko..',
+    '..oK.w....w.Ko..',
+    '...oK.w..w.Ko...',
+    '...ou..ee..uo...',
+    '....ou.ee.uo....',
+    '.....ouoouo.....',
+    '......ouuo......',
+    '.....oUuuUo.....',
+    '....oyyyyyyo....',
+    '....oYymmyyo....',
+    '....oyyyyyyo....',
+    '...ovuvvvvuvo...',
+    '..ovvoovvoovvo..',
     '..ssssssssssss..',
   ];
-  // The live turret: a 32x32 armoured mount. Rows 0-15 are deliberately empty -
-  // that is where drawTurretHead() rasterises the rotating housing and barrel,
-  // pivoting on sprite-local (16, 14) just above the collar. Baking the barrel
-  // into the grid would lock the gun to one angle.
-  const turret = [
+
+  // THE TURRET'S BASE IS TIMBER AT EVERY TIER (STRUCTS.turret, js/structures.js)
+  // and it is ONE PIECE OF TIMBER growing up: a sawn stump, the same stump
+  // CARVED, and a carved pedestal that has left the forest behind. That is the
+  // whole of the upgrade's picture, so the three tiers are three GRIDS instead
+  // of one grid remapped to stone and gold, and they widen with the tier -
+  // 16, 18 and 20 px on a 16 px footprint - so a raider reads which one it is
+  // from across the snow before the fork has moved.
+  // Each is 32x32 whose top 16 rows are deliberately empty: that is where
+  // drawTurretHead() rasterises the sling at the live bearing
+  // (js/draw/structs.js), pivoting on sprite-local (16, 12) just above the
+  // collar. Baking the fork in would lock it to one angle.
+  // THE SIDE'S PAINT IS ON ALL THREE (turretPal): a band in its coat (y/Y/t)
+  // carrying its own mark (m) between the iron straps (k/K) every building
+  // wears, lit by the glow (e) on the two carved tiers.
+  // TIER 1: a sawn stump - a cut face, bark, and roots with gaps between them
+  const turretT1 = [
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '...........oooooooooo...........',
+    '..........oUUUUUUUUUUo..........',
+    '..........oUuUUuUuUUuo..........',
+    '.........ovuUuUuuUuUuvo.........',
+    '.........ovuvvuvvuvvuvo.........',
+    '.........oYYyyyyyyyytto.........',
+    '.........oYyyyymmyyyyto.........',
+    '.........oYYyyyyyyyytto.........',
+    '.........ovuvvuvvuvvuvo.........',
+    '.........ovvuvvuuvvuvvo.........',
+    '........oovuvvuvvuvvuvoo........',
+    '........ovvuvvvuuvvvuvvo........',
+    '........ovvvuvvvvvvuvvvo........',
+    '........ovvoovvvvvvoovvo........',
+    '........ovo.oovvvvoo.ovo........',
+    '........ssssssssssssssss........',
+  ];
+  // TIER 2: the stump CARVED - a snow rim over straight, faceted sides cut with
+  // niches, iron pegs holding a painted panel, and the roots it still grows on
+  const turretT2 = [
     '................................',
     '................................',
     '................................',
@@ -132,22 +184,60 @@
     '................................',
     '................................',
     '..........oooooooooooo..........',
-    '.........okkkkkkkkkkkko.........',
-    '........okKKKKKKKKKKKKko........',
-    '........okKwwwwwwwwwwKko........',
-    '........okKKKKKKKKKKKKko........',
-    '.........okkkkkkkkkkkko.........',
-    '..........oUUUUUUUUUUo..........',
-    '..........oUuuuuuuuuUo..........',
-    '.........ooUuvvvvvvuUoo.........',
-    '.........oUUuveeeevuUUo.........',
-    '.........oUuuvvvvvvuuUo.........',
-    '........ooUuuuuuuuuuuUoo........',
-    '........oUUuukkkkkkuuUUo........',
-    '.......ooUvvvvvvvvvvvvUoo.......',
-    '.......ovvvvvvvvvvvvvvvvo.......',
+    '.........oUUUUUUUUUUUUo.........',
+    '........oUuUUuUuUUuUUuUo........',
+    '.......ovuUuUuuuuuuUuUuvo.......',
+    '.......owvvvvvvvvvvvvvvwo.......',
+    '.......ovkvvvvvvvvvvvvkvo.......',
+    '.......oYYyyyyyyyyyyyytto.......',
+    '.......oYyyemmmmmmmmeytto.......',
+    '.......oYYyyyyyyyyyyyytto.......',
+    '.......ovkvvvvvvvvvvvvkvo.......',
+    '.......ovuUvvuvvvvuvvUuvo.......',
+    '.......ovuUvoovvvvoovUuvo.......',
+    '.......ovuUvvuvvvvuvvUuvo.......',
+    '.......ovvuuvvvvvvvvuuvvo.......',
+    '.......ovvoovvvvvvvvoovvo.......',
+    '.......ssssssssssssssssss.......',
+  ];
+  // TIER 3: a carved PEDESTAL, no roots at all - a wide cornice on two painted
+  // corner posts, a narrow shaft wearing the side's frieze between iron bands,
+  // and a stepped plinth. Its outline alone says which one it is.
+  const turretT3 = [
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '......oyo.oooooooooooo.oyo......',
+    '......oYo.oUUUUUUUUUUo.oYo......',
+    '......omo.ouUuUuuuuUuo.omo......',
+    '......ovuUuUuuuuuuUuUuUuvo......',
+    '......owwvvvvvvvvvvvvvvwwo......',
+    '......ooovvvvvvvvvvvvvvooo......',
+    '.........okKKKKKKKKKKko.........',
+    '.........oYYyyyyyyyytto.........',
+    '.........oYyemmmmmmeyto.........',
+    '.........oYYyyyyyyyytto.........',
+    '.........okKKKKKKKKKKko.........',
+    '.........ovuUvvvvvvUuvo.........',
+    '........oovuUvvvvvvUuvoo........',
+    '.......oovuUvvvvvvvvUuvoo.......',
+    '......oUUUUUUUUUUUUUUUUUUo......',
     '......ssssssssssssssssssss......',
   ];
+  const turretBases = [turretT1, turretT2, turretT3];
   const generator = [
     '................',
     '......kk........',
@@ -607,20 +697,37 @@
   const bayTeamPal = (t) => Object.assign({}, BAYPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const teamRobotPal = (t) => Object.assign({}, BOTPAL, { L: t.coatL, T: t.coat, t: t.coatD });
   const TIER_PALS = [WPAL, WPAL_STONE, WPAL_GOLD];
+  // ...and the TURRET's own three, because its tiers are three timbers rather
+  // than wood/stone/gold. They keep WPAL's letters, so the team fittings (k/K)
+  // and the glow (e) ride exactly as they do on every other building, and the
+  // wood darkens with the tier the way the sling above it does (SLING_WOOD,
+  // js/draw/structs.js).
+  const TUR_PALS = [
+    WPAL,
+    Object.assign({}, WPAL, { o: '#33241a', u: '#7a5636', U: '#966e46', v: '#5a3f28' }),
+    Object.assign({}, WPAL, { o: '#241a12', u: '#5f4028', U: '#7d5638', v: '#412a1a' }),
+  ];
+  // The turret wears MORE of its side than any other building, because it is
+  // the one piece that shoots back and whose it is has to read at a glance:
+  // besides the shared fittings (k/K) and glow (e), its painted band takes the
+  // side's COAT (y/Y/t - the gate's own three letters) and its MARK (m), the
+  // brightest ink a side owns.
+  const turretPal = (b, tm) => Object.assign(teamBuildPal(b, tm),
+    { y: tm.coat, Y: tm.coatL, t: tm.coatD, m: tm.mark });
   const gatePal = (b, t) => Object.assign(teamBuildPal(b, t), { y: t.coat, Y: t.coatL, t: t.coatD });
   const teamBuild = [], teamRobots = [];
   SPR.onTeams(() => TEAM_SKINS.forEach((t, i) => {
     teamBuild[i] = {
       wall: TIER_PALS.map((b) => bake(wall, teamBuildPal(b, t))),
       gate: TIER_PALS.map((b) => bake(gate, gatePal(b, t))),
-      turret: TIER_PALS.map((b) => bake(turret, teamBuildPal(b, t))),
+      turret: TUR_PALS.map((b, i) => bake(turretBases[i], turretPal(b, t))),
       generator: TIER_PALS.map((b) => bake(generator, teamBuildPal(b, t))),
       spawner: [bake(bay, bayTeamPal(t))],
       net: [bake(net, teamBuildPal(NETPAL, t))],
       stall: bake(stall, stallPal(t)), // the merchant's shop (render.js reads SPRITES.teamBuild[skin(team)].stall)
       // wheel glyphs for sprites too big to be their own icon
       icon: {
-        spawner: bake(bayIcon, bayTeamPal(t)), turret: bake(turretIcon, teamBuildPal(WPAL, t)),
+        spawner: bake(bayIcon, bayTeamPal(t)), turret: bake(turretIcon, turretPal(TUR_PALS[0], t)),
       },
     };
     teamRobots[i] = [bake(botA, teamRobotPal(t)), bake(botB, teamRobotPal(t))];
@@ -630,7 +737,7 @@
     teamBuild: teamBuild,
     robotTeam: teamRobots,
     wall: [bake(wall, WPAL), bake(wall, WPAL_STONE), bake(wall, WPAL_GOLD)],
-    turret: [bake(turret, WPAL), bake(turret, WPAL_STONE), bake(turret, WPAL_GOLD)],
+    turret: TUR_PALS.map((b, i) => bake(turretBases[i], turretPal(b, TEAM_SKINS[0]))),
     generator: [bake(generator, WPAL), bake(generator, WPAL_STONE), bake(generator, WPAL_GOLD)],
     spawner: [bake(spawner, WPAL), bake(spawner, WPAL_STONE), bake(spawner, WPAL_GOLD)],
     net: [bake(net, NETPAL)],

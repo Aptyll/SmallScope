@@ -668,8 +668,13 @@
       if (!smp('bow', { vol: 0.79, rate: 0.8, jitter: 0.04, dur: 0.7 })) tone(720, 0.05, 'square', 0.1, -520);
       noise(0.12, 0.32, 1700); tone(104, 0.2, 'sawtooth', 0.13, -34, 0.02);
     },
-    // turret: a hard electric crack with a low thump under it, so it never reads as a bow
-    turretFire() { tone(880, 0.05, 'square', 0.07, -520); noise(0.07, 0.2, 2600); tone(230, 0.11, 'triangle', 0.09, -90, 0.02); },
+    // a turret letting go: the cords whipping through the fork and the timber
+    // kicking under them. All wood and air - nothing electric, because the thing
+    // is a sling, and nothing twangy, because it must not read as a bow either.
+    turretFire() { noise(0.06, 0.16, 1500); tone(196, 0.09, 'triangle', 0.08, -70); tone(120, 0.13, 'sine', 0.06, -30, 0.02); },
+    // ...and the rock arriving: a dull stone knock with the snow it threw up
+    // after it. This is the cue that says a throw LANDED, hit or miss.
+    rockLand() { noise(0.05, 0.22, 700); tone(150, 0.08, 'triangle', 0.09, -60); noise(0.16, 0.08, 2400, 0.04); },
     hit() { if (smp('impact', { vol: 0.69, rate: 1.1, jitter: 0.1, dur: 0.5 })) return; noise(0.06, 0.25, 800); tone(140, 0.08, 'sawtooth', 0.1, -50); },
     hurt() { if (smp('oof', { vol: 0.71, jitter: 0.07 })) return; tone(200, 0.18, 'sawtooth', 0.16, -120); noise(0.12, 0.2, 500); },
     // A GREAT BIRD taking a blow. The eagle used hurt() - a man's winded oof

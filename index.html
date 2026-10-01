@@ -2,6 +2,10 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- what the page may load: its own files and blobs (bot workers), plus
+     ws/wss to a multiplayer relay. No script, font or fetch from another
+     host, so a bot worker (which inherits this) cannot reach out -->
+<meta http-equiv="Content-Security-Policy" content="script-src 'self' file: blob: 'unsafe-inline' 'unsafe-eval'; worker-src 'self' file: blob:; font-src 'self' file: data:; connect-src 'self' file: data: blob: ws: wss:">
 <title>Softfall</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>

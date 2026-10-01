@@ -513,8 +513,9 @@ function updatePlay(dt) {
   // Shots in flight. Everything a tool fires rides this one array, whatever
   // bit it came out of - steerBit() is where the bit's flight path gets to
   // rewrite the velocity before the step is taken, so the trail, the hit
-  // tests and the drawn body all just follow wherever it went. A turret bolt
-  // carries no path and falls straight through it.
+  // tests and the drawn body all just follow wherever it went. A turret's
+  // rock rides the 'sling' path: one constant sag onto the point it was
+  // thrown at.
   for (let i = arrows.length - 1; i >= 0; i--) {
     const a = arrows[i];
     a.t += dt;
@@ -605,7 +606,7 @@ function updatePlay(dt) {
     // archer's back.
     a.trailD += vd * dt * end;
     a.flown = (a.flown || 0) + vd * dt * end;
-    const tailB = (a.kind === 'bolt' || a.path === 'lob' || a.path === 'orbit') ? 0 : ARROW_LEN;
+    const tailB = (a.kind === 'rock' || a.path === 'lob' || a.path === 'orbit') ? 0 : ARROW_LEN;
     while (a.trailD >= ARROW_TRAIL_STEP) {
       a.trailD -= ARROW_TRAIL_STEP;
       if (a.flown < tailB + a.trailD) continue;
@@ -620,6 +621,11 @@ function updatePlay(dt) {
       });
     }
     if (dead) {
+      // A TURRET'S ROCK comes down where it was thrown rather than simply
+      // stopping, and the thump is the only door a rock has to a building -
+      // it flies over the world and never meets one in the air (rockLands,
+      // js/structures.js).
+      if (a.kind === 'rock') rockLands(a);
       // CINDER BURST: the shot ends and its embers go everywhere. Everything
       // alive in the ring catches - the ring is the bit, so it does not care
       // what kind of body is standing in it (unitsNear, js/actions.js).

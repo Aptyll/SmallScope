@@ -251,12 +251,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | THE one placement rule (the ghost's colour, the click, the pad's wheel, findSite and the AI all ask it), a dragged wall's run, the building E manages, then build, upgrade, repair, demolish, refunds, a chest's card rarity roll | `canPlaceAt`, `buildLine`/`placeLine` (`BUILD_LINE_MAX`), `manageNear`, `placeStruct`, `buildCost` (an income building's `ramp`), `startUpgrade`, `repairCost`/`startRepair` (`REPAIR_SHARE`/`REPAIR_RATE`), `structRefund`, `demolishStruct`, `cumulativeCost`, `rollCardRarity` | `structures` |
 | every buildable: its tiers, costs, HP, footprint (and whether it `rotates` / is `tiled`), what it is for (`blurb`, the build list's hover: `tipStruct`, js/ui/tooltip.js), the two colours the maps paint it; the list's order, the two wheel tables, the builder's reach | `STRUCTS`, `BUILD_ORDER`, `STRUCT_ORDER`, `WATER_STRUCT_ORDER`, `BUILD_REACH` | `structures` (scenery carries the same `mm`/`map` pair: `OBJECTS`, world.js) |
 | the build list and its ghost | not here: see [js/ui/wheel.js](#jsuiwheeljs) | `selection, hints & wheel` › `the build list and its ghost`, js/ui/wheel.js |
-| a tiled building's draw (one tile of art per footprint tile) | `drawTiledStruct` | js/draw/structs.js (`the turret's rotating half, the bay, the net and the tiled struct`) |
+| a tiled building's draw (one tile of art per footprint tile) | `drawTiledStruct` | js/draw/structs.js (`the turret's sling, its rocks, the bay, the net and the tiled struct`) |
 | where a bot lays a building | `aiBuildSite`, `AI_BUILD_R` | `ai`, ai.js |
 | the fish net's tuning: what it holds, what it lures, how fast it catches and hands over | `NET_CAP`, `NET_R`, `NET_LURE`, `NET_CATCH_T`, `NET_TAKE_T` | `structures` (beside `STRUCTS`, whose `net` entry it belongs to) |
-| tuning: the turret's pivot and barrel, its lock window, its bolts | `TUR_PIVOT_Y`, `TUR_BARREL`, `TUR_LOCK`, `TUR_MZ`, `BOLT_SPD`, `BOLT_LIFE` | `the building sim` › `turret gunnery` |
+| tuning: the sling's pivot, its reach PER TIER (the draw reads the same row for how long to make the arms), its lock window, its release, and the rock's throw | `TUR_PIVOT_Y`, `TUR_MOUTH` (one per tier), `TUR_LOCK`, `TUR_SNAP`, `ROCK_SPD`, `ROCK_FALL`, `ROCK_MISS`, `ROCK_SPLASH` | `the building sim` › `turret gunnery` |
 | construction ticks (quicker for the side standing by), a paid repair mending, generators, the bay rolling a bot out, the barracks queuing and rolling out a wave | `updateStructures`, `buildCrew` (`CREW_BOOST`/`CREW_MAX`), `BARRACKS_ROLL` | `the building sim` (the barracks' entry - `wave`/`waveT`/`grow`/`cap`, `art`, `fixed` - is in `STRUCTS`; its pixels `drawBarracksOverlay`, js/draw/overhead.js) |
-| turret targeting (range alone: a bolt flies over the world), traverse and firing | `turretPivot`, `turretMark`, `turretMuzzle`, `fireBolt` (`solid: false`) | `the building sim` › `turret gunnery` |
+| what a turret throws at and the one gate that says so (a player, a bot, a beast that is hunting, a building - `TUR_RANK` ranks them) | `turretAim`, `turretReach`, `turretHolds`, `turretMark`, `TUR_RANK` | `the building sim` › `turret gunnery` |
+| the LOB itself: the solve both the aim and the throw read, the accuracy roll it is aimed through, the throw, and where a rock comes down (the only door a rock has to a building) | `turretLaunch`, `turretRoll`/`turretGoal`, `turretPivot`/`turretMouth`, `fireRock` (`solid: false`), `rockLands` | `the building sim` › `turret gunnery` |
 
 ## js/robots.js
 
@@ -409,7 +410,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the frame sim: momentum, day/night, timers | `update`, `updatePlay`, `updatePlayer` | `update` |
 | the disc an arrow lands in round a body | `ARROW_HIT_R` (above `updatePlay`) | `update` |
-| a shot meeting everything its step CROSSED, in the order it met it: the swept disc and box, the tile walk (roost, dummy, wall), every standing building by its drawn shape (the art's opaque box, a turret's head disc), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `sweepBox`, `artBox`/`structShotBox` (also drawn by `drawHitboxes`), `shotContacts`, `shotHits` | `the shot's sweep` |
+| a shot meeting everything its step CROSSED, in the order it met it: the swept disc and box, the tile walk (roost, dummy, wall), every standing building by its drawn shape (the art's opaque box, a turret's turntable disc), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `sweepBox`, `artBox`/`structShotBox` (also drawn by `drawHitboxes`), `shotContacts`, `shotHits` | `the shot's sweep` |
 | the clock paying every player on the ground a coin, silently | `TRICKLE_GOLD`/`TRICKLE_T` (the tick is in `updatePlay`'s player loop) | `passive income` |
 | the zoom ease itself (runs first thing in `update`) | `applyZoom` | `update` |
 | the day's weather: the four rows of dials, how often each comes up, what a day rolls, and the dawn fade between them | `WEATHERS`, `WX_DIALS`, `WX_ODDS`, `WX_FADE`, `weatherOf`, `weatherNow` (the read for other systems), `stepWeather` (the dials in force: `state.wx`, core.js; the pin: `DBG.weather`) | `weather` |
@@ -541,8 +542,9 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the turret's rotating gun, its bolts, its aim line and muzzle flash | `drawTurretHead`, `drawBolt`, `drawTurretFx`, `paintRimmed`, `TUR_METAL`/`TUR_RIM` | `the turret's rotating half, the bay, the net and the tiled struct` |
-| the bay's overlay, the fish net's draw, a tiered piece's sprite and where it is laid (read by the draw and the shot's sweep), a tiled building's draw (one tile of art per footprint tile) | `drawBayOverlay`, `drawNet`/`NET_FISH_AT`, `structSprite`, `structArtOff`, `drawTiledStruct` | `the turret's rotating half` (the file's one banner; what they read: `STRUCTS`, structures.js) |
+| the turret's sling - the PART TABLE it is drawn from (a row's `from` is the tier it appears at: that is the whole of how the three forks differ), this frame's pouch, cords and fork geometry, the ink a part wears, and the rasteriser that lays them at the live bearing | `SLING`, `SL_MOUTH`/`SL_DRAW`/`SL_FLY`/`SL_FLARE`, `slingState`, `slingInk`, `slingPart`, `drawTurretHead`, `paintRimmed`, `SLING_WOOD`/`TUR_RIM` | `the turret's sling, its rocks, the bay, the net and the tiled struct` |
+| a thrown rock's tumbling body, and the dashed aim ARC plus the cords snapping on the release | `drawSlungRock`/`ROCK_MAP`/`ROCK_INK`, `drawTurretFx`, `TUR_ARC`/`TUR_LET` | `the turret's sling, its rocks, the bay, the net and the tiled struct` |
+| the bay's overlay, the fish net's draw, a tiered piece's sprite and where it is laid (read by the draw and the shot's sweep), a tiled building's draw (one tile of art per footprint tile) | `drawBayOverlay`, `drawNet`/`NET_FISH_AT`, `structSprite`, `structArtOff`, `drawTiledStruct` | `the turret's sling` (the file's one banner; what they read: `STRUCTS`, structures.js) |
 
 ## js/draw/bodies.js
 
