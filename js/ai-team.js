@@ -110,12 +110,15 @@ const AI_ALONE_R = 180;     // px: a rival with no other rival sighting this clo
 const AI_FLEE_HOLD = 1.5;  // s a bot that turned to back off keeps backing off before the judge reads the numbers again
 const AI_GRUDGE_N = 2;      // times a bot downs the same rival in a match before it is personal
 const AI_GRUDGE_T = 90;     // s a grudge lasts: the side's stalker job goes to it, on its mark
+const AI_BRACE_N = 2;       // rivals seen on the side's half that make a push worth bracing for
+const AI_BRACE_T = 4;       // s a sighting counts toward a brace
+const AI_BRACE_HOLD = 8;    // s the side stays braced after the last sighting
 const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the judge)
 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '' };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '', nPush: 0, nGuard: 0, braceT: 0, braceN: 0 };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -157,13 +160,26 @@ function aiPlan(team) {
   for (const q of bots) if (q.buffT > 20) blood++;
   if (theirs && !(mine && mine.threat) && ((state.elapsed > AI_STALK_AT && gap >= AI_WINDOW_DOWN) || blood * 2 > bots.length)) T.winT = AI_WINDOW_MIN;
   else T.winT = Math.max(0, T.winT - AI_PLAN_T);
+  // the brace: a rival push on the side's half, deeper into it than the
+  // side's own push is into theirs, is met at home - the pushers turn guard
+  // and hold the bird with everyone it has - and a brace that ends with more
+  // of them down than of the side counters at once, through the window
+  const braceN = T.winT > 0 ? 0 : aiBrace(T, team, bots);
+  if (braceN) { T.braceT = AI_BRACE_HOLD; T.braceN = braceN; }
+  else if (T.braceT > 0) {
+    T.braceT = Math.max(0, T.braceT - AI_PLAN_T);
+    if (T.braceT <= 0 && theirs && aiDownCount(1 - team) > aiDownCount(team)) T.winT = AI_WINDOW_MIN;
+  }
   let nPush = aiPushers(prof);
-  const nGuard = state.elapsed >= prof.push.t * 0.6 ? prof.guard : 0;
+  let nGuard = state.elapsed >= prof.push.t * 0.6 ? prof.guard : 0;
   if (T.winT > 0) nPush = Math.max(nPush, bots.length - nGuard);
+  else if (T.braceT > 0) { nGuard += nPush; nPush = 0; }
   nPush = Math.min(nPush, bots.length);
   const want = [];
   for (let i = 0; i < nPush; i++) want.push('pusher');
   for (let i = 0; i < nGuard && want.length < bots.length; i++) want.push('guard');
+  // (what aiWantsPush and aiOnGuard read: the plan's counts, not the profile's)
+  T.nPush = nPush; T.nGuard = want.length - nPush;
   // the bear: the side's own (the teamPay camp nearest its bird), asleep,
   // with no rival seen by it, and a party strong enough to spare. A party
   // already out keeps going while the bear lives and the bird is quiet
@@ -211,6 +227,7 @@ function aiPlan(team) {
   }
   // the stance, the one word the dashboard shows for the side
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
+  else if (T.braceT > 0 && T.winT <= 0) { T.stance = 'BRACE'; T.why = T.braceN + ' COMING'; }
   else if (T.winT > 0) { T.stance = 'WINDOW'; T.why = blood * 2 > bots.length ? 'BEAR BLOOD' : gap > 0 ? gap + ' DOWN' : 'CLOSING'; }
   else if (T.bear) { T.stance = 'BEAR'; T.why = 'PARTY OF ' + party; }
   else if (nPush > 0) { T.stance = 'PUSH'; T.why = nPush + ' ON BIRD'; }
@@ -378,10 +395,28 @@ function aiBearJob(p, dt) {
   return { meet: { x: b.x + (p.x - b.x) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R, y: b.y + (p.y - b.y) / (Math.hypot(p.x - b.x, p.y - b.y) || 1) * AI_BEAR_R }, here };
 }
 // p's job this plan (a bot the plan has not seen yet gathers)
+// how many rivals are pushing into the side's half, deeper than its own
+// pushers are into theirs (0: no brace). The depth is how far along the line
+// between the two birds a body has come, so of two pushes that cross, the
+// one further on keeps going and the other is met at home.
+function aiBrace(T, team, bots) {
+  const drop = state.drop, a = drop && drop.eagles[team], b = drop && drop.eagles[1 - team];
+  if (!a || !b) return 0;
+  const D = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+  let n = 0, deep = 0, ours = 0;
+  for (const sg of T.seen) {
+    if (state.elapsed - sg.t > AI_BRACE_T) continue;
+    const d = Math.hypot(sg.x - a.x, sg.y - a.y);
+    if (d < D * 0.5) { n++; deep = Math.max(deep, 1 - d / D); }
+  }
+  if (n < AI_BRACE_N) return 0;
+  for (const q of bots) if (T.roles[q.id] === 'pusher') ours = Math.max(ours, 1 - Math.hypot(q.x - b.x, q.y - b.y) / D);
+  return deep >= ours ? n : 0;
+}
 function aiRole(p) { return aiPlan(p.team).roles[p.id] || 'gatherer'; }
 // p's place in the side's plan: the pushers first, then the guards, then the
-// rest - what aiRank reads, so aiWantsPush and aiOnGuard hand the profile's
-// push and guard counts to the bots the plan picked
+// rest - what aiRank reads, so aiWantsPush and aiOnGuard hand the plan's
+// push and guard counts (T.nPush, T.nGuard) to the bots it picked
 function aiPlanRank(p) {
   const i = aiPlan(p.team).order.indexOf(p.id);
   return i < 0 ? 99 : i;

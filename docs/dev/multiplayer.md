@@ -711,9 +711,10 @@ Three small rules, and the teamwork is what they add up to:
   hands: its `flee` and `judge` shift the profile's, `help` scales how far it answers a call,
   `greed` how far it looks for loot and work, `roam` how wide it wanders, `fit` which jobs suit it.
 - **Role.** Every `AI_PLAN_T` (2 s) the side re-plans (`aiPlan`): the profile still says how
-  many push and guard (`aiPushers`, `prof.guard`); the plan says who, by mood fit, and a held
-  job counts `AI_KEEP` extra so nobody flip-flops. `aiRank` is the plan's order (`aiPlanRank`),
-  so the push and guard rungs below read it unchanged. From `AI_SCOUT_AT` (45 s) one bot
+  many push and guard (`aiPushers`, `prof.guard`), and the plan may change it (the window, the
+  brace, below); it says who, by mood fit, and a held job counts `AI_KEEP` extra so nobody
+  flip-flops. `aiRank` is the plan's order (`aiPlanRank`) and `T.nPush`/`T.nGuard` its counts,
+  which the push and guard gates below read. From `AI_SCOUT_AT` (45 s) one bot
   SCOUTs (walks the middle and the far road short of the rival lane), from `AI_STALK_AT`
   (90 s) one STALKs (a mood with `stalk`), and a strong side sends three SLAYERs to its bear,
   below. The rest are GATHERERs: the ladder as it always was.
@@ -738,10 +739,15 @@ Three small rules, and the teamwork is what they add up to:
   `CALL_SIDE_MAX` plates up; an answer still waiting `AI_ONIT_STALE` (4 s) is dropped.
 
 The plan also reads the match once for the side (`T.stance`, the dashboard's `plan`): HOLD (its
-bird under threat), WINDOW, BEAR, PUSH, PRESS (a stalker out) or FARM. The **window** opens when
+bird under threat), BRACE, WINDOW, BEAR, PUSH, PRESS (a stalker out) or FARM. The **window** opens when
 `AI_WINDOW_DOWN` (2) more rivals than own bots are down past `AI_STALK_AT`, or most of the side
 wears a bear's blood, and stays open at least `AI_WINDOW_MIN` (12 s): every bot but the guards
-pushes while it lasts. The plan's order (what `aiRank` reads) is always pushers, then guards,
+pushes while it lasts, as a rush (no column to walk with, no regroup). The **brace**
+(`aiBrace`): `AI_BRACE_N` (2) rivals seen inside the side's half in the last `AI_BRACE_T` (4 s),
+the deepest of them further along the line between the birds than the side's own deepest
+pusher is, and the side meets them at home: its pushers turn guard until `AI_BRACE_HOLD` (8 s)
+after the last such sighting. Of two pushes that cross, the one further on keeps going. A
+brace that ends with more rivals down than own bots opens the window: the counter. The plan's order (what `aiRank` reads) is always pushers, then guards,
 then the rest. The fight rung holds a rival it was just fighting `AI_COMMIT_T` past the edge of
 its sight (`aiHoldFoe`), and a bot that turns to back off keeps backing off `AI_FLEE_HOLD`, so a
 strafe across a line does not flip it between jobs. The **bear**: from `AI_BEAR_AT` (240 s), a side whose bots average level
@@ -843,19 +849,21 @@ The ladder:
    and the rest go on with the match (a side that empties the map for one arrow is a side that
    never pushes). Under `AI_ALARM_HP` (half its nerve) everyone comes, pushers included, the one
    exception a pusher whose side is winning the race — the rival bird lower still — who presses on.
-7. **guard** — from 0.6 × `push.t` on, the profile's `guard` bots (1 / 2 / 0 — a relentless side keeps none; allies 1) after
+7. **guard** — from 0.6 × `push.t` on, the plan's guards (`T.nGuard`: the profile's `guard` bots, 1 / 2 / 0 — a relentless side keeps none; allies 1 — and the pushers too in a brace) after
    the pushers in the plan's order (`aiRank`, the team brain above) stand by their own bird, going on down the ladder to work
    what is near while inside `AI_GUARD_R` of it. The bird is their anchor.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
    side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
-   stalemate always breaks (`aiPushers`), go for the rival bird — an ally goes whenever
+   stalemate always breaks (`aiPushers`; the plan's `T.nPush`, so more in a window and none in a
+   brace), go for the rival bird — an ally goes whenever
    **the human is already on it** (inside `AI_ROOST_R`), so a push you start is a push your side
    joins — and **any** bot joins a siege its side has going once the rival bird is under
    `AI_JOIN_HP` (0.6) with friends at it, unless its own bird is under threat, which is where it
    is wanted. **The wave is the push**: off the rival's lane, a pusher walks with the head of its
    own side's column on the road (`aiWaveHead` — the own soldier nearest the rival bird that is
    still on the march, within `AI_WAVE_D`, and not locked in a fight with a rival column: no rival
-   soldier within 1.5 × `AI_WAVE_R` of it) rather than ahead of it alone, closing to `AI_WAVE_R`
+   soldier within 1.5 × `AI_WAVE_R` of it, nor more than 2 × `AI_WAVE_R` further from the rival
+   bird than the pusher is) rather than ahead of it alone, closing to `AI_WAVE_R`
    of it and going on from there; with no column out it **regroups**: the side's pushers meet at
    the same rally as a relentless pack (their zipline's end) until `AI_REGROUP` (2) are there,
    or one has waited `AI_REGROUP_T` (15 s), then go on committed (`ai.packGo`). On the way a

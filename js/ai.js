@@ -85,8 +85,9 @@ function aiSituation() {
 // their own, and the rest farm, build and (allies) escort. The order is the
 // side's plan (aiPlanRank, js/ai-team.js): the jobs go by mood, not by seat
 function aiRank(p) { return aiPlanRank(p); }
-// the objective rung's gate: after push.t the side's push.n lowest bots go
-// for the rival bird; an ally also goes whenever the human is already on
+// the objective rung's gate: the plan's pushers (T.nPush: push.n after
+// push.t, everyone but the guards in a window, none in a brace) go for the
+// rival bird; an ally also goes whenever the human is already on
 // it, so a push you start is a push your side joins; and ANY bot joins a
 // siege its side already has going once the rival bird is under AI_JOIN_HP
 // - unless its own bird is under attack, which is where it is wanted
@@ -96,15 +97,16 @@ function aiWantsPush(p, prof, theirs, mine) {
   const e = theirs.e;
   if (prof.support && theirs.human && player !== p) return e;
   if (theirs.attackers > 0 && theirs.hp < AI_JOIN_HP && !(mine && mine.threat)) return e;
-  return aiRank(p) < aiPushers(prof) ? e : null;
+  return aiRank(p) < aiPlan(p.team).nPush ? e : null;
 }
-// the guard's gate: from 0.6 push.t on, the prof.guard bots after the
-// pushers stand by their own bird
+// the guard's gate: from 0.6 push.t on, the plan's guards (T.nGuard: the
+// prof.guard bots after the pushers, and the pushers too in a brace) stand
+// by their own bird
 function aiOnGuard(p, prof) {
   const e = aiOwnEagle(p);
-  if (!e || !prof.guard || state.elapsed < prof.push.t * 0.6) return null;
-  const r = aiRank(p), n = aiPushers(prof);
-  return r >= n && r < n + prof.guard ? e : null;
+  if (!e || state.elapsed < prof.push.t * 0.6) return null;
+  const T = aiPlan(p.team), r = aiRank(p);
+  return r >= T.nPush && r < T.nPush + T.nGuard ? e : null;
 }
 // the staging point of a roost: AI_GATE px up the road from the spur's
 // junction (e.mouth) toward the field, on the road itself, so the way in is
@@ -278,6 +280,8 @@ function aiWaveHead(p, e) {
     if (b.kind !== 'soldier' || !unitAlive(b) || b.team !== p.team) continue;
     const d = Math.hypot(b.x - e.x, b.y - e.y);
     if (d < AI_ROOST_R || d >= bd || Math.hypot(b.x - p.x, b.y - p.y) > AI_WAVE_D) continue;
+    // a column well behind is not one to walk back for (the regroup is)
+    if (d > Math.hypot(p.x - e.x, p.y - e.y) + AI_WAVE_R * 2) continue;
     // a column locked in a fight with the rival's is not going anywhere: walk past it
     let clash = false;
     for (const r of robots) if (r.kind === 'soldier' && unitAlive(r) && r.team !== p.team && Math.hypot(r.x - b.x, r.y - b.y) < AI_WAVE_R * 1.5) { clash = true; break; }
@@ -855,7 +859,11 @@ function aiThink(p, dt) {
     const tur = aiInLane(p, e) ? nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; }) : null;
     // the wave is the push: off the rival's lane, a pusher walks with the
     // head of its side's column rather than ahead of it alone
-    const head = aiInLane(p, e) || prof.relentless ? null : aiWaveHead(p, e); // (a relentless side's grouping is the pack below, not the column's pace)
+    // (a relentless side's grouping is the pack below, not the column's pace;
+    // and a WINDOW is a rush: the rivals are down now, not when a column or
+    // the side's stragglers get there)
+    const rush = T.stance === 'WINDOW';
+    const head = aiInLane(p, e) || prof.relentless || rush ? null : aiWaveHead(p, e);
     if (head && Math.hypot(head.x - p.x, head.y - p.y) > AI_WAVE_R) {
       aiNote(p, 'PUSH', 'WITH THE WAVE', head);
       if (steerTo(head.x, head.y, 2) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return; }
@@ -875,7 +883,7 @@ function aiThink(p, dt) {
     // are there, and go on together - or alone once one has waited
     // AI_REGROUP_T, so a push is never held hostage by a bot that went home.
     // A column on the road is grouping enough: walking with the wave skips it.
-    if ((prof.relentless || !head) && !aiInLane(p, e) && !ai.packGo) {
+    if ((prof.relentless || !head) && !rush && !aiInLane(p, e) && !ai.packGo) {
       const z = zips[p.team], end = z ? z.pts[z.pts.length - 1] : null;
       if (end) {
         let alive = 0, here = 0;
