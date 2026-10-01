@@ -222,7 +222,7 @@ function botAct(a) {
   if (Array.isArray(a.aim)) { out.aimX = botNum(a.aim[0], -W, 2 * W, NaN); out.aimY = botNum(a.aim[1], -W, 2 * W, NaN); }
   if (a.goTo && typeof a.goTo === 'object') {
     const x = botNum(a.goTo.x, 0, W, NaN), y = botNum(a.goTo.y, 0, W, NaN);
-    if (x === x && y === y) out.goTo = { x, y, reach: botNum(a.goTo.reach, 0, 3, 0) | 0 };
+    if (x === x && y === y) { out.goTo = { x, y, reach: botNum(a.goTo.reach, 0, 3, 0) | 0 }; out.x0 = x; out.y0 = y; out.reach0 = out.goTo.reach; }
   }
   if (typeof a.ability === 'number') out.ability = botNum(a.ability | 0, -1, AB_KEYS - 1, -1);
   if (a.cmd && typeof a.cmd === 'object' && BOT_CMDS.has(a.cmd.kind)) {
@@ -355,7 +355,13 @@ function botStep(p, dt) {
   inp.mx = a.mx; inp.my = a.my;
   if (a.goTo && !p.dead) {
     const n = navTo(p, a.goTo.x, a.goTo.y, PLAYER_R, a.goTo.reach, dt);
-    if (!n.ok) { a.goTo = null; r.nav = 'fail'; } // a goal with no way to it is dropped, and the bot is told
+    if (!n.ok) {
+      // a goal with no way to it is dropped, and the bot is told - unless it
+      // is already standing within reach of it (beside a bird or a wall,
+      // whose own tile has no path in): that is an arrival, not a failure
+      a.goTo = null;
+      r.nav = Math.hypot(a.x0 - p.x, a.y0 - p.y) <= (a.reach0 + 1) * TILE + PLAYER_R ? 'arrived' : 'fail';
+    }
     else { inp.mx = n.dx; inp.my = n.dy; r.nav = n.d < TILE ? 'arrived' : 'ok'; }
   }
   if (a.aimX === a.aimX) { inp.aimX = a.aimX; inp.aimY = a.aimY; }
