@@ -619,6 +619,19 @@ gone until the restock).
 
 ## Bots
 
+**Two controllers drive an `'ai'` seat.** With `p.botId` null it is the built-in brain below
+(`updateAI`); with `p.botId` naming a program in `BOT_LIB` it is a **bot file** (`botStep`,
+js/bots/api.js; `updatePlay` picks between the two). A bot file sees only a JSON observation of
+what its seat could see (`botObserve`: rivals by the minimap's own rule through `seenAt`, both
+birds, its own body) every `BOT_THINK` ticks, and answers with an act that is read field by
+field into the same `p.input` (`botAct`), plus a `goTo` walked by `navTo`, a `say` for its side
+and a `think` stored as `p.ai.thought`. It runs inline (the examples baked from `bots/` into
+js/bots/lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
+harness registers in `BOT_TRANSPORTS`; a headless runner steps only while `botPending()` is
+false, so a seed and the same files replay exactly. The live half of a seat (`botRt`) is never
+saved: a save keeps `p.botId` and the first step after a load reopens the program. The author's
+contract: [docs/bots/](../bots/README.md).
+
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
 well each rung is played** (the `difficulty` banner at the top of ai.js): the **rivals** run
