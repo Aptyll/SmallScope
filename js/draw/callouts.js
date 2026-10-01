@@ -18,14 +18,16 @@ const CALL_IN = 0.12;          // s the plate takes to rise in
 const CALL_OUT = 0.5;          // s it takes to fade at the end
 const CALL_PULSE = 0.8;        // s per ring, twice
 const CALL_RING = 12;          // px the ring grows to
-// 5x5 glyphs, one per kind (CALLS.icon), rows top first
+// 7x7 glyphs, one per kind (CALLS.icon), rows top first: '#' in the call's
+// ink, 'o' in a dim wash of it
 const CALL_GLYPHS = {
-  bird: ['#...#', '##.##', '.###.', '..#..', '.....'],
-  help: ['..#..', '..#..', '#####', '..#..', '..#..'],
-  low:  ['#####', '.###.', '..#..', '.....', '.....'],
-  push: ['..#..', '.###.', '#.#.#', '..#..', '..#..'],
-  here: ['.###.', '#...#', '#.#.#', '#...#', '.###.'],
+  bird: ['...#...', '..###..', '#######', '##.#.##', '...#...', '..#.#..', '.......'], // the bird from above, as it roosts
+  help: ['..###..', '..###..', '#######', '#######', '#######', '..###..', '..###..'], // the medic's cross
+  low:  ['.##.##.', '#..#..#', '#.....#', '#######', '.#####.', '..###..', '...#...'], // a heart, emptied to its last third
+  push: ['...#...', '..###..', '.##.##.', '##...##', '...#...', '..###..', '.##.##.'], // forward, twice
+  here: ['...#...', '..#.#..', '..#.#..', '.#.#.#.', '.#...#.', '#..#..#', '#######'], // the warning sign: rivals at the roost
 };
+const CALL_DIM = 0.22; // the 'o' wash
 
 // where each player's name tag sat this frame (drawPlayer, js/draw/bodies.js),
 // by seat: the plate hangs above it. Cleared once the calls are drawn.
@@ -67,7 +69,7 @@ function drawCallouts(ex, ey) {
 
 // the plate, centred on x with its tail's tip on y
 function drawCallPlate(c, spec, x, y, a) {
-  const tw = pixelTextWidth(c.word), w = 2 + 5 + 2 + tw + 2, h = 9;
+  const tw = pixelTextWidth(c.word), w = 2 + 7 + 2 + tw + 2, h = 11;
   const x0 = Math.round(x - w / 2), y0 = y - 2 - h;
   if (x0 + w < -1 || y0 + h < -1 || x0 > WV_W || y0 > WV_H) return;
   ctx.globalAlpha = a;
@@ -79,8 +81,14 @@ function drawCallPlate(c, spec, x, y, a) {
   ctx.fillRect(x - 1, y0 + h + 1, 3, 1); ctx.fillRect(x, y0 + h + 2, 1, 1); // the tail down to the head
   const g = CALL_GLYPHS[spec.icon];
   ctx.fillStyle = spec.ink;
-  for (let r = 0; r < 5; r++) for (let q = 0; q < 5; q++) if (g[r][q] === '#') ctx.fillRect(x0 + 2 + q, y0 + 2 + r, 1, 1);
-  drawPixelTextOutline(ctx, c.word, x0 + 9, y0 + 2, CALL_TEXT, '#0f1632');
+  for (let r = 0; r < 7; r++) for (let q = 0; q < 7; q++) {
+    const px = g[r][q];
+    if (px === '.') continue;
+    ctx.globalAlpha = a * (px === 'o' ? CALL_DIM : 1);
+    ctx.fillRect(x0 + 2 + q, y0 + 2 + r, 1, 1);
+  }
+  ctx.globalAlpha = a;
+  drawPixelTextOutline(ctx, c.word, x0 + 11, y0 + 3, CALL_TEXT, '#0f1632');
 }
 
 // the same pulse on the minimap disc, for calls the screen may not show

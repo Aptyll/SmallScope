@@ -36,11 +36,11 @@ const CALL_ROOST_R = 240;   // px round a bird that counts as at it (the brain's
 // and `ink` its accent. `pin` says whether the ping stays on the ground where
 // it was called (a spot) or rides the caller (the caller is the spot).
 const CALLS = {
-  bird: { word: () => 'BIRD!', icon: 'bird', ink: '#ff7a6b' },
-  help: { word: () => 'HELP!', icon: 'help', ink: '#ff7a6b' },
-  low:  { word: (n) => n + ' LOW!', icon: 'low', ink: '#ffd166' },
+  bird: { word: () => 'BIRD!', icon: 'bird', ink: '#ff9a4d' },
+  help: { word: () => 'HELP!', icon: 'help', ink: '#6be38a' },
+  low:  { word: (n) => n + ' LOW!', icon: 'low', ink: '#ff5a6a' },
   push: { word: () => 'PUSH!', icon: 'push', ink: '#8fe3ff' },
-  here: { word: (n) => n + ' HERE!', icon: 'here', ink: '#ff7a6b' },
+  here: { word: (n) => n + ' HERE!', icon: 'here', ink: '#ffd166' },
 };
 const CALL_KINDS = Object.keys(CALLS);
 
