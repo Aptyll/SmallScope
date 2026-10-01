@@ -97,6 +97,9 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               reach and no contest; id null lifts it
               or {kind:'rack'|'pkdie'|'agbell', ...} - the practice room's
               armory, roll die and range bell
+              An order of the wrong shape (a string where an index goes, a key
+              off Object's prototype) is dropped by cmdOk before any branch runs:
+              a bot file or a remote client can send anything.
 ```
 
 `sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the pad's stick, `pad.mx/my`,
@@ -845,7 +848,7 @@ with reach `WORK_REACH` (any open tile beside the target), so `aiOpenSides() >= 
 prefilter on work; a build site still wants `>= 3` open sides. Keep the -1 branches when you
 extend the ladder — a goal that is never dropped is a bot that stands still forever.
 
-**Calibrating a level** is done bot-vs-bot, headless, in the served page: make the local player a
+**Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser, one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
 bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[0]` for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
 `sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
