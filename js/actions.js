@@ -346,7 +346,7 @@ function tackleObject(o, dmg, p) {
   if (o.type === 'dummy') { hitDummy(o, dmg, c.x, c.y - 8); return; } // the dummy takes the shoulder for real
   if (!STRUCTS[o.type] || ownsStruct(o, p)) return;
   o.hp -= dmg;
-  addDmgFloater(c.x, c.y - 12, dmg);
+  tallyHit(o, dmg);
   if (o.hp <= 0) {
     destroyStructure(o, true, p);
     logEvent(p.name + ' WRECKED A ' + STRUCTS[o.type].name, p);
@@ -622,7 +622,7 @@ function hitDummy(o, dmg, hx, hy) {
   o.hitT = 0;
   o.flash = 0.1;
   o.shake = 0.24;
-  addDmgFloater(hx, hy - 6, dmg);
+  tallyHit(o, dmg);
   burst(hx, hy - 4, '#e0c890', 5, 40, 0.4, true); // straw off the sack
   sfxAt('hit', hx, hy);
 }
@@ -654,7 +654,7 @@ function hurtStruct(o, dmg, p, bot) {
   o.shake = 0.22;
   sfxAt('hit', c.x, c.y);
   burst(c.x, c.y - 4, '#a3794f', 5, 40, 0.4, true);
-  addDmgFloater(c.x, c.y - 12, dmg);
+  tallyHit(o, dmg);
   shakeFor(p, 1);
   if (o.hp <= 0) {
     const name = STRUCTS[o.type].name;

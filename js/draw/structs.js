@@ -299,7 +299,7 @@ function drawBayOverlay(o, px, sy, now) {
   ctx.fillStyle = '#1c2130'; ctx.fillRect(px + 44, sy - 4, 2, 5); ctx.fillRect(px + 42, sy - 7, 6, 4);
   ctx.fillStyle = due ? (Math.floor(now * 4) % 2 ? '#ff9a3c' : '#7a3a1c') : '#6c7486';
   ctx.fillRect(px + 43, sy - 6, 4, 2);
-  if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team);
+  if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team, undefined, o);
 }
 
 // The fish net, drawn flat on its hole in the pass right after the ground
@@ -327,7 +327,7 @@ function drawNet(o, px, py, now) {
     ctx.fillStyle = '#c9dded'; ctx.fillRect(fx + 1, fy + 1, 2, 1);
     ctx.fillStyle = '#101d2c'; ctx.fillRect(fx + 1, fy, 1, 1);
   }
-  if (o.hp < o.maxHp) drawHealthBar(px + sh + 8, py - 5, o.hp, o.maxHp, 11, o.team); // + sh: rides the shudder, like every other building bar
+  if (o.hp < o.maxHp) drawHealthBar(px + sh + 8, py - 5, o.hp, o.maxHp, 11, o.team, undefined, o); // + sh: rides the shudder, like every other building bar
 }
 const NET_FISH_AT = [[3, 4], [8, 8], [4, 11]]; // where a held fish lies in the mesh
 
@@ -368,5 +368,5 @@ function drawTiledStruct(o, px, py, sh, now) {
       }
     }
   }
-  if (!o.building && o.hp < o.maxHp) drawHealthBar(px + sh + (w * TILE >> 1), py + TILE - spr.height - 5, o.hp, o.maxHp, 17, o.team);
+  if (!o.building && o.hp < o.maxHp) drawHealthBar(px + sh + (w * TILE >> 1), py + TILE - spr.height - 5, o.hp, o.maxHp, 17, o.team, undefined, o);
 }

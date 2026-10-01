@@ -817,7 +817,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   // a burn shakes and shouts once, when it lights (igniteUnit) - not four
   // times a second for as long as it runs
   if (!dot) shakeFor(p, crit ? 6 : 3);
-  addDmgFloater(p.x, p.y - 18, dmg, p === player, crit);
+  tallyHit(p, dmg);
   if (!dot) sfxAt('hurt', p.x, p.y);
   burst(p.x, p.y - 6, dot ? '#ff9440' : '#e04a54', 8, 50, 0.45);
   if (p.hp <= 0) die(p, src, cause);
@@ -917,10 +917,10 @@ function die(p, src, cause) {
   if (!teamEagleDown(p.team)) p.respawnT = respawnTime(p);
   else p.eliminated = true;
   if (p === player) { if (!PRACTICE) PROFILE.addDeath(); endMatch(p.eliminated ? 'lost' : 'respawning'); }
-  else {
-    addFloater(p.x, p.y - 20, p.name + (p.eliminated ? ' OUT' : ' DOWN'), TEAMS[skin(p.team)].mark);
-    if (state.spec === p.id) specNext(1); // the player being watched went down: follow another
-  }
+  // no NAME DOWN over the body: the feed line above says it, and the body's
+  // own fall (the `going down` banner, js/draw/bodies.js) shows it, where a
+  // word in the air sat over whatever the fight was still about
+  else if (state.spec === p.id) specNext(1); // the player being watched went down: follow another
   checkLastStanding();
 }
 

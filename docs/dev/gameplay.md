@@ -1360,7 +1360,7 @@ Because a hit grants none, every bit of a volley ([tools and bits](#tools-and-bi
 damage, its own shove and its own fire, nothing caps a wolf pack
 ([Camp monsters](#camp-monsters-neutral-until-hit)), and
 a body can take several hits in one frame — `SFX.hurt()`’s 0.03 s `gap` collapses the oofs into
-one so they do not phase, while the damage floaters, the red flash, the shove and the shake are
+one so they do not phase, while the damage total (each hit adds to it), the red flash, the shove and the shake are
 per hit. Knockback does not accumulate: the last blow of a step writes `kbx`/`kby` outright.
 
 The six states, and what each does to a body:
@@ -1482,8 +1482,8 @@ a bow that still has to be renocked. A level-1 HUNTER's full draw of the plain a
 no cover.
 
 Wherever the tagged arrow lands — player, worker bot or animal — `ambushFx()` puts a gold flare
-over the ordinary hit puff and plays `SFX.ambush()`; `damagePlayer`'s `crit` argument runs the
-damage floater hotter and at double scale, and doubles the local shake.
+over the ordinary hit puff and plays `SFX.ambush()`; `damagePlayer`'s `crit` argument doubles the
+local shake.
 
 ### The tells
 
@@ -2704,7 +2704,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   that blinks amber while a bot is due; and an hp bar over the roof once damaged. `removeStruct()`
   clears the whole footprint and kills its robots with it.
 - **Buildings take damage from everything a rival can throw, and only from the other team.**
-  `hurtStruct(o, dmg, p, bot)` is the one blow — the flash, the shake, the floater, the camera
+  `hurtStruct(o, dmg, p, bot)` is the one blow — the flash, the shake, the damage total, the camera
   kick, the wreck payout and the `<NAME> WRECKED A <TYPE>` feed line are one path and cannot
   drift apart. Four things reach it:
   - the **E swing**, `hitObject()`'s structure branch, **contested** with everything else E does
@@ -2796,7 +2796,7 @@ had draws it, off `b.atkAim` and `b.atkCd` instead of `b.tgt` and `b.workT`.
 
 A worker is **shootable**: its hitbox is `ROBOT_HIT_R` (7) about `robotHitY(b)` (`b.y - 1`, the
 middle of a body whose treads sit at `b.y + 4`), and `hurtRobot(b, dmg, nx, ny, src)` is the single entry
-point for damage — flash, knockback, a damage floater, a scrap-and-sparks burst, `SFX.hit`, and
+point for damage — flash, knockback, the damage total, a scrap-and-sparks burst, `SFX.hit`, and
 `robotDies` at zero. Shots reach it (only from another team — friendly fire is off, as it is for
 players, so a bay's own side drives through its workers safely), and so does every class ability
 and the roll, all of them through `hurtUnit`. `robotDies(b, src)`

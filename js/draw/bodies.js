@@ -45,7 +45,7 @@ function drawAnimal(a, ex, ey, now) {
   const cx = px + spr.width / 2, mid = px + (spr.width >> 1);
   const bx = Math.round(cx - bw / 2); // the bars' own left column (drawHealthBar's x)
   overheadPlate(() => {
-    drawHealthBar(cx, ty - 8, a.hp, a.maxHp, bw);
+    drawHealthBar(cx, ty - 8, a.hp, a.maxHp, bw, undefined, undefined, a);
     if (wolf) drawHealthBar(cx, ty - 5, a.threat, 1, bw, undefined, THREAT_COL);
     else drawHealthBar(cx, ty - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
     drawLevelBadge(bx - 1, ty - 9, a.level);
@@ -125,7 +125,7 @@ function drawRobot(b, ex, ey, now) {
 
   // the four shared tells, same as any other body (js/abilities.js)
   drawUnitStates(b, bx, by, spr.width, spr.height, now);
-  drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, 8, b.team);
+  drawHealthBar(b.x - ex, by - 4, b.hp, b.maxHp, 8, b.team, undefined, b);
   if (b.stunT > 0) drawStunStars(Math.round(b.x - ex), by - 9, b, 4);
 }
 
@@ -424,6 +424,9 @@ function drawPlayer(p, ex, ey, now) {
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
     drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
+    // the running damage total, past the frame's right edge: the bar backing,
+    // the colour-blind cap or the stun plate, whichever stands furthest out
+    queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 6, barCol(p.team));
     // level badge: a 7-tall plate sharing its right frame column with the bar
     // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
     // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
