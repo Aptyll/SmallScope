@@ -81,6 +81,9 @@ function applyResult(ladder, m, log, logPath) {
     for (const p of log.players || []) if (p.id % 2 === team) for (const k in t) t[k] += p[k] || 0;
     const e = log.samples && log.samples.length ? log.samples[log.samples.length - 1].eagles[team] : null;
     t.bird = e ? Math.round(100 * e[0] / e[1]) : null; // the bird's nerve left at the end, %
+    // the bot file's health (log.seats, the arena): how often it threw, out of how many thinks
+    t.errors = 0; t.thinks = 0;
+    for (const q of log.seats || []) if (q.id % 2 === team) { t.errors += q.errors || 0; t.thinks += q.thinks || 0; }
     return t;
   };
   return {
@@ -93,26 +96,42 @@ function applyResult(ladder, m, log, logPath) {
   };
 }
 
-// the standings, best first, with what the history says about each entry
+// the standings, best first, with what the history says about each entry:
+// win share (a draw counts half), mean fun score and match length, kills per
+// death, the rating after each match (trail) and its peak, the last five
+// results (form, newest last), its record against every other entry (vs), and
+// how often its code threw (errors, out of thinks)
 function standings(ladder, history) {
   const rows = Object.values(ladder.entries).map((e) => {
     const mine = history.filter((h) => h.team0.id === e.id || h.team1.id === e.id);
+    const rated = mine.filter((h) => h.rated);
     const fun = mine.filter((h) => h.fun != null);
     const len = mine.filter((h) => h.reason === 'eagle');
-    let k = 0, dth = 0;
+    let k = 0, dth = 0, errors = 0, thinks = 0;
+    const vs = {};
     for (const h of mine) {
-      const s = h.team0.id === e.id ? h.team0.stats : h.team1.stats;
-      k += s.kills; dth += s.deaths;
+      const me = h.team0.id === e.id ? h.team0 : h.team1, them = h.team0.id === e.id ? h.team1 : h.team0;
+      k += me.stats.kills; dth += me.stats.deaths;
+      errors += me.stats.errors || 0; thinks += me.stats.thinks || 0;
+      if (!h.rated) continue;
+      const v = vs[them.id] || (vs[them.id] = { w: 0, l: 0, d: 0 });
+      if (h.winner === e.id) v.w++; else if (h.winner === them.id) v.l++; else v.d++;
     }
+    const trail = rated.map((h) => (h.team0.id === e.id ? h.team0.after : h.team1.after));
+    const last = rated[rated.length - 1];
     return Object.assign({}, e, {
       winPct: e.games ? Math.round(100 * (e.w + e.d / 2) / e.games) : null,
       fun: fun.length ? Math.round(fun.reduce((a, h) => a + h.fun, 0) / fun.length) : null,
       avgMin: len.length ? Math.round(len.reduce((a, h) => a + h.time, 0) / len.length / 6) / 10 : null,
       kd: dth ? Math.round(10 * k / dth) / 10 : k || null,
-      trail: mine.map((h) => (h.team0.id === e.id ? h.team0.after : h.team1.after)),
+      trail,
+      peak: trail.length ? Math.max(RATING_START, ...trail) : RATING_START,
+      delta: last ? Math.round(10 * ((last.team0.id === e.id ? last.team0 : last.team1).after - (last.team0.id === e.id ? last.team0 : last.team1).before)) / 10 : null,
+      form: rated.slice(-5).map((h) => (h.winner === e.id ? 'W' : h.winner ? 'L' : 'D')),
+      vs, errors, thinks,
     });
   });
-  rows.sort((x, y) => y.rating - x.rating || y.games - x.games);
+  rows.sort((x, y) => !!x.retired - !!y.retired || y.rating - x.rating || y.games - x.games);
   return rows;
 }
 
