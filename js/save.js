@@ -317,7 +317,7 @@ function saveHash() {
 // Solo matches only: an online match is the host's and a client's sim never
 // runs, and the practice room is no match at all. Nor is one already decided.
 function canSave() {
-  return !PRACTICE && !NET.isClient && NET.role === 'solo' && !!saveBase &&
+  return !PRACTICE && !NET.isClient && NET.role === 'solo' && !!saveBase && !ladderWatch && // a watched bot match is not saved (js/ui/ladder.js)
     (state.mode === 'play' || state.mode === 'drop' || state.mode === 'dead') &&
     state.over !== 'won' && state.over !== 'lost';
 }

@@ -2086,10 +2086,23 @@ the draw, the hit test (`ladderHit`) and the cursor (`ladderCursor`).
   emblem, its name big, its author, its rating big
   and its last move in green or red, the trend (`ladTrend`, a 1 px line over the start's level),
   the record as one W/D/L bar with the counts, a W/D/L bar against each rival it has met, and
-  **FIGHT** at the foot, a bare word like LOCK IN.
+  **FIGHT** and **WATCH** at the foot, bare words like LOCK IN (Left/Right pick one for the keys,
+  `menu.ldBtn`).
 - **FIGHT** (`ladderFight`, or Enter) sets `ladderFoe` and opens the [lobby](#lobby); the drop
   (`beginDrop` → `ladderSeat`) hands every rival `'ai'` seat of a solo match to that bot
   (`botAssign`), the ladder's own rule of one file playing a whole side.
+- **WATCH** (`ladderWatchPick`) turns the list into the other side's pick (`menu.ldRival`, the
+  row in the rivals' colour, the card's foot reading A VS B); a row or Enter starts it
+  (`ladderWatchStart`), Esc steps back. `ladderWatch` (`{ a, b, speed, won }`) goes straight to the
+  drop with every seat a bot's, seat 0 included (`player.control = 'ai'`, the arena's trick). While
+  it is set: `sampleHumanInput` is skipped, keys and clicks are `ladderWatchKey`/`ladderWatchClick`
+  (Left/Right follow the next living player through `state.spec`, Up/Down or 1-4 the speed, M the
+  map, Esc leaves through `toLobby`), the wheel zooms, renderUI treats the HUD as `out` and drops
+  the notices, and `drawLadderWatch` draws the followed player between two arrows under the rail,
+  A VS B over the 1X-8X chips at the foot, and the winner's banner. The loop steps `speed` times
+  as many ticks (boot.js); `endMatch` hands the ending to `ladderWatchOver` instead of the end
+  screens, a seat 0 respawn leaves the camera alone, `canSave` refuses and `PROFILE.quiet` keeps
+  the character's stats untouched until the page reloads.
 
 ## Eagle drop (mode `drop`)
 

@@ -2112,15 +2112,16 @@ function loop(nowMs) {
   }
   if (!window.DBG.freeze) {
     padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
-    tickAcc += dt;
+    const spd = ladderWatch ? ladderWatch.speed : 1; // a watched bot match runs faster on request (js/ui/ladder.js)
+    tickAcc += dt * spd;
     let n = 0;
-    while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX) {
+    while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX * spd) {
       tweenMark();
       update(TICK_DT);
       tickAcc -= TICK_DT;
       n++;
     }
-    if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
+    if (n === TICK_MAX * spd && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     tweenIn();
     try { render(); } finally { tweenOut(); } // the sim's values back, whatever render does
     saveAutoTick(); // a timed autosave, off the match clock (js/save.js)

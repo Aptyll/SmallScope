@@ -259,6 +259,7 @@ function keyPress(e) {
   if (e.key === 'F4') { botViewStep(); return; }
   if (e.key === 'F6') { openBotLab(); return; }
   if (state.mode === 'title') { menuKey(e); return; }
+  if (ladderWatch && state.mode !== 'title') { ladderWatchKey(e); return; } // a watched bot match has its own keys (js/ui/ladder.js)
   if (state.mode === 'drop') {
     // the map key raises the world map mid-flight, Esc puts it away; the map
     // does not stop the sim, so the jump keys stay live under it. The lock
@@ -486,6 +487,7 @@ canvas.addEventListener('mousedown', (e) => {
 // the side buttons (back, forward), which are KEYS - 'Mouse4' and 'Mouse5' -
 // pressed through keyPress, so they bind, rebind and hold like any key
 function pointerPress(button) {
+  if (ladderWatch && state.mode !== 'title') { if (button === 0) ladderWatchClick(); return; } // a watched bot match (js/ui/ladder.js)
   if (button === 3 || button === 4) { sideButton(button, true); return; }
   if (button === 2) {
     if (ckOn()) { ckRightPress(); return; } // the CLICK scheme: the right button is the hand
@@ -1058,6 +1060,7 @@ canvas.addEventListener('wheel', (e) => {
   // dead and watching somebody (a respawn wait, or SPECTATE after the end):
   // the wheel zooms the camera on them, as it does in play. Not over the
   // recap, the planks or either end screen - there is no camera to move
+  if (ladderWatch && (state.mode === 'play' || state.mode === 'dead')) { e.preventDefault(); if (!state.mapOpen) wheelZoom(e); return; } // a watcher zooms (js/ui/ladder.js)
   if (state.mode === 'dead') {
     e.preventDefault();
     if (state.deadView === 'spec' && !endScreen() && !replayFull() && !state.mapOpen) wheelZoom(e);
@@ -1107,6 +1110,7 @@ function wheelZoom(e) {
 // (and drop any draw) so nothing leaks through a stopped sim; the map, which
 // does not stop the sim, keeps the feet and drops everything else.
 function sampleHumanInput(p, dt) {
+  if (ladderWatch) return; // a watched bot match: seat 0's input is its bot's (js/ui/ladder.js)
   const inp = p.input;
   inp.aimX = mouseWX();
   inp.aimY = mouseWY();
