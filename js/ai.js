@@ -1012,13 +1012,16 @@ function aiThink(p, dt) {
     ai.huntT += dt;
     const clear = aiLineClear(p, prey.x, prey.y - 3);
     const d = Math.hypot(prey.x - p.x, prey.y - p.y);
-    const lost = ai.huntT > 6 || ((d > 55 || !clear) && steerTo(prey.x, prey.y) < 0);
+    // (a blade walks into reach before it swings, and gets a little longer
+    // to catch its prey for it; a bow stands off at 55 px)
+    const blade = aiMelee(p);
+    const lost = ai.huntT > (blade ? 8 : 6) || ((blade ? d > AI_MELEE_D : d > 55 || !clear) && steerTo(prey.x, prey.y) < 0);
     if (lost) {
       ai.huntAvoid = prey; ai.huntAvoidT = 15;
       ai.huntTgt = null; ai.huntT = 0;
     } else {
       aimAt(prey.x, prey.y - 3);
-      inp.fire = clear && p.chargeT < drawTime(p) * 0.8;
+      inp.fire = clear && (!blade || d < AI_MELEE_D + 8) && p.chargeT < drawTime(p) * 0.8;
       ai.tgt = null;
       return;
     }
