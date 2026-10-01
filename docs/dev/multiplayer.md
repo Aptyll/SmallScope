@@ -684,7 +684,7 @@ Three small rules, and the teamwork is what they add up to:
   job counts `AI_KEEP` extra so nobody flip-flops. `aiRank` is the plan's order (`aiPlanRank`),
   so the push and guard rungs below read it unchanged. From `AI_SCOUT_AT` (45 s) one bot
   SCOUTs (walks the middle and the far road short of the rival lane), from `AI_STALK_AT`
-  (150 s) one STALKs (a mood with `stalk`), and a strong side sends three SLAYERs to its bear,
+  (90 s) one STALKs (a mood with `stalk`), and a strong side sends three SLAYERs to its bear,
   below. The rest are GATHERERs: the ladder as it always was.
 - **Memory.** Every rival a bot notices (through `seenAt`) goes on the side's board
   (`aiLook` → `T.seen`, kept up to `AI_SEEN_T`, trusted for the profile's `memory`). A bot
