@@ -271,7 +271,7 @@ function writePage(dir, ladder, history) {
     'window.LADDER_DATA = ' + JSON.stringify({ v: 1, written: data.written, start: data.start, rows: data.rows, bots }).replace(/</g, '\\u003c') + ';\n');
   const out = path.join(dir, 'ladder.html');
   // a name holding "</script>" must not close the JSON block
-  fs.writeFileSync(out, HTML.replace('/*DATA*/', JSON.stringify(data).replace(/</g, '\\u003c')));
+  fs.writeFileSync(out, HTML.replace('/*DATA*/', () => JSON.stringify(data).replace(/</g, '\\u003c'))); // a function: a '$' in a name is not a pattern
   return out;
 }
 

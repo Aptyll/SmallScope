@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.52';
+const PATCH_TXT = 'PATCH 4.53';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.53', 'NO BOT FILE RUNS INSIDE THE GAME ANY MORE: EVERY BOT, THE EXAMPLES TOO, IS SEALED OFF WITH NO WAY TO PEEK, AND A HUNG BOT LETS GO OF ITS KEYS.'],
   ['4.52', 'THE VICTORY AND DEFEAT SCREENS NOW TELL THE MATCH IN THREE LINES UNDER THE TALLY: THE RIVAL WHO KEPT HUNTING YOU, THE MATE WHO HELD THE BIRD AT ITS WORST, WHO HIT THEIR BIRD HARDEST, WHO NEVER WENT DOWN.'],
   ['4.51', 'BOT FILES CAN MAKE CALLOUTS, AND THE BOT LADDER WRITES ITS STANDINGS FOR THE GAME TO READ.'],
   ['4.50', 'THE SAME SHORT BOT MATCHES REPLAY ON EVERY PATCH AND A PAGE FLAGS WHAT MOVED: A FLIPPED WINNER, LESS FUN, LONGER FIGHTS OR A BROKEN BOT, WITH THE LADDER CUT INTO ONE SEASON PER PATCH.'],
