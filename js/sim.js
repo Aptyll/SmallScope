@@ -803,7 +803,11 @@ function updatePlayer(p, dt) {
   // casting it (the plate is the same buy for the mouse); the cast waits for
   // the next press. A maxed key casts through an unspent point as ever.
   if (inp.ability >= 0) { const i = inp.ability; inp.ability = -1; if (abLvCanBuy(p, i)) buyAbilityLv(p, i); else tryAbility(p, i); }
-  if (inp.cmd) { const c = inp.cmd; inp.cmd = null; runCmd(p, c); }
+  if (inp.cmd) { // what came of it is kept for the body's bot (me.lastCmd, js/bots/api.js)
+    const c = inp.cmd; inp.cmd = null;
+    const r = runCmd(p, c);
+    p.lastCmd = { kind: String(c.kind), tick: state.tick, ok: r === true, why: typeof r === 'string' ? r : null };
+  }
 
   // the class abilities' own clock: cooldowns, the cast landing, and every
   // timed state one leaves on this body (js/abilities.js)
