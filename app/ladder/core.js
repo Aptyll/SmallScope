@@ -68,7 +68,12 @@ function seatsOf(m) {
 
 // fold a finished match's arena log into the ladder; returns the history record
 function applyResult(ladder, m, log, logPath) {
-  const r = log.result || {};
+  let r = log.result || {};
+  // a side whose sandbox died (out of memory: app/arena/sandbox.js) cannot
+  // turn a loss into a draw or a void match by crashing: the match is the
+  // other side's, unless the crashed side won it outright anyway
+  const dead = [0, 1].map((t) => (log.seats || []).some((q) => q.id % 2 === t && q.dead));
+  if (dead[0] !== dead[1] && r.winner !== (dead[0] ? 0 : 1)) r = Object.assign({}, r, { winner: dead[0] ? 1 : 0, reason: 'forfeit' });
   const A = ladder.entries[m.team0], B = ladder.entries[m.team1];
   const error = r.reason === 'error';
   const winner = r.winner === 0 ? m.team0 : r.winner === 1 ? m.team1 : null;

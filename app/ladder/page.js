@@ -38,7 +38,7 @@ const HTML = String.raw`<!doctype html>
                games, w, l, d, winPct, fun, avgMin, kd, errors, thinks, trail[], form[], vs{ id: {w,l,d} }, retired
     history[]  one per match, oldest first: id, date (ISO, UTC), seed, shape, shapeName,
                team0/team1 { id, before, after, stats{kills,deaths,dmg,siege,gold,bird,errors,thinks} },
-               winner (bot id or null), reason ('eagle' | 'timeout' | 'error'), time (s), fun, rated, log
+               winner (bot id or null), reason ('eagle' | 'timeout' | 'forfeit' | 'error'), time (s), fun, rated, log
     glossary[] [column, meaning]  (each column header's hover)
   The files: docs/bots/ladder.md. Each match's full log: the path in history[].log.
 -->
@@ -228,7 +228,7 @@ function side(s, h) {
 function result(h) {
   if (h.reason === 'error') return '<b class="chip l" title="crashed, unrated: ' + esc(h.error) + '">!</b>';
   if (!h.winner) return '<b class="chip d" title="draw: time ran out">D</b>';
-  return '<b class="chip w" title="a bird was driven off">W</b>';
+  return h.reason === 'forfeit' ? '<b class="chip w" title="won by forfeit: the other bot\'s sandbox died">F</b>' : '<b class="chip w" title="a bird was driven off">W</b>';
 }
 function matches() {
   if (!DATA.history.length) {
