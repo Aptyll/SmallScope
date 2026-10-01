@@ -858,10 +858,20 @@ The ladder:
    the pushers in the plan's order (`aiRank`, the team brain above) keep their own bird, as
    proactive defenders, not sentries: a guard raises the side's turrets along the spur
    (`aiFortSite`: `AI_FORT_N` (3), in pairs either side of its axis on tiles with three open
-   sides, then a tier at a time once the purse holds twice the price), and for `AI_PATROL_OUT`
+   sides, then a tier at a time once the purse holds twice the price), lays walls before those
+   tiers (`aiWallSite`, from `aiWallPlan`: a funnel across the spur `AI_WALL_T` (0.8) of the way
+   to its mouth, `AI_WALL_OFF` out each side, and three tiles on the lane-gate side of each turret;
+   one wall a side a step, `T.wallTick`), and for `AI_PATROL_OUT`
    (14 s) of every `AI_PATROL_T` (40 s) walks out past the spur's junction `AI_PATROL_D` (360 px)
    up the road to see who is coming (the brace reads what it sees). Otherwise it goes on down
-   the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor.
+   the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor. **No bot
+   building ever cuts a way:** no wall stands within `AI_WALL_GAP` (28 px) of the lane's line
+   (bird, mouth, gate: `aiLaneDist`), so the road in stays a gap of three tiles or more, and every
+   bot wall, turret and bay near its own roost must pass `aiKeepsWay`, which floods the
+   `AI_WALL_BOX` (24 tiles) square round the bird from the lane gate with and without the piece,
+   one tile at a time and again as a 2×2 body, and refuses it if anywhere reachable before is
+   not after. That keeps the bird and the spawn reachable for both sides, since a wall is solid
+   to everyone.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
    side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
    stalemate always breaks (`aiPushers`; the plan's `T.nPush`, so more in a window and none in a
@@ -928,7 +938,8 @@ The ladder:
    with its bird under attack or a rival in sight. The thought's why is PAYS IN N MIN. So a side
    builds a few early, upgrades in the middle and nothing late. A building goes on the site `aiBuildSite` finds: the nearest tile within `AI_BUILD_R` (5 tiles)
    that passes `canPlaceAt` — the build list's own rule, any open snow or road tile, reach aside
-   since the bot walks there — a 1×1 only with three open sides so it never walls itself in, the
+   since the bot walks there — a 1×1 only with three open sides so it never walls itself in, none
+   that fails `aiKeepsWay` round its own roost, the
    bay wherever its 3×2 fits; an upgrade is walked to (60 px reach). It steps off
    a build site first, since a building is solid, and a site it cannot reach (or is wedged on for
    3 s) is left for 15 s. Picking up a dropped card off the ground already falls out of the loot rung
