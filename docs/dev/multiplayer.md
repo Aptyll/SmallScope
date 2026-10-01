@@ -791,8 +791,10 @@ The ladder:
    pushing, the human it escorts — so a defender finds the archer standing off its roost and an
    ally joins the fight you are in; and a rival **wave's soldiers** in the same sight, with no cover
    to see through, a player in the same sight preferred by a small margin —
-   [the waves](gameplay.md#soldiers-the-waves)) and **reacted to** (`ai.seeT` past `react`): circle at ~70 px,
-   draw and loose at the profile's `draw`, dodge at its rate, stand for the profile's share of
+   [the waves](gameplay.md#soldiers-the-waves)) and **reacted to** (`ai.seeT` past `react`): circle at ~70 px (a bow closes
+   in past 85 px and backs off inside 50; a blade closes to `AI_MELEE_D` and circles there; each
+   range band holds `AI_BAND_HYS` px past its edge, `aiRangeBand`, so a body on an edge does not
+   swap moves every tick), draw and loose at the profile's `draw`, dodge at its rate, stand for the profile's share of
    every strafe. The aim point carries the scatter and the lead. Only shoots
    when `aiLineClear()` says the flight path is open — and with **no** line it never walks into
    the corner blocking it: past 60 px it routes in through the open (`steerTo`, so in a lane it
