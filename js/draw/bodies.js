@@ -38,14 +38,20 @@ function drawAnimal(a, ex, ey, now) {
   // deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
   // each is one, spent on the run and on the dash. Over the frame, the stun
   // stars or the noticed mark, never both.
+  // The frame centres on the SPRITE's own columns (px, already rounded), not
+  // on a.x: a wolf's 16-wide body under an 11-wide bar rounded the two
+  // halves apart, and the bar shivered a pixel against the body as it ran.
   const bw = rabbit ? 8 : big ? 24 : wolf ? 11 : 17; // widths that split into even segments (hpSegCount)
-  const bx = Math.round(a.x - ex - bw / 2); // the bars' own left column (drawHealthBar's x)
-  drawHealthBar(a.x - ex, ty - 8, a.hp, a.maxHp, bw);
-  if (wolf) drawHealthBar(a.x - ex, ty - 5, a.threat, 1, bw, undefined, THREAT_COL);
-  else drawHealthBar(a.x - ex, ty - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
-  drawLevelBadge(bx - 1, ty - 9, a.level);
-  if (a.stunT > 0) drawStunStars(Math.round(a.x - ex), ty - 13, a, 4);
-  else if (a.senseT > 0) drawSenseMark(Math.round(a.x - ex), ty - 16, a, wolf ? THREAT_COL : STAM_COL);
+  const cx = px + spr.width / 2, mid = px + (spr.width >> 1);
+  const bx = Math.round(cx - bw / 2); // the bars' own left column (drawHealthBar's x)
+  overheadPlate(() => {
+    drawHealthBar(cx, ty - 8, a.hp, a.maxHp, bw);
+    if (wolf) drawHealthBar(cx, ty - 5, a.threat, 1, bw, undefined, THREAT_COL);
+    else drawHealthBar(cx, ty - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
+    drawLevelBadge(bx - 1, ty - 9, a.level);
+    if (a.stunT > 0) drawStunStars(mid, ty - 13, a, 4);
+    else if (a.senseT > 0) drawSenseMark(mid, ty - 16, a, wolf ? THREAT_COL : STAM_COL);
+  });
 }
 
 // The only thing in the world that leaves the ground: the sprite lifts off
@@ -412,107 +418,112 @@ function drawPlayer(p, ex, ey, now) {
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;
-  drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
-  // level badge: a 7-tall plate sharing its right frame column with the bar
-  // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
-  // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
-  // hy-2) - the plate every animal wears too (drawLevelBadge)
-  drawLevelBadge(fx - 8, hy - 8, p.level);
-  // Every player carries a name tag in its team colour so a fight stays
-  // legible - your own included: the profile name is what the rest of the
-  // table sees over your head, and hiding it from you alone would make it
-  // the one label in the game you cannot check.
-  drawWorldText(p.name,
-    centreTextX(p.x - ex, p.name), hy - 18, // clear of the draw meter's frame (top row hy-11) with a gap row
-    TEAMS[skin(p.team)].mark);
   callTag(p, Math.round(p.x - ex), hy - 18); // a bot's callout hangs over the name (js/draw/callouts.js)
-  // dodge stamina: one clean unsegmented WHITE bar under the health bar -
-  // white on every side, since stamina has no side, and white is neither the
-  // team's paint above it nor the gold of the draw - charges stay discrete
-  // in the sim, the bar just shows the pooled total. Drawn for every player
-  // (a rival out of rolls is a tell, and the level badge spans both bars, so
-  // a lone hp bar would look broken).
-  // The track is painted one row taller than the fill so the gap between the two
-  // bars is track grey, not frame colour - one clean outline around both.
-  {
-    const bx = fx - 7, by = hy - 4;
-    ctx.fillStyle = 'rgba(12,18,42,0.78)';
-    ctx.fillRect(bx - 1, by, 16, 3); // rows under the hp backing only - the backing is translucent, so overlapping it would paint a darker row
-    ctx.fillStyle = '#3a3448';
-    ctx.fillRect(bx, by - 1, 14, 3);
-    const regenP = p.dodgeCharges < DODGE_CHARGES ? 1 - p.dodgeRegenT / kitOf(p).dodgeCd : 0;
-    const frac = (p.dodgeCharges + regenP) / DODGE_CHARGES;
-    // ghost of the chunk just spent: pale segment that drains into place
-    const gw = Math.round(14 * Math.max(frac, p.stamGhost)) - Math.round(14 * frac);
-    if (gw > 0) {
-      ctx.fillStyle = STAM_GHOST;
-      ctx.fillRect(bx + Math.round(14 * frac), by, gw, 2);
+  // the whole frame, name included, is one plate stamped over the grade
+  // (overheadPlate, js/draw/light.js), so it reads the same in any light and
+  // nothing standing in front of the body cuts into it
+  overheadPlate(() => {
+    drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
+    // level badge: a 7-tall plate sharing its right frame column with the bar
+    // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
+    // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
+    // hy-2) - the plate every animal wears too (drawLevelBadge)
+    drawLevelBadge(fx - 8, hy - 8, p.level);
+    // Every player carries a name tag in its team colour so a fight stays
+    // legible - your own included: the profile name is what the rest of the
+    // table sees over your head, and hiding it from you alone would make it
+    // the one label in the game you cannot check.
+    drawWorldText(p.name,
+      centreTextX(p.x - ex, p.name), hy - 18, // clear of the draw meter's frame (top row hy-11) with a gap row
+      TEAMS[skin(p.team)].mark);
+    // dodge stamina: one clean unsegmented WHITE bar under the health bar -
+    // white on every side, since stamina has no side, and white is neither the
+    // team's paint above it nor the gold of the draw - charges stay discrete
+    // in the sim, the bar just shows the pooled total. Drawn for every player
+    // (a rival out of rolls is a tell, and the level badge spans both bars, so
+    // a lone hp bar would look broken).
+    // The track is painted one row taller than the fill so the gap between the two
+    // bars is track grey, not frame colour - one clean outline around both.
+    {
+      const bx = fx - 7, by = hy - 4;
+      ctx.fillStyle = BAR_FRAME;
+      ctx.fillRect(bx - 1, by, 16, 3); // rows under the hp backing only
+      ctx.fillStyle = BAR_TRACK;
+      ctx.fillRect(bx, by - 1, 14, 3);
+      const regenP = p.dodgeCharges < DODGE_CHARGES ? 1 - p.dodgeRegenT / kitOf(p).dodgeCd : 0;
+      const frac = (p.dodgeCharges + regenP) / DODGE_CHARGES;
+      // ghost of the chunk just spent: pale segment that drains into place
+      const gw = Math.round(14 * Math.max(frac, p.stamGhost)) - Math.round(14 * frac);
+      if (gw > 0) {
+        ctx.fillStyle = STAM_GHOST;
+        ctx.fillRect(bx + Math.round(14 * frac), by, gw, 2);
+      }
+      ctx.fillStyle = STAM_COL;
+      ctx.fillRect(bx, by, Math.round(14 * frac), 2);
     }
-    ctx.fillStyle = STAM_COL;
-    ctx.fillRect(bx, by, Math.round(14 * frac), 2);
-  }
-  // stunned: the mirror of the level badge on the other side of the frame -
-  // same backing, same track, sharing its left frame column with the health
-  // bar backing's right edge, so the stack still reads as one outline. The
-  // sparks say what the state is and the track drains from the bottom as the
-  // window runs out, which answers the only question a stun asks.
-  //
-  // Nothing is drawn here while nothing is stunning - an empty plate parked
-  // over every head is a bar that is never a bar. That does mean the resting
-  // frame is only the level badge plus the bars, 22 px spanning cx-14..cx+7,
-  // sitting three pixels left of the sprite's own seam; turn the pink centre
-  // column on under '.' (drawHitboxes) and you can see it. Fixing that by
-  // shifting the badge and both bars 3 px right would take the BARS off the
-  // body to square up a badge, and the frame would still grow rightwards the
-  // moment a stun landed, so it is left as it is.
-  if (p.stunT > 0) {
-    const bx = fx + 8, by = hy - 8;
-    ctx.fillStyle = 'rgba(12,18,42,0.78)';
-    ctx.fillRect(bx, by, 6, 7); // 6 wide: the column to its left is the bar backing, already painted
-    ctx.fillStyle = '#3a3448';
-    ctx.fillRect(bx, by + 1, 5, 5);
-    const h = Math.max(1, Math.round(5 * Math.min(1, p.stunT / Math.max(0.01, p.stunMax))));
-    ctx.fillStyle = '#b06a14'; // bright enough to read as a fill against the track, dim enough to sit under the sparks
-    ctx.fillRect(bx, by + 6 - h, 5, h);
-    drawStunStars(bx + 2, by + 3, p, 1.5, 1);
-  }
-  // bow draw meter: gold while charging, blinking white and settling to
-  // pale gold the moment the draw is full - brighter, never a new hue, so it
-  // stays the bow's colour next to a red rival's bar. Drawn for everyone -
-  // it is the tell that says a shot is coming. It sits inside the shared frame directly above the hp bar, the
-  // mirror of the stamina bar below it: its backing adds the rows above the
-  // hp backing (frame top at hy-11, fill hy-10..-9) and the hp backing's top
-  // row hy-8 becomes the track-grey gap row, so the frame stays one outline.
-  // The same slot carries the renock cooldown when the bow is not drawn, AND
-  // the meal being chewed (js/core.js) - the three states of one pair of
-  // hands, and never two at once, since a meal puts the bow down and blocks
-  // the draw for its whole length. So one strip above a head answers the only
-  // question a fight asks about it: gold filling = drawing (a shot is coming),
-  // pale gold = it peaked, slate filling = reloading (it is not), pale gold
-  // again for the instant it came back (the bow's own ready colour; white is
-  // the stamina bar's), GREEN filling = eating (a heal is coming, and hitting
-  // them takes it away).
-  // All three use the identical geometry, so the bar never jumps when one
-  // hands over to the next.
-  if (p.eatT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
-    const eating = p.eatT > 0, drawing = p.charging;
-    // the reload divides by toolCycle - the same span the well's wipe and the
-    // reticle's marks read - so the slate fill starts at zero the frame the
-    // shot leaves (dividing by the bare kit.nock sat it at 1 px for half the cycle)
-    const frac = eating ? 1 - p.eatT / FOOD_EAT
-      : drawing ? drawPow(p)
-      : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, toolCycle(p));
-    const x = fx - 7, y = hy - 10;
-    ctx.fillStyle = 'rgba(12,18,42,0.78)';
-    ctx.fillRect(x - 1, y - 1, 16, 3); // rows above the hp backing only (translucent - never overlap)
-    ctx.fillStyle = '#3a3448';
-    ctx.fillRect(x, y, 14, 3);         // fill rows + the gap row
-    ctx.fillStyle = eating ? EAT_COL
-      : !drawing ? (p.readyFlash > 0 ? DRAW_FULL_COL : NOCK_COL)
-      : frac < 1 ? DRAW_COL
-      : p.chargeT < drawTime(p) + DRAW_FULL_FLASH ? '#ffffff' : DRAW_FULL_COL;
-    ctx.fillRect(x, y, Math.max(1, Math.round(14 * frac)), 2);
-  }
+    // stunned: the mirror of the level badge on the other side of the frame -
+    // same backing, same track, sharing its left frame column with the health
+    // bar backing's right edge, so the stack still reads as one outline. The
+    // sparks say what the state is and the track drains from the bottom as the
+    // window runs out, which answers the only question a stun asks.
+    //
+    // Nothing is drawn here while nothing is stunning - an empty plate parked
+    // over every head is a bar that is never a bar. That does mean the resting
+    // frame is only the level badge plus the bars, 22 px spanning cx-14..cx+7,
+    // sitting three pixels left of the sprite's own seam; turn the pink centre
+    // column on under '.' (drawHitboxes) and you can see it. Fixing that by
+    // shifting the badge and both bars 3 px right would take the BARS off the
+    // body to square up a badge, and the frame would still grow rightwards the
+    // moment a stun landed, so it is left as it is.
+    if (p.stunT > 0) {
+      const bx = fx + 8, by = hy - 8;
+      ctx.fillStyle = BAR_FRAME;
+      ctx.fillRect(bx, by, 6, 7); // 6 wide: the column to its left is the bar backing, already painted
+      ctx.fillStyle = BAR_TRACK;
+      ctx.fillRect(bx, by + 1, 5, 5);
+      const h = Math.max(1, Math.round(5 * Math.min(1, p.stunT / Math.max(0.01, p.stunMax))));
+      ctx.fillStyle = '#b06a14'; // bright enough to read as a fill against the track, dim enough to sit under the sparks
+      ctx.fillRect(bx, by + 6 - h, 5, h);
+      drawStunStars(bx + 2, by + 3, p, 1.5, 1);
+    }
+    // bow draw meter: gold while charging, blinking white and settling to
+    // pale gold the moment the draw is full - brighter, never a new hue, so it
+    // stays the bow's colour next to a red rival's bar. Drawn for everyone -
+    // it is the tell that says a shot is coming. It sits inside the shared frame directly above the hp bar, the
+    // mirror of the stamina bar below it: its backing adds the rows above the
+    // hp backing (frame top at hy-11, fill hy-10..-9) and the hp backing's top
+    // row hy-8 becomes the track-grey gap row, so the frame stays one outline.
+    // The same slot carries the renock cooldown when the bow is not drawn, AND
+    // the meal being chewed (js/core.js) - the three states of one pair of
+    // hands, and never two at once, since a meal puts the bow down and blocks
+    // the draw for its whole length. So one strip above a head answers the only
+    // question a fight asks about it: gold filling = drawing (a shot is coming),
+    // pale gold = it peaked, slate filling = reloading (it is not), pale gold
+    // again for the instant it came back (the bow's own ready colour; white is
+    // the stamina bar's), GREEN filling = eating (a heal is coming, and hitting
+    // them takes it away).
+    // All three use the identical geometry, so the bar never jumps when one
+    // hands over to the next.
+    if (p.eatT > 0 || p.charging || p.nockT > 0 || p.readyFlash > 0) {
+      const eating = p.eatT > 0, drawing = p.charging;
+      // the reload divides by toolCycle - the same span the well's wipe and the
+      // reticle's marks read - so the slate fill starts at zero the frame the
+      // shot leaves (dividing by the bare kit.nock sat it at 1 px for half the cycle)
+      const frac = eating ? 1 - p.eatT / FOOD_EAT
+        : drawing ? drawPow(p)
+        : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, toolCycle(p));
+      const x = fx - 7, y = hy - 10;
+      ctx.fillStyle = BAR_FRAME;
+      ctx.fillRect(x - 1, y - 1, 16, 3); // rows above the hp backing only
+      ctx.fillStyle = BAR_TRACK;
+      ctx.fillRect(x, y, 14, 3);         // fill rows + the gap row
+      ctx.fillStyle = eating ? EAT_COL
+        : !drawing ? (p.readyFlash > 0 ? DRAW_FULL_COL : NOCK_COL)
+        : frac < 1 ? DRAW_COL
+        : p.chargeT < drawTime(p) + DRAW_FULL_FLASH ? '#ffffff' : DRAW_FULL_COL;
+      ctx.fillRect(x, y, Math.max(1, Math.round(14 * frac)), 2);
+    }
+  });
   ctx.globalAlpha = 1;
 }
 

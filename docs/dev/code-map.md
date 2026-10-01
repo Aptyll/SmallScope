@@ -148,7 +148,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | skill points (one per hero level, spent on class-ability levels) | `p.skillPts` (spent by `buyAbilityLv`, abilities.js) | `players` (granted in `levelUp`) |
 | roguelike card effects and rarities | `CARDS`, `CARD_RARITIES`, `cardKey`, `CARD_TYPE_RARITY` | `players` › `roguelike cards` |
 | how hidden a player is, and how far anything notices it from | `concealOf`, `seenAt`, `ambushReady` | `players` › `being seen` |
-| death (which keeps everything on the body), the flat bounty a kill pays, the wait for the bird and the return at it, the one permanent path (a driven-off eagle), the team-level win check | `KILL_BOUNTY`, `die`, `RESPAWN_BASE`/`RESPAWN_LV`, `respawnTime`, `updateRespawns`, `RESPAWN_OUT`, `respawnPlayer`, `teamInMatch`, `rivalTeamsInMatch`, `checkLastStanding`, `endMatch`, `endSnapshot` | `damage & death` (`teamEagleDown`: `eagle drop`, boot.js) |
+| death (which keeps everything on the body), the flat bounty a kill pays, the wait for the bird and the return at it, the one permanent path (a driven-off eagle), the team-level win check | `KILL_BOUNTY`, `die`, `RESPAWN_WAIT`, `respawnTime`, `updateRespawns`, `RESPAWN_OUT`, `respawnPlayer`, `teamInMatch`, `rivalTeamsInMatch`, `checkLastStanding`, `endMatch`, `endSnapshot` | `damage & death` (`teamEagleDown`: `eagle drop`, boot.js) |
 | practice undoing a death on the spot | `practiceRevive` (die()'s first branch under `PRACTICE`) | `damage & death` |
 | the match record every player keeps, for [the post-game lobby](../../js/ui/lobby.js) | `p.kills`/`p.deaths`/`p.dmgOut`/`p.dmgIn`/`p.dmgBird`/`p.dmgStruct`/`p.hGold`/`p.hDmg` (written in `damagePlayer` and `die` here, `hurtEagle` js/boot.js, `hurtStruct` js/actions.js, `sampleStats` js/ui/lobby.js; a respawn's `reset` clears none of them) | `players` (declared) / `damage & death` (kept) |
 
@@ -223,7 +223,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| entity movement and unit-vs-unit solidity | `moveEntity`, `separateUnits`, `UNIT_MASS` | `movement & collision` (the tile half, `isSolidTile`: `world`, world.js) |
+| entity movement and unit-vs-unit solidity, and each body's room | `moveEntity`, `separateUnits`, `UNIT_MASS`, `unitSpace`, `UNIT_SPACE`, `UNIT_ROOM_RATE` | `movement & collision` (the tile half, `isSolidTile`: `world`, world.js) |
 | routes around obstacles: A*, the per-unit route follower, the stall/give-up signal | `findPath`, `walkable`, `navTo`, `navStep`, `navLineClear` | `pathfinding` |
 
 ## js/wildlife.js
@@ -534,7 +534,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the arrow body every shaft draws: the DDA rasteriser (crisp diagonals, mirrored vanes; the arrow's map by default, a bit's own shaft map when handed one), the parse that makes a shaft map, and its rim/colour painter | `arrowBodyPx`, `shaftBody`, `paintArrowPx` (the master: `ARROW_MAP`/`ARROW_BODY`, actions.js; the other shafts: `the bodies a bit flies as`, render.js) | `the arrow body, shared` |
-| the overhead frame and the name over it: the three bars' palette (health by side, stamina white, the draw meter's two golds) | `BAR_NEUTRAL`/`barCol`, `STAM_COL`/`STAM_GHOST`, `DRAW_COL`/`DRAW_FULL_COL`/`DRAW_FULL_FLASH`, `NOCK_COL`/`EAT_COL`, `THREAT_COL` (a camp monster's leash bar; a deer's sprint bar and a rabbit's dodge bar reuse `STAM_COL`), `drawHealthBar` and its hp chunks (`HP_SEG`/`HP_SEG_PX`/`hpSegCount`/`evenBarW`) | `the arrow body, shared, and the frame over every unit's head` (where the stack sits and the odd-width centring: `FRAME_DX`/`centreTextX`, js/draw/bodies.js) |
+| the overhead frame and the name over it: the three bars' palette (health by side, stamina white, the draw meter's two golds) | `BAR_FRAME`/`BAR_TRACK` (every frame's opaque ink and track), `BAR_NEUTRAL`/`barCol`, `STAM_COL`/`STAM_GHOST`, `DRAW_COL`/`DRAW_FULL_COL`/`DRAW_FULL_FLASH`, `NOCK_COL`/`EAT_COL`, `THREAT_COL` (a camp monster's leash bar; a deer's sprint bar and a rabbit's dodge bar reuse `STAM_COL`), `drawHealthBar` (a plate: `healthBarPx` draws it) and its hp chunks (`HP_SEG`/`HP_SEG_PX`/`hpSegCount`/`evenBarW`) | `the arrow body, shared, and the frame over every unit's head` (where the stack sits and the odd-width centring: `FRAME_DX`/`centreTextX`, js/draw/bodies.js) |
 | the level plate a hero and a beast share, the noticed `!` over an animal that sees you, the stun stars | `drawLevelBadge`, `drawSenseMark`, `drawStunStars` (under `drawHealthBar`) | `the arrow body, shared, and the frame over every unit's head` |
 | the build reveal a structure grows in under, and the barracks' overlay | `bigBuildReveal`, `drawBarracksOverlay` | `the arrow body, shared, and the frame over every unit's head` (the barracks' entry: `STRUCTS`, structures.js) |
 
@@ -584,7 +584,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a clear frosty day: its cool grade and all-day crisp (applied in `todGrade`), the cloud it clears, the glints on bare snow, and a blizzard's milky haze | `FROST_TINT`/`FROST_CRISP`/`FROST_CLEAR`, `drawFrostGlint`, `GLINT_*`, `BLIZ_HAZE`/`BLIZ_HAZE_A` | `light & weather` › `frost glints` |
 | the night colour, a lit shot's halo, snow (world-space flakes, see `fx updates`), vignette | `renderLighting`, `NIGHT_TINT`/`NIGHT_DEEP`/`NIGHT_DEEP_A`, `litShots`, `renderWeather`, `renderVignettes`/`vigGrd` | `light & weather` › `the pass` |
 | the night RIM: the world-space vignette that closes the view in rather than dimming the middle | `nightEdge`, `NIGHT_EDGE`, `nvGrd` | `light & weather` › `the pass` |
-| **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark) | `drawWorldText`, `flushWorldInk`, `worldInk`; the riders' names on a wing, the one text that never lands on another (ground names overlap): `drawNameTag`, `settleNameTags` (run by the flush), `TAG_GAP`/`TAG_CLIMB` | `light & weather` › `ink over the world` |
+| **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark), and **the frames over bodies, held back with it** (every bar, a player's and a beast's whole frame, PERCH's bar) | `drawWorldText`, `flushWorldInk`, `worldInk`; `overheadPlate`, `flushPlates`, `worldPlates`, `platesNow`; the riders' names on a wing, the one text that never lands on another (ground names overlap): `drawNameTag`, `settleNameTags` (run by the flush), `TAG_GAP`/`TAG_CLIMB` | `light & weather` › `ink over the world` |
 
 ## js/draw/render.js
 
