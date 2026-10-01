@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.45';
+const PATCH_TXT = 'PATCH 4.46';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.46', 'A THINKING NOTE ON HOW THE BOTS FIT STEAM NOW LIVES IN THE DOCS.'],
   ['4.45', 'YOUR BOTS CALL OUT WHAT THEY SEE: BIRD!, HELP!, HUNTER LOW!, BEAR LOW!, PUSH! AND 2 HERE!, EACH WITH ITS OWN ICON OVER THEIR HEAD AND A PING ON THE SPOT AND THE MINIMAP.'],
   ['4.44', 'THE BOT LADDER PAGE SHOWS MORE AND SAYS LESS: BARS, MINI CHARTS AND A WHO BEATS WHOM GRID, WITH THE DETAIL ON HOVER.'],
   ['4.43', 'A MALFORMED ORDER FROM A BOT FILE OR AN ONLINE PLAYER IS NOW IGNORED INSTEAD OF STOPPING THE MATCH.'],
