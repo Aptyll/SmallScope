@@ -47,6 +47,7 @@ ladder-data/
   bots/<id>.js     the files you entered
   ladder.html      the standings page: open it straight off the disk
   standings.json   the same numbers as the page, for scripts and agents
+  standings.js     the same numbers and the entered files, for the game's BOT LADDER screen
 ```
 
 The page is drawn more than written: each bot's rating as a bar, its trend as a small line, its
