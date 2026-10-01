@@ -10,12 +10,17 @@
 // skill, src, t }: the bot contract, docs/dev/botview.md); until a bot has one, the goal
 // is GUESSED from the ladder's own state and marked `guess` (drawn with a
 // trailing '?'), so the view is honest about which of the two it is showing.
+// A goal is painted by what it is FOR, six kinds (the Bot Lab's KINDS, in
+// botlab.html, where the set is checked for colour-blind separation): push
+// the rival bird, fall back, defend, fight, farm, roam. The word says the rest.
+// ROAM is a lighter grey here than on the page, where it is a quiet fill: in
+// the game it is a word on a dark plate and has to read.
+const BOT_PUSH = '#d55181', BOT_RETREAT = '#c98500', BOT_DEFEND = '#9085e9', BOT_FIGHT = '#d95926', BOT_FARM = '#3b8f72', BOT_ROAM = '#5d6578';
 const BOT_GOALS = {
-  DEFEND: '#6fa8ff', GUARD: '#8fb4d9', PUSH: '#ff8a5c', RALLY: '#ffb36b', FIGHT: '#ff5a5a',
-  FLEE: '#ffd166', HIDE: '#9aa3b5', EAT: '#7bd88f', WOLF: '#ff7a9a', HUNT: '#c9a26b',
-  ESCORT: '#7fe0e0', LOOT: '#e0c3ff', BUILD: '#d9b38c', GATHER: '#a8d672', MINE: '#b7c0cc',
-  SPEND: '#d9b38c', SHOP: '#d9b38c', FORGE: '#d9b38c', FOLLOW: '#7fe0e0',
-  ROAM: '#7d8699', IDLE: '#5d6578', DEAD: '#454b5a',
+  PUSH: BOT_PUSH, RALLY: BOT_PUSH, FLEE: BOT_RETREAT, HIDE: BOT_RETREAT,
+  DEFEND: BOT_DEFEND, GUARD: BOT_DEFEND, ESCORT: BOT_DEFEND, FOLLOW: BOT_DEFEND, FIGHT: BOT_FIGHT, WOLF: BOT_FIGHT,
+  GATHER: BOT_FARM, MINE: BOT_FARM, HUNT: BOT_FARM, EAT: BOT_FARM, LOOT: BOT_FARM, BUILD: BOT_FARM, SPEND: BOT_FARM, SHOP: BOT_FARM, FORGE: BOT_FARM,
+  ROAM: BOT_ROAM, IDLE: BOT_ROAM, DEAD: '#454b5a',
 };
 const BOT_GOAL_ANY = '#c8d0e0'; // a goal word the table above does not know yet
 const BOT_AIM_NEAR = 28;        // px round a firing bot's aim point its target is looked for in
@@ -24,16 +29,26 @@ function botIsBot(p) { return p.active && p.control === 'ai'; }
 // the level a bot plays at, by name (AI_LEVELS / AI_ALLIES, ai.js)
 function botLevel(p) { return aiProfile(p).name; }
 
+// where a thought's target is: its ref's live point, a building's tile centre
+// (a structure has tx/ty, no x/y), else the target's own point - finite or
+// nothing, since a NaN would hang the line drawer (hbLine)
+function botPoint(r, t) {
+  const ok = (x, y) => Number.isFinite(x) && Number.isFinite(y);
+  if (r && ok(r.x, r.y)) return [r.x, r.y];
+  if (r && ok(r.tx, r.ty)) return [r.tx * TILE + TILE / 2, r.ty * TILE + TILE / 2];
+  if (t && ok(t.x, t.y)) return [t.x, t.y];
+  return null;
+}
 // the one read: { goal, why, x, y (the target's live point, or null), ref,
 // guess, role, mood, plan, options, skill }
 function botThought(p) {
   const th = p.ai && p.ai.thought;
   if (!th || !th.goal) return botGuess(p);
   if (p.dead) return Object.assign(botGuess(p), { guess: false }); // a body down thinks nothing, whatever it last wrote
-  const t = th.target, r = t && t.ref;
+  const t = th.target, r = t && t.ref, pt = botPoint(r, t);
   return {
     goal: th.goal, why: th.why || '', guess: false, ref: r || null, kind: t && t.kind ? String(t.kind).toUpperCase() : '',
-    x: r ? r.x : t ? t.x : null, y: r ? r.y : t ? t.y : null,
+    x: pt ? pt[0] : null, y: pt ? pt[1] : null,
     role: th.role || '', mood: th.mood || '', plan: th.plan || '',
     options: th.options || null, skill: th.skill || null, src: th.src || '',
   };
@@ -48,9 +63,12 @@ function botGuess(p) {
   if (p.dead) return g('DEAD', '');
   if (p.eatT > 0) return g('EAT', 'HURT');
   if (p.prone && ai.hideT > 0) return g('HIDE', 'OUTMATCHED');
+  // a shot at game is the hunt it belongs to, not a fight: the same goal
+  // and why as between shots, so a hunt reads as one steady HUNT
+  const shot = (q) => q.kind === 'ANIMAL' ? g('HUNT', 'FOOD', q.e.x, q.e.y, q.e, 'ANIMAL') : g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e, q.kind);
   if (inp.fire || p.charging) {
     const q = botAimed(p);
-    if (q) return g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e, q.kind);
+    if (q) return shot(q);
   }
   const w = ai.want;
   if (w && w.type === 'defend') return g('DEFEND', 'BIRD HIT', w.x, w.y, null, 'BIRD');
@@ -60,7 +78,7 @@ function botGuess(p) {
   // the guess holds FIGHT instead of flickering with the trigger
   if (ai.seeT > 0 && ai.seeT >= aiProfile(p).react) {
     const q = botAimed(p);
-    return q ? g(q.isWolf ? 'WOLF' : 'FIGHT', q.kind, q.e.x, q.e.y, q.e, q.kind) : g('FIGHT', 'RIVAL SEEN');
+    return q ? shot(q) : g('FIGHT', 'RIVAL SEEN');
   }
   if (ai.huntTgt && !ai.huntTgt.dead) return g('HUNT', 'FOOD', ai.huntTgt.x, ai.huntTgt.y, ai.huntTgt, 'ANIMAL');
   if (ai.tgt) {
@@ -82,7 +100,7 @@ function botAimed(p) {
     if (d < bd) { bd = d; best = { e, kind, isWolf }; }
   };
   for (const q of players) if (enemyOf(p, q)) look(q, 'RIVAL', false);
-  for (const a of animals) if (!a.dead) look(a, a.type === 'wolf' ? 'WOLF' : 'ANIMAL', a.type === 'wolf');
+  for (const a of animals) if (!a.dead) look(a, a.kind === 'wolf' ? 'WOLF' : isBigBeast(a) ? 'BEAR' : 'ANIMAL', a.kind === 'wolf');
   for (const r of robots) if (!r.dead && r.team !== p.team) look(r, 'SOLDIER', false);
   return best;
 }
@@ -92,26 +110,32 @@ function botAimed(p) {
 // each bot has spent on each goal, every kill and the birds' nerve - read by
 // the table below and sent to the out-of-game page. Stepped from updatePlay (sim.js) after the bots think; it
 // writes nothing the sim reads, so it is no part of a save or the wire.
-// A match is over when the clock runs backward (a new one began): its last
-// summary joins `matches`, the session's history.
+// A match is over when a new drop begins or the match clock runs backward:
+// its last summary joins `matches`, the session's history. The recorder keeps
+// its own clock (`t`), since the match clock stands still while the host is
+// down, after a win and in practice, and the bots don't.
+const BOTLOG_STEP = 0.1;       // s between recorder steps (a goal held shorter than this can be missed)
 const BOTLOG_SAMPLE = 1;       // s between position samples
 const BOTLOG_CAP = 60000;      // events + samples kept per match before the oldest go
 const BOTLOG_MATCHES = 50;     // finished-match summaries kept this session
-const BOTLOG = { seed: SEED, t: -1, sampleT: 0, events: [], samples: [], kills: [], birds: [], seen: new Map(),
+const BOTLOG = { seed: SEED, t: 0, el: 0, acc: 0, drop: null, n: 0, evN: 0, killN: 0, sampleT: 0, events: [], samples: [], kills: [], birds: [], seen: new Map(),
   goals: new Map(), time: new Map(), changed: new Map(), matches: [], last: null };
 function botLogReset() {
   if (BOTLOG.last) {
     BOTLOG.matches.push(BOTLOG.last);
     if (BOTLOG.matches.length > BOTLOG_MATCHES) BOTLOG.matches.shift();
   }
-  BOTLOG.seed = SEED; BOTLOG.t = -1; BOTLOG.sampleT = 0;
+  BOTLOG.seed = SEED; BOTLOG.t = 0; BOTLOG.acc = 0; BOTLOG.sampleT = 0; BOTLOG.n++; BOTLOG.evN = 0; BOTLOG.killN = 0;
   BOTLOG.events = []; BOTLOG.samples = []; BOTLOG.kills = []; BOTLOG.birds = []; BOTLOG.seen.clear();
   BOTLOG.goals.clear(); BOTLOG.time.clear(); BOTLOG.changed.clear(); BOTLOG.last = null;
 }
 function botLogStep(dt) {
-  const t = state.elapsed;
-  if (t < BOTLOG.t - 1) botLogReset();
-  BOTLOG.t = t;
+  if ((state.drop && state.drop !== BOTLOG.drop) || state.elapsed < BOTLOG.el - 1) botLogReset();
+  BOTLOG.drop = state.drop; BOTLOG.el = state.elapsed;
+  BOTLOG.acc += dt;
+  if (BOTLOG.acc < BOTLOG_STEP) return;
+  dt = BOTLOG.acc; BOTLOG.acc = 0;
+  const t = BOTLOG.t += dt;
   BOTLOG.sampleT -= dt;
   const sample = BOTLOG.sampleT <= 0;
   if (sample) BOTLOG.sampleT += BOTLOG_SAMPLE;
@@ -126,6 +150,7 @@ function botLogStep(dt) {
       BOTLOG.changed.set(p.id, state.tick);
       botLogPush(BOTLOG.events, { t: +t.toFixed(2), id: p.id, goal: th.goal, why: th.why, guess: th.guess,
         x: Math.round(p.x), y: Math.round(p.y), tx: th.x === null ? null : Math.round(th.x), ty: th.y === null ? null : Math.round(th.y) });
+      BOTLOG.evN++;
     }
     if (sample) botLogPush(BOTLOG.samples, { t: Math.round(t), id: p.id, x: Math.round(p.x), y: Math.round(p.y), hp: Math.round(p.hp),
       mhp: Math.round(p.maxHp), k: p.kills, d: p.deaths, goal: th.goal });
@@ -152,6 +177,7 @@ function botLogKills(t) {
     const i = up ? up.findIndex((a) => a !== v) : -1;
     const a = i >= 0 ? up.splice(i, 1)[0] : null;
     botLogPush(BOTLOG.kills, { t: +t.toFixed(1), a: a ? a.id : -1, v: v.id, x: Math.round(v.x), y: Math.round(v.y) });
+    BOTLOG.killN++;
   }
 }
 function botLogPush(list, e) { list.push(e); if (list.length > BOTLOG_CAP) list.splice(0, list.length - BOTLOG_CAP); }
@@ -201,17 +227,20 @@ const BOT_FLASH = 18;          // ticks a fresh goal is drawn white before it ta
 // each level's ink in the table, dim to hot (AI_LEVELS / AI_ALLIES, ai.js)
 const BOT_LEVEL_COL = { NORMAL: '#8f9cb3', HARD: '#c7d3e6', IMPOSSIBLE: '#ff7a7a', ALLY: '#7fb8e0' };
 function botLevelCol(name) { return BOT_LEVEL_COL[name] || BOT_DIM; }
-function botViewStep() { botView = (botView + 1) % BOT_VIEW_MODES; }
+function botViewStep() { botView = botViewOk() ? (botView + 1) % BOT_VIEW_MODES : 0; }
+// solo only: on an online host every hidden or buried rival would show (and
+// a client runs no sim to read)
+function botViewOk() { return NET.role === 'solo'; }
 
 // the world pass (render.js, beside the debug routes): a dotted line from
 // each bot to what it is after, ending in a ring. World pixels, so it rides
 // the zoom exactly like the routes do.
 function drawBotLines(ex, ey) {
-  if (!botView) return;
+  if (!botView || !botViewOk()) return;
   for (const p of players) {
     if (!botIsBot(p) || p.dead || inAir(p)) continue;
     const th = botThought(p);
-    if (th.x === null) continue;
+    if (!Number.isFinite(th.x) || !Number.isFinite(th.y)) continue;
     const col = botGoalCol(th.goal);
     const x0 = Math.round(p.x - ex), y0 = Math.round(p.y - ey), x1 = Math.round(th.x - ex), y1 = Math.round(th.y - ey);
     hbLine(x0, y0, x1, y1, col, p === botHover ? 0 : 3);
@@ -224,7 +253,7 @@ let botHover = null; // the bot under the pointer this frame (set by drawBotTags
 // and which bot the pointer is on
 function drawBotTags() {
   botHover = null;
-  if (!botView) return;
+  if (!botView || !botViewOk()) return;
   let hd = BOT_HOVER_R;
   for (const p of players) {
     if (!botIsBot(p) || p.dead || inAir(p)) continue;
@@ -240,7 +269,7 @@ function drawBotTags() {
 }
 // ...and over it: the table and the hovered bot's card
 function drawBotView() {
-  if (!botView) return;
+  if (!botView || !botViewOk()) return;
   const row = botView > 1 ? drawBotPanel() : null;
   if (botHover) drawBotCard(botHover, row);
 }
@@ -398,7 +427,9 @@ const BOTLAB_T = 0.25;         // s between frames to the page
 // (a timer, not the frame: a window in front of this one may stall its
 // frames, and the page should still hear the sim wherever it has got to)
 let botLab = null, botLabT = 0;
+let botLabEv = 0, botLabKill = 0, botLabN = -1;  // how much of this match's log the page has
 function openBotLab() {
+  if (!botViewOk()) return null;
   if (botLab && !botLab.closed) { botLab.focus(); return botLab; }
   botLab = window.open('botlab.html', 'softfall-botlab', 'width=1280,height=800');
   if (botLab && !botLabT) botLabT = setInterval(botLabPump, BOTLAB_T * 1000);
@@ -407,12 +438,20 @@ function openBotLab() {
 window.addEventListener('message', (e) => {
   const m = e.data;
   if (!m || !botLab || e.source !== botLab) return;
-  // hello: the whole log and the terrain; save: the whole log again, to download
-  if (m.kind === 'botlab-hello') botLab.postMessage({ kind: 'botlab-log', log: botLogExport() }, '*');
-  else if (m.kind === 'botlab-save') botLab.postMessage({ kind: 'botlab-log', log: botLogExport(), save: true }, '*');
+  // hello: the whole log and the terrain, after which the frames carry only
+  // what is new; save: the whole log again, to download
+  if (m.kind !== 'botlab-hello' && m.kind !== 'botlab-save') return;
+  botLab.postMessage({ kind: 'botlab-log', log: botLogExport(), save: m.kind === 'botlab-save' }, '*');
+  botLabEv = BOTLOG.evN; botLabKill = BOTLOG.killN; botLabN = BOTLOG.n;
 });
 function botLabPump() {
   if (!botLab || botLab.closed) { botLab = null; clearInterval(botLabT); botLabT = 0; return; }
+  if (!botViewOk()) return;
+  // every goal change and kill since the last frame (a new match starts the count again)
+  if (botLabN !== BOTLOG.n) { botLabN = BOTLOG.n; botLabEv = botLabKill = 0; }
+  const since = (list, n) => n > 0 ? list.slice(-Math.min(n, list.length)) : [];
+  const events = since(BOTLOG.events, BOTLOG.evN - botLabEv), kills = since(BOTLOG.kills, BOTLOG.killN - botLabKill);
+  botLabEv = BOTLOG.evN; botLabKill = BOTLOG.killN;
   const bots = [];
   for (const p of players) {
     if (!botIsBot(p)) continue;
@@ -425,6 +464,6 @@ function botLabPump() {
   }
   const birds = state.drop ? state.drop.eagles.map((e) => ({ team: e.team, col: TEAMS[skin(e.team)].mark, x: Math.round(e.x), y: Math.round(e.y),
     state: e.state, hp: Math.round(Math.max(0, e.hp)), max: Math.round(e.maxHp) })) : [];
-  botLab.postMessage({ kind: 'botlab-frame', t: +state.elapsed.toFixed(2), seed: SEED, sides: botSides(), bots, humans: botPeople(), birds,
-    events: BOTLOG.events.slice(-40), kills: BOTLOG.kills.slice(-20) }, '*');
+  botLab.postMessage({ kind: 'botlab-frame', t: +BOTLOG.t.toFixed(2), match: BOTLOG.n, seed: SEED, sides: botSides(), bots, humans: botPeople(), birds,
+    events, kills }, '*');
 }
