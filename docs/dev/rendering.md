@@ -1745,12 +1745,13 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
 
-- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL —
-  all three live from the first boot, and nothing else: a [saved match](gameplay.md#saved-matches)
+- **Items** `MENU_ITEMS` (SINGLEPLAYER / MULTIPLAYER / PRACTICE TOOL / BOT LADDER —
+  all four live from the first boot, and nothing else: a [saved match](gameplay.md#saved-matches)
   is picked up from the lobby's SAVES plate; `menuActivate` dispatches on the word; PRACTICE TOOL's activation is `beginPractice()` (the
   reroll's whiteout onto
   `?practice=1`, the [practice arena](world.md#the-practice-arena)). SINGLEPLAYER leads
-  the column as the first live way in; MULTIPLAYER opens the rooms screen;
+  the column as the first live way in; MULTIPLAYER opens the rooms screen; BOT LADDER opens
+  [the bot ladder screen](#the-bot-ladder-screen);
   there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from a word in the corner of
   the patch notes, settings are the ESC panel's in play, and the seed lives on
   [lobby](#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`
@@ -1884,7 +1885,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   easy to hard, each carrying its level's name (`AI_LEVELS`, js/ai.js — NORMAL / HARD /
   IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
   lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
-  settings, and Enter closes.
+  settings, and Enter closes. While a ladder bot is picked for this lobby (`ladderFoe`, from the
+  [bot ladder screen](#the-bot-ladder-screen)) the target's name is the bot's; `setAiLevel` and
+  leaving the lobby drop it.
 
   At the foot of the view, **LOCK
   IN** is a bare word in the [main menu](#main-menu-title)'s grammar, big (`LOBBY_LOCK_SCALE`, white,
@@ -2054,6 +2057,30 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
   `scoutBody(p)` is the same for a player: only the local player wears the scout skin worn, as a
   body of its own (the IRON SCOUT, [sprites](sprites.md)), and every other player the class body.
+
+### The bot ladder screen
+
+On the lobby's painted night, in [js/ui/ladder.js](../../js/ui/ladder.js) (`menu.screen = 'ladder'`,
+`beginLadder`/`leaveLadder`, its own ease `menu.ladT`). `ladderLayout()` is the one rect source for
+the draw, the hit test (`ladderHit`) and the cursor (`ladderCursor`).
+
+- **The data** is the offline ladder's ([docs/bots/ladder.md](../bots/ladder.md)):
+  `ladder-data/standings.js` beside index.html sets `window.LADDER_DATA` (`rows`, the standings;
+  `bots`, each entered file's source, added to `BOT_LIB`). The game never fetches, so
+  `ladderLoad` adds it as a script each time the screen opens; a missing file is a ladder with no
+  matches. `ladderTake` builds the rows, best first, and lists every `BOT_LIB` bot the ladder has
+  not met at the start rating.
+- **The list**, left: a well per bot (`drawLadderRow`) with its rank, name (a red dot if its code
+  threw), a steel bar of its rating against the field with the number, and its last five results
+  as green / grey / red chips. Slate rims, lighter under the hand, bright steel on the picked row
+  (`menu.ldSel`; Up/Down or a click; `menu.ldTop` scrolls past `LAD_ROWS_MAX`).
+- **The card**, right (`drawLadderCard`): the picked bot's name big, its author, its rating big
+  and its last move in green or red, the trend (`ladTrend`, a 1 px line over the start's level),
+  the record as one W/D/L bar with the counts, a W/D/L bar against each rival it has met, and
+  **FIGHT** at the foot, a bare word like LOCK IN.
+- **FIGHT** (`ladderFight`, or Enter) sets `ladderFoe` and opens the [lobby](#lobby); the drop
+  (`beginDrop` → `ladderSeat`) hands every rival `'ai'` seat of a solo match to that bot
+  (`botAssign`), the ladder's own rule of one file playing a whole side.
 
 ## Eagle drop (mode `drop`)
 

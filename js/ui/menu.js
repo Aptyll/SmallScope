@@ -11,7 +11,7 @@
 const INTRO_T = 1.6;    // title -> play: tint dissolves, camera settles, HUD slides in
 const HUD_IN_T = 0.7;   // the HUD slide occupies the last part of the intro
 const PANEL_SLIDE_T = 0.32;
-const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL'];
+const MENU_ITEMS = ['SINGLEPLAYER', 'MULTIPLAYER', 'PRACTICE TOOL', 'BOT LADDER'];
 // SETTINGS has no plank: it is the ESC panel's in play (js/ui/panels.js). The
 // seed lives on the lobby under the map's name (rerollWorld below),
 // and the WIKI opens from the word in the patch notes' corner (renderNotes).
@@ -627,6 +627,7 @@ function menuActivate(i) {
   if (it === 'SINGLEPLAYER') beginLobby();
   else if (it === 'MULTIPLAYER') beginRooms();
   else if (it === 'PRACTICE TOOL') beginPractice();
+  else if (it === 'BOT LADDER') beginLadder(); // the ladder's standings (js/ui/ladder.js)
 }
 
 // Into the training arena: the same whiteout-and-reload the die uses, onto
@@ -694,6 +695,7 @@ function menuKey(e) {
   if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
+  if (m.screen === 'ladder') { if (m.ladT >= 1) ladderKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
@@ -719,6 +721,7 @@ function menuClick() {
   if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'chars') { charsClick(); return; }
   if (m.screen === 'skins') { skinsClick(); return; }
+  if (m.screen === 'ladder') { ladderClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
   if (m.panel) {
@@ -823,6 +826,7 @@ function updateTitle(dt) {
   else if (m.screen === 'create') updateCreate(dt);
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
   if (m.screen === 'skins') updateSkins(dt);
+  updateLadder(dt); // the bot ladder screen's ease and hovers (js/ui/ladder.js)
   m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
   if (m.screen === 'rooms') updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
@@ -2227,6 +2231,7 @@ function beginLobby() {
 }
 function leaveLobby() {
   if (NET.role !== 'solo') netLeave(); // a host's room closes; a guest walks out of one
+  ladderFoe = null; // a ladder bot picked for this lobby stays behind with it (js/ui/ladder.js)
   state.menu.screen = 'menu';
   state.menu.countT = 0;
   SFX.pickup();
@@ -2318,7 +2323,9 @@ function lockIn() {
 }
 // the rivals' difficulty: one of AI_LEVELS, remembered with the profile
 function setAiLevel(k) {
-  if (settings.aiLevel === k) return;
+  const foe = ladderFoe;
+  ladderFoe = null; // a level picked is the built-in rivals again, not the ladder bot (js/ui/ladder.js)
+  if (settings.aiLevel === k && !foe) return;
   settings.aiLevel = k;
   saveSettings();
   SFX.pickup();
@@ -2772,7 +2779,7 @@ function drawLobbyTop(now, a) {
   drawPixelTextShadow(ctx, shape, mn.x - (pixelTextWidth(shape) >> 1), mn.y, mh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   const lv = settings.aiLevel | 0;
   drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, now, a);
-  const level = AI_LEVELS[lv].name;
+  const level = ladderFoe ? ladderName(ladderFoe) : AI_LEVELS[lv].name; // a ladder bot names the rivals (js/ui/ladder.js)
   drawPixelTextShadow(ctx, level, tn.x - (pixelTextWidth(level) >> 1), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
   if (savc) {
     const sh = hover === 'saves';
@@ -3772,7 +3779,8 @@ function renderTitle(now) {
   const kc = easeInOut(m.charT);               // ...and the character screens'
   const rc = easeInOut(m.roomsT);              // ...and the rooms screen's
   const bc = easeInOut(m.skinT);               // ...and the skins screen's
-  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc); // chrome ducks under a panel or any full screen
+  const lc = easeInOut(m.ladT || 0);           // ...and the bot ladder's
+  const pan = Math.max(m.panel ? easeOut(m.panelT) : 0, sc, tc, nc, kc, rc, bc, lc); // chrome ducks under a panel or any full screen
   const { toy, rects } = menuLayout();
   const cx = Math.round(VIEW_W / 2);
   const chromeA = (1 - out) * (1 - pan);
@@ -3842,6 +3850,7 @@ function renderTitle(now) {
   if (kc > 0.005) { if (m.cscreen === 'create' && m.cedit) renderCreate(now, kc * (1 - out)); else renderChars(now, kc * (1 - out)); }
   if (rc > 0.005) renderRooms(now, rc * (1 - out));
   if (bc > 0.005) renderSkins(now, bc * (1 - out));
+  if (lc > 0.005) renderLadder(now, lc * (1 - out));
 
   // sub-panels slide up from the bottom edge over the still-visible world
   if (m.panel) {

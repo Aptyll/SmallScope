@@ -1453,6 +1453,7 @@ function cursorInfo() {
     if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
     if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
+    if (m.screen === 'ladder') return ladderCursor();
     if (!m.panel && (overCharTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };

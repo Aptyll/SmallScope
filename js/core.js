@@ -155,7 +155,7 @@ const state = {
   // table in a file that loads later, so the ease loop tops up a missing
   // cell rather than trusting it - a short array turned into NaN and
   // silently deleted a row when a fifth plank arrived.
-  menu: { sel: 0, hover: [0, 0, 0], t: 0,
+  menu: { sel: 0, hover: [0, 0, 0, 0], t: 0,
     panel: null, panelT: 0, closing: false,
     // the character screens (js/ui/chars.js): charT their ease (screen
     // 'chars' is the roster, 'create' the create/customize screen), cedit
@@ -181,7 +181,8 @@ const state = {
     // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
     // grows it with the roster, since CLASSES loads after this file), swap
     // pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'chars' | 'create' | 'skins'.
+    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'chars' | 'create' | 'skins' | 'ladder'
+    // (the bot ladder, js/ui/ladder.js: ladT its ease, ldSel its row, ldTop the first row shown, ldHover its hover eases).
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
     // grow is the hero pop-up's keyboard row (the gear column, the ability

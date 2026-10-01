@@ -738,6 +738,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
 | the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
 
+## js/ui/ladder.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the offline ladder's standings in the game: loading `ladder-data/standings.js`, the rows, a bot's name | `ladderLoad`, `ladderTake`, `ladderRows`, `ladderGames`, `ladderName` (the file's writer: `writePage`, app/ladder/page.js) | `bot ladder` › `the data` |
+| a ladder bot on the rival side of a solo match | `ladderFoe`, `ladderSeat` (its caller: `beginDrop`, boot.js; the lobby's target names it: `drawLobbyTop`, menu.js) | `bot ladder` › `the match` |
+| the screen: the list, the card, FIGHT, the keys | `LAD_*`, `beginLadder`/`leaveLadder`, `ladderLayout`, `ladderHit`, `ladderPick`, `ladderFight`, `ladderKey`, `ladderClick`, `updateLadder`, `ladderCursor`, `drawLadderRow`, `drawLadderCard`, `ladTrend`, `ladRecord`, `ladForm`, `renderLadder` | `bot ladder` › `the screen`, `the pixels` |
+
 ## js/ui/screens.js
 
 | Looking for | Start at | Banner |
