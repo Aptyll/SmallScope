@@ -81,8 +81,8 @@ What differs from a real match, on purpose:
 - **Bot files** (js/bots/api.js, [docs/bots/](../bots/)): `playMatch({ seats: { 0: 'starter', 1: 'pack' } })`
   assigns seats to programs in the library (the baked examples are there already) before the drop;
   `bots: { id: source }` adds more. Every file, the baked ones too, runs sealed in a vm context
-  of its own (`app/arena/sandbox.js`: no game globals, seeded random, frozen clock, 50 ms per
-  think). Same seed and same files, same match.
+  of its own, in a thread of its own (`app/arena/sandbox.js`: no game globals, seeded random,
+  frozen clock, 50 ms per think, 64 MB of heap; a seat whose thread dies is logged `dead`). Same seed and same files, same match.
   Each scripted seat's log entry carries its `errors`, `late` and `thinks` (the bot runtime's own counts).
   `beforeDrop(G)` is a raw hook for anything else.
 

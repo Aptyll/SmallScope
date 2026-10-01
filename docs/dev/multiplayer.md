@@ -983,6 +983,14 @@ runs every `CALL_LOOK` ticks staggered by seat and draws no `rng()`, so a match 
 same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS`, and
 `addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
 
+**The team brain speaks through the same door.** A bot answering a human's flag says ON IT, or
+GUARDING for the guard it keeps on the bird (`aiAnswerFlag`/`aiAnswerStep`, js/ai-team.js: who
+answers, and the stagger by seat, are the brain's); the callouts own only the words, the icons
+and the life on screen (`CALLS.onit`, `CALLS.guarding`). **A grudge** is voiced here: a rival bot
+whose `p.ai.grudge` has just stamped `seenT` (its first sight of its mark) says YOU AGAIN over its
+head to the mark's side only (a call's `see`), once per pair per `CALL_GRUDGE_T` (`callGrudge`).
+A scripted bot may say only `BOT_CALLS` (js/bots/api.js), none of these three.
+
 ## Online play
 
 A match is ten seats, and any of them can be a person on another screen: relay rooms between
