@@ -49,7 +49,7 @@ Today bots run offline, on your own computer, two ways:
    Then press F4 to see every bot's goal and target on the map.
 
 2. **Headless, bot against bot**, in Node (no browser), with the arena runner (`app/arena/`,
-   arriving with the match tests): `playMatch({ seed, bots: { mine: src }, seats: { 1: 'mine' } })`.
+   [docs/dev/arena.md](../dev/arena.md)): `playMatch({ seed, bots: { mine: src }, seats: { 1: 'mine' } })`.
 
 The ladder (ratings and match history between bot files) comes next and gets its own page here
 once it lands.
