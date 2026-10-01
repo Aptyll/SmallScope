@@ -49,10 +49,11 @@ ladder-data/
   standings.json   the same numbers as the page, for scripts and agents
 ```
 
-The page: the standings (rating, its trend, the last five results, record, fun, errors), a card
-for the bot you click (peak rating, best and worst matchup) with the match list narrowed to it, a
-head-to-head table (each row's wins-losses-draws against each column), and every match with its
-log. HOW TO READ, top right, explains every column; every header also explains itself on hover.
+The page is drawn more than written: each bot's rating as a bar, its trend as a small line, its
+last five results as W/D/L chips, its record as a green/grey/red bar and its matches' fun as a
+blue meter (the legend, top right). Click a bot for its card (rating, peak, trend, record against
+each opponent); the match list narrows to it. WHO BEATS WHOM is a grid of each row's win share
+against each column, green when it wins. Every number and header explains itself on hover.
 A bot whose code throws is flagged with its error count.
 
 **For scripts and agents:** read `standings.json`, or the `#ladder-data` JSON block inside the
