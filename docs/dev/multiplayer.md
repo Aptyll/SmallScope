@@ -872,6 +872,21 @@ never farms: level 5–6 against 12), who win at about 16:30 — the dive, not t
 level is for, and with a hand rather than a bot on the human's side that dive is the match. A
 `push.t` of 0 never touches the bird, and a four-minute pack of four reaches 36 % and loses.
 
+### Bot callouts
+
+Every `'ai'` seat, brain or bot file, **says what it sees** to its own side (`updateCallouts`,
+js/ai-callouts.js, from `updatePlay`): a short word on a plate over its name and a ping on the
+spot it is about, both on the minimap disc too (js/draw/callouts.js). A call never decides
+anything; it reports something already true, most urgent first (`callLook`): its own bird just
+hit (BIRD!), itself losing a fight (HELP!), a rival or a bear nearly down in front of it
+(HUNTER LOW!, BEAR LOW!), the rival bird wavering with it there (PUSH!), and rivals walking onto
+its roost (2 HERE!). It is said only with a friend near enough to act (`callFriend`), at most one
+call per bot every `CALL_BOT_CD`, one per side every `CALL_SIDE_GAP`, never the same call near
+the same spot inside `CALL_SAME_T`, and never more than `CALL_SIDE_MAX` up for a side. A look
+runs every `CALL_LOOK` ticks staggered by seat and draws no `rng()`, so a match plays out the
+same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS`, and
+`addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
+
 ## Online play
 
 A match is ten seats, and any of them can be a person on another screen: relay rooms between

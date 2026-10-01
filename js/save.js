@@ -56,6 +56,7 @@ const SAVE_ROOTS = [
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceCracks', () => iceCracks, (v) => { iceCracks.clear(); for (const [k, x] of v) iceCracks.set(k, x); }],
   ['market', () => market, (v) => Object.assign(market, v)],
+  ['callouts', ...saveArr(callouts)], ['callSaid', () => callSaid, (v) => { callSaid[0] = v[0]; callSaid[1] = v[1]; }],
   ['rng', () => [rng.s, fxRng.s, mktRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; mktRng.s = v[2]; }],
   ['wild', () => [preyRepopT, fishCap, fishFloor, emergeSites],
     (v) => { preyRepopT = v[0]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
