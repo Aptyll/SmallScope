@@ -380,7 +380,7 @@ function aiHelpCall(p) {
     if (c.id === p.id || players[c.id].dead || state.elapsed - c.t > AI_CALL_T) continue;
     let n = 0;
     for (const q of players) if (q !== p && q.team === p.team && q.control === 'ai' && q.ai.helping === c.id) n++;
-    if (n >= AI_CALL_N) continue;
+    if (n >= AI_CALL_N && p.ai.helping !== c.id) continue; // (one already answering keeps its place)
     const d = Math.hypot(c.x - p.x, c.y - p.y);
     if (d < bd) { bd = d; best = c; }
   }

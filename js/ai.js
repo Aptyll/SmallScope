@@ -278,6 +278,10 @@ function aiWaveHead(p, e) {
     if (b.kind !== 'soldier' || !unitAlive(b) || b.team !== p.team) continue;
     const d = Math.hypot(b.x - e.x, b.y - e.y);
     if (d < AI_ROOST_R || d >= bd || Math.hypot(b.x - p.x, b.y - p.y) > AI_WAVE_D) continue;
+    // a column locked in a fight with the rival's is not going anywhere: walk past it
+    let clash = false;
+    for (const r of robots) if (r.kind === 'soldier' && unitAlive(r) && r.team !== p.team && Math.hypot(r.x - b.x, r.y - b.y) < AI_WAVE_R * 1.5) { clash = true; break; }
+    if (clash) continue;
     bd = d; best = b;
   }
   return best;
@@ -602,7 +606,11 @@ function aiThink(p, dt) {
   // (...away from home: a respawn at its own besieged bird fights what is
   // there with everything it sees before it rides out again)
   const charge = prof.relentless && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
-  const engage = foe && ai.seeT >= prof.react && !((siege || rally || charge) && foeD > AI_SIEGE_R) ? foe : null;
+  // (and a pusher leaves the rival WAVE to its own: soldiers it meets on the
+  // road are fought only at arm's length - the waves fight each other in the
+  // middle, and a push that stopped for every column never reached the bird)
+  const waveFoe = foe && !(foe instanceof Player) && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
+  const engage = foe && ai.seeT >= prof.react && !((siege || rally || charge || waveFoe) && foeD > AI_SIEGE_R) ? foe : null;
   if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
     if (p.hp < p.maxHp * 0.5 && bagCount(p, 'fish') > 0) inp.eatFish = true;
     else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
@@ -680,6 +688,7 @@ function aiThink(p, dt) {
     const atHome = defend && Math.hypot(defend.x - p.x, defend.y - p.y) < AI_ROOST_R;
     if (!atHome && !siege && !charge && (state.elapsed < ai.fleeT || aiFallBack(p, prof, foe, odds))) {
       if (state.elapsed >= ai.fleeT) ai.fleeT = state.elapsed + AI_FLEE_HOLD; // once it turns, it means it for a moment
+      if (role === 'scout') ai.scoutCd = state.elapsed + 8; // (a scout chased off its beat works a while before it walks back into them)
       const to = aiFallBackTo(p, foe);
       aiNote(p, 'FLEE', odds.them > odds.us ? odds.them + 'V' + odds.us : 'LOW HP', to);
       if (steerTo(to.x, to.y, 3) < 0) { inp.mx = -Math.cos(Math.atan2(foe.y - p.y, foe.x - p.x)); inp.my = -Math.sin(Math.atan2(foe.y - p.y, foe.x - p.x)); }
@@ -940,8 +949,11 @@ function aiThink(p, dt) {
 
   // 5e. a teammate's call for help (the team brain): go to them. The caller
   //     is an anchor, so the rival they are fighting is rung 3's on arrival.
-  if (caller && Math.hypot(caller.x - p.x, caller.y - p.y) > 48) {
+  if (caller) {
     aiNote(p, 'HELP', caller.name.slice(0, 13) + ' CALLED', caller);
+    // (by the caller with the call still open: stay by them - stepping off to
+    // the next job flipped it between the two every few ticks)
+    if (Math.hypot(caller.x - p.x, caller.y - p.y) <= 48) { aimAt(caller.x, caller.y); inp.fire = false; ai.tgt = null; return; }
     if (steerTo(caller.x, caller.y, 3) >= 0) { aimAt(caller.x, caller.y); inp.fire = false; ai.tgt = null; return; }
   }
 
@@ -979,7 +991,8 @@ function aiThink(p, dt) {
   //    it cannot catch in 6 s (prey outruns a walk) or cannot route to at all
   if (ai.huntAvoidT > 0) { ai.huntAvoidT -= dt; if (ai.huntAvoidT <= 0) ai.huntAvoid = null; }
   let prey = aiNearestAnimal(p);
-  if (prey && bound && !inFlag(bound, prey.x, prey.y)) prey = null; // (an order's ring bounds the hunt as it does the work)
+  if (prey && bound && !inFlag(bound, prey.x, prey.y)) prey = null;
+  if (prey && escort && Math.hypot(prey.x - ward.x, prey.y - ward.y) > AI_ESCORT) prey = null; // (an order's ring bounds the hunt as it does the work)
   if (prey) {
     aiNote(p, 'HUNT', 'MEAT IS GOLD', prey);
     if (prey !== ai.huntTgt) { ai.huntTgt = prey; ai.huntT = 0; }
@@ -1006,7 +1019,8 @@ function aiThink(p, dt) {
     const dd = Math.hypot(d.x - p.x, d.y - p.y);
     if (dd < ld) { ld = dd; loot = d; }
   }
-  if (loot && bound && !inFlag(bound, loot.x, loot.y)) loot = null; // (an order's ring bounds the loot as it does the work)
+  if (loot && bound && !inFlag(bound, loot.x, loot.y)) loot = null;
+  if (loot && escort && Math.hypot(loot.x - ward.x, loot.y - ward.y) > AI_ESCORT) loot = null; // (an order's ring bounds the loot as it does the work)
   if (loot && ai.lootT < 4) {
     aiNote(p, 'LOOT', 'ON THE GROUND', loot);
     ai.lootT += dt; aimAt(loot.x, loot.y);
@@ -1081,12 +1095,14 @@ function aiThink(p, dt) {
   if (ai.avoidT <= 0) ai.avoid = null;
   // (under a DEFEND or GATHER order the work is bounded to the order's ring)
   if (ai.tgt && bound && !inFlag(bound, ai.tgt.tx * TILE + 8, ai.tgt.ty * TILE + 8)) ai.tgt = null;
+  if (ai.tgt && escort && Math.hypot(ai.tgt.tx * TILE + 8 - ward.x, ai.tgt.ty * TILE + 8 - ward.y) > AI_ESCORT * 0.9) ai.tgt = null; // (the human walked on: the work goes with them)
   if (!ai.tgt && ai.thinkT <= 0) {
     ai.thinkT = 0.6;
     ai.tgt = nearestObj(p.x, p.y, Math.round(AI_FORAGE * aiMood(p).greed), (o) => o !== ai.avoid &&
       (o.type === 'tree' || o.type === 'chest' || (o.type === 'rock' && rockReady(o) && !rockMiner(o)) ||
         (o.type === 'bush' && o.berries > 0)) &&
       aiOpenSides(o.tx, o.ty) >= 1 && (!bound || inFlag(bound, o.tx * TILE + 8, o.ty * TILE + 8)) &&
+      (!escort || Math.hypot(o.tx * TILE + 8 - ward.x, o.ty * TILE + 8 - ward.y) < AI_ESCORT * 0.7) && // (an escort works inside its leash)
       (!guardE || Math.hypot(o.tx * TILE + 8 - guardE.x, o.ty * TILE + 8 - guardE.y) < AI_GUARD_R * 0.85)); // (a guard works inside its leash)
   }
   if (ai.tgt) {
