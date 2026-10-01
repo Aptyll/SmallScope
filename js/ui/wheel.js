@@ -112,30 +112,61 @@ function wheelOnOwnFlag() {
   return !!(w && f && f.tx === w.tx && f.ty === w.ty);
 }
 
-// run a queued build/manage/gear order for any player
+// is an order the right shape to act on? A bot file or a remote client can
+// send anything - a string where a seat number goes, a key off Object's own
+// prototype ('constructor') - and the handlers below index tables with it,
+// so a malformed order is dropped here rather than throwing inside the step
+// or leaving NaN gold behind. Only the shape: whether it may happen is still
+// each handler's call.
+const cmdInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v < hi;
+const cmdKey = (table, k) => typeof k === 'string' && !!table && Object.hasOwn(table, k);
+const cmdTile = (c) => Number.isInteger(c.tx) && Number.isInteger(c.ty);
+function cmdOk(c) {
+  if (!c || typeof c !== 'object') return false;
+  if (c.kind === 'gear') return cmdInt(c.piece, 0, GEAR.length);
+  if (c.kind === 'ability') return cmdInt(c.i, 0, AB_KEYS);
+  if (c.kind === 'shop') {
+    if (c.act === 'buy') return cmdKey(market.stock, c.sec) && cmdInt(c.i, 0, Infinity);
+    if (c.act === 'trade') return cmdKey(GOODS, c.good) && (c.dir === 1 || c.dir === -1);
+    if (c.act === 'sell') return cmdInt(c.i, 0, Infinity);
+    if (c.act === 'forge') return (c.where === 'tool' || c.where === 'bag') && cmdInt(c.i, 0, Infinity) && !!c.pile && typeof c.pile === 'object';
+    return c.act === 'sellAll';
+  }
+  if (c.kind === 'build') return cmdKey(STRUCTS, c.id) && cmdTile(c) && (c.tx2 === undefined || (Number.isInteger(c.tx2) && Number.isInteger(c.ty2)));
+  if (c.kind === 'flag') return !c.id || (cmdKey(FLAG_TYPES, c.id) && cmdTile(c));
+  if (c.kind === 'rack' || c.kind === 'pkdie' || c.kind === 'agbell') return true; // the practice props check their own
+  return cmdTile(c); // a building's manage wheel: its tile
+}
+
+// run a queued build/manage/gear order for any player. Returns what came of
+// it, for whoever asked (a bot reads it as me.lastCmd): true when it went
+// through, or why not - a word ('gold', 'far', 'max', the placement's own
+// canPlaceAt why) where the refusal has one, false where it has none
 function runCmd(p, c) {
-  if (c.kind === 'gear') { buyGear(p, c.piece); return; } // no tile, no reach - gear is bought from anywhere
-  if (c.kind === 'ability') { buyAbilityLv(p, c.i); return; } // an ability level: a skill point, from anywhere
-  if (c.kind === 'shop') { shopCmd(p, c); return; } // the merchant's counter (js/shop.js) - it checks its own reach
+  if (!cmdOk(c)) return 'bad';
+  if (c.kind === 'gear') return buyGear(p, c.piece); // no tile, no reach - gear is bought from anywhere
+  if (c.kind === 'ability') return buyAbilityLv(p, c.i); // an ability level: a skill point, from anywhere
+  if (c.kind === 'shop') return shopCmd(p, c); // the merchant's counter (js/shop.js) - it checks its own reach
 
   if (c.kind === 'build') {
-    if (c.tx2 !== undefined) { placeLine(p, c); return; } // a dragged run (the list's `line` pieces)
-    placeStruct(c.tx, c.ty, c.id, p, c.rot); return; // rot: the list's R (a wheel's order is unturned)
+    if (c.tx2 !== undefined) return placeLine(p, c); // a dragged run (the list's `line` pieces)
+    return placeStruct(c.tx, c.ty, c.id, p, c.rot); // rot: the list's R (a wheel's order is unturned)
   }
   // the flag: per-player state, planted anywhere on the map (no reach, no
   // contest); id null is the lift (the `team flags` banner, js/robots.js)
-  if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return; }
-  if (c.kind === 'rack') { rackEquip(p, c); return; } // the practice armory (js/world.js)
-  if (c.kind === 'pkdie') { pkWheelPick(p, c); return; } // the parkour roll die (js/world.js)
-  if (c.kind === 'agbell') { agRing(p, c); return; } // the archery range's bell (js/world.js)
+  if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return true; }
+  if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/world.js)
+  if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/world.js)
+  if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/world.js)
   const o = structOf(objAt(c.tx, c.ty));
-  if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return;
-  if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
+  if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return false;
+  if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return 'far';
   // a site still going up takes only the demolish (its whole price back)
-  if (c.kind === 'demolish') demolishStruct(o, p);
-  else if (o.building) return;
-  else if (c.kind === 'upgrade') startUpgrade(o, p);
-  else if (c.kind === 'repair') startRepair(o, p);
+  if (c.kind === 'demolish') return demolishStruct(o, p);
+  if (o.building) return 'busy';
+  if (c.kind === 'upgrade') return startUpgrade(o, p);
+  if (c.kind === 'repair') return startRepair(o, p);
+  return false;
 }
 
 // ------------------------------------------------------------ selection, hints & wheel

@@ -16,7 +16,7 @@
 // the author's guide is docs/bots/ladder.md. No packages.
 //
 // TRUST: a bot file runs inside the match process with this computer's
-// rights (the arena loads it inline). Enter only files you trust; an online
+// rights (the arena runs it in a Node vm context: sealed from the game, not a hardened jail). Enter only files you trust; an online
 // ladder runs each bot in its own sandboxed process instead (docs/bots/ladder.md).
 
 const fs = require('fs');
@@ -115,9 +115,9 @@ function cmdRetire(S, args) {
 function cmdTable(S) {
   const rows = core.standings(S.load(), S.history());
   const pad = (v, n) => String(v == null ? '-' : v).padStart(n);
-  console.log('  #  bot              rating  games   W   L   D  win%  fun  min  k/d');
+  console.log('  #  bot              rating  games   W   L   D  win%  fun  min  k/d  errors');
   rows.forEach((r, i) => console.log(pad(i + 1, 3) + '  ' + String(r.id + (r.retired ? '*' : '')).padEnd(16) + pad(r.rating, 7) + pad(r.games, 7) +
-    pad(r.w, 4) + pad(r.l, 4) + pad(r.d, 4) + pad(r.winPct, 6) + pad(r.fun, 5) + pad(r.avgMin, 5) + pad(r.kd, 5)));
+    pad(r.w, 4) + pad(r.l, 4) + pad(r.d, 4) + pad(r.winPct, 6) + pad(r.fun, 5) + pad(r.avgMin, 5) + pad(r.kd, 5) + pad(r.errors || 0, 8)));
 }
 async function cmdRun(S, args) {
   const { playChild } = require('../arena/run'); // the match runner (docs/dev/arena.md)
@@ -166,7 +166,7 @@ async function main() {
   else if (cmd === 'retire') cmdRetire(S, args);
   else if (cmd === 'table') { const L = S.load(); sync(L, S.sources()); S.save(L); cmdTable(S); }
   else if (cmd === 'run') await cmdRun(S, args);
-  else if (cmd === 'page') console.log(writePage(S.dir, S.load(), S.history()));
+  else if (cmd === 'page') { const L = S.load(); sync(L, S.sources()); S.save(L); console.log(writePage(S.dir, L, S.history())); }
   else throw new Error('commands: add, run, table, page, retire');
 }
 if (require.main === module) main().catch((e) => { console.error(e.message); process.exit(1); });

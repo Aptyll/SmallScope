@@ -4,14 +4,16 @@
 //
 //   node app/arena/run.js --seeds 1-20 --level 1 --out arena-out/normal
 //   node app/arena/run.js --seeds 1-8 --level 0,1,2,3 --jobs 4
-//   node app/arena/run.js --seeds 1-8 --kind versus --a 1 --b 0
+//   node app/arena/run.js --seeds 1-8 --kind versus --a 2 --b 1
 //
 // Flags: --seeds a-b or a,b,c (default 1-4); --level n[,n] (the game's sides
 // at that difficulty, default 1 = NORMAL); --kind level|versus (--a/--b: each side's
 // AI_LEVELS index, default 1); --proxy n (the profile seat 0 plays in 'level', default 1 = NORMAL);
 // --shape n (MAPS index, default 0); --max min (timeout, default 40);
 // --every s (sample pitch, default 2); --jobs n (default: cores); --out dir
-// (default arena-out/<date>); --quiet (no per-match lines).
+// (default arena-out/<date>; refused if it already holds a run, unless --force);
+// --wall s (kill a match after this much real time; default 1.5 x --max + 60 s);
+// --quiet (no per-match lines).
 // The format: docs/dev/arena.md and /mnt/project-files/ai-behaviors/match-log.md.
 
 const fs = require('fs');
@@ -40,22 +42,43 @@ function parseList(s, def) {
   return out;
 }
 
-// play one match in a child process; resolves with its log (or an error log)
+// play one match in a child process; resolves with its log (or an error log).
+// The options go over stdin (a bot's source can outgrow a command line), so
+// they must be plain JSON: a function such as beforeDrop cannot cross, and is
+// refused rather than dropped. A child still running WALL_MUL x its sim cap
+// in real time (plus WALL_SLACK) is killed - a bot stuck in a loop never
+// returns from its think, and the sim's own clock cannot see that.
+const WALL_MUL = 1.5, WALL_SLACK = 60; // x real time, s
+const kids = new Set();
 function playChild(opts) {
+  if (Object.values(opts).some((v) => typeof v === 'function')) return Promise.reject(new Error('playChild takes plain JSON options (no beforeDrop): call playMatch in a process of your own for hooks'));
   return new Promise((resolve) => {
-    const kid = spawn(process.execPath, [path.join(__dirname, 'match.js'), JSON.stringify(opts)], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const kid = spawn(process.execPath, [path.join(__dirname, 'match.js')], { stdio: ['pipe', 'pipe', 'pipe'] });
+    kids.add(kid);
     const out = [], err = [];
+    const wall = opts.wallSec || ((opts.maxMin || 40) * 60 * WALL_MUL + WALL_SLACK);
+    let killed = false;
+    const timer = setTimeout(() => { killed = true; kid.kill('SIGKILL'); }, wall * 1000);
     kid.stdout.on('data', (d) => out.push(d));
     kid.stderr.on('data', (d) => err.push(d));
+    kid.stdin.on('error', () => {}); // a child that dies early closes the pipe under us
+    kid.stdin.end(JSON.stringify(opts));
     kid.on('close', (code) => {
+      clearTimeout(timer);
+      kids.delete(kid);
       try { resolve(JSON.parse(Buffer.concat(out).toString())); } catch (e) {
-        resolve({ v: 1, id: [opts.seed, opts.shape, 'crash', opts.n].join('-'), seed: opts.seed, shape: opts.shape,
-          result: { winner: null, reason: 'error', time: 0, ticks: 0, error: ('exit ' + code + ': ' + Buffer.concat(err).toString()).slice(0, 2000) },
+        const why = killed ? 'killed after ' + Math.round(wall) + ' s of wall clock (a bot stuck in a loop?)' : 'exit ' + code + ': ' + Buffer.concat(err).toString();
+        resolve({ v: 1, id: [opts.seed, opts.shape | 0, 'crash', opts.n | 0].join('-'), seed: opts.seed, shape: opts.shape | 0,
+          result: { winner: null, reason: 'error', time: 0, ticks: 0, error: why.slice(0, 2000) },
           fun: { score: 0, parts: {}, raw: {} } });
       }
     });
   });
 }
+// a stopped batch takes its matches with it
+function killKids() { for (const k of kids) k.kill('SIGKILL'); }
+process.on('exit', killKids);
+for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { killKids(); process.exit(130); });
 
 // a summary line: the log without its per-sample and per-event bulk
 function summaryOf(log) {
@@ -108,12 +131,17 @@ async function main() {
   const levels = kind === 'level' ? parseList(a.level, [NORMAL]) : [NORMAL];
   const jobs = Math.max(1, +a.jobs || os.cpus().length);
   const out = path.resolve(a.out && a.out !== true ? a.out : path.join('arena-out', new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')));
+  // a folder holds one run: its aggregate and rescore read every log in it
+  if (fs.existsSync(path.join(out, 'summary.jsonl')) && !a.force) {
+    console.error(out + ' already holds a run: pick a new --out, or --force to add to it');
+    process.exit(1);
+  }
   fs.mkdirSync(out, { recursive: true });
   const queue = [];
   let n = 0;
   for (const level of levels) for (const seed of seeds) {
     queue.push({ seed, level, kind, a: num(a.a), b: num(a.b), proxy: num(a.proxy), shape: +a.shape || 0,
-      maxMin: +a.max || 40, sampleEvery: +a.every || 2, n: n++ });
+      maxMin: +a.max || 40, sampleEvery: +a.every || 2, wallSec: +a.wall || 0, n: n++ });
   }
   const t0 = Date.now();
   const logs = [];

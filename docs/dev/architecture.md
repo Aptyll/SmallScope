@@ -53,6 +53,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/bots/api.js](../../js/bots/api.js) | ~340 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/bots/lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
 | [js/sim.js](../../js/sim.js) | ~1340 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
 | [js/shed.js](../../js/shed.js) | ~90 | shared scope, no `window.*` export | snow knocked off the pines by a gust's crest or a blow, raised in the sim and carried by `burst` |
+| [js/ai-callouts.js](../../js/ai-callouts.js) | ~150 | shared scope, no `window.*` export | bot callouts: when a bot tells its side something (HELP!, BIRD!, BEAR LOW!), the anti-spam rules, `addCallout` |
 | [js/net/events.js](../../js/net/events.js) | ~80 | shared scope, no `window.*` export | the sim's cosmetics on their way to the screen: `sfxAt`/`sfxFor`/`sfxOwn`/`shakeAt`/`shakeFor`, the ring a host records them into (`evPush`/`evDrain`, only inside the step and only with `evRecord` on - solo records nothing) and `evPlay`, the client's replay of one entry. The online plan the js/net/ files follow: [docs/pvp-architecture.md](../pvp-architecture.md) |
 | [js/net/net.js](../../js/net/net.js) | ~420 | shared scope, no `window.*` export | `NET`: this screen's role (`solo` / `host` / `client`; `isHost` is "am I simulating?"), `isHuman`, the five-call transport interface and its loopback, and the match protocol (`netHostStep`/`netHostFlush`, `netClientStep`/`netClientMode`; `RECONNECT_GRACE`, `SNAP_EVERY`) - the detail: [code-map](code-map.md) |
 | [js/net/snapshot.js](../../js/net/snapshot.js) | ~810 | shared scope, no `window.*` export | the match's authoritative state as one plain object (`snapBuild`/`snapApply`, refs packed to kind+id tokens by `pack`), its wire form (`snapBuildDelta`/`snapApplyDelta` against a shadow of the last send, `snapEncode`/`snapDecode` binary with a shared key dictionary) and the proofs (`netEcho`, `netEchoRun`, `netDeltaRun`: render, send through the bytes, render again, count differing pixels) |
@@ -69,6 +70,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/draw/structs.js](../../js/draw/structs.js) | ~240 | shared scope, no `window.*` export | a building's pixels: the turret's rotating half and bolts, the bay and barracks overlays, the net, `structSprite`/`structArtOff`/`drawTiledStruct` |
 | [js/draw/bodies.js](../../js/draw/bodies.js) | ~710 | shared scope, no `window.*` export | every walking thing's sprite pass: a beast on its clip, a robot, the merchant, and `drawPlayer` with its gear marks, buff ring, snow cover, burial, ghost and held tool |
 | [js/draw/marks.js](../../js/draw/marks.js) | ~200 | shared scope, no `window.*` export | the glyph grammar both maps share: a camp's icon and clock, the flag family, what a body looks like as a dot |
+| [js/draw/callouts.js](../../js/draw/callouts.js) | ~110 | shared scope, no `window.*` export | what a callout looks like: the plate over the caller, the ground ping, the minimap pulse |
 | [js/draw/light.js](../../js/draw/light.js) | ~680 | shared scope, no `window.*` export | light and weather over the finished frame: specks, cloud shadows, god rays, the reflected sky, and the pass that grades day into night |
 | [js/draw/render.js](../../js/draw/render.js) | ~1460 | shared scope, no `window.*` export | `render()` composes and blits the frame; the `.` debug overlays; cursor, reticle and aim line |
 | [js/ui/wheel.js](../../js/ui/wheel.js) | ~800 | shared scope, no `window.*` export | the HUD in world space: the radial wheel and `runCmd`, the selection brackets, key and pad prompts, the work/rack/bell/shop hints, the build list (its hammer plate, its column, the piece on the pointer) and its ghost |
@@ -345,6 +347,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
 - **`app/ladder/`** — the offline bot ladder on top of the arena: bot files play rated matches
   (Elo), every record and log kept in `ladder-data/`, and a standings page written beside them
   ([docs/bots/ladder.md](../bots/ladder.md)). `core.js` holds the rules alone, for an online ladder later.
+- **`app/regress/`** — the patch check: a fixed set of short arena matches replayed on every patch,
+  the runs diffed and flagged, and the ladder's history cut into one season per patch ([regress.md](regress.md)).
 - **`app/bake-bots.js`** — reads `bots/*.js`, writes `js/bots/lib.js` (the example bots as source text).
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.
 - **`app/bake-bears/bake.py`** — Python (needs numpy): paints and poses the two camp bears, writes `js/sprites/bears.js`.

@@ -46,16 +46,28 @@ ladder-data/
   logs/<id>.json   the full match log (the format the bot lab reads; F6 in the game, or botlab.html)
   bots/<id>.js     the files you entered
   ladder.html      the standings page: open it straight off the disk
+  standings.json   the same numbers as the page, for scripts and agents
+  standings.js     the same numbers and the entered files, for the game's BOT LADDER screen
 ```
 
-The page shows the standings with each bot's rating over its matches, a head-to-head table
-(row's win % against the column), and every match with its log. Click a bot to see only its
-matches.
+The page is drawn more than written: each bot's rating as a bar, its trend as a small line, its
+last five results as W/D/L chips, its record as a green/grey/red bar and its matches' fun as a
+blue meter (the legend, top right). Click a bot for its card (rating, peak, trend, record against
+each opponent); the match list narrows to it. WHO BEATS WHOM is a grid of each row's win share
+against each column, green when it wins. Every number and header explains itself on hover.
+A bot whose code throws is flagged with its error count.
+
+**For scripts and agents:** read `standings.json`, or the `#ladder-data` JSON block inside the
+page; a comment at the top of the page lists every field. `rows` is the standings, best first;
+`history` is every match, oldest first; `glossary` is what each column means.
 
 ## Trust
 
-On your computer a bot file runs inside the match process with your computer's rights. **Enter
-only files you trust.** The online ladder will run each bot in its own sandboxed process (below).
+Each bot file runs sealed in a Node vm context of its own: it cannot see the game, the other
+bots, `require`, or the disk, and each think gets 50 ms of CPU. That stops a bot reading what
+its player could not see, and stops honest mistakes. It is not a hardened jail (Node says so
+of its vm), so **enter only files you trust.** The online ladder will run each bot in its own
+process (below).
 
 ## Going online
 
@@ -65,7 +77,7 @@ files or processes in it. Going online changes where things run, not what a bot 
 
 1. **A server runs the matches.** The same arena runner, on a server, plays the queue.
 2. **Bots run sandboxed.** Each seat's bot runs in its own isolated process or container and
-   talks to the match over a socket: a third transport beside `inline` and `worker`
+   talks to the match over a socket: a transport beside `inline`, `worker` and the arena's `vm`
    (`BOT_TRANSPORTS`, js/bots/api.js), carrying the same messages. Lockstep keeps a match exact.
 3. **Records go in a database** instead of `ladder-data/`: the same `history.jsonl` records and
    logs, served to a web version of the standings page.

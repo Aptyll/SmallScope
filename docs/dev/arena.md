@@ -15,13 +15,17 @@ node app/arena/match.js '{"seed":42,"maxMin":3}' > one.json   # one match, its l
 `--kind level|versus` with `--a`/`--b`, `--proxy` (the profile seat 0 plays, below), `--shape`
 (`MAPS` index), `--max` (minutes before a timeout, default 40), `--every` (sample pitch in s,
 default 2), `--jobs` (parallel matches, default one per core), `--out` (default
-`arena-out/<date>`, gitignored), `--quiet`. It writes `<out>/<id>.json` per match,
+`arena-out/<date>`, gitignored; a folder that already holds a run is refused unless `--force`),
+`--wall` (seconds of real time before a match is killed, default 1.5 x `--max` + 60), `--quiet`. It writes `<out>/<id>.json` per match,
 `<out>/summary.jsonl` (one line per match without the samples), `<out>/map-<seed>-<shape>.json` (the terrain as the minimap paints it, once per seed and shape) and `<out>/aggregate.json` (the
 means per setup), and prints a table.
 
 From a script: `require('./app/arena/match').playMatch(opts)` plays one match in the calling
 process and returns its log; `require('./app/arena/run').playChild(opts)` does it in a child
-process and resolves with the log. **One page per process**: the game's scripts share one global
+process and resolves with the log. `playChild` sends the options over stdin, so they must be plain
+JSON (it refuses a function such as `beforeDrop`), and kills a child that outlives its wall clock
+(a bot stuck in a loop never returns from its think): that match logs as `reason: 'error'`.
+Stopping `run.js` stops its matches too. **One page per process**: the game's scripts share one global
 scope, so a process boots one world and plays one match.
 
 Speed: about 6x real time per core early in a match, falling to about 2x in a big late fight; a
@@ -40,8 +44,9 @@ fifteen-minute match is three to five minutes of one core.
 ## Is it the real game?
 
 Yes, by construction and by test. Nothing in the sim is copied or changed: `playMatch` calls the
-game's own `beginDrop` and `update(TICK_DT)`. Two wrappers watch without changing anything (`die`
-for the kill feed, `hurtEagle` for who last hit a bird).
+game's own `beginDrop` and `update(TICK_DT)`. Wrappers watch without changing anything (`die`
+for the kill feed, `hurtEagle` for who last hit a bird, `updateRobot` and `gainGold` for the
+robots' gold).
 
 - **Tick for tick.** A Chromium page with its frame loop held off (`requestAnimationFrame` and
   `performance.now` stubbed before load) driven by the same steps reaches the same position, hp
@@ -75,7 +80,10 @@ What differs from a real match, on purpose:
   bonus. `a = b` is a mirror match.
 - **Bot files** (js/bots/api.js, [docs/bots/](../bots/)): `playMatch({ seats: { 0: 'starter', 1: 'pack' } })`
   assigns seats to programs in the library (the baked examples are there already) before the drop;
-  `bots: { id: source }` adds more, inline. Same seed and same files, same match.
+  `bots: { id: source }` adds more. Every file, the baked ones too, runs sealed in a vm context
+  of its own (`app/arena/sandbox.js`: no game globals, seeded random, frozen clock, 50 ms per
+  think). Same seed and same files, same match.
+  Each scripted seat's log entry carries its `errors`, `late` and `thinks` (the bot runtime's own counts).
   `beforeDrop(G)` is a raw hook for anything else.
 
 ## The match log
@@ -90,7 +98,8 @@ bird driven off), per-player finals and `fun`.
 
 `act`, what a body did over a sample window, is read off the sim so it means the same for every
 brain: `dead`, `fight` (dealt or took damage), `siege` (hurt the bird or a building), `work`
-(earned more gold than the window's passive income, the clock's trickle plus one), `move` (went
+(earned more gold than the window's passive income: the clock's trickle plus one, and whatever
+the body's worker robots carried home, counted through a watcher on `gainGold` inside `updateRobot`), `move` (went
 more than a tile, or rode), else `idle`. `goal` is
 `p.ai.thought.goal` when a brain writes one, else null.
 

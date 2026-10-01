@@ -3,16 +3,18 @@
 // (the format: /mnt/project-files/ai-behaviors/match-log.md, and docs/dev/arena.md).
 //
 //   const { playMatch } = require('./match');
-//   const log = playMatch({ seed: 42, shape: 0, level: 0 });
+//   const log = playMatch({ seed: 42, shape: 0, level: 1 });
 //
 // It boots the page in this process (headless.js), makes every seat a bot,
 // flies the eagle and steps the sim at its own TICK_DT until a bird is
 // driven off or the clock runs out, sampling as it goes. The sim is never
-// changed: the log is read off fields the game already keeps, plus two
+// changed: the log is read off fields the game already keeps, plus
 // wrappers that only watch (die for the kill feed, hurtEagle for who hit a
-// bird). One page per process, so one match per process (run.js forks).
+// bird, updateRobot + gainGold for the gold a body's robots bring home).
+// One page per process, so one match per process (run.js forks).
 
 const { bootGame } = require('./headless');
+const { vmTransport } = require('./sandbox');
 const { funScore } = require('./fun');
 
 const SETUPS = ['level', 'versus'];
@@ -45,9 +47,13 @@ function playMatch(opts) {
   else for (const p of L.players) p.ai.prof = levels[p.team === 0 ? o.a : o.b];
   // bot files (js/bots/api.js, docs/bots/): `bots` adds programs to the
   // library ({ id: source text }) beside the baked examples, `seats` says who
-  // plays where ({ seat: id }) - all inline, so a seed and the same files are
-  // one exact replay. `beforeDrop(G)` is the raw hook for anything else.
-  for (const id in o.bots || {}) G.botLibAdd(id, o.bots[id], 'inline');
+  // plays where ({ seat: id }). Every file runs sealed in a vm context of its
+  // own (sandbox.js), the baked examples too, so no seat can read the game
+  // and a seed and the same files are one exact replay. `beforeDrop(G)` is
+  // the raw hook for anything else.
+  G.BOTS.transports.vm = vmTransport(G);
+  for (const e of G.BOTS.lib.values()) e.run = 'vm';
+  for (const id in o.bots || {}) G.botLibAdd(id, o.bots[id], 'vm');
   for (const seat in o.seats || {}) G.BOTS.assign(+seat, o.seats[seat]);
   if (typeof o.beforeDrop === 'function') o.beforeDrop(G);
   const profName = (p) => (p.ai.prof ? p.ai.prof.name : G.aiProfile(p).name);
@@ -77,6 +83,13 @@ function playMatch(opts) {
     if (src && L.players.includes(src)) lastHit[e.team] = src.id;
     return hurtEagleWas.apply(this, arguments);
   };
+  // gold a body's worker robots carry home lands whatever the body is doing,
+  // so it is passive income too: counted here, kept out of 'work'
+  const robotGold = L.players.map(() => 0);
+  let inRobot = false;
+  const updateRobotWas = G.updateRobot, gainGoldWas = G.gainGold;
+  G.updateRobot = function () { inRobot = true; try { return updateRobotWas.apply(this, arguments); } finally { inRobot = false; } };
+  G.gainGold = function (p, n) { if (inRobot && p && L.players[p.id] === p) robotGold[p.id] += n; return gainGoldWas.apply(this, arguments); };
 
   // ---- the drop ---------------------------------------------------------------
   G.beginDrop();
@@ -92,7 +105,7 @@ function playMatch(opts) {
   const act = L.players.map(() => ({ fight: 0, siege: 0, work: 0, move: 0, idle: 0, dead: 0 }));
   const goals = L.players.map(() => ({}));
   const dist = L.players.map(() => 0);
-  const prev = L.players.map((p) => ({ x: p.x, y: p.y, dmgOut: p.dmgOut, dmgIn: p.dmgIn, siege: p.dmgBird + p.dmgStruct, xp: p.xp }));
+  const prev = L.players.map((p) => ({ x: p.x, y: p.y, dmgOut: p.dmgOut, dmgIn: p.dmgIn, siege: p.dmgBird + p.dmgStruct, xp: p.xp, robot: 0 }));
   const nerveStep = [10, 10]; // the next 10% step down each bird's nerve is logged at
   const W = L.WORLD, TILE = L.TILE, CELL = 8, CW = Math.ceil(W / CELL);
   const cellOpen = new Uint8Array(CW * CW), cellSeen = new Uint8Array(CW * CW);
@@ -132,7 +145,7 @@ function playMatch(opts) {
       else if (p.dead) a = 'dead';
       else if (p.dmgOut > q.dmgOut || p.dmgIn > q.dmgIn) a = 'fight';
       else if (siege > q.siege) a = 'siege';
-      else if (p.xp - q.xp > passive) a = 'work';
+      else if (p.xp - q.xp - (robotGold[i] - q.robot) > passive) a = 'work';
       else if (moved > TILE || p.aboard || G.inAir(p)) a = 'move';
       else a = 'idle';
       if (a) act[i][a] += o.sampleEvery;
@@ -144,7 +157,7 @@ function playMatch(opts) {
         const cx = Math.floor(p.x / TILE / CELL), cy = Math.floor(p.y / TILE / CELL);
         if (cx >= 0 && cy >= 0 && cx < CW && cy < CW) cellSeen[cy * CW + cx] = 1;
       }
-      q.x = p.x; q.y = p.y; q.dmgOut = p.dmgOut; q.dmgIn = p.dmgIn; q.siege = siege; q.xp = p.xp;
+      q.x = p.x; q.y = p.y; q.dmgOut = p.dmgOut; q.dmgIn = p.dmgIn; q.siege = siege; q.xp = p.xp; q.robot = robotGold[i];
       return [Math.round(p.x), Math.round(p.y), Math.round(p.hp), Math.round(p.maxHp), p.dead ? 1 : 0, p.level,
         Math.round(p.xp), Math.round(p.dmgOut), Math.round(p.dmgIn), Math.round(siege), p.kills, p.deaths, a, goal];
     });
@@ -185,6 +198,12 @@ function playMatch(opts) {
     id: p.id, kills: p.kills, deaths: p.deaths, dmg: Math.round(p.dmgOut), siege: Math.round(p.dmgBird + p.dmgStruct),
     gold: Math.round(p.xp), level: p.level, dist: Math.round(dist[i]), acts: act[i], goals: goals[i],
   }));
+  // a bot file's health at the whistle (js/bots/api.js): how often it threw
+  // or answered nothing usable, so a ladder can flag a broken entry
+  for (const s of seats) {
+    const r = s.ctrl === 'scripted' && G.BOTS.rt.get(s.id);
+    if (r) { s.errors = r.errN; s.late = r.late; s.thinks = r.thinks; }
+  }
   const kindName = o.kind === 'level' ? levels[o.level].name.toLowerCase() : levels[o.a].name.toLowerCase() + '-v-' + levels[o.b].name.toLowerCase();
   const log = {
     v: 1,
@@ -213,7 +232,10 @@ module.exports = { playMatch, SETUPS };
 
 // `node app/arena/match.js '{"seed":42}'` plays one match and prints its log
 // on stdout - how run.js drives a worker, and a way to poke one by hand
+// (the options come on stdin when there is no argument: run.js sends them that
+// way, since a bot's source can outgrow a command line)
 if (require.main === module) {
-  const log = playMatch(JSON.parse(process.argv[2] || '{}'));
+  const opts = process.argv[2] ? process.argv[2] : require('fs').readFileSync(0, 'utf8');
+  const log = playMatch(JSON.parse(opts || '{}'));
   process.stdout.write(JSON.stringify(log));
 }

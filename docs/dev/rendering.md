@@ -371,6 +371,9 @@ headlines (a death, a camp) and five deliberate carve-outs:
 - **The [hover tooltip](#the-hover-tooltip)** (`tipAt`/`tipPos`/`drawTooltip`, ui/tooltip.js), because
   comparing a tool's rate of fire against a bit's weight is comparing numbers, and no shape does
   that. It is a carve-out, not a licence: the well still has to read at a glance without it.
+- **A bot's callout** (`drawCallPlate`, js/draw/callouts.js): a teammate talking, a glyph and one
+  or two words (HELP!, BEAR LOW!) on a plate over its name, because a bot that can't speak is
+  a bot a human can't play beside ([bot callouts](multiplayer.md#bot-callouts)).
 
 Anything else that wants words is a design bug.
 
