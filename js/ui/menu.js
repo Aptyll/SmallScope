@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.71';
+const PATCH_TXT = 'PATCH 4.72';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.72', 'BODIES IN A FIGHT GIVE EACH OTHER ROOM: A CROWD THAT STOPS PUSHING DRIFTS APART INSTEAD OF STANDING IN ONE PILE, SO YOU CAN TELL WHO IS WHO.'],
   ['4.71', 'RESPAWNS GROW WITH YOUR LEVEL: 5 SECONDS AT LEVEL 1, 50 AT LEVEL 12, SO EARLY DEATHS PUT YOU STRAIGHT BACK IN THE FIGHT AND LATE ONES COST YOUR SIDE.'],
   ['4.70', 'HEALTH BARS LOOK THE SAME IN ANY LIGHT: NIGHT, SUN RAYS, PINES AND OTHER BODIES NO LONGER DRAW OVER THEM, AND A NEARER FIGHTER\'S NAME AND BARS SIT CLEANLY OVER A FARTHER ONE\'S.'],
   ['4.69', 'A BOT THAT REACHES YOUR BIRD KEEPS HITTING IT INSTEAD OF TURNING TO FIGHT EVERY DEFENDER, SO YOU HAVE TO STOP IT YOURSELF.'],
@@ -1239,6 +1240,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '3.79'],
   ]],
   ['FIGHTING AND TRADE', [
+    ['A CROWD SPREADS OUT INSTEAD OF STANDING IN ONE PILE', '4.72'],
     ['TURRETS SLING ROCKS OVER YOUR WALLS, AND EACH TIER THROWS FURTHER AND TRUER', '4.64'],
     ['EVERY GENERATOR OR BOT BAY YOU OWN MAKES THE NEXT ONE DEARER', '4.63'],
     ['UPGRADED GENERATORS PAY MORE: 8 AND 13 GOLD A MINUTE', '4.65'],
