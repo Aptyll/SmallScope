@@ -20,9 +20,10 @@
 //           on an easy bot) - a hit on the bot wakes it at the full rate
 //   perceive s its read of a rival's place and motion trails the truth (a
 //           strafe beats a slow reader; 0 reads the truth)
-//   turn    rad/s its crosshair swings at (0 = at once); it holds a draw
-//           until the crosshair is on, so a body cutting across a slow
-//           hand is a shot that comes late
+//   hand    px/s its crosshair moves at, as a mouse moves on the screen
+//           (0 = at once): a flick from the tree it was chopping to a rival
+//           takes a beat, and it holds a draw until the crosshair is on,
+//           so the shot comes late rather than wide
 //   aim     px of aim wobble at bow range (70 px), a smooth drift, wider
 //           the farther and the faster either body moves
 //   fresh   x the wobble on a new target, settling to 1 over AI_SETTLE
@@ -69,16 +70,16 @@
 // - the difficulty is how well they fight when they get there, never
 // whether they come.
 const AI_LEVELS = [
-  { name: 'EASY', sight: 120, react: 1.1, cone: 60, rear: 0.25, perceive: 0.3, turn: 4, aim: 20, fresh: 2.2, lead: 0, draw: 0.6, drawVar: 0.25, slip: 6,
+  { name: 'EASY', sight: 120, react: 1.1, cone: 60, rear: 0.25, perceive: 0.3, hand: 250, aim: 20, fresh: 2.2, lead: 0, draw: 0.6, drawVar: 0.25, slip: 6,
     dodge: 0.25, abil: 0.2, flee: 0.55, work: 0.4, strafe: 0.3,
     judge: 0.1, focus: 0, team: 0.5, think: 1.2, memory: 2, pick: 'near', push: { t: 420, n: 2 }, guard: 1 },
-  { name: 'NORMAL', sight: 147, react: 0.7, cone: 80, rear: 0.4, perceive: 0.15, turn: 6, aim: 14, fresh: 1.8, lead: 0, draw: 0.7, drawVar: 0.15, slip: 3,
+  { name: 'NORMAL', sight: 147, react: 0.7, cone: 80, rear: 0.4, perceive: 0.15, hand: 400, aim: 14, fresh: 1.8, lead: 0, draw: 0.7, drawVar: 0.15, slip: 3,
     dodge: 0.5, abil: 0.35, flee: 0.5, work: 0.5, strafe: 0.45,
     judge: 0.4, focus: 0.3, team: 0.75, think: 0.8, memory: 4, pick: 'near', push: { t: 360, n: 2 }, guard: 1 },
-  { name: 'HARD', sight: 200, react: 0.3, cone: 120, rear: 0.6, perceive: 0.06, turn: 10, aim: 5, fresh: 1.5, lead: 0.5, draw: 0.9, drawVar: 0.06, slip: 1,
+  { name: 'HARD', sight: 200, react: 0.3, cone: 120, rear: 0.6, perceive: 0.06, hand: 700, aim: 5, fresh: 1.5, lead: 0.5, draw: 0.9, drawVar: 0.06, slip: 1,
     dodge: 1, abil: 0.8, flee: 0.35, work: 0.8, strafe: 0.8,
     judge: 0.75, focus: 0.7, team: 0.95, think: 0.5, memory: 7, pick: 'near', push: { t: 360, n: 3 }, guard: 2 },
-  { name: 'IMPOSSIBLE', sight: 267, react: 0, cone: 180, rear: 1, perceive: 0, turn: 0, aim: 0, fresh: 1, lead: 1, draw: 0.95, drawVar: 0, slip: 0,
+  { name: 'IMPOSSIBLE', sight: 267, react: 0, cone: 180, rear: 1, perceive: 0, hand: 0, aim: 0, fresh: 1, lead: 1, draw: 0.95, drawVar: 0, slip: 0,
     dodge: 2, abil: 1, flee: 0, work: 1, strafe: 1,
     judge: 0.95, focus: 1, team: 1, think: 0.3, memory: 10, pick: 'weak', push: { t: 300, n: 99 }, guard: 0, relentless: true },
 ];
@@ -100,7 +101,7 @@ const AI_ALLIES = AI_LEVELS.map((_, i) => Object.assign({}, AI_LEVELS[Math.min(A
 // decides, not how well it aims. The writer runs skillHands(p, this, dt)
 // after each act; `hands` marks it as a whole-body wrap (the wobble and the
 // held draw apply to every aim, not just a fight the ladder named)
-const AI_LADDER_HANDS = { name: 'LADDER', hands: true, turn: AI_LEVELS[2].turn, aim: AI_LEVELS[2].aim };
+const AI_LADDER_HANDS = { name: 'LADDER', hands: true, hand: AI_LEVELS[2].hand, aim: AI_LEVELS[2].aim };
 // which profile p plays by: a staged override (DBG, the harness), else by side
 function aiProfile(p) {
   if (p.ai.prof) return p.ai.prof;
@@ -118,20 +119,22 @@ function aiProfile(p) {
 // Per-bot state is p.ai.sk (skillOf), live for the dashboard:
 //   tgt       the rival its hands are on; px/py/pvx/pvy its READ of them
 //   ex/ey     the aim wobble in px; settle the fresh-target multiplier
-//   aa        the crosshair's bearing (rad); off how far it is from the wish
+//   cx/cy     the crosshair, as an offset from the body (a cursor rides the
+//             screen with its player); aa its bearing (rad); off how far it
+//             trails the wish (px)
 //   alertT    s it stays wide awake after a hit; rate the notice rate last tick
 //   draw      this shot's release point; slipT/slipKind the lapse in play
 //   lost      { x, y, t } the last rival it lost sight of, t s ago
 //   engaged   the fight rung had its hands this tick
 //   view      the few numbers the dev view shows, kept on p.ai.thought.skill
 //             when a brain has written a thought: { level, react, aim (the
-//             wobble now, px), off (rad the crosshair trails), rate, slip }
+//             wobble now, px), off (px the crosshair trails), rate, slip }
 const AI_SETTLE = 0.6;     // s the fresh-target wobble takes to settle (time constant)
 const AI_WOBBLE_T = 0.5;   // s the wobble's drift takes to wander back to centre
 const AI_ALERT_T = 2;      // s a hit keeps a bot watching every side
-const AI_AIM_ON = 0.3;     // rad off the wish inside which a drawn shot may go
+const AI_AIM_ON = 8;       // px off the wish inside which a drawn shot may go
 function skillOf(p) {
-  return p.ai.sk || (p.ai.sk = { tgt: null, px: 0, py: 0, pvx: 0, pvy: 0, ex: 0, ey: 0, settle: 1, aa: 0, off: 0,
+  return p.ai.sk || (p.ai.sk = { tgt: null, px: 0, py: 0, pvx: 0, pvy: 0, ex: 0, ey: 0, settle: 1, cx: 0, cy: 0, aa: 0, off: 0, wishX: 0, wishY: 0, outX: NaN, outY: NaN,
     alertT: 0, rate: 1, draw: 0, drawing: false, slipT: 0, slipKind: null, lost: null, engaged: false });
 }
 // a standard normal off the sim's stream (Box-Muller)
@@ -215,33 +218,35 @@ function skillSlip(p, prof, foe, dt) {
   }
 }
 // the crosshair: after the ladder has written where it WANTS to aim, the
-// aim point swings there at `turn` rad/s round the bot, and a drawn shot is
-// held until the crosshair is within AI_AIM_ON of the wish (only in a fight:
+// crosshair moves there at `hand` px/s as an offset from the body - a mouse
+// on a screen that follows its player - and a drawn shot is held until it is
+// within AI_AIM_ON px of the wish (only in a fight, or for a scripted seat:
 // a shot anywhere else goes where it goes)
 function skillHands(p, prof, dt) {
   const sk = skillOf(p), inp = p.input;
+  // an aim nobody rewrote since last tick is still last tick's wish, not
+  // where the crosshair was left (a scripted act holds its aim between thinks)
+  if (inp.aimX === sk.outX && inp.aimY === sk.outY) { inp.aimX = sk.wishX; inp.aimY = sk.wishY; }
+  sk.wishX = inp.aimX; sk.wishY = inp.aimY;
   let dx = inp.aimX - p.x, dy = inp.aimY - p.y;
   if (prof.hands && prof.aim > 0) { // a scripted seat: skillAim never ran, so the wobble rides here
     const f = Math.sqrt(2 * dt / AI_WOBBLE_T) * prof.aim * (0.5 + Math.hypot(dx, dy) / 140);
     sk.ex += -sk.ex * dt / AI_WOBBLE_T + f * skillGauss();
     sk.ey += -sk.ey * dt / AI_WOBBLE_T + f * skillGauss();
     dx += sk.ex; dy += sk.ey;
-    inp.aimX = p.x + dx; inp.aimY = p.y + dy;
   }
-  const want = Math.atan2(dy, dx), r = Math.hypot(dx, dy);
-  let da = Math.atan2(Math.sin(want - sk.aa), Math.cos(want - sk.aa));
-  if (prof.turn > 0) {
-    const step = prof.turn * dt;
-    sk.aa += Math.max(-step, Math.min(step, da));
-    da = Math.atan2(Math.sin(want - sk.aa), Math.cos(want - sk.aa));
-    inp.aimX = p.x + Math.cos(sk.aa) * r; inp.aimY = p.y + Math.sin(sk.aa) * r;
-  } else { sk.aa = want; da = 0; }
-  sk.off = Math.abs(da);
+  if (prof.hand > 0) {
+    const gx = dx - sk.cx, gy = dy - sk.cy, g = Math.hypot(gx, gy), step = prof.hand * dt;
+    if (g <= step) { sk.cx = dx; sk.cy = dy; } else { sk.cx += gx / g * step; sk.cy += gy / g * step; }
+  } else { sk.cx = dx; sk.cy = dy; }
+  sk.off = Math.hypot(dx - sk.cx, dy - sk.cy);
+  if (sk.cx || sk.cy) sk.aa = Math.atan2(sk.cy, sk.cx);
+  inp.aimX = sk.outX = p.x + sk.cx; inp.aimY = sk.outY = p.y + sk.cy;
   const th = p.ai.thought;
   if (th) {
     const v = sk.view || (sk.view = { level: '', react: 0, aim: 0, off: 0, rate: 1, slip: null });
     v.level = prof.name || ''; v.react = prof.react || 0; v.aim = Math.round(Math.hypot(sk.ex, sk.ey));
-    v.off = Math.round(sk.off * 100) / 100; v.rate = sk.rate; v.slip = sk.slipT > 0 ? sk.slipKind : null;
+    v.off = Math.round(sk.off); v.rate = sk.rate; v.slip = sk.slipT > 0 ? sk.slipKind : null;
     th.skill = v;
   }
   if ((sk.engaged || prof.hands) && p.charging && !inp.fire && sk.off > AI_AIM_ON) inp.fire = true;

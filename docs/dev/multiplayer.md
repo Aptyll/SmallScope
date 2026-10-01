@@ -643,7 +643,7 @@ is how good the *other* side is. `aiProfile(p)` is the one place that choice is 
 worse or better use of the same input struct (numbers EASY / NORMAL / HARD / IMPOSSIBLE; the
 banner has the whole table): `sight` (120 / 147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
 cover still works), `react` (1.1 / 0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
-the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `turn`, `aim`, `fresh`,
+the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `hand`, `aim`, `fresh`,
 `drawVar`, `slip`), `lead` (0 / 0 / 0.5 / 1 of the
 target's read motion), `draw` (0.6 / 0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
 weak shot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
@@ -686,11 +686,14 @@ constant of `perceive` s, `lead` is taken off that read, and the **wobble** is a
 faster either body moves, and `fresh` × on a new target settling over `AI_SETTLE` — the first
 shot at a new rival is the worst. `skillDraw` rolls each draw's release off `draw` ± `drawVar`.
 `skillSlip` is the **lapse**: `slip` times a minute of fighting it freezes, looses early or walks
-straight in for a moment. `skillHands` runs after the whole think (`updateAI`): the crosshair
-swings to wherever the ladder aimed at `turn` rad/s round the bot, and in a fight a drawn shot is
-held until it is within `AI_AIM_ON` of the wish — a body cutting across a slow hand is a shot that
-comes late, not a shot that goes wide. **Scripted seats** (the bot API) all play with one pair of
-hands, `AI_LADDER_HANDS` (HARD's `turn` and `aim`), through the same `skillHands`, so a ladder
+straight in for a moment. `skillHands` runs after the whole think (`updateAI`): the crosshair moves to wherever the ladder
+aimed at `hand` px/s (250 / 400 / 700 / at once), as an **offset from the body** - a mouse on a
+screen that follows its player, so a rival circling at arm's length is as easy to track as one
+far off, and a flick from the tree it was chopping to a rival takes a beat - and in a fight a
+drawn shot is held until the crosshair is within `AI_AIM_ON` (8 px) of the wish: the shot comes
+late, not wide. (An angular limit was tried first and made every close fight unwinnable: a
+rusher circling at 15 px sweeps faster than any sane turn rate.) **Scripted seats** (the bot API) all play with one pair of
+hands, `AI_LADDER_HANDS` (HARD's `hand` and `aim`), through the same `skillHands`, so a ladder
 ranks decisions rather than aim; its `hands` flag adds the wobble and the held draw to every aim.
 
 The ladder:
