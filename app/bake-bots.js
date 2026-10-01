@@ -20,7 +20,7 @@ let out = "'use strict';\n// ---------------------------------------------------
   '// The example bots, as source text the bot API runs (botLibAdd, js/bots/api.js).\n';
 for (const f of files) {
   const src = fs.readFileSync(path.join(SRC, f), 'utf8');
-  out += 'botLibAdd(' + JSON.stringify(f.replace(/\.js$/, '')) + ', ' + JSON.stringify(src) + ", 'inline');\n";
+  out += 'botLibAdd(' + JSON.stringify(f.replace(/\.js$/, '')) + ', ' + JSON.stringify(src) + ');\n';
 }
 fs.writeFileSync(OUT, out);
 console.log('baked ' + files.length + ' bots into ' + path.relative(ROOT, OUT));

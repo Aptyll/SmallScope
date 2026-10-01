@@ -16,6 +16,7 @@ const vm = require('vm');
 
 const BOT_LOAD_MS = 1000; // CPU the file's load and its hello (init) may take
 const BOT_THINK_MS = 50;  // CPU one think may take; over it, the think is an error and the seat keeps its act
+const BOT_OUT_MAX = 65536; // chars of answer one message may bring back
 
 // the runner inside the context: one message in, its answers out, all as text
 const RUNNER = `
@@ -47,6 +48,7 @@ function vmTransport(G) {
         return;
       }
       if (typeof out !== 'string') return;
+      if (out.length > BOT_OUT_MAX) { hear({ t: 'err', tick: m.tick, msg: 'answer over ' + BOT_OUT_MAX + ' chars' }); return; }
       for (const a of JSON.parse(out)) hear(a);
     };
     return { async: false, send, close() { open = false; } };
