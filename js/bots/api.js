@@ -309,7 +309,12 @@ function botErr(r, msg) {
 function botHear(r, m) {
   if (!m || typeof m !== 'object') return;
   if (m.t === 'ready') { r.ready = true; if (typeof m.name === 'string') r.name = m.name.slice(0, 40); return; }
-  if (m.t === 'err') { r.waiting = false; botErr(r, m.msg); return; }
+  if (m.t === 'err') {
+    r.waiting = false;
+    botErr(r, m.msg);
+    if (m.dead) { r.dead = true; r.act = null; } // the sandbox died: the seat lets go of every key for good
+    return;
+  }
   if (m.t !== 'act' || m.tick !== r.sentT) return; // an answer to a think already given up on
   r.waiting = false;
   r.lateRun = 0;
@@ -413,9 +418,13 @@ function botMsg(m, reply) {
 }
 `;
 // A realm of its own (a worker, the arena's vm) is sealed before the file
-// loads: Math.random is seeded from the match (on hello) and the clock stands
-// at 0, so the same seed and the same files replay the same match, and a bot
-// cannot smuggle chance or time into its choices.
+// loads. Chance: Math.random is seeded from the match (on hello). Time: the
+// clock stands at 0 and every other clock is gone (Intl, performance), so the
+// same seed and files replay the same match. Memory: raw buffers (the memory
+// a heap cap does not see) are budgeted, BOT_MEM bytes live. Ways out: a
+// worker loses the network, storage and every channel to another bot's
+// worker (two files, or a side, could pool what they see).
+const BOT_MEM = 64 * 1024 * 1024; // bytes of ArrayBuffer and typed array a bot may hold
 const BOT_SEAL = `
 Math.random = (() => {
   let s = 1;
@@ -423,14 +432,55 @@ Math.random = (() => {
   f.seed = (n) => { s = n >>> 0; };
   return f;
 })();
-Date = ((D) => { D.now = () => 0; return class extends D { constructor(...a) { if (a.length) super(...a); else super(0); } static now() { return 0; } }; })(Date);
-if (typeof performance !== 'undefined') performance.now = () => 0;
-// a worker also loses every way out: no network, no storage, no channel to
-// another bot's worker (a side or two files could pool what they see)
+// a Date that never reads the clock, and no road back to the one that does
+Date = ((RD) => {
+  function D(...a) { return new.target ? (a.length ? new RD(...a) : new RD(0)) : new RD(0).toString(); }
+  D.prototype = RD.prototype;
+  RD.prototype.constructor = D;
+  D.now = () => 0; D.UTC = RD.UTC; D.parse = RD.parse;
+  return D;
+})(Date);
+// raw memory, on a budget: every way to make a buffer goes through a counter
+(() => {
+  let live = 0;
+  const reg = typeof FinalizationRegistry === 'function' ? new FinalizationRegistry((n) => { live -= n; }) : null;
+  const take = (n, o) => { if (live + n > ${BOT_MEM}) throw new RangeError('over the bot memory budget'); live += n; if (reg && n) reg.register(o, n); };
+  const seal = (name, bytes) => {
+    const C = globalThis[name];
+    if (typeof C !== 'function') return;
+    const P = new Proxy(C, { construct(t, a, nt) {
+      if (a[0] !== null && typeof a[0] === 'object' && !(a[0] instanceof ArrayBuffer) && typeof a[0].length !== 'number') a[0] = Array.from(a[0]);
+      const n = bytes(a);
+      const o = Reflect.construct(t, a, nt === P ? t : nt);
+      take(n, o);
+      return o;
+    } });
+    C.prototype.constructor = P;
+    globalThis[name] = P;
+  };
+  seal('ArrayBuffer', (a) => Math.max(+a[0] || 0, (a[1] && +a[1].maxByteLength) || 0));
+  for (const k of ['Int8Array', 'Uint8Array', 'Uint8ClampedArray', 'Int16Array', 'Uint16Array', 'Int32Array', 'Uint32Array',
+    'Float32Array', 'Float64Array', 'BigInt64Array', 'BigUint64Array', 'Float16Array']) {
+    const C = globalThis[k];
+    if (C) seal(k, (a) => (a[0] instanceof ArrayBuffer ? 0 : (typeof a[0] === 'number' ? a[0] : (a[0] && a[0].length) || 0) * C.BYTES_PER_ELEMENT));
+  }
+  // the copies that skip a constructor
+  const TA = Object.getPrototypeOf(Int8Array.prototype);
+  for (const k of ['toReversed', 'toSorted', 'with']) delete TA[k];
+  for (const k of ['transfer', 'transferToFixedLength', 'resize']) delete ArrayBuffer.prototype[k];
+})();
+// no hook into how a stack trace is built (it would hand over every frame)
+try { Object.defineProperty(Error, 'prepareStackTrace', { value: undefined, writable: false, configurable: false }); } catch (e) { }
+for (const k of ['Intl', 'performance', 'SharedArrayBuffer', 'Atomics', 'WebAssembly', 'crypto', 'structuredClone']) {
+  for (let o = globalThis; o; o = Object.getPrototypeOf(o)) { try { delete o[k]; } catch (e) { } }
+  try { Object.defineProperty(globalThis, k, { value: undefined }); } catch (e) { }
+}
 if (typeof self !== 'undefined') {
   const post = self.postMessage.bind(self);
   for (const k of ['fetch', 'XMLHttpRequest', 'WebSocket', 'WebTransport', 'EventSource', 'importScripts', 'indexedDB', 'caches',
-    'BroadcastChannel', 'MessageChannel', 'Worker', 'SharedWorker', 'navigator', 'location', 'Request', 'Response', 'FileReaderSync']) {
+    'BroadcastChannel', 'MessageChannel', 'Worker', 'SharedWorker', 'navigator', 'location', 'Request', 'Response', 'FileReaderSync',
+    'Blob', 'File', 'TextEncoder', 'TextEncoderStream', 'CompressionStream', 'DecompressionStream', 'OffscreenCanvas', 'ImageData',
+    'createImageBitmap', 'WebGLRenderingContext', 'WebGL2RenderingContext', 'GPU', 'reportError']) {
     for (let o = self; o; o = Object.getPrototypeOf(o)) { try { delete o[k]; } catch (e) { } }
     try { Object.defineProperty(self, k, { value: undefined }); } catch (e) { }
   }

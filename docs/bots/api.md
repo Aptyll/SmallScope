@@ -31,7 +31,10 @@ counts as an error and your seat keeps its last act. A seat that misses 10 think
 
 There is no way in to the game from a bot: no `window`, no `players`, no network (`fetch`,
 `WebSocket`, `importScripts` are gone in a worker), no storage, and no channel to another bot's
-worker. Every message crosses as JSON, so nothing you receive leads back to the game's objects.
+worker. There is no other clock either (`Intl`, `performance` and `crypto` are gone). A bot may
+hold 64 MB of `ArrayBuffer` and typed arrays; past that, making one throws a `RangeError`. On the
+ladder each bot also runs in a thread with a 64 MB heap: a bot that runs out of memory dies, its
+seats stand still for the rest of the match, and its side loses by forfeit. Every message crosses as JSON, so nothing you receive leads back to the game's objects.
 The example bots run exactly the same way.
 
 ## Timing
