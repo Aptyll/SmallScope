@@ -242,7 +242,8 @@ function tipStruct(type) {
   const S = STRUCTS[type], t = S.tiers[0];
   const d = { title: S.name, tcol: '#f4f7ff', kind: 'BUILDING', rows: [], notes: [],
     icon: buildIcon(type), plate: '#141c3c', rim: '#35426e' };
-  d.rows.push(['COST', (t.cost.gold || 0) + ' GOLD', canAfford(t.cost) ? RES_COLORS.gold : '#e0637a']);
+  const c0 = buildCost(type, player); // what the NEXT one costs: an income building's ramp
+  d.rows.push(['COST', (c0.gold || 0) + ' GOLD', canAfford(c0) ? RES_COLORS.gold : '#e0637a']);
   d.rows.push(['HEALTH', String(t.hp), '#f4f7ff']);
   d.rows.push(['BUILDS IN', tipSec(t.buildT), '#f4f7ff']);
   if (t.dmg) {

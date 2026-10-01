@@ -1771,7 +1771,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | black bear | `alpha` 6 coins × 15 → 90 | the stone's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | brown bear | `dire` 6 coins × 15 → 90 | the den's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
-| generator | `tiers[tier].pay` every `period` s: 1/15, 1/10, 2/12 — 4 / 6 / 10 a minute | passive income, deposited to its owner; sized under the clock's own 15 so a farm of them never out-trickles the trickle |
+| generator | `tiers[tier].pay` every `period` s: 1/15, 1/10, 2/12 — 4 / 6 / 10 a minute | passive income, deposited to its owner; each one its owner already has makes the next cost 1.5x (`ramp`, `buildCost`), so a farm of them stops paying back |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
 | a sale at [the counter](#the-merchants-counter) | half a made thing's price, or the live market price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
@@ -2537,7 +2537,10 @@ wood → stone → gold *look* is just the sprite palette) and **one each for th
 each with a gold `cost`, `hp`, `buildT`, and per-type stats. A `water: true` entry (only the net)
 goes on a hole instead of snow, and that flag — never the type name — is what `canPlaceAt`,
 `isSolidTile` and the dawn refreeze each read; see [Fish nets](world.md#fish-nets).
-`tiers[0]` is what the list builds; upgrading pays the next tier's cost and re-runs a shorter
+`tiers[0]` is what the list builds, at `buildCost(type, p)`: an income building (`ramp`: the generator
+and the bay, 1.5) costs `ramp` times more for each of that type its owner already has, standing or
+going up (12, 18, 27, 41... for generators), and the price paid rides the building as `paid` for
+the refund. Upgrading pays the next tier's cost and re-runs a shorter
 construction, and the last tier (`tiers.length - 1`) reports MAX TIER. Building and [gear](#gear)
 are the two gold sinks.
 

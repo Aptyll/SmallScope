@@ -14,6 +14,13 @@
 // wears ITS SIDE'S INK on both (mmTeam / chTeam, world.js): at a map's scale
 // a wall and a turret are the same pixel, and whose base it is is the whole
 // read - the type is the sprite's job.
+// `ramp`: an INCOME building (one that pays its owner on its own) gets dearer
+// with every one of its type the owner already has standing - its price is
+// tiers[0].cost x ramp^n (buildCost, below). Income is a payback sum: a first
+// generator pays itself back in three minutes, so without the ramp the best
+// play was always another one, and a match drowned in them. With it the
+// answer turns: the fourth or fifth costs more than an upgrade or the gear
+// it competes with, and the list's own price says so. Defence never ramps.
 // `blurb` is what a piece is FOR, one short sentence to a line (a line is
 // split at '. ' and must fit the tooltip's width): the build list's hover
 // (tipStruct, js/ui/tooltip.js) prints it under the numbers.
@@ -51,7 +58,7 @@ const STRUCTS = {
     { cost: { gold: 25 }, hp: 90,  buildT: 4.8, range: 76, dmg: 9,  rate: 0.8,  traverse: 3.0, aim: 0.45 },
     { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 92, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35 },
   ]},
-  generator: { name: 'GENERATOR', blurb: 'PAYS YOU GOLD FOR AS LONG AS IT STANDS.', mm: mmTeam, map: chTeam, tiers: [
+  generator: { name: 'GENERATOR', blurb: 'PAYS YOU GOLD FOR AS LONG AS IT STANDS.', ramp: 1.5, mm: mmTeam, map: chTeam, tiers: [
     // 4 / 6 / 10 gold a minute against the clock's own 15 (TRICKLE_*, js/sim.js):
     // a top generator is two thirds of a second trickle for 82 gold, paid back
     // in eight minutes - an early build, and something worth walking over to wreck
@@ -61,7 +68,7 @@ const STRUCTS = {
   ]},
   // the bot bay is the one big build: a single tier on a 3x2 tile footprint
   // (w/h - see footprint()/findSite()), its three bots rolling out one by one
-  spawner: { name: 'BOT BAY', blurb: 'ROLLS OUT BOTS THAT DIG GOLD FOR YOU. THEY WORK WHERE YOUR FLAG SAYS.', w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
+  spawner: { name: 'BOT BAY', blurb: 'ROLLS OUT BOTS THAT DIG GOLD FOR YOU. THEY WORK WHERE YOUR FLAG SAYS.', ramp: 1.5, w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 45 }, hp: 220, buildT: 16, bots: 3, botHp: 24 },
   ]},
   // THE BARRACKS: the wave bays each merchant raises in the back woods
@@ -112,10 +119,26 @@ const NET_LURE = 44;       // ...and px it draws fish gently toward
 const NET_CATCH_T = 2.2;   // seconds between catches, so a net fills visibly
 const NET_TAKE_T = 0.3;    // seconds between fish handed to whoever stands on it
 
-function cumulativeCost(type, tier) {
+// WHAT p PAYS TO LAY ONE MORE `type` right now: the first tier's price,
+// times the type's `ramp` for each of that type p already owns (standing or
+// still going up). The one price every surface asks - the click, the drag,
+// the list, the wheel, the tooltip, the bots - so none can quote another.
+function buildCost(type, p) {
+  const S = STRUCTS[type], c = S.tiers[0].cost;
+  if (!S.ramp || !p) return c;
+  let n = 0;
+  for (const o of structures) if (o.type === type && o.owner === p.id) n++;
+  if (!n) return c;
+  const out = {};
+  for (const k in c) out[k] = Math.round(c[k] * Math.pow(S.ramp, n));
+  return out;
+}
+// what one standing building has cost so far: its price when it was laid
+// (`paid`, which the ramp may have raised over tiers[0]) plus every upgrade
+function cumulativeCost(type, tier, paid) {
   const total = {};
   for (let t = 0; t <= tier; t++) {
-    const c = STRUCTS[type].tiers[t].cost;
+    const c = t === 0 && paid ? paid : STRUCTS[type].tiers[t].cost;
     for (const k in c) total[k] = (total[k] || 0) + c[k];
   }
   return total;
@@ -221,14 +244,14 @@ function placeStruct(tx, ty, type, p, rot) {
     if (a) { tx = a.tx; ty = a.ty; rot = 0; can = canPlaceAt(type, tx, ty, rot, p); }
   }
   if (!can.ok) { deny(); return can.why || false; } // the ghost already said so, in red
-  const t0 = S.tiers[0];
-  if (!canAfford(t0.cost, p)) { deny('NOT ENOUGH RESOURCES', 1.6); return 'gold'; }
+  if (!canAfford(buildCost(type, p), p)) { deny('NOT ENOUGH RESOURCES', 1.6); return 'gold'; }
   const cxp = (tx + structW({ type, rot }) / 2) * TILE, cyp = (ty + structH({ type, rot }) / 2) * TILE;
   contest('site:' + idx(tx, ty), p, () => {
     if (!canPlaceAt(type, tx, ty, rot, p).ok) return; // somebody's build landed on it first
-    if (!canAfford(t0.cost, p)) return;
-    pay(t0.cost, p);
-    createStruct(tx, ty, type, 0, p, true, rot);
+    const cost = buildCost(type, p); // asked again: another of p's own may have landed this step
+    if (!canAfford(cost, p)) return;
+    pay(cost, p);
+    createStruct(tx, ty, type, 0, p, true, rot).paid = cost;
     sfxAt('hammer', cxp, cyp);
     burst(cxp, cyp, '#eef4fb', 8, 40, 0.4, true);
   });
@@ -329,7 +352,7 @@ function startRepair(o, p) {
 // hands its whole price back, so a misplaced piece costs nothing but the
 // walk. A wreck (an enemy's blow) is always the half.
 function structRefund(o, own) {
-  const g = cumulativeCost(o.type, o.tier).gold || 0;
+  const g = cumulativeCost(o.type, o.tier, o.paid).gold || 0;
   return own && o.building && o.tier === 0 ? g : Math.floor(g / 2);
 }
 
