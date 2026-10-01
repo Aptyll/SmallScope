@@ -201,7 +201,7 @@ const OPEN = `window.openBattle = function (o) {
   __M.reset({ zoom: o.zoom == null ? 1 : o.zoom, night: !!o.night, cls: o.cls == null ? 0 : o.cls,
     hideUI: !!o.hideUI, cursor: o.cursor !== false, name: 'WREN' });
   __M.stageBegin();
-  settings.aiLevel = 2;
+  settings.aiLevel = 3; // IMPOSSIBLE
   const c = __M.tile(W.field.tx, W.field.ty);
   const B = __M.battle({ x: c.x, y: c.y, axis: o.axis || 'x', gap: o.gap == null ? 210 : o.gap,
     span: o.span == null ? 130 : o.span, prof: o.prof });

@@ -1242,7 +1242,7 @@ function legend(c, lanes) {
   if (el.dataset.key === key) return;
   el.dataset.key = key;
   el.innerHTML = order.map((k) => '<span class="lg' + (S.goalPin === k ? ' on' : '') + '" data-goal="' + k + '" data-tip="' + esc(KIND_OF[k].goals.join(' ')) + '" style="--c:' + gc(k) + '"><i></i>' + k + ' <b>' +
-    Math.round(100 * sum[k] / tot) + '%</b></span>').join('');
+    (100 * sum[k] / tot < 0.5 ? '<1' : Math.round(100 * sum[k] / tot)) + '%</b></span>').join('');
 }
 // the legend's hover and pin, held by the row itself so a rebuild under the
 // pointer never leaves a kind lit

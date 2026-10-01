@@ -37,7 +37,7 @@ regress-data/
   seasons.json           the ladder's history cut into one season per patch
 ```
 
-A match's key (`1-0-L0-brain`: seed, map, side setup, who plays) is what one patch is matched
+A match's key (`1-0-L1-brain`: seed, map, side setup, who plays) is what one patch is matched
 to the next on. `patch` is `PATCH_TXT` as the match log records it.
 
 ## The flags

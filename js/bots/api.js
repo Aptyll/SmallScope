@@ -11,10 +11,10 @@
 // held, and its edge fields (a dodge, a cast, an order) fire once. Nothing
 // crosses the boundary but plain JSON: the observation is built from scratch
 // every think and the act is read field by field, so a bot never holds a
-// reference into the game and can run anywhere a message can reach - inline
-// (the same thread: only the baked examples, which can see the page), in a Web
-// Worker (a person's file), in the arena's sealed Node context (every ladder
-// match, app/arena/sandbox.js), or later over a socket (online ladder).
+// reference into the game and can run anywhere a message can reach: in a Web
+// Worker (the game), in the arena's Node vm (every headless and ladder match,
+// app/arena/sandbox.js), or later over a socket (online ladder). Each is a
+// realm of its own, sealed (BOT_SEAL): no game globals, no way out.
 // A bot can never do what a hand cannot: the act IS the input struct, the sim
 // re-validates every order, and the hands are the ladder's (skillHands).
 const BOT_API = 1;          // the message shape's version; a rename bumps it
@@ -23,6 +23,7 @@ const BOT_OBS_R = 24 * TILE; // px: how far round its side a bot sees (the minim
 const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
 const BOT_WHY_MAX = 20;     // chars of a thought's `why` (the dashboard's plate)
 const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page
+const BOT_LATE_MAX = 10;    // thinks in a row a bot may miss (1 s) before its seat lets go of every key
 const BOT_CMDS = new Set(['build', 'upgrade', 'repair', 'demolish', 'gear', 'ability', 'flag', 'shop']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'deadTree', 'rock', 'bush', 'chest']);
@@ -31,9 +32,9 @@ const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'BEAR']);       // what a 'lo
 
 // ---- the library --------------------------------------------------------------
 // Every program a seat can run, by id: { id, name, src, run } - `run` names
-// the transport it runs on (BOT_TRANSPORTS, below): the examples baked from
-// bots/*.js by app/bake-bots.js (js/bots/lib.js) run 'inline'; a person's file
-// runs in a 'worker'; a harness may register its own (the arena's 'vm', a socket).
+// the transport it runs on (BOT_TRANSPORTS, below): 'worker' in the game, the
+// examples baked from bots/*.js (js/bots/lib.js) included; a harness may
+// register its own (the arena's 'vm', a socket later).
 const BOT_LIB = new Map();
 function botLibAdd(id, src, run) {
   const m = /name\s*:\s*['"`]([^'"`]{1,40})['"`]/.exec(src); // a label for the list before the file has run
@@ -252,10 +253,13 @@ function botSetThought(p, t, src) {
   const g = t.target;
   if (g && typeof g === 'object') {
     const kind = typeof g.kind === 'string' ? g.kind : 'point';
-    const ref = kind === 'player' ? players[g.id] || null
-      : kind === 'bird' ? (state.drop && state.drop.eagles[g.id]) || null
-      : typeof g.id === 'number' ? botRefs.get(g.id) || null : null;
-    target = { x: botNum(g.x, -1e5, 1e5, ref ? ref.x : 0), y: botNum(g.y, -1e5, 1e5, ref ? ref.y : 0), kind, ref, id: typeof g.id === 'number' ? g.id : undefined };
+    const n = Number.isInteger(g.id) ? g.id : -1; // a string id ('__proto__') names nothing
+    const ref = n < 0 ? null : kind === 'player' ? players[n] || null
+      : kind === 'bird' ? (state.drop && state.drop.eagles[n]) || null
+      : botRefs.get(n) || null;
+    // a building has a tile, not a point: its centre stands in
+    const rx = ref ? (isFinite(ref.x) ? ref.x : ref.tx * TILE + 8) : 0, ry = ref ? (isFinite(ref.y) ? ref.y : ref.ty * TILE + 8) : 0;
+    target = { x: botNum(g.x, -1e5, 1e5, botNum(rx, -1e5, 1e5, 0)), y: botNum(g.y, -1e5, 1e5, botNum(ry, -1e5, 1e5, 0)), kind, ref, id: n < 0 ? undefined : n };
   }
   const o = p.ai.thought && p.ai.thought.src === src ? p.ai.thought : (p.ai.thought = {});
   o.goal = up(t.goal, 12) || 'IDLE';
@@ -288,7 +292,7 @@ function botOpen(p) {
   const lib = BOT_LIB.get(p.botId);
   if (!lib) return null;
   const r = { p, lib, conn: null, act: null, edge: false, waiting: false, sentT: -1, nav: null,
-    inbox: [], name: lib.name, errs: [], errN: 0, late: 0, thinks: 0, ms: 0, sentAt: 0, seen: players.map((q) => q.deaths), ready: false };
+    inbox: [], name: lib.name, errs: [], errN: 0, late: 0, lateRun: 0, thinks: 0, ms: 0, sentAt: 0, seen: players.map((q) => q.deaths), ready: false };
   const open = BOT_TRANSPORTS[lib.run];
   r.conn = open ? open(lib.src, (m) => botHear(r, m)) : { async: false, send() { }, close() { } };
   if (!open) botErr(r, 'no transport ' + lib.run);
@@ -308,6 +312,7 @@ function botHear(r, m) {
   if (m.t === 'err') { r.waiting = false; botErr(r, m.msg); return; }
   if (m.t !== 'act' || m.tick !== r.sentT) return; // an answer to a think already given up on
   r.waiting = false;
+  r.lateRun = 0;
   r.ms += (performance.now() - r.sentAt - r.ms) * 0.1; // timed here: inside a sealed realm the clock stands still
   const a = botAct(m.act);
   if (!a) return; // null: keep what is held
@@ -329,7 +334,7 @@ function botStep(p, dt) {
   r.p = p; // a load or a wire echo puts a new body in the seat: the runtime follows it
   if (state.tick % 600 === p.id) botIdPrune();
   if ((state.tick + p.id) % BOT_THINK === 0 && r.ready) {
-    if (r.waiting) r.late++;
+    if (r.waiting) botLate(r);
     else {
       r.waiting = true;
       r.sentT = state.tick;
@@ -366,6 +371,13 @@ function botStep(p, dt) {
   // the ladder's hands, the one set every scripted seat shares (js/ai-skill.js)
   if (typeof skillHands === 'function' && typeof AI_LADDER_HANDS !== 'undefined') skillHands(p, AI_LADDER_HANDS, dt);
 }
+// a think the bot did not answer in time. A file that stopped answering (a
+// hang, a crash) must not hold its keys forever: after BOT_LATE_MAX in a row
+// the seat lets go of every key until an answer comes
+function botLate(r) {
+  r.late++;
+  if (++r.lateRun === BOT_LATE_MAX) { r.act = null; botErr(r, 'no answer for ' + BOT_LATE_MAX + ' thinks'); }
+}
 // is any seat still waiting on an answer? (a lockstep runner steps only once none is)
 function botPending() {
   for (const r of botRt.values()) if (r.conn.async && (r.waiting || (!r.ready && !r.errN))) return true;
@@ -373,15 +385,17 @@ function botPending() {
 }
 // give up on every late answer: the seat keeps the act it holds
 function botGiveUp() {
-  for (const r of botRt.values()) if (r.conn.async && (r.waiting || !r.ready)) { if (!r.ready && !r.errN) botErr(r, 'no answer to hello'); r.waiting = false; r.late++; }
+  for (const r of botRt.values()) if (r.conn.async && (r.waiting || !r.ready)) { if (!r.ready && !r.errN) botErr(r, 'no answer to hello'); r.waiting = false; botLate(r); }
 }
 function botEnd(result) { for (const r of botRt.values()) r.conn.send({ t: 'end', result: result[r.p.team] }); }
 
 // ---- transports ------------------------------------------------------------------------
 // A connection is { send(msg), close(), async }: open(src, hear) makes one,
-// and hear(msg) takes each answer. Both built-in ones run the same PRELUDE
-// around the bot's source - it defines defineBot and answers the messages -
-// so a file behaves the same in either, and a socket later is a third one.
+// and hear(msg) takes each answer. Every one runs the same SEAL and PRELUDE
+// around the bot's source - the prelude defines defineBot and answers the
+// messages - so a file behaves the same in each. There is no transport that
+// runs a file in the page's own realm: every file, the baked examples too,
+// sees only its messages.
 const BOT_PRELUDE = `
 let BOT = null, HELLO = null;
 function defineBot(b) { BOT = b; }
@@ -409,27 +423,23 @@ Math.random = (() => {
   f.seed = (n) => { s = n >>> 0; };
   return f;
 })();
-Date = ((D) => class extends D { constructor(...a) { if (a.length) super(...a); else super(0); } static now() { return 0; } })(Date);
+Date = ((D) => { D.now = () => 0; return class extends D { constructor(...a) { if (a.length) super(...a); else super(0); } static now() { return 0; } }; })(Date);
 if (typeof performance !== 'undefined') performance.now = () => 0;
-`;
-// the same thread: every message goes through JSON both ways, so the bot's
-// world and the game's never share an object - a data boundary, not a lock:
-// the file runs in the page's own scope and could read the game, so only the
-// baked examples run this way. Anyone else's file runs sealed.
-function botInline(src, hear) {
-  let fn = null, fail = null;
-  try { fn = new Function(BOT_PRELUDE + '\n' + src + '\nreturn botMsg;')(); } catch (e) { fail = e; }
-  return {
-    async: false,
-    send(m) {
-      if (!fn) { hear({ t: 'err', msg: String(fail && fail.message || fail) }); return; }
-      fn(JSON.parse(JSON.stringify(m)), (out) => hear(JSON.parse(JSON.stringify(out))));
-    },
-    close() { fn = null; },
-  };
+// a worker also loses every way out: no network, no storage, no channel to
+// another bot's worker (a side or two files could pool what they see)
+if (typeof self !== 'undefined') {
+  const post = self.postMessage.bind(self);
+  for (const k of ['fetch', 'XMLHttpRequest', 'WebSocket', 'WebTransport', 'EventSource', 'importScripts', 'indexedDB', 'caches',
+    'BroadcastChannel', 'MessageChannel', 'Worker', 'SharedWorker', 'navigator', 'location', 'Request', 'Response', 'FileReaderSync']) {
+    for (let o = self; o; o = Object.getPrototypeOf(o)) { try { delete o[k]; } catch (e) { } }
+    try { Object.defineProperty(self, k, { value: undefined }); } catch (e) { }
+  }
+  self.postMessage = post;
 }
+`;
 // a Web Worker from a Blob: works from file:// and in the desktop wrapper,
-// and the bot has no window, no players, no storage - only its messages
+// and the bot has no window, no players, no storage, no network - only its
+// messages. The game's own transport for every file, the baked ones too
 function botWorker(src, hear) {
   const code = BOT_SEAL + BOT_PRELUDE + '\n' + src + '\nself.onmessage = (e) => botMsg(e.data, (m) => postMessage(m));';
   const url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
@@ -445,7 +455,7 @@ function botWorker(src, hear) {
 
 // by name: what a library entry's `run` picks. A harness adds its own here
 // (the arena's Node vm, a socket to a bot running elsewhere)
-const BOT_TRANSPORTS = { inline: botInline, worker: botWorker };
+const BOT_TRANSPORTS = { worker: botWorker };
 
 // the handle for the ladder page, a console, and the headless harness
 window.BOTS = { lib: BOT_LIB, rt: botRt, transports: BOT_TRANSPORTS, seal: BOT_SEAL, prelude: BOT_PRELUDE,
