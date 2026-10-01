@@ -18,6 +18,7 @@
   const SAVE_KEY = 'softfall.save.';  // + slot: one saved match's body
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
+  let quiet = false;               // PROFILE.quiet: the stats are not counting
   const DEFAULT_NAME = 'WANDERER'; // what a corrupt save falls back to mid-session
   const CHAR_MAX = 3;              // character slots a profile holds
   const CLASS_N = 2;               // CLASSES.length (js/player.js) - a class index past this is repaired to 0
@@ -345,7 +346,10 @@
     // ---- stats ------------------------------------------------------------
     // The ACTIVE character's lifetime numbers; a call with no character
     // (nothing plays without one) counts on a throwaway so it never throws.
-    stats() { const c = profile.chars[profile.active]; return c ? c.stats : blankStats(); },
+    stats() { const c = profile.chars[profile.active]; return c && !quiet ? c.stats : blankStats(); },
+    // a match the player only WATCHES (the bot ladder, js/ui/ladder.js) counts
+    // on the throwaway too: until the page reloads, nothing reaches the stats
+    quiet(on) { quiet = !!on; },
     addWin() { this.stats().wins++; scheduleSave(); },
     addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
     // one call per day the player sets foot in: day 1 as the eagles take off

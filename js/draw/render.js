@@ -798,6 +798,7 @@ function render() {
   // (see the tooltips banner, ui.js)
   tipResolve();
   renderUI(now);
+  if (ladderWatch && state.mode !== 'title') drawLadderWatch(now); // a watched bot match's controls (js/ui/ladder.js)
   drawSaveFlash(); // a save just landed (js/ui/saves.js): drawn in the drop too, which renderUI skips
   // the archery round's live layer: countdown, GO, the TIME/SCORE/HITS
   // plate, the final score (drawAgameUI, js/draw-world.js)
@@ -1459,6 +1460,7 @@ function cursorInfo() {
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
   }
+  if (ladderWatch && state.mode !== 'title') return ladderWatchCursor(); // a watched bot match (js/ui/ladder.js)
   if (state.mode === 'dead') return { kind: deadHit() >= 0 || emoteHit() >= 0 || specHit() || rpCloseHit() ? 'hand' : 'arrow' };
   if (state.mode === 'drop') return { kind: state.mapOpen && mapCloseHit() ? 'hand' : 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };

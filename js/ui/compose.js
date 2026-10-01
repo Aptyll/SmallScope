@@ -21,7 +21,7 @@ function renderUI(now) {
   // bar.
   const hudIn = hudInT(); // 0 away .. 1 home; a drop brief pins it at 0 for the tour
   const slide = 1 - hudIn;
-  const out = state.mode === 'dead'; // the local wallet is moot once you are out
+  const out = state.mode === 'dead' || !!ladderWatch; // the local wallet is moot once you are out, or only watching (js/ui/ladder.js)
 
   ctx.save();
   ctx.translate(0, Math.round(-slide * (MM_R * 2 + 40)));
@@ -82,7 +82,7 @@ function renderUI(now) {
   // that moved while you were standing at the shop is exactly the news that
   // must not arrive behind the panel it is about. They stay up while you are
   // down, like the feed - the market does not stop for a death.
-  renderNotices();
+  if (!ladderWatch) renderNotices(); // a watcher has no sheet or purse for them to be news to (js/ui/ladder.js)
 
   // arriving at a camp announces it, top centre: the name big, its
   // personality under it. Fades on the plate, so it uses the shadow font.

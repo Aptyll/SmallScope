@@ -19,6 +19,16 @@
 // on the rival side (ladderFoe; the lobby's target names it). The drop seats
 // it in all five rival seats (ladderSeat) - the ladder's own rule, one file
 // playing a whole side - so a save keeps it as each seat's p.botId.
+//
+// WATCH pits the picked bot against a second one, picked off the list, and
+// the player only watches: a solo match with all ten seats played by the two
+// bots (seat 0 included, so `player` is a bot's seat, the arena's own trick),
+// the camera on whoever the arrows pick, the side's HUD put away
+// (renderUI's `out`), and a speed of 1x to 8x (the loop's steps, boot.js).
+// While ladderWatch is set the page's keys and clicks are the watcher's
+// (ladderWatchKey / ladderWatchClick), endMatch reports the winner here
+// instead of opening the end screens, nothing is saved (canSave) and nothing
+// counts on the character (PROFILE.quiet). Leaving reloads the page.
 const LAD_ROW_H = 20, LAD_ROW_GAP = 3;
 const LAD_LIST_W = 300, LAD_CARD_W = 236, LAD_GAP = 12;
 const LAD_ROWS_MAX = 9;            // rows shown; the keys scroll past them
@@ -70,6 +80,11 @@ function ladEmblem(id, x, y, s) {
 }
 
 let ladderFoe = null;  // the BOT_LIB id the next solo drop seats on the rival side, or null
+// the match being watched: { a, b } the two sides' bot ids (a on the local
+// player's side), speed its multiple, won the side that drove the other's
+// bird off (or null); null when the player plays
+let ladderWatch = null;
+const LAD_SPEEDS = [1, 2, 4, 8];
 let ladderRows = [];   // the screen's rows, best first (ladderTake)
 let ladderGames = 0;   // matches the loaded ladder has played
 
@@ -116,10 +131,89 @@ function ladderName(id) {
 // ---- the match --------------------------------------------------------------------
 // the drop (beginDrop, js/boot.js): every rival seat a bot plays runs the foe
 function ladderSeat() {
+  const W = ladderWatch;
+  if (W) {
+    // every seat a bot's: the local player's side runs a, the other b
+    player.control = 'ai';
+    player.name = null; // the seat's colour name, not the character's
+    for (const p of players) if (p.control === 'ai') botAssign(p, p.team === player.team ? W.a : W.b);
+    return;
+  }
   const id = ladderFoe;
   ladderFoe = null;
   if (!id || NET.role !== 'solo' || !BOT_LIB.has(id)) return;
   for (const p of players) if (p.team !== player.team && p.control === 'ai') botAssign(p, id);
+}
+// WATCH: the two bots take every seat and the eagles leave at once
+function ladderWatchStart(a, b) {
+  if (NET.role !== 'solo' || !BOT_LIB.has(a) || !BOT_LIB.has(b) || state.fade) { SFX.deny(); return; }
+  ladderWatch = { a, b, speed: 1, won: null };
+  PROFILE.quiet(true);
+  state.menu.screen = 'menu';
+  SFX.place();
+  beginDrop();
+}
+// the match's ending (endMatch hands it here): the side that is left
+function ladderWatchOver(how) {
+  if (ladderWatch.won !== null) return;
+  if (how === 'won') ladderWatch.won = player.team;
+  else if (how === 'lost') ladderWatch.won = 1 - player.team;
+}
+// who the camera follows: the next living player either way (seat 0 is a
+// bot's too, so unlike specNext it is never skipped)
+function ladderWatchFollow(d) {
+  const n = players.length;
+  let i = state.spec >= 0 ? state.spec : player.id;
+  for (let k = 0; k < n; k++) {
+    i = ((i + d) % n + n) % n;
+    const q = players[i];
+    if (q.active && !q.dead) { state.spec = i; SFX.pickup(); return; }
+  }
+}
+function ladderWatchSpeed(k) {
+  ladderWatch.speed = LAD_SPEEDS[Math.max(0, Math.min(LAD_SPEEDS.length - 1, k))];
+  SFX.pickup();
+}
+function ladderWatchKey(e) {
+  if (state.fade || e.repeat) return;
+  const k = e.key.toLowerCase();
+  if (k === 'escape' || k === 'backspace') { toLobby(); return; }
+  if (keyIs(e, 'map')) { state.mapOpen = !state.mapOpen; SFX.ui(state.mapOpen); return; }
+  const d = moveDir(k);
+  if (d === 'left' || d === 'right') { if (state.mode !== 'drop') ladderWatchFollow(d === 'left' ? -1 : 1); } // the ride's camera is the eagle's
+  else if (d === 'up' || k === '+' || k === '=') ladderWatchSpeed(LAD_SPEEDS.indexOf(ladderWatch.speed) + 1);
+  else if (d === 'down' || k === '-') ladderWatchSpeed(LAD_SPEEDS.indexOf(ladderWatch.speed) - 1);
+  else if (k >= '1' && k <= '4') ladderWatchSpeed(+k - 1);
+}
+// the watcher's controls, top and bottom centre: who is followed between two
+// arrows under the team rail, and the match (a vs b) over the speed chips
+function ladderWatchLayout() {
+  const rb = railBottom();
+  const y = rb ? rb + 4 : 6;
+  const cx = Math.round(VIEW_W / 2);
+  const by = VIEW_H - 34;
+  const chips = LAD_SPEEDS.map((v, i) => ({ x: cx - 2 * 22 + i * 22, y: by + 16, w: 20, h: 11, i }));
+  return { cx, y, left: { x: cx - 70, y, w: 11, h: 13 }, right: { x: cx + 59, y, w: 11, h: 13 }, by, chips };
+}
+function ladderWatchHit() {
+  const L = ladderWatchLayout();
+  for (const c of L.chips) if (overRect(c, 1, 2)) return { kind: 'speed', i: c.i };
+  if (state.mode === 'drop') return null;
+  if (overRect(L.left, 2, 2)) return { kind: 'follow', d: -1 };
+  if (overRect(L.right, 2, 2)) return { kind: 'follow', d: 1 };
+  return null;
+}
+function ladderWatchClick() {
+  SFX.unlock();
+  if (state.mapOpen) { if (mapCloseHit()) state.mapOpen = false; return; }
+  const h = ladderWatchHit();
+  if (!h) return;
+  if (h.kind === 'speed') ladderWatchSpeed(h.i);
+  else ladderWatchFollow(h.d);
+}
+function ladderWatchCursor() {
+  if (state.mapOpen) return { kind: mapCloseHit() ? 'hand' : 'arrow' };
+  return { kind: ladderWatchHit() ? 'hand' : 'arrow' };
 }
 
 // ---- the screen ---------------------------------------------------------------------
@@ -128,6 +222,8 @@ function beginLadder() {
   m.screen = 'ladder';
   m.ldHover = {};
   m.ldTop = 0;
+  m.ldBtn = 0;     // the keys' word at the card's foot: 0 FIGHT, 1 WATCH
+  m.ldRival = -1;  // WATCH pressed: the row picked as the other side, -1 none
   ladderTake();
   ladderLoad();
   SFX.place();
@@ -147,15 +243,19 @@ function ladderLayout() {
   const n = Math.min(LAD_ROWS_MAX, ladderRows.length);
   for (let k = 0; k < n; k++) rows.push({ x: x0, y: y0 + k * (LAD_ROW_H + LAD_ROW_GAP), w: LAD_LIST_W, h: LAD_ROW_H, i: (m.ldTop | 0) + k });
   const card = { x: x0 + LAD_LIST_W + LAD_GAP, y: y0, w: LAD_CARD_W, h: LAD_ROWS_MAX * (LAD_ROW_H + LAD_ROW_GAP) - LAD_ROW_GAP + 24 };
-  const fw = pixelTextWidth('FIGHT', 2) + 8;
-  const fight = { x: card.x + Math.round((card.w - fw) / 2), y: card.y + card.h - 26, w: fw, h: 18 };
-  return { toy, x0, x1: x0 + w, head, rows, card, fight, back: card.y + card.h + 14, cx: Math.round(VIEW_W / 2) };
+  // the two words at the card's foot, FIGHT and WATCH, each a half of it
+  const fw = pixelTextWidth('FIGHT', 2) + 8, ww = pixelTextWidth('WATCH', 2) + 8, fy = card.y + card.h - 26;
+  const fight = { x: card.x + Math.round(card.w / 4 - fw / 2), y: fy, w: fw, h: 18 };
+  const watch = { x: card.x + Math.round(card.w * 3 / 4 - ww / 2), y: fy, w: ww, h: 18 };
+  return { toy, x0, x1: x0 + w, head, rows, card, fight, watch, back: card.y + card.h + 14, cx: Math.round(VIEW_W / 2) };
 }
-// what the pointer is on: { kind: 'row', i } | { kind: 'fight' } | null
+// what the pointer is on: { kind: 'row', i } | { kind: 'fight' } | { kind: 'watch' } | null
 function ladderHit() {
   const L = ladderLayout();
   for (const r of L.rows) if (overRect(r)) return { kind: 'row', i: r.i };
-  if (overRect(L.fight, 4, 3) && ladderRows[state.menu.ldSel]) return { kind: 'fight' };
+  if (!ladderRows[state.menu.ldSel] || state.menu.ldRival >= 0) return null;
+  if (overRect(L.fight, 4, 3)) return { kind: 'fight' };
+  if (overRect(L.watch, 4, 3)) return { kind: 'watch' };
   return null;
 }
 function ladderPick(i) {
@@ -177,20 +277,51 @@ function ladderFight() {
   state.menu.screen = 'menu';
   beginLobby();
 }
+// WATCH, first press: the list now picks the other side (ldRival), the
+// next row down to begin with; a row or Enter starts it, Esc steps back
+function ladderWatchPick() {
+  const m = state.menu;
+  const r = ladderRows[m.ldSel];
+  if (!r || !BOT_LIB.has(r.id)) { SFX.deny(); return; }
+  m.ldRival = ladderRows.length > 1 ? (m.ldSel + 1) % ladderRows.length : m.ldSel;
+  SFX.place();
+}
+function ladderRivalGo(i) {
+  const m = state.menu;
+  const a = ladderRows[m.ldSel], b = ladderRows[i];
+  if (!a || !b || !BOT_LIB.has(b.id)) { SFX.deny(); return; }
+  m.ldRival = -1;
+  ladderWatchStart(a.id, b.id);
+}
 function ladderKey(k) {
   const m = state.menu;
-  if (k === 'escape' || k === 'backspace') { leaveLadder(); return; }
   const d = moveDir(k);
+  if (m.ldRival >= 0) {
+    const n = ladderRows.length;
+    if (k === 'escape' || k === 'backspace') { m.ldRival = -1; SFX.pickup(); }
+    else if (d === 'up') { m.ldRival = (m.ldRival + n - 1) % n; SFX.pickup(); }
+    else if (d === 'down') { m.ldRival = (m.ldRival + 1) % n; SFX.pickup(); }
+    else if (k === 'enter' || k === ' ') ladderRivalGo(m.ldRival);
+    return;
+  }
+  if (k === 'escape' || k === 'backspace') { leaveLadder(); return; }
   if (d === 'up') ladderPick(m.ldSel - 1);
   else if (d === 'down') ladderPick(m.ldSel + 1);
-  else if (k === 'enter' || k === ' ') ladderFight();
+  else if (d === 'left' || d === 'right') { m.ldBtn = d === 'left' ? 0 : 1; SFX.pickup(); }
+  else if (k === 'enter' || k === ' ') { if (m.ldBtn) ladderWatchPick(); else ladderFight(); }
 }
 function ladderClick() {
   const m = state.menu;
   if ((m.ladT || 0) < 1) return;
   const h = ladderHit();
+  if (m.ldRival >= 0) {
+    if (h && h.kind === 'row') ladderRivalGo(h.i);
+    else { m.ldRival = -1; SFX.pickup(); }
+    return;
+  }
   if (!h) return;
   if (h.kind === 'fight') ladderFight();
+  else if (h.kind === 'watch') ladderWatchPick();
   else ladderPick(h.i);
 }
 // the screen's ease and hovers: called every title frame (updateTitle)
@@ -200,7 +331,8 @@ function updateLadder(dt) {
   if (m.screen !== 'ladder') return;
   if (!m.ldHover) m.ldHover = {};
   const h = m.ladT >= 1 && mouse.inside ? ladderHit() : null;
-  const want = h ? (h.kind === 'row' ? 'row' + h.i : 'fight') : '';
+  const want = h ? (h.kind === 'row' ? 'row' + h.i : h.kind) : '';
+  if (h && h.kind === 'row' && m.ldRival >= 0) m.ldRival = h.i; // picking the other side: the pointer's row is it
   if (want && m.ldHover[want] === undefined) m.ldHover[want] = 0;
   for (const k of Object.keys(m.ldHover)) m.ldHover[k] += ((want === k ? 1 : 0) - m.ldHover[k]) * Math.min(1, dt * 14);
 }
@@ -239,10 +371,11 @@ function drawLadderRow(r, lo, hi, a) {
   const row = ladderRows[r.i];
   if (!row) return;
   const hv = m.ldHover['row' + r.i] || 0;
-  const on = m.ldSel === r.i;
+  const on = m.ldSel === r.i, rival = m.ldRival === r.i;
   const y = r.y - Math.round(hv);
   ctx.globalAlpha = a;
-  ladWell(r.x, y, r.w, r.h, on ? '#cfe0ff' : hv > 0.5 ? '#8fa0c8' : '#2c3560');
+  // picking WATCH's other side: that row wears the rivals' colour
+  ladWell(r.x, y, r.w, r.h, rival ? TEAMS[skin(1 - player.team)].mark : on ? '#cfe0ff' : hv > 0.5 ? '#8fa0c8' : '#2c3560');
   const ty = y + 7;
   const rank = String(r.i + 1);
   drawPixelText(ctx, rank, r.x + 14 - pixelTextWidth(rank), ty, on ? '#cfe0ff' : '#5a6690');
@@ -332,13 +465,30 @@ function drawLadderCard(c, now, a) {
       y += 10;
     }
   }
-  // FIGHT: a bare word, gold under the hand, the lobby's LOCK IN in small
-  const L = ladderLayout(), F = { x: L.fight.x, y: L.fight.y + c.y - L.card.y, w: L.fight.w };
-  const hv = m.ldHover.fight || 0;
+  // the foot: FIGHT and WATCH, bare words gold under the hand (the lobby's
+  // LOCK IN in small); picking WATCH's other side, the match it will be
+  const L = ladderLayout(), dy = c.y - L.card.y, fy = L.fight.y + dy;
   const ok = BOT_LIB.has(row.id);
-  ctx.fillStyle = '#2c3a68'; ctx.fillRect(c.x + 10, F.y - 8, c.w - 20, 1);
-  drawPixelTextOutline(ctx, 'FIGHT', F.x + 4, F.y + 2 - Math.round(hv), !ok ? '#3a4470' : hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', 2);
-  if (padActive()) { ctx.fillStyle = '#cfe0ff'; ctx.fillRect(F.x + 4, F.y + 18, F.w - 8, 1); }
+  ctx.fillStyle = '#2c3a68'; ctx.fillRect(c.x + 10, fy - 8, c.w - 20, 1);
+  if (m.ldRival >= 0) {
+    const rv = ladderRows[m.ldRival];
+    const an = row.name, bn = rv ? rv.name : '';
+    const ca = TEAMS[skin(player.team)].mark, cb = TEAMS[skin(1 - player.team)].mark;
+    const cx = c.x + (c.w >> 1), vw = pixelTextWidth('VS');
+    ladEmblem(row.id, cx - vw / 2 - 8 - pixelTextWidth(an) - 13, fy + 3, 1);
+    drawPixelTextShadow(ctx, an, Math.round(cx - vw / 2 - 8 - pixelTextWidth(an)), fy + 4, ca, '#0a0e23');
+    drawPixelTextShadow(ctx, 'VS', Math.round(cx - vw / 2), fy + 4, '#5a6690', '#0a0e23');
+    if (rv) {
+      drawPixelTextShadow(ctx, bn, Math.round(cx + vw / 2 + 8), fy + 4, cb, '#0a0e23');
+      ladEmblem(rv.id, Math.round(cx + vw / 2 + 8 + pixelTextWidth(bn) + 4), fy + 3, 1);
+    }
+    return;
+  }
+  for (const [k, word, r] of [['fight', 'FIGHT', L.fight], ['watch', 'WATCH', L.watch]]) {
+    const hv = m.ldHover[k] || 0;
+    drawPixelTextOutline(ctx, word, r.x + 4, fy + 2 - Math.round(hv), !ok ? '#3a4470' : hv > 0.5 ? '#ffd95c' : '#f4f7ff', 'rgba(8,12,28,0.9)', 2);
+    if (padActive() && m.ldBtn === (k === 'watch' ? 1 : 0)) { ctx.fillStyle = '#cfe0ff'; ctx.fillRect(r.x + 4, fy + 18, r.w - 8, 1); }
+  }
 }
 function renderLadder(now, a) {
   const L = ladderLayout();
@@ -356,4 +506,67 @@ function renderLadder(now, a) {
   ctx.globalAlpha = a;
   drawBackHint(ctx, L.cx, L.back);
   ctx.globalAlpha = 1;
+}
+
+// ---- the watcher's pixels -----------------------------------------------------------------
+// an arrow box like the spectate control's (renderDead, js/ui/screens.js)
+function ladArrow(r, dir, hot) {
+  ctx.fillStyle = hot ? '#1f2b5c' : '#141c3c'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
+  ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1);
+  ctx.fillRect(dir < 0 ? r.x : r.x + r.w - 1, r.y, 1, r.h);
+  const cx = r.x + (r.w >> 1), cy = r.y + (r.h >> 1);
+  ctx.fillStyle = hot ? '#f4f7ff' : '#cfe0ff';
+  for (let i = 0; i < 4; i++) {
+    const px = dir < 0 ? cx - 2 + i : cx + 1 - i;
+    ctx.fillRect(px, cy - i, 1, 1); ctx.fillRect(px, cy + i, 1, 1);
+  }
+}
+function drawLadderWatch(now) {
+  const W = ladderWatch;
+  if (window.DBG.hideUI || state.mapOpen) return;
+  const L = ladderWatchLayout();
+  const hit = mouse.inside ? ladderWatchHit() : null;
+  ctx.globalAlpha = 1;
+  // top: who the camera follows, its side's emblem, name in its colour
+  if (state.mode !== 'drop') {
+    const vp = viewPlayer();
+    const x0 = L.left.x + L.left.w, x1 = L.right.x;
+    ctx.fillStyle = 'rgba(12,18,42,0.82)'; ctx.fillRect(x0, L.y, x1 - x0, 13);
+    ctx.fillStyle = TEAMS[skin(vp.team)].mark;
+    ctx.fillRect(x0, L.y, x1 - x0, 1); ctx.fillRect(x0, L.y + 12, x1 - x0, 1);
+    ladArrow(L.left, -1, hit && hit.kind === 'follow' && hit.d < 0);
+    ladArrow(L.right, 1, hit && hit.kind === 'follow' && hit.d > 0);
+    const id = vp.team === player.team ? W.a : W.b;
+    const nw = 9 + 4 + pixelTextWidth(vp.name), nx = Math.round(L.cx - nw / 2);
+    ladEmblem(id, nx, L.y + 2, 1);
+    drawPixelTextShadow(ctx, vp.name, nx + 13, L.y + 4, TEAMS[skin(vp.team)].mark, '#0a0e23');
+  }
+  // bottom: a vs b in their sides' colours, the speed chips under them
+  const an = ladderName(W.a), bn = ladderName(W.b);
+  const ca = TEAMS[skin(player.team)].mark, cb = TEAMS[skin(1 - player.team)].mark;
+  const vw = pixelTextWidth('VS');
+  ladEmblem(W.a, L.cx - vw / 2 - 8 - pixelTextWidth(an) - 13, L.by, 1);
+  drawPixelTextShadow(ctx, an, Math.round(L.cx - vw / 2 - 8 - pixelTextWidth(an)), L.by + 1, ca, '#0a0e23');
+  drawPixelTextShadow(ctx, 'VS', Math.round(L.cx - vw / 2), L.by + 1, '#5a6690', '#0a0e23');
+  drawPixelTextShadow(ctx, bn, Math.round(L.cx + vw / 2 + 8), L.by + 1, cb, '#0a0e23');
+  ladEmblem(W.b, Math.round(L.cx + vw / 2 + 8 + pixelTextWidth(bn) + 4), L.by, 1);
+  for (const c of L.chips) {
+    const on = LAD_SPEEDS[c.i] === W.speed, hot = hit && hit.kind === 'speed' && hit.i === c.i;
+    ctx.fillStyle = on ? '#cfe0ff' : hot ? '#8fa0c8' : '#2c3560'; ctx.fillRect(c.x, c.y, c.w, c.h);
+    ctx.fillStyle = on ? '#18203f' : 'rgba(12,18,42,0.9)'; ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
+    const t = LAD_SPEEDS[c.i] + 'X';
+    drawPixelText(ctx, t, c.x + Math.round((c.w - pixelTextWidth(t)) / 2), c.y + 2, on ? '#f4f7ff' : '#8fa0c8');
+  }
+  // the ending: the side left standing, big, its emblem over it
+  if (W.won !== null) {
+    const id = W.won === player.team ? W.a : W.b, t = ladderName(id) + ' WINS';
+    const col = TEAMS[skin(W.won)].mark;
+    const tw = pixelTextWidth(t, 3), y = Math.round(VIEW_H * 0.3);
+    ctx.fillStyle = 'rgba(8,12,28,0.7)'; ctx.fillRect(0, y - 10, VIEW_W, 58);
+    ctx.fillStyle = col; ctx.fillRect(0, y - 10, VIEW_W, 1); ctx.fillRect(0, y + 47, VIEW_W, 1);
+    ladEmblem(id, Math.round(L.cx - 9), y - 4, 2);
+    drawPixelTextOutline(ctx, t, Math.round(L.cx - tw / 2), y + 16, col, 'rgba(8,12,28,0.9)', 3);
+  }
+  drawBackHint(ctx, L.cx, VIEW_H - 8, 'LEAVE');
 }
