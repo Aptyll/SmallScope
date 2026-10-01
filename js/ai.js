@@ -578,7 +578,16 @@ function aiThink(p, dt) {
   // they know (the lane, the defenders' turrets, the archer's station); every
   // other order is walked by the flag rung (5a).
   const fl = servedFlag(p);
-  const order = fl && fl.owner !== p.id ? fl : null;
+  let order = fl && fl.owner !== p.id ? fl : null;
+  // (the team brain: an ally rolls once a flag whether it answers its human -
+  // the `obey` knob - and the side's guard keeps the bird when the human's
+  // flag sends everyone off to attack: someone has to, and it says so)
+  const humanOrder = order && players[order.owner] && isHuman(players[order.owner]);
+  ai.guarding = false;
+  if (humanOrder && prof.support && !aiObeys(p, prof, order)) order = null;
+  else if (humanOrder && order.type === 'attack' && guardE && role === 'guard') { aiAnswerFlag(p, order, 'guarding'); order = null; ai.guarding = true; }
+  if (humanOrder && order) { if (inFlag(order, p.x, p.y)) ai.answered = order; else aiAnswerFlag(p, order, 'onit'); } // (one already in the ring says nothing)
+  aiAnswerStep(p);
   const flX = order ? order.tx * TILE + 8 : 0, flY = order ? order.ty * TILE + 8 : 0;
   if (order) {
     pushE = order.type === 'attack' && theirs && ai.pushCd <= 0 && inFlag(order, theirs.e.x, theirs.e.y) ? theirs.e : null;
@@ -635,6 +644,9 @@ function aiThink(p, dt) {
   // its sight (aiHoldFoe, the team brain), so a strafe across the line does
   // not flip the bot between the fight and whatever it was doing before
   foe = aiHoldFoe(p, prof, foe);
+  // a grudge's mark in sight is the one it fights, whoever else is nearer
+  const mark = aiGrudgeFoe(p, prof);
+  if (mark) foe = mark;
   const foeD = foe ? Math.hypot(foe.x - p.x, foe.y - p.y) : Infinity;
   // the reaction: a rival stays noticed prof.react seconds before the bot
   // turns on it (a slow side keeps chopping while you line up the shot)
@@ -710,7 +722,7 @@ function aiThink(p, dt) {
   if (engage) {
     const foe = engage;
     const d = foeD;
-    aiNote(p, 'FIGHT', siege ? 'AT THEIR BIRD' : foe === fq ? 'FOCUS FIRE' : caller ? 'HELPING ' + caller.name.slice(0, 11) : 'IN SIGHT', foe);
+    aiNote(p, 'FIGHT', foe === mark ? 'YOU AGAIN' : siege ? 'AT THEIR BIRD' : foe === fq ? 'FOCUS FIRE' : caller ? 'HELPING ' + caller.name.slice(0, 11) : 'IN SIGHT', foe);
     if (p.zip >= 0) inp.jump = true; // off the zipline first: nobody fights holding the handle
     const tf = prof.lead > 0 ? d / 300 * prof.lead : 0; // s of flight it leads by
     aimAt(foe.x + foe.vx * tf + ai.aox, foe.y - 6 + foe.vy * tf + ai.aoy);
@@ -870,7 +882,7 @@ function aiThink(p, dt) {
   //      anchor, so a rival standing off the roost is rung 3's the moment
   //      they show.
   if (guardE && Math.hypot(guardE.x - p.x, guardE.y - p.y) > AI_GUARD_R) {
-    aiNote(p, 'GUARD', 'BACK TO POST', guardE);
+    aiNote(p, 'GUARD', ai.guarding ? 'GUARDING' : 'BACK TO POST', guardE);
     if (aiToRoost(p, guardE, steerTo, 4) >= 0) { aimAt(guardE.x, guardE.y); inp.fire = false; ai.tgt = null; return; }
   }
 
@@ -980,7 +992,10 @@ function aiThink(p, dt) {
   //     keeps AI_ESCORT of them - the two lowest allied players, so the rest
   //     of the side still farms and builds. Inside that it goes on down the
   //     ladder, working what is near, and comes back when they walk off.
-  if (ward && aiEscorts(p)) {
+  // (an escort is a gatherer's job: a scout, stalker or slayer of the team
+  // brain has its own walk, and a bot with two flipped between them)
+  const escort = ward && aiEscorts(p) && role === 'gatherer' && Math.hypot(ward.x - p.x, ward.y - p.y) < AI_ESCORT_R;
+  if (escort) {
     const d = Math.hypot(ward.x - p.x, ward.y - p.y);
     if (d > AI_ESCORT && d < AI_ESCORT_R) {
       aiNote(p, 'ESCORT', 'STAY CLOSE', ward);
@@ -1010,24 +1025,26 @@ function aiThink(p, dt) {
       const s = aiStalkTarget(p, prof);
       if (s) {
         const q = players[s.id];
-        aiNote(p, 'STALK', (q ? q.name.slice(0, 12) : 'RIVAL') + ' ALONE', s);
+        aiNote(p, 'STALK', aiGrudge(p) ? 'GRUDGE' : (q ? q.name.slice(0, 12) : 'RIVAL') + ' ALONE', s);
         const d = steerTo(s.x, s.y, 2);
         if (d >= 0 && d > 28) { aimAt(s.x, s.y); inp.fire = false; ai.tgt = null; return; }
         s.t = -1e9; // there and nobody: the side forgets the spot
       }
-    } else if (role === 'scout') {
+    } else if (role === 'scout' && state.elapsed >= ai.scoutCd) {
       if (!ai.scout) ai.scout = aiScoutPoint(p);
       aiNote(p, 'SCOUT', 'WATCHING', ai.scout);
       const d = steerTo(ai.scout.x, ai.scout.y);
       if (d >= 0 && d > 24) { aimAt(p.x + inp.mx * 40, p.y + inp.my * 40); inp.fire = false; ai.tgt = null; return; }
       ai.scoutN = (ai.scoutN || 0) + 1; ai.scout = null; // there, or no way there: the next point on the beat
+      if (d < 0) ai.scoutCd = state.elapsed + 3;          // (no way there: work a while before trying the next)
     }
   }
 
   // 6. meat is gold: chase and shoot the nearest animal, but give up on one
   //    it cannot catch in 6 s (prey outruns a walk) or cannot route to at all
   if (ai.huntAvoidT > 0) { ai.huntAvoidT -= dt; if (ai.huntAvoidT <= 0) ai.huntAvoid = null; }
-  const prey = aiNearestAnimal(p);
+  let prey = aiNearestAnimal(p);
+  if (prey && bound && !inFlag(bound, prey.x, prey.y)) prey = null; // (an order's ring bounds the hunt as it does the work)
   if (prey) {
     aiNote(p, 'HUNT', 'MEAT IS GOLD', prey);
     if (prey !== ai.huntTgt) { ai.huntTgt = prey; ai.huntT = 0; }
@@ -1163,19 +1180,23 @@ function aiThink(p, dt) {
   // 11. nothing to do: roam between its camp and the middle of the map -
   //     unless an order has it on its ring, where nothing to do is standing
   if (bound) { inp.fire = false; aiNote(p, 'IDLE', 'ON THE FLAG', null); return; }
-  // a guard or an escort with nothing to do holds its post (roaming off the
-  // edge of its leash had it flipping between its rung and this every few ticks)
-  if (guardE) { inp.fire = false; aimAt(guardE.x, guardE.y); aiNote(p, 'GUARD', 'ON POST', guardE); return; }
-  if (ward && aiEscorts(p) && Math.hypot(ward.x - p.x, ward.y - p.y) < AI_ESCORT_R) { inp.fire = false; aimAt(ward.x, ward.y); aiNote(p, 'ESCORT', 'BY THEIR SIDE', ward); return; }
-  aiNote(p, 'ROAM', 'NOTHING NEAR', { x: ai.wx, y: ai.wy });
+  // a guard or an escort with nothing to do walks its rounds inside its leash
+  // (roaming off the edge of the leash had it flipping between its rung and
+  // this every few ticks)
+  const leash = guardE ? { e: guardE, r: AI_GUARD_R * 0.5 } : escort ? { e: ward, r: AI_ESCORT * 0.5 } : null;
+  if (leash) aiNote(p, guardE ? 'GUARD' : 'ESCORT', guardE ? (ai.guarding ? 'GUARDING' : 'ON ROUNDS') : 'BY THEIR SIDE', leash.e);
+  else aiNote(p, 'ROAM', 'NOTHING NEAR', { x: ai.wx, y: ai.wy });
   ai.roam -= dt;
+  if (leash && Math.hypot(ai.wx - leash.e.x, ai.wy - leash.e.y) > leash.r * 1.5) ai.roam = 0; // the leash moved (the human walked on)
   if (ai.roam <= 0) {
     ai.roam = rand(3, 7);
+    if (leash) { ai.wx = leash.e.x + rand(-1, 1) * leash.r; ai.wy = leash.e.y + rand(-1, 1) * leash.r; } else {
     const toward = rng() < 0.5 ? { x: cx * TILE, y: cy * TILE } :
       { x: (p.spawn.tx + 0.5) * TILE, y: (p.spawn.ty + 0.5) * TILE };
     const w = aiMood(p).roam; // (a wild bot wanders wider)
     ai.wx = toward.x + rand(-14, 14) * TILE * w;
     ai.wy = toward.y + rand(-14, 14) * TILE * w;
+    }
   }
   const rd = steerTo(ai.wx, ai.wy);
   if (rd < 20) ai.roam = 0; // arrived, or no route (a point in the treeline): pick another
