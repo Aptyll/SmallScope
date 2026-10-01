@@ -26,6 +26,49 @@ const LAD_START = 1000;            // the rating a bot with no games shows (RATI
 const LAD_WIN = '#6fd08c', LAD_DRAW = '#7d88a8', LAD_LOSS = '#e0806a';
 const LAD_FORM = { W: LAD_WIN, D: LAD_DRAW, L: LAD_LOSS };
 
+// ---- the faces ---------------------------------------------------------------------
+// Who each known bot is at a glance, by its id: a scout in the rivals' paint
+// (cls and look, the create screen's axes: LOOK_N, js/profile.js), a colour
+// of its own and a 9x9 emblem of how it plays. Any other bot (a person's
+// file) gets FACE_ANY's emblem in steel and a scout rolled from its id.
+const LAD_GLYPHS = {
+  sapling: ['....#....', '...###...', '..#####..', '.#######.', '...###...', '..#####..', '.#######.', '....#....', '....#....'],
+  paw: ['.##...##.', '.##...##.', '#.......#', '##.....##', '...###...', '..#####..', '.#######.', '.#######.', '..##.##..'],
+  shield: ['#########', '#.......#', '#.##.##.#', '#.##.##.#', '#.......#', '.#.##.#..', '.#.##.#..', '..#...#..', '...###...'],
+  bolt: ['.....###.', '....###..', '...###...', '..######.', '.....##..', '....##...', '...##....', '..##.....', '.##......'],
+  tower: ['#.#.#.#.#', '#########', '.#######.', '.##...##.', '.##...##.', '.#######.', '.###.###.', '.##...##.', '#########'],
+  pick: ['..#####..', '.##...##.', '##..#..##', '....#....', '....#....', '....#....', '....#....', '....#....', '...###...'],
+  crook: ['..####...', '.#....#..', '.#....#..', '......#..', '......#..', '......#..', '......#..', '......#..', '.....###.'],
+  cog: ['...###...', '.#.###.#.', '..#####..', '###...###', '###...###', '###...###', '..#####..', '.#.###.#.', '...###...'],
+};
+const LAD_FACES = {
+  starter: { cls: 0, col: '#9fd7a0', glyph: 'sapling', look: { sex: 0, tone: 1, hair: 0, hairCol: 1, beard: 0, face: 0 } },
+  pack: { cls: 0, col: '#c9a0e8', glyph: 'paw', look: { sex: 1, tone: 3, hair: 4, hairCol: 5, beard: 0, face: 2 } },
+  keeper: { cls: 1, col: '#8fc4ff', glyph: 'shield', look: { sex: 0, tone: 4, hair: 2, hairCol: 0, beard: 3, face: 1 } },
+  raider: { cls: 1, col: '#ff8a6a', glyph: 'bolt', look: { sex: 0, tone: 2, hair: 5, hairCol: 7, beard: 1, face: 2 } },
+  bulwark: { cls: 1, col: '#b8c2d8', glyph: 'tower', look: { sex: 0, tone: 5, hair: 1, hairCol: 3, beard: 2, face: 1 } },
+  prospector: { cls: 0, col: '#ffd27a', glyph: 'pick', look: { sex: 0, tone: 0, hair: 3, hairCol: 6, beard: 3, face: 0 } },
+  shepherd: { cls: 0, col: '#f0e6c8', glyph: 'crook', look: { sex: 1, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 } },
+};
+const LAD_FACE_ANY = { col: '#8fa0c8', glyph: 'cog' };
+const ladFaceCache = new Map();
+function ladderFace(id) {
+  let f = LAD_FACES[id] || ladFaceCache.get(id);
+  if (f) return f;
+  let h = 7;
+  for (const ch of String(id)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  const pick = (n) => { const v = h % n; h = Math.floor(h / n) ^ (h * 2654435761 >>> 0); return v; };
+  const look = { sex: pick(2), tone: pick(6), hair: pick(6), hairCol: pick(8), beard: pick(4), face: pick(3) };
+  f = { cls: pick(2), col: LAD_FACE_ANY.col, glyph: LAD_FACE_ANY.glyph, look };
+  ladFaceCache.set(id, f);
+  return f;
+}
+// the emblem at (x, y), s px a cell, in the bot's colour
+function ladEmblem(id, x, y, s) {
+  const f = ladderFace(id);
+  stampGrid(LAD_GLYPHS[f.glyph], { '#': f.col }, x, y, s);
+}
+
 let ladderFoe = null;  // the BOT_LIB id the next solo drop seats on the rival side, or null
 let ladderRows = [];   // the screen's rows, best first (ladderTake)
 let ladderGames = 0;   // matches the loaded ladder has played
@@ -97,7 +140,7 @@ function ladderLayout() {
   const rows = [];
   const n = Math.min(LAD_ROWS_MAX, ladderRows.length);
   for (let k = 0; k < n; k++) rows.push({ x: x0, y: y0 + k * (LAD_ROW_H + LAD_ROW_GAP), w: LAD_LIST_W, h: LAD_ROW_H, i: (m.ldTop | 0) + k });
-  const card = { x: x0 + LAD_LIST_W + LAD_GAP, y: y0, w: LAD_CARD_W, h: LAD_ROWS_MAX * (LAD_ROW_H + LAD_ROW_GAP) - LAD_ROW_GAP };
+  const card = { x: x0 + LAD_LIST_W + LAD_GAP, y: y0, w: LAD_CARD_W, h: LAD_ROWS_MAX * (LAD_ROW_H + LAD_ROW_GAP) - LAD_ROW_GAP + 24 };
   const fw = pixelTextWidth('FIGHT', 2) + 8;
   const fight = { x: card.x + Math.round((card.w - fw) / 2), y: card.y + card.h - 26, w: fw, h: 18 };
   return { toy, x0, x1: x0 + w, head, rows, card, fight, back: card.y + card.h + 14, cx: Math.round(VIEW_W / 2) };
@@ -197,8 +240,9 @@ function drawLadderRow(r, lo, hi, a) {
   const ty = y + 7;
   const rank = String(r.i + 1);
   drawPixelText(ctx, rank, r.x + 14 - pixelTextWidth(rank), ty, on ? '#cfe0ff' : '#5a6690');
-  drawPixelTextShadow(ctx, row.name, r.x + 22, ty, on ? '#f4f7ff' : '#9fb6d8', '#0a0e23');
-  if (row.errors > 0) { ctx.fillStyle = LAD_LOSS; ctx.fillRect(r.x + 24 + pixelTextWidth(row.name), ty + 1, 3, 3); } // its code threw
+  ladEmblem(row.id, r.x + 21, y + 5, 1);
+  drawPixelTextShadow(ctx, row.name, r.x + 35, ty, on ? '#f4f7ff' : '#9fb6d8', '#0a0e23');
+  if (row.errors > 0) { ctx.fillStyle = LAD_LOSS; ctx.fillRect(r.x + 37 + pixelTextWidth(row.name), ty + 1, 3, 3); } // its code threw
   // the rating against the field: the bar's length, the number at its end
   const bx = r.x + 120, bw = 96;
   const f = hi > lo ? (row.rating - lo) / (hi - lo) : 0.5;
@@ -240,8 +284,21 @@ function drawLadderCard(c, now, a) {
   if (!row) return;
   const x = c.x + 10;
   let y = c.y + 9;
-  drawPixelTextShadow(ctx, row.name, x, y, '#f4f7ff', '#0a0e23', 2);
-  if (row.author) drawPixelText(ctx, String(row.author), x, y + 18, '#5a6690');
+  // the face: the bot's scout in the rivals' paint on a low glow of its
+  // colour, its emblem in the well's corner
+  const f = ladderFace(row.id);
+  const pw = 52;
+  ctx.fillStyle = '#141b3a'; ctx.fillRect(x, y, pw, pw);
+  const gx = x + pw / 2, gy = y + pw / 2;
+  const grd = ctx.createRadialGradient(gx, gy, 2, gx, gy, pw / 2 + 4);
+  grd.addColorStop(0, f.col + '40'); grd.addColorStop(1, f.col + '00');
+  ctx.fillStyle = grd; ctx.fillRect(x, y, pw, pw);
+  ctx.fillStyle = f.col; ctx.fillRect(x, y + pw - 2, pw, 2);
+  ctx.drawImage(SPRITES.portrait(f.cls, f.look, skin(1 - player.team)), x + 2, y + 2);
+  const nx = x + pw + 8;
+  ladEmblem(row.id, nx, y + 1, 2);
+  drawPixelTextShadow(ctx, row.name, nx, y + 24, '#f4f7ff', '#0a0e23', 2);
+  if (row.author) drawPixelText(ctx, String(row.author), nx, y + 42, '#5a6690');
   // the rating, big, and its last move beside it
   const rt = String(Math.round(row.rating));
   const rw = pixelTextWidth(rt, 2);
@@ -250,22 +307,23 @@ function drawLadderCard(c, now, a) {
     const up = row.delta > 0, s = (up ? '+' : '') + Math.round(row.delta);
     drawPixelText(ctx, s, c.x + c.w - 10 - pixelTextWidth(s), y + 18, up ? LAD_WIN : LAD_LOSS);
   }
-  y += 32;
+  y += 60;
   if (row.games) {
-    ladTrend(row.trail || [], x, y, c.w - 20, 34);
-    y += 42;
+    ladTrend(row.trail || [], x, y, c.w - 20, 22);
+    y += 29;
     ladRecord(row, x, y, c.w - 20, 5);
     const parts = [[row.w, LAD_WIN, 'W'], [row.d, LAD_DRAW, 'D'], [row.l, LAD_LOSS, 'L']];
     let tx = x;
     for (const [v, col, k] of parts) { const s = v + k; drawPixelText(ctx, s, tx, y + 9, col); tx += pixelTextWidth(s) + 10; }
-    y += 24;
+    y += 21;
     // against each rival it has met: its win share as one bar
     const vs = Object.keys(row.vs || {});
-    for (const id of vs.slice(0, 4)) {
+    for (const id of vs.slice(0, 6)) {
       const v = row.vs[id];
-      drawPixelText(ctx, ladderName(id), x, y, '#9fb6d8');
+      ladEmblem(id, x, y - 1, 1);
+      drawPixelText(ctx, ladderName(id), x + 13, y, '#9fb6d8');
       ladRecord(v, x + 90, y + 1, c.w - 110, 5);
-      y += 11;
+      y += 10;
     }
   }
   // FIGHT: a bare word, gold under the hand, the lobby's LOCK IN in small

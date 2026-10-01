@@ -2070,11 +2070,15 @@ the draw, the hit test (`ladderHit`) and the cursor (`ladderCursor`).
   `ladderLoad` adds it as a script each time the screen opens; a missing file is a ladder with no
   matches. `ladderTake` builds the rows, best first, and lists every `BOT_LIB` bot the ladder has
   not met at the start rating.
-- **The list**, left: a well per bot (`drawLadderRow`) with its rank, name (a red dot if its code
+- **A face per bot** (`ladderFace`, keyed by id in `LAD_FACES`): a scout in the rivals' paint
+  (`SPRITES.portrait`), a colour and a 9x9 emblem of how it plays (`LAD_GLYPHS`); any other id
+  gets a scout rolled from its id and the steel cog.
+- **The list**, left: a well per bot (`drawLadderRow`) with its rank, emblem, name (a red dot if its code
   threw), a steel bar of its rating against the field with the number, and its last five results
   as green / grey / red chips. Slate rims, lighter under the hand, bright steel on the picked row
   (`menu.ldSel`; Up/Down or a click; `menu.ldTop` scrolls past `LAD_ROWS_MAX`).
-- **The card**, right (`drawLadderCard`): the picked bot's name big, its author, its rating big
+- **The card**, right (`drawLadderCard`): the picked bot's portrait on a glow of its colour, its
+  emblem, its name big, its author, its rating big
   and its last move in green or red, the trend (`ladTrend`, a 1 px line over the start's level),
   the record as one W/D/L bar with the counts, a W/D/L bar against each rival it has met, and
   **FIGHT** at the foot, a bare word like LOCK IN.

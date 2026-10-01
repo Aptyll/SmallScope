@@ -743,6 +743,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the offline ladder's standings in the game: loading `ladder-data/standings.js`, the rows, a bot's name | `ladderLoad`, `ladderTake`, `ladderRows`, `ladderGames`, `ladderName` (the file's writer: `writePage`, app/ladder/page.js) | `bot ladder` › `the data` |
+| who each bot is at a glance: its scout, colour and emblem, and the fallback for any other file | `LAD_FACES`, `LAD_GLYPHS`, `LAD_FACE_ANY`, `ladderFace`, `ladEmblem` | `bot ladder` › `the faces` |
 | a ladder bot on the rival side of a solo match | `ladderFoe`, `ladderSeat` (its caller: `beginDrop`, boot.js; the lobby's target names it: `drawLobbyTop`, menu.js) | `bot ladder` › `the match` |
 | the screen: the list, the card, FIGHT, the keys | `LAD_*`, `beginLadder`/`leaveLadder`, `ladderLayout`, `ladderHit`, `ladderPick`, `ladderFight`, `ladderKey`, `ladderClick`, `updateLadder`, `ladderCursor`, `drawLadderRow`, `drawLadderCard`, `ladTrend`, `ladRecord`, `ladForm`, `renderLadder` | `bot ladder` › `the screen`, `the pixels` |
 
