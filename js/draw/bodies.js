@@ -425,6 +425,7 @@ function drawPlayer(p, ex, ey, now) {
   drawWorldText(p.name,
     centreTextX(p.x - ex, p.name), hy - 18, // clear of the draw meter's frame (top row hy-11) with a gap row
     TEAMS[skin(p.team)].mark);
+  callTag(p, Math.round(p.x - ex), hy - 18); // a bot's callout hangs over the name (js/draw/callouts.js)
   // dodge stamina: one clean unsegmented WHITE bar under the health bar -
   // white on every side, since stamina has no side, and white is neither the
   // team's paint above it nor the gold of the draw - charges stay discrete
