@@ -123,6 +123,9 @@ function aiProfile(p) {
 //   draw      this shot's release point; slipT/slipKind the lapse in play
 //   lost      { x, y, t } the last rival it lost sight of, t s ago
 //   engaged   the fight rung had its hands this tick
+//   view      the few numbers the dev view shows, kept on p.ai.thought.skill
+//             when a brain has written a thought: { level, react, aim (the
+//             wobble now, px), off (rad the crosshair trails), rate, slip }
 const AI_SETTLE = 0.6;     // s the fresh-target wobble takes to settle (time constant)
 const AI_WOBBLE_T = 0.5;   // s the wobble's drift takes to wander back to centre
 const AI_ALERT_T = 2;      // s a hit keeps a bot watching every side
@@ -234,5 +237,12 @@ function skillHands(p, prof, dt) {
     inp.aimX = p.x + Math.cos(sk.aa) * r; inp.aimY = p.y + Math.sin(sk.aa) * r;
   } else { sk.aa = want; da = 0; }
   sk.off = Math.abs(da);
+  const th = p.ai.thought;
+  if (th) {
+    const v = sk.view || (sk.view = { level: '', react: 0, aim: 0, off: 0, rate: 1, slip: null });
+    v.level = prof.name || ''; v.react = prof.react || 0; v.aim = Math.round(Math.hypot(sk.ex, sk.ey));
+    v.off = Math.round(sk.off * 100) / 100; v.rate = sk.rate; v.slip = sk.slipT > 0 ? sk.slipKind : null;
+    th.skill = v;
+  }
   if ((sk.engaged || prof.hands) && p.charging && !inp.fire && sk.off > AI_AIM_ON) inp.fire = true;
 }

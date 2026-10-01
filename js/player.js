@@ -483,6 +483,7 @@ class Player {
     this.id = id;
     this.team = team === undefined ? id % TEAM_COUNT : team; // alternating by slot unless a roster says otherwise
     this.control = control;             // 'human' | 'ai' | 'none' (nobody -> ghost)
+    this.botId = null;                  // an 'ai' seat's bot FILE (BOT_LIB, js/bots/api.js); null = the built-in brain
     // the local player wears the profile's display name; every other player is
     // named off its team - live, through the `name` getter below, so the name
     // follows the paint (skin) when the team-colour setting flips. Which

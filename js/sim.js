@@ -494,13 +494,14 @@ function updatePlay(dt) {
     // ...and on the ground the same intent is the zipline's (zipToggle, world.js)
     if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p)) zipToggle(p); }
     if (!p.active || inAir(p)) continue;
-    if (p.control === 'ai') updateAI(p, dt);
+    if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/bots/api.js)
     updatePlayer(p, dt);
     if (!p.dead && !PRACTICE) {
       p.trickleT += dt;
       if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
     }
   }
+  botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, build orders and fish claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
   if (!PRACTICE) updateMarket(dt); // fish/berry prices and the merchants' stock (js/shop.js)

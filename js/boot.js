@@ -1603,6 +1603,9 @@ if (LOADED_AT_BOOT) saveBootEnter();
 
 // debug/dev harness: lets external tooling step frames & stage scenes
 window.DBG = {
+  // the bot dev view (js/ui/botview.js): what a bot thinks, the recorder, the page
+  botThought, botGuess, BOTLOG, botLogExport, openBotLab, botViewStep,
+  get botView() { return botView; }, set botView(v) { botView = v | 0; },
   SEED, state, animals, objects, ground, mouse, keys, drops, footprints, flakes,
   fish, iceCracks, holes, crackIce, addFish, spawnEmerger, netAt, buildSiteAt,
   // the shoal the water this shape froze can hold (the fish banner, wildlife.js)

@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.36';
+const PATCH_TXT = 'PATCH 4.39';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,7 +38,10 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
-  ['4.36', 'BOTS PLAY WITH HANDS NOW: THEY WATCH WHERE THEY AIM, READ A MOVING TARGET A BEAT LATE, SWING THEIR AIM ACROSS, SETTLE ON A NEW TARGET AND SLIP NOW AND THEN, AND A NEW EASY LEVEL SITS BELOW NORMAL.'],
+  ['4.39', 'BOTS PLAY WITH HANDS NOW: THEY WATCH WHERE THEY AIM, READ A MOVING TARGET A BEAT LATE, SWING THEIR AIM ACROSS, SETTLE ON A NEW TARGET AND SLIP NOW AND THEN, AND A NEW EASY LEVEL SITS BELOW NORMAL.'],
+  ['4.38', 'BOTS CAN NOW BE WRITTEN AS SCRIPT FILES THAT SEE ONLY WHAT THEIR PLAYER SEES, WITH THREE EXAMPLE BOTS AND A GUIDE FOR WRITING YOUR OWN.'],
+  ['4.37', 'BEHIND THE SCENES: TIDIER FILES, SO THE BOT WORK IN PROGRESS LANDS CLEANLY.'],
+  ['4.36', 'A BOT DEV VIEW: F4 SHOWS WHAT EVERY BOT IS AFTER AND WHY, WITH A TABLE OF HOW EACH ONE SPENDS ITS MATCH, AND F6 OPENS THE BOT LAB TO WATCH THEM LIVE OR REPLAY SAVED MATCHES.'],
   ['4.35', 'THE EAGLES FLY LEVEL: NO MORE LEANING OR WING DIPS, JUST A STRAIGHT, STEADY FLIGHT.'],
   ['4.34', 'THE SLEDS ARE GONE, AND SO IS THE CAIRN IN THE MIDDLE OF THE ROAD: THE CENTRE WHERE THE TWO SIDES MEET IS OPEN GROUND.'],
   ['4.33', 'THE EAGLES FLY STRAIGHT AGAIN, FURTHER APART SO THEY PASS WITH CLEAR SKY BETWEEN THEM, AND A WAR EAGLE NOW JUST LEANS SLOWLY LEFT AND RIGHT AS IT GOES.'],
@@ -1199,7 +1202,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '3.79'],
   ]],
   ['FIGHTING AND TRADE', [
-    ['A NEW EASY LEVEL, AND BOTS THAT AIM AND MISS LIKE PEOPLE', '4.36'],
+    ['A NEW EASY LEVEL, AND BOTS THAT AIM AND MISS LIKE PEOPLE', '4.39'],
     ['A GATE IN YOUR WALL THAT ONLY YOUR SIDE WALKS THROUGH', '4.27'],
     ['A BODY FREEZES AND SHATTERS OR BLOWS AWAY ON THE WIND WHEN IT GOES DOWN', '4.21'],
     ['THE MARKET STALL OPENS FROM ANY SIDE', '4.19'],
@@ -1410,7 +1413,7 @@ function renderNotes(now, a) {
 // cracked, wrecked) - each with its name in plain white under it, and each
 // the way into a POP-UP: the map's (the shape with a chevron either side, the
 // seed row and its die - the map pop-up below) and the AI's (the three
-// plates named after AI_LEVELS, js/ai.js - the AI pop-up below). Under them
+// plates named after AI_LEVELS, js/ai-skill.js - the AI pop-up below). Under them
 // the STAGE holds YOUR CHARACTER - the 48 px model (js/sprites/looks.js) at
 // LOBBY_MODEL under its warm light, unarmed, no name under it - with a
 // CHEVRON either side that swaps to the neighbouring character (the
