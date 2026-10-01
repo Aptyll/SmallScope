@@ -264,9 +264,7 @@ function startCast(p, i, t) {
   p.castAb = i;
   p.castT = t;
   p.castMax = t;
-  const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else p.dir = dy > 0 ? 'down' : 'up';
+  faceToward(p, p.input.aimX - p.x, p.input.aimY - p.y, true);
   sfxAt('swing', p.x, p.y);
 }
 // how far through its wind-up a cast is, 0 at the press and 1 at the landing
@@ -288,9 +286,7 @@ function updateAbilities(p, dt) {
   if (p.shieldT > 0) {
     p.shieldT -= dt;
     p.shieldA = Math.atan2(p.input.aimY - (p.y - BOW_Y), p.input.aimX - p.x);
-    const adx = Math.cos(p.shieldA), ady = Math.sin(p.shieldA);
-    if (Math.abs(adx) > Math.abs(ady)) p.dir = adx > 0 ? 'right' : 'left';
-    else p.dir = ady > 0 ? 'down' : 'up';
+    faceToward(p, Math.cos(p.shieldA), Math.sin(p.shieldA));
     if (p.charging) { p.charging = false; p.chargeT = 0; }
     p.fireArmed = false;
     if (p.shieldT <= 0) abShieldDown(p, false);
@@ -305,9 +301,7 @@ function updateAbilities(p, dt) {
     // execute's wedge - so the shape and the body agree about where this is
     // going, and what lands is what was shown
     if (ab && (ab.id === 'pierce' || ab.id === 'rush' || ab.id === 'exec' || (ab.id === 'shield' && p.castSlam))) {
-      const dx = p.input.aimX - p.x, dy = p.input.aimY - p.y;
-      if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-      else p.dir = dy > 0 ? 'down' : 'up';
+      faceToward(p, p.input.aimX - p.x, p.input.aimY - p.y);
     }
     if (p.castT <= 0) {
       const i = p.castAb;
@@ -540,8 +534,7 @@ function abRush(p) {
   p.rushT = RUSH_T;
   p.rushVictim = null;
   p.sliding = false;
-  if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-  else p.dir = dy > 0 ? 'down' : 'up';
+  faceToward(p, dx, dy, true);
   burst(p.x, p.y + 4, '#dfe8f4', 8, 45, 0.4, true);
   sfxAt('dodge', p.x, p.y);
 }

@@ -141,6 +141,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | players, teams, classes + kits, hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `kitOf`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyCharacter(p?)`, `contest` | `players` |
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
+| which way a player's body faces: the one function every turn goes through, its diagonal bias and the hold an aimed action leaves | `faceToward`, `FACE_BIAS`, `FACE_HOLD`, `p.faceT` | `facing` (player.js) |
 | the numbers a player is made of: the player count and teams, walk/roll/slide speeds, hero levels, and the two bow baselines a kit is written against | `MAX_PLAYERS`, `TEAM_COUNT`, `PVP`, `PLAYER_SPEED`/`PLAYER_R`, `ICE_MAX`/`SLIDE_MIN`/`SLIDE_EXIT`/`TRAIL_MIN`/`SNOW_TRAIL_*`, `LEVEL_*`/`LVL_*`, `DODGE_*`, `BOW_CHARGE`/`BOW_NOCK` | `players` (above `CLASSES`, which reads some of them at load time) |
 | which preset a team wears on this screen, and whether a rival wears its colour-blind shape cue | `TEAMS`, `skin`, `foeCue` | top of the file |
 | the entity arrays and the local aliases | `animals`…`camps`, `players`, `player`, `inv` | `players` (the banner's tail) |

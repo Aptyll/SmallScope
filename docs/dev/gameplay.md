@@ -49,6 +49,14 @@ underfoot sets friction and speed caps. All the tuning constants live in the `pl
 `updatePlayer()`'s movement block, which every player runs. **Momentum is deliberately players-only**
 — animals, robots, and knockback move directly (a direction times a speed through `moveEntity`).
 
+**Facing** (`p.dir`, the sprite a body shows) only ever changes through `faceToward(p, dx, dy, hold)`
+in the `facing` banner of js/player.js: the walk, a draw's aim, a raised shield, a work or mining
+swing, the zipline, and every aimed action. Near a diagonal the axis the body already faces wins
+until the other one leads by `FACE_BIAS` (1.25), so walking or aiming along 45 degrees does not
+flick between two sprites each frame. A shot, a slash, a cast, a rush and a roll pass `hold`: the
+body keeps that facing for `FACE_HOLD` (0.15 s, `p.faceT`) and the walk cannot turn it straight
+back on the next frame. A draw and a shield still turn it every step.
+
 - **Snow at walking speed** uses a near-instant vector approach (settles in ~3 frames) toward
   `PLAYER_SPEED` (72) — crisp starts and stops, nothing floaty.
 - **Everything faster** (ice, sliding, or overspeed on snow) switches to a steer-the-heading /

@@ -180,8 +180,7 @@ function mineStrike(p, o, K) {
     p.swing = SWING_PICK;
     p.swingT = 0.18; p.swingHitDone = true;
     p.swingDir = Math.atan2(dy, dx);
-    if (Math.abs(dx) > Math.abs(dy)) p.dir = dx > 0 ? 'right' : 'left';
-    else p.dir = dy > 0 ? 'down' : 'up';
+    faceToward(p, dx, dy);
   }
   o.shake = 0.12;
   o.flash = Math.max(o.flash || 0, 0.04); // every bite blinks the rock

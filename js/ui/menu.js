@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.76';
+const PATCH_TXT = 'PATCH 4.77';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.77', 'BODIES STOP BLINKING IN A FIGHT: A PLAYER WALKING OR AIMING ON A DIAGONAL, OR SHOOTING WHILE ON THE MOVE, NO LONGER FLIPS ITS SPRITE FOR A SINGLE FRAME AND BACK.'],
   ['4.76', 'DAMAGE IS ONE RUNNING TOTAL BESIDE THE HEALTH BAR, IN THAT BAR\'S COLOUR, INSTEAD OF A NUMBER PER HIT OVER THE BODY, AND A FALLEN PLAYER\'S NAME NO LONGER FLOATS OVER THE FIGHT.'],
   ['4.75', 'WATCH ON THE BOT LADDER: PICK TWO BOTS AND WATCH THEM PLAY A WHOLE MATCH, FOLLOWING ANY PLAYER WITH THE ARROWS, AT UP TO EIGHT TIMES SPEED.'],
   ['4.74', 'A SWORD BOT HUNTING AN ANIMAL WALKS INTO REACH BEFORE IT SWINGS, INSTEAD OF SWINGING AT THE AIR FROM ACROSS THE SNOW.'],
@@ -1245,6 +1246,7 @@ const PATCH_DIGEST = [
   ]],
   ['FIGHTING AND TRADE', [
     ['A CROWD SPREADS OUT INSTEAD OF STANDING IN ONE PILE', '4.72'],
+    ['BODIES NO LONGER BLINK BETWEEN FACINGS IN A FIGHT', '4.77'],
     ['TURRETS SLING ROCKS OVER YOUR WALLS, AND EACH TIER THROWS FURTHER AND TRUER', '4.64'],
     ['EVERY GENERATOR OR BOT BAY YOU OWN MAKES THE NEXT ONE DEARER', '4.63'],
     ['UPGRADED GENERATORS PAY MORE: 8 AND 13 GOLD A MINUTE', '4.65'],
