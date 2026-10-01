@@ -9,7 +9,9 @@ what it is thinking, so you can watch it reason in the game's bot view (F4) and 
 - **[API reference](api.md)**: every field a bot reads and writes, the timing, the team channel.
 - **[The ladder](ladder.md)**: rated matches between bot files, and the road to an online ladder.
 - **[Example bots](../../bots/)**: `starter.js` (the template), `pack.js` (teamwork over `say`),
-  `keeper.js` (gathering, buying, defending).
+  `keeper.js` (gathering, buying, defending), and four ladder styles: `raider.js` (rushes the
+  rival bird), `bulwark.js` (holds its spur with turrets, sallies after a wipe), `prospector.js`
+  (farms and gears up, then pushes together) and `shepherd.js` (walks behind its soldier waves).
 
 ## The smallest bot
 
