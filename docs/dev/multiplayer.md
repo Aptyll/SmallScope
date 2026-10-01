@@ -97,6 +97,9 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               reach and no contest; id null lifts it
               or {kind:'rack'|'pkdie'|'agbell', ...} - the practice room's
               armory, roll die and range bell
+              An order of the wrong shape (a string where an index goes, a key
+              off Object's prototype) is dropped by cmdOk before any branch runs:
+              a bot file or a remote client can send anything.
 ```
 
 `sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the pad's stick, `pad.mx/my`,

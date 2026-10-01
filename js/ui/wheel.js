@@ -112,8 +112,35 @@ function wheelOnOwnFlag() {
   return !!(w && f && f.tx === w.tx && f.ty === w.ty);
 }
 
+// is an order the right shape to act on? A bot file or a remote client can
+// send anything - a string where a seat number goes, a key off Object's own
+// prototype ('constructor') - and the handlers below index tables with it,
+// so a malformed order is dropped here rather than throwing inside the step
+// or leaving NaN gold behind. Only the shape: whether it may happen is still
+// each handler's call.
+const cmdInt = (v, lo, hi) => Number.isInteger(v) && v >= lo && v < hi;
+const cmdKey = (table, k) => typeof k === 'string' && !!table && Object.hasOwn(table, k);
+const cmdTile = (c) => Number.isInteger(c.tx) && Number.isInteger(c.ty);
+function cmdOk(c) {
+  if (!c || typeof c !== 'object') return false;
+  if (c.kind === 'gear') return cmdInt(c.piece, 0, GEAR.length);
+  if (c.kind === 'ability') return cmdInt(c.i, 0, AB_KEYS);
+  if (c.kind === 'shop') {
+    if (c.act === 'buy') return cmdKey(market.stock, c.sec) && cmdInt(c.i, 0, Infinity);
+    if (c.act === 'trade') return cmdKey(GOODS, c.good) && (c.dir === 1 || c.dir === -1);
+    if (c.act === 'sell') return cmdInt(c.i, 0, Infinity);
+    if (c.act === 'forge') return (c.where === 'tool' || c.where === 'bag') && cmdInt(c.i, 0, Infinity) && !!c.pile && typeof c.pile === 'object';
+    return c.act === 'sellAll';
+  }
+  if (c.kind === 'build') return cmdKey(STRUCTS, c.id) && cmdTile(c) && (c.tx2 === undefined || (Number.isInteger(c.tx2) && Number.isInteger(c.ty2)));
+  if (c.kind === 'flag') return !c.id || (cmdKey(FLAG_TYPES, c.id) && cmdTile(c));
+  if (c.kind === 'rack' || c.kind === 'pkdie' || c.kind === 'agbell') return true; // the practice props check their own
+  return cmdTile(c); // a building's manage wheel: its tile
+}
+
 // run a queued build/manage/gear order for any player
 function runCmd(p, c) {
+  if (!cmdOk(c)) return;
   if (c.kind === 'gear') { buyGear(p, c.piece); return; } // no tile, no reach - gear is bought from anywhere
   if (c.kind === 'ability') { buyAbilityLv(p, c.i); return; } // an ability level: a skill point, from anywhere
   if (c.kind === 'shop') { shopCmd(p, c); return; } // the merchant's counter (js/shop.js) - it checks its own reach
