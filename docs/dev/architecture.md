@@ -341,6 +341,10 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
 - **`app/arena/`** — bot-vs-bot matches with no browser: boots the game's scripts in Node with a
   stub page, plays whole matches in parallel processes, writes match logs and a fun score per
   match ([arena.md](arena.md)).
+- **`app/ladder/`** — the offline bot ladder on top of the arena: bot files play rated matches
+  (Elo), every record and log kept in `ladder-data/`, and a standings page written beside them
+  ([docs/bots/ladder.md](../bots/ladder.md)). `core.js` holds the rules alone, for an online ladder later.
+- **`app/bake-bots.js`** — reads `bots/*.js`, writes `js/bots/lib.js` (the example bots as source text).
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.
 - **`app/bake-bears/bake.py`** — Python (needs numpy): paints and poses the two camp bears, writes `js/sprites/bears.js`.
 - **`app/bake-robot/bake.py`** — Python (needs numpy and pillow): paints and poses the IRON SCOUT skin from its faceted rig (rig.py), writes `js/sprites/robot.js`.
