@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.44';
+const PATCH_TXT = 'PATCH 4.45';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.45', 'THE BOT LAB READS AT A GLANCE: EACH SIDE DOWN ITS OWN EDGE WITH ITS BIRD AND KILLS, THE MAP IN THE MIDDLE WITH A HEAT LAYER, A ROOMY TIMELINE, AND A COMPARE VIEW ACROSS MATCHES.'],
   ['4.44', 'THE BOT LADDER PAGE SHOWS MORE AND SAYS LESS: BARS, MINI CHARTS AND A WHO BEATS WHOM GRID, WITH THE DETAIL ON HOVER.'],
   ['4.43', 'A MALFORMED ORDER FROM A BOT FILE OR AN ONLINE PLAYER IS NOW IGNORED INSTEAD OF STOPPING THE MATCH.'],
   ['4.42', 'THE BOT LADDER PAGE IS EASIER TO READ: A CARD FOR EACH BOT, RECENT FORM, HEAD TO HEAD RECORDS, BROKEN BOTS FLAGGED, AND EVERY COLUMN EXPLAINED.'],
