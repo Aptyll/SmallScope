@@ -108,6 +108,8 @@ const AI_CALL_N = 2;        // helpers a call wants; more stay on their own work
 const AI_STALK_R = 560;     // px a stalker goes for a sighting from
 const AI_ALONE_R = 180;     // px: a rival with no other rival sighting this close is alone
 const AI_FLEE_HOLD = 1.5;  // s a bot that turned to back off keeps backing off before the judge reads the numbers again
+const AI_BUILD_CAP = 8;     // generators and bays a side's bots keep standing at most (bot restraint: a
+                            // player builds by the game's rules alone; without it bots raised ~50 a side by minute 5)
 const AI_GRUDGE_N = 2;      // times a bot downs the same rival in a match before it is personal
 const AI_GRUDGE_T = 90;     // s a grudge lasts: the side's stalker job goes to it, on its mark
 const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the judge)
@@ -115,7 +117,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0 };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, built: 0 };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -146,6 +148,9 @@ function aiPlan(team) {
   if (T.at >= 0 && state.elapsed - T.at < AI_PLAN_T) return T;
   T.at = state.elapsed;
   aiForget(T);
+  // what the side's bots have standing of the buildings they raise (the cap, AI_BUILD_CAP)
+  T.built = 0;
+  for (const o of structures) if (o.team === team && (o.type === 'generator' || o.type === 'spawner') && players[o.owner] && players[o.owner].control === 'ai') T.built++;
   const bots = aiSideBots(team);
   if (!bots.length) { T.order = []; return T; }
   const prof = aiProfile(bots[0]);

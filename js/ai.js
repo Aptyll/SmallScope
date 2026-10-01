@@ -1026,7 +1026,7 @@ function aiThink(p, dt) {
   // (what it means to build is picked once and kept until it builds or gives
   // up - re-rolled every tick it flipped between a site and no site)
   if (!ai.buildType) ai.buildType = rng() < 0.3 ? 'spawner' : 'generator';
-  const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold ? ai.buildType : null;
+  const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold && T.built < AI_BUILD_CAP ? ai.buildType : null; // (past the side's cap it only upgrades)
   if (ai.buildT <= 0 && wantType) {
     const st = aiBuildSite(p, wantType);
     if (st) {

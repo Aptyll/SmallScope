@@ -895,7 +895,7 @@ The ladder:
    time, a bot bay) on the site `aiBuildSite` finds: the nearest tile within `AI_BUILD_R` (5 tiles)
    that passes `canPlaceAt` — the build list's own rule, any open snow or road tile, reach aside
    since the bot walks there — a 1×1 only with three open sides so it never walls itself in, the
-   bay wherever its 3×2 fits; else upgrade its own side's work within three tiles. It steps off
+   bay wherever its 3×2 fits; else upgrade its own side's work within three tiles. A side's bots keep at most `AI_BUILD_CAP` (8) generators and bays standing (`T.built`, counted each plan, js/ai-team.js); past it they only upgrade. The cap is bot restraint, not a game rule: a player builds by `canPlaceAt` alone. It steps off
    a build site first, since a building is solid, and a site it cannot reach (or is wedged on for
    3 s) is left for 15 s. Picking up a dropped card off the ground already falls out of the loot rung
    (drops are type-agnostic loot); a bot never presses the card key (`input.useCard`) — the
