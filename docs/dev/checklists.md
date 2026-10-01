@@ -450,7 +450,8 @@ nothing to add unless the type does something once built (a functional tick bran
 `updateStructures()`, e.g. the generator's payout timer or the bay's roll-out).
 **The manage wheel is a separate, hand-built list, not generic over `STRUCT_ORDER`**:
 `wheelOptions()` (js/ui/wheel.js) only ever returns `[upgrade, demolish]`, so a structure with its own extra manage-wheel order needs a
-line there, between the two (and a matching `runCmd()` branch), regardless of how automatic the
+line there, between the two (and a matching `runCmd()` branch, plus a `cmdOk()` line if the order
+carries anything but a tile), regardless of how automatic the
 *build* wheel's sizing is.
 
 **Adding a camp** — a `CAMPS` entry plus a site in `CAMP_SITES`; that is the whole feature (see
