@@ -448,7 +448,7 @@ function gearCost(p, i) { return p.gearLv[i] >= GEAR_LV_MAX ? null : { gold: GEA
 // new hp on the spot, the way a hero level does.
 function buyGear(p, i) {
   const cost = gearCost(p, i);
-  if (!cost || !canAfford(cost, p)) { sfxFor(p, 'deny'); return; }
+  if (!cost || !canAfford(cost, p)) { sfxFor(p, 'deny'); return cost ? 'gold' : 'max'; }
   pay(cost, p);
   p.gearLv[i]++;
   const oldMax = p.maxHp;
@@ -457,6 +457,7 @@ function buyGear(p, i) {
   addFloater(p.x, p.y - 18, GEAR[i][p.gear[i]].name + ' ' + p.gearLv[i], GEAR_MATS[p.gearLv[i] - 1]);
   burst(p.x, p.y - 8, GEAR_MATS[p.gearLv[i] - 1], 8, 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
+  return true;
 }
 // one frame of intent - the whole interface between a controller and the sim
 function makeInput() {
@@ -515,6 +516,8 @@ class Player {
     this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
     this.trickleT = 0;                  // s toward the next passive coin (TRICKLE_T, js/sim.js)
     this.kills = 0;                     // rivals downed; scoreboard only, survives death
+    this.lastDeath = null;              // { by, cause, tick } of the latest death: the kill feed's line, as data (js/bots/api.js)
+    this.lastCmd = null;                // { kind, tick, ok, why } of the latest order run (runCmd)
     // The rest of the match record, for the post-game lobby (js/ui/lobby.js).
     // Every one of them is a running total for the WHOLE match: a death
     // clears nothing here, and reset() leaves them alone the way it leaves
@@ -541,11 +544,11 @@ class Player {
       lootT: 0, spendT: 0, buildT: 0, fitT: 0,
       hideT: 0, hideCd: 0,
       wx: 0, wy: 0, roam: 0,
-      // the difficulty profile's clocks (ai.js): prof overrides the side's
-      // profile (DBG / the harness), seeT is how long a rival has been
-      // noticed, aox/aoy the current aim scatter, abilOk this tick's ability
-      // roll, pushCd a roost it could not reach
-      prof: null, seeT: 0, aimT: 0, aox: 0, aoy: 0, abilT: 0, abilOk: true, pushCd: 0,
+      // the difficulty profile's clocks (ai-skill.js): prof overrides the
+      // side's profile (DBG / the harness), seeT is how long a rival has been
+      // noticed, sk the skill layer's hands (skillOf, made on first use),
+      // abilOk this tick's ability roll, pushCd a roost it could not reach
+      prof: null, seeT: 0, sk: null, abilT: 0, abilOk: true, pushCd: 0,
       // the flag (aiFlagSync, ai.js): want is the order this tick's ladder
       // would fly ({ type, x, y } or null), wantT how long it has flown one
       // with no reason left, join the teammate whose flag it serves instead
@@ -556,10 +559,14 @@ class Player {
       // player it is shooting (the side's focus tally), focusT/focusOk the
       // focus roll, lastFoe/lastFoeT the rival it last fought and when (the
       // commit window, aiHoldFoe), fleeT until when a fall-back holds, buildType
-      // the building it means to put up next, packT how long it has waited at the rally, scout/scoutN
+      // the building it means to put up next, downs/grudge who it has downed
+      // and the mark it holds a grudge on, obeyFor/obeyOk the human flag it
+      // rolled on and the roll, guarding its guard holding the bird past an
+      // attack flag, answered/answerAt/answerKind the human flag it last
+      // answered and when its ON IT is due (aiAnswerFlag), packT how long it has waited at the rally, scout/scoutN
       // the scout's point and step along its beat, thought what it is doing
       // and why (the dashboard's record)
-      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, buildType: null,
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null, lastFoe: null, lastFoeT: -1e9, fleeT: -1e9, buildType: null, downs: {}, grudge: null, obeyFor: null, obeyOk: true, guarding: false, scoutCd: 0, answered: null, answerAt: 0, answerKind: null,
     };
     this.reset(true);
   }
@@ -883,11 +890,13 @@ function die(p, src, cause) {
   // kill credit and the feed line: the killer's colours if there is one,
   // otherwise the victim's, since the victim is who the line is about
   const killer = src && src !== p ? src : null;
+  p.lastDeath = { by: killer && players.includes(killer) ? killer.id : -1, cause: cause || null, tick: state.tick };
   // an item on the cursor goes back in the bag, so it is still there when the
   // body comes back instead of vanishing with the hand that was holding it
   if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
   if (killer) {
     killer.kills++;
+    if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai-team.js)
     if (!killer.dead) awardGold(killer, KILL_BOUNTY, killer.x, killer.y); // the bounty, not the victim's purse
     if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
@@ -899,6 +908,7 @@ function die(p, src, cause) {
       sfxAt('heal', killer.x, killer.y);
     }
   }
+  storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
   logEvent(killer ? killer.name + ' ' + (KILL_VERB[cause] || 'SHOT') + ' ' + p.name
     : p.name + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
   // the bird is the way back - a side whose objective has fallen is out,

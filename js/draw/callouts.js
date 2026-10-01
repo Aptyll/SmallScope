@@ -1,14 +1,17 @@
 // ------------------------------------------------------------ callout pixels
 // What a bot's callout looks like (what it is and when one is said: the `bot
-// callouts` banner, js/ai-callouts.js). Only the watched body's side sees its
-// own side's calls. Three pieces, all in the call's accent ink:
+// callouts` banner, js/ai-callouts.js). A screen sees the calls made to the
+// watched body's side - its own side's, and a rival's grudge against one of
+// them. Three pieces, all in the call's accent ink:
 //   the word  a dark plate with a steel edge over the caller's name tag: the
 //             kind's glyph and the word, and a one-pixel tail down to the
 //             head. A caller off the screen hangs it over the ping instead,
 //             so a call always arrives where it is about.
 //   the ping  a pixel ring that pulses outward twice from the spot it names
-//             (not for HELP: the caller is the spot, and the plate is on it)
-//   the map   the same pulse on the minimap disc (drawCalloutsMap)
+//             (not for a `pin` call - HELP, ON IT: the caller is the spot,
+//             and the plate is on it)
+//   the map   the same pulse on the minimap disc (drawCalloutsMap), for the
+//             calls about a place
 // All of it draws above the lighting, like every other world text, so a call
 // reads at midnight.
 const CALL_PLATE = 'rgba(12,18,42,0.84)';
@@ -25,9 +28,12 @@ const CALL_GLYPHS = {
   help: ['..###..', '..###..', '#######', '#######', '#######', '..###..', '..###..'], // the medic's cross
   low:  ['.##.##.', '#..#..#', '#.....#', '#######', '.#####.', '..###..', '...#...'], // a heart, emptied to its last third
   push: ['...#...', '..###..', '.##.##.', '##...##', '...#...', '..###..', '.##.##.'], // forward, twice
+  order:  ['.......', '......#', '.....##', '#...##.', '##.##..', '.###...', '..#....'], // a tick: understood
+  guard:  ['#######', '#ooooo#', '#ooooo#', '.#ooo#.', '.#ooo#.', '..#o#..', '...#...'], // a shield: holding the bird
+  grudge: ['...#...', '.#####.', '.#.#.#.', '#######', '.#.#.#.', '.#####.', '...#...'], // a crosshair: you, again
   here: ['...#...', '..#.#..', '..#.#..', '.#.#.#.', '.#...#.', '#..#..#', '#######'], // the warning sign: rivals at the roost
 };
-const CALL_DIM = 0.22; // the 'o' wash
+const CALL_DIM = 0.3; // the 'o' wash
 
 // where each player's name tag sat this frame (drawPlayer, js/draw/bodies.js),
 // by seat: the plate hangs above it. Cleared once the calls are drawn.
@@ -35,17 +41,17 @@ const callAnchor = new Map();
 function callTag(p, x, y) { callAnchor.set(p.id, [x, y]); }
 
 function callFade(c) {
-  return Math.min(1, c.t / CALL_IN, (CALL_T - c.t) / CALL_OUT);
+  return Math.min(1, c.t / CALL_IN, (callLife(c) - c.t) / CALL_OUT);
 }
 
 function drawCallouts(ex, ey) {
   if (!callouts.length) { callAnchor.clear(); return; }
   const vp = viewPlayer();
   for (const c of callouts) {
-    if (c.team !== vp.team) continue;
+    if ((c.see === undefined ? c.team : c.see) !== vp.team) continue;
     const spec = CALLS[c.k], a = Math.max(0, callFade(c));
     const sx = Math.round(c.x - ex), sy = Math.round(c.y - ey);
-    if (c.k !== 'help') {
+    if (!spec.pin) {
       for (let i = 0; i < 2; i++) {
         const u = (c.t - i * CALL_PULSE) / CALL_PULSE;
         if (u < 0 || u > 1) continue;
@@ -96,9 +102,9 @@ function drawCalloutsMap(ptx, pty, s, vp) {
   ctx.save();
   ctx.beginPath(); ctx.arc(MM_CX, MM_CY, MM_R - 1, 0, Math.PI * 2); ctx.clip();
   for (const c of callouts) {
-    if (c.team !== vp.team) continue;
+    if ((c.see === undefined ? c.team : c.see) !== vp.team) continue;
     const u = (c.t % CALL_PULSE) / CALL_PULSE;
-    if (c.t > CALL_PULSE * 2) continue;
+    if (c.t > CALL_PULSE * 2 || CALLS[c.k].map === false) continue;
     const mx = Math.round(MM_CX + (c.x / TILE - ptx) * s), my = Math.round(MM_CY + (c.y / TILE - pty) * s);
     const r = 1 + Math.round(u * 4), d = r * 2 + 1;
     ctx.globalAlpha = 1 - u;

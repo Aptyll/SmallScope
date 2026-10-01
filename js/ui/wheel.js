@@ -138,31 +138,35 @@ function cmdOk(c) {
   return cmdTile(c); // a building's manage wheel: its tile
 }
 
-// run a queued build/manage/gear order for any player
+// run a queued build/manage/gear order for any player. Returns what came of
+// it, for whoever asked (a bot reads it as me.lastCmd): true when it went
+// through, or why not - a word ('gold', 'far', 'max', the placement's own
+// canPlaceAt why) where the refusal has one, false where it has none
 function runCmd(p, c) {
-  if (!cmdOk(c)) return;
-  if (c.kind === 'gear') { buyGear(p, c.piece); return; } // no tile, no reach - gear is bought from anywhere
-  if (c.kind === 'ability') { buyAbilityLv(p, c.i); return; } // an ability level: a skill point, from anywhere
-  if (c.kind === 'shop') { shopCmd(p, c); return; } // the merchant's counter (js/shop.js) - it checks its own reach
+  if (!cmdOk(c)) return 'bad';
+  if (c.kind === 'gear') return buyGear(p, c.piece); // no tile, no reach - gear is bought from anywhere
+  if (c.kind === 'ability') return buyAbilityLv(p, c.i); // an ability level: a skill point, from anywhere
+  if (c.kind === 'shop') return shopCmd(p, c); // the merchant's counter (js/shop.js) - it checks its own reach
 
   if (c.kind === 'build') {
-    if (c.tx2 !== undefined) { placeLine(p, c); return; } // a dragged run (the list's `line` pieces)
-    placeStruct(c.tx, c.ty, c.id, p, c.rot); return; // rot: the list's R (a wheel's order is unturned)
+    if (c.tx2 !== undefined) return placeLine(p, c); // a dragged run (the list's `line` pieces)
+    return placeStruct(c.tx, c.ty, c.id, p, c.rot); // rot: the list's R (a wheel's order is unturned)
   }
   // the flag: per-player state, planted anywhere on the map (no reach, no
   // contest); id null is the lift (the `team flags` banner, js/robots.js)
-  if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return; }
-  if (c.kind === 'rack') { rackEquip(p, c); return; } // the practice armory (js/world.js)
-  if (c.kind === 'pkdie') { pkWheelPick(p, c); return; } // the parkour roll die (js/world.js)
-  if (c.kind === 'agbell') { agRing(p, c); return; } // the archery range's bell (js/world.js)
+  if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return true; }
+  if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/world.js)
+  if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/world.js)
+  if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/world.js)
   const o = structOf(objAt(c.tx, c.ty));
-  if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return;
-  if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
+  if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return false;
+  if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return 'far';
   // a site still going up takes only the demolish (its whole price back)
-  if (c.kind === 'demolish') demolishStruct(o, p);
-  else if (o.building) return;
-  else if (c.kind === 'upgrade') startUpgrade(o, p);
-  else if (c.kind === 'repair') startRepair(o, p);
+  if (c.kind === 'demolish') return demolishStruct(o, p);
+  if (o.building) return 'busy';
+  if (c.kind === 'upgrade') return startUpgrade(o, p);
+  if (c.kind === 'repair') return startRepair(o, p);
+  return false;
 }
 
 // ------------------------------------------------------------ selection, hints & wheel

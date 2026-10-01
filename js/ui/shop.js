@@ -862,11 +862,12 @@ function shopFx(p, txt, col) {
 
 // the one entry point runCmd hands a shop order to (js/ui.js)
 function shopCmd(p, c) {
-  if (c.act === 'buy') shopBuy(p, c.sec, c.i);
-  else if (c.act === 'trade') shopTrade(p, c.good, c.dir);
-  else if (c.act === 'sell') shopSellCell(p, c.i);
-  else if (c.act === 'sellAll') shopSellAll(p);
-  else if (c.act === 'forge') forgeTool(p, c.where, c.i, c.pile);
+  if (c.act === 'buy') return !!shopBuy(p, c.sec, c.i);
+  if (c.act === 'trade') return !!shopTrade(p, c.good, c.dir);
+  if (c.act === 'sell') return !!shopSellCell(p, c.i);
+  if (c.act === 'sellAll') return !!shopSellAll(p);
+  if (c.act === 'forge') return !!forgeTool(p, c.where, c.i, c.pile);
+  return false;
 }
 
 // ------------------------------------------------------------ the shop panel

@@ -22,6 +22,18 @@ defineBot({
 The file runs with only `defineBot` and standard JavaScript in reach: no `window`, no game
 globals, no storage, no network. Keep state on `this`.
 
+**Sealed.** On the ladder and in headless matches your file runs in a context of its own (a Node
+vm), and in the game it runs in a Web Worker. Either way `Math.random` is seeded from the match
+(seed and seat), and the clock stands still (`Date.now()` is 0), so the same seed and files
+replay the same match. One think may take **50 ms of CPU** on the ladder; a think over that
+counts as an error and your seat keeps its last act. A seat that misses 10 thinks in a row
+(1 s, a hang or a crash) lets go of every key until it answers again.
+
+There is no way in to the game from a bot: no `window`, no `players`, no network (`fetch`,
+`WebSocket`, `importScripts` are gone in a worker), no storage, and no channel to another bot's
+worker. Every message crosses as JSON, so nothing you receive leads back to the game's objects.
+The example bots run exactly the same way.
+
 ## Timing
 
 - The sim steps 60 times a second; a bot **thinks every 6 ticks** (10 a second), seats staggered.
@@ -42,11 +54,21 @@ are listed because a socket transport later will carry exactly these.
 | game → bot | `{ t: 'hello', api, seat, team, cls, name, seed, rules, map }` | once |
 | bot → game | `{ t: 'ready', name, author, version }` | answer to hello |
 | game → bot | `{ t: 'obs', tick, obs }` | every think |
-| bot → game | `{ t: 'act', tick, act, ms }` | answer to obs (`tick` echoes it) |
+| bot → game | `{ t: 'act', tick, act }` | answer to obs (`tick` echoes it) |
 | bot → game | `{ t: 'err', tick, msg }` | your code threw |
 | game → bot | `{ t: 'end', result }` | the match is over |
 
-`rules`: `{ tickDt, thinkEvery, obsR, tile, world }`. `map`: `{ world, tile, shape }`.
+`rules`: `{ tickDt, thinkEvery, obsR, tile, world, gearCosts, gearMax }`. `gearCosts[n - 1]` is
+the gold that takes a piece from level `n` to `n + 1`; `gearMax` is the top level.
+
+`map`: `{ world, tile, shape, grid }`. `grid` is the map when your seat was taken: `world`
+strings, one per row, one character per tile (`grid[ty][tx]`):
+
+| `#` | `~` | `-` | `=` | `,` | `.` |
+| --- | --- | --- | --- | --- | --- |
+| solid (tree, rock, wall) | open water | ice | road or bridge | ford | snow |
+
+Trees fall and buildings rise after that: `obs.nodes` and `obs.structs` are the live word near you.
 
 ## The observation
 
@@ -60,13 +82,16 @@ obs = {
     level, xp, gold, skillPts,
     prone, hide,           // hide 0..1: how buried under the snow
     aboard, falling, zip,  // on the eagle; in the drop; -1 or the cable ridden
-    abilities: [{ key, lv, cd, ready }],   // keys 0..3; lv 0 = locked
+    abilities: [{ key, id, lv, cd, ready, range }],  // keys 0..3; lv 0 = locked; range px or null
+    gear: [lv, lv, lv, lv],                // helmet, chest, legs, boots: 1..rules.gearMax
     tool: { type, bits, lvl } | null,      // the weapon in hand and the bits loaded in it
     toolSel, tools: [type | null],
     bag: [{ type, n } | null],
     food: { berry, fish, ... },            // the pouch: meals and unopened cards
     charging, chargeT,     // the draw in progress
     nav,                   // your last goTo: 'ok' | 'arrived' | 'fail' | null
+    lastCmd: { kind, tick, ok, why } | null,  // what came of your latest order
+    atShop,                // standing at a merchant's counter
   },
   allies:   [{ id, x, y, hp, maxHp, cls, dead, respawnT, aboard, bot }],  // your whole side, always
   enemies:  [{ id, x, y, vx, vy, hp, maxHp, cls, prone }],                // rivals your side can see
@@ -78,6 +103,9 @@ obs = {
   drops:    [{ id, type, n, x, y }],   // loot on the ground near you
   shots:    [{ x, y, vx, vy, team }],  // shots in flight near you
   flags:    [{ owner, type, tx, ty }], // your side's order markers
+  merchants: [{ team, x, y, stall }],  // both merchants, always; stall: { tx, ty } | null
+  shop:     [{ sec, i, kind, id, price }] | null,  // the counter's stock, only while atShop
+  kills:    [{ victim, team, by, cause, tick, out }], // the kill feed since your last think
   team:     [{ from, say }],           // what teammates said since your last think
 }
 ```
@@ -93,6 +121,17 @@ obs = {
 - **Ids.** A player's id is its seat. Every other id is stable for the match on this machine;
   use it to name a target in `think` or to remember a thing across thinks.
 - **Tiles to pixels:** the centre of tile `(tx, ty)` is `(tx * 16 + 8, ty * 16 + 8)`.
+- **Abilities.** `id` is what the key is on your body: hunter `pierce`, `net`, `grap`, `snow`;
+  warrior `shield`, `rush`, `stomp`, `exec`, or an alternate (`cry`, `whirl`, `ham`, `wind`).
+  `range` is how far its aim reaches in px, `null` when it has none.
+- **`lastCmd`.** `ok` is true when the order went through. When it did not, `why` names the
+  reason where the game has one: `'gold'`, `'max'`, `'far'`, `'points'`, `'busy'`, `'bad'`, or
+  a placement's `'blocked'`, `'ground'`, `'unit'`; `null` otherwise.
+- **`kills`.** Every death on the map since your last think, as the feed shows it on every
+  screen. `by` is the killer's seat, or -1 when no player did it. `out` is true when
+  the victim's bird has fallen, so it will not come back.
+- **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists what is on
+  the shelf. Buy one with `cmd: { kind: 'shop', act: 'buy', sec, i }`.
 
 ## The act
 
@@ -113,6 +152,7 @@ act = {
   ability,                 // 0..3: cast that key (or buy its level when a skill point waits)
   cmd,                     // an order: see below
   // talk
+  call,                    // a callout your side sees and hears: { kind, x, y, n } (below)
   say,                     // any JSON up to 256 bytes, to your teammates' next obs.team
   think,                   // what you are doing and why (below)
 }
@@ -138,6 +178,23 @@ again on its side, exactly as it does a player's.
 `say` is the only way five copies of a file share anything. Whatever one seat says reaches
 every scripted teammate's next `obs.team` as `{ from: seat, say }`. Rivals never hear it. See
 `bots/pack.js`: one seat calls a focus target and a rally, the rest follow.
+
+## Callouts
+
+`call` puts a word on the map for your whole side, humans included, with a ping and a sound:
+
+| `kind` | prints | `n` |
+| --- | --- | --- |
+| `'bird'` | BIRD! | |
+| `'help'` | HELP! | |
+| `'push'` | PUSH! | |
+| `'low'` | HUNTER LOW! | `'HUNTER'`, `'WARRIOR'` or `'BEAR'` (required) |
+| `'here'` | 3 HERE! | how many rivals, 1 to 5 |
+
+`x, y` is the spot in px. A call goes through the same rules as the game's own bots: your side
+holds only a few at once, the same call at the same spot is not repeated, and one seat calls at
+most once every few seconds. A call those rules refuse is dropped. Your seat also makes the
+game's automatic calls, as every bot does.
 
 ## Thoughts
 

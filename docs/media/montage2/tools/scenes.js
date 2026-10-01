@@ -54,7 +54,7 @@ const OPEN = `window.openBattle = function (o) {
   __M.reset({ zoom: o.zoom == null ? 1 : o.zoom, night: !!o.night, cls: o.cls == null ? 0 : o.cls,
     hideUI: !!o.hideUI, cursor: o.cursor !== false, name: 'WREN' });
   __M.stageBegin();
-  settings.aiLevel = 2;
+  settings.aiLevel = 3; // IMPOSSIBLE
   const c = __M.tile(W.field.tx, W.field.ty);
   const B = __M.battle({ x: c.x, y: c.y + (o.drop || 0), gap: o.gap == null ? 190 : o.gap,
     span: o.span == null ? 150 : o.span, prof: o.prof });
@@ -193,7 +193,7 @@ const scenes = [
     stage: `(function () { ${PROLOGUE}; ${OPEN};
       const S = openBattle({ zoom: 1.3333, gap: 200, span: 150, warm: 70 });
       __M.stageBegin();
-      // IMPOSSIBLE picks the weakest rival (AI_LEVELS, js/ai.js), so one wounded
+      // IMPOSSIBLE picks the weakest rival (AI_LEVELS, js/ai-skill.js), so one wounded
       // body is all it takes to turn a whole side onto it
       const mark = S.B.foes.filter(function (p) { return p.name === 'THORNE'; })[0] || S.B.foes[3];
       for (const p of S.B.mine) if (p.ai && p.ai.prof) p.ai.prof.pick = 'weak';

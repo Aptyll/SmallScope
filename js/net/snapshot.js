@@ -47,7 +47,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   'avoidT', 'madT', 'madX', 'madY', 'baySite', 'bayDir']);
 // the match's own state keys: the clock, the result, the birds. Everything
 // else on `state` is one screen's UI (overlays, the menu, the death view)
-const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'over', 'end', 'eagleCine'];
+const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'over', 'end', 'eagleCine', 'story'];
 const SNAP_DEPTH = 8; // how deep pack() follows plain objects before giving up (a cycle guard)
 // the moving kinds, their arrays and their token letters
 const SNAP_KINDS = { R: () => robots, A: () => animals, W: () => arrows, D: () => drops, F: () => fish };

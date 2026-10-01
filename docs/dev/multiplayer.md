@@ -374,8 +374,8 @@ three with the chevrons beside the stage figure; bots hash theirs — class, loo
 variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
-the rest of the count) — and the target at the top, whose pop-up's three plates
-set `settings.aiLevel` (`AI_LEVELS`, js/ai.js: NORMAL / HARD /
+the rest of the count) — and the target at the top, whose pop-up's four plates
+set `settings.aiLevel` (`AI_LEVELS`, js/ai-skill.js: EASY / NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
 (`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
 the grid files under js/sprites/ are never rewritten) — same
@@ -637,19 +637,22 @@ contract: [docs/bots/](../bots/README.md).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
-well each rung is played** (the `difficulty` banner at the top of ai.js): the **rivals** run
-`AI_LEVELS[settings.aiLevel]` — NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
+well each rung is played** (the `difficulty` banner, js/ai-skill.js): the **rivals** run
+`AI_LEVELS[settings.aiLevel]` — EASY / NORMAL / HARD / IMPOSSIBLE, the lobby's plates, remembered
 with the profile — and **your allies** run `AI_ALLIES[level]`, the next notch up (capped at the
 top) plus the support fields, so your side is always the more competent one and the difficulty
 is how good the *other* side is. `aiProfile(p)` is the one place that choice is made
 (`p.ai.prof` overrides it for a staged bot — `DBG`, the calibration harness). Every field is a
-worse or better use of the same input struct: `sight` (147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
-cover still works), `react` (0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
-`aim` (30 / 8 / 0 px of scatter, re-rolled every `AI_AIM_T`), `lead` (0 / 0.5 / 1 of the
-target's motion), `draw` (0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
-weak shot), `dodge` (×0.5 / 1 / 2), `abil` (0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
-ready ability is spent), `flee` (0.5 / 0.35 / 0 hp it hides at), `work` (0.5 / 0.8 / 1 duty
-cycle of the E key while harvesting — its level pace), `strafe` (0.45 / 0.8 / 1 of each 2 s it
+worse or better use of the same input struct (numbers EASY / NORMAL / HARD / IMPOSSIBLE; the
+banner has the whole table): `sight` (120 / 147 / 200 / 267 px — sized to the share of a 640×360 screen a hand sees — through `seenAt` so
+cover still works), `react` (1.1 / 0.7 / 0.3 / 0 s a rival stays noticed before the bot turns on it),
+the **skill layer's** hand fields (below: `cone`, `rear`, `perceive`, `hand`, `aim`, `fresh`,
+`drawVar`, `slip`), `lead` (0 / 0 / 0.5 / 1 of the
+target's read motion), `draw` (0.6 / 0.7 / 0.9 / 0.95 of `bowCharge` it looses at — a short draw is a
+weak shot), `dodge` (×0.25 / 0.5 / 1 / 2), `abil` (0.2 / 0.35 / 0.8 / 1 chance per `AI_ABIL_T` that a
+ready ability is spent), `flee` (0.55 / 0.5 / 0.35 / 0 hp it hides at), `work` (0.4 / 0.5 / 0.8 / 1 duty
+cycle of the E key while harvesting — its level pace), the **choice** knobs the team brain reads
+(`judge`, `focus`, `team`, `think`, `memory` — what each means is in the banner), `strafe` (0.3 / 0.45 / 0.8 / 1 of each 2 s it
 keeps moving in a fight; the rest it PLANTS — stands, draws and shoots, the only time a slow side
 fires, so stopping is the tell and the moment a new player hits it — and under 1 it circles that
 much less, walking in straighter), `pick`
@@ -674,12 +677,36 @@ a hit on its own bird — at every level the side answers from anywhere on the m
 (`aiDefendersWanted`, **the two birds**, below); the difficulty is how well they fight when
 they get there, never whether they come.
 
+**The skill layer** (the `skill` banner, js/ai-skill.js) is the hands between what the ladder
+decides and the input it writes, so an easy bot misses the way a person does rather than at
+random. Its state is `p.ai.sk` (`skillOf`, made on first use; the banner lists every field for
+the dashboard). `skillNotice` is the **eyes**: a rival inside `cone` degrees of where the bot is
+aiming is noticed at the full rate, one outside it at `rear` × (so a flank works on EASY and not
+on HARD), and a hit keeps it watching every side for `AI_ALERT_T` (2 s). `skillAim` is the
+**read**: the bot's picture of its target (`sk.px`/`sk.pvx`) trails the truth with a time
+constant of `perceive` s, `lead` is taken off that read, and the **wobble** is a smooth drift
+(mean-reverting over `AI_WOBBLE_T`) of `aim` px at bow range, wider the farther the target, the
+faster either body moves, and `fresh` × on a new target settling over `AI_SETTLE` — the first
+shot at a new rival is the worst. `skillDraw` rolls each draw's release off `draw` ± `drawVar`.
+`skillSlip` is the **lapse**: `slip` times a minute of fighting it freezes, looses early or walks
+straight in for a moment. `skillHands` runs after the whole think (`updateAI`): the crosshair moves to wherever the ladder
+aimed at `hand` px/s (250 / 400 / 700 / at once), as an **offset from the body** - a mouse on a
+screen that follows its player, so a rival circling at arm's length is as easy to track as one
+far off, and a flick from the tree it was chopping to a rival takes a beat - and in a fight a
+drawn shot is held until the crosshair is within `AI_AIM_ON` (8 px) of the wish: the shot comes
+late, not wide. (An angular limit was tried first and made every close fight unwinnable: a
+rusher circling at 15 px sweeps faster than any sane turn rate.) **Scripted seats** (the bot API) all play with one pair of
+hands, `AI_LADDER_HANDS` (HARD's `hand` and `aim`), through the same `skillHands`, so a ladder
+ranks decisions rather than aim; its `hands` flag adds the wobble and the held draw to every aim.
+
 **The team brain** (js/ai-team.js) is what turns ten ladders into two sides. The profile says
 how well a bot plays; the team brain says what the side is doing and who does which part of it.
 Three small rules, and the teamwork is what they add up to:
 
 - **Mood.** Each bot is one of five temperaments (`AI_MOODS`: BRAVE, CAUTIOUS, GREEDY, LOYAL,
-  WILD), dealt off the seed so each side fields all five (`aiMood`). A mood moves choices, never
+  WILD), for life rather than for a match (`aiMood`): a body with a roster name of its own is the
+  mood its name hashes to (`aiMoodOf`), and a seat bot is the mood of its place on its side, the
+  five dealt in one fixed order so each side fields all five. No seed and no rng. A mood moves choices, never
   hands: its `flee` and `judge` shift the profile's, `help` scales how far it answers a call,
   `greed` how far it looks for loot and work, `roam` how wide it wanders, `fit` which jobs suit it.
 - **Role.** Every `AI_PLAN_T` (2 s) the side re-plans (`aiPlan`): the profile still says how
@@ -696,12 +723,25 @@ Three small rules, and the teamwork is what they add up to:
   mood's `help` answers, at most `AI_CALL_N` (2) a call (rung 5e), and the caller is an anchor
   for rung 3, so the helper joins the fight it walks into. On the profile's `focus` roll a bot
   shoots the rival most of its side is already shooting (`T.focus`).
+- **Grudge.** `die` tells the brain who a bot downed (`aiDowned`); the `AI_GRUDGE_N`-th time
+  (2) it is the same player, the bot holds a grudge for `AI_GRUDGE_T` (90 s): the plan hands it
+  the side's one stalker job first, it walks to its mark's last known spot, and the mark in sight
+  is its foe over anyone nearer (`aiGrudgeFoe`, the thought's why YOU AGAIN). `ai.grudge.seenT`
+  is when it first saw its mark since, for the callouts.
+- **Your flag.** An ally rolls once a human flag whether it answers it (`aiObeys`, the profile's
+  `obey`, 1 when missing). The side's guard keeps the bird when the human's flag is an ATTACK
+  (`ai.guarding`, the thought's GUARDING). Each bot answering says so once a flag, staggered
+  `AI_ONIT_T` by seat (`aiAnswerFlag`/`aiAnswerStep`): an `onit` or `guarding` callout when
+  `CALLS` (js/ai-callouts.js) carries that kind; a bot already in the ring says nothing.
 
 The plan also reads the match once for the side (`T.stance`, the dashboard's `plan`): HOLD (its
 bird under threat), WINDOW, BEAR, PUSH, PRESS (a stalker out) or FARM. The **window** opens when
 `AI_WINDOW_DOWN` (2) more rivals than own bots are down past `AI_STALK_AT`, or most of the side
 wears a bear's blood, and stays open at least `AI_WINDOW_MIN` (12 s): every bot but the guards
-pushes while it lasts. The **bear**: from `AI_BEAR_AT` (240 s), a side whose bots average level
+pushes while it lasts. The plan's order (what `aiRank` reads) is always pushers, then guards,
+then the rest. The fight rung holds a rival it was just fighting `AI_COMMIT_T` past the edge of
+its sight (`aiHoldFoe`), and a bot that turns to back off keeps backing off `AI_FLEE_HOLD`, so a
+strafe across a line does not flip it between jobs. The **bear**: from `AI_BEAR_AT` (240 s), a side whose bots average level
 `AI_BEAR_LV` (6), with three to spare, its bird quiet and no rival seen by the bear, sends a
 party of `AI_BEAR_N` (3) to the teamPay camp nearest its own bird (`aiSideBear`). They meet
 `AI_BEAR_R` off it until all three are there or `AI_BEAR_WAIT` (15 s) runs out (`aiBearJob`),
@@ -855,7 +895,7 @@ The ladder:
    time, a bot bay) on the site `aiBuildSite` finds: the nearest tile within `AI_BUILD_R` (5 tiles)
    that passes `canPlaceAt` — the build list's own rule, any open snow or road tile, reach aside
    since the bot walks there — a 1×1 only with three open sides so it never walls itself in, the
-   bay wherever its 3×2 fits; else upgrade its own side's work within three tiles. It steps off
+   bay wherever its 3×2 fits; else upgrade its own side's work within three tiles. A side's bots keep at most `AI_BUILD_CAP` (8) generators and bays standing (`T.built`, counted each plan, js/ai-team.js); past it they only upgrade. The cap is bot restraint, not a game rule: a player builds by `canPlaceAt` alone. It steps off
    a build site first, since a building is solid, and a site it cannot reach (or is wedged on for
    3 s) is left for 15 s. Picking up a dropped card off the ground already falls out of the loot rung
    (drops are type-agnostic loot); a bot never presses the card key (`input.useCard`) — the
@@ -904,7 +944,7 @@ prefilter on work; a build site still wants `>= 3` open sides. Keep the -1 branc
 extend the ladder — a goal that is never dropped is a bot that stands still forever.
 
 **Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser, one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
-bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[0]` for a middling player who
+bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[1]` (NORMAL) for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
 `sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
 `DBG.step(dt, n)` runs `n` steps and one render; the bots' strafe and work clocks count ticks, so
@@ -941,6 +981,14 @@ the same spot inside `CALL_SAME_T`, and never more than `CALL_SIDE_MAX` up for a
 runs every `CALL_LOOK` ticks staggered by seat and draws no `rng()`, so a match plays out the
 same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS`, and
 `addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
+
+**The team brain speaks through the same door.** A bot answering a human's flag says ON IT, or
+GUARDING for the guard it keeps on the bird (`aiAnswerFlag`/`aiAnswerStep`, js/ai-team.js: who
+answers, and the stagger by seat, are the brain's); the callouts own only the words, the icons
+and the life on screen (`CALLS.onit`, `CALLS.guarding`). **A grudge** is voiced here: a rival bot
+whose `p.ai.grudge` has just stamped `seenT` (its first sight of its mark) says YOU AGAIN over its
+head to the mark's side only (a call's `see`), once per pair per `CALL_GRUDGE_T` (`callGrudge`).
+A scripted bot may say only `BOT_CALLS` (js/bots/api.js), none of these three.
 
 ## Online play
 
