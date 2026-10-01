@@ -550,6 +550,13 @@ class Player {
       // with no reason left, join the teammate whose flag it serves instead
       // of planting a twin (-1 = none), flagT the re-read clock
       want: null, wantT: 0, join: -1, flagT: 0,
+      // the team brain (js/ai-team.js): mood its temperament's key (dealt on
+      // first read), helping the teammate whose call it answers, foeId the
+      // player it is shooting (the side's focus tally), focusT/focusOk the
+      // focus roll, packT how long it has waited at the rally, scout/scoutN
+      // the scout's point and step along its beat, thought what it is doing
+      // and why (the dashboard's record)
+      mood: null, helping: -1, foeId: -1, focusT: 0, focusOk: false, packT: 0, scout: null, scoutN: 0, thought: null,
     };
     this.reset(true);
   }

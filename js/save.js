@@ -60,6 +60,7 @@ const SAVE_ROOTS = [
   ['wild', () => [preyRepopT, fishCap, fishFloor, emergeSites],
     (v) => { preyRepopT = v[0]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
   ['ai', () => [aiSitTick, aiSit], (v) => { aiSitTick = v[0]; aiSit = v[1]; }],
+  ['aiTeams', ...saveArr(aiTeams)], // the sides' shared minds (js/ai-team.js)
   ['stats', () => [statT, matchStats], (v) => { statT = v[0]; matchStats = v[1]; }],
   // the view: where the camera and both zooms stood, so the first frame is the saved one
   // (boot frames the camera on the player after this runs, so saveBootView puts it back again)
