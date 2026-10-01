@@ -407,7 +407,7 @@ function updateAI(p, dt) {
   ai.zipUsed = false;
   if (p.dead) ai.packGo = false;
   aiThink(p, dt);
-  if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair swings to where the ladder aimed (the skill layer, ai-skill.js)
+  if (!p.dead) skillHands(p, aiProfile(p), dt); // the crosshair moves to where the ladder aimed (the skill layer, ai-skill.js)
   // riding with no rung wanting the ride this think: let go (the ride, above)
   if (p.zip >= 0 && !ai.zipUsed) p.input.jump = true;
 }
