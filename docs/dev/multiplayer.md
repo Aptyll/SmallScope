@@ -679,7 +679,9 @@ how well a bot plays; the team brain says what the side is doing and who does wh
 Three small rules, and the teamwork is what they add up to:
 
 - **Mood.** Each bot is one of five temperaments (`AI_MOODS`: BRAVE, CAUTIOUS, GREEDY, LOYAL,
-  WILD), dealt off the seed so each side fields all five (`aiMood`). A mood moves choices, never
+  WILD), for life rather than for a match (`aiMood`): a body with a roster name of its own is the
+  mood its name hashes to (`aiMoodOf`), and a seat bot is the mood of its place on its side, the
+  five dealt in one fixed order so each side fields all five. No seed and no rng. A mood moves choices, never
   hands: its `flee` and `judge` shift the profile's, `help` scales how far it answers a call,
   `greed` how far it looks for loot and work, `roam` how wide it wanders, `fit` which jobs suit it.
 - **Role.** Every `AI_PLAN_T` (2 s) the side re-plans (`aiPlan`): the profile still says how
@@ -696,12 +698,25 @@ Three small rules, and the teamwork is what they add up to:
   mood's `help` answers, at most `AI_CALL_N` (2) a call (rung 5e), and the caller is an anchor
   for rung 3, so the helper joins the fight it walks into. On the profile's `focus` roll a bot
   shoots the rival most of its side is already shooting (`T.focus`).
+- **Grudge.** `die` tells the brain who a bot downed (`aiDowned`); the `AI_GRUDGE_N`-th time
+  (2) it is the same player, the bot holds a grudge for `AI_GRUDGE_T` (90 s): the plan hands it
+  the side's one stalker job first, it walks to its mark's last known spot, and the mark in sight
+  is its foe over anyone nearer (`aiGrudgeFoe`, the thought's why YOU AGAIN). `ai.grudge.seenT`
+  is when it first saw its mark since, for the callouts.
+- **Your flag.** An ally rolls once a human flag whether it answers it (`aiObeys`, the profile's
+  `obey`, 1 when missing). The side's guard keeps the bird when the human's flag is an ATTACK
+  (`ai.guarding`, the thought's GUARDING). Each bot answering says so once a flag, staggered
+  `AI_ONIT_T` by seat (`aiAnswerFlag`/`aiAnswerStep`): an `onit` or `guarding` callout when
+  `CALLS` (js/ai-callouts.js) carries that kind; a bot already in the ring says nothing.
 
 The plan also reads the match once for the side (`T.stance`, the dashboard's `plan`): HOLD (its
 bird under threat), WINDOW, BEAR, PUSH, PRESS (a stalker out) or FARM. The **window** opens when
 `AI_WINDOW_DOWN` (2) more rivals than own bots are down past `AI_STALK_AT`, or most of the side
 wears a bear's blood, and stays open at least `AI_WINDOW_MIN` (12 s): every bot but the guards
-pushes while it lasts. The **bear**: from `AI_BEAR_AT` (240 s), a side whose bots average level
+pushes while it lasts. The plan's order (what `aiRank` reads) is always pushers, then guards,
+then the rest. The fight rung holds a rival it was just fighting `AI_COMMIT_T` past the edge of
+its sight (`aiHoldFoe`), and a bot that turns to back off keeps backing off `AI_FLEE_HOLD`, so a
+strafe across a line does not flip it between jobs. The **bear**: from `AI_BEAR_AT` (240 s), a side whose bots average level
 `AI_BEAR_LV` (6), with three to spare, its bird quiet and no rival seen by the bear, sends a
 party of `AI_BEAR_N` (3) to the teamPay camp nearest its own bird (`aiSideBear`). They meet
 `AI_BEAR_R` off it until all three are there or `AI_BEAR_WAIT` (15 s) runs out (`aiBearJob`),
