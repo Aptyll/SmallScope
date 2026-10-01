@@ -5,13 +5,13 @@ match log, and scores how fun it was. Use it to see what a change to the bots (o
 they play) does to a hundred matches instead of one. No packages.
 
 ```
-node app/arena/run.js --seeds 1-20 --level 0 --out arena-out/normal
-node app/arena/run.js --seeds 1-8 --level 0,1,2            # a sweep over the three difficulties
-node app/arena/run.js --seeds 1-8 --kind versus --a 1 --b 0 # HARD against NORMAL, no ally bonus
+node app/arena/run.js --seeds 1-20 --level 1 --out arena-out/normal
+node app/arena/run.js --seeds 1-8 --level 0,1,2,3          # a sweep over the four difficulties
+node app/arena/run.js --seeds 1-8 --kind versus --a 2 --b 1 # HARD against NORMAL, no ally bonus
 node app/arena/match.js '{"seed":42,"maxMin":3}' > one.json   # one match, its log on stdout
 ```
 
-`run.js` flags: `--seeds` (`a-b` or `a,b,c`), `--level` (one or a list of `AI_LEVELS` indexes),
+`run.js` flags: `--seeds` (`a-b` or `a,b,c`), `--level` (one or a list of `AI_LEVELS` indexes: 0 EASY, 1 NORMAL, 2 HARD, 3 IMPOSSIBLE; default 1),
 `--kind level|versus` with `--a`/`--b`, `--proxy` (the profile seat 0 plays, below), `--shape`
 (`MAPS` index), `--max` (minutes before a timeout, default 40), `--every` (sample pitch in s,
 default 2), `--jobs` (parallel matches, default one per core), `--out` (default

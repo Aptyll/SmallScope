@@ -21,7 +21,7 @@ const BOT_GOAL_ANY = '#c8d0e0'; // a goal word the table above does not know yet
 const BOT_AIM_NEAR = 28;        // px round a firing bot's aim point its target is looked for in
 function botGoalCol(g) { return BOT_GOALS[g] || BOT_GOAL_ANY; }
 function botIsBot(p) { return p.active && p.control === 'ai'; }
-// the level a bot plays at, by name (AI_LEVELS / AI_ALLIES, ai.js)
+// the level a bot plays at, by name (AI_LEVELS / AI_ALLIES, ai-skill.js)
 function botLevel(p) { return aiProfile(p).name; }
 
 // the one read: { goal, why, x, y (the target's live point, or null), ref,
@@ -167,8 +167,8 @@ const BOT_BAR_W = 44;          // the goal-time bar at a row's right end
 const BOT_EDGE = '#5b6678', BOT_BG = 'rgba(12,16,24,0.92)', BOT_INK = '#d6dde8', BOT_DIM = '#7d8699';
 const BOT_SHADOW = 'rgba(6,8,14,0.9)';
 const BOT_FLASH = 18;          // ticks a fresh goal is drawn white before it takes its colour
-// each level's ink in the table, dim to hot (AI_LEVELS / AI_ALLIES, ai.js)
-const BOT_LEVEL_COL = { NORMAL: '#8f9cb3', HARD: '#c7d3e6', IMPOSSIBLE: '#ff7a7a', ALLY: '#7fb8e0' };
+// each level's ink in the table, dim to hot (AI_LEVELS / AI_ALLIES, ai-skill.js)
+const BOT_LEVEL_COL = { EASY: '#6a7488', NORMAL: '#8f9cb3', HARD: '#c7d3e6', IMPOSSIBLE: '#ff7a7a', ALLY: '#7fb8e0' };
 function botLevelCol(name) { return BOT_LEVEL_COL[name] || BOT_DIM; }
 function botViewStep() { botView = (botView + 1) % BOT_VIEW_MODES; }
 
