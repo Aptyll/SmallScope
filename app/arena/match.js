@@ -43,15 +43,12 @@ function playMatch(opts) {
   const levels = L.AI_LEVELS;
   if (o.kind === 'level') g.run(`player.ai.prof = AI_LEVELS[${o.proxy | 0}];`);
   else for (const p of L.players) p.ai.prof = levels[p.team === 0 ? o.a : o.b];
-  // scripted seats (the bot contract, thread 1's js/bots/): `bots` is the
-  // library to load ({ id: source text }), `seats` who plays where
-  // ({ seat: id }) - both inline, so a seed and the same bot files are one
-  // exact replay. `beforeDrop(G)` is the raw hook for anything else.
-  if (o.bots || o.seats) {
-    if (typeof G.botLibAdd !== 'function' || !G.BOTS) throw new Error('scripted seats need js/bots/ (the bot contract) on this branch');
-    for (const id in o.bots || {}) G.botLibAdd(id, o.bots[id], 'inline');
-    for (const seat in o.seats || {}) G.BOTS.assign(+seat, o.seats[seat]);
-  }
+  // bot files (js/bots/api.js, docs/bots/): `bots` adds programs to the
+  // library ({ id: source text }) beside the baked examples, `seats` says who
+  // plays where ({ seat: id }) - all inline, so a seed and the same files are
+  // one exact replay. `beforeDrop(G)` is the raw hook for anything else.
+  for (const id in o.bots || {}) G.botLibAdd(id, o.bots[id], 'inline');
+  for (const seat in o.seats || {}) G.BOTS.assign(+seat, o.seats[seat]);
   if (typeof o.beforeDrop === 'function') o.beforeDrop(G);
   const profName = (p) => (p.ai.prof ? p.ai.prof.name : G.aiProfile(p).name);
   const seats = L.players.map((p) => {

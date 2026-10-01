@@ -73,9 +73,10 @@ What differs from a real match, on purpose:
   is expected here; it is the difficulty.
 - **`versus`**: team 0 plays `AI_LEVELS[a]`, team 1 `AI_LEVELS[b]` through `p.ai.prof`, no ally
   bonus. `a = b` is a mirror match.
-- **Scripted seats** (the bot contract, js/bots/ once it lands): `playMatch({ bots: { id: source },
-  seats: { seat: id } })` loads each bot inline (`botLibAdd`) and assigns its seats
-  (`BOTS.assign`) before the drop; `beforeDrop(G)` is a raw hook for anything else.
+- **Bot files** (js/bots/api.js, [docs/bots/](../bots/)): `playMatch({ seats: { 0: 'starter', 1: 'pack' } })`
+  assigns seats to programs in the library (the baked examples are there already) before the drop;
+  `bots: { id: source }` adds more, inline. Same seed and same files, same match.
+  `beforeDrop(G)` is a raw hook for anything else.
 
 ## The match log
 
