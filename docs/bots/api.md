@@ -31,7 +31,8 @@ counts as an error and your seat keeps its last act. A seat that misses 10 think
 
 There is no way in to the game from a bot: no `window`, no `players`, no network (`fetch`,
 `WebSocket`, `importScripts` are gone in a worker), no storage, and no channel to another bot's
-worker. There is no other clock either (`Intl`, `performance` and `crypto` are gone). A bot may
+worker. There is no other clock either (`Intl`, `performance` and `crypto` are gone). In the game the page's
+Content-Security-Policy also stops `import()` and font loads from any other host. A bot may
 hold 64 MB of `ArrayBuffer` and typed arrays; past that, making one throws a `RangeError`. On the
 ladder each bot also runs in a thread with a 64 MB heap: a bot that runs out of memory dies, its
 seats stand still for the rest of the match, and its side loses by forfeit. Every message crosses as JSON, so nothing you receive leads back to the game's objects.
@@ -218,10 +219,15 @@ ROAM WOLF`; any other word shows plain. Target kinds: `player`, `soldier`, `bird
 
 ## Hands
 
-Every scripted seat aims with the same hands: the crosshair swings toward your `aim` at a fixed
-speed with a small wobble, about as well as the game's HARD bots (`skillHands`, which arrives
-with the difficulty work; until it does, the crosshair lands exactly on `aim`). `aim` is where
-you *want* to aim; lead a moving target yourself.
+Every scripted seat aims with the same hands, the game's HARD bots' (`AI_LADDER_HANDS`,
+js/ai-skill.js):
+
+| crosshair speed | wobble | a drawn shot |
+| --- | --- | --- |
+| 700 px/s, moving as an offset from your body | about 5 px at bow range, wider on a new target, settling in 0.6 s | is held until the crosshair is within 8 px of `aim` |
+
+So releasing `fire` is a request: the arrow leaves once the crosshair has caught up. `aim` is
+where you *want* to aim; lead a moving target yourself.
 
 ## Versioning
 
