@@ -815,13 +815,19 @@ const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight clim
 function wakeCamp(w, t) {
   if (!t) return;
   if (!w.home) { w.target = t; w.threat = 1; return; }
-  let howl = false;
+  // the cue a waking camp gives: a bear roars (the sound lands with its roar
+  // clip), a pack howls. Only a monster not already hunting gives one, so a
+  // camp mid-chase stays quiet however often it is hit
+  let cue = null;
   for (const o of animals) {
     if (o.dead || !isCampKind(o.kind) || o.home !== w.home) continue;
-    if (!o.target) { howl = true; if (ANIM_CLIPS[o.kind].roar) setClip(o, 'roar'); }
+    if (!o.target) {
+      if (ANIM_CLIPS[o.kind].roar) { setClip(o, 'roar'); cue = 'roar'; }
+      else if (!cue) cue = 'howl';
+    }
     o.target = t; o.threat = 1;
   }
-  if (howl) sfxAt('howl', w.x, w.y, 260);
+  if (cue) sfxAt(cue, w.x, w.y, 260);
 }
 
 function updateCampMonster(a, dt) {

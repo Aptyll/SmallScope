@@ -1672,8 +1672,10 @@ still load. All three run
 - **Neutral.** There is no sight and no threat bar filling on a linger: a player can stand at
   the mouth of a den and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
   stomp, anything through `hurtUnit` — and it wakes the *camp*: `wakeCamp(w, hitter)` hands the
-  hitter to every monster of the same camp at a full leash bar and plays `SFX.howl()`; a bear that
-  was not already hunting first plays its `roar` clip, planted, for `BEAR_ROAR_FRAMES`. Every
+  hitter to every monster of the same camp at a full leash bar. A bear that was not already
+  hunting plays its `roar` clip, planted, for `BEAR_ROAR_FRAMES`, and the camp gives `SFX.roar()`
+  (the `roar` sample, a low bear roar about as long as the clip); a pack that wakes gives
+  `SFX.howl()`. A camp already on a hunt is silent however often it is hit. Every
   further hit re-aims the camp at the latest hitter, which is how a team takes turns tanking
   it.
 - **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
