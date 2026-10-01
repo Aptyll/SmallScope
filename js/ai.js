@@ -522,8 +522,6 @@ function aiThink(p, dt) {
   ai.guarding = false;
   if (humanOrder && prof.support && !aiObeys(p, prof, order)) order = null;
   else if (humanOrder && order.type === 'attack' && guardE && role === 'guard') { aiAnswerFlag(p, order, 'guarding'); order = null; ai.guarding = true; }
-  if (humanOrder && order) { if (inFlag(order, p.x, p.y)) ai.answered = order; else aiAnswerFlag(p, order, 'onit'); } // (one already in the ring says nothing)
-  aiAnswerStep(p);
   const flX = order ? order.tx * TILE + 8 : 0, flY = order ? order.ty * TILE + 8 : 0;
   if (order) {
     pushE = order.type === 'attack' && theirs && ai.pushCd <= 0 && inFlag(order, theirs.e.x, theirs.e.y) ? theirs.e : null;
@@ -531,6 +529,14 @@ function aiThink(p, dt) {
     guardE = null;
     ward = null;
   }
+  // (the answer is what it will do: ON IT on the way, nothing from one
+  // already in the ring, and GUARDING from one its bird's alarm keeps home)
+  if (humanOrder && order) {
+    if (defend && !(order.type === 'defend' && inFlag(order, own.x, own.y))) aiAnswerFlag(p, order, 'guarding');
+    else if (inFlag(order, p.x, p.y)) ai.answered = order;
+    else aiAnswerFlag(p, order, 'onit');
+  }
+  aiAnswerStep(p);
   // a teammate's call for help it would answer (the team brain): a bot with
   // somewhere it must be - the push, its bird, a flag, a guard's post - does
   // not leave it for one
@@ -1035,27 +1041,28 @@ function aiThink(p, dt) {
   ai.fitT -= dt;
   if (ai.fitT <= 0) { ai.fitT = 2.5; botFitLoadout(p); }
 
-  // 9. spend the purse (gear went at rung 0, from anywhere): a stump to
-  //    build on, then its own work to upgrade
-  // (what it means to build is picked once and kept until it builds or gives
-  // up - re-rolled every tick it flipped between a site and no site)
-  if (!ai.buildType) ai.buildType = rng() < 0.3 ? 'spawner' : 'generator';
-  const wantType = p.inv.gold >= STRUCTS.generator.tiers[0].cost.gold && T.built < AI_BUILD_CAP ? ai.buildType : null; // (past the side's cap it only upgrades)
-  if (ai.buildT <= 0 && wantType) {
+  // 9. spend the purse (gear went at rung 0, from anywhere) on income, by
+  //    payback (aiEcoBuy, the team brain): a stump to build on, or its own
+  //    generator to raise a tier. Never with its bird under attack or a
+  //    rival in sight; short of the price, it saves for it.
+  const buy = ai.buildT <= 0 && !(mine && mine.threat) && !(foe instanceof Player) ? aiEcoBuy(p) : null;
+  const buyWhy = buy ? 'PAYS IN ' + Math.ceil(buy.pay) + ' MIN' : '';
+  const wantType = buy && buy.type && p.inv.gold >= buy.cost ? buy.type : null;
+  if (wantType) {
     const st = aiBuildSite(p, wantType);
     if (st) {
       const sx = st.tx * TILE + 8, sy = st.ty * TILE + 8;
       const d = Math.hypot(sx - p.x, sy - p.y);
-      aiNote(p, 'BUILD', wantType.toUpperCase(), { x: sx, y: sy });
+      aiNote(p, 'BUILD', buyWhy, { x: sx, y: sy });
       if (d > 40) {
         // a site it cannot route to must not pin it there
-        if (steerTo(sx, sy) < 0) { ai.buildT = 15; ai.spendT = 0; ai.buildType = null; }
+        if (steerTo(sx, sy) < 0) { ai.buildT = 15; ai.spendT = 0; }
         return;
       }
       if (d > 16) { // clear of the site: order it
         ai.spendT = 0;
         inp.cmd = { kind: 'build', tx: st.tx, ty: st.ty, id: wantType };
-        ai.buildT = 12; ai.buildType = null;
+        ai.buildT = 12;
         return;
       }
       // standing on the site: step off toward the openest neighbouring tile
@@ -1070,21 +1077,21 @@ function aiThink(p, dt) {
       }
       steerTo((bx + 0.5) * TILE, (by + 0.5) * TILE);
       ai.spendT += dt;
-      if (ai.spendT > 3) { ai.buildT = 15; ai.spendT = 0; ai.buildType = null; } // wedged: go do something else
+      if (ai.spendT > 3) { ai.buildT = 15; ai.spendT = 0; } // wedged: go do something else
       return;
     }
-  }
-  if (ai.buildT <= 0) {
-    const up = nearestObj(p.x, p.y, 3, (o) => STRUCTS[o.type] && !o.building &&
-      o.team === p.team && o.tier < STRUCTS[o.type].tiers.length - 1 && canAfford(STRUCTS[o.type].tiers[o.tier + 1].cost, p));
-    if (up) {
-      aiNote(p, 'BUILD', 'UPGRADE', up);
-      inp.cmd = { kind: 'upgrade', tx: up.tx, ty: up.ty, id: 'upgrade' };
-      ai.buildT = 10;
+    ai.buildT = 4; // no stump near: look again shortly
+  } else if (buy && buy.up && canAfford(STRUCTS[buy.up.type].tiers[buy.up.tier + 1].cost, p)) {
+    const o = buy.up, ux = o.tx * TILE + 8, uy = o.ty * TILE + 8;
+    aiNote(p, 'BUILD', buyWhy, o);
+    if (Math.hypot(ux - p.x, uy - p.y) > 48) {
+      if (steerTo(ux, uy) < 0) ai.buildT = 15;
       return;
     }
-    ai.buildT = 4; // nothing worth spending on nearby; look again shortly
-  }
+    inp.cmd = { kind: 'upgrade', tx: o.tx, ty: o.ty, id: 'upgrade' };
+    ai.buildT = 10;
+    return;
+  } else if (ai.buildT <= 0) ai.buildT = 4; // nothing worth it, or saving up: look again shortly
 
   // 10. harvest: walk to a tree/rock/berry bush/chest and hold E on it
   // (a stripped bush stops being work, so drop it the moment it empties)
