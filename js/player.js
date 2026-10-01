@@ -903,6 +903,7 @@ function die(p, src, cause) {
       sfxAt('heal', killer.x, killer.y);
     }
   }
+  storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
   logEvent(killer ? killer.name + ' ' + (KILL_VERB[cause] || 'SHOT') + ' ' + p.name
     : p.name + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
   // the bird is the way back - a side whose objective has fallen is out,
