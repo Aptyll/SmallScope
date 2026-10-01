@@ -942,6 +942,17 @@ runs every `CALL_LOOK` ticks staggered by seat and draws no `rng()`, so a match 
 same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS`, and
 `addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
 
+**A human's flag gets an answer** (`callOrders`, the `orders` banner). Planting or moving one
+queues every bot that serves it (`servedFlag`) and stands outside its ring, staggered by seat
+(`CALL_ORDER_GAP`). Each answers on its turn from what its brain is doing by then
+(`callAnswer`, reading `p.ai.thought`): walking the order says ON IT; held at its bird by the
+alarm says GUARDING, one bot per side per flag; busy with anything else, it gets
+`CALL_ORDER_WAIT` to turn to the order and otherwise says nothing. Lifting a flag says nothing.
+Answers skip `CALL_SIDE_GAP` but wait for room under `CALL_SIDE_MAX`; the queue (`callFlags`) is
+in `SAVE_ROOTS`. **A grudge** is the team brain's call: `callGrudge(p, mark)` says YOU AGAIN
+over the rival's head to the mark's side only (a call's `see`), once per pair per
+`CALL_GRUDGE_T`. A scripted bot may say only `BOT_CALLS` (js/bots/api.js), none of these three.
+
 ## Online play
 
 A match is ten seats, and any of them can be a person on another screen: relay rooms between

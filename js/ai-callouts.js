@@ -33,36 +33,47 @@ const CALL_ROOST_R = 240;   // px round a bird that counts as at it (the brain's
 
 // What each call is. `word` is what prints (a function when the call names
 // something), `icon` the glyph beside it (CALL_GLYPHS, js/draw/callouts.js)
-// and `ink` its accent. `pin` says whether the ping stays on the ground where
-// it was called (a spot) or rides the caller (the caller is the spot).
+// and `ink` its accent. `pin` marks a call whose spot is the caller itself:
+// no ground ping, the plate is the whole call. `t` is a life other than
+// CALL_T, and `map: false` keeps a call off the minimap disc.
 const CALLS = {
-  bird: { word: () => 'BIRD!', icon: 'bird', ink: '#ff9a4d' },
-  help: { word: () => 'HELP!', icon: 'help', ink: '#6be38a' },
-  low:  { word: (n) => n + ' LOW!', icon: 'low', ink: '#ff5a6a' },
-  push: { word: () => 'PUSH!', icon: 'push', ink: '#8fe3ff' },
-  here: { word: (n) => n + ' HERE!', icon: 'here', ink: '#ffd166' },
+  bird:   { word: () => 'BIRD!', icon: 'bird', ink: '#ff9a4d' },
+  help:   { word: () => 'HELP!', icon: 'help', ink: '#6be38a', pin: true },
+  low:    { word: (n) => n + ' LOW!', icon: 'low', ink: '#ff5a6a' },
+  push:   { word: () => 'PUSH!', icon: 'push', ink: '#8fe3ff' },
+  here:   { word: (n) => n + ' HERE!', icon: 'here', ink: '#ffd166' },
+  // the answers to a human's flag (the `orders` block below)
+  order:  { word: () => 'ON IT', icon: 'order', ink: '#e8eeff', pin: true, t: 1.6, map: false },
+  guard:  { word: () => 'GUARDING', icon: 'guard', ink: '#b9a3ff', pin: true, t: 1.8, map: false },
+  // a rival who has downed the same scout twice, on seeing them again:
+  // said to the MARK's side (callGrudge)
+  grudge: { word: () => 'YOU AGAIN', icon: 'grudge', ink: '#ff4d5e', pin: true, map: false },
 };
+function callLife(c) { return CALLS[c.k].t || CALL_T; }
 const CALL_KINDS = Object.keys(CALLS);
 
-const callouts = []; // live: { k, word, id (caller seat), team, x, y, t }
+const callouts = []; // live: { k, word, id (caller seat), team, see (the side shown it), x, y, t }
 
 // The one door in: every call, a bot's own or (later) a scripted bot's
 // `act.call`, goes through here. Records itself for the clients, the way a
-// floater does, and rings the notch for the screen whose side it is.
-function addCallout(k, word, id, team, x, y) {
+// floater does, and rings the notch for the screen whose side sees it -
+// the caller's own side, unless `see` names the other (a grudge).
+function addCallout(k, word, id, team, x, y, see) {
   if (!CALLS[k]) return;
-  evPush('call', [k, word, id, team, x, y]);
-  callouts.push({ k, word, id, team, x, y, t: 0 });
-  callSaid[team][k] = callSaid[team].any = { t: state.elapsed, x, y };
-  if (player && team === player.team && !PRACTICE) SFX.notch();
+  if (see === undefined) see = team;
+  evPush('call', [k, word, id, team, x, y, see]);
+  callouts.push({ k, word, id, team, see, x, y, t: 0 });
+  if (see === team) callSaid[team][k] = callSaid[team].any = { t: state.elapsed, x, y };
+  if (player && see === player.team && !PRACTICE) SFX.notch();
 }
 
 function updateCallouts(dt) {
   for (let i = callouts.length - 1; i >= 0; i--) {
     callouts[i].t += dt;
-    if (callouts[i].t >= CALL_T) callouts.splice(i, 1);
+    if (callouts[i].t >= callLife(callouts[i])) callouts.splice(i, 1);
   }
   if (PRACTICE) return;
+  callOrders(0); callOrders(1);
   for (const p of players) {
     if (p.control !== 'ai' || !unitAlive(p)) continue;
     const ai = p.ai;
@@ -79,7 +90,7 @@ function updateCallouts(dt) {
 function callFree(team, k, x, y) {
   let up = 0;
   for (const c of callouts) {
-    if (c.team !== team) continue;
+    if (c.see !== team) continue;
     up++;
     if (c.k === k && Math.hypot(c.x - x, c.y - y) < CALL_SAME_R) return false;
   }
@@ -147,4 +158,80 @@ function callFriend(p) {
     best = q;
   }
   return best;
+}
+
+// ------ orders
+// A human's flag gets an answer. When a human on a side plants or moves one,
+// every bot that serves it (servedFlag - the same read the ladder makes) and
+// is not already in its ring is queued to answer, staggered by seat so the
+// answers read as a crew and not a chorus. Each answers when its turn comes,
+// from what its brain is doing by then (`p.ai.thought`): walking the order
+// says ON IT; held at its bird by the alarm (the one thing no flag
+// overrides) says GUARDING, one bot per side per flag; anything else - a
+// fight, a meal, a retreat - says nothing yet, and gets CALL_ORDER_WAIT to
+// turn to the order before its answer is dropped. These skip CALL_SIDE_GAP
+// for that flag (an order is answered at once or not at all) but not
+// CALL_SIDE_MAX: a crew answering takes turns on the screen.
+const CALL_ORDER_GAP = [0.2, 0.6]; // s between two answers, picked by seat
+const CALL_ORDER_WAIT = 2.5;       // s an answer waits for its bot to turn to the order, or for room
+// per side: the standing human flag's key and the queue of answers to it
+const callFlags = [{ key: null, pend: [], guard: false }, { key: null, pend: [], guard: false }];
+function callOrders(team) {
+  const f = humanFlag(team), cf = callFlags[team];
+  const key = f ? f.tx + ',' + f.ty + ',' + f.type : null;
+  if (key !== cf.key) {
+    cf.key = key; cf.pend.length = 0; cf.guard = false; // lifted: no words; moved or replaced: fresh answers
+    if (f) {
+      let at = state.elapsed;
+      for (const p of players) {
+        if (p.team !== team || p.control !== 'ai' || !unitAlive(p) || servedFlag(p) !== f || inFlag(f, p.x, p.y)) continue;
+        at += CALL_ORDER_GAP[0] + (p.id * 7 % 5) / 4 * (CALL_ORDER_GAP[1] - CALL_ORDER_GAP[0]);
+        cf.pend.push({ id: p.id, at });
+      }
+    }
+  }
+  for (let i = 0; i < cf.pend.length; i++) {
+    const q = cf.pend[i];
+    if (state.elapsed < q.at) break; // queued in order: the rest wait their turn too
+    const p = players[q.id], late = state.elapsed - q.at > CALL_ORDER_WAIT;
+    const k = !late && unitAlive(p) ? callAnswer(p, f) : 'drop';
+    if (!k) continue; // busy: ask again next step
+    if (k !== 'drop') {
+      let up = 0;
+      for (const c of callouts) if (c.see === team) up++;
+      if (up >= CALL_SIDE_MAX) continue; // no room on the screen yet
+      addCallout(k, CALLS[k].word(), p.id, team, Math.round(p.x), Math.round(p.y));
+      if (k === 'guard') cf.guard = true;
+    }
+    cf.pend.splice(i--, 1);
+  }
+}
+// what p says to flag f right now: 'order', 'guard', 'drop' (nothing, ever)
+// or null (nothing yet)
+function callAnswer(p, f) {
+  const th = p.ai.thought;
+  if (!th) return null;
+  if (th.goal === 'ORDER' || th.goal === 'RALLY' || /FLAG/.test(th.why || '') ||
+    (f.type === 'attack' && (th.goal === 'PUSH' || th.goal === 'REGROUP')) || (f.type === 'defend' && th.goal === 'DEFEND')) return 'order';
+  if (th.goal === 'DEFEND' || th.goal === 'GUARD') return callFlags[p.team].guard ? 'drop' : 'guard';
+  return null;
+}
+
+// ------ grudges
+// The team brain's call (js/ai-team.js): rival bot p has downed `mark` twice
+// and has just seen them again. Said once per grudge - a repeat for the same
+// pair waits CALL_GRUDGE_T - and shown to the MARK's side, over p's head, so
+// the scout being hunted knows it. It ignores CALL_SIDE_GAP (the hunter's
+// side never sees it) but not the mark's side's CALL_SIDE_MAX.
+const CALL_GRUDGE_T = 90; // s before the same rival may say it to the same scout again
+function callGrudge(p, mark) {
+  if (PRACTICE || !unitAlive(p) || !mark || mark.team === p.team) return false;
+  const key = p.id + '>' + mark.id, last = callSaid[p.team]['grudge' + key];
+  if (last && state.elapsed - last.t < CALL_GRUDGE_T) return false;
+  let up = 0;
+  for (const c of callouts) if (c.see === mark.team) up++;
+  if (up >= CALL_SIDE_MAX) return false;
+  addCallout('grudge', CALLS.grudge.word(), p.id, p.team, Math.round(p.x), Math.round(p.y), mark.team);
+  callSaid[p.team]['grudge' + key] = { t: state.elapsed, x: p.x, y: p.y };
+  return true;
 }

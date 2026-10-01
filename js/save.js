@@ -36,7 +36,8 @@ const SAVE_FLASH_T = 1.6;   // s the HUD's saved mark shows
 // [name, get, put]: get() hands the live value in, put(v) takes the decoded
 // one back. A const container is refilled in place (every file holds the same
 // array); a `let` is reassigned (this file shares the one global scope).
-function saveArr(a) { return [() => a, (v) => { a.length = 0; for (const x of v) a.push(x); }]; }
+// (a save from before the array joined SAVE_ROOTS carries none of it: it loads empty)
+function saveArr(a) { return [() => a, (v) => { a.length = 0; if (v) for (const x of v) a.push(x); }]; }
 // state's own UI keys are this screen's and never the match's: a load opens
 // with every panel shut
 const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'bagOpen', 'charOpen', 'shop', 'drag', 'dragPend',
@@ -56,7 +57,11 @@ const SAVE_ROOTS = [
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceCracks', () => iceCracks, (v) => { iceCracks.clear(); for (const [k, x] of v) iceCracks.set(k, x); }],
   ['market', () => market, (v) => Object.assign(market, v)],
-  ['callouts', ...saveArr(callouts)], ['callSaid', () => callSaid, (v) => { callSaid[0] = v[0]; callSaid[1] = v[1]; }],
+  // the bot callouts (js/ai-callouts.js); a save from before they existed
+  // carries none of these, and loads with every side silent
+  ['callouts', ...saveArr(callouts)],
+  ['callSaid', () => callSaid, (v) => { callSaid[0] = v ? v[0] : {}; callSaid[1] = v ? v[1] : {}; }],
+  ['callFlags', () => callFlags, (v) => { for (const t of [0, 1]) Object.assign(callFlags[t], v ? v[t] : { key: null, pend: [], guard: false }); }],
   ['rng', () => [rng.s, fxRng.s, mktRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; mktRng.s = v[2]; }],
   ['wild', () => [preyRepopT, fishCap, fishFloor, emergeSites],
     (v) => { preyRepopT = v[0]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],

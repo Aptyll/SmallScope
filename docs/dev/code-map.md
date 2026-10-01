@@ -391,6 +391,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
+| a human's flag answered (ON IT, GUARDING) and a rival's grudge said to its mark (YOU AGAIN) | `callOrders`, `callAnswer`, `callFlags`, `CALL_ORDER_*`; `callGrudge`, `CALL_GRUDGE_T` | `orders`, `grudges` |
 | a bot's callout to its side: what each one is, when one is said, the anti-spam rules, the one door every call goes through | `CALLS`, `CALL_*`, `updateCallouts` (called from `updatePlay`, sim.js), `callLook`, `callFriend`, `callFree`/`callSaid`, `addCallout` (replayed by `evPlay`, js/net/events.js), `callouts` | `bot callouts` (the pixels: js/draw/callouts.js) |
 
 ## js/sim.js
