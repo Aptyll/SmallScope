@@ -118,6 +118,7 @@
     yelp: ['Sharp,_sudden_yelp_o_#1-1787704729513.mp3', 'Sharp,_sudden_yelp_o_#4-1787704737368.mp3'],
     beastDie: ['rabbit_death_#3-1787705452920.mp3'],
     wolf: ['wolf_noise_#4-1787703570165.mp3'],
+    roar: ['low_bear_roar_4.mp3'],
     timber: ['tree_falling_down_#1-1787704695709.mp3', 'tree_falling_down_#3-1787704695712.mp3'],
     coin: ['gold_coin_dropping_o_#1-1787704006953.mp3', 'gold_coin_dropping_o_#4-1787704018023.mp3'],
     stash: ['pocket_items_thrown__#2-1787704061469.mp3', 'pocket_items_thrown__#4-1787704061471.mp3'],
@@ -871,6 +872,11 @@
     howl() {
       if (smp('wolf', { vol: 0.89, jitter: 0.08 })) return;
       tone(280, 0.55, 'sawtooth', 0.05, 150); tone(430, 0.75, 'triangle', 0.06, -140, 0.1); tone(360, 0.5, 'triangle', 0.035, -110, 0.34);
+    },
+    // a bear waking: one low roar, timed to its planted roar clip
+    roar() {
+      if (smp('roar', { vol: 0.89, jitter: 0.05 })) return;
+      tone(110, 0.7, 'sawtooth', 0.09, -40); tone(82, 0.8, 'sawtooth', 0.07, -25, 0.05); noise(0.6, 0.12, 380);
     },
     bite() { if (smp('impact', { vol: 0.51, rate: 1.45, jitter: 0.1, gap: 0.05, dur: 0.35 })) return; noise(0.07, 0.32, 1100); tone(210, 0.08, 'sawtooth', 0.11, -110); },
     // the rookery going up: three overlapping beats of wings
