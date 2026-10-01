@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.79';
+const PATCH_TXT = 'PATCH 4.80';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.80', 'A PLAYER WHO FALLS FLOATS THEIR LAST DAMAGE TOTAL UP AND OUT, SO EVEN A ONE-SHOT SHOWS WHAT HIT THEM.'],
   ['4.79', 'BOTS DEFEND LESS AND NEVER STAND AROUND DOING IT: ONE STAYS HOME UNLESS THE BIRD IS UNDER FIRE, AND IT BUILDS TURRETS ALONG THE SPUR AND WALKS OUT UP THE ROAD TO SCOUT FOR YOU.'],
   ['4.78', 'BOTS NO LONGER FLICKER IN A FIGHT: ONE STANDING RIGHT AT ITS FIGHTING RANGE STOPPED SWAPPING BETWEEN CLOSING IN AND CIRCLING EVERY FRAME.'],
   ['4.77', 'BODIES STOP BLINKING IN A FIGHT: A PLAYER WALKING OR AIMING ON A DIAGONAL, OR SHOOTING WHILE ON THE MOVE, NO LONGER FLIPS ITS SPRITE FOR A SINGLE FRAME AND BACK.'],
@@ -1272,6 +1273,7 @@ const PATCH_DIGEST = [
     ['HEALTH BARS ARE CUT INTO EVEN SEGMENTS', '3.99'],
     ['HEALTH BARS STAY CRISP AT NIGHT AND NEVER HIDE BEHIND A TREE', '4.70'],
     ['DAMAGE ADDS UP IN ONE NUMBER BESIDE THE BAR, IN THE BAR\'S COLOUR', '4.76'],
+    ['A FALLEN PLAYER\'S DAMAGE FLOATS UP AND FADES', '4.80'],
     ['EACH SHOP OFFER SELLS ONCE UNTIL THE NEXT RESTOCK', '3.81'],
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '3.73'],
   ]],
