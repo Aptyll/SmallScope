@@ -1222,14 +1222,16 @@ function drawEagle(e, ex, ey, now) {
       // is set here rather than asked of hpSegCount (which would split
       // EAGLE_HP into a comb of 2 px blocks)
       const bw = PERCH_BAR_W, bh = PERCH_BAR_H, bx = Math.round(sx - bw / 2), by = sy - Math.round(vh) - 5 - bh;
-      ctx.fillStyle = '#0f1632'; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
-      ctx.fillStyle = '#3a3448'; ctx.fillRect(bx, by, bw, bh);
-      ctx.fillStyle = TEAMS[skin(e.team)].mark;
-      ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), bh);
-      const segs = PERCH_BAR_SEGS, seg = (bw + 1) / segs;
-      ctx.fillStyle = HP_TICK;
-      for (let k = 1; k < segs; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
-      drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - 15, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
+      overheadPlate(() => { // over the grade, like every frame (js/draw/light.js)
+        ctx.fillStyle = BAR_FRAME; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+        ctx.fillStyle = BAR_TRACK; ctx.fillRect(bx, by, bw, bh);
+        ctx.fillStyle = TEAMS[skin(e.team)].mark;
+        ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), bh);
+        const segs = PERCH_BAR_SEGS, seg = (bw + 1) / segs;
+        ctx.fillStyle = HP_TICK;
+        for (let k = 1; k < segs; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
+        drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - 15, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
+      });
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -

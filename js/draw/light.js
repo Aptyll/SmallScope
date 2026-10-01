@@ -675,8 +675,39 @@ function nightEdge(a) {
 // raises a sense mark of its own, ui/menu.js) has no grade over it and no
 // flush coming, and draws where it stands.
 const worldInk = [];
+// The frames over a body - a health bar, the level plate, the draw meter,
+// the name - are readouts too, and they are held back the same way, one
+// closure per body (overheadPlate). Graded in place, a bar wore whatever
+// the world laid over it that frame: a god ray's stripe, a drifting cloud's
+// edge, the night's blue on a red bar, a pine's canopy or the next body's
+// sprite cut across it. Stamped together in the world's own draw order, each
+// body's frame comes out the same pixels every frame, and a nearer body's
+// whole frame - name and bars as one - covers a farther one's, the way
+// League's plates pile.
+const worldPlates = [];
+let platesNow = false; // set while the flush stamps them: a plate's own calls then draw in place
+function overheadPlate(fn) {
+  if (ctx !== wctx || platesNow) { fn(); return; }
+  // the caller's fade (a buried body's) and its offset (a wader's sink,
+  // drawWading) ride along; a clip does not - a cut frame is the bug
+  worldPlates.push(fn, ctx.globalAlpha, ctx.getTransform());
+}
+function flushPlates() {
+  if (!worldPlates.length) return;
+  const base = ctx.getTransform();
+  platesNow = true;
+  for (let i = 0; i < worldPlates.length; i += 3) {
+    ctx.globalAlpha = worldPlates[i + 1];
+    ctx.setTransform(worldPlates[i + 2]);
+    worldPlates[i]();
+  }
+  ctx.setTransform(base);
+  ctx.globalAlpha = 1;
+  platesNow = false;
+  worldPlates.length = 0;
+}
 function drawWorldText(text, x, y, color, scale, alpha) {
-  if (ctx !== wctx) {
+  if (ctx !== wctx || platesNow) {
     const was = ctx.globalAlpha;
     if (alpha !== undefined) ctx.globalAlpha = was * alpha;
     drawPixelTextOutline(ctx, text, x, y, color, '#0f1632', scale || 1);
@@ -726,6 +757,7 @@ function settleNameTags() {
   }
 }
 function flushWorldInk() {
+  flushPlates(); // under the loose ink: a damage floater still lands over a frame
   settleNameTags();
   for (let i = 0; i < worldInk.length; i += 7) {
     ctx.globalAlpha = worldInk[i + 5];

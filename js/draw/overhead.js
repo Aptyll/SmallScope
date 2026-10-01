@@ -94,6 +94,10 @@ function paintArrowPx(px) {
 //             beside a red rival bar was two warm bars, and it is fire's.
 // The cursor's bow ring, the aim line and the mouse icon speak the same
 // gold / pale gold (render.js, ui.js), so "full draw" is one colour everywhere.
+// Every frame is one opaque ink, the name outline's (drawPixelTextOutline),
+// over one track grey: a see-through backing came out a different colour on
+// snow, on a pine, on another body's frame, so no two frames matched.
+const BAR_FRAME = '#0f1632', BAR_TRACK = '#3a3448';
 const BAR_NEUTRAL = '#f2cc6a';
 const STAM_COL = '#f4f7ff', STAM_GHOST = '#9aa4c0'; // the fill, and the dimmer chunk just spent draining into place
 const DRAW_COL = '#ffd95c', DRAW_FULL_COL = '#fff3c4', DRAW_FULL_FLASH = 0.12; // s of white the peak blinks for
@@ -127,13 +131,18 @@ function evenBarW(w) {
 }
 // small overhead bar shared by every living unit, in its side's colour
 // (barCol - pass nothing for a thing with no side); col overrides it for a
-// bar that is not health at all (a wolf's threat, a regrow clock)
+// bar that is not health at all (a wolf's threat, a regrow clock). In the
+// world it is a plate (overheadPlate, js/draw/light.js): stamped over the
+// grade, in the bodies' order, never cut by what stands in front of it.
 function drawHealthBar(cxp, topY, hp, maxHp, w, team, col) {
+  overheadPlate(() => healthBarPx(cxp, topY, hp, maxHp, w, team, col));
+}
+function healthBarPx(cxp, topY, hp, maxHp, w, team, col) {
   const x = Math.round(cxp - w / 2), y = Math.round(topY);
   const frac = Math.max(0, Math.min(1, hp / maxHp));
-  ctx.fillStyle = 'rgba(12,18,42,0.78)';
+  ctx.fillStyle = BAR_FRAME;
   ctx.fillRect(x - 1, y - 1, w + 2, 4);
-  ctx.fillStyle = '#3a3448';
+  ctx.fillStyle = BAR_TRACK;
   ctx.fillRect(x, y, w, 2);
   ctx.fillStyle = col || barCol(team);
   // a living thing's last sliver of hp is still a pixel; an empty charge
@@ -163,9 +172,9 @@ function drawHealthBar(cxp, topY, hp, maxHp, w, team, col) {
 function drawLevelBadge(rx, topY, level) {
   const lt = String(level), lw = pixelTextWidth(lt);
   const bw = lw + 3, bx = rx - bw;
-  ctx.fillStyle = 'rgba(12,18,42,0.78)';
+  ctx.fillStyle = BAR_FRAME;
   ctx.fillRect(bx, topY, bw, 7);
-  ctx.fillStyle = '#3a3448';
+  ctx.fillStyle = BAR_TRACK;
   ctx.fillRect(bx + 1, topY + 1, bw - 1, 5);
   drawPixelText(ctx, lt, bx + 2, topY + 1, '#f2cc6a');
 }
