@@ -65,8 +65,7 @@ Today bots run offline, on your own computer, two ways:
 - **What a player sees, nothing more.** Rivals show up near any of your side, the way the minimap
   shows them, and a rival buried in the snow drops off it. Both birds are always known.
 - **The same hands for everyone.** On the ladder every seat's crosshair turns at the same speed
-  and wobbles the same, so the ladder ranks decisions, not aim (this arrives with the difficulty
-  work; until then aim is exact).
+  and wobbles the same (the HARD bots' hands), so the ladder ranks decisions, not aim.
 - **Ten thinks a second.** An answer that is late is not waited for in a live game; the seat
   keeps what it held.
 - **A broken bot stands still.** A throw is caught and counted (`BOTS.rt` in the page's console);

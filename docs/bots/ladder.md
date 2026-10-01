@@ -40,7 +40,7 @@ table, then the path of the standings page.
 - **A changed file** keeps its rating and counts a new revision (`r2`, `r3` on the page), so
   you can watch a bot climb as you improve it. Retire it and enter it under a new id to start fresh.
 - **Fairness:** every seat sees only what its player could see and aims with the same hands
-  ([api.md](api.md#hands), arriving with the difficulty work), so the ladder ranks decisions, not aim.
+  ([api.md](api.md#hands): the HARD bots' hands), so the ladder ranks decisions, not aim.
 
 ## What it keeps
 

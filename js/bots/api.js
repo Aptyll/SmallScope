@@ -486,7 +486,8 @@ if (typeof self !== 'undefined') {
   for (const k of ['fetch', 'XMLHttpRequest', 'WebSocket', 'WebTransport', 'EventSource', 'importScripts', 'indexedDB', 'caches',
     'BroadcastChannel', 'MessageChannel', 'Worker', 'SharedWorker', 'navigator', 'location', 'Request', 'Response', 'FileReaderSync',
     'Blob', 'File', 'TextEncoder', 'TextEncoderStream', 'CompressionStream', 'DecompressionStream', 'OffscreenCanvas', 'ImageData',
-    'createImageBitmap', 'WebGLRenderingContext', 'WebGL2RenderingContext', 'GPU', 'reportError']) {
+    'createImageBitmap', 'WebGLRenderingContext', 'WebGL2RenderingContext', 'GPU', 'reportError',
+    'FontFace', 'fonts', 'WebSocketStream', 'Notification', 'ServiceWorker', 'Cache', 'CacheStorage', 'StorageManager']) {
     for (let o = self; o; o = Object.getPrototypeOf(o)) { try { delete o[k]; } catch (e) { } }
     try { Object.defineProperty(self, k, { value: undefined }); } catch (e) { }
   }
