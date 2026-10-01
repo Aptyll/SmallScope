@@ -233,6 +233,12 @@ every `getImageData`. Rerun the baker after replacing the picture.
 Music is deliberately **not** baked: it is ~70 MB, and an `<audio>` element streams a relative
 `file://` path perfectly well — only `fetch` is blocked.
 
+index.html carries a **Content-Security-Policy**: scripts, workers and fonts from the page's own
+files, `blob:` and `data:` only; connections to its own origin plus any `ws:`/`wss:` (the
+multiplayer relay). It is what keeps a bot's Web Worker (js/bots/api.js, which inherits it)
+from `import()`ing code or sending data to another host. A new feature that loads from
+elsewhere must widen it on purpose.
+
 ### audio.js
 
 Three layers under one master dial: a WebAudio synth for UI blips *and* as the fallback line

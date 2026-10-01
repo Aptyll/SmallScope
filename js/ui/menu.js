@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.63';
+const PATCH_TXT = 'PATCH 4.64';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.64', 'A BOT IN THE GAME CAN NO LONGER REACH THE INTERNET: THE PAGE NOW REFUSES SCRIPTS, FONTS AND REQUESTS FROM ANY OTHER HOST.'],
   ['4.63', 'EACH GENERATOR AND BOT BAY YOU OWN MAKES THE NEXT ONE COST HALF AGAIN AS MUCH, SO A FEW PAY OFF AND A FIELD OF THEM DOES NOT.'],
   ['4.62', 'FOUR NEW BOTS JOIN THE LADDER, EACH WITH ITS OWN STYLE: RAIDER RUSHES, BULWARK TURTLES, PROSPECTOR FARMS AND SHEPHERD RIDES THE SOLDIER WAVES.'],
   ['4.61', 'A BOT STANDING BESIDE ITS GOAL, THE BIRD OR A TREE, IS TOLD IT ARRIVED INSTEAD OF THAT ITS ROUTE FAILED.'],
