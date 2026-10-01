@@ -26,6 +26,8 @@ const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page
 const BOT_CMDS = new Set(['build', 'upgrade', 'repair', 'demolish', 'gear', 'ability', 'flag', 'shop']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'deadTree', 'rock', 'bush', 'chest']);
+const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
+const BOT_CALL_LOW = new Set(['HUNTER', 'WARRIOR', 'BEAR']);       // what a 'low' call may name
 
 // ---- the library --------------------------------------------------------------
 // Every program a seat can run, by id: { id, name, src, run } - `run` names
@@ -214,7 +216,7 @@ function botAct(a) {
   if (!a || typeof a !== 'object') return null;
   const W = WORLD * TILE, out = { mx: 0, my: 0, aimX: NaN, aimY: NaN, fire: !!a.fire, work: !!a.work, slide: !!a.slide, grapple: !!a.grapple,
     goTo: null, dodge: !!a.dodge, jump: !!a.jump, eatBerry: !!a.eatBerry, eatFish: !!a.eatFish, useCard: !!a.useCard,
-    ability: -1, cmd: null, say: undefined, think: null };
+    ability: -1, cmd: null, call: null, say: undefined, think: null };
   if (Array.isArray(a.move)) { out.mx = botNum(a.move[0], -1, 1, 0); out.my = botNum(a.move[1], -1, 1, 0); }
   if (Array.isArray(a.aim)) { out.aimX = botNum(a.aim[0], -W, 2 * W, NaN); out.aimY = botNum(a.aim[1], -W, 2 * W, NaN); }
   if (a.goTo && typeof a.goTo === 'object') {
@@ -229,6 +231,13 @@ function botAct(a) {
       if (typeof v === 'number' ? isFinite(v) : typeof v === 'string' ? v.length <= 40 : typeof v === 'boolean' || v === null) c[k] = v;
     }
     out.cmd = c;
+  }
+  // a callout to the side (js/ai-callouts.js): a kind, where, and for 'low' or
+  // 'here' what it names - a class or BEAR, or how many rivals
+  if (a.call && typeof a.call === 'object' && BOT_CALLS.has(a.call.kind)) {
+    const c = a.call, x = botNum(c.x, 0, W, NaN), y = botNum(c.y, 0, W, NaN);
+    const n = c.kind === 'here' ? botNum(c.n | 0, 1, 5, 1) : c.kind === 'low' ? (BOT_CALL_LOW.has(c.n) ? c.n : null) : undefined;
+    if (x === x && y === y && n !== null) out.call = { kind: c.kind, x, y, n };
   }
   if (a.say !== undefined) {
     try { const s = JSON.stringify(a.say); if (s !== undefined && s.length <= BOT_SAY_MAX) out.say = JSON.parse(s); } catch (e) { }
@@ -347,6 +356,12 @@ function botStep(p, dt) {
     inp.eatBerry = inp.eatBerry || a.eatBerry; inp.eatFish = inp.eatFish || a.eatFish; inp.useCard = inp.useCard || a.useCard;
     if (a.ability >= 0) inp.ability = a.ability;
     if (a.cmd) inp.cmd = a.cmd;
+    // through the side's own anti-spam, on the same cooldown as a native bot's calls
+    const c = a.call;
+    if (c && !PRACTICE && unitAlive(p) && !(p.ai.callCd > 0) && callFree(p.team, c.kind, c.x, c.y)) {
+      addCallout(c.kind, CALLS[c.kind].word(c.n), p.id, p.team, Math.round(c.x), Math.round(c.y));
+      p.ai.callCd = CALL_BOT_CD;
+    }
   }
   // the ladder's hands, the one set every scripted seat shares (js/ai-skill.js)
   if (typeof skillHands === 'function' && typeof AI_LADDER_HANDS !== 'undefined') skillHands(p, AI_LADDER_HANDS, dt);

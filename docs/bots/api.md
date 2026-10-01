@@ -147,6 +147,7 @@ act = {
   ability,                 // 0..3: cast that key (or buy its level when a skill point waits)
   cmd,                     // an order: see below
   // talk
+  call,                    // a callout your side sees and hears: { kind, x, y, n } (below)
   say,                     // any JSON up to 256 bytes, to your teammates' next obs.team
   think,                   // what you are doing and why (below)
 }
@@ -172,6 +173,23 @@ again on its side, exactly as it does a player's.
 `say` is the only way five copies of a file share anything. Whatever one seat says reaches
 every scripted teammate's next `obs.team` as `{ from: seat, say }`. Rivals never hear it. See
 `bots/pack.js`: one seat calls a focus target and a rally, the rest follow.
+
+## Callouts
+
+`call` puts a word on the map for your whole side, humans included, with a ping and a sound:
+
+| `kind` | prints | `n` |
+| --- | --- | --- |
+| `'bird'` | BIRD! | |
+| `'help'` | HELP! | |
+| `'push'` | PUSH! | |
+| `'low'` | HUNTER LOW! | `'HUNTER'`, `'WARRIOR'` or `'BEAR'` (required) |
+| `'here'` | 3 HERE! | how many rivals, 1 to 5 |
+
+`x, y` is the spot in px. A call goes through the same rules as the game's own bots: your side
+holds only a few at once, the same call at the same spot is not repeated, and one seat calls at
+most once every few seconds. A call those rules refuse is dropped. Your seat also makes the
+game's automatic calls, as every bot does.
 
 ## Thoughts
 
