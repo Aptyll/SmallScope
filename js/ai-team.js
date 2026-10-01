@@ -40,11 +40,11 @@
 //   roam   x how wide it wanders with nothing to do
 //   fit    how well it suits each role (the plan hands jobs out by this)
 const AI_MOODS = {
-  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3 } },
-  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1 } },
-  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3 } },
-  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2 } },
-  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2 } },
+  brave:    { name: 'BRAVE',    flee: -0.15, judge: -0.25, help: 1.3, stalk: true,  greed: 0.9, eco: 0.3, roam: 1.1, fit: { pusher: 4, stalker: 3, guard: 0, scout: 1, slayer: 3 } },
+  cautious: { name: 'CAUTIOUS', flee: 0.15,  judge: 0.25,  help: 0.8, stalk: false, greed: 1,   eco: 0.5, roam: 0.8, fit: { pusher: 0, stalker: 0, guard: 4, scout: 2, slayer: 1 } },
+  greedy:   { name: 'GREEDY',   flee: 0.05,  judge: 0.1,   help: 0.5, stalk: false, greed: 1.5, eco: 0.7, roam: 0.9, fit: { pusher: 1, stalker: 0, guard: 1, scout: 0, slayer: 3 } },
+  loyal:    { name: 'LOYAL',    flee: 0,     judge: 0.1,   help: 1.8, stalk: true,  greed: 1,   eco: 0.5, roam: 1,   fit: { pusher: 3, stalker: 1, guard: 3, scout: 0, slayer: 2 } },
+  wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   eco: 0.4, roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2 } },
 };
 const AI_MOOD_KEYS = Object.keys(AI_MOODS);
 // A bot's mood is for life, not for a match: a body with a roster name of
@@ -108,8 +108,6 @@ const AI_CALL_N = 2;        // helpers a call wants; more stay on their own work
 const AI_STALK_R = 560;     // px a stalker goes for a sighting from
 const AI_ALONE_R = 180;     // px: a rival with no other rival sighting this close is alone
 const AI_FLEE_HOLD = 1.5;  // s a bot that turned to back off keeps backing off before the judge reads the numbers again
-const AI_BUILD_CAP = 8;     // generators and bays a side's bots keep standing at most (bot restraint: a
-                            // player builds by the game's rules alone; without it bots raised ~50 a side by minute 5)
 const AI_GRUDGE_N = 2;      // times a bot downs the same rival in a match before it is personal
 const AI_GRUDGE_T = 90;     // s a grudge lasts: the side's stalker job goes to it, on its mark
 const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the judge)
@@ -117,7 +115,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, built: 0 };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '' };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -148,9 +146,6 @@ function aiPlan(team) {
   if (T.at >= 0 && state.elapsed - T.at < AI_PLAN_T) return T;
   T.at = state.elapsed;
   aiForget(T);
-  // what the side's bots have standing of the buildings they raise (the cap, AI_BUILD_CAP)
-  T.built = 0;
-  for (const o of structures) if (o.team === team && (o.type === 'generator' || o.type === 'spawner') && players[o.owner] && players[o.owner].control === 'ai') T.built++;
   const bots = aiSideBots(team);
   if (!bots.length) { T.order = []; return T; }
   const prof = aiProfile(bots[0]);
@@ -208,6 +203,12 @@ function aiPlan(team) {
   const pri = (id) => (roles[id] === 'pusher' ? 0 : roles[id] === 'guard' ? 1 : 2);
   order.sort((a, b) => pri(a) - pri(b));
   T.roles = roles; T.order = order;
+  // the side's builder, the one bot that raises bays (aiEcoBuy): the most
+  // patient purse on the side, kept while it is up
+  if (!bots.some((q) => q.id === T.builder)) {
+    let bk = -1;
+    for (const q of bots) if (aiMood(q).eco > bk) { bk = aiMood(q).eco; T.builder = q.id; }
+  }
   // the stance, the one word the dashboard shows for the side
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
   else if (T.winT > 0) { T.stance = 'WINDOW'; T.why = blood * 2 > bots.length ? 'BEAR BLOOD' : gap > 0 ? gap + ' DOWN' : 'CLOSING'; }
@@ -280,26 +281,73 @@ function aiObeys(p, prof, f) {
   return p.ai.obeyOk;
 }
 
-// A bot answering its human's flag says so - ON IT, or GUARDING for the
-// guard that stays on the bird - once a flag, staggered by seat so the side
-// reads as a crew rather than a chorus. The words are the callouts' (CALLS,
-// js/ai-callouts.js): a kind they do not carry yet is simply not said.
-const AI_ONIT_T = [0.2, 0.6]; // s after the flag goes up the first and the last of a side answer
+// A bot answering its human's flag says so - ON IT, or GUARDING for one bot
+// that stays on the bird instead - once a flag. The side answers one at a
+// time, AI_ONIT_T apart (by seat, so it reads as a crew rather than a
+// chorus), and never past CALL_SIDE_MAX plates up at once: an answer waits
+// its turn, and one still waiting AI_ONIT_STALE after the flag went up is
+// not said at all. The words are the callouts' (CALLS, js/ai-callouts.js).
+const AI_ONIT_T = [0.2, 0.6]; // s between two answers of a side: the least and the most, by seat
+const AI_ONIT_STALE = 4;      // s after the flag an unsaid answer is dropped
+function aiFlagKey(f) { return f.owner + ':' + f.type + ':' + f.tx + ':' + f.ty; }
 function aiAnswerFlag(p, f, kind) {
   const ai = p.ai;
   if (ai.answered === f) return;
   ai.answered = f;
-  let n = 0;
-  for (const q of players) { if (q === p) break; if (q.team === p.team) n++; }
-  ai.answerAt = state.elapsed + AI_ONIT_T[0] + (AI_ONIT_T[1] - AI_ONIT_T[0]) * (n % 5) / 4;
+  ai.answerAt = state.elapsed + AI_ONIT_T[0];
   ai.answerKind = kind;
+  ai.answerKey = aiFlagKey(f);
 }
 function aiAnswerStep(p) {
-  const ai = p.ai;
+  const ai = p.ai, T = aiTeams[p.team];
   if (!ai.answerKind || state.elapsed < ai.answerAt) return;
+  if (state.elapsed - ai.answerAt > AI_ONIT_STALE) { ai.answerKind = null; return; }
+  // one GUARDING a side a flag: the human only needs to know the bird is covered
+  if (ai.answerKind === 'guarding' && T.guarded === ai.answerKey) { ai.answerKind = null; return; }
+  if (state.elapsed < T.answerT) return;
+  let up = 0;
+  for (const c of callouts) if (c.see === p.team) up++;
+  if (up >= CALL_SIDE_MAX) return;
   const k = ai.answerKind;
   ai.answerKind = null;
+  if (k === 'guarding') T.guarded = ai.answerKey;
+  T.answerT = state.elapsed + AI_ONIT_T[0] + (AI_ONIT_T[1] - AI_ONIT_T[0]) * (p.id % 5) / 4;
   if (CALLS[k]) addCallout(k, CALLS[k].word(p), p.id, p.team, p.x, p.y);
+}
+
+// The purse: what a bot buys with its gold, judged by payback. A generator,
+// a generator's next tier or (the side's builder only) a bay is bought only
+// when it pays for itself in AI_ECO_K x the minutes the match has left - the
+// mood's `eco`, so a greedy bot farms longer and a brave one stops sooner -
+// and of those that pass, the quickest to pay back. Prices are the game's
+// (buildCost, js/structures.js: each one the owner has raises the next), so
+// the side builds a few early, upgrades in the middle and nothing late.
+// Gear (rung 0) is power, not income, and goes first.
+const AI_MATCH_MIN = 15;  // min a match is reckoned to run (the minutes left, never under 3)
+const AI_BAY_RATE = 12;   // gold a minute a bay's three workers bring home (measured: seed 7, NORMAL, 4.65)
+// gold a minute one income building at tier t pays its owner
+function aiIncome(type, t) {
+  if (type === 'spawner') return AI_BAY_RATE;
+  const r = STRUCTS[type].tiers[t];
+  return r.pay * 60 / r.period;
+}
+// p's best income buy now, or null: { type } to build, or { up } (its own
+// generator) to raise a tier; `pay` is the payback in minutes, `cost` the gold
+function aiEcoBuy(p) {
+  const most = aiMood(p).eco * Math.max(3, AI_MATCH_MIN - state.elapsed / 60);
+  let best = null;
+  const offer = (cost, gain, buy) => {
+    const pay = cost / gain;
+    if (pay <= most && (!best || pay < best.pay)) { best = buy; best.pay = pay; best.cost = cost; }
+  };
+  offer(buildCost('generator', p).gold, aiIncome('generator', 0), { type: 'generator' });
+  if (aiTeams[p.team].builder === p.id) offer(buildCost('spawner', p).gold, AI_BAY_RATE, { type: 'spawner' });
+  for (const o of structures) {
+    if (o.owner !== p.id || o.type !== 'generator' || o.building) continue;
+    const tiers = STRUCTS[o.type].tiers;
+    if (o.tier < tiers.length - 1) offer(tiers[o.tier + 1].cost.gold, aiIncome(o.type, o.tier + 1) - aiIncome(o.type, o.tier), { up: o });
+  }
+  return best;
 }
 
 // the side's bear: the living teamPay camp monster nearest its own bird
@@ -380,7 +428,7 @@ function aiHelpCall(p) {
     if (c.id === p.id || players[c.id].dead || state.elapsed - c.t > AI_CALL_T) continue;
     let n = 0;
     for (const q of players) if (q !== p && q.team === p.team && q.control === 'ai' && q.ai.helping === c.id) n++;
-    if (n >= AI_CALL_N) continue;
+    if (n >= AI_CALL_N && p.ai.helping !== c.id) continue; // (one already answering keeps its place)
     const d = Math.hypot(c.x - p.x, c.y - p.y);
     if (d < bd) { bd = d; best = c; }
   }

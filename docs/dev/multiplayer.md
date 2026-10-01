@@ -731,9 +731,11 @@ Three small rules, and the teamwork is what they add up to:
   is when it first saw its mark since, for the callouts.
 - **Your flag.** An ally rolls once a human flag whether it answers it (`aiObeys`, the profile's
   `obey`, 1 when missing). The side's guard keeps the bird when the human's flag is an ATTACK
-  (`ai.guarding`, the thought's GUARDING). Each bot answering says so once a flag, staggered
-  `AI_ONIT_T` by seat (`aiAnswerFlag`/`aiAnswerStep`): an `onit` or `guarding` callout when
-  `CALLS` (js/ai-callouts.js) carries that kind; a bot already in the ring says nothing.
+  (`ai.guarding`, the thought's GUARDING). Each bot answering says so once a flag
+  (`aiAnswerFlag`/`aiAnswerStep`): ON IT on its way, nothing when already in the ring, GUARDING
+  when the guard or its bird's alarm keeps it home (one GUARDING a side a flag, `T.guarded`).
+  The side answers one at a time, `AI_ONIT_T` (0.2 to 0.6 s, by seat) apart, never past
+  `CALL_SIDE_MAX` plates up; an answer still waiting `AI_ONIT_STALE` (4 s) is dropped.
 
 The plan also reads the match once for the side (`T.stance`, the dashboard's `plan`): HOLD (its
 bird under threat), WINDOW, BEAR, PUSH, PRESS (a stalker out) or FARM. The **window** opens when
@@ -852,10 +854,13 @@ The ladder:
    `AI_JOIN_HP` (0.6) with friends at it, unless its own bird is under threat, which is where it
    is wanted. **The wave is the push**: off the rival's lane, a pusher walks with the head of its
    own side's column on the road (`aiWaveHead` — the own soldier nearest the rival bird that is
-   still on the march, within `AI_WAVE_D`) rather than ahead of it alone, closing to `AI_WAVE_R`
+   still on the march, within `AI_WAVE_D`, and not locked in a fight with a rival column: no rival
+   soldier within 1.5 × `AI_WAVE_R` of it) rather than ahead of it alone, closing to `AI_WAVE_R`
    of it and going on from there; with no column out it **regroups**: the side's pushers meet at
    the same rally as a relentless pack (their zipline's end) until `AI_REGROUP` (2) are there,
-   or one has waited `AI_REGROUP_T` (15 s), then go on committed (`ai.packGo`). (A relentless
+   or one has waited `AI_REGROUP_T` (15 s), then go on committed (`ai.packGo`). On the way a
+   pusher leaves the rival wave to its own: a rival soldier is fought only inside `AI_SIEGE_R`,
+   unless its own bird is threatened and it is near home. (A relentless
    side skips the column and waits for its whole pack instead — the profile, above.)
    The walk is `aiToRoost`: the roost sits in its corner's woods at the end of its spur and the
    spur is the only way in, so off it the route is road → `aiLaneGate` (`AI_GATE` px up the road
@@ -877,12 +882,15 @@ The ladder:
    (10 s).
 9. **escort** (allies only) — the two lowest allied bots (`aiEscorts`) keep within
    `AI_ESCORT` (120 px) of the human while they are on the ground and inside `AI_ESCORT_R`
-   (400 px), going on down the ladder while they are close.
+   (400 px), going on down the ladder while they are close. An escort's harvest, hunt and loot
+   stay inside that leash, and work the human walks away from is dropped.
 9a. **help** — a teammate's call this bot answers (`aiHelpCall`; never a pusher, a guard, a
-   defender or a bot under an order): walk to the caller. Then a slayer's walk to its party's
+   defender or a bot under an order): walk to the caller and stay by them (48 px) while the call is open;
+   a bot already answering keeps its place past `AI_CALL_N`. Then a slayer's walk to its party's
    meeting point, then the side's roaming jobs: a STALKER walks to the nearest sighting of a
    rival with no other rival within `AI_ALONE_R` (`aiStalkTarget`), striking it off if nobody is
-   there; a SCOUT walks its beat (`aiScoutPoint`). Neither job holds a bot with nothing to do:
+   there; a SCOUT walks its beat (`aiScoutPoint`), but not for 8 s after it fled a fight
+   (`ai.scoutCd`). Neither job holds a bot with nothing to do:
    they fall through to the rungs below.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk). Birds are excluded: they fly, and no ground route catches a flushed flock.
@@ -892,11 +900,18 @@ The ladder:
    mid-defence alike — the hero pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the
-   shop is human-only except the drag that sells. Then, with a generator's price in hand, build a generator (or, 30% of the
-   time, a bot bay) on the site `aiBuildSite` finds: the nearest tile within `AI_BUILD_R` (5 tiles)
+   shop is human-only except the drag that sells. Then income, bought by payback (`aiEcoBuy`,
+   js/ai-team.js): a new generator, its own generator's next tier, or (the side's builder,
+   `T.builder`, the most patient mood on the side, only) a bot bay, priced by the game's
+   `buildCost` (each one the owner has costs 1.5× more) over the gold a minute it adds (a
+   generator's `pay`/`period`; a bay `AI_BAY_RATE`, 12, measured). A buy passes when it pays back
+   within the mood's `eco` × the minutes left (`AI_MATCH_MIN` 15 less the clock, never under 3),
+   and the quickest of those is the one; short of its price the bot saves, and it buys nothing
+   with its bird under attack or a rival in sight. The thought's why is PAYS IN N MIN. So a side
+   builds a few early, upgrades in the middle and nothing late. A building goes on the site `aiBuildSite` finds: the nearest tile within `AI_BUILD_R` (5 tiles)
    that passes `canPlaceAt` — the build list's own rule, any open snow or road tile, reach aside
    since the bot walks there — a 1×1 only with three open sides so it never walls itself in, the
-   bay wherever its 3×2 fits; else upgrade its own side's work within three tiles. A side's bots keep at most `AI_BUILD_CAP` (8) generators and bays standing (`T.built`, counted each plan, js/ai-team.js); past it they only upgrade. The cap is bot restraint, not a game rule: a player builds by `canPlaceAt` alone. It steps off
+   bay wherever its 3×2 fits; an upgrade is walked to (60 px reach). It steps off
    a build site first, since a building is solid, and a site it cannot reach (or is wedged on for
    3 s) is left for 15 s. Picking up a dropped card off the ground already falls out of the loot rung
    (drops are type-agnostic loot); a bot never presses the card key (`input.useCard`) — the
@@ -984,7 +999,7 @@ same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS
 `addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
 
 **The team brain speaks through the same door.** A bot answering a human's flag says ON IT, or
-GUARDING for the guard it keeps on the bird (`aiAnswerFlag`/`aiAnswerStep`, js/ai-team.js: who
+GUARDING for one bot it keeps on the bird (`aiAnswerFlag`/`aiAnswerStep`, js/ai-team.js: who
 answers, and the stagger by seat, are the brain's); the callouts own only the words, the icons
 and the life on screen (`CALLS.onit`, `CALLS.guarding`). **A grudge** is voiced here: a rival bot
 whose `p.ai.grudge` has just stamped `seenT` (its first sight of its mark) says YOU AGAIN over its
