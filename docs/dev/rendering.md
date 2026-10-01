@@ -1839,7 +1839,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   (`drawLobbyTarget`: the practice range's own archery face, `bakeTargetFace` from
   js/draw/practice.js with `bare` set so the rim carries no snow — straw batt, wooden frame, red
   ring, cream, red bullseye) is **worn by the level** (`wreckTargetFace`, baked once per size and
-  level, every mark laid out in a 32 px face's pixels and scaled): whole on NORMAL, a few
+  level, every mark laid out in a 32 px face's pixels and scaled): whole on EASY, one puncture on NORMAL, a few
   punctures and one crack on HARD, crazed through on IMPOSSIBLE — one great split top to bottom
   through the bullseye with branches off it, hairlines in from the rim, a few more punctures.
   Whenever the level it shows changes (`menu.tgtLv`) the
@@ -1884,9 +1884,9 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   seed rolls, Enter on the picture closes. The **AI pop-up** (`menu.screen = 'ai'`, off the
   target, host or solo — `beginAiPick`, `aiLayout`/`aiScreenHit`, `renderAiPick`): the target
   `POP_PIC` big on the left worn as the hovered (else the picked) level wears it, and on the
-  right the **three difficulty plates** (`drawDiffPlates`: `LOBBY_LV_W`×`LOBBY_LV_H`, stacked
-  easy to hard, each carrying its level's name (`AI_LEVELS`, js/ai.js — NORMAL / HARD /
-  IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
+  right the **four difficulty plates** (`drawDiffPlates`: `LOBBY_LV_W`×`LOBBY_LV_H`, one per
+  `AI_LEVELS` row, stacked easy to hard, each carrying its level's name (js/ai-skill.js — EASY /
+  NORMAL / HARD / IMPOSSIBLE) and its tier in pips, the picked one filled in the rivals' paint, the hovered one
   lifting (`menu.dhover`)); a click or Up/Down is `setAiLevel`, which saves the profile's
   settings, and Enter closes. While a ladder bot is picked for this lobby (`ladderFoe`, from the
   [bot ladder screen](#the-bot-ladder-screen)) the target's name is the bot's; `setAiLevel` and

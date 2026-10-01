@@ -47,23 +47,31 @@ const AI_MOODS = {
   wild:     { name: 'WILD',     flee: -0.05, judge: -0.1,  help: 1,   stalk: true,  greed: 1,   roam: 1.6, fit: { pusher: 2, stalker: 4, guard: 0, scout: 4, slayer: 2 } },
 };
 const AI_MOOD_KEYS = Object.keys(AI_MOODS);
-// a bot's mood: the five dealt round each side in a seeded order, so both
-// sides field the same five and a seed replays the same temperaments
+// A bot's mood is for life, not for a match: a body with a roster name of
+// its own (a lobby's, a joiner's) is the mood its name hashes to, so the same
+// name plays the same temperament in every match, online or off; a seat bot
+// (named after its colour) is the mood of its place on its side - the five
+// dealt round each side in one fixed order, so both sides field all five and
+// RED-4 is the same bot every match. No seed, no rng: nothing here moves the
+// world's draws.
+function aiMoodOf(name) {
+  let h = 2166136261;
+  for (let i = 0; i < name.length; i++) h = Math.imul(h ^ name.charCodeAt(i), 16777619);
+  return AI_MOOD_KEYS[(h >>> 0) % AI_MOOD_KEYS.length];
+}
 function aiMood(p) {
   if (p.ai.mood && AI_MOODS[p.ai.mood]) return AI_MOODS[p.ai.mood];
-  let n = 0;
-  for (const q of players) { if (q === p) break; if (q.team === p.team) n++; }
-  const deal = AI_MOOD_KEYS.slice();
-  for (let i = deal.length - 1; i > 0; i--) { // Fisher-Yates off the seed, one shuffle per side
-    const j = Math.floor(hash2(p.team * 97 + i * 13 + 5, 409) * (i + 1));
-    const t = deal[i]; deal[i] = deal[j]; deal[j] = t;
+  if (p._name) p.ai.mood = aiMoodOf(p._name);
+  else {
+    let n = 0;
+    for (const q of players) { if (q === p) break; if (q.team === p.team) n++; }
+    p.ai.mood = AI_MOOD_KEYS[(n + p.team * 2) % AI_MOOD_KEYS.length];
   }
-  p.ai.mood = deal[n % deal.length];
   return AI_MOODS[p.ai.mood];
 }
 // a decision knob off the difficulty profile (js/ai.js), with the neutral
 // value a profile that predates it plays by
-const AI_KNOB_DEFAULT = { judge: 0.5, focus: 0.5, team: 0.8, memory: 5 };
+const AI_KNOB_DEFAULT = { judge: 0.5, focus: 0.5, team: 0.8, memory: 5, obey: 1 };
 function aiKnob(prof, k) { return prof[k] !== undefined ? prof[k] : AI_KNOB_DEFAULT[k]; }
 // the knob with p's mood on it, kept inside 0..1
 function aiJudge(p, prof) { return Math.max(0, Math.min(1, aiKnob(prof, 'judge') + aiMood(p).judge)); }
@@ -100,12 +108,16 @@ const AI_CALL_N = 2;        // helpers a call wants; more stay on their own work
 const AI_STALK_R = 560;     // px a stalker goes for a sighting from
 const AI_ALONE_R = 180;     // px: a rival with no other rival sighting this close is alone
 const AI_FLEE_HOLD = 1.5;  // s a bot that turned to back off keeps backing off before the judge reads the numbers again
+const AI_BUILD_CAP = 8;     // generators and bays a side's bots keep standing at most (bot restraint: a
+                            // player builds by the game's rules alone; without it bots raised ~50 a side by minute 5)
+const AI_GRUDGE_N = 2;      // times a bot downs the same rival in a match before it is personal
+const AI_GRUDGE_T = 90;     // s a grudge lasts: the side's stalker job goes to it, on its mark
 const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the judge)
 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0 };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, built: 0 };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
@@ -136,6 +148,9 @@ function aiPlan(team) {
   if (T.at >= 0 && state.elapsed - T.at < AI_PLAN_T) return T;
   T.at = state.elapsed;
   aiForget(T);
+  // what the side's bots have standing of the buildings they raise (the cap, AI_BUILD_CAP)
+  T.built = 0;
+  for (const o of structures) if (o.team === team && (o.type === 'generator' || o.type === 'spawner') && players[o.owner] && players[o.owner].control === 'ai') T.built++;
   const bots = aiSideBots(team);
   if (!bots.length) { T.order = []; return T; }
   const prof = aiProfile(bots[0]);
@@ -169,15 +184,18 @@ function aiPlan(team) {
   if (party) { if (T.bear !== bear) T.bearT = 0; T.bear = bear; for (let i = 0; i < party; i++) want.push('slayer'); }
   else T.bear = null;
   if (state.elapsed >= AI_SCOUT_AT && want.length < bots.length - 1) want.push('scout');
-  if (state.elapsed >= AI_STALK_AT && want.length < bots.length - 1) want.push('stalker');
+  // a grudge (aiDowned) takes the side's one stalker job first, whatever the clock
+  const grudger = bots.find((q) => aiGrudge(q));
+  if (grudger && want.length < bots.length) want.unshift('stalker');
+  else if (state.elapsed >= AI_STALK_AT && want.length < bots.length - 1) want.push('stalker');
   // hand the jobs out best fit first, a held job counting AI_KEEP extra
   const free = bots.slice(), roles = {}, order = [];
   for (const r of want) {
     let best = -1, bs = -Infinity;
     for (let i = 0; i < free.length; i++) {
       const q = free[i], m = aiMood(q);
-      if (r === 'stalker' && !m.stalk) continue;
-      const s = (m.fit[r] || 0) + (T.roles[q.id] === r ? AI_KEEP : 0) - q.id * 0.01;
+      if (r === 'stalker' && !m.stalk && q !== grudger) continue;
+      const s = (m.fit[r] || 0) + (T.roles[q.id] === r ? AI_KEEP : 0) - q.id * 0.01 + (r === 'stalker' && q === grudger ? 100 : 0);
       if (s > bs) { bs = s; best = i; }
     }
     if (best < 0) continue;
@@ -185,6 +203,10 @@ function aiPlan(team) {
     roles[q.id] = r; order.push(q.id);
   }
   for (const q of free) { roles[q.id] = 'gatherer'; order.push(q.id); }
+  // the order aiRank reads: pushers, then guards, then everyone else (a
+  // grudge's stalker is handed out first, but never ranks ahead of them)
+  const pri = (id) => (roles[id] === 'pusher' ? 0 : roles[id] === 'guard' ? 1 : 2);
+  order.sort((a, b) => pri(a) - pri(b));
   T.roles = roles; T.order = order;
   // the stance, the one word the dashboard shows for the side
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
@@ -221,6 +243,65 @@ function aiHoldFoe(p, prof, foe) {
   if (foe) { ai.lastFoe = foe; ai.lastFoeT = state.elapsed; }
   return foe;
 }
+// The grudge: die() (js/player.js) tells the brain each time a bot downs a
+// player; the AI_GRUDGE_N-th time it is the same one, the bot holds a grudge
+// for AI_GRUDGE_T - the side's stalker job on that mark, the mark taken over
+// any other rival in sight. `seenT` is when it first laid eyes on its mark
+// since (the callouts' YOU AGAIN, js/ai-callouts.js), -1 until then.
+function aiDowned(k, v) {
+  if (!k.ai || v === k) return;
+  const d = k.ai.downs || (k.ai.downs = {});
+  d[v.id] = (d[v.id] || 0) + 1;
+  if (d[v.id] >= AI_GRUDGE_N && !aiGrudge(k)) k.ai.grudge = { id: v.id, until: state.elapsed + AI_GRUDGE_T, seenT: -1 };
+}
+// p's live grudge, or null (one that ran out, or whose mark is out of the match, is dropped)
+function aiGrudge(p) {
+  const g = p.ai.grudge;
+  if (!g) return null;
+  const m = players[g.id];
+  if (state.elapsed > g.until || !m || !m.active || m.eliminated) { p.ai.grudge = null; return null; }
+  return g;
+}
+// the mark, if p holds a grudge and can see them now: the rival it fights
+function aiGrudgeFoe(p, prof) {
+  const g = aiGrudge(p);
+  const m = g ? players[g.id] : null;
+  if (!m || !enemyOf(p, m)) return null;
+  const d = Math.hypot(m.x - p.x, m.y - p.y);
+  if (d >= prof.sight * AI_COMMIT_R || d >= seenAt(m, prof.sight * AI_COMMIT_R)) return null;
+  if (g.seenT < 0) g.seenT = state.elapsed;
+  return m;
+}
+// Whether an ALLY answers its human's flag: rolled once a flag, off the
+// profile's `obey` (a missing knob obeys). The appeal read: an ally that
+// ignores you is worse than a dumb one that follows - keep it high.
+function aiObeys(p, prof, f) {
+  if (p.ai.obeyFor !== f) { p.ai.obeyFor = f; p.ai.obeyOk = rng() < aiKnob(prof, 'obey'); }
+  return p.ai.obeyOk;
+}
+
+// A bot answering its human's flag says so - ON IT, or GUARDING for the
+// guard that stays on the bird - once a flag, staggered by seat so the side
+// reads as a crew rather than a chorus. The words are the callouts' (CALLS,
+// js/ai-callouts.js): a kind they do not carry yet is simply not said.
+const AI_ONIT_T = [0.2, 0.6]; // s after the flag goes up the first and the last of a side answer
+function aiAnswerFlag(p, f, kind) {
+  const ai = p.ai;
+  if (ai.answered === f) return;
+  ai.answered = f;
+  let n = 0;
+  for (const q of players) { if (q === p) break; if (q.team === p.team) n++; }
+  ai.answerAt = state.elapsed + AI_ONIT_T[0] + (AI_ONIT_T[1] - AI_ONIT_T[0]) * (n % 5) / 4;
+  ai.answerKind = kind;
+}
+function aiAnswerStep(p) {
+  const ai = p.ai;
+  if (!ai.answerKind || state.elapsed < ai.answerAt) return;
+  const k = ai.answerKind;
+  ai.answerKind = null;
+  if (CALLS[k]) addCallout(k, CALLS[k].word(p), p.id, p.team, p.x, p.y);
+}
+
 // the side's bear: the living teamPay camp monster nearest its own bird
 function aiSideBear(team) {
   const e = state.drop && state.drop.eagles[team];
@@ -310,6 +391,11 @@ function aiHelpCall(p) {
 // A lone rival is a fight the side can win; a pair is not a stalker's job
 function aiStalkTarget(p, prof) {
   const T = aiTeams[p.team], mem = aiKnob(prof, 'memory');
+  const g = aiGrudge(p);
+  if (g) { // a grudge goes to its mark's last known spot, alone or not, near or far
+    for (const s of T.seen) if (s.id === g.id && state.elapsed - s.t <= AI_SEEN_T) return s;
+    return null;
+  }
   let best = null, bd = AI_STALK_R;
   for (const s of T.seen) {
     if (state.elapsed - s.t > mem) continue;

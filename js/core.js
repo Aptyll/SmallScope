@@ -224,7 +224,7 @@ const state = {
 // volume is the master dial; musicVol and sfxVol sit under it (SFX.setVolume /
 // setMusicVolume / setSfxVolume). A save written before the split simply has
 // neither key and keeps the defaults - no version bump needed.
-const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
+const settings = { v: 3, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/player.js); off = the roster's real colours
   teamBlue: true,
@@ -232,9 +232,9 @@ const settings = { v: 2, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // or a repaint for colour-blind eyes - 'rg', 'by', 'hc'. applyTeamPal
   // puts it on the sprites; the COLOUR BLIND dropdown on the VIDEO page picks it
   teamPal: 'def',
-  // the rival bots' difficulty: an index into AI_LEVELS (js/ai.js), picked on
-  // lobby's notches and remembered; 0 (NORMAL) until someone moves it
-  aiLevel: 0,
+  // the rival bots' difficulty: an index into AI_LEVELS (js/ai-skill.js),
+  // picked on the lobby's plates and remembered; 1 (NORMAL) until someone moves it
+  aiLevel: 1,
   // the shape the valley comes out of the snow in: an index into MAPS
   // (js/world.js), picked on the lobby's map chip and remembered. A pick
   // is a page (pickMap, js/ui/menu.js), so what this holds is what the NEXT
@@ -295,9 +295,15 @@ function loadSettings() {
     // a save from before the minimap ladder grew: its mmZoom indexes the old
     // six-rung array, so carry it across instead of silently rescaling the
     // disc under someone who had already set it where they wanted it
-    if (s && s.v !== 2) {
+    if (s && (s.v | 0) < 2) {
       settings.mmZoom = MM_MIGRATE[Math.max(0, Math.min(MM_MIGRATE.length - 1, s.mmZoom | 0))];
       settings.v = 2;
+    }
+    // ...and one from before EASY: its aiLevel counted from NORMAL, so a
+    // saved level moves up one to stay the level it was
+    if (s && (s.v | 0) < 3) {
+      if (s.aiLevel != null) settings.aiLevel = (s.aiLevel | 0) + 1;
+      settings.v = 3;
     }
   } catch (e) { }
   mmCur = mmWant();

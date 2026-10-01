@@ -26,8 +26,13 @@ globals, no storage, no network. Keep state on `this`.
 vm), and in the game it runs in a Web Worker. Either way `Math.random` is seeded from the match
 (seed and seat), and the clock stands still (`Date.now()` is 0), so the same seed and files
 replay the same match. One think may take **50 ms of CPU** on the ladder; a think over that
-counts as an error and your seat keeps its last act. (Only the example bots baked into the game
-run in the page itself.)
+counts as an error and your seat keeps its last act. A seat that misses 10 thinks in a row
+(1 s, a hang or a crash) lets go of every key until it answers again.
+
+There is no way in to the game from a bot: no `window`, no `players`, no network (`fetch`,
+`WebSocket`, `importScripts` are gone in a worker), no storage, and no channel to another bot's
+worker. Every message crosses as JSON, so nothing you receive leads back to the game's objects.
+The example bots run exactly the same way.
 
 ## Timing
 

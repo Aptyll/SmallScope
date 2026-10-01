@@ -3,7 +3,7 @@
 // (the format: /mnt/project-files/ai-behaviors/match-log.md, and docs/dev/arena.md).
 //
 //   const { playMatch } = require('./match');
-//   const log = playMatch({ seed: 42, shape: 0, level: 0 });
+//   const log = playMatch({ seed: 42, shape: 0, level: 1 });
 //
 // It boots the page in this process (headless.js), makes every seat a bot,
 // flies the eagle and steps the sim at its own TICK_DT until a bird is
@@ -20,7 +20,7 @@ const { funScore } = require('./fun');
 const SETUPS = ['level', 'versus'];
 
 function playMatch(opts) {
-  const o = Object.assign({ seed: 42, shape: 0, level: 0, kind: 'level', a: 0, b: 0, proxy: 0, maxMin: 40, sampleEvery: 2, n: 0 }, opts || {});
+  const o = Object.assign({ seed: 42, shape: 0, level: 1, kind: 'level', a: 1, b: 1, proxy: 1, maxMin: 40, sampleEvery: 2, n: 0 }, opts || {});
   if (!SETUPS.includes(o.kind)) throw new Error('kind must be one of ' + SETUPS.join(', '));
   const g = bootGame({ seed: o.seed, search: '&map=' + (o.shape | 0) });
   // the page's function declarations are globals of this process now; its
