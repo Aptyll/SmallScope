@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.51';
+const PATCH_TXT = 'PATCH 4.52';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.52', 'BOT LADDER ON THE TITLE: EVERY LADDER BOT WITH ITS FACE, EMBLEM, RATING AND FORM, AND FIGHT TO TAKE ON ANY OF THEM.'],
   ['4.51', 'BOT FILES CAN MAKE CALLOUTS, AND THE BOT LADDER WRITES ITS STANDINGS FOR THE GAME TO READ.'],
   ['4.50', 'THE SAME SHORT BOT MATCHES REPLAY ON EVERY PATCH AND A PAGE FLAGS WHAT MOVED: A FLIPPED WINNER, LESS FUN, LONGER FIGHTS OR A BROKEN BOT, WITH THE LADDER CUT INTO ONE SEASON PER PATCH.'],
   ['4.49', 'BOT FILES RUN SEALED OFF FROM THE GAME, AND NOW SEE ABILITY NAMES, GEAR LEVELS, THE MAP, THE KILL FEED, THE MERCHANTS AND WHAT CAME OF EACH ORDER.'],
@@ -1232,6 +1233,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '3.73'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['BOT LADDER ON THE TITLE: SEE THE STANDINGS, THEN FIGHT ANY BOT', '4.52'],
     ['EARN COINS EVERY MATCH AND SPEND THEM ON SKINS', '4.29'],
     ['FIVE ARMOURED WAR EAGLES TO FLY YOUR SIDE IN', '4.30'],
     ['YOUR WAR EAGLE LANDS TOO, AND EVERY EAGLE\'S SHADOW BEATS WITH ITS WINGS', '4.32'],

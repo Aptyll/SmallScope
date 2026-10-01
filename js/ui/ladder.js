@@ -83,7 +83,13 @@ function ladderLoad() {
 }
 function ladderTake() {
   const D = window.LADDER_DATA && typeof window.LADDER_DATA === 'object' ? window.LADDER_DATA : null;
-  if (D && D.bots) for (const id of Object.keys(D.bots)) if (!BOT_LIB.has(id) && typeof D.bots[id] === 'string') botLibAdd(id, D.bots[id]);
+  // an entered file joins BOT_LIB on the sealed 'worker' transport (botLibAdd's
+  // default; never 'inline'), its newest revision replacing the last; the
+  // baked examples keep their own entries
+  if (D && D.bots) for (const id of Object.keys(D.bots)) {
+    const cur = BOT_LIB.get(id);
+    if (typeof D.bots[id] === 'string' && (!cur || cur.run === 'worker')) botLibAdd(id, D.bots[id]);
+  }
   const rows = (D && Array.isArray(D.rows) ? D.rows : []).filter((r) => r && !r.retired && typeof r.id === 'string');
   const have = new Set(rows.map((r) => r.id));
   // the bots the game holds that the ladder has not met: listed at the start

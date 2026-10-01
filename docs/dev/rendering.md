@@ -2069,7 +2069,8 @@ the draw, the hit test (`ladderHit`) and the cursor (`ladderCursor`).
 
 - **The data** is the offline ladder's ([docs/bots/ladder.md](../bots/ladder.md)):
   `ladder-data/standings.js` beside index.html sets `window.LADDER_DATA` (`rows`, the standings;
-  `bots`, each entered file's source, added to `BOT_LIB`). The game never fetches, so
+  `bots`, each entered file's source, added to `BOT_LIB` on the sealed `'worker'` transport, never
+  `'inline'`; written by `writePage`, app/ladder/page.js). The game never fetches, so
   `ladderLoad` adds it as a script each time the screen opens; a missing file is a ladder with no
   matches. `ladderTake` builds the rows, best first, and lists every `BOT_LIB` bot the ladder has
   not met at the start rating.
