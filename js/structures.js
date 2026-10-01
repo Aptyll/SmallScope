@@ -66,12 +66,15 @@ const STRUCTS = {
     { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 124, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35, acc: 0.9 },
   ]},
   generator: { name: 'GENERATOR', blurb: 'PAYS YOU GOLD FOR AS LONG AS IT STANDS.', ramp: 1.5, mm: mmTeam, map: chTeam, tiers: [
-    // 4 / 6 / 10 gold a minute against the clock's own 15 (TRICKLE_*, js/sim.js):
-    // a top generator is two thirds of a second trickle for 82 gold, paid back
-    // in eight minutes - an early build, and something worth walking over to wreck
+    // 4 / 8 / 13.3 gold a minute against the clock's own 15 (TRICKLE_*, js/sim.js),
+    // so one never out-earns the trickle. Each step pays itself back on the same
+    // curve the `ramp` lays for a new one: the first build 3 min, the second
+    // 4.5, an upgrade to tier 2 6.25 (+4 for 25), a third build 6.75, tier 3 8.4
+    // (+5.3 for 45), a fourth build 10 - so building and upgrading take turns
+    // as the right buy, and a field of tier 1s is never the answer
     { cost: { gold: 12 }, hp: 40,  buildT: 8,   pay: 1, period: 15 },
-    { cost: { gold: 25 }, hp: 70,  buildT: 4.8, pay: 1, period: 10 },
-    { cost: { gold: 45 }, hp: 100, buildT: 4.8, pay: 2, period: 12 },
+    { cost: { gold: 25 }, hp: 70,  buildT: 4.8, pay: 1, period: 7.5 },
+    { cost: { gold: 45 }, hp: 100, buildT: 4.8, pay: 2, period: 9 },
   ]},
   // the bot bay is the one big build: a single tier on a 3x2 tile footprint
   // (w/h - see footprint()/findSite()), its three bots rolling out one by one

@@ -1772,7 +1772,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | black bear | `alpha` 6 coins × 15 → 90 | the stone's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | brown bear | `dire` 6 coins × 15 → 90 | the den's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
-| generator | `tiers[tier].pay` every `period` s: 1/15, 1/10, 2/12 — 4 / 6 / 10 a minute | passive income, deposited to its owner; each one its owner already has makes the next cost 1.5x (`ramp`, `buildCost`), so a farm of them stops paying back |
+| generator | `tiers[tier].pay` every `period` s: 1/15, 1/7.5, 2/9 — 4 / 8 / 13.3 a minute, so an upgrade pays back (6.25 and 8.4 min) between the ramp's new builds | passive income, deposited to its owner; each one its owner already has makes the next cost 1.5x (`ramp`, `buildCost`), so a farm of them stops paying back |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
 | a sale at [the counter](#the-merchants-counter) | half a made thing's price, or the live market price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
