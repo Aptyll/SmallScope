@@ -543,7 +543,7 @@ function renderWheel(now) {
     const ix = L.cx + Math.cos(opt.ang) * WHEEL_RING;
     const iy = L.cy + Math.sin(opt.ang) * WHEEL_RING;
     if (w.kind === 'build' || w.kind === 'piece') {
-      const affordable = canAfford(STRUCTS[opt.id].tiers[0].cost);
+      const affordable = canAfford(buildCost(opt.id, player));
       const tb = SPRITES.teamBuild[skin(player.team)];
       const art = STRUCTS[opt.id].tiled || STRUCTS[opt.id].art || opt.id; // a piece wearing another's tile (the long wall)
       const spr = (tb.icon && (tb.icon[opt.id] || tb.icon[art])) || tb[art][0];
@@ -614,9 +614,9 @@ function renderWheel(now) {
     const opt = L.opts[L.seg];
     const o = structOf(objAt(w.tx, w.ty));
     if (w.kind === 'build' || w.kind === 'piece') {
-      const t0 = STRUCTS[opt.id].tiers[0];
-      label = STRUCTS[opt.id].name + ' : ' + costText(t0.cost);
-      color = canAfford(t0.cost) ? '#ffd95c' : '#ff8a7a';
+      const c0 = buildCost(opt.id, player);
+      label = STRUCTS[opt.id].name + ' : ' + costText(c0);
+      color = canAfford(c0) ? '#ffd95c' : '#ff8a7a';
     } else if (w.kind === 'flag') {
       label = FLAG_TYPES[opt.id].name;
       color = FLAG_TYPES[opt.id].col;
@@ -833,7 +833,7 @@ function buildGhostAt() {
   const tx = Math.floor(mouseWX() / TILE) - (w >> 1), ty = Math.floor(mouseWY() / TILE) - (h >> 1);
   const g = { type, rot, tx, ty, w, h, can: canPlaceAt(type, tx, ty, rot, player) };
   if (b.drag && STRUCTS[type].line) {
-    const cost = STRUCTS[type].tiers[0].cost.gold || 0;
+    const cost = buildCost(type, player).gold || 0;
     let purse = player.inv.gold;
     g.line = buildLine(b.drag.tx, b.drag.ty, tx, ty).map(([x, y]) => {
       const can = canPlaceAt(type, x, y, 0, player);
@@ -868,7 +868,7 @@ function drawBuildGhost(ox, oy, now) {
   if (!mouse.inside || (overHud(mouse.x, mouse.y) && !state.build.drag)) return; // the well and the column are HUD (overHud)
   const g = buildGhostAt();
   const spr = structSprite({ type: g.type, tier: 0, team: player.team, rot: g.rot });
-  const afford = canAfford(STRUCTS[g.type].tiers[0].cost);
+  const afford = canAfford(buildCost(g.type, player));
   const pieces = g.line || [{ tx: g.tx, ty: g.ty, can: g.can, paid: afford }];
   for (const t of pieces) {
     const col = !t.can.ok ? BUILD_NO : t.paid ? BUILD_OK : BUILD_BROKE;
@@ -911,7 +911,7 @@ function drawBuildList(now) {
   for (let i = 0; i < BUILD_ORDER.length; i++) {
     const type = BUILD_ORDER[i], S = STRUCTS[type], sel = i === b.sel;
     const r = buildRowRect(i);
-    const t0 = S.tiers[0], afford = canAfford(t0.cost);
+    const c0 = buildCost(type, player), afford = canAfford(c0);
     ctx.fillStyle = '#0a0e23'; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
     ctx.fillStyle = sel ? '#141c3c' : '#0d1229'; ctx.fillRect(r.x, r.y, r.w, r.h);
     if (sel) { ctx.fillStyle = BUILD_LIT; ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1); ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h); }
@@ -919,7 +919,7 @@ function drawBuildList(now) {
     ctx.drawImage(buildIcon(type), r.x + (S.tiled ? 1 : 2), r.y + 1);
     ctx.globalAlpha = 1;
     // the price, in gold's own colour while the purse covers it, red while not
-    const cost = '' + (t0.cost.gold || 0);
+    const cost = '' + (c0.gold || 0);
     drawPixelTextOutline(ctx, cost, r.x + 25, r.y + 6, afford ? RES_COLORS.gold : BUILD_NO, '#0f1632');
     // the piece that turns wears the rotate key's cap on its row while picked
     if (S.rotates && sel) drawKeyCap(ctx, r.x + r.w - 14, r.y + 4, keyCap('rotate'), keyHeld('rotate'), 0, now);
