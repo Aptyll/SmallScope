@@ -494,7 +494,7 @@ function updatePlay(dt) {
     // ...and on the ground the same intent is the zipline's (zipToggle, world.js)
     if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p)) zipToggle(p); }
     if (!p.active || inAir(p)) continue;
-    if (p.control === 'ai') updateAI(p, dt);
+    if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/bots/api.js)
     updatePlayer(p, dt);
     if (!p.dead && !PRACTICE) {
       p.trickleT += dt;
