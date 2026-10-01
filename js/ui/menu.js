@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.55';
+const PATCH_TXT = 'PATCH 4.56';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.56', 'YOUR BOTS SAY IT WHEN THEY ANSWER YOUR FLAG: ON IT, OR GUARDING FOR THE ONE THAT STAYS ON THE BIRD, AND A RIVAL WITH A GRUDGE TELLS YOU: YOU AGAIN.'],
   ['4.55', 'BOTS REMEMBER: EACH KEEPS ITS MOOD FOR LIFE, ONE THAT DOWNS YOU TWICE HUNTS YOU FOR A WHILE, AND YOUR ALLIES ANSWER YOUR FLAG WHILE THEIR GUARD STAYS ON THE BIRD.'],
   ['4.54', 'BOTS PLAY WITH HANDS NOW: THEY WATCH WHERE THEY AIM, READ A MOVING TARGET A BEAT LATE, SWING THEIR AIM ACROSS, SETTLE ON A NEW TARGET AND SLIP NOW AND THEN, AND A NEW EASY LEVEL SITS BELOW NORMAL.'],
   ['4.53', 'NO BOT FILE RUNS INSIDE THE GAME ANY MORE: EVERY BOT, THE EXAMPLES TOO, IS SEALED OFF WITH NO WAY TO PEEK, AND A HUNG BOT LETS GO OF ITS KEYS.'],
@@ -1218,6 +1219,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '3.79'],
   ]],
   ['FIGHTING AND TRADE', [
+    ['YOUR BOTS ANSWER YOUR FLAGS OUT LOUD: ON IT, GUARDING', '4.56'],
     ['A NEW EASY LEVEL, AND BOTS THAT AIM AND MISS LIKE PEOPLE', '4.54'],
     ['BOTS PLAY AS A TEAM: SCOUTS, STALKERS, GUARDS, HELP CALLS AND BEAR HUNTS', '4.47'],
     ['A BOT THAT DOWNS YOU TWICE COMES LOOKING FOR YOU', '4.55'],

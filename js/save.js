@@ -61,7 +61,6 @@ const SAVE_ROOTS = [
   // carries none of these, and loads with every side silent
   ['callouts', ...saveArr(callouts)],
   ['callSaid', () => callSaid, (v) => { callSaid[0] = v ? v[0] : {}; callSaid[1] = v ? v[1] : {}; }],
-  ['callFlags', () => callFlags, (v) => { for (const t of [0, 1]) Object.assign(callFlags[t], v ? v[t] : { key: null, pend: [], guard: false }); }],
   ['rng', () => [rng.s, fxRng.s, mktRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; mktRng.s = v[2]; }],
   ['wild', () => [preyRepopT, fishCap, fishFloor, emergeSites],
     (v) => { preyRepopT = v[0]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
