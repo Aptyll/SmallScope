@@ -508,6 +508,7 @@ function updatePlay(dt) {
   updateAbilityWorld(dt); // craters and nets in flight
   if (state.drop) updateDrop(dt);
   shedStep(dt); // the gusts knocking snow off the pines (js/shed.js)
+  updateCallouts(dt); // the bots' calls to their side (js/ai-callouts.js)
 
   // Shots in flight. Everything a tool fires rides this one array, whatever
   // bit it came out of - steerBit() is where the bit's flight path gets to

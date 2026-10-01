@@ -97,6 +97,9 @@ cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               reach and no contest; id null lifts it
               or {kind:'rack'|'pkdie'|'agbell', ...} - the practice room's
               armory, roll die and range bell
+              An order of the wrong shape (a string where an index goes, a key
+              off Object's prototype) is dropped by cmdOk before any branch runs:
+              a bot file or a remote client can send anything.
 ```
 
 `sampleHumanInput(player, dt)` (input banner) folds `keys`/`mouse` — and the pad's stick, `pad.mx/my`,
@@ -900,7 +903,7 @@ with reach `WORK_REACH` (any open tile beside the target), so `aiOpenSides() >= 
 prefilter on work; a build site still wants `>= 3` open sides. Keep the -1 branches when you
 extend the ladder — a goal that is never dropped is a bot that stands still forever.
 
-**Calibrating a level** is done bot-vs-bot, headless, in the served page: make the local player a
+**Calibrating a level** is done bot-vs-bot, headless: `node app/arena/run.js` plays a batch of seeds with no browser, one exact replay per seed, and scores each match ([arena.md](arena.md)). The same recipe by hand, in the served page: make the local player a
 bot (`player.control = 'ai'`, `players[0].ai.prof = AI_LEVELS[0]` for a middling player who
 never pushes — `aiRank` skips `player`, so it holds no push or guard player), stub
 `sampleHumanInput`, `DBG.beginDrop()`, then step the sim at its own `TICK_DT` (1/60 —
@@ -923,6 +926,21 @@ the allied bird to **15 % nerve** by six minutes, then bleeds to the levelled al
 never farms: level 5–6 against 12), who win at about 16:30 — the dive, not the race, is what the
 level is for, and with a hand rather than a bot on the human's side that dive is the match. A
 `push.t` of 0 never touches the bird, and a four-minute pack of four reaches 36 % and loses.
+
+### Bot callouts
+
+Every `'ai'` seat, brain or bot file, **says what it sees** to its own side (`updateCallouts`,
+js/ai-callouts.js, from `updatePlay`): a short word on a plate over its name and a ping on the
+spot it is about, both on the minimap disc too (js/draw/callouts.js). A call never decides
+anything; it reports something already true, most urgent first (`callLook`): its own bird just
+hit (BIRD!), itself losing a fight (HELP!), a rival or a bear nearly down in front of it
+(HUNTER LOW!, BEAR LOW!), the rival bird wavering with it there (PUSH!), and rivals walking onto
+its roost (2 HERE!). It is said only with a friend near enough to act (`callFriend`), at most one
+call per bot every `CALL_BOT_CD`, one per side every `CALL_SIDE_GAP`, never the same call near
+the same spot inside `CALL_SAME_T`, and never more than `CALL_SIDE_MAX` up for a side. A look
+runs every `CALL_LOOK` ticks staggered by seat and draws no `rng()`, so a match plays out the
+same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS`, and
+`addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
 
 ## Online play
 

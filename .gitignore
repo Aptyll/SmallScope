@@ -102,6 +102,9 @@ dist
 # TernJS port file
 .tern-port
 
+# Bot-vs-bot match logs (app/arena/run.js's default --out)
+arena-out/
+
 # Headless screenshot sink (app/server.js POST /shot)
 shot.png
 
@@ -135,3 +138,6 @@ desktop/dist/
 
 # python bytecode (app/bake-bears)
 __pycache__/
+
+# The offline bot ladder's data: ratings, history, logs, entered bot files (app/ladder/)
+ladder-data/
