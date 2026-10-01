@@ -87,6 +87,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/menu.js](../../js/ui/menu.js) | ~3210 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, the lobby, the hero pop-up, the tech tree screen, `PATCH_TXT` |
 | [js/ui/chars.js](../../js/ui/chars.js) | ~580 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
+| [js/ui/ladder.js](../../js/ui/ladder.js) | ~290 | shared scope, no `window.*` export | the bot ladder screen: the offline ladder's standings, and FIGHT, which seats a ladder bot on the rival side |
 | [js/ui/screens.js](../../js/ui/screens.js) | ~1380 | shared scope, no `window.*` export | the replay window, the death overlay and spectating, the victory and defeat ceremonies |
 | [js/ui/lobby.js](../../js/ui/lobby.js) | ~470 | shared scope, no `window.*` export | the post-game lobby: the match's own record, and the sampling during play its graphs are drawn from |
 | [js/save.js](../../js/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
