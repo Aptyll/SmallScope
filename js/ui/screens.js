@@ -832,7 +832,8 @@ function winLayout() {
     bannerY: toy + 50,  // the rail the banners hang from
     stageY: toy + 138,  // the stage: the step the side stands on (the loss's drift lies here)
     statY: toy + 174,
-    plankY: toy + 218,
+    storyY: toy + 198,  // the three story lines (js/ui/story.js), 1x, under the plates
+    plankY: toy + 226,
   };
 }
 
@@ -1436,6 +1437,7 @@ function renderVictory(now) {
 
   // --- the tally ----------------------------------------------------------
   drawEndTally(WIN_STATS, ws, t, L.statY, WIN_T, WIN_ACCENT);
+  drawStoryLines(ws, t, L.storyY, WIN_T, WIN_ACCENT); // the match story (js/ui/story.js), under the plates
 
   // --- the planks, sliding up to land exactly on WIN_T.menu ---------------
   if (t > WIN_T.menu - WIN_SLIDE) {
@@ -1696,6 +1698,7 @@ function renderDefeat(now) {
 
   // --- the tally ----------------------------------------------------------
   drawEndTally(DEF_STATS, ws, t, L.statY, DEF_T, DEF_ACCENT);
+  drawStoryLines(ws, t, L.storyY, DEF_T, DEF_ACCENT);
 
   // --- the plank, sliding up to land exactly on DEF_T.menu ----------------
   if (t > DEF_T.menu - DEF_SLIDE) {

@@ -357,12 +357,19 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | who a thing left in the world credits its kill to, once the caster may be down | `abCredit` | `class abilities` › `the world tick` (whose SIDE it is on: `sideOf`, actions.js) |
 | the twelve 32×32 ability icons (the eight firsts, the warrior's four others) and their bake per option | `AB32`, `AB32_ALT`, `AB32_PAL`, `classAbIcon(cls, i, k)` | `class abilities` › `the strip icons` (drawn by `drawClassAbCell`, js/ui/hud-draw.js, and `tipClassAb`, js/ui/tooltip.js) |
 
+## js/ai-skill.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| how well a bot plays: the four rival levels (every hand and choice field explained), the ally profile a notch above, the ladder's one pair of hands, which profile a player runs | `AI_LEVELS`, `AI_ALLY_PUSH`, `AI_ALLIES`, `AI_LADDER_HANDS`, `aiProfile` | `difficulty` |
+| the hands between a decision and the input: noticing (the cone, a hit's wake-up), the read of a target and the aim wobble, each draw's release, the lapse, the crosshair's swing and the held draw; the per-bot state the dashboard reads | `skillOf` (`p.ai.sk`), `skillTick`, `skillNotice`, `skillAim`, `skillDraw`, `skillSlip`, `skillHands`, `AI_SETTLE`/`AI_WOBBLE_T`/`AI_ALERT_T`/`AI_AIM_ON` | `skill` |
+
 ## js/ai.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | what a bot decides to do this frame | `updateAI` (the wrapper: the ride's let-go), `aiThink` (the ladder), `aiNearestEnemy`, `aiLineClear`, `aiOpenSides` | `ai` |
-| how well it plays: the three rival levels, the ally profile a notch above, which one a player runs; IMPOSSIBLE's `relentless` (never gives ground, everyone pushes as a pack from the zipline's end, charges past anything not at arm's length) | `AI_LEVELS`, `AI_ALLIES`, `aiProfile`, `AI_AIM_T`/`AI_ABIL_T`; `AI_PACK`/`AI_PACK_R` and `ai.packGo` (the pack, in the objective rung), `charge` (beside `siege`, in `aiThink`) | `ai` › `difficulty` |
+| IMPOSSIBLE's `relentless` played (never gives ground, everyone pushes as a pack from the zipline's end, charges past anything not at arm's length); the ability roll | `AI_PACK`/`AI_PACK_R` and `ai.packGo` (the pack, in the objective rung), `charge` (beside `siege`, in `aiThink`), `AI_ABIL_T` | `ai` (the levels themselves: js/ai-skill.js) |
 | how a bot covers ground: the zipline ride folded into every walk - is the cable worth it, the mount point, the hold along it and the let-go at the exit, the ride no rung wanted | `ZIP_AI_GAIN`/`ZIP_AI_OFF`, `aiWalkT`, `aiZipWorth`, `steerTo`/`walkTo` (inside `aiThink`; the mount is `zipMount`, world.js), `ai.zipUsed` (`updateAI`) | `ai` › `the ride` |
 | the objective: who pushes and who guards, the walk into a roost through its lane, the defenders' turrets, the archer's station, the siege that ignores respawning defenders | `aiRank`, `aiPushers`, `aiWantsPush`, `aiOnGuard`, `aiRivalEagle`/`aiOwnEagle`, `aiToRoost`, `aiLaneGate`, `aiInLane`, `aiEagleTile`, `AI_HOLD`, `AI_GATE`, `AI_ROOST_BUDGET`, `AI_ESCALATE`, `AI_SIEGE_R` (the `siege` read in `updateAI`) | `ai` › `difficulty` (the bird's numbers: `EAGLE_HP`/`EAGLE_ARROW_DMG`/`EAGLE_WORK_DMG`, boot.js) |
 | what every bot knows about both birds: nerve, last hit, who is at each (a rival wave counted at half strength), the `threat` read the defend and push rungs ask, how many a threat calls home | `aiSituation`, `aiDefendersWanted`, `AI_ROOST_R`/`AI_DEFEND_T`/`AI_JOIN_HP`/`AI_ALARM_HP` | `ai` › `difficulty` › `the two birds` |
@@ -760,6 +767,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a card's picture: the eagle's own icon or today's bird turned, a scout body's own `icon`, a placeholder washed in its tint, a trail's streak | `skinArt` (the eagle's: `SPRITES.birdSkinIcon`, warbirds.js), `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
 | the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |
 | the skins screen: the navbar, the grid of cards, a press that wears, picks or buys, the short purse's shake, the buy's flash, the keys | `SK_*`, `skinsLayout`, `skinsTab`, `beginSkins`/`leaveSkins`, `skinsHit`, `skinPress`, `skinsKey`, `skinsClick`, `updateSkins`, `drawSkinTab`, `drawSkinCard`, `renderSkins` | `skins` › `the screen` |
+
+## js/ui/story.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the three lines under an end screen's tally: the record the sim keeps (who downed whom, each bird's worst moment and who stood by it), how the lines are picked for the local player, and how they are printed | `storyOf`, `storyDown` (called from the down block in js/player.js), `storyBirdHit` (called from `hurtEagle`, js/boot.js), `storyLines`, `drawStoryLines` (called after `drawEndTally` by `renderVictory`/`renderDefeat`); `state.story` rides `SNAP_STATE` | `match story` |
 
 ## js/ui/screens.js
 

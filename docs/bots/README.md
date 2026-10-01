@@ -76,6 +76,6 @@ The game already drives every player through one **input struct**, the same one 
 and an online client sends to its host. A bot file is one more controller of that struct, behind
 a plain JSON message boundary: the bot never holds a reference into the game, so the same file
 runs in a Web Worker in the game, sealed in a Node vm on the ladder, or, later, on a server across
-a socket for an online ladder, with no change to the file. (Only the baked examples run in the
-page itself.) The contract that pins this down is
+a socket for an online ladder, with no change to the file. Nothing runs in the page itself, not
+even the examples. The contract that pins this down is
 [api.md](api.md); its `api` number goes up whenever a field is renamed.

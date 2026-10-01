@@ -544,11 +544,11 @@ class Player {
       lootT: 0, spendT: 0, buildT: 0, fitT: 0,
       hideT: 0, hideCd: 0,
       wx: 0, wy: 0, roam: 0,
-      // the difficulty profile's clocks (ai.js): prof overrides the side's
-      // profile (DBG / the harness), seeT is how long a rival has been
-      // noticed, aox/aoy the current aim scatter, abilOk this tick's ability
-      // roll, pushCd a roost it could not reach
-      prof: null, seeT: 0, aimT: 0, aox: 0, aoy: 0, abilT: 0, abilOk: true, pushCd: 0,
+      // the difficulty profile's clocks (ai-skill.js): prof overrides the
+      // side's profile (DBG / the harness), seeT is how long a rival has been
+      // noticed, sk the skill layer's hands (skillOf, made on first use),
+      // abilOk this tick's ability roll, pushCd a roost it could not reach
+      prof: null, seeT: 0, sk: null, abilT: 0, abilOk: true, pushCd: 0,
       // the flag (aiFlagSync, ai.js): want is the order this tick's ladder
       // would fly ({ type, x, y } or null), wantT how long it has flown one
       // with no reason left, join the teammate whose flag it serves instead
@@ -903,6 +903,7 @@ function die(p, src, cause) {
       sfxAt('heal', killer.x, killer.y);
     }
   }
+  storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
   logEvent(killer ? killer.name + ' ' + (KILL_VERB[cause] || 'SHOT') + ' ' + p.name
     : p.name + ' ' + (DEATH_CAUSE[cause] || 'WENT DOWN'), killer || p);
   // the bird is the way back - a side whose objective has fallen is out,
