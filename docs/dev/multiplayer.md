@@ -882,11 +882,10 @@ The ladder:
    the roost open (off the axis a wall the defenders raised may eat the shot) and outside the gust, and looses at the
    profile's draw; a warrior walks up to the nearest roost tile (`aiEagleTile`) and swings E on
    it, gust and all, exactly as a hand does. Defenders in sight are rung 3's business — until
-   the side outnumbers them: a pusher inside `AI_ROOST_R` of the rival bird whose side has more
-   bodies there than the defenders (the `siege` read, above rung 3) keeps hitting the bird and
-   leaves the fight to its friends, turning only for a rival inside `AI_SIEGE_R` (48 px),
-   because defenders come back from sixty pixels away every few seconds and a push that turns
-   to meet each one never lands a swing. A roost it cannot route to is left for `ai.pushCd`
+   the pusher is at the bird: inside `AI_ROOST_R` of it (the `siege` read, above rung 3) it keeps
+   hitting the bird and leaves the fight to its friends, however many defenders there are,
+   turning only for a rival inside `AI_SIEGE_R` (48 px), because defenders respawn at their
+   bird and a push that turns to meet each one never lands a swing. A roost it cannot route to is left for `ai.pushCd`
    (10 s).
 9. **escort** (allies only) — the two lowest allied bots (`aiEscorts`) keep within
    `AI_ESCORT` (120 px) of the human while they are on the ground and inside `AI_ESCORT_R`
