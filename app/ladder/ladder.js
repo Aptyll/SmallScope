@@ -16,7 +16,7 @@
 // the author's guide is docs/bots/ladder.md. No packages.
 //
 // TRUST: a bot file runs inside the match process with this computer's
-// rights (the arena loads it inline). Enter only files you trust; an online
+// rights (the arena runs it in a Node vm context: sealed from the game, not a hardened jail). Enter only files you trust; an online
 // ladder runs each bot in its own sandboxed process instead (docs/bots/ladder.md).
 
 const fs = require('fs');

@@ -675,6 +675,53 @@ a hit on its own bird — at every level the side answers from anywhere on the m
 (`aiDefendersWanted`, **the two birds**, below); the difficulty is how well they fight when
 they get there, never whether they come.
 
+**The team brain** (js/ai-team.js) is what turns ten ladders into two sides. The profile says
+how well a bot plays; the team brain says what the side is doing and who does which part of it.
+Three small rules, and the teamwork is what they add up to:
+
+- **Mood.** Each bot is one of five temperaments (`AI_MOODS`: BRAVE, CAUTIOUS, GREEDY, LOYAL,
+  WILD), dealt off the seed so each side fields all five (`aiMood`). A mood moves choices, never
+  hands: its `flee` and `judge` shift the profile's, `help` scales how far it answers a call,
+  `greed` how far it looks for loot and work, `roam` how wide it wanders, `fit` which jobs suit it.
+- **Role.** Every `AI_PLAN_T` (2 s) the side re-plans (`aiPlan`): the profile still says how
+  many push and guard (`aiPushers`, `prof.guard`); the plan says who, by mood fit, and a held
+  job counts `AI_KEEP` extra so nobody flip-flops. `aiRank` is the plan's order (`aiPlanRank`),
+  so the push and guard rungs below read it unchanged. From `AI_SCOUT_AT` (45 s) one bot
+  SCOUTs (walks the middle and the far road short of the rival lane), from `AI_STALK_AT`
+  (90 s) one STALKs (a mood with `stalk`), and a strong side sends three SLAYERs to its bear,
+  below. The rest are GATHERERs: the ladder as it always was.
+- **Memory.** Every rival a bot notices (through `seenAt`) goes on the side's board
+  (`aiLook` → `T.seen`, kept up to `AI_SEEN_T`, trusted for the profile's `memory`). A bot
+  hurt under 60% or outnumbered in a fight **calls** (`aiCall`); a hurt human with a rival on
+  them calls without pressing anything (`aiHumanCall`). A free bot within `AI_CALL_R` × its
+  mood's `help` answers, at most `AI_CALL_N` (2) a call (rung 5e), and the caller is an anchor
+  for rung 3, so the helper joins the fight it walks into. On the profile's `focus` roll a bot
+  shoots the rival most of its side is already shooting (`T.focus`).
+
+The plan also reads the match once for the side (`T.stance`, the dashboard's `plan`): HOLD (its
+bird under threat), WINDOW, BEAR, PUSH, PRESS (a stalker out) or FARM. The **window** opens when
+`AI_WINDOW_DOWN` (2) more rivals than own bots are down past `AI_STALK_AT`, or most of the side
+wears a bear's blood, and stays open at least `AI_WINDOW_MIN` (12 s): every bot but the guards
+pushes while it lasts. The **bear**: from `AI_BEAR_AT` (240 s), a side whose bots average level
+`AI_BEAR_LV` (6), with three to spare, its bird quiet and no rival seen by the bear, sends a
+party of `AI_BEAR_N` (3) to the teamPay camp nearest its own bird (`aiSideBear`). They meet
+`AI_BEAR_R` off it until all three are there or `AI_BEAR_WAIT` (15 s) runs out (`aiBearJob`),
+then the camp rung (4) fights it. The kill pays and bloods the whole side, which opens the window:
+bear, then push, is a loop that comes out of the rules rather than a script.
+
+The fight rung weighs the numbers (`aiOdds`: rivals within `AI_ODDS_R` of the foe against its own
+side within `AI_ODDS_R` of it) through the profile's `judge` plus the mood's (`aiFallBack`): a
+good judge short by two always gives ground, short by one once it is hurt; it backs off toward
+the nearest teammate outside the fight (`aiFallBackTo`) shooting over its shoulder, which pulls
+the chase into its own side. A relentless side, a siege, a charge and a bot at its own bird never
+back off. Knobs a profile does not carry yet play by `AI_KNOB_DEFAULT` (`aiKnob`).
+
+**Thoughts.** Each think the rung that wins writes `p.ai.thought` (`aiNote`): `goal` (one upper
+case word: FIGHT, FLEE, PUSH, REGROUP, HELP, STALK, SCOUT, GATHER...), `why` (at most 20
+characters), `target` (`{ x, y, kind, ref, id }` or null), and the bot's `role`, `mood` and its
+side's `plan`. The last write in a think stands. The dashboard reads it (F4, F6), never `p.ai`'s
+other fields; `p.ai` never rides the wire.
+
 The ladder:
 
 1. **eat** — fish below 50% hp, berry below 80%.
@@ -755,7 +802,7 @@ The ladder:
    never pushes). Under `AI_ALARM_HP` (half its nerve) everyone comes, pushers included, the one
    exception a pusher whose side is winning the race — the rival bird lower still — who presses on.
 7. **guard** — from 0.6 × `push.t` on, the profile's `guard` bots (1 / 2 / 0 — a relentless side keeps none; allies 1) after
-   the pushers in player order (`aiRank`) stand by their own bird, going on down the ladder to work
+   the pushers in the plan's order (`aiRank`, the team brain above) stand by their own bird, going on down the ladder to work
    what is near while inside `AI_GUARD_R` of it. The bird is their anchor.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
    side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
@@ -766,8 +813,10 @@ The ladder:
    is wanted. **The wave is the push**: off the rival's lane, a pusher walks with the head of its
    own side's column on the road (`aiWaveHead` — the own soldier nearest the rival bird that is
    still on the march, within `AI_WAVE_D`) rather than ahead of it alone, closing to `AI_WAVE_R`
-   of it and going on from there; with no column out it walks as it always did. (A relentless
-   side's grouping is its pack at the zipline's end instead — the profile, above.)
+   of it and going on from there; with no column out it **regroups**: the side's pushers meet at
+   the same rally as a relentless pack (their zipline's end) until `AI_REGROUP` (2) are there,
+   or one has waited `AI_REGROUP_T` (15 s), then go on committed (`ai.packGo`). (A relentless
+   side skips the column and waits for its whole pack instead — the profile, above.)
    The walk is `aiToRoost`: the roost sits in its corner's woods at the end of its spur and the
    spur is the only way in, so off it the route is road → `aiLaneGate` (`AI_GATE` px up the road
    from the junction, toward the field) → junction (`e.mouth`) → spur → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
@@ -789,6 +838,12 @@ The ladder:
 9. **escort** (allies only) — the two lowest allied bots (`aiEscorts`) keep within
    `AI_ESCORT` (120 px) of the human while they are on the ground and inside `AI_ESCORT_R`
    (400 px), going on down the ladder while they are close.
+9a. **help** — a teammate's call this bot answers (`aiHelpCall`; never a pusher, a guard, a
+   defender or a bot under an order): walk to the caller. Then a slayer's walk to its party's
+   meeting point, then the side's roaming jobs: a STALKER walks to the nearest sighting of a
+   rival with no other rival within `AI_ALONE_R` (`aiStalkTarget`), striking it off if nobody is
+   there; a SCOUT walks its beat (`aiScoutPoint`). Neither job holds a bot with nothing to do:
+   they fall through to the rungs below.
 10. **hunt** — an animal within `AI_HUNT` (120 px), with a 6 s catch timer per animal (prey
    outruns a walk). Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
@@ -872,6 +927,21 @@ the allied bird to **15 % nerve** by six minutes, then bleeds to the levelled al
 never farms: level 5–6 against 12), who win at about 16:30 — the dive, not the race, is what the
 level is for, and with a hand rather than a bot on the human's side that dive is the match. A
 `push.t` of 0 never touches the bird, and a four-minute pack of four reaches 36 % and loses.
+
+### Bot callouts
+
+Every `'ai'` seat, brain or bot file, **says what it sees** to its own side (`updateCallouts`,
+js/ai-callouts.js, from `updatePlay`): a short word on a plate over its name and a ping on the
+spot it is about, both on the minimap disc too (js/draw/callouts.js). A call never decides
+anything; it reports something already true, most urgent first (`callLook`): its own bird just
+hit (BIRD!), itself losing a fight (HELP!), a rival or a bear nearly down in front of it
+(HUNTER LOW!, BEAR LOW!), the rival bird wavering with it there (PUSH!), and rivals walking onto
+its roost (2 HERE!). It is said only with a friend near enough to act (`callFriend`), at most one
+call per bot every `CALL_BOT_CD`, one per side every `CALL_SIDE_GAP`, never the same call near
+the same spot inside `CALL_SAME_T`, and never more than `CALL_SIDE_MAX` up for a side. A look
+runs every `CALL_LOOK` ticks staggered by seat and draws no `rng()`, so a match plays out the
+same with callouts as without them. `callouts` and `callSaid` are in `SAVE_ROOTS`, and
+`addCallout` records each call (`evPush('call')`) so a host's clients raise the same one.
 
 ## Online play
 

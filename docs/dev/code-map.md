@@ -369,6 +369,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the waves as a bot sees them: a rival soldier in sight is a target, its own column's head is what a pusher walks with | `aiNearestEnemy` (its `robots` loop), `aiWaveHead`, `AI_WAVE_R`/`AI_WAVE_D` (the `head` read in rung 5c of `updateAI`) | `ai` |
 | an ally at your side: the escorts, the anchors that let it join your fight and your push | `aiEscorts`, `AI_ESCORT`/`AI_ESCORT_R`, `AI_ANCHOR_R`/`AI_ANCHOR_D` | `ai` › `difficulty` |
 
+## js/ai-team.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a bot's temperament and what it moves; the decision knobs read off the profile with their defaults | `AI_MOODS`, `aiMood`, `aiKnob`/`AI_KNOB_DEFAULT`, `aiJudge`, `aiFlee` | `team brain` |
+| the side's plan: who pushes, guards, scouts, stalks or hunts the bear, the stance, the window, the focus, the plan's order (`aiRank`, ai.js) | `AI_ROLES`, `aiTeams`, `aiTeamNew`, `aiPlan`, `aiRole`, `aiPlanRank`, `AI_PLAN_T`, `AI_WINDOW_*` | `team brain` |
+| what the side has seen and who is calling: sightings, calls for help, the stalker's pick, the odds and the fall-back, the scout's beat | `aiLook`/`aiSaw`, `aiCall`, `aiHumanCall`, `aiHelpCall`, `aiStalkTarget`, `aiOdds`, `aiFallBack`/`aiFallBackTo`, `aiScoutPoint`, `aiForget` | `team brain` |
+| the bear party | `aiSideBear`, `aiBearJob`, `AI_BEAR_*` | `team brain` |
+| what a bot is doing and why, for the dashboard | `aiNote` (`p.ai.thought`) | `team brain` |
+
 ## js/bots/api.js
 
 | Looking for | Start at | Banner |
@@ -376,6 +386,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a seat driven by a bot FILE: its step in place of `updateAI`, taking and leaving a seat, its live runtime (never saved: `p.botId` is) | `botStep` (called from `updatePlay`, sim.js), `botAssign`/`botRelease`/`botOpen`, `botRt`, `BOT_THINK` | `bot api` |
 | what a bot sees and what it may send: the observation, the hello, the act read field by field, the thought it leaves on `p.ai.thought`, the side's `say` | `botObserve` (`BOT_OBS_R`, `BOT_NODES`/`BOT_NODES_N`, `botSeen`), `botHello`, `botAct` (`BOT_CMDS`, `BOT_SAY_MAX`), `botSetThought`, `botHear`, `botIdOf`/`botRefs` | `bot api` |
 | where a program runs: the library, the transports, the lockstep a headless runner waits on | `BOT_LIB`/`botLibAdd` (the examples: js/bots/lib.js, baked from bots/*.js by app/bake-bots.js), `BOT_TRANSPORTS` (`botInline`, `botWorker`, `BOT_PRELUDE`), `botPending`/`botGiveUp`, `botEnd`, `window.BOTS` | `bot api` |
+
+## js/ai-callouts.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a bot's callout to its side: what each one is, when one is said, the anti-spam rules, the one door every call goes through | `CALLS`, `CALL_*`, `updateCallouts` (called from `updatePlay`, sim.js), `callLook`, `callFriend`, `callFree`/`callSaid`, `addCallout` (replayed by `evPlay`, js/net/events.js), `callouts` | `bot callouts` (the pixels: js/draw/callouts.js) |
 
 ## js/sim.js
 
@@ -537,6 +553,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the camp glyph both maps stamp, and the respawn clock a hovered anchor wears | `drawCampIcon`, `drawCampClock` | `the camp glyph both maps and the drop chart stamp` (its `CAMPS` spec: `camps`, world.js) |
 | what a flag looks like: the order's glyph (at any scale), the map pennant, the ring an order covers (every standing one and the held wheel's preview), the planted banner, and a map's pennant-with-ring | `drawFlagIcon`, `drawFlagPennant`, `drawFlagRing`, `drawFlagRings`, `drawFlag`, `drawFlagMark` | `what a flag looks like` (what they read, `FLAG_TYPES`/`FLAG_R`: `team flags`, robots.js; the wheel's pick: `wheelLayout`, js/ui/wheel.js) |
 | what a body looks like on either map: the square in its side's ink (a player one step bigger than a robot), the watched body's white heart in its side's ring, the bird diamond, and a rival's cross under a colour-blind palette | `drawMapDot`, `drawMapUnit`, `drawMapCross`, `drawMapYou`, `drawMapBird` | `what a body looks like on a map` (its two callers: `renderMinimap` js/ui/minimap.js, `renderWorldMap` js/ui/panels.js) |
+
+## js/draw/callouts.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| what a callout looks like: the plate over the caller's name (or over the ping when the caller is off the screen), its glyphs, the ground ping's pulse, the minimap's | `drawCallouts` (called after `renderLighting`, render.js), `drawCallPlate`, `CALL_GLYPHS`, `callTag`/`callAnchor` (set from `drawPlayer`, js/draw/bodies.js), `drawCalloutsMap` (called from `renderMinimap`, js/ui/minimap.js) | `callout pixels` (what a call is: `bot callouts`, js/ai-callouts.js) |
 
 ## js/draw/light.js
 
