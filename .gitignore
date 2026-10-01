@@ -138,3 +138,6 @@ desktop/dist/
 
 # python bytecode (app/bake-bears)
 __pycache__/
+
+# The offline bot ladder's data: ratings, history, logs, entered bot files (app/ladder/)
+ladder-data/
