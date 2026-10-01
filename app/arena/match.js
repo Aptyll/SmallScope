@@ -185,6 +185,12 @@ function playMatch(opts) {
     id: p.id, kills: p.kills, deaths: p.deaths, dmg: Math.round(p.dmgOut), siege: Math.round(p.dmgBird + p.dmgStruct),
     gold: Math.round(p.xp), level: p.level, dist: Math.round(dist[i]), acts: act[i], goals: goals[i],
   }));
+  // a bot file's health at the whistle (js/bots/api.js): how often it threw
+  // or answered nothing usable, so a ladder can flag a broken entry
+  for (const s of seats) {
+    const r = s.ctrl === 'scripted' && G.BOTS.rt.get(s.id);
+    if (r) { s.errors = r.errN; s.late = r.late; s.thinks = r.thinks; }
+  }
   const kindName = o.kind === 'level' ? levels[o.level].name.toLowerCase() : levels[o.a].name.toLowerCase() + '-v-' + levels[o.b].name.toLowerCase();
   const log = {
     v: 1,
