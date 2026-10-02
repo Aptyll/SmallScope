@@ -119,7 +119,7 @@ const AI_ODDS_R = 150;      // px round a fight the numbers are counted in (the 
 // the side's shared mind, one per team; it is saved whole (SAVE_ROOTS,
 // js/save.js), the bear by reference like any other shared body
 function aiTeamNew() {
-  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '', nPush: 0, nGuard: 0, braceT: 0, braceN: 0, wallTick: -1 };
+  return { at: -1, stance: 'FARM', why: '', winT: 0, roles: {}, order: [], seen: [], calls: [], focus: -1, bear: null, bearT: 0, builder: -1, answerT: 0, guarded: '', nPush: 0, nGuard: 0, braceT: 0, braceN: 0, wallTick: -1, ring: null, wallNo: {} };
 }
 const aiTeams = [aiTeamNew(), aiTeamNew()];
 
