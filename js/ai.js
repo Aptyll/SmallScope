@@ -242,16 +242,15 @@ function aiLaneDist(e, x, y) {
 // line a straight run; the side's own walls count as ground so the answer
 // holds still while they go up) and, between AI_RING_K steps out, find the ring of tiles
 // with the fewest that still lead on outward - the roost's narrowest line.
-// Each stretch of that line wider than a gap is an opening: all of it is
-// walled but AI_RING_GAP tiles, at the road where the road crosses it, else
-// at its middle. Chopping trees round a base widens the line, and the next
+// All of that line is walled but one gate of AI_RING_GAP tiles where the
+// road crosses it, so every other way in closes. Chopping trees round a base widens the line, and the next
 // look (every AI_RING_T) plans the walls that close it again. One look is a
 // flood of the AI_WALL_BOX square, once per side per AI_RING_T; the result
-// rides the team brain (T.ring). A line no wider than the gaps it would
+// rides the team brain (T.ring). A line no wider than the gate it would
 // keep is already a choke: open is false and nothing is planned.
 const AI_RING_T = 10;      // s between a side's looks at how open its roost is
-const AI_RING_K = [6, 14]; // steps out from the bird the defence line may run
-const AI_RING_GAP = 3;     // tiles each opening keeps as its way through
+const AI_RING_K = [5, 12]; // steps out from the bird the defence line may run, near the guards and turrets
+const AI_RING_GAP = 3;     // tiles of the line's one gate, on the road
 const AI_RING_D = new Int16Array(AI_WAY_N * AI_WAY_N), AI_RING_L = new Uint8Array(AI_WAY_N * AI_WAY_N);
 function aiRingPlan(team, e) {
   const T = aiPlan(team);
@@ -288,28 +287,16 @@ function aiRingPlan(team, e) {
   if (old >= AI_RING_K[0] && width[old] && width[old] <= width[k] + 2) k = old;
   const line = [];
   for (let h = 0; h < n; h++) { const i = AI_WAY_Q[h]; if (AI_RING_D[i] === k && AI_RING_L[i]) line.push([x0 + i % N, y0 + ((i / N) | 0)]); }
-  // its stretches: tiles of the line touching, corners included
-  const left = new Set(line.map((t, i) => i)), walls = [];
-  let open = false;
-  while (left.size) {
-    const first = left.values().next().value, part = [first]; left.delete(first);
-    for (let h = 0; h < part.length; h++) for (const j of [...left]) {
-      if (Math.abs(line[j][0] - line[part[h]][0]) <= 1 && Math.abs(line[j][1] - line[part[h]][1]) <= 1) { left.delete(j); part.push(j); }
-    }
-    if (part.length <= AI_RING_GAP + 1) continue; // a choke already
-    open = true;
-    // the gap's middle: the tile nearest the road's line where the road crosses here, else the stretch's middle
-    let mx = 0, my = 0;
-    for (const j of part) { mx += line[j][0]; my += line[j][1]; }
-    mx /= part.length; my /= part.length;
-    const road = (j) => aiLaneDist(e, line[j][0] * TILE + 8, line[j][1] * TILE + 8);
-    const near = part.some((j) => road(j) < 24);
-    let mid = part[0];
-    for (const j of part) {
-      const a = near ? road(j) : Math.hypot(line[j][0] - mx, line[j][1] - my), b = near ? road(mid) : Math.hypot(line[mid][0] - mx, line[mid][1] - my);
-      if (a < b) mid = j;
-    }
-    const byGap = part.slice().sort((a, b) => Math.hypot(line[a][0] - line[mid][0], line[a][1] - line[mid][1]) - Math.hypot(line[b][0] - line[mid][0], line[b][1] - line[mid][1]) || a - b);
+  // one gate: the AI_RING_GAP tiles of the line nearest where the road crosses
+  // it (the way the side walks in and out, and where its turrets look); every
+  // other tile is walled, so each other opening closes and the road is the
+  // way in. A tile whose wall would cut ground off stays open (aiKeepsWay).
+  const walls = [], open = line.length > AI_RING_GAP;
+  if (open) {
+    const road = line.map(([x, y]) => aiLaneDist(e, x * TILE + 8, y * TILE + 8));
+    let mid = 0;
+    for (let j = 1; j < line.length; j++) if (road[j] < road[mid]) mid = j;
+    const byGap = line.map((t, j) => j).sort((a, b) => Math.hypot(line[a][0] - line[mid][0], line[a][1] - line[mid][1]) - Math.hypot(line[b][0] - line[mid][0], line[b][1] - line[mid][1]) || a - b);
     for (const j of byGap.slice(AI_RING_GAP)) walls.push(line[j]);
   }
   walls.sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx) || a[0] - b[0] || a[1] - b[1]);
