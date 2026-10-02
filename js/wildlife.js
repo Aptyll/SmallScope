@@ -97,8 +97,8 @@ const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
-  alpha: { idle: 5, walk: 8, run: 12, swipe: 14, roar: 10 }, // the bears: patrol at a walk, charge at a gallop
-  dire: { idle: 5, walk: 8, run: 12, swipe: 14, roar: 10 },
+  alpha: { idle: 5, walk: 8, run: 12, swipe: 14, roar: 10, fish: 8 }, // the bears: patrol at a walk, charge at a gallop
+  dire: { idle: 5, walk: 8, run: 12, swipe: 14, roar: 10, fish: 8 },
   bird: { idle: 0, fly: 14 },
 };
 // A clip change restarts the loop, so a sit-up always begins on the frame it
@@ -778,6 +778,8 @@ const BEAR_SWIPE_FRAMES = 10;
 const BEAR_STRIKE = 4;
 const BEAR_SWIPE_REACH = 1.25;
 const BEAR_ROAR_FRAMES = 8;
+const BEAR_FISH_FRAMES = 12; // the river camp's catch: paw up, scoop, snap, chew (riverFish)
+const BEAR_FISH_STRIKE = 3;  // the frame the paw hits the water
 const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
 const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
@@ -830,12 +832,43 @@ function wakeCamp(w, t) {
   if (cue) sfxAt(cue, w.x, w.y, 260);
 }
 
+// A RIVER camp's bear (CAMPS' `river`, world.js) has no den to stand at: it
+// walks its stretch of bank (C.path) up and down, a few tiles a leg, turning
+// at either end, and at the end of most legs stops facing the water, waits,
+// and fishes - its own clip, `fish`: paw up over the water, a scoop that
+// flips a fish into the air, the snap that catches it, and the chewing. The
+// splash is the game's, on the scoop (riverFish); the fish is in the frames.
+const RIVER_LEG = [3, 7];       // points along the bank one patrol leg walks
+const RIVER_FISH_P = 0.6;       // the chance a leg ends in a stop to fish
+const RIVER_FISH_WAIT = [1.4, 3.2]; // s it stands watching the water before the scoop
+function riverLeg(a, C) {
+  const P = C.path, n = P.length;
+  let near = 0;
+  for (let i = 1; i < n; i++) if (Math.hypot(P[i].x - a.x, P[i].y - a.y) < Math.hypot(P[near].x - a.x, P[near].y - a.y)) near = i;
+  // off the bank (home from a hunt, or knocked off it): back to the nearest point first
+  if (Math.hypot(P[near].x - a.x, P[near].y - a.y) > TILE * 2) { a.bankI = near; a.fishAt = false; return { x: P[near].x, y: P[near].y }; }
+  if (!a.bankD) a.bankD = rng() < 0.5 ? 1 : -1;
+  let i = near + a.bankD * randi(RIVER_LEG[0], RIVER_LEG[1]);
+  if (i < 0 || i > n - 1) { a.bankD = -a.bankD; i = Math.max(0, Math.min(n - 1, near + a.bankD * randi(RIVER_LEG[0], RIVER_LEG[1]))); }
+  a.bankI = i;
+  a.fishAt = rng() < RIVER_FISH_P;
+  return { x: P[i].x, y: P[i].y };
+}
+// the scoop's frame: the water jumps where the paw goes in
+function riverFish(a) {
+  const q = a.home.path[a.bankI];
+  burst(q.wx, q.wy, '#cfe6f5', 14, 60, 0.7, true);
+  sfxAt('splash', q.wx, q.wy, 200);
+}
+
 function updateCampMonster(a, dt) {
   const M = MONSTER[a.kind], C = a.home, foot = M.foot || M.r;
   const hx = C ? (C.tx + 0.5) * TILE : a.x, hy = C ? (C.ty + 0.5) * TILE : a.y;
   const groundR = ((C ? C.r : 5) + CAMP_GROUND) * TILE;
   a.biteCd = Math.max(0, a.biteCd - dt);
-  const onGround = (p) => Math.hypot(p.x - hx, p.y - hy) < groundR;
+  // the camp's ground: its clearing, and a river camp's whole bank (campNear, world.js)
+  const onGround = (p) => (C ? campNear(C, p.x / TILE - 0.5, p.y / TILE - 0.5, CAMP_GROUND) : Math.hypot(p.x - hx, p.y - hy) < groundR);
+  const river = !!(C && C.path && C.path.length);
 
   let t = a.target;
   if (t && (!t.active || t.dead || inAir(t))) { t = null; a.threat = 0; navClear(a); }
@@ -858,6 +891,15 @@ function updateCampMonster(a, dt) {
   // the mark over its head (drawAnimal): a monster on a hunt, and nothing else
   a.senseT = t ? a.senseT + dt : 0;
 
+  // a bear fishing: planted at the water until the fish is down, or until
+  // something wakes it, when the fish can wait
+  if (a.clip === 'fish') {
+    const was = a.animT;
+    if (!t) stepClip(a, dt);
+    if (!t && was < BEAR_FISH_STRIKE && a.animT >= BEAR_FISH_STRIKE) riverFish(a);
+    if (!t && a.animT < BEAR_FISH_FRAMES) return;
+    setClip(a, 'idle');
+  }
   // a bear mid set piece: planted, facing its quarry, the swipe's blow
   // landing on its strike frame
   if (a.clip === 'roar' || a.clip === 'swipe') {
@@ -871,6 +913,7 @@ function updateCampMonster(a, dt) {
     if (a.animT < (a.clip === 'swipe' ? BEAR_SWIPE_FRAMES : BEAR_ROAR_FRAMES)) return;
     setClip(a, 'idle');
   }
+  if (t) a.fishT = 0; // woken while watching the water: the fish can wait
 
   let moving = false;
   if (t) {
@@ -893,12 +936,22 @@ function updateCampMonster(a, dt) {
   } else if (a.goal) {
     // patrolling its camp, on a route like any other walk
     const n = navStep(a, a.goal.x, a.goal.y, foot, 34, dt);
-    if (!n.ok || n.d < 6) { a.goal = null; navClear(a); a.idleT = rand(0.8, 2.6); }
-    else moving = true;
+    if (!n.ok || n.d < 6) {
+      a.goal = null; navClear(a); a.idleT = rand(0.8, 2.6);
+      if (river && n.ok && a.fishAt) { // at the water: turn to it and watch
+        const q = C.path[a.bankI];
+        a.fishT = rand(RIVER_FISH_WAIT[0], RIVER_FISH_WAIT[1]);
+        a.dir = q.wx > a.x ? 'right' : 'left';
+      }
+    } else moving = true;
+  } else if (a.fishT > 0) {
+    a.fishT -= dt;
+    if (a.fishT <= 0 && ANIM_CLIPS[a.kind].fish) { setClip(a, 'fish'); return; }
   } else {
     a.idleT -= dt;
     if (Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, a.kbx * dt, a.kby * dt, foot);
-    if (a.idleT <= 0) {
+    if (a.idleT <= 0 && river) a.goal = riverLeg(a, C);
+    else if (a.idleT <= 0) {
       // pick the next patrol leg, but never far from the camp it belongs to:
       // out past the ring and the only way it will walk is back toward home
       const ring = (C ? C.r : 4) * TILE * 0.8;

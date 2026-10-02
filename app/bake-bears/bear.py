@@ -28,6 +28,22 @@ def pix(rows, col='BN'):
 
 ANTLER_L = pix(['.#..', '..##', '.##.', '##..', '.#..', '.##.', '..ss'])   # measured off the reference
 ANTLER_R = pix(['.#..', '.###', '..#.', '..#.', '..##', '..#.', '##..'])
+# the catch: '#' silver back, 's' its slate belly, 'e' the eye, all inked
+# round (fishpx) so it reads over fur and snow alike. Head first: H across
+# the jaw (H2 with its tail flapped down), V flipping up through the air,
+# T the tail left sticking out after the first bites
+def fishpx(rows):
+    cell = {(x, y): c for y, r in enumerate(rows) for x, c in enumerate(r) if c in '#se'}
+    ink = {(x + dx, y + dy) for (x, y) in cell for dx in (-1, 0, 1) for dy in (-1, 0, 1) if abs(dx) + abs(dy) == 1} - set(cell)
+    col = {'#': 'FL', 's': 'FM', 'e': 'SD'}
+    return [(x, y, col[c]) for (x, y), c in cell.items()] + [(x, y, 'SD') for (x, y) in ink]
+FISH_H = ['.####.##', '#e######', 'sssssss.', '.ssss.ss']
+FISH_PX = {
+    'H': fishpx(FISH_H),
+    'H2': fishpx(['.####...', '#e######', 'ssssssss', '.ssss.ss', '......ss']),
+    'V': fishpx([''.join(r[i] if i < len(r) else '.' for r in FISH_H) for i in range(8)]),
+    'T': fishpx(['#..', '.##', '.ss', 's..']),
+}
 RUNE = pix(['.##.', '#..#', '#..#', '.##.'])
 
 def pose(P=None, dark=False):
@@ -90,6 +106,11 @@ def pose(P=None, dark=False):
     add(6.0, 17.2, 2.2, 1.6, 'muz', 3.04, fur=0.2, sd=42, lift=0.3)
     add(4.6, 15.4, 0.55, 0.55, 'eye', 3.1, fur=0)
     add(8.6, 15.4, 0.55, 0.55, 'eye', 3.1, fur=0)
+    fish = P.get('fish')
+    if fish:   # the catch: loose in the air (crop coords), or held across the jaw
+        if fish[0] == 'jaw': (fx, fy), k = Hd(0.0 if fish[1] == 'T' else -1.5, 15.5), fish[1]
+        else: fx, fy, k = fish[1], fish[2], fish[3]
+        pr.append(dict(E(fx, fy, 1, 1, mat='sticker', layer=9), px=FISH_PX[k]))
     for arc in P.get('smear', []):   # claw trail: three parallel arcs, bright at the paw end
         pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), px=smear_px(*arc)))
     for (x, y) in P.get('dust', []):  # snow kicked up where the paw lands

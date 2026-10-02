@@ -352,8 +352,9 @@ function renderWorldMap(now) {
   // stays whole
   const inked = [];
   for (const L of camps) {
-    const lx = MAP_X + Math.round((L.tx + 0.5) * MAP_S);
-    const ly = MAP_Y + Math.round((L.ty + 0.5) * MAP_S);
+    const m = campMark(L);
+    const lx = MAP_X + Math.round((m.tx + 0.5) * MAP_S);
+    const ly = MAP_Y + Math.round((m.ty + 0.5) * MAP_S);
     drawCampIcon(ctx, L, lx, ly - 3, '#2c3448', 'rgba(240,244,250,0.9)');
     const w = pixelTextWidth(L.name);
     const nx = Math.max(MAP_X + 1, Math.min(MAP_X + MAP_W - w - 1, Math.round(lx - w / 2)));

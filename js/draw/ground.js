@@ -1295,8 +1295,9 @@ const CHEST_SPR = (() => {
   });
   return c;
 })();
-// The cairn (the BLACK BEAR STONE camp's anchor, CAMPS in world.js), baked
-// here like the chest: a heap of river stones under snow.
+// The cairn (the BLACK BEAR STONE camp's old anchor: no camp stamps one now,
+// OBJECTS.cairn in world.js), baked here like the chest: a heap of river
+// stones under snow.
 const CAIRN_SPR = (() => {
   const pal = { o: '#2a2e3a', G: '#9aa2b2', g: '#737b8c', d: '#596072', s: '#f4f7ff', S: '#d8e4f2' };
   const rows = [

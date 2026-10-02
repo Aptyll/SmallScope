@@ -1680,7 +1680,7 @@ They are not shown on the minimap or world map.
 ### Camp monsters: neutral until hit
 
 The [camps](world.md#camps) keep three kinds — the **wolf** (a den's 4), the **black bear**
-(`alpha`, the stone's 1) and the **brown bear** (`dire`, the den on RED's bank, 1) — one `MONSTER`
+(`alpha`, BLUE's river camp, 1) and the **brown bear** (`dire`, RED's river camp, 1) — one `MONSTER`
 row each (wildlife.js: the bite and what it grows a level, the reach, the seconds between one
 body's bites, the hunting speed, the body's radius and mass, `big` for a bear's big body, and
 `cause`, the death line a bite writes). The kind keys are the old wolves' and stay so saves
@@ -1688,7 +1688,7 @@ still load. All three run
 `updateCampMonster()`:
 
 - **Neutral.** There is no sight and no threat bar filling on a linger: a player can stand at
-  the mouth of a den and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
+  the mouth of a den, or beside a fishing bear, and nothing happens. **A hit is the whole trigger** — an arrow, a roll, a
   stomp, anything through `hurtUnit` — and it wakes the *camp*: `wakeCamp(w, hitter)` hands the
   hitter to every monster of the same camp at a full leash bar. A bear that was not already
   hunting plays its `roar` clip, planted, for `BEAR_ROAR_FRAMES`, and the camp gives `SFX.roar()`
@@ -1698,7 +1698,8 @@ still load. All three run
   it.
 - **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
   player's stamina is (`THREAT_COL`, `drawAnimal`; bare track at rest). It holds full while
-  the quarry is on the camp's **ground** — `CAMP_GROUND` (7) tiles past the camp's `r` — and
+  the quarry is on the camp's **ground** — `CAMP_GROUND` (7) tiles past the camp's `r`, or past
+  a river camp's bank band (`campNear`, [world.md](world.md#river-camps)) — and
   drains over `CAMP_LEASH_T` (3 s) anywhere off it, with the monster at your heels or not; it
   keeps coming while the bar drains and the hunt ends only when the bar is empty. Then it walks
   home and **heals**: a monster with nobody to hunt mends from nothing to full over
@@ -1721,6 +1722,14 @@ still load. All three run
 - **Off duty** it patrols its camp on routed legs from the same `wanderGoal` the prey graze with
   (2–5 tiles); once it drifts past `r * 0.8` the arc narrows to 0.5 rad straight back at the
   camp, so the only way it will walk out there is home. Taking a quarry drops the patrol goal.
+  **A bear walks its river instead** (`riverLeg`): legs of `RIVER_LEG` (3–7) points along its
+  bank (`C.path`), turning at either end, back to the nearest point first when a hunt left it off
+  the bank. `RIVER_FISH_P` (0.6) of legs end in a stop to **fish**: it faces the water for
+  `RIVER_FISH_WAIT` (1.4–3.2 s), then plays its own `fish` clip (`BEAR_FISH_FRAMES`): paw up over
+  the water, a scoop that flips a fish into the air, the snap that catches it and the chewing. The
+  fish is drawn in the frames; on the scoop (`BEAR_FISH_STRIKE`) `riverFish` splashes the water at
+  the edge (a burst and `SFX.splash`). A hit mid-catch drops it at once for the hunt.
+  A hit mid-fish wakes it as anywhere else; the fish can wait.
   The noticed mark (`a.senseT`) is worn on a hunt and nothing else.
 
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
@@ -1783,14 +1792,14 @@ rather than a different resource (the League model: one number, many ways to ear
 | --- | --- | --- |
 | the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse and the pace a level comes at for a player who never farms |
 | tree (`TREE_HP` 3, js/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
-| dead tree (3 hp) | `deadTreeFall` 1 | a tree, but only in the brown bear den's ring |
+| dead tree (3 hp) | `deadTreeFall` 1 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
 | rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 (+1 berry) | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
-| black bear | `alpha` 6 coins × 15 → 90 | the stone's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
-| brown bear | `dire` 6 coins × 15 → 90 | the den's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
+| black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
+| brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | generator | `tiers[tier].pay` every `period` s: 1/15, 1/7.5, 2/9 — 4 / 8 / 13.3 a minute, so an upgrade pays back (6.25 and 8.4 min) between the ramp's new builds | passive income, deposited to its owner; each one its owner already has makes the next cost 1.5x (`ramp`, `buildCost`), so a farm of them stops paying back |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
