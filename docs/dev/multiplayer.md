@@ -866,14 +866,14 @@ The ladder:
    the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor.
    **The defence line** (`aiRingPlan`, once per side every `AI_RING_T` (10 s), kept on `T.ring`):
    a flood steps out from the bird 8 ways, as a walker moves, with the side's own walls counted
-   as ground so the plan holds still while they go up. Between `AI_RING_K` (6 to 14) steps out
+   as ground so the plan holds still while they go up. Between `AI_RING_K` (5 to 12) steps out
    it takes the ring with the fewest tiles that still lead on to the edge of the `AI_WALL_BOX`
-   (24 tiles) square: the roost's narrowest line, a straight run in the open. Each stretch of it
-   wider than `AI_RING_GAP` + 1 is an opening and is walled but for `AI_RING_GAP` (3) tiles, at
-   the road where the road crosses it, else at its middle. Trees chopped round a base widen the
-   line and the next look plans the walls that close it. While the line has an opening, any bot
-   at home (inside `AI_GUARD_R`, no push, defence or flag) lays its walls too. Walls may stand on
-   the road. **No bot building ever cuts a way:** every bot wall, turret and bay near its own
+   (24 tiles) square: the roost's narrowest line, a straight run in the open. All of it is
+   walled but one gate of `AI_RING_GAP` (3) tiles where the road crosses it, so every other way
+   in closes and the road, under the turrets, is the way in. Trees chopped round a base widen
+   the line and the next look plans the walls that close it. While the line is wider than the
+   gate, any bot at home (inside `AI_GUARD_R`, no push, defence or flag) lays its walls too.
+   Walls may stand on the road. **No bot building ever cuts a way:** every bot wall, turret and bay near its own
    roost must pass `aiKeepsWay`, which floods the box from the lane gate with and without the
    piece, one tile at a time and again as a 2×2 body, and refuses it if anywhere reachable
    before is not after (a refused wall tile waits for the next look, `T.wallNo`). That keeps
