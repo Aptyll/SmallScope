@@ -48,8 +48,13 @@ iy, ix = np.nonzero(sets['brown'][0]['idle'][0][..., 3] > 0)
 mid = (ix.min() + ix.max() + 1) / 2
 half = int(np.ceil(max(mid - x0, x1 - mid)))
 x0, x1 = int(mid - half), int(mid + half)
-# rows above the standing bear's head: the bars hang off the head, not the box
+# rows above the standing bear's head: the tells hang off the head, not the box
 TOP = int(iy.min() - y0)
+# rows above each bear's tallest pose (the rear-up, a new clip's leap): its
+# frame sits over that, so no clip ever climbs into its bars
+def crown(imgs):
+    return int(np.nonzero(np.any([f[..., 3] > 0 for fr in imgs.values() for f in fr], axis=(0, 2)))[0].min() - y0)
+CROWN = {name: crown(imgs) for name, (imgs, _) in sets.items()}
 
 def js_pal(pal):
     hexc = lambda c: '#%02x%02x%02x' % c
@@ -80,14 +85,16 @@ for name, (imgs, pal) in sets.items():
         out.append("    ],")
     out.append("  };")
 out.append("  // `top`: the empty rows over the standing bear's head, so drawAnimal hangs")
-out.append("  // the bars off the bear rather than off the headroom the rear-up needs")
+out.append("  // the tells off the bear rather than off the headroom the rear-up needs;")
+out.append("  // `crown`: the empty rows over this bear's tallest pose in any clip, where")
+out.append("  // its frame sits so no rear-up or lunge climbs into the bars")
 out.append(f"  const TOP = {TOP};")
-out.append("  const set = (grids, pal) => {")
+out.append("  const set = (grids, pal, crown) => {")
 out.append("    const left = bakeClips(grids, pal), right = mapClips(left, flipH);")
-out.append("    for (const s of [left, right]) for (const k in s) for (const c of s[k]) c.top = TOP;")
+out.append("    for (const s of [left, right]) for (const k in s) for (const c of s[k]) { c.top = TOP; c.crown = crown; }")
 out.append("    return { left, right };")
 out.append("  };")
-out.append("  Object.assign(SPRITES, { dire: set(BROWN, BROWN_PAL), alpha: set(BLACK, BLACK_PAL) });")
+out.append(f"  Object.assign(SPRITES, {{ dire: set(BROWN, BROWN_PAL, {CROWN['brown']}), alpha: set(BLACK, BLACK_PAL, {CROWN['black']}) }});")
 out.append("})();")
 open(OUT, 'w').write('\n'.join(out) + '\n')
 print('wrote', OUT, 'frame', x1 - x0, 'x', y1 - y0)
