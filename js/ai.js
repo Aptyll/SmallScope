@@ -170,16 +170,13 @@ function aiFortSite(p, e) {
   return null;
 }
 // ---- bot walls --------------------------------------------------------------
-// A guard lays walls round its own roost (rung 5b''): a funnel across the spur
-// near its mouth and a shield on the road side of each turret (the rock lobs
-// over it, the arrows coming back stop on it). Two rules keep every way open:
-// no wall stands within AI_WALL_GAP of the lane's line (bird -> mouth -> gate),
-// so the road in is always a gap of three tiles or more, and none stands
-// unless aiKeepsWay says nothing walkable round the roost is cut off by it.
-const AI_WALL_GAP = 28;    // px either side of the lane's line no bot wall stands on
-const AI_WALL_BOX = 24;    // tiles round a bird aiKeepsWay floods
-const AI_WALL_T = 0.8;     // share of the way from bird to mouth the funnel crosses the spur
-const AI_WALL_OFF = [32, 48, 64, 80]; // px out from the lane's line, each side, the funnel's tiles sit
+// Bots wall their own roost (rung 5b''): a defence line that closes every
+// wide opening round the bird down to a gap (aiRingPlan), and a shield on the
+// road side of each turret (the rock lobs over it, the arrows coming back
+// stop on it). A wall may stand anywhere, the road too, but none stands unless
+// aiKeepsWay says nothing walkable round the roost is cut off by it, so every
+// way in stays open, two tiles wide or more.
+const AI_WALL_BOX = 24;    // tiles round a bird aiKeepsWay and aiRingPlan look at
 // does a piece on `tiles` leave every way round the roost of e open? Floods
 // the AI_WALL_BOX square from the lane gate twice - one tile at a time, then
 // as a 2x2 body, so a gap one tile wide does not count as a way - with and
@@ -240,15 +237,93 @@ function aiLaneDist(e, x, y) {
   const g = aiLaneGate(e);
   return Math.min(seg(e.x, e.y, e.mouth.x, e.mouth.y), seg(e.mouth.x, e.mouth.y, g.x, g.y));
 }
-// the walls a side wants round the roost of e, as tiles: the funnel first,
-// then three in front of each of its turrets there, facing the lane gate
-function aiWallPlan(team, e) {
+// HOW OPEN IS THE ROOST: walk out from the bird a step at a time (a flood,
+// 8-ways as a walker steps, so in the open each step is a square and the
+// line a straight run; the side's own walls count as ground so the answer
+// holds still while they go up) and, between AI_RING_K steps out, find the ring of tiles
+// with the fewest that still lead on outward - the roost's narrowest line.
+// Each stretch of that line wider than a gap is an opening: all of it is
+// walled but AI_RING_GAP tiles, at the road where the road crosses it, else
+// at its middle. Chopping trees round a base widens the line, and the next
+// look (every AI_RING_T) plans the walls that close it again. One look is a
+// flood of the AI_WALL_BOX square, once per side per AI_RING_T; the result
+// rides the team brain (T.ring). A line no wider than the gaps it would
+// keep is already a choke: open is false and nothing is planned.
+const AI_RING_T = 10;      // s between a side's looks at how open its roost is
+const AI_RING_K = [6, 14]; // steps out from the bird the defence line may run
+const AI_RING_GAP = 3;     // tiles each opening keeps as its way through
+const AI_RING_D = new Int16Array(AI_WAY_N * AI_WAY_N), AI_RING_L = new Uint8Array(AI_WAY_N * AI_WAY_N);
+function aiRingPlan(team, e) {
+  const T = aiPlan(team);
+  if (T.ring && T.ring.at >= 0 && state.elapsed - T.ring.at < AI_RING_T) return T.ring;
+  const N = AI_WAY_N, x0 = Math.floor(e.x / TILE) - AI_WALL_BOX, y0 = Math.floor(e.y / TILE) - AI_WALL_BOX;
+  const inBox = (x, y) => x >= x0 && y >= y0 && x < x0 + N && y < y0 + N;
+  const ground = (x, y) => { if (!inBox(x, y)) return false; if (walkable(x, y)) return true; const o = objects[idx(x, y)]; return !!(o && o.type === 'wall' && o.team === team); };
+  AI_RING_D.fill(-1); AI_RING_L.fill(0);
+  let n = 0;
+  const cx = Math.floor(e.x / TILE), cy = Math.floor(e.y / TILE);
+  for (let y = cy - 2; y <= cy + 2; y++) for (let x = cx - 2; x <= cx + 2; x++) { // the ground round the bird is step 0
+    if (ground(x, y)) { const i = (y - y0) * N + (x - x0); AI_RING_D[i] = 0; AI_WAY_Q[n++] = i; }
+  }
+  for (let h = 0; h < n; h++) { // breadth first: AI_WAY_Q ends up in step order
+    const i = AI_WAY_Q[h], x = x0 + i % N, y = y0 + ((i / N) | 0);
+    for (let k = 0; k < 8; k++) {
+      const nx = x + NAV_DX[k], ny = y + NAV_DY[k], j = (ny - y0) * N + (nx - x0);
+      if (!ground(nx, ny) || AI_RING_D[j] >= 0) continue;
+      if (k >= 4 && !(ground(nx, y) && ground(x, ny))) continue; // no corner squeezed past, as a walker
+      AI_RING_D[j] = AI_RING_D[i] + 1; AI_WAY_Q[n++] = j;
+    }
+  }
+  // which tiles lead on out (to the box's edge), walked back from the farthest
+  for (let h = n - 1; h >= 0; h--) {
+    const i = AI_WAY_Q[h], x = x0 + i % N, y = y0 + ((i / N) | 0);
+    if (x === x0 || y === y0 || x === x0 + N - 1 || y === y0 + N - 1) { AI_RING_L[i] = 1; continue; }
+    for (let k = 0; k < 8; k++) { const j = (y + NAV_DY[k] - y0) * N + (x + NAV_DX[k] - x0); if (AI_RING_D[j] === AI_RING_D[i] + 1 && AI_RING_L[j]) { AI_RING_L[i] = 1; break; } }
+  }
+  const width = new Array(AI_RING_K[1] + 1).fill(0);
+  for (let h = 0; h < n; h++) { const i = AI_WAY_Q[h], d = AI_RING_D[i]; if (d >= AI_RING_K[0] && d <= AI_RING_K[1] && AI_RING_L[i]) width[d]++; }
+  let k = -1;
+  for (let d = AI_RING_K[0]; d <= AI_RING_K[1]; d++) if (width[d] && (k < 0 || width[d] <= width[k])) k = d;
+  const old = T.ring && T.ring.k; // keep the line it has started unless another is clearly narrower
+  if (old >= AI_RING_K[0] && width[old] && width[old] <= width[k] + 2) k = old;
+  const line = [];
+  for (let h = 0; h < n; h++) { const i = AI_WAY_Q[h]; if (AI_RING_D[i] === k && AI_RING_L[i]) line.push([x0 + i % N, y0 + ((i / N) | 0)]); }
+  // its stretches: tiles of the line touching, corners included
+  const left = new Set(line.map((t, i) => i)), walls = [];
+  let open = false;
+  while (left.size) {
+    const first = left.values().next().value, part = [first]; left.delete(first);
+    for (let h = 0; h < part.length; h++) for (const j of [...left]) {
+      if (Math.abs(line[j][0] - line[part[h]][0]) <= 1 && Math.abs(line[j][1] - line[part[h]][1]) <= 1) { left.delete(j); part.push(j); }
+    }
+    if (part.length <= AI_RING_GAP + 1) continue; // a choke already
+    open = true;
+    // the gap's middle: the tile nearest the road's line where the road crosses here, else the stretch's middle
+    let mx = 0, my = 0;
+    for (const j of part) { mx += line[j][0]; my += line[j][1]; }
+    mx /= part.length; my /= part.length;
+    const road = (j) => aiLaneDist(e, line[j][0] * TILE + 8, line[j][1] * TILE + 8);
+    const near = part.some((j) => road(j) < 24);
+    let mid = part[0];
+    for (const j of part) {
+      const a = near ? road(j) : Math.hypot(line[j][0] - mx, line[j][1] - my), b = near ? road(mid) : Math.hypot(line[mid][0] - mx, line[mid][1] - my);
+      if (a < b) mid = j;
+    }
+    const byGap = part.slice().sort((a, b) => Math.hypot(line[a][0] - line[mid][0], line[a][1] - line[mid][1]) - Math.hypot(line[b][0] - line[mid][0], line[b][1] - line[mid][1]) || a - b);
+    for (const j of byGap.slice(AI_RING_GAP)) walls.push(line[j]);
+  }
+  walls.sort((a, b) => Math.atan2(a[1] - cy, a[0] - cx) - Math.atan2(b[1] - cy, b[0] - cx) || a[0] - b[0] || a[1] - b[1]);
+  T.ring = { at: state.elapsed, k, open, width: k >= 0 ? width[k] : 0, walls };
+  return T.ring;
+}
+// the walls a side wants round the roost of e, as tiles: the defence line
+// first (aiRingPlan), then three in front of each of its turrets there,
+// facing the lane gate (none of those for ringOnly)
+function aiWallPlan(team, e, ringOnly) {
   const out = [], seen = new Set();
   const add = (tx, ty) => { const k = idx(tx, ty); if (inWorld(tx, ty) && !seen.has(k)) { seen.add(k); out.push([tx, ty]); } };
-  const L = Math.max(1, Math.hypot(e.mouth.x - e.x, e.mouth.y - e.y));
-  const ux = (e.mouth.x - e.x) / L, uy = (e.mouth.y - e.y) / L;
-  const cx = e.x + (e.mouth.x - e.x) * AI_WALL_T, cy = e.y + (e.mouth.y - e.y) * AI_WALL_T;
-  for (const side of [-1, 1]) for (const off of AI_WALL_OFF) add(Math.floor((cx - uy * off * side) / TILE), Math.floor((cy + ux * off * side) / TILE));
+  for (const [x, y] of aiRingPlan(team, e).walls) add(x, y);
+  if (ringOnly) return out;
   const g = aiLaneGate(e);
   for (const o of structures) {
     if (o.type !== 'turret' || o.team !== team || Math.hypot(o.tx * TILE + 8 - e.x, o.ty * TILE + 8 - e.y) > AI_ROOST_R * 1.5) continue;
@@ -259,18 +334,20 @@ function aiWallPlan(team, e) {
   }
   return out;
 }
-// the next wall job for a guard of the bird e, or null: { tx, ty, n, of },
-// the first tile of the plan that is free, off the lane's line, placeable
-// and keeps every way open (n: how many of the plan already stand)
-function aiWallSite(p, e) {
+// the next wall job for a bot at the bird e, or null: { tx, ty, n, of },
+// the first tile of the plan that is free, placeable and keeps every way
+// open (n: how many of the plan already stand)
+function aiWallSite(p, e, ringOnly) {
   if (!e.mouth || p.inv.gold < buildCost('wall', p).gold) return null;
-  const plan = aiWallPlan(p.team, e);
+  const plan = aiWallPlan(p.team, e, ringOnly), T = aiPlan(p.team);
   let n = 0, pick = null;
   for (const [tx, ty] of plan) {
     const o = objects[idx(tx, ty)];
     if (o && o.type === 'wall' && o.team === p.team) { n++; continue; }
-    if (pick || aiLaneDist(e, tx * TILE + 8, ty * TILE + 8) < AI_WALL_GAP) continue;
-    if (canPlaceAt('wall', tx, ty, 0, null).ok && aiKeepsWay(e, [[tx, ty]])) pick = { tx, ty };
+    if (pick) continue;
+    if (!canPlaceAt('wall', tx, ty, 0, null).ok || (T.wallNo[idx(tx, ty)] || 0) > state.elapsed) continue;
+    if (aiKeepsWay(e, [[tx, ty]])) pick = { tx, ty };
+    else T.wallNo[idx(tx, ty)] = state.elapsed + AI_RING_T; // it would cut a way: not asked again till the next look
   }
   return pick && { tx: pick.tx, ty: pick.ty, n, of: plan.length };
 }
@@ -993,12 +1070,18 @@ function aiThink(p, dt) {
   //       purse is deep), and for AI_PATROL_OUT of every AI_PATROL_T walks
   //       out past the spur's junction and up the road to see who is coming
   //       (what it sees is the side's, aiLook - the brace reads it); the rest
-  //       of the time it works what is near the bird (the rungs below)
-  if (guardE) {
+  //       of the time it works what is near the bird (the rungs below).
+  //       Any other bot at home with nothing to push or answer lends a hand
+  //       while the roost is open (aiRingPlan): it lays the defence line's
+  //       walls, and nothing else of the guard's (a job it took at home is
+  //       walked to, wherever the line runs)
+  const homeE = guardE || (!pushE && !defend && !order && aiOwnEagle(p));
+  const wallE = homeE && homeE.mouth && (guardE || ((ai.fortJob || Math.hypot(homeE.x - p.x, homeE.y - p.y) < AI_GUARD_R) && aiRingPlan(p.team, homeE).open)) ? homeE : null;
+  if (wallE) {
     ai.fortCd = (ai.fortCd || 0) - dt;
     if (ai.fortCd <= 0) { // the job is chosen once a second at most (the floods are not free) and held between
-      let job = aiFortSite(p, guardE);
-      if (!job || job.up) job = aiWallSite(p, guardE) || job; // walls when no new turret is due, and before any tier
+      let job = guardE ? aiFortSite(p, guardE) : null;
+      if (!job || job.up) job = aiWallSite(p, wallE, !guardE) || job; // walls when no new turret is due, and before any tier
       ai.fortJob = job; ai.fortCd = job ? 1 : 3;
     }
     const fort = ai.fortJob;
@@ -1007,10 +1090,10 @@ function aiThink(p, dt) {
       const wall = fort.of !== undefined, T = aiPlan(p.team);
       aiNote(p, 'BUILD', wall ? 'WALL ' + (fort.n + 1) + ' OF ' + fort.of : fort.up ? 'TURRET UP' : 'TURRET ' + (fort.n + 1) + ' OF ' + AI_FORT_N, { x: fx, y: fy });
       if (d > 48 || d < 16) { // walk up to it - or off the very tile
-        const tx = d < 16 ? guardE.x : fx, ty = d < 16 ? guardE.y : fy;
+        const tx = d < 16 ? wallE.x : fx, ty = d < 16 ? wallE.y : fy;
         if (steerTo(tx, ty, 1, AI_ROOST_BUDGET) >= 0) { aimAt(fx, fy); inp.fire = false; ai.tgt = null; return; }
         ai.fortJob = null; ai.fortCd = 15; // no way to it: leave it a while
-      } else if (wall && (T.wallTick === state.tick || !canPlaceAt('wall', fort.tx, fort.ty, 0, p).ok || !aiKeepsWay(guardE, [[fort.tx, fort.ty]]))) {
+      } else if (wall && (T.wallTick === state.tick || !canPlaceAt('wall', fort.tx, fort.ty, 0, p).ok || !aiKeepsWay(wallE, [[fort.tx, fort.ty]]))) {
         ai.fortJob = null; ai.fortCd = T.wallTick === state.tick ? 0.1 : 0; // the world moved since it chose (or a friend lays one this very step): choose again
       } else {
         inp.cmd = fort.up ? { kind: 'upgrade', tx: fort.tx, ty: fort.ty, id: 'upgrade' } : { kind: 'build', tx: fort.tx, ty: fort.ty, id: wall ? 'wall' : 'turret' };
@@ -1018,7 +1101,7 @@ function aiThink(p, dt) {
         ai.fortJob = null; ai.fortCd = wall ? 1 : 2; aimAt(fx, fy); inp.fire = false; ai.tgt = null; return;
       }
     }
-    if ((state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT && guardE.mouth) {
+    if (guardE && (state.elapsed + p.id * 9) % AI_PATROL_T < AI_PATROL_OUT && guardE.mouth) {
       const u = roadNest(guardE.team).u + (guardE.team === 0 ? 1 : -1) * AI_PATROL_D / (TILE * Math.SQRT2);
       const pt = roadPoint(u);
       aiNote(p, 'GUARD', 'SCOUTING', pt);

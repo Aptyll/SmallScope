@@ -859,19 +859,25 @@ The ladder:
    proactive defenders, not sentries: a guard raises the side's turrets along the spur
    (`aiFortSite`: `AI_FORT_N` (3), in pairs either side of its axis on tiles with three open
    sides, then a tier at a time once the purse holds twice the price), lays walls before those
-   tiers (`aiWallSite`, from `aiWallPlan`: a funnel across the spur `AI_WALL_T` (0.8) of the way
-   to its mouth, `AI_WALL_OFF` out each side, and three tiles on the lane-gate side of each turret;
-   one wall a side a step, `T.wallTick`), and for `AI_PATROL_OUT`
+   tiers (`aiWallSite`, from `aiWallPlan`: the defence line below, then three tiles on the
+   lane-gate side of each turret; one wall a side a step, `T.wallTick`), and for `AI_PATROL_OUT`
    (14 s) of every `AI_PATROL_T` (40 s) walks out past the spur's junction `AI_PATROL_D` (360 px)
    up the road to see who is coming (the brace reads what it sees). Otherwise it goes on down
-   the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor. **No bot
-   building ever cuts a way:** no wall stands within `AI_WALL_GAP` (28 px) of the lane's line
-   (bird, mouth, gate: `aiLaneDist`), so the road in stays a gap of three tiles or more, and every
-   bot wall, turret and bay near its own roost must pass `aiKeepsWay`, which floods the
-   `AI_WALL_BOX` (24 tiles) square round the bird from the lane gate with and without the piece,
-   one tile at a time and again as a 2×2 body, and refuses it if anywhere reachable before is
-   not after. That keeps the bird and the spawn reachable for both sides, since a wall is solid
-   to everyone.
+   the ladder to work what is near while inside `AI_GUARD_R` of the bird, its anchor.
+   **The defence line** (`aiRingPlan`, once per side every `AI_RING_T` (10 s), kept on `T.ring`):
+   a flood steps out from the bird 8 ways, as a walker moves, with the side's own walls counted
+   as ground so the plan holds still while they go up. Between `AI_RING_K` (6 to 14) steps out
+   it takes the ring with the fewest tiles that still lead on to the edge of the `AI_WALL_BOX`
+   (24 tiles) square: the roost's narrowest line, a straight run in the open. Each stretch of it
+   wider than `AI_RING_GAP` + 1 is an opening and is walled but for `AI_RING_GAP` (3) tiles, at
+   the road where the road crosses it, else at its middle. Trees chopped round a base widen the
+   line and the next look plans the walls that close it. While the line has an opening, any bot
+   at home (inside `AI_GUARD_R`, no push, defence or flag) lays its walls too. Walls may stand on
+   the road. **No bot building ever cuts a way:** every bot wall, turret and bay near its own
+   roost must pass `aiKeepsWay`, which floods the box from the lane gate with and without the
+   piece, one tile at a time and again as a 2×2 body, and refuses it if anywhere reachable
+   before is not after (a refused wall tile waits for the next look, `T.wallNo`). That keeps
+   the bird and the spawn reachable for both sides, since a wall is solid to everyone.
 8. **push (the objective)** — after `push.t` (360 / 360 / 300 s; allies 720 / 480 / 420) the
    side's `push.n` lowest-ranked bots (2 / 3 / everyone), **one more every `AI_ESCALATE`** (120 s) so a
    stalemate always breaks (`aiPushers`; the plan's `T.nPush`, so more in a window and none in a
