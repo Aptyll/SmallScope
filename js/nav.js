@@ -65,6 +65,10 @@ function moveEntity(e, dx, dy, r, strict) {
 // (UNIT_ROOM_RATE): a slow nudge on position only, never on momentum, so
 // anyone walking, swinging or chasing goes straight through it to contact,
 // and only a crowd that has stopped pushing spreads out into a readable fight.
+// A camp beast keeps no room against anything outside its own kind of body
+// (`hunt`): it bites from inside its MONSTER reach, and a room wider than that
+// reach (a bear's is 28.8 px above or below, its swipe lands inside 27.5) would
+// slide a standing target out of every blow. Hard contact still holds them apart.
 // a camp monster's mass and radius are its MONSTER row (wildlife.js), read at call time
 const UNIT_MASS = { player: 3, deer: 2.2, rabbit: 0.5, robot: 0.7, soldier: 1, merchant: 3 };
 const UNIT_BOUNCE = 0.3; // restitution for the lighter side of a contact
@@ -84,7 +88,7 @@ function separateUnits(dt) {
   for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 });
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
-  for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
+  for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
   for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
@@ -96,6 +100,7 @@ function separateUnits(dt) {
   for (let i = 0; i < us.length; i++) for (let j = i + 1; j < us.length; j++) {
     const a = us[i], b = us[j];
     if (a.roll || b.roll) continue; // a roll keeps its line
+    if (!a.hunt !== !b.hunt) continue; // a hunter and its quarry: the bite's reach decides, not a room
     const dx = b.e.x - a.e.x, dy = (b.e.y - a.e.y) / UNIT_SPACE_TALL;
     const room = a.s + b.s;
     if (Math.abs(dx) >= room || Math.abs(dy) >= room) continue;
