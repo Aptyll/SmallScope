@@ -539,9 +539,9 @@ function aiZipWorth(p, x, y) {
 // AI_SIGHT, or (an ally minding the human, `ward`) one hunting anybody on
 // its side inside AI_ANCHOR_R of the human, noticed from AI_ANCHOR_D - the
 // human is the anchor, exactly as for a rival at rung 3, so a bear you
-// wake is a bear your side comes to. "Anybody on its side" because every
-// hit re-aims the camp at the latest hitter: the first helper to land one
-// takes it off the human, and the rest must not drop out when it does
+// wake is a bear your side comes to. "Anybody on its side" because the
+// camp goes for whoever is nearest (campQuarry): the first helper to walk
+// in takes it off the human, and the rest must not drop out when it does
 function aiNearestWolf(p, ward) {
   let best = null, bd = Infinity;
   for (const a of animals) {
