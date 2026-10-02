@@ -372,8 +372,8 @@ function rollSweep(p) {
     if (Math.hypot(a.x - p.x, a.y - p.y) > ROLL_HIT_R + unitRadius(a)) continue;
     p.rollHit.push(a);
     hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB });
-    if (a.hp > 0) stunUnit(a, stun);
-    if (a.kind === 'deer') { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
+    if (a.hp > 0 && !isAnchored(a)) stunUnit(a, stun); // a bear is not knocked out of its stride by a body
+    if (a.kind === 'deer' || isBigBeast(a)) { rollTackle(p, sp, nx, ny); return; } // too much animal to go through
   }
   for (const b of robots) {
     if (!unitAlive(b) || b.team === p.team || p.rollHit.includes(b)) continue;

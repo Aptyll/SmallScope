@@ -225,7 +225,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| entity movement and unit-vs-unit solidity, and each body's room | `moveEntity`, `separateUnits`, `UNIT_MASS`, `unitSpace`, `UNIT_SPACE`, `UNIT_ROOM_RATE` | `movement & collision` (the tile half, `isSolidTile`: `world`, world.js) |
+| entity movement and unit-vs-unit solidity, and each body's room | `moveEntity`, `separateUnits`, `UNIT_MASS`, `unitSpace`, `UNIT_SPACE`, `UNIT_ROOM_RATE`, `unitShare` (the right of way; who outranks: `isAnchored`, `MONSTER.anchor`, wildlife.js) | `movement & collision` (the tile half, `isSolidTile`: `world`, world.js) |
 | routes around obstacles: A*, the per-unit route follower, the stall/give-up signal | `findPath`, `walkable`, `navTo`, `navStep`, `navLineClear` | `pathfinding` |
 
 ## js/wildlife.js

@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.82';
+const PATCH_TXT = 'PATCH 4.83';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.83', 'NOTHING PUSHES A BEAR: YOU STOP AGAINST IT WHEN YOU WALK OR ROLL INTO IT, IT SHOVES YOU ASIDE, AND A ROLL NO LONGER STUNS IT OUT OF ITS ROAR.'],
   ['4.82', 'THE BEARS LEFT THEIR DEN AND STONE FOR THE RIVER: EACH WALKS ITS OWN BANK OF THE CREEK UP AND DOWN, STOPPING TO SCOOP A FISH OUT OF THE WATER, CATCH IT IN ITS JAWS AND EAT IT.'],
   ['4.81', 'BOT GUARDS NOW BUILD WALLS ROUND THEIR BIRD, A FUNNEL ACROSS THE SPUR AND COVER IN FRONT OF EACH TURRET, AND NEVER ONE THAT CLOSES A WAY: THE ROAD IN ALWAYS KEEPS A GAP OF THREE TILES OR MORE.'],
   ['4.80', 'A PLAYER WHO FALLS FLOATS THEIR LAST DAMAGE TOTAL UP AND OUT, SO EVEN A ONE-SHOT SHOWS WHAT HIT THEM.'],
@@ -1231,6 +1232,7 @@ const PATCH_DIGEST = [
     ['A BROWN BEAR AND A BLACK BEAR HOLD THE TWO BIG CAMPS', '4.24'],
     ['A BEAR STANDS UP BEFORE IT SWIPES: STEP BACK', '4.28'],
     ['A BEAR ROARS WHEN YOU WAKE IT', '4.68'],
+    ['NOTHING PUSHES A BEAR: IT SHOVES YOU ASIDE', '4.83'],
     ['BEARS WALK THE RIVERBANK AND FISH, NO MORE DENS', '4.82'],
     ['ROCKS STAND IN A FEW MINING SPOTS, THE RAREST AT THE CORNERS', '4.15'],
     ['ROLL OVER THE CREEK FROM ITS BANK', '4.12'],
