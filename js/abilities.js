@@ -553,6 +553,8 @@ function rushStep(p, mv, dt) {
   const v = p.rushVictim;
   if (!v) {
     for (const q of unitsHit(p, p.x, p.y, ROLL_HIT_R + PLAYER_R)) {
+      // a bear is not picked up: the charge stops against it and slams it where it stands
+      if (isAnchored(q)) { p.rushVictim = q; rushEnd(p, false); return; }
       p.rushVictim = q;
       if (q instanceof Player) risePlayer(q);
       stunUnit(q, 0.3); // manhandled: nothing they hold survives the grab

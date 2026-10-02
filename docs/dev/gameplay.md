@@ -224,6 +224,15 @@ every animal but a deer and a bear (`MONSTER[kind].big`, asked through `isBigBea
 them and [swipes them](#the-roll-is-a-hit) instead of shoving them. A deer and a bear keep
 their mass and their contact, which is what makes running into one a tackle rather than a pass.
 
+**Right of way.** A body whose `MONSTER` row says `anchor` (both bears, asked through `isAnchored`)
+outranks every other one (`pri` in `separateUnits`, `unitShare`). In a contact between ranks the
+lower side takes the whole push in the room pass and the hard passes, loses its closing speed
+(with the lighter side's bounce) and hands the higher side **no** knockback, so a player walking,
+sliding or rolling into a bear stops against it while a bear walking into a player moves the player
+aside. Only when a wall refuses the lower side does the higher take the remainder, so no one is ever
+left inside a bear. Nothing else shoves it either: `updateAnimal` drops an anchored body's knockback
+every step, so arrows, slams and stomps still hurt (and stun, where the ability stuns) but never move it.
+
 Momentum: on the first pass a unit closing on the contact loses only its *share* of the
 velocity component along the normal — tangential speed is untouched, so a slide into a deer
 deflects along it and carries on rather than sticking — the rest of that component is handed to
@@ -926,7 +935,7 @@ WARRIOR — close pressure, blocking, momentum:
 | key | name | cd | what it does |
 | --- | --- | --- | --- |
 | 1 | **SHIELD WALL** | 9 s | raises a tower shield toward the aim for up to 2.2 s (the cooldown starts when it comes DOWN). Any shot flying into the front arc dies on it (`abShieldBlocks`, checked in the arrow loop before the body); walking drops to 40 % and the weapon is out of hand. **The key again while the wall is up is the SLAM** (`tryAbility` sets `p.castSlam`, the row's `use` branches on it): a `SLAM_CAST` (0.16 s) wind-up with the wedge on the snow, then `abSlam` — `SLAM_DMG` (8), `SLAM_STUN` (1.1 s) and `SLAM_KB` down the face on everything in `SLAM_R`/`SLAM_HALF` (30 px, ±0.85 rad, `unitsInCone`/`structsInCone`, js/actions.js) — and the wall is spent (`abShieldDown`, the cooldown starts). **Mid-charge the same key slams too**: the rush ends on the spot (`rushEnd`, the carried body slammed where it stands) and the wind-up begins there; with no wall up it waits on the shield's cooldown like the raise would. A rush may be cast with the wall up — only the charge itself refuses the other keys |
-| 2 | **BULL RUSH** | 12 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end — 10 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
+| 2 | **BULL RUSH** | 12 s | a 0.3 s wind-up with **the line on the snow** for both sides (`RUSH_SPD × RUSH_T` long, stopped at solids, a bar at its end where the slam will be — the body faces the live aim the whole wind-up), then charges the aim line at 300 px/s for 0.42 s (its own movement branch in `updatePlayer`, no i-frames, ramping to speed over `RUSH_RAMP`): the **first rival hit is carried** on the shoulder and **slammed** at the end (a bear is never picked up: the charge stops against it and slams it where it stands) — 10 damage + 0.6 s stun, ×1.6 driven into a wall (`rushStep`/`rushEnd`) |
 | 3 | **STOMP** | 14 s | a leap-stomp at the feet — the ring of `STOMP_R` on the snow through the wind-up, filling in as it nears, and flashed white where it lands (`abFx`): 12 damage + radial knockback + a beat of stun in `STOMP_R`, and the **crater** (`craters`) is deep snow that slows rivals crossing it for 4 s |
 | 4 | **EXECUTE** | 18 s | a 0.55 s overhead wind-up with the wedge on the snow (`EXEC_R`/`EXEC_HALF`, 30 px, ±0.75 rad — narrower than the sword), then `abExecute`: every unit in it takes `execDmg` — `EXEC_DMG` (10) plus `EXEC_MISSING` (half) of the life it has already lost, capped at `EXEC_BONUS_MAX` (40) extra — so a body the other three keys have worked over is finished, and a full one takes ten. `EXEC_KB` shove; a cut over twice the base is a crit |
 
@@ -1306,8 +1315,8 @@ takes everything inside `ROLL_HIT_R` (7px) of the roller's own radius and splits
   small, so there is nothing to bump against. Friendly bots and teammates are passed through
   untouched — you roll *under* them, you do not run them down. A rival with i-frames up (mid-roll
   of their own) refuses the whole thing, damage and stun both, so **rolls cancel rolls**.
-- **Big — a deer, a tree, a rock, a building.** A **tackle**: both sides take it, both are
-  stunned, and the roll ends on the spot. `rollTackle` drops the roller's own i-frames first,
+- **Big — a deer, a bear, a tree, a rock, a building.** A **tackle**: both sides take it, both are
+  stunned (except a bear: it takes the damage and keeps its stride, roar and swipe included), and the roll ends on the spot. `rollTackle` drops the roller's own i-frames first,
   because the tackle is the one hit a roll cannot dodge, and bounces them back off the contact.
   A wall only counts when it is taken head-on — the speed actually driven into the axis
   `moveEntity` refused has to clear `TACKLE_MIN` (120 px/s), so brushing past a pine at a run is

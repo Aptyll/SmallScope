@@ -52,6 +52,12 @@ function moveEntity(e, dx, dy, r, strict) {
 // that component is handed to the other unit as knockback, and a lighter
 // unit gets a small bounce off a heavier one. Two relaxation passes settle
 // piles. Deterministic: fixed iteration order, no rng.
+// RIGHT OF WAY: an anchored body (MONSTER.anchor - the bears) outranks every
+// other one. In a contact between ranks the lower takes the whole push, loses
+// its closing speed and hands none to the higher, so a player walks, slides or
+// rolls into a bear and stops; the bear walks into a player and moves it aside.
+// Only when a wall refuses the lower one does the higher take the remainder, so
+// nobody is ever left inside a bear.
 // ROOM: past the hard circle every body keeps a soft ring of personal space
 // (unitSpace, UNIT_SPACE x its radius), an ellipse taller than it is wide
 // because a body is drawn standing up and its frame rides over its head. A
@@ -68,15 +74,18 @@ const UNIT_ROOM_RATE = 8;   // share of the room overlap closed per second (at m
 // the merchant (robots.js) is a player-sized body in the robots list, so it takes a player's radius
 function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 5 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : 3; }
 function unitSpace(e) { return unitRadius(e) * UNIT_SPACE; }
+// a's share of a contact with b: none when it outranks b, all when b outranks it,
+// else split by mass (the lighter moves more)
+function unitShare(a, b) { return a.pri !== b.pri ? (a.pri > b.pri ? 0 : 1) : b.m / (a.m + b.m); }
 function unitMass(e) { return MONSTER[e.kind] ? MONSTER[e.kind].mass : UNIT_MASS[e.kind]; }
 function separateUnits(dt) {
   const us = [];
   // (a zipline's rider hangs above the ground: nothing on it touches one, though every weapon still can)
-  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, vel: true, small: true, roll: p.dodgeT > 0 });
+  for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 });
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
-  for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
-  for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, vel: false, small: true });
+  for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
+  for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
   const vx = (u) => u.vel ? u.e.vx + u.e.kbx : u.e.kbx;
@@ -92,7 +101,7 @@ function separateUnits(dt) {
     if (Math.abs(dx) >= room || Math.abs(dy) >= room) continue;
     const d = Math.hypot(dx, dy);
     if (d >= room || d < 0.01) continue; // a dead-centre stack is the hard pass's to part
-    const push = (room - d) * roomStep, sa = b.m / (a.m + b.m);
+    const push = (room - d) * roomStep, sa = unitShare(a, b);
     const nx = dx / d, ny = dy * UNIT_SPACE_TALL / d; // back to world space: the tall axis moves farther
     moveEntity(a.e, -nx * push * sa, -ny * push * sa, a.r, true);
     moveEntity(b.e, nx * push * (1 - sa), ny * push * (1 - sa), b.r, true);
@@ -110,7 +119,7 @@ function separateUnits(dt) {
       if (d >= min) continue;
       if (d < 0.01) { dx = 1; dy = 0; d = 1; } // dead-centre stack: part along +x
       const nx = dx / d, ny = dy / d, overlap = min - d;
-      const sa = b.m / (a.m + b.m), sb = 1 - sa; // a's share of the push (lighter moves more)
+      const sa = unitShare(a, b), sb = 1 - sa; // a's share of the push
       // positions: a's share first, then b takes its own share plus what a's wall refused
       const ax = a.e.x, ay = a.e.y;
       moveEntity(a.e, -nx * overlap * sa, -ny * overlap * sa, a.r, true);
@@ -133,7 +142,7 @@ function separateUnits(dt) {
     const lose = vn * share * (1 + (u.m < o.m ? UNIT_BOUNCE : 0));
     if (u.vel) { u.e.vx -= lose * nx; u.e.vy -= lose * ny; }
     else { u.e.kbx -= lose * nx; u.e.kby -= lose * ny; }
-    const give = vn * share * 0.8;
+    const give = o.pri > u.pri ? 0 : vn * share * 0.8; // nothing is handed up the right of way
     o.e.kbx += give * nx; o.e.kby += give * ny;
   }
 }

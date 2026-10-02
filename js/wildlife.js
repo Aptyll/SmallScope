@@ -454,6 +454,7 @@ function updateAnimal(a, dt) {
   a.flash = Math.max(0, a.flash - dt);
   a.kbx *= Math.pow(0.02, dt);
   a.kby *= Math.pow(0.02, dt);
+  if (isAnchored(a)) a.kbx = a.kby = 0; // a shove from anything never moves it (MONSTER.anchor)
   // every timed state on the body first - the burn can kill, and a corpse
   // must not then take a step (js/actions.js, `status effects`)
   updateUnitStatus(a, dt);
@@ -761,14 +762,19 @@ function animalDies(a) {
 // same row, the same hp (ANIMAL_HP) and the same pay. `cause` is the
 // DEATH_CAUSE a bite writes (player.js). `foot` is the box a bear walks the
 // tiles with, smaller than its body: a 9 px box is wider than a tile and
-// jams on the first tree beside the lane its route runs down.
+// jams on the first tree beside the lane its route runs down. `anchor`: nothing a
+// player does moves it - no body pushes it (separateUnits gives it right of way),
+// no hit shoves it (updateAnimal drops its knockback), a roll into it is a tackle
+// that stuns only the roller, and a charge stops against it (rushStep) - so a bear
+// always walks where it means to, roar and swipe included.
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
-  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', cause: 'bear' }, // the same bear on the other bank
+  alpha: { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear' }, // the same bear on the other bank
 };
 function isCampKind(k) { return !!MONSTER[k]; }
 function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }
+function isAnchored(e) { return !!(MONSTER[e.kind] && MONSTER[e.kind].anchor); }
 // A bear's two set pieces, played out whole where it stands (updateCampMonster):
 // the ROAR when its camp wakes, and the SWIPE - up on the hinds, then the
 // paw comes down and the blow lands on BEAR_STRIKE, on whoever is still
