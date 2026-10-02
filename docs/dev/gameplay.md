@@ -216,7 +216,10 @@ standing up with its frame over its head (19.2 px one above the other). Before t
 overlap per second, split by mass, through `moveEntity(…, strict)`. It moves position only, never
 `vx/vy` or knockback, and peaks at 43 px/s between two players against a ~73 px/s walk, so anyone
 walking, chasing or swinging still reaches contact; only a crowd that has stopped pushing spreads out.
-A live roll skips the rooms entirely, and the hard passes run after them and get the last word.
+A live roll skips the rooms entirely, and so does any pair of a camp beast and a body that is not one
+(`hunt`, `isCampKind`): a beast bites from inside its `MONSTER` reach, and a bear's room (28.8 px above or
+below) is wider than the 27.5 px its swipe lands inside, so a room would slide a standing target out of
+every blow. The hard passes run after the rooms and get the last word.
 
 **A live dodge roll is the one exception to any of it.** `separateUnits` skips a pair outright
 when one side is a player mid-roll and the other is *small* — every player, every robot, and

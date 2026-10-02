@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.84';
+const PATCH_TXT = 'PATCH 4.85';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.85', 'A BEAR\'S SWIPE LANDS ON A PLAYER STANDING STILL ABOVE OR BELOW IT AGAIN: CROWD SPACING NO LONGER EASES YOU OUT OF A BEAST\'S REACH.'],
   ['4.84', 'BOTS SEE WHEN THEIR BASE IS OPEN: THEY FIND THE NARROWEST LINE ROUND THEIR BIRD AND WALL EVERY WIDE OPENING DOWN TO A THREE-TILE GAP, ROAD INCLUDED, AND CLOSE IT AGAIN WHEN CHOPPED TREES OPEN NEW GROUND.'],
   ['4.83', 'NOTHING PUSHES A BEAR: YOU STOP AGAINST IT WHEN YOU WALK OR ROLL INTO IT, IT SHOVES YOU ASIDE, AND A ROLL NO LONGER STUNS IT OUT OF ITS ROAR.'],
   ['4.82', 'THE BEARS LEFT THEIR DEN AND STONE FOR THE RIVER: EACH WALKS ITS OWN BANK OF THE CREEK UP AND DOWN, STOPPING TO SCOOP A FISH OUT OF THE WATER, CATCH IT IN ITS JAWS AND EAT IT.'],
