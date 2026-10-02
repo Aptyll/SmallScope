@@ -392,7 +392,9 @@ palette measured off Noah's reference sheet. The black bear is the same frames r
 wearing its antlers and back runes as exact 1× stickers on their bones. Both are drawn facing
 left, so `right` is the `flipH` there, and every frame of both shares one 48×38 box, centred on the standing bear, so the feet
 never jump between clips. The box's headroom is for the rear-up; each frame carries `top`, the
-empty rows over the standing head, and `drawAnimal` hangs the bars and tells from there. The
+empty rows over the standing head, where `drawAnimal` hangs the tells, and `crown`, the empty rows
+over that bear's tallest pose in any clip (bake.py measures it per bear on every rebake), where the
+frame sits, still, so a rear-up or any new clip never climbs into the bars. The
 swipe's claw trail is baked into its frames (`SM`/`SD`, white slashes with an ink edge), and so is the
 `fish` clip's catch (`FISH_PX` in bear.py, `FL`/`FM` silver inked in `SD`). Change the rig and rebake; never edit the grids.
 

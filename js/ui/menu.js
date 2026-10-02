@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.86';
+const PATCH_TXT = 'PATCH 4.87';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.87', 'A BEAR\'S HEALTH BAR SITS ABOVE ITS TALLEST POSE, SO A ROAR OR A SWIPE NEVER RISES INTO IT.'],
   ['4.86', 'BOTS CLOSE THEIR BASE PROPERLY: THE WHOLE DEFENCE LINE ROUND THE BIRD IS WALLED BUT ONE THREE-TILE GATE ON THE ROAD, INSTEAD OF A GAP IN EVERY OPENING.'],
   ['4.85', 'A BEAR\'S SWIPE LANDS ON A PLAYER STANDING STILL ABOVE OR BELOW IT AGAIN: CROWD SPACING NO LONGER EASES YOU OUT OF A BEAST\'S REACH.'],
   ['4.84', 'BOTS SEE WHEN THEIR BASE IS OPEN: THEY FIND THE NARROWEST LINE ROUND THEIR BIRD AND WALL EVERY WIDE OPENING DOWN TO A THREE-TILE GAP, ROAD INCLUDED, AND CLOSE IT AGAIN WHEN CHOPPED TREES OPEN NEW GROUND.'],
@@ -1234,6 +1235,7 @@ const PATCH_DIGEST = [
     ['THE CREEK BENDS SO EACH SIDE OWNS ONE BIG CAMP, AND BOTH PAY THE SAME', '4.17'],
     ['A BROWN BEAR AND A BLACK BEAR HOLD THE TWO BIG CAMPS', '4.24'],
     ['A BEAR STANDS UP BEFORE IT SWIPES: STEP BACK', '4.28'],
+    ['A BEAR\'S BAR STAYS CLEAR WHEN IT REARS UP', '4.87'],
     ['A BEAR ROARS WHEN YOU WAKE IT', '4.68'],
     ['NOTHING PUSHES A BEAR: IT SHOVES YOU ASIDE', '4.83'],
     ['BEARS WALK THE RIVERBANK AND FISH, NO MORE DENS', '4.82'],
@@ -3632,7 +3634,7 @@ function drawWikiBeast(bs, cx, baseY, level, now) {
   ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bs.bw ? bs.bw >> 1 : 3), baseY, bs.bw || 6, 2);
   const px = cx - (spr.width >> 1), py0 = baseY + 2 - spr.height;
   ctx.drawImage(spr, px, py0);
-  const py = py0 + (spr.top || 0); // the bars on the standing body, as drawAnimal hangs them
+  const py = py0 + (spr.crown || 0); // the bars over the tallest pose, as drawAnimal hangs them
   const wolf = isCampKind(bs.kind); // a camp monster's second bar is its leash
   const bx = Math.round(cx - bs.bw / 2);
   drawHealthBar(cx, py - 8, ANIMAL_HP[bs.kind], ANIMAL_HP[bs.kind], bs.bw); // full, chunked the way the world chunks it

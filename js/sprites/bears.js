@@ -4039,12 +4039,14 @@
     ],
   };
   // `top`: the empty rows over the standing bear's head, so drawAnimal hangs
-  // the bars off the bear rather than off the headroom the rear-up needs
+  // the tells off the bear rather than off the headroom the rear-up needs;
+  // `crown`: the empty rows over this bear's tallest pose in any clip, where
+  // its frame sits so no rear-up or lunge climbs into the bars
   const TOP = 17;
-  const set = (grids, pal) => {
+  const set = (grids, pal, crown) => {
     const left = bakeClips(grids, pal), right = mapClips(left, flipH);
-    for (const s of [left, right]) for (const k in s) for (const c of s[k]) c.top = TOP;
+    for (const s of [left, right]) for (const k in s) for (const c of s[k]) { c.top = TOP; c.crown = crown; }
     return { left, right };
   };
-  Object.assign(SPRITES, { dire: set(BROWN, BROWN_PAL), alpha: set(BLACK, BLACK_PAL) });
+  Object.assign(SPRITES, { dire: set(BROWN, BROWN_PAL, 4), alpha: set(BLACK, BLACK_PAL, 0) });
 })();

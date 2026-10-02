@@ -25,7 +25,7 @@ function drawAnimal(a, ex, ey, now) {
   // netted, snared, alight, marked: the same four tells a player wears, at
   // this body's size (drawUnitStates, js/abilities.js). `top` (a bear's
   // frames) is the headroom its rear-up needs over the standing head: the
-  // tells and the bars sit on the standing body, not on the box
+  // tells sit on the standing body, not on the box
   const ty = py + (spr.top || 0);
   drawUnitStates(a, px, ty, spr.width, spr.height - (spr.top || 0), now);
   // The player's frame, on a beast: health on top, always, the second bar
@@ -44,13 +44,17 @@ function drawAnimal(a, ex, ey, now) {
   const bw = rabbit ? 8 : big ? 24 : wolf ? 11 : 17; // widths that split into even segments (hpSegCount)
   const cx = px + spr.width / 2, mid = px + (spr.width >> 1);
   const bx = Math.round(cx - bw / 2); // the bars' own left column (drawHealthBar's x)
+  // The frame stands still over the TALLEST pose any clip reaches (`crown`,
+  // a bear's rear-up), never over the frame now playing: a bar that rode the
+  // roar up and down would jump, and one on the standing head is buried by it
+  const fy = py + (spr.crown || 0);
   overheadPlate(() => {
-    drawHealthBar(cx, ty - 8, a.hp, a.maxHp, bw, undefined, undefined, a);
-    if (wolf) drawHealthBar(cx, ty - 5, a.threat, 1, bw, undefined, THREAT_COL);
-    else drawHealthBar(cx, ty - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
-    drawLevelBadge(bx - 1, ty - 9, a.level);
-    if (a.stunT > 0) drawStunStars(mid, ty - 13, a, 4);
-    else if (a.senseT > 0) drawSenseMark(mid, ty - 16, a, wolf ? THREAT_COL : STAM_COL);
+    drawHealthBar(cx, fy - 8, a.hp, a.maxHp, bw, undefined, undefined, a);
+    if (wolf) drawHealthBar(cx, fy - 5, a.threat, 1, bw, undefined, THREAT_COL);
+    else drawHealthBar(cx, fy - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
+    drawLevelBadge(bx - 1, fy - 9, a.level);
+    if (a.stunT > 0) drawStunStars(mid, fy - 13, a, 4);
+    else if (a.senseT > 0) drawSenseMark(mid, fy - 16, a, wolf ? THREAT_COL : STAM_COL);
   });
 }
 
