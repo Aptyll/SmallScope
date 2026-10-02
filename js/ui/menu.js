@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 4.88';
+const PATCH_TXT = 'PATCH 4.89';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -38,6 +38,7 @@ const LOGO_Y = 12;
 // PATCH_TXT prints bottom-right of the title screen; click it for the notes.
 // one sentence per patch, newest first - the biggest change only, in plain english
 const PATCH_NOTES = [
+  ['4.89', 'AN AWAKE BEAR OR DEN WOLF GOES FOR WHOEVER IS NEAREST, NOT WHOEVER HIT IT LAST: IT NEVER RUNS PAST ONE OF YOU TO REACH ANOTHER, AND WHEN ITS PREY FALLS IT TURNS ON THE NEXT CLOSEST.'],
   ['4.88', 'A BEAR ONLY STANDS UP TO ROAR WHEN IT WAKES: IN A FIGHT IT STAYS ON ALL FOURS AND TAKES TURNS BETWEEN A LUNGING BITE AND A SWEEP OF ITS PAW, AND IT HOLDS ITS GROUND FACING YOU BETWEEN BLOWS.'],
   ['4.87', 'A BEAR\'S HEALTH BAR SITS ABOVE ITS TALLEST POSE, SO A ROAR OR A SWIPE NEVER RISES INTO IT.'],
   ['4.86', 'BOTS CLOSE THEIR BASE PROPERLY: THE WHOLE DEFENCE LINE ROUND THE BIRD IS WALLED BUT ONE THREE-TILE GATE ON THE ROAD, INSTEAD OF A GAP IN EVERY OPENING.'],
@@ -1241,6 +1242,7 @@ const PATCH_DIGEST = [
     ['NOTHING PUSHES A BEAR: IT SHOVES YOU ASIDE', '4.83'],
     ['BEARS WALK THE RIVERBANK AND FISH, NO MORE DENS', '4.82'],
     ['BEARS BITE AND SWIPE, AND ONLY STAND UP TO ROAR', '4.88'],
+    ['AN AWAKE BEAR OR WOLF GOES FOR WHOEVER IS NEAREST', '4.89'],
     ['ROCKS STAND IN A FEW MINING SPOTS, THE RAREST AT THE CORNERS', '4.15'],
     ['ROLL OVER THE CREEK FROM ITS BANK', '4.12'],
     ['A ROWBOAT LIES FROZEN IN THE ICE', '3.98'],

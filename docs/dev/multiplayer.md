@@ -817,7 +817,7 @@ The ladder:
    anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D` (the human is
    the anchor, as at rung 3; its own bird under threat comes first), which it walks in on - a
    blade to arm's length, a bow to 90 px with the line open - since that monster is not coming
-   to it. Every hit re-aims the camp at the latest hitter, so the helpers keep on whichever of
+   to it. The camp goes for whoever is nearest, so the helpers keep on whichever of
    the side it is chasing.
 5. **lie low** — prone with nothing in sight: hold still and let the snow finish. Everything below
    this rung walks somewhere, and a bot crawling to a berry bush at 20 px/s has stopped playing.

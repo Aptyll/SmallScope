@@ -1705,9 +1705,13 @@ still load. All three run
   hitter to every monster of the same camp at a full leash bar. A bear that was not already
   hunting plays its `roar` clip, planted, for `BEAR_ROAR_FRAMES`, and the camp gives `SFX.roar()`
   (the `roar` sample, a low bear roar about as long as the clip); a pack that wakes gives
-  `SFX.howl()`. A camp already on a hunt is silent however often it is hit. Every
-  further hit re-aims the camp at the latest hitter, which is how a team takes turns tanking
-  it.
+  `SFX.howl()`. A camp already on a hunt is silent however often it is hit, and a hit does not
+  re-aim it.
+- **The nearest body.** Awake, each monster goes for whoever is nearest (`campQuarry`): any
+  living, landed player on the camp's ground inside `CAMP_SEE` (9 tiles, shortened by `seenAt`
+  for the hidden). It turns only between blows, never mid-attack or mid-roar, and only to a body
+  `CAMP_SWITCH` (a tile) nearer than its quarry, so two side by side never make it dither. So it
+  never runs past one player to reach another, and whoever stands closest is tanking it.
 - **The leash bar.** `a.threat` (0..1) is the red bar hung under the health bar the way a
   player's stamina is (`THREAT_COL`, `drawAnimal`; bare track at rest). It holds full while
   the quarry is on the camp's **ground** — `CAMP_GROUND` (7) tiles past the camp's `r`, or past
@@ -1716,7 +1720,8 @@ still load. All three run
   keeps coming while the bar drains and the hunt ends only when the bar is empty. Then it walks
   home and **heals**: a monster with nobody to hunt mends from nothing to full over
   `CAMP_REGEN_T` (6 s), so a fight you break off is a fight reset, never a chip-away. A quarry
-  that dies or boards its eagle ends the hunt at once.
+  that dies or boards its eagle hands the hunt straight on to the nearest player on the ground;
+  with nobody there the hunt is over.
 - **The chase.** The kind's `spd` (the table below) is faster than the 72 px/s walk and slower
   than a slide, so the answer is the momentum system, not
   distance; every one routes around trees and water ([Pathfinding](#pathfinding)), and a quarry
@@ -1773,8 +1778,8 @@ a monster whose `target` is that bot, inside `AI_SIGHT`) — and an **ally** als
 anybody on its side inside `AI_ANCHOR_R` of the human, noticed from `AI_ANCHOR_D`, walking in to
 its own range first, unless its own bird is under threat: the human is the camp fight's anchor
 the way it is a rival's ([Bots](multiplayer.md#bots), rung 4), so a bear you wake is one
-your side comes to. It is *anybody on its side* because every hit re-aims the camp, and the
-helpers must not drop out when one of them takes it off you. A bot will pull a den on its own through
+your side comes to. It is *anybody on its side* because the camp turns to whoever is nearest, and the
+helpers must not drop out when one of them walks in and takes it off you. A bot will pull a den on its own through
 the hunt rung like any other animal, and never a bear (`teamPay`), which a
 lone bot would die to. No bot walks *to* a camp deliberately yet — see
 [checklists.md](checklists.md#known-drift).

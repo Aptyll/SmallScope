@@ -792,6 +792,8 @@ const BEAR_FISH_STRIKE = 3;  // the frame the paw hits the water
 const CAMP_GROUND = 7;     // tiles past a camp's r that are its ground: the leash bar holds on it, drains anywhere off it
 const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - then the monster goes home
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
+const CAMP_SEE = 9 * TILE; // px an awake monster spots a player across (seenAt shortens it for the hidden)
+const CAMP_SWITCH = TILE;  // px closer another player must be before an awake monster turns to them
 // The kills' rewards past the gold (YIELD, core.js). ALPHA'S BLOOD is what
 // a midline camp's kill wears: CAMP_BUFF_DMG on every blow the player lands
 // (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
@@ -820,25 +822,38 @@ const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight clim
 // the monster is at its heels, and it keeps coming while the bar drains;
 // the hunt ends when the bar is empty, and then it goes home and HEALS
 // (CAMP_REGEN_T) - so a fight you break off is a fight reset, never a
-// chip-away. Every hit re-aims the camp at the latest hitter, which is how a
-// team takes turns tanking it. Waking one wakes the camp, which is what
-// makes it a place instead of four animals.
+// chip-away. Awake, each monster goes for whoever is NEAREST (campQuarry),
+// not whoever hit it last: it never runs past one body to reach another, so
+// whoever stands closest is the one tanking it. Waking one wakes the camp,
+// which is what makes it a place instead of four animals.
 function wakeCamp(w, t) {
   if (!t) return;
-  if (!w.home) { w.target = t; w.threat = 1; return; }
+  if (!w.home) { if (!w.target) { w.target = t; w.threat = 1; } return; }
   // the cue a waking camp gives: a bear roars (the sound lands with its roar
-  // clip), a pack howls. Only a monster not already hunting gives one, so a
+  // clip), a pack howls. Only a monster not already hunting wakes, so a
   // camp mid-chase stays quiet however often it is hit
   let cue = null;
   for (const o of animals) {
-    if (o.dead || !isCampKind(o.kind) || o.home !== w.home) continue;
-    if (!o.target) {
-      if (ANIM_CLIPS[o.kind].roar) { setClip(o, 'roar'); cue = 'roar'; }
-      else if (!cue) cue = 'howl';
-    }
+    if (o.dead || !isCampKind(o.kind) || o.home !== w.home || o.target) continue;
+    if (ANIM_CLIPS[o.kind].roar) { setClip(o, 'roar'); cue = 'roar'; }
+    else if (!cue) cue = 'howl';
     o.target = t; o.threat = 1;
   }
   if (cue) sfxAt(cue, w.x, w.y, 260);
+}
+// The quarry an awake monster should be on: the nearest player standing on
+// its camp's ground that it can see (seenAt), or `t` it already has unless
+// another is CAMP_SWITCH nearer, so two bodies side by side never make it
+// dither. With `t` gone (dead, or off on its eagle) it is whoever is nearest,
+// and with nobody on its ground at all the hunt is over.
+function campQuarry(a, t, onGround) {
+  let best = t, bd = t ? Math.hypot(t.x - a.x, t.y - a.y) - CAMP_SWITCH : Infinity;
+  for (const p of players) {
+    if (p === t || !unitAlive(p) || !onGround(p)) continue;
+    const d = Math.hypot(p.x - a.x, p.y - a.y);
+    if (d < bd && d <= seenAt(p, CAMP_SEE)) { bd = d; best = p; }
+  }
+  return best;
 }
 
 // A RIVER camp's bear (CAMPS' `river`, world.js) has no den to stand at: it
@@ -880,7 +895,14 @@ function updateCampMonster(a, dt) {
   const river = !!(C && C.path && C.path.length);
 
   let t = a.target;
+  const awake = !!t;
   if (t && (!t.active || t.dead || inAir(t))) { t = null; a.threat = 0; navClear(a); }
+  // awake, it turns to whoever is nearest - between blows, never in the
+  // middle of one or of its roar; a quarry that falls hands the hunt on at once
+  if (awake && (!t || !(a.clip === 'roar' || BEAR_ATTACKS.includes(a.clip)))) {
+    const q = campQuarry(a, t, onGround);
+    if (q !== t) { t = q; a.threat = 1; navClear(a); }
+  }
   if (t) {
     // hunting: the bar holds while the quarry is on the ground and drains
     // once it is off - the monster at its heels or not; the chase goes on
