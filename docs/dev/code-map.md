@@ -61,7 +61,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the brown bear (`dire`) and black bear (`alpha`) clips; never edit, rebake with app/bake-bears/bake.py (the rig: rig.py paints and bands, bear.py lays out and poses, anim.py walks and swipes) | `BROWN`/`BLACK`, `BROWN_PAL`/`BLACK_PAL`, `TOP` (each frame's `top`: the tells), each bear's `crown` (its frame over the tallest pose) | - |
+| the brown bear (`dire`) and black bear (`alpha`) clips; never edit, rebake with app/bake-bears/bake.py (the rig: rig.py paints and bands, bear.py lays out and poses, anim.py holds the clips) | `BROWN`/`BLACK`, `BROWN_PAL`/`BLACK_PAL`, `TOP` (each frame's `top`: the tells), each bear's `crown` (its frame over the tallest pose) | - |
 
 ## js/sprites/robot.js (generated)
 

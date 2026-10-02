@@ -97,8 +97,8 @@ const ANIM_CLIPS = {
   rabbit: { idle: 6, rise: 8, hop: 14 },
   deer: { idle: 4, graze: 5, run: 16 },
   wolf: { idle: 0, run: 8 },
-  alpha: { idle: 5, walk: 8, run: 12, swipe: 14, roar: 10, fish: 8 }, // the bears: patrol at a walk, charge at a gallop
-  dire: { idle: 5, walk: 8, run: 12, swipe: 14, roar: 10, fish: 8 },
+  alpha: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 }, // the bears: patrol at a walk, charge at a gallop
+  dire: { idle: 5, walk: 8, run: 12, bite: 14, paw: 14, roar: 10, fish: 8 },
   bird: { idle: 0, fly: 14 },
 };
 // A clip change restarts the loop, so a sit-up always begins on the frame it
@@ -766,7 +766,7 @@ function animalDies(a) {
 // player does moves it - no body pushes it (separateUnits gives it right of way),
 // no hit shoves it (updateAnimal drops its knockback), a roll into it is a tackle
 // that stuns only the roller, and a charge stops against it (rushStep) - so a bear
-// always walks where it means to, roar and swipe included.
+// always walks where it means to, roar and attacks included.
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
   alpha: { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
@@ -775,12 +775,15 @@ const MONSTER = {
 function isCampKind(k) { return !!MONSTER[k]; }
 function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }
 function isAnchored(e) { return !!(MONSTER[e.kind] && MONSTER[e.kind].anchor); }
-// A bear's two set pieces, played out whole where it stands (updateCampMonster):
-// the ROAR when its camp wakes, and the SWIPE - up on the hinds, then the
-// paw comes down and the blow lands on BEAR_STRIKE, on whoever is still
-// inside the reach stretched by BEAR_SWIPE_REACH. The stand-up is the tell.
-// Frame counts are the clips' in js/sprites/bears.js (app/bake-bears/anim.py).
-const BEAR_SWIPE_FRAMES = 10;
+// A bear's set pieces, played out whole where it stands (updateCampMonster):
+// the ROAR when its camp wakes, the one time it stands up on its hinds, and
+// its ATTACKS, on all fours - a lunging BITE or a sweep of the PAW, taken in
+// turn so no two blows in a row look alike. Either lands on BEAR_STRIKE, on
+// whoever is still inside the reach stretched by BEAR_SWIPE_REACH; the
+// wind-up is the tell. Frame counts are the clips' in js/sprites/bears.js
+// (app/bake-bears/anim.py).
+const BEAR_ATTACKS = ['bite', 'paw'];
+const BEAR_ATTACK_FRAMES = 10;
 const BEAR_STRIKE = 4;
 const BEAR_SWIPE_REACH = 1.25;
 const BEAR_ROAR_FRAMES = 8;
@@ -906,17 +909,18 @@ function updateCampMonster(a, dt) {
     if (!t && a.animT < BEAR_FISH_FRAMES) return;
     setClip(a, 'idle');
   }
-  // a bear mid set piece: planted, facing its quarry, the swipe's blow
+  // a bear mid set piece: planted, facing its quarry, an attack's blow
   // landing on its strike frame
-  if (a.clip === 'roar' || a.clip === 'swipe') {
+  const attack = BEAR_ATTACKS.includes(a.clip);
+  if (a.clip === 'roar' || attack) {
     const was = a.animT;
     stepClip(a, dt);
     if (t) {
       const d = Math.hypot(t.x - a.x, t.y - a.y) || 1;
       if (a.clip === 'roar') { a.mvx = (t.x - a.x) / d; a.mvy = (t.y - a.y) / d; if (Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left'; }
-      if (a.clip === 'swipe' && was < BEAR_STRIKE && a.animT >= BEAR_STRIKE && d < M.reach * BEAR_SWIPE_REACH) monsterBite(a, t, M);
+      if (attack && was < BEAR_STRIKE && a.animT >= BEAR_STRIKE && d < M.reach * BEAR_SWIPE_REACH) monsterBite(a, t, M);
     }
-    if (a.animT < (a.clip === 'swipe' ? BEAR_SWIPE_FRAMES : BEAR_ROAR_FRAMES)) return;
+    if (a.animT < (attack ? BEAR_ATTACK_FRAMES : BEAR_ROAR_FRAMES)) return;
     setClip(a, 'idle');
   }
   if (t) a.fishT = 0; // woken while watching the water: the fish can wait
@@ -924,17 +928,20 @@ function updateCampMonster(a, dt) {
   let moving = false;
   if (t) {
     if (a.goal) { a.goal = null; navClear(a); } // the patrol is off; the quarry is the route now
-    // run the route to the quarry; with no route (it is out over water, or
-    // the camp has it pinned) hold and face it
-    const n = navStep(a, t.x, t.y, foot, M.spd, dt);
+    // run the route to the quarry; in reach (a route step there only shoves
+    // at the body it is already touching), or with no route (it is out over
+    // water, or the camp has it pinned), hold and face it
+    const near = Math.hypot(t.x - a.x, t.y - a.y);
+    const n = near < M.reach ? { ok: false, d: near } : navStep(a, t.x, t.y, foot, M.spd, dt);
     const d = n.d || 1;
     if (!n.ok) { a.mvx = (t.x - a.x) / d; a.mvy = (t.y - a.y) / d; }
     moving = n.ok;
     if (d < M.reach && a.biteCd <= 0) {
       a.biteCd = M.cd;
-      if (ANIM_CLIPS[a.kind].swipe) { // a bear stands up first: the blow lands later, on the strike frame
-        setClip(a, 'swipe');
-        if (Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
+      if (ANIM_CLIPS[a.kind].bite) { // a bear winds up first: the blow lands later, on the strike frame
+        a.atkN = ((a.atkN === undefined ? randi(0, 1) : a.atkN) + 1) % BEAR_ATTACKS.length;
+        setClip(a, BEAR_ATTACKS[a.atkN]);
+        if (Math.abs(t.x - a.x) > 2) a.dir = t.x > a.x ? 'right' : 'left'; // at the quarry, not the last step of the route
         return;
       }
       monsterBite(a, t, M);
@@ -968,7 +975,7 @@ function updateCampMonster(a, dt) {
     }
   }
 
-  if (moving && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
+  if ((moving || t) && Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left';
   // standing, and coming for you; a kind with a walk (a bear) walks its
   // patrol and gallops the hunt, a wolf runs both at two paces
   const walks = !!ANIM_CLIPS[a.kind].walk;
