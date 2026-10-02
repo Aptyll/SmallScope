@@ -111,29 +111,38 @@ def pose(P=None, dark=False):
         if fish[0] == 'jaw': (fx, fy), k = Hd(0.0 if fish[1] == 'T' else -1.5, 15.5), fish[1]
         else: fx, fy, k = fish[1], fish[2], fish[3]
         pr.append(dict(E(fx, fy, 1, 1, mat='sticker', layer=9), px=FISH_PX[k]))
+    if P.get('fangs'):   # the snap: two white bites shut in front of the jaw
+        x, y = P['fangs']
+        pr.append(dict(E(x, y, 1, 1, mat='sticker', layer=9), px=FANGS))
     for arc in P.get('smear', []):   # claw trail: three parallel arcs, bright at the paw end
         pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), px=smear_px(*arc)))
     for (x, y) in P.get('dust', []):  # snow kicked up where the paw lands
         pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), px=[(int(round(x)) + dx, int(round(y)) + dy, c) for dx, dy, c in DUST]))
     return pr
 
+FANGS = [(0, 0, 'SD'), (1, 1, 'SM'), (2, 2, 'SM'), (3, 1, 'SM'), (4, 0, 'SD'),
+         (0, 5, 'SD'), (1, 4, 'SM'), (2, 3, 'SM'), (3, 4, 'SM'), (4, 5, 'SD'), (-2, 2, 'SD'), (-2, 3, 'SD')]
 DUST = [(-3, 0, 'SD'), (-2, -1, 'SM'), (2, -1, 'SM'), (3, 0, 'SD'), (-4, -2, 'SD'), (4, -2, 'SD'), (0, -2, 'SD')]
 
 def smear_px(p0, p1, p2, span=1.0):
     """a quadratic arc p0 -> p1 (control) -> p2 in crop coords, drawn as three
-    claw lines 1.3 px apart; `span` keeps only the last part (a fading trail)"""
-    out = {}
-    for k in (-1.5, -0.5, 0.5, 1.5):
-        for i in range(41):
-            t = 1 - span + span * i / 40
+    claw slashes 2 px apart, white cores that thicken toward the paw end,
+    the whole sweep inked round so it reads on snow as well as on fur; `span` keeps only the last part (a fading trail)"""
+    white = set()
+    for o in (-2.0, 0.0, 2.0):
+        for i in range(81):
+            u = i / 80
+            t = 1 - span + span * u
             x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0]
             y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]
             dx = 2 * (1 - t) * (p1[0] - p0[0]) + 2 * t * (p2[0] - p1[0])
             dy = 2 * (1 - t) * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1])
             n = math.hypot(dx, dy) or 1
-            px, py = x - dy / n * 1.0 * k, y + dx / n * 1.0 * k
-            q = (int(round(px)), int(round(py)))
-            if i < 8 and abs(k) > 1: continue               # the tail thins to the two slashes
-            col = 'SD' if abs(k) > 1 or i < 8 else 'SM'    # two white slashes inside an ink edge
-            if out.get(q) != 'SM': out[q] = col
+            nx, ny = -dy / n, dx / n
+            half = 0.0 if u < 0.35 else 0.5            # a thin tail, a thick head
+            for w in ((0.0,) if half == 0 else (-half, half)):
+                white.add((int(round(x + nx * (o + w))), int(round(y + ny * (o + w)))))
+    ink = {(x + dx, y + dy) for (x, y) in white for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))} - white
+    out = {q: 'SD' for q in ink}
+    out.update({q: 'SM' for q in white})
     return [(x, y, c) for (x, y), c in out.items()]

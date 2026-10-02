@@ -3,7 +3,7 @@
 import numpy as np, math
 
 SS = 8
-CW, CH = 60, 46          # 1x canvas: room for the rear-up above and the swipe out front
+CW, CH = 60, 46          # 1x canvas: room for the rear-up above and the attacks out front
 OX, OY = 12, 16          # where the reference crop origin sits in the canvas
 
 PAL = {                  # measured from the reference (k-means on 5px cells)
@@ -11,7 +11,7 @@ PAL = {                  # measured from the reference (k-means on 5px cells)
     'L6': (149, 98, 60), 'H8': (187, 136, 91), 'G7': (137, 109, 102),
     'EY': (214, 160, 102),
     'FL': (214, 226, 236), 'FM': (128, 150, 170),  # the fish: silver over a slate belly
-    'SM': (250, 252, 255), 'SD': (58, 66, 96),   # the swipe's claw trail: white slashes, ink edges so they read on snow
+    'SM': (250, 252, 255), 'SD': (58, 66, 96),   # the paw's claw trail and the bite's snap: white slashes, ink edges so they read on snow
 }
 # the antlered bear in the reference is the same sprite recoloured: map band by band
 PAL_DARK = {

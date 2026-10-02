@@ -1319,7 +1319,7 @@ takes everything inside `ROLL_HIT_R` (7px) of the roller's own radius and splits
   untouched — you roll *under* them, you do not run them down. A rival with i-frames up (mid-roll
   of their own) refuses the whole thing, damage and stun both, so **rolls cancel rolls**.
 - **Big — a deer, a bear, a tree, a rock, a building.** A **tackle**: both sides take it, both are
-  stunned (except a bear: it takes the damage and keeps its stride, roar and swipe included), and the roll ends on the spot. `rollTackle` drops the roller's own i-frames first,
+  stunned (except a bear: it takes the damage and keeps its stride, roar and attacks included), and the roll ends on the spot. `rollTackle` drops the roller's own i-frames first,
   because the tackle is the one hit a roll cannot dodge, and bounces them back off the contact.
   A wall only counts when it is taken head-on — the speed actually driven into the axis
   `moveEntity` refused has to clear `TACKLE_MIN` (120 px/s), so brushing past a pine at a run is
@@ -1590,7 +1590,7 @@ a wander is the same gallop run slower, not a second animation; and `clipFrame`
 | `rabbit` | `idle` low over its paws, `rise` up on its haunches, `hop` | `updatePrey` |
 | `deer` | `graze` head down in the snow, `idle` head up and turning, `run` the gallop | `updatePrey` |
 | `wolf` | `idle`, `run` | `updateCampMonster` |
-| `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `swipe`, `roar` | `updateCampMonster` |
+| `alpha` / `dire` (the bears) | `idle`, `walk`, `run`, `bite`, `paw`, `roar`, `fish` | `updateCampMonster` |
 | `bird` | `idle` perched, `fly` | `updateBird` |
 
 **The head is the tell.** Standing still and settled, a deer's head is DOWN in the snow and a
@@ -1724,9 +1724,11 @@ still load. All three run
   for every level past the monster's first, inside `reach`, every `cd` seconds *per body*,
   through `damagePlayer(t, dmg, dx, dy, null, cause)` — `'wolf'` (`WENT TO THE WOLVES`) for the
   pack, `'bear'` (`MET A BEAR`) for either bear. **A bear's blow is telegraphed**: in reach it
-  stands up on its `swipe` clip, planted, and the blow (`monsterBite`) lands only as the clip
-  crosses `BEAR_STRIKE`, on a quarry still inside `reach × BEAR_SWIPE_REACH` - so the stand-up is
-  the tell and a step back dodges it. A bear walks its patrol on `walk` and gallops the hunt on
+  plays one of its attacks, on all fours and planted: the `bite` (coil, jaw wide, lunge, snap) or
+  the `paw` (paw cocked over the head, swept out flat in front), taken in turn (`BEAR_ATTACKS`,
+  `a.atkN`) so two blows in a row never look alike. The blow (`monsterBite`) lands only as the clip
+  crosses `BEAR_STRIKE`, on a quarry still inside `reach × BEAR_SWIPE_REACH` - so the wind-up is
+  the tell and a step back dodges it. Only the wake-up `roar` stands the bear on its hinds. A bear walks its patrol on `walk` and gallops the hunt on
   `run`, and moves through the tiles on its `foot` box (5), not its 9 px body, which is wider
   than a tile and jammed on the first tree beside its route. **Nothing caps the
   pack** ([i-frames](#i-frames-only-something-deliberate-grants-them)):
