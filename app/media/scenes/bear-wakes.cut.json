@@ -1,0 +1,16 @@
+{
+  "size": [1080, 1920],
+  "shots": [
+    { "name": "catch",  "from": "fish-10", "to": "loose",   "k": [9, 10],    "focus": "bear@fish", "oy": -10, "ease": "linear" },
+    { "name": "arrow",  "from": "loose",   "to": "roar+8",  "k": 6,          "focus": "mix:bear,archer,0.45", "oy": -8 },
+    { "name": "roar",   "from": "roar+8",  "to": "charge",  "k": [10, 12],   "focus": "bear@roar", "oy": -16, "ease": "out" },
+    { "name": "charge", "from": "charge",  "to": "end",     "k": [6, 5.5],   "focus": ["mix:bear,archer,0.3", "archer"], "oy": -10 }
+  ],
+  "texts": [
+    { "shot": "roar", "from": 4, "lines": [[["IT WOKE UP", "gold"]]], "s": 16, "y": 300 }
+  ],
+  "end": {
+    "freeze": { "frames": 90, "texts": [ { "at": 6, "lines": [[["RUN", "gold"]]], "s": 26, "y": 330 } ] },
+    "card": { "frames": 150 }
+  }
+}
