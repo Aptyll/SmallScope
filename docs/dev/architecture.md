@@ -356,6 +356,9 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   ([docs/bots/ladder.md](../bots/ladder.md)). `core.js` holds the rules alone, for an online ladder later.
 - **`app/regress/`** — the patch check: a fixed set of short arena matches replayed on every patch,
   the runs diffed and flagged, and the ladder's history cut into one season per patch ([regress.md](regress.md)).
+- **`app/media/`**: the media kit: staged headless takes, a cut editor, the game's sound rendered
+  offline, storyboards, GIFs, stills, and the 2D painted cutout painter for concept sheets
+  ([media.md](media.md)). Node with no packages plus Python (pillow, numpy, imageio-ffmpeg).
 - **`app/bake-bots.js`** — reads `bots/*.js`, writes `js/bots/lib.js` (the example bots as source text).
 - **`app/bake-sfx.js`** — reads `audio/sfx/`, writes `js/sfxdata.js`.
 - **`app/bake-bears/bake.py`** — Python (needs numpy): paints and poses the two camp bears, writes `js/sprites/bears.js`.
