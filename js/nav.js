@@ -67,7 +67,7 @@ function moveEntity(e, dx, dy, r, strict) {
 // and only a crowd that has stopped pushing spreads out into a readable fight.
 // A camp beast keeps no room against anything outside its own kind of body
 // (`hunt`): it bites from inside its MONSTER reach, and a room wider than that
-// reach (a bear's is 28.8 px above or below, its swipe lands inside 27.5) would
+// reach (a bear's is 28.8 px above or below, wider than the 22 px it starts a blow inside) would
 // slide a standing target out of every blow. Hard contact still holds them apart.
 // a camp monster's mass and radius are its MONSTER row (wildlife.js), read at call time
 const UNIT_MASS = { player: 3, deer: 2.2, rabbit: 0.5, robot: 0.7, soldier: 1, merchant: 3 };
