@@ -219,6 +219,9 @@ const ITEMS = {
   cardBlue:   { icon: 'itemCardBlue',   stack: Infinity, pouch: true },
   cardPurple: { icon: 'itemCardPurple', stack: Infinity, pouch: true },
   cardGold:   { icon: 'itemCardGold',   stack: Infinity, pouch: true },
+  // the burrow, a rabbit's drop: pressed from its own hud cell, it digs a
+  // tunnel (js/tunnel.js). Its icon is baked there.
+  tunnel:     { icon: 'itemTunnel',     stack: Infinity, pouch: true },
 };
 const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // What one unopened card of each rarity costs at the merchant's counter
@@ -511,6 +514,9 @@ class Player {
     // see the `team flags` banner in js/robots.js): null, or { tx, ty, type,
     // owner }. NOT cleared by reset() - an order outlives the hand that gave it.
     this.flag = null;
+    // the tile index of the near hole of this body's one tunnel (js/tunnel.js),
+    // -1 for none. NOT cleared by reset() - a dug tunnel outlives its digger.
+    this.tunHole = -1;
     this.eliminated = false;            // its bird was driven off: no coming back - see die()/eagleFleeResolve
     this.respawnT = 0;                  // seconds left on an active respawn countdown
     this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
@@ -625,6 +631,12 @@ class Player {
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0; this.rushVictim = null;
     this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/abilities.js)
     this.buffT = 0;                                // s of ALPHA'S BLOOD left (campBuff, wildlife.js): harder blows, a quicker walk
+    this.dawnShield = 0;                           // hp of the DAWN SHIELD left (pickSnowdrop, js/actions.js): spent before health
+    // the tunnels (js/tunnel.js): the one being ridden ({ fx, fy, tx, ty, t, len },
+    // px and s), the wait after coming up before any hole takes this body
+    // again, the seconds left on the far end being dug, and the work key held
+    // through the last step (a hole takes a fresh press, never a held one)
+    this.tun = null; this.tunCd = 0; this.digT = 0; this.tunE = false;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (world.js): the line ridden (its team, or none), px along it, and which way
@@ -705,8 +717,9 @@ function initPlayers(roster, local) {
 // who p is allowed to shoot: another live player on another team (this is the
 // one place the FFA/friendly-fire rule lives)
 function enemyOf(p, q) { return q !== p && q.active && !q.dead && !inAir(q) && (!PVP || q.team !== p.team); }
-// riding the eagle or falling from it: not in the world yet, nothing can touch it
-function inAir(p) { return p.aboard || p.dropT > 0; }
+// riding the eagle or falling from it - or under the snow in a tunnel
+// (js/tunnel.js): not in the world, nothing can touch it
+function inAir(p) { return p.aboard || p.dropT > 0 || !!p.tun; }
 
 // ---- facing --------------------------------------------------------------
 // The one way a body turns (faceToward). Near a diagonal the facing it
@@ -816,7 +829,15 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   const dot = !!DOT_CAUSE[cause];
   if (p.dead || (p.invuln > 0 && !dot)) return;
   dmg = Math.max(1, dmg - kitOf(p).dr); // IRONHIDE flattens every hit, but never to zero
-  p.hp -= dmg;
+  // the dawn shield (pickSnowdrop, js/actions.js) takes the hit first, a burn
+  // included; what is left of the blow goes on to health
+  const shielded = Math.min(p.dawnShield, dmg);
+  if (shielded > 0) {
+    p.dawnShield -= shielded;
+    burst(p.x, p.y - 10, '#ffd84a', 4, 36, 0.35);
+    if (p.dawnShield <= 0) { sfxAt('shieldBreak', p.x, p.y); burst(p.x, p.y - 10, '#fff4b8', 10, 60, 0.5); }
+  }
+  p.hp -= dmg - shielded;
   // the match record both ends of the blow keep (the post-game lobby, js/ui/lobby.js).
   // What is counted is what LANDED, DR already off it - the overkill on the
   // last hit of a kill included, because that is what the swing was worth.
@@ -905,6 +926,7 @@ function die(p, src, cause) {
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
   p.castSlam = false; p.hopT = 0; p.grapT = 0;
   p.buffT = 0; // the blood goes with the body too
+  p.dawnShield = 0; // ...and the dawn's shield
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
   burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);
   // kill credit and the feed line: the killer's colours if there is one,

@@ -63,6 +63,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the brown bear (`dire`) and black bear (`alpha`) clips; never edit, rebake with app/bake-bears/bake.py (the rig: rig.py paints and bands, bear.py lays out and poses, anim.py holds the clips) | `BROWN`/`BLACK`, `BROWN_PAL`/`BLACK_PAL`, `TOP` (each frame's `top`: the tells), each bear's `crown` (its frame over the tallest pose) | - |
 
+## js/sprites/snowdrops.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the warren's snowdrop clumps: four variants, each shut and open at three wind leans and picked; never edit, rebake with `node app/bake-snowdrops/bake.js` from the Winter flowers painter's atlases beside it | `SPRITES.snowdrop[variant]` (`closed`/`open`/`picked`; drawn by the snowdrop branch of `render()`, js/draw/render.js, `SNOWDROP_SWAY`) | - |
+
 ## js/sprites/robot.js (generated)
 
 | Looking for | Start at | Banner |
@@ -182,7 +188,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| worldgen, rivers, forest border and the two roost corners' guaranteed woods | `genWorld`, `carveRiver`, `borderNoise` (the seed's own border), `borderDepth` (that or the roost disc - what everything reads), `BORDER_MIN`/`BORDER_MAX`, `ROOST_R`/`ROOST_WOBBLE`, `CENTER_R` | `world` |
+| worldgen, rivers, forest border and the two roost corners' guaranteed woods | `genWorld`, `carveRiver`, `borderNoise` (the seed's own border), `borderDepth` (that or the roost disc - what everything reads), `BORDER_MIN`/`BORDER_MAX`, `ROOST_R`/`ROOST_WOBBLE`, `CENTER_R`, `warrenGrove`/`GROVE_IN`/`GROVE_TAPER` (the border grown out round each warren, folded into `borderDepth`) | `world` |
+| the snowdrop clump and the dawn window it opens in | `OBJECTS.snowdrop`, `BLOOM_LEAD`/`BLOOM_HOLD`, `bloomOpen`, `bloomDay` (the pick: `pickSnowdrop`, js/actions.js) | `world` |
 | the **map shapes** - the table, the rule one IS, which shape this page grew, and the ore/berry top-up a grown one needs | `MAPS`, `MT_SNOW`/`MT_ICE`/`MT_FOREST`, `mapFbm`, `mapTerrain`, `mapName`, `mapGrown`, `MAP_TYPE` (set in js/boot.js after `loadSettings`), `MAP_ROCKS`/`MAP_BUSHES` | `world` > `the map types` (the pick and its chip: `mapChip`/`mapStep`/`pickMap`, js/ui/menu.js; the setting: `settings.mapType`, core.js; the lobby: `netHostHello`/`netHostRoom`, js/net/net.js) |
 | the **paths** a grown shape cuts through its own woods: their tuning, the registry roadDist mins over, the per-tile index, the cost field where wood is a wall, the route search and its axe fallback, laying the network | `PATH_HW`/`PATH_RAG`/`PATH_WOOD` (the `cut` fallback only)/`PATH_ICE`/`PATH_LANE`/`PATH_CAMP`/`PATH_SEG`, `paths`, `pathLat`, `pathDist`, `addPathSeg`, `addPathRoute`, `indexPaths`, `pathCost`, `pathRoute`, `layPaths` (called at boot between `placeCreek` and `placeRoad`, boot.js) | `world` > `the paths` (the pixels: `paintRoadOverlay`'s `onIce`, js/draw/ground.js) |
 | what a kind of scenery **is** - solid, which tool, the E verb and lift, what each map paints it (the minimap's colour, the chart's class) | `OBJECTS` | `world` (buildings carry the same `mm`/`map` pair: `STRUCTS`, structures.js) |
@@ -212,7 +219,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | how deep the snow lies anywhere: the map, its bands, the prevailing wind, the drift list and per-tile index, the lee pad behind every standing thing | `snowDepth`/`snowDepthPx`, `driftsDepth`, `hollowDepth`, `leeDepth`/`layLees`/`leeCell`/`LEE_AMP`, `DEPTH_DEEP`/`DEPTH_MID`, `driftWind`, `drifts`, `driftCell`, `driftDepth` (one drift's shape) | `snow depth` |
-| laying the drifts: what breaks the wind, what a drift may lie on or bury, the keep-outs, the fair split between the halves | `layDrifts` (boot.js, after worldgen), `driftBreak`, `driftBury`, `driftFree`, `driftTiles`, the `DRIFT_*` constants | `snow depth` |
+| laying the drifts: what breaks the wind, what a drift may lie on or bury, the keep-outs, the fair split between the halves, and the warrens' own set | `layDrifts` (boot.js, after worldgen), `driftBreak`, `driftBury`, `driftFree`, `driftTiles`, the `DRIFT_*` constants, `layMeadowDrifts`/`MEADOW_DRIFTS`/`MEADOW_AMP` | `snow depth` › `laying the drifts` |
 | the slowdown: the wade every unit eases, what it leaves of a walk, and its tuning | `wadeStep` (from `updateUnitStatus`, actions.js), `wadeMul` (`walkMax` in `updatePlayer`, sim.js; `unitMoveMul`, actions.js), `DEEP_WALK`/`DEEP_DODGE`/`DEEP_SLIDE`/`DEEP_SLIDE_BAR`/`DEEP_EASE` | `snow depth` |
 
 ## js/landmarks.js
@@ -233,7 +240,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | an animal's level: dealt once at spawn from the table's average, what it grows (hp, and the kill's gold) | `ANIMAL_LV_HP`, `ANIMAL_LV_GOLD`, `animalLevel` (under `ANIMAL_HP`), `a.level` in `makeAnimal`, the payout in `animalDies` | `animals` (a monster's bite growth: `MONSTER.lvBite`, above the `camp monsters` banner) |
-| the meadow's strength and its restock: the boot spawn, the clock, the clear-of-everyone spot | `PREY_POP`/`PREY_REPOP`/`PREY_CLEAR`, `spawnPrey`, `bushList`, `spawnAnimals`, `updatePreyStock` (called from `updatePlay`, sim.js, never under `PRACTICE`) | `animals` |
+| the meadow's strength and its restock: the boot spawn, the clock, the clear-of-everyone spot | `PREY_POP`/`PREY_REPOP`/`PREY_CLEAR`, `spawnPrey`, `warrens`/`warrenFor` (every rabbit's warren, `a.meadow`; its hop home: `preyWander`), `spawnAnimals`, `updatePreyStock` (called from `updatePlay`, sim.js, never under `PRACTICE`) | `animals` |
 | wildlife behaviour: the shared lifecycle and the prey half, with the rabbit's jink (the shot it reads as coming at it, and the dash) and the noticed mark's clock (`a.senseT`, set in `updatePrey` and `updateCampMonster`) | `updateAnimal`, `updatePrey`, `arrowAtRabbit`, `rabbitDodge`, `animalDies` | `animals` |
 | what a beast is DOING, drawn: the clip table, the two movers of it, and the sit-up / head-up windows the prey read off | `ANIM_CLIPS`, `setClip`, `stepClip`, `RABBIT_ALERT` (`a.alertT`), `PREY_WARY_T` (`a.wary`) | `animals` (played by `clipFrame`, js/draw/bodies.js) |
 | the tuning for everything wild: the prey's bolt, the deer's sprint and the rabbit's jink, the holes cut down to the fish, the shoal itself, the pack, the flock | `FLEE_SIGHT`/`FLEE_TIME`/`PREY_SPD`/`PREY_RUN`, `DEER_WALK_MUL`/`DEER_RUN_MUL`/`DEER_EASE_T`, `DEER_SPRINT`/`DEER_SPRINT_T`/`DEER_SPRINT_REGEN`, `RABBIT_DODGE_*`, `ICE_HOLE_HITS`, `HOLE_FALL_DMG`/`HOLE_FALL_T`, `FISH_CATCH_R`, `FISH_MAX`/`FISH_MIN`/`FISH_SPAWN_FAST`/`FISH_EMERGE_*`, `MONSTER`, `CAMP_GROUND`/`CAMP_LEASH_T`/`CAMP_REGEN_T`, `BIRD_*` | the top of `animals` (the prey), `fish` (the ice and shoal half) and above `camp monsters` (the three wolves, and the dormant flock); `FISH_SPAWN_T` alone stays in core.js |
@@ -282,6 +289,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | what a click / E / space actually does, and the work the hands take with no key (a tree, a berried bush in reach) | `clickAction`, `tryWork`, `workTarget`/`workTargetAt` (by tile: the CLICK scheme's right button), `startSwing`, `autoToolFor`, `autoPrio`/`AUTO_PRIO_*`, `autoTarget`, `autoWork`, `tryDodge`, `hitObject`, `crackIce` (what a click FIRES: `fireTool`, tools.js; the fish half: `autoFish`, tools.js) | `actions` |
+| the dawn shield: a snowdrop picked, the shield it lays on the picker's whole side (spent before health in `damagePlayer`, player.js; cleared by `die`) | `pickSnowdrop`, `DAWN_SHIELD`/`DAWN_SHIELD_MAX` (`p.dawnShield`; reached from `hitObject`'s snowdrop branch) | `actions` |
 | one chop into a standing tree - gold, stump, fell payout, loot roll, jackpot - whatever landed it | `chopTree` | `actions` (above `hitObject`; its other caller is `BIT_IMPACT.chop`, tools.js) |
 | the tuning for everything a player does: the three SWING tools, the shot trail, E's reach, the roll, prone | `SWING_TOOLS`/`SWING_*`, `BOW_Y`, `ARROW_*`, `WORK_REACH`, `STRUCT_HIT_DMG`, `ROLL_*`/`TACKLE_*`, `PRONE_*`, `AMBUSH_MUL` | `actions` (its head; the two kit baselines `BOW_CHARGE`/`BOW_NOCK`: `players`, player.js; the weapon's own tuning: `TOOLS`/`BITS`, tools.js) |
 | the roll as a hit: the sweep and the tackle | `rollSweep`, `rollTackle`, `tackleObject`, `tackleObjAhead`, `rollPow`, `rollDmg` | `actions` › `the roll as a hit` |
@@ -338,6 +346,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | is a rock standing, who is at it, is it in reach, and the timers: the cracks closing on a rock nobody is at (`MINE_DECAY`) and the rubble growing back | `rockReady`, `rockMiner`, `mineReach`, `rockCx`/`rockCy`, `tickRock` (the object timers, sim.js) | `rocks and ore` (the draw: `drawRock`, js/draw/render.js; the shade: `CASTERS.rock`, js/draw/ground.js) |
 | a weapon's forge points and level, and what a level adds: damage on every body, then rate of fire or tensile by the body's `TOOLS` row `up`, tapering | `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`, `forgeNeed`/`forgeCum`/`forgeBar`/`forgeLvlOf`, `toolFp` (`cell.fp`; a bare `lvl` reads as its points), `toolLvl`, `toolUp`, `forgeSum`, `forgeDmgAt`/`forgeRofAt`/`forgeTensileAt` (the bench's preview), `toolDmgMul` (read by `toolPlan`, tools.js, and `pierceMods`, abilities.js), `toolRofMul` (`toolRof`, tools.js), `toolTensile` (`toolPlan`, `toolDrawMul`, `botFitLoadout`, tools.js, and the tooltip) | `the forge` |
 | what a pile is worth, what a forged weapon sells for, and the order that dumps a pile into it | `pilePts`, `forgeWorth`/`FORGE_GOLD` (`cellValue`, js/ui/shop.js), `forgeCell`, `forgeReady`, `forgeTool` (from `shopCmd` act `forge`, js/ui/shop.js) | `the forge` (the bench: js/ui/forge.js) |
+
+## js/tunnel.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the burrow's tunnels: the tuning, the one placement rule, the dig order, the holes standing and caving, the far end, going under and coming up, and the step that runs it all | `TUN_*`, `tunSiteOk`, `tunPlaceOk`, `digTunnel` (the `tunnel` order: `runCmd`, js/ui/wheel.js), `tunHoleOf`/`tunHoles`, `caveTunnel`, `tunFarSite`, `tunnelEnter` (ahead of the swing in `updatePlayer`, sim.js; `p.tunE` the fresh press), `tunUnder`, `tunnelExit`, `updateTunnels` (from `updatePlay`, sim.js) | `tunnels` (the hole's `OBJECTS` row: world.js; the rider out of the world: `inAir`, player.js; the drop: `animalDies`, wildlife.js; the state: `p.tun`/`p.tunCd`/`p.digT`/`p.tunHole`, player.js) |
+| the aim: the local hand's ghost, standing it up and putting it away, and the press that sends the order; the burrow's icon | `tunnelAimToggle` (V: `keyPress`, input.js; the strip button's `press`, `FOOD_BTNS`), `tunnelAimTile`, `tunnelAimPress` (`pointerPress`, input.js), `state.tunAim` (in `SAVE_STATE_SKIP`), `SPRITES.itemTunnel` | `tunnels` › `the aim` |
 
 ## js/abilities.js
 
@@ -531,12 +546,19 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | a pylon's sprite in each side's colour and its draw in the y-sorted pass, the cable pass (a span rasterised pixel by pixel with its sag and wind lean, over every body and canopy, under the night; the hovered line lit gold), the dotted walk to the hovered cable, and a rider's handle and rope | `PYLON_H`/`PYLON_SPRS`, `drawPylon` (dispatched from `render()`'s object pass), `ZIP_INK`/`ZIP_LIT`/`ZIP_HOV_A`/`ZIP_HOV_B`/`ZIP_GUIDE`, `drawZips` (between `drawDropAir` and `renderLighting` in `render()`), `zipLitLine`, `drawZipGuide` (after `drawAimLine`), `drawZipHandle` (from `drawPlayer`, js/draw/bodies.js) | `zipline` (the geometry it reads: `zips`/`zipPoint`/`zipLift`, the `zipline` banner, world.js) |
 
+## js/draw/tunnel.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a burrow's pixels: the hole (crumbling as it caves) and its rings (the dig draining gold, your wait filling pale blue), the mound a rider pushes up, the dig's ring under a digger, the aim's ghost, the work key's cap over a hole | `tunOval`, `tunRing`, `tunHoleArt`, `drawTunnelHole` (the flat pass of `render()`), `drawTunnelGround` (`render()`, after it), `drawTunnelGhost` (beside `drawBuildGhost`), `drawTunnelHint` (`drawWorkHint`, js/ui/wheel.js), `TUN_RING_*`/`TUN_*_COL` | `tunnels, drawn` |
+
 ## js/draw/overhead.js
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the arrow body every shaft draws: the DDA rasteriser (crisp diagonals, mirrored vanes; the arrow's map by default, a bit's own shaft map when handed one), the parse that makes a shaft map, and its rim/colour painter | `arrowBodyPx`, `shaftBody`, `paintArrowPx` (the master: `ARROW_MAP`/`ARROW_BODY`, actions.js; the other shafts: `the bodies a bit flies as`, render.js) | `the arrow body, shared` |
 | the overhead frame and the name over it: the three bars' palette (health by side, stamina white, the draw meter's two golds) | `BAR_FRAME`/`BAR_TRACK` (every frame's opaque ink and track), `BAR_NEUTRAL`/`barCol`, `STAM_COL`/`STAM_GHOST`, `DRAW_COL`/`DRAW_FULL_COL`/`DRAW_FULL_FLASH`, `NOCK_COL`/`EAT_COL`, `THREAT_COL` (a camp monster's leash bar; a deer's sprint bar and a rabbit's dodge bar reuse `STAM_COL`), `drawHealthBar` (a plate: `healthBarPx` draws it; its `u` hangs the body's damage total) and its hp chunks (`HP_SEG`/`HP_SEG_PX`/`hpSegCount`/`evenBarW`) | `the arrow body, shared, and the frame over every unit's head` (where the stack sits and the odd-width centring: `FRAME_DX`/`centreTextX`, js/draw/bodies.js) |
+| the dawn shield's gold row over a player's hp bar, and the lift it gives the meter, name and callout | `drawShieldBar`, `SHIELD_LIFT`, `SHIELD_HI`/`SHIELD_LO`/`SHIELD_TICK`/`SHIELD_GLINT` (called by `drawPlayer`, js/draw/bodies.js) | `the arrow body, shared, and the frame over every unit's head` |
 | the level plate a hero and a beast share, the noticed `!` over an animal that sees you, the stun stars | `drawLevelBadge`, `drawSenseMark`, `drawStunStars` (under `drawHealthBar`) | `the arrow body, shared, and the frame over every unit's head` |
 | the running damage total beside a frame's right edge: queuing it with the frame, its size, hold, fade and pop, a dead body's float, stamping it on the screen after the world blit | `queueTally`, `drawTallies` (called from `render`, js/draw/render.js), `tallyImg`/`tallyInk`, `TALLY_SC`/`TALLY_POP_SC`, `TALLY_FADE`/`TALLY_POP`; a dead body's total floating off: `tallySpot`, `TALLY_DEATH`/`TALLY_RISE`, `tallyFall` (called from `trackDowns`, js/draw/bodies.js) (the total itself: `tallyHit`, js/core.js) | `the running damage total beside the bar` |
 | the build reveal a structure grows in under, and the barracks' overlay | `bigBuildReveal`, `drawBarracksOverlay` | `the arrow body, shared, and the frame over every unit's head` (the barracks' entry: `STRUCTS`, structures.js) |
@@ -640,7 +662,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the hud strip (bottom-centre), its geometry and hit tests: the four ability wells, the pouch block (berry, fish, gold, cards) on its tab, the refusal flashes, the xp bar, the floating buy plates, the slide home and away | `AB_CELL`/`FOOD_SQ`/`POUCH_GAP`/`POUCH_W`/`POUCH_H`/`POUCH_RISE`/`FOOD_BTNS`/`AB_SEGS`/`AB_BUY`/`AB_BUY_AIR`/`HUD_SLIDE`/`hudStripRect`/`hudInT`/`hudHome`/`stripCellRect`/`abCellRect`/`pouchCellRect`/`pouchTabRect`/`foodCellRect`/`goldCellRect`/`foodDenied`/`toolDenied`/`abDenied`/`abBuyRect`/`abBuyHit`/`stripHit` | `hud strip` (its pixels: `drawing the strip, the shelf and the carried item`, js/ui/hud-draw.js) |
+| the hud strip (bottom-centre), its geometry and hit tests: the four ability wells, the pouch block (berry, fish, gold, cards) on its tab and the burrow past it, the refusal flashes, the xp bar, the floating buy plates, the slide home and away | `AB_CELL`/`FOOD_SQ`/`POUCH_GAP`/`POUCH_W`/`POUCH_H`/`POUCH_TAIL` (the burrow's square past the block)/`POUCH_RISE`/`FOOD_BTNS`/`AB_SEGS`/`AB_BUY`/`AB_BUY_AIR`/`HUD_SLIDE`/`hudStripRect`/`hudInT`/`hudHome`/`stripCellRect`/`abCellRect`/`pouchCellRect`/`pouchTabRect`/`foodCellRect`/`goldCellRect`/`foodDenied`/`toolDenied`/`abDenied`/`abBuyRect`/`abBuyHit`/`stripHit` | `hud strip` (its pixels: `drawing the strip, the shelf and the carried item`, js/ui/hud-draw.js) |
 | the weapon's "it does not fit in here" red on the shelf's tool cell, the backpack's twin | `toolFlash`, `toolDenied` (aged in `updateFx`, sim.js, beside `bagFlash`) | `hud strip` (its head, above `hudStripRect`) |
 | the hud frame: the chamfered plate (dark outline, a thin bright edge inside it, solid ground; League and Dota kept simple) the strip (with its pouch tab), the pack and the team rail stand on | `HUD_INK`/`HUD_EDGE`/`HUD_LIT`/`HUD_FROST`, `chamCut`, `drawHudFrame` | `the hud frame` |
 | the HUD SIZE scale (`settings.hudScale`): the dial's notches, the sizes crisp on this screen and capped where the strip would outgrow the view, the notch in force (the one scale the strip, the corner and the rail share), a bake's landing on the device grid, and the pointer's map back through the strip's bottom-centre anchor | `HUD_MIN`/`HUD_MAX`, `hudSizes`, `hudStep`, `hudSc`, `hudSnapDown`, `hudPx`, `stripMouse` | `the hud frame` (the bakes and blits: `drawHudScaled`/`drawCornerScaled`, js/ui/hud-draw.js) |
@@ -673,7 +695,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | what the pointer is on, said in words | `tipAt`, `tipResolve`, `tipNow`, `tipSize`, `drawTooltip`, `TIP_*` | `tooltips` (resolved once per frame in `render`, js/draw/render.js) |
 | where that panel sits — beside the pointer, or parked bottom left | `tipPos`, `TIP_GAP`, `TIP_EDGE` (the row that picks: `settings.tipFollow`, `SET_TABS` js/ui/panels.js) | `tooltips` |
-| the per-kind descriptions that panel is built from | `tipBase`, `tipTool`, `tipBit`, `tipStack`, `tipCell`, `tipGear`, `tipGold`, `tipCards`, `tipClassAb`, `tipRail`, `tipSend`, `tipStruct` (a build list row), `tipKind` (a wiki ARSENAL row), `tipSec`, `TIP_PATH` | `tooltips` (the shop's own: `tipShop`, js/ui/shop.js) |
+| the per-kind descriptions that panel is built from | `tipBase`, `tipTool`, `tipBit`, `tipStack`, `tipCell`, `tipGear`, `tipGold`, `tipCards`, `tipTunnel`, `tipClassAb`, `tipRail`, `tipSend`, `tipStruct` (a build list row), `tipKind` (a wiki ARSENAL row), `tipSec`, `TIP_PATH` | `tooltips` (the shop's own: `tipShop`, js/ui/shop.js) |
 
 ## js/ui/compose.js
 

@@ -488,7 +488,7 @@ empty world.
 | top centre | the **team rail**: one plate, every player in the match as a 14px chip with a hp bar, your side left (you first, a frost tick under your bar) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
-| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
+| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip, and the burrow's square past the cards on the strip itself — the five numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Every widget slides **its own size** away for the landing intro — the minimap up by
@@ -758,7 +758,7 @@ or pressed: a click only opens a tab or pages the rail.
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **four 34px wells** —
 `[1][2][3][4]`, the class abilities in key order (`stripCellRect`; `abCellRect(i)` is well `i`;
 the weapon is not on the strip — its one well is [the shelf's tool cell](#the-weapon-shelf)) —
-then, on the right end, the **pouch block** (the 2×2 of squares on its tab, described at the end
+then, on the right end, the **pouch block** (the 2×2 of squares on its tab and the burrow's tail square, described at the end
 of [the cooldown sweep](#the-cooldown-sweep)) — all over the
 **plum xp bar** along the bottom (lifetime gold, left-to-right, no level number — that lives on
 the overhead badge). The bar has a dark silhouette and a frost rim so it reads against the
@@ -850,12 +850,18 @@ the size: the item icon **doubled** in the middle (the card fan is baked at 16 p
 ability well prints its key (the keybind-indicator carve-out, wearing the pad's own glyph while
 one is in hand; the gold has none), and the count in the **top-right** corner — `shortNum`,
 because the pouch has no ceiling, and a four-character count covers the icon's corner rather
-than moving it — so keys read along the strip's bottom edge and numbers along its top.
+than moving it — so keys read along the strip's bottom edge and numbers along its top. One
+square more stands **past the cards on the bottom row**, inside the strip's plate rather than on
+the tab (`POUCH_TAIL`, `pouchCellRect(2, 1)`): the **burrow**
+([gameplay.md](gameplay.md#the-burrow-a-tunnel-anyone-can-ride)), its count in the burrow's ink.
 
-Three of the four are **buttons** (`FOOD_BTNS`: berry, fish, cards, in `stripHit`'s `food`
+Four of the five are **buttons** (`FOOD_BTNS`: berry, fish, cards, burrow, in `stripHit`'s `food`
 order; the tab counts as on the strip for the hit test): hover lights the rim, a press sets the
 same edge-triggered intent the key does (`eatBerry`/`eatFish`/`useCard`), so `startEat` and
-`useCard` speak every refusal and a button can never disagree with its key. A refusal *shows*:
+`useCard` speak every refusal and a button can never disagree with its key. The burrow's square
+has no intent but a local `press` instead — the hole needs a tile, so the press stands the aim's
+ghost up (`tunnelAimToggle`), the key's own path — and it stays lit while the ghost is up, with a
+gold fill draining over it while the far end is being dug. A refusal *shows*:
 whatever the reason (none in the pouch, the clock still up, full health, a busy body, nothing
 to draw), the button that was asked takes the well's red band and the pack's 1px shake for
 `foodFlash` seconds — `foodDenied(type)` / `cardDenied()`, aged in `updateFx` beside
@@ -1178,7 +1184,12 @@ bar with no side to it; every player, since the level badge spans both
 bars), health at `py - 7`, that meter at
 `py - 10` (inside the same frame, directly above the hp bar with a track-grey gap row, the mirror of
 the stamina bar), and the player's name tag in team colour at `py - 18`, a clear row above the meter's
-frame — **every** player, the local one included: the name is the profile's
+frame. A **dawn shield** ([gameplay.md](gameplay.md#the-dawn-shield)) adds its own row straight
+above the health bar, built the way the meter is (`drawShieldBar`: two-tone dawn gold, light over
+deep, cut into one segment per snowdrop with a pale glint on its first pixel — gold is the dawn's
+and no side's, so it reads the same over a friend or a rival), and while it holds the meter, the
+name and a bot's callout all stand `SHIELD_LIFT` (3) rows higher; an empty shield is not drawn at
+all. It is never on the team rail. The name is on **every** player, the local one included: the name is the profile's
 ([architecture.md](architecture.md#profilejs)), and yours is what the rest of the table reads over
 your head, so hiding it from you alone would make it the one label in the game you cannot check. Every frame is one **opaque** ink, `BAR_FRAME` (the name outline's `#0f1632`), over one track grey, `BAR_TRACK`: a see-through backing came out a different colour on snow, on a pine and on another body's frame.
 
@@ -2358,8 +2369,10 @@ handled in input.js's drop branch, the map swallows the jump click, and the sim 
 under it). Text scale follows the view (2× when tall). Once `down`, both objectives are marked on
 the minimap disc and the M map as the same bird diamond in team colour.
 
-Airborne players (`inAir(p)`: aboard or `dropT > 0`) are skipped by `updatePlayer`/`updateAI`, arrows,
-drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map.
+Airborne players (`inAir(p)`: aboard or `dropT > 0` — or riding a [tunnel](gameplay.md#the-burrow-a-tunnel-anyone-can-ride), `p.tun`) are skipped by `updatePlayer`/`updateAI`, arrows,
+drops, wildlife scares, `enemyOf`, the y-sorted draws, the minimap and the M map. A tunnel's rider
+is drawn as its mound instead (`drawTunnelGround`, js/draw/tunnel.js), and the god rays answer
+the ride alone (`rayLight` asks `aboard`/`dropT`, never `inAir`).
 
 ## Light and weather
 

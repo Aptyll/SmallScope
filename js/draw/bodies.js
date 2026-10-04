@@ -422,12 +422,17 @@ function drawPlayer(p, ex, ey, now) {
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;
-  callTag(p, Math.round(p.x - ex), hy - 18); // a bot's callout hangs over the name (js/draw/callouts.js)
+  // a dawn shield (pickSnowdrop, js/actions.js) adds its own row straight
+  // above the hp bar, and everything that sat above the bar - the draw meter,
+  // the name, a callout - stands SHIELD_LIFT rows higher while it holds
+  const lift = p.dawnShield > 0 ? SHIELD_LIFT : 0;
+  callTag(p, Math.round(p.x - ex), hy - 18 - lift); // a bot's callout hangs over the name (js/draw/callouts.js)
   // the whole frame, name included, is one plate stamped over the grade
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
     drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
+    if (lift) drawShieldBar(fx - 7, hy - 10, p.dawnShield);
     // the running damage total, past the frame's right edge: the bar backing,
     // the colour-blind cap or the stun plate, whichever stands furthest out
     queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 6, barCol(p.team));
@@ -441,7 +446,7 @@ function drawPlayer(p, ex, ey, now) {
     // table sees over your head, and hiding it from you alone would make it
     // the one label in the game you cannot check.
     drawWorldText(p.name,
-      centreTextX(p.x - ex, p.name), hy - 18, // clear of the draw meter's frame (top row hy-11) with a gap row
+      centreTextX(p.x - ex, p.name), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
       TEAMS[skin(p.team)].mark);
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
     // white on every side, since stamina has no side, and white is neither the
@@ -519,7 +524,7 @@ function drawPlayer(p, ex, ey, now) {
       const frac = eating ? 1 - p.eatT / FOOD_EAT
         : drawing ? drawPow(p)
         : p.readyFlash > 0 ? 1 : 1 - p.nockT / Math.max(0.01, toolCycle(p));
-      const x = fx - 7, y = hy - 10;
+      const x = fx - 7, y = hy - 10 - lift;
       ctx.fillStyle = BAR_FRAME;
       ctx.fillRect(x - 1, y - 1, 16, 3); // rows above the hp backing only
       ctx.fillStyle = BAR_TRACK;

@@ -257,7 +257,7 @@ const RAY_CV = (() => {
 // ~15 s window around noon. Both ease in and out over RAY_WINDOW_FADE, and the
 // practice arena's clock never moves, so its training light never gets them.
 function rayLight() {
-  const drop = state.mode === 'drop' || inAir(player)
+  const drop = state.mode === 'drop' || player.aboard || player.dropT > 0 // the ride, never a tunnel
     ? 1 : Math.min(1, state.rayT / RAY_WINDOW_FADE);
   const noon = (RAY_NOON_HALF - Math.abs(state.time - RAY_NOON)) / RAY_WINDOW_FADE;
   return Math.max(0, Math.min(1, Math.max(drop, noon)));

@@ -501,6 +501,7 @@ function updatePlay(dt) {
       if (p.trickleT >= TRICKLE_T) { p.trickleT -= TRICKLE_T; gainGold(p, TRICKLE_GOLD); }
     }
   }
+  updateTunnels(dt); // the burrows: the digs, the rides under the snow and the holes caving (js/tunnel.js)
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, build orders and fish claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
@@ -1180,6 +1181,10 @@ function updatePlayer(p, dt) {
   // back, and with no E the hands find their own work (autoWork, js/actions.js:
   // a tree or a berried bush in reach) - and their own fish (autoFish, js/tools.js)
   if (p.swingT <= 0 && p.swingCd <= 0) p.swing = SWING_BOW;
+  // a tunnel's hole underfoot takes a FRESH press of the work key ahead of
+  // the swing (js/tunnel.js) - a key held since before stays the swing's
+  if (inp.work && !p.tunE && tunnelEnter(p)) { p.tunE = true; return; }
+  p.tunE = !!inp.work;
   if (inp.work) tryWork(p); else autoWork(p);
   autoFish(p, dt);
 

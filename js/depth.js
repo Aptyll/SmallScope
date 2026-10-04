@@ -241,12 +241,38 @@ function layDrifts() {
       half[D.side] -= D.deep; drifts.splice(i, 1);
     }
   }
+  layMeadowDrifts(); // the warrens' own drifts: fixed, after the fair shares, so neither side trades them away
   // index every drift on each tile its skirt, rim or shade reaches
   for (const D of drifts) for (const q of driftTiles(D, 0.2)) {
     const i = idx(q.tx, q.ty);
     (driftCell[i] || (driftCell[i] = [])).push(D);
   }
   layLees();
+}
+// THE WARRENS' DRIFTS (CAMPS.meadow, js/world.js): every warren lies under
+// the same set of drifts laid across its clearing along the prevailing wind -
+// MEADOW_DRIFTS, each [along, across, len, wid] in tiles off the camp's centre
+// in the wind's own frame - so a scout wades through the warren while its
+// rabbits run on the crust (wadeStep). Both warrens wear the identical set,
+// which is the fairness the open valley's drifts have to be weighed for. The
+// rest of the clearing stays open snow for the clumps to stand in.
+const MEADOW_DRIFTS = [[-2.5, -1.5, 6, 1.9], [-1, 2.2, 5, 1.6]];
+const MEADOW_AMP = 0.95;
+function layMeadowDrifts() {
+  const wx = driftWind.dx, wy = driftWind.dy;
+  for (const C of camps) {
+    if (C.key !== 'meadow') continue;
+    for (const [u, v, len, wid] of MEADOW_DRIFTS) {
+      const D = {
+        x: C.tx + 0.5 + wx * u - wy * v, y: C.ty + 0.5 + wy * u + wx * v, dx: wx, dy: wy,
+        len, wid, head: wid * 0.6, amp: MEADOW_AMP, bend: 0, rag: null, deep: 0, side: 0,
+      };
+      const n = Math.ceil((D.len + D.head) / DRIFT_RAG_STEP) + 2;
+      D.rag = new Float32Array(n * 2);
+      for (let k = 0; k < 2; k++) for (let i = 0; i < n; i++) D.rag[k * n + i] = (vnoise(i * DRIFT_RAG_STEP * 0.8 + u * 3.1, k * 5.3 + v * 2.7) - 0.5) * 2;
+      drifts.push(D);
+    }
+  }
 }
 // Every standing thing out in the open - a pine on the treeline's edge or in
 // a stand's fringe, a rock, a bush, a stump, a snag, a den, a hut - holds a
@@ -284,9 +310,10 @@ function layLees() {
 // at DEEP_EASE: every unit, a player included, ages it in updateUnitStatus
 // (js/actions.js), so the slowdown eases in over a step or two instead of
 // stopping anyone at a line. A body in the air, on the cable or in the water
-// is in none of it.
+// is in none of it - and nor is a rabbit, light enough to run on the crust,
+// which is the warren's whole defence against a scout wading after it.
 function wadeStep(e, dt) {
-  const air = e instanceof Player ? (inAir(e) || e.zip >= 0 || e.fallT > 0 || e.dead) : (e.kind === 'bird' || e.dead);
+  const air = e instanceof Player ? (inAir(e) || e.zip >= 0 || e.fallT > 0 || e.dead) : (e.kind === 'bird' || e.kind === 'rabbit' || e.dead);
   const want = !air && deepAt(e.x, e.y + 4) ? 1 : 0;
   const w0 = e.wade || 0;
   e.wade = want + (w0 - want) * Math.exp(-DEEP_EASE * dt);

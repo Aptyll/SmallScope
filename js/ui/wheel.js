@@ -134,6 +134,7 @@ function cmdOk(c) {
   }
   if (c.kind === 'build') return cmdKey(STRUCTS, c.id) && cmdTile(c) && (c.tx2 === undefined || (Number.isInteger(c.tx2) && Number.isInteger(c.ty2)));
   if (c.kind === 'flag') return !c.id || (cmdKey(FLAG_TYPES, c.id) && cmdTile(c));
+  if (c.kind === 'tunnel') return cmdTile(c);
   if (c.kind === 'rack' || c.kind === 'pkdie' || c.kind === 'agbell') return true; // the practice props check their own
   return cmdTile(c); // a building's manage wheel: its tile
 }
@@ -155,6 +156,7 @@ function runCmd(p, c) {
   // the flag: per-player state, planted anywhere on the map (no reach, no
   // contest); id null is the lift (the `team flags` banner, js/robots.js)
   if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return true; }
+  if (c.kind === 'tunnel') return digTunnel(p, c.tx, c.ty); // a burrow's near hole (js/tunnel.js) - it checks its own reach
   if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/world.js)
   if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/world.js)
   if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/world.js)
@@ -221,6 +223,8 @@ function drawWorkHint(ox, oy) {
   if (drawShopHint(ox, oy)) return;
   // ...then a zipline overhead, the key's next claim (keyPress again)
   if (drawZipHint(ox, oy)) return;
+  // ...then a tunnel's hole underfoot (tunnelEnter takes the fresh press ahead of the swing)
+  if (drawTunnelHint(ox, oy)) return;
   let t = workTarget(player);
   // what the hands take on their own (autoToolFor: a tree, a rock, a chest, a
   // rival's building or eagle) asks for no key - the swing itself is the whole signal
@@ -770,7 +774,7 @@ function toggleBuild(sel) {
   else {
     if (sel !== undefined) buildLast = sel;
     state.build = { sel: buildLast, rot: state.build ? state.build.rot : 0 };
-    state.wheel = null; state.bagOpen = false;
+    state.wheel = null; state.bagOpen = false; state.tunAim = false;
   }
   SFX.ui(!!state.build);
   return true;

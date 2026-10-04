@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.394';
+const PATCH_TXT = 'PATCH 0.395';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.395', 'EVERY RABBIT NOW LIVES IN ONE OF TWO WARRENS DUG INTO THE TREELINE, WHERE SNOWDROPS OPEN AT DAWN AND SHIELD YOUR WHOLE SIDE WHEN PICKED, AND A RABBIT CAN DROP A BURROW: DIG ONE END, RUN, AND THE TUNNEL ANYONE CAN RIDE OPENS WHERE YOU STAND.'],
   ['0.394', 'BEHIND THE SCENES: THE DEV NOTES NOW POINT AT THE MEDIA KIT FOR SHORTS AND STILLS.'],
   ['0.393', 'BEARS ARE TOUGHER AND FASTER: TWICE THE HEALTH, A CHASE THAT OUTRUNS YOU ON FOOT, AND A BLOW THAT ONCE STARTED FOLLOWS YOU AND LANDS UNLESS YOU ROLL OR DASH CLEAR.'],
   ['0.391', 'THE PATCH NOTES RUN NEWEST FIRST, COUNT EVERY PATCH (THIS IS THE 391ST) AND CAN SHOW ART: HERE ARE FOUR WINTER FLOWERS ON THE SKETCH PAD.', 'winter-flowers'],
@@ -1240,6 +1241,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['RABBIT WARRENS: DAWN SNOWDROPS SHIELD YOUR SIDE, BURROWS DIG TUNNELS', '0.395'],
     ['SIX HOG HUTS HIDE IN THE BORDER WOODS, THREE CHESTS AROUND EACH', '0.287'],
     ['A CREEK THAT NEVER FREEZES SPLITS THE VALLEY, BRIDGED AT THE ROAD', '0.286'],
     ['THE WOLF DEN IS A ROCK MAW, AND THERE ARE SIX CAMPS', '0.285'],

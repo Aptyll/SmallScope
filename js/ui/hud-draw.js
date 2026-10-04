@@ -351,6 +351,15 @@ function drawFoodCell(i, now, on) {
   const isCard = b.type === 'card';
   const n = isCard ? cardTotal(p) : bagCount(p, b.type);
   const red = foodFlash > 0 && foodFlashI === i;
+  if (b.type === 'tunnel') { // the burrow: lit while its ghost is up, and the far end's dig draining over it
+    drawPouchCell(r, b.act, SPRITES.itemTunnel, n, RES_COLORS.tunnel, on || !!state.tunAim, red, n > 0 && p.digT <= 0, now);
+    if (p.digT > 0) {
+      const h = Math.round((r.h - 2) * p.digT / TUN_DIG);
+      ctx.fillStyle = 'rgba(242,204,106,0.35)';
+      ctx.fillRect(r.x + 1, r.y + r.h - 1 - h, r.w - 2, h);
+    }
+    return;
+  }
   const live = n > 0 && (isCard || p.foodCd <= 0);
   drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now);
   if (!isCard) drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, b.type);

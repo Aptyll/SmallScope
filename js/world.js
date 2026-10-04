@@ -59,6 +59,20 @@ const OBJECTS = {
   bush:     { solid: false, tool: 'axe',  needs: null,   verb: 'PICK', lift: 10, auto: true,
               ready: (o) => o.berries > 0,
               mm: [88, 148, 108] },
+  // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): shut
+  // all day and open for the dawn window (bloomOpen, below), when one pick
+  // shields the picker's whole company (pickSnowdrop, js/actions.js). The
+  // pick holds until the next dawn opens it again (`picked` = the bloomDay
+  // it was taken on), and `ready` is what makes E and the hands reach for an
+  // open clump only. Off both maps: a speck of white on white is noise.
+  snowdrop: { solid: false, tool: 'axe', needs: null,   verb: 'PICK', lift: 10, auto: true,
+              ready: (o) => bloomOpen() && o.picked !== bloomDay() },
+  // one end of a burrow's tunnel (js/tunnel.js): `mate` the other end (null
+  // while it is still being dug), `owner` the digger's id, `team` the side a
+  // rival's boots cave it for, `crumble` the s of that so far. Flat, walked
+  // over, nothing for a tool - the work key on it is the way down
+  // (tunnelEnter), drawn in the flat pass (drawTunnelHole, js/draw/tunnel.js).
+  tunnel:   { solid: false, tool: null, needs: null },
   // a buried cache swapped in for an inner-edge border tree (placeChests):
   // one free E press springs it - hitObject's chest branch pays the gold and
   // rolls the card. Any tool opens it, so `needs` stays null.
@@ -142,6 +156,16 @@ const OBJECTS = {
 const BUSH_REGROW = 70;   // s from a pick to the next two berries
 const BUSH_BUD_T = 35;    // s left when the buds show
 const BUSH_RIPEN_T = 12;  // s left when the berries come in dull
+// The DAWN BLOOM: the warren's snowdrops open as the dark lifts and shut
+// again once the morning is up, so a company that wants the shield is there
+// at first light. bloomDay names the dawn the window belongs to (it opens in
+// the last seconds of the night before), which is what a pick stamps on the
+// clump: open again only when a new dawn's window comes round. Pure reads of
+// the match clock, so every machine agrees; the practice arena has no dawn.
+const BLOOM_LEAD = 6;       // s before dawn (state.time wrapping CYCLE) the clumps open
+const BLOOM_HOLD = 18;      // s after it they shut
+function bloomOpen() { return !PRACTICE && (state.time >= CYCLE - BLOOM_LEAD || state.time < BLOOM_HOLD); }
+function bloomDay() { return state.time >= CYCLE - BLOOM_LEAD ? state.day + 1 : state.day; }
 // the minimap's team inks: a roosting bird (and the road-mouth pennant) in
 // the side's bright mark, its buildings a step deeper, so a base is a shape
 // in its colour with the bird lit at the middle
@@ -312,7 +336,7 @@ function borderNoise(tx, ty) {
   return BORDER_MIN + (BORDER_MAX - BORDER_MIN) * n;
 }
 function borderDepth(tx, ty) {
-  const d = borderNoise(tx, ty);
+  const d = warrenGrove(tx, ty, borderNoise(tx, ty));
   if (PRACTICE) return d;
   const c = Math.min(Math.hypot(tx, WORLD - 1 - ty), Math.hypot(WORLD - 1 - tx, ty)); // to the nearer roost corner
   if (c >= ROOST_R + ROOST_WOBBLE) return d;
@@ -322,6 +346,36 @@ function borderDepth(tx, ty) {
   // depth into the disc, so genWorld's `edge < borderDepth` plants it and
   // forestDepth (boot.js) reads how far inside the arc it sits
   return Math.max(d, Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) + R - c);
+}
+
+// The WARREN GROVES (CAMPS.meadow, a `treeline` camp): the seed's border
+// wanders 30-70 tiles deep, so on a shallow seed a warren would sit out in the
+// open field. Each warren's stretch of treeline is grown out to meet it - a
+// tongue of pines from the border to GROVE_IN tiles past the warren's centre,
+// as wide as its clearing and three more, tapering GROVE_TAPER a tile either
+// side back into the seed's own edge with a wobble on the fine noise - and clearCamp then cuts the clearing out of it, so the
+// warren is dug into the treeline on every seed. Like the roost discs it only
+// ever ADDS trees, and they roll nothing (genWorld's variant rule). Pure
+// position: the sites, the fine noise.
+const GROVE_IN = 3;       // tiles past the warren's centre the tongue reaches
+const GROVE_TAPER = 1.4;  // tiles of depth lost per tile either side of the clearing
+let groveSites = null;    // [{ tx, ty, e, side, r }] (e: the site's depth from its nearest edge, `side` which edge), once - CAMP_SITES is further down this file
+function warrenGrove(tx, ty, d) {
+  if (PRACTICE) return d;
+  if (!groveSites) groveSites = campSites().filter((s) => CAMPS[s.key].treeline).map((s) => {
+    const t = campTile(s.u, s.s), es = [t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty], e = Math.min(...es);
+    return { tx: t.tx, ty: t.ty, e, side: es.indexOf(e), r: CAMPS[s.key].r };
+  });
+  for (const G of groveSites) {
+    const lat = G.side % 2 ? Math.abs(tx - G.tx) : Math.abs(ty - G.ty); // along the edge
+    const base = G.e + GROVE_IN - Math.max(0, lat - G.r - 3) * GROVE_TAPER;
+    if (base + 1.5 <= d) continue; // not even the wobble reaches past the seed's own edge here
+    const deep = base + (vnoise(tx / 4 + 70, ty / 4 + 70) - 0.5) * 3;
+    if (deep <= d) continue;
+    const own = [tx, ty, WORLD - 1 - tx, WORLD - 1 - ty][G.side]; // the tile's depth from the warren's edge
+    if (own === Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty)) d = deep;
+  }
+  return d;
 }
 
 // swings to fell a pine, everywhere one is planted (the border, the practice
@@ -1733,6 +1787,11 @@ function zipStep(p, dt, mx, my, len) {
 //   spots       where each monster stands, [dx, dy] off the centre
 //   woods       the site is IN the border forest, not the open valley:
 //               placeCamps checks it is, and layPaths cuts no branch to it
+//   treeline    the site is ON the border forest's edge, in the band between
+//               the shallowest and the deepest treeline any seed grows, and
+//               the border is grown out round it (warrenGrove) so its
+//               clearing is cut out of the pines on every seed; layPaths cuts
+//               it a branch like any valley camp (no CAMP_EDGE, see placeCamps)
 //   river       the camp is a stretch of RIVERBANK, not a den: no props and
 //               no spots - its one monster walks `river` tiles of its own bank
 //               either way along the creek's bend round the site, up and
@@ -1746,6 +1805,11 @@ function zipStep(p, dt, mx, my, len) {
 //           it walks RED's bank of the upstream bend
 // hut:      no monster - three chests round a hut buried in the treeline,
 //           worth the chopping it takes to reach
+// meadow:   no monster - the WARREN: the rabbits live here and nowhere else
+//           (spawnPrey, wildlife.js), over drifts of deep snow (layMeadowDrifts,
+//           depth.js) and a scatter of snowdrops that open only at dawn and
+//           shield the picker's whole company (OBJECTS.snowdrop); one each
+//           side, halfway out along the treeline
 const CAMPS = {
   resource: {
     name: 'WOLF DEN', tag: 'THE PACK PAYS IN GOLD',
@@ -1779,6 +1843,18 @@ const CAMPS = {
     props: [[0, 0, 'hut'], [-2, -1, 'chest'], [3, -1, 'chest'], [0, 2, 'chest']],
     spots: [],
   },
+  meadow: {
+    name: 'SNOWDROP WARREN', tag: 'THE SNOWDROPS OPEN AT DAWN',
+    r: 6, mark: '#e8eef8', treeline: true,
+    icon: [[1, 0, 1, 3], [4, 0, 1, 3], [1, 3, 4, 3], [0, 4, 1, 2], [5, 4, 1, 2], [2, 6, 2, 1]], // a rabbit's head
+    kind: null, pop: 0, repop: 0,
+    // the snowdrop clumps, [dx, dy, 'snowdrop', variant]: a loose scatter
+    // with room between, never a carpet - about a dozen to a screen
+    props: [[-4, -2, 'snowdrop', 0], [-1, -4, 'snowdrop', 1], [2, -3, 'snowdrop', 2], [4, -1, 'snowdrop', 3],
+      [-5, 1, 'snowdrop', 1], [-2, 0, 'snowdrop', 2], [1, 1, 'snowdrop', 0], [5, 2, 'snowdrop', 2],
+      [-3, 3, 'snowdrop', 3], [0, 4, 'snowdrop', 1], [3, 4, 'snowdrop', 0], [-1, -2, 'snowdrop', 3]],
+    spots: [],
+  },
 };
 // Where the camps are, for the RED half of the map (u < WORLD / 2), in the
 // road's coordinates (roadAlong / roadOffS): `u` tiles along the diagonal
@@ -1806,6 +1882,8 @@ const CAMP_SITES = [
   { key: 'hut', u: 100.5, s: -114 },   // by the top-left corner, on the left edge
   { key: 'hut', u: 100.5, s: 114 },    // by the bottom-right corner, on the bottom edge
   { key: 'hut', u: 63, s: -61 },       // halfway up the left edge
+  // the warrens, halfway out from each roost along the left-hand treeline
+  { key: 'meadow', u: 91.5, s: -56 },
 ];
 function campTile(u, s) {
   return { tx: Math.round(u + s / Math.SQRT2), ty: Math.round(WORLD - 1 - u + s / Math.SQRT2) };
@@ -1876,7 +1954,9 @@ function placeCamps() {
     const spec = CAMPS[site.key];
     const t = campTile(site.u, site.s);
     const edge = Math.min(t.tx, t.ty, WORLD - 1 - t.tx, WORLD - 1 - t.ty);
-    if (spec.woods ? edge + spec.r + 2 > BORDER_MIN || edge < spec.r + 4 : edge < CAMP_EDGE) throw new Error('camp ' + site.key + (spec.woods ? ' not in the woods' : ' too near the edge'));
+    const bad = spec.woods ? edge + spec.r + 2 > BORDER_MIN || edge < spec.r + 4
+      : spec.treeline ? edge - spec.r - 2 < BORDER_MIN || edge > CAMP_EDGE : edge < CAMP_EDGE;
+    if (bad) throw new Error('camp ' + site.key + (spec.woods ? ' not in the woods' : spec.treeline ? ' not on the treeline' : ' too near the edge'));
     const C = { key: site.key, spec, name: spec.name, tag: spec.tag, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
     camps.push(C);
     clearCamp(C);
@@ -1888,7 +1968,7 @@ function placeCamps() {
       }
     }
     for (const [dx, dy, type, variant] of spec.props) {
-      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : {};
+      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : type === 'snowdrop' ? { variant, picked: -1 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
       const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a

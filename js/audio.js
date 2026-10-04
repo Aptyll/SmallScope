@@ -867,6 +867,14 @@
       tone(784, 0.18, 'triangle', 0.09, 0, RESTOCK_RING + 0.09);
     },
     heal() { if (smp('warm', { vol: 0.73, rate: 1.3, jitter: 0.06 })) return; tone(440, 0.1, 'triangle', 0.08); tone(554, 0.12, 'triangle', 0.08, 0, 0.08); },
+    // the dawn shield laid on you (pickSnowdrop), and the last of it broken
+    shieldUp() { if (smp('warm', { vol: 0.7, rate: 1.6, jitter: 0.04 })) return; tone(659, 0.12, 'triangle', 0.07); tone(988, 0.2, 'triangle', 0.06, 0, 0.09); },
+    // a burrow (js/tunnel.js): a hole dug, a body going under and coming up, a tunnel caving
+    tunnelDig() { noise(0.16, 0.16, 900); noise(0.1, 0.1, 1800, 0.12); tone(150, 0.12, 'triangle', 0.06, -60, 0.05); },
+    tunnelIn() { noise(0.2, 0.14, 700); tone(320, 0.16, 'sine', 0.07, -200); },
+    tunnelOut() { noise(0.18, 0.16, 1400); tone(200, 0.14, 'sine', 0.07, 240); },
+    tunnelCave() { noise(0.35, 0.22, 500); tone(110, 0.3, 'sawtooth', 0.06, -50); },
+    shieldBreak() { tone(1318, 0.09, 'square', 0.05, -400); tone(880, 0.16, 'triangle', 0.06, -300, 0.04); noise(0.12, 0.05, 5200); },
     splash() { noise(0.28, 0.28, 750); tone(300, 0.22, 'sine', 0.1, -190); noise(0.14, 0.12, 1500, 0.06); },
     // a camp waking: the pack answering, or a rising synth howl that sags at the end
     howl() {

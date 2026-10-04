@@ -235,6 +235,35 @@ function healthBarPx(cxp, topY, hp, maxHp, w, team, col) {
   }
 }
 
+// The DAWN SHIELD bar (pickSnowdrop, js/actions.js): its own row in the
+// frame straight above the hp bar, built the way the draw meter is - its
+// backing adds the rows above the hp backing and the hp backing's top row
+// becomes the track-grey gap, so the frame stays one outline - and the draw
+// meter, name and callout stand SHIELD_LIFT rows higher while it holds
+// (drawPlayer). Two-tone dawn gold, light over deep, cut into one segment per
+// snowdrop's worth (DAWN_SHIELD) with a pale glint on its first pixel: gold
+// is the dawn's, and no team's paint, so it reads as the same thing over a
+// friend or a rival. Empty, it is not drawn at all.
+const SHIELD_LIFT = 3;
+const SHIELD_HI = '#ffd84a', SHIELD_LO = '#f0961e', SHIELD_TICK = '#a8520e', SHIELD_GLINT = '#fff4b8';
+function drawShieldBar(x, y, shield) {
+  const w = 14, frac = Math.max(0, Math.min(1, shield / DAWN_SHIELD_MAX));
+  const fw = Math.max(1, Math.round(w * frac));
+  ctx.fillStyle = BAR_FRAME;
+  ctx.fillRect(x - 1, y - 1, w + 2, 3); // rows above the hp backing only
+  ctx.fillStyle = BAR_TRACK;
+  ctx.fillRect(x, y, w, 3);             // fill rows + the gap row
+  ctx.fillStyle = SHIELD_HI;
+  ctx.fillRect(x, y, fw, 1);
+  ctx.fillStyle = SHIELD_LO;
+  ctx.fillRect(x, y + 1, fw, 1);
+  const n = Math.round(DAWN_SHIELD_MAX / DAWN_SHIELD), seg = (w + 1) / n;
+  ctx.fillStyle = SHIELD_TICK;
+  for (let k = 1; k < n; k++) ctx.fillRect(Math.round(x + k * seg - 1), y, 1, 2);
+  ctx.fillStyle = SHIELD_GLINT;
+  ctx.fillRect(x, y, 1, 1);
+}
+
 // The level plate: a 7-tall badge hard against a bar backing's LEFT column
 // (`rx`, the column past the plate, already painted by the bar), sharing that
 // one frame column and spanning the two bars stacked under it (topY..topY+6).
