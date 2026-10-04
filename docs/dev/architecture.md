@@ -32,6 +32,7 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/sfxdata.js](../../js/sfxdata.js) | ~60 | `SFXDATA` | **generated** — the sfx bank as base64 |
 | [js/audio.js](../../js/audio.js) | ~780 | `SFX` | synth, samples and music under one master dial |
 | [js/logodata.js](../../js/logodata.js) | ~6 | `LOGO_PNG` | **generated** — the title logo as a PNG data URL |
+| [js/notesart.js](../../js/notesart.js) | ~5 | `NOTES_ART` (on `window`) | **generated** — the patch notes' pictures as PNG data URLs |
 | [js/core.js](../../js/core.js) | ~520 | shared scope, no `window.*` export | the base layer: the numbers with no one owner (grid, view, day cycle, `YIELD`), the seeded rng, `state`/`settings`, the fx/economy helpers |
 | [js/canvas.js](../../js/canvas.js) | ~270 | shared scope, no `window.*` export | screen + world + light buffers, `fitCanvas`, pixel-exact zoom, the panel layout anchors |
 | [js/player.js](../../js/player.js) | ~1010 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
@@ -336,7 +337,7 @@ bytes both ways ([docs/pvp-architecture.md](../pvp-architecture.md)).
 ## app/
 
 None of the scripts is part of the game, and nothing in `js/` may depend on one having run — except
-`sfxdata.js` and `logodata.js`, which two of them write.
+`sfxdata.js`, `logodata.js` and `notesart.js`, which three of them write.
 
 - **`app/server.js`** — a static server on `http://localhost:8471` with a `POST /shot` sink that
   writes the canvas to `shot.png`, and the **match relay** at `/ws` (`role=host` is given a
@@ -365,6 +366,8 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
 - **`app/bake-robot/bake.py`** — Python (needs numpy and pillow): paints and poses the IRON SCOUT skin from its faceted rig (rig.py), writes `js/sprites/robot.js`.
 - **`app/bake-logo.js`** — reads `docs/media/logos/mainMenuSoftfall.png`, writes `js/logodata.js`
   (`--probe` prints the key's box without writing).
+- **`app/bake-notes-art.js`** — reads `docs/media/notes/*.png`, writes `js/notesart.js`: the pictures
+  a patch note names in its third field, as PNG data URLs (rerun after adding one).
 - **`app/check-globals.js`** — the shared scope's lint, run before every push (exit 1 on a
   problem; `--list` prints every name it found as JSON). It reads the scripts in `index.html`'s
   order and takes each file's depth-0 declarations (`const`/`let`/`var` with destructuring,

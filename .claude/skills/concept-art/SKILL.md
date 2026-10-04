@@ -44,3 +44,6 @@ Rules that make a sheet honest:
    `docs/media/concepts/<thing>-concepts-<round>.png`. Verify in game at a close-up
    (`DBG.setK(6, true)`, `DBG.hideUI = true`), update [docs/dev/sprites.md](../../../docs/dev/sprites.md),
    bump the patch.
+5. **Show it in the patch notes.** Save the shipped art at 1x, trimmed, on a transparent ground as
+   `docs/media/notes/<thing>.png`, run `node app/bake-notes-art.js`, and name it as the patch note's
+   third field: `['0.392', 'TEXT.', '<thing>']`. The notes screen draws it under the line.

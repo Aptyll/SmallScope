@@ -696,11 +696,14 @@ click on that well would do.
 `m.screen = 'notes'` (js/ui/menu.js `patch notes`), opened from the `PATCH_TXT` tag and eased in
 on its own `notesT` like the wiki. It is the whole view: a dark veil over the world, PATCH NOTES
 in gold over the gold rule at `NOTES_TOP`, and one column (`NOTES_W_MAX` = 440, narrowing with
-the view) of folding groups. First the HIGHLIGHTS: `PATCH_DIGEST`, hand-written, the patches since
-`DIGEST_FROM` condensed into short lines by what a player notices, each with its patch dim on the
-right. Then EVERY PATCH: `PATCH_NOTES` folded by tenth (`NOTES_GROUPS`, built off the list, so a
-new patch needs nothing here). A group is a chevron and its name; a click or Enter on the keys'
-pick folds it (`notesOpen`, session only; the digest starts open). Only whole rows draw, never
+the view) of folding groups, newest at the top. First EVERY PATCH: `PATCH_NOTES` folded by tenth
+(0.390 - 0.391, 0.380 - 0.389 ... `NOTES_GROUPS`, built off the list, so a new patch needs nothing
+here). A note with a third field shows that picture under its text (`NOTES_PICS`, from
+`window.NOTES_ART` in the generated js/notesart.js), scaled up by whole pixels to fit the column,
+at most `NOTES_PIC_MAX` times. Below them the HIGHLIGHTS: `PATCH_DIGEST`, hand-written, the patches
+since `DIGEST_FROM` condensed into short lines by what a player notices, each with its patch dim on
+the right. A group is a chevron and its name; a click or Enter on the keys' pick folds it
+(`notesOpen`, session only; only the newest patches start open). Only whole rows draw, never
 one cut by the window's edge; a hairline rail with a gold thumb shows the scroll (wheel, Up/Down,
 a click on the rail pages). The WIKI is one dim word in the top-right corner, gold and underlined
 under the pointer like the patch tag; the wiki's Esc comes back here.

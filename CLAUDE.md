@@ -53,8 +53,9 @@ headlines and the carve-outs in [rendering](docs/dev/rendering.md#show-dont-labe
 ## Git and docs
 
 - Never commit to main. Branch, run `/sync` before pushing, merge by PR.
-- The last commit bumps `PATCH_TXT` (js/ui/menu.js) by 0.01 over main, tops `PATCH_NOTES` with one
-  uppercase sentence and is named `PATCH x.yy — ...`. Player-facing work adds a `PATCH_DIGEST` line.
+- The last commit bumps `PATCH_TXT` (js/ui/menu.js) by 0.001 over main, tops `PATCH_NOTES` with one
+  uppercase sentence and is named `PATCH 0.xxx — ...`; the first digit moves only when Noah says so.
+  Player-facing work adds a `PATCH_DIGEST` line; art it shipped can ride the note (`app/bake-notes-art.js`).
 - A change that makes a doc line false fixes it in the same PR. Write what the code does now.
 - This file holds only rules that break silently. Name functions, never counts, sizes or file lists;
   those live in `docs/dev/` and go stale here.
