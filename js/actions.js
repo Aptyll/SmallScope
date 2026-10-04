@@ -579,6 +579,9 @@ function hitObject(o, p) {
       spawnDrop(ox, oy, 'berry'); spawnDrop(ox, oy, 'berry');
       burst(ox, oy - 4, '#4c8560', 5, 35, 0.4, true);
     } else sfxAt('swing', ox, oy);
+  } else if (o.type === 'snowdrop') {
+    if (OBJECTS.snowdrop.ready(o)) pickSnowdrop(o, p);
+    else sfxAt('swing', ox, oy);
   } else if (o.type === 'chest') {
     // a buried cache in the treeline (placeChests, js/world.js): one free E
     // press springs it - gold straight into the purse, a card drop rolled
@@ -600,6 +603,28 @@ function hitObject(o, p) {
     // reached from swingHit only for a building on ANOTHER team
     hurtStruct(o, STRUCT_HIT_DMG, p);
   }
+}
+
+// THE DAWN SHIELD: an open snowdrop picked (OBJECTS.snowdrop, js/world.js)
+// lays DAWN_SHIELD of shield on every scout of the picker's company who is
+// up and on the ground, wherever they are, stacking to DAWN_SHIELD_MAX - so
+// the clumps are worth racing a rival company for, one segment each. It
+// holds until hits break it (damagePlayer spends it before health) or its
+// scout goes down; it never wears off by itself. The gold bar over the
+// health bar is the whole read (drawShieldBar, js/draw/overhead.js).
+const DAWN_SHIELD = 10;
+const DAWN_SHIELD_MAX = 30;
+function pickSnowdrop(o, p) {
+  const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
+  o.picked = bloomDay();
+  for (const q of players) {
+    if (!q.active || q.dead || inAir(q) || q.team !== p.team) continue;
+    q.dawnShield = Math.min(DAWN_SHIELD_MAX, q.dawnShield + DAWN_SHIELD);
+    sfxFor(q, 'shieldUp');
+    burst(q.x, q.y - 8, '#ffd84a', 5, 26, 0.45);
+  }
+  burst(ox, oy - 4, '#fff4b8', 6, 30, 0.5, true);
+  burst(ox, oy - 4, '#ffd84a', 4, 24, 0.4, true);
 }
 
 // Every way of hurting the practice dummy lands here - the E swing, every

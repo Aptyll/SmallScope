@@ -125,6 +125,19 @@ function tipCards() {
   d.notes.push(['ONE AT RANDOM, ITS BUFF AT RANDOM', TIP_DIM]);
   return d;
 }
+// the burrow's cell (js/tunnel.js): the dig, the wait after a ride, and how
+// long a rival's boots take to cave it - the numbers the hole itself shows
+function tipTunnel() {
+  const n = bagCount(player, 'tunnel');
+  const d = tipBase('tunnel', 'BURROW', 'TUNNEL');
+  d.tcol = RES_COLORS.tunnel;
+  d.rows.push(['DIG', tipSec(TUN_DIG), '#f4f7ff']);
+  d.rows.push(['COOLDOWN', tipSec(TUN_CD), '#f4f7ff']);
+  d.rows.push(['CAVES IN', tipSec(TUN_BREAK), '#e0637a']);
+  d.rows.push(['CARRIED', String(n), '#f4f7ff']);
+  if (player.digT > 0) d.rows.push(['OPENS IN', tipSec(player.digT), '#f2cc6a']);
+  return d;
+}
 // the gold plate: the exact figure, since the plate itself is rounded
 // a chip on the team rail: the name in the player's tint, the class under it,
 // the level - and, while the body is down, the seconds until the bird sets it
@@ -344,6 +357,7 @@ function tipAt(mx, my) {
   if (sh && sh.kind === 'food') {
     const type = FOOD_BTNS[sh.i].type;
     if (type === 'card') return tipCards();
+    if (type === 'tunnel') return tipTunnel();
     return tipStack({ type, n: bagCount(player, type) });
   }
   if (sh && sh.kind === 'frame') {

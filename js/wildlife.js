@@ -169,28 +169,43 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   sfxAt('hit', a.x, a.y); if (a.hp > 0 && a.kind !== 'bird') sfxAt('yelp', a.x, a.y);
 }
 
-// The passive pair, and the strength the meadow is kept at: PREY_POP of each
-// kind - rabbits biased toward berry bushes, which is what makes a patch read
-// as a warren - put down at boot by spawnAnimals and then topped up one at a
-// time by updatePreyStock, every PREY_REPOP seconds a kind is short, at a spot
-// no live player is within PREY_CLEAR of (past the edge of any screen at zoom
-// 1, so nothing is ever seen to appear) and at the level the table has
-// reached by then (animalLevel). Neither kind breeds: the meadow is restocked,
-// not grown, and a hunt never empties it for good.
+// The passive pair, and the strength the valley is kept at: PREY_POP of each
+// kind - every rabbit in the two WARRENS (CAMPS.meadow, js/world.js), split
+// between them, and the deer anywhere in the open - put down at boot by
+// spawnAnimals and then topped up one at a time by updatePreyStock, every
+// PREY_REPOP seconds a kind is short, at a spot no live player is within
+// PREY_CLEAR of (past the edge of any screen at zoom 1, so nothing is ever
+// seen to appear: a warren with a scout standing in it waits) and at the
+// level the table has reached by then (animalLevel). Neither kind breeds: the
+// valley is restocked, not grown, and a hunt never empties it for good.
 const PREY_POP = { rabbit: 16, deer: 10 };
 const PREY_REPOP = 15;  // s between top-ups (one animal each)
 const PREY_CLEAR = 280; // px from every live player a newcomer must land
 let preyRepopT = PREY_REPOP;
 
-// one animal of a kind on a free tile: beside one of `bushes` seven times in
-// ten when a list is given, clear of the map's centre, and - when `clear` -
-// out of everyone's reach. The animal, or null if forty tries found nowhere
-function spawnPrey(kind, bushes, clear) {
+// the warrens, and the one a new rabbit goes to: whichever holds fewest
+function warrens() { return camps.filter((C) => C.key === 'meadow'); }
+function warrenFor() {
+  let best = null, bn = 1e9;
+  for (const C of warrens()) {
+    let n = 0;
+    for (const a of animals) if (!a.dead && a.meadow === C) n++;
+    if (n < bn) { bn = n; best = C; }
+  }
+  return best;
+}
+// one animal of a kind on a free tile: a rabbit inside its warren's clearing
+// (none on a map with no warren - the practice arena), a deer anywhere clear
+// of the map's centre, and - when `clear` - out of everyone's reach. The
+// animal, or null if forty tries found nowhere
+function spawnPrey(kind, clear) {
+  const home = kind === 'rabbit' ? warrenFor() : null;
+  if (kind === 'rabbit' && !home) return null;
   for (let tries = 0; tries < 40; tries++) {
     let tx, ty;
-    if (bushes && bushes.length && rng() < 0.7) {
-      const b = bushes[randi(0, bushes.length - 1)];
-      tx = b.tx + randi(-4, 4); ty = b.ty + randi(-4, 4);
+    if (home) {
+      tx = home.tx + randi(1 - home.r, home.r - 1); ty = home.ty + randi(1 - home.r, home.r - 1);
+      if (Math.hypot(tx - home.tx, ty - home.ty) > home.r - 1) continue;
     } else {
       tx = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
       ty = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
@@ -199,22 +214,16 @@ function spawnPrey(kind, bushes, clear) {
     const x = (tx + 0.5) * TILE, y = (ty + 0.5) * TILE;
     if (clear && players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - x, p.y - y) < PREY_CLEAR)) continue;
     const a = makeAnimal(kind, x, y);
+    if (home) a.meadow = home;
     animals.push(a);
     return a;
   }
   return null;
 }
 
-function bushList() {
-  const bushes = [];
-  for (const o of objects) if (o && o.type === 'bush') bushes.push(o);
-  return bushes;
-}
-
 function spawnAnimals() {
-  const bushes = bushList();
-  for (let i = 0; i < PREY_POP.rabbit; i++) spawnPrey('rabbit', bushes, false);
-  for (let i = 0; i < PREY_POP.deer; i++) spawnPrey('deer', null, false);
+  for (let i = 0; i < PREY_POP.rabbit; i++) spawnPrey('rabbit', false);
+  for (let i = 0; i < PREY_POP.deer; i++) spawnPrey('deer', false);
 }
 
 // the top-up: on the clock, the kind furthest under strength gets one back
@@ -226,7 +235,7 @@ function updatePreyStock(dt) {
   for (const a of animals) if (!a.dead && live[a.kind] !== undefined) live[a.kind]++;
   let kind = null, short = 0;
   for (const k in PREY_POP) if (PREY_POP[k] - live[k] > short) { short = PREY_POP[k] - live[k]; kind = k; }
-  if (kind) spawnPrey(kind, kind === 'rabbit' ? bushList() : null, true);
+  if (kind) spawnPrey(kind, true);
 }
 
 // ------------------------------------------------------------ fish
@@ -446,10 +455,6 @@ function nearestObj(x, y, rTiles, pred) {
   return best;
 }
 
-function nearestBerryBush(x, y, rTiles) {
-  return nearestObj(x, y, rTiles, (o) => o.type === 'bush' && o.berries > 0);
-}
-
 function updateAnimal(a, dt) {
   a.flash = Math.max(0, a.flash - dt);
   a.kbx *= Math.pow(0.02, dt);
@@ -512,16 +517,15 @@ function wanderGoal(a, base, spread, near, far) {
   return null;
 }
 
-// a rabbit with berries in range grazes toward them - that is what makes a
-// patch of bushes read as a warren; everyone else just picks an open way out
+// a rabbit keeps to its warren: out past its clearing it hops back toward the
+// middle, and inside it takes short hops of a tile or three any way at all;
+// everyone else just picks an open way out
 function preyWander(a) {
-  if (a.kind === 'rabbit') {
-    const b = nearestBerryBush(a.x, a.y, 7);
-    if (b) {
-      const bx = b.tx * TILE + 8, by = b.ty * TILE + 8;
-      if (Math.hypot(bx - a.x, by - a.y) < 22) return null; // already nibbling it
-      return wanderGoal(a, Math.atan2(by - a.y, bx - a.x), 0.5, 2, 5);
-    }
+  const C = a.meadow;
+  if (C) {
+    const hx = (C.tx + 0.5) * TILE, hy = (C.ty + 0.5) * TILE;
+    if (Math.hypot(hx - a.x, hy - a.y) > (C.r - 1) * TILE) return wanderGoal(a, Math.atan2(hy - a.y, hx - a.x), 0.5, 3, 6);
+    return wanderGoal(a, rng() * Math.PI * 2, Math.PI, 1, 3);
   }
   return wanderGoal(a, rng() * Math.PI * 2, Math.PI, 3, 6);
 }
@@ -715,6 +719,7 @@ function animalDies(a) {
     burst(a.x, a.y - 3, '#9a6a45', 10, 45, 0.5);
     burst(a.x, a.y - 3, '#c29068', 6, 35, 0.4);
     spawnDrop(a.x, a.y, 'berry');
+    if (rng() < TUN_DROP) spawnDrop(a.x, a.y, 'tunnel'); // ...and now and then the burrow it came out of (js/tunnel.js)
   } else if (a.kind === 'deer') {
     burst(a.x, a.y - 5, '#8f582f', 12, 50, 0.55);
     burst(a.x, a.y - 5, '#f2cc6a', 8, 45, 0.5);

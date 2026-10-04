@@ -618,6 +618,10 @@ over the hollows. `layDrifts()` runs at boot once every worldgen pass has stood 
   both roost corners' woods (`ROOST_R + DRIFT_KEEP_ROOST`), every camp's clearing
   (`DRIFT_KEEP_CAMP`), and anything within `DRIFT_KEEP_WET` of ice, a hole, the creek or a
   ford. A drift whose skirt runs into one is shortened and narrowed, never cut.
+- **The warrens' own.** Each [SNOWDROP WARREN](#camps) is the one camp that wants deep snow in
+  it: `layMeadowDrifts` lays the same `MEADOW_DRIFTS` (two drifts, set in the wind's frame) in
+  each before the free search, identical on both sides, with only their ragged edge on the
+  position noise. Rabbits run on the crust: `wadeStep` never slows one.
 - **Spacing and share.** Crests stand `DRIFT_HEAD` apart, deep cores `DRIFT_GAP`; drifts are
   taken best first until the deep band covers `DEEP_COVER` of the interior's open snow or the
   candidates run out (OPEN FIELD and THICKET land near 3-4.5%: there is only so much shelter).
@@ -677,7 +681,7 @@ The jungle: named places at **fixed, mirrored sites** where neutral monsters sta
 a team is choosing between while the eagle is still in the air, and the places it walks out of
 its base for. They live in the `camps` banner of [world.js](../../js/world.js) and in the
 module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
-Four kinds, one reward each:
+Five kinds, one reward each:
 
 - **WOLF DEN** (`resource`, r 5, ×4) — a `den` in an open clearing and a pack of 4
   wolves. Gold per head (`YIELD.wolf`), the biggest steady payout on the map. Back 60 s after
@@ -696,6 +700,12 @@ Four kinds, one reward each:
   an axe, and the chests are why that is worth doing. They are ordinary
   [chests](#treasure-chests) and never come back; `pop` 0 means nothing restocks and the anchor
   wears no clock.
+- **SNOWDROP WARREN** (`meadow`, r 6, ×2) — no monster: a clearing **dug into the treeline**
+  (`treeline`) halfway out from each roost, home to every rabbit on the map
+  ([wildlife](gameplay.md#wildlife)), with deep snow drifted across it (`layMeadowDrifts`,
+  js/depth.js) and a dozen **snowdrop** clumps that open at dawn and shield the picker's side
+  ([the dawn shield](gameplay.md#the-dawn-shield)). Nothing in it is hostile and nothing restocks:
+  the rabbits are the meadow's (`PREY_POP`), the clumps reopen every dawn.
 
 **One entry in `CAMPS` is one kind of camp**, and that entry plus its site is the whole feature —
 no map, chart or HUD code knows a camp by name:
@@ -712,6 +722,7 @@ no map, chart or HUD code knows a camp by name:
 | `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** the ground bakes; the prop at `0, 0` is the anchor and carries `site` |
 | `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
 | `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it and `placeChests` keeps off its rim |
+| `treeline` | the site is **on the treeline**: between the border's shallowest edge and `CAMP_EDGE`, with the border grown out round it on every seed (the warren groves, below) |
 | `river` | the camp is a **stretch of riverbank**, not a den: tiles of bank either way along the creek's bend round the site that its monster walks ([river camps](#river-camps)); `props` and `spots` are empty |
 
 ### Placement
@@ -739,6 +750,7 @@ s)` is the conversion back to a tile. The layout as shipped:
 | HOG HUT | 100.5, −114 | 20, 50 | 50, 20 |
 | HOG HUT | 100.5, +114 | 181, 211 | 211, 181 |
 | HOG HUT | 63, −61 | 20, 125 | 125, 20 |
+| SNOWDROP WARREN | 91.5, −56 | 52, 100 | 100, 52 |
 
 The huts are 20 tiles in from the world's edge: the two far corners (top-left and bottom-right)
 hold one of each side's, and each side has one more halfway along an edge of its own half.
@@ -754,7 +766,15 @@ strength, never past it, when `DBG` calls it by hand). Every site sits at least 
 (`BORDER_MAX`, 70) — and `placeCamps` throws if one does not, so a site can never be moved into
 the woods by accident. A `woods` camp is the rule turned round: its whole clearing (`r + 2`) must
 end inside `BORDER_MIN` (30), the shallowest treeline any seed grows, so it is buried in pines on
-every seed (and stays `r + 4` off the edge itself). Terrain still comes from the seed: **`clearCamp()` clears everything
+every seed (and stays `r + 4` off the edge itself). A `treeline` camp sits between the two: its
+clearing must stay outside `BORDER_MIN` and its centre inside `CAMP_EDGE`. The seed's border
+wanders 30–70 tiles deep, so on a shallow seed a warren would stand in the open field — and each
+warren's stretch of border is **grown out to meet it** (`warrenGrove`, unioned into `borderDepth`
+like the roost discs): a tongue of pines from the edge to `GROVE_IN` (3) tiles past the warren's
+centre, as wide as its clearing plus three, tapering `GROVE_TAPER` (1.4) tiles of depth a tile
+back into the seed's own edge, with a ±1.5 wobble on the fine noise. The clearing is then cut out
+of it, so the warren is a bay in the treeline on every seed. Like the discs it only adds pines,
+which roll nothing. Terrain still comes from the seed: **`clearCamp()` clears everything
 inside `r + 2` of the centre** — a pine, a rock, a bush goes, ice becomes snow — so a camp is the
 same clearing on every seed, and the props then stamp the same on every seed. A river camp also
 fells everything on its bank ([river camps](#river-camps)). (A camp on a

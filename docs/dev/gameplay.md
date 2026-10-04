@@ -1543,7 +1543,10 @@ the answer; a warrior bot has no burrow to decide.
 `animals` holds **everything that is shot rather than swung at** — two kinds of prey, the camps' three wolves and the dormant bird, keyed by
 `a.kind` with hp from `ANIMAL_HP`. The passive pair is spawned at boot by `spawnAnimals()`
 (called right after `genWorld()`, so its `rng()` draws don't reshuffle the world layout) at
-`PREY_POP` strength: 16 rabbits (8 HP, biased to spawn near berry bushes) and 10 deer (24 HP).
+`PREY_POP` strength: 16 rabbits (8 HP) and 10 deer (24 HP). **Every rabbit lives in a warren**
+([the SNOWDROP WARREN camps](world.md#camps)): `spawnPrey` puts a new one inside the clearing of
+whichever warren holds fewest (`warrenFor`), and `a.meadow` remembers it (not `a.home`, which is a
+camp monster's).
 Neither reproduces, but **the meadow is restocked**: `updatePreyStock` (from `updatePlay`, never
 under `PRACTICE`) puts one animal of the kind furthest under strength back every `PREY_REPOP`
 (15 s) through `spawnPrey`, on a free tile no live player is within `PREY_CLEAR` (280 px — past
@@ -1636,9 +1639,10 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
 - **Grazing.** Idle, then pick one goal and walk it. `wanderGoal(a, base, spread, near, far)`
   tries 8 tiles in an arc, takes the first it can actually route to, and returns `null` when the
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
-  chooser: a rabbit with a berried bush inside 7 tiles (`nearestBerryBush`) aims at it and
-  returns `null` — idling, i.e. "nibbling" — once within 22 px, which is what makes a bush patch
-  read as a warren; everyone else takes an open direction, 3–6 tiles. `navStep` walks it at
+  chooser: a rabbit out past its warren's clearing (`r - 1` tiles from the centre) hops back
+  toward the middle, and inside it takes short 1–3 tile hops, so the warren reads as theirs; a
+  deer takes an open direction, 3–6 tiles. A rabbit runs on the deep snow's crust (`wadeStep`
+  never slows one). `navStep` walks it at
   `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles. The walk wears the
   `hop` / `run` clip at 0.6 rate — the same gait as a flight, taken lazily — and the idle at
   the end of it is where a settled deer's head actually goes down.
@@ -1682,7 +1686,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
 A kill pays its `YIELD` gold, grown a tenth a level for the animal's level (`ANIMAL_LV_GOLD`,
 above), straight to whoever landed the final blow (`a.lastHit`, through
 `awardGold` — see [Economy](#economy-one-currency)); rabbits also drop 1 berry as a physical
-pickup, and a burn credits the player that lit it, so an animal that walks away and dies of its
+pickup, and one in four (`TUN_DROP`) a [burrow](#the-burrow-a-tunnel-anyone-can-ride), and a burn credits the player that lit it, so an animal that walks away and dies of its
 fire still pays. Shots, rolls and the class abilities are what hurt them (there is no
 melee — the E swing is for scenery, never for a body); animals are solid
 to players, robots and each other except birds, which fly (see
@@ -1861,7 +1865,7 @@ the card rarities, a caught fish goes straight into the pouch (taken by `autoFis
 [fish net](world.md#fish-nets) you are standing on), and a wrecked net's
 contents carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
 the **hud strip's right end** (bottom centre) — the pouch block, berry over fish and gold over
-cards, on screen all match. Death touches none of them —
+cards with the burrow past them, on screen all match. Death touches none of them —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
 toward the nearest player, and everyone standing on one contests it
 (`canAfford`/`pay` also take the player whose wallet is meant) — except that a player with **no
@@ -2224,9 +2228,9 @@ chooses between — and a bit only takes a cell once every tool carried (the one
 each in the pack) is full, since `fitAdd` (js/tools.js) loads it into them first.
 
 **The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
-holds the two **meals** and the five **unopened card** rarities — everything with `pouch: true`.
-A pouch kind takes no cell, cannot be dragged, cannot be arranged and cannot be refused: a meal
-is pressed on Q and F and a card drawn on C from
+holds the two **meals**, the five **unopened card** rarities and the **burrow** — everything with
+`pouch: true`. A pouch kind takes no cell, cannot be dragged, cannot be arranged and cannot be
+refused: a meal is pressed on Q and F, a card drawn on C and a burrow dug on V from
 [the hud strip's pouch block](rendering.md#the-hud-strip) and nowhere else, so the cells are
 all the build's. Being uncapped is why every count that shows
 one goes through **`shortNum`** (js/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
@@ -2238,6 +2242,7 @@ numbers.
 | `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal button — eats it (see [Food](#food-the-meal-is-a-channel)) |
 | `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | C, or clicking the strip's card button — draws one at random (see [Roguelike cards](#roguelike-cards)) |
+| `tunnel` | `itemTunnel` | pouch, no cap | V, or clicking the strip's burrow button — stands the hole's ghost up (see [The burrow](#the-burrow-a-tunnel-anyone-can-ride)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
 | `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
 | `ironstone`/`frostglass`/`sunstone` | `itemOre_<key>` | bag, stack `ORE_STACK` 99 | nothing yet but the counter, which buys it at half its `price` (2 / 12 / 40); see [Mining a rock](#mining-a-rock) |
@@ -2346,6 +2351,56 @@ as the overhead tells do (`alpha: 1 - concealOf(p)`).
 **Bots eat through the same one path** (rung 1 of `aiThink`, the ladder `updateAI` wraps — which is why it reads `foe` before the
 burrow rung): a bot only starts a meal with no rival inside `AI_EAT_R` (110 px), because standing
 there chewing under fire is not patience, it is a free kill.
+
+## The dawn shield
+
+The [warrens](world.md#camps) carry a dozen **snowdrop** clumps each (`OBJECTS.snowdrop`, art from
+`app/bake-snowdrops`). They are shut all day and open only for the **dawn window**
+(`bloomOpen`, js/world.js): `BLOOM_LEAD` (6 s) before the clock wraps to a new day and
+`BLOOM_HOLD` (18 s) after it, never under `PRACTICE`. An open clump is a work target and the hands
+take it on their own like a berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`,
+js/actions.js) lays `DAWN_SHIELD` (10) of shield on **every scout of the picker's side** who is up
+and on the ground, wherever they are, stacking to `DAWN_SHIELD_MAX` (30): so the clumps are worth
+racing the other side to, one segment each. The clump stays picked until the next dawn opens it
+(`o.picked` = the `bloomDay` it was taken on).
+
+The shield (`p.dawnShield`) holds until hits break it or its scout goes down — it never wears off.
+`damagePlayer` spends it **after** the damage reduction and **before** health, with a gold burst,
+and a shatter (`shieldBreak`) the hit that empties it. It is drawn as its own gold bar over the
+health bar ([rendering.md](rendering.md#overhead-health-bars)), and nowhere else.
+
+## The burrow: a tunnel anyone can ride
+
+A rabbit's kill leaves a **burrow** one time in four (`TUN_DROP`), carried in the pouch
+(`ITEMS.tunnel`). Pressed (V, or its strip button), it stands a **hole ghost** on the tile under
+the pointer, the build list's grammar (`tunnelAimToggle`/`drawTunnelGhost`): the builder's reach
+dotted round the body, green where `tunPlaceOk` says it can go (inside `BUILD_REACH`, on open
+snow or the road, nothing standing there), red where not. A left press sends the `tunnel` order
+(`runCmd` → `digTunnel`); the key again, the right button or Escape puts the ghost away.
+
+The order lays the **near hole** (`OBJECTS.tunnel`, a tile object that knows its `mate`, its
+digger and side, and `crumble`) and starts the dig: for `TUN_DIG` (10 s) the digger runs, and
+wherever they stand when it ends — or the nearest free tile within `TUN_FAR` (2) — the **far hole**
+opens (`updateTunnels`). Nowhere free puts the burrow back in the pouch. A tunnel can end anywhere
+on the map. **One tunnel a digger**: a new dig caves the old one, and a digger who goes down before
+the far end opens loses the near hole too. A finished tunnel outlives its digger
+(`p.tunHole` is not cleared by `reset()`).
+
+**Anyone takes a hole**, of either side, and many can be under at once: a fresh press of the work
+key standing on it (`TUN_ON`, 9 px; `tunnelEnter`, ahead of the swing in `updatePlayer` — a key held
+from before stays the swing's). Underground the body is out of the world — `inAir` answers true
+for `p.tun`, so nothing hits it, nothing it wants gets through, and every loop over players skips
+it — and it rides the line between the holes at `TUN_SPEED` (240 px/s, at least `TUN_MIN_T`)
+as a **mound of snow** every player can see, with its side's pip and a churned furrow behind it.
+It comes up `TUN_UP` px above the far hole, so the hole lies in front of its boots, and waits
+`TUN_CD` (3 s, `p.tunCd`) before any hole takes it again. Bots do not take holes yet.
+
+A **rival standing on a hole** for `TUN_BREAK` (3 s, `h.crumble`, which drains back when they step
+off) caves the whole tunnel. Every state is drawn on the hole (js/draw/tunnel.js): a ring of dots
+draining **gold** is a dig running out (the same ring under the digger's boots, so a rival sees
+where it comes up), one filling **pale blue** is your own wait, and a hole that shrinks and shakes
+is caving. Standing on a hole you can take, the work key's bare cap rises over it
+(`drawTunnelHint`).
 
 ## Mining a rock
 
@@ -2804,7 +2859,7 @@ The root and the slow are spent inside `navStep` for a routed drive and folded i
 hand for the loiter, which is the only movement a worker steers itself. **What job it runs is decided by the [flag](#team-flags) the player who owns its
 bay serves** (`flagOf(b)` — a human teammate's flag over the owner's own); with no flag it falls back to the original bay-centred gather: pick the
 nearest tree/rock within 8 tiles of the bay's mouth (`structMouth`, also where they deposit)
-(`nearestObj`, the predicate generalisation of `nearestBerryBush`), work it in 0.9 s ticks into a
+(`nearestObj`), work it in 0.9 s ticks into a
 `carry` gold count (same `YIELD` numbers as `hitObject`, tree-fall leaves a stump and pays the
 jackpot — banked in the carry rather than paid on the spot), and walk home to deposit into their
 owner's `inv.gold` with a floater at 8+ carried. A worker's `harvest()` handles **deadTree** too (the brown bear den's ring: quicker,
@@ -3370,7 +3425,7 @@ without a scroll. The pad's listing is baked once (`bakeCtrlPad` into
 `ctrlCvs`, js/ui/panels.js); **the keyboard's is live**: each rebindable verb beside
 its key drawn as a **cap** — the same cap the work prompt wears in the world (`drawKeyCap`,
 js/ui/wheel.js), printing whatever key the action is bound to — and the fixed ones (the mouse's
-buttons, ESC, SCROLL, F3, `.`) as plain gold text, since nothing about them can be pressed. A
+buttons, ESC, SCROLL, F3, `.`, where the scheme has room for them) as plain gold text, since nothing about them can be pressed. A
 cap is a button: it lifts white on hover, a click sets it **listening** (the face pulses gold)
 and the next key down is its key; a key another cap holds swaps the two, a reserved key is
 refused, Escape or a click elsewhere calls it off
@@ -3417,7 +3472,8 @@ red on anything missing — why it is there: [Audio](#audio), *a failed load mus
 `settings.hitbox` is the same idea one key over: **`.`** toggles it 0 ↔ 2 in any mode. One press
 draws the circles and boxes the sim actually tests over the sprites that hide them, *and* the
 route every walker is following with the tile it is heading for; the next press turns both off. It
-has no ESC-menu row, only the `. HITBOX` line in the CONTROLS block; the rest is in
+has no ESC-menu row, only the `. HITBOX` line in the WASD scheme's CONTROLS block (CLICK and
+MOUSE leave it out to make room for the burrow); the rest is in
 [Debug overlays](rendering.md#debug-overlays-hitboxes-and-routes).
 
 Beneath the minimap `renderMinimap()` prints the elapsed clock alone, centred on the disc. There

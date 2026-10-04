@@ -823,25 +823,26 @@ function drawToolPrimer(g, y0) {
 // the right button's, so those rows are the mouse's fixed words instead;
 // MOUSE adds the middle button's action wheel, and its dodge and slide caps
 // print the side buttons (MB4, MB5). No column runs past KEY_ROWS_N's eight,
-// so MOUSE leaves the debug '.' off its listing (the key still works).
+// so CLICK leaves the debug '.' off its listing, and MOUSE both debug keys
+// (the keys still work).
 const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'FLAG WHEEL']],
-    ['berry', 'fish', 'card', 'bag', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'card', 'tunnel', 'bag', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    ['berry', 'fish', 'flag', 'card', 'bag', 'char', 'build', 'rotate'],
-    ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
+    ['berry', 'fish', 'flag', 'card', 'tunnel', 'bag', 'char', 'build'],
+    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', 'berry', 'fish', 'flag', 'card', 'bag', 'char', 'build'],
-    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
+    ['stop', 'berry', 'fish', 'flag', 'card', 'tunnel', 'bag', 'char'],
+    ['build', 'rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;

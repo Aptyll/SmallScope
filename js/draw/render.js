@@ -156,6 +156,7 @@ function drawTargetRim(src, sx, sy, w, h, x, y, now) {
 // whose strength runs on the same distances, so the body pops off the
 // canopy over it and the rim dissolves as the hero steps into the open.
 const HUT_FR = 140; // ms a frame of the hog hut's chimney smoke
+const SNOWDROP_SWAY = 12; // gain on windSway for a snowdrop's lean: a stem bends where a pine barely sways
 const TREE_FADE_A = 0.35; // alpha floor on the adjacent ring
 const TREE_FADE_R0 = 24; // fully faded inside this trunk distance (world px)
 const TREE_FADE_R1 = 52; // back to opaque beyond this
@@ -334,8 +335,12 @@ function render() {
       if (o.type === 'stump') ctx.drawImage(SPRITES.stump, px, py + 4);
       // nets lie flat on the water, under everything that walks on them
       else if (o.type === 'net') drawNet(o, px, py, now);
+      // ...and so do a burrow's holes (js/draw/tunnel.js)
+      else if (o.type === 'tunnel') drawTunnelHole(o, px, py, now);
     }
   }
+  // the mounds of bodies riding a tunnel, and the dig's clock under a digger
+  drawTunnelGround(ex, ey, now);
   // your side's flag rings - the ground each order covers - flat on the snow
   // under everything that walks it, and the ring a held flag wheel previews
   drawFlagRings(ox, oy, now);
@@ -383,9 +388,9 @@ function render() {
   for (let ty = ty0; ty <= ty1; ty++) {
     for (let tx = tx0; tx <= tx1; tx++) {
       let o = objects[idx(tx, ty)];
-      // stumps and nets are both drawn flat, above, and never y-sorted; an
+      // stumps, nets and holes are all drawn flat, above, and never y-sorted; an
       // eagle's hitbox tiles have no pixels of their own (drawEagle draws the bird)
-      if (!o || o.type === 'stump' || o.type === 'net' || o.type === 'eagle') continue;
+      if (!o || o.type === 'stump' || o.type === 'net' || o.type === 'tunnel' || o.type === 'eagle') continue;
       if (o.type === 'part') {
         o = o.of;
         if ((o.tx >= tx0 && o.tx <= tx1 && o.ty >= ty0 && o.ty <= ty1) || seen.has(o)) continue;
@@ -586,6 +591,19 @@ function render() {
       // the plant filling toward ripe - the frames say roughly, a look asks
       // exactly. A ripe bush wears the rim instead, and says pick me.
       if (o.berries <= 0 && o === hovO) drawHealthBar(px + 8, py + 1, BUSH_REGROW - o.regrow, BUSH_REGROW, 12, undefined, BAR_NEUTRAL);
+    } else if (o.type === 'snowdrop') {
+      // a warren's clump: shut, open for the dawn window, or the snapped
+      // stem of a pick that waits for the next dawn (bloomOpen, world.js).
+      // It leans with the pines' own wind - lighter, so the same breath
+      // moves it further (SNOWDROP_SWAY) - and sits a hash's few pixels off
+      // its tile's grid so a scatter never reads as rows. Feet at (8, 15).
+      const V = SPRITES.snowdrop[o.variant % SPRITES.snowdrop.length];
+      const picked = o.picked === bloomDay(), open = !picked && bloomOpen();
+      const lean = Math.max(-1, Math.min(1, Math.round(windSway(o.tx, o.ty) * SNOWDROP_SWAY)));
+      const spr = picked ? V.picked[0] : (open ? V.open : V.closed)[lean + 1];
+      const jx = Math.floor(hash2(o.tx * 5 + 3, o.ty * 7 + 1) * 7) - 3, jy = Math.floor(hash2(o.tx * 3 + 9, o.ty * 11 + 2) * 4) - 2;
+      if (open && fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh + jx, py + jy, now);
+      drawSpriteFlash(spr, px + sh + jx, py + jy, o.flash);
     } else if (STRUCTS[o.type] && STRUCTS[o.type].tiled) {
       drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
     } else if (STRUCTS[o.type]) {
@@ -656,6 +674,7 @@ function render() {
 
   drawSelection(ox, oy, now);
   drawBuildGhost(ox, oy, now);
+  drawTunnelGhost(ox, oy);
   drawWorkHint(ox, oy);
   drawFishHint(ex, ey, now);
   // the parkour's two readouts: the lap clock over the runner, BEST / LAST
