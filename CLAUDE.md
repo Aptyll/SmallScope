@@ -7,7 +7,8 @@ writing a word a player reads. Before working in an area, read its doc: [code-ma
 (which file and banner owns a thing), [architecture](docs/dev/architecture.md),
 [rendering](docs/dev/rendering.md), [world](docs/dev/world.md), [gameplay](docs/dev/gameplay.md),
 [multiplayer](docs/dev/multiplayer.md), [online play](docs/pvp-architecture.md),
-[sprites](docs/dev/sprites.md), [checklists](docs/dev/checklists.md). New art starts with the `concept-art` skill.
+[sprites](docs/dev/sprites.md), [checklists](docs/dev/checklists.md). New art starts with the `concept-art` skill;
+Shorts, GIFs, storyboards and stills use the kit in [media](docs/dev/media.md).
 
 ## Run and verify
 
