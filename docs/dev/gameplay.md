@@ -218,8 +218,8 @@ overlap per second, split by mass, through `moveEntity(…, strict)`. It moves p
 walking, chasing or swinging still reaches contact; only a crowd that has stopped pushing spreads out.
 A live roll skips the rooms entirely, and so does any pair of a camp beast and a body that is not one
 (`hunt`, `isCampKind`): a beast bites from inside its `MONSTER` reach, and a bear's room (28.8 px above or
-below) is wider than the 27.5 px its swipe lands inside, so a room would slide a standing target out of
-every blow. The hard passes run after the rooms and get the last word.
+below) is wider than the 22 px it starts a blow inside, so a room would slide a standing target out of
+every blow before it began. The hard passes run after the rooms and get the last word.
 
 **A live dodge roll is the one exception to any of it.** `separateUnits` skips a pair outright
 when one side is a player mid-roll and the other is *small* — every player, every robot, and
@@ -1732,8 +1732,10 @@ still load. All three run
   plays one of its attacks, on all fours and planted: the `bite` (coil, jaw wide, lunge, snap) or
   the `paw` (paw cocked over the head, swept out flat in front), taken in turn (`BEAR_ATTACKS`,
   `a.atkN`) so two blows in a row never look alike. The blow (`monsterBite`) lands only as the clip
-  crosses `BEAR_STRIKE`, on a quarry still inside `reach × BEAR_SWIPE_REACH` - so the wind-up is
-  the tell and a step back dodges it. Only the wake-up `roar` stands the bear on its hinds. A bear walks its patrol on `walk` and gallops the hunt on
+  crosses `BEAR_STRIKE`. **A blow once begun is committed**, like a moba's auto attack: nothing but a
+  stun cuts it, the bear turns with its quarry through the wind-up, and the blow lands on that quarry
+  anywhere inside `reach × BEAR_COMMIT_REACH` (44 px) - walking away does not dodge it, a roll or a
+  dash does. The wind-up is the tell. Only the wake-up `roar` stands the bear on its hinds. A bear walks its patrol on `walk` and gallops the hunt on
   `run`, and moves through the tiles on its `foot` box (5), not its 9 px body, which is wider
   than a tile and jammed on the first tree beside its route. **Nothing caps the
   pack** ([i-frames](#i-frames-only-something-deliberate-grants-them)):
@@ -1754,8 +1756,8 @@ still load. All three run
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
-| alpha (black bear) | 320 (+25) | 22 (+3) | 22 px / 1.4 s / 80 | r 9, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
-| dire (brown bear) | 320 (+25) | 22 (+3) | 22 px / 1.4 s / 80 | r 9, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
+| alpha (black bear) | 640 (+50) | 22 (+3) | 22 px / 1.4 s / 100 | r 9, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
+| dire (brown bear) | 640 (+50) | 22 (+3) | 22 px / 1.4 s / 100 | r 9, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
 
 The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
 [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two coats,
