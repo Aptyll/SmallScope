@@ -9,7 +9,7 @@
 // what they are: things you shoot. (Birds - updateBird - are DORMANT: the
 // rookery went with the landmarks, and nothing spawns one; the kind's code
 // stays for a camp that wants a flock - checklists.md, Known drift.)
-const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 320, dire: 320, bird: 3 };
+const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640, bird: 3 };
 // Every animal wears a hero-style level, dealt ONCE at spawn (makeAnimal) from
 // the table's average hero level (animalLevel) and never raised after: what
 // grows with it is hp, ANIMAL_LV_HP a level over ANIMAL_HP, and a monster's
@@ -20,7 +20,7 @@ const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 320, dire: 320, bird: 
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Gold is XP, so the loop feeds itself, but at a tenth a
 // level it is a slope, not a farm.
-const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 25, dire: 25, bird: 0 };
+const ANIMAL_LV_HP = { rabbit: 1, deer: 2, wolf: 3, alpha: 50, dire: 50, bird: 0 };
 const ANIMAL_LV_GOLD = 0.1;
 function animalLevel() {
   let n = 0, s = 0;
@@ -769,8 +769,8 @@ function animalDies(a) {
 // always walks where it means to, roar and attacks included.
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
-  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 80, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear' }, // the same bear on the other bank
+  alpha: { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 100, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 100, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear' }, // the same bear on the other bank
 };
 function isCampKind(k) { return !!MONSTER[k]; }
 function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }
@@ -778,14 +778,17 @@ function isAnchored(e) { return !!(MONSTER[e.kind] && MONSTER[e.kind].anchor); }
 // A bear's set pieces, played out whole where it stands (updateCampMonster):
 // the ROAR when its camp wakes, the one time it stands up on its hinds, and
 // its ATTACKS, on all fours - a lunging BITE or a sweep of the PAW, taken in
-// turn so no two blows in a row look alike. Either lands on BEAR_STRIKE, on
-// whoever is still inside the reach stretched by BEAR_SWIPE_REACH; the
+// turn so no two blows in a row look alike. A blow once begun is committed,
+// like a moba's auto attack: nothing but a stun cuts it (the stun branch of
+// updateAnimal), the bear turns with its quarry through the wind-up, and the
+// blow lands on BEAR_STRIKE on that quarry wherever it has walked, inside
+// BEAR_COMMIT_REACH x its reach - only a roll or a dash gets clear. The
 // wind-up is the tell. Frame counts are the clips' in js/sprites/bears.js
 // (app/bake-bears/anim.py).
 const BEAR_ATTACKS = ['bite', 'paw'];
 const BEAR_ATTACK_FRAMES = 10;
 const BEAR_STRIKE = 4;
-const BEAR_SWIPE_REACH = 1.25;
+const BEAR_COMMIT_REACH = 2;
 const BEAR_ROAR_FRAMES = 8;
 const BEAR_FISH_FRAMES = 12; // the river camp's catch: paw up, scoop, snap, chew (riverFish)
 const BEAR_FISH_STRIKE = 3;  // the frame the paw hits the water
@@ -939,8 +942,9 @@ function updateCampMonster(a, dt) {
     stepClip(a, dt);
     if (t) {
       const d = Math.hypot(t.x - a.x, t.y - a.y) || 1;
-      if (a.clip === 'roar') { a.mvx = (t.x - a.x) / d; a.mvy = (t.y - a.y) / d; if (Math.abs(a.mvx) > 0.05) a.dir = a.mvx > 0 ? 'right' : 'left'; }
-      if (attack && was < BEAR_STRIKE && a.animT >= BEAR_STRIKE && d < M.reach * BEAR_SWIPE_REACH) monsterBite(a, t, M);
+      // the roar, and an attack's wind-up, turn with the quarry
+      if (a.clip === 'roar' || (attack && was < BEAR_STRIKE)) { a.mvx = (t.x - a.x) / d; a.mvy = (t.y - a.y) / d; if (Math.abs(t.x - a.x) > 2) a.dir = t.x > a.x ? 'right' : 'left'; }
+      if (attack && was < BEAR_STRIKE && a.animT >= BEAR_STRIKE && d < M.reach * BEAR_COMMIT_REACH) monsterBite(a, t, M);
     }
     if (a.animT < (attack ? BEAR_ATTACK_FRAMES : BEAR_ROAR_FRAMES)) return;
     setClip(a, 'idle');
