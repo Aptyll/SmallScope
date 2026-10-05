@@ -41,8 +41,10 @@ dodge charges, slide state, swing state, held tool, i-frames, footprint cadence 
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
 wears its **active character's** name, class and look — `applyCharacter(p?)`, called by
 `initPlayers` and whenever the roster's active slot changes — see
-[architecture.md](architecture.md#profilejs)), `look` (the face on the class body: a bot's is
-hashed off its id by `botLook`, so a replayed world fields the same faces), `spawn` (the tile it landed
+[architecture.md](architecture.md#profilejs)), `look` (the face and the clothes: a bot's is
+hashed off its id by `botLook`, every axis of `LOOK_N` including its hat and coat, so a replayed
+world fields the same faces in the same clothes), `face` (the eight-way facing only the drawing
+reads, turned by `faceToward` beside `dir`), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
 (the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
 and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
@@ -377,10 +379,11 @@ rivals right, their picks face-down until LOCK IN's countdown turns them (a seco
 the rest of the count) — and the target at the top, whose pop-up's four plates
 set `settings.aiLevel` (`AI_LEVELS`, js/ai-skill.js: EASY / NORMAL / HARD /
 IMPOSSIBLE, remembered with the profile), the profile the rivals play by
-(`aiProfile`, [Bots](#bots)). Sprites live in `SPRITES.champ[c][team]` (the sprite key keeps its legacy name;
-the grid files under js/sprites/ are never rewritten) — same
-16×16 body plan and frame set as the player, so `drawPlayer`/`drawGhost` just swap the set via
-`classSet(p)`, which asks `SPRITES.champLook(cls, look, skin(team))` for the class body in the
+(`aiProfile`, [Bots](#bots)). A standing body is the scout: `scoutSet(p)` asks
+`SPRITES.scout(cls, look, skin(team))` for the class's body in the character's hat, coat, tone,
+hair and beard, eight facings with a run ([sprites.md](sprites.md#the-scout-the-body-in-the-world)).
+A lying or fishing body is the class body in `SPRITES.champ[c][team]` (the sprite key keeps its
+legacy name), asked through `classSet(p)` → `SPRITES.champLook(cls, look, skin(team))` in the
 character's tone and fringe ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
 `SPRITES.playerTeam` is class 0 in the default look.
 
@@ -431,7 +434,7 @@ player (default local) the way a pickup would, which is how to stage a level.
 ## Teams and colours
 
 Two presets live in `SPRITES.teams` (`TEAM_SKINS` in [js/sprites/core.js](../../js/sprites/core.js)):
-**RED** (the red/teal look) and **BLUE**. A player's team
+**RED** (a red coat under a burgundy hat) and **BLUE** (a blue coat under a navy one). A player's team
 is `id % TEAM_COUNT` (2), so the ten players alternate into five a side. The team table is the
 only place a team colour is written down; the game code reads it back as `TEAMS` for name tags,
 map markers, death bursts and the eagles' armour.

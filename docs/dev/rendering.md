@@ -1964,8 +1964,9 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   is that character's copy for editing, and `first` is the fresh install (js/boot.js opens it
   before the title when `!PROFILE.hasChar()`: no CANCEL, and DONE lands on the title menu).
   Two columns centred as one block (`createLayout`), sharing a top line and a foot. Left, the
-  stage: the model at 3× (`drawModel`, the lobby's light and ring), the 16 px body at 2×
-  walking on a snow pad by its feet (what the snow will show), and the **name field** centred
+  stage: the model at 3× (`drawModel`, the lobby's light and ring), the scout at 2× on a snow
+  pad by its feet running in place and turning through its eight facings (`CH_TURN`: what the
+  snow will show), and the **name field** centred
   under the stage: the buffer at 2× with a caret, or **selected** on a gold band
   (`menu.nameSel`) when the next letter will replace it — a new character's pre-rolled name
   arrives selected, a roll of the die leaves its word selected, and a click on the field
@@ -1979,11 +1980,13 @@ first)`). The store behind them is [profile.js](architecture.md#profilejs); `cha
   (`drawDie` — five pips at rest, gold under the hand, and for `DIE_T` after a press it rattles
   and flickers through the six faces while `shuffleLook` lands a new look *and* a new name: a
   roll, not a button) — then **one row per axis in one grammar** — an 8 px glyph in the gutter and a
-  `CH_CELL` (24 px) cell per choice, each cell a 1× crop of the *bare* model wearing that
-  choice (`drawLookCell`: the head crop `CH_HEAD` for tone, hair, hair colour, beard and face,
-  the torso crop `CH_TORSO` for the body type), so a row is its choices seen before they are
-  picked — no swatches, no chevrons, no count pips. Cells sit in the same columns on every row;
-  the widest row (`CH_ROW_N`) sets the panel's width. DONE / CANCEL centred along the foot.
+  `CH_CELL` (24 px) cell per choice, each cell a 1× crop of the model wearing that choice
+  (`drawLookCell`: the head crop `CH_HEAD` for tone, hair, hair colour, beard, face and the
+  **hat**, the torso crop `CH_TORSO` for the body type and the **coat**; the face rows show the
+  model bare and the two clothes rows dressed - a class's own three of each), so a row is its
+  choices seen before they are picked — no swatches, no chevrons, no count pips. Cells sit in the
+  same columns on every row at `CH_ROW_P`, eight rows to the frame's foot; the widest row
+  (`CH_ROW_N`) sets the panel's width. DONE / CANCEL sit under the name, in the stage's column.
   The screen **owns the keyboard** (input.js routes to `createKey` before its own
   shortcuts): letters are the name, Backspace edits it, Up/Down walk `menu.crow` (a gold tick
   breathes at the row's glyph while the pointer is off the page), Left/Right turn the row, Enter
@@ -2084,7 +2087,7 @@ is the one rect source for the draw, the hit test (`skinsHit`) and the cursor.
   local player's company wears the skin worn, the other company the free first row (skins are
   not sent over the wire). `drawEagle` asks it at draw time; it is paint, never read by the sim.
   `scoutBody(p)` is the same for a player: only the local player wears the scout skin worn, as a
-  body of its own (the IRON SCOUT, [sprites](sprites.md)), and every other player the class body.
+  body of its own (the IRON SCOUT, [sprites](sprites.md)), and every other player its scout.
 
 ### The bot ladder screen
 

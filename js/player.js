@@ -145,9 +145,13 @@ function levelUp(p) {
   if (!inAir(p)) floaters.push({ x: p.x, y: p.y - 22, txt: 'LEVEL ' + p.level, color: '#f2cc6a', t: 0, vx: 0, scale: 2, rise: 20 });
   sfxFor(p, 'levelUp');
 }
-// the pose set a body draws from: its class body in its team's paint, worn
-// by its character's look (tone and fringe at 16 px - js/sprites/characters.js)
+// the pose set a body LIES and FISHES from: its 16 px class body in its
+// team's paint, worn by its character's look (tone and fringe -
+// js/sprites/characters.js). A body standing up draws from scoutSet.
 function classSet(p) { return SPRITES.champLook(p.cls, p.look, skin(p.team)); }
+// the body a player STANDS and RUNS in: the 24 px scout in its character's
+// hat and coat, eight facings (js/sprites/scouts.js; picked by p.face)
+function scoutSet(p) { return SPRITES.scout(p.cls, p.look, skin(p.team)); }
 // a bot's look, off the seed like its class and gear: a roster of faces,
 // the same faces on a replayed world. LOOK_N is the axes' sizes (profile.js).
 function botLook(id) {
@@ -588,7 +592,7 @@ class Player {
     this.x = (this.spawn.tx + 0.5) * TILE;
     this.y = (this.spawn.ty + 0.5) * TILE;
     this.vx = 0; this.vy = 0;
-    this.dir = 'down'; this.faceT = 0; this.moving = false; this.animT = 0;
+    this.dir = 'down'; this.face = 2; this.faceT = 0; this.moving = false; this.animT = 0;
     this.hp = this.maxHp;
     this.dead = false;
     this.charging = false; this.chargeT = 0;      // bow draw state
@@ -729,13 +733,23 @@ function inAir(p) { return p.aboard || p.dropT > 0 || !!p.tun; }
 // passes `hold`: the body keeps that facing for FACE_HOLD (p.faceT) and the
 // walk cannot turn it straight back on the next frame, which read as the
 // body blinking. A draw or a raised shield still turns it every step.
+//
+// Beside the four-way `dir` every rule reads, the body keeps an eight-way
+// `face` (0 east, clockwise in screen space: 2 south, 4 west, 6 north) that
+// only the drawing reads - the scout's eight facings. It turns with the same
+// call and holds the same way: a new eighth only once the heading is
+// FACE8_SLACK past the edge of the one it has.
 const FACE_BIAS = 1.25;
 const FACE_HOLD = 0.15; // s
+const FACE8_SLACK = 0.12; // rad, about 7 degrees
 function faceToward(p, dx, dy, hold) {
   if (!dx && !dy) return;
   const ax = Math.abs(dx), ay = Math.abs(dy);
   const wide = p.dir === 'left' || p.dir === 'right' ? ax * FACE_BIAS >= ay : ax > ay * FACE_BIAS;
   p.dir = wide ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
+  const a = Math.atan2(dy, dx), cur = p.face | 0;
+  const off = Math.atan2(Math.sin(a - cur * Math.PI / 4), Math.cos(a - cur * Math.PI / 4));
+  if (Math.abs(off) > Math.PI / 8 + FACE8_SLACK) p.face = ((Math.round(a / (Math.PI / 4)) % 8) + 8) % 8;
   if (hold) p.faceT = FACE_HOLD;
 }
 

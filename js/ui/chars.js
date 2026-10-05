@@ -6,7 +6,7 @@
 // the roster. The STORE is js/profile.js (three slots, each a name, a class
 // fixed at creation, a look and its lifetime stats) and nothing here touches
 // localStorage; the pictures are js/sprites/looks.js (the 48 px model) and
-// characters.js (the look on the 16 px body).
+// scouts.js (the character in the world, in its own hat and coat).
 //
 // A fresh install opens the create screen before the title (js/boot.js),
 // on a PRE-ROLLED character - a rolled name and look - so DONE is one press
@@ -22,17 +22,19 @@ const CH_STAGE = 144;      // the create screen's model, the 48 px portrait at 3
 const CH_CELL = 24;        // an option cell's side: a 1x crop of the model wearing that option
 const CH_CELL_GAP = 2;
 const CH_PLATE = 36;       // the head row's plates: the two class emblems and the die
-const CH_ROW_P = 28;       // the option rows' pitch
+const CH_ROW_P = 26;       // the option rows' pitch: eight rows to the frame's foot
 const CH_GAP = 24;         // between the stage column and the option panel
 const CH_NAME_W = 176, CH_NAME_H = 20;
 const CH_BW = 88, CH_BH = 20, CH_BGAP = 12;
 const NAME_SHAKE_T = 0.3;  // the name field's refusal: it rattles and flushes red
 const DIE_T = 0.4;         // the die's tumble after a press
+const CH_TURN = 1.2;       // the stage's scout turns an eighth this many times a second
 // the create screen's rows, in keyboard order: the axis each turns and the
-// crop of the bare model its cells show - the head (x 12, y 2) for anything
-// on the face, the torso (x 12, y 22) for the body. `cls` is the class pair,
-// only live for a new character. Every row is the same thing: one cell per
-// choice, the choice drawn in it, the picked one gold.
+// crop of the model its cells show - the head (x 12, y 2) for anything on the
+// face and for the hat, the torso (x 12, y 22) for the body and the coat. The
+// face rows show the model bare, the two clothes rows dressed in the choice.
+// `cls` is the class pair, only live for a new character. Every row is the
+// same thing: one cell per choice, the choice drawn in it, the picked one gold.
 const CH_HEAD = { x: 12, y: 2 }, CH_TORSO = { x: 12, y: 22 };
 const CH_ROWS = [
   { id: 'cls', kind: 'cls' },
@@ -42,6 +44,8 @@ const CH_ROWS = [
   { id: 'hairCol', crop: CH_HEAD },
   { id: 'beard', crop: CH_HEAD },
   { id: 'face', crop: CH_HEAD },
+  { id: 'hat', crop: CH_HEAD, worn: true },
+  { id: 'coat', crop: CH_TORSO, worn: true },
 ];
 const CH_ROW_N = Math.max(...Object.values(PROFILE.LOOK_N)); // the widest row sets the panel
 
@@ -60,30 +64,30 @@ function charsLayout() {
   }
   return { toy, cx, cards, back: toy + 222 };
 }
-// the create screen, two columns sharing a top line and a foot, centred as
-// one block: the stage (the model, the in-world body on a snow pad) with the
-// name under it, and the option panel - its head row the class pair at the
-// left and the die at the right, both at CH_PLATE, the look rows under it,
-// every cell the same size, every row starting in the same column and the
-// head row spanning the widest. DONE / CANCEL centred along the foot.
+// the create screen, two columns sharing a top line, centred as one block:
+// the stage (the model, the in-world body on a snow pad) with the name under
+// it and DONE / CANCEL under that, and the option panel - its head row the
+// class pair at the left and the die at the right, both at CH_PLATE, the look
+// rows under it down to the frame's foot, every cell the same size, every row
+// starting in the same column and the head row spanning the widest.
 function createLayout() {
   const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
   const panelW = 16 + CH_ROW_N * CH_CELL + (CH_ROW_N - 1) * CH_CELL_GAP; // the glyph gutter + the widest row
   const left = cx - Math.round((CH_STAGE + CH_GAP + panelW) / 2);
   const stage = { x: left, y: toy + 12, w: CH_STAGE, h: CH_STAGE };
-  const mini = { x: stage.x + stage.w - 34, y: stage.y + stage.h - 36, w: 32, h: 32 }; // the in-world body, 2x
+  const mini = { x: stage.x + stage.w - 34, y: stage.y + stage.h - 52, w: 32, h: 50 }; // the in-world scout, 2x
   const name = { x: stage.x + Math.round((stage.w - CH_NAME_W) / 2), y: stage.y + stage.h + 12, w: CH_NAME_W, h: CH_NAME_H };
   const x0 = left + CH_STAGE + CH_GAP + 16; // the cells' left edge; a row's glyph sits in the 16 px gutter before it
   const cellsW = panelW - 16;
   const rows = CH_ROWS.map((r, i) => i
-    ? { id: r.id, crop: r.crop, x: x0, y: toy + 56 + (i - 1) * CH_ROW_P, w: cellsW, h: CH_CELL }
+    ? { id: r.id, crop: r.crop, worn: r.worn, x: x0, y: toy + 56 + (i - 1) * CH_ROW_P, w: cellsW, h: CH_CELL }
     : { id: r.id, kind: r.kind, x: x0, y: toy + 12, w: CH_PLATE * 2 + 6, h: CH_PLATE });
   const die = { x: x0 + cellsW - CH_PLATE, y: toy + 12, w: CH_PLATE, h: CH_PLATE }; // the head row's right end
   const planks = [];
   const first = state.menu.cedit && state.menu.cedit.first;
   const pw = first ? CH_BW : CH_BW * 2 + CH_BGAP;
-  const px = cx - Math.round(pw / 2), py = toy + 230;
+  const px = stage.x + Math.round((stage.w - pw) / 2), py = name.y + name.h + 16; // under the name, in the stage's column
   planks.push({ x: px, y: py, w: CH_BW, h: CH_BH, id: 'done' });
   if (!first) planks.push({ x: px + CH_BW + CH_BGAP, y: py, w: CH_BW, h: CH_BH, id: 'cancel' });
   return { toy, cx, stage, die, mini, name, rows, planks };
@@ -95,7 +99,7 @@ function rowCells(r) {
     for (let v = 0; v < CLASSES.length; v++) out.push({ id: 'cls' + v, x: r.x + v * (CH_PLATE + 6), y: r.y, w: CH_PLATE, h: CH_PLATE, axis: 'cls', v });
   } else {
     const n = PROFILE.LOOK_N[r.id];
-    for (let v = 0; v < n; v++) out.push({ id: r.id + v, x: r.x + v * (CH_CELL + CH_CELL_GAP), y: r.y, w: CH_CELL, h: CH_CELL, axis: r.id, v, crop: r.crop });
+    for (let v = 0; v < n; v++) out.push({ id: r.id + v, x: r.x + v * (CH_CELL + CH_CELL_GAP), y: r.y, w: CH_CELL, h: CH_CELL, axis: r.id, v, crop: r.crop, worn: r.worn });
   }
   return out;
 }
@@ -335,6 +339,8 @@ const CH_ROW_GLYPH = {
   hairCol: ['..wwww..', '.w.w..w.', 'w.w....w', 'w......w', 'w..w...w', '.w....w.', '..wwww..', '........'],
   beard: ['w......w', 'w......w', 'ww....ww', '.ww..ww.', '.wwwwww.', '..wwww..', '...ww...', '........'],
   face: ['..wwww..', '.w....w.', 'w.w..w.w', 'w......w', 'w.w..w.w', 'w..ww..w', '.w....w.', '..wwww..'],
+  hat: ['...ww...', '..wwww..', '.wwwwww.', '.wwwwww.', 'wwwwwwww', 'w.w.w.w.', '........', '........'],
+  coat: ['.ww..ww.', 'wwwwwwww', 'ww.ww.ww', 'ww.ww.ww', 'ww.ww.ww', '..wwww..', '..wwww..', '........'],
 };
 
 // a well: the this-is-a-button grammar shared by every plate here - a dark
@@ -449,14 +455,15 @@ function renderChars(now, a) {
   ctx.globalAlpha = 1;
 }
 
-// one option cell: a well with a 1x crop of the bare model wearing that
-// choice in it - the head for anything on the face, the torso for the body -
-// so a row IS its choices, seen before they are picked. The picked cell is
-// gold and sits a px up; a hovered one lifts under the hand.
+// one option cell: a well with a 1x crop of the model wearing that choice
+// in it - the head for anything on the face, the torso for the body - so a
+// row IS its choices, seen before they are picked. The face rows show the
+// model bare; the hat and coat rows dress it. The picked cell is gold and
+// sits a px up; a hovered one lifts under the hand.
 function drawLookCell(c, spec, team, hv, picked) {
   const y = drawWell(c, hv, picked, true);
   const look = Object.assign({}, spec.look); look[c.axis] = c.v;
-  const src = SPRITES.portrait(spec.cls, look, team, true);
+  const src = SPRITES.portrait(spec.cls, look, team, !c.worn);
   ctx.drawImage(src, c.crop.x, c.crop.y, c.w - 2, c.h - 2, c.x + 1, y + 1, c.w - 2, c.h - 2);
 }
 // the die: a well with a face of pips on it. At rest it shows five; under
@@ -489,11 +496,13 @@ function renderCreate(now, a) {
   const slide = Math.round((1 - a) * 26);
   ctx.globalAlpha = a;
   drawModel(spec.cls, spec.look, team, L.stage.x - slide, L.stage.y, 3, now, a);
-  // the 16 px body at 2x on a little snow pad: the in-world read
-  const set = SPRITES.champLook(spec.cls, spec.look, team);
+  // the scout at 2x on a little snow pad: the in-world read, running in
+  // place and turning through its eight facings
+  const set = SPRITES.scout(spec.cls, spec.look, team);
+  const fc = set.dirs[[2, 1, 0, 7, 6, 5, 4, 3][Math.floor(now * CH_TURN) % 8]];
   ctx.fillStyle = '#e8eef8';
-  ctx.beginPath(); ctx.ellipse(L.mini.x + 16 - slide, L.mini.y + 30, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.drawImage(set.down[1 + (Math.floor(now * 4) % 2)], L.mini.x - slide, L.mini.y, 32, 32);
+  ctx.beginPath(); ctx.ellipse(L.mini.x + 16 - slide, L.mini.y + 48, 18, 5, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.drawImage(fc.run[Math.floor(now * 8) % fc.run.length], L.mini.x - slide, L.mini.y, 32, 50);
   // the name field: a well whose rim lights under the hand, the buffer at 2x
   // with the caret - or SELECTED, on a gold band, when the next letter will
   // replace it (a pre-rolled name, a rolled one, a click on the field) - the
@@ -571,8 +580,8 @@ function drawCharTag(now) {
   const hot = !state.menu.panel && overCharTag();
   const r = charTagRect();
   const nm = PROFILE.name();
-  const set = classSet(player);
-  ctx.drawImage(set.down[hot ? 1 + (Math.floor(now * 4) % 2) : 0], r.x, r.y + 1);
+  const fc = scoutSet(player).dirs[2]; // the scout, its soles on the tag's foot row; running under the hand
+  ctx.drawImage(hot ? fc.run[Math.floor(now * 8) % fc.run.length] : fc.idle[0], r.x, r.y - 8);
   drawPixelTextShadow(ctx, nm, r.x + 18, r.y + 12, hot ? '#ffd95c' : '#9fb6d8', 'rgba(15,22,50,0.9)');
   stampGrid(CH_QUILL, hot ? CH_QUILL_HOT : CH_QUILL_PAL, r.x + 18 + pixelTextWidth(nm) + 4, r.y + 12, 1);
   if (hot) { ctx.fillStyle = '#c89a3c'; ctx.fillRect(r.x + 18, r.y + 19, r.w - 18, 1); }

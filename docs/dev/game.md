@@ -213,7 +213,8 @@ into the fight always walked. [The road](world.md#the-road), [the zipline](world
 - **Not a game that explains itself in text.** The UI rule in [CLAUDE.md](../../CLAUDE.md) is a
   design constraint, not a style preference.
 - **Not an account.** The player profile is up to three **characters** — each a name, a class
-  fixed when it was made, a look (body type, skin tone, hair, beard, face) and its own lifetime
+  fixed when it was made, a look (body type, skin tone, hair, beard, face, and a hat and a coat
+  out of its class's three of each) and its own lifetime
   numbers — plus a record of which kinds you have held, in the browser. No passwords, no sign-in,
   nothing to log into. A fresh install opens the create screen **before** the title on a
   pre-rolled name and look, so PLAY is one press away and nobody is stopped at a blank form. **A

@@ -1,14 +1,16 @@
 'use strict';
 // The 48 px CHARACTER MODEL: the big front-facing figure the create screen,
-// the roster and the lobby's stage show. In-world bodies stay 16 px
-// (characters.js paints a character's tone and fringe onto them); this is
-// where the whole look reads - body type, face shape, hair style, beard - as
+// the roster and the lobby's stage show. The body in the world is the 24 px
+// scout (js/sprites/scouts.js), which carries the tone, the hair, the beard
+// and the clothes; this is where the whole look reads - body type and face
+// shape too - as
 // LAYERS stamped in order onto one canvas: body, head, beard, hair, then the
-// class outfit over the lot (the hunter's coat and pom hat, the warrior's
-// hooded coat and goggles), so a hat covers the crown and the hair shows
-// under its brim. Every layer is a grid placed at an offset in the 48 x 48
+// character's coat and hat over the lot (three of each per class, the same
+// wardrobe the scout wears in the world), so a hat covers the crown and the
+// hair shows under its brim. Every layer is a grid placed at an offset in the 48 x 48
 // cell; the letters are the player palette's (characters.js PPAL) plus
-// h/H hair, u undershirt, W eye white, g/G goggles, S the hood's fur. The
+// h/H hair, u undershirt, W eye white, g/G goggles, S/s/j fur, l/L/n leather
+// and i/I iron. The
 // tone and hair tables are SPRITES.LOOK (characters.js) - the one list.
 (() => {
   const { TEAM_SKINS } = SPR;
@@ -230,7 +232,16 @@
     ] },
     null,
   ];
-  const OUTFIT = [
+  // the WARDROBE, laid over everything else: per class three hats and three
+  // coats, the same pieces the scout wears in the world (js/sprites/scouts.js),
+  // picked by the look's `hat` and `coat`. A hat is drawn after its coat, so a
+  // hood or an earflap's ties hang over the collar. The hunter's: the pom
+  // beanie, the knit earflap, the hood; the scarf coat, the pack jacket, the
+  // short cape. The warrior's: the fur hood with the goggles up, the parka
+  // hood, the crested helm; the fur mantle, the quilted parka, the pauldrons
+  // over a tabard. Hats stop at row 8 or frame the face, so hair shows under
+  // a brim and a beard inside a hood.
+  const HATS48 = [[
     { x: 12, y: 0, rows: [
       '..........mmmm..........',
       '.........mmmmmm.........',
@@ -241,41 +252,57 @@
       '.....otttTTTTTTttto.....',
       '....otttttttttttttto....',
       '...oooooooooooooooooo...',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '........................',
-      '..ooooommmmmmmmmmooooo..',
-      '.orrrommmmmmmmmmmmorrro.',
-      '.orrrrommmmmmmmmmorrrro.',
-      'orrrrrrommmmmmmmorrrrrro',
-      'orrrrrrrommmmmmorrrrrrro',
-      'orrrrRrrroooooorrrRrrrro',
-      'orrrrRrrrrrrrrrrrrRrrrro',
-      'omrrrorrrrrRRrrrrrorrrmo',
-      'ommrrorrrrrRRrrrrrorrmmo',
-      'ommmorrrrrrRRrrrrrrommmo',
-      'ommmorrrrrrRRrrrrrrommmo',
-      '.oooorrrrrrrrrrrrrroooo.',
-      '....oddddddddddddddo....',
-      '....orrrrrrrrrrrrrro....',
-      '....orrrrrrrrrrrrrro....',
-      '....orrrrrrrrrrrrrro....',
-      '....oddddddddddddddo....',
-      '.....oooooooooooooo.....',
     ] },
-    { x: 12, y: 0, rows: [
-      '........................',
-      '........................',
+    { x: 12, y: 1, rows: [
+      '..........oooo..........',
+      '........oottttoo........',
+      '......oottTTTTttoo......',
+      '.....otttTTTTTTttto.....',
+      '....ottttTTTTTTtttto....',
+      '...otttttttttttttttto...',
+      '...otttttttttttttttto...',
+      '..oTmTmTmTmTTmTmTmTmTo..',
+      '..otttttttttttttttttto..',
+      '..ottto..........ottto..',
+      '..ottto..........ottto..',
+      '..ottto..........ottto..',
+      '..ottto..........ottto..',
+      '..ottto..........ottto..',
+      '..ottto..........ottto..',
+      '..ottto..........ottto..',
+      '..ottto..........ottto..',
+      '...ooo............ooo...',
+      '....m..............m....',
+      '....m..............m....',
+      '....m..............m....',
+      '....M..............M....',
+    ] },
+    { x: 12, y: 1, rows: [
+      '.........oooooo.........',
+      '.......oottttttoo.......',
+      '.....oottTTTTTTttoo.....',
+      '....ottTTTTTTTTTTtto....',
+      '...ottTTTTTTTTTTTTtto...',
+      '...otttttttttttttttto...',
+      '..otttttttttttttttttto..',
+      '..otttoooooooooooottto..',
+      '..ottoKKKKKKKKKKKKotto..',
+      '..otto............otto..',
+      '..otto............otto..',
+      '..otto............otto..',
+      '..otto............otto..',
+      '..otto............otto..',
+      '..otto............otto..',
+      '..otto............otto..',
+      '..otto............otto..',
+      '..ottto..........ottto..',
+      '..otttto........otttto..',
+      '.ottttttoo....ootttttto.',
+      'otttttttttoooottttttttto',
+      'otttTTtttttttttttttTTtto',
+    ] },
+  ], [
+    { x: 12, y: 2, rows: [
       '........oooooooo........',
       '......ooSSSSSSSSoo......',
       '.....oSSttttttttSSo.....',
@@ -296,9 +323,59 @@
       '...oSo............oSo...',
       '....oSo..........oSo....',
       '.....oSSo......oSSo.....',
-      '..oooommSSSSSSSSmmoooo..',
-      '.orrrommSSSSSSSSmmorrro.',
-      '.orrrrommmSSSSmmmorrrro.',
+    ] },
+    { x: 12, y: 0, rows: [
+      '.......oooooooooo.......',
+      '.....oottTTTTTTttoo.....',
+      '....ottTTTTTTTTTTTTo....',
+      '...ottTTTTTTTTTTTTTTo...',
+      '..ottttGGGGGGGGGGtttto..',
+      '..otttGggggggggggGttto..',
+      '.otttttGGGGGGGGGGttttto.',
+      '.ottSSSSSSSSSSSSSSSStto.',
+      'otSSSSooooooooooooSSSSto',
+      'otSSso............osSSto',
+      'otSSo..............oSSto',
+      'otSso..............osSto',
+      'otSSo..............oSSto',
+      'otSso..............osSto',
+      'otSSo..............oSSto',
+      'otSso..............osSto',
+      'otSSo..............oSSto',
+      'otSSso............osSSto',
+      'ottSSSo..........oSSStto',
+      'ottSSSSoo......ooSSSStto',
+      '.otSSSSSSSSSSSSSSSSSSto.',
+      '..ooSSSSSSSSSSSSSSSSoo..',
+    ] },
+    { x: 12, y: 0, rows: [
+      '..........oooo..........',
+      '.........ommmMo.........',
+      '.........ommmMo.........',
+      '.........ommmMo.........',
+      '........oommmMoo........',
+      '......oottTmmTttoo......',
+      '.....otttTTmmTTttto.....',
+      '....otttttTmmTttttto....',
+      '....otttttttttttttto....',
+      '...oiiiiiiiiiiiiiiiio...',
+      '...oIiIiIiIiIiIiIiIio...',
+      '...oiiiio......oiiiio...',
+      '...oiIiio......oiiIio...',
+      '...oiIiio......oiiIio...',
+      '...oiIiio......oiiIio...',
+      '...oiIiio......oiiIio...',
+      '...oiiiio......oiiiio...',
+      '....oiiio......oiiio....',
+      '.....oiio......oiio.....',
+      '......oo........oo......',
+    ] },
+  ]];
+  const COATS48 = [[
+    { x: 12, y: 22, rows: [
+      '..ooooommmmmmmmmmooooo..',
+      '.orrrommmmmmmmmmmmorrro.',
+      '.orrrrommmmmmmmmmorrrro.',
       'orrrrrrommmmmmmmorrrrrro',
       'orrrrrrrommmmmmorrrrrrro',
       'orrrrRrrroooooorrrRrrrro',
@@ -315,7 +392,112 @@
       '....oddddddddddddddo....',
       '.....oooooooooooooo.....',
     ] },
-  ];
+    { x: 12, y: 22, rows: [
+      '..oooooommmmmmmmoooooo..',
+      '.orrrrrlommmmmmolrrrrro.',
+      '.orrrrrLlommmmolLrrrrro.',
+      'orrrrrrLlrooooorlLrrrrro',
+      'orrrrrrLlrrrrrrrlLrrrrro',
+      'orrrrRrLlrrrrrrrlLRrrrro',
+      'orrrrRrLlrrRRrrrlLRrrrro',
+      'omrrrorLlrrRRrrrlLorrrmo',
+      'ommrrorLlrrRRrrrlLorrmmo',
+      'ommmorrLlrrRRrrrlLrommmo',
+      'ommmorrnllllllllnnrommmo',
+      '.oooorrrrrrrrrrrrrroooo.',
+      '....oddddddddddddddo....',
+      '....orrrrrrRRrrrrrro....',
+      '....orrrrrrRRrrrrrro....',
+      '....orrrrrrRRrrrrrro....',
+      '....oddddddddddddddo....',
+      '.....oooooooooooooo.....',
+    ] },
+    { x: 12, y: 21, rows: [
+      '.......oottttttoo.......',
+      '....oottttttttttttoo....',
+      '..ootttTTttttttTTtttoo..',
+      '.otttttTTttttttTTttttto.',
+      'otttttttttttttttttttttto',
+      'otttttttttttttttttttttto',
+      'otttttttttttttttttttttto',
+      'otttttttttttttttttttttto',
+      'ommmmmmmmmmmmmmmmmmmmmmo',
+      '.ooomorrrrrRRrrrrromooo.',
+      '...oLorrrrrRRrrrrroLo...',
+      '...oLorrrrrRRrrrrroLo...',
+      '...ooorrrrrrrrrrrrrooo..',
+      '....oddddddddddddddo....',
+      '....orrrrrrrrrrrrrro....',
+      '....orrrrrrrrrrrrrro....',
+      '....orrrrrrrrrrrrrro....',
+      '....oddddddddddddddo....',
+      '.....oooooooooooooo.....',
+    ] },
+  ], [
+    { x: 12, y: 21, rows: [
+      '.....oSSSSSSSSSSSSSSo...',
+      '..ooSSSSSSSSSSSSSSSSSSoo',
+      '.oSSSSSSSSSSSSSSSSSSSSSo',
+      'oSSSSSSSSSSSSSSSSSSSSSSo',
+      'osssssssssssssssssssssso',
+      'osjsssjsssjsssjsssjsssjo',
+      'ojjsjjjsjjrrrrjjsjjjsjjo',
+      '.ojjoojjoorRRrojjoojjoo.',
+      'ollloorrrrrRRrrrrrrollo.',
+      'oLLLorrrrrrRRrrrrrroLLLo',
+      'oLLLorrrrrrRRrrrrrroLLLo',
+      'oLLLorrrrrrRRrrrrrroLLLo',
+      '.ooolllllllIIllllllooo..',
+      '....oddddddddddddddo....',
+      '....orrrrrrrrrrrrrro....',
+      '....orrrrrrrrrrrrrro....',
+      '....orrrrrrrrrrrrrro....',
+      '....oddddddddddddddo....',
+      '.....oooooooooooooo.....',
+    ] },
+    { x: 12, y: 21, rows: [
+      '...oooooooooooooooooo...',
+      '.oorrrrrrrrrrrrrrrrrroo.',
+      'orrrrrrrrrrrrrrrrrrrrrro',
+      'oRRrrrrrrrrRRrrrrrrrrRRo',
+      'oRRrrrrrrrrRRrrrrrrrrRRo',
+      'oddddddddddddddddddddddo',
+      'orrrrrrrrrrRRrrrrrrrrrro',
+      'oRRrrrrrrrrRRrrrrrrrrRRo',
+      'oRRrrrrrrrrRRrrrrrrrrRRo',
+      'oddddddddddddddddddddddo',
+      'orrrrrrrrrrRRrrrrrrrrrro',
+      'ommmmolllllIIlllllommmmo',
+      'ommmmorrrrrRRrrrrrommmmo',
+      '.oooodddddddddddddoooo..',
+      '....odrrrrrRRrrrrrdo....',
+      '....odrrrrrRRrrrrrdo....',
+      '....oddddddddddddddo....',
+      '.....oooooooooooooo.....',
+    ] },
+    { x: 12, y: 21, rows: [
+      '.oooooo.ommmmmmo.oooooo.',
+      'oiIIIIio.ommmmo.oiIIIIio',
+      'oIIiiiIio.oo..oiIiiiIIo.',
+      'oiiiiiiiorrrrrroiiiiiiio',
+      'oiiiiiiiorrRRrroiiiiiiio',
+      '.oiiiiiorrrRRrrroiiiiio.',
+      '..ooooodrrrRRrrrdooooo..',
+      '...oddodrrrRRrrrdodddo..',
+      '...oddodrrrRRrrrdoddo...',
+      '...oddodrrrRRrrrdoddo...',
+      '...ollodrrrRRrrrdollo...',
+      '...oLLodrrrRRrrrdoLLo...',
+      '...oLLoollllIIllloLLo...',
+      '....oooddrrRRrrddooo....',
+      '.....odddrrRRrrdddo.....',
+      '.....oddrrrRRrrrddo.....',
+      '.....oddrrrRRrrrddo.....',
+      '......ooorrRRrrooo......',
+      '.........rRRRRr.........',
+      '..........dddd..........',
+    ] },
+  ]];
   check('BODY', BODY.length, N.sex);
   check('HEAD', HEAD.length, N.face);
   check('BEARD', BEARD.length, N.beard);
@@ -323,8 +505,11 @@
   check('LOOK.tones', LOOK.tones.length, N.tone);
   check('LOOK.hairCols', LOOK.hairCols.length, N.hairCol);
   check('LOOK.hairs', LOOK.hairs.length, N.hair);
-  check('OUTFIT', OUTFIT.length, PROFILE.CLASS_N);
-  for (const L of [].concat(BODY, HEAD, BEARD, HAIR, OUTFIT)) {
+  check('HATS48', HATS48.length, PROFILE.CLASS_N);
+  check('COATS48', COATS48.length, PROFILE.CLASS_N);
+  for (const c of HATS48) check('HATS48 per class', c.length, N.hat);
+  for (const c of COATS48) check('COATS48 per class', c.length, N.coat);
+  for (const L of [].concat(BODY, HEAD, BEARD, HAIR, ...HATS48, ...COATS48)) {
     if (!L) continue;
     for (const r of L.rows) if (r.length !== L.rows[0].length) throw new Error('looks.js: ragged grid row "' + r + '"');
   }
@@ -332,12 +517,14 @@
   const MODEL_PAL = {
     '.': null, 'o': '#2e2440', 'e': '#2e2440', 'W': '#f4f0e8', 'u': '#8c8674', 'p': '#463c5c',
     'b': '#6f4d38', 'B': '#4a3324', 'g': '#203a52', 'G': '#8fd8ff', 'S': '#e8e2d4',
+    // the wardrobe's leather, iron and fur shades (the scout's own: js/sprites/scouts.js)
+    'l': '#7a5034', 'L': '#9c6a44', 'n': '#4f3322', 'i': '#8c99b0', 'I': '#c3cad6', 's': '#bdb2a2', 'j': '#8d8274',
   };
   const modelPal = (look, team) => {
     const t = TEAM_SKINS[team], tone = LOOK.tones[look.tone] || LOOK.tones[0], hc = LOOK.hairCols[look.hairCol] || LOOK.hairCols[0];
     return Object.assign({}, MODEL_PAL, {
       k: tone[0], K: tone[1], x: tone[2], h: hc[0], H: hc[1],
-      r: t.coat, R: t.coatL, d: t.coatD, t: t.hat, T: t.hatL, m: t.trim, M: t.trimD,
+      r: t.coat, R: t.coatL, d: t.coatD, t: t.head, T: t.headL, m: t.trim, M: t.trimD,
     });
   };
   const stamp = (g, L, pal) => {
@@ -359,7 +546,7 @@
   const cache = new Map();
   SPR.onTeams(() => cache.clear()); // a repaint (setTeamPal) rebakes every model on its next ask
   function portrait(cls, look, team, bare) {
-    const key = cls + '|' + team + '|' + (bare ? 1 : 0) + '|' + [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face].join(',');
+    const key = cls + '|' + team + '|' + (bare ? 1 : 0) + '|' + [look.sex, look.tone, look.hair, look.hairCol, look.beard, look.face, look.hat, look.coat].join(',');
     let c = cache.get(key);
     if (c) return c;
     c = document.createElement('canvas');
@@ -370,11 +557,15 @@
     stamp(g, HEAD[look.face] || HEAD[0], pal);
     stamp(g, BEARD[look.beard], pal);
     stamp(g, HAIR[look.hair], pal);
-    if (!bare) stamp(g, OUTFIT[cls] || OUTFIT[0], pal);
+    if (!bare) {
+      const hats = HATS48[cls] || HATS48[0], coats = COATS48[cls] || COATS48[0];
+      stamp(g, coats[look.coat | 0] || coats[0], pal);
+      stamp(g, hats[look.hat | 0] || hats[0], pal);
+    }
     if (cache.size >= PORTRAIT_KEEP) cache.clear();
     cache.set(key, c);
     return c;
   }
 
-  Object.assign(SPRITES, { portrait, MODEL_LAYERS: { BODY, HEAD, BEARD, HAIR, OUTFIT } });
+  Object.assign(SPRITES, { portrait, MODEL_LAYERS: { BODY, HEAD, BEARD, HAIR, HATS48, COATS48 } });
 })();

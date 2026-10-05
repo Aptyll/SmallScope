@@ -23,9 +23,12 @@
   const CHAR_MAX = 3;              // character slots a profile holds
   const CLASS_N = 2;               // CLASSES.length (js/player.js) - a class index past this is repaired to 0
   // the look's axes and how many choices each has. The pictures for them are
-  // js/sprites/looks.js, which asserts its tables against these counts at
-  // load; this file only stores and repairs the numbers.
-  const LOOK_N = { sex: 2, tone: 6, hair: 6, hairCol: 8, beard: 4, face: 3 };
+  // js/sprites/looks.js (the 48 px model) and js/sprites/scouts.js (the body
+  // in the world), which assert their tables against these counts at load;
+  // this file only stores and repairs the numbers. `hat` and `coat` index the
+  // class's own wardrobe (three of each per class), so a hunter's 1 and a
+  // warrior's 1 are different clothes; a save from before them mends to 0.
+  const LOOK_N = { sex: 2, tone: 6, hair: 6, hairCol: 8, beard: 4, face: 3, hat: 3, coat: 3 };
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins
   // screen's table (js/ui/skins.js); this file only keeps the count and ids.

@@ -6,10 +6,11 @@ file holds what, is at the end.
 
 Sprites are literal ASCII grids paired with a palette object mapping character → hex (or `null`
 for transparent), baked by `bake()` at load. Left-facing variants are `flipH()` of the right ones.
-Character sprites are 16×16 in the world — detail goes into the 48 px model
-([Looks](#looks-a-character-on-the-class-body)). The one exception is the IRON SCOUT skin (below),
-the first step of Noah's move to a 32 px base: a body twice a player's height, drawn for the
-local player only and over an unchanged sim body. The raider set
+A player STANDS and RUNS as the **scout**, 16 × 24 in eight facings and dressed in its character's
+own hat and coat ([The scout](#the-scout-the-body-in-the-world)); it LIES (prone) and FISHES (the
+catch) in the older 16×16 class body, the only set with those poses. The 48 px model is the menus'
+([Looks](#looks-a-character-on-the-class-body)). The IRON SCOUT skin (below) is a body of its own,
+drawn for the local player only over an unchanged sim body. The raider set
 (`SPRITES.raider`, `RDPAL`) is baked from the exact same grids as the player, so a player pose
 edit changes both — but nothing reads it (dead, [Intentional dead code](checklists.md#intentional-dead-code)).
 
@@ -63,11 +64,54 @@ team's paint. The hoist is **16x20**: four rows of fish above the hat on the sam
 is up. Look A off `docs/media/concepts/fish-catch-concepts-1.png`; which frame shows and for how long
 is `catchFrame` / `CATCH_T` in [js/tools.js](../../js/tools.js) - [fishing](world.md#ice-holes-and-fishing).
 
+## The scout: the body in the world
+
+js/sprites/scouts.js. A player's standing and running body is **16 × 24** (plus one row of
+headroom, so a frame is 16 × 25 with the soles on its bottom row) and it is **layers on one body
+plan**, not a grid per outfit: legs, the arms, the coat, the head, the hat, the coat's back item,
+stamped as letters onto one char grid by `compose(cls, look, facing, frame)` and baked through one
+palette (`SCOUT_PAL`, the side's `head`/`coat`/`trim` inks, the look's tone and hair). So a hat and
+a coat mix freely and a new piece is five grids, never a grid per combination. The pieces are looks
+A, B and C of `docs/media/concepts/scout-concepts-1.png` (round 1 of the `concept-art` skill, all
+three taken), split into wearables:
+
+| | hats (`HATS[cls]`) | coats (`COATS[cls]`), with what each slings on the back |
+| --- | --- | --- |
+| HUNTER | pom beanie, knit earflap (ties down), hood | scarf coat + quiver, pack jacket + frame pack under a bedroll, short cape + the bow across the back |
+| WARRIOR | fur hood with the goggles up, parka hood, crested helm | fur mantle, quilted parka, iron pauldrons over a tabard |
+
+A character's `look.hat` and `look.coat` index its own class's three (profile.js `LOOK_N`), and the
+names are `SPRITES.SCOUT_WEAR`. **The body plan** every layer is drawn against: the face is the box
+rows 7-11, cols 4-11 from the front; the collar row 12; the torso rows 13-18; the legs 19-22; the
+soles 23. A hunter's arm is two px of sleeve, a warrior's three.
+
+**Five facings are drawn and three are mirrors.** S (front), SE, E (side, facing right), NE and N
+(back); SW, W and NW are their `flipH`. A piece that draws no SE or NE falls back to S or N, and one
+that draws a diagonal overrides those layer by layer. `SPRITES.scout(cls, look, team).dirs[face]`
+is `{ idle: [frame], run: [four frames] }` in `p.face`'s order (0 east, clockwise, 2 south, 6
+north); `.down`/`.up`/`.left`/`.right` alias four of them and `.poses` gives the four-way frame
+lists a seated rider or a faller draws from. Sets are baked on first ask and kept per class, side
+and look; `SPR.onTeams` empties the cache, so a repaint reaches them.
+
+**A run is four frames**: a contact, a pass, the other contact, a pass. On a pass frame everything
+above the legs rides 1 px up (`frame.bob`, which the gear marks read), which is what the legs' top
+two rows under the coat are for. Front and back share a leg set and the other contact is its
+mirror; the two diagonals share the front's legs; the side draws all four with the far leg a shade
+darker. Arms are their own layer, drawn in `u`/`U`/`z` (sleeve) and `q`/`Q` (hand), which each coat
+maps onto its own letters (`sleeve`), so one set of arm shapes wears every coat. A coat's `under` is
+the coat, `over` is what lies over the arms (a mantle, a cape, a pauldron) and `back` is the slung
+item, drawn under the body from the front and the side and over it from behind.
+
+**A look on the face** is per facing too: `HAIR` and `BEARD` masks in profile.js's order (`h` turns
+skin to hair and never paints a hat, `#` lays hair on cloth), and BALD turns the head's own hair to
+skin. What draws it: `scoutSet(p)` (js/player.js) and `bodyFacing`/`standFrame` (js/draw/bodies.js).
+
 ## Looks: a character on the class body
 
 A **character** ([profile.js](architecture.md#profilejs)) is a look — `sex`, `tone`, `hair`,
-`hairCol`, `beard`, `face`, each an index — on a class body, and it is drawn at two sizes from one
-set of tables. `SPRITES.LOOK` (characters.js, the `looks` section) is the one list: six skin
+`hairCol`, `beard`, `face`, `hat`, `coat`, each an index — on a class body. Standing in the world it
+is the scout above; this section is its two older pictures, the 16×16 class body (prone and the
+catch) and the 48 px model, drawn from one set of tables. `SPRITES.LOOK` (characters.js, the `looks` section) is the one list: six skin
 tones (`k`/`K`/`x`), eight hair colours (`h`/`H`), and per hair style a **fringe** — two
 six-wide masks over the first face row and the row under it. **At 16 px only the tone and the
 fringe read**: `champLook(cls, look, team)` rebuilds the class set through `lookPal` (the tone
@@ -75,8 +119,7 @@ and hair letters swapped in) with the fringe cut into the front and side walking
 `fringed` (mask chars replace *skin* pixels only, so a hat or hood is never painted on; the
 pom-hat body shows six pixels under its brim, the hood four), and caches the set per
 (class, team, tone, hair, colour) — ten players and a menu is all that ever asks. Every reader
-of a body goes through `classSet(p)` (player.js), which asks it. Body type, beard and face
-never touch the in-world body: it stays 16×16 permanently, and they read on the 48 px model only.
+of a lying or fishing body goes through `classSet(p)` (player.js), which asks it.
 
 The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look, team,
 bare)`) is where the whole look reads — the create screen, the roster and the lobby's
@@ -86,22 +129,25 @@ square-jawed, narrow — eyes `W`/`e`, nose shade, blush, mouth), `BEARD[beard]`
 short, full — `h` only inside the face, rimmed only where it hangs past the chin),
 `HAIR[hair]` (20 wide from row 4: a shared crown, then the style — crop, side part, long to the
 shoulders, bangs, spiked, bald is `null`; hair rows over the face carry no inner outline, so the
-head's own rim stays), then `OUTFIT[cls]` over everything (the hunter's pom hat and trimmed
-coat, the warrior's fur-lined hood with goggles pushed up and a scarf collar; the same
-`r`/`R`/`d`/`t`/`T`/`m`/`M` letters as the 16 px body, so one team palette paints both
-sizes). The hats stop at row 8 and the hair's fringe rows sit at 9–10, so hair shows under a
+head's own rim stays), then the character's coat and hat over everything (`COATS48[cls][look.coat]`,
+then `HATS48[cls][look.hat]`: the scout's wardrobe at 48 px, front only, the hat last so a hood or an
+earflap's ties hang over the collar; the same `r`/`R`/`d`/`t`/`T`/`m`/`M` letters as the scout, so
+one team palette paints every size). The hats stop at row 8 and the hair's fringe rows sit at 9–10, so hair shows under a
 brim; long hair runs down beside the neck to where the coat begins. The file asserts every
-table's length against `PROFILE.LOOK_N` / `CLASS_N` at load, so a new choice is added in
-profile.js and here together or the game refuses to boot. The model is front view only (the
-in-world body, which turns, stays the 16×16 set). A new class needs an `OUTFIT` layer
-here ([checklists](checklists.md#common-changes)). `portrait` keeps what it composes in a cache
+table's length against `PROFILE.LOOK_N` / `CLASS_N` at load (scouts.js does the same for its
+hats and coats), so a new choice is added in profile.js and in both files together or the game
+refuses to boot. The model is front view only (the scout turns). A new class needs its three hats
+and three coats here and in scouts.js ([checklists](checklists.md#common-changes)). `portrait` keeps what it composes in a cache
 the create screen fills quickly — a cell per choice per row, refreshed on every pick — so the cache
 is emptied past `PORTRAIT_KEEP` (512) rather than growing with every roll of the die.
 
 `docs/media/concepts/model-concepts-1.png` (A BUNDLED, B LANKY, C STOUT) is a **rejected**
 concept round for this model, kept as the record of what not to draw again.
 
-**Team colours are palette swaps of those same grids.** `TEAM_SKINS` (two presets, RED and BLUE,
+**Team colours are palette swaps of those same grids.** A body's hat or hood is the side's `head`/
+`headL` ink (a burgundy and a navy in the default pair, never the teal and near-white the hats wore
+before, which read as the other side and as snow); `hat`/`hatL` are no longer painted and stay as two
+of the per-player name inks (`playerTint`). `TEAM_SKINS` (two presets, RED and BLUE,
 also exported as `SPRITES.teams` so the game code can read the names and marker colours) drives
 five baked sets — the four below plus `eagleTeam[team]`: the drop eagle's three flap frames with
 the torso band (the rows the head sits in, which hold still across the frames) re-lettered by
@@ -415,8 +461,8 @@ a little from the front so the lamp eyes stay on screen, and `left` is its mirro
 shares one 22×38 box centred on the body, with `top` (rows over the head) and `foot` (the soles'
 row); `icon` is the rig at its full 64 px for the skins screen's card. He stands about 32 px
 tall, twice a player, but his hitbox is the player's: `drawPlayer` swaps him in for the class
-body while upright (`scoutBody`, js/ui/skins.js), and grows the held tool and an ability's marks
-2× about the feet to fit him. Lying down and the fish catch still show the class body.
+body while upright (`scoutBody`, js/ui/skins.js, ahead of the scout), and grows the held tool and an
+ability's marks 2× about the feet to fit him. Lying down and the fish catch still show the class body.
 
 The three camp props are
 `deadTree` (two 16×24 snags on `DTPAL`) and `den` (A ROCK MAW of [den-concepts-1.png](../media/concepts/den-concepts-1.png): a 32×21 snow-capped boulder cave with icicle fangs over its mouth, on `DNPAL`, drawn at `py - 4` over its two tiles — the concept's trampled-snow rows were left off, because a decal must not cast a shade) and `hogHut` (eight 35×35 frames of the HOG HUT's chimney smoke on `HHPAL`, converted 1:1 from docs/media/new_media5/hog-hut-chimney-moving.png and drawn centred over the front row of its 2×2 footprint). The berry bush is
@@ -460,7 +506,7 @@ candidates (C, the ice-fishing shack, stood in the game until 4.12; A, the slat 
 
 `js/sprites/core.js` loads first and makes two globals: the empty `SPRITES` registry and `SPR`,
 the helpers every art file shares — `bake`, `spansOf`, `bakeSpan`, `flipH`, `bakeClips`, `mapClips`,
-`liveIcon`, the `TEAM_SKINS` table and `teamBuildPal`. Each of the eleven art files
+`liveIcon`, the `TEAM_SKINS` table and `teamBuildPal`. Each of the twelve art files
 is a private IIFE with the same skeleton: destructure what it needs off `SPR`, its palettes and
 grids under `// ---- name` banners, the set builders, and at the bottom one
 `Object.assign(SPRITES, { ... })` naming every key it owns. Nothing reads another file's grid, so
@@ -473,7 +519,8 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | File | Banners | Registers |
 | --- | --- | --- |
 | `characters.js` | player, the fish catch, skater, prone, raider, looks, the merchant | `playerTeam`, `champ`, `LOOK`, `champLook`, `player`, `raider` **(dead)**, `merchant` |
-| `looks.js` | bodies, heads, beards, hair, outfits | `portrait`, `MODEL_LAYERS` |
+| `scouts.js` | palette, heads, hats, coats, arms, legs, looks, compose | `scout`, `SCOUT_WEAR`, `SCOUT_FACINGS`, `scoutCompose` |
+| `looks.js` | bodies, heads, beards, hair, the wardrobe | `portrait`, `MODEL_LAYERS` |
 | `terrain.js` | trees, gold ore, gold mine, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `goldOre` **(dead)**, `mine` **(dead)**, `bush*`, `deadTree`, `den`, `hogHut` |
 | `rocks.js` | the three rock kinds, their rubble, the channel's cracks, the glint sites | `rock[kind]`, `rockSpent[kind]`, `rockCracks[kind][stage]`, `rockGlints[kind]` |
 | `beasts.js` | imp, rabbit, deer, wolf, the bird | `rabbit`, `wolf`, `bird`, `deer`, `imp` **(dead)** |

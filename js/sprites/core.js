@@ -86,6 +86,11 @@ window.SPR = (() => {
   // tier material) and its EAGLE's armour, so a side reads as one side at a
   // glance. The game code reads the names/markers back out of SPRITES.teams -
   // TEAM_PALETTES is the only place the team palette is written down.
+  // `head`/`headL` paint a scout's hat or hood (every body: js/sprites/scouts.js,
+  // characters.js, the 48 px model) and are the side's own ink - in the default
+  // pair a burgundy and a navy, never the teal and near-white that read as the
+  // wrong side or as snow; `hat`/`hatL` are no longer worn and stay as two of
+  // the per-player name inks (playerTint, js/player.js).
   // TEAM_PALETTES are the COLOUR BLIND dropdown's four answers (settings.teamPal): the
   // same two presets repainted for a player who cannot tell the default pair
   // apart. Slot 0 is the side your screen paints as the rival, slot 1 yours
@@ -98,34 +103,34 @@ window.SPR = (() => {
   const TEAM_PALETTES = {
     def: [
       { mark: '#e05548', // slot 0 - the original red/teal look
-        coat: '#c9524e', coatL: '#df7358', coatD: '#96393f', hat: '#3e8c81', hatL: '#58ab98',
+        coat: '#c9524e', coatL: '#df7358', coatD: '#96393f', hat: '#3e8c81', hatL: '#58ab98', head: '#7f2e3f', headL: '#a8444f',
         trim: '#f6ecd4', trimD: '#d9c5a0', fit: '#5a3340', fitL: '#8c4f52', glow: '#ff9440' },
       { mark: '#6aa8e8',
-        coat: '#3f6fb0', coatL: '#5e93d8', coatD: '#2b4d7d', hat: '#cfe4f2', hatL: '#f4faff',
+        coat: '#3f6fb0', coatL: '#5e93d8', coatD: '#2b4d7d', hat: '#cfe4f2', hatL: '#f4faff', head: '#27426f', headL: '#3b609c',
         trim: '#e8f2fb', trimD: '#bcd0e4', fit: '#2a3a56', fitL: '#4c6a94', glow: '#8fd8ff' },
     ],
     rg: [
       { mark: '#f2a93a',
-        coat: '#e08a1e', coatL: '#f4ab44', coatD: '#a25c12', hat: '#4a3526', hatL: '#6e503a',
+        coat: '#e08a1e', coatL: '#f4ab44', coatD: '#a25c12', hat: '#4a3526', hatL: '#6e503a', head: '#4a3526', headL: '#6e503a',
         trim: '#fbeed0', trimD: '#dcc59a', fit: '#5a3a1e', fitL: '#8c5c2a', glow: '#ffc040' },
       { mark: '#5f9cf0',
-        coat: '#2f5fb8', coatL: '#4f84dc', coatD: '#1f3f80', hat: '#cfe4f2', hatL: '#f4faff',
+        coat: '#2f5fb8', coatL: '#4f84dc', coatD: '#1f3f80', hat: '#cfe4f2', hatL: '#f4faff', head: '#1f3f80', headL: '#2f5fb8',
         trim: '#e8f2fb', trimD: '#bcd0e4', fit: '#1e2c56', fitL: '#3c5898', glow: '#7cc8ff' },
     ],
     by: [
       { mark: '#ff5a4a',
-        coat: '#d8402a', coatL: '#f0623e', coatD: '#962a1a', hat: '#3a2420', hatL: '#5c3a30',
+        coat: '#d8402a', coatL: '#f0623e', coatD: '#962a1a', hat: '#3a2420', hatL: '#5c3a30', head: '#3a2420', headL: '#5c3a30',
         trim: '#fbeae4', trimD: '#dcc0b4', fit: '#4a2018', fitL: '#7c3a28', glow: '#ff8a50' },
       { mark: '#28c0f0',
-        coat: '#1a80c8', coatL: '#3aa4e8', coatD: '#105a90', hat: '#d8eef8', hatL: '#f4fbff',
+        coat: '#1a80c8', coatL: '#3aa4e8', coatD: '#105a90', hat: '#d8eef8', hatL: '#f4fbff', head: '#105a90', headL: '#1a80c8',
         trim: '#e6f6fc', trimD: '#b4d8e8', fit: '#0e3450', fitL: '#2a6490', glow: '#8ae4ff' },
     ],
     hc: [
       { mark: '#ffe04a',
-        coat: '#f0c828', coatL: '#fff070', coatD: '#b08a10', hat: '#2a2418', hatL: '#4a4028',
+        coat: '#f0c828', coatL: '#fff070', coatD: '#b08a10', hat: '#2a2418', hatL: '#4a4028', head: '#2a2418', headL: '#4a4028',
         trim: '#fffbe8', trimD: '#e8dcb0', fit: '#4a3a10', fitL: '#86701e', glow: '#fff4a0' },
       { mark: '#4c7cff',
-        coat: '#1e3aa8', coatL: '#3458d4', coatD: '#101e60', hat: '#141a3a', hatL: '#28305a',
+        coat: '#1e3aa8', coatL: '#3458d4', coatD: '#101e60', hat: '#141a3a', hatL: '#28305a', head: '#141a3a', headL: '#28305a',
         trim: '#d8e4ff', trimD: '#a8b8e0', fit: '#0e163e', fitL: '#26367a', glow: '#6c9cff' },
     ],
   };

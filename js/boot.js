@@ -245,7 +245,7 @@ function riderDir(e) {
 // the bottom three rows (the boots) are tucked into the plumage - a rider
 // sits, it does not stand on a wing - and the body rises from that point, so
 // the hem meets the bird's back and nothing floats. `set` is a pose set
-// (classSet(p) or SPRITES.merchant[...]), any height.
+// (scoutSet(p).poses or SPRITES.merchant[...]), any height.
 function drawSeated(set, dir, x, y, sc, frame) {
   const spr = set[dir][frame || 0];
   const w = spr.width, keep = spr.height - 3;
@@ -989,9 +989,9 @@ function drawDropAir(ex, ey, now) {
     const sw = Math.round(3 + 5 * q);
     ctx.fillStyle = 'rgba(40,60,100,' + (0.12 + 0.28 * q).toFixed(2) + ')';
     ctx.fillRect(px - sw, py - 1, sw * 2, 2);
-    const ps = classSet(p).down[1 + (Math.floor(p.dropT * 10) % 2)];
-    const dw = Math.round(16 * sc);
-    ctx.drawImage(ps, Math.round(px - dw / 2), Math.round(py - alt - 12 * sc), dw, dw);
+    const ps = scoutSet(p).poses.down[1 + (Math.floor(p.dropT * 10) % 4)]; // legs going through the run on the way down
+    const dw = Math.round(ps.width * sc), dh = Math.round(ps.height * sc);
+    ctx.drawImage(ps, Math.round(px - dw / 2), Math.round(py - alt + 4 * sc - dh), dw, dh); // soles on the cell's floor, as a standing body's
   }
 }
 
@@ -1118,8 +1118,8 @@ function drawEagle(e, ex, ey, now) {
       const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
       const dx = st[0] * S, dy = st[1] * S;
       const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
-      drawSeated(classSet(p), rd, rx, ry, RS);
-      seatedName(classSet(p), rd, rx, ry, RS, p.name, p.team);
+      drawSeated(scoutSet(p).poses, rd, rx, ry, RS);
+      seatedName(scoutSet(p).poses, rd, rx, ry, RS, p.name, p.team);
     }
     // where a jump right now would land: a pulsing ring under the bird -
     // only while the jump window is open and never on the scripted first flight,
@@ -1199,8 +1199,8 @@ function drawEagle(e, ex, ey, now) {
         const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
         const dx = st[0] * S, dy = st[1] * S;
         const rx = sx + dx * hc - dy * hs, ry = sy + breath + dx * hs + dy * hc;
-        drawSeated(classSet(p), rd, rx, ry, 1);
-        seatedName(classSet(p), rd, rx, ry, 1, p.name, p.team);
+        drawSeated(scoutSet(p).poses, rd, rx, ry, 1);
+        seatedName(scoutSet(p).poses, rd, rx, ry, 1, p.name, p.team);
       }
       if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
         const ph = (now * 1.2) % 1;

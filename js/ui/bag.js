@@ -478,12 +478,8 @@ function drawCharPanel(now) {
   ctx.fillStyle = '#232c52';
   ctx.fillRect(pr.x, pr.y, pr.w, 1); ctx.fillRect(pr.x, pr.y + pr.h - 1, pr.w, 1);
   ctx.fillRect(pr.x, pr.y, 1, pr.h); ctx.fillRect(pr.x + pr.w - 1, pr.y, 1, pr.h);
-  const sx = pr.x + 12, sy = pr.y + 7;
-  ctx.fillStyle = 'rgba(4,6,18,0.6)';
-  ctx.beginPath(); ctx.ellipse(sx + 32, pr.y + pr.h - 6, 22, 4, 0, 0, Math.PI * 2); ctx.fill();
-  const spr = SPRITES.champLook(player.cls, player.look, skin(0)).down[1 + (Math.floor(now * 3) % 2)];
-  ctx.drawImage(spr, sx, sy, 64, 64);
-  drawGearMarks(player, sx, sy, 4);
+  const pv = drawScoutPreview(player, pr.x + 44, pr.y + pr.h - 2, 3, now);
+  drawScoutMarks(player, pv.x, pv.y, pv.spr, pv.set.marks, 3);
   const held = heldTool(player);
   if (held) {
     const im = SPRITES[ITEMS[held.type].icon];

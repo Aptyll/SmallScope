@@ -2486,7 +2486,8 @@ for everybody** — AI players deal theirs from the seed in `initPlayers()`, a p
 across the tracks — so a spend is a shape, never a head start, and the arsenal's flatness holds.
 
 **Worn gear shows on the sprite**: each piece at level 2+ lays a 1 px band of its material across
-the shared 16×16 body plan — hat, coat, hips, one mark per foot (`GEAR_MARKS`/`drawGearMarks`,
+the body — hat, coat, hips, one mark per foot: on the standing scout at its own rows (`marks`,
+riding a run's bob; `drawScoutMarks`), on the 16×16 class body at `GEAR_MARKS` (`drawGearMarks`),
 called from `drawPlayer` under the held tool; skipped while rolling, in a hole, or in title). The
 free level-1 pick draws nothing, so the baseline look stays the class's; a fed player reads
 iron → steel → gold at a glance, the same materials the HUD plates wear.

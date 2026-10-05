@@ -669,7 +669,7 @@
   };
 
   const teamPlayerPal = (t) => Object.assign({}, PPAL, {
-    r: t.coat, R: t.coatL, d: t.coatD, t: t.hat, T: t.hatL, m: t.trim, M: t.trimD,
+    r: t.coat, R: t.coatL, d: t.coatD, t: t.head, T: t.headL, m: t.trim, M: t.trimD,
   });
   // the three catch frames in a class's team paint (the fish keeps its own colours)
   const catchSet = (pal, stoop, haul, hold) => {

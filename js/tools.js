@@ -306,8 +306,9 @@ function warpPlayer(p, x, y) {
     x = tx * TILE + 8; y = ty * TILE + 8;
   }
   const d = Math.hypot(x - p.x, y - p.y);
+  const sf = standFrame(p); // the body as it stood, and where its frame sits on the feet (js/draw/bodies.js)
   warps.push({
-    spr: classSet(p)[p.dir][0], x0: p.x, y0: p.y, x1: x, y1: y,
+    spr: sf.spr, fx: sf.ox, fy: sf.oy, x0: p.x, y0: p.y, x1: x, y1: y,
     n: Math.max(2, Math.min(WARP_MAX, Math.round(d / WARP_STEP))),
     col: BITS.warp.col, t: 0,
   });

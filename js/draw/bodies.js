@@ -257,6 +257,55 @@ function atFeet(x, y, sc, fn) {
   ctx.restore();
 }
 
+// which way a body is drawn facing: the eight-way p.face (js/player.js), or
+// for a save or a peer from before it, the four-way dir it always had
+const FACE_OF_DIR = { right: 0, down: 2, left: 4, up: 6 };
+function faceOf(p) { return p.face !== undefined ? p.face : FACE_OF_DIR[p.dir] || 2; }
+// a standing body's frames for the way it faces: the scout turns through
+// eight (`dirs`), a skin with four keeps the four-way names
+function bodyFacing(b, p) { return b.dirs ? b.dirs[faceOf(p)] : b[p.dir]; }
+// a body standing still, for a pass that draws one frame of it at the
+// body's feet - an empty slot's ghost, a body going down, a warp's trail:
+// { spr, ox, oy } with (ox, oy) the frame's top-left from the 16 x 16 cell's
+// (x - 8, y - 12), feet on the cell's floor row as a class frame stands
+function standFrame(p) {
+  const b = scoutSet(p);
+  const spr = bodyFacing(b, p).idle[0];
+  return { spr, ox: 8 - (spr.width >> 1), oy: 15 - b.foot };
+}
+// the gear marks (GEAR_MARKS' four pieces, one 1 px stripe each in the
+// piece's material) on the scout: its own rows (`marks`), across the middle
+// six columns of whatever frame it is in. A run's pass frame carries its
+// bob (`spr.bob`), and the hat, chest and hip marks ride up with the body.
+// `s` scales the lot for a body drawn big in a panel, and `colOf(i)` (a
+// colour, or null for none) stands in for the pieces' own materials there.
+function drawScoutMarks(p, x, y, spr, marks, s, colOf) {
+  s = s || 1;
+  const rows = [marks.hat, marks.chest, marks.hips, marks.boots];
+  const c = x + (spr.width >> 1) * s;
+  for (let i = 0; i < rows.length; i++) {
+    const col = colOf ? colOf(i) : p.gearLv[i] >= 2 ? GEAR_MATS[p.gearLv[i] - 1] : null;
+    if (!col) continue;
+    ctx.fillStyle = col;
+    const ry = y + (rows[i] + (i < 3 ? spr.bob || 0 : 0)) * s;
+    if (i === 3) { ctx.fillRect(c - 4 * s, ry, 2 * s, s); ctx.fillRect(c + 2 * s, ry, 2 * s, s); }
+    else ctx.fillRect(c - 3 * s, ry, 6 * s, s);
+  }
+}
+// a scout running in place in a panel's well, S px a px, centred on cx with
+// its soles on the row `foot`: the character sheet and the hero pop-up show
+// the body you will stand in. Returns the frame and where it went.
+const PREVIEW_RUN_FPS = 7;
+function drawScoutPreview(p, cx, foot, S, now) {
+  const set = scoutSet(p);
+  const spr = set.dirs[2].run[Math.floor(now * PREVIEW_RUN_FPS) % set.dirs[2].run.length];
+  const w = spr.width * S, h = spr.height * S, x = cx - (w >> 1), y = foot - (set.foot + 1) * S;
+  ctx.fillStyle = 'rgba(4,6,18,0.6)';
+  ctx.beginPath(); ctx.ellipse(cx, foot - 1, 7 * S, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.drawImage(spr, x, y, w, h);
+  return { spr, set, x, y, w, h };
+}
+
 function drawPlayer(p, ex, ey, now) {
   const local = p === player;
   const lying = p.prone;
@@ -273,12 +322,13 @@ function drawPlayer(p, ex, ey, now) {
   // which is what `sy` below pays for
   const catchF = !lying && p.fallT <= 0 && p.dodgeT <= 0 ? catchFrame(p) : -1;
   if (catchF >= 0) spr = classSet(p).catch[catchF];
-  // ...or the worn body: lying and the catch keep the class body, which has
-  // the only poses for them
-  const rb = !lying && catchF < 0 ? scoutBody(p) : null;
+  // ...or the body it stands in: a worn skin's (scoutBody, js/ui/skins.js),
+  // else the scout in its own hat and coat (scoutSet, js/player.js). Lying
+  // and the catch keep the class body, which has the only poses for them.
+  const rb = !lying && catchF < 0 ? scoutBody(p) || scoutSet(p) : null;
   if (rb) {
-    const c = rb[p.dir];
-    spr = frame > 0 ? c.run[Math.floor(p.animT) % c.run.length] : c.idle[Math.floor(now * ROBOT_IDLE_FPS) % c.idle.length];
+    const c = bodyFacing(rb, p);
+    spr = frame > 0 && !p.sliding ? c.run[Math.floor(p.animT * (rb.runRate || 1)) % c.run.length] : c.idle[Math.floor(now * ROBOT_IDLE_FPS) % c.idle.length];
   }
   // the crawl inches: the second frame sits one pixel further along the facing
   // than the first, so the body hauls itself forward instead of flapping in
@@ -293,14 +343,14 @@ function drawPlayer(p, ex, ey, now) {
   // the cell with its soles on the cell's bottom row
   const bx = rb ? px + 8 - (spr.width >> 1) : px;
   const by = rb ? py + 15 - rb.foot : py + 16 - spr.height;
-  const wsc = rb ? WORN_SC : 1, fx0 = px + 8, fy0 = py + 16; // what the hands hold grows about the feet
+  const wsc = rb ? rb.sc || WORN_SC : 1, fx0 = px + 8, fy0 = py + 16; // what the hands hold grows about the feet (a skin drawn at twice a scout's height)
   // shadow (not while swimming in a hole, and not while lying down - a body
   // flat on the snow has nothing to cast one over, and the cover's own dark
   // lower rim is what grounds it instead)
   if (p.fallT <= 0 && !lying) {
     // the sun's shade, cut from the frame (ground.js) - the standing one
     // through a roll, whose spin would smear it - feet on the foot row
-    const ss = p.dodgeT > 0 ? (rb ? rb[p.dir].idle[0] : classSet(p)[p.dir][0]) : spr;
+    const ss = p.dodgeT > 0 ? (rb ? bodyFacing(rb, p).idle[0] : classSet(p)[p.dir][0]) : spr;
     drawCastShade(ss, bx, rb ? by : py + 16 - ss.height);
   }
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
@@ -325,7 +375,7 @@ function drawPlayer(p, ex, ey, now) {
       p.dodgeVY < 0 ? -1 : 1;
     const vd = Math.hypot(p.dodgeVX, p.dodgeVY) || 1;
     const nx = p.dodgeVX / vd, ny = p.dodgeVY / vd;
-    const rollSpr = rb ? rb[p.dir].idle[0] : classSet(p)[p.dir][0];
+    const rollSpr = rb ? bodyFacing(rb, p).idle[0] : classSet(p)[p.dir][0];
     const rw = rollSpr.width >> 1, rh = rb ? (rb.foot + 1 - rb.top) >> 1 : 8, ry0 = rb ? rb.foot + 1 - rh : 8;
     const spin = (a, gx, gy) => {
       ctx.save();
@@ -370,7 +420,8 @@ function drawPlayer(p, ex, ey, now) {
     // mid-cast (or holding the shield, or charging) has no hand free for it.
     const held = state.mode !== 'title' && (!lying || p.charging) && catchF < 0 &&
       p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
-    const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
+    const away = rb && rb.dirs ? faceOf(p) >= 5 : p.dir === 'up'; // the back turned: NW, N, NE
+    const toolBehind = held && away && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
     if (toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py));
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
     if (pose && pose.rot) {
@@ -385,7 +436,10 @@ function drawPlayer(p, ex, ey, now) {
     }
     // gear marks sit at fixed points on the standing body plan, so the prone
     // poses skip them rather than stripe a shoulder across someone's hip
-    if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0 && !rb) drawGearMarks(p, ax, ay);
+    if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0) {
+      if (!rb) drawGearMarks(p, ax, ay);
+      else if (rb.marks) drawScoutMarks(p, sx, sy, spr, rb.marks);
+    }
     ctx.globalAlpha = 1;
     if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py));
     // what an ability left ON this body - shield, net, jaws, fury, mark -
@@ -663,8 +717,8 @@ function drawBuryRing(p, cxp, cyp) {
 // an unfilled player: a flat team-tinted silhouette standing at its camp, so
 // the world shows who is missing rather than pretending the player isn't there
 function drawGhost(p, ex, ey) {
-  const spr = classSet(p)[p.dir][0];
-  const px = Math.round(p.x - 8 - ex), py = Math.round(p.y - 12 - ey);
+  const { spr, ox, oy } = standFrame(p);
+  const px = Math.round(p.x - 8 - ex) + ox, py = Math.round(p.y - 12 - ey) + oy;
   sctx.clearRect(0, 0, 32, 32);
   sctx.globalCompositeOperation = 'source-over';
   sctx.drawImage(spr, 0, 0);
@@ -811,7 +865,8 @@ function downPixels(spr) {
 function trackDowns(now) {
   for (const p of players) {
     if (p.dead && downWas.get(p) === false && p.active) {
-      downs.set(p, { t0: now, x: p.x, y: p.y, spr: classSet(p)[p.dir][0], wind: hash2(p.id, p.deaths) < 0.5, k: p.deaths });
+      const f = standFrame(p);
+      downs.set(p, { t0: now, x: p.x, y: p.y, spr: f.spr, fx: f.ox, fy: f.oy, wind: hash2(p.id, p.deaths) < 0.5, k: p.deaths });
       tallyFall(p); // a one-shot never wore its total: it floats off from where the frame stood
     }
     if (!p.dead) downs.delete(p);
@@ -823,7 +878,7 @@ function goingDown(p) { return downs.has(p); }
 
 function drawDown(p, ex, ey, now) {
   const d = downs.get(p), t = now - d.t0;
-  const ox = Math.round(d.x - 8 - ex), oy = Math.round(d.y - 12 - ey);
+  const ox = Math.round(d.x - 8 - ex) + d.fx, oy = Math.round(d.y - 12 - ey) + d.fy;
   const px = downPixels(d.spr), h = d.spr.height;
   const dot = (col, x, y) => { ctx.fillStyle = col; ctx.fillRect(Math.round(x), Math.round(y), 1, 1); };
   if (t < DOWN_FLASH) { for (const q of px) dot('#ffffff', ox + q.x, oy + q.y); return; }

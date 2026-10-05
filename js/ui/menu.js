@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.395';
+const PATCH_TXT = 'PATCH 0.396';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.396', 'SCOUTS STAND HALF AGAIN AS TALL AND RUN IN EIGHT DIRECTIONS IN A HAT AND A COAT OF THEIR OWN: THREE OF EACH PER CLASS ON THE CHARACTER SCREEN, A SIDE\'S HATS IN ITS OWN COLOUR, AND EVERY BOT DRESSED ITS OWN WAY.'],
   ['0.395', 'EVERY RABBIT NOW LIVES IN ONE OF TWO WARRENS DUG INTO THE TREELINE, WHERE SNOWDROPS OPEN AT DAWN AND SHIELD YOUR WHOLE SIDE WHEN PICKED, AND A RABBIT CAN DROP A BURROW: DIG ONE END, RUN, AND THE TUNNEL ANYONE CAN RIDE OPENS WHERE YOU STAND.'],
   ['0.394', 'BEHIND THE SCENES: THE DEV NOTES NOW POINT AT THE MEDIA KIT FOR SHORTS AND STILLS.'],
   ['0.393', 'BEARS ARE TOUGHER AND FASTER: TWICE THE HEALTH, A CHASE THAT OUTRUNS YOU ON FOOT, AND A BLOW THAT ONCE STARTED FOLLOWS YOU AND LANDS UNLESS YOU ROLL OR DASH CLEAR.'],
@@ -1306,6 +1307,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['SCOUTS STAND TALLER, RUN EIGHT WAYS AND WEAR THE HAT AND COAT YOU PICK', '0.396'],
     ['WATCH TWO LADDER BOTS PLAY, AT UP TO 8X SPEED', '0.375'],
     ['BOT LADDER ON THE TITLE: SEE THE STANDINGS, THEN FIGHT ANY BOT', '0.360'],
     ['THE END SCREENS TELL THE MATCH IN THREE LINES: WHO HUNTED YOU, WHO HELD THE BIRD', '0.352'],
@@ -2704,17 +2706,19 @@ function drawLobbyCard(r, mine, hidden, flash) {
     ctx.fillRect(cxx, by - 3, 1, 1); ctx.fillRect(cxx + 2, by - 3, 1, 1); ctx.fillRect(cxx + 4, by - 3, 1, 1);
     ctx.fillRect(cxx, by - 2, 5, 1);
   }
-  const spr = SPRITES.champLook(p.cls, p.look, side).down[0];
+  // the scout from the hat to the chest: the top 16 rows of its front, in
+  // the same square the whole 16 px body used to fill
+  const spr = SPRITES.scout(p.cls, p.look, side).dirs[2].idle[0], top = 1;
   if (hidden) {
-    sctx.clearRect(0, 0, 16, 16);
+    sctx.clearRect(0, 0, 16, 32);
     sctx.globalCompositeOperation = 'source-over';
     sctx.drawImage(spr, 0, 0);
     sctx.globalCompositeOperation = 'source-in';
     sctx.fillStyle = '#35426e';
-    sctx.fillRect(0, 0, 16, 16);
+    sctx.fillRect(0, 0, 16, 32);
     sctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(scratch, 0, 0, 16, 16, bx, by, bw, bw);
-  } else ctx.drawImage(spr, bx, by, bw, bw);
+    ctx.drawImage(scratch, 0, top, 16, 16, bx, by, bw, bw);
+  } else ctx.drawImage(spr, 0, top, 16, 16, bx, by, bw, bw);
   const nm = p.name, col = me ? '#ffd95c' : hidden ? '#6d7ea6' : TEAMS[side].mark;
   const nx = mine ? bx + bw + 5 : bx - 5 - pixelTextWidth(nm);
   drawPixelTextShadow(ctx, nm, nx, r.y + ((r.h - 5) >> 1), col, '#0a0e23');
@@ -2972,34 +2976,26 @@ function drawGearPreview(r, now) {
   ctx.fillStyle = '#232c52';
   ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1);
   ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h);
-  const sx = r.x + 12, sy = r.y + 7, s = 4; // the 16x16 body at 4x
-  ctx.fillStyle = 'rgba(4,6,18,0.6)';
-  ctx.beginPath(); ctx.ellipse(sx + 32, r.y + r.h - 6, 22, 4, 0, 0, Math.PI * 2); ctx.fill();
-  const spr = classSet(player).down[1 + (Math.floor(now * 3) % 2)];
-  ctx.drawImage(spr, sx, sy, 64, 64);
-  for (let i = 0; i < GEAR_MARKS.length; i++) { // the leather the picks ride
-    const mk = GEAR_MARKS[i];
-    const lit = m.gearFxT > 0 && m.gearFxSlot === i;
-    ctx.fillStyle = lit ? '#f4f7ff' : GEAR_MATS[0];
-    ctx.fillRect(sx + mk.x * s, sy + mk.y * s, mk.w * s, s);
-    if (mk.x2 !== undefined) ctx.fillRect(sx + mk.x2 * s, sy + mk.y * s, mk.w * s, s);
-  }
+  const pv = drawScoutPreview(player, r.x + 44, r.y + r.h - 2, 3, now); // the scout at 3x, running in place
+  // the leather the picks ride, the changed piece's lit
+  drawScoutMarks(player, pv.x, pv.y, pv.spr, pv.set.marks, 3, (i) => (m.gearFxT > 0 && m.gearFxSlot === i ? '#f4f7ff' : GEAR_MATS[0]));
   if (m.gearFxT > 0) { // the equip: the body flashes white and throws sparks
     const f = m.gearFxT / 0.45;
     sctx.clearRect(0, 0, 64, 64);
     sctx.globalCompositeOperation = 'source-over';
-    sctx.drawImage(spr, 0, 0);
+    sctx.drawImage(pv.spr, 0, 0);
     sctx.globalCompositeOperation = 'source-in';
     sctx.fillStyle = 'rgba(255,255,255,0.85)';
     sctx.fillRect(0, 0, 64, 64);
     ctx.globalAlpha *= f;
-    ctx.drawImage(scratch, 0, 0, 16, 16, sx, sy, 64, 64);
+    ctx.drawImage(scratch, 0, 0, pv.spr.width, pv.spr.height, pv.x, pv.y, pv.w, pv.h);
     ctx.globalAlpha /= f;
     ctx.fillStyle = '#f2cc6a';
+    const mx = pv.x + (pv.w >> 1), my = pv.y + (pv.h >> 1);
     for (let k = 0; k < 8; k++) {
       const an = hash2(k, 77) * Math.PI * 2;
       const d = 20 + (1 - f) * 22;
-      ctx.fillRect(sx + 32 + Math.round(Math.cos(an) * d), sy + 32 + Math.round(Math.sin(an) * d * 0.8), 2, 2);
+      ctx.fillRect(mx + Math.round(Math.cos(an) * d), my + Math.round(Math.sin(an) * d * 0.8), 2, 2);
     }
   }
   // the class weapon rides along - the other half of what you fly out with
@@ -3467,11 +3463,11 @@ const WIKI_WORLD = [
     text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
   { name: 'THE WORKS', fig: () => [SPRITES.rock[0], SPRITES.crate],
     text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM AND THE ROCKS ARE THEIR RUBBLE, SO THERE IS GOLD IN BOTH, AND NOW AND THEN A TOOL. THE TREELINE KEEPS THE CRATES THAT NEVER SHIPPED. BREAK IT OPEN AND IT IS YOURS.' },
-  { name: 'THE CLAIM', fig: () => [SPRITES.champ[0][skin(player.team)].right[0], SPRITES.champ[1][skin(1 - player.team)].left[0]],
+  { name: 'THE CLAIM', fig: () => [SPRITES.scout(0, null, skin(player.team)).dirs[0].idle[0], SPRITES.scout(1, null, skin(1 - player.team)).dirs[4].idle[0]],
     text: 'VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER COMPANY\'S BIRD OFF ITS GROUND AND THE WHOLE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
   { name: 'THE EAGLES', air: true, fig: () => [SPRITES.eagleTeam[skin(player.team)][0]],
     text: 'BIG ENOUGH TO CARRY FIVE SCOUTS AND A MERCHANT, ARMOURED IN COMPANY COLOUR, AND BRAVE ONLY UP TO A POINT. IT BEATS ITS WINGS AT WHATEVER CROWDS IT. HIT IT ENOUGH AND ITS NERVE GOES. IT LEAVES, AND ITS COMPANY LEAVES WITH IT.' },
-  { name: 'THE SCOUTS', fig: () => [SPRITES.champ[0][skin(player.team)].down[0], SPRITES.champ[1][skin(player.team)].down[0]],
+  { name: 'THE SCOUTS', fig: () => [SPRITES.scout(0, null, skin(player.team)).dirs[2].idle[0], SPRITES.scout(1, null, skin(player.team)).dirs[2].idle[0]],
     text: 'A COMPANY SENDS FIVE. HUNTERS KEEP THE GAP AND WARRIORS CLOSE IT. A SCOUT WHO GOES DOWN IS CARRIED BACK TO THE ROOST AND SENT OUT AGAIN WITH EVERYTHING THEY HAD. THE BETTER THE SCOUT, THE LONGER THE COMPANY MAKES THEM SIT FIRST.' },
   { name: 'THE COUNTER', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
     text: 'THE MERCHANTS ARE A GUILD OF THEIR OWN. ONE RIDES IN WITH EACH BIRD, BUILDS ITS BARRACKS AND SELLS TO ANY PURSE THAT WALKS UP, YOURS OR THEIRS. THEY ARE NOT ON A SIDE. THEY ARE ON THE PRICE OF FISH. NOBODY LAYS A HAND ON ONE.' },
@@ -3771,8 +3767,8 @@ function renderWiki(now, a) {
       // name and role, the three lines of its pitch, and on the right the
       // ledger the lobby reads - health, then the four stats as pips
       const c = CLASSES[bl.cls];
-      const spr = SPRITES.champ[bl.cls][skin(player.team)].down[0];
-      ctx.drawImage(spr, L.left, y + 2, 48, 48);
+      const spr = SPRITES.scout(bl.cls, null, skin(player.team)).dirs[2].idle[0];
+      ctx.drawImage(spr, 0, 1, 16, 24, L.left + 8, y + 2, 32, 48); // the scout at 2x, its 24 rows in the card's 48
       const tx = L.left + 56;
       drawPixelTextShadow(ctx, c.name, tx, y + 4, '#ffd95c', '#0a0e23');
       drawPixelTextShadow(ctx, c.role, tx + pixelTextWidth(c.name) + 7, y + 4, TIP_LABEL, '#0a0e23');

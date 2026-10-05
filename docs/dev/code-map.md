@@ -33,11 +33,22 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the player, the fish catch pose, the skater, prone, the raider | by banner | `player`, `the fish catch`, `skater (champion 2)`, `prone`, `raider` |
 | a character's paint on the class body: the tone and hair-colour tables, the six fringes, the per-character bake and its cache | `LOOK`, `fringed`, `lookPal`, `lookSet`, `champLook` | `looks` |
 
+## js/sprites/scouts.js (legacy IIFE)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the scout's palette and the side's inks on it | `SCOUT_PAL`, `teamScoutPal` | `palette` |
+| the bare head per drawn facing | `HEAD` | `heads` |
+| a class's three hats / three coats, per drawn facing (a coat's `under`, `over`, `back` and `sleeve`) | `HATS`, `COATS` | `hats`, `coats` |
+| the arm shapes and the leg sets of the run | `ARM_F_*`/`ARM_D_*`/`ARM_E_*`, `LEG_F_*`/`LEG_E_*` | `arms`, `legs` |
+| a hair style or a beard on the scout's face, per facing | `HAIR`, `BEARD` | `looks` |
+| one frame composed as letters, the five drawn facings and their mirrors, the run, the set and its cache, the wardrobe's names | `compose`, `limbs`, `FACINGS`/`DRAWN`/`FAMILY`, `RUN_N`, `scoutSet` (`SPRITES.scout`), `WEAR` (`SPRITES.SCOUT_WEAR`) | `compose` |
+
 ## js/sprites/looks.js (legacy IIFE)
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the 48 px character model: the two bodies, three heads, four beards, six hair styles, two class outfits, and the compose | `BODY`, `HEAD`, `BEARD`, `HAIR`, `OUTFIT`, `modelPal`, `portrait` | `bodies` (the file's one banner; the rest follow it by const name) |
+| the 48 px character model: the two bodies, three heads, four beards, six hair styles, a class's three hats and three coats, and the compose | `BODY`, `HEAD`, `BEARD`, `HAIR`, `HATS48`, `COATS48`, `modelPal`, `portrait` | `bodies` (the file's one banner; the rest follow it by const name) |
 
 ## js/sprites/terrain.js (legacy IIFE)
 
@@ -147,7 +158,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | players, teams, classes + kits, hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `kitOf`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyCharacter(p?)`, `contest` | `players` |
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
-| which way a player's body faces: the one function every turn goes through, its diagonal bias and the hold an aimed action leaves | `faceToward`, `FACE_BIAS`, `FACE_HOLD`, `p.faceT` | `facing` (player.js) |
+| which way a player's body faces: the one function every turn goes through, its diagonal bias and the hold an aimed action leaves; the eight-way facing beside it that only the drawing reads | `faceToward`, `FACE_BIAS`, `FACE_HOLD`, `p.faceT`, `p.face`/`FACE8_SLACK` | `facing` (player.js) |
+| the body a player stands in (the scout) and the one it lies and fishes in (the class body) | `scoutSet`, `classSet` | `players` (beside `botLook`) |
 | the numbers a player is made of: the player count and teams, walk/roll/slide speeds, hero levels, and the two bow baselines a kit is written against | `MAX_PLAYERS`, `TEAM_COUNT`, `PVP`, `PLAYER_SPEED`/`PLAYER_R`, `ICE_MAX`/`SLIDE_MIN`/`SLIDE_EXIT`/`TRAIL_MIN`/`SNOW_TRAIL_*`, `LEVEL_*`/`LVL_*`, `DODGE_*`, `BOW_CHARGE`/`BOW_NOCK` | `players` (above `CLASSES`, which reads some of them at load time) |
 | which preset a team wears on this screen, and whether a rival wears its colour-blind shape cue | `TEAMS`, `skin`, `foeCue` | top of the file |
 | the entity arrays and the local aliases | `animals`…`camps`, `players`, `player`, `inv` | `players` (the banner's tail) |
@@ -575,7 +587,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| drawing players / animals / robots / the merchant / held tool; a worn skin body standing in for the class body (its clock, the held tool and ability marks grown about the feet) | `drawPlayer`, `ROBOT_IDLE_FPS`, `WORN_SC`, `atFeet`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
+| drawing players / animals / robots / the merchant / held tool; the scout standing and running in its eight facings, or a worn skin's body ahead of it (its clock, the held tool and ability marks grown about the feet) | `drawPlayer`, `faceOf`/`FACE_OF_DIR`, `bodyFacing`, `standFrame` (a still body for the ghost, a fall, a warp's trail), `drawScoutMarks`, `drawScoutPreview`/`PREVIEW_RUN_FPS` (the character sheet and the hero pop-up), `ROBOT_IDLE_FPS`, `WORN_SC`, `atFeet`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
 | the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js and bears.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
 | ALPHA'S BLOOD worn: the amber ring of pips around a blooded player's feet | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
 | a body going down: the frozen shatter or the wind, picked by `hash2(id, deaths)`, started off the edge of `p.dead` | `DOWN_T`, `trackDowns` (from `render()` before the draw list), `goingDown` (also held by `viewPlayer` and the replay), `drawDown` | `going down` |
@@ -782,7 +794,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the roster: three slot cards, the ledger, the quill, the X plate that deletes, the empty slot's plus | `charsLayout`, `charsHit`, `beginChars`/`leaveChars`, `activateChar`, `deleteSlot`, `charsKey`, `charsClick`, `updateChars`, `drawCharCard`, `drawLedger`, `renderChars`, `CH_CARD_*` | `characters` › `the roster` (the verbs; `charsLayout` and `CH_CARD_*` sit under `layout`, the draws under `pixels`) |
 | both screens' geometry: the sizes, the option rows' spec, the two layouts, a row's cells | `CH_*`, `charsLayout`, `createLayout`, `rowCells` | `characters` › `layout` |
 | both screens' draws: the icon grids, a well, the 48 px model, the ledger, a card, an option cell, the die, the two renders | `CH_ICON_PAL` and the `CH_*` grids under it, `drawWell`, `drawModel`, `drawLedger`, `drawCharCard`, `renderChars`, `drawLookCell`, `drawDie`/`DIE_FACES`, `renderCreate` | `characters` › `pixels` |
-| the create / customize screen: the pre-rolled buffer, the option rows (a cell per choice, each a crop of the model wearing it), the class pair and its lock, the die, the name field, DONE / CANCEL, the keyboard | `CH_ROWS`/`CH_HEAD`/`CH_TORSO`/`CH_CELL`/`CH_PLATE`/`CH_ROW_N`, `createLayout`, `rowCells`, `beginCreate`, `createCommit`/`createCancel`, `setLook`/`cycleLook`/`shuffleLook`, `createHit`, `createKey`, `createClick`, `updateCreate`, `nameOk`, `renderCreate`, `drawModel`, `drawLookCell`, `drawDie`/`DIE_FACES`/`DIE_T`, `drawWell`, `NAME_SHAKE_T` | `characters` › `the create screen` (the store: `PROFILE`, profile.js; the model: `SPRITES.portrait`, js/sprites/looks.js) |
+| the create / customize screen: the pre-rolled buffer, the option rows (a cell per choice, each a crop of the model wearing it), the class pair and its lock, the die, the name field, DONE / CANCEL, the keyboard | `CH_ROWS` (the hat and coat rows dress the model: `worn`)/`CH_HEAD`/`CH_TORSO`/`CH_CELL`/`CH_ROW_P`/`CH_PLATE`/`CH_ROW_N`, `CH_TURN` (the stage scout turning), `createLayout`, `rowCells`, `beginCreate`, `createCommit`/`createCancel`, `setLook`/`cycleLook`/`shuffleLook`, `createHit`, `createKey`, `createClick`, `updateCreate`, `nameOk`, `renderCreate`, `drawModel`, `drawLookCell`, `drawDie`/`DIE_FACES`/`DIE_T`, `drawWell`, `NAME_SHAKE_T` | `characters` › `the create screen` (the store: `PROFILE`, profile.js; the model: `SPRITES.portrait`, js/sprites/looks.js) |
 | the character tag bottom-left of the title screen | `charTagRect`, `overCharTag`, `drawCharTag` (the player that wears it: `applyCharacter`, player.js) | `characters` › `the character tag` |
 
 ## js/ui/skins.js
@@ -791,7 +803,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the catalogue: the navbar's categories, the rarity colours, the scout table (placeholders but the IRON SCOUT, whose `body` names its sprites), the placeholder weapon / trail tables, a bought skin's profile key | `SKIN_TABS`, `SKIN_RARITY`, `SCOUT_SKINS`, `WEAPON_SKINS`, `TRAIL_SKINS`, `skinRow`, `skinKey`, `skinHas`, `skinWorn` | `skins` › `the catalogue` (the eagle's table: `BIRD_SKINS`, js/sprites/eagle.js; the purse: `PROFILE.coins`/`buy`/`wear`, profile.js) |
 | which skin a bird wears on this screen (your company's bird wears yours, the other company's the free one) | `birdSkinFor` (asked by `drawEagle`, boot.js), `birdSkinRow`, `skinOwned` | `skins` › `the catalogue` |
-| which body a player wears on this screen (only you wear your scout skin; everyone else the class body) | `scoutBody` (asked by `drawPlayer`, js/draw/bodies.js), `SK_TAB_SCOUT` | `skins` › `the catalogue` |
+| which body a player wears on this screen (only you wear your scout skin; everyone else the scout) | `scoutBody` (asked by `drawPlayer`, js/draw/bodies.js), `SK_TAB_SCOUT` | `skins` › `the catalogue` |
 | what a finished match pays | `COINS_MATCH`, `COINS_WIN`, `payMatchCoins` (its caller: `endMatch`, player.js) | `skins` › `the catalogue` |
 | a card's picture: the eagle's own icon or today's bird turned, a scout body's own `icon`, a placeholder washed in its tint, a trail's streak | `skinArt` (the eagle's: `SPRITES.birdSkinIcon`, warbirds.js), `washed`, `trailArt`, `SK_ART_MAX` | `skins` › `the pictures` |
 | the coin tag top-right of the title | `coinTagRect`, `overCoinTag`, `drawCoinTag`, `SK_COIN` | `skins` › `the coin tag` |

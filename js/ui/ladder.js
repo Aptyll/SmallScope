@@ -52,13 +52,13 @@ const LAD_GLYPHS = {
   cog: ['...###...', '.#.###.#.', '..#####..', '###...###', '###...###', '###...###', '..#####..', '.#.###.#.', '...###...'],
 };
 const LAD_FACES = {
-  starter: { cls: 0, col: '#9fd7a0', glyph: 'sapling', look: { sex: 0, tone: 1, hair: 0, hairCol: 1, beard: 0, face: 0 } },
-  pack: { cls: 0, col: '#c9a0e8', glyph: 'paw', look: { sex: 1, tone: 3, hair: 4, hairCol: 5, beard: 0, face: 2 } },
-  keeper: { cls: 1, col: '#8fc4ff', glyph: 'shield', look: { sex: 0, tone: 4, hair: 2, hairCol: 0, beard: 3, face: 1 } },
-  raider: { cls: 1, col: '#ff8a6a', glyph: 'bolt', look: { sex: 0, tone: 2, hair: 5, hairCol: 7, beard: 1, face: 2 } },
-  bulwark: { cls: 1, col: '#b8c2d8', glyph: 'tower', look: { sex: 0, tone: 5, hair: 1, hairCol: 3, beard: 2, face: 1 } },
-  prospector: { cls: 0, col: '#ffd27a', glyph: 'pick', look: { sex: 0, tone: 0, hair: 3, hairCol: 6, beard: 3, face: 0 } },
-  shepherd: { cls: 0, col: '#f0e6c8', glyph: 'crook', look: { sex: 1, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1 } },
+  starter: { cls: 0, col: '#9fd7a0', glyph: 'sapling', look: { sex: 0, tone: 1, hair: 0, hairCol: 1, beard: 0, face: 0, hat: 0, coat: 0 } },
+  pack: { cls: 0, col: '#c9a0e8', glyph: 'paw', look: { sex: 1, tone: 3, hair: 4, hairCol: 5, beard: 0, face: 2, hat: 1, coat: 1 } },
+  keeper: { cls: 1, col: '#8fc4ff', glyph: 'shield', look: { sex: 0, tone: 4, hair: 2, hairCol: 0, beard: 3, face: 1, hat: 0, coat: 0 } },
+  raider: { cls: 1, col: '#ff8a6a', glyph: 'bolt', look: { sex: 0, tone: 2, hair: 5, hairCol: 7, beard: 1, face: 2, hat: 2, coat: 2 } },
+  bulwark: { cls: 1, col: '#b8c2d8', glyph: 'tower', look: { sex: 0, tone: 5, hair: 1, hairCol: 3, beard: 2, face: 1, hat: 1, coat: 1 } },
+  prospector: { cls: 0, col: '#ffd27a', glyph: 'pick', look: { sex: 0, tone: 0, hair: 3, hairCol: 6, beard: 3, face: 0, hat: 1, coat: 0 } },
+  shepherd: { cls: 0, col: '#f0e6c8', glyph: 'crook', look: { sex: 1, tone: 2, hair: 1, hairCol: 2, beard: 0, face: 1, hat: 2, coat: 2 } },
 };
 const LAD_FACE_ANY = { col: '#8fa0c8', glyph: 'cog' };
 const ladFaceCache = new Map();

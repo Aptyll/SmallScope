@@ -1137,7 +1137,7 @@ function drawWarps(ex, ey) {
     for (let i = 0; i < w.n; i++) {
       const f = i / w.n;   // 0 where the jump began, never 1
       const x = w.x0 + (w.x1 - w.x0) * f, y = w.y0 + (w.y1 - w.y0) * f;
-      const px = Math.round(x - 8 - ex), py = Math.round(y - 12 - ey);
+      const px = Math.round(x - 8 - ex) + (w.fx || 0), py = Math.round(y - 12 - ey) + (w.fy || 0);
       if (px < -20 || px > WV_W + 20 || py < -20 || py > WV_H + 20) continue;
       sctx.clearRect(0, 0, 32, 32);
       sctx.globalCompositeOperation = 'source-over';

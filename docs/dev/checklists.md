@@ -344,11 +344,14 @@ new class needs written:
    symbolic mark the create screen's class pair and the roster read the class by — and its 12×12
    twin in `CLASS12` beside it, drawn by hand (never a shrink), which the
    [team rail](rendering.md#the-team-rail) wears;
-5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
-   the hat stopping at row 8 so the hair shows under it) and `CLASS_N` bumped in
-   [js/profile.js](../../js/profile.js), which looks.js asserts against at load; a `champLook`
-   branch in characters.js saying where the new body's fringe sits
-   ([sprites.md](sprites.md#looks-a-character-on-the-class-body));
+5b. its wardrobe: three hats and three coats for the scout in the world (`HATS`/`COATS`, five
+   facings each, and a `sleeve` map per coat - [js/sprites/scouts.js](../../js/sprites/scouts.js))
+   and the same six at 48 px for the model (`HATS48`/`COATS48`,
+   [js/sprites/looks.js](../../js/sprites/looks.js) - a hat stopping at row 8 or framing the face
+   so the hair shows), their names in `SCOUT_WEAR`, and `CLASS_N` bumped in
+   [js/profile.js](../../js/profile.js), which both files assert against at load; a `champLook`
+   branch in characters.js saying where the lying body's fringe sits
+   ([sprites.md](sprites.md#the-scout-the-body-in-the-world));
 6. a `CLASS_LOADOUT` entry ([js/tools.js](../../js/tools.js));
 7. a fight rung in `updateAI` ([js/ai.js](../../js/ai.js)) that spends the four keys at the
    ranges the kit is good at — the class branch there is per-class content and the one `if`
