@@ -337,6 +337,17 @@ function relayout() {
 }
 
 // ------------------------------------------------------------ helpers
+// A page event (a key, a click, a resize) waits for boot: its handler may call
+// any global, and until boot.js runs, the files after the listener's own are
+// still loading - a click or a resize mid-load threw ReferenceErrors on the
+// web build. Files register here; boot.js attaches the lot with
+// pageListenStart() once every global stands.
+const PAGE_LISTENERS = [];
+function pageListen(target, type, fn, opt) { PAGE_LISTENERS.push([target, type, fn, opt]); }
+function pageListenStart() {
+  for (const [target, type, fn, opt] of PAGE_LISTENERS) target.addEventListener(type, fn, opt);
+  PAGE_LISTENERS.length = 0;
+}
 function showMsg(t, dur) { state.msg = t; state.msgT = dur || 5; }
 
 // seconds as M:SS - the HUD's match clock and the victory tally's, one source

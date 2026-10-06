@@ -31,114 +31,118 @@
 <canvas id="bars"></canvas>
 <canvas id="game" width="640" height="360"></canvas>
 <canvas id="replay"></canvas>
+<!-- every script is `defer`: still run in this order, after the page is parsed.
+     The CSP <meta> above turns off Chrome's look-ahead fetch, so without defer
+     each file waited for the one before it to download and run (one round
+     trip per file on the web build). app/check-globals.js fails a script without it. -->
 <!-- the local player profile (name, stats, settings) and the only file that touches
      localStorage: it has no dependencies, so it goes first. -->
-<script src="js/profile.js"></script>
-<script src="js/font.js"></script>
+<script defer src="js/profile.js"></script>
+<script defer src="js/font.js"></script>
 <!-- js/sprites/: every sprite as a char grid + palette, baked at load. core.js first (it
      makes SPRITES and the SPR helpers); each file after it registers the keys it owns. -->
-<script src="js/sprites/core.js"></script>
-<script src="js/sprites/characters.js"></script>
-<script src="js/sprites/looks.js"></script>
-<script src="js/sprites/robot.js"></script>
-<script src="js/sprites/terrain.js"></script>
-<script src="js/sprites/rocks.js"></script>
-<script src="js/sprites/beasts.js"></script>
-<script src="js/sprites/bears.js"></script>
-<script src="js/sprites/snowdrops.js"></script>
-<script src="js/sprites/eagle.js"></script>
-<script src="js/sprites/warbirds.js"></script>
-<script src="js/sprites/buildings.js"></script>
-<script src="js/sprites/items.js"></script>
-<script src="js/sprites/icons.js"></script>
-<script src="js/sprites/landmarks.js"></script>
+<script defer src="js/sprites/core.js"></script>
+<script defer src="js/sprites/characters.js"></script>
+<script defer src="js/sprites/looks.js"></script>
+<script defer src="js/sprites/robot.js"></script>
+<script defer src="js/sprites/terrain.js"></script>
+<script defer src="js/sprites/rocks.js"></script>
+<script defer src="js/sprites/beasts.js"></script>
+<script defer src="js/sprites/bears.js"></script>
+<script defer src="js/sprites/snowdrops.js"></script>
+<script defer src="js/sprites/eagle.js"></script>
+<script defer src="js/sprites/warbirds.js"></script>
+<script defer src="js/sprites/buildings.js"></script>
+<script defer src="js/sprites/items.js"></script>
+<script defer src="js/sprites/icons.js"></script>
+<script defer src="js/sprites/landmarks.js"></script>
 <!-- audio/sfx/*.mp3 baked to base64 by app/bake-sfx.js: a file:// page cannot fetch
      its own folder, so this is what lets the sound effects work when index.html
      is opened straight off the disk. Must load before audio.js. -->
-<script src="js/sfxdata.js"></script>
-<script src="js/audio.js"></script>
+<script defer src="js/sfxdata.js"></script>
+<script defer src="js/audio.js"></script>
 <!-- docs/media/logos/mainMenuSoftfall.png keyed and baked by app/bake-logo.js
      for the same reason: an <img> off a file:// path would taint the canvas. -->
-<script src="js/logodata.js"></script>
-<script src="js/notesart.js"></script>
+<script defer src="js/logodata.js"></script>
+<script defer src="js/notesart.js"></script>
 <!-- The game code: flat classic scripts sharing one global scope
      (docs/dev/architecture.md). A file may reference names from any file at runtime, but its
      top-level (load-time) statements may only reference names from files loaded above it. -->
-<script src="js/core.js"></script>
-<script src="js/canvas.js"></script>
-<script src="js/player.js"></script>
-<script src="js/input.js"></script>
+<script defer src="js/core.js"></script>
+<script defer src="js/canvas.js"></script>
+<script defer src="js/player.js"></script>
+<script defer src="js/input.js"></script>
 <!-- the other controller, a keyboard-and-mouse in disguise: it calls
      input.js's keyPress/pointerPress and folds its sticks into sampleHumanInput -->
-<script src="js/gamepad.js"></script>
-<script src="js/world.js"></script>
-<script src="js/depth.js"></script>
-<script src="js/landmarks.js"></script>
-<script src="js/nav.js"></script>
-<script src="js/wildlife.js"></script>
-<script src="js/structures.js"></script>
-<script src="js/robots.js"></script>
-<script src="js/actions.js"></script>
-<script src="js/tools.js"></script>
-<script src="js/mining.js"></script>
-<script src="js/tunnel.js"></script>
-<script src="js/abilities.js"></script>
-<script src="js/ai-skill.js"></script>
-<script src="js/ai.js"></script>
-<script src="js/ai-team.js"></script>
-<script src="js/bots/api.js"></script>
-<script src="js/bots/lib.js"></script>
-<script src="js/sim.js"></script>
-<script src="js/shed.js"></script>
-<script src="js/ai-callouts.js"></script>
+<script defer src="js/gamepad.js"></script>
+<script defer src="js/world.js"></script>
+<script defer src="js/depth.js"></script>
+<script defer src="js/landmarks.js"></script>
+<script defer src="js/nav.js"></script>
+<script defer src="js/wildlife.js"></script>
+<script defer src="js/structures.js"></script>
+<script defer src="js/robots.js"></script>
+<script defer src="js/actions.js"></script>
+<script defer src="js/tools.js"></script>
+<script defer src="js/mining.js"></script>
+<script defer src="js/tunnel.js"></script>
+<script defer src="js/abilities.js"></script>
+<script defer src="js/ai-skill.js"></script>
+<script defer src="js/ai.js"></script>
+<script defer src="js/ai-team.js"></script>
+<script defer src="js/bots/api.js"></script>
+<script defer src="js/bots/lib.js"></script>
+<script defer src="js/sim.js"></script>
+<script defer src="js/shed.js"></script>
+<script defer src="js/ai-callouts.js"></script>
 <!-- js/net/: what a match shares between screens. events.js records the step's cosmetics
      (a puff, a number, a cue, a shake) for a host's clients; solo records nothing. -->
-<script src="js/net/events.js"></script>
-<script src="js/net/net.js"></script>
-<script src="js/net/snapshot.js"></script>
-<script src="js/net/transport-ws.js"></script>
-<script src="js/net/transport-steam.js"></script>
+<script defer src="js/net/events.js"></script>
+<script defer src="js/net/net.js"></script>
+<script defer src="js/net/snapshot.js"></script>
+<script defer src="js/net/transport-ws.js"></script>
+<script defer src="js/net/transport-steam.js"></script>
 <!-- js/draw/: the world's pixels, cut from the one draw-world.js. ground.js first (every
      other draw file calls its hash2); render.js composes the frame and comes last. -->
-<script src="js/draw/depth.js"></script>
-<script src="js/draw/ground.js"></script>
-<script src="js/draw/landmarks.js"></script>
-<script src="js/draw/lakes.js"></script>
-<script src="js/draw/trample.js"></script>
-<script src="js/draw/practice.js"></script>
-<script src="js/draw/zipline.js"></script>
-<script src="js/draw/tunnel.js"></script>
-<script src="js/draw/overhead.js"></script>
-<script src="js/draw/structs.js"></script>
-<script src="js/draw/bodies.js"></script>
-<script src="js/draw/marks.js"></script>
-<script src="js/draw/callouts.js"></script>
-<script src="js/draw/light.js"></script>
-<script src="js/draw/render.js"></script>
+<script defer src="js/draw/depth.js"></script>
+<script defer src="js/draw/ground.js"></script>
+<script defer src="js/draw/landmarks.js"></script>
+<script defer src="js/draw/lakes.js"></script>
+<script defer src="js/draw/trample.js"></script>
+<script defer src="js/draw/practice.js"></script>
+<script defer src="js/draw/zipline.js"></script>
+<script defer src="js/draw/tunnel.js"></script>
+<script defer src="js/draw/overhead.js"></script>
+<script defer src="js/draw/structs.js"></script>
+<script defer src="js/draw/bodies.js"></script>
+<script defer src="js/draw/marks.js"></script>
+<script defer src="js/draw/callouts.js"></script>
+<script defer src="js/draw/light.js"></script>
+<script defer src="js/draw/render.js"></script>
 <!-- js/ui/: the in-match HUD, cut from the one ui.js, in this order - four of its
      load-time constants read an earlier file's (AB_CELL, SHELF_X, CORNER_CLAIM, RAIL_PAD);
      then the screens: the shop, the panels, the menu and the end screens. -->
-<script src="js/ui/wheel.js"></script>
-<script src="js/ui/minimap.js"></script>
-<script src="js/ui/bag.js"></script>
-<script src="js/ui/strip.js"></script>
-<script src="js/ui/hud-draw.js"></script>
-<script src="js/ui/rail.js"></script>
-<script src="js/ui/tooltip.js"></script>
-<script src="js/ui/compose.js"></script>
-<script src="js/ui/shop.js"></script>
-<script src="js/ui/forge.js"></script>
-<script src="js/ui/panels.js"></script>
-<script src="js/ui/menu.js"></script>
-<script src="js/ui/chars.js"></script>
-<script src="js/ui/skins.js"></script>
-<script src="js/ui/story.js"></script>
-<script src="js/ui/ladder.js"></script>
-<script src="js/ui/screens.js"></script>
-<script src="js/ui/lobby.js"></script>
-<script src="js/save.js"></script>
-<script src="js/ui/saves.js"></script>
-<script src="js/ui/botview.js"></script>
-<script src="js/boot.js"></script>
+<script defer src="js/ui/wheel.js"></script>
+<script defer src="js/ui/minimap.js"></script>
+<script defer src="js/ui/bag.js"></script>
+<script defer src="js/ui/strip.js"></script>
+<script defer src="js/ui/hud-draw.js"></script>
+<script defer src="js/ui/rail.js"></script>
+<script defer src="js/ui/tooltip.js"></script>
+<script defer src="js/ui/compose.js"></script>
+<script defer src="js/ui/shop.js"></script>
+<script defer src="js/ui/forge.js"></script>
+<script defer src="js/ui/panels.js"></script>
+<script defer src="js/ui/menu.js"></script>
+<script defer src="js/ui/chars.js"></script>
+<script defer src="js/ui/skins.js"></script>
+<script defer src="js/ui/story.js"></script>
+<script defer src="js/ui/ladder.js"></script>
+<script defer src="js/ui/screens.js"></script>
+<script defer src="js/ui/lobby.js"></script>
+<script defer src="js/save.js"></script>
+<script defer src="js/ui/saves.js"></script>
+<script defer src="js/ui/botview.js"></script>
+<script defer src="js/boot.js"></script>
 </body>
 </html>

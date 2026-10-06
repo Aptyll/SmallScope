@@ -117,7 +117,16 @@ tag `pre-split` keeps the one-file history.
 - **Collision behavior**: a `let`/`const` declared in two files throws a `SyntaxError` at load
   (loud, good); a `function` declared in two files silently overwrites (silent, bad) — so grep
   for a duplicate top-level name before adding or moving a function.
-- **Performance**: the file count changes nothing at runtime — same total parse, same JIT. The
+- **Every script tag is `defer`**: the files still run in the tags' order, after the page is
+  parsed. The CSP `<meta>` turns off Chrome's look-ahead fetch, so a plain tag fetched each file only
+  after the one above it ran: one round trip per file on the web build. `app/check-globals.js`
+  fails a tag without it.
+- **Page events wait for boot**: a key, mouse, resize or fullscreen listener registers with
+  `pageListen(target, type, fn)` (js/core.js), and boot.js attaches them all with
+  `pageListenStart()` once every global stands. A listener attached at load could fire while the
+  later files were still loading and call a name that did not exist yet.
+- **Performance**: the file count changes nothing at runtime — same total parse, same JIT, and the
+  deferred tags fetch in parallel. The
   files are for maintainability, a sim/render seam, and files a session can load whole.
 
 ### profile.js

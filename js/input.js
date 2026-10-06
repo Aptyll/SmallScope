@@ -228,7 +228,7 @@ const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, src: '
 // (keyName above), char what it typed (the name editor's letters) - a real
 // KeyboardEvent translated, or the object a pad builds.
 const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3', 'F4', 'F6']);
-window.addEventListener('keydown', (e) => {
+pageListen(window, 'keydown', (e) => {
   const k = keyName(e);
   // Tab is held to read the scoreboard (scoreboardOpen()), so it must never
   // reach the browser's focus traversal - nor may a bound key in a match, or
@@ -409,7 +409,7 @@ function keyPress(e) {
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
   if (keyIs(e, 'pause')) { state.paused = !state.paused; SFX.ui(state.paused); if (state.paused) autoSave(); } // the PAUSED plate is a surface like any other
 }
-window.addEventListener('keyup', (e) => {
+pageListen(window, 'keyup', (e) => {
   const k = keyName(e);
   keys[k.toLowerCase()] = false;
   keyRelease({ key: k, char: e.key });
@@ -433,7 +433,7 @@ function keyRelease(e) {
 // out would otherwise leave the scoreboard (or a walk direction) stuck on
 // - and an item on the cursor goes back where it came from rather than
 // hanging there over a game that has stopped listening
-window.addEventListener('blur', () => {
+pageListen(window, 'blur', () => {
   for (const k in keys) keys[k] = false;
   state.rebind = null; // a cap left listening would eat the first key back
   state.dragPend = null;
@@ -447,7 +447,7 @@ window.addEventListener('blur', () => {
   if (ckOn()) { if (state.wheel) state.wheel = null; ck.follow = false; ck.arm = false; }
 });
 
-canvas.addEventListener('mousemove', (e) => {
+pageListen(canvas, 'mousemove', (e) => {
   const r = canvas.getBoundingClientRect();
   pointerMove((e.clientX - r.left) / scale, (e.clientY - r.top) / scale, 'mouse');
 });
@@ -470,9 +470,9 @@ function pointerMove(x, y, src) {
   }
 }
 // the in-canvas cursor must vanish when the pointer leaves the page
-canvas.addEventListener('mouseleave', () => { mouse.inside = false; });
-document.addEventListener('mouseleave', () => { mouse.inside = false; });
-canvas.addEventListener('mousedown', (e) => {
+pageListen(canvas, 'mouseleave', () => { mouse.inside = false; });
+pageListen(document, 'mouseleave', () => { mouse.inside = false; });
+pageListen(canvas, 'mousedown', (e) => {
   // a press carries its own position - don't trust the last mousemove (touch,
   // synthetic clicks and pointer-lock all press without moving first)
   const r = canvas.getBoundingClientRect();
@@ -554,7 +554,7 @@ function pointerPress(button) {
   mouse.down = true;
   clickAction(player);
 }
-window.addEventListener('mouseup', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); pointerRelease(e.button); });
+pageListen(window, 'mouseup', (e) => { if (e.button === 3 || e.button === 4) e.preventDefault(); pointerRelease(e.button); });
 // a side button as the key it is named for: held in `keys` like the
 // keyboard's own, and pressed and released through the same two entry points
 function sideButton(button, down) {
@@ -1055,10 +1055,10 @@ function panelScrollBy(d) {
   if (state.mode === 'play' && state.settingsOpen) { settingsScrollBy(d); return true; }
   return false;
 }
-canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+pageListen(canvas, 'contextmenu', (e) => e.preventDefault());
 // the middle button and the side buttons are the game's, and nothing of them should reach the page
-canvas.addEventListener('auxclick', (e) => { if (e.button === 1 || e.button === 3 || e.button === 4) e.preventDefault(); });
-canvas.addEventListener('wheel', (e) => {
+pageListen(canvas, 'auxclick', (e) => { if (e.button === 1 || e.button === 3 || e.button === 4) e.preventDefault(); });
+pageListen(canvas, 'wheel', (e) => {
   if (state.mode === 'title') {
     if (state.menu.screen === 'notes' && state.menu.notesT >= 1) { e.preventDefault(); notesScrollBy(e.deltaY > 0 ? 16 : -16); }
     else if (state.menu.panel === 'settings') { e.preventDefault(); settingsScrollBy(e.deltaY > 0 ? 14 : -14); }

@@ -1470,7 +1470,7 @@ rebuildLootPool();
 // ...and the merchants' market, which primes three days of prices behind it
 // so the counter's graphs are graphs on day one (js/shop.js).
 initMarket();
-relayout(); // fitCanvas already ran at load; this places the UI for the fitted view
+fitCanvas(); relayout(); // the window may have changed size while the scripts loaded (no resize listener yet); this places the UI for the fitted view
 SFX.setVolume(settings.volume);
 SFX.setMusicVolume(settings.musicVol);
 SFX.setSfxVolume(settings.sfxVol);
@@ -2129,4 +2129,5 @@ function loop(nowMs) {
   if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead
   else watchHidden();
 }
+pageListenStart(); // keys, mouse and resize reach the game only now that every global stands (js/core.js)
 requestAnimationFrame(loop);
