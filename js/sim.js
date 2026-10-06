@@ -1126,7 +1126,10 @@ function updatePlayer(p, dt) {
     while (footprints.length > 800) footprints.shift();
   }
   if (spNow > 8 && p.dodgeT <= 0 && !p.sliding && !p.prone && p.zip < 0) { // a rider's feet are off the snow
-    p.animT += dt * 9 * (1 - 0.35 * p.wade); // a wading stride is a slower one
+    // the stride keeps time with the snow going by: a drawn bow's creep and a
+    // drift's wade step slower, an ice run a little quicker (nothing but the
+    // drawn stride reads it: drawPlayer, js/draw/bodies.js)
+    p.animT += dt * 9 * Math.max(0.55, Math.min(1.3, spNow / PLAYER_SPEED));
     p.footT -= dt;
     if (p.footT <= 0) {
       p.footT = 0.16;

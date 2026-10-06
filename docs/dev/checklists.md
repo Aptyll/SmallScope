@@ -334,7 +334,10 @@ new class needs written:
    terrain.js, HUD art in icons.js), registered by adding its key to that file's
    `Object.assign(SPRITES, {...})` at the bottom —
    4 directions × 3 frames plus the 5-pose prone set, baked into `SPRITES.champ[c]` per team
-   via the `TEAM_SKINS` bakes ([sprites.md](sprites.md)) — **this is the expensive part**;
+   via the `TEAM_SKINS` bakes ([sprites.md](sprites.md)) — **this is the expensive part**; and
+   its run, held run and roll: a body for the doll in `app/bake-player/bodies.py` (`BODIES`),
+   measured off the new idle frames, rebaked into js/sprites/motion.js, with its name in
+   characters.js's `MOTION_CLS` ([the run and the roll](sprites.md#the-run-and-the-roll));
 3. a `CLASS_AB` row of four actives ([js/abilities.js](../../js/abilities.js)): each ability's
    `cd`/`cast`/`blurb`/`use(p)` (plus `acol`/`activeF` if a state runs on the body), its
    `abilityPose` case, any world entities it leaves and their tick/draw, and its on-body draw

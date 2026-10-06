@@ -17,8 +17,9 @@ in the water or dead is in none of it. The numbers ([js/depth.js](../../js/depth
   becomes 52).
 - **Sliding: friction x`DEEP_SLIDE` (2)** on a snow slide in it, and no slide *starts* with the
   wade past `DEEP_SLIDE_BAR` - you can slide in, and the drift eats it.
-- The walk cycle runs up to 35% slower with the wade, and a wading body moving faster than
-  12 px/s kicks up a puff at its feet every `DEEP_PUFF_T`.
+- The walk cycle keeps time with the speed the wade leaves (`animT` steps with `spNow` over
+  `PLAYER_SPEED`, updatePlayer, js/sim.js), so a full wade strides 30% slower, and a wading
+  body moving faster than 12 px/s kicks up a puff at its feet every `DEEP_PUFF_T`.
 
 A rush, the grapple's reel and the zipline own their velocity and ignore it. Bots do not route
 around deep snow (`findPath` has no cost for it); they walk through it slower like anybody.
@@ -93,7 +94,9 @@ back on the next frame. A draw and a shield still turn it every step.
   mid-roll** costs more than the axis: past `TACKLE_MIN` of speed driven into it, that is a
   [tackle](#the-roll-is-a-hit).
 - Walk animation and footprints key off actual speed (`sp > 8`), not input; sliding and
-  ice-gliding use the standing pose. `die(p)` and `Player.reset()` zero `vx/vy` and clear
+  ice-gliding use the standing pose. The stride's pace is the ground speed too (clamped to
+  0.55-1.3 of a walk's), so a drawn bow's creep steps slower than a run and an ice run a
+  little quicker. `die(p)` and `Player.reset()` zero `vx/vy` and clear
   `sliding`. Footprints and slide trails from every player share the one `footprints` decal array.
 
 ### The zipline
@@ -1270,7 +1273,7 @@ The weapon is also drawn **on the player** by `drawHeldTool()` (called from `dra
 rest the hands hold the tool on the *selected slot*, in its own tier colour, so what someone is
 carrying reads off their sprite from across the snow — and an empty slot reads as empty hands.
 It is carried at the leading hand while idle/walking (turned to the facing, drawn *before* the
-body sprite for `up` so it's occluded, 1px walk bob), and rotated toward the mouse while drawn.
+body sprite for `up` so it's occluded, riding the run's bob - `runBob`), and rotated toward the mouse while drawn.
 Every art says which way its business end points as drawn (`TOOL_FWD`, js/tools.js) and the hand
 turns it by the facing or the aim minus that: a bow's arrowhead is at +x, drawn the way a bow is
 held — string toward the archer, belly toward the target — the sword's point at −x, the sling's
@@ -1291,11 +1294,13 @@ for `DODGE_T` (0.28 s), with i-frames for the roll only (`p.invuln` — momentum
 past the roll gets no i-frames). It is the only i-frame a fight produces
 ([i-frames](#i-frames-only-something-deliberate-grants-them)). Two charges (`DODGE_CHARGES`), refilling **one at a time**
 every `DODGE_CD` (3.5 s); state lives on the player as `dodgeT/dodgeVX/dodgeVY/dodgeCharges/
-dodgeRegenT/dodgeDustT` (`dodgeVX/VY` exist only for the spin/ghost render — movement runs on
-`vx/vy`). While rolling, movement input, friction, footprints, walk animation, and the held
-tool are suppressed (still collides with solids; a wall zeroes that axis), and `drawPlayer`
-swaps to a full 360° sprite spin with two afterimage ghosts trailing the velocity plus dust
-bursts. The roll's exit speed is spent by the surface — see
+dodgeRegenT/dodgeDustT` (`dodgeVX/VY` exist only for the render, which trails the afterimages
+along them — movement runs on `vx/vy`). While rolling, movement input, friction, footprints,
+walk animation, and the held tool are suppressed (still collides with solids; a wall zeroes
+that axis), and `drawPlayer` plays the roll's frames over `DODGE_T` - a crouch, a dive, the
+tucked ball turning over once, a squat ([the run and the roll](sprites.md#the-run-and-the-roll))
+- with two afterimages of the frames just shown trailing the velocity, plus dust bursts. A
+worn IRON SCOUT has no tuck yet and spins its standing frame instead. The roll's exit speed is spent by the surface — see
 [Momentum movement](#momentum-movement-players-only). The charge meter is a single unsegmented **white** stamina
 bar (`STAM_COL`, js/draw/overhead.js — white on every side, since stamina has no side) on a plate
 directly beneath the overhead health bar — charges stay discrete in the sim,

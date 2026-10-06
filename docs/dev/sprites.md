@@ -7,7 +7,9 @@ file holds what, is at the end.
 Sprites are literal ASCII grids paired with a palette object mapping character → hex (or `null`
 for transparent), baked by `bake()` at load. Left-facing variants are `flipH()` of the right ones.
 Character sprites are 16×16 in the world — detail goes into the 48 px model
-([Looks](#looks-a-character-on-the-class-body)). The one exception is the IRON SCOUT skin (below),
+([Looks](#looks-a-character-on-the-class-body)); the run and the roll are wider frames holding that
+same cell, and the one set not typed by hand ([the run and the roll](#the-run-and-the-roll)). The
+one exception is the IRON SCOUT skin (below),
 the first step of Noah's move to a 32 px base: a body twice a player's height, drawn for the
 local player only and over an unchanged sim body. The raider set
 (`SPRITES.raider`, `RDPAL`) is baked from the exact same grids as the player, so a player pose
@@ -59,9 +61,82 @@ the four directions and `prone`, baked by `catchSet` from `catchStoop`/`catchHau
 skater's `skCatch*` on her body plan) through the class palette plus `CATCHPAL_EXTRA`, the fish's own
 letters (outline, two blues, belly, eye, a flying drop) so the catch keeps its colour under either
 team's paint. The hoist is **16x20**: four rows of fish above the hat on the same feet, which is why
-`drawPlayer` draws every frame at `ay + (16 - spr.height)` and lifts the overhead stack 4 px while it
+`drawPlayer` draws a hand-drawn frame at `ay + (16 - spr.height)` and lifts the overhead stack 4 px while it
 is up. Look A off `docs/media/concepts/fish-catch-concepts-1.png`; which frame shows and for how long
 is `catchFrame` / `CATCH_T` in [js/tools.js](../../js/tools.js) - [fishing](world.md#ice-holes-and-fishing).
+
+## The run and the roll
+
+**The run, the held run and the dodge roll are the one set of player frames not typed by hand.**
+[app/bake-player/](../../app/bake-player/) paints them off a jointed doll of each class body and
+writes them to js/sprites/motion.js as char grids in characters.js's own letters, so `motionSet`
+bakes them through the same team and look palettes as every hand-drawn pose: `run[dir]`,
+`hold[dir]` and `roll[dir]` sit beside the walking directions, `left` the mirror of `right`.
+They are look A, TUCK TUMBLE, and C, SPRINT, off
+[run-roll-concepts-1.png](../media/concepts/run-roll-concepts-1.png) (B CANNONBALL curled up first
+and held it a beat; D JOG was the calmer run). The idle and every other pose stay the hand-drawn
+grids above. The doll's own idle lands on them pixel for pixel head-on, which is why a stand turns
+into a run without a jump.
+
+**The doll** (doll.py) is soft parts posed in 3D and seen through a 20° camera. Each part is a
+superellipsoid: exponent 2 is an ellipsoid, a higher one is boxier, which is how the hand-drawn
+head keeps its rounded square. It is rasterised at 8× and shrunk to the game's pixel: the nearest
+part holding a fair share of a cell wins it, banded by its mean light into its material's
+letters. Then it is inked the hand art's way: an outline beside the silhouette on the left and
+right only (all four sides for the compact roll shapes, across the top too for the warrior's
+hood), and an inner line where one part passes in front of another. The light comes mostly from
+the viewer, so a highlight runs down a part's middle like the hand-drawn `RR` stripe. A region of
+a part's surface can wear another material (the face is the front of the head below the brim).
+The marks that must land on one exact pixel (eyes, blush, the mouth's shade, the warrior's goggle
+lenses) are stickers, placed where they sit on today's front frame and carried by the head
+(`decal`). bodies.py measures each class body off its idle grids: the hunter's pom beanie; the
+warrior's hood and goggles, two scarf ends, a tail that streams out on the run, and the skate
+blades that stand her a row taller. anim.py poses them.
+
+**Pixel discipline is what keeps it from looking generated.** The body bobs only in whole screen
+pixels (`RUN_BOB`, `HOLD_BOB`), so the coat and the face are the same pixels in every frame,
+moved up or down, and the limbs' joints snap to the pixel grid, so a leg lands as a clean
+two-pixel column. The views differ where a 16 px body cannot show one stride both ways. Side-on
+the legs scissor out past the coat on a narrow track (the far boot a shade darker, an inner line
+where the legs cross); head-on they mostly lift, because a long stride toward the camera would
+step the near boot below the ground line. Side-on the head also turns toward the viewer, so the
+near eye shows as it does on the hand-drawn side frame, and the pom trails behind the hat.
+
+**What each set holds.** `run` is eight frames, two steps: contact, down, pass and float off the
+right foot, then the left. The arms pump against the legs and the pom lags the bob by a frame.
+`hold` is the same legs with the arms at the sides, for a body whose hands are busy (`handsBusy`,
+js/draw/bodies.js: a drawn weapon, a swing, a meal, a cast, the shield up, the grapple's rope), so
+nothing pumps under a drawn bow; it only dips onto each strike. `roll` is a crouch, a dive, the
+tucked ball turning over once in 30° steps from the dive's end to sitting curled again, a deep
+squat and a rise. The ball is a body of its own (`paint_ball`: the back of the coat is the ball,
+the beanie or hood tucked in at the front, the knees, boots and mittens wrapped round the other
+side), turned about its centre, so its colours go round the rim while the light stays where the
+sun is; every roll frame is set down on the ground row. `ROLL_AT` is the share of `DODGE_T` at
+which each frame starts (the crouch and the dive get the first fifth, the ball most of the rest,
+the squat and the rise the last sixth), and `rollFrame` picks off `1 - dodgeT / DODGE_T`, the two
+afterimages wearing the frames from 0.07 and 0.14 of the roll earlier. A worn IRON SCOUT has no
+tuck yet and still spins its standing frame.
+
+**A frame is wider than the cell.** Every frame is the one box `SPRITES.motionBox` names, centred
+on the body's column so a mirrored left frame keeps its feet where they were, with the 16×16 cell
+at its (`x`, `y`); `drawPlayer` draws a frame at the cell's top-left less that. The run plays
+`RUN_STEP` frames per step of `animT` (`runFrame`), and the sim steps `animT` with the ground
+speed, so a creep strides slower and an ice run quicker. What rides the body follows it: the held
+tool and the gear marks move with the frame's bob (`runBob`), side-on the helmet's mark leans the
+pixel the head leans, and the boots' marks are left off while the feet move.
+
+**A character's fringe** goes on at the first face row of each upright frame (the run, the held
+run, the crouch and the squats), which the bake writes beside the grids (`FRINGE`: the row, the
+first column, the first slot of the six-slot hair mask, the count): head-on centred in the
+mask's slots, side-on against its front end, the way `fringed` lays the walking frames, so the
+hair holds from a stand into a run (`fringeAt`).
+
+**A facing bakes the first time it is drawn** (`motionSet`'s getters), not with the set: a set is
+a hundred-odd canvases, every character and team paint carries one, and baked up front they
+stalled the drop's start and a palette repaint.
+
+Edit the doll and rebake (`python app/bake-player/bake.py`, after `preview.py out.png` has laid
+every frame of both classes out on one sheet to judge); never edit the grids.
 
 ## Looks: a character on the class body
 
@@ -73,7 +148,8 @@ six-wide masks over the first face row and the row under it. **At 16 px only the
 fringe read**: `champLook(cls, look, team)` rebuilds the class set through `lookPal` (the tone
 and hair letters swapped in) with the fringe cut into the front and side walking frames by
 `fringed` (mask chars replace *skin* pixels only, so a hat or hood is never painted on; the
-pom-hat body shows six pixels under its brim, the hood four), and caches the set per
+pom-hat body shows six pixels under its brim, the hood four) and into the run's and the roll's
+upright frames by `fringeAt` ([the run and the roll](#the-run-and-the-roll)), and caches the set per
 (class, team, tone, hair, colour) — ten players and a menu is all that ever asks. Every reader
 of a body goes through `classSet(p)` (player.js), which asks it. Body type, beard and face
 never touch the in-world body: it stays 16×16 permanently, and they read on the 48 px model only.
@@ -460,19 +536,22 @@ candidates (C, the ice-fishing shack, stood in the game until 4.12; A, the slat 
 
 `js/sprites/core.js` loads first and makes two globals: the empty `SPRITES` registry and `SPR`,
 the helpers every art file shares — `bake`, `spansOf`, `bakeSpan`, `flipH`, `bakeClips`, `mapClips`,
-`liveIcon`, the `TEAM_SKINS` table and `teamBuildPal`. Each of the eleven art files
+`liveIcon`, the `TEAM_SKINS` table and `teamBuildPal`. Each art file
 is a private IIFE with the same skeleton: destructure what it needs off `SPR`, its palettes and
 grids under `// ---- name` banners, the set builders, and at the bottom one
 `Object.assign(SPRITES, { ... })` naming every key it owns. Nothing reads another file's grid, so
 they load in any order after core; a new sprite goes into the file that owns its subject and its
-key onto that file's `Object.assign`.
+key onto that file's `Object.assign`. The one exception is `motion.js`, which is data only: the
+run and roll grids on `SPR.motion`, loaded right before characters.js, which bakes them
+([the run and the roll](#the-run-and-the-roll)).
 
 Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 ([Intentional dead code](checklists.md#intentional-dead-code)).
 
 | File | Banners | Registers |
 | --- | --- | --- |
-| `characters.js` | player, the fish catch, skater, prone, raider, looks, the merchant | `playerTeam`, `champ`, `LOOK`, `champLook`, `player`, `raider` **(dead)**, `merchant` |
+| `motion.js` | none: generated by app/bake-player/bake.py | `SPR.motion` (not `SPRITES`: the run, held run and roll grids, their fringe rows, the bobs and the roll's timing, for characters.js) |
+| `characters.js` | player, the fish catch, skater, prone, run and roll, raider, looks, the merchant | `playerTeam`, `champ` (with each set's `run`/`hold`/`roll`), `LOOK`, `champLook`, `player`, `raider` **(dead)**, `merchant`, `motionBox`/`runBob`/`holdBob`/`rollAt` |
 | `looks.js` | bodies, heads, beards, hair, outfits | `portrait`, `MODEL_LAYERS` |
 | `terrain.js` | trees, gold ore, gold mine, bush, the dead snags, the den, the hog hut | `tree`, `treeAtlas`, `stump`, `goldOre` **(dead)**, `mine` **(dead)**, `bush*`, `deadTree`, `den`, `hogHut` |
 | `rocks.js` | the three rock kinds, their rubble, the channel's cracks, the glint sites | `rock[kind]`, `rockSpent[kind]`, `rockCracks[kind][stage]`, `rockGlints[kind]` |
