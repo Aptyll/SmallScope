@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.395';
+const PATCH_TXT = 'PATCH 0.396';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.396', 'THE WEB BUILD OPENS TWO TO THREE TIMES FASTER, AND A CLICK, KEY OR RESIZE WHILE IT LOADS NO LONGER THROWS ERRORS.'],
   ['0.395', 'EVERY RABBIT NOW LIVES IN ONE OF TWO WARRENS DUG INTO THE TREELINE, WHERE SNOWDROPS OPEN AT DAWN AND SHIELD YOUR WHOLE SIDE WHEN PICKED, AND A RABBIT CAN DROP A BURROW: DIG ONE END, RUN, AND THE TUNNEL ANYONE CAN RIDE OPENS WHERE YOU STAND.'],
   ['0.394', 'BEHIND THE SCENES: THE DEV NOTES NOW POINT AT THE MEDIA KIT FOR SHORTS AND STILLS.'],
   ['0.393', 'BEARS ARE TOUGHER AND FASTER: TWICE THE HEALTH, A CHASE THAT OUTRUNS YOU ON FOOT, AND A BLOW THAT ONCE STARTED FOLLOWS YOU AND LANDS UNLESS YOU ROLL OR DASH CLEAR.'],
@@ -1336,6 +1337,7 @@ const PATCH_DIGEST = [
     ['NEW MUSIC, AND EVERY SOUND LEVELLED BY LOUDNESS', '0.278'],
     ['AN FPS CAP, AND A QUARTER OF EACH FRAME BACK', '0.271'],
     ['THE STEAM BUILD CARRIES ONLY WHAT THE GAME PLAYS', '0.276'],
+    ['THE WEB BUILD OPENS TWO TO THREE TIMES FASTER', '0.396'],
   ]],
 ];
 const DIGEST_FROM = '0.268'; // the oldest patch the digest covers, printed beside HIGHLIGHTS

@@ -150,8 +150,8 @@ function fitCanvas() {
   barsCv.style.width = (FULL_W * scale) + 'px';
   barsCv.style.height = (VIEW_H * scale) + 'px';
 }
-window.addEventListener('resize', () => { fitCanvas(); relayout(); });
-document.addEventListener('fullscreenchange', () => { fitCanvas(); relayout(); });
+pageListen(window, 'resize', () => { fitCanvas(); relayout(); });
+pageListen(document, 'fullscreenchange', () => { fitCanvas(); relayout(); });
 fitCanvas();
 
 // Frost-panel art for the pillarbox bars (wider-than-16:9 screens), in the

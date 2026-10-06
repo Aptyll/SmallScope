@@ -228,6 +228,10 @@ function main() {
     if (!fs.existsSync(path.join(ROOT, f))) problems.push(`index.html loads ${f}, which does not exist`);
   }
   for (const f of onDisk) if (!seen.has(f)) problems.push(`${f} is never loaded by index.html (dead, or a missing <script>)`);
+  // a script without defer would run while the page parses, ahead of every
+  // deferred one above it: the load order breaks (index.html says why defer)
+  const tags = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8').match(/<script\b[^>]*>/g) || [];
+  for (const t of tags) if (/\bsrc=/.test(t) && !/\bdefer\b/.test(t)) problems.push(`index.html: ${t} needs defer`);
 
   const byName = new Map(); // name -> [{ file, kind, line }]
   for (const f of order) {
