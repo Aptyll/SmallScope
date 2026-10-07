@@ -144,3 +144,6 @@ ladder-data/
 
 # The patch check's runs: one folder per patch (app/regress/)
 regress-data/
+
+# A Sprite Fusion API key (a live secret): never committed
+docs/sprite_fusion_api.txt

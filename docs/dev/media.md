@@ -87,6 +87,9 @@ line over a shot; `end` adds the freeze and the wishlist card.
 - Every player stays `control = 'human'`: `'none'` makes an inactive ghost and an empty team ends
   the match. Park, don't delete; `p.respawnT = 99` keeps the dead down; player 0 must not die (the
   RESPAWNING screen). Only the local team is visible.
+- A teammate can still be on its roost's zipline after the boot (`zipStep` sets its position every
+  frame), and a body just off the drop blinks at 45% while `p.invuln > 0`: set `p.zip = -1` and
+  `p.invuln = 0` before placing it.
 - Archers loose only at a target standing still; leading a moving one misses. Stage melee on snow:
   on ice nobody brakes. Dry-run until the log shows every hit landing.
 - Runs are not deterministic between page loads (the title loop runs on wall time): never trust a
