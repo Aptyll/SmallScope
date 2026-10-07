@@ -26,11 +26,18 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the `SPR` helpers every sprite file bakes with (`bake`, `flipH`, `bakeClips`/`mapClips`), and the team palettes | its head; `teams` | `teams` |
 
+## js/sprites/motion.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the players' run, held run and dodge roll grids for both classes, each upright frame's first face row, the bobs and the roll's timing; never edit, rebake with app/bake-player/bake.py (doll.py paints and inks, bodies.py builds the two class bodies, anim.py poses them, preview.py lays every frame out on one sheet) | `BOX`, `GRIDS`, `FRINGE`, `RUN_BOB`/`HOLD_BOB`, `ROLL_AT` → `SPR.motion` | - |
+
 ## js/sprites/characters.js (legacy IIFE)
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the player, the fish catch pose, the skater, prone, the raider | by banner | `player`, `the fish catch`, `skater (champion 2)`, `prone`, `raider` |
+| the run, the held run and the roll in a paint: motion.js's grids baked a facing at a time on first use, a look's fringe on their upright frames | `motionSet`, `fringeAt`, `MOTION_CLS` | `run and roll` |
 | a character's paint on the class body: the tone and hair-colour tables, the six fringes, the per-character bake and its cache | `LOOK`, `fringed`, `lookPal`, `lookSet`, `champLook` | `looks` |
 
 ## js/sprites/looks.js (legacy IIFE)
@@ -577,6 +584,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | drawing players / animals / robots / the merchant / held tool; a worn skin body standing in for the class body (its clock, the held tool and ability marks grown about the feet) | `drawPlayer`, `ROBOT_IDLE_FPS`, `WORN_SC`, `atFeet`, `drawGhost`, `drawHeldTool`, `drawAnimal`, `drawBird`, `drawRobot`, `drawMerchant` (dispatched from `drawRobot`) | `the player` (`drawPlayer`, `drawGhost`, `drawHeldTool`) and `beasts, robots and the merchant` (the rest; the overhead block inside `drawPlayer` reads js/draw/overhead.js) |
+| which run or roll frame a class body shows: the stride off `animT`, the held run for busy hands, the bob what rides the body follows, the roll's frame off how far through `DODGE_T` | `RUN_STEP`, `runFrame`, `handsBusy`, `runBob`, `rollFrame` (the frames: `SPRITES.champ[c][team].run`/`hold`/`roll`, js/sprites/characters.js) | `the player` |
 | the frame a beast is on: its clip and how far into it, wrapped so any `animT` lands on a frame | `clipFrame` (the clip is `a.clip`, set in js/wildlife.js from `ANIM_CLIPS`; the frames are `SPRITES[kind][dir][clip]`, built in js/sprites/beasts.js and bears.js by `bakeClips`/`mapClips`, js/sprites/core.js) | `beasts, robots and the merchant` |
 | ALPHA'S BLOOD worn: the amber ring of pips around a blooded player's feet | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
 | a body going down: the frozen shatter or the wind, picked by `hash2(id, deaths)`, started off the edge of `p.dead` | `DOWN_T`, `trackDowns` (from `render()` before the draw list), `goingDown` (also held by `viewPlayer` and the replay), `drawDown` | `going down` |

@@ -647,6 +647,46 @@
     '....oSSooSSo....',
   ];
 
+  // ---------------------------------------------------------------- run and roll
+  // The run cycle and the dodge roll are not drawn here: js/sprites/motion.js carries them as
+  // grids painted off a doll of each class body (app/bake-player/), in this file's letters,
+  // so they bake through the same team and look palettes as the hand-drawn poses. Each is a
+  // sibling of the walking directions - `run[dir]`, `hold[dir]` (the run with the hands at
+  // the sides, for a body whose hands are busy) and `roll[dir]` - frames in order; a frame
+  // is wider than the 16 x 16 cell (SPRITES.motionBox says where the cell sits inside it).
+  // A character's fringe goes on at the first face row each frame names, slot for slot as
+  // fringed() lays it on the walking frames, so the hair holds from a stand into a run.
+  const MOTION_CLS = ['hunter', 'warrior'];
+  const fringeAt = (rows, at, mask) => {
+    const [y, x0, s0, n, two] = at;
+    return rows.map((row, r) => {
+      const m = r === y ? mask[0] : two && r === y + 1 ? mask[1] : null;
+      if (!m) return row;
+      let out = row;
+      for (let i = 0; i < n; i++) {
+        const x = x0 + i;
+        if (m[s0 + i] === 'h' && out[x] === 'k') out = out.slice(0, x) + 'h' + out.slice(x + 1);
+      }
+      return out;
+    });
+  };
+  // cls: the class index; mask: a look's fringe (LOOK.hairs), or none for the bare class body.
+  // A facing's frames bake the first time they are asked for, not with the set: a set is a
+  // hundred-odd canvases, every character and team paint has one, and few bodies ever show
+  // all of them - baked up front they made the drop's start and a palette repaint stall.
+  const motionSet = (cls, pal, mask) => {
+    const M = SPR.motion, name = MOTION_CLS[cls], out = {};
+    const once = (fn) => { let v = null; return () => v || (v = fn()); };
+    for (const kind of ['run', 'hold', 'roll']) {
+      const grids = M.GRIDS[name][kind], fr = M.FRINGE[name][kind];
+      const one = (d) => once(() => grids[d].map((g, i) => bake(mask && fr[d] && fr[d][i] ? fringeAt(g, fr[d][i], mask) : g, pal)));
+      const right = one('right');
+      const dirs = { down: one('down'), up: one('up'), right, left: once(() => right().map(flipH)) };
+      out[kind] = Object.defineProperties({}, Object.fromEntries(Object.entries(dirs).map(([d, get]) => [d, { get, enumerable: true }])));
+    }
+    return out;
+  };
+
   // ---------------------------------------------------------------- raider
   // Player-like night raider: same body grids, hostile palette.
   const RDPAL = {
@@ -676,7 +716,7 @@
     const cp = Object.assign({}, pal, CATCHPAL_EXTRA);
     return [bake(stoop, cp), bake(haul, cp), bake(hold, cp)];
   };
-  const playerSet = (pal) => ({
+  const playerSet = (pal, mask) => Object.assign({
     down: [bake(playerDownIdle, pal), bake(playerDownA, pal), bake(playerDownB, pal)],
     up: [bake(playerUpIdle, pal), bake(playerUpA, pal), bake(playerUpB, pal)],
     right: [bake(playerSideIdle, pal), bake(playerSideA, pal), bake(playerSideB, pal)],
@@ -689,11 +729,11 @@
       right: [bakeSpan(pnSideIdle, pal), bakeSpan(pnSideA, pal), bakeSpan(pnSideB, pal)],
       left: [flipH(bakeSpan(pnSideIdle, pal)), flipH(bakeSpan(pnSideA, pal)), flipH(bakeSpan(pnSideB, pal))],
     },
-  });
+  }, motionSet(0, pal, mask));                 // run and roll (the `run and roll` banner)
   const teamPlayers = [];
-  const skaterSet = (pal) => {
+  const skaterSet = (pal, mask) => {
     const sp = Object.assign({}, pal, SKPAL_EXTRA);
-    return {
+    return Object.assign({
       down: [bake(skDownIdle, sp), bake(skDownA, sp), bake(skDownB, sp)],
       up: [bake(skUpIdle, sp), bake(skUpA, sp), bake(skUpB, sp)],
       right: [bake(skSideIdle, sp), bake(skSideA, sp), bake(skSideB, sp)],
@@ -705,7 +745,7 @@
         right: [bakeSpan(pnSkSideIdle, sp), bakeSpan(pnSkSideA, sp), bakeSpan(pnSkSideB, sp)],
         left: [flipH(bakeSpan(pnSkSideIdle, sp)), flipH(bakeSpan(pnSkSideA, sp)), flipH(bakeSpan(pnSkSideB, sp))],
       },
-    };
+    }, motionSet(1, sp, mask));
   };
   // champ[c][team] - one full pose set per champion per team colour
   const champPlayers = [teamPlayers, []];
@@ -765,7 +805,7 @@
       const sp = Object.assign({}, pal, SKPAL_EXTRA);
       const dn = (g) => fringed(g, 4, 6, [f[0].slice(1, 5), f[1].slice(1, 5)]);
       const sd = (g) => fringed(g, 4, 9, [f[0].slice(4), '..']);
-      return Object.assign(skaterSet(sp), {
+      return Object.assign(skaterSet(sp, f), {
         down: [bake(dn(skDownIdle), sp), bake(dn(skDownA), sp), bake(dn(skDownB), sp)],
         right: [bake(sd(skSideIdle), sp), bake(sd(skSideA), sp), bake(sd(skSideB), sp)],
         left: [flipH(bake(sd(skSideIdle), sp)), flipH(bake(sd(skSideA), sp)), flipH(bake(sd(skSideB), sp))],
@@ -773,7 +813,7 @@
     }
     const dn = (g) => fringed(g, 6, 5, f);
     const sd = (g) => fringed(g, 6, 7, [f[0].slice(2), '....']);
-    return Object.assign(playerSet(pal), {
+    return Object.assign(playerSet(pal, f), {
       down: [bake(dn(playerDownIdle), pal), bake(dn(playerDownA), pal), bake(dn(playerDownB), pal)],
       right: [bake(sd(playerSideIdle), pal), bake(sd(playerSideA), pal), bake(sd(playerSideB), pal)],
       left: [flipH(bake(sd(playerSideIdle), pal)), flipH(bake(sd(playerSideA), pal)), flipH(bake(sd(playerSideB), pal))],
@@ -897,6 +937,10 @@
     playerTeam: teamPlayers,
     champ: champPlayers,
     LOOK, champLook, // a character's paint on a class body (the `looks` section above)
+    // the run and roll frames' size and where the 16 x 16 cell sits in one, the body's bob per
+    // frame of the run and the held run (whole px up) and the share of the roll at which each
+    // roll frame starts
+    motionBox: SPR.motion.BOX, runBob: SPR.motion.RUN_BOB, holdBob: SPR.motion.HOLD_BOB, rollAt: SPR.motion.ROLL_AT,
     merchant: teamMerchants, // merchant[team] - the eagle's driver, a full walking pose set per team colour
     player: teamPlayers[0],
     raider: {

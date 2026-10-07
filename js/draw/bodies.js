@@ -182,21 +182,26 @@ function drawMerchant(b, ex, ey, now) {
 // a number. Level 1 (the free pick) draws nothing: the baseline look is the
 // champion's. Rows are sprite-relative to the shared 16x16 body plan.
 const GEAR_MARKS = [
-  { y: 3, x: 5, w: 6 },          // helmet: across the hat/hood
+  { y: 3, x: 5, w: 6, lean: true }, // helmet: across the hat/hood
   { y: 8, x: 5, w: 6 },          // chest: across the coat
   { y: 11, x: 5, w: 6 },         // legs: across the hips
   { y: 13, x: 5, w: 2, x2: 9 },  // boots: one mark per foot
 ];
 // s scales the whole 16x16 grid the marks are authored on: 1 in the world,
-// 3 on the victory screen's stage
-function drawGearMarks(p, px, py, s) {
+// 3 on the victory screen's stage. On a run (`running`) the body has the
+// doll's frames under it: their feet are never where the standing ones are,
+// so the boots' marks are left off, and the head leans `lean` px along a
+// side-on facing, so the helmet's mark goes with it.
+function drawGearMarks(p, px, py, s, running, lean) {
   s = s || 1;
   for (let i = 0; i < GEAR_MARKS.length; i++) {
     const lv = p.gearLv[i];
     if (lv < 2) continue;
     const m = GEAR_MARKS[i];
+    if (running && m.x2 !== undefined) continue;
+    const x = px + (m.x + (running && m.lean ? lean : 0)) * s;
     ctx.fillStyle = GEAR_MATS[lv - 1];
-    ctx.fillRect(px + m.x * s, py + m.y * s, m.w * s, s);
+    ctx.fillRect(x, py + m.y * s, m.w * s, s);
     if (m.x2 !== undefined) ctx.fillRect(px + m.x2 * s, py + m.y * s, m.w * s, s);
   }
 }
@@ -257,13 +262,39 @@ function atFeet(x, y, sc, fn) {
   ctx.restore();
 }
 
+// The class body's run and dodge roll are the doll's frames (js/sprites/motion.js,
+// baked in every paint by characters.js), each wider than the 16x16 cell, which
+// sits at SPRITES.motionBox's (x, y) inside it. The run plays RUN_STEP frames per
+// step of animT - eight frames, two steps, 18 a second at a walk's 9 - and a roll
+// frame is picked off how far through DODGE_T the roll is (SPRITES.rollAt).
+const RUN_STEP = 2;
+function runFrame(p) { return Math.floor(p.animT * RUN_STEP) % SPRITES.runBob.length; }
+// A body whose hands are busy - a drawn weapon, a swing, a meal, a cast, the
+// shield up, the grapple's rope - runs on the held run instead, its arms at its
+// sides rather than pumping under what they hold. runBob is the bob of the
+// frame on show, whole px up, for what rides the body.
+function handsBusy(p) {
+  return p.charging || p.swingT > 0 || p.slashT > 0 || p.eatT > 0 || p.castT > 0 || p.shieldT > 0 || p.grapT > 0;
+}
+function runBob(p) { return (handsBusy(p) ? SPRITES.holdBob : SPRITES.runBob)[runFrame(p)]; }
+function rollFrame(prog) {
+  const at = SPRITES.rollAt;
+  let i = 0;
+  while (i + 1 < at.length && prog >= at[i + 1]) i++;
+  return i;
+}
+
 function drawPlayer(p, ex, ey, now) {
   const local = p === player;
   const lying = p.prone;
   const set = lying ? classSet(p).prone[p.dir] : classSet(p)[p.dir];
   let frame = 0;
+  // upright, a body strides only while it covers ground on its own feet - the
+  // sim's own test for stepping animT on (updatePlayer, js/sim.js) - so a
+  // shift-slide and a push against a wall stand, and a zipline's rider hangs still
+  const striding = p.moving && p.zip < 0 && !p.sliding && Math.hypot(p.vx, p.vy) > 8;
   if (lying) frame = p.moving ? 1 + (Math.floor(p.crawlT) % 2) : 0;
-  else if (p.moving && p.zip < 0) frame = 1 + (Math.floor(p.animT) % 2); // a zipline's rider hangs still
+  else if (striding) frame = 1 + (Math.floor(p.animT) % 2);
   // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
   // is - the rope and handle over its head are the cable pass's (drawZips)
   const zl = p.zip >= 0 ? ZIP_ALT : 0;
@@ -280,6 +311,10 @@ function drawPlayer(p, ex, ey, now) {
     const c = rb[p.dir];
     spr = frame > 0 ? c.run[Math.floor(p.animT) % c.run.length] : c.idle[Math.floor(now * ROBOT_IDLE_FPS) % c.idle.length];
   }
+  // ...and a class body on the move runs: the doll's eight frames (runFrame)
+  const running = frame > 0 && !lying && catchF < 0 && !rb && p.fallT <= 0;
+  if (running) spr = classSet(p)[handsBusy(p) ? 'hold' : 'run'][p.dir][runFrame(p)];
+  const MB = SPRITES.motionBox;
   // the crawl inches: the second frame sits one pixel further along the facing
   // than the first, so the body hauls itself forward instead of flapping in
   // place. Baking two shifted copies of every grid would have said the same
@@ -289,19 +324,25 @@ function drawPlayer(p, ex, ey, now) {
   const px = Math.round(p.x - 8 - ex) + ix;
   const py = Math.round(p.y - 12 - ey) + iy;
   // where the frame's top-left sits: a class frame fills the 16x16 cell (a
-  // taller one keeps its feet on the cell's floor); a worn body is centred on
-  // the cell with its soles on the cell's bottom row
-  const bx = rb ? px + 8 - (spr.width >> 1) : px;
-  const by = rb ? py + 15 - rb.foot : py + 16 - spr.height;
+  // taller one keeps its feet on the cell's floor, a doll frame holds the cell
+  // at motionBox's x, y); a worn body is centred on the cell with its soles on
+  // the cell's bottom row
+  const bx = rb ? px + 8 - (spr.width >> 1) : running ? px - MB.x : px;
+  const by = rb ? py + 15 - rb.foot : running ? py - MB.y : py + 16 - spr.height;
   const wsc = rb ? WORN_SC : 1, fx0 = px + 8, fy0 = py + 16; // what the hands hold grows about the feet
   // shadow (not while swimming in a hole, and not while lying down - a body
   // flat on the snow has nothing to cast one over, and the cover's own dark
   // lower rim is what grounds it instead)
   if (p.fallT <= 0 && !lying) {
-    // the sun's shade, cut from the frame (ground.js) - the standing one
-    // through a roll, whose spin would smear it - feet on the foot row
-    const ss = p.dodgeT > 0 ? (rb ? rb[p.dir].idle[0] : classSet(p)[p.dir][0]) : spr;
-    drawCastShade(ss, bx, rb ? by : py + 16 - ss.height);
+    // the sun's shade, cut from the frame on show (ground.js), feet on the
+    // foot row: a roll's own frame, so the ball goes over its own shadow - but
+    // a worn body's standing frame through its spin, which would smear it
+    const roll = p.dodgeT > 0;
+    if (roll && !rb) drawCastShade(classSet(p).roll[p.dir][rollFrame(1 - p.dodgeT / DODGE_T)], px - MB.x, py - MB.y);
+    else {
+      const ss = roll ? rb[p.dir].idle[0] : spr;
+      drawCastShade(ss, bx, rb || running ? by : py + 16 - ss.height);
+    }
   }
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (lying && local) drawBuryRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3);
@@ -318,25 +359,39 @@ function drawPlayer(p, ex, ey, now) {
     ctx.fillRect(px + 2, py + 11, 12, 1);
     ctx.fillRect(px + 4, py + 13, 8, 1);
   } else if (p.dodgeT > 0) {
-    // dodge roll: full spin over the roll, trailing two afterimage ghosts.
-    // Spin sign follows horizontal intent so side rolls tumble forward.
+    // dodge roll, trailing two afterimages of where the roll just was
     const prog = 1 - p.dodgeT / DODGE_T;
-    const sgn = p.dodgeVX < 0 ? -1 : p.dodgeVX > 0 ? 1 :
-      p.dodgeVY < 0 ? -1 : 1;
     const vd = Math.hypot(p.dodgeVX, p.dodgeVY) || 1;
     const nx = p.dodgeVX / vd, ny = p.dodgeVY / vd;
-    const rollSpr = rb ? rb[p.dir].idle[0] : classSet(p)[p.dir][0];
-    const rw = rollSpr.width >> 1, rh = rb ? (rb.foot + 1 - rb.top) >> 1 : 8, ry0 = rb ? rb.foot + 1 - rh : 8;
-    const spin = (a, gx, gy) => {
-      ctx.save();
-      ctx.translate(Math.round(px + 8 + gx), Math.round(py + 16 - rh + gy)); // spun about the body's middle
-      ctx.rotate(a);
-      ctx.drawImage(rollSpr, -rw, -ry0);
-      ctx.restore();
-    };
-    ctx.globalAlpha = 0.12; spin(sgn * (prog - 0.14) * Math.PI * 2, -nx * 11, -ny * 11);
-    ctx.globalAlpha = 0.28; spin(sgn * (prog - 0.07) * Math.PI * 2, -nx * 6, -ny * 6);
-    ctx.globalAlpha = 1; spin(sgn * prog * Math.PI * 2, 0, 0);
+    if (rb) {
+      // a worn body has no tuck of its own: its standing frame spins a full
+      // turn, the spin's sign following horizontal intent so side rolls
+      // tumble forward
+      const sgn = p.dodgeVX < 0 ? -1 : p.dodgeVX > 0 ? 1 : p.dodgeVY < 0 ? -1 : 1;
+      const rollSpr = rb[p.dir].idle[0];
+      const rw = rollSpr.width >> 1, rh = (rb.foot + 1 - rb.top) >> 1, ry0 = rb.foot + 1 - rh;
+      const spin = (a, gx, gy) => {
+        ctx.save();
+        ctx.translate(Math.round(px + 8 + gx), Math.round(py + 16 - rh + gy)); // spun about the body's middle
+        ctx.rotate(a);
+        ctx.drawImage(rollSpr, -rw, -ry0);
+        ctx.restore();
+      };
+      ctx.globalAlpha = 0.12; spin(sgn * (prog - 0.14) * Math.PI * 2, -nx * 11, -ny * 11);
+      ctx.globalAlpha = 0.28; spin(sgn * (prog - 0.07) * Math.PI * 2, -nx * 6, -ny * 6);
+      ctx.globalAlpha = 1; spin(sgn * prog * Math.PI * 2, 0, 0);
+    } else {
+      // the class body goes down into a crouch, dives, tucks into a ball that
+      // turns over once, and comes up out of a squat - the doll's frames, lit
+      // from where the sun is rather than spun with it. Each afterimage wears
+      // the frame the roll showed where it is drawn.
+      const fr = classSet(p).roll[p.dir];
+      const at = (pr, back) => ctx.drawImage(fr[rollFrame(pr)],
+        px - MB.x - Math.round(nx * back), py - MB.y - Math.round(ny * back));
+      if (prog >= 0.14) { ctx.globalAlpha = 0.12; at(prog - 0.14, 11); }
+      if (prog >= 0.07) { ctx.globalAlpha = 0.28; at(prog - 0.07, 6); }
+      ctx.globalAlpha = 1; at(prog, 0);
+    }
   } else {
     // a cast, the net shot's recoil hop or the rush lean is performed BY the
     // body: the pose shifts / tilts the sprite itself (abilityPose,
@@ -375,17 +430,25 @@ function drawPlayer(p, ex, ey, now) {
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
     if (pose && pose.rot) {
       ctx.save();
-      const hw = spr.width >> 1, hh = rb ? rb.foot + 1 - ((rb.foot + 1 - rb.top) >> 1) : 8; // about the body's middle
-      ctx.translate((rb ? sx : ax) + hw, (rb ? sy : ay) + hh);
+      // turned about the body's middle: a worn body's own, or the cell's for a
+      // class frame (a doll frame is wider than the cell it holds)
+      const hw = rb ? spr.width >> 1 : 8, hh = rb ? rb.foot + 1 - ((rb.foot + 1 - rb.top) >> 1) : 8;
+      const ox = rb ? sx : ax, oy = rb ? sy : ay;
+      ctx.translate(ox + hw, oy + hh);
       ctx.rotate(pose.rot);
-      drawSpriteFlash(spr, -hw, -hh, p.hurtT > 0.12 ? 1 : 0);
+      drawSpriteFlash(spr, sx - ox - hw, sy - oy - hh, p.hurtT > 0.12 ? 1 : 0);
       ctx.restore();
     } else {
       drawSpriteFlash(spr, sx, sy, p.hurtT > 0.12 ? 1 : 0);
     }
     // gear marks sit at fixed points on the standing body plan, so the prone
-    // poses skip them rather than stripe a shoulder across someone's hip
-    if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0 && !rb) drawGearMarks(p, ax, ay);
+    // poses skip them rather than stripe a shoulder across someone's hip; a
+    // running body carries them up and down its bob, and side-on leans the
+    // head a pixel into the run
+    if (state.mode !== 'title' && !lying && !(pose && pose.rot) && catchF < 0 && !rb) {
+      drawGearMarks(p, ax, ay - (running ? runBob(p) : 0), 1, running,
+        p.dir === 'right' ? 1 : p.dir === 'left' ? -1 : 0);
+    }
     ctx.globalAlpha = 1;
     if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py));
     // what an ability left ON this body - shield, net, jaws, fury, mark -
@@ -754,12 +817,13 @@ function drawHeldTool(p, px, py) {
   if (drawing || swinging) return;
 
   // carried: the weapon (or, through the swing cooldown, the work tool) sits
-  // in the leading hand, with a 1px walk bob, turned to the facing - a work
-  // tool's icon points up and is left as drawn, the way it always was
+  // in the leading hand, riding the run's bob, turned to the facing - a work
+  // tool's icon points up and is left as drawn, the way it always was. A worn
+  // body keeps the old one-pixel step.
   const icon = t.key === 'bow' ? wHeld : SPRITES[t.icon];
   if (!icon) return;
   const half = icon.width >> 1;
-  const bob = p.moving ? Math.floor(p.animT) % 2 : 0;
+  const bob = !p.moving || p.prone ? 0 : scoutBody(p) ? Math.floor(p.animT) % 2 : -runBob(p);
   const hx = p.dir === 'left' || p.dir === 'up' ? px + 2 : px + 14; // the leading hand (up: the far one, occluded by the body - the caller draws us first)
   const hy = cyp - (p.dir === 'left' || p.dir === 'right' ? 2 : 1) + bob;
   if (t.key !== 'bow') { ctx.drawImage(icon, hx - half, hy - half); return; }
