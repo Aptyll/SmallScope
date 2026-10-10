@@ -249,27 +249,34 @@ function layDrifts() {
   }
   layLees();
 }
-// THE WARRENS' DRIFTS (CAMPS.meadow, js/world.js): every warren lies under
-// the same set of drifts laid across its clearing along the prevailing wind -
-// MEADOW_DRIFTS, each [along, across, len, wid] in tiles off the camp's centre
-// in the wind's own frame - so a scout wades through the warren while its
-// rabbits run on the crust (wadeStep). Both warrens wear the identical set,
-// which is the fairness the open valley's drifts have to be weighed for. The
-// rest of the clearing stays open snow for the clumps to stand in.
-const MEADOW_DRIFTS = [[-2.5, -1.5, 6, 1.9], [-1, 2.2, 5, 1.6]];
+// THE WARRENS' DRIFTS (CAMPS.meadow, js/world.js): a bank of deep snow drawn
+// across each warren's front, laid in the camp's own frame (campFrame) so
+// both warrens wear the same bank, mirrored. MEADOW_DRIFTS is each piece as
+// [a, o, along, out, len, wid, bend] in tiles: its head at (a, o) off the
+// camp's centre, pointing (along, out), bending `bend`. Two pieces, heads
+// heaped against the pines at either end and tails thinning toward the
+// middle, leave one lane of crust through the bank: the rabbits run on the
+// crust anywhere (wadeStep), a scout wades unless it takes the lane. Nothing
+// in it reads the seed: every match's warrens wear the same bank.
+const MEADOW_DRIFTS = [[-8.2, 3.6, 1, 0.15, 7, 2.4, 0.05], [8.2, 3.6, -1, 0.15, 7, 2.4, -0.05]];
 const MEADOW_AMP = 0.95;
 function layMeadowDrifts() {
-  const wx = driftWind.dx, wy = driftWind.dy;
   for (const C of camps) {
     if (C.key !== 'meadow') continue;
-    for (const [u, v, len, wid] of MEADOW_DRIFTS) {
+    const F = campFrame(C);
+    for (const [a, o, da, dO, len, wid, bend] of MEADOW_DRIFTS) {
+      const h = campLocal(C, F, a, o), dl = Math.hypot(da, dO);
+      const dx = (F.ax * da + F.ox * dO) / dl, dy = (F.ay * da + F.oy * dO) / dl;
+      // a mirrored frame turns the drift's left side to its right: the bend
+      // and the two ragged edges trade over with it (`hand`)
       const D = {
-        x: C.tx + 0.5 + wx * u - wy * v, y: C.ty + 0.5 + wy * u + wx * v, dx: wx, dy: wy,
-        len, wid, head: wid * 0.6, amp: MEADOW_AMP, bend: 0, rag: null, deep: 0, side: 0,
+        x: h.tx + 0.5, y: h.ty + 0.5, dx, dy,
+        len, wid, head: wid * 0.6, amp: MEADOW_AMP, bend: bend * F.hand, rag: null, deep: 0, side: 0,
       };
       const n = Math.ceil((D.len + D.head) / DRIFT_RAG_STEP) + 2;
       D.rag = new Float32Array(n * 2);
-      for (let k = 0; k < 2; k++) for (let i = 0; i < n; i++) D.rag[k * n + i] = (vnoise(i * DRIFT_RAG_STEP * 0.8 + u * 3.1, k * 5.3 + v * 2.7) - 0.5) * 2;
+      const swap = F.hand * Math.sign(da) < 0; // the piece pointing back along `a` is the other's mirror too
+      for (let k = 0; k < 2; k++) for (let i = 0; i < n; i++) D.rag[(swap ? 1 - k : k) * n + i] = 0.6 * Math.sin(i * 1.3 + k * 2.1) + 0.4 * Math.sin(i * 0.55 + k * 4.4); // drawn, not rolled: the same edge on every seed
       drifts.push(D);
     }
   }

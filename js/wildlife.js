@@ -169,52 +169,30 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   sfxAt('hit', a.x, a.y); if (a.hp > 0 && a.kind !== 'bird') sfxAt('yelp', a.x, a.y);
 }
 
-// The passive pair, and the strength the valley is kept at: PREY_POP of each
-// kind - every rabbit in the two WARRENS (CAMPS.meadow, js/world.js), split
-// between them, and the deer anywhere in the open - put down at boot by
-// spawnAnimals and then topped up one at a time by updatePreyStock, every
-// PREY_REPOP seconds a kind is short, at a spot no live player is within
-// PREY_CLEAR of (past the edge of any screen at zoom 1, so nothing is ever
-// seen to appear: a warren with a scout standing in it waits) and at the
-// level the table has reached by then (animalLevel). Neither kind breeds: the
-// valley is restocked, not grown, and a hunt never empties it for good.
-const PREY_POP = { rabbit: 16, deer: 10 };
+// The deer, and the strength the valley is kept at: PREY_POP of them,
+// anywhere in the open, put down at boot by spawnAnimals and then topped up
+// one at a time by updatePreyStock, every PREY_REPOP seconds the herd is
+// short, at a spot no live player is within PREY_CLEAR of (past the edge of
+// any screen at zoom 1, so nothing is ever seen to appear) and at the level
+// the table has reached by then (animalLevel). They never breed: the valley
+// is restocked, not grown, and a hunt never empties it for good. The
+// rabbits are not stock: three live in each WARREN and come back as a camp
+// does, on its clock (CAMPS.meadow, updateCamps, js/world.js).
+const PREY_POP = { deer: 10 };
 const PREY_REPOP = 15;  // s between top-ups (one animal each)
 const PREY_CLEAR = 280; // px from every live player a newcomer must land
 let preyRepopT = PREY_REPOP;
 
-// the warrens, and the one a new rabbit goes to: whichever holds fewest
-function warrens() { return camps.filter((C) => C.key === 'meadow'); }
-function warrenFor() {
-  let best = null, bn = 1e9;
-  for (const C of warrens()) {
-    let n = 0;
-    for (const a of animals) if (!a.dead && a.meadow === C) n++;
-    if (n < bn) { bn = n; best = C; }
-  }
-  return best;
-}
-// one animal of a kind on a free tile: a rabbit inside its warren's clearing
-// (none on a map with no warren - the practice arena), a deer anywhere clear
-// of the map's centre, and - when `clear` - out of everyone's reach. The
-// animal, or null if forty tries found nowhere
+// one animal of a kind on a free tile clear of the map's centre, and - when
+// `clear` - out of everyone's reach. The animal, or null if forty tries
+// found nowhere
 function spawnPrey(kind, clear) {
-  const home = kind === 'rabbit' ? warrenFor() : null;
-  if (kind === 'rabbit' && !home) return null;
   for (let tries = 0; tries < 40; tries++) {
-    let tx, ty;
-    if (home) {
-      tx = home.tx + randi(1 - home.r, home.r - 1); ty = home.ty + randi(1 - home.r, home.r - 1);
-      if (Math.hypot(tx - home.tx, ty - home.ty) > home.r - 1) continue;
-    } else {
-      tx = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
-      ty = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
-    }
+    const tx = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN), ty = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
     if (!inWorld(tx, ty) || objects[idx(tx, ty)] || waterAt(tx, ty) || Math.hypot(tx - cx, ty - cy) <= 14) continue;
     const x = (tx + 0.5) * TILE, y = (ty + 0.5) * TILE;
     if (clear && players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - x, p.y - y) < PREY_CLEAR)) continue;
     const a = makeAnimal(kind, x, y);
-    if (home) a.meadow = home;
     animals.push(a);
     return a;
   }
@@ -222,8 +200,7 @@ function spawnPrey(kind, clear) {
 }
 
 function spawnAnimals() {
-  for (let i = 0; i < PREY_POP.rabbit; i++) spawnPrey('rabbit', false);
-  for (let i = 0; i < PREY_POP.deer; i++) spawnPrey('deer', false);
+  for (const k in PREY_POP) for (let i = 0; i < PREY_POP[k]; i++) spawnPrey(k, false);
 }
 
 // the top-up: on the clock, the kind furthest under strength gets one back
@@ -231,7 +208,8 @@ function updatePreyStock(dt) {
   preyRepopT -= dt;
   if (preyRepopT > 0) return;
   preyRepopT = PREY_REPOP;
-  const live = { rabbit: 0, deer: 0 };
+  const live = {};
+  for (const k in PREY_POP) live[k] = 0;
   for (const a of animals) if (!a.dead && live[a.kind] !== undefined) live[a.kind]++;
   let kind = null, short = 0;
   for (const k in PREY_POP) if (PREY_POP[k] - live[k] > short) { short = PREY_POP[k] - live[k]; kind = k; }

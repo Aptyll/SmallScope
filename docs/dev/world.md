@@ -619,9 +619,11 @@ over the hollows. `layDrifts()` runs at boot once every worldgen pass has stood 
   (`DRIFT_KEEP_CAMP`), and anything within `DRIFT_KEEP_WET` of ice, a hole, the creek or a
   ford. A drift whose skirt runs into one is shortened and narrowed, never cut.
 - **The warrens' own.** Each [SNOWDROP WARREN](#camps) is the one camp that wants deep snow in
-  it: `layMeadowDrifts` lays the same `MEADOW_DRIFTS` (two drifts, set in the wind's frame) in
-  each before the free search, identical on both sides, with only their ragged edge on the
-  position noise. Rabbits run on the crust: `wadeStep` never slows one.
+  it: `layMeadowDrifts` lays `MEADOW_DRIFTS` across its front, after the fair shares, in the
+  camp's own frame (`campFrame`): two drifts heaped against the pines at either end, thinning
+  toward the middle, with a three-tile lane of crust between them. Nothing in it reads the seed
+  (its ragged edge is a fixed wave), so both warrens wear the same bank, mirrored, on every
+  match. Rabbits run on the crust: `wadeStep` never slows one.
 - **Spacing and share.** Crests stand `DRIFT_HEAD` apart, deep cores `DRIFT_GAP`; drifts are
   taken best first until the deep band covers `DEEP_COVER` of the interior's open snow or the
   candidates run out (OPEN FIELD and THICKET land near 3-4.5%: there is only so much shelter).
@@ -700,12 +702,14 @@ Five kinds, one reward each:
   an axe, and the chests are why that is worth doing. They are ordinary
   [chests](#treasure-chests) and never come back; `pop` 0 means nothing restocks and the anchor
   wears no clock.
-- **SNOWDROP WARREN** (`meadow`, r 6, ×2) — no monster: a clearing **dug into the treeline**
-  (`treeline`) halfway out from each roost, home to every rabbit on the map
-  ([wildlife](gameplay.md#wildlife)), with deep snow drifted across it (`layMeadowDrifts`,
-  js/depth.js) and a dozen **snowdrop** clumps that open at dawn and shield the picker's side
-  ([the dawn shield](gameplay.md#the-dawn-shield)). Nothing in it is hostile and nothing restocks:
-  the rabbits are the meadow's (`PREY_POP`), the clumps reopen every dawn.
+- **SNOWDROP WARREN** (`meadow`, ×2) — a bay **dug into the treeline** (`treeline`) halfway out
+  from each roost, and the one camp **drawn by hand** (its `plan`): **three rabbits** round their
+  mound (`OBJECTS.warren`, the anchor; `WARREN_SPR`, js/draw/ground.js), a crescent of seven
+  **snowdrop** clumps at the back against the pines that open at dawn and shield the picker's
+  side ([the dawn shield](gameplay.md#the-dawn-shield)), and a bank of deep snow across the
+  front with one crust lane through it (`layMeadowDrifts`, js/depth.js). The rabbits are the only
+  ones on the map ([wildlife](gameplay.md#wildlife)); nothing in it is hostile. Cleared, the
+  three are back 40 s later, on the camp clock every camp keeps.
 
 **One entry in `CAMPS` is one kind of camp**, and that entry plus its site is the whole feature —
 no map, chart or HUD code knows a camp by name:
@@ -717,12 +721,13 @@ no map, chart or HUD code knows a camp by name:
 | `r` | footprint radius in tiles: the clearing, the props, and the radius `campAt()` calls "here" |
 | `mark` | map ink for its glyph and its toast rule |
 | `icon` | the glyph itself: `[x, y, w, h]` rects inside a 7×7 box, stamped by `drawCampIcon()` with a dark rim pass so it reads on parchment, snow and forest alike |
-| `kind` / `pop` | the monster kind (`MONSTER`, wildlife.js) and how many the camp holds (`a.home === C` is the backref) |
+| `kind` / `pop` | the monster kind (`MONSTER`, wildlife.js) and how many the camp holds (`a.home === C` is the backref; prey, the warren's rabbits, carries `a.meadow === C` instead, so it is never a camp fight) |
 | `repop` | seconds after the **last** one dies before the whole camp is back — a camp is cleared or it is not; nothing trickles |
 | `props` | what stands in it: `[dx, dy, type, variant]` off the centre, stamped in worldgen **before** the ground bakes; the prop at `0, 0` is the anchor and carries `site` |
 | `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
 | `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it and `placeChests` keeps off its rim |
 | `treeline` | the site is **on the treeline**: between the border's shallowest edge and `CAMP_EDGE`, with the border grown out round it on every seed (the warren groves, below) |
+| `plan` | the camp is **drawn**: rows of characters from the back of the clearing (into the woods) to its front (the field), centred on the middle of the middle row, turned to face the field from whichever edge the site is nearest (`campFrame`), so the mirrored site gets the mirrored drawing. `layCampPlan` stamps it in place of `clearCamp`, `props` and `spots`: `-` left as the seed grew it, `.` cleared snow, `T` a pine, `f` a snowdrop, `w` the anchor, `r` a monster's spot (kept on the camp as `C.spots`). `campNear` covers the whole drawing, so no later pass (rocks, chests, landmarks, drifts) lands in it |
 | `river` | the camp is a **stretch of riverbank**, not a den: tiles of bank either way along the creek's bend round the site that its monster walks ([river camps](#river-camps)); `props` and `spots` are empty |
 
 ### Placement
@@ -773,8 +778,9 @@ warren's stretch of border is **grown out to meet it** (`warrenGrove`, unioned i
 like the roost discs): a tongue of pines from the edge to `GROVE_IN` (3) tiles past the warren's
 centre, as wide as its clearing plus three, tapering `GROVE_TAPER` (1.4) tiles of depth a tile
 back into the seed's own edge, with a ±1.5 wobble on the fine noise. The clearing is then cut out
-of it, so the warren is a bay in the treeline on every seed. Like the discs it only adds pines,
-which roll nothing. Terrain still comes from the seed: **`clearCamp()` clears everything
+of it, so the warren is a bay in the treeline on every seed, and the warren's own drawing
+(`plan`) then sets every tile of the bay: its wall of pines, its clearing, its props. Like the
+discs it only adds pines, which roll nothing. Terrain still comes from the seed: **`clearCamp()` clears everything
 inside `r + 2` of the centre** — a pine, a rock, a bush goes, ice becomes snow — so a camp is the
 same clearing on every seed, and the props then stamp the same on every seed. A river camp also
 fells everything on its bank ([river camps](#river-camps)). (A camp on a

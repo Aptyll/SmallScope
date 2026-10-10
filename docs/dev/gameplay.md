@@ -1546,16 +1546,17 @@ the answer; a warrior bot has no burrow to decide.
 ## Wildlife
 
 `animals` holds **everything that is shot rather than swung at** — two kinds of prey, the camps' three wolves and the dormant bird, keyed by
-`a.kind` with hp from `ANIMAL_HP`. The passive pair is spawned at boot by `spawnAnimals()`
+`a.kind` with hp from `ANIMAL_HP`. The deer are spawned at boot by `spawnAnimals()`
 (called right after `genWorld()`, so its `rng()` draws don't reshuffle the world layout) at
-`PREY_POP` strength: 16 rabbits (8 HP) and 10 deer (24 HP). **Every rabbit lives in a warren**
-([the SNOWDROP WARREN camps](world.md#camps)): `spawnPrey` puts a new one inside the clearing of
-whichever warren holds fewest (`warrenFor`), and `a.meadow` remembers it (not `a.home`, which is a
-camp monster's).
-Neither reproduces, but **the meadow is restocked**: `updatePreyStock` (from `updatePlay`, never
-under `PRACTICE`) puts one animal of the kind furthest under strength back every `PREY_REPOP`
-(15 s) through `spawnPrey`, on a free tile no live player is within `PREY_CLEAR` (280 px — past
-the edge of any screen at zoom 1) of, so nothing is ever seen to appear. The three wolf kinds
+`PREY_POP` strength: 10 deer (24 HP), anywhere in the open. **The rabbits (8 HP) are a camp's**:
+three live in each [SNOWDROP WARREN](world.md#camps), stocked by `stockCamps` at their plan's
+spots and back all at once 40 s after the last of a warren's three dies, on the camp clock
+(`updateCamps`, held while anyone stands in the warren). `a.meadow` remembers the warren (not
+`a.home`, which is a camp monster's, so a rabbit is never a camp fight).
+The deer never breed, but **the herd is restocked**: `updatePreyStock` (from `updatePlay`, never
+under `PRACTICE`) puts one back every `PREY_REPOP` (15 s) while it is short, through
+`spawnPrey`, on a free tile no live player is within `PREY_CLEAR` (280 px — past the edge of any
+screen at zoom 1) of, so nothing is ever seen to appear. The three wolf kinds
 ([their table](#camp-monsters-neutral-until-hit)) belong to a [camp](world.md#camps) instead — `a.home` points at it,
 and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, are dormant: nothing spawns one.)
 
@@ -2359,8 +2360,9 @@ there chewing under fire is not patience, it is a free kill.
 
 ## The dawn shield
 
-The [warrens](world.md#camps) carry a dozen **snowdrop** clumps each (`OBJECTS.snowdrop`, art from
-`app/bake-snowdrops`). They are shut all day and open only for the **dawn window**
+The [warrens](world.md#camps) carry seven **snowdrop** clumps each, a crescent at the back
+(`OBJECTS.snowdrop`, art from `app/bake-snowdrops`: a gold bell on one bold crook, a bronze bud
+shut, and a halo of sparks turning round an open one). They are shut all day and open only for the **dawn window**
 (`bloomOpen`, js/world.js): `BLOOM_LEAD` (6 s) before the clock wraps to a new day and
 `BLOOM_HOLD` (18 s) after it, never under `PRACTICE`. An open clump is a work target and the hands
 take it on their own like a berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`,

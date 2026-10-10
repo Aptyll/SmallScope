@@ -157,6 +157,7 @@ function drawTargetRim(src, sx, sy, w, h, x, y, now) {
 // canopy over it and the rim dissolves as the hero steps into the open.
 const HUT_FR = 140; // ms a frame of the hog hut's chimney smoke
 const SNOWDROP_SWAY = 12; // gain on windSway for a snowdrop's lean: a stem bends where a pine barely sways
+const SNOWDROP_GLOW_HZ = 5; // halo steps a second round an open snowdrop's bell (SPRITES.snowdrop glow)
 const TREE_FADE_A = 0.35; // alpha floor on the adjacent ring
 const TREE_FADE_R0 = 24; // fully faded inside this trunk distance (world px)
 const TREE_FADE_R1 = 52; // back to opaque beyond this
@@ -536,6 +537,9 @@ function render() {
       if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20, undefined, undefined, o);
       // the combo readout, above the bar's slot so neither ever covers the other
       drawDummyMeter(o, px + 8, dy - 10);
+    } else if (o.type === 'warren') {
+      drawSpriteFlash(WARREN_SPR, px + sh, py + TILE - WARREN_SPR.height + 1, o.flash);
+      if (o === hovO) drawCampClock(o, px + 8, py + TILE - WARREN_SPR.height - 3); // the warren's clock
     } else if (o.type === 'cairn') {
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
       if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the black bear stone's clock
@@ -604,6 +608,12 @@ function render() {
       const jx = Math.floor(hash2(o.tx * 5 + 3, o.ty * 7 + 1) * 7) - 3, jy = Math.floor(hash2(o.tx * 3 + 9, o.ty * 11 + 2) * 4) - 2;
       if (open && fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh + jx, py + jy, now);
       drawSpriteFlash(spr, px + sh + jx, py + jy, o.flash);
+      // an open bell's halo: its sparks step round it SNOWDROP_GLOW_HZ times
+      // a second, each clump on its own phase so a scatter never pulses as one
+      if (open) {
+        const G = V.glow[lean + 1];
+        ctx.drawImage(G[Math.floor(now * SNOWDROP_GLOW_HZ + hash2(o.tx * 7 + 5, o.ty * 3 + 8) * G.length) % G.length], px + sh + jx, py + jy);
+      }
     } else if (STRUCTS[o.type] && STRUCTS[o.type].tiled) {
       drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
     } else if (STRUCTS[o.type]) {

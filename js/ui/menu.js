@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.399';
+const PATCH_TXT = 'PATCH 0.400';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.400', 'EACH WARREN IS NOW DRAWN BY HAND: GOLD SNOWDROPS GLOW IN A CRESCENT AT THE BACK, THREE RABBITS SIT ROUND THEIR MOUND AND COME BACK 40 SECONDS AFTER THE LAST ONE FALLS, AND A BANK OF DEEP SNOW GUARDS THE FRONT WITH ONE LANE THROUGH IT.'],
   ['0.399', 'THE BURROW IS NOW A STACK IN YOUR PACK: PRESS V OR CLICK ITS CELL TO DIG, AND THE STRIP KEEPS ONLY YOUR MEALS, GOLD AND CARDS.'],
   ['0.398', 'BEHIND THE SCENES: A NEW SHORT SHOWS A STAG, A HEDGEHOG AND ITS TURN TO STONE MADE THROUGH SPRITE FUSION AND CLAUDE CODE, FROM ONE PASTE TO THE SNOW.'],
   ['0.397', 'SCOUTS RUN WITH THEIR WHOLE BODY NOW, AND A ROLL IS A DIVE INTO A TUCKED BALL THAT GOES OVER ONCE AND LANDS IN A CROUCH.', 'run-and-roll'],
@@ -1245,6 +1246,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['WARRENS DRAWN BY HAND: GOLD SNOWDROPS, THREE RABBITS, A DEEP SNOW BANK', '0.400'],
     ['BURROWS RIDE IN YOUR PACK: V OR A CLICK ON THE CELL DIGS ONE', '0.399'],
     ['RABBIT WARRENS: DAWN SNOWDROPS SHIELD YOUR SIDE, BURROWS DIG TUNNELS', '0.395'],
     ['SIX HOG HUTS HIDE IN THE BORDER WOODS, THREE CHESTS AROUND EACH', '0.287'],
