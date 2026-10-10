@@ -51,6 +51,7 @@ const driftWind = { ang: 0, dx: 1, dy: 0 }; // the prevailing wind, blowing towa
 // inner part of a wider skirt, and a drift whose amp is under DEPTH_DEEP is a
 // skirt alone.
 function driftDepth(D, fx, fy) {
+  if (D.pool) return poolDepth(D, fx, fy);
   const rx = fx - D.x, ry = fy - D.y;
   const u = rx * D.dx + ry * D.dy;
   if (u <= -D.head || u >= D.len) return 0;
@@ -249,30 +250,37 @@ function layDrifts() {
   }
   layLees();
 }
-// THE WARRENS' DRIFTS (CAMPS.meadow, js/world.js): every warren lies under
-// the same set of drifts laid across its clearing along the prevailing wind -
-// MEADOW_DRIFTS, each [along, across, len, wid] in tiles off the camp's centre
-// in the wind's own frame - so a scout wades through the warren while its
-// rabbits run on the crust (wadeStep). Both warrens wear the identical set,
-// which is the fairness the open valley's drifts have to be weighed for. The
-// rest of the clearing stays open snow for the clumps to stand in.
-const MEADOW_DRIFTS = [[-2.5, -1.5, 6, 1.9], [-1, 2.2, 5, 1.6]];
+// THE WARRENS' SNOW (CAMPS.meadow, js/world.js): each warren's ring of pines
+// holds a round pool of deep snow that fills its clearing to the trees,
+// laid in the camp's own frame (campFrame) so both warrens wear the same
+// pool, mirrored. MEADOW_POOL in tiles: `r` the pool's radius off the camp's
+// centre, `edge` how far in from its rim it takes to reach full depth,
+// `ring` the radius of a crust island left in its middle (0: none), `lane`
+// the half-width of a crust lane winding in from the mouth to the middle
+// (0: none). The rim wanders on a fixed wave even about the camp's own axis,
+// so the pool is the same on every seed. The rabbits
+// run on the crust (wadeStep); a scout wades.
+const MEADOW_POOL = { r: 6.9, edge: 1.4, ring: 0, lane: 0 };
 const MEADOW_AMP = 0.95;
 function layMeadowDrifts() {
-  const wx = driftWind.dx, wy = driftWind.dy;
   for (const C of camps) {
     if (C.key !== 'meadow') continue;
-    for (const [u, v, len, wid] of MEADOW_DRIFTS) {
-      const D = {
-        x: C.tx + 0.5 + wx * u - wy * v, y: C.ty + 0.5 + wy * u + wx * v, dx: wx, dy: wy,
-        len, wid, head: wid * 0.6, amp: MEADOW_AMP, bend: 0, rag: null, deep: 0, side: 0,
-      };
-      const n = Math.ceil((D.len + D.head) / DRIFT_RAG_STEP) + 2;
-      D.rag = new Float32Array(n * 2);
-      for (let k = 0; k < 2; k++) for (let i = 0; i < n; i++) D.rag[k * n + i] = (vnoise(i * DRIFT_RAG_STEP * 0.8 + u * 3.1, k * 5.3 + v * 2.7) - 0.5) * 2;
-      drifts.push(D);
-    }
+    const F = campFrame(C), P = MEADOW_POOL;
+    drifts.push({
+      pool: true, x: C.tx + 0.5, y: C.ty + 0.5, ax: F.ax, ay: F.ay, ox: F.ox, oy: F.oy,
+      r: P.r, edge: P.edge, ring: P.ring, lane: P.lane, amp: MEADOW_AMP,
+      len: P.r + 1, head: 0, wid: 0, bend: 0, deep: 0, side: 0, // driftTiles' reach: the pool and its rim
+    });
   }
+}
+// one warren's pool at a tile-space point (driftDepth hands a `pool` here)
+function poolDepth(D, fx, fy) {
+  const dx = fx - D.x, dy = fy - D.y, a = dx * D.ax + dy * D.ay, o = dx * D.ox + dy * D.oy;
+  const d = Math.hypot(a, o), th = Math.atan2(a, o);
+  let m = D.r * (1 + 0.05 * Math.cos(5 * th) + 0.03 * Math.cos(3 * th)) - d; // in from the rim
+  if (D.ring) m = Math.min(m, d - D.ring);                                      // ...out from the island
+  if (D.lane) m = Math.min(m, (o > 0 ? Math.abs(a - 0.9 * Math.sin(o * 0.5)) : d) - D.lane); // ...out from the lane, winding in from the mouth to a round end at the middle
+  return m <= 0 ? 0 : D.amp * Math.min(1, m / D.edge);
 }
 // Every standing thing out in the open - a pine on the treeline's edge or in
 // a stand's fringe, a rock, a bush, a stump, a snag, a den, a hut - holds a

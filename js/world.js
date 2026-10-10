@@ -59,14 +59,14 @@ const OBJECTS = {
   bush:     { solid: false, tool: 'axe',  needs: null,   verb: 'PICK', lift: 10, auto: true,
               ready: (o) => o.berries > 0,
               mm: [88, 148, 108] },
-  // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): shut
-  // all day and open for the dawn window (bloomOpen, below), when one pick
-  // shields the picker's whole company (pickSnowdrop, js/actions.js). The
-  // pick holds until the next dawn opens it again (`picked` = the bloomDay
-  // it was taken on), and `ready` is what makes E and the hands reach for an
-  // open clump only. Off both maps: a speck of white on white is noise.
-  snowdrop: { solid: false, tool: 'axe', needs: null,   verb: 'PICK', lift: 10, auto: true,
-              ready: (o) => bloomOpen() && o.picked !== bloomDay() },
+  // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): open
+  // until someone picks it, when one pick shields the picker's whole company
+  // (pickSnowdrop, js/actions.js), and then resting SNOWDROP_CD seconds
+  // (`readyAt`, the match second it opens again: snowdropLeft, below).
+  // `ready` is what makes E and the hands reach for an open clump only. Off
+  // both maps: a speck on the snow is noise.
+  snowdrop: { solid: false, tool: 'axe', needs: null,   verb: 'PICK', lift: 14, auto: true,
+              ready: (o) => snowdropLeft(o) <= 0 },
   // one end of a burrow's tunnel (js/tunnel.js): `mate` the other end (null
   // while it is still being dug), `owner` the digger's id, `team` the side a
   // rival's boots cave it for, `crumble` the s of that so far. Flat, walked
@@ -156,16 +156,14 @@ const OBJECTS = {
 const BUSH_REGROW = 70;   // s from a pick to the next two berries
 const BUSH_BUD_T = 35;    // s left when the buds show
 const BUSH_RIPEN_T = 12;  // s left when the berries come in dull
-// The DAWN BLOOM: the warren's snowdrops open as the dark lifts and shut
-// again once the morning is up, so a company that wants the shield is there
-// at first light. bloomDay names the dawn the window belongs to (it opens in
-// the last seconds of the night before), which is what a pick stamps on the
-// clump: open again only when a new dawn's window comes round. Pure reads of
-// the match clock, so every machine agrees; the practice arena has no dawn.
-const BLOOM_LEAD = 6;       // s before dawn (state.time wrapping CYCLE) the clumps open
-const BLOOM_HOLD = 18;      // s after it they shut
-function bloomOpen() { return !PRACTICE && (state.time >= CYCLE - BLOOM_LEAD || state.time < BLOOM_HOLD); }
-function bloomDay() { return state.time >= CYCLE - BLOOM_LEAD ? state.day + 1 : state.day; }
+// A SNOWDROP's rest: a picked clump is a snapped stem for the first stretch
+// of SNOWDROP_CD, a shut bud once it is within SNOWDROP_BUD_T of opening,
+// and open again at zero - the plant is the clock, the way a bush is, and a
+// look under the pointer reads it exactly. A pure read of the match clock
+// (state.elapsed against the clump's `readyAt`), so every machine agrees.
+const SNOWDROP_CD = 90;     // s from a pick to the clump opening again
+const SNOWDROP_BUD_T = 25;  // s left when the shut bud shows
+function snowdropLeft(o) { return Math.max(0, (o.readyAt || 0) - state.elapsed); }
 // the minimap's team inks: a roosting bird (and the road-mouth pennant) in
 // the side's bright mark, its buildings a step deeper, so a base is a shape
 // in its colour with the bird lit at the middle
@@ -633,12 +631,13 @@ function placeChests() {
   const SIDES = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   const edge = [], deep = [];
   // a camp dug into the woods (CAMPS.hut) brings its own chests, and the rim
-  // of its clearing is not the forest's inner edge: no cache stands on it
-  const dug = camps.filter((C) => C.spec.woods);
+  // of its clearing is not the forest's inner edge: no cache stands on it -
+  // nor in a drawn camp's wall of pines (CAMPS' `plan`)
+  const dug = camps.filter((C) => C.spec.woods), drawn = camps.filter((C) => C.spec.plan);
   for (let ty = 1; ty < WORLD - 1; ty++) for (let tx = 1; tx < WORLD - 1; tx++) {
     const o = objects[idx(tx, ty)];
     if (!o || o.type !== 'tree') continue;
-    if (dug.some((C) => Math.hypot(tx - C.tx, ty - C.ty) <= C.r + 4)) continue;
+    if (dug.some((C) => Math.hypot(tx - C.tx, ty - C.ty) <= C.r + 4) || drawn.some((C) => campNear(C, tx, ty, 1))) continue;
     // the forest's inner edge: at least one cardinal neighbour is open snow
     if (SIDES.some(([dx, dy]) => !objects[idx(tx + dx, ty + dy)] &&
       ground[idx(tx + dx, ty + dy)] === 0)) edge.push({ tx, ty });
@@ -1785,6 +1784,15 @@ function zipStep(p, dt, mx, my, len) {
 //               back - a camp is cleared or it is not; nothing trickles
 //   props       what stands in it: [dx, dy, type, extra] off the centre
 //   spots       where each monster stands, [dx, dy] off the centre
+//   plan        a camp DRAWN, not scattered (the treeline camps): rows of
+//               characters from the back of the clearing (into the woods) to
+//               its front (out in the field), centre at the middle of the
+//               middle row, turned to face the field from whichever edge the
+//               site is nearest (campFrame) - so the mirrored site gets the
+//               mirrored drawing. It replaces clearCamp, props and spots:
+//                 -  left as the seed grew it    .  cleared snow
+//                 T  a pine, the clearing's wall f  a snowdrop clump
+//                 r  a monster's spot
 //   woods       the site is IN the border forest, not the open valley:
 //               placeCamps checks it is, and layPaths cuts no branch to it
 //   treeline    the site is ON the border forest's edge, in the band between
@@ -1805,11 +1813,14 @@ function zipStep(p, dt, mx, my, len) {
 //           it walks RED's bank of the upstream bend
 // hut:      no monster - three chests round a hut buried in the treeline,
 //           worth the chopping it takes to reach
-// meadow:   no monster - the WARREN: the rabbits live here and nowhere else
-//           (spawnPrey, wildlife.js), over drifts of deep snow (layMeadowDrifts,
-//           depth.js) and a scatter of snowdrops that open only at dawn and
-//           shield the picker's whole company (OBJECTS.snowdrop); one each
-//           side, halfway out along the treeline
+// meadow:   the WARREN, drawn by hand (its `plan`): a round clearing in a
+//           ring of pines, open to the field at one mouth, three rabbits in
+//           the middle, three snowdrops at the back that each shield the
+//           picker's whole company and then rest on their own cooldown
+//           (OBJECTS.snowdrop), and the whole clearing filled to the trees
+//           with deep snow (layMeadowDrifts, depth.js) - the rabbits run on
+//           the crust, a scout wades. The only rabbits on the map; one
+//           warren each side, halfway out along the treeline
 const CAMPS = {
   resource: {
     name: 'WOLF DEN', tag: 'THE PACK PAYS IN GOLD',
@@ -1844,16 +1855,35 @@ const CAMPS = {
     spots: [],
   },
   meadow: {
-    name: 'SNOWDROP WARREN', tag: 'THE SNOWDROPS OPEN AT DAWN',
+    name: 'SNOWDROP WARREN', tag: 'A SNOWDROP SHIELDS YOUR SIDE',
     r: 6, mark: '#e8eef8', treeline: true,
     icon: [[1, 0, 1, 3], [4, 0, 1, 3], [1, 3, 4, 3], [0, 4, 1, 2], [5, 4, 1, 2], [2, 6, 2, 1]], // a rabbit's head
-    kind: null, pop: 0, repop: 0,
-    // the snowdrop clumps, [dx, dy, 'snowdrop', variant]: a loose scatter
-    // with room between, never a carpet - about a dozen to a screen
-    props: [[-4, -2, 'snowdrop', 0], [-1, -4, 'snowdrop', 1], [2, -3, 'snowdrop', 2], [4, -1, 'snowdrop', 3],
-      [-5, 1, 'snowdrop', 1], [-2, 0, 'snowdrop', 2], [1, 1, 'snowdrop', 0], [5, 2, 'snowdrop', 2],
-      [-3, 3, 'snowdrop', 3], [0, 4, 'snowdrop', 1], [3, 4, 'snowdrop', 0], [-1, -2, 'snowdrop', 3]],
+    kind: 'rabbit', pop: 3, repop: 40,
+    props: [],
     spots: [],
+    // the back row is the woods, the front the open field: a round clearing
+    // in a ring of pines with one mouth out to the field, three snowdrops at
+    // the back, the rabbits' spots in the middle, and the clearing filled to
+    // the trees with deep snow (MEADOW_POOL)
+    plan: [
+      '------TTTTTTTTT------',
+      '----TTTTTTTTTTTTT----',
+      '---TTTTT.....TTTTT---',
+      '---TTT....f....TTT---',
+      '--TTT..f.....f..TTT--',
+      '--TTT...........TTT--',
+      '-TTT.............TTT-',
+      '-TTT.............TTT-',
+      '-TTT.............TTT-',
+      '-TTT....r...r....TTT-',
+      '-TTT.............TTT-',
+      '--TTT.....r.....TTT--',
+      '--TTT...........TTT--',
+      '---TTT.........TTT---',
+      '---TTTTT.....TTTTT---',
+      '----TTTT.....TTTT----',
+      '------TT.....TT------',
+    ],
   },
 };
 // Where the camps are, for the RED half of the map (u < WORLD / 2), in the
@@ -1924,13 +1954,56 @@ function campMark(C) {
   return q ? { tx: q.tx, ty: q.ty } : { tx: C.tx, ty: C.ty };
 }
 // whether tile coordinates (tx, ty) are within `pad` tiles of a camp's
-// ground: its round clearing, and a river camp's stretch of bank too. Every
+// ground: its round clearing, a river camp's stretch of bank too, and a
+// drawn camp's whole drawing (CAMPS' `plan`, turned to its site). Every
 // keep-out and the camp's own reach (campAt, the leash) ask this, so the
-// bank counts wherever the clearing does.
+// bank counts wherever the clearing does, and nothing a later pass stands
+// up (a rock, a landmark, a drift) lands inside a drawing.
 function campNear(C, tx, ty, pad) {
+  const P = C.spec.plan;
+  if (P) {
+    const F = campFrame(C), dx = tx - C.tx, dy = ty - C.ty, a = dx * F.ax + dy * F.ay, o = dx * F.ox + dy * F.oy;
+    const back = P.length >> 1, mid = P[0].length >> 1;
+    return Math.abs(a) <= mid + pad && o >= -back - pad && o <= P.length - 1 - back + pad;
+  }
   if (Math.hypot(tx - C.tx, ty - C.ty) <= C.r + pad) return true;
   if (C.path) for (const q of C.path) if (Math.hypot(tx - q.tx, ty - q.ty) <= RIVER_BAND + pad) return true;
   return false;
+}
+
+// A treeline camp's own axes, in tile steps: `o` OUT from the edge its site is
+// nearest into the field, `a` ALONG that edge - always `o` with its x and y
+// swapped, so the two mirrored warrens (whose sites swap tx and ty) get axes
+// that swap too, and anything laid out in (a, o) comes out each other's
+// mirror image. `hand` is -1 where the pair is a mirror of (x, y): a curved
+// shape laid in this frame bends the other way there (layMeadowDrifts).
+function campFrame(C) {
+  const es = [C.tx, C.ty, WORLD - 1 - C.tx, WORLD - 1 - C.ty], side = es.indexOf(Math.min(...es));
+  const o = [[1, 0], [0, 1], [-1, 0], [0, -1]][side], a = [o[1], o[0]];
+  return { ax: a[0], ay: a[1], ox: o[0], oy: o[1], hand: a[0] * o[1] - a[1] * o[0] };
+}
+// (a, o) in a camp's frame to tile coordinates
+function campLocal(C, F, a, o) { return { tx: C.tx + F.ax * a + F.ox * o, ty: C.ty + F.ay * a + F.oy * o }; }
+// A drawn camp (CAMPS' `plan`) onto the ground: every character is one
+// tile, so the clearing, its wall of pines, its props and its monsters'
+// spots are the drawing on every seed. Pines plant the way the border's do,
+// variant off the tile's hash so they roll nothing.
+function layCampPlan(C) {
+  const P = C.spec.plan, F = campFrame(C), back = P.length >> 1, mid = P[0].length >> 1;
+  C.spots = [];
+  let k = 0;
+  P.forEach((row, r) => {
+    for (let c = 0; c < row.length; c++) {
+      const ch = row[c], t = campLocal(C, F, c - mid, r - back);
+      if (ch === '-' || !inWorld(t.tx, t.ty)) continue;
+      const i = idx(t.tx, t.ty);
+      if (ground[i] === 1) ground[i] = 0;
+      objects[i] = null;
+      if (ch === 'T') placeObj(t.tx, t.ty, 'tree', { hp: TREE_HP, variant: hash2(t.tx * 3 + 1, t.ty * 3 + 2) > 0.5 ? 1 : 0, rare: treeRare(t.tx, t.ty) });
+      else if (ch === 'f') placeObj(t.tx, t.ty, 'snowdrop', { variant: k++ % 4, readyAt: 0 });
+      else if (ch === 'r') C.spots.push([t.tx - C.tx, t.ty - C.ty]);
+    }
+  });
 }
 
 // the ground a camp stands on: everything inside r + 2 of the centre is
@@ -1959,7 +2032,8 @@ function placeCamps() {
     if (bad) throw new Error('camp ' + site.key + (spec.woods ? ' not in the woods' : spec.treeline ? ' not on the treeline' : ' too near the edge'));
     const C = { key: site.key, spec, name: spec.name, tag: spec.tag, tx: t.tx, ty: t.ty, r: spec.r, repopT: spec.repop };
     camps.push(C);
-    clearCamp(C);
+    if (spec.plan) layCampPlan(C);
+    else clearCamp(C);
     if (spec.river) { // the bank it walks: nothing standing on the line or a tile either side of it
       C.path = riverPath(C);
       for (const q of C.path) for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
@@ -1968,7 +2042,7 @@ function placeCamps() {
       }
     }
     for (const [dx, dy, type, variant] of spec.props) {
-      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : type === 'snowdrop' ? { variant, picked: -1 } : {};
+      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : type === 'snowdrop' ? { variant, readyAt: 0 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
       const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a
@@ -1987,7 +2061,8 @@ function placeCamps() {
 function spawnCampMonster(C, i) {
   // a river camp's monster comes back in the middle of its stretch
   const q = C.path && C.path[C.path.length >> 1];
-  const [dx, dy] = q || !C.spec.spots.length ? [0, 0] : C.spec.spots[i % C.spec.spots.length]; // a save from before the river keeps no path: the old site
+  const spots = C.spots || C.spec.spots; // a drawn camp's spots are its plan's, turned to the site (layCampPlan)
+  const [dx, dy] = q || !spots.length ? [0, 0] : spots[i % spots.length]; // a save from before the river keeps no path: the old site
   let tx = q ? Math.round(q.tx) : C.tx + dx, ty = q ? Math.round(q.ty) : C.ty + dy;
   if (objAt(tx, ty)) {
     let found = null;
@@ -1999,7 +2074,8 @@ function spawnCampMonster(C, i) {
     tx = found.tx; ty = found.ty;
   }
   const a = makeAnimal(C.spec.kind, (tx + 0.5) * TILE, (ty + 0.5) * TILE);
-  a.home = C;
+  if (isCampKind(C.spec.kind)) a.home = C;
+  else a.meadow = C; // prey stays prey: it keeps to its warren (preyWander) and is never a camp fight (ckAcquire)
   animals.push(a);
   return a;
 }
@@ -2012,7 +2088,7 @@ function stockCamps() {
 
 function campPop(C) {
   let n = 0;
-  for (const a of animals) if (!a.dead && a.home === C) n++;
+  for (const a of animals) if (!a.dead && (a.home === C || a.meadow === C)) n++;
   return n;
 }
 
