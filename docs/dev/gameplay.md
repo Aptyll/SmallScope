@@ -1870,7 +1870,7 @@ the card rarities, a caught fish goes straight into the pouch (taken by `autoFis
 [fish net](world.md#fish-nets) you are standing on), and a wrecked net's
 contents carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
 the **hud strip's right end** (bottom centre) — the pouch block, berry over fish and gold over
-cards with the burrow past them, on screen all match. Death touches none of them —
+cards, on screen all match. Death touches none of them —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
 toward the nearest player, and everyone standing on one contests it
 (`canAfford`/`pay` also take the player whose wallet is meant) — except that a player with **no
@@ -2233,9 +2233,9 @@ chooses between — and a bit only takes a cell once every tool carried (the one
 each in the pack) is full, since `fitAdd` (js/tools.js) loads it into them first.
 
 **The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
-holds the two **meals**, the five **unopened card** rarities and the **burrow** — everything with
+holds the two **meals** and the five **unopened card** rarities — everything with
 `pouch: true`. A pouch kind takes no cell, cannot be dragged, cannot be arranged and cannot be
-refused: a meal is pressed on Q and F, a card drawn on C and a burrow dug on V from
+refused: a meal is pressed on Q and F and a card drawn on C from
 [the hud strip's pouch block](rendering.md#the-hud-strip) and nowhere else, so the cells are
 all the build's. Being uncapped is why every count that shows
 one goes through **`shortNum`** (js/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
@@ -2247,7 +2247,7 @@ numbers.
 | `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal button — eats it (see [Food](#food-the-meal-is-a-channel)) |
 | `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | C, or clicking the strip's card button — draws one at random (see [Roguelike cards](#roguelike-cards)) |
-| `tunnel` | `itemTunnel` | pouch, no cap | V, or clicking the strip's burrow button — stands the hole's ghost up (see [The burrow](#the-burrow-a-tunnel-anyone-can-ride)) |
+| `tunnel` | `itemTunnel` | bag, stack 5 | a **consumable** (`use`): V, or clicking its pack cell (`sendBagCell`) — stands the hole's ghost up, and the dig spends one (see [The burrow](#the-burrow-a-tunnel-anyone-can-ride)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
 | `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
 | `ironstone`/`frostglass`/`sunstone` | `itemOre_<key>` | bag, stack `ORE_STACK` 99 | nothing yet but the counter, which buys it at half its `price` (2 / 12 / 40); see [Mining a rock](#mining-a-rock) |
@@ -2376,8 +2376,9 @@ health bar ([rendering.md](rendering.md#overhead-health-bars)), and nowhere else
 
 ## The burrow: a tunnel anyone can ride
 
-A rabbit's kill leaves a **burrow** one time in four (`TUN_DROP`), carried in the pouch
-(`ITEMS.tunnel`). Pressed (V, or its strip button), it stands a **hole ghost** on the tile under
+A rabbit's kill leaves a **burrow** one time in four (`TUN_DROP`), carried as a stack in a pack
+cell (`ITEMS.tunnel`, stack 5; a full pack leaves it in the snow) and on no hud cell of its own.
+Used (V, or a click on its cell in the drawer), it stands a **hole ghost** on the tile under
 the pointer, the build list's grammar (`tunnelAimToggle`/`drawTunnelGhost`): the builder's reach
 dotted round the body, green where `tunPlaceOk` says it can go (inside `BUILD_REACH`, on open
 snow or the road, nothing standing there), red where not. A left press sends the `tunnel` order
@@ -2386,7 +2387,9 @@ snow or the road, nothing standing there), red where not. A left press sends the
 The order lays the **near hole** (`OBJECTS.tunnel`, a tile object that knows its `mate`, its
 digger and side, and `crumble`) and starts the dig: for `TUN_DIG` (10 s) the digger runs, and
 wherever they stand when it ends — or the nearest free tile within `TUN_FAR` (2) — the **far hole**
-opens (`updateTunnels`). Nowhere free puts the burrow back in the pouch. A tunnel can end anywhere
+opens (`updateTunnels`). Nowhere free puts the burrow back in the pack (or at the digger's boots
+when the pack is full). While the ghost is up its cell is framed gold, and while the far end is
+dug a gold fill drains up out of it. A tunnel can end anywhere
 on the map. **One tunnel a digger**: a new dig caves the old one, and a digger who goes down before
 the far end opens loses the near hole too. A finished tunnel outlives its digger
 (`p.tunHole` is not cleared by `reset()`).

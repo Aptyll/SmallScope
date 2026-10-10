@@ -652,6 +652,16 @@ function drawBag(now) {
           ctx.fillRect(r.x + 3 + k * 3, y + r.h - 4, 2, 2);
         }
       }
+      // a burrow says what it is doing in its own cell: framed gold while
+      // its ghost is up, and the far end's dig draining up out of it
+      if (s.type === 'tunnel' && (state.tunAim || player.digT > 0)) {
+        ctx.fillStyle = TUN_DIG_COL;
+        if (state.tunAim) { ctx.fillRect(r.x, y, r.w, 1); ctx.fillRect(r.x, y + r.h - 1, r.w, 1); ctx.fillRect(r.x, y, 1, r.h); ctx.fillRect(r.x + r.w - 1, y, 1, r.h); }
+        if (player.digT > 0) {
+          const h = Math.round((r.h - 2) * player.digT / TUN_DIG);
+          ctx.globalAlpha = 0.35; ctx.fillRect(r.x + 1, y + r.h - 1 - h, r.w - 2, h); ctx.globalAlpha = 1;
+        }
+      }
       // ...and last, over everything in it: the pulse a cell wears for a
       // beat after something landed there, in the colour of what happened
       drawWellLit(wl, 'bag', i);

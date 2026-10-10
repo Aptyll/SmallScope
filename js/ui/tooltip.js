@@ -125,7 +125,7 @@ function tipCards() {
   d.notes.push(['ONE AT RANDOM, ITS BUFF AT RANDOM', TIP_DIM]);
   return d;
 }
-// the burrow's cell (js/tunnel.js): the dig, the wait after a ride, and how
+// the burrow's pack cell (js/tunnel.js): the dig, the wait after a ride, and how
 // long a rival's boots take to cave it - the numbers the hole itself shows
 function tipTunnel() {
   const n = bagCount(player, 'tunnel');
@@ -357,7 +357,6 @@ function tipAt(mx, my) {
   if (sh && sh.kind === 'food') {
     const type = FOOD_BTNS[sh.i].type;
     if (type === 'card') return tipCards();
-    if (type === 'tunnel') return tipTunnel();
     return tipStack({ type, n: bagCount(player, type) });
   }
   if (sh && sh.kind === 'frame') {
@@ -368,7 +367,7 @@ function tipAt(mx, my) {
   if (!bh) return null;
   if (bh.kind === 'cell') {
     const s = player.bag[bh.i];
-    const d = tipCell(s);
+    const d = s && s.type === 'tunnel' ? tipTunnel() : tipCell(s);
     if (d && isToolCell(s)) tipSend(d, 'TAKE IT IN HAND');
     else if (d && bitIdOf(s.type) && heldTool(player)) tipSend(d, 'LOAD IT IN THE WEAPON');
     // ...and while the counter is up, what it is worth over there

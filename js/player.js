@@ -219,9 +219,10 @@ const ITEMS = {
   cardBlue:   { icon: 'itemCardBlue',   stack: Infinity, pouch: true },
   cardPurple: { icon: 'itemCardPurple', stack: Infinity, pouch: true },
   cardGold:   { icon: 'itemCardGold',   stack: Infinity, pouch: true },
-  // the burrow, a rabbit's drop: pressed from its own hud cell, it digs a
-  // tunnel (js/tunnel.js). Its icon is baked there.
-  tunnel:     { icon: 'itemTunnel',     stack: Infinity, pouch: true },
+  // the burrow, a rabbit's drop: a CONSUMABLE in the pack, stacked in one
+  // cell. Clicking the cell (or the burrow key) is `use`: it stands the hole's
+  // ghost up, and the dig spends one (js/tunnel.js, where its icon is baked).
+  tunnel:     { icon: 'itemTunnel',     stack: 5, use: () => tunnelAimToggle() },
 };
 const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // What one unopened card of each rarity costs at the merchant's counter
@@ -240,7 +241,8 @@ for (const r of CARD_RARITIES) CARD_TYPE_RARITY[cardKey(r)] = r;
 // no tool had a cell for, with every cell earned by choosing what to keep.
 // Nothing that is merely COUNTED lives in it (meals and cards are the
 // pouch), and a found bit loads itself into a tool before it ever takes a
-// cell (fitAdd, js/tools.js).
+// cell (fitAdd, js/tools.js). A kind with a `use` (the burrow) is spent from
+// its cell: a click on it is the use (sendBagCell, js/ui/strip.js).
 const BAG_CAP = 12;
 // Is this kind carried in the POUCH (p.food) rather than in a cell? One test,
 // asked by all four counting helpers, so a pouch kind can never be half in

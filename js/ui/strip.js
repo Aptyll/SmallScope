@@ -55,9 +55,8 @@ const FOOD_SQ = 24;                          // a pouch cell: a square
 const POUCH_GAP = 2;                         // between neighbouring squares
 const POUCH_W = FOOD_SQ * 2 + POUCH_GAP;     // the block: two columns...
 const POUCH_H = POUCH_W;                     // ...and two rows
-const POUCH_TAIL = FOOD_SQ + POUCH_GAP;      // ...and one square more past them on the bottom row, inside the plate (the burrow)
 // THE BUILD WELL ends the wells (buildTabRect, js/ui/wheel.js): the fifth, after ability 4
-const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W + POUCH_TAIL; // four ability wells, the build well, their gaps, the pouch block and its tail
+const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W; // four ability wells, the build well, their gaps, the pouch block
 const AB_PAD = 3, AB_XP = 5, AB_SEGS = 10; // AB_PAD: the frame's outline, its lit line and one px of ground (drawHudFrame); AB_SEGS: xp bar notches
 const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
 const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
@@ -194,12 +193,10 @@ function stripCellRect(j) {
 }
 // ability i's well: keys 1-4, in order from the strip's left end
 function abCellRect(i) { return stripCellRect(i); }
-// pouch cell (col, row) of the 2x2 block: col 0 the meals, col 1 gold and
-// cards - and col 2, row 1 only, the burrow: the tail square standing in the
-// plate itself, past the tab
+// pouch cell (col, row) of the 2x2 block: col 0 the meals, col 1 gold and cards
 function pouchCellRect(col, row) {
   const R = hudStripRect();
-  return { x: R.x + AB_W - POUCH_TAIL - POUCH_W + col * (FOOD_SQ + POUCH_GAP),
+  return { x: R.x + AB_W - POUCH_W + col * (FOOD_SQ + POUCH_GAP),
     y: R.y + AB_PAD + AB_CELL - POUCH_H + row * (FOOD_SQ + POUCH_GAP), w: FOOD_SQ, h: FOOD_SQ };
 }
 // the tab the block stands on: the strip's plate carried up behind the two
@@ -208,17 +205,14 @@ function pouchTabRect() {
   const R = hudStripRect(), b = pouchCellRect(0, 0);
   return { x: b.x - 3, y: b.y - 3, w: POUCH_W + 6, h: R.y - b.y + 3 };
 }
-// the four BUTTONS of the block, in stripHit's 'food' order: the berry (0)
-// over the fish (1) on the left, the cards (2) bottom-right, the burrow (3)
-// on the tail past them; the gold plate top-right is a readout and answers
-// 'frame'. Each carries the action whose key its cap prints and the input
-// intent its press sets - or, for the burrow, the local `press` that stands
-// its ghost up (tunnelAimToggle, js/tunnel.js), since a hole needs a tile.
+// the three BUTTONS of the block, in stripHit's 'food' order: the berry (0)
+// over the fish (1) on the left, the cards (2) bottom-right; the gold plate
+// top-right is a readout and answers 'frame'. Each carries the action whose
+// key its cap prints and the input intent its press sets.
 const FOOD_BTNS = [
   { type: 'berry', act: 'berry', intent: 'eatBerry', col: 0, row: 0 },
   { type: 'fish', act: 'fish', intent: 'eatFish', col: 0, row: 1 },
   { type: 'card', act: 'card', intent: 'useCard', col: 1, row: 1 },
-  { type: 'tunnel', act: 'tunnel', press: () => tunnelAimToggle(), col: 2, row: 1 },
 ];
 function foodCellRect(i) { const b = FOOD_BTNS[i]; return pouchCellRect(b.col, b.row); }
 function goldCellRect() { return pouchCellRect(1, 0); }
@@ -232,7 +226,7 @@ function goldCellRect() { return pouchCellRect(1, 0); }
 // updateFx ages it on wall time beside bagFlash and toolFlash.
 let foodFlash = 0, foodFlashI = 0;
 function foodDenied(type) {
-  const i = Math.max(0, FOOD_BTNS.findIndex((b) => b.type === type));
+  const i = type === 'fish' ? 1 : type === 'card' ? 2 : 0;
   if (foodFlash > 0 && foodFlashI === i) return;
   foodFlash = 0.6;
   foodFlashI = i;
@@ -520,12 +514,15 @@ function dragDrop(mx, my) {
 // reddens and buzzes (bagDenied / toolDenied), which is the same refusal a
 // drop you cannot carry already fires.
 
-// a grid cell: a tool swaps into the hand, a bit loads into the weapon
+// a grid cell: a tool swaps into the hand, a bit loads into the weapon, a
+// consumable is used
 function sendBagCell(i) {
   const s = player.bag[i];
   if (!s) return false;
   // with the counter's FORGE face up, a weapon or an ore goes onto the bench
   if (forgeTabOpen() && (isToolCell(s) || isOre(s.type))) return forgePut(s, 'bag', i, null);
+  // a consumable (ITEMS[type].use): the click is the use, refusals and all
+  if (ITEMS[s.type] && ITEMS[s.type].use) { ITEMS[s.type].use(); return true; }
   if (isToolCell(s)) {
     // the swap is one move each way: what was in hand lands in the cell the
     // tool just left, so the grid never grows or loses a row
@@ -629,7 +626,7 @@ function hudPress(mx, my) {
   const sh = stripHit(mx, my);
   if (sh) {
     if (sh.kind === 'ab') { if (msOn()) msWell(sh.i); else player.input.ability = sh.i; } // click-to-cast: the well IS the key (under MOUSE it readies - msWell)
-    else if (sh.kind === 'food') { const b = FOOD_BTNS[sh.i]; if (b.press) b.press(); else player.input[b.intent] = true; } // the button IS the key, refusals and all (startEat / useCard / tunnelAimToggle)
+    else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat / useCard)
     return true;
   }
   const bh = bagHit(mx, my);
