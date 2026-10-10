@@ -616,7 +616,7 @@ const DAWN_SHIELD = 10;
 const DAWN_SHIELD_MAX = 30;
 function pickSnowdrop(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
-  o.picked = bloomDay();
+  o.readyAt = state.elapsed + SNOWDROP_CD;
   for (const q of players) {
     if (!q.active || q.dead || inAir(q) || q.team !== p.team) continue;
     q.dawnShield = Math.min(DAWN_SHIELD_MAX, q.dawnShield + DAWN_SHIELD);

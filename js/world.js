@@ -59,19 +59,14 @@ const OBJECTS = {
   bush:     { solid: false, tool: 'axe',  needs: null,   verb: 'PICK', lift: 10, auto: true,
               ready: (o) => o.berries > 0,
               mm: [88, 148, 108] },
-  // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): shut
-  // all day and open for the dawn window (bloomOpen, below), when one pick
-  // shields the picker's whole company (pickSnowdrop, js/actions.js). The
-  // pick holds until the next dawn opens it again (`picked` = the bloomDay
-  // it was taken on), and `ready` is what makes E and the hands reach for an
-  // open clump only. Off both maps: a speck of white on white is noise.
-  snowdrop: { solid: false, tool: 'axe', needs: null,   verb: 'PICK', lift: 10, auto: true,
-              ready: (o) => bloomOpen() && o.picked !== bloomDay() },
-  // the WARREN's mound (CAMPS.meadow): a hump of snow over the rabbits'
-  // holes, one tile, solid, inert to E like the den. It is the camp's anchor
-  // and wears its respawn clock under the pointer (drawCampClock); its
-  // pixels are WARREN_SPR in render()'s object pass (js/draw/ground.js).
-  warren:   { solid: true },
+  // a SNOWDROP clump, stamped only by the warren camp (CAMPS.meadow): open
+  // until someone picks it, when one pick shields the picker's whole company
+  // (pickSnowdrop, js/actions.js), and then resting SNOWDROP_CD seconds
+  // (`readyAt`, the match second it opens again: snowdropLeft, below).
+  // `ready` is what makes E and the hands reach for an open clump only. Off
+  // both maps: a speck on the snow is noise.
+  snowdrop: { solid: false, tool: 'axe', needs: null,   verb: 'PICK', lift: 14, auto: true,
+              ready: (o) => snowdropLeft(o) <= 0 },
   // one end of a burrow's tunnel (js/tunnel.js): `mate` the other end (null
   // while it is still being dug), `owner` the digger's id, `team` the side a
   // rival's boots cave it for, `crumble` the s of that so far. Flat, walked
@@ -161,16 +156,14 @@ const OBJECTS = {
 const BUSH_REGROW = 70;   // s from a pick to the next two berries
 const BUSH_BUD_T = 35;    // s left when the buds show
 const BUSH_RIPEN_T = 12;  // s left when the berries come in dull
-// The DAWN BLOOM: the warren's snowdrops open as the dark lifts and shut
-// again once the morning is up, so a company that wants the shield is there
-// at first light. bloomDay names the dawn the window belongs to (it opens in
-// the last seconds of the night before), which is what a pick stamps on the
-// clump: open again only when a new dawn's window comes round. Pure reads of
-// the match clock, so every machine agrees; the practice arena has no dawn.
-const BLOOM_LEAD = 6;       // s before dawn (state.time wrapping CYCLE) the clumps open
-const BLOOM_HOLD = 18;      // s after it they shut
-function bloomOpen() { return !PRACTICE && (state.time >= CYCLE - BLOOM_LEAD || state.time < BLOOM_HOLD); }
-function bloomDay() { return state.time >= CYCLE - BLOOM_LEAD ? state.day + 1 : state.day; }
+// A SNOWDROP's rest: a picked clump is a snapped stem for the first stretch
+// of SNOWDROP_CD, a shut bud once it is within SNOWDROP_BUD_T of opening,
+// and open again at zero - the plant is the clock, the way a bush is, and a
+// look under the pointer reads it exactly. A pure read of the match clock
+// (state.elapsed against the clump's `readyAt`), so every machine agrees.
+const SNOWDROP_CD = 90;     // s from a pick to the clump opening again
+const SNOWDROP_BUD_T = 25;  // s left when the shut bud shows
+function snowdropLeft(o) { return Math.max(0, (o.readyAt || 0) - state.elapsed); }
 // the minimap's team inks: a roosting bird (and the road-mouth pennant) in
 // the side's bright mark, its buildings a step deeper, so a base is a shape
 // in its colour with the bird lit at the middle
@@ -1799,7 +1792,7 @@ function zipStep(p, dt, mx, my, len) {
 //               mirrored drawing. It replaces clearCamp, props and spots:
 //                 -  left as the seed grew it    .  cleared snow
 //                 T  a pine, the clearing's wall f  a snowdrop clump
-//                 w  the anchor prop (a mound)   r  a monster's spot
+//                 r  a monster's spot
 //   woods       the site is IN the border forest, not the open valley:
 //               placeCamps checks it is, and layPaths cuts no branch to it
 //   treeline    the site is ON the border forest's edge, in the band between
@@ -1820,14 +1813,14 @@ function zipStep(p, dt, mx, my, len) {
 //           it walks RED's bank of the upstream bend
 // hut:      no monster - three chests round a hut buried in the treeline,
 //           worth the chopping it takes to reach
-// meadow:   the WARREN, drawn by hand (its `plan`): three rabbits round
-//           their mound, a crescent of snowdrops at the back against the
-//           pines that open only at dawn and shield the picker's whole
-//           company (OBJECTS.snowdrop), and a bank of deep snow across the
-//           front with one crust lane through its middle (layMeadowDrifts,
-//           depth.js) - the rabbits run on the crust, a scout wades. The
-//           only rabbits on the map; one warren each side, halfway out along
-//           the treeline
+// meadow:   the WARREN, drawn by hand (its `plan`): a round clearing in a
+//           ring of pines, open to the field at one mouth, three rabbits in
+//           the middle, three snowdrops at the back that each shield the
+//           picker's whole company and then rest on their own cooldown
+//           (OBJECTS.snowdrop), and the whole clearing filled to the trees
+//           with deep snow (layMeadowDrifts, depth.js) - the rabbits run on
+//           the crust, a scout wades. The only rabbits on the map; one
+//           warren each side, halfway out along the treeline
 const CAMPS = {
   resource: {
     name: 'WOLF DEN', tag: 'THE PACK PAYS IN GOLD',
@@ -1862,30 +1855,34 @@ const CAMPS = {
     spots: [],
   },
   meadow: {
-    name: 'SNOWDROP WARREN', tag: 'THE SNOWDROPS OPEN AT DAWN',
+    name: 'SNOWDROP WARREN', tag: 'A SNOWDROP SHIELDS YOUR SIDE',
     r: 6, mark: '#e8eef8', treeline: true,
     icon: [[1, 0, 1, 3], [4, 0, 1, 3], [1, 3, 4, 3], [0, 4, 1, 2], [5, 4, 1, 2], [2, 6, 2, 1]], // a rabbit's head
     kind: 'rabbit', pop: 3, repop: 40,
     props: [],
     spots: [],
-    // the back row is the woods, the front the open field; the snowdrops
-    // are a crescent against the pines, the rabbits sit round their mound,
-    // and the deep snow lies across the four front rows (MEADOW_DRIFTS)
+    // the back row is the woods, the front the open field: a round clearing
+    // in a ring of pines with one mouth out to the field, three snowdrops at
+    // the back, the rabbits' spots in the middle, and the clearing filled to
+    // the trees with deep snow (MEADOW_POOL)
     plan: [
+      '------TTTTTTTTT------',
       '----TTTTTTTTTTTTT----',
-      'TTTTTTTT.....TTTTTTTT',
-      'TTTTTT..f.f.f..TTTTTT',
-      'TTTTT.f.......f.TTTTT',
-      'TTTT.............TTTT',
-      'TTTTf...........fTTTT',
-      'TTT...............TTT',
-      'TTT.......w.......TTT',
-      'TTT.....r...r.....TTT',
-      'TTT.......r.......TTT',
-      '.....................',
-      '.....................',
-      '.....................',
-      '.....................',
+      '---TTTTT.....TTTTT---',
+      '---TTT....f....TTT---',
+      '--TTT..f.....f..TTT--',
+      '--TTT...........TTT--',
+      '-TTT.............TTT-',
+      '-TTT.............TTT-',
+      '-TTT.............TTT-',
+      '-TTT....r...r....TTT-',
+      '-TTT.............TTT-',
+      '--TTT.....r.....TTT--',
+      '--TTT...........TTT--',
+      '---TTT.........TTT---',
+      '---TTTTT.....TTTTT---',
+      '----TTTT.....TTTT----',
+      '------TT.....TT------',
     ],
   },
 };
@@ -2003,8 +2000,7 @@ function layCampPlan(C) {
       if (ground[i] === 1) ground[i] = 0;
       objects[i] = null;
       if (ch === 'T') placeObj(t.tx, t.ty, 'tree', { hp: TREE_HP, variant: hash2(t.tx * 3 + 1, t.ty * 3 + 2) > 0.5 ? 1 : 0, rare: treeRare(t.tx, t.ty) });
-      else if (ch === 'f') placeObj(t.tx, t.ty, 'snowdrop', { variant: k++ % 4, picked: -1 });
-      else if (ch === 'w') placeObj(t.tx, t.ty, 'warren', { site: C }); // the anchor knows its camp (drawCampClock)
+      else if (ch === 'f') placeObj(t.tx, t.ty, 'snowdrop', { variant: k++ % 4, readyAt: 0 });
       else if (ch === 'r') C.spots.push([t.tx - C.tx, t.ty - C.ty]);
     }
   });
@@ -2046,7 +2042,7 @@ function placeCamps() {
       }
     }
     for (const [dx, dy, type, variant] of spec.props) {
-      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : type === 'snowdrop' ? { variant, picked: -1 } : {};
+      const extra = type === 'deadTree' ? { hp: 3, variant } : type === 'chest' ? { hp: 1 } : type === 'snowdrop' ? { variant, readyAt: 0 } : {};
       if (dx === 0 && dy === 0) extra.site = C; // the anchor knows its camp: a hover reads the clock off it (drawCampClock)
       const o = placeObj(C.tx + dx, C.ty + dy, type, extra);
       // a prop bigger than a tile (OBJECTS' w, h) fills the rest with parts, as a

@@ -537,9 +537,6 @@ function render() {
       if (o.hp < o.maxHp) drawHealthBar(px + 8 + sh, dy - 6, o.hp, o.maxHp, 20, undefined, undefined, o);
       // the combo readout, above the bar's slot so neither ever covers the other
       drawDummyMeter(o, px + 8, dy - 10);
-    } else if (o.type === 'warren') {
-      drawSpriteFlash(WARREN_SPR, px + sh, py + TILE - WARREN_SPR.height + 1, o.flash);
-      if (o === hovO) drawCampClock(o, px + 8, py + TILE - WARREN_SPR.height - 3); // the warren's clock
     } else if (o.type === 'cairn') {
       drawSpriteFlash(CAIRN_SPR, px + sh + 1, py + TILE - CAIRN_SPR.height + 1, o.flash);
       if (o === hovO) drawCampClock(o, px + 8, py + TILE - CAIRN_SPR.height - 2); // the black bear stone's clock
@@ -596,24 +593,27 @@ function render() {
       // exactly. A ripe bush wears the rim instead, and says pick me.
       if (o.berries <= 0 && o === hovO) drawHealthBar(px + 8, py + 1, BUSH_REGROW - o.regrow, BUSH_REGROW, 12, undefined, BAR_NEUTRAL);
     } else if (o.type === 'snowdrop') {
-      // a warren's clump: shut, open for the dawn window, or the snapped
-      // stem of a pick that waits for the next dawn (bloomOpen, world.js).
-      // It leans with the pines' own wind - lighter, so the same breath
-      // moves it further (SNOWDROP_SWAY) - and sits a hash's few pixels off
-      // its tile's grid so a scatter never reads as rows. Feet at (8, 15).
+      // a warren's clump: open until picked, then the snapped stem, then the
+      // shut bud as it comes back (snowdropLeft, world.js) - and hovered while
+      // it rests, the neutral bar a bush wears, filling toward open. It leans
+      // with the pines' own wind - lighter, so the same breath moves it
+      // further (SNOWDROP_SWAY) - and sits a hash's few pixels off its tile's
+      // grid so two clumps never line up. Its 24 px cell stands its feet at
+      // the tile's (8, 15).
       const V = SPRITES.snowdrop[o.variant % SPRITES.snowdrop.length];
-      const picked = o.picked === bloomDay(), open = !picked && bloomOpen();
+      const left = snowdropLeft(o), open = left <= 0;
       const lean = Math.max(-1, Math.min(1, Math.round(windSway(o.tx, o.ty) * SNOWDROP_SWAY)));
-      const spr = picked ? V.picked[0] : (open ? V.open : V.closed)[lean + 1];
-      const jx = Math.floor(hash2(o.tx * 5 + 3, o.ty * 7 + 1) * 7) - 3, jy = Math.floor(hash2(o.tx * 3 + 9, o.ty * 11 + 2) * 4) - 2;
-      if (open && fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh + jx, py + jy, now);
-      drawSpriteFlash(spr, px + sh + jx, py + jy, o.flash);
+      const spr = left > SNOWDROP_BUD_T ? V.picked[0] : (open ? V.open : V.closed)[lean + 1];
+      const jx = Math.floor(hash2(o.tx * 5 + 3, o.ty * 7 + 1) * 5) - 2, jy = Math.floor(hash2(o.tx * 3 + 9, o.ty * 11 + 2) * 3) - 1;
+      const sx = px + sh + jx + 8 - (spr.width >> 1), sy = py + jy + 17 - spr.height;
+      if (open && fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, sx, sy, now);
+      drawSpriteFlash(spr, sx, sy, o.flash);
       // an open bell's halo: its sparks step round it SNOWDROP_GLOW_HZ times
-      // a second, each clump on its own phase so a scatter never pulses as one
+      // a second, each clump on its own phase so two never pulse as one
       if (open) {
         const G = V.glow[lean + 1];
-        ctx.drawImage(G[Math.floor(now * SNOWDROP_GLOW_HZ + hash2(o.tx * 7 + 5, o.ty * 3 + 8) * G.length) % G.length], px + sh + jx, py + jy);
-      }
+        ctx.drawImage(G[Math.floor(now * SNOWDROP_GLOW_HZ + hash2(o.tx * 7 + 5, o.ty * 3 + 8) * G.length) % G.length], sx, sy);
+      } else if (o === hovO) drawHealthBar(px + 8, sy + 4, SNOWDROP_CD - left, SNOWDROP_CD, 12, undefined, BAR_NEUTRAL);
     } else if (STRUCTS[o.type] && STRUCTS[o.type].tiled) {
       drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
     } else if (STRUCTS[o.type]) {

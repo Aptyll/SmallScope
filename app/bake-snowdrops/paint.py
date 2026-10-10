@@ -15,14 +15,15 @@
 #                              halo's pixels alone, drawn over the open bloom
 #
 # The four variants are two shapes (a tall crook, a short one), each also
-# mirrored, so a scatter never repeats one plant. 16x16 cells, feet at (8, 15).
+# mirrored, so a scatter never repeats one plant. 24x24 cells, feet at (12, 22).
 import math
 import os
 import numpy as np
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CELL = 16
+CELL = 24  # px a cell; the shapes are drawn on a 16-unit plant, scaled K to fill it
+K = CELL / 16
 S = 8  # supersampling
 GLOW_N = 6  # halo phases: six sparks a sixth of a turn apart, stepping a twelfth, lit two in three
 
@@ -49,8 +50,8 @@ def paint(variant, state, sway=0.0):
     shape, mirror = VARIANTS[variant]
     ay, R, blades = SHAPES[shape]
     N = CELL * S
-    ys, xs = (np.mgrid[0:N, 0:N] + 0.5) / S
-    if mirror: xs = CELL - xs   # the masks are built mirrored, then lit from the upper left like the rest
+    ys, xs = (np.mgrid[0:N, 0:N] + 0.5) / S / K
+    if mirror: xs = 16 - xs   # the masks are built mirrored, then lit from the upper left like the rest
     m = {}
     m['shad'] = ((xs - 8.5) / 6.0) ** 2 + ((ys - 14.0) / 1.5) ** 2 <= 1
     leaf = np.zeros_like(xs, bool)
@@ -76,22 +77,22 @@ def paint(variant, state, sway=0.0):
             dd = np.hypot((xs - bx) / 1.7, (ys - by - 3.0) / 2.6)
             m['bell'] = (dd < 1) | ((ys > by) & (ys < by + 1.2) & (np.abs(xs - bx) < 0.5))
     a = np.zeros((CELL, CELL, 4), np.uint8)
-    bxs = CELL - bx if mirror else bx   # the bell's centre in screen space
+    bxs = 16 - bx if mirror else bx   # the bell's centre in screen space (plant units)
     tones = {'shad': SHADOW, 'leaf': LEAF, 'stem': STEM, 'bell': OPEN if state == 'open' else SHUT}
     for name in ('shad', 'leaf', 'stem', 'bell'):
         mk = m[name]; dark, lite = tones[name]
         for y in range(CELL):
             for x in range(CELL):
                 if mk[y * S:(y + 1) * S, x * S:(x + 1) * S].mean() < 0.4: continue
-                if name == 'shad': lit = y < 14
+                if name == 'shad': lit = y < 14 * K
                 elif name == 'stem': lit = True
-                elif name == 'bell': lit = (x + 0.5) < bxs + 1.3
+                elif name == 'bell': lit = (x + 0.5) / K < bxs + 1.3
                 else: lit = not mk[y * S + S // 2, max(0, x * S - S // 2)]  # a pixel whose left neighbour is the shape is in its shade
                 a[y, x, :3] = lite if lit else dark; a[y, x, 3] = 255
     if state != 'open': return a, None
-    px = lambda x: (CELL - 1 - int(round(x))) if mirror else int(round(x))
+    px = lambda x: (CELL - 1 - int(round(x * K))) if mirror else int(round(x * K))
     def put(x, y, c):
-        y = int(round(y))
+        y = int(round(y * K))
         if 0 < x < CELL - 1 and 0 < y < CELL - 1: a[y, x, :3] = c; a[y, x, 3] = 255
     put(px(bx), by + 4, THROAT)
     put(px(bx - 1), by + 1, GOLD)
@@ -109,7 +110,7 @@ def halo(a, centre, phase):
     for k in range(6):
         if (k + phase) % 3 == 0: continue
         ang = (k / 6 + phase / 12) * math.tau
-        x, y = int(round(cx + math.cos(ang) * 3.6)), int(round(cy + math.sin(ang) * 3.0))
+        x, y = int(round(cx + math.cos(ang) * 3.6 * K)), int(round(cy + math.sin(ang) * 3.0 * K))
         if 0 < x < CELL - 1 and 0 < y < CELL - 1 and not a[y, x, 3]:
             out[y, x, :3] = HALO; out[y, x, 3] = 255
     return out

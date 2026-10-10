@@ -2360,16 +2360,16 @@ there chewing under fire is not patience, it is a free kill.
 
 ## The dawn shield
 
-The [warrens](world.md#camps) carry seven **snowdrop** clumps each, a crescent at the back
-(`OBJECTS.snowdrop`, art from `app/bake-snowdrops`: a gold bell on one bold crook, a bronze bud
-shut, and a halo of sparks turning round an open one). They are shut all day and open only for the **dawn window**
-(`bloomOpen`, js/world.js): `BLOOM_LEAD` (6 s) before the clock wraps to a new day and
-`BLOOM_HOLD` (18 s) after it, never under `PRACTICE`. An open clump is a work target and the hands
-take it on their own like a berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`,
-js/actions.js) lays `DAWN_SHIELD` (10) of shield on **every scout of the picker's side** who is up
-and on the ground, wherever they are, stacking to `DAWN_SHIELD_MAX` (30): so the clumps are worth
-racing the other side to, one segment each. The clump stays picked until the next dawn opens it
-(`o.picked` = the `bloomDay` it was taken on).
+The [warrens](world.md#camps) carry three **snowdrop** clumps each, at the back of the clearing
+(`OBJECTS.snowdrop`, art from `app/bake-snowdrops`: a gold bell on one bold crook in a 24 px cell,
+a bronze bud shut, and a halo of sparks turning round an open one). A clump is **open until
+someone picks it**: an open clump is a work target and the hands take it on their own like a
+berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`, js/actions.js) lays `DAWN_SHIELD` (10)
+of shield on **every scout of the picker's side** who is up and on the ground, wherever they are,
+stacking to `DAWN_SHIELD_MAX` (30): so the clumps are worth racing the other side to, one segment
+each. Then that clump alone rests `SNOWDROP_CD` (90 s; `o.readyAt`, the match second it opens,
+read by `snowdropLeft`): a snapped stem, a shut bud for its last `SNOWDROP_BUD_T` (25 s), open
+again at zero, and the neutral bar a bush wears under the pointer while it rests.
 
 The shield (`p.dawnShield`) holds until hits break it or its scout goes down — it never wears off.
 `damagePlayer` spends it **after** the damage reduction and **before** health, with a gold burst,

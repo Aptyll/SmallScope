@@ -619,10 +619,11 @@ over the hollows. `layDrifts()` runs at boot once every worldgen pass has stood 
   (`DRIFT_KEEP_CAMP`), and anything within `DRIFT_KEEP_WET` of ice, a hole, the creek or a
   ford. A drift whose skirt runs into one is shortened and narrowed, never cut.
 - **The warrens' own.** Each [SNOWDROP WARREN](#camps) is the one camp that wants deep snow in
-  it: `layMeadowDrifts` lays `MEADOW_DRIFTS` across its front, after the fair shares, in the
-  camp's own frame (`campFrame`): two drifts heaped against the pines at either end, thinning
-  toward the middle, with a three-tile lane of crust between them. Nothing in it reads the seed
-  (its ragged edge is a fixed wave), so both warrens wear the same bank, mirrored, on every
+  it: `layMeadowDrifts` lays one round **pool** (`MEADOW_POOL`, a drift with `pool` set that
+  `driftDepth` hands to `poolDepth`) after the fair shares, in the camp's own frame
+  (`campFrame`), filling the clearing to its ring of pines. It can leave a crust island in its
+  middle (`ring`) or a crust lane winding in from the mouth (`lane`). Nothing in it reads the
+  seed (its rim wanders on a fixed wave), so both warrens wear the same pool, mirrored, on every
   match. Rabbits run on the crust: `wadeStep` never slows one.
 - **Spacing and share.** Crests stand `DRIFT_HEAD` apart, deep cores `DRIFT_GAP`; drifts are
   taken best first until the deep band covers `DEEP_COVER` of the interior's open snow or the
@@ -702,14 +703,14 @@ Five kinds, one reward each:
   an axe, and the chests are why that is worth doing. They are ordinary
   [chests](#treasure-chests) and never come back; `pop` 0 means nothing restocks and the anchor
   wears no clock.
-- **SNOWDROP WARREN** (`meadow`, ×2) — a bay **dug into the treeline** (`treeline`) halfway out
-  from each roost, and the one camp **drawn by hand** (its `plan`): **three rabbits** round their
-  mound (`OBJECTS.warren`, the anchor; `WARREN_SPR`, js/draw/ground.js), a crescent of seven
-  **snowdrop** clumps at the back against the pines that open at dawn and shield the picker's
-  side ([the dawn shield](gameplay.md#the-dawn-shield)), and a bank of deep snow across the
-  front with one crust lane through it (`layMeadowDrifts`, js/depth.js). The rabbits are the only
-  ones on the map ([wildlife](gameplay.md#wildlife)); nothing in it is hostile. Cleared, the
-  three are back 40 s later, on the camp clock every camp keeps.
+- **SNOWDROP WARREN** (`meadow`, ×2) — dug into the treeline (`treeline`) halfway out from each
+  roost, and the one camp **drawn by hand** (its `plan`): a round clearing in a ring of pines
+  with one mouth out to the field, **three rabbits** in the middle, three **snowdrop** clumps at
+  the back that each shield the picker's side and then rest on their own cooldown
+  ([the dawn shield](gameplay.md#the-dawn-shield)), and the clearing filled to the trees with
+  deep snow (`layMeadowDrifts`, js/depth.js). The rabbits are the only ones on the map
+  ([wildlife](gameplay.md#wildlife)); nothing in it is hostile. Cleared, the three are back 40 s
+  later on the camp clock; with no anchor prop, nothing wears it.
 
 **One entry in `CAMPS` is one kind of camp**, and that entry plus its site is the whole feature —
 no map, chart or HUD code knows a camp by name:
@@ -727,7 +728,7 @@ no map, chart or HUD code knows a camp by name:
 | `spots` | where each monster stands, `[dx, dy]` off the centre (`spawnCampMonster` takes the nearest free tile if a slot is taken) |
 | `woods` | the site is **in the border forest**, not the valley: `placeCamps` checks it is, `layPaths` cuts no branch to it and `placeChests` keeps off its rim |
 | `treeline` | the site is **on the treeline**: between the border's shallowest edge and `CAMP_EDGE`, with the border grown out round it on every seed (the warren groves, below) |
-| `plan` | the camp is **drawn**: rows of characters from the back of the clearing (into the woods) to its front (the field), centred on the middle of the middle row, turned to face the field from whichever edge the site is nearest (`campFrame`), so the mirrored site gets the mirrored drawing. `layCampPlan` stamps it in place of `clearCamp`, `props` and `spots`: `-` left as the seed grew it, `.` cleared snow, `T` a pine, `f` a snowdrop, `w` the anchor, `r` a monster's spot (kept on the camp as `C.spots`). `campNear` covers the whole drawing, so no later pass (rocks, chests, landmarks, drifts) lands in it |
+| `plan` | the camp is **drawn**: rows of characters from the back of the clearing (into the woods) to its front (the field), centred on the middle of the middle row, turned to face the field from whichever edge the site is nearest (`campFrame`), so the mirrored site gets the mirrored drawing. `layCampPlan` stamps it in place of `clearCamp`, `props` and `spots`: `-` left as the seed grew it, `.` cleared snow, `T` a pine, `f` a snowdrop, `r` a monster's spot (kept on the camp as `C.spots`). `campNear` covers the whole drawing, so no later pass (rocks, chests, landmarks, drifts) lands in it |
 | `river` | the camp is a **stretch of riverbank**, not a den: tiles of bank either way along the creek's bend round the site that its monster walks ([river camps](#river-camps)); `props` and `spots` are empty |
 
 ### Placement

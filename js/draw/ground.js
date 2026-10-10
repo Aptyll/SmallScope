@@ -1322,47 +1322,6 @@ const CAIRN_SPR = (() => {
   });
   return c;
 })();
-// The WARREN's mound (OBJECTS.warren, CAMPS.meadow in world.js): a hump of
-// snow lit from the upper left with the rabbits' arched hole in its face and
-// the earth they kicked out spilled in front - side-on, so it never reads as
-// a burrow's flat hole (drawTunnelHole). Painted from shapes at 4x, each
-// pixel the shape most of it falls in, like the snowdrops (app/bake-snowdrops).
-const WARREN_SPR = (() => {
-  const W = 18, H = 13, SS = 4;
-  const pal = ['#f4f7ff', '#d3ddef', '#a9b4d6', '#7d8bb4', '#231d2c', '#4a3a40', '#5e4230', '#8f6a4a', '#8e9cc4', '#bfcae2'];
-  const inE = (x, y, cx, cy, rx, ry) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 < 1;
-  // which tone a point is, or -1: later shapes paint over earlier ones
-  const at = (x, y) => {
-    let t = -1;
-    if (inE(x, y, 9.5, 11.6, 8.8, 1.5)) t = 8;            // the cool pool of shadow it sits in
-    const mx = (x - 9) / 8, my = (y - 10.4) / 5.6, e = mx * mx + my * my;
-    if (e < 1 && y < 11.8) {
-      const lit = mx * 0.55 + my * 0.85;                   // facing the light, up and to the left
-      t = e > 0.78 ? (lit > 0.05 ? 3 : 9) : lit < -0.45 ? 0 : lit < 0.2 ? 1 : 2; // a rim all round: white on white needs an edge
-    }
-    // the two holes, small arches in its face, and the earth kicked out of each
-    for (const [hx, hy, rx, ry] of [[6.4, 10.9, 1.7, 1.9], [12.2, 11.2, 1.4, 1.6]]) {
-      if (inE(x, y, hx, hy, rx, ry) && y < 11.6) t = y > 10.8 && x > hx ? 5 : 4;
-      if (inE(x, y, hx + 0.3, 12.1, rx + 1.1, 0.8)) t = x < hx && y < 12.1 ? 7 : 6;
-    }
-    return t;
-  };
-  const c = document.createElement('canvas');
-  c.width = W; c.height = H;
-  const g = c.getContext('2d');
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
-    const n = new Array(pal.length).fill(0);
-    let clear = 0;
-    for (let j = 0; j < SS; j++) for (let i = 0; i < SS; i++) {
-      const t = at(x + (i + 0.5) / SS, y + (j + 0.5) / SS);
-      if (t < 0) clear++; else n[t]++;
-    }
-    if (clear * 2 >= SS * SS) continue;
-    g.fillStyle = pal[n.indexOf(Math.max(...n))];
-    g.fillRect(x, y, 1, 1);
-  }
-  return c;
-})();
 // The practice dummy (the `practice arena` banner, js/world.js), baked here
 // for the same reason the chest is. A big target you read across the arena:
 // a burlap sack head with stitched eyes under a snow cap, arms lashed to a
