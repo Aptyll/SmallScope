@@ -1,7 +1,7 @@
 'use strict';
 // ------------------------------------------------------------ tunnels
-// THE BURROW: a rabbit's drop (animalDies, js/wildlife.js) carried in the
-// pouch. Pressed, it lays the NEAR HOLE where the ghost stands (the aim is the
+// THE BURROW: a rabbit's drop (animalDies, js/wildlife.js) carried as a
+// stack in a pack cell (ITEMS.tunnel, js/player.js). Used, it lays the NEAR HOLE where the ghost stands (the aim is the
 // local hand's, below; the sim only ever sees the `tunnel` order), and the far
 // end is dug behind the digger for TUN_DIG: wherever the digger stands when
 // the clock runs out, the FAR HOLE opens and the two are one tunnel.
@@ -40,7 +40,7 @@ function tunSiteOk(tx, ty) {
 }
 // THE one placement rule for the near hole: the ghost's colour, the click and
 // the order all ask it. Inside the builder's reach, on a free site, with a
-// burrow in the pouch and no far end already being dug.
+// burrow in the pack and no far end already being dug.
 function tunPlaceOk(p, tx, ty) {
   if (p.dead || inAir(p) || p.digT > 0 || bagCount(p, 'tunnel') <= 0) return false;
   if (Math.hypot(tx * TILE + 8 - p.x, ty * TILE + 8 - p.y) > BUILD_REACH) return false;
@@ -155,7 +155,7 @@ function updateTunnels(dt) {
     if (p.digT > 0) continue;
     p.digT = 0;
     const s = tunFarSite(p, near);
-    if (!s) { caveTunnel(near); bagAdd(p, 'tunnel', 1); continue; } // nowhere to come up: the burrow goes back in the pouch
+    if (!s) { caveTunnel(near); if (!bagAdd(p, 'tunnel', 1)) spawnDrop(p.x, p.y, 'tunnel'); continue; } // nowhere to come up: the burrow goes back in the pack, or at the boots when it is full
     const far = placeObj(s.tx, s.ty, 'tunnel', { owner: p.id, team: p.team, mate: near, crumble: 0 });
     near.mate = far;
     sfxAt('tunnelOut', tunX(far), tunY(far));
@@ -175,14 +175,14 @@ function updateTunnels(dt) {
 }
 
 // ---- the aim: the local hand's ghost ---------------------------------------
-// The burrow's key (or its hud cell) stands a hole ghost on the tile under the
-// pointer, the build list's grammar: green where tunPlaceOk says it can go,
+// The burrow's key (or a click on its pack cell) stands a hole ghost on the
+// tile under the pointer, the build list's grammar: green where tunPlaceOk says it can go,
 // red where not, and the builder's reach dotted round the body. A left press
 // on the world sends the order; the key again, the right button or Escape
 // puts it away. state.tunAim is the screen's, never the match's (SAVE_STATE_SKIP).
 function tunnelAimToggle() {
   if (state.tunAim) { state.tunAim = false; SFX.ui(false); return; }
-  if (player.dead || inAir(player) || player.digT > 0 || bagCount(player, 'tunnel') <= 0) { foodDenied('tunnel'); return; }
+  if (player.dead || inAir(player) || player.digT > 0 || bagCount(player, 'tunnel') <= 0) { bagDenied(); return; }
   state.build = null;
   state.tunAim = true;
   SFX.ui(true);
@@ -198,7 +198,7 @@ function tunnelAimPress() {
 }
 
 // the burrow's 8x8 icon (ITEMS.tunnel): a hole in a snow mound with a
-// rabbit's ears in it - the pouch cell, the drop on the snow and the floater
+// rabbit's ears in it - the pack cell, the drop on the snow and the floater
 // all draw this one canvas
 SPRITES.itemTunnel = bakeGrid([
   '...b.b..',

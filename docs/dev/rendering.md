@@ -488,7 +488,7 @@ empty world.
 | top centre | the **team rail**: one plate, every player in the match as a 14px chip with a hp bar, your side left (you first, a frost tick under your bar) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
-| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip, and the burrow's square past the cards on the strip itself — the five numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
+| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Every widget slides **its own size** away for the landing intro — the minimap up by
@@ -758,7 +758,7 @@ or pressed: a click only opens a tab or pages the rail.
 `drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **four 34px wells** —
 `[1][2][3][4]`, the class abilities in key order (`stripCellRect`; `abCellRect(i)` is well `i`;
 the weapon is not on the strip — its one well is [the shelf's tool cell](#the-weapon-shelf)) —
-then, on the right end, the **pouch block** (the 2×2 of squares on its tab and the burrow's tail square, described at the end
+then, on the right end, the **pouch block** (the 2×2 of squares on its tab, described at the end
 of [the cooldown sweep](#the-cooldown-sweep)) — all over the
 **plum xp bar** along the bottom (lifetime gold, left-to-right, no level number — that lives on
 the overhead badge). The bar has a dark silhouette and a frost rim so it reads against the
@@ -850,18 +850,12 @@ the size: the item icon **doubled** in the middle (the card fan is baked at 16 p
 ability well prints its key (the keybind-indicator carve-out, wearing the pad's own glyph while
 one is in hand; the gold has none), and the count in the **top-right** corner — `shortNum`,
 because the pouch has no ceiling, and a four-character count covers the icon's corner rather
-than moving it — so keys read along the strip's bottom edge and numbers along its top. One
-square more stands **past the cards on the bottom row**, inside the strip's plate rather than on
-the tab (`POUCH_TAIL`, `pouchCellRect(2, 1)`): the **burrow**
-([gameplay.md](gameplay.md#the-burrow-a-tunnel-anyone-can-ride)), its count in the burrow's ink.
+than moving it — so keys read along the strip's bottom edge and numbers along its top.
 
-Four of the five are **buttons** (`FOOD_BTNS`: berry, fish, cards, burrow, in `stripHit`'s `food`
+Three of the four are **buttons** (`FOOD_BTNS`: berry, fish, cards, in `stripHit`'s `food`
 order; the tab counts as on the strip for the hit test): hover lights the rim, a press sets the
 same edge-triggered intent the key does (`eatBerry`/`eatFish`/`useCard`), so `startEat` and
-`useCard` speak every refusal and a button can never disagree with its key. The burrow's square
-has no intent but a local `press` instead — the hole needs a tile, so the press stands the aim's
-ghost up (`tunnelAimToggle`), the key's own path — and it stays lit while the ghost is up, with a
-gold fill draining over it while the far end is being dug. A refusal *shows*:
+`useCard` speak every refusal and a button can never disagree with its key. A refusal *shows*:
 whatever the reason (none in the pouch, the clock still up, full health, a busy body, nothing
 to draw), the button that was asked takes the well's red band and the pack's 1px shake for
 `foodFlash` seconds — `foodDenied(type)` / `cardDenied()`, aged in `updateFx` beside
