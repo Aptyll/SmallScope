@@ -587,6 +587,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a thrown rock's tumbling body, and the dashed aim ARC plus the cords snapping on the release | `drawSlungRock`/`ROCK_MAP`/`ROCK_INK`, `drawTurretFx`, `TUR_ARC`/`TUR_LET` | `the turret's sling, its rocks, the bay, the net and the tiled struct` |
 | the bay's overlay, the fish net's draw, a tiered piece's sprite and where it is laid (read by the draw and the shot's sweep), a tiled building's draw (one tile of art per footprint tile) | `drawBayOverlay`, `drawNet`/`NET_FISH_AT`, `structSprite`, `structArtOff`, `drawTiledStruct` | `the turret's sling` (the file's one banner; what they read: `STRUCTS`, structures.js) |
 
+## js/draw/canopy.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the canopy window: a pine or snag drawn over the viewed hero's model opens round exactly what it covers, eased by how much | `CANOPY_FULL`, `CANOPY_CUT`, `canopyFrame` (from `render`), `heroLayerOpen`/`heroLayerClose` (from `drawPlayer`, js/draw/bodies.js), `canopyOver`, `drawWindowed` (the tree and snag branches of `render`'s y-sorted pass), `inkMask` | `canopy window` (the shin clip it copies: `wadeCut`, js/draw/depth.js) |
+
 ## js/draw/bodies.js
 
 | Looking for | Start at | Banner |
@@ -634,8 +640,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | render pass order | `render` | `render` |
-| the occluder fade: the visibility pocket around the viewed hero, and its silhouette rim | `TREE_FADE_A`/`TREE_FADE_R0`/`TREE_FADE_R1`, `treeFadeSil`, the tree branch of the y-sorted pass | `render` (the rim stamp: `drawPlayer`, js/draw/bodies.js) |
-| the work-target rim: gold outline on the hovered tree/dead tree/berried bush/chest | `drawTargetRim`, the `o === fadeWkO` stamps in the y-sorted pass | `render` |
+| the work-target rim: gold outline on the hovered tree/dead tree/berried bush/chest | `drawTargetRim`, the `o === wkO` stamps in the y-sorted pass | `render` |
 | a rock as drawn: its kind or its rubble, the cracks and bar of its progress, its glint, and the ring of the pick's reach on the snow | `drawRock`, `drawMineRing`/`MINE_RING_NEAR`, `ROCK_GLINT_T`/`ROCK_GLINT_NIGHT` | `render` (above `drawTargetRim`; the art: js/sprites/rocks.js) |
 | the F3 readout: fps, coords, seed | `drawTags` | `render` |
 | the `.` overlay: hitboxes, the model centre column, and its 1px ring/box/line rasterisers | `drawHitboxes`, `hbRing`, `hbBox`, `hbDot`, `hbLine`, `hbMid`, `HB_*` | `debug overlays` |

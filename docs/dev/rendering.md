@@ -240,30 +240,28 @@ lightens the ones it opens up. None of it is world state — no `rng`, nothing o
 leaning comes from `treeFrame(tx, ty)` off the [wind field](#the-wind-field), never
 from a clock of its own, and it is blitted out of **one atlas texture** rather than a per-frame
 canvas — see [Drawing a thousand of something](#drawing-a-thousand-of-something), which is the
-largest performance fact in this file. The pines **surrounding the viewed hero** take the
-**occluder fade**, a two-layer visibility pocket: alpha is a pure function of trunk-to-hero
-distance (`TREE_FADE_A` floor inside `TREE_FADE_R0` — the adjacent ring, hard-faded so the hero
-reads clearly through it — climbing back to opaque by `TREE_FADE_R1`, the two-tile ring that
-gives the pocket a soft edge; consts above `render()`), so the fade eases with every step without
-storing anything per tree. The hero's **work target** — the hovered tree, dead tree, rock,
+largest performance fact in this file. A pine (or a dead snag) drawn **over the viewed hero's
+model** opens the **canopy window** ([js/draw/canopy.js](../../js/draw/canopy.js)): `drawPlayer`
+draws that hero's model (body in any pose, held tool, ability marks, snow cover; never its shade
+or foot rings) through a small layer as well as onto the world (`heroLayerOpen`/`heroLayerClose`,
+clipped at `wadeCut` like the body), and each canopy drawn after the hero in the y-sort counts
+the model pixels its own ink covers (`canopyOver`). A covering one composes off-batch with the
+model's silhouette cut out of it plus a two-pixel falloff (`CANOPY_CUT`), opened in proportion to
+the covered share (full at `CANOPY_FULL`), so the body reads crisp, the forest round it stays
+whole, and a tree merely beside or in front of the hero draws untouched. Nothing is stored per
+tree. The hero's **work target** — the hovered tree, dead tree, rock,
 berried bush or chest — draws under a **pulsing gold rim** (`drawTargetRim`: the buy plates' two
-golds, stamped through the scratch canvas like the silhouette below), so the target is its own
-visible state everywhere the cursor lands, not a faded pine quietly borrowing the normal look;
+golds, stamped through the scratch canvas at the eight neighbours, the rim grammar of
+`drawPixelTextOutline`; a windowed pine's rim opens with it), so the target is its own visible
+state everywhere the cursor lands;
 a bare bush never rims because `workTarget`'s `ready` gate already refuses it — a *hovered* bare
 bush shows its regrow clock instead, the neutral unit bar (`drawHealthBar`, gold) over the plant
 filling toward `BUSH_REGROW`, drawn only while the pointer's tile is that bush (`hovO`, resolved
-beside `fadeWkO` at any reach, since a look asks nothing of the legs). A hovered **camp anchor**
+beside `wkO` at any reach, since a look asks nothing of the legs). A hovered **camp anchor**
 (a wolf den's mouth; the bears' river camps have none) wears the same bar the same way — over the prop, filling toward the camp's return off its
 respawn clock (`o.site.repopT`, `drawCampClock`, [world.md](world.md#runtime)) while the camp is cleared, nothing
-while anything in it lives. A hovered tree
-also holds full ink against the fade, and a mid-shake chop lifts a faded neighbour back to
-opaque. While any pine
-is inside the ramp the hero also wears a **black 1px silhouette rim** — `treeFadeSil`, the
-nearest pine's position on the same ramp, computed beside the y-sort and stamped by `drawPlayer`
-(the current frame tinted black on the scratch canvas, blitted at the eight neighbours, the same
-rim grammar as `drawPixelTextOutline`) — so the body pops off the canopy over it and the rim
-dissolves as the hero steps into the open; a lying body keeps its stealth read bare. Only that
-handful of pines ever flips `globalAlpha`, so the atlas batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
+while anything in it lives. Only a
+covering canopy leaves the atlas batch, so the batch below stays whole. A **dead tree** is a 16×24 snag at `py - 8`. Short ground sprites (bush,
 stump) all draw at `py + 4` to stay clear of that band — drop one lower and
 a tree on the tile below hides it almost completely. The den is tall enough not to need it: its 21 rows
 sit at `py - 4`, the lip on the foot of its two tiles. A **rock** (`drawRock`) stands on the foot of its two tiles like

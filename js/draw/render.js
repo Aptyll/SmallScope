@@ -65,10 +65,9 @@ function stepItemIcons(nowMs) {
 // The work-target rim: the hero's hovered workable object (tree, dead tree,
 // berried bush, chest) draws under a 1px pulsing gold outline - the
 // buy plates' two golds on the same beat, so "you can act on this" reads in
-// its standing ink, and the target never blends into the occluder fade's
-// pocket below. The sprite (or atlas frame) tints through the scratch canvas
-// and stamps the eight neighbours, the same rim grammar as the hero
-// silhouette and drawPixelTextOutline. Call it right before drawing the
+// its standing ink. The sprite (or atlas frame) tints through the scratch
+// canvas and stamps the eight neighbours, the same rim grammar as
+// drawPixelTextOutline. Call it right before drawing the
 // object itself so the rim sits under the body.
 // A rock (ROCK_KINDS, js/mining.js) from its anchor at (x, y): two tiles
 // wide, feet on the tile's bottom edge, so a taller kind stands up into the
@@ -142,25 +141,8 @@ function drawTargetRim(src, sx, sy, w, h, x, y, now) {
   }
 }
 
-// Occluder fade: the pines around the viewed hero soften into a visibility
-// pocket, so the hero stays readable while digging into the treeline. Alpha
-// is a pure function of trunk-to-hero distance - nothing is stored per tree,
-// so the fade eases in and out with every step by construction - in two
-// layers: the adjacent ring sits hard on the TREE_FADE_A floor (the hero
-// reads clearly through it), and the two-tile ring climbs back to opaque so
-// the pocket has a soft edge instead of a wall. The tree under the hero's
-// own cursor holds full ink so the one being worked stays crisp; a mid-shake
-// chop lifts a faded neighbour back to opaque and o.shake's decay eases it
-// down again. While any pine is inside the ramp the hero also wears a black
-// 1px silhouette rim (treeFadeSil, stamped by drawPlayer, draw-world.js)
-// whose strength runs on the same distances, so the body pops off the
-// canopy over it and the rim dissolves as the hero steps into the open.
 const HUT_FR = 140; // ms a frame of the hog hut's chimney smoke
 const SNOWDROP_SWAY = 12; // gain on windSway for a snowdrop's lean: a stem bends where a pine barely sways
-const TREE_FADE_A = 0.35; // alpha floor on the adjacent ring
-const TREE_FADE_R0 = 24; // fully faded inside this trunk distance (world px)
-const TREE_FADE_R1 = 52; // back to opaque beyond this
-let treeFadeSil = 0; // this frame's silhouette-rim strength, set beside the y-sort
 
 function render() {
   const now = performance.now() / 1000;
@@ -419,30 +401,21 @@ function render() {
   draws.sort((a, b) => a.y - b.y);
 
   // whose view the canopies must not hide (null while dead or airborne - no
-  // sprite on the ground to hide), the tree its cursor is resting on, and the
-  // silhouette-rim strength: the nearest pine's position on the fade ramp, so
-  // the rim is full where the pocket is hard and gone where the forest ends
-  let fadeP = viewPlayer();
-  if (!fadeP.active || fadeP.dead || inAir(fadeP)) fadeP = null;
-  let fadeWkO = null;
+  // sprite on the ground to hide; the canopy window, js/draw/canopy.js) and
+  // the tree its cursor is resting on
+  let heroP = viewPlayer();
+  if (!heroP.active || heroP.dead || inAir(heroP)) heroP = null;
+  canopyFrame(heroP);
+  let wkO = null;
   // the scenery under the pointer, for the one thing a hover shows on a
   // thing E cannot act on yet: a regrowing bush's clock (its branch below).
   // Any reach: a look asks nothing of the legs
   let hovO = null;
-  treeFadeSil = 0;
-  if (fadeP) {
-    const wk = workTarget(fadeP);
-    if (wk && !window.DBG.hideUI) fadeWkO = wk.o; // no gold rim on a clean frame (director mode, the media kit)
+  if (heroP) {
+    const wk = workTarget(heroP);
+    if (wk && !window.DBG.hideUI) wkO = wk.o; // no gold rim on a clean frame (director mode, the media kit)
     if (mouse.inside && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel && !state.drag && !window.DBG.hideUI)
       hovO = structOf(objAt(Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE)));
-    const ptx = Math.floor(fadeP.x / TILE), pty = Math.floor(fadeP.y / TILE);
-    for (let sy = pty - 2; sy <= pty + 2; sy++) for (let sx = ptx - 2; sx <= ptx + 2; sx++) {
-      const so = inWorld(sx, sy) ? objects[idx(sx, sy)] : null;
-      if (!so || so.type !== 'tree') continue;
-      const sd = Math.hypot(sx * TILE + 8 - fadeP.x, sy * TILE + 8 - fadeP.y);
-      treeFadeSil = Math.max(treeFadeSil,
-        1 - Math.max(0, sd - TREE_FADE_R0) / (TREE_FADE_R1 - TREE_FADE_R0));
-    }
   }
 
   for (const d of draws) {
@@ -462,38 +435,30 @@ function render() {
       // above. How far over it is leaning - and whether it draws mirrored - is
       // the WIND's business, not the tree's: see treeFrame() in
       // js/draw/ground.js, which hands back a column of the one atlas
-      // texture, never a per-frame canvas. The handful
-      // surrounding the viewed hero take the occluder fade (consts above
-      // render()); the globalAlpha flip only ever touches those few, so the
-      // thousand-pine atlas batch stays whole.
+      // texture, never a per-frame canvas.
       // which palette row (variant, forest-depth tone) and where on the tile
       // it stands are the tile's too: treeCell / treeNudgeX/Y, js/draw/ground.js
       const fi = treeCell(d.tx, d.ty, treeFrame(d.tx, d.ty));
       const artX = px - 5 + sh + treeNudgeX(d.tx, d.ty), artY = py - 21 + treeNudgeY(d.tx, d.ty);
-      // the hero's own work target: full ink under the gold rim, so the tree
-      // the cursor is on is its OWN state - not a faded pine quietly
-      // borrowing the normal look, which read as the tree blending away the
-      // moment the cursor left it
-      if (fadeP && o === fadeWkO) {
-        const A = SPRITES.treeAtlas, fw = A.fw, fh = A.fh;
-        drawTargetRim(A, (fi % A.cols) * fw, Math.floor(fi / A.cols) * fh, fw, fh, artX, artY, now);
-      }
-      let fa = 1;
-      if (fadeP && o !== fadeWkO) {
-        const dist = Math.hypot(d.tx * TILE + 8 - fadeP.x, d.ty * TILE + 8 - fadeP.y);
-        if (dist < TREE_FADE_R1) {
-          fa = TREE_FADE_A + (1 - TREE_FADE_A) *
-            Math.max(0, dist - TREE_FADE_R0) / (TREE_FADE_R1 - TREE_FADE_R0);
-          if (o.shake > 0) fa = Math.max(fa, Math.min(1, o.shake * 4));
-        }
-      }
-      if (fa < 1) ctx.globalAlpha = fa;
-      drawFrameFlash(SPRITES.treeAtlas, fi, artX, artY, o.flash);
-      if (fa < 1) ctx.globalAlpha = 1;
+      // the hero's own work target wears the gold rim; a canopy over the
+      // hero's model opens its window (canopyOver/drawWindowed,
+      // js/draw/canopy.js), rim and all. Only a covering canopy leaves the
+      // atlas batch, so the thousand-pine batch stays whole.
+      const A = SPRITES.treeAtlas, fw = A.fw, fh = A.fh, cx = (fi % A.cols) * fw, cy = Math.floor(fi / A.cols) * fh;
+      const drawTree = () => {
+        if (o === wkO) drawTargetRim(A, cx, cy, fw, fh, artX, artY, now);
+        drawFrameFlash(A, fi, artX, artY, o.flash);
+      };
+      const open = canopyOver(A, cx, cy, fw, fh, artX, artY);
+      if (open > 0) drawWindowed(open, artX, artY, fw, fh, drawTree); else drawTree();
     } else if (o.type === 'deadTree') {
-      const spr = SPRITES.deadTree[o.variant];
-      if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py - 8, now);
-      drawSpriteFlash(spr, px + sh, py - 8, o.flash);
+      const spr = SPRITES.deadTree[o.variant], x = px + sh, y = py - 8;
+      const drawSnag = () => {
+        if (o === wkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, x, y, now);
+        drawSpriteFlash(spr, x, y, o.flash);
+      };
+      const open = canopyOver(spr, 0, 0, spr.width, spr.height, x, y);
+      if (open > 0) drawWindowed(open, x, y, spr.width, spr.height, drawSnag); else drawSnag();
     } else if (o.type === 'den') {
       drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
       if (o === hovO) drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock, under the pointer
@@ -514,7 +479,7 @@ function render() {
     } else if (o.type === 'rock') {
       drawRock(o, px + sh, py, now);
     } else if (o.type === 'chest') {
-      if (fadeP && o === fadeWkO) drawTargetRim(CHEST_SPR, 0, 0, CHEST_SPR.width, CHEST_SPR.height, px + sh, py + TILE - CHEST_SPR.height, now);
+      if (o === wkO) drawTargetRim(CHEST_SPR, 0, 0, CHEST_SPR.width, CHEST_SPR.height, px + sh, py + TILE - CHEST_SPR.height, now);
       drawSpriteFlash(CHEST_SPR, px + sh, py + TILE - CHEST_SPR.height, o.flash);
     } else if (o.type === 'dummy') {
       // the practice target: skids on its tile, everything else drawn up off
@@ -585,7 +550,7 @@ function render() {
         : o.regrow <= BUSH_BUD_T ? SPRITES.bushBud : SPRITES.bushEmpty;
       // a bare bush never rims: workTarget's `ready` gate already refuses it,
       // so the rim only ever lands on berries worth picking
-      if (fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);
+      if (o === wkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, px + sh, py + 4, now);
       drawSpriteFlash(spr, px + sh, py + 4, o.flash);
       // hovered while regrowing: the clock itself, the neutral unit bar over
       // the plant filling toward ripe - the frames say roughly, a look asks
@@ -607,7 +572,7 @@ function render() {
       const spr = left > SNOWDROP_BUD_T ? V.picked[0] : (open ? V.open : V.closed)[lean + 1];
       const jx = Math.floor(hash2(o.tx * 5 + 3, o.ty * 7 + 1) * 5) - 2, jy = Math.floor(hash2(o.tx * 3 + 9, o.ty * 11 + 2) * 3) - 1;
       const sx = px + sh + jx + 8 - (spr.width >> 1), sy = py + jy + 17 - spr.height;
-      if (open && fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, sx, sy, now);
+      if (open && o === wkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, sx, sy, now);
       drawSpriteFlash(spr, sx, sy, o.flash);
       if (open) litDrops.push({ o, V, lean, sx, sy });
       else if (o === hovO) drawHealthBar(px + 8, sy + 4, SNOWDROP_CD - left, SNOWDROP_CD, 12, undefined, BAR_NEUTRAL);

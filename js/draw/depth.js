@@ -97,7 +97,10 @@ function wadeWidth(e) {
   if (ON_CRUST[e.kind] || e.merchant) return 0;
   return e.kind === 'deer' ? 18 : MONSTER[e.kind] && MONSTER[e.kind].big ? 20 : 10;
 }
-// draw a body through fn() as it stands in the snow
+// draw a body through fn() as it stands in the snow; while fn() runs, wadeCut
+// is the world-buffer row the drift swallows the body from (the canopy
+// window's hero layer clips there too, js/draw/canopy.js)
+let wadeCut = Infinity;
 function drawWading(e, ex, ey, now, fn) {
   const w = wadeWidth(e), k = w ? wadeLook(e, now) : 0;
   if (k < 0.05) { fn(); return; }
@@ -106,7 +109,9 @@ function drawWading(e, ex, ey, now, fn) {
   ctx.save();
   ctx.beginPath(); ctx.rect(sx - 64, fy - 128, 128, cut - (fy - 128)); ctx.clip();
   ctx.translate(0, sink);
+  wadeCut = cut;
   fn();
+  wadeCut = Infinity;
   ctx.restore();
   // the collar: a mound of the drift round the shins - a sunlit crest over
   // the body, the hole's own shade where the legs go in, the drift's top
