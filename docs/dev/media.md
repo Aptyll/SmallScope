@@ -89,8 +89,9 @@ in log space). `ease` is `smooth`, `linear` or `out`. `paint` stamps a 1x sprite
 over a tracked body (so it scales with the world, never drifts onto a health bar); `texts` put a
 line over a shot; `end` adds the freeze and the end card: WISHLIST ON STEAM under the Steam mark by
 default. `card.cta` gives lines of its own (say JOIN THE DISCORD), standing larger where the mark
-was unless `card.mark` names one (`steam`, `discord`); `line` is the small line under them, at
-`line_y`. `step` plays a shot every nth take
+was unless `card.mark` names one (`steam`, `discord`), and `card.cta_s` sizes each of its lines
+(a small JOIN THE over a big DISCORD); `line` is the small line under them, at `line_y`, and
+`line: 0` drops it. Colour `discord` is the Discord blue. `step` plays a shot every nth take
 frame, negative to run it backwards (a rewind), and `mute: true` keeps its frames silent. Slow
 motion and a held freeze are recorded, not cut: the scene lowers `M.speed`, so the snow keeps
 falling through them.

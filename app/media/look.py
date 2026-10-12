@@ -11,7 +11,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 FONT = dict(re.findall(r"'(.)': '([01]{15})'", open(os.path.join(ROOT, 'js', 'font.js'), encoding='utf8').read()))
 for ch, g in {'"': '101101000000000', "'": '010010000000000', ':': '000010000010000', ',': '000000000010100', '.': '000000000000010'}.items():
     FONT.setdefault(ch, g)
-COL = {'white': '#f4f7ff', 'gold': '#ffd34d', 'red': '#ff5a4a', 'cyan': '#7fe8ff', 'blue': '#6aa8e8', 'grey': '#b8c0cc'}
+COL = {'white': '#f4f7ff', 'gold': '#ffd34d', 'red': '#ff5a4a', 'cyan': '#7fe8ff', 'blue': '#6aa8e8', 'grey': '#b8c0cc', 'discord': '#7984ff'}
 RIM = (14, 20, 44, 255)
 
 def rgb(c):
@@ -50,6 +50,13 @@ def text(lines, s=16, gap=1, rim=7):
     # text([[('MISSION', 'red')], [('FAILED', 'red')]], s=26): a card to stamp() on a frame
     if isinstance(lines, str): lines = [[(lines, 'white')]]
     return rimmed(glyphs(lines, s, gap), rim)
+
+def stack(cards, gap=0):
+    # text() cards one over another, each centred: lines of different sizes as one card
+    w = max(c.width for c in cards); h = sum(c.height for c in cards) + gap * (len(cards) - 1)
+    m = Image.new('RGBA', (w, h), (0, 0, 0, 0)); y = 0
+    for c in cards: m.alpha_composite(c, ((w - c.width) // 2, y)); y += c.height + gap
+    return m
 
 def stamp(img, card, x, y, al=1.0, scale=1.0):
     # card centred on (x, y); al fades it; scale pops it (nearest, so pixels stay hard)
