@@ -2237,8 +2237,7 @@ function addPTarget(kind, s, opts) {
   }, opts || {});
   if (t.kind === 'pop') { t.up = 0; if (!t.pop) t.pop = PT_POP; }
   t.laneU = t.lane;
-  const p0 = agPos(t.s, t.laneU);
-  t.x = p0.x; t.y = p0.y;
+  if (t.kind !== 'raid') { const p0 = agPos(t.s, t.laneU); t.x = p0.x; t.y = p0.y; } // a raider stands where it was put
   ptargets.push(t);
   return t;
 }
@@ -2246,6 +2245,7 @@ function addPTarget(kind, s, opts) {
 // where a face's centre is right now, in world px - the one geometry the
 // update, the arrow test and the draw all share, so they can never disagree
 function ptFace(t) {
+  if (t.kind === 'raid') return { x: t.x, y: t.y - DF_FACE_Y - t.hopY }; // a raider's painted chest ring (DEFEND)
   const fh = 32 * AG_SIZE[t.size];
   // a pop-up's face flips up out of its trolley: bottom edge pinned at the
   // mouth, so the centre rides the rise (exactly how drawPTarget anchors it)
@@ -2253,7 +2253,7 @@ function ptFace(t) {
   return { x: t.x, y: t.y - AG_POST - fh / 2 };
 }
 // the face's hit disc, scaled with its size
-function ptHitR(t) { return PT_HIT_R * AG_SIZE[t.size]; }
+function ptHitR(t) { return t.kind === 'raid' ? DF_HIT_R : PT_HIT_R * AG_SIZE[t.size]; }
 // can an arrow score on it this frame
 function ptLive(t) { return !t.gone && t.broken <= 0 && (t.kind !== 'pop' || t.up > 0.6); }
 
@@ -2276,14 +2276,12 @@ function hitPTarget(t) {
     SFX.runUp(agStreak); // ...and it rings higher the longer the run is
   }
   if (!t.stock && agame.phase === 'play') {
-    // speed pays by CLASS (slow/medium/fast), not raw px/s - the classes
-    // mean the same thing on every difficulty's speed table
-    const pts = 10 + (t.size === 0 ? 10 : 0) + (t.kind === 'pop' ? 10 : 0) +
-      (t.spd > 0 ? [0, 5, 10][t.spdClass] || 0 : 0);
-    agame.score += pts;
+    // the round in play says what the hit is worth and what its popup reads
+    // (AG_ROUNDS: the range pays points, quick draw pays time)
+    const pop = AG_ROUNDS[agame.mode].hit(t);
     agame.hits++;
-    // the popup: the points, wearing the run from the second hit on
-    addFloater(f.x, f.y - 6, '+' + pts + (agStreak > 1 ? ' X' + agStreak : ''), '#ffd95c');
+    // the popup wears the run from the second hit on
+    addFloater(f.x, f.y - 6, pop + (agStreak > 1 ? ' X' + agStreak : ''), '#ffd95c');
   } else if (agStreak > 1) {
     // free practice pays nothing, so the popup IS the run - white, gold from
     // five in a row, hot orange from ten
@@ -2312,22 +2310,23 @@ function agShatter(t) {
 // The BELL west of the dummy starts the round on the die's own grammar:
 // HOLDING E beside it (agBellNear - shared by the E RING cap, drawBellHint
 // in js/ui.js, and the press in js/input.js) opens a three-wedge radial
-// wheel (kind 'agbell', the ordinary wheel pipeline) - one wedge per
-// difficulty, each drawn as the TARGET FACE the round pours out, smaller as
-// the pick gets harder, the armed one wearing a gold frame. Releasing on a
+// wheel (kind 'agbell', the ordinary wheel pipeline) - one wedge per round
+// (AG_WEDGES: RANGE, QUICK DRAW, DEFEND), each in its own mark with its best
+// medal, the last-rung one wearing a gold frame. Releasing on a
 // wedge IS the ring (agRing, through the same input.cmd -> runCmd path every
 // order takes): the stock roster bursts away, the dummy, the rack AND THE
 // BELL ITSELF sink under the snow (their objects leave the grid at full
 // depth, so nothing blocks a shot or a runner - which is also why a running
 // round cannot be rung off: the timer alone ends it), a 3-2-1 countdown
-// lands, and for AG_T seconds random targets pour onto the track from the
-// picked difficulty's spawn table (AG_DIFF: mover speeds, small/pop odds,
-// crowd cap and refill pace) - each worth points on hitPTarget's
+// lands, and - for the RANGE, the rest are AG_ROUNDS below - for AG_T
+// seconds random targets pour onto the track from a spawn table that climbs
+// with the clock (AG_DIFF: mover speeds, small/pop odds, crowd cap and
+// refill pace, in AG_RANGE_DIFF order) - each worth points on hitPTarget's
 // harder-shot-pays-more rule. Time out and the round ends: the score stands
 // as LAST, a strictly higher one writes BEST through PROFILE.setBestRange -
 // the range's own all-time record beside the parkour's lap - the furniture
 // rises back out of the snow and the stock roster springs back on. The bell
-// never wears the difficulty (no recolour - the wheel's gold frame is the
+// never wears the pick (no recolour - the wheel's gold frame is the
 // readout); the readouts (the countdown, the top-centre TIME/SCORE/HITS
 // plate, the bell's BEST/LAST frost plate) live in drawAgameUI / drawAgame,
 // js/draw-world.js.
@@ -2336,7 +2335,7 @@ const AG_COUNT_T = 3;    // the countdown, one tick per second
 const AG_SINK_T = 0.9;   // s the dummy, rack and bell take to sink / rise
 const AG_END_T = 2.4;    // s the final score stands before the field resets
 const AG_BELL = { tx: PR_X0 + 15, ty: PR_Y0 + 12 }; // the bell, west of the dummy on its own row
-// one spawn table per difficulty, picked off the bell's wheel: spd = the
+// one spawn table per difficulty, which the range climbs: spd = the
 // three mover speeds (scored by class, not raw px/s), small/still/pop the
 // mix odds (move takes the rest), max/spawnT the crowd and its refill pace
 const AG_DIFF = {
@@ -2344,13 +2343,212 @@ const AG_DIFF = {
   medium: { spd: [26, 46, 70], small: 0.40, still: 0.30, pop: 0.25, max: 7, spawnT: 1.5 },
   hard:   { spd: [34, 60, 90], small: 0.58, still: 0.16, pop: 0.32, max: 9, spawnT: 1.1 },
 };
-// phase: off | sink | count | play | end. `diff` is the armed difficulty
-// (the wheel's gold frame; the bell itself never wears it). `best` is the
+// QUICK DRAW: one face on the track at a time, a short clock, and every hit
+// buys time back - how long can you keep it alive. Every QD_STEP hits the
+// round climbs a stage (QD_STAGES: what the next face is, top to bottom, and
+// how much time it buys), and each face appears within QD_NEAR px of you when
+// the track has a spot that close, so the draw is the test, not the walk.
+const QD_START = 6;        // s on the clock as the window opens
+const QD_MAX = 9;          // s the clock can bank, so a hot run still has to keep shooting
+const QD_STEP = 5;         // hits per stage
+const QD_GAP = 0.18;       // s between a break and the next face
+const QD_NEAR = 190;       // px: how close to the archer a new face prefers to stand
+const QD_STAGES = [
+  { kind: 'still', size: 1, add: 2.0 },
+  { kind: 'still', size: 0, add: 1.8 },
+  { kind: 'move', size: 1, spd: 46, add: 1.7 },
+  { kind: 'pop', size: 0, hold: 1.2, add: 1.6 },
+  { kind: 'move', size: 0, spd: 74, add: 1.5 },
+];
+// What a bell round IS lives here, one entry per round (CLAUDE.md: never in
+// an if): its wheel wedges, its starting clock, how it opens and runs, what
+// a hit pays and says, the plate's rows, and where its record is kept.
+// agame.mode names the one in play; agUpdate and hitPTarget only ever ask it.
+const AG_ROUNDS = {
+  range: {
+    name: 'RANGE',
+    clock: AG_T,
+    medals: [150, 300, 450], // score for bronze / silver / gold
+    begin() { agame.diff = AG_RANGE_DIFF[0]; for (let i = 0; i < 4; i++) agSpawn(); },
+    tick(dt) {
+      // the range climbs its own tables: a third of the clock on each
+      agame.diff = AG_RANGE_DIFF[Math.min(AG_RANGE_DIFF.length - 1, Math.floor(agame.t / (AG_T / AG_RANGE_DIFF.length)))];
+      const S = AG_DIFF[agame.diff] || AG_DIFF.medium;
+      agame.spawnT -= dt;
+      if (agame.spawnT <= 0 && ptargets.length < S.max) { agSpawn(); agame.spawnT = S.spawnT; }
+    },
+    // speed pays by CLASS (slow/medium/fast), not raw px/s - the classes
+    // mean the same thing on every difficulty's speed table
+    hit(t) {
+      const pts = 10 + (t.size === 0 ? 10 : 0) + (t.kind === 'pop' ? 10 : 0) +
+        (t.spd > 0 ? [0, 5, 10][t.spdClass] || 0 : 0);
+      agame.score += pts;
+      return '+' + pts;
+    },
+    over: () => agame.left <= 0,
+    end: () => agame.lastHits + ' HITS',
+    rows: () => [agTimeRow(5), ['SCORE', String(agame.score), '#f4f7ff'], ['HITS', String(agame.hits), '#e0c890']],
+    best: () => PROFILE.bestRange(),
+    setBest: (n) => PROFILE.setBestRange(n),
+  },
+  quick: {
+    name: 'QUICK DRAW',
+    clock: QD_START,
+    medals: [10, 20, 30], // hits
+    begin() { agame.spawnT = 0; },
+    tick(dt) {
+      if (ptargets.length) return;
+      agame.spawnT -= dt;
+      if (agame.spawnT <= 0) qdSpawn();
+    },
+    hit() {
+      const st = QD_STAGES[qdStage()];
+      agame.left = Math.min(QD_MAX, agame.left + st.add);
+      agame.score++;
+      agame.spawnT = QD_GAP;
+      if (agame.score % QD_STEP === 0 && qdStage() > 0) SFX.place(); // a new stage opens
+      return '+' + st.add.toFixed(1) + 'S';
+    },
+    over: () => agame.left <= 0,
+    end: () => 'STAGE ' + (qdStage() + 1),
+    rows: () => [agTimeRow(2), ['HITS', String(agame.score), '#f4f7ff'], ['STAGE', String(qdStage() + 1), '#e0c890']],
+    best: () => PROFILE.bestRound('quick'),
+    setBest: (n) => PROFILE.setBestRound('quick', n),
+  },
+  defend: {
+    name: 'DEFEND',
+    medals: [8, 16, 28], // raiders downed
+    clock: 0, // no clock: it runs until the raiders get through DF_LIVES times
+    begin() { agame.lives = DF_LIVES; agame.spawnT = DF_FIRST; agame.dfGap = DF_GAP0; },
+    tick(dt) {
+      agame.left = 0;
+      agame.spawnT -= dt;
+      if (agame.spawnT <= 0) {
+        dfSpawn();
+        agame.dfGap = Math.max(DF_GAP_MIN, agame.dfGap * DF_GAP_MUL);
+        agame.spawnT = agame.dfGap;
+      }
+    },
+    hit() { agame.score++; return '+1'; },
+    over: () => agame.lives <= 0,
+    end: () => 'HELD ' + Math.floor(agame.t) + 'S',
+    rows: () => [['TIME', String(Math.floor(agame.t)), '#ffd95c'], ['DOWNED', String(agame.score), '#f4f7ff'],
+      ['LIVES', String(agame.lives), agame.lives <= 1 ? '#ff6a5a' : '#e0c890']],
+    best: () => PROFILE.bestRound('defend'),
+    setBest: (n) => PROFILE.setBestRound('defend', n),
+  },
+};
+// the plate's clock row: gold, red for its last `warn` seconds
+function agTimeRow(warn) {
+  const left = Math.max(0, agame.left);
+  return ['TIME', left.toFixed(1), left < warn + 0.05 ? '#ff6a5a' : '#ffd95c'];
+}
+// DEFEND: straw RAIDERS - the field dummy's own body, hopping on its post -
+// come in off the field's rim and make for the HOLD (the field's centre,
+// where the dummy sank), each one arrow to drop. One that reaches the hold
+// costs a life; DF_LIVES gone ends it, and the score is how many went down.
+// They come faster and closer together the longer you hold (DF_*). A raider
+// is a target, not a unit: it rides ptargets beside the rail faces (only
+// arrows meet it, nothing blocks on it), and it hops a straight line across
+// the round's emptied field - the round has sunk everything that stood on
+// it - so it needs no path.
+const DF_LIVES = 3;
+const DF_FIRST = 1.2;      // s before the first raider
+const DF_GAP0 = 2.6;       // s between raiders at the start...
+const DF_GAP_MUL = 0.94;   // ...shrinking by this each raider...
+const DF_GAP_MIN = 0.8;    // ...to no closer than this
+const DF_SPD0 = 15;        // px/s the first raiders cover
+const DF_SPD_UP = 0.45;    // px/s more for every raider downed
+const DF_SPD_MAX = 34;
+const DF_HOP_T = 0.42;     // s one hop takes; a raider covers ground only in the air
+const DF_HOP_H = 5;        // px a hop lifts it
+const DF_REACH = 14;       // px from the hold's centre that counts as through
+const DF_FACE_Y = 20;      // px from its feet up to the chest ring
+const DF_HIT_R = 8;        // px around the ring an arrow drops it on
+const DF_HOLD = { x: (PR_X0 + 20.5) * TILE, y: (PR_Y0 + 12.5) * TILE }; // the field dummy's own tile
+// one raider onto the field's rim, on a side and spot rolled fresh
+// (runtime rng() - world.md), never right on top of the archer
+function dfSpawn() {
+  const a = players[agame.pid] || players[0];
+  const x0 = (PR_X0 + 1) * TILE, x1 = (PR_X0 + PR_W - 1) * TILE;
+  const y0 = (PR_Y0 + 1) * TILE, y1 = (PR_Y0 + PR_H - 1) * TILE;
+  let x = 0, y = 0;
+  for (let i = 0; i < 8; i++) {
+    const side = (rng() * 4) | 0, u = rng();
+    x = side === 1 ? x1 : side === 3 ? x0 : x0 + u * (x1 - x0);
+    y = side === 0 ? y0 : side === 2 ? y1 : y0 + u * (y1 - y0);
+    if (Math.hypot(x - a.x, y - a.y) > 90) break;
+  }
+  const t = addPTarget('raid', 0, { x, y, lane: -1, spd: Math.min(DF_SPD_MAX, DF_SPD0 + DF_SPD_UP * agame.score),
+    hopY: 0, t: rng() * DF_HOP_T });
+  t.wob = 0.3;
+  burst(x, y - 6, '#e0c890', 6, 40, 0.45, true);
+  burst(x, y - 2, '#f4f7ff', 5, 35, 0.4, true);
+}
+// a raider's hop toward the hold, from updatePractice: it gains ground only
+// while it is in the air, and one that lands within DF_REACH is through
+function dfStep(t, dt) {
+  const u = (t.t % DF_HOP_T) / DF_HOP_T;
+  t.hopY = Math.sin(Math.PI * u) * DF_HOP_H;
+  const dx = DF_HOLD.x - t.x, dy = DF_HOLD.y - t.y, d = Math.hypot(dx, dy);
+  if (d <= DF_REACH) {
+    t.gone = true;
+    if (agame.phase === 'play' && agame.mode === 'defend') {
+      agame.lives--; agame.hurtT = 0.5;
+      agStreak = 0; // a raider through ends the run
+    }
+    burst(t.x, t.y - 10, '#e0c890', 10, 60, 0.5, true);
+    burst(t.x, t.y - 10, '#d0453a', 6, 50, 0.45, true);
+    sfxAt('break_', t.x, t.y);
+    return;
+  }
+  const step = Math.min(d, t.spd * dt * 2); // twice its pace aloft, still on the ground
+  if (u > 0.08 && u < 0.92) { t.x += dx / d * step; t.y += dy / d * step; }
+  else if (t.prevU > 0.5 && u < 0.5) burst(t.x, t.y + 1, '#f4f7ff', 2, 18, 0.3, true); // the landing puff
+  t.prevU = u;
+}
+// the bell's wheel, wedge by wedge: one per round
+const AG_WEDGES = ['range', 'quick', 'defend'];
+function agRoundOf(id) { return AG_ROUNDS[id] ? id : null; }
+// the range's spawn tables in the order a round climbs them
+const AG_RANGE_DIFF = ['easy', 'medium', 'hard'];
+// the medal a score earns in a round: 0 none, 1 bronze, 2 silver, 3 gold
+// (the thresholds are each round's `medals`; untuned first guesses)
+function agMedal(mode, score) {
+  const M = AG_ROUNDS[mode].medals;
+  let m = 0;
+  while (m < M.length && score >= M[m]) m++;
+  return m;
+}
+// quick draw's stage, off the hits so far
+function qdStage() { return Math.min(QD_STAGES.length - 1, Math.floor(agame.score / QD_STEP)); }
+// quick draw's next face: the stage's kind, on a track spot near the archer
+function qdSpawn() {
+  const st = QD_STAGES[qdStage()], a = players[agame.pid] || players[0];
+  let s = rng() * AG_LEN;
+  for (let i = 0; i < 16; i++) {
+    const c = rng() * AG_LEN, q = agPos(c, 0);
+    if (Math.hypot(q.x - a.x, q.y - a.y) <= QD_NEAR) { s = c; break; }
+  }
+  const t = addPTarget(st.kind, s, {
+    lane: rng() < 0.5 ? 0 : 1, size: st.size, dir: rng() < 0.5 ? 1 : -1,
+    spd: st.spd || 0, spdClass: st.spd ? 1 : 0,
+    pop: st.kind === 'pop' ? { hide: 0.35, rise: 0.18, hold: st.hold, sink: 0.18 } : null,
+  });
+  t.wob = 0.3;
+  burst(t.x, t.y - 8, '#f4f7ff', 6, 40, 0.45, true);
+}
+// phase: off | sink | count | play | end. `diff` is the spawn table the
+// range is on right now (it climbs AG_RANGE_DIFF with the clock). `best` is the
 // profile's record, seeded at gen and written on a strictly higher score;
 // last/lastHits are this visit's. `tick` edges the countdown SFX, dustT
 // paces the sink dust.
+// `mode` is the round in play (AG_ROUNDS), `left` its clock - a range round
+// only runs down, quick draw's buys time back - and `bests` each round's
+// record, seeded at gen; `best` is the mode's, for the bell's plate.
 const agame = { phase: 'off', t: 0, score: 0, hits: 0, last: 0, lastHits: 0,
-  best: 0, record: false, diff: 'medium', spawnT: 0, tick: 0, dustT: 0 };
+  best: 0, record: false, diff: 'medium', mode: 'range', pid: 0, left: 0, bests: {}, spawnT: 0, tick: 0, dustT: 0,
+  lives: 0, hurtT: 0, dfGap: 0, lastLine: '', lastMedal: 0 }; // DEFEND's: lives left, the plate's red flash, the raiders' spacing
 let agBellObj = null;    // the bell object, for its ring animation
 let agFurniture = [];    // the dummy + rack + bell objects the round sinks away
 // the consecutive-hit run: every arrow into a face extends it, minigame or
@@ -2405,15 +2603,17 @@ function agBellNear(p) {
   return null;
 }
 
-// a difficulty released off the bell's wheel, through runCmd: the wedge IS
-// the ring (the roll die's own grammar) - it arms that difficulty and winds
+// a round released off the bell's wheel, through runCmd: the wedge IS
+// the ring (the roll die's own grammar) - it arms that round and winds
 // the round up, the stock roster leaving with the furniture. Only an idle
 // range answers: mid-round the bell is under the snow, and the sink and
 // rise phases are mid-ceremony. PRACTICE-gated like pkWheelPick.
 function agRing(p, c) {
-  if (!PRACTICE || agame.phase !== 'off' || !AG_DIFF[c.id]) return;
+  const mode = agRoundOf(c.id);
+  if (!PRACTICE || agame.phase !== 'off' || !mode) return;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
-  agame.diff = c.id;
+  agame.mode = mode; agame.pid = p.id;
+  agame.best = agame.bests[mode] || 0;
   if (agBellObj) agBellObj.ring = 0.9;
   SFX.dawnChime();
   agame.phase = 'sink'; agame.t = 0; agame.dustT = 0;
@@ -2429,8 +2629,10 @@ function agRing(p, c) {
 // the free-practice roster once the final score has stood AG_END_T
 function agEndRound() {
   agame.last = agame.score; agame.lastHits = agame.hits;
+  agame.lastLine = AG_ROUNDS[agame.mode].end(); // what stands under the final score
+  agame.lastMedal = agMedal(agame.mode, agame.score);
   agame.record = agame.score > 0 && agame.score > agame.best;
-  if (agame.record) { agame.best = agame.score; PROFILE.setBestRange(agame.score); }
+  if (agame.record) { agame.best = agame.bests[agame.mode] = agame.score; AG_ROUNDS[agame.mode].setBest(agame.score); }
   agame.phase = 'end'; agame.t = 0; agame.dustT = 0;
   for (const t of ptargets) { const f = ptFace(t); burst(f.x, f.y, '#f4f7ff', 5, 40, 0.4, true); }
   ptargets.length = 0;
@@ -2506,15 +2708,17 @@ function agUpdate(dt) {
     const left = Math.ceil(AG_COUNT_T - G.t);
     if (left !== G.tick) { G.tick = left; if (left > 0) SFX.countTick(); }
     if (G.t >= AG_COUNT_T) {
-      G.phase = 'play'; G.t = 0; G.spawnT = (AG_DIFF[G.diff] || AG_DIFF.medium).spawnT;
-      for (let i = 0; i < 4; i++) agSpawn();
+      const R = AG_ROUNDS[G.mode];
+      G.phase = 'play'; G.t = 0; G.left = R.clock; G.spawnT = (AG_DIFF[G.diff] || AG_DIFF.medium).spawnT;
+      R.begin();
       SFX.place();
     }
   } else if (G.phase === 'play') {
-    const S = AG_DIFF[G.diff] || AG_DIFF.medium;
-    G.spawnT -= dt;
-    if (G.spawnT <= 0 && ptargets.length < S.max) { agSpawn(); G.spawnT = S.spawnT; }
-    if (G.t >= AG_T) agEndRound();
+    const R = AG_ROUNDS[G.mode];
+    G.left -= dt;
+    if (G.hurtT > 0) G.hurtT -= dt;
+    R.tick(dt);
+    if (R.over()) { G.left = 0; agEndRound(); }
   } else if (G.phase === 'end') {
     if (G.t >= AG_END_T) { G.phase = 'off'; agStock(false); }
   }
@@ -2633,6 +2837,102 @@ function rackEquip(p, c) {
   sfxAt('place', p.x, p.y);
 }
 
+// ---- the practice bar: League's practice-tool cheats -----------------------
+// The column of buttons down the left edge (js/ui/cheats.js) sends each press
+// through input.cmd {kind:'cheat', id, tx?, ty?} -> runCmd -> cheatCmd, so a
+// cheat is a command like any wheel pick and never a UI write into the sim.
+// Two are standing toggles (CHEAT_AUTO: cooldowns and health refill every
+// tick while on - updatePractice reads them); the rest act once. Teleport
+// and the dummy carry the tile the pointer picked. PRACTICE-gated: the bar
+// never draws in a match, and a forged command there does nothing.
+const CHEAT_GOLD = 500;      // what one ADD GOLD press pays
+const CHEAT_DUMMIES = 12;    // the most spawned dummies standing at once
+const CHEAT_AUTO = { cd: false, hp: false };
+const cheatDummies = [];     // the dummies the bar spawned, oldest first (the field's own is not one)
+function cheatCmd(p, c) {
+  if (!PRACTICE) return false;
+  const fx = (col) => burst(p.x, p.y - 8, col, 8, 45, 0.45, true);
+  if (c.id === 'level') {
+    if (p.level >= LEVEL_MAX) return 'max';
+    p.xp = Math.max(p.xp, LEVEL_XP[p.level]); // the bar fills to the line it crosses
+    levelUp(p);
+    return true;
+  }
+  if (c.id === 'gold') {
+    // play money with no XP behind it - LEVEL UP is its own button - so the
+    // till's no-XP path, not gainGold (which would level you as it paid)
+    tradeGold(p, CHEAT_GOLD);
+    addFloater(p.x, p.y - 22, '+' + CHEAT_GOLD, RES_COLORS.gold);
+    sfxFor(p, 'coin');
+    return true;
+  }
+  if (c.id === 'cd' || c.id === 'hp') {
+    CHEAT_AUTO[c.id] = !CHEAT_AUTO[c.id];
+    cheatAuto(p);
+    sfxFor(p, CHEAT_AUTO[c.id] ? 'levelUp' : 'deny');
+    return true;
+  }
+  if (c.id === 'reset') {
+    // back to a fresh level 1: level, xp, purse, skill points and ranks
+    p.level = 1; p.xp = 0; p.inv.gold = 0; p.skillPts = 1;
+    for (let i = 0; i < p.abLv.length; i++) { p.abLv[i] = 0; p.abCd[i] = 0; }
+    p.maxHp = levelMaxHp(p); p.hp = p.maxHp;
+    fx('#f4f7ff');
+    sfxFor(p, 'place');
+    return true;
+  }
+  if (c.id === 'tp') {
+    if (!Number.isInteger(c.tx) || !Number.isInteger(c.ty) || !walkable(c.tx, c.ty, p)) return 'blocked';
+    fx('#9fc4dd');
+    p.x = (c.tx + 0.5) * TILE; p.y = (c.ty + 0.5) * TILE; p.vx = p.vy = 0;
+    p.sliding = false; p.dodgeT = 0;
+    fx('#ddf1f8');
+    sfxFor(p, 'place');
+    return true;
+  }
+  if (c.id === 'dummy') return cheatDummy(p, c.tx, c.ty);
+  if (c.id === 'clear') {
+    if (!cheatDummies.length) return false;
+    for (const o of cheatDummies) cheatDummyGone(o);
+    cheatDummies.length = 0;
+    sfxFor(p, 'place');
+    return true;
+  }
+  return false;
+}
+// the standing toggles, applied: every tick from updatePractice, and once on
+// the press so a toggle answers the moment it lights
+function cheatAuto(p) {
+  if (CHEAT_AUTO.cd) {
+    for (let i = 0; i < p.abCd.length; i++) p.abCd[i] = 0;
+    p.dodgeCharges = DODGE_CHARGES; p.dodgeRegenT = 0;
+  }
+  if (CHEAT_AUTO.hp && !p.dead) p.hp = p.maxHp;
+}
+// a dummy where the pointer picked: the field's own dummy's numbers and
+// meter, on any open tile. Never mid-round (the round has the field), and the
+// oldest goes when the cap is reached. It joins the round's furniture, so a
+// rung bell sinks it with the rest and the end of the round stands it back up.
+function cheatDummy(p, tx, ty) {
+  if (agame.phase !== 'off') return 'busy';
+  if (!Number.isInteger(tx) || !Number.isInteger(ty) || !walkable(tx, ty)) return 'blocked';
+  if (Math.floor(p.x / TILE) === tx && Math.floor(p.y / TILE) === ty) return 'blocked'; // not onto yourself
+  if (cheatDummies.length >= CHEAT_DUMMIES) cheatDummyGone(cheatDummies.shift());
+  const o = placeObj(tx, ty, 'dummy', { hp: DUMMY_HP, maxHp: DUMMY_HP, hitT: 99,
+    mLast: 0, mTotal: 0, mT0: 0, mT1: 0 });
+  practiceDummies.push(o); agFurniture.push(o); cheatDummies.push(o);
+  burst(tx * TILE + 8, ty * TILE + 2, '#e0c890', 8, 45, 0.45, true);
+  burst(tx * TILE + 8, ty * TILE + 8, '#f4f7ff', 6, 35, 0.4, true);
+  sfxAt('place', tx * TILE + 8, ty * TILE + 8);
+  return true;
+}
+function cheatDummyGone(o) {
+  if (objects[idx(o.tx, o.ty)] === o) objects[idx(o.tx, o.ty)] = null;
+  const a = practiceDummies.indexOf(o); if (a >= 0) practiceDummies.splice(a, 1);
+  const b = agFurniture.indexOf(o); if (b >= 0) agFurniture.splice(b, 1);
+  burst(o.tx * TILE + 8, o.ty * TILE - 4, '#e0c890', 6, 40, 0.4, true);
+}
+
 // the rack the player is standing at - Chebyshev 1 of any of its tiles, E's
 // own WORK_REACH - resolved to its lead. What the E ARM prompt, the E-opens
 // gesture and the hover brackets all agree on.
@@ -2694,7 +2994,8 @@ function genPracticeWorld() {
   // the records stand across visits: the gate plate opens showing the
   // profile's best lap, the bell plate its best round score
   parkour.best = PROFILE.bestLap();
-  agame.best = PROFILE.bestRange();
+  for (const k in AG_ROUNDS) agame.bests[k] = AG_ROUNDS[k].best();
+  agame.best = agame.bests[agame.mode] || 0;
 }
 
 // Plan one loop's carve: walk the centreline and collect every tile within
@@ -2994,6 +3295,7 @@ function pkWheelPick(p, c) {
 function updatePractice(dt) {
   pkAnimStep(dt); // the roll's carving front, while one is out
   agUpdate(dt);   // the archery round's clock, sink, countdown and spawner
+  cheatAuto(player); // the practice bar's standing toggles
   if (pkDieObj && pkDieObj.rollT > 0) pkDieObj.rollT = Math.max(0, pkDieObj.rollT - dt); // the die's tumble
   for (const o of practiceDummies) {
     o.hitT += dt;
@@ -3020,6 +3322,7 @@ function updatePractice(dt) {
         sfxAt('place', f.x, f.y);
       }
     }
+    if (t.kind === 'raid') { dfStep(t, dt); continue; } // DEFEND's raiders hop, they ride no rail
     if (t.kind === 'pop') {
       // the cycle: hidden - rise - hold - sink, on the target's own clock
       const C = t.pop || PT_POP, total = C.hide + C.rise + C.hold + C.sink;

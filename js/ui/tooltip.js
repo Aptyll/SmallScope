@@ -331,6 +331,8 @@ function tipAt(mx, my) {
   if (gi >= 0) return tipGear(gi);
   const rc = railHit(mx, my);
   if (rc) return tipRail(rc);
+  const ch = cheatHit(mx, my);
+  if (ch && ch.kind === 'cell') return tipCheat(ch.i);
   const fh = shelfHit(mx, my);
   if (fh) {
     const cell = shelfCell();

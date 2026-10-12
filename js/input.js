@@ -405,6 +405,7 @@ function keyPress(e) {
     else if (state.wheel) state.wheel = null;
     else if (state.build) { state.build = null; SFX.ui(false); }
     else if (state.tunAim) { state.tunAim = false; SFX.ui(false); }
+    else if (cheatAimOff()) { /* the practice bar's armed aim, put down */ }
     else if (state.mapOpen) { state.mapOpen = false; SFX.ui(false); }
     else if (state.shop) closeShop();
     else if (state.charOpen) { state.charOpen = false; SFX.ui(false); }
@@ -506,9 +507,10 @@ function pointerPress(button) {
     if (state.mode !== 'play' || state.settingsOpen || state.wheel) return;
     if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
     if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
+    if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y)) return; // no wheel through the HUD
+        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any tile on the map is a place to plant a flag on (building is the
     // list on T, managing is E beside your own building)
     openFlagWheel();
@@ -534,6 +536,9 @@ function pointerPress(button) {
   // the burrow's ghost: a press on the world digs there (a red ghost refuses
   // with the deny cue); presses over the HUD go on to it as ever
   if (state.tunAim && !overHud(mouse.x, mouse.y)) { tunnelAimPress(); return; }
+  // the practice bar (js/ui/cheats.js): a press on it, then its armed aim on the world
+  if (cheatClick(mouse.x, mouse.y)) return;
+  if (cheatAimLive() && !overHud(mouse.x, mouse.y)) { cheatAimPress(); return; }
   if (state.build) {
     const row = buildListHit(mouse.x, mouse.y);
     if (row >= 0) { SFX.unlock(); buildPick(row); return; }
@@ -787,6 +792,7 @@ function ckRightPress() {
   if (state.wheel) { if (state.wheel.kind !== 'flag' || state.wheel.stand) { resolveWheel(); state.wheel = null; } return; }
   if (state.build) { SFX.unlock(); state.build = null; return; } // the right button puts the build list away
   if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
+  if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
   ck.arm = false;
   ms.ready = -1; // a readied ability is put down by the walk, League's grammar
   if (player.dead) return;

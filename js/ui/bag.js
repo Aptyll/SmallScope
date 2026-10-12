@@ -93,7 +93,7 @@ function bagCellRect(i) {
 // the pointer is over HUD that owns its own clicks, not over the world
 function overHud(x, y) {
   return !!bagHit(x, y) || !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
-    !!shelfHit(x, y) || shelfPlateHit(x, y) || buildTabHit(x, y) || buildListHit(x, y) >= 0 || overMinimap();
+    !!shelfHit(x, y) || shelfPlateHit(x, y) || buildTabHit(x, y) || buildListHit(x, y) >= 0 || overMinimap() || !!cheatHit(x, y);
 }
 // THE CORNER SCALES WITH THE HUD SIZE DIAL, about the top-left corner
 // (drawCornerScaled, below the shelf). Every rect in this banner and the
