@@ -85,7 +85,8 @@ number. A focus is a tracked name, `"bear@roar"` (pinned where it stood at the r
 or `[x, y]`; `ox`/`oy` nudge it. `k` is output px per world px, `[from, to]` for a push (zoom moves
 in log space). `ease` is `smooth`, `linear` or `out`. `paint` stamps a 1x sprite into the take frame
 over a tracked body (so it scales with the world, never drifts onto a health bar); `texts` put a
-line over a shot; `end` adds the freeze and the wishlist card. `step` plays a shot every nth take
+line over a shot; `end` adds the freeze and the wishlist card (`card.cta` swaps the Steam mark and
+WISHLIST ON STEAM for lines of its own, say JOIN THE DISCORD). `step` plays a shot every nth take
 frame, negative to run it backwards (a rewind), and `mute: true` keeps its frames silent. Slow
 motion and a held freeze are recorded, not cut: the scene lowers `M.speed`, so the snow keeps
 falling through them.
