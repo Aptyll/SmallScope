@@ -104,7 +104,7 @@ function tunFarSite(p, near) {
 // ahead of the swing): under it goes. True when it took the body.
 function tunnelEnter(p) {
   if (p.control === 'ai' || p.tunCd > 0 || p.prone || p.fallT > 0 || p.dodgeT > 0 || p.eatT > 0 ||
-    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.grapT > 0 || p.zip >= 0) return false;
+    p.castT > 0 || p.rushT > 0 || p.shieldT > 0 || p.grapT > 0 || p.zip >= 0 || p.mount) return false;
   const h = tunUnder(p);
   if (!h || !h.mate) return false;
   const fx = tunX(h), fy = tunY(h), tx = tunX(h.mate), ty = tunY(h.mate);

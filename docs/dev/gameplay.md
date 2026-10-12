@@ -1584,6 +1584,28 @@ a camp monster it is a hunt in progress and nothing else — a leash bar still d
 a hunt — and the mark going out is the monster giving you up. The **body** says the same thing
 at a distance where a `!` is a speck — see the clips below.
 
+### Riding a deer
+
+E beside a wild deer (`rideNear`, inside `RIDE_REACH`) hops on (`hopToggle` → `rideStart`, through
+`contest` so two riders on one deer resolve fairly), and a bare work cap over its back says so
+(`drawRideHint`). The **player** stays the body that moves: `updatePlayer` walks it at the mount's
+gallop (`RIDE[kind].mul` times `PLAYER_SPEED`, the deer's own sprint, with no draw penalty and no
+slide), and `updateAnimal` hands the ridden deer to `rideCarry` instead of its brain, which stands
+it where its rider is and plays its gallop. While ridden the deer carries the rider's `team`, so
+`unitFoe` and the arrow sweep (`shotContacts`) treat it as that side: your shots and your allies'
+pass through it, a rival's land. Its bar hangs one row under the rider's frame in the side's
+colour (`drawPlayer`), and the rider sits `RIDE[kind].seat` rows up its back with no shadow of
+their own. The hands stay free: the bow, the blades and the abilities all work from the saddle.
+
+The roll key is **the leap** (`tryDodge` → `rideLeap`): `RIDE_LEAP_T` in the air at the gallop,
+owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whose `OBJECTS` entry
+says `leap` (the road's felled trunk, `isSolidTile`). A leap never lands on a trunk: it holds up to
+`RIDE_LEAP_HOLD` longer to come down clear. E again hops off (`rideEnd`) and the deer bolts, wild
+again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
+throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`); nobody goes prone or
+under the snow in a tunnel from deer-back. Bots never mount. The `riding` banner in
+js/wildlife.js holds all of it.
+
 ### What a beast is doing: the clips
 
 A beast's animation is a named **clip** — a graze, a gallop, a

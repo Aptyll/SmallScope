@@ -323,6 +323,8 @@ function keyPress(e) {
     // rider passes the counter and every trunk at 220 px/s (zipToggle,
     // world.js, through the hop intent the step reads for every player)
     if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; } // ...and walking to it, the key calls the walk off
+    // ...and on deer-back it is the hop off, the same way (hopToggle, js/wildlife.js)
+    if (player.mount) { player.input.jump = true; return; }
     // The merchant's counter is a PANEL, not a held wheel, so the key that
     // opened it shuts it - whatever else has come into reach meanwhile.
     if (state.shop) { closeShop(); return; }
@@ -341,6 +343,9 @@ function keyPress(e) {
     // on (the cap over the cable says so - drawZipHint, js/ui/wheel.js), and
     // the trunk beside it is still chopped from one step further out
     if (zipNear(player)) { player.input.jump = true; return; }
+    // ...then a wild deer in reach: up onto its back (rideNear, js/wildlife.js -
+    // the cap over it says so, drawRideHint, js/ui/wheel.js)
+    if (rideNear(player)) { player.input.jump = true; return; }
     // ...or the pointer on your own cable out of reach: the same intent, and
     // the step walks the body there and clips on (zipWalkStart, world.js)
     if (hoverZip()) { player.input.jump = true; return; }

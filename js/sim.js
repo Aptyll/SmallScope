@@ -464,6 +464,7 @@ function shotContacts(a, x0, y0, dx, dy) {
     if (s >= 0 && s < stop) { shotHits.push({ s, k: 'robot', t }); if (!a.pierce) stop = s; }
   }
   for (const t of animals) {
+    if (t.team !== undefined && a.team === t.team && !a.ff) continue; // a deer ridden by the shot's side (js/wildlife.js)
     const r = animalHitR(t) + pad, cy = animalHitY(t);
     if (t.x + r < lx || t.x - r > hx || cy + r < ly || cy - r > hy) continue;
     if (!unitAlive(t) || (a.pierce && a.pierceHit.includes(t))) continue;
@@ -491,8 +492,8 @@ function updatePlay(dt) {
   for (const p of players) {
     // the leap is the one act a rider can take: read here, before the air
     // skips the body, so a remote hand's press lands like a local one
-    // ...and on the ground the same intent is the zipline's (zipToggle, world.js)
-    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p)) zipToggle(p); }
+    // ...and on the ground the same intent is the zipline's and the deer's (hopToggle, wildlife.js)
+    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p)) hopToggle(p); }
     if (!p.active || inAir(p)) continue;
     if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/bots/api.js)
     updatePlayer(p, dt);
@@ -826,6 +827,10 @@ function updatePlayer(p, dt) {
   // ...and the pick's: the rock in reach mining itself (js/mining.js)
   updateMine(p, dt);
 
+  // a stun, a fall, going prone or the cable takes a rider out of the saddle (js/wildlife.js)
+  rideCheck(p);
+  if (p.leapCd > 0) p.leapCd = Math.max(0, p.leapCd - dt);
+
   // input - or the walk to the zipline holding the stick for the player
   // (zipWalkStep, world.js: any input of their own ends it), which leaves
   // lastMx/lastMy alone so the clip-on still reads the walk before the press
@@ -848,7 +853,7 @@ function updatePlayer(p, dt) {
   let sp = Math.hypot(p.vx, p.vy);
 
   // shift-slide: only engages above walking speed; keeps momentum, drops the tools
-  const wantSlide = inp.slide && p.dodgeT <= 0 && !p.prone; // nothing glides on its belly
+  const wantSlide = inp.slide && p.dodgeT <= 0 && !p.prone && !p.mount; // nothing glides on its belly, or on deer-back
   const kit = kitOf(p);
   if (!p.sliding && wantSlide && sp > kit.slideMin && p.wade <= DEEP_SLIDE_BAR) { // nobody launches a slide out of a drift
     p.sliding = true;
@@ -939,6 +944,10 @@ function updatePlayer(p, dt) {
       burst(p.x, p.y + 5, '#dfe8f4', 1, 20, 0.3, true);
     }
     if (!inp.grapple || gd <= GRAP_ARRIVE || mv.blockedX || mv.blockedY || p.grapT <= 0) grapEnd(p);
+  } else if (p.leapT > 0) {
+    // THE LEAP on deer-back: it owns the velocity the way a roll does, and
+    // clears a felled trunk (rideLeapStep, js/wildlife.js)
+    rideLeapStep(p, dt);
   } else if (p.zip >= 0) {
     // ZIPLINE: the cable owns the position outright - no moveEntity, so
     // nothing under it stops a rider - and sets the velocity the exit keeps
@@ -953,9 +962,12 @@ function updatePlayer(p, dt) {
     const abMul = abilityMoveMul(p) * (p.eatT > 0 ? FOOD_SLOW : 1);
     // a belly crawl is a flat crawl on any surface - no ice cap, no draw
     // penalty, nothing to stack. Getting back up costs a moment of it too.
-    const walkMax = (p.prone ? PRONE_SPEED
-      : p.riseT > 0 ? PLAYER_SPEED * kit.walkMul * 0.45
-        : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul * wadeMul(p); // STRIDER lengthens the stride; deep snow drags (js/depth.js)
+    // a rider goes at the deer's gallop (RIDE, js/wildlife.js): not the
+    // hero's stride, and a drawn bow does not slow the deer under it
+    const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
+      : p.prone ? PRONE_SPEED
+        : p.riseT > 0 ? PLAYER_SPEED * kit.walkMul * 0.45
+          : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul * wadeMul(p); // STRIDER lengthens the stride; deep snow drags (js/depth.js)
 
     if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
       // plain snow walking: near-instant vector approach, tuned so it feels

@@ -644,6 +644,9 @@ class Player {
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (world.js): the line ridden (its team, or none), px along it, and which way
     this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
     this.zipWalk = false;                            // walking itself to the cable to clip on (zipWalkStep, world.js)
+    // the deer ridden (the `riding` banner, js/wildlife.js), or null; the leap
+    // in the air (s left), how long it has been up, and the wait before the next
+    this.mount = null; this.leapT = 0; this.leapUp = 0; this.leapCd = 0;
     // The one weapon slot the button fires. It holds a tool CELL - the same
     // object a bag cell is, bits and all - so moving one between the bag and
     // the slot is a reference move and a tool never loses what is loaded
@@ -912,6 +915,7 @@ function die(p, src, cause) {
   p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
   p.zip = -1;      // the handle is let go of (the respawn's reset clears the rest)
   p.zipWalk = false;
+  rideEnd(p, true); // ...and off the deer, which bolts (js/wildlife.js)
   p.charging = false;
   p.chargeT = 0;
   p.fireArmed = false;

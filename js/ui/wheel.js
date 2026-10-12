@@ -217,12 +217,15 @@ function drawSelection(ox, oy, now) {
 function drawWorkHint(ox, oy) {
   if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop) return;
   if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
+  if (player.mount) return; // on deer-back E is the hop off, and the deer under you says so
   if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
   // a MERCHANT in reach owns the key outright (keyPress, js/input.js), so its
   // cap is the one that shows - trunk under the aim or not
   if (drawShopHint(ox, oy)) return;
   // ...then a zipline overhead, the key's next claim (keyPress again)
   if (drawZipHint(ox, oy)) return;
+  // ...then a deer in reach (keyPress again)
+  if (drawRideHint(ox, oy)) return;
   // ...then a tunnel's hole underfoot (tunnelEnter takes the fresh press ahead of the swing)
   if (drawTunnelHint(ox, oy)) return;
   let t = workTarget(player);
@@ -389,6 +392,18 @@ function drawZipHint(ox, oy) {
   drawKeyPrompt(Math.round(player.x - ox - w / 2), Math.max(1, Math.min(WV_H - 11, y)), '', keyHeld('work'));
   return true;
 }
+
+// The deer's prompt, the zipline's grammar: a bare cap over the back of the
+// wild deer in reach (rideNear, js/wildlife.js - the resolver keyPress hops
+// on with). The deer is the affordance; the cap only says which key takes it.
+function drawRideHint(ox, oy) {
+  const a = rideNear(player);
+  if (!a) return false;
+  const w = promptW('', 'work');
+  drawKeyPrompt(Math.round(a.x - ox - w / 2), Math.round(a.y - oy - RIDE_HINT_Y), '', keyHeld('work'));
+  return true;
+}
+const RIDE_HINT_Y = 40; // px above a deer's feet: clear of its plate and its noticed mark
 
 // The practice armory's prompt: PROXIMITY, not hover - standing beside the
 // rack is the whole gesture (rackNear, js/world.js), so the E ARM cap rises

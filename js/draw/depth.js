@@ -90,10 +90,10 @@ function wadeLook(e, now) {
 }
 // how wide a body's collar is - 0 for one that is not standing in the snow:
 // a player lying under it (the cover is its own look), in the water, on the
-// cable or in the air, a kind that runs on the crust (ON_CRUST, js/depth.js:
+// cable, on a deer's back or in the air, a kind that runs on the crust (ON_CRUST, js/depth.js:
 // a rabbit, a bird), and the merchant, who never leaves the road
 function wadeWidth(e) {
-  if (e instanceof Player) return e.prone || e.fallT > 0 || e.zip >= 0 || inAir(e) || e.dead ? 0 : 10;
+  if (e instanceof Player) return e.prone || e.fallT > 0 || e.zip >= 0 || e.mount || inAir(e) || e.dead ? 0 : 10; // a rider sits up on its deer
   if (ON_CRUST[e.kind] || e.merchant) return 0;
   return e.kind === 'deer' ? 12 : MONSTER[e.kind] && MONSTER[e.kind].big ? 20 : 10;
 }
