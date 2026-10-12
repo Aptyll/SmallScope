@@ -844,10 +844,12 @@ the checklist in [checklists.md](checklists.md#common-changes).
 The TRAINING FIELD behind the title's PRACTICE TOOL plank (three knocks break its ice —
 [rendering.md](rendering.md#main-menu-title)): `?practice=1` boots `genPracticeWorld()` (the
 `practice arena` banner, js/world.js) **instead of** `genWorld()`, and js/boot.js skips
-camps, chests, wildlife spawns and the eagle drop entirely. **The practice world itself is
-small — `WORLD` is 76 under `PRACTICE`, against the match's 232** (the conditional above the
-`WORLD` const, js/core.js; everything downstream sizes itself off `WORLD`, so the match world is
-untouched). The **clock never runs**: js/boot.js pins `state.time` to early morning and sim.js
+camps, chests, wildlife spawns and the eagle drop entirely. **The practice world is
+`WORLD` 112 under `PRACTICE`, against the match's 232** (the conditional above the `WORLD`
+const, js/core.js; everything downstream sizes itself off `WORLD`, so the match world is
+untouched). The field and the ice loop's collar round it are one `PR_RING` (76) tile square
+block centred across the top (`PR_OX`/`PR_OY` offset every fixed parkour coordinate, which is
+written in the block's own tiles); the **deer ride's forest wing** fills the rows under it. The **clock never runs**: js/boot.js pins `state.time` to early morning and sim.js
 never advances it under `PRACTICE` — crisp daylight forever, no dusk, no dawn refreeze. The
 **cloud shadows are skipped there too** for the same reason the clock is pinned: a shadow drifting
 over the dummy's meter or the parkour's ice would change what those instruments measure between
@@ -900,7 +902,23 @@ Everything is coordinate tests against the carved ice — no objects, no trigger
 match's shoal is **off entirely under `PRACTICE`** (js/wildlife.js), because the only ice in the
 world is the race line and a fish emerging into it would be absurd; `crackIce` still works on
 the track (a hole in the racing line is the player's own doing, and re-entering rebuilds —
-and a reroll unregisters the old track's cracks and holes before the forest regrows).
+and a reroll unregisters the old track's cracks and holes before the forest regrows). Ice a
+roll lays down after the bake is labelled as it lands (`relabelIce`, called by `repaintGround`,
+js/draw/ground.js): the style of the lake it joins and the edge's depth, so the shore painter
+can read it.
+
+**The deer ride** is a hand-laid snow trail (`RD_PATH`, the centreline in world tiles, smoothed
+by `rdCurve` into a Catmull-Rom curve and cleared `RD_RAD` either side by `rdCarve`): out of the
+field's south edge, across the ice loop and the tree belt into the forest wing, a sweep west, the
+wing's length east in tight S-bends past three targets, a climb over a felled log (`RD_LOG`,
+pieces along the cross-diagonal as across a match road, so the roll key's leap clears it) and
+north across the ice again into the field. It is carved before the loop, so a crossing ends up
+ice, and a roll never grows forest back onto it (`rdTiles`, `pkAnimStep`). The three targets
+are stock faces on posts off the track (`RD_TARGETS`; an `at` point holds a face there instead
+of the rail, `addPTarget`), each in a clearing that runs down to the trail. A **tame deer**
+(`a.tame`: it never bolts from a player and never wanders, js/wildlife.js) waits at the
+trailhead (`PR_DEER`); `prDeerStep` (from `updatePractice`) puts it back on its stand
+`PR_DEER_BACK` seconds after it is let go, shot or killed.
 
 **The roll station is one die and one held wheel**: the die on its plinth stands in a small
 felled nook off the walk's south side, adjacent to the walk so its `E ROLL` cap rises as you

@@ -52,13 +52,14 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | `still.js` | one clean frame anywhere (`--find open` picks open snow under pines, `--player dx,dy` adds one for scale) |
 | `cut.py` | the editor: `cut.json` shots between beats, sharp camera moves, text, a freeze with a drain, the wishlist card; writes the mp4 and `map.json` |
 | `view.py` | any camera off a recorded frame, pixel-exact (nearest blow-up, then area-average down) |
-| `look.py` | the game's 3x5 font as rimmed video text, `stamp`, the game logo, the pixel Steam mark (`steam-mark.png`), `drain`, `freeze` |
+| `look.py` | the game's 3x5 font as rimmed video text, `stamp`, the game logo, the pixel Steam and Discord marks (`steam-mark.png`, `discord-mark.png`), `drain`, `freeze` |
 | `mix.py` + `audio.js` | the take's cues on the frames they land on, rendered offline through js/audio.js, under an optional song, muxed |
 | `board.py` | a 3x3 (or `--cols`) storyboard with pixel-font captions, from stills or from `--keep` frames |
 | `gif.py` | GIFs from frames, a 1x strip, or a piece of an mp4 |
 | `paint.py` | the 2D painted cutout painter: parts at 8x, banded to locked ramps, inner lines, outline, stickers, `lint` |
 | `sheet.py` | a concept pick sheet: letters and names, 8x/1x/2x, pasted into a real frame beside a player at each size asked |
 | `scenes/bear-wakes.js` | the example scene and template; `bear-wakes.cut.json` its cut |
+| `scenes/deer-ride.js` | the practice field's deer ride at a gallop: the three posts say JOIN, THE, DISCORD, then the log leap; `deer-ride.cut.json` its cut |
 | `scenes/deer-gap.js` | a hunter on a deer breaks three word targets (WISHLIST, ON, STEAM), the last through a cut in the pines mid-leap, slowing to a freeze |
 
 ```
@@ -77,6 +78,7 @@ A scene file sets `window.SCENE = { o, setup(M), tick(M), done(M) }` (read `scen
 `o.dpr` is the frame; `o.k` (device px per world px) is the take's S, and an edit can zoom from
 the frame's width up to any k. A bigger S costs disk and time per frame, not quality you can't get
 in post below S: record at the closest zoom the cut needs. Actors act through `p.input` only.
+`o.practice` stages on the practice field instead of a match (no seed, no drop).
 
 ## A cut
 
@@ -85,8 +87,10 @@ number. A focus is a tracked name, `"bear@roar"` (pinned where it stood at the r
 or `[x, y]`; `ox`/`oy` nudge it. `k` is output px per world px, `[from, to]` for a push (zoom moves
 in log space). `ease` is `smooth`, `linear` or `out`. `paint` stamps a 1x sprite into the take frame
 over a tracked body (so it scales with the world, never drifts onto a health bar); `texts` put a
-line over a shot; `end` adds the freeze and the wishlist card (`card.cta` swaps the Steam mark and
-WISHLIST ON STEAM for lines of its own, say JOIN THE DISCORD). `step` plays a shot every nth take
+line over a shot; `end` adds the freeze and the end card: WISHLIST ON STEAM under the Steam mark by
+default. `card.cta` gives lines of its own (say JOIN THE DISCORD), standing larger where the mark
+was unless `card.mark` names one (`steam`, `discord`); `line` is the small line under them, at
+`line_y`. `step` plays a shot every nth take
 frame, negative to run it backwards (a rewind), and `mute: true` keeps its frames silent. Slow
 motion and a held freeze are recorded, not cut: the scene lowers `M.speed`, so the snow keeps
 falling through them.

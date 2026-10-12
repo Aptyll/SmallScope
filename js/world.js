@@ -2151,7 +2151,13 @@ function updateCamps(dt) {
 // exception: a record parkour lap goes through PROFILE.setBestLap, so the
 // gate plate's BEST stands across visits.
 const PR_W = 40, PR_H = 23;                      // the open field, in tiles
-const PR_X0 = (WORLD - PR_W) >> 1, PR_Y0 = (WORLD - PR_H) >> 1;
+// the field and the ice loop's collar round it are one PR_RING-tile square
+// block, centred across the top of the world; the deer ride's forest wing
+// fills the rows under it (the `deer ride` part below). Every fixed parkour
+// coordinate is written in the block's own tiles and offset by PR_OX/PR_OY
+const PR_RING = 76;
+const PR_OX = (WORLD - PR_RING) >> 1, PR_OY = 0;
+const PR_X0 = PR_OX + ((PR_RING - PR_W) >> 1), PR_Y0 = PR_OY + ((PR_RING - PR_H) >> 1);
 const PR_SPAWN = { tx: PR_X0 + 20, ty: PR_Y0 + 17 }; // south of the rack, facing it and the dummy behind
 const DUMMY_HP = 60;
 const DUMMY_WORK_DMG = 10;   // what one E swing chips off it (the eagle's own number)
@@ -2237,7 +2243,9 @@ function addPTarget(kind, s, opts) {
   }, opts || {});
   if (t.kind === 'pop') { t.up = 0; if (!t.pop) t.pop = PT_POP; }
   t.laneU = t.lane;
-  if (t.kind !== 'raid') { const p0 = agPos(t.s, t.laneU); t.x = p0.x; t.y = p0.y; } // a raider stands where it was put
+  // a raider stands where it was put; a post off the track (`at`, the deer
+  // ride's) stands there for good; everything else rides the rail
+  if (t.kind !== 'raid') { const p0 = t.at || agPos(t.s, t.laneU); t.x = p0.x; t.y = p0.y; }
   ptargets.push(t);
   return t;
 }
@@ -2577,7 +2585,7 @@ function agDist(a, b) {
 // point and a lane hop's landing zone both check
 function agBlocked(lane, s, r, skip) {
   for (const t of ptargets) {
-    if (t === skip || t.gone || t.lane !== lane) continue;
+    if (t === skip || t.gone || t.at || t.lane !== lane) continue; // a post off the track is on no rail
     if (agDist(t.s, s) < r) return true;
   }
   return false;
@@ -2678,6 +2686,8 @@ function agStock(quiet) {
   addPTarget('pop', w * 0.15, { stock: true, t: 0 });
   addPTarget('pop', w + h * 0.8, { stock: true, t: 1.4, size: 0 });
   addPTarget('pop', w + h + w * 0.7, { stock: true, t: 2.7 });
+  // ...and the three posts along the deer ride, off the track (`at`)
+  for (const [tx, ty] of RD_TARGETS) addPTarget('still', 0, { stock: true, at: { x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE } });
   if (!quiet) for (const t of ptargets) burst(t.x, t.y - 8, '#f4f7ff', 5, 38, 0.4, true);
 }
 
@@ -2742,9 +2752,9 @@ function agUpdate(dt) {
 // The loop rides an ellipse around the field's centre (PK_CX/PK_CY), with a
 // deep tree belt between track and field: PK_APRON tiles of forest that no
 // waypoint, chord or carve may enter, so the run reads as a lane cut through
-// woods rather than the hem of the clearing. The practice WORLD is 76 to give
-// the collar that depth on every side (js/core.js).
-const PK_CX = PR_X0 + (PR_W >> 1), PK_CY = PR_Y0 + 11; // (38, 37): the field's centre tile
+// woods rather than the hem of the clearing. The field's block is PR_RING
+// tiles square to give the collar that depth on every side.
+const PK_CX = PR_X0 + (PR_W >> 1), PK_CY = PR_Y0 + 11; // the field's centre tile, (38, 37) in the block
 const PK_RX = 30, PK_RY = 26;  // the loop's base radii, in tiles
 const PK_APRON = 6;            // tree belt between field and anything the track does
 const PK_PATH = [
@@ -2753,16 +2763,16 @@ const PK_PATH = [
   [68, 22], [66, 30], [69, 37], [66, 45], [68, 54],              // east leg, down
   [62, 59], [52, 64], [43, 59], [33, 64], [24, 59],              // the bottom slalom
   [15, 63], [9, 57], [7, 49], [8, 42], [8, 37],                  // and home
-];
+].map(([x, y]) => [PR_OX + x, PR_OY + y]);
 // The start/finish line is a FIXED five-tile checker band: pkPlanCarve
 // force-ices exactly this strip on every carve, whatever width the roll cut
 // the lane, so the line never stretches, never gaps, and the coordinate test
 // that times laps is the same box that is painted. A flag stands at each end.
-const PK_LINE = { x0: 6, x1: 10, y: 37 };
+const PK_LINE = { x0: PR_OX + 6, x1: PR_OX + 10, y: PR_OY + 37 };
 const PK_OFF_T = 2.5;  // s off the ice before a live run is abandoned
-const PK_GATE = { x: 5.5 * TILE, y: 34.5 * TILE }; // where the BEST/LAST plate hangs, over the west line flag
+const PK_GATE = { x: (PR_OX + 5.5) * TILE, y: (PR_OY + 34.5) * TILE }; // where the BEST/LAST plate hangs, over the west line flag
 // the walk out of the field: cleared snow the reroll must never ice or tree
-const PK_WALK = { x0: 10, x1: 18, y0: 36, y1: 37 };
+const PK_WALK = { x0: PR_OX + 10, x1: PR_OX + 18, y0: PR_OY + 36, y1: PR_OY + 37 };
 // one runner, one clock: the live lap (on/t/cp), the abandon timer, and the
 // last and best laps. `best` is the profile's all-time record - seeded from
 // PROFILE.bestLap() by genPracticeWorld and written back through
@@ -2774,7 +2784,7 @@ const PK_WALK = { x0: 10, x1: 18, y0: 36, y1: 37 };
 // `diff` is the current track's difficulty - the die wears it as its body
 // colour - and cpTx/cpTy is THIS track's checkpoint.
 const parkour = { on: false, t: 0, cp: false, wasLine: false, offT: 0, last: 0, best: 0,
-  diff: 'easy', custom: false, cpTx: 69, cpTy: 37 };
+  diff: 'easy', custom: false, cpTx: PR_OX + 69, cpTy: PR_OY + 37 };
 
 // ---- the roll station: one die, one held wheel ---------------------------
 // A die on a pedestal in a felled nook off the walk rerolls the loop: HOLD E
@@ -2796,7 +2806,7 @@ const PK_DIFF = {
 };
 // The die stands in a small felled nook off the walk's south side, adjacent
 // to the walk so its prompt rises as you pass on the way to the track.
-const PK_DIE = { tx: 15, ty: 38 };
+const PK_DIE = { tx: PR_OX + 15, ty: PR_OY + 38 };
 let pkTiles = new Set();   // every tile index the current track's carve iced
 let pkDieObj = null;       // the die object, for the roll animation
 // A roll is WATCHED, not blinked: one carving front sweeps once around the
@@ -2985,7 +2995,8 @@ function genPracticeWorld() {
   for (let ty = PK_WALK.y0; ty <= PK_WALK.y1; ty++) for (let tx = PK_WALK.x0; tx <= PK_WALK.x1; tx++) { fell(tx, ty); ground[idx(tx, ty)] = 0; }
   // the die's nook: a small felled pocket off the walk's south side, deep
   // enough that no pine canopy from the row behind hangs over the die
-  for (let ty = 38; ty <= 40; ty++) for (let tx = 14; tx <= 16; tx++) fell(tx, ty);
+  for (let ty = PK_DIE.ty; ty <= PK_DIE.ty + 2; ty++) for (let tx = PK_DIE.tx - 1; tx <= PK_DIE.tx + 1; tx++) fell(tx, ty);
+  rdCarve(); // the deer ride's trail, under the loop: where they cross, the ice wins
   pkCarve(PK_PATH, 1.15);
   // the gate: a flag capping each END of the checker line, west and east
   fell(PK_LINE.x0 - 1, PK_LINE.y); placeObj(PK_LINE.x0 - 1, PK_LINE.y, 'banner');
@@ -3063,8 +3074,9 @@ function pkGenPath(spec) {
   // little (x 6-9, y a few tiles either way), so even two rolls of the same
   // difficulty visibly redraw the ice in front of the gate where the roller
   // is standing to watch
-  const path = [[8, 37], [6 + ((rng() * 4) | 0), 28 + ((rng() * 4) | 0)]];
-  let cp = [69, 37];
+  const ox = PR_OX, oy = PR_OY, home = [ox + 8, oy + 37];
+  const path = [home, [ox + 6 + ((rng() * 4) | 0), oy + 28 + ((rng() * 4) | 0)]];
+  let cp = [ox + 69, oy + 37];
   const n = spec.pts;
   for (let i = 2; i <= n - 2; i++) {
     const th = Math.PI - 2 * Math.PI * i / n;
@@ -3088,7 +3100,7 @@ function pkGenPath(spec) {
     }
     path.push([x, y]);
   }
-  path.push([6 + ((rng() * 4) | 0), 43 + ((rng() * 4) | 0)], [8, 37]);
+  path.push([ox + 6 + ((rng() * 4) | 0), oy + 43 + ((rng() * 4) | 0)], home.slice());
   // a straight leg between two collar points can still CHORD across the tree
   // belt's corner - walk every segment and, where one would cross the belt,
   // route it through the belt corner nearest its midpoint instead
@@ -3232,7 +3244,7 @@ function pkAnimStep(dt) {
       const inField = tx >= PR_X0 && tx < PR_X0 + PR_W && ty >= PR_Y0 && ty < PR_Y0 + PR_H;
       const inWalk = tx >= PK_WALK.x0 && tx <= PK_WALK.x1 && ty >= PK_WALK.y0 && ty <= PK_WALK.y1;
       const onMe = Math.abs(player.x / TILE - (tx + 0.5)) < 1.5 && Math.abs(player.y / TILE - (ty + 0.5)) < 1.5;
-      if (!inField && !inWalk && !onMe && !objects[e.i]) {
+      if (!inField && !inWalk && !onMe && !rdTiles.has(e.i) && !objects[e.i]) { // the deer ride's trail stays open
         const t = placeObj(tx, ty, 'tree', { hp: TREE_HP, variant: hash2(tx * 3 + 1, ty * 3 + 2) > 0.5 ? 1 : 0, rare: treeRare(tx, ty) });
         t.flash = 0.2;
         if (rng() < 0.5) burst(px, py - 10, '#f4f7ff', 3, 40, 0.45, true);
@@ -3288,12 +3300,95 @@ function pkWheelPick(p, c) {
   pkRoll(c.id);
 }
 
+// ---- the deer ride: a trail through the forest wing ----------------------
+// A cleared snow trail leaves the field's south edge, crosses the ice loop
+// and the tree belt into the forest wing under the field's block (PR_RING),
+// sweeps west, runs the wing's length east in tight S-bends past three
+// standing targets, climbs over a felled log (the roll key's leap,
+// js/wildlife.js) and turns north to cross the ice again back into the field. A tame deer waits at its
+// head (PR_DEER): E rides it. The trail is laid out by hand, never rolled:
+// RD_PATH is its centreline in world tiles, smoothed through every point
+// (rdCurve). Where it crosses the ice loop the ice wins, and a re-rolled
+// track never grows the forest back over it (rdTiles, pkAnimStep).
+const RD_PATH = [[48, 48], [47, 56], [45, 63], [42, 71], [36, 78], [26, 81], [16, 80], [9, 86], [11, 95],
+  [20, 101], [30, 96], [40, 103], [50, 97], [60, 103], [70, 97], [80, 103], [90, 99], [99, 92],
+  [102, 83], [97, 77], [86, 74], [76, 70], [71, 63], [68, 55], [66, 48]];
+const RD_RAD = 1.4;                  // tiles from the centreline the trail is cleared
+const RD_LOG = { tx: 95, ty: 95 };   // the felled log's middle piece, across the north-east climb
+const RD_TARGETS = [[30, 93], [50, 94], [70, 94]]; // the three faces, each in its own clearing over a bend
+const PR_DEER = { tx: 48, ty: 46 };  // where the tame deer waits, at the trail's head in the field
+const PR_DEER_BACK = 3;              // s riderless away from its stand (or gone) before it is back
+let rdTiles = new Set();             // every tile the trail cleared
+let prDeer = null, prDeerAway = 0;
+
+// the centreline as dense samples, a Catmull-Rom curve through RD_PATH
+function rdCurve() {
+  const P = RD_PATH, out = [];
+  for (let i = 0; i < P.length - 1; i++) {
+    const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+    const n = Math.ceil(Math.hypot(p2[0] - p1[0], p2[1] - p1[1])) * 4;
+    for (let j = 0; j < n; j++) {
+      const t = j / n, t2 = t * t, t3 = t2 * t;
+      const f = (a, b, c, d) => 0.5 * (2 * b + (c - a) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (3 * b - a - 3 * c + d) * t3);
+      out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]);
+    }
+  }
+  out.push(P[P.length - 1]);
+  return out;
+}
+
+// the boot carve, before the ice loop's (so a crossing ends up ice): fell the
+// trail, lay the log across it, and open a clearing round each target's post
+function rdCarve() {
+  const fell = (tx, ty) => { if (!inWorld(tx, ty)) return; objects[idx(tx, ty)] = null; ground[idx(tx, ty)] = 0; rdTiles.add(idx(tx, ty)); };
+  const reach = Math.ceil(RD_RAD);
+  for (const [fx, fy] of rdCurve()) {
+    for (let dy = -reach; dy <= reach; dy++) for (let dx = -reach; dx <= reach; dx++) {
+      const tx = Math.round(fx) + dx, ty = Math.round(fy) + dy;
+      if (Math.hypot(tx + 0.5 - fx, ty + 0.5 - fy) <= RD_RAD) fell(tx, ty);
+    }
+  }
+  // the face stands two tiles tall over its post: the clearing is open above
+  // it and runs down to the trail, so a shot from the saddle meets no pine
+  for (const [tx, ty] of RD_TARGETS) for (let dy = -3; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) fell(tx + dx, ty + dy);
+  // one `log` per tile along the cross-diagonal, as across a match road
+  // (placeRoad): the ends run into the trees, so nothing squeezes round it
+  for (let k = -2; k <= 2; k++) {
+    const tx = RD_LOG.tx + k, ty = RD_LOG.ty + k;
+    objects[idx(tx, ty)] = null;
+    placeObj(tx, ty, 'log', { seg: k === -2 ? 0 : k === 2 ? 2 : 1 });
+  }
+}
+
+// the tame deer, from updatePractice: it stands at its post and never bolts
+// from a player (`tame`, updatePrey). Ridden off and let go, shot, or dead,
+// it is back on its stand PR_DEER_BACK seconds later
+function prDeerStep(dt) {
+  const sx = (PR_DEER.tx + 0.5) * TILE, sy = (PR_DEER.ty + 0.5) * TILE;
+  const here = prDeer && animals.includes(prDeer) && !prDeer.dead;
+  const away = !here || (!prDeer.rider && Math.hypot(prDeer.x - sx, prDeer.y - sy) > 24);
+  prDeerAway = away ? prDeerAway + dt : 0;
+  if (prDeerAway < PR_DEER_BACK && prDeer) return;
+  prDeerAway = 0;
+  if (here) {
+    burst(prDeer.x, prDeer.y - 6, '#f4f7ff', 6, 40, 0.4, true);
+    Object.assign(prDeer, { x: sx, y: sy, fleeT: 0, fleeGoal: null, goal: null, spd: 0, hp: prDeer.maxHp });
+    navClear(prDeer);
+  } else {
+    prDeer = makeAnimal('deer', sx, sy);
+    prDeer.tame = true;
+    animals.push(prDeer);
+  }
+  burst(sx, sy - 6, '#f4f7ff', 8, 40, 0.45, true);
+}
+
 // The grounds' clock, from updatePlay under PRACTICE only: the dummy mends
 // between combos, broken targets spring back, pop-ups run their cycle,
 // sliders patrol their rails, and the parkour lap is timed. The shimmer, the
 // wobble and the bar refilling are the whole announcement - no words.
 function updatePractice(dt) {
   pkAnimStep(dt); // the roll's carving front, while one is out
+  prDeerStep(dt); // the deer ride's tame deer, back on its stand
   agUpdate(dt);   // the archery round's clock, sink, countdown and spawner
   cheatAuto(player); // the practice bar's standing toggles
   if (pkDieObj && pkDieObj.rollT > 0) pkDieObj.rollT = Math.max(0, pkDieObj.rollT - dt); // the die's tumble
@@ -3355,7 +3450,7 @@ function updatePractice(dt) {
         const ahead = 10 + t.spd * 0.4;
         let block = false;
         for (const o of ptargets) {
-          if (o === t || o.gone || o.lane !== t.lane) continue;
+          if (o === t || o.gone || o.at || o.lane !== t.lane) continue;
           const dd = ((((o.s - t.s) * t.dir) % AG_LEN) + AG_LEN) % AG_LEN;
           if (dd <= 0 || dd >= ahead) continue;
           if (o.spd > 0 && o.dir === t.dir && o.spd >= t.spd) continue; // pulling away
@@ -3372,7 +3467,7 @@ function updatePractice(dt) {
       t.hopping = false;
       burst(t.x, t.y + 1, '#f4f7ff', 3, 25, 0.3, true);
     }
-    const tp = agPos(t.s, t.laneU);
+    const tp = t.at || agPos(t.s, t.laneU);
     t.x = tp.x; t.y = tp.y;
   }
   // a round target that has been shot is spent for good

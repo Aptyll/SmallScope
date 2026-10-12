@@ -498,6 +498,7 @@ function groundIdleArm() {
 function repaintGround(tx, ty) {
   const g = groundCv.getContext('2d');
   g.imageSmoothingEnabled = false;
+  relabelIce(tx, ty); // a tile that has just joined or left the ice (bakeLakes labelled the rest)
   for (const [dx, dy] of [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
     if (inWorld(tx + dx, ty + dy)) paintGroundTile(g, tx + dx, ty + dy);
   }
@@ -553,9 +554,26 @@ function rollIceStyle(tx, ty) {
   for (let s = 0; s < ICE_STYLES.length; s++) if ((r -= ICE_STYLES[s].w) < 0) return s;
   return 0;
 }
+// a tile that turned to ice after the bake takes the style of the lake it
+// joins (else its own roll) and sits on that lake's edge; one that left the
+// ice drops both. Its night mirror slot stays unset: practice, the one place
+// that lays ice at runtime, never leaves its morning (world.md)
+function relabelIce(tx, ty) {
+  if (!lakeStyle) return;
+  const i = idx(tx, ty);
+  if (!isLake(tx, ty)) { lakeStyle[i] = 255; lakeDepth[i] = 0; return; }
+  if (lakeStyle[i] !== 255) return;
+  let s = 255;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    if (isLake(tx + dx, ty + dy) && lakeStyle[idx(tx + dx, ty + dy)] !== 255) { s = lakeStyle[idx(tx + dx, ty + dy)]; break; }
+  }
+  lakeStyle[i] = s === 255 ? rollIceStyle(tx, ty) : s;
+  lakeDepth[i] = 1;
+}
 // label every lake (flood fill, rolled off its first tile in scan order) and
-// sweep its depth in from the edge. Runs once, before the bake: ground only
-// ever flips ice <-> hole at runtime, and both are lake.
+// sweep its depth in from the edge. Runs once, before the bake. At runtime a
+// match only flips ice <-> hole (both lake), but the practice parkour's roll
+// lays new ice and lets old ice go back to snow: relabelIce keeps those up.
 function bakeLakes() {
   const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
   lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);

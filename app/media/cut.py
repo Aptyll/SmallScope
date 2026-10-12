@@ -129,17 +129,18 @@ if last and 'freeze' in E:
 if last and 'card' in E:
     cd = E['card']; i, cx, cy, k = last
     bg = card_bg(view(painted(i), R[i]['cam'], S, cx, cy, k, SIZE))
-    LOGO, STEAM = game_logo(4), steam_mark(11); Y = SIZE[1] / 1920   # laid out on a 1920-tall frame
-    # the call: the Steam mark over WISHLIST ON STEAM, or a `cta` of its own lines
-    # (say JOIN THE DISCORD) standing larger where the mark would be
-    CTA = cd.get('cta')
-    WL = text(CTA or [[('WISHLIST', 'gold')], [('ON STEAM', 'gold')]], s=cd.get('s', 26 if CTA else 18), gap=2)
+    CTA, MARK = cd.get('cta'), cd.get('mark', None if cd.get('cta') else 'steam')
+    LOGO, STEAM = game_logo(4), steam_mark(11, MARK or 'steam'); Y = SIZE[1] / 1920   # laid out on a 1920-tall frame
+    # the call: a store mark (`mark`: steam, discord) over its lines - WISHLIST ON
+    # STEAM unless a `cta` gives its own - or, a `cta` with no mark, those lines
+    # standing larger where the mark would be (say JOIN THE DISCORD)
+    WL = text(CTA or [[('WISHLIST', 'gold')], [('ON STEAM', 'gold')]], s=cd.get('s', 18 if MARK else 26), gap=2)
     LC = text(cd.get('line', 'LINK IN COMMENTS'), s=12)
     for j in range(cd.get('frames', 270)):
         im = stamp(bg, LOGO, SIZE[0] / 2, 300 * Y, min(1, (j + 1) / 4))
-        if j >= 6 and not CTA: im = stamp(im, STEAM, SIZE[0] / 2, 700 * Y, min(1, (j - 5) / 3), 1 + 0.25 * max(0, 1 - (j - 6) / 6))
-        if j >= 12: im = stamp(im, WL, SIZE[0] / 2, (860 if CTA else 1120) * Y, min(1, (j - 11) / 3))
-        if j >= 24 and cd.get('line', 1): im = stamp(im, LC, SIZE[0] / 2, (1180 if CTA else 1330) * Y, min(1, (j - 23) / 3))
+        if j >= 6 and MARK: im = stamp(im, STEAM, SIZE[0] / 2, 700 * Y, min(1, (j - 5) / 3), 1 + 0.25 * max(0, 1 - (j - 6) / 6))
+        if j >= 12: im = stamp(im, WL, SIZE[0] / 2, (1120 if MARK else 860) * Y, min(1, (j - 11) / 3))
+        if j >= 24 and cd.get('line', 1): im = stamp(im, LC, SIZE[0] / 2, cd.get('line_y', 1330 if MARK else 1180) * Y, min(1, (j - 23) / 3))
         emit(im)
 wr.close()
 json.dump({'map': MAP, 'gameplay': NG, 'fps': FPS}, open(os.path.join(OUTDIR, 'map.json'), 'w'))

@@ -1,0 +1,142 @@
+{
+ "size": [
+  1080,
+  1920
+ ],
+ "shots": [
+  {
+   "name": "hook",
+   "from": "hit1-27",
+   "to": "hit1+48",
+   "k": [
+    9,
+    8
+   ],
+   "focus": "mix:rider,t1,0.4",
+   "oy": -6,
+   "ease": "linear"
+  },
+  {
+   "name": "ride1",
+   "from": "hit1+48",
+   "to": "hit2-23",
+   "k": [
+    7,
+    6
+   ],
+   "focus": "rider",
+   "oy": -30
+  },
+  {
+   "name": "hit2",
+   "from": "hit2-23",
+   "to": "hit2+52",
+   "k": [
+    7,
+    9
+   ],
+   "focus": [
+    "rider",
+    "mix:rider,t2,0.5"
+   ],
+   "oy": [
+    -30,
+    -8
+   ],
+   "ease": "out"
+  },
+  {
+   "name": "ride2",
+   "from": "hit2+52",
+   "to": "hit3-37",
+   "k": [
+    8,
+    6
+   ],
+   "focus": [
+    "mix:rider,t2,0.5",
+    "rider"
+   ],
+   "oy": [
+    -8,
+    -30
+   ]
+  },
+  {
+   "name": "hit3",
+   "from": "hit3-37",
+   "to": "hit3+38",
+   "k": [
+    7,
+    9
+   ],
+   "focus": [
+    "rider",
+    "mix:rider,t3,0.5"
+   ],
+   "oy": [
+    -30,
+    -8
+   ],
+   "ease": "out"
+  },
+  {
+   "name": "climb",
+   "from": "hit3+88",
+   "to": "leap-21",
+   "k": [
+    6.2,
+    6.6
+   ],
+   "focus": "rider",
+   "oy": -44
+  },
+  {
+   "name": "leap",
+   "from": "leap-21",
+   "to": "leap+79",
+   "k": [
+    7,
+    8.5
+   ],
+   "focus": "rider",
+   "oy": -10,
+   "ease": "out"
+  }
+ ],
+ "end": {
+  "card": {
+   "frames": 180,
+   "mark": "discord",
+   "cta": [
+    [
+     [
+      "JOIN THE",
+      "gold"
+     ]
+    ],
+    [
+     [
+      "DISCORD",
+      "gold"
+     ]
+    ]
+   ],
+   "line": [
+    [
+     [
+      "PLAYTEST THIS FRIDAY",
+      "white"
+     ]
+    ],
+    [
+     [
+      "8PM CST",
+      "white"
+     ]
+    ]
+   ],
+   "line_y": 1360
+  }
+ }
+}

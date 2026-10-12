@@ -137,6 +137,7 @@ function makeAnimal(kind, x, y) {
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
     home: null,                          // the camp it belongs to, if any
     rider: null,                         // a ridden deer: the player on its back (the `riding` banner)
+    tame: false,                         // a deer that stands for its rider and never bolts (the practice ride's, prDeerStep)
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     perch: null, flyT: 0, fa: 0, alt: 0, // bird: its tree, its flight, its height
     dead: false,
@@ -598,7 +599,8 @@ function updatePrey(a, dt) {
     const d = Math.hypot(p.x - a.x, p.y - a.y);
     if (d < sd) { sd = d; scare = p; }
   }
-  const seen = !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
+  // a tame deer (the practice ride's, prDeerStep, js/world.js) never bolts from one
+  const seen = !a.tame && !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
   if (a.fleeT <= 0 && seen) {
     // a rabbit that has only just noticed you sits up first (RABBIT_ALERT);
     // the deer, and a rabbit whose beat is spent, go
@@ -659,7 +661,7 @@ function updatePrey(a, dt) {
     // a shove (arrow or unit collision) still moves an idle animal
     if (coast > 0 || Math.abs(a.kbx) + Math.abs(a.kby) > 1) moveEntity(a, (a.mvx * coast + a.kbx) * dt, (a.mvy * coast + a.kby) * dt, r);
     if (a.idleT <= 0) {
-      a.goal = preyWander(a);
+      a.goal = a.tame ? null : preyWander(a); // ...and stays on its stand
       if (!a.goal) a.idleT = rand(1.5, 3); // nibbling where it stands, or boxed in
     }
   }
@@ -838,11 +840,12 @@ const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight clim
 // prone, the zipline, the air, or either one dying throws the rider
 // (rideCheck, stunUnit, die, animalDies).
 // What can be ridden, per kind: its gallop as a multiple of a player's walk
-// (the deer's own sprint, DEER_RUN_MUL) and where on its back the rider sits
+// (RIDE_GALLOP_MUL: a ridden deer outruns its own wild sprint) and where on its back the rider sits
 // (the draw, riderSeat): `col` is the seat's column in the right-facing frame,
 // and the rider's 16-row cell sinks until its row `hip` meets the back there,
 // so the back hides the legs and the rider sits IN the deer, not on top
-const RIDE = { deer: { mul: DEER_RUN_MUL, col: 13, hip: 14 } };
+const RIDE_GALLOP_MUL = 1.65; // a ridden deer's gallop; its wild sprint is DEER_RUN_MUL (1.4)
+const RIDE = { deer: { mul: RIDE_GALLOP_MUL, col: 13, hip: 14 } };
 const RIDE_REACH = 20;     // px from the player to a deer that E reaches
 const RIDE_LEAP_T = 0.45;  // s a leap is in the air
 const RIDE_LEAP_CD = 0.6;  // s on the ground before the next leap
