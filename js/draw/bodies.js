@@ -355,6 +355,10 @@ function drawPlayer(p, ex, ey, now) {
   if (p.buffT > 0 && p.fallT <= 0) drawBuffRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3, now);
   if (lying && local) drawBuryRing(p, Math.round(p.x - ex), Math.round(p.y - ey) + 3);
 
+  // the model itself - never the shade or the rings at its feet - goes
+  // through the canopy window's hero layer (js/draw/canopy.js) when it is the
+  // viewed hero's, so a canopy over it can open round exactly what is drawn
+  const layer = heroLayerOpen(p, px, py);
   if (p.fallT > 0) {
     // plunged through the ice: quick sink, only the head above the waterline
     const sink = Math.round(Math.min(7, (HOLE_FALL_T - p.fallT) * 40)) * wsc;
@@ -407,26 +411,6 @@ function drawPlayer(p, ex, ey, now) {
     const pose = state.mode !== 'title' ? abilityPose(p) : null;
     const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl;
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
-    // deep in the treeline the viewed hero wears a black 1px rim so the body
-    // pops off the faded canopy - treeFadeSil (render.js) is the occluder
-    // fade's silhouette strength, 0 in the open, so the rim dissolves as the
-    // hero leaves the trees. The current frame tints black on the scratch
-    // canvas and stamps the eight neighbours, the same rim grammar as
-    // drawPixelTextOutline. A lying body keeps its stealth read bare, and a
-    // rotating cast pose skips the stamp rather than wear a stale rim.
-    if (treeFadeSil > 0 && !lying && !(pose && pose.rot) && p === viewPlayer()) {
-      sctx.clearRect(0, 0, 64, 64);
-      sctx.globalCompositeOperation = 'source-over';
-      sctx.drawImage(spr, 0, 0);
-      sctx.globalCompositeOperation = 'source-in';
-      sctx.fillStyle = '#000';
-      sctx.fillRect(0, 0, 64, 64);
-      ctx.globalAlpha = treeFadeSil;
-      for (let ry = -1; ry <= 1; ry++) for (let rx = -1; rx <= 1; rx++) {
-        if (rx || ry) ctx.drawImage(scratch, 0, 0, spr.width, spr.height, sx + rx, sy + ry, spr.width, spr.height);
-      }
-      ctx.globalAlpha = 1;
-    }
     // held tool: behind the body when facing away, in the hand otherwise. A
     // lying player shows one only while the bow is actually drawn - a carried
     // axe bobbing over a body on its belly reads as a floating axe. A body
@@ -468,6 +452,7 @@ function drawPlayer(p, ex, ey, now) {
       drawSnowCover(p, spr, px, py, local ? 0.66 : p.team === player.team ? 0.85 : 1);
     }
   }
+  heroLayerClose(layer);
 
   // ...and neither the title's living world nor an end screen's frozen one
   // wears any of the tells below: both are compositions somebody is looking
