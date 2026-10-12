@@ -37,7 +37,8 @@ function wheelOptions() {
   // the parkour die and the range bell: the three difficulties, easy
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
-  if (w.kind === 'pkdie' || w.kind === 'agbell') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
+  if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
+  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // the range's three, then the other rounds (js/world.js)
   // the MOUSE scheme's action wheel: the four abilities clockwise from the
   // top, then the two meals and the flag (MS_WHEEL, js/input.js)
   if (w.kind === 'kit') return MS_WHEEL.map((id) => ({ id }));
@@ -135,7 +136,7 @@ function cmdOk(c) {
   if (c.kind === 'build') return cmdKey(STRUCTS, c.id) && cmdTile(c) && (c.tx2 === undefined || (Number.isInteger(c.tx2) && Number.isInteger(c.ty2)));
   if (c.kind === 'flag') return !c.id || (cmdKey(FLAG_TYPES, c.id) && cmdTile(c));
   if (c.kind === 'tunnel') return cmdTile(c);
-  if (c.kind === 'rack' || c.kind === 'pkdie' || c.kind === 'agbell') return true; // the practice props check their own
+  if (c.kind === 'rack' || c.kind === 'pkdie' || c.kind === 'agbell' || c.kind === 'cheat') return true; // the practice props check their own
   return cmdTile(c); // a building's manage wheel: its tile
 }
 
@@ -160,6 +161,7 @@ function runCmd(p, c) {
   if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/world.js)
   if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/world.js)
   if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/world.js)
+  if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/world.js, js/ui/cheats.js)
   const o = structOf(objAt(c.tx, c.ty));
   if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return false;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return 'far';
@@ -606,8 +608,9 @@ function renderWheel(now) {
       const rix = Math.round(ix), riy = Math.round(iy);
       const di = PK_DIFFS.indexOf(opt.id);
       const fw = [14, 11, 8][di];
-      ctx.drawImage(TARGET_SPR, rix - (fw >> 1), riy - (fw >> 1), fw, fw);
-      if (agame.diff === opt.id) {
+      if (di < 0) drawAgRoundWedge(opt.id, rix, riy); // another round's own mark (js/draw/practice.js)
+      else ctx.drawImage(TARGET_SPR, rix - (fw >> 1), riy - (fw >> 1), fw, fw);
+      if (agame.mode === (di < 0 ? opt.id : 'range') && (di < 0 || agame.diff === opt.id)) {
         ctx.fillStyle = '#ffd95c';
         ctx.fillRect(rix - 9, riy - 9, 18, 1); ctx.fillRect(rix - 9, riy + 8, 18, 1);
         ctx.fillRect(rix - 9, riy - 9, 1, 18); ctx.fillRect(rix + 8, riy - 9, 1, 18);
@@ -646,8 +649,9 @@ function renderWheel(now) {
       label = 'ROLL ' + opt.id.toUpperCase();
       color = PK_PIP_COL[PK_DIFFS.indexOf(opt.id)];
     } else if (w.kind === 'agbell') {
-      label = 'RING ' + opt.id.toUpperCase();
-      color = PK_PIP_COL[PK_DIFFS.indexOf(opt.id)];
+      const di = PK_DIFFS.indexOf(opt.id);
+      label = 'RING ' + (di < 0 ? AG_ROUNDS[opt.id].name : opt.id.toUpperCase());
+      color = di < 0 ? '#ffd95c' : PK_PIP_COL[di];
     } else if (w.kind === 'kit') {
       ({ label, color } = kitLabel(opt.id));
     } else if (opt.id === 'upgrade') {

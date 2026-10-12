@@ -993,13 +993,40 @@ number is the thing being climbed - and losing a run that long plays `SFX.runBro
 
 **The archery round** hangs off the **bell** (`agbell`, `AG_BELL`) west of the dummy: standing
 within E's reach (`agBellNear`) raises an `E RING` cap (`drawBellHint`, js/ui/wheel.js), and **holding E
-opens a three-wedge radial wheel** (kind `'agbell'`, the roll die's own hold-and-release
-grammar and the ordinary wheel pipeline) — one wedge per difficulty, each drawn as **the target
-face the round pours out, smaller as the pick gets harder**, the armed one wearing a gold frame
-(the bell itself never wears the difficulty — no recolour, the wheel's frame is the readout).
+opens a five-wedge radial wheel** (kind `'agbell'`, `AG_WEDGES`, the roll die's own hold-and-release
+grammar and the ordinary wheel pipeline) — the range's three difficulties, each drawn as **the target
+face the round pours out, smaller as the pick gets harder**, then the two other rounds (QUICK
+DRAW and DEFEND, below) in their own marks (`AG_WEDGE_ART`, js/draw/practice.js); the armed one
+wears a gold frame (the bell itself never wears the pick — no recolour, the wheel's frame is the
+readout).
+
+**What a round is lives in `AG_ROUNDS`** (js/world.js), one entry per round: its name, its
+starting clock, how it opens (`begin`) and runs (`tick`), what a hit pays and what its popup says
+(`hit`), when it is over (`over`), the plate's three rows (`rows`), the line under the final score
+(`end`) and where its record is kept (`best`/`setBest`). `agame.mode` names the one in play and
+`agUpdate`, `hitPTarget` and `drawAgameUI` only ever ask it; `agame.left` is the round's clock.
+The range is the entry described next. The other two:
+
+- **QUICK DRAW** (`QD_*`): one face on the track at a time, `QD_START` seconds on the clock,
+  and every hit buys time back (banked up to `QD_MAX`). Every `QD_STEP` hits the round climbs a
+  stage (`QD_STAGES`: large still, small still, mover, quick pop-up, small fast mover, each
+  buying a little less time), and each new face prefers a track spot within `QD_NEAR` px of the
+  archer, so the draw is the test, not the walk. The score is the hits.
+- **DEFEND** (`DF_*`): straw **raiders** — the field dummy's own sprite, hopping on its post
+  (`drawRaider`) — come in off the field's rim and make for the **hold**, the dummy's own tile
+  (`DF_HOLD`, a dashed frost ring on the snow while the round runs, `drawDfHold`). One arrow drops
+  one; one that lands within `DF_REACH` of the hold costs a life and ends the run, and `DF_LIVES`
+  gone ends the round. They come faster and closer together the longer you hold. A raider is a
+  `ptargets` entry of kind `'raid'` — only arrows meet it, nothing blocks on it — and it hops a
+  straight line (`dfStep`) because the round has sunk everything that stood on the field. No
+  clock; the score is how many went down.
+
+Each round keeps its own all-time record: the range's in `PROFILE.bestRange`, the others in
+`PROFILE.bestRound(id)`; the bell's BEST / LAST plate shows the last-rung round's.
 
 Releasing on a wedge IS the ring (`agRing`, through the same `input.cmd` → `runCmd` path every
-order takes) and runs the show (`agame.phase`, ticked by `agUpdate` from `updatePractice`): the
+order takes) and runs the show — this is the range's (`AG_ROUNDS.range`); the other rounds share
+everything up to GO (`agame.phase`, ticked by `agUpdate` from `updatePractice`): the
 stock roster bursts away and **the dummy, the rack and the bell itself sink under the snow**
 (`agSinkU` crops their sprites in js/draw/render.js; at full depth their objects leave the grid
 entirely, so nothing blocks a shot — which is also why a running round cannot be rung off, and
@@ -1022,13 +1049,28 @@ on a frost plate over the bell (`drawAgame`). **BEST is the profile's all-time r
 (`PROFILE.bestRange()`/`setBestRange` — whole points, only a strictly higher score writes), the
 lap record's twin and the second of the only two things practice ever writes.
 
+**The practice bar** (js/ui/cheats.js, League's practice-tool column) hangs down the left edge
+under the corner's open drawer, at the HUD SIZE the dial holds (capped so it never runs off the
+bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEAT_GOLD`, through
+`tradeGold`, so no XP rides it), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
+`CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),
+RESET TO LEVEL 1; then TELEPORT, SPAWN DUMMY and CLEAR DUMMIES. The name is the tooltip
+(`tipCheat`). A press sends `input.cmd {kind:'cheat'}` → `runCmd` → `cheatCmd` (js/world.js,
+`PRACTICE`-gated); TELEPORT and SPAWN DUMMY arm a ghost on the pointer's tile instead (green
+where it lands, red where it would not — `cheatAimOk` asks what `cheatCmd` will), and a left
+press on the world sends the order with that tile — teleport once, dummies until the button,
+the right button or Escape puts it down. A spawned dummy is the field dummy's twin (meter,
+mend), at most `CHEAT_DUMMIES` standing (the oldest goes), never mid-round, and it joins the
+round's furniture so a rung bell sinks it with the rest. The chevron tab on the plate folds the
+column away.
+
 Practice is not a match, and everything with stakes is guarded on `PRACTICE`: the local player is
 the only active one (js/boot.js parks the other nine as `control: 'none'` in the corner
 forest), `die()` becomes `practiceRevive()` (full pool, spawn tile `PR_SPAWN`, a beat of
 grace), `checkLastStanding()` never fires, and the profile is never written — `gainGold` skips
 `PROFILE.addGold` and the pinned clock means `addDay` can never fire — with two deliberate
-exceptions: a record parkour lap (`PROFILE.setBestLap`) and a record archery round
-(`PROFILE.setBestRange`, both above). The way out is the ESC
+exceptions: a record parkour lap (`PROFILE.setBestLap`) and a record bell round
+(`PROFILE.setBestRange` / `setBestRound`, both above). The way out is the ESC
 slab's LEAVE plank ([settings](gameplay.md#settings)).
 
 The **dummy** is an `OBJECTS` entry (`solid`, any tool, verb HIT) with one solid tile and a

@@ -384,6 +384,7 @@ function drawAgTrack(ox, oy) {
 // test reads, so what you see is exactly what a shot can hit.
 function drawPTarget(t, ex, ey, now) {
   if (t.gone) return; // shot this very frame; the sweep collects it next tick
+  if (t.kind === 'raid') { drawRaider(t, ex, ey); return; }
   const vert = agEdge(t.s) % 2 === 1; // side rails run vertically
   // the lane hop: the carriage lifts off its rail through a swap
   const hd = Math.abs(t.lane - t.laneU);
@@ -449,6 +450,58 @@ function drawPTarget(t, ex, ey, now) {
 // break (agRings, js/world.js), sized to the face it came off. Rasterised
 // 1px dots rather than an arc stroke, so the ring stays as crisp as the
 // pixel grid; white-hot young, cooling to gold as it spreads and fades.
+// a bell wheel wedge for a round that is not the range's (AG_WEDGES), each
+// round's own mark. QUICK DRAW: one small face with the speed streaks of a
+// face coming at you.
+const AG_WEDGE_ART = {
+  quick(x, y) {
+    ctx.drawImage(TARGET_SPR, x - 3, y - 5, 10, 10);
+    ctx.fillStyle = '#f4f7ff';
+    ctx.fillRect(x - 9, y - 3, 4, 1); ctx.fillRect(x - 10, y, 5, 1); ctx.fillRect(x - 9, y + 3, 4, 1);
+  },
+  // DEFEND: a raider, small
+  defend(x, y) { ctx.drawImage(DF_WEDGE_SPR, x - 5, y - 7); },
+};
+const DF_WEDGE_SPR = SPR.bake([
+  '...ooooo...',
+  '..obbbbbo..',
+  '..obbbbbo..',
+  '...ooooo...',
+  'ooooobooooo',
+  'oWWWWbWWWWo',
+  'ooobbbbbooo',
+  '..obbtbbo..',
+  '..obtTtbo..',
+  '..obbtbbo..',
+  '...ooooo...',
+  '....oWo....',
+  '...ooooo...',
+], { '.': null, o: '#1c1208', b: '#c9a874', W: '#8a6142', t: '#a83232', T: '#d05548' });
+function drawAgRoundWedge(id, x, y) { if (AG_WEDGE_ART[id]) AG_WEDGE_ART[id](x, y); }
+// a DEFEND raider: the field dummy's own body hopping on its post, its
+// shadow left on the snow (shrinking as it rises) so the hop reads
+function drawRaider(t, ex, ey) {
+  const gx = Math.round(t.x - ex), gy = Math.round(t.y - ey);
+  const lift = Math.round(t.hopY);
+  ctx.fillStyle = 'rgba(40,60,100,0.28)';
+  ctx.fillRect(gx - 6 + (lift >> 2), gy - 1, 12 - (lift >> 1), 3);
+  if (t.wob > 0) ctx.globalAlpha = 1 - t.wob / 0.3 * 0.6; // fades in off the rim
+  ctx.drawImage(DUMMY_SPR, gx - (DUMMY_SPR.width >> 1), gy - DUMMY_SPR.height - lift);
+  ctx.globalAlpha = 1;
+}
+// DEFEND's hold: a frost ring on the snow where the dummy sank, the line a
+// raider must not reach - drawn flat, under every body, only while it runs
+function drawDfHold(ex, ey) {
+  if (agame.mode !== 'defend' || (agame.phase !== 'play' && agame.phase !== 'count')) return;
+  const cx = Math.round(DF_HOLD.x - ex), cy = Math.round(DF_HOLD.y - ey);
+  ctx.fillStyle = agame.hurtT > 0 ? '#ff6a5a' : '#9fc4dd';
+  const n = 28;
+  for (let i = 0; i < n; i++) {
+    if (i % 2) continue; // dashed
+    const a = (i / n) * Math.PI * 2;
+    ctx.fillRect(Math.round(cx + Math.cos(a) * DF_REACH), Math.round(cy + Math.sin(a) * DF_REACH * 0.6), 2, 1);
+  }
+}
 function drawAgRings(ex, ey) {
   for (const g of agRings) {
     const u = g.t / AG_RING_T;
@@ -649,17 +702,12 @@ function drawAgameUI(now) {
         Math.round(VIEW_H * 0.3), '#7ddb7a', '#0f1632', 4);
       ctx.globalAlpha = 1;
     }
-    const left = Math.max(0, AG_T - G.t);
-    const rows = [
-      ['TIME',  left.toFixed(1),  left < 5.05 ? '#ff6a5a' : '#ffd95c'],
-      ['SCORE', String(G.score),  '#f4f7ff'],
-      ['HITS',  String(G.hits),   '#e0c890'],
-    ];
+    const rows = AG_ROUNDS[G.mode].rows(); // the round says what it counts
     const W = 62, H = 25;
     const x = cxm - (W >> 1), y = 8;
     ctx.fillStyle = 'rgba(12,18,42,0.85)';
     ctx.fillRect(x - 1, y - 1, W + 2, H + 2);
-    ctx.fillStyle = '#3a4470';
+    ctx.fillStyle = G.hurtT > 0 ? '#ff6a5a' : '#3a4470'; // a raider through flashes the rim
     ctx.fillRect(x, y, W, 1); ctx.fillRect(x, y + H - 1, W, 1);
     ctx.fillRect(x, y, 1, H); ctx.fillRect(x + W - 1, y, 1, H);
     for (let i = 0; i < 3; i++) {
@@ -679,7 +727,7 @@ function drawAgameUI(now) {
   drawPixelTextOutline(ctx, s, Math.round(cxm - pixelTextWidth(s, 3) / 2),
     Math.round(VIEW_H * 0.28) + 9, col, '#0f1632', 3);
   ctx.globalAlpha = 1;
-  const hs = G.lastHits + ' HITS';
+  const hs = G.lastLine;
   drawPixelTextOutline(ctx, hs, Math.round(cxm - pixelTextWidth(hs) / 2),
     Math.round(VIEW_H * 0.28) + 28, '#e0c890', '#0f1632');
 }

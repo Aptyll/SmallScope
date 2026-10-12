@@ -237,7 +237,7 @@ function render() {
 
   // the archery track's rails, flat under everything that walks, then the
   // parkour's start/finish line, painted flat on the carved ice
-  if (PRACTICE) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); }
+  if (PRACTICE) { drawAgTrack(ox, oy); drawParkourLine(ox, oy); drawDfHold(ox, oy); }
 
   // the trampled snow: the match's slow record, under the crisp prints (js/draw/trample.js)
   drawTrample(ox, oy);
@@ -648,6 +648,7 @@ function render() {
   drawSelection(ox, oy, now);
   drawBuildGhost(ox, oy, now);
   drawTunnelGhost(ox, oy);
+  drawCheatGhost(ox, oy); // the practice bar's armed teleport / dummy (js/ui/cheats.js)
   drawWorkHint(ox, oy);
   drawFishHint(ex, ey, now);
   // the parkour's two readouts: the lap clock over the runner, BEST / LAST
