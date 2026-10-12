@@ -153,8 +153,10 @@ function makeAnimal(kind, x, y) {
 // The disc is animalHitR round (a.x, animalHitY): the arrow loop sweeps a
 // shot's whole step against it (sweepDisc, js/sim.js), widened by the shot's
 // own `reach` (the fist, the axe; js/tools.js); the aim line asks animalHit.
-function animalHitR(a) { return a.kind === 'bird' ? 5 : isBigBeast(a) ? 14 : 8; }
-function animalHitY(a) { return a.y - (a.alt || 0) - 3; }
+// The stag stands twice a player's height (its 38 px cell, js/sprites/beasts.js),
+// so its disc is wider and sits up on its flank.
+function animalHitR(a) { return a.kind === 'bird' ? 5 : isBigBeast(a) ? 14 : a.kind === 'deer' ? 12 : 8; }
+function animalHitY(a) { return a.y - (a.alt || 0) - (a.kind === 'deer' ? 8 : 3); }
 function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < animalHitR(a); }
 
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
@@ -830,7 +832,7 @@ const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight clim
 // What can be ridden, per kind: its gallop as a multiple of a player's walk
 // (the deer's own sprint, DEER_RUN_MUL) and how many rows up its back the
 // rider sits (the draw, rideLift)
-const RIDE = { deer: { mul: DEER_RUN_MUL, seat: 9 } };
+const RIDE = { deer: { mul: DEER_RUN_MUL, seat: 14 } };
 const RIDE_REACH = 20;     // px from the player to a deer that E reaches
 const RIDE_LEAP_T = 0.45;  // s a leap is in the air
 const RIDE_LEAP_CD = 0.6;  // s on the ground before the next leap

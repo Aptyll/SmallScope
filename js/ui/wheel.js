@@ -403,7 +403,7 @@ function drawRideHint(ox, oy) {
   drawKeyPrompt(Math.round(a.x - ox - w / 2), Math.round(a.y - oy - RIDE_HINT_Y), '', keyHeld('work'));
   return true;
 }
-const RIDE_HINT_Y = 40; // px above a deer's feet: clear of its plate and its noticed mark
+const RIDE_HINT_Y = 56; // px above a deer's feet: clear of its plate and its noticed mark
 
 // The practice armory's prompt: PROXIMITY, not hover - standing beside the
 // rack is the whole gesture (rackNear, js/world.js), so the E ARM cap rises

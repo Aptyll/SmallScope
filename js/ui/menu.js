@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.403';
+const PATCH_TXT = 'PATCH 0.404';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.404', 'THE DEER STANDS TWICE AS TALL, AT THE FULL DETAIL OF ITS ART, SO A RIDER SITS ON A REAL STAG.'],
   ['0.403', 'DIRECTOR MODE FOR FILMING: F7 TURNS IT ON, THE ARROWS FLY A FREE CAMERA, F8 HIDES THE HUD, F9 SWAPS TO A 9:16 SHORT FRAME AND F2 RECORDS A CRISP VIDEO OF THE GAME.'],
   ['0.402', 'YOU CAN RIDE A DEER: PRESS E BESIDE ONE TO HOP ON, GALLOP AND FIGHT FROM ITS BACK WHILE IT WEARS YOUR SIDE\'S BAR, ROLL TO LEAP THE FELLED TRUNK ON THE ROAD, AND E AGAIN TO HOP OFF.'],
   ['0.401', 'OPEN SNOWDROPS NOW GLOW: A SUNNY GOLD BELL IN A POOL OF WARM LIGHT WITH TWINKLES AND RISING MOTES, BRIGHT UNDER ANY CLOUD AND AT NIGHT.'],
@@ -1249,6 +1250,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE DEER STANDS TWICE AS TALL', '0.404'],
     ['RIDE A DEER: E HOPS ON, ROLL LEAPS THE ROAD\'S TRUNK', '0.402'],
     ['SNOWDROPS GLOW: WARM LIGHT, TWINKLES AND MOTES, BRIGHT AT NIGHT', '0.401'],
     ['WARRENS DRAWN BY HAND: A DEEP SNOW CIRCLE, THREE RABBITS, THREE SNOWDROPS', '0.400'],

@@ -442,13 +442,13 @@ snapped onto `RBPAL` (eleven colours) and `DEPAL` (thirteen), source order the a
 | kind | clips (frames, and the sheet each came off) | source cell | **ships at** |
 | --- | --- | --- | --- |
 | `rabbit` | `idle` 10 `bunny…gently_look_around`, `hop` 6 `…hopping_right`, `rise` 8 `…stand_up_and_wiggle` | 28×30 | **11×12** |
-| `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **19×19** |
+| `deer` | `idle` 10 `deer…gently_look_around`, `graze` 12 `…grazing_loop`, `run` 12 `…galloping` | 38×38 | **38×38** (its own cell, snapped onto `DEPAL` 1:1) |
 | `wolf` | `idle` 1, `run` 2 | — | 16×13 |
 | `bird` | `idle` 1 (perched), `fly` 2 | — | 9×6 / 9×5 |
 | `dire` / `alpha` (the bears) | `idle` 6, `walk` 8, `run` 6, `bite` 10, `paw` 10, `roar` 8, `fish` 12 | a painted rig | 56×38 |
 
-Both are [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
-than a 16 px player and the stag more than twice one. The **rabbit ships at 11×12**, deliberately
+The rabbit is [resampled offline](#the-offline-resample) — at its own cell size the bunny stands taller
+than a 16 px player — and the deer only snapped, never scaled: the stag ships at its full cell, twice a player's height, so it reads as the animal you can ride ([riding](gameplay.md#riding-a-deer)). The **rabbit ships at 11×12**, deliberately
 shy of half its source: a bunny the height of the hero read as a hare the size of a dog, and the
 stag beside it is the animal that is meant to look big. Each kind's three sheets share **one
 crop** — the box every frame of every clip fits inside — because a clip taking over on a different
