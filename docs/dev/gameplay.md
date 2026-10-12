@@ -1594,8 +1594,11 @@ slide), and `updateAnimal` hands the ridden deer to `rideCarry` instead of its b
 it where its rider is and plays its gallop. While ridden the deer carries the rider's `team`, so
 `unitFoe` and the arrow sweep (`shotContacts`) treat it as that side: your shots and your allies'
 pass through it, a rival's land. Its bar hangs one row under the rider's frame in the side's
-colour (`drawPlayer`), and the rider sits `RIDE[kind].seat` rows up its back with no shadow of
-their own. The hands stay free: the bow, the blades and the abilities all work from the saddle.
+colour (`drawPlayer`), and the rider sits *in* the deer with no shadow of their own (`riderSeat`):
+the player's own frame sinks until its row `RIDE[kind].hip` meets the back at the seat column
+`RIDE[kind].col` (toward the rump), and nothing of the body under that row is drawn, so the deer's
+back line hides the legs. The seat is read off the frame on show, so the rider rides the gallop's
+bob; the plate holds still on the standing frame's seat. The hands stay free: the bow, the blades and the abilities all work from the saddle.
 
 The roll key is **the leap** (`tryDodge` → `rideLeap`): `RIDE_LEAP_T` in the air at the gallop,
 owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whose `OBJECTS` entry
