@@ -35,7 +35,7 @@ window.SCENE = {
     posts.forEach((t, i) => M.track('t' + (i + 1), () => ptFace(t)));
     M.track('arrow', () => { const r = arrows.find((q) => q.owner === p.id); return r ? [r.x, r.y] : null; });
     M.cam = [p.x, p.y - 30];
-    M.data.shots = [];
+    M.data.shots = []; M.data.k = i0;   // follow the trail from here, never snap back to an earlier stretch
     return { mounted: !!p.mount, start: i0, posts: posts.map((t) => [Math.round(t.x), Math.round(t.y)]), logS: Math.round(M.data.logS), s0: Math.round(s0) };
   },
 

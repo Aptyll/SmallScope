@@ -68,28 +68,28 @@
    "to": "hit3+38",
    "k": [
     7,
-    9
+    6.4
    ],
    "focus": [
     "rider",
-    "mix:rider,t3,0.5"
+    "mix:rider,t3,0.7"
    ],
    "oy": [
     -30,
-    -8
+    -12
    ],
    "ease": "out"
   },
   {
    "name": "climb",
-   "from": "hit3+88",
+   "from": "hit3+38",
    "to": "leap-21",
    "k": [
-    6.2,
+    7,
     6.6
    ],
    "focus": "rider",
-   "oy": -44
+   "oy": -30
   },
   {
    "name": "leap",

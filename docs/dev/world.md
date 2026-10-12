@@ -910,12 +910,12 @@ can read it.
 **The deer ride** is a hand-laid snow trail (`RD_PATH`, the centreline in world tiles, smoothed
 by `rdCurve` into a Catmull-Rom curve and cleared `RD_RAD` either side by `rdCarve`): out of the
 field's south edge, across the ice loop and the tree belt into the forest wing, a sweep west, the
-wing's length east in tight S-bends past three targets, a climb over a felled log (`RD_LOG`,
-pieces along the cross-diagonal as across a match road, so the roll key's leap clears it) and
-north across the ice again into the field. It is carved before the loop, so a crossing ends up
-ice, and a roll never grows forest back onto it (`rdTiles`, `pkAnimStep`). The three targets
+wing east with no two bends alike (a hairpin, a long flat sprint, a hook that curls back west)
+past three targets and over a felled log on the hook's climb (`RD_LOG`, pieces along the
+cross-diagonal as across a match road, so the roll key's leap clears it), a dive south and north
+across the ice again into the field. It is carved before the loop, so a crossing ends up ice, and a roll never grows forest back onto it (`rdTiles`, `pkAnimStep`). The three targets
 are stock faces on posts off the track (`RD_TARGETS`; an `at` point holds a face there instead
-of the rail, `addPTarget`), each in a clearing that runs down to the trail. A **tame deer**
+of the rail, `addPTarget`), each in a clearing that runs three wide to the nearest stretch of trail. A **tame deer**
 (`a.tame`: it never bolts from a player and never wanders, js/wildlife.js) waits at the
 trailhead (`PR_DEER`); `prDeerStep` (from `updatePractice`) puts it back on its stand
 `PR_DEER_BACK` seconds after it is let go, shot or killed.

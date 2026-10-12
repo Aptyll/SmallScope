@@ -3303,19 +3303,23 @@ function pkWheelPick(p, c) {
 // ---- the deer ride: a trail through the forest wing ----------------------
 // A cleared snow trail leaves the field's south edge, crosses the ice loop
 // and the tree belt into the forest wing under the field's block (PR_RING),
-// sweeps west, runs the wing's length east in tight S-bends past three
-// standing targets, climbs over a felled log (the roll key's leap,
-// js/wildlife.js) and turns north to cross the ice again back into the field. A tame deer waits at its
-// head (PR_DEER): E rides it. The trail is laid out by hand, never rolled:
+// sweeps west, then runs the wing east with no two bends alike: a hairpin
+// up to the first target, a long flat sprint past the second, and a hook
+// that curls back west round the third and east again over a felled log (the
+// roll key's leap, js/wildlife.js), then dives south and turns north to cross
+// the ice again back into the field. A tame deer waits at its head (PR_DEER): E
+// rides it. The trail is laid out by hand, never rolled:
 // RD_PATH is its centreline in world tiles, smoothed through every point
 // (rdCurve). Where it crosses the ice loop the ice wins, and a re-rolled
 // track never grows the forest back over it (rdTiles, pkAnimStep).
-const RD_PATH = [[48, 48], [47, 56], [45, 63], [42, 71], [36, 78], [26, 81], [16, 80], [9, 86], [11, 95],
-  [20, 101], [30, 96], [40, 103], [50, 97], [60, 103], [70, 97], [80, 103], [90, 99], [99, 92],
-  [102, 83], [97, 77], [86, 74], [76, 70], [71, 63], [68, 55], [66, 48]];
+const RD_PATH = [[48, 48], [47, 56], [45, 63], [42, 71], [36, 78], [26, 81], [16, 80], [9, 86], [10, 95],
+  [14, 101], [21, 104], [26, 100], [28, 92], [32, 88], [36, 92], [40, 100], [47, 104], [60, 104],
+  [67, 102], [71, 97], [70, 91], [66, 88], [65, 85], [71, 79], [78, 81], [83, 91], [86, 100], [89, 101],
+  [93, 97], [99, 92], [102, 83], [97, 77], [86, 74], [76, 70], [71, 63], [68, 55], [66, 48]];
 const RD_RAD = 1.4;                  // tiles from the centreline the trail is cleared
-const RD_LOG = { tx: 95, ty: 95 };   // the felled log's middle piece, across the north-east climb
-const RD_TARGETS = [[30, 93], [50, 94], [70, 94]]; // the three faces, each in its own clearing over a bend
+const RD_SHOT = 8;                   // tiles of trail each target's clearing opens onto
+const RD_LOG = { tx: 68, ty: 82 };   // the felled log's middle piece, across the hook's climb
+const RD_TARGETS = [[27, 87], [52, 101], [74, 93]]; // the three faces: past the hairpin, over the sprint, in the hook
 const PR_DEER = { tx: 48, ty: 46 };  // where the tame deer waits, at the trail's head in the field
 const PR_DEER_BACK = 3;              // s riderless away from its stand (or gone) before it is back
 let rdTiles = new Set();             // every tile the trail cleared
@@ -3349,8 +3353,21 @@ function rdCarve() {
     }
   }
   // the face stands two tiles tall over its post: the clearing is open above
-  // it and runs down to the trail, so a shot from the saddle meets no pine
-  for (const [tx, ty] of RD_TARGETS) for (let dy = -3; dy <= 2; dy++) for (let dx = -1; dx <= 1; dx++) fell(tx + dx, ty + dy);
+  // it and fans out over the stretch of trail it stands by, as far as
+  // RD_SHOT, so a shot from the saddle meets no pine wherever it is loosed
+  // (only that stretch: a pass of the trail further off stays behind trees)
+  const C = rdCurve();
+  for (const [tx, ty] of RD_TARGETS) {
+    for (let dy = -3; dy <= 0; dy++) for (let dx = -1; dx <= 1; dx++) fell(tx + dx, ty + dy);
+    const ox = tx + 0.5, oy = ty - 0.5;   // the face, a tile over the post
+    const far = (i) => Math.hypot(C[i][0] - ox, C[i][1] - oy);
+    let m = 0; for (let i = 1; i < C.length; i++) if (far(i) < far(m)) m = i;
+    let a = m, b = m; while (a > 0 && far(a - 1) <= RD_SHOT) a--; while (b < C.length - 1 && far(b + 1) <= RD_SHOT) b++;
+    for (let i = a; i <= b; i++) {
+      const [cx, cy] = C[i];
+      for (let k = 0, n = Math.ceil(far(i) * 2); k <= n; k++) fell(Math.floor(ox + (cx - ox) * k / n), Math.floor(oy + (cy - oy) * k / n));
+    }
+  }
   // one `log` per tile along the cross-diagonal, as across a match road
   // (placeRoad): the ends run into the trees, so nothing squeezes round it
   for (let k = -2; k <= 2; k++) {
