@@ -4,10 +4,11 @@
 #
 # The bears are not typed by hand: rig.py paints a bear as shaded ellipse
 # parts (bear.py lays them out and poses them, anim.py holds the walk and the
-# attack), renders each pose at 8x, shrinks it to the game's pixel and bands
-# it into the palette measured off Noah's reference sheet. The black bear is
-# the same frames recoloured, wearing its antlers and back runes as exact
-# 1x stickers. The grids this writes are the game's only copy.
+# attack), renders each pose at 8x, shrinks it to the game's pixel (rig.S
+# game pixels to a rig unit: the bear's size) and bands it into the palette
+# measured off Noah's reference sheet. The black bear is the same frames
+# recoloured, wearing its antlers and back runes as exact stickers. The grids
+# this writes are the game's only copy.
 import os, numpy as np
 from rig import draw, PAL, PAL_DARK
 from bear import pose

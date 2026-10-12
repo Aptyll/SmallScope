@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.407';
+const PATCH_TXT = 'PATCH 0.408';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.408', 'THE BEARS ARE TWICE AS BIG, AT TWICE THE DETAIL: THEIR BODY, HIT AREA AND REACH GROW WITH THEM, SO THEY FIGHT LIKE THE BEAR YOU SEE.'],
   ['0.407', 'A STAGED ARCHERY TARGET CAN STAND IN THE VALLEY AND SAY A GOLD WORD WHEN YOUR ARROW BREAKS IT, FOR FILMING SHORTS.'],
   ['0.406', 'A DEER\'S RIDER SITS DOWN INTO IT: ITS BACK HIDES YOUR LEGS AND YOU RISE AND FALL WITH THE GALLOP.', 'deer-rider'],
   ['0.405', 'NO MORE BLACK OUTLINE NEAR TREES: A PINE ONLY OPENS A SOFT WINDOW IN ITS LEAVES WHEN IT ACTUALLY COVERS YOU, SO YOUR HERO AND BOW STAY CRISP UNDER THE CANOPY.'],
@@ -1253,6 +1254,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE BEARS ARE TWICE AS BIG', '0.408'],
     ['A DEER\'S RIDER SITS DOWN ON ITS BACK', '0.406'],
     ['THE DEER STANDS TWICE AS TALL', '0.404'],
     ['RIDE A DEER: E HOPS ON, ROLL LEAPS THE ROAD\'S TRUNK', '0.402'],
@@ -3417,13 +3419,13 @@ const wikiScroll = {};        // px scrolled per page id
 const WIKI_BEASTS = [
   { kind: 'rabbit', name: 'RABBIT', bw: 8,
     line: () => 'BOLTS AT ' + FLEE_SIGHT.rabbit + ' PX. ONE JINK CHARGE EVERY ' + RABBIT_DODGE_CD + ' S. DROPS A BERRY.' },
-  { kind: 'deer', name: 'DEER', bw: 17,
+  { kind: 'deer', name: 'DEER', bw: 23,
     line: () => 'BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
   { kind: 'wolf', name: 'WOLF', bw: 11,
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
-  { kind: 'alpha', name: 'BLACK BEAR', bw: 24,
+  { kind: 'alpha', name: 'BLACK BEAR', bw: 49,
     line: () => 'ONE A STONE. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
-  { kind: 'dire', name: 'BROWN BEAR', bw: 24,
+  { kind: 'dire', name: 'BROWN BEAR', bw: 49,
     line: () => 'ONE A DEN. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
@@ -3483,6 +3485,7 @@ function wikiKinds(sort) {
 // the voice, the fixed words and what stays unanswered: docs/dev/lore.md.
 const WIKI_FIG_W = 44;   // the figure column...
 const WIKI_TEXT_X = 52;  // ...and where an entry's words start, off the content's left margin
+const WIKI_BEAST_W = 52; // a beast card's figure column, at least: a wider beast widens its own
 const WIKI_WORLD = [
   { name: 'SOFTFALL', fig: () => [SPRITES.tree[0]],
     text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
@@ -3519,13 +3522,20 @@ const WIKI_PAGES = [
     });
     return b;
   } },
-  { id: 'beasts', label: 'BEASTS', build() {
+  { id: 'beasts', label: 'BEASTS', build(cw) {
     const b = [];
     b.push({ kind: 'line', h: 9, text: 'EVERY BEAST IS DEALT THE TABLE\'S AVERAGE HERO LEVEL WHEN IT SPAWNS, AND KEEPS IT.', col: '#cfe0ff' });
     b.push({ kind: 'line', h: 9, text: 'A LEVEL IS MORE HEALTH TO SHOOT THROUGH, AND MORE GOLD FOR THE KILL.', col: TIP_DIM });
-    b.push({ kind: 'legend', h: 58 });
+    b.push({ kind: 'legend', h: SPRITES.deer.right.idle[0].height + 26 }); // the deer under its frame, as a card's figure
     b.push({ kind: 'rule', h: 8 });
-    for (const bs of WIKI_BEASTS) b.push({ kind: 'beast', h: 46, beast: bs });
+    // a card is as wide and as tall as its beast standing under its frame
+    // (a bear is a 112 px frame), and its line wraps to what is left
+    for (const bs of WIKI_BEASTS) {
+      const spr = SPRITES[bs.kind].right.idle[0];
+      const figW = Math.max(WIKI_BEAST_W, spr.width), lines = wikiWrap(bs.line(), cw - figW - 8);
+      const h = Math.max(46 + (lines.length - 1) * 8, spr.height - (spr.crown || 0) + 26);
+      b.push({ kind: 'beast', h, beast: bs, figW, lines });
+    }
     return b;
   } },
   { id: 'arsenal', label: 'ARSENAL', build() {
@@ -3680,7 +3690,7 @@ function drawWikiFig(e, cx, baseY) {
 // A camp monster shows its leash bar part-filled, since bare track says nothing.
 function drawWikiBeast(bs, cx, baseY, level, now) {
   const spr = SPRITES[bs.kind].right.idle[0];
-  wikiMound(cx, baseY, 26);
+  wikiMound(cx, baseY, Math.max(26, bs.bw + 8)); // a bear's snow as wide as its bar
   ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bs.bw ? bs.bw >> 1 : 3), baseY, bs.bw || 6, 2);
   const px = cx - (spr.width >> 1), py0 = baseY + 2 - spr.height;
   ctx.drawImage(spr, px, py0);
@@ -3839,7 +3849,7 @@ function renderWiki(now, a) {
       // edge, the mark's rim, the bar backing's right wall) and the three on
       // the right fan out - a column of their own each, label rows 10 px
       // apart - so no line crosses a plate, a bar or another line.
-      const fx = L.left + 40, base = y + 52;
+      const fx = L.left + 40, base = y + bl.h - 6;
       const spr = SPRITES.deer.right.idle[0], py = base + 2 - spr.height;
       drawWikiBeast(WIKI_BEASTS[1], fx, base, level, now);
       wikiLeader(fx - 17, py - 6, fx - 27, py - 6, 'LEVEL', '#f2cc6a');
@@ -3855,10 +3865,10 @@ function renderWiki(now, a) {
       bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
     } else if (bl.kind === 'beast') {
       const bs = bl.beast;
-      drawWikiBeast(bs, L.left + 26, y + 40, level, now);
-      const nx = L.left + 60;
+      drawWikiBeast(bs, L.left + (bl.figW >> 1), y + bl.h - 6, level, now);
+      const nx = L.left + bl.figW + 8, dy = (bl.lines.length - 1) * 8; // a wrapped line pushes the table down
       drawPixelTextShadow(ctx, bs.name, nx, y + 4, '#ffd95c', '#0a0e23');
-      drawPixelTextShadow(ctx, bs.line(), nx, y + 13, TIP_DIM, '#0a0e23');
+      bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, nx, y + 13 + k * 8, TIP_DIM, '#0a0e23'));
       // the growth table: LV heads over three columns, HEALTH and KILL GOLD
       // under them, a dotted leader from each label to its first number
       const colW = 30, cx0 = L.right - colW * WIKI_LEVELS.length;
@@ -3868,7 +3878,7 @@ function renderWiki(now, a) {
       });
       const rowsT = [['HEALTH', (lv) => String(wikiBeastHp(bs.kind, lv)), BAR_NEUTRAL], ['KILL GOLD', (lv) => String(wikiBeastGold(bs.kind, lv)), '#f2cc6a']];
       rowsT.forEach(([label, get, col], k) => {
-        const ry = y + 24 + k * 9;
+        const ry = y + 24 + dy + k * 9;
         drawPixelTextShadow(ctx, label, nx, ry, TIP_LABEL, '#0a0e23');
         let firstX = L.right;
         WIKI_LEVELS.forEach((lv, i) => {

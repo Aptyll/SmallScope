@@ -95,7 +95,7 @@ function wadeLook(e, now) {
 function wadeWidth(e) {
   if (e instanceof Player) return e.prone || e.fallT > 0 || e.zip >= 0 || e.mount || inAir(e) || e.dead ? 0 : 10; // a rider sits up on its deer
   if (ON_CRUST[e.kind] || e.merchant) return 0;
-  return e.kind === 'deer' ? 18 : MONSTER[e.kind] && MONSTER[e.kind].big ? 20 : 10;
+  return e.kind === 'deer' ? 18 : MONSTER[e.kind] && MONSTER[e.kind].big ? 40 : 10;
 }
 // draw a body through fn() as it stands in the snow; while fn() runs, wadeCut
 // is the world-buffer row the drift swallows the body from (the canopy

@@ -6,12 +6,12 @@
 function drawSpriteFlash(spr, x, y, flash) {
   ctx.drawImage(spr, x, y);
   if (flash > 0) {
-    sctx.clearRect(0, 0, 64, 64);
+    sctx.clearRect(0, 0, spr.width, spr.height);
     sctx.globalCompositeOperation = 'source-over';
     sctx.drawImage(spr, 0, 0);
     sctx.globalCompositeOperation = 'source-in';
     sctx.fillStyle = 'rgba(255,255,255,0.8)';
-    sctx.fillRect(0, 0, 64, 64);
+    sctx.fillRect(0, 0, spr.width, spr.height);
     ctx.drawImage(scratch, 0, 0, spr.width, spr.height, x, y, spr.width, spr.height);
   }
 }
@@ -26,12 +26,12 @@ function drawFrameFlash(atlas, fi, x, y, flash) {
   const sx = (fi % cols) * w, sy = Math.floor(fi / cols) * h;
   ctx.drawImage(atlas, sx, sy, w, h, x, y, w, h);
   if (flash > 0) {
-    sctx.clearRect(0, 0, 64, 64);
+    sctx.clearRect(0, 0, w, h);
     sctx.globalCompositeOperation = 'source-over';
     sctx.drawImage(atlas, sx, sy, w, h, 0, 0, w, h);
     sctx.globalCompositeOperation = 'source-in';
     sctx.fillStyle = 'rgba(255,255,255,0.8)';
-    sctx.fillRect(0, 0, 64, 64);
+    sctx.fillRect(0, 0, w, h);
     ctx.drawImage(scratch, 0, 0, w, h, x, y, w, h);
   }
 }
@@ -130,12 +130,12 @@ function drawRock(o, x, y, now) {
 }
 
 function drawTargetRim(src, sx, sy, w, h, x, y, now) {
-  sctx.clearRect(0, 0, 64, 64);
+  sctx.clearRect(0, 0, w, h);
   sctx.globalCompositeOperation = 'source-over';
   sctx.drawImage(src, sx, sy, w, h, 0, 0, w, h);
   sctx.globalCompositeOperation = 'source-in';
   sctx.fillStyle = Math.sin(now * 6) > 0 ? '#f2cc6a' : '#c9a227';
-  sctx.fillRect(0, 0, 64, 64);
+  sctx.fillRect(0, 0, w, h);
   for (let ry = -1; ry <= 1; ry++) for (let rx = -1; rx <= 1; rx++) {
     if (rx || ry) ctx.drawImage(scratch, 0, 0, w, h, x + rx, y + ry, w, h);
   }

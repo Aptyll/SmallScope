@@ -1,6 +1,6 @@
 # Brown bear puppet: part layout fitted to the reference, poses for walk and attack.
 import math
-from rig import E, seg
+from rig import E, seg, S, INKED
 
 HIPS = {  # hip in body frame (crop coords at rest), rest foot, lengths, knee bend, layer, material
     'FF': dict(hip=(8.5, 15.0), foot=(6.5, 23.0), L=(4.5, 4.2), bend=-1, layer=0.2, mat='far', r=(2.6, 2.0)),
@@ -36,7 +36,7 @@ def fishpx(rows):
     cell = {(x, y): c for y, r in enumerate(rows) for x, c in enumerate(r) if c in '#se'}
     ink = {(x + dx, y + dy) for (x, y) in cell for dx in (-1, 0, 1) for dy in (-1, 0, 1) if abs(dx) + abs(dy) == 1} - set(cell)
     col = {'#': 'FL', 's': 'FM', 'e': 'SD'}
-    return [(x, y, col[c]) for (x, y), c in cell.items()] + [(x, y, 'SD') for (x, y) in ink]
+    return [(x, y, col[c]) for (x, y), c in cell.items()] + [(x, y, INKED) for (x, y) in ink]
 FISH_H = ['.####.##', '#e######', 'sssssss.', '.ssss.ss']
 FISH_PX = {
     'H': fishpx(FISH_H),
@@ -110,28 +110,31 @@ def pose(P=None, dark=False):
     if fish:   # the catch: loose in the air (crop coords), or held across the jaw
         if fish[0] == 'jaw': (fx, fy), k = Hd(0.0 if fish[1] == 'T' else -1.5, 15.5), fish[1]
         else: fx, fy, k = fish[1], fish[2], fish[3]
-        pr.append(dict(E(fx, fy, 1, 1, mat='sticker', layer=9), px=FISH_PX[k]))
+        pr.append(dict(E(fx, fy, 1, 1, mat='sticker', layer=9), px=FISH_PX[k], ink=True))
     if P.get('fangs'):   # the snap: two white bites shut in front of the jaw
         x, y = P['fangs']
-        pr.append(dict(E(x, y, 1, 1, mat='sticker', layer=9), px=FANGS))
+        pr.append(dict(E(x, y, 1, 1, mat='sticker', layer=9), px=FANGS, ink=True))
     for arc in P.get('smear', []):   # claw trail: three parallel arcs, bright at the paw end
-        pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), px=smear_px(*arc)))
+        pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), gpx=smear_px(*arc)))
     for (x, y) in P.get('dust', []):  # snow kicked up where the paw lands
         pr.append(dict(E(0, 0, 1, 1, mat='sticker', layer=9), px=[(int(round(x)) + dx, int(round(y)) + dy, c) for dx, dy, c in DUST]))
     return pr
 
-FANGS = [(0, 0, 'SD'), (1, 1, 'SM'), (2, 2, 'SM'), (3, 1, 'SM'), (4, 0, 'SD'),
-         (0, 5, 'SD'), (1, 4, 'SM'), (2, 3, 'SM'), (3, 4, 'SM'), (4, 5, 'SD'), (-2, 2, 'SD'), (-2, 3, 'SD')]
+FANGS = [(0, 0, INKED), (1, 1, 'SM'), (2, 2, 'SM'), (3, 1, 'SM'), (4, 0, INKED),
+         (0, 5, INKED), (1, 4, 'SM'), (2, 3, 'SM'), (3, 4, 'SM'), (4, 5, INKED), (-2, 2, INKED), (-2, 3, INKED)]
 DUST = [(-3, 0, 'SD'), (-2, -1, 'SM'), (2, -1, 'SM'), (3, 0, 'SD'), (-4, -2, 'SD'), (4, -2, 'SD'), (0, -2, 'SD')]
 
 def smear_px(p0, p1, p2, span=1.0):
-    """a quadratic arc p0 -> p1 (control) -> p2 in crop coords, drawn as three
-    claw slashes 2 px apart, white cores that thicken toward the paw end,
-    the whole sweep inked round so it reads on snow as well as on fur; `span` keeps only the last part (a fading trail)"""
+    """a quadratic arc p0 -> p1 (control) -> p2 in rig units, drawn as three
+    claw slashes 2 units apart, white cores that thicken toward the paw end,
+    the whole sweep inked round so it reads on snow as well as on fur; `span`
+    keeps only the last part (a fading trail). Drawn straight onto the game's
+    pixels (S a unit), so the curve is as smooth as the bear's own edge and
+    the ink one game pixel, like its outline"""
     white = set()
     for o in (-2.0, 0.0, 2.0):
-        for i in range(81):
-            u = i / 80
+        for i in range(161):
+            u = i / 160
             t = 1 - span + span * u
             x = (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0]
             y = (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]
@@ -139,9 +142,10 @@ def smear_px(p0, p1, p2, span=1.0):
             dy = 2 * (1 - t) * (p1[1] - p0[1]) + 2 * t * (p2[1] - p1[1])
             n = math.hypot(dx, dy) or 1
             nx, ny = -dy / n, dx / n
-            half = 0.0 if u < 0.35 else 0.5            # a thin tail, a thick head
-            for w in ((0.0,) if half == 0 else (-half, half)):
-                white.add((int(round(x + nx * (o + w))), int(round(y + ny * (o + w)))))
+            cw = S if u < 0.35 else 2 * S              # a thin tail, a thick head (game pixels)
+            for k in range(cw):
+                w = k - (cw - 1) / 2
+                white.add((math.floor((x + 0.5) * S + nx * (o * S + w)), math.floor((y + 0.5) * S + ny * (o * S + w))))
     ink = {(x + dx, y + dy) for (x, y) in white for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))} - white
     out = {q: 'SD' for q in ink}
     out.update({q: 'SM' for q in white})

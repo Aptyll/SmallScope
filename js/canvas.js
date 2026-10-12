@@ -234,7 +234,7 @@ function renderBars() {
 
 // scratch canvas for white hit-flash sprites
 const scratch = document.createElement('canvas');
-scratch.width = 64; scratch.height = 64; // the biggest thing that flashes is the 48x38 bay
+scratch.width = 128; scratch.height = 128; // the biggest thing that flashes is a bear's 112x76 frame
 const sctx = scratch.getContext('2d');
 
 // offscreen minimap canvas (1px per world tile)

@@ -279,8 +279,8 @@ unfinished net fades in with `buildT` rather than wearing a scaffold, because th
 on the water to stand a frame on. Its construction bar comes from the shared progress-bar pass
 like every other building's.
 
-Sprite hit-flash goes through `drawSpriteFlash()`, which recolours via a shared 64×64 `scratch`
-canvas with `source-in` — sprites larger than 64×64 will clip (the 48×38 bot bay is the biggest).
+Sprite hit-flash goes through `drawSpriteFlash()`, which recolours via a shared 128×128 `scratch`
+canvas with `source-in` — sprites larger than 128×128 will clip (a bear's 112×76 frame is the biggest).
 
 An **item drop** wears its icon centred on its own width (a tool's is 12×12, everything else 8×8)
 over a flat shadow, and a find — anything with a tier — pulses a plate of that tier's rim behind
@@ -2343,7 +2343,7 @@ copy under it read as a second bird — and folds its wings over `EAGLE_SETTLE_T
 frames as a settle animation), then **rests**, breathing a ±1 px bob with a wing-shuffle idle
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
 the gust's telegraph, so the idle can never cry wolf), flashing via the baked
-all-white `SPRITES.eagleFlash` (a war eagle: `SPRITES.warBirds.flash` of its frame) when hit (it is taller than the 64×64 `drawSpriteFlash` scratch),
+all-white `SPRITES.eagleFlash` (a war eagle: `SPRITES.warBirds.flash` of its frame) when hit (it is taller than the 128×128 `drawSpriteFlash` scratch),
 with its team-colour hp bar (`PERCH_BAR_W` x `PERCH_BAR_H`, in `PERCH_BAR_SEGS` even segments: bigger and fewer than a body's, so it reads across the clearing) up **from the moment it roosts** — the bar is the objective's
 introduction, anchored to the bird's rotated extent, under a `PERCH` nameplate in the same paint (its
 driver wears `MERCH`: the side's two named bodies, named the same way). A gust windup draws wings thrown open

@@ -42,7 +42,7 @@ function drawAnimal(a, ex, ey, now) {
   // The frame centres on the SPRITE's own columns (px, already rounded), not
   // on a.x: a wolf's 16-wide body under an 11-wide bar rounded the two
   // halves apart, and the bar shivered a pixel against the body as it ran.
-  const bw = rabbit ? 8 : big ? 24 : wolf ? 11 : 23; // widths that split into even segments (hpSegCount)
+  const bw = rabbit ? 8 : big ? 49 : wolf ? 11 : 23; // widths that split into even segments (hpSegCount)
   const cx = px + spr.width / 2, mid = px + (spr.width >> 1);
   const bx = Math.round(cx - bw / 2); // the bars' own left column (drawHealthBar's x)
   // The frame stands still over the TALLEST pose any clip reaches (`crown`,

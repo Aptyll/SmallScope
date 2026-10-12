@@ -196,7 +196,7 @@ take nothing. The footprints and slide trails draw over it as the crisp detail.
 ## Unit collisions
 
 Players, animals and robots are solid circles to each other (`PLAYER_R` 4.5 — a merchant takes it
-too — deer 5, rabbit 2.5, a camp monster its `MONSTER` row's `r`: the wolf 4.5, either bear 9;
+too — deer 5, rabbit 2.5, a camp monster its `MONSTER` row's `r`: the wolf 4.5, either bear 18;
 everything else, worker bots and wave soldiers included, 3 — `unitRadius`). **Birds are the exception**: they fly, so `separateUnits()`
 skips them entirely and they have no `UNIT_MASS` entry. Tile collision stays per-mover in
 `moveEntity`; unit-vs-unit is a separate relaxation pass, `separateUnits(dt)` in the
@@ -220,9 +220,9 @@ overlap per second, split by mass, through `moveEntity(…, strict)`. It moves p
 `vx/vy` or knockback, and peaks at 43 px/s between two players against a ~73 px/s walk, so anyone
 walking, chasing or swinging still reaches contact; only a crowd that has stopped pushing spreads out.
 A live roll skips the rooms entirely, and so does any pair of a camp beast and a body that is not one
-(`hunt`, `isCampKind`): a beast bites from inside its `MONSTER` reach, and a bear's room (28.8 px above or
-below) is wider than the 22 px it starts a blow inside, so a room would slide a standing target out of
-every blow before it began. The hard passes run after the rooms and get the last word.
+(`hunt`, `isCampKind`): a beast bites from inside its `MONSTER` reach, and a bear's room (28.8 px wide, 38.4 px above or
+below) nearly fills the 44 px it starts a blow inside, so a room would slide a standing target out of
+reach as often as not. The hard passes run after the rooms and get the last word.
 
 **A live dodge roll is the one exception to any of it.** `separateUnits` skips a pair outright
 when one side is a player mid-roll and the other is *small* — every player, every robot, and
@@ -1771,10 +1771,10 @@ still load. All three run
   `a.atkN`) so two blows in a row never look alike. The blow (`monsterBite`) lands only as the clip
   crosses `BEAR_STRIKE`. **A blow once begun is committed**, like a moba's auto attack: nothing but a
   stun cuts it, the bear turns with its quarry through the wind-up, and the blow lands on that quarry
-  anywhere inside `reach × BEAR_COMMIT_REACH` (44 px) - walking away does not dodge it, a roll or a
+  anywhere inside `reach × BEAR_COMMIT_REACH` (66 px, 22 px past its reach) - walking away does not dodge it, a roll or a
   dash does. The wind-up is the tell. Only the wake-up `roar` stands the bear on its hinds. A bear walks its patrol on `walk` and gallops the hunt on
-  `run`, and moves through the tiles on its `foot` box (5), not its 9 px body, which is wider
-  than a tile and jammed on the first tree beside its route. **Nothing caps the
+  `run`, and moves through the tiles on its `foot` box (5), not its 18 px body: anything near a
+  tile wide jams on the first tree beside its route. **Nothing caps the
   pack** ([i-frames](#i-frames-only-something-deliberate-grants-them)):
   four wolves on you is four bites a second, ~36 hp/s at level 1. `cd` is the only dial on it.
 - **Off duty** it patrols its camp on routed legs from the same `wanderGoal` the prey graze with
@@ -1793,8 +1793,8 @@ still load. All three run
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
-| alpha (black bear) | 640 (+50) | 22 (+3) | 22 px / 1.4 s / 100 | r 9, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
-| dire (brown bear) | 640 (+50) | 22 (+3) | 22 px / 1.4 s / 100 | r 9, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
+| alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
+| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
 
 The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
 [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two coats,
