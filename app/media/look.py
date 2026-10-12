@@ -63,8 +63,9 @@ def game_logo(scale=4):
     lg = Image.open(io.BytesIO(base64.b64decode(re.search(r"base64,([^'\"]+)", src).group(1)))).convert('RGBA')
     return lg.resize((lg.width * scale, lg.height * scale), Image.NEAREST)
 
-def steam_mark(scale=10):
-    m = Image.open(os.path.join(HERE, 'steam-mark.png')).convert('RGBA')
+def steam_mark(scale=10, name='steam'):
+    # the store marks, 40x40 on the pixel grid: steam-mark.png, discord-mark.png (flat, drawn straight on the grid)
+    m = Image.open(os.path.join(HERE, name + '-mark.png')).convert('RGBA')
     return rimmed(m.resize((m.width * scale, m.height * scale), Image.NEAREST), 6, shadow=False)
 
 def drain(img, u):

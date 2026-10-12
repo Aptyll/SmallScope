@@ -12,7 +12,7 @@ const TILE = 16;
 // itself off WORLD (the ground arrays, the ground bake, both maps, the
 // camera clamps), so the match world is untouched.
 const PRACTICE = /[?&]practice=1/.test(location.search);
-const WORLD = PRACTICE ? 76 : 232; // tiles per side (match: ~132-tile open interior, 2x the old 92's area; treeline depth unchanged); practice: field + a collar deep enough that the parkour runs INSIDE the forest, not along its hem
+const WORLD = PRACTICE ? 112 : 232; // tiles per side (match: ~132-tile open interior, 2x the old 92's area; treeline depth unchanged); practice: the field and its ice-loop collar (PR_RING) up top, the deer ride's forest wing under them
 let VIEW_W = 640, VIEW_H = 360; // internal resolution; fitCanvas() sizes it to the window
 let FULL_W = 640; // window width in game px BEFORE the 16:9 cap (bars canvas span)
 // The frame the menus, the panels and the end screens were authored in: 270

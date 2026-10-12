@@ -52,7 +52,7 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | `still.js` | one clean frame anywhere (`--find open` picks open snow under pines, `--player dx,dy` adds one for scale) |
 | `cut.py` | the editor: `cut.json` shots between beats, sharp camera moves, text, a freeze with a drain, the wishlist card; writes the mp4 and `map.json` |
 | `view.py` | any camera off a recorded frame, pixel-exact (nearest blow-up, then area-average down) |
-| `look.py` | the game's 3x5 font as rimmed video text, `stamp`, the game logo, the pixel Steam mark (`steam-mark.png`), `drain`, `freeze` |
+| `look.py` | the game's 3x5 font as rimmed video text, `stamp`, the game logo, the pixel Steam and Discord marks (`steam-mark.png`, `discord-mark.png`), `drain`, `freeze` |
 | `mix.py` + `audio.js` | the take's cues on the frames they land on, rendered offline through js/audio.js, under an optional song, muxed |
 | `board.py` | a 3x3 (or `--cols`) storyboard with pixel-font captions, from stills or from `--keep` frames |
 | `gif.py` | GIFs from frames, a 1x strip, or a piece of an mp4 |
@@ -85,7 +85,8 @@ number. A focus is a tracked name, `"bear@roar"` (pinned where it stood at the r
 or `[x, y]`; `ox`/`oy` nudge it. `k` is output px per world px, `[from, to]` for a push (zoom moves
 in log space). `ease` is `smooth`, `linear` or `out`. `paint` stamps a 1x sprite into the take frame
 over a tracked body (so it scales with the world, never drifts onto a health bar); `texts` put a
-line over a shot; `end` adds the freeze and the wishlist card. `step` plays a shot every nth take
+line over a shot; `end` adds the freeze and the end card (the wishlist by default; `mark: "discord"`
+and `cta` lines make it a Discord one, `line` the small line under it, at `line_y`). `step` plays a shot every nth take
 frame, negative to run it backwards (a rewind), and `mute: true` keeps its frames silent. Slow
 motion and a held freeze are recorded, not cut: the scene lowers `M.speed`, so the snow keeps
 falling through them.

@@ -129,13 +129,13 @@ if last and 'freeze' in E:
 if last and 'card' in E:
     cd = E['card']; i, cx, cy, k = last
     bg = card_bg(view(painted(i), R[i]['cam'], S, cx, cy, k, SIZE))
-    LOGO, STEAM = game_logo(4), steam_mark(11); Y = SIZE[1] / 1920   # laid out on a 1920-tall frame
-    WL = text([[('WISHLIST', 'gold')], [('ON STEAM', 'gold')]], s=18, gap=2); LC = text(cd.get('line', 'LINK IN COMMENTS'), s=12)
+    LOGO, STEAM = game_logo(4), steam_mark(11, cd.get('mark', 'steam')); Y = SIZE[1] / 1920   # laid out on a 1920-tall frame
+    WL = text(cd.get('cta', [[('WISHLIST', 'gold')], [('ON STEAM', 'gold')]]), s=18, gap=2); LC = text(cd.get('line', 'LINK IN COMMENTS'), s=12)
     for j in range(cd.get('frames', 270)):
         im = stamp(bg, LOGO, SIZE[0] / 2, 300 * Y, min(1, (j + 1) / 4))
         if j >= 6: im = stamp(im, STEAM, SIZE[0] / 2, 700 * Y, min(1, (j - 5) / 3), 1 + 0.25 * max(0, 1 - (j - 6) / 6))
         if j >= 12: im = stamp(im, WL, SIZE[0] / 2, 1120 * Y, min(1, (j - 11) / 3))
-        if j >= 24 and cd.get('line', 1): im = stamp(im, LC, SIZE[0] / 2, 1330 * Y, min(1, (j - 23) / 3))
+        if j >= 24 and cd.get('line', 1): im = stamp(im, LC, SIZE[0] / 2, cd.get('line_y', 1330) * Y, min(1, (j - 23) / 3))
         emit(im)
 wr.close()
 json.dump({'map': MAP, 'gameplay': NG, 'fps': FPS}, open(os.path.join(OUTDIR, 'map.json'), 'w'))

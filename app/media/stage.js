@@ -12,8 +12,9 @@ window.MEDIA = (function () {
   M.boot = function (o) {
     M.o = o = Object.assign({ k: 6, weather: 'calm', earR: 260, teamBlue: true }, o || {});
     D.freeze = true;
-    D.beginDrop();
-    for (let i = 0; i < 60 * 90; i++) {
+    // a match flies its drop first; the practice field (o.practice) boots on the ground
+    if (!PRACTICE) D.beginDrop();
+    for (let i = 0; i < 60 * 90 && !PRACTICE; i++) {
       if (state.dropBrief) state.dropBrief = null;
       if (player.aboard) D.dropJump(player);
       update(DT);

@@ -18,7 +18,7 @@ const { openGame, args } = require('./browser');
   const O = Function('window', src + '\n;return window.SCENE.o')({});
   const seed = +(A.seed || O.seed || 6);
   fs.mkdirSync(out, { recursive: true });
-  const pg = await openGame({ seed, width: O.w || 540, height: O.h || 960, dpr: O.dpr || 2 });
+  const pg = await openGame({ seed, practice: !!O.practice, width: O.w || 540, height: O.h || 960, dpr: O.dpr || 2 });
   await pg.inject(path.join(__dirname, 'stage.js'));
   await pg.eval(src + '\n;true');
   const boot = await pg.eval((o) => MEDIA.boot(o), O);

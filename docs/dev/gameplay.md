@@ -1589,7 +1589,7 @@ at a distance where a `!` is a speck — see the clips below.
 E beside a wild deer (`rideNear`, inside `RIDE_REACH`) hops on (`hopToggle` → `rideStart`, through
 `contest` so two riders on one deer resolve fairly), and a bare work cap over its back says so
 (`drawRideHint`). The **player** stays the body that moves: `updatePlayer` walks it at the mount's
-gallop (`RIDE[kind].mul` times `PLAYER_SPEED`, the deer's own sprint, with no draw penalty and no
+gallop (`RIDE[kind].mul` times `PLAYER_SPEED`: `RIDE_GALLOP_MUL`, 1.65, a step past the deer's own wild sprint, with no draw penalty and no
 slide), and `updateAnimal` hands the ridden deer to `rideCarry` instead of its brain, which stands
 it where its rider is and plays its gallop. While ridden the deer carries the rider's `team`, so
 `unitFoe` and the arrow sweep (`shotContacts`) treat it as that side: your shots and your allies'
