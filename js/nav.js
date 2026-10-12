@@ -76,7 +76,7 @@ const UNIT_SPACE = 1.6;     // a body's room: this x its hard radius (players 7.
 const UNIT_SPACE_TALL = 4 / 3; // ...and that much farther apart one above the other (19.2 px for two players)
 const UNIT_ROOM_RATE = 8;   // share of the room overlap closed per second (at most 43 px/s between two players; a walk is ~73)
 // the merchant (robots.js) is a player-sized body in the robots list, so it takes a player's radius
-function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 5 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : 3; }
+function unitRadius(e) { return e instanceof Player ? PLAYER_R : e.kind === 'rabbit' ? 2.5 : e.kind === 'deer' ? 8 : MONSTER[e.kind] ? MONSTER[e.kind].r : e.kind === 'merchant' ? PLAYER_R : 3; }
 function unitSpace(e) { return unitRadius(e) * UNIT_SPACE; }
 // a's share of a contact with b: none when it outranks b, all when b outranks it,
 // else split by mass (the lighter moves more)
