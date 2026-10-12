@@ -51,10 +51,13 @@ half = int(np.ceil(max(mid - x0, x1 - mid)))
 x0, x1 = int(mid - half), int(mid + half)
 # rows above the standing bear's head: the tells hang off the head, not the box
 TOP = int(iy.min() - y0)
-# rows above each bear's tallest pose (the rear-up, a new clip's leap): its
-# frame sits over that, so no clip ever climbs into its bars
+# rows above each bear's tallest pose in any clip but the roar (the paw's
+# claw trail, the fish flipped into the air, a new clip's leap): its frame
+# sits just over that, so nothing but the roar climbs into its bars. The
+# roar's rear-up is far taller than the bear, and a frame held clear of it
+# floated off the body; the one-off wake-up passes behind the frame instead
 def crown(imgs):
-    return int(np.nonzero(np.any([f[..., 3] > 0 for fr in imgs.values() for f in fr], axis=(0, 2)))[0].min() - y0)
+    return int(np.nonzero(np.any([f[..., 3] > 0 for k, fr in imgs.items() if k != 'roar' for f in fr], axis=(0, 2)))[0].min() - y0)
 CROWN = {name: crown(imgs) for name, (imgs, _) in sets.items()}
 
 def js_pal(pal):
@@ -87,8 +90,8 @@ for name, (imgs, pal) in sets.items():
     out.append("  };")
 out.append("  // `top`: the empty rows over the standing bear's head, so drawAnimal hangs")
 out.append("  // the tells off the bear rather than off the headroom the rear-up needs;")
-out.append("  // `crown`: the empty rows over this bear's tallest pose in any clip, where")
-out.append("  // its frame sits so no rear-up or lunge climbs into the bars")
+out.append("  // `crown`: the empty rows over this bear's tallest pose in any clip but the")
+out.append("  // roar, where its frame sits so no lunge, swipe or catch climbs into the bars")
 out.append(f"  const TOP = {TOP};")
 out.append("  const set = (grids, pal, crown) => {")
 out.append("    const left = bakeClips(grids, pal), right = mapClips(left, flipH);")

@@ -487,8 +487,10 @@ block. Both are drawn facing
 left, so `right` is the `flipH` there, and every frame of both shares one 112×76 box, centred on the standing bear, so the feet
 never jump between clips. The box's headroom is for the rear-up; each frame carries `top`, the
 empty rows over the standing head, where `drawAnimal` hangs the tells, and `crown`, the empty rows
-over that bear's tallest pose in any clip (bake.py measures it per bear on every rebake), where the
-frame sits, still, so a rear-up or any new clip never climbs into the bars. The
+over that bear's tallest pose in any clip but the roar (bake.py measures it per bear on every rebake), where the
+frame sits, still, so a lunge, the claw trail, the flipped fish or any new clip never climbs into the bars.
+The roar's rear-up is far taller than the bear; a frame held clear of it floated off the body, so the
+one-off wake-up passes behind the frame instead. The
 paw's claw trail and the bite's snap are baked into their frames (`SM`/`SD`, white slashes with an ink edge one game pixel wide), and so is the
 `fish` clip's catch (`FISH_PX` in bear.py, `FL`/`FM` silver inked in `SD`). Change the rig and rebake; never edit the grids.
 

@@ -14,9 +14,6 @@ function clipFrame(set, a) {
 
 function drawAnimal(a, ex, ey, now) {
   if (a.kind === 'bird') { drawBird(a, ex, ey, now); return; }
-  const rabbit = a.kind === 'rabbit';
-  const wolf = isCampKind(a.kind); // a camp monster: wears the leash bar in threat red
-  const big = isBigBeast(a);       // a bear: everything about its frame is wider
   const spr = clipFrame(SPRITES[a.kind][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
   const gy = Math.round(a.y + 4 - spr.height - ey);
@@ -29,37 +26,46 @@ function drawAnimal(a, ex, ey, now) {
   // tells sit on the standing body, not on the box
   const ty = py + (spr.top || 0);
   drawUnitStates(a, px, ty, spr.width, spr.height - (spr.top || 0), now);
-  // The player's frame, on a beast: health on top, always, the second bar
-  // hung 3 rows under it the way a player's stamina hangs under the health,
-  // the two sharing a wall, and the level badge on the left spanning both -
-  // the same plate a hero wears (drawLevelBadge), because the number means
-  // the same thing over either. The second bar is always worn: a wolf's
-  // threat, bare track at rest and filling from the first flicker of
-  // interest to the full bar it charges on (updateWolf, js/wildlife.js); a
-  // deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
-  // each is one, spent on the run and on the dash. Over the frame, the stun
-  // stars or the noticed mark, never both.
   // The frame centres on the SPRITE's own columns (px, already rounded), not
   // on a.x: a wolf's 16-wide body under an 11-wide bar rounded the two
   // halves apart, and the bar shivered a pixel against the body as it ran.
-  const bw = rabbit ? 8 : big ? 49 : wolf ? 11 : 23; // widths that split into even segments (hpSegCount)
-  const cx = px + spr.width / 2, mid = px + (spr.width >> 1);
-  const bx = Math.round(cx - bw / 2); // the bars' own left column (drawHealthBar's x)
-  // The frame stands still over the TALLEST pose any clip reaches (`crown`,
-  // a bear's rear-up), never over the frame now playing: a bar that rode the
-  // roar up and down would jump, and one on the standing head is buried by it
+  // It stands still over the tallest pose its clips reach (`crown`; a bear's
+  // roar is the one it lets pass behind it), never over the frame now
+  // playing: a bar that rode the poses up and down would jump
   const fy = py + (spr.crown || 0);
   // a ridden deer's bar is its rider's: one row under theirs, in their
   // side's colour (drawPlayer), so the two read as one frame
   if (a.rider) return;
-  overheadPlate(() => {
-    drawHealthBar(cx, fy - 8, a.hp, a.maxHp, bw, undefined, undefined, a);
-    if (wolf) drawHealthBar(cx, fy - 5, a.threat, 1, bw, undefined, THREAT_COL);
-    else drawHealthBar(cx, fy - 5, rabbit ? a.dodge : a.sprint, 1, bw, undefined, STAM_COL);
-    drawLevelBadge(bx - 1, fy - 9, a.level);
-    if (a.stunT > 0) drawStunStars(mid, fy - 13, a, 4);
-    else if (a.senseT > 0) drawSenseMark(mid, fy - 16, a, wolf ? THREAT_COL : STAM_COL);
-  });
+  const two = isCampKind(a.kind) ? a.threat : a.kind === 'rabbit' ? a.dodge : a.sprint;
+  overheadPlate(() => drawBeastFrame(a.kind, px + spr.width / 2, px + (spr.width >> 1), fy, a, two, a));
+}
+
+// The player's frame, on a beast: health on top, always, the second bar
+// hung 3 rows under it the way a player's stamina hangs under the health,
+// the two sharing a wall, and the level badge on the left spanning both -
+// the same plate a hero wears (drawLevelBadge), because the number means
+// the same thing over either. The second bar is always worn: a wolf's
+// threat, bare track at rest and filling from the first flicker of
+// interest to the full bar it charges on (updateWolf, js/wildlife.js); a
+// deer's sprint and a rabbit's jink charge (updatePrey) in stamina white -
+// each is one, spent on the run and on the dash. Over the frame, the stun
+// stars or the noticed mark, never both. The bar's width is the kind's
+// (beastFrame): BEAST_BAR_W, or a camp monster's own `frame` row - a bear's
+// is drawn at its body's 2x, cut into fixed `segs`, and centred whole,
+// plate and bar together, on its body. `cx` is the body's centre, `mid` its
+// centre column, `fy` the row the frame stands on; drawAnimal's in the
+// world and the wiki's cards (ui/menu.js) are the same pixels.
+const BEAST_BAR_W = { rabbit: 8, wolf: 11, deer: 23 }; // widths that split into even segments (hpSegCount)
+function beastFrame(kind) { return (MONSTER[kind] && MONSTER[kind].frame) || { s: 1, w: BEAST_BAR_W[kind] || 17 }; }
+function drawBeastFrame(kind, cx, mid, fy, e, two, u) {
+  const F = beastFrame(kind), k = F.s, camp = isCampKind(kind);
+  const bc = F.centre ? mid + levelBadgeW(e.level) * k / 2 : cx; // the bar's centre: the plate's half off a centred frame's
+  const bx = Math.round(bc - F.w * k / 2);                       // the bar's own left column (drawHealthBar's x)
+  drawHealthBar(bc, fy - 8 * k, e.hp, e.maxHp, F.w, undefined, undefined, u, k, F.segs);
+  drawHealthBar(bc, fy - 5 * k, two, 1, F.w, undefined, camp ? THREAT_COL : STAM_COL, undefined, k);
+  drawLevelBadge(bx - k, fy - 9 * k, e.level, k);
+  if (e.stunT > 0) drawStunStars(mid, fy - 13 * k, e, 4, undefined, k);
+  else if (e.senseT > 0) drawSenseMark(mid, fy - 16 * k, e, camp ? THREAT_COL : STAM_COL, k);
 }
 
 // The only thing in the world that leaves the ground: the sprite lifts off
