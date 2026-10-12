@@ -194,6 +194,16 @@ function drawTallies(k) {
     ctx.globalAlpha = tallyQueue[i + 4];
     ctx.drawImage(img, Math.round(tallyQueue[i + 1] * k), Math.round(tallyQueue[i + 2] * k - img.height * s / 2), img.width * s, img.height * s);
   }
+  // ...and the words a hit says (wordPop, js/core.js), over the totals: one
+  // beat bigger as they land, like a total taking a hit
+  for (const w of wordPops) {
+    const img = tallyImg(w.txt, BAR_NEUTRAL);
+    const s = Math.max(1, Math.round(k * (w.t < TALLY_POP ? TALLY_POP_SC : TALLY_SC)));
+    const u = w.t / WORD_POP_T;
+    ctx.globalAlpha = Math.min(1, 2 * (1 - u));
+    ctx.drawImage(img, Math.round((w.x - camX) * k - img.width * s / 2),
+      Math.round((w.y - camY - u * WORD_POP_RISE) * k - img.height * s / 2), img.width * s, img.height * s);
+  }
   ctx.globalAlpha = 1;
   tallyQueue.length = 0;
 }

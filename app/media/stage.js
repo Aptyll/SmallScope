@@ -53,16 +53,26 @@ window.MEDIA = (function () {
   };
   M.fix = (v) => Math.round(v * 100) / 100;
 
+  // the sim's speed: M.speed 1 is real time, below 1 slow motion (the sim steps
+  // a shorter dt, so it stays smooth), 0 a freeze where only the weather moves:
+  // snow falls and pines sway, every body, arrow, spark and word holds still
+  M.speed = 1;
+  M.still = function () {
+    const held = [particles, floaters, wordPops].map((a) => a.map((q) => Object.assign({}, q)));
+    updateFx(DT);
+    [particles, floaters, wordPops].forEach((a, i) => { a.length = 0; a.push(...held[i]); });
+  };
+
   // one frame: the scene writes inputs, the sim steps, the camera holds still
   M.tick = function () {
     const S = window.SCENE;
     if (S && S.tick) S.tick(M);
-    update(DT);
+    if (M.speed > 0) update(DT * M.speed); else M.still();
     if (S && S.after) S.after(M);
     const c = M.cam || [player.x, player.y];
     camX = Math.round(c[0] - WV_W / 2); camY = Math.round(c[1] - WV_H / 2);
     if (M.draw) render();
-    const row = { f: M.frame, cam: [camX, camY], tr: {} };
+    const row = { f: M.frame, cam: [camX, camY], tr: {}, sp: M.speed };
     for (const n in M.tracks) {
       const b = M.tracks[n], p = typeof b === 'function' ? b() : b;
       if (p) row.tr[n] = Array.isArray(p) ? p.map(M.fix) : [M.fix(p.x), M.fix(p.y), p.dead ? 1 : 0];

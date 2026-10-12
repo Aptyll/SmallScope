@@ -47,7 +47,7 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | file | what it does |
 | --- | --- |
 | `browser.js` | finds Chrome, drives it headless over the DevTools protocol (`open`, `openGame`, `eval`, `inject`, `shot`) |
-| `stage.js` | page side, injected: `MEDIA.boot` flies the drop, cuts the local input, hides the HUD, sets zoom, weather and time; `park`, `track`, `mark`, `drive`; logs hits and the sound cues heard near the camera |
+| `stage.js` | page side, injected: `MEDIA.boot` flies the drop, cuts the local input, hides the HUD, sets zoom, weather and time; `park`, `track`, `mark`, `drive`; `M.speed` slows the sim (0 freezes it: `still` runs only the snow and the effects); logs hits and the sound cues heard near the camera |
 | `rec.js` | records a scene: every frame as `fNNNN.png` plus `log.json` (`--dry` no pixels, `--at f,f` only those) |
 | `still.js` | one clean frame anywhere (`--find open` picks open snow under pines, `--player dx,dy` adds one for scale) |
 | `cut.py` | the editor: `cut.json` shots between beats, sharp camera moves, text, a freeze with a drain, the wishlist card; writes the mp4 and `map.json` |
@@ -59,6 +59,7 @@ state; `DBG.directorKey('F9')` presses a key headless.
 | `paint.py` | the 2D painted cutout painter: parts at 8x, banded to locked ramps, inner lines, outline, stickers, `lint` |
 | `sheet.py` | a concept pick sheet: letters and names, 8x/1x/2x, pasted into a real frame beside a player at each size asked |
 | `scenes/bear-wakes.js` | the example scene and template; `bear-wakes.cut.json` its cut |
+| `scenes/deer-gap.js` | a hunter on a deer breaks three word targets (WISHLIST, ON, STEAM), the last through a cut in the pines mid-leap, slowing to a freeze |
 
 ```
 node app/media/rec.js app/media/scenes/bear-wakes.js W/take --dry      # clean? then:
@@ -84,7 +85,10 @@ number. A focus is a tracked name, `"bear@roar"` (pinned where it stood at the r
 or `[x, y]`; `ox`/`oy` nudge it. `k` is output px per world px, `[from, to]` for a push (zoom moves
 in log space). `ease` is `smooth`, `linear` or `out`. `paint` stamps a 1x sprite into the take frame
 over a tracked body (so it scales with the world, never drifts onto a health bar); `texts` put a
-line over a shot; `end` adds the freeze and the wishlist card.
+line over a shot; `end` adds the freeze and the wishlist card. `step` plays a shot every nth take
+frame, negative to run it backwards (a rewind), and `mute: true` keeps its frames silent. Slow
+motion and a held freeze are recorded, not cut: the scene lowers `M.speed`, so the snow keeps
+falling through them.
 
 ## Rules that came from reviews
 

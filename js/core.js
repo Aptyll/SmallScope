@@ -376,6 +376,14 @@ function tallyHit(u, amount) {
   u.tallyTick = state.tick;
 }
 
+// A word that floats up off a hit (a staged target's `word`, hitPTarget,
+// js/world.js): the running totals' ink and size in the neutral bar's gold,
+// rising WORD_POP_RISE px and fading out over the last half of WORD_POP_T
+// (aged in updateFx, js/sim.js; drawn beside the totals, drawTallies)
+const WORD_POP_T = 1.6, WORD_POP_RISE = 14; // s it floats, and how far up
+const wordPops = []; // { x, y, txt, t }
+function wordPop(x, y, txt) { wordPops.push({ x, y, txt, t: 0 }); }
+
 // an ambush arrow landing, on whatever it lands on: a gold flare over the
 // ordinary hit puff and a crack that never sounds like a normal shot
 function ambushFx(x, y) {

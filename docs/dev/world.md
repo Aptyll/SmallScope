@@ -974,6 +974,13 @@ clock can never eat a landed shot. After the break a **stock** target (the free-
 `agStock`) stands bare `PT_RESPAWN` seconds and springs a fresh face, while a round target is
 spent for good.
 
+**A target can stand in a match too**, though only a staged scene puts one there
+(`app/media/scenes/deer-gap.js`): the arrow test and the draw read `ptargets` in any mode, the
+list rides `SAVE_ROOTS`, and since `updatePractice` never runs in a match the face holds where
+it was put. One carrying a `word` scores nothing: `hitPTarget` shatters it and `wordPop`
+(js/core.js) floats the word up from the face in the damage totals' gold
+([rendering](rendering.md#damage-feedback)).
+
 **Every arrow into a face also extends a consecutive-hit run** (`agStreak`),
 minigame or not: the hit popup carries it from the second hit on (`X3` alone in free practice —
 white, gold from five, hot orange from ten — appended to the points during a round), any

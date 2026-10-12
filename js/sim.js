@@ -435,8 +435,9 @@ function shotContacts(a, x0, y0, dx, dy) {
   }
   // ...the archery targets: the shot meets the FACE, wherever its habit has
   // carried it - ptFace is the same geometry the draw uses, and the hit disc
-  // scales with the target's size (ptHitR)
-  if (PRACTICE) for (const t of ptargets) {
+  // scales with the target's size (ptHitR). Practice's track holds them; in a
+  // match the list is empty unless a staged scene stood one (app/media/scenes)
+  for (const t of ptargets) {
     if (!ptLive(t)) continue;
     const f = ptFace(t);
     const s = sweepDisc(x0, y0, dx, dy, f.x, f.y, ptHitR(t));
@@ -1627,6 +1628,10 @@ function updateFx(dt) {
     const f = floaters[i];
     f.t += dt;
     if (f.t > 0.9) floaters.splice(i, 1);
+  }
+  for (let i = wordPops.length - 1; i >= 0; i--) { // a target's word (hitPTarget, js/world.js)
+    wordPops[i].t += dt;
+    if (wordPops[i].t > WORD_POP_T) wordPops.splice(i, 1);
   }
   updateWarps(dt); // the silhouettes a teleport request left behind (js/tools.js)
   updateSwaps(dt); // ...and the risen icon a tool that traded itself up leaves
