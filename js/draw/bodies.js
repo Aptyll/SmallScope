@@ -289,6 +289,38 @@ function rollFrame(prog) {
 }
 
 const MOUNT_BAR_ROWS = 1; // rows a rider's frame stands higher to hang the deer's bar under it
+// A deer's rider sits IN the deer (RIDE, js/wildlife.js): the cell sinks
+// until its row `hip` meets the back at the seat column, which sits toward
+// the rump, and nothing of the body from that row down is drawn - the deer's
+// own back line is the rider's lower edge, so the legs are out of sight
+// behind the flank. `lift` seats it on the standing frame's back (the plate
+// rides that and holds still); `bob` follows the frame on show, so the body
+// rises and falls with the gallop.
+function riderSeat(p) {
+  const a = p.mount, R = RIDE[a.kind];
+  const still = SPRITES[a.kind][a.dir].idle[0], w = still.width;
+  const left = a.dir === 'left', col = left ? w - 1 - R.col : R.col;
+  const back = backRow(still, col);
+  return {
+    dx: col + (left ? 1 : 0) - (w >> 1), // the cell's middle columns on the seat, mirrored with the deer
+    lift: R.hip - 16 + still.height - back, // the cell's foot is p.y+4, the deer's frame's too
+    bob: backRow(clipFrame(SPRITES[a.kind][a.dir], a), col) - back,
+    hip: R.hip,
+  };
+}
+// the top of a frame's body at one column: the opaque run through the
+// frame's lower middle, walked up past the back (antlers above the gap are
+// not the back). Read once per frame and column, kept on the frame.
+function backRow(spr, col) {
+  const k = 'back' + col;
+  if (spr[k] === undefined) {
+    const d = spr.getContext('2d').getImageData(col, 0, 1, spr.height).data;
+    let y = Math.floor(spr.height * 0.6);
+    while (y > 0 && d[(y - 1) * 4 + 3] > 0) y--;
+    spr[k] = y;
+  }
+  return spr[k];
+}
 function drawPlayer(p, ex, ey, now) {
   const local = p === player;
   const lying = p.prone;
@@ -303,9 +335,10 @@ function drawPlayer(p, ex, ey, now) {
   // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
   // is - the rope and handle over its head are the cable pass's (drawZips)
   const zl = p.zip >= 0 ? ZIP_ALT : 0;
-  // a deer's rider: the body sits its seat up on the deer's back and rides
+  // a deer's rider: the body sits in the deer's back (riderSeat) and rides
   // its leap (rideLift, js/wildlife.js); the deer casts the shadow
-  const rl = rideLift(p);
+  const seat = p.mount ? riderSeat(p) : null;
+  const rl = rideLift(p) + (seat ? seat.lift : 0);
   let spr = set[frame];
   // the fish catch: three DOWN-facing frames whatever the body faces
   // (catchFrame, js/tools.js). The hoist frame is 20 tall on the same feet,
@@ -329,7 +362,7 @@ function drawPlayer(p, ex, ey, now) {
   // thing at eight times the art.
   const ix = lying && frame === 2 ? (p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0) : 0;
   const iy = lying && frame === 2 ? (p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0) : 0;
-  const px = Math.round(p.x - 8 - ex) + ix;
+  const px = Math.round(p.x - 8 - ex) + ix + (seat ? seat.dx : 0);
   const py = Math.round(p.y - 12 - ey) + iy - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
   // where the frame's top-left sits: a class frame fills the 16x16 cell (a
   // taller one keeps its feet on the cell's floor, a doll frame holds the cell
@@ -409,7 +442,8 @@ function drawPlayer(p, ex, ey, now) {
     // body: the pose shifts / tilts the sprite itself (abilityPose,
     // js/abilities.js), so an ability visibly happens to the model
     const pose = state.mode !== 'title' ? abilityPose(p) : null;
-    const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl;
+    const bob = seat ? seat.bob : 0; // a rider rises and falls with the gallop, the plate holds still
+    const ax = px + (pose ? pose.dx : 0), ay = py + (pose ? pose.dy : 0) - zl + bob;
     const sy = ay + by - py, sx = ax + bx - px; // a taller frame (the hoist) keeps its feet
     // held tool: behind the body when facing away, in the hand otherwise. A
     // lying player shows one only while the bow is actually drawn - a carried
@@ -418,7 +452,13 @@ function drawPlayer(p, ex, ey, now) {
     const held = state.mode !== 'title' && (!lying || p.charging) && catchF < 0 &&
       p.castT <= 0 && p.shieldT <= 0 && p.rushT <= 0 && p.zip < 0; // ...or holding a zipline's handle
     const toolBehind = held && p.dir === 'up' && !p.charging && p.swingT <= 0 && p.slashT <= 0; // a blade mid-sweep is always in front
-    if (toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py));
+    if (toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));
+    // a rider's body stops at the deer's back: the rows from its hip down
+    // are the deer's (riderSeat); what the hands hold is not cut
+    if (seat) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(sx - 32, py + bob + seat.hip - 64, spr.width + 64, 64); ctx.clip();
+    }
     if (p.invuln > 0 && state.mode !== 'title' && ((now * 12) | 0) % 2 === 0) ctx.globalAlpha = 0.45;
     if (pose && pose.rot) {
       ctx.save();
@@ -441,8 +481,9 @@ function drawPlayer(p, ex, ey, now) {
       drawGearMarks(p, ax, ay - (running ? runBob(p) : 0), 1, running,
         p.dir === 'right' ? 1 : p.dir === 'left' ? -1 : 0);
     }
+    if (seat) ctx.restore();
     ctx.globalAlpha = 1;
-    if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py));
+    if (held && !toolBehind) atFeet(fx0, fy0, wsc, () => drawHeldTool(p, px, py + bob));
     // what an ability left ON this body - shield, net, jaws, fury, mark -
     // drawn over the sprite for every side alike (js/abilities.js)
     if (state.mode !== 'title') atFeet(fx0, fy0, wsc, () => drawAbilityOnPlayer(p, ax, ay, now));

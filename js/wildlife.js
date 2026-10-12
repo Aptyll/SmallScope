@@ -830,9 +830,11 @@ const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight clim
 // prone, the zipline, the air, or either one dying throws the rider
 // (rideCheck, stunUnit, die, animalDies).
 // What can be ridden, per kind: its gallop as a multiple of a player's walk
-// (the deer's own sprint, DEER_RUN_MUL) and how many rows up its back the
-// rider sits (the draw, rideLift)
-const RIDE = { deer: { mul: DEER_RUN_MUL, seat: 14 } };
+// (the deer's own sprint, DEER_RUN_MUL) and where on its back the rider sits
+// (the draw, riderSeat): `col` is the seat's column in the right-facing frame,
+// and the rider's 16-row cell sinks until its row `hip` meets the back there,
+// so the back hides the legs and the rider sits IN the deer, not on top
+const RIDE = { deer: { mul: DEER_RUN_MUL, col: 13, hip: 14 } };
 const RIDE_REACH = 20;     // px from the player to a deer that E reaches
 const RIDE_LEAP_T = 0.45;  // s a leap is in the air
 const RIDE_LEAP_CD = 0.6;  // s on the ground before the next leap
@@ -972,14 +974,14 @@ function rideOverLeap(p) {
   return false;
 }
 // how far off the ground a body is drawn by the ride: the leap's arc for the
-// deer and its rider alike, plus the seat for the rider (drawAnimal, drawPlayer)
+// deer and its rider alike (drawAnimal, drawPlayer; the seat is riderSeat's)
 function leapArc(p) {
   if (!p || !(p.leapT > 0)) return 0;
   const u = p.leapUp || 0; // past RIDE_LEAP_T it is holding over a trunk: low, still clear of it
   return u < RIDE_LEAP_T ? Math.round(Math.sin(Math.PI * u / RIDE_LEAP_T) * RIDE_LEAP_H) : 2;
 }
 function rideLift(e) {
-  if (e instanceof Player) return e.mount ? RIDE[e.mount.kind].seat + leapArc(e) : 0;
+  if (e instanceof Player) return e.mount ? leapArc(e) : 0;
   return e.rider ? leapArc(e.rider) : 0;
 }
 
