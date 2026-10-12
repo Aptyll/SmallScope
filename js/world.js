@@ -1499,8 +1499,8 @@ function placeCreek() {
 }
 
 // ------------------------------------------------------------ zipline
-// THE ZIPLINE: one cable per team, strung on pylons from just outside its
-// base's outer stump ring, down beside the spur and along the road's own verge, to
+// THE ZIPLINE: one cable per team, strung on pylons from the stump ring
+// beside its bird, out over the spur's treeline and along the road's own verge, to
 // a terminus ZIP_MID_GAP road-units short of the road's centre - so the
 // middle stretch where the waves meet is cable-free and is always walked
 // into. The walk out of a base is dead time with no decisions in it; the
@@ -1534,7 +1534,7 @@ const ZIP_HOVER = 6;       // px the pointer may sit off the DRAWN cable (the tr
 const ZIP_ALT = 8;         // px the riding body hangs above its own shadow (the draw)
 const ZIP_H = 31;          // px above the ground track the cable itself hangs at a pylon: one row under the crossarm's top (PYLON_H, js/draw/zipline.js)
 const ZIP_SAG = 3;         // px a span sags at its middle
-const ZIP_BASE_OUT = 7.5;  // tiles from the crater the base pylon stands: outside the outer stump ring (BOOM_STUMP_R2)
+const ZIP_BASE_OUT = 4.4;  // tiles from the crater the base pylon stands: in the middle stump ring (BOOM_R..BOOM_STUMP_R), so the ride home lets go beside the bird, well clear of the verge pylon
 const ZIP_SPUR_OFF = 1.9;  // tiles the spur leg stands off the spur's own axis (over SPUR_HW: never on the track), toward the front
 const zips = [];           // [team] -> { team, pts: [{x, y}] (body positions, base -> front), cum: [px along at each point], len }
 // a point `s` tiles off the diagonal at u, signed like roadOffS (+ toward the

@@ -649,9 +649,10 @@ a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at ea
 `roadEdgeAt`, `findCrashPoint`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
 untouched. Not under `PRACTICE`. The points, base to front:
 
-1. the **base pylon**, `ZIP_BASE_OUT` (7.5) tiles from the crater along the spur's axis (the crash
+1. the **base pylon**, `ZIP_BASE_OUT` (4.4) tiles from the crater along the spur's axis (the crash
    point by the crash's own rule, `findCrashPoint`) and `ZIP_SPUR_OFF` (1.9) tiles off that axis
-   toward the front — outside the outer stump ring, and over `SPUR_HW` so the track is never blocked;
+   toward the front — in the middle stump ring beside the bird, so the ride home lets go there,
+   and over `SPUR_HW` so the track is never blocked;
 2. the **verge pylon** where the spur meets the road, `ZIP_SPUR_OFF` along the road from the
    junction and `roadEdgeAt(u, side) + ZIP_OUT` (0.6) tiles off the centreline on the bird's own
    right (`roadNest(team).side` — the two cables sit on opposite verges and mirror through the

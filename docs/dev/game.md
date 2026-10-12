@@ -192,7 +192,7 @@ met on the road reaches the rival bird, and a scrapped soldier pays its killer g
 on the spot — so the lane is where the fighting, the pushing and the paying are, and a base is
 something to walk *out* of. A raid that wrecks a barracks thins a side's waves until its
 merchant rebuilds it. **The walk out is not the fight, so a zipline compresses it**: each side's
-cable runs from outside its crater's stump rings along the road's verge to short of the middle, and any body
+cable runs from the stump ring beside its bird along the road's verge to short of the middle, and any body
 of that team under it clips on with E, rides either way at three times a walk, and lets go
 anywhere — hands on the handle, still a target, dropped by a stun or a net, and the last stretch
 into the fight always walked. [The road](world.md#the-road), [the zipline](world.md#the-zipline),
