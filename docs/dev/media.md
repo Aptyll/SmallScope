@@ -26,6 +26,22 @@ Concept art is the same shape: a rough sheet (`paint.py` + `sheet.py`), the user
 polish only the pick. Draft at medium effort; spend high effort on the final only. A re-cut costs
 nothing to re-record: shots name the take's own beats, so most notes are a `cut.json` edit.
 
+## Director mode: filming the live game
+
+The kit stages headless takes; director mode films a match you are playing, for OBS or the game's
+own recorder (code: js/director.js). **F7** turns it on and shows a strip at the left edge with the
+keys. While it is on: the **arrows** fly a free camera (they stop walking the body), **HOME** hands
+the camera back to a steady follow with no aim lean, **PAGE UP / PAGE DOWN** and the wheel zoom on
+a slow glide, **F8** hides the HUD (`DBG.hideUI`, the kit's own switch: also the aim line, the
+pointer's gold rims and E caps), **F9** swaps the window's 16:9 for a **9:16** frame whose canvas is
+always 1080x1920 device px (360x640 game px) shown fitted to the window, and **F2** starts and stops
+a take of the canvas itself, saved as a download: H.264 mp4 where the browser has it, else VP9
+webm, with the sounds but not the music. The strip is drawn after the take copies the frame, so it
+is never in a take; with the HUD hidden it shows only a moment after a key. A screen recorder
+captures the 9:16 frame at the size it is shown, so use F2 for a crisp 1080x1920 Short and OBS
+for 16:9 at the monitor's own size. The free camera also pans while paused. `DBG.director` is the
+state; `DBG.directorKey('F9')` presses a key headless.
+
 ## The files
 
 | file | what it does |

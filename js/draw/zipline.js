@@ -124,7 +124,7 @@ function drawZips(ex, ey, now) {
 // whole answer and the line stays away.
 function drawZipGuide(ex, ey) {
   const z = zipLitLine();
-  if (!z) return;
+  if (!z || window.DBG.hideUI) return;
   const n = zipNearest(z, player.x, player.y);
   if (n.dist <= ZIP_GRAB) return;
   const q = zipPoint(z, n.d);

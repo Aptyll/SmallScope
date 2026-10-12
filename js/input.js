@@ -59,8 +59,9 @@ function keyLabel(k) {
 // each, saved with the profile (settings.binds). This is every rebindable
 // verb, in the order the CONTROLS page lists them, with the key each starts
 // on. What is NOT here is fixed - Escape backs out of everything, Enter and
-// the arrows walk the menus (and the arrows always walk the body too), F3 and
-// '.' are the two debug flips, the mouse buttons are the mouse's. Nothing
+// the arrows walk the menus (and the body too, unless a director's camera has
+// them), F3 and '.' are the two debug flips, F2 and F7-F9 are director mode's
+// (js/director.js), the mouse buttons are the mouse's. Nothing
 // compares a key event against a literal: keyIs / keyHeld ask the binds, and
 // a pad button names an ACTION (PAD_PLAY) and presses whatever key it
 // holds, so a rebind moves both controllers.
@@ -227,7 +228,7 @@ const mouse = { x: VIEW_W / 2, y: VIEW_H / 2, down: false, inside: false, src: '
 // dead on a pad. `e` is {key, repeat, char}: key the game's NAME for the key
 // (keyName above), char what it typed (the name editor's letters) - a real
 // KeyboardEvent translated, or the object a pad builds.
-const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F3', 'F4', 'F6']);
+const KEY_PREVENT = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'Tab', 'F2', 'F3', 'F4', 'F6', 'F7', 'F8', 'F9']);
 pageListen(window, 'keydown', (e) => {
   const k = keyName(e);
   // Tab is held to read the scoreboard (scoreboardOpen()), so it must never
@@ -258,6 +259,9 @@ function keyPress(e) {
   // opens its out-of-game page, in any mode for the same reason (js/ui/botview.js)
   if (e.key === 'F4') { botViewStep(); return; }
   if (e.key === 'F6') { openBotLab(); return; }
+  // F7 and, while directing, its keys (directorKey, js/director.js) - in any
+  // mode, since a Short is filmed off the drop and the end screens too
+  if (directorKey(e)) return;
   if (state.mode === 'title') { menuKey(e); return; }
   if (ladderWatch && state.mode !== 'title') { ladderWatchKey(e); return; } // a watched bot match has its own keys (js/ui/ladder.js)
   if (state.mode === 'drop') {
@@ -1133,10 +1137,11 @@ function sampleHumanInput(p, dt) {
   let mx = 0, my = 0;
   if (ckOn() && p.dead) ckClear();
   if (!ckOn()) {
-    if (keyHeld('up') || keys['arrowup']) my -= 1;
-    if (keyHeld('down') || keys['arrowdown']) my += 1;
-    if (keyHeld('left') || keys['arrowleft']) mx -= 1;
-    if (keyHeld('right') || keys['arrowright']) mx += 1;
+    const ar = !director.on; // a director's arrows fly the camera (dirCam, js/director.js)
+    if (keyHeld('up') || (ar && keys['arrowup'])) my -= 1;
+    if (keyHeld('down') || (ar && keys['arrowdown'])) my += 1;
+    if (keyHeld('left') || (ar && keys['arrowleft'])) mx -= 1;
+    if (keyHeld('right') || (ar && keys['arrowright'])) mx += 1;
   }
   // ...and a pad's left stick, at its tilt (gamepad.js loads after this
   // file; this is a run-time read)

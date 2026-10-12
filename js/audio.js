@@ -17,6 +17,7 @@
   let sfxVol = 1;
   let windGain = null;
   let an = null;       // lazy analyser on sfxBus, for SFX.meter()
+  let tapOut = null;   // lazy stream off master, for SFX.tap()
 
   function ensure() {
     if (!ctx) {
@@ -613,6 +614,14 @@
     // table asks for. The info stack (F3) prints this, so "I hear no new sounds"
     // is one keypress from an answer instead of a guess.
     banked() { return { got: bankStat.got, want: bankStat.want, err: bankStat.err.length }; },
+    // Everything on the master dial as a MediaStream, for director mode's
+    // recorder (js/director.js): the sounds and the wind as heard, the music
+    // not (it plays through its own elements, outside the graph).
+    tap() {
+      ensure();
+      if (!tapOut) { tapOut = ctx.createMediaStreamDestination(); master.connect(tapOut); }
+      return tapOut.stream;
+    },
     // Peak on the SOUNDS bus right now, 0..1. Costs nothing until first asked
     // for; poll it around a cue to prove the cue makes signal.
     meter() {
