@@ -633,7 +633,7 @@ Code that is dead **on purpose** is the next section.
   made visible (`aiFlagSync`, ai.js); nothing in the ladder is a retreat, so the fourth wedge is a
   human's alone until one is.
 - **[README.md](../../README.md) is bare on purpose**: the main menu still
-  (`docs/media/github-title.png`), the Steam and Discord links and the license line; the store
+  (`docs/media/github-title.png`), the Steam, Discord, YouTube and X links and the license line; the store
   copy lives on Steam. The other `github-*` stills, the capsule set and the gallery pngs stay in
   the tree unreferenced. The repo's **Social
   preview** is set by hand in GitHub settings to `github-preview.png` (1280×640, under 1 MB). A
