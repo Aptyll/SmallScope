@@ -18,7 +18,6 @@ const CB_GAP = 2;            // between two wells
 const CB_SPLIT = 7;          // between the two groups
 const CB_TAB_W = 7, CB_TAB_H = 14; // the fold tab on the plate's right edge
 const CB_FLASH_T = 0.18;     // s a pressed well stays white
-const CB_LABEL_W = 92;       // look B: the name column beside the icons
 // the buttons, top to bottom; `aim` arms a ghost, `auto` names a standing toggle
 const CHEATS = [
   { id: 'level', name: 'LEVEL UP' },
@@ -153,9 +152,9 @@ function cbIcon(id) {
   return cbIcons[id];
 }
 
-// this screen's bar state - the look, never the sim: folded, which well was
+// this screen's bar state, never the sim's: folded, which well was
 // last pressed (the flash), and the armed aim ('tp' | 'dummy' | null)
-const cheatUi = { open: true, flashId: null, flashT: 0, aim: null, look: 'A' };
+const cheatUi = { open: true, flashId: null, flashT: 0, aim: null };
 
 function cheatBarUp() { return PRACTICE && state.mode === 'play' && hudInT() >= 1 && !shopOpen(); }
 // 1x layout, in the bar's own space (its top-left at the view's cheatTop):
@@ -163,7 +162,7 @@ function cheatBarUp() { return PRACTICE && state.mode === 'play' && hudInT() >= 
 function cheatPlateRect() {
   let h = AB_PAD * 2 + CHEATS.length * CB_CELL + (CHEATS.length - 1) * CB_GAP;
   for (const c of CHEATS) if (c.split) h += CB_SPLIT - CB_GAP;
-  const w = AB_PAD * 2 + CB_CELL + (cheatUi.look === 'B' ? CB_LABEL_W : 0);
+  const w = AB_PAD * 2 + CB_CELL;
   return { x: 0, y: 0, w, h };
 }
 // where the bar's top lands in the view: clear of the corner's open drawer
@@ -200,8 +199,6 @@ function cheatHit(mx, my) {
   if (!cheatUi.open) return null;
   for (let i = 0; i < CHEATS.length; i++) {
     const r = cheatCellRect(i);
-    // look B: the name beside a well is part of its button
-    if (cheatUi.look === 'B') r.w += CB_LABEL_W;
     if (cbIn(r, mx, my)) return { kind: 'cell', i };
   }
   if (cbIn(cheatPlateRect(), mx, my)) return { kind: 'plate' };
@@ -281,9 +278,6 @@ function drawCheatBar1() {
       ctx.fillStyle = on ? '#1c2a4e' : BAG_WELL;
       ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
       ctx.drawImage(cbIcon(c.id), r.x + 2, r.y + 2 - (hot ? 1 : 0));
-      if (cheatUi.look === 'B') {
-        drawPixelTextShadow(ctx, c.name, r.x + r.w + 4, r.y + 5, on ? HUD_FROST : hot ? '#f4f7ff' : '#b4c0dc', '#0a0e23');
-      }
     }
     // the gap between the groups carries one quiet steel tick
     for (let i = 1; i < CHEATS.length; i++) if (CHEATS[i].split) {

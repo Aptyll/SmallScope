@@ -332,7 +332,7 @@ function tipAt(mx, my) {
   const rc = railHit(mx, my);
   if (rc) return tipRail(rc);
   const ch = cheatHit(mx, my);
-  if (ch && ch.kind === 'cell' && cheatUi.look !== 'B') return tipCheat(ch.i);
+  if (ch && ch.kind === 'cell') return tipCheat(ch.i);
   const fh = shelfHit(mx, my);
   if (fh) {
     const cell = shelfCell();

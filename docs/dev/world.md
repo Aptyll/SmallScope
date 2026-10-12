@@ -993,12 +993,11 @@ number is the thing being climbed - and losing a run that long plays `SFX.runBro
 
 **The archery round** hangs off the **bell** (`agbell`, `AG_BELL`) west of the dummy: standing
 within E's reach (`agBellNear`) raises an `E RING` cap (`drawBellHint`, js/ui/wheel.js), and **holding E
-opens a five-wedge radial wheel** (kind `'agbell'`, `AG_WEDGES`, the roll die's own hold-and-release
-grammar and the ordinary wheel pipeline) — the range's three difficulties, each drawn as **the target
-face the round pours out, smaller as the pick gets harder**, then the two other rounds (QUICK
-DRAW and DEFEND, below) in their own marks (`AG_WEDGE_ART`, js/draw/practice.js); the armed one
-wears a gold frame (the bell itself never wears the pick — no recolour, the wheel's frame is the
-readout).
+opens a three-wedge radial wheel** (kind `'agbell'`, `AG_WEDGES`, the roll die's own hold-and-release
+grammar and the ordinary wheel pipeline) — one wedge per round, RANGE, QUICK DRAW and DEFEND, each
+in its own mark (`AG_WEDGE_ART`, js/draw/practice.js) with the best medal it has earned pinned to
+the corner; the last-rung one wears a gold frame (the bell itself never wears the pick — no
+recolour, the wheel's frame is the readout).
 
 **What a round is lives in `AG_ROUNDS`** (js/world.js), one entry per round: its name, its
 starting clock, how it opens (`begin`) and runs (`tick`), what a hit pays and what its popup says
@@ -1024,6 +1023,11 @@ The range is the entry described next. The other two:
 Each round keeps its own all-time record: the range's in `PROFILE.bestRange`, the others in
 `PROFILE.bestRound(id)`; the bell's BEST / LAST plate shows the last-rung round's.
 
+**Medals**, Crossbow Training's: each round's `medals` is the score for bronze, silver and gold
+(untuned first guesses), `agMedal` reads a score against them, and the medal is never stored —
+it is always the record's. The final score wears the round's at 2x, the bell's plate the best's,
+and each wheel wedge its round's best (`MEDAL_SPR`, js/draw/practice.js).
+
 Releasing on a wedge IS the ring (`agRing`, through the same `input.cmd` → `runCmd` path every
 order takes) and runs the show — this is the range's (`AG_ROUNDS.range`); the other rounds share
 everything up to GO (`agame.phase`, ticked by `agUpdate` from `updatePractice`): the
@@ -1032,10 +1036,10 @@ stock roster bursts away and **the dummy, the rack and the bell itself sink unde
 entirely, so nothing blocks a shot — which is also why a running round cannot be rung off, and
 `agEndRound` puts the same instances back), a **3-2-1 countdown** lands (a second per tick on
 `SFX.countTick`, the class screen's own cue) in the eagle drop's
-big-number language, and for `AG_T` seconds **random targets pour onto the track from the
-picked difficulty's spawn table** (`AG_DIFF`: the three mover speeds, the small/still/pop odds,
-the crowd cap and its refill pace — easy is slow, large and sparse, hard fast, small and
-crowded) — each worth points on the harder-shot-pays-more rule (base 10; small, pop-up and
+big-number language, and for `AG_T` seconds **random targets pour onto the track from a spawn
+table that climbs with the clock** (`AG_DIFF`, a third of the round on each in `AG_RANGE_DIFF`
+order: the three mover speeds, the small/still/pop odds, the crowd cap and its refill pace —
+easy is slow, large and sparse, hard fast, small and crowded) — each worth points on the harder-shot-pays-more rule (base 10; small, pop-up and
 fast/medium pay more, speed scored by **class** so the bonus means the same thing on every
 difficulty's table; the floater at the face says what it paid).
 

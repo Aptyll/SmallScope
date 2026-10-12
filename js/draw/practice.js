@@ -446,14 +446,11 @@ function drawPTarget(t, ex, ey, now) {
   else ctx.drawImage(spr, bx - (w >> 1), Math.round(ptFace(t).y - ey) - hop - (h >> 1), w, h);
 }
 
-// The hit-ring flash: one quick shock ring snapping out from every face
-// break (agRings, js/world.js), sized to the face it came off. Rasterised
-// 1px dots rather than an arc stroke, so the ring stays as crisp as the
-// pixel grid; white-hot young, cooling to gold as it spreads and fades.
-// a bell wheel wedge for a round that is not the range's (AG_WEDGES), each
-// round's own mark. QUICK DRAW: one small face with the speed streaks of a
-// face coming at you.
+// a bell wheel wedge (AG_WEDGES), each round's own mark. RANGE: the big
+// target face. QUICK DRAW: one small face with the speed streaks of a face
+// coming at you.
 const AG_WEDGE_ART = {
+  range(x, y) { ctx.drawImage(TARGET_SPR, x - 7, y - 7, 14, 14); },
   quick(x, y) {
     ctx.drawImage(TARGET_SPR, x - 3, y - 5, 10, 10);
     ctx.fillStyle = '#f4f7ff';
@@ -477,7 +474,31 @@ const DF_WEDGE_SPR = SPR.bake([
   '....oWo....',
   '...ooooo...',
 ], { '.': null, o: '#1c1208', b: '#c9a874', W: '#8a6142', t: '#a83232', T: '#d05548' });
-function drawAgRoundWedge(id, x, y) { if (AG_WEDGE_ART[id]) AG_WEDGE_ART[id](x, y); }
+// ...and the best medal that round has earned, pinned to the mark's corner
+function drawAgRoundWedge(id, x, y) {
+  if (AG_WEDGE_ART[id]) AG_WEDGE_ART[id](x, y);
+  const m = agMedal(id, agame.bests[id] || 0);
+  if (m) ctx.drawImage(MEDAL_SPR[m], x + 3, y + 2);
+}
+// The medals: bronze, silver, gold, a 7x9 disc on a short ribbon - the end
+// screen stamps one at 2x, the wheel and the bell's plate at 1x. MEDAL_SPR[m]
+// for m 1..3 (agMedal, js/world.js); [0] is no medal.
+const MEDAL_SPR = [null, ...[
+  { m: '#c07a3a', h: '#e8a868', d: '#7a4a20' },
+  { m: '#b8c4d4', h: '#eef3fa', d: '#6a7888' },
+  { m: '#f2cc6a', h: '#fff1b0', d: '#b8912f' },
+].map((c) => SPR.bake([
+  '.oo.oo.',
+  '.or.ro.',
+  '..ooo..',
+  '.ohhmo.',
+  'ohmmmdo',
+  'ommmmdo',
+  'ommmddo',
+  '.oddmo.',
+  '..ooo..',
+], { '.': null, o: '#0a0e1c', r: '#a83232', m: c.m, h: c.h, d: c.d }))];
+
 // a DEFEND raider: the field dummy's own body hopping on its post, its
 // shadow left on the snow (shrinking as it rises) so the hop reads
 function drawRaider(t, ex, ey) {
@@ -502,6 +523,10 @@ function drawDfHold(ex, ey) {
     ctx.fillRect(Math.round(cx + Math.cos(a) * DF_REACH), Math.round(cy + Math.sin(a) * DF_REACH * 0.6), 2, 1);
   }
 }
+// The hit-ring flash: one quick shock ring snapping out from every face
+// break (agRings, js/world.js), sized to the face it came off. Rasterised
+// 1px dots rather than an arc stroke, so the ring stays as crisp as the
+// pixel grid; white-hot young, cooling to gold as it spreads and fades.
 function drawAgRings(ex, ey) {
   for (const g of agRings) {
     const u = g.t / AG_RING_T;
@@ -583,6 +608,9 @@ function drawAgame(ex, ey, now) {
     const v = rows[i][1];
     drawPixelTextShadow(ctx, v, x + W - 3 - pixelTextWidth(v), ry, rows[i][2], 'rgba(8,12,28,0.9)');
   }
+  // the best's medal hangs off the plate's right edge
+  const m = agMedal(agame.mode, agame.best);
+  if (m) ctx.drawImage(MEDAL_SPR[m], x + W + 2, y + 1);
 }
 
 // Off-screen targets: while the round runs, every live face outside the view
@@ -730,6 +758,9 @@ function drawAgameUI(now) {
   const hs = G.lastLine;
   drawPixelTextOutline(ctx, hs, Math.round(cxm - pixelTextWidth(hs) / 2),
     Math.round(VIEW_H * 0.28) + 28, '#e0c890', '#0f1632');
+  // the medal the round earned, stamped at 2x beside the score
+  const md = MEDAL_SPR[G.lastMedal];
+  if (md) ctx.drawImage(md, Math.round(cxm + pixelTextWidth(s, 3) / 2) + 5, Math.round(VIEW_H * 0.28) + 7, md.width * 2, md.height * 2);
 }
 
 // A flag: dark pole with a gilt finial, and a big red cloth streaming off it

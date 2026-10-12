@@ -38,7 +38,7 @@ function wheelOptions() {
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
   if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
-  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // the range's three, then the other rounds (js/world.js)
+  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/world.js)
   // the MOUSE scheme's action wheel: the four abilities clockwise from the
   // top, then the two meals and the flag (MS_WHEEL, js/input.js)
   if (w.kind === 'kit') return MS_WHEEL.map((id) => ({ id }));
@@ -602,15 +602,12 @@ function renderWheel(now) {
         ctx.fillRect(rix - 7, riy - 7, 1, 14); ctx.fillRect(rix + 6, riy - 7, 1, 14);
       }
     } else if (w.kind === 'agbell') {
-      // a difficulty wedge is the round it rings in: the TARGET FACE the
-      // spawner pours out, drawn smaller as the pick gets harder. The armed
-      // difficulty wears the gold frame - the bell itself never changes.
+      // a wedge is a round, in its own mark with its best medal pinned to
+      // the corner (js/draw/practice.js). The last-rung round wears the gold
+      // frame - the bell itself never changes.
       const rix = Math.round(ix), riy = Math.round(iy);
-      const di = PK_DIFFS.indexOf(opt.id);
-      const fw = [14, 11, 8][di];
-      if (di < 0) drawAgRoundWedge(opt.id, rix, riy); // another round's own mark (js/draw/practice.js)
-      else ctx.drawImage(TARGET_SPR, rix - (fw >> 1), riy - (fw >> 1), fw, fw);
-      if (agame.mode === (di < 0 ? opt.id : 'range') && (di < 0 || agame.diff === opt.id)) {
+      drawAgRoundWedge(opt.id, rix, riy);
+      if (agame.mode === opt.id) {
         ctx.fillStyle = '#ffd95c';
         ctx.fillRect(rix - 9, riy - 9, 18, 1); ctx.fillRect(rix - 9, riy + 8, 18, 1);
         ctx.fillRect(rix - 9, riy - 9, 1, 18); ctx.fillRect(rix + 8, riy - 9, 1, 18);
@@ -649,9 +646,8 @@ function renderWheel(now) {
       label = 'ROLL ' + opt.id.toUpperCase();
       color = PK_PIP_COL[PK_DIFFS.indexOf(opt.id)];
     } else if (w.kind === 'agbell') {
-      const di = PK_DIFFS.indexOf(opt.id);
-      label = 'RING ' + (di < 0 ? AG_ROUNDS[opt.id].name : opt.id.toUpperCase());
-      color = di < 0 ? '#ffd95c' : PK_PIP_COL[di];
+      label = 'RING ' + AG_ROUNDS[opt.id].name;
+      color = '#ffd95c';
     } else if (w.kind === 'kit') {
       ({ label, color } = kitLabel(opt.id));
     } else if (opt.id === 'upgrade') {

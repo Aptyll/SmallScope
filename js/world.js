@@ -2310,22 +2310,23 @@ function agShatter(t) {
 // The BELL west of the dummy starts the round on the die's own grammar:
 // HOLDING E beside it (agBellNear - shared by the E RING cap, drawBellHint
 // in js/ui.js, and the press in js/input.js) opens a three-wedge radial
-// wheel (kind 'agbell', the ordinary wheel pipeline) - one wedge per
-// difficulty, each drawn as the TARGET FACE the round pours out, smaller as
-// the pick gets harder, the armed one wearing a gold frame. Releasing on a
+// wheel (kind 'agbell', the ordinary wheel pipeline) - one wedge per round
+// (AG_WEDGES: RANGE, QUICK DRAW, DEFEND), each in its own mark with its best
+// medal, the last-rung one wearing a gold frame. Releasing on a
 // wedge IS the ring (agRing, through the same input.cmd -> runCmd path every
 // order takes): the stock roster bursts away, the dummy, the rack AND THE
 // BELL ITSELF sink under the snow (their objects leave the grid at full
 // depth, so nothing blocks a shot or a runner - which is also why a running
 // round cannot be rung off: the timer alone ends it), a 3-2-1 countdown
-// lands, and for AG_T seconds random targets pour onto the track from the
-// picked difficulty's spawn table (AG_DIFF: mover speeds, small/pop odds,
-// crowd cap and refill pace) - each worth points on hitPTarget's
+// lands, and - for the RANGE, the rest are AG_ROUNDS below - for AG_T
+// seconds random targets pour onto the track from a spawn table that climbs
+// with the clock (AG_DIFF: mover speeds, small/pop odds, crowd cap and
+// refill pace, in AG_RANGE_DIFF order) - each worth points on hitPTarget's
 // harder-shot-pays-more rule. Time out and the round ends: the score stands
 // as LAST, a strictly higher one writes BEST through PROFILE.setBestRange -
 // the range's own all-time record beside the parkour's lap - the furniture
 // rises back out of the snow and the stock roster springs back on. The bell
-// never wears the difficulty (no recolour - the wheel's gold frame is the
+// never wears the pick (no recolour - the wheel's gold frame is the
 // readout); the readouts (the countdown, the top-centre TIME/SCORE/HITS
 // plate, the bell's BEST/LAST frost plate) live in drawAgameUI / drawAgame,
 // js/draw-world.js.
@@ -2334,7 +2335,7 @@ const AG_COUNT_T = 3;    // the countdown, one tick per second
 const AG_SINK_T = 0.9;   // s the dummy, rack and bell take to sink / rise
 const AG_END_T = 2.4;    // s the final score stands before the field resets
 const AG_BELL = { tx: PR_X0 + 15, ty: PR_Y0 + 12 }; // the bell, west of the dummy on its own row
-// one spawn table per difficulty, picked off the bell's wheel: spd = the
+// one spawn table per difficulty, which the range climbs: spd = the
 // three mover speeds (scored by class, not raw px/s), small/still/pop the
 // mix odds (move takes the rest), max/spawnT the crowd and its refill pace
 const AG_DIFF = {
@@ -2365,9 +2366,13 @@ const QD_STAGES = [
 // agame.mode names the one in play; agUpdate and hitPTarget only ever ask it.
 const AG_ROUNDS = {
   range: {
+    name: 'RANGE',
     clock: AG_T,
-    begin() { for (let i = 0; i < 4; i++) agSpawn(); },
+    medals: [150, 300, 450], // score for bronze / silver / gold
+    begin() { agame.diff = AG_RANGE_DIFF[0]; for (let i = 0; i < 4; i++) agSpawn(); },
     tick(dt) {
+      // the range climbs its own tables: a third of the clock on each
+      agame.diff = AG_RANGE_DIFF[Math.min(AG_RANGE_DIFF.length - 1, Math.floor(agame.t / (AG_T / AG_RANGE_DIFF.length)))];
       const S = AG_DIFF[agame.diff] || AG_DIFF.medium;
       agame.spawnT -= dt;
       if (agame.spawnT <= 0 && ptargets.length < S.max) { agSpawn(); agame.spawnT = S.spawnT; }
@@ -2389,6 +2394,7 @@ const AG_ROUNDS = {
   quick: {
     name: 'QUICK DRAW',
     clock: QD_START,
+    medals: [10, 20, 30], // hits
     begin() { agame.spawnT = 0; },
     tick(dt) {
       if (ptargets.length) return;
@@ -2411,6 +2417,7 @@ const AG_ROUNDS = {
   },
   defend: {
     name: 'DEFEND',
+    medals: [8, 16, 28], // raiders downed
     clock: 0, // no clock: it runs until the raiders get through DF_LIVES times
     begin() { agame.lives = DF_LIVES; agame.spawnT = DF_FIRST; agame.dfGap = DF_GAP0; },
     tick(dt) {
@@ -2500,10 +2507,19 @@ function dfStep(t, dt) {
   else if (t.prevU > 0.5 && u < 0.5) burst(t.x, t.y + 1, '#f4f7ff', 2, 18, 0.3, true); // the landing puff
   t.prevU = u;
 }
-// the bell's wheel, wedge by wedge: the range's three difficulties, then the
-// other rounds - an id that is a difficulty rings the range at it
-const AG_WEDGES = ['easy', 'medium', 'hard', 'quick', 'defend'];
-function agRoundOf(id) { return AG_DIFF[id] ? 'range' : AG_ROUNDS[id] ? id : null; }
+// the bell's wheel, wedge by wedge: one per round
+const AG_WEDGES = ['range', 'quick', 'defend'];
+function agRoundOf(id) { return AG_ROUNDS[id] ? id : null; }
+// the range's spawn tables in the order a round climbs them
+const AG_RANGE_DIFF = ['easy', 'medium', 'hard'];
+// the medal a score earns in a round: 0 none, 1 bronze, 2 silver, 3 gold
+// (the thresholds are each round's `medals`; untuned first guesses)
+function agMedal(mode, score) {
+  const M = AG_ROUNDS[mode].medals;
+  let m = 0;
+  while (m < M.length && score >= M[m]) m++;
+  return m;
+}
 // quick draw's stage, off the hits so far
 function qdStage() { return Math.min(QD_STAGES.length - 1, Math.floor(agame.score / QD_STEP)); }
 // quick draw's next face: the stage's kind, on a track spot near the archer
@@ -2522,8 +2538,8 @@ function qdSpawn() {
   t.wob = 0.3;
   burst(t.x, t.y - 8, '#f4f7ff', 6, 40, 0.45, true);
 }
-// phase: off | sink | count | play | end. `diff` is the armed difficulty
-// (the wheel's gold frame; the bell itself never wears it). `best` is the
+// phase: off | sink | count | play | end. `diff` is the spawn table the
+// range is on right now (it climbs AG_RANGE_DIFF with the clock). `best` is the
 // profile's record, seeded at gen and written on a strictly higher score;
 // last/lastHits are this visit's. `tick` edges the countdown SFX, dustT
 // paces the sink dust.
@@ -2532,7 +2548,7 @@ function qdSpawn() {
 // record, seeded at gen; `best` is the mode's, for the bell's plate.
 const agame = { phase: 'off', t: 0, score: 0, hits: 0, last: 0, lastHits: 0,
   best: 0, record: false, diff: 'medium', mode: 'range', pid: 0, left: 0, bests: {}, spawnT: 0, tick: 0, dustT: 0,
-  lives: 0, hurtT: 0, dfGap: 0, lastLine: '' }; // DEFEND's: lives left, the plate's red flash, the raiders' spacing
+  lives: 0, hurtT: 0, dfGap: 0, lastLine: '', lastMedal: 0 }; // DEFEND's: lives left, the plate's red flash, the raiders' spacing
 let agBellObj = null;    // the bell object, for its ring animation
 let agFurniture = [];    // the dummy + rack + bell objects the round sinks away
 // the consecutive-hit run: every arrow into a face extends it, minigame or
@@ -2587,8 +2603,8 @@ function agBellNear(p) {
   return null;
 }
 
-// a difficulty released off the bell's wheel, through runCmd: the wedge IS
-// the ring (the roll die's own grammar) - it arms that difficulty and winds
+// a round released off the bell's wheel, through runCmd: the wedge IS
+// the ring (the roll die's own grammar) - it arms that round and winds
 // the round up, the stock roster leaving with the furniture. Only an idle
 // range answers: mid-round the bell is under the snow, and the sink and
 // rise phases are mid-ceremony. PRACTICE-gated like pkWheelPick.
@@ -2598,7 +2614,6 @@ function agRing(p, c) {
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return;
   agame.mode = mode; agame.pid = p.id;
   agame.best = agame.bests[mode] || 0;
-  if (mode === 'range') agame.diff = c.id;
   if (agBellObj) agBellObj.ring = 0.9;
   SFX.dawnChime();
   agame.phase = 'sink'; agame.t = 0; agame.dustT = 0;
@@ -2615,6 +2630,7 @@ function agRing(p, c) {
 function agEndRound() {
   agame.last = agame.score; agame.lastHits = agame.hits;
   agame.lastLine = AG_ROUNDS[agame.mode].end(); // what stands under the final score
+  agame.lastMedal = agMedal(agame.mode, agame.score);
   agame.record = agame.score > 0 && agame.score > agame.best;
   if (agame.record) { agame.best = agame.bests[agame.mode] = agame.score; AG_ROUNDS[agame.mode].setBest(agame.score); }
   agame.phase = 'end'; agame.t = 0; agame.dustT = 0;
