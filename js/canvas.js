@@ -111,8 +111,13 @@ function fitCanvas() {
   // display scaling (125%/150% Windows) a CSS-integer scale lands game pixels
   // on fractional device pixels, which smears and shimmers during scrolling.
   const dpr = window.devicePixelRatio || 1;
-  const devW = Math.max(1, Math.round(window.innerWidth * dpr));
-  const devH = Math.max(1, Math.round(window.innerHeight * dpr));
+  const winW = Math.max(1, Math.round(window.innerWidth * dpr));
+  const winH = Math.max(1, Math.round(window.innerHeight * dpr));
+  // director mode's 9:16 frame (js/director.js) lays out as if the window were
+  // a Short, DIR_TALL_W x DIR_TALL_H device px, whatever the window really is;
+  // the canvas is then shown fitted inside it (below)
+  const tall = dirTall();
+  const devW = tall ? DIR_TALL_W : winW, devH = tall ? DIR_TALL_H : winH;
   let dev = Math.max(1, Math.round(devH / TARGET_ROWS));
   // never shrink the view below the UI panels' footprint
   while (dev > 1 && (devW / dev < 320 || devH / dev < 240)) dev--;
@@ -142,13 +147,24 @@ function fitCanvas() {
   worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
   sizeWorldView();
+  // The 9:16 canvas keeps its Short-sized backing store and is SHOWN fitted to
+  // the window: a whole multiple when it fits, else shrunk smoothly - a
+  // preview, since the recorder (js/director.js) takes the backing store.
+  // `scale` follows what is shown, so the pointer maps through it as ever.
+  canvas.style.imageRendering = '';
+  if (tall) {
+    let f = Math.min(winW / devW, winH / devH);
+    if (f >= 1) f = Math.floor(f); else canvas.style.imageRendering = 'auto';
+    scale = dev * f / dpr;
+    FULL_W = Math.max(VIEW_W, Math.ceil(window.innerWidth / scale));
+  }
   canvas.style.width = (VIEW_W * scale) + 'px';
   canvas.style.height = (VIEW_H * scale) + 'px';
   // bars canvas spans the whole window at the same pixel scale; painted by
   // renderBars() via relayout() (it needs hash2, so never before boot)
-  barsCv.width = FULL_W; barsCv.height = VIEW_H;
+  barsCv.width = FULL_W; barsCv.height = tall ? Math.max(VIEW_H, Math.ceil(window.innerHeight / scale)) : VIEW_H;
   barsCv.style.width = (FULL_W * scale) + 'px';
-  barsCv.style.height = (VIEW_H * scale) + 'px';
+  barsCv.style.height = (barsCv.height * scale) + 'px';
 }
 pageListen(window, 'resize', () => { fitCanvas(); relayout(); });
 pageListen(document, 'fullscreenchange', () => { fitCanvas(); relayout(); });

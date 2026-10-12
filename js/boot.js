@@ -1963,6 +1963,8 @@ window.DBG = {
   },
   layout: () => ({ VIEW_W, VIEW_H, SET_X, SET_Y, SL_X, PANEL_X, PANEL_Y, MM_CX, MM_CY }),
   hideUI: false,
+  // director mode (js/director.js): its state, and its keys as pressed
+  director, directorKey: (key) => keyPress({ key, repeat: false, char: key }),
   // saved matches (js/save.js): the record, the hash the replay proof compares, a slot by hand
   saveCapture, saveApply, saveHash, saveMatch, loadSave, saveList, autoSave,
   step: (dt, n) => { for (let i = 0; i < (n || 1); i++) { update(dt || TICK_DT); } render(); },

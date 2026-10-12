@@ -432,8 +432,8 @@ function render() {
   treeFadeSil = 0;
   if (fadeP) {
     const wk = workTarget(fadeP);
-    if (wk) fadeWkO = wk.o;
-    if (mouse.inside && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel && !state.drag)
+    if (wk && !window.DBG.hideUI) fadeWkO = wk.o; // no gold rim on a clean frame (director mode, the media kit)
+    if (mouse.inside && state.mode === 'play' && !state.mapOpen && !state.settingsOpen && !state.wheel && !state.drag && !window.DBG.hideUI)
       hovO = structOf(objAt(Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE)));
     const ptx = Math.floor(fadeP.x / TILE), pty = Math.floor(fadeP.y / TILE);
     for (let sy = pty - 2; sy <= pty + 2; sy++) for (let sx = ptx - 2; sx <= ptx + 2; sx++) {
@@ -864,6 +864,10 @@ function render() {
   applyCursorStyle(cur);
   if (!window.DBG.hideUI) drawBuildCursor(cur); // the build list's piece, under the pointer's own glyph
   if (settings.pixelCursor && mouse.inside && !window.DBG.hideUI) drawCursor(cur, now);
+  // director mode (js/director.js): the finished frame goes to a take being
+  // recorded, and only then the director's strip over it
+  dirRecFrame();
+  drawDirector(now);
 }
 
 // ---- the bodies a bit flies as -------------------------------------------
@@ -1689,7 +1693,7 @@ function drawCursor(info, now) {
 // the first part of its flight, up to where it starts falling away from the
 // bearing.
 function drawAimLine(ex, ey, now) {
-  if (!player.charging || state.mode !== 'play') return;
+  if (!player.charging || state.mode !== 'play' || window.DBG.hideUI) return;
   const full = drawPow(player) >= 1;
   const col = full ? DRAW_FULL_COL : DRAW_COL; // the meter's own two golds (draw-world.js)
   // The LEAD shot of the next press, and the envelope the modifiers under it

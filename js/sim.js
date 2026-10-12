@@ -24,7 +24,7 @@ let camX = 0, camY = 0;
 // takes that share too, off the scale this returns (the one it started from).
 function applyZoom(dt, snap) {
   const want = state.mode === 'drop' ? DROP_ZOOM : zoomWantOf();
-  const k = 1 - Math.exp(-ZOOM_EASE * dt);
+  const k = 1 - Math.exp(-(director.on ? DIR_ZOOM_EASE : ZOOM_EASE) * dt); // a director's zoom glides (js/director.js)
   const zPrev = zoomCur;
   if (snap) zoomCur = want;
   else {
@@ -150,8 +150,11 @@ function update(dt) {
     updateTitle(dt); // menu timers, camera drift, and the ambient world behind it
   }
 
-  // camera
-  if (state.mode === 'title') {
+  // camera: director mode's own first (dirCam, js/director.js), when it has
+  // the shot - the free camera anywhere but the title, the steady follow in play
+  if (dirCam(dt)) {
+    // the director holds it
+  } else if (state.mode === 'title') {
     const c = titleCamTarget();
     camX = c.x; camY = c.y;
   } else if (state.mode === 'drop') {

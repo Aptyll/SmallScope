@@ -174,7 +174,7 @@ function runCmd(p, c) {
 // ------------------------------------------------------------ selection, hints & wheel
 // white corner brackets over the hovered / wheel-targeted tile
 function drawSelection(ox, oy, now) {
-  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.build) return; // the build list's ghost has the tile
+  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.build || window.DBG.hideUI) return; // the build list's ghost has the tile
   let tx, ty;
   if (state.wheel) {
     tx = state.wheel.tx; ty = state.wheel.ty;
@@ -215,7 +215,7 @@ function drawSelection(ox, oy, now) {
 // when the target is in reach and tools aren't blocked, so it doubles as
 // the "you're close enough" signal.
 function drawWorkHint(ox, oy) {
-  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop) return;
+  if (state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || window.DBG.hideUI) return;
   if (player.charging || player.fallT > 0 || player.dodgeT > 0 || player.zip >= 0) return; // a rider's hands are full, and the cable is the only thing E does
   if (player.mount) return; // on deer-back E is the hop off, and the deer under you says so
   if (hoverFish()) return; // the fish brackets win over CRACK ICE on the same tile
