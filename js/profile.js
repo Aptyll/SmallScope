@@ -112,7 +112,8 @@
       active: 0,
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
-      bestRange: 0,    // the archery range's all-time best round score (0 = never played) - these two are all practice writes
+      bestRange: 0,    // the archery range's all-time best round score (0 = never played)
+      bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/world.js), by round id - these three are all practice writes
       // (the lifetime stats moved onto the characters in v2: a v1 save's
       // name and stats become its first character in load())
       // The arsenal tree. A MATCH reads nothing back out of here - every kind
@@ -196,6 +197,12 @@
         profile.dropped = !!s.dropped;
         if (typeof s.bestLap === 'number' && isFinite(s.bestLap) && s.bestLap > 0) profile.bestLap = s.bestLap;
         if (typeof s.bestRange === 'number' && isFinite(s.bestRange) && s.bestRange > 0) profile.bestRange = Math.floor(s.bestRange);
+        if (s.bestRounds && typeof s.bestRounds === 'object') {
+          for (const k in s.bestRounds) {
+            const n = s.bestRounds[k];
+            if (/^[a-z]+$/.test(k) && typeof n === 'number' && isFinite(n) && n > 0) profile.bestRounds[k] = Math.floor(n);
+          }
+        }
         if (Array.isArray(s.chars)) {
           // the slots, each repaired on its own; past CHAR_MAX are dropped
           for (const c of s.chars.slice(0, CHAR_MAX)) profile.chars.push(mendChar(c));
@@ -334,6 +341,16 @@
       const r = Math.floor(n);
       if (r <= profile.bestRange) return false;
       profile.bestRange = r;
+      saveNow();
+      return true;
+    },
+    // the bell's other rounds keep their records the same way, one per round id
+    bestRound(id) { return profile.bestRounds[id] || 0; },
+    setBestRound(id, n) {
+      if (!(n > 0)) return false;
+      const r = Math.floor(n);
+      if (r <= (profile.bestRounds[id] || 0)) return false;
+      profile.bestRounds[id] = r;
       saveNow();
       return true;
     },

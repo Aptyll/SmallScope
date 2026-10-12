@@ -52,6 +52,8 @@ function renderUI(now) {
   // parked over the cinematic.
   const cornerSlide = -Math.round(slide * CORNER_REACH * hudSc());
   if (!out && !shop) drawCornerScaled(now, cornerSlide);
+  // the practice bar down the left edge, PRACTICE TOOL only (js/ui/cheats.js)
+  if (!out && PRACTICE) drawCheatBar(now);
 
   // hud strip (the xp bar over the ability wells and the pouch block),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD

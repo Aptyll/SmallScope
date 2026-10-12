@@ -1633,7 +1633,7 @@ window.DBG = {
   // first - the reach check is real), spawn one random target, and the
   // track parametrisation for staging shots
   agame, AG_DIFF, agBellNear, agSpawn, agStock, agPos, AG_LEN, AG_BELL,
-  agRing: (diff, p) => agRing(p || player, { tx: AG_BELL.tx, ty: AG_BELL.ty, id: diff || agame.diff }),
+  agRing: (diff, p) => agRing(p || player, { tx: AG_BELL.tx, ty: AG_BELL.ty, id: diff || agame.mode }),
   get agStreak() { return agStreak; }, // the consecutive-hit run (rebinds, so a getter)
   // the parkour roll station: roll a track by hand, resolve the die E would
   // open the wheel on, and watch the sweep (pkAnim rebinds, so a getter;
