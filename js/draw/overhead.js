@@ -215,33 +215,38 @@ function drawTallies(k) {
 // grade, in the bodies' order, never cut by what stands in front of it.
 // `u`, the body the bar is over, hangs its running damage total off the
 // bar's right end (queueTally); a player's frame hangs its own.
-function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u) {
+// `s` (default 1) draws the whole bar that many pixels to its own pixel - a
+// bear's frame is its body's 2x (MONSTER.frame, js/wildlife.js) - with `w`
+// and the cut still counted in the bar's own pixels; `segs` fixes the cut
+// instead of hpSegCount's (it must divide w + 1)
+function drawHealthBar(cxp, topY, hp, maxHp, w, team, col, u, s, segs) {
+  const k = s || 1;
   overheadPlate(() => {
-    healthBarPx(cxp, topY, hp, maxHp, w, team, col);
-    if (u) queueTally(u, Math.round(cxp - w / 2) + w + 1 + (foeCue(team) ? 1 : 0), Math.round(topY) + 1, barCol(team));
+    healthBarPx(cxp, topY, hp, maxHp, w, team, col, k, segs);
+    if (u) queueTally(u, Math.round(cxp - w * k / 2) + (w + 1) * k + (foeCue(team) ? 1 : 0), Math.round(topY) + k, barCol(team));
   });
 }
-function healthBarPx(cxp, topY, hp, maxHp, w, team, col) {
-  const x = Math.round(cxp - w / 2), y = Math.round(topY);
+function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs) {
+  const k = s || 1, x = Math.round(cxp - w * k / 2), y = Math.round(topY);
   const frac = Math.max(0, Math.min(1, hp / maxHp));
   ctx.fillStyle = BAR_FRAME;
-  ctx.fillRect(x - 1, y - 1, w + 2, 4);
+  ctx.fillRect(x - k, y - k, (w + 2) * k, 4 * k);
   ctx.fillStyle = BAR_TRACK;
-  ctx.fillRect(x, y, w, 2);
+  ctx.fillRect(x, y, w * k, 2 * k);
   ctx.fillStyle = col || barCol(team);
   // a living thing's last sliver of hp is still a pixel; an empty charge
   // (a wolf's threat at rest, a spent jink) is bare track, not a false one
   const fw = frac > 0 ? Math.max(1, Math.round(w * frac)) : 0;
-  ctx.fillRect(x, y, fw, 2);
+  ctx.fillRect(x, y, fw * k, 2 * k);
   if (col) return;
-  const n = hpSegCount(maxHp, w), seg = (w + 1) / n;
+  const n = segs || hpSegCount(maxHp, w), seg = (w + 1) / n;
   ctx.fillStyle = HP_TICK;
-  for (let k = 1; k < n; k++) ctx.fillRect(x + k * seg - 1, y, 1, 2);
+  for (let i = 1; i < n; i++) ctx.fillRect(x + (i * seg - 1) * k, y, k, 2 * k);
   // a rival's bar under a colour-blind palette wears a raised dark cap on its
   // right end (foeCue, js/player.js), so the side reads by outline alone
   if (foeCue(team)) {
     ctx.fillStyle = HP_CAP;
-    ctx.fillRect(x + w, y - 2, 2, 5);
+    ctx.fillRect(x + w * k, y - 2 * k, 2 * k, 5 * k);
   }
 }
 
@@ -282,14 +287,15 @@ function drawShieldBar(x, y, shield) {
 // plate does on the other side rather than squashing the digits. One shape
 // for a hero (drawPlayer) and for a beast (drawAnimal): the number on a body
 // is what it costs to take.
-function drawLevelBadge(rx, topY, level) {
-  const lt = String(level), lw = pixelTextWidth(lt);
-  const bw = lw + 3, bx = rx - bw;
+// the plate's width in its own pixels, so a frame can be laid out around it
+function levelBadgeW(level) { return pixelTextWidth(String(level)) + 3; }
+function drawLevelBadge(rx, topY, level, s) {
+  const k = s || 1, bw = levelBadgeW(level), bx = rx - bw * k;
   ctx.fillStyle = BAR_FRAME;
-  ctx.fillRect(bx, topY, bw, 7);
+  ctx.fillRect(bx, topY, bw * k, 7 * k);
   ctx.fillStyle = BAR_TRACK;
-  ctx.fillRect(bx + 1, topY + 1, bw - 1, 5);
-  drawPixelText(ctx, lt, bx + 2, topY + 1, '#f2cc6a');
+  ctx.fillRect(bx + k, topY + k, (bw - 1) * k, 5 * k);
+  drawPixelText(ctx, String(level), bx + 2 * k, topY + k, '#f2cc6a', k);
 }
 
 // The noticed mark: a "!" over a head for as long as an animal has a player
@@ -300,9 +306,9 @@ function drawLevelBadge(rx, topY, level) {
 // It turns where the stun stars turn, and the stars win: a stunned body is
 // seeing nothing. So a deer running wears the reason over its head, and one
 // grazing on wears the absence of it.
-function drawSenseMark(cx, topY, e, col) {
-  const lift = e.senseT < 0.05 ? 2 : e.senseT < 0.1 ? 1 : 0;
-  drawWorldText('!', cx - 1, topY + lift, col);
+function drawSenseMark(cx, topY, e, col, s) {
+  const k = s || 1, lift = e.senseT < 0.05 ? 2 : e.senseT < 0.1 ? 1 : 0;
+  drawWorldText('!', cx - k, topY + lift * k, col, k);
 }
 
 // Seeing stars. Three sparks on an orbit, phased off the unit's own stun
@@ -312,12 +318,12 @@ function drawSenseMark(cx, topY, e, col) {
 // vocabulary for the state - squashed and wide over an animal's head, round
 // and tight inside the badge on a player's frame - so it reads the same
 // wherever it turns up.
-function drawStunStars(cx, cy, e, r, squash) {
-  const a0 = -(e.stunT || 0) * 9, sq = squash === undefined ? 0.5 : squash;
+function drawStunStars(cx, cy, e, r, squash, s) {
+  const a0 = -(e.stunT || 0) * 9, sq = squash === undefined ? 0.5 : squash, k = s || 1;
   for (let i = 0; i < 3; i++) {
     const a = a0 + i * Math.PI * 2 / 3;
     ctx.fillStyle = Math.sin(a) > 0 ? '#ffb641' : '#fff3c4'; // the near half is the bright one
-    ctx.fillRect(Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r * sq), 1, 1);
+    ctx.fillRect(Math.round(cx + Math.cos(a) * r * k), Math.round(cy + Math.sin(a) * r * sq * k), k, k);
   }
 }
 

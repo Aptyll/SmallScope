@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.408';
+const PATCH_TXT = 'PATCH 0.409';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.409', 'A BEAR\'S HEALTH FRAME IS BEAR-SIZED: A BIGGER BAR, LEVEL AND "!" IN FIVE CHUNKS, CENTRED JUST OVER ITS BACK. BEARS ARE NEVER UNDER LEVEL 6.'],
   ['0.408', 'THE BEARS ARE TWICE AS BIG, AT TWICE THE DETAIL: THEIR BODY, HIT AREA AND REACH GROW WITH THEM, SO THEY FIGHT LIKE THE BEAR YOU SEE.'],
   ['0.407', 'A STAGED ARCHERY TARGET CAN STAND IN THE VALLEY AND SAY A GOLD WORD WHEN YOUR ARROW BREAKS IT, FOR FILMING SHORTS.'],
   ['0.406', 'A DEER\'S RIDER SITS DOWN INTO IT: ITS BACK HIDES YOUR LEGS AND YOU RISE AND FALL WITH THE GALLOP.', 'deer-rider'],
@@ -1254,6 +1255,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['BEARS WEAR A BEAR-SIZED FRAME AND START AT LEVEL 6', '0.409'],
     ['THE BEARS ARE TWICE AS BIG', '0.408'],
     ['A DEER\'S RIDER SITS DOWN ON ITS BACK', '0.406'],
     ['THE DEER STANDS TWICE AS TALL', '0.404'],
@@ -3411,22 +3413,26 @@ function pickMap(k) {
 // words answer to are docs/dev/lore.md).
 const WIKI_W_MAX = 400;
 const WIKI_H = 200;           // the slab; the window is inside it
-const WIKI_LEVELS = [1, 6, 12]; // the three columns a beast's growth is shown at
+const WIKI_LEVELS = [1, 6, 12]; // the three columns a beast's growth is shown at...
+// ...from the least level the kind spawns at (MONSTER.lv: a bear's 6, then 9 and 12)
+function wikiLevels(kind) {
+  const lv0 = (MONSTER[kind] && MONSTER[kind].lv) || 1;
+  return lv0 > 1 ? [lv0, Math.round((lv0 + LEVEL_MAX) / 2), LEVEL_MAX] : WIKI_LEVELS;
+}
 const wikiScroll = {};        // px scrolled per page id
 
-// the beast cards: kind, the frame's bar width (drawAnimal's), a line of
-// what it does - every number in it read off the sim's own constants
+// the beast cards: kind, name, a line of what it does - every number in it read off the sim's own constants
 const WIKI_BEASTS = [
-  { kind: 'rabbit', name: 'RABBIT', bw: 8,
+  { kind: 'rabbit', name: 'RABBIT',
     line: () => 'BOLTS AT ' + FLEE_SIGHT.rabbit + ' PX. ONE JINK CHARGE EVERY ' + RABBIT_DODGE_CD + ' S. DROPS A BERRY.' },
-  { kind: 'deer', name: 'DEER', bw: 23,
+  { kind: 'deer', name: 'DEER',
     line: () => 'BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
-  { kind: 'wolf', name: 'WOLF', bw: 11,
+  { kind: 'wolf', name: 'WOLF',
     line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
-  { kind: 'alpha', name: 'BLACK BEAR', bw: 49,
-    line: () => 'ONE A STONE. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
-  { kind: 'dire', name: 'BROWN BEAR', bw: 49,
-    line: () => 'ONE A DEN. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
+  { kind: 'alpha', name: 'BLACK BEAR',
+    line: () => 'ONE A STONE, NEVER UNDER LV ' + MONSTER.alpha.lv + '. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
+  { kind: 'dire', name: 'BROWN BEAR',
+    line: () => 'ONE A DEN, NEVER UNDER LV ' + MONSTER.dire.lv + '. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
 function wikiBeastHp(kind, lv) { return (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (lv - 1); }
@@ -3533,7 +3539,7 @@ const WIKI_PAGES = [
     for (const bs of WIKI_BEASTS) {
       const spr = SPRITES[bs.kind].right.idle[0];
       const figW = Math.max(WIKI_BEAST_W, spr.width), lines = wikiWrap(bs.line(), cw - figW - 8);
-      const h = Math.max(46 + (lines.length - 1) * 8, spr.height - (spr.crown || 0) + 26);
+      const h = Math.max(46 + (lines.length - 1) * 8, spr.height - (spr.crown || 0) + 18 * beastFrame(bs.kind).s + 8);
       b.push({ kind: 'beast', h, beast: bs, figW, lines });
     }
     return b;
@@ -3690,18 +3696,15 @@ function drawWikiFig(e, cx, baseY) {
 // A camp monster shows its leash bar part-filled, since bare track says nothing.
 function drawWikiBeast(bs, cx, baseY, level, now) {
   const spr = SPRITES[bs.kind].right.idle[0];
-  wikiMound(cx, baseY, Math.max(26, bs.bw + 8)); // a bear's snow as wide as its bar
-  ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bs.bw ? bs.bw >> 1 : 3), baseY, bs.bw || 6, 2);
+  const F = beastFrame(bs.kind), bw = F.w * F.s;
+  wikiMound(cx, baseY, Math.max(26, bw + 8)); // a bear's snow as wide as its bar
+  ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bw >> 1), baseY, bw, 2);
   const px = cx - (spr.width >> 1), py0 = baseY + 2 - spr.height;
   ctx.drawImage(spr, px, py0);
-  const py = py0 + (spr.crown || 0); // the bars over the tallest pose, as drawAnimal hangs them
-  const wolf = isCampKind(bs.kind); // a camp monster's second bar is its leash
-  const bx = Math.round(cx - bs.bw / 2);
-  drawHealthBar(cx, py - 8, ANIMAL_HP[bs.kind], ANIMAL_HP[bs.kind], bs.bw); // full, chunked the way the world chunks it
-  if (wolf) drawHealthBar(cx, py - 5, 0.6, 1, bs.bw, undefined, THREAT_COL);
-  else drawHealthBar(cx, py - 5, 1, 1, bs.bw, undefined, STAM_COL);
-  drawLevelBadge(bx - 1, py - 9, level);
-  drawSenseMark(cx, py - 16, { senseT: 1 }, wolf ? THREAT_COL : STAM_COL);
+  // full, chunked the way the world chunks it, at the least level it spawns
+  // at; a camp monster's leash part-filled, since bare track says nothing
+  const lv = Math.max(level, (MONSTER[bs.kind] && MONSTER[bs.kind].lv) || 1), hp = wikiBeastHp(bs.kind, lv);
+  drawBeastFrame(bs.kind, cx, cx, py0 + (spr.crown || 0), { hp, maxHp: hp, level: lv, senseT: 1 }, isCampKind(bs.kind) ? 0.6 : 1);
 }
 // a label tied to a point on the figure by a thin leader
 function wikiLeader(x0, y0, x1, y1, text, col) {
@@ -3871,8 +3874,8 @@ function renderWiki(now, a) {
       bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, nx, y + 13 + k * 8, TIP_DIM, '#0a0e23'));
       // the growth table: LV heads over three columns, HEALTH and KILL GOLD
       // under them, a dotted leader from each label to its first number
-      const colW = 30, cx0 = L.right - colW * WIKI_LEVELS.length;
-      WIKI_LEVELS.forEach((lv, i) => {
+      const levels = wikiLevels(bs.kind), colW = 30, cx0 = L.right - colW * levels.length;
+      levels.forEach((lv, i) => {
         const t = 'LV ' + lv;
         drawPixelTextShadow(ctx, t, cx0 + (i + 1) * colW - pixelTextWidth(t), y + 4, TIP_LABEL, '#0a0e23');
       });
@@ -3881,7 +3884,7 @@ function renderWiki(now, a) {
         const ry = y + 24 + dy + k * 9;
         drawPixelTextShadow(ctx, label, nx, ry, TIP_LABEL, '#0a0e23');
         let firstX = L.right;
-        WIKI_LEVELS.forEach((lv, i) => {
+        levels.forEach((lv, i) => {
           const v = get(lv), vw = pixelTextWidth(v), vx = cx0 + (i + 1) * colW - vw;
           if (i === 0) firstX = vx;
           drawPixelTextShadow(ctx, v, vx, ry, col, '#0a0e23');

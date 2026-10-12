@@ -122,7 +122,7 @@ function stepClip(a, dt, rate) {
 }
 
 function makeAnimal(kind, x, y) {
-  const level = animalLevel();
+  const level = Math.max(animalLevel(), (MONSTER[kind] && MONSTER[kind].lv) || 1);
   const hp = (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (level - 1);
   const a = {
     kind, x, y, hp, maxHp: hp, level,
@@ -768,10 +768,16 @@ function animalDies(a) {
 // no hit shoves it (updateAnimal drops its knockback), a roll into it is a tackle
 // that stuns only the roller, and a charge stops against it (rushStep) - so a bear
 // always walks where it means to, roar and attacks included.
+// `lv`: the least level it spawns at, over the table's average (makeAnimal) -
+// a bear is never a level-1 kill. `frame`: its frame over the body (drawBeastFrame,
+// js/draw/bodies.js) - drawn `s` px to its pixel to match the 2x body, a
+// `w`-pixel bar cut into `segs` (dividing w + 1), and centred whole on the body.
+const BEAR_LV = 6;
+const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
-  dire:  { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear' }, // the same bear on the other bank
+  alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  dire:  { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // the same bear on the other bank
 };
 function isCampKind(k) { return !!MONSTER[k]; }
 function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }

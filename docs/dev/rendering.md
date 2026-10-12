@@ -739,8 +739,8 @@ never disagree. Per-page scroll lives in `wikiScroll` beside the settings slab's
 the open page is `menu.wikiTab`. A new page is one table entry and one builder.
 
 `drawWikiBeast` draws a kind exactly as `drawAnimal` hangs its frame in the world — the same
-`drawHealthBar`, `drawLevelBadge` and `drawSenseMark` calls at the same offsets over the same
-sprite, on a low snow mound — so the page teaches the frame by showing it, and a change to the
+`drawBeastFrame` (js/draw/bodies.js) over the same sprite, on a low snow mound, at the least level
+the kind spawns at (a bear's growth columns start there too, `wikiLevels`) — so the page teaches the frame by showing it, and a change to the
 frame in the world changes it on the page. A camp monster's leash bar is shown part-filled, since bare
 track says nothing. An ARSENAL row is the kind's icon on
 the tier plate a bag cell wears (`tierPlate`, `modPlate`), rimmed and lifted a pixel
@@ -1149,7 +1149,11 @@ rabbit's dodge charge (both `STAM_COL` white, at the health bar's own width:
 [gameplay.md](gameplay.md#wildlife)) — every second bar always worn, since **the level plate
 spans both**: `drawLevelBadge(rx, topY, level)` is the one 7-tall badge a hero and a beast
 share, hard against the bar backing's left column and growing left with the digits, so a
-rabbit's frame is the player's frame at 8 px. An empty bar is bare track (`drawHealthBar`
+rabbit's frame is the player's frame at 8 px. **A bear's frame is its body's size**: its
+`MONSTER.frame` (`BEAR_FRAME`) draws the whole frame, bars, plate, `!` and stars, `s` (2) pixels
+to its own pixel (each drawer takes that scale), a `w`-pixel bar cut into a fixed `segs` (5)
+instead of `hpSegCount`'s, and centres it whole, plate and bar together, on the bear's centre
+column, where every other frame centres its bar (`drawBeastFrame`). An empty bar is bare track (`drawHealthBar`
 paints no fill at zero; a living thing's last sliver of hp is still a pixel). Over the frame,
 where the stun stars turn, an animal that has a player in sight wears the **noticed mark** —
 `drawSenseMark`, the font's `!` under a dark rim, white on prey and threat red on a camp monster,
