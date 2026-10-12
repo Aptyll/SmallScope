@@ -98,7 +98,9 @@ falling through them.
 
 ## Rules that came from reviews
 
-- The first frame is mid-action and the first 2 s carry the hook. Give an action about 1 s to read
+- The first frame decides: most viewers swipe within about a second. Open on the peak or just
+  before it, one clear subject already in action; the `shorts` skill plans it and logs the result.
+  Give an action about 1 s to read
   (a 0.5 s opening was too fast; 0.9 s worked). Cut on actions; mix ~1 s close shots with one slow
   ~2 s wide one. End on the wishlist card even if it breaks a loop.
 - Show what the game really does. If staging needs the game to behave differently, that is a game

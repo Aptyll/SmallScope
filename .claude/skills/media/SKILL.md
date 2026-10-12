@@ -1,6 +1,6 @@
 ---
 name: media
-description: Make a video, GIF, storyboard, thumbnail or screenshot of the game (a YouTube Short, a trailer clip, a scenery shot) with the app/media kit. Use whenever Noah asks for a Short, a clip, a GIF, a storyboard, a render, or "record" or "film" something.
+description: Make a video, GIF, storyboard, thumbnail or screenshot of the game (a YouTube Short, a trailer clip, a scenery shot) with the app/media kit. Use whenever Noah asks for a clip, a GIF, a storyboard, a render, or "record" or "film" something; a YouTube Short starts with the shorts skill, which hands its filming here.
 ---
 
 # Media: Shorts, GIFs, storyboards, stills
@@ -8,6 +8,8 @@ description: Make a video, GIF, storyboard, thumbnail or screenshot of the game 
 Read [docs/dev/media.md](../../../docs/dev/media.md) first: the kit, the scene and cut formats,
 the rules from earlier reviews and the staging traps. Do not write a new recorder, editor or
 font renderer: extend `app/media/` instead, in the same PR as the media if the change is general.
+A YouTube Short is planned by the `shorts` skill first (the test, the first frame, the log); its
+first-frame lines are the scene's opening beat here.
 
 ## Steps
 
