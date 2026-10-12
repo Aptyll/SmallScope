@@ -462,15 +462,17 @@ of the right-facing frames.
 
 The warrens' **snowdrops** ([world.md](world.md#camps)) are painted by
 `app/bake-snowdrops/paint.py` (Python with numpy and Pillow): distance-field shapes at 8×
-supersampling (two leaf blades, one bold crook, the bell, a cool shadow pool) filled in two flat
-tones lit from the upper left, no ink line. The bloom is gold so it reads on snow, the shut bud
-bronze. It writes three transparent 16×16-cell atlases beside itself; `node
+supersampling (two leaf blades, one bold crook, the bell, a pale shadow pool) filled in two flat
+tones lit from the upper left, no ink line. The bloom is a sunny gold with a white lip so it reads
+on snow, the leaves a fresh green, the shut bud a dull bronze. It writes four transparent 24×24-cell
+atlases beside itself; `node
 app/bake-snowdrops/bake.js` reads them (zlib, no packages) and writes js/sprites/snowdrops.js as
 char grids and one palette, baked at load like every other sprite. Four variants (two shapes,
 each also mirrored), each **shut** and **open** at three wind leans and once **picked**, plus the
-open bloom's **glow**: a halo of sparks round the bell at `GLOW_N` (6) phases per lean, drawn
-over the bloom and stepped `SNOWDROP_GLOW_HZ` times a second on each clump's own hash phase.
-Feet at (8, 15). The render picks the lean off `windSway` and jitters each clump inside its tile
+open bloom's **glow**: a halo of sparks round the bell at `GLOW_N` (6) phases per lean, and the
+open **bell** alone at each lean with `at`, the point in the cell its light centres on. The bell,
+the glow and the light are laid above the night grade by `litSnowdrops`
+([rendering](rendering.md#light-and-weather)). Feet at the tile's (8, 15). The render picks the lean off `windSway` and jitters each clump inside its tile
 by its own hash. Repaint and rebake; never edit the grids.
 
 The camps' two [bears](world.md#camps), the brown (`dire`) and the black (`alpha`), live in

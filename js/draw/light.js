@@ -1,19 +1,19 @@
 'use strict';
 // Light and weather over the finished world frame: specks, cloud shadows,
 // god rays, the reflected sky, and the pass that grades day into night.
-// Nothing on the map emits light; this file is where a glow is added.
+// Only lit shots and open snowdrops give light; this file is where a glow is added.
 // ------------------------------------------------------------ light & weather
 // Daylight, night, and the two things that make a flat white field read as a
 // place with weather over it: SUN SHAFTS and the shadows of drifting CLOUD.
 // Both are world-anchored and world-sized, so zooming in walks you under a
 // cloud and between two shafts rather than magnifying the sky.
 //
-// There is no darkness-and-lamps model any more. Nothing on the map emits
-// light, nothing punches a hole in a dark overlay, and the player carries no
-// personal glow: NIGHT IS A COLOUR. A blue multiply cools and darkens the
-// whole frame, the field stays readable at midnight, and the one thing that
-// still glows - a shot with a `lit` bit in it - reads as warm against the
-// blue instead of being the only thing on screen.
+// There is no darkness-and-lamps model any more. Nothing punches a hole in a
+// dark overlay, and the player carries no personal glow: NIGHT IS A COLOUR.
+// A blue multiply cools and darkens the whole frame, the field stays readable
+// at midnight, and the two things that still glow - a shot with a `lit` bit
+// in it, and a warren's open snowdrop - read as warm against the blue
+// instead of being the only thing on screen.
 //
 // Everything here runs on the SIM clock (state.windT), not on wall time, so
 // DBG.step reproduces a gust, a shaft and a twinkle exactly.
@@ -652,6 +652,87 @@ function nightEdge(a) {
   ctx.globalAlpha = 1;
 }
 
+// ---- lit snowdrops ----
+// An open snowdrop is the one thing in a warren worth crossing it for, so it
+// is the second light on the map: the render pass draws the whole clump under
+// the grade like any plant and hands its place over (litDrops, filled by the
+// snowdrop branch of render()), and this lays the rest ABOVE the cloud
+// shadow, the hour and the night - so no weather or hour ever dulls it:
+// - a stepped pool of warm light on the snow round its feet, added to what is
+//   there ('lighter') and breathing slowly, barely there at noon and a real
+//   lantern at night, like a lit shot;
+// - the bell itself again (SPRITES.snowdrop bell), in its own sunny gold;
+// - its halo of white sparks, stepping round it SNOWDROP_GLOW_HZ times a second;
+// - SNOWDROP_TWINKLES four-armed stars popping round the bell, each on its own
+//   slow clock and at a new place every pop, and SNOWDROP_MOTES gold motes
+//   rising off it and fading.
+// Every clump runs on its own hash phase so two never pulse as one. All of it
+// is the frame's clock, never the sim's: nothing here is world state.
+// A body standing just in front of a clump has the bell drawn over its edge:
+// the price of a light no grade touches, and a pick takes the bell away anyway.
+const litDrops = [];          // { o, V, lean, sx, sy } this frame, from render()
+const SNOWDROP_GLOW_HZ = 5;   // halo steps a second
+const SNOWDROP_POOL_R = 22;   // px: the light pool's half-width (half as tall: it lies on the snow)
+const SNOWDROP_POOL_Y = 19;   // px below the cell's top the pool centres on: the clump's feet
+const SNOWDROP_BREATH = 2.2;  // rad/s the pool's slow breath
+const SNOWDROP_TWINKLES = 3, SNOWDROP_TWINKLE_HZ = 0.9; // stars round a bell, and pops a second each
+const SNOWDROP_MOTES = 4, SNOWDROP_MOTE_HZ = 0.35, SNOWDROP_MOTE_RISE = 16; // motes, how often, px they climb
+// the pool, three stepped rings of warm light: pixel edges, not a gradient
+const SNOWDROP_POOL = (() => {
+  const R = SNOWDROP_POOL_R, c = document.createElement('canvas');
+  c.width = 2 * R; c.height = R;
+  const g = c.getContext('2d');
+  for (const [k, a] of [[1, 0.10], [0.72, 0.12], [0.45, 0.16]]) {
+    g.fillStyle = `rgba(255,190,70,${a})`;
+    for (let y = 0; y < R; y++) for (let x = 0; x < 2 * R; x++) {
+      const u = (x + 0.5 - R) / (R * k), v = (y + 0.5 - R / 2) / (R / 2 * k);
+      if (u * u + v * v <= 1) g.fillRect(x, y, 1, 1);
+    }
+  }
+  return c;
+})();
+// kind 0 a twinkle (a white core, gold arms past half, longer pale arms near
+// its peak), 1 and 2 a gold and a pale mote
+const SNOWDROP_SPECKS = bakeSpecks(3, (g, kind, a) => {
+  const c = SPECK_CELL >> 1;
+  g.globalAlpha = a;
+  if (kind) { g.fillStyle = kind === 1 ? '#ffd24a' : '#fff6b0'; g.fillRect(c, c, 1, 1); return; }
+  g.fillStyle = '#ffffff'; g.fillRect(c, c, 1, 1);
+  if (a > 0.6) { g.fillStyle = '#ffe27a'; g.fillRect(c - 1, c, 3, 1); g.fillRect(c, c - 1, 1, 3); g.fillStyle = '#ffffff'; g.fillRect(c, c, 1, 1); }
+  if (a > 0.85) { g.globalAlpha = a * 0.6; g.fillRect(c - 2, c, 1, 1); g.fillRect(c + 2, c, 1, 1); g.fillRect(c, c - 2, 1, 1); g.fillRect(c, c + 2, 1, 1); }
+});
+function litSnowdrops(now, dark) {
+  if (!litDrops.length) return;
+  const lamp = 0.7 + 0.6 * dark;
+  ctx.globalCompositeOperation = 'lighter';
+  for (const d of litDrops) {
+    const ph = hash2(d.o.tx * 7 + 5, d.o.ty * 3 + 8), at = d.V.at[d.lean + 1];
+    ctx.globalAlpha = lamp * (0.85 + 0.15 * Math.sin(now * SNOWDROP_BREATH + ph * 6.28));
+    ctx.drawImage(SNOWDROP_POOL, d.sx + at[0] - SNOWDROP_POOL_R, d.sy + SNOWDROP_POOL_Y - (SNOWDROP_POOL_R >> 1));
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  for (const d of litDrops) {
+    const ph = hash2(d.o.tx * 7 + 5, d.o.ty * 3 + 8), k = d.lean + 1, at = d.V.at[k];
+    const bx = d.sx + at[0], by = d.sy + at[1];
+    ctx.drawImage(d.V.bell[k], d.sx, d.sy);
+    const G = d.V.glow[k];
+    ctx.drawImage(G[Math.floor(now * SNOWDROP_GLOW_HZ + ph * G.length) % G.length], d.sx, d.sy);
+    for (let i = 0; i < SNOWDROP_TWINKLES; i++) {
+      const t = now * SNOWDROP_TWINKLE_HZ + i / SNOWDROP_TWINKLES + ph * 3, pop = Math.floor(t);
+      const ang = i * 2.1 + pop * 1.7;
+      drawSpeck(SNOWDROP_SPECKS, 0, Math.sin((t - pop) * Math.PI),
+        Math.round(bx + Math.cos(ang) * 7), Math.round(by + Math.sin(ang) * 6));
+    }
+    for (let i = 0; i < SNOWDROP_MOTES; i++) {
+      const t = (now * SNOWDROP_MOTE_HZ + i / SNOWDROP_MOTES + ph) % 1;
+      drawSpeck(SNOWDROP_SPECKS, 1 + (i & 1), Math.sin(t * Math.PI) * 0.9,
+        Math.round(bx + Math.sin(t * 6 + i * 2) * 3 + (i - 1.5) * 2), Math.round(by + 2 - t * SNOWDROP_MOTE_RISE));
+    }
+  }
+  litDrops.length = 0;
+}
+
 // ---- ink over the world ----
 // THE GRADE DIMS WHAT THE WORLD IS, NEVER WHAT THE GAME IS SAYING. A name
 // tag, a damage floater, an alert "!" - these are HUD that happens to be
@@ -818,6 +899,7 @@ function renderLighting(ox, oy, now) {
   if (settings.vidStars) drawFrostGlint(ox, oy);
 
   litShots(ox, oy, now, dark);
+  litSnowdrops(now, dark);
   // ...and last, the readouts the grade was never allowed to touch
   flushWorldInk();
 }
@@ -825,8 +907,8 @@ function renderLighting(ox, oy, now) {
 // A shot can still carry its own light: the CARE ARROW and the WISP do, and
 // anything a FLAME modifier is riding (`lit` in the BITS table, js/tools.js).
 // They are read straight off the live shots rather than registered anywhere,
-// and they are the only light left in the game - additive, so they warm the
-// night blue rather than cutting a clean hole in it.
+// and with the open snowdrops they are the only light left in the game -
+// additive, so they warm the night blue rather than cutting a clean hole in it.
 function litShots(ox, oy, now, dark) {
   let any = false;
   for (const a of arrows) if (a.lit) { any = true; break; }

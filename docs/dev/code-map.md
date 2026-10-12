@@ -74,7 +74,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the warren's snowdrop clumps: four variants in 24 px cells, each shut and open at three wind leans and picked, and the open bloom's turning glow (kept as spark points); never edit, repaint with `python3 app/bake-snowdrops/paint.py` and rebake with `node app/bake-snowdrops/bake.js` | `SPRITES.snowdrop[variant]` (`closed`/`open`/`picked`/`glow`; drawn by the snowdrop branch of `render()`, js/draw/render.js, `SNOWDROP_SWAY`, `SNOWDROP_GLOW_HZ`) | - |
+| the warren's snowdrop clumps: four variants in 24 px cells, each shut and open at three wind leans and picked, and the open bloom's turning glow (kept as spark points); never edit, repaint with `python3 app/bake-snowdrops/paint.py` and rebake with `node app/bake-snowdrops/bake.js` | `SPRITES.snowdrop[variant]` (`closed`/`open`/`picked`/`glow`/`bell`/`at`; drawn by the snowdrop branch of `render()`, js/draw/render.js, `SNOWDROP_SWAY`, and lit by `litSnowdrops`, js/draw/light.js) | - |
 
 ## js/sprites/robot.js (generated)
 
@@ -617,6 +617,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the hour's colour grade (rose dawn, crisp midday, gold dusk: a warm multiply over a cool screen off keyframes on `state.time`, and the noon self-multiply) | `todGrade`, `todMix`, `todNoon`, `TOD_KEYS`/`TOD_CRISP`/`TOD_NOON*` | `light & weather` › `the hour` |
 | a clear frosty day: its cool grade and all-day crisp (applied in `todGrade`), the cloud it clears, the glints on bare snow, and a blizzard's milky haze | `FROST_TINT`/`FROST_CRISP`/`FROST_CLEAR`, `drawFrostGlint`, `GLINT_*`, `BLIZ_HAZE`/`BLIZ_HAZE_A` | `light & weather` › `frost glints` |
 | the night colour, a lit shot's halo, snow (world-space flakes, see `fx updates`), vignette | `renderLighting`, `NIGHT_TINT`/`NIGHT_DEEP`/`NIGHT_DEEP_A`, `litShots`, `renderWeather`, `renderVignettes`/`vigGrd` | `light & weather` › `the pass` |
+| an open snowdrop's light, laid above every grade (its pool, bell, halo, twinkles and motes) | `litSnowdrops`, `litDrops` (filled by `render()`'s snowdrop branch), `SNOWDROP_POOL`/`SNOWDROP_SPECKS`, `SNOWDROP_*` | `light & weather` › `lit snowdrops` |
 | the night RIM: the world-space vignette that closes the view in rather than dimming the middle | `nightEdge`, `NIGHT_EDGE`, `nvGrd` | `light & weather` › `the pass` |
 | **text over the world, held back from the night grade** (a name tag, MERCH/PERCH, a damage floater, a sense mark), and **the frames over bodies, held back with it** (every bar, a player's and a beast's whole frame, PERCH's bar) | `drawWorldText`, `flushWorldInk`, `worldInk`; `overheadPlate`, `flushPlates`, `worldPlates`, `platesNow`; the riders' names on a wing, the one text that never lands on another (ground names overlap): `drawNameTag`, `settleNameTags` (run by the flush), `TAG_GAP`/`TAG_CLIMB` | `light & weather` › `ink over the world` |
 

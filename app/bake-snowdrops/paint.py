@@ -2,17 +2,22 @@
 #
 #   python3 app/bake-snowdrops/paint.py   (needs numpy and Pillow)
 #
-# The look Noah picked (M GOLD GLOW, 0.400): one bold crook, flat. Every part
-# is a distance field at 8x supersampling - two leaf blades, the arch, the
-# bell hung off its end, a cool shadow pool under the clump - filled in two
-# flat tones lit from the upper left, with no ink line. The bloom is gold so
-# it reads on snow at a distance, the shut bud a dull bronze so the opening is
-# the event, and an open bell wears a halo of pale sparks that turns round it.
+# The look Noah picked (M GOLD GLOW, 0.400; brightened to C SPARKLE, 0.401):
+# one bold crook, flat. Every part is a distance field at 8x supersampling -
+# two leaf blades, the arch, the bell hung off its end, a pale shadow pool
+# under the clump - filled in two flat tones lit from the upper left, with no
+# ink line. The bloom is a sunny gold with a white lip so it reads on snow at
+# a distance, the leaves a fresh spring green, the shut bud a dull bronze so
+# the opening is the event, and an open bell wears a halo of white sparks
+# that turns round it. The bell is also painted alone, so the game can lay it
+# again above the hour's grade (litSnowdrops, js/draw/light.js).
 #
 #   snowdrop16-atlas.png       4 variant rows x (closed, open, picked)
 #   snowdrop16-sway-atlas.png  4 rows x (closed leaning -1, 0, +1, open -1, 0, +1)
 #   snowdrop16-glow-atlas.png  4 rows x (lean -1, 0, +1) x GLOW_N phases: the
 #                              halo's pixels alone, drawn over the open bloom
+#   snowdrop16-bell-atlas.png  4 rows x (lean -1, 0, +1): the open bell's
+#                              pixels alone, at the same place in the cell
 #
 # The four variants are two shapes (a tall crook, a short one), each also
 # mirrored, so a scatter never repeats one plant. 24x24 cells, feet at (12, 22).
@@ -28,15 +33,15 @@ S = 8  # supersampling
 GLOW_N = 6  # halo phases: six sparks a sixth of a turn apart, stepping a twelfth, lit two in three
 
 def hx(s): return tuple(int(s[i:i + 2], 16) for i in (1, 3, 5))
-LEAF = (hx('#1f5240'), hx('#4f8e66'))
-STEM = (hx('#2e6c44'), hx('#4f8e66'))
-SHADOW = (hx('#8e9cc4'), hx('#a9b4d6'))
-OPEN = (hx('#f0961e'), hx('#ffd84a'))
+LEAF = (hx('#2c7a50'), hx('#74c486'))
+STEM = (hx('#3a8a56'), hx('#74c486'))
+SHADOW = (hx('#b4c0e2'), hx('#c8d2ee'))
+OPEN = (hx('#ffb52e'), hx('#fff27a'))
 SHUT = (hx('#8a5a24'), hx('#b8843a'))
-GOLD = hx('#f4cf6a')      # the inner lip
-GLINT = hx('#fff4b8')     # one pale pixel on the lit shoulder
-HALO = hx('#ffe9a0')
-THROAT = hx('#4f8e66')    # the green at the bell's mouth
+GOLD = hx('#fffbe6')      # the inner lip
+GLINT = hx('#ffffff')     # one white pixel on the lit shoulder
+HALO = hx('#ffffff')
+THROAT = hx('#5aa870')    # the green at the bell's mouth
 
 # (arch top y, arch radius, leaf blades [(foot x, tip x, tip y)])
 SHAPES = [
@@ -46,7 +51,7 @@ SHAPES = [
 VARIANTS = [(0, False), (0, True), (1, False), (1, True)]
 
 def paint(variant, state, sway=0.0):
-    """state: 'closed', 'open' or 'picked'. Returns (rgba, bell centre or None)."""
+    """state: 'closed', 'open' or 'picked'. Returns (rgba, bell centre or None, the bell alone or None)."""
     shape, mirror = VARIANTS[variant]
     ay, R, blades = SHAPES[shape]
     N = CELL * S
@@ -77,6 +82,7 @@ def paint(variant, state, sway=0.0):
             dd = np.hypot((xs - bx) / 1.7, (ys - by - 3.0) / 2.6)
             m['bell'] = (dd < 1) | ((ys > by) & (ys < by + 1.2) & (np.abs(xs - bx) < 0.5))
     a = np.zeros((CELL, CELL, 4), np.uint8)
+    bell = np.zeros((CELL, CELL), bool)  # which pixels are the bell's
     bxs = 16 - bx if mirror else bx   # the bell's centre in screen space (plant units)
     tones = {'shad': SHADOW, 'leaf': LEAF, 'stem': STEM, 'bell': OPEN if state == 'open' else SHUT}
     for name in ('shad', 'leaf', 'stem', 'bell'):
@@ -89,11 +95,12 @@ def paint(variant, state, sway=0.0):
                 elif name == 'bell': lit = (x + 0.5) / K < bxs + 1.3
                 else: lit = not mk[y * S + S // 2, max(0, x * S - S // 2)]  # a pixel whose left neighbour is the shape is in its shade
                 a[y, x, :3] = lite if lit else dark; a[y, x, 3] = 255
-    if state != 'open': return a, None
+                bell[y, x] = name == 'bell'
+    if state != 'open': return a, None, None
     px = lambda x: (CELL - 1 - int(round(x * K))) if mirror else int(round(x * K))
     def put(x, y, c):
         y = int(round(y * K))
-        if 0 < x < CELL - 1 and 0 < y < CELL - 1: a[y, x, :3] = c; a[y, x, 3] = 255
+        if 0 < x < CELL - 1 and 0 < y < CELL - 1: a[y, x, :3] = c; a[y, x, 3] = 255; bell[y, x] = True
     put(px(bx), by + 4, THROAT)
     put(px(bx - 1), by + 1, GOLD)
     gold = set(OPEN)
@@ -101,7 +108,8 @@ def paint(variant, state, sway=0.0):
     ty, tx = min(pts)
     a[ty + 1, tx, :3] = GLINT
     cy = sum(p[0] for p in pts) / len(pts); cx = sum(p[1] for p in pts) / len(pts)
-    return a, (cx, cy)
+    alone = a.copy(); alone[~bell] = 0
+    return a, (cx, cy), alone
 
 def halo(a, centre, phase):
     """the open bloom's halo at one phase, as its own layer over sprite a"""
@@ -119,16 +127,19 @@ LEANS = (-1.5, 0.0, 1.5)
 still = Image.new('RGBA', (3 * CELL, 4 * CELL))
 sway = Image.new('RGBA', (6 * CELL, 4 * CELL))
 glow = Image.new('RGBA', (3 * GLOW_N * CELL, 4 * CELL))
+bells = Image.new('RGBA', (3 * CELL, 4 * CELL))
 for v in range(len(VARIANTS)):
     for i, st in enumerate(('closed', 'open', 'picked')):
         still.paste(Image.fromarray(paint(v, st)[0]), (i * CELL, v * CELL))
     for j, lean in enumerate(LEANS):
         sway.paste(Image.fromarray(paint(v, 'closed', lean)[0]), (j * CELL, v * CELL))
-        a, c = paint(v, 'open', lean)
+        a, c, alone = paint(v, 'open', lean)
         sway.paste(Image.fromarray(a), ((3 + j) * CELL, v * CELL))
+        bells.paste(Image.fromarray(alone), (j * CELL, v * CELL))
         for f in range(GLOW_N):
             glow.paste(Image.fromarray(halo(a, c, f)), ((j * GLOW_N + f) * CELL, v * CELL))
 still.save(os.path.join(HERE, 'snowdrop16-atlas.png'))
 sway.save(os.path.join(HERE, 'snowdrop16-sway-atlas.png'))
 glow.save(os.path.join(HERE, 'snowdrop16-glow-atlas.png'))
+bells.save(os.path.join(HERE, 'snowdrop16-bell-atlas.png'))
 print('painted', len(VARIANTS), 'variants')
