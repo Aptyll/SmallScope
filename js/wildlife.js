@@ -34,8 +34,8 @@ const HIT_PUFF = { rabbit: '#9a6a45', deer: '#8f582f', wolf: '#6f778c', alpha: '
 // speeds. A deer keeps the wider watch and the longer run; a rabbit sits tight
 // and then goes off like a spring. Both resolve the ring through seenAt, so
 // crawling in under the snow is what gets a hunter inside it.
-const FLEE_SIGHT = { rabbit: 26, deer: 46 };
-const FLEE_TIME = { rabbit: [0.6, 1.1], deer: [1.1, 1.9] };
+const FLEE_SIGHT = { rabbit: 36, deer: 46 };
+const FLEE_TIME = { rabbit: [1.6, 2.6], deer: [1.1, 1.9] };
 const PREY_SPD = { rabbit: 42, deer: 26 };   // px/s grazing
 // A deer's two flight gaits, as multiples of a player's walk (PLAYER_SPEED):
 // the run while its stamina bar lasts and the walk once it is empty. The
@@ -47,7 +47,7 @@ const DEER_RUN_MUL = 1.4;     // 1.3 to 1.5 is the band
 // is at its run, and a spent one back down at its walk, DEER_EASE_T after the
 // change, on an ease-out (fast at first, settling in) - never a jump in speed
 const DEER_EASE_T = 0.28;     // s; 0.2 to 0.35 reads as a startle, not a dash
-const PREY_RUN = { rabbit: 80, deer: Math.round(PLAYER_SPEED * DEER_WALK_MUL) };   // px/s bolting
+const PREY_RUN = { rabbit: 104, deer: Math.round(PLAYER_SPEED * DEER_WALK_MUL) };   // px/s bolting
 // A deer's sprint: the first stretch of a flight goes at DEER_SPRINT, a run
 // a walking player cannot match, off a stamina bar it always wears (a.sprint,
 // 0..1); the bar drains over DEER_SPRINT_T of running and refills over
@@ -68,13 +68,20 @@ const RABBIT_DODGE_SIGHT = 90; // px an arrow is noticed from (the fastest bit, 
 const RABBIT_DODGE_MISS = 14;  // px off the body's centre a shot's line must pass inside to be coming AT it
 const RABBIT_DODGE_SPD = 260;  // px/s of the jink
 const RABBIT_DODGE_T = 0.11;   // s it lasts: ~29 px, well clear of the 8 px disc an arrow lands in
-const RABBIT_DODGE_CD = 10;    // s for the charge to come back
+const RABBIT_DODGE_CD = 6;     // s for the charge to come back
 // The beat a rabbit sits up for before it goes: it hears you, rocks back onto
 // its haunches (the `rise` clip) and only then bolts. It is what the meadow's
 // oldest line - "a rabbit sits tight and then goes off like a spring" - looks
 // like, and it is the one still shot a hunter is ever offered at one. A hit
 // skips it (hurtAnimal), so a rabbit already running never stops to pose.
 const RABBIT_ALERT = 0.3;
+// A warren's rabbit never runs out of its snow: every leg of a flight and
+// every graze must end on its warren's deep snow (warrenHolds), and a flight
+// is a chain of RABBIT_LEG-tile legs, each picked away from the threat, so on
+// the crust (ON_CRUST, js/depth.js) at PREY_RUN it circles a wading scout
+// rather than leaving the circle.
+const RABBIT_LEG = 3.5;
+function warrenHolds(C, x, y) { return campNear(C, x / TILE - 0.5, y / TILE - 0.5, 0) && deepAt(x, y); }
 // The head-up window: seconds either prey keeps WATCHING after the last sign
 // of a player - the beat a deer stands in when a flight ends, before it puts
 // its head back down. It costs nothing (no speed, no sight, no bolt of its
@@ -169,52 +176,30 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   sfxAt('hit', a.x, a.y); if (a.hp > 0 && a.kind !== 'bird') sfxAt('yelp', a.x, a.y);
 }
 
-// The passive pair, and the strength the valley is kept at: PREY_POP of each
-// kind - every rabbit in the two WARRENS (CAMPS.meadow, js/world.js), split
-// between them, and the deer anywhere in the open - put down at boot by
-// spawnAnimals and then topped up one at a time by updatePreyStock, every
-// PREY_REPOP seconds a kind is short, at a spot no live player is within
-// PREY_CLEAR of (past the edge of any screen at zoom 1, so nothing is ever
-// seen to appear: a warren with a scout standing in it waits) and at the
-// level the table has reached by then (animalLevel). Neither kind breeds: the
-// valley is restocked, not grown, and a hunt never empties it for good.
-const PREY_POP = { rabbit: 16, deer: 10 };
+// The deer, and the strength the valley is kept at: PREY_POP of them,
+// anywhere in the open, put down at boot by spawnAnimals and then topped up
+// one at a time by updatePreyStock, every PREY_REPOP seconds the herd is
+// short, at a spot no live player is within PREY_CLEAR of (past the edge of
+// any screen at zoom 1, so nothing is ever seen to appear) and at the level
+// the table has reached by then (animalLevel). They never breed: the valley
+// is restocked, not grown, and a hunt never empties it for good. The
+// rabbits are not stock: three live in each WARREN and come back as a camp
+// does, on its clock (CAMPS.meadow, updateCamps, js/world.js).
+const PREY_POP = { deer: 10 };
 const PREY_REPOP = 15;  // s between top-ups (one animal each)
 const PREY_CLEAR = 280; // px from every live player a newcomer must land
 let preyRepopT = PREY_REPOP;
 
-// the warrens, and the one a new rabbit goes to: whichever holds fewest
-function warrens() { return camps.filter((C) => C.key === 'meadow'); }
-function warrenFor() {
-  let best = null, bn = 1e9;
-  for (const C of warrens()) {
-    let n = 0;
-    for (const a of animals) if (!a.dead && a.meadow === C) n++;
-    if (n < bn) { bn = n; best = C; }
-  }
-  return best;
-}
-// one animal of a kind on a free tile: a rabbit inside its warren's clearing
-// (none on a map with no warren - the practice arena), a deer anywhere clear
-// of the map's centre, and - when `clear` - out of everyone's reach. The
-// animal, or null if forty tries found nowhere
+// one animal of a kind on a free tile clear of the map's centre, and - when
+// `clear` - out of everyone's reach. The animal, or null if forty tries
+// found nowhere
 function spawnPrey(kind, clear) {
-  const home = kind === 'rabbit' ? warrenFor() : null;
-  if (kind === 'rabbit' && !home) return null;
   for (let tries = 0; tries < 40; tries++) {
-    let tx, ty;
-    if (home) {
-      tx = home.tx + randi(1 - home.r, home.r - 1); ty = home.ty + randi(1 - home.r, home.r - 1);
-      if (Math.hypot(tx - home.tx, ty - home.ty) > home.r - 1) continue;
-    } else {
-      tx = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
-      ty = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
-    }
+    const tx = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN), ty = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
     if (!inWorld(tx, ty) || objects[idx(tx, ty)] || waterAt(tx, ty) || Math.hypot(tx - cx, ty - cy) <= 14) continue;
     const x = (tx + 0.5) * TILE, y = (ty + 0.5) * TILE;
     if (clear && players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - x, p.y - y) < PREY_CLEAR)) continue;
     const a = makeAnimal(kind, x, y);
-    if (home) a.meadow = home;
     animals.push(a);
     return a;
   }
@@ -222,8 +207,7 @@ function spawnPrey(kind, clear) {
 }
 
 function spawnAnimals() {
-  for (let i = 0; i < PREY_POP.rabbit; i++) spawnPrey('rabbit', false);
-  for (let i = 0; i < PREY_POP.deer; i++) spawnPrey('deer', false);
+  for (const k in PREY_POP) for (let i = 0; i < PREY_POP[k]; i++) spawnPrey(k, false);
 }
 
 // the top-up: on the clock, the kind furthest under strength gets one back
@@ -231,7 +215,8 @@ function updatePreyStock(dt) {
   preyRepopT -= dt;
   if (preyRepopT > 0) return;
   preyRepopT = PREY_REPOP;
-  const live = { rabbit: 0, deer: 0 };
+  const live = {};
+  for (const k in PREY_POP) live[k] = 0;
   for (const a of animals) if (!a.dead && live[a.kind] !== undefined) live[a.kind]++;
   let kind = null, short = 0;
   for (const k in PREY_POP) if (PREY_POP[k] - live[k] > short) { short = PREY_POP[k] - live[k]; kind = k; }
@@ -486,12 +471,15 @@ function updateAnimal(a, dt) {
 // the first open tile it can actually route to
 function fleeGoal(a, from) {
   const base = Math.atan2(a.y - from.y, a.x - from.x) + rand(-0.4, 0.4);
-  const dist = 6 * TILE;
+  // a warren's rabbit runs short legs that never leave its snow (warrenHolds):
+  // pinned to the circle it zigzags round the chaser instead of out of reach
+  const C = a.meadow, dist = (C ? RABBIT_LEG : 6) * TILE;
   for (const k of [0, 0.6, -0.6, 1.2, -1.2, 1.9, -1.9, 2.6, -2.6, Math.PI]) {
     const gx = a.x + Math.cos(base + k) * dist, gy = a.y + Math.sin(base + k) * dist;
     const tx = Math.floor(gx / TILE), ty = Math.floor(gy / TILE);
     if (!walkable(tx, ty)) continue;
     const x = tx * TILE + 8, y = ty * TILE + 8;
+    if (C && !warrenHolds(C, x, y)) continue;
     if (navLineClear(a.x, a.y, x, y, 5) || findPath(a.x, a.y, x, y, 0, 250)) return { x, y };
   }
   return null;
@@ -505,27 +493,28 @@ function fleeGoal(a, from) {
 // it ends where the animal actually stops, and the debug overlay has a real
 // route to draw instead of a stub pointing off into nothing.
 // null means boxed in - the caller waits a beat and picks again.
-function wanderGoal(a, base, spread, near, far) {
+function wanderGoal(a, base, spread, near, far, C) {
   for (let k = 0; k < 8; k++) {
     const ang = base + rand(-spread, spread);
     const d = rand(near, far) * TILE;
     const tx = Math.floor((a.x + Math.cos(ang) * d) / TILE), ty = Math.floor((a.y + Math.sin(ang) * d) / TILE);
     if (!walkable(tx, ty)) continue;
     const x = tx * TILE + 8, y = ty * TILE + 8;
+    if (C && !warrenHolds(C, x, y)) continue; // a warren's rabbit grazes inside its snow
     if (navLineClear(a.x, a.y, x, y, 5) || findPath(a.x, a.y, x, y, 0, 250)) return { x, y };
   }
   return null;
 }
 
-// a rabbit keeps to its warren: out past its clearing it hops back toward the
-// middle, and inside it takes short hops of a tile or three any way at all;
-// everyone else just picks an open way out
+// a rabbit keeps to its warren's deep snow (warrenHolds): off it, it hops
+// back toward the middle, and on it takes short hops of a tile or three any
+// way that stays on it; everyone else just picks an open way out
 function preyWander(a) {
   const C = a.meadow;
   if (C) {
     const hx = (C.tx + 0.5) * TILE, hy = (C.ty + 0.5) * TILE;
-    if (Math.hypot(hx - a.x, hy - a.y) > (C.r - 1) * TILE) return wanderGoal(a, Math.atan2(hy - a.y, hx - a.x), 0.5, 3, 6);
-    return wanderGoal(a, rng() * Math.PI * 2, Math.PI, 1, 3);
+    if (!warrenHolds(C, a.x, a.y)) return wanderGoal(a, Math.atan2(hy - a.y, hx - a.x), 0.5, 2, 4);
+    return wanderGoal(a, rng() * Math.PI * 2, Math.PI, 1, 3, C);
   }
   return wanderGoal(a, rng() * Math.PI * 2, Math.PI, 3, 6);
 }

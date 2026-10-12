@@ -1546,16 +1546,17 @@ the answer; a warrior bot has no burrow to decide.
 ## Wildlife
 
 `animals` holds **everything that is shot rather than swung at** — two kinds of prey, the camps' three wolves and the dormant bird, keyed by
-`a.kind` with hp from `ANIMAL_HP`. The passive pair is spawned at boot by `spawnAnimals()`
+`a.kind` with hp from `ANIMAL_HP`. The deer are spawned at boot by `spawnAnimals()`
 (called right after `genWorld()`, so its `rng()` draws don't reshuffle the world layout) at
-`PREY_POP` strength: 16 rabbits (8 HP) and 10 deer (24 HP). **Every rabbit lives in a warren**
-([the SNOWDROP WARREN camps](world.md#camps)): `spawnPrey` puts a new one inside the clearing of
-whichever warren holds fewest (`warrenFor`), and `a.meadow` remembers it (not `a.home`, which is a
-camp monster's).
-Neither reproduces, but **the meadow is restocked**: `updatePreyStock` (from `updatePlay`, never
-under `PRACTICE`) puts one animal of the kind furthest under strength back every `PREY_REPOP`
-(15 s) through `spawnPrey`, on a free tile no live player is within `PREY_CLEAR` (280 px — past
-the edge of any screen at zoom 1) of, so nothing is ever seen to appear. The three wolf kinds
+`PREY_POP` strength: 10 deer (24 HP), anywhere in the open. **The rabbits (8 HP) are a camp's**:
+three live in each [SNOWDROP WARREN](world.md#camps), stocked by `stockCamps` at their plan's
+spots and back all at once 40 s after the last of a warren's three dies, on the camp clock
+(`updateCamps`, held while anyone stands in the warren). `a.meadow` remembers the warren (not
+`a.home`, which is a camp monster's, so a rabbit is never a camp fight).
+The deer never breed, but **the herd is restocked**: `updatePreyStock` (from `updatePlay`, never
+under `PRACTICE`) puts one back every `PREY_REPOP` (15 s) while it is short, through
+`spawnPrey`, on a free tile no live player is within `PREY_CLEAR` (280 px — past the edge of any
+screen at zoom 1) of, so nothing is ever seen to appear. The three wolf kinds
 ([their table](#camp-monsters-neutral-until-hit)) belong to a [camp](world.md#camps) instead — `a.home` points at it,
 and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, are dormant: nothing spawns one.)
 
@@ -1644,23 +1645,25 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
 - **Grazing.** Idle, then pick one goal and walk it. `wanderGoal(a, base, spread, near, far)`
   tries 8 tiles in an arc, takes the first it can actually route to, and returns `null` when the
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
-  chooser: a rabbit out past its warren's clearing (`r - 1` tiles from the centre) hops back
-  toward the middle, and inside it takes short 1–3 tile hops, so the warren reads as theirs; a
-  deer takes an open direction, 3–6 tiles. A rabbit runs on the deep snow's crust (`wadeStep`
-  never slows one). `navStep` walks it at
+  chooser: a rabbit off its warren's deep snow (`warrenHolds`) hops back toward the middle, and
+  on it takes short 1–3 tile hops that end on it, so the warren reads as theirs; a deer takes an
+  open direction, 3–6 tiles. A rabbit runs on top of the deep snow (`ON_CRUST`, js/depth.js:
+  `wadeStep` never slows one and `wadeWidth` never sinks it). `navStep` walks it at
   `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles. The walk wears the
   `hop` / `run` clip at 0.6 rate — the same gait as a flight, taken lazily — and the idle at
   the end of it is where a settled deer's head actually goes down.
 - **Bolting.** Both species flee, on `FLEE_SIGHT` / `FLEE_TIME`: a rabbit sits tight and goes
-  at 26 px, a deer watches wider and runs longer at 46 px. The trigger asks
+  at 36 px and runs 1.6–2.6 s, a deer watches wider at 46 px. The trigger asks
   **`seenAt(p, FLEE_SIGHT[kind])`**, not raw distance, so GHOSTSTEP and lying buried in the snow
   are how a hunter closes on a deer at all — measured, full cover collapses a deer's ring from 46
   to `PRONE_SNIFF` (22), and inside *that* it bolts no matter what you are lying under. A hit
   also sends either species running from the nearest player (`fleeT`).
-- **The flight** is a chain of routed legs at `PREY_RUN`: `fleeGoal(a, from)` picks a tile ~6
-  tiles off, as straight away from the threat as the ground allows (fanning out, then sideways,
-  then past it), the first it can route to; a leg that arrives or fails hands over to the next,
-  and an animal with nowhere to run stops fleeing.
+- **The flight** is a chain of routed legs at `PREY_RUN` (a rabbit's 104 px/s, half again a
+  walking scout's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
+  threat as the ground allows (fanning out, then sideways, then past it), the first it can route
+  to; a leg that arrives or fails hands over to the next, and an animal with nowhere to run stops
+  fleeing. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
+  snow (`warrenHolds`), so it circles a scout wading after it instead of leaving the circle.
 - **A deer's sprint.** A deer always wears a second bar under its health — stamina white
   (`STAM_COL`), stacked the way a player's is (`drawAnimal`) — and spends it on the first stretch
   of every flight: while `a.sprint` (0..1) is above zero the legs run at `DEER_SPRINT` and the bar
@@ -1684,7 +1687,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
   leans to (the other if that one is a wall, `navLineClear`), at `RABBIT_DODGE_SPD` (260 px/s) for
   `RABBIT_DODGE_T` (0.11 s, ~29 px, clear of the 8 px disc `animalHit` tests) — and then an ordinary
   bolt (`fleeT`) away from the shooter: the zig, then the zag. The charge comes back over
-  `RABBIT_DODGE_CD` (10 s) whatever the rabbit is doing, so an empty bar is the read that the
+  `RABBIT_DODGE_CD` (6 s) whatever the rabbit is doing, so an empty bar is the read that the
   next arrow lands; a rooted or netted rabbit never spends it. A shot already past or flying
   wide is nothing to it, and a stun drops a dash mid-jink like any other move.
 
@@ -2359,15 +2362,16 @@ there chewing under fire is not patience, it is a free kill.
 
 ## The dawn shield
 
-The [warrens](world.md#camps) carry a dozen **snowdrop** clumps each (`OBJECTS.snowdrop`, art from
-`app/bake-snowdrops`). They are shut all day and open only for the **dawn window**
-(`bloomOpen`, js/world.js): `BLOOM_LEAD` (6 s) before the clock wraps to a new day and
-`BLOOM_HOLD` (18 s) after it, never under `PRACTICE`. An open clump is a work target and the hands
-take it on their own like a berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`,
-js/actions.js) lays `DAWN_SHIELD` (10) of shield on **every scout of the picker's side** who is up
-and on the ground, wherever they are, stacking to `DAWN_SHIELD_MAX` (30): so the clumps are worth
-racing the other side to, one segment each. The clump stays picked until the next dawn opens it
-(`o.picked` = the `bloomDay` it was taken on).
+The [warrens](world.md#camps) carry three **snowdrop** clumps each, at the back of the clearing
+(`OBJECTS.snowdrop`, art from `app/bake-snowdrops`: a gold bell on one bold crook in a 24 px cell,
+a bronze bud shut, and a halo of sparks turning round an open one). A clump is **open until
+someone picks it**: an open clump is a work target and the hands take it on their own like a
+berried bush (`auto`, `ready`), and a pick (`pickSnowdrop`, js/actions.js) lays `DAWN_SHIELD` (10)
+of shield on **every scout of the picker's side** who is up and on the ground, wherever they are,
+stacking to `DAWN_SHIELD_MAX` (30): so the clumps are worth racing the other side to, one segment
+each. Then that clump alone rests `SNOWDROP_CD` (90 s; `o.readyAt`, the match second it opens,
+read by `snowdropLeft`): a snapped stem, a shut bud for its last `SNOWDROP_BUD_T` (25 s), open
+again at zero, and the neutral bar a bush wears under the pointer while it rests.
 
 The shield (`p.dawnShield`) holds until hits break it or its scout goes down — it never wears off.
 `damagePlayer` spends it **after** the damage reduction and **before** health, with a gold burst,
