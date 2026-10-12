@@ -389,9 +389,10 @@ function render() {
   }
   for (const a of animals) draws.push({ y: a.y + 4, a });
   for (const b of robots) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
-  // the training grounds' archery targets: entities, never tile objects (a
-  // slider crosses tiles every frame), sorted by their base like everything
-  if (PRACTICE) for (const t of ptargets) draws.push({ y: t.y + 1, pt: t });
+  // the archery targets (the training grounds', or one a staged scene stood in
+  // a match): entities, never tile objects (a slider crosses tiles every
+  // frame), sorted by their base like everything
+  for (const t of ptargets) draws.push({ y: t.y + 1, pt: t });
   // your side's flags, half a pixel behind their own tile so a flag planted
   // on a tree is never swallowed by that tree's canopy
   for (const q of players) {

@@ -7,6 +7,7 @@
 # world point [x, y], or "mix:a,b,0.3" (30% from a toward b); ox/oy nudge it in world px.
 # --keep saves those output frames as keep_NNNN.png (storyboard and thumbnail); --preview N
 # saves every Nth as a small prev_NNNN.png to check a cut without watching it.
+# A shot's "step" plays every Nth take frame (-10: a rewind scrub), "mute" keeps its frames out of the sound.
 # Writes map.json beside the mp4: the take frame behind every output frame, for the sound.
 import sys, json, os, math, argparse
 import numpy as np
@@ -103,16 +104,17 @@ for sh in C['shots']:
     i0, i1 = F(sh['from']), F(sh['to'])
     fc = sh.get('focus', sh.get('c'))
     f0, f1 = fc if isinstance(fc, list) and len(fc) == 2 and not all(isinstance(v, (int, float)) for v in fc) else (fc, fc)
-    p0, p1 = focus(f0, i0), focus(f1, max(i0, i1 - 1))
+    st = sh.get('step', 1)                  # take frames per output frame: 10 a fast scrub, -10 a rewind
+    n = (i1 - i0) // st
+    if n <= 0: raise SystemExit(f'shot {sh.get("name")} runs the wrong way: {sh["from"]}={i0} to {sh["to"]}={i1} at step {st}')
+    p0, p1 = focus(f0, i0), focus(f1, i0 + (n - 1) * st)
     k0, k1 = pair(sh['k']); ox0, ox1 = pair(sh.get('ox'), 0); oy0, oy1 = pair(sh.get('oy'), 0)
-    n = i1 - i0
-    if n <= 0: raise SystemExit(f'shot {sh.get("name")} runs backward: {sh["from"]}={i0} to {sh["to"]}={i1}')
     for j in range(n):
-        i = i0 + j; e = ease(sh.get('ease', 'smooth'), j / max(1, n - 1))
+        i = i0 + j * st; e = ease(sh.get('ease', 'smooth'), j / max(1, n - 1))
         k = math.exp(math.log(k0) + (math.log(k1) - math.log(k0)) * e)     # zoom in log space: an even push
         cx = p0[0] + ox0 + (p1[0] + ox1 - p0[0] - ox0) * e; cy = p0[1] + oy0 + (p1[1] + oy1 - p0[1] - oy0) * e
-        emit(overlay(view(painted(i), R[i]['cam'], S, cx, cy, k, SIZE), sh.get('name'), j), i)
-    last = (i1 - 1, cx, cy, k)
+        emit(overlay(view(painted(i), R[i]['cam'], S, cx, cy, k, SIZE), sh.get('name'), j), None if sh.get('mute') else i)
+    last = (i0 + (n - 1) * st, cx, cy, k)
     print('shot', sh.get('name', ''), i0, i1, 'out', len(MAP))
 NG = len(MAP)
 

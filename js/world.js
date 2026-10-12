@@ -2172,8 +2172,11 @@ const practiceDummies = [];  // every dummy standing, for updatePractice's mend 
 // face; drawAgTrack, js/draw-world.js). Every target is a trolley on a rail - ENTITIES in
 // `ptargets`, never tile objects (a mover crosses tiles every frame and a
 // raised face should not block a walker) - so only arrows meet them: the
-// PRACTICE branch of the arrow loop (js/sim.js) tests every live face disc
-// (ptFace/ptLive/ptHitR). The track has TWO LANES (outer 0, inner 1,
+// arrow loop (js/sim.js) tests every live face disc (ptFace/ptLive/ptHitR).
+// Outside practice the list is empty unless a staged scene (app/media/scenes)
+// stands a face in the valley: it holds where it was put (updatePractice,
+// which rolls the track, never runs in a match), and one carrying a `word`
+// says it in gold when it breaks (hitPTarget). The track has TWO LANES (outer 0, inner 1,
 // AG_LANE_GAP px apart): a mover about to run into anything parked - or
 // rolling slower - on its rail hops to the free lane and keeps going (the
 // hop eases over laneU, a visible little lane change, never a teleport).
@@ -2263,6 +2266,9 @@ function ptLive(t) { return !t.gone && t.broken <= 0 && (t.kind !== 'pop' || t.u
 function hitPTarget(t) {
   const f = ptFace(t);
   agStreak++;
+  // a target that carries a WORD says it instead of scoring: gold, rising
+  // and fading in the damage totals' own ink (wordPop, js/core.js)
+  if (t.word) { wordPop(f.x, f.y - 6, t.word); agShatter(t); return; }
   // a milestone run flares at the face: gold at every fifth in a row, hot
   // orange from ten - the popup says the number, this says the moment
   if (agStreak >= AG_RUN_STEP && agStreak % AG_RUN_STEP === 0) {
