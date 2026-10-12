@@ -13,7 +13,7 @@ import sys, json, os, math, argparse
 import numpy as np
 from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from look import text, stamp, drain, card_bg, game_logo, steam_mark
+from look import text, stack, stamp, drain, card_bg, game_logo, steam_mark
 from view import view
 import imageio_ffmpeg
 
@@ -135,7 +135,9 @@ if last and 'card' in E:
     # STEAM unless a `cta` gives its own - or, a `cta` with no mark, those lines
     # standing larger where the mark would be (say JOIN THE DISCORD)
     WL = text(CTA or [[('WISHLIST', 'gold')], [('ON STEAM', 'gold')]], s=cd.get('s', 18 if MARK else 26), gap=2)
-    LC = text(cd.get('line', 'LINK IN COMMENTS'), s=12)
+    # `cta_s` gives each cta line its own size (a small JOIN THE over a big DISCORD)
+    if CTA and cd.get('cta_s'): WL = stack([text([l], s=sz) for l, sz in zip(CTA, cd['cta_s'])], -4)
+    LC = text(cd.get('line') or 'LINK IN COMMENTS', s=12)
     for j in range(cd.get('frames', 270)):
         im = stamp(bg, LOGO, SIZE[0] / 2, 300 * Y, min(1, (j + 1) / 4))
         if j >= 6 and MARK: im = stamp(im, STEAM, SIZE[0] / 2, 700 * Y, min(1, (j - 5) / 3), 1 + 0.25 * max(0, 1 - (j - 6) / 6))

@@ -112,31 +112,21 @@
     [
      [
       "JOIN THE",
-      "gold"
+      "white"
      ]
     ],
     [
      [
       "DISCORD",
-      "gold"
+      "discord"
      ]
     ]
    ],
-   "line": [
-    [
-     [
-      "PLAYTEST THIS FRIDAY",
-      "white"
-     ]
-    ],
-    [
-     [
-      "8PM CST",
-      "white"
-     ]
-    ]
-   ],
-   "line_y": 1360
+   "line": 0,
+   "cta_s": [
+    20,
+    34
+   ]
   }
  }
 }
