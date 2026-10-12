@@ -2374,8 +2374,8 @@ Everything over the finished world frame, in world pixels, in `renderLighting()`
 ([js/draw/light.js](../../js/draw/light.js), the `light & weather` banner). It is the last world
 pass; the debug overlays are the only thing above it.
 
-**Nothing on the map emits light, and there is no light registry** — not even a glow on the
-player. **Night is a colour and a closing in**: a `multiply` of
+**Almost nothing on the map emits light, and there is no light registry** — not even a glow on the
+player: a lit shot and a warren's open snowdrop are the only two. **Night is a colour and a closing in**: a `multiply` of
 `NIGHT_TINT` at `globalAlpha = state.darkness`, a little `NIGHT_DEEP` for depth, and then
 `nightEdge` — a vignette **inside the world pass**, so it never touches the HUD. It cools what is
 already drawn instead of laying a slab over it, so snow stays snow, team colours stay legible at
@@ -2485,7 +2485,13 @@ light left in the game. A shot carrying a `lit` bit (the CARE ARROW, the WISP, a
 modifier is riding — see [tools and bits](gameplay.md#tools-and-bits)) gets an additive warm
 halo read straight off the live `arrows`, so it warms the night blue rather than cutting a hole
 in it. It is drawn **after** the night grade, which is why it reads at midnight and barely at all
-at noon.
+at noon. Then **`litSnowdrops`**, the other light: each open snowdrop the object pass drew hands
+its place over (`litDrops`), and this lays the rest above every grade — a stepped pool of warm light
+(`SNOWDROP_POOL`, added, breathing on `SNOWDROP_BREATH`, stronger with the dark), the bell again
+(`SPRITES.snowdrop[v].bell`, so no cloud shadow, hour or night dulls it), its halo of sparks
+(`SNOWDROP_GLOW_HZ`), `SNOWDROP_TWINKLES` four-armed stars popping round the bell and
+`SNOWDROP_MOTES` gold motes rising off it. Each clump runs on its own hash phase, all of it on the
+frame's clock. A body standing just in front of a clump has the bell drawn over its edge.
 
 ### The hour
 

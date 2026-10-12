@@ -157,7 +157,6 @@ function drawTargetRim(src, sx, sy, w, h, x, y, now) {
 // canopy over it and the rim dissolves as the hero steps into the open.
 const HUT_FR = 140; // ms a frame of the hog hut's chimney smoke
 const SNOWDROP_SWAY = 12; // gain on windSway for a snowdrop's lean: a stem bends where a pine barely sways
-const SNOWDROP_GLOW_HZ = 5; // halo steps a second round an open snowdrop's bell (SPRITES.snowdrop glow)
 const TREE_FADE_A = 0.35; // alpha floor on the adjacent ring
 const TREE_FADE_R0 = 24; // fully faded inside this trunk distance (world px)
 const TREE_FADE_R1 = 52; // back to opaque beyond this
@@ -599,7 +598,9 @@ function render() {
       // with the pines' own wind - lighter, so the same breath moves it
       // further (SNOWDROP_SWAY) - and sits a hash's few pixels off its tile's
       // grid so two clumps never line up. Its 24 px cell stands its feet at
-      // the tile's (8, 15).
+      // the tile's (8, 15). An open one's bell, halo and light are laid again
+      // above the grade (litDrops, then litSnowdrops in js/draw/light.js), so
+      // no cloud or night dulls the one thing in the warren worth crossing it for.
       const V = SPRITES.snowdrop[o.variant % SPRITES.snowdrop.length];
       const left = snowdropLeft(o), open = left <= 0;
       const lean = Math.max(-1, Math.min(1, Math.round(windSway(o.tx, o.ty) * SNOWDROP_SWAY)));
@@ -608,12 +609,8 @@ function render() {
       const sx = px + sh + jx + 8 - (spr.width >> 1), sy = py + jy + 17 - spr.height;
       if (open && fadeP && o === fadeWkO) drawTargetRim(spr, 0, 0, spr.width, spr.height, sx, sy, now);
       drawSpriteFlash(spr, sx, sy, o.flash);
-      // an open bell's halo: its sparks step round it SNOWDROP_GLOW_HZ times
-      // a second, each clump on its own phase so two never pulse as one
-      if (open) {
-        const G = V.glow[lean + 1];
-        ctx.drawImage(G[Math.floor(now * SNOWDROP_GLOW_HZ + hash2(o.tx * 7 + 5, o.ty * 3 + 8) * G.length) % G.length], sx, sy);
-      } else if (o === hovO) drawHealthBar(px + 8, sy + 4, SNOWDROP_CD - left, SNOWDROP_CD, 12, undefined, BAR_NEUTRAL);
+      if (open) litDrops.push({ o, V, lean, sx, sy });
+      else if (o === hovO) drawHealthBar(px + 8, sy + 4, SNOWDROP_CD - left, SNOWDROP_CD, 12, undefined, BAR_NEUTRAL);
     } else if (STRUCTS[o.type] && STRUCTS[o.type].tiled) {
       drawTiledStruct(o, px, py, sh, now); // one tile of art per footprint tile (the long wall)
     } else if (STRUCTS[o.type]) {
