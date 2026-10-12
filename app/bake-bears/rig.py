@@ -3,7 +3,8 @@
 import numpy as np, math
 
 SS = 8
-CW, CH = 60, 46          # 1x canvas: room for the rear-up above and the attacks out front
+S = 2                    # game pixels per rig unit: the bear's size in the world
+CW, CH = 60, 46          # the canvas in rig units: room for the rear-up above and the attacks out front
 OX, OY = 12, 16          # where the reference crop origin sits in the canvas
 
 PAL = {                  # measured from the reference (k-means on 5px cells)
@@ -62,17 +63,19 @@ def seg(ax, ay, bx, by, r0, r1, mat, layer, seed, n=3):
     return out
 
 def render(prims):
-    W, H = CW * SS, CH * SS
+    # the parts are laid out in rig units (the 1x bear the reference was
+    # measured at) and sampled SS times per game pixel, S game pixels a unit
+    U = SS * S
+    W, H = CW * U, CH * U
     mat = np.full((H, W), -1, int)
     shade = np.zeros((H, W))
-    layer = np.full((H, W), -1e9)
     ys, xs = np.mgrid[0:H, 0:W]
-    wx, wy = (xs + 0.5) / SS, (ys + 0.5) / SS
+    wx, wy = (xs + 0.5) / U, (ys + 0.5) / U
     for p in sorted(prims, key=lambda p: p['layer']):
         cx, cy = p['cx'] + OX, p['cy'] + OY
         r = max(p['rx'], p['ry']) + 1
-        x0, x1 = int(max(0, (cx - r) * SS)), int(min(W, (cx + r) * SS))
-        y0, y1 = int(max(0, (cy - r) * SS)), int(min(H, (cy + r) * SS))
+        x0, x1 = int(max(0, (cx - r) * U)), int(min(W, (cx + r) * U))
+        y0, y1 = int(max(0, (cy - r) * U)), int(min(H, (cy + r) * U))
         if x0 >= x1 or y0 >= y1: continue
         dx, dy = wx[y0:y1, x0:x1] - cx, wy[y0:y1, x0:x1] - cy
         c, s = math.cos(p['ang']), math.sin(p['ang'])
@@ -101,7 +104,7 @@ def render(prims):
 TH = [0.025, 0.488, 0.842, 1.101]
 
 def downsample(mat, shade):
-    H, W = CH, CW
+    H, W = CH * S, CW * S
     m = mat.reshape(H, SS, W, SS).transpose(0, 2, 1, 3).reshape(H, W, SS * SS)
     s = shade.reshape(H, SS, W, SS).transpose(0, 2, 1, 3).reshape(H, W, SS * SS)
     out = np.full((H, W), -1, int); sv = np.zeros((H, W))
@@ -161,14 +164,35 @@ def to_rgba(out, band, pal=None):
             img[y, x, :3] = pal[name]; img[y, x, 3] = 255
     return img
 
+INK, INKED = 'SD', '~'   # INKED: a pixel of a sticker's own ink ring, redrawn at the game's pixel
+def sticker_px(p):
+    """a sticker's pixels on the game grid. `px` is drawn in rig units, each
+    pixel an SxS block at its snapped anchor, so the antlers and runes keep
+    the exact shape measured off the reference; an `ink` sticker (the fish,
+    the fangs) drops its INKED ring and is inked again one game pixel round,
+    the same weight as the bear's own outline. `gpx` is already in game
+    pixels from the anchor (the claw trail, drawn at the game's resolution)"""
+    ax, ay = int(round(p['cx'] + OX)), int(round(p['cy'] + OY))
+    if 'gpx' in p:
+        return [(ax * S + x, ay * S + y, c) for (x, y, c) in p['gpx']]
+    out = {}
+    for (dx, dy, col) in p['px']:
+        if col == INKED: continue
+        for i in range(S):
+            for j in range(S):
+                out[((ax + dx) * S + i, (ay + dy) * S + j)] = col
+    if p.get('ink'):
+        for (x, y) in list(out):
+            for q in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+                if q not in out: out[q] = INK
+    return [(x, y, c) for (x, y), c in out.items()]
+
 def stamp_stickers(prims, img, pal):
-    """pixel-exact markings (antlers, runes) ride their bone: each sticker is a
-    list of 1x pixels placed at its snapped anchor"""
+    """pixel-exact markings (antlers, runes, the fish, the claw trail) ride
+    their bone, painted over the banded body"""
     for p in prims:
         if p['mat'] != 'sticker': continue
-        ax, ay = int(round(p['cx'] + OX)), int(round(p['cy'] + OY))
-        for (dx, dy, col) in p['px']:
-            x, y = ax + dx, ay + dy
+        for (x, y, col) in sticker_px(p):
             if not (0 <= y < img.shape[0] and 0 <= x < img.shape[1]): continue
             if p.get('on_body') and img[y, x, 3] == 0: continue
             img[y, x, :3] = pal[col]; img[y, x, 3] = 255
@@ -178,12 +202,15 @@ def bands(sv, th=TH):
     return np.searchsorted(th, sv)
 
 def stamp_eyes(prims, out):
-    """eyes are one exact pixel each, snapped, so they never blur away or flicker"""
+    """eyes are one exact rig pixel each (an SxS block), snapped, so they
+    never blur away or flicker"""
     for p in prims:
         if p['mat'] == 'eye':
-            x, y = int(math.floor(p['cx'] + OX)), int(math.floor(p['cy'] + OY))
-            if 0 <= y < out.shape[0] and 0 <= x < out.shape[1] and out[y, x] >= 0:
-                out[y, x] = MATS.index('eye')
+            ex, ey = int(math.floor(p['cx'] + OX)) * S, int(math.floor(p['cy'] + OY)) * S
+            for y in range(ey, ey + S):
+                for x in range(ex, ex + S):
+                    if 0 <= y < out.shape[0] and 0 <= x < out.shape[1] and out[y, x] >= 0:
+                        out[y, x] = MATS.index('eye')
     return out
 
 def draw(prims, th=None, pal=None):

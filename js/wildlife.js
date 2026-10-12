@@ -154,9 +154,10 @@ function makeAnimal(kind, x, y) {
 // shot's whole step against it (sweepDisc, js/sim.js), widened by the shot's
 // own `reach` (the fist, the axe; js/tools.js); the aim line asks animalHit.
 // The stag stands twice a player's height (its 38 px cell, js/sprites/beasts.js),
-// so its disc is wider and sits up on its flank.
-function animalHitR(a) { return a.kind === 'bird' ? 5 : isBigBeast(a) ? 14 : a.kind === 'deer' ? 12 : 8; }
-function animalHitY(a) { return a.y - (a.alt || 0) - (a.kind === 'deer' ? 8 : 3); }
+// and a bear is wider still (its 112x76 frame, js/sprites/bears.js), so their
+// discs are wider and sit up on the flank.
+function animalHitR(a) { return a.kind === 'bird' ? 5 : isBigBeast(a) ? 28 : a.kind === 'deer' ? 12 : 8; }
+function animalHitY(a) { return a.y - (a.alt || 0) - (isBigBeast(a) ? 10 : a.kind === 'deer' ? 8 : 3); }
 function animalHit(a, x, y) { return Math.hypot(a.x - x, animalHitY(a) - y) < animalHitR(a); }
 
 // One animal taking a hit, from an arrow or from a body rolled into it. Both
@@ -722,9 +723,9 @@ function animalDies(a) {
     burst(a.x, a.y - 5, '#e04a54', 8, 45, 0.5);
     addFloater(a.x, a.y - 26, 'WOLF DOWN', '#f2cc6a');
   } else if (isBigBeast(a)) {
-    burst(a.x, a.y - 8, HIT_PUFF[a.kind], 20, 60, 0.7);
-    burst(a.x, a.y - 8, '#ffb04a', 14, 55, 0.6);
-    addFloater(a.x, a.y - 34, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
+    burst(a.x, a.y - 16, HIT_PUFF[a.kind], 20, 60, 0.7);
+    burst(a.x, a.y - 16, '#ffb04a', 14, 55, 0.6);
+    addFloater(a.x, a.y - 68, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
   }
   // a midline camp's kill (the black bear's and the brown bear's, one side's each
   // and paid the same): the whole team is paid and blooded, wherever they
@@ -760,16 +761,17 @@ function animalDies(a) {
 // bear (`dire`, RED's bank) and the black bear (`alpha`, BLUE's) have the
 // same row, the same hp (ANIMAL_HP) and the same pay. `cause` is the
 // DEATH_CAUSE a bite writes (player.js). `foot` is the box a bear walks the
-// tiles with, smaller than its body: a 9 px box is wider than a tile and
-// jams on the first tree beside the lane its route runs down. `anchor`: nothing a
+// tiles with, far smaller than its body: a box near a tile wide jams on the
+// first tree beside the lane its route runs down, so the 2x bear (r 18) still
+// walks a 5 px one. `anchor`: nothing a
 // player does moves it - no body pushes it (separateUnits gives it right of way),
 // no hit shoves it (updateAnimal drops its knockback), a roll into it is a tackle
 // that stuns only the roller, and a charge stops against it (rushStep) - so a bear
 // always walks where it means to, roar and attacks included.
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 100, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
-  dire:  { bite: 22, lvBite: 3, reach: 22, cd: 1.4, spd: 100, r: 9,   foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear' }, // the same bear on the other bank
+  alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear' }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  dire:  { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear' }, // the same bear on the other bank
 };
 function isCampKind(k) { return !!MONSTER[k]; }
 function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }
@@ -787,7 +789,7 @@ function isAnchored(e) { return !!(MONSTER[e.kind] && MONSTER[e.kind].anchor); }
 const BEAR_ATTACKS = ['bite', 'paw'];
 const BEAR_ATTACK_FRAMES = 10;
 const BEAR_STRIKE = 4;
-const BEAR_COMMIT_REACH = 2;
+const BEAR_COMMIT_REACH = 1.5; // x reach: a blow lands up to 22 px past it, one walking step out of the wind-up
 const BEAR_ROAR_FRAMES = 8;
 const BEAR_FISH_FRAMES = 12; // the river camp's catch: paw up, scoop, snap, chew (riverFish)
 const BEAR_FISH_STRIKE = 3;  // the frame the paw hits the water
@@ -1183,7 +1185,7 @@ function updateCampMonster(a, dt) {
 // one camp monster's blow on its quarry: the hurt, the spray, the sound
 function monsterBite(a, t, M) {
   damagePlayer(t, M.bite + M.lvBite * (a.level - 1), a.mvx, a.mvy, null, M.cause);
-  burst(a.x + a.mvx * (M.big ? 14 : 6), a.y - 4, '#e04a54', M.big ? 9 : 5, 40, 0.35);
+  burst(a.x + a.mvx * (M.big ? 28 : 6), a.y - (M.big ? 8 : 4), '#e04a54', M.big ? 9 : 5, 40, 0.35);
   sfxAt('bite', a.x, a.y);
 }
 
