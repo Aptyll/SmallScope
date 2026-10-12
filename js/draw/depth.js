@@ -90,11 +90,12 @@ function wadeLook(e, now) {
 }
 // how wide a body's collar is - 0 for one that is not standing in the snow:
 // a player lying under it (the cover is its own look), in the water, on the
-// cable or in the air, a bird, and the merchant, who never leaves the road
+// cable or in the air, a kind that runs on the crust (ON_CRUST, js/depth.js:
+// a rabbit, a bird), and the merchant, who never leaves the road
 function wadeWidth(e) {
   if (e instanceof Player) return e.prone || e.fallT > 0 || e.zip >= 0 || inAir(e) || e.dead ? 0 : 10;
-  if (e.kind === 'bird' || e.merchant) return 0;
-  return e.kind === 'rabbit' ? 6 : e.kind === 'deer' ? 12 : MONSTER[e.kind] && MONSTER[e.kind].big ? 20 : 10;
+  if (ON_CRUST[e.kind] || e.merchant) return 0;
+  return e.kind === 'deer' ? 12 : MONSTER[e.kind] && MONSTER[e.kind].big ? 20 : 10;
 }
 // draw a body through fn() as it stands in the snow
 function drawWading(e, ex, ey, now, fn) {

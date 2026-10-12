@@ -1645,23 +1645,25 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
 - **Grazing.** Idle, then pick one goal and walk it. `wanderGoal(a, base, spread, near, far)`
   tries 8 tiles in an arc, takes the first it can actually route to, and returns `null` when the
   animal is boxed in (the caller just idles and picks again). `preyWander` is the per-kind
-  chooser: a rabbit out past its warren's clearing (`r - 1` tiles from the centre) hops back
-  toward the middle, and inside it takes short 1–3 tile hops, so the warren reads as theirs; a
-  deer takes an open direction, 3–6 tiles. A rabbit runs on the deep snow's crust (`wadeStep`
-  never slows one). `navStep` walks it at
+  chooser: a rabbit off its warren's deep snow (`warrenHolds`) hops back toward the middle, and
+  on it takes short 1–3 tile hops that end on it, so the warren reads as theirs; a deer takes an
+  open direction, 3–6 tiles. A rabbit runs on top of the deep snow (`ON_CRUST`, js/depth.js:
+  `wadeStep` never slows one and `wadeWidth` never sinks it). `navStep` walks it at
   `PREY_SPD`, and arriving (or `ok === false`) drops the goal and idles. The walk wears the
   `hop` / `run` clip at 0.6 rate — the same gait as a flight, taken lazily — and the idle at
   the end of it is where a settled deer's head actually goes down.
 - **Bolting.** Both species flee, on `FLEE_SIGHT` / `FLEE_TIME`: a rabbit sits tight and goes
-  at 26 px, a deer watches wider and runs longer at 46 px. The trigger asks
+  at 36 px and runs 1.6–2.6 s, a deer watches wider at 46 px. The trigger asks
   **`seenAt(p, FLEE_SIGHT[kind])`**, not raw distance, so GHOSTSTEP and lying buried in the snow
   are how a hunter closes on a deer at all — measured, full cover collapses a deer's ring from 46
   to `PRONE_SNIFF` (22), and inside *that* it bolts no matter what you are lying under. A hit
   also sends either species running from the nearest player (`fleeT`).
-- **The flight** is a chain of routed legs at `PREY_RUN`: `fleeGoal(a, from)` picks a tile ~6
-  tiles off, as straight away from the threat as the ground allows (fanning out, then sideways,
-  then past it), the first it can route to; a leg that arrives or fails hands over to the next,
-  and an animal with nowhere to run stops fleeing.
+- **The flight** is a chain of routed legs at `PREY_RUN` (a rabbit's 104 px/s, half again a
+  walking scout's): `fleeGoal(a, from)` picks a tile ~6 tiles off, as straight away from the
+  threat as the ground allows (fanning out, then sideways, then past it), the first it can route
+  to; a leg that arrives or fails hands over to the next, and an animal with nowhere to run stops
+  fleeing. A warren's rabbit runs `RABBIT_LEG` (3.5) tile legs that must end on its warren's deep
+  snow (`warrenHolds`), so it circles a scout wading after it instead of leaving the circle.
 - **A deer's sprint.** A deer always wears a second bar under its health — stamina white
   (`STAM_COL`), stacked the way a player's is (`drawAnimal`) — and spends it on the first stretch
   of every flight: while `a.sprint` (0..1) is above zero the legs run at `DEER_SPRINT` and the bar
@@ -1685,7 +1687,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
   leans to (the other if that one is a wall, `navLineClear`), at `RABBIT_DODGE_SPD` (260 px/s) for
   `RABBIT_DODGE_T` (0.11 s, ~29 px, clear of the 8 px disc `animalHit` tests) — and then an ordinary
   bolt (`fleeT`) away from the shooter: the zig, then the zag. The charge comes back over
-  `RABBIT_DODGE_CD` (10 s) whatever the rabbit is doing, so an empty bar is the read that the
+  `RABBIT_DODGE_CD` (6 s) whatever the rabbit is doing, so an empty bar is the read that the
   next arrow lands; a rooted or netted rabbit never spends it. A shot already past or flying
   wide is nothing to it, and a stun drops a dash mid-jink like any other move.
 

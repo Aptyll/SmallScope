@@ -318,10 +318,12 @@ function layLees() {
 // at DEEP_EASE: every unit, a player included, ages it in updateUnitStatus
 // (js/actions.js), so the slowdown eases in over a step or two instead of
 // stopping anyone at a line. A body in the air, on the cable or in the water
-// is in none of it - and nor is a rabbit, light enough to run on the crust,
-// which is the warren's whole defence against a scout wading after it.
+// is in none of it - and nor is a kind ON_CRUST: a rabbit, light enough to
+// run on top of the snow, which is the warren's whole defence against a
+// scout wading after it (and the draw stands it on top too, wadeWidth).
+const ON_CRUST = { rabbit: true, bird: true };
 function wadeStep(e, dt) {
-  const air = e instanceof Player ? (inAir(e) || e.zip >= 0 || e.fallT > 0 || e.dead) : (e.kind === 'bird' || e.kind === 'rabbit' || e.dead);
+  const air = e instanceof Player ? (inAir(e) || e.zip >= 0 || e.fallT > 0 || e.dead) : (ON_CRUST[e.kind] || e.dead);
   const want = !air && deepAt(e.x, e.y + 4) ? 1 : 0;
   const w0 = e.wade || 0;
   e.wade = want + (w0 - want) * Math.exp(-DEEP_EASE * dt);
