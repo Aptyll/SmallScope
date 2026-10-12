@@ -66,7 +66,5 @@ window.SCENE = {
     M.cam = [M.cam[0] + (want[0] - M.cam[0]) * 0.1, M.cam[1] + (want[1] - M.cam[1]) * 0.1];
   },
 
-  row(M) { const p = M.p; return { dbg: [p.charging ? 1 : 0, M.fix(drawPow(p)), M.fix(p.leapT || 0), p.mount ? 1 : 0] }; },
-
   done(M) { return M.data.end != null && M.frame - M.data.end > 40; },
 };

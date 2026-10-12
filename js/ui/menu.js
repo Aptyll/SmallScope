@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.411';
+const PATCH_TXT = 'PATCH 0.412';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.412', 'THE PRACTICE FIELD GREW A FOREST WING WITH A DEER RIDE: A TAME DEER WAITS AT THE TRAILHEAD, THE TRAIL WINDS PAST THREE TARGETS AND OVER A FELLED LOG, A RIDDEN DEER GALLOPS FASTER, AND ROLLING A NEW ICE TRACK NO LONGER FREEZES THE GAME.'],
   ['0.411', 'THE PRACTICE TOOL HAS A BAR DOWN THE LEFT EDGE TO LEVEL UP, ADD GOLD, REFRESH COOLDOWNS AND HEALTH, TELEPORT AND SPAWN DUMMIES, AND THE BELL RINGS THREE ROUNDS - RANGE, QUICK DRAW AND DEFEND - EACH WITH A BRONZE, SILVER AND GOLD MEDAL.'],
   ['0.410', 'A SHORT\'S END CARD CAN CARRY ITS OWN CALL, SUCH AS JOIN THE DISCORD, IN PLACE OF THE STEAM WISHLIST.'],
   ['0.409', 'A BEAR\'S HEALTH FRAME IS BEAR-SIZED: A BIGGER BAR, LEVEL AND "!" IN FIVE CHUNKS, CENTRED JUST OVER ITS BACK. BEARS ARE NEVER UNDER LEVEL 6.'],
@@ -1257,6 +1258,8 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE PRACTICE FIELD HAS A DEER RIDE THROUGH THE FOREST', '0.412'],
+    ['A RIDDEN DEER GALLOPS FASTER', '0.412'],
     ['BEARS WEAR A BEAR-SIZED FRAME AND START AT LEVEL 6', '0.409'],
     ['THE BEARS ARE TWICE AS BIG', '0.408'],
     ['A DEER\'S RIDER SITS DOWN ON ITS BACK', '0.406'],
