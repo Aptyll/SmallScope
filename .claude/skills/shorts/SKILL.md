@@ -1,77 +1,89 @@
 ---
 name: shorts
-description: Plan a Softfall YouTube Short as a one-variable test, design its first frame as an honest hook, hand the filming to the media skill, and keep the Shorts log that learns from each result. Use whenever Noah asks for a Short or a Short idea, or brings back a Short's numbers.
+description: Turn Noah's rough idea into a Softfall YouTube Short with him in the loop: three lettered first-frame options with their hooks, more rounds or a pick, then recording through the media skill, and the title, thumbnail, description and pinned comment. Use whenever Noah asks for a Short, a Short idea, or "use the shorts skill".
 ---
 
-# Shorts that keep viewers
+# Shorts: from a rough idea to a posted Short
 
-The goal is viewers who stay: most swipe within about a second, judging mostly by the first frame.
-This skill decides **what** to film and **what we learn**; filming is the `media` skill's job and
-new art is the `concept-art` skill's. Do not restate their steps or rules here, and never write a
-new recorder, editor or painter: follow those skills and [docs/dev/media.md](../../../docs/dev/media.md).
+Viewers decide in about a second, mostly on the first frame, so the first frame is designed and
+picked **before** anything is recorded. Noah steers every round; Claude never records a frame he
+has not picked. This skill owns the idea, the first frame, the hook and the YouTube package.
+Filming belongs to the `media` skill and new sprites to `concept-art`: follow them, never restate
+or rebuild them ([docs/dev/media.md](../../../docs/dev/media.md)).
 
-## The log
+## The loop
 
-One file, `/mnt/project-files/shorts/log.md` (copy `log-template.md` beside this skill if it is
-missing). It has three parts: **What we know** (rules a result proved), **Baseline** (the current
-default for every variable) and **Tests** (one row per Short). Read it before anything else; re-read
-it just before you write to it, and change only your own row or line.
+```
+Noah: "use the shorts skill to make a Short about <rough idea>"
+  -> round 1: frames A B C, each with its hook          (stop, wait)
+  -> "more" / "more like B": round 2 D E F               (stop, wait)
+  -> "B": record with the media skill                    (its own gates)
+  -> package: title, thumbnail, description, comment
+```
 
-- **Stayed %** is YouTube Studio's "Viewed" share in "Viewed vs swiped away". **APV** (average
-  percentage viewed) checks the payoff. Both are read at the same age every time: **3 days** after
-  posting. Noah pastes them or a screenshot; never guess a number.
-- Under 500 views a row is **too few**: log it, learn nothing from it.
-- A change of under 5 points against the median of the last three counted Shorts is **noise**.
-- A variable joins What we know only after it wins on **two** counted Shorts, and its line names
-  them. One win is a lead, written in the row, not a rule.
-- High stayed % with low APV means the hook over-promised: log it as a broken hook, not a win.
+### 1. Read the idea
 
-## Steps
+Take Noah's rough idea as the brief. Find its **peak**: the one moment a stranger would stop for
+(scale, speed, danger, surprise). Only ask if the idea cannot be staged at all; otherwise pick a
+reading and say which in one line.
 
-1. **Pick the test.** From the log, choose one variable to change (the list below); every other
-   variable stays at Baseline. Never retest a rule in What we know without a reason. Write the
-   row now: number, variable, baseline value, this value, and a one-line bet ("opening on the bear
-   mid-swing beats opening on the walk-up").
-2. **Find the moment.** Name the single most striking thing the Short shows, the thing a stranger
-   would stop for: scale (a 2x bear over a player), speed (a gallop), danger (a one-shot), a
-   surprise. It must be something the game really does; if staging needs the game to behave
-   differently, that is a game change and a PR, per the media rules.
-3. **Write the first frame** in three lines before filming, as a stranger would read it with no
-   sound and no title:
-   - **Subject:** one thing, big enough to read on a phone, that anyone names in a word.
-   - **Happening:** it is already moving or already in trouble, never posed or waiting.
-   - **Gap:** a question the frame raises that the Short answers.
-4. **Open on the peak, or just before it.** The peak lands inside the first second, then the Short
-   explains how it got there and pays off the gap. Keep Noah's one-timeline rule: open a beat
-   before the peak so time runs straight, or, if the frame opens on the peak itself, explain it with
-   a visible rewind (`cut.py` negative `step`), never a hidden jump.
-5. **Check frame 0 before filming.** Grab two or three candidate opening frames with the media
-   kit's stills (`still.js`, `rec.js --at`), shown at phone size, lettered, a pick marked with the
-   three lines from step 3. This is Noah's gate; then the board and the rest go through `media`.
-6. **Film and cut with the `media` skill.** If the moment needs a sprite that does not exist yet,
-   `concept-art` makes it first. Pass the first-frame lines in as the scene's opening beat.
-7. **Check the payoff.** Watch the cut: does the rest answer the gap the first frame opened? If not,
-   fix the cut or the hook before delivery. Staged takes are labelled staged, never "real gameplay".
-8. **Deliver and log.** Add the media board card (title starts with the test number, `#4 deer
-   peak-open`), finish the row's files column, and ask Noah for the numbers at 3 days.
-9. **Learn.** When numbers come back, fill the row, give a verdict (win, loss, noise, too few,
-   broken hook), and update Baseline and What we know only by the rules above. Then suggest the
-   next test in one line.
+### 2. Round of first frames
 
-## Variables (change one per Short)
+Make three first frames, lettered A, B, C, **genuinely different** (another subject, moment or
+framing, not one shot nudged). Letters run on across rounds (D, E, F), as `concept-art` does, so
+"B" always means one frame.
 
-| variable | example values |
-| --- | --- |
-| opening | peak itself / a beat before the peak / mid-chase |
-| subject | creature / player / creature and player at scale |
-| framing | close (subject fills a third) / medium / wide |
-| first-frame text | none / a claim / a question (game font, max 2 lines) |
-| motion in frame 0 | fast / slow / still subject, moving world |
-| sound at frame 0 | hit / roar / music only |
-| length | under 8 s / 8 to 15 s / over 15 s |
-| topic | creature fight / riding / scenery / a new feature |
-| title | statement / question / "I added X to my game" |
+- **Real stills, not paintings.** Stage each in the game with the media kit (`still.js`, or a
+  quick scene and `rec.js --at`) at 9:16, HUD hidden (`DBG.hideUI`). The Short must show what the
+  game does, so its first frame must too. If the idea needs a creature or prop the game lacks,
+  that sprite goes through `concept-art` first and Noah picks it before any frame uses it.
+- **Opening text**, if a frame has any, is drawn on the still the way the cut will draw it
+  (`look.py` `text` and `stamp`: game font, integer scale, outline, no box, at most 2 lines).
+- Each frame must pass, at phone size: **one subject** anyone names in a word, big enough to read;
+  something **already happening**, never posed or waiting; a **question** the frame raises.
+- Lay the round out with `board.py --cols 3`, captions `A  <name>`, in
+  `/mnt/project-files/shorts/<short-name>/round-N.png`. Look at it yourself before sending.
 
-Add a variable to the table when a test needs one; keep its name the same across rows.
+### 3. Hook text under each frame
 
-Reply to Noah in a few lines: the bet, frame 0 as an image with letters, and the one question.
+For every letter, three short lines:
+
+- **Sees:** what a stranger sees in the first second.
+- **Wonders:** the question it opens.
+- **Pays off:** what the rest of the Short shows that answers it. If nothing in the game would
+  answer it, the hook is dishonest: drop that frame.
+
+Add one working title per letter. Send the board image with these lines, your pick and why, then
+**stop and wait**.
+
+### 4. Iterate or pick
+
+- "more", "more like B", or a note: make the next round of three (variations of the named frame
+  when one is named, new directions otherwise), same rules, next letters.
+- A letter: that frame is the Short's frame 0. Write the beats from it: peak inside the first
+  second, then how it got there, then the payoff and the end card. Hand that to the `media` skill,
+  which boards, stages, records and cuts with its own gates. Open a beat before the peak so time
+  runs straight; if frame 0 is the peak itself, the explanation is a visible rewind (`cut.py`
+  negative `step`), never a hidden jump.
+
+### 5. Package for YouTube
+
+With the finished cut, deliver all four together:
+
+- **Title:** under 40 characters (the feed cuts the rest), says what frame 0 promises, no clickbait
+  the Short does not pay off. Three options, pick marked.
+- **Thumbnail:** 1080x1920, the peak frame from the cut (`cut.py --keep`), same subject as frame 0,
+  readable at the size of a channel grid tile. No text unless Noah asks.
+- **Description:** line one restates the hook plainly; then Steam and Discord links; two or three
+  hashtags (`#indiegame #pixelart #gamedev`). Staged takes never say "real gameplay".
+- **Pinned comment:** the reason to act now (a playtest date, a question for viewers), with the
+  Discord link. Dates go here, not on the end card.
+
+Put the description and comment in a `writing_draft_v0` card so Noah can copy them, and add the
+video to the media board. Links: Steam https://store.steampowered.com/app/5244550/Softfall/,
+Discord https://discord.com/invite/24teKhrGb8.
+
+## After posting
+
+If Noah brings numbers back, add a row to `/mnt/project-files/shorts/log.md` with the letter that
+was used. Nothing else in this flow waits on statistics.
