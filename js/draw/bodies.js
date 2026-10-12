@@ -295,6 +295,7 @@ function rollFrame(prog) {
 }
 
 const MOUNT_BAR_ROWS = 1; // rows a rider's frame stands higher to hang the deer's bar under it
+const MOUNT_BAR_COL = '#c98f52'; // that bar's fill: the deer's own coat tan, so it never reads as the rider's health
 // A deer's rider sits IN the deer (RIDE, js/wildlife.js): the cell sinks
 // until its row `hip` meets the back at the seat column, which sits toward
 // the rump, and nothing of the body from that row down is drawn - the deer's
@@ -578,9 +579,15 @@ function drawPlayer(p, ex, ey, now) {
       ctx.fillRect(bx, by, Math.round(14 * frac), 2);
     }
     // a deer's rider: the deer's health one row under the stamina, sharing
-    // its bottom frame row, in the rider's side's colour - the deer is on
-    // that side while it is ridden (unitFoe, js/actions.js)
-    if (p.mount) drawHealthBar(p.x - ex + FRAME_DX, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, undefined, p.mount);
+    // its bottom frame row, in the deer's coat tan (MOUNT_BAR_COL): in the
+    // side's colour it read as a second copy of the rider's own bar. The
+    // rider's bar above still says the side the deer is on while ridden
+    // (unitFoe, js/actions.js), and the deer's damage total wears the tan too
+    if (p.mount) {
+      const cx = p.x - ex + FRAME_DX; // the column the rider's own bars hang off
+      drawHealthBar(cx, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, MOUNT_BAR_COL);
+      queueTally(p.mount, Math.round(cx - 7) + 15, Math.round(hy), MOUNT_BAR_COL); // where drawHealthBar puts a total
+    }
     // stunned: the mirror of the level badge on the other side of the frame -
     // same backing, same track, sharing its left frame column with the health
     // bar backing's right edge, so the stack still reads as one outline. The
