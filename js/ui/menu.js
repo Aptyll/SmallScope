@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.413';
+const PATCH_TXT = 'PATCH 0.414';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.414', 'THE GITHUB README IS NOW A SHORT PAGE WITH A MAIN MENU SHOT AND LINKS TO STEAM AND THE DISCORD.'],
   ['0.413', 'THE VIDEO END CARD CAN SIZE EACH LINE ON ITS OWN AND PAINT IT DISCORD BLUE.'],
   ['0.412', 'THE PRACTICE FIELD GREW A FOREST WING WITH A DEER RIDE: A TAME DEER WAITS AT THE TRAILHEAD, THE TRAIL WINDS PAST THREE TARGETS AND OVER A FELLED LOG, A RIDDEN DEER GALLOPS FASTER, AND ROLLING A NEW ICE TRACK NO LONGER FREEZES THE GAME.'],
   ['0.411', 'THE PRACTICE TOOL HAS A BAR DOWN THE LEFT EDGE TO LEVEL UP, ADD GOLD, REFRESH COOLDOWNS AND HEALTH, TELEPORT AND SPAWN DUMMIES, AND THE BELL RINGS THREE ROUNDS - RANGE, QUICK DRAW AND DEFEND - EACH WITH A BRONZE, SILVER AND GOLD MEDAL.'],

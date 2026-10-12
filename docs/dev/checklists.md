@@ -16,6 +16,9 @@ that method was retired.
 
 ## Verifying a change
 
+After cloning, run `sh scripts/setup-hooks.sh` once: its pre-push hook refuses a push to main
+or a branch behind origin/main.
+
 The rule is in [CLAUDE.md](../../CLAUDE.md): look at the running game, don't re-read the code and
 declare victory. The affordances:
 
@@ -629,10 +632,10 @@ Code that is dead **on purpose** is the next section.
 - **bots never plant a RALLY flag.** Every other order a bot flies is its ladder's own decision
   made visible (`aiFlagSync`, ai.js); nothing in the ladder is a retreat, so the fourth wedge is a
   human's alone until one is.
-- **[README.md](../../README.md)'s About copy is the pillars of [game.md](game.md)** — when a
-  pillar changes, both change. Its stills live in `docs/media/` (`github-*`, plus
-  `capsule/03-catch`); `github-pass`, the older capsule set and the gallery pngs (`hero`,
-  `player`, `bow`, `axe`, `deer`, `rabbits`) stay in the tree unreferenced. The repo's **Social
+- **[README.md](../../README.md) is bare on purpose**: the main menu still
+  (`docs/media/github-title.png`), the Steam and Discord links and the license line; the store
+  copy lives on Steam. The other `github-*` stills, the capsule set and the gallery pngs stay in
+  the tree unreferenced. The repo's **Social
   preview** is set by hand in GitHub settings to `github-preview.png` (1280×640, under 1 MB). A
   still is staged through `DBG`: `PROFILE.markDropped()`, `beginDrop()`, `hideUI`, `step` to
   `e.t ≈ dur/2` for the pass, `freeze`, `POST /shot?f=`.
