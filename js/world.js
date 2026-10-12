@@ -121,7 +121,8 @@ const OBJECTS = {
   // the trunk, the down-right end. Solid and inert to E; its pixels are baked
   // flat into the ground (paintLog under paintGroundTile, draw-world.js),
   // never drawn in the y-sorted pass - a trunk on the ground is ground.
-  log:      { solid: true,  mm: [124, 94, 62] },
+  // `leap`: a deer's leap clears it (rideLeap, js/wildlife.js)
+  log:      { solid: true,  leap: true, mm: [124, 94, 62] },
   // a zipline's pylon (placeZips, the `zipline` banner below): solid, inert
   // to E, carrying its `team`. Its pixels are PYLON_SPRS in render()'s
   // object pass (js/draw/zipline.js); the cable itself is not an object at
@@ -207,6 +208,7 @@ function isSolidTile(tx, ty, e) {
   // exception: it lies flat on the surface and is walked over, not into.
   if (STRUCTS[o.type]) return !STRUCTS[o.type].water;
   const d = OBJECTS[o.type];
+  if (d && d.leap && e && e.leapT > 0) return false; // a deer in mid-leap goes over (js/wildlife.js)
   return !!(d && d.solid);
 }
 

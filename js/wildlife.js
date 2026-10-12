@@ -136,6 +136,7 @@ function makeAnimal(kind, x, y) {
     spd: 0,                              // deer: the pace it is actually at, px/s, eased toward the one it wants (deerPace)
     dodge: 1, dashT: 0, dashX: 0, dashY: 0, // rabbit: its one jink charge (0..1, ready at 1) and the dash it is on
     home: null,                          // the camp it belongs to, if any
+    rider: null,                         // a ridden deer: the player on its back (the `riding` banner)
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     perch: null, flyT: 0, fa: 0, alt: 0, // bird: its tree, its flight, its height
     dead: false,
@@ -449,6 +450,7 @@ function updateAnimal(a, dt) {
   // must not then take a step (js/actions.js, `status effects`)
   updateUnitStatus(a, dt);
   if (a.hp <= 0 && !a.dead) { animalDies(a); return; }
+  if (a.rider) { rideCarry(a, dt); return; } // carried under its rider, brain off (the `riding` banner)
   if (a.stunT > 0) {
     // seeing stars: no brain for the window, and the route it was walking is
     // dropped rather than resumed - a tackle can slide a body a long way from
@@ -696,6 +698,7 @@ function updatePrey(a, dt) {
 // alive to credit pays nobody.
 function animalDies(a) {
   a.dead = true;
+  if (a.rider) rideEnd(a.rider, true); // the rider goes down in the snow beside it
   sfxAt('monsterDie', a.x, a.y, 0, a.kind);
   const hunter = a.lastHit !== undefined ? players[a.lastHit] : null;
   const y = YIELD[a.kind];
@@ -807,6 +810,176 @@ function campBuff(p, t) { if (p && p.active) p.buffT = Math.max(p.buffT || 0, t)
 const BIRD_FLUSH = 34;     // px: a player this close puts the whole rookery up
 const BIRD_SPD = 112;      // px/s in flight
 const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight climbs past it
+
+// ------------------------------------------------------------ riding
+// A deer can be ridden. E beside a wild one (rideNear) hops the player on
+// (rideStart), and from then the PLAYER is the body that moves: updatePlayer
+// walks it at the mount's gallop off the same input struct, and the deer is
+// carried under it (rideCarry, from updateAnimal) with its brain off. While
+// ridden the deer wears its rider's `team`, so every target picker that asks
+// unitFoe (the arrows, the swings, the area effects, the pointer) takes it
+// as the rider's side: your own shots and your allies' pass through it, a
+// rival's land, and its bar wears the side's colour (drawAnimal). The hands
+// stay free, so the bow and the blades work from the saddle. The roll key is
+// the LEAP (rideLeap): a short hop that owns the velocity, as a roll does,
+// and clears anything whose OBJECTS entry says `leap` (the felled trunk
+// across the road, isSolidTile). E again hops off (rideEnd) and the deer
+// bolts, wild again; a stun on either body, a fall through the ice, going
+// prone, the zipline, the air, or either one dying throws the rider
+// (rideCheck, stunUnit, die, animalDies).
+// What can be ridden, per kind: its gallop as a multiple of a player's walk
+// (the deer's own sprint, DEER_RUN_MUL) and how many rows up its back the
+// rider sits (the draw, rideLift)
+const RIDE = { deer: { mul: DEER_RUN_MUL, seat: 9 } };
+const RIDE_REACH = 20;     // px from the player to a deer that E reaches
+const RIDE_LEAP_T = 0.45;  // s a leap is in the air
+const RIDE_LEAP_CD = 0.6;  // s on the ground before the next leap
+const RIDE_LEAP_H = 7;     // px the arc rises at its top (the draw)
+const RIDE_LEAP_HOLD = 0.4; // s a leap may stay up past RIDE_LEAP_T to come down clear of the trunk it is over
+// the wild deer nearest the player inside RIDE_REACH, if one stands to be
+// ridden - the one resolver the E press (keyPress), the hop (hopToggle) and
+// the cap over its back (drawRideHint) all ask
+function rideNear(p) {
+  if (p.mount || p.dead || inAir(p) || p.zip >= 0) return null;
+  let best = null, bd = RIDE_REACH;
+  for (const a of animals) {
+    if (!RIDE[a.kind] || a.rider || !unitAlive(a) || a.stunT > 0) continue;
+    const d = Math.hypot(a.x - p.x, a.y - p.y);
+    if (d < bd) { bd = d; best = a; }
+  }
+  return best;
+}
+// the hop intent on the ground (updatePlay reads input.jump for every player
+// alike), in keyPress's own order: off a deer first, then the zipline's
+// claims overhead, then a deer in reach, then the walk to a cable under the
+// pointer (zipToggle, world.js)
+function hopToggle(p) {
+  if (p.mount) { rideEnd(p, false); return; }
+  if (p.zip >= 0 || p.zipWalk || zipNear(p)) { zipToggle(p); return; }
+  // two players on one deer in the same step: one back, settled fairly (contest, js/player.js)
+  const a = rideNear(p);
+  if (a) { contest('ride:' + animals.indexOf(a), p, () => rideStart(p, a)); return; }
+  zipToggle(p);
+}
+function rideStart(p, a) {
+  if (!a || p.mount || a.rider || p.dead || p.stunT > 0 || p.fallT > 0 || p.dodgeT > 0 || p.rushT > 0 ||
+    p.grapT > 0 || p.zip >= 0 || p.prone || inAir(p)) return;
+  if (p.zipWalk) zipWalkEnd(p);
+  cancelCatch(p);
+  p.sliding = false; p.slideT = 0;
+  p.mount = a; a.rider = p; a.team = p.team;
+  p.leapT = 0; p.leapCd = 0;
+  // the deer's own plans are over: no flight, no graze, no mark over it
+  a.fleeT = 0; a.fleeGoal = null; a.goal = null; a.alertT = 0; a.senseT = 0; a.dashT = 0;
+  a.kbx = a.kby = 0;
+  navClear(a);
+  p.x = a.x; p.y = a.y; // up onto its back
+  sfxAt('dodge', p.x, p.y);
+  burst(p.x, p.y + 4, '#dfe8f4', 5, 28, 0.3, true);
+}
+// off the deer: `thrown` (a stun, a fall, a death) drops the rider at rest;
+// a hop-off keeps the gallop's velocity for the surface to spend. The deer
+// is wild again either way, and runs from whoever is nearest
+function rideEnd(p, thrown) {
+  const a = p.mount;
+  if (!a) return;
+  p.mount = null; p.leapT = 0;
+  if (a.rider === p) { a.rider = null; delete a.team; }
+  if (thrown) { p.vx = 0; p.vy = 0; }
+  // a leap cut short over the trunk comes down beside it, both bodies
+  const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
+  if (isSolidTile(tx, ty)) {
+    const out = nearestDryTile(p.x, p.y + 4, p);
+    p.x = (out.tx + 0.5) * TILE; p.y = (out.ty + 0.5) * TILE - 4;
+    if (!a.dead) { a.x = p.x; a.y = p.y; }
+  }
+  if (!a.dead) {
+    const t = FLEE_TIME[a.kind] || FLEE_TIME.deer;
+    a.fleeT = rand(t[0], t[1]); a.fleeGoal = null; a.goal = null;
+    navClear(a);
+  }
+  if (!thrown) sfxAt('dodge', p.x, p.y);
+  burst(p.x, p.y + 4, '#cfd8e8', 4, 30, 0.3, true);
+}
+// every step, before the rider moves (updatePlayer): anything that takes the
+// body out of the saddle throws it
+function rideCheck(p) {
+  const a = p.mount;
+  if (!a) return;
+  if (!p.active || p.dead || a.dead || a.rider !== p || p.stunT > 0 || p.fallT > 0 || p.prone ||
+    p.zip >= 0 || inAir(p)) rideEnd(p, true);
+}
+// the ridden deer's step (updateAnimal, in place of its brain): it stands
+// where its rider is, faces the way they ride, and gallops in time with them
+function rideCarry(a, dt) {
+  const p = a.rider;
+  if (p.mount !== a || p.dead || !p.active) {
+    if (p.mount === a) rideEnd(p, true);
+    else { a.rider = null; delete a.team; }
+    return;
+  }
+  a.x = p.x; a.y = p.y;
+  a.kbx = a.kby = 0;
+  const sp = Math.hypot(p.vx, p.vy);
+  a.spd = sp;
+  if (p.vx < -4) a.dir = 'left'; else if (p.vx > 4) a.dir = 'right';
+  setClip(a, sp > 8 ? 'run' : 'idle');
+  stepClip(a, dt, Math.max(0.6, sp / PREY_RUN.deer));
+}
+// THE LEAP: the roll key on deer-back (tryDodge hands it here). The deer
+// springs at its gallop the way the stick points (or the way it faces), and
+// the leap owns the velocity until it lands (rideLeapStep), so it carries
+// over the trunk whatever the stick does mid-air
+function rideLeap(p) {
+  if (p.leapT > 0 || p.leapCd > 0 || p.rootT > 0 || p.stunT > 0) return;
+  let dx = p.input.mx, dy = p.input.my;
+  if (!dx && !dy) {
+    dx = p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0;
+    dy = p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0;
+  }
+  const d = Math.hypot(dx, dy) || 1;
+  const v = Math.max(PLAYER_SPEED * RIDE[p.mount.kind].mul * wadeMul(p), Math.hypot(p.vx, p.vy));
+  p.vx = dx / d * v; p.vy = dy / d * v;
+  p.leapT = RIDE_LEAP_T; p.leapUp = 0;
+  sfxAt('dodge', p.x, p.y);
+  burst(p.x, p.y + 4, '#dfe8f4', 5, 30, 0.3, true);
+}
+// one step in the air (updatePlayer's movement ladder). A leap never comes
+// down ON a trunk: over one at the end, it stays up (up to RIDE_LEAP_HOLD)
+// and carries on until it is clear
+function rideLeapStep(p, dt) {
+  p.leapT = Math.max(0, p.leapT - dt);
+  p.leapUp += dt;
+  const mv = moveEntity(p, (p.vx + p.kbx) * dt, (p.vy + p.kby) * dt, PLAYER_R);
+  if (mv.blockedX) p.vx = 0;
+  if (mv.blockedY) p.vy = 0;
+  if (p.leapT > 0) return;
+  if (rideOverLeap(p) && p.leapUp < RIDE_LEAP_T + RIDE_LEAP_HOLD) { p.leapT = dt; return; }
+  p.leapCd = RIDE_LEAP_CD;
+  burst(p.x, p.y + 4, '#cfd8e8', 4, 28, 0.3, true);
+  if (rideOverLeap(p)) rideEnd(p, true); // stopped dead on the trunk: off, beside it
+}
+// is any tile under the body (PLAYER_R about its middle) one a leap clears
+function rideOverLeap(p) {
+  const x0 = Math.floor((p.x - PLAYER_R) / TILE), x1 = Math.floor((p.x + PLAYER_R) / TILE);
+  const y0 = Math.floor((p.y - PLAYER_R) / TILE), y1 = Math.floor((p.y + PLAYER_R) / TILE);
+  for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) {
+    const o = inWorld(tx, ty) ? objects[idx(tx, ty)] : null;
+    if (o && OBJECTS[o.type] && OBJECTS[o.type].leap) return true;
+  }
+  return false;
+}
+// how far off the ground a body is drawn by the ride: the leap's arc for the
+// deer and its rider alike, plus the seat for the rider (drawAnimal, drawPlayer)
+function leapArc(p) {
+  if (!p || !(p.leapT > 0)) return 0;
+  const u = p.leapUp || 0; // past RIDE_LEAP_T it is holding over a trunk: low, still clear of it
+  return u < RIDE_LEAP_T ? Math.round(Math.sin(Math.PI * u / RIDE_LEAP_T) * RIDE_LEAP_H) : 2;
+}
+function rideLift(e) {
+  if (e instanceof Player) return e.mount ? RIDE[e.mount.kind].seat + leapArc(e) : 0;
+  return e.rider ? leapArc(e.rider) : 0;
+}
 
 // ------------------------------------------------------------ camp monsters
 // A camp monster holds station at its camp and minds its own business: no

@@ -88,7 +88,8 @@ function separateUnits(dt) {
   for (const p of players) if (p.active && !p.dead && !inAir(p) && p.zip < 0) us.push({ e: p, r: PLAYER_R, s: unitSpace(p), m: UNIT_MASS.player, pri: 0, vel: true, small: true, roll: p.dodgeT > 0 });
   // birds fly: they are the one unit nothing collides with
   // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
-  for (const a of animals) if (!a.dead && a.kind !== 'bird') us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
+  // ...and a ridden deer is carried by its rider, who stands for both (js/wildlife.js)
+  for (const a of animals) if (!a.dead && a.kind !== 'bird' && !a.rider) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
   for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)

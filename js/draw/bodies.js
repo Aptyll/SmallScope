@@ -19,8 +19,9 @@ function drawAnimal(a, ex, ey, now) {
   const big = isBigBeast(a);       // a bear: everything about its frame is wider
   const spr = clipFrame(SPRITES[a.kind][a.dir], a);
   const px = Math.round(a.x - spr.width / 2 - ex);
-  const py = Math.round(a.y + 4 - spr.height - ey);
-    drawCastShade(spr, px, py); // the sun's shade, cut from this frame (ground.js)
+  const gy = Math.round(a.y + 4 - spr.height - ey);
+  drawCastShade(spr, px, gy); // the sun's shade, cut from this frame (ground.js), on the ground under a leap
+  const py = gy - rideLift(a); // a ridden deer's leap lifts it off its shade (js/wildlife.js)
   drawSpriteFlash(spr, px, py, a.flash);
   // netted, snared, alight, marked: the same four tells a player wears, at
   // this body's size (drawUnitStates, js/abilities.js). `top` (a bear's
@@ -48,6 +49,9 @@ function drawAnimal(a, ex, ey, now) {
   // a bear's rear-up), never over the frame now playing: a bar that rode the
   // roar up and down would jump, and one on the standing head is buried by it
   const fy = py + (spr.crown || 0);
+  // a ridden deer's bar is its rider's: one row under theirs, in their
+  // side's colour (drawPlayer), so the two read as one frame
+  if (a.rider) return;
   overheadPlate(() => {
     drawHealthBar(cx, fy - 8, a.hp, a.maxHp, bw, undefined, undefined, a);
     if (wolf) drawHealthBar(cx, fy - 5, a.threat, 1, bw, undefined, THREAT_COL);
@@ -284,6 +288,7 @@ function rollFrame(prog) {
   return i;
 }
 
+const MOUNT_BAR_ROWS = 1; // rows a rider's frame stands higher to hang the deer's bar under it
 function drawPlayer(p, ex, ey, now) {
   const local = p === player;
   const lying = p.prone;
@@ -292,12 +297,15 @@ function drawPlayer(p, ex, ey, now) {
   // upright, a body strides only while it covers ground on its own feet - the
   // sim's own test for stepping animT on (updatePlayer, js/sim.js) - so a
   // shift-slide and a push against a wall stand, and a zipline's rider hangs still
-  const striding = p.moving && p.zip < 0 && !p.sliding && Math.hypot(p.vx, p.vy) > 8;
+  const striding = p.moving && p.zip < 0 && !p.mount && !p.sliding && Math.hypot(p.vx, p.vy) > 8; // ...and a deer's rider sits
   if (lying) frame = p.moving ? 1 + (Math.floor(p.crawlT) % 2) : 0;
   else if (striding) frame = 1 + (Math.floor(p.animT) % 2);
   // a zipline's rider: the body ZIP_ALT rows up, the shadow where it always
   // is - the rope and handle over its head are the cable pass's (drawZips)
   const zl = p.zip >= 0 ? ZIP_ALT : 0;
+  // a deer's rider: the body sits its seat up on the deer's back and rides
+  // its leap (rideLift, js/wildlife.js); the deer casts the shadow
+  const rl = rideLift(p);
   let spr = set[frame];
   // the fish catch: three DOWN-facing frames whatever the body faces
   // (catchFrame, js/tools.js). The hoist frame is 20 tall on the same feet,
@@ -322,7 +330,7 @@ function drawPlayer(p, ex, ey, now) {
   const ix = lying && frame === 2 ? (p.dir === 'left' ? -1 : p.dir === 'right' ? 1 : 0) : 0;
   const iy = lying && frame === 2 ? (p.dir === 'up' ? -1 : p.dir === 'down' ? 1 : 0) : 0;
   const px = Math.round(p.x - 8 - ex) + ix;
-  const py = Math.round(p.y - 12 - ey) + iy;
+  const py = Math.round(p.y - 12 - ey) + iy - rl; // a rider's whole body - held tool, marks, plate - sits up on the deer
   // where the frame's top-left sits: a class frame fills the 16x16 cell (a
   // taller one keeps its feet on the cell's floor, a doll frame holds the cell
   // at motionBox's x, y); a worn body is centred on the cell with its soles on
@@ -333,7 +341,7 @@ function drawPlayer(p, ex, ey, now) {
   // shadow (not while swimming in a hole, and not while lying down - a body
   // flat on the snow has nothing to cast one over, and the cover's own dark
   // lower rim is what grounds it instead)
-  if (p.fallT <= 0 && !lying) {
+  if (p.fallT <= 0 && !lying && !p.mount) {
     // the sun's shade, cut from the frame on show (ground.js), feet on the
     // foot row: a roll's own frame, so the ball goes over its own shadow - but
     // a worn body's standing frame through its spin, which would smear it
@@ -481,7 +489,8 @@ function drawPlayer(p, ex, ey, now) {
   // pose starts ~6 rows lower in the same 16x16 cell, and bars floating where
   // a head no longer is look broken
   const hy = py + (lying ? 6 : 0) - (catchF === 2 ? 4 : 0) - (zl ? zl + 5 : 0) + // the hoist holds the fish where the plate would sit; a rider's frame rises with it and clears the handle
-    (rb ? by + rb.top - py : 0); // ...and a worn body's frame sits on its taller head
+    (rb ? by + rb.top - py : 0) - // ...and a worn body's frame sits on its taller head
+    (p.mount ? MOUNT_BAR_ROWS : 0); // ...and a deer's rider stands the frame up off the head for the deer's row
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;
@@ -536,6 +545,10 @@ function drawPlayer(p, ex, ey, now) {
       ctx.fillStyle = STAM_COL;
       ctx.fillRect(bx, by, Math.round(14 * frac), 2);
     }
+    // a deer's rider: the deer's health one row under the stamina, sharing
+    // its bottom frame row, in the rider's side's colour - the deer is on
+    // that side while it is ridden (unitFoe, js/actions.js)
+    if (p.mount) drawHealthBar(p.x - ex + FRAME_DX, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, undefined, p.mount);
     // stunned: the mirror of the level badge on the other side of the frame -
     // same backing, same track, sharing its left frame column with the health
     // bar backing's right edge, so the stack still reads as one outline. The

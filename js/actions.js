@@ -254,6 +254,7 @@ function autoWork(p) {
 // dodge roll: dash with i-frames in the held movement direction (8-way),
 // falling back to the facing direction when no key is down
 function tryDodge(p) {
+  if (p.mount) { rideLeap(p); return; } // on deer-back the key is the leap (js/wildlife.js)
   if (p.dodgeT > 0 || p.dodgeCharges <= 0 || p.fallT > 0 || p.dead || p.stunT > 0 ||
     p.rootT > 0 || p.rushT > 0) return; // a trap pins the roll too, and a charge is already a dash
   risePlayer(p); // a roll is the fast way out of the snow, and it costs a charge
@@ -368,7 +369,7 @@ function rollSweep(p) {
   const dmg = rollDmg(p, sp), stun = rollLerp(ROLL_STUN, rollPow(p, sp));
 
   for (const a of animals) {
-    if (a.dead || a.kind === 'bird' || p.rollHit.includes(a)) continue;
+    if (!unitFoe(p, a) || a.kind === 'bird' || p.rollHit.includes(a)) continue; // a deer your side rides is rolled under
     if (Math.hypot(a.x - p.x, a.y - p.y) > ROLL_HIT_R + unitRadius(a)) continue;
     p.rollHit.push(a);
     hurtUnit(a, dmg, nx, ny, p, { kb: ROLL_KB });
@@ -399,7 +400,7 @@ function rollSweep(p) {
 // Everything else about the state is one number, `p.hide`, which updatePlayer
 // ramps and every watcher reads back through seenAt().
 function tryProne(p) {
-  if (p.dead || p.fallT > 0 || inAir(p) || p.zip >= 0) return;
+  if (p.dead || p.fallT > 0 || inAir(p) || p.zip >= 0 || p.mount) return;
   if (p.prone) { risePlayer(p); return; }
   const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
   if (p.dodgeT > 0 || p.sliding || Math.hypot(p.vx, p.vy) > PRONE_ENTER ||
@@ -799,7 +800,7 @@ function unitUnder(src, wx, wy) {
   for (const q of players) if (enemyOf(src, q) && Math.abs(wx - q.x) <= 8 && wy >= q.y - 14 && wy <= q.y + 4) return q;
   for (const b of robots) if (unitAlive(b) && b.team !== src.team && Math.abs(wx - b.x) <= 7 && wy >= b.y - 7 && wy <= b.y + 4) return b;
   for (const a of animals) {
-    if (!unitAlive(a)) continue;
+    if (!unitFoe(src, a)) continue; // a deer your own side rides is no mark
     const hw = a.kind === 'rabbit' ? 7 : a.kind === 'bird' ? 5 : isBigBeast(a) ? 17 : a.kind === 'wolf' ? 9 : 13;
     const h = a.kind === 'rabbit' ? 11 : a.kind === 'bird' ? 7 : isBigBeast(a) ? 24 : a.kind === 'wolf' ? 14 : 22;
     const by = a.y + 4 - (a.alt || 0); // birds ride their alt
@@ -922,6 +923,7 @@ function stunUnit(e, t) {
     if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; }
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
     if (e.zip >= 0) zipEnd(e, true);               // ...and the zipline's handle: dropped at rest under the cable
+    if (e.mount) rideEnd(e, true);                 // ...and the deer's back (js/wildlife.js)
     // ...and if it is YOUR hands the swing, the cast, the shield and the meal
     // were just knocked out of, you are told. Only the local player, only a
     // FRESH stun (a second blow inside the window extends it and says nothing
@@ -929,6 +931,7 @@ function stunUnit(e, t) {
     // the strip's numbers cannot say that while the body is not answering.
     if (cur <= 0) sfxFor(e, 'dazed');
   }
+  if (e.rider) rideEnd(e.rider, true); // a stunned deer throws whoever is on it
   burst(e.x, unitMidY(e) - 3, '#ffe9a8', 4, 26, 0.4, true);
 }
 

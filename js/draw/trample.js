@@ -112,7 +112,7 @@ function trBody(e, foot, r, pack) {
 function trampleStep(dt) {
   if (state.mode === 'title') return;
   for (const p of players) {
-    if (!p.active || inAir(p) || p.zip >= 0) continue;
+    if (!p.active || inAir(p) || p.zip >= 0 || p.mount) continue; // a rider's deer leaves the tracks
     // the same reads the footprint emitter makes (updatePlayer, sim.js): a
     // crawl drags wide, a slide rides two runners, a walk presses a stride
     const pack = p.prone ? TR_CRAWL : p.sliding ? TR_SLIDE : TR_WALK;

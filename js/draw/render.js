@@ -1729,7 +1729,7 @@ function drawAimLine(ex, ey, now) {
     const x = x0 + nx * s, y = y0 + ny * s;
     if (bit.solid !== false && isSolidTile(Math.floor(x / TILE), Math.floor(y / TILE))) { len = s; blocked = 'solid'; break; }
     let hit = false;
-    for (const an of animals) if (animalHit(an, x, y)) { hit = true; break; }
+    for (const an of animals) if (unitFoe(player, an) && animalHit(an, x, y)) { hit = true; break; }
     if (!hit) for (const q of players) {
       if (enemyOf(player, q) && Math.hypot(q.x - x, q.y - 6 - y) < 7) { hit = true; break; }
     }

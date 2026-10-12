@@ -407,7 +407,7 @@ room for a whole side and a wave to fight in; where it crosses each roost corner
 **gate**, `roadSpan()`'s `u0`/`u1`, two pennant poles — it eases over `ROAD_GATE_BLEND` (2) u to
 `ROAD_HW_WOOD` (2.5), a five-tile forest road with the pines closing in (`roadHW(u)`); and
 `ROAD_LOG_IN` (10) u past each nest's junction a **felled trunk** lies across it (`log`, below):
-the way on is blocked, and the road running on under it to the edge says the route does not end
+the way on is blocked to anyone on foot (a ridden deer's leap clears it: `OBJECTS.log.leap`, [riding](gameplay.md#riding-a-deer)), and the road running on under it to the edge says the route does not end
 here (the `the road` group of the `world` banner, js/world.js). Ground `3`, packed earth showing
 through the snow with two ruts down its length: it **walks like snow** (only ice and holes are
 special-cased in `updatePlayer`'s momentum block) but it is **not snow** — nothing digs into it
