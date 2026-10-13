@@ -323,7 +323,8 @@ stock is rolled off `TOOLS`/`BITS`/`CARD_RARITIES` themselves (`shopRestock`,
 A new **traded good** (a thing whose price moves) is one `GOODS` entry and its `MKT_ORDER`
 place; the walk, the graph, the headlines, the trade plates and the tooltip are all generic over
 that table, but the panel has room for exactly two cards, and "one currency" ([game.md](game.md))
-means a good is a *commodity you carry*, never a second wallet.
+means a good is a *commodity you carry*, never a second wallet. A new **fish** needs none of it: a
+place in `FISH_KINDS` puts it on the fish card's tabs at a price scaled off its `heal` (`goodScale`).
 
 **Adding a class** — the tables make most of it mechanical, and every screen picks the new
 entry up with no edit: the create screen's class pair grows an emblem, the strip, the gear
