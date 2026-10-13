@@ -259,6 +259,11 @@ multiplayer relay). It is what keeps a bot's Web Worker (js/bots/api.js, which i
 from `import()`ing code or sending data to another host. A new feature that loads from
 elsewhere must widen it on purpose.
 
+The tab icon is `favicon.ico` beside index.html, linked from its head: a 16 and a 32 PNG, each
+drawn on its own pixel grid (source: `favicon/src/art.py` in the project files, not the repo).
+Without the link a browser asks the site's root for `/favicon.ico`, which on GitHub Pages is
+not this repo's. desktop/build.js copies it with the page.
+
 ### audio.js
 
 Three layers under one master dial: a WebAudio synth for UI blips *and* as the fallback line
