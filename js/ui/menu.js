@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.423';
+const PATCH_TXT = 'PATCH 0.424';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.424', 'A RIDER\'S FRAME SHOWS THE DEER\'S TAN HEALTH IN PLACE OF THE DODGE STAMINA, SO THE BARS NO LONGER STACK THREE HIGH.'],
   ['0.423', 'THE GENERATOR IS NOW THE GOLD PUMP: A BIG PUMP JACK THAT NODS AS IT PAYS 12, 24 OR 42 GOLD A MINUTE BY TIER, AND EACH ONE YOU OWN MAKES THE NEXT COST TWO AND A HALF TIMES AS MUCH.', 'gold-pump'],
   ['0.422', 'THE TOP BAR IS SLIMMER: THE CLOCK SITS OVER THE KILL SCORE, AND A DOWNED PLAYER SHOWS THE SECONDS UNTIL THEY ARE BACK.'],
   ['0.421', 'THE HUD IS NOW QUIET GRAPHITE INSTEAD OF STEEL, AND THE TOP BAR SHOWS ONLY THE OTHER NINE PLAYERS.'],
@@ -1273,7 +1274,7 @@ const PATCH_DIGEST = [
     ['THE PRACTICE FIELD HAS A DEER RIDE THROUGH THE FOREST', '0.412'],
     ['A RIDDEN DEER GALLOPS FASTER', '0.412'],
     ['THE DEER RIDE TRAIL TWISTS: A HAIRPIN, A SPRINT AND A HOOK', '0.416'],
-    ['A RIDDEN DEER\'S HEALTH IS A TAN ROW', '0.419'],
+    ['A RIDDEN DEER\'S HEALTH IS A TAN ROW IN PLACE OF STAMINA', '0.424'],
     ['BEARS WEAR A BEAR-SIZED FRAME AND START AT LEVEL 6', '0.409'],
     ['THE BEARS ARE TWICE AS BIG', '0.408'],
     ['A DEER\'S RIDER SITS DOWN ON ITS BACK', '0.406'],
