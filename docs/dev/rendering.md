@@ -156,7 +156,9 @@ entity draw code must use `ex`/`ey`.
    ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: whitefish and snow char under the
    water, at `SWIM_A` alpha with a rim in the water's own shade) → **the creek's current**
    (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
-   and over the fish, on the field's clock) → under-ice fish →
+   and over the fish, on the field's clock) → under-ice fish (frost pike and gold sunfish:
+   `SPRITES.iceFish[kind].shadow` at 0.4 alpha, and the crisp `swim` sprite clipped to the open-hole
+   tiles round a fish crossing one) →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
@@ -275,7 +277,8 @@ times rarer after dark — a reflection, drawn under the grade, never a light. P
 The **fish net** is the one building that is not in `draws` at all. It lies flat on its hole and
 gets walked over, so y-sorting it would put it in front of the player standing on it: `drawNet`
 runs in the flat pre-pass instead, at `(px, py)` filling its tile exactly, with its own health bar
-and its catch (up to `NET_CAP` fish at `NET_FISH_AT`, each on its own bob) drawn into the mesh —
+and its catch (up to `NET_CAP` fish at `NET_FISH_AT`, each on its own bob, the gold sunfish first in
+`NET_FISH_SUN`, the pike in `NET_FISH_PIKE`) drawn into the mesh —
 the catch showing through the rope is the only thing that says a net is worth walking to. An
 unfinished net fades in with `buildT` rather than wearing a scaffold, because there is nothing out
 on the water to stand a frame on. Its construction bar comes from the shared progress-bar pass
@@ -860,8 +863,9 @@ still up, full health, a busy body), the asked well takes the red band and 1px s
 The shared food clock (`drawFoodClock`) sweeps both together and lifts the one being chewed
 white. A meal you have none of keeps its seat but dims to 0.35, so the pair never rearranges.
 The fish well shows the fish F will eat next (`fishToEat`) and, with nothing picked, the count of
-all three. Pointing at it raises the **fish picker** (`drawFishPop`): the three fish in ability-size
-wells in a column growing straight up out of the strip over the fish well (ice fish nearest it),
+all four. Pointing at it raises the **fish picker** (`drawFishPop`): the four fish in ability-size
+wells in a column growing straight up out of the strip over the fish well (`FISH_POP` order: frost
+pike nearest it, then gold sunfish, whitefish, snow char),
 its frame running on into the strip's, each with its count; the hovered one's name in its colour
 and its `+heal` stand over the column, the picked one wears a gold rim and the
 others dim. The bake grows by `fishPopHeadroom()` while it is up.

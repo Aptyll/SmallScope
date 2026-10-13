@@ -293,7 +293,7 @@ function createStruct(tx, ty, type, tier, p, building, rot) {
   if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
   // fish: what the net is holding. catchT/takeT are the two clocks that let
   // it fill and empty a fish at a time instead of all at once
-  if (type === 'net') { o.fish = 0; o.catchT = NET_CATCH_T; o.takeT = 0; }
+  if (type === 'net') { o.fish = 0; o.sun = 0; o.catchT = NET_CATCH_T; o.takeT = 0; } // o.sun: how many of o.fish are gold sunfish
   o.sparkT = 0;
   o.mend = 0; // hp a paid repair has still to put back (startRepair)
   structures.push(o);
@@ -389,7 +389,7 @@ function removeStruct(o) {
 
 // ------------------------------------------------------------ the building sim
 const RES_COLORS = {
-  gold: '#f2cc6a', berry: '#f2707a', fish: '#7ac0e8', whitefish: '#cfdcec', snowChar: '#d47e8e',
+  gold: '#f2cc6a', berry: '#f2707a', fish: '#9fd0ea', sunfish: '#f2b640', whitefish: '#cfdcec', snowChar: '#d47e8e',
   // card rarities - kept out of the amber family so a "gold" card drop never
   // reads as a currency floater; must match CARD_PALS in js/sprites/items.js
   cardWhite: '#d9dfe8', cardGreen: '#5fd18a', cardBlue: '#4a90e2', cardPurple: '#a259e6', cardGold: '#e8a33d',
@@ -760,6 +760,7 @@ function updateStructures(dt) {
           if (!f.born || Math.hypot(f.x - ox, f.y - oy) > NET_R) continue;
           fish.splice(k, 1);
           o.fish++;
+          if (f.kind === 'sunfish') o.sun = (o.sun || 0) + 1;
           o.catchT = NET_CATCH_T;
           sfxAt('splash', ox, oy);
           burst(ox, oy, '#7fa9c6', 6, 40, 0.4, true);
@@ -776,11 +777,13 @@ function updateStructures(dt) {
           if (!p.active || p.dead || inAir(p)) continue;
           if (Math.floor(p.x / TILE) !== o.tx || Math.floor((p.y + 4) / TILE) !== o.ty) continue;
           contest('net:' + idx(o.tx, o.ty), p, () => {
-            if (o.fish <= 0 || bagAdd(p, 'fish', 1) < 1) return;
+            const k = o.sun > 0 ? 'sunfish' : 'fish'; // the rare one comes off the rope first
+            if (o.fish <= 0 || bagAdd(p, k, 1) < 1) return;
             o.fish--;
+            if (k === 'sunfish') o.sun--;
             o.takeT = NET_TAKE_T;
-            if (p.catchT <= 0) startCatch(p); // the first fish off the rope is hoisted; the rest come up under it
-            addFloater(p.x, p.y - 14, '+1', RES_COLORS.fish);
+            if (p.catchT <= 0) startCatch(p, k); // the first fish off the rope is hoisted; the rest come up under it
+            addFloater(p.x, p.y - 14, '+1', RES_COLORS[k]);
             sfxFor(p, 'stash');
           });
         }

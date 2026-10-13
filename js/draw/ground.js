@@ -425,7 +425,7 @@ function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
 }
 // THE CREEK'S FISH (creekFishAt, js/world.js: where each is, what kind, how
 // much shows), drawn UNDER the water: the sprite (SPRITES.creekFish, baked by
-// app/bake-creekfish/paint.py) is rimmed in the water's own shade and laid at
+// app/bake-fish/paint.py) is rimmed in the water's own shade and laid at
 // part alpha, so the creek shows through it, and the current's glints are
 // drawn after it, so the streaks run over the fish. The heading is the
 // current's at the fish, the tail beats on the field's clock. World pass,

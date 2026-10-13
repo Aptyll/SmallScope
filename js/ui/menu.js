@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.443';
+const PATCH_TXT = 'PATCH 0.444';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.444', 'THE ICE FISH IS NOW A FROST PIKE (+50), AND ONE FISH IN FIVE UNDER THE ICE IS A RARE GOLD SUNFISH (+80): BOTH SWIM AS DIM SHADOWS UNDER THE ICE AND SHOW THEIR COLOURS ONLY IN AN OPEN HOLE.', 'ice-fish'],
   ['0.443', 'THE MARKET HAS ITS OWN PAGE BESIDE THE SHOP AND THE FORGE: A BIG CHART FOR EACH GOOD WITH EVERY BUY AND SALE YOU MADE PINNED WHERE IT HAPPENED, WHAT YOUR BUYS COST ON AVERAGE, AND BUY 1, BUY 5, SELL 1 AND SELL ALL.'],
   ['0.442', 'ANYONE CAN RIDE EITHER ZIPLINE, THE WAVES RIDE THEM TOWARD THE RIVAL BIRD, AND TWO RIVALS WHO MEET ON A CABLE ARE BOTH STUNNED AND FALL OFF.'],
   ['0.441', 'PERCH\'S NAME FLIES ON A BANNER IN ITS SIDE\'S COLOURS OVER ITS HEALTH BAR, AND READS ON EVERY COLOUR-BLIND PALETTE.'],
@@ -1289,6 +1290,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['FROST PIKE AND RARE GOLD SUNFISH SWIM UNDER THE ICE', '0.444'],
     ['PERCH\'S NAME FLIES ON A BANNER OVER ITS HEALTH BAR', '0.441'],
     ['THE EAGLE RIDE OPENS ON YOU, WITH A GOLD JUMP WINDOW AND A REAL KEY', '0.440'],
     ['PERCH FLIES IN ITS NEW LOOK, TUCKING TO DIVE AND FLARING TO LAND', '0.434'],

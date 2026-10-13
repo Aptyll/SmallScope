@@ -388,10 +388,10 @@ function drawFoodCell(i, now, on) {
   drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
   if (red) ctx.restore();
 }
-// The fish picker's row (FISH_POP, js/ui/strip.js): the meal wells' own wells
-// on the hud plate, each kind's icon and count; the picked one rings gold and
-// the rest dim, none picked leaves all three lit. The pointed-at kind's name
-// and meal stand over the row.
+// The fish picker's column (FISH_POP, js/ui/strip.js): the meal wells' own
+// wells on the hud plate, each kind's icon and count; the picked one rings gold
+// and the rest dim, none picked leaves all of them lit. The pointed-at kind's
+// name and meal stand over the column.
 function drawFishPop(hov) {
   const m = stripMouse(mouse.x, mouse.y);
   if (!fishPopUp(m.x, m.y)) return;
