@@ -253,7 +253,7 @@ function healthBarPx(cxp, topY, hp, maxHp, w, team, col, s, segs) {
 // The DAWN SHIELD bar (pickSnowdrop, js/actions.js): its own row in the
 // frame straight above the hp bar, built the way the draw meter is - its
 // backing adds the rows above the hp backing and the hp backing's top row
-// becomes the track-grey gap, so the frame stays one outline - and the draw
+// is the frame-colour gap, so the frame stays one outline - and the draw
 // meter, name and callout stand SHIELD_LIFT rows higher while it holds
 // (drawPlayer). Two-tone dawn gold, light over deep, cut into one segment per
 // snowdrop's worth (DAWN_SHIELD) with a pale glint on its first pixel: gold
@@ -267,7 +267,7 @@ function drawShieldBar(x, y, shield) {
   ctx.fillStyle = BAR_FRAME;
   ctx.fillRect(x - 1, y - 1, w + 2, 3); // rows above the hp backing only
   ctx.fillStyle = BAR_TRACK;
-  ctx.fillRect(x, y, w, 3);             // fill rows + the gap row
+  ctx.fillRect(x, y, w, 2);             // the fill rows; the gap row under is the hp backing's
   ctx.fillStyle = SHIELD_HI;
   ctx.fillRect(x, y, fw, 1);
   ctx.fillStyle = SHIELD_LO;
