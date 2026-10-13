@@ -407,8 +407,8 @@ lane as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), i
 DAMAGE rows lit with `+LVL_HP` and `+LVL_DMG` — which is why those two `GEAR_STATS` rows fold the
 level in themselves: the kit never holds it.
 The table's **average** level is also what the
-wildlife is dealt at spawn (`animalLevel`, js/wildlife.js): an animal never levels, but the
-meadow and the dens restock at the level the match has reached —
+wildlife wears (`animalLevel`, js/wildlife.js): dealt at spawn and followed after by every
+unhurt animal that hunts nobody (`relevelAnimal`) —
 [gameplay.md](gameplay.md#wildlife).
 
 Each level also grants **one skill point** (`p.skillPts`, starting with one at level 1), and a
