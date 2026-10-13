@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.426';
+const PATCH_TXT = 'PATCH 0.427';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.427', 'PERCH ROOSTS IN A NEW LOOK: LANDED WITH ITS WINGS HALF OPEN AND THE CREW\'S SADDLE ON ITS BACK, THE CLASSIC BIRD WITH A WHITE HEAD AND TAIL AND IRONCLAD IN IRON PLATES, UNDER A BIGGER HEALTH BAR THAT SHOWS ITS NUMBER AND FLASHES PALE WHERE A HIT LANDS.'],
   ['0.426', 'THE BOTTOM BAR IS A MOBA BAR: YOUR PORTRAIT WITH XP RUNNING ROUND ITS EDGE AND THE LEVEL ON ITS CORNER, HEALTH AND STAMINA BARS WITH NUMBERS UNDER THE ABILITIES, BERRIES, FISH AND GOLD BESIDE THEM, AND CARDS THAT OPEN THE MOMENT YOU PICK THEM UP.'],
   ['0.425', 'A RIDER KEEPS THEIR STAMINA BAR WITH THE DEER\'S TAN HEALTH UNDER IT, AND THE GAP BETWEEN TWO OVERHEAD BARS IS NOW THE FRAME\'S DARK OUTLINE EVERYWHERE.'],
   ['0.424', 'A RIDER\'S FRAME SHOWS THE DEER\'S TAN HEALTH IN PLACE OF THE DODGE STAMINA, SO THE BARS NO LONGER STACK THREE HIGH.'],
@@ -1272,6 +1273,8 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['PERCH ROOSTS WITH ITS WINGS OPEN AND A SADDLE ON ITS BACK', '0.427'],
+    ['PERCH\'S HEALTH BAR IS BIGGER AND SHOWS ITS NUMBER', '0.427'],
     ['THE ZIPLINE STARTS IN THE STUMPS BESIDE YOUR BIRD', '0.420'],
     ['THE PRACTICE FIELD HAS A DEER RIDE THROUGH THE FOREST', '0.412'],
     ['A RIDDEN DEER GALLOPS FASTER', '0.412'],
