@@ -71,8 +71,8 @@ dodge         edge-triggered, cleared by the sim when it reads it
 jump          edge-triggered: the leap off the eagle, or the hop off the roost -
               the ride's one act (dropJump, js/boot.js; read at the top of
               updatePlay's player loop, before the air skips the body) - and
-              on the ground the zipline's: clip on under your side's cable,
-              let go while riding, or - out of reach with the aim on your
+              on the ground the zipline's: clip on under either side's cable,
+              let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
               js/world.js; E sets it there)
 grapple       held (key 3): the hunter's grapple reels only while this is down -
@@ -211,7 +211,7 @@ bot fills, once per step from `sampleHumanInput`.
   rule. Holding the button drags the goal under the pointer (`ck.follow`). A right press on the
   chart or the minimap walks there across the map (`ckPoint`, `mmWorldAt`). Seated on the roost
   it is the hop, and the fall drifts toward the spot and walks on landing; in flight it is the
-  jump, with the same rule the jump key has. Riding a zipline it lets go; standing under your
+  jump, with the same rule the jump key has. Riding a zipline it lets go; standing under either
   side's cable, a press **on the drawn cable** (`zipUnder`, the strand the hover lights) clips on,
   or from out of reach walks the body there and clips on (`zipWalkStart` — the channel, ended by
   any order of your own; a press anywhere else is the walk it always was).
@@ -978,7 +978,7 @@ Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the 
 and returns **-1 when there is no route** (or the bot has been pinned for a while). **It rides
 the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
-its own side's cable, riding to the point nearest the goal and walking the rest beat the feet by
+either side's cable (the better of the two), riding to the point nearest the goal and walking the rest beat the feet by
 `ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, world.js — the nearest point of
 the cable whose ground a body can stand on, shared with a player's walk to the cable), presses `input.jump` under it, holds the stick along
 the cable toward the exit while it rides (the goal re-read every think, so a rider called home

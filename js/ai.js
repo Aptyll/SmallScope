@@ -506,9 +506,10 @@ function aiWaveHead(p, e) {
 // ---- the ride ---------------------------------------------------------------
 // A bot rides the zipline (the `zipline` banner, world.js) the way a hand
 // does, through the same hop intent: every walk the ladder orders goes
-// through steerTo, and steerTo asks aiZipWorth first - would walking to its
-// own side's cable, riding to the point nearest the goal and walking the
-// rest beat the feet by ZIP_AI_GAIN seconds? If so it walks to the mount
+// through steerTo, and steerTo asks aiZipWorth first - would walking to
+// either side's cable, riding to the point nearest the goal and walking the
+// rest beat the feet by ZIP_AI_GAIN seconds? (The better of the two, if both
+// would.) If so it walks to the mount
 // (zipMount, world.js: the nearest point of the cable whose ground a body can stand
 // on), presses the hop under it, holds the stick along the cable toward the
 // exit while it rides, and presses the hop again ZIP_AI_OFF short of the
@@ -525,12 +526,15 @@ function aiWalkT(p, d) { return d / (PLAYER_SPEED * kitOf(p).walkMul); }
 // the ride from p's spot to (x, y), if the cable saves ZIP_AI_GAIN over the
 // feet: { z, d0, d1 } (px along at the mount and the exit), else null
 function aiZipWorth(p, x, y) {
-  const z = zips[p.team];
-  if (!z) return null;
-  const nb = zipNearest(z, p.x, p.y), ng = zipNearest(z, x, y);
   const feet = aiWalkT(p, Math.hypot(x - p.x, y - p.y));
-  const ride = aiWalkT(p, nb.dist) + Math.abs(ng.d - nb.d) / ZIP_SPD + aiWalkT(p, ng.dist);
-  return feet - ride >= ZIP_AI_GAIN ? { z, d0: nb.d, d1: ng.d } : null;
+  let best = null, bt = feet - ZIP_AI_GAIN;
+  for (const z of zips) {
+    if (!z) continue;
+    const nb = zipNearest(z, p.x, p.y), ng = zipNearest(z, x, y);
+    const ride = aiWalkT(p, nb.dist) + Math.abs(ng.d - nb.d) / ZIP_SPD + aiWalkT(p, ng.dist);
+    if (ride <= bt) { bt = ride; best = { z, d0: nb.d, d1: ng.d }; }
+  }
+  return best;
 }
 
 // the camp monster nearest of those in a fight this bot is in. A camp is
@@ -669,7 +673,8 @@ function aiThink(p, dt) {
     }
     const w = aiZipWorth(p, x, y);
     if (w) {
-      if (zipNear(p)) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
+      const nr = zipNear(p);
+      if (nr && nr.z === w.z) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
       const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (world.js)
       if (m && walkTo(m.x, m.y, 0, budget) >= 0) return Math.hypot(x - p.x, y - p.y);
     }

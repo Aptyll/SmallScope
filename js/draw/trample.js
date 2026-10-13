@@ -123,7 +123,7 @@ function trampleStep(dt) {
     const r = unitRadius(a), big = a.kind === 'deer' || (MONSTER[a.kind] && MONSTER[a.kind].big);
     trBody(a, 0, r, big ? TR_WALK * 1.4 : r < 3 ? TR_WALK * 0.35 : TR_WALK);
   }
-  for (const b of robots) trBody(b, 0, unitRadius(b), TR_WALK * 0.8);
+  for (const b of robots) if (!(b.zip >= 0)) trBody(b, 0, unitRadius(b), TR_WALK * 0.8); // (a soldier on the cable is off the snow)
   trRefill(dt);
   trDustSync(dt);
 }

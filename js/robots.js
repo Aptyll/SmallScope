@@ -30,6 +30,7 @@ function makeRobot(sp) {
     carry: 0, // gold held, deposited at home
     moveT: 0, idleT: rand(0.3, 1), mvx: 0, mvy: 0, moving: false,
     animT: rng() * 2, flash: 0, kbx: 0, kby: 0, dead: false,
+    zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (world.js), the player's own fields: a soldier rides it (soldierBoard)
   };
   // a worker takes every state a player can be put under - snared,
   // netted, marked, alight - written by the same setters (`status effects`,
@@ -112,6 +113,13 @@ function updateRobot(b, dt) {
     if (Math.abs(b.kbx) + Math.abs(b.kby) > 1) moveEntity(b, b.kbx * dt, b.kby * dt, 3);
     b.x = Math.max(8, Math.min(WORLD * TILE - 8, b.x));
     b.y = Math.max(8, Math.min(WORLD * TILE - 8, b.y));
+    return;
+  }
+  if (b.zip >= 0) {
+    // on the zipline's handle: the cable carries it (zipRide, world.js), the
+    // brain waits for the end, and nothing is swung on the way
+    zipRide(b, dt);
+    b.moving = false; b.atkAim = null;
     return;
   }
   if (b.merchant) { updateMerchant(b, dt); return; } // the eagle's driver: its own brain, the shared body above
@@ -725,13 +733,19 @@ function updateMerchant(b, dt) {
 // takes every hit, state and gust like any other body. Its route is the
 // road's waypoints from its own spur's junction to the rival's
 // (roadWaypoints), then the rival's spur to the roost: a waypoint it cannot reach is skipped, not
-// waited on, so a wave never stands still on a blocked tile.
+// waited on, so a wave never stands still on a blocked tile. On the march it
+// rides any ZIPLINE that carries it toward the rival bird (soldierBoard):
+// its own side's out to the front, the rival's in to their roost - hands on
+// the handle, so a soldier on the cable swings at nothing, and a rival who
+// meets it on the line crashes with it (zipCrash, world.js).
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
 const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
 const SOLDIER_BOUNTY = 4;      // gold (and so xp) a scrapped soldier pays its killer
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
+const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
+const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it
 
 function makeSoldier(o) {
   const b = makeRobot(o); // the bay's roll-out geometry, the barracks' botHp
@@ -745,10 +759,61 @@ function makeSoldier(o) {
   for (const w of roadWaypoints(b.team)) b.way.push(w);
   if (rival && rival.mouth) b.way.push({ x: rival.mouth.x, y: rival.mouth.y });
   b.wayI = 0;
+  b.rode = false; // boarded a zipline since the route was last read (soldierRejoin)
   return b;
 }
 
+// where the march ends: the rival bird, wherever it is
+function soldierGoal(b) {
+  const rival = state.drop && state.drop.eagles[1 - b.team];
+  return rival || (b.way.length ? b.way[b.way.length - 1] : null);
+}
+// the ride: a cable within SOLDIER_ZIP_REACH of the soldier whose end nearer
+// the rival bird is SOLDIER_ZIP_GAIN nearer it than the soldier stands. Under
+// it (inside ZIP_GRAB) it clips on, riding toward that end; short of it, it
+// walks to the mount (zipMount, world.js - the point a player's walk and a
+// bot's stand on too). True while the cable has the soldier, walking or on
+function soldierBoard(b, walkToward) {
+  const g = soldierGoal(b);
+  if (!g) return false;
+  const here = Math.hypot(g.x - b.x, g.y - b.y);
+  for (const z of zips) {
+    if (!z) continue;
+    const n = zipNearest(z, b.x, b.y);
+    if (n.dist > SOLDIER_ZIP_REACH) continue;
+    const p0 = z.pts[0], p1 = z.pts[z.pts.length - 1];
+    const d0 = Math.hypot(g.x - p0.x, g.y - p0.y), d1 = Math.hypot(g.x - p1.x, g.y - p1.y);
+    if (Math.min(d0, d1) > here - SOLDIER_ZIP_GAIN) continue;
+    if (n.dist <= ZIP_GRAB) {
+      zipBoard(b, z, n.d, d1 < d0 ? 1 : -1);
+      b.rode = true;
+      b.moving = false;
+      return true;
+    }
+    const m = zipMount(z, n.d);
+    if (m && walkToward(m.x, m.y, 0) >= 0) return true;
+  }
+  return false;
+}
+// off the cable - at its end, or knocked off - the route is read again from
+// where the soldier now stands: the leg of it (waypoint to waypoint, the last
+// one on to the bird) it stands nearest is the leg it is on, and the
+// waypoint ending that leg is next. Never back down the route
+function soldierRejoin(b) {
+  b.rode = false;
+  const g = soldierGoal(b), pts = g ? b.way.concat([g]) : b.way;
+  let best = b.wayI, bd = Infinity;
+  for (let k = Math.max(1, b.wayI); k < pts.length; k++) {
+    const a = pts[k - 1], c = pts[k], lx = c.x - a.x, ly = c.y - a.y, L2 = lx * lx + ly * ly || 1;
+    const t = Math.max(0, Math.min(1, ((b.x - a.x) * lx + (b.y - a.y) * ly) / L2));
+    const d = Math.hypot(b.x - a.x - lx * t, b.y - a.y - ly * t);
+    if (d < bd) { bd = d; best = k; }
+  }
+  b.wayI = Math.max(b.wayI, Math.min(best, b.way.length));
+}
+
 function updateSoldier(b, dt) {
+  if (b.rode) soldierRejoin(b); // just off a zipline (the ride branch in updateRobot carries it while it is on)
   let moving = false;
   const walkToward = (px, py, reach) => {
     const n = navStep(b, px, py, 3, SOLDIER_SPD, dt, reach);
@@ -793,7 +858,9 @@ function updateSoldier(b, dt) {
       else { swing(pt, () => robotStrike(b, st, pt)); busy = true; }
     }
   }
-  // 4. the march: the next waypoint, then the roost through its lane
+  // 4. the march: by a zipline that carries it closer, else the next
+  //    waypoint, then the roost through its lane
+  if (!busy) busy = soldierBoard(b, walkToward);
   if (!busy) {
     if (b.wayI < b.way.length) {
       const w = b.way[b.wayI];

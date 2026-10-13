@@ -681,6 +681,7 @@ function updatePlay(dt) {
   updateRespawns(dt);
   for (const b of robots) updateRobot(b, dt);
   for (let i = robots.length - 1; i >= 0; i--) if (robots[i].dead) robots.splice(i, 1);
+  zipCrash(); // rivals meeting on a cable (world.js): every rider has stepped
 
   // everyone has stepped: push overlapping units apart (players, animals, robots)
   separateUnits(dt);

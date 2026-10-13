@@ -342,14 +342,14 @@ function keyPress(e) {
     // (cursorInfo, js/draw/render.js).
     const mb = merchNear(player);
     if (mb) { SFX.unlock(); openShop(mb); return; }
-    // ...then a ZIPLINE overhead: under your own side's cable the key clips
+    // ...then a ZIPLINE overhead: under either side's cable the key clips
     // on (the cap over the cable says so - drawZipHint, js/ui/wheel.js), and
     // the trunk beside it is still chopped from one step further out
     if (zipNear(player)) { player.input.jump = true; return; }
     // ...then a wild deer in reach: up onto its back (rideNear, js/wildlife.js -
     // the cap over it says so, drawRideHint, js/ui/wheel.js)
     if (rideNear(player)) { player.input.jump = true; return; }
-    // ...or the pointer on your own cable out of reach: the same intent, and
+    // ...or the pointer on a cable out of reach: the same intent, and
     // the step walks the body there and clips on (zipWalkStart, world.js)
     if (hoverZip()) { player.input.jump = true; return; }
     const t = workTarget(player);
@@ -799,11 +799,11 @@ function ckRightPress() {
   if (state.mode === 'drop') { dropPress(); if (player.aboard) return; }
   else if (player.aboard) ck.hop = true;
   // on a zipline the press lets go of it, and walking to one it calls the
-  // walk off; a press ON your own drawn cable (zipUnder, world.js - the
+  // walk off; a press ON a drawn cable (zipUnder, world.js - the
   // strand the hover lights) clips on under it or walks there and clips on
   // (a press anywhere else is the walk it always was)
   else if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; }
-  else if (zipUnder(player.team, wx, wy)) { ckClear(); SFX.unlock(); player.input.jump = true; return; }
+  else if (zipUnder(wx, wy)) { ckClear(); SFX.unlock(); player.input.jump = true; return; }
   SFX.unlock();
   if (!pt.far && !player.aboard) {
     const t = unitUnder(player, wx, wy);
