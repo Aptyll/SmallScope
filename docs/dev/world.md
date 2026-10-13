@@ -1083,7 +1083,7 @@ on a frost plate over the bell (`drawAgame`). **BEST is the profile's all-time r
 lap record's twin and the second of the only two things practice ever writes.
 
 **The practice bar** (js/ui/cheats.js, League's practice-tool column) hangs down the left edge
-under the corner's open drawer, at the HUD SIZE the dial holds (capped so it never runs off the
+under the corner's open drawer, at the corner's size (`cornerSc`) (capped so it never runs off the
 bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEAT_GOLD`, through
 `tradeGold`, so no XP rides it), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
 `CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),

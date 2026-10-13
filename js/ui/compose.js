@@ -30,8 +30,8 @@ function renderUI(now) {
   ctx.restore();
 
   // the team rail, top centre (the `team rail` block above): it rides the
-  // intro slide down from above like the minimap, at the HUD SIZE the dial
-  // holds, and stays up while you are out - who is up is what a spectator reads
+  // intro slide down from above like the minimap, at its own size dial
+  // (railSc), and stays up while you are out - who is up is what a spectator reads
   drawRailScaled(now, slide);
 
   // THE COUNTER WASHES THE FRAME (shopScrim, js/shop.js), and exactly what a
@@ -47,10 +47,10 @@ function renderUI(now) {
   // panel: minimap and strip, the wash, then the corner and the slab.
   const shop = !out && shopOpen();
   // The top-left corner - the weapon shelf and the drawer under it - rides
-  // the intro slide in from the LEFT as one widget, at the HUD SIZE the dial
-  // holds (drawCornerScaled), by its widest reach so no tool's row is left
+  // the intro slide in from the LEFT as one widget, at its own size dial
+  // (cornerSc, drawCornerScaled), by its widest reach so no tool's row is left
   // parked over the cinematic.
-  const cornerSlide = -Math.round(slide * CORNER_REACH * hudSc());
+  const cornerSlide = -Math.round(slide * CORNER_REACH * cornerSc());
   if (!out && !shop) drawCornerScaled(now, cornerSlide);
   // the practice bar down the left edge, PRACTICE TOOL only (js/ui/cheats.js)
   if (!out && PRACTICE) drawCheatBar(now);

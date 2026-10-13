@@ -225,7 +225,7 @@ const state = {
 // volume is the master dial; musicVol and sfxVol sit under it (SFX.setVolume /
 // setMusicVolume / setSfxVolume). A save written before the split simply has
 // neither key and keeps the defaults - no version bump needed.
-const settings = { v: 3, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
+const settings = { v: 4, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom: 5, hudScale: 1, shake: true, muted: false, info: false, pixelCursor: true, hitbox: 0,
   // your side is painted BLUE and the rival side RED whatever team the roster
   // dealt you (skin(), js/player.js); off = the roster's real colours
   teamBlue: true,
@@ -260,7 +260,11 @@ const settings = { v: 3, volume: 0.5, musicVol: 0.7, sfxVol: 1, mmR: 24, mmZoom:
   // js/input.js) or 'mouse' (CLICK for one hand - the `mouse only` banner).
   // The KEYBOARD listing's top row; each scheme keeps its own binds
   // (settings.binds / bindsClick / bindsMouse, mended by mendBinds).
-  scheme: 'wasd' };
+  scheme: 'wasd',
+  // the GAME page's size dials, one per HUD widget (hudSizes, js/ui/strip.js):
+  // hudScale the bottom strip, hudCorner the weapon shelf and drawer top-left,
+  // hudRail the team rail along the top; the minimap's is mmR above
+  hudCorner: 1, hudRail: 1 };
 // Minimap zoom ladder, px per world tile: index settings.mmZoom (5 = the 1:1
 // baseline). Twice the rungs and twice the reach of the old six, and like the
 // camera it eases between them rather than snapping - mmCur is what anything
@@ -306,6 +310,13 @@ function loadSettings() {
       if (s.aiLevel != null) settings.aiLevel = (s.aiLevel | 0) + 1;
       settings.v = 3;
     }
+    // ...and one from before the HUD's one size dial split in three: the
+    // corner and the rail keep the size the one dial gave them
+    if (s && (s.v | 0) < 4) {
+      if (s.hudScale != null) settings.hudCorner = settings.hudRail = s.hudScale;
+      settings.v = 4;
+    }
+    settings.mmR = Math.max(MM_R_MIN, Math.min(MM_R_MAX, settings.mmR | 0 || 24));
   } catch (e) { }
   mmCur = mmWant();
 }
@@ -315,6 +326,7 @@ function loadSettings() {
 // hugging one edge and floating off the other.
 const MM_OUT = 7;  // outline's outer radius past MM_R (mmChrome, ui.js)
 const MM_GAP = 4;  // px of screen between the outline and either edge
+const MM_R_MIN = 12, MM_R_MAX = 48; // the MINIMAP SIZE dial's reach, px of radius (24 = 100)
 function applyMinimapSize() {
   MM_R = settings.mmR;
   MM_CX = VIEW_W - MM_R - MM_OUT - MM_GAP;

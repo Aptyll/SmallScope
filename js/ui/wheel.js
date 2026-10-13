@@ -720,7 +720,7 @@ function kitLabel(id) {
 // what the piece is for (tipStruct, js/ui/tooltip.js).
 //
 // The column is the STRIP's: laid out in its 1x space, drawn inside
-// drawHudScaled (js/ui/hud-draw.js) at the HUD SIZE the dial holds and hit
+// drawHudScaled (js/ui/hud-draw.js) at the strip's size (hudSc) and hit
 // tested through stripMouse. Its foot clears the strip's top edge, so it
 // never covers a meal.
 //

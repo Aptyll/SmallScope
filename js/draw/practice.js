@@ -692,7 +692,7 @@ function drawAgMarkers() {
     if (Math.abs(mx - MM_CX) < mq && my < MM_CY + mq + 12) {
       if (mx >= x1 - 1) my = Math.max(my, MM_CY + mq + 12); else mx = MM_CX - mq - 1;
     }
-    // the hud strip (bottom-centre), at the HUD SIZE it is drawn at
+    // the hud strip (bottom-centre), at the size it is drawn at (hudSc)
     const R = hudStripRect(), hs = hudSc(), top = VIEW_H - (R.h + 4) * hs;
     if (my > top - 5 && Math.abs(mx - VIEW_W / 2) < (R.w / 2 + 4) * hs + 6) my = top - 5;
     mx = Math.max(x0, Math.min(x1, mx)); my = Math.max(y0, Math.min(y1, my));
