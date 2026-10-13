@@ -178,6 +178,7 @@ function render() {
   ctx.drawImage(groundCv, ox, oy, WV_W, WV_H, 0, 0, WV_W, WV_H);
   // the creek's current, drifting over the still water the bake laid (ground.js)
   drawCreekFlow(ox, oy, Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
+  drawCreekFish(ox, oy);
 
   // fish: silhouettes drifting under the thin ice, crisp in open holes
   for (const f of fish) {
