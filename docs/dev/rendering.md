@@ -1575,17 +1575,17 @@ width (`drawNavCell`'s grammar), and BACK / LOBBY are bare 2x words at the foot,
 under the pointer or the keys - the title screen's grammar, no plank. Left/right walks those four
 words and Enter takes one.
 
-**The graph**, the GRAPHS page, on two words (**GOLD** / **DAMAGE**; up/down swaps them): one
-cumulative line **per player**, a side's five in five shades of its colour (`SCORE_SHADE`) and yours
-in gold, beside a key that names every player - your side first, a gap, the rivals - with the
-line's swatch and where that player ended. The pointer on a key row lifts that player's line over
-the rest and dims the others, which is how ten crossing lines stay readable. Dotted uprights are
-the match's days (`CYCLE`), the top-left prints the scale (a chart with no scale is a squiggle,
-the merchant's own rule) and the match clock is in the head, printed once. A match shorter than
-two samples draws a flat line rather than a sentence saying so.
+**The graphs**, the GRAPHS page, League's: every stat of every group listed down the left under
+its group's name, the charted one marked gold (a click, or up/down, picks another), and that stat as
+a **horizontal bar chart** - one bar a player in its side's colour, your side first, a gap, the
+rivals, each with its face at the head, its name over the bar (beside it on a view too short for
+two lines a row) and its number at the end; yours carries a gold line and a gold number. A bar is
+its player's share of the scale's top, a round step past the biggest value (`scoreStep`), and the
+steps stand as faint uprights with their values (K/M/B) under the chart.
 
 **Where the numbers come from.** `sampleStats(dt)` (called from `updatePlay`, sim.js) pushes every
-player's cumulative gold earned and damage dealt onto `p.hGold`/`p.hDmg` every `STAT_STEP` seconds.
+player's cumulative gold earned and damage dealt onto `p.hGold`/`p.hDmg` every `STAT_STEP` seconds;
+the lobby no longer draws them (the bars read the frozen record), and the bot lab reads the last gold.
 They live on the PLAYER rather than in a table of their own because a player field crosses the wire
 with everything else, so a client's lobby draws the host's graph instead of a flat line; every
 player is sampled on the same tick, active or not, so index *i* means the same moment in all ten
