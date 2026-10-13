@@ -1559,8 +1559,9 @@ recap bow out under it the way they do under the two ceremonies.
 **The page**, League's post-game STATS read sideways. Every active player is a **column**, the
 local player first and their side next (its colour through `skin()` like everything else, so your
 side is BLUE here too), then a gap and the rivals. Each column wears its player's HUD portrait
-(`portraitSprite`, small) with the level on its corner and the side's colour as a line under it;
-a name shows only while the pointer is on its face. Down the left are four **folding groups**,
+(`portraitSprite`, small) with the level on its corner and the side's colour as a line under it,
+and its name printed whole under the face: the columns take turns between two lines, so each name
+has two columns' width (`scoreName` cuts one only on a view narrowed below full width). Down the left are four **folding groups**,
 `SCORE_GROUPS`: COMBAT (K/D, level, best streak, best multi-kill, crowd control), DAMAGE DEALT (to
 players, the bird, buildings, beasts, and the total), TAKEN AND HEALED, and GOLD (earned, spent,
 beasts hunted). A click on a group's heading folds it, a short view scrolls the groups (the wheel
@@ -1575,13 +1576,13 @@ under the pointer or the keys - the title screen's grammar, no plank. Left/right
 words and Enter takes one.
 
 **The graph**, the GRAPHS page, on two words (**GOLD** / **DAMAGE**; up/down swaps them): one
-cumulative line per side,
-summed over its players, with the **lead** shaded between them in the colour of whoever is ahead at
-that moment - two cumulative totals nest, so filling under each would just fill the well, and what
-a reader wants is the gap and when it opened. Dotted uprights are the match's days (`CYCLE`), the
-top-left prints the scale (a chart with no scale is a squiggle, the merchant's own rule) and the
-match clock is in the head, printed once. A match shorter than two samples draws a flat line rather
-than a sentence saying so.
+cumulative line **per player**, a side's five in five shades of its colour (`SCORE_SHADE`) and yours
+in gold, beside a key that names every player - your side first, a gap, the rivals - with the
+line's swatch and where that player ended. The pointer on a key row lifts that player's line over
+the rest and dims the others, which is how ten crossing lines stay readable. Dotted uprights are
+the match's days (`CYCLE`), the top-left prints the scale (a chart with no scale is a squiggle,
+the merchant's own rule) and the match clock is in the head, printed once. A match shorter than
+two samples draws a flat line rather than a sentence saying so.
 
 **Where the numbers come from.** `sampleStats(dt)` (called from `updatePlay`, sim.js) pushes every
 player's cumulative gold earned and damage dealt onto `p.hGold`/`p.hDmg` every `STAT_STEP` seconds.
