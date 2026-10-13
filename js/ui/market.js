@@ -1,7 +1,7 @@
 'use strict';
 // ------ the market tab
 // The counter's third face, beside the SHOP and the FORGE (the tab plates:
-// forgeTabs, js/ui/forge.js): the four traded goods - the three fish and the
+// forgeTabs, js/ui/forge.js): the traded goods - every fish and the
 // berries - on a page of their own. The rules underneath (the walk, the
 // shocks, the ledger) are the `market` banner of js/ui/shop.js; this file is
 // only how they are read and traded.
@@ -25,11 +25,13 @@
 // The numbers on this page are the panel carve-out of CLAUDE.md's UI rule
 // (the shop banner's reason): reading a market IS reading numbers.
 const MKT_SIGN = 'MARKET';
-const MKT_GOODS = ['fish', 'whitefish', 'snowChar', 'berry']; // the rows' order: the money good first
+// the rows' order: the money good first, then every other fish (FISH_KINDS,
+// js/player.js, so a new fish gets its row), then the berries
+const MKT_GOODS = ['fish', ...FISH_KINDS.filter((k) => k !== 'fish'), 'berry'];
 const MKT_BUY = '#8fe08a', MKT_SELL = '#e0637a';               // a buy and a sale, and the rise and the fall
 const MKT_AVG = '#f2cc6a';                                      // what the buys cost, in the purse's own gold
 const MKT_INK = '#c3d0ee', MKT_DIM = '#5a6a99';
-const MKT_ROW_H = 28;      // a good's row in the list
+const MKT_ROW_H = 28;      // a good's row in the list, at most: more goods squeeze it to fit over the trades
 const MKT_BTN_H = 18;      // a trade plate along the bottom
 const MKT_AXIS = 22;       // the price axis down the chart's right side
 // the trades along the bottom: [dir, how many] - Infinity is "all you carry"
@@ -64,8 +66,8 @@ function mktLayout(L) {
   }
   btns[btns.length - 1].w = x + w - btns[btns.length - 1].x; // the last plate takes the odd px
   const rows = [];
-  const lw = 84;
-  for (let i = 0; i < MKT_GOODS.length; i++) rows.push({ id: MKT_GOODS[i], x, y: top + i * (MKT_ROW_H + 3), w: lw, h: MKT_ROW_H });
+  const lw = 84, n = MKT_GOODS.length, rh = Math.min(MKT_ROW_H, Math.floor((by - 4 - top - 3 * (n - 1)) / n));
+  for (let i = 0; i < n; i++) rows.push({ id: MKT_GOODS[i], x, y: top + i * (rh + 3), w: lw, h: rh });
   const chart = { x: x + lw + 6, y: top, w: w - lw - 6, h: by - 18 - top };
   const info = { x: chart.x, y: chart.y + chart.h + 4, w: chart.w, h: 10 };
   const plot = { x: chart.x + 1, y: chart.y + 1, w: chart.w - 2 - MKT_AXIS, h: chart.h - 2 };
@@ -165,7 +167,7 @@ function drawMktRow(r, h, now) {
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   const img = SPRITES[ITEMS[id].icon];
   ctx.globalAlpha = on || hot ? 1 : 0.7;
-  ctx.drawImage(img, r.x + 4, r.y + 4);
+  ctx.drawImage(img, r.x + 4, r.y + (r.h < MKT_ROW_H ? 3 : 4)); // a squeezed row lifts it clear of the name
   ctx.globalAlpha = 1;
   const pt = String(price), pw = pixelTextWidth(pt, 2);
   const ink = up ? MKT_BUY : MKT_SELL;

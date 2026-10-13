@@ -221,11 +221,11 @@ function goldCellRect() {
   const r = foodCellRect(0);
   return { x: r.x, y: r.y + BAR_TOP, w: FOOD_W, h: ST_TOP + ST_H + 2 - BAR_TOP };
 }
-// THE FISH PICKER: the fish well holds three kinds (FISH_KINDS, js/player.js),
+// THE FISH PICKER: the fish well holds four kinds (FISH_KINDS, js/player.js),
 // and pointing at it raises a column of them straight up off the well - the
-// ice fish nearest it, then the whitefish, then the snow char, each with how
-// many you carry. With
-// none picked all three stand lit and the key eats whichever comes next (the
+// lake's frost pike nearest it, its gold sunfish, then the creek's whitefish
+// and snow char, each with how many you carry. With
+// none picked all four stand lit and the key eats whichever comes next (the
 // well shows that one); a click on one picks it, and the key eats only that
 // (it rings gold, the others dim), and a click on the picked one lets it go.
 // The pick is the body's own (p.fishPick), set through the input's cmd like
@@ -234,7 +234,7 @@ function goldCellRect() {
 // it: its frame runs on down into the strip's (drawFishPop), so the rect below
 // reaches into the strip's top frame. The fish well has no buy plate over it,
 // so the column hides none.
-const FISH_POP = ['fish', 'whitefish', 'snowChar']; // the column, bottom to top
+const FISH_POP = ['fish', 'sunfish', 'whitefish', 'snowChar']; // the column, bottom to top: the lake's, then the creek's
 const FISH_POP_NAME = 10;  // the hovered kind's name, standing over the column
 function fishPopRect() {
   const s = foodCellRect(1), top = hudStripRect().y - (FISH_POP.length * AB_CELL + (FISH_POP.length - 1) * AB_GAP + AB_PAD);

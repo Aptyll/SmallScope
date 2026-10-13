@@ -693,11 +693,11 @@ function hurtStruct(o, dmg, p, bot) {
 function destroyStructure(o, refund, p) {
   // a net going down tips its catch back out onto the ice - the fish in it
   // were never the owner's, and wrecking one should not delete them
-  const spill = o.type === 'net' ? o.fish || 0 : 0;
+  const spill = o.type === 'net' ? o.fish || 0 : 0, sun = o.type === 'net' ? o.sun || 0 : 0;
   if (STRUCTS[o.type]) removeStruct(o);
   else objects[idx(o.tx, o.ty)] = null;
   const c = structCenter(o), ox = c.x, oy = c.y;
-  for (let i = 0; i < spill; i++) spawnDrop(ox, oy, 'fish');
+  for (let i = 0; i < spill; i++) spawnDrop(ox, oy, i < sun ? 'sunfish' : 'fish');
   sfxAt('break_', ox, oy);
   burst(ox, oy, '#8a6142', 10, 50, 0.5, true);
   burst(ox, oy, '#eef4fb', 6, 40, 0.5, true);

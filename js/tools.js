@@ -936,9 +936,10 @@ function autoFish(p, dt) {
     const j = fish.indexOf(f);
     if (j < 0) return;
     fish.splice(j, 1);
-    bagAdd(p, 'fish', 1);
-    startCatch(p);
-    addFloater(f.x, f.y - 10, 'FISH!', '#7ac0e8');
+    const k = f.kind || 'fish';
+    bagAdd(p, k, 1);
+    startCatch(p, k);
+    addFloater(f.x, f.y - 10, ITEMS[k].name + '!', RES_COLORS[k]);
     burst(f.x, f.y, '#9fc4dd', 8, 45, 0.45, true);
     burst(f.x, f.y, '#ddf1f8', 5, 35, 0.4, true);
     sfxAt('splash', f.x, f.y); sfxAt('stash', f.x, f.y);
@@ -954,7 +955,7 @@ function autoFish(p, dt) {
 // damagePlayer), because an automatic catch may never hold the player.
 // A net hands its first fish up the same way (updateStructures, js/structures.js).
 const CATCH_T = 2, CATCH_STOOP = 0.16, CATCH_HAUL = 0.22;
-function startCatch(p) { p.catchT = CATCH_T; }
+function startCatch(p, kind) { p.catchT = CATCH_T; p.catchKind = kind || 'fish'; }
 function cancelCatch(p) { p.catchT = 0; }
 // which catch frame the body is on: 0 stoop, 1 haul, 2 hoist, -1 not catching
 function catchFrame(p) {

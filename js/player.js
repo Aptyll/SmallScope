@@ -218,9 +218,13 @@ function playerTint(p) {
 // lives, so the tooltip and the meal that lands can never disagree (js/core.js).
 const ITEMS = {
   berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
-  fish: { icon: 'itemFish', stack: Infinity, pouch: true, heal: 50, name: 'ICE FISH' },
+  // the lake's two, caught through a hole in the ice (the `fish` shoal,
+  // js/wildlife.js): the FROST PIKE - still the `fish` key, which the market,
+  // the nets and every save already name - and the rare GOLD SUNFISH
+  fish: { icon: 'itemFrostPike', stack: Infinity, pouch: true, heal: 50, name: 'FROST PIKE' },
+  sunfish: { icon: 'itemSunfish', stack: Infinity, pouch: true, heal: 80, name: 'GOLD SUNFISH' },
   // the creek's two (CREEK_FISH, js/world.js): caught by rolling over the
-  // water onto one, eaten off the fish well like the ice fish
+  // water onto one, eaten off the fish well like the lake's
   whitefish: { icon: 'itemWhitefish', stack: Infinity, pouch: true, heal: 40, name: 'WHITEFISH' },
   snowChar: { icon: 'itemSnowChar', stack: Infinity, pouch: true, heal: 70, name: 'SNOW CHAR' },
   // unopened roguelike cards - one ITEMS entry per rarity, in the pouch like
@@ -242,7 +246,7 @@ const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // is picked: the smallest meal first, so the best one is kept. The well's
 // picker (fishPick, js/ui/strip.js) sets p.fishPick to one of them, or null
 // for "whichever comes next" (fishToEat, js/core.js).
-const FISH_KINDS = ['whitefish', 'fish', 'snowChar'];
+const FISH_KINDS = ['whitefish', 'fish', 'snowChar', 'sunfish'];
 function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
 // What one unopened card of each rarity costs at the merchant's counter
 // (the `shop` banner, js/shop.js), and half of it what one fetches sold back.
@@ -634,6 +638,7 @@ class Player {
     this.nockT = 0;                                // the cycle: seconds until the next press (toolCycle, js/tools.js)
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (slashTool, js/tools.js; drawHeldTool, js/draw-world.js)
     this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/tools.js)
+    this.catchKind = 'fish';                       // ...and which fish is hoisted (an ITEMS key)
     this.fireArmed = false;                        // the bow button has been pressed since the last loose
     this.readyFlash = 0; this.dryT = 0;            // HUD tells: renocked / pressed empty
     this.dodgeT = 0; this.dodgeVX = 0; this.dodgeVY = 0; this.dodgeDustT = 0;

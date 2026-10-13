@@ -63,16 +63,16 @@ const MKT_ORDER = ['fish', 'berry']; // the order the counter lists them in: the
 const market = { t: 0, goods: {}, stockT: 0, stock: null, n: 0, step: 0 };
 
 // EVERY FISH trades on the one fish market. Each kind in FISH_KINDS (the
-// creek's whitefish and snow char beside the ice fish, js/player.js) is
-// priced off the ice fish's live price, scaled by what it heals against what
-// the ice fish heals - so a new fish is priced the moment it has a `heal`,
-// and the three move together on one graph.
+// creek's whitefish and snow char beside the hole's frost pike and gold
+// sunfish, js/player.js) is priced off the frost pike's live price (the
+// `fish` good), scaled by what it heals against what the pike heals - so a
+// new fish is priced the moment it has a `heal`, and the four move together.
 function goodOf(type) { return Object.hasOwn(GOODS, type) ? type : FISH_KINDS.includes(type) ? 'fish' : null; }
 function goodScale(type) { const g = goodOf(type); return g === type ? 1 : ITEMS[type].heal / ITEMS[g].heal; }
 function goodName(type) { return ITEMS[type].name || GOODS[type].name; } // a fish by its own name, the market's by its
 function marketPrice(id) { return Math.max(1, Math.round(market.goods[goodOf(id)].price * goodScale(id))); }
 // the goods array a good's graph is drawn from, oldest first (a fish's is
-// its market's, in the ice fish's coin)
+// its market's, in the frost pike's coin)
 function marketHist(id) { return market.goods[goodOf(id)].hist; }
 // is this a traded good rather than a made thing?
 function isGood(type) { return !!goodOf(type); }
@@ -983,7 +983,7 @@ const SHOP_WELL_GAP = 5;
 const SHOP_SEC_W = SHOP_WELL_W * 3 + SHOP_WELL_GAP * 2; // a section: three wells and the gaps between
 const SHOP_SEC_HEAD = 8;                                // its name, and the rule off it
 const SHOP_SEC_H = SHOP_SEC_HEAD + SHOP_WELL_H + SHOP_BAND;
-const SHOP_CARD_H = 46;                                 // one ticker card (four share the width)
+const SHOP_CARD_H = 46;                                 // one ticker card (every good's share the width)
 const SHOP_SELL_H = 16;    // the sell strip along the counter's edge...
 const SHOP_ALL_W = 82;     // ...the SELL ALL button at its right end, and the
 const SHOP_ALL_GAP = 4;    //    air between the two halves
@@ -1097,10 +1097,10 @@ function shopLayout() {
   }
   const mkY = y + SHOP_HEAD + 6 + SHOP_SEC_H * 2 + 3 + 3; // under the second row of sections
   // the market's ticker: a card a good, each a way onto the MARKET page
-  const cards = [], tw = Math.floor((cw - 3 * 4) / 4);
-  for (let i = 0; i < MKT_GOODS.length; i++) {
+  const nk = MKT_GOODS.length, cards = [], tw = Math.floor((cw - (nk - 1) * 4) / nk);
+  for (let i = 0; i < nk; i++) {
     const kx = cx + i * (tw + 4);
-    cards.push({ id: MKT_GOODS[i], x: kx, y: mkY + 8, w: i === 3 ? cx + cw - kx : tw, h: SHOP_CARD_H });
+    cards.push({ id: MKT_GOODS[i], x: kx, y: mkY + 8, w: i === nk - 1 ? cx + cw - kx : tw, h: SHOP_CARD_H });
   }
   // the bottom of the slab, from the rail up: the restock road, air, the sell
   // strip. The strip is measured off the LANE and not off the frame, so

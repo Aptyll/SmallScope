@@ -251,6 +251,7 @@ const FISH_MARGIN = 6;     // body clearance from snow: soft-steered away, hard-
 // spears and nets and refilled by a trickle of new fish swimming in from
 // under the snow - the deep water no hole ever reaches (see spawnEmerger).
 const FISH_MAX = 30;       // cap: the boot shoal, and the ceiling the trickle fills to
+const FISH_RARE = 0.2;     // the share of the shoal that is GOLD SUNFISH; the rest are FROST PIKE
 const FISH_MIN = 10;       // floor: below it the trickle runs at FISH_SPAWN_FAST instead
 // The shoal belongs to the WATER, not to the map. A shape that freezes half
 // the valley over (FROZEN ISLES, the map types in world.js) is not the same
@@ -284,6 +285,9 @@ function addFish(x, y, a, born) {
     x, y, a: a === undefined ? rand(0, Math.PI * 2) : a, spd: rand(9, 18), t: rand(0, 9), turnT: rand(1, 3),
     spook: 0, ts: rng() < 0.5 ? -1 : 1, // preferred turn direction at a dead end
     born: born !== false, vis: born === false ? 0 : 1, emT: 0,
+    // its kind, an ITEMS key: hashed off where it came in rather than drawn
+    // from rng, so the shoal's stream is the one it always was
+    kind: hash2(Math.floor(x) * 7 + Math.floor(y), Math.floor(y) * 3 + 11) < FISH_RARE ? 'sunfish' : 'fish',
   });
 }
 

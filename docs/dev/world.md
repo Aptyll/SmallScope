@@ -579,8 +579,8 @@ world.js), so every client places them alike. A body that **rolls** over the wat
 catches it (`creekFishCatch`, run by the roll in `updatePlayer`, one winner through `contest()`):
 it goes into the pouch as `whitefish` or `snowChar`, and its place swims back `CREEK_FISH_BACK`
 seconds later (`state.creekGone`, index to the `windT` it returns at, in `SNAP_STATE` and the
-save). Walking in is a plunge, so a roll is the only way to them. They are not the `fish` a hole
-or a net gives up, and the practice field has none.
+save). Walking in is a plunge, so a roll is the only way to them. They are not the frost pike and
+gold sunfish a hole or a net gives up, and the practice field has none.
 
 Verified on seeds 42, 7 and 1234 across the shapes: every ford runs bank to bank with open ground
 at both ends; the two junctions reach each other and every camp from both halves; a route across
@@ -1235,34 +1235,41 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   a position that would poke the body into snow is never committed. That clamp is **axis-aligned**
   (`fishClear` probes ±margin on the four compass directions from the centre) while the drawn body
   is rotated, so a fish swimming diagonally along a shore can clip a corner of snow with its
-  nose or tail for a frame or two, at the 0.4 alpha an under-ice fish is drawn with — accepted.
-  They render as translucent silhouettes
-  through the ice — brighter and surfaced inside an open hole — in a pass right after the
-  ground blit (using `ex`/`ey`). Cracking ice spooks nearby fish into a fast dart.
+  nose or tail for a frame or two, at the faint alpha an under-ice fish is drawn with — accepted.
+  Each is a **FROST PIKE** or, one in `FISH_RARE` (0.2, js/wildlife.js), a **GOLD SUNFISH**: `f.kind`
+  (`fish` or `sunfish`) comes from `hash2` of its spawn spot inside `addFish`, so no `rng()` call
+  is added. They render in a pass right after the ground blit (using `ex`/`ey`) as a cold blue
+  **shadow** under the ice (`SPRITES.iceFish[kind].shadow`, look N: the swim sprite's shape in the under-ice ink
+  alone, solid round its rim and half as strong in its core, so a pike and a sunfish are told apart
+  by shape, never colour) at 0.42 alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's
+  tiles, so only what is in the open water shows in colour. Both are baked by
+  app/bake-fish/paint.py (16 headings, 2 tail frames). Cracking ice spooks nearby fish into a fast dart.
 - **Fishing is automatic**: `autoFish(p, dt)` (js/tools.js, called from `updatePlayer` every
   step) checks whether that player stands on an ice tile with a fish within `FISH_CATCH_R`
   (16 px); if so the fish is taken with no press — once per `FISH_AUTO_CD` (1.2 s), spending no
   tool cycle — into the `p.food` pouch, splash, no arrow, and the press on the ice
   flies like any other ([the swing tools](gameplay.md#the-swing-tools-e)). The catch is
   [contested](multiplayer.md#contested-orders), so two players can't land the same fish. **The catch is a pose**: the contest's
-  callback calls `startCatch(p)` (below `autoFish` in js/tools.js), `CATCH_T` (2 s) of three
+  callback calls `startCatch(p, kind)` (below `autoFish` in js/tools.js), `CATCH_T` (2 s) of three
   down-facing frames whatever the body faced - `CATCH_STOOP` (0.16 s) bent to the hole,
   `CATCH_HAUL` (0.22 s) with the fish coming up, then the trophy hoist over the head
   (`catchFrame(p)` says which; `drawPlayer` draws it, the held tool and gear marks off, the
   overhead stack lifted 4 px for the hoist). It is shown only by a body standing still anyway:
   a step, any other intent (a fresh press, a roll, a cast, a swing, a meal) and a hit
   through `damagePlayer` end it at once via `cancelCatch` — an automatic catch may never cost
-  the player a frame of control. A net's first fish is hoisted
+  the player a frame of control. `p.catchKind` picks the hoisted fish: a gold sunfish lifts the
+  gold `catchSun` frames, anything else the pike's `catch`. A net's first fish is hoisted
   the same way from `updateStructures`. The frames:
   [sprites](sprites.md). `DBG.startCatch`/`cancelCatch`/`catchFrame` stage it. Hovering a fish (`hoverFish()`, a 7 px disc) switches the
   cursor to the water-blue **fish** reticle and `drawFishHint()` (overlay pass, after the E
   prompt) frames it with the same pulsing brackets stumps get — white when `fishInRange()`
   holds, dimmed blue-grey outside it, and no verb: the mechanic is proximity, not aim, and the
-  brackets' brightness is the whole of that hint. Fish are food: **F** eats one for +50 HP over a 1.5 s channel a
+  brackets' brightness is the whole of that hint. Fish are food: **F** eats one over a 1.5 s channel a
   hit can break (`eatFish`, mirroring the berry's Q/+20; both meals share one 3 s clock - see
-  [Food](gameplay.md#food-the-meal-is-a-channel)), counted beside the berries on the backpack strip
-  (`SPRITES.itemFish`, 8×8, own `FIPAL`). This ICE FISH is one of three fish the fish well eats:
-  the creek's whitefish (+40) and snow char (+70) are the others ([Food](gameplay.md#food-the-meal-is-a-channel)). `SFX.splash()` is the water cue. `DBG`
+  [Food](gameplay.md#food-the-meal-is-a-channel)), counted beside the berries on the backpack strip.
+  A hole gives the frost pike (`fish`, +50, `SPRITES.itemFrostPike`) or the gold sunfish
+  (`sunfish`, +80, `SPRITES.itemSunfish`); with the creek's whitefish (+40) and snow char (+70)
+  they are the four fish the fish well eats ([Food](gameplay.md#food-the-meal-is-a-channel)). `SFX.splash()` is the water cue. `DBG`
   exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`,
   `buildSiteAt`.
 
@@ -1320,7 +1327,7 @@ still cancels.
 A finished net runs two clocks in `updateStructures`' `net` branch:
 
 - **Catching.** Any `born` fish within `NET_R` (9 px) of the tile centre is spliced out of `fish`
-  and becomes `o.fish`, capped at `NET_CAP` (3), one every `NET_CATCH_T` (2.2 s) so a net fills
+  and becomes `o.fish` (`o.sun` of them gold sunfish), capped at `NET_CAP` (3), one every `NET_CATCH_T` (2.2 s) so a net fills
   visibly instead of hoovering the pond. Fish are *drawn into* it: `nearestNet` gives every born
   fish a gentle lean toward any net inside `NET_LURE` (44 px) that still has room — that lure is
   what makes a net read as working rather than waiting on luck.
@@ -1328,9 +1335,9 @@ A finished net runs two clocks in `updateStructures`' `net` branch:
   (0.3 s) straight into their pouch — **team is never checked**. A net is a thing lying on the ice,
   not a locked chest, so an enemy standing on yours walks off with the catch. It is
   [contested](multiplayer.md#contested-orders) (`net:<idx>`) so two players over one rope cannot
-  take the same fish. Nothing can refuse a catch: fish are a pouch kind and take no bag cell.
+  take the same fish. Sunfish come out first. Nothing can refuse a catch: fish are a pouch kind and take no bag cell.
 
 Enemies break a net with **E** like any other building (`workTarget` finds the object on the tile
 and gates on `ownsStruct`); the owner demolishes it from the manage wheel. Either way
-`destroyStructure` tips what it was holding back out as `fish` drops before it goes.
+`destroyStructure` tips what it was holding back out as `sunfish` and `fish` drops before it goes.
 
