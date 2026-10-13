@@ -121,6 +121,9 @@ const SCORE_LABEL_W = 92; // px of row names down the left
 const SCORE_COL_W = 46;   // px per player column at most: a six-digit number and its air
 const SCORE_TEAM_GAP = 10; // px between the two sides
 const SCORE_FACE = 26;    // the portrait square over each column
+const SCORE_NAME = 8;     // px per line of names under the faces: two lines, the columns taking turns,
+                          // so every name has two columns' width to be printed whole in
+const SCORE_KEY_W = 104;  // px of the graph's key: a swatch, a full name and the player's last value
 const SCORE_ROW = 10;     // px per stat row
 const SCORE_HEAD = 11;    // px per group heading, and the 2 under a group
 // a number in a column: whole up to 99999, past that its magnitude (shortNum,
@@ -128,6 +131,13 @@ const SCORE_HEAD = 11;    // px per group heading, and the 2 under a group
 function scoreFmt(n) {
   n = Math.round(n || 0);
   return n >= 100000 ? shortNum(n) : String(n);
+}
+// a name cut to what fits in w px (it only ever bites on a view narrowed
+// below the columns' full width: two columns hold the longest name there is)
+function scoreName(nm, w) {
+  nm = String(nm || '');
+  const n = Math.max(1, Math.floor((w + 1) / 4));
+  return nm.length > n ? nm.slice(0, n) : nm;
 }
 function scoreVal(r, row) {
   return row.key === 'dealt' ? r.dmg + r.bird + r.struct + r.beast : r[row.key] || 0;
@@ -186,14 +196,20 @@ function scoresLayout() {
   const L = { x, w, cols, colW, face, headY: 10, tabsY: 30, ruleY: 40, faceY: 46 };
   L.colX = cols.map((r, i) => x + SCORE_LABEL_W + i * colW + (i >= nMine ? gap : 0));
   L.wordY = VIEW_H - 24;
-  L.body = { x, y: L.faceY + face + 6, w, h: 0 };
+  L.nameY = L.faceY + face + 4;
+  L.body = { x, y: L.nameY + SCORE_NAME * 2 + 3, w, h: 0 };
   L.body.h = Math.max(20, L.wordY - 8 - L.body.y);
   // the stats' own height, every open group at full length
   let h = 0;
   for (const g of SCORE_GROUPS) h += SCORE_HEAD + (scores.shut[g.head] ? 0 : g.rows.length * SCORE_ROW) + 2;
   L.contentH = h;
   L.maxScroll = Math.max(0, h - L.body.h);
-  L.graph = { x, y: L.tabsY + 22, w, h: Math.max(40, L.wordY - 12 - (L.tabsY + 22)) };
+  // the graph takes the width the key leaves it; the key lists every player
+  // down the right, your side first, at the graph's own top
+  const gy = L.tabsY + 22, gh = Math.max(40, L.wordY - 12 - gy);
+  L.graph = { x, y: gy, w: Math.max(80, w - SCORE_KEY_W - 8), h: gh };
+  L.key = { x: x + w - SCORE_KEY_W, y: gy, w: SCORE_KEY_W };
+  L.keyRows = cols.map((r, i) => ({ x: L.key.x, y: gy + 2 + i * 10 + (i >= nMine ? 6 : 0), w: SCORE_KEY_W, h: 9 }));
   // the page words, top left, and the graph's two under the rule on its page
   let tx = x;
   L.tabs = ['STATS', 'GRAPHS'].map((label) => { const r = { label, x: tx, y: L.tabsY, w: pixelTextWidth(label), h: 7 }; tx += r.w + 14; return r; });
@@ -242,8 +258,8 @@ function scoresBack() {
   SFX.pickup();
 }
 
-// what the pointer is on: a page word, a graph word, a group heading, a row,
-// a face, a way out, or nothing. The screen has to have arrived first - a
+// what the pointer is on: a page word, a graph word or key row, a group heading,
+// a row, a way out, or nothing. The screen has to have arrived first - a
 // control that is still fading in is not a control yet.
 function scoresHit() {
   if (scores.t < SCORE_IN) return null;
@@ -254,10 +270,8 @@ function scoresHit() {
   for (let i = 0; i < L.words.length; i++) if (inR(L.words[i], 2)) return { kind: 'word', i };
   if (scores.page === 1) {
     for (let i = 0; i < L.gtabs.length; i++) if (inR(L.gtabs[i], 3)) return { kind: 'tab', i };
+    for (let i = 0; i < L.keyRows.length; i++) if (inR(L.keyRows[i])) return { kind: 'key', i };
     return null;
-  }
-  for (let i = 0; i < L.cols.length; i++) {
-    if (inR({ x: L.colX[i] + ((L.colW - L.face) >> 1), y: L.faceY, w: L.face, h: L.face })) return { kind: 'face', i };
   }
   if (!inR(L.body)) return null;
   for (const ln of scoreLines(L)) {
@@ -373,7 +387,7 @@ function renderScores(now) {
   if (scores.page === 0) drawScoreStats(L, hit, fade);
   else {
     for (let i = 0; i < L.gtabs.length; i++) scoreWord(L.gtabs[i], scores.tab === i, hit && hit.kind === 'tab' && hit.i === i);
-    drawScoreGraph(L.graph, ac);
+    drawScoreGraph(L, hit, ac);
   }
 
   // --- the ways out: bare words, white, gold under the pointer or the keys
@@ -397,6 +411,10 @@ function drawScoreStats(L, hit, fade) {
     if (a <= 0) continue;
     ctx.globalAlpha = fade * a;
     drawScoreFace(L.colX[i] + ((L.colW - L.face) >> 1), L.faceY, L.face, cols[i]);
+    // the name, whole: the columns take turns between two lines, so each one
+    // is centred on its own column with two columns' width to print in
+    const nm = scoreName(cols[i].name, L.colW * 2 - 4), cx = L.colX[i] + (L.colW >> 1);
+    drawPixelText(ctx, nm, Math.round(cx - pixelTextWidth(nm) / 2), L.nameY + (i & 1) * SCORE_NAME, cols[i].you ? SC_GOLD : SC_TXT, 1);
   }
   ctx.globalAlpha = fade;
   const b = L.body;
@@ -448,40 +466,50 @@ function drawScoreStats(L, hit, fade) {
     }
     ctx.globalAlpha = fade;
   }
-  // a face under the pointer names its player, on a plate over the column
-  if (hit && hit.kind === 'face') {
-    const r = cols[hit.i], nm = r.name || '';
-    const nw = pixelTextWidth(nm) + 6, cx = L.colX[hit.i] + (L.colW >> 1);
-    const nx = Math.max(2, Math.min(VIEW_W - nw - 2, Math.round(cx - nw / 2))), ny = L.faceY + L.face + 4;
-    ctx.fillStyle = SC_INK; ctx.fillRect(nx - 1, ny - 1, nw + 2, 11);
-    ctx.fillStyle = SC_PLATE; ctx.fillRect(nx, ny, nw, 9);
-    drawPixelText(ctx, nm, nx + 3, ny + 2, r.you ? SC_GOLD : SC_LIT, 1);
-  }
 }
 
-// The graph: one cumulative line per side, summed over its players, in the
-// side's own colour, with the LEAD shaded between the two. A chart with no
-// scale is a squiggle (the merchant's own rule, js/ui/shop.js), so the top of
-// the well prints the biggest value it reaches; the match clock is in the
-// head and printed once. The dotted uprights are the match's days.
-function drawScoreGraph(r, ac) {
-  const key = scores.tab === 0 ? 'hGold' : 'hDmg';
+// The graph: one cumulative line PER PLAYER, and the key beside it naming
+// every one of them. A side's five lines are five shades of its colour, yours
+// the game's gold over all of them, and the key prints each name with its
+// swatch and where that player ended; the pointer on a key row lifts that
+// player's line and dims the rest, which is how ten lines that cross stay
+// readable. A chart with no scale is a squiggle (the merchant's own rule,
+// js/ui/shop.js), so the top of the well prints the biggest value it reaches;
+// the match clock is in the head and printed once. The dotted uprights are
+// the match's days.
+const SCORE_SHADE = [0, 0.45, -0.3, 0.75, 0.2]; // a side's five lines: toward white (+) or the dark (-)
+function scoreLineCols(cols) {
+  const seen = [0, 0];
+  return cols.map((r) => {
+    if (r.you) return SC_GOLD;
+    const mark = TEAMS[skin(r.team)].mark, f = SCORE_SHADE[seen[r.team]++ % SCORE_SHADE.length];
+    return f >= 0 ? mixHex(mark, '#ffffff', f) : mixHex(mark, SC_BG, -f);
+  });
+}
+function drawScoreGraph(L, hit, ac) {
+  const r = L.graph, key = scores.tab === 0 ? 'hGold' : 'hDmg';
   ctx.fillStyle = SC_WELL;
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = SC_RULE;
   ctx.fillRect(r.x, r.y, r.w, 1);
   ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1);
   if (!matchStats) return;
-  const mine = player ? player.team : 0;
-  const sides = [mine, 1 - mine].map((t) => {
-    const rows = matchStats.rows.filter((q) => q.team === t);
-    let n = 0;
-    for (const q of rows) n = Math.max(n, q[key].length);
-    const sum = new Array(n).fill(0);
-    for (const q of rows) { const h = q[key]; for (let i = 0; i < n; i++) sum[i] += h[i] === undefined ? (h.length ? h[h.length - 1] : 0) : h[i]; }
-    return { t, sum };
-  });
-  const n = Math.max(sides[0].sum.length, sides[1].sum.length);
+  const cols = L.cols, lc = scoreLineCols(cols);
+  const pick = hit && hit.kind === 'key' ? hit.i : -1;
+  let n = 0, hi = 1;
+  for (const q of cols) { n = Math.max(n, q[key].length); for (const v of q[key]) hi = Math.max(hi, v); }
+  // the key: every player, your side first, a gap, the rivals
+  for (let i = 0; i < cols.length; i++) {
+    const q = cols[i], k = L.keyRows[i], h = q[key];
+    const on = pick === i;
+    if (on) { ctx.fillStyle = SC_HOT; ctx.fillRect(k.x, k.y - 1, k.w, k.h + 1); }
+    ctx.globalAlpha = pick >= 0 && !on ? 0.5 : 1;
+    ctx.fillStyle = lc[i]; ctx.fillRect(k.x + 2, k.y + 3, 6, 2);
+    const v = scoreFmt(h.length ? h[h.length - 1] : 0), vw = pixelTextWidth(v);
+    drawPixelText(ctx, scoreName(q.name, k.w - 16 - vw - 4), k.x + 12, k.y + 1, q.you ? SC_GOLD : on ? SC_LIT : SC_TXT, 1);
+    drawPixelText(ctx, v, k.x + k.w - 2 - vw, k.y + 1, on ? SC_LIT : SC_LBL, 1);
+    ctx.globalAlpha = 1;
+  }
   // a match shorter than one sample has nothing to draw: say so with the
   // empty well rather than with a sentence
   if (n < 2) {
@@ -489,8 +517,6 @@ function drawScoreGraph(r, ac) {
     ctx.fillRect(r.x + 4, r.y + (r.h >> 1), r.w - 8, 1);
     return;
   }
-  let hi = 1;
-  for (const s of sides) for (const v of s.sum) hi = Math.max(hi, v);
   // x = 0 is the drop, which every series starts from at zero, so the line
   // leaves the corner rather than the first sample's height
   const px = (i) => r.x + 1 + Math.round(i / n * (r.w - 3));
@@ -502,38 +528,25 @@ function drawScoreGraph(r, ac) {
     const gx = r.x + Math.round(d * CYCLE / span * (r.w - 1));
     for (let y = r.y + 1; y < r.y + r.h - 1; y += 3) ctx.fillRect(gx, y, 1, 2);
   }
-  // THE LEAD, shaded between the two lines in the colour of whoever is ahead
-  // at that moment. Two cumulative totals nest - the trailing side's area is
-  // inside the leading side's - so filling under each one just fills the well;
-  // what a reader wants off this graph is the GAP and when it opened, which is
-  // the band itself. The lines keep the absolute totals readable over it.
-  const at = (s, i) => (i === 0 ? 0 : s.sum[Math.min(i - 1, s.sum.length - 1)]);
-  ctx.globalAlpha = 0.3;
-  for (let i = 0; i <= n; i++) {
-    const a = at(sides[0], i), b = at(sides[1], i);
-    if (a === b) continue;
-    const ya = py(a), yb = py(b);
-    ctx.fillStyle = TEAMS[skin(a > b ? sides[0].t : sides[1].t)].mark;
-    ctx.fillRect(px(i), Math.min(ya, yb), 1, Math.abs(ya - yb) + 1);
-  }
-  ctx.globalAlpha = 1;
-  // the rival's line first, so your own side's is the one on top where they cross
-  for (const s of [sides[1], sides[0]]) {
-    const col = TEAMS[skin(s.t)].mark;
-    ctx.fillStyle = col;
+  // the rivals first, then your side, then you, then the picked line over all
+  const order = cols.map((q, i) => i).sort((a, b) => (cols[a].team === cols[0].team) - (cols[b].team === cols[0].team) || cols[a].you - cols[b].you);
+  if (pick >= 0) { order.splice(order.indexOf(pick), 1); order.push(pick); }
+  for (const i of order) {
+    const h = cols[i][key];
+    const at = (j) => (j === 0 ? 0 : h.length ? h[Math.min(j - 1, h.length - 1)] : 0);
+    ctx.globalAlpha = pick >= 0 && pick !== i ? 0.25 : 1;
+    ctx.fillStyle = lc[i];
     let lx = px(0), ly = py(0);
-    for (let i = 1; i <= n; i++) {
-      const x = px(i), y = py(at(s, i));
+    for (let j = 1; j <= n; j++) {
+      const x = px(j), y = py(at(j));
       const y0 = Math.min(ly, y), y1 = Math.max(ly, y);
       ctx.fillRect(x, y0, 1, y1 - y0 + 1);
       if (x > lx + 1) ctx.fillRect(lx, ly, x - lx, 1);
       lx = x; ly = y;
     }
-    // the head of the line, so which side ended where reads without counting
-    // (a cross for the rival's under a colour-blind palette, as on the minimap)
-    drawMapUnit(ctx, lx, ly, col, SC_LIT, 1, true, foeCue(s.t));
   }
+  ctx.globalAlpha = 1;
   // the scale, and nothing else: the match clock is already in the head, and
   // a fact printed twice is a fact that drifts in one of the two places
-  drawPixelTextShadow(ctx, String(hi), r.x + 3, r.y + 3, ac.txt, SC_WELL, 1);
+  drawPixelTextShadow(ctx, scoreFmt(hi), r.x + 3, r.y + 3, ac.txt, SC_WELL, 1);
 }
