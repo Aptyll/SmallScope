@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.439';
+const PATCH_TXT = 'PATCH 0.440';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.440', 'THE EAGLE RIDE OPENS TIGHT ON YOU AND PULLS OUT, ONLY YOUR NAME RIDES THE WING UNDER A GOLD ARROW, THE FLIGHT BAR IS GRAPHITE WITH A GOLD JUMP WINDOW AND A REAL KEY, THE ROOST TOUR SAYS ATTACK THEIR EAGLE AND PROTECT YOUR EAGLE IN BIG LETTERS, AND YOU HOP OFF WITH E OR JUST BY WALKING.'],
   ['0.439', 'EVERY ANIMAL AND CAMP KEEPS UP WITH THE AVERAGE PLAYER LEVEL: AN UNHURT BEAST TAKES THE NEW LEVEL AS SOON AS THE TABLE GAINS ONE, NOT ONLY WHEN IT RESPAWNS.'],
   ['0.438', 'THE FISH PICKER GROWS OUT OF THE BOTTOM BAR AS ONE PIECE WITH IT, AND THE NAME OF THE FISH UNDER YOUR POINTER STANDS OVER ITS TOP.'],
   ['0.437', 'THE FISH PICKER RISES AS A COLUMN STRAIGHT UP OFF THE FISH WELL, THE ICE FISH NEAREST IT, WITH THE NAME AND HEAL OF THE FISH UNDER YOUR POINTER BESIDE IT.'],
@@ -1285,6 +1286,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE EAGLE RIDE OPENS ON YOU, WITH A GOLD JUMP WINDOW AND A REAL KEY', '0.440'],
     ['PERCH FLIES IN ITS NEW LOOK, TUCKING TO DIVE AND FLARING TO LAND', '0.434'],
     ['ROLL OVER A FISH IN THE CREEK TO CATCH IT', '0.433'],
     ['THE MARKET BUYS AND SELLS EVERY KIND OF FISH', '0.435'],
