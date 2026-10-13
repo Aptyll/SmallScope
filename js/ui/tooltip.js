@@ -152,7 +152,7 @@ function tipStack(s) {
   }
   if (ITEMS[s.type] && ITEMS[s.type].heal) {
     const heal = Math.round(ITEMS[s.type].heal * kitOf(player).foodMul);
-    const d = tipBase(s.type, s.type === 'berry' ? 'BERRIES' : 'FISH', 'FOOD');
+    const d = tipBase(s.type, ITEMS[s.type].name || 'BERRIES', 'FOOD');
     d.tcol = RES_COLORS[s.type];
     d.rows.push(['HEALS', '+' + heal, '#8fe08a']);
     // the two halves of a meal, said the way an ability well says them: how
@@ -344,6 +344,7 @@ function tipAt(mx, my) {
   if (sh && sh.kind === 'ab') return tipClassAb(sh.i);
   // a meal button describes the meal it eats - the bag cell's own food
   // descriptor, so the two surfaces can never disagree about a berry
+  if (sh && (sh.kind === 'fishPick' || sh.kind === 'fishPop' || (sh.kind === 'food' && FOOD_BTNS[sh.i].type === 'fish'))) return null; // the picker says it (drawFishPop)
   if (sh && sh.kind === 'food') {
     const type = FOOD_BTNS[sh.i].type;
     return tipStack({ type, n: bagCount(player, type) });

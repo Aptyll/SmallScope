@@ -571,11 +571,16 @@ at each corner, three pilings upstream) with the water coming out from under it 
 ford tile's snow-capped stone (`paintFordStone`) with foam heaped on its upstream side. Both maps
 ink the creek as open water and its fords as gaps. `drawCreekFlow`, right after the ground blit,
 drifts a couple of glints per tile of open creek downstream every frame on the field's clock
-(`windT`), so `DBG.step` and the wire's echo reproduce it. `drawCreekFish`, right after it, swims
-a fish every `SWIM_GAP` tiles of creek downstream under the water, now and then out of sight and
-back, hidden under the deck and over a ford. They are a picture only: not the `fish` a hole or a
-net gives up, nothing in the sim knows of them, and each is a pure function of its index and
-`windT`, so every client draws the same ones.
+(`windT`), so `DBG.step` and the wire's echo reproduce it. Under those glints (`drawCreekFish`,
+drawn just before them) a LAKE WHITEFISH or a SNOW CHAR (`CREEK_FISH_CHAR` of them) swims
+downstream every `CREEK_FISH_GAP` tiles of creek, now and then down out of sight and back, under
+the deck and never over a ford. Each is a pure function of its index and `windT` (`creekFishAt`,
+world.js), so every client places them alike. A body that **rolls** over the water onto one
+catches it (`creekFishCatch`, run by the roll in `updatePlayer`, one winner through `contest()`):
+it goes into the pouch as `whitefish` or `snowChar`, and its place swims back `CREEK_FISH_BACK`
+seconds later (`state.creekGone`, index to the `windT` it returns at, in `SNAP_STATE` and the
+save). Walking in is a plunge, so a roll is the only way to them. They are not the `fish` a hole
+or a net gives up, and the practice field has none.
 
 Verified on seeds 42, 7 and 1234 across the shapes: every ford runs bank to bank with open ground
 at both ends; the two junctions reach each other and every camp from both halves; a route across
@@ -1256,7 +1261,8 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   brackets' brightness is the whole of that hint. Fish are food: **F** eats one for +50 HP over a 1.5 s channel a
   hit can break (`eatFish`, mirroring the berry's Q/+20; both meals share one 3 s clock - see
   [Food](gameplay.md#food-the-meal-is-a-channel)), counted beside the berries on the backpack strip
-  (`SPRITES.itemFish`, 8×8, own `FIPAL`). `SFX.splash()` is the water cue. `DBG`
+  (`SPRITES.itemFish`, 8×8, own `FIPAL`). This ICE FISH is one of three fish the fish well eats:
+  the creek's whitefish (+40) and snow char (+70) are the others ([Food](gameplay.md#food-the-meal-is-a-channel)). `SFX.splash()` is the water cue. `DBG`
   exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`,
   `buildSiteAt`.
 

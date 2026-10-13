@@ -153,9 +153,10 @@ entity draw code must use `ex`/`ey`.
 `render()` (js/draw/render.js) runs, in order. **World space** (`ctx = wctx`):
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](#cast-shadows)) →
-   ground blit → **the creek's current** (`drawCreekFlow`, js/draw/ground.js: glints drifting
-   downstream over the still water the bake laid, on the field's clock) → **the creek's fish**
-   (`drawCreekFish`, the same file: decoration swimming downstream, not the sim's `fish`) → under-ice fish →
+   ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: whitefish and snow char under the
+   water, at `SWIM_A` alpha with a rim in the water's own shade) → **the creek's current**
+   (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
+   and over the fish, on the field's clock) → under-ice fish →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
@@ -858,6 +859,11 @@ still up, full health, a busy body), the asked well takes the red band and 1px s
 `foodFlash` seconds — `foodDenied(type)`, aged in `updateFx` beside `bagDenied()`/`toolDenied()`.
 The shared food clock (`drawFoodClock`) sweeps both together and lifts the one being chewed
 white. A meal you have none of keeps its seat but dims to 0.35, so the pair never rearranges.
+The fish well shows the fish F will eat next (`fishToEat`) and, with nothing picked, the count of
+all three. Pointing at it raises the **fish picker** (`drawFishPop`): the three fish in ability-size
+wells over the strip's right end, above the buy plates' row, each with its count; the hovered one's
+name in its colour and its `+heal` stand over the row, the picked one wears a gold rim and the
+others dim. The bake grows by `fishPopHeadroom()` while it is up.
 The **purse** under them (`drawGoldCell`, `goldCellRect`) is the coin and the gold, centred, in
 the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
 over it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD

@@ -121,6 +121,7 @@ const state = {
   end: null, defeatT: 0,
   msg: null, msgT: 0,
   fishT: FISH_SPAWN_T, // countdown to the next fish swimming in (see updateFish)
+  creekGone: {}, // the creek's caught fish: index -> the windT it swims back at (creekFishAt, js/world.js)
   loc: null,     // the named place the local player is standing in: { L, t }
   dayPop: null,  // the dawn headline, top centre: { day, t } - set by each dawn and the landing (js/sim.js), drawn by renderUI
   paused: false,
@@ -523,7 +524,16 @@ function startEat(p, type) {
 // two names because Q and F are two keys and two meals, even though one clock
 // now covers both
 function eatBerry(p) { startEat(p, 'berry'); }
-function eatFish(p) { startEat(p, 'fish'); }
+function eatFish(p) { startEat(p, fishToEat(p)); }
+// which fish the fish key eats: the picked kind, or with none picked the
+// first FISH_KINDS kind in the pouch (the smallest meal first). A pick you
+// hold none of is still the answer, so the press is refused rather than
+// eating the fish you were saving.
+function fishToEat(p) {
+  if (p.fishPick) return p.fishPick;
+  for (const k of FISH_KINDS) if (bagCount(p, k) > 0) return k;
+  return FISH_KINDS[0];
+}
 
 // how many unopened cards the pouch holds, all rarities together
 function cardsHeld(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
