@@ -1,6 +1,7 @@
 'use strict';
-// The war eagles: the drop bird's first cosmetic skins. Five
-// armoured birds (GREAT HELM, BEAK GUARD, HORNED, CRESTED, IRONCLAD), each
+// The war eagles: the drop bird's first cosmetic skins. Four
+// armoured birds (GREAT HELM, BEAK GUARD, HORNED, CRESTED; IRONCLAD and the
+// classic are Perch's own look, js/sprites/perch.js), each
 // PAINTED IN CODE rather than typed as grids: flat plates in bird space
 // (x forward, y toward the right wing, z up, units = world px at the roost),
 // seen from above and cel-shaded, one tone per plate, then shrunk to whole
@@ -31,7 +32,6 @@
   const METAL = {
     steel:  ramp('#464b62', '#7a869e', '#afbbcd', '#eaf0f8'),
     bronze: ramp('#553620', '#8a5c2e', '#bd8a44', '#eecb78'),
-    iron:   ramp('#2f3342', '#505870', '#7c869c', '#b8c2d2'),
   };
   const COMMON = {
     beak:  ramp('#7c5a1a', '#c8962c', '#eec246', '#fae696'),
@@ -50,7 +50,6 @@
     beak: { plume: 'slate', metal: 'steel', helm: 'beakguard', crown: 'plume', armour: 'edge', team: null, whitetail: true },
     horned: { plume: 'gold', metal: 'bronze', helm: 'grille', crown: 'horns', armour: 'pauldron', team: 'straps' },
     crested: { plume: 'char', metal: 'bronze', helm: 'slit', crown: 'fin', armour: 'edge', team: null },
-    ironclad: { plume: 'slate', metal: 'iron', helm: 'glow', crown: null, armour: 'lames', team: 'plate' },
   };
   const MERCH_SEAT_WAR = [3, 0];
 
@@ -60,7 +59,6 @@
       plume: PLUME[cfg.plume], cov: LIGHTER[cfg.plume], metal: METAL[cfg.metal],
       tail: cfg.whitetail ? COMMON.white : PLUME[cfg.plume],
       team: ramp(T.fit, T.coatD, T.coat, T.coatL),
-      glow: ramp(T.coatD, T.mark, T.glow, T.trim),
     });
   }
 
@@ -96,12 +94,8 @@
     W.push(P([[7, 34, Z + 1], [4, 45, Z + 1], [-2, 46, Z + 1], [-7, 42, Z + 1], [-8, 38, Z + 1], [-3, 34, Z + 1]], 'cov', 1.6, 1));
     W.push(P([[6, 7, Z + 2], [9.5, 18, Z + 2], [10, 30, Z + 2], [7.5, 38, Z + 2], [4, 45, Z + 2], [1.5, 43, Z + 2], [3, 36, Z + 2], [3, 24, Z + 2], [1, 7, Z + 2]],
       'cov', 1.8, 2, { shine: true }));
-    if (cfg.armour === 'pauldron' || cfg.armour === 'lames') {
-      const n = cfg.armour === 'pauldron' ? 1 : 3;
-      for (let k = 0; k < n; k++) {
-        const y0 = 7 + k * 8.5;
-        W.push(P([[8.5, y0, Z + 3 + k * 0.1], [10.5, y0 + 10, Z + 3], [6, y0 + 12, Z + 3], [-2, y0 + 11, Z + 3], [-3, y0, Z + 3]], 'metal', 2 + k * 0.01, k === 0 ? 2 : 1, { shine: true }));
-      }
+    if (cfg.armour === 'pauldron') {
+      W.push(P([[8.5, 7, Z + 3], [10.5, 17, Z + 3], [6, 19, Z + 3], [-2, 18, Z + 3], [-3, 7, Z + 3]], 'metal', 2, 2, { shine: true }));
       W.push(PX(4, 11, Z + 4, 'metal', 3, 2.1));
     }
     if (cfg.armour === 'edge') {
@@ -146,7 +140,7 @@
             H.push(P([o(g0[0], g0[1], za + 0.4), o(g1[0], g1[1], za + 0.4), o(g1[0], g1[1], zb2 - 0.4), o(g0[0], g0[1], zb2 - 0.4)], 'slit', 5.2, 0, { cull, keep: true }));
           }
         } else {
-          H.push(P([o(x0, y0, za), o(x1, y1, za), o(x1, y1, zb2), o(x0, y0, zb2)], h === 'glow' ? 'glow' : 'slit', 5.2, h === 'glow' ? 2 : 0, { cull, keep: true }));
+          H.push(P([o(x0, y0, za), o(x1, y1, za), o(x1, y1, zb2), o(x0, y0, zb2)], 'slit', 5.2, 0, { cull, keep: true }));
         }
       }
     }
@@ -177,10 +171,6 @@
       B.push(P([[7, -12, 6], [7, 12, 6], [-12, 13, 6], [-15, 0, 6], [-12, -13, 6]], 'team', 3.5, 1));
       B.push(P([[6, -10, 6.2], [6, 10, 6.2], [-4, 11, 6.2], [-4, -11, 6.2]], 'team', 3.51, 2, { line: false }));
       B.push(P([[-12, -13, 6.3], [-15, 0, 6.3], [-12, 13, 6.3], [-13, 13, 6.3], [-16.4, 0, 6.3], [-13, -13, 6.3]], 'metal', 3.52, 2));
-    } else if (cfg.team === 'plate') {
-      B.push(P([[9, -10, 6], [9, 10, 6], [-8, 12, 6], [-14, 6, 6], [-14, -6, 6], [-8, -12, 6]], 'metal', 3.5, 1, { shine: true }));
-      B.push(P([[7.5, -8.5, 6.2], [7.5, 8.5, 6.2], [-7.5, 10.4, 6.2], [-12.5, 5.2, 6.2], [-12.5, -5.2, 6.2], [-7.5, -10.4, 6.2]], 'team', 3.51, 2));
-      B.push(P([[7.5, -8.5, 6.3], [7.5, 8.5, 6.3], [0, 9.5, 6.3], [0, -9.5, 6.3]], 'team', 3.52, 3, { line: false }));
     } else if (cfg.team === 'straps') {
       for (const s of [-1, 1]) B.push(P([[10, s * 9, 6], [12, s * 6, 6], [-10, -s * 9, 6], [-12, -s * 6, 6]], 'strap', 3.5, 1, { keep: true }));
       B.push(P(circle(-1, 0, 6.5, 12).map(([x, y]) => [x, y, 6]), 'team', 3.55, 2));

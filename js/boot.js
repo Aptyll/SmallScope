@@ -70,7 +70,6 @@ const LANE_MAX = 60;        // tiles the spur may run at most (the nest is ROAD_
 const TRAIL_T = 1.1;        // s of flight a ribbon reaches back
 const TRAIL_STEP = 6;       // px between the ribbon's samples along the line
 const TRAIL_RIM = 'rgba(40,60,100,0.6)'; // the dark line under the ribbon: white air over white snow needs a rim, like the text does
-const MERCH_SEAT = [8, 0];  // where the merchant sits in flight: on the neck, ahead of the back seat (EAGLE_SEATS' frame)
 const FALL_T = 1.3;         // seconds of free fall
 const DRIFT_SPD = 130;      // px/s a faller steers sideways with WASD (~10 tiles over the fall)
 const DROP_ALT = 56;        // screen px between the bird / a faller and its shadow
@@ -138,9 +137,10 @@ const BOOM_STUMP_R2 = 6.0;  // ...and the OUTER ring beyond that - two layers, s
 const BOOM_LIFE = 0.9;      // seconds the impact shockwave rings run
 // where the five riders sit, in the bird's own frame (x along the heading,
 // y across the wings, unscaled sprite px): one on its back, two on the inner
-// wings, two out on the primaries. Seat 0 is the roster's first player per team
-// - the human, on their own bird.
-const EAGLE_SEATS = [[-2, 0], [2, -11], [2, 11], [-7, -19], [-7, 19]];
+// wings, two out on the primaries - where Perch's spread wing is
+// (SPRITES.perch.seat), so a rider who jumps leaves from where it was drawn.
+// Seat 0 is the roster's first player per team - the human, on their own bird.
+const EAGLE_SEATS = [[-2, 0], [2, -11], [2, 11], [0, -15.5], [0, 15.5]];
 
 // The line is FIXED: the map's one diagonal, corner to corner - there is no
 // randomness in where a team roosts. Each end sits EAGLE_END tiles inside the
@@ -1054,7 +1054,7 @@ function drawEagleTrail(e, ex, ey, S, now) {
 // a frame by tick): its level flight's stroke, then the stoop's headings and
 // its roost pose. Render only; once per bird, skin and state.
 const warBirdWarmed = new WeakMap();
-const strokeAt = (flap) => Math.floor(flap * EAGLE_BEAT_HZ * SPRITES.warBirds.STROKE_N) % SPRITES.warBirds.STROKE_N;
+const strokeAt = (flap, n) => Math.floor(flap * EAGLE_BEAT_HZ * n) % n;
 function warmWarBird(e, id) {
   const key = id + '|' + e.state;
   if (warBirdWarmed.get(e) === key) return;
@@ -1062,8 +1062,55 @@ function warmWarBird(e, id) {
   const WB = SPRITES.warBirds, t = skin(e.team);
   if (e.state === 'fly') for (let k = 0; k < WB.STROKE_N; k++) WB.warmFlight(id, t, e.heading, k);
   if (e.state === 'dive') for (let i = 0; i <= 16; i++) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.diveH0 + e.diveTurn * i / 16, fi);
-  if ((e.state === 'dive' || e.state === 'down') && !SPRITES.perchRest.has(id)) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, WB.REST);
+  if (e.state === 'dive' || e.state === 'down') for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, WB.REST);
 }
+
+// Perch's frames the same way (SPRITES.perch.warm): on its first frame in a
+// state, every frame that state will draw - level flight's stroke; the
+// stoop and the takeoff stepped a frame at a time by the same clocks
+// updateEagle runs them on (the dive's turn and shrink, the takeoff's turn,
+// climb and beats), so a frame is painted before it is shown; the roost's
+// beats. The next state's frames go on the slow queue well before it comes:
+// in flight the stoop the line's end will start (beginDive's turn onto
+// findCrashPoint), at the roost the takeoff eagleFlee would fly (away from
+// the map's centre). Render only: it reads the bird, never moves it.
+const perchWarmed = new WeakMap();
+function warmPerch(e, id) {
+  const key = id + '|' + e.state;
+  if (perchWarmed.get(e) === key) return;
+  perchWarmed.set(e, key);
+  const PR = SPRITES.perch, t = skin(e.team);
+  const both = (hd, k, sc, idle) => { PR.warm(id, t, hd, k, sc, false, idle); PR.warm(id, t, hd, k, 1, true, idle); };
+  const wrap = (a) => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
+  const stoop = (h0, turn, T0, idle) => {
+    for (let T = T0; T <= EAGLE_DIVE_T; T += 1 / 60) {
+      const u = T / EAGLE_DIVE_T;
+      both(h0 + turn * Math.min(1, u * 1.8), 'd' + Math.round(u * PR.DIVE_N), (EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * u * u) / EAGLE_REST_SCALE, idle);
+    }
+    for (let fi = 0; fi < 3; fi++) PR.warm(id, t, h0 + turn, 'r' + fi, 1, false, idle);
+  };
+  const takeoff = (from, to, T0, idle) => {
+    const turn = wrap(to - from);
+    for (let T = T0; T <= FLEE_LIFT_T + 0.5; T += 1 / 60) {
+      const u = Math.min(1, T / FLEE_LIFT_T);
+      both(from + turn * u, 'l' + perchLiftBeat(T), (EAGLE_REST_SCALE + (EAGLE_SCALE - EAGLE_REST_SCALE) * u) / EAGLE_REST_SCALE, idle);
+    }
+  };
+  if (e.state === 'fly') {
+    for (let k = 0; k <= PR.STROKE_N / 2; k++) both(e.heading, 's' + k, EAGLE_SCALE / EAGLE_REST_SCALE);
+    const end = eaglePathAt(e, 1), crash = findCrashPoint(e);
+    stoop(e.heading, wrap(Math.atan2(crash.y - end.y, crash.x - end.x) - e.heading), 0, true);
+  }
+  if (e.state === 'dive') stoop(e.diveH0, e.diveTurn, e.diveT);
+  if (e.state === 'down') {
+    for (let fi = 0; fi < 3; fi++) PR.warm(id, t, e.heading, 'r' + fi, 1);
+    const c = WORLD * TILE / 2;
+    takeoff(e.heading, Math.atan2(e.y - c, e.x - c), 0, true);
+  }
+  if (e.state === 'flee') takeoff(e.fleeFrom, e.fleeTo, e.fleeT);
+}
+// the takeoff's beat at T s into it: hard and fast, from the spread
+const perchLiftBeat = (T) => [0, 1, 2, 1][Math.floor(T * 13) % 4];
 
 // the roosting bird's pool: the match is won and lost on it, so it is the
 // biggest bar in the world. Even segments like every hp bar but big and few
@@ -1101,63 +1148,65 @@ function drawPerchBar(e, sx, bottom, now) {
 
 // one bird in its team's armour, whatever its state. In the air the sprite
 // sits at (x, y) with the shadow `alt` px below it; the dive walks that gap
-// to zero so shadow and bird meet exactly at the crash point. A war eagle
-// skin (birdSkinFor, read here only: the sim never asks) is painted at its
-// heading, so it draws unrotated.
+// to zero so shadow and bird meet exactly at the crash point. The skin it
+// wears (birdSkinFor, read here only: the sim never asks) is Perch's own look
+// (SPRITES.perch: the classic, ironclad) or a war eagle (SPRITES.warBirds);
+// both are painted at their heading, so the bird draws unrotated. Perch is
+// painted at its size too, in the pose of the moment, so it draws 1:1, its
+// shadow is its own silhouette at the roost's size, and a rider on a wing
+// rides that wing (SPRITES.perch.seat)
 function drawEagle(e, ex, ey, now) {
-  const frames = SPRITES.eagleTeam[skin(e.team)];
-  const sx = Math.round(e.x - ex), sy = Math.round(e.y - ey);
-  const WB = SPRITES.warBirds, worn = birdSkinFor(e.team), war = WB.has(worn) ? worn : null;
+  const sx = Math.round(e.x - ex), sy = Math.round(e.y - ey), t = skin(e.team);
+  const WB = SPRITES.warBirds, PR = SPRITES.perch, worn = birdSkinFor(e.team);
+  const war = !PR.has(worn) && WB.has(worn) ? worn : null, look = war ? null : PR.has(worn) ? worn : BIRD_SKINS[0].id;
   if (war) { warmWarBird(e, war); WB.tick(4); } // paint the frames it is about to need, a few ms a frame
-  const PR = SPRITES.perchRest, perch = PR.has(worn) ? worn : null; // a look that roosts landed (perch.js)
-  if (perch && e.state === 'dive') { for (let fi = 0; fi < 3; fi++) PR.warm(perch, skin(e.team), e.diveH0 + e.diveTurn, fi); PR.tick(4); }
+  else { warmPerch(e, look); PR.tick(4); }
+  const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
   if (e.state === 'fly' || e.state === 'dive') {
     const u = e.state === 'dive' ? Math.min(1, e.diveT / EAGLE_DIVE_T) : 0;
     const fall = u * u; // gravity: slow tip-over, hard finish
     const alt = DROP_ALT * (1 - fall);
     const S = EAGLE_SCALE - (EAGLE_SCALE - EAGLE_REST_SCALE) * fall; // 3x down to the roost's 2x
-    const fi = [0, 1, 2, 1][Math.floor(e.flap * EAGLE_BEAT_HZ * (4 + 9 * u)) % 4]; // wingbeats quicken into the stoop
-    // a war eagle in level flight beats its smooth stroke; the stoop beats hard
-    const level = war && e.state === 'fly', ks = level ? strokeAt(e.flap) : 0;
-    const spr = level ? WB.flight(war, skin(e.team), e.heading, ks) : war ? WB.frame(war, skin(e.team), e.heading, fi) : frames[fi];
-    // a war frame is already flight-sized (FLY): the stoop shrinks it to the roost's REST
-    const k = war ? 1 - (1 - WB.REST / WB.FLY) * fall : S, w = spr.width * k, h = spr.height * k;
     // the shadow lies on the snow at the bird's TRUE size - the roost's, not
     // the nearer-the-camera flight size - and beats with the same wings
-    const shw = war ? WB.shadow(spr) : SPRITES.eagleShadows[fi], G = war ? WB.REST / WB.FLY : EAGLE_REST_SCALE;
+    let spr, k, shw, G, seatAt, level = false, ks = 0, fi = 0;
+    if (war) {
+      fi = [0, 1, 2, 1][Math.floor(e.flap * EAGLE_BEAT_HZ * (4 + 9 * u)) % 4]; // wingbeats quicken into the stoop
+      // a war eagle in level flight beats its smooth stroke; the stoop beats hard
+      level = e.state === 'fly'; ks = level ? strokeAt(e.flap, WB.STROKE_N) : 0;
+      spr = level ? WB.flight(war, t, e.heading, ks) : WB.frame(war, t, e.heading, fi);
+      k = 1 - (1 - WB.REST / WB.FLY) * fall; // a war frame is flight-sized (FLY): the stoop shrinks it to the roost's REST
+      shw = WB.shadow(spr); G = WB.REST / WB.FLY;
+      const beat = (level ? Math.cos(2 * Math.PI * ks / WB.STROKE_N) > 0.5 : fi === 0) ? -1 : 0; // the downstroke (spread) rides the crew a pixel high
+      seatAt = (st) => [st[0] * S * hc - st[1] * S * hs, beat + st[0] * S * hs + st[1] * S * hc];
+    } else {
+      // level flight's stroke, or the stoop's pose by how far down it is
+      const key = e.state === 'fly' ? 's' + strokeAt(e.flap, PR.STROKE_N) : 'd' + Math.round(u * PR.DIVE_N), sc = S / EAGLE_REST_SCALE;
+      spr = PR.frame(look, t, e.heading, key, sc, e); k = 1;
+      shw = PR.shadow(look, t, e.heading, key, e); G = 1;
+      seatAt = (st) => PR.seat(e.heading, key, sc, st);
+    }
+    const w = spr.width * k, h = spr.height * k;
     drawEagleTrail(e, ex, ey, S, now); // before the cull: the trail hangs behind a bird already off the frame
     if (sx < -w - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + 40) return;
     const bob = e.state === 'fly' ? Math.round(Math.sin(now * 2.4 + e.team * 2.1) * 3) : 0;
-    ctx.save();
-    ctx.translate(sx + Math.round(10 * (1 - fall)), sy + alt);
-    if (!war) ctx.rotate(e.heading);
-    ctx.drawImage(shw, -Math.round(shw.width * G / 2), -Math.round(shw.height * G / 2), Math.round(shw.width * G), Math.round(shw.height * G));
-    ctx.restore();
-    ctx.save();
-    ctx.translate(sx, sy + bob);
-    if (!war) ctx.rotate(e.heading);
-    ctx.drawImage(spr, -Math.round(w / 2), -Math.round(h / 2), w, h);
-    ctx.restore();
+    const gw = Math.round(shw.width * G), gh = Math.round(shw.height * G);
+    ctx.drawImage(shw, sx + Math.round(10 * (1 - fall)) - (gw >> 1), sy + alt - (gh >> 1), gw, gh);
+    ctx.drawImage(spr, sx - Math.round(w / 2), sy + bob - Math.round(h / 2), w, h);
     // every rider seated on its wing, facing the way the bird flies, at the
     // bird's own perspective size (riderScale); the local player draws last so
-    // it is never under a teammate. A wingbeat lifts the whole crew a pixel.
-    const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
+    // it is never under a teammate
     const RS = riderScale(e), rd = riderDir(e);
-    const beat = (level ? Math.cos(2 * Math.PI * ks / WB.STROKE_N) > 0.5 : fi === 0) ? -1 : 0; // the downstroke (spread) rides high
     { // the driver first, on the neck: the team's merchant, who climbs down at the crash
-      const ms = war ? WB.merchSeat : MERCH_SEAT; // behind the war helm, not on it
-      const dx = ms[0] * S, dy = ms[1] * S;
-      const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
-      drawSeated(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS);
-      seatedName(SPRITES.merchant[skin(e.team)], rd, rx, ry, RS, 'MERCH', e.team);
+      const [dx, dy] = seatAt(war ? WB.merchSeat : PR.merchSeat); // a war eagle's behind its helm, not on it
+      drawSeated(SPRITES.merchant[t], rd, sx + dx, sy + bob + dy, RS);
+      seatedName(SPRITES.merchant[t], rd, sx + dx, sy + bob + dy, RS, 'MERCH', e.team);
     }
     for (let pass = 0; pass < 2; pass++) for (const p of players) {
       if (!p.active || !p.aboard || p.team !== e.team || (p === player) !== (pass === 1)) continue;
-      const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
-      const dx = st[0] * S, dy = st[1] * S;
-      const rx = sx + dx * hc - dy * hs, ry = sy + bob + beat + dx * hs + dy * hc;
-      drawSeated(classSet(p), rd, rx, ry, RS);
-      seatedName(classSet(p), rd, rx, ry, RS, p.name, p.team);
+      const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
+      drawSeated(classSet(p), rd, sx + dx, sy + bob + dy, RS);
+      seatedName(classSet(p), rd, sx + dx, sy + bob + dy, RS, p.name, p.team);
     }
     // where a jump right now would land: a pulsing ring under the bird -
     // only while the jump window is open and never on the scripted first flight,
@@ -1178,70 +1227,61 @@ function drawEagle(e, ex, ey, now) {
     const u = Math.min(1, e.fleeT / FLEE_LIFT_T);
     const alt = DROP_ALT * u;
     const S = EAGLE_REST_SCALE + (EAGLE_SCALE - EAGLE_REST_SCALE) * u;
-    const fi = [0, 1, 2, 1][Math.floor(e.flap * 13) % 4]; // beating for its life
-    const spr = war ? WB.frame(war, skin(e.team), e.heading, fi) : frames[fi];
-    const k = war ? WB.REST / WB.FLY + (1 - WB.REST / WB.FLY) * u : S, w = spr.width * k, h = spr.height * k;
+    const fi = perchLiftBeat(e.fleeT); // beating for its life, from the first downstroke
+    let spr, k, shw, G;
+    if (war) {
+      spr = WB.frame(war, t, e.heading, fi); k = WB.REST / WB.FLY + (1 - WB.REST / WB.FLY) * u;
+      shw = WB.shadow(spr); G = WB.REST / WB.FLY; // true size, as in flight
+    } else {
+      spr = PR.frame(look, t, e.heading, 'l' + fi, S / EAGLE_REST_SCALE, e); k = 1;
+      shw = PR.shadow(look, t, e.heading, 'l' + fi, e); G = 1;
+    }
+    const w = spr.width * k, h = spr.height * k;
     if (sx < -w - DROP_ALT - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + 40) return;
     const fade = Math.min(1, Math.max(0, (FLEE_T - e.fleeT) / 1.4));
-    const shw = war ? WB.shadow(spr) : SPRITES.eagleShadows[fi], G = war ? WB.REST / WB.FLY : EAGLE_REST_SCALE; // true size, as in flight
-    ctx.save();
-    ctx.translate(sx + Math.round(10 * u), sy + alt);
-    if (!war) ctx.rotate(e.heading);
+    const gw = Math.round(shw.width * G), gh = Math.round(shw.height * G);
     ctx.globalAlpha = 0.8 * u * fade; // the shadow returns as the ground falls away
-    ctx.drawImage(shw, -Math.round(shw.width * G / 2), -Math.round(shw.height * G / 2), Math.round(shw.width * G), Math.round(shw.height * G));
-    ctx.restore();
-    ctx.save();
-    ctx.translate(sx, sy);
-    if (!war) ctx.rotate(e.heading);
+    ctx.drawImage(shw, sx + Math.round(10 * u) - (gw >> 1), sy + alt - (gh >> 1), gw, gh);
     ctx.globalAlpha = fade;
-    ctx.drawImage(spr, -Math.round(w / 2), -Math.round(h / 2), w, h);
-    ctx.restore();
+    ctx.drawImage(spr, sx - Math.round(w / 2), sy - Math.round(h / 2), w, h);
     ctx.globalAlpha = 1;
   } else if (e.state === 'down') {
     // the roosting objective. The landing is a landing, not a wound - the
     // bird folds its wings over EAGLE_SETTLE_T and sits there breathing;
-    // wings thrown back open (frame 0) are the gust's telegraph.
-    const S = EAGLE_REST_SCALE;
+    // wings thrown open and raised (beat 0) are the gust's telegraph.
     const winding = e.windT > 0;
-    // the idle's wing shuffle rides the MID frame only, in the middle beats
-    // of RUFFLE_T (fold - shuffle - fold): the full spread stays the gust's
+    // the idle's wing shuffle rides the MID beat only, in the middle of
+    // RUFFLE_T (fold - shuffle - fold): the full spread stays the gust's
     const ruffling = !winding && e.ruffleT > RUFFLE_T * 0.25 && e.ruffleT < RUFFLE_T * 0.75;
     const fi = e.restT < EAGLE_SETTLE_T
       ? Math.min(2, Math.floor(e.restT / EAGLE_SETTLE_T * 3)) : (winding ? 0 : (ruffling ? 1 : 2));
-    // a roosting look (perch.js) sits landed, painted at its heading; a war
-    // eagle roosts as its flight frame painted at REST (today's bird's
-    // footprint); either draws unrotated. Today's bird is laid flat and turned
-    const spr = perch ? PR.frame(perch, skin(e.team), e.heading, fi) : war ? WB.frame(war, skin(e.team), e.heading, fi, WB.REST) : frames[fi];
-    const flat = perch || war;
-    const w = flat ? spr.width : spr.width * S, h = flat ? spr.height : spr.height * S;
+    // Perch sits landed, painted at its heading; a war eagle roosts as its
+    // flight frame painted at REST (the roost's footprint)
+    const spr = war ? WB.frame(war, t, e.heading, fi, WB.REST) : PR.frame(look, t, e.heading, 'r' + fi, 1, e);
+    const seatAt = war ? (st) => [st[0] * EAGLE_REST_SCALE * hc - st[1] * EAGLE_REST_SCALE * hs, st[0] * EAGLE_REST_SCALE * hs + st[1] * EAGLE_REST_SCALE * hc]
+      : (st) => PR.seat(e.heading, 'r' + fi, 1, st);
+    const w = spr.width, h = spr.height;
     if (sx > -w - 70 && sy > -h - 70 && sx < WV_W + w + 70 && sy < WV_H + h + 70) {
       // no cast shadow at rest: the bird is ON the ground, and a dark copy
       // under it read as a second bird
       const breath = winding ? -2 : (ruffling ? -1 : (e.restT >= EAGLE_SETTLE_T ? Math.round(Math.sin(now * 1.5 + e.team * 2.1)) : 0));
-      ctx.save();
-      ctx.translate(sx, sy + breath);
-      if (!flat) ctx.rotate(e.heading);
-      ctx.drawImage(spr, -Math.round(w / 2), -Math.round(h / 2), w, h);
+      ctx.drawImage(spr, sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
       if (e.flash > 0) {
         ctx.globalAlpha = Math.min(1, e.flash * 7);
-        ctx.drawImage(flat ? WB.flash(spr) : SPRITES.eagleFlash, -Math.round(w / 2), -Math.round(h / 2), w, h);
+        ctx.drawImage(WB.flash(spr), sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
         ctx.globalAlpha = 1;
       }
-      ctx.restore();
       // whoever rode the landing, still seated - world-sized now, the bird at
       // rest is just a big bird - breathing with it, facing where it points
       // (the local player: their first ground is this bird's back), with the
       // gold landing ring pulsing under the bird once the brief has handed
       // back - the flight's own "a jump lands here" mark, now for the hop
-      const hc = Math.cos(e.heading), hs = Math.sin(e.heading);
       const rd = riderDir(e);
       for (const p of players) {
         if (!p.active || !p.aboard || p.team !== e.team) continue;
-        const st = EAGLE_SEATS[p.seat % EAGLE_SEATS.length];
-        const dx = st[0] * S, dy = st[1] * S;
-        const rx = sx + dx * hc - dy * hs, ry = sy + breath + dx * hs + dy * hc;
-        drawSeated(classSet(p), rd, rx, ry, 1);
-        seatedName(classSet(p), rd, rx, ry, 1, p.name, p.team);
+        const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
+        drawSeated(classSet(p), rd, sx + dx, sy + breath + dy, 1);
+        seatedName(classSet(p), rd, sx + dx, sy + breath + dy, 1, p.name, p.team);
       }
       if (player.aboard && player.team === e.team && state.mode === 'play' && !state.dropBrief) {
         const ph = (now * 1.2) % 1;
@@ -1257,7 +1297,7 @@ function drawEagle(e, ex, ey, now) {
       // drawMerchant): the side's two named bodies, named the same way.
       // Anchored to the bird's rotated extent, not the unrotated box, so it
       // hugs the sprite whatever way the dive left it pointing.
-      const vh = flat ? WB.reach(spr).up : Math.abs(w / 2 * Math.sin(e.heading)) + Math.abs(h / 2 * Math.cos(e.heading));
+      const vh = WB.reach(spr).up;
       // in even health segments like every hp bar, but big and few: the
       // objective's bar reads from across the clearing, so PERCH_BAR_SEGS
       // is set here rather than asked of hpSegCount (which would split

@@ -438,7 +438,7 @@ map markers, death bursts and the eagles' armour.
 
 **The paint is per screen, the team is not.** Every colour lookup goes through
 `skin(team)` (js/player.js) — `TEAMS[skin(p.team)]`, `SPRITES.champ[cls][skin(team)]`,
-`eagleTeam`/`teamBuild`/`robotTeam`/`merchant[skin(...)]`, the two maps' eagle marks — and with
+`teamBuild`/`robotTeam`/`merchant[skin(...)]`, the birds' `SPRITES.perch`/`warBirds` frames, the two maps' eagle marks — and with
 `settings.teamBlue` (the default, the ESC menu's MY TEAM row) it returns the BLUE preset for the
 local player's side and RED for the rival side whatever indices the roster dealt, so allies are
 always blue and enemies always red on your screen (a second human on the other team would see the

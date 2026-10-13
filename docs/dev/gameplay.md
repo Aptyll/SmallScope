@@ -2982,7 +2982,7 @@ sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#b
 ### The merchant
 
 Each eagle is **driven** by its team's merchant — the old trader in the wide fur hat with the
-team-cloth crown and the white beard, seated on the bird's neck in flight (`MERCH_SEAT`, `drawEagle`; the look is
+team-cloth crown and the white beard, seated on the bird's neck in flight (`SPRITES.perch.merchSeat`, `drawEagle`; the look is
 [sprites.md](sprites.md)'s own 16 × 18 grids, built so it never reads as a player on either side,
 with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; the bird wears `PERCH`) — who climbs
 down the moment it roosts (`spawnMerchant`, called
