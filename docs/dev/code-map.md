@@ -758,7 +758,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the fish/berry market: the walk, the shocks, the rails, the three-day history, and the market's own rng stream | `GOODS`, `MKT_STEP`/`MKT_DAYS`/`MKT_HIST`/`MKT_REVERT`/`MKT_NEWS`, `mktRng`, `market`, `goodOf`/`goodScale`/`goodName` (every fish rides the fish market, priced by its heal), `marketPrice`, `marketHist`, `marketWalk`, `initMarket` (called from boot.js), `updateMarket` (called once a step from `updatePlay`, sim.js) | `market` |
+| the fish/berry market: the walk, the shocks, the rails, the three-day history, and the market's own rng stream | `GOODS`, `MKT_STEP`/`MKT_DAYS`/`MKT_HIST`/`MKT_REVERT`/`MKT_NEWS`, `mktRng`, `market` (`market.step`: the moves since the match began), `marketNow` (the market clock in moves, the graphs' right edge), `goodOf`/`goodScale`/`goodName` (every fish rides the fish market, priced by its heal), `marketPrice`, `marketHist`, `marketWalk`, `initMarket` (called from boot.js), `updateMarket` (called once a step from `updatePlay`, sim.js) | `market` |
+| the ledger: every good a body bought or sold, pinned to the move and the coin it changed hands at (the MARKET page's markers) | `marketLog` (from `shopTrade`, `shopSell`, `shopSellAll`), `MKT_TRADES`, `p.trades` (js/player.js) | `market` |
 | a price move worth telling everyone about | `marketNews` (the good's own `news` gold floor beside `MKT_NEWS`) | `market` (the log line: `logEvent`'s colour override, js/ui/panels.js; the plate: `raiseNotice`, below; the cue: `SFX.market`, audio.js) |
 | the plates top-right under the minimap - the market's, the roost's and the stat sheet's: raising one, ageing it, where it sits, its pixels | `NOTE_MAX`/`NOTE_LIFE`/`NOTE_IN`/`NOTE_FLASH`/`NOTE_WASH`/`NOTE_OUT`/`NOTE_SLIDE`/`NOTE_FR`/`NOTE_W`/`NOTE_H`/`NOTE_AIR`/`NOTE_GAP`, `NOTE_KIND` (the palette the feed line shares) + `NOTE_MARKS` (a STAMPED mark, named by a kind's `glyph` - the roost's bird), `raiseNotice`, `ageNotices` (called from `updateFx`, sim.js), `noteRect`, `renderNotices` (called from `renderUI`, js/ui/compose.js) | `notices` |
 | **a plate is its kind's size**, and the lane sums the heights it finds rather than counting a pitch: the per-kind width, height and body, which slot holds which kind, and where the lane stops rather than run under the hud strip | `noteW`/`noteH`/`notePitch`, `noteKindAt`, `noteLaneFloor`, `noteBody` (the default mark / headline / tail row a kind with no `body` of its own wears), `noteCard`/`noteBox`/`noteFrame` (all sized by the kind) | `notices` |
@@ -776,7 +777,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the counter's own clock along the bottom rail: the road, the countdown plate, and the merchant's wagon going out and coming back on it | `drawShopLane`, `LANE_LEAVE`/`LANE_STEP`/`LANE_PLATE_W`, `SHOP_CLOCK`/`SHOP_CLOCK_PAL` (the clock face), `shopBuggyCv` (four baked canvases: two trot frames, mirrored), `SHOP_BUGGY`/`SHOP_BUGGY_PAL`/`SHOP_BUGGY_W`/`SHOP_BUGGY_H` | `the restock road` (the clock it reads: `market.stockT`, `SHOP_RESTOCK`, the `the counter's stock` banner) |
 | the sell strip's resting shimmer | `sellSheen`, `SELL_SHEEN`/`SELL_SHEEN_W` | `the shop panel` › `drawing` (called from `drawSellWell`) |
 | the SELL ALL button at the strip's right end, and the pack it draws to say what it empties | `drawSellAll`, `drawPackGlyph`, `PACK_GLYPH_W`/`PACK_GLYPH_H` | `the shop panel` › `drawing` |
-| its pixels | `drawShopPanel`, `drawShopSign`, `drawShopHeading`, `drawShopSection`, `drawShopWell`, `drawSellWell`, `drawSellAll`, `drawMarketCard` (the fish card's tabs: `SHOP_FISH_TAB`, `shopFish`), `drawMarketGraph`, `drawTradePlate`, `drawTradeArrow`, `drawTrend` | `the shop panel` › `drawing` (the `E SHOP` cap over the body: `drawShopHint`, js/ui/wheel.js) |
+| its pixels | `drawShopPanel`, `drawShopSign`, `drawShopHeading`, `drawShopSection`, `drawShopWell`, `drawSellWell`, `drawSellAll`, `drawTradeArrow`, `drawTrend` (the MARKET ticker cards: `drawMktTicker`, js/ui/market.js) | `the shop panel` › `drawing` (the `E SHOP` cap over the body: `drawShopHint`, js/ui/wheel.js) |
 | the TRADING POST's own chrome: the timber frame and its iron brackets, the team-striped awning with its snow, scallops and icicles, the counter edge, and the two lanterns flanking the sign | `shopChromeCv` (baked once a side, keyed by team), `drawShopLantern`, `SHOP_WOOD_*`/`SHOP_CLOTH_*`/`SHOP_SNOW*`/`SHOP_LAMP*`/`SHOP_IRON*`/`SHOP_SIGN` | `the shop panel` › `drawing` |
 | what the pointer is on there, in the shared descriptor shape | `tipShop` | `the shop panel` › `tooltips` (`tipBase`/`tipTool`/`tipBit`/`tipStack`: `tooltips`, js/ui/tooltip.js) |
 
@@ -784,11 +785,20 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the SHOP / FORGE tab plates in the counter's sign row, and which face is up | `forgeTabs` (into `shopLayout`'s `L.tabs`), `drawShopTabs`, `state.shopTab`, `forgeTabOpen`, `FORGE_SIGN` (the sign board's word, `drawShopSign`), `FORGE_ANVIL` | `the forge tab` |
+| the SHOP / MARKET / FORGE tab plates in the counter's sign row, and which face is up | `forgeTabs` (into `shopLayout`'s `L.tabs`), `drawShopTabs`, `state.shopTab`, `forgeTabOpen`, `FORGE_SIGN` (the sign board's word, `drawShopSign`; the MARKET's: `MKT_SIGN`), `FORGE_ANVIL` (the MARKET's: `MKT_GLYPH`) | `the forge tab` |
 | the bench: its geometry, what the pointer is on, a click, a drop | `forgeLayout` (into `L.forge`), `forgeHit`/`forgeKind` (from `shopHit`), `forgeClick` (from `shopClick`), `forgeDrop` (from `dragDrop`, js/ui/strip.js) | `the forge tab` |
 | what is in the weapon well and the pile, and filling them from the pack or the shelf | `state.forgeSel` (a pointer to the weapon's cell) + `forgeFind`, `state.forgePile` + `forgePileNow`/`pileCount`, `forgeSelect`, `forgeAdd`, `forgePut` (also from `sendBagCell`/`sendSlot`, js/ui/strip.js), `forgeCarried`, `forgeReset` (from `closeShop`), `FORGE_ORES` | `the forge tab` |
 | drawing it - the wells, the forge bar, the preview, the plate, the ore plates - and the `+N` a forged weapon wears in every well | `drawForge` (from `drawShopPanel`), `forgeWell`, `forgeGhost`, `forgeArrow`, `forgeUpArrow`, `FORGE_WELL`/`FORGE_KIND_H`/`FORGE_INK`, `forgeMark` (also `drawBag`, js/ui/bag.js; `drawShelf`, js/ui/hud-draw.js) | `the forge tab` |
 | the bench's tooltips | `tipForge` (from `tipShop`, js/ui/shop.js) | `the forge tab` |
+
+## js/ui/market.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the page: its geometry, which good it is on, what the pointer is on, a click, and the four trades along the bottom | `MKT_GOODS`, `MKT_TRADE`, `mktSel`, `mktLayout` (into `shopLayout`'s `L.market`), `mktHit`/`mktKind` (from `shopHit`), `mktClick` (from `shopClick`; the order: `shopTrade`, js/ui/shop.js), `mktUnits`/`mktCan` | `the market tab` |
+| the chart: the coin line, the window in market moves, the two maps onto the plot, the average your buys cost, the marker under the pointer | `mktChart`, `mktAvg`, `mktMarkAt`, `mktAgo`, `MKT_AXIS` | `the market tab` |
+| drawing it - the rows, the chart and its pinned trades, the hairline, the line under it, the trade plates - and the ticker cards on the SHOP face | `drawMarket` (from `drawShopPanel`), `drawMktRow`, `drawMktChart`, `drawMktMark`, `drawMktInfo`, `drawMktBtn`, `drawMktTicker`, `MKT_BUY`/`MKT_SELL`/`MKT_AVG` | `the market tab` |
+| the page's tooltips | `tipMarket` (from `tipShop`, js/ui/shop.js) | `the market tab` |
 
 ## js/ui/panels.js
 

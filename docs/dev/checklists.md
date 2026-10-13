@@ -321,10 +321,12 @@ stock is rolled off `TOOLS`/`BITS`/`CARD_RARITIES` themselves (`shopRestock`,
 **section** is a row in `SHOP_SECTIONS` plus its branch in `shopOffer` and room in
 `shopLayout`'s 2×2 grid — which is full, so a fifth section is a re-layout, not an insert.
 A new **traded good** (a thing whose price moves) is one `GOODS` entry and its `MKT_ORDER`
-place; the walk, the graph, the headlines, the trade plates and the tooltip are all generic over
-that table, but the panel has room for exactly two cards, and "one currency" ([game.md](game.md))
+place and a row in `MKT_GOODS` (js/ui/market.js); the walk, the graph, the headlines, the ledger
+and the tooltip are all generic over that table, but the page and the ticker have room for
+exactly four rows, and "one currency" ([game.md](game.md))
 means a good is a *commodity you carry*, never a second wallet. A new **fish** needs none of it: a
-place in `FISH_KINDS` puts it on the fish card's tabs at a price scaled off its `heal` (`goodScale`).
+place in `FISH_KINDS` prices it off its `heal` (`goodScale`); it shows once it has a row in
+`MKT_GOODS`.
 
 **Adding a class** — the tables make most of it mechanical, and every screen picks the new
 entry up with no edit: the create screen's class pair grows an emblem, the strip, the gear
