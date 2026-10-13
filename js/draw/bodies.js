@@ -294,8 +294,7 @@ function rollFrame(prog) {
   return i;
 }
 
-const MOUNT_BAR_ROWS = 1; // rows a rider's frame stands higher to hang the deer's bar under it
-const MOUNT_BAR_COL = '#c98f52'; // that bar's fill: the deer's own coat tan, so it never reads as the rider's health
+const MOUNT_BAR_COL = '#c98f52'; // a ridden deer's health in its rider's frame: its own coat tan, never the rider's colour
 // A deer's rider sits IN the deer (RIDE, js/wildlife.js): the cell sinks
 // until its row `hip` meets the back at the seat column, which sits toward
 // the rump, and nothing of the body from that row down is drawn - the deer's
@@ -522,8 +521,7 @@ function drawPlayer(p, ex, ey, now) {
   // pose starts ~6 rows lower in the same 16x16 cell, and bars floating where
   // a head no longer is look broken
   const hy = py + (lying ? 6 : 0) - (catchF === 2 ? 4 : 0) - (zl ? zl + 5 : 0) + // the hoist holds the fish where the plate would sit; a rider's frame rises with it and clears the handle
-    (rb ? by + rb.top - py : 0) - // ...and a worn body's frame sits on its taller head
-    (p.mount ? MOUNT_BAR_ROWS : 0); // ...and a deer's rider stands the frame up off the head for the deer's row
+    (rb ? by + rb.top - py : 0); // ...and a worn body's frame sits on its taller head
   // fx is the stack's own centre column - the body's, shifted by FRAME_DX so
   // the frame straddles the sprite. Everything in the frame hangs off it.
   const fx = Math.round(p.x - ex) + FRAME_DX;
@@ -567,26 +565,28 @@ function drawPlayer(p, ex, ey, now) {
       ctx.fillRect(bx - 1, by, 16, 3); // rows under the hp backing only
       ctx.fillStyle = BAR_TRACK;
       ctx.fillRect(bx, by - 1, 14, 3);
-      const regenP = p.dodgeCharges < DODGE_CHARGES ? 1 - p.dodgeRegenT / kitOf(p).dodgeCd : 0;
-      const frac = (p.dodgeCharges + regenP) / DODGE_CHARGES;
-      // ghost of the chunk just spent: pale segment that drains into place
-      const gw = Math.round(14 * Math.max(frac, p.stamGhost)) - Math.round(14 * frac);
-      if (gw > 0) {
-        ctx.fillStyle = STAM_GHOST;
-        ctx.fillRect(bx + Math.round(14 * frac), by, gw, 2);
+      if (p.mount) {
+        // a deer's rider rolls nothing (the roll key leaps, js/wildlife.js),
+        // so the row is the deer's health instead, in its coat tan
+        // (MOUNT_BAR_COL): a white or side-coloured row over a rider read as
+        // the rider's own. The rider's bar above still says the side the deer
+        // is on while ridden (unitFoe, js/actions.js); its total wears the tan
+        const m = p.mount, mf = Math.max(0, Math.min(1, m.hp / m.maxHp));
+        ctx.fillStyle = MOUNT_BAR_COL;
+        ctx.fillRect(bx, by, mf > 0 ? Math.max(1, Math.round(14 * mf)) : 0, 2);
+        queueTally(m, bx + 15, by + 1, MOUNT_BAR_COL);
+      } else {
+        const regenP = p.dodgeCharges < DODGE_CHARGES ? 1 - p.dodgeRegenT / kitOf(p).dodgeCd : 0;
+        const frac = (p.dodgeCharges + regenP) / DODGE_CHARGES;
+        // ghost of the chunk just spent: pale segment that drains into place
+        const gw = Math.round(14 * Math.max(frac, p.stamGhost)) - Math.round(14 * frac);
+        if (gw > 0) {
+          ctx.fillStyle = STAM_GHOST;
+          ctx.fillRect(bx + Math.round(14 * frac), by, gw, 2);
+        }
+        ctx.fillStyle = STAM_COL;
+        ctx.fillRect(bx, by, Math.round(14 * frac), 2);
       }
-      ctx.fillStyle = STAM_COL;
-      ctx.fillRect(bx, by, Math.round(14 * frac), 2);
-    }
-    // a deer's rider: the deer's health one row under the stamina, sharing
-    // its bottom frame row, in the deer's coat tan (MOUNT_BAR_COL): in the
-    // side's colour it read as a second copy of the rider's own bar. The
-    // rider's bar above still says the side the deer is on while ridden
-    // (unitFoe, js/actions.js), and the deer's damage total wears the tan too
-    if (p.mount) {
-      const cx = p.x - ex + FRAME_DX; // the column the rider's own bars hang off
-      drawHealthBar(cx, hy - 1, p.mount.hp, p.mount.maxHp, 14, p.team, MOUNT_BAR_COL);
-      queueTally(p.mount, Math.round(cx - 7) + 15, Math.round(hy), MOUNT_BAR_COL); // where drawHealthBar puts a total
     }
     // stunned: the mirror of the level badge on the other side of the frame -
     // same backing, same track, sharing its left frame column with the health
