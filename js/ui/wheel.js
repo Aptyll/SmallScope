@@ -705,13 +705,10 @@ function kitLabel(id) {
 }
 
 // ---- the build list and its ghost -----------------------------------------
-// THE BUILD WELL ends the ability strip, after the four abilities (the
-// strip's fifth well, stripCellRect(AB_N)): the hammer the pointer turns into
-// over the world, with the build key's cap in the corner an ability well
-// prints its key in, so the way in sits with the other keys pressed in a
-// fight. A TAP of T (or a click on the well) opens a column of every
-// buildable (BUILD_ORDER, structures.js) standing over the well, the last
-// piece picked already lit; a tap again puts it away. HOLDING T opens the
+// THE BUILD KEY is the way in (the strip lost its build well in 0.426): a
+// TAP of T opens a column of every buildable (BUILD_ORDER, structures.js)
+// standing over the strip's meal wells, the last piece picked already lit; a
+// tap again puts it away. HOLDING T opens the
 // PIECE WHEEL over the pointer - every buildable round the ring, the manage
 // wheel's own grammar - and the release on a wedge picks it and opens the
 // list on it (keyRelease, js/input.js), so the hand never leaves WASD. In the
@@ -720,10 +717,10 @@ function kitLabel(id) {
 // cap. The mouse wheel walks the rows, a click picks one, and a hover prints
 // what the piece is for (tipStruct, js/ui/tooltip.js).
 //
-// Well and column are the STRIP's: laid out in its 1x space, drawn inside
+// The column is the STRIP's: laid out in its 1x space, drawn inside
 // drawHudScaled (js/ui/hud-draw.js) at the HUD SIZE the dial holds and hit
-// tested through stripMouse. The column's foot clears the pouch tab beside
-// the well, so it never covers a meal.
+// tested through stripMouse. Its foot clears the strip's top edge, so it
+// never covers a meal.
 //
 // The world under the pointer carries the GHOST: the piece's own art, faint,
 // snapped to the tile grid with its footprint rimmed in the standard bright
@@ -740,27 +737,25 @@ const BUILD_ROW = 20;        // a row's pitch
 const BUILD_W = 62;          // a row's width: icon, price, the rotate cap
 const BUILD_OK = '#f4f7ff', BUILD_NO = '#ff8a7a'; // the ghost's two answers (the flag's own pair, robots.js)
 const BUILD_BROKE = '#8c919a'; // ...and the third: it could stand, but the purse cannot pay (the strip's dim ink)
-const BUILD_LIT = '#ffd95c'; // the picked row's rim, the open well's and the pointer's piece: one gold says "this one"
+const BUILD_LIT = '#ffd95c'; // the picked row's rim and the pointer's piece: one gold says "this one"
 const PIECE_HOLD = 0.18;     // s the build key is held before its press is a hold (the wheel) and not a tap (the list)
 let buildLast = 0;           // the row the list opens on: the last piece picked (a screen's habit, not the sim's)
-// whether the well answers the pointer: the strip's own gate, and never from
-// the roost seat, where the build key answers nothing
+// whether the column answers the pointer: the strip's own gate, and never
+// from the roost seat, where the build key answers nothing
 function buildTabUp() {
   return state.mode === 'play' && !player.dead && !player.aboard && !state.paused &&
     !state.mapOpen && !state.settingsOpen && !state.wheel && !window.DBG.hideUI;
 }
-// the well: the strip's fifth, after the four abilities
-function buildTabRect() { return stripCellRect(AB_N); }
-function buildTabHit(mx, my) {
-  if (!buildTabUp()) return false;
-  ({ x: mx, y: my } = stripMouse(mx, my));
-  const r = buildTabRect();
-  return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h;
+// where the column stands: centred over the meal wells, its foot on the
+// wells' top row (no buy plate floats there)
+function buildTabRect() {
+  const r = foodCellRect(0);
+  return { x: r.x + ((FOOD_W - BUILD_W) >> 1), y: r.y, w: BUILD_W, h: 0 };
 }
-// row i of the column over the well, top to bottom in BUILD_ORDER, its foot
-// clear of the strip's top edge and of the pouch tab it overhangs
+// row i of the column, top to bottom in BUILD_ORDER, its foot clear of the
+// strip's top edge
 function buildRowRect(i) {
-  const w = buildTabRect(), foot = Math.min(w.y - AB_PAD, pouchTabRect().y) - 3;
+  const w = buildTabRect(), foot = w.y - AB_PAD - 3;
   return { x: w.x, y: foot - (BUILD_ORDER.length - i) * BUILD_ROW + 2, w: BUILD_W, h: BUILD_ROW - 2 };
 }
 // how far over the strip's top edge the open column reaches - what the
@@ -779,7 +774,7 @@ function buildListHit(mx, my) {
 // seated on the roost
 function buildCanOpen() { return !state.mapOpen && !state.settingsOpen && !player.dead && !player.aboard; }
 // THE ONE WAY THE LIST OPENS AND SHUTS - a tap of the build key (keyRelease,
-// js/input.js) and a click on the well alike; it opens on the last piece
+// js/input.js); it opens on the last piece
 // picked. `sel` opens it on that row instead (the piece wheel's pick), and
 // never shuts it.
 function toggleBuild(sel) {
@@ -884,7 +879,7 @@ function drawBuildGhost(ox, oy, now) {
     if (Math.hypot(tx * TILE + 8 - player.x, ty * TILE + 8 - player.y) > BUILD_REACH) continue;
     ctx.fillRect(tx * TILE - ox, ty * TILE - oy, 1, 1);
   }
-  if (!mouse.inside || (overHud(mouse.x, mouse.y) && !state.build.drag)) return; // the well and the column are HUD (overHud)
+  if (!mouse.inside || (overHud(mouse.x, mouse.y) && !state.build.drag)) return; // the column is HUD (overHud)
   const g = buildGhostAt();
   const spr = structSprite({ type: g.type, tier: 0, team: player.team, rot: g.rot });
   const afford = canAfford(buildCost(g.type, player));
@@ -904,26 +899,7 @@ function drawBuildGhost(ox, oy, now) {
     rim(col, px, py, fw, fh);
   }
 }
-// The well, in the strip's 1x space: an ability well's grammar - the hammer
-// doubled in the middle, the build key's cap (the pad's glyph while one is in
-// hand) in the bottom-left corner. Its states are colour and a pixel: the rim
-// lightens and the hammer lifts under the pointer, the cap drops while the
-// key is held, and the rim goes the picked row's gold while the list is
-// open - the column stands on a lit well.
-function drawBuildTab(now) {
-  const r = buildTabRect(), open = !!state.build;
-  const hot = mouse.inside && buildTabHit(mouse.x, mouse.y);
-  ctx.fillStyle = open ? BUILD_LIT : hot ? '#9ca1aa' : '#3c4048';
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = open ? '#1d1f24' : BAG_WELL;
-  ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const hm = SPRITES.cursor.hammer, hw = hm.width * 2, hh = hm.height * 2;
-  ctx.drawImage(hm, r.x + ((r.w - hw) >> 1), r.y + ((r.h - hh) >> 1) - 2 - (hot ? 1 : 0), hw, hh);
-  const held = keyHeld('build');
-  if (padActive() && PAD_BIND.build) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, 'build', 2, false);
-  else drawPixelTextOutline(ctx, keyCapShort('build'), r.x + 3, r.y + r.h - 13 + (held ? 1 : 0), '#f4f7ff', '#191b1f', 2);
-}
-// The column of rows, in the strip's 1x space over the well
+// The column of rows, in the strip's 1x space over the meal wells
 function drawBuildList(now) {
   const b = state.build;
   if (!b || state.mode !== 'play' || player.dead || player.aboard) return;

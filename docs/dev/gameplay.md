@@ -1897,8 +1897,8 @@ leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key: sources pay
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
 [fish net](world.md#fish-nets) you are standing on), and a wrecked net's
 contents carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
-the **hud strip's right end** (bottom centre) — the pouch block, berry over fish and gold over
-cards, on screen all match. Death touches none of them —
+the **hud strip's right end** (bottom centre) — the berry and fish wells with the gold under
+them, on screen all match. Death touches none of them —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
 toward the nearest player, and everyone standing on one contests it
 (`canAfford`/`pay` also take the player whose wallet is meant) — except that a player with **no
@@ -2263,18 +2263,18 @@ each in the pack) is full, since `fitAdd` (js/tools.js) loads it into them first
 **The pouch** (`p.food`, `newPouch()`) is a set of uncapped counters beside the wallet, and it
 holds the two **meals** and the five **unopened card** rarities — everything with
 `pouch: true`. A pouch kind takes no cell, cannot be dragged, cannot be arranged and cannot be
-refused: a meal is pressed on Q and F and a card drawn on C from
-[the hud strip's pouch block](rendering.md#the-hud-strip) and nowhere else, so the cells are
-all the build's. Being uncapped is why every count that shows
+refused: a meal is pressed on Q and F or on
+[the hud strip's meal wells](rendering.md#the-hud-strip), and a card opens itself the moment it
+is held, so the cells are all the build's. Being uncapped is why every count that shows
 one goes through **`shortNum`** (js/core.js) — `999`, then `1.2K`, `12K`, `340K`, `1.2M`, four
 characters at most. The exact figure stays in the tooltip, the surface whose job is comparing
 numbers.
 
 | Item | Icon | Where | Used by |
 | --- | --- | --- | --- |
-| `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal button — eats it (see [Food](#food-the-meal-is-a-channel)) |
-| `fish` | `itemFish` | pouch, no cap | F, or clicking its meal button — eats it (same) |
-| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | C, or clicking the strip's card button — draws one at random (see [Roguelike cards](#roguelike-cards)) |
+| `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal well — eats it (see [Food](#food-the-meal-is-a-channel)) |
+| `fish` | `itemFish` | pouch, no cap | F, or clicking its meal well — eats it (same) |
+| `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | nothing: it opens itself the moment it is held, one at random (see [Roguelike cards](#roguelike-cards)) |
 | `tunnel` | `itemTunnel` | bag, stack 5 | a **consumable** (`use`): V, or clicking its pack cell (`sendBagCell`) — stands the hole's ghost up, and the dig spends one (see [The burrow](#the-burrow-a-tunnel-anyone-can-ride)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
 | `bit:<id>` | `bitArt_<id>` | bag, stack `BIT_STACK` 255 | loads itself into the tool in hand on pickup (`fitAdd`), or is dragged into a cell of the shelf |
@@ -2571,45 +2571,43 @@ vocabulary (`dmgBase`, `dr`, `maxHp`, `walkMul`, `stealth`, `ambushMul`, `iceMax
 genuinely new field, `killHeal` — a flat heal on a confirmed kill, hooked at `die()`'s existing
 kill-credit line the same way `updateEat` applies a meal's.
 
-**The draw** (there is no draft screen): an unopened card is a pouch kind, and
-the card key (`'card'`, C; L3 on a pad) or a click on the strip's card button sets the
-`useCard` intent, which `useCard(p)` (js/core.js, beside `startEat`) resolves on the spot —
+**The draw** (there is no draft screen and no key, 0.426): an unopened card is a pouch kind,
+and it opens itself the moment it is held with the body on the ground — `updatePlayer`
+(js/sim.js) calls `useCard(p)` (js/core.js, beside `startEat`) while `cardsHeld(p)` is above
+zero, as does the input's `useCard` intent (the bots' API) —
 one card taken at random from everything held (so a rarity is as likely as it is common in the
 hand), one entry of that rarity at random, `bagTake` the card, push `{ rarity, id }` onto
 `p.cards`, `refreshKit(p)`, then `cardFx` (a burst in the rarity's colour) and a floater with the
 card's name. The floater names the CARD; what it did to the NUMBERS flies into the notice lane
 as the [stat sheet](rendering.md#the-stat-ledger-your-sheet-as-a-notice), every row the pick
-moved lit and blinking on it. Nothing to draw is a refusal on the button (`cardDenied`). `refreshKit` folds every entry in `p.cards` in after gear, cumulatively
+moved lit and blinking on it. An intent with nothing to draw is refused (`cardDenied`, the deny cue). `refreshKit` folds every entry in `p.cards` in after gear, cumulatively
 (`for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);`), so picking the same effect twice stacks
 it, and every existing kit-reading site in the sim — movement, `emitBit`, dodge timing, the AI,
 `seenAt`'s stealth — picks a card up for free, the same way it already does for gear. `p.cards` is
 set once in the `Player` constructor and never touched by `reset()`, so a build survives every
 respawn within a match.
 
-**Bots never press the card key** — `useCard` is reached through the input struct, which `updateAI` never sets for cards.
-Instead, the instant a bot is carrying any unopened card, `resolveCardForBot(p)` (js/ai.js, the
-top of `aiThink`) resolves it: the first rarity in `CARD_RARITIES` order it holds (a human's draw
+**The built-in brain opens its own first** — the instant a bot is carrying any unopened card,
+`resolveCardForBot(p)` (js/ai.js, the top of `aiThink`, which runs before `updatePlayer`) resolves it: the first rarity in `CARD_RARITIES` order it holds (a human's draw
 is weighted across everything held), one random entry from that rarity's pool, minus the burst
 and the floater.
 
 ## Base building
 
-**T opens the build list, and the ghost under the pointer is what a click lays.** The way in is
-on screen all match: the **build well** (`drawBuildTab`), the ability strip's fifth well after
-ability 4 — the hammer the pointer turns into, doubled, with the build key's cap (the pad's
-dpad-down glyph while one is in hand) in the corner an ability well prints its key in. **A tap
-of T** or a click on the well opens the list on the **last piece picked** (`toggleBuild`, the one
-toggle both call; `buildLast`), and a tap again puts it away. **Holding T** past `PIECE_HOLD`
+**T opens the build list, and the ghost under the pointer is what a click lays.** **A tap of T**
+opens the list on the **last piece picked** (`toggleBuild`; `buildLast`), and a tap again puts it
+away (the strip lost its build well in 0.426). **Holding T** past `PIECE_HOLD`
 opens the **piece wheel** over the pointer (`buildKeyPress`: the wheel kind `piece`, every piece
 round the ring on the manage wheel's grammar, drawn only once the hold is a hold so a tap never
 flashes it), and the release on a wedge opens the list on that piece (`buildKeyRelease`); a hold
 let go in the hub changes nothing. The list (`drawBuildList`, the `build list` group in
-[js/ui/wheel.js](../../js/ui/wheel.js)) is a column standing over the well, one row a piece in
+[js/ui/wheel.js](../../js/ui/wheel.js)) is a column standing over the strip's meal wells
+(`buildTabRect`), one row a piece in
 `BUILD_ORDER` — wall, long wall, gate, turret, generator, bot bay, fish net — each row its icon and its
-price (gold's colour while the purse covers it, red while not), the picked row rimmed gold and
-the well with it. Well and column are the **strip's**: drawn in its 1× space at the HUD SIZE
+price (gold's colour while the purse covers it, red while not), the picked row rimmed gold.
+The column is the **strip's**: drawn in its 1× space at the HUD SIZE
 (`drawHudStrip`, js/ui/hud-draw.js, whose bake grows by `buildHeadroom` while the column is up),
-hit tested through `stripMouse`, the column's foot clear of the pouch tab it overhangs.
+hit tested through `stripMouse`, its foot clear of the strip's top edge.
 The mouse wheel walks the rows (the camera's zoom waits), a click on a row picks it, a **hover on
 a row prints what the piece is for** (`tipStruct`, js/ui/tooltip.js: the price, health, build
 time and the type's own numbers, then its `STRUCTS` `blurb`), and **R turns a piece that turns**:

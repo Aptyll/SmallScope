@@ -484,7 +484,7 @@ function shotContacts(a, x0, y0, dx, dy) {
 // trickle. A floor under everyone's purse, so a player who never swings an
 // axe still buys gear and still reaches the mid levels, and a farmer pulls
 // ahead only by the fells, never by the clock. Silent on purpose: no floater,
-// no blip - the bag strip's number and the xp bar are the tell. The practice
+// no blip - the strip's purse and the xp round the portrait are the tell. The practice
 // arena has no clock and gets none; the dead and the airborne earn nothing.
 const TRICKLE_GOLD = 1;
 const TRICKLE_T = 4;      // s per coin: 15 gold a minute, ~225 over a fifteen-minute match
@@ -811,6 +811,10 @@ function updatePlayer(p, dt) {
   if (inp.eatBerry) { inp.eatBerry = false; eatBerry(p); }
   if (inp.eatFish) { inp.eatFish = false; eatFish(p); }
   if (inp.useCard) { inp.useCard = false; useCard(p); }
+  // an unopened card opens the moment it is held and the body is on the
+  // ground (0.426): no key and no strip button, so a card is a buff that
+  // lands, never a thing to remember to press
+  if (cardsHeld(p) > 0 && !inAir(p)) useCard(p);
   // an ability key with a skill point in hand LEVELS the key instead of
   // casting it (the plate is the same buy for the mouse); the cast waits for
   // the next press. A maxed key casts through an unspent point as ever.

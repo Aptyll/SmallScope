@@ -829,20 +829,20 @@ const KEY_ROWS = {
   wasd: [
     [{ acts: ['up', 'left', 'down', 'right'], verb: 'MOVE' }, { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'dodge', 'slide', 'work', ['RMB', 'FLAG WHEEL']],
-    ['berry', 'fish', 'card', 'tunnel', 'bag', 'char', 'build', 'rotate'],
+    ['berry', 'fish', 'tunnel', 'bag', 'char', 'build', 'rotate'],
     ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO'], ['.', 'HITBOX']],
   ],
   click: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' },
       ['CLICK', 'FIRE'], 'amove', 'stop', 'dodge', 'slide'],
-    ['berry', 'fish', 'flag', 'card', 'tunnel', 'bag', 'char', 'build'],
-    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
+    ['berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build', 'rotate'],
+    ['map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM'], ['F3', 'INFO']],
   ],
   mouse: [
     [['RMB', 'MOVE / ACT'], ['HOLD RMB', 'FOLLOW'], ['CLICK', 'FIRE'], ['HOLD MMB', 'ACTION WHEEL'],
       'dodge', 'slide', { acts: ['ab1', 'ab2', 'ab3', 'ab4'], verb: 'ABILITIES' }, 'amove'],
-    ['stop', 'berry', 'fish', 'flag', 'card', 'tunnel', 'bag', 'char'],
-    ['build', 'rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
+    ['stop', 'berry', 'fish', 'flag', 'tunnel', 'bag', 'char', 'build'],
+    ['rotate', 'map', 'board', 'mute', 'pause', ['ESC', 'SETTINGS'], ['SCROLL', 'ZOOM']],
   ],
 };
 const KEY_ROW_H = 12, KEY_ROWS_Y = 5;
@@ -969,7 +969,7 @@ function drawPadReadout(x0, y0) {
     [['stick', 'L', 'MOVE'], ['stick', 'R', 'AIM'], ['trig', 'RT', 'FIRE'], ['trig', 'LT', 'SLIDE'], ['face', 'A', 'DODGE - HOP OFF'], ['face', 'X', 'HARVEST'],
       ['stick', 'R3', 'HOLD: FLAG WHEEL'], ['dpad', 'D', 'HOLD: BUILD WHEEL']],
     [['face', 'Y', 'ABILITY 1'], ['face', 'B', 'ABILITY 2'], ['bump', 'LB', 'ABILITY 3'], ['bump', 'RB', 'ABILITY 4'], ['dpad', 'L', 'EAT BERRY'], ['dpad', 'R', 'EAT FISH'],
-      ['stick', 'R3', 'DRAW CARD'], ['stick', 'L3', 'INVENTORY'], ['dpad', 'U', 'CHARACTER']],
+      ['stick', 'L3', 'INVENTORY'], ['dpad', 'U', 'CHARACTER']],
     [['pill', 'BACK', 'WORLD MAP'], ['pill', 'BACK', 'HOLD: STANDINGS'], ['pill', 'START', 'SETTINGS'], null,
       ['face', 'A', 'TAKE'], ['face', 'B', 'BACK'], ['bump', 'LB', 'PAGE TABS'], ['dpad', 'L', 'SELECT'], ['stick', 'L', 'POINTER'], ['stick', 'R', 'SCROLL']],
   ];
