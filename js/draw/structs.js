@@ -302,6 +302,30 @@ function drawBayOverlay(o, px, sy, now) {
   if (o.hp < o.maxHp) drawHealthBar(px + 24, sy - 11, o.hp, o.maxHp, 24, o.team, undefined, o);
 }
 
+// THE GOLD PUMP'S STROKE (js/sprites/pump.js): the frame is read off the
+// pump's own payout clock, so every screen that is sent payT draws the same
+// nod. A whole number of PUMP_STROKE-long strokes fits one `period`, so the
+// pay lands as a stroke ends, and for PUMP_HOP s after it a coin hops out of
+// the barrel's mouth (SPRITES.pumpMouth) toward the +N.
+const PUMP_STROKE = 1.25; // s a stroke takes, near enough: rounded to fit the period
+const PUMP_HOP = 0.6;     // s the payout's coin is in the air
+function pumpFrame(o) {
+  const t = STRUCTS.generator.tiers[o.tier], set = SPRITES.teamBuild[skin(o.team === undefined ? 0 : o.team)].pumpAnim[o.tier];
+  const n = Math.max(1, Math.round(t.period / PUMP_STROKE));
+  const u = Math.min(1, Math.max(0, 1 - (o.payT || 0) / t.period)); // 0 just paid, 1 about to
+  return set[Math.floor(((u * n) % 1) * set.length) % set.length];
+}
+function drawPumpCoin(o, sx, sy) {
+  const since = STRUCTS.generator.tiers[o.tier].period - (o.payT || 0);
+  if (since < 0 || since > PUMP_HOP) return;
+  const k = since / PUMP_HOP, m = SPRITES.pumpMouth[o.tier];
+  const x = Math.round(sx + m[0] + 7 * k) - 1, y = Math.round(sy + m[1] - 2 - 13 * Math.sin(k * Math.PI)) - 1;
+  ctx.fillStyle = '#221c2e'; ctx.fillRect(x - 1, y, 5, 3); ctx.fillRect(x, y - 1, 3, 5);
+  ctx.fillStyle = '#d8a850'; ctx.fillRect(x, y, 3, 3);
+  ctx.fillStyle = '#f2cc6a'; ctx.fillRect(x, y, 2, 2);
+  ctx.fillStyle = '#fff2c0'; ctx.fillRect(x, y, 1, 1);
+}
+
 // The fish net, drawn flat on its hole in the pass right after the ground
 // instead of y-sorted with the buildings that stand up out of it - a player
 // walks OVER this one, so it must never sort in front of them. An unfinished

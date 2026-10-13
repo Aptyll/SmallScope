@@ -1,8 +1,9 @@
 'use strict';
-// What a player builds and what a bay rolls out: the wall, generator and
-// spawner in three tier materials and each side's fittings, the turret's three
-// timber bases, the net, the scaffold, the bot bay and its worker bots, spikes,
-// fire and the torch.
+// What a player builds and what a bay rolls out: the wall and spawner in
+// three tier materials and each side's fittings, the turret's three timber
+// bases, the net, the scaffold, the bot bay and its worker bots, spikes, fire
+// and the torch. The generator is the gold pump, baked after this file
+// (js/sprites/pump.js), into the same teamBuild sets.
 (() => {
   const { bake, TEAM_SKINS, teamBuildPal } = SPR;
 
@@ -91,7 +92,7 @@
   ];
 
   // ------------------------------------------------- tiered structures
-  // One 16x16 grid each for the wall, the gate and the generator, baked with
+  // One 16x16 grid each for the wall and the gate, baked with
   // WPAL / WPAL_STONE / WPAL_GOLD. The TURRET is the exception: three grids of
   // its own in three timbers, below.
   // the wheel glyph: the sling over a stump in the side's own paint. The live
@@ -238,24 +239,6 @@
     '......ssssssssssssssssssss......',
   ];
   const turretBases = [turretT1, turretT2, turretT3];
-  const generator = [
-    '................',
-    '......kk........',
-    '.....okko.......',
-    '..oooooooooooo..',
-    '.ouUUUUUUUUUUvo.',
-    '.ouKkkKuuKkkKvo.',
-    '.ouKuuKuuKuuKvo.',
-    '.ouKkkKeeKkkKvo.',
-    '.ouuuuuuuuuuuvo.',
-    '.ouvkkkkkkkkvvo.',
-    '.ouvkKKKKKKkvvo.',
-    '.ouvkkkkkkkkvvo.',
-    '.ovuuuuuuuuuuvo.',
-    '.ovvvvvvvvvvvvo.',
-    '.oooooooooooooo.',
-    '.ssssssssssssss.',
-  ];
   const spawner = [
     '................',
     '......oooo......',
@@ -721,7 +704,6 @@
       wall: TIER_PALS.map((b) => bake(wall, teamBuildPal(b, t))),
       gate: TIER_PALS.map((b) => bake(gate, gatePal(b, t))),
       turret: TUR_PALS.map((b, i) => bake(turretBases[i], turretPal(b, t))),
-      generator: TIER_PALS.map((b) => bake(generator, teamBuildPal(b, t))),
       spawner: [bake(bay, bayTeamPal(t))],
       net: [bake(net, teamBuildPal(NETPAL, t))],
       stall: bake(stall, stallPal(t)), // the merchant's shop (render.js reads SPRITES.teamBuild[skin(team)].stall)
@@ -738,7 +720,6 @@
     robotTeam: teamRobots,
     wall: [bake(wall, WPAL), bake(wall, WPAL_STONE), bake(wall, WPAL_GOLD)],
     turret: TUR_PALS.map((b, i) => bake(turretBases[i], turretPal(b, TEAM_SKINS[0]))),
-    generator: [bake(generator, WPAL), bake(generator, WPAL_STONE), bake(generator, WPAL_GOLD)],
     spawner: [bake(spawner, WPAL), bake(spawner, WPAL_STONE), bake(spawner, WPAL_GOLD)],
     net: [bake(net, NETPAL)],
     scaffold: [bake(scaffold1, SCPAL), bake(scaffold2, SCPAL), bake(scaffold3, SCPAL)],

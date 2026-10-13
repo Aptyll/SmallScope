@@ -619,8 +619,11 @@ function render() {
           ctx.drawImage(SPRITES.scaffold[2], px, py);
         }
       } else {
-        drawCastShade(spr, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
-        drawSpriteFlash(spr, sx + sh, sy, o.flash);
+        // the gold pump strokes: the frame off its payout clock (pumpFrame)
+        const art = o.type === 'generator' ? pumpFrame(o) : spr;
+        drawCastShade(art, sx, sy); // a standing building throws the sun's shade like a body (ground.js)
+        drawSpriteFlash(art, sx + sh, sy, o.flash);
+        if (o.type === 'generator') drawPumpCoin(o, sx + sh, sy);
         if (o.type === 'spawner') drawBayOverlay(o, sx + sh, sy, now);
         if (o.type === 'barracks') drawBarracksOverlay(o, sx + sh, sy, now);
         // the gun is not in the grid: rasterise it at the live bearing, on the collar
