@@ -11,8 +11,8 @@
 // dummies until the button, the right button or Escape puts it down). The
 // chevron tab on the plate's right edge folds the column away to the tab.
 // It hangs under the corner (the weapon shelf and the pack's open drawer),
-// and scales with the HUD SIZE dial about its own top-left like the corner
-// does (drawCornerScaled) - capped so the column never runs off the bottom.
+// and scales with the corner's size dial (cornerSc) about its own top-left
+// like the corner does (drawCornerScaled) - capped so the column never runs off the bottom.
 const CB_CELL = 16;          // a well: a 12px icon, 1px rim and 1px air round it
 const CB_GAP = 2;            // between two wells
 const CB_SPLIT = 7;          // between the two groups
@@ -167,10 +167,10 @@ function cheatPlateRect() {
 }
 // where the bar's top lands in the view: clear of the corner's open drawer
 // at the corner's own scale, on the device grid (hudPx)
-function cheatTop() { const f = bagFrameRect(); return hudPx((f.y + f.h) * hudSc() + 6); }
+function cheatTop() { const f = bagFrameRect(); return hudPx((f.y + f.h) * cornerSc() + 6); }
 // the bar's scale: the dial's, unless that would run it off the bottom
 function cheatSc() {
-  const s = hudSc(), room = VIEW_H - cheatTop() - 4, h = cheatPlateRect().h;
+  const s = cornerSc(), room = VIEW_H - cheatTop() - 4, h = cheatPlateRect().h;
   return h * s <= room ? s : Math.min(s, hudSnapDown(room / h));
 }
 function cheatCellRect(i) {

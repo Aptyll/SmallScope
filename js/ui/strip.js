@@ -1,6 +1,6 @@
 'use strict';
 // The hud strip's bones: its constants, the hud frame every bottom widget
-// stands on, HUD SIZE, every cell rect and refusal flash, the weapon
+// stands on, the HUD size dials, every cell rect and refusal flash, the weapon
 // shelf's geometry and drops, sending a cell across, and the press / move /
 // release the drag is made of. Drawing is js/ui/hud-draw.js.
 // ---- hud strip: portrait, wells and bars, bottom-centre ------------------
@@ -123,42 +123,67 @@ function hudInT() {
   return state.intro > 0 ? easeOut(Math.max(0, 1 - state.intro / HUD_IN_T)) : 1;
 }
 function hudHome() { return hudInT() >= 1; }
-// The HUD SIZE dial (settings.hudScale, the ESC panel's GAME page). The strip
-// keeps ALL its geometry in this 1x space and drawHudScaled blits the whole
-// widget scaled about its bottom-centre anchor; stripMouse maps the pointer
-// back through that anchor, so every hit test below converts first and the
-// rects themselves never move.
-// The size the HUD is actually drawn at is one of the dial's NOTCHES
-// (hudSizes): every size from HUD_MIN to HUD_MAX at which one HUD pixel is a
-// whole number of device pixels, and none past the size where the strip would
-// outgrow the view. Whole device pixels are what keep the HUD's pixels exact:
-// at 0.8 on a 2x canvas every HUD pixel was 1.6 device pixels, so a 1px line
-// drew one or two wide depending on where it fell. So the notches depend on
-// the screen - 50 / 100 / 150 on a 2x canvas, 67 / 100 / 133 on a 3x, quarter
-// steps on a 4x - and the stored dial lands on the notch nearest it (hudStep),
-// which also carries a setting across to a screen with other notches. Every
-// HUD widget scales by this one number (drawHudScaled, drawCornerScaled,
-// drawRailScaled).
-const HUD_MIN = 0.5, HUD_MAX = 1.5;
+// THE HUD SIZE DIALS (the ESC panel's GAME page): one per widget, so each
+// part of the HUD is sized on its own - the strip (settings.hudScale), the
+// top-left corner of weapon shelf and drawer (settings.hudCorner), the team
+// rail along the top (settings.hudRail); the minimap has its own radius dial
+// (settings.mmR, applyMinimapSize, js/core.js). Each widget keeps ALL its
+// geometry in 1x space and its draw bakes it at 1x and blits it scaled about
+// its anchor (drawHudScaled, drawCornerScaled, drawRailScaled); the pointer is
+// mapped back through the same anchor (stripMouse, cornerMouse), so every hit
+// test converts first and the rects themselves never move.
+// A dial stops every HUD_FINE from HUD_MIN to HUD_MAX, plus on each CRISP size
+// - one at which a HUD pixel is a whole number of device pixels, so a 1px
+// line draws the same width wherever it falls (hudCrisp). A fine stop within
+// half a step of a crisp one gives way to it, so the knob always lands on the
+// crisp size near where it is dropped. Between crisp sizes some pixel rows
+// draw one device pixel wider than others: the price of any size at all. The
+// crisp sizes depend on the screen - halves on a 2x canvas, thirds on a 3x -
+// and a dial never stops past the size where its widget would outgrow the
+// view (the cap each widget passes, hudFit).
+const HUD_MIN = 0.5, HUD_MAX = 2, HUD_FINE = 0.05;
 function hudSnapDown(s) { return Math.max(1, Math.floor(s * devScale + 1e-6)) / devScale; }
-let hudSizesKey = '', hudSizesList = [1];
-function hudSizes() {
-  const key = devScale + ':' + VIEW_W;
-  if (key === hudSizesKey) return hudSizesList;
-  const cap = hudSnapDown((VIEW_W - 8) / (AB_W + 6)), out = [];
-  const k0 = Math.max(1, Math.ceil(HUD_MIN * devScale - 1e-6)), k1 = Math.floor(HUD_MAX * devScale + 1e-6);
-  for (let k = k0; k <= k1; k++) if (k / devScale <= cap + 1e-6) out.push(k / devScale);
-  if (!out.length) out.push(cap);
-  hudSizesKey = key; hudSizesList = out;
+// the crisp sizes in [HUD_MIN, cap]
+function hudCrisp(cap) {
+  const out = [], k0 = Math.max(1, Math.ceil(HUD_MIN * devScale - 1e-6));
+  for (let k = k0; k / devScale <= Math.min(HUD_MAX, cap) + 1e-6; k++) out.push(k / devScale);
   return out;
 }
-function hudStep() {
-  const S = hudSizes(), want = settings.hudScale || 1;
-  let best = 0;
-  for (let i = 1; i < S.length; i++) if (Math.abs(S[i] - want) < Math.abs(S[best] - want) - 1e-6) best = i;
+// a dial's stops, low to high, never past `cap` (the widget's fit); cached
+// per screen and cap
+const hudSizesMemo = new Map();
+function hudSizes(cap) {
+  const key = devScale + ':' + cap;
+  let out = hudSizesMemo.get(key);
+  if (out) return out;
+  const crisp = hudCrisp(cap), top = Math.min(HUD_MAX, cap);
+  out = crisp.slice();
+  for (let i = 0; HUD_MIN + i * HUD_FINE <= top + 1e-6; i++) {
+    const v = Math.round((HUD_MIN + i * HUD_FINE) * 100) / 100;
+    if (!crisp.some((c) => Math.abs(c - v) < HUD_FINE / 2 - 1e-6)) out.push(v);
+  }
+  if (!out.length) out.push(hudSnapDown(cap));
+  out.sort((a, b) => a - b);
+  hudSizesMemo.set(key, out);
+  return out;
+}
+// the stop nearest a stored dial value
+function hudPick(want, cap) {
+  const S = hudSizes(cap);
+  let best = S[0];
+  for (const v of S) if (Math.abs(v - want) < Math.abs(best - want) - 1e-6) best = v;
   return best;
 }
-function hudSc() { return hudSizes()[hudStep()]; }
+// the cap a widget `w` x `h` view px at 1x passes: the size at which it would
+// reach the view's edges, on the device grid so a crisp size can sit there
+function hudFit(w, h) { return hudSnapDown(Math.min((VIEW_W - 8) / w, (VIEW_H - 8) / h)); }
+// THE SCALES. The strip's caps where its plate would outgrow the view; the
+// corner's where its claim would cross half the view or its open drawer the
+// view's foot. The rail's is railSc (js/ui/rail.js), capped by its own width.
+function stripCap() { return hudFit(AB_W + 6, AB_H + XP_TAG); }
+function cornerCap() { const f = bagFrameRect(); return hudFit(CORNER_CLAIM * 2, f.y + f.h + 6); }
+function hudSc() { return hudPick(settings.hudScale || 1, stripCap()); }
+function cornerSc() { return hudPick(settings.hudCorner || 1, cornerCap()); }
 // a view coordinate put on the device grid, where a scaled HUD bake has to
 // land for its pixels to stay whole
 function hudPx(v) { return Math.round(v * devScale) / devScale; }
@@ -374,8 +399,8 @@ const SHELF_ROW_MAX = SHELF_X + SHELF_CELL + SHELF_WGAP + SHELF_MAX_BITS * SHELF
 // SHIFT plate off its end - what the intro slide and the bake are sized by,
 // so neither jumps when the tool changes
 const CORNER_REACH = SHELF_ROW_MAX + 80;
-// WHAT THE CORNER CLAIMS OF THE FRAME, in view px at the HUD SIZE the dial
-// holds: the widest row a tool can ever grow to, or the drawer under it,
+// WHAT THE CORNER CLAIMS OF THE FRAME, in view px at the corner's own size
+// (cornerSc): the widest row a tool can ever grow to, or the drawer under it,
 // whichever reaches further. The merchant's slab is pinned off this
 // (shopLayout, js/shop.js) so a trade never stands on the pack it is dragged
 // out of. It is the FIXED reach and not the live shelfRowRight(): the row
@@ -384,12 +409,12 @@ const CORNER_REACH = SHELF_ROW_MAX + 80;
 // plate CORNER_REACH allows for is left out of it - that is a hover hint,
 // not a widget, and 80 px of room for one is 80 px the counter would lose.
 const CORNER_CLAIM = Math.max(BAG_W, SHELF_ROW_MAX + SHELF_PAD); // ...and the plate's margin past it
-function cornerClaim() { return Math.round(CORNER_CLAIM * hudSc()); }
+function cornerClaim() { return Math.round(CORNER_CLAIM * cornerSc()); }
 // ...and how far DOWN it reaches with the drawer open: the other half of the
 // room a panel pinned off the corner has to miss, for a view too NARROW to
 // stand one beside it. This one is measured live off the drawer, which sits
 // under the plate and so moves with the lines over the row.
-function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h + 2) * hudSc()); }
+function cornerBottom() { const f = bagFrameRect(); return Math.round((f.y + f.h + 2) * cornerSc()); }
 // the tool the shelf is showing, or null with the weapon well empty
 function shelfCell() { return player.tools[SHELF_SLOT] || null; }
 // ...and whether the shelf is on screen and answering the pointer at all: the

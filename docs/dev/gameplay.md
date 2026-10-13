@@ -606,7 +606,7 @@ It stands on the same plate as the rest of the HUD, which swallows a click anywh
 corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
 read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
-js/ui/hud-draw.js and js/ui/strip.js, scaled about the top-left corner at the strip's HUD SIZE
+js/ui/hud-draw.js and js/ui/strip.js, scaled about the top-left corner at its own size (`cornerSc`)
 ([rendering.md](rendering.md#the-hud-strip)).
 
 Two marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: a box's
@@ -2620,7 +2620,7 @@ let go in the hub changes nothing. The list (`drawBuildList`, the `build list` g
 (`buildTabRect`), one row a piece in
 `BUILD_ORDER` — wall, long wall, gate, turret, generator, bot bay, fish net — each row its icon and its
 price (gold's colour while the purse covers it, red while not), the picked row rimmed gold.
-The column is the **strip's**: drawn in its 1× space at the HUD SIZE
+The column is the **strip's**: drawn in its 1× space at the strip's size
 (`drawHudStrip`, js/ui/hud-draw.js, whose bake grows by `buildHeadroom` while the column is up),
 hit tested through `stripMouse`, its foot clear of the strip's top edge.
 The mouse wheel walks the rows (the camera's zoom waits), a click on a row picks it, a **hover on
@@ -3361,7 +3361,7 @@ click and with no code plate, since a lobby id is not for reading aloud. Which r
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
-`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
+`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `hudCorner`, `hudRail`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
@@ -3379,8 +3379,8 @@ and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) 
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
 saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, default **1**; it steps between the screen's crisp sizes from 0.5 to 1.5, `hudSizes`, and a stored value draws at the nearest one, `hudSc`) needs no apply
-call: the hud strip, the pack and the shelf read it live every frame
+it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale`, `hudCorner` and `hudRail` (the BOTTOM BAR, WEAPON BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`cornerSc`/`railSc`) need no apply
+call: the hud strip, the corner and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to the other two, and `mmR` is clamped to `MM_R_MIN`..`MM_R_MAX` (12..48, shown as a percent of 24)
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
@@ -3394,7 +3394,7 @@ under it (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a s
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
+(weapon bar size, top bar size, minimap size, bottom bar size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
@@ -3417,8 +3417,9 @@ MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plai
 carries `val`/`pick` like a choice row; its box shows the entry in force and a click hangs the
 list under it (`setDrop`), drawn over the page outside its clip. While the list is open it takes
 the whole pointer: a click on an entry picks it, any click folds it, and ESC folds it before the panel.
-The HUD SIZE slider steps notch to notch (a tick under the track at each): only the sizes
-`hudSizes` finds crisp on this screen ([rendering](rendering.md#the-hud-strip)).
+The four size sliders share one grammar: the knob lands on the dial's nearest stop, a tick under the
+track marks each size `hudCrisp` finds crisp on this screen, and the track past the widget's cap is
+sunk (`HUD_DIALS`; [rendering](rendering.md#the-hud-strip)). Dragging one previews its widget over the panel.
 
 **The VIDEO page** holds one QUALITY row, five toggles and the COLOUR BLIND dropdown, every one a cosmetic-only render
 pass a weak GPU can shed (they read at draw time; nothing the sim computes changes):

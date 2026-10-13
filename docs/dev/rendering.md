@@ -517,7 +517,7 @@ what it is about, then one 8×8 glyph carrying which way — an arrow up or an a
 otherwise), the lane **sums** the heights above a slot rather than counting a pitch, a plate slides
 its own width clear of the edge, and the newest shoves the stack down by *its* own height. Nothing
 in the lane is special-cased for the tall one. `noteLaneFloor()` is where the lane stops — the top
-of the hud strip's tab at the HUD SIZE the dial holds — and a plate that would cross it is not
+of the hud strip's xp numbers at the strip's size (`hudSc`) — and a plate that would cross it is not
 drawn, which on a short view drops the **oldest** news and keeps the newest.
 
 The mark is the kind's own (`NOTE_KIND[k].mark`, a `SPRITES` key or null), 16×16 in a sunken well:
@@ -904,8 +904,8 @@ DAY headline all hang `headlineY()` under `railBottom()` (14 from the top when t
 the practice arena, or a match with an empty side — `railSides` is null, nothing draws, and the
 clock goes back under the minimap: `mmClockShown`), and
 the two notes step under the spectate control as well while it is up (`noteY`).
-**Its scale is the HUD's one scale**: `railSc` is `hudSc()` (whole device pixels, so a 12px
-emblem never drops a row), capped on the same grid where the plate would reach the view's edge;
+**Its scale is its own dial**, TOP BAR SIZE: `railSc` is `settings.hudRail` at its nearest stop
+(`hudPick`), capped on the device grid where the plate would reach the view's edge (`railCap`);
 the bake is blitted about the **top-centre** anchor and `railMouse` maps the pointer back through
 it.
 
@@ -935,22 +935,26 @@ one size on the shelf as an ability does on the strip. The drawer's cells are th
 purpose — `BAG_CELL` (18) with the art at 1× — because a spare is glanced at and dragged, not
 read all match.
 
-The whole widget — plate, wells and buy plates — draws at the **HUD SIZE**
-the ESC panel's GAME slider holds (`settings.hudScale`, default 1×). All geometry stays in 1×
+The whole widget — plate, wells and buy plates — draws at the size of its own dial, BOTTOM BAR SIZE
+on the ESC panel's GAME page (`settings.hudScale`, default 1×). All geometry stays in 1×
 strip space: at 1× everything draws straight to the frame, and at any other size `drawHudScaled`
 bakes the widget into `hudScaleCv` and blits it scaled about the strip's anchor
 with smoothing off, so the art scales nearest-neighbour instead of every fillRect going soft.
 Every hit test (`stripHit`, `abBuyHit`) maps the pointer back through
-the same anchor via `stripMouse` first, so a click can never land beside its pixel. **The dial has
-notches, not a range** (`hudSizes`): every size from `HUD_MIN` to `HUD_MAX` (0.5× to 1.5×) at which
-one HUD pixel is a whole number of canvas pixels, and none past the size where the strip would
-outgrow the view (`hudSnapDown`). So a 2× canvas offers 50 / 100 / 150, a 3× canvas 67 / 100 / 133,
-a 4× canvas quarter steps. `hudSc()` draws at the notch nearest the stored value (`hudStep`),
-which also carries a setting across to a screen with other notches; the slider's knob steps
-between them with a tick under the track at each. A size off the grid would draw every pixel,
-say, 1.6 canvas pixels wide and its lines one or two wide by chance. The strip, the corner
-and the team rail all scale by this one number, and a bake lands on the device grid (`hudPx`). **The top-left corner
-scales with the same dial**: `drawCornerScaled` bakes the shelf and the drawer at 1× (`drawCorner`)
+the same anchor via `stripMouse` first, so a click can never land beside its pixel. **Each HUD widget
+has its own size dial** (0.436: `hudScale` the strip, `hudCorner` the top-left corner, `hudRail` the
+team rail; the minimap keeps its radius dial, `mmR`). A dial's stops (`hudSizes`) are every 5%
+(`HUD_FINE`) from `HUD_MIN` to `HUD_MAX` (0.5× to 2×) plus every **crisp** size (`hudCrisp`), one at
+which a HUD pixel is a whole number of canvas pixels: a 2× canvas's are 50 / 100 / 150 / 200, a 3×
+canvas's 67 / 100 / 133 / 167 / 200. A 5% stop within half a step of a crisp size gives way to it, so
+the knob lands crisp near where it is dropped, and the crisp sizes are ticked under the track. Between
+them some pixel rows draw one canvas pixel wider than others, the price of any size at all. No dial
+stops past the size where its widget would outgrow the view (`stripCap`, `cornerCap`, `railCap`,
+through `hudFit`); the track past that is sunk. `hudPick` draws a stored value at its nearest stop,
+which also carries a setting across to a screen with other stops; `hudSc()` is the strip's size,
+`cornerSc()` the corner's, `railSc` the rail's, and a bake and its size land on the device grid
+(`hudPx`). **The top-left corner
+scales with its own dial**: `drawCornerScaled` bakes the shelf and the drawer at 1× (`drawCorner`)
 and blits them about the top-left corner (sized by `CORNER_REACH` and the open drawer), and
 `bagHit` and `shelfHit` map the pointer back through `cornerMouse`. The
 [build list](gameplay.md#base-building)'s column is the strip's: its bake grows by

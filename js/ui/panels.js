@@ -547,8 +547,11 @@ function drawFlatButton(r, label, hv) {
 // without them the row reads ON / OFF.
 const SET_TABS = [
   { id: 'game', label: 'GAME', rows: [
+    // one size dial per HUD widget (HUD_DIALS, below), top of the screen first
+    { id: 'hudCorner', label: 'WEAPON BAR SIZE', kind: 'slider' },
+    { id: 'hudRail', label: 'TOP BAR SIZE', kind: 'slider' },
     { id: 'map', label: 'MINIMAP SIZE', kind: 'slider' },
-    { id: 'hud', label: 'HUD SIZE', kind: 'slider' },
+    { id: 'hud', label: 'BOTTOM BAR SIZE', kind: 'slider' },
     { id: 'shake', label: 'SCREEN SHAKE', kind: 'toggle' },
     // the pad's rumble when an item is grabbed, placed or
     // swapped (haptic, js/input.js) - dead on a mouse, which has no motor
@@ -1000,15 +1003,25 @@ function applySliderDrag() {
     settings.sfxVol = Math.round(t * 20) / 20;
     SFX.setSfxVolume(settings.sfxVol);
   } else if (dragSlider === 'map') {
-    settings.mmR = Math.round(16 + t * 18);
+    settings.mmR = Math.round(MM_R_MIN + t * (MM_R_MAX - MM_R_MIN));
     applyMinimapSize();
-  } else if (dragSlider === 'hud') {
-    // the knob steps notch to notch - only sizes the HUD can draw crisp on
-    // this screen (hudSizes, js/ui/strip.js); the strip reads it live
-    const S = hudSizes();
-    settings.hudScale = S[Math.round(t * (S.length - 1))];
+  } else if (HUD_DIALS[dragSlider]) {
+    // the knob lands on the dial's nearest stop (hudSizes, js/ui/strip.js),
+    // never past the widget's cap; the widget reads it live
+    const d = HUD_DIALS[dragSlider];
+    settings[d.key] = hudPick(HUD_MIN + t * (HUD_MAX - HUD_MIN), d.cap());
   }
 }
+// THE HUD SIZE DIALS, by row id: the settings key each one holds and the cap
+// its widget passes (js/ui/strip.js, js/ui/rail.js). All share one track,
+// HUD_MIN at the left end to HUD_MAX at the right, so the same knob position
+// is the same size on every row.
+const HUD_DIALS = {
+  hud: { key: 'hudScale', cap: () => stripCap() },
+  hudCorner: { key: 'hudCorner', cap: () => cornerCap() },
+  hudRail: { key: 'hudRail', cap: () => railCap(railLayout()) },
+};
+function hudDialT(v) { return (v - HUD_MIN) / (HUD_MAX - HUD_MIN); }
 
 // the speaker beside the MASTER track: 9x9, the same plate the toggle rows
 // use. It lives on the AUDIO page, so it only has a rect while that page is
@@ -1126,7 +1139,7 @@ function settingsMouseDown() {
     else SFX.pickup();
     return;
   }
-  if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || hit === 'hud') { dragSlider = hit; applySliderDrag(); return; }
+  if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || HUD_DIALS[hit]) { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'close') { settingsClose(); return; }
   if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
   if (hit === 'saves') { openSaves(); return; }
@@ -1144,15 +1157,18 @@ function settingsMouseDown() {
 
 // dim: the fill and the readout go grey. The three sound dials pass it while
 // muted, so the speaker's state reads off every track it silences at a glance.
-// notches: a stepped dial's stops, one tick under the track at each, so the
-// knob's jumps read as stops rather than as a stuck knob
-function drawSliderRow(y, t, txt, dim, notches) {
+// ticks: 0..1 track positions to mark under the track - a HUD size dial's
+// crisp sizes, the stops where its pixels draw perfectly even. stop: where
+// the knob can go no further (a widget's cap); the track past it is sunk
+function drawSliderRow(y, t, txt, dim, ticks, stop) {
   ctx.fillStyle = '#0a0e23'; ctx.fillRect(SL_X - 1, y + 1, SL_W + 2, 5);
-  ctx.fillStyle = '#2c3a68'; ctx.fillRect(SL_X, y + 2, SL_W, 3);
+  const room = stop == null ? SL_W : Math.round(stop * SL_W);
+  ctx.fillStyle = '#2c3a68'; ctx.fillRect(SL_X, y + 2, room, 3);
+  if (room < SL_W) { ctx.fillStyle = '#161e3e'; ctx.fillRect(SL_X + room, y + 2, SL_W - room, 3); }
   ctx.fillStyle = dim ? '#4a5480' : '#ffd95c'; ctx.fillRect(SL_X, y + 2, Math.round(t * SL_W), 3);
-  if (notches > 1) {
+  if (ticks) {
     ctx.fillStyle = '#4a5480';
-    for (let i = 0; i < notches; i++) ctx.fillRect(SL_X + Math.round(i / (notches - 1) * SL_W), y + 6, 1, 2);
+    for (const k of ticks) ctx.fillRect(SL_X + Math.round(k * SL_W), y + 6, 1, 2);
   }
   const kx = SL_X + Math.round(t * SL_W);
   ctx.fillStyle = '#0a0e23'; ctx.fillRect(kx - 2, y - 1, 5, 9);
@@ -1236,8 +1252,11 @@ function drawSliderById(id, y, off) {
   if (id === 'vol') drawSliderRow(y, settings.volume, String(Math.round(settings.volume * 100)), off);
   else if (id === 'music') drawSliderRow(y, settings.musicVol, String(Math.round(settings.musicVol * 100)), off);
   else if (id === 'sfx') drawSliderRow(y, settings.sfxVol, String(Math.round(settings.sfxVol * 100)), off);
-  else if (id === 'map') drawSliderRow(y, (settings.mmR - 16) / 18, 'R' + settings.mmR);
-  else if (id === 'hud') { const n = hudSizes().length; drawSliderRow(y, n > 1 ? hudStep() / (n - 1) : 1, String(Math.round(hudSc() * 100)), false, n); }
+  else if (id === 'map') drawSliderRow(y, (settings.mmR - MM_R_MIN) / (MM_R_MAX - MM_R_MIN), String(Math.round(settings.mmR / 24 * 100)));
+  else if (HUD_DIALS[id]) {
+    const d = HUD_DIALS[id], cap = d.cap(), v = hudPick(settings[d.key] || 1, cap);
+    drawSliderRow(y, hudDialT(v), String(Math.round(v * 100)), false, hudCrisp(cap).map(hudDialT), Math.min(1, hudDialT(hudSizes(cap).at(-1))));
+  }
 }
 
 // one toggle row's state, by row id
@@ -1319,9 +1338,13 @@ function renderSettings(now, opts) {
   // the foot: CLOSE, and in a match the exit beside it, as flat buttons
   for (const l of footPlanks()) drawFlatButton(l, l.label, hit === l.id ? 1 : 0);
   if (slide) ctx.restore();
-  // live strip preview while the HUD SIZE knob is in hand - the minimap
+  // live preview of the widget whose size knob is in hand - the minimap
   // slider's grammar. Only during the drag, and drawn last: the strip's home
   // sits under the slab's bottom edge, so it rides over the panel for exactly
   // as long as the hand is resizing it.
-  if (dragSlider === 'hud' && state.mode === 'play' && !player.dead) { drawHudScaled(now, 0); drawCornerScaled(now, 0); }
+  if (HUD_DIALS[dragSlider] && state.mode === 'play' && !player.dead) {
+    if (dragSlider === 'hud') drawHudScaled(now, 0);
+    else if (dragSlider === 'hudCorner') drawCornerScaled(now, 0);
+    else drawRailScaled(now, 0);
+  }
 }

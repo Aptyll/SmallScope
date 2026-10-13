@@ -16,7 +16,7 @@
 // coming back is its emblem at LOCK_DIM. The tooltip carries the name, class
 // and level of the one chip the pointer is on (tipRail). WHERE anyone is
 // stays the minimap's job.
-// It scales with the HUD SIZE dial about its top-centre anchor
+// It scales with its own TOP BAR size dial about its top-centre anchor
 // (drawRailScaled), capped so the plate clears the view's edge (railSc),
 // rides the intro slide down from above with the minimap, and stays up while
 // you are dead - the side's state is exactly what a spectator reads.
@@ -92,12 +92,11 @@ function railLayout() {
   row(1, x);
   return { x: x0, w, span, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, sep, clock: clk };
 }
-// the size the rail is drawn at: the one HUD scale every widget shares
-// (hudSc, whole device pixels, so a 12px emblem never drops a row), capped
-// on the same grid where the plate would reach the view's edge
-function railSc(L) {
-  return Math.min(hudSc(), hudSnapDown((VIEW_W - 2 * 4) / (L.span + 2)));
-}
+// the size the rail is drawn at: its own dial (settings.hudRail, the stops
+// hudSizes offers, js/ui/strip.js), capped on the device grid where the plate
+// would reach the view's edge (railCap); no layout yet = no cap but the dial's
+function railCap(L) { return L ? hudSnapDown((VIEW_W - 2 * 4) / (L.span + 2)) : HUD_MAX; }
+function railSc(L) { return hudPick(settings.hudRail || 1, railCap(L)); }
 // the rail's bottom edge in view px (0 while there is no rail): what the
 // top-centre headlines - the camp plate and DAY N - hang under
 function railBottom() {
@@ -167,7 +166,7 @@ function drawRail(now, L) {
   drawRailScore(L);
   for (const c of L.chips) drawRailChip(c, now, hov && hov.p === c.p);
 }
-// The rail at the HUD SIZE the dial holds: drawHudScaled's deal, the bake
+// The rail at the size its dial holds: drawHudScaled's deal, the bake
 // blitted about the TOP-centre anchor. `slide` is the intro's 0..1 (1 away).
 const railScaleCv = document.createElement('canvas');
 const railScaleCtx = railScaleCv.getContext('2d');
@@ -196,5 +195,5 @@ function drawRailScaled(now, slide) {
   drawRail(now, L);
   ctx.restore();
   ctx = o;
-  ctx.drawImage(railScaleCv, hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s), slideY, bw * s, bh * s);
+  ctx.drawImage(railScaleCv, hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s), slideY, hudPx(bw * s), hudPx(bh * s));
 }

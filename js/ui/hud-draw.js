@@ -453,7 +453,7 @@ function drawHudStrip(now) {
   drawFishPop(hov);
   drawBuildList(now); // last: the open column stands over the meal wells
 }
-// The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
+// The strip and its buy plates at the size its dial holds (hudSc). At 1x
 // everything draws straight to the frame as it always did; any other size
 // bakes the widget at 1x into hudScaleCv and blits it scaled about the strip's
 // bottom-centre anchor - uictx's smoothing is off, so the art scales
@@ -491,10 +491,10 @@ function drawHudScaled(now, slideY) {
   ctx.drawImage(hudScaleCv,
     hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
     hudPx(VIEW_H - (VIEW_H - by) * s) + slideY,
-    bw * s, bh * s); // whole device pixels: hudSc snaps to them
+    hudPx(bw * s), hudPx(bh * s)); // the size, too, on the device grid
 }
 
-// THE CORNER - the shelf and the drawer under it - at the same HUD SIZE, scaled about the
+// THE CORNER - the shelf and the drawer under it - at its own size (cornerSc), scaled about the
 // TOP-LEFT corner so the tool cell stays put in it. The same deal as
 // drawHudScaled: at 1x straight to the frame, otherwise a 1x bake blitted
 // with smoothing off. The bake is sized to the widget's reach (CORNER_REACH,
@@ -506,7 +506,7 @@ function drawCorner(now) {
   drawBag(now);
 }
 function drawCornerScaled(now, slideX) {
-  const s = hudSc();
+  const s = cornerSc();
   if (s === 1) {
     ctx.save();
     ctx.translate(slideX, 0);
@@ -525,7 +525,7 @@ function drawCornerScaled(now, slideX) {
   ctx.clearRect(0, 0, bw, bh);
   drawCorner(now);
   ctx = o;
-  ctx.drawImage(cornerScaleCv, slideX, 0, bw * s, bh * s); // whole device pixels: hudSc snaps to them
+  ctx.drawImage(cornerScaleCv, slideX, 0, hudPx(bw * s), hudPx(bh * s)); // the size on the device grid
 }
 
 // ONE WELL OF THE SHELF: the tier rim and the dark well inside it, one px
@@ -660,14 +660,14 @@ function drawShelf(now) {
 // what it would do there. It asks the wells in the SAME order dragDrop
 // resolves in, so the ring can never point at a well the release would not
 // take. The strip's own weapon slot is left out on purpose - it is drawn under
-// the HUD SIZE transform (drawHudScaled) while this pass is in plain view
+// the strip's size transform (drawHudScaled) while this pass is in plain view
 // space, and the shelf's tool well, which dragDrop tries first, is the one a
 // drag actually aims at.
 function drawDropPromise() {
   if (!state.drag || !mouse.inside || shopHit(mouse.x, mouse.y)) return;
   // the ring is painted in screen space after the corner's bake, so a 1x
-  // rect of the shelf or the drawer is mapped through the HUD SIZE first
-  const k = hudSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
+  // rect of the shelf or the drawer is mapped through the corner's size first
+  const k = cornerSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
   const fh = shelfHit(mouse.x, mouse.y);
   if (fh) {
     if (fh.kind === 'bit') drawDropRing(sc(shelfCellRect(fh.i)), dropKindBit(SHELF_SLOT, fh.i));
