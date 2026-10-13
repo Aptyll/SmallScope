@@ -1,8 +1,8 @@
 'use strict';
-// The team rail: every player in the match as a chip along the top edge,
+// The team rail: every other player in the match as a chip along the top edge,
 // and the anchors (railBottom, headlineY, noteY) the screens hang under it.
 // ---- the team rail: the roster along the top edge ----------------------
-// THE TEAM RAIL (3.33, joined into one scoreboard in 4.16): every player in
+// THE TEAM RAIL (3.33, joined into one scoreboard in 4.16): every other player in
 // the match along the top centre, Dota's top bar kept clean and minimal.
 // ONE plain plate (the hud frame's outline and flat ground, no bevel, no
 // snow): your side's chips on the left, the rival's on the right, and
@@ -10,8 +10,8 @@
 // rival's total - on a darker panel, each total in its
 // side's mark. A CHIP per player: the class emblem at 12px (CLASS12,
 // js/menu.js) in a rim painted by side through skin(), a thin hp bar under it
-// in the same colour (one solid run, no segments), and you at
-// the head of your side with a frost tick under your bar - there, not loud.
+// in the same colour (one solid run, no segments). You are not on it:
+// your own hp and level are the strip's, so the rail is the other nine.
 // A dead player's chip goes under the wells' slate with the hand walking
 // round it until the bird sets them down again (drawSweepCover - the one
 // shape every wait on this HUD is drawn in), and its rim is drawn back in
@@ -35,18 +35,15 @@ const RAIL_Y = MM_GAP;              // the plate's top edge: level with the mini
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
 const RAIL_SLIDE = RAIL_Y + RAIL_H + 4; // how far it rises to be AWAY: the plate, the cap and the sky over it
-const RAIL_YOU = HUD_FROST;         // the tick under your own bar
-const RAIL_TRACK = '#1e2544';       // an hp bar's empty track
-// the roster: your side then the rival's, each by id, you at the head of
-// yours. Null unless both sides have a body - the practice arena has no rail.
+const RAIL_TRACK = '#25282d';       // an hp bar's empty track
+// the roster: your teammates then the rival's, each by id - never you.
+// Null unless the rival side has a body - the practice arena has no rail.
 function railSides() {
   const mine = [], theirs = [];
-  for (const p of players) { if (!p.active) continue; (p.team === player.team ? mine : theirs).push(p); }
-  if (!mine.length || !theirs.length) return null;
+  for (const p of players) { if (!p.active || p === player) continue; (p.team === player.team ? mine : theirs).push(p); }
+  if (!theirs.length) return null;
   const byId = (a, b) => a.id - b.id;
   mine.sort(byId); theirs.sort(byId);
-  const i = mine.indexOf(player);
-  if (i > 0) { mine.splice(i, 1); mine.unshift(player); }
   return [mine, theirs];
 }
 // a side's kills: every player who has worn its colour this match, a
@@ -56,21 +53,26 @@ function railKills(team) {
   for (const p of players) if (p.team === team) n += p.kills || 0;
   return n;
 }
-function railChipsW(n) { return n * RAIL_CHIP + (n - 1) * RAIL_GAP; }
+// a side's chips and the air between them and the score well; nothing for a
+// side with no one on it but you
+function railChipsW(n) { return n ? n * RAIL_CHIP + (n - 1) * RAIL_GAP + RAIL_SEP : 0; }
 // the plate, every chip, the two totals and the clock in 1x space, or null
 // while there is no rail. The score cells grow for a third digit rather
 // than spill, so the layout only moves on a hundredth kill.
 function railLayout() {
   const sides = railSides();
   if (!sides) return null;
-  const teams = [sides[0][0].team, sides[1][0].team];
+  const teams = [player.team, sides[1][0].team];
   const kills = teams.map(railKills);
   const clock = clockTxt(state.elapsed);
   const kw = kills.map((k) => Math.max(RAIL_KILL_W, pixelTextWidth(String(k), 2)));
   const cw = Math.max(RAIL_CLOCK_W, pixelTextWidth(clock));
   const wellW = 1 + RAIL_SEP + kw[0] + RAIL_SEP + cw + RAIL_SEP + kw[1] + RAIL_SEP + 1;
-  const w = RAIL_PAD + railChipsW(sides[0].length) + RAIL_SEP + wellW + RAIL_SEP + railChipsW(sides[1].length) + RAIL_PAD;
-  const x0 = Math.round((VIEW_W - w) / 2), y = RAIL_Y + RAIL_PAD;
+  const w = RAIL_PAD + railChipsW(sides[0].length) + wellW + railChipsW(sides[1].length) + RAIL_PAD;
+  // the score well holds the centre, so the clock never drifts when one
+  // side is a chip short (yours always is: you are not on it)
+  const x0 = Math.round(VIEW_W / 2 - RAIL_PAD - railChipsW(sides[0].length) - wellW / 2), y = RAIL_Y + RAIL_PAD;
+  const span = 2 * Math.max(VIEW_W / 2 - x0, x0 + w - VIEW_W / 2);
   const chips = [];
   const row = (s, x) => {
     for (let j = 0; j < sides[s].length; j++) {
@@ -79,7 +81,7 @@ function railLayout() {
   };
   let x = x0 + RAIL_PAD;
   row(0, x);
-  x += railChipsW(sides[0].length) + RAIL_SEP;
+  x += railChipsW(sides[0].length);
   const well = { x, y, w: wellW, h: RAIL_BODY };
   x += 1 + RAIL_SEP;
   const score = [{ x, w: kw[0], n: kills[0], team: teams[0] }];
@@ -89,13 +91,13 @@ function railLayout() {
   score.push({ x, w: kw[1], n: kills[1], team: teams[1] });
   x += kw[1] + RAIL_SEP + 1 + RAIL_SEP;
   row(1, x);
-  return { x: x0, w, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, clock: clk };
+  return { x: x0, w, span, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, clock: clk };
 }
 // the size the rail is drawn at: the one HUD scale every widget shares
 // (hudSc, whole device pixels, so a 12px emblem never drops a row), capped
 // on the same grid where the plate would reach the view's edge
 function railSc(L) {
-  return Math.min(hudSc(), hudSnapDown((VIEW_W - 2 * 4) / (L.w + 2)));
+  return Math.min(hudSc(), hudSnapDown((VIEW_W - 2 * 4) / (L.span + 2)));
 }
 // the rail's bottom edge in view px (0 while there is no rail): what the
 // top-centre headlines - the camp plate and DAY N - hang under
@@ -148,7 +150,7 @@ function drawRailChip(c, now, on) {
   const left = wait ? (total > 0 ? Math.min(1, p.respawnT / total) : 1) : 0;
   if (wait && !on) drawRimSweep(c.x, c.y, c.w, c.h, left, tm.mark, HUD_LIT);
   else {
-    ctx.fillStyle = on ? '#f4f7ff' : gone ? '#232c52' : tm.mark;
+    ctx.fillStyle = on ? '#f4f7ff' : gone ? '#2b2e34' : tm.mark;
     ctx.fillRect(c.x, c.y, c.w, c.h);
   }
   ctx.fillStyle = BAG_WELL;
@@ -165,10 +167,6 @@ function drawRailChip(c, now, on) {
   if (frac > 0) {
     ctx.fillStyle = tm.mark;
     ctx.fillRect(c.x, by, Math.max(1, Math.round(c.w * frac)), 2);
-  }
-  if (p === player) {
-    ctx.fillStyle = RAIL_YOU;
-    ctx.fillRect(c.x + c.w / 2 - 2, c.y + RAIL_BODY, 4, 1);
   }
 }
 // the score well: a darker panel between the two sides, the kill totals in

@@ -483,7 +483,7 @@ empty world.
 | top left | the **weapon shelf**: the tool in hand and its bit cells, shots left and fittings right, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
 | top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
-| top centre | the **team rail**: one plate, every player in the match as a 14px chip with a hp bar, your side left (you first, a frost tick under your bar) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
+| top centre | the **team rail**: one plate, every other player in the match as a 14px chip with a hp bar, your teammates left (never you: your own hp is the strip's) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
@@ -881,8 +881,10 @@ player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the class's 12×12
 (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`, never a shrink of it)
 on the `BAG_WELL` ground in a rim painted by side through `skin()`, with a **hp bar** hung off its
 foot: one solid 2px run of the side's `mark` on a `RAIL_TRACK` groove, deliberately unsegmented.
-`railSides` orders each side by id and puts **you first**, marked by a 4 px `RAIL_YOU` frost tick
-under your bar, nothing louder: your emblem is the same as anyone's. A chip's state, in the wells'
+`railSides` orders each side by id and **leaves you off** (0.421): your own hp and level are the
+strip's, so a chip for you only repeated them. Your side is a chip short, so `railLayout` centres
+the score well, not the plate, on the view (`span` is the plate's reach either side of that, what
+`railSc` caps on), and the clock never drifts. A chip's state, in the wells'
 own grammar:
 
 - **up**: the side's `mark` rim, the emblem lit, the bar full or not;
@@ -915,9 +917,13 @@ it.
 
 `drawHudFrame(x, y, w, h, o)` is the one plate the strip, the weapon shelf, the pack and the team rail stand on,
 drawn the way League's and Dota's HUDs get their contrast, kept simple (4.18): a dark outline
-(`HUD_INK`), one bright line just inside it (`HUD_EDGE`, cold steel, kept apart from the drawer's amber and red states), and a
-solid dark ground (`o.bg`, `AB_BG` by default). The outline holds the plate apart from bright
-snow at noon, the bright line holds it apart from the forest at night, and the ground keeps every
+(`HUD_INK`), one faint line just inside it (`HUD_EDGE`, a step off the ground, kept apart from the drawer's amber and red states), and a
+solid dark ground (`o.bg`, `AB_BG` by default). **The palette is neutral graphite** (0.421): the
+cold steel line and the navy grounds it replaced pulled the eye off the game, so the frame is the
+quietest thing on screen and the icons, the sides' colours and the gold carry the contrast. The
+strip, the shelf, the drawer, the rail, the build well, the practice bar and the tooltips share it;
+the menus, the shop and the minimap are still navy. The outline holds the plate apart from bright
+snow at noon, the faint line finishes its edge against the forest at night, and the ground keeps every
 well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
 both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world
 there reads as a hole; `o.corners`). `o.tab` is a block rising off the top edge and flush with
