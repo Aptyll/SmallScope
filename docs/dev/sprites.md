@@ -190,11 +190,7 @@ concept round for this model, kept as the record of what not to draw again.
 
 **Team colours are palette swaps of those same grids.** `TEAM_SKINS` (two presets, RED and BLUE,
 also exported as `SPRITES.teams` so the game code can read the names and marker colours) drives
-five baked sets — the four below plus `eagleTeam[team]`: the drop eagle's three flap frames with
-the torso band (the rows the head sits in, which hold still across the frames) re-lettered by
-`armorize()` to plate/helm chars and baked in team colour, so the armour recolours only pixels
-the bird already has and the silhouette is untouched (`eagleFlash` is the same trick in all
-white, for the downed objective's hit flash):
+four baked sets:
 
 **The presets can be repainted live.** `TEAM_PALETTES` holds four versions of the pair (`def`,
 and `rg`/`by`/`hc` for colour-blind eyes, picked by `settings.teamPal`); `TEAM_SKINS` holds the
@@ -215,7 +211,7 @@ A new character or building sprite has to be added to those bakes, not just to t
 entry, or it will not wear a team's colour — and every read indexes by `skin(team)` (the
 CLAUDE.md hard rule), never the bare team.
 
-**The war eagles** (`warbirds.js`) are the drop bird's cosmetic skins and have **no grids**: each
+**The war eagles** (`warbirds.js`, four of them) are the drop bird's cosmetic skins and have **no grids**: each
 is flat plates in bird space (x forward, y toward the right wing, z up), seen from above, one cel
 tone per plate from the way it faces a fixed light, filled at 4× and shrunk to whole pixels, then
 given inner lines, lit edges and one ink outline. `frame(id, team, heading, beat, size)` paints a frame
@@ -230,21 +226,30 @@ the least recently drawn go past `KEEP`; `shadow` and
 `flash` wash a frame into one scratch canvas each, and `reach` measures how far it stands up and
 down from its centre (the roost's hp bar). The team plates read `TEAM_SKINS`, so the cache clears
 in an `onTeams` callback. `LOOKS` says what each wears by its `BIRD_SKINS` id (eagle.js, with the
-name and price), and `SPRITES.birdSkinIcon` gives the skins screen the wingbeat (spread, mid, back, mid) nose-up at a
+name and price), and `SPRITES.birdSkinIcon` gives the skins screen the wingbeat (Perch's two looks add theirs, perch.js) (spread, mid, back, mid) nose-up at a
 card's size, cropped to one box. The plates were designed in the concept round's Python, kept in
 the project files, not the repo.
 
-**Perch at the roost** (`perch.js`) is the landed bird of the looks that have one (`LOOKS`: the
-classic and ironclad, by `BIRD_SKINS` id): seen from above with its wings half open, the crew's
-saddle on its back, a narrow arrow head with no face, and no grids either. It is a stack of flat
-shapes (`rell` ellipses, `blade` feathers, `poly`, `rect`) on a 112 px grid facing left, one world
-px a cell, shaded by rule: a shadow rim away from the top-left light, a lit rim on `hl` parts, a
-contact shadow under whatever overlaps from above, an inner line (`lt`) where a part passes over the
-same material (`seam: false` melts a part into it instead), one ink outline and a tight snow
-shadow. `frame(id, team, heading, beat)` turns the shapes to the heading before filling them, so
-the pixels never smear and the light stays top-left; the beat turns the wings forward
-(`SPREAD`). Frames paint on first use or from `warm`/`tick` (about 12 ms each) and the team parts
-read `TEAM_SKINS`, so the cache clears in `onTeams`. The concept rounds' Python
+**Perch** (`perch.js`) is the drop bird itself in the looks that are its own (`LOOKS`: the
+classic and the ironclad, by `BIRD_SKINS` id), in flight and at the roost: seen from above, the
+crew's saddle on its back, a narrow arrow head with no face, and no grids either. It is a stack
+of flat shapes (`rell` ellipses, `blade` feathers, `poly`, `rect`) on a 112 px grid facing left,
+shaded by rule: a shadow rim away from the top-left light, a lit rim on `hl` parts, a contact
+shadow under whatever overlaps from above, an inner line (`lt`) where a part passes over the same
+material (`seam: false` melts a part into it instead), one ink outline, and on the ground a tight
+snow shadow. A **pose** (`POSE(key)`) moves the wings and tail: `r0`-`r2` the roost's three beats,
+`s0`-`s9` level flight's one smooth stroke (`STROKE_N` phases), `d0`-`dDIVE_N` the stoop by its
+progress (the wings tuck back off the stroke, hold, then flare to brake), `l0`-`l2` the takeoff's
+hard beats; a lifted wing turned from the light steps a tone darker (`litStep`). `frame(id, team,
+heading, key, scale)` maps every part from the grid onto the frame through its own affine (posed,
+turned to the heading, `scale` px a cell: 1 at the roost, 1.5 in flight), so the pixels never
+smear, the light stays top-left and the bird draws 1:1; `shadow` is the same pose's silhouette
+flat on the snow at the roost's size; `seat` is where a rider's seat lands on that frame, so a
+rider rides its wing. Frames paint on first use or from `warm` (urgent, or `idle`: the slow queue,
+one frame per `IDLE_GAP`) and `tick`, about 5 ms each, within a budget; a bird whose frame is not
+painted yet holds its last one, and the least recently drawn go past `KEEP`. The team parts read
+`TEAM_SKINS`, so the cache clears in `onTeams`. `SPRITES.birdSkinIcon` gets the two looks' card
+frames (the stroke nose-up) and `figure` the wiki's. The concept rounds' Python
 (perch-landed/src/styles.py, look D, head H) lives in the project files, not the repo.
 
 **The merchant** has its **own grids**, `merchDown`/`merchUp`/`merchSide`
@@ -595,9 +600,9 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | `creekfish.js` | none: generated by app/bake-creekfish/paint.py | `creekFish[kind]` (`whitefish`/`snowChar`: `swim[heading][frame]`, 16 headings, 2 tail frames, rimmed in the water's shade; `icon` side-on), `itemWhitefish`, `itemSnowChar` |
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
 | `robot.js` | none: generated by app/bake-robot/bake.py | `robotSkin` (the IRON SCOUT skin, per team) |
-| `eagle.js` | eagle | `eagle`, `eagleTeam`, `eagleFlash`, `eagleShadows` |
+| `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
 | `warbirds.js` | palettes, plates, painter, cache | `warBirds` (no grids: painted in code, below) |
-| `perch.js` | palettes, shapes, the bird, painter, cache | `perchRest` (no grids: painted in code, below) |
+| `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
 | `buildings.js` | wall, tiered structures, the turret's three timber bases, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret` (`turretT1`/`T2`/`T3` through `TUR_PALS` and `turretPal`), `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
 | `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |

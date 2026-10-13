@@ -17,7 +17,7 @@ const TEAMS = SPRITES.teams; // the 2 colour presets (RED, BLUE), baked into the
 // enemies red from the first match to the last, and a future second human
 // sees the mirror. The match itself never asks this: team indices, enemyOf,
 // PVP and every rule read p.team; only the PAINT goes through here - every
-// TEAMS[...] lookup, the per-team sprite sets (champ, eagleTeam, teamBuild,
+// TEAMS[...] lookup, the per-team sprite sets (champ, the birds, teamBuild,
 // robotTeam, merchant) and the two maps' eagle colours. Bot names are
 // computed from it live (Player.name), so RED-3 turns BLUE-3 with the toggle.
 function skin(team) { return settings.teamBlue && player && player.team === 0 ? 1 - team : team; }

@@ -169,10 +169,9 @@ function trailArt(cols, f) {
 }
 function skinArt(tab, r, t, f) {
   if (tab.id === 'bird') {
-    const own = SPRITES.birdSkinIcon && SPRITES.birdSkinIcon[r.id];
-    if (own && own[t]) { const spr = own[t][f % own[t].length]; return { img: spr, sx: 0, sy: 0, w: spr.width, h: spr.height, turn: false }; }
-    const spr = SPRITES.eagleTeam[t][[0, 1, 2, 1][f % 4]];
-    return { img: spr, sx: 0, sy: 0, w: spr.height, h: spr.width, turn: true };
+    const set = (SPRITES.birdSkinIcon[r.id] || SPRITES.birdSkinIcon[BIRD_SKINS[0].id])[t]; // every bird skin has a card (perch.js, warbirds.js)
+    const spr = set[f % set.length];
+    return { img: spr, sx: 0, sy: 0, w: spr.width, h: spr.height };
   }
   let key = tab.id + ':' + r.id + ':' + t;
   if (tab.id === 'trail') key += ':' + f;
@@ -185,7 +184,7 @@ function skinArt(tab, r, t, f) {
     else cv = trailArt(r.cols, f);
     skinArtCache.set(key, cv);
   }
-  return { img: cv, sx: 0, sy: 0, w: cv.width, h: cv.height, turn: false };
+  return { img: cv, sx: 0, sy: 0, w: cv.width, h: cv.height };
 }
 
 // ---- the coin tag -----------------------------------------------------------
@@ -367,12 +366,7 @@ function drawSkinCard(c, now, a) {
   ctx.save();
   ctx.beginPath(); ctx.rect(c.x + 1, y + 1, c.w - 2, SK_ART_H + 2); ctx.clip();
   ctx.globalAlpha = a * (owned ? 1 : 0.85);
-  if (!art.turn) ctx.drawImage(art.img, art.sx, art.sy, bw, bh, bx, by, bw * S, bh * S);
-  else {
-    ctx.translate(bx + (bw * S) / 2, by + (bh * S) / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.drawImage(art.img, -(art.img.width * S) / 2, -(art.img.height * S) / 2, art.img.width * S, art.img.height * S);
-  }
+  ctx.drawImage(art.img, art.sx, art.sy, bw, bh, bx, by, bw * S, bh * S);
   ctx.restore();
   ctx.globalAlpha = a;
   // the foot: a hairline, the name, and the price or the tick
