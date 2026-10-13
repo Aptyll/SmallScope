@@ -101,8 +101,8 @@ back on the next frame. A draw and a shield still turn it every step.
 
 ### The zipline
 
-The one movement that is neither walked nor slid: a body of the owning team standing under its
-side's cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
+The one movement that is neither walked nor slid: any body standing under **either** side's
+cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
 (world.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
@@ -121,7 +121,7 @@ said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px 
 `p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
 comes back clipped on; `die` lets go too.
 
-**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is your own
+**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is either
 side's cable under the pointer as drawn (`zipUnder`, world.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
@@ -132,9 +132,9 @@ tiles); inside it the cap is the whole answer. The click scheme's press asks the
 `zipUnder`, so what lights is what a press takes.
 
 **The walk to the cable — a channel.** E (or the click scheme's right press) with the pointer on
-your own cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
+a cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
 `input.aimX/aimY` (`zipUnder` again — the aim rides the wire, so a host answers a client the
-same): `zipWalkStart` sets `p.zipWalk` (declared in `reset()`, cleared by `die`) and the body
+same): `zipWalkStart` sets `p.zipWalk` and the line in `p.zipWalkL` (declared in `reset()`, cleared by `die`) and the body
 walks itself there — `zipWalkStep`, called at the top of `updatePlayer`'s input read, routes
 through `navTo` to the **mount** (`zipMount`: the nearest point of the track whose ground a body
 can stand on — the track point itself is the pylon's own tile at a pylon; the bots walk to the
@@ -156,8 +156,13 @@ rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash
 still a body to every weapon** — arrows, the roll's sweep, a turret, a wolf, `seenAt` — and plain
 damage never dismounts (its knockback decays unspent, since the ride branch never applies
 `kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
-`rootUnit` and `netUnit`: dropped at rest on the snow under the cable. The one thing that cannot
-touch a rider is another body: `separateUnits` skips `p.zip >= 0` the way it skips `inAir(p)`.
+`rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the
+cable. Another body never shoves a rider (`separateUnits` skips `zip >= 0` the way it skips
+`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (world.js, called in `updatePlay`
+once the robots have stepped) finds every pair of riders of different sides on the same line
+within `ZIP_CRASH_R` (8 px) along it, or past each other since the last step (`zipLast`), and
+`stunUnit`s both for `ZIP_CRASH_STUN` (0.8 s, the tackle's top) — so both fall at rest where they
+met. A side's own riders pass through each other. Players (any seat) and soldiers crash alike.
 
 **Letting go keeps the cable's speed** — `zipEnd(p, false)` leaves `vx/vy` at 220 px/s for the
 surface model to spend exactly as `grapEnd` leaves the reel's, so a hop-off is a dash (snow kills
@@ -166,13 +171,17 @@ it in under a second) and shift on landing carves a slide; a body coming down ov
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
 (`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every
-walk the ladder orders ([bots](multiplayer.md#bots)); the waves never will.
+walk the ladder orders ([bots](multiplayer.md#bots)), and so do the waves' soldiers
+([Soldiers](#soldiers-the-waves)). The ride's own steps are shared by every body: `zipBoard` (onto
+the handle, the end's one way included), `zipRide` (the cable's step) and `zipEnd`; `zipStart` is
+the player's preparation in front of `zipBoard`, `zipStep` the player's stick and facing around
+`zipRide`.
 
 ## Trampled snow
 
 Visual only (js/draw/trample.js). A grid of 4 px cells over the world holds how **packed** and how
 **churned** each patch is. `trampleStep` looks at every body on the snow each frame the world moves
-(players off the eagle and off a zipline, every animal but a bird, every robot) and stamps a disc
+(players off the eagle and off a zipline, every animal but a bird, every robot off a zipline) and stamps a disc
 the size of the body every `TR_STEP` px it travels: a walk packs `TR_WALK`, a slide and a crawl
 their own amounts (read off `p.sliding`/`p.prone`, the same state the footprint emitter reads), a
 roll or a knockback past `TR_SHOVE_V` churns, and a drop in hp or a body going down churns a wider
@@ -2120,9 +2129,8 @@ the counter's price flickering.
 whitefish, snow char and gold sunfish (every kind in `FISH_KINDS`) ride its walk, each at the live
 fish price scaled by its heal against the pike's (`goodOf`, `goodScale`): a whitefish (+40) is 0.8
 of a fish, a snow char (+70) 1.4, a gold sunfish (+80) 1.6. So a new fish is priced the moment it
-has a `heal`, and the four rise and fall together. The fish card shows one fish at a time: a tab per fish along its top picks which one its
-price, graph labels and trade plates are for (`shopFish`, this screen's own choice, not match
-state; the trade order still names its fish).
+has a `heal`, and the four rise and fall together. Each fish is its own row on
+[the market page](#the-market-page), with its own coin and its own trades, over the one shared walk.
 
 **Both goods trade at one price in both directions** — no spread at all, the one place the
 half-price rule does not apply. A spread would kill the only thing the market is *for* (buy low,
@@ -2137,8 +2145,8 @@ rather than a flat line that fills in over the first quarter of an hour.
 **A big move makes the news.** `marketNews` cuts a headline when the price has moved both
 `MKT_NEWS` (30%) *and* the good's own `newsMin` gold (fish 4, berries 2) since the last one — green on a rise and red on
 a fall. The absolute floor is the half that matters: a berry going 2G → 3G is a 50% "spike", and
-without it the feed fills with small change. The card that made one pulses in the panel for three
-seconds.
+without it the feed fills with small change. The ticker card and the market page row of the good
+that made one pulse for three seconds.
 
 A headline goes to **two places at once**, and a restock's does too:
 
@@ -2195,9 +2203,10 @@ Top to bottom: the **awning** — a snow-capped, icicled valance striped in the 
 colours, the one thing on the panel that says whose eagle this is — with the shop's sign hung off
 its hem between two lanterns, the merchant's portrait framed at one end and the purse at the
 other; the four sections as a 2×2 grid of three-well rows, each on a recessed
-board; the **MARKET** rule and its two cards side by side; the **SELL strip**, the full width of
+board; the **MARKET** rule and its ticker cards, one a good across the width (each good's coin and a three-day sparkline;
+a click opens [the market page](#the-market-page) on it); the **SELL strip**, the full width of
 the slab, with air under it (`SHOP_SELL_GAP`); and the
-[restock road](#the-restock-road) along that rail. The frame, the section rules, the market cards and
+[restock road](#the-restock-road) along that rail. The frame, the section rules, the ticker cards and
 that edge are all cut from one timber palette under iron corner brackets, which is what makes the
 slab read as a shopfront rather than as one more blue HUD panel.
 
@@ -2240,17 +2249,16 @@ The countdown sits at the **right** end deliberately ([the tooltip-corner rule](
 (`SHOP_DEAR_*`), the price ink with them, and the goods themselves grey back under a wash — the
 tier plate keeping its own hue through it, since which tier a thing is stays true whatever it
 costs. It does not lift under the pointer and it does not shine. It is the same red
-[tipGear](#gear)'s next-level row and the pack's own refusal already speak, and a market card's
-BUY plate wears it too when the reason it is dead is the price rather than a full pack.
+[tipGear](#gear)'s next-level row and the pack's own refusal already speak, and the market page's
+BUY plates wear it too when the reason they are dead is the price.
 
 The **sell strip** is a full-width recessed well with corner brackets — a drop target, so it is
 hard to miss — and it carries the word SELL. Idle it is SELL → a coin; with something in hand it
 becomes that item → a coin and the gold it fetches, and the whole well lights and pulses. At rest
 a slow band of light crosses it (`sellSheen`, a long period and a soft envelope: a resting
 state must not blink). Nothing
-else on the panel is labelled with a verb: a market card's two trade plates say their direction by
-*arrangement* — coin into item is a buy, item into coin is a sale — and the price is stated once,
-big, because it is the same number both ways. The
+else on the SHOP face is labelled with a verb (the market page's trade plates are plain words, like
+the menus). The
 section headings (TOOLS / BITS / MODIFIERS / CARDS) and the graphs' own numbers are this panel's
 share of the [instruments carve-out](rendering.md#show-dont-label), for the reason the practice instruments have
 one: reading a market **is** reading numbers, and no shape compares a price today against a price
@@ -2258,6 +2266,38 @@ yesterday. Hovering anything on it describes it in the ordinary tooltip — an o
 row on top of the rows that item shows anywhere else, a good with its day's change and its
 three-day high and low — and while the counter is up, every bag cell's tooltip gains a SELLS FOR
 row.
+
+### The market page
+
+The counter's third face, a tab plate (a little chart) between SHOP and FORGE, with MARKET on the
+sign (js/ui/market.js). Down the left, a **row per good** (`MKT_GOODS`: frost pike, then every other fish in
+`FISH_KINDS`, then berries; up to `MKT_ROW_H` tall, squeezed to fit over the trades): its icon and name, the live coin in the colour of the last move, and how many you
+carry. The picked row (`mktSel`, this screen's own choice) is rimmed in its good's colour and its
+three days fill **the chart** beside it.
+
+The chart's line is drawn on the **coin**, the rounded price the counter pays, not on the walk's
+float, and its right edge is the market clock right now (`marketNow`: the newest move plus the
+share of the next already gone), so the last sample holds out to the edge and the line creeps on
+between moves. Dotted rules mark the day boundaries; the high, middle and low sit on an axis down
+the right, with the live coin on a plate where the line meets it. Under the pointer a hairline
+reads off the coin at that moment and how long ago (`M:SS`).
+
+**Every trade you made is pinned on it** (the ledger, `marketLog` in js/ui/shop.js): a green dot
+and an upward triangle under the line where you bought, a red dot and a downward one over it where
+you sold, at the exact move and coin the trade happened at, with a count beside it when more than
+one changed hands. A trade is logged with its own clock and coin, never re-read off the graph, so
+the marker sits on the line. Selling a good through the sell strip or SELL ALL logs too. Units
+bought or sold one way, at one coin, inside one move fold into one entry, and a body keeps
+`MKT_TRADES` (48) entries, none older than the graph (`p.trades`, on the player, so it rides the
+save and the wire). Hovering a marker says BOUGHT or SOLD, how many, the coin, the total, the coin
+now (green when the trade is ahead) and how long ago. A **dashed gold line** is what the buys still
+on the chart cost on average, repeated as PAID under the chart beside what you carry and what it
+fetches now.
+
+Along the bottom, four plates in plain words, each wearing the gold it moves: **BUY 1**, **BUY 5**,
+**SELL 1**, **SELL ALL**. A trade order carries a count (`n`): a buy takes as many as the purse and
+the pack cover up to it (BUY 5 with gold for three buys three), a sale as many as you carry, and it
+resolves as one payment, one floater and one marker (`shopTrade`).
 
 ## Inventory and the backpack
 
@@ -2981,9 +3021,17 @@ it may have flown. `updateSoldier` is four rungs, first hit wins:
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
    wall across the spur, a rival bay): `hurtStruct` through the same `robotStrike`;
-4. the **march**: the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
+4. the **march**: first **the zipline** (`soldierBoard`): a cable within `SOLDIER_ZIP_REACH`
+   (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
+   soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
+   toward that end: its own side's cable out to the front, the rival's in to their roost. On
+   the cable the brain is off (the ride branch in `updateRobot`: `zipRide`, no swing), so a
+   rival who meets it there crashes with it ([the zipline](#the-zipline)). Off it, at the end or
+   knocked off, `soldierRejoin` reads the route again from where it stands (the leg it is
+   nearest). Else the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
    route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
-   roost through its lane.
+   roost through its lane. Seed 42: a soldier reaches the rival roost in about 34 s by the
+   cables, 83 s on foot.
 
 It is allowed to fight and nothing else — no tree tempts it, no flag recalls it. Two waves
 meeting on the road therefore grind each other down (they are rival units to each other), which

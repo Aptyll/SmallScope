@@ -90,7 +90,7 @@ function separateUnits(dt) {
   // ...and a roll passes through everything but a deer and a bear (MONSTER.big)
   // ...and a ridden deer is carried by its rider, who stands for both (js/wildlife.js)
   for (const a of animals) if (!a.dead && a.kind !== 'bird' && !a.rider) us.push({ e: a, r: unitRadius(a), s: unitSpace(a), m: unitMass(a), pri: isAnchored(a) ? 1 : 0, hunt: isCampKind(a.kind), vel: false, small: a.kind !== 'deer' && !(MONSTER[a.kind] && MONSTER[a.kind].big) });
-  for (const b of robots) if (!b.dead) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
+  for (const b of robots) if (!b.dead && !(b.zip >= 0)) us.push({ e: b, r: unitRadius(b), s: unitSpace(b), m: UNIT_MASS[b.kind] || UNIT_MASS.robot, pri: 0, vel: false, small: true });
   // velocity a unit carries into a contact: players their momentum, the
   // rest their knockback (their walk is direction-only and re-chosen each tick)
   const vx = (u) => u.vel ? u.e.vx + u.e.kbx : u.e.kbx;

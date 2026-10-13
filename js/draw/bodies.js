@@ -92,9 +92,10 @@ function drawRobot(b, ex, ey, now) {
   const spr = set[b.moving ? Math.floor(b.animT) % 2 : 0];
   const bob = b.moving ? Math.floor(b.animT / 2) % 2 : 0;
   const bx = Math.round(b.x - 6 - ex);
-  const by = Math.round(b.y + 4 - ey) - spr.height - bob; // tread bottom sits at b.y + 4
+  const zl = b.zip >= 0 ? ZIP_ALT : 0; // a soldier on a zipline hangs ZIP_ALT rows up, its shadow on the snow
+  const by = Math.round(b.y + 4 - ey) - spr.height - bob - zl; // tread bottom sits at b.y + 4
 
-  drawCastShade(spr, bx, by + bob); // on the ground under the bob
+  drawCastShade(spr, bx, by + bob + zl); // on the ground under the bob
 
   // one swing animation, two jobs: the harvest tick, or - on an attack flag -
   // the same axe aimed at whatever b.atkAim points to (`worker flags`, robots.js)
@@ -111,6 +112,7 @@ function drawRobot(b, ex, ey, now) {
     prog = Math.min(1, b.workT / 0.9);
   }
 
+  if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   drawSpriteFlash(spr, bx, by, b.flash);
   // a soldier (the `soldiers` banner, robots.js) flies its side's pennant
   // off the chassis: the one thing that says this bot is not here to chop

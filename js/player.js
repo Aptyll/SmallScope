@@ -576,6 +576,7 @@ class Player {
     Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
+    this.trades = [];                   // the market ledger: every good bought or sold at a counter (marketLog, js/ui/shop.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
     this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
     this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)
@@ -682,7 +683,8 @@ class Player {
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
     this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (world.js): the line ridden (its team, or none), px along it, and which way
     this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
-    this.zipWalk = false;                            // walking itself to the cable to clip on (zipWalkStep, world.js)
+    this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, world.js)
+    this.zipLast = 0;                                // px along the cable a step ago (zipCrash, world.js)
     // the deer ridden (the `riding` banner, js/wildlife.js), or null; the leap
     // in the air (s left), how long it has been up, and the wait before the next
     this.mount = null; this.leapT = 0; this.leapUp = 0; this.leapCd = 0;

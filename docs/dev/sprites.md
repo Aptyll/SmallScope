@@ -372,7 +372,7 @@ resampled from `docs/media/new_media3/`; the **berry is drawn by hand**
 from `docs/media/new_media4/new-berries-spritesheet.png`, because a 2×2 average of its
 four-berry cluster is mud. It keeps the sheet's colours and its leaf timing (up, soft, mid, flat,
 flat, mid, mid, up), and its body holds still: the sheet's one-pixel dip would be half a pixel
-at 8×8. (The old finning ice-fish loop off `fish.png` went with the ice fish in 0.442: every fish
+at 8×8. (The old finning ice-fish loop off `fish.png` went with the ice fish in 0.444: every fish
 icon now comes from app/bake-fish, below.)
 
 | icon | source | frames | palette | the loop |

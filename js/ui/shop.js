@@ -35,6 +35,7 @@ const MKT_DAYS = 3;      // days of history a graph shows
 const MKT_HIST = Math.ceil(MKT_DAYS * CYCLE / MKT_STEP); // samples held per good
 const MKT_REVERT = 0.05; // share of the gap back to `base` each step: the pull home
 const MKT_NEWS = 0.3;    // share of the last headline's price a move must clear to cut a new one
+const MKT_TRADES = 48;   // trades a body's ledger keeps; older ones have scrolled off the graph anyway
 
 // The two traded goods. `base` is what a thing is worth when nothing is
 // happening, `min`/`max` the rails it can never leave, `vol` the ordinary
@@ -56,8 +57,10 @@ const MKT_ORDER = ['fish', 'berry']; // the order the counter lists them in: the
 // ever PAID is marketPrice() - the rounded coin - so the graph can wander
 // between two whole numbers without the counter's price flickering.
 // `news` is the price the last headline was cut at, `pop` the seconds of
-// highlight left on a row that just made one.
-const market = { t: 0, goods: {}, stockT: 0, stock: null, n: 0 };
+// highlight left on a row that just made one. `step` counts the moves since
+// the match began, so the newest sample of every graph is move `step` and a
+// trade can say which move it was made on (marketLog).
+const market = { t: 0, goods: {}, stockT: 0, stock: null, n: 0, step: 0 };
 
 // EVERY FISH trades on the one fish market. Each kind in FISH_KINDS (the
 // creek's whitefish and snow char beside the hole's frost pike and gold
@@ -73,6 +76,27 @@ function marketPrice(id) { return Math.max(1, Math.round(market.goods[goodOf(id)
 function marketHist(id) { return market.goods[goodOf(id)].hist; }
 // is this a traded good rather than a made thing?
 function isGood(type) { return !!goodOf(type); }
+// where on the clock the market stands right now, in moves: the newest
+// sample plus the share of the next move already gone - the right edge of
+// every graph, and the moment a trade made now is pinned to
+function marketNow() { return (market.step || 0) + market.t / MKT_STEP; }
+
+// THE LEDGER: every unit of a good a body bought or sold at the counter, as
+// { id, d, at, c, n } - the kind, +1 bought / -1 sold, the market clock it
+// happened at (marketNow), the coin paid or fetched for ONE, and how many.
+// It is what the market page pins its markers on, so `at` and `c` are the
+// trade's own and never re-read off the graph: a marker sits exactly where
+// the price was when the coin changed hands. Back-to-back trades of one kind,
+// one way, at one price inside one move fold into one entry, so a run of
+// clicks reads as one marker with a count rather than a smear. Kept on the
+// player, so it rides the save and the wire like the rest of the body.
+function marketLog(p, id, dir, price, n) {
+  const L = p.trades || (p.trades = []);
+  const at = Math.round(marketNow() * 100) / 100, last = L[L.length - 1];
+  if (last && last.id === id && last.d === dir && last.c === price && Math.floor(last.at) === Math.floor(at)) last.n += n;
+  else L.push({ id, d: dir, at, c: price, n });
+  while (L.length && (L.length > MKT_TRADES || L[0].at < at - MKT_HIST)) L.shift();
+}
 
 // one step of the walk: the pull home, the ordinary drift, then the shock
 function marketWalk(id) {
@@ -114,6 +138,7 @@ function initMarket() {
     for (let i = 0; i < MKT_HIST; i++) { marketWalk(id); r.hist.push(r.price); }
     r.news = marketPrice(id);
   }
+  market.step = 0;
   shopRestock(true);
 }
 
@@ -124,6 +149,7 @@ function updateMarket(dt) {
   market.t += dt;
   while (market.t >= MKT_STEP) {
     market.t -= MKT_STEP;
+    market.step = (market.step || 0) + 1;
     for (const id of MKT_ORDER) {
       const r = market.goods[id];
       marketWalk(id);
@@ -791,6 +817,7 @@ function shopSell(p, s) {
   if (!s || !merchNear(p)) { shopDeny(p); return 0; }
   const v = sellValue(s);
   if (v <= 0) { shopDeny(p); return 0; }
+  if (isGood(s.type)) marketLog(p, s.type, -1, marketPrice(s.type), s.n); // a good sold any way is on the market page
   tradeGold(p, v);
   shopFx(p, '+' + v, RES_COLORS.gold);
   sfxFor(p, 'coin');
@@ -832,6 +859,7 @@ function shopSellAll(p) {
     if (!s) continue;
     const g = sellValue(s);
     if (g <= 0) continue;
+    if (isGood(s.type)) marketLog(p, s.type, -1, marketPrice(s.type), s.n);
     v += g;
     p.bag[i] = null;
   }
@@ -842,21 +870,30 @@ function shopSellAll(p) {
   return v;
 }
 
-// One unit of a traded good, either way, at the live price. `dir` is +1 to buy
+// Units of a traded good, either way, at the live price. `dir` is +1 to buy
 // and -1 to sell - one function, because the price is the same number in both
-// directions and splitting it would be two ways to read one quantity.
-function shopTrade(p, id, dir) {
+// directions and splitting it would be two ways to read one quantity. `n` is
+// how many (one when left out): a buy takes as many as the purse and the pack
+// cover, up to `n`, and a sale as many as are carried - so BUY 5 with gold for
+// three buys three, and SELL ALL is a sale of `Infinity`. It resolves as ONE
+// trade, one payment and one marker, however many units moved.
+function shopTrade(p, id, dir, n) {
   if (!isGood(id) || !merchNear(p)) { shopDeny(p); return false; }
   const price = marketPrice(id);
+  const want = Math.max(1, Math.floor(n) || 1);
   if (dir > 0) {
-    if (!canAfford({ gold: price }, p)) { shopDeny(p); return false; }
-    if (!bagAdd(p, id, 1)) { shopNoRoom(p); return false; }
-    pay({ gold: price }, p);
-    shopFx(p, '-' + price, RES_COLORS[id]);
+    const k = Math.min(want, Math.floor(p.inv.gold / price), bagRoom(p, id));
+    if (k < 1) { if (p.inv.gold < price) shopDeny(p); else shopNoRoom(p); return false; }
+    const got = bagAdd(p, id, k);
+    pay({ gold: price * got }, p);
+    marketLog(p, id, 1, price, got);
+    shopFx(p, '-' + price * got, RES_COLORS[id]);
   } else {
-    if (!bagTake(p, id, 1)) { shopDeny(p); return false; }
-    tradeGold(p, price);
-    shopFx(p, '+' + price, RES_COLORS[id]);
+    const k = bagTake(p, id, Math.min(want, bagCount(p, id)));
+    if (k < 1) { shopDeny(p); return false; }
+    tradeGold(p, price * k);
+    marketLog(p, id, -1, price, k);
+    shopFx(p, '+' + price * k, RES_COLORS[id]);
   }
   sfxFor(p, 'coin');
   return true;
@@ -872,7 +909,7 @@ function shopFx(p, txt, col) {
 // the one entry point runCmd hands a shop order to (js/ui.js)
 function shopCmd(p, c) {
   if (c.act === 'buy') return !!shopBuy(p, c.sec, c.i);
-  if (c.act === 'trade') return !!shopTrade(p, c.good, c.dir);
+  if (c.act === 'trade') return !!shopTrade(p, c.good, c.dir, c.n);
   if (c.act === 'sell') return !!shopSellCell(p, c.i);
   if (c.act === 'sellAll') return !!shopSellAll(p);
   if (c.act === 'forge') return !!forgeTool(p, c.where, c.i, c.pile);
@@ -900,9 +937,9 @@ function shopCmd(p, c) {
 // the merchant's portrait at one end and the purse at the other; the four
 // SECTIONS of the stock, three wells each on a recessed board,
 // every well wearing its item's own tier plate with its price on a band along
-// the bottom; the MARKET rule and its two cards, each carrying a live price, a
-// three-day graph and a pair of trade plates whose ARRANGEMENT is the
-// direction; the SELL strip - the drop well and the SELL ALL button on one
+// the bottom; the MARKET rule and its ticker, a card a good with its live
+// price and a three-day sparkline, each a way onto the MARKET face where the
+// trading itself is (js/ui/market.js); the SELL strip - the drop well and the SELL ALL button on one
 // line; and the RESTOCK ROAD along the bottom rail.
 //
 // Two rules make the stock read as one grid rather than as twelve loose
@@ -946,12 +983,7 @@ const SHOP_WELL_GAP = 5;
 const SHOP_SEC_W = SHOP_WELL_W * 3 + SHOP_WELL_GAP * 2; // a section: three wells and the gaps between
 const SHOP_SEC_HEAD = 8;                                // its name, and the rule off it
 const SHOP_SEC_H = SHOP_SEC_HEAD + SHOP_WELL_H + SHOP_BAND;
-const SHOP_CARD_W = 157, SHOP_CARD_H = 46;              // one market card
-const SHOP_GRAPH_H = 22;
-const SHOP_FISH_TAB = 18;  // a fish's tab on the fish card, wide enough for the longest fish icon
-// which fish the fish card is showing: this screen's own choice of what to
-// look at (a trade still names its fish in the order), so not match state
-let shopFish = 'fish';
+const SHOP_CARD_H = 46;                                 // one ticker card (every good's share the width)
 const SHOP_SELL_H = 16;    // the sell strip along the counter's edge...
 const SHOP_ALL_W = 82;     // ...the SELL ALL button at its right end, and the
 const SHOP_ALL_GAP = 4;    //    air between the two halves
@@ -1017,7 +1049,7 @@ function closeShop() {
 
 // The whole geometry in one place, top to bottom: the sign row hung off the
 // awning, carrying the portrait and the purse; the four sections as a 2x2 grid
-// of three-well rows; the MARKET rule and its two cards side by side; the SELL
+// of three-well rows; the MARKET rule and its four ticker cards; the SELL
 // strip, the full width of the slab, because it is a drop target and a drop
 // target should be hard to miss with an item on the cursor - the drop WELL and
 // the SELL ALL button that shares that line; and the restock road along the
@@ -1064,15 +1096,11 @@ function shopLayout() {
     secs.push({ id: SHOP_SECTIONS[i].id, label: SHOP_SECTIONS[i].label, x: sx, y: sy, wells });
   }
   const mkY = y + SHOP_HEAD + 6 + SHOP_SEC_H * 2 + 3 + 3; // under the second row of sections
-  const cards = [];
-  for (let i = 0; i < MKT_ORDER.length; i++) {
-    const kx = cx + i * (cw - SHOP_CARD_W), ky = mkY + 8, m = MKT_ORDER[i];
-    // the fish card trades whichever fish its tabs are on (shopFish)
-    const kinds = m === 'fish' ? FISH_KINDS.map((k, j) => ({ id: k, x: kx + 2 + j * (SHOP_FISH_TAB + 1), y: ky + 1, w: SHOP_FISH_TAB, h: 10 })) : null;
-    cards.push({ id: kinds ? shopFish : m, kinds, x: kx, y: ky, w: SHOP_CARD_W, h: SHOP_CARD_H,
-      graph: { x: kx + 3, y: ky + 11, w: SHOP_CARD_W - 6, h: SHOP_GRAPH_H },
-      buy: { x: kx + 3, y: ky + 34, w: 73, h: 11 },
-      sell: { x: kx + 81, y: ky + 34, w: 73, h: 11 } });
+  // the market's ticker: a card a good, each a way onto the MARKET page
+  const nk = MKT_GOODS.length, cards = [], tw = Math.floor((cw - (nk - 1) * 4) / nk);
+  for (let i = 0; i < nk; i++) {
+    const kx = cx + i * (tw + 4);
+    cards.push({ id: MKT_GOODS[i], x: kx, y: mkY + 8, w: i === nk - 1 ? cx + cw - kx : tw, h: SHOP_CARD_H });
   }
   // the bottom of the slab, from the rail up: the restock road, air, the sell
   // strip. The strip is measured off the LANE and not off the frame, so
@@ -1096,11 +1124,12 @@ function shopLayout() {
   };
   L.tabs = forgeTabs(L);      // the SHOP / FORGE plates beside the portrait (js/ui/forge.js)
   L.forge = forgeLayout(L);   // ...and the bench the FORGE face stands in this room
+  L.market = mktLayout(L);    // ...and the MARKET face's page (js/ui/market.js)
   return L;
 }
 
 // 'x' | 'panel' | { kind:'buy', sec, i } | { kind:'sell' } | { kind:'sellAll' } |
-// { kind:'trade', id, dir } | { kind:'good', id } | { kind:'fishTab', id } | { kind:'tab', tab } | the
+// { kind:'good', id } (a ticker card) | { kind:'tab', tab } | the MARKET face's own (mktHit, js/ui/market.js) | the
 // FORGE face's own (forgeHit, js/ui/forge.js) | null.
 // Shared by the click, the cursor and the tooltip, so the three can never
 // disagree about what the pointer is on.
@@ -1111,6 +1140,7 @@ function shopHit(mx, my) {
   if (hitR(L.xr, mx, my)) return 'x';
   for (const t of L.tabs) if (hitR(t, mx, my)) return { kind: 'tab', tab: t.tab };
   if (state.shopTab === 'forge') return forgeHit(L, mx, my) || 'panel';
+  if (state.shopTab === 'market') return mktHit(L, mx, my) || 'panel';
   for (const s of L.secs) {
     for (let i = 0; i < s.wells.length; i++) {
       if (hitR(s.wells[i], mx, my) && shopOffer(s.id, i)) return { kind: 'buy', sec: s.id, i };
@@ -1118,12 +1148,7 @@ function shopHit(mx, my) {
   }
   if (hitR(L.all, mx, my)) return { kind: 'sellAll' };
   if (hitR(L.well, mx, my)) return { kind: 'sell' };
-  for (const c of L.cards) {
-    if (c.kinds) for (const t of c.kinds) if (hitR(t, mx, my)) return { kind: 'fishTab', id: t.id };
-    if (hitR(c.buy, mx, my)) return { kind: 'trade', id: c.id, dir: 1 };
-    if (hitR(c.sell, mx, my)) return { kind: 'trade', id: c.id, dir: -1 };
-    if (hitR(c, mx, my)) return { kind: 'good', id: c.id };
-  }
+  for (const c of L.cards) if (hitR(c, mx, my)) return { kind: 'good', id: c.id };
   return 'panel';
 }
 function hitR(r, mx, my) { return mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h; }
@@ -1133,9 +1158,10 @@ function shopClick(h) {
   if (!h) return false;
   if (h === 'x') { closeShop(); return true; }
   if (h.kind === 'tab' || forgeKind(h)) { forgeClick(h); return true; }
+  if (mktKind(h)) { mktClick(h); return true; }
+  // a ticker card opens the MARKET page on its good
+  if (h.kind === 'good') { mktSel = h.id; state.shopTab = 'market'; SFX.place(); return true; }
   if (h.kind === 'buy') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'buy', sec: h.sec, i: h.i }; return true; }
-  if (h.kind === 'fishTab') { shopFish = h.id; return true; }
-  if (h.kind === 'trade') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'trade', good: h.id, dir: h.dir }; return true; }
   // SELL ALL goes through input.cmd like the buys rather than resolving on the
   // spot the way a drop does: nothing is on the cursor, so there is nothing a
   // dropped command could take with it, and a bot could press it tomorrow.
@@ -1279,10 +1305,11 @@ function drawShopPanel(now) {
   drawShopTabs(L, h);
 
   if (state.shopTab === 'forge') drawForge(L, h, now);
+  else if (state.shopTab === 'market') drawMarket(L, h, now);
   else {
     for (const s of L.secs) drawShopSection(s, h, now);
     drawShopHeading(L.mkt, 'MARKET', true);
-    for (const c of L.cards) drawMarketCard(c, h, now);
+    for (const c of L.cards) drawMktTicker(c, h, now);
     drawSellWell(L.well, h, now);
     drawSellAll(L.all, h, now);
   }
@@ -1321,7 +1348,7 @@ function drawShopSign(L, ti, now) {
   // It hangs a few px HIGHER than the portrait and the purse beside it and is
   // deeper than both, so the shop's own name is the thing the eye lands on
   // when the slab opens rather than one plate in a row of three.
-  const sign = state.shopTab === 'forge' ? FORGE_SIGN : SHOP_SIGN;
+  const sign = state.shopTab === 'forge' ? FORGE_SIGN : state.shopTab === 'market' ? MKT_SIGN : SHOP_SIGN;
   const sc = SHOP_SIGN_SC, tw = pixelTextWidth(sign, sc);
   const bw = tw + 22, bx = P.x + ((P.w - bw) >> 1), bh = sc * 5 + 8, by = R.y - 3;
   ctx.fillStyle = SHOP_IRON;
@@ -1509,7 +1536,7 @@ function drawSellWell(r, h, now) {
 // SELL ALL: the whole pack over the counter in one press, at the strip's
 // right end. It is a CLICK where the well beside it is a DROP, so it wears a
 // button's grammar and not a target's - a raised plate that lifts under the
-// pointer, the market cards' own - rather than a second recessed well with
+// pointer, the ticker cards' own - rather than a second recessed well with
 // brackets, which would say "aim at me with something in your hand".
 //
 // It says its press in three marks and one word. The PACK - the drawer's own
@@ -1738,69 +1765,6 @@ function drawTradeArrow(x, y, dir, col) {
   for (let i = 0; i < 3; i++) ctx.fillRect(x + (dir > 0 ? i : 2 - i), y - 2 + i, 1, 5 - i * 2);
 }
 
-// One traded good, in a timber card to match the counter it stands on: the
-// live price, the three days behind it, and the two plates that move it.
-// Nothing here says "buy" or "sell" in words - the coin on the left of an
-// arrow is money going out, the coin on the right is money coming in.
-function drawMarketCard(c, h, now) {
-  const r = market.goods[goodOf(c.id)];
-  const col = RES_COLORS[c.id];
-  const price = marketPrice(c.id);
-  const hist = r.hist;
-  const prev = hist.length > 1 ? hist[hist.length - 2] : r.price;
-  const up = r.price >= prev;
-  ctx.fillStyle = 'rgba(4,6,18,0.5)'; ctx.fillRect(c.x + 2, c.y + 2, c.w, c.h);
-  ctx.fillStyle = r.pop > 0 ? (Math.sin(now * 8) > 0 ? col : SHOP_WOOD) : SHOP_WOOD;
-  ctx.fillRect(c.x, c.y, c.w, c.h);
-  ctx.fillStyle = SHOP_WOOD_L; ctx.fillRect(c.x, c.y, c.w, 1);
-  ctx.fillStyle = SHOP_WOOD_D; ctx.fillRect(c.x, c.y + c.h - 1, c.w, 1);
-  ctx.fillStyle = '#0d1229';
-  ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
-
-  // name on the left, price on the right in the direction of the last move.
-  // The fish card leads with a tab per fish: the one shown lit and underlined
-  // in its own colour, the rest dim until pointed at.
-  let nx = c.x + 15;
-  if (c.kinds) {
-    for (const t of c.kinds) {
-      const img = SPRITES[ITEMS[t.id].icon], on = t.id === c.id;
-      ctx.globalAlpha = on ? 1 : h && h.kind === 'fishTab' && h.id === t.id ? 0.8 : 0.35;
-      ctx.drawImage(img, t.x + ((t.w - img.width) >> 1), t.y + ((t.h - 1 - img.height) >> 1));
-      ctx.globalAlpha = 1;
-      if (on) { ctx.fillStyle = RES_COLORS[t.id]; ctx.fillRect(t.x + 2, t.y + t.h - 1, t.w - 4, 1); }
-    }
-    nx = c.kinds[c.kinds.length - 1].x + SHOP_FISH_TAB + 3;
-  } else ctx.drawImage(SPRITES[ITEMS[c.id].icon], c.x + 4, c.y + 2);
-  const pt = String(price);
-  const pw = pixelTextWidth(pt, 2);
-  // the name, where it clears the price and its arrow (with every fish's tab
-  // up the tabs are the name, and the tooltip says it)
-  const name = goodName(c.id);
-  if (nx + pixelTextWidth(name) + 3 <= c.x + c.w - 13 - pw) drawPixelTextShadow(ctx, name, nx, c.y + 3, '#9fb6d8', SHOP_BG);
-  // no shadow on the 2x price: at that scale the shadow is 2 px deep and the
-  // graph's top rim would clip it, which reads as a clipped NUMBER
-  drawPixelText(ctx, pt, c.x + c.w - 5 - pw, c.y + 1, up ? '#8fe08a' : '#e0637a', 2);
-  drawTrend(c.x + c.w - 13 - pw, c.y + 4, up);
-
-  drawMarketGraph(c.graph, c.id, col);
-
-  // the two plates. Carrying none of a good greys its sale; not affording one
-  // greys the buy - the same can/cannot ink every price in the game uses.
-  const held = bagCount(player, c.id);
-  const dear = player.inv.gold < price; // ...as against merely having no room for one
-  drawTradePlate(c.buy, 1, c.id, !dear && bagRoom(player, c.id) > 0,
-    !!h && h.kind === 'trade' && h.id === c.id && h.dir > 0, now, dear);
-  drawTradePlate(c.sell, -1, c.id, held > 0, !!h && h.kind === 'trade' && h.id === c.id && h.dir < 0, now, false);
-  // what you are carrying, on the sale plate's own edge: the number that
-  // decides whether the plate is even worth pressing. The pouch has no
-  // ceiling (js/player.js), so it wears the HUD's shortNum rather than a
-  // fifth digit through the plate's rim.
-  if (held > 0) {
-    const ht = shortNum(held);
-    drawPixelTextShadow(ctx, ht, c.sell.x + c.sell.w - 3 - pixelTextWidth(ht), c.sell.y + 3, col, SHOP_BG);
-  }
-}
-
 // The last move, as a 5x3 triangle beside the price: apex up on a rise, apex
 // down on a fall. Three rows narrowing toward the point, drawn from the row
 // the apex is on, so the shape says the direction even in one colour.
@@ -1812,82 +1776,6 @@ function drawTrend(x, y, up) {
   }
 }
 
-// A trade plate: coin -> item is a buy, item -> coin is a sale. `on` is
-// whether the trade can be made at all; a dead plate goes flat and dark, and
-// `dear` says the reason is the PRICE rather than a full pack, so it wears
-// the counter's out-of-reach red like an offer well does.
-function drawTradePlate(r, dir, id, on, hot, now, dear) {
-  const y = r.y - (hot && on ? 1 : 0);
-  ctx.fillStyle = 'rgba(4,6,18,0.5)'; ctx.fillRect(r.x + 1, r.y + 1, r.w, r.h);
-  ctx.fillStyle = dear ? SHOP_DEAR_RIM : !on ? '#232c52' : hot ? '#8fa0c8' : (Math.sin(now * 6) > 0 ? '#4a5a8c' : '#41527f');
-  ctx.fillRect(r.x, y, r.w, r.h);
-  ctx.fillStyle = dear ? SHOP_DEAR_BAND : on ? '#141c3c' : '#0c1128';
-  ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
-  const item = SPRITES[ITEMS[id].icon], coin = SPRITES.itemGold;
-  // left icon, 5 of air, the 3-wide arrow, 5 of air, right icon - laid out on
-  // the icons' own widths, since a fish can be twice a coin's
-  const [a, b] = dir > 0 ? [coin, item] : [item, coin];
-  const x0 = r.x + ((r.w - (a.width + 13 + b.width)) >> 1), iy = y + 2;
-  ctx.globalAlpha = on ? 1 : 0.4;
-  ctx.drawImage(a, x0, iy + ((8 - a.height) >> 1));
-  drawTradeArrow(x0 + a.width + 5, iy + 4, 1, on ? '#f4f7ff' : '#4a5a8c');
-  ctx.drawImage(b, x0 + a.width + 13, iy + ((8 - b.height) >> 1));
-  ctx.globalAlpha = 1;
-}
-
-// The three-day graph: MKT_HIST samples across the well, the area under the
-// line filled in the good's own colour, a dotted line per day boundary so
-// three days READ as three days, and the range printed small at the ends -
-// a chart with no scale is a squiggle.
-function drawMarketGraph(r, id, col) {
-  const hist = marketHist(id), k = goodScale(id); // a fish's line is its market's: only the labels scale
-  ctx.fillStyle = BAG_WELL;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = '#151b3a';
-  ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1);
-  if (hist.length < 2) return;
-  let lo = Infinity, hi = -Infinity;
-  for (const v of hist) { if (v < lo) lo = v; if (v > hi) hi = v; }
-  if (hi - lo < 0.5) { hi = lo + 0.5; }
-  const n = hist.length;
-  const px = (i) => r.x + Math.round(i / (n - 1) * (r.w - 1));
-  const py = (v) => r.y + r.h - 2 - Math.round((v - lo) / (hi - lo) * (r.h - 4));
-  // the day marks, counted back from now
-  const per = CYCLE / MKT_STEP;
-  ctx.fillStyle = '#20294f';
-  for (let d = 1; d < MKT_DAYS; d++) {
-    const i = (n - 1) - d * per;
-    if (i < 0) continue;
-    const gx = px(i);
-    for (let y = r.y + 1; y < r.y + r.h - 1; y += 3) ctx.fillRect(gx, y, 1, 2);
-  }
-  // the area, then the line over it
-  ctx.globalAlpha = 0.22;
-  ctx.fillStyle = col;
-  for (let i = 0; i < n; i++) {
-    const x = px(i), y = py(hist[i]);
-    ctx.fillRect(x, y, 1, r.y + r.h - 1 - y);
-  }
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = col;
-  let lx = px(0), ly = py(hist[0]);
-  for (let i = 1; i < n; i++) {
-    const x = px(i), y = py(hist[i]);
-    // a vertical run between the two samples keeps the line unbroken where it jumps
-    const y0 = Math.min(ly, y), y1 = Math.max(ly, y);
-    ctx.fillRect(x, y0, 1, y1 - y0 + 1);
-    if (x > lx + 1) ctx.fillRect(lx, ly, x - lx, 1);
-    lx = x; ly = y;
-  }
-  // the head of the line, and the range it moved through
-  ctx.fillStyle = '#f4f7ff';
-  ctx.fillRect(lx - 1, ly - 1, 3, 3);
-  ctx.fillStyle = col;
-  ctx.fillRect(lx, ly, 1, 1);
-  drawPixelTextShadow(ctx, String(Math.round(hi * k)), r.x + 2, r.y + 2, '#5a6a99', BAG_WELL);
-  drawPixelTextShadow(ctx, String(Math.round(lo * k)), r.x + 2, r.y + r.h - 8, '#5a6a99', BAG_WELL);
-}
-
 // ---- tooltips ------------------------------------------------------------
 // What the pointer is on at the counter, in the shared descriptor shape
 // (tipBase and friends, js/ui.js) - so an offer describes itself with exactly
@@ -1895,6 +1783,7 @@ function drawMarketGraph(r, id, col) {
 function tipShop(h) {
   if (!h || h === 'x' || h === 'panel' || h.kind === 'tab') return null;
   if (forgeKind(h)) return tipForge(h);
+  if (mktKind(h)) return tipMarket(h);
   if (h.kind === 'buy') {
     const o = shopOffer(h.sec, h.i);
     if (!o) return null;
@@ -1952,7 +1841,6 @@ function tipShop(h) {
   d.rows.push([MKT_DAYS + ' DAY HIGH', String(Math.round(hi)), '#f4f7ff']);
   d.rows.push([MKT_DAYS + ' DAY LOW', String(Math.round(lo)), '#f4f7ff']);
   d.rows.push(['CARRIED', String(bagCount(player, id)), '#f4f7ff']);
-  if (h.kind === 'trade') d.notes.push([h.dir > 0 ? 'CLICK TO BUY ONE' : 'CLICK TO SELL ONE', TIP_DIM]);
   d.notes.push(['IT TRADES AT ONE PRICE BOTH WAYS', TIP_DIM]);
   return d;
 }

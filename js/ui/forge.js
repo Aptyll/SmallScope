@@ -134,7 +134,8 @@ function forgeLayout(L) {
 function forgeTabs(L) {
   const R = L.head;
   return [{ tab: 'shop', x: R.x + 18, y: R.y - 1, w: 17, h: 13 },
-          { tab: 'forge', x: R.x + 37, y: R.y - 1, w: 17, h: 13 }];
+          { tab: 'market', x: R.x + 37, y: R.y - 1, w: 17, h: 13 },
+          { tab: 'forge', x: R.x + 56, y: R.y - 1, w: 17, h: 13 }];
 }
 // what the pointer is on, on the FORGE face - null for the bare slab
 function forgeHit(L, mx, my) {
@@ -212,11 +213,11 @@ function drawShopTabs(L, h) {
     ctx.fillRect(t.x, y, t.w, t.h);
     ctx.fillStyle = on ? '#141c3c' : '#0b1030';
     ctx.fillRect(t.x + 1, y + 1, t.w - 2, t.h - 2);
-    const im = t.tab === 'shop' ? SPRITES.itemGold : FORGE_ANVIL;
+    const im = t.tab === 'shop' ? SPRITES.itemGold : t.tab === 'market' ? MKT_GLYPH : FORGE_ANVIL;
     ctx.globalAlpha = on || hot ? 1 : 0.45;
     ctx.drawImage(im, t.x + ((t.w - im.width) >> 1), y + ((t.h - im.height) >> 1));
     ctx.globalAlpha = 1;
-    if (on) { ctx.fillStyle = t.tab === 'shop' ? RES_COLORS.gold : FORGE_INK; ctx.fillRect(t.x + 3, y + t.h - 2, t.w - 6, 1); }
+    if (on) { ctx.fillStyle = t.tab === 'shop' ? RES_COLORS.gold : t.tab === 'market' ? MKT_BUY : FORGE_INK; ctx.fillRect(t.x + 3, y + t.h - 2, t.w - 6, 1); }
   }
 }
 
