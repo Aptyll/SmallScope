@@ -60,16 +60,16 @@ const MKT_ORDER = ['fish', 'berry']; // the order the counter lists them in: the
 const market = { t: 0, goods: {}, stockT: 0, stock: null, n: 0 };
 
 // EVERY FISH trades on the one fish market. Each kind in FISH_KINDS (the
-// creek's whitefish and snow char beside the ice fish, js/player.js) is
-// priced off the ice fish's live price, scaled by what it heals against what
-// the ice fish heals - so a new fish is priced the moment it has a `heal`,
-// and the three move together on one graph.
+// creek's whitefish and snow char beside the hole's frost pike and gold
+// sunfish, js/player.js) is priced off the frost pike's live price (the
+// `fish` good), scaled by what it heals against what the pike heals - so a
+// new fish is priced the moment it has a `heal`, and the four move together.
 function goodOf(type) { return Object.hasOwn(GOODS, type) ? type : FISH_KINDS.includes(type) ? 'fish' : null; }
 function goodScale(type) { const g = goodOf(type); return g === type ? 1 : ITEMS[type].heal / ITEMS[g].heal; }
 function goodName(type) { return ITEMS[type].name || GOODS[type].name; } // a fish by its own name, the market's by its
 function marketPrice(id) { return Math.max(1, Math.round(market.goods[goodOf(id)].price * goodScale(id))); }
 // the goods array a good's graph is drawn from, oldest first (a fish's is
-// its market's, in the ice fish's coin)
+// its market's, in the frost pike's coin)
 function marketHist(id) { return market.goods[goodOf(id)].hist; }
 // is this a traded good rather than a made thing?
 function isGood(type) { return !!goodOf(type); }
@@ -1771,9 +1771,12 @@ function drawMarketCard(c, h, now) {
     }
     nx = c.kinds[c.kinds.length - 1].x + SHOP_FISH_TAB + 3;
   } else ctx.drawImage(SPRITES[ITEMS[c.id].icon], c.x + 4, c.y + 2);
-  drawPixelTextShadow(ctx, goodName(c.id), nx, c.y + 3, '#9fb6d8', SHOP_BG);
   const pt = String(price);
   const pw = pixelTextWidth(pt, 2);
+  // the name, where it clears the price and its arrow (with every fish's tab
+  // up the tabs are the name, and the tooltip says it)
+  const name = goodName(c.id);
+  if (nx + pixelTextWidth(name) + 3 <= c.x + c.w - 13 - pw) drawPixelTextShadow(ctx, name, nx, c.y + 3, '#9fb6d8', SHOP_BG);
   // no shadow on the 2x price: at that scale the shadow is 2 px deep and the
   // graph's top rim would clip it, which reads as a clipped NUMBER
   drawPixelText(ctx, pt, c.x + c.w - 5 - pw, c.y + 1, up ? '#8fe08a' : '#e0637a', 2);
@@ -1934,7 +1937,6 @@ function tipShop(h) {
     d.notes.push(['THE WEAPON AND THE POUCH STAY', TIP_DIM]);
     return d;
   }
-  if (h.kind === 'fishTab') return null; // the tab IS the fish; the card says the rest
   const id = h.id;
   const r = market.goods[goodOf(id)], k = goodScale(id);
   const price = marketPrice(id);

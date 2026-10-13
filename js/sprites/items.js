@@ -42,10 +42,9 @@
     '..OOO...',
     '........',
   ];
-  // The berry and the fish are LOOPS rather than stamps, and the only item
-  // icons that are: a cluster of four berries under two leaves that flap
-  // (docs/media/new_media4/new-berries-spritesheet.png, eight frames) and a
-  // fish whose fins work (docs/media/new_media3/fish.png, eight). The berry
+  // The berry is a LOOP rather than a stamp, like the gold piece: a cluster
+  // of four berries under two leaves that flap
+  // (docs/media/new_media4/new-berries-spritesheet.png, eight frames). It
   // is drawn by hand at the 8x8 every other item icon is, on the sheet's own
   // colours and to its leaf timing - a 2x2 average of the 16px cluster is
   // mud - and its body holds still, because the sheet's one-pixel dip is
@@ -146,117 +145,6 @@
       '..oDDo..',
       '...oo...',
     ],
-  ];
-
-  // The fish arrived SALMON, and the fish in this game is blue - the market's
-  // fish line, its price graph, the pickup floater and RES_COLORS.fish are all
-  // one cold blue, and a pink icon under a blue number reads as two different
-  // goods. So the palette is HUE-SHIFTED and the grids are not: every entry
-  // keeps the lightness it had (which is what carries the shading) and lands in
-  // a tight band around 205 deg, the family the old hand-drawn fish and
-  // RES_COLORS.fish (#7ac0e8) already lived in. Only `c` is off that rule: the
-  // source told its two bellies apart by HUE at the same lightness (a peach and
-  // a cream), which one hue cannot carry, so the cream is lifted to be the
-  // highlight above the pale instead.
-  //
-  // docs/media/new_media3/fish.png is UNTOUCHED and still salmon: the shift
-  // lives here, in the twelve numbers below, and a regenerated grid set would
-  // need it reapplied. The grids themselves are the sheet, pixel for pixel.
-  const FIPAL = {
-    '.': null,
-    'o': '#010000', // outline, deepest
-    'd': '#21628f', // back, deep
-    'b': '#387099', // back and fins
-    'r': '#658cab', // tail and fin, mid
-    'K': '#7a9db9', // the underside
-    'k': '#69b3dc', // the stripe along the flank
-    's': '#a1a9b2', // the eye
-    'p': '#94c9e6', // flank, light
-    'P': '#b9d9ee', // belly, pale
-    'c': '#d5e1f0', // belly, highlight
-  };
-
-  const fish = [
-    [
-      '........',
-      '....b...',
-      'b..rrbb.',
-      'bbbkkkrr',
-      'bpPPPPsr',
-      'brKKKrb.',
-      '........',
-      '........',
-    ],
-    [
-      '........',
-      '....b...',
-      'b..rrbb.',
-      'bbbkkprr',
-      'bpPPPPsr',
-      'brKKKKK.',
-      '........',
-      '........',
-    ],
-    [
-      '........',
-      '........',
-      '...rrbb.',
-      'rbbkkprr',
-      'bpPPPsPr',
-      '.rrKKKK.',
-      '..b.....',
-      '........',
-    ],
-    [
-      '........',
-      '....b...',
-      '...brbb.',
-      'bbbkkkrr',
-      'bpPPPsPr',
-      '.rrKKKb.',
-      '........',
-      '........',
-    ],
-    [
-      '........',
-      '....b...',
-      'b..rrbb.',
-      'bbbkkkrr',
-      'bpPPPPsr',
-      'brKKKrb.',
-      '........',
-      '........',
-    ],
-    [
-      '........',
-      '....b...',
-      'b..rrbb.',
-      'bbbkkprr',
-      'bpPPPspr',
-      'brKKKKK.',
-      '........',
-      '........',
-    ],
-    [
-      '........',
-      '........',
-      'b..rrbb.',
-      'bbbkkkrr',
-      'bpPPPPPr',
-      'brKKKKK.',
-      '........',
-      '........',
-    ],
-    [
-      '........',
-      '....b...',
-      '...brbb.',
-      'rbbkkkrr',
-      'bpPPPPsr',
-      '.rrKKrb.',
-      '........',
-      '........',
-    ]
   ];
 
   // Roguelike cards: one card back, the full height of the icon, in the
@@ -709,31 +597,29 @@
     '...oo...',
   ];
 
-  // The three goods that MOVE. Their frames bake like anything else; what
+  // The two goods that MOVE. Their frames bake like anything else; what
   // ships beside them is a blank canvas of the same size per icon, which
   // stepItemIcons (js/render.js) redraws each frame. It starts on frame 0 so
   // anything that bakes an item icon into a still panel at boot (the control
   // primer) gets a picture rather than a hole.
   const goldFrames = nugget.map((f) => bake(f, NUGPAL));
   const berryFrames = berry.map((f) => bake(f, BERPAL));
-  const fishFrames = fish.map((f) => bake(f, FIPAL));
 
   Object.assign(SPRITES, {
     itemWood: bake(itemWood, ITPAL),
     itemStone: bake(itemStone, ITPAL),
     itemBag: bake(itemBag, ITPAL),
-    // THE THREE ANIMATED GOODS. `itemAnim[key]` is the frames; `SPRITES[key]`
+    // THE ANIMATED GOODS. `itemAnim[key]` is the frames; `SPRITES[key]`
     // is one LIVE canvas per icon that stepItemIcons (js/render.js) stamps the
     // current frame into, once a frame, off one clock. That indirection is the
     // point: an item icon is reached generically all over the game
     // (`SPRITES[ITEMS[type].icon]` - the bag, a price, a sale row, a drop on
     // the snow, a tooltip), and handing those reads an ARRAY would mean
-    // teaching every one of them which three goods are special. They are not
+    // teaching every one of them which goods are special. They are not
     // special: they are icons that happen to move.
-    itemAnim: { itemGold: goldFrames, itemBerry: berryFrames, itemFish: fishFrames },
+    itemAnim: { itemGold: goldFrames, itemBerry: berryFrames },
     itemGold: liveIcon(goldFrames),
     itemBerry: liveIcon(berryFrames),
-    itemFish: liveIcon(fishFrames),
     // the merchant's sack, ten frames of coin catching the light: 16x16, the
     // size the market plate reads at, beside the crate on the same plate
     goldSack: sack.map((f) => bake(f, SACKPAL)),

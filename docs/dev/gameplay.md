@@ -1898,7 +1898,7 @@ removed when `d.n` hits zero** — that is what lets a stack of 5 bits half-fill
 leave 3 lying in the snow. A drop's `type` is always an `ITEMS` key: sources pay `berry` and
 the card rarities, a caught fish goes straight into the pouch (taken by `autoFish`, or handed over by a
 [fish net](world.md#fish-nets) you are standing on), and a wrecked net's
-contents carry `fish` too (`SPRITES.itemFish` in the drop draw pass). Gold, berries and fish all read on
+contents carry `fish` and `sunfish` too (each drawn with its own `ITEMS` icon). Gold, berries and fish all read on
 the **hud strip's right end** (bottom centre) — the berry and fish wells with the gold under
 them, on screen all match. Death touches none of them —
 see [Death and respawn](#death-and-respawn). Drops are neutral: they drift
@@ -2116,11 +2116,11 @@ base, the drift, then the lurch. `price` is a float and the walk runs on it; wha
 is `marketPrice()`, the rounded coin, so the graph can wander between two whole numbers without
 the counter's price flickering.
 
-**Every fish trades on the fish market.** The ice fish is the `GOODS` row; the creek's whitefish
-and snow char (every kind in `FISH_KINDS`) ride its walk, each at the live fish price scaled by
-its heal against the ice fish's (`goodOf`, `goodScale`): a whitefish (+40) is 0.8 of a fish, a snow
-char (+70) 1.4. So a new fish is priced the moment it has a `heal`, and the three rise and fall
-together. The fish card shows one fish at a time: a tab per fish along its top picks which one its
+**Every fish trades on the fish market.** The frost pike (`fish`) is the `GOODS` row; the
+whitefish, snow char and gold sunfish (every kind in `FISH_KINDS`) ride its walk, each at the live
+fish price scaled by its heal against the pike's (`goodOf`, `goodScale`): a whitefish (+40) is 0.8
+of a fish, a snow char (+70) 1.4, a gold sunfish (+80) 1.6. So a new fish is priced the moment it
+has a `heal`, and the four rise and fall together. The fish card shows one fish at a time: a tab per fish along its top picks which one its
 price, graph labels and trade plates are for (`shopFish`, this screen's own choice, not match
 state; the trade order still names its fish).
 
@@ -2283,7 +2283,7 @@ numbers.
 | Item | Icon | Where | Used by |
 | --- | --- | --- | --- |
 | `berry` | `itemBerry` | pouch, no cap | Q, or clicking the strip's meal well — eats it (see [Food](#food-the-meal-is-a-channel)) |
-| `fish` | `itemFish` | pouch, no cap | F, or clicking its meal well — eats it (same) |
+| `fish` (frost pike) / `sunfish` / `whitefish` / `snowChar` | `itemFrostPike` / `itemSunfish` / `itemWhitefish` / `itemSnowChar` | pouch, no cap | F, or clicking its meal well — eats one (same; which one: `fishToEat`) |
 | `cardWhite`/`cardGreen`/`cardBlue`/`cardPurple`/`cardGold` | `itemCard<Rarity>` | pouch, no cap | nothing: it opens itself the moment it is held, one at random (see [Roguelike cards](#roguelike-cards)) |
 | `tunnel` | `itemTunnel` | bag, stack 5 | a **consumable** (`use`): V, or clicking its pack cell (`sendBagCell`) — stands the hole's ghost up, and the dig spends one (see [The burrow](#the-burrow-a-tunnel-anyone-can-ride)) |
 | `tool:<id>` | `toolArt_<shape>_<tier>` | bag, stack 1 | dragged onto one of the four weapon slots (see [Tools and bits](#tools-and-bits)) |
@@ -2358,10 +2358,10 @@ and the tempo and **nothing out of the pouch**, and can be restarted on the spot
 
 `eatBerry(p)` / `eatFish(p)` are the two edge-triggered intents Q and F set (two keys, two
 meals — the hud strip's meal buttons click the same intents a key sets); both are one
-line into `startEat`. **Three fish** share F (`FISH_KINDS`, js/player.js): the WHITEFISH (+40) and
-the SNOW CHAR (+70) caught in the creek ([world](world.md)) and the ICE FISH (+50) from a hole or a
-net. `fishToEat(p)` says which: the body's pick (`p.fishPick`) if it has one, else the smallest
-meal it carries. Pointing at the fish well raises the **fish picker**, a column of the three with
+line into `startEat`. **Four fish** share F (`FISH_KINDS`, js/player.js): the WHITEFISH (+40) and
+the rarer SNOW CHAR (+70) caught in the creek ([world](world.md)), and the FROST PIKE (+50, item
+`fish`) and the rarer GOLD SUNFISH (+80) from a hole or a net. `fishToEat(p)` says which: the body's pick (`p.fishPick`) if it has one, else the smallest
+meal it carries. Pointing at the fish well raises the **fish picker**, a column of the four with
 their counts rising straight up off it (`drawFishPop`, hovering one names it and its heal); a click
 picks one (gold rim, the others dim) and F then eats only that, refused when none are left, and a
 click on the picked one lets it go. The pick is set through the input's `cmd`

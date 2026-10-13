@@ -351,7 +351,7 @@ function drawPlayer(p, ex, ey, now) {
   // (catchFrame, js/tools.js). The hoist frame is 20 tall on the same feet,
   // which is what `sy` below pays for
   const catchF = !lying && p.fallT <= 0 && p.dodgeT <= 0 ? catchFrame(p) : -1;
-  if (catchF >= 0) spr = classSet(p).catch[catchF];
+  if (catchF >= 0) { const cs = classSet(p); spr = (p.catchKind === 'sunfish' && cs.catchSun || cs.catch)[catchF]; }
   // ...or the worn body: lying and the catch keep the class body, which has
   // the only poses for them
   const rb = !lying && catchF < 0 ? scoutBody(p) : null;

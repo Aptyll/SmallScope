@@ -36,15 +36,15 @@ function drawFrameFlash(atlas, fi, x, y, flash) {
   }
 }
 
-// THE ANIMATED GOODS. Three item icons are loops rather than stamps - the
-// gold piece, the berry cluster and the fish (`SPRITES.itemAnim`,
+// THE ANIMATED GOODS. Two item icons are loops rather than stamps - the
+// gold piece and the berry cluster (`SPRITES.itemAnim`,
 // js/sprites.js) - and this stamps each one's current frame into the LIVE
 // canvas the game holds for it, once a frame, before anything draws.
 //
 // Doing it here rather than at the call sites is what keeps an item icon one
 // generic read: `SPRITES[ITEMS[type].icon]` is how the bag, a shop price, a
 // sale row, a drop on the snow, a tooltip and the wiki all reach one, and
-// none of them has to know which three goods move. They share ONE clock, so
+// none of them has to know which goods move. They share ONE clock, so
 // every berry on the screen is on the same beat - a dozen icons each looping
 // to their own is a fruit machine, not a HUD. A frame that has not changed
 // is not redrawn, so a still HUD costs nothing.
@@ -180,7 +180,10 @@ function render() {
   drawCreekFish(ox, oy); // under the water: drawn first, so the glints run over it
   drawCreekFlow(ox, oy, Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
 
-  // fish: silhouettes drifting under the thin ice, crisp in open holes
+  // fish: the lake's frost pike and gold sunfish (f.kind), SHADOWS drifting
+  // under the thin ice and crisp in open holes - both pre-turned to the
+  // nearest of the baked headings, so a fish is never rotated off the pixel
+  // grid (SPRITES.iceFish, js/sprites/fish.js)
   for (const f of fish) {
     // `vis` is how much of the body is over water (1 for every born fish).
     // The alpha ramps off the BACK half of it, so an emerger stays completely
@@ -190,29 +193,30 @@ function render() {
     const em = f.born ? 1 : Math.max(0, (f.vis - 0.5) * 2);
     if (em <= 0) continue;
     const sx = f.x - ex, sy = f.y - ey;
-    if (sx < -12 || sy < -12 || sx > WV_W + 12 || sy > WV_H + 12) continue;
-    const surfaced = ground[idx(Math.floor(f.x / TILE), Math.floor(f.y / TILE))] === 2;
-    const wig = Math.round(Math.sin(f.t * 7) * 1.2);
-    ctx.save();
-    ctx.translate(Math.round(sx), Math.round(sy));
-    ctx.rotate(f.a);
-    ctx.globalAlpha = (surfaced ? 0.95 : 0.4) * em;
-    ctx.fillStyle = surfaced ? '#7fa9c6' : '#4a708c';
-    // tapered oval body with a pointed nose (drawn along +x)
-    ctx.fillRect(-3, -1, 7, 3);            // core
-    ctx.fillRect(-1, -2, 3, 5);            // dorsal/belly bulge amidships
-    ctx.fillRect(4, 0, 1, 1);              // nose tip
-    // forked tail on a narrow peduncle, waving side to side
-    ctx.fillRect(-4, -1 + wig, 1, 3);
-    ctx.fillRect(-5, -2 + wig, 1, 2);
-    ctx.fillRect(-5, 1 + wig, 1, 2);
-    if (surfaced) {
-      ctx.fillStyle = '#c9dded';
-      ctx.fillRect(-1, 1, 3, 1);           // pale belly
-      ctx.fillStyle = '#101d2c';
-      ctx.fillRect(2, -1, 1, 1);           // eye
+    if (sx < -16 || sy < -16 || sx > WV_W + 16 || sy > WV_H + 16) continue;
+    const F = SPRITES.iceFish[f.kind] || SPRITES.iceFish.fish, n = F.shadow.length;
+    const hd = ((Math.round(f.a / (Math.PI * 2) * n) % n) + n) % n, wag = Math.sin(f.t * 7) > 0 ? 1 : 0; // the tail's wag
+    const x0 = Math.round(sx), y0 = Math.round(sy);
+    const sh = F.shadow[hd][wag];
+    ctx.globalAlpha = 0.4 * em;
+    ctx.drawImage(sh, x0 - (sh.width >> 1), y0 - (sh.height >> 1));
+    // whatever of it lies under an open hole is the fish itself, crisp: cut
+    // to the hole's own tiles, so a long body crossing the rim is half fish
+    // in the water and half shadow under the ice
+    const tx = Math.floor(f.x / TILE), ty = Math.floor(f.y / TILE);
+    let cut = false;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      if (!inWorld(tx + dx, ty + dy) || ground[idx(tx + dx, ty + dy)] !== 2) continue;
+      if (!cut) { ctx.save(); ctx.beginPath(); cut = true; }
+      ctx.rect(Math.round((tx + dx) * TILE - ex), Math.round((ty + dy) * TILE - ey), TILE, TILE);
     }
-    ctx.restore();
+    if (cut) {
+      ctx.clip();
+      const sw = F.swim[hd][wag];
+      ctx.globalAlpha = 0.95 * em;
+      ctx.drawImage(sw, x0 - (sw.width >> 1), y0 - (sw.height >> 1));
+      ctx.restore();
+    }
     ctx.globalAlpha = 1;
   }
 
