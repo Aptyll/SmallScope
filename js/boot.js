@@ -40,6 +40,7 @@ const DROP_EDGE_MARGIN = 3; // tiles of open ground a forced drop keeps clear of
 const EAGLE_END = 2;        // tiles inside the corner's treeline each end of the line sits (diagEnd)
 const HOP_FALL_T = 0.7;     // s the hop off a GROUNDED bird takes (a step down, not a free fall)...
 const HOP_ALT = 16;         // ...from this many px up
+const HOP_GAP = 6;          // px kept clear between the HOP OFF key and your name tag under it
 // the DROP BRIEF: a local player that rides the landing (the first flight
 // always - its manual jump is refused, the ride is fully scripted - or a
 // veteran who never jumped) sits through a camera tour before the hop: a
@@ -53,7 +54,9 @@ const BRIEF_HOLD = 3;       // s it holds on the rival roost
 const BRIEF_HOLD_OURS = 4;  // s it holds on your own to finish
 const BRIEF_GO_MIN = 1;     // s a glide leg lasts at least, however close the target
 const BRIEF_MAX_T = 24;     // s the whole tour may run before it force-ends (safety)
-const BRIEF_PLATE_A = 0.82; // the dark plate under the headline (drawDropBrief): the roost is pines edge to edge
+const BRIEF_TEXT = 4;        // the headline's scale, times the drop HUD's text scale (drawDropBrief)
+const BRIEF_RIM = 2;         // px of dark rim round it: the roost is pines edge to edge, and no plate
+const BRIEF_Y = 0.72;        // where its top sits, as a share of the view's height: under the bird
 // the SPUR the crash cuts back to the road, pine by pine - aimed from the
 // crater at its junction on the road's centreline (e.mouth: roadNest,
 // world.js), run until the front is inside the road, and PAVED behind the
@@ -295,13 +298,14 @@ function beginDrop() {
   state.menu.panel = null;
   state.menu.screen = 'menu';
   netHostRoom(); // the relay's list: this room is live now
-  // the view grows around its centre (applyZoom keeps the point under the
-  // screen centre put); ease in from the drift's framing. The eagle's framing
-  // is snapped rather than eased: the ride opens on a cross-fade from the
-  // menu, and a zoom sliding under that reads as a stumble.
-  applyZoom(0, true);
+  // the OPENING SHOT: the ride opens tight on your own seat (DROP_OPEN_ZOOM,
+  // snapped under the menu's cross-fade) and pulls out to the ride's framing
+  // over INTRO_T, the camera held on you the whole way (the drop branch of
+  // the camera, js/sim.js; the zoom's curve: applyZoom)
   state.introFrom = { x: camX, y: camY };
   state.intro = INTRO_T; state.introLen = INTRO_T;
+  applyZoom(0, true);
+  camX = player.x - WV_W / 2; camY = player.y - WV_H / 2;
   SFX.dawnChime();
   SFX.music.play('eagle');
 }
@@ -450,7 +454,7 @@ function updateDrop(dt) {
       const sp = seatPos(e, p.seat);
       p.x = sp.x; p.y = sp.y;
       if (e.prog >= p.dropU) dropJump(p, true); // the window's end drops a bot still riding
-      else if (e.state === 'down' && state.mode === 'play' && !state.dropBrief && (p.input.work || p.input.dodge)) hopOff(p); // E (or the roll button: a pad's A, the jump) off the roost
+      else if (e.state === 'down' && state.mode === 'play' && !state.dropBrief && (p.input.work || p.input.dodge || p.input.mx || p.input.my)) hopOff(p); // E, the roll button (a pad's A) or simply walking: off the roost
       p.input.dodge = false; // a seated roll is spent here, never carried into the landing
     } else if (p.dropT > 0) {
       p.dropT -= dt;
@@ -1189,24 +1193,25 @@ function drawEagle(e, ex, ey, now) {
     const w = spr.width * k, h = spr.height * k;
     drawEagleTrail(e, ex, ey, S, now); // before the cull: the trail hangs behind a bird already off the frame
     if (sx < -w - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + 40) return;
-    const bob = e.state === 'fly' ? Math.round(Math.sin(now * 2.4 + e.team * 2.1) * 3) : 0;
+    const bob = flightBob(e, now);
     const gw = Math.round(shw.width * G), gh = Math.round(shw.height * G);
     ctx.drawImage(shw, sx + Math.round(10 * (1 - fall)) - (gw >> 1), sy + alt - (gh >> 1), gw, gh);
     ctx.drawImage(spr, sx - Math.round(w / 2), sy + bob - Math.round(h / 2), w, h);
     // every rider seated on its wing, facing the way the bird flies, at the
     // bird's own perspective size (riderScale); the local player draws last so
-    // it is never under a teammate
+    // it is never under a teammate. Only YOUR name rides the wing (in your
+    // side's paint, under the gold arrow renderDropUI hangs over you): seven
+    // names on one bird told a new player nothing about which one was them
     const RS = riderScale(e), rd = riderDir(e);
     { // the driver first, on the neck: the team's merchant, who climbs down at the crash
       const [dx, dy] = seatAt(war ? WB.merchSeat : PR.merchSeat); // a war eagle's behind its helm, not on it
       drawSeated(SPRITES.merchant[t], rd, sx + dx, sy + bob + dy, RS);
-      seatedName(SPRITES.merchant[t], rd, sx + dx, sy + bob + dy, RS, 'MERCH', e.team);
     }
     for (let pass = 0; pass < 2; pass++) for (const p of players) {
       if (!p.active || !p.aboard || p.team !== e.team || (p === player) !== (pass === 1)) continue;
       const [dx, dy] = seatAt(EAGLE_SEATS[p.seat % EAGLE_SEATS.length]);
       drawSeated(classSet(p), rd, sx + dx, sy + bob + dy, RS);
-      seatedName(classSet(p), rd, sx + dx, sy + bob + dy, RS, p.name, p.team);
+      if (p === player) seatedName(classSet(p), rd, sx + dx, sy + bob + dy, RS, p.name, p.team);
     }
     // where a jump right now would land: a pulsing ring under the bird -
     // only while the jump window is open and never on the scripted first flight,
@@ -1333,10 +1338,10 @@ function drawEagle(e, ex, ey, now) {
 // (so a pause or a stalled wire holds it within a frame) and never
 // backwards. Render-only: the sim's e.t is untouched.
 const FLIGHT_BAR_CUT = { tl: true, tr: true, bl: true, br: true }; // all four corners cut
-const FLIGHT_TRACK = '#1a2240';    // the line still to fly
-const FLIGHT_SHUT = '#3c4a74';     // the jump window while the door is locked
-const FLIGHT_OPEN = '#e8f0ff';     // ...and open
-const FLIGHT_KEY_SHUT = '#5d6b92'; // the JUMP indicator while locked
+const FLIGHT_TRACK = '#0b0c0e';    // the line still to fly: a step under the graphite plate (AB_BG)
+const FLIGHT_SHUT = '#4a4536';     // the jump window while the door is locked: gold, unlit
+const FLIGHT_OPEN = '#ffd95c';     // ...and open: the gold every "do it now" wears
+const FLIGHT_KEY_SHUT = '#7d828c'; // the JUMP word while locked
 const FLIGHT_DENY_T = 0.6;         // s the refusal holds - the bag's own (bagFlash)
 // A press of the jump in flight, from any device - a key or the pad
 // (keyPress), the click, the mouse scheme's press (input.js): the step
@@ -1369,14 +1374,14 @@ function renderDropUI(now) {
   const cxm = Math.round(VIEW_W / 2);
   if (player.aboard) {
     const me = d.eagles[player.team];
-    const left = Math.max(0, me.dur - me.t);
     const open = me.t >= me.dur - DROP_LOCK_T;
-    // the flight bar, top centre: a steel HUD plate (drawHudFrame, the
-    // strip's own frame) round the whole line as a track. The pale stretch
+    drawYouArrow(now, me);
+    // the flight bar, top centre: a graphite HUD plate (drawHudFrame, the
+    // strip's own frame) round the whole line as a track. The gold stretch
     // is the jump window - the lock is taught by the shape, not a sentence -
-    // and it pulses bright the moment the door opens.
-    const bw = 120 * ts, bh = 6 * ts, bxx = cxm - Math.round(bw / 2), byy = 14 * ts;
-    // a refused press: the whole plate - frame, track, number and key as one -
+    // unlit while the door is shut, lit gold the moment it opens.
+    const bw = 120 * ts, bh = 5 * ts, bxx = cxm - Math.round(bw / 2), byy = 12 * ts;
+    // a refused press: the whole plate - frame, track and key as one -
     // shakes a pixel either way and goes the bag's refusal red
     const red = now - flightDenyAt < FLIGHT_DENY_T;
     ctx.save();
@@ -1389,33 +1394,68 @@ function renderDropUI(now) {
     // the first flight is scripted (dropJump shuts the door), so it shows
     // no window and no key: nothing on screen offers a jump it would refuse
     const door = !d.firstFlight;
+    const wx0 = bxx + Math.round(bw * me.jumpOpen), wx1 = bxx + Math.round(bw * me.jumpEnd);
     if (door) {
-      const wx0 = bxx + Math.round(bw * me.jumpOpen), wx1 = bxx + Math.round(bw * me.jumpEnd);
       ctx.fillStyle = open ? FLIGHT_OPEN : FLIGHT_SHUT;
-      if (open) ctx.globalAlpha = 0.75 + 0.25 * Math.sin(now * 6);
       ctx.fillRect(wx0, byy, Math.max(2, wx1 - wx0), bh);
-      ctx.globalAlpha = 1;
     }
-    // flown so far, in team colour, a white head line riding its front. On
-    // device pixels, not UI pixels: the head glides a device pixel at a time
-    // (whole device pixels, so every edge stays crisp)
+    // flown so far, in team colour up to the window (inside it the gold is
+    // the news), a white head line riding its front. On device pixels, not UI
+    // pixels: the head glides a device pixel at a time (whole device pixels,
+    // so every edge stays crisp)
     const fx = Math.round(bw * Math.min(1, flightShownT(me, now) / me.dur) * devScale) / devScale;
     ctx.fillStyle = TEAMS[skin(player.team)].mark;
-    ctx.fillRect(bxx, byy, fx, bh);
+    ctx.fillRect(bxx, byy, door ? Math.min(fx, wx0 - bxx) : fx, bh);
     ctx.fillStyle = '#f4f7ff';
     ctx.fillRect(bxx + fx - 1, byy - 2, 2, bh + 4);
-    // seconds left beside the plate, white once the window is open
-    drawPixelTextOutline(ctx, Math.ceil(left) + 'S', bxx + bw + 7 * ts, byy + Math.round(bh / 2) - 3 * ts,
-      red ? '#c2465a' : open && door ? '#f4f7ff' : '#9fb6d8', '#0f1632', ts);
-    // the jump's keybind indicator under the plate: dim while the door is
-    // shut, lit once it opens, red with the plate on a refused press
-    if (door) drawDropBind('dodge', 'JUMP', cxm, byy + bh + 9 * ts, red ? '#c2465a' : open ? '#f4f7ff' : FLIGHT_KEY_SHUT, ts, true);
+    // the jump's key under the plate: a real key cap (the hop's own) and the
+    // one word - grey while the door is shut, lit gold once it opens, red
+    // with the plate on a refused press
+    if (door) {
+      const lit = open && !red, col = red ? '#c2465a' : open ? FLIGHT_OPEN : FLIGHT_KEY_SHUT;
+      drawCapBind('dodge', 'JUMP', cxm, byy + bh + 6 * ts, col, lit);
+    }
     ctx.restore();
   } else {
     drawDropBind('move', 'DRIFT', cxm, 10 * ts, '#f4f7ff', ts, true);
   }
   // keybind indicator, bottom right: the map itself is the affordance
   if (!state.mapOpen) drawDropBind('map', 'MAP', VIEW_W - 6 * ts, VIEW_H - 12 * ts, '#9fb6d8', ts, false);
+}
+// the bird's bob in flight: its riders, their names and your arrow ride it
+function flightBob(e, now) {
+  return e.state === 'fly' ? Math.round(Math.sin(now * 2.4 + e.team * 2.1) * 3) : 0;
+}
+// the gold arrow over your own name on the wing, bobbing: with only your
+// name riding the bird, this is the "that one is you" a first flight needs.
+// World-anchored like the tag under it (seatedName: 8 px over the seated
+// head, at the bird's rider scale), so it stays clear of it at every zoom
+// of the opening shot.
+function drawYouArrow(now, e) {
+  const set = classSet(player), RS = riderScale(e);
+  const tagTop = wToSY(player.y + flightBob(e, now) - (set[riderDir(e)][0].height - 5) * RS - 8);
+  const b = Math.round(Math.sin(now * 5) * 1.5);
+  const cx = Math.round(wToSX(player.x)), cy = Math.round(tagTop) - 9 + b;
+  ctx.fillStyle = '#0f1632';
+  for (let r = 0; r < 5; r++) ctx.fillRect(cx - 5 + r, cy - 1 + r, 11 - 2 * r, 2);
+  ctx.fillStyle = FLIGHT_OPEN;
+  for (let r = 0; r < 4; r++) ctx.fillRect(cx - 4 + r, cy + r, 9 - 2 * r, 1);
+}
+// an action's key cap - the shared one (drawKeyCap, js/ui/wheel.js), its
+// face lit white when `lit`; the pad's glyph while a pad is in hand - with
+// its one word beside it in `col`, the pair centred on x with its top at y.
+// The flight bar's JUMP and the roost's HOP OFF wear it.
+function drawCapBind(act, verb, x, y, col, lit) {
+  const vw = pixelTextWidth(verb);
+  if (padActive() && PAD_BIND[act]) {
+    const gw = padBindW(act), x0 = Math.round(x - (gw + 3 + vw) / 2);
+    drawPadBind(ctx, x0, y, act, 1);
+    drawPixelTextOutline(ctx, verb, x0 + gw + 3, y + 3, col, '#0f1632');
+    return;
+  }
+  const lab = keyCap(act), x0 = Math.round(x - (pixelTextWidth(lab) + 6 + 3 + vw) / 2);
+  const cw = drawKeyCap(ctx, x0, y, lab, false, lit ? 1 : 0);
+  drawPixelTextOutline(ctx, verb, x0 + cw + 3, y + 3, col, '#0f1632');
 }
 // one of the flight HUD's two keybind indicators: `KEY - VERB` as text for
 // the keyboard - the key the action is bound to (keyCap, input.js) - the
@@ -1444,20 +1484,14 @@ function drawHopPrompt(now) {
   if (!state.drop || !player.aboard || state.dropBrief || window.DBG.hideUI) return;
   const e = state.drop.eagles[player.team];
   if (e.state !== 'down') return;
-  const ts = VIEW_H >= 500 ? 2 : 1;
   const bob = Math.round(Math.sin(now * 4) * 2);
-  const lab = keyCap('work'), w = (pixelTextWidth(lab) + 8) * ts, h = 11 * ts;
-  const cx = Math.round(wToSX(player.x)) + 20 * ts, cy = Math.round(wToSY(player.y)) - 14 * ts + bob;
-  if (padActive()) {
-    // a pad in hand: the A disc (the jump; X, the work button, hops too)
-    drawPadBind(ctx, cx, cy + ts, 'dodge', ts);
-  } else {
-    ctx.fillStyle = '#0f1632'; ctx.fillRect(cx - ts, cy - ts, w + 2 * ts, h + 2 * ts);
-    ctx.fillStyle = '#f4f7ff'; ctx.fillRect(cx, cy, w, h);
-    ctx.fillStyle = '#c9d0e2'; ctx.fillRect(cx, cy + h - 2 * ts, w, 2 * ts); // the cap's lower face
-    drawPixelText(ctx, lab, cx + 3 * ts, cy + 2 * ts, '#0f1632', ts);
-  }
-  drawPixelTextOutline(ctx, 'HOP OFF', cx + w + 4 * ts, cy + 2 * ts, '#ffd95c', '#0f1632', ts);
+  // centred over your head, its foot HOP_GAP clear of your name tag's top
+  // (seatedName: the tag sits 8 world px over the seated body's head)
+  const set = classSet(player), dir = riderDir(e);
+  const tagTop = Math.round(wToSY(player.y - (set[dir][0].height - 5) - 8));
+  const y = tagTop - HOP_GAP - 10 + bob, cx = Math.round(wToSX(player.x));
+  // the work key on a keyboard (E); a pad's A disc (the jump; X, the work button, hops too)
+  drawCapBind(padActive() ? 'dodge' : 'work', 'HOP OFF', cx, y, FLIGHT_OPEN, true);
 }
 
 // the brief is over, however it ended: the controls come back, and the DAY 1
@@ -1481,12 +1515,13 @@ function dropBriefTarget() {
 }
 
 // the brief's two headlines, one per roost: the bird on screen is the
-// picture, this says what it MEANS (the headline carve-out - a match has
-// exactly one win condition, and this is the once it is ever written down).
-// Big, high and short: the headline in the roost's team colour at three times
-// the HUD's text scale across the top of the view, one plain line under it,
-// nothing else. Baked opaque and faded as a canvas, the dayPop grammar: an
-// outline stamped under globalAlpha goes blotchy (the CLAUDE.md text rule).
+// picture, this says what to DO about it (the headline carve-out - a match
+// has exactly one win condition, and this is the once it is ever written
+// down). One line, verb first, nothing under it: the roost's team colour at
+// four times the drop HUD's text scale, low in the view under the bird, on
+// no plate - a 2 px dark rim carries it over the pines instead. Baked opaque
+// and faded as a canvas, the dayPop grammar: an outline stamped under
+// globalAlpha goes blotchy (the CLAUDE.md text rule).
 let briefCv = null, briefCvKey = '';
 function drawDropBrief() {
   const b = state.dropBrief;
@@ -1499,30 +1534,20 @@ function drawDropBrief() {
   const key = b.ph + ts;
   if (!briefCv || briefCvKey !== key) {
     const team = b.ph === 'ours' ? player.team : 1 - player.team;
-    const t1 = b.ph === 'ours' ? 'YOUR EAGLE' : 'THEIR EAGLE';
-    const t2 = b.ph === 'ours' ? 'LOSE IT, LOSE THE MATCH' : 'DRIVE IT OFF TO WIN';
-    const hs = 3 * ts, ss = ts, pad = 6 * ts; // the plate's margin round the words
+    const t1 = b.ph === 'ours' ? 'PROTECT YOUR EAGLE' : 'ATTACK THEIR EAGLE';
+    const hs = BRIEF_TEXT * ts, rim = BRIEF_RIM;
     briefCv = document.createElement('canvas');
-    briefCv.width = Math.max(pixelTextWidth(t1, hs), pixelTextWidth(t2, ss)) + 4 + pad * 2;
-    briefCv.height = 8 * hs + 8 * ss + 8 + pad * 2;
+    briefCv.width = pixelTextWidth(t1, hs) + rim * 2;
+    briefCv.height = 5 * hs + rim * 2;
     const c2 = briefCv.getContext('2d');
-    // a dark PLATE under the words, the panels' own ink at BRIEF_PLATE_A with
-    // a 1px rim: the roost is a wall of pines, and an outline alone on green
-    // needles at this size was a smear
-    c2.fillStyle = BAG_BG;
-    c2.globalAlpha = BRIEF_PLATE_A;
-    c2.fillRect(0, 0, briefCv.width, briefCv.height);
-    c2.globalAlpha = 1;
-    c2.fillStyle = TEAMS[skin(team)].mark;
-    c2.fillRect(0, 0, briefCv.width, 1); c2.fillRect(0, briefCv.height - 1, briefCv.width, 1); // the team's colour as the plate's rule, top and bottom
-    drawPixelTextOutline(c2, t1, Math.round((briefCv.width - pixelTextWidth(t1, hs)) / 2), pad + 2,
-      TEAMS[skin(team)].mark, '#0f1632', hs);
-    drawPixelTextOutline(c2, t2, Math.round((briefCv.width - pixelTextWidth(t2, ss)) / 2), pad + 8 * hs + 6,
-      '#f4f7ff', '#0f1632', ss);
+    for (let dy = -rim; dy <= rim; dy++) for (let dx = -rim; dx <= rim; dx++) {
+      if (dx || dy) drawPixelText(c2, t1, rim + dx, rim + dy, '#0f1632', hs);
+    }
+    drawPixelText(c2, t1, rim, rim, TEAMS[skin(team)].mark, hs);
     briefCvKey = key;
   }
   ctx.globalAlpha = a;
-  ctx.drawImage(briefCv, Math.round((VIEW_W - briefCv.width) / 2), Math.round(VIEW_H * 0.08));
+  ctx.drawImage(briefCv, Math.round((VIEW_W - briefCv.width) / 2), Math.round(VIEW_H * BRIEF_Y));
   ctx.globalAlpha = 1;
 }
 

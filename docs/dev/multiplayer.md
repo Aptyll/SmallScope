@@ -1092,7 +1092,7 @@ ground before the corner's treeline — no bot is ever force-dropped in the tree
 they press Space — drifting with WASD on the way down — or **not at all**: a human who never
 jumps rides the dive and the crash on the bird's back, sits through the
 [drop brief](rendering.md#the-drop-brief) (the camera tour of both roosts), then hops off the
-roost with E under the E - HOP OFF indicator. A profile's first flight is exactly that ride with
+roost with E (or by walking) under the E HOP OFF indicator. A profile's first flight is exactly that ride with
 the manual leap refused — scripted onboarding — and a real jump is the opt-out for everyone
 after. That tile is what the bot brain
 treats as "home". There are no spawn pockets, no starter rings, and no guaranteed resources near
