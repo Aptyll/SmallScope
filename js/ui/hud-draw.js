@@ -361,7 +361,10 @@ function cardDenied() { SFX.deny(); }
 // (foodDenied).
 function drawFoodCell(i, now, on) {
   const p = player, b = FOOD_BTNS[i], r = foodCellRect(i);
-  const n = bagCount(p, b.type);
+  // the fish well counts every fish you carry and shows the one its key eats
+  // next - or only the picked kind (the picker over it, drawFishPop)
+  const fish = b.type === 'fish', type = fish ? fishToEat(p) : b.type;
+  const n = fish && !p.fishPick ? fishHeld(p) : bagCount(p, type);
   const red = foodFlash > 0 && foodFlashI === i;
   const live = n > 0 && p.foodCd <= 0;
   if (red) {
@@ -374,16 +377,46 @@ function drawFoodCell(i, now, on) {
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const icon = SPRITES[ITEMS[b.type].icon], iw = icon.width * 2, ih = icon.height * 2;
+  const icon = SPRITES[ITEMS[type].icon], iw = icon.width * 2, ih = icon.height * 2;
   if (n <= 0) ctx.globalAlpha = 0.35;
   ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
   ctx.globalAlpha = 1;
-  drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, b.type);
+  drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, fish && FISH_KINDS.includes(p.eatType) ? p.eatType : type);
   if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, b.act, 2, !live);
   else drawPixelTextOutline(ctx, keyCapShort(b.act), r.x + 3, r.y + r.h - 13, live ? '#f4f7ff' : '#8c919a', '#191b1f', 2);
   const t = shortNum(n);
   drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
   if (red) ctx.restore();
+}
+// The fish picker's row (FISH_POP, js/ui/strip.js): the meal wells' own wells
+// on the hud plate, each kind's icon and count; the picked one rings gold and
+// the rest dim, none picked leaves all three lit. The pointed-at kind's name
+// and meal stand over the row.
+function drawFishPop(hov) {
+  const m = stripMouse(mouse.x, mouse.y);
+  if (!fishPopUp(m.x, m.y)) return;
+  const p = player, R = fishPopRect();
+  drawHudFrame(R.x, R.y, R.w, R.h);
+  for (let j = 0; j < FISH_POP.length; j++) {
+    const t = FISH_POP[j], r = fishPopCellRect(j), n = bagCount(p, t);
+    const picked = p.fishPick === t, on = hov && hov.kind === 'fishPick' && hov.j === j;
+    ctx.fillStyle = picked ? '#f5c542' : on ? '#9ca1aa' : n > 0 ? '#3c4048' : '#2b2e34';
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.fillStyle = BAG_WELL;
+    ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+    const icon = SPRITES[ITEMS[t].icon], iw = icon.width * 2, ih = icon.height * 2;
+    if (n <= 0 || (p.fishPick && !picked)) ctx.globalAlpha = 0.35;
+    ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
+    ctx.globalAlpha = 1;
+    const c = shortNum(n);
+    drawPixelTextOutline(ctx, c, r.x + r.w - 2 - pixelTextWidth(c), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
+    if (on) {
+      const name = ITEMS[t].name, heal = '+' + Math.round(ITEMS[t].heal * kitOf(p).foodMul);
+      const w = pixelTextWidth(name) + 4 + pixelTextWidth(heal), x = Math.min(R.x + R.w - w, Math.max(R.x, r.x + ((r.w - w) >> 1)));
+      drawPixelTextOutline(ctx, name, x, R.y - FISH_POP_NAME + 2, RES_COLORS[t], '#191b1f');
+      drawPixelTextOutline(ctx, heal, x + pixelTextWidth(name) + 4, R.y - FISH_POP_NAME + 2, '#8fe08a', '#191b1f');
+    }
+  }
 }
 // THE PURSE under the meals: the coin and the gold, centred, inked '#f5c542'
 // because the one number on the HUD that is money must never read as a count
@@ -417,6 +450,7 @@ function drawHudStrip(now) {
   drawHpBar();
   drawStBar();
   drawGoldCell();
+  drawFishPop(hov);
   drawBuildList(now); // last: the open column stands over the meal wells
 }
 // The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
@@ -440,7 +474,7 @@ function drawHudScaled(now, slideY) {
     return;
   }
   const R = hudStripRect();
-  const head = Math.max(HUD_BAKE_HEAD, buildHeadroom());
+  const head = Math.max(HUD_BAKE_HEAD, buildHeadroom(), fishPopHeadroom());
   const bx = R.x - 3, by = R.y - head, bw = Math.max(R.w + 6, buildTabRect().x + BUILD_W + 1 - bx), bh = R.h + head;
   if (hudScaleCv.width !== bw || hudScaleCv.height !== bh) {
     hudScaleCv.width = bw; hudScaleCv.height = bh;

@@ -196,6 +196,38 @@ function goldCellRect() {
   const r = foodCellRect(0);
   return { x: r.x, y: r.y + BAR_TOP, w: FOOD_W, h: ST_TOP + ST_H + 2 - BAR_TOP };
 }
+// THE FISH PICKER: the fish well holds three kinds (FISH_KINDS, js/player.js),
+// and pointing at it raises a row of them over the strip's right end - the
+// ice fish, the whitefish, the snow char, each with how many you carry. With
+// none picked all three stand lit and the key eats whichever comes next (the
+// well shows that one); a click on one picks it, and the key eats only that
+// (it rings gold, the others dim), and a click on the picked one lets it go.
+// The pick is the body's own (p.fishPick), set through the input's cmd like
+// every other order, so it holds online. It stays up while the pointer is on
+// the well, the row or the gap between them, and it stands over the ability
+// buy plates' row so it never hides one (a plate in the gap keeps its press).
+const FISH_POP = ['fish', 'whitefish', 'snowChar']; // the row, left to right
+const FISH_POP_NAME = 10;  // the hovered kind's name, standing over the row
+function fishPopRect() {
+  const R = hudStripRect(), w = FISH_POP.length * AB_CELL + (FISH_POP.length - 1) * AB_GAP + 2 * AB_PAD, h = AB_CELL + 2 * AB_PAD;
+  return { x: R.x + R.w + 3 - w, y: abBuyRect(0).y - h - 2, w, h };
+}
+function fishPopCellRect(j) {
+  const r = fishPopRect();
+  return { x: r.x + AB_PAD + j * (AB_CELL + AB_GAP), y: r.y + AB_PAD, w: AB_CELL, h: AB_CELL };
+}
+// is the row up, for a pointer at strip-space (mx, my)
+function fishPopUp(mx, my) {
+  if (state.mode !== 'play' || player.dead || state.paused || state.build || !hudHome() ||
+      state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI || !mouse.inside) return false;
+  const r = fishPopRect(), s = foodCellRect(1);
+  if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < s.y) return true; // the row and the gap under it
+  return mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h;
+}
+function fishPopHeadroom() {
+  const m = stripMouse(mouse.x, mouse.y);
+  return fishPopUp(m.x, m.y) ? hudStripRect().y - fishPopRect().y + FISH_POP_NAME + 2 : 0;
+}
 // The meal buttons' share of that refusal: a press that could not become a
 // meal - nothing in the bag, the clock still up, full health, a busy body -
 // reddens and shakes the button that was asked, in the red the well and the
@@ -206,7 +238,7 @@ function goldCellRect() {
 // updateFx ages it on wall time beside bagFlash and toolFlash.
 let foodFlash = 0, foodFlashI = 0;
 function foodDenied(type) {
-  const i = type === 'fish' ? 1 : 0;
+  const i = FISH_KINDS.includes(type) ? 1 : 0;
   if (foodFlash > 0 && foodFlashI === i) return;
   foodFlash = 0.6;
   foodFlashI = i;
@@ -254,13 +286,21 @@ function abBuyHit(mx, my) {
   }
   return -1;
 }
-// { kind:'ab', i } | { kind:'food', i } | { kind:'port' } | { kind:'frame' }
+// { kind:'ab', i } | { kind:'food', i } | { kind:'fishPick', j } | { kind:'fishPop' } | { kind:'port' } | { kind:'frame' }
 // | null. Shared by the click handler, the cursor and the strip's own hover
 // so they cannot disagree.
 function stripHit(mx, my) {
   if (state.mode !== 'play' || player.dead || state.paused ||
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
   ({ x: mx, y: my } = stripMouse(mx, my));
+  if (fishPopUp(mx, my)) {
+    for (let j = 0; j < FISH_POP.length; j++) {
+      const s = fishPopCellRect(j);
+      if (mx >= s.x && mx < s.x + s.w && my >= s.y && my < s.y + s.h) return { kind: 'fishPick', j };
+    }
+    const r = fishPopRect();
+    if (my < r.y + r.h + 2) return { kind: 'fishPop' }; // the row's frame and the gap: nothing, but not the world either
+  }
   const R = hudStripRect();
   if (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h) return null;
   for (let i = 0; i < AB_N; i++) {
@@ -606,6 +646,11 @@ function hudPress(mx, my) {
   if (sh) {
     if (sh.kind === 'ab') { if (msOn()) msWell(sh.i); else player.input.ability = sh.i; } // click-to-cast: the well IS the key (under MOUSE it readies - msWell)
     else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat)
+    else if (sh.kind === 'fishPick') { // pick that fish, or let the picked one go
+      const t = FISH_POP[sh.j];
+      SFX.unlock();
+      player.input.cmd = { kind: 'fishPick', type: player.fishPick === t ? null : t };
+    }
     return true;
   }
   const bh = bagHit(mx, my);

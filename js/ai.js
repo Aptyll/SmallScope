@@ -834,7 +834,7 @@ function aiThink(p, dt) {
   const waveFoe = foe && !(foe instanceof Player) && !!pushE && !(mine && mine.threat && own && Math.hypot(own.x - p.x, own.y - p.y) < AI_ROOST_R);
   const engage = foe && ai.seeT >= prof.react && !((siege || rally || charge || waveFoe) && foeD > AI_SIEGE_R) ? foe : null;
   if (p.eatT <= 0 && p.foodCd <= 0 && foeD > AI_EAT_R) {
-    if (p.hp < p.maxHp * 0.5 && bagCount(p, 'fish') > 0) inp.eatFish = true;
+    if (p.hp < p.maxHp * 0.5 && fishHeld(p) > 0) inp.eatFish = true;
     else if (p.hp < p.maxHp * 0.8 && bagCount(p, 'berry') > 0) inp.eatBerry = true;
   }
   if (p.eatT > 0) aiNote(p, 'EAT', 'LOW HP', null);

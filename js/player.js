@@ -218,7 +218,11 @@ function playerTint(p) {
 // lives, so the tooltip and the meal that lands can never disagree (js/core.js).
 const ITEMS = {
   berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
-  fish: { icon: 'itemFish', stack: Infinity, pouch: true, heal: 50 },
+  fish: { icon: 'itemFish', stack: Infinity, pouch: true, heal: 50, name: 'ICE FISH' },
+  // the creek's two (CREEK_FISH, js/world.js): caught by rolling over the
+  // water onto one, eaten off the fish well like the ice fish
+  whitefish: { icon: 'itemWhitefish', stack: Infinity, pouch: true, heal: 40, name: 'WHITEFISH' },
+  snowChar: { icon: 'itemSnowChar', stack: Infinity, pouch: true, heal: 70, name: 'SNOW CHAR' },
   // unopened roguelike cards - one ITEMS entry per rarity, in the pouch like
   // a meal, so the drop pickup and the counter are all free
   // (see checklists.md "adding a carried item"). Drawing one (useCard,
@@ -234,6 +238,12 @@ const ITEMS = {
   tunnel:     { icon: 'itemTunnel',     stack: 5, use: () => tunnelAimToggle() },
 };
 const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
+// THE FISH a body can eat, in the order the fish well eats them when no kind
+// is picked: the smallest meal first, so the best one is kept. The well's
+// picker (fishPick, js/ui/strip.js) sets p.fishPick to one of them, or null
+// for "whichever comes next" (fishToEat, js/core.js).
+const FISH_KINDS = ['whitefish', 'fish', 'snowChar'];
+function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
 // What one unopened card of each rarity costs at the merchant's counter
 // (the `shop` banner, js/shop.js), and half of it what one fetches sold back.
 // A card is priced by its RARITY and not per entry, because the rarity is
@@ -280,7 +290,7 @@ function bagRoom(p, type) {
 // returns how many went in; the caller decides what happens to the remainder
 function bagAdd(p, type, n) {
   if (!ITEMS[type]) return 0;
-  if (isPouch(type)) { p.food[type] += n; return n; } // the pouch always takes it
+  if (isPouch(type)) { p.food[type] = (p.food[type] || 0) + n; return n; } // the pouch always takes it (a save from before a kind existed carries no counter for it)
   const max = ITEMS[type].stack;
   let left = n;
   for (const s of p.bag) {
@@ -525,7 +535,8 @@ class Player {
     // the POUCH: the two meals, uncapped and cell-free (the ITEMS `pouch`
     // flag above). Read and written only through the bag helpers, so every
     // caller stays generic over where a kind actually lives.
-    this.food = newPouch();             // the pouch: the two meals and the unopened cards, uncapped
+    this.food = newPouch();             // the pouch: the meals and the unopened cards, uncapped
+    this.fishPick = null;               // the fish the fish well eats (a FISH_KINDS key), or null for whichever comes next
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
     this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
     this.pts = STAT_TRACKS.map(() => 0); // STAT_POINTS spent per STAT_TRACKS row (a ledger row each), pre-match (the hero pop-up)

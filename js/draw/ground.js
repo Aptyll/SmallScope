@@ -423,56 +423,25 @@ function drawCreekFlow(ox, oy, tx0, ty0, tx1, ty1) {
   }
   ctx.globalAlpha = 1;
 }
-// Fish in the current: dim shapes under the water swimming downstream, a
-// picture only. They are not the `fish` a hole or a net gives up and nothing
-// in the sim knows of them: each is a pure function of its index and the
-// field's clock (windT), so every client draws the same ones. World pass,
-// right after the glints.
-const SWIM_GAP = 5;          // tiles of creek per fish
-const SWIM_SPD = [18, 34];   // px/s downstream, slowest .. fastest fish
-const SWIM_SIZE = 1.4;       // the shape below drawn this many times over: a creek fish is about a player long
-const SWIM_COL = { back: '#94c9e6', spine: '#387099', fin: '#658cab', rim: '#13263a' }; // the caught fish's own blues (FIPAL, js/sprites/items.js), ringed dark so it reads over the streaks
-// a fish seen from above, in its own frame (a along it, nose at +a; b
-// across): a tapered body with a dark spine and a bulge amidships, and a
-// forked tail that wags across (tb). Every pixel near it asks this, so the
-// shape holds at any angle the current turns it to.
-function swimPx(a, b, tb) {
-  const ab = Math.abs(b), at = Math.abs(tb);
-  if (a > 3 && a <= 4.6) return ab <= 0.6 ? 'spine' : null;
-  if (a >= -2.6 && a <= 3) return ab > (a > -0.5 && a < 2 ? 1.5 : 1.05) ? null : ab < 0.5 ? 'spine' : 'back';
-  if (a >= -4 && a < -2.6) return at <= 0.6 ? 'fin' : null;
-  if (a >= -5.8 && a < -4) return at > 0.5 && at <= 1.7 ? 'fin' : null;
-  return null;
-}
+// THE CREEK'S FISH (creekFishAt, js/world.js: where each is, what kind, how
+// much shows), drawn UNDER the water: the sprite (SPRITES.creekFish, baked by
+// app/bake-creekfish/paint.py) is rimmed in the water's own shade and laid at
+// part alpha, so the creek shows through it, and the current's glints are
+// drawn after it, so the streaks run over the fish. The heading is the
+// current's at the fish, the tail beats on the field's clock. World pass,
+// right after the ground and before the glints.
+const SWIM_A = 0.62;    // how much of a fish shows through the water at its plainest
+const SWIM_BEAT = 5;    // tail beats a second
 function drawCreekFish(ox, oy) {
-  if (PRACTICE) return;
-  const now = state.windT, span = (WORLD - 1) * Math.SQRT2, half = span / 2;
-  const n = Math.ceil(span / SWIM_GAP);
+  const n = creekFishN();
   for (let i = 0; i < n; i++) {
-    const h = hash2(i * 13 + 7, 41), h2 = hash2(i * 5 + 3, 77), h3 = hash2(i + 19, i * 3 + 11);
-    const v = (SWIM_SPD[0] + (SWIM_SPD[1] - SWIM_SPD[0]) * h) / TILE;
-    // along the creek, wrapping world edge to world edge (where the woods hide it)
-    const w = ((i * SWIM_GAP + h3 * SWIM_GAP + now * v) % span + span) % span - half;
-    // ...and now and then down out of sight and back up
-    const show = Math.max(0, Math.min(1, (vnoise(now * 0.12 + i * 7.3, i * 1.9) - 0.28) * 5));
-    if (show <= 0) continue;
-    const p = creekMid(w) + (h2 - 0.5) * 2 * (CREEK_HW - 0.7) + Math.sin(now * 1.3 + i) * 0.25;
-    const fx = ((w + p) * Math.SQRT2 + WORLD - 1) / 2, fy = ((w - p) * Math.SQRT2 + WORLD - 1) / 2;
-    const cx = (fx + 0.5) * TILE, cy = (fy + 0.5) * TILE;
-    if (cx < ox - 12 || cy < oy - 12 || cx > ox + WV_W + 12 || cy > oy + WV_H + 12) continue;
-    const f = creekFlow(fx, fy), ax = f.fdx, ay = f.fdy, bx = -ay, by = ax;
-    const wag = Math.sin(now * 7 + i * 2.1) * 1.2;
-    ctx.globalAlpha = show * 0.9;
-    const sx0 = Math.round(cx - ox), sy0 = Math.round(cy - oy);
-    for (let sy = sy0 - 10; sy <= sy0 + 10; sy++) for (let sx = sx0 - 10; sx <= sx0 + 10; sx++) {
-      const x = sx + ox + 0.5, y = sy + oy + 0.5, dx = sx - sx0, dy = sy - sy0; // the pixel's middle in the world, and off the fish's own pixel (so it stays symmetric)
-      const at = (ex, ey) => { const a = (ex * ax + ey * ay) / SWIM_SIZE, b = (ex * bx + ey * by) / SWIM_SIZE; return swimPx(a, b, b - wag * Math.min(1, Math.max(0, (-a - 3) / 2))); };
-      const k = at(dx, dy) || (at(dx + 1, dy) || at(dx - 1, dy) || at(dx, dy + 1) || at(dx, dy - 1) ? 'rim' : null); // a pixel beside the fish is its dark ring
-      if (!k) continue;
-      if (ground[idx(Math.floor(x / TILE), Math.floor(y / TILE))] !== 4 || !creekWet(x / TILE - 0.5, y / TILE - 0.5) || CQ.d > -0.2) continue; // under the deck, on a ford, or out at the bank: not drawn
-      ctx.fillStyle = SWIM_COL[k];
-      ctx.fillRect(sx, sy, 1, 1);
-    }
+    const f = creekFishAt(i);
+    if (f.show <= 0 || f.x < ox - 16 || f.y < oy - 16 || f.x > ox + WV_W + 16 || f.y > oy + WV_H + 16) continue;
+    const S = SPRITES.creekFish[f.kind].swim;
+    const hd = ((Math.round(Math.atan2(f.fdy, f.fdx) / (Math.PI * 2) * S.length) % S.length) + S.length) % S.length;
+    const img = S[hd][Math.floor(state.windT * SWIM_BEAT + i * 0.37) & 1];
+    ctx.globalAlpha = f.show * SWIM_A;
+    ctx.drawImage(img, Math.round(f.x - ox) - (img.width >> 1), Math.round(f.y - oy) - (img.height >> 1));
   }
   ctx.globalAlpha = 1;
 }
