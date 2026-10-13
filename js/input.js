@@ -1082,6 +1082,7 @@ pageListen(canvas, 'wheel', (e) => {
   if (ladderWatch && (state.mode === 'play' || state.mode === 'dead')) { e.preventDefault(); if (!state.mapOpen) wheelZoom(e); return; } // a watcher zooms (js/ui/ladder.js)
   if (state.mode === 'dead') {
     e.preventDefault();
+    if (state.deadView === 'scores') { scoresScrollBy(e.deltaY > 0 ? 20 : -20); return; } // the post-game stats (js/ui/lobby.js)
     if (state.deadView === 'spec' && !endScreen() && !replayFull() && !state.mapOpen) wheelZoom(e);
     return;
   }

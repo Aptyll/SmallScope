@@ -450,7 +450,11 @@ function dropLocked(d, p) { return d.lockT > 0 && d.lock === p.id; }
 
 // wallets are per player: every cost check and payment names whose it is
 function canAfford(cost, p) { const w = (p || player).inv; for (const k in cost) if ((w[k] || 0) < cost[k]) return false; return true; }
-function pay(cost, p) { const w = (p || player).inv; for (const k in cost) w[k] -= cost[k]; }
+function pay(cost, p) {
+  p = p || player;
+  for (const k in cost) p.inv[k] -= cost[k];
+  if (cost.gold > 0) p.goldSpent += cost.gold; // the post-game record (js/ui/lobby.js)
+}
 // A COUNT ON THE HUD, cut to four characters. Gold and the two meals have no
 // ceiling any more - a purse and a pouch both climb all match - so past a
 // thousand the number carries its MAGNITUDE instead of its digits: 999, then
@@ -591,7 +595,7 @@ function updateEat(p, dt) {
   bagTake(p, type, 1);
   p.foodCd = FOOD_CD;
   const heal = Math.round(ITEMS[type].heal * kitOf(p).foodMul); // HEARTHWEAVE makes meals bigger
-  p.hp = Math.min(p.maxHp, p.hp + heal);
+  healPlayer(p, heal);
   sfxAt('heal', p.x, p.y);
   addFloater(p.x, p.y - 14, '+' + heal, '#8fe08a');
   burst(p.x, p.y - 8, RES_COLORS[type], 6, 30, 0.4);

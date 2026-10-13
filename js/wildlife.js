@@ -706,6 +706,7 @@ function animalDies(a) {
   if (a.rider) rideEnd(a.rider, true); // the rider goes down in the snow beside it
   sfxAt('monsterDie', a.x, a.y, 0, a.kind);
   const hunter = a.lastHit !== undefined ? players[a.lastHit] : null;
+  if (hunter) hunter.beasts++; // the post-game record (js/ui/lobby.js)
   const y = YIELD[a.kind];
   if (hunter && !hunter.dead && y && y.coins) {
     const base = Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * ((a.level || 1) - 1)));
@@ -781,6 +782,9 @@ const MONSTER = {
   alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
   dire:  { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // the same bear on the other bank
 };
+// the causes a beast's bite names, which is how damagePlayer (js/player.js)
+// tells a bite apart from the world's other blows for the post-game record
+const BEAST_CAUSES = new Set(Object.values(MONSTER).map((m) => m.cause));
 function isCampKind(k) { return !!MONSTER[k]; }
 function isBigBeast(a) { return !!(MONSTER[a.kind] && MONSTER[a.kind].big); }
 function isAnchored(e) { return !!(MONSTER[e.kind] && MONSTER[e.kind].anchor); }

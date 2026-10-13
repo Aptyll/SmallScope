@@ -3,19 +3,18 @@
 // The victory and defeat screens are a CEREMONY - one side, one headline,
 // four numbers about you. They answer "what happened to me". This answers
 // "what happened", which is a different question and wants a different
-// screen: every player who flew in, both sides, side by side, with the six
-// numbers a match is actually argued about afterwards and a graph of how the
-// two sides pulled apart. LOBBY off either ending lands here first, and this
+// screen: League's post-game page - every player who flew in a column, both
+// sides, the numbers a match is argued about afterwards in folding groups,
+// and a page of graphs of how the two sides pulled apart. LOBBY off either ending lands here first, and this
 // screen's own LOBBY is the door out (toLobby, js/ui/screens.js) - so the
 // walk out of a match is ceremony, then record, then the title.
 //
 // It is an INSTRUMENT in the sense CLAUDE.md's show-don't-label rule carves
 // out: its whole job is comparing numbers between ten people, so it gets
-// column headings and printed values the way the practice room's meters and
-// the merchant's price graphs do. Everything that is NOT a number still reads
-// as a shape - the side you are on is a colour, a player's class is its
-// emblem, a row's own fill IS its share of the sorted column, and the heading
-// you sorted by wears the arrow.
+// row names and printed values the way the practice room's meters and the
+// merchant's price graphs do. Everything that is NOT a number still reads as
+// a shape - the side is a colour, a player is their face, your column is a
+// lit band in gold, and the best in each row wears its side's underline.
 //
 // Nothing here runs during a match except sampleStats() below, and nothing
 // here is anybody's state but this screen's: the table is frozen out of
@@ -73,7 +72,10 @@ function statFreeze() {
     rows: players.filter((q) => q.active).map((q) => ({
       id: q.id, name: q.name, cls: q.cls, team: q.team, you: q === player,
       level: q.level, kills: q.kills, deaths: q.deaths,
-      dmg: q.dmgOut, siege: q.dmgBird + q.dmgStruct, gold: q.xp,
+      streak: q.bestStreak, multi: q.bestMulti, cc: Math.round(q.ccOut),
+      dmg: q.dmgOut, bird: q.dmgBird, struct: q.dmgStruct, beast: Math.round(q.dmgBeast),
+      inP: q.dmgInP, inB: q.dmgInB, healed: Math.round(q.healed),
+      gold: q.xp, spent: q.goldSpent, beasts: q.beasts,
       hGold: q.hGold.slice(), hDmg: q.hDmg.slice(),
     })),
     // which sides are still standing at the whistle: a side whose bird has
@@ -82,49 +84,78 @@ function statFreeze() {
   };
 }
 
-// ------------------------------------------------------------ the columns
-// Six numbers, each right-aligned under its own heading and each sortable by
-// clicking that heading. `w` is what the widest value the column can hold
-// needs at 2x, so the table's geometry is this table's own business.
-const SCORE_COLS = [
-  { key: 'level', head: 'LV', w: 16 },
-  { key: 'kills', head: 'K', w: 16 },
-  { key: 'deaths', head: 'D', w: 16 },
-  { key: 'dmg', head: 'DMG', w: 40 },
-  { key: 'siege', head: 'SIEGE', w: 40 },
-  { key: 'gold', head: 'GOLD', w: 34 },
+// ------------------------------------------------------------ the groups
+// League's post-game page, read sideways: a COLUMN per player, faces across
+// the top, and the numbers in folding groups down the side. `key` is the
+// number a row compares, `txt` how it prints when that is not the plain
+// number, and `best: false` leaves a row out of the underline the biggest
+// value in every other row wears (in its side's colour): a K/D has no single
+// best, and the most damage TAKEN is nobody's prize.
+const SCORE_GROUPS = [
+  { head: 'COMBAT', rows: [
+    { label: 'K/D', key: 'kills', txt: (r) => r.kills + '/' + r.deaths, best: false },
+    { label: 'LEVEL', key: 'level' },
+    { label: 'BEST STREAK', key: 'streak' },
+    { label: 'BEST MULTI-KILL', key: 'multi' },
+    { label: 'CROWD CONTROL', key: 'cc', txt: (r) => scoreFmt(r.cc) + 'S' },
+  ] },
+  { head: 'DAMAGE DEALT', rows: [
+    { label: 'TO PLAYERS', key: 'dmg' },
+    { label: 'TO THE BIRD', key: 'bird' },
+    { label: 'TO BUILDINGS', key: 'struct' },
+    { label: 'TO BEASTS', key: 'beast' },
+    { label: 'TOTAL', key: 'dealt' },
+  ] },
+  { head: 'TAKEN AND HEALED', rows: [
+    { label: 'FROM PLAYERS', key: 'inP', best: false },
+    { label: 'FROM BEASTS', key: 'inB', best: false },
+    { label: 'HEALED', key: 'healed' },
+  ] },
+  { head: 'GOLD', rows: [
+    { label: 'EARNED', key: 'gold' },
+    { label: 'SPENT', key: 'spent' },
+    { label: 'BEASTS HUNTED', key: 'beasts' },
+  ] },
 ];
-const SCORE_GAP = 8;    // px between columns
-const SCORE_ROW = 12;   // px per player row
-const SCORE_STRIP = 10; // px of team heading over each block
-const SCORE_ICON = 12;  // the class emblem (classIcon12, js/ui/menu.js)
+const SCORE_LABEL_W = 92; // px of row names down the left
+const SCORE_COL_W = 46;   // px per player column at most: a six-digit number and its air
+const SCORE_TEAM_GAP = 10; // px between the two sides
+const SCORE_FACE = 26;    // the portrait square over each column
+const SCORE_ROW = 10;     // px per stat row
+const SCORE_HEAD = 11;    // px per group heading, and the 2 under a group
+// a number in a column: whole up to 99999, past that its magnitude (shortNum,
+// js/core.js: 100K, 2.4M, 1B) so no column ever outgrows its width
+function scoreFmt(n) {
+  n = Math.round(n || 0);
+  return n >= 100000 ? shortNum(n) : String(n);
+}
+function scoreVal(r, row) {
+  return row.key === 'dealt' ? r.dmg + r.bird + r.struct + r.beast : r[row.key] || 0;
+}
 
 // this screen's whole state - it is one screen's UI and nothing the match or
 // the wire has any business in, so it lives here rather than on `state`
 const scores = {
-  t: 0,          // s since the screen opened: the fade and the row cascade
+  t: 0,          // s since the screen opened: the fade and the column cascade
   last: 0,       // the frame clock's last reading, so t steps on real time
+  page: 0,       // 0 the stats, 1 the graphs
   tab: 0,        // which graph: 0 gold, 1 damage
-  sort: 'gold',  // the column the blocks are ordered by...
-  desc: true,    // ...and which way
-  sel: 0,        // the keyboard's plank
-  hover: [0, 0], // per-plank hover ease
+  shut: {},      // the folded groups, by head, for the session
+  scroll: 0,     // px the stats are scrolled up when they outgrow the view
+  sel: 2,        // the keyboard's word in SCORE_WORDS
   from: 'menu',  // the view BACK returns to
 };
 
-const SCORE_PLANKS = ['BACK', 'LOBBY'];
+// the words a key walks: the two pages, then the two ways out
+const SCORE_WORDS = ['STATS', 'GRAPHS', 'BACK', 'LOBBY'];
 const SCORE_IN = 0.28; // s the screen takes to arrive
 
-// The head, the rule and the sort arrow are struck in the ending's own
-// accent - gold for a win, frost for anything else, the way the two
-// ceremonies are. `sort` is NOT: it is the colour the sorted column's numbers
-// are printed in, and a frost one would read dimmer than an ordinary column
-// rather than brighter, so the mark on "this is the column you asked for" is
-// the game's own number gold on both endings.
+// The head is struck in the ending's own accent - gold for a win, frost for
+// anything else, the way the two ceremonies are.
 function scoreAccent() {
   return (matchStats && matchStats.over) === 'won'
-    ? { rule: '#c89a3c', txt: '#f2cc6a', hi: '#ffd95c', sort: '#ffd95c' }
-    : { rule: '#3f5a77', txt: '#9fc4dd', hi: '#cfe4f2', sort: '#f2cc6a' };
+    ? { rule: '#c89a3c', txt: '#f2cc6a', hi: '#ffd95c' }
+    : { rule: '#3f5a77', txt: '#9fc4dd', hi: '#cfe4f2' };
 }
 function scoreHead() {
   const o = matchStats && matchStats.over;
@@ -132,61 +163,66 @@ function scoreHead() {
 }
 
 // ------------------------------------------------------------ the layout
-// Authored in the 270-row frame every other screen is (frameTop, core.js) and
-// centred in whatever width the view actually has, so the table breathes with
-// the window without a single literal 640 in it.
+// Centred in whatever the view has, the full height of it: the head and the
+// page words on top, the faces under them, the groups in a window that
+// scrolls when a short view cannot hold them all, and BACK / LOBBY as bare
+// words at the foot, the title screen's own (drawMenuItems, js/ui/menu.js).
+function scoreCols() {
+  if (!matchStats) return [];
+  const mine = player ? player.team : 0;
+  const side = (t) => matchStats.rows.filter((r) => r.team === t).sort((a, b) => (b.you - a.you) || a.id - b.id);
+  return side(mine).concat(side(1 - mine));
+}
 function scoresLayout() {
-  const toy = frameTop();
-  const w = Math.max(240, Math.min(VIEW_W - 24, 440));
+  const cols = scoreCols();
+  const nMine = cols.filter((r) => r.team === (player ? player.team : 0)).length;
+  const gap = nMine && nMine < cols.length ? SCORE_TEAM_GAP : 0;
+  // a narrow view narrows the columns, never the numbers: a six-digit value
+  // still fits at the floor's width (320, fitCanvas js/canvas.js)
+  const colW = Math.max(20, Math.min(SCORE_COL_W, Math.floor((VIEW_W - 8 - SCORE_LABEL_W - gap) / Math.max(1, cols.length))));
+  const face = Math.min(SCORE_FACE, colW - 2);
+  const w = SCORE_LABEL_W + cols.length * colW + gap;
   const x = Math.round((VIEW_W - w) / 2);
-  // the numbers are pinned to the right edge and the name takes what is left,
-  // so a narrow view loses name room rather than losing a column
-  const cols = [];
-  let cx = x + w - 4;
-  for (let i = SCORE_COLS.length - 1; i >= 0; i--) {
-    cx -= SCORE_COLS[i].w;
-    cols[i] = { x: cx, w: SCORE_COLS[i].w, c: SCORE_COLS[i] };
-    cx -= SCORE_GAP;
-  }
-  const nameX = x + 4 + SCORE_ICON + 4;
-  const blockH = SCORE_STRIP + 5 * SCORE_ROW;
-  const L = {
-    toy, x, w, cols, nameX, nameW: Math.max(8, cols[0].x - 6 - nameX),
-    headY: toy + 6, ruleY: toy + 22, colHY: toy + 26,
-    blocks: [toy + 34, toy + 34 + blockH + 4],
-    tabsY: toy + 184, graph: { x: x, y: toy + 194, w: w, h: 40 },
-    plankY: toy + 240,
-  };
-  L.tabs = ['GOLD', 'DAMAGE'].map((label, i) => ({
-    label, x: L.x + i * 56, y: L.tabsY, w: 52, h: 9,
-  }));
-  const pw = SCORE_PLANKS.length * DEAD_BW + (SCORE_PLANKS.length - 1) * DEAD_GAP;
-  L.planks = SCORE_PLANKS.map((label, i) => ({
-    label, x: Math.round((VIEW_W - pw) / 2) + i * (DEAD_BW + DEAD_GAP), y: L.plankY, w: DEAD_BW, h: DEAD_BH,
+  const L = { x, w, cols, colW, face, headY: 10, tabsY: 30, ruleY: 40, faceY: 46 };
+  L.colX = cols.map((r, i) => x + SCORE_LABEL_W + i * colW + (i >= nMine ? gap : 0));
+  L.wordY = VIEW_H - 24;
+  L.body = { x, y: L.faceY + face + 6, w, h: 0 };
+  L.body.h = Math.max(20, L.wordY - 8 - L.body.y);
+  // the stats' own height, every open group at full length
+  let h = 0;
+  for (const g of SCORE_GROUPS) h += SCORE_HEAD + (scores.shut[g.head] ? 0 : g.rows.length * SCORE_ROW) + 2;
+  L.contentH = h;
+  L.maxScroll = Math.max(0, h - L.body.h);
+  L.graph = { x, y: L.tabsY + 22, w, h: Math.max(40, L.wordY - 12 - (L.tabsY + 22)) };
+  // the page words, top left, and the graph's two under the rule on its page
+  let tx = x;
+  L.tabs = ['STATS', 'GRAPHS'].map((label) => { const r = { label, x: tx, y: L.tabsY, w: pixelTextWidth(label), h: 7 }; tx += r.w + 14; return r; });
+  tx = x;
+  L.gtabs = ['GOLD', 'DAMAGE'].map((label) => { const r = { label, x: tx, y: L.ruleY + 4, w: pixelTextWidth(label), h: 7 }; tx += r.w + 12; return r; });
+  // BACK and LOBBY: 2x words side by side at the foot
+  const ws = ['BACK', 'LOBBY'].map((l) => pixelTextWidth(l, MENU_TXT_SCALE) + 8);
+  const wgap = 24, total = ws[0] + wgap + ws[1];
+  L.words = ['BACK', 'LOBBY'].map((label, i) => ({
+    label, x: Math.round((VIEW_W - total) / 2) + (i ? ws[0] + wgap : 0), y: L.wordY - 2, w: ws[i], h: 7 * MENU_TXT_SCALE + 4,
   }));
   return L;
 }
-
-// the two sides in reading order - yours first, whatever index it was dealt -
-// each already sorted by the live column
-function scoreBlocks() {
-  if (!matchStats) return [];
-  const mine = player ? player.team : 0;
-  const dir = scores.desc ? -1 : 1;
-  return [mine, 1 - mine].map((t) => ({
-    team: t,
-    down: matchStats.down[t],
-    rows: matchStats.rows.filter((r) => r.team === t)
-      .sort((a, b) => (a[scores.sort] - b[scores.sort]) * dir || a.id - b.id),
-  }));
+// the stats laid out down the scrolled window: each group's heading and each
+// open row with its y, and what a click on it does
+function scoreLines(L) {
+  const out = [];
+  let y = L.body.y - Math.round(scores.scroll);
+  for (const g of SCORE_GROUPS) {
+    out.push({ kind: 'group', g, y });
+    y += SCORE_HEAD;
+    if (!scores.shut[g.head]) for (let i = 0; i < g.rows.length; i++) { out.push({ kind: 'row', row: g.rows[i], i, y }); y += SCORE_ROW; }
+    y += 2;
+  }
+  return out;
 }
-
-// the biggest value in the sorted column anywhere in the match: what every
-// row's bar is drawn as a share of
-function scoreBest() {
-  let best = 0;
-  if (matchStats) for (const r of matchStats.rows) best = Math.max(best, r[scores.sort]);
-  return best;
+function scoresScrollBy(d) {
+  const L = scoresLayout();
+  scores.scroll = Math.max(0, Math.min(L.maxScroll, scores.scroll + d));
 }
 
 // ------------------------------------------------------------ the way in
@@ -196,8 +232,8 @@ function openScores(from) {
   if (!matchStats) statFreeze(); // a driver that opened the screen without an ending
   scores.from = from;
   scores.t = 0;
-  scores.sel = 0;
-  scores.hover = [0, 0];
+  scores.sel = 2;
+  scores.scroll = 0;
   state.deadView = 'scores';
 }
 
@@ -206,31 +242,36 @@ function scoresBack() {
   SFX.pickup();
 }
 
-// what the pointer is on: a column heading, a graph tab, a plank, or nothing.
-// The screen has to have arrived first - a control that is still fading in is
-// not a control yet.
+// what the pointer is on: a page word, a graph word, a group heading, a row,
+// a face, a way out, or nothing. The screen has to have arrived first - a
+// control that is still fading in is not a control yet.
 function scoresHit() {
   if (scores.t < SCORE_IN) return null;
   const L = scoresLayout();
   const inR = (r, pad) => mouse.x >= r.x - (pad || 0) && mouse.x < r.x + r.w + (pad || 0)
     && mouse.y >= r.y - (pad || 0) && mouse.y < r.y + r.h + (pad || 0);
-  for (let i = 0; i < L.cols.length; i++) {
-    if (inR({ x: L.cols[i].x - 3, y: L.colHY - 3, w: L.cols[i].w + 6, h: 11 })) return { kind: 'col', i };
+  for (let i = 0; i < L.tabs.length; i++) if (inR(L.tabs[i], 3)) return { kind: 'page', i };
+  for (let i = 0; i < L.words.length; i++) if (inR(L.words[i], 2)) return { kind: 'word', i };
+  if (scores.page === 1) {
+    for (let i = 0; i < L.gtabs.length; i++) if (inR(L.gtabs[i], 3)) return { kind: 'tab', i };
+    return null;
   }
-  for (let i = 0; i < L.tabs.length; i++) if (inR(L.tabs[i], 1)) return { kind: 'tab', i };
-  for (let i = 0; i < L.planks.length; i++) if (inR(L.planks[i], 2)) return { kind: 'plank', i };
+  for (let i = 0; i < L.cols.length; i++) {
+    if (inR({ x: L.colX[i] + ((L.colW - L.face) >> 1), y: L.faceY, w: L.face, h: L.face })) return { kind: 'face', i };
+  }
+  if (!inR(L.body)) return null;
+  for (const ln of scoreLines(L)) {
+    const h = ln.kind === 'group' ? SCORE_HEAD - 1 : SCORE_ROW;
+    if (mouse.y >= ln.y && mouse.y < ln.y + h) return ln.kind === 'group' ? { kind: 'group', head: ln.g.head } : { kind: 'row', label: ln.row.label };
+  }
   return null;
 }
 
-function scoresSort(key) {
-  if (scores.sort === key) scores.desc = !scores.desc;
-  else { scores.sort = key; scores.desc = true; }
-  SFX.pickup();
-}
-
 function scoresActivate(i) {
+  const w = SCORE_WORDS[i];
+  if (w === 'STATS' || w === 'GRAPHS') { const pg = w === 'STATS' ? 0 : 1; if (scores.page !== pg) { scores.page = pg; SFX.pickup(); } return; }
   SFX.place();
-  if (SCORE_PLANKS[i] === 'BACK') scoresBack();
+  if (w === 'BACK') scoresBack();
   else toLobby();
 }
 
@@ -239,31 +280,65 @@ function scoresKey(k) {
   if (scores.t < SCORE_IN) { scores.t = SCORE_IN; return; }
   if (k === 'escape' || k === 'backspace') { scoresBack(); return; }
   const d = moveDir(k);
-  if (d === 'left') { scores.sel = (scores.sel + SCORE_PLANKS.length - 1) % SCORE_PLANKS.length; SFX.pickup(); }
-  else if (d === 'right') { scores.sel = (scores.sel + 1) % SCORE_PLANKS.length; SFX.pickup(); }
-  // up/down is the graph's, since the planks are a row and the tabs are the
-  // only other thing on the screen a key could mean
-  else if (d === 'up' || d === 'down') { scores.tab = 1 - scores.tab; SFX.pickup(); }
-  else if (k === 'enter' || k === ' ') scoresActivate(scores.sel);
+  if (d === 'left') { scores.sel = (scores.sel + SCORE_WORDS.length - 1) % SCORE_WORDS.length; SFX.pickup(); }
+  else if (d === 'right') { scores.sel = (scores.sel + 1) % SCORE_WORDS.length; SFX.pickup(); }
+  // up/down is the page's own: the stats scroll, the graphs swap their line
+  else if (d === 'up' || d === 'down') {
+    if (scores.page === 1) { scores.tab = 1 - scores.tab; SFX.pickup(); }
+    else scoresScrollBy(d === 'down' ? SCORE_ROW * 3 : -SCORE_ROW * 3);
+  } else if (k === 'enter' || k === ' ') scoresActivate(scores.sel);
 }
 
 function scoresClick() {
   if (scores.t < SCORE_IN) { scores.t = SCORE_IN; return; }
   const h = scoresHit();
   if (!h) return;
-  if (h.kind === 'col') scoresSort(SCORE_COLS[h.i].key);
+  if (h.kind === 'page') { scores.sel = h.i; scoresActivate(h.i); }
   else if (h.kind === 'tab') { if (scores.tab !== h.i) { scores.tab = h.i; SFX.pickup(); } }
-  else { scores.sel = h.i; scoresActivate(h.i); }
+  else if (h.kind === 'group') {
+    scores.shut[h.head] = !scores.shut[h.head];
+    scoresScrollBy(0); // a fold can leave the window scrolled past its new end
+    SFX.pickup();
+  } else if (h.kind === 'word') { scores.sel = 2 + h.i; scoresActivate(2 + h.i); }
 }
 
 // ------------------------------------------------------------ the pixels
-const SC_DARK = '#0a0e23', SC_PLATE = '#141c3c', SC_WELL = '#10162f';
-const SC_RULE = '#35426e', SC_DIM = '#5a6a99', SC_TXT = '#cfe0ff', SC_LIT = '#f4f7ff';
+// Graphite, the HUD's own (js/ui/strip.js): a neutral dark page, one step
+// lighter for a heading, the numbers pale and yours gold.
+const SC_INK = '#07080a', SC_BG = '#0d0e11', SC_PLATE = '#16181c', SC_EDGE = '#2f3238';
+const SC_ROW_A = '#121317', SC_ROW_B = '#0f1013', SC_YOU = '#1e2127', SC_HOT = '#23262c';
+const SC_DIM = '#6c717a', SC_LBL = '#a3a8b0', SC_TXT = '#d4d7dc', SC_LIT = '#f4f7ff', SC_GOLD = '#f2cc6a';
+const SC_WELL = '#101114', SC_RULE = SC_EDGE;
 
-// a 2x number, right-aligned in its column
-function scoreNum(txt, col, y, color) {
-  txt = String(txt);
-  drawPixelTextShadow(ctx, txt, col.x + col.w - pixelTextWidth(txt, 2), y, color, SC_DARK, 2);
+// a page word: dim, pale under the pointer, white with a gold hairline under
+// the word alone when it is the open page (drawNavCell's grammar, js/ui/panels.js)
+function scoreWord(r, on, hot) {
+  drawPixelText(ctx, r.label, r.x, r.y, on ? SC_LIT : hot ? SC_TXT : SC_DIM, 1);
+  if (on) { ctx.fillStyle = SC_GOLD; ctx.fillRect(r.x, r.y + 7, r.w, 1); }
+}
+
+// One player's face over their column: the HUD portrait's square (drawPortrait,
+// js/ui/hud-draw.js) small, a gold rim on yours, the side's colour as a line
+// under it and the level on its corner.
+function drawScoreFace(x, y, s, r) {
+  const q = players[r.id];
+  ctx.fillStyle = SC_INK; ctx.fillRect(x, y, s, s);
+  ctx.fillStyle = r.you ? '#c89a3c' : SC_EDGE; ctx.fillRect(x + 1, y + 1, s - 2, s - 2);
+  ctx.fillStyle = PORT_SKY; ctx.fillRect(x + 2, y + 2, s - 4, s - 4);
+  const half = (s - 4) >> 1;
+  ctx.fillStyle = PORT_GROUND; ctx.fillRect(x + 2, y + 2 + half + 3, s - 4, s - 4 - half - 3);
+  if (q) {
+    const spr = portraitSprite(q), k = 2;
+    ctx.save(); ctx.beginPath(); ctx.rect(x + 2, y + 2, s - 4, s - 4); ctx.clip();
+    ctx.drawImage(spr, x + 2 + ((s - 4 - spr.width * k) >> 1), y + 2 + half - 14, spr.width * k, spr.height * k);
+    ctx.restore();
+  }
+  ctx.fillStyle = TEAMS[skin(r.team)].mark; ctx.fillRect(x, y + s + 1, s, 1);
+  const lv = String(r.level), bw = pixelTextWidth(lv) + 4;
+  const lx = x + s - bw + 2, ly = y + s - 6;
+  ctx.fillStyle = SC_INK; ctx.fillRect(lx, ly, bw, 8);
+  ctx.fillStyle = SC_PLATE; ctx.fillRect(lx + 1, ly + 1, bw - 2, 6);
+  drawPixelText(ctx, lv, lx + 2, ly + 2, r.you ? SC_GOLD : SC_LIT, 1);
 }
 
 function renderScores(now) {
@@ -271,6 +346,7 @@ function renderScores(now) {
   scores.last = now;
   scores.t += dt;
   const L = scoresLayout();
+  if (scores.scroll > L.maxScroll) scores.scroll = L.maxScroll;
   const ac = scoreAccent();
   const arrive = Math.min(1, scores.t / SCORE_IN);
   const hit = scoresHit();
@@ -278,127 +354,109 @@ function renderScores(now) {
   // OPAQUE once it has arrived: the ceremony's stage, and the match still
   // playing under that, are put away entirely. A page that lets the pines
   // show through reads as a pause menu, which is the wrong promise.
-  ctx.fillStyle = arrive < 1 ? 'rgba(6,9,22,' + (0.95 * arrive).toFixed(3) + ')' : '#060916';
+  ctx.fillStyle = arrive < 1 ? 'rgba(13,14,17,' + (0.95 * arrive).toFixed(3) + ')' : SC_BG;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  if (arrive < 1) ctx.globalAlpha = arrive;
+  const fade = arrive < 1 ? arrive : 1;
+  ctx.globalAlpha = fade;
 
-  // --- the head: the result, and how long it took ------------------------
-  drawPixelTextShadow(ctx, scoreHead(), L.x, L.headY, ac.txt, SC_DARK, 2);
+  // --- the head: the result, how long it took, and the two pages --------
+  drawPixelTextShadow(ctx, scoreHead(), L.x, L.headY, ac.txt, SC_INK, 2);
   const clock = clockTxt(matchStats ? matchStats.time : state.elapsed);
-  drawPixelTextShadow(ctx, clock, L.x + L.w - pixelTextWidth(clock, 2), L.headY, SC_TXT, SC_DARK, 2);
-  ctx.fillStyle = ac.rule;
+  drawPixelTextShadow(ctx, clock, L.x + L.w - pixelTextWidth(clock, 2), L.headY, SC_TXT, SC_INK, 2);
+  for (let i = 0; i < L.tabs.length; i++) {
+    const hot = (hit && hit.kind === 'page' && hit.i === i) || scores.sel === i;
+    scoreWord(L.tabs[i], scores.page === i, hot);
+  }
+  ctx.fillStyle = SC_EDGE;
   ctx.fillRect(L.x, L.ruleY, Math.round(L.w * arrive), 1);
 
-  // --- the column headings, which are also the sort control --------------
-  for (const col of L.cols) {
-    const on = scores.sort === col.c.key;
-    const hot = hit && hit.kind === 'col' && L.cols[hit.i] === col;
-    const head = col.c.head;
-    const hw = pixelTextWidth(head, 1);
-    // the arrow is the whole explanation of what a heading does: the one
-    // wearing it is the one the blocks are ordered by, and it points the way
-    const ax = col.x + col.w - (on ? 5 : 0);
-    drawPixelText(ctx, head, ax - hw, L.colHY, on ? ac.sort : hot ? SC_TXT : SC_DIM, 1);
-    if (on) {
-      const tx = col.x + col.w - 3, ty = L.colHY + 1;
-      ctx.fillStyle = ac.sort;
-      for (let i = 0; i < 3; i++) {
-        const row = scores.desc ? ty + i : ty + 2 - i;
-        ctx.fillRect(tx - (2 - i), row, (2 - i) * 2 + 1, 1);
-      }
-    }
+  if (scores.page === 0) drawScoreStats(L, hit, fade);
+  else {
+    for (let i = 0; i < L.gtabs.length; i++) scoreWord(L.gtabs[i], scores.tab === i, hit && hit.kind === 'tab' && hit.i === i);
+    drawScoreGraph(L.graph, ac);
   }
 
-  // --- the two sides -----------------------------------------------------
-  const blocks = scoreBlocks();
-  const best = scoreBest();
-  for (let b = 0; b < blocks.length; b++) {
-    const blk = blocks[b], y0 = L.blocks[b], tm = TEAMS[skin(blk.team)];
-    // the team strip: the side's colour edge to edge, its name in it, and the
-    // side's own totals at the right end - the blocks compare as blocks too
-    ctx.fillStyle = SC_PLATE;
-    ctx.fillRect(L.x, y0, L.w, SCORE_STRIP);
-    ctx.fillStyle = tm.mark;
-    ctx.fillRect(L.x, y0, 2, SCORE_STRIP);
-    ctx.globalAlpha = (arrive < 1 ? arrive : 1) * 0.5;
-    ctx.fillRect(L.x + 2, y0, L.w - 2, 1);
-    ctx.globalAlpha = arrive < 1 ? arrive : 1;
-    drawPixelText(ctx, tm.name, L.x + 6, y0 + 3, tm.mark, 1);
-    // the crest: one side left standing at the whistle wears it, and neither
-    // does while both birds are still on their roosts
-    if (!blk.down && blocks.some((o) => o.down)) {
-      const cx = L.x + 8 + pixelTextWidth(tm.name, 1) + 6;
-      ctx.fillStyle = ac.hi;
-      for (let i = 0; i < 3; i++) ctx.fillRect(cx - 3 + i * 3, y0 + 2 + (i === 1 ? 0 : 1), 2, i === 1 ? 5 : 4);
-      ctx.fillRect(cx - 4, y0 + 7, 9, 1);
-    }
-    // the side's totals, under the same headings the rows use
-    for (const col of L.cols) {
-      let sum = 0;
-      for (const r of blk.rows) sum += r[col.c.key];
-      if (col.c.key === 'level') sum = blk.rows.length ? Math.round(sum / blk.rows.length) : 0;
-      scoreNumSmall(String(sum), col, y0 + 3, SC_DIM);
-    }
-
-    for (let i = 0; i < blk.rows.length; i++) {
-      const r = blk.rows[i];
-      const ry = y0 + SCORE_STRIP + i * SCORE_ROW;
-      // the rows cascade in, a beat apart, so the eye is walked down the block
-      const ra = Math.max(0, Math.min(1, (scores.t - SCORE_IN - (b * 5 + i) * 0.035) / 0.18));
-      if (ra <= 0) continue;
-      ctx.globalAlpha = (arrive < 1 ? arrive : 1) * ra;
-      // your own row is the one you came to read: it sits on a lit plate
-      ctx.fillStyle = r.you ? '#1c2750' : i & 1 ? '#0e1430' : '#0b1026';
-      ctx.fillRect(L.x, ry, L.w, SCORE_ROW - 1);
-      // THE BAR IS THE ROW. This row's share of the biggest value anywhere in
-      // the column the table is sorted by, drawn as the row's own fill in the
-      // side's colour rather than as a line somewhere in it - so the block
-      // reads as a bar chart at a glance and nothing crosses the names. It is
-      // what makes a heading worth pressing: the numbers say how much, the
-      // fill says how much OF the best.
-      if (best > 0) {
-        ctx.globalAlpha = (arrive < 1 ? arrive : 1) * ra * (r.you ? 0.34 : 0.22);
-        ctx.fillStyle = tm.mark;
-        ctx.fillRect(L.x, ry, Math.round(L.w * Math.max(0, r[scores.sort]) / best), SCORE_ROW - 1);
-        ctx.globalAlpha = (arrive < 1 ? arrive : 1) * ra;
-      }
-      if (r.you) { ctx.fillStyle = tm.mark; ctx.fillRect(L.x, ry, 2, SCORE_ROW - 1); }
-      ctx.drawImage(classIcon12(r.cls, r.you), L.x + 4, ry - 1);
-      drawPixelTextShadow(ctx, r.name, L.nameX, ry + 2, r.you ? SC_LIT : SC_TXT, SC_DARK, 2);
-      for (const col of L.cols) {
-        const on = scores.sort === col.c.key;
-        scoreNum(r[col.c.key], col, ry + 2, on ? ac.sort : r.you ? SC_LIT : SC_TXT);
-      }
-      ctx.globalAlpha = arrive < 1 ? arrive : 1;
-    }
-  }
-
-  // --- the graph ---------------------------------------------------------
-  for (let i = 0; i < L.tabs.length; i++) {
-    const t = L.tabs[i], on = scores.tab === i;
-    const hot = hit && hit.kind === 'tab' && hit.i === i;
-    ctx.fillStyle = on ? SC_PLATE : '#0c1228';
-    ctx.fillRect(t.x, t.y, t.w, t.h);
-    ctx.fillStyle = on ? ac.rule : hot ? SC_RULE : '#1b2445';
-    ctx.fillRect(t.x, t.y, t.w, 1);
-    const tw = pixelTextWidth(t.label, 1);
-    drawPixelText(ctx, t.label, t.x + Math.round((t.w - tw) / 2), t.y + 3, on ? ac.hi : hot ? SC_TXT : SC_DIM, 1);
-  }
-  drawScoreGraph(L.graph, ac);
-
-  // --- the planks --------------------------------------------------------
-  for (let i = 0; i < L.planks.length; i++) {
-    const want = (hit && hit.kind === 'plank' ? hit.i === i : scores.sel === i) ? 1 : 0;
-    scores.hover[i] += (want - scores.hover[i]) * Math.min(1, dt * 14);
-    drawMenuButton(L.planks[i], L.planks[i].label, scores.hover[i], now, false);
+  // --- the ways out: bare words, white, gold under the pointer or the keys
+  for (let i = 0; i < L.words.length; i++) {
+    const w = L.words[i];
+    const hot = hit && hit.kind === 'word' ? hit.i === i : scores.sel === 2 + i;
+    drawPixelTextOutline(ctx, w.label, w.x + 4, w.y + 2, hot ? '#ffd95c' : SC_LIT, 'rgba(8,12,28,0.9)', MENU_TXT_SCALE);
   }
   ctx.globalAlpha = 1;
 }
 
-// the team totals on the strip, 1x so they sit under the 2x rows without
-// competing with them
-function scoreNumSmall(txt, col, y, color) {
-  drawPixelText(ctx, txt, col.x + col.w - pixelTextWidth(txt, 1), y, color, 1);
+// the STATS page: the faces, then the groups in their scrolled window
+function drawScoreStats(L, hit, fade) {
+  const cols = L.cols;
+  const youI = cols.findIndex((r) => r.you);
+  // the columns arrive a beat apart, left to right, so the eye is walked
+  // along the faces the way the old rows walked it down the blocks
+  const colA = (i) => Math.max(0, Math.min(1, (scores.t - SCORE_IN - i * 0.03) / 0.18));
+  for (let i = 0; i < cols.length; i++) {
+    const a = colA(i);
+    if (a <= 0) continue;
+    ctx.globalAlpha = fade * a;
+    drawScoreFace(L.colX[i] + ((L.colW - L.face) >> 1), L.faceY, L.face, cols[i]);
+  }
+  ctx.globalAlpha = fade;
+  const b = L.body;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(b.x, b.y, b.w, b.h); ctx.clip();
+  for (const ln of scoreLines(L)) {
+    if (ln.y + SCORE_HEAD < b.y || ln.y > b.y + b.h) continue;
+    const y = ln.y;
+    if (ln.kind === 'group') {
+      const shut = !!scores.shut[ln.g.head];
+      const hot = hit && hit.kind === 'group' && hit.head === ln.g.head;
+      ctx.fillStyle = hot ? SC_HOT : SC_PLATE; ctx.fillRect(L.x, y, L.w, SCORE_HEAD - 1);
+      ctx.fillStyle = SC_EDGE; ctx.fillRect(L.x, y, L.w, 1);
+      // the fold's chevron: down while open, right while shut
+      ctx.fillStyle = hot ? SC_TXT : SC_DIM;
+      if (shut) { ctx.fillRect(L.x + 3, y + 3, 1, 5); ctx.fillRect(L.x + 4, y + 4, 1, 3); ctx.fillRect(L.x + 5, y + 5, 1, 1); }
+      else { ctx.fillRect(L.x + 2, y + 4, 5, 1); ctx.fillRect(L.x + 3, y + 5, 3, 1); ctx.fillRect(L.x + 4, y + 6, 1, 1); }
+      drawPixelText(ctx, ln.g.head, L.x + 10, y + 3, hot ? SC_LIT : SC_LBL, 1);
+      continue;
+    }
+    const row = ln.row;
+    const hot = hit && hit.kind === 'row' && hit.label === row.label;
+    ctx.fillStyle = ln.i & 1 ? SC_ROW_B : SC_ROW_A; ctx.fillRect(L.x, y, L.w, SCORE_ROW);
+    if (youI >= 0) { ctx.fillStyle = SC_YOU; ctx.fillRect(L.colX[youI], y, L.colW, SCORE_ROW); }
+    if (hot) { ctx.fillStyle = SC_HOT; ctx.fillRect(L.x, y, L.w, SCORE_ROW); ctx.fillStyle = SC_GOLD; ctx.fillRect(L.x, y, 1, SCORE_ROW); }
+    drawPixelText(ctx, row.label, L.x + 10, y + 3, hot ? SC_LIT : SC_LBL, 1);
+    let best = 0;
+    if (row.best !== false) for (const r of cols) best = Math.max(best, scoreVal(r, row));
+    for (let i = 0; i < cols.length; i++) {
+      const a = colA(i);
+      if (a <= 0) continue;
+      ctx.globalAlpha = fade * a;
+      const r = cols[i], v = row.txt ? row.txt(r) : scoreFmt(scoreVal(r, row));
+      const vw = pixelTextWidth(v), vx = L.colX[i] + ((L.colW - vw) >> 1);
+      // the biggest in the row, anywhere in the match: underlined in its side's colour
+      if (best > 0 && scoreVal(r, row) === best) { ctx.fillStyle = TEAMS[skin(r.team)].mark; ctx.fillRect(vx - 1, y + 8, vw + 2, 1); }
+      drawPixelText(ctx, v, vx, y + 2, r.you ? SC_GOLD : hot ? SC_LIT : SC_TXT, 1);
+    }
+    ctx.globalAlpha = fade;
+  }
+  ctx.restore();
+  // more below, or above: a fade off the window's edge says the page goes on
+  if (L.maxScroll > 0) {
+    ctx.fillStyle = SC_BG;
+    for (let k = 0; k < 4; k++) {
+      ctx.globalAlpha = fade * (0.8 - k * 0.2);
+      if (scores.scroll < L.maxScroll) ctx.fillRect(b.x, b.y + b.h - 1 - k, b.w, 1);
+      if (scores.scroll > 0) ctx.fillRect(b.x, b.y + k, b.w, 1);
+    }
+    ctx.globalAlpha = fade;
+  }
+  // a face under the pointer names its player, on a plate over the column
+  if (hit && hit.kind === 'face') {
+    const r = cols[hit.i], nm = r.name || '';
+    const nw = pixelTextWidth(nm) + 6, cx = L.colX[hit.i] + (L.colW >> 1);
+    const nx = Math.max(2, Math.min(VIEW_W - nw - 2, Math.round(cx - nw / 2))), ny = L.faceY + L.face + 4;
+    ctx.fillStyle = SC_INK; ctx.fillRect(nx - 1, ny - 1, nw + 2, 11);
+    ctx.fillStyle = SC_PLATE; ctx.fillRect(nx, ny, nw, 9);
+    drawPixelText(ctx, nm, nx + 3, ny + 2, r.you ? SC_GOLD : SC_LIT, 1);
+  }
 }
 
 // The graph: one cumulative line per side, summed over its players, in the
@@ -439,7 +497,7 @@ function drawScoreGraph(r, ac) {
   const py = (v) => r.y + r.h - 2 - Math.round(v / hi * (r.h - 4));
   // the days, counted forward from the drop at the pitch the samples ended on
   const span = matchStats.time || 1;
-  ctx.fillStyle = '#20294f';
+  ctx.fillStyle = SC_EDGE;
   for (let d = 1; d * CYCLE < span; d++) {
     const gx = r.x + Math.round(d * CYCLE / span * (r.w - 1));
     for (let y = r.y + 1; y < r.y + r.h - 1; y += 3) ctx.fillRect(gx, y, 1, 2);

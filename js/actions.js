@@ -381,7 +381,7 @@ function rollSweep(p) {
     if (Math.hypot(b.x - p.x, b.y - p.y) > ROLL_HIT_R + unitRadius(b)) continue;
     p.rollHit.push(b);
     hurtUnit(b, dmg, nx, ny, p);
-    if (!b.dead) stunUnit(b, stun);
+    if (!b.dead) stunUnit(b, stun, p);
   }
   for (const q of players) {
     if (!enemyOf(p, q) || p.rollHit.includes(q)) continue;
@@ -389,7 +389,7 @@ function rollSweep(p) {
     p.rollHit.push(q);
     if (q.invuln > 0) continue; // a rival mid-roll of their own is untouchable: rolls cancel rolls
     hurtUnit(q, dmg, nx, ny, p);
-    if (!q.dead) stunUnit(q, stun);
+    if (!q.dead) stunUnit(q, stun, p);
   }
 }
 
@@ -883,6 +883,7 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
   if (e instanceof Player) {
     damagePlayer(e, dmg, nx, ny, src, o.cause || null, o.crit, km);
   } else if (isAnimalUnit(e)) {
+    if (src instanceof Player) src.dmgBeast += Math.min(dmg, Math.max(0, e.hp)); // the post-game record (js/ui/lobby.js)
     hurtAnimal(e, dmg, nx, ny, (o.kb === undefined ? 30 : o.kb) * km, src ? src.id : undefined, o.ambush);
   } else {
     hurtRobot(e, dmg, nx, ny, src);
@@ -906,9 +907,17 @@ function hurtUnit(e, dmg, nx, ny, src, o) {
 // same window), a stunned animal or robot skips its brain for it. Nobody
 // loses their velocity: whatever knocked you still slides you, and the
 // surface spends it the way it spends any other momentum.
-function stunUnit(e, t) {
+// `src`, where a caller names one, is the body that put the state on: a rival
+// player pinned by a player is that player's crowd control in the post-game
+// record (js/ui/lobby.js), counted as the seconds it ADDS to what is already
+// on - a stun refreshed every frame is not a stun every frame.
+function ccCredit(e, cur, t, src) {
+  if (src instanceof Player && e instanceof Player && src.team !== e.team) src.ccOut += Math.max(0, t - Math.max(0, cur));
+}
+function stunUnit(e, t, src) {
   if (t <= 0 || !unitAlive(e)) return;
   const cur = e.stunT || 0;
+  ccCredit(e, cur, t, src);
   e.stunT = Math.max(cur, t);
   e.stunMax = cur > 0 ? Math.max(e.stunMax || 0, e.stunT) : e.stunT;
   if (e instanceof Player) {
@@ -939,8 +948,9 @@ function stunUnit(e, t) {
 // reads it through abilityMoveMul, an animal or a bot through unitMoveMul -
 // both end at zero, so a snared deer stands in the jaws exactly as long as a
 // snared rival does.
-function rootUnit(e, t) {
+function rootUnit(e, t, src) {
   if (t <= 0 || !unitAlive(e)) return;
+  ccCredit(e, e.rootT || 0, t, src);
   e.rootT = Math.max(e.rootT || 0, t);
   if (e instanceof Player) { if (e.zip >= 0) zipEnd(e, true); e.vx = 0; e.vy = 0; e.sliding = false; } // a rider is pulled off the cable
 }
@@ -953,8 +963,9 @@ function slowUnit(e, t, mul) {
   e.slowMul = Math.min(e.slowMul === undefined ? 1 : e.slowMul, mul);
 }
 // Netted: the slow, plus the drape drawn over the body that says why it is slow.
-function netUnit(e, t, mul) {
+function netUnit(e, t, mul, src) {
   if (!unitAlive(e)) return;
+  ccCredit(e, e.netT || 0, t, src);
   slowUnit(e, t, mul);
   e.netT = Math.max(e.netT || 0, t);
   if (e instanceof Player && e.zip >= 0) zipEnd(e, true); // the drape brings a rider down
