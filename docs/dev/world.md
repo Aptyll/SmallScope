@@ -509,8 +509,8 @@ pines stand to the water's edge and there is no bank to walk along. Look A of
 **It is open water**, ground `4`: to every walker but a player a wall (`moveEntity`), to every
 route a gap (`walkable`), and nothing spawns, lands or climbs out onto it (`waterAt`). A player
 who steps in **plunges exactly as into an ice hole** ([falling in](#ice-holes-and-fishing)) — but
-a dodge roll carries over it as it does over a hole: the roll's ~60 px clears the two tiles of
-current only when started at the bank, and a roll that runs out over the water goes in. The scramble out is
+a dodge roll carries over it as it does over a hole: the roll's ~60 px clears the three tiles
+of current only when started at the bank, and a roll that runs out over the water goes in. The scramble out is
 onto the bank they went in from: `nearestDryTile` keeps to the same side of the water (creekAt's
 `n`). A bot never wades in on its own feet — its walk is strict unless a shove past `WADE_SHOVE`
 (sim.js) is carrying it — so the creek punishes a bot the way it punishes a player: by being
@@ -519,7 +519,8 @@ pushed off the bridge. The death line is `WENT IN THE CREEK`.
 **The ways over**, all of them ground that walks like snow:
 
 - **the bridge** — the road crosses on a timber deck the lane's width (`BRIDGE_W` either side of
-  the centreline along the creek, `BRIDGE_L` either side of the creek's line along the road),
+  the centreline along the creek, `BRIDGE_L` either side of the creek's line along the road:
+  `CREEK_HW` and a tile onto each bank, so a wider creek takes a longer deck),
   ground `3`, so to every rule it is road (the waves march over it, a building may stand on it).
   Its sides are open: shoved off one, you are in the water;
 - **an outer ford** (`creekOuterFords`) on each stretch between a bend and the treeline, at
@@ -570,7 +571,11 @@ at each corner, three pilings upstream) with the water coming out from under it 
 ford tile's snow-capped stone (`paintFordStone`) with foam heaped on its upstream side. Both maps
 ink the creek as open water and its fords as gaps. `drawCreekFlow`, right after the ground blit,
 drifts a couple of glints per tile of open creek downstream every frame on the field's clock
-(`windT`), so `DBG.step` and the wire's echo reproduce it.
+(`windT`), so `DBG.step` and the wire's echo reproduce it. `drawCreekFish`, right after it, swims
+a fish every `SWIM_GAP` tiles of creek downstream under the water, now and then out of sight and
+back, hidden under the deck and over a ford. They are a picture only: not the `fish` a hole or a
+net gives up, nothing in the sim knows of them, and each is a pure function of its index and
+`windT`, so every client draws the same ones.
 
 Verified on seeds 42, 7 and 1234 across the shapes: every ford runs bank to bank with open ground
 at both ends; the two junctions reach each other and every camp from both halves; a route across

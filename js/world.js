@@ -1351,7 +1351,7 @@ function layPaths() {
 // tile IS and what it LOOKS like agree to within the bank, as the road's do.
 // Pure position noise: nothing rolls, so no seed reshuffles - but it writes
 // ground after genWorld, so every seed's ground hash moves (placeCreek).
-const CREEK_HW = 1.05;       // tiles either side of the creek's line the water runs: about two tiles across
+const CREEK_HW = 1.6;       // tiles either side of the creek's line the water runs: about three tiles across, which a roll from the bank still clears
 const CREEK_HW_RAG = 0.22;   // ...that each bank wanders on the position noise
 const CREEK_WANDER = 2.5;    // tiles the line itself wanders off the cross-diagonal, either way
 const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the bridge, a bend or a ford
@@ -1360,7 +1360,7 @@ const CREEK_COST = 6;        // what a tile of creek costs a path's route (pathC
 const CREEK_BEND_GAP = 1.2;  // tiles of dry bank between a path's end at a bend's camp (r + PATH_CAMP) and the water
 const CREEK_BEND_LONG = 2.2; // a bend runs this many times its reach along the creek either way (2 or more keeps the camp clear)
 const CREEK_FORD_GAP = 14;   // tiles of creek an outer ford needs between a bend and the treeline
-const BRIDGE_L = 2.0;        // tiles the deck runs either side of the creek's line, along the road
+const BRIDGE_L = CREEK_HW + 0.95; // tiles the deck runs either side of the creek's line, along the road: bank to bank and a tile onto each
 const BRIDGE_W = ROAD_HW + 0.35; // ...and either side of the road's centreline, along the creek: the lane's width
 function creekP(fx, fy) { return (fx - fy) / Math.SQRT2; }
 // the bends: every camp site on the mirror line, with how far the water's

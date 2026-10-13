@@ -154,7 +154,8 @@ entity draw code must use `ex`/`ey`.
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](#cast-shadows)) →
    ground blit → **the creek's current** (`drawCreekFlow`, js/draw/ground.js: glints drifting
-   downstream over the still water the bake laid, on the field's clock) → under-ice fish →
+   downstream over the still water the bake laid, on the field's clock) → **the creek's fish**
+   (`drawCreekFish`, the same file: decoration swimming downstream, not the sim's `fish`) → under-ice fish →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where

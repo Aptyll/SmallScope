@@ -1031,7 +1031,7 @@ function updatePlayer(p, dt) {
 
   // open water: standing over a carved ice hole plunges you in, and so does
   // the creek. An active dodge roll carries over both: a hole's one tile
-  // easily, the creek's two only from its bank, so a roll that runs out over
+  // easily, the creek's three only from its bank, so a roll that runs out over
   // the current goes in. The creek asks the feet against its banks as drawn
   // (creekWet), so nobody goes in off a pixel of snow or off the deck's
   // overhang.
