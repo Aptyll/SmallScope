@@ -395,8 +395,17 @@ function drawFoodCell(i, now, on) {
 function drawFishPop(hov) {
   const m = stripMouse(mouse.x, mouse.y);
   if (!fishPopUp(m.x, m.y)) return;
-  const p = player, R = fishPopRect();
+  const p = player, R = fishPopRect(), S = hudStripRect();
+  // the column grows out of the strip: its frame, then the seam opened so its
+  // ground runs on into the strip's and its sides turn into the strip's top
+  // edge (a side flush with the strip's own outer side just carries on down)
   drawHudFrame(R.x, R.y, R.w, R.h);
+  ctx.fillStyle = AB_BG; ctx.fillRect(R.x + 2, S.y, R.w - 4, R.h - (S.y - R.y));
+  for (const [ink, edge] of [[R.x, R.x + 1], [R.x + R.w - 1, R.x + R.w - 2]]) {
+    if (ink === S.x - 3 || ink === S.x + S.w + 2) continue;
+    ctx.fillStyle = HUD_EDGE; ctx.fillRect(ink, S.y + 1, 1, 1);
+    ctx.fillStyle = AB_BG; ctx.fillRect(ink, S.y + 2, 1, R.y + R.h - S.y - 2); ctx.fillRect(edge, S.y + 2, 1, R.y + R.h - S.y - 2);
+  }
   for (let j = 0; j < FISH_POP.length; j++) {
     const t = FISH_POP[j], r = fishPopCellRect(j), n = bagCount(p, t);
     const picked = p.fishPick === t, on = hov && hov.kind === 'fishPick' && hov.j === j;
@@ -412,8 +421,9 @@ function drawFishPop(hov) {
     drawPixelTextOutline(ctx, c, r.x + r.w - 2 - pixelTextWidth(c), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
     if (on) {
       const name = ITEMS[t].name, heal = '+' + Math.round(ITEMS[t].heal * kitOf(p).foodMul);
-      // beside the hovered fish, on the column's left
-      const x = R.x - 3 - pixelTextWidth(name) - 4 - pixelTextWidth(heal), y = r.y + ((r.h - 5) >> 1);
+      // over the column's top, flush with its right side: clear of the
+      // ability buy plates whichever fish is hovered
+      const x = R.x + R.w - 1 - pixelTextWidth(name) - 4 - pixelTextWidth(heal), y = R.y - FISH_POP_NAME + 2; // 1 in: the outline stays inside the bake
       drawPixelTextOutline(ctx, name, x, y, RES_COLORS[t], '#191b1f');
       drawPixelTextOutline(ctx, heal, x + pixelTextWidth(name) + 4, y, '#8fe08a', '#191b1f');
     }

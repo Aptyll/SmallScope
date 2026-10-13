@@ -861,8 +861,9 @@ The shared food clock (`drawFoodClock`) sweeps both together and lifts the one b
 white. A meal you have none of keeps its seat but dims to 0.35, so the pair never rearranges.
 The fish well shows the fish F will eat next (`fishToEat`) and, with nothing picked, the count of
 all three. Pointing at it raises the **fish picker** (`drawFishPop`): the three fish in ability-size
-wells in a column straight up off the fish well (ice fish nearest it), each with its count; the
-hovered one's name in its colour and its `+heal` stand to its left, the picked one wears a gold rim and the
+wells in a column growing straight up out of the strip over the fish well (ice fish nearest it),
+its frame running on into the strip's, each with its count; the hovered one's name in its colour
+and its `+heal` stand over the column, the picked one wears a gold rim and the
 others dim. The bake grows by `fishPopHeadroom()` while it is up.
 The **purse** under them (`drawGoldCell`, `goldCellRect`) is the coin and the gold, centred, in
 the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
