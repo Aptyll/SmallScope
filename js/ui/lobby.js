@@ -5,7 +5,8 @@
 // "what happened", which is a different question and wants a different
 // screen: League's post-game page - every player who flew in a column, both
 // sides, the numbers a match is argued about afterwards in folding groups,
-// and a page of graphs of how the two sides pulled apart. LOBBY off either ending lands here first, and this
+// and a page charting any one of those numbers as a bar per player. LOBBY
+// off either ending lands here first, and this
 // screen's own LOBBY is the door out (toLobby, js/ui/screens.js) - so the
 // walk out of a match is ceremony, then record, then the title.
 //
@@ -23,17 +24,17 @@
 // them.
 
 // ------------------------------------------------------------ the samples
-// The two graphs are drawn from a running sample of every player's cumulative
-// gold earned and damage dealt. They live ON the player (hGold/hDmg, the
-// Player constructor) rather than in a table of their own for one reason: a
-// player field crosses the wire with everything else, so a client's lobby
-// draws the host's graph instead of a flat line. Every player is sampled on
-// the same tick, active or not, so index i means the same moment in all ten
-// arrays and the series can simply be summed per side.
+// A running sample of every player's cumulative gold earned and damage dealt,
+// once the lobby's line graphs. The GRAPHS page is a bar chart of the frozen
+// record now (drawScoreBars) and draws none of it; the bot lab reads the last
+// gold (js/ui/botview.js), and the series stay for a timeline to come. They
+// live ON the player (hGold/hDmg, the Player constructor) because a player
+// field crosses the wire with everything else. Every player is sampled on the
+// same tick, active or not, so index i means the same moment in all ten arrays.
 //
 // A match has no length limit, so the series cannot either: past STAT_MAX
 // samples each one HALVES - every other sample dropped, newest kept - and the
-// pitch doubles with it. The spacing stays uniform, which is all the graph
+// pitch doubles with it. The spacing stays uniform, which is all a timeline
 // needs, and ten players' history stays a few hundred numbers however long
 // the match runs.
 const STAT_STEP = 10;  // s between samples
@@ -76,7 +77,6 @@ function statFreeze() {
       dmg: q.dmgOut, bird: q.dmgBird, struct: q.dmgStruct, beast: Math.round(q.dmgBeast),
       inP: q.dmgInP, inB: q.dmgInB, healed: Math.round(q.healed),
       gold: q.xp, spent: q.goldSpent, beasts: q.beasts,
-      hGold: q.hGold.slice(), hDmg: q.hDmg.slice(),
     })),
     // which sides are still standing at the whistle: a side whose bird has
     // been driven off is out, and a lone side left standing wears the crest
@@ -123,7 +123,10 @@ const SCORE_TEAM_GAP = 10; // px between the two sides
 const SCORE_FACE = 26;    // the portrait square over each column
 const SCORE_NAME = 8;     // px per line of names under the faces: two lines, the columns taking turns,
                           // so every name has two columns' width to be printed whole in
-const SCORE_KEY_W = 104;  // px of the graph's key: a swatch, a full name and the player's last value
+const SCORE_LIST_W = 104; // px of the GRAPHS page's stat list down the left
+const SCORE_LIST_ROW = 9; // px per stat in that list (a group heading takes SCORE_HEAD)
+// every row of every group in one list: what the GRAPHS page picks among
+const SCORE_STATS = SCORE_GROUPS.flatMap((g) => g.rows);
 const SCORE_ROW = 10;     // px per stat row
 const SCORE_HEAD = 11;    // px per group heading, and the 2 under a group
 // a number in a column: whole up to 99999, past that its magnitude (shortNum,
@@ -149,7 +152,7 @@ const scores = {
   t: 0,          // s since the screen opened: the fade and the column cascade
   last: 0,       // the frame clock's last reading, so t steps on real time
   page: 0,       // 0 the stats, 1 the graphs
-  tab: 0,        // which graph: 0 gold, 1 damage
+  stat: 5,       // the row the GRAPHS page charts, in SCORE_STATS (5: damage to players)
   shut: {},      // the folded groups, by head, for the session
   scroll: 0,     // px the stats are scrolled up when they outgrow the view
   sel: 2,        // the keyboard's word in SCORE_WORDS
@@ -204,17 +207,27 @@ function scoresLayout() {
   for (const g of SCORE_GROUPS) h += SCORE_HEAD + (scores.shut[g.head] ? 0 : g.rows.length * SCORE_ROW) + 2;
   L.contentH = h;
   L.maxScroll = Math.max(0, h - L.body.h);
-  // the graph takes the width the key leaves it; the key lists every player
-  // down the right, your side first, at the graph's own top
-  const gy = L.tabsY + 22, gh = Math.max(40, L.wordY - 12 - gy);
-  L.graph = { x, y: gy, w: Math.max(80, w - SCORE_KEY_W - 8), h: gh };
-  L.key = { x: x + w - SCORE_KEY_W, y: gy, w: SCORE_KEY_W };
-  L.keyRows = cols.map((r, i) => ({ x: L.key.x, y: gy + 2 + i * 10 + (i >= nMine ? 6 : 0), w: SCORE_KEY_W, h: 9 }));
-  // the page words, top left, and the graph's two under the rule on its page
+  // the GRAPHS page: the stat list down the left, every group's rows under its
+  // heading (scrolled to keep the picked one in sight on a short view), and
+  // the chart in what is left - one bar a player, your side first, a gap, the rivals
+  const gy = L.ruleY + 6, gh = Math.max(60, L.wordY - 10 - gy);
+  L.list = { x, y: gy, w: SCORE_LIST_W, h: gh, rows: [] };
+  let ly = 0;
+  for (const g of SCORE_GROUPS) {
+    L.list.rows.push({ head: g.head, y: ly }); ly += SCORE_HEAD;
+    for (const row of g.rows) { L.list.rows.push({ i: SCORE_STATS.indexOf(row), row, y: ly }); ly += SCORE_LIST_ROW; }
+    ly += 2;
+  }
+  const pk = L.list.rows.find((e) => e.i === scores.stat);
+  L.list.off = pk ? Math.max(0, Math.min(ly - gh, pk.y + SCORE_LIST_ROW * 2 - gh)) : 0;
+  const cx0 = x + SCORE_LIST_W + 10;
+  L.chart = { x: cx0, y: gy + 12, w: x + w - cx0, h: gh - 12 - 10 };
+  const gapB = nMine && nMine < cols.length ? 6 : 0;
+  L.barH = Math.max(14, Math.min(26, Math.floor((L.chart.h - gapB) / Math.max(1, cols.length))));
+  L.bars = cols.map((r, i) => ({ y: L.chart.y + i * L.barH + (i >= nMine ? gapB : 0) }));
+  // the page words, top left
   let tx = x;
   L.tabs = ['STATS', 'GRAPHS'].map((label) => { const r = { label, x: tx, y: L.tabsY, w: pixelTextWidth(label), h: 7 }; tx += r.w + 14; return r; });
-  tx = x;
-  L.gtabs = ['GOLD', 'DAMAGE'].map((label) => { const r = { label, x: tx, y: L.ruleY + 4, w: pixelTextWidth(label), h: 7 }; tx += r.w + 12; return r; });
   // BACK and LOBBY: 2x words side by side at the foot
   const ws = ['BACK', 'LOBBY'].map((l) => pixelTextWidth(l, MENU_TXT_SCALE) + 8);
   const wgap = 24, total = ws[0] + wgap + ws[1];
@@ -258,7 +271,7 @@ function scoresBack() {
   SFX.pickup();
 }
 
-// what the pointer is on: a page word, a graph word or key row, a group heading,
+// what the pointer is on: a page word, a stat in the GRAPHS list, a group heading,
 // a row, a way out, or nothing. The screen has to have arrived first - a
 // control that is still fading in is not a control yet.
 function scoresHit() {
@@ -269,8 +282,11 @@ function scoresHit() {
   for (let i = 0; i < L.tabs.length; i++) if (inR(L.tabs[i], 3)) return { kind: 'page', i };
   for (let i = 0; i < L.words.length; i++) if (inR(L.words[i], 2)) return { kind: 'word', i };
   if (scores.page === 1) {
-    for (let i = 0; i < L.gtabs.length; i++) if (inR(L.gtabs[i], 3)) return { kind: 'tab', i };
-    for (let i = 0; i < L.keyRows.length; i++) if (inR(L.keyRows[i])) return { kind: 'key', i };
+    if (!inR(L.list)) return null;
+    for (const e of L.list.rows) {
+      const y = L.list.y + e.y - L.list.off;
+      if (e.row && mouse.y >= y && mouse.y < y + SCORE_LIST_ROW) return { kind: 'stat', i: e.i };
+    }
     return null;
   }
   if (!inR(L.body)) return null;
@@ -296,9 +312,9 @@ function scoresKey(k) {
   const d = moveDir(k);
   if (d === 'left') { scores.sel = (scores.sel + SCORE_WORDS.length - 1) % SCORE_WORDS.length; SFX.pickup(); }
   else if (d === 'right') { scores.sel = (scores.sel + 1) % SCORE_WORDS.length; SFX.pickup(); }
-  // up/down is the page's own: the stats scroll, the graphs swap their line
+  // up/down is the page's own: the stats scroll, the graphs walk the stat list
   else if (d === 'up' || d === 'down') {
-    if (scores.page === 1) { scores.tab = 1 - scores.tab; SFX.pickup(); }
+    if (scores.page === 1) { scores.stat = (scores.stat + (d === 'down' ? 1 : SCORE_STATS.length - 1)) % SCORE_STATS.length; SFX.pickup(); }
     else scoresScrollBy(d === 'down' ? SCORE_ROW * 3 : -SCORE_ROW * 3);
   } else if (k === 'enter' || k === ' ') scoresActivate(scores.sel);
 }
@@ -308,7 +324,7 @@ function scoresClick() {
   const h = scoresHit();
   if (!h) return;
   if (h.kind === 'page') { scores.sel = h.i; scoresActivate(h.i); }
-  else if (h.kind === 'tab') { if (scores.tab !== h.i) { scores.tab = h.i; SFX.pickup(); } }
+  else if (h.kind === 'stat') { if (scores.stat !== h.i) { scores.stat = h.i; SFX.pickup(); } }
   else if (h.kind === 'group') {
     scores.shut[h.head] = !scores.shut[h.head];
     scoresScrollBy(0); // a fold can leave the window scrolled past its new end
@@ -322,7 +338,6 @@ function scoresClick() {
 const SC_INK = '#07080a', SC_BG = '#0d0e11', SC_PLATE = '#16181c', SC_EDGE = '#2f3238';
 const SC_ROW_A = '#121317', SC_ROW_B = '#0f1013', SC_YOU = '#1e2127', SC_HOT = '#23262c';
 const SC_DIM = '#6c717a', SC_LBL = '#a3a8b0', SC_TXT = '#d4d7dc', SC_LIT = '#f4f7ff', SC_GOLD = '#f2cc6a';
-const SC_WELL = '#101114', SC_RULE = SC_EDGE;
 
 // a page word: dim, pale under the pointer, white with a gold hairline under
 // the word alone when it is the open page (drawNavCell's grammar, js/ui/panels.js)
@@ -385,10 +400,7 @@ function renderScores(now) {
   ctx.fillRect(L.x, L.ruleY, Math.round(L.w * arrive), 1);
 
   if (scores.page === 0) drawScoreStats(L, hit, fade);
-  else {
-    for (let i = 0; i < L.gtabs.length; i++) scoreWord(L.gtabs[i], scores.tab === i, hit && hit.kind === 'tab' && hit.i === i);
-    drawScoreGraph(L, hit, ac);
-  }
+  else drawScoreBars(L, hit, fade);
 
   // --- the ways out: bare words, white, gold under the pointer or the keys
   for (let i = 0; i < L.words.length; i++) {
@@ -468,85 +480,71 @@ function drawScoreStats(L, hit, fade) {
   }
 }
 
-// The graph: one cumulative line PER PLAYER, and the key beside it naming
-// every one of them. A side's five lines are five shades of its colour, yours
-// the game's gold over all of them, and the key prints each name with its
-// swatch and where that player ended; the pointer on a key row lifts that
-// player's line and dims the rest, which is how ten lines that cross stay
-// readable. A chart with no scale is a squiggle (the merchant's own rule,
-// js/ui/shop.js), so the top of the well prints the biggest value it reaches;
-// the match clock is in the head and printed once. The dotted uprights are
-// the match's days.
-const SCORE_SHADE = [0, 0.45, -0.3, 0.75, 0.2]; // a side's five lines: toward white (+) or the dark (-)
-function scoreLineCols(cols) {
-  const seen = [0, 0];
-  return cols.map((r) => {
-    if (r.you) return SC_GOLD;
-    const mark = TEAMS[skin(r.team)].mark, f = SCORE_SHADE[seen[r.team]++ % SCORE_SHADE.length];
-    return f >= 0 ? mixHex(mark, '#ffffff', f) : mixHex(mark, SC_BG, -f);
-  });
+// The GRAPHS page, League's: a list of every stat down the left, the picked
+// one gold-marked, and that stat as a bar chart - one horizontal bar a
+// player, each in its side's colour, the face and the name at its head and
+// the number at its end, over a scale of round steps. A bar is that player's
+// share of the biggest value in the match, so the longest bar is the leader
+// and an empty row is a zero. The pointer on a row of the list charts it; so
+// do up/down.
+function scoreStep(hi) {
+  const raw = Math.max(1, hi / 4), p = Math.pow(10, Math.floor(Math.log10(raw)));
+  for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw) return m * p;
+  return 10 * p;
 }
-function drawScoreGraph(L, hit, ac) {
-  const r = L.graph, key = scores.tab === 0 ? 'hGold' : 'hDmg';
-  ctx.fillStyle = SC_WELL;
-  ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = SC_RULE;
-  ctx.fillRect(r.x, r.y, r.w, 1);
-  ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1);
-  if (!matchStats) return;
-  const cols = L.cols, lc = scoreLineCols(cols);
-  const pick = hit && hit.kind === 'key' ? hit.i : -1;
-  let n = 0, hi = 1;
-  for (const q of cols) { n = Math.max(n, q[key].length); for (const v of q[key]) hi = Math.max(hi, v); }
-  // the key: every player, your side first, a gap, the rivals
+function drawScoreBars(L, hit, fade) {
+  const cols = L.cols, li = L.list, row = SCORE_STATS[scores.stat];
+  // --- the list ----------------------------------------------------------
+  ctx.save();
+  ctx.beginPath(); ctx.rect(li.x, li.y, li.w, li.h); ctx.clip();
+  for (const e of li.rows) {
+    const y = li.y + e.y - li.off;
+    if (y + SCORE_HEAD < li.y || y > li.y + li.h) continue;
+    if (e.head) { drawPixelText(ctx, e.head, li.x, y + 2, SC_DIM, 1); continue; }
+    const on = e.i === scores.stat, hot = hit && hit.kind === 'stat' && hit.i === e.i;
+    if (on || hot) { ctx.fillStyle = SC_HOT; ctx.fillRect(li.x, y, li.w, SCORE_LIST_ROW); }
+    if (on) { ctx.fillStyle = SC_GOLD; ctx.fillRect(li.x, y, 1, SCORE_LIST_ROW); }
+    drawPixelText(ctx, e.row.label, li.x + 6, y + 2, on ? SC_LIT : hot ? SC_TXT : SC_LBL, 1);
+  }
+  ctx.restore();
+  ctx.fillStyle = SC_EDGE; ctx.fillRect(li.x + li.w + 4, li.y, 1, li.h);
+  // --- the chart ---------------------------------------------------------
+  const c = L.chart;
+  const title = SCORE_GROUPS.find((g) => g.rows.includes(row)).head + ' - ' + row.label;
+  drawPixelText(ctx, title, c.x + ((c.w - pixelTextWidth(title)) >> 1), c.y - 10, SC_LIT, 1);
+  let hi = 0;
+  for (const r of cols) hi = Math.max(hi, scoreVal(r, row));
+  const step = scoreStep(hi), top = Math.max(step, Math.ceil(hi / step) * step);
+  // the bars start past the face; the name rides over its bar, or - on a view
+  // too short for two lines a row - beside the face, ahead of the bar
+  const face = Math.min(20, L.barH - 2), nh = L.barH >= 20 ? 8 : 0;
+  const nameW = nh ? 0 : 16 * 4 + 2;
+  const bx = c.x + face + 4 + nameW, bw = c.x + c.w - 30 - bx;
+  const bottom = L.bars.length ? L.bars[L.bars.length - 1].y + L.barH : c.y;
+  // the scale: faint uprights at each round step, their values under the chart
+  for (let v = 0; v <= top + 0.5; v += step) {
+    const gx = bx + Math.round(v / top * bw);
+    ctx.fillStyle = SC_ROW_A; ctx.fillRect(gx, c.y - 1, 1, bottom - c.y + 2);
+    const t = shortNum(v);
+    drawPixelText(ctx, t, gx - (pixelTextWidth(t) >> 1), bottom + 3, SC_DIM, 1);
+  }
+  const colA = (i) => Math.max(0, Math.min(1, (scores.t - SCORE_IN - i * 0.03) / 0.18));
   for (let i = 0; i < cols.length; i++) {
-    const q = cols[i], k = L.keyRows[i], h = q[key];
-    const on = pick === i;
-    if (on) { ctx.fillStyle = SC_HOT; ctx.fillRect(k.x, k.y - 1, k.w, k.h + 1); }
-    ctx.globalAlpha = pick >= 0 && !on ? 0.5 : 1;
-    ctx.fillStyle = lc[i]; ctx.fillRect(k.x + 2, k.y + 3, 6, 2);
-    const v = scoreFmt(h.length ? h[h.length - 1] : 0), vw = pixelTextWidth(v);
-    drawPixelText(ctx, scoreName(q.name, k.w - 16 - vw - 4), k.x + 12, k.y + 1, q.you ? SC_GOLD : on ? SC_LIT : SC_TXT, 1);
-    drawPixelText(ctx, v, k.x + k.w - 2 - vw, k.y + 1, on ? SC_LIT : SC_LBL, 1);
-    ctx.globalAlpha = 1;
+    const r = cols[i], y = L.bars[i].y, a = colA(i);
+    if (a <= 0) continue;
+    ctx.globalAlpha = fade * a;
+    drawScoreFace(c.x, y + ((L.barH - face) >> 1) - 1, face, r);
+    // the name over the bar, the bar under it, the number at its end
+    const nc = r.you ? SC_GOLD : SC_TXT;
+    if (nh) drawPixelText(ctx, scoreName(r.name, bw), bx, y + 1, nc, 1);
+    else drawPixelText(ctx, scoreName(r.name, nameW - 2), c.x + face + 4, y + ((L.barH - 5) >> 1), nc, 1);
+    const v = scoreVal(r, row), len = Math.round(bw * Math.max(0, v) / top * a);
+    const bh = L.barH - nh - 4, by = y + nh + 1;
+    ctx.fillStyle = TEAMS[skin(r.team)].mark;
+    if (len > 0) ctx.fillRect(bx, by, len, bh);
+    if (r.you && len > 0) { ctx.fillStyle = SC_GOLD; ctx.fillRect(bx, by + bh - 1, len, 1); }
+    const t = row.txt ? row.txt(r) : scoreFmt(v);
+    drawPixelText(ctx, t, bx + len + 4, by + ((bh - 5) >> 1), r.you ? SC_GOLD : SC_LIT, 1);
   }
-  // a match shorter than one sample has nothing to draw: say so with the
-  // empty well rather than with a sentence
-  if (n < 2) {
-    ctx.fillStyle = SC_DIM;
-    ctx.fillRect(r.x + 4, r.y + (r.h >> 1), r.w - 8, 1);
-    return;
-  }
-  // x = 0 is the drop, which every series starts from at zero, so the line
-  // leaves the corner rather than the first sample's height
-  const px = (i) => r.x + 1 + Math.round(i / n * (r.w - 3));
-  const py = (v) => r.y + r.h - 2 - Math.round(v / hi * (r.h - 4));
-  // the days, counted forward from the drop at the pitch the samples ended on
-  const span = matchStats.time || 1;
-  ctx.fillStyle = SC_EDGE;
-  for (let d = 1; d * CYCLE < span; d++) {
-    const gx = r.x + Math.round(d * CYCLE / span * (r.w - 1));
-    for (let y = r.y + 1; y < r.y + r.h - 1; y += 3) ctx.fillRect(gx, y, 1, 2);
-  }
-  // the rivals first, then your side, then you, then the picked line over all
-  const order = cols.map((q, i) => i).sort((a, b) => (cols[a].team === cols[0].team) - (cols[b].team === cols[0].team) || cols[a].you - cols[b].you);
-  if (pick >= 0) { order.splice(order.indexOf(pick), 1); order.push(pick); }
-  for (const i of order) {
-    const h = cols[i][key];
-    const at = (j) => (j === 0 ? 0 : h.length ? h[Math.min(j - 1, h.length - 1)] : 0);
-    ctx.globalAlpha = pick >= 0 && pick !== i ? 0.25 : 1;
-    ctx.fillStyle = lc[i];
-    let lx = px(0), ly = py(0);
-    for (let j = 1; j <= n; j++) {
-      const x = px(j), y = py(at(j));
-      const y0 = Math.min(ly, y), y1 = Math.max(ly, y);
-      ctx.fillRect(x, y0, 1, y1 - y0 + 1);
-      if (x > lx + 1) ctx.fillRect(lx, ly, x - lx, 1);
-      lx = x; ly = y;
-    }
-  }
-  ctx.globalAlpha = 1;
-  // the scale, and nothing else: the match clock is already in the head, and
-  // a fact printed twice is a fact that drifts in one of the two places
-  drawPixelTextShadow(ctx, scoreFmt(hi), r.x + 3, r.y + 3, ac.txt, SC_WELL, 1);
+  ctx.globalAlpha = fade;
 }
