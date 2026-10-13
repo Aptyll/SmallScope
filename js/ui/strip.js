@@ -222,36 +222,36 @@ function goldCellRect() {
   return { x: r.x, y: r.y + BAR_TOP, w: FOOD_W, h: ST_TOP + ST_H + 2 - BAR_TOP };
 }
 // THE FISH PICKER: the fish well holds three kinds (FISH_KINDS, js/player.js),
-// and pointing at it raises a row of them over the strip's right end - the
-// ice fish, the whitefish, the snow char, each with how many you carry. With
+// and pointing at it raises a column of them straight up off the well - the
+// ice fish nearest it, then the whitefish, then the snow char, each with how
+// many you carry. With
 // none picked all three stand lit and the key eats whichever comes next (the
 // well shows that one); a click on one picks it, and the key eats only that
 // (it rings gold, the others dim), and a click on the picked one lets it go.
 // The pick is the body's own (p.fishPick), set through the input's cmd like
 // every other order, so it holds online. It stays up while the pointer is on
-// the well, the row or the gap between them, and it stands over the ability
-// buy plates' row so it never hides one (a plate in the gap keeps its press).
-const FISH_POP = ['fish', 'whitefish', 'snowChar']; // the row, left to right
-const FISH_POP_NAME = 10;  // the hovered kind's name, standing over the row
+// the well, the column or the gap between them. The fish well has no buy
+// plate over it, so the column hides none.
+const FISH_POP = ['fish', 'whitefish', 'snowChar']; // the column, bottom to top
 function fishPopRect() {
-  const R = hudStripRect(), w = FISH_POP.length * AB_CELL + (FISH_POP.length - 1) * AB_GAP + 2 * AB_PAD, h = AB_CELL + 2 * AB_PAD;
-  return { x: R.x + R.w + 3 - w, y: abBuyRect(0).y - h - 2, w, h };
+  const s = foodCellRect(1), w = AB_CELL + 2 * AB_PAD, h = FISH_POP.length * AB_CELL + (FISH_POP.length - 1) * AB_GAP + 2 * AB_PAD;
+  return { x: s.x - AB_PAD, y: hudStripRect().y - h - 2, w, h };
 }
 function fishPopCellRect(j) {
   const r = fishPopRect();
-  return { x: r.x + AB_PAD + j * (AB_CELL + AB_GAP), y: r.y + AB_PAD, w: AB_CELL, h: AB_CELL };
+  return { x: r.x + AB_PAD, y: r.y + AB_PAD + (FISH_POP.length - 1 - j) * (AB_CELL + AB_GAP), w: AB_CELL, h: AB_CELL };
 }
-// is the row up, for a pointer at strip-space (mx, my)
+// is the column up, for a pointer at strip-space (mx, my)
 function fishPopUp(mx, my) {
   if (state.mode !== 'play' || player.dead || state.paused || state.build || !hudHome() ||
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI || !mouse.inside) return false;
   const r = fishPopRect(), s = foodCellRect(1);
-  if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < s.y) return true; // the row and the gap under it
+  if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < s.y) return true; // the column and the gap under it
   return mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h;
 }
 function fishPopHeadroom() {
   const m = stripMouse(mouse.x, mouse.y);
-  return fishPopUp(m.x, m.y) ? hudStripRect().y - fishPopRect().y + FISH_POP_NAME + 2 : 0;
+  return fishPopUp(m.x, m.y) ? hudStripRect().y - fishPopRect().y + 2 : 0;
 }
 // The meal buttons' share of that refusal: a press that could not become a
 // meal - nothing in the bag, the clock still up, full health, a busy body -

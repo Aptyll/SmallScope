@@ -412,9 +412,10 @@ function drawFishPop(hov) {
     drawPixelTextOutline(ctx, c, r.x + r.w - 2 - pixelTextWidth(c), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
     if (on) {
       const name = ITEMS[t].name, heal = '+' + Math.round(ITEMS[t].heal * kitOf(p).foodMul);
-      const w = pixelTextWidth(name) + 4 + pixelTextWidth(heal), x = Math.min(R.x + R.w - w, Math.max(R.x, r.x + ((r.w - w) >> 1)));
-      drawPixelTextOutline(ctx, name, x, R.y - FISH_POP_NAME + 2, RES_COLORS[t], '#191b1f');
-      drawPixelTextOutline(ctx, heal, x + pixelTextWidth(name) + 4, R.y - FISH_POP_NAME + 2, '#8fe08a', '#191b1f');
+      // beside the hovered fish, on the column's left
+      const x = R.x - 3 - pixelTextWidth(name) - 4 - pixelTextWidth(heal), y = r.y + ((r.h - 5) >> 1);
+      drawPixelTextOutline(ctx, name, x, y, RES_COLORS[t], '#191b1f');
+      drawPixelTextOutline(ctx, heal, x + pixelTextWidth(name) + 4, y, '#8fe08a', '#191b1f');
     }
   }
 }

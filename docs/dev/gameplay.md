@@ -2359,8 +2359,8 @@ meals — the hud strip's meal buttons click the same intents a key sets); both 
 line into `startEat`. **Three fish** share F (`FISH_KINDS`, js/player.js): the WHITEFISH (+40) and
 the SNOW CHAR (+70) caught in the creek ([world](world.md)) and the ICE FISH (+50) from a hole or a
 net. `fishToEat(p)` says which: the body's pick (`p.fishPick`) if it has one, else the smallest
-meal it carries. Pointing at the fish well raises the **fish picker**, a row of the three with
-their counts over the strip's right end (`drawFishPop`, hovering one names it and its heal); a click
+meal it carries. Pointing at the fish well raises the **fish picker**, a column of the three with
+their counts rising straight up off it (`drawFishPop`, hovering one names it and its heal); a click
 picks one (gold rim, the others dim) and F then eats only that, refused when none are left, and a
 click on the picked one lets it go. The pick is set through the input's `cmd`
 (`{kind: 'fishPick'}`, `runCmd`), so it holds online. It refuses — with the `SFX.deny()` an ability well
