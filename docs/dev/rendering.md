@@ -2345,15 +2345,20 @@ to 1× along
 `alt = p.dropAlt·(1 − q²)` with a widening shadow. The faller cull is against `WV_*`, the world
 pass rule — against `VIEW_*`, fallers in the far half of the zoomed-out frame vanish mid-air. A
 `down` bird casts **no shadow** — it is on the ground, and a dark
-copy under it read as a second bird — and folds its wings over `EAGLE_SETTLE_T` (the three
+copy under it read as a second bird (a roosting look keeps only the tight snow shadow painted into
+its frame) — and folds its wings over `EAGLE_SETTLE_T` (the three
 frames as a settle animation), then **rests**, breathing a ±1 px bob with a wing-shuffle idle
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
 the gust's telegraph, so the idle can never cry wolf), flashing via the baked
-all-white `SPRITES.eagleFlash` (a war eagle: `SPRITES.warBirds.flash` of its frame) when hit (it is taller than the 128×128 `drawSpriteFlash` scratch),
+all-white `SPRITES.eagleFlash` (a war eagle or a roosting look: `SPRITES.warBirds.flash` of its frame) when hit (it is taller than the 128×128 `drawSpriteFlash` scratch),
 with its team-colour hp bar (`PERCH_BAR_W` x `PERCH_BAR_H`, in `PERCH_BAR_SEGS` even segments: bigger and fewer than a body's, so it reads across the clearing) up **from the moment it roosts** — the bar is the objective's
 introduction, anchored to the bird's rotated extent, under a `PERCH` nameplate in the same paint (its
 driver wears `MERCH`: the side's two named bodies, named the same way). A gust windup draws wings thrown open
-(frame 0) lifted 2 px: the spread IS the telegraph, no text. A `flee` bird climbs back out —
+(frame 0) lifted 2 px: the spread IS the telegraph, no text. A bird whose skin has a **roosting look**
+(`SPRITES.perchRest.has`, js/sprites/perch.js: the classic and ironclad) roosts as that instead, landed with its
+wings half open and the crew's saddle on its back, painted at its heading and drawn unrotated
+(`perchRest.frame`, the same three beats as wing turns; `perchRest.warm` queues them through the
+dive); the other skins still roost as their flight frame laid flat. A `flee` bird climbs back out —
 scale and `alt` walk from the roost's numbers to the flight's over `FLEE_LIFT_T`, the shadow
 returning and diverging as the ground falls away, wingbeats at full panic — and fades over the
 last 1.4 s of `FLEE_T`; `gone` draws nothing. `renderDropUI` (mode `drop` only) draws the

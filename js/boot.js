@@ -1060,7 +1060,7 @@ function warmWarBird(e, id) {
   const WB = SPRITES.warBirds, t = skin(e.team);
   if (e.state === 'fly') for (let k = 0; k < WB.STROKE_N; k++) WB.warmFlight(id, t, e.heading, k);
   if (e.state === 'dive') for (let i = 0; i <= 16; i++) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.diveH0 + e.diveTurn * i / 16, fi);
-  if (e.state === 'dive' || e.state === 'down') for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, WB.REST);
+  if ((e.state === 'dive' || e.state === 'down') && !SPRITES.perchRest.has(id)) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, WB.REST);
 }
 
 // one bird in its team's armour, whatever its state. In the air the sprite
@@ -1073,6 +1073,8 @@ function drawEagle(e, ex, ey, now) {
   const sx = Math.round(e.x - ex), sy = Math.round(e.y - ey);
   const WB = SPRITES.warBirds, worn = birdSkinFor(e.team), war = WB.has(worn) ? worn : null;
   if (war) { warmWarBird(e, war); WB.tick(4); } // paint the frames it is about to need, a few ms a frame
+  const PR = SPRITES.perchRest, perch = PR.has(worn) ? worn : null; // a look that roosts landed (perch.js)
+  if (perch && e.state === 'dive') { for (let fi = 0; fi < 3; fi++) PR.warm(perch, skin(e.team), e.diveH0 + e.diveTurn, fi); PR.tick(4); }
   if (e.state === 'fly' || e.state === 'dive') {
     const u = e.state === 'dive' ? Math.min(1, e.diveT / EAGLE_DIVE_T) : 0;
     const fall = u * u; // gravity: slow tip-over, hard finish
@@ -1170,20 +1172,23 @@ function drawEagle(e, ex, ey, now) {
     const ruffling = !winding && e.ruffleT > RUFFLE_T * 0.25 && e.ruffleT < RUFFLE_T * 0.75;
     const fi = e.restT < EAGLE_SETTLE_T
       ? Math.min(2, Math.floor(e.restT / EAGLE_SETTLE_T * 3)) : (winding ? 0 : (ruffling ? 1 : 2));
-    // a war eagle roosts painted at REST (today's bird's footprint), unrotated
-    const spr = war ? WB.frame(war, skin(e.team), e.heading, fi, WB.REST) : frames[fi];
-    const w = war ? spr.width : spr.width * S, h = war ? spr.height : spr.height * S;
+    // a roosting look (perch.js) sits landed, painted at its heading; a war
+    // eagle roosts as its flight frame painted at REST (today's bird's
+    // footprint); either draws unrotated. Today's bird is laid flat and turned
+    const spr = perch ? PR.frame(perch, skin(e.team), e.heading, fi) : war ? WB.frame(war, skin(e.team), e.heading, fi, WB.REST) : frames[fi];
+    const flat = perch || war;
+    const w = flat ? spr.width : spr.width * S, h = flat ? spr.height : spr.height * S;
     if (sx > -w - 70 && sy > -h - 70 && sx < WV_W + w + 70 && sy < WV_H + h + 70) {
       // no cast shadow at rest: the bird is ON the ground, and a dark copy
       // under it read as a second bird
       const breath = winding ? -2 : (ruffling ? -1 : (e.restT >= EAGLE_SETTLE_T ? Math.round(Math.sin(now * 1.5 + e.team * 2.1)) : 0));
       ctx.save();
       ctx.translate(sx, sy + breath);
-      if (!war) ctx.rotate(e.heading);
+      if (!flat) ctx.rotate(e.heading);
       ctx.drawImage(spr, -Math.round(w / 2), -Math.round(h / 2), w, h);
       if (e.flash > 0) {
         ctx.globalAlpha = Math.min(1, e.flash * 7);
-        ctx.drawImage(war ? WB.flash(spr) : SPRITES.eagleFlash, -Math.round(w / 2), -Math.round(h / 2), w, h);
+        ctx.drawImage(flat ? WB.flash(spr) : SPRITES.eagleFlash, -Math.round(w / 2), -Math.round(h / 2), w, h);
         ctx.globalAlpha = 1;
       }
       ctx.restore();
@@ -1216,7 +1221,7 @@ function drawEagle(e, ex, ey, now) {
       // drawMerchant): the side's two named bodies, named the same way.
       // Anchored to the bird's rotated extent, not the unrotated box, so it
       // hugs the sprite whatever way the dive left it pointing.
-      const vh = war ? WB.reach(spr).up : Math.abs(w / 2 * Math.sin(e.heading)) + Math.abs(h / 2 * Math.cos(e.heading));
+      const vh = flat ? WB.reach(spr).up : Math.abs(w / 2 * Math.sin(e.heading)) + Math.abs(h / 2 * Math.cos(e.heading));
       // in even health segments like every hp bar, but big and few: the
       // objective's bar reads from across the clearing, so PERCH_BAR_SEGS
       // is set here rather than asked of hpSegCount (which would split
