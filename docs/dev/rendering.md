@@ -157,7 +157,7 @@ entity draw code must use `ex`/`ey`.
    water, at `SWIM_A` alpha with a rim in the water's own shade) → **the creek's current**
    (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
    and over the fish, on the field's clock) → under-ice fish (frost pike and gold sunfish:
-   `SPRITES.iceFish[kind].shadow` at 0.4 alpha, and the crisp `swim` sprite clipped to the open-hole
+   `SPRITES.iceFish[kind].shadow` at 0.42 alpha, a solid rim over a half-strength core, and the crisp `swim` sprite clipped to the open-hole
    tiles round a fish crossing one) →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);

@@ -1235,13 +1235,13 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   a position that would poke the body into snow is never committed. That clamp is **axis-aligned**
   (`fishClear` probes ±margin on the four compass directions from the centre) while the drawn body
   is rotated, so a fish swimming diagonally along a shore can clip a corner of snow with its
-  nose or tail for a frame or two, at the 0.4 alpha an under-ice fish is drawn with — accepted.
+  nose or tail for a frame or two, at the faint alpha an under-ice fish is drawn with — accepted.
   Each is a **FROST PIKE** or, one in `FISH_RARE` (0.2, js/wildlife.js), a **GOLD SUNFISH**: `f.kind`
   (`fish` or `sunfish`) comes from `hash2` of its spawn spot inside `addFish`, so no `rng()` call
   is added. They render in a pass right after the ground blit (using `ex`/`ey`) as a cold blue
-  **shadow** under the ice (`SPRITES.iceFish[kind].shadow`, the swim sprite flattened toward the
-  ice's blue-grey with a quarter of its own colour left, so the sunfish reads warm but dim) at 0.4
-  alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's
+  **shadow** under the ice (`SPRITES.iceFish[kind].shadow`, look N: the swim sprite's shape in the under-ice ink
+  alone, solid round its rim and half as strong in its core, so a pike and a sunfish are told apart
+  by shape, never colour) at 0.42 alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's
   tiles, so only what is in the open water shows in colour. Both are baked by
   app/bake-fish/paint.py (16 headings, 2 tail frames). Cracking ice spooks nearby fish into a fast dart.
 - **Fishing is automatic**: `autoFish(p, dt)` (js/tools.js, called from `updatePlayer` every
