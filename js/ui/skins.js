@@ -169,7 +169,7 @@ function trailArt(cols, f) {
 }
 function skinArt(tab, r, t, f) {
   if (tab.id === 'bird') {
-    const set = (SPRITES.birdSkinIcon[r.id] || SPRITES.birdSkinIcon[BIRD_SKINS[0].id])[t]; // every bird skin has a card (perch.js, warbirds.js)
+    const set = (SPRITES.birdSkinIcon[r.id] || SPRITES.birdSkinIcon[BIRD_SKINS[0].id])[t]; // every bird skin has a card (perch.js)
     const spr = set[f % set.length];
     return { img: spr, sx: 0, sy: 0, w: spr.width, h: spr.height };
   }

@@ -3,7 +3,8 @@
 // look D: seen from above, wings open, the crew's saddle on its back, a
 // narrow arrow head with no face. NEW CLASSIC (white head and tail, a team
 // mantle and covert band, dark slate flight feathers) and IRONCLAD (slate
-// plumage, iron lames, an iron cap); the other skins are warbirds.js's.
+// plumage, iron lames, an iron cap) and the four war eagles (a helm, a
+// crown and arm armour over a plumage) are all its looks.
 // PAINTED IN CODE: a stack of flat shapes (ellipses, feather blades, polygons)
 // on a 112 px grid facing left, one world px a cell at the roost, shaded the
 // way a hand artist would: a flat base tone, a shadow rim away from the
@@ -33,6 +34,7 @@
     strap: ramp('#24161a', '#3e2a26', '#5a3e30', '#76523c'),
     brass: ramp('#62381a', '#a87226', '#e2b448', '#fae296'),
     metal: ramp('#464b62', '#7a869e', '#afbbcd', '#eaf0f8'),
+    slit: ramp('#120e18', '#120e18', '#120e18', '#120e18'),
   };
   // what each roosting look wears, by its BIRD_SKINS id; 'team' = the side's coat
   const LOOKS = {
@@ -40,8 +42,24 @@
       prim: ramp('#0e1018', '#1a1e2c', '#2a3042', '#3e4660'), tail: WHITE },
     ironclad: { plume: SLATE, head: SLATE, nape: ramp('#343a52', '#525c78', '#76829e', '#a0aac0'), wing: SLATE,
       cov: ramp('#343a52', '#525c78', '#76829e', '#a0aac0'), prim: ramp('#12141e', '#1f2234', '#343a52', '#4a5068'), tail: SLATE,
-      metal: ramp('#2f3342', '#505870', '#7c869c', '#b8c2d2'), cap: true, lames: true },
+      metal: ramp('#2f3342', '#505870', '#7c869c', '#b8c2d2'), cap: 'iron', lames: true },
   };
+  // the war eagles in the same look: a plumage ramp, its
+  // covert band a step lighter, a helm (cap) and a crown on the head, and
+  // armour on the arm (pauldron plates, or a metal leading edge)
+  const STEEL = ramp('#464b62', '#7a869e', '#afbbcd', '#eaf0f8'), BRONZE = ramp('#553620', '#8a5c2e', '#bd8a44', '#eecb78');
+  const STEEL_D = ramp('#2f3342', '#505870', '#7c869c', '#b8c2d2'), BRONZE_D = ramp('#2e1c12', '#553620', '#8a5c2e', '#bd8a44'); // the arm's plates, a step down from the helm
+  const war = (pl, lt, pr, o) => Object.assign({ plume: pl, head: pl, nape: lt, wing: pl, cov: lt, prim: pr, tail: pl }, o);
+  Object.assign(LOOKS, {
+    helm: war(ramp('#261c28', '#43303a', '#654638', '#8a6446'), ramp('#43303a', '#654638', '#8a6446', '#b08660'), ramp('#1a1218', '#2c1f26', '#43303a', '#5e4440'),
+      { metal: STEEL, plate: STEEL_D, cap: 'great', armour: 'pauldron' }),
+    beak: war(SLATE, ramp('#343a52', '#525c78', '#76829e', '#a0aac0'), ramp('#12141e', '#1f2234', '#343a52', '#4a5068'),
+      { tail: WHITE, metal: STEEL, plate: STEEL_D, cap: 'guard', crown: 'plume', armour: 'edge' }),
+    horned: war(ramp('#33231f', '#5e3e2c', '#8e6236', '#bd8c4a'), ramp('#5e3e2c', '#8e6236', '#bd8c4a', '#e0b466'), ramp('#20160f', '#33231f', '#5e3e2c', '#7a5636'),
+      { metal: BRONZE_D, plate: BRONZE_D, bone: ramp('#8a7c6a', '#b8a88e', '#ddd0b4', '#f6eed8'), cap: 'grille', crown: 'horns', armour: 'pauldron' }),
+    crested: war(ramp('#1b1926', '#2e2a3c', '#474258', '#655e76'), ramp('#2e2a3c', '#474258', '#655e76', '#8a849a'), ramp('#100e16', '#1b1926', '#2e2a3c', '#433e52'),
+      { metal: BRONZE_D, plate: BRONZE_D, crest: BRONZE, cap: 'slit', crown: 'fin', armour: 'edge' }),
+  });
   function palette(cfg, t) {
     const T = TEAM_SKINS[t], team = ramp(T.fit, T.coatD, T.coat, T.coatL);
     const p = Object.assign({}, COMMON, { team, trim: [mix(hex(T.trimD), hex(T.fit), 0.3), hex(T.trimD), hex(T.trim), mix(hex(T.trim), [255, 255, 255], 0.7)] });
@@ -121,6 +139,10 @@
       add(rell(52, Y(14), 5, 4.5), 'cov', { lt: 1, side }); add(rell(50, Y(23), 4.5, 4), 'cov', { lt: 1, side });
       if (cfg.lames) for (const [x, y] of [[44, Y(12)], [42, Y(20)]]) // ironclad: iron plates down the arm
         add(poly([[x - 4, y - side * 3], [x + 5, y - side * 3], [x + 6, y + side * 3], [x - 3, y + side * 3]]), 'metal', { hl: true, side });
+      if (cfg.armour === 'pauldron') // a shoulder plate over the coverts
+        add(poly([[37.5, Y(6)], [36.5, Y(13)], [40, Y(19)], [47, Y(19.5)], [50, Y(13)], [48.5, Y(6)]]), 'plate', { hl: true, side });
+      if (cfg.armour === 'edge') // a metal leading edge down the arm
+        for (const [a, b] of [[[40.5, 6], [37.2, 17]], [[37.2, 17], [41.5, 28.5]]]) add(blade(a[0], Y(a[1]), b[0], Y(b[1]), 2.6, 2.2), 'plate', { hl: true, side });
     }
     add(rell(55, C, 17, 11), 'plume', { sh: 2, hl: true });
     saddle(add, dot);
@@ -167,11 +189,30 @@
     D(HEAD[0][0] + 0.6, 0, 'beak', 0);                                               // the hook's dark tip
     for (const t of range(BEAK_T + 1, 12, 1 / HK)) D(t, -0.4, 'head', 3);            // the crown's ridge, lit
     for (const e of [-1, 1]) D(2.6, e * 4.0, 'head', e < 0 ? 3 : 1);                // the arrow's corners
-    if (cfg.cap) { // ironclad: an iron cap of the same shape
-      const t0 = BEAK_T + 0.6, cap = [[t0, half(t0) + 0.5]].concat(HEAD.filter(([t]) => t > t0).map(([t, y]) => [t, y + 0.6]));
+    if (cfg.cap) { // a metal cap of the arrow's shape: ironclad's, or a war eagle's helm
+      const t0 = cfg.cap === 'guard' ? HEAD[0][0] - 0.4 : BEAK_T + 0.6, wide = cfg.cap === 'great' ? 1.1 : 0.6;
+      const cap = [[t0, cfg.cap === 'guard' ? 0.6 : half(t0) + 0.5]].concat(HEAD.filter(([t]) => t > t0).map(([t, y]) => [t, y + wide]));
+      if (cfg.cap === 'guard') cap.splice(cap.findIndex(([t]) => t > 5), Infinity, [5.5, half(5.5) + 0.6], [6.5, 0]); // the guard sheathes the beak and stops short of the crown
       add(poly(both(cap)), 'metal', { hl: true });
-      for (const t of range(BEAK_T + 1.5, 13, 1 / HK)) D(t, -0.2, 'metal', 3);
-      for (const t of range(BEAK_T + 1.5, 13, 1 / HK)) D(t, 0.8, 'metal', 1);
+      const back = cfg.cap === 'guard' ? 5 : 13;
+      for (const t of range(t0 + 1, back, 1 / HK)) D(t, -0.2, 'metal', 3);  // its ridge, lit
+      for (const t of range(t0 + 1, back, 1 / HK)) D(t, 0.8, 'metal', 1);
+      if (cfg.cap === 'great') for (const y of range(-3.6, 3.7, 1 / HK)) D(1.2, y, 'slit', 0);          // the great helm's eye slit across its brow
+      if (cfg.cap === 'grille') for (const t of [0.4, 1.8, 3.2]) for (const y of [-2.4, -1, 1, 2.4]) D(t, y, 'slit', 0); // the grille's bars
+      if (cfg.cap === 'slit') { for (const y of range(-3, 3.1, 1 / HK)) D(1.6, y, 'slit', 0); }
+    }
+    if (cfg.crown === 'plume') for (let j = 0; j < 3; j++) { // a team plume streaming back off the crown
+      const u = j - 1;
+      add(blade(X(5), Y(u * 0.8), X(19), Y(u * 3.2), 3.4 * HK, 1.2), 'team', { hl: j === 1, lt: 1 });
+    }
+    if (cfg.crown === 'horns') for (const e of [-1, 1]) { // two horns out from the helm's sides, curling forward
+      add(blade(X(6), Y(e * 3.6), X(5.5), Y(e * 8.5), 4.2, 3.4), 'bone', { hl: true, seam: false, lt: 1 });
+      add(blade(X(5.5), Y(e * 8.5), X(2), Y(e * 11.5), 3.4, 2.4), 'bone', { hl: true, seam: false, lt: 1 });
+      add(blade(X(2), Y(e * 11.5), X(-3.5), Y(e * 12), 2.4, 0.8), 'bone', { hl: true, seam: false, lt: 1 });
+    }
+    if (cfg.crown === 'fin') { // a tall fin crest down the crown and the neck, its far face in shadow
+      add(blade(X(-1.5), Y(0.9), X(22), Y(0.9), 3.6, 1.6), 'crest', { sh: 0 });
+      add(blade(X(-1.5), C, X(22), C, 3.2, 1.4), 'crest', { hl: true, sh: 1 });
     }
   }
 
@@ -186,7 +227,7 @@
   // raised, the gust's telegraph; 1 the shuffle; 2 at rest), s0-s9 level
   // flight's stroke (0 the spread, 5 the top), d0-dDIVE_N the stoop by its
   // progress (it tucks, then flares to land), l0-l2 the takeoff's hard beats
-  const HINGE = 7, FOLD = 38, ZK = 0.55;       // ZK: how far a px of height climbs the screen (warbirds.js's camera)
+  const HINGE = 7, FOLD = 38, ZK = 0.55;       // ZK: how far a px of height climbs the screen
   const SHOULDER = [46, 6], WRIST = [48, 24];  // grid; the lateral half mirrored per side
   const L0 = [-0.45, -0.55, 0.70], LN = Math.hypot(...L0), LIGHT = L0.map((v) => v / LN);
   const P_ = (spread, up, fold, tail, ground = false) => ({ spread, up, fold, tail, ground });
@@ -247,7 +288,7 @@
   }
 
   // ---------------------------------------------------------------- painter
-  const SHADOW = [40, 60, 100, 77]; // a flying bird's shadow on the snow, warbirds.js's wash
+  const SHADOW = [40, 60, 100, 77]; // a flying bird's shadow on the snow
   // one frame of look `id` for palette set `team`: pose `key` at heading hd,
   // `scale` frame px a grid cell (1 at the roost, 1.5 in flight: the bird is
   // nearer the camera). mask: only its silhouette in the shadow's wash, flat
@@ -444,10 +485,39 @@
     if (!stills.has(key)) stills.set(key, cropped([paint(id, team, 0, 's0', FIGURE_SCALE, false)]));
     return stills.get(key)[0];
   }
-  // drawEagle asks has(id) for the skin a bird wears; the flash and reach of
-  // a frame are warbirds.js's (they read any canvas)
-  SPRITES.perch = { has: (id) => !!LOOKS[id], frame, shadow, warm, tick, seat, figure, STROKE_N, DIVE_N, merchSeat: [6, 0] };
-  for (const id in LOOKS) { // the skins screen's cards, painted the first time one asks
+  // a frame's all-white hit flash, drawn fresh into one scratch canvas (it is
+  // drawn at once, so no copy is kept)
+  let flashCv = null;
+  function flash(src) {
+    const cv = flashCv || (flashCv = document.createElement('canvas'));
+    if (cv.width !== src.width || cv.height !== src.height) { cv.width = src.width; cv.height = src.height; }
+    const g = cv.getContext('2d');
+    g.globalCompositeOperation = 'copy';
+    g.drawImage(src, 0, 0);
+    g.globalCompositeOperation = 'source-in';
+    g.fillStyle = '#f4f7ff';
+    g.fillRect(0, 0, cv.width, cv.height);
+    return cv;
+  }
+  // how far the painted bird reaches above and below the frame's centre, in
+  // canvas px: what the roost's nameplate hangs over
+  const reaches = new WeakMap();
+  function reach(src) {
+    let r = reaches.get(src);
+    if (!r) {
+      const d = src.getContext('2d').getImageData(0, 0, src.width, src.height).data;
+      let y0 = src.height, y1 = -1;
+      for (let y = 0; y < src.height; y++) for (let x = 0; x < src.width; x++) if (d[(y * src.width + x) * 4 + 3]) { if (y < y0) y0 = y; y1 = y; break; }
+      reaches.set(src, r = { up: src.height / 2 - y0, down: y1 + 1 - src.height / 2 });
+    }
+    return r;
+  }
+  // drawEagle asks has(id) for the skin a bird wears
+  SPRITES.perch = { has: (id) => !!LOOKS[id], frame, shadow, flash, reach, warm, tick, seat, figure, STROKE_N, DIVE_N, merchSeat: [6, 0] };
+  // the skins screen's cards: SPRITES.birdSkinIcon[id][skin(team)], painted
+  // the first time a card asks
+  SPRITES.birdSkinIcon = {};
+  for (const id in LOOKS) {
     const per = {};
     for (const t of [0, 1]) Object.defineProperty(per, t, { get: () => icons(id, t) });
     Object.defineProperty(SPRITES.birdSkinIcon, id, { value: per, enumerable: true });

@@ -212,33 +212,18 @@ A new character or building sprite has to be added to those bakes, not just to t
 entry, or it will not wear a team's colour — and every read indexes by `skin(team)` (the
 CLAUDE.md hard rule), never the bare team.
 
-**The war eagles** (`warbirds.js`, four of them) are the drop bird's cosmetic skins and have **no grids**: each
-is flat plates in bird space (x forward, y toward the right wing, z up), seen from above, one cel
-tone per plate from the way it faces a fixed light, filled at 4× and shrunk to whole pixels, then
-given inner lines, lit edges and one ink outline. `frame(id, team, heading, beat, size)` paints a frame
-at one of 64 headings, so the bird is never rotated on screen, and the helm's walls draw only
-while they face the camera (the visor toward you, the back of the helm away). Level flight
-beats `stroke`, one smooth shallow stroke in `STROKE_N` phases (`flight(id, team, heading, phase)`;
-the upstroke reuses the downstroke's poses); the stoop, the flee and the roost use
-the three harder `BEATS`. `pose` lifts and dips the tail with the wing. Frames
-paint at `FLY` in the air and `REST` (today's bird's footprint) at the roost, on first use or
-ahead of it (`warm`/`warmFlight` queue, `tick(ms)` paints within a budget; about 11 ms each) and
-the least recently drawn go past `KEEP`; `shadow` and
-`flash` wash a frame into one scratch canvas each, and `reach` measures how far it stands up and
-down from its centre (the roost's hp bar). The team plates read `TEAM_SKINS`, so the cache clears
-in an `onTeams` callback. `LOOKS` says what each wears by its `BIRD_SKINS` id (eagle.js, with the
-name and price), and `SPRITES.birdSkinIcon` gives the skins screen the wingbeat (Perch's two looks add theirs, perch.js) (spread, mid, back, mid) nose-up at a
-card's size, cropped to one box. The plates were designed in the concept round's Python, kept in
-the project files, not the repo.
-
-**Perch** (`perch.js`) is the drop bird itself in the looks that are its own (`LOOKS`: the
-classic and the ironclad, by `BIRD_SKINS` id), in flight and at the roost: seen from above, the
+**Perch** (`perch.js`) is the drop bird in every skin it wears (`LOOKS`, by `BIRD_SKINS` id:
+the classic, the ironclad and the four war eagles, which `war` builds as a plumage with a helm
+`cap`, a `crown` and `armour` on the arm), in flight and at the roost: seen from above, the
 crew's saddle on its back, a narrow arrow head with no face, and no grids either. It is a stack
 of flat shapes (`rell` ellipses, `blade` feathers, `poly`, `rect`) on a 112 px grid facing left,
 shaded by rule: a shadow rim away from the top-left light, a lit rim on `hl` parts, a contact
 shadow under whatever overlaps from above, an inner line (`lt`) where a part passes over the same
 material (`seam: false` melts a part into it instead), one ink outline, and on the ground a tight
-snow shadow. A **pose** (`POSE(key)`) moves the wings and tail: `r0`-`r2` the roost's three beats,
+snow shadow. The war eagles' metal is parts like any other: the helm (`cap`: `great`, `guard`,
+`grille`, `slit`) follows the arrow head's shape with dark sight dots, the crown (`plume` in the
+team's colour, bone `horns`, a `fin`) rides the crown, and the arm wears `pauldron` plates or a
+metal leading `edge`. A **pose** (`POSE(key)`) moves the wings and tail: `r0`-`r2` the roost's three beats,
 `s0`-`s9` level flight's one smooth stroke (`STROKE_N` phases), `d0`-`dDIVE_N` the stoop by its
 progress (the wings tuck back off the stroke, hold, then flare to brake), `l0`-`l2` the takeoff's
 hard beats; a lifted wing turned from the light steps a tone darker (`litStep`). `frame(id, team,
@@ -246,10 +231,11 @@ heading, key, scale)` maps every part from the grid onto the frame through its o
 turned to the heading, `scale` px a cell: 1 at the roost, 1.5 in flight), so the pixels never
 smear, the light stays top-left and the bird draws 1:1; `shadow` is the same pose's silhouette
 flat on the snow at the roost's size; `seat` is where a rider's seat lands on that frame, so a
-rider rides its wing. Frames paint on first use or from `warm` (urgent, or `idle`: the slow queue,
+rider rides its wing; `flash` washes a frame all white into one scratch canvas and `reach`
+measures how far it stands up and down from its centre (the roost's hp bar). Frames paint on first use or from `warm` (urgent, or `idle`: the slow queue,
 one frame per `IDLE_GAP`) and `tick`, about 5 ms each, within a budget; a bird whose frame is not
 painted yet holds its last one, and the least recently drawn go past `KEEP`. The team parts read
-`TEAM_SKINS`, so the cache clears in `onTeams`. `SPRITES.birdSkinIcon` gets the two looks' card
+`TEAM_SKINS`, so the cache clears in `onTeams`. `SPRITES.birdSkinIcon` gets every look's card
 frames (the stroke nose-up) and `figure` the wiki's. The concept rounds' Python
 (perch-landed/src/styles.py, look D, head H) lives in the project files, not the repo.
 
@@ -593,7 +579,6 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/
 | `snowdrops.js` | none: generated by app/bake-snowdrops/bake.js | `snowdrop[variant]` (`closed`/`open` at three leans, `picked`, `glow[lean][phase]`) |
 | `robot.js` | none: generated by app/bake-robot/bake.py | `robotSkin` (the IRON SCOUT skin, per team) |
 | `eagle.js` | none: only `BIRD_SKINS`, the skins' table | none |
-| `warbirds.js` | palettes, plates, painter, cache | `warBirds` (no grids: painted in code, below) |
 | `perch.js` | palettes, shapes, the bird, poses, painter, cache | `perch` (no grids: painted in code, below) |
 | `buildings.js` | wall, tiered structures, the turret's three timber bases, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret` (`turretT1`/`T2`/`T3` through `TUR_PALS` and `turretPal`), `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
 | `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
