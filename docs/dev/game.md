@@ -154,8 +154,8 @@ own from anywhere. [Eagle drop](rendering.md#eagle-drop-mode-drop),
 [Death and respawn](gameplay.md#death-and-respawn), [Bots](multiplayer.md#bots).
 
 **Roguelike cards come out of the treeline's chests.** A sprung chest drops a **rarity-rolled
-card**, drawn at random on a key from the pouch without pausing the sim, and a picked card is
-baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#roguelike-cards).
+card**, which opens itself the moment it is held, one at random, without pausing the sim, and
+the card is baked into the kit for the rest of the match. [Roguelike cards](gameplay.md#roguelike-cards).
 
 **T is the build list, and the ghost under the pointer is what a click lays.** A tap opens it on
 the last piece and holding T flicks a piece off a wheel. Any open snow or road tile within reach

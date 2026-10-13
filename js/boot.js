@@ -1660,7 +1660,7 @@ window.DBG = {
   plantFlag: (tx, ty, type, p) => plantFlag(p || player, tx, ty, type),
   clearFlag: (p) => clearFlag(p || player),
   get flag() { return player.flag; },
-  // the hud strip - the xp bar + weapon/ability strip, bottom-centre.
+  // the hud strip - portrait, abilities, bars and meals, bottom-centre.
   hudStripRect, stripHit,
   // Tools and bits: the two tables, the tier palette, an instance maker, the
   // firing pipeline and the loot roll - so a driver can stage a build without
@@ -1910,7 +1910,7 @@ window.DBG = {
   canPlaceAt, BUILD_ORDER, BUILD_REACH, buildGhostAt, manageNear, placeStruct,
   // ...and the hammer plate that opens it, the rows under it (1x corner
   // space - the hit tests take the pointer's own), and the one toggle
-  buildTabRect, buildTabHit, buildRowRect, buildListHit, toggleBuild,
+  buildTabRect, buildRowRect, buildListHit, toggleBuild,
   finishBuild: (o) => { if (o && o.building) o.buildT = o.buildTotal; },
   // z is a world scale; it lands on the nearest pixel-exact rung, as the
   // wheel does. snap skips the ease. setK sets the rung itself.

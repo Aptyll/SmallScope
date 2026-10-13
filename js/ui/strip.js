@@ -3,63 +3,52 @@
 // stands on, HUD SIZE, every cell rect and refusal flash, the weapon
 // shelf's geometry and drops, sending a cell across, and the press / move /
 // release the drag is made of. Drawing is js/ui/hud-draw.js.
-// ---- hud strip: the ability wells over the xp bar, bottom-centre --------
-// One opaque plate. Four wells on top - the class abilities in key order
-// 1-4 (the WEAPON left the strip for the shelf, top-left, in 3.23: one tool,
-// read in one place); under them the plum xp bar (xp IS lifetime gold), notched into
-// AB_SEGS segments so progress through a level is countable at a glance. The
-// bar sits at the BOTTOM so the strip's top edge is open screen: that is
-// where an affordable ability level floats its buy plate (abBuyRect below),
-// and a plate bobbing through the bar was the reason the bar moved.
-// The dodge pips the old rail carried are gone: the reticle and the overhead
-// bar already say it.
+// ---- hud strip: portrait, wells and bars, bottom-centre ------------------
+// One opaque plate, read left to right the way a MOBA's bottom bar is (0.426):
 //
-// A tool cell says three things without a word on it. The PLATE behind the
-// icon is the tool's tier colour, the same colour it wears in every other
-// well it ever sits in. The SELECTED slot is the one with the lit rim, lifted
-// a pixel off the plate. And the cooldown between shots wipes top-down over
-// the whole well, so the tool's rate of fire is the shape of the wipe rather
-// than a number anywhere. What is loaded stays out of the resting well - the
-// shelf over the backpack is where the build is read and edited.
+//   [portrait] [1][2][3][4] [berry][fish]
+//              [ health bar ] [  gold  ]
+//              [ stamina    ]
 //
-// The strip proper is FIVE wells: [1][2][3][4][T] - the class abilities in
-// key order, each wearing its 32px icon (classAbIcon, js/abilities.js), then
-// the BUILD well (the `build list` group, js/ui/wheel.js), whose column of
-// pieces stands over it while the list is open. On the right end the two MEAL buttons
-// stack: berry over fish, half-height cells (two of them + the gap = one
-// well, so the pair sits flush with the wells), each wearing its item
-// icon, its count and its key letter, and both wiping on the one shared
-// food clock (drawFoodClock) the bag's cells already wear. THE MEALS ARE
-// ALWAYS HERE: food is a pouch and not a bag stack (the `inventory` banner,
-// js/player.js), so these two buttons are the whole of where a berry and a
-// fish are read and pressed, and the counts on them are uncapped - hence
-// shortNum, four characters at most in a square's corner.
+// THE PORTRAIT is a square well holding your hero's face, framed in the
+// wells' own border. Your XP runs CLOCKWISE ROUND ITS EDGE from top centre,
+// so the ring filling is the level filling; the xp you have and the xp the
+// next level needs stand over it as one number pair, and the level itself is
+// the digit in the badge on its bottom-right corner. Under the four ability
+// wells run the HEALTH bar (the number on it is your health and your most)
+// and the STAMINA bar under that: the dodge charges, white, one notch between
+// each, the overhead bar's twin (drawOverhead, js/draw/bodies.js). It is the
+// seat a mana bar takes when heroes come.
 //
-// And flush on the strip's top edge over that column, THE PURSE: the coin and
-// the gold behind it, on screen for the whole match. Money is the number a
-// player is deciding on all game - what the counter is asking, what a gear
-// level costs, whether that kill was worth it - and it used to be readable
-// only with the pack open. It is a tab of the strip rather than a bar of its
-// own so it slides in with the HUD, scales with it, and stays one glance from
-// the meals and the abilities it is spent on.
+// The meals sit beside the abilities in wells of the SAME size, because they
+// are pressed the same way (Q and F, a click), each with its key in the
+// corner an ability prints its key in and its count in the top-right; both
+// wipe on the shared food clock (drawFoodClock). THE MEALS ARE ALWAYS HERE:
+// food is a pouch and not a bag stack (the `inventory` banner, js/player.js),
+// so these two wells are the whole of where a berry and a fish are read and
+// pressed, and the counts are uncapped - hence shortNum, four characters at
+// most. Under them, level with the bars, THE PURSE: the coin and the gold, on
+// screen for the whole match, since money is the number a player decides on
+// all game. Unopened cards are not on the strip: they are bag items, drawn
+// from the pack or on the card key.
+//
+// The weapon is not on the strip either (the shelf, top-left), and nor is the
+// build list's way in: the build key opens it, and its column stands over the
+// meal wells (buildTabRect, js/ui/wheel.js).
 const AB_CELL = HUD_CELL, AB_GAP = 2, AB_N = 4; // AB_CELL: a strip well (the one size, above); AB_N: abilities
-// THE POUCH BLOCK, the strip's right end: the four numbers you own in a 2x2
-// of SQUARES - berry over fish on the left, gold over cards on the right
-// (3.23). Every cell is the ability wells' own grammar at two thirds the
-// size: the doubled icon in the middle, the key cap in the bottom-left corner
-// (the carve-out; the gold has none) and the count in the top-right, so
-// the block reads as four stamps and not as four bars. It is TALLER than a
-// well: two squares and their gap stand POUCH_RISE px above the strip's top
-// edge on a tab of the strip's own plate, its bottom flush with the wells'.
-const FOOD_SQ = 24;                          // a pouch cell: a square
-const POUCH_GAP = 2;                         // between neighbouring squares
-const POUCH_W = FOOD_SQ * 2 + POUCH_GAP;     // the block: two columns...
-const POUCH_H = POUCH_W;                     // ...and two rows
-// THE BUILD WELL ends the wells (buildTabRect, js/ui/wheel.js): the fifth, after ability 4
-const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W; // four ability wells, the build well, their gaps, the pouch block
-const AB_PAD = 3, AB_XP = 5, AB_SEGS = 10; // AB_PAD: the frame's outline, its lit line and one px of ground (drawHudFrame); AB_SEGS: xp bar notches
-const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
-const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
+const AB_PAD = 3;                         // the frame's outline, its edge and one px of ground (drawHudFrame)
+const PORT_SQ = 51;                       // the portrait square, the plate's full inner height
+const PORT_GAP = 4;                       // portrait to the first well
+const AB_ROW_W = AB_N * AB_CELL + (AB_N - 1) * AB_GAP; // the four ability wells
+const FOOD_GAP = 5;                       // abilities to the meals
+const FOOD_N = 2;                         // the meal wells: berry, fish
+const FOOD_W = FOOD_N * AB_CELL + (FOOD_N - 1) * AB_GAP;
+const HP_H = 7, ST_H = 4;                 // the health bar (tall enough for its number) and the stamina bar
+const BAR_TOP = AB_CELL + 3;              // the health bar's outline, under the wells
+const ST_TOP = BAR_TOP + HP_H + 1;        // the stamina bar's outline: shares the health bar's bottom ink
+const XP_TAG = 9;                         // the xp numbers standing over the portrait
+const AB_W = PORT_SQ + PORT_GAP + AB_ROW_W + FOOD_GAP + FOOD_W; // the content, inside the frame's pads
+const AB_H = AB_PAD + ST_TOP + ST_H + 2 + AB_PAD; // wells, bars, the stamina bar's outline, the pads
 const AB_BG = '#16181c';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
 // The strip, the pack and the team rail stand on one plate, drawn the way
@@ -71,17 +60,14 @@ const AB_BG = '#16181c';
 // every well on it readable over both; the icons, the sides' colours and
 // the gold carry the contrast, never the frame. No bevel, no snow, no ornament: a plate
 // looked at for an hour has to stay quiet. Three layers, all pixels:
-//   * the SILHOUETTE, one dark line (the xp bar's own ink) with its top
+//   * the SILHOUETTE, one dark line (the bars' own ink) with its top
 //     corners cut two pixels, so the plate sits on the snow as a shape and
 //     not a rectangle - the bottom corners stay square where they meet the
 //     screen's edge, since a notch of world there reads as a hole;
 //   * the EDGE, one faint line just inside it, following the same cuts;
 //   * the GROUND inside that, one opaque colour.
-// `tab` is a block rising off the top edge and flush with the right side
-// (the pouch block's): outline and edge step up around it as ONE
-// silhouette and the ground runs through the seam. `ink` and `lit` are what
-// a widget's state colours (the pack's full amber, a refusal's red): `lit`
-// repaints the edge. Every margin inside the outline is three pixels -
+// `ink` and `lit` are what a widget's state colours (the pack's full amber,
+// a refusal's red): `lit` repaints the edge. Every margin inside the outline is three pixels -
 // line, edge, ground - which is what AB_PAD and BAG_PAD are.
 const HUD_INK = '#07080a';   // the silhouette
 const HUD_EDGE = '#2f3238';  // the faint line inside it: one step off the ground, apart from the pack's amber and red states
@@ -99,19 +85,13 @@ function chamCut(x, y, w, h, c) {
 function drawHudFrame(x, y, w, h, o) {
   o = o || {};
   const c = o.corners || { tl: true, tr: true, bl: false, br: false };
-  const t = o.tab || null, tc = { tl: true, tr: true, bl: false, br: false };
-  // outline, edge, ground, each laid over the last one pixel in; the tab's
-  // edge stops on the plate's own top edge and its ground runs down INTO
-  // the plate's, so the seam between the two is ground, never line
+  // outline, edge, ground, each laid over the last one pixel in
   ctx.fillStyle = o.ink || HUD_INK;
   chamCut(x, y, w, h, c);
-  if (t) chamCut(t.x, t.y, t.w, y - t.y + 3, tc);
   ctx.fillStyle = o.lit || HUD_EDGE;
   chamCut(x + 1, y + 1, w - 2, h - 2, c);
-  if (t) chamCut(t.x + 1, t.y + 1, t.w - 2, y - t.y + 1, tc);
   ctx.fillStyle = o.bg || AB_BG;
   chamCut(x + 2, y + 2, w - 4, h - 4, c);
-  if (t) chamCut(t.x + 2, t.y + 2, t.w - 4, y - t.y + 2, tc);
 }
 // The weapon well's half of the refusal the backpack already has: a bit that
 // will not fit in the tool reddens and shakes the WELL, exactly as one that
@@ -127,10 +107,10 @@ function toolDenied() {
 function hudStripRect() {
   return { x: Math.round((VIEW_W - AB_W) / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
 }
-// How far the strip drops to be AWAY: its own height plus the pouch block's
-// tab standing over it, so the whole widget clears the bottom edge rather
-// than leaving a sliver of tab over a cinematic.
-const HUD_SLIDE = AB_H + POUCH_RISE + 5; // ...and its outline over it
+// How far the strip drops to be AWAY: its own height plus the xp numbers
+// standing over the portrait, so the whole widget clears the bottom edge
+// rather than leaving a sliver of numbers over a cinematic.
+const HUD_SLIDE = AB_H + XP_TAG + 5; // ...and their outline
 // How far the HUD has slid in: 0 while it is away below the screen, 1 once it
 // is home. The intro rides it up (renderUI) - and a ceremony PINS it there,
 // because the drop brief's camera branch holds state.intro for the whole
@@ -187,36 +167,35 @@ function stripMouse(mx, my) {
   if (s === 1) return { x: mx, y: my };
   return { x: VIEW_W / 2 + (mx - VIEW_W / 2) / s, y: VIEW_H + (my - VIEW_H) / s };
 }
-// well j of the four, left to right, over the xp bar
+// well j, left to right after the portrait: 0-3 the abilities, then the meals
 function stripCellRect(j) {
   const R = hudStripRect();
-  return { x: R.x + j * (AB_CELL + AB_GAP), y: R.y + AB_PAD, w: AB_CELL, h: AB_CELL };
+  const x = R.x + PORT_SQ + PORT_GAP + j * (AB_CELL + AB_GAP) + (j >= AB_N ? FOOD_GAP - AB_GAP : 0);
+  return { x, y: R.y + AB_PAD, w: AB_CELL, h: AB_CELL };
 }
-// ability i's well: keys 1-4, in order from the strip's left end
+// ability i's well: keys 1-4, in order after the portrait
 function abCellRect(i) { return stripCellRect(i); }
-// pouch cell (col, row) of the 2x2 block: col 0 the meals, col 1 gold and cards
-function pouchCellRect(col, row) {
+// the portrait square, the plate's full inner height at its left end
+function portraitRect() {
   const R = hudStripRect();
-  return { x: R.x + AB_W - POUCH_W + col * (FOOD_SQ + POUCH_GAP),
-    y: R.y + AB_PAD + AB_CELL - POUCH_H + row * (FOOD_SQ + POUCH_GAP), w: FOOD_SQ, h: FOOD_SQ };
+  return { x: R.x, y: R.y + AB_PAD, w: PORT_SQ, h: PORT_SQ };
 }
-// the tab the block stands on: the strip's plate carried up behind the two
-// rows, a rim's width around them, down to the strip's own top edge
-function pouchTabRect() {
-  const R = hudStripRect(), b = pouchCellRect(0, 0);
-  return { x: b.x - 3, y: b.y - 3, w: POUCH_W + 6, h: R.y - b.y + 3 };
-}
-// the three BUTTONS of the block, in stripHit's 'food' order: the berry (0)
-// over the fish (1) on the left, the cards (2) bottom-right; the gold plate
-// top-right is a readout and answers 'frame'. Each carries the action whose
-// key its cap prints and the input intent its press sets.
+// the health bar's and the stamina bar's insides, under the ability wells
+function hpBarRect() { const r = abCellRect(0); return { x: r.x + 1, y: r.y + BAR_TOP + 1, w: AB_ROW_W - 2, h: HP_H }; }
+function stBarRect() { const r = abCellRect(0); return { x: r.x + 1, y: r.y + ST_TOP + 1, w: AB_ROW_W - 2, h: ST_H }; }
+// the two meal BUTTONS, in stripHit's 'food' order: the berry (0), the fish
+// (1). Each carries the action whose key its corner prints and the input
+// intent its press sets.
 const FOOD_BTNS = [
-  { type: 'berry', act: 'berry', intent: 'eatBerry', col: 0, row: 0 },
-  { type: 'fish', act: 'fish', intent: 'eatFish', col: 0, row: 1 },
-  { type: 'card', act: 'card', intent: 'useCard', col: 1, row: 1 },
+  { type: 'berry', act: 'berry', intent: 'eatBerry' },
+  { type: 'fish', act: 'fish', intent: 'eatFish' },
 ];
-function foodCellRect(i) { const b = FOOD_BTNS[i]; return pouchCellRect(b.col, b.row); }
-function goldCellRect() { return pouchCellRect(1, 0); }
+function foodCellRect(i) { return stripCellRect(AB_N + i); }
+// the purse: a readout well under the meals, level with the two bars
+function goldCellRect() {
+  const r = foodCellRect(0);
+  return { x: r.x, y: r.y + BAR_TOP, w: FOOD_W, h: ST_TOP + ST_H + 2 - BAR_TOP };
+}
 // The meal buttons' share of that refusal: a press that could not become a
 // meal - nothing in the bag, the clock still up, full health, a busy body -
 // reddens and shakes the button that was asked, in the red the well and the
@@ -227,7 +206,7 @@ function goldCellRect() { return pouchCellRect(1, 0); }
 // updateFx ages it on wall time beside bagFlash and toolFlash.
 let foodFlash = 0, foodFlashI = 0;
 function foodDenied(type) {
-  const i = type === 'fish' ? 1 : type === 'card' ? 2 : 0;
+  const i = type === 'fish' ? 1 : 0;
   if (foodFlash > 0 && foodFlashI === i) return;
   foodFlash = 0.6;
   foodFlashI = i;
@@ -275,7 +254,7 @@ function abBuyHit(mx, my) {
   }
   return -1;
 }
-// { kind:'ab', i } | { kind:'food', i } | { kind:'frame' }
+// { kind:'ab', i } | { kind:'food', i } | { kind:'port' } | { kind:'frame' }
 // | null. Shared by the click handler, the cursor and the strip's own hover
 // so they cannot disagree.
 function stripHit(mx, my) {
@@ -283,10 +262,7 @@ function stripHit(mx, my) {
       state.mapOpen || state.settingsOpen || state.wheel || window.DBG.hideUI) return null;
   ({ x: mx, y: my } = stripMouse(mx, my));
   const R = hudStripRect();
-  // the pouch block's tab stands above the plate: inside it counts as on the strip
-  const tb = pouchTabRect();
-  const onTab = mx >= tb.x && mx < tb.x + tb.w && my >= tb.y && my < tb.y + tb.h;
-  if (!onTab && (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h)) return null;
+  if (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h) return null;
   for (let i = 0; i < AB_N; i++) {
     const s = abCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'ab', i };
@@ -295,6 +271,8 @@ function stripHit(mx, my) {
     const s = foodCellRect(i);
     if (mx >= s.x && mx < s.x + s.w && my >= s.y - 1 && my < s.y + s.h) return { kind: 'food', i };
   }
+  const pr = portraitRect();
+  if (mx >= pr.x && mx < pr.x + pr.w && my >= pr.y && my < pr.y + pr.h) return { kind: 'port' };
   return { kind: 'frame' };
 }
 
@@ -627,7 +605,7 @@ function hudPress(mx, my) {
   const sh = stripHit(mx, my);
   if (sh) {
     if (sh.kind === 'ab') { if (msOn()) msWell(sh.i); else player.input.ability = sh.i; } // click-to-cast: the well IS the key (under MOUSE it readies - msWell)
-    else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat / useCard)
+    else if (sh.kind === 'food') player.input[FOOD_BTNS[sh.i].intent] = true; // the button IS the key, refusals and all (startEat)
     return true;
   }
   const bh = bagHit(mx, my);

@@ -485,13 +485,12 @@ empty world.
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
-| bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
-| bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
+| bottom centre | the hud strip, flush to the bottom: your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
 | centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
 
 Every widget slides **its own size** away for the landing intro — the minimap up by
 `MM_R * 2 + 40`, the rail up by `RAIL_SLIDE`, the strip down by
-`HUD_SLIDE` (`AB_H` + `POUCH_RISE` + 5), the top-left corner left by `CORNER_REACH` (the widest
+`HUD_SLIDE` (`AB_H` + `XP_TAG` + 5), the top-left corner left by `CORNER_REACH` (the widest
 row a tool can have plus the SHIFT plate off its end) — because a shove that only cleared the
 tool cell would leave a longbow's row parked over the cinematic.
 
@@ -663,8 +662,8 @@ In `play`, in order: the merchant's counter (`shopHit` → `tipShop` — first, 
 its sell well is priced rather than merely described), then a **live drag** (whatever is on the
 cursor describes itself, `tipCell`), the character panel's gear wells (`gearHit`), a rail chip
 (`railHit`), the shelf (`shelfHit`: the tool cell, a loaded bit, or an empty bit cell), a
-floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, a meal or card button,
-the gold plate) and last the drawer (`bagHit`). In `title` it answers the wiki's rows and
+floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, a meal well,
+the purse) and last the drawer (`bagHit`). In `title` it answers the wiki's rows and
 ability cards and the lobby's stage wells; every other mode returns null.
 
 `tipResolve()` runs **once per frame in `render()`, before `renderUI`**, so every draw in the
@@ -681,7 +680,7 @@ The builders, one per kind: `tipTool` (forged damage, rate of fire, bit slots, t
 full draw at that weight and the shots a press puts up, then the loaded bits, and a line when the
 built-in arrow is the shot or the load slows the draw), `tipBit` (damage, weight, speed, lifespan, flight —
 then only the flags that are *true*, because four rows of NO would drown the three that matter),
-`tipStack` (a meal), `tipCards` (the hand, a row per rarity), `tipGold`, `tipRail` (a rail
+`tipStack` (a meal), `tipGold`, `tipRail` (a rail
 chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipGear`, `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed — the in-play cooldown
 and cast-hint rows only appear in play), and `tipKind` (a wiki row), which strips the "what is loaded in it"
@@ -753,18 +752,29 @@ or pressed: a click only opens a tab or pages the rail.
 
 ### The hud strip
 
-`drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — carrying **four 34px wells** —
-`[1][2][3][4]`, the class abilities in key order (`stripCellRect`; `abCellRect(i)` is well `i`;
-the weapon is not on the strip — its one well is [the shelf's tool cell](#the-weapon-shelf)) —
-then, on the right end, the **pouch block** (the 2×2 of squares on its tab, described at the end
-of [the cooldown sweep](#the-cooldown-sweep)) — all over the
-**plum xp bar** along the bottom (lifetime gold, left-to-right, no level number — that lives on
-the overhead badge). The bar has a dark silhouette and a frost rim so it reads against the
-plate, and is **notched into `AB_SEGS` segments** WoW-fashion — a tick cuts dark plum through
-the fill and sits faint on the empty track, so progress through a level is countable either way.
-It sits at the *bottom* so the strip's top edge stays open screen for the ability wells'
-**floating buy plates** (below). The plate swallows clicks so nothing fires through it. Stamina
-is not on the strip: the overhead stamina bar says it.
+`drawHudStrip` is one plate, flush to the bottom — the [hud frame](#the-hud-frame) — read left to
+right the way a MOBA's bottom bar is (0.426): the **portrait**, then **four 34px ability wells**
+`[1][2][3][4]` in key order with the **health bar** and the **stamina bar** under them, then the
+**two meal wells** with the **purse** under them (`stripCellRect(j)`: 0-3 the abilities, 4-5 the
+meals; `abCellRect(i)`, `foodCellRect(i)`, `portraitRect`, `hpBarRect`, `stBarRect`,
+`goldCellRect`). The weapon is not on the strip — its one well is
+[the shelf's tool cell](#the-weapon-shelf) — and nor are unopened cards (they open the moment they
+are held, [gameplay](gameplay.md#roguelike-cards)) or a build well (the build key opens the list).
+The plate swallows clicks so nothing fires through it.
+
+The **portrait** (`drawPortrait`) is a `PORT_SQ` square in the wells' own border (ink, then the
+rim), the hero's standing frame at 3× (`portraitSprite`: the worn body's if one is worn, the
+class body's otherwise) on a dusk ground. Inside the rim a 3 px band is the **xp, filling
+clockwise from top centre round the square** — each band pixel's place along the perimeter
+decides it, so the corners turn at the sides' pace — then one px of ink seals the face apart from
+it. The xp you have of this level and what it needs stand over the square (`XP_TAG`), and the
+level is the digit in an odd-sized badge on its bottom-right corner (13 px, 17 for two digits, so
+the digits sit on a true centre). At `LEVEL_MAX` the band is full and the numbers go. A level-up
+pops the band and the numbers white (`abLvSeen`/`abLvFlash`). The **health bar** (`drawHpBar`)
+is green, with your health and your most printed on it — green and not your side's colour,
+because this one bar is always yours and the overhead bars keep the sides. The **stamina bar**
+(`drawStBar`) is the dodge charges, read as the overhead one is (`STAM_COL`, the spent chunk
+draining as `STAM_GHOST`), notched between charges: the seat a mana bar takes when heroes come.
 
 An **ability well** (`drawClassAbCell`) is the same grammar pointed at `CLASS_AB[p.cls][i]`: its
 detailed 32px icon (`classAbIcon`, baked from `AB32` in js/abilities.js) is the ability, a
@@ -836,37 +846,20 @@ draws the hand itself, centre to rim, as a 1px bright line; pass `null` instead 
 turns the veil alone. The pips and the key digit are
 drawn **after** it: the wait is what the veil is for, and what you own is never dimmed by it.
 
-The **pouch block** is the strip's right end: a 2×2 of `FOOD_SQ` (24 px) **squares**
-(`pouchCellRect(col, row)`) —
-**berry** over **fish** on the left, **gold** over **cards** on the right — standing on a tab of
-the strip's own plate (`pouchTabRect`: rimmed on top and sides, open onto the strip) whose
-bottom row is flush with the wells and whose top rises `POUCH_RISE` (13) px above the strip's
-edge, so the block is a small panel on the strip's end rather than four bars squeezed into one
-well. Every square is drawn by `drawPouchCell` in the ability wells' own grammar at two thirds
-the size: the item icon **doubled** in the middle (the card fan is baked at 16 px and draws at
-1×, so all four carry art of one size), the key cap in the **bottom-left** corner, where an
-ability well prints its key (the keybind-indicator carve-out, wearing the pad's own glyph while
-one is in hand; the gold has none), and the count in the **top-right** corner — `shortNum`,
-because the pouch has no ceiling, and a four-character count covers the icon's corner rather
-than moving it — so keys read along the strip's bottom edge and numbers along its top.
-
-Three of the four are **buttons** (`FOOD_BTNS`: berry, fish, cards, in `stripHit`'s `food`
-order; the tab counts as on the strip for the hit test): hover lights the rim, a press sets the
-same edge-triggered intent the key does (`eatBerry`/`eatFish`/`useCard`), so `startEat` and
-`useCard` speak every refusal and a button can never disagree with its key. A refusal *shows*:
-whatever the reason (none in the pouch, the clock still up, full health, a busy body, nothing
-to draw), the button that was asked takes the well's red band and the pack's 1px shake for
-`foodFlash` seconds — `foodDenied(type)` / `cardDenied()`, aged in `updateFx` beside
-`bagDenied()`/`toolDenied()`. The shared food clock (`drawFoodClock`) sweeps both meal squares
-together and lifts the one being chewed white; the card button has no clock. A kind you have
-none of keeps its seat but dims to 0.35, so the block never rearranges. The **card button**'s
-icon is three of the card icons themselves fanned — a white, a blue and a gold, each a step up
-and over from the last (`cardFanCv`) — and its count is every rarity together; hover raises `tipCards`, one row per
-rarity held in that rarity's ink, which is the only place the hand is read by kind. The **gold
-plate** (`drawGoldCell`, `goldCellRect`) wears the same rim as its three neighbours, so the
-block is one symmetrical thing, but it is a readout, not a button — no key cap, no hover, no
-refusal — which is what marks the one square you cannot press; `stripHit` answers `frame` over
-it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
+The **meal wells** (`drawFoodCell`, `FOOD_BTNS`: berry, fish, in `stripHit`'s `food` order) are
+the ability wells' size and grammar: the item icon **doubled** in the middle, the key at 2× in the
+**bottom-left** corner where an ability prints its key (the keybind-indicator carve-out, wearing
+the pad's own glyph while one is in hand), and the count in the **top-right** — `shortNum`,
+because the pouch has no ceiling. Hover lights the rim, a press sets the same edge-triggered
+intent the key does (`eatBerry`/`eatFish`), so `startEat` speaks every refusal and a well can
+never disagree with its key. A refusal *shows*: whatever the reason (none in the pouch, the clock
+still up, full health, a busy body), the asked well takes the red band and 1px shake for
+`foodFlash` seconds — `foodDenied(type)`, aged in `updateFx` beside `bagDenied()`/`toolDenied()`.
+The shared food clock (`drawFoodClock`) sweeps both together and lifts the one being chewed
+white. A meal you have none of keeps its seat but dims to 0.35, so the pair never rearranges.
+The **purse** under them (`drawGoldCell`, `goldCellRect`) is the coin and the gold, centred, in
+the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
+over it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
 that is money must never read as a count of something carried.
 
 ### The team rail
@@ -917,14 +910,12 @@ drawn the way League's and Dota's HUDs get their contrast, kept simple (4.18): a
 solid dark ground (`o.bg`, `AB_BG` by default). **The palette is neutral graphite** (0.421): the
 cold steel line and the navy grounds it replaced pulled the eye off the game, so the frame is the
 quietest thing on screen and the icons, the sides' colours and the gold carry the contrast. The
-strip, the shelf, the drawer, the rail, the build well, the practice bar and the tooltips share it;
+strip, the shelf, the drawer, the rail, the build list, the practice bar and the tooltips share it;
 the menus, the shop and the minimap are still navy. The outline holds the plate apart from bright
 snow at noon, the faint line finishes its edge against the forest at night, and the ground keeps every
 well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
 both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world
-there reads as a hole; `o.corners`). `o.tab` is a block rising off the top edge and flush with
-the right side — the pouch block's — and the frame draws the two as **one silhouette**: outline
-and edge step up around the tab and the ground runs through the seam. `o.lit`/`o.ink` are what a
+there reads as a hole; `o.corners`). `o.lit`/`o.ink` are what a
 widget's states colour (the drawer's full amber, a refusal's red): `o.lit` repaints the edge.
 Every margin inside the outline is three pixels — line, edge, ground — which is what `AB_PAD` and
 `BAG_PAD` are, so a well sits the same distance from the edge on every side of every widget. The
@@ -955,9 +946,9 @@ and the team rail all scale by this one number, and a bake lands on the device g
 scales with the same dial**: `drawCornerScaled` bakes the shelf and the drawer at 1× (`drawCorner`)
 and blits them about the top-left corner (sized by `CORNER_REACH` and the open drawer), and
 `bagHit` and `shelfHit` map the pointer back through `cornerMouse`. The
-[build list](gameplay.md#base-building)'s well and column are the strip's: its bake grows by
-`buildHeadroom` while the column stands over the well, and `buildTabHit` and `buildListHit` map
-the pointer back through `stripMouse`. While the slider's knob is in hand,
+[build list](gameplay.md#base-building)'s column is the strip's: its bake grows by
+`buildHeadroom` while the column stands over the meal wells, and `buildListHit` maps the pointer
+back through `stripMouse`. While the slider's knob is in hand,
 `renderSettings` draws the strip and the corner live over the slab — the minimap slider's
 preview grammar.
 
@@ -1055,8 +1046,8 @@ The frame (`bagFrameRect()`, flush with the view's left edge `BAG_TAB_AIR` under
 `BAG_W` wide) is **nothing but the inventory grid** (`BAG_CAP` 12 — two rows of
 `BAG_COLS` 6): the tools and bits a build is made of, in the small `BAG_CELL` cells
 ([the hud frame](#the-hud-frame) has the size and the why).
-There is no numbers row — the two meals, the gold and the cards are the
-[strip's pouch block](#the-hud-strip). The tab never moves; its arrow's colour is its only state — gold
+There is no numbers row — the two meals and the gold are the
+[strip's right end](#the-hud-strip). The tab never moves; its arrow's colour is its only state — gold
 under the pointer, **amber** when no cell is free, red on a refusal (`bagDenied()`, aged in
 `updateFx`, which also reddens and shakes the open drawer for `bagFlash` seconds).
 
@@ -1727,8 +1718,8 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over the world while the build list
   is up (`dim` where the ghost cannot stand, and wearing the picked piece as `piece` wherever a
-  press would lay it — `drawBuildCursor` puts its icon under the hotspot; the build well and
-  the list's rows are a **hand**), or over a building of your side's that E manages
+  press would lay it — `drawBuildCursor` puts its icon under the hotspot; the list's rows
+  are a **hand**), or over a building of your side's that E manages
   (`dim` beyond the 60 px reach, except under the CLICK scheme, where the press walks there);
   **reticle** — everywhere else in play.
 - Reticle `mode` (table `RETICLE`): **idle** white cross; **cast** gold ring — the MOUSE scheme's

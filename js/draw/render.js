@@ -1487,7 +1487,7 @@ function cursorInfo() {
   const bh = bagHit(mouse.x, mouse.y);
   if (gearHit(mouse.x, mouse.y) >= 0 || (bh && bh.kind !== 'frame')) return { kind: 'hand' };
   if (bh) return { kind: 'arrow' };
-  if (shelfHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y)) return { kind: 'hand' };
+  if (shelfHit(mouse.x, mouse.y)) return { kind: 'hand' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
   if (sh && (sh.kind === 'ab' || sh.kind === 'food')) return { kind: 'hand' };

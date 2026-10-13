@@ -521,20 +521,22 @@ function startEat(p, type) {
 function eatBerry(p) { startEat(p, 'berry'); }
 function eatFish(p) { startEat(p, 'fish'); }
 
-// DRAWING A CARD. The card key and a click on the strip's card button both
-// arrive here: one unopened card is taken at random from everything the
+// how many unopened cards the pouch holds, all rarities together
+function cardsHeld(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
+// DRAWING A CARD. A card opens itself the moment it is held (updatePlayer,
+// js/sim.js) and the input's useCard intent (the bots' API) arrives here
+// too: one unopened card is taken at random from everything the
 // pouch holds (so a rarer card is exactly as likely as it is common in your
 // hand), one entry of its rarity is picked at random, and the buff lands on
 // the spot - onto p.cards, into the kit, and as a burst in the rarity's
 // colour with the card's name rising out of it. No screen, no choice, no
 // pause: the pick of three was the one thing in the game that asked you to
-// read a menu mid-fight. Refused with nothing to draw (cardDenied, ui.js -
-// the button's own red), like a meal with nothing behind it. A bot draws
-// through resolveCardForBot (js/ai.js) and never comes here.
+// read a menu mid-fight. An intent with nothing to draw is refused
+// (cardDenied, js/ui/hud-draw.js). The built-in brain opens its own first,
+// the lowest rarity it holds (resolveCardForBot, js/ai.js).
 function useCard(p) {
   if (p.dead) { return; }
-  let total = 0;
-  for (const r of CARD_RARITIES) total += bagCount(p, cardKey(r));
+  const total = cardsHeld(p);
   if (total <= 0 || inAir(p)) { if (p === player) cardDenied(); return; }
   let pick = Math.floor(rng() * total), rarity = CARD_RARITIES[0];
   for (const r of CARD_RARITIES) { pick -= bagCount(p, cardKey(r)); if (pick < 0) { rarity = r; break; } }

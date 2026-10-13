@@ -81,8 +81,8 @@ grapple       held (key 3): the hunter's grapple reels only while this is down -
 eatBerry      edge-triggered (Q): STARTS the 1.5s meal, it does not heal on the spot
 eatFish       edge-triggered (F): same, and off the same shared 3s clock
               (startEat, js/core.js - see Food in gameplay.md)
-useCard       edge-triggered (the card key): draw one unopened card at random
-              (useCard, js/core.js)
+useCard       edge-triggered (bots only: a held card opens itself anyway):
+              draw one unopened card at random (useCard, js/core.js)
 ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
               (tryAbility, js/abilities.js - see Classes below)
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
@@ -949,7 +949,7 @@ The ladder:
    bay wherever its 3×2 fits; an upgrade is walked to (60 px reach). It steps off
    a build site first, since a building is solid, and a site it cannot reach (or is wedged on for
    3 s) is left for 15 s. Picking up a dropped card off the ground already falls out of the loot rung
-   (drops are type-agnostic loot); a bot never presses the card key (`input.useCard`) — the
+   (drops are type-agnostic loot); the
    instant one is carried, `resolveCardForBot` (top of every think) makes the same single random
    pick `useCard` makes for a hand, rarest first, minus the burst and the floater. The loot
    itself is put to work between the loot and spend rungs: every 2.5 s `botFitLoadout`
