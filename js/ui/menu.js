@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.438';
+const PATCH_TXT = 'PATCH 0.439';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.439', 'EVERY ANIMAL AND CAMP KEEPS UP WITH THE AVERAGE PLAYER LEVEL: AN UNHURT BEAST TAKES THE NEW LEVEL AS SOON AS THE TABLE GAINS ONE, NOT ONLY WHEN IT RESPAWNS.'],
   ['0.438', 'THE FISH PICKER GROWS OUT OF THE BOTTOM BAR AS ONE PIECE WITH IT, AND THE NAME OF THE FISH UNDER YOUR POINTER STANDS OVER ITS TOP.'],
   ['0.437', 'THE FISH PICKER RISES AS A COLUMN STRAIGHT UP OFF THE FISH WELL, THE ICE FISH NEAREST IT, WITH THE NAME AND HEAL OF THE FISH UNDER YOUR POINTER BESIDE IT.'],
   ['0.436', 'EVERY PART OF THE HUD HAS ITS OWN SIZE SLIDER - WEAPON BAR, TOP BAR, MINIMAP AND BOTTOM BAR - FROM HALF SIZE TO DOUBLE IN 5% STEPS, WITH THE PIXEL-PERFECT SIZES TICKED UNDER EACH TRACK.'],
@@ -1296,6 +1297,7 @@ const PATCH_DIGEST = [
     ['THE DEER RIDE TRAIL TWISTS: A HAIRPIN, A SPRINT AND A HOOK', '0.416'],
     ['A RIDDEN DEER\'S HEALTH IS A TAN ROW UNDER THE RIDER\'S BARS', '0.425'],
     ['BEARS WEAR A BEAR-SIZED FRAME AND START AT LEVEL 6', '0.409'],
+    ['ANIMALS AND CAMPS KEEP UP WITH THE AVERAGE PLAYER LEVEL', '0.439'],
     ['THE BEARS ARE TWICE AS BIG', '0.408'],
     ['A DEER\'S RIDER SITS DOWN ON ITS BACK', '0.406'],
     ['THE DEER STANDS TWICE AS TALL', '0.404'],
@@ -3487,7 +3489,7 @@ const WIKI_BEASTS = [
     line: () => 'ONE A DEN, NEVER UNDER LV ' + MONSTER.dire.lv + '. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
-function wikiBeastHp(kind, lv) { return (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (lv - 1); }
+function wikiBeastHp(kind, lv) { return animalHpAt(kind, lv); }
 function wikiBeastGold(kind, lv) { const y = YIELD[kind]; return Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * (lv - 1))); }
 
 // the arsenal tables: one column set per kind of thing, each column a label,
@@ -3755,7 +3757,7 @@ function drawWikiBeast(bs, cx, baseY, level, now) {
   ctx.drawImage(spr, px, py0);
   // full, chunked the way the world chunks it, at the least level it spawns
   // at; a camp monster's leash part-filled, since bare track says nothing
-  const lv = Math.max(level, (MONSTER[bs.kind] && MONSTER[bs.kind].lv) || 1), hp = wikiBeastHp(bs.kind, lv);
+  const lv = animalLevelOf(bs.kind), hp = wikiBeastHp(bs.kind, lv);
   drawBeastFrame(bs.kind, cx, cx, py0 + (spr.crown || 0), { hp, maxHp: hp, level: lv, senseT: 1 }, isCampKind(bs.kind) ? 0.6 : 1);
 }
 // a label tied to a point on the figure by a thin leader

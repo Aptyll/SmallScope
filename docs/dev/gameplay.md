@@ -1561,11 +1561,13 @@ screen at zoom 1) of, so nothing is ever seen to appear. The three wolf kinds
 and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, are dormant: nothing spawns one.)
 
 **Every animal wears a level** (`a.level`), the hero's plate on the left of its frame
-([rendering.md](rendering.md#overhead-health-bars)), dealt once by `makeAnimal` from
-`animalLevel()` — the **average hero level of the active players**, rounded, capped at
-`LEVEL_MAX`, and never under a camp monster's `MONSTER.lv` (a bear's `BEAR_LV`, 6) — and never raised after: an animal does not level, the meadow does, as the ones
-the eagle dropped you into (all level 1) are shot and restocked at whatever the table has
-reached. What grows with it is hp, `ANIMAL_LV_HP` a level over `ANIMAL_HP` (rabbit +1, deer
+([rendering.md](rendering.md#overhead-health-bars)): `animalLevelOf(kind)`, which is
+`animalLevel()` — the **average hero level of the active players** (bots included), rounded, capped at
+`LEVEL_MAX` — never under a camp monster's `MONSTER.lv` (a bear's `BEAR_LV`, 6). `makeAnimal` deals
+it at spawn and `relevelAnimal` (every tick in `updateAnimal`) keeps it on the table's average
+after, but only while the body is at full hp and hunts nobody: never mid-fight, so a blow never
+meets more hp than the last one did. A relevel resets hp to the new full. So the bear that sat out
+the early game is as tough as the table when someone finally pulls it. What grows with it is hp, `ANIMAL_LV_HP` a level over `ANIMAL_HP` (rabbit +1, deer
 +2; a level-6 pack is 45 hp a wolf), and a camp monster's bite (`MONSTER.lvBite`) — the wolves' numbers are in
 [their table](#camp-monsters-neutral-until-hit).
 **The kill pays for it**: `animalDies` grows the `YIELD` payout by `ANIMAL_LV_GOLD` (a tenth)

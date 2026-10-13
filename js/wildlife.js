@@ -10,12 +10,15 @@
 // rookery went with the landmarks, and nothing spawns one; the kind's code
 // stays for a camp that wants a flock - checklists.md, Known drift.)
 const ANIMAL_HP = { rabbit: 8, deer: 24, wolf: 30, alpha: 640, dire: 640, bird: 3 };
-// Every animal wears a hero-style level, dealt ONCE at spawn (makeAnimal) from
-// the table's average hero level (animalLevel) and never raised after: what
-// grows with it is hp, ANIMAL_LV_HP a level over ANIMAL_HP, and a monster's
-// bite (MONSTER.lvBite, above the camp monsters banner) - so the number on a body is what it costs
-// to take, the way a hero's is, and a meadow restocked late in a match is a
-// harder one than the one the eagle dropped you into. The kill pays for it:
+// Every animal wears a hero-style level: the table's average hero level
+// (animalLevel), never under a camp monster's MONSTER.lv. It is dealt at
+// spawn (makeAnimal) and follows the table after (relevelAnimal) while the
+// body is unhurt and hunts nobody - never mid-fight, so a blow never lands on
+// more hp than the last one did. What grows with it is hp, ANIMAL_LV_HP a
+// level over ANIMAL_HP, and a monster's bite (MONSTER.lvBite, above the camp
+// monsters banner) - so the number on a body is what it costs to take, the
+// way a hero's is, and the bear that sat out the early game is as tough as
+// the table when it is finally pulled. The kill pays for it:
 // ANIMAL_LV_GOLD of the YIELD payout more a level (animalDies), a tenth, so
 // a level-12 beast is worth a little over twice a level-1 one - about what
 // its hp grew by. Gold is XP, so the loop feeds itself, but at a tenth a
@@ -26,6 +29,16 @@ function animalLevel() {
   let n = 0, s = 0;
   for (const p of players) if (p.active) { n++; s += p.level; }
   return n ? Math.max(1, Math.min(LEVEL_MAX, Math.round(s / n))) : 1;
+}
+// the level a kind wears right now, and its full hp at a level
+function animalLevelOf(kind) { return Math.max(animalLevel(), (MONSTER[kind] && MONSTER[kind].lv) || 1); }
+function animalHpAt(kind, level) { return (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (level - 1); }
+// an unhurt body that hunts nobody takes the table's level, and the full hp
+// that comes with it (updateAnimal, every tick)
+function relevelAnimal(a) {
+  if (a.hp < a.maxHp || a.target) return;
+  const level = animalLevelOf(a.kind);
+  if (level !== a.level) { a.level = level; a.hp = a.maxHp = animalHpAt(a.kind, level); }
 }
 // what a hit knocks off a body: its own coat, so a puff says which beast
 // took the blow. Both prey are warm brown since the new sheets landed.
@@ -122,8 +135,7 @@ function stepClip(a, dt, rate) {
 }
 
 function makeAnimal(kind, x, y) {
-  const level = Math.max(animalLevel(), (MONSTER[kind] && MONSTER[kind].lv) || 1);
-  const hp = (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (level - 1);
+  const level = animalLevelOf(kind), hp = animalHpAt(kind, level);
   const a = {
     kind, x, y, hp, maxHp: hp, level,
     senseT: 0,                           // s it has had a player in sight (0: it has not) - the mark over its head (drawAnimal)
@@ -454,6 +466,7 @@ function updateAnimal(a, dt) {
   // must not then take a step (js/actions.js, `status effects`)
   updateUnitStatus(a, dt);
   if (a.hp <= 0 && !a.dead) { animalDies(a); return; }
+  relevelAnimal(a);
   if (a.rider) { rideCarry(a, dt); return; } // carried under its rider, brain off (the `riding` banner)
   if (a.stunT > 0) {
     // seeing stars: no brain for the window, and the route it was walking is
