@@ -95,9 +95,11 @@ const EAGLE_SETTLE_T = 0.6; // seconds of wing-fold after the impact, into the r
 // answer the hit (the two birds, ai.js). At 60 a swing two warriors emptied the
 // nerve in the fifty seconds between two harness marks, before anyone came
 const EAGLE_HP = 2000;
-const PERCH_BAR_W = 63;   // px: the roost's hp bar...
-const PERCH_BAR_H = 5;    // ...its height...
+const PERCH_BAR_W = 95;   // px: the roost's hp bar, the match's win/lose bar...
+const PERCH_BAR_H = 9;    // ...its height, room for the pool's number inside...
 const PERCH_BAR_SEGS = 8; // ...and its blocks: (PERCH_BAR_W + 1) must divide by this
+const PERCH_BAR_RIM = 2;  // its ink frame, twice a body's
+const PERCH_LAG_HOLD = 0.35, PERCH_LAG_RATE = 900; // s a hit's lost chunk holds pale, then hp/s it drains at
 const EAGLE_WORK_DMG = 20;  // what one rival E swing chips off the roosting bird
 const EAGLE_ARROW_DMG = 12; // what one rival arrow chips, whatever it would do to a body
 const EAGLE_TILE_R = 1.6;   // tiles around the roost marked solid - the hitbox arrows AND walkers test
@@ -1063,6 +1065,40 @@ function warmWarBird(e, id) {
   if ((e.state === 'dive' || e.state === 'down') && !SPRITES.perchRest.has(id)) for (let fi = 0; fi < 3; fi++) WB.warm(id, t, e.state === 'dive' ? e.diveH0 + e.diveTurn : e.heading, fi, WB.REST);
 }
 
+// the roosting bird's pool: the match is won and lost on it, so it is the
+// biggest bar in the world. Even segments like every hp bar but big and few
+// (PERCH_BAR_SEGS, not hpSegCount, which would split EAGLE_HP into a comb of
+// 2 px blocks), a heavy ink frame, the chunk a hit just took holding pale
+// before it drains (render-side: perchLag eases toward e.hp), the pool's
+// number inside, and the PERCH nameplate over it in the same paint (the
+// driver wears MERCH: the side's two named bodies, named the same way).
+// `bottom` is the world row just above the bird.
+const perchLag = new WeakMap();
+function drawPerchBar(e, sx, bottom, now) {
+  const L = perchLag.get(e) || { v: e.hp, t: now, last: now };
+  if (e.hp > L.v) L.v = e.hp;                                  // healed or a new pool: no ghost
+  else if (e.hp < L.v && now - L.t > PERCH_LAG_HOLD) L.v = Math.max(e.hp, L.v - PERCH_LAG_RATE * Math.max(0, now - L.last));
+  if (e.hp < L.hp0) L.t = now;                                 // a fresh hit restarts the hold
+  L.hp0 = e.hp; L.last = now;
+  perchLag.set(e, L);
+  const T = TEAMS[skin(e.team)], bw = PERCH_BAR_W, bh = PERCH_BAR_H, r = PERCH_BAR_RIM;
+  const bx = Math.round(sx - bw / 2), by = bottom - r - bh;
+  const fill = (v) => Math.round(bw * Math.max(0, v) / e.maxHp);
+  overheadPlate(() => { // over the grade, like every frame (js/draw/light.js)
+    ctx.fillStyle = BAR_FRAME; ctx.fillRect(bx - r, by - r, bw + 2 * r, bh + 2 * r);
+    ctx.fillStyle = BAR_TRACK; ctx.fillRect(bx, by, bw, bh);
+    ctx.fillStyle = '#f4f7ff'; ctx.fillRect(bx, by, fill(L.v), bh);   // the chunk a hit just took, pale
+    ctx.fillStyle = T.mark; ctx.fillRect(bx, by, fill(e.hp), bh);
+    ctx.fillStyle = T.coatD; ctx.fillRect(bx, by + bh - 2, fill(e.hp), 2);  // its lower rows a step darker: weight, not a bevel
+    const seg = (bw + 1) / PERCH_BAR_SEGS;
+    ctx.fillStyle = HP_TICK;
+    for (let k = 1; k < PERCH_BAR_SEGS; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
+    const txt = String(Math.max(0, Math.ceil(e.hp))); // the pool's number, 1x outlined, centred in the bar
+    drawWorldText(txt, centreTextX(sx, txt, 1), by + 2, '#f4f7ff', 1);
+    drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - r - 13, T.mark, 2); // at twice a player's size, two clear rows over the frame
+  });
+}
+
 // one bird in its team's armour, whatever its state. In the air the sprite
 // sits at (x, y) with the shadow `alt` px below it; the dive walks that gap
 // to zero so shadow and bird meet exactly at the crash point. A war eagle
@@ -1226,17 +1262,7 @@ function drawEagle(e, ex, ey, now) {
       // objective's bar reads from across the clearing, so PERCH_BAR_SEGS
       // is set here rather than asked of hpSegCount (which would split
       // EAGLE_HP into a comb of 2 px blocks)
-      const bw = PERCH_BAR_W, bh = PERCH_BAR_H, bx = Math.round(sx - bw / 2), by = sy - Math.round(vh) - 5 - bh;
-      overheadPlate(() => { // over the grade, like every frame (js/draw/light.js)
-        ctx.fillStyle = BAR_FRAME; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
-        ctx.fillStyle = BAR_TRACK; ctx.fillRect(bx, by, bw, bh);
-        ctx.fillStyle = TEAMS[skin(e.team)].mark;
-        ctx.fillRect(bx, by, Math.round(bw * Math.max(0, e.hp) / e.maxHp), bh);
-        const segs = PERCH_BAR_SEGS, seg = (bw + 1) / segs;
-        ctx.fillStyle = HP_TICK;
-        for (let k = 1; k < segs; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
-        drawWorldText('PERCH', centreTextX(sx, 'PERCH', 2), by - 15, TEAMS[skin(e.team)].mark, 2); // at twice a player's size, two clear rows over the frame
-      });
+      drawPerchBar(e, sx, sy - Math.round(vh) - 6, now);
     }
   }
   // the impact shockwave: two rings racing out over the crater, then gone -
