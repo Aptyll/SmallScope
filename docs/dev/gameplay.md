@@ -2114,6 +2114,14 @@ base, the drift, then the lurch. `price` is a float and the walk runs on it; wha
 is `marketPrice()`, the rounded coin, so the graph can wander between two whole numbers without
 the counter's price flickering.
 
+**Every fish trades on the fish market.** The ice fish is the `GOODS` row; the creek's whitefish
+and snow char (every kind in `FISH_KINDS`) ride its walk, each at the live fish price scaled by
+its heal against the ice fish's (`goodOf`, `goodScale`): a whitefish (+40) is 0.8 of a fish, a snow
+char (+70) 1.4. So a new fish is priced the moment it has a `heal`, and the three rise and fall
+together. The fish card shows one fish at a time: a tab per fish along its top picks which one its
+price, graph labels and trade plates are for (`shopFish`, this screen's own choice, not match
+state; the trade order still names its fish).
+
 **Both goods trade at one price in both directions** — no spread at all, the one place the
 half-price rule does not apply. A spread would kill the only thing the market is *for* (buy low,
 hold, sell high), and there is nothing to protect: the price does the taking by itself.

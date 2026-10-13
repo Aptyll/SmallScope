@@ -59,11 +59,20 @@ const MKT_ORDER = ['fish', 'berry']; // the order the counter lists them in: the
 // highlight left on a row that just made one.
 const market = { t: 0, goods: {}, stockT: 0, stock: null, n: 0 };
 
-function marketPrice(id) { return Math.max(1, Math.round(market.goods[id].price)); }
-// the goods array a good's graph is drawn from, oldest first
-function marketHist(id) { return market.goods[id].hist; }
+// EVERY FISH trades on the one fish market. Each kind in FISH_KINDS (the
+// creek's whitefish and snow char beside the ice fish, js/player.js) is
+// priced off the ice fish's live price, scaled by what it heals against what
+// the ice fish heals - so a new fish is priced the moment it has a `heal`,
+// and the three move together on one graph.
+function goodOf(type) { return Object.hasOwn(GOODS, type) ? type : FISH_KINDS.includes(type) ? 'fish' : null; }
+function goodScale(type) { const g = goodOf(type); return g === type ? 1 : ITEMS[type].heal / ITEMS[g].heal; }
+function goodName(type) { return ITEMS[type].name || GOODS[type].name; } // a fish by its own name, the market's by its
+function marketPrice(id) { return Math.max(1, Math.round(market.goods[goodOf(id)].price * goodScale(id))); }
+// the goods array a good's graph is drawn from, oldest first (a fish's is
+// its market's, in the ice fish's coin)
+function marketHist(id) { return market.goods[goodOf(id)].hist; }
 // is this a traded good rather than a made thing?
-function isGood(type) { return !!GOODS[type]; }
+function isGood(type) { return !!goodOf(type); }
 
 // one step of the walk: the pull home, the ordinary drift, then the shock
 function marketWalk(id) {
@@ -939,6 +948,10 @@ const SHOP_SEC_HEAD = 8;                                // its name, and the rul
 const SHOP_SEC_H = SHOP_SEC_HEAD + SHOP_WELL_H + SHOP_BAND;
 const SHOP_CARD_W = 157, SHOP_CARD_H = 46;              // one market card
 const SHOP_GRAPH_H = 22;
+const SHOP_FISH_TAB = 18;  // a fish's tab on the fish card, wide enough for the longest fish icon
+// which fish the fish card is showing: this screen's own choice of what to
+// look at (a trade still names its fish in the order), so not match state
+let shopFish = 'fish';
 const SHOP_SELL_H = 16;    // the sell strip along the counter's edge...
 const SHOP_ALL_W = 82;     // ...the SELL ALL button at its right end, and the
 const SHOP_ALL_GAP = 4;    //    air between the two halves
@@ -1053,8 +1066,10 @@ function shopLayout() {
   const mkY = y + SHOP_HEAD + 6 + SHOP_SEC_H * 2 + 3 + 3; // under the second row of sections
   const cards = [];
   for (let i = 0; i < MKT_ORDER.length; i++) {
-    const kx = cx + i * (cw - SHOP_CARD_W), ky = mkY + 8;
-    cards.push({ id: MKT_ORDER[i], x: kx, y: ky, w: SHOP_CARD_W, h: SHOP_CARD_H,
+    const kx = cx + i * (cw - SHOP_CARD_W), ky = mkY + 8, m = MKT_ORDER[i];
+    // the fish card trades whichever fish its tabs are on (shopFish)
+    const kinds = m === 'fish' ? FISH_KINDS.map((k, j) => ({ id: k, x: kx + 2 + j * (SHOP_FISH_TAB + 1), y: ky + 1, w: SHOP_FISH_TAB, h: 10 })) : null;
+    cards.push({ id: kinds ? shopFish : m, kinds, x: kx, y: ky, w: SHOP_CARD_W, h: SHOP_CARD_H,
       graph: { x: kx + 3, y: ky + 11, w: SHOP_CARD_W - 6, h: SHOP_GRAPH_H },
       buy: { x: kx + 3, y: ky + 34, w: 73, h: 11 },
       sell: { x: kx + 81, y: ky + 34, w: 73, h: 11 } });
@@ -1085,7 +1100,7 @@ function shopLayout() {
 }
 
 // 'x' | 'panel' | { kind:'buy', sec, i } | { kind:'sell' } | { kind:'sellAll' } |
-// { kind:'trade', id, dir } | { kind:'good', id } | { kind:'tab', tab } | the
+// { kind:'trade', id, dir } | { kind:'good', id } | { kind:'fishTab', id } | { kind:'tab', tab } | the
 // FORGE face's own (forgeHit, js/ui/forge.js) | null.
 // Shared by the click, the cursor and the tooltip, so the three can never
 // disagree about what the pointer is on.
@@ -1104,6 +1119,7 @@ function shopHit(mx, my) {
   if (hitR(L.all, mx, my)) return { kind: 'sellAll' };
   if (hitR(L.well, mx, my)) return { kind: 'sell' };
   for (const c of L.cards) {
+    if (c.kinds) for (const t of c.kinds) if (hitR(t, mx, my)) return { kind: 'fishTab', id: t.id };
     if (hitR(c.buy, mx, my)) return { kind: 'trade', id: c.id, dir: 1 };
     if (hitR(c.sell, mx, my)) return { kind: 'trade', id: c.id, dir: -1 };
     if (hitR(c, mx, my)) return { kind: 'good', id: c.id };
@@ -1118,6 +1134,7 @@ function shopClick(h) {
   if (h === 'x') { closeShop(); return true; }
   if (h.kind === 'tab' || forgeKind(h)) { forgeClick(h); return true; }
   if (h.kind === 'buy') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'buy', sec: h.sec, i: h.i }; return true; }
+  if (h.kind === 'fishTab') { shopFish = h.id; return true; }
   if (h.kind === 'trade') { SFX.unlock(); player.input.cmd = { kind: 'shop', act: 'trade', good: h.id, dir: h.dir }; return true; }
   // SELL ALL goes through input.cmd like the buys rather than resolving on the
   // spot the way a drop does: nothing is on the cursor, so there is nothing a
@@ -1726,7 +1743,7 @@ function drawTradeArrow(x, y, dir, col) {
 // Nothing here says "buy" or "sell" in words - the coin on the left of an
 // arrow is money going out, the coin on the right is money coming in.
 function drawMarketCard(c, h, now) {
-  const g = GOODS[c.id], r = market.goods[c.id];
+  const r = market.goods[goodOf(c.id)];
   const col = RES_COLORS[c.id];
   const price = marketPrice(c.id);
   const hist = r.hist;
@@ -1740,9 +1757,21 @@ function drawMarketCard(c, h, now) {
   ctx.fillStyle = '#0d1229';
   ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
 
-  // name on the left, price on the right in the direction of the last move
-  ctx.drawImage(SPRITES[ITEMS[c.id].icon], c.x + 4, c.y + 2);
-  drawPixelTextShadow(ctx, g.name, c.x + 15, c.y + 3, '#9fb6d8', SHOP_BG);
+  // name on the left, price on the right in the direction of the last move.
+  // The fish card leads with a tab per fish: the one shown lit and underlined
+  // in its own colour, the rest dim until pointed at.
+  let nx = c.x + 15;
+  if (c.kinds) {
+    for (const t of c.kinds) {
+      const img = SPRITES[ITEMS[t.id].icon], on = t.id === c.id;
+      ctx.globalAlpha = on ? 1 : h && h.kind === 'fishTab' && h.id === t.id ? 0.8 : 0.35;
+      ctx.drawImage(img, t.x + ((t.w - img.width) >> 1), t.y + ((t.h - 1 - img.height) >> 1));
+      ctx.globalAlpha = 1;
+      if (on) { ctx.fillStyle = RES_COLORS[t.id]; ctx.fillRect(t.x + 2, t.y + t.h - 1, t.w - 4, 1); }
+    }
+    nx = c.kinds[c.kinds.length - 1].x + SHOP_FISH_TAB + 3;
+  } else ctx.drawImage(SPRITES[ITEMS[c.id].icon], c.x + 4, c.y + 2);
+  drawPixelTextShadow(ctx, goodName(c.id), nx, c.y + 3, '#9fb6d8', SHOP_BG);
   const pt = String(price);
   const pw = pixelTextWidth(pt, 2);
   // no shadow on the 2x price: at that scale the shadow is 2 px deep and the
@@ -1792,17 +1821,14 @@ function drawTradePlate(r, dir, id, on, hot, now, dear) {
   ctx.fillStyle = dear ? SHOP_DEAR_BAND : on ? '#141c3c' : '#0c1128';
   ctx.fillRect(r.x + 1, y + 1, r.w - 2, r.h - 2);
   const item = SPRITES[ITEMS[id].icon], coin = SPRITES.itemGold;
-  const x0 = r.x + ((r.w - 29) >> 1), iy = y + 2;
+  // left icon, 5 of air, the 3-wide arrow, 5 of air, right icon - laid out on
+  // the icons' own widths, since a fish can be twice a coin's
+  const [a, b] = dir > 0 ? [coin, item] : [item, coin];
+  const x0 = r.x + ((r.w - (a.width + 13 + b.width)) >> 1), iy = y + 2;
   ctx.globalAlpha = on ? 1 : 0.4;
-  if (dir > 0) {
-    ctx.drawImage(coin, x0, iy);
-    drawTradeArrow(x0 + 13, iy + 4, 1, on ? '#f4f7ff' : '#4a5a8c');
-    ctx.drawImage(item, x0 + 21, iy);
-  } else {
-    ctx.drawImage(item, x0, iy);
-    drawTradeArrow(x0 + 13, iy + 4, 1, on ? '#f4f7ff' : '#4a5a8c');
-    ctx.drawImage(coin, x0 + 21, iy);
-  }
+  ctx.drawImage(a, x0, iy + ((8 - a.height) >> 1));
+  drawTradeArrow(x0 + a.width + 5, iy + 4, 1, on ? '#f4f7ff' : '#4a5a8c');
+  ctx.drawImage(b, x0 + a.width + 13, iy + ((8 - b.height) >> 1));
   ctx.globalAlpha = 1;
 }
 
@@ -1811,7 +1837,7 @@ function drawTradePlate(r, dir, id, on, hot, now, dear) {
 // three days READ as three days, and the range printed small at the ends -
 // a chart with no scale is a squiggle.
 function drawMarketGraph(r, id, col) {
-  const hist = market.goods[id].hist;
+  const hist = marketHist(id), k = goodScale(id); // a fish's line is its market's: only the labels scale
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = '#151b3a';
@@ -1855,8 +1881,8 @@ function drawMarketGraph(r, id, col) {
   ctx.fillRect(lx - 1, ly - 1, 3, 3);
   ctx.fillStyle = col;
   ctx.fillRect(lx, ly, 1, 1);
-  drawPixelTextShadow(ctx, String(Math.round(hi)), r.x + 2, r.y + 2, '#5a6a99', BAG_WELL);
-  drawPixelTextShadow(ctx, String(Math.round(lo)), r.x + 2, r.y + r.h - 8, '#5a6a99', BAG_WELL);
+  drawPixelTextShadow(ctx, String(Math.round(hi * k)), r.x + 2, r.y + 2, '#5a6a99', BAG_WELL);
+  drawPixelTextShadow(ctx, String(Math.round(lo * k)), r.x + 2, r.y + r.h - 8, '#5a6a99', BAG_WELL);
 }
 
 // ---- tooltips ------------------------------------------------------------
@@ -1908,15 +1934,16 @@ function tipShop(h) {
     d.notes.push(['THE WEAPON AND THE POUCH STAY', TIP_DIM]);
     return d;
   }
+  if (h.kind === 'fishTab') return null; // the tab IS the fish; the card says the rest
   const id = h.id;
-  const g = GOODS[id], r = market.goods[id];
+  const r = market.goods[goodOf(id)], k = goodScale(id);
   const price = marketPrice(id);
   let lo = Infinity, hi = -Infinity;
-  for (const v of r.hist) { if (v < lo) lo = v; if (v > hi) hi = v; }
+  for (const v of r.hist) { if (v * k < lo) lo = v * k; if (v * k > hi) hi = v * k; }
   const per = Math.floor(CYCLE / MKT_STEP);
   const back = r.hist.length > per ? r.hist[r.hist.length - 1 - per] : r.hist[0];
   const chg = Math.round((r.price - back) / Math.max(1, back) * 100);
-  const d = { title: g.name, tcol: RES_COLORS[id], kind: 'TRADED GOOD', rows: [], notes: [],
+  const d = { title: goodName(id), tcol: RES_COLORS[id], kind: 'TRADED GOOD', rows: [], notes: [],
     icon: SPRITES[ITEMS[id].icon], plate: BAG_WELL, rim: '#35426e' };
   d.rows.push(['PRICE', price + ' GOLD', RES_COLORS.gold]);
   d.rows.push(['A DAY AGO', (chg >= 0 ? '+' : '') + chg + '%', chg >= 0 ? '#8fe08a' : '#e0637a']);
