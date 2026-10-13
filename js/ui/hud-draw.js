@@ -19,16 +19,16 @@ function drawXpBar(now, x, y) {
   const fw = Math.round(Math.max(0, Math.min(1, frac)) * inner);
   // dark silhouette + frost rim: the plate is nearly the old track colour,
   // so without this the bar is a gold smudge with no readable shape
-  ctx.fillStyle = '#05070f';
+  ctx.fillStyle = '#07080a';
   ctx.fillRect(x - 1, y - 1, AB_W + 2, AB_XP + 2);
   ctx.fillStyle = '#5a6a9a';
   ctx.fillRect(x, y, AB_W, 1);
-  ctx.fillStyle = '#1c2448';
+  ctx.fillStyle = '#24272c';
   ctx.fillRect(x, y + AB_XP - 1, AB_W, 1);
-  ctx.fillStyle = '#35426e';
+  ctx.fillStyle = '#3c4048';
   ctx.fillRect(x, y, 1, AB_XP);
   ctx.fillRect(x + AB_W - 1, y, 1, AB_XP);
-  ctx.fillStyle = '#05070f';
+  ctx.fillStyle = '#07080a';
   ctx.fillRect(x + 1, y + 1, inner, AB_XP - 2);
   const gx = x + 1, gy = y + 1, gh = AB_XP - 2;
   if (fw > 0) {
@@ -47,7 +47,7 @@ function drawXpBar(now, x, y) {
   // faint on the empty track, so the bar is countable full or empty
   for (let s = 1; s < AB_SEGS; s++) {
     const tx = gx + Math.round(s * inner / AB_SEGS);
-    ctx.fillStyle = tx < gx + fw ? '#3d1c4d' : '#1c2448';
+    ctx.fillStyle = tx < gx + fw ? '#3d1c4d' : '#24272c';
     ctx.fillRect(tx, gy, 1, gh);
   }
 }
@@ -59,7 +59,7 @@ function drawXpBar(now, x, y) {
 // without a rarity word anywhere on screen. Nothing on it moves.
 function tierPlate(type, lit) {
   const t = itemTier(type);
-  if (t < 0) return { plate: BAG_WELL, rim: lit ? '#8fa0c8' : '#35426e' };
+  if (t < 0) return { plate: BAG_WELL, rim: lit ? '#9ca1aa' : '#3c4048' };
   const T = TOOL_TIERS[t];
   return { plate: T.plate, rim: lit ? T.ink : T.rim };
 }
@@ -132,7 +132,7 @@ function drawItemIcon(type, r, y, g, k) {
 // well actually on cooldown is walked at all.
 // The veil is NOT the near-black cover the old top-down wipes used
 // (rgba(8,12,30,0.82), gone with the last of them): the well's ground is
-// #080b1c and half of every 32px icon is nearly as dark, so a darker-still
+// #0e0f12 and half of every 32px icon is nearly as dark, so a darker-still
 // wash over it changes nothing you can see and the sweep would be a bare line
 // turning over a well that never dims. A translucent SLATE reads on both
 // halves at once - it drags the lit pixels of an icon down and lifts its dark
@@ -140,7 +140,7 @@ function drawItemIcon(type, r, y, g, k) {
 // than merely a darker one, which is the thing League's grey veil is actually
 // doing.
 const CD_SWEEP = 'rgba(40,50,86,0.74)';
-const CD_EDGE = '#9fb6d8'; // the hand: the 1px line the veil retreats behind
+const CD_EDGE = '#b4b8bf'; // the hand: the 1px line the veil retreats behind
 function drawSweepCover(x, y, w, h, frac, col, edge) {
   if (frac <= 0) return;
   if (frac >= 1) { ctx.fillStyle = col; ctx.fillRect(x, y, w, h); return; }
@@ -210,13 +210,13 @@ function drawClassAbCell(i, now, on) {
     ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
   }
   const rim = red ? '#c2465a'
-    : lock ? (on ? '#4a5480' : '#232c52')
+    : lock ? (on ? '#555a63' : '#2b2e34')
     : ms.ready === i ? '#ffd95c' // readied under the MOUSE scheme: the next left press casts it
     : casting ? '#f4f7ff'
-    : act > 0 ? (Math.sin(now * 9) > 0 ? ab.acol : '#35426e')
+    : act > 0 ? (Math.sin(now * 9) > 0 ? ab.acol : '#3c4048')
     : now < abReadyFlash[i] ? '#f4f7ff'
-    : on ? '#8fa0c8'
-    : cd > 0 ? '#232c52' : '#35426e';
+    : on ? '#9ca1aa'
+    : cd > 0 ? '#2b2e34' : '#3c4048';
   ctx.fillStyle = rim;
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
@@ -238,13 +238,13 @@ function drawClassAbCell(i, now, on) {
   // whole ladder in one readout. They sit ABOVE the sweep: the wait is what
   // the cover is for, and what you own is never dimmed by it
   for (let k = 0; k < AB_LV_MAX; k++) {
-    ctx.fillStyle = '#0f1632';
+    ctx.fillStyle = '#191b1f';
     ctx.fillRect(r.x + 2 + k * 10, r.y + 2, 9, 5);
-    ctx.fillStyle = k < p.abLv[i] ? '#f2cc6a' : '#2c3560';
+    ctx.fillStyle = k < p.abLv[i] ? '#f2cc6a' : '#33363d';
     ctx.fillRect(r.x + 3 + k * 10, r.y + 3, 7, 3);
   }
   if (act > 0) {
-    ctx.fillStyle = '#0f1632';
+    ctx.fillStyle = '#191b1f';
     ctx.fillRect(r.x + 1, r.y + r.h - 4, r.w - 2, 3);
     ctx.fillStyle = ab.acol;
     ctx.fillRect(r.x + 2, r.y + r.h - 3, Math.max(1, Math.round(act * (r.w - 4))), 1);
@@ -258,7 +258,7 @@ function drawClassAbCell(i, now, on) {
   const abAct = 'ab' + (i + 1), key = keyCapShort(abAct); // the corner prints the key the ability is bound to
   const dimKey = lock || (cd > 0 && !casting && act <= 0);
   if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, abAct, 2, dimKey); // the pad's button, at the number's size
-  else drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#7a8bb8' : '#f4f7ff', '#0f1632', 2);
+  else drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#8c919a' : '#f4f7ff', '#191b1f', 2);
   if (red) ctx.restore();
 }
 // The floating buy plate over ability i - gear's bobbing chevron made a real
@@ -276,7 +276,7 @@ function drawAbBuyPlate(i, now, hot) {
   ctx.fillRect(r.x + 2, y + 2, AB_BUY, AB_BUY);
   ctx.fillStyle = hot ? '#f4f7ff' : Math.sin(now * 6) > 0 ? '#f2cc6a' : '#c9a227';
   ctx.fillRect(r.x, y, AB_BUY, AB_BUY);
-  ctx.fillStyle = '#0f1632';
+  ctx.fillStyle = '#191b1f';
   ctx.fillRect(r.x + 1, y + 1, AB_BUY - 2, AB_BUY - 2);
   ctx.fillStyle = hot ? '#f4f7ff' : '#f2cc6a';
   ctx.fillRect(r.x + 6, y + 3, 2, 8); ctx.fillRect(r.x + 3, y + 6, 8, 2);
@@ -326,7 +326,7 @@ function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
     ctx.fillStyle = '#c2465a';
     ctx.fillRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4);
   }
-  ctx.fillStyle = red ? '#c2465a' : on ? '#8fa0c8' : n > 0 ? '#35426e' : '#232c52';
+  ctx.fillStyle = red ? '#c2465a' : on ? '#9ca1aa' : n > 0 ? '#3c4048' : '#2b2e34';
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
@@ -337,10 +337,10 @@ function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
   if (act) {
     const lab = keyCapShort(act);
     if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 8, act, 1, !live);
-    else drawPixelTextOutline(ctx, lab, r.x + 2, r.y + r.h - 8, live ? '#f4f7ff' : '#7a8bb8', '#0f1632');
+    else drawPixelTextOutline(ctx, lab, r.x + 2, r.y + r.h - 8, live ? '#f4f7ff' : '#8c919a', '#191b1f');
   }
   const t = shortNum(n);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? col : '#7a8bb8', '#0f1632');
+  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? col : '#8c919a', '#191b1f');
   if (red) ctx.restore();
 }
 // a meal button, or the card button: the pouch grammar pointed at a thing
@@ -463,7 +463,7 @@ function drawCornerScaled(now, slideX) {
 // which is how the refusal's red and a hovered fitting's reach are said in
 // one place.
 function shelfWell(r, type, lit, rim) {
-  const tp = type ? tierPlate(type, lit) : { plate: BAG_WELL, rim: lit ? '#8fa0c8' : '#2c3560' };
+  const tp = type ? tierPlate(type, lit) : { plate: BAG_WELL, rim: lit ? '#9ca1aa' : '#33363d' };
   ctx.fillStyle = rim || tp.rim;
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = tp.plate;
@@ -625,7 +625,7 @@ function drawDragGhost(now) {
   ctx.globalAlpha = 1;
   if (d.cell.n > 1) {
     const t = String(d.cell.n);
-    drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + r.h - 7, '#f4f7ff', '#0f1632');
+    drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + r.h - 7, '#f4f7ff', '#191b1f');
   }
   // THE HAND ITSELF, WHEN A SWAP CHANGED WHAT IS IN IT. A trade hands you the
   // ousted item back, which is the one thing a release can do that you did not
@@ -649,7 +649,7 @@ function drawDragGhost(now) {
   // ghost says so by growing a fall shadow under itself
   if (!overHud(mouse.x, mouse.y)) {
     ctx.globalAlpha = 0.5;
-    ctx.fillStyle = '#0a0e23';
+    ctx.fillStyle = '#121418';
     ctx.fillRect(r.x + 3, r.y + r.h + 3, r.w - 6, 2);
     ctx.fillRect(r.x + 5, r.y + r.h + 6, r.w - 10, 1);
     ctx.globalAlpha = 1;

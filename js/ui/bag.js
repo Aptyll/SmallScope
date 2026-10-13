@@ -44,11 +44,11 @@ const BAG_TAB_W = 21, BAG_TAB_H = 10; // the arrow's own small plate under the w
 const BAG_TAB_AIR = 4;  // px of air between the shelf's plate and the tab, and between the tab and the open drawer
 const BAG_SLIDE_T = 0.15; // s the drawer takes to drop or lift; updateFx eases it
 let bagEase = 0;       // 0 shut .. 1 open, on wall time
-const BAG_BG = '#0d1229';     // the whole frame
+const BAG_BG = '#16181c';     // the whole frame
 const BAG_BG_RED = '#4a121c'; // ... and while a refusal is up
 // a filled cell recesses BELOW that ground, an empty one sits above it, so
 // the three tones say occupied / free / frame without any line doing it
-const BAG_WELL = '#080b1c';
+const BAG_WELL = '#0e0f12';
 let bagFlash = 0;      // seconds left of the "it does not fit" red; updateFx ages it
 // The refusal tell, fired by every path that cannot store something. Re-firing
 // while it is already up does not restart it, so standing on a drop you
@@ -166,7 +166,7 @@ let dragLit = 0;
 // WILL do (dropKindAt), so the promise and the answer are one language
 const FX_PLACE = '#9fe0ff', FX_MERGE = '#8fe08a', FX_SWAP = '#ffd95c', FX_DENY = '#c2465a';
 const HUD_FX = {
-  grab:  { sfx: () => SFX.pickup(), col: '#8fa0c8' },
+  grab:  { sfx: () => SFX.pickup(), col: '#9ca1aa' },
   place: { sfx: () => SFX.stash(),  col: FX_PLACE },
   merge: { sfx: () => SFX.stash(),  col: FX_MERGE },
   seat:  { sfx: () => SFX.place(),  col: FX_PLACE },
@@ -458,9 +458,9 @@ function drawCharPanel(now) {
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   // the slab, in the planks' own chrome
   ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(panel.x + 3, panel.y + 3, panel.w, panel.h);
-  ctx.fillStyle = '#0a0e23'; chamRect(panel.x, panel.y, panel.w, panel.h);
+  ctx.fillStyle = '#121418'; chamRect(panel.x, panel.y, panel.w, panel.h);
   ctx.fillStyle = '#10173a'; chamRect(panel.x + 1, panel.y + 1, panel.w - 2, panel.h - 2);
-  ctx.fillStyle = '#35426e';
+  ctx.fillStyle = '#3c4048';
   ctx.fillRect(panel.x + 2, panel.y + 1, panel.w - 4, 1); ctx.fillRect(panel.x + 1, panel.y + 2, 1, panel.h - 4);
   ctx.fillStyle = '#080c1c';
   ctx.fillRect(panel.x + 2, panel.y + panel.h - 2, panel.w - 4, 1); ctx.fillRect(panel.x + panel.w - 2, panel.y + 2, 1, panel.h - 4);
@@ -468,14 +468,14 @@ function drawCharPanel(now) {
   // and hero level beside it in quiet ink
   const head = player.name;
   const sub = CLASSES[player.cls].name + ' ' + player.level;
-  drawPixelTextShadow(ctx, head, panel.x + 8, panel.y + 6, TEAMS[skin(player.team)].mark, '#0a0e23');
-  drawPixelTextShadow(ctx, sub, panel.x + 8 + pixelTextWidth(head) + 8, panel.y + 6, '#7a8bb8', '#0a0e23');
+  drawPixelTextShadow(ctx, head, panel.x + 8, panel.y + 6, TEAMS[skin(player.team)].mark, '#121418');
+  drawPixelTextShadow(ctx, sub, panel.x + 8 + pixelTextWidth(head) + 8, panel.y + 6, '#8c919a', '#121418');
   // the body, live: walking in place with its bought bands in their level
   // materials and the held weapon beside it
   const pr = L.prev;
-  ctx.fillStyle = '#0a0e23';
+  ctx.fillStyle = '#121418';
   ctx.fillRect(pr.x, pr.y, pr.w, pr.h);
-  ctx.fillStyle = '#232c52';
+  ctx.fillStyle = '#2b2e34';
   ctx.fillRect(pr.x, pr.y, pr.w, 1); ctx.fillRect(pr.x, pr.y + pr.h - 1, pr.w, 1);
   ctx.fillRect(pr.x, pr.y, 1, pr.h); ctx.fillRect(pr.x + pr.w - 1, pr.y, 1, pr.h);
   const sx = pr.x + 12, sy = pr.y + 7;
@@ -496,9 +496,9 @@ function drawCharPanel(now) {
   for (let i = 0; i < GEAR_STATS.length; i++) {
     const [label, get, fmt] = GEAR_STATS[i];
     const y = L.led.y + i * 8;
-    drawPixelTextShadow(ctx, label, L.led.x, y, '#7a8bb8', '#0a0e23');
+    drawPixelTextShadow(ctx, label, L.led.x, y, '#8c919a', '#121418');
     const vTxt = fmt(get(k, player));
-    drawPixelTextShadow(ctx, vTxt, L.led.x + L.led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#0a0e23');
+    drawPixelTextShadow(ctx, vTxt, L.led.x + L.led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#121418');
     ctx.fillStyle = '#2c3a68'; // the leader: dots from the label to its number
     for (let dx = L.led.x + pixelTextWidth(label) + 4; dx < L.led.x + L.led.w - pixelTextWidth(vTxt) - 4; dx += 4) {
       ctx.fillRect(dx, y + 4, 2, 1);
@@ -512,29 +512,29 @@ function drawCharPanel(now) {
     const on = gh && gh.piece === i;
     const y = r.y - (on ? 1 : 0);
     ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, CHAR_WELL, CHAR_WELL);
-    ctx.fillStyle = !cost ? '#c89a3c' : on ? '#8fa0c8'
-      : afford ? (Math.sin(now * 8) > 0 ? '#f2cc6a' : '#c9a227') : '#2c3560';
+    ctx.fillStyle = !cost ? '#c89a3c' : on ? '#9ca1aa'
+      : afford ? (Math.sin(now * 8) > 0 ? '#f2cc6a' : '#c9a227') : '#33363d';
     ctx.fillRect(r.x, y, CHAR_WELL, CHAR_WELL);
-    ctx.fillStyle = '#0f1632';
+    ctx.fillStyle = '#191b1f';
     ctx.fillRect(r.x + 1, y + 1, CHAR_WELL - 2, CHAR_WELL - 2);
     ctx.drawImage(gearIcon32(i, player.gear[i]), r.x + 2, y + 2);
     const tx0 = r.x + CHAR_WELL + 6;
-    drawPixelTextShadow(ctx, GEAR[i][player.gear[i]].name, tx0, y + 4, GEAR_MATS[lv - 1], '#0a0e23');
+    drawPixelTextShadow(ctx, GEAR[i][player.gear[i]].name, tx0, y + 4, GEAR_MATS[lv - 1], '#121418');
     for (let p2 = 0; p2 < GEAR_LV_MAX - 1; p2++) { // the buys, gear's own pips
-      ctx.fillStyle = p2 < lv - 1 ? '#f2cc6a' : '#2c3560';
+      ctx.fillStyle = p2 < lv - 1 ? '#f2cc6a' : '#33363d';
       ctx.fillRect(tx0 + p2 * 5, y + 14, 4, 2);
     }
     if (cost) { // the price, coin + number, in can/cannot ink
       ctx.drawImage(SPRITES.itemGold, tx0, y + 22);
       drawPixelTextShadow(ctx, String(cost.gold), tx0 + 10, y + 24,
-        afford ? '#f5c542' : '#9fb6d8', '#0a0e23');
+        afford ? '#f5c542' : '#b4b8bf', '#121418');
     }
   }
   // the X: the one way out that is drawn (ESC and G also close)
   const hot = gh === 'x';
-  ctx.fillStyle = hot ? '#8fa0c8' : '#35426e';
+  ctx.fillStyle = hot ? '#9ca1aa' : '#3c4048';
   ctx.fillRect(L.xr.x, L.xr.y, L.xr.w, L.xr.h);
-  ctx.fillStyle = '#0f1632';
+  ctx.fillStyle = '#191b1f';
   ctx.fillRect(L.xr.x + 1, L.xr.y + 1, L.xr.w - 2, L.xr.h - 2);
   ctx.fillStyle = hot ? '#f4f7ff' : '#8fa8d0';
   for (let k2 = 0; k2 < 4; k2++) {
@@ -631,7 +631,7 @@ function drawBag(now) {
       // tool or a bit brings its own ground: the tier plate, which is where
       // the whole "how good is this find" question is answered.
       const tp = s ? tierPlate(s.type, on) : null;
-      const y = bagCellPlate(r, on ? '#8fa0c8' : s ? tp.rim : '#2c3560',
+      const y = bagCellPlate(r, on ? '#9ca1aa' : s ? tp.rim : '#33363d',
         s ? tp.plate : '#171f45', on && s);
       const wl = { x: r.x, y, w: r.w, h: r.h }; // the plate's own rect, which a lift raises a pixel
       if (!s) { drawWellLit(wl, 'bag', i); continue; }
@@ -642,13 +642,13 @@ function drawBag(now) {
       if (s.bits) forgeMark(r, y, toolLvl(s));
       if (s.n > 1) { // a lone item needs no '1' on it - an empty corner says it
         const n = String(s.n);
-        drawPixelTextOutline(ctx, n, r.x + r.w - 3 - pixelTextWidth(n), y + 10, '#f4f7ff', '#0f1632');
+        drawPixelTextOutline(ctx, n, r.x + r.w - 3 - pixelTextWidth(n), y + 10, '#f4f7ff', '#191b1f');
       }
       // a loaded tool counts its bits in the corner the stack number would
       // have used, so a full build is told apart from a bare body in the grid
       if (s.bits) {
         for (let k = 0; k < s.bits.length && k < 5; k++) {
-          ctx.fillStyle = s.bits[k] ? BITS[s.bits[k]].col : '#2c3560';
+          ctx.fillStyle = s.bits[k] ? BITS[s.bits[k]].col : '#33363d';
           ctx.fillRect(r.x + 3 + k * 3, y + r.h - 4, 2, 2);
         }
       }
@@ -685,7 +685,7 @@ function drawBag(now) {
       ctx.fillRect(ax + 3 - d + ox, yy, 1, 1);
     }
   };
-  for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (ox || oy) stamp(ox, oy, '#0f1632');
+  for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) if (ox || oy) stamp(ox, oy, '#191b1f');
   stamp(0, 0, col);
   drawShiftHint(); // outside the refusal shake: the plate is not what refused
 }

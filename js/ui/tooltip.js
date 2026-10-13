@@ -24,8 +24,8 @@
 const TIP_PAD = 4;      // frame edge to content
 const TIP_ROW = 8;      // pitch of a stat row
 const TIP_MAXW = 168;   // wraps nothing; long lines are authored to fit
-const TIP_LABEL = '#7a8bb8';
-const TIP_DIM = '#9fb6d8';
+const TIP_LABEL = '#8c919a';
+const TIP_DIM = '#b4b8bf';
 let tipNow = null;      // this frame's descriptor, resolved once in render()
 
 // seconds, to two places, without a trailing shout of precision
@@ -116,7 +116,7 @@ function tipBit(id) {
 // the card button: every rarity in hand on its own row, in its own ink, so
 // what the next draw could be is read here and nowhere else
 function tipCards() {
-  const d = { title: 'CARDS', tcol: '#f4f7ff', kind: 'UNOPENED', icon: cardFanCv, plate: BAG_WELL, rim: '#35426e', rows: [], notes: [] };
+  const d = { title: 'CARDS', tcol: '#f4f7ff', kind: 'UNOPENED', icon: cardFanCv, plate: BAG_WELL, rim: '#3c4048', rows: [], notes: [] };
   for (const r of CARD_RARITIES) {
     const n = bagCount(player, cardKey(r));
     if (n > 0) d.rows.push([r.toUpperCase(), String(n), RES_COLORS[cardKey(r)]]);
@@ -150,7 +150,7 @@ function tipRail(c) {
   return d;
 }
 function tipGold() {
-  return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#35426e',
+  return { title: 'GOLD', tcol: '#f5c542', kind: 'PURSE', icon: SPRITES.itemGold, plate: BAG_WELL, rim: '#3c4048',
     rows: [['CARRIED', String(inv.gold), '#f5c542']], notes: [] };
 }
 // anything else a bag cell can hold
@@ -210,7 +210,7 @@ function tipCell(s) {
 function tipGear(i) {
   const g = GEAR[i][player.gear[i]], lv = player.gearLv[i], cost = gearCost(player, i);
   const d = { title: g.name, tcol: GEAR_MATS[lv - 1], kind: GEAR_SLOTS[i], rows: [], notes: [],
-    icon: SPRITES.gearIcons[i][player.gear[i]][lv - 1], plate: BAG_WELL, rim: '#35426e' };
+    icon: SPRITES.gearIcons[i][player.gear[i]][lv - 1], plate: BAG_WELL, rim: '#3c4048' };
   d.rows.push(['LEVEL', lv + '/' + GEAR_LV_MAX, GEAR_MATS[lv - 1]]);
   if (cost) d.rows.push(['NEXT LEVEL', cost.gold + ' GOLD',
     player.inv.gold >= cost.gold ? '#f2cc6a' : '#e0637a']);
@@ -228,7 +228,7 @@ function tipClassAb(i, cls, k) {
   const opt = cls == null ? (player.abPick[i] | 0) : (k | 0);
   const ab = abOptions(c, i)[opt] || CLASS_AB[c][i];
   const d = { title: ab.name, tcol: '#f4f7ff', kind: CLASSES[c].name + ' ABILITY',
-    rows: [], notes: [], icon: classAbIcon(c, i, opt), plate: BAG_WELL, rim: '#35426e' };
+    rows: [], notes: [], icon: classAbIcon(c, i, opt), plate: BAG_WELL, rim: '#3c4048' };
   // in play the cooldown is the LIVE one, level cuts and all; on the lobby
   // there is no slot to have levelled anything yet, so it is the base
   d.rows.push(['COOLDOWN', tipSec(cls == null ? abCdOf(player, i) : ab.cd), '#f4f7ff']);
@@ -254,7 +254,7 @@ function tipClassAb(i, cls, k) {
 function tipStruct(type) {
   const S = STRUCTS[type], t = S.tiers[0];
   const d = { title: S.name, tcol: '#f4f7ff', kind: 'BUILDING', rows: [], notes: [],
-    icon: buildIcon(type), plate: '#141c3c', rim: '#35426e' };
+    icon: buildIcon(type), plate: '#1d1f24', rim: '#3c4048' };
   const c0 = buildCost(type, player); // what the NEXT one costs: an income building's ramp
   d.rows.push(['COST', (c0.gold || 0) + ' GOLD', canAfford(c0) ? RES_COLORS.gold : '#e0637a']);
   d.rows.push(['HEALTH', String(t.hp), '#f4f7ff']);
@@ -338,7 +338,7 @@ function tipAt(mx, my) {
     const cell = shelfCell();
     if (fh.kind === 'tool') {
       if (cell) return tipSend(tipCell(cell), 'STOW IT IN THE PACK');
-      return { title: 'EMPTY WEAPON SLOT', tcol: TIP_DIM, kind: 'WEAPON', rows: [], plate: BAG_WELL, rim: '#35426e',
+      return { title: 'EMPTY WEAPON SLOT', tcol: TIP_DIM, kind: 'WEAPON', rows: [], plate: BAG_WELL, rim: '#3c4048',
         notes: [['DRAG A TOOL HERE FROM THE PACK', TIP_DIM]] };
     }
     const id = cell.bits[fh.i];
@@ -426,7 +426,7 @@ function drawTooltip() {
   ctx.fillRect(x + 2, y + 2, w, h);
   ctx.fillStyle = BAG_BG;
   ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = d.rim || '#35426e';
+  ctx.fillStyle = d.rim || '#3c4048';
   ctx.fillRect(x, y, w, 1); ctx.fillRect(x, y + h - 1, w, 1);
   ctx.fillRect(x, y, 1, h); ctx.fillRect(x + w - 1, y, 1, h);
   let cy = y + TIP_PAD;
@@ -441,21 +441,21 @@ function drawTooltip() {
     ctx.drawImage(d.icon, tx, cy);
     tx += iw + 3;
   }
-  drawPixelTextShadow(ctx, d.title, tx, cy, d.tcol, '#0a0e23');
-  if (d.kind) drawPixelTextShadow(ctx, d.kind, tx, cy + 7, TIP_LABEL, '#0a0e23');
+  drawPixelTextShadow(ctx, d.title, tx, cy, d.tcol, '#121418');
+  if (d.kind) drawPixelTextShadow(ctx, d.kind, tx, cy + 7, TIP_LABEL, '#121418');
   cy += d.icon ? Math.max(14, d.icon.height + 2) : 14;
   for (const [label, value, col] of d.rows) {
     const lw = pixelTextWidth(label), vw = pixelTextWidth(value);
-    drawPixelTextShadow(ctx, label, x + TIP_PAD, cy, TIP_LABEL, '#0a0e23');
+    drawPixelTextShadow(ctx, label, x + TIP_PAD, cy, TIP_LABEL, '#121418');
     // the dotted leader ties the pair across the gap, exactly as the PLAYER
     // panel's stat rows do - a bare gap reads as two unrelated columns
-    ctx.fillStyle = '#2c3560';
+    ctx.fillStyle = '#33363d';
     for (let px = x + TIP_PAD + lw + 3; px < x + w - TIP_PAD - vw - 2; px += 2) ctx.fillRect(px, cy + 4, 1, 1);
-    drawPixelTextShadow(ctx, value, x + w - TIP_PAD - vw, cy, col || '#f4f7ff', '#0a0e23');
+    drawPixelTextShadow(ctx, value, x + w - TIP_PAD - vw, cy, col || '#f4f7ff', '#121418');
     cy += TIP_ROW;
   }
   for (const [text, col] of d.notes || []) {
-    drawPixelTextShadow(ctx, text, x + TIP_PAD, cy, col || TIP_DIM, '#0a0e23');
+    drawPixelTextShadow(ctx, text, x + TIP_PAD, cy, col || TIP_DIM, '#121418');
     cy += TIP_ROW;
   }
 }

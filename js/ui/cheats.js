@@ -30,7 +30,7 @@ const CHEATS = [
   { id: 'clear', name: 'CLEAR DUMMIES' },
 ];
 // the icons: 12x12 grids, baked once (SPR.bake, js/sprites/core.js)
-const CB_PAL = { '.': null, o: '#0a0e1c', w: '#ddf1f8', s: '#9fb6d8', g: '#f2cc6a', h: '#ffedb0', d: '#b8912f',
+const CB_PAL = { '.': null, o: '#0a0e1c', w: '#ddf1f8', s: '#b4b8bf', g: '#f2cc6a', h: '#ffedb0', d: '#b8912f',
   r: '#e0505a', R: '#f2909a', b: '#e0c890', n: '#8a6a4a', c: '#9fc4dd' };
 const CB_ICONS = {
   level: [
@@ -241,7 +241,7 @@ function cheatAimLive() { return !!cheatUi.aim && cheatBarUp() && !state.mapOpen
 // the tooltip's card for one well: its name, and what it is doing right now
 function tipCheat(i) {
   const c = CHEATS[i];
-  const d = { title: c.name, tcol: '#f4f7ff', kind: 'PRACTICE', icon: cbIcon(c.id), plate: BAG_WELL, rim: '#35426e', rows: [], notes: [] };
+  const d = { title: c.name, tcol: '#f4f7ff', kind: 'PRACTICE', icon: cbIcon(c.id), plate: BAG_WELL, rim: '#3c4048', rows: [], notes: [] };
   if (c.note) d.notes.push([c.note, '#f2cc6a']);
   if (c.auto) d.notes.push(CHEAT_AUTO[c.id] ? ['ON', HUD_FROST] : ['OFF', TIP_DIM]);
   if (c.id === 'clear') d.notes.push([cheatDummies.length + ' STANDING', TIP_DIM]);
@@ -273,7 +273,7 @@ function drawCheatBar1() {
       const on = (c.auto && CHEAT_AUTO[c.id]) || (c.aim && cheatUi.aim === c.id);
       const hot = hov && hov.kind === 'cell' && hov.i === i;
       const flash = cheatUi.flashId === c.id && cheatUi.flashT > 0;
-      ctx.fillStyle = flash ? '#ffffff' : on ? HUD_FROST : hot ? '#8fa0c8' : '#2c3560';
+      ctx.fillStyle = flash ? '#ffffff' : on ? HUD_FROST : hot ? '#9ca1aa' : '#33363d';
       ctx.fillRect(r.x, r.y, r.w, r.h);
       ctx.fillStyle = on ? '#1c2a4e' : BAG_WELL;
       ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
@@ -282,14 +282,14 @@ function drawCheatBar1() {
     // the gap between the groups carries one quiet steel tick
     for (let i = 1; i < CHEATS.length; i++) if (CHEATS[i].split) {
       const r = cheatCellRect(i);
-      ctx.fillStyle = '#35426e';
+      ctx.fillStyle = '#3c4048';
       ctx.fillRect(r.x + 3, r.y - ((CB_SPLIT + 1) >> 1), r.w - 6, 1);
     }
   }
   // the fold tab: a small plate with a chevron pointing where it will go
   const th = hov && hov.kind === 'tab';
-  drawHudFrame(tab.x, tab.y, tab.w, tab.h, { corners: { tl: false, tr: true, bl: false, br: true }, lit: th ? '#b8cce6' : undefined });
-  ctx.fillStyle = th ? '#f4f7ff' : '#9fb6d8';
+  drawHudFrame(tab.x, tab.y, tab.w, tab.h, { corners: { tl: false, tr: true, bl: false, br: true }, lit: th ? '#d4d7dc' : undefined });
+  ctx.fillStyle = th ? '#f4f7ff' : '#b4b8bf';
   const cx = tab.x + 3, cy = tab.y + (tab.h >> 1);
   for (let k = 0; k < 3; k++) {
     const x = cheatUi.open ? cx - 1 + k : cx + 1 - k;

@@ -319,8 +319,8 @@ function drawPadBind(g, x, y, key, s, pressed) {
   if (pressed) g.globalAlpha *= 0.55;
   // a dark rim under the disc so it reads on snow as the cap's navy did
   const w = padBindW(key);
-  g.fillStyle = '#0f1632';
-  if (b[0] === 'face' || b[0] === 'stick') { pixDisc(g, 4, 4, 5, '#0f1632'); }
+  g.fillStyle = '#191b1f';
+  if (b[0] === 'face' || b[0] === 'stick') { pixDisc(g, 4, 4, 5, '#191b1f'); }
   else g.fillRect(-1, -1, w + 2, 11);
   drawPadGlyph(g, 0, 0, b[0], b[1]);
   g.restore();
@@ -332,10 +332,10 @@ function drawBackHint(g, cx, y, verb) {
   if (padActive()) {
     const w = 9 + 3 + pixelTextWidth(verb), x = Math.round(cx - w / 2);
     drawPadBind(g, x, y - 2, 'esc');
-    drawPixelText(g, verb, x + 12, y, '#5a6690');
+    drawPixelText(g, verb, x + 12, y, '#60656e');
   } else {
     const t = 'ESC ' + verb;
-    drawPixelText(g, t, Math.round(cx - pixelTextWidth(t) / 2), y, '#5a6690');
+    drawPixelText(g, t, Math.round(cx - pixelTextWidth(t) / 2), y, '#60656e');
   }
 }
 
@@ -348,7 +348,7 @@ function drawBackHint(g, cx, y, verb) {
 function drawKeyCap(g, x, y, label, pressed, hot, now) {
   const w = pixelTextWidth(label) + 6;
   const cy = y + (pressed ? 1 : 0);
-  g.fillStyle = '#0a0e23';
+  g.fillStyle = '#121418';
   g.fillRect(x, y, w, 10);
   g.fillStyle = hot === 2 ? (Math.sin((now || 0) * 9) > 0 ? '#ffd95c' : '#f4f7ff') : hot ? '#f4f7ff' : pressed ? '#8fb3d6' : '#c2d8ee';
   g.fillRect(x + 1, cy + 1, w - 2, 8 - (pressed ? 1 : 0));
@@ -356,7 +356,7 @@ function drawKeyCap(g, x, y, label, pressed, hot, now) {
     g.fillStyle = '#f4f7ff'; g.fillRect(x + 1, y + 1, w - 2, 1);
     g.fillStyle = hot === 2 ? '#c9a227' : '#8fb3d6'; g.fillRect(x + 1, y + 8, w - 2, 1); // bottom shade = depth
   }
-  drawPixelText(g, label, x + 3, cy + 3, '#0a0e23');
+  drawPixelText(g, label, x + 3, cy + 3, '#121418');
   return w;
 }
 // the key-cap + verb pair itself, shared by the work prompt, the rack's and
@@ -371,11 +371,11 @@ function drawKeyPrompt(x, y, verb, pressed, action) {
   if (padActive() && PAD_BIND[action]) {
     const gw = padBindW(action);
     drawPadBind(ctx, x, y, action, 1, pressed);
-    drawPixelTextOutline(ctx, verb, x + gw + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#0f1632');
+    drawPixelTextOutline(ctx, verb, x + gw + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#191b1f');
     return;
   }
   const capW = drawKeyCap(ctx, x, y, keyCap(action), pressed, 0);
-  drawPixelTextOutline(ctx, verb, x + capW + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#0f1632');
+  drawPixelTextOutline(ctx, verb, x + capW + 3, y + 3, pressed ? '#ffd95c' : '#f4f7ff', '#191b1f');
 }
 function promptW(verb, action) {
   action = action || 'work';
@@ -489,7 +489,7 @@ function drawFishHint(ex, ey, now) {
     ctx.fillRect(px + 13, py + 11, 3, 1); ctx.fillRect(px + 15, py + 9, 1, 3);
   };
   corners('rgba(15,22,50,0.9)', fx - 7, fy - 5);
-  corners(near ? '#ffffff' : '#9fb6d8', fx - 8, fy - 6);
+  corners(near ? '#ffffff' : '#b4b8bf', fx - 8, fy - 6);
   ctx.globalAlpha = 1;
 }
 
@@ -505,7 +505,7 @@ function drawWheelStick(L) {
   const reach = (WHEEL_HUB + WHEEL_RING) >> 1;      // clear of the hub, short of the icons
   const k = L.dist > reach ? reach / L.dist : 1;    // 1:1 until it would reach an icon
   const kx = Math.round(L.cx + L.dx * k), ky = Math.round(L.cy + L.dy * k);
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(kx - 2, ky - 2, 5, 5);
+  ctx.fillStyle = '#121418'; ctx.fillRect(kx - 2, ky - 2, 5, 5);
   ctx.fillStyle = live ? '#ffd95c' : '#8fa4c8'; ctx.fillRect(kx - 1, ky - 1, 3, 3);
 }
 
@@ -519,9 +519,9 @@ function drawWheelHub(L) {
   const lift = state.wheel.kind === 'flag' && wheelOnOwnFlag();
   ctx.beginPath();
   ctx.arc(L.cx, L.cy, WHEEL_HUB - 1.5, 0, Math.PI * 2);
-  ctx.fillStyle = lift ? '#0e142c' : cancel ? '#3a1f2c' : '#0e142c';
+  ctx.fillStyle = lift ? '#131519' : cancel ? '#3a1f2c' : '#131519';
   ctx.fill();
-  ctx.strokeStyle = lift ? (cancel ? '#ffd95c' : '#2a3358') : cancel ? '#ff8a7a' : '#2a3358';
+  ctx.strokeStyle = lift ? (cancel ? '#ffd95c' : '#2c2f36') : cancel ? '#ff8a7a' : '#2c2f36';
   ctx.lineWidth = 1;
   ctx.stroke();
   if (lift) { drawFlagPennant(ctx, L.cx - 2, L.cy + 4, cancel ? '#ffd95c' : TEAMS[skin(player.team)].mark); return; }
@@ -554,7 +554,7 @@ function renderWheel(now) {
     ctx.arc(L.cx, L.cy, WHEEL_R, a0, a1);
     ctx.arc(L.cx, L.cy, WHEEL_HUB, a1, a0, true);
     ctx.closePath();
-    ctx.fillStyle = hovered ? '#35426e' : '#141c3c';
+    ctx.fillStyle = hovered ? '#3c4048' : '#1d1f24';
     ctx.fill();
     if (hovered) {
       ctx.strokeStyle = '#ffd95c';
@@ -579,7 +579,7 @@ function renderWheel(now) {
     } else if (w.kind === 'flag') {
       // the order's glyph at twice its banner size, in its own ink (the
       // stakes: pale for your side, red for theirs) - lit gold under the pick
-      drawFlagIcon(ctx, opt.id, ix, iy, hovered ? '#ffd95c' : FLAG_TYPES[opt.id].col, '#0f1632', 2);
+      drawFlagIcon(ctx, opt.id, ix, iy, hovered ? '#ffd95c' : FLAG_TYPES[opt.id].col, '#191b1f', 2);
     } else if (w.kind === 'rack') {
       // a tool's own strip icon: the family silhouette in its tier's metal
       const T = TOOLS[opt.id];
@@ -618,7 +618,7 @@ function renderWheel(now) {
       const label = opt.id === 'upgrade' ? 'UP' : opt.id === 'demolish' ? 'DEL' : opt.id === 'repair' ? 'FIX' : 'CARD';
       drawPixelTextOutline(ctx, label,
         Math.round(ix - pixelTextWidth(label) / 2), Math.round(iy - 2),
-        hovered ? '#ffd95c' : '#9fb6d8', '#0f1632');
+        hovered ? '#ffd95c' : '#b4b8bf', '#191b1f');
     }
   }
 
@@ -627,7 +627,7 @@ function renderWheel(now) {
 
   // hovered label + cost under the wheel (or CANCEL, from inside the hub -
   // LIFT, from the hub of a flag wheel standing on your own flag)
-  let label = 'CANCEL', color = '#9fb6d8';
+  let label = 'CANCEL', color = '#b4b8bf';
   if (L.seg < 0 && w.kind === 'flag' && wheelOnOwnFlag()) { label = 'LIFT'; color = '#ffd95c'; }
   if (L.seg >= 0) {
     const opt = L.opts[L.seg];
@@ -651,7 +651,7 @@ function renderWheel(now) {
     } else if (w.kind === 'kit') {
       ({ label, color } = kitLabel(opt.id));
     } else if (opt.id === 'upgrade') {
-      if (!o || o.tier >= STRUCTS[o.type].tiers.length - 1) { label = 'MAX TIER'; color = '#9fb6d8'; }
+      if (!o || o.tier >= STRUCTS[o.type].tiers.length - 1) { label = 'MAX TIER'; color = '#b4b8bf'; }
       else {
         const t = STRUCTS[o.type].tiers[o.tier + 1];
         label = 'UPGRADE : ' + costText(t.cost);
@@ -659,7 +659,7 @@ function renderWheel(now) {
       }
     } else if (opt.id === 'repair') {
       const g = o ? repairCost(o) : 0;
-      if (g <= 0) { label = 'FULL HEALTH'; color = '#9fb6d8'; }
+      if (g <= 0) { label = 'FULL HEALTH'; color = '#b4b8bf'; }
       else { label = 'REPAIR : ' + costText({ gold: g }); color = canAfford({ gold: g }) ? '#ffd95c' : '#ff8a7a'; }
     } else if (opt.id === 'demolish') {
       // what it pays back, so a site's whole refund reads before the release
@@ -671,7 +671,7 @@ function renderWheel(now) {
   const lw = pixelTextWidth(label);
   drawPixelTextOutline(ctx, label,
     Math.round(Math.max(2, Math.min(VIEW_W - lw - 2, L.cx - lw / 2))),
-    Math.round(L.cy + WHEEL_R + WHEEL_PAD + 6), color, '#0f1632');
+    Math.round(L.cy + WHEEL_R + WHEEL_PAD + 6), color, '#191b1f');
 }
 
 // ---- the action wheel's wedges ------------------------------------------
@@ -698,10 +698,10 @@ function drawKitWedge(id, x, y, hot) {
 // meal's verb with the count in the bag, or the flag wheel's own verb
 function kitLabel(id) {
   const i = kitAb(id);
-  if (i >= 0) return { label: abOf(player, i).name, color: abReady(player, i) ? '#ffd95c' : '#7a8bb8' };
+  if (i >= 0) return { label: abOf(player, i).name, color: abReady(player, i) ? '#ffd95c' : '#8c919a' };
   if (id === 'flag') return { label: KEY_ACT.flag.verb, color: '#ffd95c' };
   const n = bagCount(player, id);
-  return { label: KEY_ACT[id].verb + ' ' + n, color: n > 0 ? '#ffd95c' : '#7a8bb8' };
+  return { label: KEY_ACT[id].verb + ' ' + n, color: n > 0 ? '#ffd95c' : '#8c919a' };
 }
 
 // ---- the build list and its ghost -----------------------------------------
@@ -739,7 +739,7 @@ function kitLabel(id) {
 const BUILD_ROW = 20;        // a row's pitch
 const BUILD_W = 62;          // a row's width: icon, price, the rotate cap
 const BUILD_OK = '#f4f7ff', BUILD_NO = '#ff8a7a'; // the ghost's two answers (the flag's own pair, robots.js)
-const BUILD_BROKE = '#7a8bb8'; // ...and the third: it could stand, but the purse cannot pay (the strip's dim ink)
+const BUILD_BROKE = '#8c919a'; // ...and the third: it could stand, but the purse cannot pay (the strip's dim ink)
 const BUILD_LIT = '#ffd95c'; // the picked row's rim, the open well's and the pointer's piece: one gold says "this one"
 const PIECE_HOLD = 0.18;     // s the build key is held before its press is a hold (the wheel) and not a tap (the list)
 let buildLast = 0;           // the row the list opens on: the last piece picked (a screen's habit, not the sim's)
@@ -913,15 +913,15 @@ function drawBuildGhost(ox, oy, now) {
 function drawBuildTab(now) {
   const r = buildTabRect(), open = !!state.build;
   const hot = mouse.inside && buildTabHit(mouse.x, mouse.y);
-  ctx.fillStyle = open ? BUILD_LIT : hot ? '#8fa0c8' : '#35426e';
+  ctx.fillStyle = open ? BUILD_LIT : hot ? '#9ca1aa' : '#3c4048';
   ctx.fillRect(r.x, r.y, r.w, r.h);
-  ctx.fillStyle = open ? '#141c3c' : BAG_WELL;
+  ctx.fillStyle = open ? '#1d1f24' : BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
   const hm = SPRITES.cursor.hammer, hw = hm.width * 2, hh = hm.height * 2;
   ctx.drawImage(hm, r.x + ((r.w - hw) >> 1), r.y + ((r.h - hh) >> 1) - 2 - (hot ? 1 : 0), hw, hh);
   const held = keyHeld('build');
   if (padActive() && PAD_BIND.build) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, 'build', 2, false);
-  else drawPixelTextOutline(ctx, keyCapShort('build'), r.x + 3, r.y + r.h - 13 + (held ? 1 : 0), '#f4f7ff', '#0f1632', 2);
+  else drawPixelTextOutline(ctx, keyCapShort('build'), r.x + 3, r.y + r.h - 13 + (held ? 1 : 0), '#f4f7ff', '#191b1f', 2);
 }
 // The column of rows, in the strip's 1x space over the well
 function drawBuildList(now) {
@@ -931,15 +931,15 @@ function drawBuildList(now) {
     const type = BUILD_ORDER[i], S = STRUCTS[type], sel = i === b.sel;
     const r = buildRowRect(i);
     const c0 = buildCost(type, player), afford = canAfford(c0);
-    ctx.fillStyle = '#0a0e23'; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
-    ctx.fillStyle = sel ? '#141c3c' : '#0d1229'; ctx.fillRect(r.x, r.y, r.w, r.h);
+    ctx.fillStyle = '#121418'; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
+    ctx.fillStyle = sel ? '#1d1f24' : '#16181c'; ctx.fillRect(r.x, r.y, r.w, r.h);
     if (sel) { ctx.fillStyle = BUILD_LIT; ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1); ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h); }
     ctx.globalAlpha = afford ? 1 : 0.5;
     ctx.drawImage(buildIcon(type), r.x + (S.tiled ? 1 : 2), r.y + 1);
     ctx.globalAlpha = 1;
     // the price, in gold's own colour while the purse covers it, red while not
     const cost = '' + (c0.gold || 0);
-    drawPixelTextOutline(ctx, cost, r.x + 25, r.y + 6, afford ? RES_COLORS.gold : BUILD_NO, '#0f1632');
+    drawPixelTextOutline(ctx, cost, r.x + 25, r.y + 6, afford ? RES_COLORS.gold : BUILD_NO, '#191b1f');
     // the piece that turns wears the rotate key's cap on its row while picked
     if (S.rotates && sel) drawKeyCap(ctx, r.x + r.w - 14, r.y + 4, keyCap('rotate'), keyHeld('rotate'), 0, now);
   }
@@ -956,9 +956,9 @@ function drawBuildCursor(info) {
   const x = Math.round(mouse.x) + 3, y = Math.round(mouse.y) + 4;
   const w = ic.width + 4, h = ic.height + 4;
   ctx.globalAlpha = info.dim ? 0.5 : 0.95;
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x, y, w, h);
+  ctx.fillStyle = '#121418'; ctx.fillRect(x, y, w, h);
   ctx.fillStyle = BUILD_LIT; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-  ctx.fillStyle = '#141c3c'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
+  ctx.fillStyle = '#1d1f24'; ctx.fillRect(x + 2, y + 2, w - 4, h - 4);
   ctx.drawImage(ic, x + 2, y + 2);
   ctx.globalAlpha = 1;
 }

@@ -60,20 +60,22 @@ const AB_W = (AB_N + 1) * AB_CELL + (AB_N + 1) * AB_GAP + POUCH_W; // four abili
 const AB_PAD = 3, AB_XP = 5, AB_SEGS = 10; // AB_PAD: the frame's outline, its lit line and one px of ground (drawHudFrame); AB_SEGS: xp bar notches
 const AB_H = AB_PAD + AB_CELL + AB_PAD + AB_XP + AB_PAD;
 const POUCH_RISE = POUCH_H - AB_PAD - AB_CELL; // how far the block stands above the strip's top edge
-const AB_BG = '#0d1229';
+const AB_BG = '#16181c';
 // ---- the hud frame: the one plate the bottom widgets stand on ----------
 // The strip, the pack and the team rail stand on one plate, drawn the way
 // League's and Dota's HUDs get their contrast, kept simple: a dark outline,
-// a thin bright line just inside it, and a solid dark ground. The outline
-// is what holds the plate apart from bright snow at noon, the bright line
-// what holds it apart from the forest at night, and the ground keeps every
-// well on it readable over both. No bevel, no snow, no ornament: a plate
+// a faint line just inside it, and a solid dark ground, all neutral
+// graphite (0.421: the cold steel line pulled the eye off the game). The
+// outline holds the plate apart from bright snow at noon, the faint line
+// gives its edge a finish against the forest at night, and the ground keeps
+// every well on it readable over both; the icons, the sides' colours and
+// the gold carry the contrast, never the frame. No bevel, no snow, no ornament: a plate
 // looked at for an hour has to stay quiet. Three layers, all pixels:
 //   * the SILHOUETTE, one dark line (the xp bar's own ink) with its top
 //     corners cut two pixels, so the plate sits on the snow as a shape and
 //     not a rectangle - the bottom corners stay square where they meet the
 //     screen's edge, since a notch of world there reads as a hole;
-//   * the EDGE, one bright line just inside it, following the same cuts;
+//   * the EDGE, one faint line just inside it, following the same cuts;
 //   * the GROUND inside that, one opaque colour.
 // `tab` is a block rising off the top edge and flush with the right side
 // (the pouch block's): outline and edge step up around it as ONE
@@ -81,10 +83,10 @@ const AB_BG = '#0d1229';
 // a widget's state colours (the pack's full amber, a refusal's red): `lit`
 // repaints the edge. Every margin inside the outline is three pixels -
 // line, edge, ground - which is what AB_PAD and BAG_PAD are.
-const HUD_INK = '#05070f';   // the silhouette
-const HUD_EDGE = '#7f93bf';  // the bright line inside it: cold steel, apart from the pack's amber and red states
-const HUD_LIT = '#35426e';   // a quiet slate: the waiting part of a dead chip's rim (rail.js)
-const HUD_FROST = '#b8cce6'; // the tick under your own rail chip
+const HUD_INK = '#07080a';   // the silhouette
+const HUD_EDGE = '#2f3238';  // the faint line inside it: one step off the ground, apart from the pack's amber and red states
+const HUD_LIT = '#3c4048';   // a quiet slate: the waiting part of a dead chip's rim (rail.js)
+const HUD_FROST = '#d4d7dc'; // a pale "on": the practice bar's lit toggles (cheats.js)
 // a rect with its corners cut two pixels where `c` says so
 function chamCut(x, y, w, h, c) {
   ctx.fillRect(x + 2, y, w - 4, h);
