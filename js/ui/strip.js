@@ -230,12 +230,15 @@ function goldCellRect() {
 // (it rings gold, the others dim), and a click on the picked one lets it go.
 // The pick is the body's own (p.fishPick), set through the input's cmd like
 // every other order, so it holds online. It stays up while the pointer is on
-// the well, the column or the gap between them. The fish well has no buy
-// plate over it, so the column hides none.
+// the well or the column. The column is a part of the strip, not a plate over
+// it: its frame runs on down into the strip's (drawFishPop), so the rect below
+// reaches into the strip's top frame. The fish well has no buy plate over it,
+// so the column hides none.
 const FISH_POP = ['fish', 'whitefish', 'snowChar']; // the column, bottom to top
+const FISH_POP_NAME = 10;  // the hovered kind's name, standing over the column
 function fishPopRect() {
-  const s = foodCellRect(1), w = AB_CELL + 2 * AB_PAD, h = FISH_POP.length * AB_CELL + (FISH_POP.length - 1) * AB_GAP + 2 * AB_PAD;
-  return { x: s.x - AB_PAD, y: hudStripRect().y - h - 2, w, h };
+  const s = foodCellRect(1), top = hudStripRect().y - (FISH_POP.length * AB_CELL + (FISH_POP.length - 1) * AB_GAP + AB_PAD);
+  return { x: s.x - AB_PAD, y: top, w: AB_CELL + 2 * AB_PAD, h: s.y - top };
 }
 function fishPopCellRect(j) {
   const r = fishPopRect();
@@ -251,7 +254,7 @@ function fishPopUp(mx, my) {
 }
 function fishPopHeadroom() {
   const m = stripMouse(mouse.x, mouse.y);
-  return fishPopUp(m.x, m.y) ? hudStripRect().y - fishPopRect().y + 2 : 0;
+  return fishPopUp(m.x, m.y) ? hudStripRect().y - fishPopRect().y + FISH_POP_NAME + 2 : 0;
 }
 // The meal buttons' share of that refusal: a press that could not become a
 // meal - nothing in the bag, the clock still up, full health, a busy body -

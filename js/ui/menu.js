@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.437';
+const PATCH_TXT = 'PATCH 0.438';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.438', 'THE FISH PICKER GROWS OUT OF THE BOTTOM BAR AS ONE PIECE WITH IT, AND THE NAME OF THE FISH UNDER YOUR POINTER STANDS OVER ITS TOP.'],
   ['0.437', 'THE FISH PICKER RISES AS A COLUMN STRAIGHT UP OFF THE FISH WELL, THE ICE FISH NEAREST IT, WITH THE NAME AND HEAL OF THE FISH UNDER YOUR POINTER BESIDE IT.'],
   ['0.436', 'EVERY PART OF THE HUD HAS ITS OWN SIZE SLIDER - WEAPON BAR, TOP BAR, MINIMAP AND BOTTOM BAR - FROM HALF SIZE TO DOUBLE IN 5% STEPS, WITH THE PIXEL-PERFECT SIZES TICKED UNDER EACH TRACK.'],
   ['0.435', 'THE MARKET TRADES ALL THREE FISH: TABS ON THE FISH CARD PICK ONE, AND EACH IS PRICED OFF THE FISH PRICE BY HOW MUCH IT HEALS, SO A SNOW CHAR FETCHES THE MOST.'],
