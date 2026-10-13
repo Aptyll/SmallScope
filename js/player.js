@@ -572,6 +572,7 @@ class Player {
     Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
+    this.trades = [];                   // the market ledger: every good bought or sold at a counter (marketLog, js/ui/shop.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
     this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
     this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)

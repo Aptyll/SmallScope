@@ -2118,9 +2118,8 @@ the counter's price flickering.
 and snow char (every kind in `FISH_KINDS`) ride its walk, each at the live fish price scaled by
 its heal against the ice fish's (`goodOf`, `goodScale`): a whitefish (+40) is 0.8 of a fish, a snow
 char (+70) 1.4. So a new fish is priced the moment it has a `heal`, and the three rise and fall
-together. The fish card shows one fish at a time: a tab per fish along its top picks which one its
-price, graph labels and trade plates are for (`shopFish`, this screen's own choice, not match
-state; the trade order still names its fish).
+together. Each fish is its own row on [the market page](#the-market-page), with its own coin and
+its own trades, over the one shared walk.
 
 **Both goods trade at one price in both directions** — no spread at all, the one place the
 half-price rule does not apply. A spread would kill the only thing the market is *for* (buy low,
@@ -2135,8 +2134,8 @@ rather than a flat line that fills in over the first quarter of an hour.
 **A big move makes the news.** `marketNews` cuts a headline when the price has moved both
 `MKT_NEWS` (30%) *and* the good's own `newsMin` gold (fish 4, berries 2) since the last one — green on a rise and red on
 a fall. The absolute floor is the half that matters: a berry going 2G → 3G is a 50% "spike", and
-without it the feed fills with small change. The card that made one pulses in the panel for three
-seconds.
+without it the feed fills with small change. The ticker card and the market page row of the good
+that made one pulse for three seconds.
 
 A headline goes to **two places at once**, and a restock's does too:
 
@@ -2193,9 +2192,10 @@ Top to bottom: the **awning** — a snow-capped, icicled valance striped in the 
 colours, the one thing on the panel that says whose eagle this is — with the shop's sign hung off
 its hem between two lanterns, the merchant's portrait framed at one end and the purse at the
 other; the four sections as a 2×2 grid of three-well rows, each on a recessed
-board; the **MARKET** rule and its two cards side by side; the **SELL strip**, the full width of
+board; the **MARKET** rule and its four ticker cards (each good's coin and a three-day sparkline;
+a click opens [the market page](#the-market-page) on it); the **SELL strip**, the full width of
 the slab, with air under it (`SHOP_SELL_GAP`); and the
-[restock road](#the-restock-road) along that rail. The frame, the section rules, the market cards and
+[restock road](#the-restock-road) along that rail. The frame, the section rules, the ticker cards and
 that edge are all cut from one timber palette under iron corner brackets, which is what makes the
 slab read as a shopfront rather than as one more blue HUD panel.
 
@@ -2238,17 +2238,16 @@ The countdown sits at the **right** end deliberately ([the tooltip-corner rule](
 (`SHOP_DEAR_*`), the price ink with them, and the goods themselves grey back under a wash — the
 tier plate keeping its own hue through it, since which tier a thing is stays true whatever it
 costs. It does not lift under the pointer and it does not shine. It is the same red
-[tipGear](#gear)'s next-level row and the pack's own refusal already speak, and a market card's
-BUY plate wears it too when the reason it is dead is the price rather than a full pack.
+[tipGear](#gear)'s next-level row and the pack's own refusal already speak, and the market page's
+BUY plates wear it too when the reason they are dead is the price.
 
 The **sell strip** is a full-width recessed well with corner brackets — a drop target, so it is
 hard to miss — and it carries the word SELL. Idle it is SELL → a coin; with something in hand it
 becomes that item → a coin and the gold it fetches, and the whole well lights and pulses. At rest
 a slow band of light crosses it (`sellSheen`, a long period and a soft envelope: a resting
 state must not blink). Nothing
-else on the panel is labelled with a verb: a market card's two trade plates say their direction by
-*arrangement* — coin into item is a buy, item into coin is a sale — and the price is stated once,
-big, because it is the same number both ways. The
+else on the SHOP face is labelled with a verb (the market page's trade plates are plain words, like
+the menus). The
 section headings (TOOLS / BITS / MODIFIERS / CARDS) and the graphs' own numbers are this panel's
 share of the [instruments carve-out](rendering.md#show-dont-label), for the reason the practice instruments have
 one: reading a market **is** reading numbers, and no shape compares a price today against a price
@@ -2256,6 +2255,38 @@ yesterday. Hovering anything on it describes it in the ordinary tooltip — an o
 row on top of the rows that item shows anywhere else, a good with its day's change and its
 three-day high and low — and while the counter is up, every bag cell's tooltip gains a SELLS FOR
 row.
+
+### The market page
+
+The counter's third face, a tab plate (a little chart) between SHOP and FORGE, with MARKET on the
+sign (js/ui/market.js). Down the left, a **row per good** (`MKT_GOODS`: ice fish, whitefish, snow
+char, berries): its icon and name, the live coin in the colour of the last move, and how many you
+carry. The picked row (`mktSel`, this screen's own choice) is rimmed in its good's colour and its
+three days fill **the chart** beside it.
+
+The chart's line is drawn on the **coin**, the rounded price the counter pays, not on the walk's
+float, and its right edge is the market clock right now (`marketNow`: the newest move plus the
+share of the next already gone), so the last sample holds out to the edge and the line creeps on
+between moves. Dotted rules mark the day boundaries; the high, middle and low sit on an axis down
+the right, with the live coin on a plate where the line meets it. Under the pointer a hairline
+reads off the coin at that moment and how long ago (`M:SS`).
+
+**Every trade you made is pinned on it** (the ledger, `marketLog` in js/ui/shop.js): a green dot
+and an upward triangle under the line where you bought, a red dot and a downward one over it where
+you sold, at the exact move and coin the trade happened at, with a count beside it when more than
+one changed hands. A trade is logged with its own clock and coin, never re-read off the graph, so
+the marker sits on the line. Selling a good through the sell strip or SELL ALL logs too. Units
+bought or sold one way, at one coin, inside one move fold into one entry, and a body keeps
+`MKT_TRADES` (48) entries, none older than the graph (`p.trades`, on the player, so it rides the
+save and the wire). Hovering a marker says BOUGHT or SOLD, how many, the coin, the total, the coin
+now (green when the trade is ahead) and how long ago. A **dashed gold line** is what the buys still
+on the chart cost on average, repeated as PAID under the chart beside what you carry and what it
+fetches now.
+
+Along the bottom, four plates in plain words, each wearing the gold it moves: **BUY 1**, **BUY 5**,
+**SELL 1**, **SELL ALL**. A trade order carries a count (`n`): a buy takes as many as the purse and
+the pack cover up to it (BUY 5 with gold for three buys three), a sale as many as you carry, and it
+resolves as one payment, one floater and one marker (`shopTrade`).
 
 ## Inventory and the backpack
 

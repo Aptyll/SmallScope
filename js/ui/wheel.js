@@ -129,7 +129,8 @@ function cmdOk(c) {
   if (c.kind === 'fishPick') return c.type === null || FISH_KINDS.includes(c.type);
   if (c.kind === 'shop') {
     if (c.act === 'buy') return cmdKey(market.stock, c.sec) && cmdInt(c.i, 0, Infinity);
-    if (c.act === 'trade') return typeof c.good === 'string' && isGood(c.good) && (c.dir === 1 || c.dir === -1);
+    if (c.act === 'trade') return typeof c.good === 'string' && isGood(c.good) && (c.dir === 1 || c.dir === -1) &&
+      (c.n === undefined || (Number.isInteger(c.n) && c.n >= 1));
     if (c.act === 'sell') return cmdInt(c.i, 0, Infinity);
     if (c.act === 'forge') return (c.where === 'tool' || c.where === 'bag') && cmdInt(c.i, 0, Infinity) && !!c.pile && typeof c.pile === 'object';
     return c.act === 'sellAll';
