@@ -389,7 +389,7 @@ function removeStruct(o) {
 
 // ------------------------------------------------------------ the building sim
 const RES_COLORS = {
-  gold: '#f2cc6a', berry: '#f2707a', fish: '#7ac0e8',
+  gold: '#f2cc6a', berry: '#f2707a', fish: '#7ac0e8', whitefish: '#cfdcec', snowChar: '#d47e8e',
   // card rarities - kept out of the amber family so a "gold" card drop never
   // reads as a currency floater; must match CARD_PALS in js/sprites/items.js
   cardWhite: '#d9dfe8', cardGreen: '#5fd18a', cardBlue: '#4a90e2', cardPurple: '#a259e6', cardGold: '#e8a33d',

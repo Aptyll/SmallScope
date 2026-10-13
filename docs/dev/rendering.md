@@ -153,9 +153,10 @@ entity draw code must use `ex`/`ey`.
 `render()` (js/draw/render.js) runs, in order. **World space** (`ctx = wctx`):
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](#cast-shadows)) →
-   ground blit → **the creek's current** (`drawCreekFlow`, js/draw/ground.js: glints drifting
-   downstream over the still water the bake laid, on the field's clock) → **the creek's fish**
-   (`drawCreekFish`, the same file: decoration swimming downstream, not the sim's `fish`) → under-ice fish →
+   ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: whitefish and snow char under the
+   water, at `SWIM_A` alpha with a rim in the water's own shade) → **the creek's current**
+   (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
+   and over the fish, on the field's clock) → under-ice fish →
    ice-crack decals;
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
@@ -858,6 +859,11 @@ still up, full health, a busy body), the asked well takes the red band and 1px s
 `foodFlash` seconds — `foodDenied(type)`, aged in `updateFx` beside `bagDenied()`/`toolDenied()`.
 The shared food clock (`drawFoodClock`) sweeps both together and lifts the one being chewed
 white. A meal you have none of keeps its seat but dims to 0.35, so the pair never rearranges.
+The fish well shows the fish F will eat next (`fishToEat`) and, with nothing picked, the count of
+all three. Pointing at it raises the **fish picker** (`drawFishPop`): the three fish in ability-size
+wells over the strip's right end, above the buy plates' row, each with its count; the hovered one's
+name in its colour and its `+heal` stand over the row, the picked one wears a gold rim and the
+others dim. The bake grows by `fishPopHeadroom()` while it is up.
 The **purse** under them (`drawGoldCell`, `goldCellRect`) is the coin and the gold, centred, in
 the same rim — a readout, not a button: no key, no hover, no refusal; `stripHit` answers `frame`
 over it and `tipGold` gives the exact figure — inked `#f5c542` because the one number on the HUD
@@ -1575,17 +1581,17 @@ width (`drawNavCell`'s grammar), and BACK / LOBBY are bare 2x words at the foot,
 under the pointer or the keys - the title screen's grammar, no plank. Left/right walks those four
 words and Enter takes one.
 
-**The graph**, the GRAPHS page, on two words (**GOLD** / **DAMAGE**; up/down swaps them): one
-cumulative line **per player**, a side's five in five shades of its colour (`SCORE_SHADE`) and yours
-in gold, beside a key that names every player - your side first, a gap, the rivals - with the
-line's swatch and where that player ended. The pointer on a key row lifts that player's line over
-the rest and dims the others, which is how ten crossing lines stay readable. Dotted uprights are
-the match's days (`CYCLE`), the top-left prints the scale (a chart with no scale is a squiggle,
-the merchant's own rule) and the match clock is in the head, printed once. A match shorter than
-two samples draws a flat line rather than a sentence saying so.
+**The graphs**, the GRAPHS page, League's: every stat of every group listed down the left under
+its group's name, the charted one marked gold (a click, or up/down, picks another), and that stat as
+a **horizontal bar chart** - one bar a player in its side's colour, your side first, a gap, the
+rivals, each with its face at the head, its name over the bar (beside it on a view too short for
+two lines a row) and its number at the end; yours carries a gold line and a gold number. A bar is
+its player's share of the scale's top, a round step past the biggest value (`scoreStep`), and the
+steps stand as faint uprights with their values (K/M/B) under the chart.
 
 **Where the numbers come from.** `sampleStats(dt)` (called from `updatePlay`, sim.js) pushes every
-player's cumulative gold earned and damage dealt onto `p.hGold`/`p.hDmg` every `STAT_STEP` seconds.
+player's cumulative gold earned and damage dealt onto `p.hGold`/`p.hDmg` every `STAT_STEP` seconds;
+the lobby no longer draws them (the bars read the frozen record), and the bot lab reads the last gold.
 They live on the PLAYER rather than in a table of their own because a player field crosses the wire
 with everything else, so a client's lobby draws the host's graph instead of a flat line; every
 player is sampled on the same tick, active or not, so index *i* means the same moment in all ten

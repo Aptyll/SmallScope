@@ -176,9 +176,9 @@ function render() {
   groundView(ox, oy, ox + WV_W, oy + WV_H);
   syncCasts(Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
   ctx.drawImage(groundCv, ox, oy, WV_W, WV_H, 0, 0, WV_W, WV_H);
-  // the creek's current, drifting over the still water the bake laid (ground.js)
+  // the creek's fish and its current, drifting over the still water the bake laid (ground.js)
+  drawCreekFish(ox, oy); // under the water: drawn first, so the glints run over it
   drawCreekFlow(ox, oy, Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
-  drawCreekFish(ox, oy);
 
   // fish: silhouettes drifting under the thin ice, crisp in open holes
   for (const f of fish) {
@@ -1491,7 +1491,7 @@ function cursorInfo() {
   if (shelfHit(mouse.x, mouse.y)) return { kind: 'hand' };
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };
   const sh = stripHit(mouse.x, mouse.y);
-  if (sh && (sh.kind === 'ab' || sh.kind === 'food')) return { kind: 'hand' };
+  if (sh && (sh.kind === 'ab' || sh.kind === 'food' || sh.kind === 'fishPick')) return { kind: 'hand' };
   if (sh) return { kind: 'arrow' };
 
   // Every reticle in play carries the tool's state, whatever it is hovering:

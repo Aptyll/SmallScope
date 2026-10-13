@@ -916,6 +916,7 @@ function updatePlayer(p, dt) {
     } else {
       rollSweep(p); // everything small in the way takes a swipe and is rolled through
     }
+    creekFishCatch(p); // ...and a fish in the creek under it is taken (js/world.js)
     p.dodgeDustT -= dt;
     if (p.dodgeDustT <= 0) {
       p.dodgeDustT = 0.05;

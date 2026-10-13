@@ -1498,6 +1498,72 @@ function placeCreek() {
   for (const f of creekOuterFords()) creekFord(f.x, f.y);
 }
 
+// THE CREEK'S FISH: a LAKE WHITEFISH or a SNOW CHAR every CREEK_FISH_GAP
+// tiles of creek, swimming downstream under the water, now and then down out
+// of sight and back, under the bridge's deck and never over a ford. Each one
+// is a pure function of its index and the field's clock (state.windT), so
+// nothing has to move them and every client places them alike; the one thing
+// the match keeps is which were caught: state.creekGone maps an index to the
+// windT it swims back at. A body ROLLING over the water onto one catches it
+// (creekFishCatch, from the roll in updatePlayer) - the only way to them, since
+// walking in is a plunge - and it goes in the pouch (ITEMS.whitefish /
+// ITEMS.snowChar) to be eaten off the fish well. They are not the `fish` an
+// ice hole or a net gives up (the `fish` banner, js/wildlife.js). The pixels:
+// drawCreekFish, js/draw/ground.js.
+const CREEK_FISH_GAP = 5;        // tiles of creek per fish
+const CREEK_FISH_SPD = [18, 34]; // px/s downstream, the slowest fish .. the fastest
+const CREEK_FISH_CHAR = 0.35;    // the share of them that are snow char (the bigger meal); the rest are whitefish
+const CREEK_FISH_LANE = CREEK_HW - 0.9; // tiles either side of the water's middle a fish keeps to: its body clear of the banks
+const CREEK_FISH_R = 11;         // px from a roller's feet that a fish is caught
+const CREEK_FISH_BACK = 45;      // s before a caught fish's place in the shoal swims back
+const CF = { x: 0, y: 0, w: 0, kind: 'whitefish', show: 0, fdx: 1, fdy: 0 };
+function creekFishN() { return PRACTICE ? 0 : Math.ceil((WORLD - 1) * Math.SQRT2 / CREEK_FISH_GAP); }
+// where fish i is now, into CF: world px, w along the creek, its kind, how
+// much of it shows (0 gone or dived, 1 plain to see) and its heading
+function creekFishAt(i) {
+  const now = state.windT, span = (WORLD - 1) * Math.SQRT2, half = span / 2;
+  const h = hash2(i * 13 + 7, 41), h2 = hash2(i * 5 + 3, 77), h3 = hash2(i + 19, i * 3 + 11);
+  const v = (CREEK_FISH_SPD[0] + (CREEK_FISH_SPD[1] - CREEK_FISH_SPD[0]) * h) / TILE;
+  const w = ((i * CREEK_FISH_GAP + h3 * CREEK_FISH_GAP + now * v) % span + span) % span - half; // wraps world edge to edge, where the woods hide it
+  let show = Math.max(0, Math.min(1, (vnoise(now * 0.12 + i * 7.3, i * 1.9) - 0.28) * 5));
+  show *= Math.max(0, Math.min(1, (Math.abs(w) - BRIDGE_W - 0.6) / 1.2)); // dives under the deck
+  const back = state.creekGone[i];
+  if (back !== undefined) show *= Math.max(0, Math.min(1, now - back));
+  const p = creekMid(w) + (h2 - 0.5) * 2 * CREEK_FISH_LANE + Math.sin(now * 1.3 + i) * 0.25;
+  const fx = ((w + p) * Math.SQRT2 + WORLD - 1) / 2, fy = ((w - p) * Math.SQRT2 + WORLD - 1) / 2;
+  if (show > 0) { // ...and never shows over a ford's stones
+    const tx = Math.round(fx), ty = Math.round(fy);
+    for (let dy = -1; dy <= 1 && show > 0; dy++) for (let dx = -1; dx <= 1; dx++) if (inWorld(tx + dx, ty + dy) && ground[idx(tx + dx, ty + dy)] === 5) { show = 0; break; }
+  }
+  const f = creekFlow(fx, fy);
+  CF.fdx = f.fdx; CF.fdy = f.fdy;
+  CF.x = (fx + 0.5) * TILE; CF.y = (fy + 0.5) * TILE; CF.w = w; CF.show = show;
+  CF.kind = hash2(i * 3 + 101, 59) < CREEK_FISH_CHAR ? 'snowChar' : 'whitefish';
+  return CF;
+}
+// A roll over the creek takes any fish it passes over (from the roll in
+// updatePlayer, js/sim.js). Two rollers can reach one fish in a step, so it is
+// contested, not first-come.
+function creekFishCatch(p) {
+  if (PRACTICE || creekAt(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5) > 0.6) return;
+  const n = creekFishN(), g = state.creekGone;
+  for (const k in g) if (state.windT > g[k] + 1) delete g[k]; // swum back in: forgotten
+  for (let i = 0; i < n; i++) {
+    const f = creekFishAt(i);
+    if (f.show < 0.5 || Math.hypot(f.x - p.x, f.y - (p.y + 4)) > CREEK_FISH_R) continue;
+    const kind = f.kind, x = f.x, y = f.y;
+    contest('creekfish:' + i, p, () => {
+      if (g[i] !== undefined && state.windT < g[i] + 1) return;
+      g[i] = state.windT + CREEK_FISH_BACK;
+      bagAdd(p, kind, 1);
+      addFloater(x, y - 10, ITEMS[kind].name + '!', RES_COLORS[kind]);
+      burst(x, y, '#9fc4dd', 8, 45, 0.45, true);
+      burst(x, y, '#ddf1f8', 5, 35, 0.4, true);
+      sfxAt('splash', x, y); sfxAt('stash', x, y);
+    });
+  }
+}
+
 // ------------------------------------------------------------ zipline
 // THE ZIPLINE: one cable per team, strung on pylons from the stump ring
 // beside its bird, out over the spur's treeline and along the road's own verge, to

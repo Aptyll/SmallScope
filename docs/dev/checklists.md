@@ -242,7 +242,8 @@ hovering it says only its raw type name. **A new FOOD is the one item that is al
 give its `ITEMS` row a `heal` and `pouch: true` and it picks up the pouch, the meal channel, the
 shared clock and the tooltip rows for free (`startEat`, js/core.js — see
 [Food](gameplay.md#food-the-meal-is-a-channel)); what it still needs is its own key and a seat in
-`FOOD_BTNS` (js/ui/strip.js), because a meal is pressed from the hud strip and never from a cell. The
+`FOOD_BTNS` (js/ui/strip.js), because a meal is pressed from the hud strip and never from a cell
+(a new fish instead joins `FISH_KINDS`, js/player.js, and `FISH_POP`, and eats off the fish well). The
 drop draw pass and the bag cell both centre an icon
 on its own width, so a 12×12 needs no branch. Gold is **not** an `ITEMS` entry and must not become
 one: it is a wallet number with no ceiling. See

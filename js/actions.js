@@ -295,8 +295,9 @@ function tryDodge(p) {
 // branch calls rollSweep() every step: anything small inside the roll's body
 // takes one swipe per roll and is rolled through (separateUnits skips the
 // pair, so there is nothing to bump against), and anything too big to go
-// through ends the roll in a tackle that hurts both sides. Fish are under the
-// ice and are not in any of it.
+// through ends the roll in a tackle that hurts both sides. Fish under the ice
+// are not in any of it; a creek fish the roll passes over is caught
+// (creekFishCatch, js/world.js).
 
 // How hard the roll in progress hits: the scale runs from the champion's own
 // dodgeSpeed (the floor a standing dash starts at) up to ROLL_FAST, so speed
