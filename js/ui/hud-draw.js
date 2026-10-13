@@ -1,55 +1,121 @@
 'use strict';
-// Drawing the strip and the shelf: the xp bar, tier and mod plates, item
-// icons, the cooldown sweep, the ability, pouch, food and gold cells,
+// Drawing the strip and the shelf: the portrait, the health and stamina
+// bars, tier and mod plates, item icons, the cooldown sweep, the ability,
+// meal and gold cells,
 // drawHudStrip and the scaled bakes, then the shelf's wells, the drop
 // promise and the drag ghost.
 // ---- the plates, bars and icons the widgets share --------------------------
-// a level-up is an edge the sim never announces to the HUD, so the xp bar
-// watches for it itself and pops white
+// THE PORTRAIT: the hero's face in a square well, framed in the wells' own
+// border (ink, then the rim). Inside the rim a 3px band is the XP, filling
+// CLOCKWISE FROM TOP CENTRE round the square (each band pixel's place along
+// the perimeter decides it, so the corners turn at the same pace as the
+// sides); then one px of ink seals the face apart from the band. The xp you
+// have and what the level needs stand over the square; at the top level the
+// band is full and the numbers go. A level-up is an edge the sim never
+// announces to the HUD, so the portrait watches for it and pops the band
+// white.
 let abLvSeen = 0, abLvFlash = 0;
-function drawXpBar(now, x, y) {
-  const p = player;
+const PORT_BAND = 3;                          // the xp band's width
+const PORT_XP = '#9d4fb3', PORT_XP_LIT = '#c98ad8', PORT_XP_EMPTY = '#121418';
+const PORT_SKY = '#2f4166', PORT_GROUND = '#263655'; // behind the face: a dusk the hero's pale kit reads on
+const PORT_ZOOM = 3;                          // the face at 3x: the model's head and shoulders fill the square
+function xpFrac(p) {
+  if (p.level >= LEVEL_MAX) return 1;
+  return Math.max(0, Math.min(1, (p.xp - LEVEL_XP[p.level - 1]) / (LEVEL_XP[p.level] - LEVEL_XP[p.level - 1])));
+}
+// the face: the worn body's standing frame if one is worn, the class body's
+// otherwise - the same model drawPlayer puts in the world
+function portraitSprite(p) {
+  const rb = scoutBody(p);
+  return rb ? rb.down.idle[0] : classSet(p).down[0];
+}
+function drawPortrait(now) {
+  const p = player, r = portraitRect();
   if (p.level > abLvSeen && abLvSeen > 0) abLvFlash = now + 0.5;
   abLvSeen = p.level;
   const hot = now < abLvFlash;
-  const max = p.level >= LEVEL_MAX;
-  const frac = max ? 1
-    : (p.xp - LEVEL_XP[p.level - 1]) / (LEVEL_XP[p.level] - LEVEL_XP[p.level - 1]);
-  const inner = AB_W - 2;
-  const fw = Math.round(Math.max(0, Math.min(1, frac)) * inner);
-  // dark silhouette + frost rim: the plate is nearly the old track colour,
-  // so without this the bar is a gold smudge with no readable shape
-  ctx.fillStyle = '#07080a';
-  ctx.fillRect(x - 1, y - 1, AB_W + 2, AB_XP + 2);
-  ctx.fillStyle = '#5a6a9a';
-  ctx.fillRect(x, y, AB_W, 1);
-  ctx.fillStyle = '#24272c';
-  ctx.fillRect(x, y + AB_XP - 1, AB_W, 1);
-  ctx.fillStyle = '#3c4048';
-  ctx.fillRect(x, y, 1, AB_XP);
-  ctx.fillRect(x + AB_W - 1, y, 1, AB_XP);
-  ctx.fillStyle = '#07080a';
-  ctx.fillRect(x + 1, y + 1, inner, AB_XP - 2);
-  const gx = x + 1, gy = y + 1, gh = AB_XP - 2;
+  ctx.fillStyle = HUD_INK; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = '#2b2e34'; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  // the band
+  const bx = r.x + 2, by = r.y + 2, bs = r.w - 4, h = bs / 2;
+  ctx.fillStyle = PORT_XP_EMPTY; ctx.fillRect(bx, by, bs, bs);
+  const f = xpFrac(p);
+  for (let py = 0; py < bs; py++) {
+    for (let px = 0; px < bs; px++) {
+      if (px >= PORT_BAND && px < bs - PORT_BAND && py >= PORT_BAND && py < bs - PORT_BAND) continue;
+      const dx = px + 0.5 - h, dy = py + 0.5 - h;
+      // the pixel's place along the perimeter, clockwise from top centre, 0..1
+      let u;
+      if (-dy >= Math.abs(dx)) u = dx >= 0 ? dx : 8 * h + dx;     // top side
+      else if (dx >= Math.abs(dy)) u = 2 * h + dy;                // right side
+      else if (dy >= Math.abs(dx)) u = 4 * h - dx;                // bottom side
+      else u = 6 * h - dy;                                        // left side
+      if (u / (8 * h) > f) continue;
+      const rim = px === 0 || py === 0 || px === bs - 1 || py === bs - 1;
+      ctx.fillStyle = hot ? '#f4f7ff' : rim ? PORT_XP_LIT : PORT_XP;
+      ctx.fillRect(bx + px, by + py, 1, 1);
+    }
+  }
+  // the seal and the face
+  const sx = bx + PORT_BAND, ss = bs - PORT_BAND * 2;
+  ctx.fillStyle = HUD_INK; ctx.fillRect(sx, by + PORT_BAND, ss, ss);
+  const fx = sx + 1, fy = by + PORT_BAND + 1, fs = ss - 2;
+  ctx.fillStyle = PORT_SKY; ctx.fillRect(fx, fy, fs, fs);
+  ctx.fillStyle = PORT_GROUND; ctx.fillRect(fx, fy + (fs >> 1) + 4, fs, fs - (fs >> 1) - 4);
+  const spr = portraitSprite(p), k = PORT_ZOOM;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(fx, fy, fs, fs); ctx.clip();
+  ctx.drawImage(spr, fx + ((fs - spr.width * k) >> 1), fy + (fs >> 1) - 22, spr.width * k, spr.height * k);
+  ctx.restore();
+  // the level, in a badge on the bottom-right corner: an odd-sized plate so
+  // its digits sit on a true centre, widened for two
+  const lv = String(p.level), lw = pixelTextWidth(lv), bw = lw > 3 ? 17 : 13;
+  const lx = r.x + r.w - bw, ly = r.y + r.h - 13;
+  ctx.fillStyle = HUD_INK; ctx.fillRect(lx, ly, bw, 13);
+  ctx.fillStyle = '#2b2e34'; ctx.fillRect(lx + 1, ly + 1, bw - 2, 11);
+  ctx.fillStyle = BAG_WELL; ctx.fillRect(lx + 2, ly + 2, bw - 4, 9);
+  drawPixelText(ctx, lv, lx + (bw >> 1) - ((lw - 1) >> 1), ly + 4, '#f4f7ff', 1);
+  // what you have of this level, and what it needs, standing over the square
+  if (p.level < LEVEL_MAX) {
+    const t = Math.floor(p.xp - LEVEL_XP[p.level - 1]) + '/' + (LEVEL_XP[p.level] - LEVEL_XP[p.level - 1]);
+    drawPixelTextOutline(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1), r.y - AB_PAD - XP_TAG + 2, hot ? '#f4f7ff' : PORT_XP_LIT, HUD_INK);
+  }
+}
+// THE HEALTH BAR under the ability wells: green, the number on it your health
+// and your most. Green and not your side's colour: this one bar is always
+// yours, and the overhead bars keep the sides.
+const HP_FILL = '#4fae4a', HP_LIT = '#7fd36b', HP_DARK = '#2f7a33', HP_TRACK = '#1a2a1c';
+function drawHpBar() {
+  const p = player, r = hpBarRect();
+  const f = Math.max(0, Math.min(1, p.hp / p.maxHp)), fw = Math.round(r.w * f);
+  ctx.fillStyle = HUD_INK; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
+  ctx.fillStyle = HP_TRACK; ctx.fillRect(r.x, r.y, r.w, r.h);
   if (fw > 0) {
-    // 1px dark leading edge so the fill's end reads as a silhouette
-    const cap = fw < inner ? 1 : 0;
-    ctx.fillStyle = '#0a0e1c';
-    ctx.fillRect(gx, gy, fw, gh);
-    ctx.fillStyle = hot ? '#f4f7ff' : '#9d4fb3';
-    ctx.fillRect(gx, gy, Math.max(1, fw - cap), gh);
-    ctx.fillStyle = hot ? '#ffffff' : '#c98ad8';
-    ctx.fillRect(gx, gy, Math.max(1, fw - cap), 1);
-    ctx.fillStyle = hot ? '#cfd8e8' : '#5f2d75';
-    ctx.fillRect(gx, gy + gh - 1, Math.max(1, fw - cap), 1);
+    ctx.fillStyle = HP_FILL; ctx.fillRect(r.x, r.y, fw, r.h);
+    ctx.fillStyle = HP_LIT; ctx.fillRect(r.x, r.y, fw, 1);
+    ctx.fillStyle = HP_DARK; ctx.fillRect(r.x, r.y + r.h - 1, fw, 1);
   }
-  // the notches: AB_SEGS segments - a tick cuts dark through the fill and sits
-  // faint on the empty track, so the bar is countable full or empty
-  for (let s = 1; s < AB_SEGS; s++) {
-    const tx = gx + Math.round(s * inner / AB_SEGS);
-    ctx.fillStyle = tx < gx + fw ? '#3d1c4d' : '#24272c';
-    ctx.fillRect(tx, gy, 1, gh);
+  const t = Math.ceil(Math.max(0, p.hp)) + '/' + Math.round(p.maxHp);
+  drawPixelTextOutline(ctx, t, r.x + ((r.w - pixelTextWidth(t)) >> 1), r.y + 1, '#f4f7ff', HUD_INK);
+}
+// THE STAMINA BAR under it: the dodge charges, read exactly as the overhead
+// one is (white, the chunk just spent draining as a ghost - drawOverhead,
+// js/draw/bodies.js), with a notch between charges. The seat a mana bar takes
+// when heroes come.
+function drawStBar() {
+  const p = player, r = stBarRect();
+  ctx.fillStyle = HUD_INK; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
+  ctx.fillStyle = '#24272c'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  const regen = p.dodgeCharges < DODGE_CHARGES ? 1 - p.dodgeRegenT / kitOf(p).dodgeCd : 0;
+  const f = Math.max(0, Math.min(1, (p.dodgeCharges + regen) / DODGE_CHARGES));
+  const fw = Math.round(r.w * f), gw = Math.round(r.w * Math.max(f, p.stamGhost)) - fw;
+  if (gw > 0) { ctx.fillStyle = STAM_GHOST; ctx.fillRect(r.x + fw, r.y, gw, r.h); }
+  if (fw > 0) {
+    ctx.fillStyle = STAM_COL; ctx.fillRect(r.x, r.y, fw, r.h);
+    ctx.fillStyle = '#b4b8bf'; ctx.fillRect(r.x, r.y + r.h - 1, fw, 1);
   }
+  ctx.fillStyle = HUD_INK;
+  for (let k = 1; k < DODGE_CHARGES; k++) ctx.fillRect(r.x + Math.round(k * r.w / DODGE_CHARGES), r.y, 1, r.h);
 }
 // The tier behind an item's icon, wherever that icon sits: a bag cell, the
 // weapon well, a bit cell, the drag ghost. This is the ONLY place a tier is
@@ -281,45 +347,23 @@ function drawAbBuyPlate(i, now, hot) {
   ctx.fillStyle = hot ? '#f4f7ff' : '#f2cc6a';
   ctx.fillRect(r.x + 6, y + 3, 2, 8); ctx.fillRect(r.x + 3, y + 6, 8, 2);
 }
-// A meal button: read left to right, the key it is pressed on, the item icon
-// and how many you are carrying, over BAG_WELL and under the shared food
-// clock - one grammar for the meal wherever it is read. It is WIDE because
-// the pouch has no ceiling: the count is shortNum's four characters at most
-// (js/core.js), so a hundred berries and three read in the same seat.
-// A meal you have none of keeps its seat but dims, so the pair never
-// rearranges; the click sets the same edge-trigger the key does and startEat
-// speaks every refusal - and the refused button wears the well's red band and
-// the pack's 1px shake for it (foodDenied).
-// how many unopened cards the pouch holds, all rarities together
-function cardTotal(p) { let n = 0; for (const r of CARD_RARITIES) n += bagCount(p, cardKey(r)); return n; }
-// the card button's refusal: nothing to draw
-function cardDenied() { foodDenied('card'); }
-// THE CARD ICON: three of the card icons themselves fanned - a white, a blue
-// and a gold, each a step up and over from the last, the gold's glint on top
-// - baked once at 16x16, the size a doubled 8px item icon draws at, so the
-// four squares carry art of one size. Three rarities, because the button
-// holds every rarity at once and the fan is what says "a hand" rather than
-// "a card"; the real icons, so the hand is visibly made of what it draws.
-const cardFanCv = (() => {
-  const cv = document.createElement('canvas');
-  cv.width = cv.height = 16;
-  const g = cv.getContext('2d');
-  g.drawImage(SPRITES.itemCardWhite, -1, 7);
-  g.drawImage(SPRITES.itemCardBlue, 3, 4);
-  g.drawImage(SPRITES.itemCardGold, 7, 1);
-  return cv;
-})();
-// ONE POUCH SQUARE, the block's whole grammar - the ability well's, smaller:
-// the icon doubled in the middle (a bake that is already 16px draws at 1x),
-// the key cap in the BOTTOM-LEFT corner, exactly where an ability well
-// prints its key (the pad's glyph while one is in hand), and the count in
-// the TOP-RIGHT, over the icon's corner if it has to be - so the eye reads
-// keys along the strip's bottom edge and numbers along its top.
-// All four wear the same rim, so the block is one symmetrical thing; on a
-// button (a meal, the cards) it lights on hover and reddens on a refusal,
-// and on the gold - a readout - it never does either, which with no key cap
-// in its corner is what says the one square you cannot press.
-function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
+// a card key with nothing to draw: the deny cue (unopened cards are bag
+// items, so the pack is where they are read)
+function cardDenied() { SFX.deny(); }
+// A MEAL WELL: an ability well's grammar pointed at the pouch - the item icon
+// doubled in the middle, the key in the bottom-left corner at the size an
+// ability prints its key (the pad's glyph while one is in hand), and how many
+// you carry in the top-right, shortNum's four characters at most (the pouch
+// has no ceiling). It wipes on the shared food clock. A meal you have none
+// of keeps its seat but dims, so the pair never rearranges; the click sets
+// the same edge-trigger the key does and startEat speaks every refusal - the
+// refused well wears the ability wells' red and their 1px shake for it
+// (foodDenied).
+function drawFoodCell(i, now, on) {
+  const p = player, b = FOOD_BTNS[i], r = foodCellRect(i);
+  const n = bagCount(p, b.type);
+  const red = foodFlash > 0 && foodFlashI === i;
+  const live = n > 0 && p.foodCd <= 0;
   if (red) {
     ctx.save();
     ctx.translate(((now * 40) | 0) % 2 ? -1 : 1, 0);
@@ -330,67 +374,59 @@ function drawPouchCell(r, act, icon, n, col, on, red, live, now) {
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = BAG_WELL;
   ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
-  const k = icon.width <= 8 ? 2 : 1, iw = icon.width * k, ih = icon.height * k;
+  const icon = SPRITES[ITEMS[b.type].icon], iw = icon.width * 2, ih = icon.height * 2;
   if (n <= 0) ctx.globalAlpha = 0.35;
   ctx.drawImage(icon, r.x + ((r.w - iw) >> 1), r.y + ((r.h - ih) >> 1), iw, ih);
   ctx.globalAlpha = 1;
-  if (act) {
-    const lab = keyCapShort(act);
-    if (padActive()) drawPadBind(ctx, r.x + 2, r.y + r.h - 8, act, 1, !live);
-    else drawPixelTextOutline(ctx, lab, r.x + 2, r.y + r.h - 8, live ? '#f4f7ff' : '#8c919a', '#191b1f');
-  }
+  drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, b.type);
+  if (padActive()) drawPadBind(ctx, r.x + 3, r.y + r.h - 13 - 2 * 3, b.act, 2, !live);
+  else drawPixelTextOutline(ctx, keyCapShort(b.act), r.x + 3, r.y + r.h - 13, live ? '#f4f7ff' : '#8c919a', '#191b1f', 2);
   const t = shortNum(n);
-  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? col : '#8c919a', '#191b1f');
+  drawPixelTextOutline(ctx, t, r.x + r.w - 2 - pixelTextWidth(t), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
   if (red) ctx.restore();
 }
-// a meal button, or the card button: the pouch grammar pointed at a thing
-// you press - the meals share the food clock, the cards have no clock
-function drawFoodCell(i, now, on) {
-  const p = player, b = FOOD_BTNS[i];
-  const r = foodCellRect(i);
-  const isCard = b.type === 'card';
-  const n = isCard ? cardTotal(p) : bagCount(p, b.type);
-  const red = foodFlash > 0 && foodFlashI === i;
-  const live = n > 0 && (isCard || p.foodCd <= 0);
-  drawPouchCell(r, b.act, isCard ? cardFanCv : SPRITES[ITEMS[b.type].icon], n, '#f4f7ff', on, red, live, now);
-  if (!isCard) drawFoodClock(r.x + 1, r.y + 1, r.w - 2, r.h - 2, b.type);
-}
-// THE GOLD PLATE, top-right of the block: the coin and the gold, inked
-// '#f5c542' because the one number on the HUD that is money must never read
-// as a count of something carried. A readout, not a button - the same rim
-// as its three neighbours, but no key cap, no hover and no refusal.
+// THE PURSE under the meals: the coin and the gold, centred, inked '#f5c542'
+// because the one number on the HUD that is money must never read as a count
+// of something carried. A readout, not a button - the meal wells' rim, but no
+// key, no hover and no refusal.
 function drawGoldCell() {
-  drawPouchCell(goldCellRect(), null, SPRITES.itemGold, inv.gold, '#f5c542', false, false, true, 0);
+  const r = goldCellRect();
+  ctx.fillStyle = HUD_INK; ctx.fillRect(r.x - 1, r.y - 1, r.w + 2, r.h + 2);
+  ctx.fillStyle = '#3c4048'; ctx.fillRect(r.x, r.y, r.w, r.h);
+  ctx.fillStyle = BAG_WELL; ctx.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2);
+  const t = shortNum(inv.gold), coin = SPRITES.itemGold, w = coin.width + 2 + pixelTextWidth(t);
+  const x = r.x + ((r.w - w) >> 1), y = r.y + ((r.h - coin.height) >> 1);
+  ctx.drawImage(coin, x, y);
+  drawPixelTextOutline(ctx, t, x + coin.width + 2, r.y + ((r.h - 5) >> 1), '#f5c542', '#191b1f');
 }
 function drawHudStrip(now) {
   const R = hudStripRect();
   const hov = mouse.inside ? stripHit(mouse.x, mouse.y) : null;
   const bhov = mouse.inside ? abBuyHit(mouse.x, mouse.y) : -1;
-  // one frame behind bar, wells and the pouch block's tab (drawHudFrame,
-  // above): the bag's ground and the bag's chrome, so the two HUD pieces
-  // sit in the same family
-  const tb = pouchTabRect();
-  drawHudFrame(R.x - 3, R.y, R.w + 6, R.h, { tab: { x: tb.x, y: tb.y, w: tb.w } });
+  // one frame behind portrait, wells and bars (drawHudFrame): the bag's
+  // ground and the bag's chrome, so the HUD pieces sit in the same family
+  drawHudFrame(R.x - 3, R.y, R.w + 6, R.h);
+  drawPortrait(now);
   for (let i = 0; i < AB_N; i++) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
     drawAbBuyPlate(i, now, bhov === i);
   }
-  drawBuildTab(now);
   for (let i = 0; i < FOOD_BTNS.length; i++) {
     drawFoodCell(i, now, hov && hov.kind === 'food' && hov.i === i);
   }
+  drawHpBar();
+  drawStBar();
   drawGoldCell();
-  drawXpBar(now, R.x, R.y + AB_PAD + AB_CELL + AB_PAD);
-  drawBuildList(now); // last: the open column stands over the pouch tab's shoulder
+  drawBuildList(now); // last: the open column stands over the meal wells
 }
 // The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
 // everything draws straight to the frame as it always did; any other size
 // bakes the widget at 1x into hudScaleCv and blits it scaled about the strip's
 // bottom-centre anchor - uictx's smoothing is off, so the art scales
 // nearest-neighbour instead of every fillRect going soft under a fractional
-// transform. The bake's headroom covers the buy plates' bob and the purse tab
-// - and, while the build list is open, the column standing over the build
-// well (buildHeadroom, js/ui/wheel.js).
+// transform. The bake's headroom covers the buy plates' bob and the xp
+// numbers over the portrait - and, while the build list is open, the column
+// standing over the meal wells (buildHeadroom, js/ui/wheel.js).
 const HUD_BAKE_HEAD = 26;
 const hudScaleCv = document.createElement('canvas');
 const hudScaleCtx = hudScaleCv.getContext('2d');

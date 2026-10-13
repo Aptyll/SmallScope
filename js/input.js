@@ -92,7 +92,7 @@ const KEY_ACTIONS = [
   { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
   { id: 'flag', verb: 'FLAG WHEEL', ck: 'g' },
-  { id: 'card', verb: 'DRAW CARD', key: 'c', ck: 'z' }, { id: 'tunnel', verb: 'DIG BURROW', key: 'v', ck: 'v' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
+  { id: 'tunnel', verb: 'DIG BURROW', key: 'v', ck: 'v' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
   { id: 'build', verb: 'BUILD', key: 't', ck: 't' }, { id: 'rotate', verb: 'ROTATE', key: 'r', ck: 'x' },
   { id: 'map', verb: 'WORLD MAP', key: 'm', ck: 'm' }, { id: 'board', verb: 'STANDINGS', key: 'Tab', ck: 'Tab' },
@@ -294,7 +294,6 @@ function keyPress(e) {
   if (keyIs(e, 'dodge')) player.input.dodge = true;
   if (keyIs(e, 'berry')) player.input.eatBerry = true;
   if (keyIs(e, 'fish')) player.input.eatFish = true;
-  if (keyIs(e, 'card')) player.input.useCard = true;
   // the burrow stands its hole ghost under the pointer, and puts it away (js/tunnel.js)
   if (keyIs(e, 'tunnel') && !e.repeat) tunnelAimToggle();
   // the pack key drops the inventory drawer under the weapon shelf. It is
@@ -302,8 +301,8 @@ function keyPress(e) {
   // sim nor swallows anything but its own clicks.
   if (keyIs(e, 'bag')) { state.bagOpen = !state.bagOpen; SFX.ui(state.bagOpen); }
   // THE BUILD LIST (the `build list` group, js/ui/wheel.js): a tap of T
-  // opens it over the build well on the last piece and a tap again closes it
-  // (so do a click on the well, Escape and the right button); holding T
+  // opens it over the strip's meal wells on the last piece and a tap again
+  // closes it (so do Escape and the right button); holding T
   // opens the piece wheel, and the release on a wedge opens the list on that
   // piece (buildKeyRelease). While it is up the ghost under the pointer is
   // what a left-click lays, the wheel walks the rows, and R turns a piece
@@ -510,7 +509,7 @@ function pointerPress(button) {
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
     if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
-        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || buildTabHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
+        shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any tile on the map is a place to plant a flag on (building is the
     // list on T, managing is E beside your own building)
     openFlagWheel();
@@ -527,9 +526,6 @@ function pointerPress(button) {
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
   if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // the chart's CLOSE plank; the rest of the slab swallows the press
-  // the hammer plate under the shelf opens and shuts the build list, as the
-  // build key does - never while carrying, when the release is the drop
-  if (!state.drag && buildTabHit(mouse.x, mouse.y)) { toggleBuild(); return; }
   // the build list: a press on a row picks it, a press on the world lays
   // the ghost (a red ghost refuses with the deny cue and nothing else);
   // presses over the rest of the HUD go on to it as ever

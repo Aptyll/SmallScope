@@ -197,10 +197,10 @@ function playerTint(p) {
 //
 // FOOD AND CARDS ARE NOT IN THE BAG AT ALL. An item marked `pouch` lives in
 // `p.food`, a set of uncapped counters beside the wallet, and takes no cell:
-// the two meals are pressed on Q and F from the hud strip's own buttons, and
-// an unopened card (3.23) is DRAWN on the card key from the strip's card
-// button - one at random from everything held, its buff picked at random
-// (useCard, js/core.js) - so none of them is ever laid out, compared or
+// the two meals are pressed on Q and F from the hud strip's own wells, and
+// an unopened card (3.23) opens itself the moment it is held (0.426) - one
+// at random from everything held, its buff picked at random (useCard,
+// js/core.js) - so none of them is ever laid out, compared or
 // dragged, and every cell one of them took was a cell taken off the build.
 // The six helpers below route them there, which is what keeps the pickup, the
 // catch, the sale and the AI's food check generic over "a

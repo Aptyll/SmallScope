@@ -293,7 +293,6 @@ white snow — in the rarity's colour (`C`, the same five hexes as `RES_COLORS`)
 under any palette, so colour is never the only thing carrying a rarity; Purple and Gold also throw
 a glint off the corner (`x`). `itemCards` holds the five grids (the pips differ, so they are five
 grids on one `CARD_PAL`, not one grid swapped five ways), baked as `itemCardWhite`…`itemCardGold`.
-The strip's card button fans three of those same icons (`cardFanCv`, js/ui/hud-draw.js).
 
 **The pine is twenty-four bend frames of one tree**, and the first of the imported sprites — the
 others are the gold sack, the three animated goods and both prey, below:

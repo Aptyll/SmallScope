@@ -55,7 +55,7 @@ function renderUI(now) {
   // the practice bar down the left edge, PRACTICE TOOL only (js/ui/cheats.js)
   if (!out && PRACTICE) drawCheatBar(now);
 
-  // hud strip (the xp bar over the ability wells and the pouch block),
+  // hud strip (the portrait, the ability wells over the bars, the meals),
   // bottom-centre; it rides the intro slide up from below, at whatever HUD
   // SIZE the settings dial holds (drawHudScaled). The carried item rides the
   // pointer over everything, so it stays outside the scale and the slide.

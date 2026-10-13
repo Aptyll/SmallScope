@@ -28,8 +28,8 @@ const PAD_IDLE = 30;                      // s since its last input before a pad
 // START is the ESC slab (Escape, the one fixed key), L3 the inventory
 // drawer, up the character sheet, left and right the two meals. Four are gestures rather
 // than keys and are handled by hand in padPress/padRelease: RT is the draw
-// (held) and LT the slide, R3 holds the flag wheel open over the aim (and
-// draws a card on a tap, the way BACK splits), down holds the build wheel,
+// (held) and LT the slide, R3 holds the flag wheel open over the aim (a quick
+// tap plants nothing), down holds the build wheel,
 // and BACK is the standings while held and the map on a tap.
 const PAD_PLAY = { 0: 'dodge', 1: 'ab2', 2: 'work', 3: 'ab1', 4: 'ab3', 5: 'ab4', 9: 'Escape', 10: 'bag', 12: 'char', 14: 'berry', 15: 'fish' };
 // Over a menu or a panel: A takes (whatever the pointer is on, or the
@@ -51,7 +51,7 @@ const pad = {
   backT: -1,                    // seconds BACK has been held; -1 while it is up
   wheel: false,                 // dpad down is holding the build wheel open
   flag: false,                  // R3 is holding the flag wheel open
-  r3T: -1,                      // seconds R3 has been held; -1 while it is up (a tap draws a card)
+  r3T: -1,                      // seconds R3 has been held; -1 while it is up (a tap plants nothing)
   click: false,                 // A is holding the pointer's button down over a panel
   menu: false,                  // last poll's mode, so a flip mid-hold releases cleanly
   slot: -1,                     // its navigator.getGamepads() index
@@ -285,9 +285,9 @@ function padRelease(i, menu) {
     return;
   }
   if (i === 11) {
-    // let go quickly: not an order but a card - the wheel, if it opened, is
-    // closed choosing nothing before it can plant anything
-    if (pad.r3T >= 0 && pad.r3T < PAD_TAP) { if (pad.flag) state.wheel = null; keyPress({ key: actKey('card'), act: 'card', repeat: false }); keyRelease({ key: actKey('card'), act: 'card' }); }
+    // let go quickly: not an order - the wheel, if it opened, is closed
+    // choosing nothing before it can plant anything
+    if (pad.r3T >= 0 && pad.r3T < PAD_TAP) { if (pad.flag) state.wheel = null; }
     else if (pad.flag && state.wheel) { resolveWheel(); state.wheel = null; }
     pad.flag = false; pad.r3T = -1;
     return;

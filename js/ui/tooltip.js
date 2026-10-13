@@ -113,18 +113,6 @@ function tipBit(id) {
   d.notes.push([b.blurb, TIP_DIM]);
   return d;
 }
-// the card button: every rarity in hand on its own row, in its own ink, so
-// what the next draw could be is read here and nowhere else
-function tipCards() {
-  const d = { title: 'CARDS', tcol: '#f4f7ff', kind: 'UNOPENED', icon: cardFanCv, plate: BAG_WELL, rim: '#3c4048', rows: [], notes: [] };
-  for (const r of CARD_RARITIES) {
-    const n = bagCount(player, cardKey(r));
-    if (n > 0) d.rows.push([r.toUpperCase(), String(n), RES_COLORS[cardKey(r)]]);
-  }
-  if (!d.rows.length) d.rows.push(['NONE', '', TIP_DIM]);
-  d.notes.push(['ONE AT RANDOM, ITS BUFF AT RANDOM', TIP_DIM]);
-  return d;
-}
 // the burrow's pack cell (js/tunnel.js): the dig, the wait after a ride, and how
 // long a rival's boots take to cave it - the numbers the hole itself shows
 function tipTunnel() {
@@ -358,7 +346,6 @@ function tipAt(mx, my) {
   // descriptor, so the two surfaces can never disagree about a berry
   if (sh && sh.kind === 'food') {
     const type = FOOD_BTNS[sh.i].type;
-    if (type === 'card') return tipCards();
     return tipStack({ type, n: bagCount(player, type) });
   }
   if (sh && sh.kind === 'frame') {
