@@ -2,35 +2,33 @@
 // The team rail: every other player in the match as a chip along the top edge,
 // and the anchors (railBottom, headlineY, noteY) the screens hang under it.
 // ---- the team rail: the roster along the top edge ----------------------
-// THE TEAM RAIL (3.33, joined into one scoreboard in 4.16): every other player in
-// the match along the top centre, Dota's top bar kept clean and minimal.
-// ONE plain plate (the hud frame's outline and flat ground, no bevel, no
-// snow): your side's chips on the left, the rival's on the right, and
-// between them the score - your side's kill total, the match clock, the
-// rival's total - on a darker panel, each total in its
-// side's mark. A CHIP per player: the class emblem at 12px (CLASS12,
-// js/menu.js) in a rim painted by side through skin(), a thin hp bar under it
-// in the same colour (one solid run, no segments). You are not on it:
+// THE TEAM RAIL (3.33, joined into one scoreboard in 4.16, slimmed in 0.422):
+// every other player in the match along the top centre, Dota's top bar kept
+// clean and minimal. ONE thin plate (the hud frame's outline and flat
+// ground, no bevel, no snow): your side's chips on the left, the rival's on
+// the right, and between them the match clock with the kill score under
+// it, each total in its side's mark. A CHIP per player: the class emblem at
+// 12px (CLASS12, js/menu.js) with no rim - the side is the thin hp bar under
+// it, in the side's colour (one solid run, no segments). You are not on it:
 // your own hp and level are the strip's, so the rail is the other nine.
-// A dead player's chip goes under the wells' slate with the hand walking
-// round it until the bird sets them down again (drawSweepCover - the one
-// shape every wait on this HUD is drawn in), and its rim is drawn back in
-// behind the hand (drawRimSweep): the side's colour returns round the chip
-// as the countdown runs, whole the moment they are up. A chip that is never
-// coming back sits dark at LOCK_DIM. The tooltip carries the name, class and
-// level of the one chip the pointer is on (tipRail). WHERE anyone is stays
-// the minimap's job.
+// A dead player's emblem gives way to the seconds until the bird sets them
+// down again, Dota's grey portrait with its number; a chip that is never
+// coming back is its emblem at LOCK_DIM. The tooltip carries the name, class
+// and level of the one chip the pointer is on (tipRail). WHERE anyone is
+// stays the minimap's job.
 // It scales with the HUD SIZE dial about its top-centre anchor
 // (drawRailScaled), capped so the plate clears the view's edge (railSc),
 // rides the intro slide down from above with the minimap, and stays up while
 // you are dead - the side's state is exactly what a spectator reads.
-const RAIL_CHIP = 14;               // a chip: the 12px emblem and its 1px rim
-const RAIL_BAR = 4;                 // the hp bar under a chip: 1px air, the 2px bar, 1px air
+const RAIL_CHIP = 12;               // a chip: the 12px emblem, no rim
+const RAIL_BAR = 3;                 // the hp bar under a chip: 1px air, the 2px bar
 const RAIL_BODY = RAIL_CHIP + RAIL_BAR;
-const RAIL_GAP = 2;                 // the air between two chips
-const RAIL_SEP = 4;                 // the air between a side's chips and the score well, and inside the well
-const RAIL_KILL_W = 14;             // a kill total's cell: two digits at 2x
-const RAIL_CLOCK_W = 19;            // the clock's cell: M:SS up to MM:SS at 1x
+const RAIL_GAP = 3;                 // the air between two chips
+const RAIL_SEP = 6;                 // the air between a side's chips and the score well
+const RAIL_CLOCK_W = 19;            // the score well's least width: M:SS up to MM:SS at 1x
+const RAIL_LINE = 8;                // the clock's row to the score's row
+const RAIL_WAIT = '#d4d7dc';        // a waiting chip's seconds
+const RAIL_HOV = '#6a6f79';         // the outline round the chip under the pointer
 const RAIL_Y = MM_GAP;              // the plate's top edge: level with the minimap's outline
 const RAIL_PAD = AB_PAD;            // the plate's margin: line, light, ground
 const RAIL_H = RAIL_PAD + RAIL_BODY + RAIL_PAD;
@@ -57,17 +55,17 @@ function railKills(team) {
 // side with no one on it but you
 function railChipsW(n) { return n ? n * RAIL_CHIP + (n - 1) * RAIL_GAP + RAIL_SEP : 0; }
 // the plate, every chip, the two totals and the clock in 1x space, or null
-// while there is no rail. The score cells grow for a third digit rather
-// than spill, so the layout only moves on a hundredth kill.
+// while there is no rail. The score well holds RAIL_CLOCK_W and only grows
+// for a score row wider than that.
 function railLayout() {
   const sides = railSides();
   if (!sides) return null;
   const teams = [player.team, sides[1][0].team];
   const kills = teams.map(railKills);
   const clock = clockTxt(state.elapsed);
-  const kw = kills.map((k) => Math.max(RAIL_KILL_W, pixelTextWidth(String(k), 2)));
-  const cw = Math.max(RAIL_CLOCK_W, pixelTextWidth(clock));
-  const wellW = 1 + RAIL_SEP + kw[0] + RAIL_SEP + cw + RAIL_SEP + kw[1] + RAIL_SEP + 1;
+  const kt = kills.map(String), kw = kt.map((t) => pixelTextWidth(t));
+  const colon = pixelTextWidth(':'), scoreW = kw[0] + 2 + colon + 2 + kw[1];
+  const wellW = Math.max(RAIL_CLOCK_W, pixelTextWidth(clock), scoreW);
   const w = RAIL_PAD + railChipsW(sides[0].length) + wellW + railChipsW(sides[1].length) + RAIL_PAD;
   // the score well holds the centre, so the clock never drifts when one
   // side is a chip short (yours always is: you are not on it)
@@ -83,15 +81,16 @@ function railLayout() {
   row(0, x);
   x += railChipsW(sides[0].length);
   const well = { x, y, w: wellW, h: RAIL_BODY };
-  x += 1 + RAIL_SEP;
-  const score = [{ x, w: kw[0], n: kills[0], team: teams[0] }];
-  x += kw[0] + RAIL_SEP;
-  const clk = { x, w: cw, txt: clock };
-  x += cw + RAIL_SEP;
-  score.push({ x, w: kw[1], n: kills[1], team: teams[1] });
-  x += kw[1] + RAIL_SEP + 1 + RAIL_SEP;
+  const clk = { x: x + Math.round((wellW - pixelTextWidth(clock)) / 2), y: y + 1, txt: clock };
+  const sx = x + Math.round((wellW - scoreW) / 2), sy = clk.y + RAIL_LINE;
+  const score = [
+    { x: sx, y: sy, txt: kt[0], team: teams[0] },
+    { x: sx + kw[0] + 2 + colon + 2, y: sy, txt: kt[1], team: teams[1] },
+  ];
+  const sep = { x: sx + kw[0] + 2, y: sy };
+  x += wellW + RAIL_SEP;
   row(1, x);
-  return { x: x0, w, span, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, clock: clk };
+  return { x: x0, w, span, plate: { x: x0, y: RAIL_Y, w, h: RAIL_H }, chips, well, score, sep, clock: clk };
 }
 // the size the rail is drawn at: the one HUD scale every widget shares
 // (hudSc, whole device pixels, so a 12px emblem never drops a row), capped
@@ -123,42 +122,26 @@ function railHit(mx, my) {
   }
   return null;
 }
-// A dead chip's rim drawn back in behind the respawn hand: the rim's
-// pixels from twelve clockwise to where drawSweepCover's hand stands are the
-// side's colour, the rest the cooldown's slate. `frac` is the wait still to
-// run, the cover's own argument, so the rim and the uncovered emblem are
-// always the same wedge of the chip.
-function drawRimSweep(x, y, w, h, frac, lit, dim) {
-  const TAU = Math.PI * 2, cx = x + w / 2, cy = y + h / 2, done = TAU * (1 - frac);
-  for (let py = 0; py < h; py++) {
-    const edgeRow = py === 0 || py === h - 1;
-    for (let px = 0; px < w; px += edgeRow ? 1 : w - 1) {
-      const a = ((Math.atan2(y + py + 0.5 - cy, x + px + 0.5 - cx) + Math.PI / 2) % TAU + TAU) % TAU;
-      ctx.fillStyle = a < done ? lit : dim;
-      ctx.fillRect(x + px, y + py, 1, 1);
-    }
-  }
-}
-// a chip: the rim is the side (white under the pointer), the emblem the
-// class, the bar its hp, the slate and its hand the wait for the bird, with
-// the rim returning behind the hand
+// a chip: the emblem is the class, the bar its hp in the side's colour;
+// while the body waits on the bird the emblem gives way to the seconds left,
+// and a body that is never coming back keeps its emblem at LOCK_DIM
 function drawRailChip(c, now, on) {
   const p = c.p, tm = TEAMS[skin(p.team)];
   const gone = p.dead && (p.eliminated || p.respawnT <= 0);
   const wait = p.dead && !gone;
-  const total = wait ? respawnTime(p) : 0;
-  const left = wait ? (total > 0 ? Math.min(1, p.respawnT / total) : 1) : 0;
-  if (wait && !on) drawRimSweep(c.x, c.y, c.w, c.h, left, tm.mark, HUD_LIT);
-  else {
-    ctx.fillStyle = on ? '#f4f7ff' : gone ? '#2b2e34' : tm.mark;
-    ctx.fillRect(c.x, c.y, c.w, c.h);
+  if (on) {
+    ctx.fillStyle = RAIL_HOV;
+    ctx.fillRect(c.x - 1, c.y - 1, c.w + 2, 1); ctx.fillRect(c.x - 1, c.y + c.h, c.w + 2, 1);
+    ctx.fillRect(c.x - 1, c.y, 1, c.h); ctx.fillRect(c.x + c.w, c.y, 1, c.h);
   }
-  ctx.fillStyle = BAG_WELL;
-  ctx.fillRect(c.x + 1, c.y + 1, c.w - 2, c.h - 2);
-  if (gone) ctx.globalAlpha = LOCK_DIM;
-  ctx.drawImage(classIcon12(p.cls, false), c.x + 1, c.y + 1);
-  ctx.globalAlpha = 1;
-  if (wait) drawSweepCover(c.x + 1, c.y + 1, c.w - 2, c.h - 2, left, CD_SWEEP, CD_EDGE);
+  if (wait) {
+    const t = String(Math.ceil(p.respawnT));
+    drawPixelText(ctx, t, c.x + Math.round((c.w - pixelTextWidth(t)) / 2), c.y + Math.round((c.h - 5) / 2), RAIL_WAIT);
+  } else {
+    if (gone) ctx.globalAlpha = LOCK_DIM;
+    ctx.drawImage(classIcon12(p.cls, false), c.x, c.y);
+    ctx.globalAlpha = 1;
+  }
   // the hp bar hangs off the chip's foot: one solid run of the side's
   // colour on a dark track, no segments - a glance, not a count
   const by = c.y + c.h + 1, frac = p.dead ? 0 : Math.max(0, Math.min(1, p.hp / p.maxHp));
@@ -169,19 +152,13 @@ function drawRailChip(c, now, on) {
     ctx.fillRect(c.x, by, Math.max(1, Math.round(c.w * frac)), 2);
   }
 }
-// the score well: a darker panel between the two sides, the kill totals in
-// their sides' marks and the match clock between them
+// the score well: the match clock, and under it the two kill totals in
+// their sides' marks either side of a quiet colon
 function drawRailScore(L) {
-  const wl = L.well;
-  ctx.fillStyle = BAG_WELL;
-  ctx.fillRect(wl.x, wl.y, wl.w, wl.h);
-  const ky = wl.y + Math.round((wl.h - 10) / 2);
-  for (const s of L.score) {
-    const t = String(s.n);
-    drawPixelText(ctx, t, s.x + Math.round((s.w - pixelTextWidth(t, 2)) / 2), ky, TEAMS[skin(s.team)].mark, 2);
-  }
   const c = L.clock;
-  drawPixelText(ctx, c.txt, c.x + Math.round((c.w - pixelTextWidth(c.txt)) / 2), wl.y + Math.round((wl.h - 5) / 2), '#f4f7ff');
+  drawPixelText(ctx, c.txt, c.x, c.y, '#f4f7ff');
+  for (const s of L.score) drawPixelText(ctx, s.txt, s.x, s.y, TEAMS[skin(s.team)].mark);
+  drawPixelText(ctx, ':', L.sep.x, L.sep.y, RAIL_HOV);
 }
 function drawRail(now, L) {
   const hov = mouse.inside ? railHit(mouse.x, mouse.y) : null;

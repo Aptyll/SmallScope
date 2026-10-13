@@ -483,7 +483,7 @@ empty world.
 | top left | the **weapon shelf**: the tool in hand and its bit cells, shots left and fittings right, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
 | top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
 | top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
-| top centre | the **team rail**: one plate, every other player in the match as a 14px chip with a hp bar, your teammates left (never you: your own hp is the strip's) and the rival right, the two kill totals and the match clock between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
+| top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the segmented plum xp bar over the four ability wells, flush to the bottom | `drawHudStrip` |
 | bottom centre, right end | the pouch block: berry over fish, gold over cards, a 2×2 of 24px squares on a tab standing above the strip — the four numbers you own, always on | `drawFoodCell`, `drawGoldCell` |
@@ -871,32 +871,28 @@ that is money must never read as a count of something carried.
 
 ### The team rail
 
-`drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one plain plate
+`drawRailScaled` (the `team rail` banner, js/ui/rail.js) is the roster and the score: one thin plate
 (`drawHudFrame`) centred on `VIEW_W` at `RAIL_Y` (`MM_GAP`, level with the minimap's outline), Dota's top bar kept clean and minimal.
-**Your side's chips on the left**, the rival's on the right, and between them a sunk **score
-panel** (`drawRailScore`, a flat `BAG_WELL` fill): your side's kill total, the match clock (`clockTxt(state.elapsed)`, the
-one clock a match shows), the rival's total, each total at 2× in its side's `mark`
-(`railKills` sums `p.kills` over every player who wore the side's colour). A **chip** per active
-player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the class's 12×12 emblem
-(`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`, never a shrink of it)
-on the `BAG_WELL` ground in a rim painted by side through `skin()`, with a **hp bar** hung off its
-foot: one solid 2px run of the side's `mark` on a `RAIL_TRACK` groove, deliberately unsegmented.
+**Your side's chips on the left**, the rival's on the right, and between them the **score well**
+(`drawRailScore`, no panel of its own): the match clock (`clockTxt(state.elapsed)`, the one clock
+a match shows) on top, and `RAIL_LINE` under it the two kill totals at 1x in their sides' `mark`
+either side of a quiet colon (`railKills` sums `p.kills` over every player who wore the side's
+colour). A **chip** per active player (`railLayout`: `RAIL_CHIP`, `RAIL_GAP`, `RAIL_PAD`) is the
+class's 12×12 emblem (`CLASS12`/`classIcon12`, js/ui/menu.js: drawn by hand beside `CLASS32`,
+never a shrink of it) with **no rim** (0.422): the side is its **hp bar**, hung a pixel under its
+foot, one solid 2px run of the side's `mark` on a `RAIL_TRACK` groove, deliberately unsegmented.
 `railSides` orders each side by id and **leaves you off** (0.421): your own hp and level are the
 strip's, so a chip for you only repeated them. Your side is a chip short, so `railLayout` centres
 the score well, not the plate, on the view (`span` is the plate's reach either side of that, what
-`railSc` caps on), and the clock never drifts. A chip's state, in the wells'
-own grammar:
+`railSc` caps on), and the clock never drifts. A chip's state, Dota's top bar read plainly:
 
-- **up**: the side's `mark` rim, the emblem lit, the bar full or not;
-- **waiting**: a dead player with `respawnT` running — `drawSweepCover` lays the `CD_SWEEP`
-  slate over the emblem with the `CD_EDGE` hand walking round from twelve, `respawnT /
-  respawnTime(p)` of the way, exactly as an ability well waits, and `drawRimSweep` draws the rim
-  back in behind the hand: from twelve clockwise to the hand in the side's `mark`, the rest in
-  `HUD_LIT` slate, so the colour returns round the chip as the wait runs out; the bar is bare;
-- **out**: `eliminated`, or dead with no countdown (its bird already driven off) — the rim dark,
-  the emblem at `LOCK_DIM`.
+- **up**: the emblem, the bar full or not;
+- **waiting**: a dead player with `respawnT` running — the emblem gives way to the whole seconds
+  left (`Math.ceil(p.respawnT)`) in `RAIL_WAIT`, and the bar is bare;
+- **out**: `eliminated`, or dead with no countdown (its bird already driven off) — the emblem at
+  `LOCK_DIM`, the bar bare.
 
-No names on the plate: under the pointer a chip's rim goes white and the
+No names on the plate: under the pointer a chip takes a 1px `RAIL_HOV` outline and the
 [tooltip](#the-hover-tooltip) carries the words (`tipRail`, through `railHit` in `tipAt`): the
 name in `playerTint`, the class, the level, and the countdown or OUT while the body is down — the
 scoreboard's own line. *Where* anyone is stays the minimap's job.

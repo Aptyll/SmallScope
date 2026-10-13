@@ -85,7 +85,6 @@ const AB_BG = '#16181c';
 // line, edge, ground - which is what AB_PAD and BAG_PAD are.
 const HUD_INK = '#07080a';   // the silhouette
 const HUD_EDGE = '#2f3238';  // the faint line inside it: one step off the ground, apart from the pack's amber and red states
-const HUD_LIT = '#3c4048';   // a quiet slate: the waiting part of a dead chip's rim (rail.js)
 const HUD_FROST = '#d4d7dc'; // a pale "on": the practice bar's lit toggles (cheats.js)
 // a rect with its corners cut two pixels where `c` says so
 function chamCut(x, y, w, h, c) {
