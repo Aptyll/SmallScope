@@ -1272,7 +1272,7 @@ function updatePlayer(p, dt) {
 
   // gentle regen in daylight (HEARTHWEAVE keeps the hearth lit after dark)
   if (p.hp < p.maxHp && (state.darkness < 0.3 || kit.nightHeal)) {
-    p.hp = Math.min(p.maxHp, p.hp + dt * 0.6);
+    healPlayer(p, dt * 0.6);
   }
 }
 

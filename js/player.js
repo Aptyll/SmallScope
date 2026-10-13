@@ -109,6 +109,15 @@ function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 function setClass(p, c) { p.cls = c; refreshKit(p); p.hp = p.maxHp; giveLoadout(p); }
 // kit hp plus the flat per-level growth
 function levelMaxHp(p) { return kitOf(p).maxHp + LVL_HP * (p.level - 1); }
+// THE ONE WAY HEALTH COMES BACK to a player: a meal, the daylight, a second
+// wind, a kill's heal. Capped at the most, and what it actually gave back is
+// counted for the post-game record (js/ui/lobby.js) and returned.
+function healPlayer(p, n) {
+  const h = Math.max(0, Math.min(n, p.maxHp - p.hp));
+  p.hp += h;
+  p.healed += h;
+  return h;
+}
 // the one way gold enters a wallet: pays the purse and the same amount of XP
 function gainGold(p, n) {
   p.inv.gold += n;
@@ -484,6 +493,19 @@ function makeInput() {
   };
 }
 
+// The newer half of the match record, as a table so a save written before a
+// field existed can be filled in on load (saveApply, js/save.js).
+const PLAYER_RECORD = {
+  dmgBeast: 0,                   // damage dealt to wildlife, what landed of it (hurtUnit, actions.js)
+  dmgInP: 0,                     // ...of dmgIn, what rival players dealt
+  dmgInB: 0,                     // ...and what a beast's bite dealt (BEAST_CAUSES, js/wildlife.js)
+  healed: 0,                     // health given back to this body, whatever gave it (healPlayer)
+  goldSpent: 0,                  // gold paid out of the purse (pay, js/core.js)
+  beasts: 0,                     // animals this body landed the last blow on (animalDies, js/wildlife.js)
+  streak: 0, bestStreak: 0,      // rivals downed since this body last went down, and the most of it
+  multiN: 0, multiT: -1e9, bestMulti: 0, // the run of kills MULTI_T apart, when the last one was, the most of it
+  ccOut: 0,                      // s of stun, root and net put on RIVAL players (ccCredit, js/actions.js)
+};
 class Player {
   constructor(id, control, team) {
     this.id = id;
@@ -536,6 +558,7 @@ class Player {
     this.dmgIn = 0;                     // damage taken from anything at all, counted after this body's DR
     this.dmgBird = 0;                   // nerve knocked off the rival eagle (hurtEagle, boot.js)
     this.dmgStruct = 0;                 // damage dealt to rival buildings, after STRUCT_DR (hurtStruct, actions.js)
+    Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
@@ -849,7 +872,8 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   // Only a RIVAL's blow is anybody's damage dealt: the world's and your own
   // side's still show up as damage taken, which is the honest read of both.
   p.dmgIn += dmg;
-  if (src instanceof Player && src !== p && src.team !== p.team) src.dmgOut += dmg;
+  if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; }
+  else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
   if (!dot) {
     const k = HIT_KB * (kb === undefined ? 1 : kb);
@@ -884,6 +908,7 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 // against a scrapped soldier's SOLDIER_BOUNTY (4): a player is three of them.
 // The one stake left on a death is the wait below and the walk back.
 const KILL_BOUNTY = 12;   // gold (and so xp) a downed rival pays its killer
+const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
 
 // The wait for the bird to set a downed player back down: a read of the
 // hero's level alone, shaped like League's (its base wait runs 10 s to
@@ -913,6 +938,7 @@ function die(p, src, cause) {
   if (PRACTICE && p === player) { practiceRevive(p); return; }
   p.dead = true;
   p.deaths++;      // the match record; a respawn never clears it (js/ui/lobby.js)
+  p.streak = 0;    // ...and the run of kills ends with the body
   p.zip = -1;      // the handle is let go of (the respawn's reset clears the rest)
   p.zipWalk = false;
   rideEnd(p, true); // ...and off the deer, which bolts (js/wildlife.js)
@@ -944,14 +970,18 @@ function die(p, src, cause) {
   if (p === player && state.drag) { dragReturn(); state.dragPend = null; }
   if (killer) {
     killer.kills++;
+    killer.streak++; killer.bestStreak = Math.max(killer.bestStreak, killer.streak);
+    // a multi-kill: each kill inside MULTI_T of the one before carries the run on
+    killer.multiN = state.elapsed - killer.multiT <= MULTI_T ? killer.multiN + 1 : 1;
+    killer.multiT = state.elapsed;
+    killer.bestMulti = Math.max(killer.bestMulti, killer.multiN);
     if (killer.control === 'ai') aiDowned(killer, p); // a bot remembers who it keeps downing (the grudge, js/ai-team.js)
     if (!killer.dead) awardGold(killer, KILL_BOUNTY, killer.x, killer.y); // the bounty, not the victim's purse
     if (killer === player && !PRACTICE) PROFILE.addKill(); // the character's lifetime count
     // BLOODLUST/VAMPIRE: a flat heal on a confirmed kill, the one card
     // effect that isn't a plain kitOf() field - mirrors eatBerry's heal
     if (killer.kit.killHeal > 0 && killer.hp < killer.maxHp) {
-      const heal = Math.min(killer.kit.killHeal, killer.maxHp - killer.hp);
-      killer.hp += heal;
+      const heal = healPlayer(killer, killer.kit.killHeal);
       addFloater(killer.x, killer.y - 14, '+' + heal, '#8fe08a');
       sfxAt('heal', killer.x, killer.y);
     }

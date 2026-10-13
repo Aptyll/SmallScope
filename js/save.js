@@ -291,6 +291,8 @@ function saveApply(rec) {
   for (const [i, o] of r.tiles) objects[i] = o;
   for (let j = 0; j < r.ground.length; j += 2) ground[r.ground[j]] = r.ground[j + 1];
   for (const [n, , put] of SAVE_ROOTS) put(r[n]);
+  // a save from before a record field existed: the field starts at nothing
+  for (const p of players) for (const k in PLAYER_RECORD) if (p[k] === undefined) p[k] = PLAYER_RECORD[k];
 }
 
 // A hash of everything a save carries, for the proof (DBG.saveHash): two

@@ -180,6 +180,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | players, teams, classes + kits, hero levels, the input struct, contested orders, the local slot and the roster a match is built from | `Player`, `CLASSES`, `kitOf`, `gainGold`, `levelUp`, `makeInput`, `localId`/`LOCAL_SLOT`, `defaultRoster`, `initPlayers(roster, local)`, `applyCharacter(p?)`, `contest` | `players` |
 | the one on-the-spot gold payout every source uses (gold is never a drop) | `awardGold` | `players` (beside `gainGold`) |
+| the one way health comes back to a player - a meal, daylight, a second wind, a kill's heal - capped and counted | `healPlayer` | `players` (beside `gainGold`) |
 | which way a player's body faces: the one function every turn goes through, its diagonal bias and the hold an aimed action leaves | `faceToward`, `FACE_BIAS`, `FACE_HOLD`, `p.faceT` | `facing` (player.js) |
 | the numbers a player is made of: the player count and teams, walk/roll/slide speeds, hero levels, and the two bow baselines a kit is written against | `MAX_PLAYERS`, `TEAM_COUNT`, `PVP`, `PLAYER_SPEED`/`PLAYER_R`, `ICE_MAX`/`SLIDE_MIN`/`SLIDE_EXIT`/`TRAIL_MIN`/`SNOW_TRAIL_*`, `LEVEL_*`/`LVL_*`, `DODGE_*`, `BOW_CHARGE`/`BOW_NOCK` | `players` (above `CLASSES`, which reads some of them at load time) |
 | which preset a team wears on this screen, and whether a rival wears its colour-blind shape cue | `TEAMS`, `skin`, `foeCue` | top of the file |
@@ -191,7 +192,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | how hidden a player is, and how far anything notices it from | `concealOf`, `seenAt`, `ambushReady` | `players` › `being seen` |
 | death (which keeps everything on the body), the flat bounty a kill pays, the wait for the bird and the return at it, the one permanent path (a driven-off eagle), the team-level win check | `KILL_BOUNTY`, `die`, `RESPAWN_WAIT`, `respawnTime`, `updateRespawns`, `RESPAWN_OUT`, `respawnPlayer`, `teamInMatch`, `rivalTeamsInMatch`, `checkLastStanding`, `endMatch`, `endSnapshot` | `damage & death` (`teamEagleDown`: `eagle drop`, boot.js) |
 | practice undoing a death on the spot | `practiceRevive` (die()'s first branch under `PRACTICE`) | `damage & death` |
-| the match record every player keeps, for [the post-game lobby](../../js/ui/lobby.js) | `p.kills`/`p.deaths`/`p.dmgOut`/`p.dmgIn`/`p.dmgBird`/`p.dmgStruct`/`p.hGold`/`p.hDmg` (written in `damagePlayer` and `die` here, `hurtEagle` js/boot.js, `hurtStruct` js/actions.js, `sampleStats` js/ui/lobby.js; a respawn's `reset` clears none of them) | `players` (declared) / `damage & death` (kept) |
+| the match record every player keeps, for [the post-game lobby](../../js/ui/lobby.js) | `p.kills`/`p.deaths`/`p.dmgOut`/`p.dmgIn`/`p.dmgBird`/`p.dmgStruct`/`p.hGold`/`p.hDmg`, and the newer half as a table, `PLAYER_RECORD` (`dmgBeast`, `dmgInP`/`dmgInB`, `healed`, `goldSpent`, `beasts`, `streak`/`bestStreak`, `multiN`/`multiT`/`bestMulti` over `MULTI_T`, `ccOut`; an older save is filled from it in `saveApply`, js/save.js) (written in `damagePlayer`, `die` and `healPlayer` here, `hurtEagle` js/boot.js, `hurtUnit`/`ccCredit`/`hurtStruct` js/actions.js, `pay` js/core.js, `animalDies` + `BEAST_CAUSES` js/wildlife.js, `sampleStats` js/ui/lobby.js; a respawn's `reset` clears none of them) | `players` (declared) / `damage & death` (kept) |
 
 ## js/input.js
 
@@ -338,7 +339,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | **the one blow every kind of unit takes** - a player, an animal, a worker bot | `hurtUnit` | `status effects` (its per-kind ends: `damagePlayer` player.js, `hurtAnimal` wildlife.js, `hurtRobot` robots.js) |
 | every living thing in a circle an area effect may touch, in one list; and the rival body under a POINTER, by each kind's box (the hunt reticle and the CLICK scheme's right button) | `unitsNear`, `unitsHit` (blows only), `unitFoe`, `unitTeam`, `unitAlive`, `unitMidY`, `isAnimalUnit`, `unitUnder` | `status effects` › `what a unit IS` |
 | asking those two on behalf of a THING in the world (a net, a shot) rather than a body | `sideOf` | `status effects` › `what a unit IS` (its kill-credit half: `abCredit`, abilities.js) |
-| putting a state ON a body - the one writer for each | `stunUnit`, `rootUnit`, `slowUnit`, `netUnit`, `markUnit`, `igniteUnit` | `status effects` › `the states a unit can be under` |
+| putting a state ON a body - the one writer for each (a `src` the stun, root and net take is that player's crowd control: `ccCredit`) | `stunUnit`, `rootUnit`, `slowUnit`, `netUnit`, `markUnit`, `igniteUnit`, `ccCredit` | `status effects` › `the states a unit can be under` |
 | what a damage TYPE is, and the fire that outlives its blow | `DMG_TYPES`, `BURN_T`/`BURN_DPS`/`BURN_TICK`/`BURN_MAX`, `igniteUnit`, `updateBurn`, `douseUnit` | `status effects` › `fire` (the bits that deal it: `BITS.flame`/`pyre`/`cinder`, tools.js; the exemption from the roll’s and the respawn’s i-frames: `DOT_CAUSE`, player.js) |
 | ageing those states, and what is left of a non-player's speed | `updateUnitStatus`, `unitMoveMul`, `clearUnitStatus` | `status effects` › `the clock every non-player unit runs` (a player's own copy: `updateAbilities`, abilities.js; where the speed is spent: `navStep`, nav.js) |
 
@@ -881,10 +882,10 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the two graphs' samples: the pitch, the cap, the halving that bounds a series of any length, and the sampler itself | `STAT_STEP`, `STAT_MAX`, `statT`, `statHalve`, `sampleStats` (its one caller: `updatePlay`, sim.js; the arrays it fills: `p.hGold`/`p.hDmg`, the `Player` constructor, js/player.js) | `the samples` |
 | the match's record, frozen at the whistle | `matchStats`, `statFreeze` (its one caller: `endMatch`, js/player.js) | `the record` |
-| the six sortable columns, this screen's own state, and the accent each ending is struck in | `SCORE_COLS`, `SCORE_GAP`/`SCORE_ROW`/`SCORE_STRIP`/`SCORE_ICON`, `scores`, `SCORE_PLANKS`, `SCORE_IN`, `scoreAccent`, `scoreHead` | `the columns` |
-| the composition, the two blocks in reading order, and the best every row's fill is drawn as a share of | `scoresLayout`, `scoreBlocks`, `scoreBest` | `the layout` |
-| the way in off either ceremony, the way back, and the controls: the headings that sort, the graph's tabs, the two planks | `openScores`, `scoresBack`, `scoresHit`, `scoresSort`, `scoresActivate`, `scoresKey`, `scoresClick` (the four one-line hand-offs: `deadActivate`/`renderDead`/`deadKey`/`deadClick`, js/ui/screens.js; the door: `toLobby`, same file) | `the way in` |
-| the pixels: the head, the sortable headings, the two blocks, the tabs, the planks, and the lead-shaded graph | `SC_*`, `scoreNum`, `scoreNumSmall`, `renderScores`, `drawScoreGraph` | `the pixels` |
+| the folding stat groups and their rows, the column geometry, the K/M/B cut, this screen's own state, and the accent each ending is struck in | `SCORE_GROUPS`, `SCORE_LABEL_W`/`SCORE_COL_W`/`SCORE_TEAM_GAP`/`SCORE_FACE`/`SCORE_ROW`/`SCORE_HEAD`, `scoreFmt`, `scoreVal`, `scores`, `SCORE_WORDS`, `SCORE_IN`, `scoreAccent`, `scoreHead` | `the groups` |
+| the composition: the columns in reading order, the narrowing on a small view, the scrolled window and its lines | `scoreCols`, `scoresLayout`, `scoreLines`, `scoresScrollBy` (the wheel: input.js) | `the layout` |
+| the way in off either ceremony, the way back, and the controls: the page words, the graph's words, a group's fold, the faces, BACK / LOBBY | `openScores`, `scoresBack`, `scoresHit`, `scoresActivate`, `scoresKey`, `scoresClick` (the four one-line hand-offs: `deadActivate`/`renderDead`/`deadKey`/`deadClick`, js/ui/screens.js; the door: `toLobby`, same file) | `the way in` |
+| the pixels: the head, the page words, the faces, the groups with your column lit and each row's best underlined, the bare BACK / LOBBY words, and the lead-shaded graph | `SC_*`, `scoreWord`, `drawScoreFace`, `renderScores`, `drawScoreStats`, `drawScoreGraph` | `the pixels` |
 
 ## js/save.js
 

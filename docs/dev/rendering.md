@@ -1556,18 +1556,26 @@ the same three chokepoints every other dead view does - `renderDead`, `deadKey`,
 hand off on one line - and counts as a full-frame screen in `endScreen()`, so the HUD and the
 recap bow out under it the way they do under the two ceremonies.
 
-**The table.** Every active player, both sides, the local player's side first (its colour through
-`skin()` like everything else, so your side is BLUE here too), five rows to a block under a team
-strip carrying that side's totals. Six columns - **LV K D DMG SIEGE GOLD** - and each heading is
-the sort control: click it to order both blocks by it, click it again to flip, and the heading
-wears the arrow. This is the [instrument carve-out](#show-dont-label) of the show-don't-label rule
-and the only thing on the screen that earns printed headings; everything else reads as a shape -
-the side is a colour, the class is `classIcon12`'s emblem, your own row sits on a lit plate, and
-**the row's fill IS the bar**: each row is tinted across its own width by its share of the biggest
-value anywhere in the sorted column, so a block reads as a bar chart at a glance and pressing a
-heading redraws the chart.
+**The page**, League's post-game STATS read sideways. Every active player is a **column**, the
+local player first and their side next (its colour through `skin()` like everything else, so your
+side is BLUE here too), then a gap and the rivals. Each column wears its player's HUD portrait
+(`portraitSprite`, small) with the level on its corner and the side's colour as a line under it;
+a name shows only while the pointer is on its face. Down the left are four **folding groups**,
+`SCORE_GROUPS`: COMBAT (K/D, level, best streak, best multi-kill, crowd control), DAMAGE DEALT (to
+players, the bird, buildings, beasts, and the total), TAKEN AND HEALED, and GOLD (earned, spent,
+beasts hunted). A click on a group's heading folds it, a short view scrolls the groups (the wheel
+or up/down), and a number past 99999 prints its magnitude (`scoreFmt` → `shortNum`: 154K, 1.2M).
+This is the [instrument carve-out](#show-dont-label); everything that is not a number still reads
+as a shape: your column is a lit band with gold numbers and a gold rim on the face, and the biggest
+value in each row is **underlined in its side's colour** (never brightened) - except K/D and the
+two damage-taken rows, which have no single best. The page is graphite, the HUD's own neutral dark.
+STATS and GRAPHS are page words in the top-left corner, the open one underlined to the word's
+width (`drawNavCell`'s grammar), and BACK / LOBBY are bare 2x words at the foot, white and gold
+under the pointer or the keys - the title screen's grammar, no plank. Left/right walks those four
+words and Enter takes one.
 
-**The graph**, under the table on two tabs (**GOLD** / **DAMAGE**): one cumulative line per side,
+**The graph**, the GRAPHS page, on two words (**GOLD** / **DAMAGE**; up/down swaps them): one
+cumulative line per side,
 summed over its players, with the **lead** shaded between them in the colour of whoever is ahead at
 that moment - two cumulative totals nest, so filling under each would just fill the well, and what
 a reader wants is the gap and when it opened. Dotted uprights are the match's days (`CYCLE`), the
@@ -1583,7 +1591,12 @@ player is sampled on the same tick, active or not, so index *i* means the same m
 arrays and the series can simply be summed per side. A match has no length limit, so past
 `STAT_MAX` samples each series **halves** - every other sample dropped, newest kept - and the pitch
 doubles with it, which keeps the spacing uniform and ten players' history a few hundred numbers
-however long the match runs. The table itself is frozen by `statFreeze()` from `endMatch` on every
+however long the match runs. The rest is counted where it happens, each at the shared function
+every case goes through: damage dealt and taken (split into rival players' and a beast's bite,
+`BEAST_CAUSES`) in `damagePlayer`, beasts' damage in `hurtUnit`, healing in `healPlayer` (the one
+way health comes back), gold spent in `pay`, beasts hunted in `animalDies`, streaks and multi-kills
+(kills `MULTI_T` apart) in `die`, and crowd control in `ccCredit`, which the stun, root and net
+setters call with the `src` a caller names - the seconds a rival PLAYER is newly held. The table itself is frozen by `statFreeze()` from `endMatch` on every
 real ending (a respawn wait is not one), because a won match runs on underneath its own ceremony
 and the bots still farming must not move the numbers while they are being read.
 

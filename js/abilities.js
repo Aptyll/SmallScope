@@ -315,7 +315,7 @@ function updateAbilities(p, dt) {
   if (p.windT > 0) {
     const step = Math.min(dt, p.windT);
     p.windT -= step;
-    p.hp = Math.min(p.maxHp, p.hp + p.windRate * step);
+    healPlayer(p, p.windRate * step);
   }
 }
 
@@ -510,7 +510,7 @@ function abSlam(p) {
   const nx = Math.cos(a), ny = Math.sin(a);
   for (const q of unitsInCone(p, p.x, p.y, a, SLAM_R, SLAM_HALF)) {
     hurtUnit(q, SLAM_DMG, nx, ny, p, { kb: SLAM_KB });
-    if (!q.dead) { stunUnit(q, SLAM_STUN); q.kbx += nx * SLAM_KB * 0.5; q.kby += ny * SLAM_KB * 0.5; }
+    if (!q.dead) { stunUnit(q, SLAM_STUN, p); q.kbx += nx * SLAM_KB * 0.5; q.kby += ny * SLAM_KB * 0.5; }
     burst(q.x, unitMidY(q), '#f2cc6a', 8, 50, 0.45, true);
     shakeFor(p, 4, q);
   }
@@ -557,7 +557,7 @@ function rushStep(p, mv, dt) {
       if (isAnchored(q)) { p.rushVictim = q; rushEnd(p, false); return; }
       p.rushVictim = q;
       if (q instanceof Player) risePlayer(q);
-      stunUnit(q, 0.3); // manhandled: nothing they hold survives the grab
+      stunUnit(q, 0.3, p); // manhandled: nothing they hold survives the grab
       burst(q.x, unitMidY(q), '#eef4fb', 6, 40, 0.4, true);
       sfxAt('hit', q.x, q.y);
       break;
@@ -565,7 +565,7 @@ function rushStep(p, mv, dt) {
   } else if (unitAlive(v)) {
     // carried on the shoulder: held one body ahead, stun refreshed so their
     // own step stays limp until the slam
-    stunUnit(v, 0.2);
+    stunUnit(v, 0.2, p);
     const wx = p.x + p.rushNX * 9, wy = p.y + p.rushNY * 9;
     moveEntity(v, wx - v.x, wy - v.y, unitRadius(v));
   } else {
@@ -590,7 +590,7 @@ function rushEnd(p, wall) {
   if (v && unitAlive(v)) {
     const mul = wall ? RUSH_WALL_MUL : 1;
     hurtUnit(v, Math.round(RUSH_DMG * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul });
-    if (!v.dead) stunUnit(v, RUSH_STUN * mul);
+    if (!v.dead) stunUnit(v, RUSH_STUN * mul, p);
     burst(v.x, v.y - 5, '#e04a54', 8, 50, 0.5);
     burst(v.x, v.y - 4, '#eef4fb', 10, 55, 0.5, true);
     shakeFor(p, wall ? 6 : 4, v);
@@ -611,7 +611,7 @@ function abStomp(p) {
     const d = Math.hypot(q.x - px, q.y - py) || 1;
     const nx = (q.x - px) / d, ny = (q.y - py) / d;
     hurtUnit(q, STOMP_DMG, nx, ny, p, { kb: STOMP_KB });
-    if (!q.dead) { stunUnit(q, STOMP_STUN); q.kbx += nx * STOMP_KB; q.kby += ny * STOMP_KB; }
+    if (!q.dead) { stunUnit(q, STOMP_STUN, p); q.kbx += nx * STOMP_KB; q.kby += ny * STOMP_KB; }
   }
   // the ring does not stop at bodies: every rival building it touches takes
   // the same blow, damped once by STRUCT_DR inside hurtStruct (js/actions.js)
@@ -696,7 +696,7 @@ function abHamstring(p) {
   const nx = Math.cos(a), ny = Math.sin(a);
   for (const q of unitsInCone(p, p.x, p.y, a, HAM_R, HAM_HALF)) {
     hurtUnit(q, HAM_DMG, nx, ny, p, { kb: 0 });
-    if (!q.dead) rootUnit(q, HAM_ROOT);
+    if (!q.dead) rootUnit(q, HAM_ROOT, p);
     burst(q.x, q.y, '#e05a4a', 5, 35, 0.35);
   }
   if (PRACTICE) abHitDummies(p.x + nx * HAM_R * 0.5, p.y + ny * HAM_R * 0.5, HAM_R * 0.5, HAM_DMG);
@@ -773,7 +773,7 @@ function updateAbilityWorld(dt) {
         burst(n.x, n.y, '#cfd8e8', 6, 40, 0.35, true); dead = true; break;
       }
       hurtUnit(q, NET_DMG, n.nx, n.ny, abCredit(n), { kb: 40 });
-      if (!q.dead) netUnit(q, NET_SLOW_T, NET_SLOW); // the drape the slow is read off
+      if (!q.dead) netUnit(q, NET_SLOW_T, NET_SLOW, abCredit(n)); // the drape the slow is read off
       burst(q.x, unitMidY(q), '#cfd8e8', 8, 45, 0.4, true);
       dead = true;
       break;
