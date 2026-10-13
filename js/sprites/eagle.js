@@ -1,7 +1,6 @@
 'use strict';
-// The eagle's skins. Its art is painted in code: the classic and ironclad
-// are Perch's own look (SPRITES.perch, js/sprites/perch.js), the rest the war
-// eagles (SPRITES.warBirds, js/sprites/warbirds.js); both feed the skins
+// The eagle's skins. Their art is painted in code, every one a look of
+// Perch's (SPRITES.perch, js/sprites/perch.js), which also paints the skins
 // screen's cards (SPRITES.birdSkinIcon).
 
 // The bird's skins: what each one IS for the skins screen (js/ui/skins.js)

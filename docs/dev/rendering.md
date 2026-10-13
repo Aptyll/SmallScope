@@ -2171,7 +2171,7 @@ the world zoom tight on your seat (`DROP_OPEN_ZOOM`) and starts the menu exit, w
 **wing seat** (`p.seat`, dealt per team in `beginDrop`; `seatPos`
 rotates the `EAGLE_SEATS` offsets — one on the back, two inner wings, two out on the primaries —
 by the heading, and the human sits seat 0 of their own bird); the team's **merchant** rides the
-neck (`SPRITES.perch.merchSeat`, or a war eagle's `SPRITES.warBirds.merchSeat` behind its helm, drawn by `drawEagle` ahead of the riders — see
+neck (`SPRITES.perch.merchSeat`, drawn by `drawEagle` ahead of the riders — see
 [the merchant](gameplay.md#the-merchant)). Every flight takes exactly
 `EAGLE_FLIGHT_T` (10 s) — each bird derives `e.spd` from its own line's length — and jumping is
 **locked until the line's last `DROP_LOCK_T` (4 s)**: `dropJump` refuses (and `SFX.deny`s) an
@@ -2328,8 +2328,8 @@ shadow `alt` px below and up to 10 px right of the body (`alt` is
 `DROP_ALT` 56 px in flight, converging to 0 down the dive so shadow and bird meet at the crash
 point) at the bird's **true ground size** — the roost's, not the nearer-the-camera flight size —
 and beating with the same wings (`SPRITES.perch.shadow`: the silhouette of the very pose drawn,
-painted at the roost's size; or `SPRITES.warBirds.shadow` of the very frame drawn), then the bird.
-**Perch** (the classic and the ironclad, `SPRITES.perch.has`, js/sprites/perch.js) is painted at
+painted at the roost's size), then the bird.
+**Perch** (in the skin `birdSkinFor(team)` names, js/sprites/perch.js) is painted at
 its heading and at its size, so it draws 1:1 and unrotated: in level flight a smooth stroke
 (`'s' + strokeAt(e.flap, STROKE_N)`, `EAGLE_BEAT_HZ` (1) a second) at 1.5× the roost's size
 (`EAGLE_SCALE` 3 over `EAGLE_REST_SCALE` 2), flying dead level; in the stoop the pose of its
@@ -2340,14 +2340,8 @@ queues every frame a state will draw on its first frame in it, stepped by the sa
 runs, and the next state's frames well ahead on the perch cache's slow queue (one frame per
 `IDLE_GAP`, only while nothing is urgent): in flight the stoop `beginDive` will start (its turn onto
 `findCrashPoint`), at the roost the takeoff `eagleFlee` would fly; a frame not painted yet holds
-the one the bird drew last. A side whose bird wears a war eagle skin
-(`birdSkinFor(team)` names one `SPRITES.warBirds.has`) draws `SPRITES.warBirds.flight` in level
-flight and `.frame` (the three hard beats) in the stoop, **unrotated**, since each frame is
-painted at its heading: in level flight a smooth, shallow stroke (`strokeAt`, `EAGLE_BEAT_HZ`)
-with the tail dipping and lifting with it, flying dead level; shrinking to `REST` of its
-flight size through the dive, with the merchant on `SPRITES.warBirds.merchSeat` behind the helm;
-the flee and the roost draw it too, and `warmWarBird` queues the frames the bird is about to
-need (the stroke's, then the stoop's and the roost's) so they paint ahead, a few ms a frame, `SPRITES.warBirds.tick`), under it the **wind trail** (`drawEagleTrail`,
+the one the bird drew last. Every skin is one of Perch's looks, so a war eagle flies, stoops, roosts
+and takes off the same way, under it the **wind trail** (`drawEagleTrail`,
 drawn before the bird's own cull because it hangs behind a bird already off the frame): **one
 continuous ribbon off each wingtip**, sampled every `TRAIL_STEP` (6) px back along the flown
 line for `TRAIL_T` (1.1 s) of flight, each sample where the tip actually *was* on that beat —
@@ -2360,8 +2354,7 @@ the stoop. Pure reads of the flight clock (`e.t`, `e.spd`, `e.flap`) — no part
 the same trail at any dt. Then **every rider seated on its wing** (`drawSeated`:
 the pose set's direction picked by the heading's dominant axis — `riderDir`, so a crew flying
 down-left shows its profiles — the bottom three rows tucked into the plumage so a body sits
-rather than stands, the hem meeting the feathers at the seat point, lifted a pixel on a war eagle's
-downstroke; **world-sized** — `riderScale(e)` is the bird's own perspective, `eagleScale / 2`:
+rather than stands, the hem meeting the feathers at the seat point; **world-sized** — `riderScale(e)` is the bird's own perspective, `eagleScale / 2`:
 1× on the roosting bird, 1.5× in flight because the bird itself is 1.5× bigger up there, so a
 body never changes size against the feathers under it; the merchant on the neck the same way; the
 local player drawn last; in flight only **your own** name rides the wing, in your side's paint (`seatedName`) under a bobbing gold arrow (`drawYouArrow`, drawn by `renderDropUI`, anchored over the tag in world space so it clears it at every zoom; both ride `flightBob`) - seven names on one bird told a new player nothing about which one was them), and a pulsing landing ring
@@ -2376,14 +2369,13 @@ copy under it read as a second bird (a roosting look keeps only the tight snow s
 its frame) — and folds its wings over `EAGLE_SETTLE_T` (the three
 frames as a settle animation), then **rests**, breathing a ±1 px bob with a wing-shuffle idle
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
-the gust's telegraph, so the idle can never cry wolf), flashing all white when hit (`SPRITES.warBirds.flash` of the frame drawn, Perch's or a war eagle's: it is taller than the 128×128 `drawSpriteFlash` scratch),
+the gust's telegraph, so the idle can never cry wolf), flashing all white when hit (`SPRITES.perch.flash` of the frame drawn: it is taller than the 128×128 `drawSpriteFlash` scratch),
 with its team-colour hp bar (`drawPerchBar`: `PERCH_BAR_W` x `PERCH_BAR_H` in a `PERCH_BAR_RIM` ink frame, in `PERCH_BAR_SEGS` even segments, the biggest bar in the world since the match is won and lost on it; the chunk a hit takes holds pale `PERCH_LAG_HOLD` then drains at `PERCH_LAG_RATE`, a render-side `perchLag`; the pool's number sits inside) up **from the moment it roosts** — the bar is the objective's
 introduction, anchored to the bird's rotated extent, under the `PERCH` banner in the same paint (`perchBanner`: the side's coat with its darker lower rows, swallowtails `PERCH_TAG_NOTCH` deep, an ink rim, the name at 2x flat on the cloth in white, or in ink where the coat is too pale for white, `inkOn`; its
 driver wears `MERCH`: the side's two named bodies, named the same way). A gust windup draws wings thrown open
 (frame 0) lifted 2 px: the spread IS the telegraph, no text. Perch roosts landed with its
 wings half open and the crew's saddle on its back (`'r' + beat`, at the roost's size, the three
-beats as wing turns, its seats again `SPRITES.perch.seat`); the war eagles roost as their flight
-frame laid flat. A `flee` bird climbs back out —
+beats as wing turns, its seats again `SPRITES.perch.seat`). A `flee` bird climbs back out —
 scale and `alt` walk from the roost's numbers to the flight's over `FLEE_LIFT_T`, the shadow
 returning and diverging as the ground falls away, wingbeats at full panic (`perchLiftBeat`, counted
 from the takeoff's first downstroke, so the roost can warm the whole climb: Perch's `'l'` poses) — and fades over the
