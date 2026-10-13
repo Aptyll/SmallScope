@@ -682,8 +682,8 @@ its side's ink. Seed 42: RED's line runs u 35→91, BLUE's 131→196.
 `zipPoint(z, d)` is the cable at `d` px along (position, unit tangent, span and how far across
 it), `zipLift(z, d)` how high it hangs there (`ZIP_H` 31 at a pylon, `ZIP_SAG` 3 less mid-span),
 `zipNearest(z, x, y)` the nearest point of a line to a spot, and `zipNear(p)` the line a body may
-clip on — its own team's, within `ZIP_GRAB` (32, two tiles) px of the track — or null:
-**team-locked**, a rival under your cable is a walker. `zipUnder(team, wx, wy)` is the same
+clip on — the nearer of the two, within `ZIP_GRAB` (32, two tiles) px of the track — or null:
+**either side's**, a cable is anyone's ride. `zipUnder(wx, wy)` is the same
 question for a world point against the cable **as drawn** — the point dropped to the track by
 the lift where it lands (once for the span, once more with that span's sag), within `ZIP_HOVER`
 (6) px — which the pointer's hover and the click scheme's press ask. The ride itself:
@@ -1083,7 +1083,7 @@ on a frost plate over the bell (`drawAgame`). **BEST is the profile's all-time r
 lap record's twin and the second of the only two things practice ever writes.
 
 **The practice bar** (js/ui/cheats.js, League's practice-tool column) hangs down the left edge
-under the corner's open drawer, at the HUD SIZE the dial holds (capped so it never runs off the
+under the corner's open drawer, at the corner's size (`cornerSc`) (capped so it never runs off the
 bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEAT_GOLD`, through
 `tradeGold`, so no XP rides it), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
 `CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),

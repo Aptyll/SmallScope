@@ -457,8 +457,8 @@ function noteRect(k) {
   for (let j = 0; j < k; j++) y += notePitch(noteKindAt(j));
   return { x: MM_CX + MM_R - w, y, w, h: noteH(K) };
 }
-// The lane's floor: the top of the hud strip's xp numbers, at whatever HUD SIZE
-// the dial holds. Three plates of a price's height never came near it, but the
+// The lane's floor: the top of the hud strip's xp numbers, at whatever size
+// its dial holds (hudSc). Three plates of a price's height never came near it, but the
 // stats sheet is five of them, so on a short view the lane can reach the
 // bottom edge - and a plate drawn half under the strip is worse than one not
 // drawn. renderNotices lays them newest first and stops here, which drops the

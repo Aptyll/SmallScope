@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.435';
+const PATCH_TXT = 'PATCH 0.442';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,13 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.442', 'ANYONE CAN RIDE EITHER ZIPLINE, THE WAVES RIDE THEM TOWARD THE RIVAL BIRD, AND TWO RIVALS WHO MEET ON A CABLE ARE BOTH STUNNED AND FALL OFF.'],
+  ['0.441', 'PERCH\'S NAME FLIES ON A BANNER IN ITS SIDE\'S COLOURS OVER ITS HEALTH BAR, AND READS ON EVERY COLOUR-BLIND PALETTE.'],
+  ['0.440', 'THE EAGLE RIDE OPENS TIGHT ON YOU AND PULLS OUT, ONLY YOUR NAME RIDES THE WING UNDER A GOLD ARROW, THE FLIGHT BAR IS GRAPHITE WITH A GOLD JUMP WINDOW AND A REAL KEY, THE ROOST TOUR SAYS ATTACK THEIR EAGLE AND PROTECT YOUR EAGLE IN BIG LETTERS, AND YOU HOP OFF WITH E OR JUST BY WALKING.'],
+  ['0.439', 'EVERY ANIMAL AND CAMP KEEPS UP WITH THE AVERAGE PLAYER LEVEL: AN UNHURT BEAST TAKES THE NEW LEVEL AS SOON AS THE TABLE GAINS ONE, NOT ONLY WHEN IT RESPAWNS.'],
+  ['0.438', 'THE FISH PICKER GROWS OUT OF THE BOTTOM BAR AS ONE PIECE WITH IT, AND THE NAME OF THE FISH UNDER YOUR POINTER STANDS OVER ITS TOP.'],
+  ['0.437', 'THE FISH PICKER RISES AS A COLUMN STRAIGHT UP OFF THE FISH WELL, THE ICE FISH NEAREST IT, WITH THE NAME AND HEAL OF THE FISH UNDER YOUR POINTER BESIDE IT.'],
+  ['0.436', 'EVERY PART OF THE HUD HAS ITS OWN SIZE SLIDER - WEAPON BAR, TOP BAR, MINIMAP AND BOTTOM BAR - FROM HALF SIZE TO DOUBLE IN 5% STEPS, WITH THE PIXEL-PERFECT SIZES TICKED UNDER EACH TRACK.'],
   ['0.435', 'THE MARKET TRADES ALL THREE FISH: TABS ON THE FISH CARD PICK ONE, AND EACH IS PRICED OFF THE FISH PRICE BY HOW MUCH IT HEALS, SO A SNOW CHAR FETCHES THE MOST.'],
   ['0.434', 'PERCH FLIES IN ITS NEW LOOK TOO: A SMOOTH WINGBEAT ON THE WAY IN, WINGS TUCKED IN THE DIVE AND THROWN OPEN TO LAND, A HARD CLIMB WHEN IT IS DRIVEN OFF, ITS SHADOW THE SAME SHAPE, AND THE CREW SITTING ON THE WINGS THEY RIDE.'],
   ['0.433', 'WHITEFISH AND SNOW CHAR SWIM DOWN THE CREEK UNDER THE WATER: ROLL OVER ONE TO CATCH IT, AND POINT AT THE FISH WELL TO PICK WHICH FISH F EATS (WHITEFISH +40, ICE FISH +50, SNOW CHAR +70).', 'creek-fish'],
@@ -1281,6 +1288,8 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['PERCH\'S NAME FLIES ON A BANNER OVER ITS HEALTH BAR', '0.441'],
+    ['THE EAGLE RIDE OPENS ON YOU, WITH A GOLD JUMP WINDOW AND A REAL KEY', '0.440'],
     ['PERCH FLIES IN ITS NEW LOOK, TUCKING TO DIVE AND FLARING TO LAND', '0.434'],
     ['ROLL OVER A FISH IN THE CREEK TO CATCH IT', '0.433'],
     ['THE MARKET BUYS AND SELLS EVERY KIND OF FISH', '0.435'],
@@ -1288,11 +1297,13 @@ const PATCH_DIGEST = [
     ['PERCH ROOSTS WITH ITS WINGS OPEN AND A SADDLE ON ITS BACK', '0.427'],
     ['PERCH\'S HEALTH BAR IS BIGGER AND SHOWS ITS NUMBER', '0.427'],
     ['THE ZIPLINE STARTS IN THE STUMPS BESIDE YOUR BIRD', '0.420'],
+    ['ANYONE RIDES EITHER ZIPLINE, THE WAVES TOO; RIVALS WHO MEET ON ONE CRASH OFF IT', '0.442'],
     ['THE PRACTICE FIELD HAS A DEER RIDE THROUGH THE FOREST', '0.412'],
     ['A RIDDEN DEER GALLOPS FASTER', '0.412'],
     ['THE DEER RIDE TRAIL TWISTS: A HAIRPIN, A SPRINT AND A HOOK', '0.416'],
     ['A RIDDEN DEER\'S HEALTH IS A TAN ROW UNDER THE RIDER\'S BARS', '0.425'],
     ['BEARS WEAR A BEAR-SIZED FRAME AND START AT LEVEL 6', '0.409'],
+    ['ANIMALS AND CAMPS KEEP UP WITH THE AVERAGE PLAYER LEVEL', '0.439'],
     ['THE BEARS ARE TWICE AS BIG', '0.408'],
     ['A DEER\'S RIDER SITS DOWN ON ITS BACK', '0.406'],
     ['THE DEER STANDS TWICE AS TALL', '0.404'],
@@ -1368,6 +1379,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['A SIZE SLIDER FOR EACH HUD PART, HALF TO DOUBLE IN 5% STEPS', '0.436'],
     ['POINT AT THE FISH WELL TO PICK WHICH FISH YOU EAT', '0.433'],
     ['POST-GAME STATS: A COLUMN PER PLAYER, FOLDING GROUPS, BEST STREAK AND MULTI-KILLS', '0.430'],
     ['POST-GAME NAMES UNDER EVERY FACE', '0.431'],
@@ -3483,7 +3495,7 @@ const WIKI_BEASTS = [
     line: () => 'ONE A DEN, NEVER UNDER LV ' + MONSTER.dire.lv + '. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF BLOOD.' },
 ];
 // what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
-function wikiBeastHp(kind, lv) { return (ANIMAL_HP[kind] || 8) + (ANIMAL_LV_HP[kind] || 0) * (lv - 1); }
+function wikiBeastHp(kind, lv) { return animalHpAt(kind, lv); }
 function wikiBeastGold(kind, lv) { const y = YIELD[kind]; return Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * (lv - 1))); }
 
 // the arsenal tables: one column set per kind of thing, each column a label,
@@ -3751,7 +3763,7 @@ function drawWikiBeast(bs, cx, baseY, level, now) {
   ctx.drawImage(spr, px, py0);
   // full, chunked the way the world chunks it, at the least level it spawns
   // at; a camp monster's leash part-filled, since bare track says nothing
-  const lv = Math.max(level, (MONSTER[bs.kind] && MONSTER[bs.kind].lv) || 1), hp = wikiBeastHp(bs.kind, lv);
+  const lv = animalLevelOf(bs.kind), hp = wikiBeastHp(bs.kind, lv);
   drawBeastFrame(bs.kind, cx, cx, py0 + (spr.crown || 0), { hp, maxHp: hp, level: lv, senseT: 1 }, isCampKind(bs.kind) ? 0.6 : 1);
 }
 // a label tied to a point on the figure by a thin leader

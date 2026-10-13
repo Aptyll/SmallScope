@@ -101,8 +101,8 @@ back on the next frame. A draw and a shield still turn it every step.
 
 ### The zipline
 
-The one movement that is neither walked nor slid: a body of the owning team standing under its
-side's cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
+The one movement that is neither walked nor slid: any body standing under **either** side's
+cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
 (world.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
@@ -121,7 +121,7 @@ said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px 
 `p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
 comes back clipped on; `die` lets go too.
 
-**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is your own
+**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is either
 side's cable under the pointer as drawn (`zipUnder`, world.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
@@ -132,9 +132,9 @@ tiles); inside it the cap is the whole answer. The click scheme's press asks the
 `zipUnder`, so what lights is what a press takes.
 
 **The walk to the cable — a channel.** E (or the click scheme's right press) with the pointer on
-your own cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
+a cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
 `input.aimX/aimY` (`zipUnder` again — the aim rides the wire, so a host answers a client the
-same): `zipWalkStart` sets `p.zipWalk` (declared in `reset()`, cleared by `die`) and the body
+same): `zipWalkStart` sets `p.zipWalk` and the line in `p.zipWalkL` (declared in `reset()`, cleared by `die`) and the body
 walks itself there — `zipWalkStep`, called at the top of `updatePlayer`'s input read, routes
 through `navTo` to the **mount** (`zipMount`: the nearest point of the track whose ground a body
 can stand on — the track point itself is the pylon's own tile at a pylon; the bots walk to the
@@ -156,8 +156,13 @@ rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash
 still a body to every weapon** — arrows, the roll's sweep, a turret, a wolf, `seenAt` — and plain
 damage never dismounts (its knockback decays unspent, since the ride branch never applies
 `kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
-`rootUnit` and `netUnit`: dropped at rest on the snow under the cable. The one thing that cannot
-touch a rider is another body: `separateUnits` skips `p.zip >= 0` the way it skips `inAir(p)`.
+`rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the
+cable. Another body never shoves a rider (`separateUnits` skips `zip >= 0` the way it skips
+`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (world.js, called in `updatePlay`
+once the robots have stepped) finds every pair of riders of different sides on the same line
+within `ZIP_CRASH_R` (8 px) along it, or past each other since the last step (`zipLast`), and
+`stunUnit`s both for `ZIP_CRASH_STUN` (0.8 s, the tackle's top) — so both fall at rest where they
+met. A side's own riders pass through each other. Players (any seat) and soldiers crash alike.
 
 **Letting go keeps the cable's speed** — `zipEnd(p, false)` leaves `vx/vy` at 220 px/s for the
 surface model to spend exactly as `grapEnd` leaves the reel's, so a hop-off is a dash (snow kills
@@ -166,13 +171,17 @@ it in under a second) and shift on landing carves a slide; a body coming down ov
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
 (`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every
-walk the ladder orders ([bots](multiplayer.md#bots)); the waves never will.
+walk the ladder orders ([bots](multiplayer.md#bots)), and so do the waves' soldiers
+([Soldiers](#soldiers-the-waves)). The ride's own steps are shared by every body: `zipBoard` (onto
+the handle, the end's one way included), `zipRide` (the cable's step) and `zipEnd`; `zipStart` is
+the player's preparation in front of `zipBoard`, `zipStep` the player's stick and facing around
+`zipRide`.
 
 ## Trampled snow
 
 Visual only (js/draw/trample.js). A grid of 4 px cells over the world holds how **packed** and how
 **churned** each patch is. `trampleStep` looks at every body on the snow each frame the world moves
-(players off the eagle and off a zipline, every animal but a bird, every robot) and stamps a disc
+(players off the eagle and off a zipline, every animal but a bird, every robot off a zipline) and stamps a disc
 the size of the body every `TR_STEP` px it travels: a walk packs `TR_WALK`, a slide and a crawl
 their own amounts (read off `p.sliding`/`p.prone`, the same state the footprint emitter reads), a
 roll or a knockback past `TR_SHOVE_V` churns, and a drop in hp or a body going down churns a wider
@@ -606,7 +615,7 @@ It stands on the same plate as the rest of the HUD, which swallows a click anywh
 corner and grows rightward — a bigger tool grows the row rather than moving the tool cell it is
 read from. The geometry is `shelfCellRect(i)` (cell **-1 is the tool**), the pointer
 `shelfHit` (`{kind:'tool'}` / `{kind:'bit', i}` / null), and the draw `drawShelf` — all in
-js/ui/hud-draw.js and js/ui/strip.js, scaled about the top-left corner at the strip's HUD SIZE
+js/ui/hud-draw.js and js/ui/strip.js, scaled about the top-left corner at its own size (`cornerSc`)
 ([rendering.md](rendering.md#the-hud-strip)).
 
 Two marks and no words, [drawn](rendering.md#the-weapon-shelf) rather than labelled: a box's
@@ -1561,11 +1570,13 @@ screen at zoom 1) of, so nothing is ever seen to appear. The three wolf kinds
 and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, are dormant: nothing spawns one.)
 
 **Every animal wears a level** (`a.level`), the hero's plate on the left of its frame
-([rendering.md](rendering.md#overhead-health-bars)), dealt once by `makeAnimal` from
-`animalLevel()` — the **average hero level of the active players**, rounded, capped at
-`LEVEL_MAX`, and never under a camp monster's `MONSTER.lv` (a bear's `BEAR_LV`, 6) — and never raised after: an animal does not level, the meadow does, as the ones
-the eagle dropped you into (all level 1) are shot and restocked at whatever the table has
-reached. What grows with it is hp, `ANIMAL_LV_HP` a level over `ANIMAL_HP` (rabbit +1, deer
+([rendering.md](rendering.md#overhead-health-bars)): `animalLevelOf(kind)`, which is
+`animalLevel()` — the **average hero level of the active players** (bots included), rounded, capped at
+`LEVEL_MAX` — never under a camp monster's `MONSTER.lv` (a bear's `BEAR_LV`, 6). `makeAnimal` deals
+it at spawn and `relevelAnimal` (every tick in `updateAnimal`) keeps it on the table's average
+after, but only while the body is at full hp and hunts nobody: never mid-fight, so a blow never
+meets more hp than the last one did. A relevel resets hp to the new full. So the bear that sat out
+the early game is as tough as the table when someone finally pulls it. What grows with it is hp, `ANIMAL_LV_HP` a level over `ANIMAL_HP` (rabbit +1, deer
 +2; a level-6 pack is 45 hp a wolf), and a camp monster's bite (`MONSTER.lvBite`) — the wolves' numbers are in
 [their table](#camp-monsters-neutral-until-hit).
 **The kill pays for it**: `animalDies` grows the `YIELD` payout by `ANIMAL_LV_GOLD` (a tenth)
@@ -2390,8 +2401,8 @@ meals — the hud strip's meal buttons click the same intents a key sets); both 
 line into `startEat`. **Three fish** share F (`FISH_KINDS`, js/player.js): the WHITEFISH (+40) and
 the SNOW CHAR (+70) caught in the creek ([world](world.md)) and the ICE FISH (+50) from a hole or a
 net. `fishToEat(p)` says which: the body's pick (`p.fishPick`) if it has one, else the smallest
-meal it carries. Pointing at the fish well raises the **fish picker**, a row of the three with
-their counts over the strip's right end (`drawFishPop`, hovering one names it and its heal); a click
+meal it carries. Pointing at the fish well raises the **fish picker**, a column of the three with
+their counts rising straight up off it (`drawFishPop`, hovering one names it and its heal); a click
 picks one (gold rim, the others dim) and F then eats only that, refused when none are left, and a
 click on the picked one lets it go. The pick is set through the input's `cmd`
 (`{kind: 'fishPick'}`, `runCmd`), so it holds online. It refuses — with the `SFX.deny()` an ability well
@@ -2651,7 +2662,7 @@ let go in the hub changes nothing. The list (`drawBuildList`, the `build list` g
 (`buildTabRect`), one row a piece in
 `BUILD_ORDER` — wall, long wall, gate, turret, generator, bot bay, fish net — each row its icon and its
 price (gold's colour while the purse covers it, red while not), the picked row rimmed gold.
-The column is the **strip's**: drawn in its 1× space at the HUD SIZE
+The column is the **strip's**: drawn in its 1× space at the strip's size
 (`drawHudStrip`, js/ui/hud-draw.js, whose bake grows by `buildHeadroom` while the column is up),
 hit tested through `stripMouse`, its foot clear of the strip's top edge.
 The mouse wheel walks the rows (the camera's zoom waits), a click on a row picks it, a **hover on
@@ -3010,9 +3021,17 @@ it may have flown. `updateSoldier` is four rungs, first hit wins:
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
    wall across the spur, a rival bay): `hurtStruct` through the same `robotStrike`;
-4. the **march**: the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
+4. the **march**: first **the zipline** (`soldierBoard`): a cable within `SOLDIER_ZIP_REACH`
+   (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
+   soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
+   toward that end: its own side's cable out to the front, the rival's in to their roost. On
+   the cable the brain is off (the ride branch in `updateRobot`: `zipRide`, no swing), so a
+   rival who meets it there crashes with it ([the zipline](#the-zipline)). Off it, at the end or
+   knocked off, `soldierRejoin` reads the route again from where it stands (the leg it is
+   nearest). Else the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
    route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
-   roost through its lane.
+   roost through its lane. Seed 42: a soldier reaches the rival roost in about 34 s by the
+   cables, 83 s on foot.
 
 It is allowed to fight and nothing else — no tree tempts it, no flag recalls it. Two waves
 meeting on the road therefore grind each other down (they are rival units to each other), which
@@ -3392,7 +3411,7 @@ click and with no code plate, since a lobby id is not for reading aloud. Which r
 `netRelay()` (js/net/net.js) - `?relay=host:port` once,
 remembered with the settings (`settings.relay`), else the page's own host.
 
-`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
+`settings` (`v`, `volume`, `musicVol`, `sfxVol`, `mmR`, `mmZoom`, `hudScale`, `hudCorner`, `hudRail`, `shake`, `muted`, `info`, `pixelCursor`, `hitbox`,
 `teamBlue` — your side always painted BLUE, see [teams and colours](multiplayer.md#teams-and-colours) —
 `teamPal` — the VIDEO page's COLOUR BLIND dropdown: `def` (OFF) or a colour-blind palette (`rg`, `by`, `hc`), same section —
 `tipFollow` — the TOOLTIP row, the hover panel beside the pointer (the default) or parked bottom
@@ -3410,8 +3429,8 @@ and the five video toggles `vidClouds`/`vidRays`/`vidStars`/`vidSnow`/`vidVig`) 
 **under the player profile** — `saveSettings()` is a call to `PROFILE.putSettings()` and
 `loadSettings()` reads `PROFILE.settings()`, which returns `null` when this profile has never
 saved any (the pre-profile migration: [architecture.md](architecture.md#profilejs)). `applyMinimapSize()` must be called after changing `mmR` —
-it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale` (the HUD SIZE slider, default **1**; it steps between the screen's crisp sizes from 0.5 to 1.5, `hudSizes`, and a stored value draws at the nearest one, `hudSc`) needs no apply
-call: the hud strip, the pack and the shelf read it live every frame
+it recomputes `MM_R`/`MM_CX`/`MM_CY`. `hudScale`, `hudCorner` and `hudRail` (the BOTTOM BAR, WEAPON BAR and TOP BAR SIZE sliders, default **1**; each stops every 5% from 0.5 to 2 and on the screen's crisp sizes, `hudSizes`, and a stored value draws at the nearest stop, `hudSc`/`cornerSc`/`railSc`) need no apply
+call: the hud strip, the corner and the rail read them live every frame. A save from before the split (`v` < 4) copies its one `hudScale` to the other two, and `mmR` is clamped to `MM_R_MIN`..`MM_R_MAX` (12..48, shown as a percent of 24)
 ([rendering.md](rendering.md#the-hud-strip)). The **backpack** has no open/closed state: it is always up
 ([rendering.md](rendering.md#the-backpack)). (Old saves may still carry `res`, `fps`, `seed` or `paths` keys from removed settings;
 `Object.assign` in `loadSettings` copies them harmlessly and nothing reads them.)
@@ -3425,7 +3444,7 @@ under it (`drawSlabHead`), the SAVES slab in its place the same. A toggle is a s
 right when on), and the row under the pointer lifts as a band with its name white.
 
 **The panel is tabbed.** A navbar under the title splits the rows into four pages — GAME
-(minimap size, hud size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
+(weapon bar size, top bar size, minimap size, bottom bar size, screen shake, rumble, info display, cursor, tooltip, my team), VIDEO (below),
 AUDIO (the three sound dials and the speaker), CONTROLS (the listings, below) — and each page scrolls independently
 inside the content window (`SET_CONTENT_Y`..`SET_CONTENT_B`, panel-local 43..202) when its rows
 outgrow it, which is what lets the slab hold any number of future settings: the slab is 320×226
@@ -3448,8 +3467,9 @@ MY TEAM's ALWAYS BLUE / AS DEALT); a row without them reads ON / OFF, and a plai
 carries `val`/`pick` like a choice row; its box shows the entry in force and a click hangs the
 list under it (`setDrop`), drawn over the page outside its clip. While the list is open it takes
 the whole pointer: a click on an entry picks it, any click folds it, and ESC folds it before the panel.
-The HUD SIZE slider steps notch to notch (a tick under the track at each): only the sizes
-`hudSizes` finds crisp on this screen ([rendering](rendering.md#the-hud-strip)).
+The four size sliders share one grammar: the knob lands on the dial's nearest stop, a tick under the
+track marks each size `hudCrisp` finds crisp on this screen, and the track past the widget's cap is
+sunk (`HUD_DIALS`; [rendering](rendering.md#the-hud-strip)). Dragging one previews its widget over the panel.
 
 **The VIDEO page** holds one QUALITY row, five toggles and the COLOUR BLIND dropdown, every one a cosmetic-only render
 pass a weak GPU can shed (they read at draw time; nothing the sim computes changes):

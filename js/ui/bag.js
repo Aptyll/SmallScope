@@ -31,7 +31,7 @@
 // ONE WELL SIZE FOR THE HUD (3.23): the strip's ability wells and the
 // shelf's cells are HUD_CELL square with their item art doubled
 // (drawItemIcon's k), so a tool reads at the same size on the shelf as an
-// ability does on the strip. The HUD SIZE dial scales both widgets: the
+// ability does on the strip. Each has its own size dial (hudSc, cornerSc): the
 // strip about its bottom-centre anchor (drawHudScaled), the shelf and its
 // drawer about the top-left corner (drawCornerScaled).
 const HUD_CELL = 34;
@@ -95,13 +95,13 @@ function overHud(x, y) {
   return !!bagHit(x, y) || !!charHit(x, y) || !!shopHit(x, y) || !!stripHit(x, y) || abBuyHit(x, y) >= 0 ||
     !!shelfHit(x, y) || shelfPlateHit(x, y) || buildListHit(x, y) >= 0 || overMinimap() || !!cheatHit(x, y);
 }
-// THE CORNER SCALES WITH THE HUD SIZE DIAL, about the top-left corner
+// THE CORNER SCALES WITH ITS OWN SIZE DIAL (cornerSc), about the top-left corner
 // (drawCornerScaled, below the shelf). Every rect in this banner and the
 // shelf's stays in 1x space; a pointer is mapped back through the corner
 // anchor here before any hit test reads it, the way stripMouse does for the
 // strip, so a click can never land beside its pixel.
 function cornerMouse(mx, my) {
-  const s = hudSc();
+  const s = cornerSc();
   if (s === 1) return { x: mx, y: my };
   return { x: mx / s, y: my / s };
 }

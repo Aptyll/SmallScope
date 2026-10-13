@@ -83,12 +83,12 @@ const ZIP_GUIDE = '#ffd95c'; // the guide's dots: the draw meter's gold (DRAW_CO
 // is skipped, and only a few are ever in it. (A rider's handle and rope are
 // drawPlayer's - drawZipHandle, below - so the frame over its head covers
 // the rope rather than the rope crossing the name.)
-// the line that lights: the one under the pointer, or your own while the
-// body is walking itself to it (zipWalk) - null for none
+// the line that lights: the one under the pointer, or the one the body is
+// walking itself to (zipWalk, zipWalkL) - null for none
 function zipLitLine() {
   const hov = hoverZip();
   if (hov) return hov.z;
-  return player.zipWalk && !player.dead ? zips[player.team] || null : null;
+  return player.zipWalk && !player.dead ? zips[player.zipWalkL] || null : null;
 }
 function drawZips(ex, ey, now) {
   const hot = zipLitLine();
@@ -115,7 +115,7 @@ function drawZips(ex, ey, now) {
     }
   }
 }
-// The guide: while the pointer rests on your own cable - or the body is
+// The guide: while the pointer rests on a cable - or the body is
 // walking itself to it - and the body stands too far out to clip on (past
 // ZIP_GRAB of the track), a static dotted gold line from the feet to the
 // nearest point of the track and a short bar across it there - the walk that

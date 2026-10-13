@@ -395,8 +395,17 @@ function drawFoodCell(i, now, on) {
 function drawFishPop(hov) {
   const m = stripMouse(mouse.x, mouse.y);
   if (!fishPopUp(m.x, m.y)) return;
-  const p = player, R = fishPopRect();
+  const p = player, R = fishPopRect(), S = hudStripRect();
+  // the column grows out of the strip: its frame, then the seam opened so its
+  // ground runs on into the strip's and its sides turn into the strip's top
+  // edge (a side flush with the strip's own outer side just carries on down)
   drawHudFrame(R.x, R.y, R.w, R.h);
+  ctx.fillStyle = AB_BG; ctx.fillRect(R.x + 2, S.y, R.w - 4, R.h - (S.y - R.y));
+  for (const [ink, edge] of [[R.x, R.x + 1], [R.x + R.w - 1, R.x + R.w - 2]]) {
+    if (ink === S.x - 3 || ink === S.x + S.w + 2) continue;
+    ctx.fillStyle = HUD_EDGE; ctx.fillRect(ink, S.y + 1, 1, 1);
+    ctx.fillStyle = AB_BG; ctx.fillRect(ink, S.y + 2, 1, R.y + R.h - S.y - 2); ctx.fillRect(edge, S.y + 2, 1, R.y + R.h - S.y - 2);
+  }
   for (let j = 0; j < FISH_POP.length; j++) {
     const t = FISH_POP[j], r = fishPopCellRect(j), n = bagCount(p, t);
     const picked = p.fishPick === t, on = hov && hov.kind === 'fishPick' && hov.j === j;
@@ -412,9 +421,11 @@ function drawFishPop(hov) {
     drawPixelTextOutline(ctx, c, r.x + r.w - 2 - pixelTextWidth(c), r.y + 2, n > 0 ? '#f4f7ff' : '#8c919a', '#191b1f');
     if (on) {
       const name = ITEMS[t].name, heal = '+' + Math.round(ITEMS[t].heal * kitOf(p).foodMul);
-      const w = pixelTextWidth(name) + 4 + pixelTextWidth(heal), x = Math.min(R.x + R.w - w, Math.max(R.x, r.x + ((r.w - w) >> 1)));
-      drawPixelTextOutline(ctx, name, x, R.y - FISH_POP_NAME + 2, RES_COLORS[t], '#191b1f');
-      drawPixelTextOutline(ctx, heal, x + pixelTextWidth(name) + 4, R.y - FISH_POP_NAME + 2, '#8fe08a', '#191b1f');
+      // over the column's top, flush with its right side: clear of the
+      // ability buy plates whichever fish is hovered
+      const x = R.x + R.w - 1 - pixelTextWidth(name) - 4 - pixelTextWidth(heal), y = R.y - FISH_POP_NAME + 2; // 1 in: the outline stays inside the bake
+      drawPixelTextOutline(ctx, name, x, y, RES_COLORS[t], '#191b1f');
+      drawPixelTextOutline(ctx, heal, x + pixelTextWidth(name) + 4, y, '#8fe08a', '#191b1f');
     }
   }
 }
@@ -453,7 +464,7 @@ function drawHudStrip(now) {
   drawFishPop(hov);
   drawBuildList(now); // last: the open column stands over the meal wells
 }
-// The strip and its buy plates at the HUD SIZE the settings dial holds. At 1x
+// The strip and its buy plates at the size its dial holds (hudSc). At 1x
 // everything draws straight to the frame as it always did; any other size
 // bakes the widget at 1x into hudScaleCv and blits it scaled about the strip's
 // bottom-centre anchor - uictx's smoothing is off, so the art scales
@@ -491,10 +502,10 @@ function drawHudScaled(now, slideY) {
   ctx.drawImage(hudScaleCv,
     hudPx(VIEW_W / 2 - (VIEW_W / 2 - bx) * s),
     hudPx(VIEW_H - (VIEW_H - by) * s) + slideY,
-    bw * s, bh * s); // whole device pixels: hudSc snaps to them
+    hudPx(bw * s), hudPx(bh * s)); // the size, too, on the device grid
 }
 
-// THE CORNER - the shelf and the drawer under it - at the same HUD SIZE, scaled about the
+// THE CORNER - the shelf and the drawer under it - at its own size (cornerSc), scaled about the
 // TOP-LEFT corner so the tool cell stays put in it. The same deal as
 // drawHudScaled: at 1x straight to the frame, otherwise a 1x bake blitted
 // with smoothing off. The bake is sized to the widget's reach (CORNER_REACH,
@@ -506,7 +517,7 @@ function drawCorner(now) {
   drawBag(now);
 }
 function drawCornerScaled(now, slideX) {
-  const s = hudSc();
+  const s = cornerSc();
   if (s === 1) {
     ctx.save();
     ctx.translate(slideX, 0);
@@ -525,7 +536,7 @@ function drawCornerScaled(now, slideX) {
   ctx.clearRect(0, 0, bw, bh);
   drawCorner(now);
   ctx = o;
-  ctx.drawImage(cornerScaleCv, slideX, 0, bw * s, bh * s); // whole device pixels: hudSc snaps to them
+  ctx.drawImage(cornerScaleCv, slideX, 0, hudPx(bw * s), hudPx(bh * s)); // the size on the device grid
 }
 
 // ONE WELL OF THE SHELF: the tier rim and the dark well inside it, one px
@@ -660,14 +671,14 @@ function drawShelf(now) {
 // what it would do there. It asks the wells in the SAME order dragDrop
 // resolves in, so the ring can never point at a well the release would not
 // take. The strip's own weapon slot is left out on purpose - it is drawn under
-// the HUD SIZE transform (drawHudScaled) while this pass is in plain view
+// the strip's size transform (drawHudScaled) while this pass is in plain view
 // space, and the shelf's tool well, which dragDrop tries first, is the one a
 // drag actually aims at.
 function drawDropPromise() {
   if (!state.drag || !mouse.inside || shopHit(mouse.x, mouse.y)) return;
   // the ring is painted in screen space after the corner's bake, so a 1x
-  // rect of the shelf or the drawer is mapped through the HUD SIZE first
-  const k = hudSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
+  // rect of the shelf or the drawer is mapped through the corner's size first
+  const k = cornerSc(), sc = (r) => ({ x: Math.round(r.x * k), y: Math.round(r.y * k), w: Math.round(r.w * k), h: Math.round(r.h * k) });
   const fh = shelfHit(mouse.x, mouse.y);
   if (fh) {
     if (fh.kind === 'bit') drawDropRing(sc(shelfCellRect(fh.i)), dropKindBit(SHELF_SLOT, fh.i));

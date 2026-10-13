@@ -23,7 +23,12 @@ let camX = 0, camY = 0;
 // follow lerp then only has the lean's change to close - and the play camera
 // takes that share too, off the scale this returns (the one it started from).
 function applyZoom(dt, snap) {
-  const want = state.mode === 'drop' ? DROP_ZOOM : zoomWantOf();
+  // the ride's OPENING SHOT: beginDrop's intro starts tight on your seat
+  // (DROP_OPEN_ZOOM) and pulls out to the ride's framing as it runs down -
+  // fractional in motion like any zoom, landing exact on DROP_ZOOM
+  const want = state.mode !== 'drop' ? zoomWantOf()
+    : state.intro > 0 ? DROP_ZOOM + (DROP_OPEN_ZOOM - DROP_ZOOM) * (1 - easeInOut(1 - state.intro / state.introLen))
+      : DROP_ZOOM;
   const k = 1 - Math.exp(-(director.on ? DIR_ZOOM_EASE : ZOOM_EASE) * dt); // a director's zoom glides (js/director.js)
   const zPrev = zoomCur;
   if (snap) zoomCur = want;
@@ -159,13 +164,12 @@ function update(dt) {
     camX = c.x; camY = c.y;
   } else if (state.mode === 'drop') {
     // riding: track the eagle (the rider sits on it); falling: hold over the
-    // landing point. The first INTRO_T eases in from where the drift left off.
+    // landing point. The first INTRO_T is the opening shot: held dead on your
+    // seat while applyZoom pulls the view out round it.
     const tx = player.x - WV_W / 2, ty = player.y - WV_H / 2;
     if (state.intro > 0) {
       state.intro = Math.max(0, state.intro - dt);
-      const q = easeInOut(1 - state.intro / state.introLen);
-      camX = state.introFrom.x + (tx - state.introFrom.x) * q;
-      camY = state.introFrom.y + (ty - state.introFrom.y) * q;
+      camX = tx; camY = ty;
     } else {
       camX += (tx - camX) * Math.min(1, dt * 9);
       camY += (ty - camY) * Math.min(1, dt * 9);
@@ -681,6 +685,7 @@ function updatePlay(dt) {
   updateRespawns(dt);
   for (const b of robots) updateRobot(b, dt);
   for (let i = robots.length - 1; i >= 0; i--) if (robots[i].dead) robots.splice(i, 1);
+  zipCrash(); // rivals meeting on a cable (world.js): every rider has stepped
 
   // everyone has stepped: push overlapping units apart (players, animals, robots)
   separateUnits(dt);
