@@ -198,7 +198,7 @@ function render() {
     const hd = ((Math.round(f.a / (Math.PI * 2) * n) % n) + n) % n, wag = Math.sin(f.t * 7) > 0 ? 1 : 0; // the tail's wag
     const x0 = Math.round(sx), y0 = Math.round(sy);
     const sh = F.shadow[hd][wag];
-    ctx.globalAlpha = 0.4 * em;
+    ctx.globalAlpha = 0.42 * em; // the rim at 0.42, the core (baked at half) about 0.22: look N
     ctx.drawImage(sh, x0 - (sh.width >> 1), y0 - (sh.height >> 1));
     // whatever of it lies under an open hole is the fish itself, crisp: cut
     // to the hole's own tiles, so a long body crossing the rim is half fish
