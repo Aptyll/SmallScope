@@ -149,14 +149,14 @@ function hoverFish() {
   for (const f of fish) if (f.born && Math.hypot(f.x - wx, f.y - wy) < 7) return f;
   return null;
 }
-// the local player's own cable under the pointer (zipUnder, world.js), while
+// the cable under the local player's pointer (zipUnder, world.js), while
 // it is on the ground with the world under the pointer and nothing open over
 // it - or null. The cable pass lights the strand on it and the guide line
 // walks the body to it (drawZips/drawZipGuide, js/draw/zipline.js)
 function hoverZip() {
   if (!mouse.inside || state.mode !== 'play' || state.mapOpen || state.settingsOpen || state.wheel || state.shop || state.drag) return null;
   if (player.dead || player.zip >= 0 || inAir(player)) return null;
-  return zipUnder(player.team, mouseWX(), mouseWY());
+  return zipUnder(mouseWX(), mouseWY());
 }
 // bow-fishing works when the player stands on ice with the fish in FISH_CATCH_R
 function fishInRange(f, p) {
@@ -932,7 +932,6 @@ function stunUnit(e, t, src) {
     if (e.shieldT > 0) abShieldDown(e, false);     // ...and the shield, at its full cooldown
     if (e.rushT > 0) { e.rushT = 0; e.rushVictim = null; }
     if (e.grapT > 0) grapEnd(e);                   // the rope is knocked loose too, at its cooldown
-    if (e.zip >= 0) zipEnd(e, true);               // ...and the zipline's handle: dropped at rest under the cable
     if (e.mount) rideEnd(e, true);                 // ...and the deer's back (js/wildlife.js)
     // ...and if it is YOUR hands the swing, the cast, the shield and the meal
     // were just knocked out of, you are told. Only the local player, only a
@@ -941,6 +940,7 @@ function stunUnit(e, t, src) {
     // the strip's numbers cannot say that while the body is not answering.
     if (cur <= 0) sfxFor(e, 'dazed');
   }
+  if (e.zip >= 0) zipEnd(e, true);      // any body's hold on the zipline's handle: dropped at rest under the cable
   if (e.rider) rideEnd(e.rider, true); // a stunned deer throws whoever is on it
   burst(e.x, unitMidY(e) - 3, '#ffe9a8', 4, 26, 0.4, true);
 }
@@ -953,7 +953,8 @@ function rootUnit(e, t, src) {
   if (t <= 0 || !unitAlive(e)) return;
   ccCredit(e, e.rootT || 0, t, src);
   e.rootT = Math.max(e.rootT || 0, t);
-  if (e instanceof Player) { if (e.zip >= 0) zipEnd(e, true); e.vx = 0; e.vy = 0; e.sliding = false; } // a rider is pulled off the cable
+  if (e.zip >= 0) zipEnd(e, true); // a rider is pulled off the cable
+  if (e instanceof Player) { e.vx = 0; e.vy = 0; e.sliding = false; }
 }
 // Slowed: a multiplier on everything that moves the body, for a window.
 // Always the WORSE of what is already on you and what has just landed, which
@@ -969,7 +970,7 @@ function netUnit(e, t, mul, src) {
   ccCredit(e, e.netT || 0, t, src);
   slowUnit(e, t, mul);
   e.netT = Math.max(e.netT || 0, t);
-  if (e instanceof Player && e.zip >= 0) zipEnd(e, true); // the drape brings a rider down
+  if (e.zip >= 0) zipEnd(e, true); // the drape brings a rider down
 }
 // Marked: revealed. On a player seenAt() returns its full range and both maps
 // keep drawing them; an animal or a bot has no cover to strip, so it is the

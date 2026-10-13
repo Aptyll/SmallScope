@@ -385,7 +385,7 @@ function promptW(verb, action) {
 }
 
 // The zipline's prompt: a bare cap, no verb, over the cable at the body's own
-// column while it stands under its side's line (zipNear, js/world.js - the
+// column while it stands under either side's line (zipNear, js/world.js - the
 // resolver keyPress clips on with). The cable overhead is the whole
 // affordance; the cap only says which key takes it.
 function drawZipHint(ox, oy) {

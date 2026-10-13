@@ -101,8 +101,8 @@ back on the next frame. A draw and a shield still turn it every step.
 
 ### The zipline
 
-The one movement that is neither walked nor slid: a body of the owning team standing under its
-side's cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
+The one movement that is neither walked nor slid: any body standing under **either** side's
+cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
 (world.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
@@ -121,7 +121,7 @@ said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px 
 `p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
 comes back clipped on; `die` lets go too.
 
-**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is your own
+**The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is either
 side's cable under the pointer as drawn (`zipUnder`, world.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
@@ -132,9 +132,9 @@ tiles); inside it the cap is the whole answer. The click scheme's press asks the
 `zipUnder`, so what lights is what a press takes.
 
 **The walk to the cable — a channel.** E (or the click scheme's right press) with the pointer on
-your own cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
+a cable but the body out of reach is the same hop intent, and `zipToggle` reads it off
 `input.aimX/aimY` (`zipUnder` again — the aim rides the wire, so a host answers a client the
-same): `zipWalkStart` sets `p.zipWalk` (declared in `reset()`, cleared by `die`) and the body
+same): `zipWalkStart` sets `p.zipWalk` and the line in `p.zipWalkL` (declared in `reset()`, cleared by `die`) and the body
 walks itself there — `zipWalkStep`, called at the top of `updatePlayer`'s input read, routes
 through `navTo` to the **mount** (`zipMount`: the nearest point of the track whose ground a body
 can stand on — the track point itself is the pylon's own tile at a pylon; the bots walk to the
@@ -156,8 +156,13 @@ rolls off the cable the way it rolls off the rope (`zipEnd` first, then the dash
 still a body to every weapon** — arrows, the roll's sweep, a turret, a wolf, `seenAt` — and plain
 damage never dismounts (its knockback decays unspent, since the ride branch never applies
 `kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
-`rootUnit` and `netUnit`: dropped at rest on the snow under the cable. The one thing that cannot
-touch a rider is another body: `separateUnits` skips `p.zip >= 0` the way it skips `inAir(p)`.
+`rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the
+cable. Another body never shoves a rider (`separateUnits` skips `zip >= 0` the way it skips
+`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (world.js, called in `updatePlay`
+once the robots have stepped) finds every pair of riders of different sides on the same line
+within `ZIP_CRASH_R` (8 px) along it, or past each other since the last step (`zipLast`), and
+`stunUnit`s both for `ZIP_CRASH_STUN` (0.8 s, the tackle's top) — so both fall at rest where they
+met. A side's own riders pass through each other. Players (any seat) and soldiers crash alike.
 
 **Letting go keeps the cable's speed** — `zipEnd(p, false)` leaves `vx/vy` at 220 px/s for the
 surface model to spend exactly as `grapEnd` leaves the reel's, so a hop-off is a dash (snow kills
@@ -166,13 +171,17 @@ it in under a second) and shift on landing carves a slide; a body coming down ov
 `ZIP_ALT` px with their shadow on the ground, the handle over the head and a rope up to the cable
 (`drawZipHandle`, js/draw/zipline.js), in the standing pose; the bare key cap over the cable is
 `drawZipHint` (js/ui/wheel.js). Bots ride it too, through the same hop intent, folded into every
-walk the ladder orders ([bots](multiplayer.md#bots)); the waves never will.
+walk the ladder orders ([bots](multiplayer.md#bots)), and so do the waves' soldiers
+([Soldiers](#soldiers-the-waves)). The ride's own steps are shared by every body: `zipBoard` (onto
+the handle, the end's one way included), `zipRide` (the cable's step) and `zipEnd`; `zipStart` is
+the player's preparation in front of `zipBoard`, `zipStep` the player's stick and facing around
+`zipRide`.
 
 ## Trampled snow
 
 Visual only (js/draw/trample.js). A grid of 4 px cells over the world holds how **packed** and how
 **churned** each patch is. `trampleStep` looks at every body on the snow each frame the world moves
-(players off the eagle and off a zipline, every animal but a bird, every robot) and stamps a disc
+(players off the eagle and off a zipline, every animal but a bird, every robot off a zipline) and stamps a disc
 the size of the body every `TR_STEP` px it travels: a walk packs `TR_WALK`, a slide and a crawl
 their own amounts (read off `p.sliding`/`p.prone`, the same state the footprint emitter reads), a
 roll or a knockback past `TR_SHOVE_V` churns, and a drop in hp or a body going down churns a wider
@@ -2981,9 +2990,17 @@ it may have flown. `updateSoldier` is four rungs, first hit wins:
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
    wall across the spur, a rival bay): `hurtStruct` through the same `robotStrike`;
-4. the **march**: the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
+4. the **march**: first **the zipline** (`soldierBoard`): a cable within `SOLDIER_ZIP_REACH`
+   (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
+   soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
+   toward that end: its own side's cable out to the front, the rival's in to their roost. On
+   the cable the brain is off (the ride branch in `updateRobot`: `zipRide`, no swing), so a
+   rival who meets it there crashes with it ([the zipline](#the-zipline)). Off it, at the end or
+   knocked off, `soldierRejoin` reads the route again from where it stands (the leg it is
+   nearest). Else the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
    route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
-   roost through its lane.
+   roost through its lane. Seed 42: a soldier reaches the rival roost in about 34 s by the
+   cables, 83 s on foot.
 
 It is allowed to fight and nothing else — no tree tempts it, no flag recalls it. Two waves
 meeting on the road therefore grind each other down (they are rival units to each other), which
