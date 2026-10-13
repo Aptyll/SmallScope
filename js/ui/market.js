@@ -38,8 +38,6 @@ const MKT_TRADE = [[1, 1], [1, 5], [-1, 1], [-1, Infinity]];
 // which good the page is on: this screen's own choice of what to look at (a
 // trade names its good in the order), so not match state
 let mktSel = 'fish';
-// TEMP (mock): which of the two layouts is drawn
-let mktLook = 'A';
 
 // the chart glyph on the MARKET tab (the SHOP tab wears the coin, the FORGE the anvil)
 const MKT_GLYPH = SPRITES.marketGlyph = bakeGrid([
@@ -66,18 +64,10 @@ function mktLayout(L) {
   }
   btns[btns.length - 1].w = x + w - btns[btns.length - 1].x; // the last plate takes the odd px
   const rows = [];
-  let chart, info;
-  if (mktLook === 'A') {
-    const lw = 84;
-    for (let i = 0; i < MKT_GOODS.length; i++) rows.push({ id: MKT_GOODS[i], x, y: top + i * (MKT_ROW_H + 3), w: lw, h: MKT_ROW_H });
-    chart = { x: x + lw + 6, y: top, w: w - lw - 6, h: by - 18 - top };
-    info = { x: chart.x, y: chart.y + chart.h + 4, w: chart.w, h: 10 };
-  } else {
-    const tw = Math.floor((w - 3 * 4) / 4);
-    for (let i = 0; i < MKT_GOODS.length; i++) rows.push({ id: MKT_GOODS[i], x: x + i * (tw + 4), y: top, w: i === 3 ? x + w - (x + i * (tw + 4)) : tw, h: 22 });
-    chart = { x, y: top + 26, w, h: by - 18 - top - 26 };
-    info = { x, y: chart.y + chart.h + 4, w, h: 10 };
-  }
+  const lw = 84;
+  for (let i = 0; i < MKT_GOODS.length; i++) rows.push({ id: MKT_GOODS[i], x, y: top + i * (MKT_ROW_H + 3), w: lw, h: MKT_ROW_H });
+  const chart = { x: x + lw + 6, y: top, w: w - lw - 6, h: by - 18 - top };
+  const info = { x: chart.x, y: chart.y + chart.h + 4, w: chart.w, h: 10 };
   const plot = { x: chart.x + 1, y: chart.y + 1, w: chart.w - 2 - MKT_AXIS, h: chart.h - 2 };
   return { rows, chart, plot, info, btns };
 }
@@ -179,18 +169,12 @@ function drawMktRow(r, h, now) {
   ctx.globalAlpha = 1;
   const pt = String(price), pw = pixelTextWidth(pt, 2);
   const ink = up ? MKT_BUY : MKT_SELL;
-  if (mktLook === 'A') {
-    drawPixelText(ctx, goodName(id), r.x + 4, r.y + r.h - 9, on ? '#f4f7ff' : MKT_INK);
-    drawPixelText(ctx, pt, r.x + r.w - 4 - pw, r.y + 4, ink, 2);
-    drawTrend(r.x + r.w - 11 - pw, r.y + 7, up);
-    if (held) {
-      const ht = 'X' + shortNum(held);
-      drawPixelText(ctx, ht, r.x + r.w - 4 - pixelTextWidth(ht), r.y + r.h - 9, col);
-    }
-  } else {
-    drawPixelText(ctx, pt, r.x + r.w - 4 - pw, r.y + 3, ink, 2);
-    drawTrend(r.x + r.w - 11 - pw, r.y + 6, up);
-    if (held) drawPixelText(ctx, 'X' + shortNum(held), r.x + 4, r.y + r.h - 8, col);
+  drawPixelText(ctx, goodName(id), r.x + 4, r.y + r.h - 9, on ? '#f4f7ff' : MKT_INK);
+  drawPixelText(ctx, pt, r.x + r.w - 4 - pw, r.y + 4, ink, 2);
+  drawTrend(r.x + r.w - 11 - pw, r.y + 7, up);
+  if (held) {
+    const ht = 'X' + shortNum(held);
+    drawPixelText(ctx, ht, r.x + r.w - 4 - pixelTextWidth(ht), r.y + r.h - 9, col);
   }
   if (on) { ctx.fillStyle = col; ctx.fillRect(r.x + 1, r.y + r.h - 2, r.w - 2, 1); }
 }
