@@ -17,10 +17,10 @@
 // `ramp`: an INCOME building (one that pays its owner on its own) gets dearer
 // with every one of its type the owner already has standing - its price is
 // tiers[0].cost x ramp^n (buildCost, below). Income is a payback sum: a first
-// generator pays itself back in three minutes, so without the ramp the best
+// gold pump pays itself back in five minutes, so without the ramp the best
 // play was always another one, and a match drowned in them. With it the
-// answer turns: the fourth or fifth costs more than an upgrade or the gear
-// it competes with, and the list's own price says so. Defence never ramps.
+// answer turns: the second costs more than an upgrade or the gear it
+// competes with, and the list's own price says so. Defence never ramps.
 // `blurb` is what a piece is FOR, one short sentence to a line (a line is
 // split at '. ' and must fit the tooltip's width): the build list's hover
 // (tipStruct, js/ui/tooltip.js) prints it under the numbers.
@@ -65,18 +65,20 @@ const STRUCTS = {
     { cost: { gold: 25 }, hp: 90,  buildT: 4.8, range: 92,  dmg: 9,  rate: 0.8,  traverse: 3.0, aim: 0.45, acc: 0.8 },
     { cost: { gold: 50 }, hp: 140, buildT: 4.8, range: 124, dmg: 14, rate: 0.65, traverse: 3.8, aim: 0.35, acc: 0.9 },
   ]},
-  generator: { name: 'GENERATOR', blurb: 'PAYS YOU GOLD FOR AS LONG AS IT STANDS.', ramp: 1.5, mm: mmTeam, map: chTeam, tiers: [
-    // 4 / 8 / 13.3 gold a minute against the clock's own 15 (TRICKLE_*, js/sim.js),
-    // so one never out-earns the trickle. Each step pays itself back on the same
-    // curve the `ramp` lays for a new one: the first build 3 min, the second
-    // 4.5, an upgrade to tier 2 6.25 (+4 for 25), a third build 6.75, tier 3 8.4
-    // (+5.3 for 45), a fourth build 10 - so building and upgrading take turns
-    // as the right buy, and a field of tier 1s is never the answer
-    { cost: { gold: 12 }, hp: 40,  buildT: 8,   pay: 1, period: 15 },
-    { cost: { gold: 25 }, hp: 70,  buildT: 4.8, pay: 1, period: 7.5 },
-    { cost: { gold: 45 }, hp: 100, buildT: 4.8, pay: 2, period: 9 },
+  // THE GOLD PUMP (type 'generator'): a pump jack on a 4x2 tile pad, the one
+  // income building a scout raises. Big on purpose: one or two to a player.
+  // Its `ramp` is steep, so the second costs 2.5x the first and pays back in
+  // 12.5 min, while each upgrade pays back in 6.7 and 7.8 - after the first
+  // pump the right buy is the next tier, and a tier 3 earns 42 a minute
+  // against the clock's own 15 (TRICKLE_*, js/sim.js). The pay comes every
+  // `period` s, the draw's stroke count is set off the same clock (drawPump,
+  // js/draw/structs.js).
+  generator: { name: 'GOLD PUMP', blurb: 'PUMPS GOLD UP OUT OF THE OLD WORKS. IT PAYS YOU FOR AS LONG AS IT STANDS.', ramp: 2.5, w: 4, h: 2, mm: mmTeam, map: chTeam, tiers: [
+    { cost: { gold: 60 },  hp: 160, buildT: 20, pay: 2, period: 10 },
+    { cost: { gold: 80 },  hp: 280, buildT: 12, pay: 4, period: 10 },
+    { cost: { gold: 140 }, hp: 420, buildT: 12, pay: 7, period: 10 },
   ]},
-  // the bot bay is the one big build: a single tier on a 3x2 tile footprint
+  // the bot bay is a big build like the pump: a single tier on a 3x2 tile footprint
   // (w/h - see footprint()/findSite()), its three bots rolling out one by one
   spawner: { name: 'BOT BAY', blurb: 'ROLLS OUT BOTS THAT DIG GOLD FOR YOU. THEY WORK WHERE YOUR FLAG SAYS.', ramp: 1.5, w: 3, h: 2, mm: mmTeam, map: chTeam, tiers: [
     { cost: { gold: 45 }, hp: 220, buildT: 16, bots: 3, botHp: 24 },
@@ -689,9 +691,11 @@ function updateStructures(dt) {
       if (o.payT <= 0) {
         o.payT = t.period;
         // passive income deposits straight into the owner's wallet - gold is
-        // never a physical drop, so there is no pile to collect or to cap
-        awardGold(players[o.owner], t.pay, ox, oy + 2);
-        burst(ox, oy - 6, '#c9d0e2', 2, 20, 0.3);
+        // never a physical drop, so there is no pile to collect or to cap.
+        // The +N rises over the pump's barrel, where the drawn coin hops out
+        const c = structCenter(o);
+        awardGold(players[o.owner], t.pay, c.x - 5, c.y);
+        burst(c.x - 5, c.y - 6, '#c9d0e2', 2, 20, 0.3);
       }
     } else if (o.type === 'spawner') {
       // bots roll out one after another (4 s apart); a lost bot takes 12 s to replace

@@ -1859,7 +1859,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
-| generator | `tiers[tier].pay` every `period` s: 1/15, 1/7.5, 2/9 — 4 / 8 / 13.3 a minute, so an upgrade pays back (6.25 and 8.4 min) between the ramp's new builds | passive income, deposited to its owner; each one its owner already has makes the next cost 1.5x (`ramp`, `buildCost`), so a farm of them stops paying back |
+| gold pump (`generator`) | `tiers[tier].pay` every `period` s: 2 / 4 / 7 every 10 s — 12 / 24 / 42 a minute, so the first pays back in 5 min and each upgrade in 6.7 and 7.8 | passive income, deposited to its owner; a 4x2 building, and each one its owner already has makes the next cost 2.5x (`ramp`, `buildCost`: 60, 150, 375), so the second pays back in 12.5 min and the next tier is the better buy |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
 | a sale at [the counter](#the-merchants-counter) | half a made thing's price, or the live market price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
@@ -1879,7 +1879,7 @@ animal or a loaded worker bot (its `b.carry` goes to whoever downed it), the bre
 building (the 50% wreck refund, same as a demolishing owner's), the killer of a player (a flat
 `KILL_BOUNTY` of 12 from nowhere — the victim's own purse is untouched, and an uncredited death
 pays nobody), and a
-generator's **owner**, into whose wallet each `pay` tick deposits directly. Robots carry a
+gold pump's **owner**, into whose wallet each `pay` tick deposits directly. Robots carry a
 single gold number (`b.carry`) and deposit at 8+ into their owner's wallet.
 
 **Treasure chests** are the free-money exception to earning it: `placeChests()`
@@ -2676,15 +2676,16 @@ below); the pick is laid on that
 tile, a big one fitted round it by `findSite`, and a building of the player's own on that tile
 opens its manage wheel instead.
 
-All the data lives in the `STRUCTS` table: three tiers for wall/long wall/turret/generator (for
-the wall, the long wall and the generator the wood → stone → gold *look* is just the sprite
-palette; the turret is the exception — three timber grids of its own) and **one each for the bay and the net**,
+All the data lives in the `STRUCTS` table: three tiers for wall/long wall/turret/gold pump (for
+the wall and the long wall the wood → stone → gold *look* is just the sprite
+palette; the turret has three timber grids of its own and the gold pump, a 4x2 `generator`, three
+painted tiers of its own, [sprites](sprites.md)) and **one each for the bay and the net**,
 each with a gold `cost`, `hp`, `buildT`, and per-type stats. A `water: true` entry (only the net)
 goes on a hole instead of snow, and that flag — never the type name — is what `canPlaceAt`,
 `isSolidTile` and the dawn refreeze each read; see [Fish nets](world.md#fish-nets).
-`tiers[0]` is what the list builds, at `buildCost(type, p)`: an income building (`ramp`: the generator
-and the bay, 1.5) costs `ramp` times more for each of that type its owner already has, standing or
-going up (12, 18, 27, 41... for generators), and the price paid rides the building as `paid` for
+`tiers[0]` is what the list builds, at `buildCost(type, p)`: an income building (`ramp`: the gold pump
+2.5, the bay 1.5) costs `ramp` times more for each of that type its owner already has, standing or
+going up (60, 150, 375... for gold pumps), and the price paid rides the building as `paid` for
 the refund. Upgrading pays the next tier's cost and re-runs a shorter
 construction, and the last tier (`tiers.length - 1`) reports MAX TIER. Building and [gear](#gear)
 are the two gold sinks.
@@ -2810,9 +2811,9 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   inside `ROCK_SPLASH` (7 px) through `hurtStruct` and every body through `hurtUnit`, by way of
   `structsNear`/`unitsHit`. **That landing is the only door a rock has to a building.** A rock that
   already struck something on the way in spent itself there and only puffs.
-  **Generator**: deposits `tiers[tier].pay` gold every `period` seconds straight into its
-  **owner's** wallet (`awardGold` — the `+N` floater rises at the generator, but there is
-  nothing to collect and no pile to cap). **Bot bay** (`spawner`):
+  **Gold pump** (`generator`): deposits `tiers[tier].pay` gold every `period` seconds straight into its
+  **owner's** wallet (`awardGold` — the `+N` floater rises over the pump's barrel as a drawn coin
+  hops out of it, but there is nothing to collect and no pile to cap). **Bot bay** (`spawner`):
   keeps `tiers[0].bots` (3) robots alive, rolling them out **one at a time** — the first 1 s after
   completion, then 4 s apart; a lost bot takes 12 s to replace (`respawnT`/`respawnTotal`).
   `makeRobot` spawns at `structMouth()` (the ring around the footprint if that is blocked) with an
