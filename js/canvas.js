@@ -37,6 +37,14 @@ const actx = airCv.getContext('2d');
 const airMask = document.createElement('canvas');
 const amctx = airMask.getContext('2d');
 let airOn = false; // the air layer holds something this frame (the replay banks it too)
+const airRiders = []; // this frame's players on a zipline's handle, held out of the y-sorted pass for the air layer (render())
+const airBox = { x0: 0, y0: 0, x1: 0, y1: 0 }; // the air layer's used box this frame, in its own px: all that is graded and blitted
+const AIR_PAD = 56; // px round a rider or faller the box keeps: the name tag's half-width and the frame
+const AIR_TOP = 72; // px above a rider's feet the box reaches: the body, the frame and the name over it
+function airGrow(x0, y0, x1, y1) {
+  if (x0 < airBox.x0) airBox.x0 = x0; if (y0 < airBox.y0) airBox.y0 = y0;
+  if (x1 > airBox.x1) airBox.x1 = x1; if (y1 > airBox.y1) airBox.y1 = y1;
+}
 
 // full-window canvas behind the game: the pillarbox bars' frost frame
 const barsCv = document.getElementById('bars');
