@@ -293,7 +293,7 @@
   // `scale` frame px a grid cell (1 at the roost, 1.5 in flight: the bird is
   // nearer the camera). mask: only its silhouette in the shadow's wash, flat
   // on the ground (no height), for the shadow a flying bird casts
-  function paint(id, team, hd, key, scale, mask) {
+  function paint(id, team, hd, key, scale, mask, trim) {
     const cfg = LOOKS[id], pose = POSE(key), pal = palette(cfg, team), { parts, dots } = build(cfg, pose.ground && !mask);
     const W = sizeOf(scale), N = W * W, place = placer(pose, hd, scale, mask ? 0 : ZK);
     const own = new Int16Array(N).fill(-1), P = parts.length;
@@ -316,9 +316,7 @@
       loc[i] = m; bx[i * 4] = x0; bx[i * 4 + 1] = y0; bx[i * 4 + 2] = x1; bx[i * 4 + 3] = y1;
       if (x1 >= x0) { X0 = Math.min(X0, x0); Y0 = Math.min(Y0, y0); X1 = Math.max(X1, x1); Y1 = Math.max(Y1, y1); }
     });
-    const cv = document.createElement('canvas');
-    cv.width = W; cv.height = W;
-    const g = cv.getContext('2d'), img = g.createImageData(W, W), D = img.data;
+    const img = new ImageData(W, W), D = img.data;
     const put = (k, rgb, al = 255) => { D[k * 4] = rgb[0]; D[k * 4 + 1] = rgb[1]; D[k * 4 + 2] = rgb[2]; D[k * 4 + 3] = al; };
     const edge = (x, y) => { // an empty cell beside the bird: the outline's
       const k = y * W + x;
@@ -327,8 +325,7 @@
     const ya = Math.max(0, Y0 - 1), yb = Math.min(W - 1, Y1 + 4), xa = Math.max(0, X0 - 1), xb = Math.min(W - 1, X1 + 3);
     if (mask) {
       for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) if (own[y * W + x] >= 0 || edge(x, y)) put(y * W + x, SHADOW, SHADOW[3]);
-      g.putImageData(img, 0, 0);
-      return cv;
+      return trim ? trimmed(img, W) : whole(img, W);
     }
     const inPart = (i, x, y) => {
       const x0 = bx[i * 4], y0 = bx[i * 4 + 1];
@@ -378,9 +375,35 @@
       if (X >= 0 && Y >= 0 && X < W && Y < W) put(Y * W + X, pal[mat][t]);
     }
     for (let y = ya; y <= yb; y++) for (let x = xa; x <= xb; x++) if (edge(x, y)) put(y * W + x, INK); // one ink line round the whole bird
-    g.putImageData(img, 0, 0);
+    return trim ? trimmed(img, W) : whole(img, W);
+  }
+  // A cached frame keeps only the box its ink fills: three quarters of a
+  // W x W frame is empty air round the wings, and that air cost memory and a
+  // blend of every one of its pixels on every draw. The frame carries where
+  // the box sat (ox, oy) and the full frame's size (fw, fh), so put() lands
+  // each pixel exactly where the whole frame would have.
+  function trimmed(img, W) {
+    const D = img.data;
+    let x0 = W, y0 = W, x1 = -1, y1 = -1;
+    for (let y = 0; y < W; y++) for (let x = 0; x < W; x++) {
+      if (!D[(y * W + x) * 4 + 3]) continue;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+    }
+    if (x1 < 0) { x0 = y0 = 0; x1 = y1 = 0; } // nothing painted: one clear pixel
+    const cv = document.createElement('canvas');
+    cv.width = x1 - x0 + 1; cv.height = y1 - y0 + 1;
+    cv.getContext('2d').putImageData(img, -x0, -y0, x0, y0, cv.width, cv.height);
+    cv.ox = x0; cv.oy = y0; cv.fw = cv.fh = W;
     return cv;
   }
+  function whole(img, W) {
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = W;
+    cv.getContext('2d').putImageData(img, 0, 0);
+    return cv;
+  }
+  // a cached frame drawn with its full frame's top-left at (x, y)
+  const put = (g, cv, x, y) => g.drawImage(cv, x + cv.ox, y + cv.oy);
 
   // ---------------------------------------------------------------- cache
   // 64 headings round the circle, sizes in 32nds of a grid cell, so a turn
@@ -399,7 +422,7 @@
   SPR.onTeams(() => { frames = new Map(); queue = []; slow = []; queued = new Set(); last = new WeakMap(); }); // the colour-blind palettes repaint the team parts
   function job(id, team, hd, key, scale, mask) {
     const t = turnOf(hd), k = normKey(key), q = sizeQ(scale);
-    return { key: [id, team, t, k, q, mask ? 'm' : 'c'].join('|'), make: () => paint(id, team, t * 2 * Math.PI / TURNS, k, q, mask) };
+    return { key: [id, team, t, k, q, mask ? 'm' : 'c'].join('|'), make: () => paint(id, team, t * 2 * Math.PI / TURNS, k, q, mask, true) };
   }
   function keep(key, cv) {
     frames.delete(key); frames.set(key, cv); // the Map's order is the draw order
@@ -491,6 +514,7 @@
   function flash(src) {
     const cv = flashCv || (flashCv = document.createElement('canvas'));
     if (cv.width !== src.width || cv.height !== src.height) { cv.width = src.width; cv.height = src.height; }
+    cv.ox = src.ox; cv.oy = src.oy; cv.fw = src.fw; cv.fh = src.fh; // a trimmed frame's box, for put()
     const g = cv.getContext('2d');
     g.globalCompositeOperation = 'copy';
     g.drawImage(src, 0, 0);
@@ -500,7 +524,8 @@
     return cv;
   }
   // how far the painted bird reaches above and below the frame's centre, in
-  // canvas px: what the roost's hp bar hangs over
+  // canvas px: what the roost's hp bar hangs over (a trimmed frame's box
+  // measured back against its full frame)
   const reaches = new WeakMap();
   function reach(src) {
     let r = reaches.get(src);
@@ -508,12 +533,13 @@
       const d = src.getContext('2d').getImageData(0, 0, src.width, src.height).data;
       let y0 = src.height, y1 = -1;
       for (let y = 0; y < src.height; y++) for (let x = 0; x < src.width; x++) if (d[(y * src.width + x) * 4 + 3]) { if (y < y0) y0 = y; y1 = y; break; }
-      reaches.set(src, r = { up: src.height / 2 - y0, down: y1 + 1 - src.height / 2 });
+      const oy = src.oy || 0, fh = src.fh || src.height;
+      reaches.set(src, r = { up: fh / 2 - (oy + y0), down: oy + y1 + 1 - fh / 2 });
     }
     return r;
   }
   // drawEagle asks has(id) for the skin a bird wears
-  SPRITES.perch = { has: (id) => !!LOOKS[id], frame, shadow, flash, reach, warm, tick, seat, figure, STROKE_N, DIVE_N, merchSeat: [6, 0] };
+  SPRITES.perch = { has: (id) => !!LOOKS[id], frame, shadow, flash, put, reach, warm, tick, seat, figure, STROKE_N, DIVE_N, merchSeat: [6, 0] };
   // the skins screen's cards: SPRITES.birdSkinIcon[id][skin(team)], painted
   // the first time a card asks
   SPRITES.birdSkinIcon = {};
