@@ -624,7 +624,7 @@ function updateStructures(dt) {
       if (o.buildT >= o.buildTotal) {
         o.building = false;
         o.hp = o.maxHp;
-        o.flash = 0.3; // the completion flash
+        joltObj(o, 0.3); // the completion flash
         if (big) {
           // snow settles along the whole roofline
           const top = (o.ty + structH(o)) * TILE - structSprite(o).height + 4;

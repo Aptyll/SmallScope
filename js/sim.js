@@ -489,6 +489,49 @@ function shotContacts(a, x0, y0, dx, dy) {
   if (shotHits.length > 1) shotHits.sort(byStep);
   return shotHits;
 }
+// ------------------------------------------------------------ object timers
+// A map object's running clocks: the hit blink (flash), the shiver (shake),
+// a picked bush growing back, a rock's crack fading and its rubble regrowing.
+// Only the objects with one running are ticked: the map is ~54,000 tiles and
+// ~33,000 of them pines, and walking all of them every step to find the few
+// that blink cost half the step. So a clock is only ever STARTED through
+// joltObj (the blink and shiver) or timeObj (any other), which enrols the
+// object; it leaves on its own once every clock has run down. A clock set
+// straight on the object never runs. After a load objTimersRescan finds them.
+const objTimed = new Set();
+function timeObj(o) { objTimed.add(o); }
+function joltObj(o, flash, shake) {
+  if (flash !== undefined) o.flash = flash;
+  if (shake !== undefined) o.shake = shake;
+  objTimed.add(o);
+}
+const objTiming = (o) => o.flash > 0 || o.shake > 0 || (o.type === 'bush' && o.berries === 0) ||
+  (o.type === 'rock' && (o.crack > 0 || o.regrow > 0));
+function objTimersRescan() {
+  objTimed.clear();
+  for (const o of objects) if (o && objTiming(o)) objTimed.add(o);
+}
+const objTickList = [];
+function tickObjTimers(dt) {
+  // in map order, as the whole-map walk ran them, so a regrowing rock's
+  // burst draws off rng() in the same order it always did
+  objTickList.length = 0;
+  for (const o of objTimed) {
+    if (objects[idx(o.tx, o.ty)] === o) objTickList.push(o);
+    else objTimed.delete(o); // felled, mined away or a new match: no longer on the map
+  }
+  if (objTickList.length > 1) objTickList.sort((a, b) => idx(a.tx, a.ty) - idx(b.tx, b.ty));
+  for (const o of objTickList) {
+    if (o.flash > 0) o.flash -= dt;
+    if (o.shake > 0) o.shake -= dt;
+    if (o.type === 'bush' && o.berries === 0) {
+      o.regrow -= dt;
+      if (o.regrow <= 0) o.berries = 2;
+    } else if (o.type === 'rock') tickRock(o, dt); // the rubble growing back (js/mining.js)
+    if (!objTiming(o)) objTimed.delete(o);
+  }
+}
+
 // ------------------------------------------------------------ passive income
 // The clock pays: every player on the ground draws TRICKLE_GOLD into its
 // wallet every TRICKLE_T s, through gainGold so it levels too - the League
@@ -766,16 +809,7 @@ function updatePlay(dt) {
     }
   }
 
-  // object timers
-  for (const o of objects) {
-    if (!o) continue;
-    if (o.flash > 0) o.flash -= dt;
-    if (o.shake > 0) o.shake -= dt;
-    if (o.type === 'bush' && o.berries === 0) {
-      o.regrow -= dt;
-      if (o.regrow <= 0) o.berries = 2;
-    } else if (o.type === 'rock') tickRock(o, dt); // the rubble growing back (js/mining.js)
-  }
+  tickObjTimers(dt); // the blinks, shivers and regrowth running on map objects (the `object timers` banner)
 
   resolveContests(); // the drop pickups queued above
 }

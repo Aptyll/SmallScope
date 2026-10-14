@@ -159,9 +159,10 @@ function updateMine(p, dt) {
   }
   const K = ROCK_KINDS[o.kind], was = o.crack || 0;
   o.crack = Math.min(1, was + dt / K.mine);
+  timeObj(o); // the crack fades once nobody picks at it (tickRock)
   // a crack stage breaking open: a chunk off the face, the rock blinking white
   if (o.crack < 1 && Math.floor(o.crack * 3) > Math.floor(was * 3)) {
-    o.flash = 0.1; o.shake = 0.2;
+    joltObj(o, 0.1, 0.2);
     shakeFor(p, 1);
     burst(rockCx(o), rockCy(o) - 6, K.chip, 8, 55, 0.5, true);
   }
@@ -182,8 +183,7 @@ function mineStrike(p, o, K) {
     p.swingDir = Math.atan2(dy, dx);
     faceToward(p, dx, dy);
   }
-  o.shake = 0.12;
-  o.flash = Math.max(o.flash || 0, 0.04); // every bite blinks the rock
+  joltObj(o, Math.max(o.flash || 0, 0.04), 0.12); // every bite blinks the rock
   sfxAt('mine', cx, cy);
   // where the pick lands: chips off the face, a white spark, and motes of the
   // kind's colour pulled off the rock into the miner
@@ -197,7 +197,7 @@ function finishMine(p, o, K) {
   const cx = rockCx(o), cy = rockCy(o);
   p.mineO = null;
   o.miner = -1; o.crack = 0; o.regrow = K.regrow;
-  o.flash = 0.15; o.shake = 0.3;
+  joltObj(o, 0.15, 0.3); // ...and enrols the regrow set just above
   sfxAt('break_', cx, cy);
   shakeFor(p, 2 + o.kind);
   burst(cx, cy - 6, K.chip, 12 + o.kind * 6, 60, 0.7, true);

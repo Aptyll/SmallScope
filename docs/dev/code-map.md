@@ -478,6 +478,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the frame sim: momentum, day/night, timers | `update`, `updatePlay`, `updatePlayer` | `update` |
 | the disc an arrow lands in round a body | `ARROW_HIT_R` (above `updatePlay`) | `update` |
 | a shot meeting everything its step CROSSED, in the order it met it: the swept disc and box, the tile walk (roost, dummy, wall), every standing building by its drawn shape (the art's opaque box, a turret's turntable disc), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `sweepBox`, `artBox`/`structShotBox` (also drawn by `drawHitboxes`), `shotContacts`, `shotHits` | `the shot's sweep` |
+| a map object's running clocks (the hit blink, the shiver, a picked bush and a mined rock growing back): starting one, ticking only the objects that have one, the rebuild after a load | `joltObj`, `timeObj`, `objTimed`, `objTiming`, `tickObjTimers` (called at the end of `updatePlay`), `objTimersRescan` (`saveApply`, js/save.js) | `object timers` |
 | the clock paying every player on the ground a coin, silently | `TRICKLE_GOLD`/`TRICKLE_T` (the tick is in `updatePlay`'s player loop) | `passive income` |
 | the zoom ease itself (runs first thing in `update`) | `applyZoom` | `update` |
 | particles, floaters, footprints, drops, world-space snow flakes | `updateFx`, `makeFlake`, `fitFlakes` | `fx updates` |

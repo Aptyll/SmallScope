@@ -802,7 +802,7 @@ function laneStep(e, dt) {
     const ev = L.ev[L.next++]; spent++;
     const o = objects[ev.i];
     if (!laneFells(o)) continue; // already felled by hand, or grown into something else
-    if (ev.k === 2) { structOf(o).shake = 0.55; continue; }
+    if (ev.k === 2) { joltObj(structOf(o), undefined, 0.55); continue; }
     const tx = ev.i % WORLD, ty = (ev.i / WORLD) | 0, px = tx * TILE + 8, py = ty * TILE + 8;
     if (fellScenery(tx, ty).type === 'rock') { // the whole rock, whichever of its two tiles the lane met
       burst(px, py - 6, '#9aa4b4', 6, 50, 0.45, true); // the rock shatters
