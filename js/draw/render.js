@@ -432,9 +432,11 @@ function render() {
       hovO = structOf(objAt(Math.floor(mouseWX() / TILE), Math.floor(mouseWY() / TILE)));
   }
 
+  airRiders.length = 0;
   for (const d of draws) {
     // a body in deep snow is drawn sunk to the shins (drawWading, js/draw/depth.js)
     if (d.down) { drawDown(d.down, ex, ey, now); continue; }
+    if (d.p && !d.ghost && d.p.zip >= 0) { airRiders.push(d.p); continue; } // on a cable: the air layer's, below
     if (d.p) { if (d.ghost) drawGhost(d.p, ex, ey); else drawWading(d.p, ex, ey, now, () => drawPlayer(d.p, ex, ey, now)); continue; }
     if (d.a) { drawWading(d.a, ex, ey, now, () => drawAnimal(d.a, ex, ey, now)); continue; }
     if (d.r) { drawWading(d.r, ex, ey, now, () => drawRobot(d.r, ex, ey, now)); continue; }
@@ -782,16 +784,27 @@ function render() {
   drawHitboxes(ox, oy, ex, ey);
   drawBotLines(ex, ey); // F4: a line from each bot to what it is after (js/ui/botview.js)
 
-  // the air layer (airCv, js/canvas.js): a bird in flight, its riders and
-  // anyone falling, off the EXACT camera so the bird the camera rides holds
-  // still on the screen while the ground slides under it; the day's grade
-  // laid over it the way renderLighting laid it over the world
-  airOn = !!state.drop && (state.drop.eagles.some(dropFlies) || players.some((p) => p.active && p.dropT > 0));
+  // the air layer (airCv, js/canvas.js): a bird in flight, its riders,
+  // anyone falling and a player on a zipline's handle, off the EXACT camera
+  // so the body the camera rides holds still on the screen while the ground
+  // slides under it; the day's grade laid over it the way renderLighting
+  // laid it over the world. Only the box round what it holds is graded and
+  // blitted (airBox): a bird's trail and shadow reach across the frame, so a
+  // flight takes all of it, but a rider is a few dozen px
+  const ax = camX + shx, ay = camY + shy;
+  airBox.x0 = airBox.y0 = Infinity; airBox.x1 = airBox.y1 = -Infinity;
+  if (state.drop && state.drop.eagles.some(dropFlies)) airGrow(0, 0, WV_W, WV_H);
+  for (const p of players) if (p.active && p.dropT > 0) airGrow(p.x - ax - AIR_PAD, p.y - ay - DROP_ALT - 60, p.x - ax + AIR_PAD, p.y - ay + AIR_PAD);
+  for (const p of airRiders) airGrow(p.x - ax - AIR_PAD, p.y - ay - AIR_TOP, p.x - ax + AIR_PAD, p.y - ay + AIR_PAD);
+  airBox.x0 = Math.max(0, Math.floor(airBox.x0)); airBox.y0 = Math.max(0, Math.floor(airBox.y0));
+  airBox.x1 = Math.min(WV_W, Math.ceil(airBox.x1)); airBox.y1 = Math.min(WV_H, Math.ceil(airBox.y1));
+  airOn = airBox.x1 > airBox.x0 && airBox.y1 > airBox.y0;
   if (airOn) {
     ctx = actx;
     ctx.clearRect(0, 0, WV_W, WV_H);
-    drawDropAir(camX + shx, camY + shy, now, true);
-    lightAir();
+    if (state.drop) drawDropAir(ax, ay, now, true);
+    for (const p of airRiders) drawWading(p, ax, ay, now, () => drawPlayer(p, ax, ay, now));
+    lightAir(airBox.x0, airBox.y0, airBox.x1 - airBox.x0, airBox.y1 - airBox.y0);
   }
 
   // Back to the screen, and the only place the two pixel spaces meet. The
@@ -811,7 +824,10 @@ function render() {
   const kPx = zoomCur * devScale;
   const subX = Math.round((camX + shx - ox) * kPx), subY = Math.round((camY + shy - oy) * kPx);
   ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, -subX, -subY, WV_W * kPx, WV_H * kPx);
-  if (airOn) ctx.drawImage(airCv, 0, 0, WV_W, WV_H, 0, 0, WV_W * kPx, WV_H * kPx);
+  if (airOn) {
+    const b = airBox, bw = b.x1 - b.x0, bh = b.y1 - b.y0;
+    ctx.drawImage(airCv, b.x0, b.y0, bw, bh, b.x0 * kPx, b.y0 * kPx, bw * kPx, bh * kPx);
+  }
   // everything from here draws in VIEW space, blown up by the whole-number
   // devScale - so 1px HUD rects and the 3x5 font stay exact at any zoom
   ctx.setTransform(devScale, 0, 0, devScale, 0, 0);

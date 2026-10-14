@@ -160,10 +160,14 @@ number of px a step, and that full-screen judder was eye strain. `sizeWorldView(
 spare world px on each axis the shift needs. The cost: a body the camera follows sits on the
 world grid while the screen slides under it, so it wanders within half a world px of the centre.
 
-**The air layer** removes that cost where it showed: the eagle the camera rides. A bird in flight
-(`dropFlies`: fly, dive, flee) and anyone falling from it draw into `airCv` (js/canvas.js) off the
-**exact** camera, and the layer is blitted over the world with no shift, so the bird holds still on
-the screen while the ground slides under it. `lightAir` lays the frame-wide grades over it (the
+**The air layer** removes that cost where it showed: the eagle the camera rides, and a player on a
+zipline. A bird in flight (`dropFlies`: fly, dive, flee), anyone falling from it and a player on a
+cable's handle (held out of the y-sorted pass in `airRiders`, so whoever that pass would not show
+stays hidden) draw into `airCv` (js/canvas.js) off the **exact** camera, and the layer is blitted
+over the world with no shift, so the body holds still on the screen while the ground slides under
+it. A rider is drawn over the cable and the canopy. Only `airBox` is graded and blitted: the whole
+frame while a bird flies (its trail and shadow reach across it), else a box `AIR_PAD`/`AIR_TOP`
+round each rider and faller, grown with `airGrow`. `lightAir` lays the frame-wide grades over it (the
 hour, the haze, the night and its rim, none of the ground's lights or shadows), cuts its empty
 pixels back out with the layer's own shape (`airMask`), and stamps its names and frames ungraded
 (`inWorldLayer` holds them back on both layers). A bird on the ground stays in the world buffer.
@@ -231,7 +235,7 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
 14. `renderLighting` → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
     **above** the lighting, see [Debug overlays](#debug-overlays-hitboxes-and-routes));
 15. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
-    the riders and every faller) → `lightAir` ([the air layer](#the-resting-zoom-is-always-pixel-exact)).
+    the riders and every faller) → the zipline riders (`airRiders`, `drawPlayer`) → `lightAir` ([the air layer](#the-resting-zoom-is-always-pixel-exact)).
 
 Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
 drew in world space, everything below draws in screen space; see

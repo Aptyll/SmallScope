@@ -913,9 +913,13 @@ function renderLighting(ox, oy, now) {
 // the lights). The fills colour the layer's empty pixels too, so its own
 // shape, copied first, cuts them back out; then the riders' names and the
 // frames are stamped over it ungraded, as the world's are.
-function lightAir() {
-  amctx.clearRect(0, 0, WV_W, WV_H);
-  amctx.drawImage(airCv, 0, 0);
+function lightAir(x, y, w, h) {
+  amctx.clearRect(x, y, w, h);
+  amctx.drawImage(airCv, x, y, w, h, x, y, w, h);
+  // every fill below is cut to the box, so a rider's grade costs a rider's
+  // few hundred px, not the frame's
+  ctx.save();
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
   todGrade();
   const haze = state.wx.drift * state.wind * BLIZ_HAZE_A;
   if (haze > 0.005) {
@@ -938,8 +942,9 @@ function lightAir() {
     nightEdge(dark * NIGHT_EDGE);
   }
   ctx.globalCompositeOperation = 'destination-in';
-  ctx.drawImage(airMask, 0, 0);
+  ctx.drawImage(airMask, x, y, w, h, x, y, w, h);
   ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
   flushWorldInk();
 }
 

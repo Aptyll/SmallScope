@@ -152,7 +152,10 @@ const tallyInk = new Map(); // 'text|colour' -> the outlined number at world 1x
 const tallySpot = new Map(); // body -> { x, y, col, a, f }: where its frame last hung a total, and on which frame
 let tallyFrame = 0;
 function queueTally(u, rx, cy, col) {
-  if (!u.tallyN || ctx !== wctx) return; // a UI pass (the wiki's beasts) has no fight to total
+  if (!u.tallyN || !inWorldLayer()) return; // a UI pass (the wiki's beasts) has no fight to total
+  // the air layer sits on the exact camera, the world buffer on its floor:
+  // a rider's total is moved onto the world buffer's px, where the queue lives
+  if (ctx === actx) { rx += camX - Math.floor(camX); cy += camY - Math.floor(camY); }
   const age = (state.tick - u.tallyTick) * TICK_DT;
   if (age > TALLY_HOLD + TALLY_FADE || age < 0) return;
   const a = age < TALLY_HOLD ? 1 : 1 - (age - TALLY_HOLD) / TALLY_FADE;
