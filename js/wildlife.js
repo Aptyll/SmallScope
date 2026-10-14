@@ -733,7 +733,6 @@ function animalDies(a) {
   if (a.kind === 'rabbit') {
     burst(a.x, a.y - 3, '#9a6a45', 10, 45, 0.5);
     burst(a.x, a.y - 3, '#c29068', 6, 35, 0.4);
-    spawnDrop(a.x, a.y, 'berry');
     if (rng() < TUN_DROP) spawnDrop(a.x, a.y, 'tunnel'); // ...and now and then the burrow it came out of (js/tunnel.js)
   } else if (a.kind === 'deer') {
     burst(a.x, a.y - 5, '#8f582f', 12, 50, 0.55);

@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.448';
+const PATCH_TXT = 'PATCH 0.449';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.449', 'RABBITS NO LONGER DROP A BERRY WHEN THEY DIE: BERRIES COME FROM BUSHES ONLY.'],
   ['0.448', 'THE MAIN MENU, THE ROOST TOUR AFTER THE EAGLE RIDE AND THE DRIVEN-OFF CEREMONY ARE FRAMED FROM FURTHER OUT AGAIN, AND PLAY STILL STARTS TWICE AS CLOSE.'],
   ['0.447', 'THE CAMERA STARTS TWICE AS CLOSE: EVERYTHING IN THE WORLD IS DRAWN AT DOUBLE SIZE, AND THE MOUSE WHEEL STILL ZOOMS OUT TO THE OLD VIEW AND BEYOND.'],
   ['0.446', 'THE FOUR WAR EAGLES ARE REDRAWN IN PERCH\'S NEW LOOK: GREAT HELM, BEAK GUARD, HORNED AND CRESTED NOW WEAR THEIR HELMS, CROWNS AND ARMOUR OVER THE SAME WINGS, AND TUCK, FLARE, ROOST AND TAKE OFF LIKE PERCH.'],
@@ -1294,6 +1295,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['RABBITS NO LONGER DROP BERRIES', '0.449'],
     ['THE CAMERA STARTS TWICE AS CLOSE, AND THE WHEEL STILL ZOOMS OUT', '0.447'],
     ['FROST PIKE AND RARE GOLD SUNFISH SWIM UNDER THE ICE', '0.444'],
     ['PERCH\'S NAME FLIES ON A BANNER OVER ITS HEALTH BAR', '0.441'],
@@ -3494,7 +3496,7 @@ const wikiScroll = {};        // px scrolled per page id
 // the beast cards: kind, name, a line of what it does - every number in it read off the sim's own constants
 const WIKI_BEASTS = [
   { kind: 'rabbit', name: 'RABBIT',
-    line: () => 'BOLTS AT ' + FLEE_SIGHT.rabbit + ' PX. ONE JINK CHARGE EVERY ' + RABBIT_DODGE_CD + ' S. DROPS A BERRY.' },
+    line: () => 'BOLTS AT ' + FLEE_SIGHT.rabbit + ' PX. ONE JINK CHARGE EVERY ' + RABBIT_DODGE_CD + ' S.' },
   { kind: 'deer', name: 'DEER',
     line: () => 'BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
   { kind: 'wolf', name: 'WOLF',

@@ -1729,8 +1729,7 @@ included, which is what keeps the `.` overlay honest ([rendering.md](rendering.m
 
 A kill pays its `YIELD` gold, grown a tenth a level for the animal's level (`ANIMAL_LV_GOLD`,
 above), straight to whoever landed the final blow (`a.lastHit`, through
-`awardGold` — see [Economy](#economy-one-currency)); rabbits also drop 1 berry as a physical
-pickup, and one in four (`TUN_DROP`) a [burrow](#the-burrow-a-tunnel-anyone-can-ride), and a burn credits the player that lit it, so an animal that walks away and dies of its
+`awardGold` — see [Economy](#economy-one-currency)); rabbits also drop, one in four (`TUN_DROP`), a [burrow](#the-burrow-a-tunnel-anyone-can-ride), and a burn credits the player that lit it, so an animal that walks away and dies of its
 fire still pays. Shots, rolls and the class abilities are what hurt them (there is no
 melee — the E swing is for scenery, never for a body); animals are solid
 to players, robots and each other except birds, which fly (see
@@ -1864,7 +1863,7 @@ rather than a different resource (the League model: one number, many ways to ear
 | dead tree (3 hp) | `deadTreeFall` 1 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
 | rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
-| rabbit | `rabbit` 2 coins × 5 → 10 (+1 berry) | bolts when approached; jinks one shot per 10 s |
+| rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
 | black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
