@@ -191,9 +191,9 @@ const state = {
     // gearFxT/gearFxSlot its equip flash,
     // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
     // is a surface of its own on wikiT, with wikiTab the open page (js/ui/wiki.js
-    // `the wiki`), wikiFrom the screen Esc takes it back to; the patch notes
-    // are one too, on notesT, notesSel the group the keys have picked
-    // (menu.js `patch notes`).
+    // `the wiki`); the patch notes are one too, on notesT, notesTab its open
+    // tab (0 PATCH NOTES, 1 ROADMAP), notesSel the group the keys have picked
+    // (js/ui/notes.js `patch notes`).
     screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
     // lobby's map slide (mapStep: {d, k, from, t}, null at rest), the lock-in's
     // ring (lockFx, s left), and the difficulty target: the level it wears and
@@ -208,7 +208,7 @@ const state = {
     // relay's open rooms, whether the relay answered, the row hovers, the
     // keyboard row, and the refusal rattle of a room that would not have us
     roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
-    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0, wikiFrom: null, notesT: 0, notesSel: 0 },
+    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from

@@ -125,7 +125,9 @@ declare victory. The affordances:
   kinds this profile has *held*, which is all the [wiki](gameplay.md#the-wiki)'s blue pips are.
   The wiki itself is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
   `wikiLayout()` (tabs, rows, the window, the rail) and `wikiHit(x, y)`; the ease takes 0.35 s
-  of real frames, so wait for `state.menu.wikiT` to read 1 before hovering anything.
+  of real frames, so wait for `state.menu.wikiT` to read 1 before hovering anything. The patch
+  notes and roadmap open with `DBG.beginNotes()` and `DBG.openPageTab(i)` (0 wiki, 1 patch notes,
+  2 roadmap); `DBG.pageTabsLayout()` and `DBG.notesLayout()` read them back.
 - **`POST /shot`** in [app/server.js](../../app/server.js) (its `/shot` branch) writes a base64 PNG body to `shot.png` in the
   repo root, for a headless driver doing `canvas.toDataURL()` → POST. Nothing in the client calls
   it; `shot.png` is gitignored.

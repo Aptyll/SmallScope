@@ -260,8 +260,10 @@ window.DBG = {
   // all a profile still remembers about the tree.
   TECH, rebuildLootPool, LOOT_POOL,
   // the wiki: its pages, the live layout (tabs, rows, window, rail), what is
-  // under a point, the open page's scroll, and the way in from the plank
+  // under a point, the open page's scroll, and the way in and out; the
+  // title's three tabs over it and the notes screen (js/ui/notes.js)
   WIKI_PAGES, wikiLayout, wikiHit, wikiScrollBy, wikiSetTab, beginWiki, leaveWiki,
+  beginNotes, openPageTab, pageTabsLayout, notesLayout,
   wipeTech: () => PROFILE.clearTech(),
   // The merchant's counter (js/shop.js): the live market and its two goods,
   // the rolled stock, the panel's geometry, and every trade without the

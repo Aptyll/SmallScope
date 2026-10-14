@@ -1469,6 +1469,7 @@ function cursorInfo() {
     if (m.screen === 'saves' && savesCarrying()) return { kind: 'grab' }; // a save card in the hand
     if (popOpen()) { const gh = m.popT >= 1 ? popHit() : null; return { kind: gh !== null && gh !== 'panel' ? 'hand' : 'arrow' }; }
     if (m.screen === 'notes') return { kind: m.notesT >= 1 && notesHit(mouse.x, mouse.y) ? 'hand' : 'arrow' };
+    if (m.screen === 'wiki') return { kind: m.wikiT >= 1 && pageTabHit(mouse.x, mouse.y) >= 0 ? 'hand' : 'arrow' };
     if (m.screen === 'lobby') return { kind: m.screenT >= 1 && m.popT <= 0 && lobbyHit() ? 'hand' : 'arrow' };
     if (m.screen === 'chars') return { kind: m.charT >= 1 && charsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
