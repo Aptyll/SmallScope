@@ -6,7 +6,7 @@ before naming anything, before writing a line a player will read (a blurb, an ev
 entry, a patch note, store copy), and before proposing a feature whose reason to exist *in the
 valley* is not obvious.
 
-**The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/menu.js](../../js/ui/menu.js);
+**The player-facing canon is the wiki's WORLD page** (`WIKI_WORLD`, [js/ui/wiki.js](../../js/ui/wiki.js);
 what the page is: [gameplay.md](gameplay.md#the-wiki)). The sentences live there and only there.
 This file is the rules they answer to, and it never restates them.
 

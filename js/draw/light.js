@@ -575,7 +575,7 @@ function todGrade() {
 }
 
 // ---- frost glints ----
-// A clear frosty day (state.wx.frost, the `weather` banner, js/sim.js) is the
+// A clear frosty day (state.wx.frost, the `weather` banner, js/weather.js) is the
 // one weather with nothing falling, so what it shows instead is the cold on
 // the ground: the day's grade cooled by FROST_TINT and held at FROST_CRISP
 // from dawn to dusk (todGrade), the cloud shadows thinned by FROST_CLEAR, and
@@ -813,7 +813,7 @@ function drawWorldText(text, x, y, color, scale, alpha) {
 // the way League's do - a crowd's tags stacked into a tower read worse than
 // a pile - but a wing of riders is seated a few pixels apart for the whole
 // ride, and their names stamped on each other would read as none of them
-// (seatedName, boot.js). So those are queued as tags, and the flush sorts
+// (seatedName, eagle.js). So those are queued as tags, and the flush sorts
 // the tags out before it stamps: the lowest on screen keeps its place, and
 // one that would touch a placed tag climbs to clear it. Only tags move;
 // every other world text keeps where it was put.

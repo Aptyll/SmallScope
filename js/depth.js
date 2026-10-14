@@ -250,7 +250,7 @@ function layDrifts() {
   }
   layLees();
 }
-// THE WARRENS' SNOW (CAMPS.meadow, js/world.js): each warren's ring of pines
+// THE WARRENS' SNOW (CAMPS.meadow, js/camps.js): each warren's ring of pines
 // holds a round pool of deep snow that fills its clearing to the trees,
 // laid in the camp's own frame (campFrame) so both warrens wear the same
 // pool, mirrored. MEADOW_POOL in tiles: `r` the pool's radius off the camp's

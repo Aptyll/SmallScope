@@ -38,7 +38,7 @@ function wheelOptions() {
   // straight up - picking one IS the roll (or the ring), so neither carries
   // a separate go wedge
   if (w.kind === 'pkdie') return [{ id: 'easy' }, { id: 'medium' }, { id: 'hard' }];
-  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/world.js)
+  if (w.kind === 'agbell') return AG_WEDGES.map((id) => ({ id })); // one wedge per round (js/practice.js)
   // the MOUSE scheme's action wheel: the four abilities clockwise from the
   // top, then the two meals and the flag (MS_WHEEL, js/input.js)
   if (w.kind === 'kit') return MS_WHEEL.map((id) => ({ id }));
@@ -161,10 +161,10 @@ function runCmd(p, c) {
   // contest); id null is the lift (the `team flags` banner, js/robots.js)
   if (c.kind === 'flag') { if (c.id) plantFlag(p, c.tx, c.ty, c.id); else clearFlag(p); return true; }
   if (c.kind === 'tunnel') return digTunnel(p, c.tx, c.ty); // a burrow's near hole (js/tunnel.js) - it checks its own reach
-  if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/world.js)
-  if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/world.js)
-  if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/world.js)
-  if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/world.js, js/ui/cheats.js)
+  if (c.kind === 'rack') { rackEquip(p, c); return true; } // the practice armory (js/practice.js)
+  if (c.kind === 'pkdie') { pkWheelPick(p, c); return true; } // the parkour roll die (js/practice.js)
+  if (c.kind === 'agbell') { agRing(p, c); return true; } // the archery range's bell (js/practice.js)
+  if (c.kind === 'cheat') return cheatCmd(p, c); // the practice bar (js/practice.js, js/ui/cheats.js)
   const o = structOf(objAt(c.tx, c.ty));
   if (!o || !STRUCTS[o.type] || !ownsStruct(o, p)) return false;
   if (Math.hypot(c.tx * TILE + 8 - p.x, c.ty * TILE + 8 - p.y) > 60) return 'far';
@@ -386,7 +386,7 @@ function promptW(verb, action) {
 }
 
 // The zipline's prompt: a bare cap, no verb, over the cable at the body's own
-// column while it stands under either side's line (zipNear, js/world.js - the
+// column while it stands under either side's line (zipNear, js/zipline.js - the
 // resolver keyPress clips on with). The cable overhead is the whole
 // affordance; the cap only says which key takes it.
 function drawZipHint(ox, oy) {
@@ -411,7 +411,7 @@ function drawRideHint(ox, oy) {
 const RIDE_HINT_Y = 56; // px above a deer's feet: clear of its plate and its noticed mark
 
 // The practice armory's prompt: PROXIMITY, not hover - standing beside the
-// rack is the whole gesture (rackNear, js/world.js), so the E ARM cap rises
+// rack is the whole gesture (rackNear, js/practice.js), so the E ARM cap rises
 // over the rack itself the moment you are in reach, wherever the pointer is.
 // Pressing E opens the wheel, which hides every hint including this one.
 function drawRackHint(ox, oy) {
@@ -424,7 +424,7 @@ function drawRackHint(ox, oy) {
 }
 
 // The parkour die's prompt, the rack's own proximity grammar: an E ROLL cap
-// over the die while it is in reach (pkDieNear, js/world.js - the same
+// over the die while it is in reach (pkDieNear, js/practice.js - the same
 // resolver the wheel-open press uses). Holding E opens the roll wheel, which
 // hides every hint including this one.
 function drawPkHint(ox, oy) {
@@ -437,7 +437,7 @@ function drawPkHint(ox, oy) {
 }
 
 // The range bell's prompt, the die's own proximity grammar: an E RING cap
-// over the bell while it is in reach (agBellNear, js/world.js - the same
+// over the bell while it is in reach (agBellNear, js/practice.js - the same
 // resolver the wheel-open press uses). Holding E opens the difficulty
 // wheel, which hides every hint including this one. Only while the range
 // is idle - mid-round the bell is under the snow.

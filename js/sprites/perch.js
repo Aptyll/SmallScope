@@ -233,7 +233,7 @@
   const P_ = (spread, up, fold, tail, ground = false) => ({ spread, up, fold, tail, ground });
   const mixPose = (a, b, t) => P_(a.spread + (b.spread - a.spread) * t, a.up + (b.up - a.up) * t, a.fold + (b.fold - a.fold) * t, a.tail + (b.tail - a.tail) * t);
   const REST = [P_(12, 16, 0, 1, true), P_(5, 6, 0, 0, true), P_(0, 0, 0, 0, true)];
-  const STROKE_N = 10; // level flight's one smooth stroke, cut into phases (EAGLE_BEAT_HZ a second, js/boot.js)
+  const STROKE_N = 10; // level flight's one smooth stroke, cut into phases (EAGLE_BEAT_HZ a second, js/eagle.js)
   function stroke(k) { const q = (1 - Math.cos(2 * Math.PI * k / STROKE_N)) / 2; return P_(4 - 8 * q, -4 + 28 * q, 0.3 * q, -1.5 + 3 * q); }
   const TUCK = P_(-26, 8, 0.75, -1), FLARE = P_(14, 24, 0, 2.5); // the stoop's wings swept back, and thrown open to land
   const DIVE_N = 24;
@@ -436,7 +436,7 @@
     const j = slow.shift(); queued.delete(j.key);
     if (!frames.has(j.key)) make(j);
   }
-  // where a seat (EAGLE_SEATS' units, js/boot.js: two grid cells each, x
+  // where a seat (EAGLE_SEATS' units, js/eagle.js: two grid cells each, x
   // forward, y to the bird's right) sits on the frame of the same heading,
   // pose and scale, off the bird's centre: on a wing it rides the wing
   function seat(hd, key, scale, st) {

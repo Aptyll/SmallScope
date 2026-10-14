@@ -1328,7 +1328,7 @@
   const treeRows = treePals.map((pal) => treeSway.map((f) => bake(f, pal)));
   const treeSpr = treeRows[2]; // variant B, deep tone (the filtered look itself) - the pine a single frame stands for
   // ---------------------------------------------------------------- the hog hut
-  // The HOG HUT camp's anchor (CAMPS.hut, js/world.js): a snow-roofed log
+  // The HOG HUT camp's anchor (CAMPS.hut, js/camps.js): a snow-roofed log
   // hut with a smoking chimney, 35x35 on a 2x2 footprint, drawn centred over
   // the anchor tile and the one to its right. Eight frames of the chimney's smoke, straight off
   // docs/media/new_media5/hog-hut-chimney-moving.png at 1:1 - the source

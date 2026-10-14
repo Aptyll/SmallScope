@@ -30,7 +30,7 @@ function makeRobot(sp) {
     carry: 0, // gold held, deposited at home
     moveT: 0, idleT: rand(0.3, 1), mvx: 0, mvy: 0, moving: false,
     animT: rng() * 2, flash: 0, kbx: 0, kby: 0, dead: false,
-    zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (world.js), the player's own fields: a soldier rides it (soldierBoard)
+    zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (js/zipline.js), the player's own fields: a soldier rides it (soldierBoard)
   };
   // a worker takes every state a player can be put under - snared,
   // netted, marked, alight - written by the same setters (`status effects`,
@@ -117,7 +117,7 @@ function updateRobot(b, dt) {
     return;
   }
   if (b.zip >= 0) {
-    // on the zipline's handle: the cable carries it (zipRide, world.js), the
+    // on the zipline's handle: the cable carries it (zipRide, js/zipline.js), the
     // brain waits for the end, and nothing is swung on the way
     zipRide(b, dt);
     b.moving = false; b.atkAim = null;
@@ -307,7 +307,7 @@ function updateRobot(b, dt) {
 
 // ------------------------------------------------------------ merchant
 // Each eagle is DRIVEN by its team's merchant - the figure on the bird's neck
-// in flight (drawEagle, js/boot.js) - who climbs down the moment it roosts
+// in flight (drawEagle, js/eagle.js) - who climbs down the moment it roosts
 // and works HOME for its side, never toward the fight: it pitches its
 // market STALL beside the spur's head (the shop players walk to), then fells the back
 // woods (the half of the roost facing away from the spur and the road) from
@@ -369,7 +369,7 @@ function freeTileNear(tx, ty, rMax) {
   return null;
 }
 
-// the crash: the driver climbs down on the lane side of the roost (eagleCrash, js/boot.js)
+// the crash: the driver climbs down on the lane side of the roost (eagleCrash, js/eagle.js)
 function spawnMerchant(e) {
   const lx = e.laneDir.x, ly = e.laneDir.y; // the spur's own direction: from the crater to its junction on the road (eagleCrash)
   const wx = e.x + lx * (EAGLE_TILE_R + 1.4) * TILE, wy = e.y + ly * (EAGLE_TILE_R + 1.4) * TILE;
@@ -739,7 +739,7 @@ function updateMerchant(b, dt) {
 // rides any ZIPLINE that carries it toward the rival bird (soldierBoard):
 // its own side's out to the front, the rival's in to their roost - hands on
 // the handle, so a soldier on the cable swings at nothing, and a rival who
-// meets it on the line crashes with it (zipCrash, world.js).
+// meets it on the line crashes with it (zipCrash, js/zipline.js).
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
@@ -787,7 +787,7 @@ function soldierGoal(b) {
 // the ride: a cable within SOLDIER_ZIP_REACH of the soldier whose end nearer
 // the rival bird is SOLDIER_ZIP_GAIN nearer it than the soldier stands. Under
 // it (inside ZIP_GRAB) it clips on, riding toward that end; short of it, it
-// walks to the mount (zipMount, world.js - the point a player's walk and a
+// walks to the mount (zipMount, js/zipline.js - the point a player's walk and a
 // bot's stand on too). True while the cable has the soldier, walking or on
 function soldierBoard(b, walkToward) {
   const g = soldierGoal(b);

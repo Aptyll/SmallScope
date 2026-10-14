@@ -350,7 +350,7 @@ function keyPress(e) {
     // the cap over it says so, drawRideHint, js/ui/wheel.js)
     if (rideNear(player)) { player.input.jump = true; return; }
     // ...or the pointer on a cable out of reach: the same intent, and
-    // the step walks the body there and clips on (zipWalkStart, world.js)
+    // the step walks the body there and clips on (zipWalkStart, js/zipline.js)
     if (hoverZip()) { player.input.jump = true; return; }
     const t = workTarget(player);
     if (!t || !t.near) {
@@ -799,7 +799,7 @@ function ckRightPress() {
   if (state.mode === 'drop') { dropPress(); if (player.aboard) return; }
   else if (player.aboard) ck.hop = true;
   // on a zipline the press lets go of it, and walking to one it calls the
-  // walk off; a press ON a drawn cable (zipUnder, world.js - the
+  // walk off; a press ON a drawn cable (zipUnder, js/zipline.js - the
   // strand the hover lights) clips on under it or walks there and clips on
   // (a press anywhere else is the walk it always was)
   else if (player.zip >= 0 || player.zipWalk) { player.input.jump = true; return; }
