@@ -99,6 +99,10 @@ not stored as a float at all:
   whole clearing) and `ZOOM_IN_ROWS` (75, a face), and `ZOOM_MIN`/`ZOOM_MAX` are
   `TARGET_ROWS` over each (0.67 … 4.8 at 360 rows), so a taller frame neither hands out more
   vision at max-out nor loses the face at max-in. `DROP_ZOOM` is `ZOOM_MIN`.
+- **A match opens at `ZOOM_REST` (2)**: every world pixel two canvas pixels, 180 rows of world on
+  screen, so the 16 px art reads twice its old size by scale alone (no art was redrawn for it).
+  `zoomCur` starts there and `fitCanvas()` rungs `kWant` off it (6 at `devScale` 3); the wheel
+  still steps out to `ZOOM_MIN`.
 - The rungs are therefore `k / devScale`. At `devScale` 3 (a 1080p fullscreen) that is **third
   steps** — 0.67, 1, 1.33, 1.67 … 4.67, thirteen of them; at 4 (1440p) it is quarters, seventeen.
   A display with fewer pixels to spend gets fewer, coarser rungs, which is the honest answer
