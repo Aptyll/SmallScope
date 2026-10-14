@@ -69,7 +69,7 @@ work          E held (with it clear, the hands still take a tree, a bush or a fi
 slide         shift held
 dodge         edge-triggered, cleared by the sim when it reads it
 jump          edge-triggered: the leap off the eagle, or the hop off the roost -
-              the ride's one act (dropJump, js/boot.js; read at the top of
+              the ride's one act (dropJump, js/eagle.js; read at the top of
               updatePlay's player loop, before the air skips the body) - and
               on the ground the zipline's: clip on under either side's cable,
               let go while riding, or - out of reach with the aim on a
@@ -329,7 +329,7 @@ never hides the pad's hand. `padActive()` — plugged in and touched within `PAD
 the CONTROLS page reads, and what every **keybind indicator** reads: while it is true the HOP
 OFF cap, the work prompts, the strip's 1-4 and Q/F, the SHIFT plate, the flight HUD's two and
 the ESC BACK / CLOSE line under a slab all wear the pad's button instead of the key
-(`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, js/ui/wheel.js; `drawDropBind`, boot.js) —
+(`PAD_BIND`, keyed by action → `drawPadBind` / `drawBackHint`, js/ui/wheel.js; `drawDropBind`, eagle.js) —
 a change in `PAD_PLAY` is a row there.
 
 ## Classes
@@ -509,7 +509,7 @@ raided without ever touching the base; the feed says so, but a worker is never a
 
 **So is a rival's grounded eagle** — tested before tile solidity (its own roost tiles are solid,
 and would otherwise eat the shot), same team rule, through `hurtEagle` (the `eagle drop` banner in
-js/boot.js): a rival arrow landing on **any roost tile** spooks the bird `EAGLE_ARROW_DMG` (12) off
+js/eagle.js): a rival arrow landing on **any roost tile** spooks the bird `EAGLE_ARROW_DMG` (12) off
 its `EAGLE_HP` (2000) pool — a flat chip, whatever the arrow would do to a body, so archers
 standing off it take minutes and the side has time to answer — the
 tiles are the one hit test walkers, arrows and E all share, so there is no corner an arrow can
@@ -547,7 +547,7 @@ down. Every death runs `checkLastStanding()`, which ends the match as a win once
 team** is left — `rivalTeamsInMatch()`/`teamInMatch()` read the same other-team rule `enemyOf`
 does, and **a team is in the match while its eagle roosts**: `teamInMatch` asks
 `teamEagleDown(team)` first, so a fled eagle takes the side out whatever else it still holds
-(`eagleFlee` in js/boot.js is what puts every player down at liftoff), and a side with every player
+(`eagleFlee` in js/eagle.js is what puts every player down at liftoff), and a side with every player
 dead and waiting on its bird is not out — kills never end a match, only the bird does. **The
 match keeps simulating while you are out** — `update()` runs `updatePlay` in both `play` and
 `dead` mode; only pause and the settings panel stop the world (the map does not). Full detail:
@@ -930,7 +930,7 @@ The ladder:
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
 12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
-   plus a 15-gold float is bought at rung 0 beside the skill point, from anywhere, mid-push or
+   plus a 15-gold float is bought at rung 0 (`aiSpend`) beside the skill point, from anywhere, mid-push or
    mid-defence alike — the hero pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the
@@ -979,7 +979,7 @@ and returns **-1 when there is no route** (or the bot has been pinned for a whil
 the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
 either side's cable (the better of the two), riding to the point nearest the goal and walking the rest beat the feet by
-`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, world.js — the nearest point of
+`ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, js/zipline.js — the nearest point of
 the cable whose ground a body can stand on, shared with a player's walk to the cable), presses `input.jump` under it, holds the stick along
 the cable toward the exit while it rides (the goal re-read every think, so a rider called home
 mid-cable holds the other way) and presses the hop again `ZIP_AI_OFF` (6 px) short of the exit.
@@ -1056,12 +1056,16 @@ what the rest of the code needs to know is this:
   copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
-- **A joiner takes an AI seat.** `netHostHello` refuses a different patch or seed, deals the first
-  bot slot of the side with fewer people (none left: FULL; past `LATE_JOIN_T`, 300 s into a
+- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed, deals the first
+  empty seat, then the first bot slot, of the side with fewer people (a match under way offers
+  bots' bodies only; none left: FULL; past `LATE_JOIN_T`, 300 s into a
   match: LATE), flips it to `'remote'` and dresses it with the joiner's name, look and class. The
   `welcome` carries the roster (`netRoster`: control, team, name, cls, look per slot), which the
   client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
   drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.
+- **A side is a field, not a slot.** Before the count a person changes sides in the waiting room
+  by swapping `p.team` with a bot or empty seat across the rule (`seatSwap`, js/net/net.js), so
+  slots, inputs and connections never move; anything that wants "which side" reads `p.team`.
 - **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,
   `sfxFor`, `sfxOwn`, `shakeAt` and `shakeFor` (js/net/events.js) play the cosmetic on the host and
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the

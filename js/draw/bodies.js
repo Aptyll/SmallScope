@@ -54,7 +54,7 @@ function drawAnimal(a, ex, ey, now) {
 // is drawn at its body's 2x, cut into fixed `segs`, and centred whole,
 // plate and bar together, on its body. `cx` is the body's centre, `mid` its
 // centre column, `fy` the row the frame stands on; drawAnimal's in the
-// world and the wiki's cards (ui/menu.js) are the same pixels.
+// world and the wiki's cards (ui/wiki.js) are the same pixels.
 const BEAST_BAR_W = { rabbit: 8, wolf: 11, deer: 23 }; // widths that split into even segments (hpSegCount)
 function beastFrame(kind) { return (MONSTER[kind] && MONSTER[kind].frame) || { s: 1, w: BEAST_BAR_W[kind] || 17 }; }
 function drawBeastFrame(kind, cx, mid, fy, e, two, u) {
@@ -114,9 +114,9 @@ function drawRobot(b, ex, ey, now) {
 
   if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   drawSpriteFlash(spr, bx, by, b.flash);
-  // a wave's flag bearer (the `soldiers` banner, robots.js) flies its side's
-  // pennant off the chassis: the one bot in the column that rallies the rest
-  if (b.bearer) drawFlagPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
+  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant
+  // off the chassis: the one thing that says this bot is not here to chop
+  if (b.kind === 'soldier') drawFlagPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
 
   // carried gold: a nugget held up in front of the body
   if (b.carry > 0 && !working) {
@@ -151,7 +151,7 @@ function drawRobot(b, ex, ey, now) {
 // with the worker's axe swing over whatever it is felling or setting, the hop
 // off the bird as a lift, the shared tells, and a MERCH nameplate in the
 // side's paint - a name, the one text a body over the world gets (the bird it
-// drives wears PERCH the same way, drawEagle in boot.js). NO HEALTH BAR: it
+// drives wears PERCH the same way, drawEagle in eagle.js). NO HEALTH BAR: it
 // has no health to draw (the `merchant` banner, js/robots.js), and a full bar
 // that can never move would promise a fight that is not on offer.
 function drawMerchant(b, ex, ey, now) {

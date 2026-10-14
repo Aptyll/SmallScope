@@ -1,5 +1,5 @@
 // ------------------------------------------------------------ zipline
-// The zipline's pixels (the `zipline` banner, js/world.js, owns the thing
+// The zipline's pixels (the `zipline` banner, js/zipline.js, owns the thing
 // itself): a pylon's sprite in each side's colour, the cable pass that
 // hangs the line between the pylons over everything but the night, and the
 // rider's handle and rope. The pylon bakes here, beside its draw pass, the

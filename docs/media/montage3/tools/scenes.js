@@ -1266,7 +1266,7 @@ const scenes = [
         const q = DBG.zipPoint(S.z, player.zip >= 0 ? player.zipD : 0);
         if (!on && t > 0.35) { player.input.jump = true; on = true; }
         // the stick held ALONG the cable, toward the front: that is what picks
-        // the direction (zipStart / zipStep, js/world.js)
+        // the direction (zipStart / zipStep, js/zipline.js)
         if (player.zip >= 0) __M.walk(q.tx, q.ty);
         __M.aim(player.x + q.tx * 80, player.y + q.ty * 80);
       };

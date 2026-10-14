@@ -105,7 +105,7 @@ The one movement that is neither walked nor slid: any body standing under **eith
 cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
-(world.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
+(js/zipline.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
 `updatePlayer`'s movement ladder, after the grapple's and before the surface model
 (`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
 under the line never stops a rider — and `p.vx/vy` to the tangent × `ZIP_SPD` (220 px/s, three
@@ -122,7 +122,7 @@ said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px 
 comes back clipped on; `die` lets go too.
 
 **The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is either
-side's cable under the pointer as drawn (`zipUnder`, world.js — within `ZIP_HOVER` of the
+side's cable under the pointer as drawn (`zipUnder`, js/zipline.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
 its beat, and `drawZipGuide` (js/draw/zipline.js, right after the aim line) runs a static dotted
@@ -158,7 +158,7 @@ damage never dismounts (its knockback decays unspent, since the ride branch neve
 `kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
 `rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the
 cable. Another body never shoves a rider (`separateUnits` skips `zip >= 0` the way it skips
-`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (world.js, called in `updatePlay`
+`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (js/zipline.js, called in `updatePlay`
 once the robots have stepped) finds every pair of riders of different sides on the same line
 within `ZIP_CRASH_R` (8 px) along it, or past each other since the last step (`zipLast`), and
 `stunUnit`s both for `ZIP_CRASH_STUN` (0.8 s, the tackle's top) — so both fall at rest where they
@@ -1395,7 +1395,7 @@ sets it nowhere.** The only things that grant it are deliberate:
 | `Player.reset` — so `respawnPlayer` | 3 s (0 on the very first spawn) | nobody is spawn-camped |
 | `landPlayer`, `practiceRevive` | 2 s | a beat of grace while the snow settles |
 | the ice-hole scramble (`updatePlayer`, js/sim.js) | 0.8 s | you climb out; you are not bitten climbing out |
-| the drop briefing (`js/boot.js`) | 0.4 s, refreshed | the lesson is not a fight |
+| the drop briefing (`js/eagle.js`) | 0.4 s, refreshed | the lesson is not a fight |
 
 `rollTackle` **drops** them ([the roll is a hit](#the-roll-is-a-hit)).
 
@@ -1493,7 +1493,7 @@ those, never `p.hide` directly**:
 **Every watcher resolves through `seenAt`, and a new one must too.** Today's callers: a bot's
 target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai.js), a turret
 (`turretMark`/`turretHolds`), a worker bot's quarry and the flag's reach (js/robots.js), prey
-deciding to bolt (`updatePrey`), the eagle's gust (js/boot.js) and the CLICK scheme's lock and
+deciding to bolt (`updatePrey`), the eagle's gust (js/eagle.js) and the CLICK scheme's lock and
 acquire (js/input.js). A camp monster has no sight
 to resolve, since a hit is its only trigger ([Camp monsters](#camp-monsters-neutral-until-hit)).
 Both maps gate separately on `concealOf(p) >= PRONE_MAP` (0.55): a rival buried and still drops off
@@ -1594,7 +1594,7 @@ deer carried far off its line (a rider, a long flight) walks back to the nearest
 way. So a deer is found by knowing where its line runs, and caught by waiting on it.
 
 A side whose deer goes down gets the next one `DEER_BACK` (60 s) later (`updatePreyStock`, from
-`updatePlay`; `deerBackT` per side, saved in the `wild` root), on the point of its line furthest
+`updateWildlife` in `updatePlay`; `deerBackT` per side, saved in the `wild` root), on the point of its line furthest
 from every player and past `PREY_CLEAR` (280 px), so nothing is ever seen to appear: never more
 than two. A deer from a save older than the lines is taken onto an empty side's line.
 
@@ -2942,8 +2942,8 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   refund. It wears the bay's 3×2 grid (`art: 'spawner'`, read by `structSprite`) under its own
   overlay (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave
   clock on the flank in the side's paint, the beacon amber while a column is leaving). Every
-  `waveT` (30 s) it queues a **wave** — `wave` (3) axes, one more per `grow` (180 s) it has
-  stood, then `bearers` (1) flag bearer (`o.flagQ` counts the bearers queued; they leave last), never more than `cap` (24) of its **side's** soldiers alive at once, every bay's queue and column counted — and the queue leaves the door
+  `waveT` (30 s) it queues a **wave** — `wave` (3) soldiers, one more per `grow` (180 s) it has
+  stood, never more than `cap` (24) of its **side's** soldiers alive at once, every bay's queue and column counted — and the queue leaves the door
   one every `BARRACKS_ROLL` (0.5 s), so a wave reads as a column. Its `cost` (40) is only what a
   wrecker is paid half of: breaking one stalls the waves until the merchant rebuilds it
   ([Soldiers](#soldiers-the-waves)). `drawBayOverlay()` draws everything live on top of the baked sprite: the next bot
@@ -3068,23 +3068,15 @@ hauler — see [Team flags](#team-flags) for why the anger is gated on the flag.
 ### Soldiers: the waves
 
 The `soldiers` banner (js/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
-[barracks](#base-building) rolls out a column of **soldiers** — the worker's chassis, three
-swinging its axe and the last one out carrying its side's pennant — that marches
-[the road](world.md#the-road) to the rival bird. `makeSoldier(o, bearer)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
+[barracks](#base-building) rolls out a column of **soldiers** — the worker's chassis under its
+side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
+that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
+bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
 cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth` — down the
 roost's spur to the road), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
 read live each frame, since
-it may have flown. `updateSoldier` is four rungs, first hit wins, with a rung before them for the
-bearer:
+it may have flown. `updateSoldier` is four rungs, first hit wins:
 
-0. a **flag bearer** (`b.bearer`, the last of each wave out of the door: the barracks'
-   `bearers`) with an own axe inside `SOLDIER_FLAG_FOLLOW` (160 px, `bearerLead`) walks
-   `SOLDIER_FLAG_TRAIL` (22 px) behind the nearest and swings at nothing. With none near it is a
-   soldier like the rest and goes down the ladder below. `drawRobot` stamps `drawFlagPennant` on
-   the bearer alone. Every other soldier of its side within `SOLDIER_FLAG_R` (80 px, a whole column) of a living
-   bearer is **rallied** (`soldierRally`, read live at the step, the swing and the hit):
-   `SOLDIER_FLAG_SPD` (1.2×) march speed (the bearer always walks at it, so it keeps up), `SOLDIER_FLAG_DMG` (+2) on each `robotStrike`, and
-   `SOLDIER_FLAG_ARMOR` (25%) off every hit in `hurtRobot`. A bearer never rallies itself.
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
    column walk past): close and swing (`robotStrike`, the worker's own `ROBOT_DMG` every
    `ROBOT_ATK_CD`, `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line);
@@ -3112,7 +3104,7 @@ other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the rob
 than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
 and buffets it like a player (`updateEagle`/`eagleGust`), a turret marks it, and it dies through
 `robotDies` carrying a `SOLDIER_BOUNTY` (4 gold, through `awardGold`, so the kill levels too) for
-whoever scraps it — no feed line, four a wave. The cap on a barracks' live soldiers is
+whoever scraps it — no feed line, three a wave. The cap on a barracks' live soldiers is
 `STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#bots)).
 
@@ -3280,7 +3272,7 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
 ## Death and respawn
 
 Death is a walk back, never the end: while your team's eagle still roosts (`teamEagleDown`, the
-eagle-drop banner in js/boot.js) going down costs a **timer and nothing else**, and you are
+eagle-drop banner in js/eagle.js) going down costs a **timer and nothing else**, and you are
 set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
 is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw,
@@ -3458,21 +3450,27 @@ human idle, and deep in a ten-bot match with hundreds of buildings and robots st
 
 ## Settings
 
-**The MULTIPLAYER plank** (js/ui/menu.js, the `rooms` banner) is the relay's open rooms as planks
-under a HOST plank, a relay pip beside HOST (green and breathing while the list socket is open,
-red and blinking while it is not) and, while the list is empty, one ghost of a row where the
-first room will stand. A room's plank carries its host's name, ten seat pips (five a side, the
-people in them lit in that side's paint - the relay lists a count per side), its four-letter
-code on a plate (the thing a host reads aloud) and a red dot once its match is under way; a room
-on another patch is dimmed and inert with its patch printed where the code would be. HOST makes
-a room on the relay and opens the **waiting room** - the lobby, which every peer
+**The MULTIPLAYER plank** (js/ui/rooms.js) is CUSTOM GAMES, League's custom-game list in
+Graphite: the relay's open rooms as rows under GAME / MAP / PLAYERS / CODE heads, a relay pip
+top-right (green and breathing while the list socket is open, red and blinking while it is not)
+and, while the list is empty, one ghost of a row where the first room will stand. A row carries
+its host's game, its map, ten seat pips (five a side, the people in them lit in that side's
+paint - the relay lists a count per side), a red dot once its match is under way and its
+four-letter code (the thing a host reads aloud); a room on another patch is dimmed and inert with
+its patch printed where the code would be. A click picks a row, a second click or JOIN joins it;
+CREATE makes a room on the relay and opens it on **the room**: both sides as two columns of five
+seats (a face, a name, the class or BOT, the class mark), your side on the left. A click on a
+seat across the rule moves you to that side and the bot or empty seat there takes your old one
+(the swap mark shows under the pointer); the host's pointer on a seat's far end shows a red X
+that shows a person out or empties a bot's seat, and a + that puts a bot back. LEAVE, and the
+host's START, which takes everyone to the **pick** - the lobby, which every peer
 sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
 your side's roster, a crown over the host's card, a brighter rim on every person's card than a
 bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
 guest sees it minus the two pop-ups off the map plate and the target and the character swap (its class came with it), and
 where LOCK IN would be a frozen plank wearing the host's name: the host's count comes over it and
-the eagle on the host's zero. A guest whose host walks out of the waiting room is back on the
-rooms list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
+the eagle on the host's zero; the host's ESC there takes everyone back to the room. A guest whose
+host walks out of the waiting room, or who was shown out, is back on the list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
 headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
 and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
 redials (`drawNetLink`). Joining a room whose seed is not this page's reloads the page onto it
@@ -3630,16 +3628,21 @@ the same keys under `1-4 CLASS ABILITIES`.
 `settings.info` (one INFO DISPLAY toggle row in the ESC menu, **or F3**, minecraft-style — the
 keydown handler flips it in any mode and suppresses the browser's find bar; default off) shows
 the **info stack** — `drawTags()`, a vertical list on the left edge at the top quarter of the
-view, drawn above every overlay. Four lines — **FPS** (`loop()`
-accumulates raw unclamped frame deltas into `perf` and refreshes `perf.fps` every half second),
+view, drawn above every overlay. Six lines — **FPS** (`loop()`
+hands each raw unclamped frame delta to `perfFrame`, js/core.js, which refreshes `perf.fps` every
+half second),
+**SIM** and **DRAW**, the ms a frame spent in `update()` and in `render()` over the same window
+(red together once they no longer fit a 60 Hz frame; DRAW is the script's side only, since a GPU
+canvas rasterises later off the main thread),
 **SFX**, the sampled sound bank's decoded/asked-for tally (below),
 **POS**, the tile coordinates of the player the camera frames (`viewPlayer()`, so spectators read
 the watched player), and **SEED**, the run seed (see
 [world.md](world.md#determinism-and-noise)) — each drawn as a dim label plus a value on one
 shared x, so the numbers line up in a column; that dim-label / bright-value pairing is the same
 one the berry and fish counters use. **Red on the fps value (below 45) is the only colour in the
-stack that means anything** alongside **SFX** (below), and nothing else is tinted, which is what
-lets a warning read. In title, FPS and SFX show and the other two do not.
+stack that means anything** alongside **SIM/DRAW** and **SFX** (below), and nothing else is
+tinted, which is what lets a warning read. In title, FPS, SIM, DRAW and SFX show and POS and SEED
+do not.
 
 **SFX** is the sampled sound bank: files decoded / files the table asks for, from `SFX.banked()`,
 red on anything missing — why it is there: [Audio](#audio), *a failed load must never be quiet*.
@@ -3791,14 +3794,14 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 
 | Cue | Says | Fired from |
 | --- | --- | --- |
-| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/world.js) — never the `nock` blip, which is the sound of a bow being ready |
+| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/practice.js) — never the `nock` blip, which is the sound of a bow being ready |
 | `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
 | `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
 | `turn()` | a piece turned on the spot | R over the build ghost |
 | `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's four (manage, rack, roll die, range bell) the press opened |
-| `record()` | a new BEST | `agEndRound` and the parkour line (js/world.js) — one cue for one meaning, on both instruments |
+| `record()` | a new BEST | `agEndRound` and the parkour line (js/practice.js) — one cue for one meaning, on both instruments |
 | `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim.js) when a run of that length ends in the snow |
-| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/boot.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
+| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/eagle.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
 | `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
 | `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim.js), `dawnChime`'s opposite number |
 | `warp()` | a body moved without walking it | `warpPlayer` (js/tools.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |

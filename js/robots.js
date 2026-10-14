@@ -30,7 +30,7 @@ function makeRobot(sp) {
     carry: 0, // gold held, deposited at home
     moveT: 0, idleT: rand(0.3, 1), mvx: 0, mvy: 0, moving: false,
     animT: rng() * 2, flash: 0, kbx: 0, kby: 0, dead: false,
-    zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (world.js), the player's own fields: a soldier rides it (soldierBoard)
+    zip: -1, zipD: 0, zipDir: 1, zipLast: 0, // the zipline (js/zipline.js), the player's own fields: a soldier rides it (soldierBoard)
   };
   // a worker takes every state a player can be put under - snared,
   // netted, marked, alight - written by the same setters (`status effects`,
@@ -61,7 +61,6 @@ function hurtRobot(b, dmg, nx, ny, src) {
   // madX/madY is where it was standing when it was hit: the leash it fights
   // back inside, so a raider cannot walk a worker off its post
   if (src && src.team !== b.team && flagOf(b)) { b.mad = src; b.madT = ROBOT_MAD; b.madX = b.x; b.madY = b.y; }
-  if (soldierRally(b)) dmg *= 1 - SOLDIER_FLAG_ARMOR; // a soldier under its bearer's flag (soldierRally)
   b.hp -= dmg;
   b.flash = 0.12;
   b.kbx = nx * ROBOT_KB; b.kby = ny * ROBOT_KB;
@@ -87,7 +86,7 @@ function robotDies(b, src) {
   // a soldier carries a bounty instead of cargo: whoever scraps one is paid
   // it on the spot (through awardGold, so the kill levels too) - the road
   // pays, which is what makes walking out to meet a wave worth the walk.
-  // Four a wave, so no feed line: the fight is the news, not each wreck.
+  // Three a wave, so no feed line: the fight is the news, not each wreck.
   if (b.kind === 'soldier') {
     if (src && src.inv && src.team !== b.team) awardGold(src, SOLDIER_BOUNTY, b.x, b.y);
     return;
@@ -117,7 +116,7 @@ function updateRobot(b, dt) {
     return;
   }
   if (b.zip >= 0) {
-    // on the zipline's handle: the cable carries it (zipRide, world.js), the
+    // on the zipline's handle: the cable carries it (zipRide, js/zipline.js), the
     // brain waits for the end, and nothing is swung on the way
     zipRide(b, dt);
     b.moving = false; b.atkAim = null;
@@ -307,7 +306,7 @@ function updateRobot(b, dt) {
 
 // ------------------------------------------------------------ merchant
 // Each eagle is DRIVEN by its team's merchant - the figure on the bird's neck
-// in flight (drawEagle, js/boot.js) - who climbs down the moment it roosts
+// in flight (drawEagle, js/eagle.js) - who climbs down the moment it roosts
 // and works HOME for its side, never toward the fight: it pitches its
 // market STALL beside the spur's head (the shop players walk to), then fells the back
 // woods (the half of the roost facing away from the spur and the road) from
@@ -369,7 +368,7 @@ function freeTileNear(tx, ty, rMax) {
   return null;
 }
 
-// the crash: the driver climbs down on the lane side of the roost (eagleCrash, js/boot.js)
+// the crash: the driver climbs down on the lane side of the roost (eagleCrash, js/eagle.js)
 function spawnMerchant(e) {
   const lx = e.laneDir.x, ly = e.laneDir.y; // the spur's own direction: from the crater to its junction on the road (eagleCrash)
   const wx = e.x + lx * (EAGLE_TILE_R + 1.4) * TILE, wy = e.y + ly * (EAGLE_TILE_R + 1.4) * TILE;
@@ -722,8 +721,7 @@ function updateMerchant(b, dt) {
 // ------------------------------------------------------------ soldiers
 // The WAVES. Every STRUCTS.barracks.waveT seconds each merchant's barracks
 // (the `merchant` banner above) rolls out a column of soldiers - the worker's
-// chassis, the last of each wave under its side's pennant (the flag bearer,
-// SOLDIER_FLAG_* below; drawRobot) - that marches the ROAD
+// chassis under its side's pennant (drawRobot) - that marches the ROAD
 // (placeRoad, world.js) to the rival bird and strikes it. A soldier is
 // allowed to FIGHT and nothing else: no flag reads it (owner -1), no tree
 // tempts it, and it swings the worker's own axe (robotStrike) at any rival
@@ -739,7 +737,7 @@ function updateMerchant(b, dt) {
 // rides any ZIPLINE that carries it toward the rival bird (soldierBoard):
 // its own side's out to the front, the rival's in to their roost - hands on
 // the handle, so a soldier on the cable swings at nothing, and a rival who
-// meets it on the line crashes with it (zipCrash, world.js).
+// meets it on the line crashes with it (zipCrash, js/zipline.js).
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
@@ -748,24 +746,10 @@ const SOLDIER_BOUNTY = 4;      // gold (and so xp) a scrapped soldier pays its k
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
 const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it
-// THE FLAG BEARER: the last of each wave out of the door (`bearers`, STRUCTS
-// .barracks) carries the side's pennant instead of an axe. It swings at
-// nothing while its own axes are near: it keeps SOLDIER_FLAG_TRAIL behind the
-// nearest one, and every other soldier of its side inside SOLDIER_FLAG_R of
-// it is RALLIED (soldierRally) - quicker, harder-hitting, harder to scrap.
-// With no axe of its own inside SOLDIER_FLAG_FOLLOW it is a soldier like the
-// rest: it marches and it fights.
-const SOLDIER_FLAG_R = 80;        // px round a bearer its side's soldiers are rallied inside: a whole column, three axes BARRACKS_ROLL apart
-const SOLDIER_FLAG_FOLLOW = 160;  // px: an own axe nearer than this is one to walk behind
-const SOLDIER_FLAG_TRAIL = 22;    // px a bearer keeps behind the axe it follows
-const SOLDIER_FLAG_SPD = 1.2;     // a rallied soldier's march speed, times SOLDIER_SPD - and the bearer's own, so the column it quickens never outruns its flag
-const SOLDIER_FLAG_DMG = 2;       // added to each rallied swing (ROBOT_DMG 5 -> 7)
-const SOLDIER_FLAG_ARMOR = 0.25;  // share of every hit a rallied soldier shrugs off
 
-function makeSoldier(o, bearer) {
+function makeSoldier(o) {
   const b = makeRobot(o); // the bay's roll-out geometry, the barracks' botHp
   b.kind = 'soldier';
-  b.bearer = !!bearer; // carries the pennant and rallies the column (SOLDIER_FLAG_*)
   b.owner = -1; // nobody's: no flag, no cargo, no payout but the bounty
   // the march: own junction first (down the roost's spur), the road, the
   // rival junction; the rival roost itself is read live (it may have flown)
@@ -787,7 +771,7 @@ function soldierGoal(b) {
 // the ride: a cable within SOLDIER_ZIP_REACH of the soldier whose end nearer
 // the rival bird is SOLDIER_ZIP_GAIN nearer it than the soldier stands. Under
 // it (inside ZIP_GRAB) it clips on, riding toward that end; short of it, it
-// walks to the mount (zipMount, world.js - the point a player's walk and a
+// walks to the mount (zipMount, js/zipline.js - the point a player's walk and a
 // bot's stand on too). True while the cable has the soldier, walking or on
 function soldierBoard(b, walkToward) {
   const g = soldierGoal(b);
@@ -828,35 +812,11 @@ function soldierRejoin(b) {
   b.wayI = Math.max(b.wayI, Math.min(best, b.way.length));
 }
 
-// is a living bearer of b's side (not b itself) standing within SOLDIER_FLAG_R?
-// Read live at the step, the swing and the hit, so nothing goes stale while a
-// soldier rides a cable or its bearer is scrapped
-function soldierRally(b) {
-  if (b.kind !== 'soldier') return false;
-  for (const r of robots) {
-    if (r === b || !r.bearer || r.team !== b.team || !unitAlive(r)) continue;
-    if (Math.hypot(r.x - b.x, r.y - b.y) <= SOLDIER_FLAG_R) return true;
-  }
-  return false;
-}
-// the own axe a bearer walks behind: the nearest non-bearer soldier of its
-// side inside SOLDIER_FLAG_FOLLOW, or null
-function bearerLead(b) {
-  let best = null, bd = SOLDIER_FLAG_FOLLOW;
-  for (const r of robots) {
-    if (r === b || r.kind !== 'soldier' || r.bearer || r.team !== b.team || !unitAlive(r) || r.zip >= 0) continue;
-    const d = Math.hypot(r.x - b.x, r.y - b.y);
-    if (d < bd) { bd = d; best = r; }
-  }
-  return best;
-}
-
 function updateSoldier(b, dt) {
   if (b.rode) soldierRejoin(b); // just off a zipline (the ride branch in updateRobot carries it while it is on)
   let moving = false;
-  const spd = SOLDIER_SPD * (b.bearer || soldierRally(b) ? SOLDIER_FLAG_SPD : 1);
   const walkToward = (px, py, reach) => {
-    const n = navStep(b, px, py, 3, spd, dt, reach);
+    const n = navStep(b, px, py, 3, SOLDIER_SPD, dt, reach);
     if (!n.ok) return -1;
     moving = true;
     return n.d;
@@ -866,16 +826,9 @@ function updateSoldier(b, dt) {
   const rival = state.drop && state.drop.eagles[1 - b.team];
   const roost = rival && rival.state === 'down' ? rival : null;
   let busy = false;
-  // 0. a bearer with its axes near walks behind the nearest and swings at
-  //    nothing: the flag is its whole job while it has a column to carry it for
-  const lead = b.bearer ? bearerLead(b) : null;
-  if (lead) {
-    if (Math.hypot(lead.x - b.x, lead.y - b.y) > SOLDIER_FLAG_TRAIL) walkToward(lead.x, lead.y, 0);
-    busy = true;
-  }
   // 1. a rival unit in reach: close and swing (players through seenAt, so a
   //    buried hunter lets a column walk past)
-  const foe = busy ? null : robotFoeUnit(b, SOLDIER_AGGRO);
+  const foe = robotFoeUnit(b, SOLDIER_AGGRO);
   if (foe) {
     const pt = foePoint(foe, b.x, b.y - 1);
     if (Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) > ROBOT_REACH) busy = walkToward(pt.x, pt.y, 0) >= 0;
@@ -1131,7 +1084,6 @@ function robotStrike(b, e, pt) {
   const d = Math.hypot(pt.x - b.x, pt.y - (b.y - 1)) || 1;
   const nx = (pt.x - b.x) / d, ny = (pt.y - (b.y - 1)) / d;
   sfxAt('swing', b.x, b.y);
-  const dmg = ROBOT_DMG + (soldierRally(b) ? SOLDIER_FLAG_DMG : 0); // a soldier under its bearer's flag hits harder (soldierRally)
-  if (e.tx !== undefined) hurtStruct(e, dmg, src, b); // `b` swung it, so STRUCT_DR stays off: ROBOT_DMG is already a building number
-  else hurtUnit(e, dmg, nx, ny, src, { cause: b.kind === 'soldier' ? 'soldier' : 'worker' });
+  if (e.tx !== undefined) hurtStruct(e, ROBOT_DMG, src, b); // `b` swung it, so STRUCT_DR stays off: ROBOT_DMG is already a building number
+  else hurtUnit(e, ROBOT_DMG, nx, ny, src, { cause: b.kind === 'soldier' ? 'soldier' : 'worker' });
 }

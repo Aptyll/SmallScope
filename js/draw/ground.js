@@ -930,7 +930,7 @@ function snowStrip(g, ty, tx0, tx1, strip) {
 }
 
 // ------------------------------------------------------------ the wind's sweep
-// The wind's sweep (windSweep, the `wind` banner, js/sim.js) drawn: every
+// The wind's sweep (windSweep, the `wind` banner, js/weather.js) drawn: every
 // fifteen seconds a few faint streaks of loose snow drift slowly downwind,
 // each a thin white line of drift over its own soft shadow a few px
 // down-right (the one sun), rolling gently as it goes. The streaks live in
@@ -1000,7 +1000,7 @@ function drawSweep(ex, ey) {
 }
 
 // ------------------------------------------------------------ the ground blizzard
-// A blizzard day's snow (state.wx.drift, the `weather` banner, js/sim.js) is
+// A blizzard day's snow (state.wx.drift, the `weather` banner, js/weather.js) is
 // not falling, it is BLOWING: low, fast streaks of loose snow skimming the
 // drifts downwind, continuously, under everything that stands. Laid in the
 // world like the sweep's (a BLOW_CELL_W x BLOW_CELL_H grid, nothing rolls):
@@ -1260,7 +1260,7 @@ function drawCastShade(spr, x, y) {
 // ------------------------------------------------------------ the scenery bakes
 // Which of a pine's twenty-four bend frames it is wearing - and which half of
 // the atlas it takes it from. A tree does not animate on a clock of its own:
-// the wind field (the `wind` banner, js/sim.js) is sampled at the tree's own
+// the wind field (the `wind` banner, js/weather.js) is sampled at the tree's own
 // tile, so a gust crossing the field lays one band of trees over at a time and
 // the treeline works in order.
 //
@@ -1383,7 +1383,7 @@ const CAIRN_SPR = (() => {
   });
   return c;
 })();
-// The practice dummy (the `practice arena` banner, js/world.js), baked here
+// The practice dummy (the `practice arena` banner, js/practice.js), baked here
 // for the same reason the chest is. A big target you read across the arena:
 // a burlap sack head with stitched eyes under a snow cap, arms lashed to a
 // crossbar with rope, a sack torso wearing a painted red ring, straw leaking

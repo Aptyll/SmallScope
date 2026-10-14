@@ -431,7 +431,7 @@ centreline — at least `ROAD_NEST_IN` (8) u inward from its gate, walking furth
 `ROAD_NEST_MAX`, 40) until the **nest**, `ROAD_NEST_OFF` (13) tiles off the centreline to the
 bird's own right, is deep: `roadNestDeep` wants `CRASH_DEPTH` inside the treeline by the border's
 measure (`forestDepth`) *and* inside the roost disc's arc, with `MIN_CRASH_TREES` round it
-(boot.js's crash rule — the deepest, densest candidate stands in if none qualifies). RED (team 0)
+(js/eagle.js's crash rule — the deepest, densest candidate stands in if none qualifies). RED (team 0)
 flies down to the bottom-left and its right is the top-left side (`roadOffS < 0`); BLUE's is the
 bottom-right — the two nests mirror through the map's centre like the camps. Pure reads, cached
 per team; a seed's nests are where they always are. The bird lands there
@@ -441,7 +441,7 @@ either side of its centreline, so the crash's stumps stay off it, and
 registered in `spurs` (`addSpur(team, jx, jy, cx, cy, end)`: the junction, the unit direction
 toward the crater, the length to the blast's rim, and `paved`, measured back from the crater end
 as the front advances); the crater itself is a **pad** in the same registry (`addPad(team, cx, cy,
-r)`, a disc of `BOOM_R`, paved whole the frame the bird lands — `eagleCrash`, boot.js), so the
+r)`, a disc of `BOOM_R`, paved whole the frame the bird lands — `eagleCrash`, eagle.js), so the
 roost, the spur and the road are one ground. `spurDist` answers 99 where a spur is not yet paved,
 and `roadDist(fx, fy)` is the min of `roadMainDist` and every spur and pad, so the bake, both maps
 and every `onRoad` read see one road system that grows exactly as the front passes. From the road,
@@ -465,7 +465,7 @@ runs on and spills past a tile's corners.
 `placeRoad()` runs at boot **after `placeCreek()` and `layPaths()`** (then `placeZips()`, `placeCamps()`,
 `placeChests()` — js/boot.js), on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
-exactly the rule `diagEnd` (boot.js) flies the eagles by, so the gates are where each line's
+exactly the rule `diagEnd` (eagle.js) flies the eagles by, so the gates are where each line's
 mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
 run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone,
 the pines of the woods it cuts through are felled (there is no ice to meet - see above) - but a
@@ -680,7 +680,7 @@ its tile (`deepTileOpen`) and `deepPx` works each depth in it out once.
 
 ## The zipline
 
-One cable per team along the road, the `zipline` banner of [js/world.js](../../js/world.js): a
+One cable per team along the road, the `zipline` banner of [js/zipline.js](../../js/zipline.js): a
 polyline of **pylon** points `zips[team] = { team, pts, cum, len }` (`pts` are body positions —
 a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at each point) laid by
 `placeZips()` at boot **right after `placeRoad()`**, on pure reads (`roadNest`, `roadSpan`,
@@ -721,7 +721,7 @@ the lift where it lands (once for the span, once more with that span's sag), wit
 
 The jungle: named places at **fixed, mirrored sites** where neutral monsters stand — the things
 a team is choosing between while the eagle is still in the air, and the places it walks out of
-its base for. They live in the `camps` banner of [world.js](../../js/world.js) and in the
+its base for. They live in the `camps` banner of [camps.js](../../js/camps.js) and in the
 module-scope `camps` array (`{ key, spec, name, tag, tx, ty, r, repopT }` per placed site).
 Five kinds, one reward each:
 
@@ -853,7 +853,7 @@ when the hitter leaves its ground and heals — the rules are in
 world position stands in; `updatePlay` feeds it `state.loc` (`{ L, t }`), which drives the
 arrival toast in [rendering.md](rendering.md#camps-on-the-maps).
 
-`updateCamps(dt)` (from `updatePlay`) runs each camp's respawn clock (`C.repopT`), kept honest
+`updateCamps(dt)` (from `updateWildlife`, `updatePlay`'s wildlife step) runs each camp's respawn clock (`C.repopT`), kept honest
 enough to be shown: a camp with anything alive in it holds the clock at `repop` — a half-killed
 pack never trickles back; cleared, it counts down; and due, it **holds at zero** for as long as
 any player is within `CAMP_HOLD` (96 px) — clearing a camp is a real reward for a while and it
@@ -882,7 +882,7 @@ the checklist in [checklists.md](checklists.md#common-changes).
 
 The TRAINING FIELD behind the title's PRACTICE TOOL plank (three knocks break its ice —
 [rendering.md](rendering.md#main-menu-title)): `?practice=1` boots `genPracticeWorld()` (the
-`practice arena` banner, js/world.js) **instead of** `genWorld()`, and js/boot.js skips
+`practice arena` banner, js/practice.js) **instead of** `genWorld()`, and js/boot.js skips
 camps, chests, wildlife spawns and the eagle drop entirely. **The practice world is
 `WORLD` 112 under `PRACTICE`, against the match's 232** (the conditional above the `WORLD`
 const, js/core.js; everything downstream sizes itself off `WORLD`, so the match world is
@@ -1056,7 +1056,7 @@ in its own mark (`AG_WEDGE_ART`, js/draw/practice.js) with the best medal it has
 the corner; the last-rung one wears a gold frame (the bell itself never wears the pick — no
 recolour, the wheel's frame is the readout).
 
-**What a round is lives in `AG_ROUNDS`** (js/world.js), one entry per round: its name, its
+**What a round is lives in `AG_ROUNDS`** (js/practice.js), one entry per round: its name, its
 starting clock, how it opens (`begin`) and runs (`tick`), what a hit pays and what its popup says
 (`hit`), when it is over (`over`), the plate's three rows (`rows`), the line under the final score
 (`end`) and where its record is kept (`best`/`setBest`). `agame.mode` names the one in play and
@@ -1116,7 +1116,7 @@ bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEA
 `tradeGold`, so no XP rides it), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
 `CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),
 RESET TO LEVEL 1; then TELEPORT, SPAWN DUMMY and CLEAR DUMMIES. The name is the tooltip
-(`tipCheat`). A press sends `input.cmd {kind:'cheat'}` → `runCmd` → `cheatCmd` (js/world.js,
+(`tipCheat`). A press sends `input.cmd {kind:'cheat'}` → `runCmd` → `cheatCmd` (js/practice.js,
 `PRACTICE`-gated); TELEPORT and SPAWN DUMMY arm a ghost on the pointer's tile instead (green
 where it lands, red where it would not — `cheatAimOk` asks what `cheatCmd` will), and a left
 press on the world sends the order with that tile — teleport once, dummies until the button,
@@ -1266,7 +1266,7 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   nose or tail for a frame or two, at the faint alpha an under-ice fish is drawn with — accepted.
   Each is a **FROST PIKE** or, one in `FISH_RARE` (0.2, js/wildlife.js), a **GOLD SUNFISH**: `f.kind`
   (`fish` or `sunfish`) comes from `hash2` of its spawn spot inside `addFish`, so no `rng()` call
-  is added. They render in a pass right after the ground blit (using `ex`/`ey`) as a cold blue
+  is added. They render in a pass right after the ground blit (`drawIceFish`, js/draw/lakes.js, using `ex`/`ey`) as a cold blue
   **shadow** under the ice (`SPRITES.iceFish[kind].shadow`, look N: the swim sprite's shape in the under-ice ink
   alone, solid round its rim and half as strong in its core, so a pike and a sunfish are told apart
   by shape, never colour) at 0.42 alpha; where a fish crosses an open hole the crisp swim sprite is drawn clipped to the hole's

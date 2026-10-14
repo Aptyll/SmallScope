@@ -504,13 +504,13 @@ function aiWaveHead(p, e) {
 }
 
 // ---- the ride ---------------------------------------------------------------
-// A bot rides the zipline (the `zipline` banner, world.js) the way a hand
+// A bot rides the zipline (the `zipline` banner, js/zipline.js) the way a hand
 // does, through the same hop intent: every walk the ladder orders goes
 // through steerTo, and steerTo asks aiZipWorth first - would walking to
 // either side's cable, riding to the point nearest the goal and walking the
 // rest beat the feet by ZIP_AI_GAIN seconds? (The better of the two, if both
 // would.) If so it walks to the mount
-// (zipMount, world.js: the nearest point of the cable whose ground a body can stand
+// (zipMount, js/zipline.js: the nearest point of the cable whose ground a body can stand
 // on), presses the hop under it, holds the stick along the cable toward the
 // exit while it rides, and presses the hop again ZIP_AI_OFF short of the
 // exit. The goal is re-read every think, so a rider called home mid-cable
@@ -627,6 +627,32 @@ function resolveCardForBot(p) {
   }
 }
 
+// aiThink's rung 0: a free skill point, then a purse fat enough for gear
+function aiSpend(p, inp) {
+  // spend a free skill point before the ladder - waiting on it is leaving
+  // growth on the table. Lowest ability level first, so the kit rises
+  // evenly - which spends the first four points UNLOCKING all four keys
+  // (level 0 casts nothing) before any of them gets a cooldown cut.
+  if (p.skillPts > 0 && !inp.cmd) {
+    let ba = -1, bl = AB_LV_MAX - 1;
+    for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
+    if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
+  }
+  // ...and gear the same way: the hero pop-up is a menu bought from
+  // anywhere (gameplay.md), so a purse fat enough to keep a building
+  // float (buyGear re-validates, so a stale order is harmless) is spent on
+  // the cheapest piece here, mid-push or mid-defence alike, rather than
+  // at the spend rung a pusher never reaches
+  if (!inp.cmd) {
+    let gi = -1, gc = 1e9;
+    for (let i = 0; i < GEAR_SLOTS.length; i++) {
+      const c = gearCost(p, i);
+      if (c && c.gold < gc) { gc = c.gold; gi = i; }
+    }
+    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
+  }
+}
+
 function updateAI(p, dt) {
   const ai = p.ai;
   ai.zipUsed = false;
@@ -675,7 +701,7 @@ function aiThink(p, dt) {
     if (w) {
       const nr = zipNear(p);
       if (nr && nr.z === w.z) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
-      const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (world.js)
+      const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (js/zipline.js)
       if (m && walkTo(m.x, m.y, 0, budget) >= 0) return Math.hypot(x - p.x, y - p.y);
     }
     return walkTo(x, y, reach, budget);
@@ -766,28 +792,8 @@ function aiThink(p, dt) {
   const caller = call ? players[call.id] : null;
   ai.helping = call ? call.id : -1;
 
-  // 0. spend a free skill point before the ladder - waiting on it is leaving
-  //    growth on the table. Lowest ability level first, so the kit rises
-  //    evenly - which spends the first four points UNLOCKING all four keys
-  //    (level 0 casts nothing) before any of them gets a cooldown cut.
-  if (p.skillPts > 0 && !inp.cmd) {
-    let ba = -1, bl = AB_LV_MAX - 1;
-    for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
-    if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
-  }
-  //    ...and gear the same way: the hero pop-up is a menu bought from
-  //    anywhere (gameplay.md), so a purse fat enough to keep a building
-  //    float (buyGear re-validates, so a stale order is harmless) is spent on
-  //    the cheapest piece here, mid-push or mid-defence alike, rather than
-  //    at the spend rung a pusher never reaches
-  if (!inp.cmd) {
-    let gi = -1, gc = 1e9;
-    for (let i = 0; i < GEAR_SLOTS.length; i++) {
-      const c = gearCost(p, i);
-      if (c && c.gold < gc) { gc = c.gold; gi = i; }
-    }
-    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
-  }
+  // 0. a free skill point and a fat purse are spent before the ladder
+  aiSpend(p, inp);
 
   // 0b. the orca has it (js/orca.js): off its ice by the nearest way before
   //     the line runs out, everything else after. A bot reads the line a

@@ -129,7 +129,7 @@ function ladderName(id) {
 }
 
 // ---- the match --------------------------------------------------------------------
-// the drop (beginDrop, js/boot.js): every rival seat a bot plays runs the foe
+// the drop (beginDrop, js/eagle.js): every rival seat a bot plays runs the foe
 function ladderSeat() {
   const W = ladderWatch;
   if (W) {

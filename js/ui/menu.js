@@ -2,7 +2,7 @@
 // The title screen: the frost-plank menu over the living world, the reroll
 // die, the tutorial panel, the patch notes, the lobby on its own painted
 // night with its hero pop-up, and the intro that hands the locked-in class
-// to the eagle.
+// to the eagle. The wiki it opens is js/ui/wiki.js.
 // ------------------------------------------------------------ main menu
 // The title screen is a real menu over the living world: the camera drifts
 // around the interior while animals, fish and snow keep running, the items
@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.460';
+const PATCH_TXT = 'PATCH 0.465';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,7 +42,11 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.460', 'THE CREEK NOW FREEZES INTO A LAKE ROUND THE BRIDGE, AND AN ORCA LIVES UNDER IT: STAND ON ITS ICE AND A LINE OVER YOUR HEAD COUNTS DOWN FOUR SECONDS, THEN IT BREAKS THROUGH AND TAKES YOU, SO GET OFF THE ICE OR KEEP TO THE ROAD.'],
+  ['0.465', 'EACH WAVE IS NOW THREE SOLDIERS AND NO FLAG BEARER. THEY ALL CARRY THE PENNANT AGAIN.'],
+  ['0.464', 'BEHIND THE SCENES: THE GAME\'S BIGGEST CODE FILES ARE SPLIT INTO SMALLER ONES. NOTHING YOU PLAY CHANGES.'],
+  ['0.463', 'EACH FRAME TAKES ABOUT A THIRD LESS TIME TO DRAW ON SLOWER PCS, WITH NOTHING ON SCREEN CHANGED, AND F3 NOW SHOWS HOW LONG EACH FRAME SPENDS ON THE GAME AND ON DRAWING.'],
+  ['0.462', 'MULTIPLAYER IS NOW A CUSTOM GAMES LIST AND A TEAM ROOM: PICK A GAME AND JOIN IT, CLICK A SEAT ON THE OTHER SIDE TO SWAP TEAMS, AND THE HOST CAN ADD OR REMOVE BOTS, SHOW A PLAYER OUT AND PRESS START.'],
+  ['0.461', 'BEHIND THE SCENES: THE GAME\'S CODE NOW CHECKS ITSELF SO NO FILE OR FUNCTION GROWS TOO BIG TO READ.'],
   ['0.459', 'THE MAP AND THE MINIMAP WEAR THE NEW GRAPHITE LOOK: A FLATTER, QUIETER MAP WITH NO CLOSE BUTTON (M, ESCAPE OR A CLICK OUTSIDE IT CLOSES IT), CAMP NAMES THAT SHOW WHEN YOU POINT AT A CAMP, A BEAR\'S HEAD FOR THE BROWN BEAR DEN AND CLEANER ZIPLINES.'],
   ['0.458', 'EACH WAVE IS NOW THREE AXE BOTS AND ONE FLAG BEARER BEHIND THEM: THE BOTS NEAR ITS FLAG MOVE QUICKER, HIT HARDER AND TAKE LESS DAMAGE, SO SCRAP THE FLAG FIRST.'],
   ['0.457', 'THE BROWN REEDS ARE GONE FROM THE LAKE SHORES.'],
@@ -512,194 +516,6 @@ function overPatchTag() {
   const r = patchTagRect();
   return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
 }
-// ------------------------------------------------------------ rooms
-// The MULTIPLAYER plank's screen: the relay's open rooms as planks under a
-// HOST plank (docs/pvp-architecture.md; the relay: app/server.js). A room's
-// plank carries its host's name, ten seat pips (five a side, the people in
-// them lit in that side's paint), its four-letter code on a plate and a red
-// dot once its match is under way; a room on another patch is dimmed and
-// inert, its patch printed where the code would be. A relay pip beside HOST
-// says the list is live, and an empty list shows one ghost of a row. Under
-// the wrapper with Steam asked for (netSteam) the list is Steam's lobbies
-// (steamRooms, js/net/transport-steam.js) in the same shape, with no code
-// plate - a lobby is joined off the list, never read aloud. HOST makes a room on the relay and opens the waiting room (the
-// lobby, which every peer then sees as this screen does); a
-// room's plank joins it, the row staying lit until the host's WELCOME
-// arrives, or rattling if the room would not have us.
-const RM_W = 236, RM_H = 24, RM_GAP = 6, RM_MAX = 6;
-const RM_PIP = 4, RM_PIP_GAP = 2, RM_PIP_SIDE = 4; // a seat pip, its gap, the gap between the two sides' fives
-let roomsFeed = null; // the relay's list socket while the screen is up (wsRooms)
-function beginRooms() {
-  const m = state.menu;
-  m.screen = 'rooms';
-  m.rooms = []; m.roomsOk = false; m.rhover = {}; m.rsel = -1; m.roomsShake = 0;
-  if (roomsFeed) roomsFeed.close();
-  const feed = (rooms, ok) => { m.rooms = rooms.slice(0, RM_MAX); m.roomsOk = ok; };
-  roomsFeed = netSteam() ? steamRooms(feed) : wsRooms(netRelay(), feed); // Steam's lobbies under the wrapper, the relay's rooms otherwise
-  SFX.place();
-  SFX.music.play('lobby');
-}
-function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null; } }
-function leaveRooms() {
-  roomsFeedClose();
-  if (NET.role !== 'solo') netLeave();
-  state.menu.screen = 'menu';
-  SFX.pickup();
-  SFX.music.play('intro');
-}
-function roomsLayout() {
-  const toy = frameTop();
-  const host = { x: Math.round((VIEW_W - MENU_BW) / 2), y: toy + MENU_Y0, w: MENU_BW, h: MENU_BH };
-  const rows = [];
-  const x = Math.round((VIEW_W - RM_W) / 2);
-  for (let k = 0; k < state.menu.rooms.length; k++) rows.push({ x, y: toy + MENU_Y0 + MENU_PITCH + 10 + k * (RM_H + RM_GAP), w: RM_W, h: RM_H, k });
-  return { toy, host, rows };
-}
-function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
-function roomsHit() {
-  const { host, rows } = roomsLayout();
-  if (overRect(host, 2, 3)) return 'host';
-  for (const r of rows) if (roomOk(state.menu.rooms[r.k]) && overRect(r, 2, 2)) return r.k;
-  return null;
-}
-function hostRoom() {
-  roomsFeedClose();
-  netHost();
-  beginLobby();
-}
-function joinRoom(k) {
-  const m = state.menu, r = m.rooms[k];
-  if (!r || !roomOk(r) || NET.role === 'client') return;
-  m.rsel = k;
-  // the world is the host's: SEED and MAP_TYPE are both decided at load
-  // (js/core.js, js/boot.js), so a page born on another seed OR another
-  // shape starts over on the room's and joins from boot (?join=)
-  const seed = r.data && +r.data.seed, map = (r.data && r.data.map | 0) || 0;
-  if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
-  netJoin(r.room);
-  SFX.place();
-}
-function roomsKey(k) {
-  const m = state.menu;
-  if (k === 'escape' || k === 'backspace') { leaveRooms(); return; }
-  if (moveDir(k) === 'up') { m.rsel = Math.max(-1, m.rsel - 1); SFX.pickup(); }
-  else if (moveDir(k) === 'down') { m.rsel = Math.min(m.rooms.length - 1, m.rsel + 1); SFX.pickup(); }
-  else if (k === 'enter' || k === ' ') { if (m.rsel < 0) hostRoom(); else joinRoom(m.rsel); }
-}
-function roomsClick() {
-  const m = state.menu;
-  if (m.roomsT < 1) return;
-  const h = roomsHit();
-  if (h === 'host') { m.pressT = 0.12; hostRoom(); }
-  else if (h !== null) joinRoom(h);
-}
-function updateRooms(dt) {
-  const m = state.menu;
-  const h = m.roomsT >= 1 ? roomsHit() : null;
-  const keys = ['host']; for (let k = 0; k < m.rooms.length; k++) keys.push(k);
-  for (const key of keys) { const t = h === key || (key !== 'host' && key === m.rsel) ? 1 : 0; m.rhover[key] = (m.rhover[key] || 0) + (t - (m.rhover[key] || 0)) * Math.min(1, dt * 14); }
-  if (m.roomsShake > 0) m.roomsShake = Math.max(0, m.roomsShake - dt);
-  // a join answered: the waiting room on a welcome, a rattle on a refusal
-  if (NET.role === 'client') {
-    if (NET.welcomed) { roomsFeedClose(); beginLobby(); }
-    else if (NET.refused || (NET.transport.error && !NET.transport.open)) { netLeave(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
-  }
-}
-// a small pip that says the relay is there: green and breathing while the
-// socket is open, red and blinking while it is not
-function drawRelayPip(x, y, ok, now) {
-  const on = ok ? 0.6 + 0.4 * Math.sin(now * 3) : (Math.floor(now * 3) % 2 ? 1 : 0.25);
-  const a0 = ctx.globalAlpha;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x, y, 6, 6);
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(x - 1, y - 1, 6, 6);
-  ctx.globalAlpha = a0 * on;
-  ctx.fillStyle = ok ? '#7fd88a' : '#e0524f';
-  ctx.fillRect(x, y, 4, 4);
-  ctx.globalAlpha = a0;
-}
-// the ten seats of a room as pips, five a side, the people in them lit in
-// that side's paint (the list carries a count per side; seats fill from
-// the rule inward). Returns the block's width
-function drawSeatPips(x, y, sides, live) {
-  for (let i = 0; i < 10; i++) {
-    const side = i < 5 ? 0 : 1, k = side ? i - 5 : 4 - i;
-    const px = x + i * (RM_PIP + RM_PIP_GAP) + (side ? RM_PIP_SIDE : 0);
-    const lit = k < ((sides && sides[side]) | 0);
-    ctx.fillStyle = lit ? TEAMS[skin(side)].mark : live ? '#3a2a2a' : '#1a2142';
-    ctx.fillRect(px, y, RM_PIP, RM_PIP);
-  }
-  return 10 * RM_PIP + 9 * RM_PIP_GAP + RM_PIP_SIDE;
-}
-// a room's code on a small plate: the four letters a host reads aloud
-function drawCodePlate(x, y, code, col, sc) {
-  sc = sc || 1;
-  const w = pixelTextWidth(code, sc) + 6, h = 5 * sc + 6;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, y + 1, w, h);
-  ctx.fillStyle = '#35426e'; ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-  drawPixelTextShadow(ctx, code, x + 3, y + 3, col, '#0a0e23', sc);
-  return w;
-}
-function renderRooms(now, a) {
-  const m = state.menu;
-  const { host, rows } = roomsLayout();
-  drawLobbyBackdrop(now, a);
-  ctx.globalAlpha = a;
-  drawMenuButton(host, 'HOST', m.rhover.host || 0, now, m.pressT > 0 && (m.rhover.host || 0) > 0.5);
-  drawRelayPip(host.x + host.w + 8, host.y + 10, m.roomsOk, now);
-  const shake = m.roomsShake > 0 ? Math.round(Math.sin(m.roomsShake * 60) * 2 * (m.roomsShake / NAME_SHAKE_T)) : 0;
-  // an empty list: one ghost of a row, breathing, where the first room will stand
-  if (!rows.length) {
-    const g = { x: Math.round((VIEW_W - RM_W) / 2), y: host.y + MENU_PITCH + 10, w: RM_W, h: RM_H };
-    ctx.globalAlpha = a * (m.roomsOk ? 0.22 + 0.1 * Math.sin(now * 2) : 0.12);
-    ctx.fillStyle = '#8fa0c8';
-    for (let x = 0; x < g.w; x += 3) { ctx.fillRect(g.x + x, g.y, 1, 1); ctx.fillRect(g.x + x, g.y + g.h - 1, 1, 1); }
-    for (let y = 0; y < g.h; y += 3) { ctx.fillRect(g.x, g.y + y, 1, 1); ctx.fillRect(g.x + g.w - 1, g.y + y, 1, 1); }
-    ctx.globalAlpha = a;
-  }
-  for (const r of rows) {
-    const room = m.rooms[r.k], ok = roomOk(room), joining = r.k === m.rsel && NET.role === 'client';
-    const dx = r.k === m.rsel && shake ? shake : 0;
-    ctx.globalAlpha = a * (ok ? 1 : 0.4);
-    drawMenuButton({ x: r.x + dx, y: r.y, w: r.w, h: r.h }, '', ok ? (m.rhover[r.k] || 0) : 0, now, joining);
-    const lift = ok ? Math.round((m.rhover[r.k] || 0) * 2) : 0;
-    const d = room.data || {};
-    const nm = d.name || '?';
-    drawPixelTextShadow(ctx, nm, r.x + dx + 8, r.y + 9 - lift, joining ? '#ffd95c' : '#dfe6ff', '#0a0e23');
-    const live = d.state === 'live';
-    // the seats, then the code (or, dimmed, the patch this room is on) at the right
-    const pw = drawSeatPips(r.x + dx + 96, r.y + 10 - lift, d.sides || [Math.min(5, d.humans | 0), 0], live);
-    if (ok) {
-      const code = String(room.room || '');
-      const cw = pixelTextWidth(code) + 6;
-      if (code.length <= 6) drawCodePlate(r.x + dx + r.w - 8 - cw, r.y + 6 - lift, code, joining ? '#ffd95c' : '#dfe6ff'); // a Steam lobby's id is not for reading aloud
-      if (live) { ctx.fillStyle = '#e0524f'; ctx.fillRect(r.x + dx + 96 + pw + 6, r.y + 10 - lift, 3, 3); } // a match already under way
-    } else {
-      const pt = String(d.patch || '').replace(/^PATCH /, '');
-      drawPixelTextShadow(ctx, pt, r.x + dx + r.w - 8 - pixelTextWidth(pt), r.y + 9, '#e0524f', '#0a0e23');
-    }
-  }
-  ctx.globalAlpha = a;
-  drawBackHint(ctx, Math.round(VIEW_W / 2), roomsLayout().toy + 244, 'BACK');
-  ctx.globalAlpha = 1;
-}
-// The room this screen is in, on the waiting room: the code on its plate
-// under the relay pip, at the head of your side's roster - what a host reads
-// to a friend, and what a guest sees it joined
-function drawRoomPlate(now, a) {
-  if (NET.role === 'solo') return;
-  const code = String((NET.transport && (NET.transport.room || NET.transport.lobbyId)) || '');
-  const x = LOBBY_PAD, y = LOBBY_HEAD - 20;
-  ctx.globalAlpha = a;
-  drawRelayPip(x, y + 6, !!(NET.transport && NET.transport.open), now);
-  if (code && code.length <= 6) drawCodePlate(x + 9, y, code, '#ffd95c', 2); // a relay code; a Steam lobby is joined off the list
-}
-// In a match, a client whose socket is down: a red pip blinking top-centre
-// while the transport redials, and nothing at all while the link is good
-function drawNetLink(now) {
-  if (!NET.isClient || (NET.transport && NET.transport.open && NET.synced)) return;
-  drawRelayPip(Math.round(VIEW_W / 2) - 2, 3, false, now);
-}
 
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
@@ -816,6 +632,7 @@ function menuKey(e) {
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'ladder') { if (m.ladT >= 1) ladderKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
+  if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k); return; } // the waiting room (js/ui/rooms.js)
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
@@ -842,6 +659,7 @@ function menuClick() {
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'ladder') { ladderClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
+  if (m.screen === 'room') { roomClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
   if (m.panel) {
     if (!menuPanelReady()) return;
@@ -916,8 +734,8 @@ function updateTitle(dt) {
   const m = state.menu;
   // the waiting room's comings and goings: a card whose kind changed (a bot
   // became a person, or the reverse) flashes and sounds; a guest whose host
-  // left is back on the rooms list with a rattle
-  if (NET.role !== 'solo' && (m.screen === 'lobby' || popOpen())) {
+  // left, or who was shown out, is back on the rooms list with a rattle
+  if (NET.role !== 'solo' && (m.screen === 'lobby' || m.screen === 'room' || popOpen())) {
     if (!m.cardFx) { m.cardFx = {}; m.cardKind = players.map((p) => isHuman(p)); }
     for (const p of players) {
       const h = isHuman(p);
@@ -925,7 +743,7 @@ function updateTitle(dt) {
       m.cardKind[p.id] = h;
       if (m.cardFx[p.id] > 0) m.cardFx[p.id] -= dt;
     }
-    if (NET.isClient && NET.refused === 'HOSTGONE') { if (popOpen()) leavePop(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
+    if (NET.isClient && (NET.refused === 'HOSTGONE' || NET.refused === 'KICKED')) { if (popOpen()) leavePop(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
   } else m.cardFx = null;
   m.t += dt;
   m.camT += dt;
@@ -946,8 +764,8 @@ function updateTitle(dt) {
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
   if (m.screen === 'skins') updateSkins(dt);
   updateLadder(dt); // the bot ladder screen's ease and hovers (js/ui/ladder.js)
-  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
-  if (m.screen === 'rooms') updateRooms(dt);
+  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' || m.screen === 'room' ? 1 : -1) * dt / 0.35));
+  updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
   for (let i = 0; i < MENU_ITEMS.length; i++) {
@@ -1374,7 +1192,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '0.279'],
   ]],
   ['FIGHTING AND TRADE', [
-    ['WAVES ARE THREE AXES AND A FLAG BEARER THAT RALLIES THE BOTS NEAR IT', '0.458'],
+    ['A WAVE IS THREE SOLDIERS', '0.465'],
     ['THE GENERATOR IS A BIG GOLD PUMP THAT NODS AS IT PAYS', '0.423'],
     ['A GOLD PUMP PAYS 12, 24 OR 42 GOLD A MINUTE BY TIER', '0.423'],
     ['SCOUTS RUN WITH THEIR WHOLE BODY, AND THE ROLL TUCKS INTO A BALL', '0.397'],
@@ -1409,6 +1227,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['MULTIPLAYER: A CUSTOM GAMES LIST AND A TEAM ROOM; CLICK A SEAT TO SWAP TEAMS', '0.462'],
     ['THE MAP AND MINIMAP ARE GRAPHITE AND FLAT; POINT AT A CAMP FOR ITS NAME', '0.459'],
     ['THE FOUR WAR EAGLES WEAR PERCH\'S NEW LOOK', '0.446'],
     ['A SIZE SLIDER FOR EACH HUD PART, HALF TO DOUBLE IN 5% STEPS', '0.436'],
@@ -1453,6 +1272,7 @@ const PATCH_DIGEST = [
     ['AN FPS CAP, AND A QUARTER OF EACH FRAME BACK', '0.271'],
     ['THE STEAM BUILD CARRIES ONLY WHAT THE GAME PLAYS', '0.276'],
     ['THE WEB BUILD OPENS TWO TO THREE TIMES FASTER', '0.396'],
+    ['EACH FRAME DRAWS ABOUT A THIRD FASTER ON SLOWER PCS', '0.463'],
   ]],
 ];
 const DIGEST_FROM = '0.268'; // the oldest patch the digest covers, printed beside HIGHLIGHTS
@@ -2446,7 +2266,7 @@ function beginLobby() {
   SFX.music.play('lobby');
 }
 function leaveLobby() {
-  if (NET.role !== 'solo') netLeave(); // a host's room closes; a guest walks out of one
+  if (NET.role !== 'solo') { netLeave(); beginRooms(); return; } // a guest walks out of a room, back to the list (a host's ESC goes back to the seats: lobbyKey)
   ladderFoe = null; // a ladder bot picked for this lobby stays behind with it (js/ui/ladder.js)
   state.menu.screen = 'menu';
   state.menu.countT = 0;
@@ -2550,7 +2370,7 @@ function setAiLevel(k) {
 function lobbyKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveLobby(); }
+  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else if (NET.role === 'host') { netPhase('room'); beginRoom(); } else leaveLobby(); } // a host's ESC takes the room back to its seats
   else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the character chevrons
   else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
   else if (k === 'enter' || k === ' ') pressPlay();
@@ -3474,525 +3294,7 @@ function pickMap(k) {
   SFX.pickup();
 }
 
-// ---- the wiki: the game written down, one page a subject -----------------
-// Entered from the WIKI word in the patch notes' corner. One surface eased in over the chrome on its
-// own clock (wikiT), a tab bar of PAGES under the title (the settings slab's
-// navbar grammar), and under that a content window the open page scrolls
-// through when it outgrows it - wheel, up/down, the rail on the right.
-// It takes the music layer outright the way the lobby does, not as a hold:
-// WHISPERING WOODS loops under it from the moment it opens (beginWiki), and
-// the title track comes back on the way out (leaveWiki).
-// A page is data: WIKI_PAGES is {id, label, build(cw)}, build returning the
-// page's BLOCKS top to bottom (a heading, a line, a rule, a beast card, a
-// table row, a world entry) for a content width, each with a fixed height, so the layout, the draw, the hit
-// test and the scroll bound all read one list and a new page is one table
-// entry and one builder, never new plumbing. Nothing here is bought, unlocked
-// or researched. The ARSENAL page is what the tech tree was for: every kind
-// in a table with its numbers written down, tools then bits then modifiers,
-// worn to gilded, every one of them droppable from the first match (LOOT_POOL
-// is built off the tier alone); a hover still raises the full card in the
-// tooltip. The BEASTS page is the meadow's two kinds and the camps' three - each drawn wearing
-// the frame it wears in the snow - and what a level does to their health
-// and to the gold a kill pays, at levels 1, 6 and 12, read off the same
-// constants the sim spends (ANIMAL_HP, ANIMAL_LV_HP, YIELD, ANIMAL_LV_GOLD,
-// js/wildlife.js and js/core.js), so the page can never disagree with the
-// game. The CLASSES page is the two classes as the lobby reads them -
-// body, pitch, health and the four stat pips - and their eight abilities
-// with the cooldown, the cast and what each does, off CLASS_AB itself. The
-// WORLD page is the one with no numbers on it: the valley written down - the
-// snow, what is under it, the one law, and who is on it - each entry a figure
-// on its mound beside a paragraph (WIKI_WORLD; the premise and the rules the
-// words answer to are docs/dev/lore.md).
-const WIKI_W_MAX = 400;
-const WIKI_H = 200;           // the slab; the window is inside it
-const WIKI_LEVELS = [1, 6, 12]; // the three columns a beast's growth is shown at...
-// ...from the least level the kind spawns at (MONSTER.lv: a bear's 6, then 9 and 12)
-function wikiLevels(kind) {
-  const lv0 = (MONSTER[kind] && MONSTER[kind].lv) || 1;
-  return lv0 > 1 ? [lv0, Math.round((lv0 + LEVEL_MAX) / 2), LEVEL_MAX] : WIKI_LEVELS;
-}
-const wikiScroll = {};        // px scrolled per page id
-
-// the beast cards: kind, name, a line of what it does - every number in it read off the sim's own constants
-const WIKI_BEASTS = [
-  { kind: 'rabbit', name: 'RABBIT',
-    line: () => 'BOLTS AT ' + FLEE_SIGHT.rabbit + ' PX. ONE JINK CHARGE EVERY ' + RABBIT_DODGE_CD + ' S.' },
-  { kind: 'deer', name: 'DEER',
-    line: () => 'TWO, ONE EACH SIDE OF THE CREEK, ALWAYS ON THE MOVE. BOLTS AT ' + FLEE_SIGHT.deer + ' PX. SPRINTS ' + DEER_SPRINT_T + ' S AT ' + DEER_SPRINT + ', THEN ' + PREY_RUN.deer + '.' },
-  { kind: 'wolf', name: 'WOLF',
-    line: () => 'A DEN OF ' + CAMPS.resource.pop + '. NEUTRAL UNTIL HIT. BITES ' + MONSTER.wolf.bite + ' +' + MONSTER.wolf.lvBite + ' A LEVEL. BACK IN ' + CAMPS.resource.repop + ' S.' },
-  { kind: 'alpha', name: 'BLACK BEAR',
-    line: () => 'ONE A STONE, NEVER UNDER LV ' + MONSTER.alpha.lv + '. SWIPES ' + MONSTER.alpha.bite + ' +' + MONSTER.alpha.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.alpha.buff + '.' },
-  { kind: 'dire', name: 'BROWN BEAR',
-    line: () => 'ONE A DEN, NEVER UNDER LV ' + MONSTER.dire.lv + '. SWIPES ' + MONSTER.dire.bite + ' +' + MONSTER.dire.lvBite + '. THE TEAM GETS ' + EPIC_TEAM_GOLD + ' EACH AND ' + CAMP_BUFF_EPIC_T + ' S OF THE ' + MONSTER.dire.buff + '.' },
-];
-// what a beast is at a level: the sim's own arithmetic (makeAnimal, animalDies)
-function wikiBeastHp(kind, lv) { return animalHpAt(kind, lv); }
-function wikiBeastGold(kind, lv) { const y = YIELD[kind]; return Math.round(y.coins * y.each * (1 + ANIMAL_LV_GOLD * (lv - 1))); }
-
-// the arsenal tables: one column set per kind of thing, each column a label,
-// a width and how to read the number off the kind's own record
-const WIKI_TOOL_COLS = [
-  { label: 'RATE', w: 30, get: (id) => tipSec(TOOLS[id].rof * TOOL_ROF_STEP) },
-  { label: 'SLOTS', w: 28, get: (id) => String(TOOLS[id].cap) },
-  { label: 'TENSILE', w: 34, get: (id) => String(TOOLS[id].tensile), col: '#f2cc6a' },
-];
-const WIKI_BIT_COLS = [
-  { label: 'DMG', w: 22, get: (id) => String(BITS[id].dmg), col: '#e0637a' },
-  { label: 'WT', w: 18, get: (id) => String(BITS[id].weight), col: '#f2cc6a' },
-  { label: 'SPD', w: 22, get: (id) => String(BITS[id].speed) },
-  { label: 'LIFE', w: 30, get: (id) => tipSec(BITS[id].life) },
-  { label: 'FLIGHT', w: 44, get: (id) => TIP_PATH[BITS[id].path] || BITS[id].path, colOf: (id) => BITS[id].col },
-];
-const WIKI_MOD_COLS = [
-  { label: 'WT', w: 18, get: (id) => String(BITS[id].weight), col: '#f2cc6a' },
-  { label: 'EFFECT', w: 162, get: (id) => BITS[id].blurb.split('. ')[0].replace(/\.$/, ''), col: TIP_DIM },
-];
-// the classes page: an ability row's two numbers (the tooltip's own rows,
-// tipClassAb), and the four stats a class card shows as pips - the kit's
-// numbers behind each are in CLASSES, player.js
-const WIKI_AB_COLS = [
-  { label: 'COOLDOWN', w: 40, get: (ab) => tipSec(ab.cd) },
-  { label: 'CAST', w: 32, get: (ab) => tipSec(ab.cast) },
-];
-const WIKI_STATS = [['ICE', 'ice'], ['DRAW', 'draw'], ['POWER', 'power'], ['TOUGH', 'tough']];
-// a sentence broken into lines no wider than maxW, on word boundaries
-function wikiWrap(text, maxW) {
-  const lines = [];
-  let line = '';
-  for (const word of text.split(' ')) {
-    const next = line ? line + ' ' + word : word;
-    if (pixelTextWidth(next) > maxW && line) { lines.push(line); line = word; } else line = next;
-  }
-  if (line) lines.push(line);
-  return lines;
-}
-// every kind of one sort, worn to gilded, in the order the TECH table names them
-function wikiKinds(sort) {
-  const ids = TECH.map((n) => n.id).filter((id) => sort === 'tool' ? !!toolIdOf(id)
-    : sort === 'bit' ? !!bitIdOf(id) && BITS[bitIdOf(id)].proj : !!bitIdOf(id) && !BITS[bitIdOf(id)].proj);
-  return ids.sort((p, q) => itemTier(p) - itemTier(q));
-}
-
-// the world page: the setting, in the order a scout meets it. An entry is a
-// name, a paragraph (wrapped to the column when the page is built) and `fig` -
-// the sprites that stand on its mound, left to right, read at draw time so
-// they wear the side you play. `road` stands them on packed earth, not snow,
-// and `air` on nothing (the eagle's sprite is the bird seen from above).
-// Every sentence is either something the match does or the reason for it -
-// the voice, the fixed words and what stays unanswered: docs/dev/lore.md.
-const WIKI_FIG_W = 44;   // the figure column...
-const WIKI_TEXT_X = 52;  // ...and where an entry's words start, off the content's left margin
-const WIKI_BEAST_W = 52; // a beast card's figure column, at least: a wider beast widens its own
-const WIKI_WORLD = [
-  { name: 'SOFTFALL', fig: () => [SPRITES.tree[0]],
-    text: 'THE SNOW CAME DOWN SOFT AND DID NOT STOP, AND THE VALLEY\'S OLD WORKS WENT UNDER WHOLE. IT STILL FALLS EVERY WINTER, AND THE VALLEY COMES OUT FROM UNDER IT A DIFFERENT SHAPE EACH TIME. NO MAP OF SOFTFALL IS GOOD FOR TWO WINTERS.' },
-  { name: 'THE WORKS', fig: () => [SPRITES.rock[0], SPRITES.crate],
-    text: 'NOBODY ALIVE SAW THE WORKS RUNNING. THE PINES GREW UP THROUGH THEM AND THE ROCKS ARE THEIR RUBBLE, SO THERE IS GOLD IN BOTH, AND NOW AND THEN A TOOL. THE TREELINE KEEPS THE CRATES THAT NEVER SHIPPED. BREAK IT OPEN AND IT IS YOURS.' },
-  { name: 'THE CLAIM', fig: () => [SPRITES.champ[0][skin(player.team)].right[0], SPRITES.champ[1][skin(1 - player.team)].left[0]],
-    text: 'VALLEY LAW IS ONE LINE LONG: A CLAIM STANDS WHILE ITS BIRD HOLDS ITS ROOST. SO NOBODY COMES TO SOFTFALL TO KILL ANYBODY. SCARE THE OTHER COMPANY\'S BIRD OFF ITS GROUND AND THE WHOLE VALLEY IS YOURS UNTIL THE NEXT SNOW.' },
-  { name: 'THE EAGLES', air: true, fig: () => [SPRITES.perch.figure(BIRD_SKINS[0].id, skin(player.team))],
-    text: 'BIG ENOUGH TO CARRY FIVE SCOUTS AND A MERCHANT, ARMOURED IN COMPANY COLOUR, AND BRAVE ONLY UP TO A POINT. IT BEATS ITS WINGS AT WHATEVER CROWDS IT. HIT IT ENOUGH AND ITS NERVE GOES. IT LEAVES, AND ITS COMPANY LEAVES WITH IT.' },
-  { name: 'THE SCOUTS', fig: () => [SPRITES.champ[0][skin(player.team)].down[0], SPRITES.champ[1][skin(player.team)].down[0]],
-    text: 'A COMPANY SENDS FIVE. HUNTERS KEEP THE GAP AND WARRIORS CLOSE IT. A SCOUT WHO GOES DOWN IS CARRIED BACK TO THE ROOST AND SENT OUT AGAIN WITH EVERYTHING THEY HAD. THE BETTER THE SCOUT, THE LONGER THE COMPANY MAKES THEM SIT FIRST.' },
-  { name: 'THE COUNTER', fig: () => [SPRITES.merchant[skin(player.team)].down[0]],
-    text: 'THE MERCHANTS ARE A GUILD OF THEIR OWN. ONE RIDES IN WITH EACH BIRD, BUILDS ITS BARRACKS AND SELLS TO ANY PURSE THAT WALKS UP, YOURS OR THEIRS. THEY ARE NOT ON A SIDE. THEY ARE ON THE PRICE OF FISH. NOBODY LAYS A HAND ON ONE.' },
-  { name: 'THE MACHINES', fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(player.team)][1]],
-    text: 'OLDER THAN THE ROAD. THEY SLEEP UNDER THE SNOW UNTIL GOLD WAKES ONE, AND THEN THEY DO THE ONE THING THEY REMEMBER: GATHER, GUARD, OR MARCH. WHO BUILT THEM IS THE VALLEY\'S FAVOURITE ARGUMENT.' },
-  { name: 'THE ROAD', road: true, fig: () => [SPRITES.robotTeam[skin(player.team)][0], SPRITES.robotTeam[skin(1 - player.team)][0]],
-    text: 'ONE STRAIGHT LANE FROM CORNER TO CORNER, PACKED HARD BY WHATEVER THE WORKS HAULED ALONG IT. BOTH BIRDS ROOST BESIDE IT AND BOTH COLUMNS MARCH DOWN IT, SO EVERYTHING IN SOFTFALL ENDS UP ON THE ROAD. MOST OF IT MEETS IN THE MIDDLE.' },
-  { name: 'THE WOLVES', fig: () => [SPRITES.wolf.right.idle[0], SPRITES.wolf.left.idle[0]],
-    text: 'THE WOLVES WERE HERE FIRST AND HAVE NO OPINION ABOUT CLAIMS. LEAVE A DEN ALONE AND IT LEAVES YOU ALONE. THE BLACK BEAR KEEPS TO ITS STONE AND THE BROWN BEAR TO ITS DEN, AND A COMPANY THAT BRINGS ONE DOWN WALKS TALLER FOR A WHILE.' },
-  { name: 'GOLD', fig: () => [SPRITES.goldSack[SPRITES.goldSack.length - 1]],
-    text: 'THE ONLY THING THE VALLEY PAYS IN, AND THE ONLY THING THAT TEACHES. A SCOUT WHO HAS EARNED A LOT OF IT HAS DONE A LOT, AND THAT IS ALL A LEVEL IS. NOBODY HERE HAS EVER FOUND A USE FOR A SECOND CURRENCY.' },
-];
-
-const WIKI_PAGES = [
-  { id: 'classes', label: 'CLASSES', build() {
-    const b = [];
-    b.push({ kind: 'line', h: 9, text: 'TWO CLASSES, PICKED ON THE WAY IN. KEYS 1-4 ARE THE CLASS, EACH ON ITS OWN COOLDOWN.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A SKILL POINT UNLOCKS A KEY. EACH ONE AFTER IS ' + Math.round(AB_LV_CD * 100) + '% OFF THAT ABILITY\'S COOLDOWN, TO LEVEL ' + AB_LV_MAX + '.', col: TIP_DIM });
-    CLASSES.forEach((c, cls) => {
-      b.push({ kind: cls ? 'rule' : 'gap', h: cls ? 10 : 4 });
-      b.push({ kind: 'cls', h: 52, cls });
-      b.push({ kind: 'head', h: 12, text: 'KEYS 1-4', cols: WIKI_AB_COLS });
-      CLASS_AB[cls].forEach((ab, i) => abOptions(cls, i).forEach((o, k) => b.push({ kind: 'ab', h: 36, cls, i, k, cols: WIKI_AB_COLS })));
-    });
-    return b;
-  } },
-  { id: 'beasts', label: 'BEASTS', build(cw) {
-    const b = [];
-    b.push({ kind: 'line', h: 9, text: 'EVERY BEAST IS DEALT THE TABLE\'S AVERAGE HERO LEVEL WHEN IT SPAWNS, AND KEEPS IT.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'A LEVEL IS MORE HEALTH TO SHOOT THROUGH, AND MORE GOLD FOR THE KILL.', col: TIP_DIM });
-    b.push({ kind: 'legend', h: SPRITES.deer.right.idle[0].height + 26 }); // the deer under its frame, as a card's figure
-    b.push({ kind: 'rule', h: 8 });
-    // a card is as wide and as tall as its beast standing under its frame
-    // (a bear is a 112 px frame), and its line wraps to what is left
-    for (const bs of WIKI_BEASTS) {
-      const spr = SPRITES[bs.kind].right.idle[0];
-      const figW = Math.max(WIKI_BEAST_W, spr.width), lines = wikiWrap(bs.line(), cw - figW - 8);
-      const h = Math.max(46 + (lines.length - 1) * 8, spr.height - (spr.crown || 0) + 18 * beastFrame(bs.kind).s + 8);
-      b.push({ kind: 'beast', h, beast: bs, figW, lines });
-    }
-    return b;
-  } },
-  { id: 'arsenal', label: 'ARSENAL', build() {
-    const b = [];
-    b.push({ kind: 'line', h: 9, text: 'EVERY TOOL AND EVERY BIT DROPS FOR EVERYBODY FROM THE FIRST MATCH. NOTHING IS RESEARCHED.', col: '#cfe0ff' });
-    b.push({ kind: 'line', h: 9, text: 'ONE CLICK FIRES EVERY SHOT LOADED, AND EVERY MODIFIER SHAPES EVERY SHOT.', col: TIP_DIM });
-    for (const [title, sort, cols] of [['TOOLS', 'tool', WIKI_TOOL_COLS], ['BITS', 'bit', WIKI_BIT_COLS], ['MODIFIERS', 'mod', WIKI_MOD_COLS]]) {
-      b.push({ kind: 'gap', h: 4 });
-      b.push({ kind: 'head', h: 12, text: title, cols });
-      for (const id of wikiKinds(sort)) b.push({ kind: 'row', h: 14, id, cols });
-    }
-    return b;
-  } },
-  { id: 'world', label: 'WORLD', build(cw) {
-    // the one page of sentences, so the one page that wraps: every line is
-    // broken to the content width it is built for (cw), and an entry is as
-    // tall as the taller of its figure and its paragraph
-    const b = [];
-    const para = (text, col) => { for (const t of wikiWrap(text, cw)) b.push({ kind: 'line', h: 9, text: t, col }); };
-    para('SOFTFALL IS A VALLEY AND THE SNOW THAT BURIED IT. EACH WINTER TWO COMPANIES FLY IN TO DIG.', '#cfe0ff');
-    para('NOBODY IS HERE TO KILL ANYBODY. THE VALLEY HAS ONE LAW, AND IT IS ABOUT A BIRD.', TIP_DIM);
-    b.push({ kind: 'rule', h: 10 });
-    for (const e of WIKI_WORLD) {
-      const lines = wikiWrap(e.text, cw - WIKI_TEXT_X);
-      const fh = Math.max(...e.fig().map((s) => s.height));
-      b.push({ kind: 'lore', h: Math.max(Math.max(fh, 18) + 12, 14 + lines.length * 8 + 8), entry: e, lines, fh });
-    }
-    b.push({ kind: 'rule', h: 10 });
-    para('THAT IS ALL ANYBODY KNOWS. THE REST IS UNDER THE SNOW.', TIP_DIM);
-    return b;
-  } },
-];
-// a page's blocks, built once per content width: the content is constant, and
-// only the WORLD page's wrap reads the width at all
-const wikiBuilt = {};
-function wikiBlocks(pageId, cw) {
-  const key = pageId + ':' + cw;
-  if (!wikiBuilt[key]) wikiBuilt[key] = WIKI_PAGES.find((p) => p.id === pageId).build(cw);
-  return wikiBuilt[key];
-}
-function wikiPage() { return WIKI_PAGES[Math.max(0, Math.min(WIKI_PAGES.length - 1, state.menu.wikiTab))]; }
-
-// everything positioned on the page comes from here: the slab, the tab
-// cells, the content window, the rail, and the open page's blocks each
-// carrying the y it draws at (pre-scroll). Draw and hit test both read it.
-function wikiLayout() {
-  const toy = frameTop();
-  const cx = Math.round(VIEW_W / 2);
-  const w = Math.min(WIKI_W_MAX, VIEW_W - 24), x = cx - (w >> 1);
-  const y = toy + 46, h = WIKI_H;
-  const n = WIKI_PAGES.length, cw = Math.floor((w - 24) / n);
-  const tabs = WIKI_PAGES.map((p, i) => ({ id: p.id, label: p.label, x: x + 12 + i * cw, y: y + 7, w: cw, h: 9 }));
-  const winY = y + 22, winH = h - 28;
-  const page = wikiPage();
-  const blocks = wikiBlocks(page.id, w - 28); // the content's width: the margins under `left`/`right` below
-  let by = winY + 4, total = 4;
-  const rows = blocks.map((bl) => { const r = { bl, y: by }; by += bl.h; total += bl.h; return r; });
-  const maxScroll = Math.max(0, total + 4 - winH);
-  const scroll = Math.max(0, Math.min(maxScroll, wikiScroll[page.id] || 0));
-  wikiScroll[page.id] = scroll;
-  const rail = { x: x + w - 9, y: winY + 2, w: 5, h: winH - 4 };
-  const th = Math.max(8, Math.round(rail.h * winH / (total + 8)));
-  const thumb = { x: rail.x, y: rail.y + Math.round((rail.h - th) * (maxScroll ? scroll / maxScroll : 0)), w: rail.w, h: th };
-  return { toy, cx, x, y, w, h, tabs, winY, winH, rows, scroll, maxScroll, rail, thumb, page,
-    left: x + 12, right: x + w - 16 }; // the content's own margins, clear of the rail
-}
-// what is under (mx, my): a tab, a table row (carrying its kind id, for the
-// tooltip), the rail, or nothing. Shared by the hover, the click and the
-// tooltip, so the three can never point at different things.
-function wikiHit(mx, my) {
-  const L = wikiLayout();
-  for (let i = 0; i < L.tabs.length; i++) {
-    const t = L.tabs[i];
-    if (mx >= t.x && mx < t.x + t.w && my >= t.y - 3 && my < t.y + t.h + 3) return { kind: 'tab', i };
-  }
-  if (L.maxScroll > 0 && mx >= L.rail.x - 2 && mx < L.rail.x + L.rail.w + 2 && my >= L.rail.y && my < L.rail.y + L.rail.h) return { kind: 'rail', y: my };
-  if (my < L.winY || my >= L.winY + L.winH || mx < L.left || mx >= L.right) return null;
-  for (const r of L.rows) {
-    if (r.bl.kind !== 'row' && r.bl.kind !== 'ab') continue;
-    const ry = r.y - L.scroll;
-    if (my < ry || my >= ry + r.bl.h) continue;
-    return r.bl.kind === 'row' ? { kind: 'row', id: r.bl.id } : { kind: 'ab', cls: r.bl.cls, i: r.bl.i };
-  }
-  return null;
-}
-function beginWiki() {
-  const m = state.menu;
-  m.screen = 'wiki';
-  SFX.place();
-  SFX.music.play('wiki', { in: 0.6, out: 0.5 }); // WHISPERING WOODS, from the moment it opens
-}
-function leaveWiki() {
-  state.menu.screen = state.menu.wikiFrom || 'menu'; // the notes' WIKI word comes back to the notes
-  state.menu.wikiFrom = null;
-  SFX.pickup();
-  SFX.music.play('intro', { in: 0.6, out: 0.5 }); // ...and the title takes its own back
-}
-function wikiScrollBy(d) {
-  const L = wikiLayout();
-  wikiScroll[L.page.id] = Math.max(0, Math.min(L.maxScroll, L.scroll + d));
-}
-function wikiSetTab(i) {
-  const m = state.menu;
-  const t = Math.max(0, Math.min(WIKI_PAGES.length - 1, i));
-  if (t !== m.wikiTab) { m.wikiTab = t; SFX.pickup(); }
-}
-function wikiKey(k) {
-  const m = state.menu;
-  if (k === 'escape' || k === 'backspace') { leaveWiki(); return; }
-  if (moveDir(k) === 'left') wikiSetTab(m.wikiTab - 1);
-  else if (moveDir(k) === 'right') wikiSetTab(m.wikiTab + 1);
-  else if (moveDir(k) === 'up') wikiScrollBy(-12);
-  else if (moveDir(k) === 'down') wikiScrollBy(12);
-}
-// a click: a tab opens its page, the rail pages the window; a row is read,
-// not pressed - the tooltip is already up over it
-function wikiClick() {
-  const m = state.menu;
-  if (m.wikiT < 1) return;
-  const h = wikiHit(mouse.x, mouse.y);
-  if (!h) return;
-  if (h.kind === 'tab') wikiSetTab(h.i);
-  else if (h.kind === 'rail') {
-    const L = wikiLayout();
-    wikiScrollBy(h.y < L.thumb.y ? -L.winH : h.y >= L.thumb.y + L.thumb.h ? L.winH : 0);
-  }
-}
-
-// the ground a figure stands on, w px wide: a low pale mound with a shaded
-// rim - snow, or the road's packed earth (ROAD_COL_*, js/draw/ground.js)
-function wikiMound(cx, baseY, w, road) {
-  const hw = w >> 1;
-  ctx.fillStyle = road ? ROAD_COL_RUT : '#c9dcee'; ctx.fillRect(cx - hw, baseY - 1, w, 3);
-  ctx.fillStyle = road ? ROAD_COL_A : '#eef4fb'; ctx.fillRect(cx - hw + 2, baseY - 2, w - 4, 3);
-}
-// a WORLD entry's figures on one mound, left to right about cx, each over
-// its own shadow - or, `air`, on the wing with no ground under them at all
-function drawWikiFig(e, cx, baseY) {
-  const sprs = e.fig();
-  const total = sprs.reduce((w, s) => w + s.width, 0) + 2 * (sprs.length - 1);
-  if (!e.air) wikiMound(cx, baseY, Math.max(26, total + 8), e.road);
-  let x = cx - (total >> 1);
-  for (const s of sprs) {
-    if (!e.air) { ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(x + 2, baseY, s.width - 4, 2); }
-    ctx.drawImage(s, x, baseY + 2 - s.height);
-    x += s.width + 2;
-  }
-}
-// One beast standing on its snow, wearing exactly the frame drawAnimal hangs
-// over it in the world - health, the second bar, the level plate, the
-// noticed mark - so the page teaches the frame by showing it, not naming it.
-// A camp monster shows its leash bar part-filled, since bare track says nothing.
-function drawWikiBeast(bs, cx, baseY, level, now) {
-  const spr = SPRITES[bs.kind].right.idle[0];
-  const F = beastFrame(bs.kind), bw = F.w * F.s;
-  wikiMound(cx, baseY, Math.max(26, bw + 8)); // a bear's snow as wide as its bar
-  ctx.fillStyle = 'rgba(110,130,170,0.35)'; ctx.fillRect(cx - (bw >> 1), baseY, bw, 2);
-  const px = cx - (spr.width >> 1), py0 = baseY + 2 - spr.height;
-  ctx.drawImage(spr, px, py0);
-  // full, chunked the way the world chunks it, at the least level it spawns
-  // at; a camp monster's leash part-filled, since bare track says nothing
-  const lv = animalLevelOf(bs.kind), hp = wikiBeastHp(bs.kind, lv);
-  drawBeastFrame(bs.kind, cx, cx, py0 + (spr.crown || 0), { hp, maxHp: hp, level: lv, senseT: 1 }, isCampKind(bs.kind) ? 0.6 : 1);
-}
-// a label tied to a point on the figure by a thin leader
-function wikiLeader(x0, y0, x1, y1, text, col) {
-  ctx.fillStyle = '#4a5480';
-  ctx.fillRect(Math.min(x0, x1), y0, Math.abs(x1 - x0) + 1, 1);
-  if (y1 !== y0) ctx.fillRect(x1, Math.min(y0, y1), 1, Math.abs(y1 - y0) + 1);
-  drawPixelTextShadow(ctx, text, x1 > x0 ? x1 + 3 : x1 - 3 - pixelTextWidth(text), y1 - 2, col, '#0a0e23');
-}
-// the rail: only there when the page outgrows the window; the thumb's place
-// is the whole affordance
-function drawWikiRail(L) {
-  if (!L.maxScroll) return;
-  const { rail, thumb } = L;
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(rail.x - 1, rail.y - 1, rail.w + 2, rail.h + 2);
-  ctx.fillStyle = '#1c2750'; ctx.fillRect(rail.x, rail.y, rail.w, rail.h);
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(rail.x + 2, rail.y, 1, rail.h);
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(thumb.x - 1, thumb.y - 1, thumb.w + 2, thumb.h + 2);
-  ctx.fillStyle = '#c89a3c'; ctx.fillRect(thumb.x, thumb.y, thumb.w, thumb.h);
-  ctx.fillStyle = '#ffd95c'; ctx.fillRect(thumb.x, thumb.y, thumb.w, 1); ctx.fillRect(thumb.x, thumb.y, 1, thumb.h);
-  ctx.fillStyle = '#8a6a2a'; ctx.fillRect(thumb.x, thumb.y + thumb.h - 1, thumb.w, 1); ctx.fillRect(thumb.x + thumb.w - 1, thumb.y, 1, thumb.h);
-}
-// one arsenal row: the kind's icon on its own tier plate - lit the way a bag
-// cell lights, rimmed and lifted under the pointer, the blue pip for "you have
-// held one" - its name in the tier's ink, and its numbers in the columns
-function drawWikiRow(r, L, hot, now) {
-  const id = r.bl.id, y = r.y - L.scroll;
-  const n = { x: L.left, y: y + (hot ? 0 : 1), w: 12, h: 12 };
-  const tp = tierPlate(id, hot);
-  ctx.fillStyle = tp.rim; ctx.fillRect(n.x, n.y, n.w, n.h);
-  ctx.fillStyle = tp.plate; ctx.fillRect(n.x + 1, n.y + 1, n.w - 2, n.h - 2);
-  modPlate(id, n, n.y);
-  const im = SPRITES[ITEMS[id].icon];
-  ctx.drawImage(im, n.x + ((n.w - im.width) >> 1), n.y + ((n.h - im.height) >> 1));
-  if (PROFILE.techSeen(id)) { ctx.fillStyle = '#8fd8ff'; ctx.fillRect(n.x + 1, n.y + 1, 2, 2); }
-  const tool = toolIdOf(id), bit = bitIdOf(id);
-  const name = tool ? TOOLS[tool].name : BITS[bit].name;
-  const ink = TOOL_TIERS[itemTier(id)].ink;
-  const nx = L.left + 17, ty = y + 4;
-  drawPixelTextShadow(ctx, name, nx, ty, hot ? '#ffffff' : ink, '#0a0e23');
-  // the columns, right to left off the content's right margin, each value
-  // right-aligned under its head; a dotted leader ties the name to the first
-  let rx = L.right;
-  let firstX = rx;
-  for (let i = r.bl.cols.length - 1; i >= 0; i--) {
-    const c = r.bl.cols[i], key = tool || bit;
-    const v = c.get(key), vw = pixelTextWidth(v);
-    drawPixelTextShadow(ctx, v, rx - vw, ty, c.colOf ? c.colOf(key) : c.col || '#f4f7ff', '#0a0e23');
-    firstX = rx - vw;
-    rx -= c.w;
-  }
-  ctx.fillStyle = '#2c3560';
-  for (let px = nx + pixelTextWidth(name) + 3; px < firstX - 3; px += 2) ctx.fillRect(px, ty + 4, 1, 1);
-}
-function renderWiki(now, a) {
-  const m = state.menu;
-  const L = wikiLayout();
-  const slideIn = 1 - a;
-  ctx.globalAlpha = a;
-  const t0 = 'WIKI';
-  drawPixelTextShadow(ctx, t0, Math.round((VIEW_W - pixelTextWidth(t0, 2)) / 2), L.toy + 24 - Math.round(slideIn * 20), '#ffd95c', '#3c2a1e', 2);
-  drawGoldRule(L.cx, L.toy + 39 - Math.round(slideIn * 20), Math.round(pixelTextWidth(t0, 2) / 2) + 8, a);
-  drawMenuSlab(L.x, L.y, L.w, L.h, a);
-  const hit = m.wikiT >= 1 && mouse.inside ? wikiHit(mouse.x, mouse.y) : null;
-  // the tab bar: the open page in gold over a gold underline, the rest dim
-  // until hovered - the underline is the whole "you are here"
-  for (let i = 0; i < L.tabs.length; i++) {
-    const t = L.tabs[i], active = i === m.wikiTab;
-    const col = active ? '#ffd95c' : hit && hit.kind === 'tab' && hit.i === i ? '#cfe0ff' : '#7a8bb8';
-    drawPixelTextShadow(ctx, t.label, Math.round(t.x + (t.w - pixelTextWidth(t.label)) / 2), t.y, col, 'rgba(8,12,28,0.9)');
-    if (active) { ctx.fillStyle = '#ffd95c'; ctx.fillRect(t.x + 4, t.y + 8, t.w - 8, 1); }
-  }
-  ctx.fillStyle = '#2c3a68';
-  ctx.fillRect(L.x + 10, L.winY - 3, L.w - 20, 1);
-  // the open page, clipped to the window and shifted by its scroll
-  ctx.save();
-  ctx.beginPath(); ctx.rect(L.x + 2, L.winY, L.w - 4, L.winH); ctx.clip();
-  const level = animalLevel();
-  for (const r of L.rows) {
-    const bl = r.bl, y = r.y - L.scroll;
-    if (y + bl.h < L.winY || y > L.winY + L.winH) continue;
-    if (bl.kind === 'line') drawPixelTextShadow(ctx, bl.text, L.left, y, bl.col, '#0a0e23');
-    else if (bl.kind === 'rule') drawGoldRule(L.cx, y + 3, Math.round(L.w / 2) - 24, a);
-    else if (bl.kind === 'head') {
-      // a section: its name in gold with a dotted rule, the column heads over
-      // their columns on the same line
-      drawPixelTextShadow(ctx, bl.text, L.left, y + 2, '#ffd95c', '#0a0e23');
-      let rx = L.right;
-      for (let i = bl.cols.length - 1; i >= 0; i--) {
-        const c = bl.cols[i];
-        drawPixelTextShadow(ctx, c.label, rx - pixelTextWidth(c.label), y + 2, TIP_LABEL, '#0a0e23');
-        rx -= c.w;
-      }
-      ctx.fillStyle = '#2c3a68';
-      ctx.fillRect(L.left, y + 10, L.right - L.left, 1);
-    } else if (bl.kind === 'row') drawWikiRow(r, L, hit && hit.kind === 'row' && hit.id === bl.id, now);
-    else if (bl.kind === 'cls') {
-      // a class card: the body at 3x on the left (the side you play in), its
-      // name and role, the three lines of its pitch, and on the right the
-      // ledger the lobby reads - health, then the four stats as pips
-      const c = CLASSES[bl.cls];
-      const spr = SPRITES.champ[bl.cls][skin(player.team)].down[0];
-      ctx.drawImage(spr, L.left, y + 2, 48, 48);
-      const tx = L.left + 56;
-      drawPixelTextShadow(ctx, c.name, tx, y + 4, '#ffd95c', '#0a0e23');
-      drawPixelTextShadow(ctx, c.role, tx + pixelTextWidth(c.name) + 7, y + 4, TIP_LABEL, '#0a0e23');
-      c.blurb.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, k ? TIP_DIM : '#cfe0ff', '#0a0e23'));
-      const px0 = L.right - 19, lx = px0 - 5;
-      let ry = y + 4;
-      drawPixelTextShadow(ctx, 'HEALTH', lx - pixelTextWidth('HEALTH'), ry, TIP_LABEL, '#0a0e23');
-      const hp = String(c.kit.maxHp);
-      drawPixelTextShadow(ctx, hp, L.right - pixelTextWidth(hp), ry, '#f4f7ff', '#0a0e23');
-      for (const [label, key] of WIKI_STATS) {
-        ry += 8;
-        drawPixelTextShadow(ctx, label, lx - pixelTextWidth(label), ry, TIP_LABEL, '#0a0e23');
-        for (let k = 0; k < 5; k++) { ctx.fillStyle = k < c.stats[key] ? '#ffd95c' : '#2c3560'; ctx.fillRect(px0 + k * 4, ry + 1, 3, 3); }
-      }
-    } else if (bl.kind === 'ab') {
-      // an ability: its key on a plate, its icon in a well (the strip's
-      // own), its name, the two numbers in the columns, and what it does
-      const ab = abOptions(bl.cls, bl.i)[bl.k | 0];
-      const hot = hit && hit.kind === 'ab' && hit.cls === bl.cls && hit.i === bl.i && (hit.k | 0) === (bl.k | 0);
-      const iy = y + 1, wx = L.left + 10;
-      ctx.fillStyle = '#0a0e23'; ctx.fillRect(L.left, iy + 12, 7, 8);
-      ctx.fillStyle = '#1c2750'; ctx.fillRect(L.left + 1, iy + 13, 5, 6);
-      drawPixelText(ctx, String(bl.i + 1), L.left + 2, iy + 14, '#ffd95c');
-      ctx.fillStyle = hot ? '#7a8bb8' : '#0a0e23'; ctx.fillRect(wx - 1, iy - 1, 34, 34);
-      ctx.fillStyle = BAG_WELL; ctx.fillRect(wx, iy, 32, 32);
-      ctx.drawImage(classAbIcon(bl.cls, bl.i, bl.k), wx, iy);
-      const tx = wx + 37;
-      drawPixelTextShadow(ctx, ab.name, tx, y + 4, hot ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-      let rx = L.right, firstX = rx;
-      for (let k = bl.cols.length - 1; k >= 0; k--) {
-        const col = bl.cols[k], v = col.get(ab), vw = pixelTextWidth(v);
-        drawPixelTextShadow(ctx, v, rx - vw, y + 4, '#f4f7ff', '#0a0e23');
-        firstX = rx - vw;
-        rx -= col.w;
-      }
-      ctx.fillStyle = '#2c3560';
-      for (let px = tx + pixelTextWidth(ab.name) + 3; px < firstX - 3; px += 2) ctx.fillRect(px, y + 8, 1, 1);
-      wikiWrap(ab.blurb, L.right - tx).slice(0, 2).forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
-    } else if (bl.kind === 'legend') {
-      // the frame, labelled: one deer, and a leader from each part of the
-      // frame to what it is. Every beast on the page wears this same frame.
-      // Each leader starts a clear pixel off the frame (the plate's left
-      // edge, the mark's rim, the bar backing's right wall) and the three on
-      // the right fan out - a column of their own each, label rows 10 px
-      // apart - so no line crosses a plate, a bar or another line.
-      const fx = L.left + 40, base = y + bl.h - 6;
-      const spr = SPRITES.deer.right.idle[0], py = base + 2 - spr.height;
-      drawWikiBeast(WIKI_BEASTS[1], fx, base, level, now);
-      wikiLeader(fx - 17, py - 6, fx - 27, py - 6, 'LEVEL', '#f2cc6a');
-      wikiLeader(fx + 4, py - 14, fx + 26, py - 22, 'SEES YOU', '#f4f7ff');
-      wikiLeader(fx + 11, py - 7, fx + 34, py - 12, 'HEALTH', BAR_NEUTRAL);
-      wikiLeader(fx + 11, py - 4, fx + 42, py - 2, 'STAMINA - A WOLF\'S LEASH', STAM_COL);
-    } else if (bl.kind === 'lore') {
-      // a WORLD entry: its figures on their mound in the left column, feet a
-      // fixed drop under the entry's top, its name in gold and its paragraph
-      const e = bl.entry, tx = L.left + WIKI_TEXT_X;
-      drawWikiFig(e, L.left + (WIKI_FIG_W >> 1), y + Math.max(bl.fh, 18) + 4);
-      drawPixelTextShadow(ctx, e.name, tx, y + 4, '#ffd95c', '#0a0e23');
-      bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, tx, y + 14 + k * 8, TIP_DIM, '#0a0e23'));
-    } else if (bl.kind === 'beast') {
-      const bs = bl.beast;
-      drawWikiBeast(bs, L.left + (bl.figW >> 1), y + bl.h - 6, level, now);
-      const nx = L.left + bl.figW + 8, dy = (bl.lines.length - 1) * 8; // a wrapped line pushes the table down
-      drawPixelTextShadow(ctx, bs.name, nx, y + 4, '#ffd95c', '#0a0e23');
-      bl.lines.forEach((t, k) => drawPixelTextShadow(ctx, t, nx, y + 13 + k * 8, TIP_DIM, '#0a0e23'));
-      // the growth table: LV heads over three columns, HEALTH and KILL GOLD
-      // under them, a dotted leader from each label to its first number
-      const levels = wikiLevels(bs.kind), colW = 30, cx0 = L.right - colW * levels.length;
-      levels.forEach((lv, i) => {
-        const t = 'LV ' + lv;
-        drawPixelTextShadow(ctx, t, cx0 + (i + 1) * colW - pixelTextWidth(t), y + 4, TIP_LABEL, '#0a0e23');
-      });
-      const rowsT = [['HEALTH', (lv) => String(wikiBeastHp(bs.kind, lv)), BAR_NEUTRAL], ['KILL GOLD', (lv) => String(wikiBeastGold(bs.kind, lv)), '#f2cc6a']];
-      rowsT.forEach(([label, get, col], k) => {
-        const ry = y + 24 + dy + k * 9;
-        drawPixelTextShadow(ctx, label, nx, ry, TIP_LABEL, '#0a0e23');
-        let firstX = L.right;
-        levels.forEach((lv, i) => {
-          const v = get(lv), vw = pixelTextWidth(v), vx = cx0 + (i + 1) * colW - vw;
-          if (i === 0) firstX = vx;
-          drawPixelTextShadow(ctx, v, vx, ry, col, '#0a0e23');
-        });
-        ctx.fillStyle = '#2c3560';
-        for (let px = nx + pixelTextWidth(label) + 3; px < firstX - 3; px += 2) ctx.fillRect(px, ry + 4, 1, 1);
-      });
-    }
-  }
-  ctx.restore();
-  ctx.globalAlpha = a;
-  drawWikiRail(L);
-  drawBackHint(ctx, VIEW_W / 2, L.toy + 254);
-  ctx.globalAlpha = 1;
-}
-
+// ---- drawing the title screen ---------------------------------------------
 function renderTitle(now) {
   const m = state.menu;
   // leaving: 0 while the menu is up, 0->1 over the intro
@@ -4086,4 +3388,3 @@ function renderTitle(now) {
     else ctx.drawImage(helpPanelCv, SET_X, SET_Y + slide);
   }
 }
-

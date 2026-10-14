@@ -64,7 +64,7 @@ function mulberry32(a) {
   return r;
 }
 // Practice mode: ?practice=1 (the PRACTICE const above WORLD) boots the
-// training arena (the `practice arena` banner, js/world.js) instead of a
+// training arena (the `practice arena` banner, js/practice.js) instead of a
 // match - no title menu, no eagles, no other players, and the clock pinned to
 // early morning (sim.js never advances state.time under PRACTICE). It pins
 // SEED to a constant BELOW ?seed on purpose, so the arena is the same ground
@@ -96,11 +96,11 @@ const state = {
   day: 1,
   tick: 0,       // sim steps taken; with SEED + player id it decides contested orders
   darkness: 0,
-  // the weather's one wind field (the `wind` banner, js/sim.js): windT is its
+  // the weather's one wind field (the `wind` banner, js/weather.js): windT is its
   // clock, wind its strength 0..1 - full by day, nothing at all by full dark -
   // and windDir which quarter it is running from, -1..1, veering over minutes
   wind: 0.7, windT: 0, windDir: 1,
-  // the day's weather (the `weather` banner, js/sim.js): the dials the air is
+  // the day's weather (the `weather` banner, js/weather.js): the dials the air is
   // running on now, eased toward the day's row at dawn; wxForce is DBG's pin
   wx: { name: null, from: null, k: 1, snow: 1, wind: 1, gust: 1, sweep: 1, drift: 0, frost: 0 },
   wxForce: null,
@@ -190,7 +190,7 @@ const state = {
     // column, then the ledger's rows),
     // gearFxT/gearFxSlot its equip flash,
     // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
-    // is a surface of its own on wikiT, with wikiTab the open page (menu.js
+    // is a surface of its own on wikiT, with wikiTab the open page (js/ui/wiki.js
     // `the wiki`), wikiFrom the screen Esc takes it back to; the patch notes
     // are one too, on notesT, notesSel the group the keys have picked
     // (menu.js `patch notes`).
@@ -217,7 +217,7 @@ const state = {
   // crash pans the camera to both roosts and states the objective before
   // handing the controls (and the E hop off the bird) back -
   // { ph: 'wait'|'theirs-go'|'theirs'|'ours-go'|'ours', t, total }, run by
-  // updateDrop (js/boot.js), camera in js/sim.js, text in drawDropBrief.
+  // updateDrop (js/eagle.js), camera in js/sim.js, text in drawDropBrief.
   dropBrief: null,
   fade: null,          // screen fade: { a, to, spd, color, then }
 };
@@ -281,8 +281,21 @@ function mmScale() { return mmCur < 0 ? mmWant() : mmCur; }
 function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mouse.y - MM_CY) <= MM_R + 7; } // to the outline's outer edge
 
 // performance monitor: fps averaged over half-second windows from raw
-// (unclamped) frame deltas, so sim clamping can't mask slow frames
-const perf = { fps: 0, frames: 0, acc: 0 };
+// (unclamped) frame deltas, so sim clamping can't mask slow frames; sim and
+// draw are the ms a frame spent in update() and render() over the same
+// window (the info stack's SIM and DRAW). DRAW is the script's side only:
+// on a GPU canvas the pixels are drawn later, off the main thread.
+const perf = { fps: 0, frames: 0, acc: 0, sim: 0, draw: 0, simAcc: 0, drawAcc: 0 };
+function perfFrame(rawDt) {
+  perf.frames++;
+  perf.acc += rawDt;
+  if (perf.acc < 0.5) return;
+  perf.fps = Math.round(perf.frames / perf.acc);
+  perf.sim = perf.simAcc / perf.frames;
+  perf.draw = perf.drawAcc / perf.frames;
+  perf.frames = 0;
+  perf.acc = perf.simAcc = perf.drawAcc = 0;
+}
 
 // Settings live UNDER the profile - PROFILE.putSettings / PROFILE.settings,
 // js/profile.js, the one file in the game that touches storage. A pre-profile

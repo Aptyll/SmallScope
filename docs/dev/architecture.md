@@ -45,7 +45,10 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/player.js](../../js/player.js) | ~1010 | shared scope, no `window.*` export | the `Player` class and the ten of them, classes/kits/gear/cards, the entity arrays, damage & death |
 | [js/input.js](../../js/input.js) | ~1000 | shared scope, no `window.*` export | the physical-key translation and the binds (`keyName`, `KEY_ACTIONS`, `binds()` over the two schemes' maps, `keyIs`/`keyHeld`/`keyCap`, the rebind), `keys`/`mouse`, the listeners, and the four entry points every controller shares (`keyPress`/`keyRelease`, `pointerPress`/`pointerRelease`) plus the bare gestures (`fireDown`/`fireUp`, `openFlagWheel`, `openWheelNear`, `panelScrollBy`); `sampleHumanInput` folds keys, mouse and both sticks into the input struct |
 | [js/gamepad.js](../../js/gamepad.js) | ~320 | shared scope, no `window.*` export | a pad as the keyboard and mouse it stands in for: the standard-mapping tables, `padPoll` (once per frame from `loop()`), the play set and the menu set |
-| [js/world.js](../../js/world.js) | ~2030 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the camps at their fixed mirrored sites, and the practice training grounds |
+| [js/world.js](../../js/world.js) | ~1570 | shared scope, no `window.*` export | the tile grid, the `OBJECTS` table every kind of scenery is an entry in, worldgen, the road down the diagonal, the paths and the creek |
+| [js/zipline.js](../../js/zipline.js) | ~320 | shared scope, no `window.*` export | each side's zipline: laying the cable at boot and the ride every body takes on it |
+| [js/camps.js](../../js/camps.js) | ~360 | shared scope, no `window.*` export | the camps at their fixed mirrored sites: standing them up, stocking them, the respawn clock |
+| [js/practice.js](../../js/practice.js) | ~1410 | shared scope, no `window.*` export | the practice training grounds: their world, the dummies, the archery track and bell, the parkour, the practice bar, the deer ride |
 | [js/depth.js](../../js/depth.js) | ~260 | shared scope, no `window.*` export | the snow's depth: the seed's prevailing wind, the drifts laid in the lee of the scenery (`layDrifts`, at boot after `placeRocks`), `snowDepth`/`deepAt`, and wading (`wadeStep`, `wadeMul`) - the detail: [world](world.md#snow-depth) |
 | [js/landmarks.js](../../js/landmarks.js) | ~130 | shared scope, no `window.*` export | the story landmarks: the `LANDMARKS` table (each entry becomes an `OBJECTS` row), and their seeded placement |
 | [js/nav.js](../../js/nav.js) | ~320 | shared scope, no `window.*` export | `moveEntity`, `separateUnits`, and A* routing (`findPath`/`navTo`/`navStep`) |
@@ -62,7 +65,8 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ai-skill.js](../../js/ai-skill.js) | ~250 | shared scope, no `window.*` export | how well a bot plays: the difficulty levels and the skill layer, the hands between the ladder's decision and the input it writes |
 | [js/ai.js](../../js/ai.js) | ~990 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
 | [js/bots/api.js](../../js/bots/api.js) | ~340 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/bots/lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
-| [js/sim.js](../../js/sim.js) | ~1340 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
+| [js/sim.js](../../js/sim.js) | ~1420 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer`, the camera (`camX`/`camY`), fx aging, the snow |
+| [js/weather.js](../../js/weather.js) | ~260 | shared scope, no `window.*` export | the day's weather and the one wind field the sim and the draw read |
 | [js/shed.js](../../js/shed.js) | ~90 | shared scope, no `window.*` export | snow knocked off the pines by a gust's crest or a blow, raised in the sim and carried by `burst` |
 | [js/ai-callouts.js](../../js/ai-callouts.js) | ~190 | shared scope, no `window.*` export | bot callouts: when a bot tells its side something (HELP!, BIRD!, BEAR LOW!), the words of the brain's flag answers (ON IT), a grudge (YOU AGAIN), the anti-spam rules, `addCallout` |
 | [js/net/events.js](../../js/net/events.js) | ~80 | shared scope, no `window.*` export | the sim's cosmetics on their way to the screen: `sfxAt`/`sfxFor`/`sfxOwn`/`shakeAt`/`shakeFor`, the ring a host records them into (`evPush`/`evDrain`, only inside the step and only with `evRecord` on - solo records nothing) and `evPlay`, the client's replay of one entry. The online plan the js/net/ files follow: [docs/pvp-architecture.md](../pvp-architecture.md) |
@@ -72,11 +76,11 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/net/transport-steam.js](../../js/net/transport-steam.js) | ~190 | shared scope, no `window.*` export | the transport for the wrapper: a Steam lobby is the room and its owner the host, packets peer to peer through `window.steamBridge` - text reliable in parts over `STEAM_CHUNK`, a lossy delta as binary frames on the unreliable channel under its 1200-byte cap, dropped whole when a part never comes - a joiner reloading onto the lobby's seed |
 | [js/draw/ground.js](../../js/draw/ground.js) | ~330 | shared scope, no `window.*` export | `hash2`/`vnoise`, the prerendered ground and its runtime repaints, the road's pixels, the scenery bakes (the pine's wind frame, the chest, the cairn) - first of the draw files, every other one calls `hash2` |
 | [js/draw/landmarks.js](../../js/draw/landmarks.js) | ~25 | shared scope, no `window.*` export | a landmark's pixels and cast shade |
-| [js/draw/lakes.js](../../js/draw/lakes.js) | ~460 | shared scope, no `window.*` export | the wind's leavings, laid at the ground bake: drifts in the lee of what stands, the lakes' dust, downwind banks and long cracks, and the weather's per-frame pass over the ice (`drawLakeSky`) - the detail: [world](world.md#the-winds-leavings) |
+| [js/draw/lakes.js](../../js/draw/lakes.js) | ~510 | shared scope, no `window.*` export | the wind's leavings, laid at the ground bake: drifts in the lee of what stands, the lakes' dust, downwind banks and long cracks, and the weather's per-frame pass over the ice (`drawLakeSky`), and the lake's fish drawn under it (`drawIceFish`) - the detail: [world](world.md#the-winds-leavings) |
 | [js/draw/trample.js](../../js/draw/trample.js) | ~290 | shared scope, no `window.*` export | the trampled snow: the packed/churned grid every body stamps, its refill, and the chunk canvases that draw it under the footprints |
 | [js/draw/practice.js](../../js/draw/practice.js) | ~740 | shared scope, no `window.*` export | the practice arena's pixels only: the dummy and its meter, the training grounds, the ice parkour, the roll station, the archery track and the range bell |
 | [js/draw/depth.js](../../js/draw/depth.js) | ~100 | shared scope, no `window.*` export | deep snow's pixels: `DEEP_PAL` (loaded before ground.js, whose `SNOW_INK` appends it), `deepTone` (per pixel, from `snowTile`) and a body wading (`drawWading`, from `render()`'s body dispatch) |
-| [js/draw/zipline.js](../../js/draw/zipline.js) | ~110 | shared scope, no `window.*` export | the zipline's pixels: the pylon bakes (one per team skin), the cable pass `drawZips` and a rider's handle and rope `drawZipHandle` (the thing itself: the `zipline` banner, world.js) |
+| [js/draw/zipline.js](../../js/draw/zipline.js) | ~110 | shared scope, no `window.*` export | the zipline's pixels: the pylon bakes (one per team skin), the cable pass `drawZips` and a rider's handle and rope `drawZipHandle` (the thing itself: the `zipline` banner, js/zipline.js) |
 | [js/draw/icebreak.js](../../js/draw/icebreak.js) | ~190 | shared scope, no `window.*` export | an ice break's pixels: the warning cracks, the water, the plates, the crack band and the freeze back over (the thing itself: js/icebreak.js) |
 | [js/draw/orca.js](../../js/draw/orca.js) | ~80 | shared scope, no `window.*` export | the orca's pixels: its shadow under the ice and the breach out of the hole (the thing itself: js/orca.js) |
 | [js/draw/tunnel.js](../../js/draw/tunnel.js) | ~140 | shared scope, no `window.*` export | the burrow's pixels: the holes and their rings, a rider's mound, the dig's ring, the aim's ghost and the work key's cap over a hole (the thing itself: js/tunnel.js) |
@@ -101,7 +105,8 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/ui/forge.js](../../js/ui/forge.js) | ~390 | shared scope, no `window.*` export | the counter's FORGE face: the SHOP / MARKET / FORGE tab plates, the bench (weapon well, pile well, forge bar, preview, the plate that forges, the ore plates), its hits, drops and tooltips, and the `+N` mark a forged weapon wears in every well |
 | [js/ui/market.js](../../js/ui/market.js) | ~360 | shared scope, no `window.*` export | the counter's MARKET face: a row per good, the picked good's three-day chart with your trades pinned on it, the four trade plates, its hits and tooltips, and the ticker cards on the SHOP face |
 | [js/ui/panels.js](../../js/ui/panels.js) | ~1210 | shared scope, no `window.*` export | the TAB scoreboard + the (undrawn) event log, the M world map, the ESC settings slab |
-| [js/ui/menu.js](../../js/ui/menu.js) | ~3210 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, the lobby, the hero pop-up, the tech tree screen, `PATCH_TXT` |
+| [js/ui/menu.js](../../js/ui/menu.js) | ~3570 | shared scope, no `window.*` export | the title screen: menu planks, reroll die, tutorial + patch panels, the lobby, the hero pop-up, the tech tree screen, `PATCH_TXT` |
+| [js/ui/wiki.js](../../js/ui/wiki.js) | ~520 | shared scope, no `window.*` export | the wiki: its pages as data, the slab, tabs and rail, and drawing each page |
 | [js/ui/chars.js](../../js/ui/chars.js) | ~580 | shared scope, no `window.*` export | the character roster, the create / customize screen, and the title's character tag |
 | [js/ui/skins.js](../../js/ui/skins.js) | ~250 | shared scope, no `window.*` export | the skins screen the coins buy from, the title's coin tag, and `birdSkinFor`, which skin a bird wears |
 | [js/ui/ladder.js](../../js/ui/ladder.js) | ~600 | shared scope, no `window.*` export | the bot ladder screen: the offline ladder's standings, FIGHT, which seats a ladder bot on the rival side, and WATCH, two ladder bots playing every seat while the player watches |
@@ -110,7 +115,8 @@ tags breaks the build silently: a missing global is `undefined` at call time, no
 | [js/save.js](../../js/save.js) | ~450 | shared scope, no `window.*` export | saved matches: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), the slots through `PROFILE`, the autosave ring, the load's hand-off to the next page, and `saveHash`, the replay proof's hash |
 | [js/ui/saves.js](../../js/ui/saves.js) | ~545 | shared scope, no `window.*` export | the SAVES grid (the slot cards, each carrying its own verb, the arm-then-confirm load, a card's delete, name and carry), the lobby's SAVES plate and the HUD's saved mark |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
-| [js/boot.js](../../js/boot.js) | ~1840 | `DBG` + shared scope | the last file to load: the eagle drop (the corner roosts, the spur, the drop brief), the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
+| [js/eagle.js](../../js/eagle.js) | ~1510 | shared scope, no `window.*` export | the eagle drop: the corner roosts, the ride and the jump, the crash and the spur, the drop brief, the bird each side guards |
+| [js/boot.js](../../js/boot.js) | ~700 | `DBG` + shared scope | the last file to load: the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.
 
@@ -291,7 +297,7 @@ organized only by `// ------ name` banners; find any function by its banner in
 [code-map.md](code-map.md).
 
 **A file that decides things does not also draw them.** Every one of the sim files - core,
-player, input, gamepad, world, nav, wildlife, structures, robots, actions, ai, sim -
+player, input, gamepad, world, zipline, camps, practice, nav, wildlife, structures, robots, actions, ai, sim, weather -
 contains zero canvas calls; the pixels for what they own live under **js/draw/** (the world) and
 **js/ui/** (the HUD and the screens; the pad
 glyphs: `drawPadGlyph`, js/ui/panels.js), so the folder is the boundary. canvas.js is the
@@ -413,3 +419,11 @@ None of the scripts is part of the game, and nothing in `js/` may depend on one 
   missing), a `function`/`var` declared twice (**OVERRIDE**: the later one silently replaces the
   earlier everywhere), and a js file `index.html` never loads or loads twice. Git merges both
   kinds of collision cleanly and `node --check` passes each file alone, so nothing else catches them.
+- **`app/check-size.js`** — the size check, run by `check-globals.js` (or alone; `--top N` lists
+  the biggest files and functions). It counts code lines: blank, comment-only and data-only lines
+  (a pixel-grid row, a table of numbers) are free, and a function counts only its own lines, not
+  the functions nested in it. A file over `FILE_MAX` or a function over `FN_MAX` fails unless
+  `app/size-baseline.json` lists it, and a listed one may never grow past its number (a named
+  function keeps its allowance when a split moves it to another file). Baked files (a
+  `GENERATED by` header) are skipped. After a split shrinks a giant, `--tighten` lowers its
+  number and drops what is now under the limit; it never raises one.

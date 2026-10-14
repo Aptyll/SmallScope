@@ -1,6 +1,7 @@
 'use strict';
 // renderUI: the frame's UI pass in order - what goes over the world while
-// you play, from the minimap to the day headline. Last of the HUD files.
+// you play, from the minimap to the day headline - and the F3 info stack.
+// Last of the HUD files.
 // ------------------------------------------------------------ renderUI
 // the day headline's bake: bare outlined text wants a fade, and an outline
 // stamped under globalAlpha goes blotchy (the CLAUDE.md text rule), so the
@@ -144,5 +145,46 @@ function renderUI(now) {
     ctx.fillRect(0, 0, VIEW_W, VIEW_H);
     const t = 'PAUSED';
     drawPixelTextShadow(ctx, t, (VIEW_W - pixelTextWidth(t, 2)) / 2, VIEW_H / 2 - 5, '#f4f7ff', '#0a0e23', 2);
+  }
+}
+
+// ------------------------------------------------------------ the info stack
+// the info stack (settings.info - the INFO row in the ESC menu, or F3, the
+// minecraft reflex): fps, the ms a frame spends stepping and drawing, the
+// framed player's tile coordinates, and the run seed as one vertical list on
+// the left edge at the top quarter of the view, clear of the berry/fish
+// counters above it, above every overlay. In title only the fps, sim and
+// draw lines show - nobody stands anywhere yet, and the menu prints the seed
+// itself with the reroll die.
+function drawTags() {
+  if (!settings.info) return;
+  // two columns: a dim label, then the value on one shared x so the numbers
+  // line up down the stack - the same dim-label / bright-value pairing the
+  // berry and fish counters use. Red means one thing and one thing only:
+  // something is wrong (a bad frame rate, a sample bank that did not load).
+  // Nothing else is tinted for decoration.
+  const lx = 5, vx = lx + Math.max(pixelTextWidth('SEED'), pixelTextWidth('DRAW')) + 5;
+  let y = Math.round(VIEW_H * 0.25);
+  const line = (label, value, col) => {
+    drawPixelTextOutline(ctx, label, lx, y, '#7a8bb8', '#0f1632');
+    drawPixelTextOutline(ctx, value, vx, y, col || '#f4f7ff', '#0f1632');
+    y += 10;
+  };
+  line('FPS', String(perf.fps), perf.fps < 45 ? '#ff9a8a' : '#f4f7ff');
+  // where a frame's time goes, in ms: the steps, then the drawing. Red once
+  // the two together no longer fit a 60 Hz frame
+  const slow = perf.sim + perf.draw > 1000 / 60 ? '#ff9a8a' : '#f4f7ff';
+  line('SIM', perf.sim.toFixed(1), slow);
+  line('DRAW', perf.draw.toFixed(1), slow);
+  // the sampled sound bank: decoded / asked for. Red on anything missing,
+  // because an empty bank is silent in exactly the way a mis-wired cue is -
+  // every sampled sound falls back to the old synth line and the game sounds
+  // untouched. See js/audio.js loadBank().
+  const bs = SFX.banked();
+  line('SFX', bs.got + '/' + bs.want, bs.got < bs.want ? '#ff9a8a' : '#f4f7ff');
+  if (state.mode !== 'title') {
+    const vp = viewPlayer(); // spectators read the player the camera frames
+    line('POS', Math.floor(vp.x / TILE) + ', ' + Math.floor(vp.y / TILE));
+    line('SEED', String(SEED));
   }
 }

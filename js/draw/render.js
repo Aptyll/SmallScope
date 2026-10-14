@@ -188,45 +188,8 @@ function render() {
   drawCreekFish(ox, oy); // under the water: drawn first, so the glints run over it
   drawCreekFlow(ox, oy, Math.floor(ox / TILE), Math.floor(oy / TILE), Math.floor((ox + WV_W) / TILE), Math.floor((oy + WV_H) / TILE));
 
-  // fish: the lake's frost pike and gold sunfish (f.kind), SHADOWS drifting
-  // under the thin ice and crisp in open holes - both pre-turned to the
-  // nearest of the baked headings, so a fish is never rotated off the pixel
-  // grid (SPRITES.iceFish, js/sprites/fish.js)
-  for (const f of fish) {
-    // `vis` is how much of the body is over water (1 for every born fish).
-    // The alpha ramps off the BACK half of it, so an emerger stays completely
-    // invisible until most of it is under the ice and only its tail is still
-    // outside - by which point that tail is a couple of pixels at a fraction
-    // of 0.4. Nothing readable is ever drawn over snow.
-    const em = f.born ? 1 : Math.max(0, (f.vis - 0.5) * 2);
-    if (em <= 0) continue;
-    const sx = f.x - ex, sy = f.y - ey;
-    if (sx < -16 || sy < -16 || sx > WV_W + 16 || sy > WV_H + 16) continue;
-    const F = SPRITES.iceFish[f.kind] || SPRITES.iceFish.fish, n = F.shadow.length;
-    const hd = ((Math.round(f.a / (Math.PI * 2) * n) % n) + n) % n, wag = Math.sin(f.t * 7) > 0 ? 1 : 0; // the tail's wag
-    const x0 = Math.round(sx), y0 = Math.round(sy);
-    const sh = F.shadow[hd][wag];
-    ctx.globalAlpha = 0.42 * em; // the rim at 0.42, the core (baked at half) about 0.22: look N
-    ctx.drawImage(sh, x0 - (sh.width >> 1), y0 - (sh.height >> 1));
-    // whatever of it lies under an open hole is the fish itself, crisp: cut
-    // to the hole's own tiles, so a long body crossing the rim is half fish
-    // in the water and half shadow under the ice
-    const tx = Math.floor(f.x / TILE), ty = Math.floor(f.y / TILE);
-    let cut = false;
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!inWorld(tx + dx, ty + dy) || ground[idx(tx + dx, ty + dy)] !== 2 || iceBreakHolds(idx(tx + dx, ty + dy))) continue; // a break's water is its own pixels, laid over this
-      if (!cut) { ctx.save(); ctx.beginPath(); cut = true; }
-      ctx.rect(Math.round((tx + dx) * TILE - ex), Math.round((ty + dy) * TILE - ey), TILE, TILE);
-    }
-    if (cut) {
-      ctx.clip();
-      const sw = F.swim[hd][wag];
-      ctx.globalAlpha = 0.95 * em;
-      ctx.drawImage(sw, x0 - (sw.width >> 1), y0 - (sw.height >> 1));
-      ctx.restore();
-    }
-    ctx.globalAlpha = 1;
-  }
+  // the lake's fish under the ice, shadows and crisp in open holes (js/draw/lakes.js)
+  drawIceFish(ex, ey);
 
   // the orca, a shadow under the same ice (js/draw/orca.js)
   drawOrcaShadow(ex, ey, now);
@@ -488,7 +451,7 @@ function render() {
       drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
       if (o === hovO) drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock, under the pointer
     } else if (o.type === 'hut') {
-      // the HOG HUT (CAMPS.hut, world.js): the anchor is the front-left tile
+      // the HOG HUT (CAMPS.hut, camps.js): the anchor is the front-left tile
       // of its 2x2 footprint and draws the whole building centred over the
       // pair, its chimney smoking through HUT_FR ms a frame; its three
       // `part` tiles resolve to it above and draw nothing of their own
@@ -510,7 +473,7 @@ function render() {
       // the practice target: skids on its tile, everything else drawn up off
       // it like a tree. The readout bar only appears once it is hurt, and
       // updatePractice mending it is what takes the bar away again. While
-      // the archery round's sink runs (agSinkU, js/world.js) the sprite
+      // the archery round's sink runs (agSinkU, js/practice.js) the sprite
       // drops and the snow line crops it - the bottom is already under the
       // field - and at full depth the object leaves the grid entirely.
       const su = PRACTICE ? agSinkU() : 0;
@@ -783,7 +746,7 @@ function render() {
       Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / 0.9);
   }
 
-  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim.js)
+  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/weather.js)
   drawDropAir(ex, ey, now, false); // the flight path, and a bird on the ground (the fliers: the air layer, below)
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
@@ -858,7 +821,7 @@ function render() {
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (PRACTICE && state.mode === 'play') drawAgameUI(now);
   if (state.mode === 'drop') renderDropUI(now);
-  // the drop brief's roost headlines (updateDrop's tour, js/boot.js)
+  // the drop brief's roost headlines (updateDrop's tour, js/eagle.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
   else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
   // the M map works mid-flight too: the ride's wider read lives here now
@@ -1230,40 +1193,6 @@ function drawSwaps(ex, ey) {
   ctx.globalAlpha = 1;
 }
 
-// the info stack (settings.info - the INFO row in the ESC menu, or F3, the
-// minecraft reflex): fps, the framed player's tile coordinates, and the run
-// seed as one vertical list on the left edge at the top quarter of the view,
-// clear of the berry/fish counters above it, above every overlay. In title
-// only the fps line shows - nobody stands anywhere yet, and the menu prints
-// the seed itself with the reroll die.
-function drawTags() {
-  if (!settings.info) return;
-  // two columns: a dim label, then the value on one shared x so the numbers
-  // line up down the stack - the same dim-label / bright-value pairing the
-  // berry and fish counters use. Red means one thing and one thing only:
-  // something is wrong (a bad frame rate, a sample bank that did not load).
-  // Nothing else is tinted for decoration.
-  const lx = 5, vx = lx + pixelTextWidth('SEED') + 5;
-  let y = Math.round(VIEW_H * 0.25);
-  const line = (label, value, col) => {
-    drawPixelTextOutline(ctx, label, lx, y, '#7a8bb8', '#0f1632');
-    drawPixelTextOutline(ctx, value, vx, y, col || '#f4f7ff', '#0f1632');
-    y += 10;
-  };
-  line('FPS', String(perf.fps), perf.fps < 45 ? '#ff9a8a' : '#f4f7ff');
-  // the sampled sound bank: decoded / asked for. Red on anything missing,
-  // because an empty bank is silent in exactly the way a mis-wired cue is -
-  // every sampled sound falls back to the old synth line and the game sounds
-  // untouched. See js/audio.js loadBank().
-  const bs = SFX.banked();
-  line('SFX', bs.got + '/' + bs.want, bs.got < bs.want ? '#ff9a8a' : '#f4f7ff');
-  if (state.mode !== 'title') {
-    const vp = viewPlayer(); // spectators read the player the camera frames
-    line('POS', Math.floor(vp.x / TILE) + ', ' + Math.floor(vp.y / TILE));
-    line('SEED', String(SEED));
-  }
-}
-
 // ------------------------------------------------------------ debug overlays
 // What the sim actually tests, drawn on top of what the art shows. One key:
 // '.' toggles `settings.hitbox` between 0 (off) and 2 (bodies + the route
@@ -1514,6 +1443,8 @@ function cursorInfo() {
     if (m.screen === 'create') return { kind: m.charT >= 1 && createHit() ? 'hand' : 'arrow' };
     if (m.screen === 'skins') return { kind: m.skinT >= 1 && skinsHit() >= 0 ? 'hand' : 'arrow' };
     if (m.screen === 'ladder') return ladderCursor();
+    if (m.screen === 'rooms') return { kind: m.roomsT >= 1 && roomsHit() ? 'hand' : 'arrow' };
+    if (m.screen === 'room') return { kind: m.roomsT >= 1 && roomHit() ? 'hand' : 'arrow' };
     if (!m.panel && (overCharTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };

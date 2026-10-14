@@ -299,10 +299,12 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `t` | Dir | Form | Body |
 | --- | --- | --- | --- |
 | `hello` | c→h | JSON | `uid` (the client's identity across a reconnect, kept per tab in `sessionStorage`), `patch` (`PATCH_TXT`), `seed`, `map` (`MAP_TYPE` - the same world means the same shape of it, and a mismatch refuses with `SEED`), `name`, `cls`, `look` - from the profile's character |
-| `welcome` | h→c | JSON | `slot`, `hostSlot`, `seed`, `tick`, `roster` |
-| `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
+| `welcome` | h→c | JSON | `slot`, `hostSlot`, `seed`, `tick`, `roster`, `phase` (the waiting room's page: `room` or `pick`) |
+| `refuse` | h→c | JSON | `why`: `VERSION` / `SEED` / `LATE` / `FULL` / `KICKED` from the host; `NOROOM` / `FULL` from the relay. A client also sets `NET.refused` itself to `BYTES` (a frame it could not decode) and `HOSTGONE` |
 | `roster` | h→c (`*`) | JSON | `roster`: ten `{control, team, name, cls, look}`, on every join and leave. A client turns the host's `human` into `remote` and keeps its own slot `human` |
 | `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
+| `seat` | c→h | JSON | `slot`: the guest asks to move to that seat's side, swapping teams with the bot or empty seat in it (`seatSwap`); the host answers with a `roster` |
+| `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the stage and LOCK IN) |
 | `full` | h→c | bytes, reliable | `tick`, `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
 | `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
 | `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, eatBerry, eatFish, useCard, ability, cmd}`. One struct per client tick, sent once; the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
@@ -351,15 +353,15 @@ are close to half the ring and the first thing to derive locally instead of ship
 The same screens and the same protocol ride either transport; only the list and the room differ
 (a relay room with a four-letter code, or a public Steam lobby of `STEAM_LOBBY_MAX` 10).
 
-1. **The MULTIPLAYER plank** on the title opens the rooms screen (`beginRooms`, js/ui/menu.js): a
-   HOST plank over the open rooms, fed live by `wsRooms` - or by `steamRooms`, polled every
-   `STEAM_LIST_T` (2 s), when `netSteam()`. A row reads as its host's name, ten seat pips lit per
-   person in their side's paint, the code and a dot once the match is live; a room on another
+1. **The MULTIPLAYER plank** on the title opens CUSTOM GAMES (`beginRooms`, js/ui/rooms.js): the
+   open rooms as rows over CREATE / JOIN / BACK, fed live by `wsRooms` - or by `steamRooms`, polled every
+   `STEAM_LIST_T` (2 s), when `netSteam()`. A row reads as its host's game, its map, ten seat pips lit per
+   person in their side's paint, a dot once the match is live and the code; a room on another
    patch is dimmed and inert with its patch printed (`roomOk`). A Steam lobby without a `patch`
    key is someone else's test on a shared App ID and is not listed.
 2. **Host.** `hostRoom()` -> `netHost()` -> the transport's `listen()`: the relay deals a code;
    the Steam transport calls the bridge's `createLobby('public', 10)` and writes `patch`, `seed`,
-   `state: 'open'` and the host's name into lobby data. The host then sits in the waiting room
+   `state: 'open'` and the host's name into lobby data. The host then sits in the room
    and publishes its list entry once the transport is open (`netHostRoom`), and again on every
    join, leave and at the drop (`state: 'live'`).
 3. **Join.** `joinRoom(k)`: **SEED is decided at load**, so a page born on another seed reloads
@@ -368,13 +370,20 @@ The same screens and the same protocol ride either transport; only the list and 
    `connect()`, and once the transport is open the client sends `hello`.
 4. **The host answers** in `netHostHello`: `refuse` on another patch or seed, else the slot - the
    parked one for a returning `uid`, otherwise the first AI slot on the side with fewer PEOPLE
-   (`LATE` past `LATE_JOIN_T` into a live match, `FULL` with no AI slot left). The body becomes
+   (`LATE` past `LATE_JOIN_T` into a live match, `FULL` with no seat left; before the drop an
+   empty seat is taken before a bot's, `KICKED` for a uid the host showed out). The body becomes
    `control: 'remote'` and takes the hello's name, look and class; then `welcome`, a `full`, a
-   `roster` to everyone and a fresh list entry. There is no team swap, no ready flag and no kick.
-5. **Waiting room.** The lobby, which a guest sees without PLAY and with the host's
-   name on a frozen plank; the host wears a crown and people a rim. The client builds its bodies
-   from the welcome's roster (`initPlayers(roster, slot)`) and updates them in place on each
-   `roster`. The host's PLAY count is meant to reach every screen as `count` (broken - Status).
+   `roster` to everyone and a fresh list entry. There is no ready flag.
+5. **Waiting room**, two pages the host turns for everyone (`NET.phase`, the `phase` message).
+   The ROOM (js/ui/rooms.js): both sides' five seats; a click across the rule moves you there, a
+   `seat` message from a guest, and the bot or empty seat in it swaps sides with you (`seatSwap`:
+   a side is `p.team`, so nobody is reseated); the host's hand on a seat's far end shows a person
+   out (`seatKick`) or empties and refills a bot's seat (`seatBot`, `control: 'none'`). The host's
+   START turns to the PICK, the lobby, which a guest sees without LOCK IN and with the host's
+   name in its place; the host's ESC there turns back. Seats are locked once the count runs
+   (`seatsOpen`). The client builds its bodies from the welcome's roster
+   (`initPlayers(roster, slot)`) and updates them in place, its own side included, on each
+   `roster`. The host's LOCK IN count reaches every screen as `count`.
 6. **The drop.** The host's count ends in `lockIn` and `beginDrop`, which seats by slot. A client
    never starts anything: the ride arrives as snapshot state (`state.drop`, `aboard`, `dropT`, the
    eagles) and `netClientMode` moves its screen from the title to the ride, to play, to the death

@@ -1,6 +1,6 @@
 # Rendering
 
-> The title's MULTIPLAYER item and its rooms screen, and the waiting room:
+> The title's MULTIPLAYER item, its CUSTOM GAMES list and room, and the waiting room:
 > [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
 
 Everything that draws: the camera, the pass order, the baked panels, and the pixel cursor.
@@ -188,7 +188,7 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
    ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: whitefish and snow char under the
    water, at `SWIM_A` alpha with a rim in the water's own shade) → **the creek's current**
    (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
-   and over the fish, on the field's clock) → under-ice fish (frost pike and gold sunfish:
+   and over the fish, on the field's clock) → under-ice fish (`drawIceFish`, js/draw/lakes.js: frost pike and gold sunfish,
    `SPRITES.iceFish[kind].shadow` at 0.42 alpha, a solid rim over a half-strength core, and the crisp `swim` sprite clipped to the open-hole
    tiles round a fish crossing one) → **the orca's shadow** (`drawOrcaShadow`, js/draw/orca.js:
    the same look at a deer's size, cut to the ice's own pixels so it never shows over the road it
@@ -244,7 +244,9 @@ Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — eve
 drew in world space, everything below draws in screen space; see
 [World zoom](#world-zoom-and-the-two-pixel-spaces)). **Screen space**:
 `renderWeather` (snow, see below) →
-`renderVignettes` → **`replayTick`** (banks the frame just finished into the replay ring — it
+`renderVignettes` (the frame vignette is a canvas baked once per canvas size and blitted, since
+a radial gradient filled over every device px cost 5 ms a frame on a CPU-drawn canvas) →
+**`replayTick`** (banks the frame just finished into the replay ring — it
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
 itself) → `tipResolve` ([the hover tooltip](#the-hover-tooltip)'s one answer for the frame) →
 `renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
@@ -2590,9 +2592,10 @@ did). The practice arena is exempt (`PRACTICE`): its light never changes, for it
 
 **Midday** is clean light, and clean light is contrast: across the noon window (`TOD_NOON` ±
 `TOD_NOON_HALF`, easing over `TOD_NOON_FADE`, gated by `todNoon`) the world buffer is multiplied
-**by itself** at `TOD_CRISP` — one blit — which deepens the needles and the cast shade far more
-than the drifts. With the GPU synced on seed 42 the whole hour, blit included, costs nothing a
-frame time shows.
+**by itself** at `TOD_CRISP`, which deepens the needles and the cast shade far more
+than the drifts. It goes through a copy (`gradeCv`, js/canvas.js): the frame's used corner is
+copied there and multiplied back. Never draw a canvas onto itself: the browser then copies the
+whole backing store and again on the next stroke, which cost 4 ms a frame on a CPU-drawn canvas.
 
 ### The reflected sky
 
@@ -2715,7 +2718,7 @@ canvases the same scene runs at 87 fps.
 
 ### The wind field
 
-One field, in the `wind` banner of [js/sim.js](../../js/sim.js), and everything the
+One field, in the `wind` banner of [js/weather.js](../../js/weather.js), and everything the
 weather moves reads it rather than keeping a clock of its own:
 
 - `state.windT` is its clock, stepped in `updateFx` — the **sim** clock, not wall time, so
@@ -2832,7 +2835,7 @@ weather moves reads it rather than keeping a clock of its own:
 
 ### The day's weather
 
-Every day of a match rolls one of four weathers (the `weather` banner, js/sim.js) off the seed
+Every day of a match rolls one of four weathers (the `weather` banner, js/weather.js) off the seed
 and `state.day` with `hash2`, so every client that knows the day (the snapshot already carries it)
 knows the sky, and the wire carries nothing new. `weatherOf(day)` names it off `WX_ODDS`; the
 practice arena always gets `snow`. A weather is only a row of **dials** in `WEATHERS` that the

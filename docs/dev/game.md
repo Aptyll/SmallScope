@@ -26,8 +26,7 @@ worldgen and readable from anywhere, with the nests beside it, so the way to a b
 sightline down its spur ([the road](world.md#the-road)). Half a minute after landing each
 merchant raises a **barracks** (a bot bay) behind its bird, and two more as its logs pay for them:
 every thirty seconds each one marches a **wave** of soldier bots out to the road and down it at the
-rival bird: three swinging axes and a flag bearer behind them that makes the bots near it quicker,
-harder-hitting and tougher, one axe more every three minutes, a side's live soldiers capped across its bays. Both sides
+rival bird, one soldier more every three minutes, a side's live soldiers capped across its bays. Both sides
 get the same waves, so with nobody on the road the two columns meet in the middle and grind —
 which side's wave gets through is decided by who walks out to it. **Drive off the rival eagle
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
