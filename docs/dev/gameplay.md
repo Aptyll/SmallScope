@@ -1823,8 +1823,8 @@ still load. All three run
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
-| alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, BEARHEART for the whole team, a feed line |
-| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, BEARHEART for the whole team, a feed line |
+| alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the BLACK BUFF for the whole team, a feed line |
+| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the BROWN BUFF for the whole team, a feed line |
 
 The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
 [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two coats,
@@ -1833,12 +1833,14 @@ kill ([Wildlife](#wildlife)). The teammate share goes through `awardGold` at eac
 eat it the same tick — the XP is what is guaranteed), to every active teammate who is not dead
 or in the air; the buff goes to every active teammate regardless.
 
-**BEARHEART** (`CAMP_BUFF_NAME`, `campBuff(p, t)`, the constants above the `camp monsters` banner): `p.buffT`
+**The bear buffs**: each bear gives its own, the **BLACK BUFF** and the **BROWN BUFF** (`MONSTER`'s
+`buff`, named in the wiki), and they do the same thing (`campBuff(p, t, kind)`, the constants above
+the `camp monsters` banner; `p.buffKind` says whose): `p.buffT`
 seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, applied in
 `hurtUnit` — a shot, a roll and a stomp alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
-`abilityMoveMul`). Either midline kill gives the killer's whole team BEARHEART for `CAMP_BUFF_EPIC_T`
-(120 s), and a fresh grant only ever extends what is left. It is worn as an
-**amber ring of twelve pips around the feet** (`drawBuffRing`, js/draw/bodies.js) that loses a pip
+`abilityMoveMul`). Either midline kill gives the killer's whole team that bear's buff for `CAMP_BUFF_EPIC_T`
+(120 s); a fresh grant only ever extends what is left, and the latest bear is the one worn. It is worn as a
+**ring of twelve pips around the feet in the bear's colour** (`buffCol`: amber the brown, violet the black) (`drawBuffRing`, js/draw/bodies.js) that loses a pip
 at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
 goes out with the body on death. There is no HUD element for it: the ring is the read.
 
@@ -1886,8 +1888,8 @@ rather than a different resource (the League model: one number, many ways to ear
 | rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
 | deer | `deer` 3 coins × 6 → 18 | the big mobile target: two of them, each running its side's line |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
-| black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and BEARHEART for the whole team |
-| brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and BEARHEART for the whole team |
+| black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BLACK BUFF for the whole team |
+| brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the BROWN BUFF for the whole team |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | gold pump (`generator`) | `tiers[tier].pay` every `period` s: 2 / 4 / 7 every 10 s — 12 / 24 / 42 a minute, so the first pays back in 5 min and each upgrade in 6.7 and 7.8 | passive income, deposited to its owner; a 4x2 building, and each one its owner already has makes the next cost 2.5x (`ramp`, `buildCost`: 60, 150, 375), so the second pays back in 12.5 min and the next tier is the better buy |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |

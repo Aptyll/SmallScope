@@ -827,14 +827,14 @@ function animalDies(a) {
     addFloater(a.x, a.y - 68, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
   }
   // a midline camp's kill (the black bear's and the brown bear's, one side's each
-  // and paid the same): the whole team is paid and given CAMP_BUFF_NAME, wherever they
+  // and paid the same): the whole team is paid and given that bear's buff, wherever they
   // are, and the feed says who did it - the kills that are news to both sides
   if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) {
     if (hunter) {
       for (const q of players) {
         if (!q.active || q.team !== hunter.team) continue;
         if (q !== hunter && !q.dead && !inAir(q)) awardGold(q, EPIC_TEAM_GOLD, q.x, q.y);
-        campBuff(q, CAMP_BUFF_EPIC_T);
+        campBuff(q, CAMP_BUFF_EPIC_T, a.kind);
       }
       logEvent(hunter.name + ' SLEW THE ' + MONSTER[a.kind].feed, hunter);
     }
@@ -855,7 +855,7 @@ function animalDies(a) {
 // body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - a
 // bear is a big sprite and a body a roll does NOT pass through - and
 // `teamPay` for the two midline camps' ones, whose kill pays the killer's
-// whole team and gives it CAMP_BUFF_NAME (animalDies) and names it in the feed as `feed`. The creek gives one to each side's bank
+// whole team and gives it the bear's own `buff` (animalDies, worn in `buffCol`) and names it in the feed as `feed`. The creek gives one to each side's bank
 // (creekBends, world.js), so the two are one fight in two coats: the brown
 // bear (`dire`, RED's bank) and the black bear (`alpha`, BLUE's) have the
 // same row, the same hp (ANIMAL_HP) and the same pay. `cause` is the
@@ -875,8 +875,8 @@ const BEAR_LV = 6;
 const BEAR_FRAME = { s: 2, w: 24, segs: 5, centre: true };
 const MONSTER = {
   wolf:  { bite: 9,  lvBite: 1, reach: 13, cd: 1,   spd: 96, r: 4.5, mass: 2,   big: false, cause: 'wolf' }, // the pack: faster than a walk, slower than a slide
-  alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
-  dire:  { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // the same bear on the other bank
+  alpha: { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BLACK BEAR', buff: 'BLACK BUFF', buffCol: '#c2a6ff', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // a midline camp's: a wall of hp, and a swipe that takes a quarter of you
+  dire:  { bite: 22, lvBite: 3, reach: 44, cd: 1.4, spd: 100, r: 18,  foot: 5, mass: 5,   big: true,  teamPay: true, feed: 'BROWN BEAR', buff: 'BROWN BUFF', buffCol: '#ffb04a', anchor: true, cause: 'bear', lv: BEAR_LV, frame: BEAR_FRAME }, // the same bear on the other bank
 };
 // the causes a beast's bite names, which is how damagePlayer (js/player.js)
 // tells a bite apart from the world's other blows for the post-game record
@@ -906,20 +906,21 @@ const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - t
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
 const CAMP_SEE = 9 * TILE; // px an awake monster spots a player across (seenAt shortens it for the hidden)
 const CAMP_SWITCH = TILE;  // px closer another player must be before an awake monster turns to them
-// The kills' rewards past the gold (YIELD, core.js). BEARHEART (CAMP_BUFF_NAME) is what
-// a midline camp's kill wears: CAMP_BUFF_DMG on every blow the player lands
+// The kills' rewards past the gold (YIELD, core.js). A bear buff is what a
+// midline camp's kill wears, each bear's its own (MONSTER's `buff` and `buffCol`:
+// the BLACK BUFF and the BROWN BUFF, which do the same thing): CAMP_BUFF_DMG on every blow the player lands
 // (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
 // abilities.js), worn as the amber ring under the feet that empties as it
-// runs out (drawPlayer, draw-world.js). The two bears pay
+// runs out, in the bear's colour (drawBuffRing, js/draw/bodies.js). The two bears pay
 // EVERY player on the killer's team EPIC_TEAM_GOLD and give the whole team
 // the buff for CAMP_BUFF_EPIC_T - the kills in the game that pay people who were not
 // there, which is what makes them worth walking to as five.
-const CAMP_BUFF_NAME = 'BEARHEART'; // what the wiki and the patch notes call it
 const CAMP_BUFF_EPIC_T = 120;
 const CAMP_BUFF_DMG = 1.25;
 const CAMP_BUFF_SPD = 1.15;
 const EPIC_TEAM_GOLD = 40;
-function campBuff(p, t) { if (p && p.active) p.buffT = Math.max(p.buffT || 0, t); }
+// a fresh grant only extends what is left, and the latest bear is the one worn
+function campBuff(p, t, kind) { if (p && p.active) { p.buffT = Math.max(p.buffT || 0, t); p.buffKind = kind || p.buffKind || 'dire'; } }
 const BIRD_FLUSH = 34;     // px: a player this close puts the whole rookery up
 const BIRD_SPD = 112;      // px/s in flight
 const BIRD_ALT = 15;       // px a perched bird sits above its tile; flight climbs past it
