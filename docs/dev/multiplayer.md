@@ -743,7 +743,7 @@ Three small rules, and the teamwork is what they add up to:
 The plan also reads the match once for the side (`T.stance`, the dashboard's `plan`): HOLD (its
 bird under threat), BRACE, WINDOW, BEAR, PUSH, PRESS (a stalker out) or FARM. The **window** opens when
 `AI_WINDOW_DOWN` (2) more rivals than own bots are down past `AI_STALK_AT`, or most of the side
-wears BEARHEART, and stays open at least `AI_WINDOW_MIN` (12 s): every bot but the guards
+wears a bear buff, and stays open at least `AI_WINDOW_MIN` (12 s): every bot but the guards
 pushes while it lasts, as a rush (no column to walk with, no regroup). The **brace**
 (`aiBrace`): `AI_BRACE_N` (2) rivals seen inside the side's half in the last `AI_BRACE_T` (4 s),
 the deepest of them further along the line between the birds than the side's own deepest
@@ -756,7 +756,7 @@ strafe across a line does not flip it between jobs. The **bear**: from `AI_BEAR_
 `AI_BEAR_LV` (6), with three to spare, its bird quiet and no rival seen by the bear, sends a
 party of `AI_BEAR_N` (3) to the teamPay camp nearest its own bird (`aiSideBear`). They meet
 `AI_BEAR_R` off it until all three are there or `AI_BEAR_WAIT` (15 s) runs out (`aiBearJob`),
-then the camp rung (4) fights it. The kill pays the whole side and gives it BEARHEART, which opens the window:
+then the camp rung (4) fights it. The kill pays the whole side and gives it the bear's buff, which opens the window:
 bear, then push, is a loop that comes out of the rules rather than a script.
 
 The fight rung weighs the numbers (`aiOdds`: rivals within `AI_ODDS_R` of the foe against its own

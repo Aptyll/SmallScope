@@ -1668,7 +1668,7 @@ window.DBG = {
   // the shoal the water this shape froze can hold (the fish banner, wildlife.js)
   get fishCap() { return fishCap; }, get fishFloor() { return fishFloor; },
   // the camps: the live registry, the table behind it, where each site is,
-  // what is where, restock by hand, and give a player BEARHEART by hand
+  // what is where, restock by hand, and give a player a bear buff by hand (campBuff(p, t, 'alpha' | 'dire'))
   camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff, flushBirds,
   // the map shape this page grew, the table behind it, the rule one IS, and
   // the paths it cut: DBG.mapTerrain(k, tx, ty) answers for any shape

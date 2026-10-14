@@ -876,7 +876,7 @@ function structsInCone(src, x, y, a, r, half) {
 function hurtUnit(e, dmg, nx, ny, src, o) {
   if (!unitAlive(e)) return;
   o = o || {};
-  // BEARHEART (campBuff, wildlife.js): every blow a player wearing it lands
+  // a bear buff (campBuff, wildlife.js): every blow a player wearing it lands
   // is worth more, whatever landed it - a shot, a roll, a stomp alike
   if (src instanceof Player && src.buffT > 0) dmg = Math.round(dmg * CAMP_BUFF_DMG);
   const ty = DMG_TYPES[o.type] || DMG_TYPES.blunt;

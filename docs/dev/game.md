@@ -182,7 +182,7 @@ bot on the team lifts its own and follows it. [Team flags](gameplay.md#team-flag
 **The camps are the jungle, and the jungle is symmetric.** Six fixed sites, three on each side of the
 road, mirrored so both teams walk the same distance: four **WOLF DENS** that pay gold, and one
 **BLACK BEAR STONE** and one **BROWN BEAR DEN**, each a bear patrolling one side's bank of the creek, whose kill pays and
-gives the whole team BEARHEART the same either way.
+gives the whole team that bear's own buff (the BLACK BUFF or the BROWN BUFF, which do the same thing).
 Every camp is **neutral until hit** — then the whole camp comes for the hitter, leashes when
 they leave its ground and heals — and every site sits well off the road, so the lane is never a
 wolf's. [Camps](world.md#camps), [camp monsters](gameplay.md#camp-monsters-neutral-until-hit).

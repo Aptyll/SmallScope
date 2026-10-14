@@ -242,12 +242,13 @@ function centreTextX(sx, txt, scale) { return Math.round(sx) - (pixelTextWidth(t
 // something that is usually absent is what made the plate lopsided before.
 const FRAME_DX = 3;
 
-// BEARHEART (CAMP_BUFF_NAME), worn: an amber ring of pips around the feet, rimmed dark
+// A bear buff, worn: a ring of pips around the feet in that bear's colour
+// (MONSTER's buffCol: amber the brown, violet the black), rimmed dark
 // so it reads on snow, that loses a pip at a time as the buff runs out -
 // the ring IS the timer, and a full ring on a rival is the warning. The
 // longest buff (a bear's) fills every pip.
 const BUFF_RING = 12;                // pips round the ring
-const BUFF_COL = '#ffb04a';          // the epic camp's own map ink
+const BUFF_COL = '#ffb04a';          // a buff with no bear named (a hand grant): the brown's amber
 function drawBuffRing(p, cx, cy, now) {
   const n = Math.ceil(BUFF_RING * Math.min(1, p.buffT / CAMP_BUFF_EPIC_T));
   const pulse = 7 + ((now * 3) & 1); // breathes a pixel
@@ -255,7 +256,7 @@ function drawBuffRing(p, cx, cy, now) {
     const a = -Math.PI / 2 + (i / BUFF_RING) * Math.PI * 2;
     const x = Math.round(cx + Math.cos(a) * pulse), y = Math.round(cy + Math.sin(a) * pulse * 0.6);
     ctx.fillStyle = '#0f1632'; ctx.fillRect(x - 1, y - 1, 3, 3);
-    ctx.fillStyle = BUFF_COL; ctx.fillRect(x, y, 1, 1);
+    ctx.fillStyle = (MONSTER[p.buffKind] && MONSTER[p.buffKind].buffCol) || BUFF_COL; ctx.fillRect(x, y, 1, 1);
   }
 }
 
