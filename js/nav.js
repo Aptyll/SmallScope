@@ -7,8 +7,9 @@
 function moveEntity(e, dx, dy, r, strict) {
   // only players can enter open water - an ice hole or the creek (they fall
   // in - see updatePlayer); animals and robots treat those tiles as walls
-  const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e) :
-    (tx, ty) => isSolidTile(tx, ty, e) || waterAt(tx, ty); // e: its own side's gates stand open
+  // (the cistern's stone is held to by the pixel below, cisternReach, not by its tiles)
+  const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e, true) :
+    (tx, ty) => isSolidTile(tx, ty, e, true) || waterAt(tx, ty); // e: its own side's gates stand open
   // ...and the open water of an ice break, by the pixel at the feet, on a
   // tile that is still ice (js/icebreak.js) - never a step that starts in it,
   // so nothing standing in the water is pinned there
@@ -25,7 +26,8 @@ function moveEntity(e, dx, dy, r, strict) {
       if (solid(tx, ty)) hit = true;
     }
     if (!hit && wet && wet(nx, e.y)) hit = true;
-    if (!hit) e.x = nx; else blockedX = true;
+    const t = hit ? 0 : cisternReach(e.x, e.y, nx, e.y, r); // the cistern's stone: up to it, never into it
+    if (t === 1) e.x = nx; else { e.x += dx * t; blockedX = true; }
   }
   // Y axis
   if (dy !== 0) {
@@ -38,7 +40,8 @@ function moveEntity(e, dx, dy, r, strict) {
       if (solid(tx, ty)) hit = true;
     }
     if (!hit && wet && wet(e.x, ny)) hit = true;
-    if (!hit) e.y = ny; else blockedY = true;
+    const t = hit ? 0 : cisternReach(e.x, e.y, e.x, ny, r);
+    if (t === 1) e.y = ny; else { e.y += dy * t; blockedY = true; }
   }
   return { blockedX, blockedY };
 }
@@ -228,9 +231,11 @@ const NAV_DX = [1, -1, 0, 0, 1, 1, -1, -1];
 const NAV_DY = [0, 0, 1, -1, 1, -1, 1, -1];
 const NAV_COST = [1, 1, 1, 1, Math.SQRT2, Math.SQRT2, Math.SQRT2, Math.SQRT2];
 const navToll = new Uint8Array(NAV_N); // per tile: extra steps a route pays to cross it (0: none)
-// e (optional): who walks it - its own side's gates stand open (isSolidTile)
+// e (optional): who walks it - its own side's gates stand open (isSolidTile);
+// a tile beside the cistern's stone with no room for a body at its middle is
+// off every route (cisternBlocks, js/cistern.js)
 function walkable(tx, ty, e) {
-  return inWorld(tx, ty) && !isSolidTile(tx, ty, e) && !waterAt(tx, ty);
+  return inWorld(tx, ty) && !isSolidTile(tx, ty, e) && !waterAt(tx, ty) && !cisternBlocks(tx, ty);
 }
 function navH(tx, ty, gx, gy) {
   const dx = Math.abs(tx - gx), dy = Math.abs(ty - gy);
@@ -270,7 +275,7 @@ function findPath(sx, sy, gx, gy, reach, budget, e) {
     const g = navG[n];
     for (let k = 0; k < 8; k++) {
       const nx = tx + NAV_DX[k], ny = ty + NAV_DY[k];
-      if (!walkable(nx, ny, e)) continue;
+      if (!walkable(nx, ny, e) || cisternCuts(n, k)) continue; // (a fallen block lying across the step, js/cistern.js)
       if (k >= 4 && !(walkable(tx + NAV_DX[k], ty, e) && walkable(tx, ty + NAV_DY[k], e))) continue;
       const m = idx(nx, ny);
       if (navDone[m] === navGen) continue;
@@ -302,6 +307,7 @@ function navLineClear(x0, y0, x1, y1, r, e, free) {
     const tx0 = Math.floor((x - r) / TILE), tx1 = Math.floor((x + r) / TILE);
     const ty0 = Math.floor((y - r) / TILE), ty1 = Math.floor((y + r) / TILE);
     for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (!walkable(tx, ty, e) || (free && navToll[idx(tx, ty)])) return false;
+    if (cisternCrowds(x, y, r)) return false; // the cistern's stone, by the px
   }
   return true;
 }

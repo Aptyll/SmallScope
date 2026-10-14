@@ -186,7 +186,7 @@ function placeLine(p, c) {
 // refuses. A `water` building wants a bare open hole; everything else wants
 // every footprint tile to be in-world snow or road (ground 0 / 3) holding
 // nothing or a stump (a stump is consumed - it is no longer a site, just
-// something a wall may stand on). No unit may stand inside the footprint (a
+// something a wall may stand on) and none of the cistern's stone. No unit may stand inside the footprint (a
 // building is solid, and would entomb it), and the builder - when there is
 // one - must be within BUILD_REACH of the nearest footprint tile. Cost is
 // not asked here: a ghost you cannot afford yet is still a valid site, and
@@ -204,7 +204,7 @@ function canPlaceAt(type, tx, ty, rot, p) {
     if (S.water) { if (o || g !== 2) return { ok: false, why: o ? 'blocked' : 'ground' }; }
     else {
       if (g !== 0 && g !== 3) return { ok: false, why: 'ground' };
-      if (o && o.type !== 'stump') return { ok: false, why: 'blocked' };
+      if ((o && o.type !== 'stump') || cisternTouches(x, y)) return { ok: false, why: 'blocked' }; // nothing goes up in the cistern's stone (js/cistern.js)
     }
     if (p) near = Math.min(near, Math.hypot(x * TILE + 8 - p.x, y * TILE + 8 - p.y));
   }

@@ -5,7 +5,7 @@
 //   the shadow   under the ice with the lake's fish (render, after them): the
 //                baked heading nearest its own, never turned off the pixel
 //                grid, and cut to the ice's own pixels (orcaMask) so it never
-//                shows over the road it swims under or past the shore. It
+//                shows over a sill it swims under or past the shore. It
 //                darkens as it comes up (ORCA_SHADE_UP over the last
 //                ORCA_SHADE_T of the line) and is gone while it is out.
 //   the breach   y-sorted with the bodies at the hole's waterline: the lunge

@@ -114,7 +114,7 @@ function paintDressing(g, tx, ty, px, py) {
 // creek, not a tile the deep band owns
 function dressFree(tx, ty) {
   return inWorld(tx, ty) && ground[idx(tx, ty)] !== 3 && !creekNear(tx, ty) && !objAt(tx, ty)
-    && roadDist(tx, ty) >= ROAD_SHOULDER + 1.2 && !deepSnowAt(tx, ty);
+    && laneDist(tx, ty) >= ROAD_SHOULDER + 1.2 && !deepSnowAt(tx, ty);
 }
 
 // ------------------------------------------------------------ drifts in the lee

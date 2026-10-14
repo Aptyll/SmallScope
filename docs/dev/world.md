@@ -425,9 +425,13 @@ ask the same function, so what a tile *is* and what it *looks like* agree to wit
 off its edge and taper a river to nothing on its way in (the tile world, above), and a
 [shape](#map-shapes)'s lake reads the same keep-out, so the lane is dry from end to end on every
 shape and the ice network lives further out on the map. The one water it meets is
-[the creek](#the-creek), at the middle, frozen there into [the orca's lake](#the-orcas-lake):
-the lane crosses it on a bank of snow `ORCA_LAKE_VERGE` wide each side and the bridge's deck. A
-**path** is the one thing that crosses the ice network ([the paths](#the-paths)).
+[the creek](#the-creek), at the middle, frozen there into [the orca's lake](#the-orcas-lake)
+inside [the cistern](#the-cistern): the lane ends on each gate's stone sill and the way between
+is the ice. `laneDist` is the road as laid and drawn (`roadDist` capped by `cisternLane`, which
+narrows the lane onto a gate's width over `CIST_LANE_TAPER` tiles and is nothing inside the ring);
+`genWorld`'s carve rules read `roadDist` itself, so no seed's ponds move. A
+**path** is the one thing that crosses the ice network ([the paths](#the-paths)), and it goes
+round the cistern (`pathCost`).
 
 **The nests sit beside it, not on it.** `roadNest(team)` picks each side's **junction** on the
 centreline — at least `ROAD_NEST_IN` (8) u inward from its gate, walking further in (to
@@ -506,8 +510,7 @@ BLUE's with a roost on each side, meets the road once, at the middle where the w
 freezes there, into [the orca's lake](#the-orcas-lake): the one stretch that does), and
 comes from beyond and goes on past us like the road: through the border woods too, where the
 pines stand to the water's edge and there is no bank to walk along. Look A of
-`docs/media/concepts/creek-concepts-1.png` (SNOWBANK CUT) and, for the bridge, look A of
-`bridge-concepts-1.png` (PLANK DECK).
+`docs/media/concepts/creek-concepts-1.png` (SNOWBANK CUT); its middle is [the cistern](#the-cistern).
 
 **It is open water**, ground `4`: to every walker but a player a wall (`moveEntity`), to every
 route a gap (`walkable`), and nothing spawns, lands or climbs out onto it (`waterAt`). A player
@@ -517,17 +520,13 @@ of current only when started at the bank, and a roll that runs out over the wate
 onto the bank they went in from: `nearestDryTile` keeps to the same side of the water (creekAt's
 `n`). A bot never wades in on its own feet — its walk is strict unless a shove past `WADE_SHOVE`
 (sim.js) is carrying it — so the creek punishes a bot the way it punishes a player: by being
-pushed off the bridge. The death line is `WENT IN THE CREEK`.
+shoved in off the bank. The death line is `WENT IN THE CREEK`.
 
 **The ways over**, all of them ground that walks like snow:
 
-- **the bridge** — the road crosses on a timber deck the lane's width (`BRIDGE_W` either side of
-  the centreline along the creek, `BRIDGE_L` either side of the creek's line along the road:
-  `CREEK_HW` and a tile onto each bank, so a wider creek takes a longer deck),
-  ground `3`, so to every rule it is road (the waves march over it, a building may stand on it).
-  Its sides are open, over the orca's ice: shoved off one, you are out on its lake;
-- **the orca's lake** round the bridge ([below](#the-orcas-lake)): the creek is ice there, so it
-  walks over anywhere, while the orca allows;
+- **the cistern** at the middle ([below](#the-cistern)): the creek pools inside its ring and the
+  pool is frozen, [the orca's lake](#the-orcas-lake), so the road goes in at one gate and out at
+  the other across the ice, and anyone can come in by a gate or a breach, while the orca allows;
 - **an outer ford** (`creekOuterFords`) on each stretch between a bend and the treeline, at
   its middle, where the stretch is `CREEK_FORD_GAP` or more;
 - **a path's ford** wherever a grown shape's path crosses ([the paths](#the-paths)).
@@ -536,7 +535,7 @@ A **ford** (`creekFord`) is the whole run of water along one tile row through it
 ground `5` — a row, so it is always four-connected and nobody's feet cut a corner through the
 current — with any pine on the tile past either end felled, so a ford never ends in a wall. On
 OPEN FIELD the bends run most of the way to the treeline, so a seed often has no outer ford and
-the way to the rival's camp is the bridge (or a roll).
+the way to the rival's camp is the cistern's ice (or a roll).
 
 **The bends** (`creekBends`, `creekBend`): the two camps on the mirror line, the BROWN BEAR DEN and the
 BLACK BEAR STONE, each have the creek swing round them in a half-loop, so each falls on one side's
@@ -544,43 +543,42 @@ bank: the upstream one (the brown bear, top-left) to RED, the downstream one (th
 bottom-right) to BLUE. At the camp the line stands `R = r + PATH_CAMP + CREEK_BEND_GAP +
 CREEK_HW` off the diagonal and eases back over `L = R × CREEK_BEND_LONG` either way along it as
 `R (1 − t²)²`, flat where it rejoins the diagonal and never nearer the camp than `R` (that needs
-`L ≥ 2R`). The line is point-symmetric about the bridge, as the roosts are, so both sides reach
-their own camp dry-shod and the other's over the bridge, a ford or a roll. Each bear lives on the
+`L ≥ 2R`). The line is point-symmetric about the crossing, as the roosts are, so both sides reach
+their own camp dry-shod and the other's across the cistern's ice, a ford or a roll. Each bear lives on the
 camp's side of its own bend, walking the water's edge ([river camps](#river-camps)).
 
 **Geometry**, in tiles, off the road's own frame: `w` along the creek is `roadOffS` (+ downstream,
 toward the bottom-right) and `p` across it is `creekP` (+ toward the top-right, BLUE's half).
 The line is the bends plus a wander of `CREEK_WANDER` on the position noise (`creekMid`) and each
 bank `CREEK_HW_RAG` off `CREEK_HW` (`creekHW`); `creekCalm` eases the wander and the rag to nothing
-within `CREEK_CALM` of the bridge, the middle half of a bend and an outer ford, so the water meets
-each square. `creekAt(fx, fy)` is the signed distance to the nearer bank (negative in the water)
+within `CREEK_CALM` of the cistern's outer face, the middle half of a bend and an outer ford, so the
+water meets each square: through the cistern the creek is `CREEK_HW` either side of the
+cross-diagonal exactly, every seed, so the baked culverts always meet it. `creekAt(fx, fy)` is the signed distance to the nearer bank (negative in the water)
 and leaves where the point is in `CQ` — along (`a`) and across (`n`, + toward BLUE's half) —
-`creekFlow` the way the current runs there, `bridgeAt` the deck, and `creekWet` the
-plunge test: in the water as drawn, off the deck and off the orca's ice (`creekIced`), so nobody
-goes in off a pixel of bank or off the deck's overhang. The ground array (a tile's centre) and the bake (a pixel) ask the same
+`creekFlow` the way the current runs there, and `creekWet` the
+plunge test: in the water as drawn and off the frozen stretch (`creekIced`), so nobody
+goes in off a pixel of bank. The ground array (a tile's centre) and the bake (a pixel) ask the same
 functions, so they agree to within the bank, as the road's do.
 
 `placeCreek()` runs at boot **right after `genWorld()`**, before the paths and the road: the
-water fells whatever grew on it, the deck is laid bank to bank, the fixed fords go down, and
-last the orca's lake freezes over round the bridge. Pure position noise — nothing rolls, so no seed reshuffles — but it writes
+water fells whatever grew on it, the fixed fords go down, and last the cistern stands round the
+middle and its pool freezes over (`placeCistern`). Pure position noise — nothing rolls, so no seed reshuffles — but it writes
 `ground` after genWorld, so every seed's ground hash includes it
 ([determinism](#determinism-and-noise)). Not under `PRACTICE`. `DBG` exposes `creekAt`,
-`creekFlow`, `creekWet`, `bridgeAt`, `creekBends`, `creekOuterFords`, `waterAt` and `CQ`.
+`creekFlow`, `creekWet`, `creekBends`, `creekOuterFords`, `waterAt` and `CQ`.
 
 **Its pixels** (the `the creek's pixels` group, js/draw/ground.js): `paintGroundTile` hands every
 tile `creekNear` to `paintCreek`, which paints per pixel over whatever the tile is — dark water
 deepening toward the middle, the bank the light comes over (read off the slope of `creekAt`, so
 the bends read like the straight run) wearing a white lip and throwing a band of shade on
-the water, the far bank its pale face, still streaks stretched along the current, the plank deck
-(planks on the pixel diagonals, a stringer down each open side, snow drifted to the edges, a post
-at each corner, three pilings upstream) with the water coming out from under it in shade, and a
+the water, the far bank its pale face, still streaks stretched along the current, and a
 ford tile's snow-capped stone (`paintFordStone`) with foam heaped on its upstream side. Both maps
 ink the creek as open water and its fords as gaps. `drawCreekFlow`, right after the ground blit,
 drifts a couple of glints per tile of open creek downstream every frame on the field's clock
 (`windT`), so `DBG.step` and the wire's echo reproduce it. Under those glints (`drawCreekFish`,
 drawn just before them) a LAKE WHITEFISH or a SNOW CHAR (`CREEK_FISH_CHAR` of them) swims
-downstream every `CREEK_FISH_GAP` tiles of creek, now and then down out of sight and back, under
-the deck and the orca's ice and never over a ford. Each is a pure function of its index and `windT` (`creekFishAt`,
+downstream every `CREEK_FISH_GAP` tiles of creek, now and then down out of sight and back, in under
+the cistern's wall and never over a ford. Each is a pure function of its index and `windT` (`creekFishAt`,
 world.js), so every client places them alike. A body that **rolls** over the water onto one
 catches it (`creekFishCatch`, run by the roll in `updatePlayer`, one winner through `contest()`):
 it goes into the pouch as `whitefish` or `snowChar`, and its place swims back `CREEK_FISH_BACK`
@@ -590,33 +588,80 @@ gold sunfish a hole or a net gives up, and the practice field has none.
 
 Verified on seeds 42, 7 and 1234 across the shapes: every ford runs bank to bank with open ground
 at both ends; the two junctions reach each other and every camp from both halves; a route across
-the water only ever steps on the deck or a ford; three minutes of bots and waves put nobody in the
-creek on their own feet, while a shove off the deck dunks a bot.
+the water only ever steps on the ice or a ford; three minutes of bots and waves put nobody in the
+creek on their own feet, while a shove off the bank dunks a bot.
+
+### The cistern
+
+**At the middle the road and the creek meet inside a ring of dressed stone**, the works' old
+cistern (the `the cistern` banner, [js/cistern.js](../../js/cistern.js)): its pool is
+[the orca's lake](#the-orcas-lake), all ice. Look H CUT BLOCKS of
+`docs/media/concepts/cistern-concepts-4.png`. The ring runs from `CIST_RI` to `CIST_RO` tiles off
+the crossing (in `w`, `p`: the road's and the creek's frame), wall `HWALL` px tall. The road comes
+in at **two gates**, `CIST_GH` tiles either side of it, each a stone **sill** (ground `3`, walked
+over) between two piers a head taller than the wall. The wall is down in **four breaches** on the
+diagonals of that frame (north, east, south and west on screen), each stepping down course by
+course, and the blocks that fell lie round them, most outside. The creek runs in and out under it
+by a **culvert** each way, frozen under the wall (`CIST_FROZEN`) and open past it.
+
+**It is baked, footprint and all.** `app/bake-cistern/paint.py` paints it as a heightfield per world
+px in the game's 3/4 view and writes `js/sprites/cistern.js` (`SPRITES.cistern`, never hand-edited):
+`geo` (every measure above, read by the sim, so it can never stand off the art), `flat` (the sills
+and every shadow), `segs` (the standing stone in pieces) and `solid` (the footprint: every ground
+px stone stands on). Everything random is drawn from (`w`, `|p|`), so BLUE's half is RED's
+mirrored, and nothing reads the seed: the creek is calm through it (`creekCalm`), so the culverts
+meet the water on every seed. The bake keeps every fallen block `LANE` px off each breach's middle
+line and refuses to write if a breach or a gate is narrower than that.
+
+**Solid to the pixel.** `cisternField` turns the footprint into an exact distance field (px to the
+nearest stone) once a page. `moveEntity` asks `cisternReach` on every axis step of every body: a
+circle of the body's radius round its feet (`CIST_FOOT` px under `x, y`), swept every `CIST_STEP`
+px, so no roll, rush, charge or reel goes through a block, and the body stops against the stone,
+not short of it. A body already touching it may move any way but deeper. The tile grid gets three
+coarser reads off `placeCistern`'s flags: `cisternTile` (a tile whose middle is stone: a wall
+to `isSolidTile`, so to every shot, but not to `moveEntity`, which passes `swept`,
+nor to the `.` view's cyan boxes), `cisternBlocks` (no body fits at the middle: `walkable`, so every route, spawn and
+`nearestDryTile`, and `landPlayer`) and `cisternTouches` (any stone: `canPlaceAt`, and both maps
+ink it). `findPath` refuses a step between two tiles' middles that a block lies across
+(`cisternCuts`), `navLineClear` asks the px (`cisternCrowds`), and whatever puts a body down (a
+warp, a hop off a cable or a deer) moves it off the stone the same way. The `.` view draws the
+footprint's edge and each nearby body's feet ring (`drawCisternHitbox`). Pure position, the same
+every client: no sim state, nothing to save.
+
+**Drawn in two layers** (js/draw/cistern.js): `paintCisternFlat` lays the flat layer into the ground
+canvas a tile at a time from `paintGroundTile`, under everything that walks; `pushMiddleDraws` puts
+every piece of stone in view into render's y-sorted pass. A piece is the stone standing on
+`BAND` ground rows, split where its columns break, keyed as a body whose feet stand on its middle
+row, so a body is over every stone north of its feet and under every stone south of them: behind
+the wall only a head shows over it.
+
+`placeCistern` (placeCreek's last step) makes the ground the cistern's: ice inside `CIST_ICE`, the
+creek frozen to `CIST_FROZEN`, the sills road, every other lake and everything worldgen stood
+cleared off `CIST_CLEAR` (a later pass's zipline pylon may stand at its rim, off the stone).
+`cisternLane` ends the laid road on the sills ([the road](#the-road)). Not under `PRACTICE`.
+`DBG` exposes `cisternR`, `cisternDist`, `cisternReach`, `cisternTile`, `cisternBlocks` and
+`cisternTouches`.
+
+Verified on seed 7 (headless): walking with rolls and the warrior's rush at it from 120 angles,
+no body's feet ever came within its radius of the stone, and only the gates and the breaches let
+anyone in; a route from outside reaches the ice through each of the four breaches and both gates;
+on 24 seeds nothing stands on its stone.
 
 ### The orca's lake
 
-**At the middle the creek pools round the bridge, and the pool is frozen over**; the orca lives
-under it ([the orca](gameplay.md#the-orca)). It is a disc `ORCA_LAKE_R` tiles round the crossing
-whose rim wanders on **even harmonics alone** (`ORCA_LAKE_WOB`), so the shape is point-symmetric
-about the bridge like the roosts and the bends: each side's half of the valley gets the same
-ice, and both sides touch it. `orcaLakeEdge(fx, fy)` is the signed distance in tiles to the rim
-(negative inside), `orcaLakeAt` the membership, `orcaLakeNear` a tile that holds any of it (for
-the painters) and `creekIced` the creek frozen there. All of it is off `roadOffS` and `creekP`,
-the road's and the creek's own frame, so nothing rolls.
-
-`placeCreek` freezes it last: inside the disc every tile of the creek is ice (ground `1`; the
-lane's share past the deck's ends `placeRoad` then paves), and so is every snow tile more than
-`ORCA_LAKE_VERGE` tiles off the road's edge, so the road crosses on a bank of snow and the deck
-over the frozen creek; what grew there is felled. Any other ice within `ORCA_LAKE_MOAT` of the
-rim goes back to snow, so no river or pond runs into it and the lake the orca hunts is the one
-you see. A landmark never stands on it (`LM_WHERE.lake`).
+**The cistern's pool is frozen over**; the orca lives under it ([the orca](gameplay.md#the-orca)).
+It is a disc `ORCA_LAKE_R` (= `CIST_ICE`) tiles round the crossing, its rim under the wall's
+inner face, so each side's half of the valley gets the same ice. `orcaLakeEdge(fx, fy)` is the
+signed distance in tiles to the rim (negative inside), `orcaLakeAt` the membership, `orcaLakeNear`
+a tile that holds any of it or the frozen creek (for the painters) and `creekIced` the creek
+frozen there, on in under the wall. All of it is off `roadOffS` and `creekP`, so nothing rolls.
+`placeCistern` lays it; a landmark never stands on it (`LM_WHERE.lake`).
 
 **Its pixels** are any lake's: the shore, the banks and the sheet come off `iceAtPx` like every
 lake ([the ice shore](#the-ice-shore)), but `bakeLakes` labels it first and always in the DEEP
-style (`ORCA_ICE`), so its dark middle is where the orca swims. Inside the disc `paintCreek`
-leaves the creek's water to the sheet, paints any of it the shore leaves bare as ice, and keeps
-its own banks only past the shore; a piling in the ice heaps no foam. Not under `PRACTICE`.
-`DBG` exposes `orcaLakeAt` and `orcaLakeEdge`.
+style (`ORCA_ICE`), so its dark middle is where the orca swims. Where the creek is frozen,
+`paintCreek` leaves its water to the sheet and paints any of it the shore leaves bare as ice. Not
+under `PRACTICE`. `DBG` exposes `orcaLakeAt` and `orcaLakeEdge`.
 
 ## Snow depth
 

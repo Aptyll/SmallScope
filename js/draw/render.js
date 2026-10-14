@@ -375,8 +375,8 @@ function render() {
   // a match): entities, never tile objects (a slider crosses tiles every
   // frame), sorted by their base like everything
   for (const t of ptargets) draws.push({ y: t.y + 1, pt: t });
-  // the orca out of the water, sorted by its hole's waterline (js/draw/orca.js)
-  if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, orca: true });
+  // the middle's stone and the orca out of its ice (js/draw/cistern.js)
+  pushMiddleDraws(draws, ox, oy);
   // your side's flags, half a pixel behind their own tile so a flag planted
   // on a tree is never swallowed by that tree's canopy
   for (const q of players) {
@@ -413,7 +413,7 @@ function render() {
     if (d.r) { drawWading(d.r, ex, ey, now, () => drawRobot(d.r, ex, ey, now)); continue; }
     if (d.f) { drawFlag(d.f, ex, ey, now); continue; }
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
-    if (d.orca) { drawOrcaBreach(ex, ey); continue; }
+    if (d.fn) { d.fn(d, ex, ey, now); continue; }
     const o = d.o;
     const px = d.tx * TILE - ox, py = d.ty * TILE - oy;
     const sh = o.shake > 0 ? Math.round(Math.sin(o.shake * 55) * 1.4) : 0;
@@ -1309,9 +1309,10 @@ function drawHitboxes(ox, oy, ex, ey) {
   const tx1 = Math.floor((ox + WV_W) / TILE), ty1 = Math.floor((oy + WV_H) / TILE);
   for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
     const px = tx * TILE - ox, py = ty * TILE - oy;
-    if (isSolidTile(tx, ty)) hbBox(px, py, TILE, TILE, HB_SOLID);
+    if (isSolidTile(tx, ty, null, true)) hbBox(px, py, TILE, TILE, HB_SOLID);
     else if (waterAt(tx, ty)) hbBox(px, py, TILE, TILE, HB_WATER);
   }
+  drawCisternHitbox(ox, oy, ex, ey, HB_SOLID, HB_BODY); // the middle's stone is held to the px, not the tile
 
   // players: the body circle everything is pushed out of, and the hurt circle
   // an arrow is tested against - which sits 6px UP, at the chest, so a shot

@@ -6,7 +6,7 @@
 // seenAt(p, ORCA_SIGHT) of it is locked: a line over their head runs
 // ORCA_LINE s (drawOrcaLine, js/draw/overhead.js; a knock in the ice every
 // second), and the shadow runs in under them. Off the orca's ice - onto the
-// snow, the road, a zipline, a deer's back is still the ice - and the hunt
+// snow, a gate's sill, a zipline, a deer's back is still the ice - and the hunt
 // drops. If the line runs out on the ice, the orca comes up:
 //   the strike   the ice cracks round where it will break (iceBreak's warn,
 //                ORCA_CRACK) and the one it is after is pinned (rootUnit)
@@ -16,9 +16,9 @@
 //                within ORCA_JAWS of it goes down, whatever its health
 //   the rest     it slides back under and cruises again; nothing is locked
 //                for ORCA_REST
-// One orca, one hunt at a time. The road crosses the lake and the orca
-// swims under it (its water is the whole disc), but it locks and breaks
-// only bare ice. It never rolls: every pick comes off hash2 and the tick,
+// One orca, one hunt at a time. Its water is the whole disc, under the
+// cistern's sills too (js/cistern.js), but it locks and breaks only bare
+// ice. It never rolls: every pick comes off hash2 and the tick,
 // so the shared rng() is untouched. Sim only - `orca` is a SAVE_ROOTS
 // singleton and rides the snapshot; the pixels are js/draw/orca.js.
 const ORCA_LINE = 4;          // s of line before it comes up
@@ -42,7 +42,7 @@ const ORCA_TOLL = 3;          // extra steps a route pays per tile of its ice (n
 const ORCA_FRESH = () => ({ on: 0, x: 0, y: 0, a: 0, v: ORCA_SWIM, mode: 'swim', t0: 0, tgt: -1, side: 1,
   jx: 0, jy: 0, hx: 0, hy: 0, cool: 0, gx: 0, gy: 0, bit: 0, n: 0 });
 const orca = ORCA_FRESH();
-let orcaWater = null; // per tile: 1 inside the disc (the orca swims there, under the ice and the road alike)
+let orcaWater = null; // per tile: 1 inside the disc (the orca swims there, under the ice and the sills alike)
 let orcaHome = null;  // the disc's tiles with room round them: where it cruises to
 
 // the orca's bite is a beast's, in the post-game record (damagePlayer)

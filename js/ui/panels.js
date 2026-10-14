@@ -189,10 +189,11 @@ function mapAlloc() {
 }
 // one flat ink per class, indexed by CH_* (world.js) - the snow, the
 // woods, the road, the ice, open water, a chest, then a side's buildings
-// and its bird in the two depths of each team's ink
+// and its bird in the two depths of each team's ink, the cistern's stone
 const CHART_INK = [
   [214, 219, 226], [44, 60, 62], [150, 136, 116], [170, 192, 208], [52, 74, 98],
   [222, 176, 76], [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
+  [104, 112, 128],
 ];
 const CHART_NEED = []; // neighbours of its own class a tile needs to stay on the chart
 CHART_NEED[CH_FOREST] = 2; CHART_NEED[CH_ICE] = 2;
@@ -200,7 +201,10 @@ const CHART_DARK = HUD_INK; // the minimap's own dark: every mark's rim on the c
 const CHART_INK_TXT = '#d4d7dc'; // the header's ink
 let chartBuiltAt = -1e9;
 
-function chartGround(i) { const g = ground[i]; return g === 2 || g === 4 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW; } // the creek inks as open water, its fords as gaps
+function chartGround(i) { // the creek inks as open water, its fords as gaps
+  if (cisternTouches(i % WORLD, (i / WORLD) | 0)) return CH_STONE;
+  const g = ground[i]; return g === 2 || g === 4 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW;
+}
 function buildWorldMapImg() {
   if (state.tick - chartBuiltAt < MM_REBUILD && state.tick >= chartBuiltAt) return;
   chartBuiltAt = state.tick;

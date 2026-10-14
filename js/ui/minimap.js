@@ -18,7 +18,8 @@ function updateMinimap() {
     if (o) {
       const c = objMapColor(o) || MM_UNKNOWN;
       r = c[0]; g = c[1]; b = c[2];
-    } else if (ground[i] === 2 || ground[i] === 4) { r = 58; g = 92; b = 128; } // open water: a hole, the creek (a ford reads as a gap in it)
+    } else if (cisternTouches(i % WORLD, (i / WORLD) | 0)) { r = 122; g = 131; b = 153; } // the cistern's stone, a rock's grey
+    else if (ground[i] === 2 || ground[i] === 4) { r = 58; g = 92; b = 128; } // open water: a hole, the creek (a ford reads as a gap in it)
     else if (ground[i] === 1) { r = 145; g = 188; b = 212; } // ice
     else if (ground[i] === 3) { r = 188; g = 168; b = 138; } // the road
     else { r = 205; g = 216; b = 232; } // snow

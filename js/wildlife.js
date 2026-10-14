@@ -1018,7 +1018,7 @@ function rideEnd(p, thrown) {
   if (thrown) { p.vx = 0; p.vy = 0; }
   // a leap cut short over the trunk comes down beside it, both bodies
   const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
-  if (isSolidTile(tx, ty)) {
+  if (isSolidTile(tx, ty) || cisternCrowds(p.x, p.y, PLAYER_R)) {
     const out = nearestDryTile(p.x, p.y + 4, p);
     p.x = (out.tx + 0.5) * TILE; p.y = (out.ty + 0.5) * TILE - 4;
     if (!a.dead) { a.x = p.x; a.y = p.y; }

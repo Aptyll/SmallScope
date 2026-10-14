@@ -1121,8 +1121,7 @@ function updatePlayer(p, dt) {
   // the creek. An active dodge roll carries over both: a hole's one tile
   // easily, the creek's three only from its bank, so a roll that runs out over
   // the current goes in. The creek asks the feet against its banks as drawn
-  // (creekWet), so nobody goes in off a pixel of snow or off the deck's
-  // overhang.
+  // (creekWet), so nobody goes in off a pixel of snow or the frozen stretch.
   if (p.fallT <= 0) {
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
