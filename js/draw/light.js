@@ -509,7 +509,7 @@ const TOD_KEYS = [
 // the frame is multiplied by ITSELF at this share, which darkens the needles
 // and the cast shade far more than the drifts - the pale grey-white field
 // gets its depth back without the snow turning grey. One blit of the world
-// buffer onto itself.
+// buffer over a copy of itself (gradeCv).
 const TOD_CRISP = 0.22;
 const TOD_NOON = DAY_LEN * 0.5;  // the top of the day, where the crisp peaks
 const TOD_NOON_HALF = 26;        // s either side of it it reaches
@@ -564,9 +564,11 @@ function todGrade() {
   }
   const crisp = Math.max(todNoon() * TOD_CRISP, frost * FROST_CRISP * (1 - state.darkness));
   if (crisp > 0.01) {
+    grctx.globalCompositeOperation = 'copy'; // through a copy, never ctx.canvas onto itself (gradeCv, js/canvas.js)
+    grctx.drawImage(ctx.canvas, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
     ctx.globalCompositeOperation = 'multiply';
     ctx.globalAlpha = crisp;
-    ctx.drawImage(ctx.canvas, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
+    ctx.drawImage(gradeCv, 0, 0, WV_W, WV_H, 0, 0, WV_W, WV_H);
     ctx.globalAlpha = 1;
   }
   ctx.globalCompositeOperation = 'source-over';
@@ -1001,7 +1003,13 @@ function renderWeather(ex, ey) {
   }
 }
 
-let vigGrd = null, vigKey = 0; // the frame vignette, rebuilt only on resize
+// the frame vignette, baked once per canvas size: a radial gradient filled
+// over the full device-px screen every frame cost 5 ms on a CPU-drawn canvas,
+// a blit of the same pixels under 1 ms. Baked at device px under the same
+// devScale transform, so it matches the fill it replaces to within the
+// gradient's own dither (2 levels in 255).
+const vigCv = document.createElement('canvas');
+let vigKey = '';
 function renderVignettes() {
   // hurt flash
   if (player.hurtT > 0) {
@@ -1011,14 +1019,19 @@ function renderVignettes() {
     ctx.globalAlpha = 1;
   }
   // soft frame vignette (a VIDEO toggle - the hurt flash above is feedback
-  // and never goes); the gradient is rebuilt only when the view resizes
+  // and never goes)
   if (!settings.vidVig) return;
-  if (vigKey !== VIEW_W * 4096 + VIEW_H) {
-    vigKey = VIEW_W * 4096 + VIEW_H;
-    vigGrd = ctx.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.5, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.95);
-    vigGrd.addColorStop(0, 'rgba(10,14,35,0)');
-    vigGrd.addColorStop(1, 'rgba(10,14,35,0.35)');
+  const key = VIEW_W + 'x' + VIEW_H + '@' + devScale;
+  if (vigKey !== key) {
+    vigKey = key;
+    vigCv.width = VIEW_W * devScale; vigCv.height = VIEW_H * devScale;
+    const g = vigCv.getContext('2d');
+    g.setTransform(devScale, 0, 0, devScale, 0, 0);
+    const grd = g.createRadialGradient(VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.5, VIEW_W / 2, VIEW_H / 2, VIEW_H * 0.95);
+    grd.addColorStop(0, 'rgba(10,14,35,0)');
+    grd.addColorStop(1, 'rgba(10,14,35,0.35)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, VIEW_W, VIEW_H);
   }
-  ctx.fillStyle = vigGrd;
-  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  ctx.drawImage(vigCv, 0, 0, VIEW_W, VIEW_H);
 }

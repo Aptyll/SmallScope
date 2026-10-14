@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.462';
+const PATCH_TXT = 'PATCH 0.463';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.463', 'EACH FRAME TAKES ABOUT A THIRD LESS TIME TO DRAW ON SLOWER PCS, WITH NOTHING ON SCREEN CHANGED, AND F3 NOW SHOWS HOW LONG EACH FRAME SPENDS ON THE GAME AND ON DRAWING.'],
   ['0.462', 'MULTIPLAYER IS NOW A CUSTOM GAMES LIST AND A TEAM ROOM: PICK A GAME AND JOIN IT, CLICK A SEAT ON THE OTHER SIDE TO SWAP TEAMS, AND THE HOST CAN ADD OR REMOVE BOTS, SHOW A PLAYER OUT AND PRESS START.'],
   ['0.461', 'BEHIND THE SCENES: THE GAME\'S CODE NOW CHECKS ITSELF SO NO FILE OR FUNCTION GROWS TOO BIG TO READ.'],
   ['0.459', 'THE MAP AND THE MINIMAP WEAR THE NEW GRAPHITE LOOK: A FLATTER, QUIETER MAP WITH NO CLOSE BUTTON (M, ESCAPE OR A CLICK OUTSIDE IT CLOSES IT), CAMP NAMES THAT SHOW WHEN YOU POINT AT A CAMP, A BEAR\'S HEAD FOR THE BROWN BEAR DEN AND CLEANER ZIPLINES.'],
@@ -1268,6 +1269,7 @@ const PATCH_DIGEST = [
     ['AN FPS CAP, AND A QUARTER OF EACH FRAME BACK', '0.271'],
     ['THE STEAM BUILD CARRIES ONLY WHAT THE GAME PLAYS', '0.276'],
     ['THE WEB BUILD OPENS TWO TO THREE TIMES FASTER', '0.396'],
+    ['EACH FRAME DRAWS ABOUT A THIRD FASTER ON SLOWER PCS', '0.463'],
   ]],
 ];
 const DIGEST_FROM = '0.268'; // the oldest patch the digest covers, printed beside HIGHLIGHTS
