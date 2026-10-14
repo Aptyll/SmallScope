@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.464';
+const PATCH_TXT = 'PATCH 0.465';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.465', 'EACH WAVE IS NOW THREE SOLDIERS AND NO FLAG BEARER. THEY ALL CARRY THE PENNANT AGAIN.'],
   ['0.464', 'BEHIND THE SCENES: THE GAME\'S BIGGEST CODE FILES ARE SPLIT INTO SMALLER ONES. NOTHING YOU PLAY CHANGES.'],
   ['0.463', 'EACH FRAME TAKES ABOUT A THIRD LESS TIME TO DRAW ON SLOWER PCS, WITH NOTHING ON SCREEN CHANGED, AND F3 NOW SHOWS HOW LONG EACH FRAME SPENDS ON THE GAME AND ON DRAWING.'],
   ['0.462', 'MULTIPLAYER IS NOW A CUSTOM GAMES LIST AND A TEAM ROOM: PICK A GAME AND JOIN IT, CLICK A SEAT ON THE OTHER SIDE TO SWAP TEAMS, AND THE HOST CAN ADD OR REMOVE BOTS, SHOW A PLAYER OUT AND PRESS START.'],
@@ -1190,7 +1191,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '0.279'],
   ]],
   ['FIGHTING AND TRADE', [
-    ['WAVES ARE THREE AXES AND A FLAG BEARER THAT RALLIES THE BOTS NEAR IT', '0.458'],
+    ['A WAVE IS THREE SOLDIERS', '0.465'],
     ['THE GENERATOR IS A BIG GOLD PUMP THAT NODS AS IT PAYS', '0.423'],
     ['A GOLD PUMP PAYS 12, 24 OR 42 GOLD A MINUTE BY TIER', '0.423'],
     ['SCOUTS RUN WITH THEIR WHOLE BODY, AND THE ROLL TUCKS INTO A BALL', '0.397'],
