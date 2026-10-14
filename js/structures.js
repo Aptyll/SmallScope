@@ -89,14 +89,15 @@ const STRUCTS = {
   // Never on the wheel (not in STRUCT_ORDER), nobody's to upgrade or pull
   // down (`fixed`), and it wears the bay's own 3x2 grid (`art`). Every
   // `waveT` seconds it queues a WAVE of soldiers (the `soldiers` banner,
-  // robots.js) that march the road to the rival bird: `wave` of them at
-  // first, one more for every `grow` seconds it has stood. Its cost is what a
+  // robots.js) that march the road to the rival bird: `wave` axes at
+  // first, one more for every `grow` seconds it has stood, and `bearers`
+  // flag bearers behind them (SOLDIER_FLAG_*, robots.js). Its cost is what a
   // wrecker is paid half of - breaking one stalls the waves until the
   // merchant walks back and raises it again. `cap` is the most of a SIDE's
   // soldiers alive at once, every bay counted: a side nobody fights back
   // against does not fill the map, it waits for its column to spend itself.
   barracks: { name: 'BARRACKS', w: 3, h: 2, art: 'spawner', fixed: true, mm: mmTeam, map: chTeam, tiers: [
-    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 5, waveT: 30, grow: 180, botHp: 30, cap: 24 },
+    { cost: { gold: 40 }, hp: 320, buildT: 12, wave: 3, bearers: 1, waveT: 30, grow: 180, botHp: 30, cap: 24 },
   ]},
   // The fish net: the one building that goes on water instead of snow.
   // `water: true` is the whole difference, and every site reads that flag
@@ -289,8 +290,9 @@ function createStruct(tx, ty, type, tier, p, building, rot) {
   if (type === 'generator') o.payT = 0;
   if (type === 'spawner') { o.bots = []; o.respawnT = o.respawnTotal = 1; o.door = 1; }
   // waveT: the clock to the next wave. queue/rollT: soldiers still to leave
-  // the door, and the gap to the next. born: when it stood, for the growth.
-  if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
+  // the door, and the gap to the next; flagQ: how many of the queue are flag
+  // bearers, who leave last. born: when it stood, for the growth.
+  if (type === 'barracks') { o.waveT = t.waveT; o.queue = 0; o.flagQ = 0; o.rollT = 0; o.born = state.elapsed; o.door = 0; }
   // fish: what the net is holding. catchT/takeT are the two clocks that let
   // it fill and empty a fish at a time instead of all at once
   if (type === 'net') { o.fish = 0; o.sun = 0; o.catchT = NET_CATCH_T; o.takeT = 0; } // o.sun: how many of o.fish are gold sunfish
@@ -726,22 +728,29 @@ function updateStructures(dt) {
       const want = (out || (due && o.respawnT < 1.4)) ? 1 : 0;
       o.door += Math.sign(want - o.door) * Math.min(Math.abs(want - o.door), dt * 2.2);
     } else if (o.type === 'barracks') {
-      // the wave clock: every waveT a wave is queued - `wave` soldiers, one
-      // more per `grow` seconds stood - and the queue leaves the door one
-      // soldier every BARRACKS_ROLL, so a wave reads as a column, not a heap
+      // the wave clock: every waveT a wave is queued - `wave` axes, one more
+      // per `grow` seconds stood, then `bearers` flag bearers - and the queue
+      // leaves the door one soldier every BARRACKS_ROLL, the bearers last, so
+      // a wave reads as a column with its flag at the back, not a heap
       o.waveT -= dt;
       if (o.waveT <= 0) {
         o.waveT = t.waveT;
         let alive = 0; // the cap is the SIDE's: every bay of the team queued or out, so more bays refill a column faster but never fill the map
         for (const q of structures) if (q.type === 'barracks' && q.team === o.team) alive += q.queue;
         for (const b of robots) if (b.kind === 'soldier' && b.team === o.team && !b.dead) alive++;
-        o.queue += Math.max(0, Math.min(t.cap - alive, t.wave + Math.floor((state.elapsed - o.born) / t.grow)));
+        const room = Math.max(0, t.cap - alive);
+        const axes = Math.min(room, t.wave + Math.floor((state.elapsed - o.born) / t.grow));
+        const flags = Math.min(room - axes, t.bearers);
+        o.queue += axes + flags;
+        o.flagQ = (o.flagQ || 0) + flags; // a save from before the bearers has none queued
       }
       o.rollT -= dt;
       if (o.queue > 0 && o.rollT <= 0) {
         o.rollT = BARRACKS_ROLL;
         o.queue--;
-        const b = makeSoldier(o);
+        const bearer = o.flagQ > 0 && o.queue < o.flagQ; // the last ones out carry the flag
+        if (bearer) o.flagQ--;
+        const b = makeSoldier(o, bearer);
         robots.push(b);
         burst(b.x, b.y - 4, '#c3c9d3', 6, 35, 0.4, true);
         burst(b.x, b.y + 2, '#e4e8ee', 5, 30, 0.45, true);

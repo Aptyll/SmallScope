@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.457';
+const PATCH_TXT = 'PATCH 0.458';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.458', 'EACH WAVE IS NOW THREE AXE BOTS AND ONE FLAG BEARER BEHIND THEM: THE BOTS NEAR ITS FLAG MOVE QUICKER, HIT HARDER AND TAKE LESS DAMAGE, SO SCRAP THE FLAG FIRST.'],
   ['0.457', 'THE BROWN REEDS ARE GONE FROM THE LAKE SHORES.'],
   ['0.456', 'THE ICE CAN NOW BREAK IN THE SHAPE OF WHATEVER COMES UP THROUGH IT: OPEN WATER YOU FALL INTO EXACTLY WHERE IT SHOWS, FREEZING BACK OVER FROM ITS EDGES IN ABOUT TWENTY SECONDS. SOMETHING UNDER THE LAKES WILL USE IT SOON.'],
   ['0.455', 'A ZIPLINE RIDER HOLDS STILL ON SCREEN WHILE THE GROUND GLIDES BY UNDER THEM.'],
@@ -1370,6 +1371,7 @@ const PATCH_DIGEST = [
     ['EVERYTHING CASTS A SHADOW FROM ONE SUN', '0.279'],
   ]],
   ['FIGHTING AND TRADE', [
+    ['WAVES ARE THREE AXES AND A FLAG BEARER THAT RALLIES THE BOTS NEAR IT', '0.458'],
     ['THE GENERATOR IS A BIG GOLD PUMP THAT NODS AS IT PAYS', '0.423'],
     ['A GOLD PUMP PAYS 12, 24 OR 42 GOLD A MINUTE BY TIER', '0.423'],
     ['SCOUTS RUN WITH THEIR WHOLE BODY, AND THE ROLL TUCKS INTO A BALL', '0.397'],
