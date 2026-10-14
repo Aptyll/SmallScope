@@ -65,9 +65,12 @@ stable per tile.
   buildTotal, dustT, sparkT }` plus per-type fields (turret `cd`, `ang`, `tgt`/`tgtK`, `off`,
   `chg`, `rec`, `scan`; generator `payT`; spawner `mode`,
   `bots`, `respawnT`/`respawnTotal`, `door`), and every live one is also referenced from the module-scope `structures`
-  array so `updateStructures()` never scans the 53,824-tile grid. (`updatePlay` does: one
-  unconditional pass over all of `objects` every step, ticking `flash`/`shake` and bush regrow —
-  that loop, not the structure tick, is where a full-grid frame cost actually lives.) A picked
+  array so `updateStructures()` never scans the 53,824-tile grid. Nor do the object clocks
+  (`flash`/`shake`, bush regrow, a rock's crack and rubble): `tickObjTimers` (js/sim.js, the
+  `object timers` banner) ticks only the objects in `objTimed`, in map order, and drops each one
+  once its clocks run down. A clock is started only through `joltObj(o, flash, shake)` or
+  `timeObj(o)`, which enrol the object; one set straight on the object never runs.
+  `objTimersRescan` rebuilds the set after a load (`saveApply`). A picked
   bush regrows in `BUSH_REGROW` (70 s) and **wears its own clock**: `bushEmpty` until ripening is
   `BUSH_BUD_T` away, then `bushBud` (pale buds where the berries will be), `bushRipen` (the
   berries back but dull) inside `BUSH_RIPEN_T`, then `bush` — chosen in `render()`'s bush

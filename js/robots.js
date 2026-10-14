@@ -178,8 +178,7 @@ function updateRobot(b, dt) {
 
   const harvest = () => {
     const t = b.tgt, ox = t.tx * TILE + 8, oy = t.ty * TILE + 8;
-    t.flash = 0.1;
-    t.shake = 0.22;
+    joltObj(t, 0.1, 0.22);
     if (t.type === 'tree' || t.type === 'deadTree') {
       const dry = t.type === 'deadTree';   // a rookery perch: quicker, same gold
       t.hp--;
@@ -397,7 +396,7 @@ function spawnMerchant(e) {
 // like the crater and the lane.
 function merchFell(b, t) {
   const px = t.tx * TILE + 8, py = t.ty * TILE + 8;
-  t.hp--; t.flash = 0.1; t.shake = 0.22;
+  t.hp--; joltObj(t, 0.1, 0.22);
   sfxAt(t.type === 'rock' ? 'mine' : 'chop', px, py);
   burst(px, py - 10, '#eef4fb', 3, 35, 0.4, true);
   if (t.hp > 0) return false;

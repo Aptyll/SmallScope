@@ -1108,7 +1108,7 @@ function pkAnimStep(dt) {
       // (o.shake decays in sim.js's object-timer loop) - no ground change,
       // so no repaint either
       const o = objects[e.i];
-      if (o && o.type === 'tree') o.shake = 0.55;
+      if (o && o.type === 'tree') joltObj(o, undefined, 0.55);
       continue;
     }
     if (e.k === 1) {
@@ -1128,7 +1128,7 @@ function pkAnimStep(dt) {
       const onMe = Math.abs(player.x / TILE - (tx + 0.5)) < 1.5 && Math.abs(player.y / TILE - (ty + 0.5)) < 1.5;
       if (!inField && !inWalk && !onMe && !rdTiles.has(e.i) && !objects[e.i]) { // the deer ride's trail stays open
         const t = placeObj(tx, ty, 'tree', { hp: TREE_HP, variant: hash2(tx * 3 + 1, ty * 3 + 2) > 0.5 ? 1 : 0, rare: treeRare(tx, ty) });
-        t.flash = 0.2;
+        joltObj(t, 0.2);
         if (rng() < 0.5) burst(px, py - 10, '#f4f7ff', 3, 40, 0.45, true);
       }
     }
@@ -1295,7 +1295,7 @@ function updatePractice(dt) {
     o.hitT += dt;
     if (o.hp < o.maxHp && o.hitT > DUMMY_RESET_T) {
       o.hp = o.maxHp;
-      o.flash = 0.18;
+      joltObj(o, 0.18);
       const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
       burst(ox, oy - 14, '#f4f7ff', 8, 40, 0.5, true);
       burst(ox, oy - 14, '#e0c890', 5, 35, 0.45, true);
