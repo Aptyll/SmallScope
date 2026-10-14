@@ -528,6 +528,19 @@ function nearestObj(x, y, rTiles, pred) {
   return best;
 }
 
+// the title's ambient world: the wildlife and the shoal live on behind the
+// menu (updateTitle, js/ui/menu.js) - but stand still once the room is
+// shared. A client's animals are the host's (its own steps would turn a deer
+// the host never turned), and the host's clock does not tick at the title,
+// so every guest's full sync shares one ring entry: a deer turned and turned
+// back between two joins would never reach the second (snapHistoryPush)
+function titleWild(dt) {
+  if (netShared()) return;
+  for (const a of animals) updateAnimal(a, dt);
+  for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
+  updateFish(dt);
+}
+
 function updateAnimal(a, dt) {
   a.flash = Math.max(0, a.flash - dt);
   a.kbx *= Math.pow(0.02, dt);

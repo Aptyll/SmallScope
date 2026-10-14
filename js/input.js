@@ -416,7 +416,7 @@ function keyPress(e) {
     }
   }
   if (keyIs(e, 'mute')) { settings.muted = SFX.toggleMute(); saveSettings(); }
-  if (keyIs(e, 'pause')) { state.paused = !state.paused; SFX.ui(state.paused); if (state.paused) autoSave(); } // the PAUSED plate is a surface like any other
+  if (keyIs(e, 'pause') && (state.paused || !netShared())) { state.paused = !state.paused; SFX.ui(state.paused); if (state.paused) autoSave(); } // the PAUSED plate is a surface like any other
 }
 pageListen(window, 'keyup', (e) => {
   const k = keyName(e);

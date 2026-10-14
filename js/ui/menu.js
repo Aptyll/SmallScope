@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.466';
+const PATCH_TXT = 'PATCH 0.467';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.467', 'ONLINE MATCHES FEEL CLEANER: YOUR OWN WALK ANSWERS AT ONCE INSTEAD OF A MOMENT LATE, OTHER PLAYERS GLIDE STEADILY ON A SHAKY CONNECTION, AND THE HOST OPENING THE MENU NO LONGER FREEZES EVERYONE.'],
   ['0.466', 'EACH GAME STEP TAKES ABOUT 60% LESS TIME: THE GAME NO LONGER CHECKS EVERY TREE ON THE MAP SIXTY TIMES A SECOND, ONLY THE FEW THAT ARE BLINKING, SHAKING OR GROWING BACK.'],
   ['0.465', 'EACH WAVE IS NOW THREE SOLDIERS AND NO FLAG BEARER. THEY ALL CARRY THE PENNANT AGAIN.'],
   ['0.464', 'BEHIND THE SCENES: THE GAME\'S BIGGEST CODE FILES ARE SPLIT INTO SMALLER ONES. NOTHING YOU PLAY CHANGES.'],
@@ -824,10 +825,7 @@ function updateTitle(dt) {
       if (m.panelT <= 0) { m.panelT = 0; m.panel = null; m.closing = false; }
     } else m.panelT = Math.min(1, m.panelT + dt / PANEL_SLIDE_T);
   }
-  // the ambient world: wildlife and the shoal keep living behind the menu
-  for (const a of animals) updateAnimal(a, dt);
-  for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
-  updateFish(dt);
+  titleWild(dt); // the ambient world: wildlife and the shoal keep living behind the menu (js/wildlife.js)
 }
 
 // chamfered rect on the main ctx (2px corner cut)
@@ -1227,6 +1225,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['ONLINE, YOUR WALK ANSWERS AT ONCE AND THE HOST\'S MENU NEVER FREEZES THE MATCH', '0.467'],
     ['MULTIPLAYER: A CUSTOM GAMES LIST AND A TEAM ROOM; CLICK A SEAT TO SWAP TEAMS', '0.462'],
     ['THE MAP AND MINIMAP ARE GRAPHITE AND FLAT; POINT AT A CAMP FOR ITS NAME', '0.459'],
     ['THE FOUR WAR EAGLES WEAR PERCH\'S NEW LOOK', '0.446'],

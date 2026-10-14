@@ -8,6 +8,7 @@
 //   npm start -- --net=host        host a public lobby on the dev App ID
 //   npm start -- --join=LOBBYID    join one (the seed comes from the lobby)
 //   npm start -- --seed=N          pin the world, as ?seed=N does
+//   npm start -- --transport=relay the relay's rooms instead of Steam's lobbies (the default while Steam is up)
 //
 // APP_ID: the SteamAppId Steam puts in the environment of a build it launches,
 // else steam_appid.txt beside this file (Softfall's own, 5244550, committed -
@@ -66,7 +67,11 @@ function createWindow() {
   if (args.net) query.net = args.net;
   if (args.join) { query.net = 'client'; query.lobby = args.join; }
   if (args.relay) query.relay = args.relay;           // the match relay (host:port); remembered by the page
-  if (args.transport) query.transport = args.transport; // 'steam' to ride a Steam lobby instead of the relay
+  // a launch with Steam up rides Steam's lobbies (Noah's ruling, 2026-10-14):
+  // a player's own machine runs no relay. --transport=relay or a --relay=ADDR
+  // keeps the relay; with Steam down the page plays solo or dials a relay
+  if (args.transport) query.transport = args.transport;
+  else if (steam && !args.relay) query.transport = 'steam';
   // packaged (build.js copies the game into app/), or run from the repo
   const page = fs.existsSync(path.join(__dirname, 'app', 'index.html')) ? path.join(__dirname, 'app', 'index.html') : path.join(__dirname, '..', 'index.html');
   win.loadFile(page, { query });

@@ -1826,8 +1826,9 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
 ## Main menu (title)
 
 `state.mode === 'title'` is a real menu, not a splash: the sim's ambient half keeps running
-behind it (`updateTitle()` steps animals and fish and advances the menu timers; players, arrows
-and structures do not tick and `state.time` is frozen), snow falls as usual, and the camera is
+behind it (`updateTitle()` steps animals and fish - until a room is shared, when they stand still
+for every guest's sake, [online play](../pvp-architecture.md#the-wire-form) - and advances the menu
+timers; players, arrows and structures do not tick and `state.time` is frozen), snow falls as usual, and the camera is
 driven by `titleCamTarget()` — a slow lissajous drift around the open interior that stays
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:
