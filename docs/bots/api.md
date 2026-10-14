@@ -70,7 +70,7 @@ strings, one per row, one character per tile (`grid[ty][tx]`):
 
 | `#` | `~` | `-` | `=` | `,` | `.` |
 | --- | --- | --- | --- | --- | --- |
-| solid (tree, rock, wall) | open water | ice | road or bridge | ford | snow |
+| solid (tree, rock, wall, the cistern's stone) | open water | ice | road or a gate's sill | ford | snow |
 
 Trees fall and buildings rise after that: `obs.nodes` and `obs.structs` are the live word near you.
 
@@ -136,9 +136,9 @@ obs = {
 - **`kills`.** Every death on the map since your last think, as the feed shows it on every
   screen. `by` is the killer's seat, or -1 when no player did it. `out` is true when
   the victim's bird has fallen, so it will not come back.
-- **The orca.** The ice round the bridge is the orca's lake. Stand on it near the orca and it
-  locks on: `me.orca` counts down from 4, and if it reaches 0 while you are still on that ice
-  (the road over it is safe) the orca comes up and you go down, whatever your health.
+- **The orca.** The ice inside the cistern at the middle is the orca's lake. Stand on it near
+  the orca and it locks on: `me.orca` counts down from 4, and if it reaches 0 while you are still
+  on that ice (a gate's sill is safe) the orca comes up and you go down, whatever your health.
 - **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists what is on
   the shelf. Buy one with `cmd: { kind: 'shop', act: 'buy', sec, i }`.
 

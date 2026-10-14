@@ -40,14 +40,17 @@ A settings toggle (MY TEAM) shows the roster's real colours instead.
 
 **The creek splits the valley.** One creek runs the other diagonal, corner to
 corner through the woods and all, so the two roosts sit on opposite halves: it meets the road once,
-at the middle where the waves meet, under a timber bridge with open sides, and elsewhere it is
-crossed only at stepping-stone fords, or by a dodge roll from the bank. Round the bridge it pools
-and freezes into **the orca's lake**, both sides' alike: anyone can walk over it, but the orca
+at the middle where the waves meet, inside **the cistern**, and elsewhere it is crossed only at
+stepping-stone fords, or by a dodge roll from the bank. The cistern is the works' ring of cut
+stone round the crossing: the road comes in at two gates with stone sills, the wall is down in
+four breaches with the fallen blocks round them, and nothing gets through the stone itself, roll
+or charge. Inside, the creek pools and freezes into **the orca's lake**, both sides' alike: anyone
+can walk over it, but the orca
 under the ice locks on a player out on it, a line over their head runs 4 s, and then it comes up
 through the ice and they go down. [The orca](gameplay.md#the-orca). It swings round the two
 midline camps in a half-loop each, so each side owns one on its own bank: the brown bear is RED's,
 the black bear BLUE's, each walking its bank up and down and stopping to fish. Anyone who steps in plunges as through the ice, and a bot shoved off the
-bridge goes in like anybody. [The creek](world.md#the-creek).
+bank goes in like anybody. [The creek](world.md#the-creek), [the cistern](world.md#the-cistern).
 
 The world is 232 tiles of 16 px — a 3712×3712 px snowfield with a forest border and an interior
 threaded by frozen lakes and rivers, and **what that interior is, is a pick**: OPEN FIELD's wide

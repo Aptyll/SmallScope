@@ -212,8 +212,9 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
    the piercing shot's telegraph) → item drops;
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets and your side's flags, sorted by feet Y; empty player slots draw as team-tinted
-   silhouettes via `drawGhost`; the orca out of the water, `drawOrcaBreach`, sorted by its
-   hole's waterline and cut at it);
+   silhouettes via `drawGhost`; `pushMiddleDraws` adds the cistern's stone, piece by piece at
+   the key of a body standing on it, and the orca out of the water, `drawOrcaBreach`, sorted by
+   its hole's waterline and cut at it - [the cistern](world.md#the-cistern));
 8. `drawSelection` (white pulsing corners with a dark shadow over the hovered stump / open ice
    hole / finished structure, or the wheel's target) → `drawBuildGhost` (the build list's ghost)
    → `drawWorkHint` (the E work prompt) → `drawFishHint` (the fish brackets);
@@ -1384,7 +1385,9 @@ screen's world is live and a spectated match is someone else's feet:
 | `2` | bodies (tile boxes, unit circles, projectile points, pickup radii) plus the route every walker is following |
 
 Colour carries the kind, so there is nothing to label: **cyan** a wall to everyone (`isSolidTile`,
-so a multi-tile building boxes each of its footprint tiles), **blue** open water — a wall to
+so a multi-tile building boxes each of its footprint tiles; the cistern's stone, held by the pixel,
+is its footprint's edge px instead, with a green ring round the feet of each body near it:
+`drawCisternHitbox`), **blue** open water — a wall to
 animals and robots, a hole a player falls into — **green** the body circle
 `moveEntity`/`separateUnits` push apart, plus a dot on the anchor point itself, **red** the circle
 an arrow is tested against (on a standing building, the box of its drawn art and a turret

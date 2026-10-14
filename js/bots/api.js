@@ -186,7 +186,7 @@ function botAbility(p, i, lv) {
   return { key: i, id: ab.id, lv, cd: botR(p.abCd[i]), ready: abReady(p, i), range: aim.line || aim.ring || aim.cone || null };
 }
 // the map as it stood when the seat was taken, one character a tile, a row a
-// string: '#' solid, '~' open water, '-' ice, '=' road or bridge, ',' a ford,
+// string: '#' solid, '~' open water, '-' ice, '=' road or a gate's sill, ',' a ford,
 // '.' snow. Trees fall and buildings rise after it: obs.nodes and obs.structs
 // are the live word on what stands near you
 const BOT_GROUND = '.-~==,';

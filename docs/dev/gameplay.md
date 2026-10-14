@@ -260,10 +260,15 @@ its knockback too, so a shoved deer actually moves.
 [the creek](world.md#the-creek) and plunges; an animal or a robot meets a wall there. A **bot**'s
 own walk is strict too (`moveEntity(…, strict)` in `updatePlayer`) unless it is already standing
 in water or a shove past `WADE_SHOVE` (40 px/s of knockback) is carrying it, so a bot never wades
-in by itself and still goes in off the bridge when it is knocked off. An
+in by itself and still goes in off the bank when it is knocked off. An
 [ice break](world.md#ice-breaks)'s water is read by the pixel at the feet (`iceBreakWet`): a
 player goes in exactly where it shows, and a strict move (a bot's own walk, a shove) and every
 other walker stop at its edge, unless the step starts in it.
+
+**The cistern's stone is held to the pixel.** Every body, every step (`moveEntity`), meets
+[the cistern](world.md#the-cistern)'s footprint by `cisternReach`: the circle round its feet is
+swept along the step and stops against the stone, so a roll, a rush, a reel or a shove ends at the
+wall, never inside it.
 
 ## Pathfinding
 
@@ -1877,19 +1882,19 @@ perched) is the only height in the game, subtracted by `animalHitY` and the curs
 
 ### The orca
 
-**One orca lives under [its lake](world.md#the-orcas-lake), the frozen pool round the bridge**
+**One orca lives under [its lake](world.md#the-orcas-lake), the cistern's frozen pool**
 ([js/orca.js](../../js/orca.js), the pixels in [js/draw/orca.js](../../js/draw/orca.js), its
 art `SPRITES.orca`, baked by app/bake-orca/paint.py). It is not an animal: nothing shoots it,
 nothing walks into it, and it never leaves the water. `orca` is one `SAVE_ROOTS` singleton
 that rides the snapshot; the client eases it like a body (`netClientLerp`).
 
-- **It cruises** the whole disc (`orcaWater`, under the road too) as a shadow under the ice at
+- **It cruises** the whole disc (`orcaWater`, under the sills too) as a shadow under the ice at
   `ORCA_SWIM`, the lake's fish's look at the size of a deer, from one home tile (`orcaHome`: room
   of `ORCA_MARGIN` round it) to the next; every pick is `hash2` off the tick, never `rng()`.
 - **It locks on** (`orcaLook`) the nearest player standing on *its bare ice* (`orcaPrey`: ground
   `1` inside the disc, not in the air, not on a cable; a deer's back is still the ice) within
-  `seenAt(p, ORCA_SIGHT)` of it. The road over the lake, the snow bank either side of it and
-  the deck are safe. A line over their head (`orcaLine`, drawn by `drawOrcaLine`) runs
+  `seenAt(p, ORCA_SIGHT)` of it. A gate's stone sill is safe; everything else inside the ring
+  is its ice. A line over their head (`orcaLine`, drawn by `drawOrcaLine`) runs
   `ORCA_LINE` (4) s, a knock in the ice under them each second (`iceKnock`), while the shadow
   runs in under them as fast as the time left asks, up to `ORCA_DASH`. Off its ice and the hunt
   drops; it locks nobody for `ORCA_LET`.

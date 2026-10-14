@@ -597,7 +597,7 @@ creek on their own feet, while a shove off the bank dunks a bot.
 cistern (the `the cistern` banner, [js/cistern.js](../../js/cistern.js)): its pool is
 [the orca's lake](#the-orcas-lake), all ice. Look H CUT BLOCKS of
 `docs/media/concepts/cistern-concepts-4.png`. The ring runs from `CIST_RI` to `CIST_RO` tiles off
-the crossing (in `w`, `p`: the road's and the creek's frame), wall `HWALL` px tall. The road comes
+the crossing (in `w`, `p`: the road's and the creek's frame), the wall 16 px tall (the bake's `HWALL`). The road comes
 in at **two gates**, `CIST_GH` tiles either side of it, each a stone **sill** (ground `3`, walked
 over) between two piers a head taller than the wall. The wall is down in **four breaches** on the
 diagonals of that frame (north, east, south and west on screen), each stepping down course by
@@ -610,8 +610,8 @@ px in the game's 3/4 view and writes `js/sprites/cistern.js` (`SPRITES.cistern`,
 and every shadow), `segs` (the standing stone in pieces) and `solid` (the footprint: every ground
 px stone stands on). Everything random is drawn from (`w`, `|p|`), so BLUE's half is RED's
 mirrored, and nothing reads the seed: the creek is calm through it (`creekCalm`), so the culverts
-meet the water on every seed. The bake keeps every fallen block `LANE` px off each breach's middle
-line and refuses to write if a breach or a gate is narrower than that.
+meet the water on every seed. The bake keeps every fallen block `LANE` (16) px off each breach's
+middle line and refuses to write if a breach or a gate leaves less room than that.
 
 **Solid to the pixel.** `cisternField` turns the footprint into an exact distance field (px to the
 nearest stone) once a page. `moveEntity` asks `cisternReach` on every axis step of every body: a
