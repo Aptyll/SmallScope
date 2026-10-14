@@ -1927,7 +1927,7 @@ function zipCrash() {
 // resource: the pack - gold per head, the biggest steady payout on the map
 // buff:     the black bear - the brown bear's match, paid as it is (MONSTER's teamPay, wildlife.js);
 //           it walks BLUE's bank of the downstream bend
-// epic:     the brown bear - the whole team is paid and blooded for the kill;
+// epic:     the brown bear - the whole team is paid and given BEARHEART for the kill;
 //           it walks RED's bank of the upstream bend
 // hut:      no monster - three chests round a hut buried in the treeline,
 //           worth the chopping it takes to reach
@@ -1949,7 +1949,7 @@ const CAMPS = {
     spots: [[-2, -1], [2, -1], [-2, 2], [2, 2]],
   },
   buff: {
-    name: 'BLACK BEAR STONE', tag: 'ITS BLOOD RUNS HOT',
+    name: 'BLACK BEAR STONE', tag: 'THE BLACK BEAR FISHES HERE',
     r: 4, mark: '#c2a6ff', river: 9,
     icon: [[3, 1, 1, 1], [2, 2, 3, 1], [1, 3, 5, 1], [2, 4, 3, 1], [3, 5, 1, 1]], // a cut stone
     kind: 'alpha', pop: 1, repop: 300,

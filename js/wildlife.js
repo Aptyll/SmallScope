@@ -150,6 +150,7 @@ function makeAnimal(kind, x, y) {
     home: null,                          // the camp it belongs to, if any
     rider: null,                         // a ridden deer: the player on its back (the `riding` banner)
     tame: false,                         // a deer that stands for its rider and never bolts (the practice ride's, prDeerStep)
+    route: null, leg: 0, way: 1, lost: null, // a valley deer: its side's line, the point it heads for, which way along it, and what it last ran from (deerRouteGoal)
     target: null, biteCd: 0, threat: 0, // camp monster: its quarry, its bite rhythm, and the leash bar (0..1) that ends the hunt
     perch: null, flyT: 0, fa: 0, alt: 0, // bird: its tree, its flight, its height
     dead: false,
@@ -193,51 +194,117 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
   sfxAt('hit', a.x, a.y); if (a.hp > 0 && a.kind !== 'bird') sfxAt('yelp', a.x, a.y);
 }
 
-// The deer, and the strength the valley is kept at: PREY_POP of them,
-// anywhere in the open, put down at boot by spawnAnimals and then topped up
-// one at a time by updatePreyStock, every PREY_REPOP seconds the herd is
-// short, at a spot no live player is within PREY_CLEAR of (past the edge of
-// any screen at zoom 1, so nothing is ever seen to appear) and at the level
-// the table has reached by then (animalLevel). They never breed: the valley
-// is restocked, not grown, and a hunt never empties it for good. The
-// rabbits are not stock: three live in each WARREN and come back as a camp
-// does, on its clock (CAMPS.meadow, updateCamps, js/world.js).
-const PREY_POP = { deer: 10 };
-const PREY_REPOP = 15;  // s between top-ups (one animal each)
-const PREY_CLEAR = 280; // px from every live player a newcomer must land
-let preyRepopT = PREY_REPOP;
+// The deer: TWO in the valley, one each side of the creek, and they never
+// stand still for long. Each walks its side's ROUTE (deerRoutes, laid at boot
+// by layDeerRoutes): points DEER_ROUTE_STEP tiles apart on a line parallel
+// to the creek, DEER_ROUTE_U tiles out along the road from that side's roost,
+// from one treeline to the other across the road, kept DEER_ROUTE_KEEP tiles
+// off the woods and off every camp's ground. It runs the line end to end and
+// back (a.leg, a.way) at DEER_ROAM, stopping to graze at DEER_GRAZE_P of its
+// points, and bolts from any player it sees and from any wolf or bear inside
+// DEER_BEAST_SIGHT (updatePrey) - then picks the line up again heading on
+// away from what it ran from. So a deer is a thing you hunt down or wait
+// for, not one you walk past, and catching one to ride is the prize. A side
+// whose deer goes down gets the next one DEER_BACK seconds later, at the
+// point of its line furthest from every player (updatePreyStock), so nothing
+// is ever seen to appear. The rabbits are not stock: three live in each
+// WARREN and come back as a camp does, on its clock (CAMPS.meadow,
+// updateCamps, js/world.js).
+const DEER_ROUTE_U = 100;     // tiles along the road from a roost to its side's line (the creek is at ~115)
+const DEER_ROUTE_STEP = 5;    // tiles between the points of a line
+const DEER_ROUTE_KEEP = 3;    // tiles a point keeps off the woods and off a camp's ground
+const DEER_ROAM = PLAYER_SPEED; // px/s along the line: a walk keeps up, it does not close
+const DEER_GRAZE_P = 0.25;    // the share of points a deer stops at
+const DEER_GRAZE_T = [1.5, 3.5]; // s it grazes there
+const DEER_BEAST_SIGHT = 96;  // px a deer bolts from a wolf or a bear at
+const DEER_BACK = 60;         // s after a side's deer goes down before the next comes
+const PREY_CLEAR = 280;       // px from every live player a newcomer must land
+let deerRoutes = [[], []];    // each side's line, world px points (layDeerRoutes)
+let deerBackT = [DEER_BACK, DEER_BACK]; // s until each side's next deer, counting while it has none
 
-// one animal of a kind on a free tile clear of the map's centre, and - when
-// `clear` - out of everyone's reach. The animal, or null if forty tries
-// found nowhere
-function spawnPrey(kind, clear) {
-  for (let tries = 0; tries < 40; tries++) {
-    const tx = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN), ty = randi(BORDER_MIN + 2, WORLD - 3 - BORDER_MIN);
-    if (!inWorld(tx, ty) || objects[idx(tx, ty)] || waterAt(tx, ty) || Math.hypot(tx - cx, ty - cy) <= 14) continue;
-    const x = (tx + 0.5) * TILE, y = (ty + 0.5) * TILE;
-    if (clear && players.some((p) => p.active && !p.dead && !inAir(p) && Math.hypot(p.x - x, p.y - y) < PREY_CLEAR)) continue;
-    const a = makeAnimal(kind, x, y);
-    animals.push(a);
-    return a;
+// each side's line: (u, s) road coordinates (campTile, world.js) mirrored
+// across the middle, sampled every DEER_ROUTE_STEP tiles of s, keeping the
+// open tiles clear of the woods and of camp ground. Pure position: no rng.
+function layDeerRoutes() {
+  deerRoutes = [0, 1].map((side) => {
+    const u = side ? WORLD - 1 - DEER_ROUTE_U : DEER_ROUTE_U, out = [];
+    for (let s = -WORLD; s <= WORLD; s += DEER_ROUTE_STEP) {
+      const { tx, ty } = campTile(u, s);
+      if (!inWorld(tx, ty) || !walkable(tx, ty)) continue;
+      if (Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) < borderDepth(tx, ty) + DEER_ROUTE_KEEP) continue;
+      if (camps.some((C) => campNear(C, tx, ty, CAMP_GROUND + DEER_ROUTE_KEEP))) continue;
+      out.push({ x: (tx + 0.5) * TILE, y: (ty + 0.5) * TILE });
+    }
+    return out;
+  });
+}
+
+// a side's deer on a point of its line: the middle at boot, and on a restock
+// the point furthest from every live player, if that is past PREY_CLEAR. The
+// animal, or null if the line is empty or nowhere is out of sight yet
+function spawnDeer(side, clear) {
+  const R = deerRoutes[side];
+  if (!R.length) return null;
+  let i = R.length >> 1;
+  if (clear) {
+    let best = -1;
+    for (let k = 0; k < R.length; k++) {
+      let d = 1e9;
+      for (const p of players) if (p.active && !p.dead && !inAir(p)) d = Math.min(d, Math.hypot(p.x - R[k].x, p.y - R[k].y));
+      if (d >= PREY_CLEAR && d > best) { best = d; i = k; }
+    }
+    if (best < 0) return null;
   }
-  return null;
+  const a = makeAnimal('deer', R[i].x, R[i].y);
+  a.route = side; a.leg = i; a.way = rng() < 0.5 ? 1 : -1;
+  animals.push(a);
+  return a;
 }
 
 function spawnAnimals() {
-  for (const k in PREY_POP) for (let i = 0; i < PREY_POP[k]; i++) spawnPrey(k, false);
+  layDeerRoutes();
+  for (const side of [0, 1]) spawnDeer(side, false);
 }
 
-// the top-up: on the clock, the kind furthest under strength gets one back
+// the restock: a side with no deer counts DEER_BACK down and then gets one.
+// A deer from a save older than the lines (no a.route) is taken onto an
+// empty side's line rather than a new one spawned beside it
 function updatePreyStock(dt) {
-  preyRepopT -= dt;
-  if (preyRepopT > 0) return;
-  preyRepopT = PREY_REPOP;
-  const live = {};
-  for (const k in PREY_POP) live[k] = 0;
-  for (const a of animals) if (!a.dead && live[a.kind] !== undefined) live[a.kind]++;
-  let kind = null, short = 0;
-  for (const k in PREY_POP) if (PREY_POP[k] - live[k] > short) { short = PREY_POP[k] - live[k]; kind = k; }
-  if (kind) spawnPrey(kind, true);
+  for (const side of [0, 1]) {
+    if (animals.some((a) => !a.dead && a.kind === 'deer' && a.route === side)) { deerBackT[side] = DEER_BACK; continue; }
+    const stray = animals.find((a) => !a.dead && a.kind === 'deer' && a.route == null && !a.tame);
+    if (stray) { stray.route = side; stray.leg = deerLegNear(stray, side); stray.way = 1; continue; }
+    deerBackT[side] -= dt;
+    if (deerBackT[side] <= 0 && spawnDeer(side, true)) deerBackT[side] = DEER_BACK;
+  }
+}
+
+// the point of a side's line nearest a body
+function deerLegNear(a, side) {
+  const R = deerRoutes[side];
+  let best = 0, bd = 1e18;
+  for (let k = 0; k < R.length; k++) { const d = (R[k].x - a.x) ** 2 + (R[k].y - a.y) ** 2; if (d < bd) { bd = d; best = k; } }
+  return best;
+}
+
+// the deer's next point along its line, turning at either end; after a
+// flight (a.lost) it picks the line up at the nearest point, heading on
+// the way that points away from what it ran from
+function deerRouteGoal(a) {
+  const R = deerRoutes[a.route];
+  if (!R || R.length < 2) return wanderGoal(a, rng() * Math.PI * 2, Math.PI, 3, 6); // a seed with no room for a line
+  // carried off its line (a rider, a long flight): back to the nearest point
+  if (!a.lost && Math.hypot(R[a.leg].x - a.x, R[a.leg].y - a.y) > 3 * DEER_ROUTE_STEP * TILE) a.lost = { x: a.x, y: a.y };
+  if (a.lost) {
+    a.leg = deerLegNear(a, a.route);
+    const k = Math.min(R.length - 1, a.leg + 1), j = Math.max(0, a.leg - 1);
+    const fx = a.lost.x, fy = a.lost.y;
+    a.way = Math.hypot(R[k].x - fx, R[k].y - fy) >= Math.hypot(R[j].x - fx, R[j].y - fy) ? 1 : -1;
+    a.lost = null;
+  }
+  if (a.leg + a.way < 0 || a.leg + a.way >= R.length) a.way = -a.way;
+  a.leg = Math.max(0, Math.min(R.length - 1, a.leg + a.way));
+  return { x: R[a.leg].x, y: R[a.leg].y };
 }
 
 // ------------------------------------------------------------ fish
@@ -533,6 +600,7 @@ function wanderGoal(a, base, spread, near, far, C) {
 // back toward the middle, and on it takes short hops of a tile or three any
 // way that stays on it; everyone else just picks an open way out
 function preyWander(a) {
+  if (a.route != null) return deerRouteGoal(a); // a valley deer walks its line
   const C = a.meadow;
   if (C) {
     const hx = (C.tx + 0.5) * TILE, hy = (C.ty + 0.5) * TILE;
@@ -617,7 +685,14 @@ function updatePrey(a, dt) {
     if (d < sd) { sd = d; scare = p; }
   }
   // a tame deer (the practice ride's, prDeerStep, js/world.js) never bolts from one
-  const seen = !a.tame && !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
+  let seen = !a.tame && !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
+  // ...and a deer bolts from a wolf or a bear too, inside DEER_BEAST_SIGHT
+  // whether it is hunting or not: neutral to a scout is not neutral to a deer
+  if (!rabbit && !a.tame) for (const m of animals) {
+    if (m.dead || !isCampKind(m.kind)) continue;
+    const d = Math.hypot(m.x - a.x, m.y - a.y);
+    if (d < DEER_BEAST_SIGHT && (!seen || d < sd)) { seen = true; scare = m; sd = d; }
+  }
   if (a.fleeT <= 0 && seen) {
     // a rabbit that has only just noticed you sits up first (RABBIT_ALERT);
     // the deer, and a rabbit whose beat is spent, go
@@ -625,6 +700,7 @@ function updatePrey(a, dt) {
     else if (a.alertT <= 0) {
       const t = FLEE_TIME[a.kind];
       a.fleeT = rand(t[0], t[1]);
+      if (a.route != null) a.lost = { x: scare.x, y: scare.y }; // the line is picked up heading away from it (deerRouteGoal)
     }
     a.goal = null; navClear(a); // the graze is off either way
   }
@@ -665,9 +741,13 @@ function updatePrey(a, dt) {
   } else if (a.goal) {
     // grazing is a routed walk to a real tile: it rounds the trees instead of
     // bumping them, and it ends on the spot the animal was heading for
-    const n = navStep(a, a.goal.x, a.goal.y, r, rabbit ? PREY_SPD[a.kind] : deerPace(a, PREY_SPD[a.kind], dt), dt);
-    if (!n.ok || n.d < 6) { a.goal = null; navClear(a); a.idleT = rabbit ? rand(0.8, 2.2) : rand(1.6, 4); }
-    else moving = true;
+    // (a valley deer walks its line at DEER_ROAM, and grazes at only some of its points)
+    const roam = a.route != null;
+    const n = navStep(a, a.goal.x, a.goal.y, r, rabbit ? PREY_SPD[a.kind] : deerPace(a, roam ? DEER_ROAM : PREY_SPD[a.kind], dt), dt);
+    if (!n.ok || n.d < 6) {
+      a.goal = null; navClear(a);
+      a.idleT = rabbit ? rand(0.8, 2.2) : !roam ? rand(1.6, 4) : rng() < DEER_GRAZE_P ? rand(DEER_GRAZE_T[0], DEER_GRAZE_T[1]) : 0;
+    } else moving = true;
   } else {
     a.idleT -= dt;
     // a deer that has just stopped runs its pace out along the heading it
@@ -747,7 +827,7 @@ function animalDies(a) {
     addFloater(a.x, a.y - 68, MONSTER[a.kind].feed + ' DOWN', '#ffb04a');
   }
   // a midline camp's kill (the black bear's and the brown bear's, one side's each
-  // and paid the same): the whole team is paid and blooded, wherever they
+  // and paid the same): the whole team is paid and given CAMP_BUFF_NAME, wherever they
   // are, and the feed says who did it - the kills that are news to both sides
   if (MONSTER[a.kind] && MONSTER[a.kind].teamPay) {
     if (hunter) {
@@ -774,8 +854,8 @@ function animalDies(a) {
 // four wolves on you is four bites a second), the hunting speed, and the
 // body's radius and mass (unitRadius/UNIT_MASS read these, nav.js) - a
 // bear is a big sprite and a body a roll does NOT pass through - and
-// `teamPay` for the two midline camps' ones, whose kill pays and bloods the
-// killer's whole team (animalDies) and names it in the feed as `feed`. The creek gives one to each side's bank
+// `teamPay` for the two midline camps' ones, whose kill pays the killer's
+// whole team and gives it CAMP_BUFF_NAME (animalDies) and names it in the feed as `feed`. The creek gives one to each side's bank
 // (creekBends, world.js), so the two are one fight in two coats: the brown
 // bear (`dire`, RED's bank) and the black bear (`alpha`, BLUE's) have the
 // same row, the same hp (ANIMAL_HP) and the same pay. `cause` is the
@@ -826,14 +906,15 @@ const CAMP_LEASH_T = 3;    // s for a full leash bar to drain off the ground - t
 const CAMP_REGEN_T = 6;    // s for a monster with nobody to hunt to heal from nothing to full - a camp you leave is a camp reset
 const CAMP_SEE = 9 * TILE; // px an awake monster spots a player across (seenAt shortens it for the hidden)
 const CAMP_SWITCH = TILE;  // px closer another player must be before an awake monster turns to them
-// The kills' rewards past the gold (YIELD, core.js). ALPHA'S BLOOD is what
+// The kills' rewards past the gold (YIELD, core.js). BEARHEART (CAMP_BUFF_NAME) is what
 // a midline camp's kill wears: CAMP_BUFF_DMG on every blow the player lands
 // (hurtUnit, actions.js) and CAMP_BUFF_SPD on the walk (abilityMoveMul,
 // abilities.js), worn as the amber ring under the feet that empties as it
 // runs out (drawPlayer, draw-world.js). The two bears pay
-// EVERY player on the killer's team EPIC_TEAM_GOLD and blood the whole team
-// for CAMP_BUFF_EPIC_T - the kills in the game that pay people who were not
+// EVERY player on the killer's team EPIC_TEAM_GOLD and give the whole team
+// the buff for CAMP_BUFF_EPIC_T - the kills in the game that pay people who were not
 // there, which is what makes them worth walking to as five.
+const CAMP_BUFF_NAME = 'BEARHEART'; // what the wiki and the patch notes call it
 const CAMP_BUFF_EPIC_T = 120;
 const CAMP_BUFF_DMG = 1.25;
 const CAMP_BUFF_SPD = 1.15;

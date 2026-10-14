@@ -63,8 +63,9 @@ const SAVE_ROOTS = [
   ['callouts', ...saveArr(callouts)],
   ['callSaid', () => callSaid, (v) => { callSaid[0] = v ? v[0] : {}; callSaid[1] = v ? v[1] : {}; }],
   ['rng', () => [rng.s, fxRng.s, mktRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; mktRng.s = v[2]; }],
-  ['wild', () => [preyRepopT, fishCap, fishFloor, emergeSites],
-    (v) => { preyRepopT = v[0]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
+  // (a save from before the deer lines carries one number there: both sides start their clock fresh)
+  ['wild', () => [deerBackT, fishCap, fishFloor, emergeSites],
+    (v) => { deerBackT = Array.isArray(v[0]) ? v[0] : [DEER_BACK, DEER_BACK]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
   ['ai', () => [aiSitTick, aiSit], (v) => { aiSitTick = v[0]; aiSit = v[1]; }],
   ['aiTeams', ...saveArr(aiTeams)], // the sides' shared minds (js/ai-team.js)
   ['stats', () => [statT, matchStats], (v) => { statT = v[0]; matchStats = v[1]; }],

@@ -672,7 +672,7 @@ class Player {
     this.shieldT = 0; this.shieldA = 0;            // the tower shield, and where it faces
     this.rushT = 0; this.rushNX = 0; this.rushNY = 0; this.rushVictim = null;
     this.castSlam = false;                         // the shield key pressed mid-wall or mid-rush: the cast in flight is the SLAM, not a raise (js/abilities.js)
-    this.buffT = 0;                                // s of ALPHA'S BLOOD left (campBuff, wildlife.js): harder blows, a quicker walk
+    this.buffT = 0;                                // s of BEARHEART left (campBuff, wildlife.js): harder blows, a quicker walk
     this.dawnShield = 0;                           // hp of the DAWN SHIELD left (pickSnowdrop, js/actions.js): spent before health
     // the tunnels (js/tunnel.js): the one being ridden ({ fx, fy, tx, ty, t, len },
     // px and s), the wait after coming up before any hole takes this body
@@ -975,7 +975,7 @@ function die(p, src, cause) {
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
   p.castSlam = false; p.hopT = 0; p.grapT = 0;
-  p.buffT = 0; // the blood goes with the body too
+  p.buffT = 0; // BEARHEART goes with the body too
   p.dawnShield = 0; // ...and the dawn's shield
   clearUnitStatus(p); // root, slow, net, mark and the fire go out with the body
   burst(p.x, p.y - 6, TEAMS[skin(p.team)].mark, 12, 55, 0.6);

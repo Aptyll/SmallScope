@@ -702,11 +702,11 @@ Five kinds, one reward each:
   the last one dies.
 - **BLACK BEAR STONE** (`buff`, r 4, ×1) — a [river camp](#river-camps): no props, one **black
   bear** (kind `alpha`) walking BLUE's bank of the downstream bend. The brown bear's match, the same
-  body: the same hp, the same pay, the whole team blooded for 120 s
+  body: the same hp, the same pay, BEARHEART for the whole team for 120 s
   ([camp monsters](gameplay.md#camp-monsters-neutral-until-hit)). Back in 300 s.
 - **BROWN BEAR DEN** (`epic`, r 6, ×1) — a [river camp](#river-camps): no props, the **brown
   bear** (kind `dire`) walking RED's bank of the upstream bend: a big body with a wall of hp. The kill pays the killer
-  `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, bloods the whole team for 120 s, and
+  `YIELD.dire` and **every teammate** `EPIC_TEAM_GOLD`, gives the whole team BEARHEART for 120 s, and
   writes the feed. Back in 300 s.
 - **HOG HUT** (`hut`, r 4, ×6) — no monster: a log hut (`hut`, a 2×2
   footprint; `SPRITES.hogHut`, eight frames of chimney smoke) with **three chests** round it, in

@@ -21,10 +21,10 @@
 //          fight rung reads, so it joins the fight rather than walking past.
 // Plus the plan's one reading of the match: its STANCE (FARM, PRESS, PUSH,
 // HOLD, BEAR) and the WINDOW - when more of the rivals are down than of its
-// own, or the side is wearing a bear's blood, the side's free hands go for
+// own, or the side is wearing BEARHEART, the side's free hands go for
 // the bird while it lasts. And the BEAR: once the side is strong enough it
 // sends a party to the bear on its bank together - the kill pays everyone
-// and bloods them (MONSTER's teamPay, wildlife.js), which opens the window.
+// and gives them BEARHEART (MONSTER's teamPay, wildlife.js), which opens the window.
 // The difficulty profile's decision knobs (judge, focus, team, memory) are
 // read through aiKnob with a neutral default; a mood nudges them, never
 // replaces them.
@@ -155,11 +155,11 @@ function aiPlan(team) {
   const prof = aiProfile(bots[0]);
   const sit = aiSituation(), mine = sit[team], theirs = sit[1 - team];
   // the window: the rivals are thinner on the ground than the side is, or
-  // the side is wearing a bear's blood (most of it)
+  // the side is wearing BEARHEART (most of it)
   const gap = aiDownCount(1 - team) - aiDownCount(team);
-  let blood = 0;
-  for (const q of bots) if (q.buffT > 20) blood++;
-  if (theirs && !(mine && mine.threat) && ((state.elapsed > AI_STALK_AT && gap >= AI_WINDOW_DOWN) || blood * 2 > bots.length)) T.winT = AI_WINDOW_MIN;
+  let heart = 0;
+  for (const q of bots) if (q.buffT > 20) heart++;
+  if (theirs && !(mine && mine.threat) && ((state.elapsed > AI_STALK_AT && gap >= AI_WINDOW_DOWN) || heart * 2 > bots.length)) T.winT = AI_WINDOW_MIN;
   else T.winT = Math.max(0, T.winT - AI_PLAN_T);
   // the brace: a rival push on the side's half, deeper into it than the
   // side's own push is into theirs, is met at home - the pushers turn guard
@@ -233,7 +233,7 @@ function aiPlan(team) {
   // the stance, the one word the dashboard shows for the side
   if (mine && mine.threat) { T.stance = 'HOLD'; T.why = mine.hp < AI_ALARM_HP ? 'BIRD HURT' : 'BIRD HIT'; }
   else if (T.braceT > 0 && T.winT <= 0) { T.stance = 'BRACE'; T.why = T.braceN + ' COMING'; }
-  else if (T.winT > 0) { T.stance = 'WINDOW'; T.why = blood * 2 > bots.length ? 'BEAR BLOOD' : gap > 0 ? gap + ' DOWN' : 'CLOSING'; }
+  else if (T.winT > 0) { T.stance = 'WINDOW'; T.why = heart * 2 > bots.length ? 'BEARHEART' : gap > 0 ? gap + ' DOWN' : 'CLOSING'; }
   else if (T.bear) { T.stance = 'BEAR'; T.why = 'PARTY OF ' + party; }
   else if (nPush > 0) { T.stance = 'PUSH'; T.why = nPush + ' ON BIRD'; }
   else if (want.indexOf('stalker') >= 0) { T.stance = 'PRESS'; T.why = 'HUNTING'; }
