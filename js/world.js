@@ -1440,8 +1440,44 @@ function bridgeAt(fx, fy) {
   return Math.abs(creekP(fx, fy)) <= BRIDGE_L && Math.abs(roadOffS(fx, fy)) <= BRIDGE_W;
 }
 // in the water, as drawn: what the plunge asks of the feet, so nobody goes
-// in off a pixel of bank or off the deck's overhang
-function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !bridgeAt(fx, fy); }
+// in off a pixel of bank or off the deck's overhang, or off the ice where
+// the creek runs on under the orca's lake
+function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !bridgeAt(fx, fy) && !creekIced(fx, fy); }
+// THE ORCA'S LAKE: at the middle the creek pools round the bridge, and the
+// pool is frozen over. The outfall still runs under the ice, and the orca
+// lives in it (the `orca` banner, js/orca.js). A disc ORCA_LAKE_R tiles round
+// the crossing whose rim wanders on EVEN harmonics alone, so the shape is
+// point-symmetric about the bridge like the roosts and the bends: each
+// side's half of the valley gets the same ice. Inside it every tile of the
+// creek is ice (ground 1; the lane's share past the deck's ends is paved by
+// placeRoad), and so is every snow tile more than ORCA_LAKE_VERGE tiles off
+// the road's edge, so the road crosses on a bank of snow and the deck over
+// the frozen creek. Any other ice within ORCA_LAKE_MOAT of the rim goes back
+// to snow, so the lake stands alone. The water's own pixels freeze to the disc's edge
+// (creekIced: creekWet, paintCreek, creekFishAt); the banks and the sheet are
+// the lake's shore like any lake's (iceAtPx). Pure position: nothing rolls,
+// laid by placeCreek.
+const ORCA_LAKE_R = 11.5;      // tiles from the crossing to the rim, before its wander
+const ORCA_LAKE_WOB = [[0.8, 2, 0.5], [0.5, 4, 1.7], [0.3, 6, 0.4]]; // the rim's wander: tiles, harmonic (even: point-symmetric), phase
+const ORCA_LAKE_VERGE = 1.2;   // tiles of snow bank kept between the road's edge and the ice
+const ORCA_LAKE_MOAT = 2.5;    // tiles of snow kept round the rim, so no river or pond runs into it: the lake the orca hunts is the one you see
+// signed tiles from the rim (negative inside); 99 well clear of it
+function orcaLakeEdge(fx, fy) {
+  if (PRACTICE) return 99;
+  const w = roadOffS(fx, fy), p = creekP(fx, fy), d = Math.hypot(w, p);
+  if (d > ORCA_LAKE_R + ORCA_LAKE_MOAT + 2) return 99;
+  const a = Math.atan2(p, w);
+  let r = ORCA_LAKE_R;
+  for (const [amp, k, ph] of ORCA_LAKE_WOB) r += amp * Math.sin(k * a + ph);
+  return d - r;
+}
+function orcaLakeAt(fx, fy) { return orcaLakeEdge(fx, fy) < 0; }
+// does this tile hold any of the disc (a tile's whole square, for the painters)
+function orcaLakeNear(tx, ty) { return !PRACTICE && Math.hypot(roadOffS(tx, ty), creekP(tx, ty)) < ORCA_LAKE_R + 3.5; }
+// the creek frozen here: anywhere in the disc. Under the lane past the
+// deck's ends it is road (placeRoad paves those tiles, paintCreek leaves the
+// earth), so the one water the road meets is gone under the deck and the ice
+function creekIced(fx, fy) { return orcaLakeAt(fx, fy); }
 // the outer fords: on the diagonal, halfway between a bend's end (or the
 // bridge, on a side with no bend) and where the border woods close over
 // the creek - where the stretch is long enough to want one
@@ -1485,6 +1521,7 @@ function creekFord(fx, fy) {
 // Runs at boot right after genWorld() (js/boot.js), before the paths and the
 // road: the water fells whatever grew on it (its banks keep their pines), the
 // deck is laid bank to bank, and the fixed fords go down. A path's own fords follow in layPaths (addPathRoute).
+// Last, the orca's lake freezes over round the bridge, felling what grew there.
 function placeCreek() {
   if (PRACTICE) return;
   creekBendsC = null; creekFordsC = null;
@@ -1496,11 +1533,21 @@ function placeCreek() {
     objects[i] = null;
   }
   for (const f of creekOuterFords()) creekFord(f.x, f.y);
+  const c = (WORLD - 1) / 2, r = Math.ceil(ORCA_LAKE_R + ORCA_LAKE_MOAT + 2);
+  for (let ty = Math.floor(c - r); ty <= Math.ceil(c + r); ty++) for (let tx = Math.floor(c - r); tx <= Math.ceil(c + r); tx++) {
+    if (!inWorld(tx, ty)) continue;
+    const i = idx(tx, ty), g = ground[i], e = orcaLakeEdge(tx, ty);
+    if (e >= 0) { if (e < ORCA_LAKE_MOAT && g === 1) ground[i] = 0; continue; } // the moat: a river or a pond stops short of the rim
+    if (g !== 4 && (g === 3 || roadMainDist(tx, ty) <= ORCA_LAKE_VERGE)) continue; // the creek freezes to the lane (which paves it); the snow to the verge
+    ground[i] = 1;
+    objects[i] = null;
+  }
 }
 
 // THE CREEK'S FISH: a LAKE WHITEFISH or a SNOW CHAR every CREEK_FISH_GAP
 // tiles of creek, swimming downstream under the water, now and then down out
-// of sight and back, under the bridge's deck and never over a ford. Each one
+// of sight and back, under the bridge's deck and the orca's lake's ice and
+// never over a ford. Each one
 // is a pure function of its index and the field's clock (state.windT), so
 // nothing has to move them and every client places them alike; the one thing
 // the match keeps is which were caught: state.creekGone maps an index to the
@@ -1531,6 +1578,7 @@ function creekFishAt(i) {
   if (back !== undefined) show *= Math.max(0, Math.min(1, now - back));
   const p = creekMid(w) + (h2 - 0.5) * 2 * CREEK_FISH_LANE + Math.sin(now * 1.3 + i) * 0.25;
   const fx = ((w + p) * Math.SQRT2 + WORLD - 1) / 2, fy = ((w - p) * Math.SQRT2 + WORLD - 1) / 2;
+  if (show > 0 && creekIced(fx, fy)) show = 0; // under the orca's lake's ice
   if (show > 0) { // ...and never shows over a ford's stones
     const tx = Math.round(fx), ty = Math.round(fy);
     for (let dy = -1; dy <= 1 && show > 0; dy++) for (let dx = -1; dx <= 1; dx++) if (inWorld(tx + dx, ty + dy) && ground[idx(tx + dx, ty + dy)] === 5) { show = 0; break; }

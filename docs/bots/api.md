@@ -97,6 +97,7 @@ obs = {
                            // 'arrived' also beside a goal no path enters (a bird, a tree); 'fail' = no route
     lastCmd: { kind, tick, ok, why } | null,  // what came of your latest order
     atShop,                // standing at a merchant's counter
+    orca,                  // s left on the orca's line over your head; -1 when it is not after you
   },
   allies:   [{ id, x, y, hp, maxHp, cls, dead, respawnT, aboard, bot }],  // your whole side, always
   enemies:  [{ id, x, y, vx, vy, hp, maxHp, cls, prone }],                // rivals your side can see
@@ -135,6 +136,9 @@ obs = {
 - **`kills`.** Every death on the map since your last think, as the feed shows it on every
   screen. `by` is the killer's seat, or -1 when no player did it. `out` is true when
   the victim's bird has fallen, so it will not come back.
+- **The orca.** The ice round the bridge is the orca's lake. Stand on it near the orca and it
+  locks on: `me.orca` counts down from 4, and if it reaches 0 while you are still on that ice
+  (the road over it is safe) the orca comes up and you go down, whatever your health.
 - **Shopping.** Walk to a merchant or its stall until `me.atShop`; `shop` then lists what is on
   the shelf. Buy one with `cmd: { kind: 'shop', act: 'buy', sec, i }`.
 

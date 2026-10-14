@@ -1558,6 +1558,7 @@ if (PRACTICE) {
   placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
   spawnAnimals();
   spawnFish();
+  spawnOrca();       // ...and the orca under its lake (js/orca.js)
   stockCamps();      // the monsters go in once the world is standing
 }
 layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/depth.js)
@@ -1667,6 +1668,8 @@ window.DBG = {
   fish, iceCracks, holes, crackIce, addFish, spawnEmerger, netAt, buildSiteAt,
   // the ice breaking in its own shape (js/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
+  // the orca and its lake (js/orca.js, js/world.js): its state, the line over a head, the disc
+  orca, orcaLine, orcaAge, orcaShore, orcaLakeAt, orcaLakeEdge, ORCA_LINE,
   // the shoal the water this shape froze can hold (the fish banner, wildlife.js)
   get fishCap() { return fishCap; }, get fishFloor() { return fishFloor; },
   // the camps: the live registry, the table behind it, where each site is,

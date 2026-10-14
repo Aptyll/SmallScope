@@ -283,6 +283,28 @@ function drawShieldBar(x, y, shield) {
   ctx.fillRect(x, y, 1, 1);
 }
 
+// The ORCA'S LINE (orcaLine, js/orca.js): the seconds a player the orca has
+// locked has left on its ice, on a row of its own built the way the dawn
+// shield's is, over the shield when both are up, everything above standing
+// SHIELD_LIFT rows higher again (drawPlayer). Ice pale over ice blue, cut
+// into one segment a second and draining from the right; the last second
+// blinks white. The ice's colours and no team's, over a friend or a rival.
+const ORCA_LINE_HI = '#e6fbff', ORCA_LINE_LO = '#8fd4f4';
+function drawOrcaLine(x, y, left, now) {
+  const w = 14, segs = ORCA_LINE, fw = Math.max(0, Math.round(w * Math.min(1, left / segs)));
+  const blink = left < 1 && Math.floor(now * 7.5) % 2 === 0;
+  ctx.fillStyle = BAR_FRAME;
+  ctx.fillRect(x - 1, y - 1, w + 2, 3); // rows above the backing under it only
+  ctx.fillStyle = BAR_TRACK;
+  ctx.fillRect(x, y, w, 2);
+  ctx.fillStyle = blink ? '#ffffff' : ORCA_LINE_HI;
+  ctx.fillRect(x, y, fw, 1);
+  ctx.fillStyle = blink ? ORCA_LINE_HI : ORCA_LINE_LO;
+  ctx.fillRect(x, y + 1, fw, 1);
+  ctx.fillStyle = BAR_FRAME;
+  for (let i = 1; i < segs; i++) ctx.fillRect(x + Math.round(i * (w + 1) / segs) - 1, y, 1, 2);
+}
+
 // The level plate: a 7-tall badge hard against a bar backing's LEFT column
 // (`rx`, the column past the plate, already painted by the bar), sharing that
 // one frame column and spanning the two bars stacked under it (topY..topY+6).

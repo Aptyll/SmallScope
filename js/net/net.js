@@ -370,7 +370,9 @@ function netClientApplyDelta(msg) {
   for (const k in SNAP_KINDS) for (const e of SNAP_KINDS[k]()) shown.set(e, [e.x, e.y]);
   for (const p of players) shown.set(p, [p.x, p.y]);
   if (state.drop) for (const e of state.drop.eagles) shown.set(e, [e.x, e.y]);
+  shown.set(orca, [orca.x, orca.y]);
   const changed = snapApplyDelta(msg.d);
+  if (changed && msg.d.orca) changed.push([orca, msg.d.orca]); // the orca is a singleton, eased like a body
   NET.lastTick = msg.tick;
   if (changed === null) { NET.synced = false; NET.transport.send('host', { t: 'resync' }); return; } // an id we never had: ask for the whole thing
   // the check, against the host's own full form when it rides along
@@ -420,6 +422,7 @@ function netClientLerp() {
   for (const k in SNAP_KINDS) for (const e of SNAP_KINDS[k]()) ease(e);
   for (const p of players) ease(p);
   if (state.drop) for (const e of state.drop.eagles) ease(e);
+  ease(orca);
 }
 // which screen this state calls for, from the local player's own body: the
 // ride while aboard or falling, the death overlay while down, play otherwise,

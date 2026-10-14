@@ -228,6 +228,9 @@ function render() {
     ctx.globalAlpha = 1;
   }
 
+  // the orca, a shadow under the same ice (js/draw/orca.js)
+  drawOrcaShadow(ex, ey, now);
+
   // pick-cracked ice: bright fractures radiating from the struck tile
   for (const [ci, hits] of iceCracks) {
     const ctx2 = ci % WORLD, cty2 = (ci / WORLD) | 0;
@@ -409,6 +412,8 @@ function render() {
   // a match): entities, never tile objects (a slider crosses tiles every
   // frame), sorted by their base like everything
   for (const t of ptargets) draws.push({ y: t.y + 1, pt: t });
+  // the orca out of the water, sorted by its hole's waterline (js/draw/orca.js)
+  if (orca.on && orca.mode === 'up') draws.push({ y: orca.hy + 2, orca: true });
   // your side's flags, half a pixel behind their own tile so a flag planted
   // on a tree is never swallowed by that tree's canopy
   for (const q of players) {
@@ -445,6 +450,7 @@ function render() {
     if (d.r) { drawWading(d.r, ex, ey, now, () => drawRobot(d.r, ex, ey, now)); continue; }
     if (d.f) { drawFlag(d.f, ex, ey, now); continue; }
     if (d.pt) { drawPTarget(d.pt, ex, ey, now); continue; }
+    if (d.orca) { drawOrcaBreach(ex, ey); continue; }
     const o = d.o;
     const px = d.tx * TILE - ox, py = d.ty * TILE - oy;
     const sh = o.shake > 0 ? Math.round(Math.sin(o.shake * 55) * 1.4) : 0;

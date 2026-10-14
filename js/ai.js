@@ -789,6 +789,12 @@ function aiThink(p, dt) {
     if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
   }
 
+  // 0b. the orca has it (js/orca.js): off its ice by the nearest way before
+  //     the line runs out, everything else after. A bot reads the line a
+  //     beat late, as it reads a rival (the profile's react).
+  const shore = orcaShore(p, prof.react);
+  if (shore) { inp.fire = false; walkTo(shore.x, shore.y, 0); aiNote(p, 'FLEE', 'ORCA', shore); return; }
+
   // 1. food, exactly as a human eats it (Q / F) - but a meal is a 1.5 s
   //    channel now and a hit knocks it out of the hands (js/core.js), so a bot
   //    only starts one with nobody close enough to do that. Standing there

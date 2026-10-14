@@ -99,6 +99,7 @@ function botObserve(p) {
     nav: botRt.get(p.id) ? botRt.get(p.id).nav : null,
     lastCmd: p.lastCmd ? Object.assign({}, p.lastCmd) : null,
     atShop: !!merchNear(p),
+    orca: botR(orcaLine(p)), // the line over the head (js/orca.js): s left, -1 when it is not after you
   };
   const allies = [], enemies = [];
   for (const q of players) {

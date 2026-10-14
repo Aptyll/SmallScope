@@ -532,15 +532,18 @@ function drawPlayer(p, ex, ey, now) {
   const fx = Math.round(p.x - ex) + FRAME_DX;
   // a dawn shield (pickSnowdrop, js/actions.js) adds its own row straight
   // above the hp bar, and everything that sat above the bar - the draw meter,
-  // the name, a callout - stands SHIELD_LIFT rows higher while it holds
-  const lift = p.dawnShield > 0 ? SHIELD_LIFT : 0;
+  // the name, a callout - stands SHIELD_LIFT rows higher while it holds; the
+  // orca's line (js/orca.js) is one more row the same way, over the shield's
+  const shL = p.dawnShield > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
+  const lift = shL + (line >= 0 ? SHIELD_LIFT : 0);
   callTag(p, Math.round(p.x - ex), hy - 18 - lift); // a bot's callout hangs over the name (js/draw/callouts.js)
   // the whole frame, name included, is one plate stamped over the grade
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
   overheadPlate(() => {
     drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
-    if (lift) drawShieldBar(fx - 7, hy - 10, p.dawnShield);
+    if (shL) drawShieldBar(fx - 7, hy - 10, p.dawnShield);
+    if (line >= 0) drawOrcaLine(fx - 7, hy - 10 - shL, line, now);
     // the running damage total, past the frame's right edge: the bar backing,
     // the colour-blind cap or the stun plate, whichever stands furthest out
     queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 6, barCol(p.team));

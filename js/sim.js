@@ -674,6 +674,7 @@ function updatePlay(dt) {
   for (const a of animals) updateAnimal(a, dt);
   for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
   updateFish(dt);
+  updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/orca.js)
   updateCamps(dt); // a cleared camp counts down and comes back whole
   if (!PRACTICE) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
   if (PRACTICE) updatePractice(dt); // the dummy mends itself between combos

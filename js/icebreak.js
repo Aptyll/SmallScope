@@ -1,6 +1,6 @@
 'use strict';
 // ------------------------------------------------------------ ice breaks
-// Something big coming up through a lake (the orca, when it lands) breaks
+// Something big coming up through a lake (the orca, js/orca.js) breaks
 // the ice in ITS OWN SHAPE, never a tile's. The shape is a FOOTPRINT on the
 // ice plane (ICE_BREAK_SHAPES: ellipses and polygons in world px about the
 // centre, nose to +x, turned by the break's angle and squashed by `sq` the
@@ -27,10 +27,10 @@
 // tile a break holds open is painted as ice under the break's pixels
 // (paintGroundTile asks iceBreakHolds), never as a square hole.
 //
-// For the orca: iceBreak(x, y, shape, ang, { warn, hold }) breaks the ice
-// (null where there is no bare ice under the footprint); add its footprint
-// to ICE_BREAK_SHAPES; iceBreakCovers(b, x, y) is the same footprint as a
-// hit test, so a bite can be exactly the hole.
+// iceBreak(x, y, shape, ang, { warn, hold }) breaks the ice (null where
+// there is no bare ice under the footprint); the orca (orcaStrike, js/orca.js)
+// is what calls it in a match. iceBreakCovers(b, x, y) is the same footprint
+// as a hit test.
 const ICE_BREAK_FREEZE = 20;  // s the hole takes to freeze back over, rim to middle
 const ICE_BREAK_SKIM = 6;     // s a pixel of new ice takes to thicken to the sheet's tone
 const ICE_BREAK_HOLD = 2.5;   // s the hole stays wide open before it freezes (the default `hold`)
@@ -38,7 +38,8 @@ const ICE_BREAK_BURST = 0.7;  // s the plates fly before they land
 const ICE_BREAK_PAD = 26;     // px of box round the footprint: the crack band and the radial cracks
 const ICE_BREAK_PROUD = 0.8;  // px the hole stands proud of the footprint before the chipping
 const ICE_BREAK_FRONT = 1.08; // the freeze front's overshoot, so the middle closes before the clock ends
-// what each footprint IS. Placeholders until the orca's own hitbox lands.
+// what each footprint IS. `orca` is the orca's own (js/orca.js); `breach`
+// and `lunge` were the first sketches of it, kept for staged scenes.
 const breakLens = (x0, x1, hw, n) => { // a body seen from above: a pointed lens from tail (x0) to nose (x1)
   const top = [], bot = [];
   for (let k = 0; k <= n; k++) {
@@ -48,6 +49,13 @@ const breakLens = (x0, x1, hw, n) => { // a body seen from above: a pointed lens
   return top.concat(bot);
 };
 const ICE_BREAK_SHAPES = {
+  // the orca lunging up at a slant, nose toward the spot it bites: its body
+  // where it crosses the sheet (D BOLD's girth, R 8.5, drawn out by the slant),
+  // the head shoving the ice ahead of it and both pectorals cutting out
+  orca: { sq: 0.72, parts: [
+    { e: [0, 0, 15, 10] }, { e: [10, 0, 8, 7] },
+    { p: [2, 8, -6, 17, -9, 8] }, { p: [2, -8, -6, -17, -9, -8] },
+  ] },
   // straight up out of the ice: the body's cross-section at the waterline, both flippers and the fin
   breach: { sq: 0.72, parts: [
     { e: [0, 0, 13, 9] },

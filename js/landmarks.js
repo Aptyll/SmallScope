@@ -35,9 +35,9 @@ for (const k in LANDMARKS) {
 // the ice's distance from the shore, 1 on the edge (lmIceDepth). Every
 // footprint tile is already known to be in the world and empty.
 const LM_WHERE = {
-  // out on a lake: every footprint tile deep ice
+  // out on a lake: every footprint tile deep ice, and none of it the orca's (js/world.js)
   lake: (tx, ty, L, depth) => {
-    for (const [x, y] of lmFoot(tx, ty, L)) if (depth[idx(x, y)] < LM_LAKE_DEEP) return false;
+    for (const [x, y] of lmFoot(tx, ty, L)) if (depth[idx(x, y)] < LM_LAKE_DEEP || orcaLakeAt(x, y)) return false;
     return true;
   },
 };

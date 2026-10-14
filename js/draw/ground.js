@@ -309,10 +309,14 @@ function deckPost(ax, ay, s, water) {
 }
 function paintCreek(g, tx, ty, px, py) {
   const deck = Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6;
+  const iced = orcaLakeNear(tx, ty); // the orca's lake may freeze some of this tile's water (creekIced, js/world.js)
   const posts = [];
   if (deck) {
     for (const sk of [-1, 1]) for (const sm of [-1, 1]) posts.push([sk * (DECK_LK - 1), sm * (DECK_WM - 1), 2]);
-    for (const k of [-20, 0, 20]) posts.push([k, -DECK_WM - 7, 1]);
+    for (const k of [-20, 0, 20]) {
+      const cx = DECK_C + (k - DECK_WM - 8) / 2, cy = DECK_C + (-DECK_WM - 8 - k) / 2;
+      posts.push([k, -DECK_WM - 7, 1, !creekIced(cx / TILE - 0.5, cy / TILE - 0.5)]); // a piling in the ice heaps no foam
+    }
   }
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const x = px + i, y = py + j;
@@ -322,9 +326,9 @@ function paintCreek(g, tx, ty, px, py) {
     // the deck's own lattice: k across the creek (along the road), m along it
     const k = x - y, m = x + y + 1 - 2 * DECK_C;
     if (deck) {
-      for (const [pk, pm, s] of posts) {
+      for (const [pk, pm, s, wet] of posts) {
         const ax = x - Math.round(DECK_C + (pk + pm - 1) / 2), ay = y - Math.round(DECK_C + (pm - 1 - pk) / 2);
-        if (Math.abs(ax) <= s + 1 && Math.abs(ay) <= s + 1) { c = deckPost(ax, ay, s, s === 1); if (c) break; }
+        if (Math.abs(ax) <= s + 1 && Math.abs(ay) <= s + 1) { c = deckPost(ax, ay, s, !!wet); if (c) break; }
       }
       if (!c && Math.abs(k) <= DECK_LK && Math.abs(m) <= DECK_WM) {
         const em = DECK_WM - Math.abs(m), ek = DECK_LK - Math.abs(k);
@@ -343,6 +347,14 @@ function paintCreek(g, tx, ty, px, py) {
     }
     const d = creekAt(fx, fy);
     if (d > 0.3) continue;
+    // the orca's lake: the creek runs on under its ice. The sheet is the
+    // lake's own shore (the ice painter's, iceAtPx); water the shore leaves
+    // bare inside the disc is ice too, and a bank past the shore stands as
+    // the creek's
+    if (iced && creekIced(fx, fy)) {
+      if (iceAtPx(x, y) || roadMainDist(fx, fy) < 0) continue; // the sheet, or the lane's earth over it
+      if (d < 0) { penDot(g, dustIce(x, y, iceTone(x, y, ICE_STYLES[ORCA_ICE], hp)).css, x, y); continue; }
+    }
     const e = -d * TILE, a = CQ.a, n = CQ.n; // px into the water; where along and across it
     // which bank: the slope of the distance points out of the water, and a
     // bank facing back against the light is the lit lip
@@ -557,6 +569,7 @@ const ICE_STYLES = [
   { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
 ];
 const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
+const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's lake's style, whatever its roll (bakeLakes)
 const rgbOf = (h) => { const a = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; a.css = h; return a; };
 const ICE_TONE = [rgbOf('#b9dcec'), rgbOf('#c4e3f0')];     // the sheet, in two tones by a dithered low noise
 const ICE_SHALLOW = [rgbOf('#c9e7f3'), rgbOf('#d0ebf5')];  // DEEP: the shelf along the shore
@@ -600,9 +613,16 @@ function relabelIce(tx, ty) {
 function bakeLakes() {
   const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
   lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);
-  for (let i = 0; i < N; i++) {
+  // the orca's lake (js/world.js) is labelled first, and always DEEP: the
+  // dark middle is where it swims. Whatever ice it meets takes its style.
+  const c = Math.round((WORLD - 1) / 2), orcaAt = [];
+  for (let dy = -14; dy <= 14; dy++) for (let dx = -14; dx <= 14; dx++) {
+    if (isLake(c + dx, c + dy) && orcaLakeAt(c + dx, c + dy)) orcaAt.push(idx(c + dx, c + dy));
+  }
+  for (let o = -orcaAt.length; o < N; o++) {
+    const i = o < 0 ? orcaAt[-o - 1] : o;
     if (lakeStyle[i] !== 255 || !isLake(i % WORLD, (i / WORLD) | 0)) continue;
-    const s = rollIceStyle(i % WORLD, (i / WORLD) | 0);
+    const s = o < 0 ? ORCA_ICE : rollIceStyle(i % WORLD, (i / WORLD) | 0);
     let n = 0; q[n++] = i; lakeStyle[i] = s;
     while (n) {
       const j = q[--n], x = j % WORLD, y = (j / WORLD) | 0;
