@@ -36,6 +36,13 @@ const airCv = document.createElement('canvas');
 const actx = airCv.getContext('2d');
 const airMask = document.createElement('canvas');
 const amctx = airMask.getContext('2d');
+// THE GRADE'S COPY: the midday crisp multiplies a frame by itself (todGrade,
+// js/draw/light.js), and a canvas drawn onto ITSELF makes the browser copy
+// its whole backing store first and again on the next stroke - 4 ms a frame
+// on a CPU-drawn canvas. The frame is copied here instead, only its used
+// corner. Sized with worldCv.
+const gradeCv = document.createElement('canvas');
+const grctx = gradeCv.getContext('2d');
 let airOn = false; // the air layer holds something this frame (the replay banks it too)
 const airRiders = []; // this frame's players on a zipline's handle, held out of the y-sorted pass for the air layer (render())
 const airBox = { x0: 0, y0: 0, x1: 0, y1: 0 }; // the air layer's used box this frame, in its own px: all that is graded and blitted
@@ -181,7 +188,7 @@ function fitCanvas() {
   const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR) + 1, hMax = Math.ceil(VIEW_H / ZOOM_FLOOR) + 1; // + the sub-pixel camera's spare (sizeWorldView)
   worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
-  airCv.width = airMask.width = wMax; airCv.height = airMask.height = hMax;
+  airCv.width = airMask.width = gradeCv.width = wMax; airCv.height = airMask.height = gradeCv.height = hMax;
   actx.imageSmoothingEnabled = false;
   sizeWorldView();
   // The 9:16 canvas keeps its Short-sized backing store and is SHOWN fitted to

@@ -3596,16 +3596,21 @@ the same keys under `1-4 CLASS ABILITIES`.
 `settings.info` (one INFO DISPLAY toggle row in the ESC menu, **or F3**, minecraft-style — the
 keydown handler flips it in any mode and suppresses the browser's find bar; default off) shows
 the **info stack** — `drawTags()`, a vertical list on the left edge at the top quarter of the
-view, drawn above every overlay. Four lines — **FPS** (`loop()`
-accumulates raw unclamped frame deltas into `perf` and refreshes `perf.fps` every half second),
+view, drawn above every overlay. Six lines — **FPS** (`loop()`
+hands each raw unclamped frame delta to `perfFrame`, js/core.js, which refreshes `perf.fps` every
+half second),
+**SIM** and **DRAW**, the ms a frame spent in `update()` and in `render()` over the same window
+(red together once they no longer fit a 60 Hz frame; DRAW is the script's side only, since a GPU
+canvas rasterises later off the main thread),
 **SFX**, the sampled sound bank's decoded/asked-for tally (below),
 **POS**, the tile coordinates of the player the camera frames (`viewPlayer()`, so spectators read
 the watched player), and **SEED**, the run seed (see
 [world.md](world.md#determinism-and-noise)) — each drawn as a dim label plus a value on one
 shared x, so the numbers line up in a column; that dim-label / bright-value pairing is the same
 one the berry and fish counters use. **Red on the fps value (below 45) is the only colour in the
-stack that means anything** alongside **SFX** (below), and nothing else is tinted, which is what
-lets a warning read. In title, FPS and SFX show and the other two do not.
+stack that means anything** alongside **SIM/DRAW** and **SFX** (below), and nothing else is
+tinted, which is what lets a warning read. In title, FPS, SIM, DRAW and SFX show and POS and SEED
+do not.
 
 **SFX** is the sampled sound bank: files decoded / files the table asks for, from `SFX.banked()`,
 red on anything missing — why it is there: [Audio](#audio), *a failed load must never be quiet*.

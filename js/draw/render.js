@@ -1224,40 +1224,6 @@ function drawSwaps(ex, ey) {
   ctx.globalAlpha = 1;
 }
 
-// the info stack (settings.info - the INFO row in the ESC menu, or F3, the
-// minecraft reflex): fps, the framed player's tile coordinates, and the run
-// seed as one vertical list on the left edge at the top quarter of the view,
-// clear of the berry/fish counters above it, above every overlay. In title
-// only the fps line shows - nobody stands anywhere yet, and the menu prints
-// the seed itself with the reroll die.
-function drawTags() {
-  if (!settings.info) return;
-  // two columns: a dim label, then the value on one shared x so the numbers
-  // line up down the stack - the same dim-label / bright-value pairing the
-  // berry and fish counters use. Red means one thing and one thing only:
-  // something is wrong (a bad frame rate, a sample bank that did not load).
-  // Nothing else is tinted for decoration.
-  const lx = 5, vx = lx + pixelTextWidth('SEED') + 5;
-  let y = Math.round(VIEW_H * 0.25);
-  const line = (label, value, col) => {
-    drawPixelTextOutline(ctx, label, lx, y, '#7a8bb8', '#0f1632');
-    drawPixelTextOutline(ctx, value, vx, y, col || '#f4f7ff', '#0f1632');
-    y += 10;
-  };
-  line('FPS', String(perf.fps), perf.fps < 45 ? '#ff9a8a' : '#f4f7ff');
-  // the sampled sound bank: decoded / asked for. Red on anything missing,
-  // because an empty bank is silent in exactly the way a mis-wired cue is -
-  // every sampled sound falls back to the old synth line and the game sounds
-  // untouched. See js/audio.js loadBank().
-  const bs = SFX.banked();
-  line('SFX', bs.got + '/' + bs.want, bs.got < bs.want ? '#ff9a8a' : '#f4f7ff');
-  if (state.mode !== 'title') {
-    const vp = viewPlayer(); // spectators read the player the camera frames
-    line('POS', Math.floor(vp.x / TILE) + ', ' + Math.floor(vp.y / TILE));
-    line('SEED', String(SEED));
-  }
-}
-
 // ------------------------------------------------------------ debug overlays
 // What the sim actually tests, drawn on top of what the art shows. One key:
 // '.' toggles `settings.hitbox` between 0 (off) and 2 (bodies + the route
