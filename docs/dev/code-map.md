@@ -539,7 +539,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | which role this screen plays, the transport interface and the loopback solo speaks through, who counts as a person, whether another screen shares the match (then nothing pauses it) | `NET`, `SNAP_EVERY`/`LATE_JOIN_T`/`RECONNECT_GRACE`/`IN_QMAX`/`IN_QWIN`, `isHuman`, `netShared`, `loopbackTransport`, `netSetup` | `net roles` |
 | which relay or transport a screen uses, the three doors the title opens (host, join, leave), a room's listing and the roster to every peer | `RELAY_DEFAULT`, `netRelay`, `netSteam`, `netTransportFor`, `netHost`, `netJoin`, `netLeave`, `netHostRoom`, `netHostRoster`, `netClientRoster` | `net roles` |
 | a host's half: inputs in (queued, one per peer per step, a press latched), HELLO / leave, the roster, the snapshot flush and the tile slices between flushes | `netHostStep`, `netInEdges`, `netHostHello`, `netHostFull`, `netHostLeave`, `netRoster`, `netHostFlush` | `host` |
-| the waiting room's moves: a seat swapped across the rule, a person shown out, a bot's seat emptied or filled, a bot's class turned, TEAMS (a side's seats), the page (seats or pick) turned on every screen | `seatsOpen`, `seatCanSwap`, `seatSwap`, `netSeat`, `seatKick`, `seatBot`, `seatClass`, `seatsSize`, `netPhase`, `netClientPhase`, `NET.kicked`, `NET.phase` | `seats` |
+| the waiting room's moves: a seat swapped across the rule, a person shown out, a bot's seat emptied or filled, a bot's class turned, TEAMS (a side's seats), the page (seats or pick) turned on every screen | `seatsOpen`, `seatCanSwap`, `seatSwap`, `netSeat`, `seatKick`, `seatBot`, `seatClass`, `seatsSize`, `seatsShuffle`, `netPhase`, `netClientPhase`, `NET.kicked`, `NET.phase` | `seats` |
 | the waiting room's READY list, bot level and pings, sent with every roster | `roomInfo`, `roomInfoIn`, `seatReady`, `netReady`, `PING_EVERY`, `PING_EASE`, `pingsHost`, `pongIn`, `NET.ready`, `NET.pings`, `NET.aiLevel` | `room info` |
 | a client's half: its input out, welcome / full / snap in, the screen the local body calls for | `netClientStep`, `netClientHello`, `netClientWelcome`, `netClientApply`, `netClientMode` | `client` |
 | a client's lifetime stats and the leap's cue, read off its own snapshot body (what the step gates on `p === player`) | `netClientStats`, `NET.was` | `client` |
@@ -556,7 +556,16 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the CODE box: typing, pasting and joining a code; the room's code copied on a click | `RM_CODE_*`, `joinCode`, `codeType`, the `paste` listener, `drawCodeBox`, `roomCode`, `roomCodeRect`, `roomCopy` | `rooms` and `rooms` › `the room` |
 | the host page: CREATE's options (MAP, VALLEY, TEAMS, BOTS) before the room, and the reload onto another world | `HP_*`, `beginHost`, `hostValue`, `hostStep`, `hostLayout`, `hostHit`, `hostWord`, `hostGo`, `hostClick`, `hostKey`, `renderHost`, `drawHostChevron` | `rooms` › `the host page` |
 | the rematch: the next seed at a match's end, the reload back into the same room, the sides and slots carried over, a guest's retried join | `REMATCH_*`, `rematchCarry`, `rematchOffer`, `rematchUrl` (read by `toLobby`, js/ui/screens.js), `rematchHeard`, `rematchSeat`, `rematchBootHost`, `rematchBootJoin` | `rooms` › `the rematch` |
+| START's count to the drop | `ROOM_COUNT`, `roomStart` (the tick and the zero: `updateTitle`, js/ui/menu.js) | `rooms` › `the room` |
 | the relay pip, the seat pips, the code plate on the pick screen, the in-match link pip | `drawRelayPip`, `drawSeatPips`, `drawCodePlate`, `drawRoomPlate`, `drawNetLink` | `rooms` › `the pixels` |
+
+## js/ui/roomtalk.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the room's chat: cleaning, keeping and handing lines round, typing one, the plate and the lines | `TALK_*`, `talkClean`, `talkAdd`, `talkHeard`, `talkFrom`, `talkSay`, `talkKey`, `talkOpen`, `talkLayout`, `drawTalk`, `NET.chat` | `room talk` |
+| INVITE in a Steam lobby, and a friend's invite taken up | `roomInviteRect`, `roomInvite`, `steamJoinRequested` (the launch's `+connect_lobby`: desktop/main.js) | `invite` |
+| the nudge: a taskbar flash or a starred tab title when a screen out of focus is needed | `roomAttention`, `talkTitle` (the wrapper's `win:flash`, desktop/main.js) | `the nudge` |
 
 ## js/net/snapshot.js
 

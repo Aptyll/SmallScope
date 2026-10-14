@@ -43,7 +43,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
-  ['0.472', 'THE MIDDLE OF THE MAP IS NOW THE CISTERN, AN OLD RING OF STONE ROUND A FROZEN POOL: COME IN BY THE ROAD\'S TWO GATES OR THE FOUR GAPS WHERE ITS WALL HAS FALLEN, SINCE NO ROLL OR CHARGE GETS THROUGH THE STONE, AND KEEP OFF ITS ICE, WHERE AN ORCA LOCKS ON, COUNTS DOWN FOUR SECONDS OVER YOUR HEAD AND BREAKS UP THROUGH IT TO TAKE YOU.', 'cistern'],
+  ['0.472', 'MULTIPLAYER: THE ROOM HAS A CHAT (PRESS ENTER), A SHUFFLE THAT DEALS PEOPLE TO RANDOM TEAMS, A 3-2-1 COUNT AFTER START, AN INVITE BUTTON FOR STEAM FRIENDS, AND A TASKBAR FLASH WHEN SOMEONE JOINS WHILE YOU ARE TABBED OUT.'],
   ['0.471', 'MULTIPLAYER: CREATE OPENS A HOST PAGE TO PICK THE MAP, VALLEY, TEAM SIZE AND BOT LEVEL, A CLICK ON A BOT\'S CLASS MARK CHANGES ITS CLASS, START GOES STRAIGHT INTO THE MATCH, GUESTS PRESS READY AND SHOW PING BARS, A GAME CAN BE JOINED BY TYPING OR PASTING ITS CODE, AND AFTER A MATCH LOBBY TAKES EVERYONE BACK TO THE SAME ROOM FOR A REMATCH.'],
   ['0.470', 'THE PATCH NOTES ARE ONE OF THREE TABS: THE WIKI, THE PATCH NOTES, AND A NEW ROADMAP LISTING WHAT IS STILL TO BUILD, STARTING WITH THE LAG-FREE MULTIPLAYER TEST ON STEAM.'],
   ['0.469', 'THE EAGLES TAKE A QUARTER OF THE MEMORY THEY USED TO: EACH PICTURE OF A BIRD NO LONGER CARRIES THE EMPTY AIR AROUND ITS WINGS. THEY LOOK EXACTLY THE SAME.'],
@@ -640,7 +640,7 @@ function menuKey(e) {
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'ladder') { if (m.ladT >= 1) ladderKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k, e); return; }
-  if (m.screen === 'room' || m.screen === 'host') { if (m.roomsT >= 1) roomKey(k); return; } // the waiting room and CREATE's page (js/ui/rooms.js)
+  if (m.screen === 'room' || m.screen === 'host') { if (m.roomsT >= 1) roomKey(k, e); return; } // the waiting room and CREATE's page (js/ui/rooms.js)
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();

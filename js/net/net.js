@@ -22,6 +22,7 @@ const NET = {
   pings: [],                 // the waiting room's: ms to the host per slot, null for a bot or the host itself (pingsHost; a guest mirrors it)
   aiLevel: 0,                // a guest's: the host's bot level, shown in the room (the host reads its own settings.aiLevel)
   pingT: 0,                  // a host's: s toward the next round of pings
+  chat: [],                  // the waiting room's last lines, { name, team, s } (js/ui/roomtalk.js)
   hostSlot: 0,               // a client's: which slot the host's own player sits in
   phase: 'room',             // the waiting room's page, the host's to turn: 'room' (the seats, js/ui/rooms.js) or 'pick' (the lobby's stage and LOCK IN)
   synced: false,             // a client's: has the first full snapshot landed
@@ -75,7 +76,7 @@ function netSetup(role, transport) {
   if (NET.transport && NET.transport !== loopbackTransport) NET.transport.close();
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
-  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0;
+  NET.peers.clear(); NET.parked.clear(); NET.kicked.clear(); NET.ready.clear(); NET.pings = []; NET.pingT = 0; NET.chat = [];
   NET.easeAt = 0; NET.gapAvg = 0; NET.gapDev = 0; NET.easeMs = 0;
   NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.rematch = null; NET.nextSeed = 0; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
@@ -149,6 +150,7 @@ function netHostStep(dt) {
     if (msg.t === 'resync') { netHostFull(peer, pr); continue; } // a delta the client could not take: the whole thing again
     if (msg.t === 'seat') { seatSwap(pr.slot, msg.slot | 0); continue; } // the waiting room: a move to the other side
     if (msg.t === 'ready') { seatReady(pr.slot, !!msg.on); continue; }    // ...a guest's READY
+    if (msg.t === 'say') { talkFrom(pr, msg.s); continue; }               // ...a line for the room's chat
     if (msg.t === 'pong') { pongIn(pr, msg); continue; }                   // ...and its answer to a ping
     if (msg.t === 'in') {
       NET.bytesIn += JSON.stringify(msg).length;
@@ -224,6 +226,7 @@ function netHostHello(peer, msg) {
   NET.transport.send(peer, Object.assign({ t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), phase: NET.phase }, roomInfo()));
   netHostFull(peer, pr);
   logEvent((p.name || 'A PLAYER') + ' JOINED', p);
+  roomAttention(); // a host tabbed out hears the room fill (js/ui/roomtalk.js)
   netHostRoster(); netHostRoom();
 }
 // the whole match to one peer, and that peer's base set to this tick: the
@@ -320,6 +323,24 @@ function seatClass(slot) {
   if (NET.isClient || !seatsOpen() || !p || p.control !== 'ai') return;
   setClass(p, (p.cls + 1) % CLASSES.length);
   netHostRoster();
+}
+// SHUFFLE (the room's option): the people dealt at random, alternately to
+// each side (which side gets the odd one is a coin), so the two differ by
+// one at most. Two people trading sides swap with each other; the rest take
+// a bot's seat over there, else an empty one's. Menu chance, never the sim's rng
+function seatsShuffle() {
+  if (NET.isClient || !seatsOpen()) return;
+  const ppl = players.filter(isHuman);
+  for (let i = ppl.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ppl[i], ppl[j]] = [ppl[j], ppl[i]]; }
+  const first = Math.random() < 0.5 ? 0 : 1;
+  const go = [[], []]; // go[t]: the people to move onto side t
+  ppl.forEach((p, i) => { const t = i % 2 ? 1 - first : first; if (p.team !== t) go[t].push(p); });
+  while (go[0].length && go[1].length) { const a = go[0].pop(), b = go[1].pop(); const t = a.team; a.team = b.team; b.team = t; }
+  for (const t of [0, 1]) for (const p of go[t]) {
+    const seat = players.find((q) => q.team === t && q.control === 'ai') || players.find((q) => q.team === t && q.control === 'none');
+    if (seat) { seat.team = p.team; p.team = t; }
+  }
+  netHostRoster(); netHostRoom();
 }
 // TEAMS (the room's option, js/ui/rooms.js): k seats a side - the people
 // keep theirs, bots fill the side up to k in slot order and the rest empty
@@ -464,6 +485,7 @@ function netClientStep(dt) {
     if (msg.t === 'roster') { netClientRoster(msg.roster); roomInfoIn(msg); continue; }
     if (msg.t === 'ping') { T.send('host', { t: 'pong', at: msg.at }); continue; } // straight back: the host times the trip
     if (msg.t === 'pings') { NET.pings = msg.ms || []; continue; }
+    if (msg.t === 'said') { talkAdd(msg.slot | 0, talkClean(msg.s)); continue; } // the room's chat, as the host passed it on
     if (msg.t === 'count') { state.menu.countT = msg.ct; state.menu.countN = msg.n; continue; }
     if (msg.t === 'phase') { netClientPhase(msg.phase); continue; }
   }

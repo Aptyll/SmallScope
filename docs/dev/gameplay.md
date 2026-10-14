@@ -3484,9 +3484,19 @@ bars for its link to the host (green, amber, red as the round trip grows). The o
 the title (MAP, VALLEY, TEAMS as the seats each side has filled, yours first, and BOTS); the host
 clicks TEAMS or BOTS to turn it a step (or walks up off the top seat onto them with the keys),
 and a joiner takes a bot's seat on a side already at that size, so TEAMS holds. A side's count
-reads its people over its open seats. LEAVE, and a guest's READY or the host's START, which stays
-dim and flashes the seats it waits on until every guest is ready, then takes everyone straight
-into the match, each class as it came: there is no pick for now (Noah, 2026-10-14). The
+reads its people over its open seats. After BOTS the host has SHUFFLE, which deals the people
+afresh, alternately to each side (`seatsShuffle`). Under the seats is the room's chat
+(js/ui/roomtalk.js): the last four lines, each a name in its side's paint, over a plate showing
+an ENTER key cap and a speech bubble; Enter (while the keys are not walking the seats) or a click
+on the plate starts a line, Enter sends it, Esc drops it. In a Steam lobby INVITE stands where a
+relay room's code would and opens Steam's friends overlay on the lobby; a friend's invite taken
+up, or Steam's Join Game on a friend in a room, joins that lobby. A screen that is not in focus
+when someone joins, a chat line lands or the count starts flashes its taskbar button (the
+wrapper) or marks its tab's title with a star (a browser) until it is looked at. LEAVE, and a
+guest's READY or the host's START, which stays dim and flashes the seats it waits on until every
+guest is ready, then counts 3, 2, 1 on every screen as one big gold digit where the words were
+(the host's Esc calls it off) and takes everyone into the match, each class as it came: there is
+no pick for now (Noah, 2026-10-14). The
 **pick** - the lobby, still reached by a 'pick' phase and nothing in a room sends one now, which every peer
 sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
 your side's roster, a crown over the host's card, a brighter rim on every person's card than a
