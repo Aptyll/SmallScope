@@ -114,9 +114,9 @@ function drawRobot(b, ex, ey, now) {
 
   if (zl) drawZipHandle(b, Math.round(b.x - ex), by, ey); // the handle over the chassis and the rope up to the cable (js/draw/zipline.js)
   drawSpriteFlash(spr, bx, by, b.flash);
-  // a wave's flag bearer (the `soldiers` banner, robots.js) flies its side's
-  // pennant off the chassis: the one bot in the column that rallies the rest
-  if (b.bearer) drawFlagPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
+  // a soldier (the `soldiers` banner, robots.js) flies its side's pennant
+  // off the chassis: the one thing that says this bot is not here to chop
+  if (b.kind === 'soldier') drawFlagPennant(ctx, bx + 10, by + 2, TEAMS[skin(b.team)].mark);
 
   // carried gold: a nugget held up in front of the body
   if (b.carry > 0 && !working) {
