@@ -773,7 +773,7 @@ function render() {
   }
 
   drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim.js)
-  drawDropAir(ex, ey, now); // the eagle, its rider and anyone falling from it
+  drawDropAir(ex, ey, now, false); // the flight path, and a bird on the ground (the fliers: the air layer, below)
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
   drawCallouts(ex, ey); // the bots' calls, above the night like all world text (js/draw/callouts.js)
@@ -781,6 +781,18 @@ function render() {
   if (settings.hitbox > 1 || window.DBG.showPaths) drawNavPaths(ox, oy, ex, ey);
   drawHitboxes(ox, oy, ex, ey);
   drawBotLines(ex, ey); // F4: a line from each bot to what it is after (js/ui/botview.js)
+
+  // the air layer (airCv, js/canvas.js): a bird in flight, its riders and
+  // anyone falling, off the EXACT camera so the bird the camera rides holds
+  // still on the screen while the ground slides under it; the day's grade
+  // laid over it the way renderLighting laid it over the world
+  airOn = !!state.drop && (state.drop.eagles.some(dropFlies) || players.some((p) => p.active && p.dropT > 0));
+  if (airOn) {
+    ctx = actx;
+    ctx.clearRect(0, 0, WV_W, WV_H);
+    drawDropAir(camX + shx, camY + shy, now, true);
+    lightAir();
+  }
 
   // Back to the screen, and the only place the two pixel spaces meet. The
   // blit is done in DEVICE pixels (identity transform) at k = zoom * devScale
@@ -799,6 +811,7 @@ function render() {
   const kPx = zoomCur * devScale;
   const subX = Math.round((camX + shx - ox) * kPx), subY = Math.round((camY + shy - oy) * kPx);
   ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, -subX, -subY, WV_W * kPx, WV_H * kPx);
+  if (airOn) ctx.drawImage(airCv, 0, 0, WV_W, WV_H, 0, 0, WV_W * kPx, WV_H * kPx);
   // everything from here draws in VIEW space, blown up by the whole-number
   // devScale - so 1px HUD rects and the 3x5 font stay exact at any zoom
   ctx.setTransform(devScale, 0, 0, devScale, 0, 0);

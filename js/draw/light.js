@@ -767,8 +767,11 @@ const worldInk = [];
 // League's plates pile.
 const worldPlates = [];
 let platesNow = false; // set while the flush stamps them: a plate's own calls then draw in place
+// a world layer: the world buffer, or the air layer over it (airCv, js/canvas.js) -
+// both hold their readouts back for the flush, above the grade
+function inWorldLayer() { return ctx === wctx || ctx === actx; }
 function overheadPlate(fn) {
-  if (ctx !== wctx || platesNow) { fn(); return; }
+  if (!inWorldLayer() || platesNow) { fn(); return; }
   // the caller's fade (a buried body's) and its offset (a wader's sink,
   // drawWading) ride along; a clip does not - a cut frame is the bug
   worldPlates.push(fn, ctx.globalAlpha, ctx.getTransform());
@@ -788,7 +791,7 @@ function flushPlates() {
   worldPlates.length = 0;
 }
 function drawWorldText(text, x, y, color, scale, alpha) {
-  if (ctx !== wctx || platesNow) {
+  if (!inWorldLayer() || platesNow) {
     const was = ctx.globalAlpha;
     if (alpha !== undefined) ctx.globalAlpha = was * alpha;
     drawPixelTextOutline(ctx, text, x, y, color, '#0f1632', scale || 1);
@@ -813,7 +816,7 @@ function drawWorldText(text, x, y, color, scale, alpha) {
 // one that would touch a placed tag climbs to clear it. Only tags move;
 // every other world text keeps where it was put.
 function drawNameTag(text, x, y, color, scale) {
-  if (ctx !== wctx) { drawWorldText(text, x, y, color, scale); return; }
+  if (!inWorldLayer()) { drawWorldText(text, x, y, color, scale); return; }
   worldInk.push(text, x, y, color, scale || 1, ctx.globalAlpha, true);
 }
 const TAG_GAP = 1;      // px kept clear between two tags' outlines
@@ -901,6 +904,42 @@ function renderLighting(ox, oy, now) {
   litShots(ox, oy, now, dark);
   litSnowdrops(now, dark);
   // ...and last, the readouts the grade was never allowed to touch
+  flushWorldInk();
+}
+
+// The air layer's light (airCv, js/canvas.js): the grades renderLighting
+// lays over the whole frame - the hour, the blizzard's haze, the night and
+// its rim - and none of what lies on the ground (rays, cloud shadow, glints,
+// the lights). The fills colour the layer's empty pixels too, so its own
+// shape, copied first, cuts them back out; then the riders' names and the
+// frames are stamped over it ungraded, as the world's are.
+function lightAir() {
+  amctx.clearRect(0, 0, WV_W, WV_H);
+  amctx.drawImage(airCv, 0, 0);
+  todGrade();
+  const haze = state.wx.drift * state.wind * BLIZ_HAZE_A;
+  if (haze > 0.005) {
+    ctx.globalAlpha = haze;
+    ctx.fillStyle = BLIZ_HAZE;
+    ctx.fillRect(0, 0, WV_W, WV_H);
+    ctx.globalAlpha = 1;
+  }
+  const dark = state.darkness;
+  if (dark > 0.005) {
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = dark;
+    ctx.fillStyle = NIGHT_TINT;
+    ctx.fillRect(0, 0, WV_W, WV_H);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = dark * NIGHT_DEEP_A;
+    ctx.fillStyle = NIGHT_DEEP;
+    ctx.fillRect(0, 0, WV_W, WV_H);
+    ctx.globalAlpha = 1;
+    nightEdge(dark * NIGHT_EDGE);
+  }
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(airMask, 0, 0);
+  ctx.globalCompositeOperation = 'source-over';
   flushWorldInk();
 }
 
