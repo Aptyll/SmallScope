@@ -101,7 +101,6 @@ const PERCH_BAR_W = 95;   // px: the roost's hp bar, the match's win/lose bar...
 const PERCH_BAR_H = 9;    // ...its height, room for the pool's number inside...
 const PERCH_BAR_SEGS = 8; // ...and its blocks: (PERCH_BAR_W + 1) must divide by this
 const PERCH_BAR_RIM = 2;  // its ink frame, twice a body's
-const PERCH_TAG_PAD = 13, PERCH_TAG_H = 15, PERCH_TAG_NOTCH = 4; // the PERCH banner over it: px either side of the name, its height, how deep its swallowtails cut
 const PERCH_LAG_HOLD = 0.35, PERCH_LAG_RATE = 900; // s a hit's lost chunk holds pale, then hp/s it drains at
 const EAGLE_WORK_DMG = 20;  // what one rival E swing chips off the roosting bird
 const EAGLE_ARROW_DMG = 12; // what one rival arrow chips, whatever it would do to a body
@@ -1109,9 +1108,7 @@ const perchLiftBeat = (T) => [0, 1, 2, 1][Math.floor(T * 13) % 4];
 // (PERCH_BAR_SEGS, not hpSegCount, which would split EAGLE_HP into a comb of
 // 2 px blocks), a heavy ink frame, the chunk a hit just took holding pale
 // before it drains (render-side: perchLag eases toward e.hp), the pool's
-// number inside, and the PERCH nameplate over it in the same paint (the
-// driver wears MERCH: the side's two named bodies, named the same way).
-// `bottom` is the world row just above the bird.
+// number inside. `bottom` is the world row just above the bird.
 const perchLag = new WeakMap();
 function drawPerchBar(e, sx, bottom, now) {
   const L = perchLag.get(e) || { v: e.hp, t: now, last: now };
@@ -1134,30 +1131,8 @@ function drawPerchBar(e, sx, bottom, now) {
     for (let k = 1; k < PERCH_BAR_SEGS; k++) ctx.fillRect(bx + k * seg - 1, by, 1, bh);
     const txt = String(Math.max(0, Math.ceil(e.hp))); // the pool's number, 1x outlined, centred in the bar
     drawWorldText(txt, centreTextX(sx, txt, 1), by + 2, '#f4f7ff', 1);
-    perchBanner(sx, by - r, T);
   });
 }
-// the PERCH nameplate: a banner in the side's coat (a step deeper than the
-// bar's fill, so white reads on it) with darker lower rows, swallowtails cut
-// into both ends, an ink rim, the name at twice a player's size flat on the
-// cloth (no shadow): white, or the frame's ink on a coat too pale for white
-// (RED-GREEN's orange, CONTRAST's gold). `top` is the bar frame's top row.
-function perchBanner(sx, top, T) {
-  const txt = 'PERCH', w = pixelTextWidth(txt, 2) + 2 * PERCH_TAG_PAD, h = PERCH_TAG_H;
-  const x = Math.round(sx - w / 2), y = top - h - 3, mid = (h - 1) / 2;
-  const cut = (row) => Math.round(PERCH_TAG_NOTCH * (1 - Math.abs(row - mid) / mid));
-  ctx.fillStyle = BAR_FRAME;
-  for (let row = -1; row <= h; row++) { const d = cut(Math.max(0, Math.min(h - 1, row))); ctx.fillRect(x + d - 1, y + row, w - 2 * d + 2, 1); }
-  for (let row = 0; row < h; row++) { const d = cut(row); ctx.fillStyle = row >= h - 2 ? T.coatD : T.coat; ctx.fillRect(x + d, y + row, w - 2 * d, 1); }
-  drawPixelText(ctx, txt, centreTextX(sx, txt, 2), y + 2, inkOn(T.coat, '#f4f7ff', BAR_FRAME), 2);
-}
-// text colour a on `bg`, unless b stands out clearly more (WCAG's contrast ratio, a quarter better)
-function inkOn(bg, a, b) {
-  const lum = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((c) => c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4).reduce((s, c, i) => s + c * [0.2126, 0.7152, 0.0722][i], 0);
-  const ratio = (p, q) => (Math.max(lum(p), lum(q)) + 0.05) / (Math.min(lum(p), lum(q)) + 0.05);
-  return ratio(bg, b) > ratio(bg, a) * 1.25 ? b : a;
-}
-
 // one bird in its team's armour, whatever its state. In the air the sprite
 // sits at (x, y) with the shadow `alt` px below it; the dive walks that gap
 // to zero so shadow and bird meet exactly at the crash point. The skin it
@@ -1276,9 +1251,7 @@ function drawEagle(e, ex, ey, now) {
         ctx.globalAlpha = 1;
       }
       // the pool, in team colour, up from the moment it roosts - the bar IS
-      // the objective's introduction, so it never waits for a first hit -
-      // under its PERCH nameplate in the same paint (the driver wears MERCH,
-      // drawMerchant): the side's two named bodies, named the same way.
+      // the objective's introduction, so it never waits for a first hit.
       // Anchored to the bird's rotated extent, not the unrotated box, so it
       // hugs the sprite whatever way the dive left it pointing.
       const vh = PR.reach(spr).up;
