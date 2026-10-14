@@ -112,7 +112,7 @@ function paintGroundTile(g, tx, ty) {
           }
         }
         if (inner && h < 0.12) { g.fillStyle = '#ddf1f8'; g.fillRect(px + ((h * 210) | 0) % 12, py + ((h * 87) | 0) % 12, 2, 2); }
-        paintDressing(g, tx, ty, px, py); // long cracks, reeds, the downwind bank (js/draw/lakes.js)
+        paintDressing(g, tx, ty, px, py); // long cracks, the downwind bank (js/draw/lakes.js)
         // ...and, where a PATH crosses the lake (the paths, js/world.js), the
         // earth spilling over this tile's share of the crossing, rimmed along
         // its own ragged edge rather than along the tile's sides. The diagonal
@@ -134,8 +134,8 @@ function paintGroundTile(g, tx, ty) {
         }
         // a lake's edge reaching over onto this snow, and the lip of its bank
         paintSnowShore(g, tx, ty, px, py);
-        // the drifts in the lee of what stands, a lake's downwind bank, the
-        // tip of a reed rooted below (js/draw/lakes.js)
+        // the drifts in the lee of what stands, a lake's downwind bank
+        // (js/draw/lakes.js)
         paintDressing(g, tx, ty, px, py);
         // the road (ground 3, and the snow beside it) is painted OVER the
         // snow per pixel, against its ragged edge - never per tile

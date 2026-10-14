@@ -80,9 +80,9 @@ function mmChrome() {
     // a strong black outline, two crisp pixels, and NO hover state - the
     // disc is the same shape whatever the pointer is doing; no halo, no
     // second ring outside it
-    mmRing(g, cc, cc, MM_R + 5, MM_R + 7, '#000000');                   // outline
-    mmRing(g, cc, cc, 0, MM_R + 5, '#0f1632');                          // silhouette disc
-    mmRing(g, cc, cc, MM_R + 2, MM_R + 5, '#2a3358');                   // day ring track
+    mmRing(g, cc, cc, MM_R + 5, MM_R + 7, HUD_INK);                     // outline
+    mmRing(g, cc, cc, 0, MM_R + 5, AB_BG);                             // silhouette disc
+    mmRing(g, cc, cc, MM_R + 2, MM_R + 5, HUD_EDGE);                    // day ring track
     mmChromes.set(key, c);
   }
   return c;
@@ -105,7 +105,7 @@ function mmArcBand(prog) {
     // dusk boundary tick: one pixel column across the band, a little past it,
     // over the arcs exactly as the per-frame draw laid it
     const ba = a0 + dayFrac * Math.PI * 2;
-    mmRing(g, cc, cc, r0 - 1, r1, '#8f9cc4', ba - 0.03, ba + 0.03); // stops short of the outline
+    mmRing(g, cc, cc, r0 - 1, r1, '#8a8e96', ba - 0.03, ba + 0.03); // stops short of the outline
   }
   return mmArc.cv;
 }
@@ -139,6 +139,12 @@ function renderMinimap(now) {
   mmViewCtx.globalCompositeOperation = 'destination-in';
   mmViewCtx.drawImage(mmMask(MM_R), 0, 0);
   ctx.drawImage(mmView, MM_CX - MM_R, MM_CY - MM_R);
+  // the ziplines, each a thread in its side's ink along the road's verge
+  // (the chart strokes the same lines): where the fast way out runs
+  const mmIn = (x, y) => Math.hypot(x + 0.5 - MM_CX, y + 0.5 - MM_CY) < MM_R - 1;
+  for (const z of zips) {
+    if (z) drawMapZip(ctx, z, (x) => MM_CX + (x / TILE - ptx) * s, (y) => MM_CY + (y / TILE - pty) * s, TEAMS[skin(z.team)].mark, mmIn);
+  }
   // every body inside the view in the grammar both maps share (drawMap*,
   // draw-world.js), in its side's ink: the robots first - every worker,
   // soldier and merchant standing, none of them hides - then the players. A
@@ -148,14 +154,14 @@ function renderMinimap(now) {
     if (r.dead) continue;
     const dx = (r.x / TILE - ptx) * s, dy = (r.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
-    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(r.team)].mark, '#0f1632', 1, true, foeCue(r.team));
+    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(r.team)].mark, HUD_INK, 1, true, foeCue(r.team));
   }
   for (const p of players) {
     if (p === vp || !p.active || p.dead || inAir(p)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // a falcon-marked rival stays on it
     const dx = (p.x / TILE - ptx) * s, dy = (p.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 1) continue;
-    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, '#0f1632', 1, false, foeCue(p.team));
+    drawMapUnit(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(p.team)].mark, HUD_INK, 1, false, foeCue(p.team));
   }
   // flags on your side, as the same pennant and ring the chart draws: where
   // the side was sent is exactly the kind of thing you check without opening
@@ -170,27 +176,13 @@ function renderMinimap(now) {
     ctx.restore();
   }
   if (callouts.length) drawCalloutsMap(ptx, pty, s, vp); // the bots' calls, pulsing where they are about (js/draw/callouts.js)
-  // the ziplines, each a thread in its side's ink along the road's verge
-  // (the chart strokes the same lines): where the fast way out runs
-  for (const z of zips) {
-    if (!z) continue;
-    ctx.save();
-    ctx.beginPath(); ctx.arc(MM_CX, MM_CY, MM_R - 1, 0, Math.PI * 2); ctx.clip();
-    ctx.strokeStyle = TEAMS[skin(z.team)].mark;
-    ctx.globalAlpha = 0.8;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    z.pts.forEach((pt, i) => ctx[i ? 'lineTo' : 'moveTo'](MM_CX + (pt.x / TILE - ptx) * s, MM_CY + (pt.y / TILE - pty) * s));
-    ctx.stroke();
-    ctx.restore();
-  }
   // the downed eagles: both objectives, always on the disc - keeping yours
   // alive (and finding theirs) is the match
   if (state.drop) for (const e of state.drop.eagles) {
     if (e.state !== 'down') continue;
     const dx = (e.x / TILE - ptx) * s, dy = (e.y / TILE - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, '#0f1632');
+    drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, HUD_INK);
   }
   // the camps, glyph only - a name would not fit inside the disc (the
   // world map and the arrival toast are where they are read by name)
@@ -198,11 +190,11 @@ function renderMinimap(now) {
     const m = campMark(L);
     const dx = (m.tx + 0.5 - ptx) * s, dy = (m.ty + 0.5 - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawCampIcon(ctx, L, MM_CX + dx, MM_CY + dy, L.spec.mark, '#0f1632');
+    drawCampIcon(ctx, L, MM_CX + dx, MM_CY + dy, L.spec.mark, HUD_INK);
   }
   // the centre: the watched body - you, or a player you are watching - as
   // the white heart in its side's ink, the mark the chart gives it too
-  drawMapYou(ctx, MM_CX, MM_CY, TEAMS[skin(vp.team)].mark, '#0f1632', 1);
+  drawMapYou(ctx, MM_CX, MM_CY, TEAMS[skin(vp.team)].mark, HUD_INK, 1);
 
   // day/night cycle ring: a 3 px band of pixels, the elapsed part painted
   // clockwise from 12 o'clock in the day colour, then the night colour
@@ -227,7 +219,7 @@ function renderMinimap(now) {
   // number that decided nothing.)
   if (!mmClockShown()) return;
   const clock = clockTxt(state.elapsed);
-  drawPixelTextOutline(ctx, clock, Math.round(MM_CX - pixelTextWidth(clock) / 2), MM_CY + MM_R + 9, '#f4f7ff', '#0f1632');
+  drawPixelTextOutline(ctx, clock, Math.round(MM_CX - pixelTextWidth(clock) / 2), MM_CY + MM_R + 9, '#f4f7ff', HUD_INK);
 }
 // whether the clock hangs under the disc: only where the rail is not up
 function mmClockShown() { return !railLayout(); }

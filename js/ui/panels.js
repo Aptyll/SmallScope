@@ -132,30 +132,26 @@ function renderScoreboard() {
 // chartSpan says which tiles each chart pixel covers, and the pixel takes
 // the highest class among them, so a one-tile wall never drops out of its
 // run where WORLD tiles fold into MAP_W px - and PAINTED one flat ink per
-// class (CHART_INK) - A WINTER CHART: the open ground is snow, the woods a
-// deep cold pine, the lakes pale ice, the road a track trodden through it.
-// The light comes from the top-left, as it does on the snow itself: a
-// mass's rim is LIT where lower ground lies above or to its left and INKED
-// where it lies below or to its right (CHART_LIT/CHART_RIM); the ice wears
-// a sparse sheen and the snow a faint grain (chartGrain), and the woods
-// nothing at all - the palette does the work (a lattice of canopy dots read
-// as studs; scattered pine glyphs read as clutter; both were tried in 3.32).
+// class (CHART_INK) - A FLAT CHART in quiet greys: the open ground pale
+// snow, the woods a deep slate, the lakes and the creek cold blue, the road
+// a track through it. Nothing is painted over the inks - no lit or inked
+// rims, no grain (both went in 0.459: the marks and the team inks are the
+// read, and the old winter shading fought them).
 // No grid, no dot for a single bush: a lone tile is a speck at this scale. The image is re-inked at most every MM_REBUILD ticks like the
 // minimap's (a wall going up half a second late on a chart is invisible)
 // and on the tick a fresh match resets the clock.
 //
-// THE SLAB is the chart and a header, nothing else, on the game's own
-// FROST SLAB (bakeFrostSlab, the settings and help panels' night-blue
-// stone; the parchment of old read as summer against a winter chart): the
-// map centred with the same margin either side, and over it the day on the
-// left and the CLOSE plate on the right (mapCloseRect - a plate in the
-// slab's own grammar, drawFrostButton: bound in the slab's dark, lifting
-// off its shadow on hover like every plank in the game, pressed through
-// pointerPress like every other; M and Escape still close it). No compass
-// (the chart is north-up, as the world is), no key (the marks are the
-// minimap's own, learnt there), no clock (the disc wears it), no title. The
-// slab fits the view (fitMapSlab, canvas.js) and mapAlloc follows it - the
-// chart's buffers and the slab's bake are remade when MAP_W changes.
+// THE SLAB is the chart and a header, nothing else, on the HUD's own
+// graphite plate (drawHudFrame, strip.js; the frost slab's navy stone and
+// its CLOSE plank went in 0.459): the map centred with the same margin
+// either side, and over it the day. No close button: M or Escape closes it,
+// and so does a press anywhere off the slab (mapCloseHit). No compass (the
+// chart is north-up, as the world is), no key (the marks are the minimap's
+// own, learnt there), no clock (the disc wears it), no title, and no names
+// until asked: a camp is its glyph, and the one under the pointer wears its
+// name (drawChartCamps). The slab fits the view (fitMapSlab, canvas.js) and
+// mapAlloc follows it - the chart's buffers and the slab's bake are remade
+// when MAP_W changes.
 
 // a screen point over the chart -> the world tile under it (null off the map).
 // The chart is the only way to flag a tile that is off-screen, so the flag
@@ -165,15 +161,11 @@ function mapTileAt(sx, sy) {
   const tx = Math.floor((sx - MAP_X) / MAP_S), ty = Math.floor((sy - MAP_Y) / MAP_S);
   return inWorld(tx, ty) ? { tx, ty } : null;
 }
-// the CLOSE plank, top-right of the slab, and whether the pointer is on it
-const MAP_HEAD_Y = 6, MAP_HEAD_H = 14; // the header row inside the slab: where the day and the plank sit
-function mapCloseRect() {
-  const w = pixelTextWidth('CLOSE', 2) + 14;
-  return { x: PANEL_X + PANEL_W - MAP_SIDE - w, y: PANEL_Y + MAP_HEAD_Y, w, h: MAP_HEAD_H };
-}
+// whether a press would close the chart: the pointer off the slab
+const MAP_HEAD_Y = 6; // the header row inside the slab: where the day sits
 function mapCloseHit() {
-  const r = mapCloseRect(), mx = mouse.x, my = mouse.y;
-  return mouse.inside && mx >= r.x - 2 && mx < r.x + r.w + 2 && my >= r.y - 3 && my < r.y + r.h + 3;
+  const mx = mouse.x, my = mouse.y;
+  return mouse.inside && !(mx >= PANEL_X && mx < PANEL_X + PANEL_W && my >= PANEL_Y && my < PANEL_Y + PANEL_H);
 }
 
 const mapCv = document.createElement('canvas');
@@ -199,30 +191,16 @@ function mapAlloc() {
 // woods, the road, the ice, open water, a chest, then a side's buildings
 // and its bird in the two depths of each team's ink
 const CHART_INK = [
-  [232, 237, 244], [58, 88, 82], [172, 150, 118], [176, 208, 226], [56, 92, 128],
+  [214, 219, 226], [44, 60, 62], [150, 136, 116], [170, 192, 208], [52, 74, 98],
   [222, 176, 76], [168, 66, 58], [74, 114, 174], [224, 85, 72], [106, 168, 232],
 ];
-const CHART_RIM = [];  // the inked rim a mass wears where lower ground lies below or right of it
-CHART_RIM[CH_FOREST] = [30, 50, 46]; CHART_RIM[CH_ICE] = [110, 148, 172]; CHART_RIM[CH_ROAD] = [128, 106, 78];
-const CHART_LIT = [];  // the lit rim where lower ground lies above or left of it
-CHART_LIT[CH_FOREST] = [118, 150, 142]; CHART_LIT[CH_ICE] = [218, 236, 244];
-const CHART_GRAIN = []; // the stipple's ink
-CHART_GRAIN[CH_SNOW] = [220, 227, 236]; CHART_GRAIN[CH_ICE] = [200, 224, 236];
 const CHART_NEED = []; // neighbours of its own class a tile needs to stay on the chart
 CHART_NEED[CH_FOREST] = 2; CHART_NEED[CH_ICE] = 2;
-const CHART_DARK = '#0f1632'; // the minimap's own dark: every mark's rim on the chart, so a mark reads the same on both maps
-const CHART_INK_TXT = '#ffd95c'; // the header's ink: the gold every slab titles in
+const CHART_DARK = HUD_INK; // the minimap's own dark: every mark's rim on the chart, so a mark reads the same on both maps
+const CHART_INK_TXT = '#d4d7dc'; // the header's ink
 let chartBuiltAt = -1e9;
 
 function chartGround(i) { const g = ground[i]; return g === 2 || g === 4 ? CH_HOLE : g === 3 ? CH_ROAD : g === 1 ? CH_ICE : CH_SNOW; } // the creek inks as open water, its fords as gaps
-// the stipple: canopy bumps on a checker lattice, a diagonal sheen across
-// the ice, a sparse grain on the parchment
-function chartGrain(c, px, py) {
-  if (c === CH_ICE) return (px + py) % 9 === 0;
-  if (c === CH_SNOW) return (px % 6 === 0 && py % 6 === 3) || (px % 6 === 3 && py % 6 === 0);
-  return false;
-}
-
 function buildWorldMapImg() {
   if (state.tick - chartBuiltAt < MM_REBUILD && state.tick >= chartBuiltAt) return;
   chartBuiltAt = state.tick;
@@ -259,17 +237,10 @@ function buildWorldMapImg() {
       out[py * W + px] = best;
     }
   }
-  // paint: the flat ink, its stipple, then the lit rim toward the light and
-  // the inked rim away from it (a strip one pixel wide takes the ink)
+  // paint: one flat ink per class, nothing over it
   const dd = mapImg.data;
-  for (let py = 0; py < W; py++) for (let px = 0; px < W; px++) {
-    const i = py * W + px, c = out[i];
-    let ink = CHART_GRAIN[c] && chartGrain(c, px, py) ? CHART_GRAIN[c] : CHART_INK[c];
-    if (CHART_RIM[c]) {
-      const dn = (px < W - 1 && out[i + 1] < c) || (py < W - 1 && out[i + W] < c);
-      const up = (px > 0 && out[i - 1] < c) || (py > 0 && out[i - W] < c);
-      if (dn) ink = CHART_RIM[c]; else if (up && CHART_LIT[c]) ink = CHART_LIT[c];
-    }
+  for (let i = 0; i < W * W; i++) {
+    const ink = CHART_INK[out[i]];
     const j = i * 4;
     dd[j] = ink[0]; dd[j + 1] = ink[1]; dd[j + 2] = ink[2]; dd[j + 3] = 255;
   }
@@ -285,47 +256,53 @@ const panelCv = document.createElement('canvas');
 function buildMapPanel() {
   panelCv.width = PANEL_W; panelCv.height = PANEL_H;
   const g = panelCv.getContext('2d');
-  bakeFrostSlab(g, PANEL_W, PANEL_H, null);
+  const keep = ctx; ctx = g; // drawHudFrame paints on ctx
+  try { drawHudFrame(0, 0, PANEL_W, PANEL_H, { corners: { tl: true, tr: true, bl: true, br: true } }); } finally { ctx = keep; }
   const mx = MAP_X - PANEL_X, my = MAP_Y - PANEL_Y;
-  g.fillStyle = '#35426e';
-  g.fillRect(mx - 3, my - 3, MAP_W + 6, 1); g.fillRect(mx - 3, my + MAP_W + 2, MAP_W + 6, 1);
-  g.fillRect(mx - 3, my - 3, 1, MAP_W + 6); g.fillRect(mx + MAP_W + 2, my - 3, 1, MAP_W + 6);
-  g.fillStyle = '#0a0e23';
-  g.fillRect(mx - 2, my - 2, MAP_W + 4, MAP_W + 4);
+  g.fillStyle = HUD_INK;
+  g.fillRect(mx - 1, my - 1, MAP_W + 2, MAP_W + 2);
 }
 
-// a plate in the frost slab's grammar: the slab's stone bound in its dark,
-// an icy light along its top and left and deep shade along its bottom and
-// right, the label in the plank's pale ink going gold under the pointer; it
-// lifts off its shadow and brightens as every plank in the game does (the
-// menu's snow cap and icicles stay on the menu - a plate on a slab is a
-// plate, not a signpost)
-function drawFrostButton(r, label, hv) {
-  const lift = Math.round(hv * 2);
-  const x = r.x, y = r.y - lift, w = r.w, h = r.h;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; chamRect(x + 1, r.y + 2, w, h); // the shadow stays on the ground
-  ctx.fillStyle = '#0a0e23'; chamRect(x, y, w, h);                      // the binding
-  ctx.fillStyle = hv > 0.5 ? '#243472' : '#1a2450'; chamRect(x + 1, y + 1, w - 2, h - 2);
-  ctx.fillStyle = hv > 0.5 ? '#5a7fb8' : '#35426e';
-  ctx.fillRect(x + 2, y + 1, w - 4, 1); ctx.fillRect(x + 1, y + 2, 1, h - 4);
-  ctx.fillStyle = '#080c1c';
-  ctx.fillRect(x + 2, y + h - 2, w - 4, 1); ctx.fillRect(x + w - 2, y + 2, 1, h - 4);
-  const tw = pixelTextWidth(label, 2);
-  drawPixelTextShadow(ctx, label, Math.round(x + (w - tw) / 2), y + Math.round((h - 10) / 2),
-    hv > 0.5 ? '#ffd95c' : '#cfe0ff', '#0a0e23', 2);
+// the camps on the chart: the glyph alone, in its camp's ink. The camp
+// under the pointer lights white and wears its name on a small graphite tag
+// that runs away from the chart's middle (a name on every camp at the
+// chart's 3x5 font crowded the map and still read badly; the glyph says
+// what a camp is, the hover says which).
+const CHART_HOVER_R = 7; // px from a glyph the pointer still names it
+function chartTagRect(lx, ly, L, right) {
+  const w = pixelTextWidth(L.name) + 13, h = 11;
+  return { x: right ? lx - w + 5 : lx - 5, y: ly - 5, w, h };
+}
+function chartTag(lx, ly, L, right) {
+  const { x, y, w, h } = chartTagRect(lx, ly, L, right);
+  ctx.fillStyle = HUD_INK; chamRect(x, y, w, h);
+  ctx.fillStyle = AB_BG; chamRect(x + 1, y + 1, w - 2, h - 2);
+  drawCampIcon(ctx, L, lx, ly, '#f4f7ff', HUD_INK);
+  drawPixelText(ctx, L.name, right ? x + 3 : x + 10, y + 3, '#f4f7ff');
+}
+function drawChartCamps() {
+  let hov = null, hd = CHART_HOVER_R;
+  const pts = camps.map((L) => {
+    const m = campMark(L);
+    const lx = MAP_X + Math.round((m.tx + 0.5) * MAP_S), ly = MAP_Y + Math.round((m.ty + 0.5) * MAP_S);
+    const d = Math.hypot(mouse.x - lx, mouse.y - ly);
+    if (mouse.inside && d < hd) { hd = d; hov = { L, lx, ly }; }
+    return { L, lx, ly };
+  });
+  for (const { L, lx, ly } of pts) drawCampIcon(ctx, L, lx, ly, L.spec.mark, HUD_INK);
+  if (hov) chartTag(hov.lx, hov.ly, hov.L, hov.lx > MAP_X + MAP_W / 2);
 }
 
 function renderWorldMap(now) {
   mapAlloc();
   // dim the world behind the map
-  ctx.fillStyle = 'rgba(6,10,24,0.72)';
+  ctx.fillStyle = 'rgba(8,9,11,0.62)';
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
   ctx.drawImage(panelCv, PANEL_X, PANEL_Y);
 
-  // the header: the day, and the way out
+  // the header: the day
   const dayT = 'DAY ' + state.day;
-  drawPixelTextShadow(ctx, dayT, PANEL_X + MAP_SIDE + 1, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 'rgba(8,12,28,0.9)', 2);
-  drawFrostButton(mapCloseRect(), 'CLOSE', mapCloseHit() ? 1 : 0);
+  drawPixelText(ctx, dayT, PANEL_X + MAP_SIDE, PANEL_Y + MAP_HEAD_Y + 2, CHART_INK_TXT, 2);
 
   // terrain
   buildWorldMapImg();
@@ -345,31 +322,19 @@ function renderWorldMap(now) {
   ctx.strokeRect(MAP_X + (camX / TILE) * MAP_S + 0.5, MAP_Y + (camY / TILE) * MAP_S + 0.5,
     (WV_W / TILE) * MAP_S - 1, (WV_H / TILE) * MAP_S - 1);
 
-  // the camps: glyph plus the name, inked like the rest of the chart. A name
-  // hangs under its glyph unless one already inked would run into it - the
-  // sites are fixed (CAMP_SITES, world.js) and two of them sit a label's
-  // width apart - and then it goes over the glyph instead, so every name
-  // stays whole
-  const inked = [];
-  for (const L of camps) {
-    const m = campMark(L);
-    const lx = MAP_X + Math.round((m.tx + 0.5) * MAP_S);
-    const ly = MAP_Y + Math.round((m.ty + 0.5) * MAP_S);
-    drawCampIcon(ctx, L, lx, ly - 3, '#2c3448', 'rgba(240,244,250,0.9)');
-    const w = pixelTextWidth(L.name);
-    const nx = Math.max(MAP_X + 1, Math.min(MAP_X + MAP_W - w - 1, Math.round(lx - w / 2)));
-    let ny = ly + 3;
-    if (inked.some((r) => nx < r.x + r.w + 2 && nx + w + 2 > r.x && ny < r.y + 7 && ny + 7 > r.y)) ny = ly - 12;
-    inked.push({ x: nx, y: ny, w });
-    drawPixelTextShadow(ctx, L.name, nx, ny, '#2c3448', 'rgba(240,244,250,0.9)');
-  }
+  const vp = viewPlayer();
+  const mx = (x) => MAP_X + Math.round((x / TILE) * MAP_S), my = (y) => MAP_Y + Math.round((y / TILE) * MAP_S);
+  // the ziplines under everything that moves: each side's cable pylon to
+  // pylon in its ink, the minimap's own line at the chart's scale
+  for (const z of zips) if (z) drawMapZip(ctx, z, mx, my, TEAMS[skin(z.team)].mark);
+
+  // the camps, glyph only; the one under the pointer lights and wears its name
+  drawChartCamps();
 
   // every body on the chart wears the one grammar both maps share (drawMap*,
   // draw-world.js), in its side's ink: the robots first - every worker,
   // soldier and merchant standing, none of them hides - then the players,
   // then the birds over all of them, since the objective is the read
-  const vp = viewPlayer();
-  const mx = (x) => MAP_X + Math.round((x / TILE) * MAP_S), my = (y) => MAP_Y + Math.round((y / TILE) * MAP_S);
   for (const r of robots) {
     if (r.dead) continue;
     drawMapUnit(ctx, mx(r.x), my(r.y), TEAMS[skin(r.team)].mark, CHART_DARK, 2, true, foeCue(r.team));
@@ -378,19 +343,6 @@ function renderWorldMap(now) {
     if (p === vp || !p.active || p.dead || inAir(p)) continue;
     if (p.team !== vp.team && p.markT <= 0 && concealOf(p) >= PRONE_MAP) continue; // buried: off the map, same as the minimap - unless falcon-marked
     drawMapUnit(ctx, mx(p.x), my(p.y), TEAMS[skin(p.team)].mark, CHART_DARK, 2, false, foeCue(p.team));
-  }
-  // the ziplines: each side's cable as a thread in its ink along the verge,
-  // the minimap's own line at the chart's scale
-  for (const z of zips) {
-    if (!z) continue;
-    ctx.save();
-    ctx.strokeStyle = TEAMS[skin(z.team)].mark;
-    ctx.globalAlpha = 0.8;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    z.pts.forEach((pt, i) => ctx[i ? 'lineTo' : 'moveTo'](MAP_X + (pt.x / TILE) * MAP_S, MAP_Y + (pt.y / TILE) * MAP_S));
-    ctx.stroke();
-    ctx.restore();
   }
   // the eagles as bird diamonds in team colour: the two roosted objectives,
   // and mid-flight (the M map is the ride's chart) each bird on its own line,

@@ -1,9 +1,8 @@
 'use strict';
 // The wind's leavings: the low drifts it piles in the lee of whatever
 // stands, and the frozen lakes' dressing - snow dusted over the ice, a bank
-// along each lake's downwind shore, long cracks through the big lakes,
-// frozen reeds poking out along the shores - plus the few things on the ice
-// the weather moves every frame. All of it is SCENERY: laid off the seed at
+// along each lake's downwind shore, long cracks through the big lakes - plus
+// the few things on the ice the weather moves every frame. All of it is SCENERY: laid off the seed at
 // the ground bake (every pixel a function of the world and its position, so
 // a repaint lays back exactly what the bake laid), and nothing here is a
 // rule - no walker, route or slide reads it. The tile grid still says where
@@ -65,24 +64,20 @@ function bigLakeAt(tx, ty) {
 }
 
 // ------------------------------------------------------------ the dressing's stamps
-// Cracks, reeds, the downwind banks and the lee drifts are worked out ONCE,
+// Cracks, the downwind banks and the lee drifts are worked out ONCE,
 // at the bake, into per-tile lists of pixels (packed: i | j << 4 | ink << 8),
 // and every paint of a tile - the bake's, or a repaint's - stamps its own
-// list. So a reed rooted in the tile below still pokes up into this one, a
-// drift reaching across a tile edge carries on, and a hole that opens and
+// list. So a drift reaching across a tile edge carries on, and a hole that opens and
 // refreezes lays back the same crack it cut.
 const DRESS_INK = [
   '#5d8cab', // 0 a long crack
   '#78a2bf', // 1 ...its branches, fainter
   '#c6e3f1', // 2 the pale lip under a crack, the ice's thickness catching the light
-  '#6b5a3c', // 3 a reed, low
-  '#98855c', // 4 a reed, high
-  '#4f3f2a', // 5 a seed head
-  '#f5f9fd', // 6 snow: a reed's cap, a drift's body
-  '#ffffff', // 7 a drift's or a bank's sunlit edge
-  '#d3deed', // 8 the shade on a drift's lee
-  '#e4ecf6', // 9 a bank's face turned from the sun
-  '#fbfdff', // 10 a bank's face turned to it
+  '#f5f9fd', // 3 snow: a drift's body
+  '#ffffff', // 4 a drift's or a bank's sunlit edge
+  '#d3deed', // 5 the shade on a drift's lee
+  '#e4ecf6', // 6 a bank's face turned from the sun
+  '#fbfdff', // 7 a bank's face turned to it
 ];
 let dressPx = null;           // Map: tile index -> packed pixels, in paint order
 let crackPx = null;           // Map: tile index -> packed crack pixels (frost re-inks them)
@@ -105,7 +100,6 @@ function bakeDressing() {
   bakeDrifts();
   bakeBanks();
   bakeCracks();
-  bakeReeds();
 }
 // stamp a tile's dressing: called by paintGroundTile over the snow or the
 // ice, under the road, the creek and the cast shade. Nothing lands on an
@@ -158,9 +152,9 @@ function bakeDrifts() {
       if (h) {
         if (h < 1 && BAYER4[(y & 3) * 4 + (x & 3)] + 0.47 > h) continue;
         const down = H[(j + 2) * W + i + 1], right = H[(j + 1) * W + i + 2];
-        stampAt(dressPx, x, y, !up || !left ? 7 : !down || !right ? 9 : 6);
+        stampAt(dressPx, x, y, !up || !left ? 4 : !down || !right ? 6 : 3);
       } else if (up >= 1 || H[j * W + i] >= 1) {
-        stampAt(dressPx, x, y, 8);
+        stampAt(dressPx, x, y, 5);
       }
     }
   }
@@ -178,7 +172,7 @@ const BANK_W = [5, 9];        // px of bank at a shallow..mid shore
 const SUN_TO_X = -0.88, SUN_TO_Y = -0.48; // toward the sun, the way every lit face looks
 function bakeBanks() {
   const faceLit = -LW_X * SUN_TO_X - LW_Y * SUN_TO_Y > 0;
-  const face = faceLit ? 10 : 9, lee = faceLit ? 9 : 10, top = DEEP_TOP();
+  const face = faceLit ? 7 : 6, lee = faceLit ? 6 : 7, top = DEEP_TOP();
   const sx = LW_X > 0.3 ? 1 : LW_X < -0.3 ? -1 : 0, sy = LW_Y > 0.3 ? 1 : LW_Y < -0.3 ? -1 : 0;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     const n = lakesAround(tx, ty);
@@ -202,7 +196,7 @@ function bakeBanks() {
       const end = B - 1.5 + vnoise(x / 6 + 5, y / 6 + 11) * 3;
       if (d > end) continue;
       const t = d / end;
-      stampAt(dressPx, x, y, t < 0.45 ? face : t < 0.62 ? 7 : t > 0.88 ? (faceLit ? 8 : 6) : lee);
+      stampAt(dressPx, x, y, t < 0.45 ? face : t < 0.62 ? 4 : t > 0.88 ? (faceLit ? 5 : 3) : lee);
     }
   }
 }
@@ -267,53 +261,6 @@ function crackLine(x0, y0, x1, y1, gen) {
     const e2 = 2 * e;
     if (e2 >= dy) { e += dy; x0 += sx; }
     if (e2 <= dx) { e += dx; y0 += sy; }
-  }
-}
-
-// ------------------------------------------------------------ frozen reeds
-// Reeds poke out of the ice along the shores in clumps: a low noise lays out
-// the stretches that grow them, so a shore has a stand here and bare banks
-// there, never an even fringe. A clump is a few stalks of two browns rising
-// out of a pinch of snow at the ice's edge, leaning a pixel downwind, some
-// with a seed head, some capped with snow.
-const REED_NOISE = 6;         // tiles per step of the noise that lays out the stands
-const REED_CUT = 0.6;         // the noise above which a shore grows reeds
-const REED_CLUMPS = 2;        // most clumps on one shore tile
-const REED_EDGE = 3;          // px from the snow a clump's root may be
-function bakeReeds() {
-  for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
-    const n = lakesAround(tx, ty);
-    if (n === 0 || n === 9 || !isLake(tx, ty) || ground[idx(tx, ty)] !== 1 || !dressFree(tx, ty)) continue;
-    const q = vnoise(tx / REED_NOISE + 13.7, ty / REED_NOISE + 7.1);
-    if (q < REED_CUT) continue;
-    const clumps = 1 + ((hash2(tx * 5 + 1, ty * 7 + 3) * REED_CLUMPS * (q - REED_CUT) / (1 - REED_CUT) * 2) | 0);
-    for (let c = 0; c < Math.min(REED_CLUMPS, clumps); c++) {
-      for (let tr = 0; tr < 6; tr++) {
-        const h = hash2(tx * 31 + c * 7 + tr, ty * 17 + 5);
-        const x = tx * TILE + 2 + ((h * 12) | 0), y = ty * TILE + 2 + ((hash2(tx * 13 + tr, ty * 29 + c) * 12) | 0);
-        if (!iceAtPx(x, y)) continue;
-        if (iceAtPx(x, y + REED_EDGE) && iceAtPx(x, y - REED_EDGE) && iceAtPx(x + REED_EDGE, y) && iceAtPx(x - REED_EDGE, y)) continue;
-        reedClump(x, y, tx * 101 + ty * 7 + c);
-        break;
-      }
-    }
-  }
-}
-function reedClump(x, y, key) {
-  // the pinch of snow it stands in
-  for (let i = -3; i <= 3; i++) stampAt(dressPx, x + i, y, Math.abs(i) === 3 ? 6 : 7);
-  const n = 2 + ((hash2(key, 503) * 3) | 0), lean = LW_X > 0 ? 1 : -1;
-  for (let s = 0; s < n; s++) {
-    const h = hash2(key + s, 509), dx = (s - (n >> 1)) * 2 + (hash2(key + s, 521) < 0.3 ? 1 : 0);
-    const tall = 4 + ((h * 6) | 0);
-    for (let k = 1; k <= tall; k++) {
-      const bx = x + dx + (k > tall * 0.6 && h > 0.4 ? lean : 0);
-      stampAt(dressPx, bx, y - k, k <= tall / 2 ? 3 : 4);
-      if (k === tall) {
-        if (h > 0.62) { stampAt(dressPx, bx, y - k - 1, 5); stampAt(dressPx, bx, y - k - 2, 5); }
-        else if (h < 0.3) stampAt(dressPx, bx, y - k - 1, 6);
-      }
-    }
   }
 }
 
