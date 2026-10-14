@@ -1,0 +1,11 @@
+{
+  "js/ai.js aiThink": 448,
+  "js/audio.js <anon>": 206,
+  "js/boot.js": 1295,
+  "js/draw/render.js render": 438,
+  "js/sim.js updatePlay": 143,
+  "js/sim.js updatePlayer": 301,
+  "js/structures.js updateStructures": 150,
+  "js/ui/menu.js": 2031,
+  "js/world.js": 1933
+}
