@@ -1340,6 +1340,8 @@ function layPaths() {
 //   - THE CISTERN at the middle (js/cistern.js): the creek pools inside its
 //     ring and the pool is frozen over, the orca's lake (below), so the road
 //     goes in at one gate and out at the other across the ice;
+//   - a FORD just outside each of its culverts (placeCistern's last step),
+//     the waves' way round it;
 //   - an outer FORD on each stretch between a bend and the treeline;
 //   - a ford wherever a grown shape's path crosses (addPathRoute).
 // A ford is a row of stepping stones (ground 5) along one tile row across
@@ -1398,14 +1400,15 @@ function creekBend(w) {
   }
   return p;
 }
-// 0 through the cistern, at a bend's camp or a ford, easing to 1 CREEK_CALM
-// tiles out: the wander and the banks' rag are held still where the water
-// must meet a fixed thing square - the cistern's culverts are baked art, so
-// there the creek is CREEK_HW either side of the cross-diagonal exactly
+// 0 through the cistern and out past its fords, at a bend's camp or a ford,
+// easing to 1 CREEK_CALM tiles out: the wander and the banks' rag are held
+// still where the water must meet a fixed thing square - the cistern's
+// culverts are baked art, so there the creek is CREEK_HW either side of the
+// cross-diagonal exactly
 function creekCalm(w) {
   let k = 1;
   const at = (w0, r) => { const t = Math.max(0, Math.min(1, (Math.abs(w - w0) - r) / CREEK_CALM)); k = Math.min(k, t * t * (3 - 2 * t)); };
-  at(0, CIST_RO + 1);
+  at(0, CIST_FORD + 2); // the culverts and the fords outside them
   for (const B of creekBends()) at(B.w, B.L / 2);
   for (const f of creekOuterFords()) at(f.w, 1);
   return k;
@@ -1488,14 +1491,15 @@ function creekOuterFords() {
 }
 // a row of stepping stones across the water through (fx, fy): the nearest
 // creek tile on that tile row and the whole run of water it sits in, and a
-// tile of open ground cleared past either end so a ford never ends in a pine
+// tile of open ground cleared past either end so a ford never ends in a pine.
+// Returns the row ({ ty, x0, x1 }: its first and last stone), null if no water
 function creekFord(fx, fy) {
   const ty = Math.round(fy);
   let tx = Math.round(fx);
   const wet = (x) => inWorld(x, ty) && (ground[idx(x, ty)] === 4 || ground[idx(x, ty)] === 5);
   if (!wet(tx)) {
     const k = [1, -1, 2, -2, 3, -3].find((d) => wet(tx + d));
-    if (k === undefined) return;
+    if (k === undefined) return null;
     tx += k;
   }
   let x0 = tx, x1 = tx;
@@ -1506,6 +1510,7 @@ function creekFord(fx, fy) {
     const o = objAt(x, ty);
     if (o && laneFells(o)) objects[idx(x, ty)] = null;
   }
+  return { ty, x0, x1 };
 }
 // Runs at boot right after genWorld() (js/boot.js), before the paths and the
 // road: the water fells whatever grew on it (its banks keep their pines) and

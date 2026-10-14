@@ -483,7 +483,8 @@ the diagonal is `tx + ty = WORLD - 1`, `u` running from the bottom-left corner, 
 toward the bottom-right side — taking a tile index or a continuous tile coordinate alike;
 `onRoad(tx, ty)` is the membership test, and `roadWaypoints(team)` the centreline every
 `ROAD_STEP` (20) tiles from a side's own junction to the rival's, which is the march the waves
-walk ([Soldiers](gameplay.md#soldiers-the-waves)). Not under `PRACTICE` (`roadMainDist` answers
+walk ([Soldiers](gameplay.md#soldiers-the-waves)), round the cistern by one of its fords
+(`cisternWayRound`, [the cistern](#the-cistern)). Not under `PRACTICE` (`roadMainDist` answers
 99 and no spur is ever registered).
 
 Both maps paint it: a tan stroke on the minimap, a brown ink line down the parchment
@@ -527,6 +528,8 @@ shoved in off the bank. The death line is `WENT IN THE CREEK`.
 - **the cistern** at the middle ([below](#the-cistern)): the creek pools inside its ring and the
   pool is frozen, [the orca's lake](#the-orcas-lake), so the road goes in at one gate and out at
   the other across the ice, and anyone can come in by a gate or a breach, while the orca allows;
+- **the cistern's two fords** (`cistFords`), one just outside each culvert, where the waves cross
+  ([below](#the-cistern));
 - **an outer ford** (`creekOuterFords`) on each stretch between a bend and the treeline, at
   its middle, where the stretch is `CREEK_FORD_GAP` or more;
 - **a path's ford** wherever a grown shape's path crosses ([the paths](#the-paths)).
@@ -551,8 +554,8 @@ camp's side of its own bend, walking the water's edge ([river camps](#river-camp
 toward the bottom-right) and `p` across it is `creekP` (+ toward the top-right, BLUE's half).
 The line is the bends plus a wander of `CREEK_WANDER` on the position noise (`creekMid`) and each
 bank `CREEK_HW_RAG` off `CREEK_HW` (`creekHW`); `creekCalm` eases the wander and the rag to nothing
-within `CREEK_CALM` of the cistern's outer face, the middle half of a bend and an outer ford, so the
-water meets each square: through the cistern the creek is `CREEK_HW` either side of the
+within `CREEK_CALM` of the cistern's fords (`CIST_FORD` + 2 tiles out), the middle half of a bend
+and an outer ford, so the water meets each square: through the cistern the creek is `CREEK_HW` either side of the
 cross-diagonal exactly, every seed, so the baked culverts always meet it. `creekAt(fx, fy)` is the signed distance to the nearer bank (negative in the water)
 and leaves where the point is in `CQ` — along (`a`) and across (`n`, + toward BLUE's half) —
 `creekFlow` the way the current runs there, and `creekWet` the
@@ -637,15 +640,29 @@ the wall only a head shows over it.
 
 `placeCistern` (placeCreek's last step) makes the ground the cistern's: ice inside `CIST_ICE`, the
 creek frozen to `CIST_FROZEN`, the sills road, every other lake and everything worldgen stood
-cleared off `CIST_CLEAR` (a later pass's zipline pylon may stand at its rim, off the stone).
+cleared off `CIST_CLEAR` (a later pass's zipline pylon may stand at its rim, off the stone), and
+last a ford outside each culvert.
 `cisternLane` ends the laid road on the sills ([the road](#the-road)). Not under `PRACTICE`.
 `DBG` exposes `cisternR`, `cisternDist`, `cisternReach`, `cisternTile`, `cisternBlocks` and
 `cisternTouches`.
 
+**A ford outside each culvert, the waves' way round.** `placeCistern` lays a ford (`creekFord`) on
+the creek's line `CIST_FORD` tiles up and down it from the crossing, its stones just clear of the
+wall and the whole row on the cleared ground, where `creekCalm` holds the water square, and keeps
+the two rows as `cistFords` (the upstream one first). `cisternWayRound`, from `makeSoldier`, swaps
+the road's waypoints on the cistern's ground for the road just short of the soldier's own gate,
+the ford's bank on its own half, the far bank and the road just past the rival's gate: every
+other soldier out of a barracks' door takes the other ford, so a column comes up the road, forks
+round the ring, and the two sides' waves meet on the stones, never on the orca's ice. Anyone
+crosses them; a route takes one when it is the shorter way.
+
 Verified on seed 7 (headless): walking with rolls and the warrior's rush at it from 120 angles,
 no body's feet ever came within its radius of the stone, and only the gates and the breaches let
 anyone in; a route from outside reaches the ice through each of the four breaches and both gates;
-on 24 seeds nothing stands on its stone.
+on 24 seeds nothing stands on its stone. The fords, on 24 seeds and every shape: both laid, five
+stones each with open ground at both ends, and every leg of each side's march round each of them
+a whole route that steps on no ice and no water; on seeds 7 and 42 every soldier of the first
+waves crossed on the stones, none set foot inside the ring and none stood in the water.
 
 ### The orca's lake
 

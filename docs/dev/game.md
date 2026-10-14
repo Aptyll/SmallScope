@@ -27,7 +27,8 @@ sightline down its spur ([the road](world.md#the-road)). Half a minute after lan
 merchant raises a **barracks** (a bot bay) behind its bird, and two more as its logs pay for them:
 every thirty seconds each one marches a **wave** of soldier bots out to the road and down it at the
 rival bird, one soldier more every three minutes, a side's live soldiers capped across its bays. Both sides
-get the same waves, so with nobody on the road the two columns meet in the middle and grind —
+get the same waves, so with nobody on the road the two columns meet at the middle, each forking
+round the cistern and over the stepping stones outside its wall, and grind on the stones —
 which side's wave gets through is decided by who walks out to it. **Drive off the rival eagle
 and the match is won** — nothing else ends one: a player who goes down waits, and is set back
 down at their own bird.
@@ -40,8 +41,9 @@ A settings toggle (MY TEAM) shows the roster's real colours instead.
 
 **The creek splits the valley.** One creek runs the other diagonal, corner to
 corner through the woods and all, so the two roosts sit on opposite halves: it meets the road once,
-at the middle where the waves meet, inside **the cistern**, and elsewhere it is crossed only at
-stepping-stone fords, or by a dodge roll from the bank. The cistern is the works' ring of cut
+at the middle, inside **the cistern**, and elsewhere it is crossed only at stepping-stone fords
+(the waves' two just outside the cistern's wall, where it runs out under it), or by a dodge roll
+from the bank. The cistern is the works' ring of cut
 stone round the crossing: the road comes in at two gates with stone sills, the wall is down in
 four breaches with the fallen blocks round them, and nothing gets through the stone itself, roll
 or charge. Inside, the creek pools and freezes into **the orca's lake**, both sides' alike: anyone

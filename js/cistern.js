@@ -6,8 +6,10 @@
 // with a stone sill, and the wall is down in four BREACHES on the
 // diagonals, the blocks that fell lying round them. The creek runs in and
 // out under it, a culvert each way (in the wall's face: nobody goes
-// through). Look H CUT BLOCKS, baked with its footprint by
-// app/bake-cistern/paint.py into js/sprites/cistern.js, and the ring's
+// through), and just outside each culvert a FORD of stepping stones crosses
+// it: the way the waves go round (cisternWayRound). Look H CUT BLOCKS,
+// baked with its footprint by app/bake-cistern/paint.py into
+// js/sprites/cistern.js, and the ring's
 // measures are the bake's (SPRITES.cistern.geo), so the sim can never stand
 // off the art. The pixels are js/draw/cistern.js.
 //
@@ -43,11 +45,13 @@ const CIST_LANE_IN = 0.1;            // tiles past the outer face the road's ear
 const CIST_LANE_TAPER = 4;           // tiles over which the road narrows onto a gate's width
 const CIST_STEP = 2;                 // px between the points a step is swept at
 const CIST_PAD = 24;                 // px of field kept round the footprint: past any body's reach
+const CIST_FORD = 13;                // tiles down the creek from the crossing to the middle of each culvert's ford: its stones just clear of the wall, the whole row on the cleared ground
 // per world tile: 1 its middle is stone, 2 no body fits at its middle, 4 any stone on it
 const CIST_MID = 1, CIST_NOFIT = 2, CIST_ANY = 4;
 let cistTiles = null;  // the flags above (placeCistern)
 let cistCuts = null;   // per world tile, bit k: the step NAV_DX[k], NAV_DY[k] from its middle meets the stone
 let cistField = null;  // { x, y, w, h, d }: world px box, px from each px to the nearest stone (0 on it)
+let cistFords = [];    // the culverts' fords as laid (creekFord's rows): [0] upstream, top-left; [1] downstream, bottom-right
 let cistOn = false;    // a match with the cistern standing (never the practice arena)
 
 // tiles from the crossing, of a continuous tile coordinate
@@ -149,10 +153,11 @@ function cisternField() {
 // the cistern's - the pool ice to CIST_ICE (the orca's lake), the creek
 // frozen under the wall, the gates' sills road to walk, every other lake
 // and everything standing cleared off CIST_CLEAR - and the tiles' flags
-// and cuts
+// and cuts - and last a ford just outside each culvert
 function placeCistern() {
   cistTiles = new Uint8Array(WORLD * WORLD);
   cistCuts = new Uint8Array(WORLD * WORLD);
+  cistFords = [];
   cistOn = !PRACTICE;
   if (!cistOn) return;
   const f = cisternField(), c = (WORLD - 1) / 2, r = Math.ceil(CIST_CLEAR + 1);
@@ -174,4 +179,26 @@ function placeCistern() {
     cistTiles[i] = fl;
     for (let k = 0; k < 8; k++) if (cisternReach(x + 8, y + 8, x + 8 + NAV_DX[k] * TILE, y + 8 + NAV_DY[k] * TILE, CIST_STAND) < 1) cistCuts[i] |= 1 << k;
   }
+  // on the creek's line CIST_FORD up and down it, where creekCalm holds the water square
+  cistFords = [-1, 1].map((s) => { const m = (s * CIST_FORD * Math.SQRT2 + WORLD - 1) / 2; return creekFord(m, m); });
+}
+
+// a wave's way past the middle (makeSoldier): the road's waypoints on the
+// cistern's ground dropped, and where the route crosses the creek the road
+// just short of its own gate, ford `side`'s two banks (cistFords) and the
+// road just past the rival's gate spliced in. So a column comes up the road,
+// forks round the ring and over the stones, never across the orca's ice
+function cisternWayRound(way, team, side) {
+  const f = cistOn && cistFords[side];
+  if (!f) return;
+  const s = team === 1 ? 1 : -1; // the soldier's own half: + BLUE's (+p), the row's east end
+  const bank = (tx) => ({ x: (tx + 0.5) * TILE, y: (f.ty + 0.5) * TILE });
+  const gate = (k) => roadPoint((WORLD - 1) / 2 + k * (CIST_CLEAR + 1) / Math.SQRT2);
+  const round = [gate(s), bank(s > 0 ? f.x1 + 1 : f.x0 - 1), bank(s > 0 ? f.x0 - 1 : f.x1 + 1), gate(-s)];
+  const fx = (q) => q.x / TILE - 0.5, fy = (q) => q.y / TILE - 0.5;
+  const kept = way.filter((q) => cisternR(fx(q), fy(q)) >= CIST_CLEAR + 1);
+  let i = kept.findIndex((q) => creekP(fx(q), fy(q)) * s < 0); // the first on the rival's half
+  if (i < 0) i = kept.length;
+  kept.splice(i, 0, ...round);
+  way.splice(0, way.length, ...kept);
 }
