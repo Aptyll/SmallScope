@@ -161,10 +161,10 @@ shore. Night's mirror follows the same edge ([the reflected sky](rendering.md#th
 rule**: no walker, route or slide reads it, and the ice's shine shows through everything laid on
 it, so a lake still reads as slippery. `bakeDressing` runs in `prepGround` right after
 `bakeLakes`: it labels every lake with its area (`lakeTiles`; `BIG_LAKE` tiles makes one big) and
-works cracks, reeds, banks and drifts out **once** into per-tile pixel lists (`dressPx`), which
+works cracks, banks and drifts out **once** into per-tile pixel lists (`dressPx`), which
 every paint of a tile stamps (`paintDressing`, called from `paintGroundTile` under the road, the
-creek and the cast shade). So a repaint lays back exactly what the bake laid, a reed rooted in the
-tile below still pokes into this one, and a hole that refreezes gets its crack back.
+creek and the cast shade). So a repaint lays back exactly what the bake laid, a drift reaching
+across a tile edge carries on, and a hole that refreezes gets its crack back.
 
 - **One snow depth, three bands.** The deep snow layer owns one seeded depth map (`snowDepth`,
   `DEPTH_MID`/`DEPTH_DEEP`, `deepAt`, `driftWind`); its deepest band slows a walker, and this
@@ -187,8 +187,6 @@ tile below still pokes into this one, and a hole that refreezes gets its crack b
 - **Long cracks** through big lakes (`bakeCracks`/`walkCrack`): dark lines with a pale lip,
   branching, kept on `lakeDepth` 2 and in, a few per `CRACK_EVERY` tiles of lake. The short
   per-tile cracks in `paintGroundTile` still mark every lake.
-- **Reeds** in clumps along the shores (`bakeReeds`): a low noise (`REED_NOISE`/`REED_CUT`) picks
-  the stretches that grow them, so a shore has stands and bare runs, never an even fringe.
 - **The weather on the ice**, every frame (`drawLakeSky`, after the reflected stars in `render()`):
   streaks of blown snow drifting across big lakes with the live wind, more in a blizzard; a frosty
   night's glints and its long cracks darkening again; falling snow laying fresh grains from
