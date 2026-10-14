@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.465';
+const PATCH_TXT = 'PATCH 0.468';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.468', 'THE CREEK NOW FREEZES INTO A LAKE ROUND THE BRIDGE, AND AN ORCA LIVES UNDER IT: STAND ON ITS ICE AND A LINE OVER YOUR HEAD COUNTS DOWN FOUR SECONDS, THEN IT BREAKS THROUGH AND TAKES YOU, SO GET OFF THE ICE OR KEEP TO THE ROAD.'],
   ['0.465', 'EACH WAVE IS NOW THREE SOLDIERS AND NO FLAG BEARER. THEY ALL CARRY THE PENNANT AGAIN.'],
   ['0.464', 'BEHIND THE SCENES: THE GAME\'S BIGGEST CODE FILES ARE SPLIT INTO SMALLER ONES. NOTHING YOU PLAY CHANGES.'],
   ['0.463', 'EACH FRAME TAKES ABOUT A THIRD LESS TIME TO DRAW ON SLOWER PCS, WITH NOTHING ON SCREEN CHANGED, AND F3 NOW SHOWS HOW LONG EACH FRAME SPENDS ON THE GAME AND ON DRAWING.'],
@@ -1124,7 +1125,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
-    ['AN ORCA HUNTS UNDER THE FROZEN LAKE ROUND THE BRIDGE', '0.460'],
+    ['AN ORCA HUNTS UNDER THE FROZEN LAKE ROUND THE BRIDGE', '0.468'],
     ['NO MORE REEDS ALONG THE LAKE SHORES', '0.457'],
     ['A ZIPLINE RIDER NO LONGER WOBBLES ON SCREEN', '0.455'],
     ['EACH BEAR GIVES ITS OWN BUFF: BLACK BUFF AND BROWN BUFF', '0.454'],
