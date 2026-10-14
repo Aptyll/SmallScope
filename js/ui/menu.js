@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.467';
+const PATCH_TXT = 'PATCH 0.468';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.468', 'WHILE THE GAME IS HIDDEN OR MINIMISED IT STOPS DRAWING, SO IT NO LONGER KEEPS YOUR GRAPHICS CARD BUSY IN THE BACKGROUND. THE MATCH ITSELF KEEPS GOING.'],
   ['0.467', 'ONLINE MATCHES FEEL CLEANER: YOUR OWN WALK ANSWERS AT ONCE INSTEAD OF A MOMENT LATE, OTHER PLAYERS GLIDE STEADILY ON A SHAKY CONNECTION, AND THE HOST OPENING THE MENU NO LONGER FREEZES EVERYONE.'],
   ['0.466', 'EACH GAME STEP TAKES ABOUT 60% LESS TIME: THE GAME NO LONGER CHECKS EVERY TREE ON THE MAP SIXTY TIMES A SECOND, ONLY THE FEW THAT ARE BLINKING, SHAKING OR GROWING BACK.'],
   ['0.465', 'EACH WAVE IS NOW THREE SOLDIERS AND NO FLAG BEARER. THEY ALL CARRY THE PENNANT AGAIN.'],
@@ -1273,6 +1274,7 @@ const PATCH_DIGEST = [
     ['THE WEB BUILD OPENS TWO TO THREE TIMES FASTER', '0.396'],
     ['EACH FRAME DRAWS ABOUT A THIRD FASTER ON SLOWER PCS', '0.463'],
     ['EACH GAME STEP TAKES ABOUT 60% LESS TIME', '0.466'],
+    ['A HIDDEN OR MINIMISED GAME NO LONGER DRAWS', '0.468'],
   ]],
 ];
 const DIGEST_FROM = '0.268'; // the oldest patch the digest covers, printed beside HIGHLIGHTS
