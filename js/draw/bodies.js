@@ -242,7 +242,7 @@ function centreTextX(sx, txt, scale) { return Math.round(sx) - (pixelTextWidth(t
 // something that is usually absent is what made the plate lopsided before.
 const FRAME_DX = 3;
 
-// ALPHA'S BLOOD, worn: an amber ring of pips around the feet, rimmed dark
+// BEARHEART (CAMP_BUFF_NAME), worn: an amber ring of pips around the feet, rimmed dark
 // so it reads on snow, that loses a pip at a time as the buff runs out -
 // the ring IS the timer, and a full ring on a rival is the warning. The
 // longest buff (a bear's) fills every pip.

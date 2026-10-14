@@ -1668,7 +1668,7 @@ window.DBG = {
   // the shoal the water this shape froze can hold (the fish banner, wildlife.js)
   get fishCap() { return fishCap; }, get fishFloor() { return fishFloor; },
   // the camps: the live registry, the table behind it, where each site is,
-  // what is where, restock by hand, and blood a player by hand
+  // what is where, restock by hand, and give a player BEARHEART by hand
   camps, CAMPS, CAMP_SITES, campSites, campTile, campAt, stockCamps, campBuff, flushBirds,
   // the map shape this page grew, the table behind it, the rule one IS, and
   // the paths it cut: DBG.mapTerrain(k, tx, ty) answers for any shape
@@ -1949,9 +1949,9 @@ window.DBG = {
   },
   PRONE_BURY, PRONE_SPEED, PRONE_SNIFF, PRONE_CUT, PRONE_MOVE, PRONE_MAP, AMBUSH_MUL,
   spawnAnimal: (kind, x, y) => { const a = makeAnimal(kind, x, y); animals.push(a); return a; },
-  // the level a spawn is dealt (the table's average), the meadow's strength
-  // and its top-up (which a driver can call by hand to force one now)
-  animalLevel, PREY_POP, updatePreyStock,
+  // the level a spawn is dealt (the table's average), the two deer's lines
+  // and their restock (which a driver can call by hand to run one now)
+  animalLevel, updatePreyStock, spawnDeer, get deerRoutes() { return deerRoutes; },
   // debug staging: place a construction site directly, no cost or validation
   buildStruct: (tx, ty, type, tier, rot) => {
     const t = Math.min(STRUCTS[type].tiers.length - 1, tier || 0);

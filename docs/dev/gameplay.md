@@ -1555,19 +1555,39 @@ the answer; a warrior bot has no burrow to decide.
 ## Wildlife
 
 `animals` holds **everything that is shot rather than swung at** — two kinds of prey, the camps' three wolves and the dormant bird, keyed by
-`a.kind` with hp from `ANIMAL_HP`. The deer are spawned at boot by `spawnAnimals()`
-(called right after `genWorld()`, so its `rng()` draws don't reshuffle the world layout) at
-`PREY_POP` strength: 10 deer (24 HP), anywhere in the open. **The rabbits (8 HP) are a camp's**:
+`a.kind` with hp from `ANIMAL_HP`. **There are two deer (24 HP), one each side of the creek**, the
+valley's roaming neutral (League's scuttle crab): see [the deer's lines](#the-deer-run-the-valley).
+**The rabbits (8 HP) are a camp's**:
 three live in each [SNOWDROP WARREN](world.md#camps), stocked by `stockCamps` at their plan's
 spots and back all at once 40 s after the last of a warren's three dies, on the camp clock
 (`updateCamps`, held while anyone stands in the warren). `a.meadow` remembers the warren (not
 `a.home`, which is a camp monster's, so a rabbit is never a camp fight).
-The deer never breed, but **the herd is restocked**: `updatePreyStock` (from `updatePlay`, never
-under `PRACTICE`) puts one back every `PREY_REPOP` (15 s) while it is short, through
-`spawnPrey`, on a free tile no live player is within `PREY_CLEAR` (280 px — past the edge of any
-screen at zoom 1) of, so nothing is ever seen to appear. The three wolf kinds
+The three wolf kinds
 ([their table](#camp-monsters-neutral-until-hit)) belong to a [camp](world.md#camps) instead — `a.home` points at it,
 and the camp restocks them, all at once, once it is cleared. (**Birds**, 3 HP, are dormant: nothing spawns one.)
+
+### The deer run the valley
+
+`spawnAnimals()` (boot, after worldgen, never under `PRACTICE`) lays **each side's line**
+(`layDeerRoutes`, `deerRoutes[side]`): points `DEER_ROUTE_STEP` (5) tiles apart on a line parallel
+to the creek, `DEER_ROUTE_U` (100) tiles out along the road from that side's roost (the creek is
+at about 115), from one treeline to the other across the road, kept `DEER_ROUTE_KEEP` (3) tiles
+off the woods and off every camp's ground (`campNear` past `CAMP_GROUND`). Pure position, no
+`rng()`. One deer stands on the middle of each line (`spawnDeer`; `a.route` is its side).
+
+It **walks its line end to end and back** (`deerRouteGoal`: `a.leg` the point it heads for,
+`a.way` which way, turning at either end) at `DEER_ROAM` (a scout's walk, so a walk keeps up but
+never closes), grazing at `DEER_GRAZE_P` (a quarter) of its points for `DEER_GRAZE_T` (1.5–3.5 s).
+It bolts as any deer does from a player it sees, and **from any wolf or bear inside
+`DEER_BEAST_SIGHT`** (96 px), hunting or not (`updatePrey`). A flight remembers what it ran from
+(`a.lost`), and the deer picks its line up again at the nearest point heading on away from it; a
+deer carried far off its line (a rider, a long flight) walks back to the nearest point the same
+way. So a deer is found by knowing where its line runs, and caught by waiting on it.
+
+A side whose deer goes down gets the next one `DEER_BACK` (60 s) later (`updatePreyStock`, from
+`updatePlay`; `deerBackT` per side, saved in the `wild` root), on the point of its line furthest
+from every player and past `PREY_CLEAR` (280 px), so nothing is ever seen to appear: never more
+than two. A deer from a save older than the lines is taken onto an empty side's line.
 
 **Every animal wears a level** (`a.level`), the hero's plate on the left of its frame
 ([rendering.md](rendering.md#overhead-health-bars)): `animalLevelOf(kind)`, which is
@@ -1803,20 +1823,20 @@ still load. All three run
 | Kind | hp (+ a level) | bite (+ a level) | reach / cd / spd | body | kill |
 | --- | --- | --- | --- | --- | --- |
 | wolf | 30 (+3) | 9 (+1) | 13 px / 1 s / 96 | r 4.5, mass 2, a roll passes through | `YIELD.wolf` 24 |
-| alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
-| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, the whole team blooded, a feed line |
+| alpha (black bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.alpha` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, BEARHEART for the whole team, a feed line |
+| dire (brown bear) | 640 (+50) | 22 (+3) | 44 px / 1.4 s / 100 | r 18, mass 5, a big body a roll **tackles** | `YIELD.dire` 90, `EPIC_TEAM_GOLD` (40) to every teammate on the ground, BEARHEART for the whole team, a feed line |
 
 The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` rows), and
 [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two coats,
 the same row, the same hp and the same pay. Every payout grows `ANIMAL_LV_GOLD` a level like any
 kill ([Wildlife](#wildlife)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's gear purchase can
 eat it the same tick — the XP is what is guaranteed), to every active teammate who is not dead
-or in the air; the blood goes to every active teammate regardless.
+or in the air; the buff goes to every active teammate regardless.
 
-**ALPHA'S BLOOD** (`campBuff(p, t)`, the constants above the `camp monsters` banner): `p.buffT`
+**BEARHEART** (`CAMP_BUFF_NAME`, `campBuff(p, t)`, the constants above the `camp monsters` banner): `p.buffT`
 seconds during which every blow the player lands is `CAMP_BUFF_DMG` (×1.25, applied in
 `hurtUnit` — a shot, a roll and a stomp alike) and the walk is `CAMP_BUFF_SPD` (×1.15, in
-`abilityMoveMul`). Either midline kill bloods the killer's whole team for `CAMP_BUFF_EPIC_T`
+`abilityMoveMul`). Either midline kill gives the killer's whole team BEARHEART for `CAMP_BUFF_EPIC_T`
 (120 s), and a fresh grant only ever extends what is left. It is worn as an
 **amber ring of twelve pips around the feet** (`drawBuffRing`, js/draw/bodies.js) that loses a pip
 at a time as it runs out — the ring is the timer, a full ring on a rival is the warning — and it
@@ -1864,10 +1884,10 @@ rather than a different resource (the League model: one number, many ways to ear
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
 | rock | its kind's `gold` (`ROCK_KINDS`, js/mining.js): STONE 3, FROSTGLASS SPIRE 8, SUNSTONE 20 | 2 / 3 / 4 s of standing by it, paid with **ore** besides and a roll at a find; it regrows ([Mining a rock](#mining-a-rock)) |
 | rabbit | `rabbit` 2 coins × 5 → 10 | bolts when approached; jinks one shot per 10 s |
-| deer | `deer` 3 coins × 6 → 18 | the big mobile target |
+| deer | `deer` 3 coins × 6 → 18 | the big mobile target: two of them, each running its side's line |
 | wolf | `wolf` 3 coins × 8 → 24 | a den's four; neutral until hit, and then the pack bites back |
-| black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
-| brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and the whole team blooded |
+| black bear | `alpha` 6 coins × 15 → 90 | BLUE's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and BEARHEART for the whole team |
+| brown bear | `dire` 6 coins × 15 → 90 | RED's river camp's one; `EPIC_TEAM_GOLD` (40) to every teammate besides, and BEARHEART for the whole team |
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | gold pump (`generator`) | `tiers[tier].pay` every `period` s: 2 / 4 / 7 every 10 s — 12 / 24 / 42 a minute, so the first pays back in 5 min and each upgrade in 6.7 and 7.8 | passive income, deposited to its owner; a 4x2 building, and each one its owner already has makes the next cost 2.5x (`ramp`, `buildCost`: 60, 150, 375), so the second pays back in 12.5 min and the next tier is the better buy |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
