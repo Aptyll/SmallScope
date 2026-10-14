@@ -150,11 +150,22 @@ none of them is still in a temporal dead zone — a new panel anchor is declared
 offsets *within* each baked panel stay in their own sections. A screen authored
 in the 270-row frame starts at `frameTop()` — `menuLayout()` shows the pattern (`toy` offset).
 
-`render()` keeps two camera offsets for the single-rounding rule
-([CLAUDE.md](../../CLAUDE.md#hard-rules)): tiles and other statics subtract the rounded
-`ox`/`oy` (the screen shake folded in), while moving entities (player, animals, robots, drops,
-particles, floaters, swing arc) subtract the exact `ex`/`ey` and round once at the end. New
-entity draw code must use `ex`/`ey`.
+**The sub-pixel camera.** The world buffer's corner is the camera **floored** to a whole world
+px (`ox`/`oy`, the screen shake folded in; also `wOX`/`wOY` for passes outside `render()`), and
+the leftover fraction is spent at the blit: `worldCv` lands up-left of the canvas by
+`round(fraction × k)` **device** px. So the screen scrolls by the device px while every world
+pixel keeps its whole k×k block. A camera that moved only in whole world px stepped the whole
+screen k px at a time (6 at a 1080p 2x), unevenly whenever a ride's speed was not a whole
+number of px a step, and that full-screen judder was eye strain. `sizeWorldView()` adds the
+spare world px on each axis the shift needs. The cost: a body the camera follows sits on the
+world grid while the screen slides under it, so it wanders within half a world px of the centre.
+
+Statics and movers share that whole-px corner (`ex`/`ey` are `ox`/`oy`): a mover subtracts
+`ex`/`ey` from its exact position and rounds once at the end
+([CLAUDE.md](../../CLAUDE.md#hard-rules)), so it lands on the ground's own grid. New entity draw
+code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the exact camera
+(`wToSX`/`wToSY`, `renderWeather(camX, camY)`), which matches the blit to the device px;
+`drawTallies` takes the blit's own shift.
 
 ## Render pass order
 
@@ -1360,8 +1371,8 @@ The one shape here that is about the **art** rather than the sim. The overhead f
 stamina bar, level plate — is the only thing in the game that has to line up with a *sprite*
 instead of with a number, and nothing else on screen shows where a sprite's middle is; a frame
 three pixels off centre is invisible until something draws the line. Every player, animal, robot
-and building gets one: movers off the exact camera (`ex`/`ey`), buildings off the rounded one
-(`ox`/`oy`) and from the centre of the **footprint**, which is what a structure sprite centres
+and building gets one: movers off `ex`/`ey`, buildings off `ox`/`oy` (the same corner since the
+sub-pixel camera) and from the centre of the **footprint**, which is what a structure sprite centres
 itself over whether or not it is wider than its tiles.
 
 Every sprite in the game is an **even** number of pixels wide and centred on the seam between its

@@ -87,6 +87,7 @@ const ZOOM_SHOW = 1;
 let kWant = 0;            // device px per world px - a WHOLE number, the wheel steps it by 1 (0 until fitCanvas first rungs ZOOM_REST)
 let zoomCur = ZOOM_SHOW;  // applied scale, eased toward the wanted zoom every update (applyZoom, js/sim.js); the game boots on the title
 let WV_W = 640, WV_H = 360; // the world view in world px
+let wOX = 0, wOY = 0;       // this frame's world buffer corner in world px: the camera floored, the shake folded in (render())
 
 // the rungs kWant may sit on, clamped so the ends of the range are reachable
 // on any display (a devScale of 1 or 2 has very few whole numbers to offer)
@@ -98,11 +99,14 @@ function zoomWantOf() { return kWant / devScale; }
 // COVER the canvas or a sliver of stale pixels survives down the right edge.
 // Width and height ceil independently, so the effective scale can differ
 // between the axes by a fraction of a device pixel while the ease is running;
-// at rest both land on exactly k device px per world px.
+// at rest both land on exactly k device px per world px. One world px more
+// on each axis is the SPARE the sub-pixel camera shifts into: the blit lands
+// up to a world px up-left of the corner (render()), and the frame must still
+// cover the canvas after it.
 function sizeWorldView() {
   const k = Math.max(0.05, zoomCur * devScale);
-  WV_W = Math.max(16, Math.ceil(VIEW_W * devScale / k));
-  WV_H = Math.max(16, Math.ceil(VIEW_H * devScale / k));
+  WV_W = Math.max(16, Math.ceil(VIEW_W * devScale / k) + 1);
+  WV_H = Math.max(16, Math.ceil(VIEW_H * devScale / k) + 1);
 }
 // world point -> canvas point, for the few UI-layer things anchored to a tile
 function wToSX(wx) { return (wx - camX) * zoomCur; }
@@ -154,7 +158,7 @@ function fitCanvas() {
   // never reallocated mid-play; each frame uses the WV_W x WV_H corner.
   // imageSmoothing off: the scale-up must be nearest-neighbour or the pixel
   // art turns to soup.
-  const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR), hMax = Math.ceil(VIEW_H / ZOOM_FLOOR);
+  const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR) + 1, hMax = Math.ceil(VIEW_H / ZOOM_FLOOR) + 1; // + the sub-pixel camera's spare (sizeWorldView)
   worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
   sizeWorldView();

@@ -436,10 +436,9 @@ must own the app.
 The numbers are stable - code comments cite them (js/boot.js cites risk 3) - so a retired risk keeps
 its line.
 
-1. **The fixed step's presentation.** The sim's feel did not change at 1/60; what remains is that
-   a screen above 60 Hz repeats a sim state on the frames between steps (except during the drop,
-   which `tweenIn` draws in between), and a heavy stall plays a moment of slow motion instead of
-   a jump. Render interpolation of ground play would remove the first.
+1. **The fixed step's presentation.** The sim's feel did not change at 1/60; a screen above 60 Hz
+   draws the camera and the movers in between steps (`tweenIn`, render-only, since 0.451), and
+   what remains is that a heavy stall plays a moment of slow motion instead of a jump.
 2. **The snapshot is never quite complete.** Reflection carries every field, so the live risk is
    the reverse: a name added to `SNAP_SKIP` that a draw pass does read renders stale on a client,
    and a new entity ARRAY (a kind not in `SNAP_KINDS`, a singleton not in `snapSingles`) is not
