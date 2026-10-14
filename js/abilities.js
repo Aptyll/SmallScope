@@ -281,7 +281,7 @@ function updateAbilities(p, dt) {
   updateUnitStatus(p, dt);
   if (p.dead) return; // a burn can finish a player mid-tick
   if (p.rootT > 0) p.sliding = false;
-  if (p.buffT > 0) p.buffT = Math.max(0, p.buffT - dt); // ALPHA'S BLOOD running out (campBuff, wildlife.js)
+  if (p.buffT > 0) p.buffT = Math.max(0, p.buffT - dt); // BEARHEART running out (campBuff, wildlife.js)
   // the shield tracks the aim while it is up, and lowers itself on the timer
   if (p.shieldT > 0) {
     p.shieldT -= dt;
@@ -333,7 +333,7 @@ function abilityMoveMul(p) {
   }
   if (p.shieldT > 0) m *= 0.4;
   if (p.slowT > 0) m *= p.slowMul;
-  if (p.buffT > 0) m *= CAMP_BUFF_SPD; // ALPHA'S BLOOD (campBuff, wildlife.js)
+  if (p.buffT > 0) m *= CAMP_BUFF_SPD; // BEARHEART (campBuff, wildlife.js)
   return m;
 }
 
