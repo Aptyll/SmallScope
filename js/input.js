@@ -525,7 +525,7 @@ function pointerPress(button) {
   if (state.wheel && state.wheel.stand) { resolveWheel(); state.wheel = null; return; } // a standing flag wheel: this press picks
   if (state.wheel) { state.wheel = null; return; } // left-click while it is open: cancel
   if (state.settingsOpen) { mouse.down = true; settingsMouseDown(); return; }
-  if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // the chart's CLOSE plank; the rest of the slab swallows the press
+  if (state.mapOpen) { if (mapCloseHit()) { SFX.unlock(); state.mapOpen = false; } return; } // a press off the slab closes the chart; on it, the press is swallowed
   // the build list: a press on a row picks it, a press on the world lays
   // the ghost (a red ghost refuses with the deny cue and nothing else);
   // presses over the rest of the HUD go on to it as ever

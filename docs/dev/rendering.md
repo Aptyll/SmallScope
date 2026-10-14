@@ -418,7 +418,7 @@ Anything else that wants words is a design bug.
 ## UI panels are baked once
 
 `buildMapPanel()`, `buildSettingsPanel()` and `buildHelpPanel()` draw the static chrome (parchment,
-labels — the map slab's header is live, since the day changes and the plank lifts) into offscreen canvases (the map and help slabs are frost slabs, `bakeFrostSlab()`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
+labels — the map slab's header is live, since the day changes) into offscreen canvases (the map slab is the HUD's graphite plate, `drawHudFrame`; the help slab is a frost slab, `bakeFrostSlab()`; the settings slab and the SAVES slab in its place are flat, `bakeFlatSlab()`, both js/ui/panels.js); per-frame code blits them and draws only the live parts on top.
 Their layout variables (`PANEL_*`, `MAP_*`, `SET_*`, `SL_X`) are shared between the bake
 function and the per-frame code, so both sides move together — but a bake-side change only appears
 after the panel is rebuilt. They are declared in js/canvas.js and reassigned by `relayout()`
@@ -443,14 +443,10 @@ is a drawn map, not a photograph of the tiles**: `buildWorldMapImg()` files ever
 tile of forest or ice is ground again, a snow pinhole with three sides of one mass is that mass
 (`CHART_NEED`) — resamples it into the slot by priority (`chartSpan`: each chart pixel takes the
 highest class among the tiles it covers, so a one-tile wall never drops out of its run when a
-small window folds the 232 tiles into fewer px), and paints one flat ink per class (`CHART_INK`) — **a winter chart**:
-snow-white open ground, deep cold pine for the woods, pale ice, a tan track for the road. The
-light comes from the top-left, as it does on the snow: a mass's rim is lit where lower ground lies
-above or left of it and inked where it lies below or right (`CHART_LIT`/`CHART_RIM` — the forest,
-the ice, and the road's shadow edge). The ice wears a sparse diagonal sheen and the snow a faint grain
-(`chartGrain`), and the woods **nothing at all** — the palette does the work, and a forest
-texture (canopy dots, pine glyphs) reads as studs or clutter at this scale — so the chart has the
-grain of a drawn thing without the noise of one. No grid: a single
+small window folds the 232 tiles into fewer px), and paints one flat ink per class (`CHART_INK`) — **a flat chart** in quiet greys:
+pale snow for the open ground, deep slate for the woods, cold blue for the ice and the creek, a
+tan track for the road. Nothing is painted over the inks — no lit or inked rims, no grain — since
+the marks and the team inks are the read, and shading fought them. No grid: a single
 bush, rock or stump has no class and shows the ground, because at that scale a speck is noise;
 the buried chests keep theirs, a gold speck being a thing worth walking to. A side's buildings
 and its bird are two depths of one team ink (`chTeam`/`chEagle`, through `skin()`), so a base
@@ -473,14 +469,17 @@ the chart and a header, nothing else**, and it **fits the view**: `fitMapSlab()`
 `relayout`) gives the chart every row the view has up to `CHART_MAX` (232 — the match world at one
 px a tile, so a monitor charts at 1:1) with `MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT` of parchment round it
 (a window at the 240-row floor gets a 200 chart), and `mapAlloc()` (js/ui/panels.js) remakes the chart's
-buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the **frost slab** every
-panel shares (`bakeFrostSlab` with no title), the chart in a dark frame with an icy line round it. In the header (`MAP_HEAD_Y`/`MAP_HEAD_H`):
-the day at 2× in the slabs' title gold on the left, and on the right the `CLOSE` plate —
-`drawFrostButton`, a plate in the slab's own grammar (its stone bound in its dark, lifting off its
-shadow on hover, the label going gold), hit through `mapCloseRect`/`mapCloseHit` in `pointerPress`
-(play and drop alike; the cursor is a hand over it) — with no compass (the chart is north-up, as
-the world is), no key (the marks are the minimap's own), no clock (the rail or the disc wears it) and no
-title. Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
+buffers and re-bakes the slab whenever `MAP_W` changes. The slab is the HUD's **graphite plate**
+(`drawHudFrame`, its four corners cut), the chart in a one-pixel dark frame. In the header
+(`MAP_HEAD_Y`) is the day at 2× in pale ink, and **no close button**: M or Escape closes the chart,
+and so does a press anywhere off the slab (`mapCloseHit` in `pointerPress`, play and drop alike).
+There is no compass (the chart is north-up, as the world is), no key (the marks are the minimap's
+own), no clock (the rail or the disc wears it), no title, and **no camp names until asked**: each
+camp is its glyph in its camp's ink, and the one under the pointer (within `CHART_HOVER_R`) lights
+white and wears its name on a small graphite tag running away from the chart's middle
+(`drawChartCamps`/`chartTag`). The ziplines on both maps are `drawMapZip` (js/draw/marks.js): a
+crisp two-pixel ribbon in the side's ink, pylon to pylon, each pylon a pale pixel on it
+(`MAP_ZIP_PYLON`), drawn under every body. Every mark on the chart sits on the minimap's own dark (`CHART_DARK`), so a mark reads the
 same on both maps.
 The minimap is a scrolling viewport, not a whole-world view: `renderMinimap()` blits a
 `MM_R / s`-tile square of `mmCv` around `viewPlayer()` into the disc, where `s = mmScale()` is
@@ -491,8 +490,9 @@ and is carried across by `MM_MIGRATE` on load. Stepped by the
 scroll wheel while `overMinimap()` (pointer inside the disc + ring), which pre-empts the camera
 zoom in the wheel handler and is saved with the settings. Every marker drawn over it (robots, players,
 camp glyphs, your side's [flags](gameplay.md#team-flags) with their rings) multiplies its tile
-offset by `s`. The disc sits on an opaque `#0f1632`
-backing (to `MM_R + 5`) inside a **strong 2 px black outline** (to `MM_R + 7`), and it has **no
+offset by `s`. The disc sits on an opaque graphite
+backing (`AB_BG`, to `MM_R + 5`; its day ring's track is `HUD_EDGE`) inside a **strong 2 px
+`HUD_INK` outline** (to `MM_R + 7`), the HUD frame's own three inks since 0.459, and it has **no
 hover state** — the chrome is baked once per radius and looks the same whatever the pointer does;
 there is no halo or second ring outside it. `overMinimap()` reaches to that outline's outer edge. **No `arc()` anywhere in it**: canvas arcs anti-alias, and at
 game resolution that reads as blur, so `mmRing(g, cx, cy, r0, r1, col, a0?, a1?)` paints the
@@ -957,7 +957,7 @@ solid dark ground (`o.bg`, `AB_BG` by default). **The palette is neutral graphit
 cold steel line and the navy grounds it replaced pulled the eye off the game, so the frame is the
 quietest thing on screen and the icons, the sides' colours and the gold carry the contrast. The
 strip, the shelf, the drawer, the rail, the build list, the practice bar and the tooltips share it;
-the menus, the shop and the minimap are still navy. The outline holds the plate apart from bright
+the M map and the minimap wear it too (0.459); the menus and the shop are still navy. The outline holds the plate apart from bright
 snow at noon, the faint line finishes its edge against the forest at night, and the ground keeps every
 well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
 both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world

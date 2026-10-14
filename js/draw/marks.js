@@ -241,3 +241,29 @@ function drawMapBird(g, x, y, col, rim) {
   g.fillStyle = col;
   g.fillRect(gx - 2, gy, 5, 1); g.fillRect(gx, gy - 2, 1, 5);
 }
+
+// ---- a zipline on a map --------------------------------------------------
+// A two-pixel ribbon in its side's ink, pylon to pylon (each run doubled one
+// pixel to the right, so a diagonal reads as one solid stroke and not a
+// stair of dots), and each pylon a pale pixel on it: where the fast way out
+// runs and where it can be boarded, under the bodies. No dark rim: a dark
+// underline read as a black cable and dark studs as bodies (both tried).
+// Rasterised a pixel at a time like the disc's rims - a canvas stroke smears
+// a 1px line over two. (sx, sy) map a world point to the map; `keep(x, y)`
+// says whether a pixel may land (the disc's clip).
+const MAP_ZIP_PYLON = '#f4f7ff';
+function drawMapZip(g, z, sx, sy, col, keep) {
+  const at = (x, y) => { if (!keep || keep(x, y)) g.fillRect(x, y, 1, 1); };
+  g.fillStyle = col;
+  for (let i = 1; i < z.pts.length; i++) {
+    const x0 = Math.round(sx(z.pts[i - 1].x)), y0 = Math.round(sy(z.pts[i - 1].y));
+    const x1 = Math.round(sx(z.pts[i].x)), y1 = Math.round(sy(z.pts[i].y));
+    const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+    for (let k = 0; k <= n; k++) {
+      const x = Math.round(x0 + (x1 - x0) * k / n), y = Math.round(y0 + (y1 - y0) * k / n);
+      at(x, y); at(x + 1, y);
+    }
+  }
+  g.fillStyle = MAP_ZIP_PYLON;
+  for (const p of z.pts) at(Math.round(sx(p.x)), Math.round(sy(p.y)));
+}
