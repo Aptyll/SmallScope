@@ -153,15 +153,23 @@ function render() {
   const shk = (s) => Math.round(-s + fxRng() * 2 * s);
   const shx = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
   const shy = settings.shake && state.shake > 0.2 ? shk(state.shake) : 0;
-  const ox = Math.round(camX) + shx;
-  const oy = Math.round(camY) + shy;
-  // exact (unrounded) camera for MOVING entities. Screen pos must be
-  // round(world - camera) with a single rounding: rounding the camera and the
-  // entity separately makes their boundary crossings disagree, and the sprite
-  // vibrates +/-1px against the background while walking - reads as motion
-  // blur / ghosting at high refresh rates. Tiles keep the rounded ox/oy.
-  const ex = camX + shx;
-  const ey = camY + shy;
+  // THE SUB-PIXEL CAMERA. The world buffer's corner is the camera FLOORED to
+  // a whole world px, and what is left over (camX - floor, 0..1 world px) is
+  // spent at the blit below, in device px: a world px is k device px (6 at a
+  // 1080p 2x), so a camera that could only move in whole world px stepped the
+  // whole screen 6 px at a time - a ride at 2.6 px a step scrolled 12, 18,
+  // 12, 18 device px on alternate frames, and that uneven scroll across the
+  // full screen was the eye strain. Now the ground slides by the device px
+  // and every world pixel keeps its exact k x k block.
+  //   Tiles and moving entities share the one whole-px corner: `ex`/`ey` ARE
+  // `ox`/`oy`, so a body is round(world) - corner, on the ground's own grid,
+  // and never vibrates against it. The cost: a followed body sits on the
+  // world grid while the screen slides under it, so it wanders within half
+  // a world px of the centre - one sprite, instead of the whole frame.
+  const ox = Math.floor(camX) + shx;
+  const oy = Math.floor(camY) + shy;
+  const ex = ox, ey = oy;
+  wOX = ox; wOY = oy;
 
   // Into the world buffer: from here to renderLighting() every pass draws at
   // 1:1 world pixels into a WV_W x WV_H frame, and the screen never sees any
@@ -781,20 +789,24 @@ function render() {
   // ease runs, which is the one moment nobody is reading pixel edges. It is
   // one nearest-neighbour resample of an ALREADY COMPOSED frame, so ground,
   // sprites and particles share one grid instead of each rounding its own.
-  // The destination overhangs the canvas by less than k px (sizeWorldView
-  // ceils) and the edge clips it.
+  // It lands shifted up-left by the camera's leftover fraction (the
+  // sub-pixel camera, above), rounded to a whole DEVICE px so the blocks stay
+  // whole; the buffer carries a spare world px on each axis for the shift
+  // (sizeWorldView), so the destination still covers the canvas and the edge
+  // clips the overhang.
   ctx = uictx;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   const kPx = zoomCur * devScale;
-  ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, 0, 0, WV_W * kPx, WV_H * kPx);
+  const subX = Math.round((camX + shx - ox) * kPx), subY = Math.round((camY + shy - oy) * kPx);
+  ctx.drawImage(worldCv, 0, 0, WV_W, WV_H, -subX, -subY, WV_W * kPx, WV_H * kPx);
   // everything from here draws in VIEW space, blown up by the whole-number
   // devScale - so 1px HUD rects and the 3x5 font stay exact at any zoom
   ctx.setTransform(devScale, 0, 0, devScale, 0, 0);
 
-  renderWeather(ex, ey);
+  renderWeather(camX + shx, camY + shy); // on the screen: the exact camera, the way the ground was blitted
   renderVignettes();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  drawTallies(kPx); // the running damage totals the frames queued, crisp at any zoom (js/draw/overhead.js)
+  drawTallies(kPx, subX, subY); // the running damage totals the frames queued, crisp at any zoom (js/draw/overhead.js)
   ctx.setTransform(devScale, 0, 0, devScale, 0, 0);
   if (!window.DBG.hideUI) drawBotTags(); // F4: each bot's goal under its feet, under the HUD (js/ui/botview.js)
   replayTick(now); // banks the finished world frame - must stay above renderUI

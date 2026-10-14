@@ -162,7 +162,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | resolution, pillarbox frame | `fitCanvas`, `renderBars` | `canvas` (`relayout`: `state`, core.js) |
-| world zoom: the pixel-exact rung, the eased scale, the world view, the two coordinate bridges | `ZOOM_*`, `kWant`/`kMin`/`kMax`/`zoomWantOf`, `zoomCur`, `WV_W`/`WV_H`, `sizeWorldView`, `wToSX`/`wToSY`, `mouseWX`/`mouseWY` | `canvas` |
+| world zoom: the pixel-exact rung, the eased scale, the world view (with the sub-pixel camera's spare px) and this frame's buffer corner, the two coordinate bridges | `ZOOM_*`, `kWant`/`kMin`/`kMax`/`zoomWantOf`, `zoomCur`, `WV_W`/`WV_H`, `wOX`/`wOY`, `sizeWorldView`, `wToSX`/`wToSY`, `mouseWX`/`mouseWY` | `canvas` |
 | panel + minimap layout anchors (`PANEL_*`, `SET_*`, `ROW_*`, `MM_*`), and the map slab's fit to the view (`MAP_W`/`MAP_S`/`PANEL_W`/`PANEL_H` from `CHART_MAX`/`MAP_SIDE`/`MAP_HEAD`/`MAP_FOOT`) | assigned by `relayout()` (core.js) on every resize; `fitMapSlab` | `canvas` |
 
 ## js/player.js
@@ -928,5 +928,5 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | boot order, `DBG` | `startGame`, `window.DBG` | `boot` |
 | the match between screens: the sim's recorded cosmetics, roles, host and client, the snapshot, its delta and bytes, the two transports | not here: the five [js/net/](#jsneteventsjs) sections above, in load order | - |
 | a hidden tab's frames: a worker's clock drives loop() while the page is hidden, rAF when it is not | `hiddenTimer`, `hiddenTick`, `watchHidden` | `the fixed step` |
-| the fixed step: the rAF loop banks each frame's time and steps the sim in whole 1/60 s slices (up to three a frame, the rest dropped; a quarter-slice of slack so a 60 Hz screen steps once a frame), polls the pad once a frame before them, renders once after | `TICK_DT`, `TICK_MAX`, `TICK_SLACK`, `tickAcc`, `loop` (`padPoll`, js/gamepad.js); the drop drawn in between steps (camera, birds, riders and fallers, render-only): `tween`, `tweenMark`, `tweenIn`, `tweenOut`, `TWEEN_SNAP` | `the fixed step` |
+| the fixed step: the rAF loop banks each frame's time and steps the sim in whole 1/60 s slices (up to three a frame, the rest dropped; a quarter-slice of slack so a 60 Hz screen steps once a frame), polls the pad once a frame before them, renders once after | `TICK_DT`, `TICK_MAX`, `TICK_SLACK`, `tickAcc`, `loop` (`padPoll`, js/gamepad.js); the frames drawn in between steps (the camera by its centre and zoom, players, wildlife, robots, birds, shots and loot; render-only): `tween`, `tweenMark`, `tweenIn`, `tweenOut`, `TWEEN_SNAP` | `the fixed step` |
 | the FPS cap: a frame under `settings.fpsCap` is skipped whole before the bank is touched, so the sim still steps every slice it is owed; a due clock advanced a period per frame taken holds the average exactly, and resyncs after a stall | `capDue`, `capSkips` | `the fixed step` |

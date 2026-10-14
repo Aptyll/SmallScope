@@ -2030,9 +2030,8 @@ window.DBG = {
 // that is the step the game was tuned under - TOOL_ROF_STEP counts rate of
 // fire in it, and the integrators have only ever seen 16 ms - so the feel
 // is the one it had; a coarser network tick is a snapshot cadence, not a
-// sim one. render() still runs once per frame, so between steps a frame
-// repeats the last sim state (no interpolation yet - a client will need it
-// for the snapshot buffer, and it arrives with that).
+// sim one. render() still runs once per frame, and draws the world part of
+// the way between the last two steps (the in-between frames, below).
 const TICK_DT = 1 / 60;
 // steps one frame may take: three is the old 50 ms dt cap, one slice at a
 // time. Past it the rest of the owed time is DROPPED, not banked, so a long
@@ -2047,50 +2046,66 @@ const TICK_MAX = 3;
 const TICK_SLACK = TICK_DT * 0.25;
 let tickAcc = 0;
 
-// THE DROP'S IN-BETWEEN FRAMES. A screen faster than 60 Hz draws two or
-// three frames per step, and without this every one of them repeated the
-// last step's camera and bird, so the ride juddered however fast the screen.
-// Before each step tweenMark notes where the ride's movers stand; render
-// then draws them part of the way from there to where the step put them,
-// by how far the clock has got toward the next step (tickAcc), and
-// tweenOut puts the sim's own values back before anything else reads them.
-// Render-only: no step ever sees an in-between value. The drop alone - the
-// camera, both birds and everyone aboard or falling - because it is the one
-// scene where the whole screen rides one smooth line; ground play still
-// draws each step as it is. A jump bigger than TWEEN_SNAP (the intro's
-// cut, a landing) is drawn where it lands, never smeared across it.
+// THE IN-BETWEEN FRAMES. A screen faster than 60 Hz draws two or three
+// frames per step, and without this every one of them repeated the last
+// step's camera and bodies: on a 144 Hz screen a zipline ride scrolled 0, 0,
+// 25, 0, 22 device px a frame, the whole screen lurching in bursts. Before
+// each step tweenMark notes where the camera (its centre and zoom) and
+// every mover stands; render then draws them part of the way from there to
+// where the step put them, by how far the clock has got toward the next
+// step (tickAcc), and tweenOut puts the sim's own values back before
+// anything else reads them. Render-only: no step ever sees an in-between
+// value. The movers are the bodies the eye follows - players, wildlife,
+// robots, the birds, shots and flying loot; particles and floaters are
+// cosmetic and draw each step as it is. A jump bigger than TWEEN_SNAP (the
+// intro's cut, a landing, a respawn) is drawn where it lands, never smeared
+// across it, and a camera that cut takes its zoom with it.
 const TWEEN_SNAP = 48; // px a mover may cover in one step and still be drawn in between
-const tween = { on: false, cx: 0, cy: 0, was: [], now: [] };
+const tween = { on: false, cx: 0, cy: 0, z: 1, was: [], now: [] };
 function tweenMark() {
-  tween.on = state.mode === 'drop' && !!state.drop;
+  tween.on = state.mode !== 'title';
   if (!tween.on) return;
-  tween.cx = camX; tween.cy = camY;
-  tween.was.length = 0;
-  for (const e of state.drop.eagles) tween.was.push(e, e.x, e.y, true);
-  for (const p of players) if (p.active && inAir(p)) tween.was.push(p, p.x, p.y, false);
+  tween.cx = camX + WV_W / 2; tween.cy = camY + WV_H / 2; tween.z = zoomCur;
+  const w = tween.was;
+  w.length = 0;
+  if (state.drop) for (const e of state.drop.eagles) w.push(e, e.x, e.y);
+  for (const p of players) if (p.active) w.push(p, p.x, p.y);
+  for (const a of animals) w.push(a, a.x, a.y);
+  for (const r of robots) w.push(r, r.x, r.y);
+  for (const a of arrows) w.push(a, a.x, a.y);
+  for (const d of drops) w.push(d, d.x, d.y);
 }
 function tweenIn() {
   tween.now.length = 0;
-  if (!tween.on || state.mode !== 'drop') return;
+  if (!tween.on || state.mode === 'title') return;
   // shown a quarter step behind the clock, so a 60 Hz screen, whose frames
   // land about on the steps (TICK_SLACK), always draws at about 0.25
   const a = Math.max(0, Math.min(1, (tickAcc + TICK_SLACK) / TICK_DT));
   const mix = (o, n) => Math.abs(n - o) > TWEEN_SNAP ? n : o + (n - o) * a;
-  tween.now.push(null, camX, camY);
-  camX = mix(tween.cx, camX); camY = mix(tween.cy, camY);
+  // the camera by its CENTRE, since applyZoom holds the centre still
+  // through a zoom: easing the corner with the zoom stepped would swing the
+  // picture about it between steps
+  const cx = camX + WV_W / 2, cy = camY + WV_H / 2;
+  const cut = Math.abs(cx - tween.cx) > TWEEN_SNAP || Math.abs(cy - tween.cy) > TWEEN_SNAP;
+  tween.now.push(null, camX, camY, zoomCur, WV_W, WV_H);
+  if (!cut) {
+    zoomCur = tween.z + (zoomCur - tween.z) * a;
+    sizeWorldView();
+    camX = tween.cx + (cx - tween.cx) * a - WV_W / 2;
+    camY = tween.cy + (cy - tween.cy) * a - WV_H / 2;
+  }
   const w = tween.was;
-  for (let i = 0; i < w.length; i += 4) {
+  for (let i = 0; i < w.length; i += 3) {
     const b = w[i];
-    if (!w[i + 3] && !inAir(b)) continue; // a player who landed this step: drawn where it stands
     tween.now.push(b, b.x, b.y);
     b.x = mix(w[i + 1], b.x); b.y = mix(w[i + 2], b.y);
   }
 }
 function tweenOut() {
   const n = tween.now;
-  for (let i = 0; i < n.length; i += 3) {
-    if (n[i] === null) { camX = n[i + 1]; camY = n[i + 2]; }
-    else { n[i].x = n[i + 1]; n[i].y = n[i + 2]; }
+  if (n.length) {
+    camX = n[1]; camY = n[2]; zoomCur = n[3]; WV_W = n[4]; WV_H = n[5];
+    for (let i = 6; i < n.length; i += 3) { n[i].x = n[i + 1]; n[i].y = n[i + 2]; }
   }
   n.length = 0;
 }
