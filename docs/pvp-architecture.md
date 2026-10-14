@@ -14,7 +14,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
 
 - **Ships:** relay rooms (host a room, a public list, join by code, the waiting room, late join,
   rejoin into your own slot), the host-authoritative sim with snapshot clients (full sync + ack-keyed
-  binary deltas at 15 Hz, eased on the client, no prediction), the cosmetic event ring, the
+  binary deltas at 15 Hz, eased on the client, the client's own walk predicted), the cosmetic event ring, the
   HOST LEFT ending, and the wrapper with Steam lobbies listed through the same rooms screen.
 - **Unverified:** nothing on the Steam path (lobby round trip, P2P packets, the unreliable
   channel's frames) has run against a live Steam - only in Node against a fake bridge and as a
@@ -22,7 +22,7 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   client (the receiver counts a delta it gave up on) and `fulls` on the host.
 - **Owed:** the host clamps nothing in a remote input; notices (`raiseNotice`: the roost alarm's
   plate, the market's) and the own-bird alarm cue are raised on the host's screen only; a per-kind field policy if
-  ~70 KB/s per client is too much for nine clients on a home upload; walk prediction (deferred).
+  ~40-70 KB/s per client is too much for nine clients on a home upload.
 - **Steam's host-left notice is code-read only**: a client turns the owner's leaving
   `LobbyChatUpdate` into `hostGone` (`wire`, js/net/transport-steam.js), never run against a live
   lobby - the first live test should have the host quit mid-match and mid-wait.
@@ -132,16 +132,23 @@ reports `ready: false` and the page plays solo. The App ID is the environment's 
 
 ### The sim seam
 
-In `update()` (js/sim.js), host and solo, while the match is in `play`/`dead`/`drop` and unpaused:
+In `update()` (js/sim.js), host and solo, while the match is in `play`/`dead`/`drop` and unpaused
+(a host with peers is never paused: `netShared`, js/net/net.js, keeps the step running under its
+settings panel, and its pause key does nothing):
 
 ```
 sampleHumanInput(player)
 netHostStep(dt):  drain the transport - hello -> a slot, gone -> a bot, resync -> a full sync,
-                  in -> MERGED into that body's p.input (held fields overwrite; the edges dodge,
-                  jump, eatBerry, eatFish, useCard, ability and cmd latch until the sim consumes them)
+                  in -> that peer's queue; then ONE queued input per peer goes into its body's
+                  p.input (held fields overwrite; the edges dodge, jump, eatBerry, eatFish, useCard,
+                  ability and cmd latch until the sim consumes them). An empty queue holds the last
+                  input; past IN_QMAX, or never under two for IN_QWIN steps, the oldest folds into
+                  the next (netInEdges keeps its edges)
 evInStep = true;  updatePlay(dt);  evInStep = false     (the step, unchanged)
 netHostFlush():   every SNAP_EVERY ticks: push the ring, cut each peer's delta from its ack,
-                  attach the drained cosmetics, send lossy; a peer whose ack aged out gets a full sync
+                  attach the drained cosmetics and `ia` (the newest of that peer's inputs stepped),
+                  send lossy; a peer whose ack aged out gets a full sync. The ticks between scan
+                  their share of the tiles (snapTileScan), so the flush tick does not scan them all
 ```
 
 At the title a host runs `netHostStep` alone, so a peer can knock before the match starts.
@@ -150,9 +157,12 @@ Client, in every mode:
 
 ```
 sampleHumanInput(player)          (not at the title)
-netClientStep(dt): send {t:'in'} - this tick's input and the ack - then clear the edges
-                   netClientLerp(): ease every moved body toward the host's position
+netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own walk on it
+                   (netPredictStep), then clear the edges
+                   netClientLerp(): ease every moved body toward the host's position (ours only
+                   while it is not walking ahead)
                    drain the transport: full -> snapApply, snap -> snapApplyDelta + evPlay per event,
+                   each wrapped in netPredictRestore / netPredictMend (below),
                    welcome / roster / count / refuse / closed / hostGone
                    after each apply, netClientMode(): which screen this state calls for, read off the local body
 (no updatePlay: no updatePlayer, no updateAI, no resolveContests, no world subsystem)
@@ -172,13 +182,19 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - then clear th
 | particles, footprints, snow, camera, cursor, HUD, tooltips, minimap, audio | each machine | never on the wire |
 | profile stats | client-side | every `PROFILE.add*` in the sim is gated on `p === player` inside the step, which is the host's screen, so a client writes its own from its snapshot body: `netClientStats` (js/net/net.js) diffs `xp` (gold), `kills`, `dead`'s rising edge and `aboard`'s falling edge (`markDropped`, and the hard music cut off a flying bird - the leap's cue arrives as `sfxFor`'s event), counts the match and its first day at takeoff, and `endMatch('won')` writes `addWin` |
 
-**There is no prediction.** A client eases every body, its own included, over one snapshot
-interval. The game is momentum walking, 1.5 s meals and a bow you draw; a mispredicted roll that
-un-hits is a worse feel than a short delay on the walk. If the walk feels sluggish under real
-latency, the pass to add predicts **only the movement banner** for the local player: it is a pure
-function of the input, the position and the static tile grid, so re-running it over the unacked
-inputs is cheap and exact. Nothing that touches another unit, a contest or damage is ever
-predicted.
+**Only the client's own walk is predicted** (the `prediction` banner, js/net/net.js). Each step
+the input a client sends is also stepped on its own body through the same walk the host runs
+(`walkHeading`, `walkSlide`, `walkStep`, with `wadeEase`, `kbDecay`, `iceUnder` and `clampWorld`:
+the `the walk` banner in js/sim.js), and kept in `PRED.hist`. Each snapshot names `ia`, the newest
+of that client's inputs the host had stepped; `netPredictRestore` puts the body back on the host's
+last word before the apply, `netPredictMend` keeps the host's new word and walks every input after
+`ia` on top of it. The difference against where the body was drawn is not snapped: it is carried as
+an offset the next steps bleed off over `PRED_EASE` (a correction past `PRED_SNAP` is a teleport and
+is taken at once). Because the host steps one queued input per step (above), a replay lands within
+a step of the host's walk; what is left is the host's own pushes (`separateUnits`, a hit). Only the
+walk: while the host's word has the body dead, in the air, stunned, falling, rolling, rushing, on
+the rope, leaping, on the cable, walking to it or riding, `netPredictable` is false and the body is
+eased like any other. Nothing that touches another unit, a contest or damage is ever predicted.
 
 ## The wire form
 
@@ -211,9 +227,12 @@ from this snapshot, not written beside it:
   indices as numbers, not dictionary names. The relay forwards binary frames untouched but for a
   routing header. Only `full` and `snap` go as bytes; every other message is JSON text.
 - **15 Hz and interpolation.** `SNAP_EVERY` is 4; a client eases every body a delta moved from
-  where it is drawn to where the host put it over one interval (`netClientLerp`, per axis: an
-  axis a delta did not move keeps the target it had), and snaps instead of easing past
-  `LERP_SNAP` (120 px, a teleport). The local player is eased like the rest.
+  where it is drawn to where the host put it (`netClientLerp`, per axis: an axis a delta did not
+  move keeps the target it had), and snaps instead of easing past `LERP_SNAP` (120 px, a
+  teleport). The ease runs over the time deltas actually take to arrive plus twice their wobble
+  (`netEaseClock`: one interval on a steady wire, up to `EASE_MAX`), so a late delta finds a body
+  still moving instead of stood at its last target. The local player is eased like the rest only
+  while it is not walking ahead (above).
 - **What the sim keeps to itself.** `SNAP_SKIP` names the bookkeeping that ticks every step and no
   draw pass reads (footstep and dust clocks, a bot's think timer, a fish's turn clock...); the
   echo harness runs without them, so a name added there is proven harmless or caught as pixels.
@@ -254,7 +273,14 @@ touched - per entity the names that changed or left (whole for one new that tick
 gone, whether the order moved, the same for the eagles and the singletons, each tile's touched
 names (whole for one made or unmade), the ground cells, the structures' key - while the tile
 shadow keeps only the newest form of every tile, so the ring holds no world per tick, only what
-moved. A client acks the newest tick it applied on every input it sends; the host keeps that
+moved. The tiles are ~50k, so a host does not scan them on the flush tick alone: each tick between
+two flushes scans its share (`snapTileScan`, from `netHostFlush`) into a pending set the next entry
+takes, and the push scans whatever is left. A tile a slice has already passed waits one more
+interval; the cut is a union of entries, so it is late, never lost (a `DBG.netVerify` tick rescans
+all of them, so the proof compares like with like). The host's clock does not tick at the title, so
+every guest who joins there shares one ring entry: the world behind the menu therefore stands still
+once the room is shared (`updateTitle`), or a deer turned and turned back between two joins would
+never reach the second guest. A client acks the newest tick it applied on every input it sends; the host keeps that
 per peer and cuts each peer's delta from the ring entry at ITS ack (`snapDeltaFrom`, peers on
 one ack sharing the cut), a full sync going to a peer whose ack aged out of the ring
 (`netHostFull`, which also sets the base to the tick it sends). **The cut is the UNION of the
@@ -307,9 +333,9 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `count` | h→c (`*`) | JSON | the waiting room's countdown: `ct`, the host's `countT`, and `n`, the digit shown |
 | `seat` | c→h | JSON | `slot`: the guest asks to move to that seat's side, swapping teams with the bot or empty seat in it (`seatSwap`); the host answers with a `roster` |
 | `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the stage and LOCK IN) |
-| `full` | h→c | bytes, reliable | `tick`, `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
-| `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
-| `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, eatBerry, eatFish, useCard, ability, cmd}`. One struct per client tick, sent once; the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
+| `full` | h→c | bytes, reliable | `tick`, `ia` (as on a `snap`), `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
+| `snap` | h→c | bytes, lossy | `tick`, `d` (the delta, below), `ev` (the cosmetics drained this flush), `ia` (the newest of THIS peer's inputs the host has stepped: where its prediction replays from), and `full` when `NET.verify` is on and the tick is a `VERIFY_EVERY` one |
+| `in` | c→h | JSON | `tick` (the client's own send counter), `ack` (the newest snapshot tick applied), `in`: `{mx, my, aimX, aimY, fire, work, slide, grapple, dodge, jump, eatBerry, eatFish, useCard, ability, cmd}`. One struct per client tick, sent once; the host queues them and steps one per tick (`netHostStep`); the client clears its edges after sending and the host latches them until the sim consumes them. A `cmd` rides inside it - there is no separate command message |
 | `resync` | c→h | JSON | no body: the client could not take a delta; the host answers with a `full` |
 | `peer` / `gone` | transport→h | - | someone joined or left the room or lobby (`gone` hands the body to a bot and parks the slot, below) |
 | `closed` / `hostGone` | transport→c | - | the client's own socket dropped (relay; it redials) / the host is gone: its socket closed on the relay, or the lobby's owner left on Steam |
@@ -432,8 +458,9 @@ Every step shipped as its own PR and kept solo play identical.
 7. The rooms screen and the waiting room, on the relay - PATCH 3.48; dressed in 3.52; Steam's
    lobbies through the same screen in 3.53.
 8. After the plan: the binary wire form, deltas and interpolation - 3.49; quantized positions -
-   3.50; the ack-keyed ring - 3.51; Steam's unreliable channel and raw bytes over the bridge - 3.54.
-   Walk prediction stays deferred.
+   3.50; the ack-keyed ring - 3.51; Steam's unreliable channel and raw bytes over the bridge - 3.54;
+   the client's own walk predicted, one input per host step, the ease sized from arrivals and the
+   tile scan spread over the steps - 0.467.
 
 Releases: every `v*` tag builds the portable zip (desktop/build.js - the page, `js/`, the
 mp3s of `audio/music/` and the wrapper with steamworks.js, nothing else; `npm run steam:stage`
@@ -465,10 +492,11 @@ its line.
    would need the edges resent until acked.
 5. **Host advantage and trust.** The host sees zero latency and can edit anything; accepted for a
    friends game. The host clamps nothing in a remote input today (`mx`/`my` are copied as sent).
-6. **Latency is real.** With no prediction the local walk lags by the round trip plus a snapshot
-   interval, on the relay (two hops through Noah's server) more than on Steam. The ease is a
-   fixed one interval, not sized from a measured RTT - there is no ping. The mitigation is walk
-   prediction, deferred.
+6. **Latency is real.** The walk is predicted, so it answers at once; everything else a client
+   does (a shot, a roll, a meal, an ability) lands a round trip later, on the relay (two hops
+   through Noah's server) more than on Steam, and other bodies are drawn about half a round trip
+   plus an ease behind. There is no ping: the ease is sized from how deltas arrive, not from an
+   RTT.
 7. **Profile stats.** `gainGold` and the kill and death counters write `PROFILE` where
    `p === player` inside the step, which only ever runs on the host: a client's character earns
    a win and nothing else. Owed.

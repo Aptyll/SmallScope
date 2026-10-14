@@ -3291,9 +3291,11 @@ while you are out**, which is the point of holding them above the dim.
 `state.mode` is `title | drop | play | dead`, and `updatePlay()` runs in `play`, `dead` **and**
 `drop` (the clock starts with the eagle; airborne players are skipped) — the match carries on
 without you, and `updateRespawns` ticks a respawn timer down under the `'respawning'` overlay the
-same way. Only **pause (P) and the settings panel (ESC)** stop the sim;
-`update()` (time, darkness, camera, fx) always keeps running. In `title` only the ambient half
-runs (`updateTitle`: animals and fish) — see [Main menu](rendering.md#main-menu-title).
+same way. Only **pause (P) and the settings panel (ESC)** stop the sim, and neither does in a
+match another screen shares (`netShared`, js/net/net.js: a host's menu never stops its guests, and
+its P does nothing); `update()` (time, darkness, camera, fx) always keeps running. In `title` only
+the ambient half runs (`updateTitle`: animals and fish), and not even that once a room is shared
+— see [Main menu](rendering.md#main-menu-title).
 
 ## The M map does not pause
 

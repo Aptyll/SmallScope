@@ -550,7 +550,8 @@ does, and **a team is in the match while its eagle roosts**: `teamInMatch` asks
 (`eagleFlee` in js/eagle.js is what puts every player down at liftoff), and a side with every player
 dead and waiting on its bird is not out — kills never end a match, only the bird does. **The
 match keeps simulating while you are out** — `update()` runs `updatePlay` in both `play` and
-`dead` mode; only pause and the settings panel stop the world (the map does not). Full detail:
+`dead` mode; only pause and the settings panel stop the world (the map does not), and not in a
+match another screen shares (`netShared`). Full detail:
 [Death and respawn](gameplay.md#death-and-respawn).
 
 ### Respawn at the bird
