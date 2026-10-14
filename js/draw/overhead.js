@@ -157,7 +157,7 @@ function queueTally(u, rx, cy, col) {
   if (age > TALLY_HOLD + TALLY_FADE || age < 0) return;
   const a = age < TALLY_HOLD ? 1 : 1 - (age - TALLY_HOLD) / TALLY_FADE;
   tallyQueue.push(u.tallyN, rx, cy, col, a * ctx.globalAlpha, age < TALLY_POP);
-  tallySpot.set(u, { x: rx + camX, y: cy + camY, col, a: ctx.globalAlpha, f: tallyFrame });
+  tallySpot.set(u, { x: rx + wOX, y: cy + wOY, col, a: ctx.globalAlpha, f: tallyFrame });
 }
 // a player dropped in the step before any frame showed its total (a
 // one-shot): its spot is where drawPlayer's frame would have hung it
@@ -175,8 +175,9 @@ function tallyImg(txt, col) {
   tallyInk.set(key, c);
   return c;
 }
-// on the screen canvas at the identity transform, k device px per world px
-function drawTallies(k) {
+// on the screen canvas at the identity transform, k device px per world px,
+// shifted by the blit's own sub-pixel (subX/subY device px, render())
+function drawTallies(k, subX, subY) {
   // the dead first, under the living: a body whose frame hung a total last
   // frame and hangs none now floats it off if it died, and is forgotten if
   // it only left the view or the total ran out
@@ -184,7 +185,7 @@ function drawTallies(k) {
     if (s.f === tallyFrame) continue;
     const age = (state.tick - u.tallyTick) * TICK_DT;
     if (!(u.dead || u.hp <= 0) || !u.tallyN || age < 0 || age > TALLY_DEATH) { tallySpot.delete(u); continue; }
-    tallyQueue.unshift(u.tallyN, s.x - camX, s.y - camY - Math.round(age / TALLY_DEATH * TALLY_RISE), s.col,
+    tallyQueue.unshift(u.tallyN, s.x - wOX, s.y - wOY - Math.round(age / TALLY_DEATH * TALLY_RISE), s.col,
       s.a * Math.min(1, 2 * (1 - age / TALLY_DEATH)), false); // full for the first half, then out
   }
   tallyFrame++;
@@ -192,7 +193,7 @@ function drawTallies(k) {
     const img = tallyImg(String(tallyQueue[i]), tallyQueue[i + 3]);
     const s = Math.max(1, Math.round(k * (tallyQueue[i + 5] ? TALLY_POP_SC : TALLY_SC)));
     ctx.globalAlpha = tallyQueue[i + 4];
-    ctx.drawImage(img, Math.round(tallyQueue[i + 1] * k), Math.round(tallyQueue[i + 2] * k - img.height * s / 2), img.width * s, img.height * s);
+    ctx.drawImage(img, Math.round(tallyQueue[i + 1] * k) - subX, Math.round(tallyQueue[i + 2] * k - img.height * s / 2) - subY, img.width * s, img.height * s);
   }
   // ...and the words a hit says (wordPop, js/core.js), over the totals: one
   // beat bigger as they land, like a total taking a hit

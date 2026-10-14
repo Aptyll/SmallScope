@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.450';
+const PATCH_TXT = 'PATCH 0.451';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.451', 'THE CAMERA GLIDES INSTEAD OF STEPPING: FAST RIDES ON THE ZIPLINE AND THE EAGLE SCROLL SMOOTHLY, ON ANY SCREEN.'],
   ['0.450', 'PERCH NO LONGER FLIES A NAME BANNER: THE ROOSTING BIRD WEARS ONLY ITS BIG HEALTH BAR.'],
   ['0.449', 'RABBITS NO LONGER DROP A BERRY WHEN THEY DIE: BERRIES COME FROM BUSHES ONLY.'],
   ['0.448', 'THE MAIN MENU, THE ROOST TOUR AFTER THE EAGLE RIDE AND THE DRIVEN-OFF CEREMONY ARE FRAMED FROM FURTHER OUT AGAIN, AND PLAY STILL STARTS TWICE AS CLOSE.'],
@@ -1296,6 +1297,7 @@ function buildHelpPanel() {
 // Which groups are open lives in notesOpen for the session only.
 const PATCH_DIGEST = [
   ['THE VALLEY', [
+    ['THE CAMERA GLIDES SMOOTHLY ON FAST RIDES, ON ANY SCREEN', '0.451'],
     ['PERCH WEARS ONLY ITS BIG HEALTH BAR, NO NAME BANNER', '0.450'],
     ['RABBITS NO LONGER DROP BERRIES', '0.449'],
     ['THE CAMERA STARTS TWICE AS CLOSE, AND THE WHEEL STILL ZOOMS OUT', '0.447'],
