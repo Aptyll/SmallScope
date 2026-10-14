@@ -70,9 +70,9 @@ declare victory. The affordances:
     with `setInterval(() => DBG.step(1/60, 4), 66)` and it plays.
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
-    on another (Steam running on both) ride the same match over a Steam lobby; with
-    `--transport=steam` alone the MULTIPLAYER plank lists the open lobbies and a click joins
-    one. `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
+    on another (Steam running on both) ride the same match over a Steam lobby; with Steam up
+    the MULTIPLAYER plank lists the open lobbies and a click joins one (`--transport=relay` for
+    the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
 - **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until
@@ -125,7 +125,9 @@ declare victory. The affordances:
   kinds this profile has *held*, which is all the [wiki](gameplay.md#the-wiki)'s blue pips are.
   The wiki itself is driven headlessly by `DBG.beginWiki()`, `wikiSetTab(i)`, `wikiScrollBy(px)`,
   `wikiLayout()` (tabs, rows, the window, the rail) and `wikiHit(x, y)`; the ease takes 0.35 s
-  of real frames, so wait for `state.menu.wikiT` to read 1 before hovering anything.
+  of real frames, so wait for `state.menu.wikiT` to read 1 before hovering anything. The patch
+  notes and roadmap open with `DBG.beginNotes()` and `DBG.openPageTab(i)` (0 wiki, 1 patch notes,
+  2 roadmap); `DBG.pageTabsLayout()` and `DBG.notesLayout()` read them back.
 - **`POST /shot`** in [app/server.js](../../app/server.js) (its `/shot` branch) writes a base64 PNG body to `shot.png` in the
   repo root, for a headless driver doing `canvas.toDataURL()` → POST. Nothing in the client calls
   it; `shot.png` is gitignored.

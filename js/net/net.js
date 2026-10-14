@@ -13,7 +13,7 @@ const NET = {
   get isHost() { return this.role !== 'client'; },
   get isClient() { return this.role === 'client'; },
   transport: null,           // set by netSetup(); the five-call interface below
-  peers: new Map(),          // a host's: transport peer id -> { slot, uid, name, ack, dictAt } - ack: the newest tick that client applied (its delta is cut from there); dictAt: tick -> the dictionary's length after that tick's message to it
+  peers: new Map(),          // a host's: transport peer id -> { slot, uid, name, ack, dictAt, q, lastTick } - q: its inputs waiting their step; lastTick: the newest one stepped; ack: the newest tick that client applied (its delta is cut from there); dictAt: tick -> the dictionary's length after that tick's message to it
   fulls: 0,                  // a host's: how many full syncs it has sent (a join, a resync, an ack aged out of the ring)
   lossOut: 0, dropped: 0,    // a host's proof switch: the fraction of snapshot sends thrown away before the transport (DBG.netLoss), and how many were
   parked: new Map(),         // a host's: uid -> slot, for a peer that dropped and may come back
@@ -40,11 +40,17 @@ const VERIFY_EVERY = 300;
 const LERP_SNAP = 120; // px: a body that moved further than this between snapshots teleported, and is not eased
 const LATE_JOIN_T = 300;
 const RECONNECT_GRACE = 60;
+const IN_QMAX = 4;  // a peer's inputs a host holds in line (netHostStep): past this, 66 ms of them, the oldest fold together
+const IN_QWIN = 30; // steps: a line that never fell under two in this long is standing, and gives one back
 // which controls are a person: a `remote` body is a human on another screen,
 // and everything that treats a human differently from a bot (a whole side
 // reading its flag, the pack auto-fitting, the eagle never force-dropping it)
 // asks this rather than the string
 function isHuman(p) { return p.control === 'human' || p.control === 'remote'; }
+// is this match shared with another screen: then nobody can pause it - the
+// host's settings and pause keep the step running for its peers, and a
+// client never stepped anything to pause
+function netShared() { return NET.isClient || NET.peers.size > 0; }
 
 // The transport interface every adapter implements - the loopback here, the
 // WebSocket relay for tabs on one machine (js/net/transport-ws.js), Steam's
@@ -66,6 +72,7 @@ function netSetup(role, transport) {
   NET.role = role || 'solo';
   NET.transport = transport || loopbackTransport;
   NET.peers.clear(); NET.parked.clear(); NET.kicked.clear();
+  NET.easeAt = 0; NET.gapAvg = 0; NET.gapDev = 0; NET.easeMs = 0;
   NET.synced = false; NET.welcomed = false; NET.helloed = false; NET.refused = null; NET.lastTick = -1; NET.hostOver = null; NET.countN = -1; NET.published = false; NET.phase = 'room'; NET.was = null;
   NET.dictOut = encDict(); NET.dictIn = encDict(); NET.verifyFail = null;
   NET.bytesIn = 0; NET.bytesOut = 0; NET.bIn0 = 0; NET.bOut0 = 0; NET.bpsT = 0; NET.dropped = 0; NET.fulls = 0;
@@ -138,16 +145,28 @@ function netHostStep(dt) {
     if (msg.t === 'resync') { netHostFull(peer, pr); continue; } // a delta the client could not take: the whole thing again
     if (msg.t === 'seat') { seatSwap(pr.slot, msg.slot | 0); continue; } // the waiting room: a move to the other side
     if (msg.t === 'in') {
-      const p = players[pr.slot], i = p.input, m = msg.in;
       NET.bytesIn += JSON.stringify(msg).length;
       if (msg.ack > pr.ack) pr.ack = msg.ack; // the newest snapshot it applied: its next delta is cut from there
-      i.mx = m.mx; i.my = m.my; i.aimX = m.aimX; i.aimY = m.aimY;
-      i.fire = m.fire; i.work = m.work; i.slide = m.slide; i.grapple = m.grapple;
-      i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump; i.eatBerry = i.eatBerry || m.eatBerry; i.eatFish = i.eatFish || m.eatFish; i.useCard = i.useCard || m.useCard;
-      if (m.ability >= 0) i.ability = m.ability;
-      if (m.cmd) i.cmd = m.cmd;
-      pr.lastTick = msg.tick;
+      pr.q.push(msg);
     }
+  }
+  // ONE queued input per peer per step, the way the client stepped them: two
+  // that arrive together are two steps, not one, so the walk a client ran
+  // ahead (netPredict) is the walk the host runs. An empty queue holds the
+  // last input. A queue never stands: past IN_QMAX (a stall, a burst), or
+  // never below two for a whole IN_QWIN of steps, its oldest folds into the
+  // next, edges kept - one step of walk lost, against a delay on every action
+  for (const pr of NET.peers.values()) {
+    pr.qMin = Math.min(pr.qMin, pr.q.length);
+    if (++pr.qN >= IN_QWIN) { if (pr.qMin >= 2) netInEdges(pr.q[1].in, pr.q.shift().in); pr.qN = 0; pr.qMin = Infinity; }
+    while (pr.q.length > IN_QMAX) netInEdges(pr.q[1].in, pr.q.shift().in);
+    const msg = pr.q.shift();
+    if (!msg) continue;
+    const i = players[pr.slot].input, m = msg.in;
+    i.mx = m.mx; i.my = m.my; i.aimX = m.aimX; i.aimY = m.aimY;
+    i.fire = m.fire; i.work = m.work; i.slide = m.slide; i.grapple = m.grapple;
+    netInEdges(i, m);
+    pr.lastTick = msg.tick;
   }
   for (const [uid, park] of NET.parked) { park.t += dt; if (park.t > RECONNECT_GRACE) NET.parked.delete(uid); }
   // the waiting room's count, to every peer as it changes: the digits a
@@ -157,6 +176,12 @@ function netHostStep(dt) {
     const m = state.menu, n = m.countT > 0 ? Math.ceil(m.countT) : m.countN === 0 ? 0 : -1;
     if (n !== NET.countN) { NET.countN = n; NET.transport.send('*', { t: 'count', ct: m.countT, n }); }
   }
+}
+// a press in `m` latched into `i` until the sim consumes it
+function netInEdges(i, m) {
+  i.dodge = i.dodge || m.dodge; i.jump = i.jump || m.jump; i.eatBerry = i.eatBerry || m.eatBerry; i.eatFish = i.eatFish || m.eatFish; i.useCard = i.useCard || m.useCard;
+  if (m.ability >= 0) i.ability = m.ability;
+  if (m.cmd) i.cmd = m.cmd;
 }
 function netHostHello(peer, msg) {
   const refuse = (why) => NET.transport.send(peer, { t: 'refuse', why });
@@ -184,7 +209,7 @@ function netHostHello(peer, msg) {
   if (msg.name) p.name = msg.name;
   if (msg.look) p.look = msg.look;
   if (msg.cls !== undefined && msg.cls !== null) setClass(p, msg.cls);
-  const pr = { slot, uid: msg.uid, name: msg.name, lastTick: 0, ack: -1, dictAt: new Map() };
+  const pr = { slot, uid: msg.uid, name: msg.name, lastTick: 0, ack: -1, dictAt: new Map(), q: [], qMin: Infinity, qN: 0 };
   NET.peers.set(peer, pr);
   NET.transport.send(peer, { t: 'welcome', slot, hostSlot: localId, seed: SEED, tick: state.tick, roster: netRoster(), phase: NET.phase });
   netHostFull(peer, pr);
@@ -198,7 +223,7 @@ function netHostHello(peer, msg) {
 // dictionary from index 0, whole
 function netHostFull(peer, pr) {
   const h = snapHistoryPush();
-  const full = snapEncode({ t: 'full', tick: h.tick, snap: snapBuild() }, NET.dictOut, 0);
+  const full = snapEncode({ t: 'full', tick: h.tick, snap: snapBuild(), ia: pr.lastTick }, NET.dictOut, 0);
   NET.bytesOut += NET.transport.send(peer, full) ? full.length : 0;
   NET.fulls++;
   pr.ack = h.tick;
@@ -287,17 +312,21 @@ function netHostFlush() {
   if (NET.role !== 'host') return;
   evRecord = NET.peers.size > 0;
   if (!NET.peers.size) { evRing.length = 0; return; }
-  if (state.tick % SNAP_EVERY) return;
+  // the steps between two flushes each scan their share of the tiles, so the
+  // flush step does not carry the whole world alone (snapTileScan)
+  if (state.tick % SNAP_EVERY) { snapTileScan(Math.ceil(objects.length * (state.tick % SNAP_EVERY) / SNAP_EVERY)); return; }
+  const check = NET.verify && state.tick % VERIFY_EVERY === 0;
+  if (check) snapShadow.scanAt = 0; // the proof's tick sees every tile now, not a slice ago
   const h = snapHistoryPush();
   const ev = evDrain();
-  const full = NET.verify && state.tick % VERIFY_EVERY === 0 ? snapBuild() : null; // the client checks itself against this
+  const full = check ? snapBuild() : null; // the client checks itself against this
   const cuts = new Map(); // ack tick -> delta
   for (const [peer, pr] of NET.peers) {
     const base = snapHistoryAt(pr.ack);
     if (!base) { netHostFull(peer, pr); continue; }
     let d = cuts.get(pr.ack);
     if (!d) { d = snapDeltaFrom(h, base); cuts.set(pr.ack, d); }
-    const msg = { t: 'snap', tick: h.tick, d, ev };
+    const msg = { t: 'snap', tick: h.tick, d, ev, ia: pr.lastTick }; // ia: the newest of this peer's inputs the step has taken (netPredict)
     if (full) msg.full = full;
     const bytes = snapEncode(msg, NET.dictOut, pr.dictAt.get(pr.ack) || 0);
     pr.dictAt.set(h.tick, NET.dictOut.names.length);
@@ -328,6 +357,7 @@ function netClientStep(dt) {
     const i = player.input;
     const msg = { t: 'in', tick: ++NET.inTick, ack: NET.lastTick, in: { mx: i.mx, my: i.my, aimX: i.aimX, aimY: i.aimY, fire: i.fire, work: i.work, slide: i.slide, grapple: i.grapple, dodge: i.dodge, jump: i.jump, eatBerry: i.eatBerry, eatFish: i.eatFish, useCard: i.useCard, ability: i.ability, cmd: i.cmd } };
     if (T.send('host', msg)) NET.bytesOut += JSON.stringify(msg).length;
+    netPredictStep(msg.tick, i, dt); // our own walk goes ahead of the host's word
     // the edges are the host's now: a press is sent once
     i.dodge = false; i.jump = false; i.eatBerry = false; i.eatFish = false; i.useCard = false; i.ability = -1; i.cmd = null;
   }
@@ -340,7 +370,7 @@ function netClientStep(dt) {
     if (item.bin) {
       NET.bytesIn += item.bin.length;
       try { msg = snapDecode(item.bin, NET.dictIn); } catch (e) { NET.refused = 'BYTES'; continue; }
-      if (msg.t === 'full') { netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; continue; }
+      if (msg.t === 'full') { netPredictRestore(); netClientApply(msg.snap); NET.synced = true; NET.lastTick = msg.tick; netPredictMend(msg.ia, null, true); continue; }
       if (msg.t === 'snap') { if (NET.synced) netClientApplyDelta(msg); continue; }
       continue;
     }
@@ -399,6 +429,7 @@ function netClientWelcome(msg) {
   initPlayers(roster, msg.slot);
   camX = player.x - WV_W / 2; camY = player.y - WV_H / 2;
   NET.dictIn = encDict(); // the full sync that follows carries the host's whole list
+  PRED.hist.length = 0; PRED.on = false;
   NET.welcomed = true; // the title screen moves to the waiting room on this
 }
 // a later roster (someone came or went while we wait): the bodies stay, their
@@ -444,6 +475,7 @@ function netClientApplyDelta(msg) {
   for (const p of players) shown.set(p, [p.x, p.y]);
   if (state.drop) for (const e of state.drop.eagles) shown.set(e, [e.x, e.y]);
   shown.set(orca, [orca.x, orca.y]);
+  const ahead = netPredictRestore(); // our body back to the host's last word before its next one lands
   const changed = snapApplyDelta(msg.d);
   if (changed && msg.d.orca) changed.push([orca, msg.d.orca]); // the orca is a singleton, eased like a body
   NET.lastTick = msg.tick;
@@ -478,14 +510,31 @@ function netClientApplyDelta(msg) {
     e._fx = was[0]; e._fy = was[1]; e._tx = hx; e._ty = hy; e._t0 = now;
     e.x = was[0]; e.y = was[1];
   }
+  netPredictMend(msg.ia, ahead);
+  netEaseClock(now);
   netClientMode();
 }
+// how long an ease runs: the time deltas take to arrive, plus room for the
+// wobble in it, so a late one finds every body still easing toward the last
+// word instead of stood at it - a stop-start walk is what a wobbly connection
+// otherwise looks like. One snapshot interval on a steady wire, up to EASE_MAX
+const EASE_MAX = 160; // ms
+function netEaseClock(now) {
+  const dt = NET.easeAt ? now - NET.easeAt : 0;
+  NET.easeAt = now;
+  if (dt <= 0 || dt > 1000) return; // the first, or after a stall: nothing to learn from
+  const base = SNAP_EVERY * TICK_DT * 1000;
+  NET.gapAvg = NET.gapAvg ? NET.gapAvg + (dt - NET.gapAvg) * 0.1 : base;
+  NET.gapDev = (NET.gapDev || 0) + (Math.abs(dt - NET.gapAvg) - (NET.gapDev || 0)) * 0.1;
+  NET.easeMs = Math.max(base, Math.min(EASE_MAX, NET.gapAvg + 2 * NET.gapDev));
+}
 // every tick: each eased body moves from where it was drawn toward the
-// host's position over one snapshot interval, so 15 snapshots a second read
+// host's position over about one snapshot interval (netEaseClock), so 15 snapshots a second read
 // as motion rather than steps. A body the host stopped naming keeps its last
-// target; the local player is eased like the rest (no prediction here)
+// target; the local player is eased like the rest whenever it is not walking
+// ahead of the host (netPredict, below)
 function netClientLerp() {
-  const now = performance.now(), period = SNAP_EVERY * TICK_DT * 1000;
+  const now = performance.now(), period = NET.easeMs || SNAP_EVERY * TICK_DT * 1000;
   const ease = (e) => {
     if (e._t0 === undefined || e._t0 === 0) return;
     const k = Math.min(1, (now - e._t0) / period);
@@ -493,7 +542,7 @@ function netClientLerp() {
     if (k >= 1) e._t0 = 0;
   };
   for (const k in SNAP_KINDS) for (const e of SNAP_KINDS[k]()) ease(e);
-  for (const p of players) ease(p);
+  for (const p of players) if (!(PRED.on && p === player)) ease(p);
   if (state.drop) for (const e of state.drop.eagles) ease(e);
   ease(orca);
 }
@@ -522,4 +571,94 @@ function netClientMode() {
   if (state.mode === 'drop') { handOver(me); return; }
   if (state.mode === 'dead') { state.over = null; state.mode = 'play'; state.spec = -1; state.introFrom = { x: camX, y: camY }; state.intro = HUD_IN_T; state.introLen = HUD_IN_T; return; }
   if (state.mode === 'title') { state.mode = 'play'; state.menu.panel = null; state.menu.screen = 'menu'; }
+}
+
+// ------------------------------------------------------------ prediction
+// A client's own walk runs AHEAD of the host instead of a round trip behind
+// it: each step the input that went out is also stepped here, through the
+// same walk the host runs (walkHeading/walkSlide/walkStep, js/sim.js), on the
+// local body alone. Each snapshot names the newest of our inputs the host had
+// taken (`ia`); the body goes back to the host's word (netPredictRestore),
+// takes the snapshot, and the inputs the host has not yet seen are walked
+// again on top of it (netPredictMend). What the replay lands short of or past
+// where we were drawn is not snapped: it is carried as an offset the next
+// steps bleed off, so a correction reads as a nudge.
+// Only the walk is predicted: anything else that owns a body's motion (a
+// roll, a rush, the rope, a leap, the cable, the water, a stun, a ride, the
+// drop) or any harm is the host's alone, and while one of those holds the
+// body is eased like every other (netClientLerp).
+const PRED_FIELDS = ['x', 'y', 'vx', 'vy', 'kbx', 'kby', 'sliding', 'slideT', 'moving', 'lastMx', 'lastMy', 'dir'];
+const PRED_KEEP = 120;   // inputs remembered: 2 s of steps. A replay that would reach past them is not tried
+const PRED_EASE = 0.1;   // s: the time constant a correction bleeds off over
+const PRED_SNAP = 48;    // px: a correction this big is a teleport, not a nudge - taken at once
+const PRED = { on: false, hist: [], srv: null, ox: 0, oy: 0 };
+// may this body walk ahead of the host: on its feet, in play, nothing else
+// moving it. Read off the host's word, never off the prediction
+function netPredictable(p) {
+  return state.mode === 'play' && !p.dead && !inAir(p) && !p.mount && !p.zipWalk && p.zip < 0 &&
+    p.stunT <= 0 && p.fallT <= 0 && p.dodgeT <= 0 && p.rushT <= 0 && p.grapT <= 0 && p.leapT <= 0;
+}
+// one step of the walk, as updatePlayer takes it, on our own body
+function netPredictWalk(p, inp, dt) {
+  wadeEase(p, dt);
+  const hd = walkHeading(p, inp.mx, inp.my, false);
+  kbDecay(p, dt);
+  const onIce = iceUnder(p), kit = kitOf(p);
+  walkSlide(p, inp.slide, dt, onIce, kit);
+  walkStep(p, dt, hd.mx, hd.my, hd.len, onIce, kit);
+  clampWorld(p);
+  if (p.charging) faceToward(p, inp.aimX - p.x, inp.aimY - p.y); // a drawn bow keeps facing the aim, as the step has it
+}
+// the step's input in (its tick is what `ia` will name), and the body moved
+// on by it - with a share of any correction bled off first
+function netPredictStep(tick, inp, dt) {
+  PRED.hist.push({ t: tick, mx: inp.mx, my: inp.my, slide: inp.slide, aimX: inp.aimX, aimY: inp.aimY });
+  if (PRED.hist.length > PRED_KEEP) PRED.hist.shift();
+  const p = player;
+  if (!PRED.on || !p) return;
+  const k = 1 - Math.exp(-dt / PRED_EASE), dx = PRED.ox * k, dy = PRED.oy * k;
+  PRED.ox -= dx; PRED.oy -= dy;
+  p.x -= dx; p.y -= dy;
+  netPredictWalk(p, inp, dt);
+}
+// before a snapshot lands: the walked-ahead fields back to the host's last
+// word, so a delta that does not name one leaves the host's value under it.
+// Returns where the body was drawn, for the mend to measure against
+function netPredictRestore() {
+  const p = player;
+  if (!PRED.on || !PRED.srv || !p) return null;
+  const at = [p.x, p.y];
+  for (const k of PRED_FIELDS) p[k] = PRED.srv[k];
+  return at;
+}
+// after it lands: keep the host's word, and walk the inputs it has not taken
+// yet on top of it. `ahead` is where the body was drawn before the restore;
+// a delta that moved the body has already set it easing from there (the
+// host's word then sits in _tx/_ty), a full sync passes `full` and starts
+// from the host's word
+function netPredictMend(ia, ahead, full) {
+  const p = player;
+  if (!p) return;
+  if (full) p._t0 = 0;
+  const easing = !!p._t0;
+  const drawn = easing ? [p.x, p.y] : ahead;
+  const hx = easing ? p._tx : p.x, hy = easing ? p._ty : p.y;
+  const srv = PRED.srv = PRED.srv || {};
+  for (const k of PRED_FIELDS) srv[k] = p[k];
+  srv.x = hx; srv.y = hy;
+  const h = PRED.hist;
+  const ok = netPredictable(p) && typeof ia === 'number' && ia > 0 && h.length > 0 && h[0].t <= ia + 1;
+  if (!ok) { // the host's alone: the body eases from where it is drawn to the host's word
+    if (PRED.on && drawn && !easing) { p._fx = drawn[0]; p._fy = drawn[1]; p._tx = hx; p._ty = hy; p._t0 = performance.now(); p.x = drawn[0]; p.y = drawn[1]; }
+    PRED.on = false; PRED.ox = PRED.oy = 0;
+    return;
+  }
+  p._t0 = 0; p.x = hx; p.y = hy; // ours to move: no ease
+  for (const e of h) if (e.t > ia) netPredictWalk(p, e, TICK_DT);
+  // what the replay moved the body by against where it was drawn is carried,
+  // not snapped - unless it is a teleport
+  const ox = drawn ? drawn[0] - p.x : 0, oy = drawn ? drawn[1] - p.y : 0;
+  if (Math.hypot(ox, oy) <= PRED_SNAP) { PRED.ox = ox; PRED.oy = oy; p.x += ox; p.y += oy; }
+  else PRED.ox = PRED.oy = 0;
+  PRED.on = true;
 }

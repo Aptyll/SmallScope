@@ -315,10 +315,11 @@ function snapApply(s) {
 // any base in the ring can be reconstructed tile by tile without a shadow
 // of the whole world per tick.
 const HIST_KEEP = 75; // flush ticks kept in the ring: 5 s at 15 Hz. An ack older than this is a full sync
-const snapShadow = { objs: null, ground: null, hist: [], byTick: new Map() };
+const snapShadow = { objs: null, objN: null, ground: null, hist: [], byTick: new Map(), scanAt: 0, tiles: null };
 function snapShadowReset() {
-  snapShadow.objs = null; snapShadow.ground = null;
+  snapShadow.objs = null; snapShadow.objN = null; snapShadow.ground = null;
   snapShadow.hist = []; snapShadow.byTick = new Map();
+  snapShadow.scanAt = 0; snapShadow.tiles = null;
 }
 snapShadowReset();
 function snapSame(va, vb) {
@@ -385,24 +386,43 @@ function snapHistoryPush() {
   }
   h.structs = structures.map((o) => idx(o.tx, o.ty)).join(',');
   h.structsMoved = !p || p.structs !== h.structs;
-  // tiles against the newest shadow: a tile whose primitive fields all match
-  // is skipped without packing (most of the world, every tick)
-  if (!sh.objs) sh.objs = new Array(objects.length).fill(null);
-  for (let i = 0; i < objects.length; i++) {
-    const o = objects[i], prev = sh.objs[i];
-    if (!o && !prev) continue;
-    if (o && prev && snapTileSame(o, prev)) continue;
-    const packed = o ? pack(o, 0, true) : null;
-    const f = packed && prev ? snapFieldDiff(packed, prev) : null;
-    if (packed && prev && !f) { sh.objs[i] = packed; continue; }
-    (h.tiles = h.tiles || new Map()).set(i, f ? namesOf(f) : null); // null: made or unmade - whole
-    sh.objs[i] = packed;
-  }
+  // the tiles the steps since the last entry have not scanned yet (all of
+  // them when nothing ran snapTileScan between two pushes)
+  snapTileScan(objects.length);
+  h.tiles = sh.tiles; sh.tiles = null; sh.scanAt = 0;
   if (!sh.ground) { sh.ground = new Uint8Array(ground); }
   else for (let i = 0; i < ground.length; i++) if (ground[i] !== sh.ground[i]) { (h.groundCh = h.groundCh || new Set()).add(i); sh.ground[i] = ground[i]; }
   sh.hist.push(h); sh.byTick.set(tick, h);
   while (sh.hist.length > HIST_KEEP) sh.byTick.delete(sh.hist.shift().tick);
   return h;
+}
+// Tiles against the newest shadow, up to tile `end` from where the last scan
+// stopped: a tile whose primitive fields all match is skipped without packing
+// (most of the world). A host calls this a slice at a time on the steps
+// between two flushes (netHostFlush), so the world's ~50k tiles cost a
+// quarter each step instead of all at once on the flush step - which was a
+// hitch on every fourth frame. A change lands in the next entry, the same as
+// one made on a later step; the cut is the union of entries, so nothing is
+// lost, only a tile a slice already passed waits one more interval.
+function snapTileScan(end) {
+  const sh = snapShadow;
+  if (!sh.objs) { sh.objs = new Array(objects.length).fill(null); sh.objN = new Uint8Array(objects.length); }
+  const stop = Math.min(end, objects.length);
+  for (let i = sh.scanAt; i < stop; i++) {
+    const o = objects[i], prev = sh.objs[i];
+    if (!o && !prev) continue;
+    if (o && prev && snapTileSame(o, prev, sh.objN[i])) continue;
+    const packed = o ? pack(o, 0, true) : null;
+    sh.objN[i] = packed ? Math.min(255, Object.keys(packed).length) : 0;
+    const f = packed && prev ? snapFieldDiff(packed, prev) : null;
+    sh.objs[i] = packed;
+    if (packed && prev && !f) continue;
+    let ns = null; // null: made or unmade - whole
+    if (f) { ns = new Set(Object.keys(f)); if (f.$del) { ns.delete('$del'); for (const k of f.$del) ns.add(k); } }
+    const t = sh.tiles = sh.tiles || new Map(), cur = t.get(i);
+    if (ns === null || cur === null) t.set(i, null); else if (!cur) t.set(i, ns); else for (const k of ns) cur.add(k);
+  }
+  if (stop > sh.scanAt) sh.scanAt = stop;
 }
 // the ring entry at a tick, or null when it has aged out (or was never pushed)
 function snapHistoryAt(tick) { return snapShadow.byTick.get(tick) || null; }
@@ -499,7 +519,7 @@ function snapBuildDelta() {
 // the no-allocation test a live tile takes against its packed shadow: true
 // only when every field is a primitive equal to the shadow's and the key
 // counts match; anything nested or non-finite falls through to the full diff
-function snapTileSame(o, prev) {
+function snapTileSame(o, prev, prevN) {
   let n = 0;
   for (const k in o) {
     if (SNAP_SKIP.has(k)) continue;
@@ -510,7 +530,7 @@ function snapTileSame(o, prev) {
     if (typeof v === 'number') { if (!Number.isFinite(v) || prev[k] !== v) return false; continue; }
     return false;
   }
-  return n === Object.keys(prev).length;
+  return n === (prevN < 255 ? prevN : Object.keys(prev).length); // the shadow's key count, kept beside it (snapTileScan)
 }
 // a delta into the singletons: entities updated in place under their ids,
 // arrays re-ordered as the host's stand, departures dropped. Returns the

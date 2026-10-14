@@ -147,7 +147,7 @@ function update(dt) {
     trampleStep(dt); // the trampled snow reads what the client draws (js/draw/trample.js)
     if (state.mode === 'title') updateTitle(dt); // the waiting room is the title's: its eases and hovers run here too
   } else if ((state.mode === 'play' || state.mode === 'dead' || state.mode === 'drop') &&
-    !state.paused && !state.settingsOpen) {
+    ((!state.paused && !state.settingsOpen) || netShared())) { // a host's menu never stops the match for its peers
     sampleHumanInput(player, dt);
     netHostStep(dt);
     evInStep = true; // the step's cosmetics are the sim's: recorded for a host's clients (js/net/events.js)
@@ -489,6 +489,49 @@ function shotContacts(a, x0, y0, dx, dy) {
   if (shotHits.length > 1) shotHits.sort(byStep);
   return shotHits;
 }
+// ------------------------------------------------------------ object timers
+// A map object's running clocks: the hit blink (flash), the shiver (shake),
+// a picked bush growing back, a rock's crack fading and its rubble regrowing.
+// Only the objects with one running are ticked: the map is ~54,000 tiles and
+// ~33,000 of them pines, and walking all of them every step to find the few
+// that blink cost half the step. So a clock is only ever STARTED through
+// joltObj (the blink and shiver) or timeObj (any other), which enrols the
+// object; it leaves on its own once every clock has run down. A clock set
+// straight on the object never runs. After a load objTimersRescan finds them.
+const objTimed = new Set();
+function timeObj(o) { objTimed.add(o); }
+function joltObj(o, flash, shake) {
+  if (flash !== undefined) o.flash = flash;
+  if (shake !== undefined) o.shake = shake;
+  objTimed.add(o);
+}
+const objTiming = (o) => o.flash > 0 || o.shake > 0 || (o.type === 'bush' && o.berries === 0) ||
+  (o.type === 'rock' && (o.crack > 0 || o.regrow > 0));
+function objTimersRescan() {
+  objTimed.clear();
+  for (const o of objects) if (o && objTiming(o)) objTimed.add(o);
+}
+const objTickList = [];
+function tickObjTimers(dt) {
+  // in map order, as the whole-map walk ran them, so a regrowing rock's
+  // burst draws off rng() in the same order it always did
+  objTickList.length = 0;
+  for (const o of objTimed) {
+    if (objects[idx(o.tx, o.ty)] === o) objTickList.push(o);
+    else objTimed.delete(o); // felled, mined away or a new match: no longer on the map
+  }
+  if (objTickList.length > 1) objTickList.sort((a, b) => idx(a.tx, a.ty) - idx(b.tx, b.ty));
+  for (const o of objTickList) {
+    if (o.flash > 0) o.flash -= dt;
+    if (o.shake > 0) o.shake -= dt;
+    if (o.type === 'bush' && o.berries === 0) {
+      o.regrow -= dt;
+      if (o.regrow <= 0) o.berries = 2;
+    } else if (o.type === 'rock') tickRock(o, dt); // the rubble growing back (js/mining.js)
+    if (!objTiming(o)) objTimed.delete(o);
+  }
+}
+
 // ------------------------------------------------------------ passive income
 // The clock pays: every player on the ground draws TRICKLE_GOLD into its
 // wallet every TRICKLE_T s, through gainGold so it levels too - the League
@@ -761,16 +804,7 @@ function updatePlay(dt) {
     }
   }
 
-  // object timers
-  for (const o of objects) {
-    if (!o) continue;
-    if (o.flash > 0) o.flash -= dt;
-    if (o.shake > 0) o.shake -= dt;
-    if (o.type === 'bush' && o.berries === 0) {
-      o.regrow -= dt;
-      if (o.regrow <= 0) o.berries = 2;
-    } else if (o.type === 'rock') tickRock(o, dt); // the rubble growing back (js/mining.js)
-  }
+  tickObjTimers(dt); // the blinks, shivers and regrowth running on map objects (the `object timers` banner)
 
   resolveContests(); // the drop pickups queued above
 }
@@ -790,6 +824,122 @@ const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water i
 
 // One player's step - movement, tools, timers. A human, an AI fill and (later)
 // a network peer all run exactly this; only who wrote p.input differs.
+// ------------------------------------------------------------ the player's step
+// updatePlayer, at the end of this banner, is every body's step off its own
+// input. The walk inside it comes first, in pieces: the surface model's step for a body on its feet: the input accelerates
+// vx/vy, the surface sets the friction and the caps, and the body moves
+// against the tiles. updatePlayer runs it whenever nothing else owns the
+// velocity (a roll, a rush, the rope, a leap, the cable, the water), and a
+// client runs these same functions on its own body ahead of the host's word
+// (netPredict, js/net/net.js) - so they read only the body, its input and
+// the tiles, and touch nothing but the body.
+function kbDecay(p, dt) {
+  p.kbx = (p.kbx || 0) * Math.pow(0.01, dt);
+  p.kby = (p.kby || 0) * Math.pow(0.01, dt);
+}
+function iceUnder(p) {
+  const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
+  return inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1;
+}
+function clampWorld(p) {
+  p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
+  p.y = Math.max(8, Math.min(WORLD * TILE - 8, p.y));
+}
+// the input's heading, normalised, and its length before (0: no input); the
+// body faces it and remembers it
+function walkHeading(p, mx, my, auto) {
+  const len = Math.hypot(mx, my);
+  p.moving = len > 0;
+  if (len > 0) {
+    mx /= len; my /= len;
+    if (!auto) { p.lastMx = mx; p.lastMy = my; } // kept across the stop: the zipline's clip-on reads it (zipStart, js/zipline.js)
+    if (p.swingT <= 0 && p.faceT <= 0) faceToward(p, mx, my);
+  }
+  return { mx, my, len };
+}
+// shift-slide: only engages above walking speed; keeps momentum, drops the tools
+function walkSlide(p, slide, dt, onIce, kit) {
+  const sp = Math.hypot(p.vx, p.vy);
+  const wantSlide = slide && p.dodgeT <= 0 && !p.prone && !p.mount; // nothing glides on its belly, or on deer-back
+  if (!p.sliding && wantSlide && sp > kit.slideMin && p.wade <= DEEP_SLIDE_BAR) { // nobody launches a slide out of a drift
+    p.sliding = true;
+  }
+  if (p.sliding && (!wantSlide || sp < SLIDE_EXIT)) p.sliding = false;
+  // slide fatigue: builds on snow so long slides run out of glide, recovers on
+  // ice so a snow->ice->snow chain starts the snow leg fresh-ish
+  if (p.sliding) {
+    p.slideT = onIce ? Math.max(0, p.slideT - dt * 1.5) : p.slideT + dt * kit.fatigue;
+  } else {
+    p.slideT = 0;
+  }
+}
+// mx/my/len: walkHeading's
+function walkStep(p, dt, mx, my, len, onIce, kit) {
+  let sp = Math.hypot(p.vx, p.vy);
+  const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
+  // every cap an ability may drag on (root, net, crater, cast, shield),
+  // folded once - js/abilities.js - with the meal's
+  // own drag beside them (js/core.js): a body chewing walks, exactly the way
+  // a body mid-cast does
+  const abMul = abilityMoveMul(p) * (p.eatT > 0 ? FOOD_SLOW : 1);
+  // a belly crawl is a flat crawl on any surface - no ice cap, no draw
+  // penalty, nothing to stack. Getting back up costs a moment of it too.
+  // a rider goes at the deer's gallop (RIDE, js/wildlife.js): not the
+  // hero's stride, and a drawn bow does not slow the deer under it
+  const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
+    : p.prone ? PRONE_SPEED
+      : p.riseT > 0 ? PLAYER_SPEED * kit.walkMul * 0.45
+        : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul * wadeMul(p); // STRIDER lengthens the stride; deep snow drags (js/depth.js)
+
+  if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
+    // plain snow walking: near-instant vector approach, tuned so it feels
+    // exactly like the old fixed-speed movement (settles in ~3 frames)
+    const f = 1 - Math.exp(-25 * dt);
+    p.vx += (mx * walkMax - p.vx) * f;
+    p.vy += (my * walkMax - p.vy) * f;
+  } else {
+    // carrying momentum (ice, slide, or overspeed on snow):
+    // steer the heading toward the input, ease the speed toward the target
+    let dirx = mx, diry = my;
+    if (sp > 1) { dirx = p.vx / sp; diry = p.vy / sp; }
+    let steer, decay, target;
+    if (p.sliding) {
+      // snow friction ramps with slide fatigue: early glide is cheap, the
+      // tail drops off hard so slides end decisively
+      steer = 1.7; target = 0;
+      decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT) * (1 + (DEEP_SLIDE - 1) * p.wade); // a drift eats a slide
+    } else if (onIce) {
+      const cap = ICE_MAX * kit.iceMax * chargeMul * abMul;
+      if (len > 0) { steer = kit.iceSteer; target = cap; decay = sp < cap ? 1.1 : 0.35; }
+      else { steer = 0; target = 0; decay = 0.18; } // idle glide
+    } else {
+      steer = 4.5; target = len > 0 ? walkMax : 0; decay = 3.5; // snow kills overspeed fast unless you slide
+    }
+    if (len > 0 && steer > 0 && (dirx !== 0 || diry !== 0)) {
+      // carve: rotate the travel direction toward the input, never snap it
+      const cur = Math.atan2(diry, dirx), want = Math.atan2(my, mx);
+      let da = want - cur;
+      if (da > Math.PI) da -= Math.PI * 2;
+      if (da < -Math.PI) da += Math.PI * 2;
+      const na = cur + Math.max(-steer * dt, Math.min(steer * dt, da));
+      dirx = Math.cos(na); diry = Math.sin(na);
+    }
+    sp = target + (sp - target) * Math.exp(-decay * dt);
+    p.vx = dirx * sp;
+    p.vy = diry * sp;
+  }
+
+  // a bot never wades into open water on its own feet - only a shove
+  // (knockback past WADE_SHOVE) or already standing in it lets it in
+  const wade = p.control !== 'ai' || Math.hypot(p.kbx, p.kby) > WADE_SHOVE ||
+    waterAt(Math.floor(p.x / TILE), Math.floor((p.y + 4) / TILE));
+  const mv = moveEntity(p,
+    (p.vx + p.kbx) * dt,
+    (p.vy + p.kby) * dt, PLAYER_R, !wade);
+  if (mv.blockedX) p.vx = 0; // a wall kills that axis instead of grinding
+  if (mv.blockedY) p.vy = 0;
+}
+
 function updatePlayer(p, dt) {
   const inp = p.input;
 
@@ -863,36 +1013,16 @@ function updatePlayer(p, dt) {
   // lastMx/lastMy alone so the clip-on still reads the walk before the press
   let mx = inp.mx, my = inp.my, auto = false;
   if (p.zipWalk) { const w = zipWalkStep(p, dt); if (w) { mx = w.mx; my = w.my; auto = true; } }
-  const len = Math.hypot(mx, my);
-  p.moving = len > 0;
-  if (len > 0) {
-    mx /= len; my /= len;
-    if (!auto) { p.lastMx = mx; p.lastMy = my; } // kept across the stop: the zipline's clip-on reads it (zipStart, js/zipline.js)
-    if (p.swingT <= 0 && p.faceT <= 0) faceToward(p, mx, my);
-  }
+  const hd = walkHeading(p, mx, my, auto), len = hd.len;
+  mx = hd.mx; my = hd.my;
 
-  p.kbx = (p.kbx || 0) * Math.pow(0.01, dt);
-  p.kby = (p.kby || 0) * Math.pow(0.01, dt);
+  kbDecay(p, dt);
 
   // ---- unified momentum: input accelerates vx/vy, the surface sets friction/caps
   const ftx = Math.floor(p.x / TILE), fty = Math.floor((p.y + 4) / TILE);
-  const onIce = inWorld(ftx, fty) && ground[idx(ftx, fty)] === 1;
-  let sp = Math.hypot(p.vx, p.vy);
-
-  // shift-slide: only engages above walking speed; keeps momentum, drops the tools
-  const wantSlide = inp.slide && p.dodgeT <= 0 && !p.prone && !p.mount; // nothing glides on its belly, or on deer-back
+  const onIce = iceUnder(p);
   const kit = kitOf(p);
-  if (!p.sliding && wantSlide && sp > kit.slideMin && p.wade <= DEEP_SLIDE_BAR) { // nobody launches a slide out of a drift
-    p.sliding = true;
-  }
-  if (p.sliding && (!wantSlide || sp < SLIDE_EXIT)) p.sliding = false;
-  // slide fatigue: builds on snow so long slides run out of glide, recovers on
-  // ice so a snow->ice->snow chain starts the snow leg fresh-ish
-  if (p.sliding) {
-    p.slideT = onIce ? Math.max(0, p.slideT - dt * 1.5) : p.slideT + dt * kit.fatigue;
-  } else {
-    p.slideT = 0;
-  }
+  walkSlide(p, inp.slide, dt, onIce, kit);
 
   if (p.fallT > 0) {
     // floundering in an ice hole: no control until the climb-out
@@ -982,72 +1112,10 @@ function updatePlayer(p, dt) {
     // (zipStep/zipEnd, js/zipline.js). Knockback decays above and is never spent.
     zipStep(p, dt, mx, my, len);
   } else {
-    const chargeMul = p.charging ? kit.chargeMul : 1; // drawn bow slows you
-    // every cap an ability may drag on (root, net, crater, cast, shield),
-    // folded once - js/abilities.js - with the meal's
-    // own drag beside them (js/core.js): a body chewing walks, exactly the way
-    // a body mid-cast does
-    const abMul = abilityMoveMul(p) * (p.eatT > 0 ? FOOD_SLOW : 1);
-    // a belly crawl is a flat crawl on any surface - no ice cap, no draw
-    // penalty, nothing to stack. Getting back up costs a moment of it too.
-    // a rider goes at the deer's gallop (RIDE, js/wildlife.js): not the
-    // hero's stride, and a drawn bow does not slow the deer under it
-    const walkMax = (p.mount ? PLAYER_SPEED * RIDE[p.mount.kind].mul
-      : p.prone ? PRONE_SPEED
-        : p.riseT > 0 ? PLAYER_SPEED * kit.walkMul * 0.45
-          : PLAYER_SPEED * kit.walkMul * chargeMul) * abMul * wadeMul(p); // STRIDER lengthens the stride; deep snow drags (js/depth.js)
-
-    if (p.prone || p.rootT > 0 || (!onIce && !p.sliding && sp <= walkMax + 6)) {
-      // plain snow walking: near-instant vector approach, tuned so it feels
-      // exactly like the old fixed-speed movement (settles in ~3 frames)
-      const f = 1 - Math.exp(-25 * dt);
-      p.vx += (mx * walkMax - p.vx) * f;
-      p.vy += (my * walkMax - p.vy) * f;
-    } else {
-      // carrying momentum (ice, slide, or overspeed on snow):
-      // steer the heading toward the input, ease the speed toward the target
-      let dirx = mx, diry = my;
-      if (sp > 1) { dirx = p.vx / sp; diry = p.vy / sp; }
-      let steer, decay, target;
-      if (p.sliding) {
-        // snow friction ramps with slide fatigue: early glide is cheap, the
-        // tail drops off hard so slides end decisively
-        steer = 1.7; target = 0;
-        decay = onIce ? 0.15 : Math.min(2.6, 0.35 + 0.45 * p.slideT) * (1 + (DEEP_SLIDE - 1) * p.wade); // a drift eats a slide
-      } else if (onIce) {
-        const cap = ICE_MAX * kit.iceMax * chargeMul * abMul;
-        if (len > 0) { steer = kit.iceSteer; target = cap; decay = sp < cap ? 1.1 : 0.35; }
-        else { steer = 0; target = 0; decay = 0.18; } // idle glide
-      } else {
-        steer = 4.5; target = len > 0 ? walkMax : 0; decay = 3.5; // snow kills overspeed fast unless you slide
-      }
-      if (len > 0 && steer > 0 && (dirx !== 0 || diry !== 0)) {
-        // carve: rotate the travel direction toward the input, never snap it
-        const cur = Math.atan2(diry, dirx), want = Math.atan2(my, mx);
-        let da = want - cur;
-        if (da > Math.PI) da -= Math.PI * 2;
-        if (da < -Math.PI) da += Math.PI * 2;
-        const na = cur + Math.max(-steer * dt, Math.min(steer * dt, da));
-        dirx = Math.cos(na); diry = Math.sin(na);
-      }
-      sp = target + (sp - target) * Math.exp(-decay * dt);
-      p.vx = dirx * sp;
-      p.vy = diry * sp;
-    }
-
-    // a bot never wades into open water on its own feet - only a shove
-    // (knockback past WADE_SHOVE) or already standing in it lets it in
-    const wade = p.control !== 'ai' || Math.hypot(p.kbx, p.kby) > WADE_SHOVE ||
-      waterAt(Math.floor(p.x / TILE), Math.floor((p.y + 4) / TILE));
-    const mv = moveEntity(p,
-      (p.vx + p.kbx) * dt,
-      (p.vy + p.kby) * dt, PLAYER_R, !wade);
-    if (mv.blockedX) p.vx = 0; // a wall kills that axis instead of grinding
-    if (mv.blockedY) p.vy = 0;
+    walkStep(p, dt, mx, my, len, onIce, kit);
   }
 
-  p.x = Math.max(8, Math.min(WORLD * TILE - 8, p.x));
-  p.y = Math.max(8, Math.min(WORLD * TILE - 8, p.y));
+  clampWorld(p);
 
   // open water: standing over a carved ice hole plunges you in, and so does
   // the creek. An active dodge roll carries over both: a hole's one tile

@@ -337,8 +337,7 @@ function rollTackle(p, sp, nx, ny) {
 // nothing more.
 function tackleObject(o, dmg, p) {
   if (!o) return;
-  o.flash = 0.1;
-  o.shake = 0.26;
+  joltObj(o, 0.1, 0.26);
   const c = structCenter(o);
   burst(c.x, c.y - 6, '#eef4fb', 8, 45, 0.5, true);
   if (o.type === 'dummy') { hitDummy(o, dmg, c.x, c.y - 8); return; } // the dummy takes the shoulder for real
@@ -521,8 +520,7 @@ function nearestDryTile(x, y, p) {
 function chopTree(o, p) {
   const ox = o.tx * TILE + 8, oy = o.ty * TILE + 8;
   const dead = o.type === 'deadTree'; // the rookery's cover: quicker, same gold
-  o.flash = 0.1;
-  o.shake = 0.22;
+  joltObj(o, 0.1, 0.22);
   o.hp--;
   sfxAt('chop', ox, oy);
   awardGold(p, dead ? YIELD.deadTreeHit : YIELD.treeHit, ox, oy);
@@ -560,8 +558,7 @@ function hitObject(o, p) {
     addFloater(ox, oy - 14, d.needs === 'pick' ? 'NEEDS PICKAXE' : 'NEEDS AXE', '#9fb6d8');
     return;
   }
-  o.flash = 0.1;
-  o.shake = 0.22;
+  joltObj(o, 0.1, 0.22);
   if (o.type === 'tree' || o.type === 'deadTree') {
     chopTree(o, p);
   } else if (o.type === 'eagle') {
@@ -577,7 +574,7 @@ function hitObject(o, p) {
   } else if (o.type === 'bush') {
     if (o.berries > 0) {
       o.berries = 0;
-      o.regrow = BUSH_REGROW;
+      o.regrow = BUSH_REGROW; // its clock was enrolled by the blink above (joltObj)
       sfxAt('stash', ox, oy);
       spawnDrop(ox, oy, 'berry'); spawnDrop(ox, oy, 'berry');
       burst(ox, oy - 4, '#4c8560', 5, 35, 0.4, true);
@@ -644,8 +641,7 @@ function hitDummy(o, dmg, hx, hy) {
   o.mT1 = state.elapsed;
   o.hp = Math.max(0, o.hp - dmg);
   o.hitT = 0;
-  o.flash = 0.1;
-  o.shake = 0.24;
+  joltObj(o, 0.1, 0.24);
   tallyHit(o, dmg);
   burst(hx, hy - 4, '#e0c890', 5, 40, 0.4, true); // straw off the sack
   sfxAt('hit', hx, hy);
@@ -674,8 +670,7 @@ function hurtStruct(o, dmg, p, bot) {
   // capped at the wall there was left, the way the bird's is
   if (p instanceof Player) p.dmgStruct += Math.min(dmg, Math.max(0, o.hp));
   o.hp -= dmg;
-  o.flash = 0.1;
-  o.shake = 0.22;
+  joltObj(o, 0.1, 0.22);
   sfxAt('hit', c.x, c.y);
   burst(c.x, c.y - 4, '#a3794f', 5, 40, 0.4, true);
   tallyHit(o, dmg);

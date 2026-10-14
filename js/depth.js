@@ -323,11 +323,7 @@ function layLees() {
 // scout wading after it (and the draw stands it on top too, wadeWidth).
 const ON_CRUST = { rabbit: true, bird: true };
 function wadeStep(e, dt) {
-  const air = e instanceof Player ? (inAir(e) || e.zip >= 0 || e.fallT > 0 || e.dead) : (ON_CRUST[e.kind] || e.dead);
-  const want = !air && deepAt(e.x, e.y + 4) ? 1 : 0;
-  const w0 = e.wade || 0;
-  e.wade = want + (w0 - want) * Math.exp(-DEEP_EASE * dt);
-  if (e.wade < 0.01) e.wade = 0;
+  wadeEase(e, dt);
   // the snow a wading body shoves aside: a puff at the feet while it is moving
   const px = e.wadeX === undefined ? e.x : e.wadeX, py = e.wadeY === undefined ? e.y : e.wadeY;
   const sp = dt > 0 ? Math.hypot(e.x - px, e.y - py) / dt : 0;
@@ -339,6 +335,15 @@ function wadeStep(e, dt) {
       burst(e.x + (hash2(state.tick, e.x | 0) - 0.5) * 6, e.y + 4, '#f2f7fc', 2, 18, 0.35, true);
     }
   }
+}
+// the depth alone, with no puff: what a client's own body runs ahead of the
+// host (netPredict, js/net/net.js), since the wade is never on the wire
+function wadeEase(e, dt) {
+  const air = e instanceof Player ? (inAir(e) || e.zip >= 0 || e.fallT > 0 || e.dead) : (ON_CRUST[e.kind] || e.dead);
+  const want = !air && deepAt(e.x, e.y + 4) ? 1 : 0;
+  const w0 = e.wade || 0;
+  e.wade = want + (w0 - want) * Math.exp(-DEEP_EASE * dt);
+  if (e.wade < 0.01) e.wade = 0;
 }
 // what is left of a body's walking speed for the snow it is standing in
 function wadeMul(e) { return 1 - (1 - DEEP_WALK) * (e.wade || 0); }

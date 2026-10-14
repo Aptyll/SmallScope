@@ -234,7 +234,10 @@ flat on the snow at the roost's size; `seat` is where a rider's seat lands on th
 rider rides its wing; `flash` washes a frame all white into one scratch canvas and `reach`
 measures how far it stands up and down from its centre (the roost's hp bar). Frames paint on first use or from `warm` (urgent, or `idle`: the slow queue,
 one frame per `IDLE_GAP`) and `tick`, about 5 ms each, within a budget; a bird whose frame is not
-painted yet holds its last one, and the least recently drawn go past `KEEP`. The team parts read
+painted yet holds its last one, and the least recently drawn go past `KEEP`. A cached frame
+or shadow keeps only the box its pixels fill (`trimmed`: the air round the wings was three
+quarters of it), carrying where that box sat (`ox`, `oy`) and the whole frame's size (`fw`, `fh`):
+draw it with `put(g, cv, x, y)`, `x, y` the whole frame's top-left, never a bare `drawImage`. The team parts read
 `TEAM_SKINS`, so the cache clears in `onTeams`. `SPRITES.birdSkinIcon` gets every look's card
 frames (the stroke nose-up) and `figure` the wiki's. The concept rounds' Python
 (perch-landed/src/styles.py, look D, head H) lives in the project files, not the repo.

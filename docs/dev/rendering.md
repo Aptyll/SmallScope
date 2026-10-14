@@ -734,9 +734,14 @@ click on that well would do.
 
 ### The patch notes screen
 
-`m.screen = 'notes'` (js/ui/menu.js `patch notes`), opened from the `PATCH_TXT` tag and eased in
-on its own `notesT` like the wiki. It is the whole view: a dark veil over the world, PATCH NOTES
-in gold over the gold rule at `NOTES_TOP`, and one column (`NOTES_W_MAX` = 440, narrowing with
+`m.screen = 'notes'` (js/ui/notes.js `patch notes`), opened from the `PATCH_TXT` tag and eased in
+on its own `notesT` like the wiki. **The title's tabs** (js/ui/notes.js `the pages' tabs`) stand
+over it and over the wiki: WIKI, PATCH NOTES and ROADMAP at scale 2 across the top at `NOTES_TOP`,
+the open one gold over the gold rule, the rest dim and lighter under the pointer. `drawPageTabs`
+draws the row once for both screens (from `renderTitle`), so switching between them cross-fades
+the page under a steady row; `openPageTab(i)` switches, and Left/Right walk the wiki's pages, then
+PATCH NOTES, then ROADMAP. The `PATCH_TXT` tag always opens on PATCH NOTES (`menu.notesTab` 0).
+It is the whole view: a dark veil over the world, the tabs, and one column (`NOTES_W_MAX` = 440, narrowing with
 the view) of folding groups, newest at the top. First EVERY PATCH: `PATCH_NOTES` folded by tenth
 (0.390 - 0.391, 0.380 - 0.389 ... `NOTES_GROUPS`, built off the list, so a new patch needs nothing
 here). A note with a third field shows that picture under its text (`NOTES_PICS`, from
@@ -746,20 +751,21 @@ since `DIGEST_FROM` condensed into short lines by what a player notices, each wi
 the right. A group is a chevron and its name; a click or Enter on the keys' pick folds it
 (`notesOpen`, session only; only the newest patches start open). Only whole rows draw, never
 one cut by the window's edge; a hairline rail with a gold thumb shows the scroll (wheel, Up/Down,
-a click on the rail pages). The WIKI is one dim word in the top-right corner, gold and underlined
-under the pointer like the patch tag; the wiki's Esc comes back here.
+a click on the rail pages). The ROADMAP tab (`menu.notesTab` 1) is the same column over
+`ROADMAP`'s sections (`ROAD_GROUPS`, all open at first): each section's done count dim on the
+right, each line a 5 px box (an open ring to do, solid gold done, its words dimmed) and its words.
+Esc on either tab goes back to the title.
 
 ### The wiki screen
 
-`m.screen = 'wiki'`, entered from the WIKI word in the [patch notes](#the-patch-notes-screen)' top-right corner (Esc goes back to them, `menu.wikiFrom`) and eased in on its own `wikiT`
-(the chrome ducks under it the way it does under the lobby). One surface: the title and its
-gold rule, then a translucent frost slab (`drawMenuSlab`, up to `WIKI_W_MAX` = 400 wide,
+`m.screen = 'wiki'`, entered from the WIKI tab over the [patch notes](#the-patch-notes-screen) (Esc goes back to the title) and eased in on its own `wikiT`
+(the chrome ducks under it the way it does under the lobby). One surface: the title's tabs, then a translucent frost slab (`drawMenuSlab`, up to `WIKI_W_MAX` = 400 wide,
 `WIKI_H` = 200 tall, centred, narrowing with the view) with a **tab bar** of pages under its top
 edge in the settings slab's navbar grammar — the open page in gold over a gold underline, the
 rest dim until hovered — and a **content window** under a rule that the open page scrolls
 through when it outgrows it: the wheel, up/down (W/S), and an iron rail on the right with a gilt
-thumb (`drawWikiRail`; clicking the rail pages). Left/right (A/D) or a click switch pages; ESC
-leaves. What the pages say is [gameplay.md](gameplay.md#the-wiki).
+thumb (`drawWikiRail`; clicking the rail pages). Left/right (A/D) or a click switch pages, and
+right past the last page opens PATCH NOTES; ESC leaves. What the pages say is [gameplay.md](gameplay.md#the-wiki).
 
 A page is data. `WIKI_PAGES` is `{ id, label, build(cw) }` and `build` returns the page's
 **blocks** top to bottom for a content width — `line` (a sentence), `rule` (a gold rule), `head` (a section name
@@ -1832,8 +1838,9 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
 ## Main menu (title)
 
 `state.mode === 'title'` is a real menu, not a splash: the sim's ambient half keeps running
-behind it (`updateTitle()` steps animals and fish and advances the menu timers; players, arrows
-and structures do not tick and `state.time` is frozen), snow falls as usual, and the camera is
+behind it (`updateTitle()` steps animals and fish - until a room is shared, when they stand still
+for every guest's sake, [online play](../pvp-architecture.md#the-wire-form) - and advances the menu
+timers; players, arrows and structures do not tick and `state.time` is frozen), snow falls as usual, and the camera is
 driven by `titleCamTarget()` — a slow lissajous drift around the open interior that stays
 `BORDER_MAX + 6` tiles clear of the forest. Everything lives in the `main menu` banner and on
 `state.menu`:

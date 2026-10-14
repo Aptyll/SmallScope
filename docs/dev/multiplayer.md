@@ -550,7 +550,8 @@ does, and **a team is in the match while its eagle roosts**: `teamInMatch` asks
 (`eagleFlee` in js/eagle.js is what puts every player down at liftoff), and a side with every player
 dead and waiting on its bird is not out — kills never end a match, only the bird does. **The
 match keeps simulating while you are out** — `update()` runs `updatePlay` in both `play` and
-`dead` mode; only pause and the settings panel stop the world (the map does not). Full detail:
+`dead` mode; only pause and the settings panel stop the world (the map does not), and not in a
+match another screen shares (`netShared`). Full detail:
 [Death and respawn](gameplay.md#death-and-respawn).
 
 ### Respawn at the bird
@@ -1045,7 +1046,7 @@ A scripted bot may say only `BOT_CALLS` (js/bots/api.js), none of these three.
 
 A match is ten seats, and any of them can be a person on another screen: relay rooms between
 browsers (js/net/transport-ws.js, served by `app/server.js`) and Steam lobbies in the wrapper
-(js/net/transport-steam.js, behind `window.steamBridge` and `?transport=steam`). The wire, the
+(js/net/transport-steam.js, behind `window.steamBridge` and `?transport=steam`, which the wrapper asks for whenever Steam is up). The wire, the
 lobby lifecycle and the migration plan are [docs/pvp-architecture.md](../pvp-architecture.md);
 what the rest of the code needs to know is this:
 

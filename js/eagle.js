@@ -802,7 +802,7 @@ function laneStep(e, dt) {
     const ev = L.ev[L.next++]; spent++;
     const o = objects[ev.i];
     if (!laneFells(o)) continue; // already felled by hand, or grown into something else
-    if (ev.k === 2) { structOf(o).shake = 0.55; continue; }
+    if (ev.k === 2) { joltObj(structOf(o), undefined, 0.55); continue; }
     const tx = ev.i % WORLD, ty = (ev.i / WORLD) | 0, px = tx * TILE + 8, py = ty * TILE + 8;
     if (fellScenery(tx, ty).type === 'rock') { // the whole rock, whichever of its two tiles the lane met
       burst(px, py - 6, '#9aa4b4', 6, 50, 0.45, true); // the rock shatters
@@ -1159,12 +1159,12 @@ function drawEagle(e, ex, ey, now) {
     const key = e.state === 'fly' ? 's' + strokeAt(e.flap, PR.STROKE_N) : 'd' + Math.round(u * PR.DIVE_N), sc = S / EAGLE_REST_SCALE;
     const spr = PR.frame(look, t, e.heading, key, sc, e), shw = PR.shadow(look, t, e.heading, key, e);
     const seatAt = (st) => PR.seat(e.heading, key, sc, st);
-    const w = spr.width, h = spr.height;
+    const w = spr.fw, h = spr.fh;
     drawEagleTrail(e, ex, ey, S, now); // before the cull: the trail hangs behind a bird already off the frame
     if (sx < -w - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + 40) return;
     const bob = flightBob(e, now);
-    ctx.drawImage(shw, sx + Math.round(10 * (1 - fall)) - (shw.width >> 1), sy + alt - (shw.height >> 1));
-    ctx.drawImage(spr, sx - Math.round(w / 2), sy + bob - Math.round(h / 2));
+    PR.put(ctx, shw, sx + Math.round(10 * (1 - fall)) - (shw.fw >> 1), sy + alt - (shw.fh >> 1));
+    PR.put(ctx, spr, sx - Math.round(w / 2), sy + bob - Math.round(h / 2));
     // every rider seated on its wing, facing the way the bird flies, at the
     // bird's own perspective size (riderScale); the local player draws last so
     // it is never under a teammate. Only YOUR name rides the wing (in your
@@ -1202,13 +1202,13 @@ function drawEagle(e, ex, ey, now) {
     const S = EAGLE_REST_SCALE + (EAGLE_SCALE - EAGLE_REST_SCALE) * u;
     const fi = perchLiftBeat(e.fleeT); // beating for its life, from the first downstroke
     const spr = PR.frame(look, t, e.heading, 'l' + fi, S / EAGLE_REST_SCALE, e), shw = PR.shadow(look, t, e.heading, 'l' + fi, e);
-    const w = spr.width, h = spr.height;
+    const w = spr.fw, h = spr.fh;
     if (sx < -w - DROP_ALT - 40 || sy < -h - DROP_ALT - 40 || sx > WV_W + w + 40 || sy > WV_H + h + 40) return;
     const fade = Math.min(1, Math.max(0, (FLEE_T - e.fleeT) / 1.4));
     ctx.globalAlpha = 0.8 * u * fade; // the shadow returns as the ground falls away
-    ctx.drawImage(shw, sx + Math.round(10 * u) - (shw.width >> 1), sy + alt - (shw.height >> 1));
+    PR.put(ctx, shw, sx + Math.round(10 * u) - (shw.fw >> 1), sy + alt - (shw.fh >> 1));
     ctx.globalAlpha = fade;
-    ctx.drawImage(spr, sx - Math.round(w / 2), sy - Math.round(h / 2));
+    PR.put(ctx, spr, sx - Math.round(w / 2), sy - Math.round(h / 2));
     ctx.globalAlpha = 1;
   } else if (e.state === 'down') {
     // the roosting objective. The landing is a landing, not a wound - the
@@ -1222,15 +1222,15 @@ function drawEagle(e, ex, ey, now) {
       ? Math.min(2, Math.floor(e.restT / EAGLE_SETTLE_T * 3)) : (winding ? 0 : (ruffling ? 1 : 2));
     // Perch sits landed, painted at its heading
     const spr = PR.frame(look, t, e.heading, 'r' + fi, 1, e), seatAt = (st) => PR.seat(e.heading, 'r' + fi, 1, st);
-    const w = spr.width, h = spr.height;
+    const w = spr.fw, h = spr.fh;
     if (sx > -w - 70 && sy > -h - 70 && sx < WV_W + w + 70 && sy < WV_H + h + 70) {
       // no cast shadow at rest: the bird is ON the ground, and a dark copy
       // under it read as a second bird
       const breath = winding ? -2 : (ruffling ? -1 : (e.restT >= EAGLE_SETTLE_T ? Math.round(Math.sin(now * 1.5 + e.team * 2.1)) : 0));
-      ctx.drawImage(spr, sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
+      PR.put(ctx, spr, sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
       if (e.flash > 0) {
         ctx.globalAlpha = Math.min(1, e.flash * 7);
-        ctx.drawImage(PR.flash(spr), sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
+        PR.put(ctx, PR.flash(spr), sx - Math.round(w / 2), sy + breath - Math.round(h / 2));
         ctx.globalAlpha = 1;
       }
       // whoever rode the landing, still seated - world-sized now, the bird at
