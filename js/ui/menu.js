@@ -27,7 +27,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.470';
+const PATCH_TXT = 'PATCH 0.471';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -43,6 +43,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.471', 'MULTIPLAYER: CREATE OPENS A HOST PAGE TO PICK THE MAP, VALLEY, TEAM SIZE AND BOT LEVEL, A CLICK ON A BOT\'S CLASS MARK CHANGES ITS CLASS, START GOES STRAIGHT INTO THE MATCH, GUESTS PRESS READY AND SHOW PING BARS, A GAME CAN BE JOINED BY TYPING OR PASTING ITS CODE, AND AFTER A MATCH LOBBY TAKES EVERYONE BACK TO THE SAME ROOM FOR A REMATCH.'],
   ['0.470', 'THE PATCH NOTES ARE ONE OF THREE TABS: THE WIKI, THE PATCH NOTES, AND A NEW ROADMAP LISTING WHAT IS STILL TO BUILD, STARTING WITH THE LAG-FREE MULTIPLAYER TEST ON STEAM.'],
   ['0.469', 'THE EAGLES TAKE A QUARTER OF THE MEMORY THEY USED TO: EACH PICTURE OF A BIRD NO LONGER CARRIES THE EMPTY AIR AROUND ITS WINGS. THEY LOOK EXACTLY THE SAME.'],
   ['0.468', 'WHILE THE GAME IS HIDDEN OR MINIMISED IT STOPS DRAWING, SO IT NO LONGER KEEPS YOUR GRAPHICS CARD BUSY IN THE BACKGROUND. THE MATCH ITSELF KEEPS GOING.'],
@@ -637,8 +638,8 @@ function menuKey(e) {
   if (m.screen === 'chars') { if (m.charT >= 1) charsKey(k); return; }
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'ladder') { if (m.ladT >= 1) ladderKey(k); return; }
-  if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
-  if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k); return; } // the waiting room (js/ui/rooms.js)
+  if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k, e); return; }
+  if (m.screen === 'room' || m.screen === 'host') { if (m.roomsT >= 1) roomKey(k); return; } // the waiting room and CREATE's page (js/ui/rooms.js)
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
@@ -665,7 +666,7 @@ function menuClick() {
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'ladder') { ladderClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
-  if (m.screen === 'room') { roomClick(); return; }
+  if (m.screen === 'room' || m.screen === 'host') { roomClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
   if (m.panel) {
     if (!menuPanelReady()) return;
@@ -770,7 +771,7 @@ function updateTitle(dt) {
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
   if (m.screen === 'skins') updateSkins(dt);
   updateLadder(dt); // the bot ladder screen's ease and hovers (js/ui/ladder.js)
-  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' || m.screen === 'room' ? 1 : -1) * dt / 0.35));
+  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' || m.screen === 'room' || m.screen === 'host' ? 1 : -1) * dt / 0.35));
   updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
