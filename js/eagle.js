@@ -350,7 +350,7 @@ function landPlayer(p) {
     for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
       const tx = ftx + dx, ty = fty + dy;
-      if (!inWorld(tx, ty) || objAt(tx, ty) || waterAt(tx, ty)) continue;
+      if (!inWorld(tx, ty) || objAt(tx, ty) || waterAt(tx, ty) || cisternBlocks(tx, ty)) continue;
       const dd = dx * dx + dy * dy;
       if (dd < bd) { bd = dd; best = { tx, ty }; }
     }

@@ -582,7 +582,7 @@ the wait is the entire cost ([death keeps everything](gameplay.md#death-and-resp
 The last two arguments are the whole credit system. `src` is the player who dealt the damage
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
 there is no `src` (`DEATH_CAUSE`, js/player.js: `ice`, `wolf` — a den's pack — `bear`,
-`tackle`, `eagle`, `fire`, `soldier`; an unnamed one reads WENT DOWN). A death with an `src` other than
+`tackle`, `eagle`, `fire`, `soldier`, `orca`; an unnamed one reads WENT DOWN). A death with an `src` other than
 the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours
 (`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
 without one it writes the cause's line — `"<victim> FELL THROUGH THE ICE"` — in the victim's. **Any new way to hurt a
@@ -931,7 +931,7 @@ The ladder:
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
 12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
-   plus a 15-gold float is bought at rung 0 beside the skill point, from anywhere, mid-push or
+   plus a 15-gold float is bought at rung 0 (`aiSpend`) beside the skill point, from anywhere, mid-push or
    mid-defence alike — the hero pop-up is a menu, and a pusher never reaches this rung.) **A bot never shops**: [the merchant's counter](gameplay.md#the-merchants-counter)
    takes the same `input.cmd` a gear buy does and `shopBuy`/`shopTrade` take any `p`, so the
    path is there the day this rung learns to walk to a roost and read a price — nothing about the

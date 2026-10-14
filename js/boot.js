@@ -43,7 +43,7 @@ if (PRACTICE) {
   })();
   settings.mapType = MAP_TYPE; // the lobby's pick starts as the shape standing (a ?map=N page may differ from the profile's)
   genWorld();
-  placeCreek();     // the creek down the cross-diagonal, its bridge, bends and fords (world.js)
+  placeCreek();     // the creek down the cross-diagonal, its bends and fords, and the cistern round its frozen middle (world.js, cistern.js)
   layPaths();       // ...and the paths a grown shape cuts through its own woods, forded where they cross it (world.js)
   placeRoad();       // the diagonal lane, and the paths with it (world.js)
   placeZips();       // ...and each side's cable along it (js/zipline.js)
@@ -53,6 +53,7 @@ if (PRACTICE) {
   placeLandmarks();  // ...and the story landmarks take their spots, on a stream of their own (landmarks.js)
   spawnAnimals();
   spawnFish();
+  spawnOrca();       // ...and the orca under its lake (js/orca.js)
   stockCamps();      // the monsters go in once the world is standing
 }
 layDrifts();         // the snow's depth, in the lee of everything worldgen stood up (js/depth.js)
@@ -163,6 +164,8 @@ window.DBG = {
   fish, iceCracks, holes, crackIce, addFish, spawnEmerger, netAt, buildSiteAt,
   // the ice breaking in its own shape (js/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
   iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
+  // the orca and its lake (js/orca.js, js/world.js): its state, the line over a head, the disc
+  orca, orcaLine, orcaAge, orcaShore, orcaLakeAt, orcaLakeEdge, ORCA_LINE,
   // the shoal the water this shape froze can hold (the fish banner, wildlife.js)
   get fishCap() { return fishCap; }, get fishFloor() { return fishFloor; },
   // the camps: the live registry, the table behind it, where each site is,
@@ -319,8 +322,9 @@ window.DBG = {
   // the paint: which preset a team wears on this screen (settings.teamBlue), and the two merchants
   skin, get merchants() { return robots.filter((b) => b.merchant); },
   // the roost's road out: the felling front, or fire the whole lane at once
-  spurs, roadNest, roadSpan, roadDist, roadMainDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the two distances, and where a bird would land
-  creekAt, creekFlow, creekWet, bridgeAt, creekBends, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the deck, the bends and the fixed fords
+  spurs, roadNest, roadSpan, roadDist, roadMainDist, laneDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the three distances (laneDist: as laid, ended at the cistern), and where a bird would land
+  creekAt, creekFlow, creekWet, creekBends, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the bends and the fixed fords
+  cisternR, cisternDist, cisternReach, cisternTile, cisternBlocks, cisternTouches, // the cistern (js/cistern.js): tiles from the crossing, px to its stone, how much of a step it lets a body take, and its three tile reads
   zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (js/zipline.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
   landmarks, LANDMARKS, // the story landmarks (landmarks.js): every one stood, and the table
   planLane, laneStep: (team, dt) => { const e = state.drop.eagles[team]; if (e.lane) laneStep(e, dt == null ? 99 : dt); return e.lane; },

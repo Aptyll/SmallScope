@@ -223,7 +223,7 @@ function trampleGroundChanged(tx, ty) {
 
 // What each pixel of a chunk stands on, read the way the bake painted it:
 // 1 snow, 2 ice (the lake's own ragged edge, iceAtPx), 0 anything that
-// does not trample - open water, the creek and its deck, the road's earth.
+// does not trample - open water, the creek (not where the cistern froze it), the road's earth.
 // Most tiles are open snow with nothing near, and answer for all 256 pixels
 // at once; only a tile by a lake, the creek or a road asks per pixel.
 function trMask(ci) {
@@ -235,22 +235,21 @@ function trMask(ci) {
     if (!inWorld(tx, ty)) continue;
     let lake = false;
     for (let dy = -1; dy <= 1 && !lake; dy++) for (let dx = -1; dx <= 1; dx++) if (isLake(tx + dx, ty + dy)) { lake = true; break; }
-    const creek = creekNear(tx, ty), road = ground[idx(tx, ty)] === 3 || roadDist(tx, ty) < 1.5;
+    const creek = creekNear(tx, ty), road = ground[idx(tx, ty)] === 3 || laneDist(tx, ty) < 1.5;
     const plain = !lake && !creek && !road;
     for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
       const o = (tj * TILE + j) * TR_CPX + ti * TILE + i;
       if (plain) { m[o] = 1; continue; }
       const x = px0 + ti * TILE + i, y = py0 + tj * TILE + j;
       const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
-      if (creek && (creekAt(fx, fy) < 0.15 || paintsDeck(tx, ty))) continue;
-      if (road && roadDist(fx, fy) < 0) continue;
+      if (creek && creekAt(fx, fy) < 0.15 && !creekIced(fx, fy)) continue;
+      if (road && laneDist(fx, fy) < 0) continue;
       if (lake && iceAtPx(x, y)) { if (ground[idx(Math.floor(x / TILE), Math.floor(y / TILE))] !== 2) m[o] = 2; continue; }
       m[o] = 1;
     }
   }
   return m;
 }
-function paintsDeck(tx, ty) { return Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6; }
 
 // ---- the trample's pixels ----------------------------------------------------
 // Drawn at the world's own pixel, in flat shades, dithered on the world's

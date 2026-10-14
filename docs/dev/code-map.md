@@ -88,6 +88,18 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the gold pump (`teamBuild[skin(team)]`: `pumpAnim[tier][frame]`, `generator[tier]` the still, `icon.generator`; `SPRITES.pumpMouth`); never edit, repaint in app/bake-pump/pump.py and rebake with app/bake-pump/bake.py | `TIERS`, `ICON`, `BASE`, `MOUTH` | - |
 
+## js/sprites/orca.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the orca (`SPRITES.orca`: the breach stood up out of the water, jaws `open`/`shut` and their mirrors `openR`/`shutR`, its `jaw` point in the `bcell`; the shadow under the ice, `shadow[heading][tail]`, 16 headings from east, clockwise, in `cell` squares); never edit, repaint in app/bake-orca/paint.py (it rebakes this file) | the file's head | - |
+
+## js/sprites/cistern.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the cistern (`SPRITES.cistern`: `geo` its measures in tiles, `flat` the sills and every shadow, `segs` the standing stone in y-sorted pieces with their keys, `solid` the footprint as runs per ground row, all in box px round the crossing); never edit, repaint in app/bake-cistern/paint.py (it rebakes this file) | the file's head | - |
+
 ## js/sprites/eagle.js (plain script, no art)
 
 | Looking for | Start at | Banner |
@@ -209,6 +221,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the poll, which pad out of the browser's list (a live one over an idle ghost), the sticks, the aim off the body (and a wedge off a wheel's hub), the pointer over a panel, the walk under the panels that keep the world running, the stick-as-arrows repeat, A as the click or the selection | `padPoll`, `padFind`/`padLive`, `padAim`, `padRepeat`, `padTake`, `padMenuMode`/`padPanelMode`/`padPointerMode` | `gamepad` |
 | a pad in hand (the CONTROLS page opens on its tab); an unmapped pad's layout read off its rest values; the live sticks and triggers the readout draws | `padActive`, `pad`, `padCalibrate` (`pad.rest`), `pad.raw` | `gamepad` |
 
+## js/cistern.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the cistern at the middle: its measures off the bake, how far from the crossing, the footprint's distance field, how much of a step a body may take before its feet meet the stone, whether a body stood here would be in it, the road's end on the gates, laying its ground and its tile flags and cuts | `CIST_*`, `cistTiles`/`cistCuts`/`cistField`/`cistOn`, `cisternR`, `cisternC`, `cisternIn`, `cisternTile`/`cisternBlocks`/`cisternTouches`/`cisternCuts`, `cisternLane` (`laneDist`, world.js), `cisternDist`, `cisternCrowds`, `cisternReach` (from `moveEntity`, nav.js), `cisternField`, `placeCistern` (the last step of `placeCreek`, world.js) | `the cistern` (the pixels: js/draw/cistern.js; the art: js/sprites/cistern.js) |
+
 ## js/world.js
 
 | Looking for | Start at | Banner |
@@ -220,7 +238,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | what a kind of scenery **is** - solid, which tool, the E verb and lift, what each map paints it (the minimap's colour, the chart's class) | `OBJECTS` | `world` (buildings carry the same `mm`/`map` pair: `STRUCTS`, structures.js) |
 | what a tile's occupant paints on either map, over both tables: the minimap's colour, the chart's class, and the two team inks each map paints a side's buildings and its bird in | `objMapColor`, `objChart`, `CH_*`, `chTeam`/`chEagle`, `MM_TEAM_*`/`mmTeam`, `MM_EAGLE_*`, `MM_UNKNOWN` | `world` (its two readers: `updateMinimap` js/ui/minimap.js, `buildWorldMapImg` js/ui/panels.js) |
 | a picked bush's regrow clock, the frame the bush wears at each stage of it, and the bar a hover shows over it | `BUSH_REGROW`/`BUSH_BUD_T`/`BUSH_RIPEN_T` | `world` (the pick: `hitObject`'s bush branch, actions.js; the tick: the object-timers loop, sim.js; the frame and the hover bar: the bush branch of `render()` off `hovO`, js/draw/render.js; the grids: `bush`/`bushEmpty`/`bushBud`/`bushRipen`, the `bush` section of js/sprites/terrain.js) |
-| does this tile block a walker (a `gate` stands open to its own side's walker) | `isSolidTile` | `world` (it reads `STRUCTS` then `OBJECTS`, and names no type) |
+| does this tile block a walker (a `gate` stands open to its own side's walker; a tile whose middle is the cistern's stone, unless the caller holds a body to it by the pixel: `swept`) | `isSolidTile` | `world` (it reads `STRUCTS` then `OBJECTS`, and names no type) |
 | is this tile open water (an ice hole or the creek) - the one read every walker, route, spawn and climb-out asks | `waterAt` | `world` (under `isSolidTile`) |
 | is this tile a bare hole (the one site left), and which wheel table a pad's build wheel gets on it; the net on a tile | `buildSiteAt`, `buildOptionsAt`, `netAt` | `world` (the two `*_ORDER` tables: `structures`, structures.js) |
 | a footprint, turned or not: its width and height off the OBJECT (or a bare type, unturned), its tiles, its centre, its mouth, and the anchor a big piece ordered by one tile fits round | `structW`, `structH`, `structOf`, `footprint`, `structCenter`, `structMouth`, `findSite` | `world` |
@@ -228,8 +246,8 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the rocks: lifting what genWorld stood, standing them two tiles wide in mirrored clusters on the band out from the border forest, and which kind each is | `placeRocks`, `ROCK_CLUSTERS`/`ROCK_CLUSTER_R`/`ROCK_CLUSTER_SLACK`/`ROCK_BAND_MIN`/`ROCK_BAND_MAX`/`ROCK_BAND_GROW`/`ROCK_BAND_LIMIT`/`ROCK_SPACING` | `world` |
 | taking scenery off the map at runtime, the whole footprint (a two-tile rock) | `fellScenery` | `world` (its callers: the crash and the lane, boot.js; `merchFell`, robots.js) |
 | treasure chests: where they take their trees, and what one pays | `placeChests`, `CHEST_COUNT`/`CHEST_SPACING`/`CHEST_GOLD_*`/`CHEST_ODDS`/`CHEST_BURIED` (the share a grown shape digs in deep) | `world` (opening: `hitObject`'s chest branch, actions.js; sprite: `CHEST_SPR`, js/draw/ground.js) |
-| the road: its tuning, its geometry on the diagonal, each side's nest and junction, the spur registry a crash paves into, laying it, the march's waypoints | `ROAD_*`, `SPUR_HW`, `roadSpan`, `roadAlong`/`roadOffS`/`roadOff`/`roadPoint`, `roadHW`, `roadEdgeAt`, `roadMainDist`, `spurs`/`addSpur`/`addPad`/`spurDist`, `roadDist`, `onRoad`, `roadNestDeep`/`roadNest`, `placeRoad` (called at boot, boot.js), `roadWaypoints` | `world` › `the road` (pixels: `paintRoadOverlay` + `ROAD_COL_*`, `paintLog`/`LOG_COL` under `paintGroundTile`, `CAIRN_SPR`, js/draw/ground.js; `bannerCloth`, js/draw/practice.js; the maps: `updateMinimap`, js/ui/minimap.js, `buildWorldMapImg`, js/ui/panels.js; the paving: `laneStep`, js/eagle.js) |
-| the **creek**: its tuning, its geometry on the cross-diagonal, the bends round the two midline camps, the bridge deck, the fixed fords and a path's, laying it at boot, the distance to its banks and the current, the plunge test | `CREEK_*`, `BRIDGE_L`/`BRIDGE_W`, `creekP`, `creekBends`, `creekBend`, `creekCalm`, `creekMid`, `creekHW`, `CQ`/`creekAt`, `creekFlow`, `bridgeAt`, `creekWet`, `creekOuterFords`, `creekFord`, `placeCreek` (called at boot right after `genWorld`, boot.js; a path's fords: `addPathRoute`, `the paths`); the creek's catchable fish: `CREEK_FISH_*`, `creekFishN`, `creekFishAt` (where fish i is, a pure function of i and `windT`), `creekFishCatch` (a roll over one takes it, called from the roll in `updatePlayer`), `state.creekGone` | `world` › `the creek` (pixels: `paintCreek`/`paintFordStone`/`drawCreekFlow`/`drawCreekFish`, js/draw/ground.js; the plunge: `updatePlayer`, sim.js; the climb-out: `nearestDryTile`, actions.js; a bot's walk: `WADE_SHOVE`, sim.js) |
+| the road: its tuning, its geometry on the diagonal, each side's nest and junction, the spur registry a crash paves into, laying it, the march's waypoints | `ROAD_*`, `SPUR_HW`, `roadSpan`, `roadAlong`/`roadOffS`/`roadOff`/`roadPoint`, `roadHW`, `roadEdgeAt`, `roadMainDist`, `spurs`/`addSpur`/`addPad`/`spurDist`, `roadDist`, `laneDist` (the road as laid and drawn: ended on the cistern's gates), `onRoad`, `roadNestDeep`/`roadNest`, `placeRoad` (called at boot, boot.js), `roadWaypoints` | `world` › `the road` (pixels: `paintRoadOverlay` + `ROAD_COL_*`, `paintLog`/`LOG_COL` under `paintGroundTile`, `CAIRN_SPR`, js/draw/ground.js; `bannerCloth`, js/draw/practice.js; the maps: `updateMinimap`, js/ui/minimap.js, `buildWorldMapImg`, js/ui/panels.js; the paving: `laneStep`, js/eagle.js) |
+| the **creek**: its tuning, its geometry on the cross-diagonal, the bends round the two midline camps, the fixed fords and a path's, laying it at boot, the distance to its banks and the current, the plunge test | `CREEK_*`, `creekP`, `creekBends`, `creekBend`, `creekCalm`, `creekMid`, `creekHW`, `CQ`/`creekAt`, `creekFlow`, `creekWet`, `creekOuterFords`, `creekFord`, `placeCreek` (called at boot right after `genWorld`, boot.js; a path's fords: `addPathRoute`, `the paths`); **the orca's lake**, the cistern's frozen pool (`ORCA_LAKE_R`, `orcaLakeEdge`, `orcaLakeAt`, `orcaLakeNear`, `creekIced`; frozen by `placeCistern`, js/cistern.js; what lives under it: js/orca.js); the creek's catchable fish: `CREEK_FISH_*`, `creekFishN`, `creekFishAt` (where fish i is, a pure function of i and `windT`), `creekFishCatch` (a roll over one takes it, called from the roll in `updatePlayer`), `state.creekGone` | `world` › `the creek` (pixels: `paintCreek`/`paintFordStone`/`drawCreekFlow`/`drawCreekFish`, js/draw/ground.js; the plunge: `updatePlayer`, sim.js; the climb-out: `nearestDryTile`, actions.js; a bot's walk: `WADE_SHOVE`, sim.js) |
 
 ## js/zipline.js
 
@@ -276,7 +294,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | entity movement and unit-vs-unit solidity, and each body's room | `moveEntity`, `separateUnits`, `UNIT_MASS`, `unitSpace`, `UNIT_SPACE`, `UNIT_ROOM_RATE`, `unitShare` (the right of way; who outranks: `isAnchored`, `MONSTER.anchor`, wildlife.js) | `movement & collision` (the tile half, `isSolidTile`: `world`, world.js) |
-| routes around obstacles: A*, the per-unit route follower, the stall/give-up signal | `findPath`, `walkable`, `navTo`, `navStep`, `navLineClear` | `pathfinding` |
+| routes around obstacles: A*, the per-unit route follower, the stall/give-up signal, the toll a tile charges a route (the orca's ice) and the straight line that must not cut across it (nor the cistern's stone: `cisternBlocks`, `cisternCuts`, `cisternCrowds`, js/cistern.js) | `findPath`, `walkable`, `navTo`, `navStep`, `navToll` (set by `spawnOrca`, js/orca.js), `navLineClear` (its `free`: `navSmooth`, `navTo`) | `pathfinding` |
 
 ## js/wildlife.js
 
@@ -396,7 +414,14 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the ice breaking in its own shape (the orca's hole): the footprints, the tuning, breaking it, the tiles it opens and closes, the step, the footprint as a hit test, whether a pixel is its water, whether it holds a tile | `ICE_BREAK_SHAPES`/`breakLens`, `ICE_BREAK_*`, `iceBreaks`, `iceBreak`, `breakFoot`/`breakGeom` (the shape and the hole off `breakCache`), `breakOpen`/`breakClose`, `updateIceBreaks` (from `updatePlay`, sim.js), `iceBreakCovers`, `iceBreakWet` (the plunge, updatePlayer; `nearestDryTile`, actions.js; `moveEntity`, nav.js), `iceBreakHolds` (`paintGroundTile`, ground.js; the mirror, light.js; the fish clip, render.js), `iceBreakAge`/`breakFront` | `ice breaks` (the pixels: js/draw/icebreak.js; save: `SAVE_ROOTS`; wire: `snapSingles`) |
+| the ice breaking in its own shape (the orca's hole, `orcaStrike`, js/orca.js): the footprints (`orca` the orca's own), the tuning, breaking it, the tiles it opens and closes, the step, the footprint as a hit test, whether a pixel is its water, whether it holds a tile | `ICE_BREAK_SHAPES`/`breakLens`, `ICE_BREAK_*`, `iceBreaks`, `iceBreak`, `breakFoot`/`breakGeom` (the shape and the hole off `breakCache`), `breakOpen`/`breakClose`, `updateIceBreaks` (from `updatePlay`, sim.js), `iceBreakCovers`, `iceBreakWet` (the plunge, updatePlayer; `nearestDryTile`, actions.js; `moveEntity`, nav.js), `iceBreakHolds` (`paintGroundTile`, ground.js; the mirror, light.js; the fish clip, render.js), `iceBreakAge`/`breakFront` | `ice breaks` (the pixels: js/draw/icebreak.js; save: `SAVE_ROOTS`; wire: `snapSingles`) |
+
+## js/orca.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the orca: its tuning, its water and the homes it cruises to, putting it in at boot, the cruise, who it locks on and why it lets go, the line's clock, the strike that breaks the ice, the bite and its one-shot, the line a player wears | `ORCA_*`, `ORCA_FRESH`, `orca`, `orcaWater`/`orcaHome`, `orcaAge`, `orcaTileIn`/`orcaIn`/`orcaClear`, `orcaIce`/`orcaOnIce`, `orcaPrey`, `spawnOrca` (boot, after `spawnFish`), `orcaGoal`, `orcaSwim`, `orcaUnder`, `updateOrca` (from `updateWildlife`, sim.js, after `updateFish`), `orcaLook`, `orcaStrike` (`iceBreak`, icebreak.js), `orcaBite` (`unitsHit`, `hurtUnit` cause `orca`), `orcaLethal`, `orcaLine` | `orca` (its lake: `orcaLakeEdge`/`orcaLakeAt`, world.js; the pixels: js/draw/orca.js; the line's: `drawOrcaLine`, js/draw/overhead.js; save: `SAVE_ROOTS`; wire: `snapSingles`, the client's ease: `netClientLerp`, net.js) |
+| a bot the orca is after: the way off its ice | `orcaShore` (rung 0b of `updateAI`, ai.js; the bot API's `me.orca`, js/bots/api.js) | `orca` |
 
 ## js/tunnel.js
 
@@ -437,12 +462,13 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what a bot decides to do this frame | `updateAI` (the wrapper: the ride's let-go), `aiThink` (the ladder), `aiNearestEnemy`, `aiLineClear`, `aiOpenSides` | `ai` |
+| what a bot decides to do this frame | `updateAI` (the wrapper: the ride's let-go), `aiThink` (the ladder; rung 0, the skill point and the gear, is `aiSpend` above it), `aiNearestEnemy`, `aiLineClear`, `aiOpenSides` | `ai` |
 | IMPOSSIBLE's `relentless` played (never gives ground, everyone pushes as a pack from the zipline's end, charges past anything not at arm's length); the ability roll | `AI_PACK`/`AI_PACK_R` and `ai.packGo` (the pack, in the objective rung), `charge` (beside `siege`, in `aiThink`), `AI_ABIL_T` | `ai` (the levels themselves: js/ai-skill.js) |
 | how a bot covers ground: the zipline ride folded into every walk - is the cable worth it, the mount point, the hold along it and the let-go at the exit, the ride no rung wanted | `ZIP_AI_GAIN`/`ZIP_AI_OFF`, `aiWalkT`, `aiZipWorth`, `steerTo`/`walkTo` (inside `aiThink`; the mount is `zipMount`, js/zipline.js), `ai.zipUsed` (`updateAI`) | `ai` › `the ride` |
 | the objective: who pushes and who guards, the walk into a roost through its lane, the defenders' turrets, the archer's station, the siege that ignores respawning defenders | `aiRank`, `aiPushers`, `aiWantsPush`, `aiOnGuard`, `aiFortSite`/`AI_FORT_N`, `AI_PATROL_*` (a guard's turrets and scouting walk), `aiWallSite`/`aiWallPlan`/`AI_WALL_BOX` (its walls), `aiRingPlan`/`AI_RING_*` (how open the roost is: the defence line), `aiKeepsWay`/`aiLaneDist` (no bot building cuts a way: `ai` › `bot walls`), `AI_GUARD_HOT` (js/ai-team.js), `aiRivalEagle`/`aiOwnEagle`, `aiToRoost`, `aiLaneGate`, `aiInLane`, `aiEagleTile`, `AI_HOLD`, `AI_GATE`, `AI_ROOST_BUDGET`, `AI_ESCALATE`, `AI_SIEGE_R` (the `siege` read in `updateAI`) | `ai` › `difficulty` (the bird's numbers: `EAGLE_HP`/`EAGLE_ARROW_DMG`/`EAGLE_WORK_DMG`, js/eagle.js) |
 | what every bot knows about both birds: nerve, last hit, who is at each (a rival wave counted at half strength), the `threat` read the defend and push rungs ask, how many a threat calls home | `aiSituation`, `aiDefendersWanted`, `AI_ROOST_R`/`AI_DEFEND_T`/`AI_JOIN_HP`/`AI_ALARM_HP` | `ai` › `difficulty` › `the two birds` |
 | the waves as a bot sees them: a rival soldier in sight is a target, its own column's head is what a pusher walks with | `aiNearestEnemy` (its `robots` loop), `aiWaveHead`, `AI_WAVE_R`/`AI_WAVE_D` (the `head` read in rung 5c of `updateAI`) | `ai` |
+| a bot the orca is after: off its ice by the nearest way, a beat late | rung 0b of `aiThink` (`orcaShore`, js/orca.js) | `ai` |
 | an ally at your side: the escorts, the anchors that let it join your fight and your push | `aiEscorts`, `AI_ESCORT`/`AI_ESCORT_R`, `AI_ANCHOR_R`/`AI_ANCHOR_D` | `ai` › `difficulty` |
 
 ## js/ai-team.js
@@ -477,6 +503,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the frame sim: momentum, day/night, timers | `update`, `updatePlay` | `update` |
+| the wildlife's step of the frame: the animals, the lake's fish, the orca, the camps' clocks, the meadow's stock | `updateWildlife` (below `updatePlay`, which calls it) | `passive income` |
 | one player's step off its input, and the walk inside it - the heading, the knockback's decay, the ice underfoot, the slide, the surface model, the world's edge - which a client also runs on its own body ahead of the host (`netPredictWalk`, net.js) | `updatePlayer`, `walkHeading`, `kbDecay`, `iceUnder`, `walkSlide`, `walkStep`, `clampWorld` | `the player's step` |
 | the disc an arrow lands in round a body | `ARROW_HIT_R` (above `updatePlay`) | `update` |
 | a shot meeting everything its step CROSSED, in the order it met it: the swept disc and box, the tile walk (roost, dummy, wall), every standing building by its drawn shape (the art's opaque box, a turret's turntable disc), the target faces and the three kinds of body - resolved by the arrow loop in `updatePlay` | `sweepDisc`, `sweepBox`, `artBox`/`structShotBox` (also drawn by `drawHitboxes`), `shotContacts`, `shotHits` | `the shot's sweep` |
@@ -577,7 +604,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | ground painting and runtime repaints; the lazy bake in chunks (boot's prep, the view's chunks, the idle fill) | `paintGroundTile`, `repaintGround`, `hash2`, `vnoise`; `GROUND_CHUNK`/`GROUND_CN`/`GROUND_IDLE_MS`, `groundDone`/`groundLeft`/`groundBaked`, the pixel pen `penDot`/`penFlush` (every single-pixel painter's fills), `prepGround` (called at boot), `bakeGroundChunk`, `groundView` (called by `render()` before the ground blit), `groundNext`/`groundIdle`/`groundIdleArm`, `renderGround` (the whole map now) | `ground prerender` |
 | the road's pixels: the overlay and its colours, the ruts, the felled trunk across each forest end | `paintRoadOverlay` + `ROAD_COL_*`, `roadRutAt`/`roadRutCache`, `paintLog`/`LOG_COL` (under `paintGroundTile`) | `the road's pixels` (the geometry they read: `the road`, world.js) |
-| the creek's pixels: the water, its lit lip and pale far bank, the still streaks, a ford's stone, the plank deck with its posts and pilings, the current's moving glints, and the whitefish and snow char swimming down it under the water | `CREEK_COL`/`STONE_COL`/`DECK_COL`, `CREEK_SUN_X`/`CREEK_SUN_Y`, `DECK_LK`/`DECK_WM`/`DECK_C`, `creekNear`, `paintCreek` (under `paintGroundTile`), `deckPost`, `paintFordStone`, `drawCreekFlow` (called by `render()` right after the ground blit) + `FLOW_SPD`/`FLOW_RUN`/`FLOW_A`, `drawCreekFish` (just before it, so the glints run over the fish) + `SWIM_A`/`SWIM_BEAT` (the sprites: `SPRITES.creekFish`, js/sprites/fish.js) | `the creek's pixels` (the geometry they read: `the creek`, world.js) |
+| the creek's pixels: the water, its lit lip and pale far bank, the still streaks, a ford's stone, the frozen stretch through the cistern, the current's moving glints, and the whitefish and snow char swimming down it under the water | `CREEK_COL`/`STONE_COL`, `CREEK_SUN_X`/`CREEK_SUN_Y`, `creekNear`, `paintCreek` (under `paintGroundTile`), `paintFordStone`, `drawCreekFlow` (called by `render()` right after the ground blit) + `FLOW_SPD`/`FLOW_RUN`/`FLOW_A`, `drawCreekFish` (just before it, so the glints run over the fish) + `SWIM_A`/`SWIM_BEAT` (the sprites: `SPRITES.creekFish`, js/sprites/fish.js) | `the creek's pixels` (the geometry they read: `the creek`, world.js) |
 | a lake's ragged shore, its bank (the downwind bank, dust and cracks laid over it: js/draw/lakes.js), the two lake styles and which one each lake rolled, the depth in from the shore, the night mirror's shore masks | `ICE_STYLES`, `bakeLakes` (`lakeStyle`/`lakeDepth`, rolled by `rollIceStyle`; a tile iced after the bake: `relabelIce`, from `repaintGround`), `iceAtPx` (the edge test), `depthAtPx`, `iceTone`, `bankAt`, `paintIceTile`, `paintSnowShore`, `mirrorCv`/`mirrorSlot`/`markMirror` | `the ice shore` (the mirror drawn: `drawIceStars`, js/draw/light.js) |
 | open snow's drifts: the tones, the three looks and their regions, the height lattice and a chunk bake's shared window of it, a tile's tones, a chunk bake's row strip | `SNOW_PAL`, `SNOW_LOOKS`, `SNOW_REGION`/`SNOW_CUT`/`SNOW_BLEND`, `snowH`, `snowTile` (fills `snowTone`; the ice shore reads it too), `paintSnowTile`, `LAT_*`/`latVal`/`latHas`/`snowLatOpen`/`snowLatClose`, `snowStrip`/`snowBulk` (called by `bakeGroundChunk`) | `the snow's pixels` |
 | the sweep's streaks: the world grid they are laid on, how many, how far they drift, how long, their strands, the shadow and the drift | `drawSweep` (called by `render()` before `drawDropAir`), `SWEEP_CELL_W`/`SWEEP_CELL_H`/`SWEEP_RUN`/`SWEEP_STREAKS`/`SWEEP_LEN`/`SWEEP_LAG`/`SWEEP_STRANDS`/`SWEEP_SHADE`/`SWEEP_BODY`/`SWEEP_FULL` | `the wind's sweep` (when one blows: `windSweep`, js/weather.js) |
@@ -604,6 +631,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the long cracks on a big lake | `bakeCracks`, `walkCrack`, `crackLine`, `CRACK_*` | `long cracks` |
 | the dust on the ice, and the hook that scuffs it | `dustIce` (called on each ice pixel by `paintIceTile`/`paintSnowShore`), `iceDust`, `dustLee`/`bakeDustLee`, `DUST_*`, `trodden` (reads `trampleAt`), `iceDustInvalidate` (trampled snow calls it) | `dust on the ice` |
 | the weather on the ice every frame: the dials, blown streaks over big lakes, a frosty night's glints and cracks, fresh dust | `lakeSky`, `drawLakeSky` (called by `render()` after `drawIceStars`), `LSTREAK_*`, `GLINT_*`, `CRACK_FROST*`, `dustCv`/`DUST_VARS`/`DUST_LEVELS` | `the weather on the ice` |
+| the lake's fish drawn: a shadow under the ice, crisp where one crosses an open hole | `drawIceFish` (called by `render()` right after the ground blit) | `the fish under the ice` |
 
 ## js/draw/trample.js
 
@@ -632,6 +660,18 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | an ice break's pixels: the warning cracks, the water, the plates in flight, the crack band and the long cracks, the freeze front and the new ice, the canvas each break owns | `IB_*`, `breakArt` (the parts that never change, built once a screen), `paintIceBreak` (one frame of it), `drawIceBreaks` (`render()`, after the pick cracks) | `ice breaks, drawn` (the thing itself: js/icebreak.js) |
 
+## js/draw/orca.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the orca's pixels: the shadow under the ice (cut to the ice's own pixels, darkening as it comes up) and the breach (the lunge out of the hole, jaws anchored on the bitten spot, cut at the waterline, the slide back down) | `ORCA_SHADE*`, `ORCA_DEPTH`/`ORCA_DROP`/`ORCA_JAW_AT`, `orcaMask`/`orcaMaskBuild`, `drawOrcaShadow` (`render()`, after the lake's fish), `drawOrcaBreach` (the y-sorted list's `orca` entry, `render()`) | `the orca, drawn` (the thing itself: js/orca.js; the line: `drawOrcaLine`, js/draw/overhead.js) |
+
+## js/draw/cistern.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the cistern's pixels: its flat layer into the ground canvas a tile at a time, its stone into render's y-sorted pass (with the orca out of its ice), and the `.` view's footprint edge and feet rings | `cistOrigin`, `paintCisternFlat` (under `paintGroundTile`, ground.js), `pushMiddleDraws` (from `render()`), `drawCisternSeg`, `drawOrcaUp`, `drawCisternHitbox` (from `drawHitboxes`, render.js) | `the cistern's pixels` (the sim: js/cistern.js) |
+
 ## js/draw/tunnel.js
 
 | Looking for | Start at | Banner |
@@ -645,6 +685,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the arrow body every shaft draws: the DDA rasteriser (crisp diagonals, mirrored vanes; the arrow's map by default, a bit's own shaft map when handed one), the parse that makes a shaft map, and its rim/colour painter | `arrowBodyPx`, `shaftBody`, `paintArrowPx` (the master: `ARROW_MAP`/`ARROW_BODY`, actions.js; the other shafts: `the bodies a bit flies as`, render.js) | `the arrow body, shared` |
 | the overhead frame and the name over it: the three bars' palette (health by side, stamina white, the draw meter's two golds) | `BAR_FRAME`/`BAR_TRACK` (every frame's opaque ink and track), `BAR_NEUTRAL`/`barCol`, `STAM_COL`/`STAM_GHOST`, `DRAW_COL`/`DRAW_FULL_COL`/`DRAW_FULL_FLASH`, `NOCK_COL`/`EAT_COL`, `THREAT_COL` (a camp monster's leash bar; a deer's sprint bar and a rabbit's dodge bar reuse `STAM_COL`), `drawHealthBar` (a plate: `healthBarPx` draws it; its `u` hangs the body's damage total) and its hp chunks (`HP_SEG`/`HP_SEG_PX`/`hpSegCount`/`evenBarW`) | `the arrow body, shared, and the frame over every unit's head` (where the stack sits and the odd-width centring: `FRAME_DX`/`centreTextX`, js/draw/bodies.js) |
 | the dawn shield's gold row over a player's hp bar, and the lift it gives the meter, name and callout | `drawShieldBar`, `SHIELD_LIFT`, `SHIELD_HI`/`SHIELD_LO`/`SHIELD_TICK`/`SHIELD_GLINT` (called by `drawPlayer`, js/draw/bodies.js) | `the arrow body, shared, and the frame over every unit's head` |
+| the orca's line over the head it is after: a segment a second, blinking white in the last, stacked over the shield row | `drawOrcaLine`, `ORCA_LINE_HI`/`ORCA_LINE_LO` (called by `drawPlayer`, js/draw/bodies.js, off `orcaLine`, js/orca.js) | `the arrow body, shared, and the frame over every unit's head` |
 | the level plate a hero and a beast share, the noticed `!` over an animal that sees you, the stun stars | `drawLevelBadge`, `drawSenseMark`, `drawStunStars` (under `drawHealthBar`) | `the arrow body, shared, and the frame over every unit's head` |
 | the running damage total beside a frame's right edge: queuing it with the frame, its size, hold, fade and pop, a dead body's float, stamping it on the screen after the world blit, and a target's gold word beside them | `queueTally`, `drawTallies` (called from `render`, js/draw/render.js), `tallyImg`/`tallyInk`, `TALLY_SC`/`TALLY_POP_SC`, `TALLY_FADE`/`TALLY_POP`; a dead body's total floating off: `tallySpot`, `TALLY_DEATH`/`TALLY_RISE`, `tallyFall` (called from `trackDowns`, js/draw/bodies.js) (the total itself: `tallyHit`, js/core.js) | `the running damage total beside the bar` |
 | the build reveal a structure grows in under, and the barracks' overlay | `bigBuildReveal`, `drawBarracksOverlay` | `the arrow body, shared, and the frame over every unit's head` (the barracks' entry: `STRUCTS`, structures.js) |

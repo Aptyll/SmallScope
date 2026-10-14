@@ -117,7 +117,7 @@ function paintGroundTile(g, tx, ty) {
         // earth spilling over this tile's share of the crossing, rimmed along
         // its own ragged edge rather than along the tile's sides. The diagonal
         // road never meets ice on any shape (ROAD_ICE_KEEP); a path does.
-        if (roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, true);
+        if (laneDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, true);
       } else {
         // the drifts, every pixel (the `snow's pixels` banner below)
         paintSnowTile(g, px, py);
@@ -139,10 +139,10 @@ function paintGroundTile(g, tx, ty) {
         paintDressing(g, tx, ty, px, py);
         // the road (ground 3, and the snow beside it) is painted OVER the
         // snow per pixel, against its ragged edge - never per tile
-        if (gv === 3 || roadDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
+        if (gv === 3 || laneDist(tx, ty) < ROAD_SHOULDER + 1.2) paintRoadOverlay(g, tx, ty, px, py, false);
       }
-      // the creek (ground 4, its fords 5, its deck 3) is painted OVER whatever
-      // the tile is, per pixel against its wandering banks, like the road
+      // the creek (ground 4, its fords 5) is painted OVER whatever the tile
+      // is, per pixel against its wandering banks, like the road
       if (creekNear(tx, ty)) paintCreek(g, tx, ty, px, py);
       // the felled trunk across a forest road (placeRoad, world.js) lies flat
       // on the ground, so it is ground: baked here over whatever the tile is.
@@ -153,6 +153,8 @@ function paintGroundTile(g, tx, ty) {
         const dx = LOG_NBR[n], dy = LOG_NBR[n + 1], lo = objAt(tx + dx, ty + dy);
         if (lo && lo.type === 'log') paintLog(g, lo.seg, px, py, -dx * TILE, -dy * TILE);
       }
+      // the cistern's sills and the shadow its stone throws (js/draw/cistern.js)
+      paintCisternFlat(g, tx, ty, px, py);
       // last, over everything lying on the ground: the shade the scenery
       // standing around this tile throws across it (the `cast shadows` banner)
       paintCastShade(g, tx, ty, px, py);
@@ -234,7 +236,7 @@ function roadRutAt(u) {
 function paintRoadOverlay(g, tx, ty, px, py, onIce) {
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
-    const d = roadDist(fx, fy);
+    const d = laneDist(fx, fy); // ...which ends on the cistern's gates (js/world.js)
     if (d >= ROAD_SHOULDER) continue;
     const hp = hash2(px + i, py + j); // this pixel's own roll
     // the drift field: snow lies on the verge and mud spreads off it in
@@ -276,73 +278,38 @@ function paintRoadOverlay(g, tx, ty, px, py, onIce) {
 // straight run. Faint streaks drift along the current (the bake's are
 // still; drawCreekFlow moves more over them every frame). A FORD tile
 // (ground 5) is a snow-capped boulder in the current, foam heaped on its
-// upstream side. The BRIDGE is look A of bridge-concepts-1.png, PLANK DECK:
-// planks laid across the way on the two diagonals, a stringer down each open
-// side, snow drifted onto the edges and trodden off the middle, a post at
-// each corner and three pilings in the water upstream; the creek comes out
-// from under it in shade. Every pixel is a function of its position alone,
+// upstream side. Inside the cistern the creek is under the ice (creekIced):
+// the lake's own pixels, and the culverts it runs out of are the wall's art
+// (js/sprites/cistern.js). Every pixel is a function of its position alone,
 // so any repaint lays back exactly what the bake laid.
 const CREEK_COL = {
   deep: '#2c5068', mid: '#335a73', shal: '#3f6c84', shade: '#24435a', under: '#1d3649',
   glint: '#5d8aa2', glint2: '#88b3c6', lip: '#ffffff', face: '#dbe8f3', faceD: '#c3d5e6', foam: '#dcecf5',
 };
 const STONE_COL = { rim: '#3a3f4f', dark: '#6b7486', mid: '#8a93a4', lit: '#a9b2c1', snow: '#eef4fb', snowL: '#ffffff', wet: '#1f3a4e', foam: '#dcecf5' };
-const DECK_COL = {
-  gap: '#3b2716', a: '#8a6142', b: '#7c5639', c: '#95704f', dark: '#5a3d24', rim: '#2a1c10',
-  snow: '#eef4fb', snowD: '#d3dfec', beam: '#6b4a2a', beamL: '#8f6a48', post: '#4a3218', postL: '#8a6142', cap: '#f4f7ff',
-};
 const CREEK_SUN_X = 0.88, CREEK_SUN_Y = 0.48; // the way the light runs (SUN_DX/SUN_DY, normalised): a bank facing against it is the lit lip
-const DECK_LK = BRIDGE_L * TILE * Math.SQRT2, DECK_WM = BRIDGE_W * TILE * Math.SQRT2; // the deck's half-sizes on the pixel diagonals
-const DECK_C = ((WORLD - 1) / 2 + 0.5) * TILE;  // world px of the crossing
-// does this tile hold any of the creek's pixels (water, bank, deck, post)?
+// does this tile hold any of the creek's pixels (water, bank)? Not deep in
+// the cistern's pool, where it runs under the ice: those are the lake's
 function creekNear(tx, ty) {
-  if (PRACTICE) return false;
-  return creekAt(tx, ty) < 1.25 || (Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6);
-}
-// a post (s = 2, 5x5, on the deck's corners) or a piling (s = 1, in the
-// water): an upright stub seen from above, its top capped with snow
-function deckPost(ax, ay, s, water) {
-  const m = Math.max(Math.abs(ax), Math.abs(ay));
-  if (m > s) return water && m === s + 1 && ax + ay <= 0 ? CREEK_COL.foam : null; // the current heaps against its upstream face
-  if (m === s) return DECK_COL.rim;
-  return ay < 0 && ax < s - 1 ? DECK_COL.cap : ax + ay < 0 ? DECK_COL.postL : DECK_COL.post;
+  if (PRACTICE || creekAt(tx, ty) >= 1.25) return false;
+  return cisternR(tx, ty) > CIST_ICE - 1.5;
 }
 function paintCreek(g, tx, ty, px, py) {
-  const deck = Math.abs(creekP(tx, ty)) < BRIDGE_L + 1.2 && Math.abs(roadOffS(tx, ty)) < BRIDGE_W + 1.6;
-  const posts = [];
-  if (deck) {
-    for (const sk of [-1, 1]) for (const sm of [-1, 1]) posts.push([sk * (DECK_LK - 1), sm * (DECK_WM - 1), 2]);
-    for (const k of [-20, 0, 20]) posts.push([k, -DECK_WM - 7, 1]);
-  }
+  const iced = orcaLakeNear(tx, ty); // the cistern may freeze some of this tile's water (creekIced, js/world.js)
   for (let j = 0; j < TILE; j++) for (let i = 0; i < TILE; i++) {
     const x = px + i, y = py + j;
     const fx = tx + (i + 0.5) / TILE - 0.5, fy = ty + (j + 0.5) / TILE - 0.5;
     const hp = hash2(x * 7 + 13, y * 11 + 5), dith = BAYER4[(y & 3) * 4 + (x & 3)] + 0.5;
     let c = null;
-    // the deck's own lattice: k across the creek (along the road), m along it
-    const k = x - y, m = x + y + 1 - 2 * DECK_C;
-    if (deck) {
-      for (const [pk, pm, s] of posts) {
-        const ax = x - Math.round(DECK_C + (pk + pm - 1) / 2), ay = y - Math.round(DECK_C + (pm - 1 - pk) / 2);
-        if (Math.abs(ax) <= s + 1 && Math.abs(ay) <= s + 1) { c = deckPost(ax, ay, s, s === 1); if (c) break; }
-      }
-      if (!c && Math.abs(k) <= DECK_LK && Math.abs(m) <= DECK_WM) {
-        const em = DECK_WM - Math.abs(m), ek = DECK_LK - Math.abs(k);
-        if (em < 2 || ek < 2) c = DECK_COL.rim;
-        else if (em < 8) c = em >= 6 ? DECK_COL.dark : m < 0 ? DECK_COL.beamL : DECK_COL.beam; // the stringer down each open side
-        else {
-          const r = (k + 1000) % 6, tone = hash2(Math.floor((k + 1000) / 6), 17);
-          c = r === 0 ? DECK_COL.gap : tone < 0.33 ? DECK_COL.a : tone < 0.66 ? DECK_COL.b : DECK_COL.c;
-          if (r !== 0 && hp > 0.985) c = DECK_COL.dark; // a nail, a knot
-          const drift = vnoise(x / 4 + 1.3, y / 4 + 2.1) * 0.5 + (Math.abs(m) / DECK_WM) * 0.75;
-          if (drift > 0.93) c = drift > 0.99 ? DECK_COL.snow : DECK_COL.snowD;
-          else if (r === 0 && Math.abs(m) > DECK_WM * 0.55 && hp > 0.4) c = DECK_COL.snowD;
-        }
-      }
-      if (c) { penDot(g, c, x, y); continue; }
-    }
     const d = creekAt(fx, fy);
     if (d > 0.3) continue;
+    // the orca's lake: the creek runs on under its ice, and under the wall.
+    // The sheet is the lake's own shore (the ice painter's, iceAtPx); water
+    // the shore leaves bare is ice too (under the wall's foot)
+    if (iced && creekIced(fx, fy)) {
+      if (iceAtPx(x, y)) continue;
+      if (d < 0) { penDot(g, dustIce(x, y, iceTone(x, y, ICE_STYLES[ORCA_ICE], hp)).css, x, y); continue; }
+    }
     const e = -d * TILE, a = CQ.a, n = CQ.n; // px into the water; where along and across it
     // which bank: the slope of the distance points out of the water, and a
     // bank facing back against the light is the lit lip
@@ -357,10 +324,6 @@ function paintCreek(g, tx, ty, px, py) {
       if (lip && e < 3 + vnoise(a * TILE / 6, 2) * 2) c = CREEK_COL.shade;
       const fl = vnoise(a * TILE / 11 + 5, n * TILE / 1.6 + 9); // a noise stretched along the current: its peaks are the streaks
       if (e > 2.5 && fl > 0.8 && hp > 0.15) c = fl > 0.9 ? CREEK_COL.glint2 : CREEK_COL.glint;
-      if (deck && Math.abs(k) <= DECK_LK) {
-        if (m > DECK_WM && m < DECK_WM + (5 + vnoise(k / 6, 7) * 3) * Math.SQRT2) c = CREEK_COL.under; // coming out from under the deck
-        else if (m < -DECK_WM && m > -DECK_WM - 3 && hp > 0.3) c = CREEK_COL.foam;            // ...and heaped against it going in
-      }
     } else if (e > -2.2) c = lip ? CREEK_COL.lip : (e > -1 ? CREEK_COL.faceD : CREEK_COL.face);
     else if (!lip && e > -4 && dith > 0.5) c = CREEK_COL.face;
     if (c) penDot(g, c, x, y);
@@ -557,6 +520,7 @@ const ICE_STYLES = [
   { id: 'deep',  w: 2, amp: 0.5,  fr: 0.75, amp2: 0.1,  fr2: 0.25, band: 3, deep: true },
 ];
 const ICE_W = ICE_STYLES.reduce((a, s) => a + s.w, 0);
+const ORCA_ICE = ICE_STYLES.findIndex((s) => s.deep); // the orca's lake's style, whatever its roll (bakeLakes)
 const rgbOf = (h) => { const a = [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; a.css = h; return a; };
 const ICE_TONE = [rgbOf('#b9dcec'), rgbOf('#c4e3f0')];     // the sheet, in two tones by a dithered low noise
 const ICE_SHALLOW = [rgbOf('#c9e7f3'), rgbOf('#d0ebf5')];  // DEEP: the shelf along the shore
@@ -600,9 +564,16 @@ function relabelIce(tx, ty) {
 function bakeLakes() {
   const N = WORLD * WORLD, q = new Int32Array(N), D4 = [1, 0, -1, 0, 0, 1, 0, -1];
   lakeStyle = new Uint8Array(N).fill(255); lakeDepth = new Uint8Array(N);
-  for (let i = 0; i < N; i++) {
+  // the orca's lake (js/world.js) is labelled first, and always DEEP: the
+  // dark middle is where it swims. Whatever ice it meets takes its style.
+  const c = Math.round((WORLD - 1) / 2), orcaAt = [];
+  for (let dy = -14; dy <= 14; dy++) for (let dx = -14; dx <= 14; dx++) {
+    if (isLake(c + dx, c + dy) && orcaLakeAt(c + dx, c + dy)) orcaAt.push(idx(c + dx, c + dy));
+  }
+  for (let o = -orcaAt.length; o < N; o++) {
+    const i = o < 0 ? orcaAt[-o - 1] : o;
     if (lakeStyle[i] !== 255 || !isLake(i % WORLD, (i / WORLD) | 0)) continue;
-    const s = rollIceStyle(i % WORLD, (i / WORLD) | 0);
+    const s = o < 0 ? ORCA_ICE : rollIceStyle(i % WORLD, (i / WORLD) | 0);
     let n = 0; q[n++] = i; lakeStyle[i] = s;
     while (n) {
       const j = q[--n], x = j % WORLD, y = (j / WORLD) | 0;

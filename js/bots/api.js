@@ -99,6 +99,7 @@ function botObserve(p) {
     nav: botRt.get(p.id) ? botRt.get(p.id).nav : null,
     lastCmd: p.lastCmd ? Object.assign({}, p.lastCmd) : null,
     atShop: !!merchNear(p),
+    orca: botR(orcaLine(p)), // the line over the head (js/orca.js): s left, -1 when it is not after you
   };
   const allies = [], enemies = [];
   for (const q of players) {
@@ -185,7 +186,7 @@ function botAbility(p, i, lv) {
   return { key: i, id: ab.id, lv, cd: botR(p.abCd[i]), ready: abReady(p, i), range: aim.line || aim.ring || aim.cone || null };
 }
 // the map as it stood when the seat was taken, one character a tile, a row a
-// string: '#' solid, '~' open water, '-' ice, '=' road or bridge, ',' a ford,
+// string: '#' solid, '~' open water, '-' ice, '=' road or a gate's sill, ',' a ford,
 // '.' snow. Trees fall and buildings rise after it: obs.nodes and obs.structs
 // are the live word on what stands near you
 const BOT_GROUND = '.-~==,';

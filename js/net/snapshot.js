@@ -149,6 +149,7 @@ function snapSingles() {
   s.holes = holes.slice();
   s.iceCracks = [...iceCracks.entries()];
   s.iceBreaks = iceBreaks.slice(); // plain numbers and tile lists: every screen rebuilds the pixels (js/icebreak.js)
+  s.orca = pack(orca, 0); // the orca's few numbers (js/orca.js); a client eases its x/y like a body's
   s.nets = pack(nets, 0);
   s.market = pack(market, 0);
   return s;
@@ -193,6 +194,7 @@ function snapApplySingles(s) {
   if (s.holes) { holes.length = 0; for (const h of s.holes) holes.push(h); }
   if (s.iceCracks) { iceCracks.clear(); for (const [k, v] of s.iceCracks) iceCracks.set(k, v); }
   if (s.iceBreaks) { iceBreaks.length = 0; for (const b of s.iceBreaks) iceBreaks.push(Object.assign({}, b)); }
+  if (s.orca) Object.assign(orca, unpack(s.orca));
   if (s.nets) { nets.length = 0; for (const n of unpack(s.nets)) nets.push(n); }
   if (s.market) { const mk = unpack(s.market); for (const k of Object.keys(mk)) market[k] = mk[k]; }
 }
@@ -690,6 +692,7 @@ function snapBlank() {
   for (const k in SNAP_KINDS) SNAP_KINDS[k]().length = 0;
   nets.length = 0;
   holes.length = 0; iceCracks.clear(); iceBreaks.length = 0; spurs.length = 0;
+  Object.assign(orca, ORCA_FRESH());
   for (const c of camps) c.repopT = 0;
   if (state.drop) for (const e of state.drop.eagles) for (const k of Object.keys(e)) if (!SNAP_SKIP.has(k) && k !== 'team') e[k] = typeof e[k] === 'number' ? 0 : null;
   for (const k of SNAP_STATE) if (typeof state[k] === 'number') state[k] = 0;

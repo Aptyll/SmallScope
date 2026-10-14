@@ -259,9 +259,9 @@ function zipEnd(p, fell) {
   p.zip = -1;
   navClear(p);
   if (fell) { p.vx = 0; p.vy = 0; }
-  // a pine or a rock stands under the shoulder here and there: come down beside it
+  // a pine, a rock or the cistern's stone stands under the shoulder here and there: come down beside it
   const tx = Math.floor(p.x / TILE), ty = Math.floor((p.y + 4) / TILE);
-  if (isSolidTile(tx, ty)) {
+  if (isSolidTile(tx, ty) || cisternCrowds(p.x, p.y, PLAYER_R)) {
     const out = nearestDryTile(p.x, p.y + 4, p);
     p.x = (out.tx + 0.5) * TILE; p.y = (out.ty + 0.5) * TILE - 4;
   }

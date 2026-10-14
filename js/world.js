@@ -36,9 +36,9 @@ function objAt(tx, ty) { return inWorld(tx, ty) ? objects[idx(tx, ty)] : null; }
 // so a one-tile wall never drops out of its run. A side's buildings and
 // its eagle are two depths of the same ink, so a base reads as a shape in
 // its colour with the bird bright at its heart - and both go through skin()
-// like every other team paint.
+// like every other team paint. The cistern's stone (cisternTouches) inks last.
 const CH_SNOW = 0, CH_FOREST = 1, CH_ROAD = 2, CH_ICE = 3, CH_HOLE = 4, CH_CHEST = 5,
-      CH_RED = 6, CH_BLUE = 7, CH_EAGLE_RED = 8, CH_EAGLE_BLUE = 9;
+      CH_RED = 6, CH_BLUE = 7, CH_EAGLE_RED = 8, CH_EAGLE_BLUE = 9, CH_STONE = 10;
 const chTeam = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_BLUE : CH_RED;   // a side's building
 const chEagle = (o) => skin(o.team === undefined ? 0 : o.team) ? CH_EAGLE_BLUE : CH_EAGLE_RED; // its bird, its gate
 const OBJECTS = {
@@ -196,9 +196,13 @@ const MM_UNKNOWN = [188, 200, 218];
 
 // `e`, when given, is who is walking: a `gate` stands open to its own side
 // and to nobody else (the rest of the world - shots, wildlife, the maps -
-// asks without one and meets a wall).
-function isSolidTile(tx, ty, e) {
+// asks without one and meets a wall). `swept`: the caller holds the body to
+// the cistern's stone by the pixel itself (moveEntity), so its tiles do not
+// count here; to everyone else a tile whose middle is its stone is a wall
+// (cisternTile, js/cistern.js).
+function isSolidTile(tx, ty, e, swept) {
   if (!inWorld(tx, ty)) return true;
+  if (!swept && cisternTile(tx, ty)) return true;
   const o = objects[idx(tx, ty)];
   if (!o) return false;
   if (e && o.team !== undefined && e.team === o.team && STRUCTS[o.type] && STRUCTS[o.type].gate) return false;
@@ -984,7 +988,12 @@ function roadSpan() {
   roadSpanC = { u0: last(true), u1: WORLD - 1 - last(false) };
   return roadSpanC;
 }
-function onRoad(tx, ty) { return roadDist(tx, ty) < 0; }
+// the road as it is LAID and DRAWN: roadDist, ended on the cistern's gates
+// (cisternLane, js/cistern.js) - the road through the middle is the orca's
+// ice. Not genWorld's: its carve rules ask roadDist itself, before the creek
+// is in, so no seed's ponds move
+function laneDist(fx, fy) { return Math.max(roadDist(fx, fy), cisternLane(fx, fy)); }
+function onRoad(tx, ty) { return laneDist(tx, ty) < 0; }
 // where a side's bird roosts, off its own forest road: the JUNCTION on the
 // centreline at least ROAD_NEST_IN past the gate, and the NEST ROAD_NEST_OFF
 // tiles off it to the bird's own right - RED (team 0) flies down to the
@@ -1037,7 +1046,7 @@ function placeRoad() {
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     if (!onRoad(tx, ty)) continue;
     const i = idx(tx, ty);
-    if (ground[i] === 4 || ground[i] === 5) continue; // the creek runs under the lane (its deck is laid already), and a path stops at its water
+    if (ground[i] === 4 || ground[i] === 5) continue; // the lane never paves the creek, and a path stops at its water
     ground[i] = 3; // the lane is never ice (genWorld keeps it ROAD_ICE_KEEP away); a PATH crossing a frozen lake is
 
     objects[i] = null; // only worldgen's scenery stands here yet: a pine of the woods it cuts through, a rock, a bush
@@ -1205,7 +1214,7 @@ function indexPaths() {
 // The camps are not standing yet either (placeCamps runs after the road), so
 // their ground is kept off by geometry - `block`, the discs layPaths hands in.
 function pathCost(tx, ty, block, cut) {
-  if (Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) < 4) return -1;
+  if (Math.min(tx, ty, WORLD - 1 - tx, WORLD - 1 - ty) < 4 || cisternIn(tx, ty)) return -1; // a path goes round the cistern
   const i = idx(tx, ty);
   const g = ground[i];
   if (g === 2) return -1;
@@ -1328,9 +1337,9 @@ function layPaths() {
 // into an ice hole (updatePlayer) - a roll started at the bank carries over it, and the
 // scramble out is back onto the bank they went in from (nearestDryTile). The
 // ways over, all of them ground that walks like snow:
-//   - the BRIDGE: the road crosses on a timber deck (ground 3, so to every
-//     rule it is road) the lane's width, with open sides - shoved off one,
-//     you are in the creek;
+//   - THE CISTERN at the middle (js/cistern.js): the creek pools inside its
+//     ring and the pool is frozen over, the orca's lake (below), so the road
+//     goes in at one gate and out at the other across the ice;
 //   - an outer FORD on each stretch between a bend and the treeline;
 //   - a ford wherever a grown shape's path crosses (addPathRoute).
 // A ford is a row of stepping stones (ground 5) along one tile row across
@@ -1341,8 +1350,8 @@ function layPaths() {
 // BLACK BEAR STONE, whose bears walk the bend's bank: riverPath) each have the creek swing round them in a half-loop, so
 // each falls on one side's bank: the upstream one (the brown bear) to RED,
 // the downstream one (the black bear) to BLUE. The line is point-symmetric
-// about the bridge, as the roosts are. The other side reaches its rival's
-// camp over the bridge or the outer ford past it.
+// about the crossing, as the roosts are. The other side reaches its rival's
+// camp across the cistern's ice or by the outer ford past it.
 //
 // Geometry, in tiles, off the road's own frame: `w` along the creek is
 // roadOffS (+ downstream, toward the bottom-right) and `p` across it is
@@ -1355,14 +1364,12 @@ function layPaths() {
 const CREEK_HW = 1.6;       // tiles either side of the creek's line the water runs: about three tiles across, which a roll from the bank still clears
 const CREEK_HW_RAG = 0.22;   // ...that each bank wanders on the position noise
 const CREEK_WANDER = 2.5;    // tiles the line itself wanders off the cross-diagonal, either way
-const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the bridge, a bend or a ford
+const CREEK_CALM = 10;       // tiles over which the wander eases to nothing at the cistern, a bend or a ford
 const CREEK_REACH = CREEK_WANDER + CREEK_HW + CREEK_HW_RAG + 0.4; // the farthest a bank ever stands off the line's bend
 const CREEK_COST = 6;        // what a tile of creek costs a path's route (pathCost): it crosses, and short
 const CREEK_BEND_GAP = 1.2;  // tiles of dry bank between a path's end at a bend's camp (r + PATH_CAMP) and the water
 const CREEK_BEND_LONG = 2.2; // a bend runs this many times its reach along the creek either way (2 or more keeps the camp clear)
 const CREEK_FORD_GAP = 14;   // tiles of creek an outer ford needs between a bend and the treeline
-const BRIDGE_L = CREEK_HW + 0.95; // tiles the deck runs either side of the creek's line, along the road: bank to bank and a tile onto each
-const BRIDGE_W = ROAD_HW + 0.35; // ...and either side of the road's centreline, along the creek: the lane's width
 function creekP(fx, fy) { return (fx - fy) / Math.SQRT2; }
 // the bends: every camp site on the mirror line, with how far the water's
 // centre swings off the diagonal at the camp (R, out past the ground a path
@@ -1391,13 +1398,14 @@ function creekBend(w) {
   }
   return p;
 }
-// 0 at the bridge, a bend's camp or a ford, easing to 1 CREEK_CALM tiles out:
-// the wander and the banks' rag are held still where the water must meet a
-// fixed thing square
+// 0 through the cistern, at a bend's camp or a ford, easing to 1 CREEK_CALM
+// tiles out: the wander and the banks' rag are held still where the water
+// must meet a fixed thing square - the cistern's culverts are baked art, so
+// there the creek is CREEK_HW either side of the cross-diagonal exactly
 function creekCalm(w) {
   let k = 1;
   const at = (w0, r) => { const t = Math.max(0, Math.min(1, (Math.abs(w - w0) - r) / CREEK_CALM)); k = Math.min(k, t * t * (3 - 2 * t)); };
-  at(0, BRIDGE_W + 1);
+  at(0, CIST_RO + 1);
   for (const B of creekBends()) at(B.w, B.L / 2);
   for (const f of creekOuterFords()) at(f.w, 1);
   return k;
@@ -1433,18 +1441,34 @@ function creekFlow(fx, fy) {
   q.fdx = (1 + s) / l; q.fdy = (1 - s) / l;
   return q;
 }
-// the deck: a rectangle on the two diagonals round the crossing, the lane's
-// width along the creek and BRIDGE_L either way across it. Continuous tile
-// coordinates; the bake reads it per pixel and the ground array per tile.
-function bridgeAt(fx, fy) {
-  if (PRACTICE) return false;
-  return Math.abs(creekP(fx, fy)) <= BRIDGE_L && Math.abs(roadOffS(fx, fy)) <= BRIDGE_W;
-}
 // in the water, as drawn: what the plunge asks of the feet, so nobody goes
-// in off a pixel of bank or off the deck's overhang
-function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !bridgeAt(fx, fy); }
+// in off a pixel of bank, or off the ice where the creek runs on under the
+// orca's lake
+function creekWet(fx, fy) { return creekAt(fx, fy) < 0 && !creekIced(fx, fy); }
+// THE ORCA'S LAKE: at the middle the creek pools inside the cistern's ring
+// (js/cistern.js), and the pool is frozen over. The outfall still runs under
+// the ice, and the orca lives in it (the `orca` banner, js/orca.js). A disc
+// ORCA_LAKE_R tiles round the crossing, so each side's half of the valley
+// gets the same ice: every tile in it is ice (ground 1) and the rim lies
+// under the wall's inner face. The creek is frozen a little further, under
+// the wall (CIST_FROZEN), and runs out of a culvert in the wall each way
+// (creekIced: creekWet, paintCreek, creekFishAt). The road stops at the
+// gates' sills (laneDist), so the way across is the orca's ice. Pure
+// position: nothing rolls, laid by placeCistern.
+const ORCA_LAKE_R = CIST_ICE; // tiles from the crossing to the ice's rim
+// signed tiles from the rim (negative inside); 99 well clear of it
+function orcaLakeEdge(fx, fy) {
+  if (PRACTICE) return 99;
+  const d = cisternR(fx, fy) - ORCA_LAKE_R;
+  return d > 4 ? 99 : d;
+}
+function orcaLakeAt(fx, fy) { return orcaLakeEdge(fx, fy) < 0; }
+// does this tile hold any of the disc or the frozen creek (a tile's whole square, for the painters)
+function orcaLakeNear(tx, ty) { return !PRACTICE && cisternR(tx, ty) < CIST_FROZEN + 2; }
+// the creek frozen here: inside the ring and on in under the wall
+function creekIced(fx, fy) { return !PRACTICE && cisternR(fx, fy) < CIST_FROZEN; }
 // the outer fords: on the diagonal, halfway between a bend's end (or the
-// bridge, on a side with no bend) and where the border woods close over
+// cistern, on a side with no bend) and where the border woods close over
 // the creek - where the stretch is long enough to want one
 let creekFordsC = null;
 function creekOuterFords() {
@@ -1454,7 +1478,7 @@ function creekOuterFords() {
     let t = dir < 0 ? 0 : WORLD - 1;
     while (t >= 0 && t <= WORLD - 1 && Math.min(t, WORLD - 1 - t) < borderDepth(t, t)) t -= dir;
     const wT = roadOffS(t, t);
-    let wIn = dir * (BRIDGE_W + 1);
+    let wIn = dir * (CIST_RO + 1);
     for (const B of creekBends()) if (Math.sign(B.w) === dir && Math.abs(B.w) + B.L > Math.abs(wIn)) wIn = B.w + dir * B.L;
     if ((wT - wIn) * dir < CREEK_FORD_GAP) continue;
     const w = (wT + wIn) / 2, c = (w * Math.SQRT2 + WORLD - 1) / 2;
@@ -1484,24 +1508,27 @@ function creekFord(fx, fy) {
   }
 }
 // Runs at boot right after genWorld() (js/boot.js), before the paths and the
-// road: the water fells whatever grew on it (its banks keep their pines), the
-// deck is laid bank to bank, and the fixed fords go down. A path's own fords follow in layPaths (addPathRoute).
+// road: the water fells whatever grew on it (its banks keep their pines) and
+// the fixed fords go down. A path's own fords follow in layPaths (addPathRoute).
+// Last, the cistern stands round the middle and its pool freezes over: the
+// orca's lake (placeCistern, js/cistern.js).
 function placeCreek() {
-  if (PRACTICE) return;
+  if (PRACTICE) { placeCistern(); return; } // ...which stands down in the practice arena
   creekBendsC = null; creekFordsC = null;
   for (let ty = 0; ty < WORLD; ty++) for (let tx = 0; tx < WORLD; tx++) {
     const i = idx(tx, ty);
-    if (bridgeAt(tx, ty)) { ground[i] = 3; objects[i] = null; continue; }
     if (creekAt(tx, ty) >= 0) continue;
     ground[i] = 4;
     objects[i] = null;
   }
   for (const f of creekOuterFords()) creekFord(f.x, f.y);
+  placeCistern();
 }
 
 // THE CREEK'S FISH: a LAKE WHITEFISH or a SNOW CHAR every CREEK_FISH_GAP
 // tiles of creek, swimming downstream under the water, now and then down out
-// of sight and back, under the bridge's deck and never over a ford. Each one
+// of sight and back, in under the cistern's wall and its ice and never over
+// a ford. Each one
 // is a pure function of its index and the field's clock (state.windT), so
 // nothing has to move them and every client places them alike; the one thing
 // the match keeps is which were caught: state.creekGone maps an index to the
@@ -1527,11 +1554,12 @@ function creekFishAt(i) {
   const v = (CREEK_FISH_SPD[0] + (CREEK_FISH_SPD[1] - CREEK_FISH_SPD[0]) * h) / TILE;
   const w = ((i * CREEK_FISH_GAP + h3 * CREEK_FISH_GAP + now * v) % span + span) % span - half; // wraps world edge to edge, where the woods hide it
   let show = Math.max(0, Math.min(1, (vnoise(now * 0.12 + i * 7.3, i * 1.9) - 0.28) * 5));
-  show *= Math.max(0, Math.min(1, (Math.abs(w) - BRIDGE_W - 0.6) / 1.2)); // dives under the deck
+  show *= Math.max(0, Math.min(1, (Math.abs(w) - CIST_RO) / 1.2)); // swims out of a culvert
   const back = state.creekGone[i];
   if (back !== undefined) show *= Math.max(0, Math.min(1, now - back));
   const p = creekMid(w) + (h2 - 0.5) * 2 * CREEK_FISH_LANE + Math.sin(now * 1.3 + i) * 0.25;
   const fx = ((w + p) * Math.SQRT2 + WORLD - 1) / 2, fy = ((w - p) * Math.SQRT2 + WORLD - 1) / 2;
+  if (show > 0 && creekIced(fx, fy)) show = 0; // under the orca's lake's ice
   if (show > 0) { // ...and never shows over a ford's stones
     const tx = Math.round(fx), ty = Math.round(fy);
     for (let dy = -1; dy <= 1 && show > 0; dy++) for (let dx = -1; dx <= 1; dx++) if (inWorld(tx + dx, ty + dy) && ground[idx(tx + dx, ty + dy)] === 5) { show = 0; break; }

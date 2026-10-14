@@ -58,6 +58,8 @@ const SAVE_ROOTS = [
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceCracks', () => iceCracks, (v) => { iceCracks.clear(); for (const [k, x] of v) iceCracks.set(k, x); }],
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/icebreak.js); their pixels rebuild off them
+  // the orca (js/orca.js); a save from before it carries none, and it stays where boot put it
+  ['orca', () => orca, (v) => { if (v) Object.assign(orca, ORCA_FRESH(), v); }],
   ['market', () => market, (v) => Object.assign(market, v)],
   // the bot callouts (js/ai-callouts.js); a save from before they existed
   // carries none of these, and loads with every side silent

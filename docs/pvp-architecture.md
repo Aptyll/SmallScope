@@ -176,7 +176,7 @@ netClientStep(dt): send {t:'in'} - this tick's input and the ack - step our own 
 | every own field of every player (position, hp, gold, bag, gear, cooldowns, status timers, aboard/drop...) except `SNAP_SKIP` | host | snapshot fields, by reflection; every client gets every player's fields |
 | arrows, drops, robots, animals (camp monsters among them), fish, the two eagles | host | snapshot lists keyed by network id (players by slot, eagles by team) |
 | `objects` tiles (a build, a demolish, a felled tree), `ground`, the `structures` registry | host | whole in the full sync; in a delta only the tiles, tile fields and ground cells touched since the peer's ack (`objDiff`, `objWholeAt`, `groundDiff`, `structs`) - state, not events, and no hash check |
-| the market, the nets, the holes and ice cracks, the road registry (`spurs`), the camps' `repopT` | host | snapshot singletons, sent when touched |
+| the market, the nets, the holes and ice cracks, the ice breaks, the orca (eased like a body: `netClientLerp`), the road registry (`spurs`), the camps' `repopT` | host | snapshot singletons, sent when touched |
 | `state`: `SNAP_STATE` (`time`, `elapsed`, `day`, `tick`, `darkness`, the wind's three, `fishT`, `creekGone`, `over`, `end`, `eagleCine`) | host | snapshot singleton, by the names touched; a client keeps its own `over`/`end` and holds the host's as `NET.hostOver` |
 | deaths, respawns, the end of the match | host | snapshot state - `netClientMode` reads the local body (`aboard`, `dropT`, `dead`, `eliminated`) and the host's verdict turned to its own side |
 | a hit's puff and number, a cue, a shake | host | the cosmetic ring (`ev` on a `snap`), replayed by `evPlay` |

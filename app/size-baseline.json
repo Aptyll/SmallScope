@@ -1,8 +1,8 @@
 {
-  "js/ai.js aiThink": 448,
+  "js/ai.js aiThink": 441,
   "js/audio.js <anon>": 206,
-  "js/draw/render.js render": 438,
-  "js/sim.js updatePlay": 143,
+  "js/draw/render.js render": 418,
+  "js/sim.js updatePlay": 139,
   "js/sim.js updatePlayer": 301,
   "js/structures.js updateStructures": 150,
   "js/ui/menu.js": 1393

@@ -627,6 +627,32 @@ function resolveCardForBot(p) {
   }
 }
 
+// aiThink's rung 0: a free skill point, then a purse fat enough for gear
+function aiSpend(p, inp) {
+  // spend a free skill point before the ladder - waiting on it is leaving
+  // growth on the table. Lowest ability level first, so the kit rises
+  // evenly - which spends the first four points UNLOCKING all four keys
+  // (level 0 casts nothing) before any of them gets a cooldown cut.
+  if (p.skillPts > 0 && !inp.cmd) {
+    let ba = -1, bl = AB_LV_MAX - 1;
+    for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
+    if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
+  }
+  // ...and gear the same way: the hero pop-up is a menu bought from
+  // anywhere (gameplay.md), so a purse fat enough to keep a building
+  // float (buyGear re-validates, so a stale order is harmless) is spent on
+  // the cheapest piece here, mid-push or mid-defence alike, rather than
+  // at the spend rung a pusher never reaches
+  if (!inp.cmd) {
+    let gi = -1, gc = 1e9;
+    for (let i = 0; i < GEAR_SLOTS.length; i++) {
+      const c = gearCost(p, i);
+      if (c && c.gold < gc) { gc = c.gold; gi = i; }
+    }
+    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
+  }
+}
+
 function updateAI(p, dt) {
   const ai = p.ai;
   ai.zipUsed = false;
@@ -766,28 +792,14 @@ function aiThink(p, dt) {
   const caller = call ? players[call.id] : null;
   ai.helping = call ? call.id : -1;
 
-  // 0. spend a free skill point before the ladder - waiting on it is leaving
-  //    growth on the table. Lowest ability level first, so the kit rises
-  //    evenly - which spends the first four points UNLOCKING all four keys
-  //    (level 0 casts nothing) before any of them gets a cooldown cut.
-  if (p.skillPts > 0 && !inp.cmd) {
-    let ba = -1, bl = AB_LV_MAX - 1;
-    for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
-    if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
-  }
-  //    ...and gear the same way: the hero pop-up is a menu bought from
-  //    anywhere (gameplay.md), so a purse fat enough to keep a building
-  //    float (buyGear re-validates, so a stale order is harmless) is spent on
-  //    the cheapest piece here, mid-push or mid-defence alike, rather than
-  //    at the spend rung a pusher never reaches
-  if (!inp.cmd) {
-    let gi = -1, gc = 1e9;
-    for (let i = 0; i < GEAR_SLOTS.length; i++) {
-      const c = gearCost(p, i);
-      if (c && c.gold < gc) { gc = c.gold; gi = i; }
-    }
-    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
-  }
+  // 0. a free skill point and a fat purse are spent before the ladder
+  aiSpend(p, inp);
+
+  // 0b. the orca has it (js/orca.js): off its ice by the nearest way before
+  //     the line runs out, everything else after. A bot reads the line a
+  //     beat late, as it reads a rival (the profile's react).
+  const shore = orcaShore(p, prof.react);
+  if (shore) { inp.fire = false; walkTo(shore.x, shore.y, 0); aiNote(p, 'FLEE', 'ORCA', shore); return; }
 
   // 1. food, exactly as a human eats it (Q / F) - but a meal is a 1.5 s
   //    channel now and a hit knocks it out of the hands (js/core.js), so a bot

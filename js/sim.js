@@ -714,12 +714,7 @@ function updatePlay(dt) {
     }
   }
 
-  // wildlife
-  for (const a of animals) updateAnimal(a, dt);
-  for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
-  updateFish(dt);
-  updateCamps(dt); // a cleared camp counts down and comes back whole
-  if (!PRACTICE) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
+  updateWildlife(dt); // the animals, the fish, the orca and the camps (below)
   if (PRACTICE) updatePractice(dt); // the dummy mends itself between combos
 
   // the named place the local player is standing in drives the arrival toast
@@ -812,6 +807,17 @@ function updatePlay(dt) {
   tickObjTimers(dt); // the blinks, shivers and regrowth running on map objects (the `object timers` banner)
 
   resolveContests(); // the drop pickups queued above
+}
+
+// wildlife, one step of updatePlay: the animals, the lake's fish, the orca,
+// the camps' clocks and the meadow's stock
+function updateWildlife(dt) {
+  for (const a of animals) updateAnimal(a, dt);
+  for (let i = animals.length - 1; i >= 0; i--) if (animals[i].dead) animals.splice(i, 1);
+  updateFish(dt);
+  updateOrca(dt); // the orca under its lake's ice: the cruise, the hunt and the breach (js/orca.js)
+  updateCamps(dt); // a cleared camp counts down and comes back whole
+  if (!PRACTICE) updatePreyStock(dt); // and the meadow keeps its rabbits and deer
 }
 
 const WADE_SHOVE = 40; // px/s of knockback that carries a bot into open water it would never walk into
@@ -1115,8 +1121,7 @@ function updatePlayer(p, dt) {
   // the creek. An active dodge roll carries over both: a hole's one tile
   // easily, the creek's three only from its bank, so a roll that runs out over
   // the current goes in. The creek asks the feet against its banks as drawn
-  // (creekWet), so nobody goes in off a pixel of snow or off the deck's
-  // overhang.
+  // (creekWet), so nobody goes in off a pixel of snow or the frozen stretch.
   if (p.fallT <= 0) {
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;

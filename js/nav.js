@@ -7,8 +7,9 @@
 function moveEntity(e, dx, dy, r, strict) {
   // only players can enter open water - an ice hole or the creek (they fall
   // in - see updatePlayer); animals and robots treat those tiles as walls
-  const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e) :
-    (tx, ty) => isSolidTile(tx, ty, e) || waterAt(tx, ty); // e: its own side's gates stand open
+  // (the cistern's stone is held to by the pixel below, cisternReach, not by its tiles)
+  const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e, true) :
+    (tx, ty) => isSolidTile(tx, ty, e, true) || waterAt(tx, ty); // e: its own side's gates stand open
   // ...and the open water of an ice break, by the pixel at the feet, on a
   // tile that is still ice (js/icebreak.js) - never a step that starts in it,
   // so nothing standing in the water is pinned there
@@ -25,7 +26,8 @@ function moveEntity(e, dx, dy, r, strict) {
       if (solid(tx, ty)) hit = true;
     }
     if (!hit && wet && wet(nx, e.y)) hit = true;
-    if (!hit) e.x = nx; else blockedX = true;
+    const t = hit ? 0 : cisternReach(e.x, e.y, nx, e.y, r); // the cistern's stone: up to it, never into it
+    if (t === 1) e.x = nx; else { e.x += dx * t; blockedX = true; }
   }
   // Y axis
   if (dy !== 0) {
@@ -38,7 +40,8 @@ function moveEntity(e, dx, dy, r, strict) {
       if (solid(tx, ty)) hit = true;
     }
     if (!hit && wet && wet(e.x, ny)) hit = true;
-    if (!hit) e.y = ny; else blockedY = true;
+    const t = hit ? 0 : cisternReach(e.x, e.y, e.x, ny, r);
+    if (t === 1) e.y = ny; else { e.y += dy * t; blockedY = true; }
   }
   return { blockedX, blockedY };
 }
@@ -167,6 +170,9 @@ function separateUnits(dt) {
 // cutting - a diagonal step needs both orthogonal neighbours open, so a unit
 // of radius <= 5 walking tile centre to tile centre never clips a tree.
 // Deterministic: fixed neighbour order, stable heap, no rng.
+// A tile can charge a TOLL (navToll): extra steps a route pays to cross it,
+// so a walker goes round ground it can stand on but should not linger on -
+// the orca's ice (spawnOrca, js/orca.js) - unless round is much further.
 //
 //   findPath(sx, sy, gx, gy, reach, budget, e) -> [[x, y], ...] | null
 //     e (optional) is the walker, whose own side's gates stand open
@@ -224,9 +230,12 @@ function heapPop() {
 const NAV_DX = [1, -1, 0, 0, 1, 1, -1, -1];
 const NAV_DY = [0, 0, 1, -1, 1, -1, 1, -1];
 const NAV_COST = [1, 1, 1, 1, Math.SQRT2, Math.SQRT2, Math.SQRT2, Math.SQRT2];
-// e (optional): who walks it - its own side's gates stand open (isSolidTile)
+const navToll = new Uint8Array(NAV_N); // per tile: extra steps a route pays to cross it (0: none)
+// e (optional): who walks it - its own side's gates stand open (isSolidTile);
+// a tile beside the cistern's stone with no room for a body at its middle is
+// off every route (cisternBlocks, js/cistern.js)
 function walkable(tx, ty, e) {
-  return inWorld(tx, ty) && !isSolidTile(tx, ty, e) && !waterAt(tx, ty);
+  return inWorld(tx, ty) && !isSolidTile(tx, ty, e) && !waterAt(tx, ty) && !cisternBlocks(tx, ty);
 }
 function navH(tx, ty, gx, gy) {
   const dx = Math.abs(tx - gx), dy = Math.abs(ty - gy);
@@ -266,11 +275,11 @@ function findPath(sx, sy, gx, gy, reach, budget, e) {
     const g = navG[n];
     for (let k = 0; k < 8; k++) {
       const nx = tx + NAV_DX[k], ny = ty + NAV_DY[k];
-      if (!walkable(nx, ny, e)) continue;
+      if (!walkable(nx, ny, e) || cisternCuts(n, k)) continue; // (a fallen block lying across the step, js/cistern.js)
       if (k >= 4 && !(walkable(tx + NAV_DX[k], ty, e) && walkable(tx, ty + NAV_DY[k], e))) continue;
       const m = idx(nx, ny);
       if (navDone[m] === navGen) continue;
-      const ng = g + NAV_COST[k];
+      const ng = g + NAV_COST[k] * (1 + navToll[m]);
       if (navSeen[m] === navGen && navG[m] <= ng) continue;
       navG[m] = ng; navParent[m] = n; navSeen[m] = navGen;
       heapPush(m, ng + navH(nx, ny, gtx, gty));
@@ -286,15 +295,19 @@ function findPath(sx, sy, gx, gy, reach, budget, e) {
 }
 
 // can a circle of radius r slide from (x0,y0) to (x1,y1) without touching a
-// wall or a hole? the same four-corner test moveEntity makes, every 4 px
-function navLineClear(x0, y0, x1, y1, r, e) {
+// wall or a hole? the same four-corner test moveEntity makes, every 4 px.
+// `free`: and without crossing a tile that charges a toll - the straight line
+// a route takes in place of its search, which must not cut across ground
+// the search would have gone round (navTo, navSmooth)
+function navLineClear(x0, y0, x1, y1, r, e, free) {
   const dx = x1 - x0, dy = y1 - y0, d = Math.hypot(dx, dy);
   const steps = Math.ceil(d / 4) || 1;
   for (let i = 1; i <= steps; i++) {
     const x = x0 + dx * i / steps, y = y0 + dy * i / steps;
     const tx0 = Math.floor((x - r) / TILE), tx1 = Math.floor((x + r) / TILE);
     const ty0 = Math.floor((y - r) / TILE), ty1 = Math.floor((y + r) / TILE);
-    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (!walkable(tx, ty, e)) return false;
+    for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) if (!walkable(tx, ty, e) || (free && navToll[idx(tx, ty)])) return false;
+    if (cisternCrowds(x, y, r)) return false; // the cistern's stone, by the px
   }
   return true;
 }
@@ -306,7 +319,7 @@ function navSmooth(path, x, y, r, e) {
   while (i < path.length) {
     let j = i;
     for (let k = i + 1; k < path.length && k <= i + 10; k++) {
-      if (navLineClear(fx, fy, path[k][0], path[k][1], r, e)) j = k;
+      if (navLineClear(fx, fy, path[k][0], path[k][1], r, e, true)) j = k;
     }
     out.push(path[j]);
     fx = path[j][0]; fy = path[j][1];
@@ -331,7 +344,7 @@ function navTo(e, gx, gy, r, reach, dt, budget) {
   if (!nav.path && nav.fail && nav.replanT > 0 && moved <= 1 && nav.reach === reach) return { dx: 0, dy: 0, d: far, ok: false };
   if (!nav.path || moved > 1 || nav.replanT <= 0 || nav.reach !== reach) {
     nav.gtx = gtx; nav.gty = gty; nav.reach = reach; nav.replanT = NAV_REPLAN; nav.i = 0;
-    if (navLineClear(e.x, e.y, gx, gy, r, e)) {
+    if (navLineClear(e.x, e.y, gx, gy, r, e, true)) {
       nav.path = [[gx, gy]];
     } else {
       const p = findPath(e.x, e.y, gx, gy, reach, budget, e);
