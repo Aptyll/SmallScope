@@ -286,6 +286,16 @@ function overMinimap() { return mouse.inside && Math.hypot(mouse.x - MM_CX, mous
 // window (the info stack's SIM and DRAW). DRAW is the script's side only:
 // on a GPU canvas the pixels are drawn later, off the main thread.
 const perf = { fps: 0, frames: 0, acc: 0, sim: 0, draw: 0, simAcc: 0, drawAcc: 0 };
+function perfFrame(rawDt) {
+  perf.frames++;
+  perf.acc += rawDt;
+  if (perf.acc < 0.5) return;
+  perf.fps = Math.round(perf.frames / perf.acc);
+  perf.sim = perf.simAcc / perf.frames;
+  perf.draw = perf.drawAcc / perf.frames;
+  perf.frames = 0;
+  perf.acc = perf.simAcc = perf.drawAcc = 0;
+}
 
 // Settings live UNDER the profile - PROFILE.putSettings / PROFILE.settings,
 // js/profile.js, the one file in the game that touches storage. A pre-profile

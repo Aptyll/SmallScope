@@ -3597,7 +3597,8 @@ the same keys under `1-4 CLASS ABILITIES`.
 keydown handler flips it in any mode and suppresses the browser's find bar; default off) shows
 the **info stack** — `drawTags()`, a vertical list on the left edge at the top quarter of the
 view, drawn above every overlay. Six lines — **FPS** (`loop()`
-accumulates raw unclamped frame deltas into `perf` and refreshes `perf.fps` every half second),
+hands each raw unclamped frame delta to `perfFrame`, js/core.js, which refreshes `perf.fps` every
+half second),
 **SIM** and **DRAW**, the ms a frame spent in `update()` and in `render()` over the same window
 (red together once they no longer fit a 60 Hz frame; DRAW is the script's side only, since a GPU
 canvas rasterises later off the main thread),

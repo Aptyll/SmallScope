@@ -676,7 +676,6 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | render pass order | `render` | `render` |
 | the work-target rim: gold outline on the hovered tree/dead tree/berried bush/chest | `drawTargetRim`, the `o === wkO` stamps in the y-sorted pass | `render` |
 | a rock as drawn: its kind or its rubble, the cracks and bar of its progress, its glint, and the ring of the pick's reach on the snow | `drawRock`, `drawMineRing`/`MINE_RING_NEAR`, `ROCK_GLINT_T`/`ROCK_GLINT_NIGHT` | `render` (above `drawTargetRim`; the art: js/sprites/rocks.js) |
-| the F3 readout: fps, coords, seed | `drawTags` | `render` |
 | the `.` overlay: hitboxes, the model centre column, and its 1px ring/box/line rasterisers | `drawHitboxes`, `hbRing`, `hbBox`, `hbDot`, `hbLine`, `hbMid`, `HB_*` | `debug overlays` |
 | the `.` overlay's routes: waypoints + goal tile, a bird's perch line, a fish's heading arrow | `drawNavPaths`, `hbArrow` | `debug overlays` |
 | which body a bit flies as: the plain arrow and the three shafts that are not it (barbed, icy, gold with a glint), the grapple on its cord, the turning log, the comet wisp, the swung fist and axe, the teleport request; the inverse-sampled turn they share | `BIT_BODY`, `drawShaft`, `BARB_BODY`/`LANCE_BODY`/`CARE_INK`/`drawCare`, `HOOK_BODY`/`drawHook`, `stampTurned`, `LOG_MAP`/`drawTumbler`, `drawMote`, `drawSwungBody`/`FIST_MAP`/`AXE_MAP`/`BIT_INK`, `drawWarpShot` | `the bodies a bit flies as` (and its `the shafts` / `the swung bodies`, with `BIT_BODY` at the section's foot; the names they answer to: `body` on `BITS`, tools.js) |
@@ -765,6 +764,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | the frame's UI pass in order - what goes over the world while you play, from the minimap to the day headline | `renderUI`, `dayPopCv` (the day headline's bake) | `renderUI` (last of the HUD files; the pieces it calls live in the seven files above it) |
+| the F3 info stack: fps, the ms a frame spends in the sim and in drawing (`perf`, js/core.js), coords, seed | `drawTags` | `the info stack` |
 
 ## js/ui/shop.js
 

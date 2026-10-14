@@ -2175,15 +2175,7 @@ function loop(nowMs) {
   // seconds of steps
   const dt = Math.max(0, Math.min(TICK_DT * TICK_MAX, rawDt));
   last = nowMs;
-  perf.frames++;
-  perf.acc += rawDt;
-  if (perf.acc >= 0.5) {
-    perf.fps = Math.round(perf.frames / perf.acc);
-    perf.sim = perf.simAcc / perf.frames;
-    perf.draw = perf.drawAcc / perf.frames;
-    perf.frames = 0;
-    perf.acc = perf.simAcc = perf.drawAcc = 0;
-  }
+  perfFrame(rawDt);
   if (!window.DBG.freeze) {
     padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
     const spd = ladderWatch ? ladderWatch.speed : 1; // a watched bot match runs faster on request (js/ui/ladder.js)
