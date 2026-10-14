@@ -212,7 +212,7 @@ function ladderWatchClick() {
   else ladderWatchFollow(h.d);
 }
 function ladderWatchCursor() {
-  if (state.mapOpen) return { kind: mapCloseHit() ? 'hand' : 'arrow' };
+  if (state.mapOpen) return { kind: 'arrow' };
   return { kind: ladderWatchHit() ? 'hand' : 'arrow' };
 }
 

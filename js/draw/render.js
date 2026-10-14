@@ -1514,13 +1514,13 @@ function cursorInfo() {
   }
   if (ladderWatch && state.mode !== 'title') return ladderWatchCursor(); // a watched bot match (js/ui/ladder.js)
   if (state.mode === 'dead') return { kind: deadHit() >= 0 || emoteHit() >= 0 || specHit() || rpCloseHit() ? 'hand' : 'arrow' };
-  if (state.mode === 'drop') return { kind: state.mapOpen && mapCloseHit() ? 'hand' : 'arrow' };
+  if (state.mode === 'drop') return { kind: 'arrow' };
   if (state.mode !== 'play') return { kind: 'arrow' };
   if (state.settingsOpen) {
     if (dragSlider || savesCarrying()) return { kind: 'grab' };
     return { kind: settingsHit() ? 'hand' : 'arrow' };
   }
-  if (state.mapOpen) return { kind: mapCloseHit() ? 'hand' : 'arrow' };
+  if (state.mapOpen) return { kind: 'arrow' };
   if (state.paused) return { kind: 'arrow' };
   if (state.wheel) return { kind: wheelLayout().seg >= 0 ? 'hand' : 'arrow' };
   // an item riding the pointer hides the reticle entirely: the drag ghost IS
