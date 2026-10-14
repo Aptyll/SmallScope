@@ -504,13 +504,13 @@ function aiWaveHead(p, e) {
 }
 
 // ---- the ride ---------------------------------------------------------------
-// A bot rides the zipline (the `zipline` banner, world.js) the way a hand
+// A bot rides the zipline (the `zipline` banner, js/zipline.js) the way a hand
 // does, through the same hop intent: every walk the ladder orders goes
 // through steerTo, and steerTo asks aiZipWorth first - would walking to
 // either side's cable, riding to the point nearest the goal and walking the
 // rest beat the feet by ZIP_AI_GAIN seconds? (The better of the two, if both
 // would.) If so it walks to the mount
-// (zipMount, world.js: the nearest point of the cable whose ground a body can stand
+// (zipMount, js/zipline.js: the nearest point of the cable whose ground a body can stand
 // on), presses the hop under it, holds the stick along the cable toward the
 // exit while it rides, and presses the hop again ZIP_AI_OFF short of the
 // exit. The goal is re-read every think, so a rider called home mid-cable
@@ -675,7 +675,7 @@ function aiThink(p, dt) {
     if (w) {
       const nr = zipNear(p);
       if (nr && nr.z === w.z) { inp.jump = true; return Math.hypot(x - p.x, y - p.y); } // under it: clip on
-      const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (world.js)
+      const m = zipMount(w.z, w.d0); // the player's walk to the cable stands on the same point (js/zipline.js)
       if (m && walkTo(m.x, m.y, 0, budget) >= 0) return Math.hypot(x - p.x, y - p.y);
     }
     return walkTo(x, y, reach, budget);

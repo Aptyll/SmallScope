@@ -812,7 +812,7 @@
       if (smp('record', { vol: 0.89, jitter: 0 })) return;
       tone(659, 0.1, 'triangle', 0.08); tone(988, 0.14, 'triangle', 0.08, 0, 0.09); tone(1318, 0.3, 'triangle', 0.07, 0, 0.2);
     },
-    // The range's consecutive-hit run (agStreak, js/world.js): a milestone
+    // The range's consecutive-hit run (agStreak, js/practice.js): a milestone
     // reached, pitched UP as the run grows - the one place a rate is meant to
     // be heard, because the number it tracks is the thing being climbed - and
     // the run lost. Losing five in a row must not sound like losing one, so

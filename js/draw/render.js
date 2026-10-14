@@ -482,7 +482,7 @@ function render() {
       drawSpriteFlash(SPRITES.den, px + sh, py - 4, o.flash);
       if (o === hovO) drawCampClock(o, px + 16, py - 3); // a cleared camp's respawn clock, under the pointer
     } else if (o.type === 'hut') {
-      // the HOG HUT (CAMPS.hut, world.js): the anchor is the front-left tile
+      // the HOG HUT (CAMPS.hut, camps.js): the anchor is the front-left tile
       // of its 2x2 footprint and draws the whole building centred over the
       // pair, its chimney smoking through HUT_FR ms a frame; its three
       // `part` tiles resolve to it above and draw nothing of their own
@@ -504,7 +504,7 @@ function render() {
       // the practice target: skids on its tile, everything else drawn up off
       // it like a tree. The readout bar only appears once it is hurt, and
       // updatePractice mending it is what takes the bar away again. While
-      // the archery round's sink runs (agSinkU, js/world.js) the sprite
+      // the archery round's sink runs (agSinkU, js/practice.js) the sprite
       // drops and the snow line crops it - the bottom is already under the
       // field - and at full depth the object leaves the grid entirely.
       const su = PRACTICE ? agSinkU() : 0;
@@ -777,7 +777,7 @@ function render() {
       Math.round(f.y - ey - f.t * (f.rise || 14)), f.color, s, 1 - f.t / 0.9);
   }
 
-  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/sim.js)
+  drawSweep(ex, ey);        // the wind's slow sweep of loose snow, laid in the world, over the pines (windSweep, js/weather.js)
   drawDropAir(ex, ey, now, false); // the flight path, and a bird on the ground (the fliers: the air layer, below)
   drawZips(ex, ey, now);    // the ziplines' cables, lit gold under the pointer, over everything but the night (js/draw/zipline.js)
   renderLighting(ox, oy, now);
@@ -852,7 +852,7 @@ function render() {
   // plate, the final score (drawAgameUI, js/draw-world.js)
   if (PRACTICE && state.mode === 'play') drawAgameUI(now);
   if (state.mode === 'drop') renderDropUI(now);
-  // the drop brief's roost headlines (updateDrop's tour, js/boot.js)
+  // the drop brief's roost headlines (updateDrop's tour, js/eagle.js)
   if (state.mode === 'play' && state.dropBrief) drawDropBrief();
   else if (state.mode === 'play' && player.aboard) drawHopPrompt(now); // still seated on the roost: E - HOP OFF
   // the M map works mid-flight too: the ride's wider read lives here now

@@ -60,7 +60,7 @@ module.exports = `
       window.drawWorldText = function(){};
       var src = window.drawEagle.toString();
       var cut = src.replace(/const vh = Math\\.abs[\\s\\S]*?drawWorldText\\('PERCH'[\\s\\S]*?\\.mark\\);/, '');
-      if (cut === src) throw new Error('the eagle nerve bar moved - reread drawEagle, js/boot.js');
+      if (cut === src) throw new Error('the eagle nerve bar moved - reread drawEagle, js/eagle.js');
       window.drawEagle = eval('(' + cut + ')');
       return 'clean';
     },

@@ -301,7 +301,7 @@ branch, which reads them back out of `bitMods` rather than restating them.
 **It also needs a `TECH` node** (js/tools.js), or the [wiki](gameplay.md#the-wiki)'s ARSENAL
 page never lists it — the loot pool rolls it either way, since the pool is every kind at or
 under a tier, but a kind missing from the page is a kind nobody can read the numbers of. The
-page's three tables are `wikiKinds(sort)` (js/ui/menu.js): every `TECH` id of that sort, ordered
+page's three tables are `wikiKinds(sort)` (js/ui/wiki.js): every `TECH` id of that sort, ordered
 by tier, in a scrolling window — so a new node is a new row with no layout to retune. Give the
 node a `req` naming the node beneath it (null only on the tier-0 row); nothing draws that edge
 any more, but it is the lineage on paper. The row, its "held one" pip (`noteSeen`) and its
@@ -573,8 +573,9 @@ already current, so it is safe to call from a state change that repeats.
 | js/mining.js | `ROCK_KINDS` (each rock kind's mining time, gold, ore, find and regrow), `ORE_PRICE`, `MINE_STRIKE`/`MINE_R`/`MINE_DECAY`/`MINE_HIT_HOLD`/`MINE_STREAM_T`/`MINE_MOVE`/`ORE_FLING`, the forge's `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`/`FORGE_GOLD` (and each body's `up`, `TOOLS` in js/tools.js) |
 | js/ai-skill.js | every level's numbers (`AI_LEVELS`: the hand fields, the choice knobs, `push`/`guard`), the ally clocks (`AI_ALLY_PUSH`), the ladder's hands (`AI_LADDER_HANDS`), the skill layer's clocks (`AI_SETTLE`, `AI_WOBBLE_T`, `AI_ALERT_T`, `AI_AIM_ON`, `AI_BLADE_CLOSE`, `AI_BLADE_HOLD`) |
 | js/ai.js | the bot ranges (`AI_SIGHT`, `AI_HUNT`, `AI_FORAGE`); the objective clocks (`AI_ESCALATE`, `AI_JOIN_HP`, `AI_ALARM_HP`, `AI_ROOST_R`); the waves as a bot reads them (`AI_WAVE_R`/`AI_WAVE_D`) |
-| js/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk); `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
-| js/boot.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |
+| js/sim.js | the trickle (`TRICKLE_GOLD`/`TRICKLE_T`); the per-surface steer/decay rates inline in `updatePlayer()`'s movement block; the darkness ramp in `update()`; `FLAKE_BASE`/`FLAKE_MIN`/`FLAKE_MAX` beside the flake block |
+| js/weather.js | the `WIND_*` block (the three ripples, the bend that meanders them, the gust envelope's floor and peak, and how fast it all dies at dusk) |
+| js/eagle.js | the eagle's siege (`EAGLE_HP`/`EAGLE_WORK_DMG`/`EAGLE_ARROW_DMG`/`GUST_R`/`PREEN_RATE`) |
 | js/draw/ground.js | the road's colours, `ROAD_COL_*` beside `paintRoadOverlay` |
 | js/draw/light.js | the `CLOUD_*` / `RAY_*` / `NIGHT_*` / `STAR_*` blocks in the `light & weather` banner (including `RAY_AFTER` / `RAY_NOON_HALF`, which decide how long the sun shafts are up for) |
 
@@ -668,7 +669,7 @@ Kept on purpose — do not "clean up", and a verbatim code move carries it along
   with them): `updateBird`/`flushBirds`/`rookeryPerch`/`drawBird`, the `BIRD_*` constants,
   `YIELD.bird`, `ANIMAL_HP.bird` and every `kind === 'bird'` branch stay, and nothing spawns
   one — a camp that wants a flock stands it up again with `deadTree` props and a perching spawn
-  beside `spawnCampMonster` (js/world.js) ([Birds](gameplay.md#birds-the-flock-dormant)). The
+  beside `spawnCampMonster` (js/camps.js) ([Birds](gameplay.md#birds-the-flock-dormant)). The
   `flushBirds(campAt(...))` calls on a felled snag are the live hooks it would wake through.
 - `SPRITES.imp` (the `imp1`/`imp2` grids, `IPAL`) is baked but unreferenced since the worker bot
   got its own grids — kept in case the imp returns.

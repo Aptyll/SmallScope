@@ -7,7 +7,7 @@
 //
 // The record is one object on the match state (state.story), filled by two
 // hooks in the sim - a body going down (the down block of `hurtUnit`'s
-// player branch, js/player.js) and a blow on a bird (`hurtEagle`, js/boot.js)
+// player branch, js/player.js) and a blow on a bird (`hurtEagle`, js/eagle.js)
 // - so it rides saves with the rest of `state` (SAVE_ROOTS) and the wire
 // with the match keys (SNAP_STATE, js/net/snapshot.js), and a client prints
 // the same lines its host would. Everything else is read off `players` when

@@ -2709,7 +2709,7 @@ canvases the same scene runs at 87 fps.
 
 ### The wind field
 
-One field, in the `wind` banner of [js/sim.js](../../js/sim.js), and everything the
+One field, in the `wind` banner of [js/weather.js](../../js/weather.js), and everything the
 weather moves reads it rather than keeping a clock of its own:
 
 - `state.windT` is its clock, stepped in `updateFx` — the **sim** clock, not wall time, so
@@ -2826,7 +2826,7 @@ weather moves reads it rather than keeping a clock of its own:
 
 ### The day's weather
 
-Every day of a match rolls one of four weathers (the `weather` banner, js/sim.js) off the seed
+Every day of a match rolls one of four weathers (the `weather` banner, js/weather.js) off the seed
 and `state.day` with `hash2`, so every client that knows the day (the snapshot already carries it)
 knows the sky, and the wire carries nothing new. `weatherOf(day)` names it off `WX_ODDS`; the
 practice arena always gets `snow`. A weather is only a row of **dials** in `WEATHERS` that the

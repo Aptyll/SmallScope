@@ -219,7 +219,7 @@ function drawDummyMeter(o, cxp, botY) {
 
 // ---- the ice parkour's pixels (practice arena only) -----------------------
 // the start/finish line: ONE fixed-width checker band laid flat across the
-// force-iced PK_LINE strip (the practice arena banner, js/world.js - the
+// force-iced PK_LINE strip (the practice arena banner, js/practice.js - the
 // same box updatePractice times laps with), in the flat pass before anything
 // that walks. The strip is always exactly x0..x1 whatever the roll carved,
 // so the band never stretches, never gaps, and always ends at its two flags.
@@ -322,7 +322,7 @@ function drawPkDie(o, px, py, now) {
 
 // ---- the archery track's pixels ------------------------------------------
 // The two-rail target track around the field's perimeter (AG_RECT,
-// js/world.js), drawn flat in the ground pass (render.js) under everything
+// js/practice.js), drawn flat in the ground pass (render.js) under everything
 // that walks: ties spanning both rails like a narrow-gauge railway, then the
 // outer and inner rail, snow dusted along the wood by position hash. The
 // trolleys riding it are the targets themselves (drawPTarget below).
@@ -375,12 +375,12 @@ function drawAgTrack(ox, oy) {
 }
 
 // One target, whatever its habit: a rail CARRIAGE - plank body, two steel
-// wheels gripping the rail along the rail's own axis (agEdge, js/world.js),
+// wheels gripping the rail along the rail's own axis (agEdge, js/practice.js),
 // wheels visibly turning while it rolls - then a mast sized to its face and
 // planted in the body (or the hatch mouth a pop-up flips out of), then the
 // face from its own baked sprite. The whole carriage lifts through a lane
 // swap (the hop) and a hidden pop-up rattles on its rail for a beat before
-// the face flips up. ptFace() (js/world.js) is the same geometry the arrow
+// the face flips up. ptFace() (js/practice.js) is the same geometry the arrow
 // test reads, so what you see is exactly what a shot can hit.
 function drawPTarget(t, ex, ey, now) {
   if (t.gone) return; // shot this very frame; the sweep collects it next tick
@@ -482,7 +482,7 @@ function drawAgRoundWedge(id, x, y) {
 }
 // The medals: bronze, silver, gold, a 7x9 disc on a short ribbon - the end
 // screen stamps one at 2x, the wheel and the bell's plate at 1x. MEDAL_SPR[m]
-// for m 1..3 (agMedal, js/world.js); [0] is no medal.
+// for m 1..3 (agMedal, js/practice.js); [0] is no medal.
 const MEDAL_SPR = [null, ...[
   { m: '#c07a3a', h: '#e8a868', d: '#7a4a20' },
   { m: '#b8c4d4', h: '#eef3fa', d: '#6a7888' },
@@ -524,7 +524,7 @@ function drawDfHold(ex, ey) {
   }
 }
 // The hit-ring flash: one quick shock ring snapping out from every face
-// break (agRings, js/world.js), sized to the face it came off. Rasterised
+// break (agRings, js/practice.js), sized to the face it came off. Rasterised
 // 1px dots rather than an arc stroke, so the ring stays as crisp as the
 // pixel grid; white-hot young, cooling to gold as it spreads and fades.
 function drawAgRings(ex, ey) {
@@ -554,7 +554,7 @@ function drawAgRings(ex, ey) {
 // ---- the range bell's pixels ---------------------------------------------
 // The bell that runs the archery round: a bronze bell hung in a two-post
 // frame west of the dummy, rope off the clapper. While o.ring runs (the press
-// just landed, js/world.js) the bell swings on its yoke - the whole "the
+// just landed, js/practice.js) the bell swings on its yoke - the whole "the
 // round heard you" announcement at the spot the press happened.
 function drawAgBell(o, px, py, now) {
   ctx.fillStyle = 'rgba(40,60,100,0.25)'; ctx.fillRect(px + 2, py + 14, 12, 2);

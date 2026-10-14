@@ -54,7 +54,7 @@ function drawAnimal(a, ex, ey, now) {
 // is drawn at its body's 2x, cut into fixed `segs`, and centred whole,
 // plate and bar together, on its body. `cx` is the body's centre, `mid` its
 // centre column, `fy` the row the frame stands on; drawAnimal's in the
-// world and the wiki's cards (ui/menu.js) are the same pixels.
+// world and the wiki's cards (ui/wiki.js) are the same pixels.
 const BEAST_BAR_W = { rabbit: 8, wolf: 11, deer: 23 }; // widths that split into even segments (hpSegCount)
 function beastFrame(kind) { return (MONSTER[kind] && MONSTER[kind].frame) || { s: 1, w: BEAST_BAR_W[kind] || 17 }; }
 function drawBeastFrame(kind, cx, mid, fy, e, two, u) {
@@ -151,7 +151,7 @@ function drawRobot(b, ex, ey, now) {
 // with the worker's axe swing over whatever it is felling or setting, the hop
 // off the bird as a lift, the shared tells, and a MERCH nameplate in the
 // side's paint - a name, the one text a body over the world gets (the bird it
-// drives wears PERCH the same way, drawEagle in boot.js). NO HEALTH BAR: it
+// drives wears PERCH the same way, drawEagle in eagle.js). NO HEALTH BAR: it
 // has no health to draw (the `merchant` banner, js/robots.js), and a full bar
 // that can never move would promise a fight that is not on offer.
 function drawMerchant(b, ex, ey, now) {

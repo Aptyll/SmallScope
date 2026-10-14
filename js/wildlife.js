@@ -209,7 +209,7 @@ function hurtAnimal(a, dmg, nx, ny, kb, owner, ambush) {
 // point of its line furthest from every player (updatePreyStock), so nothing
 // is ever seen to appear. The rabbits are not stock: three live in each
 // WARREN and come back as a camp does, on its clock (CAMPS.meadow,
-// updateCamps, js/world.js).
+// updateCamps, js/camps.js).
 const DEER_ROUTE_U = 100;     // tiles along the road from a roost to its side's line (the creek is at ~115)
 const DEER_ROUTE_STEP = 5;    // tiles between the points of a line
 const DEER_ROUTE_KEEP = 3;    // tiles a point keeps off the woods and off a camp's ground
@@ -222,7 +222,7 @@ const PREY_CLEAR = 280;       // px from every live player a newcomer must land
 let deerRoutes = [[], []];    // each side's line, world px points (layDeerRoutes)
 let deerBackT = [DEER_BACK, DEER_BACK]; // s until each side's next deer, counting while it has none
 
-// each side's line: (u, s) road coordinates (campTile, world.js) mirrored
+// each side's line: (u, s) road coordinates (campTile, camps.js) mirrored
 // across the middle, sampled every DEER_ROUTE_STEP tiles of s, keeping the
 // open tiles clear of the woods and of camp ground. Pure position: no rng.
 function layDeerRoutes() {
@@ -684,7 +684,7 @@ function updatePrey(a, dt) {
     const d = Math.hypot(p.x - a.x, p.y - a.y);
     if (d < sd) { sd = d; scare = p; }
   }
-  // a tame deer (the practice ride's, prDeerStep, js/world.js) never bolts from one
+  // a tame deer (the practice ride's, prDeerStep, js/practice.js) never bolts from one
   let seen = !a.tame && !!scare && sd < seenAt(scare, FLEE_SIGHT[a.kind] || 0);
   // ...and a deer bolts from a wolf or a bear too, inside DEER_BEAST_SIGHT
   // whether it is hunting or not: neutral to a scout is not neutral to a deer
@@ -846,7 +846,7 @@ function animalDies(a) {
 }
 
 // The camps' monsters (the places themselves are the CAMPS table in the
-// camps banner, world.js): the den's wolves and the two midline bears, all
+// camps banner, js/camps.js): the den's wolves and the two midline bears, all
 // of them NEUTRAL - nothing in the world hunts a player who has not hit it.
 // What each is, in one row: the bite and what it grows a level (the level:
 // animalLevel, the animals banner), the reach of a bite, the seconds between
@@ -969,7 +969,7 @@ function rideNear(p) {
 // the hop intent on the ground (updatePlay reads input.jump for every player
 // alike), in keyPress's own order: off a deer first, then the zipline's
 // claims overhead, then a deer in reach, then the walk to a cable under the
-// pointer (zipToggle, world.js)
+// pointer (zipToggle, js/zipline.js)
 function hopToggle(p) {
   if (p.mount) { rideEnd(p, false); return; }
   if (p.zip >= 0 || p.zipWalk || zipNear(p)) { zipToggle(p); return; }
@@ -1143,7 +1143,7 @@ function campQuarry(a, t, onGround) {
   return best;
 }
 
-// A RIVER camp's bear (CAMPS' `river`, world.js) has no den to stand at: it
+// A RIVER camp's bear (CAMPS' `river`, camps.js) has no den to stand at: it
 // walks its stretch of bank (C.path) up and down, a few tiles a leg, turning
 // at either end, and at the end of most legs stops facing the water, waits,
 // and fishes - its own clip, `fish`: paw up over the water, a scoop that
@@ -1177,7 +1177,7 @@ function updateCampMonster(a, dt) {
   const hx = C ? (C.tx + 0.5) * TILE : a.x, hy = C ? (C.ty + 0.5) * TILE : a.y;
   const groundR = ((C ? C.r : 5) + CAMP_GROUND) * TILE;
   a.biteCd = Math.max(0, a.biteCd - dt);
-  // the camp's ground: its clearing, and a river camp's whole bank (campNear, world.js)
+  // the camp's ground: its clearing, and a river camp's whole bank (campNear, camps.js)
   const onGround = (p) => (C ? campNear(C, p.x / TILE - 0.5, p.y / TILE - 0.5, CAMP_GROUND) : Math.hypot(p.x - hx, p.y - hy) < groundR);
   const river = !!(C && C.path && C.path.length);
 

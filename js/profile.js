@@ -113,7 +113,7 @@
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
-      bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/world.js), by round id - these three are all practice writes
+      bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/practice.js), by round id - these three are all practice writes
       // (the lifetime stats moved onto the characters in v2: a v1 save's
       // name and stats become its first character in load())
       // The arsenal tree. A MATCH reads nothing back out of here - every kind
@@ -314,12 +314,12 @@
 
     // ---- first flight -------------------------------------------------------
     // whether this profile has ever left the eagle: false means the next ride
-    // runs the PREPARE TO DROP countdown and jumps itself (js/boot.js)
+    // runs the PREPARE TO DROP countdown and jumps itself (js/eagle.js)
     hasDropped() { return !!profile.dropped; },
     markDropped() { if (!profile.dropped) { profile.dropped = true; saveNow(); } },
 
     // the ice parkour's all-time best lap - one of the two things the arena
-    // itself writes back (updatePractice, js/world.js). Stored at the plate's
+    // itself writes back (updatePractice, js/practice.js). Stored at the plate's
     // own 0.1 s precision so the number shown IS the number kept; only a
     // strictly better (lower) time writes, and a lap record is a moment, not
     // a trickle, so it saves through immediately.
@@ -333,7 +333,7 @@
       return true;
     },
     // the archery range's all-time best round score - the lap record's twin
-    // (agEndRound, js/world.js). Whole points; only a strictly higher score
+    // (agEndRound, js/practice.js). Whole points; only a strictly higher score
     // writes, and a record is a moment, so it saves through immediately.
     bestRange() { return profile.bestRange; },
     setBestRange(n) {
@@ -370,7 +370,7 @@
     addWin() { this.stats().wins++; scheduleSave(); },
     addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
     // one call per day the player sets foot in: day 1 as the eagles take off
-    // (js/boot.js beginDrop), every later day at its dawn (js/sim.js) - counted
+    // (js/eagle.js beginDrop), every later day at its dawn (js/sim.js) - counted
     // at the START of the day, so quitting mid-match keeps the days begun
     addDay() { this.stats().days++; scheduleSave(); },
     addMatch() { this.stats().matches++; scheduleSave(); }, // one per eagle takeoff (beginDrop)

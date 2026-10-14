@@ -496,7 +496,7 @@ function makeInput() {
     work: false,         // E held
     slide: false,        // shift held
     dodge: false,        // edge-triggered, cleared once the sim reads it
-    jump: false,         // edge-triggered: the leap off the eagle, or the hop off the roost (dropJump, js/boot.js)
+    jump: false,         // edge-triggered: the leap off the eagle, or the hop off the roost (dropJump, js/eagle.js)
     grapple: false,      // held: the grapple reels only while this is down
                          // (key 3 for the human; the burrow itself is now the
                          // hunter's SNOW COVER cast, key 4, not an input)
@@ -571,7 +571,7 @@ class Player {
     this.deaths = 0;                    // times this body went down
     this.dmgOut = 0;                    // damage dealt to RIVAL players, counted after their DR
     this.dmgIn = 0;                     // damage taken from anything at all, counted after this body's DR
-    this.dmgBird = 0;                   // nerve knocked off the rival eagle (hurtEagle, boot.js)
+    this.dmgBird = 0;                   // nerve knocked off the rival eagle (hurtEagle, eagle.js)
     this.dmgStruct = 0;                 // damage dealt to rival buildings, after STRUCT_DR (hurtStruct, actions.js)
     Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
@@ -682,10 +682,10 @@ class Player {
     this.tun = null; this.tunCd = 0; this.digT = 0; this.tunE = false;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
-    this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (world.js): the line ridden (its team, or none), px along it, and which way
+    this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/zipline.js): the line ridden (its team, or none), px along it, and which way
     this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
-    this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, world.js)
-    this.zipLast = 0;                                // px along the cable a step ago (zipCrash, world.js)
+    this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, js/zipline.js)
+    this.zipLast = 0;                                // px along the cable a step ago (zipCrash, js/zipline.js)
     // the deer ridden (the `riding` banner, js/wildlife.js), or null; the leap
     // in the air (s left), how long it has been up, and the wait before the next
     this.mount = null; this.leapT = 0; this.leapUp = 0; this.leapCd = 0;
@@ -845,7 +845,7 @@ const footprints = [];
 const fish = []; // swimmers under the ice: {x,y,a,spd,t,turnT,spook}
 const iceCracks = new Map(); // tile idx -> pickaxe hits taken (cracked, not yet open)
 const holes = []; // tile idx of open water holes; they refreeze each dawn
-const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, world.js)
+const camps = []; // the jungle camps, stood up at fixed sites by worldgen (see the camps banner, js/camps.js)
 
 // ------------------------------------------------------------ damage & death
 // Nothing to do with the wheel above: a hit, what a hit spills, the split

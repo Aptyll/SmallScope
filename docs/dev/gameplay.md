@@ -105,7 +105,7 @@ The one movement that is neither walked nor slid: any body standing under **eith
 cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
-(world.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
+(js/zipline.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
 `updatePlayer`'s movement ladder, after the grapple's and before the surface model
 (`zipStep`): the cable sets `p.x/p.y` **outright** — no `moveEntity`, so a wall, a pine or a body
 under the line never stops a rider — and `p.vx/vy` to the tangent × `ZIP_SPD` (220 px/s, three
@@ -122,7 +122,7 @@ said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px 
 comes back clipped on; `die` lets go too.
 
 **The cable under the pointer.** `hoverZip()` (actions.js, beside `hoverFish`) is either
-side's cable under the pointer as drawn (`zipUnder`, world.js — within `ZIP_HOVER` of the
+side's cable under the pointer as drawn (`zipUnder`, js/zipline.js — within `ZIP_HOVER` of the
 strand, never the invisible track under it), while the body is on the ground with nothing open
 over it. While it holds, `drawZips` lights the whole line in the work-target rim's two golds on
 its beat, and `drawZipGuide` (js/draw/zipline.js, right after the aim line) runs a static dotted
@@ -158,7 +158,7 @@ damage never dismounts (its knockback decays unspent, since the ride branch neve
 `kbx/kby`); a **stun, a root or a net** does, through `zipEnd(p, true)` inside `stunUnit`,
 `rootUnit` and `netUnit` (any body's, a soldier's too): dropped at rest on the snow under the
 cable. Another body never shoves a rider (`separateUnits` skips `zip >= 0` the way it skips
-`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (world.js, called in `updatePlay`
+`inAir(p)`), but **two rivals on one cable crash**: `zipCrash` (js/zipline.js, called in `updatePlay`
 once the robots have stepped) finds every pair of riders of different sides on the same line
 within `ZIP_CRASH_R` (8 px) along it, or past each other since the last step (`zipLast`), and
 `stunUnit`s both for `ZIP_CRASH_STUN` (0.8 s, the tackle's top) — so both fall at rest where they
@@ -1389,7 +1389,7 @@ sets it nowhere.** The only things that grant it are deliberate:
 | `Player.reset` — so `respawnPlayer` | 3 s (0 on the very first spawn) | nobody is spawn-camped |
 | `landPlayer`, `practiceRevive` | 2 s | a beat of grace while the snow settles |
 | the ice-hole scramble (`updatePlayer`, js/sim.js) | 0.8 s | you climb out; you are not bitten climbing out |
-| the drop briefing (`js/boot.js`) | 0.4 s, refreshed | the lesson is not a fight |
+| the drop briefing (`js/eagle.js`) | 0.4 s, refreshed | the lesson is not a fight |
 
 `rollTackle` **drops** them ([the roll is a hit](#the-roll-is-a-hit)).
 
@@ -1487,7 +1487,7 @@ those, never `p.hide` directly**:
 **Every watcher resolves through `seenAt`, and a new one must too.** Today's callers: a bot's
 target pick and its roost-threat count (`aiNearestEnemy`, `aiSituation`, js/ai.js), a turret
 (`turretMark`/`turretHolds`), a worker bot's quarry and the flag's reach (js/robots.js), prey
-deciding to bolt (`updatePrey`), the eagle's gust (js/boot.js) and the CLICK scheme's lock and
+deciding to bolt (`updatePrey`), the eagle's gust (js/eagle.js) and the CLICK scheme's lock and
 acquire (js/input.js). A camp monster has no sight
 to resolve, since a hit is its only trigger ([Camp monsters](#camp-monsters-neutral-until-hit)).
 Both maps gate separately on `concealOf(p) >= PRONE_MAP` (0.55): a rival buried and still drops off
@@ -3240,7 +3240,7 @@ whole of that is [the order](multiplayer.md#bots) in the ladder.
 ## Death and respawn
 
 Death is a walk back, never the end: while your team's eagle still roosts (`teamEagleDown`, the
-eagle-drop banner in js/boot.js) going down costs a **timer and nothing else**, and you are
+eagle-drop banner in js/eagle.js) going down costs a **timer and nothing else**, and you are
 set down again at the bird ([Respawn at the bird](multiplayer.md#respawn-at-the-bird)); once the
 eagle has been driven off every death on that side is permanent, and that is the only way anyone
 is ever out of a match. `die(p, src, cause)` marks that player dead and drops its bow draw,
@@ -3757,14 +3757,14 @@ two that *are* a body in the world, `bigHurt` and `botOut`, keep a 0.04 jitter.
 
 | Cue | Says | Fired from |
 | --- | --- | --- |
-| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/world.js) — never the `nock` blip, which is the sound of a bow being ready |
+| `countTick()` | one whole second of a wait gone | the class screen's PLAY count (`state.menu.countT`, js/ui/menu.js) and the range's 3-2-1 (`agUpdate`, js/practice.js) — never the `nock` blip, which is the sound of a bow being ready |
 | `ui(open)` | a surface came up, or went away | every overlay toggle in `keyPress` (js/input.js): the pack drawer, the sheet, the chart, the build list, the ESC slab, the pause plate, and each of Escape's back-outs |
 | `notch()` | one step of a stepped control | the zoom rung and the build list's rows (the `wheel` listener), the minimap's steps, and a radial wheel's wedge as the travel crosses it (`pointerMove`) |
 | `turn()` | a piece turned on the spot | R over the build ghost |
 | `wheelUp()` | a radial wheel rolled open | `openFlagWheel`, `openWheelNear`, and whichever of the work key's four (manage, rack, roll die, range bell) the press opened |
-| `record()` | a new BEST | `agEndRound` and the parkour line (js/world.js) — one cue for one meaning, on both instruments |
+| `record()` | a new BEST | `agEndRound` and the parkour line (js/practice.js) — one cue for one meaning, on both instruments |
 | `runUp(n)` / `runBroke()` | a run of hits reaching a milestone, and a run lost | `hitPTarget` every `AG_RUN_STEP` in a row (**pitched up as the run climbs** — the one place a rate is meant to be heard, because the number it tracks is the thing being climbed), and the arrow loop (js/sim.js) when a run of that length ends in the snow |
-| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/boot.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
+| `alarm()` | **your roost is being struck and you cannot see it** | `hurtEagle` (js/eagle.js) when the bird is out of earshot and it is your own — the one cue in the game that speaks for something off screen, held to one warning per `EAGLE_WARN_GAP`, and the one that arrives with a **plate**: the `roost` notice under the minimap ([the plates](rendering.md#notices-the-plates-under-the-minimap)) and a feed line, so the ear turns your head and the corner says what happened |
 | `marked()` / `dazed()` | you have been found; you are stunned out of your own hands | `markUnit`/`stunUnit` (js/actions.js), **local player only and fresh applications only** — a state re-applied every second would otherwise re-ring every second |
 | `nightFall()` | the cold coming down | the darkness curve crossing `NIGHT_CUE` upward (js/sim.js), `dawnChime`'s opposite number |
 | `warp()` | a body moved without walking it | `warpPlayer` (js/tools.js) — never the dodge whoosh, the sound of air being crossed, the one thing a teleport never does |

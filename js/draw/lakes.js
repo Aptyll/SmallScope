@@ -339,7 +339,7 @@ function dustIce(x, y, c) {
 // fresh dusting that the wind carries off again. The weather's dials come in
 // through lakeSky() alone.
 function lakeSky() {
-  // weatherNow() (the `weather` banner, sim.js): `drift` is the ground
+  // weatherNow() (the `weather` banner, weather.js): `drift` is the ground
   // blizzard, `frost` the clear cold, `snow` the share of flakes falling
   // (a calm day's 0.4 lays nothing new)
   const w = weatherNow();

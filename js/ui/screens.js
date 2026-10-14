@@ -1501,7 +1501,7 @@ function drawBlizzard(now, a) {
   const span = VIEW_W + 80;
   // ...under one slow envelope over the whole sheet, so the wind arrives in
   // GUSTS instead of hissing flat: two sines beating against each other, the
-  // way the world's own wind is summed (windSway, js/sim.js)
+  // way the world's own wind is summed (windSway, js/weather.js)
   const gust = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(now * 0.55) * Math.sin(now * 0.23 + 1.3));
   for (let i = 0; i < 52; i++) {
     const h1 = hash2(i * 17 + 3, 41), h2 = hash2(i * 11 + 7, 89);

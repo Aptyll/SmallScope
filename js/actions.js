@@ -149,7 +149,7 @@ function hoverFish() {
   for (const f of fish) if (f.born && Math.hypot(f.x - wx, f.y - wy) < 7) return f;
   return null;
 }
-// the cable under the local player's pointer (zipUnder, world.js), while
+// the cable under the local player's pointer (zipUnder, js/zipline.js), while
 // it is on the ground with the world under the pointer and nothing open over
 // it - or null. The cable pass lights the strand on it and the guide line
 // walks the body to it (drawZips/drawZipGuide, js/draw/zipline.js)
@@ -633,7 +633,7 @@ function pickSnowdrop(o, p) {
 // Every way of hurting the practice dummy lands here - the E swing, every
 // bit an arrow pipeline shot can be (js/sim.js), and the roll's tackle - so
 // the numbers read the same whatever is thrown at it. The dummy never
-// breaks: the pool floors at zero and updatePractice (js/world.js) mends it
+// breaks: the pool floors at zero and updatePractice (js/practice.js) mends it
 // after DUMMY_RESET_T of quiet, which is what makes it a combo readout.
 function hitDummy(o, dmg, hx, hy) {
   // the meter's ledger: a hit after the quiet (the mend window) is a new
