@@ -80,8 +80,12 @@ const ZOOM_FLOOR = Math.min(ZOOM_MIN, DROP_ZOOM); // widest world buffer we ever
 // 16px art reads twice its old size and the screen holds 180 rows of world.
 // Whole, so it is a rung on every display; the wheel still zooms out from it.
 const ZOOM_REST = 2;
-let kWant = ZOOM_REST * 3; // device px per world px - a WHOLE number, the wheel steps it by 1 (fitCanvas re-rungs it off zoomCur)
-let zoomCur = ZOOM_REST;  // applied scale, eased toward kWant / devScale every update
+// ...and the shots that frame the valley instead of you - the title's backdrop, the
+// roost tour, the driven-off ceremony - hold the view they were composed at
+// (applyZoom, js/sim.js): 360 rows of world, half as close as play.
+const ZOOM_SHOW = 1;
+let kWant = 0;            // device px per world px - a WHOLE number, the wheel steps it by 1 (0 until fitCanvas first rungs ZOOM_REST)
+let zoomCur = ZOOM_SHOW;  // applied scale, eased toward the wanted zoom every update (applyZoom, js/sim.js); the game boots on the title
 let WV_W = 640, WV_H = 360; // the world view in world px
 
 // the rungs kWant may sit on, clamped so the ends of the range are reachable
@@ -127,6 +131,7 @@ function fitCanvas() {
   // never shrink the view below the UI panels' footprint
   while (dev > 1 && (devW / dev < 320 || devH / dev < 240)) dev--;
   scale = dev / dpr; // CSS px per game px; mouse mapping divides by this
+  const zWas = kWant ? kWant / devScale : ZOOM_REST; // the wheel's zoom before this fit, as a scale
   devScale = dev;    // the replay window captures at this resolution
   // cover the window exactly: ceil leaves at most one game px of overflow,
   // which the body's flex centering splits and overflow:hidden clips
@@ -142,8 +147,9 @@ function fitCanvas() {
   canvas.width = VIEW_W * dev; canvas.height = VIEW_H * dev;
   uictx.imageSmoothingEnabled = false; // resizing the canvas resets ctx state
   // devScale may have just changed (resize, fullscreen, a different monitor):
-  // re-rung the zoom onto the new ladder at the nearest scale to what it was
-  kWant = Math.max(kMin(), Math.min(kMax(), Math.round(zoomCur * dev)));
+  // re-rung the wheel's zoom onto the new ladder at the nearest scale to what
+  // it was - off kWant, never zoomCur, which a ride or a show is holding elsewhere
+  kWant = Math.max(kMin(), Math.min(kMax(), Math.round(zWas * dev)));
   // world buffer at the most zoomed-out size we can ever ask for, so it is
   // never reallocated mid-play; each frame uses the WV_W x WV_H corner.
   // imageSmoothing off: the scale-up must be nearest-neighbour or the pixel

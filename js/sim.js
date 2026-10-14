@@ -26,7 +26,13 @@ function applyZoom(dt, snap) {
   // the ride's OPENING SHOT: beginDrop's intro starts tight on your seat
   // (DROP_OPEN_ZOOM) and pulls out to the ride's framing as it runs down -
   // fractional in motion like any zoom, landing exact on DROP_ZOOM
-  const want = state.mode !== 'drop' ? zoomWantOf()
+  // the title's backdrop and the shows the match puts on (the roost tour, the
+  // driven-off ceremony) hold ZOOM_SHOW whatever the wheel says: they frame
+  // birds and valley, not your boots, and glide back to the wheel's zoom after
+  const show = state.mode === 'title' || (state.drop && (state.dropBrief || state.eagleCine ||
+    (state.mode === 'dead' && state.drop.eagles.some((q) => q.state === 'flee'))));
+  const want = show ? ZOOM_SHOW
+    : state.mode !== 'drop' ? zoomWantOf()
     : state.intro > 0 ? DROP_ZOOM + (DROP_OPEN_ZOOM - DROP_ZOOM) * (1 - easeInOut(1 - state.intro / state.introLen))
       : DROP_ZOOM;
   const k = 1 - Math.exp(-(director.on ? DIR_ZOOM_EASE : ZOOM_EASE) * dt); // a director's zoom glides (js/director.js)
