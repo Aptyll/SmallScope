@@ -337,6 +337,8 @@ wire: the handshake is `PATCH_TXT`, the seed and the map shape in the `hello` (a
 | `ping` | h→c | JSON | `at`: the host's clock, every `PING_EVERY` (2 s); the guest sends it straight back as `pong` |
 | `pong` | c→h | JSON | `at` as it came: the host eases that peer's round trip (`pongIn`). It is answered in the step, so it carries up to a frame's wait on each end |
 | `pings` | h→c (`*`) | JSON | `ms`: a round trip per slot, `null` for a bot or the host, drawn as each person's bars in the room |
+| `say` | c→h | JSON | `s`: a line for the room's chat; the host drops one that comes within `TALK_GAP` of that guest's last (`talkFrom`, js/ui/roomtalk.js) |
+| `said` | h→c (`*`) | JSON | `slot`, `s`: a line of the room's chat, the host's own and every guest's it kept, cleaned to the pixel font's letters (`talkClean`) |
 | `rematch` | h→c (`*`) | JSON | `seed`, `map`: the valley the room plays next, sent the moment a match ends (`rematchOffer`, js/ui/rooms.js) and again on the host's LOBBY. A guest's LOBBY reloads onto it and joins the same code; once the host has gone after it, the guest drops whatever else the old socket brings and does not end on HOST LEFT |
 | `phase` | h→c (`*`) | JSON | `phase`: the host turned the waiting room's page, `room` (the seats) or `pick` (the stage and LOCK IN) |
 | `full` | h→c | bytes, reliable | `tick`, `ia` (as on a `snap`), `snap`: the whole `snapBuild()` - players, `objects` as a sparse map by tile index, `structs`, the five kinds, `eagles`, `ground` (base64 of the byte array), the singletons. The dictionary from index 0. Sent after the welcome, on a `resync`, and to a peer whose ack aged out of the ring |
@@ -401,7 +403,9 @@ The same screens and the same protocol ride either transport; only the list and 
    join, leave and at the drop (`state: 'live'`).
 3. **Join.** `joinRoom(k)`: **SEED is decided at load**, so a page born on another seed reloads
    itself onto the room's (`?seed=N&join=CODE`, plus `&transport=steam`; the Steam transport does
-   the same from `connect()` with `&net=client&lobby=ID`) and joins from boot. Then `netJoin` ->
+   the same from `connect()`, on another seed or map shape, with `&map=M&join=ID`) and joins from
+   boot. A Steam invite taken up (`joinRequested`, or `+connect_lobby ID` on the launch line, which
+   desktop/main.js turns into `?join=ID`) joins the same way. Then `netJoin` ->
    `connect()`, and once the transport is open the client sends `hello`.
 4. **The host answers** in `netHostHello`: `refuse` on another patch or seed, else the slot - the
    parked one for a returning `uid`, otherwise the first AI slot on the side with fewer PEOPLE
@@ -419,8 +423,10 @@ The same screens and the same protocol ride either transport; only the list and 
    (`ready`) shows a tick on its seat, and the host's START does nothing but flash the seats it
    waits on until every person has said it (`roomAllReady`). Every person's seat carries ping bars
    (`ping`/`pong`/`pings`), and the host turns TEAMS (`seatsSize`, carried by the roster) and the
-   bots' level (`lvl` on the roster) under the title. The host's START goes straight to the drop
-   (`lockIn`): there is no pick for now. The PICK, the lobby, which a guest sees without LOCK IN
+   bots' level (`lvl` on the roster) under the title, and SHUFFLE deals the people afresh
+   (`seatsShuffle`). The room has a chat (`say`/`said`). The host's START runs a 3 s count
+   (`ROOM_COUNT`, sent as `count` like LOCK IN's; the host's Esc calls it off) and goes to the
+   drop at its zero (`lockIn`): there is no pick for now. The PICK, the lobby, which a guest sees without LOCK IN
    and with the host's name in its place, still answers a `pick` phase, and the host's ESC there
    turns back; nothing in a room sends one now. Seats are locked once the drop is under way
    (`seatsOpen`). The client builds its bodies from the welcome's roster

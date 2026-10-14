@@ -197,6 +197,9 @@ function updateRooms(dt) {
       else { m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
     }
   }
+  // the count to the match nudges a screen that is looking elsewhere, once
+  if (m.screen === 'room' && m.countT > 0 && !m.counted) { m.counted = true; roomAttention(); }
+  if (!(m.countT > 0)) m.counted = false;
   if (m.joinWait > 0) {
     m.joinWait -= dt;
     if (m.joinRetry > 0 && NET.role === 'solo' && (m.joinRetry -= dt) <= 0) netJoin(JOIN_AT_BOOT);
@@ -207,7 +210,7 @@ function updateRooms(dt) {
 function beginRoom() {
   const m = state.menu;
   m.screen = 'room';
-  m.rseat = -1; m.rword = 1; m.rkeys = false; m.ropt = -1;
+  m.rseat = -1; m.rword = 1; m.rkeys = false; m.ropt = -1; m.talkOn = false; m.counted = false;
   m.countT = 0; m.countN = -1;
   SFX.place();
   SFX.music.play('lobby');
@@ -235,6 +238,8 @@ function roomLayout() {
     opts.push({ key, label, value, lx: ox, x: vx, y: 34, w: vw, h: 5, edit: NET.role === 'host' && (key === 'teams' || key === 'bots') });
     ox = vx + vw + 16;
   }
+  // SHUFFLE, the host's: a bare word after the options, dealing the people afresh
+  if (NET.role === 'host') opts.push({ key: 'shuffle', label: '', value: 'SHUFFLE', lx: ox, x: ox, y: 34, w: pixelTextWidth('SHUFFLE'), h: 5, edit: true });
   return { x, w, colW, cols, seats, words: roomWords(labels), labels, opts };
 }
 // what a click on seat s does from this screen: 'swap' (move there), 'kick'
@@ -257,8 +262,11 @@ function roomCodeRect(L) {
 }
 function roomHit() {
   const L = roomLayout();
-  for (let i = 0; i < L.words.length; i++) if (inRect(L.words[i], 3)) return { kind: 'word', w: L.labels[i] };
+  if (!(state.menu.countT > 0)) for (let i = 0; i < L.words.length; i++) if (inRect(L.words[i], 3)) return { kind: 'word', w: L.labels[i] }; // the count stands over the words
   if (roomCode() && inRect(roomCodeRect(L), 3)) return { kind: 'code' };
+  const inv = roomInviteRect(L);
+  if (inv && inRect(inv, 3)) return { kind: 'invite' };
+  if (inRect(talkLayout(L), 2)) return { kind: 'talk' };
   for (const o of L.opts) if (o.edit && inRect(o, 3)) return { kind: 'opt', key: o.key };
   for (const s of L.seats) if (inRect(s)) {
     // the host's hand on a bot's class mark turns its class
@@ -278,6 +286,8 @@ function roomCopy() {
 function roomDo(h) {
   if (!h) return;
   if (h.kind === 'code') { roomCopy(); return; }
+  if (h.kind === 'invite') { roomInvite(); return; }
+  if (h.kind === 'talk') { talkOpen(); return; }
   if (h.kind === 'opt') { roomOpt(h.key, 1); return; }
   if (h.kind === 'word') {
     if (h.w === 'LEAVE') leaveRoom();
@@ -295,14 +305,18 @@ function roomClsRect(s) { return { x: s.x + s.w - RS_CLS - 2, y: s.y + 9, w: 16,
 function roomClick() {
   if (state.menu.screen === 'host') { hostClick(); return; }
   if (state.menu.roomsT < 1) return;
-  roomDo(roomHit());
+  const h = roomHit();
+  if (!h || h.kind !== 'talk') state.menu.talkOn = false; // a click anywhere else puts the chat line away
+  roomDo(h);
 }
 // the keys walk a cursor over the ten seats (left/right across the rule)
 // and down onto the words; Enter does what a click there would
-function roomKey(k) {
+function roomKey(k, e) {
   if (state.menu.screen === 'host') { hostKey(k); return; }
+  if (talkKey(k, e)) return; // a chat line being typed takes every key (js/ui/roomtalk.js)
   const m = state.menu, L = roomLayout();
   m.rkeys = true;
+  if (k === 'escape' && m.countT > 0 && NET.role === 'host') { cancelCount(); return; } // the host's Esc calls the count off
   if (k === 'escape' || k === 'backspace') { leaveRoom(); return; }
   const d = moveDir(k);
   const eds = L.opts.filter((o) => o.edit);
@@ -334,6 +348,7 @@ function roomKey(k) {
 // an option's value as the room reads it: TEAMS is the seats each side has
 // filled, yours first (the host can thin one side by hand)
 function roomOptValue(key) {
+  if (key === 'shuffle') return 'SHUFFLE';
   if (key === 'map') return mapName(MAP_TYPE);
   if (key === 'valley') return String(SEED);
   if (key === 'bots') return AI_LEVELS[roomLevel()].name;
@@ -344,6 +359,7 @@ function roomOptValue(key) {
 function roomOpt(key, d) {
   if (NET.role !== 'host' || !seatsOpen()) return;
   if (key === 'bots') { const n = AI_LEVELS.length; setAiLevel(((settings.aiLevel | 0) + d + n) % n); netHostRoster(); return; }
+  if (key === 'shuffle') { seatsShuffle(); SFX.place(); return; }
   if (key !== 'teams') return;
   // never fewer seats than a side has people in
   const n = (t) => roomSide(t).filter((p) => p.active).length, ppl = (t) => roomSide(t).filter(isHuman).length;
@@ -369,12 +385,17 @@ function roomStart() {
     SFX.deny();
     return;
   }
-  // no pick for now (Noah, 2026-10-14): every class as it came, and the
-  // eagle at once - a guest's screen follows the host's into the drop
+  // no pick for now (Noah, 2026-10-14): every class as it came, a short
+  // count on every screen (the host's, sent as `count`; the host's Esc calls
+  // it off), and the eagle at its zero (updateTitle -> lockIn); a guest's
+  // screen follows the host's into the drop
   const m = state.menu;
-  m.pressT = 0.12; m.csel = player.cls; m.countN = 0;
-  lockIn();
+  if (m.countT > 0) return;
+  m.pressT = 0.12; m.csel = player.cls;
+  m.countT = ROOM_COUNT; m.countN = ROOM_COUNT;
+  SFX.place();
 }
+const ROOM_COUNT = 3; // s: START's count to the eagle
 
 // ------------------------------------------------------------ the host page
 // CREATE's page, League's "create a custom game": the room's options before
@@ -727,7 +748,10 @@ function renderRoom(now, a) {
   // (a click copies it: white for a moment, lit under the pointer)
   const code = roomCode(), cw = code ? pixelTextWidth(code, 2) : 0;
   if (cw) drawPixelText(ctx, code, L.x + L.w - cw, 16, now - (m.copyAt || -9) < 0.5 ? SC_LIT : hit && hit.kind === 'code' ? '#ffd95c' : SC_GOLD, 2);
-  drawRelayPip(L.x + L.w - cw - 10, 19, !!(NET.transport && NET.transport.open), now);
+  // ...or, in a Steam lobby, INVITE in its place: Steam's friends overlay
+  const inv = roomInviteRect(L);
+  if (inv) drawPixelText(ctx, 'INVITE', inv.x, inv.y, hit && hit.kind === 'invite' ? '#ffd95c' : SC_LIT, 2);
+  drawRelayPip(L.x + L.w - (cw || (inv ? inv.w : 0)) - 10, 19, !!(NET.transport && NET.transport.open), now);
   ctx.fillStyle = SC_EDGE; ctx.fillRect(L.x, 46, L.w, 1);
   for (const c of L.cols) {
     const side = TEAMS[skin(c.t)];
@@ -740,6 +764,14 @@ function renderRoom(now, a) {
     if (!act && m.rseat === s.p.id) act = seatAct(s, false) || 'none'; // the keys' cursor lights the seat too
     drawRoomSeat(s, act === 'none' ? null : act, m.cardFx && m.cardFx[s.p.id] > 0);
     if (m.rseat === s.p.id && !hit) { ctx.fillStyle = SC_GOLD; ctx.fillRect(s.x, s.y, 2, s.h); }
+  }
+  drawTalk(L, now, hit && hit.kind === 'talk');
+  // the count to the match stands where the words were: one big gold digit
+  if (m.countT > 0) {
+    const n = String(Math.max(1, Math.ceil(m.countT))), sc = 4;
+    drawPixelTextOutline(ctx, n, Math.round((VIEW_W - pixelTextWidth(n, sc)) / 2), L.words[0].y - 4, SC_GOLD, 'rgba(8,12,28,0.9)', sc);
+    ctx.globalAlpha = 1;
+    return;
   }
   for (let i = 0; i < L.words.length; i++) {
     const w = L.words[i], hot = hit ? hit.kind === 'word' && hit.w === w.label : m.rkeys && m.rseat < 0 && m.rword === i;
