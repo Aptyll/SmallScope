@@ -1,6 +1,6 @@
 # Rendering
 
-> The title's MULTIPLAYER item and its rooms screen, and the waiting room:
+> The title's MULTIPLAYER item, its CUSTOM GAMES list and room, and the waiting room:
 > [gameplay.md](gameplay.md#settings) (they are a lobby, not a surface of their own).
 
 Everything that draws: the camera, the pass order, the baked panels, and the pixel cursor.
