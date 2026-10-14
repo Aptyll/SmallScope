@@ -1045,7 +1045,7 @@ A scripted bot may say only `BOT_CALLS` (js/bots/api.js), none of these three.
 
 A match is ten seats, and any of them can be a person on another screen: relay rooms between
 browsers (js/net/transport-ws.js, served by `app/server.js`) and Steam lobbies in the wrapper
-(js/net/transport-steam.js, behind `window.steamBridge` and `?transport=steam`). The wire, the
+(js/net/transport-steam.js, behind `window.steamBridge` and `?transport=steam`, which the wrapper asks for whenever Steam is up). The wire, the
 lobby lifecycle and the migration plan are [docs/pvp-architecture.md](../pvp-architecture.md);
 what the rest of the code needs to know is this:
 

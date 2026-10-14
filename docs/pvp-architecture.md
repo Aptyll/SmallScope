@@ -4,7 +4,7 @@ One player is the **host** and runs the authoritative simulation; every other pl
 **client** that sends its input and renders what the host says. Two transports carry the same
 protocol behind one five-call interface: a WebSocket **relay** (`app/server.js`, the server Noah
 hosts) for browser and wrapper alike, and **Steam lobbies** with Steam's P2P packets from the
-Electron wrapper (`desktop/`) behind `--transport=steam`. No dedicated servers, no host migration.
+Electron wrapper (`desktop/`), the wrapper's default whenever Steam is up. No dedicated servers, no host migration.
 
 This file is the reference for the wire: the code under `js/net/`, the relay and the wrapper cite
 it by path. Read [game.md](dev/game.md) and [multiplayer.md](dev/multiplayer.md) first: the
@@ -101,11 +101,13 @@ host `roomData(data)`, what the rooms list shows of this room. It raises the sam
 wire: `{t:'peer'}` / `{t:'gone'}` to a host as someone comes or goes, and on the relay
 `{t:'closed'}` (a client's socket dropped; it redials every `WS_RETRY` s) and `{t:'hostGone'}`.
 
-**The relay leads, Steam sits behind a flag (Noah's ruling, 2026-09-14).** A browser at a served
-address, the wrapper at `file://` and one machine playing itself in two windows all reach the relay
-(`netRelay()`: `?relay=ADDR` remembered in the settings, else the address the page was served
-from, else `localhost:8471`). `netSteam()` is true only with the bridge present AND
-`?transport=steam` (the wrapper's `--transport=steam`); the same three doors open on either.
+**Steam leads in the wrapper, the relay everywhere else (Noah's ruling, 2026-10-14; the relay led
+from 2026-09-14).** A player's own machine runs no relay, so a Steam launch with the API up asks
+for Steam's lobbies on its own (`desktop/main.js` adds `?transport=steam` unless given
+`--transport=relay` or a `--relay=ADDR`). A browser at a served address and one machine playing
+itself in two windows reach the relay (`netRelay()`: `?relay=ADDR` remembered in the settings,
+else the address the page was served from, else `localhost:8471`). `netSteam()` is true only with
+the bridge present AND `?transport=steam`; the same three doors open on either.
 
 **The relay** (`app/server.js`, a hand-rolled WebSocket server, no dependency) never reads a match.
 A room has one host and any number of clients: `/ws?role=host` (the greeting `{t:'relay', id,
@@ -502,5 +504,5 @@ Still open, with the current lean in italics:
   hash of `js/` the first time two builds on one patch number meet.*
 - What `DBG` may do on a client. *Nothing enforced: a client's writes to the singletons are
   overwritten by the next delta that touches them, and only then.*
-- Whether the relay or Steam leads at launch on Steam. *The relay leads until the Steam path has
-  run against a live Steam.*
+- Whether the relay or Steam leads at launch on Steam. *Decided 2026-10-14: Steam leads in the
+  wrapper, before the path has run against a live Steam - the first playtest is that run.*
