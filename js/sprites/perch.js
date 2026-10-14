@@ -500,7 +500,7 @@
     return cv;
   }
   // how far the painted bird reaches above and below the frame's centre, in
-  // canvas px: what the roost's nameplate hangs over
+  // canvas px: what the roost's hp bar hangs over
   const reaches = new WeakMap();
   function reach(src) {
     let r = reaches.get(src);

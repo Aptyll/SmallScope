@@ -2383,8 +2383,7 @@ frames as a settle animation), then **rests**, breathing a ±1 px bob with a win
 every 3.5–7 s (`RUFFLE_T`, mid frame only with a puff of settling snow — the full spread stays
 the gust's telegraph, so the idle can never cry wolf), flashing all white when hit (`SPRITES.perch.flash` of the frame drawn: it is taller than the 128×128 `drawSpriteFlash` scratch),
 with its team-colour hp bar (`drawPerchBar`: `PERCH_BAR_W` x `PERCH_BAR_H` in a `PERCH_BAR_RIM` ink frame, in `PERCH_BAR_SEGS` even segments, the biggest bar in the world since the match is won and lost on it; the chunk a hit takes holds pale `PERCH_LAG_HOLD` then drains at `PERCH_LAG_RATE`, a render-side `perchLag`; the pool's number sits inside) up **from the moment it roosts** — the bar is the objective's
-introduction, anchored to the bird's rotated extent, under the `PERCH` banner in the same paint (`perchBanner`: the side's coat with its darker lower rows, swallowtails `PERCH_TAG_NOTCH` deep, an ink rim, the name at 2x flat on the cloth in white, or in ink where the coat is too pale for white, `inkOn`; its
-driver wears `MERCH`: the side's two named bodies, named the same way). A gust windup draws wings thrown open
+introduction, anchored to the bird's rotated extent; no nameplate over it, the bar alone names the objective. A gust windup draws wings thrown open
 (frame 0) lifted 2 px: the spread IS the telegraph, no text. Perch roosts landed with its
 wings half open and the crew's saddle on its back (`'r' + beat`, at the roost's size, the three
 beats as wing turns, its seats again `SPRITES.perch.seat`). A `flee` bird climbs back out —
