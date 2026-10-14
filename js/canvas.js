@@ -76,8 +76,12 @@ const ZOOM_EASE = 16;     // per second, frame-rate independent
 const DROP_ZOOM = ZOOM_MIN; // the eagle ride's fixed framing: the max-out view (see the eagle drop banner)
 const DROP_OPEN_ZOOM = TARGET_ROWS / 180; // the ride's first frame: tight on your seat, pulled out to DROP_ZOOM over the opening (applyZoom, js/sim.js)
 const ZOOM_FLOOR = Math.min(ZOOM_MIN, DROP_ZOOM); // widest world buffer we ever need
-let kWant = 3;            // device px per world px - a WHOLE number, the wheel steps it by 1
-let zoomCur = 1;          // applied scale, eased toward kWant / devScale every update
+// The view a match opens at: every world pixel two canvas pixels, so the
+// 16px art reads twice its old size and the screen holds 180 rows of world.
+// Whole, so it is a rung on every display; the wheel still zooms out from it.
+const ZOOM_REST = 2;
+let kWant = ZOOM_REST * 3; // device px per world px - a WHOLE number, the wheel steps it by 1 (fitCanvas re-rungs it off zoomCur)
+let zoomCur = ZOOM_REST;  // applied scale, eased toward kWant / devScale every update
 let WV_W = 640, WV_H = 360; // the world view in world px
 
 // the rungs kWant may sit on, clamped so the ends of the range are reachable
