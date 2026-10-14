@@ -1665,6 +1665,8 @@ window.DBG = {
   get botView() { return botView; }, set botView(v) { botView = v | 0; },
   SEED, state, animals, objects, ground, mouse, keys, drops, footprints, flakes,
   fish, iceCracks, holes, crackIce, addFish, spawnEmerger, netAt, buildSiteAt,
+  // the ice breaking in its own shape (js/icebreak.js): DBG.iceBreak(x, y, 'breach', 0, { warn: 0.9 })
+  iceBreaks, iceBreak, iceBreakAge, iceBreakCovers, iceBreakHolds, iceBreakWet, ICE_BREAK_SHAPES,
   // the shoal the water this shape froze can hold (the fish banner, wildlife.js)
   get fishCap() { return fishCap; }, get fishFloor() { return fishFloor; },
   // the camps: the live registry, the table behind it, where each site is,

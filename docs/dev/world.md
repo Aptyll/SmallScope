@@ -107,7 +107,7 @@ stable per tile.
   pixels would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-fishing) and
-  their dawn refreeze, a spur's and a roost pad's paving ([the road](#the-road)), and the
+  their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, a spur's and a roost pad's paving ([the road](#the-road)), and the
   practice arena's track rolls. The bake also lays the scenery's
   [cast shadows](rendering.md#cast-shadows), and `render()` repaints a caster's reach itself
   when what stands on a tile changes, so felling or placing scenery calls nothing.
@@ -1272,6 +1272,41 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
   they are the four fish the fish well eats ([Food](gameplay.md#food-the-meal-is-a-channel)). `SFX.splash()` is the water cue. `DBG`
   exposes `fish`, `iceCracks`, `holes`, `crackIce`, `addFish`, `spawnEmerger`, `netAt`,
   `buildSiteAt`.
+
+### Ice breaks
+
+**Something big coming up through a lake breaks the ice in its own shape**, never a tile's
+([js/icebreak.js](../../js/icebreak.js), the pixels in
+[js/draw/icebreak.js](../../js/draw/icebreak.js)). Nothing in the game calls it yet: it is the
+hole the orca will come up through. `iceBreak(x, y, shape, ang, { warn, hold })` breaks the ice
+round a world point and returns the break (null where no bare ice lies under it);
+`DBG.iceBreak` stages one.
+
+- **The shape is a footprint** on the ice plane: an `ICE_BREAK_SHAPES` row of ellipses and
+  polygons in world px (nose to +x, turned by `ang`, squashed by `sq` the way the 3/4 view lays
+  ground). `breach` and `lunge` are placeholders until the orca's own hitbox lands;
+  `iceBreakCovers(b, x, y)` is the same footprint as a hit test.
+- **Every pixel is hashed, never rolled**: the hole is the footprint one px proud
+  (`ICE_BREAK_PROUD`) with a chipped edge, each pixel's freeze time `ft` runs from 0 at the rim
+  to 1 in the middle, and the plates and cracks come off Voronoi cells seeded the same way. All
+  of it comes from `hash2` (the world seed), the break's spot and its own seed, so a break is a
+  few numbers (`iceBreaks`, saved in `SAVE_ROOTS` and carried as a snapshot singleton) and
+  every screen rebuilds its pixels (`breakCache`). No `rng()` call is spent.
+- **Its life**, off `state.tick` (`iceBreakAge`): `warn` s of cracks tracing the outline, then
+  it opens (plates flung out over `ICE_BREAK_BURST`, a splash, the fish scattered), stays wide
+  open `hold` s (`ICE_BREAK_HOLD` by default), freezes back over `ICE_BREAK_FREEZE` (20 s) from
+  the rim inward along a ragged front, and the new ice thickens from dark to the sheet's tone
+  over `ICE_BREAK_SKIM`.
+- **Tiles and pixels.** Only tiles that were bare ice at birth (`cov`) break. A tile at least
+  half open water is ground `2` (so `waterAt`, routes and spawns treat it as water) until its
+  own close time in `open`; `updateIceBreaks` (from `updatePlay`) opens and closes them. A
+  tile a break holds is painted as ice (`paintGroundTile` asks `iceBreakHolds`) and the break
+  draws its own water over it, so nothing square ever shows. A player's feet read the pixels
+  (`iceBreakWet`): the plunge in `updatePlayer` and the climb out (`nearestDryTile`) go by the
+  water as drawn, and a strict move (`moveEntity`) stops at its edge. A net built on a break's
+  water keeps it open and joins `holes`, so the dawn refreeze has it from there.
+- **The pixels** (`drawIceBreaks`, flat after the pick cracks in `render()`): one small canvas a
+  break, repainted each frame it is on screen, clipped to where the ice is drawn (`iceAtPx`).
 
 ### The shoal is a population, not a nightly reset
 

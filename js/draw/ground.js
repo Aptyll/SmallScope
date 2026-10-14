@@ -62,7 +62,8 @@ function vnoise(x, y) {
 function paintGroundTile(g, tx, ty) {
       if (!groundBaked(tx, ty)) return; // its chunk's bake will paint it (the lazy bake, above)
       const px = tx * TILE, py = ty * TILE;
-      const gv = ground[idx(tx, ty)];
+      // a tile a break holds open is painted as the sheet: the break draws its own water over it (js/draw/icebreak.js)
+      const gv = ground[idx(tx, ty)] === 2 && iceBreakHolds(idx(tx, ty)) ? 1 : ground[idx(tx, ty)];
       const h = hash2(tx, ty);
       // soft tone variation sampled per 8px quad so no tile grid shows
       const quad = (g2, colA, colB) => {

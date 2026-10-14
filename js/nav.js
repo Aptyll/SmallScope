@@ -9,6 +9,10 @@ function moveEntity(e, dx, dy, r, strict) {
   // in - see updatePlayer); animals and robots treat those tiles as walls
   const solid = e instanceof Player && !strict ? (tx, ty) => isSolidTile(tx, ty, e) :
     (tx, ty) => isSolidTile(tx, ty, e) || waterAt(tx, ty); // e: its own side's gates stand open
+  // ...and the open water of an ice break, by the pixel at the feet, on a
+  // tile that is still ice (js/icebreak.js) - never a step that starts in it,
+  // so nothing standing in the water is pinned there
+  const wet = (e instanceof Player && !strict) || !iceBreaks.length || iceBreakWet(e.x, e.y + 4) ? null : (x, y) => iceBreakWet(x, y + 4);
   let blockedX = false, blockedY = false;
   // X axis
   if (dx !== 0) {
@@ -20,6 +24,7 @@ function moveEntity(e, dx, dy, r, strict) {
       const tx = dx > 0 ? x1 : x0;
       if (solid(tx, ty)) hit = true;
     }
+    if (!hit && wet && wet(nx, e.y)) hit = true;
     if (!hit) e.x = nx; else blockedX = true;
   }
   // Y axis
@@ -32,6 +37,7 @@ function moveEntity(e, dx, dy, r, strict) {
       const ty = dy > 0 ? y1 : y0;
       if (solid(tx, ty)) hit = true;
     }
+    if (!hit && wet && wet(e.x, ny)) hit = true;
     if (!hit) e.y = ny; else blockedY = true;
   }
   return { blockedX, blockedY };
