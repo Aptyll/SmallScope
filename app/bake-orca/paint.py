@@ -3,7 +3,7 @@
 #
 #   python3 app/bake-orca/paint.py   (needs numpy and Pillow)
 #
-# Look D BOLD (orca round 2, 2026-10-14): the camps' painted look, round and
+# Look D BOLD (docs/media/concepts/orca-concepts-2.png, 2026-10-14): the camps' painted look, round and
 # heavy, four tones off the black bear's palette (js/sprites/bears.js), a gold
 # eye like the bears', three blunt teeth a jaw. Built from app/media/paint.py's
 # parts round one bent spine: the body swept along it, the jaws two shorter

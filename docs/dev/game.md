@@ -39,10 +39,13 @@ it — through one function (`skin`, js/player.js) the paint goes through and th
 A settings toggle (MY TEAM) shows the roster's real colours instead.
 [Teams and colours](multiplayer.md#teams-and-colours).
 
-**The creek splits the valley.** One creek that never freezes runs the other diagonal, corner to
+**The creek splits the valley.** One creek runs the other diagonal, corner to
 corner through the woods and all, so the two roosts sit on opposite halves: it meets the road once,
 at the middle where the waves meet, under a timber bridge with open sides, and elsewhere it is
-crossed only at stepping-stone fords, or by a dodge roll from the bank. It swings round the two
+crossed only at stepping-stone fords, or by a dodge roll from the bank. Round the bridge it pools
+and freezes into **the orca's lake**, both sides' alike: anyone can walk over it, but the orca
+under the ice locks on a player out on it, a line over their head runs 4 s, and then it comes up
+through the ice and they go down. [The orca](gameplay.md#the-orca). It swings round the two
 midline camps in a half-loop each, so each side owns one on its own bank: the brown bear is RED's,
 the black bear BLUE's, each walking its bank up and down and stopping to fish. Anyone who steps in plunges as through the ice, and a bot shoved off the
 bridge goes in like anybody. [The creek](world.md#the-creek).

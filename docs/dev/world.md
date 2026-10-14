@@ -418,12 +418,13 @@ along the lane on the position noise — a slow drift of ±`ROAD_RAG` (0.8) and 
 side its own — and `roadMainDist(fx, fy)` measures any point against that wandering edge (negative
 inside; no ends). Both the ground array (`onRoad`, a tile's centre) and the ground bake (a pixel)
 ask the same function, so what a tile *is* and what it *looks like* agree to within the verge.
-**It never meets ice**: `genWorld`'s carve rules keep every pond and river `ROAD_ICE_KEEP` tiles
+**It never meets the ice network**: `genWorld`'s carve rules keep every pond and river `ROAD_ICE_KEEP` tiles
 off its edge and taper a river to nothing on its way in (the tile world, above), and a
 [shape](#map-shapes)'s lake reads the same keep-out, so the lane is dry from end to end on every
 shape and the ice network lives further out on the map. The one water it meets is
-[the creek](#the-creek), at the middle, and it crosses that on a bridge. A **path** is the one thing that crosses
-ice ([the paths](#the-paths)).
+[the creek](#the-creek), at the middle, frozen there into [the orca's lake](#the-orcas-lake):
+the lane crosses it on a bank of snow `ORCA_LAKE_VERGE` wide each side and the bridge's deck. A
+**path** is the one thing that crosses the ice network ([the paths](#the-paths)).
 
 **The nests sit beside it, not on it.** `roadNest(team)` picks each side's **junction** on the
 centreline — at least `ROAD_NEST_IN` (8) u inward from its gate, walking further in (to
@@ -495,10 +496,11 @@ tile it lays, a few tiles a frame for the seconds the front takes.
 
 ## The creek
 
-**One creek that never freezes runs the whole map, world edge to world edge, down the
+**One creek runs the whole map, world edge to world edge, down the
 cross-diagonal** (`tx = ty`, the top-left corner to the bottom-right — the road's opposite), the
 `the creek` group of [js/world.js](../../js/world.js). It cuts the valley into RED's half and
-BLUE's with a roost on each side, meets the road once, at the middle where the waves meet, and
+BLUE's with a roost on each side, meets the road once, at the middle where the waves meet (and
+freezes there, into [the orca's lake](#the-orcas-lake): the one stretch that does), and
 comes from beyond and goes on past us like the road: through the border woods too, where the
 pines stand to the water's edge and there is no bank to walk along. Look A of
 `docs/media/concepts/creek-concepts-1.png` (SNOWBANK CUT) and, for the bridge, look A of
@@ -520,7 +522,9 @@ pushed off the bridge. The death line is `WENT IN THE CREEK`.
   the centreline along the creek, `BRIDGE_L` either side of the creek's line along the road:
   `CREEK_HW` and a tile onto each bank, so a wider creek takes a longer deck),
   ground `3`, so to every rule it is road (the waves march over it, a building may stand on it).
-  Its sides are open: shoved off one, you are in the water;
+  Its sides are open, over the orca's ice: shoved off one, you are out on its lake;
+- **the orca's lake** round the bridge ([below](#the-orcas-lake)): the creek is ice there, so it
+  walks over anywhere, while the orca allows;
 - **an outer ford** (`creekOuterFords`) on each stretch between a bend and the treeline, at
   its middle, where the stretch is `CREEK_FORD_GAP` or more;
 - **a path's ford** wherever a grown shape's path crosses ([the paths](#the-paths)).
@@ -549,12 +553,13 @@ within `CREEK_CALM` of the bridge, the middle half of a bend and an outer ford, 
 each square. `creekAt(fx, fy)` is the signed distance to the nearer bank (negative in the water)
 and leaves where the point is in `CQ` — along (`a`) and across (`n`, + toward BLUE's half) —
 `creekFlow` the way the current runs there, `bridgeAt` the deck, and `creekWet` the
-plunge test: in the water as drawn and off the deck, so nobody goes in off a pixel of bank or off
-the deck's overhang. The ground array (a tile's centre) and the bake (a pixel) ask the same
+plunge test: in the water as drawn, off the deck and off the orca's ice (`creekIced`), so nobody
+goes in off a pixel of bank or off the deck's overhang. The ground array (a tile's centre) and the bake (a pixel) ask the same
 functions, so they agree to within the bank, as the road's do.
 
 `placeCreek()` runs at boot **right after `genWorld()`**, before the paths and the road: the
-water fells whatever grew on it, the deck is laid bank to bank, and the fixed fords go down. Pure position noise — nothing rolls, so no seed reshuffles — but it writes
+water fells whatever grew on it, the deck is laid bank to bank, the fixed fords go down, and
+last the orca's lake freezes over round the bridge. Pure position noise — nothing rolls, so no seed reshuffles — but it writes
 `ground` after genWorld, so every seed's ground hash includes it
 ([determinism](#determinism-and-noise)). Not under `PRACTICE`. `DBG` exposes `creekAt`,
 `creekFlow`, `creekWet`, `bridgeAt`, `creekBends`, `creekOuterFords`, `waterAt` and `CQ`.
@@ -572,7 +577,7 @@ drifts a couple of glints per tile of open creek downstream every frame on the f
 (`windT`), so `DBG.step` and the wire's echo reproduce it. Under those glints (`drawCreekFish`,
 drawn just before them) a LAKE WHITEFISH or a SNOW CHAR (`CREEK_FISH_CHAR` of them) swims
 downstream every `CREEK_FISH_GAP` tiles of creek, now and then down out of sight and back, under
-the deck and never over a ford. Each is a pure function of its index and `windT` (`creekFishAt`,
+the deck and the orca's ice and never over a ford. Each is a pure function of its index and `windT` (`creekFishAt`,
 world.js), so every client places them alike. A body that **rolls** over the water onto one
 catches it (`creekFishCatch`, run by the roll in `updatePlayer`, one winner through `contest()`):
 it goes into the pouch as `whitefish` or `snowChar`, and its place swims back `CREEK_FISH_BACK`
@@ -584,6 +589,31 @@ Verified on seeds 42, 7 and 1234 across the shapes: every ford runs bank to bank
 at both ends; the two junctions reach each other and every camp from both halves; a route across
 the water only ever steps on the deck or a ford; three minutes of bots and waves put nobody in the
 creek on their own feet, while a shove off the deck dunks a bot.
+
+### The orca's lake
+
+**At the middle the creek pools round the bridge, and the pool is frozen over**; the orca lives
+under it ([the orca](gameplay.md#the-orca)). It is a disc `ORCA_LAKE_R` tiles round the crossing
+whose rim wanders on **even harmonics alone** (`ORCA_LAKE_WOB`), so the shape is point-symmetric
+about the bridge like the roosts and the bends: each side's half of the valley gets the same
+ice, and both sides touch it. `orcaLakeEdge(fx, fy)` is the signed distance in tiles to the rim
+(negative inside), `orcaLakeAt` the membership, `orcaLakeNear` a tile that holds any of it (for
+the painters) and `creekIced` the creek frozen there. All of it is off `roadOffS` and `creekP`,
+the road's and the creek's own frame, so nothing rolls.
+
+`placeCreek` freezes it last: inside the disc every tile of the creek is ice (ground `1`; the
+lane's share past the deck's ends `placeRoad` then paves), and so is every snow tile more than
+`ORCA_LAKE_VERGE` tiles off the road's edge, so the road crosses on a bank of snow and the deck
+over the frozen creek; what grew there is felled. Any other ice within `ORCA_LAKE_MOAT` of the
+rim goes back to snow, so no river or pond runs into it and the lake the orca hunts is the one
+you see. A landmark never stands on it (`LM_WHERE.lake`).
+
+**Its pixels** are any lake's: the shore, the banks and the sheet come off `iceAtPx` like every
+lake ([the ice shore](#the-ice-shore)), but `bakeLakes` labels it first and always in the DEEP
+style (`ORCA_ICE`), so its dark middle is where the orca swims. Inside the disc `paintCreek`
+leaves the creek's water to the sheet, paints any of it the shore leaves bare as ice, and keeps
+its own banks only past the shore; a piling in the ice heaps no foam. Not under `PRACTICE`.
+`DBG` exposes `orcaLakeAt` and `orcaLakeEdge`.
 
 ## Snow depth
 
@@ -1275,14 +1305,15 @@ sits beside `STRUCTS` in [js/structures.js](../../js/structures.js) with the net
 
 **Something big coming up through a lake breaks the ice in its own shape**, never a tile's
 ([js/icebreak.js](../../js/icebreak.js), the pixels in
-[js/draw/icebreak.js](../../js/draw/icebreak.js)). Nothing in the game calls it yet: it is the
-hole the orca will come up through. `iceBreak(x, y, shape, ang, { warn, hold })` breaks the ice
+[js/draw/icebreak.js](../../js/draw/icebreak.js)). The orca comes up through one
+([the orca](gameplay.md#the-orca): `orcaStrike`). `iceBreak(x, y, shape, ang, { warn, hold })` breaks the ice
 round a world point and returns the break (null where no bare ice lies under it);
 `DBG.iceBreak` stages one.
 
 - **The shape is a footprint** on the ice plane: an `ICE_BREAK_SHAPES` row of ellipses and
   polygons in world px (nose to +x, turned by `ang`, squashed by `sq` the way the 3/4 view lays
-  ground). `breach` and `lunge` are placeholders until the orca's own hitbox lands;
+  ground). `orca` is the orca's own; `breach` and `lunge` were its first sketches, kept for
+  staged scenes;
   `iceBreakCovers(b, x, y)` is the same footprint as a hit test.
 - **Every pixel is hashed, never rolled**: the hole is the footprint one px proud
   (`ICE_BREAK_PROUD`) with a chipped edge, each pixel's freeze time `ft` runs from 0 at the rim

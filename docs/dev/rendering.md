@@ -190,8 +190,10 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
    (`drawCreekFlow`, the same file: glints drifting downstream over the still water the bake laid
    and over the fish, on the field's clock) → under-ice fish (frost pike and gold sunfish:
    `SPRITES.iceFish[kind].shadow` at 0.42 alpha, a solid rim over a half-strength core, and the crisp `swim` sprite clipped to the open-hole
-   tiles round a fish crossing one) →
-   ice-crack decals;
+   tiles round a fish crossing one) → **the orca's shadow** (`drawOrcaShadow`, js/draw/orca.js:
+   the same look at a deer's size, cut to the ice's own pixels so it never shows over the road it
+   swims under, darkening as it comes up, gone while it is out) →
+   ice-crack decals → ice breaks (`drawIceBreaks`, js/draw/icebreak.js);
 2. `PRACTICE` only: `drawAgTrack` (the archery rails) and `drawParkourLine` (the start line);
 3. **the trampled snow** (`drawTrample`, js/draw/trample.js: the match's slow record of where
    bodies walked and fought, drawn from pooled 128 px chunk canvases repainted only when their
@@ -210,7 +212,8 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
    the piercing shot's telegraph) → item drops;
 7. the **y-sorted `draws` array** (tall objects, every player, animals, robots, the practice
    targets and your side's flags, sorted by feet Y; empty player slots draw as team-tinted
-   silhouettes via `drawGhost`);
+   silhouettes via `drawGhost`; the orca out of the water, `drawOrcaBreach`, sorted by its
+   hole's waterline and cut at it);
 8. `drawSelection` (white pulsing corners with a dark shadow over the hovered stump / open ice
    hole / finished structure, or the wheel's target) → `drawBuildGhost` (the build list's ghost)
    → `drawWorkHint` (the E work prompt) → `drawFishHint` (the fish brackets);
@@ -1228,7 +1231,10 @@ above the health bar, built the way the meter is (`drawShieldBar`: two-tone dawn
 deep, cut into one segment per snowdrop with a pale glint on its first pixel — gold is the dawn's
 and no side's, so it reads the same over a friend or a rival), and while it holds the meter, the
 name and a bot's callout all stand `SHIELD_LIFT` (3) rows higher; an empty shield is not drawn at
-all. It is never on the team rail. The name is on **every** player, the local one included: the name is the profile's
+all. It is never on the team rail. **The orca's line** ([the orca](gameplay.md#the-orca)) is a row
+the same way, over the shield's if there is one (`drawOrcaLine`: ice white over pale blue, one
+segment a second of `ORCA_LINE`, the whole row blinking white in the last second), and lifts the
+rest another `SHIELD_LIFT`; it is up only over the head the orca is after. The name is on **every** player, the local one included: the name is the profile's
 ([architecture.md](architecture.md#profilejs)), and yours is what the rest of the table reads over
 your head, so hiding it from you alone would make it the one label in the game you cannot check. Every frame is one **opaque** ink, `BAR_FRAME` (the name outline's `#0f1632`), over one track grey, `BAR_TRACK`: a see-through backing came out a different colour on snow, on a pine and on another body's frame.
 

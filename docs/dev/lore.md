@@ -47,7 +47,8 @@ guild sells — not from a new faction or a new magic.
 | fish and berry prices swing all day | the market is the guild's, not the companies' |
 | robots, turrets, generators and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | one straight road, corner to corner | the works' haul road, older than everything but the machines |
-| a creek down the other diagonal that never freezes | the works' old outfall, still running warm under the snow |
+| a creek down the other diagonal that never freezes, but for a frozen pool where the road crosses it | the works' old outfall, still running warm under the snow; at the crossing it slows to a pool, and the pool freezes |
+| an orca under that pool's ice: stand on it too long and you go down | it was there before either company, and it takes whoever is on its ice, any side |
 | camps are neutral until hit | the wolves were here first and have no opinion about claims |
 | WORN, KEEN, GILDED | the condition salvage comes out of the snow in |
 | the wind dies at dusk and night is a colour | the valley goes blue and quiet; the claim does not stop for it |
@@ -137,3 +138,4 @@ A new line may deepen these. It never settles one.
 - Where the eagles come from, and why they put up with it.
 - Whether the merchants answer to anyone.
 - What the machines remember that they are not telling.
+- How an orca came to live in a pool in a high valley.

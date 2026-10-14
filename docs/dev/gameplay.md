@@ -282,6 +282,12 @@ that exhausts `NAV_BUDGET` (700 expansions, ~a 25-tile detour) returns the route
 tile it saw with `path.partial = true`, so a far goal still gets a first leg and a later replan
 finishes it; only an enclosed goal (or an unwalkable one with reach 0) returns `null`. A full
 search is cheap enough that dozens of units replanning several times a second is noise.
+A tile can charge a **toll** (`navToll`, extra steps per step onto it): ground a walker can
+stand on but should not linger on, so a route goes round unless round is much further. The one
+toll today is [the orca's](#the-orca) ice (`ORCA_TOLL`, set by `spawnOrca`); the lane over its
+lake charges none, so the waves and the bots keep to the road. The straight line a plan tries in
+place of a search, and `navSmooth`'s string-pulling, are `navLineClear` with `free` set, which
+refuses a tolled tile, so neither cuts across ground the search went round.
 
 Units do not call `findPath` directly. `navTo(e, gx, gy, r, reach, dt, budget)` (the last optional: a bigger
 search budget for a walk into a corner's forest — the bots' `AI_ROOST_BUDGET`, ai.js) keeps a route on
@@ -1869,6 +1875,40 @@ perched) is the only height in the game, subtracted by `animalHitY` and the curs
 `separateUnits`. A camp that wants a flock stands one up with
 `props` of `deadTree` and a spawn that perches birds on them (`rookeryPerch`).
 
+### The orca
+
+**One orca lives under [its lake](world.md#the-orcas-lake), the frozen pool round the bridge**
+([js/orca.js](../../js/orca.js), the pixels in [js/draw/orca.js](../../js/draw/orca.js), its
+art `SPRITES.orca`, baked by app/bake-orca/paint.py). It is not an animal: nothing shoots it,
+nothing walks into it, and it never leaves the water. `orca` is one `SAVE_ROOTS` singleton
+that rides the snapshot; the client eases it like a body (`netClientLerp`).
+
+- **It cruises** the whole disc (`orcaWater`, under the road too) as a shadow under the ice at
+  `ORCA_SWIM`, the lake's fish's look at the size of a deer, from one home tile (`orcaHome`: room
+  of `ORCA_MARGIN` round it) to the next; every pick is `hash2` off the tick, never `rng()`.
+- **It locks on** (`orcaLook`) the nearest player standing on *its bare ice* (`orcaPrey`: ground
+  `1` inside the disc, not in the air, not on a cable; a deer's back is still the ice) within
+  `seenAt(p, ORCA_SIGHT)` of it. The road over the lake, the snow bank either side of it and
+  the deck are safe. A line over their head (`orcaLine`, drawn by `drawOrcaLine`) runs
+  `ORCA_LINE` (4) s, a knock in the ice under them each second (`iceKnock`), while the shadow
+  runs in under them as fast as the time left asks, up to `ORCA_DASH`. Off its ice and the hunt
+  drops; it locks nobody for `ORCA_LET`.
+- **The line runs out** (`orcaStrike`): the ice breaks in the orca's own shape
+  (`iceBreak(…, 'orca', …)` with `ORCA_CRACK` of warning cracks, [ice breaks](world.md#ice-breaks))
+  beside and below them (`ORCA_LEAN`, the 3/4 view's behind; shorter lunges where the ice for the
+  long one is not there, and no strike at all where there is no bare ice), and the one it is
+  after is rooted (`rootUnit`). The orca lunges up out of the hole, and at `ORCA_BITE` its jaws
+  shut on the spot they stood on (`orcaBite`): every unit `unitsHit` finds within `ORCA_JAWS`
+  takes a blow of exactly its health, shield and armour (`orcaLethal`) through `hurtUnit`,
+  cause `orca`, the death line `WENT TO THE ORCA`, counted as a beast's in the post-game
+  record (`BEAST_CAUSES`). It slides back under by `ORCA_UP` and locks nobody for `ORCA_REST`.
+- **Bots run.** Rung 0b of `aiThink`: once the profile's `react` of the line has gone,
+  `orcaShore` walks them off its ice by the nearest way. Routes pay its toll
+  ([pathfinding](#pathfinding)), so a bot crosses only where round is much further. A bot file
+  reads the line as `me.orca` ([the bot API](../bots/api.md)).
+
+Not under `PRACTICE`. `DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` and `ORCA_LINE`.
+
 ## Economy (one currency)
 
 Every player owns a wallet **and** a bag. `p.inv` is `{ gold }` — currency only, no ceiling —
@@ -3341,7 +3381,7 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
 
 - **the roots** (`SAVE_ROOTS`): every mutable global the sim reads - `state` without its UI keys
   (`SAVE_STATE_SKIP`: the panels, the drag, the fade, the intro), `players`, the entity arrays,
-  `iceCracks`, `iceBreaks`, `market`, the streams, wildlife's and the bot brain's module `let`s, the post-game
+  `iceCracks`, `iceBreaks`, `orca`, `market`, the streams, wildlife's and the bot brain's module `let`s, the post-game
   record, and the camera and zoom - **as one object graph**, so a reference shared anywhere (a
   bot's hunt target, a den's camp, `player` as `players[localId]`) comes back shared. JSON with a
   handful of `$` tags: an object reached twice is written once and pointed at, a `Player` comes
