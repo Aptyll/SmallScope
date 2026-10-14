@@ -1477,6 +1477,7 @@ function cursorInfo() {
     if (m.screen === 'ladder') return ladderCursor();
     if (m.screen === 'rooms') return { kind: m.roomsT >= 1 && roomsHit() ? 'hand' : 'arrow' };
     if (m.screen === 'room') return { kind: m.roomsT >= 1 && roomHit() ? 'hand' : 'arrow' };
+    if (m.screen === 'host') return { kind: m.roomsT >= 1 && hostHit() ? 'hand' : 'arrow' };
     if (!m.panel && (overCharTag() || overPatchTag() || overCoinTag())) return { kind: 'hand' }; // the three corner tags
     if (!m.panel && menuHit() >= 0) return { kind: 'hand' };
     return { kind: 'arrow' };
