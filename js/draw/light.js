@@ -425,7 +425,7 @@ function drawIceStars(ox, oy, tx0, ty0, tx1, ty1) {
   ctx.globalAlpha = ma;
   for (let ty = ty0; ty <= ty1; ty++) for (let tx = tx0; tx <= tx1; tx++) {
     const s = mirrorSlot[idx(tx, ty)];
-    if (s < 0 || ground[idx(tx, ty)] === 2) continue;
+    if (s < 0 || (ground[idx(tx, ty)] === 2 && !iceBreakHolds(idx(tx, ty)))) continue; // a break's tile mirrors as the sheet it is painted as
     ctx.drawImage(mirrorCv, (s % MIRROR_COLS) * TILE, ((s / MIRROR_COLS) | 0) * TILE, TILE, TILE, tx * TILE - ox, ty * TILE - oy, TILE, TILE);
   }
   ctx.globalAlpha = 1;

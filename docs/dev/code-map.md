@@ -376,6 +376,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a weapon's forge points and level, and what a level adds: damage on every body, then rate of fire or tensile by the body's `TOOLS` row `up`, tapering | `FORGE_PTS`/`FORGE_NEED`/`FORGE_NEED_UP`/`FORGE_TAPER`/`FORGE_DMG`/`FORGE_ROF`/`FORGE_TENSILE`, `forgeNeed`/`forgeCum`/`forgeBar`/`forgeLvlOf`, `toolFp` (`cell.fp`; a bare `lvl` reads as its points), `toolLvl`, `toolUp`, `forgeSum`, `forgeDmgAt`/`forgeRofAt`/`forgeTensileAt` (the bench's preview), `toolDmgMul` (read by `toolPlan`, tools.js, and `pierceMods`, abilities.js), `toolRofMul` (`toolRof`, tools.js), `toolTensile` (`toolPlan`, `toolDrawMul`, `botFitLoadout`, tools.js, and the tooltip) | `the forge` |
 | what a pile is worth, what a forged weapon sells for, and the order that dumps a pile into it | `pilePts`, `forgeWorth`/`FORGE_GOLD` (`cellValue`, js/ui/shop.js), `forgeCell`, `forgeReady`, `forgeTool` (from `shopCmd` act `forge`, js/ui/shop.js) | `the forge` (the bench: js/ui/forge.js) |
 
+## js/icebreak.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the ice breaking in its own shape (the orca's hole): the footprints, the tuning, breaking it, the tiles it opens and closes, the step, the footprint as a hit test, whether a pixel is its water, whether it holds a tile | `ICE_BREAK_SHAPES`/`breakLens`, `ICE_BREAK_*`, `iceBreaks`, `iceBreak`, `breakFoot`/`breakGeom` (the shape and the hole off `breakCache`), `breakOpen`/`breakClose`, `updateIceBreaks` (from `updatePlay`, sim.js), `iceBreakCovers`, `iceBreakWet` (the plunge, updatePlayer; `nearestDryTile`, actions.js; `moveEntity`, nav.js), `iceBreakHolds` (`paintGroundTile`, ground.js; the mirror, light.js; the fish clip, render.js), `iceBreakAge`/`breakFront` | `ice breaks` (the pixels: js/draw/icebreak.js; save: `SAVE_ROOTS`; wire: `snapSingles`) |
+
 ## js/tunnel.js
 
 | Looking for | Start at | Banner |
@@ -574,6 +580,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | Looking for | Start at | Banner |
 | --- | --- | --- |
 | a pylon's sprite in each side's colour and its draw in the y-sorted pass, the cable pass (a span rasterised pixel by pixel with its sag and wind lean, over every body and canopy, under the night; the hovered line lit gold), the dotted walk to the hovered cable, and a rider's handle and rope | `PYLON_H`/`PYLON_SPRS`, `drawPylon` (dispatched from `render()`'s object pass), `ZIP_INK`/`ZIP_LIT`/`ZIP_HOV_A`/`ZIP_HOV_B`/`ZIP_GUIDE`, `drawZips` (between `drawDropAir` and `renderLighting` in `render()`), `zipLitLine`, `drawZipGuide` (after `drawAimLine`), `drawZipHandle` (from `drawPlayer`, js/draw/bodies.js) | `zipline` (the geometry it reads: `zips`/`zipPoint`/`zipLift`, the `zipline` banner, world.js) |
+
+## js/draw/icebreak.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| an ice break's pixels: the warning cracks, the water, the plates in flight, the crack band and the long cracks, the freeze front and the new ice, the canvas each break owns | `IB_*`, `breakArt` (the parts that never change, built once a screen), `paintIceBreak` (one frame of it), `drawIceBreaks` (`render()`, after the pick cracks) | `ice breaks, drawn` (the thing itself: js/icebreak.js) |
 
 ## js/draw/tunnel.js
 

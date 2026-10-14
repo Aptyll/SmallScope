@@ -214,7 +214,7 @@ function render() {
     const tx = Math.floor(f.x / TILE), ty = Math.floor(f.y / TILE);
     let cut = false;
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
-      if (!inWorld(tx + dx, ty + dy) || ground[idx(tx + dx, ty + dy)] !== 2) continue;
+      if (!inWorld(tx + dx, ty + dy) || ground[idx(tx + dx, ty + dy)] !== 2 || iceBreakHolds(idx(tx + dx, ty + dy))) continue; // a break's water is its own pixels, laid over this
       if (!cut) { ctx.save(); ctx.beginPath(); cut = true; }
       ctx.rect(Math.round((tx + dx) * TILE - ex), Math.round((ty + dy) * TILE - ey), TILE, TILE);
     }
@@ -247,6 +247,9 @@ function render() {
       }
     }
   }
+
+  // the ice breaks: their water, plates and cracks, in their own shape (js/draw/icebreak.js)
+  drawIceBreaks(ox, oy);
 
   // the archery track's rails, flat under everything that walks, then the
   // parkour's start/finish line, painted flat on the carved ice

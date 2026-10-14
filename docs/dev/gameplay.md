@@ -260,7 +260,10 @@ its knockback too, so a shoved deer actually moves.
 [the creek](world.md#the-creek) and plunges; an animal or a robot meets a wall there. A **bot**'s
 own walk is strict too (`moveEntity(…, strict)` in `updatePlayer`) unless it is already standing
 in water or a shove past `WADE_SHOVE` (40 px/s of knockback) is carrying it, so a bot never wades
-in by itself and still goes in off the bridge when it is knocked off.
+in by itself and still goes in off the bridge when it is knocked off. An
+[ice break](world.md#ice-breaks)'s water is read by the pixel at the feet (`iceBreakWet`): a
+player goes in exactly where it shows, and a strict move (a bot's own walk, a shove) and every
+other walker stop at its edge, unless the step starts in it.
 
 ## Pathfinding
 
@@ -3330,7 +3333,7 @@ by reference with a hash of its contents, and the ground); `saveCapture` then wr
 
 - **the roots** (`SAVE_ROOTS`): every mutable global the sim reads - `state` without its UI keys
   (`SAVE_STATE_SKIP`: the panels, the drag, the fade, the intro), `players`, the entity arrays,
-  `iceCracks`, `market`, the streams, wildlife's and the bot brain's module `let`s, the post-game
+  `iceCracks`, `iceBreaks`, `market`, the streams, wildlife's and the bot brain's module `let`s, the post-game
   record, and the camera and zoom - **as one object graph**, so a reference shared anywhere (a
   bot's hunt target, a den's camp, `player` as `players[localId]`) comes back shared. JSON with a
   handful of `$` tags: an object reached twice is written once and pointed at, a `Player` comes

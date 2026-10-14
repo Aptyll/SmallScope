@@ -57,6 +57,7 @@ const SAVE_ROOTS = [
   ['warps', ...saveArr(warps)], ['wordPops', ...saveArr(wordPops)], ['ptargets', ...saveArr(ptargets)], ['swaps', ...saveArr(swaps)], ['slashes', ...saveArr(slashes)],
   ['shed', () => [shedWait, shedLive], (v) => { saveArr(shedWait)[1](v[0]); shedLive = v[1]; }],
   ['iceCracks', () => iceCracks, (v) => { iceCracks.clear(); for (const [k, x] of v) iceCracks.set(k, x); }],
+  ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/icebreak.js); their pixels rebuild off them
   ['market', () => market, (v) => Object.assign(market, v)],
   // the bot callouts (js/ai-callouts.js); a save from before they existed
   // carries none of these, and loads with every side silent

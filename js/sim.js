@@ -517,6 +517,7 @@ function updatePlay(dt) {
     }
   }
   updateTunnels(dt); // the burrows: the digs, the rides under the snow and the holes caving (js/tunnel.js)
+  updateIceBreaks(); // a break's hole opening and its tiles freezing back (js/icebreak.js)
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, build orders and fish claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
@@ -1050,9 +1051,13 @@ function updatePlayer(p, dt) {
   if (p.fallT <= 0) {
     const htx = Math.floor(p.x / TILE), hty = Math.floor((p.y + 4) / TILE);
     const g = inWorld(htx, hty) ? ground[idx(htx, hty)] : 0;
+    // a tile an ice break holds open is wet only where its pixels are: the
+    // break's own shape says where the water is (iceBreakWet, js/icebreak.js)
+    const held = g === 2 && iceBreakHolds(idx(htx, hty));
     // a net is planked over its hole: you stand on it, and that is how the
     // catch comes out of it (see updateStructures' net branch)
-    if ((g === 2 && p.dodgeT <= 0 && !netAt(htx, hty)) ||
+    if ((g === 2 && !held && p.dodgeT <= 0 && !netAt(htx, hty)) ||
+      (iceBreaks.length && p.dodgeT <= 0 && !netAt(htx, hty) && iceBreakWet(p.x, p.y + 4)) ||
       (g === 4 && p.dodgeT <= 0 && creekWet(p.x / TILE - 0.5, (p.y + 4) / TILE - 0.5))) {
       p.dodgeT = 0; p.rollHit.length = 0; // a roll ends in the water
       p.fallT = HOLE_FALL_T;

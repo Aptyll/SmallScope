@@ -502,6 +502,7 @@ function nearestDryTile(x, y, p) {
       if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
       const tx = ctx0 + dx, ty = cty0 + dy;
       if (!inWorld(tx, ty) || waterAt(tx, ty) || isSolidTile(tx, ty)) continue;
+      if (iceBreakWet((tx + 0.5) * TILE, (ty + 0.5) * TILE + 4)) continue; // the feet would land in a break's water (js/icebreak.js)
       if (inCreek) { creekAt(tx, ty); if (Math.sign(CQ.n) !== side) continue; }
       const d = Math.hypot(dx, dy);
       if (d < bd) { bd = d; best = { tx, ty }; }
