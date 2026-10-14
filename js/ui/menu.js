@@ -26,7 +26,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.459';
+const PATCH_TXT = 'PATCH 0.462';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -42,6 +42,8 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.462', 'MULTIPLAYER IS NOW A CUSTOM GAMES LIST AND A TEAM ROOM: PICK A GAME AND JOIN IT, CLICK A SEAT ON THE OTHER SIDE TO SWAP TEAMS, AND THE HOST CAN ADD OR REMOVE BOTS, SHOW A PLAYER OUT AND PRESS START.'],
+  ['0.461', 'BEHIND THE SCENES: THE GAME\'S CODE NOW CHECKS ITSELF SO NO FILE OR FUNCTION GROWS TOO BIG TO READ.'],
   ['0.459', 'THE MAP AND THE MINIMAP WEAR THE NEW GRAPHITE LOOK: A FLATTER, QUIETER MAP WITH NO CLOSE BUTTON (M, ESCAPE OR A CLICK OUTSIDE IT CLOSES IT), CAMP NAMES THAT SHOW WHEN YOU POINT AT A CAMP, A BEAR\'S HEAD FOR THE BROWN BEAR DEN AND CLEANER ZIPLINES.'],
   ['0.458', 'EACH WAVE IS NOW THREE AXE BOTS AND ONE FLAG BEARER BEHIND THEM: THE BOTS NEAR ITS FLAG MOVE QUICKER, HIT HARDER AND TAKE LESS DAMAGE, SO SCRAP THE FLAG FIRST.'],
   ['0.457', 'THE BROWN REEDS ARE GONE FROM THE LAKE SHORES.'],
@@ -511,194 +513,6 @@ function overPatchTag() {
   const r = patchTagRect();
   return mouse.x >= r.x - 3 && mouse.x < r.x + r.w + 3 && mouse.y >= r.y - 3 && mouse.y < r.y + r.h + 3;
 }
-// ------------------------------------------------------------ rooms
-// The MULTIPLAYER plank's screen: the relay's open rooms as planks under a
-// HOST plank (docs/pvp-architecture.md; the relay: app/server.js). A room's
-// plank carries its host's name, ten seat pips (five a side, the people in
-// them lit in that side's paint), its four-letter code on a plate and a red
-// dot once its match is under way; a room on another patch is dimmed and
-// inert, its patch printed where the code would be. A relay pip beside HOST
-// says the list is live, and an empty list shows one ghost of a row. Under
-// the wrapper with Steam asked for (netSteam) the list is Steam's lobbies
-// (steamRooms, js/net/transport-steam.js) in the same shape, with no code
-// plate - a lobby is joined off the list, never read aloud. HOST makes a room on the relay and opens the waiting room (the
-// lobby, which every peer then sees as this screen does); a
-// room's plank joins it, the row staying lit until the host's WELCOME
-// arrives, or rattling if the room would not have us.
-const RM_W = 236, RM_H = 24, RM_GAP = 6, RM_MAX = 6;
-const RM_PIP = 4, RM_PIP_GAP = 2, RM_PIP_SIDE = 4; // a seat pip, its gap, the gap between the two sides' fives
-let roomsFeed = null; // the relay's list socket while the screen is up (wsRooms)
-function beginRooms() {
-  const m = state.menu;
-  m.screen = 'rooms';
-  m.rooms = []; m.roomsOk = false; m.rhover = {}; m.rsel = -1; m.roomsShake = 0;
-  if (roomsFeed) roomsFeed.close();
-  const feed = (rooms, ok) => { m.rooms = rooms.slice(0, RM_MAX); m.roomsOk = ok; };
-  roomsFeed = netSteam() ? steamRooms(feed) : wsRooms(netRelay(), feed); // Steam's lobbies under the wrapper, the relay's rooms otherwise
-  SFX.place();
-  SFX.music.play('lobby');
-}
-function roomsFeedClose() { if (roomsFeed) { roomsFeed.close(); roomsFeed = null; } }
-function leaveRooms() {
-  roomsFeedClose();
-  if (NET.role !== 'solo') netLeave();
-  state.menu.screen = 'menu';
-  SFX.pickup();
-  SFX.music.play('intro');
-}
-function roomsLayout() {
-  const toy = frameTop();
-  const host = { x: Math.round((VIEW_W - MENU_BW) / 2), y: toy + MENU_Y0, w: MENU_BW, h: MENU_BH };
-  const rows = [];
-  const x = Math.round((VIEW_W - RM_W) / 2);
-  for (let k = 0; k < state.menu.rooms.length; k++) rows.push({ x, y: toy + MENU_Y0 + MENU_PITCH + 10 + k * (RM_H + RM_GAP), w: RM_W, h: RM_H, k });
-  return { toy, host, rows };
-}
-function roomOk(r) { return r.data && r.data.patch === PATCH_TXT; }
-function roomsHit() {
-  const { host, rows } = roomsLayout();
-  if (overRect(host, 2, 3)) return 'host';
-  for (const r of rows) if (roomOk(state.menu.rooms[r.k]) && overRect(r, 2, 2)) return r.k;
-  return null;
-}
-function hostRoom() {
-  roomsFeedClose();
-  netHost();
-  beginLobby();
-}
-function joinRoom(k) {
-  const m = state.menu, r = m.rooms[k];
-  if (!r || !roomOk(r) || NET.role === 'client') return;
-  m.rsel = k;
-  // the world is the host's: SEED and MAP_TYPE are both decided at load
-  // (js/core.js, js/boot.js), so a page born on another seed OR another
-  // shape starts over on the room's and joins from boot (?join=)
-  const seed = r.data && +r.data.seed, map = (r.data && r.data.map | 0) || 0;
-  if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + r.room + (netSteam() ? '&transport=steam' : ''); return; }
-  netJoin(r.room);
-  SFX.place();
-}
-function roomsKey(k) {
-  const m = state.menu;
-  if (k === 'escape' || k === 'backspace') { leaveRooms(); return; }
-  if (moveDir(k) === 'up') { m.rsel = Math.max(-1, m.rsel - 1); SFX.pickup(); }
-  else if (moveDir(k) === 'down') { m.rsel = Math.min(m.rooms.length - 1, m.rsel + 1); SFX.pickup(); }
-  else if (k === 'enter' || k === ' ') { if (m.rsel < 0) hostRoom(); else joinRoom(m.rsel); }
-}
-function roomsClick() {
-  const m = state.menu;
-  if (m.roomsT < 1) return;
-  const h = roomsHit();
-  if (h === 'host') { m.pressT = 0.12; hostRoom(); }
-  else if (h !== null) joinRoom(h);
-}
-function updateRooms(dt) {
-  const m = state.menu;
-  const h = m.roomsT >= 1 ? roomsHit() : null;
-  const keys = ['host']; for (let k = 0; k < m.rooms.length; k++) keys.push(k);
-  for (const key of keys) { const t = h === key || (key !== 'host' && key === m.rsel) ? 1 : 0; m.rhover[key] = (m.rhover[key] || 0) + (t - (m.rhover[key] || 0)) * Math.min(1, dt * 14); }
-  if (m.roomsShake > 0) m.roomsShake = Math.max(0, m.roomsShake - dt);
-  // a join answered: the waiting room on a welcome, a rattle on a refusal
-  if (NET.role === 'client') {
-    if (NET.welcomed) { roomsFeedClose(); beginLobby(); }
-    else if (NET.refused || (NET.transport.error && !NET.transport.open)) { netLeave(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
-  }
-}
-// a small pip that says the relay is there: green and breathing while the
-// socket is open, red and blinking while it is not
-function drawRelayPip(x, y, ok, now) {
-  const on = ok ? 0.6 + 0.4 * Math.sin(now * 3) : (Math.floor(now * 3) % 2 ? 1 : 0.25);
-  const a0 = ctx.globalAlpha;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x, y, 6, 6);
-  ctx.fillStyle = '#0f1632'; ctx.fillRect(x - 1, y - 1, 6, 6);
-  ctx.globalAlpha = a0 * on;
-  ctx.fillStyle = ok ? '#7fd88a' : '#e0524f';
-  ctx.fillRect(x, y, 4, 4);
-  ctx.globalAlpha = a0;
-}
-// the ten seats of a room as pips, five a side, the people in them lit in
-// that side's paint (the list carries a count per side; seats fill from
-// the rule inward). Returns the block's width
-function drawSeatPips(x, y, sides, live) {
-  for (let i = 0; i < 10; i++) {
-    const side = i < 5 ? 0 : 1, k = side ? i - 5 : 4 - i;
-    const px = x + i * (RM_PIP + RM_PIP_GAP) + (side ? RM_PIP_SIDE : 0);
-    const lit = k < ((sides && sides[side]) | 0);
-    ctx.fillStyle = lit ? TEAMS[skin(side)].mark : live ? '#3a2a2a' : '#1a2142';
-    ctx.fillRect(px, y, RM_PIP, RM_PIP);
-  }
-  return 10 * RM_PIP + 9 * RM_PIP_GAP + RM_PIP_SIDE;
-}
-// a room's code on a small plate: the four letters a host reads aloud
-function drawCodePlate(x, y, code, col, sc) {
-  sc = sc || 1;
-  const w = pixelTextWidth(code, sc) + 6, h = 5 * sc + 6;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 1, y + 1, w, h);
-  ctx.fillStyle = '#35426e'; ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = '#0a0e23'; ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-  drawPixelTextShadow(ctx, code, x + 3, y + 3, col, '#0a0e23', sc);
-  return w;
-}
-function renderRooms(now, a) {
-  const m = state.menu;
-  const { host, rows } = roomsLayout();
-  drawLobbyBackdrop(now, a);
-  ctx.globalAlpha = a;
-  drawMenuButton(host, 'HOST', m.rhover.host || 0, now, m.pressT > 0 && (m.rhover.host || 0) > 0.5);
-  drawRelayPip(host.x + host.w + 8, host.y + 10, m.roomsOk, now);
-  const shake = m.roomsShake > 0 ? Math.round(Math.sin(m.roomsShake * 60) * 2 * (m.roomsShake / NAME_SHAKE_T)) : 0;
-  // an empty list: one ghost of a row, breathing, where the first room will stand
-  if (!rows.length) {
-    const g = { x: Math.round((VIEW_W - RM_W) / 2), y: host.y + MENU_PITCH + 10, w: RM_W, h: RM_H };
-    ctx.globalAlpha = a * (m.roomsOk ? 0.22 + 0.1 * Math.sin(now * 2) : 0.12);
-    ctx.fillStyle = '#8fa0c8';
-    for (let x = 0; x < g.w; x += 3) { ctx.fillRect(g.x + x, g.y, 1, 1); ctx.fillRect(g.x + x, g.y + g.h - 1, 1, 1); }
-    for (let y = 0; y < g.h; y += 3) { ctx.fillRect(g.x, g.y + y, 1, 1); ctx.fillRect(g.x + g.w - 1, g.y + y, 1, 1); }
-    ctx.globalAlpha = a;
-  }
-  for (const r of rows) {
-    const room = m.rooms[r.k], ok = roomOk(room), joining = r.k === m.rsel && NET.role === 'client';
-    const dx = r.k === m.rsel && shake ? shake : 0;
-    ctx.globalAlpha = a * (ok ? 1 : 0.4);
-    drawMenuButton({ x: r.x + dx, y: r.y, w: r.w, h: r.h }, '', ok ? (m.rhover[r.k] || 0) : 0, now, joining);
-    const lift = ok ? Math.round((m.rhover[r.k] || 0) * 2) : 0;
-    const d = room.data || {};
-    const nm = d.name || '?';
-    drawPixelTextShadow(ctx, nm, r.x + dx + 8, r.y + 9 - lift, joining ? '#ffd95c' : '#dfe6ff', '#0a0e23');
-    const live = d.state === 'live';
-    // the seats, then the code (or, dimmed, the patch this room is on) at the right
-    const pw = drawSeatPips(r.x + dx + 96, r.y + 10 - lift, d.sides || [Math.min(5, d.humans | 0), 0], live);
-    if (ok) {
-      const code = String(room.room || '');
-      const cw = pixelTextWidth(code) + 6;
-      if (code.length <= 6) drawCodePlate(r.x + dx + r.w - 8 - cw, r.y + 6 - lift, code, joining ? '#ffd95c' : '#dfe6ff'); // a Steam lobby's id is not for reading aloud
-      if (live) { ctx.fillStyle = '#e0524f'; ctx.fillRect(r.x + dx + 96 + pw + 6, r.y + 10 - lift, 3, 3); } // a match already under way
-    } else {
-      const pt = String(d.patch || '').replace(/^PATCH /, '');
-      drawPixelTextShadow(ctx, pt, r.x + dx + r.w - 8 - pixelTextWidth(pt), r.y + 9, '#e0524f', '#0a0e23');
-    }
-  }
-  ctx.globalAlpha = a;
-  drawBackHint(ctx, Math.round(VIEW_W / 2), roomsLayout().toy + 244, 'BACK');
-  ctx.globalAlpha = 1;
-}
-// The room this screen is in, on the waiting room: the code on its plate
-// under the relay pip, at the head of your side's roster - what a host reads
-// to a friend, and what a guest sees it joined
-function drawRoomPlate(now, a) {
-  if (NET.role === 'solo') return;
-  const code = String((NET.transport && (NET.transport.room || NET.transport.lobbyId)) || '');
-  const x = LOBBY_PAD, y = LOBBY_HEAD - 20;
-  ctx.globalAlpha = a;
-  drawRelayPip(x, y + 6, !!(NET.transport && NET.transport.open), now);
-  if (code && code.length <= 6) drawCodePlate(x + 9, y, code, '#ffd95c', 2); // a relay code; a Steam lobby is joined off the list
-}
-// In a match, a client whose socket is down: a red pip blinking top-centre
-// while the transport redials, and nothing at all while the link is good
-function drawNetLink(now) {
-  if (!NET.isClient || (NET.transport && NET.transport.open && NET.synced)) return;
-  drawRelayPip(Math.round(VIEW_W / 2) - 2, 3, false, now);
-}
 
 function easeOut(t) { t = Math.max(0, Math.min(1, t)); return 1 - (1 - t) * (1 - t) * (1 - t); }
 function easeInOut(t) { t = Math.max(0, Math.min(1, t)); return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
@@ -815,6 +629,7 @@ function menuKey(e) {
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'ladder') { if (m.ladT >= 1) ladderKey(k); return; }
   if (m.screen === 'rooms') { if (m.roomsT >= 1) roomsKey(k); return; }
+  if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k); return; } // the waiting room (js/ui/rooms.js)
   if (m.screen === 'create') return; // its keys arrive through createKey (input.js), never here
   if (m.panel) {
     if (k === 'escape' || k === 'backspace' || (m.panel !== 'settings' && (k === 'enter' || k === ' '))) closeMenuPanel();
@@ -841,6 +656,7 @@ function menuClick() {
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'ladder') { ladderClick(); return; }
   if (m.screen === 'rooms') { roomsClick(); return; }
+  if (m.screen === 'room') { roomClick(); return; }
   if (m.screen === 'create') { createClick(); return; }
   if (m.panel) {
     if (!menuPanelReady()) return;
@@ -915,8 +731,8 @@ function updateTitle(dt) {
   const m = state.menu;
   // the waiting room's comings and goings: a card whose kind changed (a bot
   // became a person, or the reverse) flashes and sounds; a guest whose host
-  // left is back on the rooms list with a rattle
-  if (NET.role !== 'solo' && (m.screen === 'lobby' || popOpen())) {
+  // left, or who was shown out, is back on the rooms list with a rattle
+  if (NET.role !== 'solo' && (m.screen === 'lobby' || m.screen === 'room' || popOpen())) {
     if (!m.cardFx) { m.cardFx = {}; m.cardKind = players.map((p) => isHuman(p)); }
     for (const p of players) {
       const h = isHuman(p);
@@ -924,7 +740,7 @@ function updateTitle(dt) {
       m.cardKind[p.id] = h;
       if (m.cardFx[p.id] > 0) m.cardFx[p.id] -= dt;
     }
-    if (NET.isClient && NET.refused === 'HOSTGONE') { if (popOpen()) leavePop(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
+    if (NET.isClient && (NET.refused === 'HOSTGONE' || NET.refused === 'KICKED')) { if (popOpen()) leavePop(); netLeave(); beginRooms(); m.roomsShake = NAME_SHAKE_T; SFX.deny(); }
   } else m.cardFx = null;
   m.t += dt;
   m.camT += dt;
@@ -945,8 +761,8 @@ function updateTitle(dt) {
   m.skinT = Math.max(0, Math.min(1, m.skinT + (m.screen === 'skins' ? 1 : -1) * dt / 0.35)); // the skins screen (js/ui/skins.js)
   if (m.screen === 'skins') updateSkins(dt);
   updateLadder(dt); // the bot ladder screen's ease and hovers (js/ui/ladder.js)
-  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' ? 1 : -1) * dt / 0.35));
-  if (m.screen === 'rooms') updateRooms(dt);
+  m.roomsT = Math.max(0, Math.min(1, m.roomsT + (m.screen === 'rooms' || m.screen === 'room' ? 1 : -1) * dt / 0.35));
+  updateRooms(dt);
   // a word lights under the pointer, or as the keys' pick until the pointer moves
   const hit = !m.panel && m.screen === 'menu' && mouse.inside ? menuHit() : -1;
   for (let i = 0; i < MENU_ITEMS.length; i++) {
@@ -1407,6 +1223,7 @@ const PATCH_DIGEST = [
     ['THE PIERCING SHOT FLIES TWICE AS FAR', '0.273'],
   ]],
   ['MENUS AND CONTROLS', [
+    ['MULTIPLAYER: A CUSTOM GAMES LIST AND A TEAM ROOM; CLICK A SEAT TO SWAP TEAMS', '0.462'],
     ['THE MAP AND MINIMAP ARE GRAPHITE AND FLAT; POINT AT A CAMP FOR ITS NAME', '0.459'],
     ['THE FOUR WAR EAGLES WEAR PERCH\'S NEW LOOK', '0.446'],
     ['A SIZE SLIDER FOR EACH HUD PART, HALF TO DOUBLE IN 5% STEPS', '0.436'],
@@ -2444,7 +2261,7 @@ function beginLobby() {
   SFX.music.play('lobby');
 }
 function leaveLobby() {
-  if (NET.role !== 'solo') netLeave(); // a host's room closes; a guest walks out of one
+  if (NET.role !== 'solo') { netLeave(); beginRooms(); return; } // a guest walks out of a room, back to the list (a host's ESC goes back to the seats: lobbyKey)
   ladderFoe = null; // a ladder bot picked for this lobby stays behind with it (js/ui/ladder.js)
   state.menu.screen = 'menu';
   state.menu.countT = 0;
@@ -2548,7 +2365,7 @@ function setAiLevel(k) {
 function lobbyKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else leaveLobby(); }
+  if (k === 'escape' || k === 'backspace') { if (m.countT > 0) cancelCount(); else if (NET.role === 'host') { netPhase('room'); beginRoom(); } else leaveLobby(); } // a host's ESC takes the room back to its seats
   else if (moveDir(k) === 'left' || moveDir(k) === 'up') lobbyStep(-1);   // the character chevrons
   else if (moveDir(k) === 'right' || moveDir(k) === 'down') lobbyStep(1);
   else if (k === 'enter' || k === ' ') pressPlay();

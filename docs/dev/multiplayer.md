@@ -1056,12 +1056,16 @@ what the rest of the code needs to know is this:
   copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
-- **A joiner takes an AI seat.** `netHostHello` refuses a different patch or seed, deals the first
-  bot slot of the side with fewer people (none left: FULL; past `LATE_JOIN_T`, 300 s into a
+- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed, deals the first
+  empty seat, then the first bot slot, of the side with fewer people (a match under way offers
+  bots' bodies only; none left: FULL; past `LATE_JOIN_T`, 300 s into a
   match: LATE), flips it to `'remote'` and dresses it with the joiner's name, look and class. The
   `welcome` carries the roster (`netRoster`: control, team, name, cls, look per slot), which the
   client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
   drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.
+- **A side is a field, not a slot.** Before the count a person changes sides in the waiting room
+  by swapping `p.team` with a bot or empty seat across the rule (`seatSwap`, js/net/net.js), so
+  slots, inputs and connections never move; anything that wants "which side" reads `p.team`.
 - **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,
   `sfxFor`, `sfxOwn`, `shakeAt` and `shakeFor` (js/net/events.js) play the cosmetic on the host and
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the

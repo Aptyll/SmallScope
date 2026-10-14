@@ -3418,21 +3418,27 @@ human idle, and deep in a ten-bot match with hundreds of buildings and robots st
 
 ## Settings
 
-**The MULTIPLAYER plank** (js/ui/menu.js, the `rooms` banner) is the relay's open rooms as planks
-under a HOST plank, a relay pip beside HOST (green and breathing while the list socket is open,
-red and blinking while it is not) and, while the list is empty, one ghost of a row where the
-first room will stand. A room's plank carries its host's name, ten seat pips (five a side, the
-people in them lit in that side's paint - the relay lists a count per side), its four-letter
-code on a plate (the thing a host reads aloud) and a red dot once its match is under way; a room
-on another patch is dimmed and inert with its patch printed where the code would be. HOST makes
-a room on the relay and opens the **waiting room** - the lobby, which every peer
+**The MULTIPLAYER plank** (js/ui/rooms.js) is CUSTOM GAMES, League's custom-game list in
+Graphite: the relay's open rooms as rows under GAME / MAP / PLAYERS / CODE heads, a relay pip
+top-right (green and breathing while the list socket is open, red and blinking while it is not)
+and, while the list is empty, one ghost of a row where the first room will stand. A row carries
+its host's game, its map, ten seat pips (five a side, the people in them lit in that side's
+paint - the relay lists a count per side), a red dot once its match is under way and its
+four-letter code (the thing a host reads aloud); a room on another patch is dimmed and inert with
+its patch printed where the code would be. A click picks a row, a second click or JOIN joins it;
+CREATE makes a room on the relay and opens it on **the room**: both sides as two columns of five
+seats (a face, a name, the class or BOT, the class mark), your side on the left. A click on a
+seat across the rule moves you to that side and the bot or empty seat there takes your old one
+(the swap mark shows under the pointer); the host's pointer on a seat's far end shows a red X
+that shows a person out or empties a bot's seat, and a + that puts a bot back. LEAVE, and the
+host's START, which takes everyone to the **pick** - the lobby, which every peer
 sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
 your side's roster, a crown over the host's card, a brighter rim on every person's card than a
 bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
 guest sees it minus the two pop-ups off the map plate and the target and the character swap (its class came with it), and
 where LOCK IN would be a frozen plank wearing the host's name: the host's count comes over it and
-the eagle on the host's zero. A guest whose host walks out of the waiting room is back on the
-rooms list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
+the eagle on the host's zero; the host's ESC there takes everyone back to the room. A guest whose
+host walks out of the waiting room, or who was shown out, is back on the list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
 headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
 and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
 redials (`drawNetLink`). Joining a room whose seed is not this page's reloads the page onto it
