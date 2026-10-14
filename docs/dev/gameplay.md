@@ -979,7 +979,7 @@ cooldown wipes) are the HUD's half and live with it in [rendering.md](rendering.
 
 ## The wiki
 
-The main menu's **WIKI** plank (`m.screen = 'wiki'`, its own `wikiT` ease, ESC back) opens the
+The **WIKI** tab over the patch notes (`m.screen = 'wiki'`, its own `wikiT` ease, ESC back) opens the
 game written down: one surface, a tab bar of **pages**, each a scrolling column of blocks.
 WHISPERING WOODS (`TRACKS.wiki`) loops under it from the moment it opens — an ordinary
 `music.play` the way the lobby takes the layer, not the counter's hold, because the wiki is

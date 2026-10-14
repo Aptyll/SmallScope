@@ -1,9 +1,9 @@
 'use strict';
-// The wiki: the game written down, one page a subject, opened from the
-// patch notes.
+// The wiki: the game written down, one page a subject, the first of the
+// title's three tabs (js/ui/notes.js).
 // ------------------------------------------------------------ the wiki
-// Entered from the WIKI word in the patch notes' corner. One surface eased in over the chrome on its
-// own clock (wikiT), a tab bar of PAGES under the title (the settings slab's
+// Entered from the WIKI tab over the patch notes. One surface eased in over the chrome on its
+// own clock (wikiT), under the title's tabs a bar of PAGES (the settings slab's
 // navbar grammar), and under that a content window the open page scrolls
 // through when it outgrows it - wheel, up/down, the rail on the right.
 // It takes the music layer outright the way the lobby does, not as a hold:
@@ -207,10 +207,9 @@ function wikiPage() { return WIKI_PAGES[Math.max(0, Math.min(WIKI_PAGES.length -
 // cells, the content window, the rail, and the open page's blocks each
 // carrying the y it draws at (pre-scroll). Draw and hit test both read it.
 function wikiLayout() {
-  const toy = frameTop();
   const cx = Math.round(VIEW_W / 2);
   const w = Math.min(WIKI_W_MAX, VIEW_W - 24), x = cx - (w >> 1);
-  const y = toy + 46, h = WIKI_H;
+  const y = NOTES_TOP + 34, h = WIKI_H; // under the title's tabs (drawPageTabs, js/ui/notes.js)
   const n = WIKI_PAGES.length, cw = Math.floor((w - 24) / n);
   const tabs = WIKI_PAGES.map((p, i) => ({ id: p.id, label: p.label, x: x + 12 + i * cw, y: y + 7, w: cw, h: 9 }));
   const winY = y + 22, winH = h - 28;
@@ -224,13 +223,15 @@ function wikiLayout() {
   const rail = { x: x + w - 9, y: winY + 2, w: 5, h: winH - 4 };
   const th = Math.max(8, Math.round(rail.h * winH / (total + 8)));
   const thumb = { x: rail.x, y: rail.y + Math.round((rail.h - th) * (maxScroll ? scroll / maxScroll : 0)), w: rail.w, h: th };
-  return { toy, cx, x, y, w, h, tabs, winY, winH, rows, scroll, maxScroll, rail, thumb, page,
+  return { cx, x, y, w, h, tabs, winY, winH, rows, scroll, maxScroll, rail, thumb, page,
     left: x + 12, right: x + w - 16 }; // the content's own margins, clear of the rail
 }
-// what is under (mx, my): a tab, a table row (carrying its kind id, for the
+// what is under (mx, my): one of the title's tabs, a page's tab, a table row (carrying its kind id, for the
 // tooltip), the rail, or nothing. Shared by the hover, the click and the
 // tooltip, so the three can never point at different things.
 function wikiHit(mx, my) {
+  const page = pageTabHit(mx, my);
+  if (page >= 0) return { kind: 'page', i: page };
   const L = wikiLayout();
   for (let i = 0; i < L.tabs.length; i++) {
     const t = L.tabs[i];
@@ -252,9 +253,9 @@ function beginWiki() {
   SFX.place();
   SFX.music.play('wiki', { in: 0.6, out: 0.5 }); // WHISPERING WOODS, from the moment it opens
 }
-function leaveWiki() {
-  state.menu.screen = state.menu.wikiFrom || 'menu'; // the notes' WIKI word comes back to the notes
-  state.menu.wikiFrom = null;
+// Esc goes back to the title; the other two tabs to the notes screen
+function leaveWiki(to) {
+  state.menu.screen = to || 'menu';
   SFX.pickup();
   SFX.music.play('intro', { in: 0.6, out: 0.5 }); // ...and the title takes its own back
 }
@@ -271,18 +272,19 @@ function wikiKey(k) {
   const m = state.menu;
   if (k === 'escape' || k === 'backspace') { leaveWiki(); return; }
   if (moveDir(k) === 'left') wikiSetTab(m.wikiTab - 1);
-  else if (moveDir(k) === 'right') wikiSetTab(m.wikiTab + 1);
+  else if (moveDir(k) === 'right') { if (m.wikiTab < WIKI_PAGES.length - 1) wikiSetTab(m.wikiTab + 1); else openPageTab(1); } // past the last page: PATCH NOTES
   else if (moveDir(k) === 'up') wikiScrollBy(-12);
   else if (moveDir(k) === 'down') wikiScrollBy(12);
 }
-// a click: a tab opens its page, the rail pages the window; a row is read,
+// a click: a title tab opens its screen, a page tab its page, the rail pages the window; a row is read,
 // not pressed - the tooltip is already up over it
 function wikiClick() {
   const m = state.menu;
   if (m.wikiT < 1) return;
   const h = wikiHit(mouse.x, mouse.y);
   if (!h) return;
-  if (h.kind === 'tab') wikiSetTab(h.i);
+  if (h.kind === 'page') openPageTab(h.i);
+  else if (h.kind === 'tab') wikiSetTab(h.i);
   else if (h.kind === 'rail') {
     const L = wikiLayout();
     wikiScrollBy(h.y < L.thumb.y ? -L.winH : h.y >= L.thumb.y + L.thumb.h ? L.winH : 0);
@@ -380,11 +382,7 @@ function drawWikiRow(r, L, hot, now) {
 function renderWiki(now, a) {
   const m = state.menu;
   const L = wikiLayout();
-  const slideIn = 1 - a;
-  ctx.globalAlpha = a;
-  const t0 = 'WIKI';
-  drawPixelTextShadow(ctx, t0, Math.round((VIEW_W - pixelTextWidth(t0, 2)) / 2), L.toy + 24 - Math.round(slideIn * 20), '#ffd95c', '#3c2a1e', 2);
-  drawGoldRule(L.cx, L.toy + 39 - Math.round(slideIn * 20), Math.round(pixelTextWidth(t0, 2) / 2) + 8, a);
+  ctx.globalAlpha = a; // the title's tabs over it are drawPageTabs
   drawMenuSlab(L.x, L.y, L.w, L.h, a);
   const hit = m.wikiT >= 1 && mouse.inside ? wikiHit(mouse.x, mouse.y) : null;
   // the tab bar: the open page in gold over a gold underline, the rest dim
@@ -516,6 +514,6 @@ function renderWiki(now, a) {
   ctx.restore();
   ctx.globalAlpha = a;
   drawWikiRail(L);
-  drawBackHint(ctx, VIEW_W / 2, L.toy + 254);
+  drawBackHint(ctx, VIEW_W / 2, VIEW_H - 13);
   ctx.globalAlpha = 1;
 }
