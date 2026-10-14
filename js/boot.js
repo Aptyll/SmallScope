@@ -2179,14 +2179,17 @@ function loop(nowMs) {
   perf.acc += rawDt;
   if (perf.acc >= 0.5) {
     perf.fps = Math.round(perf.frames / perf.acc);
+    perf.sim = perf.simAcc / perf.frames;
+    perf.draw = perf.drawAcc / perf.frames;
     perf.frames = 0;
-    perf.acc = 0;
+    perf.acc = perf.simAcc = perf.drawAcc = 0;
   }
   if (!window.DBG.freeze) {
     padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
     const spd = ladderWatch ? ladderWatch.speed : 1; // a watched bot match runs faster on request (js/ui/ladder.js)
     tickAcc += dt * spd;
     let n = 0;
+    const t0 = performance.now();
     while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX * spd) {
       tweenMark();
       update(TICK_DT);
@@ -2194,8 +2197,10 @@ function loop(nowMs) {
       n++;
     }
     if (n === TICK_MAX * spd && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
+    const t1 = performance.now();
     tweenIn();
     try { render(); } finally { tweenOut(); } // the sim's values back, whatever render does
+    perf.simAcc += t1 - t0; perf.drawAcc += performance.now() - t1;
     saveAutoTick(); // a timed autosave, off the match clock (js/save.js)
   }
   if (!document.hidden) requestAnimationFrame(loop); // hidden: the worker calls loop() instead

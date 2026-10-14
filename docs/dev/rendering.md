@@ -241,7 +241,9 @@ Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — eve
 drew in world space, everything below draws in screen space; see
 [World zoom](#world-zoom-and-the-two-pixel-spaces)). **Screen space**:
 `renderWeather` (snow, see below) →
-`renderVignettes` → **`replayTick`** (banks the frame just finished into the replay ring — it
+`renderVignettes` (the frame vignette is a canvas baked once per canvas size and blitted, since
+a radial gradient filled over every device px cost 5 ms a frame on a CPU-drawn canvas) →
+**`replayTick`** (banks the frame just finished into the replay ring — it
 sits here, not at the end of `render()`, so the strip holds no HUD, no dim and no picture of
 itself) → `tipResolve` ([the hover tooltip](#the-hover-tooltip)'s one answer for the frame) →
 `renderUI` (skipped in `title` and `drop`) → `drawAgameUI` (`PRACTICE`, mode `play`) →
@@ -2584,9 +2586,10 @@ did). The practice arena is exempt (`PRACTICE`): its light never changes, for it
 
 **Midday** is clean light, and clean light is contrast: across the noon window (`TOD_NOON` ±
 `TOD_NOON_HALF`, easing over `TOD_NOON_FADE`, gated by `todNoon`) the world buffer is multiplied
-**by itself** at `TOD_CRISP` — one blit — which deepens the needles and the cast shade far more
-than the drifts. With the GPU synced on seed 42 the whole hour, blit included, costs nothing a
-frame time shows.
+**by itself** at `TOD_CRISP`, which deepens the needles and the cast shade far more
+than the drifts. It goes through a copy (`gradeCv`, js/canvas.js): the frame's used corner is
+copied there and multiplied back. Never draw a canvas onto itself: the browser then copies the
+whole backing store and again on the next stroke, which cost 4 ms a frame on a CPU-drawn canvas.
 
 ### The reflected sky
 
