@@ -41,7 +41,7 @@ const YIELD = {
   treeRare: 3,                          // rare-tree jackpot on top of the fall payout (1 pine in 12: four trees' worth)
   deadTreeHit: 0, deadTreeFall: 1,      // 3 hp snag  -> 1 gold, the rookery's cover; leaves a stump
   // (a rock pays by its kind, with its ore: ROCK_KINDS, js/mining.js)
-  rabbit: { coins: 2, each: 5 },        // 10 gold + a berry, but it bolts
+  rabbit: { coins: 2, each: 5 },        // 10 gold, but it bolts
   deer:   { coins: 3, each: 6 },        // 18 gold, the big mobile target
   wolf:   { coins: 3, each: 8 },        // 24 gold, a den's four: the resource camp, and it bites back once woken
   alpha:  { coins: 6, each: 15 },       // the black bear's pay, the brown bear's match (the two are one side's each and pay the same)
