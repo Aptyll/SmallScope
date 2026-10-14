@@ -2902,8 +2902,8 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   refund. It wears the bay's 3×2 grid (`art: 'spawner'`, read by `structSprite`) under its own
   overlay (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave
   clock on the flank in the side's paint, the beacon amber while a column is leaving). Every
-  `waveT` (30 s) it queues a **wave** — `wave` (5) soldiers, one more per `grow` (180 s) it has
-  stood, never more than `cap` (24) of its **side's** soldiers alive at once, every bay's queue and column counted — and the queue leaves the door
+  `waveT` (30 s) it queues a **wave** — `wave` (3) axes, one more per `grow` (180 s) it has
+  stood, then `bearers` (1) flag bearer (`o.flagQ` counts the bearers queued; they leave last), never more than `cap` (24) of its **side's** soldiers alive at once, every bay's queue and column counted — and the queue leaves the door
   one every `BARRACKS_ROLL` (0.5 s), so a wave reads as a column. Its `cost` (40) is only what a
   wrecker is paid half of: breaking one stalls the waves until the merchant rebuilds it
   ([Soldiers](#soldiers-the-waves)). `drawBayOverlay()` draws everything live on top of the baked sprite: the next bot
@@ -3028,15 +3028,23 @@ hauler — see [Team flags](#team-flags) for why the anger is gated on the flag.
 ### Soldiers: the waves
 
 The `soldiers` banner (js/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
-[barracks](#base-building) rolls out a column of **soldiers** — the worker's chassis under its
-side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
-that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
-bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
+[barracks](#base-building) rolls out a column of **soldiers** — the worker's chassis, three
+swinging its axe and the last one out carrying its side's pennant — that marches
+[the road](world.md#the-road) to the rival bird. `makeSoldier(o, bearer)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
 cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth` — down the
 roost's spur to the road), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
 read live each frame, since
-it may have flown. `updateSoldier` is four rungs, first hit wins:
+it may have flown. `updateSoldier` is four rungs, first hit wins, with a rung before them for the
+bearer:
 
+0. a **flag bearer** (`b.bearer`, the last of each wave out of the door: the barracks'
+   `bearers`) with an own axe inside `SOLDIER_FLAG_FOLLOW` (160 px, `bearerLead`) walks
+   `SOLDIER_FLAG_TRAIL` (22 px) behind the nearest and swings at nothing. With none near it is a
+   soldier like the rest and goes down the ladder below. `drawRobot` stamps `drawFlagPennant` on
+   the bearer alone. Every other soldier of its side within `SOLDIER_FLAG_R` (80 px, a whole column) of a living
+   bearer is **rallied** (`soldierRally`, read live at the step, the swing and the hit):
+   `SOLDIER_FLAG_SPD` (1.2×) march speed (the bearer always walks at it, so it keeps up), `SOLDIER_FLAG_DMG` (+2) on each `robotStrike`, and
+   `SOLDIER_FLAG_ARMOR` (25%) off every hit in `hurtRobot`. A bearer never rallies itself.
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
    column walk past): close and swing (`robotStrike`, the worker's own `ROBOT_DMG` every
    `ROBOT_ATK_CD`, `cause: 'soldier'` — `DEATH_CAUSE.soldier` is the feed line);
@@ -3064,7 +3072,7 @@ other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the rob
 than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
 and buffets it like a player (`updateEagle`/`eagleGust`), a turret marks it, and it dies through
 `robotDies` carrying a `SOLDIER_BOUNTY` (4 gold, through `awardGold`, so the kill levels too) for
-whoever scraps it — no feed line, five a wave. The cap on a barracks' live soldiers is
+whoever scraps it — no feed line, four a wave. The cap on a barracks' live soldiers is
 `STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#bots)).
 
