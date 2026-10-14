@@ -160,6 +160,15 @@ number of px a step, and that full-screen judder was eye strain. `sizeWorldView(
 spare world px on each axis the shift needs. The cost: a body the camera follows sits on the
 world grid while the screen slides under it, so it wanders within half a world px of the centre.
 
+**The air layer** removes that cost where it showed: the eagle the camera rides. A bird in flight
+(`dropFlies`: fly, dive, flee) and anyone falling from it draw into `airCv` (js/canvas.js) off the
+**exact** camera, and the layer is blitted over the world with no shift, so the bird holds still on
+the screen while the ground slides under it. `lightAir` lays the frame-wide grades over it (the
+hour, the haze, the night and its rim, none of the ground's lights or shadows), cuts its empty
+pixels back out with the layer's own shape (`airMask`), and stamps its names and frames ungraded
+(`inWorldLayer` holds them back on both layers). A bird on the ground stays in the world buffer.
+The replay banks the layer with the world (`airOn`).
+
 Statics and movers share that whole-px corner (`ex`/`ey` are `ox`/`oy`): a mover subtracts
 `ex`/`ey` from its exact position and rounds once at the end
 ([CLAUDE.md](../../CLAUDE.md#hard-rules)), so it lands on the ground's own grid. New entity draw
@@ -215,12 +224,14 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
     (queued through `drawWorldText`, see [Text over the world](#text-over-the-world));
 13. `drawSweep` (the wind's slow sweep of loose snow, over every canopy, as strong as the day's
     weather lets it — [the wind field](#the-wind-field))
-    → `drawDropAir` (the eagle, its shadow, the rider and every faller, while `state.drop`
-    exists) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
+    → `drawDropAir` (the dotted flight path and a bird on the ground, while `state.drop`
+    exists; the fliers draw on the air layer, below) → `drawZips` (each side's zipline cable, span by span with its sag and wind lean —
     over every body and canopy, under the night; the line under the pointer lit gold, `hoverZip`;
     js/draw/zipline.js);
 14. `renderLighting` → `drawNavPaths` + `drawHitboxes` (the `.` debug overlay — deliberately
-    **above** the lighting, see [Debug overlays](#debug-overlays-hitboxes-and-routes)).
+    **above** the lighting, see [Debug overlays](#debug-overlays-hitboxes-and-routes));
+15. the air layer (`ctx = actx`): `drawDropAir(…, true)` (a bird in flight, its shadow and trail,
+    the riders and every faller) → `lightAir` ([the air layer](#the-resting-zoom-is-always-pixel-exact)).
 
 Then **the world blit** (`ctx = uictx`; `worldCv` scaled onto the canvas — everything above it
 drew in world space, everything below draws in screen space; see

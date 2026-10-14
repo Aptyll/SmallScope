@@ -948,7 +948,11 @@ function teamEagleDown(team) {
 // both birds, the rider and every faller, above the world and below the
 // lighting. Shadows sit `alt` below (and a little right of) each body,
 // converging as a dive comes down.
-function drawDropAir(ex, ey, now) {
+// a bird whose body is off the ground: drawn on the air layer (airCv)
+function dropFlies(e) { return e.state === 'fly' || e.state === 'dive' || e.state === 'flee'; }
+// `air` picks the half: false is the world pass (the path dotted over the
+// snow and a bird on the ground), true the air layer (render())
+function drawDropAir(ex, ey, now, air) {
   const d = state.drop;
   if (!d) return;
   // the flight path itself, dotted over the snow in each team's colour - the
@@ -956,7 +960,7 @@ function drawDropAir(ex, ey, now) {
   // direction, and your own bird's jump window rides it in the flight bar's
   // pale window colour, brightening the moment the lock opens (never on the
   // scripted first flight, which has no door).
-  if (state.mode === 'drop') for (const e of d.eagles) {
+  if (!air && state.mode === 'drop') for (const e of d.eagles) {
     if (e.state !== 'fly') continue;
     ctx.save();
     ctx.lineWidth = 2;
@@ -978,7 +982,8 @@ function drawDropAir(ex, ey, now) {
     ctx.restore();
     ctx.globalAlpha = 1;
   }
-  for (const e of d.eagles) drawEagle(e, ex, ey, now);
+  for (const e of d.eagles) if (dropFlies(e) === air) drawEagle(e, ex, ey, now);
+  if (!air) return;
   // fallers: a hop off the wing, then the shrink from rider scale to the
   // ground's, shadow growing under them. This is a WORLD pass, so the cull is
   // against WV_*, not VIEW_* - the old VIEW_* bounds were half the zoomed-out

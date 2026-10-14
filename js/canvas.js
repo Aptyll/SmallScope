@@ -25,6 +25,18 @@ ctx.imageSmoothingEnabled = false;
 // per frame - resizing a canvas reallocates it and resets its context state.
 const worldCv = document.createElement('canvas');
 const wctx = worldCv.getContext('2d');
+// THE AIR LAYER: what flies above the valley (a bird in flight and anyone
+// falling from it), drawn at 1:1 like the world but off the EXACT camera and
+// blitted with no sub-pixel shift (render()). The camera rides a bird, so a
+// bird on the ground's grid wandered half a world px against the sliding
+// screen every frame - that is the jitter this layer exists to remove.
+// airMask holds the layer's own shape while the day's grade is laid over it
+// (lightAir, js/draw/light.js). Sized with worldCv.
+const airCv = document.createElement('canvas');
+const actx = airCv.getContext('2d');
+const airMask = document.createElement('canvas');
+const amctx = airMask.getContext('2d');
+let airOn = false; // the air layer holds something this frame (the replay banks it too)
 
 // full-window canvas behind the game: the pillarbox bars' frost frame
 const barsCv = document.getElementById('bars');
@@ -161,6 +173,8 @@ function fitCanvas() {
   const wMax = Math.ceil(VIEW_W / ZOOM_FLOOR) + 1, hMax = Math.ceil(VIEW_H / ZOOM_FLOOR) + 1; // + the sub-pixel camera's spare (sizeWorldView)
   worldCv.width = wMax; worldCv.height = hMax;
   wctx.imageSmoothingEnabled = false;
+  airCv.width = airMask.width = wMax; airCv.height = airMask.height = hMax;
+  actx.imageSmoothingEnabled = false;
   sizeWorldView();
   // The 9:16 canvas keeps its Short-sized backing store and is SHOWN fitted to
   // the window: a whole multiple when it fits, else shrunk smoothly - a

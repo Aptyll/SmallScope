@@ -180,6 +180,7 @@ function replayTick(now) {
     rpAtx.fillStyle = '#06091a';
     rpAtx.fillRect(sx, sy, rpSW, rpSH);
     rpAtx.drawImage(worldCv, 0, 0, WV_W, WV_H, sx, sy, cw, ch);
+    if (airOn) rpAtx.drawImage(airCv, 0, 0, WV_W, WV_H, sx, sy, cw, ch); // the fliers ride over it (render())
     rpFW[rpHead] = cw; rpFH[rpHead] = ch; rpFK[rpHead] = ck;
     rpHead = (rpHead + 1) % RP_N;
     if (rpCount < RP_N) rpCount++;
