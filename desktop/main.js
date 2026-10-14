@@ -40,6 +40,9 @@ slog('appId ' + APP_ID + ' (env SteamAppId=' + (process.env.SteamAppId || '') + 
 
 const args = {};
 for (const a of process.argv.slice(1)) { const m = /^--(\w+)(?:=(.*))?$/.exec(a); if (m) args[m[1]] = m[2] === undefined ? '1' : m[2]; }
+// a launch from a friend's Steam invite (or Join Game) names the lobby as `+connect_lobby ID`
+const connectAt = process.argv.indexOf('+connect_lobby');
+const connectLobby = connectAt >= 0 && /^\d+$/.test(process.argv[connectAt + 1] || '') ? process.argv[connectAt + 1] : null;
 
 const lobbies = new Map(); // id (string) -> Lobby, the ones this process created or joined
 let win = null;
@@ -62,11 +65,13 @@ function createWindow() {
   // whatever else is still open
   win.webContents.setWindowOpenHandler(() => ({ action: 'allow', overrideBrowserWindowOptions: { parent: win, autoHideMenuBar: true, backgroundColor: '#0b0f16' } }));
   win.on('closed', () => { win = null; app.quit(); });
+  win.on('focus', () => win.flashFrame(false)); // a nudge stops once the window is looked at
   const query = {};
   if (args.seed) query.seed = args.seed;
   if (args.net) query.net = args.net;
   if (args.join) { query.net = 'client'; query.lobby = args.join; }
   if (args.relay) query.relay = args.relay;           // the match relay (host:port); remembered by the page
+  if (connectLobby && !args.join) query.join = connectLobby; // the page joins it from boot (JOIN_AT_BOOT, js/boot.js)
   // a launch with Steam up rides Steam's lobbies (Noah's ruling, 2026-10-14):
   // a player's own machine runs no relay. --transport=relay or a --relay=ADDR
   // keeps the relay; with Steam down the page plays solo or dials a relay
@@ -113,6 +118,7 @@ ipcMain.handle('steam:lobby', (e, id) => { const l = lobbies.get(String(id)); re
 ipcMain.handle('steam:lobbies', async () => (await steam.matchmaking.getLobbies()).map(lobbyInfo));
 ipcMain.handle('steam:setLobbyData', (e, id, data) => { const l = lobbies.get(String(id)); return l ? l.mergeFullData(data) : false; });
 ipcMain.handle('steam:log', (e, line) => { slog(String(line).slice(0, 500)); return true; });
+ipcMain.handle('win:flash', () => { if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true); return true; });
 ipcMain.handle('steam:invite', (e, id) => { const l = lobbies.get(String(id)); if (l) l.openInviteDialog(); return !!l; });
 // text goes as utf8, bytes as they are; steamworks.js exposes Steam's older
 // P2P sockets, whose reliable packet is capped at 1 MB and unreliable at

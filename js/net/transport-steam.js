@@ -65,7 +65,7 @@ function steamTransport(lobbyId) {
         this.id = info.id;
         const l = await this.bridge.createLobby('public', STEAM_LOBBY_MAX);
         this.lobbyId = l.id; this.owner = l.owner;
-        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, seed: String(SEED), state: 'open', name: info.name || '' });
+        await this.bridge.setLobbyData(l.id, { patch: PATCH_TXT, seed: String(SEED), map: String(MAP_TYPE), state: 'open', name: info.name || '' });
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
@@ -79,9 +79,10 @@ function steamTransport(lobbyId) {
         this.id = info.id;
         const l = await this.bridge.joinLobby(this.lobbyId);
         this.owner = l.owner;
-        // the world is the lobby's: a page born on another seed starts over on it
-        const seed = parseInt(l.data.seed, 10);
-        if (seed && seed !== SEED) { location.search = '?seed=' + seed + '&net=client&lobby=' + this.lobbyId + '&transport=steam'; return; }
+        // the world is the lobby's: a page born on another seed or shape
+        // starts over on it, and joins from boot (?join=, JOIN_AT_BOOT)
+        const seed = parseInt(l.data.seed, 10), map = parseInt(l.data.map, 10) || 0;
+        if (seed && (seed !== SEED || map !== MAP_TYPE)) { location.search = '?seed=' + seed + '&map=' + map + '&join=' + this.lobbyId + '&transport=steam'; return; }
         this.wire();
         this.open = true;
       } catch (e) { this.error = String(e); }
@@ -168,7 +169,7 @@ function steamTransport(lobbyId) {
 }
 // The rooms screen's feed of Steam lobbies, in the shape the relay's list
 // sends (wsRooms, js/net/transport-ws.js): { room: lobby id, n: members,
-// data: { name, patch, seed, state, humans, sides } }, the numbers parsed
+// data: { name, patch, seed, map, state, humans, sides } }, the numbers parsed
 // back out of Steam's string store. Polled while the screen is up; close()
 // stops it. Lobbies without a patch key are not this game's.
 function steamRooms(cb) {
@@ -186,7 +187,7 @@ function steamRooms(cb) {
         const d = l.data || {};
         if (!d.patch) continue;
         let sides = [0, 0]; try { sides = JSON.parse(d.sides || '[0,0]'); } catch (e) {}
-        rooms.push({ room: l.id, n: (l.members || []).length, data: { name: d.name || '', patch: d.patch, seed: num(d.seed), state: d.state || 'open', humans: num(d.humans), sides } });
+        rooms.push({ room: l.id, n: (l.members || []).length, data: { name: d.name || '', patch: d.patch, seed: num(d.seed), map: num(d.map), state: d.state || 'open', humans: num(d.humans), sides } });
       }
       if (!closed) cb(rooms, true);
     } catch (e) { if (!closed) cb([], false); }
