@@ -290,7 +290,8 @@ search is cheap enough that dozens of units replanning several times a second is
 A tile can charge a **toll** (`navToll`, extra steps per step onto it): ground a walker can
 stand on but should not linger on, so a route goes round unless round is much further. The one
 toll today is [the orca's](#the-orca) ice (`ORCA_TOLL`, set by `spawnOrca`); the lane over its
-lake charges none, so the waves and the bots keep to the road. The straight line a plan tries in
+lake charges none, so the bots keep to the road (the waves go round it by a ford:
+[Soldiers](#soldiers-the-waves)). The straight line a plan tries in
 place of a search, and `navSmooth`'s string-pulling, are `navLineClear` with `free` set, which
 refuses a tolled tile, so neither cuts across ground the search went round.
 
@@ -3080,7 +3081,11 @@ bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no fl
 cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth` — down the
 roost's spur to the road), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
 read live each frame, since
-it may have flown. `updateSoldier` is four rungs, first hit wins:
+it may have flown. The road's middle is swapped for a way round [the cistern](world.md#the-cistern)
+(`cisternWayRound`): the road just short of its own gate, the bank of one of the fords outside the
+culverts, the far bank, the road just past the rival gate. Every other soldier out of the door
+(`o.queue`'s parity) takes the other ford, so a column forks round the ring and the two sides'
+waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs, first hit wins:
 
 1. a rival **unit** inside `SOLDIER_AGGRO` (96 px — `robotFoeUnit`, so a buried hunter lets a
    column walk past): close and swing (`robotStrike`, the worker's own `ROBOT_DMG` every

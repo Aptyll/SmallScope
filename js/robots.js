@@ -731,7 +731,9 @@ function updateMerchant(b, dt) {
 // It carries a SOLDIER_BOUNTY paid to whoever scraps it (robotDies), and it
 // takes every hit, state and gust like any other body. Its route is the
 // road's waypoints from its own spur's junction to the rival's
-// (roadWaypoints), then the rival's spur to the roost: a waypoint it cannot reach is skipped, not
+// (roadWaypoints), round the cistern at the middle by a ford outside one of
+// its culverts (cisternWayRound, js/cistern.js), then the rival's spur to
+// the roost: a waypoint it cannot reach is skipped, not
 // waited on, so a wave never stands still on a blocked tile. On the march it
 // rides any ZIPLINE that carries it toward the rival bird (soldierBoard):
 // its own side's out to the front, the rival's in to their roost - hands on
@@ -757,6 +759,9 @@ function makeSoldier(o) {
   if (own && own.mouth) b.way.push({ x: own.mouth.x, y: own.mouth.y });
   for (const w of roadWaypoints(b.team)) b.way.push(w);
   if (rival && rival.mouth) b.way.push({ x: rival.mouth.x, y: rival.mouth.y });
+  // ...round the cistern by a culvert's ford, the column forking: every
+  // other soldier out of the door takes the other one (o.queue counts down)
+  cisternWayRound(b.way, b.team, o.queue % 2);
   b.wayI = 0;
   b.rode = false; // boarded a zipline since the route was last read (soldierRejoin)
   return b;
