@@ -685,8 +685,14 @@ function loop(nowMs) {
     }
     if (n === TICK_MAX * spd && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     const t1 = performance.now();
-    tweenIn();
-    try { render(); } finally { tweenOut(); } // the sim's values back, whatever render does
+    // a hidden page draws nothing: nobody can see it, and a minimised Steam
+    // window would otherwise keep the GPU drawing 60 frames a second. Its sim
+    // keeps stepping above (the host's match goes on). A take being recorded
+    // keeps its frames. The replay ring banks no frames meanwhile.
+    if (!document.hidden || director.rec) {
+      tweenIn();
+      try { render(); } finally { tweenOut(); } // the sim's values back, whatever render does
+    }
     perf.simAcc += t1 - t0; perf.drawAcc += performance.now() - t1;
     saveAutoTick(); // a timed autosave, off the match clock (js/save.js)
   }

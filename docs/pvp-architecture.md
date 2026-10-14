@@ -63,7 +63,8 @@ ten-player `Player` array, the input struct and the bot brain are what keep the 
   below), because a client does not run those moments and has to be told.
 - **A hidden host keeps stepping.** A hidden tab gets no animation frames, so while
   `document.hidden` the frames come from a worker's 16 ms clock (`watchHidden`, js/boot.js); the
-  wrapper sets `backgroundThrottling: false`.
+  wrapper sets `backgroundThrottling: false`. Those frames step the sim and draw nothing
+  (`loop()` skips `render()` while hidden, unless a director take is recording).
 
 ## Module boundaries
 
