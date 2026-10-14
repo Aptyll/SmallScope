@@ -101,8 +101,12 @@ not stored as a float at all:
   vision at max-out nor loses the face at max-in. `DROP_ZOOM` is `ZOOM_MIN`.
 - **A match opens at `ZOOM_REST` (2)**: every world pixel two canvas pixels, 180 rows of world on
   screen, so the 16 px art reads twice its old size by scale alone (no art was redrawn for it).
-  `zoomCur` starts there and `fitCanvas()` rungs `kWant` off it (6 at `devScale` 3); the wheel
-  still steps out to `ZOOM_MIN`.
+  `fitCanvas()` rungs `kWant` off it (6 at `devScale` 3), and re-rungs it from `kWant` itself on
+  a resize, never from `zoomCur`, which a ride or a show may be holding elsewhere. The wheel still
+  steps out to `ZOOM_MIN`.
+- **The shows hold `ZOOM_SHOW` (1)**, the framing they were composed at: the title's backdrop,
+  the drop brief's roost tour and the driven-off ceremony (`applyZoom`'s `show`, js/sim.js), then
+  ease back to the wheel's zoom. The ride itself keeps `DROP_OPEN_ZOOM` → `DROP_ZOOM`.
 - The rungs are therefore `k / devScale`. At `devScale` 3 (a 1080p fullscreen) that is **third
   steps** — 0.67, 1, 1.33, 1.67 … 4.67, thirteen of them; at 4 (1440p) it is quarters, seventeen.
   A display with fewer pixels to spend gets fewer, coarser rungs, which is the honest answer
