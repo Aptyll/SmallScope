@@ -1058,13 +1058,14 @@ what the rest of the code needs to know is this:
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
 - **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed, deals the first
-  empty seat, then the first bot slot, of the side with fewer people (a match under way offers
+  empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
+  side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers
   bots' bodies only; none left: FULL; past `LATE_JOIN_T`, 300 s into a
   match: LATE), flips it to `'remote'` and dresses it with the joiner's name, look and class. The
   `welcome` carries the roster (`netRoster`: control, team, name, cls, look per slot), which the
   client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
   drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.
-- **A side is a field, not a slot.** Before the count a person changes sides in the waiting room
+- **A side is a field, not a slot.** Before the drop a person changes sides in the waiting room
   by swapping `p.team` with a bot or empty seat across the rule (`seatSwap`, js/net/net.js), so
   slots, inputs and connections never move; anything that wants "which side" reads `p.team`.
 - **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,

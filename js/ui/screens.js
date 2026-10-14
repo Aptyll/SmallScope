@@ -424,13 +424,16 @@ function specNext(dir) {
   state.spec = -1; // nobody left to watch
 }
 
-// back to the title screen: fade to dark and reload this seed
+// back to the title screen: fade to dark and reload this seed - or, after a
+// match in a room, onto a fresh valley with the room reopened around the same
+// people and sides (rematchUrl, js/ui/rooms.js)
 function toLobby() {
   if (state.fade) return;
   SFX.music.stop(0.4);
+  const next = rematchUrl() || location.pathname + location.search;
   state.fade = {
     a: 0, to: 1, spd: 1 / 0.5, color: '#06081a',
-    then: () => { location.href = location.pathname + location.search; },
+    then: () => { location.href = next; },
   };
 }
 

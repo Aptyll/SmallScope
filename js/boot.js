@@ -111,7 +111,8 @@ if (PRACTICE) {
   // pre-rolled character (js/ui/chars.js) - the title menu is behind it
   beginCreate(-1, true);
 }
-if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) { beginRooms(); state.menu.rsel = -2; netJoin(JOIN_AT_BOOT); }
+if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) { beginRooms(); state.menu.rsel = -2; netJoin(JOIN_AT_BOOT); rematchBootJoin(); }
+rematchBootHost(); // a host back from a match in a room: the room again, same people, same sides (js/ui/rooms.js)
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {

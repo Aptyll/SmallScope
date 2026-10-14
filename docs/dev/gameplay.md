@@ -3460,18 +3460,38 @@ its host's game, its map, ten seat pips (five a side, the people in them lit in 
 paint - the relay lists a count per side), a red dot once its match is under way and its
 four-letter code (the thing a host reads aloud); a room on another patch is dimmed and inert with
 its patch printed where the code would be. A click picks a row, a second click or JOIN joins it;
-CREATE makes a room on the relay and opens it on **the room**: both sides as two columns of five
+The CODE box top-right joins by a room's four letters: click it and type, or paste (Ctrl+V)
+anywhere on the list - "code: ACKT" works, the word a listed room answers to wins - and a code
+no room answers to rattles the box. CREATE opens **the host page**: the room's options before the
+room exists, one row each with its value between two chevrons - MAP (the shape), VALLEY (the
+seed; either chevron rolls another), TEAMS (1V1 to 5V5: seats a side, the rest emptied,
+`seatsSize`) and BOTS (their level) - with BACK and CREATE at the foot. CREATE on this page's
+own world opens the room at once; another shape or seed reloads the page hosting on it
+(`?map&seed&net=host&back=1`), straight onto the room with TEAMS carried. It makes a room on
+the relay and opens it on **the room**,
+whose code top-right copies itself on a click (white for a moment), for a Discord message: both sides as two columns of five
 seats (a face, a name, the class or BOT, the class mark), your side on the left. A click on a
 seat across the rule moves you to that side and the bot or empty seat there takes your old one
 (the swap mark shows under the pointer); the host's pointer on a seat's far end shows a red X
-that shows a person out or empties a bot's seat, and a + that puts a bot back. LEAVE, and the
-host's START, which takes everyone to the **pick** - the lobby, which every peer
+that shows a person out or empties a bot's seat, and a + that puts a bot back; the host's click on a
+bot's class mark turns that bot to the next class (`seatClass`), kept through a rematch. A guest's seat shows a green tick once it has said READY and
+bars for its link to the host (green, amber, red as the round trip grows). The options read under
+the title (MAP, VALLEY, TEAMS as the seats each side has filled, yours first, and BOTS); the host
+clicks TEAMS or BOTS to turn it a step (or walks up off the top seat onto them with the keys),
+and a joiner takes a bot's seat on a side already at that size, so TEAMS holds. A side's count
+reads its people over its open seats. LEAVE, and a guest's READY or the host's START, which stays
+dim and flashes the seats it waits on until every guest is ready, then takes everyone straight
+into the match, each class as it came: there is no pick for now (Noah, 2026-10-14). The
+**pick** - the lobby, still reached by a 'pick' phase and nothing in a room sends one now, which every peer
 sees as the host does, with the room's code on a 2x plate under the relay pip at the head of
 your side's roster, a crown over the host's card, a brighter rim on every person's card than a
 bot's, and a white flash with a cue on a card whose kind changed (someone came, or went). A
 guest sees it minus the two pop-ups off the map plate and the target and the character swap (its class came with it), and
 where LOCK IN would be a frozen plank wearing the host's name: the host's count comes over it and
-the eagle on the host's zero; the host's ESC there takes everyone back to the room. A guest whose
+the eagle on the host's zero; the host's ESC there takes everyone back to the room. After the
+match LOBBY takes each screen back to the same room on a fresh valley, with the same code, the
+same people in the same seats and the same empty seats (the rematch, js/ui/rooms.js); a guest
+who presses it first waits on the list until the host's room is back. A guest whose
 host walks out of the waiting room, or who was shown out, is back on the list with a rattle; one whose host leaves mid-match gets the HOST LEFT end screen (a
 headline and a LOBBY plank over the frozen world, `hostleft` in DEAD_ITEMS, js/ui/screens.js),
 and one whose socket drops mid-match shows a red pip blinking top-centre until the transport
