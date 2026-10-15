@@ -591,7 +591,7 @@ function rushEnd(p, wall) {
     const mul = wall ? RUSH_WALL_MUL : 1;
     hurtUnit(v, Math.round(RUSH_DMG * mul), p.rushNX, p.rushNY, p, { kb: 110 * mul });
     if (!v.dead) stunUnit(v, RUSH_STUN * mul, p);
-    burst(v.x, v.y - 5, '#e04a54', 8, 50, 0.5);
+    burst(v.x, v.y - 5, '#cfd8e8', 8, 50, 0.5);
     burst(v.x, v.y - 4, '#eef4fb', 10, 55, 0.5, true);
     shakeFor(p, wall ? 6 : 4, v);
     sfxAt('hit', v.x, v.y);
@@ -646,7 +646,7 @@ function abExecute(p) {
   for (const q of unitsInCone(p, p.x, p.y, a, EXEC_R, EXEC_HALF)) {
     const dmg = execDmg(q);
     hurtUnit(q, dmg, nx, ny, p, { kb: EXEC_KB, crit: dmg > EXEC_DMG * 2 });
-    burst(q.x, unitMidY(q), '#e05a4a', 10, 55, 0.5);
+    burst(q.x, unitMidY(q), '#cfd8e8', 10, 55, 0.5);
     burst(q.x, unitMidY(q), '#f4f7ff', 6, 45, 0.4, true);
     shakeFor(p, 5, q);
   }
@@ -679,7 +679,7 @@ function abWhirlwind(p) {
     const d = Math.hypot(q.x - p.x, q.y - p.y) || 1;
     const nx = (q.x - p.x) / d, ny = (q.y - p.y) / d;
     hurtUnit(q, WHIRL_DMG, nx, ny, p, { kb: WHIRL_KB });
-    burst(q.x, unitMidY(q), '#e05a4a', 6, 45, 0.4);
+    burst(q.x, unitMidY(q), '#cfd8e8', 6, 45, 0.4);
   }
   for (const s of structsNear(p, p.x, p.y, WHIRL_R)) hurtStruct(s, WHIRL_DMG, p);
   if (PRACTICE) abHitDummies(p.x, p.y, WHIRL_R, WHIRL_DMG);
@@ -697,7 +697,7 @@ function abHamstring(p) {
   for (const q of unitsInCone(p, p.x, p.y, a, HAM_R, HAM_HALF)) {
     hurtUnit(q, HAM_DMG, nx, ny, p, { kb: 0 });
     if (!q.dead) rootUnit(q, HAM_ROOT, p);
-    burst(q.x, q.y, '#e05a4a', 5, 35, 0.35);
+    burst(q.x, q.y, '#cfd8e8', 5, 35, 0.35);
   }
   if (PRACTICE) abHitDummies(p.x + nx * HAM_R * 0.5, p.y + ny * HAM_R * 0.5, HAM_R * 0.5, HAM_DMG);
   abFx.push({ kind: 'wedge', x: p.x, y: p.y - 2, a, r: HAM_R, half: HAM_HALF, t: 0, col: '#c8d2e4' });
@@ -1400,7 +1400,7 @@ const AB32 = [
       '................................',
     ],
     [ // EXECUTE: the greatsword coming straight down - gold guard, wrapped
-      // grip, a white gleam on the edge - and the blood already flying off it
+      // grip, a white gleam on the edge
       '................................',
       '................................',
       '..............oooo..............',
@@ -1422,12 +1422,12 @@ const AB32 = [
       '.............oCssSo.............',
       '.............oCssSo.............',
       '.............oCssSo.............',
-      '.......r.....oCssSo.....r.......',
-      '......r......oCssSo......r......',
       '.............oCssSo.............',
-      '........r....oCssSo....r........',
       '.............oCssSo.............',
-      '..........r..oCssSo..r..........',
+      '.............oCssSo.............',
+      '.............oCssSo.............',
+      '.............oCssSo.............',
+      '.............oCssSo.............',
       '..............oCSo..............',
       '..............oCSo..............',
       '...............oo...............',
@@ -1510,7 +1510,7 @@ const AB32_ALT = [
       '................................',
       '................................',
     ]],
-    [[ // HAMSTRING: a low blade across two shins, the cut a red arc
+    [[ // HAMSTRING: a low blade across two shins, the cut a white arc
       '................................',
       '................................',
       '................................',
@@ -1529,13 +1529,13 @@ const AB32_ALT = [
       '.........ohhooooooWWWWsssssssoo.',
       '.........ohhooWWWWssssssssoooo..',
       '.....oooooWWWWssssssssooooo.....',
-      '..ooooWWWWssssssssoohhoooroo....',
-      '..oWWWrrrsssssoooooohhoorrro....',
-      '..ossssrrrhhooo....ohhorrroo....',
-      '..osssoorrrnnoo...oonnrrroo.....',
-      '..ooooooorrrrrooooorrrrroo......',
-      '........onrrrrrrrrrrrrrno.......',
-      '........onnnnrrrrrrrnnnno.......',
+      '..ooooWWWWssssssssoohhoooCoo....',
+      '..oWWWCCCsssssoooooohhooCCCo....',
+      '..ossssCCChhooo....ohhoCCCoo....',
+      '..osssooCCCnnoo...oonnCCCoo.....',
+      '..oooooooCCCCCoooooCCCCCoo......',
+      '........onCCCCCCCCCCCCCno.......',
+      '........onnnnCCCCCCCnnnno.......',
       '........oonnnooooooonnnoo.......',
       '.........ooooo.....ooooo........',
       '................................',

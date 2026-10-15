@@ -649,7 +649,7 @@ function updatePlay(dt) {
         dead = true;
       } else {
         blow(t, h.k === 'robot' ? ROBOT_KB : h.k === 'animal' ? 25 + 45 * a.pow : undefined, hx, hy);
-        if (h.k === 'player') burst(hx, hy, '#e04a54', 6, 45, 0.4);
+        if (h.k === 'player') burst(hx, hy, '#cfd8e8', 6, 45, 0.4);
         if (a.pierce) a.pierceHit.push(t);
         else dead = true;
       }

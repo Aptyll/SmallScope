@@ -832,7 +832,7 @@ function animalDies(a) {
     burst(a.x, a.y - 5, '#f2cc6a', 8, 45, 0.5);
   } else if (a.kind === 'wolf') {
     burst(a.x, a.y - 5, '#6f778c', 12, 50, 0.55);
-    burst(a.x, a.y - 5, '#e04a54', 8, 45, 0.5);
+    burst(a.x, a.y - 5, '#cfd8e8', 8, 45, 0.5);
     addFloater(a.x, a.y - 26, 'WOLF DOWN', '#f2cc6a');
   } else if (isBigBeast(a)) {
     burst(a.x, a.y - 16, HIT_PUFF[a.kind], 20, 60, 0.7);
@@ -1309,7 +1309,7 @@ function updateCampMonster(a, dt) {
 // one camp monster's blow on its quarry: the hurt, the spray, the sound
 function monsterBite(a, t, M) {
   damagePlayer(t, M.bite + M.lvBite * (a.level - 1), a.mvx, a.mvy, null, M.cause);
-  burst(a.x + a.mvx * (M.big ? 28 : 6), a.y - (M.big ? 8 : 4), '#e04a54', M.big ? 9 : 5, 40, 0.35);
+  burst(a.x + a.mvx * (M.big ? 28 : 6), a.y - (M.big ? 8 : 4), '#cfd8e8', M.big ? 9 : 5, 40, 0.35);
   sfxAt('bite', a.x, a.y);
 }
 
