@@ -3,27 +3,34 @@
 // The pixels of the orca (the thing itself, its hunt and its clock:
 // js/orca.js; its art: SPRITES.orca, js/sprites/orca.js).
 //   the shadow   under the ice with the lake's fish (render, after them): the
-//                baked heading nearest its own, never turned off the pixel
-//                grid, and cut to the ice's own pixels (orcaMask) so it never
-//                shows over a sill it swims under or past the shore. It
-//                darkens as it comes up (ORCA_SHADE_UP over the last
-//                ORCA_SHADE_T of the line) and is gone while it is out.
+//                baked heading nearest its own (64 round, so a turn rolls
+//                through them), never turned off the pixel grid, and cut to the ice's own pixels (orcaMask) so it never
+//                shows over a sill it swims under or past the shore. Locked
+//                on, it drops a little deeper (ORCA_SHADE_DEEP) and rises
+//                through the countdown to ORCA_SHADE_UP: always in sight,
+//                only darker. Its flukes beat up and down through the
+//                baked steps, quicker the faster it goes: the beat is
+//                kept as a phase (orcaBeat) that only ever moves on, so a
+//                change of speed never jumps the tail. It is gone while
+//                it is out.
 //   the breach   y-sorted with the bodies at the hole's waterline: the lunge
 //                anchored by its jaws on the bitten spot, cut at the
 //                waterline, rising ORCA_DEPTH px over ORCA_RISE, the jaws
 //                shut at ORCA_BITE, a bob, then the slide back down. The
 //                hole, its plates and its cracks are the ice break's
 //                (js/draw/icebreak.js), flat on the ground under it.
-//   the line     over the hunted head (drawOrcaLine, js/draw/overhead.js)
+//   the count    over the hunted head (drawOrcaCount, js/draw/overhead.js)
 const ORCA_SHADE = 0.42;      // the shadow's alpha cruising: the fish's own (render)
-const ORCA_SHADE_UP = 0.78;   // ...and coming up under its quarry
-const ORCA_SHADE_T = 0.8;     // s of line it darkens over
+const ORCA_SHADE_DEEP = 0.34; // ...the moment it locks on, a little deeper
+const ORCA_SHADE_UP = 0.78;   // ...and come up under its quarry when the count runs out
+const ORCA_WAG = [4, 1 / 16]; // the tail's beat: rad/s at rest, and more per px/s of speed
 const ORCA_DEPTH = 46;        // px under the waterline the lunge starts from
 const ORCA_DROP = 70;         // px it slides down going back under
 const ORCA_JAW_AT = [6, -4];  // px from the bitten spot to where the jaws close: its chest, a little to the hole's side
 const orcaSh = document.createElement('canvas'); // one shadow frame, cut to the ice
 const orcaShG = orcaSh.getContext('2d');
 let orcaMask = null; // { cv, x0, y0 }: the disc's ice pixels (opaque) over its box, built once
+let orcaBeat = 0, orcaBeatAt = 0; // the tail's phase (rad) and the draw it was last moved on (s)
 
 // the ice the shadow may show through: every ice pixel of the disc and a
 // tile round it (iceAtPx: the sheet as the ground drew it)
@@ -45,8 +52,10 @@ function drawOrcaShadow(ex, ey, now) {
   const rx = Math.round(orca.x), ry = Math.round(orca.y), S = SPRITES.orca, h = S.cell >> 1;
   if (rx - ex < -h || ry - ey < -h || rx - ex > WV_W + h || ry - ey > WV_H + h) return;
   if (!orcaMask) orcaMaskBuild();
-  const n = S.shadow.length, hd = ((Math.round(orca.a / (Math.PI * 2) * n) % n) + n) % n;
-  const f = S.shadow[hd][Math.sin(now * (orca.mode === 'hunt' ? 12 : 5)) > 0 ? 1 : 0]; // the tail's wag, quicker on the run
+  const n = S.hds, hd = ((Math.round(orca.a / (Math.PI * 2) * n) % n) + n) % n;
+  orcaBeat = (orcaBeat + Math.min(0.1, Math.max(0, now - orcaBeatAt)) * (ORCA_WAG[0] + orca.v * ORCA_WAG[1])) % (Math.PI * 2);
+  orcaBeatAt = now;
+  const f = S.shade(hd, Math.floor(orcaBeat / (Math.PI * 2) * S.phs) % S.phs);
   if (orcaSh.width !== S.cell) orcaSh.width = orcaSh.height = S.cell;
   orcaShG.globalCompositeOperation = 'source-over';
   orcaShG.clearRect(0, 0, S.cell, S.cell);
@@ -54,8 +63,9 @@ function drawOrcaShadow(ex, ey, now) {
   orcaShG.globalCompositeOperation = 'destination-in';
   orcaShG.drawImage(orcaMask.cv, rx - h - orcaMask.x0, ry - h - orcaMask.y0, S.cell, S.cell, 0, 0, S.cell, S.cell);
   orcaShG.globalCompositeOperation = 'source-over';
-  const left = orca.mode === 'crack' ? 0 : orca.mode === 'hunt' ? ORCA_LINE - orcaAge() : ORCA_SHADE_T;
-  ctx.globalAlpha = ORCA_SHADE + (ORCA_SHADE_UP - ORCA_SHADE) * Math.max(0, Math.min(1, (ORCA_SHADE_T - left) / ORCA_SHADE_T));
+  // the rise: from a little deeper at the lock to just under the ice at the strike
+  const u = orca.mode === 'crack' ? 1 : orca.mode === 'hunt' ? Math.min(1, orcaAge() / ORCA_LINE) : -1;
+  ctx.globalAlpha = u < 0 ? ORCA_SHADE : ORCA_SHADE_DEEP + (ORCA_SHADE_UP - ORCA_SHADE_DEEP) * u * u;
   ctx.drawImage(orcaSh, rx - h - ex, ry - h - ey);
   ctx.globalAlpha = 1;
 }
