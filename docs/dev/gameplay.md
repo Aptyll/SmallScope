@@ -1895,10 +1895,14 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
 - **It locks on** (`orcaLook`) the nearest player standing on *its bare ice* (`orcaPrey`: ground
   `1` inside the disc, not in the air, not on a cable; a deer's back is still the ice) within
   `seenAt(p, ORCA_SIGHT)` of it. A gate's stone sill is safe; everything else inside the ring
-  is its ice. A line over their head (`orcaLine`, drawn by `drawOrcaLine`) runs
-  `ORCA_LINE` (4) s, a knock in the ice under them each second (`iceKnock`), while the shadow
-  runs in under them as fast as the time left asks, up to `ORCA_DASH`. Off its ice and the hunt
-  drops; it locks nobody for `ORCA_LET`.
+  is its ice. A countdown over their head (`orcaLine`, drawn by `drawOrcaCount`) runs
+  `ORCA_LINE` (3) s, 3 2 1, a knock in the ice under them on each number (`iceKnock`), while it
+  stalks them (`orcaStalk`): a glide past beside them (`orcaPass` picks the mark, `ORCA_PASS`, on
+  the side its heading already sits), a wide turn, then the run in under them as fast as the time
+  left asks, up to `ORCA_DASH`. Its heading turns at a capped rate and its speed eases
+  (`ORCA_ACC`), so the path is arcs, never a pivot; the shadow drops a little deeper at the lock
+  and darkens as it rises (js/draw/orca.js). Off its ice and the hunt drops; it locks nobody for
+  `ORCA_LET`.
 - **The line runs out** (`orcaStrike`): the ice breaks in the orca's own shape
   (`iceBreak(…, 'orca', …)` with `ORCA_CRACK` of warning cracks, [ice breaks](world.md#ice-breaks))
   beside and below them (`ORCA_LEAN`, the 3/4 view's behind; shorter lunges where the ice for the
@@ -1907,7 +1911,7 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   shut on the spot they stood on (`orcaBite`): every unit `unitsHit` finds within `ORCA_JAWS`
   takes a blow of exactly its health, shield and armour (`orcaLethal`) through `hurtUnit`,
   cause `orca`, the death line `WENT TO THE ORCA`, counted as a beast's in the post-game
-  record (`BEAST_CAUSES`). It slides back under by `ORCA_UP` and locks nobody for `ORCA_REST`.
+  record (`BEAST_CAUSES`). It slides back under by `ORCA_UP` and locks nobody for `ORCA_REST` (1 s) after.
 - **Bots run.** Rung 0b of `aiThink`: once the profile's `react` of the line has gone,
   `orcaShore` walks them off its ice by the nearest way. Routes pay its toll
   ([pathfinding](#pathfinding)), so a bot crosses only where round is much further. A bot file

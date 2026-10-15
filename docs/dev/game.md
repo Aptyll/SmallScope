@@ -48,7 +48,7 @@ stone round the crossing: the road comes in at two gates with stone sills, the w
 four breaches with the fallen blocks round them, and nothing gets through the stone itself, roll
 or charge. Inside, the creek pools and freezes into **the orca's lake**, both sides' alike: anyone
 can walk over it, but the orca
-under the ice locks on a player out on it, a line over their head runs 4 s, and then it comes up
+under the ice locks on a player out on it, stalks them while a 3 2 1 counts down over their head, and then it comes up
 through the ice and they go down. [The orca](gameplay.md#the-orca). It swings round the two
 midline camps in a half-loop each, so each side owns one on its own bank: the brown bear is RED's,
 the black bear BLUE's, each walking its bank up and down and stopping to fish. Anyone who steps in plunges as through the ice, and a bot shoved off the

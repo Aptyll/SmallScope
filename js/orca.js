@@ -3,11 +3,13 @@
 // The orca's lake (orcaLakeAt, js/world.js) has one thing living under it.
 // It cruises the disc as a shadow under the ice, like the lake's fish but
 // the size of a deer. A player who walks out onto ITS ice within
-// seenAt(p, ORCA_SIGHT) of it is locked: a line over their head runs
-// ORCA_LINE s (drawOrcaLine, js/draw/overhead.js; a knock in the ice every
-// second), and the shadow runs in under them. Off the orca's ice - onto the
-// snow, a gate's sill, a zipline, a deer's back is still the ice - and the hunt
-// drops. If the line runs out on the ice, the orca comes up:
+// seenAt(p, ORCA_SIGHT) of it is locked: a countdown over their head runs
+// ORCA_LINE s (drawOrcaCount, js/draw/overhead.js; a knock in the ice on
+// every number) while the orca stalks them (orcaStalk): a glide past beside
+// them, a wide turn, then the run in under them, its heading always leading
+// its path. Off the orca's ice - onto the snow, a gate's sill, a zipline, a
+// deer's back is still the ice - and the hunt drops. If the line runs out on
+// the ice, the orca comes up:
 //   the strike   the ice cracks round where it will break (iceBreak's warn,
 //                ORCA_CRACK) and the one it is after is pinned (rootUnit)
 //   the breach   the hole opens beside and below them (ORCA_LEAN: the 3/4
@@ -15,18 +17,24 @@
 //                close on the spot they stood on (ORCA_BITE): whatever is
 //                within ORCA_JAWS of it goes down, whatever its health
 //   the rest     it slides back under and cruises again; nothing is locked
-//                for ORCA_REST
+//                for ORCA_REST once it is gone
 // One orca, one hunt at a time. Its water is the whole disc, under the
 // cistern's sills too (js/cistern.js), but it locks and breaks only bare
 // ice. It never rolls: every pick comes off hash2 and the tick,
 // so the shared rng() is untouched. Sim only - `orca` is a SAVE_ROOTS
 // singleton and rides the snapshot; the pixels are js/draw/orca.js.
-const ORCA_LINE = 4;          // s of line before it comes up
+const ORCA_LINE = 3;          // s of countdown before it comes up
 const ORCA_SIGHT = 160;       // px from the orca a player on its ice is felt from (seenAt shortens it)
 const ORCA_SWIM = 26;         // px/s cruising
 const ORCA_DASH = 260;        // px/s at most on the run in
 const ORCA_TURN = 1.4;        // rad/s cruising; the run in turns ORCA_TURN_HUNT
-const ORCA_TURN_HUNT = 5;
+const ORCA_TURN_HUNT = 5;     // ...in its last few px under them
+const ORCA_STALK = 1.5;       // s of the line at most it spends on the pass before it turns in
+const ORCA_PASS = [28, 44];   // px beside its quarry, and past it, that the pass glides for
+const ORCA_GLIDE = 55;        // px/s on the pass, and the least on the run in
+const ORCA_TURN_PASS = 2.2;   // rad/s on the pass and the turn: a wide arc, never a pivot
+const ORCA_TURN_RUN = 3.2;    // rad/s on the run in
+const ORCA_ACC = 4;           // 1/s: how fast its speed eases to what it wants (a few tail strokes)
 const ORCA_MARGIN = 12;       // px of the disc kept round the shadow's middle
 const ORCA_LEAN = [24, 28];   // px from the bitten spot to the middle of the hole: beside it, and below
 const ORCA_LEAN_K = [1, 0.75, 0.5]; // ...and the shorter lunges it tries where the ice for the long one is not there
@@ -36,11 +44,11 @@ const ORCA_BITE = 0.2;        // s from the hole opening to the jaws shutting
 const ORCA_SINK_AT = 0.57;    // s from the hole opening to it sliding back down
 const ORCA_UP = 0.93;         // s from the hole opening to it gone under again
 const ORCA_JAWS = 12;         // px round the bitten spot the jaws take
-const ORCA_REST = 5;          // s after a breach before it locks anyone
+const ORCA_REST = 1;          // s after it is back under before it locks anyone
 const ORCA_LET = 1.5;         // s after losing one before it locks anyone
 const ORCA_TOLL = 3;          // extra steps a route pays per tile of its ice (navToll): the bots go round
 const ORCA_FRESH = () => ({ on: 0, x: 0, y: 0, a: 0, v: ORCA_SWIM, mode: 'swim', t0: 0, tgt: -1, side: 1,
-  jx: 0, jy: 0, hx: 0, hy: 0, cool: 0, gx: 0, gy: 0, bit: 0, n: 0 });
+  jx: 0, jy: 0, hx: 0, hy: 0, cool: 0, gx: 0, gy: 0, bit: 0, n: 0, px: 0, py: 0, run: 0 });
 const orca = ORCA_FRESH();
 let orcaWater = null; // per tile: 1 inside the disc (the orca swims there, under the ice and the sills alike)
 let orcaHome = null;  // the disc's tiles with room round them: where it cruises to
@@ -124,9 +132,7 @@ function updateOrca(dt) {
     // a knock in the ice under them, once a second, the line's own clock
     const k = state.tick - orca.t0, sec = Math.round(1 / TICK_DT);
     if (k > 0 && k % sec === 0 && left > 0.5) sfxAt('iceKnock', p.x, p.y);
-    const [tx, ty] = orcaUnder(p), d = Math.hypot(tx - orca.x, ty - orca.y);
-    orcaSwim(tx, ty, Math.min(ORCA_DASH, Math.max(ORCA_SWIM, d / Math.max(0.12, left))), ORCA_TURN_HUNT, dt);
-    if (left < 0.3 && orcaClear(tx, ty)) { orca.x += (tx - orca.x) * 0.25; orca.y += (ty - orca.y) * 0.25; }
+    const [tx, ty] = orcaStalk(p, left, dt);
     if (left <= 0) orcaStrike(p);
     return;
   }
@@ -150,7 +156,37 @@ function orcaLook() {
   if (!best) return;
   orca.mode = 'hunt'; orca.t0 = state.tick; orca.tgt = best.id;
   orca.side = orca.x >= best.x ? 1 : -1;
+  orcaPass(best);
   sfxAt('iceKnock', best.x, best.y);
+}
+// where the pass glides for: beside its quarry on the side it is already
+// heading, and on past them, so it goes by and has to turn back. No disc
+// there (the rim) and it runs straight in.
+function orcaPass(p) {
+  const d = Math.max(1, Math.hypot(p.x - orca.x, p.y - orca.y)), ux = (p.x - orca.x) / d, uy = (p.y - orca.y) / d;
+  const lean = Math.cos(orca.a) * -uy + Math.sin(orca.a) * ux >= 0 ? 1 : -1; // the side its heading already sits
+  orca.run = 1;
+  for (const s of [lean, -lean]) {
+    const x = p.x - uy * s * ORCA_PASS[0] + ux * ORCA_PASS[1], y = p.y + ux * s * ORCA_PASS[0] + uy * ORCA_PASS[1];
+    if (orcaClear(x, y)) { orca.px = x; orca.py = y; orca.run = 0; return; }
+  }
+}
+// one step of the stalk; returns where it comes up under them (orcaUnder).
+// The pass ends at its mark, once it is past them, or at ORCA_STALK; the run
+// in goes as fast as the time left asks. Its speed eases (ORCA_ACC), its
+// heading turns at a capped rate, so the path is arcs, never a pivot.
+function orcaStalk(p, left, dt) {
+  const [tx, ty] = orcaUnder(p);
+  if (!orca.run) {
+    const ahead = (p.x - orca.x) * Math.cos(orca.a) + (p.y - orca.y) * Math.sin(orca.a);
+    if (Math.hypot(orca.px - orca.x, orca.py - orca.y) < 10 || ahead < -12 || ORCA_LINE - left >= ORCA_STALK) orca.run = 1;
+  }
+  const d = Math.hypot(tx - orca.x, ty - orca.y);
+  const want = orca.run ? Math.min(ORCA_DASH, Math.max(ORCA_GLIDE, 1.4 * d / Math.max(0.12, left))) : ORCA_GLIDE;
+  const v = orca.v + (want - orca.v) * Math.min(1, ORCA_ACC * dt);
+  const turn = !orca.run ? ORCA_TURN_PASS : d < 20 ? ORCA_TURN_HUNT : ORCA_TURN_RUN;
+  if (orca.run) orcaSwim(tx, ty, v, turn, dt); else orcaSwim(orca.px, orca.py, v, turn, dt);
+  return [tx, ty];
 }
 // the line has run out: break the ice for the lunge, the longest one there
 // is bare ice for, and pin the one it is after. Nowhere to come up (the
@@ -181,7 +217,7 @@ function orcaLethal(e) {
   return e instanceof Player ? Math.ceil(e.hp + (e.dawnShield || 0)) + kitOf(e).dr : Math.ceil(e.hp);
 }
 
-// the line over a player's head, in s left; -1 while the orca is not after them
+// the countdown over a player's head, in s left; -1 while the orca is not after them
 function orcaLine(p) {
   if (!orca.on || orca.tgt !== p.id) return -1;
   if (orca.mode === 'hunt') return Math.max(0, ORCA_LINE - orcaAge());

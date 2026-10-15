@@ -97,7 +97,7 @@ obs = {
                            // 'arrived' also beside a goal no path enters (a bird, a tree); 'fail' = no route
     lastCmd: { kind, tick, ok, why } | null,  // what came of your latest order
     atShop,                // standing at a merchant's counter
-    orca,                  // s left on the orca's line over your head; -1 when it is not after you
+    orca,                  // s left on the orca's countdown over your head; -1 when it is not after you
   },
   allies:   [{ id, x, y, hp, maxHp, cls, dead, respawnT, aboard, bot }],  // your whole side, always
   enemies:  [{ id, x, y, vx, vy, hp, maxHp, cls, prone }],                // rivals your side can see

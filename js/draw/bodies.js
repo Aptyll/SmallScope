@@ -533,9 +533,9 @@ function drawPlayer(p, ex, ey, now) {
   // a dawn shield (pickSnowdrop, js/actions.js) adds its own row straight
   // above the hp bar, and everything that sat above the bar - the draw meter,
   // the name, a callout - stands SHIELD_LIFT rows higher while it holds; the
-  // orca's line (js/orca.js) is one more row the same way, over the shield's
+  // orca's count (js/orca.js) stands over the frame the same way, over the shield's
   const shL = p.dawnShield > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
-  const lift = shL + (line >= 0 ? SHIELD_LIFT : 0);
+  const lift = shL + (line > 0 ? ORCA_COUNT_LIFT : 0);
   callTag(p, Math.round(p.x - ex), hy - 18 - lift); // a bot's callout hangs over the name (js/draw/callouts.js)
   // the whole frame, name included, is one plate stamped over the grade
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
@@ -543,7 +543,7 @@ function drawPlayer(p, ex, ey, now) {
   overheadPlate(() => {
     drawHealthBar(p.x - ex + FRAME_DX, hy - 7, p.hp, p.maxHp, 14, p.team);
     if (shL) drawShieldBar(fx - 7, hy - 10, p.dawnShield);
-    if (line >= 0) drawOrcaLine(fx - 7, hy - 10 - shL, line, now);
+    if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
     // the running damage total, past the frame's right edge: the bar backing,
     // the colour-blind cap or the stun plate, whichever stands furthest out
     queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 6, barCol(p.team));
