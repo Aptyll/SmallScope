@@ -907,7 +907,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   if (!dot) shakeFor(p, crit ? 6 : 3);
   tallyHit(p, dmg);
   if (!dot) sfxAt('hurt', p.x, p.y);
-  burst(p.x, p.y - 6, dot ? '#ff9440' : '#e04a54', 8, 50, 0.45);
+  burst(p.x, p.y - 6, dot ? '#ff9440' : '#cfd8e8', 8, 50, 0.45);
   if (p.hp <= 0) die(p, src, cause);
 }
 
