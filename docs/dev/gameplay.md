@@ -1907,7 +1907,8 @@ that rides the snapshot; the client eases it like a body (`netClientLerp`).
   (`iceBreak(…, 'orca', …)` with `ORCA_CRACK` of warning cracks, [ice breaks](world.md#ice-breaks))
   beside and below them (`ORCA_LEAN`, the 3/4 view's behind; shorter lunges where the ice for the
   long one is not there, and no strike at all where there is no bare ice), and the one it is
-  after is rooted (`rootUnit`). The orca lunges up out of the hole, and at `ORCA_BITE` its jaws
+  after is rooted (`rootUnit`). Under the cracks the shadow glides onto the hole and turns to
+  face the spot it lunges at, arriving as they open, so it never jumps. The orca lunges up out of the hole, and at `ORCA_BITE` its jaws
   shut on the spot they stood on (`orcaBite`): every unit `unitsHit` finds within `ORCA_JAWS`
   takes a blow of exactly its health, shield and armour (`orcaLethal`) through `hurtUnit`,
   cause `orca`, the death line `WENT TO THE ORCA`, counted as a beast's in the post-game
