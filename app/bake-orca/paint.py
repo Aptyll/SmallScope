@@ -12,8 +12,8 @@
 #            to the LEFT (the right-hand lunge is the mirror, SPR.flipH): `open`
 #            as it rises, `shut` once it has bitten. `jaw` is the pixel of the
 #            cell between the jaws, the point the draw lays on the bitten spot.
-#   shadow   top-down, SHADOW_HD headings round from +x (east) clockwise, 2 tail
-#            frames each, as a SHADOW under the ice the way the lake's fish are
+#   shadow   top-down, SHADOW_HD headings round from +x (east) clockwise, SHADOW_PH
+#            steps of the tail's up-and-down beat each, as a SHADOW under the ice the way the lake's fish are
 #            one (js/sprites/fish.js): no colour of its own, the under-ice ink
 #            solid round its edge and half strength in its core
 # Each frame is trimmed to its pixels and carries where it sits in its CELL
@@ -27,7 +27,8 @@ from paint import Canvas, ramp, lint, bez, nrm, hx
 OUT = os.path.join(HERE, '..', '..', 'js', 'sprites', 'orca.js')
 CELL = 64          # px square of every shadow frame before the trim
 BCELL = 80         # ...and of a breach frame (the flukes hang under the waterline)
-SHADOW_HD = 16     # headings
+SHADOW_HD = 64     # headings: a step is under 6 degrees, so a turn rolls round instead of jumping
+SHADOW_PH = 8      # steps of one beat of the tail
 SHADOW = '#4a708c'                     # the under-ice ink every shadow is made of (js/sprites/fish.js): its rim
 SHADOW_CORE = 'rgba(74,112,140,0.52)'  # ...and its core, about half the rim
 
@@ -124,17 +125,21 @@ def breach(bite):
     m = (h + ut + lt) / 3
     return img, (int(round(m[0])), int(round(m[1])))
 
-def shadow(a, wag):
-    """top-down, head along `a`; the tail swung to one side or the other"""
+def shadow(a, ph):
+    """top-down, head along `a`, at step `ph` of the tail's beat. An orca beats
+    its flukes up and down, so from above they shorten as they tilt and come
+    back long as they pass level, the stock swaying a pixel or so behind"""
     def at(u, v):
         c, s = math.cos(a), math.sin(a)
         return (CELL / 2 + u * c - v * s, CELL / 2 + u * s + v * c)
+    f = ph / SHADOW_PH * 2 * math.pi
+    tilt = abs(math.sin(f))                     # 0 level .. 1 at the top or bottom of the stroke
+    sway = math.sin(f - 0.9)                    # the stock's side to side, a step behind the stroke
     c = Canvas(CELL)
-    w = 0.35 if wag else -0.35
-    tail = at(-21, w * 4)
+    tail = at(-21 + tilt, sway * 1.4)
     for side in (-1, 1):                                                   # flukes off the tail stock
-        c.lens(tail, at(-27, side * 8 + w * 6), 4.2, mat='sh', bend=-0.25 * side)
-    c.lens(at(-22, w * 3), at(-4, 0), 6, mat='sh', prof='leaf')            # tail stock
+        c.lens(tail, at(-27 + 2.5 * tilt, side * (8 - 0.8 * tilt) + sway * 2), 4.2 - 0.8 * tilt, mat='sh', bend=-0.25 * side)
+    c.lens(at(-22 + tilt, sway * 1.1), at(-4, 0), 6, mat='sh', prof='leaf')  # tail stock
     c.lens(at(-8, 0), at(22, 0), 13, mat='sh', prof='leaf')                # body, widest behind the head
     c.dome(at(16, 0), 5.4, 5.4, mat='sh')                                  # round head
     for side in (-1, 1):                                                   # paddle pectorals
@@ -176,24 +181,37 @@ jaw = frames['open'][1]
 print('breach jaw', jaw, 'shut jaw', frames['shut'][1])
 shadows = []
 for hd in range(SHADOW_HD):
-    pair = []
-    for wag in (0, 1):
-        img = shadow(hd / SHADOW_HD * 2 * math.pi, wag); check(f'shadow {hd}/{wag}', img)
-        pair.append(grid(img, as_shadow=True))
-    shadows.append(pair)
+    beat = []
+    for ph in range(SHADOW_PH):
+        img = shadow(hd / SHADOW_HD * 2 * math.pi, ph); check(f'shadow {hd}/{ph}', img)
+        beat.append(grid(img, as_shadow=True))
+    shadows.append(beat)
 
 def g(t):
     ox, oy, rows = t
     return f"t({ox}, {oy}, [" + ', '.join(f"'{r}'" for r in rows) + "])"
+def rle(row):
+    """a shadow row run-length packed: each run its count (left out when 1) then its char"""
+    out, i = '', 0
+    while i < len(row):
+        j = i
+        while j < len(row) and row[j] == row[i]: j += 1
+        out += (str(j - i) if j - i > 1 else '') + row[i]; i = j
+    return out
+def gs(t):
+    ox, oy, rows = t
+    return f"[{ox},{oy},'" + '|'.join(rle(r) for r in rows) + "']"
 
 js = ["'use strict';",
       "// The orca of the orca's lake (js/orca.js), look D BOLD. SPRITES.orca =",
       "//   breach  { open, shut }: side-on, the steep lunge up out of the ice, head",
       "//           up and to the LEFT (the lunge to the right is SPR.flipH of it);",
       "//           `jaw` is the cell's pixel between the jaws, laid on the bitten spot",
-      "//   shadow  [" + str(SHADOW_HD) + " headings round from +x (east) clockwise][2 tail frames]: top-down,",
-      "//           the under-ice ink, solid rim over a half-strength core, like the",
-      "//           lake's fish (js/sprites/fish.js); drawn at part alpha under the ice",
+      "//   shade(hd, ph)  the shadow: heading hd of " + str(SHADOW_HD) + " round from +x (east) clockwise, step ph",
+      "//           of " + str(SHADOW_PH) + " of the tail's beat; top-down, the under-ice ink, solid rim over a",
+      "//           half-strength core, like the lake's fish (js/sprites/fish.js); drawn at part alpha",
+      "//           under the ice. Packed (rows run-length, '|' between them) and baked the first time",
+      "//           it is asked for, so the game starts without painting them all",
       "// Every frame is cut from its cell (cell: a shadow's, bcell: a breach's) and keeps where it sat in it",
       "// (canvas.ox / .oy), so the cell's centre still lands where the draw puts it.",
       "// GENERATED by app/bake-orca/paint.py - repaint and rebake, never edit these grids.",
@@ -209,9 +227,20 @@ js = ["'use strict';",
       f"    cell: {CELL}, bcell: {BCELL},",
       f"    jaw: [{jaw[0]}, {jaw[1]}],",
       "    breach: { open, shut, openR: m(open), shutR: m(shut) },",
-      "    shadow: ["]
-for pair in shadows:
-    js.append("      [" + ', '.join(g(t) for t in pair) + "],")
-js += ["    ],", "  };", "})();", ""]
+      f"    hds: {SHADOW_HD}, phs: {SHADOW_PH},",
+      "    shade(hd, ph) {",
+      "      const k = hd * " + str(SHADOW_PH) + " + ph;",
+      "      if (!baked[k]) {",
+      "        const [ox, oy, s] = SHADE[k];",
+      "        baked[k] = t(ox, oy, s.split('|').map((r) => r.replace(/(\\d+)(\\D)/g, (_, n, c) => c.repeat(+n))));",
+      "      }",
+      "      return baked[k];",
+      "    },",
+      "  };",
+      "  const baked = [];",
+      "  const SHADE = ["]
+for beat in shadows:
+    js.append("    " + ', '.join(gs(t) for t in beat) + ",")
+js += ["  ];", "})();", ""]
 open(OUT, 'w', newline='\n').write('\n'.join(js))
 print(OUT, len(pal), 'colours', os.path.getsize(OUT), 'bytes')
