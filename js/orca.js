@@ -11,7 +11,9 @@
 // deer's back is still the ice - and the hunt drops. If the line runs out on
 // the ice, the orca comes up:
 //   the strike   the ice cracks round where it will break (iceBreak's warn,
-//                ORCA_CRACK) and the one it is after is pinned (rootUnit)
+//                ORCA_CRACK) and the one it is after is pinned (rootUnit);
+//                under the cracks the shadow glides onto the hole, turning
+//                to face the spot it lunges at
 //   the breach   the hole opens beside and below them (ORCA_LEAN: the 3/4
 //                view's "behind"), the orca lunges up out of it and its jaws
 //                close on the spot they stood on (ORCA_BITE): whatever is
@@ -137,6 +139,11 @@ function updateOrca(dt) {
     return;
   }
   if (orca.mode === 'crack') {
+    // the last glide under the cracks: from where the run left it onto the hole, turning to
+    // face the spot it lunges at, so the shadow goes into the breach instead of jumping to it
+    const u = Math.min(1, dt / Math.max(dt, ORCA_CRACK - age));
+    orca.x += (orca.hx - orca.x) * u; orca.y += (orca.hy - orca.y) * u;
+    orca.a += angDelta(orca.a, Math.atan2(orca.jy - orca.hy, orca.jx - orca.hx)) * u;
     if (age >= ORCA_CRACK) { orca.mode = 'up'; orca.t0 = state.tick; orca.bit = 0; } // the hole opens this same step (updateIceBreaks)
     return;
   }
@@ -198,7 +205,7 @@ function orcaStrike(p) {
     if (!orcaIce(Math.floor(hx / TILE), Math.floor(hy / TILE))) continue;
     const b = iceBreak(hx, hy, 'orca', Math.atan2((jy - hy) / sq, jx - hx), { warn: ORCA_CRACK });
     if (!b) continue;
-    Object.assign(orca, { mode: 'crack', t0: state.tick, side: s, jx, jy, hx, hy, x: hx, y: hy, bit: 0 });
+    Object.assign(orca, { mode: 'crack', t0: state.tick, side: s, jx, jy, hx, hy, bit: 0 });
     rootUnit(p, ORCA_CRACK + ORCA_BITE + 0.05);
     return;
   }
