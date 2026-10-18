@@ -27,7 +27,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.477';
+const PATCH_TXT = 'PATCH 0.478';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -43,6 +43,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.478', 'THE VIDEO KIT CAN NOW BLUR THE EDGES OF A SHOT AROUND ITS SUBJECT AND FADE ITS SUBTITLES OUT.'],
   ['0.477', 'THE ORCA NO LONGER JUMPS WHEN IT STRIKES: ITS SHADOW GLIDES ONTO THE HOLE AND TURNS TO FACE YOU AS THE ICE CRACKS.'],
   ['0.476', 'THE ORCA STALKS NOW: ONCE IT LOCKS ON, A BIG 3 2 1 COUNTS DOWN OVER YOUR HEAD WHILE ITS SHADOW GLIDES PAST YOU, ROLLS SMOOTHLY ROUND AND RUNS IN WITH ITS FLUKES BEATING, RISING DARKER AS IT COMES, AND A SECOND AFTER IT SINKS BACK IT CAN LOCK ON THE NEXT ONE.'],
   ['0.475', 'NO MORE BLOOD: A HIT, A BITE OR A CUT NOW THROWS UP WHITE SNOW INSTEAD OF RED, AND THE EXECUTE AND HAMSTRING ICONS SHOW A CLEAN BLADE.'],
