@@ -8,10 +8,14 @@
 # --keep saves those output frames as keep_NNNN.png (storyboard and thumbnail); --preview N
 # saves every Nth as a small prev_NNNN.png to check a cut without watching it.
 # A shot's "step" plays every Nth take frame (-10: a rewind scrub), "mute" keeps its frames out of the sound.
+# "blur" (on the cut, a default for every shot, or on a shot, merged over it; false turns it off) keeps an
+# ellipse round the subject sharp and blurs and dims the rest: r = half-axes as fractions of the frame,
+# soft = the feather past the ellipse in the same units, px = the blur radius, dim = how much the margin
+# darkens, cx/cy = the ellipse's centre as fractions. Text is drawn after it, so it stays sharp.
 # Writes map.json beside the mp4: the take frame behind every output frame, for the sound.
 import sys, json, os, math, argparse
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter, ImageEnhance
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from look import text, stack, stamp, drain, card_bg, game_logo, steam_mark
 from view import view
@@ -91,13 +95,38 @@ def emit(im, src=None):
     if A.preview and n % A.preview == 0: im.resize((SIZE[0] // 4, SIZE[1] // 4), Image.BOX).save(os.path.join(OUTDIR, f'prev_{n:04d}.png'))
     if n in KEEP: im.save(os.path.join(OUTDIR, f'keep_{n:04d}.png'))
 
-TEXTS = C.get('texts', [])   # {"shot": name, "from": out frames into it, "to": ..., "lines": ..., "s", "y"}
-def overlay(im, shot, j):
+TEXTS = C.get('texts', [])   # {"shot": name, "from": out frames into it, "to": ..., "lines": ..., "s", "y", "out"}
+def overlay(im, shot, j, n):
     for t in TEXTS:
         if t['shot'] != shot or not (t.get('from', 0) <= j < t.get('to', 10 ** 9)): continue
         card = text(t['lines'], s=t.get('s', 16), gap=2)
-        im = stamp(im, card, SIZE[0] / 2, t.get('y', 300), min(1, (j - t.get('from', 0) + 1) / 3))
+        al = min(1, (j - t.get('from', 0) + 1) / 3)
+        if t.get('out'): al = min(al, (min(t.get('to', n), n) - j) / t['out'])   # `out`: frames it fades over before it goes
+        im = stamp(im, card, SIZE[0] / 2, t.get('y', 300), al)
     return im
+
+BLUR = {'r': [0.42, 0.26], 'soft': 0.6, 'px': 14, 'dim': 0.12, 'cx': 0.5, 'cy': 0.5}
+MASKS = {}
+def shot_blur(sh):
+    # the shot's own blur merged over the cut's, or None for none (absent, false or 0)
+    b = sh['blur'] if 'blur' in sh else C.get('blur')
+    if b is None or b is False or b == 0: return None
+    out = dict(BLUR)
+    for part in (C.get('blur'), b):
+        if isinstance(part, dict): out.update(part)
+    return out
+def focus_blur(im, b):
+    if b is None: return im
+    key = (tuple(b['r']), b['soft'], b['cx'], b['cy'])
+    if key not in MASKS:
+        W, H = SIZE; yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+        d = np.sqrt(((xx - W * b['cx']) / (W * b['r'][0])) ** 2 + ((yy - H * b['cy']) / (H * b['r'][1])) ** 2)
+        u = np.clip((d - 1) / b['soft'], 0, 1)
+        MASKS[key] = Image.fromarray(np.round(u * u * (3 - 2 * u) * 255).astype(np.uint8))
+    W, H = SIZE   # blurred at a quarter size: a wide blur for a fraction of the cost
+    soft = im.resize((W // 4, H // 4), Image.BOX).filter(ImageFilter.GaussianBlur(b['px'] / 4)).resize(SIZE, Image.BILINEAR)
+    if b['dim']: soft = ImageEnhance.Brightness(soft).enhance(1 - b['dim'])
+    return Image.composite(soft, im, MASKS[key])
 
 last = None
 for sh in C['shots']:
@@ -109,11 +138,12 @@ for sh in C['shots']:
     if n <= 0: raise SystemExit(f'shot {sh.get("name")} runs the wrong way: {sh["from"]}={i0} to {sh["to"]}={i1} at step {st}')
     p0, p1 = focus(f0, i0), focus(f1, i0 + (n - 1) * st)
     k0, k1 = pair(sh['k']); ox0, ox1 = pair(sh.get('ox'), 0); oy0, oy1 = pair(sh.get('oy'), 0)
+    bl = shot_blur(sh)
     for j in range(n):
         i = i0 + j * st; e = ease(sh.get('ease', 'smooth'), j / max(1, n - 1))
         k = math.exp(math.log(k0) + (math.log(k1) - math.log(k0)) * e)     # zoom in log space: an even push
         cx = p0[0] + ox0 + (p1[0] + ox1 - p0[0] - ox0) * e; cy = p0[1] + oy0 + (p1[1] + oy1 - p0[1] - oy0) * e
-        emit(overlay(view(painted(i), R[i]['cam'], S, cx, cy, k, SIZE), sh.get('name'), j), None if sh.get('mute') else i)
+        emit(overlay(focus_blur(view(painted(i), R[i]['cam'], S, cx, cy, k, SIZE), bl), sh.get('name'), j, n), None if sh.get('mute') else i)
     last = (i0 + (n - 1) * st, cx, cy, k)
     print('shot', sh.get('name', ''), i0, i1, 'out', len(MAP))
 NG = len(MAP)

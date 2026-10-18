@@ -94,7 +94,11 @@ was unless `card.mark` names one (`steam`, `discord`), and `card.cta_s` sizes ea
 `line: 0` drops it. Colour `discord` is the Discord blue. `step` plays a shot every nth take
 frame, negative to run it backwards (a rewind), and `mute: true` keeps its frames silent. Slow
 motion and a held freeze are recorded, not cut: the scene lowers `M.speed`, so the snow keeps
-falling through them.
+falling through them. `blur`, on the cut (every shot's) or on a shot (merged over it; `false` turns
+it off), keeps an ellipse round the frame's middle sharp and blurs and dims the rest: `r` its
+half-axes as fractions of the frame, `soft` the feather past it, `px` the blur, `dim` the darkening,
+`cx`/`cy` its centre. Text goes on after it, so it stays sharp. A text's `out` fades it over that
+many frames before it goes.
 
 ## Rules that came from reviews
 
