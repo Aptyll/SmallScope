@@ -536,7 +536,8 @@ function drawPlayer(p, ex, ey, now) {
   // orca's count (js/sim/orca.js) stands over the frame the same way, over the shield's
   const shL = p.dawnShield > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
   const lift = shL + (line > 0 ? ORCA_COUNT_LIFT : 0);
-  callTag(p, Math.round(p.x - ex), hy - 18 - lift); // a bot's callout hangs over the name (js/draw/callouts.js)
+  const bounty = bountyOf(p);
+  callTag(p, Math.round(p.x - ex), hy - 18 - lift - (bounty > 0 ? BOUNTY_LIFT : 0)); // a bot's callout hangs over the name, and over a bounty (js/draw/callouts.js)
   // the whole frame, name included, is one plate stamped over the grade
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
@@ -556,11 +557,10 @@ function drawPlayer(p, ex, ey, now) {
     // legible - your own included: the profile name is what the rest of the
     // table sees over your head, and hiding it from you alone would make it
     // the one label in the game you cannot check.
-    const nameX = centreTextX(p.x - ex, p.name);
     drawWorldText(p.name,
-      nameX, hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
+      centreTextX(p.x - ex, p.name), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
       TEAMS[skin(p.team)].mark);
-    drawBountyTag(nameX + pixelTextWidth(p.name) + 2, hy - 18 - lift, bountyOf(p)); // a streak's price, past the name (js/draw/overhead.js)
+    drawBountyTag(p.x - ex, hy - 18 - lift, bounty); // a streak's price, over the name (js/draw/overhead.js)
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
     // white on every side, since stamina has no side, and white is neither the
     // team's paint above it nor the gold of the draw - charges stay discrete

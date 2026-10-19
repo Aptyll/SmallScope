@@ -1274,9 +1274,9 @@ once-and-only-once rule in [CLAUDE.md](../../CLAUDE.md)) and then steps back a w
 pixels, `w >> 1`, which puts the run's **middle column** on `round(sx)` — the column
 [hbMid](#the-centre-column-hbmid) draws, so the overlay runs straight down the middle glyph. Use it
 for any text centred over a model; free-floating text (damage floaters, wheel labels) is not
-centred on anything and keeps its own maths. A player with a bounty wears it two pixels past the
-right end of the tag (`drawBountyTag`, js/draw/overhead.js): a 5 px gold coin on a 1 px ink rim and
-the gold in the purse's ink, so the tag stays centred and the price hangs off it.
+centred on anything and keeps its own maths. A player with a bounty wears it centred over the tag,
+`BOUNTY_LIFT` rows up with a clear row between (`drawBountyTag`, js/draw/overhead.js): a 5 px gold
+coin on a 1 px ink rim and the gold in the purse's ink; a bot's callout stands over it.
 
 **Every other bar in the game is centred on its model directly** — an animal's frame carries the
 level badge too, but its bars stay on the body's own centre and the badge simply overhangs to the

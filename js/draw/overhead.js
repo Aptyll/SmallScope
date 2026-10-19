@@ -297,13 +297,18 @@ function drawOrcaCount(cx, bottom, left) {
 }
 
 // The BOUNTY (bountyOf, the `takedowns` banner js/sim/player.js): a body on a
-// kill streak wears a coin and the gold its killer will cash, just past the
-// right end of its name, so everyone on both sides can see who is worth
-// hunting. The coin is 5 px round on the font's own 1 px ink rim, the number
+// kill streak wears a coin and the gold its killer will cash, centred over
+// its name (Noah's pick, round 1 look C with the number), so everyone on both
+// sides can see who is worth hunting. `cx` is the body's column, `ny` the
+// name's top row; the tag stands BOUNTY_LIFT rows over it with a clear row
+// between. The coin is 5 px round on the font's own 1 px ink rim, the number
 // the purse's gold; nothing at all while there is no bounty.
 const BOUNTY_INK = '#f2cc6a', BOUNTY_LIT = '#fff3c4', BOUNTY_DEEP = '#c8902c';
-function drawBountyTag(x, y, bounty) {
+const BOUNTY_LIFT = 8;
+function drawBountyTag(cx, ny, bounty) {
   if (!(bounty > 0)) return;
+  const t = String(bounty), w = 9 + pixelTextWidth(t);
+  const x = Math.round(cx) - (w >> 1), y = ny - BOUNTY_LIFT;
   ctx.fillStyle = BAR_FRAME;                        // the rim: the coin's 5x5 disc grown a pixel each way
   ctx.fillRect(x + 1, y - 1, 5, 7); ctx.fillRect(x, y, 7, 5);
   ctx.fillStyle = BOUNTY_INK;

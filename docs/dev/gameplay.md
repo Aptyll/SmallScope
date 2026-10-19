@@ -3373,7 +3373,7 @@ never funds the other side. **Bounty** grows from a streak of `BOUNTY_FROM` (2) 
 (4) a kill to `BOUNTY_MAX` (20); the killer cashes it as a **SHUTDOWN** (the log says SHUT DOWN,
 and a 2x gold word rises off the body for 1.4 s), so ending a streak pays without erasing the
 lead it built. The bounty is worn over the name for every screen to see (`drawBountyTag`,
-js/draw/overhead.js: a 5 px gold coin and the number past the name tag). Bots run the same
+js/draw/overhead.js: a 5 px gold coin and the number over the name tag). Bots run the same
 `die`, so they assist, wear bounties and shut down like anyone.
 
 ## The M map does not pause
