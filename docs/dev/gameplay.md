@@ -1523,7 +1523,7 @@ js/draw/fog.js (the picture).
 - **Nothing is stored**: it is all read off where things stand. **Online, each side is sent only
   what it sees** (the `fog` banner in js/net/snapshot.js): a rival soldier, creature or shot out of
   a client's side's sight is not in its snapshot at all, and a rival player out of it comes as a
-  stub (`fogHid` and the fields the rail and scoreboard show). The puffs, streams and numbers
+  stub (`fogHid` and the fields the rail and scoreboard show). The puffs, streams, numbers and coins
   raised out of a side's sight are left out of its cosmetics too (`netEvSeen`, asking `sightAt`).
   A client draws the host's verdict: `inSight` and `fogShown` answer no for a body with `fogHid`.
 - **Shots and numbers.** A rival's arrow or rock in the fog is not drawn, nor its flame's light,

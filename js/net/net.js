@@ -263,13 +263,14 @@ function netHostFull(peer, pr) {
 function netFogTeam(pr) { const p = players[pr.slot]; return p.eliminated ? -1 : p.team; }
 // the step's cosmetics a side may see: a puff, a stream or a number raised
 // out of its sight is a body it cannot see giving itself away (sightAt,
-// js/sim/fog.js), and a bot's call is for the side it names (js/ai/ai-callouts.js)
+// js/sim/fog.js), and a bot's call or a miss's coin is for the side it names
 function netEvSeen(ev, team) {
   if (team < 0) return ev;
   return ev.filter((e) => {
     const a = e.a;
     if (e.k === 'float' || e.k === 'burst') return sightAt(team, a[0], a[1]);
     if (e.k === 'stream') return sightAt(team, a[0], a[1]) || sightAt(team, a[2], a[3]);
+    if (e.k === 'coin') return a[2] ? a[3] === team : sightAt(team, a[0], a[1]); // a miss's coin is its own side's (js/sim/farm.js)
     return e.k !== 'call' || a[6] === team;
   });
 }

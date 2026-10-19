@@ -387,8 +387,8 @@ is no per-recipient field policy beyond the fog.
 `sfxo` (owner cue / bystander cue), `shake` and `shakep` entries as `{k, a}`, recorded inside the
 step on the host (`evInStep` and `evRecord`, which is on only while there are peers; `EV_MAX` 1024
 per flush) and replayed by `evPlay` on a client against *its* player. A side's peers get only the
-`burst`, `stream` and `float` entries raised where it sees and the bot calls meant for it
-(`netEvSeen`). Everything that changes
+`burst`, `stream`, `float` and last-hit `coin` entries raised where it sees, and the bot calls and
+missed coins meant for it (`netEvSeen`). Everything that changes
 state - a build, a ground change, a death, a respawn, a trade, the end of the match - arrives as
 snapshot state, not as an event, so a lost `snap` loses only cosmetics. Two wrinkles: a floater
 that carries a team's paint records the HOST's `skin()` colour, and `burst` draws off the sim's
