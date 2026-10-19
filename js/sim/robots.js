@@ -65,6 +65,7 @@ function hurtRobot(b, dmg, nx, ny, src) {
   b.flash = 0.12;
   b.kbx = nx * ROBOT_KB; b.kby = ny * ROBOT_KB;
   tallyHit(b, dmg);
+  aiFarmLearn(src, dmg); // a bot remembers its blow for the next last hit (js/ai/ai-farm.js)
   burst(b.x, b.y - 2, '#c3c9d3', 6, 45, 0.35, true);
   burst(b.x, b.y - 2, '#ffb347', 3, 40, 0.3, true); // sparks off the plating
   sfxAt('hit', b.x, b.y);
@@ -83,13 +84,16 @@ function robotDies(b, src) {
     if (src && src.inv) awardGold(src, b.carry, b.x, b.y);
     b.carry = 0;
   }
-  // a soldier carries a bounty instead of cargo: whoever scraps one is paid
-  // it on the spot (awardGold) - the last hit is gold - and every rival scout
-  // standing near shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js):
-  // the road is where a scout levels, which is what makes walking out to meet a wave worth the walk.
+  // a soldier carries a bounty instead of cargo: the rival who lands the
+  // LAST HIT is paid it on the spot (soldierBounty, the `farm` banner of
+  // js/sim/farm.js) and counts a farm, and every rival scout standing near
+  // shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js) -
+  // the road pays, which is what makes walking out to meet a wave worth the walk. One the waves, a turret or a
+  // beast finish pays nobody, and its rivals near it see the coin go grey.
   // Three a wave, so no feed line: the fight is the news, not each wreck.
   if (b.kind === 'soldier') {
-    if (src && src.inv && src.team !== b.team) awardGold(src, SOLDIER_BOUNTY, b.x, b.y);
+    if (src && src.inv && src.team !== b.team) { awardGold(src, soldierBounty(), b.x, b.y); farmHit(src, b.x, b.y - 6); }
+    else coinPop(b.x, b.y - 6, true, 1 - b.team);
     shareXp(b, SOLDIER_XP, 1 - b.team, src);
     return;
   }
@@ -711,24 +715,25 @@ function updateMerchant(b, dt) {
 // turret or wall in its way, their bays), and then the bird itself,
 // SOLDIER_EAGLE_DMG a swing through hurtEagle - which is why two waves
 // meeting on the road grind each other down until somebody breaks the tie.
-// It carries a SOLDIER_BOUNTY paid to whoever scraps it (robotDies), and it
-// takes every hit, state and gust like any other body. It marches its BAY'S
-// LANE (b.lane). A mid soldier's route is the road's waypoints from its own
-// base's junction to the rival's (roadWaypoints), round the cistern at the
-// middle by a ford outside one of its culverts (cisternWayRound,
-// js/sim/cistern.js), then up the rival's road to the roost; a top or bot
-// soldier's is its own mouth, down its lane to the rival mouth and into the
-// rival hollow (laneWaypoints, js/sim/lanes.js). A waypoint it cannot reach
-// is skipped, not waited on, so a wave never stands still on a blocked tile.
-// On the mid road it rides any ZIPLINE that carries it toward the rival bird (soldierBoard):
+// It carries a bounty paid to the rival who lands its last hit (robotDies,
+// soldierBounty in js/sim/farm.js), and it takes every hit, state and gust
+// like any other body. It marches its BAY'S LANE (b.lane). A mid soldier's
+// route is the road's waypoints from its own base's junction to the rival's
+// (roadWaypoints), round the cistern at the middle by a ford outside one of
+// its culverts (cisternWayRound, js/sim/cistern.js), then up the rival's road
+// to the roost; a top or bot soldier's is its own mouth, down its lane to the
+// rival mouth and into the rival hollow (laneWaypoints, js/sim/lanes.js). A
+// waypoint it cannot reach is skipped, not waited on, so a wave never stands
+// still on a blocked tile. On the mid road it rides any ZIPLINE that carries
+// it toward the rival bird (soldierBoard):
 // its own side's out to the front, the rival's in to their roost - hands on
 // the handle, so a soldier on the cable swings at nothing, and a rival who
 // meets it on the line crashes with it (zipCrash, js/sim/zipline.js).
 const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
+const SOLDIER_HP_GROW = 10;    // health a soldier gains for every barracks `grow` the match has run
 const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
-const SOLDIER_BOUNTY = 4;      // gold a scrapped soldier pays its killer
 const SOLDIER_XP = 20;         // XP it is worth to the rival scouts standing near (shareXp)
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
@@ -737,6 +742,9 @@ const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turn
 function makeSoldier(o) {
   const b = makeRobot(o); // the bay's roll-out geometry, the barracks' botHp
   b.kind = 'soldier';
+  // tougher every `grow`, like its bounty (soldierBounty, js/sim/farm.js), so a
+  // hero's grown blow never makes every hit on one a last hit
+  b.hp = b.maxHp = b.maxHp + SOLDIER_HP_GROW * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
   b.owner = -1; // nobody's: no flag, no cargo, no payout but the bounty
   b.lane = o.lane === undefined ? 1 : o.lane; // the bay's lane (updateMerchant): 0 top, 1 mid, 2 bot
   b.wayI = 0;

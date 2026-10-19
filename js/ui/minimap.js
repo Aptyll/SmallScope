@@ -186,13 +186,13 @@ function renderMinimap(now) {
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
     drawMapBird(ctx, MM_CX + dx, MM_CY + dy, TEAMS[skin(e.team)].mark, HUD_INK);
   }
-  // the camps, glyph only - a name would not fit inside the disc (the
+  // the camps, glyph and a cleared one's clock - a name would not fit inside the disc (the
   // world map and the arrival toast are where they are read by name)
   for (const L of camps) {
     const m = campMark(L);
     const dx = (m.tx + 0.5 - ptx) * s, dy = (m.ty + 0.5 - pty) * s;
     if (Math.hypot(dx, dy) > MM_R - 2) continue;
-    drawCampIcon(ctx, L, MM_CX + dx, MM_CY + dy, L.spec.mark, HUD_INK);
+    drawCampMark(ctx, L, MM_CX + dx, MM_CY + dy); // a cleared one wears its seconds (js/draw/marks.js)
   }
   // the centre: the watched body - you, or a player you are watching - as
   // the white heart in its side's ink, the mark the chart gives it too
