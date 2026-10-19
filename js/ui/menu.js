@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.499';
+const PATCH_TXT = 'PATCH 0.500';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.500', 'GEAR IS GONE: NO MORE HELMET, CHEST, LEGS AND BOOTS TO PICK OR LEVEL - ITEMS CARRY EVERY STAT NOW, THE G PANEL SHOWS YOUR SIX ITEMS BESIDE YOUR STATS, AND THE HERO POP-UP IS YOUR STATS AND YOUR FOUR ABILITY KEYS.'],
   ['0.499', 'THREE LANES: A TOP AND A BOT LANE NOW CURVE ROUND EITHER SIDE OF THE VALLEY TO A FORD AT THE MIDDLE, EACH BASE RAISES A BOT BAY AT EVERY LANE\'S MOUTH WHOSE WAVES MARCH THAT LANE, AND EACH LANE HAS ITS OWN ZIPLINE.'],
   ['0.498', 'UNDER THE HOOD: THE BOTS\' BRAIN IS NOW SPLIT INTO NAMED STEPS, AND BOTS PLAY EXACTLY THE SAME.'],
   ['0.497', 'QUICKPLAY AND RANKED NOW FIND YOU REAL OPPONENTS: FIND MATCH LOOKS FOR ANOTHER PARTY FOR A FEW SECONDS UNDER A GOLD CLOCK AND PUTS IT ON THE OTHER SIDE, WITH BOTS ONLY IF NOBODY IS THERE, AND THE PARTY LEADER CAN NOW SWITCH MODES BY CLICKING THE MODE NAME.'],
@@ -787,7 +788,7 @@ function updateTitle(dt) {
     // cell would go NaN here and take its whole row off the screen
     m.hover[i] = (m.hover[i] || 0) + (target - (m.hover[i] || 0)) * Math.min(1, dt * 14);
   }
-  // lobby cross-fade and its own hovers; a pop-up (gear, map, ai) rides a
+  // lobby cross-fade and its own hovers; a pop-up (hero, map, ai) rides a
   // second ease (popT) over the still-lit lobby
   const st = m.screen === 'lobby' || popOpen() ? 1 : 0;
   m.screenT = Math.max(0, Math.min(1, m.screenT + (st ? 1 : -1) * dt / 0.35));
@@ -823,7 +824,6 @@ function updateTitle(dt) {
     m.lockT -= dt;
     if (m.lockT <= 0) { m.lockT = 0; beginDrop(); }
   }
-  if (m.gearFxT > 0) m.gearFxT = Math.max(0, m.gearFxT - dt); // the equip flash on the preview
 
   if (m.panel) {
     if (m.closing) {
@@ -1132,7 +1132,7 @@ function buildHelpPanel() {
 // the view is too short for 3x under the row) under its warm light, unarmed.
 // The arrow keys step the row; the hero locked in is the profile's next
 // opening pick (js/app/profile.js). Clicking the figure opens
-// the HERO POP-UP (gear, stat points, the abilities - `the hero pop-up`
+// the HERO POP-UP (the stats and the abilities - `the hero pop-up`
 // above). LOCK IN is a bare word at the foot of the view, big: it locks the
 // pick and starts the COUNTDOWN (pressPlay) - a gold ring bursting off the
 // figure (lockFx), the hero row dimmed, the count in the word's place, one
@@ -1262,516 +1262,47 @@ function drawLobbyBackdrop(now, a) {
 
 // ---- the hero pop-up (League runes-style) --------------------------------
 // Opened by clicking your character on the lobby (beginHero). The lobby
-// stays lit underneath; the pop-up dims it and floats a panel in three
-// columns. LEFT: the live preview - the chosen class walking in place in
-// its four leather pieces with the class weapon at hand, and under it the
-// STAT LEDGER: every number the kit flies out with, real values from the
-// same code the sim reads (heroPreviewKit / baseKit, js/sim/player.js).
-// RIGHT: two COLUMNS of four wells, a click turning any of them. The GEAR
-// column is one well a piece (helmet, chest, legs, boots) wearing the
-// picked variant's 32px icon; a click turns it to the piece's next variant
-// (pickGear writes straight to player.gear; the equip plays ON the preview
-// body - a white flash, sparks, the piece's band lit - and the ledger's
-// numbers step to the new kit's), and a hover writes the NEXT variant's
-// stat deltas into the ledger in green/better or red/worse, so what a click
-// would do to the numbers is read before it is done. The ABILITIES column
-// is one well a key (1-4) wearing the picked option's icon with the key in
-// the corner; a click turns it to the key's next option (abOptions,
-// js/sim/abilities.js - the warrior's keys carry two each, the hunter's one,
-// which a click leaves as it is; the pick is player.abPick, read by abOf),
-// and a hover raises the option's card (tipClassAb, js/ui/tooltip.js):
-// what the key will do, read before the eagle - its growth is the match's
-// own (skill points), never bought here. The ledger under the preview is
-// the hero's seven stats at level 1 (STAT_ROWS, js/sim/stats.js) with the
-// gear picked, the PLAYER-panel text carve-out: comparing numbers is this
-// panel's whole job. ESC, Backspace, the X, or a click outside the panel
+// stays lit underneath; the pop-up dims it and floats a panel in two
+// columns. LEFT: the live preview - the chosen class walking in place with
+// the class weapon at hand, and under it the STAT LEDGER: every number the
+// kit flies out with, real values from the same code the sim reads (baseKit,
+// js/sim/player.js). RIGHT: the ABILITIES column, one well a key (1-4)
+// wearing the picked option's icon with the key in the corner; a click turns
+// it to the key's next option (abOptions, js/sim/abilities.js - the
+// warrior's keys carry two each, the hunter's one, which a click leaves as it
+// is; the pick is player.abPick, read by abOf), and a hover raises the
+// option's card (tipClassAb, js/ui/tooltip.js): what the key will do, read
+// before the eagle - its growth is the match's own (skill points), never
+// bought here. The ledger is the hero's seven stats at level 1 (STAT_ROWS,
+// js/sim/stats.js), the PLAYER-panel text carve-out: comparing numbers is
+// this panel's whole job. ESC, Backspace, the X, or a click outside the panel
 // closes it; LOCK IN stays on the lobby behind it. The keyboard walks
-// menu.grow down the gear column and the ability column; on a well Enter,
-// Space or Right turns it, Left turns it back.
-const GEARP_W = 38, GEARP_G = 4;                     // a column well, and the gap between wells
-const HERO_COL_GAP = 10;                             // between the two columns
+// menu.grow down the ability column; on a well Enter, Space or Right turns
+// it, Left turns it back.
+const HERO_WELL = 38, HERO_WELL_G = 4;               // an ability well, and the gap between wells
 function heroLayout() {
   const cx = Math.round(VIEW_W / 2);
   const ledW = 118;
-  const colsW = 2 * GEARP_W + HERO_COL_GAP;
-  const pw = 8 + ledW + 10 + colsW + 8;
-  const ph = 222;
+  const pw = 8 + ledW + 10 + HERO_WELL + 8;
+  const ph = 206;
   const px = cx - (pw >> 1), py = Math.round((VIEW_H - ph) / 2);
-  const gx = px + 8 + ledW + 10, ax = gx + GEARP_W + HERO_COL_GAP;
-  const col = (x) => [0, 1, 2, 3].map((i) => ({ x, y: py + 12 + i * (GEARP_W + GEARP_G), w: GEARP_W, h: GEARP_W, i }));
-  const gear = col(gx), abils = col(ax);
+  const ax = px + 8 + ledW + 10;
+  const abils = [0, 1, 2, 3].map((i) => ({ x: ax, y: py + 12 + i * (HERO_WELL + HERO_WELL_G), w: HERO_WELL, h: HERO_WELL, i }));
   // the ledger: a row a stat, under the preview
   const led = { x: px + 8, y: py + 94, w: ledW };
-  return { cx, panel: { x: px, y: py, w: pw, h: ph }, gear, abils,
+  return { cx, panel: { x: px, y: py, w: pw, h: ph }, abils,
     prev: { x: px + 8, y: py + 8, w: ledW, h: 78 },   // the preview well
     led,                                               // the ledger below it
-    name: { x: gx + (colsW >> 1), y: py + 190 },       // the hovered well's name
+    name: { x: cx, y: py + 190 },                      // the hovered well's name
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
 
-// The kit these picks would fly out with: the class base plus each variant
-// at the free level 1 - no skills, no cards - exactly what refreshKit hands
-// the sim at lock-in.
-function heroPreviewKit(gear) {
-  const k = baseKit(state.menu.csel);
-  for (let i = 0; i < GEAR.length; i++) GEAR[i][gear[i]].mod(k, 1);
-  return k;
-}
-
-// The twelve variant icons: detailed 32x32 char grids on the ability icons'
-// palette (AB32_PAL, js/sim/abilities.js - one style across every big icon),
-// baked lazily beside the code that draws them (sprites.md). GEAR32[slot][v]
-// in GEAR's own order; the 12px material-swapped SPRITES.gearIcons stay the
-// HUD's and the plaque's.
-const GEAR32 = [
-  [ // helmets
-    [ // LONGSIGHT: the leather hood with a long visor, a gold lens over one eye
-      '................................',
-      '................................',
-      '................................',
-      '............oooooooo............',
-      '..........oowwwwwwwwoo..........',
-      '.........owwwwwwwwwwwwo.........',
-      '........owwwwwwwwwwwwwwo........',
-      '........owwhhwwwwwwhhwwo........',
-      '.......owwwwwwwwwwwwwwwwo.......',
-      '.......owwwwwwwwwwwwwwwwo.......',
-      '.......owwwwwwwwwwwwwwwwo.......',
-      '.......ouwwwwwwwwwwwwwwuo.......',
-      '.....oooooooooooooooooooooo.....',
-      '....ouuuuuuuuuuuuuuuuuuuuuuo....',
-      '.....okkkkkkkkkkkGGGGGGGkko.....',
-      '.....okkkWWkkkkkkGWggggGkko.....',
-      '.....okkkkkkkkkkkGgggggGkko.....',
-      '.....ooooooooooooGGGGGGGooo.....',
-      '.......ouuo..........ouuo.......',
-      '.......ouo............ouo.......',
-      '........ou............uo........',
-      '.........ouddddddddduo..........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // QUICKDRAW: the steel sallet, wing fins swept off both sides
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '.............oooooo.............',
-      '...........oossssssoo...........',
-      '..........ossCCCCCCsso..........',
-      '.........osssCCCCCCssso.........',
-      '...oWWo..osssssssssssso..oWWo...',
-      '..oWWWo..osssssssssssso..oWWWo..',
-      '.oWWCWWoossssssssssssssooWWCWWo.',
-      '.oWCCCWoosskkkkkkkkkkssooWCCCWo.',
-      '..oWWWo.osskkkkkkkkkksso.oWWWo..',
-      '...oWo..osssssssssssssso..oWo...',
-      '........osssssssssssssso........',
-      '........ossssoooooosssso........',
-      '.........oooo......oooo.........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // HUNTSMAN: the fur hood under two small antlers
-      '................................',
-      '................................',
-      '......ot....ot....to....to......',
-      '.......ot..to......ot..to.......',
-      '........ottto......ottto........',
-      '.........oto........oto.........',
-      '.........odo........odo.........',
-      '.........odo........odo.........',
-      '..........oooooooooooo..........',
-      '.........ohhhhhhhhhhhho.........',
-      '........ohHhhHhhhHhhHhho........',
-      '........ohhHhhhHhhhhHhho........',
-      '.......ohhhhhhhhhhhhhhhho.......',
-      '.......ohHhhhHhhhHhhhHhho.......',
-      '.......ohhokkkkkkkkkkohho.......',
-      '.......ohhokkWkkkkWkkohho.......',
-      '.......ohhokkkkkkkkkkohho.......',
-      '........ohhokkkkkkkkohho........',
-      '........ohhhhhhhhhhhhhho........',
-      '.........ohHohHohHohHo..........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-  ],
-  [ // chests
-    [ // BULWARK: the broad breastplate, gold boss, riveted belt
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '....oooooo............oooooo....',
-      '...osssssso..........osssssso...',
-      '...ossssssoooooooooooosssssso...',
-      '....osssssssssssssssssssssso....',
-      '....oksssssssssCCsssssssssko....',
-      '....ossssssssssCCsssssssssso....',
-      '.....osssssssssCCssssssssso.....',
-      '.....osssssssssCCssssssssso.....',
-      '.....ossssssssoooosssssssso.....',
-      '.....osssssssogggGossssssso.....',
-      '.....osssssssogWgGossssssso.....',
-      '.....osssssssoggGGossssssso.....',
-      '.....ossssssssoooosssssssso.....',
-      '......osssssssssssssssssso......',
-      '.......okssssssssssssssko.......',
-      '.......ossssssssssssssssso......',
-      '........oDDDDDDDDDDDDDDo........',
-      '........oDDDDDDggDDDDDDo........',
-      '.........osssssssssssso.........',
-      '..........oooooooooooo..........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // IRONHIDE: the scale coat, row on row of plates
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '......oooooooooooooooooooo......',
-      '.....owwoooooookkkkoooooowwo....',
-      '......oCCsCCsCCsCCsCCsCCso......',
-      '......oSSsSSsSSsSSsSSsSSso......',
-      '......osCCsCCsCCsCCsCCsCCo......',
-      '......osSSsSSsSSsSSsSSsSSo......',
-      '......oCCsCCsCCsCCsCCsCCso......',
-      '......oSSsSSsSSsSSsSSsSSso......',
-      '......osCCsCCsCCsCCsCCsCCo......',
-      '......osSSsSSsSSsSSsSSsSSo......',
-      '......oCCsCCsCCsCCsCCsCCso......',
-      '......oSSsSSsSSsSSsSSsSSso......',
-      '......osCCsCCsCCsCCsCCsCCo......',
-      '......osSSsSSsSSsSSsSSsSSo......',
-      '......oCCsCCsCCsCCsCCsCCso......',
-      '......oSSsSSsSSsSSsSSsSSso......',
-      '......oooooooooooooooooooo......',
-      '.......oSoSoSoSoSoSoSoSo........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // HEARTHWEAVE: the quilted tunic, an ember heart at the chest
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '.......oooooooooooooooooo.......',
-      '.......owwwwwwokkowwwwwwo.......',
-      '.......ouwwwuwwwuwwwuwwwo.......',
-      '.......owuwwwuwwwuwwwuwwo.......',
-      '.......owwuwwwuwwwuwwwuwo.......',
-      '.......owwwuwwwuwwwuwwwuo.......',
-      '.......ouwwwurrwurrwuwwwo.......',
-      '.......owuwwrprrrrprwuwwo.......',
-      '.......owwuwrrggggrrwwuwo.......',
-      '.......owwwurrggggrrwwwuo.......',
-      '.......ouwwwurrggrrwuwwwo.......',
-      '.......owuwwwurrrrwwwuwwo.......',
-      '.......owwuwwwurrwuwwwuwo.......',
-      '.......owwwuwwwuwwwuwwwuo.......',
-      '.......ouwwwuwwwuwwwuwwwo.......',
-      '.......owuwwwuwwwuwwwuwwo.......',
-      '.......oooooooooooooooooo.......',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-  ],
-  [ // legs
-    [ // STRIDER: the long pants, wings flaring off both knees
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '.........oooooooooooooo.........',
-      '........oDDDDDDDDDDDDDDo........',
-      '........oDDggDDDDDDggDDo........',
-      '........owwwwwwuuwwwwwwo........',
-      '........owwwwwo..owwwwwo........',
-      '........owwwwo....owwwwo........',
-      '........owwwwo....owwwwo........',
-      '........owwwwo....owwwwo........',
-      '........ouwwwo....owwwuo........',
-      '...oWWo.owwwwo....owwwwo.oWWo...',
-      '..oWWCWoogwwwo....owwwgooWCWWo..',
-      '...oWWo.owwwwo....owwwwo.oWWo...',
-      '....oWo.owwwwo....owwwwo.oWo....',
-      '........ouwwwo....owwwuo........',
-      '........ouwwwo....owwwuo........',
-      '........ouwwwo....owwwuo........',
-      '........ouwwwo....owwwuo........',
-      '........ouuuuo....ouuuuo........',
-      '........oooooo....oooooo........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // SLIDEWORN: the worn pants, knees polished smooth, slide streaks
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '.........oooooooooooooo.........',
-      '........ouuuuuuuuuuuuuuo........',
-      '........owwwwwwuuwwwwwwo........',
-      '........owwwwwo..owwwwwo........',
-      '........owwdwo....owdwwo........',
-      '........owwwwo....owwwwo........',
-      '........odwwwo....owwwdo........',
-      '........owwwwo....owwwwo........',
-      '........oCCCCo....oCCCCo........',
-      '..bb....oCCCCo....oCCCCo........',
-      '.bb.....oCWCCo....oCCWCo....bb..',
-      '..bb....oCCCCo....oCCCCo..bb....',
-      '........osCCso....osCCso........',
-      '........owwwwo....owwwwo........',
-      '...bb...odwwwo....owwwdo...bb...',
-      '........owwwwo....owwwwo........',
-      '........owwwwo....owwwwo........',
-      '........ouuuuo....ouuuuo........',
-      '........oooooo....oooooo........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // PACKMULE: the sturdy pants, a strapped pouch on each thigh
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '.........oooooooooooooo.........',
-      '........oDDDDDDDDDDDDDDo........',
-      '........owwwwwwuuwwwwwwo........',
-      '........owwwwwo..owwwwwo........',
-      '...oooooowwwwo....owwwwooooo....',
-      '...ouuuoowwwwo....owwwwoouuuo...',
-      '...ouguoowwwwo....owwwwoouguo...',
-      '...ohhhoowwwwo....owwwwoohhho...',
-      '...ohhhoowwwwo....owwwwoohhho...',
-      '...ohhhoowwwwo....owwwwoohhho...',
-      '...ouuuoowwwwo....owwwwoouuuo...',
-      '....ooo.owwwwo....owwwwo.ooo....',
-      '........owwwwo....owwwwo........',
-      '........owwwwo....owwwwo........',
-      '........owwwwo....owwwwo........',
-      '........owwwwo....owwwwo........',
-      '........ouwwwo....owwwuo........',
-      '........ouuuuo....ouuuuo........',
-      '........oooooo....oooooo........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-  ],
-  [ // boots
-    [ // SKATES: the winter boot up on its bright blade
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '..........oooooooo..............',
-      '.........oWWWWWWWWo.............',
-      '.........obbWWWWbbo.............',
-      '.........oooooooooo.............',
-      '..........owwwwwwuo.............',
-      '..........owwgwwwuo.............',
-      '..........owwwwwwuo.............',
-      '..........owwwwwwuo.............',
-      '..........owwwwwwuo.............',
-      '..........owwwwwwuoo............',
-      '..........owwwwwwwuooo..........',
-      '..........owwwwwwwwwuooo........',
-      '..........owwwwwwwwwwwuo........',
-      '.........oDDDDDDDDDDDDDDDo......',
-      '.........ooooooooooooooooo......',
-      '...........oo....oo....oo.......',
-      '.........oCCCCCCCCCCCCCCCCo.....',
-      '..........oooooooooooooooo......',
-      '......b........b.......b........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // DANCER: the pair up on pointe, ribbons crossed up the shin
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '.......ot...to....ot...to.......',
-      '........ottto......ottto........',
-      '.......oHHHHo.....oHHHHo........',
-      '.......otHHto.....otHHto........',
-      '.......oHHHHo.....oHHHHo........',
-      '..b....otHHto.....otHHto....b...',
-      '.b.....oHHHHo.....oHHHHo.....b..',
-      '.......oHHHHo.....oHHHHo........',
-      '.......oHHHo......oHHHo.........',
-      '.......oHHHo......oHHHo.........',
-      '........oHHo......oHHo..........',
-      '........oddo......oddo..........',
-      '.........oo........oo...........',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-    [ // GHOSTSTEP: the pale boot, its heel drifting off as wisps
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '..........oooooooo..............',
-      '.........obbbbbbbbo.............',
-      '.........obBBbbBbo..............',
-      '.........oBbbbbbBo..............',
-      '.........oB.bb.bBo..............',
-      '..B......oBbbbbbBo..............',
-      '.....B...oBbbbbbBo..............',
-      '..b......oBbbbbbBo..............',
-      '.........oBbbbbbBoo.............',
-      '....B....oBbbbbbbbBooo..........',
-      '..b......oBbbbbbbbbbBoo.........',
-      '.........oBbbbbbbbbbbbBo........',
-      '........obbbbbbbbbbbbbbbo.......',
-      '........ooooooooooooooooo.......',
-      '......b....b.....b......b.......',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-      '................................',
-    ],
-  ],
-];
-const gear32Cache = new Map();
-// the baked 32x32 icon for gear slot i, variant v
-function gearIcon32(i, v) {
-  const key = i + ':' + v;
-  let cv = gear32Cache.get(key);
-  if (!cv) {
-    cv = document.createElement('canvas');
-    cv.width = cv.height = 32;
-    const g = cv.getContext('2d');
-    const rows = GEAR32[i][v];
-    for (let r = 0; r < rows.length; r++) {
-      const row = rows[r];
-      for (let c = 0; c < row.length; c++) {
-        const col = AB32_PAL[row[c]];
-        if (!col) continue;
-        g.fillStyle = col;
-        g.fillRect(c, r, 1, 1);
-      }
-    }
-    gear32Cache.set(key, cv);
-  }
-  return cv;
-}
-// what the pointer is over on the hero pop-up: {row} (a gear well), {ab}
-// (an ability well), 'x', 'panel' (the slab itself - inert, swallows the
+// what the pointer is over on the hero pop-up: {ab} (an ability well), 'x', 'panel' (the slab itself - inert, swallows the
 // press, the ledger included), or null (outside: a click closes)
 function heroScreenHit() {
-  const { gear, abils, panel, xr } = heroLayout();
+  const { abils, panel, xr } = heroLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(xr, 3, 3)) return 'x';
-  for (const w of gear) if (over(w, 0, 1)) return { row: w.i };
   for (const w of abils) if (over(w, 0, 1)) return { ab: w.i };
   return popFrameHit(panel, xr);
 }
@@ -1789,28 +1320,15 @@ function beginHero() {
   openPop('hero');
 }
 function leaveHero() { leavePop(); }
-// pre-match variant pick for the local player, full heal like setClass since
-// nothing has been risked yet. The pick plays on the preview body: gearFxT
-// runs the white flash and the sparkles, gearFxSlot lights the piece's band.
-function pickGear(i, v) {
-  if (player.gear[i] === v) return;
-  player.gear[i] = v;
-  refreshKit(player);
-  player.hp = player.maxHp;
-  state.menu.gearFxT = 0.45;
-  state.menu.gearFxSlot = i;
-  SFX.pickup();
-}
-
 function heroKey(k) {
   const m = state.menu;
   if (m.lockT > 0) return;
-  const N = 8; // the gear column, then the ability column
+  const N = AB_KEYS; // the ability column
   if (k === 'escape' || k === 'backspace') leaveHero();
   else if (moveDir(k) === 'up') { m.grow = (m.grow + N - 1) % N; SFX.pickup(); }
   else if (moveDir(k) === 'down') { m.grow = (m.grow + 1) % N; SFX.pickup(); }
-  else if (moveDir(k) === 'left') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 2) % 3); else pickAbility(m.grow - 4, -1); }
-  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') { if (m.grow < 4) pickGear(m.grow, (player.gear[m.grow] + 1) % 3); else pickAbility(m.grow - 4, 1); }
+  else if (moveDir(k) === 'left') pickAbility(m.grow, -1);
+  else if (moveDir(k) === 'right' || k === 'enter' || k === ' ') pickAbility(m.grow, 1);
 }
 
 function heroClick() {
@@ -1819,8 +1337,7 @@ function heroClick() {
   const h = heroScreenHit();
   if (!h || h === 'x') { leaveHero(); return; } // the X, or anywhere off the panel
   if (h === 'panel') return;                    // the slab swallows it
-  if (h.row != null) { m.grow = h.row; pickGear(h.row, (player.gear[h.row] + 1) % 3); return; } // the well turns to the next variant
-  if (h.ab != null) { m.grow = 4 + h.ab; pickAbility(h.ab, 1); }                               // ...or the next option
+  if (h.ab != null) { m.grow = h.ab; pickAbility(h.ab, 1); } // the well turns to the next option
 }
 
 // what the pointer is on: 'play', 'hero' (your figure: the hero pop-up),
@@ -1886,8 +1403,8 @@ function mapStep(d) {
   m.mapSlide = { d, k, from, t: 0 };
   pickMap(k);
 }
-// LOCK IN: the class is locked here and the countdown starts. Gear stays
-// open through it (the widget still opens its pop-up), ESC calls it off, and
+// LOCK IN: the class is locked here and the countdown starts. The hero
+// pop-up stays open through it (your figure still opens it), ESC calls it off, and
 // the eagle comes at zero (updateTitle -> lockIn) - or at once on a SECOND
 // press: a player who has already decided is not made to sit through the
 // count, so LOCK IN again ends it where zero would have (every rival frame
@@ -1926,8 +1443,8 @@ function lobbyRevealed() {
 // grown at boot (MAP_TYPE), so a pick that is not this page's shape is a
 // page - the lobby stays on screen to the end of the count, then the page
 // comes back on this seed in that shape and js/app/boot.js goes straight to
-// the eagle (softfall.drop, carrying the gear picks and the stat points,
-// which no profile holds).
+// the eagle (softfall.drop, carrying the ability picks, which no profile
+// holds).
 function lockIn() {
   const m = state.menu;
   if (m.lockT > 0) return;
@@ -1935,7 +1452,7 @@ function lockIn() {
   if (!NET.isClient) PROFILE.setHero(m.csel); // the next match's pick opens on it
   SFX.place();
   if (NET.role === 'solo' && (settings.mapType | 0) !== MAP_TYPE) {
-    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ gear: player.gear, abPick: player.abPick })); } catch (e) { }
+    try { sessionStorage.setItem('softfall.drop', JSON.stringify({ abPick: player.abPick })); } catch (e) { }
     location.href = location.pathname + '?seed=' + SEED + '&map=' + (settings.mapType | 0);
     m.lockT = 9; // the old page holds the lobby still until the new one paints
     return;
@@ -1965,7 +1482,7 @@ function lobbyClick() {
   const h = lobbyHit();
   if (!h) return;
   if (h === 'play') pressPlay();                                    // LOCK IN: lock the pick, start the count
-  else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: gear, points, abilities
+  else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: stats, abilities
   else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
   else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
   else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // a hero on the row (js/ui/heroes.js)
@@ -2335,72 +1852,19 @@ function renderLobby(now, a) {
   ctx.globalAlpha = 1;
 }
 
-// a variant well: the 32px icon on a dark plate. The picked one wears the
-// gold rim; the hovered one lifts; the keyboard focus (the focused row's
-// pick) breathes four corner ticks.
-function drawGearWell(r, slot, v, hot, picked, focused, now) {
-  const lift = hot && !picked ? 1 : 0;
-  const x = r.x, y = r.y - lift, w = r.w, h = r.h;
-  ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(x + 2, r.y + 2, w, h);
-  ctx.fillStyle = picked ? '#c89a3c' : hot ? '#8fa0c8' : '#2c3560';
-  ctx.fillRect(x, y, w, h);
-  ctx.fillStyle = picked ? '#1a2142' : '#0f1632';
-  ctx.fillRect(x + 1, y + 1, w - 2, h - 2);
-  ctx.globalAlpha *= picked || hot ? 1 : 0.75;
-  ctx.drawImage(gearIcon32(slot, v), x + 3, y + 3);
-  ctx.globalAlpha /= picked || hot ? 1 : 0.75;
-  if (focused) { // keyboard cursor: four corner ticks, breathing
-    ctx.globalAlpha *= 0.7 + 0.3 * Math.sin(now * 6);
-    ctx.fillStyle = '#f4f7ff';
-    ctx.fillRect(x - 1, y - 1, 4, 1); ctx.fillRect(x - 1, y - 1, 1, 4);
-    ctx.fillRect(x + w - 3, y - 1, 4, 1); ctx.fillRect(x + w, y - 1, 1, 4);
-    ctx.fillRect(x - 1, y + h, 4, 1); ctx.fillRect(x - 1, y + h - 3, 1, 4);
-    ctx.fillRect(x + w - 3, y + h, 4, 1); ctx.fillRect(x + w, y + h - 3, 1, 4);
-    ctx.globalAlpha /= 0.7 + 0.3 * Math.sin(now * 6);
-  }
-}
-
-// The preview body: the chosen class walking in place, its four leather
-// bands worn (every pre-match pick is the free level 1), the class weapon at
-// hand - and the equip playing ON it: gearFxT runs a white flash through the
-// scratch canvas, gold sparks off the body, and the changed piece's band lit.
-function drawGearPreview(r, now) {
+// The preview body: the chosen class walking in place with the class weapon
+// at hand.
+function drawHeroPreview(r, now) {
   const m = state.menu;
   ctx.fillStyle = '#0a0e23';
   ctx.fillRect(r.x, r.y, r.w, r.h);
   ctx.fillStyle = '#232c52';
   ctx.fillRect(r.x, r.y, r.w, 1); ctx.fillRect(r.x, r.y + r.h - 1, r.w, 1);
   ctx.fillRect(r.x, r.y, 1, r.h); ctx.fillRect(r.x + r.w - 1, r.y, 1, r.h);
-  const sx = r.x + 12, sy = r.y + 7, s = 4; // the 16x16 body at 4x
+  const sx = r.x + 12, sy = r.y + 7; // the 16x16 body at 4x
   ctx.fillStyle = 'rgba(4,6,18,0.6)';
   ctx.beginPath(); ctx.ellipse(sx + 32, r.y + r.h - 6, 22, 4, 0, 0, Math.PI * 2); ctx.fill();
-  const spr = classSet(player).down[1 + (Math.floor(now * 3) % 2)];
-  ctx.drawImage(spr, sx, sy, 64, 64);
-  for (let i = 0; i < GEAR_MARKS.length; i++) { // the leather the picks ride
-    const mk = GEAR_MARKS[i];
-    const lit = m.gearFxT > 0 && m.gearFxSlot === i;
-    ctx.fillStyle = lit ? '#f4f7ff' : GEAR_MATS[0];
-    ctx.fillRect(sx + mk.x * s, sy + mk.y * s, mk.w * s, s);
-    if (mk.x2 !== undefined) ctx.fillRect(sx + mk.x2 * s, sy + mk.y * s, mk.w * s, s);
-  }
-  if (m.gearFxT > 0) { // the equip: the body flashes white and throws sparks
-    const f = m.gearFxT / 0.45;
-    sctx.clearRect(0, 0, 64, 64);
-    sctx.globalCompositeOperation = 'source-over';
-    sctx.drawImage(spr, 0, 0);
-    sctx.globalCompositeOperation = 'source-in';
-    sctx.fillStyle = 'rgba(255,255,255,0.85)';
-    sctx.fillRect(0, 0, 64, 64);
-    ctx.globalAlpha *= f;
-    ctx.drawImage(scratch, 0, 0, 16, 16, sx, sy, 64, 64);
-    ctx.globalAlpha /= f;
-    ctx.fillStyle = '#f2cc6a';
-    for (let k = 0; k < 8; k++) {
-      const an = hash2(k, 77) * Math.PI * 2;
-      const d = 20 + (1 - f) * 22;
-      ctx.fillRect(sx + 32 + Math.round(Math.cos(an) * d), sy + 32 + Math.round(Math.sin(an) * d * 0.8), 2, 2);
-    }
-  }
+  ctx.drawImage(classSet(player).down[1 + (Math.floor(now * 3) % 2)], sx, sy, 64, 64);
   // the class weapon rides along - the other half of what you fly out with
   const L = CLASS_LOADOUT[m.csel] || CLASS_LOADOUT[0];
   const im = SPRITES[ITEMS[toolType(L.tool)].icon];
@@ -2409,60 +1873,28 @@ function drawGearPreview(r, now) {
 
 // the pop-up itself: a dim over the still-lit select screen, then the panel
 // slab rising a few px as it eases in - the preview and its ledger on the
-// left, the twelve wells on the right, the X in the corner
+// left, the four ability wells on the right, the X in the corner
 function renderHero(now, a) {
   const m = state.menu;
-  const { panel, gear, abils, xr, prev, led, name } = heroLayout();
+  const { panel, abils, xr, prev, led, name } = heroLayout();
   const rise = Math.round((1 - a) * 12);
   ctx.globalAlpha = a;
   drawPopSlab(panel, rise);
   const gh = m.popT >= 1 && mouse.inside ? heroScreenHit() : null;
-  const onWell = gh && gh.row != null, onAb = gh && gh.ab != null;
-  const gearNext = onWell ? (player.gear[gh.row] + 1) % 3 : -1; // what a click on the hovered well would pick
-  drawGearPreview({ x: prev.x, y: prev.y + rise, w: prev.w, h: prev.h }, now);
-  // the ledger: the seven stats as picked now - and, under a hovered gear
-  // well, what they would BECOME, green where that is better and red where worse
-  const cur = heroPreviewKit(player.gear);
-  let hovKit = null;
-  if (onWell) {
-    const picks = player.gear.slice();
-    picks[gh.row] = gearNext;
-    hovKit = heroPreviewKit(picks);
-  }
+  const onAb = gh && gh.ab != null;
+  drawHeroPreview({ x: prev.x, y: prev.y + rise, w: prev.w, h: prev.h }, now);
+  // the ledger: the seven stats the hero flies out with
+  const cur = baseKit(m.csel);
   for (let i = 0; i < STAT_ROWS.length; i++) {
-    const [label, get, fmt, dir] = STAT_ROWS[i];
-    const y = led.y + rise + i * 8;
-    const ov = get(cur), nv = hovKit ? get(hovKit) : ov;
-    const changed = hovKit && Math.abs(nv - ov) > 1e-9;
-    drawPixelTextShadow(ctx, label, led.x, y, changed ? '#f4f7ff' : '#7a8bb8', '#0a0e23');
-    const vTxt = fmt(ov);
-    if (changed) {
-      // the current number steps aside dim; the would-be number takes the
-      // right edge in its verdict colour
-      const col = (nv - ov) * dir > 0 ? '#8fe08a' : '#e0637a';
-      const nTxt = fmt(nv);
-      const nw = pixelTextWidth(nTxt);
-      drawPixelTextShadow(ctx, nTxt, led.x + led.w - nw, y, col, '#0a0e23');
-      const ow = pixelTextWidth(vTxt);
-      drawPixelTextShadow(ctx, vTxt, led.x + led.w - nw - 8 - ow, y, '#5a6690', '#0a0e23');
-      ctx.fillStyle = col;
-      ctx.fillRect(led.x + led.w - nw - 6, y + 2, 1, 1);
-      ctx.fillRect(led.x + led.w - nw - 5, y + 3, 1, 1);
-      ctx.fillRect(led.x + led.w - nw - 6, y + 4, 1, 1);
-    } else {
-      drawPixelTextShadow(ctx, vTxt, led.x + led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#0a0e23');
-    }
+    const [label, get, fmt] = STAT_ROWS[i];
+    const y = led.y + rise + i * 8, vTxt = fmt(get(cur));
+    drawPixelTextShadow(ctx, label, led.x, y, '#7a8bb8', '#0a0e23');
+    drawPixelTextShadow(ctx, vTxt, led.x + led.w - pixelTextWidth(vTxt), y, '#f4f7ff', '#0a0e23');
   }
   ctx.globalAlpha = a;
-  // the two strips:  ctx.globalAlpha = a;
-  // the two columns: a well a piece wearing its pick, a well a key wearing
-  // its option, each a button that turns it; the keyboard's well breathing
-  // its corner ticks
+  // the column: a well a key wearing its option, each a button that turns
+  // it; the keyboard's well breathing its corner ticks
   const keyed = !mouse.inside;
-  for (const w of gear) {
-    drawGearWell({ x: w.x, y: w.y + rise, w: w.w, h: w.h }, w.i, player.gear[w.i], onWell && gh.row === w.i, true, keyed && m.grow === w.i, now);
-    ctx.globalAlpha = a;
-  }
   for (const w of abils) {
     const k = player.abPick[w.i] | 0;
     const hot = onAb && gh.ab === w.i, y = w.y + rise - (hot ? 1 : 0);
@@ -2471,7 +1903,7 @@ function renderHero(now, a) {
     ctx.fillStyle = '#1a2142'; ctx.fillRect(w.x + 1, y + 1, w.w - 2, w.h - 2);
     ctx.drawImage(classAbIcon(player.cls, w.i, k), w.x + 3, y + 3);
     drawPixelTextShadow(ctx, String(w.i + 1), w.x + 3, y + w.h - 9, '#ffd95c', '#0a0e23'); // the key, a keybind indicator
-    if (keyed && m.grow === 4 + w.i) { // keyboard cursor: four corner ticks, breathing
+    if (keyed && m.grow === w.i) { // keyboard cursor: four corner ticks, breathing
       ctx.globalAlpha = a * (0.7 + 0.3 * Math.sin(now * 6));
       ctx.fillStyle = '#f4f7ff';
       ctx.fillRect(w.x - 1, y - 1, 4, 1); ctx.fillRect(w.x - 1, y - 1, 1, 4);
@@ -2485,11 +1917,10 @@ function renderHero(now, a) {
   // focused well's pick; nothing while the hand is on the ledger, which is
   // labelled
   const nOpt = onAb ? abOptions(player.cls, gh.ab).length : 0;
-  const nm = onWell ? GEAR[gh.row][gearNext].name
-    : onAb ? abOptions(player.cls, gh.ab)[((player.abPick[gh.ab] | 0) + 1) % nOpt].name
-    : m.grow >= 4 ? abOf(player, m.grow - 4).name : GEAR[m.grow][player.gear[m.grow]].name;
+  const nm = onAb ? abOptions(player.cls, gh.ab)[((player.abPick[gh.ab] | 0) + 1) % nOpt].name
+    : abOf(player, m.grow).name;
   if (nm) drawPixelTextShadow(ctx, nm, name.x - Math.round(pixelTextWidth(nm) / 2), name.y + rise,
-    onWell || (onAb && nOpt > 1) ? '#f4f7ff' : '#ffd95c', '#0a0e23');
+    onAb && nOpt > 1 ? '#f4f7ff' : '#ffd95c', '#0a0e23');
   drawPopX(xr, rise, gh === 'x');
   ctx.globalAlpha = 1;
 }

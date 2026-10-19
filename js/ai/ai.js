@@ -146,7 +146,7 @@ function aiInLane(p, e) {
 // raise one more of the side's AI_FORT_N along the road home - pairs either side
 // of its axis, out from the bird, on a tile with three open sides so the
 // lane is never walled in - or { tx, ty, up } to raise one of them a tier
-// once they all stand and the purse holds twice the price (gear comes first)
+// once they all stand and the purse holds twice the price (items come first)
 function aiFortSite(p, e) {
   if (!e.mouth) return null;
   let n = 0, low = null;
@@ -674,7 +674,7 @@ function resolveCardForBot(p) {
 // class's build (BOT_BUILDS, js/sim/items.js): at a counter it buys whatever
 // of the build it can afford, a part or the whole item, and a purse that
 // covers the next WHOLE item walks it to its own side's counter when that is
-// close (a bot respawns beside it). Only a finished build spends on gear.
+// close (a bot respawns beside it).
 // True while it is walking to shop, which ends aiThink's ladder this think.
 const AI_SHOP_DETOUR = 32 * TILE; // px: how far a bot walks to its counter to buy; past it (AI_RECALL_FAR) it recalls
 function aiSpend(p, inp, steerTo) {
@@ -708,19 +708,6 @@ function aiSpend(p, inp, steerTo) {
       }
     }
     if (next) return false;
-  }
-  // ...and gear once the build is done: the hero pop-up is a menu bought from
-  // anywhere (gameplay.md), so a purse fat enough to keep a building
-  // float (buyGear re-validates, so a stale order is harmless) is spent on
-  // the cheapest piece here, mid-push or mid-defence alike, rather than
-  // at the spend rung a pusher never reaches
-  if (!inp.cmd) {
-    let gi = -1, gc = 1e9;
-    for (let i = 0; i < GEAR_SLOTS.length; i++) {
-      const c = gearCost(p, i);
-      if (c && c.gold < gc) { gc = c.gold; gi = i; }
-    }
-    if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
   }
   return false;
 }

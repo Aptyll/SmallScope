@@ -32,7 +32,7 @@ screen's player in slot `id` (title only: it is a fresh `initPlayers`).
 **`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls? }` per
 slot — and the local slot; with neither it builds today's match (`defaultRoster`: this screen's
 human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still rolls its
-class and gear off the seed; a roster entry's own `name`/`cls` land over that, which is
+class off the seed; a roster entry's own `name`/`cls` land over that, which is
 how a lobby dresses a remote human's body (`netClientWelcome`, [Online play](#online-play)).
 The profile is only ever applied to this screen's player (`applyProfile()`).
 
@@ -87,8 +87,8 @@ ability       edge-triggered (keys 1-4): cast that class ability, -1 = none
 cmd           one-shot order, run by runCmd (js/ui/wheel.js):
               {kind:'build'|'upgrade'|'demolish', tx, ty, id} - a build also
               carries rot, the list's R (a wheel's order is unturned)
-              or {kind:'gear', piece} - a gear buy: no tile, no reach, no contest
-              or {kind:'ability', i} - an ability level: same, paid with a skill point
+              or {kind:'ability', i} - an ability level: no tile, no reach, no
+              contest, paid with a skill point
               or {kind:'shop', act, ...} - at the merchant's counter: act
               'item' (buy an item, id), 'sellItem' (slot), 'trade' (food:
               good, dir, n?) or 'sell' (a bag cell, i); no tile and no contest
@@ -168,7 +168,7 @@ reserved key or a key two actions share falls back to its default; `schemeActs`/
 are the per-scheme roster and default). **Nothing compares a key
 event against a literal**: `keyIs(e, 'work')`, `keyHeld('slide')`, `moveDir(k)` (the four walk
 binds and the arrows, which every key-driven menu steps on — the title's planks, the death
-planks, the wiki, gear, the lobby, the settings slab; under CLICK the arrows alone) and
+planks, the wiki, the hero pop-up, the lobby, the settings slab; under CLICK the arrows alone) and
 `keyBound(k)` ask the live binds, and every keybind indicator names an action and prints
 `keyCap(action)` (`keyCapShort` for a well's corner, where SPACE is SPC; an action the live scheme
 has no key for prints RMB, because under CLICK the walk and the harvest are the right button's). What is *not* an action is fixed: Escape backs out of everything,
@@ -340,15 +340,15 @@ one option or several — `CLASS_AB_ALT`, picked pre-match, [class abilities](ga
 [js/sim/abilities.js](../../js/sim/abilities.js) — see [Class abilities](gameplay.md#class-abilities-keys-1-4)).
 The kit is the handful of numbers the sim reads through `kitOf(p)`
 instead of the bare constants. **`kitOf(p)` returns the *effective* kit**: the class's numbers
-with the player's [gear](gameplay.md#gear) folded in by `refreshKit(p)` (cached on `p.kit`, rebuilt
-on class or gear change — never per frame). The kit fields: `iceMax` (× `ICE_MAX`), `iceSteer`, `slideMin`, `fatigue`
+with the player's cards and items folded in by `refreshKit(p)` ([the effective kit](gameplay.md#the-effective-kit); cached on `p.kit`, rebuilt
+on a class, card or item change — never per frame). The kit fields: `iceMax` (× `ICE_MAX`), `iceSteer`, `slideMin`, `fatigue`
 (snow-slide fatigue rate), `chargeMul` (speed while drawn), `bowCharge` (seconds to full draw),
 `nock` (the baseline every rate of fire is scaled against — a tool's own `rof` is multiplied by
 `nock / BOW_NOCK`, so a class's hands still set the rhythm; see
 [the cycle](gameplay.md#the-cycle)),
 `spdDmg` (extra damage scaled by the shooter's speed at release, capped at 200 px/s),
 `dodgeSpeed`, plus `cls` (whose kit) and `add`, the bag of [hero stat](gameplay.md#hero-stats)
-bonuses gear and cards write. Sites that read it: `updatePlayer`'s movement block, `emitBit`,
+bonuses cards and items write. Sites that read it: `updatePlayer`'s movement block, `emitBit`,
 `tryDodge`, the AI's draw timing, the cursor, aim line and draw meter. The seven hero stats
 themselves (health, damage, attack speed, armor, ability power, cooldown speed, move speed) are
 read through `statOf(p, key)` (js/sim/stats.js), never off the kit. `setClass(p, c)` swaps one in
@@ -371,9 +371,8 @@ one does, its cooldown, cast, and the states it leaves on a body — are
 
 The local player's class is its **hero, picked each match** on the lobby's hero row
 ([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
-hero (js/app/profile.js), where the next pick opens. Bots hash theirs — hero (and with it its look), all four gear
-variants — from the seed in `initPlayers()` so a replayed world fields the same roster in the
-same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
+hero (js/app/profile.js), where the next pick opens. Bots hash theirs (hero, and with it its look) from the seed in `initPlayers()` so a replayed
+world fields the same roster. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
 the rest of the count) — and the target at the top, whose pop-up's four plates
 set `settings.aiLevel` (`AI_LEVELS`, js/ai/ai-skill.js: EASY / NORMAL / HARD /
@@ -615,7 +614,7 @@ the road everyone walked out on, past the merchant. A bird still in the air (a p
 shot in the seconds between its own landing and the bird's) has nowhere to set anyone down, so
 the timer holds at zero until it roosts; a bird that has fled mid-timer is left to
 `eagleFleeResolve`, which puts the whole side out at the end of the ceremony. `reset()` never
-touches `p.cards` (picked roguelike cards), gear, skill ranks, level, xp, the wallet, the pouch or
+touches `p.cards` (picked roguelike cards), `p.items`, skill ranks, level, xp, the wallet, the pouch or
 the bag, and with `first` false it leaves the weapon slots alone too (the class kit is only handed
 over again when every slot is bare), so the whole player survives every respawn within a match —
 the wait is the entire cost ([death keeps everything](gameplay.md#death-and-respawn)).
@@ -987,9 +986,7 @@ The ladder:
    outruns a walk; 8 s for a blade). A bow shoots from 55 px; a blade walks in to `AI_MELEE_D`
    and swings only inside `AI_MELEE_D` + 8 px. Birds are excluded: they fly, and no ground route catches a flushed flock.
 11. **loot** — walk onto a drop within 72 px (drops are neutral and first-come).
-12. **spend** — (a [gear](gameplay.md#gear) level when the purse covers the cheapest piece
-   plus a 15-gold float is bought at rung 0 (`aiSpend`) beside the skill point, from anywhere, mid-push or
-   mid-defence alike, but only once its item build is finished — the hero pop-up is a menu, and a pusher never reaches this rung.) **Items come first, also at rung 0**: a bot buys its class's
+12. **spend** — **Items come first, at rung 0** (`aiSpend`, beside the skill point): a bot buys its class's
    build ([`BOT_BUILDS`](gameplay.md#buying-and-selling)) at whichever counter it is standing at, a part or the whole
    item, through the same `input.cmd` a human's click sends, and when its purse covers the next
    whole item and it is out of a fight it walks to its own side's counter if that is within

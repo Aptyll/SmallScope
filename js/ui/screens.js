@@ -801,7 +801,7 @@ function drawEmoteBar(now, ac, dy) {
 // the last beat skips to it (endSkip): the reward is worth watching, never
 // twice. Everything here is procedural in the title screen's idiom (hash2 for
 // static grain, the frame clock for flicker); the only sprites are the
-// side's bodies, the gear icons and the coin.
+// side's bodies and the coin.
 const WIN_T = {
   flash: 0.30,   // the white bloom off the winning frame
   dim: 0.50,     // the backdrop has finished settling
@@ -1347,7 +1347,7 @@ function renderVictory(now) {
     const ranks = stands.length >> 1;
     drawWinDais(L.cx, L.stageY + lift, ranks * (WIN_BODY + L.gap) + (WIN_BODY >> 1) + 8, tm, rise);
     // every body of the side, outer ranks first and the local player last: 3x,
-    // each breathing on its own beat, wearing the gear it finished in, its
+    // each breathing on its own beat, its
     // name over its head - the local player's a row higher, clear of its crown
     let bobMe = 0, crownOff = false;
     for (let k = stands.length - 1; k >= 0; k--) {
@@ -1369,13 +1369,10 @@ function renderVictory(now) {
       const by = s.y + Math.round((1 - sr) * 26) + (pose ? 0 : bob);
       ctx.globalAlpha = sr;
       if (pose) {
-        // the marks sit on the standing body plan (drawPlayer), so a body
-        // that has left it wears none of them
         drawEndBody(pose.spr, s.x + (pose.dx || 0), by + WIN_BODY - (pose.dy || 0));
         if (pose.puff) drawSnowPuff(s.x + (WIN_BODY >> 1), by + WIN_BODY, pose.puff, sr);
       } else {
         ctx.drawImage(set.down[Math.sin(ph) > 0.6 ? 1 : 0], s.x, by, WIN_BODY, WIN_BODY);
-        drawGearMarks(s.m, s.x, by, 3);
       }
       drawPixelTextOutline(ctx, s.m.name, centreTextX(s.x + (WIN_BODY >> 1), s.m.name), by - (k ? 8 : 13) - lift, tm.mark, '#0f1632');
       ctx.globalAlpha = 1;
@@ -1625,8 +1622,7 @@ function renderDefeat(now) {
     // their feet among the fallen reads as a survivor, which is exactly what
     // this screen has none of. Heads toward the middle, so the line lies
     // mirrored the way it stood, each sunk a row or two off the hash so it
-    // is a field of them rather than a rank of dominoes, and no gear marks -
-    // those sit on the standing body plan (see drawPlayer). Outer ranks
+    // is a field of them rather than a rank of dominoes. Outer ranks
     // first, each settling a beat after the last; the name sits over the
     // body's top row (row 7 of the prone grid).
     const DEAD_INK = mixHex(tm.mark, '#141c3c', 0.42); // a colder plate than the win's

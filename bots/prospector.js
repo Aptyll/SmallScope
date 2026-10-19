@@ -1,18 +1,18 @@
 // PROSPECTOR: the farmer. Spends the early match getting rich: loot on the
 // ground first, then chests, rocks, berry bushes, rabbits and deer, and pines
-// when nothing better is near. Every coin goes on armour and every point on
+// when nothing better is near. Every coin goes on items and every point on
 // the class keys. It only defends when its own bird is struck. At nine
-// minutes (or from five, once a seat's armour is full) it calls the push, and the
-// whole side goes for the rival bird at once, geared. Beats sides that
+// minutes (or from five, once a seat holds four items) it calls the push, and the
+// whole side goes for the rival bird at once, built. Beats sides that
 // trade early and even; loses to an early raid.
 const PUSH_AT = 540;   // s: the push, called by the clock if nobody called it sooner
-const PUSH_FULL = 300; // s: the earliest a seat in full armour may call it
+const PUSH_FULL = 300; // s: the earliest a seat holding four items may call it
 defineBot({
   name: 'PROSPECTOR',
   author: 'Softfall',
   version: '1.0',
 
-  init(hello) { this.drawT = 0; this.swing = false; this.push = false; this.spent = 0; this.lastGold = 0; },
+  init(hello) { this.drawT = 0; this.swing = false; this.push = false; },
 
   think(obs) {
     const me = obs.me;
@@ -23,11 +23,7 @@ defineBot({
 
     for (const m of obs.team) if (m.say && m.say.push) this.push = true;
     if (!this.push && obs.time > PUSH_AT) { this.push = true; act.say = { push: true }; }
-    // armour: count what a buy took off the purse; 260 gold buys all four pieces to the top
-    if (this.wantGear && [10, 20, 35].includes(this.lastGold - me.gold)) this.spent += this.lastGold - me.gold;
-    this.wantGear = false;
-    this.lastGold = me.gold;
-    if (!this.push && this.spent >= 240 && obs.time > PUSH_FULL) { this.push = true; act.say = { push: true }; }
+    if (!this.push && me.items.filter(Boolean).length >= 4 && obs.time > PUSH_FULL) { this.push = true; act.say = { push: true }; }
 
     const own = obs.eagles.find((e) => e.team === me.team && e.state === 'down');
     const bird = obs.eagles.find((e) => e.team !== me.team && e.state === 'down');
@@ -54,7 +50,7 @@ defineBot({
 
     if (me.hp < me.maxHp * 0.6 && me.food.berry > 0) { act.eatBerry = true; act.think = { goal: 'EAT', why: 'LOW HP' }; return act; }
     if (me.hp < me.maxHp * 0.6 && me.food.fish > 0) { act.eatFish = true; act.think = { goal: 'EAT', why: 'LOW HP' }; return act; }
-    if (!act.cmd && me.gold >= 45) { buyGear(this, me, act, 35); this.wantGear = !!act.cmd; }
+    buyItem(obs.shop, me, act, 0);
 
     if (this.push && bird) {
       siege(this, me, bird, act);
@@ -165,10 +161,10 @@ function work(me, n, act) {
   act.work = d < 28 && n.kind !== 'rock';
 }
 
-// gold to spare: the next gear piece, round the four in turn (the obs does
-// not say which pieces are already bought, so a full one is just skipped)
-function buyGear(bot, me, act, keep) {
-  if (act.cmd || me.gold < keep + 10) return;
-  bot.gear = ((bot.gear || 0) + 1) % 4;
-  act.cmd = { kind: 'gear', piece: bot.gear };
+// gold to spare at a counter: the dearest item the purse covers, keeping
+// `keep` back (the obs lists the shop only while me.atShop)
+function buyItem(shop, me, act, keep) {
+  if (act.cmd || !shop || !me.items.includes(null)) return;
+  const can = shop.filter((s) => s.price <= me.gold - keep).sort((a, b) => b.price - a.price);
+  if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id };
 }

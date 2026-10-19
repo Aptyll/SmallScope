@@ -277,7 +277,7 @@ function abDenied(i) {
   SFX.deny();
 }
 // The floating buy plate: an affordable ability level's ask hovers in the
-// open screen ABOVE the well - gear's old chevron grammar, made a real
+// open screen ABOVE the well - a bobbing chevron, made a real
 // button. The plate is the buy click and the well below stays purely the
 // cast, so the two can never steal each other's press. The rect is FIXED
 // (the bob is drawn, never hit-tested) and 3px taller than the plate so the

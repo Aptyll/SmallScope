@@ -11,8 +11,8 @@
 // wasted gold, and saving toward a finished item can start one part at a time.
 //
 // What an item does is all in this file: its stats and its passive both write
-// into the kit through refreshKit (js/sim/player.js), the same way a card or
-// a gear level does, so every kit-reading site (damage, movement, dodge,
+// into the kit through refreshKit (js/sim/player.js), the same way a card
+// does, so every kit-reading site (damage, movement, dodge,
 // stealth, the bots) picks an item up without knowing items exist. The two
 // passives that are not a kit number - a hit that does something, a heal out
 // of a fight - hang off hurtUnit (itemsOnHit) and the player's clock
@@ -33,7 +33,7 @@ const CHILL_T = 1, CHILL_MUL = 0.7; // CHILL: a hit slows the target this long, 
 // What each stat line IS: the label the shop prints, how its number reads,
 // and what it writes into the kit. Every line is one of the hero stats
 // (js/sim/stats.js) and adds to the kit's stat bag, `kit.add`, the same bag
-// gear and cards add to, so statOf reads an item without knowing items
+// cards add to, so statOf reads an item without knowing items
 // exist. ARMOR is League's (each point a share off every hit), ATTACK SPEED a
 // share added to the hero's attack speed, MOVE SPEED flat (the hero's walk is
 // PLAYER_SPEED).
@@ -62,7 +62,7 @@ const ITEM_PASSIVES = {
 
 // THE CATALOGUE. `from` lists the parts a finished item is built out of (a
 // part named twice is needed twice). `icon` is a SPRITES key, or
-// ['gear', slot, variant, material] for one of the gear icons. The icons are
+// ['gear', slot, variant, material] for one of SPRITES.gearIcons. The icons are
 // borrowed from today's art until the items get their own.
 const BUILD_ITEMS = {
   flint:  { name: 'FLINT HEAD', price: 30, stats: { dmg: 2 }, icon: 'bitArt_barb' },
@@ -116,7 +116,7 @@ function itemMods(k, p) {
   }
 }
 // rebuild the kit after the slots changed; new max health arrives filled, the
-// way a gear level or a hero level does, and lost max health clamps
+// way a hero level does, and lost max health clamps
 function itemsChanged(p) {
   const oldMax = p.maxHp;
   refreshKit(p);

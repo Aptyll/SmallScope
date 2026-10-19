@@ -23,6 +23,7 @@ const AB_KEYS = 4;          // keys 1-4
 // key you can use at all, and how early - is the whole build.
 const AB_LV_MAX = 3;
 const AB_LV_CD = 0.12;
+const AB_LV_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#f2cc6a']; // the level-up floater's ink, by the key's new level
 // the warrior's alternate keys (CLASS_AB_ALT below)
 const CRY_R = 96;           // px: the shout's reach
 const CRY_SLOW_T = 2.5, CRY_SLOW = 0.6, CRY_MARK_T = 4; // slowed to 60% for 2.5 s, marked for 4
@@ -221,8 +222,8 @@ function buyAbilityLv(p, i) {
   // the first point is the one that changes what you CAN do, so it says so;
   // every one after is a number going up
   const nm = abOf(p, i).name;
-  addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], GEAR_MATS[p.abLv[i] - 1]);
-  burst(p.x, p.y - 8, GEAR_MATS[p.abLv[i] - 1], p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
+  addFloater(p.x, p.y - 18, p.abLv[i] === 1 ? nm + ' UNLOCKED' : nm + ' ' + p.abLv[i], AB_LV_MATS[p.abLv[i] - 1]);
+  burst(p.x, p.y - 8, AB_LV_MATS[p.abLv[i] - 1], p.abLv[i] === 1 ? 14 : 8, p.abLv[i] === 1 ? 55 : 40, 0.45);
   sfxOwn(p, 'levelUp', 'pickup');
   return true;
 }

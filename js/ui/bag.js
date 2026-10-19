@@ -327,7 +327,7 @@ function dragDropBag(i) {
   return true;
 }
 // One cell, and the reason nothing in here is bigger than anything else:
-// grid slots and gear plates all come out of this. Returns
+// every grid slot comes out of this. Returns
 // the y it actually drew at, since a hover lift shifts it.
 function bagCellPlate(r, rim, inner, lift) {
   const y = r.y - (lift ? 1 : 0);
@@ -341,21 +341,19 @@ function bagCellPlate(r, rim, inner, lift) {
 // ---- the character panel (G) ---------------------------------------------
 // WoW's C key, at this game's size: one slab, sim running live behind it.
 // LEFT: the body as it stands right now - the class sprite walking in place
-// at 4x wearing its bought gear bands in their level materials
-// (drawGearMarks, the same pixels every rival reads on you in the world) with
-// the held weapon beside it - and under it the STAT LEDGER, STAT_ROWS read
-// off the LIVE kit (kitOf) with the player handed to it, so gear levels,
-// cards and the hero level's own growth are all in the numbers - the same
-// table, numbers and verdict inks as the stat sheet that flies into the
+// at 4x with the held weapon beside it - and under it the STAT LEDGER,
+// STAT_ROWS read off the LIVE kit (kitOf) with the player handed to it, so
+// items, cards and the hero level's own growth are all in the numbers - the
+// same table, numbers and verdict inks as the stat sheet that flies into the
 // notice lane (js/ui/shop.js), opened out: the panel's job is reading a body
-// at leisure, the plate's is catching what moved. RIGHT: the four equipped pieces, each a 32px icon well
-// (gearIcon32) with its variant name, gear's buy pips, and the next level's
-// price; a click on an affordable well buys through the same input.cmd the
-// old HUD row used, so bots and the panel still share one path. The ledger's
-// labelled rows are the panels' text carve-out - comparing numbers is this
-// panel's whole job. G toggles it, ESC or the X closes it; it swallows only
-// its own clicks, so the fight stays live around it.
-const CHAR_LEDW = 118, CHAR_WELL = 36;
+// at leisure, the plate's is catching what moved. RIGHT: the six item slots,
+// each a well with the item's icon (part or finished rim, as on the shelf),
+// its name and its passive; a hover raises the shop's item card (tipItem).
+// Items are bought and sold at a counter, never here. The ledger's labelled
+// rows are the panels' text carve-out - comparing numbers is this panel's
+// whole job. G toggles it, ESC or the X closes it; it swallows only its own
+// clicks, so the fight stays live around it.
+const CHAR_LEDW = 118, CHAR_WELL = 28;
 function charLayout() {
   const rowW = 128;
   const pw = 8 + CHAR_LEDW + 10 + rowW + 8;
@@ -363,15 +361,15 @@ function charLayout() {
   const px = Math.round((VIEW_W - pw) / 2), py = Math.round((VIEW_H - ph) / 2);
   const gx = px + 8 + CHAR_LEDW + 10;
   const rows = [];
-  for (let i = 0; i < GEAR_SLOTS.length; i++) {
-    rows.push({ x: gx, y: py + 22 + i * 50, w: rowW, h: CHAR_WELL });
+  for (let i = 0; i < ITEM_SLOTS; i++) {
+    rows.push({ x: gx, y: py + 22 + i * (CHAR_WELL + 5), w: rowW, h: CHAR_WELL });
   }
   return { panel: { x: px, y: py, w: pw, h: ph }, rows,
     prev: { x: px + 8, y: py + 22, w: CHAR_LEDW, h: 78 },
     led: { x: px + 8, y: py + 106, w: CHAR_LEDW },
     xr: { x: px + pw - 14, y: py + 4, w: 10, h: 10 } };
 }
-// 'x' | { piece } | 'panel' | null - shared by the click, the cursor and the
+// 'x' | { item } | 'panel' | null - shared by the click, the cursor and the
 // tooltip so the three cannot disagree
 function charHit(mx, my) {
   if (!state.charOpen || state.mode !== 'play' || player.dead || state.paused ||
@@ -382,21 +380,19 @@ function charHit(mx, my) {
   if (mx >= L.xr.x && mx < L.xr.x + L.xr.w && my >= L.xr.y && my < L.xr.y + L.xr.h) return 'x';
   for (let i = 0; i < L.rows.length; i++) {
     const r = L.rows[i];
-    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return { piece: i };
+    if (mx >= r.x && mx < r.x + r.w && my >= r.y && my < r.y + r.h) return { item: i };
   }
   return 'panel';
 }
-// the piece index under the pointer, or -1 - the shape tipAt and the cursor
-// already read gear through, kept so both keep working unchanged
-function gearHit(mx, my) {
+// the item slot under the pointer on the panel, or -1 (the tooltip's read)
+function charItemHit(mx, my) {
   const h = charHit(mx, my);
-  return h && h.piece !== undefined ? h.piece : -1;
+  return h && h.item !== undefined ? h.item : -1;
 }
 // a press inside the panel; returns whether it was swallowed
 function charClick(h) {
   if (!h) return false;
   if (h === 'x') { state.charOpen = false; SFX.pickup(); return true; }
-  if (h.piece !== undefined) { SFX.unlock(); player.input.cmd = { kind: 'gear', piece: h.piece }; return true; }
   return true; // the slab eats it; the world never sees it
 }
 function drawCharPanel(now) {
@@ -420,8 +416,7 @@ function drawCharPanel(now) {
   const sub = CLASSES[player.cls].name + ' ' + player.level;
   drawPixelTextShadow(ctx, head, panel.x + 8, panel.y + 6, TEAMS[skin(player.team)].mark, '#121418');
   drawPixelTextShadow(ctx, sub, panel.x + 8 + pixelTextWidth(head) + 8, panel.y + 6, '#8c919a', '#121418');
-  // the body, live: walking in place with its bought bands in their level
-  // materials and the held weapon beside it
+  // the body, live: walking in place with the held weapon beside it
   const pr = L.prev;
   ctx.fillStyle = '#121418';
   ctx.fillRect(pr.x, pr.y, pr.w, pr.h);
@@ -433,13 +428,12 @@ function drawCharPanel(now) {
   ctx.beginPath(); ctx.ellipse(sx + 32, pr.y + pr.h - 6, 22, 4, 0, 0, Math.PI * 2); ctx.fill();
   const spr = SPRITES.champLook(player.cls, player.look, skin(0)).down[1 + (Math.floor(now * 3) % 2)];
   ctx.drawImage(spr, sx, sy, 64, 64);
-  drawGearMarks(player, sx, sy, 4);
   const held = heldTool(player);
   if (held) {
     const im = SPRITES[ITEMS[held.type].icon];
     ctx.drawImage(im, pr.x + pr.w - 31, pr.y + pr.h - 33 + Math.round(Math.sin(now * 2.2) * 1.5), 24, 24);
   }
-  // the ledger: every number this body carries RIGHT NOW - gear levels, cards
+  // the ledger: every number this body carries RIGHT NOW - items, cards
   // and the hero level already folded in, because it reads the live kit and
   // hands the getters the player (STAT_ROWS, js/sim/stats.js)
   const k = kitOf(player);
@@ -454,31 +448,22 @@ function drawCharPanel(now) {
       ctx.fillRect(dx, y + 4, 2, 1);
     }
   }
-  // the four equipped pieces: icon well, variant name in the level's
-  // material, gear's buy pips, and the next level's price
+  // the six item slots: icon well (part or finished rim, the shelf's),
+  // the item's name, and its passive under it
   for (let i = 0; i < L.rows.length; i++) {
-    const r = L.rows[i], lv = player.gearLv[i], cost = gearCost(player, i);
-    const afford = cost && player.inv.gold >= cost.gold;
-    const on = gh && gh.piece === i;
+    const r = L.rows[i], id = player.items[i];
+    const on = gh && gh.item === i && !!id;
     const y = r.y - (on ? 1 : 0);
     ctx.fillStyle = 'rgba(4,6,18,0.55)'; ctx.fillRect(r.x + 2, r.y + 2, CHAR_WELL, CHAR_WELL);
-    ctx.fillStyle = !cost ? '#c89a3c' : on ? '#9ca1aa'
-      : afford ? (Math.sin(now * 8) > 0 ? '#f2cc6a' : '#c9a227') : '#33363d';
+    ctx.fillStyle = !id ? '#33363d' : on ? '#9ca1aa' : TOOL_TIERS[isPart(id) ? 0 : 2].rim;
     ctx.fillRect(r.x, y, CHAR_WELL, CHAR_WELL);
     ctx.fillStyle = '#191b1f';
     ctx.fillRect(r.x + 1, y + 1, CHAR_WELL - 2, CHAR_WELL - 2);
-    ctx.drawImage(gearIcon32(i, player.gear[i]), r.x + 2, y + 2);
-    const tx0 = r.x + CHAR_WELL + 6;
-    drawPixelTextShadow(ctx, GEAR[i][player.gear[i]].name, tx0, y + 4, GEAR_MATS[lv - 1], '#121418');
-    for (let p2 = 0; p2 < GEAR_LV_MAX - 1; p2++) { // the buys, gear's own pips
-      ctx.fillStyle = p2 < lv - 1 ? '#f2cc6a' : '#33363d';
-      ctx.fillRect(tx0 + p2 * 5, y + 14, 4, 2);
-    }
-    if (cost) { // the price, coin + number, in can/cannot ink
-      ctx.drawImage(SPRITES.itemGold, tx0, y + 22);
-      drawPixelTextShadow(ctx, String(cost.gold), tx0 + 10, y + 24,
-        afford ? '#f5c542' : '#b4b8bf', '#121418');
-    }
+    if (!id) continue;
+    shopIcon(itemIcon(id), { x: r.x, y, w: CHAR_WELL, h: CHAR_WELL });
+    const it = BUILD_ITEMS[id], tx0 = r.x + CHAR_WELL + 6;
+    drawPixelTextShadow(ctx, it.name, tx0, y + 6, on ? '#ffffff' : '#cfe0ff', '#121418');
+    if (it.passive) drawPixelTextShadow(ctx, ITEM_PASSIVES[it.passive].name, tx0, y + 16, '#9fd6a0', '#121418');
   }
   // the X: the one way out that is drawn (ESC and G also close)
   const hot = gh === 'x';

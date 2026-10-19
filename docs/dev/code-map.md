@@ -133,7 +133,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| the gear icons, the heart, the cursors | by banner | `gear icons`, `heart`, `cursors` |
+| the gear icons (item icon art), the heart, the cursors | by banner | `gear icons`, `heart`, `cursors` |
 
 ## js/sprites/landmarks.js (legacy IIFE)
 
@@ -190,7 +190,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | which preset a team wears on this screen, and whether a rival wears its colour-blind shape cue | `TEAMS`, `skin`, `foeCue` | top of the file |
 | the entity arrays and the local aliases | `animals`…`camps`, `players`, `player`, `inv` | `players` (the banner's tail) |
 | the item table and the two carry stores: the bag's cells, and the uncapped POUCH (`p.food`) every `pouch` kind lives in - count, room, add, take, and putting an instanced cell (a loaded tool) in whole | `ITEMS`, `BAG_CAP`, `isPouch`, `bagCount`, `bagUsed`, `bagRoom`, `bagAdd`, `bagTake`, `bagPut` | `players` › `inventory` (the tool and bit rows register themselves from tools.js) |
-| the gear table, the effective kit, buying a piece level | `GEAR`, `GEAR_SLOTS`, `GEAR_COSTS`, `baseKit`, `refreshKit` (folds in the item slots: `itemMods`, js/sim/items.js), `gearCost`, `buyGear` | `players` › `gear` |
+| the effective kit | `baseKit`, `refreshKit` (folds in the cards and the item slots: `itemMods`, js/sim/items.js) | `players` › `roguelike cards` |
 | skill points (one per hero level, spent on class-ability levels) | `p.skillPts` (spent by `buyAbilityLv`, abilities.js) | `players` (granted in `levelUp`) |
 | roguelike card effects and rarities | `CARDS`, `CARD_RARITIES`, `cardKey`, `CARD_TYPE_RARITY` | `players` › `roguelike cards` |
 | how hidden a player is, and how far anything notices it from (`seenAt`'s `team`: the fog of war, js/sim/fog.js) | `concealOf`, `seenAt`, `ambushReady` | `players` › `being seen` |
@@ -436,7 +436,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the teleport itself: the jump, and the silhouettes it strings across it | `warpPlayer`, `updateWarps`, `warps`, `WARP_FLASH_T`/`WARP_STEP`/`WARP_MAX` | `tools & bits` › `the teleport` (drawn by `drawWarps`, js/draw/render.js; aged in `updateFx`, sim.js) |
 | how hard a shot shoves what it hits | `kb` on each `BITS` row (`HIT_KB` player.js, `ROBOT_KB` robots.js, `o.kbMul` in `hurtUnit`) | `tools & bits` (beside `BITS`) |
 | the old arsenal's kinds and their lineage on paper; the "held one" record nothing reads now | `TECH`, `TECH_BY_ID`, `noteSeen` | `tools & bits` › `the tech tree` (storage: `PROFILE.techSeen`, profile.js) |
-| what each class flies in with | `CLASS_LOADOUT`, `giveLoadout` | `tools & bits` › `starting loadouts` (the weapon rides the hero pop-up's preview: `drawGearPreview`, js/ui/menu.js) |
+| what each class flies in with | `CLASS_LOADOUT`, `giveLoadout` | `tools & bits` › `starting loadouts` (the weapon rides the hero pop-up's preview: `drawHeroPreview`, js/ui/menu.js) |
 | a bot fitting the bits and tools it holds, having no pointer | `botFitLoadout` | `tools & bits` › `a bot fitting what it has found` (called from `updateAI`: `ai`, ai.js) |
 | the icons for both, and the one bake helper they share | `TOOL_ART`, `TOOL_ART_PAL`, `BIT_ART`, `BIT_PAL`, `bakeGrid` | `tools & bits` › `icons` |
 | **a found bit arming itself**: the free cells of the tool in hand counted as room, and the pickup that fills them before the pack (a bot is left to `botFitLoadout`) | `autoFitTools`, `fitRoom`, `fitAdd`, and `fitBit` — the cell a bit lands in, sorted onto its own side (`fitAdd`'s caller: the drop pickup in `updatePlay`, sim.js) | `tools & bits` › `a find arms itself` |
@@ -516,7 +516,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what a bot decides to do this frame | `updateAI` (the wrapper: the ride's let-go, and `aiRecall` after the ladder: the walk home when low, the wait in the roost ring, `AI_RECALL_*`/`AI_RING_FULL`; the ladder itself, `aiThink`, is js/ai/ai-ladder.js), `aiSpend` (rung 0: the skill point, the item build (walking to its own counter, `AI_SHOP_DETOUR`) and the gear), `aiNearestEnemy`, `aiLineClear`, `aiOpenSides` | `ai` |
+| what a bot decides to do this frame | `updateAI` (the wrapper: the ride's let-go, and `aiRecall` after the ladder: the walk home when low, the wait in the roost ring, `AI_RECALL_*`/`AI_RING_FULL`; the ladder itself, `aiThink`, is js/ai/ai-ladder.js), `aiSpend` (rung 0: the skill point, and the item build (walking to its own counter, `AI_SHOP_DETOUR`)), `aiNearestEnemy`, `aiLineClear`, `aiOpenSides` | `ai` |
 | IMPOSSIBLE's `relentless` played (never gives ground, everyone pushes as a pack from the zipline's end, charges past anything not at arm's length); the ability roll | `AI_PACK`/`AI_PACK_R` and `ai.packGo` (the pack, in the objective rung), `charge` (beside `siege`, in `aiFoe`, js/ai/ai-ladder.js), `AI_ABIL_T` | `ai` (the levels themselves: js/ai/ai-skill.js) |
 | how a bot covers ground: the zipline ride folded into every walk - is the cable worth it, the mount point, the hold along it and the let-go at the exit, the ride no rung wanted | `ZIP_AI_GAIN`/`ZIP_AI_OFF`, `aiWalkT`, `aiZipWorth`, `steerTo`/`walkTo` (built by `aiRead`, js/ai/ai-ladder.js; the mount is `zipMount`, js/sim/zipline.js), `ai.zipUsed` (`updateAI`) | `ai` › `the ride` |
 | the objective: who pushes and who guards, the walk into a roost through its lane, the defenders' turrets, the archer's station, the siege that ignores respawning defenders | `aiRank`, `aiPushers`, `aiWantsPush`, `aiOnGuard`, `aiFortSite`/`AI_FORT_N`, `AI_PATROL_*` (a guard's turrets and scouting walk), `aiWallSite`/`aiWallPlan`/`AI_WALL_BOX` (its walls), `aiRingPlan`/`AI_RING_*` (how open the roost is: the defence line), `aiKeepsWay`/`aiLaneDist` (no bot building cuts a way: `ai` › `bot walls`), `AI_GUARD_HOT` (js/ai/ai-team.js), `aiRivalEagle`/`aiOwnEagle`, `aiToRoost`, `aiLaneGate`, `aiInLane`, `aiEagleTile`, `AI_HOLD`, `AI_GATE`, `AI_ROOST_BUDGET`, `AI_ESCALATE`, `AI_SIEGE_R` (the `siege` read in `updateAI`) | `ai` › `difficulty` (the bird's numbers: `EAGLE_HP`/`EAGLE_ARROW_DMG`/`EAGLE_WORK_DMG`, js/sim/eagle.js) |
@@ -807,7 +807,6 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a bear buff worn: the ring of pips around the feet in that bear's colour (`p.buffKind`) | `BUFF_RING`/`BUFF_COL`, `drawBuffRing` (above `drawPlayer`) | - |
 | a body going down: the frozen shatter or the wind, picked by `hash2(id, deaths)`, started off the edge of `p.dead` | `DOWN_T`, `trackDowns` (from `render()` before the draw list), `goingDown` (also held by `viewPlayer` and the replay), `drawDown` | `going down` |
 | the snow over a buried body, its row spans, and the bury meter | `drawSnowCover`, `poseBounds`, `poseSpans`, `drawBuryRing` | - |
-| worn gear on the 16×16 sprite | `GEAR_MARKS`, `drawGearMarks` | - |
 | where the overhead stack sits on a model, centring odd-width text on it, and the two frames that wear none of it | `FRAME_DX`, `centreTextX`, the `state.mode === 'title' || endScreen()` bail in `drawPlayer` (a composition somebody looks AT, not a match somebody reads) | - (the bars themselves: `drawHealthBar`, js/draw/overhead.js; `endScreen`: js/ui/screens.js) |
 
 ## js/draw/marks.js
@@ -896,7 +895,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | where the item a drop DISPLACES goes - home, which makes the drop a swap | `dragHome` (its caller is `dragDropBag`; false = the ousted item rides the cursor as before) | `carrying an item on the cursor` |
 | **what a gesture answers with** — one call raising the cue, the rumble and the well's pulse together (grab / place / merge / seat / swap / deny) | `hudFx`, `HUD_FX`, `WELL_LIT_T`/`DRAG_LIT_T`, `wellLit`/`dragLit`, `wellLitAt`, `drawWellLit` (aged in `updateFx`, sim.js; the rumble: `haptic`, input.js) | `what a gesture answers with` |
 | **what letting go would do**, as a ring on the pack cell under the pointer while something is carried | `dropKindBag`, `DROP_RIM`/`dropRim`, `drawDropRing` (the promise over the ghost: `drawDropPromise`, js/ui/hud-draw.js) | `what a gesture answers with` |
-| the character panel (G): the live body with its gear bands, the stat ledger off the live kit, the four gear pieces and their buys | `CHAR_LEDW`/`CHAR_WELL`, `charLayout`, `charHit`, `gearHit` (the piece-index read tipAt and the cursor keep using), `charClick`, `drawCharPanel` (state: `state.charOpen`, core.js) | `the character panel (G)` |
+| the character panel (G): the live body, the stat ledger off the live kit, the six item slots (no buying: items are bought at a counter) | `CHAR_LEDW`/`CHAR_WELL`, `charLayout`, `charHit`, `charItemHit` (the slot-index read tipAt uses), `charClick`, `drawCharPanel` (state: `state.charOpen`, core.js) | `the character panel (G)` |
 
 ## js/ui/strip.js
 
@@ -952,7 +951,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | what the pointer is on, said in words | `tipAt`, `tipResolve`, `tipNow`, `tipSize`, `drawTooltip`, `TIP_*` | `tooltips` (resolved once per frame in `render`, js/draw/render.js) |
 | where that panel sits — beside the pointer, or parked bottom left | `tipPos`, `TIP_GAP`, `TIP_EDGE` (the row that picks: `settings.tipFollow`, `SET_TABS` js/ui/panels.js) | `tooltips` |
-| the per-kind descriptions that panel is built from | `tipBase`, `tipTool`, `tipBit`, `tipStack`, `tipCell`, `tipGear`, `tipGold`, `tipTunnel`, `tipClassAb`, `tipRail`, `tipStruct` (a build list row), `tipSec`, `TIP_PATH` | `tooltips` (the shop's own: `tipShop`/`tipItem`, js/ui/shop.js, which also answers a shelf item slot and a wiki ITEMS row) |
+| the per-kind descriptions that panel is built from | `tipBase`, `tipTool`, `tipBit`, `tipStack`, `tipCell`, `tipGold`, `tipTunnel`, `tipClassAb`, `tipRail`, `tipStruct` (a build list row), `tipSec`, `TIP_PATH` | `tooltips` (the shop's own: `tipShop`/`tipItem`, js/ui/shop.js, which also answers a shelf item slot and a wiki ITEMS row) |
 
 ## js/ui/compose.js
 
@@ -1008,7 +1007,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the map pop-up over the lobby: the picture with its chevrons, the shape's name, the seed row and the die | `mapLayout`, `mapScreenHit`, `beginMapPick`, `mapKey`, `mapClick`, `renderMapPick` | `main menu` › `the map pop-up` |
 | leaving the practice arena without a party (the way in is the party's START: `partyPractice`, js/ui/rooms.js) | `leavePractice` | `main menu` |
 | the patch tag bottom-right of the title and the list it prints | `PATCH_TXT`, `PATCH_NOTES`, `patchTagRect`/`overPatchTag` | `main menu` |
-| the pre-match build: the hero pop-up off your figure on the lobby - live preview, stat ledger with hover deltas, the gear column and the ability column (a well a piece, a well a key, a click turning each, a hover previewing the swap in the ledger), the equip flash, the ability card on hover | `heroLayout`, `heroScreenHit`, `pickGear`, `pickAbility`, `renderHero`, `drawGearWell`, `drawGearPreview`, `heroPreviewKit`, `GEAR32`/`gearIcon32`, `beginHero`/`leaveHero`, `HERO_*` | `main menu` › `the hero pop-up` (the numbers' base: `baseKit`; the rows: `STAT_ROWS`, js/sim/stats.js) |
+| the pre-match build: the hero pop-up off your figure on the lobby - live preview, stat ledger, the ability column (a well a key, a click turning each), the ability card on hover | `heroLayout`, `heroScreenHit`, `pickAbility`, `renderHero`, `drawHeroPreview`, `beginHero`/`leaveHero`, `HERO_*` | `main menu` › `the hero pop-up` (the numbers' base: `baseKit`; the rows: `STAT_ROWS`, js/sim/stats.js) |
 
 ## js/ui/notes.js
 

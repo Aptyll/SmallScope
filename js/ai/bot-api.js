@@ -24,7 +24,7 @@ const BOT_SAY_MAX = 256;    // bytes of JSON a `say` may carry to the side
 const BOT_WHY_MAX = 20;     // chars of a thought's `why` (the dashboard's plate)
 const BOT_ERR_MAX = 8;      // errors kept per seat for the ladder page
 const BOT_LATE_MAX = 10;    // thinks in a row a bot may miss (1 s) before its seat lets go of every key
-const BOT_CMDS = new Set(['build', 'upgrade', 'repair', 'demolish', 'gear', 'ability', 'flag', 'shop', 'recall']);
+const BOT_CMDS = new Set(['build', 'upgrade', 'repair', 'demolish', 'ability', 'flag', 'shop', 'recall']);
 const BOT_NODES_N = 64;     // workable tiles an observation lists, nearest first
 const BOT_NODES = new Set(['tree', 'deadTree', 'rock', 'bush', 'chest']);
 const BOT_CALLS = new Set(['bird', 'help', 'low', 'push', 'here']); // CALLS' kinds a bot may say
@@ -93,7 +93,6 @@ function botObserve(p) {
     stats: botStats(p), // the seven hero stats, the numbers the HUD's panel prints (js/sim/stats.js)
     prone: !!p.prone, hide: botR(p.hide || 0), aboard: !!p.aboard, falling: p.dropT > 0, zip: p.zip,
     abilities: p.abLv.map((lv, i) => botAbility(p, i, lv)),
-    gear: p.gearLv.slice(), // each piece's level, 1..GEAR_LV_MAX (hello.rules.gearCosts prices the next)
     tool: botToolOf(heldTool(p)), toolSel: p.toolSel,
     tools: (p.tools || []).map((c) => (c ? c.type : null)),
     bag: p.bag.map((s) => (s ? { type: s.type, n: s.n } : null)),
@@ -208,7 +207,7 @@ function botGrid(p) {
 function botHello(p) {
   return {
     t: 'hello', api: BOT_API, seat: p.id, team: p.team, cls: CLASSES[p.cls].name, name: p.name, seed: SEED,
-    rules: { tickDt: TICK_DT, thinkEvery: BOT_THINK, obsR: BOT_OBS_R, tile: TILE, world: WORLD, gearCosts: GEAR_COSTS.slice(), gearMax: GEAR_LV_MAX },
+    rules: { tickDt: TICK_DT, thinkEvery: BOT_THINK, obsR: BOT_OBS_R, tile: TILE, world: WORLD },
     map: { world: WORLD, tile: TILE, shape: MAP_TYPE, grid: botGrid(p) },
   };
 }

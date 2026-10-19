@@ -184,9 +184,7 @@ const state = {
     // ('room' is the party lobby, js/ui/rooms.js; 'lobby' the hero select).
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
-    // grow is the hero pop-up's keyboard row (the gear column, the ability
-    // column, then the ledger's rows),
-    // gearFxT/gearFxSlot its equip flash,
+    // grow is the hero pop-up's keyboard row (the ability column),
     // mrow the map pop-up's keyboard row (0 the picture, 1 the seed); the wiki
     // is a surface of its own on wikiT, with wikiTab the open page (js/ui/wiki.js
     // `the wiki`); the patch notes are one too, on notesT, notesTab its open
@@ -206,7 +204,7 @@ const state = {
     // is looked up in and whether the list answered, the code being looked
     // for (seek), and a join under way
     roomsT: 0, rooms: [], roomsOk: false, seek: null, joining: false,
-    pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
+    pop: null, popT: 0, grow: 0, mrow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from
@@ -629,7 +627,7 @@ function updateEat(p, dt) {
   if (bagCount(p, type) <= 0) return; // spilled out from under the meal
   bagTake(p, type, 1);
   p.foodCd = FOOD_CD;
-  const heal = Math.round(ITEMS[type].heal * kitOf(p).foodMul); // HEARTHWEAVE makes meals bigger
+  const heal = Math.round(ITEMS[type].heal * kitOf(p).foodMul); // a kit's foodMul scales the meal
   healPlayer(p, heal);
   sfxAt('heal', p.x, p.y);
   addFloater(p.x, p.y - 14, '+' + heal, '#8fe08a');

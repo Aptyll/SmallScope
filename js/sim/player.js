@@ -1,6 +1,6 @@
 'use strict';
 // Every combatant in the match: the numbers a player is made of, the Player
-// class and the ten of them, the two playable classes and their kits, gear, cards,
+// class and the ten of them, the two playable classes and their kits, cards,
 // the input struct, contested orders, the entity arrays - and the damage &
 // death lifecycle those players live and die by.
 // ------------------------------------------------------------ players
@@ -116,8 +116,8 @@ const HEROES_SOON = [
   { name: 'SLEET', cls: 0, look: { sex: 1, tone: 1, hair: 4, hairCol: 6, beard: 0, face: 2 } },
   { name: 'DURAVO', cls: 1, look: { sex: 0, tone: 3, hair: 2, hairCol: 0, beard: 3, face: 0 } },
 ];
-// the kit every sim site reads: the class's numbers with the player's gear
-// folded in. refreshKit() rebuilds the cache whenever class or gear
+// the kit every sim site reads: the class's numbers with the player's cards
+// and items folded in. refreshKit() rebuilds the cache whenever one of them
 // changes; kitOf() itself is called many times a frame and must stay a read.
 function kitOf(p) { return p.kit || CLASSES[p.cls].kit; }
 // swap a player's hero: its look comes with it (a copy - a snapshot merges
@@ -248,7 +248,7 @@ function playerTint(p) {
 // The six helpers below route them there, which is what keeps the pickup, the
 // catch, the sale and the AI's food check generic over "a
 // berry" and "a bit" alike.
-// `heal` is what a meal is worth before HEARTHWEAVE - the ONE place the number
+// `heal` is what a meal is worth before the kit's foodMul - the ONE place the number
 // lives, so the tooltip and the meal that lands can never disagree (js/sim/core.js).
 const ITEMS = {
   berry: { icon: 'itemBerry', stack: Infinity, pouch: true, heal: 20 },
@@ -365,50 +365,15 @@ function bagTake(p, type, n) {
   return n - left;
 }
 
-// ---- gear ----------------------------------------------------------------
-// Four pieces - helmet, chest, legs, boots - each picked from three variants
-// at the lobby (that free pick is level 1) and bought to level GEAR_LV_MAX
-// in-match, from anywhere, per piece. A variant's mod() writes its bonus into
-// the effective kit at the piece's level, so the whole system is one table
-// plus refreshKit(); the sim never reads gear directly. Levels reset with the
-// match because every boot builds fresh Players. The HUD row (UI banner) and
-// the bots both buy through input.cmd {kind:'gear', piece}, never directly.
-const GEAR_SLOTS = ['HELMET', 'CHEST', 'LEGS', 'BOOTS'];
-const GEAR_COSTS = [10, 20, 35]; // gold to reach piece level 2 / 3 / 4
-const GEAR_LV_MAX = 4;
-const GEAR_MATS = ['#8a6a4a', '#9aa3ad', '#9fc4dd', '#f2cc6a']; // leather/iron/steel/gold, by piece level
-const GEAR = [
-  [ // helmet: how you kill
-    { name: 'LONGSIGHT', blurb: 'ARROWS HIT HARDER', mod: (k, L) => { k.add.dmg += L; } },
-    { name: 'QUICKDRAW', blurb: 'FASTER DRAW AND RENOCK', mod: (k, L) => { k.add.as += 0.08 * L; } },
-    { name: 'HUNTSMAN', blurb: 'ANIMALS PAY MORE', mod: (k, L) => { k.huntMul += 0.15 * L; } },
-  ],
-  [ // chest: how you last
-    { name: 'BULWARK', blurb: 'MORE HEALTH', mod: (k, L) => { k.add.hp += 8 * L; } },
-    { name: 'IRONHIDE', blurb: 'EVERY HIT HURTS LESS', mod: (k, L) => { k.add.armor += 6 * L; } },
-    { name: 'HEARTHWEAVE', blurb: 'FOOD AND NIGHTS ARE KINDER', mod: (k, L) => { k.foodMul += 0.25 * L; k.nightHeal = true; } },
-  ],
-  [ // legs: how you cross snow
-    { name: 'STRIDER', blurb: 'WALK FASTER', mod: (k, L) => { k.add.ms += 3 * L; } },
-    { name: 'SLIDEWORN', blurb: 'LONGER, EARLIER SLIDES', mod: (k, L) => { k.fatigue *= 1 - 0.12 * L; k.slideMin -= 5 * L; } },
-    { name: 'PACKMULE', blurb: 'FELLS AND BREAKS PAY MORE', mod: (k, L) => { k.harvestMul += 0.25 * L; } },
-  ],
-  [ // boots: how you skate and dodge
-    { name: 'SKATES', blurb: 'FASTER, SHARPER ON ICE', mod: (k, L) => { k.iceMax *= 1 + 0.08 * L; k.iceSteer += 0.15 * L; } },
-    { name: 'DANCER', blurb: 'DODGES COME BACK SOONER', mod: (k, L) => { k.dodgeCd -= 0.4 * L; } },
-    { name: 'GHOSTSTEP', blurb: 'FOES SPOT YOU FROM CLOSER', mod: (k, L) => { k.stealth -= 0.10 * L; } },
-  ],
-];
 // ---- roguelike cards ------------------------------------------------------
 // Dropped by a sprung chest in the treeline (hitObject's chest branch,
 // js/sim/actions.js, rolled against CHEST_ODDS), carried in the pouch, and DRAWN
 // on the card key: one card at random from everything held, one entry at
 // random from its rarity (useCard, js/sim/core.js) - no draft screen (3.23).
-// Same shape as a GEAR variant's mod(k, L) minus the level - a card is a
-// one-shot pick, not a leveled buy - folded into the kit cumulatively by
+// A card's mod(k) writes into the kit - folded in cumulatively by
 // refreshKit below, so every kit-reading site in the sim picks them up for
-// free the same way it already does for gear. killHeal is the one field no
-// champion/gear kit carries; die()'s kill-credit line reads it.
+// free the same way it does items. killHeal is the one field no
+// class kit carries; die()'s kill-credit line reads it.
 const CARDS = {
   white: [
     { name: 'QUICK HANDS', blurb: 'FASTER RENOCK', mod: (k) => { k.add.as += 0.04; } },
@@ -447,45 +412,27 @@ const CARDS = {
   ],
 };
 
-// the class kit plus the gear-free defaults - the fields no class kit
-// carries; a variant's mod() edits them in place. Shared by refreshKit and
-// the hero pop-up's preview ledger (heroPreviewKit, js/ui/menu.js), so the
-// numbers that page shows can never drift from the ones the sim reads.
+// the class kit plus the defaults no class kit carries; a card's or an
+// item's mod() edits them in place. Shared by refreshKit and the hero
+// pop-up's preview ledger (js/ui/menu.js), so the numbers that page shows can
+// never drift from the ones the sim reads.
 function baseKit(cls) {
   return Object.assign({}, CLASSES[cls].kit, {
-    cls, add: statBag(), // whose kit, and the stat bonuses gear and cards write (js/sim/stats.js)
+    cls, add: statBag(), // whose kit, and the stat bonuses cards and items write (js/sim/stats.js)
     huntMul: 1, foodMul: 1, nightHeal: false,
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
     killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
   });
 }
-// rebuild p.kit from class + gear + cards + items
+// rebuild p.kit from class + cards + items
 function refreshKit(p) {
   const k = baseKit(p.cls);
-  for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
   for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
   itemMods(k, p); // the six item slots (js/sim/items.js)
   p.kit = k;
   p.maxHp = levelMaxHp(p);
   if (p.hp === undefined || p.hp > p.maxHp) p.hp = p.maxHp;
-}
-function gearCost(p, i) { return p.gearLv[i] >= GEAR_LV_MAX ? null : { gold: GEAR_COSTS[p.gearLv[i] - 1] }; }
-// the one entry point for an upgrade, reached through runCmd so every buyer -
-// HUD click, number key, bot - goes the same way. A BULWARK bump heals the
-// new hp on the spot, the way a hero level does.
-function buyGear(p, i) {
-  const cost = gearCost(p, i);
-  if (!cost || !canAfford(cost, p)) { sfxFor(p, 'deny'); return cost ? 'gold' : 'max'; }
-  pay(cost, p);
-  p.gearLv[i]++;
-  const oldMax = p.maxHp;
-  refreshKit(p);
-  if (p.maxHp > oldMax) p.hp = Math.min(p.maxHp, p.hp + (p.maxHp - oldMax));
-  addFloater(p.x, p.y - 18, GEAR[i][p.gear[i]].name + ' ' + p.gearLv[i], GEAR_MATS[p.gearLv[i] - 1]);
-  burst(p.x, p.y - 8, GEAR_MATS[p.gearLv[i] - 1], 8, 40, 0.45);
-  sfxOwn(p, 'levelUp', 'pickup');
-  return true;
 }
 // one frame of intent - the whole interface between a controller and the sim
 function makeInput() {
@@ -503,7 +450,7 @@ function makeInput() {
     eatBerry: false, eatFish: false, // edge-triggered
     useCard: false,      // edge-triggered: draw one unopened card at random (useCard, js/sim/core.js)
     ability: -1,         // edge-triggered: cast the class ability on this key (1-4), js/sim/abilities.js
-    cmd: null,           // one-shot: {kind:'build'|'upgrade'|'demolish'|'craft', tx, ty, id} or {kind:'gear', piece} or {kind:'ability', i}
+    cmd: null,           // one-shot: {kind:'build'|'upgrade'|'demolish'|'craft', tx, ty, id} or {kind:'ability', i}
   };
 }
 
@@ -546,12 +493,10 @@ class Player {
     this.food = newPouch();             // the pouch: the meals and the unopened cards, uncapped
     this.fishPick = null;               // the fish the fish well eats (a FISH_KINDS key), or null for whichever comes next
     this.cls = 0;                       // CLASSES index; the lobby sets the local one
-    this.gear = [0, 0, 0, 0];           // chosen GEAR variant per slot (helmet/chest/legs/boots)
-    this.gearLv = [1, 1, 1, 1];         // piece levels, 1..GEAR_LV_MAX - fresh every match
     this.skillPts = 1;                  // unspent; level 1 starts with one, each levelUp adds one - spent on ability levels (buyAbilityLv, js/sim/abilities.js)
-    this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like gear and cards, NOT cleared by reset(): a death keeps what was bought
+    this.abLv = [0, 0, 0, 0];           // ability ranks, 0 (LOCKED) ..AB_LV_MAX, a skill point each - like cards and items, NOT cleared by reset(): a death keeps what was bought
     this.abPick = [0, 0, 0, 0];         // which option each key carries (abOf, js/sim/abilities.js), picked pre-match in the hero pop-up; a bot keeps the first
-    this.cards = [];                    // picked roguelike cards, {rarity,id} - like gear, survives a respawn
+    this.cards = [];                    // picked roguelike cards, {rarity,id} - like items, survives a respawn
     // the one order marker this player has standing (the right-click radial;
     // see the `team flags` banner in js/sim/robots.js): null, or { tx, ty, type,
     // owner }. NOT cleared by reset() - an order outlives the hand that gave it.
@@ -582,7 +527,7 @@ class Player {
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
     this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - like cards, they survive a respawn
     this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
-    refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
+    refreshKit(this);                   // builds this.kit and this.maxHp from class + cards + items
     this.aboard = false;                // riding the eagle (beginDrop sets it, hopOff clears it)
     this.dropT = 0;                     // seconds left of the step down off the roost (0 = on the ground)
     this.dropAlt = 0;                   // px the step down started from: HOP_ALT off the roost
@@ -744,10 +689,9 @@ function initPlayers(roster, local) {
   roster = roster || defaultRoster(local);
   players.length = 0;
   for (let i = 0; i < MAX_PLAYERS; i++) players.push(new Player(i, roster[i].control, roster[i].team));
-  // bots draw their class and their four gear variants from the seed, so a
-  // replayed world fields the same roster in the same loadouts
+  // bots draw their class from the seed, so a replayed world fields the
+  // same roster
   for (const p of players) if (p.control === 'ai') {
-    for (let i = 0; i < GEAR_SLOTS.length; i++) p.gear[i] = Math.floor(hash2(p.id * 29 + i * 13 + 5, 191) * 3) % 3;
     // floor(hash * N): even over however many classes exist (for two it maps
     // exactly as the old `< 0.5` coin, so old seeds keep their rosters)
     setClass(p, Math.floor(hash2(p.id * 17 + 3, 77) * CLASSES.length)); // refreshes the kit too
@@ -795,7 +739,7 @@ function faceToward(p, dx, dy, hold) {
 // which is the whole reason to stop moving before you shoot.
 function concealOf(p) { return p.hide > 0 ? p.hide * (p.moving ? PRONE_MOVE : 1) : 0; }
 // How far p is noticed from by a watcher whose plain sight range is `range`.
-// GHOSTSTEP always shortens it; lying under the snow shortens it hard - but
+// The kit's stealth (cards, items) shortens it; lying under the snow shortens it hard - but
 // never past PRONE_SNIFF, because at arm's length you are found whatever you
 // are lying under. Every watcher in the game (the pack, the turrets, the bot
 // brain) resolves through this one function so they cannot disagree about who
@@ -927,7 +871,7 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 
 // DEATH COSTS TIME, NOTHING ELSE. A body goes down with everything it had
 // and comes back with all of it: the wallet, the pouch, the bag, the weapon
-// and its build, the cards, the gear, the level. Nothing spills and nothing
+// and its build, the cards, the items, the level. Nothing spills and nothing
 // is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
 // build lay where it fell, is gone - it made the fifteenth minute a bag you
 // were afraid to carry). What a kill is worth is gold from nowhere, paid out
@@ -1180,7 +1124,7 @@ function endSnapshot() {
     // is down at the whistle still shares the result)
     roster: players.filter((q) => q.active && q.team === player.team)
       .sort((a, b) => (a === player ? -1 : b === player ? 1 : a.id - b.id))
-      .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team, gear: q.gear.slice(), gearLv: q.gearLv.slice() })),
+      .map((q) => ({ name: q.name, cls: q.cls, look: q.look, team: q.team })),
     place: player.eliminated ? left + 1 : 1, of: players.filter((q) => q.active).length,
   };
 }

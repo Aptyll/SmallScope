@@ -351,7 +351,7 @@ function aiAnswerStep(p) {
 // and of those that pass, the quickest to pay back. Prices are the game's
 // (buildCost, js/sim/structures.js: each one the owner has raises the next), so
 // the side builds a few early, upgrades in the middle and nothing late.
-// Gear (rung 0) is power, not income, and goes first.
+// Items (rung 0, aiSpend) are power, not income, and go first.
 const AI_MATCH_MIN = 15;  // min a match is reckoned to run (the minutes left, never under 3)
 const AI_BAY_RATE = 12;   // gold a minute a bay's three workers bring home (measured: seed 7, NORMAL, 4.65)
 // gold a minute one income building at tier t pays its owner

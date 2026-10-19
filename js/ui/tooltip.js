@@ -185,18 +185,6 @@ function tipCell(s) {
   if (b) return tipBit(b);
   return tipStack(s);
 }
-// the two HUD rows that are not items: a gear piece and an ability
-function tipGear(i) {
-  const g = GEAR[i][player.gear[i]], lv = player.gearLv[i], cost = gearCost(player, i);
-  const d = { title: g.name, tcol: GEAR_MATS[lv - 1], kind: GEAR_SLOTS[i], rows: [], notes: [],
-    icon: SPRITES.gearIcons[i][player.gear[i]][lv - 1], plate: BAG_WELL, rim: '#3c4048' };
-  d.rows.push(['LEVEL', lv + '/' + GEAR_LV_MAX, GEAR_MATS[lv - 1]]);
-  if (cost) d.rows.push(['NEXT LEVEL', cost.gold + ' GOLD',
-    player.inv.gold >= cost.gold ? '#f2cc6a' : '#e0637a']);
-  d.notes.push([g.blurb, TIP_DIM]);
-  d.notes.push([cost ? 'CLICK TO BUY THE NEXT LEVEL' : 'FULLY UPGRADED', TIP_DIM]);
-  return d;
-}
 // a class ability well - the strip's in play (cls omitted: the local player's
 // class, live cooldown, the cast hint), or the lobby's stage (cls given:
 // the previewed class, before it is ever locked, with nothing castable yet)
@@ -254,9 +242,9 @@ function tipStruct(type) {
   return d;
 }
 // What the pointer is on, asked once per frame. The order mirrors the
-// mousedown handler exactly: the build list's rows, gear, then the shelf,
-// then the weapon strip, then the backpack - so the panel and the click
-// always agree.
+// mousedown handler exactly: the build list's rows, the character panel's
+// items, then the shelf, then the weapon strip, then the backpack - so the
+// panel and the click always agree.
 function tipAt(mx, my) {
   if (window.DBG.hideUI || !mouse.inside) return null;
   if (state.mode === 'title') {
@@ -287,8 +275,8 @@ function tipAt(mx, my) {
   }
   const bl = buildListHit(mx, my);
   if (bl >= 0) return tipStruct(BUILD_ORDER[bl]);
-  const gi = gearHit(mx, my);
-  if (gi >= 0) return tipGear(gi);
+  const ci = charItemHit(mx, my);
+  if (ci >= 0 && player.items[ci]) return tipItem(player.items[ci]);
   const rc = railHit(mx, my);
   if (rc) return tipRail(rc);
   const ch = cheatHit(mx, my);

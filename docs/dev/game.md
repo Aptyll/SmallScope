@@ -141,9 +141,8 @@ else, and the twelve cells (`BAG_CAP`) are for the consumables and ore a match h
 (`p.food`) pressed on Q and F from the HUD, because a meal is never arranged, only eaten.
 [Inventory and the backpack](gameplay.md#inventory-and-the-backpack).
 
-**Gear is 4 pieces × 3 variants, bought from anywhere.** No trip home for *armour* — the gear
-pop-up is a menu, and a piece levels through four materials. The counter's items are the other bargain:
-they make you walk to a body to get them. [Gear](gameplay.md#gear).
+**Items are bought at a counter.** You walk to a body to get them.
+[Buying and selling](gameplay.md#buying-and-selling).
 
 **Your eagle is your life.** The bird that carried the team in crashes onto its base's perch and
 roosts there, armoured in team colour — the hollow round it, the crater it blows (packed earth,

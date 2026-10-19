@@ -784,7 +784,7 @@ function aiLootRung(k) {
 
 function aiBuyRung(k) {
   const { p, dt, inp, ai, steerTo, mine, foe } = k;
-  // 9. spend the purse (gear went at rung 0, from anywhere) on income, by
+  // 9. spend the purse (items went at rung 0, at a counter) on income, by
   //    payback (aiEcoBuy, the team brain): a stump to build on, or its own
   //    generator to raise a tier. Never with its bird under attack or a
   //    rival in sight; short of the price, it saves for it.

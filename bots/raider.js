@@ -51,7 +51,7 @@ defineBot({
       return act;
     }
 
-    buyGear(this, me, act, 0); // gold is never saved: armour now
+    buyItem(obs.shop, me, act, 0); // gold is never saved: items now
     // back from a respawn: wait a few seconds at home for one partner, never longer
     const own = obs.eagles.find((e) => e.team === me.team && e.state === 'down');
     if (this.waitT > 0 && own) {
@@ -148,10 +148,10 @@ function work(me, n, act) {
   act.work = d < 28 && n.kind !== 'rock';
 }
 
-// gold to spare: the next gear piece, round the four in turn (the obs does
-// not say which pieces are already bought, so a full one is just skipped)
-function buyGear(bot, me, act, keep) {
-  if (act.cmd || me.gold < keep + 10) return;
-  bot.gear = ((bot.gear || 0) + 1) % 4;
-  act.cmd = { kind: 'gear', piece: bot.gear };
+// gold to spare at a counter: the dearest item the purse covers, keeping
+// `keep` back (the obs lists the shop only while me.atShop)
+function buyItem(shop, me, act, keep) {
+  if (act.cmd || !shop || !me.items.includes(null)) return;
+  const can = shop.filter((s) => s.price <= me.gold - keep).sort((a, b) => b.price - a.price);
+  if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id };
 }

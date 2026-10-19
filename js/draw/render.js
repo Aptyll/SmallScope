@@ -1458,7 +1458,7 @@ function cursorInfo() {
   // the backpack widget: a hand over anything in it that does something, a
   // plain arrow over the rest of its frame (which still swallows the click).
   const bh = bagHit(mouse.x, mouse.y);
-  if (gearHit(mouse.x, mouse.y) >= 0 || (bh && bh.kind !== 'frame')) return { kind: 'hand' };
+  if (bh && bh.kind !== 'frame') return { kind: 'hand' };
   if (bh) return { kind: 'arrow' };
   if (shelfHit(mouse.x, mouse.y)) return { kind: 'arrow' }; // read, not handled
   if (abBuyHit(mouse.x, mouse.y) >= 0) return { kind: 'hand' };

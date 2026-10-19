@@ -382,7 +382,7 @@ function keyPress(e) {
     if (state.wheel) SFX.wheelUp();
   }
   // the sheet key raises the character panel - the body, the live stat
-  // ledger and the four gear pieces. HUD like the bag: the sim runs on
+  // ledger and the six item slots. HUD like the bag: the sim runs on
   // underneath.
   if (keyIs(e, 'char') && !state.settingsOpen) { state.charOpen = !state.charOpen; SFX.ui(state.charOpen); }
   // the four ability binds cast, left to right exactly as the strip shows
@@ -502,7 +502,7 @@ function pointerPress(button) {
     if (state.tunAim) { SFX.unlock(); state.tunAim = false; return; } // ...and the burrow's ghost
     if (cheatAimOff()) { SFX.unlock(); return; } // ...and the practice bar's aim
     if (state.mapOpen) { openFlagWheel(); return; } // over the chart: the flag wheel, the one way to order a tile off-screen
-    if (bagHit(mouse.x, mouse.y) || gearHit(mouse.x, mouse.y) >= 0 || stripHit(mouse.x, mouse.y) ||
+    if (bagHit(mouse.x, mouse.y) || charHit(mouse.x, mouse.y) || stripHit(mouse.x, mouse.y) ||
         shopHit(mouse.x, mouse.y) || shelfHit(mouse.x, mouse.y) || shelfPlateHit(mouse.x, mouse.y) || cheatHit(mouse.x, mouse.y)) return; // no wheel through the HUD
     // any tile on the map is a place to plant a flag on (building is the
     // list on T, managing is E beside your own building)
@@ -545,8 +545,8 @@ function pointerPress(button) {
   }
   // The backpack widget, the weapon slots and the weapon shelf swallow every
   // press over themselves before the tool ever sees them. The character panel
-  // is asked first while it is up - a press on a gear well buys, the X
-  // closes, and the slab eats the rest. Everything else goes through
+  // is asked first while it is up - the X closes, and the slab eats
+  // every press. Everything else goes through
   // hudPress, which arms a drag the mouseup below either completes or reads
   // as a click.
   if (shopClick(shopHit(mouse.x, mouse.y))) return;
@@ -731,8 +731,8 @@ function openWheelNear(p, ax, ay) {
 //
 // What balances the assist: a locked shot goes where the target IS, never
 // led, so a strafing rival at range is missed where a hand would lead it;
-// the lock holds only to CK_LOCK_R and through seenAt, so cover and
-// GHOSTSTEP break it; the auto-draw is a bot's, under the hand's; and
+// the lock holds only to CK_LOCK_R and through seenAt, so cover and a
+// stealth card or item break it; the auto-draw is a bot's, under the hand's; and
 // nothing here reaches the sim but the same input struct a bot fills
 // (ckStep -> sampleHumanInput), so the sim never learns which scheme is in
 // hand. The rings on the snow are drawClickMarks (draw-world.js); the armed
@@ -831,7 +831,7 @@ function ckArmedPress() {
   ckOrder({ kind: 'amove', x: pt.wx, y: pt.wy }, pt.wx, pt.wy, 'foe');
 }
 // can p still hold this lock: alive, a foe, and inside the leash - a rival
-// player through seenAt, so its cover and GHOSTSTEP shorten the leash
+// player through seenAt, so its cover and its stealth shorten the leash
 function ckSees(p, t) {
   if (!unitAlive(t) || !unitFoe(p, t)) return false;
   const d = Math.hypot(t.x - p.x, t.y - p.y);
@@ -1151,7 +1151,7 @@ function sampleHumanInput(p, dt) {
   // keep walking, sliding, rolling and burrowing with it up, and watch your
   // own marker move across it. Everything that acts on the world is dropped -
   // the pointer is over the parchment, so there is nothing to aim or work at,
-  // and a gear plate bought blind under the dim would be bought by accident.
+  // and an ability level bought blind under the dim would be bought by accident.
   if (state.mode === 'play' && state.mapOpen && !state.paused && !state.settingsOpen) {
     inp.mx = mx; inp.my = my;
     inp.slide = keyHeld('slide');

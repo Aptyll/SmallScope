@@ -134,8 +134,7 @@ on the body's column so a mirrored left frame keeps its feet where they were, wi
 at its (`x`, `y`); `drawPlayer` draws a frame at the cell's top-left less that. The run plays
 `RUN_STEP` frames per step of `animT` (`runFrame`), and the sim steps `animT` with the ground
 speed, so a creep strides slower and an ice run quicker. What rides the body follows it: the held
-tool and the gear marks move with the frame's bob (`runBob`), side-on the helmet's mark leans the
-pixel the head leans, and the boots' marks are left off while the feet move.
+tool moves with the frame's bob (`runBob`).
 
 **A character's fringe** goes on at the first face row of each upright frame (the run, the held
 run, the crouch and the squats), which the bake writes beside the grids (`FRINGE`: the row, the
@@ -273,13 +272,13 @@ bar. At rest `drawHeldTool()` draws the **weapon on the selected slot** instead,
 `toolArt_*` canvas baked in [js/sim/tools.js](../../js/sim/tools.js) rather than here; both sizes go
 through the same code because the icon is centred on its own half-width.
 
-The **gear icons** are twelve 12×12 grids, **one per variant** (`gearLongsight` … `gearGhoststep`), each baked once per
+The **gear icons** are twelve 12×12 grids (`gearLongsight` … `gearGhoststep`), each baked once per
 **material** — `GEAR_MAT_PALS`, leather → iron → steel → gold, plus the shared accent chars `w`
-(ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`: the glyph
-says which piece, the material says its level. Drawn by the HUD's gear plates; the hero pop-up's wells wear the detailed 32×32 `GEAR32` set instead
-(js/ui/menu.js — see [gameplay.md](gameplay.md#gear)). `itemBag` is
-12×12 for the same reason — it sits in the same 18 px HUD well — but shares `ITPAL` with the
-8×8 item icons rather than taking a material palette: it is one object, not four levels of one.
+(ice-white) and `r` (hearth-red) — into `SPRITES.gearIcons[slot][variant][material]`. They are
+item icon art now: a `BUILD_ITEMS` entry's `icon` of `['gear', slot, variant, material]` names one
+(`itemIcon`, js/sim/items.js; see [the items](gameplay.md#the-items)). `itemBag` is
+12×12 too, since it sits in the same 18 px HUD well, but shares `ITPAL` with the
+8×8 item icons rather than taking a material palette: it is one object, not four materials of one.
 
 The five **roguelike card** icons are one card back — the full 8 px of height, lit along its top
 and left edge (`L`), shaded along its bottom and right (`c`), inside a dark rim that holds it off
@@ -538,11 +537,9 @@ js/draw/ground.js) and every tool and bit icon (`TOOL_ART` / `BIT_ART` / `bakeGr
 paint their char grids onto their own canvases and assign into `SPRITES`, which works because it
 is a plain object - exactly what each js/sprites/ file does for its own keys (the paragraph
 below), so a sprite that belongs to a drawer can live beside it. Tool art goes further and follows the gear icons'
-trick — one 12×12 silhouette per weapon, baked once per **tier** through `TOOL_ART_PAL`, so shape
-says which weapon and palette says how good it is. The two detailed 32×32 icon sets do the same:
-the ability icons (`AB32`/`AB32_PAL`, js/sim/abilities.js) and the gear-variant icons (`GEAR32`,
-js/ui/menu.js) bake lazily beside their drawers, and `GEAR32` deliberately shares `AB32_PAL` so
-every big icon in the game speaks one palette.
+material trick — one 12×12 silhouette per weapon, baked once per **tier** through `TOOL_ART_PAL`, so shape
+says which weapon and palette says how good it is. The detailed 32×32 ability icons (`AB32`/`AB32_PAL`,
+js/sim/abilities.js) bake lazily beside their drawer.
 
 **The story landmarks** (`landmarks.js`, palette `LMPAL`) are E of
 `docs/media/concepts/landmarks-concepts-1.png`: the rowboat (50×24 over 3×1). The paint on the hull is a
@@ -586,7 +583,7 @@ Keys marked **(dead)** are still baked but read by nothing outside js/sprites/ a
 | `buildings.js` | wall, tiered structures, the turret's three timber bases, fish net, bot bay, spikes, fire, torch | `teamBuild`, `robotTeam`, `wall`, `turret` (`turretT1`/`T2`/`T3` through `TUR_PALS` and `turretPal`), `spawner` **(dead**: the flat 16×16; the bay is `teamBuild[team].spawner`**)**, `net`, `scaffold`, `robot`, `spikes` **(dead)**, `fire` **(dead)**, `torch` **(dead)** |
 | `items.js` | items, gold nugget, gold sack, crate, axe icon | `itemWood`/`itemStone`/`itemBag`, `itemAnim` + the three live icons, `goldSack`, `crate`, `itemCard*`, `itemAxe`/`itemBow`/`itemPick` |
 | `landmarks.js` | landmarks | `landmark` (`boat`) |
-| `icons.js` | gear icons, heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
+| `icons.js` | gear icons (item icon art), heart, cursors | `gearIcons`, `heart*`, `cursor`, `cursorShadow` |
 
 The grids are **pure ASCII and byte-fragile**: `bake()` sizes each canvas from `rows[0].length`
 alone, and an unmatched palette char is indistinguishable from a transparent pixel, so a row that

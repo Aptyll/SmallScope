@@ -317,7 +317,7 @@ the bots' `BOT_BUILDS` if a class should buy it. A new **fish** needs no shop ed
 in `FISH_KINDS` prices it off its `heal` (`foodPrice`).
 
 **Adding a class** — the tables make most of it mechanical, and every screen picks the new
-entry up with no edit: the lobby's hero row grows a cell, the strip, the gear
+entry up with no edit: the lobby's hero row grows a cell, the strip, the hero
 pop-up's preview/ledger and the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
 new class needs written:

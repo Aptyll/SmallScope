@@ -1,7 +1,7 @@
 // BULWARK: the turtle. Holds the spur in front of its own bird: warriors
 // stand at its head, hunters a step behind, and one seat spends the side's
 // first gold on turrets along it. Everyone else chops the woods by the roost
-// for gear. It only leaves when it has just wiped an attack, or the snow has
+// for items. It only leaves when it has just wiped an attack, or the snow has
 // been quiet a long while, and the side is up: then the first seat calls a sally, everyone goes at the
 // rival bird together, and the first blow on its own bird calls them home.
 // Shows `cmd` builds, team `say` and reading your own bird's `hitT`.
@@ -102,7 +102,7 @@ defineBot({
       if (t && Math.hypot(t.tx * 16 + 8 - me.x, t.ty * 16 + 8 - me.y) < 56) act.cmd = { kind: 'upgrade', tx: t.tx, ty: t.ty };
       else if (t) { act.goTo = { x: t.tx * 16 + 8, y: t.ty * 16 + 8, reach: 1 }; act.think = { goal: 'BUILD', why: 'UPGRADE', plan: 'HOLD' }; return act; }
     }
-    buyGear(this, me, act, this.lead ? 40 : 0);
+    buyItem(obs.shop, me, act, this.lead ? 40 : 0);
 
     // the rest of the time: warriors at the post, hunters chop close by
     if (me.cls === 'WARRIOR' && obs.allies.some((a) => a.cls === 'HUNTER' && !a.dead)) {
@@ -112,7 +112,7 @@ defineBot({
       return act;
     }
     const n = pickNode(this, obs, own, 220, ['tree', 'bush', 'rock']);
-    if (n) { work(me, n, act); act.think = { goal: 'GATHER', why: 'GOLD FOR GEAR', plan: 'HOLD', target: { kind: 'point', x: n.x, y: n.y } }; return act; }
+    if (n) { work(me, n, act); act.think = { goal: 'GATHER', why: 'GOLD FOR ITEMS', plan: 'HOLD', target: { kind: 'point', x: n.x, y: n.y } }; return act; }
     act.goTo = { x: post.x, y: post.y };
     act.think = { goal: 'GUARD', why: 'NOTHING TO DO', plan: 'HOLD' };
     return act;
@@ -208,10 +208,10 @@ function work(me, n, act) {
   act.work = d < 28 && n.kind !== 'rock';
 }
 
-// gold to spare: the next gear piece, round the four in turn (the obs does
-// not say which pieces are already bought, so a full one is just skipped)
-function buyGear(bot, me, act, keep) {
-  if (act.cmd || me.gold < keep + 10) return;
-  bot.gear = ((bot.gear || 0) + 1) % 4;
-  act.cmd = { kind: 'gear', piece: bot.gear };
+// gold to spare at a counter: the dearest item the purse covers, keeping
+// `keep` back (the obs lists the shop only while me.atShop)
+function buyItem(shop, me, act, keep) {
+  if (act.cmd || !shop || !me.items.includes(null)) return;
+  const can = shop.filter((s) => s.price <= me.gold - keep).sort((a, b) => b.price - a.price);
+  if (can.length) act.cmd = { kind: 'shop', act: 'item', id: can[0].id };
 }

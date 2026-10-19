@@ -409,7 +409,7 @@ headlines (a death, a camp) and five deliberate carve-outs:
 - **Keybind indicators** (`'ESC BACK'`, a "1" in a slot's corner). They name an *action*, print
   whatever key it is bound to (`keyCap`, input.js) and wear the pad's button while one is in hand
   (`PAD_BIND`, ui/wheel.js), so a new one goes through `drawKeyPrompt`/`drawPadBind`.
-- **The settings, PLAYER, gear, character and shop panels'** labelled rows.
+- **The settings, PLAYER, hero, character and shop panels'** labelled rows.
 - **The instruments**: the practice room's (the dummy meter, the parkour lap clock, the archery
   round's readouts and their BEST / LAST plates) and the [stat sheet](#the-stat-ledger-your-sheet-as-a-notice). An instrument's whole job is comparing numbers.
 - **The [hover tooltip](#the-hover-tooltip)** (`tipAt`/`tipPos`/`drawTooltip`, ui/tooltip.js), because
@@ -529,7 +529,7 @@ empty world.
 | top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the hud strip, flush to the bottom: the stat panel, your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
-| centre, on G | the character panel: the live body, the stat ledger, the four gear pieces | `drawCharPanel` |
+| centre, on G | the character panel: the live body, the stat ledger, the six item slots | `drawCharPanel` |
 
 Every widget slides **its own size** away for the landing intro — the minimap up by
 `MM_R * 2 + 40`, the rail up by `RAIL_SLIDE`, the strip down by
@@ -613,8 +613,8 @@ panels, and the end screens own the frame outright. Each kind carries its own cu
 
 The answer to *what did that DO?* — the `stat ledger` block in
 [js/ui/notices.js](../../js/ui/notices.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
-a [notice](#notices-the-plates-under-the-minimap) kind. A hero level, a card drawn on C and a gear
-buy all rewrite the kit silently: the floater over the body names the *thing* taken and never the
+a [notice](#notices-the-plates-under-the-minimap) kind. A hero level, a card drawn on C and an
+item bought all rewrite the kit silently: the floater over the body names the *thing* taken and never the
 *number* it moved, so until this plate the only place to read the change was the character panel — a
 key press and a pause in the middle of a fight.
 
@@ -634,14 +634,13 @@ decay flash grammar, so the thing you are meant to read is still blinking when y
 The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a roost warning
 that wash *is* the arrival, but over seven rows it would drown the green ones that are the news,
 so the frame pulses and the rows do the blinking. **Green is better and red is worse**, by the row's
-own `dir` — the grammar the hero pop-up's hover deltas
-already teach.
+own `dir`.
 
 **One stats plate is ever up.** A second change inside the first one's life drops it and flies a
 fresh one, so the plate is what your sheet is *now* rather than a stack of what it has been; a row
 still inside its own hold comes along on the new plate until that hold runs out.
 
-It **watches the kit** rather than hooking the writers — `levelUp`, `buyGear`, `useCard` and a
+It **watches the kit** rather than hooking the writers — `levelUp`, `itemsChanged`, `useCard` and a
 bot's `resolveCardForBot` all land in it for free, a host's snapshot lands a client's the same way,
 and nothing that edits a kit has to remember to announce it. The test is the **printed** number,
 not the raw one: a change too small to move the row is one the plate cannot show, and a `+0` beside
@@ -656,7 +655,7 @@ about what a stat is, how it prints, or which way is up. The getters take `(kit,
 **hero level** is not in the kit, so a live body is passed and its level read; the hero pop-up
 prices a pre-match pick where every hero is level 1 and passes nothing (the kit says whose it is).
 
-**Anything outside the seven lights nothing** — a card or gear bonus to ice, the dodge, stealth,
+**Anything outside the seven lights nothing** — a card or item bonus to ice, the dodge, stealth,
 food, hunts, fells, `killHeal` or `ambushMul` moves no row.
 
 ### The hover tooltip
@@ -686,7 +685,7 @@ panel is painted at this frame, which is how the two modes are read without eyeb
 does, so what the panel describes and what a click would do can never be two different things.
 In `play`, in order: the merchant's counter (`shopHit` → `tipShop` — first, so a drag held over
 its sell well is priced rather than merely described), then a **live drag** (whatever is on the
-cursor describes itself, `tipCell`), the character panel's gear wells (`gearHit`), a rail chip
+cursor describes itself, `tipCell`), the character panel's item slots (`charItemHit`, answering `tipItem`), a rail chip
 (`railHit`), the shelf (`shelfHit`: the weapon, answering `tipCell`, or an item slot, answering
 `tipItem`), a
 floating buy plate (`abBuyHit`), the strip (`stripHit`: an ability well, a meal well,
@@ -708,9 +707,9 @@ full draw at that weight and the shots a press puts up, then the loaded bits, an
 built-in arrow is the shot or the load slows the draw), `tipBit` (damage, weight, speed, lifespan, flight —
 then only the flags that are *true*, because four rows of NO would drown the three that matter),
 `tipStack` (a meal), `tipGold`, `tipRail` (a rail
-chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipGear`, `tipClassAb` (a strip
+chip), `tipShop` (the counter's wells, js/ui/shop.js), `tipClassAb` (a strip
 ability well in play, or the lobby's stage wells with `cls` passed — the in-play cooldown
-and cast-hint rows only appear in play), and the shop's `tipItem` (an item slot on the shelf, a
+and cast-hint rows only appear in play), and the shop's `tipItem` (an item slot on the shelf or the character panel, a
 wiki ITEMS row). `tipCell(s)` picks the builder for whatever a bag cell or the weapon well
 holds.
 
@@ -801,7 +800,7 @@ ring colour while it runs). The strip and the panel are one widget: `hudStripRec
 **pair** on the view, `stripCap` fits the pair, and `drawHudScaled` bakes from the panel's left
 edge. `stripHit` answers it first (`statPanelHit`: `{kind: 'stat', key}` on a cell, the plate's
 `'frame'` off one), so a press on it never reaches the world, and a hover raises the tooltip's
-**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, what GEAR AND CARDS and ITEMS
+**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, what CARDS and ITEMS
 gave, the buff, then the total under a rule (the descriptor's `sum`).
 
 The **portrait** (`drawPortrait`) is a `PORT_SQ` square in the wells' own border (ink, then the
@@ -823,7 +822,7 @@ detailed 32px icon (`classAbIcon`, baked from `AB32` in js/sim/abilities.js) is 
 **sweep** round the well is its cooldown (against the level-cut `abCdOf`, not the table base —
 see below), and the key
 digit sits big at 2× in the bottom-left corner (the keybind-indicator carve-out). Along the top
-inner edge, fat gear-style **buy pips** on dark seats count the points in the key — one seat per
+inner edge, fat **buy pips** on dark seats count the points in the key — one seat per
 level it can hold, `AB_LV_MAX` of them, the first being the unlock
 ([gameplay.md](gameplay.md#class-abilities-keys-1-4)). A key with no point in it is **locked**,
 and the well says so in the meal button's own grammar: dark rim, the icon at `LOCK_DIM` (0.28),
@@ -1072,9 +1071,6 @@ There is no numbers row — the two meals and the gold are the
 under the pointer, **amber** when no cell is free, red on a refusal (`bagDenied()`, aged in
 `updateFx`, which also reddens and shakes the open drawer for `bagFlash` seconds).
 
-Gear is not in this widget at all — the four pieces live on
-[the character panel](#the-character-panel-g).
-
 A grid cell holding a tool or a bit wears that item's **tier plate** rather than the default well,
 so a find is read at a glance without a rarity word anywhere; a tool also counts its loaded bits
 as pips along the bottom, in the corner a stack number would have used.
@@ -1102,8 +1098,7 @@ as pips along the bottom, in the corner a stack number would have used.
 - **The grid does not stop the sim.** It is HUD, not an overlay — the same deal the
   [M map](gameplay.md#the-m-map-does-not-pause) takes, only smaller.
 
-The model behind the grid is in [gameplay.md](gameplay.md#inventory-and-the-backpack); the gear
-table and what a buy does are in [gameplay.md](gameplay.md#gear).
+The model behind the grid is in [gameplay.md](gameplay.md#inventory-and-the-backpack).
 
 ### The character panel (G)
 
@@ -1111,23 +1106,20 @@ WoW's C key at this game's size: **G raises one slab in the middle of the screen
 on live around it** — a light dim, no pause, and it swallows only its own clicks (`charHit` /
 `charClick`, asked first by the mousedown while it is up). G again, ESC or the drawn X closes it.
 
-LEFT: the **body as it stands right now** — the class sprite walking in place at 4×, wearing its
-bought gear bands in their level materials (`drawGearMarks`, the same pixels every rival reads on
-you in the world) with the held weapon beside it — under a header naming the sheet (the profile
+LEFT: the **body as it stands right now** — the class sprite walking in place at 4× with the held
+weapon beside it — under a header naming the sheet (the profile
 name in the team's mark, the class and hero level beside it). Below, the **stat ledger**:
-`STAT_ROWS` read off the **live kit** (`kitOf`) *and handed the player*, so gear levels, cards and
+`STAT_ROWS` read off the **live kit** (`kitOf`) *and handed the player*, so items, cards and
 the hero level's own growth are all already in the numbers — dotted leaders, label left,
 value right, the panels' text carve-out. It is the same table, the same numbers and the same
 verdict inks as the [sheet that flies into the notice lane](#the-stat-ledger-your-sheet-as-a-notice),
 opened out: the panel's job is reading a body at leisure, the plate's is catching what moved.
 
-RIGHT: the **four equipped pieces**, head to toe — each a 32 px icon well (`gearIcon32`) with its
-variant name inked in the piece's level material, gear's three buy pips, and the next level's
-price (coin + number, gold when affordable, slate when not). An affordable well pulses its rim
-gold; a **click on the well buys** through `input.cmd {kind:'gear', piece}`, so the panel and
-the bots share one entry point (`buyGear`). A maxed piece goes quiet behind a gold rim. Hovering
-a well raises `tipGear` (`gearHit` reads through `charHit`, so the tooltip, the cursor and the
-click can never disagree).
+RIGHT: the **six item slots**, one a row: a 28 px icon well (`itemIcon`) rimmed as a part or a
+finished item (the shelf's own rims), the item's name beside it and its passive under that. Hovering
+a slot raises the shop's item card (`tipItem`; `charItemHit` reads through `charHit`, so the
+tooltip and the click can never disagree). Nothing is bought here: items are bought and sold at a
+[counter](gameplay.md#the-merchants-counter).
 
 ## Overhead health bars
 
@@ -1490,7 +1482,7 @@ beat calls `endSkip()`, which jumps the relevant clock to the end.
   team banners, the three-tier dais and **the whole winning side** on it — every active player of the
   team at 3× in a mirrored line (`winStands`: the local player in the middle on the raised block,
   mates fanning out a rank at a time to the right and the left, each rank a beat after the last),
-  wearing the gear it finished in, its name over its head in the team's mark → a crown falling onto
+  its name over its head in the team's mark → a crown falling onto
   the local player's head, firing a confetti burst (`drawWinConfetti`) across the whole frame →
   four stat plates popping in with their numbers climbing from zero → the planks and the emote bar
   sliding up together. Each body throws a puff of snow (`drawSnowPuff`) on the beat it lands on the
@@ -1521,9 +1513,8 @@ are the shared passes: each takes the ending's timeline and its accent pair (`WI
 `DEF_ACCENT` frost), so one plate tallies both. A plate is icon-and-number and nothing else — the
 icon at 2× (the coin and the bow blitted at 16 px, the stamped glyphs at 2 px cells) beside the
 value at 2×, so the row reads at a glance with no label on it. `dy` on the planks slides them
-without moving the rects `deadHit()` tests, so a plank is only clickable once it has arrived. The
-kit is read off the bodies themselves (`drawGearMarks` at 3×); the fallen one draws none — those
-sit on the standing body plan (see `drawPlayer`) — and there is no kit strip.
+without moving the rects `deadHit()` tests, so a plank is only clickable once it has arrived. There
+is no kit strip.
 
 The art is procedural, in the title screen's idiom — `drawWinAurora` (three additive curtains of
 2 px strands across the top band), `drawWinRays` (stepped wedges walking out from behind the
@@ -1547,7 +1538,7 @@ it up in the air. It is drawn twice, once behind the body and once in front, so 
 **in** the snow rather than on a hill. `stampGrid(rows, pal, x, y, s, rim)` paints a char grid at
 any cell size, the shape the [js/sprites/](../../js/sprites/) grid files author in, for the crown, the arrow and
 the stat glyphs (`WIN_ICONS`) that never earned a baked sprite; the sprites the screens do use are
-the class bodies (`SPRITES.champ`), `SPRITES.gearIcons`, `itemBow` and `itemGold` — that last one a **live
+the class bodies (`SPRITES.champ`), `itemBow` and `itemGold` — that last one a **live
 canvas** whose frame `stepItemIcons()` stamps in each frame, like every item icon that moves
 ([sprites.md](sprites.md)).
 
@@ -1770,7 +1761,7 @@ both the pixel cursor and the browser-cursor fallback read from it. It returns
 - `kind` **arrow** — dead (off a plank), paused, map, and anywhere in the title/settings/wheel that isn't
   a widget; **hand** — over a live main-menu item (`menuHit()`, frozen planks stay an arrow), a death-overlay plank (`deadHit()`) or spectate arrow (`specHit()`), a settings widget (`settingsHit()`, shared with the click handler
   so hover and click can never disagree), a live wheel segment, or a control inside the backpack
-  widget (`gearHit()` / `bagHit()`) or an ability or meal well (`stripHit()`); a cell of the weapon shelf
+  widget (`bagHit()`) or an ability or meal well (`stripHit()`); a cell of the weapon shelf
   (`shelfHit()`) is read, not handled, and stays an arrow, as does the strip's gold plate (see [The HUD corners](#the-hud-corners)); **grab** — dragging a
   slider, **or carrying an item on the cursor** (`state.drag`, which outranks everything: the drag
   ghost *is* the cursor until it is put down); **hammer** — over the world while the build list
@@ -1889,7 +1880,7 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   ribbons, a vnoise ridge over a pine line, a lit snow floor, stateless snowfall off the clock,
   the cinematic band; fully opaque at rest, so the live ambient world is never this screen's
   backdrop), laid out **the way a League lobby is**, in the full view (no authored frame).
-  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'gear'`, `'map'`, `'ai'`, `'pickN'` (a hero on
+  `lobbyLayout()`/`lobbyHit()` (which answers `'play'`, `'hero'`, `'map'`, `'ai'`, `'pickN'` (a hero on
   the row) or null) are the rect source for both drawing and the mouse.
   **Two team panels stand glued to the screen's edges** (`LOBBY_PANEL_W` wide, `drawLobbyRosters`/
   `drawLobbyCard`): your side's five **frames** down the left, the rivals' down the right, in
@@ -1934,8 +1925,8 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   clear the row and its name, `HERO_ROW_H`) in your side's paint under a warm pool of light with
   a gold ring turning on the snow, and **no weapon and no name under it** — the row carries the
   hero's name, the roster frame yours. **Clicking the figure** (it lifts under the hand; `'hero'` in `lobbyHit`, the
-  body's own rect) opens the [hero pop-up](#the-hero-pop-up): gear and the
-  abilities. No gear shows on the lobby itself.
+  body's own rect) opens the [hero pop-up](#the-hero-pop-up): the stats and the
+  abilities.
 
   **Three pop-ups** open over the still-lit lobby, one at a time, on one shared ease
   (`menu.popT`, `menu.pop` naming the open one through its fade-out; `popOpen()`/`popHit()`/
@@ -1976,14 +1967,14 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
   white the instant it changes, sinking through its second),
   `SFX.countTick` ticking each one (a low bell), and **one rival frame turning face-up per
   tick** (`lobbyRevealed()`: the first on the press, the last on ONE, all of them once it has
-  run out, and none at rest — a white flash as each turns). Gear stays open through the count
-  (the figure still opens its pop-up, which shuts itself at zero); a hero pick or a map step is
+  run out, and none at rest — a white flash as each turns). The hero pop-up stays open through the count
+  (the figure still opens it, which shuts itself at zero); a hero pick or a map step is
   refused with `SFX.deny`; Esc/Backspace call it off (`cancelCount`) and, at rest, go back to
   the menu; **LOCK IN again skips the rest of it** — the second `pressPlay()` ends the count
   where zero would have (every frame face-up, the hero pop-up shut). <a id="lobby-lock-in"></a>At
   zero, or on that press, `lockIn()` — `menu.lockT`, then straight to `beginDrop()` (the eagle
   ride, below) — unless the picked shape is not the one this page grew: a shape is grown at boot
-  (`MAP_TYPE`), so `lockIn` then loads `?seed=<this seed>&map=<the pick>` with the gear picks in
+  (`MAP_TYPE`), so `lockIn` then loads `?seed=<this seed>&map=<the pick>` with the ability picks in
   `sessionStorage['softfall.drop']` (no profile holds them) and js/app/boot.js puts them back on and
   calls `beginDrop()` itself; the old page holds the lobby until the new one paints. No
   instructional text anywhere on the screen.
@@ -2015,34 +2006,23 @@ tag). The store behind it is [profile.js](architecture.md#profilejs): one name a
 <a id="the-hero-pop-up"></a>
 - **Hero pop-up** (`menu.screen = 'hero'`, off your figure on the lobby, easing over the
   still-lit lobby on `menu.popT`): a dim, then a floating panel in two columns
-  (`heroLayout()`/`heroScreenHit()`, which answers `{row}` a variant well, `{ab}` an ability
-  well, `'x'`, `'panel'` or null). LEFT is the **live preview**
-  (`drawGearPreview`): the chosen class walking in place at 4× wearing its four leather bands
-  (every pre-match pick is the free level 1) with the class weapon at hand, and under it the
-  **stat ledger** — the seven [hero stats](gameplay.md#hero-stats) at level 1 (`STAT_ROWS`,
-  handed no player here), real values computed by `heroPreviewKit` through the same `baseKit`
-  (js/sim/player.js) the sim's `refreshKit` uses, so the page can never lie. RIGHT is two **columns** of four wells, every well a button that
-  turns it: the **gear column** — one well a piece wearing the picked variant's 32px icon
-  (`drawGearWell`, `GEAR32`/`gearIcon32` baked on the ability icons' palette), gold-rimmed, a
-  click turning it to the piece's next variant (`pickGear`) — and the **ability column** — one
+  (`heroLayout()`/`heroScreenHit()`, which answers `{ab}` an ability well, `'x'`, `'panel'` or
+  null). LEFT is the **live preview** (`drawHeroPreview`): the chosen class walking in place at 4×
+  with the class weapon at hand, and under it the **stat ledger**: the seven
+  [hero stats](gameplay.md#hero-stats) at level 1 (`STAT_ROWS`, handed no player here), real
+  values off the same `baseKit` (js/sim/player.js) the sim's `refreshKit` starts from, so the page
+  can never lie. RIGHT is the **ability column**, four wells, each a button that turns it: one
   well a key wearing the picked option's `classAbIcon` with the key in the corner (the
   keybind-indicator carve-out), a click turning it to the key's next option (`pickAbility` →
   `player.abPick`; [the options on a key](gameplay.md#class-abilities-keys-1-4): the warrior's
   carry two, the hunter's one, which a click leaves as it is), and a hover raising the option's
-  card (`tipClassAb`, hooked in `tipAt`) — their growth is the match's own skill points, never
-  bought here. The hovered well's name prints once under the columns: what a click would turn
-  it to. **Hovering a gear well writes its deltas into the ledger** — the
-  current number steps aside dim and the would-be number (the NEXT variant's)
-  takes the edge in green (better) or red (worse), covering the whole swap — and a click
-  makes it so, the ledger stepping to the new kit as the equip plays. **Picking plays on the
-  preview body** (`pickGear` → `menu.gearFxT`/`gearFxSlot`): a white flash through the scratch
-  canvas, gold sparks, the changed piece's band lit. The keyboard walks `menu.grow` down the
-  gear column and the ability column: on a well (corner ticks) Enter, Space or Right turns it and
-  Left turns it back. ESC,
-  Backspace, the **X** in the corner, or a click anywhere off the panel
-  close it back to the lobby (`leaveHero`) — LOCK IN (and a running count) stays on the lobby
-  behind it. The ledger's labelled rows are the PLAYER-panel text carve-out:
-  comparing numbers is this panel's whole job. See [gameplay.md](gameplay.md#gear).
+  card (`tipClassAb`, hooked in `tipAt`); their growth is the match's own skill points, never
+  bought here. The hovered well's name prints once under the panel: what a click would turn it
+  to. The keyboard walks `menu.grow` down the four ability wells: on a well (corner ticks) Enter,
+  Space or Right turns it and Left turns it back. ESC, Backspace, the **X** in the corner, or a
+  click anywhere off the panel close it back to the lobby (`leaveHero`); LOCK IN (and a running
+  count) stays on the lobby behind it. The ledger's labelled rows are the PLAYER-panel text
+  carve-out: comparing numbers is this panel's whole job.
 
 - **Entrance**: `menu.t` staggers the logo and items in at boot.
 - **Menu exit**: `state.intro` counting down from `INTRO_T` (1.6 s) with `state.introLen = INTRO_T`

@@ -245,7 +245,7 @@ function drawSweepCover(x, y, w, h, frac, col, edge) {
 // pulses the rim in its own colour and drains a bar of it along the bottom
 // edge, and the well pops white the frame a cooldown comes home. The big
 // digit bottom-left is the key (the keybind-indicator carve-out). Along the
-// top inner edge, gear's buy pips - fat ones, this is the strip's main
+// top inner edge, buy pips - fat ones, this is the strip's main
 // progress readout - count the POINTS in the key, one seat per level; the ASK
 // lives off the well entirely, on the floating plate above it
 // (drawAbBuyPlate), so the well's rim carries combat states only.
@@ -295,7 +295,7 @@ function drawClassAbCell(i, now, on) {
     drawSweepCover(r.x + 1, r.y + 1, r.w - 2, r.h - 2,
       Math.min(1, cd / abCdOf(p, i)), CD_SWEEP, CD_EDGE);
   }
-  // the level, as gear's buy pips along the top inner edge - fat blocks with a
+  // the level, as buy pips along the top inner edge - fat blocks with a
   // dark seat, so the bought count reads from across the screen. ONE SEAT PER
   // POINT the key can hold (AB_LV_MAX of them, the first of which is the
   // unlock), so an empty row is a locked ability and the row filling up is the
@@ -325,7 +325,7 @@ function drawClassAbCell(i, now, on) {
   else drawPixelTextOutline(ctx, key, r.x + 3, r.y + r.h - 13, dimKey ? '#8c919a' : '#f4f7ff', '#191b1f', 2);
   if (red) ctx.restore();
 }
-// The floating buy plate over ability i - gear's bobbing chevron made a real
+// The floating buy plate over ability i - a bobbing chevron made a real
 // button, spending a SKILL POINT (never gold). Drawn only while a point is
 // in hand, the key has room, and the strip is HOME (the same abLvCanBuy +
 // hudHome gate abBuyHit answers with - the plate hangs in open screen, so the

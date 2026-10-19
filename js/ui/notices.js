@@ -46,8 +46,8 @@ const NOTE_TAILS = {
   down: ['..ahha..', '..ahha..', '..ahha..', 'aahhhhaa', '.ahhhha.', '..ahha..', '...aa...', '........'],
 };
 // ---- the stat ledger: your sheet, as a notice ------------------------------
-// THE ANSWER TO "WHAT DID THAT DO?". A hero level, a card drawn on C and a
-// gear buy all rewrite the kit silently - the floater over your head names the
+// THE ANSWER TO "WHAT DID THAT DO?". A hero level, a card drawn on C and an
+// item bought all rewrite the kit silently - the floater over your head names the
 // thing you TOOK and never the number it moved - so until this plate the only
 // place to read the change was the character panel, which is a key press and a
 // pause in the middle of a fight.
@@ -66,8 +66,7 @@ const NOTE_TAILS = {
 // printed in the leader's own space between them - and those rows PULSE for
 // STAT_PULSE seconds as the plate slides home, so the thing you are meant to
 // read is still blinking when your eyes arrive. Green is BETTER and red is
-// WORSE by the row's own `dir`, so a draw time that FELL reads green: the
-// grammar the hero pop-up's hover deltas already teach.
+// WORSE by the row's own `dir`, so a draw time that FELL reads green.
 //
 // ONE stats plate is ever up. A second change inside the first one's life
 // drops it and flies a fresh one - the news is what your sheet is NOW, not a
@@ -87,7 +86,7 @@ const STAT_PULSE = 1.3;  // s the moved rows blink for, arriving
 const STAT_W = 100;      // the longest label ('COOLDOWN SPEED'), its number, and a delta between them
 const STAT_LABEL = '#68769f', STAT_VAL = '#c3d0ee', STAT_LIT = '#f4f7ff';
 const STAT_DOT = '#2b3560';                       // the leader, where a delta is not standing in it
-const STAT_UP = '#8fe08a', STAT_DOWN = '#e0637a'; // better / worse: the hero pop-up's verdict inks
+const STAT_UP = '#8fe08a', STAT_DOWN = '#e0637a'; // better / worse: the verdict inks
 // The plate's height is every row of the sheet, so it follows STAT_ROWS
 // rather than repeating its length; NOTE_KIND.stats asks for it through a
 // getter, at draw time.
@@ -102,14 +101,14 @@ function raiseStatNote() {
   notices.push({ kind: 'stats', txt: '', good: null, t: 0 });
   while (notices.length > NOTE_MAX * 2) notices.shift();
 }
-// Watching the kit beats hooking the writers: levelUp, buyGear, useCard and a
+// Watching the kit beats hooking the writers: levelUp, buyItem, useCard and a
 // bot's resolveCardForBot all land here for free, a host's snapshot lands a
 // client's here the same way, and nothing that ever edits a kit has to
 // remember to announce it. Aged from updateFx (js/sim/sim.js) beside ageNotices.
 function updateStatLedger(dt) {
   for (let i = 0; i < statLit.length; i++) if (statLit[i] && (statLit[i].t -= dt) <= 0) statLit[i] = null;
   const p = player;
-  // the menus, the class screen's gear picks and the drop tour reseed in
+  // the menus, the lobby's picks and the drop tour reseed in
   // silence: nothing there is news, and a plate must not be waiting to fly in
   // the moment the HUD arrives
   if (!p || (state.mode !== 'play' && state.mode !== 'dead')) { statSeen = null; return; }
