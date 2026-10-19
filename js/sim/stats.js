@@ -62,19 +62,20 @@ function statBuffMul(p, key) {
 // the number the panel prints: the sheet with its buffs on
 function statShown(p, key) { return statOf(p, key) * statBuffMul(p, key); }
 // The panel's hover: where a number comes from, row by row. Each row is
-// [source, value, kind] - kind 'base', 'lv', 'add' (gear and cards) or 'buff'
+// [source, value, kind] - kind 'base', 'lv', 'add' (gear and cards, or items) or 'buff'
 // (a multiplier, printed as a percent) - and rows that add nothing are left out.
 function statParts(p, key) {
   const c = CLASSES[p.cls], add = kitOf(p).add, n = Math.max(0, p.level - 1), rows = [];
-  if (key === 'as') {
-    rows.push(['BASE', classAs(p.cls), 'base']);
-    if (n && c.grow.as) rows.push(['LEVEL ' + p.level, c.grow.as * n, 'lvp']);
-    if (add && add.as) rows.push(['BONUS', add.as, 'addp']);
-  } else {
-    rows.push(['BASE', c.base[key] || 0, 'base']);
-    if (n && c.grow[key]) rows.push(['LEVEL ' + p.level, c.grow[key] * n, 'lv']);
-    if (add && add[key]) rows.push(['BONUS', add[key], 'add']);
-  }
+  // the items' share of the bonus, folded into a spare kit the way refreshKit
+  // folds them; the rest of the bag is gear and cards
+  const ik = baseKit(p.cls);
+  if (p.items) itemMods(ik, p);
+  const it = ik.add[key] || 0, rest = ((add && add[key]) || 0) - it;
+  const kind = key === 'as' ? ['lvp', 'addp'] : ['lv', 'add'];
+  rows.push(['BASE', key === 'as' ? classAs(p.cls) : c.base[key] || 0, 'base']);
+  if (n && c.grow[key]) rows.push(['LEVEL ' + p.level, c.grow[key] * n, kind[0]]);
+  if (Math.abs(rest) > 1e-9) rows.push(['GEAR AND CARDS', rest, kind[1]]);
+  if (Math.abs(it) > 1e-9) rows.push(['ITEMS', it, kind[1]]);
   const b = statBuffMul(p, key);
   if (b !== 1) rows.push([(MONSTER[p.buffKind] && MONSTER[p.buffKind].buff) || 'BUFF', b - 1, 'buff']);
   return rows;

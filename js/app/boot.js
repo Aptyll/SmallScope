@@ -15,9 +15,6 @@ mendBinds(); // the profile's key binds made whole (input.js)
 // ...and the tech tree, which decides what this profile's world may drop.
 // Must run after PROFILE.load() and before initPlayers()/any swing.
 rebuildLootPool();
-// ...and the merchants' market, which primes three days of prices behind it
-// so the counter's graphs are graphs on day one (js/shop.js).
-initMarket();
 fitCanvas(); relayout(); // the window may have changed size while the scripts loaded (no resize listener yet); this places the UI for the fitted view
 SFX.setVolume(settings.volume);
 SFX.setMusicVolume(settings.musicVol);
@@ -264,29 +261,20 @@ window.DBG = {
   WIKI_PAGES, wikiLayout, wikiHit, wikiScrollBy, wikiSetTab, beginWiki, leaveWiki,
   beginNotes, openPageTab, pageTabsLayout, notesLayout,
   wipeTech: () => PROFILE.clearTech(),
-  // The merchant's counter (js/shop.js): the live market and its two goods,
-  // the rolled stock, the panel's geometry, and every trade without the
-  // pointer. `marketStep(n)` walks the prices n moves on so a driver can watch
-  // a spike without waiting three days for one, and `shopRestock()` turns the
-  // counter over on the spot - quietly, or `shopRestock(true)` with the plate
-  // and the two-beat cue a real turnover raises.
-  market, GOODS, MKT_STEP, MKT_HIST, MKT_DAYS, SHOP_RESTOCK, marketPrice, marketHist,
-  marketStep: (n) => { for (let i = 0; i < (n || 1); i++) updateMarket(MKT_STEP); return MKT_ORDER.map(marketPrice); },
-  shopRestock: (loud) => shopRestock(!loud), shopOffer, itemValue, cellValue, sellValue,
-  // the market's plates under the minimap: the live stack, where a slot lands,
-  // and a way to raise one without waiting for the walk to do it
+  // The merchant's counter (js/ui/shop.js) and the items it sells
+  // (js/sim/items.js): the catalogue, the panel's geometry, and every trade
+  // without the pointer
+  BUILD_ITEMS, ITEM_PARTS, ITEM_DONE, itemCost: (id, p) => itemCost(p || player, id),
+  buyItem: (id, p) => buyItem(p || player, id), sellItem: (slot, p) => sellItem(p || player, slot),
+  botNextItem, botItemBuy, FOOD_PRICE, foodPrice, itemValue, cellValue, sellValue,
+  // the news plates under the minimap: the live stack, where a slot lands,
+  // and a way to raise one
   notices, noteRect, NOTE_KIND, raiseNotice,
   merchNear: (p) => merchNear(p || player),
   openShop: (p) => openShop(merchNear(p || player)), closeShop, shopOpen,
   shopLayout, shopHit: (x, y) => shopHit(x == null ? mouse.x : x, y == null ? mouse.y : y),
-  shopBuy: (sec, i, p) => shopBuy(p || player, sec, i),
   shopSellCell: (i, p) => shopSellCell(p || player, i),
-  // the SELL ALL button's own press, and the two numbers it reads itself out
-  // with - the pack's worth over the counter and how many cells that is
-  shopSellAll: (p) => shopSellAll(p || player), packValue: (p) => packValue(p || player),
-  packCount: (p) => packCount(p || player),
-  shopTrade: (id, dir, p) => shopTrade(p || player, id, dir),
-  CARD_PRICE,
+  shopTrade: (good, dir, p) => shopTrade(p || player, good, dir),
   // what the pointer is on, as the panel would describe it (null = nothing)
   tipAt: (x, y) => tipAt(x == null ? mouse.x : x, y == null ? mouse.y : y),
   // and where this frame's panel is sitting, the rect drawTooltip paints -

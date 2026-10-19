@@ -589,7 +589,6 @@ function drawShelf(now) {
   shelfWell(t, cell && cell.type, !!hov && hov.kind === 'tool', red ? '#c2465a' : null);
   if (cell) {
     drawItemIcon(cell.type, t, t.y, null, 2);
-    forgeMark(t, t.y, toolLvl(cell)); // its forge level, top-left (js/ui/forge.js)
     if (p.nockT > 0) {
       drawSweepCover(t.x + 1, t.y + 1, t.w - 2, t.h - 2,
         Math.min(1, p.nockT / Math.max(0.01, toolCycle(p))), CD_SWEEP, CD_EDGE);

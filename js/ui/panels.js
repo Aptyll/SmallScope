@@ -24,8 +24,7 @@ const events = [];        // {txt, bg, edge, fg, t}, newest last
 // plate takes the team's dark coat, not its bright mark: the ink is a pale
 // per-player tint, and a bright plate over snow leaves it nothing to sit on.
 // `o` overrides that palette for a line no player owns but the world still
-// wants coloured - the market's own headlines, green on a spike and red on a
-// crash (marketNews, js/shop.js).
+// wants coloured.
 function logEvent(txt, p, o) {
   o = o || {};
   events.push({

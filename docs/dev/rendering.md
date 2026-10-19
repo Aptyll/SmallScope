@@ -410,8 +410,7 @@ headlines (a death, a camp) and five deliberate carve-outs:
   (`PAD_BIND`, ui/wheel.js), so a new one goes through `drawKeyPrompt`/`drawPadBind`.
 - **The settings, PLAYER, gear, character and shop panels'** labelled rows.
 - **The instruments**: the practice room's (the dummy meter, the parkour lap clock, the archery
-  round's readouts and their BEST / LAST plates), the merchant's two price graphs with their
-  high/low, and the [stat sheet](#the-stat-ledger-your-sheet-as-a-notice). An instrument's whole job is comparing numbers.
+  round's readouts and their BEST / LAST plates) and the [stat sheet](#the-stat-ledger-your-sheet-as-a-notice). An instrument's whole job is comparing numbers.
 - **The [hover tooltip](#the-hover-tooltip)** (`tipAt`/`tipPos`/`drawTooltip`, ui/tooltip.js), because
   comparing a tool's rate of fire against a bit's weight is comparing numbers, and no shape does
   that. It is a carve-out, not a licence: the well still has to read at a glance without it.
@@ -434,12 +433,9 @@ it is tabbed, and each page lays its rows out (and scrolls them) through `settin
 so a recenter never requires a re-bake — keep any new bake-side label and its per-frame widget
 expressed the same way.
 
-The [trading post](gameplay.md#the-panel) bakes its chrome the same way but **lazily and per
-team**: `shopChromeCv(ti)` draws the timber frame, its iron corner brackets, the team-striped
-awning with its snow crest, scalloped hem and icicles, and the counter edge into one canvas the
-size of the slab, clears the middle out of it, and caches it under the team index — so the live
-pass blits one image and then owns every well on top of it. Its size is constant (`SHOP_W` ×
-`SHOP_H`), which is why it needs no rebuild on a resize; only the panel's *position* moves.
+The [counter](gameplay.md#the-panel) bakes nothing: it draws on the HUD's own graphite plate
+(`drawHudFrame`, js/ui/strip.js) every frame at a constant `SHOP_W` × `SHOP_H`, and only its
+*position* moves on a resize (`shopLayout`).
 
 The map panel's chart is a `MAP_W`-square slot **fitted to the view** (`fitMapSlab()`, below:
 96 to `CHART_MAX` 232 px), so every tile-space position drawn on the chart (the camera rect,
@@ -526,8 +522,8 @@ empty world.
 | Where | What | Function |
 | --- | --- | --- |
 | top left | the **weapon shelf**: the tool in hand and its bit cells, shots left and fittings right, always up — and under the weapon well the small tab of the **inventory drawer**, shut until B or the tab | `drawShelf`, `drawBag` |
-| top right, under the disc | the **notice lane**: the market's plates, the roost warning, and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
-| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the market's plates under that | `renderMinimap`, `renderNotices` |
+| top right, under the disc | the **notice lane**: the roost warning and the **stat sheet** that flies in when a number on yours moves | `renderNotices` |
+| top right | the minimap and its day/night ring — the black outline sits `MM_GAP` (4 px) off the top edge and the right edge alike (`applyMinimapSize`, core.js) — the clock centred under it while no team rail is up (`mmClockShown`), and the notice plates under that | `renderMinimap`, `renderNotices` |
 | top centre | the **team rail**: one thin plate, every other player in the match as a 12px emblem over a hp bar in the side's colour, your teammates left (never you: your own hp is the strip's) and the rival right, the match clock over the two kill totals between them — and under it, the camp plate, the DAY headline and the spectate control (`headlineY`) | `drawRailScaled` |
 | beside the pointer, or bottom left | the hover tooltip, wherever the TOOLTIP row puts it | `tipPos`, `drawTooltip` |
 | bottom centre | the hud strip, flush to the bottom: the stat panel, your portrait (xp round its edge, the level on its corner), the four ability wells over the health and stamina bars, the two meal wells over the gold | `drawHudStrip` |
@@ -541,15 +537,11 @@ tool cell would leave a longbow's row parked over the cinematic.
 
 ### Notices: the plates under the minimap
 
-The HUD's corner for news from where you are NOT — the `notices` banner in [js/ui/shop.js](../../js/ui/shop.js),
-raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. A price
-spike, a price crash, a counter turning over and **your roost being struck while you are elsewhere**
-each raise one, *as well as* the line they already
-put in the [event log](#scoreboard-and-event-log): the log is the record of what happened to
-somebody, and a price is not that — it is the state of the world your bag is about to be sold
-into, so it belongs where the clock already is. The market is this corner's first and biggest
-customer, which is why the block lives in shop.js, but the plate is not the market's: the
-`roost` kind is the same card with a different mark on it.
+The HUD's corner for news from where you are NOT: the `notices` banner in [js/ui/notices.js](../../js/ui/notices.js),
+raised by `raiseNotice(kind, txt, good)` and drawn by `renderNotices()` from `renderUI`. Two kinds
+use it: **your roost being struck while you are elsewhere** (`roost`, raised from js/sim/eagle.js
+*as well as* the line it puts in the [event log](#scoreboard-and-event-log), which is not drawn),
+and your own [stat sheet](#the-stat-ledger-your-sheet-as-a-notice) moving (`stats`).
 
 **One shape, read left to right, with no sentence in it**: the **mark** of what the news is, then
 what it is about, then one 8×8 glyph carrying which way — an arrow up or an arrow down. That row is
@@ -563,14 +555,7 @@ in the lane is special-cased for the tall one. `noteLaneFloor()` is where the la
 of the hud strip's xp numbers at the strip's size (`hudSc`) — and a plate that would cross it is not
 drawn, which on a short view drops the **oldest** news and keeps the newest.
 
-The mark is the kind's own (`NOTE_KIND[k].mark`, a `SPRITES` key or null), 16×16 in a sunken well:
-the merchant's **gold sack** (`SPRITES.goldSack`, ten frames turning over on `NOTE_FR` (0.11 s) the
-whole time a **price** plate is up, so the coin keeps catching the light) and a still wooden
-**crate** (`SPRITES.crate`) when the counter itself has turned over — a sack of coin is what a
-price is worth, a crate is what a delivery *is*. A stock plate has **no tail**: its crate has
-already said which kind of news this is, so the headline takes that 8 px instead.
-
-A kind may name a **stamped** mark instead of a blitted one — `NOTE_KIND[k].glyph` into
+The mark sits in a sunken well at the plate's left. It is **stamped**, not blitted: `NOTE_KIND[k].glyph` into
 `NOTE_MARKS`, one pixel grid per glyph (16 wide, in the tails' own grid language) so the draw
 never grows an `if` per kind. `renderNotices` stamps it with `stampGrid` (js/ui/screens.js),
 filling `h` with your side's ink through `skin(player.team)` over a dark rim — the reason to
@@ -579,16 +564,15 @@ is `bird`: a soaring raptor from below (head, swept wings, tail), **not** the ma
 diamond — `drawMapBird(g, x, y, col, rim)` is one 7 px size only, and blown up to 2× it reads
 as a medical plus beside the arrow tail on the same plate. Its text is the **nerve the bird has
 left**, as a percent, under the falling tail — the plate says what happened where the cue
-(`SFX.alarm`) only turned your head, which is the market's own split between a ding and a number.
+(`SFX.alarm`) only turned your head: a cue for the ear, a number for the eye.
 
-What it is about is the good's own item icon and the price it landed on, **sized together** —
-`runW(s)` measures the pair at a scale and the icon is drawn at the text's own, so a 2× price
-carries a 16×16 icon and both drop to 1× together if a headline is too long for 2×. An 8 px icon
-against a 10 px number reads as a footnote to it, and these two are one reading. `NEW STOCK` names
-no good, so it is text alone.
+What it is about is the number, with an item's own icon before it when the notice's `good` names
+one, **sized together**: `runW(s)` measures the pair at a scale and the icon is drawn at the text's
+own, so both drop from 2× to 1× together if a headline is too long for 2×. The roost plate names no
+good, so it is text alone.
 
-The plate is a fixed `NOTE_W`×`NOTE_H` (78×22) card — 78 is what the content well needs, 16 px of
-icon and 3 of gap and the 22 of `60G` at 2× over the 30 the mark's well and the tail's gutter take
+The plate is a fixed `NOTE_W`×`NOTE_H` (78×22) card — 78 is what the content well needs, the 22 of `60%` at 2× over the 30 the mark's well and the
+tail's gutter take
 — and `noteCard` is the whole
 of what makes it read as a stamped tag rather than as a rectangle: a shadow offset under it,
 **corners notched** off (`noteBox`, which draws the shape as three bands), a lit top edge and a
@@ -597,8 +581,8 @@ accent (`noteFrame`), a sunken well behind the mark, and the kind's ink **draini
 as the plate's own remaining life — the only place its 8 s is written down, and it is written as a
 length. Text is the `drawPixelTextShadow` font, because the whole plate fades and an outline
 stamped under a `globalAlpha` goes blotchy ([text over the world](#text-over-the-world)). `NOTE_KIND`
-holds the three palettes and is handed straight to `logEvent` as its colour override, so the plate
-and the feed line can never disagree about which way a price went.
+holds the palettes, and the roost's is handed straight to `logEvent` as its colour override, so the
+plate and the feed line can never disagree.
 
 `noteRect(k)` places slot `k` off `MM_*` — right edge flush with the disc's own, `NOTE_GAP` (18 px)
 under its rim, so the column follows the minimap wherever the size dial and the view put it and
@@ -619,26 +603,25 @@ the last `NOTE_OUT` (1.2 s), at most `NOTE_MAX` (3) on screen. The timings are l
 this is news you are meant to look *up* for, and a third-of-a-second slide is over before a glance
 can land on it.
 
-They draw **above the counter and the character sheet** (a price that moved while you were
-standing at the shop must not arrive behind the panel it is about) and stay up while you are
-down, like the feed — the market does not stop for a death. They duck under the map and settings
+They draw **above the counter and the character sheet** (news must never arrive behind a panel)
+and stay up while you are down, like the feed. They duck under the map and settings
 panels, and the end screens own the frame outright. Each kind carries its own cue:
 [audio](gameplay.md#audio).
 
 ### The stat ledger: your sheet, as a notice
 
 The answer to *what did that DO?* — the `stat ledger` block in
-[js/ui/shop.js](../../js/ui/shop.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
+[js/ui/notices.js](../../js/ui/notices.js), watched by `updateStatLedger(dt)` from `updateFx` and drawn as
 a [notice](#notices-the-plates-under-the-minimap) kind. A hero level, a card drawn on C and a gear
 buy all rewrite the kit silently: the floater over the body names the *thing* taken and never the
 *number* it moved, so until this plate the only place to read the change was the character panel — a
 key press and a pause in the middle of a fight.
 
 **It does not stand on the HUD, it arrives.** A change flies the sheet in off the right edge into
-the lane under the disc on the same ease, the same white frame pulse and the same lane as a price
+the lane under the disc on the same ease, the same white frame pulse and the same lane as a roost
 plate, holds `NOTE_LIFE` (8 s), and rides back out the way it came — and it **shoves** whatever
-plate was in the lane down under it exactly as a price plate does. When nothing has changed there is
-nothing on screen at all. The only thing about it that is not a price plate is its **size**
+plate was in the lane down under it exactly as a roost plate does. When nothing has changed there is
+nothing on screen at all. The only thing about it that is not a roost plate is its **size**
 (`STAT_W` 100 wide, `statPlateH()` tall), and every plate is right-aligned on the disc's own right
 edge, so the wider one still reads as the same lane.
 
@@ -647,7 +630,7 @@ white, a wash across the row in its verdict colour, and the delta printed in the
 between them — `+9`, `-15`, `+8%`, `-0.30S`, the magnitude in that row's own format behind the sign
 it moved in. Those rows **pulse** for `STAT_PULSE` (1.3 s) on the card's own three-pulses-under-a-
 decay flash grammar, so the thing you are meant to read is still blinking when your eyes arrive.
-The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a price
+The stats kind sets `flash: 0` so the card's white wash never fires: on a plate the size of a roost warning
 that wash *is* the arrival, but over seven rows it would drown the green ones that are the news,
 so the frame pulses and the rows do the blinking. **Green is better and red is worse**, by the row's
 own `dir` — the grammar the hero pop-up's hover deltas
@@ -718,7 +701,7 @@ leader between them — the PLAYER panel's ledger, which is where that pattern a
 free lines under those. The panel sizes itself to its widest line (capped at `TIP_MAXW`), so a
 short tooltip is a short panel.
 
-The builders, one per kind: `tipTool` (forged damage, rate of fire, bit slots, tensile, loaded weight, the
+The builders, one per kind: `tipTool` (rate of fire, bit slots, tensile, loaded weight, the
 full draw at that weight and the shots a press puts up, then the loaded bits, and a line when the
 built-in arrow is the shot or the load slows the draw), `tipBit` (damage, weight, speed, lifespan, flight —
 then only the flags that are *true*, because four rows of NO would drown the three that matter),
@@ -818,7 +801,7 @@ ring colour while it runs). The strip and the panel are one widget: `hudStripRec
 **pair** on the view, `stripCap` fits the pair, and `drawHudScaled` bakes from the panel's left
 edge. `stripHit` answers it first (`statPanelHit`: `{kind: 'stat', key}` on a cell, the plate's
 `'frame'` off one), so a press on it never reaches the world, and a hover raises the tooltip's
-**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, the BONUS gear and cards
+**breakdown** (`tipStat`, off `statParts`): BASE, the LEVEL's growth, what GEAR AND CARDS and ITEMS
 gave, the buff, then the total under a rule (the descriptor's `sum`).
 
 The **portrait** (`drawPortrait`) is a `PORT_SQ` square in the wells' own border (ink, then the
@@ -977,7 +960,7 @@ solid dark ground (`o.bg`, `AB_BG` by default). **The palette is neutral graphit
 cold steel line and the navy grounds it replaced pulled the eye off the game, so the frame is the
 quietest thing on screen and the icons, the sides' colours and the gold carry the contrast. The
 strip, the shelf, the drawer, the rail, the build list, the practice bar and the tooltips share it;
-the M map and the minimap wear it too (0.459); the menus and the shop are still navy. The outline holds the plate apart from bright
+the M map and the minimap wear it too (0.459), and the shop (0.484); the menus are still navy. The outline holds the plate apart from bright
 snow at noon, the faint line finishes its edge against the forest at night, and the ground keeps every
 well readable over both. No bevel, no snow, no ornament. The top corners are cut two pixels and
 both lines follow the cuts; the corners that meet a screen edge stay square (a notch of world
@@ -1060,8 +1043,7 @@ plate never falls through to the world (`overHud`, and the right button's wheel 
 - the one *event*: a **red band all the way round and the pack's own 1px shake** for `toolFlash`
   seconds when a bit has nowhere to go in the tool
   ([one click sends it](gameplay.md#the-weapon-shelf)) — `toolDenied()`, the twin of `bagDenied()`
-  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language;
-- the forge's `+N` in its corner.
+  in the same red and aged in `updateFx` beside it, so the two containers refuse in one language.
 
 Two marks, no words, all off `toolPlan`:
 

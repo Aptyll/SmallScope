@@ -79,7 +79,7 @@ function botNearSide(p, x, y) {
   return false;
 }
 function botToolOf(c) {
-  return c ? { type: c.type, bits: c.bits.map((b) => (b ? (b.type || b) : null)), lvl: toolLvl(c) } : null;
+  return c ? { type: c.type, bits: c.bits.map((b) => (b ? (b.type || b) : null)) } : null;
 }
 // a body's hero stats as the panel reads them, buffs on, keyed as STATS
 function botStats(p) { const o = {}; for (const s of STATS) o[s.key] = Math.round(statShown(p, s.key) * 100) / 100; return o; }
@@ -101,6 +101,7 @@ function botObserve(p) {
     charging: !!p.charging, chargeT: botR(p.chargeT),
     nav: botRt.get(p.id) ? botRt.get(p.id).nav : null,
     lastCmd: p.lastCmd ? Object.assign({}, p.lastCmd) : null,
+    items: p.items.slice(), // ITEM_SLOTS slots, an item id or null each (js/sim/items.js)
     atShop: !!merchNear(p),
     orca: botR(orcaLine(p)), // the line over the head (js/sim/orca.js): s left, -1 when it is not after you
   };
@@ -154,20 +155,19 @@ function botObserve(p) {
   for (const a of arrows) if (near(a.x, a.y)) shots.push({ x: botR(a.x), y: botR(a.y), vx: botR(a.vx), vy: botR(a.vy), team: a.team });
   const flags = [];
   for (const q of players) if (q.active && q.team === p.team && q.flag) flags.push({ owner: q.id, type: q.flag.type, tx: q.flag.tx, ty: q.flag.ty });
-  // the merchants are as plain to see as their birds; the counter's stock
-  // only from the counter, where a hand would read it off the shelf
+  // the merchants are as plain to see as their birds; the catalogue only
+  // from the counter, where a hand would read it off the shelf
   const merchants = [];
   for (const b of robots) {
     if (!b.merchant || b.dead) continue;
     merchants.push({ team: b.team, x: botR(b.x), y: botR(b.y), stall: stallUp(b.stall) ? { tx: b.stall.tx, ty: b.stall.ty } : null });
   }
+  // the whole catalogue is always on sale, so the counter lists every item
+  // at what it would cost THIS seat now (the parts it holds already paid)
   let shop = null;
-  if (me.atShop && market.stock) {
+  if (me.atShop) {
     shop = [];
-    for (const sec in market.stock) market.stock[sec].forEach((_, i) => {
-      const o = shopOffer(sec, i);
-      if (o) shop.push({ sec, i, kind: o.kind, id: o.id, price: o.price });
-    });
+    for (const id in BUILD_ITEMS) shop.push({ id, part: isPart(id), price: itemCost(p, id).gold, from: (BUILD_ITEMS[id].from || []).slice() });
   }
   const r = botRt.get(p.id);
   // the kill feed every screen shows: each death since this seat's last think

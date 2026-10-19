@@ -518,18 +518,9 @@ function dragDropSlot(i) {
 // away - so a fumbled release inside the frame costs nothing and a deliberate
 // drag out onto the snow is the one way to get rid of a tool.
 function dragDrop(mx, my) {
-  // the counter first: its sell STRIP is the one place a release turns an item
-  // into gold, and the rest of the slab sends it home. Both halves of the
-  // strip take the release - the well you aim at and the SELL ALL button at
-  // its end - because the strip is one full-width target with an item on the
-  // cursor and only becomes two controls once your hand is empty.
-  const sp = shopHit(mx, my);
-  if (sp) {
-    if (sp.kind === 'sell' || sp.kind === 'sellAll') shopDropSell();
-    else if (sp.kind === 'fWeapon' || sp.kind === 'fOre') forgeDrop(sp); // the bench (js/ui/forge.js)
-    else dragReturn();
-    return;
-  }
+  // the counter first: a release anywhere on it is a sale - the one place a
+  // release turns an item into gold (shopDropSell, js/ui/shop.js)
+  if (shopHit(mx, my)) { shopDropSell(); return; }
   const fh = shelfHit(mx, my);
   if (fh) {
     if (fh.kind === 'bit') dragDropBit(SHELF_SLOT, fh.i);
@@ -570,8 +561,6 @@ function dragDrop(mx, my) {
 function sendBagCell(i) {
   const s = player.bag[i];
   if (!s) return false;
-  // with the counter's FORGE face up, a weapon or an ore goes onto the bench
-  if (forgeTabOpen() && (isToolCell(s) || isOre(s.type))) return forgePut(s, 'bag', i, null);
   // a consumable (ITEMS[type].use): the click is the use, refusals and all
   if (ITEMS[s.type] && ITEMS[s.type].use) { ITEMS[s.type].use(); return true; }
   if (isToolCell(s)) {
@@ -609,7 +598,6 @@ function sendBitCell(s, i) {
 function sendSlot(i) {
   const cell = player.tools[i];
   if (!cell) return false;
-  if (forgeTabOpen()) return forgePut(cell, 'tool', i, null); // onto the bench, not into the pack
   if (!bagPut(player, cell)) { bagDenied(); return true; } // put it down before lifting it
   slotPut(player, i, null);
   hudFx('place', 'slot', i);
