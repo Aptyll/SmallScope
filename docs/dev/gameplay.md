@@ -959,9 +959,10 @@ typed twice, so a retune can never leave the wiki lying.
   finished the way the shop rims it, its name, and STATS / PASSIVE / PRICE (`WIKI_ITEM_COLS`,
   `wikiItemStats`) read off `BUILD_ITEMS`, `ITEM_STATS` and `ITEM_PASSIVES`. A hover raises the
   shop's own item card (`tipItem`, js/ui/shop.js).
-- **WORLD** — the one page with no numbers on it: the valley written down. Ten entries in the
+- **WORLD** — the one page with no numbers on it: the valley written down. Eleven entries in the
   order a scout meets them — SOFTFALL, THE WORKS, THE CLAIM, THE EAGLES, THE SCOUTS, THE
-  COUNTER, THE MACHINES, THE ROAD, THE WOLVES, GOLD (`WIKI_WORLD`) — each a figure on its mound
+  COUNTER, THE MACHINES, THE ROAD, THE TOWERS (a whole loaded tower, `towerFigure`, js/draw/towers.js),
+  THE WOLVES, GOLD (`WIKI_WORLD`) — each a figure on its mound
   in the side you play beside a short paragraph, between a two-line opening and a one-line
   close. Every sentence is either something a match does or the valley's reason for it, and the
   sentences live in that table alone; the premise, the fixed words and the voice they are
@@ -1499,8 +1500,8 @@ the answer; a warrior bot has no burrow to decide.
 ## Fog of war
 
 A side sees a circle round each of its heroes (`FOG_HERO`, 10 tiles), wave soldiers
-(`FOG_SOLDIER`, 7) and finished turrets (`FOG_TURRET`, 8) — towers will join `sightSources` when they
-exist. Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
+(`FOG_SOLDIER`, 7), finished turrets (`FOG_TURRET`, 8) and road towers from their foot (`FOG_TOWER`,
+8.5, past their reach). Everything else is dimmed, never black: terrain, buildings and both eagles stay, but a rival
 player, a rival bot and every creature outside the side's sight are not there for it — not drawn on
 the screen, the minimap or the M map, and not seen by its bots. Code: js/sim/fog.js (the rule),
 js/draw/fog.js (the picture).
@@ -2925,18 +2926,20 @@ waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs
    `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtEagle` — ahead of any
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
-   wall across the road, a rival bay): `hurtStruct` through the same `robotStrike`;
-4. the **march**: first **the zipline** (`soldierBoard`): a cable of its own lane within `SOLDIER_ZIP_REACH`
+   wall across the road, a rival bay), or a rival [road tower](#road-towers) inside
+   `SOLDIER_TOWER_R` (160 px, `towerNear`), which a wave stops to bring down before it marches
+   on: `hurtStruct` through the same `robotStrike`;
+4. the **march**: first **the zipline** (`soldierBoard`): its own side's cable of its own lane within `SOLDIER_ZIP_REACH`
    (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
    soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
-   toward that end: its own side's cable out to the front, the rival's in to their roost. On
+   toward that end, out to the front. Never the rival's: it always ends under a standing rival
+   [road tower](#road-towers), and riding it in would skip that tower. On
    the cable the brain is off (the ride branch in `updateRobot`: `zipRide`, no swing), so a
    rival who meets it there crashes with it ([the zipline](#the-zipline)). Off it, at the end or
    knocked off, `soldierRejoin` reads the route again from where it stands (the leg it is
    nearest). Else the next waypoint (`SOLDIER_WP_R` to count it reached; one `navStep` cannot
    route to is *skipped*, never waited on, so a column never stands on a blocked tile), then the
-   roost through its lane. Seed 42: a soldier reaches the rival roost in about 34 s by the
-   cables, 83 s on foot.
+   roost through its lane, stopping at every rival road tower standing on the way.
 
 It is allowed to fight and nothing else — no tree tempts it, no flag recalls it. Two waves
 meeting on the road therefore grind each other down (they are rival units to each other), which
@@ -2968,6 +2971,30 @@ within `COIN_MISS_R` of the watched body (`drawPops`, js/draw/pops.js). A rival'
 the fog is not drawn. The wolf den is the jungle: four wolves at 16 each and back `repop` (75 s)
 after the last dies, its clock on the den and on both maps ([world.md](world.md#runtime)).
 Bots farm through two roles, the LANER and the JUNGLER ([multiplayer.md](multiplayer.md#bots)).
+
+### Road towers
+
+The `road towers` banner (js/sim/towers.js). Every zipline has two `STRUCTS.tower` (ROAD TOWER: 3x2,
+700 hp, `fixed`, so nobody upgrades, repairs or wrecks one for a refund) beside it, placed at boot
+([the zipline](world.md#the-zipline)); the cable runs only to the furthest one standing.
+`updateTower` (called from `updateStructures`) is one gun on a turntable:
+
+- **What it shoots** (`towerMark`): a rival scout inside `TOWER_RANGE` (112 px from the foot)
+  who hit one of its side's scouts in the ring within `TOWER_CALL_T` (the latest such, read off
+  `foeHits`); else the mark it already holds; else the nearest rival bot; else the nearest rival
+  scout. A scout is only a mark while `seenAt` says the side sees them.
+- **The turn and the wind**: the gun turns at `TOWER_TRAVERSE`, and once inside `TOWER_LOCK` of
+  the mark it winds for `TOWER_WIND` (0.7 s) before it looses; then `TOWER_RELOAD` (1.6 s).
+  While it winds on a scout, `drawTowerFx` (js/draw/towers.js) runs a dashed line on the snow
+  from the foot to them and a ring at their feet, brightening as the string comes back.
+- **The bolt**: `TOWER_BOLT_T` in the air, then `hurtUnit` (`cause: 'tower'`, a short knockback).
+  A bot takes `TOWER_DMG_BOT` (15). A scout takes `TOWER_DMG` (24), and each bolt in a row into
+  the same scout adds `TOWER_HEAT` of that, up to three times the first. The spent bolt stands in
+  the snow at the mark's feet for `TOWER_PIN_T`.
+
+A wave turns on a tower inside `SOLDIER_TOWER_R` ([the waves](#soldiers-the-waves)), and a
+pushing bot only walks in to hit one while its own wave stands in the ring (`aiLaneFort`,
+`towerTanked`, [bots](multiplayer.md#bots)). Its eye joins the side's fog sight (`FOG_TOWER`).
 
 ### The merchant
 

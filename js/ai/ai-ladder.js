@@ -560,7 +560,9 @@ function aiPushRung(k) {
     // first with E (STRUCT_HIT_DMG a swing, 10 of it once STRUCT_DR has taken
     // its cut), exactly as a hand would, since
     // a bot standing off the bird under bolt fire never gets a draw finished
-    const tur = aiInLane(p, e) ? nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; }) : null;
+    // ...and a rival ROAD TOWER its own wave stands under (aiLaneFort, ai.js):
+    // the wave takes the bolts, so the push stops to bring the tower down with it
+    const tur = aiLaneFort(p, e);
     // the wave is the push: off the rival's lane, a pusher walks with the
     // head of its side's column rather than ahead of it alone
     // (a relentless side's grouping is the pack below, not the column's pace;
@@ -608,14 +610,14 @@ function aiPushRung(k) {
         }
       }
     }
-    if (!aiInLane(p, e)) {
+    if (!aiInLane(p, e) && !tur) {
       if (aiToRoost(p, e, steerTo, 5) >= 0) { aimAt(e.x, e.y); inp.fire = false; ai.tgt = null; return true; }
       ai.pushCd = 10;
     } else if (tur) {
-      const st = structOf(tur), tx = st.tx * TILE + 8, ty = st.ty * TILE + 8;
+      const tx = tur.tx * TILE + 8, ty = tur.ty * TILE + 8; // the building's tile nearest the bot (a tower's is one of six)
       aimAt(tx, ty);
       const ptx = Math.floor(p.x / TILE), pty = Math.floor(p.y / TILE);
-      if (Math.max(Math.abs(st.tx - ptx), Math.abs(st.ty - pty)) <= WORK_REACH) { inp.work = true; inp.fire = false; ai.tgt = null; return true; }
+      if (Math.max(Math.abs(tur.tx - ptx), Math.abs(tur.ty - pty)) <= WORK_REACH) { inp.work = true; inp.fire = false; ai.tgt = null; return true; }
       if (steerTo(tx, ty, WORK_REACH, AI_ROOST_BUDGET) >= 0) { inp.fire = false; ai.tgt = null; return true; }
       ai.pushCd = 10;
     } else if (p.cls === 1) {

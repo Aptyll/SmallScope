@@ -91,6 +91,7 @@ function zipLitLine() {
   return player.zipWalk && !player.dead ? zips[player.zipWalkL] || null : null;
 }
 function drawZips(ex, ey, now) {
+  towersSync(); // a client never steps the sim: the cable is cut to the towers it was sent (js/sim/towers.js)
   const hot = zipLitLine();
   for (const z of zips) {
     if (!z) continue;

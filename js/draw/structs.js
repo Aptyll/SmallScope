@@ -203,6 +203,7 @@ function drawSlungRock(a, ex, ey) {
 }
 // The aim arc and the release, over the world so they read against the base.
 function drawTurretFx(ex, ey, now) {
+  drawTowerFx(ex, ey, now); // the road towers' aim lines and bolts, in the same layer (js/draw/towers.js)
   for (const o of structures) {
     if (o.type !== 'turret' || o.building) continue;
     const tm = TEAMS[skin(o.team === undefined ? 0 : o.team)];

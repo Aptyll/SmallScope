@@ -142,6 +142,16 @@ function aiInLane(p, e) {
   const perp = Math.abs(px * vy - py * vx) / Math.sqrt(L2);
   return (t >= -0.1 && t <= 1.08 && perp < 40) || Math.hypot(px, py) < 90;
 }
+// THE FORT IN A PUSHER'S WAY, as the tile of it nearest the bot (a part of a
+// big building carries its own tx/ty), or null: in the rival's lane, a
+// turret its defenders raised; anywhere, a rival road tower (towerNear,
+// js/sim/towers.js) with the bot's own wave under it to take the bolts
+// (towerTanked) - a bot never walks in under a tower alone
+function aiLaneFort(p, e) {
+  if (aiInLane(p, e)) return nearestObj(p.x, p.y, 4, (o) => { const st = structOf(o); return st.type === 'turret' && st.team === e.team && !st.building; });
+  const t = towerNear(p.team, p.x, p.y, TOWER_RANGE + 24);
+  return t && towerTanked(t, p.team) ? nearestObj(p.x, p.y, 9, (o) => structOf(o) === t) : null;
+}
 // The next turret job for a guard of the bird e, or null: { tx, ty, n } to
 // raise one more of the side's AI_FORT_N along the road home - pairs either side
 // of its axis, out from the bird, on a tile with three open sides so the

@@ -204,7 +204,14 @@ merchant rebuilds it. **The walk out is not the fight, so a zipline compresses i
 has a cable down each lane, from beside its bird along the lane's verge to short of the middle, and any body
 under one clips on with E, rides either way at three times a walk, and lets go
 anywhere — hands on the handle, still a target, dropped by a stun or a net, and the last stretch
-into the fight always walked. [The road](world.md#the-road), [the zipline](world.md#the-zipline),
+into the fight always walked. **Two road towers hold each cable**: a stone tower with a
+great crossbow on its deck stands beside the lane at the middle and at the end of every cable,
+so six a side, and the cable runs only to the furthest one still standing, so breaking a tower takes ground back
+from the rival's ride. A tower shoots the rival wave first, so a scout who walks in under it with
+their own soldiers can bring it down, and a scout who hits one of its side's scouts in its ring, or
+walks in alone, gets the bolt: it winds for a beat with a dashed line on the snow to its mark, and
+each bolt in a row into the same scout hits harder. [Road towers](gameplay.md#road-towers),
+[the road](world.md#the-road), [the zipline](world.md#the-zipline),
 [the ride](gameplay.md#the-zipline), [the waves](gameplay.md#soldiers-the-waves),
 [the barracks](gameplay.md#base-building).
 

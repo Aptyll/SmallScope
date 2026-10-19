@@ -88,6 +88,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the gold pump (`teamBuild[skin(team)]`: `pumpAnim[tier][frame]`, `generator[tier]` the still, `icon.generator`; `SPRITES.pumpMouth`); never edit, repaint in app/bake-pump/pump.py and rebake with app/bake-pump/bake.py | `TIERS`, `ICON`, `BASE`, `MOUTH` | - |
 
+## js/baked/tower.js (generated)
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the road tower (`teamBuild[skin(team)]`: `tower[0]` the body, `towerFront` the deck's front parapet, `towerGun[heading][frame]`, `towerBolt[heading]`; `SPRITES.towerAt` the turntable and the grids' corners); never edit, repaint in app/bake-tower/tower.py and rebake with app/bake-tower/bake.py | `BASE`, `BODY`, `FRONT`, `GUN`, `BOLT` | - |
+
 ## js/baked/orca.js (generated)
 
 | Looking for | Start at | Banner |
@@ -290,6 +296,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | --- | --- | --- |
 | the zipline: its tuning, where each side's cables run (the road's; a side lane's: `laneZipTiles`, lanes.js), laying them at boot, a point along a line and its height, the nearest point to a body, whether a body may clip on, and the ride's verbs (clip on / let go, the per-step ride, the knocked-off drop) | `ZIP_*`, `zips`, `zipTile`, `placeZips` (called at boot after `placeRoad` and `placeBase`, boot.js), `zipLay`, `zipPoint`, `zipLift`, `zipNearest`, `zipNear`, `zipUnder` (the cable as drawn under a world point: the hover, `hoverZip`, actions.js, and the click scheme's press), `zipToggle` (what `input.jump` does on the ground: `updatePlay`, sim.js), `zipStart` (a player's), `zipBoard`/`zipRide`/`zipEnd` (any body's: a soldier rides through them, robots.js), `zipStep` (the branch in `playerMove`, updatePlayer's movement ladder, sim.js), `ZIP_CRASH_R`/`ZIP_CRASH_STUN`/`zipCrash` (two rivals meeting on one cable: both stunned and dropped; called in `updatePlay` after the robots, sim.js), `zipMount` (the nearest point of a cable whose ground a body can stand on - the walk's goal, and a bot's), `zipWalkStart`/`zipWalkEnd`/`zipWalkStep` (the walk to the cable - a channel holding the stick at the top of `updatePlayer`'s input read, ended by any input of the player's own) | `zipline` (the pylon's `OBJECTS` entry: `world`; pixels: js/draw/zipline.js; the cap: `drawZipHint`, js/ui/wheel.js; the E press: `keyPress`/`ckRightPress`, input.js; the gates it joins: `tryWork`/`autoWork`/`tryDodge`/`tryProne`/`stunUnit`/`rootUnit`/`netUnit`, actions.js, `tryAbility`, abilities.js, `autoFish`, tools.js, `separateUnits`, nav.js) |
 
+## js/sim/towers.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the road towers: their tuning, standing two on every cable at boot (`TOWER_SEEK`, `TOWER_CLEAR`), cutting each cable to the furthest one standing, what one shoots, the turn, the wind and the loose, the bolt's hit and the spent bolt, the nearest rival tower (a wave's and a pusher's read), whether a side's wave stands under one | `TOWER_*`, `zipWhole`, `towerFoot`, `placeTowers` (called at boot after `placeZips`, boot.js), `towerStand`, `towersSync` (first thing in `updateStructures`, and in `drawZips`), `towerHolds`/`towerCall`/`towerMark`, `updateTower` (from `updateStructures`), `towerBolt`, `towerNear` (`updateSoldier` rung 3, robots.js; `aiLaneFort`, ai.js), `towerTanked` | `road towers` (the `STRUCTS.tower` entry: structures.js; pixels: js/draw/towers.js; sight: `FOG_TOWER`, fog.js) |
+
 ## js/sim/recall.js
 
 | Looking for | Start at | Banner |
@@ -368,7 +380,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | where a bot lays a building | `aiBuildSite`, `AI_BUILD_R` | `ai`, ai.js |
 | the fish net's tuning: what it holds, what it lures, how fast it catches and hands over | `NET_CAP`, `NET_R`, `NET_LURE`, `NET_CATCH_T`, `NET_TAKE_T` | `structures` (beside `STRUCTS`, whose `net` entry it belongs to) |
 | tuning: the sling's pivot, its reach PER TIER (the draw reads the same row for how long to make the arms), its lock window, its release, and the rock's throw | `TUR_PIVOT_Y`, `TUR_MOUTH` (one per tier), `TUR_LOCK`, `TUR_SNAP`, `ROCK_SPD`, `ROCK_FALL`, `ROCK_MISS`, `ROCK_SPLASH` | `the building sim` › `turret gunnery` |
-| construction ticks (quicker for the side standing by), a paid repair mending, generators, the bay rolling a bot out, the barracks queuing and rolling out a wave | `updateStructures`, `buildCrew` (`CREW_BOOST`/`CREW_MAX`), `BARRACKS_ROLL`, `barracksLaneLoad` (the cap is the lane's) | `the building sim` (the barracks' entry - `wave`/`waveT`/`grow`/`cap`, `art`, `fixed` - is in `STRUCTS`; its pixels `drawBarracksOverlay`, js/draw/overhead.js) |
+| construction ticks (quicker for the side standing by), a paid repair mending, generators, the bay rolling a bot out, the barracks queuing and rolling out a wave | `updateStructures`, `buildCrew` (`CREW_BOOST`/`CREW_MAX`), `BARRACKS_ROLL`, `barracksLaneLoad` (the cap is the lane's); a turret's step `updateTurret`, a road tower's `updateTower` (js/sim/towers.js) | `the building sim` (the barracks' entry - `wave`/`waveT`/`grow`/`cap`, `art`, `fixed` - is in `STRUCTS`; its pixels `drawBarracksOverlay`, js/draw/overhead.js) |
 | what a turret throws at and the one gate that says so (a player, a bot, a beast that is hunting, a building - `TUR_RANK` ranks them) | `turretAim`, `turretReach`, `turretHolds`, `turretMark`, `TUR_RANK` | `the building sim` › `turret gunnery` |
 | the LOB itself: the solve both the aim and the throw read, the accuracy roll it is aimed through, the throw, and where a rock comes down (the only door a rock has to a building) | `turretLaunch`, `turretRoll`/`turretGoal`, `turretPivot`/`turretMouth`, `fireRock` (`solid: false`), `rockLands` | `the building sim` › `turret gunnery` |
 
@@ -499,7 +511,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| how far each side sees, the woods' count and reach, the lit face | `FOG_HERO`/`FOG_SOLDIER`/`FOG_TURRET`, `FOG_WOODS_N`/`FOG_BRUSH`, `FOG_FACE` | `fog of war` |
+| how far each side sees, the woods' count and reach, the lit face | `FOG_HERO`/`FOG_SOLDIER`/`FOG_TURRET`/`FOG_TOWER`, `FOG_WOODS_N`/`FOG_BRUSH`, `FOG_FACE` | `fog of war` |
 | whether the fog is up at all | `fogUp` (`DBG.fog`) | `fog of war` |
 | a side's eyes, and a sight line meeting stone (built walls by tile, the cistern by its distance field) | `sightSources`, `sightEye`, `sightReach`, `sightWalls`, `sightWallAt` | `fog of war` |
 | the woods as brush | `inWoods`, `woodsHide` | `fog of war` |
@@ -791,6 +803,12 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | a thrown rock's tumbling body, and the dashed aim ARC plus the cords snapping on the release | `drawSlungRock`/`ROCK_MAP`/`ROCK_INK`, `drawTurretFx`, `TUR_ARC`/`TUR_LET` | `the turret's sling, its rocks, the bay, the net and the tiled struct` |
 | the gold pump's stroke frame and its payout coin, the bay's overlay, the fish net's draw, a tiered piece's sprite and where it is laid (read by the draw and the shot's sweep), a tiled building's draw (one tile of art per footprint tile) | `pumpFrame`/`drawPumpCoin` (`PUMP_STROKE`, `PUMP_HOP`), `drawBayOverlay`, `drawNet`/`NET_FISH_AT`, `structSprite`, `structArtOff`, `drawTiledStruct` | `the turret's sling` (the file's one banner; what they read: `STRUCTS`, structures.js) |
 
+## js/draw/towers.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| a road tower's gun at its heading and frame, the front parapet over it and the bar; the dashed aim line and ring while it winds on a scout, the bolt in flight, the spent bolt in the snow | `TOWER_HEADS`, `towerHead`, `towerFrame`, `towerGunAt`, `drawTowerTop` (from `drawStructObj`, js/draw/passes.js), `drawTowerFx` (from `drawTurretFx`, js/draw/structs.js), `towerFigure` (the whole tower as one canvas: the wiki's figure) | `road towers` (the sim: js/sim/towers.js) |
+
 ## js/draw/canopy.js
 
 | Looking for | Start at | Banner |
@@ -1031,7 +1049,7 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | the wiki: its pages as data, the slab, tabs, window and rail, the per-page scroll, what is under a point, the way in and out | `WIKI_PAGES`, `WIKI_W_MAX`/`WIKI_H`, `wikiScroll`, `wikiBlocks`, `wikiPage`, `wikiLayout`, `wikiHit`, `beginWiki`/`leaveWiki` (Esc to the title, a tab to the notes), `wikiScrollBy`, `wikiSetTab`, `wikiKey`, `wikiClick`, `renderWiki`, `drawWikiRail` | `the wiki` (the tooltip a row raises: `tipItem`, js/ui/shop.js; the wheel: input.js; its song WHISPERING WOODS: `TRACKS.wiki`, audio.js) |
 | the BEASTS page: the five cards, a kind at a level, the figure wearing its frame, the labelled legend | `WIKI_BEASTS`, `WIKI_LEVELS`, `wikiBeastHp`, `wikiBeastGold`, `drawWikiBeast`, `wikiLeader` | `the wiki` (the numbers: `ANIMAL_HP`/`ANIMAL_LV_HP`/`ANIMAL_LV_GOLD`, wildlife.js; `YIELD`, core.js) |
 | the ITEMS page: PARTS then FINISHED, each row the item's icon in a part- or finished-rimmed well, its name, and STATS / PASSIVE / PRICE | `WIKI_ITEM_COLS`, `wikiItemStats`, `drawWikiRow` | `the wiki` (the items themselves: `BUILD_ITEMS`, `ITEM_STATS`, `ITEM_PASSIVES`, js/sim/items.js) |
-| the WORLD page: the setting's ten entries (name, paragraph, the sprites on its mound), the figure column, the mound the beasts share, the `lore` draw in `renderWiki` | `WIKI_WORLD`, `WIKI_FIG_W`/`WIKI_TEXT_X`, `drawWikiFig`, `wikiMound` | `the wiki` (the premise, the fixed words and the voice: [lore.md](lore.md); the road's colours: `ROAD_COL_A`/`ROAD_COL_RUT`, js/draw/ground.js) |
+| the WORLD page: the setting's eleven entries (name, paragraph, the sprites on its mound), the figure column, the mound the beasts share, the `lore` draw in `renderWiki` | `WIKI_WORLD`, `WIKI_FIG_W`/`WIKI_TEXT_X`, `drawWikiFig`, `wikiMound` | `the wiki` (the premise, the fixed words and the voice: [lore.md](lore.md); the road's colours: `ROAD_COL_A`/`ROAD_COL_RUT`, js/draw/ground.js) |
 | the CLASSES page: an ability row's columns, the four stat pips, the word-wrap the blurbs and the WORLD page use, the `cls` and `ab` draws in `renderWiki` | `WIKI_AB_COLS`, `WIKI_STATS`, `wikiWrap` | `the wiki` (the classes and kits: `CLASSES`, player.js; the abilities: `CLASS_AB`, `classAbIcon`, abilities.js; the card a hover raises: `tipClassAb`, js/ui/tooltip.js) |
 
 ## js/ui/profile-card.js

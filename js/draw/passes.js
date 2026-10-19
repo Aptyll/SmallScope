@@ -468,7 +468,7 @@ function drawStructObj(o, px, py, sh, now) {
     if (o.type === 'spawner') drawBayOverlay(o, sx + sh, sy, now);
     if (o.type === 'barracks') drawBarracksOverlay(o, sx + sh, sy, now);
     // the gun is not in the grid: rasterise it at the live bearing, on the collar
-    if (o.type === 'turret') drawTurretHead(o, sx + sh + 16, sy + 12);
+    if (o.type === 'turret') drawTurretHead(o, sx + sh + 16, sy + 12); else if (o.type === 'tower') drawTowerTop(o, sx + sh, sy); // a tower's gun in its deck, and its bar (js/draw/towers.js)
     if (o.hp < o.maxHp * 0.6) {
       // four crack marks, placed as fractions of the sprite so they fit any size
       const w = spr.width, h = spr.height;
@@ -482,7 +482,7 @@ function drawStructObj(o, px, py, sh, now) {
     // belongs to: it only ever appears while the thing is being hit, and a
     // bar holding still over a wall that is rocking is a bar centred on
     // nothing. drawBayOverlay is handed `sx + sh` and has always done this.
-    if (o.type !== 'spawner' && o.type !== 'barracks' && o.hp < o.maxHp) {
+    if (o.type !== 'spawner' && o.type !== 'barracks' && o.type !== 'tower' && o.hp < o.maxHp) {
       drawHealthBar(sx + sh + (spr.width >> 1), sy - 5, o.hp, o.maxHp, evenBarW(Math.max(12, Math.min(24, spr.width - 4))), o.team, undefined, o);
     }
   }

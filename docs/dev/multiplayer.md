@@ -953,7 +953,9 @@ The ladder:
    hollow → bird, on a bigger pathfinder budget (`AI_ROOST_BUDGET`,
    `navTo`'s optional last argument); a route straight at the bird runs `NAV_BUDGET` out in
    the border and leaves a bot wedged in a pocket, which is what this exists to prevent. On the
-   way in, any **turret the defenders raised comes down first** (E, `STRUCT_HIT_DMG` a swing, 10 of it once
+   way in, any **turret the defenders raised comes down first**, and anywhere a rival
+   [road tower](gameplay.md#road-towers) does while the bot's own wave stands under it to take the
+   bolts (`aiLaneFort`, `towerTanked`; a bot never walks in under a tower alone) (E, `STRUCT_HIT_DMG` a swing, 10 of it once
    `STRUCT_DR` has taken its cut — a bot
    standing off the bird under a turret's rocks never finishes a draw), then a hunter takes its
    station `AI_HOLD` (96 px) out **on the road's axis**, where the road keeps the line to

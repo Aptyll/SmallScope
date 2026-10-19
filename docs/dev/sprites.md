@@ -33,6 +33,15 @@ head and barrel. The team paint is `k`/`K`/`e`, baked inside `SPR.onTeams` into
 pump's `payT`, a whole number of `PUMP_STROKE` strokes to a payout, and `drawPumpCoin` hops a coin
 out of `SPRITES.pumpMouth[tier]` for `PUMP_HOP` s after each pay.
 
+**The road tower** is a cut-stone tower with a gun deck and a great crossbow on a turntable,
+painted in code by `app/bake-tower/tower.py` with the cutout painter and baked by
+`python3 app/bake-tower/bake.py` into `js/baked/tower.js` (never hand-edit it). It is three layers
+so the gun stands in its deck: the body (`teamBuild[team].tower[0]`, what `structSprite` hands
+every reader), the gun (`towerGun[heading][frame]`: 16 headings from east, clockwise, and the
+frames LOADED, LOOSED, WINDING, WOUND) and the deck's front parapet (`towerFront`) over it. The team
+paint is `k`/`K`/`e`/`E` (fit, coatD, coat, coatL), baked inside `SPR.onTeams`. `drawTowerTop`
+(js/draw/towers.js) lays the gun and the parapet; the bolt in flight is `towerBolt[heading]`.
+
 The **bot bay** (`spawner`) is the one big typed grid: a single-tier 48×38 grid (`bay`, `BAYPAL`) on a 3×2
 tile footprint — steel plates under a flat two-row snow cap, a team-painted lintel band (`L`/`T`/`t`
 via `bayTeamPal`), riveted flanks with a grille and hazard stripe, and a 20-px dark doorway (cols

@@ -48,6 +48,7 @@ guild sells — not from a new faction or a new magic.
 | the counter's items and food have one fixed price, the same for both sides | the prices are the guild's, not the companies', and the guild does not haggle |
 | robots, turrets, generators and a barracks beside bows and swords | the works' machines, woken with gold; nobody knows who built them |
 | one straight road, corner to corner | the works' haul road, older than everything but the machines |
+| two road towers on every zipline, and a company's zipline runs no further than its last one standing | the works raised them to hold the haul road and gold woke their crossbows; each company strings its cable out to its own |
 | a creek down the other diagonal that never freezes, but for a frozen pool where the road crosses it | the works' old outfall, still running warm under the snow; at the crossing it slows to a pool, and the pool freezes |
 | a ring of cut stone round that pool, two gates on the road, its wall down in four places | THE CISTERN: the works walled the pool in and ran the haul road through it; the stone has been coming down ever since |
 | an orca under that pool's ice: stand on it too long and you go down | it was there before either company, and it takes whoever is on its ice, any side |
@@ -73,6 +74,7 @@ sentences.
 | **company** | a team, in a sentence | faction, army, clan, nation |
 | **the bird**, **the eagle** | the objective | mount, base, core |
 | **roost** | where the bird sits, and the base round it | nest, camp, spawn |
+| **tower**, **road tower** | the stone towers with a crossbow on top beside the road | turret, fort, outpost |
 | **nerve** | the eagle's health | hp, life |
 | **driven off**, **leaves** | the eagle lost | killed, destroyed, dead |
 | **goes down**, **carried back** | a scout's death and return | dies, killed, corpse, respawn |
