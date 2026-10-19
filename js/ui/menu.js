@@ -21,14 +21,15 @@ const MENU_ITEMS = ['QUICKPLAY', 'RANKED', 'PRACTICE TOOL'];
 // last one's foot MENU_BOTTOM above the edge; no plank, slab or frame around
 // them, and all three live from the first boot. QUICKPLAY and RANKED open
 // the party lobby (beginParty, js/ui/rooms.js), whose FIND MATCH goes on to
-// the hero select below; PRACTICE TOOL boots the training arena (beginPractice).
+// the hero select below; PRACTICE TOOL opens it too, whose START takes the
+// party onto the training arena (partyPractice).
 const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // The frost plank (drawMenuButton) is no longer the title's: MENU_BW x
 // MENU_BH at MENU_Y0 in the 270-tall authored frame is where the lobby's
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.488';
+const PATCH_TXT = 'PATCH 0.489';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.489', 'THE PRACTICE TOOL TAKES YOUR PARTY: IT OPENS YOUR PARTY LIKE QUICKPLAY, START TAKES EVERYONE ONTO THE PRACTICE FIELD TOGETHER, FRIENDS CAN JOIN YOU THERE BY CODE ANY TIME, AND LEAVE BRINGS THE PARTY BACK.'],
   ['0.488', 'GO HOME LIKE IN LEAGUE: PRESS H TO STAND STILL FOR 6 SECONDS AS A RING CLOSES ON YOUR FEET, THEN LAND BACK AT YOUR ROOST, WHERE A GLOWING RING ROUND YOUR BIRD QUICKLY HEALS YOU AND REFILLS YOUR ROLLS ONCE YOU ARE OUT OF A FIGHT; A STEP, A SHOT OR A HIT ENDS THE RECALL, AND BOTS GO HOME WHEN THEY ARE LOW TOO.'],
   ['0.487', 'THE MERCHANT SELLS ITEMS NOW: CHEAP PARTS BUILD INTO EIGHT FINISHED ITEMS WITH STATS AND ONE PASSIVE EACH, SIX SLOTS A PLAYER, ALL ALWAYS ON SALE, WHILE THE STOCK MARKET AND THE FORGE ARE GONE AND FISH AND BERRIES KEEP ONE FIXED PRICE.'],
   ['0.486', 'FOG OF WAR: YOUR SIDE SEES A CIRCLE ROUND EACH HERO, SOLDIER AND TURRET, STONE WALLS CUT IT, SOMEONE DEEP IN THE WOODS STAYS HIDDEN UNTIL YOU STEP CLOSE, AND EVERY RIVAL AND CREATURE OUT OF SIGHT IS GONE FROM THE SCREEN AND BOTH MAPS - FOR THE BOTS TOO.'],
@@ -585,26 +587,14 @@ function menuActivate(i) {
   const it = MENU_ITEMS[i];
   if (it === 'QUICKPLAY') beginParty('quick'); // the party lobby (js/ui/rooms.js)
   else if (it === 'RANKED') beginParty('ranked');
-  else if (it === 'PRACTICE TOOL') beginPractice();
+  else if (it === 'PRACTICE TOOL') beginParty('practice'); // the field with friends or alone: the party first (js/ui/rooms.js)
 }
 
-// Into the training arena: the same whiteout-and-reload the die uses, onto
-// ?practice=1 - PRACTICE (js/sim/core.js) pins the seed and js/app/boot.js boots the
-// arena straight into play. leavePractice is the way back (the ESC panel's
-// plank, js/panels.js): the same fade onto a bare URL, so leaving practice
-// lands on a fresh title world exactly like a reroll does.
-function beginPractice() {
-  if (state.fade) return;
-  SFX.dodge();
-  SFX.music.stop(0.45);
-  state.fade = {
-    a: 0, to: 1, spd: 1 / 0.55, color: '#f4f7ff',
-    then: () => {
-      try { sessionStorage.setItem('softfall.reroll', '1'); } catch (e) { }
-      location.href = location.pathname + '?practice=1';
-    },
-  };
-}
+// Out of the training arena, for a page with no party to go back to (a
+// guest, or a page that came up on ?practice=1 by hand): the reroll's
+// whiteout onto a bare URL, landing on a fresh title world. A leader goes
+// back to its party instead (toLobby, the ESC panel's LEAVE, js/ui/panels.js).
+// The way in is the party's START (partyPractice, js/ui/rooms.js).
 function leavePractice() {
   if (state.fade) return;
   SFX.pickup();

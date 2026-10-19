@@ -200,7 +200,7 @@ function steamRooms(cb) {
         const d = l.data || {};
         if (!d.patch) continue;
         let sides = [0, 0]; try { sides = JSON.parse(d.sides || '[0,0]'); } catch (e) {}
-        rooms.push({ room: l.id, n: (l.members || []).length, data: { name: d.name || '', patch: d.patch, seed: num(d.seed), map: num(d.map), state: d.state || 'open', humans: num(d.humans), sides, code: d.code || '' } });
+        rooms.push({ room: l.id, n: (l.members || []).length, data: { name: d.name || '', patch: d.patch, seed: num(d.seed), map: num(d.map), state: d.state || 'open', humans: num(d.humans), sides, code: d.code || '', practice: num(d.practice) } });
       }
       if (!closed) cb(rooms, true);
     } catch (e) { if (!closed) cb([], false); }

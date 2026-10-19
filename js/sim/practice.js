@@ -41,6 +41,19 @@ const PR_RING = 76;
 const PR_OX = (WORLD - PR_RING) >> 1, PR_OY = 0;
 const PR_X0 = PR_OX + ((PR_RING - PR_W) >> 1), PR_Y0 = PR_OY + ((PR_RING - PR_H) >> 1);
 const PR_SPAWN = { tx: PR_X0 + 20, ty: PR_Y0 + 17 }; // south of the rack, facing it and the dummy behind
+// who stands on the field: a person on the spawn tile (separateUnits eases
+// a party apart), every empty seat parked deep in the corner forest, far
+// outside the arena, so no ghost silhouette wanders into a capture
+const PR_PARK = { tx: 4, ty: 4 };
+function practiceSeat(p) {
+  p.spawn = { tx: PR_SPAWN.tx, ty: PR_SPAWN.ty };
+  p.x = (PR_SPAWN.tx + 0.5) * TILE; p.y = (PR_SPAWN.ty + 0.5) * TILE;
+}
+function practiceVacate(p) {
+  p.control = 'none';
+  p.spawn = { tx: PR_PARK.tx, ty: PR_PARK.ty };
+  p.x = (PR_PARK.tx + 0.5) * TILE; p.y = (PR_PARK.ty + 0.5) * TILE;
+}
 const DUMMY_HP = 60;
 const DUMMY_WORK_DMG = 10;   // what one E swing chips off it (the eagle's own number)
 const DUMMY_RESET_T = 2.5;   // s unhit before a dummy mends itself back to full

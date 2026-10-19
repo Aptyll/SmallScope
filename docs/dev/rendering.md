@@ -1832,11 +1832,10 @@ driven by `titleCamTarget()` — a slow lissajous drift around the open interior
 `state.menu`:
 
 - **Items** `MENU_ITEMS` (QUICKPLAY / RANKED / PRACTICE TOOL —
-  all three live from the first boot, and nothing else; `menuActivate` dispatches on the word; PRACTICE TOOL's activation is `beginPractice()` (the
-  reroll's whiteout onto
-  `?practice=1`, the [practice arena](world.md#the-practice-arena)). QUICKPLAY and
-  RANKED open the [party lobby](gameplay.md#settings) in that mode (`beginParty`), whose FIND
-  MATCH leads to the [lobby](#lobby)'s hero select;
+  all three live from the first boot, and nothing else; `menuActivate` dispatches on the word. All three open the
+  [party lobby](gameplay.md#settings) in that mode (`beginParty`): QUICKPLAY's and RANKED's FIND
+  MATCH leads to the [lobby](#lobby)'s hero select, PRACTICE TOOL's START to the
+  [practice arena](world.md#the-practice-arena);
   there is no WIKI or SETTINGS item: the [wiki](#the-wiki-screen) opens from a word in the corner of
   the patch notes, settings are the ESC panel's in play, and the seed lives on
   [lobby](#lobby) under the map), stacked `MENU_TXT_PITCH` apart, climbing from `MENU_BOTTOM`

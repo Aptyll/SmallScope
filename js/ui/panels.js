@@ -990,9 +990,9 @@ function muteBtnRect() {
 
 // The foot's buttons (drawFlatButton): CLOSE, and
 // in a match the way out beside it (the ESC panel is the one menu a match or
-// the arena has). In practice LEAVE is leavePractice()
-// (js/menu.js), the reroll's whiteout onto a bare URL, so leaving lands on a
-// fresh title world; in a match it is toLobby() (js/screens.js), the
+// the arena has). In practice a party's leader goes back to its party
+// (toLobby) and anyone else takes leavePractice() (js/ui/menu.js), the
+// reroll's whiteout onto a bare URL, landing on a fresh title world; in a match it is toLobby() (js/screens.js), the
 // death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
 // SURRENDER stands before LEAVE while your side may vote: it starts the
@@ -1097,7 +1097,7 @@ function settingsMouseDown() {
   }
   if (hit === 'vol' || hit === 'music' || hit === 'sfx' || hit === 'map' || HUD_DIALS[hit]) { dragSlider = hit; applySliderDrag(); return; }
   if (hit === 'close') { settingsClose(); return; }
-  if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
+  if (hit === 'leave') { if (PRACTICE && !(NET.isHost && NET.mode)) leavePractice(); else toLobby(); return; } // a party's leader back to its party
   if (hit === 'surrender') { player.input.cmd = { kind: 'vote', yes: true }; settingsClose(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');

@@ -3341,8 +3341,8 @@ human idle, and deep in a ten-bot match with hundreds of buildings and robots st
 
 ## Settings
 
-**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY and RANKED on
-the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
+**The party lobby** (js/ui/rooms.js, `menu.screen = 'room'`) is where QUICKPLAY, RANKED and
+PRACTICE TOOL on the title land: the page hosts its own party at once (`beginParty`: a room on the relay, or a
 Steam lobby) and NET.mode names the mode. One centred column, League's lobby in Graphite: the
 mode's name and "n / 5" at the head, the party's four-letter code top-right in gold (a click copies
 it, white for a moment) beside a relay pip, and in a Steam lobby INVITE beside it, which opens
@@ -3367,7 +3367,14 @@ where LOCK IN would be a frozen plank wearing the leader's name: the leader's co
 it and the eagle on its zero; the leader's ESC takes everyone back to the party. RANKED keeps a
 rating per profile (`PROFILE.rank`, starts at 1000): a win adds RANK_STEP, a loss takes it
 (`rankResult`), and the bots' level is read off the party's average rating (`rankLevel`), so
-the target cannot be picked there. A screen that is not in focus when someone joins, a chat
+the target cannot be picked there. PRACTICE TOOL's leader has START in place of FIND MATCH
+(`partyPractice`): once every friend is READY the leader's page reloads onto the
+[practice arena](world.md#the-practice-arena) hosting the party's code, each guest is told
+(`practice`) and follows, joining while the leader's page comes up (`practiceBootHost`,
+`practiceBootJoin`). A friend can also type the code from their own party while the party is on
+the field, and lands straight on it (`joinRoom` reads the list's `practice` flag). The leader's
+LEAVE takes everyone back to the party on the title (the rematch: guests follow on hearing it,
+`rematchHeard`); a guest's LEAVE takes only them to the title. A screen that is not in focus when someone joins, a chat
 line lands or the count starts flashes its taskbar button (the wrapper) or marks its tab's
 title with a star (a browser) until it is looked at. After the match LOBBY takes each screen
 back to the same party on a fresh valley, same code, same people in the same seats (the
@@ -3472,7 +3479,8 @@ leave, so it centres CLOSE alone). SURRENDER stands before LEAVE while your side
 (js/sim/surrender.js). `settingsHit()` answers `'close'` (→ `settingsClose`: the
 in-match slab folds the way ESC folds it, the title's slide-in through `closeMenuPanel`), `'surrender'` and
 `'leave'` (→ `toLobby()`, js/ui/screens.js, the death screen's own fade back to the title on this
-seed, or `leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
+seed, or back to the party for a party's leader on the practice field; anyone else there takes
+`leavePractice()`, js/ui/menu.js, the reroll's whiteout onto a bare URL, landing on a fresh
 title world); `leavePlankRect()` is the LEAVE plank, `null` on the title.
 
 **Mute is not a row.** It is a 9×9 speaker plate (`muteBtnRect`, `drawMuteBtn`) hard against the

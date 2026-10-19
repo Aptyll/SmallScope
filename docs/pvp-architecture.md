@@ -443,6 +443,12 @@ The same screens and the same protocol ride either transport; only the list and 
    party (`rematchBootHost`); a guest's LOBBY reloads as `?join=CODE&back=1` and keeps trying the
    code for `REMATCH_WAIT` while the leader's page comes back, and the leader deals it the slot
    it held (`rematchSeat`). Leaving (`netLeave`) closes a leader's party; a guest walks out of one.
+9. **The practice field.** PRACTICE TOOL's START sends guests `practice` and reloads the leader as
+   `?practice=1&net=host&back=1` on the party's code; a guest reloads as `?practice=1&join=CODE&back=1`
+   and keeps trying the code like a rematch. The field's host takes friends at any time (no
+   `BUSY`), seats them on the spawn and parks a leaver's empty body in the corner; the list
+   entry carries `practice: 1`, so a code typed on a title page reloads onto the field. The
+   leader's LEAVE is a rematch back to the party (`rematch`, which a guest on the field follows at once).
 
 ### Joins, leaves, reconnects
 
