@@ -59,8 +59,8 @@ That falls out of rendering in **two pixel spaces**:
 | world | `WV_W`×`WV_H` | `ctx` while it points at `wctx` | ground → … → `renderLighting` |
 | screen | `VIEW_W`×`VIEW_H` (backed by `VIEW * devScale` device px) | `ctx` while it points at `uictx`, under a `devScale` transform | weather, vignettes, all UI |
 
-`ctx` is therefore **not a fixed binding**: `render()` sets `ctx = wctx` before the ground blit
-and `ctx = uictx` straight after `renderLighting`. Between them it drops to the identity
+`ctx` is therefore **not a fixed binding**: `render()` sets `ctx = wctx` before the ground blit,
+`renderAirLayer` points it at `actx` for the air layer, and `renderScreen` sets `ctx = uictx`. Between them it drops to the identity
 transform and blits `worldCv` **in device pixels** at `k = zoomCur * devScale` px per world px,
 then sets the `devScale` transform for everything below. Doing the scale-up as **one
 nearest-neighbour resample of an already-composed frame** is what keeps it coherent: ground,
@@ -182,7 +182,9 @@ code still uses `ex`/`ey`. A screen-space pass anchored to the world reads the e
 
 ## Render pass order
 
-`render()` (js/draw/render.js) runs, in order. **World space** (`ctx = wctx`):
+`render()` (js/draw/render.js) runs, in order; most steps are named functions in js/draw/passes.js
+(`drawGroundPass`, `drawFlatPass`, `drawSorted` and its `drawSceneryObj`, `renderAirLayer`,
+`renderScreen` and the rest). **World space** (`ctx = wctx`):
 
 1. `syncCasts` (repaint the shade of any scenery that changed, [cast shadows](#cast-shadows)) →
    ground blit → **the creek's fish** (`drawCreekFish`, js/draw/ground.js: whitefish and snow char under the
