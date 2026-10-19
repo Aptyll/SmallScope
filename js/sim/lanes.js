@@ -12,7 +12,8 @@
 // A lane IS road, like a path: roadDist mins over sideLaneDist, so placeRoad
 // paves it with the mid road in its one pass (fells the pines and rocks on it,
 // turns ice to road), both maps ink it and every reader of the road reads it.
-// Only it has no ruts and no cable: those are the mid road's. Laid by
+// Only it has no ruts (those are measured off the diagonal), and each side
+// strings its own cable down it (laneZipTiles, below). Laid by
 // layLanes at boot after the paths and before placeRoad (js/app/boot.js), so
 // neither genWorld's carve rules nor the paths' search ever saw it.
 const LANE_HW = 3;        // tiles either side of the centreline: a six-tile lane, a tile narrower than the mid road across the field
