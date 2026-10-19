@@ -528,8 +528,8 @@ swing is refused. It is not helpless either: a rival lingering in `GUST_R` makes
 hp/s back.
 
 `die(p, src, cause)` takes **nothing off the body** regardless of what happens next: wallet, pouch,
-bag, weapon and build all stay, and the credited killer is paid a flat `KILL_BOUNTY` (12) via
-`awardGold` — an uncredited death pays nobody (gold is never a physical drop). What happens next
+bag, weapon and build all stay, and the killer and the assists are paid by `payTakedown`
+([Takedowns](gameplay.md#takedowns-assists-bounties-and-shutdowns)) — gold is never a physical drop. What happens next
 depends on `teamEagleDown(p.team)` alone: the wait and the return of
 [Respawn at the bird](#respawn-at-the-bird) while the team's eagle still roosts, or
 `p.eliminated = true`, the permanent path, once it has been driven off;
@@ -583,9 +583,9 @@ The last two arguments are the whole credit system. `src` is the player who deal
 (`players[a.owner]` for an arrow, null for the world) and `cause` names what the world did when
 there is no `src` (`DEATH_CAUSE`, js/sim/player.js: `ice`, `wolf` — a den's pack — `bear`,
 `tackle`, `eagle`, `fire`, `soldier`, `orca`; an unnamed one reads WENT DOWN). A death with an `src` other than
-the victim bumps `src.kills` — the scoreboard's KILLS column — and writes `"<killer> SHOT <victim>"` into the log in the killer's colours
+the victim bumps `src.kills` — the scoreboard's K/D/A column — and writes `"<killer> SHOT <victim>"` (SHUT DOWN when the victim wore a bounty) into the log in the killer's colours
 (`KILL_VERB` swaps the verb where the cause was no arrow: a `worker`'s axe CUT DOWN, `fire` BURNED);
-without one it writes the cause's line — `"<victim> FELL THROUGH THE ICE"` — in the victim's. **Any new way to hurt a
+without one the latest rival who hit the victim inside `ASSIST_T` takes the kill, and the cause's line — `"<victim> FELL THROUGH THE ICE"` — is written in that killer's colours, or the victim's when there is none. **Any new way to hurt a
 player must pass its `src`**, or the kill goes uncredited and the log line reads as an accident.
 
 The log also takes a level-up at `LOG_LEVEL` (5) or above — the early levels come too

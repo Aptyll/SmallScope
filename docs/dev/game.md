@@ -155,7 +155,7 @@ and when its nerve breaks it is **driven off**, not killed: every camera pans to
 away, and its whole side falls with it as it goes. **It is also the way back**: a player who
 goes down waits out a timer and is set down again at the roost with everything it had — wallet, bag, weapon and build;
 death costs the wait and the walk, League-style, and a kill pays its
-taker a flat bounty. The bird is the **only objective** and the one way a
+taker and the assists gold, more for ending a streak (a shutdown), less for a player who keeps dying. The bird is the **only objective** and the one way a
 match ends, which is why both teams always have somewhere worth walking to — and why every bot
 on the map knows where both birds are and what is happening at them, and answers a hit on its
 own from anywhere. [Eagle drop](rendering.md#eagle-drop-mode-drop),
