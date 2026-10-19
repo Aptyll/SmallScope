@@ -29,20 +29,19 @@ to the world.
 fewer bots, a frozen target dummy, or a ghost. `DBG.setLocal(id)` rebuilds the ten with this
 screen's player in slot `id` (title only: it is a fresh `initPlayers`).
 
-**`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls?, look? }` per
+**`initPlayers(roster, local)` takes a roster** — one `{ control, team?, name?, cls? }` per
 slot — and the local slot; with neither it builds today's match (`defaultRoster`: this screen's
 human in `LOCAL_SLOT`, an AI everywhere else, teams alternating by slot). A bot still rolls its
-class and gear off the seed; a roster entry's own `name`/`cls`/`look` land over that, which is
+class and gear off the seed; a roster entry's own `name`/`cls` land over that, which is
 how a lobby dresses a remote human's body (`netClientWelcome`, [Online play](#online-play)).
-The profile's character is only ever applied to this screen's player (`applyCharacter(p?)`).
+The profile is only ever applied to this screen's player (`applyProfile()`).
 
 **A `Player` owns its whole body** — position, velocity, facing, hp, bow draw,
 dodge charges, slide state, swing state, held tool, i-frames, footprint cadence — plus `id`,
 `team`, `control`, `name` (`TEAMS[team].name + '-' + (id + 1)` for an AI fill; the local player
-wears its **active character's** name, class and look — `applyCharacter(p?)`, called by
-`initPlayers` and whenever the roster's active slot changes — see
-[architecture.md](architecture.md#profilejs)), `look` (the face on the class body: a bot's is
-hashed off its id by `botLook`, so a replayed world fields the same faces), `spawn` (the tile it landed
+wears the **profile's** name and last hero — `applyProfile()`, called by `initPlayers` — see
+[architecture.md](architecture.md#profilejs)), `look` (the hero's fixed face, a copy of
+`CLASSES[cls].look` that every `setClass` writes, so every copy of a hero looks the same), `spawn` (the tile it landed
 on from the eagle), `aboard`/`dropT`/`dropU`
 (the eagle ride, see [Eagle drop](rendering.md#eagle-drop-mode-drop)), its own `inv` wallet, `bag`
 and `food` pouch (see [the backpack](gameplay.md#inventory-and-the-backpack)),
@@ -146,7 +145,7 @@ game's key *name*, the face that key wears on a US board, lowercase for a letter
 `KeyW` → `'w'`, `Space` → `' '`, `ShiftLeft` → `'Shift'`, `Period` → `'.'`; a code the table
 does not know falls back to `e.key`, so an on-screen keyboard is not dead). `keys`, the binds and
 every comparison are written in those names, so an AZERTY board walks on its Z Q S D without
-knowing it. `e.char` is what the key *typed*, which only the name editor reads (`createKey`, js/ui/chars.js). What
+knowing it. `e.char` is what the key *typed*, which only the name editor reads (`profileKey`, js/ui/profile-card.js). What
 the player *sees* runs the other way: `keyLabel` prints the face the key has on the board in hand
 where the browser can say (Chrome's `navigator.keyboard.getLayoutMap()`, cached in `kbLayout` and
 refreshed on `layoutchange` — `KeyW` reads Z on AZERTY), else the US face; anything the pixel
@@ -369,10 +368,9 @@ already firing: [starting loadouts](gameplay.md#starting-loadouts). See
 one does, its cooldown, cast, and the states it leaves on a body — are
 [Class abilities](gameplay.md#class-abilities-keys-1-4) in gameplay.md.
 
-The local player's class is **fixed on the character** it was created with (js/app/profile.js; the
-create screen's class pair, [the character screens](rendering.md#the-character-screens)) — the
-only way to the other class is another character, and the lobby swaps between the profile's
-three with the chevrons beside the stage figure; bots hash theirs — class, look, all four gear
+The local player's class is its **hero, picked each match** on the lobby's hero row
+([lobby](rendering.md#lobby), js/ui/heroes.js); the one locked in is kept as the profile's
+hero (js/app/profile.js), where the next pick opens. Bots hash theirs — hero (and with it its look), all four gear
 variants **and** their stat points — from the seed in `initPlayers()` so a replayed world fields the same roster in the
 same loadouts. Lobby shows that roster as two team panels on the screen's edges — your side left, the
 rivals right, their picks face-down until LOCK IN's countdown turns them (a second press skips
@@ -556,6 +554,32 @@ match keeps simulating while you are out** — `update()` runs `updatePlay` in b
 match another screen shares (`netShared`). Full detail:
 [Death and respawn](gameplay.md#death-and-respawn).
 
+### Surrender vote
+
+A side can give up together, League-style (js/sim/surrender.js). Past `VOTE_OPEN` (15:00 on the match
+clock) any person on a side sees SURRENDER on the ESC panel's foot (`footPlanks`, js/ui/panels.js);
+pressing it sends `{ kind: 'vote', yes: true }` down `p.input.cmd`, which opens the side's vote with
+that yes, or casts a yes into one already open. Every seat of the side then gets the panel top
+centre under the clock (`drawVotePanel`, `voteY`/`noteY` js/ui/rail.js): SURRENDER?, one dash per
+seat (you first; green yes, red no, the track while undecided), plain YES and NO words a click
+casts (`voteClick`, from `pointerPress`; the panel is js/ui/vote.js), and the time left as a line draining to the centre.
+**Bots vote with the people**: they never start or cast a vote (`voteCmd` drops a non-person's
+order), and their dashes count as yes while more people voted yes than no (`voteTally`). The vote
+passes at `voteNeed` seats yes: 4 of 5, every seat on a smaller side; it fails as soon as that can
+no longer be reached or when `VOTE_T` runs out (an unvoted seat is a no), holds its dashes for
+`VOTE_HOLD`, and the side waits `VOTE_CD` before another. A gamepad casts its yes through the same
+SURRENDER plank; a no from a pad is letting the clock run out.
+
+**The host counts.** The orders are read in `updateVotes`, first thing in `updatePlay` and before
+any body runs, since `updatePlayer` drops every order of a body that is down or stunned; a client
+only draws `state.votes`/`state.voteCd`/`state.surrendered`, which ride `SNAP_STATE` (and the save,
+with the rest of `state`). A vote that passes runs `surrenderSide`: the side's bodies leave the
+world through `bodyOut` (no death is counted), every seat is out for good, the local one goes
+through `endMatch('lost')` straight onto [the post-game stats](rendering.md#the-end-screens)
+(`openScores`, skipping the defeat), and the side's bird lifts off through `eagleFlee` with a
+SURRENDERED feed line, so the other side gets the driven-off ceremony and its victory exactly as
+if it had been beaten off.
+
 ### Respawn at the bird
 
 The team's roosting eagle is the way back, and the only thing
@@ -633,9 +657,7 @@ and a `think` stored as `p.ai.thought`. It runs inline (the examples baked from 
 js/baked/bot-lib.js by `app/bake-bots.js`), in a Web Worker (a person's file) or on any transport a
 harness registers in `BOT_TRANSPORTS`; a headless runner steps only while `botPending()` is
 false, so a seed and the same files replay exactly. The live half of a seat (`botRt`) is never
-saved: a save keeps `p.botId` and the first step after a load reopens the program. In a solo match
-the title's BOT LADDER screen can seat one on the whole rival side (`ladderSeat`, js/ui/ladder.js,
-at the drop). The author's contract: [docs/bots/](../bots/README.md).
+saved: a save keeps `p.botId` and the first step after a load reopens the program. The author's contract: [docs/bots/](../bots/README.md).
 
 `updateAI(p, dt)` (the `ai` banner) writes `p.input` and nothing else — a bot can never do anything
 a human couldn't. It is a priority ladder re-picked a few times a second, and **a profile says how
@@ -1058,7 +1080,10 @@ what the rest of the code needs to know is this:
   copies onto that slot's `p.input`, `netHostStep`) and draws the snapshots the host sends every
   `SNAP_EVERY` (4) ticks, eased between two (`netClientLerp`). A key handler that calls a sim
   function directly therefore does nothing on a client.
-- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed, deals the first
+- **A joiner takes an open seat.** `netHostHello` refuses a different patch or seed. In a party
+  (`NET.mode`, js/ui/rooms.js) it seats the joiner on the leader's side, only while the party is
+  on its seats (BUSY once the hero select or the match has begun; FULL past five). A host with no
+  mode (a harness's `?net=host`) deals the first
   empty seat, then the first bot slot, of the side with fewer people - a bot's slot first on a
   side already at the room's size (its fullest side's seats, TEAMS) - (a match under way offers
   bots' bodies only; none left: FULL; past `LATE_JOIN_T`, 300 s into a
@@ -1066,9 +1091,8 @@ what the rest of the code needs to know is this:
   `welcome` carries the roster (`netRoster`: control, team, name, cls, look per slot), which the
   client hands to `initPlayers(roster, slot)` with its own seat as the `'human'`. A peer that
   drops gives its body back to a bot, and its seat waits `RECONNECT_GRACE` (60 s) for it.
-- **A side is a field, not a slot.** Before the drop a person changes sides in the waiting room
-  by swapping `p.team` with a bot or empty seat across the rule (`seatSwap`, js/net/net.js), so
-  slots, inputs and connections never move; anything that wants "which side" reads `p.team`.
+- **A side is a field, not a slot.** Anything that wants "which side" reads `p.team`, never the
+  slot number; a party sits on the leader's side.
 - **A cue reaches a client only if the sim said where and who.** Inside the step, `sfxAt`,
   `sfxFor`, `sfxOwn`, `shakeAt` and `shakeFor` (js/net/events.js) play the cosmetic on the host and
   record it (`evPush`; `burst` and the floaters record themselves); the ring rides out with the

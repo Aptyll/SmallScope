@@ -166,9 +166,10 @@ upright frames by `fringeAt` ([the run and the roll](#the-run-and-the-roll)), an
 of a body goes through `classSet(p)` (player.js), which asks it. Body type, beard and face
 never touch the in-world body: it stays 16×16 permanently, and they read on the 48 px model only.
 
-The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look, team,
-bare)`) is where the whole look reads — the create screen, the roster and the lobby's
-stage. It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
+The **48 px model** ([looks.js](../../js/sprites/looks.js), `SPRITES.portrait(cls, look,
+team)`) is where the whole look reads — the lobby's stage and its hero row. Each hero wears one
+fixed `look` (`CLASSES[i].look`, js/sim/player.js; the heroes still to come in `HEROES_SOON`
+are drawn from theirs as silhouettes). It is **layers stamped in order** onto one 48×48 canvas: `BODY[sex]` (24 wide at x 12:
 neck, shoulders, arms, undershirt `u`, pants, boots), `HEAD[face]` (16 wide at x 16: round,
 square-jawed, narrow — eyes `W`/`e`, nose shade, blush, mouth), `BEARD[beard]` (none, stubble,
 short, full — `h` only inside the face, rimmed only where it hangs past the chin),
@@ -179,12 +180,12 @@ coat, the warrior's fur-lined hood with goggles pushed up and a scarf collar; th
 `r`/`R`/`d`/`t`/`T`/`m`/`M` letters as the 16 px body, so one team palette paints both
 sizes). The hats stop at row 8 and the hair's fringe rows sit at 9–10, so hair shows under a
 brim; long hair runs down beside the neck to where the coat begins. The file asserts every
-table's length against `PROFILE.LOOK_N` / `CLASS_N` at load, so a new choice is added in
-profile.js and here together or the game refuses to boot. The model is front view only (the
+table's length against its own axes table `N` (and the outfits against `PROFILE.HERO_N`) at
+load, so a table that drifts from its axis refuses to boot. The model is front view only (the
 in-world body, which turns, stays the 16×16 set). A new class needs an `OUTFIT` layer
-here ([checklists](checklists.md#common-changes)). `portrait` keeps what it composes in a cache
-the create screen fills quickly — a cell per choice per row, refreshed on every pick — so the cache
-is emptied past `PORTRAIT_KEEP` (512) rather than growing with every roll of the die.
+here ([checklists](checklists.md#common-changes)). `portrait` keeps what it composes in a cache,
+emptied past `PORTRAIT_KEEP` (512) so a ladder card's look or a team repaint never grows it
+without bound.
 
 `docs/media/concepts/model-concepts-1.png` (A BUNDLED, B LANKY, C STOUT) is a **rejected**
 concept round for this model, kept as the record of what not to draw again.

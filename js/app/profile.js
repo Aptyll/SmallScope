@@ -7,36 +7,33 @@
 // else: swap the private read()/write() pair for requests, keep the surface
 // below identical.
 //
-// There are no accounts, no passwords and no sign-in. A profile is up to
-// CHAR_MAX CHARACTERS - each a name, a class fixed at creation, a look and its
-// own lifetime stats - one of them active, plus the flags and settings the
-// player carries between them (moved here in v1; the old key is migrated once
-// and removed; v2 turned the one name into the character slots).
+// There are no accounts, no passwords and no sign-in. A profile is ONE NAME
+// and its lifetime stats, the hero last picked (so the pick opens on it),
+// plus the flags, records and settings the player carries (moved here in v1;
+// the old key is migrated once and removed). Heroes are picked per match and
+// wear a fixed look (CLASSES, js/sim/player.js), so nothing here stores a
+// body. v2's three character slots fold into v3's one profile on load: the
+// active slot's name and hero, every slot's stats added together.
 (function () {
   const KEY = 'softfall.profile';
   const SAVES_KEY = 'softfall.saves'; // the saved matches' index: { slot: meta }
   const SAVE_KEY = 'softfall.save.';  // + slot: one saved match's body
   const OLD_SETTINGS = 'softfall.settings'; // pre-profile saves; migrated once
   const NAME_MAX = 16;
-  let quiet = false;               // PROFILE.quiet: the stats are not counting
-  const DEFAULT_NAME = 'WANDERER'; // what a corrupt save falls back to mid-session
-  const CHAR_MAX = 3;              // character slots a profile holds
-  const CLASS_N = 2;               // CLASSES.length (js/sim/player.js) - a class index past this is repaired to 0
-  // the look's axes and how many choices each has. The pictures for them are
-  // js/sprites/looks.js, which asserts its tables against these counts at
-  // load; this file only stores and repairs the numbers.
-  const LOOK_N = { sex: 2, tone: 6, hair: 6, hairCol: 8, beard: 4, face: 3 };
+  const HERO_N = 2;                // CLASSES.length (js/sim/player.js) - a hero index past this is repaired to 0
   // the coins a profile starts with: the cosmetics' purse, kept outside every
   // match (a match's gold never reaches it). What a coin buys is the skins
   // screen's table (js/ui/skins.js); this file only keeps the count and ids.
   const START_COINS = 100;
+  // RANKED's rating, one per profile: where it starts and its floor. What
+  // moves it is the party lobby's (rankResult, js/ui/rooms.js)
+  const RANK_START = 1000, RANK_MIN = 0;
   const ID_MAX = 24; // a cosmetic id is a short word; anything longer is junk from a hand edit
 
-  // A fresh character comes PRE-ROLLED, not blank: the create screen opens on
-  // one of these winter words and a random look, so a player who wants the
-  // game presses PLAY once and a player who wants to be someone stays and
-  // shapes it. Every word passes validate() (A-Z, under NAME_MAX, clean), and
-  // none is a class name.
+  // A fresh profile comes PRE-NAMED, never blank: one of these winter words,
+  // so the first press on the title is play and not a form. The name is the
+  // profile card's to change (js/ui/chars.js). Every word passes validate()
+  // (A-Z, under NAME_MAX, clean), and none is a hero name.
   const NAME_POOL = [
     'JUNIPER', 'ROWAN', 'ASPEN', 'BIRCH', 'ALDER', 'BRAMBLE', 'SORREL', 'THISTLE',
     'FROST', 'DRIFT', 'FLURRY', 'EMBER', 'FLINT', 'TINDER', 'GLACIER', 'AURORA',
@@ -46,40 +43,17 @@
   function randomName() {
     return NAME_POOL[Math.floor(Math.random() * NAME_POOL.length)];
   }
-  function randomLook() {
-    const look = {};
-    for (const k in LOOK_N) look[k] = Math.floor(Math.random() * LOOK_N[k]);
-    return look;
-  }
-  // a look repaired axis by axis against LOOK_N: a missing or out-of-range
-  // value (a hand-edited save, a table that shrank) lands on 0, never throws
-  function mendLook(src) {
-    const look = {};
-    for (const k in LOOK_N) {
-      const v = src && typeof src[k] === 'number' && isFinite(src[k]) ? Math.floor(src[k]) : 0;
-      look[k] = v >= 0 && v < LOOK_N[k] ? v : 0;
-    }
-    return look;
-  }
   function blankStats() {
     return { wins: 0, matches: 0, gold: 0, days: 0, kills: 0, deaths: 0 };
   }
-  // a character's stored shape. `born` is when it was made (ms), unread by
-  // the game and kept for a server to order slots by.
-  function mendChar(src) {
-    const c = { name: '', cls: 0, look: mendLook(src && src.look), stats: blankStats(), born: Date.now() };
-    if (src && typeof src === 'object') {
-      if (typeof src.name === 'string' && validate(src.name).ok) c.name = validate(src.name).name;
-      if (typeof src.cls === 'number' && isFinite(src.cls) && src.cls >= 0 && src.cls < CLASS_N) c.cls = Math.floor(src.cls);
-      if (src.stats && typeof src.stats === 'object') {
-        for (const k in c.stats) {
-          if (typeof src.stats[k] === 'number' && isFinite(src.stats[k])) c.stats[k] = Math.max(0, Math.floor(src.stats[k]));
-        }
-      }
-      if (typeof src.born === 'number' && isFinite(src.born)) c.born = src.born;
+  // stats repaired onto `into`: whole, non-negative numbers ADDED to what is
+  // there (so v2's slots sum into one ledger); anything else is skipped
+  function addStats(into, src) {
+    if (!src || typeof src !== 'object') return into;
+    for (const k in into) {
+      if (typeof src[k] === 'number' && isFinite(src[k])) into[k] += Math.max(0, Math.floor(src[k]));
     }
-    if (!c.name) c.name = randomName();
-    return c;
+    return into;
   }
 
   // A basic filter, deliberately: it normalises the obvious letter-for-digit
@@ -102,20 +76,14 @@
   // against, so every field below is guaranteed present to every reader
   function blank() {
     return {
-      v: 2,
-      // the character slots (mendChar's shape, at most CHAR_MAX) and which one
-      // is active. An empty list is a fresh install: boot opens the create
-      // screen before the title (js/app/boot.js). Everything a character owns -
-      // its name, class, look and stats - lives in its slot; what follows is
-      // the player's, shared by all three.
-      chars: [],
-      active: 0,
+      v: 3,
+      name: randomName(),
+      stats: blankStats(),
+      hero: 0,         // the hero last locked in (a CLASSES index): where the pick opens next time
       dropped: false,  // has this profile ever jumped off the eagle - gates the first-flight countdown
       bestLap: 0,      // the ice parkour's all-time best lap in seconds (0 = never lapped)
       bestRange: 0,    // the archery range's all-time best round score (0 = never played)
       bestRounds: {},  // ...and the bell's other rounds' (AG_ROUNDS, js/sim/practice.js), by round id - these three are all practice writes
-      // (the lifetime stats moved onto the characters in v2: a v1 save's
-      // name and stats become its first character in load())
       // The arsenal tree. A MATCH reads nothing back out of here - every kind
       // is unlocked for every profile alike - so the one live list is `seen`:
       // every `TECH` node id this profile has ever held, written from the
@@ -128,6 +96,7 @@
       // `owned`, and an id the game no longer has is kept but never worn
       // (birdSkinFor, js/ui/skins.js, falls back to the free one).
       coins: START_COINS,
+      rank: RANK_START,
       owned: [],
       worn: {},
       // null, not {} - game.js reads a null here as "nothing was ever saved"
@@ -185,7 +154,7 @@
   }
 
   window.PROFILE = {
-    NAME_MAX, DEFAULT_NAME,
+    NAME_MAX, RANK_START,
 
     // Read the store once, at boot, before anything asks for a name. Repairs a
     // partial or corrupt save against blank() rather than throwing, and folds a
@@ -203,19 +172,18 @@
             if (/^[a-z]+$/.test(k) && typeof n === 'number' && isFinite(n) && n > 0) profile.bestRounds[k] = Math.floor(n);
           }
         }
+        // who you are: v1 and v3 keep one name and one ledger; v2 kept up to
+        // three character slots, which fold into one here - the active slot's
+        // name and hero, and every slot's stats added together, so nobody
+        // loses a win they had on any of them
+        let name = s.name, hero = s.hero;
         if (Array.isArray(s.chars)) {
-          // the slots, each repaired on its own; past CHAR_MAX are dropped
-          for (const c of s.chars.slice(0, CHAR_MAX)) profile.chars.push(mendChar(c));
-        } else if (typeof s.name === 'string' && s.name) {
-          // a v1 save: its one name and its numbers become the first
-          // character, a hunter with a rolled look (the class is the
-          // player's to fix by making another; the stats are the point)
-          const c = mendChar({ name: s.name, cls: 0, look: randomLook(), stats: s.stats });
-          if (validate(s.name).ok) c.name = validate(s.name).name;
-          profile.chars.push(c);
-        }
-        if (typeof s.active === 'number' && isFinite(s.active)) profile.active = Math.floor(s.active);
-        if (profile.active < 0 || profile.active >= profile.chars.length) profile.active = 0;
+          const act = s.chars[s.active | 0] || s.chars[0];
+          if (act && typeof act === 'object') { name = act.name; hero = act.cls; }
+          for (const c of s.chars) if (c && typeof c === 'object') addStats(profile.stats, c.stats);
+        } else addStats(profile.stats, s.stats);
+        if (typeof name === 'string' && validate(name).ok) profile.name = validate(name).name;
+        if (typeof hero === 'number' && isFinite(hero) && hero >= 0 && hero < HERO_N) profile.hero = Math.floor(hero);
         // the tech lists: strings only, de-duplicated, and a save written
         // before the tree existed simply arrives without them and keeps the
         // empty pair blank() made
@@ -231,6 +199,7 @@
         // a profile from before the purse arrives without it and keeps the
         // START_COINS blank() gave it, like a fresh one
         if (typeof s.coins === 'number' && isFinite(s.coins)) profile.coins = Math.max(0, Math.floor(s.coins));
+        if (typeof s.rank === 'number' && isFinite(s.rank)) profile.rank = Math.max(RANK_MIN, Math.floor(s.rank));
         if (Array.isArray(s.owned)) {
           for (const id of s.owned) if (typeof id === 'string' && id.length <= ID_MAX && profile.owned.indexOf(id) < 0) profile.owned.push(id);
         }
@@ -246,70 +215,31 @@
         } catch (e) { }
         saveNow();
       }
-      if (s && s.v !== 2) saveNow(); // a migrated save is written back in its new shape at once
+      if (s && s.v !== 3) saveNow(); // a migrated save is written back in its new shape at once
       return profile;
     },
 
     get() { return profile; },
     validate,
 
-    // ---- characters -------------------------------------------------------
-    // The slots. A character is { name, cls, look, stats, born } (mendChar);
-    // the active one is what the local player wears into a match
-    // (applyCharacter, js/sim/player.js). Everything a match writes back - the
-    // stat calls below - lands on the active slot.
-    CHAR_MAX, CLASS_N, LOOK_N,
-    chars() { return profile.chars; },
-    activeIndex() { return profile.active; },
-    char() { return profile.chars[profile.active] || null; },
-    hasChar() { return profile.chars.length > 0; },
-    // the name to print: the active character's, the default only for a
-    // profile with no character yet (boot never plays one)
-    name() { const c = profile.chars[profile.active]; return c ? c.name : DEFAULT_NAME; },
-    // a fresh, UNSAVED character for the create screen to open on: rolled
-    // name, rolled look, the class the caller asks for (or a coin)
-    rollChar(cls) {
-      return mendChar({ name: randomName(), cls: typeof cls === 'number' ? cls : Math.floor(Math.random() * CLASS_N), look: randomLook() });
-    },
-    // Make a character from a spec ({ name, cls, look }) into the next free
-    // slot and make it active. Returns validate()'s result for the name, or
-    // { ok: false, why: 'FULL' }; on failure nothing is written.
-    createChar(spec) {
-      if (profile.chars.length >= CHAR_MAX) return { ok: false, why: 'FULL' };
-      const r = validate(spec && spec.name);
+    // ---- who you are --------------------------------------------------------
+    // The one name every other player sees, and the hero the pick opens on.
+    HERO_N,
+    name() { return profile.name; },
+    // Returns validate()'s result; on a refusal nothing is written.
+    setName(raw) {
+      const r = validate(raw);
       if (!r.ok) return r;
-      const c = mendChar({ name: r.name, cls: spec.cls, look: spec.look, stats: null });
-      profile.chars.push(c);
-      profile.active = profile.chars.length - 1;
-      saveNow();
+      if (profile.name !== r.name) { profile.name = r.name; saveNow(); }
       return r;
     },
-    // Rename and re-dress slot i. The class is NOT taken from the spec: it is
-    // fixed at creation, and the only way to another class is another
-    // character. Returns validate()'s result; on failure nothing is written.
-    updateChar(i, spec) {
-      const c = profile.chars[i];
-      if (!c) return { ok: false, why: 'EMPTY' };
-      const r = validate(spec && spec.name);
-      if (!r.ok) return r;
-      c.name = r.name;
-      c.look = mendLook(spec.look);
+    // a fresh winter word, unsaved: the profile card's die offers it
+    rollName() { return randomName(); },
+    hero() { return profile.hero; },
+    setHero(i) {
+      if (!(i >= 0 && i < HERO_N) || profile.hero === i) return;
+      profile.hero = i | 0;
       saveNow();
-      return r;
-    },
-    deleteChar(i) {
-      if (!profile.chars[i]) return false;
-      profile.chars.splice(i, 1);
-      if (profile.active >= profile.chars.length) profile.active = Math.max(0, profile.chars.length - 1);
-      else if (profile.active > i) profile.active--;
-      saveNow();
-      return true;
-    },
-    setActive(i) {
-      if (!profile.chars[i] || profile.active === i) return false;
-      profile.active = i;
-      saveNow();
-      return true;
     },
 
     // ---- first flight -------------------------------------------------------
@@ -361,12 +291,8 @@
     putSettings(s) { profile.settings = s; saveNow(); },
 
     // ---- stats ------------------------------------------------------------
-    // The ACTIVE character's lifetime numbers; a call with no character
-    // (nothing plays without one) counts on a throwaway so it never throws.
-    stats() { const c = profile.chars[profile.active]; return c && !quiet ? c.stats : blankStats(); },
-    // a match the player only WATCHES (the bot ladder, js/ui/ladder.js) counts
-    // on the throwaway too: until the page reloads, nothing reaches the stats
-    quiet(on) { quiet = !!on; },
+    // The lifetime numbers.
+    stats() { return profile.stats; },
     addWin() { this.stats().wins++; scheduleSave(); },
     addGold(n) { if (n > 0) { this.stats().gold += n; scheduleSave(); } },
     // one call per day the player sets foot in: day 1 as the eagles take off
@@ -403,6 +329,9 @@
     },
     // a finished match's pay (payMatchCoins, js/ui/skins.js): a moment, so it saves through
     addCoins(n) { n = Math.floor(n) || 0; if (n > 0) { profile.coins += n; saveNow(); } },
+    // ---- ranked -------------------------------------------------------------
+    rank() { return profile.rank; },
+    addRank(d) { profile.rank = Math.max(RANK_MIN, profile.rank + (Math.round(d) || 0)); saveNow(); },
     // DBG only: set the purse (a staged screenshot, a test of the short purse)
     setCoins(n) { profile.coins = Math.max(0, Math.floor(n) || 0); saveNow(); },
 

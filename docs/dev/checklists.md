@@ -71,8 +71,8 @@ declare victory. The affordances:
   - **Under the wrapper — Noah runs this by hand; a session never starts Electron or makes a
     Steam lobby.** `cd desktop && npm start -- --net=host` on one machine and `--join=LOBBYID`
     on another (Steam running on both) ride the same match over a Steam lobby; with Steam up
-    the MULTIPLAYER plank lists the open lobbies and a click joins one (`--transport=relay` for
-    the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
+    QUICKPLAY hosts a party as a public lobby whose code a friend types into their own party
+    (`--transport=relay` for the relay's rooms instead). `DBG.netStatus().lobby` is the id to hand a joiner and `DBG.lobbies()` lists them raw.
     `npm start -- --seed=42 --shot=out.png --wait=4 --quit` boots the game from disk headlessly
     and captures it.
 - **The counter needs a merchant, and a merchant needs a roost**: `startGame()`, step until
@@ -111,14 +111,14 @@ declare victory. The affordances:
   `{ connected: true, mapping: 'standard', axes: [..4], buttons: [{pressed, value}..17] }`,
   set axes and buttons, and call `padPoll(1/60)` before each `update` — the [two
   controllers](multiplayer.md#the-two-controllers) list what each does.
-- **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a profile with no
-  character boots straight into the create screen on a pre-rolled character (boot.js calls
-  `beginCreate(-1, true)`), and its `dropped` flag comes back false, so the next ride runs the
-  scripted first flight and its [drop brief](rendering.md#eagle-drop-mode-drop). `DBG.PROFILE`
-  is the store; `DBG.beginChars()` opens the roster and `DBG.beginCreate(slot)` the create /
-  customize screen (`-1` a new character), driven by `createHit`/`charsHit`, `createKey`,
-  `createCommit`/`createCancel` and read back through `createLayout`/`charsLayout`. See
-  [architecture.md](architecture.md#profilejs).
+- **`localStorage.removeItem('softfall.profile')`** re-stages a first launch: a fresh profile
+  boots on the title with a pre-rolled name, and its `dropped` flag comes back false, so the next
+  ride runs the scripted first flight and its [drop brief](rendering.md#eagle-drop-mode-drop).
+  A v2 save (`{ v: 2, active, chars: [{ name, cls, stats }..] }` written before a reload) stages
+  the fold into one profile. `DBG.PROFILE` is the store; `DBG.beginProfile()` opens the profile
+  card, driven by `profileHit`, `profileKey`, `profileCommit`/`leaveProfile` and read back
+  through `profileLayout`/`profileTagRect`; `DBG.lobbyPick(i)` and `DBG.heroList()` drive the
+  lobby's hero row. See [architecture.md](architecture.md#profilejs).
 - **The arsenal needs no staging** — every kind is unlocked for
   every profile, so `DBG.LOOT_POOL` is the same on a fresh install as on a played-in one, and
   reading it back is how you prove what a match may drop. `DBG.wipeTech()` still forgets which
@@ -331,13 +331,14 @@ the bots' `BOT_BUILDS` if a class should buy it. A new **fish** needs no shop ed
 in `FISH_KINDS` prices it off its `heal` (`foodPrice`).
 
 **Adding a class** — the tables make most of it mechanical, and every screen picks the new
-entry up with no edit: the create screen's class pair grows an emblem, the strip, the gear
+entry up with no edit: the lobby's hero row grows a cell, the strip, the gear
 pop-up's preview/ledger and the bot class hash
 (`initPlayers`, already `floor(hash × CLASSES.length)`) are all generic over the tables. What a
 new class needs written:
 
-1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name` and the `kit` numbers are
-   the load-bearing halves;
+1. a `CLASSES` entry ([js/sim/player.js](../../js/sim/player.js)) — `name`, its one fixed `look`
+   and the `kit` numbers are the load-bearing parts (a hero announced in `HEROES_SOON` moves
+   over, keeping its look);
 2. the full sprite set in the byte-fragile [js/sprites/characters.js](../../js/sprites/characters.js)
    (a beast goes in beasts.js, the bears in bears.js by rebaking, a building in buildings.js, an item in items.js, terrain in
    terrain.js, HUD art in icons.js), registered by adding its key to that file's
@@ -352,12 +353,11 @@ new class needs written:
    `abilityPose` case, any world entities it leaves and their tick/draw, and its on-body draw
    in `drawAbilityOnPlayer` if it leaves a visible state;
 4. four detailed 32×32 icons in `AB32` (on `AB32_PAL` — one palette across every big icon);
-5. a 32×32 class **emblem** in `CLASS32` ([js/ui/menu.js](../../js/ui/menu.js), same palette) — the
-   symbolic mark the create screen's class pair and the roster read the class by — and its 12×12
-   twin in `CLASS12` beside it, drawn by hand (never a shrink), which the
-   [team rail](rendering.md#the-team-rail) wears;
+5. a 12×12 class **emblem** in `CLASS12` ([js/ui/menu.js](../../js/ui/menu.js), same palette),
+   drawn by hand (never a shrink), which the [team rail](rendering.md#the-team-rail), the rooms,
+   the saves and the tooltips wear;
 5b. an `OUTFIT` layer for the 48 px model ([js/sprites/looks.js](../../js/sprites/looks.js) —
-   the hat stopping at row 8 so the hair shows under it) and `CLASS_N` bumped in
+   the hat stopping at row 8 so the hair shows under it) and `HERO_N` bumped in
    [js/app/profile.js](../../js/app/profile.js), which looks.js asserts against at load; a `champLook`
    branch in characters.js saying where the new body's fringe sits
    ([sprites.md](sprites.md#looks-a-character-on-the-class-body));

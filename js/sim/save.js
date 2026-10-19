@@ -325,7 +325,7 @@ function saveHash() {
 // Solo matches only: an online match is the host's and a client's sim never
 // runs, and the practice room is no match at all. Nor is one already decided.
 function canSave() {
-  return !PRACTICE && !NET.isClient && NET.role === 'solo' && !!saveBase && !ladderWatch && // a watched bot match is not saved (js/ui/ladder.js)
+  return !PRACTICE && !NET.isClient && NET.role === 'solo' && !!saveBase &&
     (state.mode === 'play' || state.mode === 'drop' || state.mode === 'dead') &&
     state.over !== 'won' && state.over !== 'lost';
 }
@@ -430,10 +430,6 @@ function loadSave(slot) {
       return;
     }
     try { sessionStorage.setItem('softfall.load', json); } catch (e) { go(null); return; }
-    // the character that played it becomes the active one, so what the match
-    // adds to a lifetime tally lands on the right card (js/app/profile.js)
-    const ci = PROFILE.chars().findIndex((c) => c.name === m.name && c.cls === m.cls);
-    if (ci >= 0) PROFILE.setActive(ci);
     location.href = location.pathname + '?seed=' + m.seed + '&map=' + m.map;
   };
   state.fade = {

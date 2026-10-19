@@ -156,34 +156,29 @@ const state = {
   // table in a file that loads later, so the ease loop tops up a missing
   // cell rather than trusting it - a short array turned into NaN and
   // silently deleted a row when a fifth plank arrived.
-  menu: { sel: 0, hover: [0, 0, 0, 0], t: 0,
+  menu: { sel: 0, hover: [0, 0, 0], t: 0,
     panel: null, panelT: 0, closing: false,
-    // the character screens (js/ui/chars.js): charT their ease (screen
-    // 'chars' is the roster, 'create' the create/customize screen), cedit
-    // the create screen's unsaved buffer ({ slot, spec, first } - slot -1 is
-    // a new character, first the fresh-install pass with no title to go
-    // back to), nameBuf/nameShake its name field and refusal rattle, crow the
-    // keyboard row, ksel the roster's keyboard slot, khover the hover eases
-    // keyed by hit id
+    // the profile card (screen 'profile', js/ui/profile-card.js): charT its
+    // ease, nameBuf the name field's buffer, nameSel whether the next letter
+    // replaces it, nameEdit whether the field is being typed in, nameShake
+    // its refusal rattle, khover the hover eases keyed by hit id
     // the skins screen (js/ui/skins.js): skinT its ease, skTab the open
     // category (SKIN_TABS; it opens on the eagle), skSel the keyboard's card,
     // skNav the keyboard up on the navbar, skPick the card for sale picked for
     // a second press to buy, skHover the tabs' and cards' hover eases, skDeny
     // the short purse's shake, skFlash the buy's flash over card skFlashI
     skinT: 0, skTab: 1, skSel: 0, skNav: false, skPick: -1, skHover: {}, skDeny: 0, skFlash: 0, skFlashI: -1,
-    charT: 0, cscreen: 'chars', cedit: null, nameBuf: '', nameSel: false, nameShake: 0, dieT: 0, crow: 0, ksel: 0, khover: {},
+    charT: 0, nameBuf: '', nameSel: false, nameEdit: false, nameShake: 0, khover: {},
     moved: false, keyNav: false, dieT: 0, rolling: 0, camT: 0, pressT: 0, // keyNav: the keys made the pick (it lights until the pointer moves)
     // a sealed plank's knock (drawMenuButton's frozen glaze cracks from
     // iceX/iceY while iceT runs, on the plank iceI names); nothing sets them
     // today - the title's items are all live - but a client's lobby still
     // draws the host's name sealed, and the glaze reads them
     iceT: 0, iceI: -1, iceSeed: 0, iceX: 0, iceY: 0,
-    // lobby: which screen the menu shows, its cross-fade, the chosen
-    // class, per-portrait hover eases (a seed pair - updateTitle's `|| 0`
-    // grows it with the roster, since CLASSES loads after this file), swap
-    // pop, lock-in hold.
-    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'chars' | 'create' | 'skins' | 'ladder'
-    // (the bot ladder, js/ui/ladder.js: ladT its ease, ldSel its row, ldTop the first row shown, ldHover its hover eases).
+    // lobby: which screen the menu shows, its cross-fade, the chosen hero
+    // (csel, the hero row - js/ui/heroes.js), the stage's swap pop, lock-in hold.
+    // screen: 'menu' | 'lobby' | 'hero' | 'map' | 'ai' | 'wiki' | 'notes' | 'profile' | 'skins' | 'room'
+    // ('room' is the party lobby, js/ui/rooms.js; 'lobby' the hero select).
     // 'hero', 'map' and 'ai' are the three pop-ups over the still-lit lobby:
     // pop names the one open (kept while it fades out) and popT is its ease;
     // grow is the hero pop-up's keyboard row (the gear column, the ability
@@ -194,7 +189,7 @@ const state = {
     // `the wiki`); the patch notes are one too, on notesT, notesTab its open
     // tab (0 PATCH NOTES, 1 ROADMAP), notesSel the group the keys have picked
     // (js/ui/notes.js `patch notes`).
-    screen: 'menu', screenT: 0, csel: 0, chover: [0, 0], cswapT: 1, lockT: 0,
+    screen: 'menu', screenT: 0, csel: 0, cswapT: 1, lockT: 0,
     // lobby's map slide (mapStep: {d, k, from, t}, null at rest), the lock-in's
     // ring (lockFx, s left), and the difficulty target: the level it wears and
     // how long since it changed (its jolt, menu.js `lobby`)
@@ -204,10 +199,10 @@ const state = {
     // ran out); dhover the AI pop-up's three plates' hover eases (menu.js
     // `lobby`)
     countT: 0, countN: -1, dhover: [0, 0, 0],
-    // the rooms screen (the MULTIPLAYER plank, js/ui/menu.js): its ease, the
-    // relay's open rooms, whether the relay answered, the row hovers, the
-    // keyboard row, and the refusal rattle of a room that would not have us
-    roomsT: 0, rooms: [], roomsOk: false, rhover: {}, rsel: -1, roomsShake: 0,
+    // the party lobby (js/ui/rooms.js): its ease, the open rooms a typed code
+    // is looked up in and whether the list answered, the code being looked
+    // for (seek), and a join under way
+    roomsT: 0, rooms: [], roomsOk: false, seek: null, joining: false,
     pop: null, popT: 0, grow: 0, gearFxT: 0, gearFxSlot: 0, mrow: 0, wikiT: 0, wikiTab: 0, notesT: 0, notesTab: 0, notesSel: 0 },
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)

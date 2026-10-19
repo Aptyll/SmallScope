@@ -22,7 +22,7 @@ function renderUI(now) {
   // bar.
   const hudIn = hudInT(); // 0 away .. 1 home; a drop brief pins it at 0 for the tour
   const slide = 1 - hudIn;
-  const out = state.mode === 'dead' || !!ladderWatch; // the local wallet is moot once you are out, or only watching (js/ui/ladder.js)
+  const out = state.mode === 'dead'; // the local wallet is moot once you are out
 
   ctx.save();
   ctx.translate(0, Math.round(-slide * (MM_R * 2 + 40)));
@@ -34,6 +34,7 @@ function renderUI(now) {
   // intro slide down from above like the minimap, at its own size dial
   // (railSc), and stays up while you are out - who is up is what a spectator reads
   drawRailScaled(now, slide);
+  drawVotePanel(); // the surrender vote, under the rail (js/ui/vote.js)
 
   // THE COUNTER WASHES THE FRAME (shopScrim, js/ui/shop.js), and exactly what a
   // trade is made of stays lit above the wash: the counter itself, the corner
@@ -83,7 +84,7 @@ function renderUI(now) {
   // roost under attack. Above the counter and the sheet on purpose, so the
   // news never arrives behind a panel; they stay up while you are down,
   // like the feed.
-  if (!ladderWatch) renderNotices(); // a watcher has no sheet or purse for them to be news to (js/ui/ladder.js)
+  renderNotices();
 
   // arriving at a camp announces it, top centre: the name big, its
   // personality under it. Fades on the plate, so it uses the shadow font.

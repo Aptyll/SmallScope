@@ -995,13 +995,17 @@ function muteBtnRect() {
 // fresh title world; in a match it is toLobby() (js/screens.js), the
 // death screen's own way back to the title. Only the in-match slab hangs it:
 // the title's slide-in has nothing to leave, so CLOSE sits centred alone.
-// A solo match hangs SAVES between them (the saves slab, js/ui/saves.js).
+// A solo match hangs SAVES between them (the saves slab, js/ui/saves.js),
+// and SURRENDER stands before LEAVE while your side may vote: it starts the
+// vote, or casts your yes in one already open (js/sim/surrender.js). Four planks
+// slim down a little to keep the slab's margins.
 function footPlanks() {
-  const ids = state.settingsOpen ? (canSave() ? ['close', 'saves', 'leave'] : ['close', 'leave']) : ['close'];
-  const n = ids.length, y = SET_Y + SET_FOOT_Y;
-  const x0 = SET_X + Math.round((SET_W - (SET_PLANK_W * n + SET_PLANK_GAP * (n - 1))) / 2);
-  const label = { close: 'CLOSE', saves: 'SAVES', leave: 'LEAVE' };
-  return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (SET_PLANK_W + SET_PLANK_GAP), y, w: SET_PLANK_W, h: SET_PLANK_H }));
+  const ids = !state.settingsOpen ? ['close'] : ['close', ...(canSave() ? ['saves'] : []),
+    ...(voteCanStart(player) || voteOpenFor(player) ? ['surrender'] : []), 'leave'];
+  const n = ids.length, y = SET_Y + SET_FOOT_Y, pw = n > 3 ? SET_PLANK_W - 8 : SET_PLANK_W;
+  const x0 = SET_X + Math.round((SET_W - (pw * n + SET_PLANK_GAP * (n - 1))) / 2);
+  const label = { close: 'CLOSE', saves: 'SAVES', surrender: 'SURRENDER', leave: 'LEAVE' };
+  return ids.map((id, i) => ({ id, label: label[id], x: x0 + i * (pw + SET_PLANK_GAP), y, w: pw, h: SET_PLANK_H }));
 }
 function leavePlankRect() { return footPlanks().find((l) => l.id === 'leave') || null; }
 // CLOSE: the in-match slab folds (what ESC does, input.js), the title's
@@ -1098,6 +1102,7 @@ function settingsMouseDown() {
   if (hit === 'close') { settingsClose(); return; }
   if (hit === 'leave') { if (PRACTICE) leavePractice(); else toLobby(); return; }
   if (hit === 'saves') { openSaves(); return; }
+  if (hit === 'surrender') { player.input.cmd = { kind: 'vote', yes: true }; settingsClose(); return; }
   if (hit.startsWith('c:')) {
     const [, rid, oid] = hit.split(':');
     const row = settingsLayout().rows.find(r => r.id === rid);

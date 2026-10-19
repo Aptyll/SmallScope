@@ -66,8 +66,8 @@ initPlayers();
   netRelay(); // a ?relay= in the URL is remembered now, whether or not a role follows
   if (q) netSetup(q[1], netTransportFor(r ? r[1] : null)); else netSetup('solo');
 })();
-// ...and a page reloaded onto a room's seed to join it (joinRoom, js/ui/menu.js)
-// walks straight into the rooms screen with that join under way
+// ...and a page reloaded onto a party's seed to join it (joinRoom, js/ui/rooms.js),
+// a Steam invite, or a rematch walks straight into the party lobby with that join under way
 const JOIN_AT_BOOT = (function () { const j = /[?&]join=([A-Z0-9]+)/i.exec(location.search); return j ? j[1].toUpperCase() : null; })();
 // a saved match (js/sim/save.js): the valley as it grew is the baseline every
 // save is written against, and a load that reloaded onto its seed puts the
@@ -103,13 +103,9 @@ if (PRACTICE) {
   camY = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
   state.introFrom = { x: camX, y: camY };
   state.intro = HUD_IN_T; state.introLen = HUD_IN_T;
-} else if (!PROFILE.hasChar()) {
-  // a fresh install: the first thing seen is the create screen, opened on a
-  // pre-rolled character (js/ui/chars.js) - the title menu is behind it
-  beginCreate(-1, true);
 }
-if (JOIN_AT_BOOT && !PRACTICE && PROFILE.hasChar()) { beginRooms(); state.menu.rsel = -2; netJoin(JOIN_AT_BOOT); rematchBootJoin(); }
-rematchBootHost(); // a host back from a match in a room: the room again, same people, same sides (js/ui/rooms.js)
+if (JOIN_AT_BOOT && !PRACTICE) partyBootJoin(JOIN_AT_BOOT); // the party screen, the join under way (js/ui/rooms.js)
+rematchBootHost(); // a leader back from a match: the party again, same people (js/ui/rooms.js)
 // landing from a reroll: the whiteout the die left behind clears to the new world
 try {
   if (sessionStorage.getItem('softfall.reroll')) {
@@ -124,7 +120,7 @@ try {
   // itself and comes back up on itself)
   if (sessionStorage.getItem('softfall.select')) {
     sessionStorage.removeItem('softfall.select');
-    if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
+    if (!PRACTICE && !JOIN_AT_BOOT) {
       beginLobby(); state.menu.screenT = 1;
       if (state.fade) state.fade.color = LOBBY_NIGHT;
     }
@@ -135,7 +131,7 @@ try {
   const dropRaw = sessionStorage.getItem('softfall.drop');
   if (dropRaw) {
     sessionStorage.removeItem('softfall.drop');
-    if (!PRACTICE && PROFILE.hasChar() && !JOIN_AT_BOOT) {
+    if (!PRACTICE && !JOIN_AT_BOOT) {
       try {
         const d = JSON.parse(dropRaw);
         if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
@@ -195,10 +191,10 @@ window.DBG = {
   settings, perf, treeRare, cursorInfo,
   // the other controller (js/app/gamepad.js): its live state
   pad, padActive,
-  // the local profile: the store itself and the character screens (js/ui/chars.js),
-  // so a driver can open the roster or the create screen and read back what it accepts
-  PROFILE, beginChars, leaveChars, beginCreate, createCommit, createCancel, createKey, createHit, charsHit,
-  createLayout, charsLayout, nameOk, charTagRect, overCharTag, applyCharacter, activateChar, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
+  // the local profile: the store itself, the profile card (js/ui/profile-card.js)
+  // and the hero row (js/ui/heroes.js), so a driver can rename, pick and read back
+  PROFILE, beginProfile, leaveProfile, profileCommit, profileKey, profileHit, profileLayout, profileTagRect, overProfileTag,
+  applyProfile, heroList, lobbyPick, beginSkins, skinsLayout, birdSkinFor, coinTagRect, setCoins: (n) => PROFILE.setCoins(n),
   // the radial wheel: open one by hand (state.wheel) and read back the
   // geometry the hover test and the pixels both use
   wheelLayout, wheelSpan, wheelAng, WHEEL_HUB, WHEEL_R, WHEEL_RING,
@@ -668,17 +664,16 @@ function loop(nowMs) {
   perfFrame(rawDt);
   if (!window.DBG.freeze) {
     padPoll(dt);   // the sticks have no events: read them once a frame, before the steps
-    const spd = ladderWatch ? ladderWatch.speed : 1; // a watched bot match runs faster on request (js/ui/ladder.js)
-    tickAcc += dt * spd;
+    tickAcc += dt;
     let n = 0;
     const t0 = performance.now();
-    while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX * spd) {
+    while (tickAcc >= TICK_DT - TICK_SLACK && n < TICK_MAX) {
       tweenMark();
       update(TICK_DT);
       tickAcc -= TICK_DT;
       n++;
     }
-    if (n === TICK_MAX * spd && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
+    if (n === TICK_MAX && tickAcc > 0) tickAcc = 0; // the stall's remainder is dropped, not owed
     const t1 = performance.now();
     // a hidden page draws nothing: nobody can see it, and a minimised Steam
     // window would otherwise keep the GPU drawing 60 frames a second. Its sim
