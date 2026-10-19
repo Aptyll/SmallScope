@@ -39,7 +39,7 @@ function saveArr(a) { return [() => a, (v) => { a.length = 0; if (v) for (const 
 // with every panel shut
 const SAVE_STATE_SKIP = new Set(['paused', 'mapOpen', 'bagOpen', 'charOpen', 'shop', 'drag', 'dragPend',
   'settingsOpen', 'rebind', 'wheel', 'build', 'menu', 'intro', 'introLen', 'introFrom', 'fade', 'shake',
-  'shopTab', 'forgeSel', 'forgePile', 'tunAim']); // the forge's bench (js/ui/forge.js); a weapon's points ride its own cell
+  'shopSel', 'shopSlot', 'shopCat', 'tunAim']); // the counter's pick and filter (js/ui/shop.js)
 const SAVE_ROOTS = [
   ['state', () => { const o = {}; for (const k of Object.keys(state)) if (!SAVE_STATE_SKIP.has(k)) o[k] = state[k]; return o; },
     (v) => Object.assign(state, v)],
@@ -56,12 +56,11 @@ const SAVE_ROOTS = [
   ['iceBreaks', ...saveArr(iceBreaks)], // the breaks in their own shape (js/sim/icebreak.js); their pixels rebuild off them
   // the orca (js/sim/orca.js); a save from before it carries none, and it stays where boot put it
   ['orca', () => orca, (v) => { if (v) Object.assign(orca, ORCA_FRESH(), v); }],
-  ['market', () => market, (v) => Object.assign(market, v)],
   // the bot callouts (js/ai/ai-callouts.js); a save from before they existed
   // carries none of these, and loads with every side silent
   ['callouts', ...saveArr(callouts)],
   ['callSaid', () => callSaid, (v) => { callSaid[0] = v ? v[0] : {}; callSaid[1] = v ? v[1] : {}; }],
-  ['rng', () => [rng.s, fxRng.s, mktRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; mktRng.s = v[2]; }],
+  ['rng', () => [rng.s, fxRng.s], (v) => { rng.s = v[0]; fxRng.s = v[1]; }], // (an old save's third, the market's, is ignored)
   // (a save from before the deer lines carries one number there: both sides start their clock fresh)
   ['wild', () => [deerBackT, fishCap, fishFloor, emergeSites],
     (v) => { deerBackT = Array.isArray(v[0]) ? v[0] : [DEER_BACK, DEER_BACK]; fishCap = v[1]; fishFloor = v[2]; emergeSites = v[3]; }],
@@ -293,6 +292,7 @@ function saveApply(rec) {
   for (const [n, , put] of SAVE_ROOTS) put(r[n]);
   // a save from before a record field existed: the field starts at nothing
   for (const p of players) for (const k in PLAYER_RECORD) if (p[k] === undefined) p[k] = PLAYER_RECORD[k];
+  for (const p of players) if (!p.items) p.items = new Array(ITEM_SLOTS).fill(null); // ...and from before items (js/sim/items.js)
   objTimersRescan(); // the objects with a clock running are an index of the tiles, rebuilt rather than saved (js/sim/sim.js)
 }
 

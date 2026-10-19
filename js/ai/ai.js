@@ -627,8 +627,14 @@ function resolveCardForBot(p) {
   }
 }
 
-// aiThink's rung 0: a free skill point, then a purse fat enough for gear
-function aiSpend(p, inp) {
+// aiThink's rung 0: a free skill point, then the purse. Items first, off the
+// class's build (BOT_BUILDS, js/sim/items.js): at a counter it buys whatever
+// of the build it can afford, a part or the whole item, and a purse that
+// covers the next WHOLE item walks it to its own side's counter when that is
+// close (a bot respawns beside it). Only a finished build spends on gear.
+// True while it is walking to shop, which ends aiThink's ladder this think.
+const AI_SHOP_DETOUR = 12 * TILE; // px: how far off a bot walks to its counter to buy
+function aiSpend(p, inp, steerTo) {
   // spend a free skill point before the ladder - waiting on it is leaving
   // growth on the table. Lowest ability level first, so the kit rises
   // evenly - which spends the first four points UNLOCKING all four keys
@@ -638,7 +644,22 @@ function aiSpend(p, inp) {
     for (let i = 0; i < AB_KEYS; i++) if (p.abLv[i] - 1 < bl) { bl = p.abLv[i] - 1; ba = i; }
     if (ba >= 0) inp.cmd = { kind: 'ability', i: ba };
   }
-  // ...and gear the same way: the hero pop-up is a menu bought from
+  if (!inp.cmd && p.items) {
+    const buy = botItemBuy(p);
+    if (buy && merchNear(p)) { inp.cmd = { kind: 'shop', act: 'item', id: buy }; return false; }
+    const next = botNextItem(p);
+    if (next && buy === next && p.fightT <= 0) { // never out of a fight (ITEM_FIGHT_T)
+      const m = robots.find((b) => b.merchant && !b.dead && b.team === p.team);
+      const c = m && (stallUp(m.stall) ? m.stall : m.hopT > 0 ? null : m);
+      const pt = c && counterPt(c);
+      if (pt && Math.hypot(pt.x - p.x, pt.y - p.y) < AI_SHOP_DETOUR && steerTo(pt.x, pt.y, 1) >= 0) {
+        aiNote(p, 'SHOP', BUILD_ITEMS[next].name, pt);
+        return true;
+      }
+    }
+    if (next) return false;
+  }
+  // ...and gear once the build is done: the hero pop-up is a menu bought from
   // anywhere (gameplay.md), so a purse fat enough to keep a building
   // float (buyGear re-validates, so a stale order is harmless) is spent on
   // the cheapest piece here, mid-push or mid-defence alike, rather than
@@ -651,6 +672,7 @@ function aiSpend(p, inp) {
     }
     if (gi >= 0 && p.inv.gold >= gc + 15) inp.cmd = { kind: 'gear', piece: gi };
   }
+  return false;
 }
 
 function updateAI(p, dt) {
@@ -793,7 +815,7 @@ function aiThink(p, dt) {
   ai.helping = call ? call.id : -1;
 
   // 0. a free skill point and a fat purse are spent before the ladder
-  aiSpend(p, inp);
+  if (aiSpend(p, inp, steerTo)) return;
 
   // 0b. the orca has it (js/sim/orca.js): off its ice by the nearest way before
   //     the line runs out, everything else after. A bot reads the line a

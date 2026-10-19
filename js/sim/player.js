@@ -247,12 +247,6 @@ const CARD_RARITIES = ['white', 'green', 'blue', 'purple', 'gold'];
 // for "whichever comes next" (fishToEat, js/sim/core.js).
 const FISH_KINDS = ['whitefish', 'fish', 'snowChar', 'sunfish'];
 function fishHeld(p) { let n = 0; for (const k of FISH_KINDS) n += bagCount(p, k); return n; }
-// What one unopened card of each rarity costs at the merchant's counter
-// (the `shop` banner, js/shop.js), and half of it what one fetches sold back.
-// A card is priced by its RARITY and not per entry, because the rarity is
-// what is ever bought or carried: the pick of three inside it is drawn after
-// the money changes hands, so the buyer is paying for the odds, not the buff.
-const CARD_PRICE = { white: 25, green: 45, blue: 80, purple: 130, gold: 210 };
 // 'white' <-> the 'cardWhite' ITEMS/RES_COLORS key every rarity is stored under
 function cardKey(rarity) { return 'card' + rarity[0].toUpperCase() + rarity.slice(1); }
 const CARD_TYPE_RARITY = {}; // 'cardWhite' -> 'white', the inverse of cardKey
@@ -456,15 +450,16 @@ function baseKit(cls) {
     huntMul: 1, dr: 0, foodMul: 1, nightHeal: false, walkMul: 1,
     harvestMul: 1, dodgeCd: DODGE_CD, stealth: 1,
     ambushMul: AMBUSH_MUL, bury: PRONE_BURY,
-    killHeal: 0,
+    killHeal: 0, kindle: false, chill: false, restHeal: 0, // the item passives (js/sim/items.js)
   });
 }
-// rebuild p.kit from class + gear + skills + cards
+// rebuild p.kit from class + gear + skills + cards + items
 function refreshKit(p) {
   const k = baseKit(p.cls);
   for (let i = 0; i < GEAR.length; i++) GEAR[i][p.gear[i]].mod(k, p.gearLv[i]);
   for (let i = 0; i < STAT_TRACKS.length; i++) STAT_TRACKS[i].mod(k, p.pts[i] | 0);
   for (const c of p.cards) CARDS[c.rarity][c.id].mod(k);
+  itemMods(k, p); // the six item slots (js/sim/items.js)
   p.kit = k;
   p.maxHp = levelMaxHp(p);
   if (p.hp === undefined || p.hp > p.maxHp) p.hp = p.maxHp;
@@ -575,7 +570,8 @@ class Player {
     Object.assign(this, PLAYER_RECORD); // the rest of the record, which a save older than a field fills from too (saveApply)
     this.hGold = [];                    // the lobby's two graphs, sampled every STAT_STEP: gold earned...
     this.hDmg = [];                     // ...and damage dealt, both cumulative (sampleStats, js/ui/lobby.js)
-    this.trades = [];                   // the market ledger: every good bought or sold at a counter (marketLog, js/ui/shop.js)
+    this.items = new Array(ITEM_SLOTS).fill(null); // the six item slots, ids or null (js/sim/items.js) - like cards, they survive a respawn
+    this.fightT = 0; this.kindleN = 0;  // s since the last hit given or taken, and KINDLING's count (itemsOnHit)
     refreshKit(this);                   // builds this.kit and this.maxHp from class + gear + skill
     this.aboard = false;                // riding the eagle (beginDrop sets it, dropJump clears it)
     this.dropT = 0;                     // seconds of free fall left after jumping (0 = on the ground)
@@ -896,6 +892,7 @@ function damagePlayer(p, dmg, dx, dy, src, cause, crit, kb) {
   if (src instanceof Player && src !== p && src.team !== p.team) { src.dmgOut += dmg; p.dmgInP += dmg; }
   else if (BEAST_CAUSES.has(cause)) p.dmgInB += dmg;
   p.hurtT = 0.25;
+  p.fightT = ITEM_FIGHT_T; // in a fight: DEN's heal waits (js/sim/items.js)
   if (!dot) {
     const k = HIT_KB * (kb === undefined ? 1 : kb);
     p.kbx = dx * k; p.kby = dy * k;

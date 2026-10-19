@@ -313,14 +313,11 @@
   ];
 
   // ---------------------------------------------------------------- gold sack
-  // The merchant's mark, and the face of every market notice (the `market
-  // notices` banner, js/shop.js): a cinched sack with the hoard glowing in
-  // its neck. Ten frames off docs/media/new_media3/bag_of_gold_bouncing.png,
-  // resampled from 32x32 to the 16x16 the market plate reads at and snapped
+  // The merchant's mark, and GOLD's figure on the wiki's world page: a
+  // cinched sack with the hoard glowing in its neck. Ten frames off docs/media/new_media3/bag_of_gold_bouncing.png,
+  // resampled from 32x32 to 16x16 and snapped
   // onto SACKPAL - the cloth barely moves and the coin does, so the loop
   // reads as gold catching the light rather than as a bag being jostled.
-  // It sits beside the hand-drawn crate on that plate and has to be as crisp
-  // as one.
   const SACKPAL = {
     '.': null,
     'o': '#040102', // outline
@@ -521,11 +518,10 @@
   ];
 
   // ------------------------------------------------------------------- crate
-  // What a TURNOVER looks like: the mark on the market's `NEW STOCK` plate
-  // (the `notices` banner, js/shop.js), where the gold sack says the
-  // PRICE of a thing and this says there is new stock on the counter. Authored
-  // at the 16 it is drawn at rather than at 32 like the sack - it is a still
-  // object with no sparkle to lose, and native pixels keep its braces crisp.
+  // A crate that never shipped: THE WORKS' figure on the wiki's world page.
+  // Authored at the 16 it is drawn at rather than at 32 like the sack - it is
+  // a still object with no sparkle to lose, and native pixels keep its braces
+  // crisp.
   // Lit from above: a hot top rail, an X of pale bracing over mid plank, and
   // the base rail dropping into shade.
   const CRATE_PAL = {
@@ -620,10 +616,8 @@
     itemAnim: { itemGold: goldFrames, itemBerry: berryFrames },
     itemGold: liveIcon(goldFrames),
     itemBerry: liveIcon(berryFrames),
-    // the merchant's sack, ten frames of coin catching the light: 16x16, the
-    // size the market plate reads at, beside the crate on the same plate
+    // the merchant's sack, ten frames of coin catching the light: 16x16
     goldSack: sack.map((f) => bake(f, SACKPAL)),
-    // the same 16px stamp, but for the plate that is about STOCK not price
     crate: bake(crate, CRATE_PAL),
     itemCardWhite: bake(itemCards.white, CARD_PALS.white),
     itemCardGreen: bake(itemCards.green, CARD_PALS.green),
