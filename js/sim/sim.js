@@ -565,7 +565,7 @@ function updatePlay(dt) {
   botLogStep(dt);    // the bot dev view's recorder: reads what the bots just decided (js/ui/botview.js)
   resolveContests(); // this step's work swings, build orders and fish claims
   if (!PRACTICE) sampleStats(dt); // the post-game lobby's two graphs (js/ui/lobby.js)
-  if (!PRACTICE) updateMarket(dt); // fish/berry prices and the merchants' stock (js/shop.js)
+  if (!PRACTICE) updateShop(); // the counter shuts when you walk off (js/ui/shop.js)
   updateAbilityWorld(dt); // craters and nets in flight
   if (state.drop) updateDrop(dt);
   shedStep(dt); // the gusts knocking snow off the pines (js/sim/shed.js)
@@ -1406,6 +1406,7 @@ function updatePlayer(p, dt) {
   playerTool(p, dt);
 
   p.hurtT = Math.max(0, p.hurtT - dt);
+  itemsTick(p, dt); // the fight clock and DEN's heal (js/sim/items.js)
   p.faceT = Math.max(0, p.faceT - dt);
   p.invuln = Math.max(0, p.invuln - dt);
 
@@ -1536,6 +1537,6 @@ function updateFx(dt) {
     f.t += dt;
     if (f.t > (f.k === 1 ? SNOW_TRAIL_LIFE : 9)) footprints.splice(i, 1);
   }
-  ageNotices(dt); // the market's plates under the minimap age here too (js/shop.js)
-  updateStatLedger(dt); // ...and the stat sheet that flies into that lane when a number moves (js/ui/shop.js)
+  ageNotices(dt); // the news plates under the minimap age here too (js/ui/notices.js)
+  updateStatLedger(dt); // ...and the stat sheet that flies into that lane when a number moves
 }

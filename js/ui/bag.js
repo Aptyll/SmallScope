@@ -639,7 +639,6 @@ function drawBag(now) {
       // the icon sits high in the cell so the count can have the bottom
       // right corner without its outline eating the cell's own rim
       drawItemIcon(s.type, r, y - 2);
-      if (s.bits) forgeMark(r, y, toolLvl(s));
       if (s.n > 1) { // a lone item needs no '1' on it - an empty corner says it
         const n = String(s.n);
         drawPixelTextOutline(ctx, n, r.x + r.w - 3 - pixelTextWidth(n), y + 10, '#f4f7ff', '#191b1f');

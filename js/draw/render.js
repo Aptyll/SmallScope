@@ -1469,7 +1469,7 @@ function cursorInfo() {
   // the merchant's counter: a hand over anything that trades, an arrow over
   // the rest of the slab (which still swallows the click)
   const sp = shopHit(mouse.x, mouse.y);
-  if (sp) return { kind: sp === 'panel' ? 'arrow' : 'hand' };
+  if (sp) return { kind: sp === 'panel' || sp.kind === 'foodWell' ? 'arrow' : 'hand' };
   // the backpack widget: a hand over anything in it that does something, a
   // plain arrow over the rest of its frame (which still swallows the click).
   // The weapon shelf standing on it is the other left-draggable HUD.
