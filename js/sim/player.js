@@ -1260,5 +1260,5 @@ function payTakedown(p, killer, foes, worth, bounty) {
     q.assists++; q.feed = 0;
     if (!q.dead) awardGold(q, share, q.x, q.y);
   }
-  if (bounty > 0) addFloater(p.x, p.y - 24, 'SHUTDOWN', '#f2cc6a', { scale: 2, rise: 20, life: 1.4 });
+  if (bounty > 0) addFloater(p.x, p.y - 40, 'SHUTDOWN', '#f2cc6a', { scale: 2, rise: 20, life: 1.4 });
 }
