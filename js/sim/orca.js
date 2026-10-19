@@ -221,7 +221,7 @@ function orcaBite() {
 // a blow that takes the whole of a body, its shield and its hide included,
 // and not a point more (the post-game record counts what landed)
 function orcaLethal(e) {
-  return e instanceof Player ? Math.ceil(e.hp + (e.dawnShield || 0)) + kitOf(e).dr : Math.ceil(e.hp);
+  return e instanceof Player ? armorRaw(e, Math.ceil(e.hp + (e.dawnShield || 0))) : Math.ceil(e.hp);
 }
 
 // the countdown over a player's head, in s left; -1 while the orca is not after them

@@ -343,7 +343,7 @@ function bagCellPlate(r, rim, inner, lift) {
 // LEFT: the body as it stands right now - the class sprite walking in place
 // at 4x wearing its bought gear bands in their level materials
 // (drawGearMarks, the same pixels every rival reads on you in the world) with
-// the held weapon beside it - and under it the STAT LEDGER, GEAR_STATS read
+// the held weapon beside it - and under it the STAT LEDGER, STAT_ROWS read
 // off the LIVE kit (kitOf) with the player handed to it, so gear levels,
 // cards and the hero level's own growth are all in the numbers - the same
 // table, numbers and verdict inks as the stat sheet that flies into the
@@ -441,10 +441,10 @@ function drawCharPanel(now) {
   }
   // the ledger: every number this body carries RIGHT NOW - gear levels, cards
   // and the hero level already folded in, because it reads the live kit and
-  // hands the getters the player (GEAR_STATS, js/ui/menu.js)
+  // hands the getters the player (STAT_ROWS, js/sim/stats.js)
   const k = kitOf(player);
-  for (let i = 0; i < GEAR_STATS.length; i++) {
-    const [label, get, fmt] = GEAR_STATS[i];
+  for (let i = 0; i < STAT_ROWS.length; i++) {
+    const [label, get, fmt] = STAT_ROWS[i];
     const y = L.led.y + i * 8;
     drawPixelTextShadow(ctx, label, L.led.x, y, '#8c919a', '#121418');
     const vTxt = fmt(get(k, player));

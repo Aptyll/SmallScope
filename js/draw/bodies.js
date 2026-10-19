@@ -536,7 +536,8 @@ function drawPlayer(p, ex, ey, now) {
   // orca's count (js/sim/orca.js) stands over the frame the same way, over the shield's
   const shL = p.dawnShield > 0 ? SHIELD_LIFT : 0, line = orcaLine(p);
   const lift = shL + (line > 0 ? ORCA_COUNT_LIFT : 0);
-  callTag(p, Math.round(p.x - ex), hy - 18 - lift); // a bot's callout hangs over the name (js/draw/callouts.js)
+  const bounty = bountyOf(p);
+  callTag(p, Math.round(p.x - ex), hy - 18 - lift - (bounty > 0 ? BOUNTY_LIFT : 0)); // a bot's callout hangs over the name, and over a bounty (js/draw/callouts.js)
   // the whole frame, name included, is one plate stamped over the grade
   // (overheadPlate, js/draw/light.js), so it reads the same in any light and
   // nothing standing in front of the body cuts into it
@@ -545,13 +546,15 @@ function drawPlayer(p, ex, ey, now) {
     if (shL) drawShieldBar(fx - 7, hy - 10, p.dawnShield);
     if (line > 0) drawOrcaCount(fx, hy - 10 - shL, line);
     // the running damage total, past the frame's right edge: the bar backing,
-    // the colour-blind cap or the stun plate, whichever stands furthest out
-    queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 6, barCol(p.team));
+    // the colour-blind cap or the stun plate, whichever stands furthest out,
+    // centred on the 7-row frame the badge spans (hy-8 .. hy-2)
+    queueTally(p, fx + 8 + (p.stunT > 0 ? 6 : foeCue(p.team) ? 1 : 0), hy - 4.5, barCol(p.team));
     // level badge: a 7-tall plate sharing its right frame column with the bar
     // backing's left edge (fx-8: one 1px frame everywhere, never a doubled
     // wall), and spanning the health bar and the stamina bar stacked (hy-8 ..
     // hy-2) - the plate every animal wears too (drawLevelBadge)
     drawLevelBadge(fx - 8, hy - 8, p.level);
+    if (local) queueXp(p, fx - 8 - levelBadgeW(p.level), hy - 4.5); // your XP, mirroring the damage total off the badge's left (js/draw/overhead.js)
     // Every player carries a name tag in its team colour so a fight stays
     // legible - your own included: the profile name is what the rest of the
     // table sees over your head, and hiding it from you alone would make it
@@ -559,6 +562,7 @@ function drawPlayer(p, ex, ey, now) {
     drawWorldText(p.name,
       centreTextX(p.x - ex, p.name), hy - 18 - lift, // clear of the draw meter's frame (top row hy-11) with a gap row
       TEAMS[skin(p.team)].mark);
+    drawBountyTag(p.x - ex, hy - 18 - lift, bounty); // a streak's price, over the name (js/draw/overhead.js)
     // dodge stamina: one clean unsegmented WHITE bar under the health bar -
     // white on every side, since stamina has no side, and white is neither the
     // team's paint above it nor the gold of the draw - charges stay discrete

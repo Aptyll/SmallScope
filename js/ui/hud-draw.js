@@ -448,6 +448,7 @@ function drawHudStrip(now) {
   // one frame behind portrait, wells and bars (drawHudFrame): the bag's
   // ground and the bag's chrome, so the HUD pieces sit in the same family
   drawHudFrame(R.x - 3, R.y, R.w + 6, R.h);
+  drawStatPanel(hov); // left of the portrait (js/ui/statpanel.js)
   drawPortrait(now);
   for (let i = 0; i < AB_N; i++) {
     drawClassAbCell(i, now, hov && hov.kind === 'ab' && hov.i === i);
@@ -484,7 +485,7 @@ function drawHudScaled(now, slideY) {
   }
   const R = hudStripRect();
   const head = Math.max(HUD_BAKE_HEAD, buildHeadroom(), fishPopHeadroom());
-  const bx = R.x - 3, by = R.y - head, bw = Math.max(R.w + 6, buildTabRect().x + BUILD_W + 1 - bx), bh = R.h + head;
+  const bx = statPanelRect().x, by = R.y - head, bw = Math.max(R.x + R.w + 3 - bx, buildTabRect().x + BUILD_W + 1 - bx), bh = R.h + head;
   if (hudScaleCv.width !== bw || hudScaleCv.height !== bh) {
     hudScaleCv.width = bw; hudScaleCv.height = bh;
     hudScaleCtx.imageSmoothingEnabled = false; // resizing resets ctx state; the tool well's 2x art must stay chunky

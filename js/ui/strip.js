@@ -94,7 +94,9 @@ function drawHudFrame(x, y, w, h, o) {
   chamCut(x + 2, y + 2, w - 4, h - 4, c);
 }
 function hudStripRect() {
-  return { x: Math.round((VIEW_W - AB_W) / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
+  // centred WITH the stat panel on its left (js/ui/statpanel.js): the two are
+  // one widget, so the pair sits on the view's centre and scales about it
+  return { x: Math.round((VIEW_W - AB_W + STAT_PANEL_W - 1) / 2), y: VIEW_H - AB_H, w: AB_W, h: AB_H };
 }
 // How far the strip drops to be AWAY: its own height plus the xp numbers
 // standing over the portrait, so the whole widget clears the bottom edge
@@ -169,7 +171,7 @@ function hudFit(w, h) { return hudSnapDown(Math.min((VIEW_W - 8) / w, (VIEW_H - 
 // THE SCALES. The strip's caps where its plate would outgrow the view; the
 // corner's where its claim would cross half the view or its open drawer the
 // view's foot. The rail's is railSc (js/ui/rail.js), capped by its own width.
-function stripCap() { return hudFit(AB_W + 6, AB_H + XP_TAG); }
+function stripCap() { return hudFit(AB_W + 6 + STAT_PANEL_W - 1, AB_H + XP_TAG); }
 function cornerCap() { const f = bagFrameRect(); return hudFit(CORNER_CLAIM * 2, f.y + f.h + 6); }
 function hudSc() { return hudPick(settings.hudScale || 1, stripCap()); }
 function cornerSc() { return hudPick(settings.hudCorner || 1, cornerCap()); }
@@ -318,6 +320,8 @@ function stripHit(mx, my) {
     const r = fishPopRect();
     if (my < r.y + r.h + 2) return { kind: 'fishPop' }; // the row's frame and the gap: nothing, but not the world either
   }
+  const sp = statPanelHit(mx, my); // the stat panel left of the portrait (js/ui/statpanel.js)
+  if (sp) return sp;
   const R = hudStripRect();
   if (mx < R.x - 3 || mx >= R.x + R.w + 3 || my < R.y || my >= R.y + R.h) return null;
   for (let i = 0; i < AB_N; i++) {

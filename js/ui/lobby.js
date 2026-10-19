@@ -54,7 +54,7 @@ function sampleStats(dt) {
   if (statT < STAT_STEP) return;
   statT -= STAT_STEP;
   for (const p of players) {
-    p.hGold.push(p.xp);
+    p.hGold.push(p.earned);
     p.hDmg.push(p.dmgOut);
     if (p.hGold.length > STAT_MAX) { p.hGold = statHalve(p.hGold); p.hDmg = statHalve(p.hDmg); }
   }
@@ -72,11 +72,11 @@ function statFreeze() {
     over: state.over,
     rows: players.filter((q) => q.active).map((q) => ({
       id: q.id, name: q.name, cls: q.cls, team: q.team, you: q === player,
-      level: q.level, kills: q.kills, deaths: q.deaths,
+      level: q.level, kills: q.kills, deaths: q.deaths, assists: q.assists || 0,
       streak: q.bestStreak, multi: q.bestMulti, cc: Math.round(q.ccOut),
       dmg: q.dmgOut, bird: q.dmgBird, struct: q.dmgStruct, beast: Math.round(q.dmgBeast),
       inP: q.dmgInP, inB: q.dmgInB, healed: Math.round(q.healed),
-      gold: q.xp, spent: q.goldSpent, beasts: q.beasts,
+      gold: q.earned, spent: q.goldSpent, beasts: q.beasts,
     })),
     // which sides are still standing at the whistle: a side whose bird has
     // been driven off is out, and a lone side left standing wears the crest
@@ -93,7 +93,7 @@ function statFreeze() {
 // best, and the most damage TAKEN is nobody's prize.
 const SCORE_GROUPS = [
   { head: 'COMBAT', rows: [
-    { label: 'K/D', key: 'kills', txt: (r) => r.kills + '/' + r.deaths, best: false },
+    { label: 'K/D/A', key: 'kills', txt: (r) => r.kills + '/' + r.deaths + '/' + (r.assists || 0), best: false },
     { label: 'LEVEL', key: 'level' },
     { label: 'BEST STREAK', key: 'streak' },
     { label: 'BEST MULTI-KILL', key: 'multi' },

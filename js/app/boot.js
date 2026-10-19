@@ -40,6 +40,7 @@ if (PRACTICE) {
   placeCreek();     // the creek down the cross-diagonal, its bends and fords, and the cistern round its frozen middle (world.js, cistern.js)
   layPaths();       // ...and the paths a grown shape cuts through its own woods, forded where they cross it (world.js)
   placeRoad();       // the diagonal lane, and the paths with it (world.js)
+  placeBase();       // ...and each side's hollow round the end of it, where its bird roosts (js/sim/base.js)
   placeZips();       // ...and each side's cable along it (js/sim/zipline.js)
   placeCamps();      // worldgen's last pass, before the ground is baked: the camps clear their sites
   placeChests();     // ...then the caches take their trees (objects only, no ground)
@@ -126,7 +127,6 @@ try {
       try {
         const d = JSON.parse(dropRaw);
         if (d && Array.isArray(d.gear)) player.gear = d.gear.map((v) => v | 0);
-        if (d && Array.isArray(d.pts)) player.pts = d.pts.map((v) => v | 0);
         if (d && Array.isArray(d.abPick)) player.abPick = d.abPick.map((v) => v | 0);
       } catch (e) { }
       setClass(player, player.cls);
@@ -217,7 +217,7 @@ window.DBG = {
   spawnDrop, throwCell, flingDrop, lockDrop, dropLocked, TOSS_SPEED, TOSS_LOCK_T,
   shedBits, SHED_KICK, BIT_STACK, swaps, SWAP_T,
   // death keeps everything (die): the one number a kill is worth
-  KILL_BOUNTY,
+  get KILL_BOUNTY() { return killBounty(); },
   toolUpgrade: (cell, p) => toolUpgrade(p || player, cell),
   takeUpgrade: (cell, p) => takeUpgrade(p || player, cell),
   // the draw curve: 0..1 off a player's chargeT, and the flight and damage it buys a bit
@@ -285,8 +285,8 @@ window.DBG = {
   setNock: (t, p) => { (p || player).nockT = t; }, // a huge t parks a player's bow for a capture
   // the players: all ten, the local one, and the teams table
   players, MAX_PLAYERS, TEAMS, Player, ringPts, contestRank,
-  // the eagle drop: the live flight records, force a jump, or fly the route from scratch
-  get drop() { return state.drop; }, beginDrop, dropJump: (p) => dropJump(p || player, true), landPlayer, makeEagleRoute, makeEagles, inAir,
+  // the eagle drop: the live flight records, or fly the birds in from scratch
+  get drop() { return state.drop; }, beginDrop, landPlayer, hopOff, makeEagles, inAir,
   hopOff: (p) => hopOff(p || player), // E off the roost for a rider who rode the landing (refused while the brief runs)
   // the two objectives: read them, chip one, or fell one outright without a siege
   get eagles() { return state.drop && state.drop.eagles; },
@@ -294,13 +294,13 @@ window.DBG = {
   perch: SPRITES.perch,
   // the paint: which preset a team wears on this screen (settings.teamBlue), and the two merchants
   skin, get merchants() { return robots.filter((b) => b.merchant); },
-  // the roost's road out: the felling front, or fire the whole lane at once
-  spurs, roadNest, roadSpan, roadDist, roadMainDist, laneDist, findCrashPoint, // the road system: the spur registry, a side's nest and junction, the gates, the three distances (laneDist: as laid, ended at the cistern), and where a bird would land
+  // the road and the bases (js/sim/base.js)
+  pads, roadNest, roadSpan, roadDist, roadMainDist, laneDist, findCrashPoint, // the road system: the crash pads, a side's nest and junction, the gates, the three distances (laneDist: as laid, ended on the perches and at the cistern), and where a bird lands
+  baseAt, baseCentre, basePerch, BASE_R, // the bases: whose hollow a tile is in, its centre, its perch, its radius
   creekAt, creekFlow, creekWet, creekBends, creekOuterFords, waterAt, CQ, // the creek: the distance to its banks (CQ holds where), the current, the plunge test, the bends and the fixed fords
   cisternR, cisternDist, cisternReach, cisternTile, cisternBlocks, cisternTouches, // the cistern (js/sim/cistern.js): tiles from the crossing, px to its stone, how much of a step it lets a body take, and its three tile reads
   zips, zipPoint, zipNearest, zipNear, zipStart, zipEnd, zipToggle,  // the ziplines (js/sim/zipline.js): both lines, a point along one, the nearest point to a body, and the ride's own verbs
   landmarks, LANDMARKS, // the story landmarks (landmarks.js): every one stood, and the table
-  planLane, laneStep: (team, dt) => { const e = state.drop.eagles[team]; if (e.lane) laneStep(e, dt == null ? 99 : dt); return e.lane; },
   hurtEagle: (team, dmg, src) => { const e = state.drop.eagles[team]; hurtEagle(e, dmg == null ? 25 : dmg, src); return e; },
   eagleFlee: (team, src) => eagleFlee(state.drop.eagles[team], src),
   teamEagleDown,
@@ -361,21 +361,21 @@ window.DBG = {
   rpRect, rpCloseRect, rpCloseHit,
   // routes: the search itself, and showPaths = true draws every unit's live route
   findPath, walkable, navTo, showPaths: false,
-  // hero levels: pay a player gold (and XP) the way a pickup would
-  gainGold: (n, p) => gainGold(p || player, n), LEVEL_XP, LEVEL_MAX,
+  // hero levels: pay a player gold, or XP, the way the match would
+  gainGold: (n, p) => gainGold(p || player, n), gainXp: (n, p) => gainXp(p || player, n), LEVEL_XP, LEVEL_MAX,
   // the stat ledger, the sheet that flies into the notice lane when a number
   // moves (the `stat ledger` block, js/ui/shop.js): the table every surface
   // prices a body with, the plate's own size, the live values, what each row
   // is still lit for, and the raise without a change behind it - so a driver
   // can prove a level, a card or a gear buy moved the number it was meant to
-  GEAR_STATS, STAT_W, statPlateH, raiseStatNote, noteLaneFloor,
-  statValues: (p) => GEAR_STATS.map(([n, get, fmt]) => [n, fmt(get(kitOf(p || player), p || player))]),
-  statLit: () => GEAR_STATS.map(([n], i) => (statLit[i] ? [n, statDeltaTxt(statLit[i].d, GEAR_STATS[i][2]), statLit[i].t] : null)).filter(Boolean),
+  STAT_ROWS, STAT_W, statPlateH, raiseStatNote, noteLaneFloor,
+  statValues: (p) => STAT_ROWS.map(([n, get, fmt]) => [n, fmt(get(kitOf(p || player), p || player))]),
+  statLit: () => STAT_ROWS.map(([n], i) => (statLit[i] ? [n, statDeltaTxt(statLit[i].d, STAT_ROWS[i][2]), statLit[i].t] : null)).filter(Boolean),
   // gear: the table, a player's effective kit, and buy/pick without the HUD
   GEAR, GEAR_SLOTS, GEAR_COSTS, kitOf, refreshKit, gearHit, charLayout, charHit, BAG_CELL,
   gearCost: (i, p) => gearCost(p || player, i),
   buyGear: (i, p) => buyGear(p || player, i),
-  pickGear: (i, v) => pickGear(i, v), spendPt, heroLayout, heroScreenHit, beginHero,
+  pickGear: (i, v) => pickGear(i, v), heroLayout, heroScreenHit, beginHero,
   setGear: (i, v, p) => { const q = p || player; q.gear[i] = v; refreshKit(q); return q.kit; },
   // the match readouts: the log (not drawn - read it here), staged lines
   // without the kills behind them, and the standings (hold TAB in game, or

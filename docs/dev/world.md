@@ -15,7 +15,7 @@ stable per tile.
   ([eagle drop](rendering.md#eagle-drop-mode-drop)) — are forested to `ROOST_R` (68 tiles from the
   corner, ~48 along the diagonal) outright: `borderDepth` is the seed's own `borderNoise` **or**
   a quarter-disc whose arc wobbles ±`ROOST_WOBBLE` (3) on the fine noise, so whatever the seed grew
-  there the corner holds one solid block of woods: the nest sits `CRASH_DEPTH` inside the arc and
+  there the corner holds one solid block of woods round its [base](#the-bases)'s hollow, and
   the road's gate is at least the arc out. The union only adds pines, and `genWorld` rolls its per-tree `rng()` only under
   `borderNoise`, so the discs cost the shared stream nothing and move no seed's ground hash
   (the [camps](#camps)' clearings do); not under `PRACTICE`.
@@ -110,7 +110,7 @@ stable per tile.
   pixels would. The per-tile painter is `paintGroundTile(g, tx, ty)`, and a runtime change goes through
   `repaintGround(tx, ty)` (the CLAUDE.md hard rule — the four neighbours are repainted because
   edge rims depend on them). The runtime ground writers: [ice holes](#ice-holes-and-fishing) and
-  their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, a spur's and a roost pad's paving ([the road](#the-road)), and the
+  their dawn refreeze, [ice breaks](#ice-breaks) opening and freezing back, a roost pad's paving ([the road](#the-road)), and the
   practice arena's track rolls. The bake also lays the scenery's
   [cast shadows](rendering.md#cast-shadows), and `render()` repaints a caster's reach itself
   when what stands on a tile changes, so felling or placing scenery calls nothing.
@@ -200,8 +200,8 @@ across a tile edge carries on, and a hole that refreezes gets its crack back.
 **The valley comes out from under the snow a different shape each winter** ([lore](lore.md)), and
 `MAPS` (the `map types` group of [js/sim/world.js](../../js/sim/world.js)) is the shapes it comes out in.
 One entry is one **interior**; the border forest and the two roost corners are every shape's
-alike, because the road's gates, both nests and the crash rule are all measured off
-`borderDepth` and nothing may move them.
+alike, because the road's gates are measured off `borderDepth` and the [bases](#the-bases)
+are fixed, and nothing may move them.
 
 | Shape | The interior |
 | --- | --- |
@@ -341,8 +341,8 @@ places its own on a stream of its own, `mulberry32(SEED ^ 0x524f434b)` (`rkRng`)
 SUNSTONE and FROSTGLASS SPIRE are out at the contested corners, the plain STONE nearer home.
 
 A rock is only ever taken off the map whole: `fellScenery(tx, ty)` clears every tile of the
-footprint from either of them, and the three runtime clears that reach scenery (the crash's
-ring, the landing's lane, the merchant's axe) go through it.
+footprint from either of them, and the runtime clears that reach scenery (the base's hollow at
+boot, the crash's ring, the merchant's axe) go through it.
 
 ## Treasure chests
 
@@ -406,10 +406,9 @@ route that comes from beyond and goes on past us, not one that starts and ends h
 open field it is about `ROAD_HW` (3.5) tiles either side of the centreline, a seven-tile lane with
 room for a whole side and a wave to fight in; where it crosses each roost corner's treeline — the
 **gate**, `roadSpan()`'s `u0`/`u1`, two pennant poles — it eases over `ROAD_GATE_BLEND` (2) u to
-`ROAD_HW_WOOD` (2.5), a five-tile forest road with the pines closing in (`roadHW(u)`); and
-`ROAD_LOG_IN` (10) u past each nest's junction a **felled trunk** lies across it (`log`, below):
-the way on is blocked to anyone on foot (a ridden deer's leap clears it: `OBJECTS.log.leap`, [riding](gameplay.md#riding-a-deer)), and the road running on under it to the edge says the route does not end
-here (the `the road` group of the `world` banner, js/sim/world.js). Ground `3`, packed earth showing
+`ROAD_HW_WOOD` (2.5), a five-tile forest road with the pines closing in (`roadHW(u)`); and it
+runs on through each side's [base](#the-bases) to end on the bird's **perch** (the `the road`
+group of the `world` banner, js/sim/world.js). Ground `3`, packed earth showing
 through the snow with two ruts down its length: it **walks like snow** (only ice and holes are
 special-cased in `updatePlayer`'s momentum block) but it is **not snow** — nothing digs into it
 (`tryProne`, the hunter's burrow), nothing grows on it, a fish never counts it
@@ -427,53 +426,36 @@ off its edge and taper a river to nothing on its way in (the tile world, above),
 shape and the ice network lives further out on the map. The one water it meets is
 [the creek](#the-creek), at the middle, frozen there into [the orca's lake](#the-orcas-lake)
 inside [the cistern](#the-cistern): the lane ends on each gate's stone sill and the way between
-is the ice. `laneDist` is the road as laid and drawn (`roadDist` capped by `cisternLane`, which
-narrows the lane onto a gate's width over `CIST_LANE_TAPER` tiles and is nothing inside the ring);
-`genWorld`'s carve rules read `roadDist` itself, so no seed's ponds move. A
+is the ice. `laneDist` is the road as laid and drawn: `roadDist(fx, fy, true)`, which ends the line
+on the two perches (`baseRoadEnd`, js/sim/base.js), capped by `cisternLane`, which narrows the
+lane onto a gate's width over `CIST_LANE_TAPER` tiles and is nothing inside the ring.
+`genWorld`'s carve rules read `roadDist` without `laid`, the whole line, so no seed's ponds move. A
 **path** is the one thing that crosses the ice network ([the paths](#the-paths)), and it goes
 round the cistern (`pathCost`).
 
-**The nests sit beside it, not on it.** `roadNest(team)` picks each side's **junction** on the
-centreline — at least `ROAD_NEST_IN` (8) u inward from its gate, walking further in (to
-`ROAD_NEST_MAX`, 40) until the **nest**, `ROAD_NEST_OFF` (13) tiles off the centreline to the
-bird's own right, is deep: `roadNestDeep` wants `CRASH_DEPTH` inside the treeline by the border's
-measure (`forestDepth`) *and* inside the roost disc's arc, with `MIN_CRASH_TREES` round it
-(js/sim/eagle.js's crash rule — the deepest, densest candidate stands in if none qualifies). RED (team 0)
-flies down to the bottom-left and its right is the top-left side (`roadOffS < 0`); BLUE's is the
-bottom-right — the two nests mirror through the map's centre like the camps. Pure reads, cached
-per team; a seed's nests are where they always are. The bird lands there
-([eagle drop](rendering.md#eagle-drop-mode-drop)) and its felling front cuts a **spur** from the
-crater straight back to the junction, **paved behind it** into a track `SPUR_HW` (1.25) tiles
-either side of its centreline, so the crash's stumps stay off it, and
-registered in `spurs` (`addSpur(team, jx, jy, cx, cy, end)`: the junction, the unit direction
-toward the crater, the length to the blast's rim, and `paved`, measured back from the crater end
-as the front advances); the crater itself is a **pad** in the same registry (`addPad(team, cx, cy,
-r)`, a disc of `BOOM_R`, paved whole the frame the bird lands — `eagleCrash`, eagle.js), so the
-roost, the spur and the road are one ground. `spurDist` answers 99 where a spur is not yet paved,
-and `roadDist(fx, fy)` is the min of `roadMainDist` and every spur and pad, so the bake, both maps
-and every `onRoad` read see one road system that grows exactly as the front passes. From the road,
-then, the way to a bird is one straight sightline down its spur.
+**Each side's nest and junction are fixed.** `roadNest(team)` (cached) gives the **nest**, the
+bird's perch at the back of the side's [base](#the-bases) (`basePerch`, on the centreline), and the
+**junction**, the point on the centreline where the road leaves the base's hollow through its
+mouth (`baseGateU`): `{ u, side, jx, jy, nx, ny, x, y }`, `side` the bird's own right (RED's the
+top-left side, `roadOffS < 0`; BLUE's the bottom-right), which the cables use. The bird lands on
+the nest ([eagle drop](rendering.md#eagle-drop-mode-drop)), and the crater is a **pad** in the
+`pads` registry (`addPad(team, cx, cy, r)`, a disc of `BOOM_R`, paved whole the frame the bird
+lands: `eagleCrash`, eagle.js), so the roost and the road are one ground. `roadDist(fx, fy)` is
+the min of `roadMainDist` and every pad, so the bake, both maps and every `onRoad` read see one
+road system. From the field, the way to a bird is one straight road through its base's mouth.
 
 **Its furniture** is placed with it, off the same ragged edge (`mark` in `placeRoad`,
 `ROAD_POLE_OUT` (0.9) tiles past it): two **`banner`** poles at each gate carrying a `team` (0 at
 the bottom-left gate, 1 at the top-right — the practice gate's own flag object, which paints
 its cloth in `TEAMS[skin(team)]`'s coat and both maps in that side's ink, and *fells* what stands
-on its spot, since the gate stands in the treeline, but gives way to a rock or a bush); and the
-**`log`** across each forest end — `ROAD_LOG_HALF` (2) pieces either side of the centreline along
-the cross-diagonal, five tiles touching corner to corner so nothing squeezes between them, each
-carrying `seg` (0 the up-left end, 1 the trunk, 2 the down-right end), solid, and a pine on the
-verge gives way to its ends. All inert to E (no `tool`). The shoulders are otherwise bare: a
-lane's edge is not a thing to look at, and the centre where the waves meet is open ground.
-Their pixels: the pole is `drawBanner`; the trunk is
-**ground** — `paintLog` under `paintGroundTile` bakes each piece flat (`LOG_COL`), and a tile
-paints its four neighbours' pieces too, shifted, because the trunk is wider than the diagonal it
-runs on and spills past a tile's corners.
+on its spot, since the gate stands in the treeline, but gives way to a rock or a bush). Inert to
+E (no `tool`). The shoulders are otherwise bare: a lane's edge is not a thing to look at, and the
+centre where the waves meet is open ground. The pole's pixels are `drawBanner`.
 
 `placeRoad()` runs at boot **after `placeCreek()` and `layPaths()`** (then `placeZips()`, `placeCamps()`,
 `placeChests()` — js/app/boot.js), on pure reads —
 `roadSpan()` scans the diagonal for the last wooded tile out from each corner by `borderDepth`,
-exactly the rule `diagEnd` (eagle.js) flies the eagles by, so the gates are where each line's
-mouth is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
+so the gates are where the treeline is — and it rolls nothing, so it neither moves the shared `rng` stream nor differs run to
 run. Whatever the interior grew across the band is overwritten: a rock or a bush on it is gone,
 the pines of the woods it cuts through are felled (there is no ice to meet - see above) - but a
 tile of the creek or a ford is left as it is, so the creek runs on under the lane (its deck is
@@ -485,22 +467,45 @@ toward the bottom-right side — taking a tile index or a continuous tile coordi
 `ROAD_STEP` (20) tiles from a side's own junction to the rival's, which is the march the waves
 walk ([Soldiers](gameplay.md#soldiers-the-waves)), round the cistern by one of its fords
 (`cisternWayRound`, [the cistern](#the-cistern)). Not under `PRACTICE` (`roadMainDist` answers
-99 and no spur is ever registered).
+99 and no pad is ever registered).
 
 Both maps paint it: a tan stroke on the minimap, a brown ink line down the parchment
-(`updateMinimap`, `buildWorldMapImg`) — from the ground array, so a paved spur appears on both as
-it is laid. In the world it is **painted over the snow per pixel**, not per tile:
+(`updateMinimap`, `buildWorldMapImg`) — from the ground array. In the world it is **painted over the snow per pixel**, not per tile:
 `paintGroundTile` paints every road tile, and every snow tile within `ROAD_SHOULDER` (1.4) + 1.2
 tiles of the edge, as snow first and then hands it to `paintRoadOverlay` (the `the road's pixels`
 group, js/draw/ground.js), which asks `roadDist` per pixel — inside, packed earth in two tones by 8 px
 quad, the two ruts at `ROAD_RUT` (1.0) tiles off the *diagonal's* centreline (broken, wandering a
-little along the lane on a per-quarter-tile cached noise — a spur, measured off the same line, is
-too far off it to carry them), the odd stone and hoof-dark spot, and drifts of snow lying over the
+little along the lane on a per-quarter-tile cached noise), the odd stone and hoof-dark spot, and drifts of snow lying over the
 last 0.7 tiles of the verge; outside, mud spread off the road in patches thinning to greyed snow
 and then the field. The drifts and the mud are placed on a low-frequency `clump` noise read per
 pixel, not on a per-pixel roll, so the melt reads as patches rather than sand. The whole bake
-costs ~0.2 s at boot on top of the ground's own; a spur's paving repaints three tiles round each
-tile it lays, a few tiles a frame for the seconds the front takes.
+costs ~0.2 s at boot on top of the ground's own; a roost pad's paving repaints its disc and three
+tiles round it once, the frame the bird lands.
+
+## The bases
+
+**Each side's home is a fixed hollow cut into its own roost corner's woods**, on the road's
+diagonal: the `base` banner of [js/sim/base.js](../../js/sim/base.js). It is the same spot on every
+seed, so a base is designed rather than found, and every bot knows it. RED (team 0) holds the
+bottom-left corner, BLUE the top-right, mirrored across the creek like the camps (`baseU(team, u)`:
+u → `WORLD - 1 - u`).
+
+- The **hollow** is a clearing of radius `BASE_R` (15) tiles round `baseCentre(team)`, `BASE_U`
+  (30) u from the corner; its wall wanders ±`BASE_RAG` (1.2) tiles on the position noise
+  (`baseWall`), so it reads as a clearing, not a circle.
+- The **perch** (`basePerch(team)`) is `PERCH_U` (21) u from the corner, at the back of the hollow
+  and deepest in the woods: the bird roosts there ([eagle drop](rendering.md#eagle-drop-mode-drop)).
+- The **mouth** is where the road leaves the hollow, `baseGateU(team)` (u `BASE_U + BASE_R`): the
+  side's junction (`roadNest`, [the road](#the-road)), the way in for every walker.
+- The road runs in through the mouth and **ends on the perch**: `baseRoadEnd(fx, fy)` is positive
+  past either perch, and `laneDist` takes it, so the lane as laid and drawn stops at the bird.
+- `baseAt(tx, ty, pad)` names the side whose hollow holds a tile (`pad` tiles past the wall
+  counted in), or −1, always −1 under `PRACTICE`. The chests and the rocks keep `BASE_KEEP` (3)
+  tiles off a hollow's wall (`placeChests`, `placeRocks`).
+
+`placeBase()` runs at boot right after `placeRoad()` (js/app/boot.js): every object inside a
+hollow goes through `fellScenery` (a rock with both its tiles) and any ice there turns to snow. Pure
+position noise, no `rng()`, so no seed moves. Not under `PRACTICE`.
 
 ## The creek
 
@@ -748,19 +753,15 @@ its tile (`deepTileOpen`) and `deepPx` works each depth in it out once.
 One cable per team along the road, the `zipline` banner of [js/sim/zipline.js](../../js/sim/zipline.js): a
 polyline of **pylon** points `zips[team] = { team, pts, cum, len }` (`pts` are body positions —
 a rider's `p.y + 4` sits on the pylon tile's centre — `cum` the px along at each point) laid by
-`placeZips()` at boot **right after `placeRoad()`**, on pure reads (`roadNest`, `roadSpan`,
-`roadEdgeAt`, `findCrashPoint`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
+`placeZips()` at boot **right after `placeRoad()` and `placeBase()`**, on pure reads (`basePerch`,
+`roadNest`, `roadSpan`, `roadEdgeAt`, `objAt`): nothing rolls, so `genWorld` and every seed's ground are
 untouched. Not under `PRACTICE`. The points, base to front:
 
-1. the **base pylon**, `ZIP_BASE_OUT` (4.4) tiles from the crater along the spur's axis (the crash
-   point by the crash's own rule, `findCrashPoint`) and `ZIP_SPUR_OFF` (1.9) tiles off that axis
-   toward the front — in the middle stump ring beside the bird, so the ride home lets go there,
-   and over `SPUR_HW` so the track is never blocked;
-2. the **verge pylon** where the spur meets the road, `ZIP_SPUR_OFF` along the road from the
-   junction and `roadEdgeAt(u, side) + ZIP_OUT` (0.6) tiles off the centreline on the bird's own
-   right (`roadNest(team).side` — the two cables sit on opposite verges and mirror through the
-   centre like the nests and camps);
-3. a pylon every `ZIP_SPAN` (10) u along the same verge to the **terminus** at `ZIP_MID_GAP`
+1. the **base pylon**, `ZIP_BASE_OUT` (4.4) u up the road from the perch, `roadEdgeAt(u, side) +
+   ZIP_OUT` (0.6) tiles off the centreline on the bird's own right (`roadNest(team).side`: the two
+   cables sit on opposite verges and mirror through the centre like the camps), past the crash pad,
+   so the ride home lets go beside the bird;
+2. a pylon every `ZIP_SPAN` (10) u along the same verge to the **terminus** at `ZIP_MID_GAP`
    (20) u short of the road's centre — a stub of a span at the end joins the one before it — so the
    middle stretch where the waves meet is cable-free.
 
@@ -770,7 +771,7 @@ else refuses, and the point stands whether or not a pylon does. It is an `OBJECT
 (`pylon`: solid, inert to E, carrying its `team`; `mm` grey), so `isSolidTile`, `canPlaceAt` and
 both maps handle it for free. Its pixels are `PYLON_SPRS` (one bake per team skin) and the cable
 pass `drawZips` in [js/draw/zipline.js](../../js/draw/zipline.js); both maps stroke each line in
-its side's ink. Seed 42: RED's line runs u 35→91, BLUE's 131→196.
+its side's ink. Seed 42: RED's line runs u 23→88, BLUE's 134→208.
 
 `zipPoint(z, d)` is the cable at `d` px along (position, unit tangent, span and how far across
 it), `zipLift(z, d)` how high it hangs there (`ZIP_H` 31 at a pylon, `ZIP_SAG` 3 less mid-span),
@@ -1180,7 +1181,7 @@ lap record's twin and the second of the only two things practice ever writes.
 **The practice bar** (js/ui/cheats.js, League's practice-tool column) hangs down the left edge
 under the corner's open drawer, at the corner's size (`cornerSc`) (capped so it never runs off the
 bottom): icon wells on one hud plate in two groups — LEVEL UP, ADD GOLD (`CHEAT_GOLD`, through
-`tradeGold`, so no XP rides it), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
+`tradeGold`, so it never counts as earned), REFRESH COOLDOWNS and REFRESH HEALTH (standing toggles,
 `CHEAT_AUTO`, applied every tick by `cheatAuto` from `updatePractice`, frost-rimmed while on),
 RESET TO LEVEL 1; then TELEPORT, SPAWN DUMMY and CLEAR DUMMIES. The name is the tooltip
 (`tipCheat`). A press sends `input.cmd {kind:'cheat'}` → `runCmd` → `cheatCmd` (js/sim/practice.js,

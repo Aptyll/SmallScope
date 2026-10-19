@@ -18,7 +18,7 @@
 // out at each of the two corners neither side owns.
 //
 //   mine    - seconds of pick from nothing to broken
-//   gold    - paid on the spot (awardGold, so it is XP too), before harvestMul
+//   gold    - paid on the spot (awardGold: gold only, never XP), before harvestMul
 //   ore     - how many of `item` burst out, [min, max]
 //   regrow  - seconds the rubble stands before the rock is back
 //   glint   - seconds between glints on its crystal (0: plain stone never glints)
