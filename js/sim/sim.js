@@ -170,10 +170,12 @@ function update(dt) {
     const c = titleCamTarget();
     camX = c.x; camY = c.y;
   } else if (state.mode === 'drop') {
-    // riding: track the eagle (the rider sits on it); falling: hold over the
-    // landing point. The first INTRO_T is the opening shot: held dead on your
-    // seat while applyZoom pulls the view out round it.
-    const tx = player.x - WV_W / 2, ty = player.y - WV_H / 2;
+    // riding: track the eagle (the rider sits on it). The first INTRO_T is
+    // the opening shot: held on your seat while applyZoom pulls the view out
+    // round it. Kept inside the world, like play's: the bird comes in over
+    // its own corner, from the very edge of the map.
+    const tx = Math.max(0, Math.min(WORLD * TILE - WV_W, player.x - WV_W / 2));
+    const ty = Math.max(0, Math.min(WORLD * TILE - WV_H, player.y - WV_H / 2));
     if (state.intro > 0) {
       state.intro = Math.max(0, state.intro - dt);
       camX = tx; camY = ty;
@@ -556,10 +558,10 @@ function updatePlay(dt) {
   // every player steps through the same code, each off its own input struct
   // (players still on or under the eagle are moved by updateDrop instead)
   for (const p of players) {
-    // the leap is the one act a rider can take: read here, before the air
-    // skips the body, so a remote hand's press lands like a local one
+    // the hop off the roost is the one act a rider can take: read here, before
+    // the air skips the body, so a remote hand's press lands like a local one
     // ...and on the ground the same intent is the zipline's and the deer's (hopToggle, wildlife.js)
-    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) dropJump(p); else if (p.active && !p.dead && !inAir(p)) hopToggle(p); }
+    if (p.input.jump) { p.input.jump = false; if (p.active && p.aboard) hopOff(p); else if (p.active && !p.dead && !inAir(p)) hopToggle(p); }
     if (!p.active || inAir(p)) continue;
     if (p.control === 'ai') (p.botId ? botStep : updateAI)(p, dt); // a bot file's seat, or the built-in brain (js/ai/bot-api.js)
     updatePlayer(p, dt);

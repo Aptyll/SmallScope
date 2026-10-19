@@ -468,8 +468,8 @@ function netClientStep(dt) {
 // move it: xp is the match's gold earned (gainGold), kills only climbs, a
 // death is dead's rising edge, the match and its first day start at takeoff
 // (beginDrop's two, which a client never calls) and the leap off the bird is
-// aboard's falling edge (dropJump's markDropped, and off a FLYING bird the
-// hard music cut - the leap's cue itself arrives as sfxFor's event). A redial
+// aboard's falling edge (hopOff's markDropped - the hop's cue itself
+// arrives as sfxFor's event). A redial
 // keeps the baseline, so what was earned while the socket was down still counts.
 function netClientStats() {
   const me = player;
@@ -480,11 +480,7 @@ function netClientStats() {
     if (me.xp > w.xp) PROFILE.addGold(me.xp - w.xp);
     for (let k = w.kills; k < me.kills; k++) PROFILE.addKill();
     if (me.dead && !w.dead) PROFILE.addDeath();
-    if (w.aboard && !me.aboard) {
-      PROFILE.markDropped();
-      const e = state.drop && state.drop.eagles[me.team];
-      if (e && e.state !== 'down') SFX.music.play('jump', { out: 0.1, in: 0.05 });
-    }
+    if (w.aboard && !me.aboard) PROFILE.markDropped();
   }
   NET.was = { p: me, xp: me.xp, kills: me.kills, dead: me.dead, aboard: me.aboard };
 }
@@ -631,6 +627,12 @@ function netClientMode() {
     return;
   }
   if (state.over === 'won' || state.over === 'lost') return;
+  // seated on a bird that has come down: play begins on the roost, as the
+  // host's landAboard does, so the hop keys reach the host (no brief here)
+  if (me.aboard && state.drop.eagles[me.team].state === 'down') {
+    if (state.mode === 'drop') { handOver(me); SFX.music.play('jump', { out: 0.1, in: 0.05 }); }
+    return;
+  }
   if (me.aboard || me.dropT > 0) {
     if (state.mode !== 'drop') { state.mode = 'drop'; state.menu.panel = null; state.menu.screen = 'menu'; applyZoom(0, true); }
     return;

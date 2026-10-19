@@ -2,8 +2,8 @@
 // The zipline: each team's cable, laid at boot, and the ride every body takes
 // on it (drawn by js/draw/zipline.js).
 // ------------------------------------------------------------ zipline
-// THE ZIPLINE: one cable per team, strung on pylons from the stump ring
-// beside its bird, out over the spur's treeline and along the road's own verge, to
+// THE ZIPLINE: one cable per team, strung on pylons from beside its bird at
+// the perch, out through its base's mouth along the road's own verge, to
 // a terminus ZIP_MID_GAP road-units short of the road's centre - so the
 // middle stretch where the waves meet is cable-free and is always walked
 // into. The walk out of a base is dead time with no decisions in it; the
@@ -24,8 +24,8 @@
 // Riders leave the unit-contact list (separateUnits: the body is above the
 // ground) and move by the cable alone - no moveEntity, so a wall or a pine
 // under the line never stops one. The lines are laid at boot by placeZips,
-// right after the road, on pure reads (roadNest, roadSpan, roadEdgeAt,
-// findCrashPoint, objAt): nothing rolls, so genWorld and every seed's
+// right after the road and the bases, on pure reads (basePerch, roadNest,
+// roadSpan, roadEdgeAt, objAt): nothing rolls, so genWorld and every seed's
 // ground are untouched; a pylon (`pylon`, OBJECTS) fells the pine or rock
 // on its tile like the road's own furniture and refuses anything else. Its
 // pixels and the cable pass are js/draw/zipline.js. Bots ride it through
@@ -43,8 +43,7 @@ const ZIP_H = 31;          // px above the ground track the cable itself hangs a
 const ZIP_SAG = 3;         // px a span sags at its middle
 const ZIP_CRASH_R = 8;     // px along the cable two rival riders meet inside (a body's width)
 const ZIP_CRASH_STUN = 0.8; // s both are stunned for: a body hit at full speed, the tackle's top (TACKLE_STUN, actions.js)
-const ZIP_BASE_OUT = 4.4;  // tiles from the crater the base pylon stands: in the middle stump ring (BOOM_R..BOOM_STUMP_R), so the ride home lets go beside the bird, well clear of the verge pylon
-const ZIP_SPUR_OFF = 1.9;  // tiles the spur leg stands off the spur's own axis (over SPUR_HW: never on the track), toward the front
+const ZIP_BASE_OUT = 4.4;  // u up the road from the perch the base pylon stands on the verge: past the crash pad, so the ride home lets go beside the bird
 const zips = [];           // [team] -> { team, pts: [{x, y}] (body positions, base -> front), cum: [px along at each point], len }
 // a point `s` tiles off the diagonal at u, signed like roadOffS (+ toward the
 // bottom-right side), in continuous tile-index space
@@ -54,15 +53,10 @@ function placeZips() {
   if (PRACTICE) return;
   const sp = roadSpan(), um = (sp.u0 + sp.u1) / 2;
   for (const team of [0, 1]) {
-    const n = roadNest(team), dirF = team === 0 ? 1 : -1, side = n.side; // dirF: u toward the centre
-    const c = findCrashPoint({ team }), cx = c.x / TILE - 0.5, cy = c.y / TILE - 0.5; // where the bird will come down (eagle.js: the same rule the crash uses)
-    let ax = n.jx - cx, ay = n.jy - cy; const L = Math.hypot(ax, ay) || 1; ax /= L; ay /= L; // the spur's axis, crater -> road
-    const lx = dirF / Math.SQRT2, ly = -dirF / Math.SQRT2;                                    // along the road, toward the front
-    const tiles = [];
-    tiles.push({ x: cx + ax * ZIP_BASE_OUT + lx * ZIP_SPUR_OFF, y: cy + ay * ZIP_BASE_OUT + ly * ZIP_SPUR_OFF });
-    const u1 = n.u + dirF * ZIP_SPUR_OFF / Math.SQRT2, uEnd = um - dirF * ZIP_MID_GAP;
+    const side = roadNest(team).side, dirF = team === 0 ? 1 : -1; // dirF: u toward the centre
+    const u1 = basePerch(team).u + dirF * ZIP_BASE_OUT, uEnd = um - dirF * ZIP_MID_GAP;
     const verge = (u) => zipTile(u, side * (roadEdgeAt(u, side) + ZIP_OUT));
-    tiles.push(verge(u1));
+    const tiles = [verge(u1)];
     for (let k = 1; ; k++) {
       let u = u1 + dirF * k * ZIP_SPAN;
       const last = (uEnd - u) * dirF < ZIP_SPAN * 0.4; // a stub of a span at the end joins the one before it
