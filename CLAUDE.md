@@ -33,7 +33,7 @@ Shorts, GIFs, storyboards and stills use the kit in [media](docs/dev/media.md).
 1. **Go through the shared function, never around it.** Each one is where every case is handled, so
    a copy silently skips wildlife, bots, stealth or the other team. Hits: `hurtUnit`/`hurtStruct` and
    the status setters. Areas: `unitsNear`/`structsNear`. Targets: `unitAlive`. Sight: `seenAt`.
-   Gold: `gainGold`. Water: `waterAt`. Walking: `navTo`/`navStep`, dropping the goal on `ok = false`.
+   Gold: `gainGold`. XP: `shareXp` on a death, `gainXp` under it. Water: `waterAt`. Walking: `navTo`/`navStep`, dropping the goal on `ok = false`.
    Team colour: `skin(team)`. Keys: `keyPress`/`keyRelease`, asked by action with `keyIs`. Tiles:
    `placeObj`/`placeStruct`. World text: `drawWorldText`. Ground edits: `repaintGround`. A new walker
    joins `separateUnits`. Loops over `players` skip `inAir(p)`.

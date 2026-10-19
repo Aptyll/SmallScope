@@ -366,8 +366,8 @@ window.DBG = {
   rpRect, rpCloseRect, rpCloseHit,
   // routes: the search itself, and showPaths = true draws every unit's live route
   findPath, walkable, navTo, showPaths: false,
-  // hero levels: pay a player gold (and XP) the way a pickup would
-  gainGold: (n, p) => gainGold(p || player, n), LEVEL_XP, LEVEL_MAX,
+  // hero levels: pay a player gold, or XP, the way the match would
+  gainGold: (n, p) => gainGold(p || player, n), gainXp: (n, p) => gainXp(p || player, n), LEVEL_XP, LEVEL_MAX,
   // the stat ledger, the sheet that flies into the notice lane when a number
   // moves (the `stat ledger` block, js/ui/shop.js): the table every surface
   // prices a body with, the plate's own size, the live values, what each row

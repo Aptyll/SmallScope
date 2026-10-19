@@ -131,12 +131,12 @@ function evenBarW(w) {
 }
 // ---- the running damage total beside the bar ----
 // A body's hits since its last quiet (tallyHit, js/sim/core.js) stand as one
-// number hard against its frame's right edge, centred on the health bar, in
-// that bar's colour - a blue player's damage is blue, a beast's gold - and
+// number TALLY_GAP px clear of its frame's right edge, centred on the frame,
+// in that bar's colour - a blue player's damage is blue, a beast's gold - and
 // one beat bigger for the instant a hit adds to it. It holds TALLY_HOLD s
-// after the last hit, then fades over TALLY_FADE.
-// The size is 1.25 world px per font px, a step no world pixel can take, so
-// a frame drawer only QUEUES it (queueTally) with the body's frame alpha,
+// after the last hit, then fades over TALLY_FADE. At rest it is one world px
+// per font px, so its 7 rows stand as tall as a hero's 7-row frame; the beat
+// bigger is a step no world pixel can take, so a frame drawer only QUEUES it (queueTally) with the body's frame alpha,
 // and drawTallies stamps the queue on the screen after the world is blitted:
 // the world-1x outlined number scaled whole into device px, crisp at any
 // zoom, under the HUD.
@@ -145,7 +145,8 @@ function evenBarW(w) {
 // and a dead body's total - its killing blow the last hit in it - rises
 // TALLY_RISE px from there and fades out over TALLY_DEATH s.
 const TALLY_FADE = 0.3, TALLY_POP = 0.08; // s
-const TALLY_SC = 1.25, TALLY_POP_SC = 1.5; // world px per font px, resting and the instant a hit lands
+const TALLY_SC = 1, TALLY_POP_SC = 1.25; // world px per font px, resting and the instant a hit lands
+const TALLY_GAP = 2; // world px between a total and the frame it hangs off, either side
 const TALLY_DEATH = 0.9, TALLY_RISE = 12;   // s a dead body's total floats, and how far up
 const tallyQueue = [];
 const tallyInk = new Map(); // 'text|colour' -> the outlined number at world 1x
@@ -162,10 +163,27 @@ function queueTally(u, rx, cy, col) {
   tallyQueue.push(u.tallyN, rx, cy, col, a * ctx.globalAlpha, age < TALLY_POP);
   tallySpot.set(u, { x: rx + wOX, y: cy + wOY, col, a: ctx.globalAlpha, f: tallyFrame });
 }
+// THE RUNNING XP TOTAL beside the level badge: your own XP since its last
+// quiet (xpN since xpTick, gainXp in js/sim/player.js) stands as a plain
+// purple number TALLY_GAP px clear of your level badge's left, in the
+// portrait's xp ink - the damage total's mirror on the frame's other side, by
+// its rules: queued here with the frame's alpha, stamped crisp by
+// drawTallies, one beat bigger the instant a gain adds to it, held
+// TALLY_HOLD s after the last gain and faded over TALLY_FADE. Only your own:
+// the rivals' XP is theirs to watch, and ten totals would be noise.
+const xpQueue = []; // [text, badge's left column, centre y, alpha, pop] per total, in the world buffer's px
+function queueXp(p, rx, cy) {
+  if (!p.xpN || !inWorldLayer()) return;
+  if (ctx === actx) { rx += camX - Math.floor(camX); cy += camY - Math.floor(camY); }
+  const age = (state.tick - p.xpTick) * TICK_DT;
+  if (age > TALLY_HOLD + TALLY_FADE || age < 0) return;
+  const a = age < TALLY_HOLD ? 1 : 1 - (age - TALLY_HOLD) / TALLY_FADE;
+  xpQueue.push(String(p.xpN), rx, cy, a * ctx.globalAlpha, age < TALLY_POP);
+}
 // a player dropped in the step before any frame showed its total (a
 // one-shot): its spot is where drawPlayer's frame would have hung it
 function tallyFall(p) {
-  if (p.tallyN && !tallySpot.has(p)) tallySpot.set(p, { x: p.x + FRAME_DX + 8, y: p.y - 18, col: barCol(p.team), a: 1, f: -1 });
+  if (p.tallyN && !tallySpot.has(p)) tallySpot.set(p, { x: p.x + FRAME_DX + 8, y: p.y - 16.5, col: barCol(p.team), a: 1, f: -1 });
 }
 function tallyImg(txt, col) {
   const key = txt + '|' + col;
@@ -196,8 +214,16 @@ function drawTallies(k, subX, subY) {
     const img = tallyImg(String(tallyQueue[i]), tallyQueue[i + 3]);
     const s = Math.max(1, Math.round(k * (tallyQueue[i + 5] ? TALLY_POP_SC : TALLY_SC)));
     ctx.globalAlpha = tallyQueue[i + 4];
-    ctx.drawImage(img, Math.round(tallyQueue[i + 1] * k) - subX, Math.round(tallyQueue[i + 2] * k - img.height * s / 2) - subY, img.width * s, img.height * s);
+    ctx.drawImage(img, Math.round((tallyQueue[i + 1] + TALLY_GAP) * k) - subX, Math.round(tallyQueue[i + 2] * k - img.height * s / 2) - subY, img.width * s, img.height * s);
   }
+  // ...your XP, its right edge TALLY_GAP px clear of the badge's left (queueXp)
+  for (let i = 0; i < xpQueue.length; i += 5) {
+    const img = tallyImg(xpQueue[i], PORT_XP_LIT);
+    const s = Math.max(1, Math.round(k * (xpQueue[i + 4] ? TALLY_POP_SC : TALLY_SC)));
+    ctx.globalAlpha = xpQueue[i + 3];
+    ctx.drawImage(img, Math.round((xpQueue[i + 1] - TALLY_GAP) * k) - img.width * s - subX, Math.round(xpQueue[i + 2] * k - img.height * s / 2) - subY, img.width * s, img.height * s);
+  }
+  xpQueue.length = 0;
   // ...and the words a hit says (wordPop, js/sim/core.js), over the totals: one
   // beat bigger as they land, like a total taking a hit
   for (const w of wordPops) {

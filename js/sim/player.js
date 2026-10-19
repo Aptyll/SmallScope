@@ -47,18 +47,21 @@ const TRAIL_MIN = 110;    // sliding faster than this carves the snow trail
 const SNOW_TRAIL_LIFE = 3.5; // snow groove lifetime (ice scratches keep the 9s footprint life)
 const SNOW_TRAIL_FADE = 1.4; // fade window at the end of that life: hold crisp, then wipe tail-first
 
-// Hero levels (League-style, max 12). XP is lifetime gold earned (gainGold), never spent
-// or lost on death; LEVEL_XP[n-1] is the total needed to reach level n, the gap growing
-// by 20 a level. Sized against what a bot chaining pines all match earns (about a gold
-// a second on the fells, plus the clock's 15 a minute - TRICKLE_*, js/sim/sim.js): that
-// bot is level 9 or 10 at fifteen minutes and capped past twenty, a player who fights
-// and farms by halves is two or three levels behind it, and the trickle alone is level
-// 3 by seven minutes - a level is news all match, not a sprint over by 2:00. Each
-// level past the first is the same flat growth: +LVL_HP max hp (healed on the spot)
-// and +LVL_DMG on every arrow, applied on top of the class kit - a level-8 hero of
-// this table is about the capped hero of the old one.
+// Hero levels (League-style, max 12). XP is its own number, apart from gold:
+// it comes from being NEAR when a rival body dies - a soldier, a scout, a
+// camp monster - shared among the allies standing there (shareXp, below), so
+// the last hit is gold and the being-there is XP. Mining, felling, fishing,
+// chests and the clock pay gold and never XP: the road is where you level.
+// LEVEL_XP[n-1] is the total needed to reach level n, the gap growing by 30 a
+// level. It is sized against a scout who keeps to the road and the camps
+// (waves every 30 s growing a soldier every 3 min, a share of the kills, a
+// den now and then): about level 6 at ten minutes and the cap near 25, so a
+// lead in levels is still news late, where the old gold-fed table capped near
+// 13. XP is never spent or lost on death. Each level past the first is the
+// same flat growth: +LVL_HP max hp (healed on the spot) and +LVL_DMG on every
+// arrow, applied on top of the class kit.
 const LEVEL_MAX = 12;
-const LEVEL_XP = [0, 40, 100, 180, 280, 400, 540, 700, 880, 1080, 1300, 1540];
+const LEVEL_XP = [0, 60, 150, 270, 420, 600, 810, 1050, 1320, 1620, 1950, 2310];
 const LVL_HP = 9;
 const LVL_DMG = 2;
 
@@ -132,31 +135,61 @@ function healPlayer(p, n) {
   p.healed += h;
   return h;
 }
-// the one way gold enters a wallet: pays the purse and the same amount of XP
+// the one way gold enters a wallet: the purse, and `earned`, the match's
+// lifetime gold (the scoreboard's rank and the post-game GOLD). Gold buys;
+// it no longer teaches - XP is gainXp's alone.
 function gainGold(p, n) {
   p.inv.gold += n;
-  p.xp += n;
+  p.earned += n;
   // lifetime total, coalesced - see profile.js. Practice gold is play money:
   // a free room with chests in it must never farm the tech tree's points.
   if (p === player && !PRACTICE) PROFILE.addGold(n);
-  while (p.level < LEVEL_MAX && p.xp >= LEVEL_XP[p.level]) levelUp(p);
 }
-// The merchant's till, and the ONE way gold reaches a wallet without XP
-// behind it (CLAUDE.md names it as the exception to the gainGold rule). A
-// SALE is an exchange, not a source: the counter buys fish and berries at the
-// same price it sells them, so paying levels for one would turn two clicks
-// into a level farm rather than into a trade. Everything that EARNS gold -
-// a fell, a kill, a chest, the clock - still goes through gainGold.
+// The merchant's till, and the ONE way gold reaches a wallet without counting
+// as earned. A SALE is an exchange, not a source: the counter buys fish and
+// berries at the same price it sells them, so counting one would turn two
+// clicks into a scoreboard farm rather than into a trade. Everything that
+// EARNS gold - a fell, a kill, a chest, the clock - still goes through gainGold.
 function tradeGold(p, n) { if (p && n > 0) p.inv.gold += n; }
 // Gold is never a physical drop: every source pays the earner on the spot
-// through this one wrapper - the wallet (via gainGold, so it levels too), the
-// '+N' popup at the place the action happened, and the coin blip for the
-// local earner. (x, y) is the tree, the kill, the wreck - not the player.
+// through this one wrapper - the wallet (via gainGold), the '+N' popup at
+// the place the action happened, and the coin blip for the local earner.
+// (x, y) is the tree, the kill, the wreck - not the player.
 function awardGold(p, n, x, y) {
   if (!p || n <= 0) return;
   gainGold(p, n);
-  addFloater(x, y - 14, '+' + n, RES_COLORS.gold);
+  addFloater(x, y - 14, String(n), RES_COLORS.gold);
   sfxFor(p, 'coin');
+}
+
+// THE ONE WAY XP ENTERS A BODY: the bar, the levels it crosses, and the
+// running total over the head (xpN since xpTick, the damage total's rules:
+// one number that adds each gain and fades TALLY_HOLD s after the last - the
+// purple +N left of the level badge, queueXp in js/draw/overhead.js).
+function gainXp(p, n) {
+  n = Math.round(n);
+  if (!p || n <= 0) return;
+  p.xp += n;
+  if (!p.xpN || (state.tick - p.xpTick) * TICK_DT > TALLY_HOLD) p.xpN = 0;
+  p.xpN += n;
+  p.xpTick = state.tick;
+  while (p.level < LEVEL_MAX && p.xp >= LEVEL_XP[p.level]) levelUp(p);
+}
+// A death's XP, League style: every scout of `team` standing (alive, on the
+// ground) within XP_R of the body shares it, and the one who landed the blow
+// (`src`) always does, wherever they stood - a long shot still teaches. The
+// pot grows XP_SHARE of the whole for each sharer past the first, so two
+// scouts on a wave each get 65%, five get 46%: company pays, but less each.
+// `team` is the side the death was good for - the rival of a soldier or a
+// scout, the hunter's side for a beast (which has none).
+const XP_R = 160;      // px round a death that shares its XP: about half the view at the default zoom
+const XP_SHARE = 0.3;  // of the whole added to the pot for each sharer past the first
+function shareXp(dead, xp, team, src) {
+  if (!(xp > 0) || team < 0) return;
+  const who = unitsNear(dead, dead.x, dead.y - (dead.alt || 0), XP_R).filter((q) => q instanceof Player && q.team === team);
+  if (src instanceof Player && src.team === team && unitAlive(src) && !who.includes(src)) who.push(src);
+  const each = xp * (1 + XP_SHARE * (who.length - 1)) / who.length;
+  for (const q of who) gainXp(q, each);
 }
 function levelUp(p) {
   p.level++;
@@ -515,6 +548,7 @@ const PLAYER_RECORD = {
   ccOut: 0,                      // s of stun, root and net put on RIVAL players (ccCredit, js/sim/actions.js)
   assists: 0,                    // rivals this body helped down without the last blow (payTakedown)
   feed: 0,                       // deaths since this body's last kill or assist: past FEED_FROM it is worth less (killWorth)
+  earned: 0,                     // gold earned this match, spent or not (gainGold): the scoreboard's rank
 };
 class Player {
   constructor(id, control, team) {
@@ -554,7 +588,7 @@ class Player {
     this.tunHole = -1;
     this.eliminated = false;            // its bird was driven off: no coming back - see die()/eagleFleeResolve
     this.respawnT = 0;                  // seconds left on an active respawn countdown
-    this.level = 1; this.xp = 0;        // hero level and lifetime gold earned; survive death
+    this.level = 1; this.xp = 0;        // hero level and its XP (gainXp); survive death
     this.trickleT = 0;                  // s toward the next passive coin (TRICKLE_T, js/sim/sim.js)
     this.kills = 0;                     // rivals downed; scoreboard only, survives death
     this.foeHits = {};                  // rival id -> state.elapsed of its latest blow or crowd control on this body (noteFoe); a death clears it
@@ -927,19 +961,22 @@ const KILL_VERB = { worker: 'CUT DOWN', fire: 'BURNED' };
 // is looted (the 1.25-3.54 rule, where the killer pocketed the wallet and the
 // build lay where it fell, is gone - it made the fifteenth minute a bag you
 // were afraid to carry). What a kill is worth is gold from nowhere, paid out
-// by payTakedown (the `takedowns` banner below). The one stake left on a
-// death is the wait below and the walk back.
+// by payTakedown (the `takedowns` banner below) - and XP, which is the
+// victim's level's worth (KILL_XP + KILL_XP_LV a level) shared by every
+// rival standing near (shareXp), so a kill teaches the fight, not the blow.
+// The one stake left on a death is the wait below and the walk back.
+const KILL_XP = 40, KILL_XP_LV = 15; // XP a downed scout is worth: 55 at level 1, 220 at 12
 const MULTI_T = 10;       // s a kill may follow the one before and still count toward a multi-kill (the post-game record)
 
 // The wait for the bird to set a downed player back down: a read of the
 // hero's level alone, shaped like League's (its base wait runs 10 s to
 // 52.5 s over 18 levels, flat early, steepest mid-game). Early, levels 1-5
-// (about the first four minutes), a death is a few seconds and the fighting
+// (the opening minutes), a death is a few seconds and the fighting
 // goes on; mid-game, 6-9, it starts to cost; from 10 a death is a real hole
 // in the side, which is what makes a wiped side late a real window on a
 // roost whose defenders otherwise come back sixty pixels from the bird.
-// Nothing off the match clock: the level IS the clock, since gold is XP and
-// the table only climbs. With nothing else lost on a death, this wait is the
+// Nothing off the match clock: the level IS the clock, since XP only
+// climbs. With nothing else lost on a death, this wait is the
 // WHOLE penalty.
 const RESPAWN_WAIT = [5, 6, 7, 9, 11, 14, 18, 23, 29, 36, 43, 50]; // s, by hero level 1..LEVEL_MAX
 function respawnTime(p) { return RESPAWN_WAIT[Math.max(1, Math.min(LEVEL_MAX, p.level)) - 1]; }
@@ -1024,6 +1061,9 @@ function die(p, src, cause) {
       sfxAt('heal', killer.x, killer.y);
     }
   }
+  // the XP is the rival side's whoever landed it - a scout the bear or the
+  // orca took still teaches the rivals who stood by
+  shareXp(p, KILL_XP + KILL_XP_LV * p.level, 1 - p.team, killer);
   storyDown(killer, p); // the match story (js/ui/story.js): who keeps downing whom
   // a killer the world stood in for keeps the world's line, in the killer's colours
   const shot = killer && killer === src;
@@ -1163,7 +1203,7 @@ function endSnapshot() {
   // screen that prints place never sees a win, but the object shouldn't lie).
   const left = players.filter((q) => q !== player && q.active && !q.eliminated).length;
   return {
-    gold: player.xp, kills: player.kills, level: player.level, time: state.elapsed,
+    gold: player.earned, kills: player.kills, level: player.level, time: state.elapsed,
     team: player.team, cls: player.cls,
     // the whole side, the local player first: every body either ending stands
     // on its stage, with the name, class and kit it finished in (a mate who

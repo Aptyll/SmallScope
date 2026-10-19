@@ -84,11 +84,13 @@ function robotDies(b, src) {
     b.carry = 0;
   }
   // a soldier carries a bounty instead of cargo: whoever scraps one is paid
-  // it on the spot (through awardGold, so the kill levels too) - the road
-  // pays, which is what makes walking out to meet a wave worth the walk.
+  // it on the spot (awardGold) - the last hit is gold - and every rival scout
+  // standing near shares its SOLDIER_XP whoever scrapped it (shareXp, js/sim/player.js):
+  // the road is where a scout levels, which is what makes walking out to meet a wave worth the walk.
   // Three a wave, so no feed line: the fight is the news, not each wreck.
   if (b.kind === 'soldier') {
     if (src && src.inv && src.team !== b.team) awardGold(src, SOLDIER_BOUNTY, b.x, b.y);
+    shareXp(b, SOLDIER_XP, 1 - b.team, src);
     return;
   }
   // a downed worker is not a downed player: it makes the feed, never the kill
@@ -171,7 +173,7 @@ function updateRobot(b, dt) {
   const deposit = () => {
     if (b.carry <= 0) return;
     gainGold(players[b.owner] || player, b.carry);
-    addFloater(hx, hy - 14, '+' + b.carry, RES_COLORS.gold);
+    addFloater(hx, hy - 14, String(b.carry), RES_COLORS.gold);
     b.carry = 0;
     sfxAt('coin', hx, hy);
   };
@@ -743,7 +745,8 @@ const SOLDIER_SPD = 44;        // px/s, a step slower than a walking player
 const SOLDIER_AGGRO = 96;      // px it turns on a rival unit inside
 const SOLDIER_SIEGE = 40;      // px it turns on a rival building inside - what is in its way, not the whole ring round a roost
 const SOLDIER_EAGLE_DMG = 8;   // nerve one swing takes off the rival bird (a hand's E swing is EAGLE_WORK_DMG, 20)
-const SOLDIER_BOUNTY = 4;      // gold (and so xp) a scrapped soldier pays its killer
+const SOLDIER_BOUNTY = 4;      // gold a scrapped soldier pays its killer
+const SOLDIER_XP = 20;         // XP it is worth to the rival scouts standing near (shareXp)
 const SOLDIER_WP_R = 28;       // px from a waypoint that counts as reached
 const SOLDIER_ZIP_GAIN = 96;   // px nearer the rival bird a ride's end must be than the soldier stands before it clips on: six tiles, so never a hop on and straight off
 const SOLDIER_ZIP_REACH = 96;  // px off a cable's track a marching soldier turns aside to it: the road's own width and the verge, so a column on the lane finds the line beside it
