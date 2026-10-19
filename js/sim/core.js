@@ -633,7 +633,10 @@ function updateEat(p, dt) {
 
 // The meal dropped, from every side that can drop one. Nothing is spent, so an
 // interruption costs the time and the tempo and nothing out of the bag.
+// Every way a meal is knocked out (a hit, a stun, the roll, the fire button,
+// the water, the cable) knocks the recall's channel out too (js/sim/recall.js).
 function breakEat(p) {
+  breakRecall(p);
   if (p.eatT <= 0) return;
   burst(p.x, p.y - 6, RES_COLORS[p.eatType] || '#f4f7ff', 4, 34, 0.35, true);
   p.eatT = 0;

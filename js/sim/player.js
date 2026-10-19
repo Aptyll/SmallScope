@@ -630,6 +630,8 @@ class Player {
     this.charging = false; this.chargeT = 0;      // bow draw state
     // the meal being chewed and the clock BOTH meals share (js/sim/core.js)
     this.eatT = 0; this.eatType = null; this.eatFxT = 0; this.foodCd = 0;
+    // the recall's channel, and the roost ring's motes' clock (js/sim/recall.js)
+    this.recallT = 0; this.ringFxT = 0;
     this.nockT = 0;                                // the cycle: seconds until the next press (toolCycle, js/sim/tools.js)
     this.slashT = 0; this.slashA = 0; this.slashHalf = 0; // a blade's sweep in flight: the hand swings the sword through it (slashTool, js/sim/tools.js; drawHeldTool, js/draw-world.js)
     this.catchT = 0;                               // the fish hoist's clock (startCatch/catchFrame, js/sim/tools.js)
@@ -961,6 +963,7 @@ function bodyOut(p) {
   p.swingT = p.swingCd = 0;
   // whatever ability the body was mid-way through dies with it, and the meal
   p.eatT = 0; p.eatType = null;
+  p.recallT = 0; // ...and the walk home it was channelling
   breakMine(p);
   p.castT = 0; p.castAb = -1;
   p.shieldT = 0; p.rushT = 0; p.rushVictim = null;
@@ -1053,12 +1056,18 @@ function updateRespawns(dt) {
 // stand on there - so the way back into the match is the road everyone
 // else walked out on.
 const RESPAWN_OUT = 40;
-function respawnPlayer(p) {
+// the tile a body is set down on at its own roost: RESPAWN_OUT down the spur
+// from the bird, the nearest dry one - null while the bird is not down. The
+// carried-back scout and the recall (js/sim/recall.js) both land here.
+function roostTile(p) {
   const e = state.drop && state.drop.eagles[p.team];
-  if (e && e.state === 'down') {
-    const d = e.laneDir || { x: 0, y: 1 };
-    p.spawn = nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
-  }
+  if (!e || e.state !== 'down') return null;
+  const d = e.laneDir || { x: 0, y: 1 };
+  return nearestDryTile(e.x + d.x * RESPAWN_OUT, e.y + d.y * RESPAWN_OUT, p);
+}
+function respawnPlayer(p) {
+  const t = roostTile(p);
+  if (t) p.spawn = t;
   p.eliminated = false;
   p.respawnT = 0;
   p.reset(false);
@@ -1125,6 +1134,7 @@ function practiceRevive(p) {
   p.prone = false; p.hide = 0; p.riseT = 0;
   p.charging = false; p.chargeT = 0; p.fireArmed = false;
   p.eatT = 0; p.eatType = null;                  // the meal dies with the body here too
+  p.recallT = 0;                                 // ...and the recall
   const s = p.spawn || { tx: WORLD >> 1, ty: WORLD >> 1 };
   p.x = (s.tx + 0.5) * TILE; p.y = (s.ty + 0.5) * TILE;
   p.invuln = 2;

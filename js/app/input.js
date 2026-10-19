@@ -91,6 +91,7 @@ const KEY_ACTIONS = [
   { id: 'amove', verb: 'ATTACK MOVE', ck: 'a' }, { id: 'stop', verb: 'STOP', ck: 's' },
   { id: 'dodge', verb: 'DODGE', key: ' ', ck: ' ', ms: 'Mouse4' }, { id: 'slide', verb: 'SLIDE', key: 'Shift', ck: 'Shift', ms: 'Mouse5' }, { id: 'work', verb: 'HARVEST', key: 'e' },
   { id: 'berry', verb: 'EAT BERRY', key: 'q', ck: 'd' }, { id: 'fish', verb: 'EAT FISH', key: 'f', ck: 'f' },
+  { id: 'recall', verb: 'RECALL', key: 'h', ck: 'h' },
   { id: 'flag', verb: 'FLAG WHEEL', ck: 'g' },
   { id: 'tunnel', verb: 'DIG BURROW', key: 'v', ck: 'v' }, { id: 'bag', verb: 'INVENTORY', key: 'b', ck: 'b' },
   { id: 'char', verb: 'CHARACTER', key: 'g', ck: 'c' },
@@ -291,6 +292,8 @@ function keyPress(e) {
   if (keyIs(e, 'dodge')) player.input.dodge = true;
   if (keyIs(e, 'berry')) player.input.eatBerry = true;
   if (keyIs(e, 'fish')) player.input.eatFish = true;
+  // the walk home (js/sim/recall.js): a CLICK order would walk out of it, so the press drops the order
+  if (keyIs(e, 'recall') && !e.repeat) { player.input.cmd = { kind: 'recall' }; if (ckOn()) ckClear(); }
   // the burrow stands its hole ghost under the pointer, and puts it away (js/sim/tunnel.js)
   if (keyIs(e, 'tunnel') && !e.repeat) tunnelAimToggle();
   // the pack key drops the inventory drawer under the weapon shelf. It is

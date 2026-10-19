@@ -5,6 +5,12 @@
 // day's weather and the wind field it reads are js/sim/weather.js.
 // ------------------------------------------------------------ update
 let camX = 0, camY = 0;
+// the body the play camera followed last frame and where it stood: a body
+// that moved further than CAM_CUT in one frame was set down somewhere else (a
+// recall, a burrow's far hole), and the camera cuts to it instead of sweeping
+// the map. Render-side, so a client's view cuts the same way.
+const CAM_CUT = 6 * TILE;
+let camVp = null, camVpX = 0, camVpY = 0;
 
 // Ease the world scale toward what is wanted and resize the world view to
 // match. Nothing here touches the canvas, so unlike the old applyView() it
@@ -216,7 +222,9 @@ function update(dt) {
     camY += lookSY * (1 / zoomCur - 1 / zPrev);
     const tx = vp.x - WV_W / 2 + lookX;
     const ty = vp.y - WV_H / 2 + lookY;
-    if (state.intro > 0) {
+    const cut = vp === camVp && Math.hypot(vp.x - camVpX, vp.y - camVpY) > CAM_CUT;
+    camVp = vp; camVpX = vp.x; camVpY = vp.y;
+    if (cut) { camX = tx; camY = ty; } else if (state.intro > 0) {
       // landing -> play: glide from the touchdown framing onto the play
       // camera with an ease, instead of the play lerp's snap
       state.intro = Math.max(0, state.intro - dt);
@@ -955,6 +963,7 @@ function walkStep(p, dt, mx, my, len, onIce, kit) {
 // then the edge-triggered intents, each consumed where it lands
 function playerIntents(p, dt) {
   const inp = p.input;
+  recallIntents(p); // anything the body does itself ends the walk home (js/sim/recall.js)
 
   // stunned: rolled through, or the wrong end of a tackle. Every intent is
   // dropped where it arrives rather than blocked at each action, so a human
@@ -1376,6 +1385,8 @@ function updatePlayer(p, dt) {
   // ...and the meal's clock beside it: the channel landing its heal, and the
   // one cooldown a berry and a fish share (js/sim/core.js)
   updateEat(p, dt);
+  // ...and the recall's, with the roost ring's heal (js/sim/recall.js)
+  updateRecall(p, dt);
   // ...and the pick's: the rock in reach mining itself (js/sim/mining.js)
   updateMine(p, dt);
 
