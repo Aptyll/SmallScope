@@ -28,7 +28,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.484';
+const PATCH_TXT = 'PATCH 0.485';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -44,6 +44,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.485', 'NO MORE SAVED MATCHES: THE SAVES BUTTON, THE AUTOSAVES AND THE SAVES PLATE ON THE HERO SELECT ARE GONE, AND OLD SAVES ARE CLEARED FROM YOUR COMPUTER. EVERY MATCH IS PLAYED START TO FINISH.'],
   ['0.484', 'ONE WAY IN, LEAGUE STYLE: THE TITLE OFFERS QUICKPLAY, RANKED AND PRACTICE TOOL; QUICKPLAY AND RANKED OPEN YOUR PARTY, WHERE FRIENDS JOIN BY CODE OR STEAM INVITE, SAY READY AND CHAT, AND FIND MATCH FILLS EVERY EMPTY SEAT WITH BOTS AND TAKES EVERYONE TO PICK A HERO; RANKED KEEPS A RATING AND ITS BOTS MATCH IT; SINGLEPLAYER, THE ROOM LIST AND THE BOT LADDER SCREEN ARE GONE.'],
   ['0.483', 'YOU CAN SURRENDER NOW: AFTER 15 MINUTES ANYONE CAN START A VOTE FROM THE ESC MENU, EVERY TEAMMATE CLICKS YES OR NO UNDER THE CLOCK, AND 4 OF 5 YES ENDS THE MATCH STRAIGHT ON THE STATS, WITH THE BOTS VOTING ALONG WITH THE PLAYERS.'],
   ['0.482', 'HEROES, LEAGUE STYLE: THE CHARACTER CREATOR AND LIST ARE GONE, YOU ARE ONE PROFILE - YOUR NAME AND LIFETIME STATS, OPENED FROM YOUR NAME ON THE TITLE - THAT YOUR OLD CHARACTERS FOLD INTO WITH EVERY WIN KEPT, AND EACH MATCH YOU PICK HUNTER OR WARRIOR FROM A ROW OF HEROES ON THE LOBBY, EVERY HERO WEARING ONE LOOK FOR BOTS AND PLAYERS ALIKE, WITH SLEET AND DURAVO SHOWN AS SILHOUETTES UNTIL THEY ARRIVE.'],
@@ -645,7 +646,6 @@ function menuKey(e) {
   if (m.screen === 'hero') { if (m.popT >= 1) heroKey(k); return; }
   if (m.screen === 'map') { if (m.popT >= 1) mapKey(k); return; }
   if (m.screen === 'ai') { if (m.popT >= 1) aiKey(k); return; }
-  if (m.screen === 'saves') { if (m.popT >= 1) savesKey(k); return; } // its own keys, the X included (js/ui/saves.js)
   if (m.screen === 'lobby') { if (m.screenT >= 1 && m.popT <= 0) lobbyKey(k); return; }
   if (m.screen === 'skins') { if (m.skinT >= 1) skinsKey(k); return; }
   if (m.screen === 'room') { if (m.roomsT >= 1) roomKey(k, e); return; } // the party lobby (js/ui/rooms.js)
@@ -669,7 +669,6 @@ function menuClick() {
   if (m.screen === 'hero') { heroClick(); return; }
   if (m.screen === 'map') { mapClick(); return; }
   if (m.screen === 'ai') { aiClick(); return; }
-  if (m.screen === 'saves') { if (m.popT >= 1 && !m.lockT) savesClick(); return; }
   if (m.screen === 'lobby') { lobbyClick(); return; }
   if (m.screen === 'skins') { skinsClick(); return; }
   if (m.screen === 'room') { roomClick(); return; }
@@ -1165,13 +1164,12 @@ function lobbyLayout() {
     cards[mine].push({ x: mine ? 0 : VIEW_W - pw, y, w: pw, h: fh, p });
   }
   // the map plate and the target side by side at the top centre, each with
-  // its name under it: the shape's, the level's - and when a solo profile
-  // has a saved match, the SAVES plate beside them, the three centred as a row
-  const nt = lobbySavesShown() ? 3 : 2, x0 = cx - ((nt * LOBBY_MAP + (nt - 1) * LOBBY_TOP_GAP) >> 1);
+  // its name under it: the shape's, the level's, the two centred as a row
+  const nt = 2, x0 = cx - ((nt * LOBBY_MAP + (nt - 1) * LOBBY_TOP_GAP) >> 1);
   const plate = (i) => ({ x: x0 + i * (LOBBY_MAP + LOBBY_TOP_GAP), y: pad, w: LOBBY_MAP, h: LOBBY_MAP });
   const under = (r) => ({ x: r.x + (LOBBY_MAP >> 1), y: r.y + r.h + 6 });
-  const mapc = plate(0), tgt = plate(1), savc = nt > 2 ? plate(2) : null;
-  const mapName = under(mapc), tgtName = under(tgt), savName = savc ? under(savc) : null;
+  const mapc = plate(0), tgt = plate(1);
+  const mapName = under(mapc), tgtName = under(tgt);
   // LOCK IN, a bare word at the foot, big; the stage figure on the snow above it
   const pw2 = pixelTextWidth('LOCK IN', LOBBY_LOCK_SCALE) + 8;
   const play = { x: cx - (pw2 >> 1), y: VIEW_H - pad - 7 * LOBBY_LOCK_SCALE - 8, w: pw2, h: 7 * LOBBY_LOCK_SCALE + 4 };
@@ -1182,10 +1180,8 @@ function lobbyLayout() {
   const bs = 48 * S;
   const body = { x: cx - (bs >> 1), y: play.y - 22 - 46 * S, w: bs, h: bs }; // its feet (46 rows down) 22 px over the word
   const figure = { x: body.x + 14 * S, y: body.y + 4 * S, w: 20 * S, h: 42 * S }; // the body itself, the button into the hero pop-up
-  return { cx, play, S, body, figure, heroes, cards, tgt, mapc, mapName, tgtName, savc, savName };
+  return { cx, play, S, body, figure, heroes, cards, tgt, mapc, mapName, tgtName };
 }
-// the SAVES plate stands only where a match can be picked up: solo, with one kept
-function lobbySavesShown() { return NET.role === 'solo' && !!saveNewest(); }
 
 // The screen's own painted night, fully opaque at rest so the live ambient
 // world is never the backdrop here: a starfield under two aurora ribbons, a
@@ -1893,7 +1889,7 @@ function heroClick() {
 // 'pickN' (playable hero N's cell on the hero row) or null. A guest's room
 // offers the hero pop-up alone.
 function lobbyHit() {
-  const { play, figure, tgt, mapc, savc, heroes } = lobbyLayout();
+  const { play, figure, tgt, mapc, heroes } = lobbyLayout();
   const over = (r, px, py) => mouse.x >= r.x - px && mouse.x < r.x + r.w + px && mouse.y >= r.y - py && mouse.y < r.y + r.h + py;
   if (over(figure, 0, 0)) return 'hero';
   const hi = heroCellAt(heroes);
@@ -1904,14 +1900,13 @@ function lobbyHit() {
   // the shape and the seed are picked before a room is opened: a pick is a
   // page, and a host reloading would drop the room under everyone in it
   if (NET.role === 'solo' && over(mapc, 2, 2)) return 'map';
-  if (savc && over({ x: savc.x, y: savc.y - 6, w: savc.w, h: savc.h + 6 }, 2, 2)) return 'saves'; // its fanned cards stand a little over the plate
   return null;
 }
 // the four pop-ups over the lobby share one ease (menu.popT) and one way
 // out; which is open is menu.pop, kept through the fade so the right one
 // draws on the way out
-function popOpen() { const s = state.menu.screen; return s === 'hero' || s === 'map' || s === 'ai' || s === 'saves'; }
-function popHit() { const s = state.menu.screen; return s === 'hero' ? heroScreenHit() : s === 'map' ? mapScreenHit() : s === 'ai' ? aiScreenHit() : s === 'saves' ? savesHit() : null; }
+function popOpen() { const s = state.menu.screen; return s === 'hero' || s === 'map' || s === 'ai'; }
+function popHit() { const s = state.menu.screen; return s === 'hero' ? heroScreenHit() : s === 'map' ? mapScreenHit() : s === 'ai' ? aiScreenHit() : null; }
 function openPop(which) {
   const m = state.menu;
   m.screen = which; m.pop = which;
@@ -2034,12 +2029,11 @@ function lobbyClick() {
   else if (h === 'hero') { m.pressT = 0.12; beginHero(); }          // your figure opens the hero pop-up: gear, points, abilities
   else if (h === 'map') { m.pressT = 0.12; beginMapPick(); }        // the map plate its own: the shape, the seed, the die
   else if (h === 'ai') { m.pressT = 0.12; beginAiPick(); }          // the target its own: the rivals' level
-  else if (h === 'saves') { m.pressT = 0.12; beginSavesPick(); }    // the saves plate: the kept matches (js/ui/saves.js)
   else if (h.startsWith('pick')) lobbyPick(+h.slice(4));            // a hero on the row (js/ui/heroes.js)
 }
 
 // The class EMBLEMS at 12px - the hunter's bow, the warrior's gauntlet - for
-// the team rail's chips (drawRailChip), the rooms, saves and tooltips, on the
+// the team rail's chips (drawRailChip), the rooms and tooltips, on the
 // shared big-icon palette (AB32_PAL, js/sim/abilities.js): drawn by hand at
 // that size. The local player's own chip is baked with every colour but the
 // outline pushed to white, the maps' "you". A new hero brings a CLASS12 grid.
@@ -2340,7 +2334,7 @@ function drawMapPlate(r, lift) {
 // and a guest's target is too.
 function drawLobbyTop(now, a) {
   const m = state.menu;
-  const { mapc, tgt, savc, mapName: mn, tgtName: tn, savName: sn } = lobbyLayout();
+  const { mapc, tgt, mapName: mn, tgtName: tn } = lobbyLayout();
   const hover = m.screenT >= 1 && m.popT <= 0 ? lobbyHit() : null;
   const rc = TEAMS[skin(1 - (player ? player.team : 0))].mark;
   ctx.globalAlpha = a;
@@ -2352,12 +2346,6 @@ function drawLobbyTop(now, a) {
   drawLobbyTarget(tgt.x, tgt.y - (th ? 1 : 0), tgt.w, lv, now, a);
   const level = AI_LEVELS[lv].name;
   drawPixelTextShadow(ctx, level, tn.x - (pixelTextWidth(level) >> 1), tn.y, th ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-  if (savc) {
-    const sh = hover === 'saves';
-    drawSavesPlate(savc, sh ? 1 : 0);
-    const nm = saveTitleOf(savesMetas()[saveNewest()]);
-    drawPixelTextShadow(ctx, nm, sn.x - (pixelTextWidth(nm) >> 1), sn.y, sh ? '#ffd95c' : '#f4f7ff', '#0a0e23');
-  }
   ctx.globalAlpha = a;
 }
 
@@ -2899,14 +2887,13 @@ function renderTitle(now) {
     ctx.globalAlpha = 1;
   }
 
-  // the lobby stays fully lit under its pop-ups (hero, map, ai, saves), which ride
+  // the lobby stays fully lit under its pop-ups (hero, map, ai), which ride
   // one ease of their own (popT); m.pop names the one to draw
   const gc = easeInOut(state.menu.popT);
   if (sc > 0.005) renderLobby(now, sc * (1 - out));
   if (sc > 0.005 && gc > 0.005) {
     const pa = sc * (1 - out) * gc;
     if (m.pop === 'hero') renderHero(now, pa); else if (m.pop === 'map') renderMapPick(now, pa); else if (m.pop === 'ai') renderAiPick(now, pa);
-    else if (m.pop === 'saves') renderSaves(now, { pop: pa });
   }
   if (nc > 0.005) renderNotes(now, nc * (1 - out));
   if (tc > 0.005) renderWiki(now, tc * (1 - out));
