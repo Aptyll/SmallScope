@@ -365,12 +365,12 @@ function render() {
   }
   trackDowns(now); // a body that just dropped goes down in place (the `going down` banner, js/draw/bodies.js)
   for (const p of players) {
-    if (goingDown(p)) { draws.push({ y: p.y + 8, down: p }); continue; }
-    if (p.dead || inAir(p)) continue; // airborne players draw in drawDropAir
+    if (goingDown(p)) { if (fogShown(p, now)) draws.push({ y: p.y + 8, down: p }); continue; }
+    if (p.dead || inAir(p) || !fogShown(p, now)) continue; // airborne players draw in drawDropAir; one in the fog not at all (js/draw/fog.js)
     draws.push({ y: p.y + 8, p, ghost: !p.active }); // empty slots stand as silhouettes
   }
-  for (const a of animals) draws.push({ y: a.y + 4, a });
-  for (const b of robots) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
+  for (const a of animals) if (fogShown(a, now)) draws.push({ y: a.y + 4, a });
+  for (const b of robots) if (fogShown(b, now)) draws.push({ y: b.y + (b.merchant ? 8 : 4), r: b }); // a merchant stands on player feet (robots.js)
   // the archery targets (the training grounds', or one a staged scene stood in
   // a match): entities, never tile objects (a slider crosses tiles every
   // frame), sorted by their base like everything
@@ -723,7 +723,7 @@ function render() {
   drawSlashes(ex, ey);
   // swing arcs (every player who is mid-swing)
   for (const p of players) {
-    if (!p.active || p.dead || inAir(p) || p.swingT <= 0) continue;
+    if (!p.active || p.dead || inAir(p) || p.swingT <= 0 || !fogShown(p, now)) continue;
     const prog = 1 - p.swingT / 0.18;
     const a0 = p.swingDir - 1.1 + prog * 2.2;
     ctx.fillStyle = 'rgba(255,255,255,' + (0.8 - prog * 0.6).toFixed(2) + ')';

@@ -67,7 +67,7 @@ function botSeen(p, q) {
   if (q.markT <= 0 && concealOf(q) >= PRONE_MAP) return false;
   for (const a of players) {
     if (a.team !== p.team || !a.active || a.dead || inAir(a)) continue;
-    if (Math.hypot(q.x - a.x, q.y - a.y) < seenAt(q, BOT_OBS_R)) return true;
+    if (Math.hypot(q.x - a.x, q.y - a.y) < seenAt(q, BOT_OBS_R, p.team)) return true;
   }
   return false;
 }
@@ -114,12 +114,12 @@ function botObserve(p) {
   }
   const soldiers = [];
   for (const b of robots) {
-    if (b.kind !== 'soldier' || !unitAlive(b) || !botNearSide(p, b.x, b.y)) continue;
+    if (b.kind !== 'soldier' || !unitAlive(b) || !botNearSide(p, b.x, b.y) || !inSight(p.team, b)) continue;
     soldiers.push({ id: botIdOf(b), team: b.team, x: botR(b.x), y: botR(b.y), hp: botR(b.hp), maxHp: b.maxHp });
   }
   const animalsSeen = [];
   for (const a of animals) {
-    if (a.dead || !near(a.x, a.y)) continue;
+    if (a.dead || !near(a.x, a.y) || !inSight(p.team, a)) continue;
     animalsSeen.push({ id: botIdOf(a), kind: a.kind, level: a.level, x: botR(a.x), y: botR(a.y), hp: botR(a.hp), maxHp: a.maxHp });
   }
   const eagles = [];
