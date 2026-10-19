@@ -1013,8 +1013,9 @@ typed twice, so a retune can never leave the wiki lying.
 - **BEASTS** — the meadow's two kinds and the camps' three, each drawn wearing the frame it wears in the snow; a
   legend naming the frame's parts once (the level plate, health, the stamina bar that is a
   camp monster's leash bar, the `!` noticed mark); and per kind a line of what it does and a growth
-  table — HEALTH and KILL GOLD at levels 1, 6 and 12 (`WIKI_LEVELS`) — from `ANIMAL_HP` /
-  `ANIMAL_LV_HP` and `YIELD` / `ANIMAL_LV_GOLD` through the same arithmetic `makeAnimal` and
+  table — HEALTH, KILL GOLD and, for a kind worth any, KILL XP (the whole, before the side near
+  shares it; in the xp ink) at levels 1, 6 and 12 (`WIKI_LEVELS`) — from `ANIMAL_HP` /
+  `ANIMAL_LV_HP` and `YIELD` / `ANIMAL_LV_GOLD` / `ANIMAL_LV_XP` through the same arithmetic `makeAnimal` and
   `animalDies` use ([Wildlife](#wildlife)). The frames on the page wear the level a spawn would
   be dealt right now (`animalLevel()`).
 - **ARSENAL** — every tool and bit, and **every one is unlocked**: the page is not a shop, not a
@@ -1645,8 +1646,9 @@ the early game is as tough as the table when someone finally pulls it. What grow
 **The kill pays for it**: `animalDies` grows the `YIELD` payout by `ANIMAL_LV_GOLD` (a tenth)
 a level, rounded, before the HUNTSMAN bonus is taken off it — a level-6 rabbit is 15 gold, a
 level-6 wolf 36, and a level-12 beast a little over twice its level-1 self, about what its hp
-grew by. Gold is XP, so a richer meadow lifts the table that made it richer, but at a tenth a
-level it is a slope, not a farm.
+grew by. A kind with an `xp` in `YIELD` (deer, wolf, both bears) is also worth that much XP,
+grown `ANIMAL_LV_XP` (the same tenth) a level and shared by the hunter's side standing near
+(`shareXp`, [Hero levels](multiplayer.md#hero-levels)); a rabbit is worth no XP.
 
 **The noticed mark.** An animal that has a player in sight wears a `!` over its head — the
 `drawSenseMark` glyph in [rendering.md](rendering.md#overhead-health-bars), stamina white on
@@ -1676,7 +1678,7 @@ bob; the plate holds still on the standing frame's seat. The hands stay free: th
 
 The roll key is **the leap** (`tryDodge` → `rideLeap`): `RIDE_LEAP_T` in the air at the gallop,
 owning the velocity the way a roll does (`rideLeapStep`), clearing any tile whose `OBJECTS` entry
-says `leap` (the road's felled trunk, `isSolidTile`). A leap never lands on a trunk: it holds up to
+says `leap` (a felled trunk, the practice field's `log`, `isSolidTile`). A leap never lands on a trunk: it holds up to
 `RIDE_LEAP_HOLD` longer to come down clear. E again hops off (`rideEnd`) and the deer bolts, wild
 again. A stun on either body, a fall through the ice, the zipline, the air, or either one dying
 throws the rider at rest (`rideCheck`, `stunUnit`, `die`, `animalDies`); nobody goes prone or
@@ -1873,8 +1875,9 @@ The two bears are the two midline camps' kinds (`teamPay` in their `MONSTER` row
 [the creek](world.md#the-creek) bends so each side owns one: they are one fight in two coats,
 the same row, the same hp and the same pay. Every payout grows `ANIMAL_LV_GOLD` a level like any
 kill ([Wildlife](#wildlife)). The teammate share goes through `awardGold` at each teammate's own feet (so a bot's gear purchase can
-eat it the same tick — the XP is what is guaranteed), to every active teammate who is not dead
-or in the air; the buff goes to every active teammate regardless.
+eat it the same tick), to every active teammate who is not dead
+or in the air; the buff goes to every active teammate regardless. The bear's 150 XP is the
+hunter's side's, shared by whoever of it stands near ([Hero levels](multiplayer.md#hero-levels)).
 
 **The bear buffs**: each bear gives its own, the **BLACK BUFF** and the **BROWN BUFF** (`MONSTER`'s
 `buff`, named in the wiki), and they do the same thing (`campBuff(p, t, kind)`, the constants above
@@ -1950,6 +1953,12 @@ Not under `PRACTICE`. `DBG` exposes `orca`, `orcaLine`, `orcaAge`, `orcaShore` a
 
 ## Economy (one currency)
 
+**Gold is not XP.** Gold buys; XP levels, and it comes only from being near when a rival body
+dies — a soldier, a scout, a deer, a wolf, a bear — shared by the side standing there
+([Hero levels](multiplayer.md#hero-levels)). Nothing in this section pays XP: the works, the
+clock, a pump and a sale are gold alone, so the road is where a scout levels and the woods are
+where it gets rich.
+
 Every player owns a wallet **and** a bag. `p.inv` is `{ gold }` — currency only, no ceiling —
 while everything you *carry* lives in `p.bag`, the slot array described in
 [Inventory and the backpack](#inventory-and-the-backpack). (`inv` is an alias for the local
@@ -1962,7 +1971,7 @@ rather than a different resource (the League model: one number, many ways to ear
 
 | Source | Pays | Profile |
 | --- | --- | --- |
-| the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse and the pace a level comes at for a player who never farms |
+| the clock | `TRICKLE_GOLD` (1) every `TRICKLE_T` (4 s) — the `passive income` banner, js/sim/sim.js | 15 a minute to every player on the ground, silently (no floater, no blip); the floor under everyone's purse |
 | tree (`TREE_HP` 3, js/sim/world.js) | `treeFall` 1 on the fell (`treeHit` is 0 — a swing is work, the fell is the pay) | slow, safe, everywhere — a pine a second chained, so a gold a second is the ceiling of full-time farming; leaves a stump, and 1 in 25 leaves a tier-0 [find](#where-tools-and-bits-come-from) |
 | dead tree (3 hp) | `deadTreeFall` 1 | a tree; none stand since 4.82 (the brown bear's ring went with its den) |
 | rare tree (8%) | + `treeRare` 3 → 4 | jackpot roll, see `treeRare()` |
@@ -1975,24 +1984,21 @@ rather than a different resource (the League model: one number, many ways to ear
 | bird | `bird` 2 coins × 4 → 8 | dormant: nothing spawns one |
 | gold pump (`generator`) | `tiers[tier].pay` every `period` s: 2 / 4 / 7 every 10 s — 12 / 24 / 42 a minute, so the first pays back in 5 min and each upgrade in 6.7 and 7.8 | passive income, deposited to its owner; a 4x2 building, and each one its owner already has makes the next cost 2.5x (`ramp`, `buildCost`: 60, 150, 375), so the second pays back in 12.5 min and the next tier is the better buy |
 | chest | `CHEST_GOLD_MIN`–`MAX` (8–20) + a card, and 3 in 4 a tool or bit of any tier | ~14 caches along the treeline, one free E press — the world's one source of cards, and with the SUNSTONE the only [find](#where-tools-and-bits-come-from) that can be top-tier |
-| a sale at [the counter](#the-merchants-counter) | half a made thing's or an item's price, or the fixed price for fish and berries | the one payout that is **not** XP (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
+| a sale at [the counter](#the-merchants-counter) | half a made thing's or an item's price, or the fixed price for fish and berries | the one payout that does not count as earned (`tradeGold`) — a trade is an exchange, not a source, and the counter buys food at the price it sells it |
 
 The table is sized so that a
 player chaining pines nonstop earns about a gold a second, the trickle is a quarter of that,
-and the animals, chests, kills and rocks are where the rest comes from ([hero
-levels](multiplayer.md#hero-levels) are sized against the same rate — raise a fell and the
-bots hit the level cap early). PACKMULE and the
+and the animals, chests, kills and rocks are where the rest comes from. PACKMULE and the
 FORAGER card multiply the fell (`harvestMul`, +25% a level and +50%; the payout rounds).
 
 **Gold is never a physical drop.** Every source pays the earner on the spot through
-`awardGold(p, n, x, y)` (`players` banner, js/sim/player.js, beside `gainGold` — which it wraps, so
-every payout is also XP, see [Hero levels](multiplayer.md#hero-levels)): the `+N` floater rises
+`awardGold(p, n, x, y)` (`players` banner, js/sim/player.js, beside `gainGold` — which it wraps,
+paying the purse and `p.earned`, the match's gold earned): the plain gold number rises
 at the place the action happened (the tree, the kill, the wreck), and the local earner gets the
 coin blip. Who earns is always the actor: the swinger of the blow, the final-blow shooter of an
 animal or a loaded worker bot (its `b.carry` goes to whoever downed it), the breaker of an enemy
-building (the 50% wreck refund, same as a demolishing owner's), the killer of a player (a flat
-`KILL_BOUNTY` of 12 from nowhere — the victim's own purse is untouched, and an uncredited death
-pays nobody), and a
+building (the 50% wreck refund, same as a demolishing owner's), the killer of a player and the assists
+(gold from nowhere, the victim's own purse untouched — see [Takedowns](#takedowns-assists-bounties-and-shutdowns)), and a
 gold pump's **owner**, into whose wallet each `pay` tick deposits directly. Robots carry a
 single gold number (`b.carry`) and deposit at 8+ into their owner's wallet.
 
@@ -2032,7 +2038,7 @@ holds, because that pickup is an exchange.
 ## The merchant's counter
 
 **Each eagle's merchant keeps a shop, and both shops serve everybody.** Walk up to either team's
-**stall** (the stall its [merchant](#the-merchant) pitches beside the spur's head) or to the
+**stall** (the stall its [merchant](#the-merchant) pitches beside the road's head) or to the
 merchant itself, press **E**, and the counter opens: the **SHOP**, an items shop in League's
 mould. It sells five cheap **parts** and eight **finished items** built out of them into
 [six item slots](#the-items), and fish and berries at a fixed price; anything in the pack sells by
@@ -2179,8 +2185,9 @@ cursor is out of the bag already, and a command the sim might drop that frame wo
 with it. `shopSellCell` is the same sale addressed by bag index, for a bot or any later caller.
 While the counter is up, every bag cell's tooltip gains a SELLS FOR row.
 
-**A sale pays gold but no XP**: `tradeGold`, the one documented exception to the `gainGold`
-rule in [CLAUDE.md](../../CLAUDE.md).
+**A sale pays gold but does not count as earned**: `tradeGold`, the one documented exception to
+the `gainGold` rule in [CLAUDE.md](../../CLAUDE.md). It adds nothing to `p.earned`, so selling
+back and forth never climbs the scoreboard.
 
 **Every other order goes through `input.cmd`** `{kind: 'shop', act: 'item' | 'sellItem' | 'trade' | 'sell'}`
 → `runCmd` → `shopCmd`, validated on arrival by `cmdOk` (js/ui/wheel.js), so the HUD click and a
@@ -2523,8 +2530,8 @@ the air or the zipline let go (`breakMine`). **Progress is never thrown away**: 
 nobody is at closes back up at `MINE_DECAY` (0.35 s of pick per s, `tickRock`), and the next pick
 at it, yours or a rival's, starts from what is left.
 
-When it lands (`finishMine`) the rock pays its `gold` through `awardGold` (times `harvestMul`,
-so it is XP too), throws its ore onto the snow one piece at a time toward the miner
+When it lands (`finishMine`) the rock pays its `gold` through `awardGold` (times `harvestMul`;
+gold only, never XP), throws its ore onto the snow one piece at a time toward the miner
 (`ORE_FLING`) for the [drop pickup](#inventory-and-the-backpack), rolls its find
 (`dropLoot`), and lies as **rubble** (`o.regrow`, `SPRITES.rockSpent`) — still solid, not
 offered to E (`OBJECTS.rock.ready` is `rockReady`) — until `tickRock` in the object timers
@@ -2866,7 +2873,7 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   `structsNear`/`unitsHit`. **That landing is the only door a rock has to a building.** A rock that
   already struck something on the way in spent itself there and only puffs.
   **Gold pump** (`generator`): deposits `tiers[tier].pay` gold every `period` seconds straight into its
-  **owner's** wallet (`awardGold` — the `+N` floater rises over the pump's barrel as a drawn coin
+  **owner's** wallet (`awardGold` — the gold number rises over the pump's barrel as a drawn coin
   hops out of it, but there is nothing to collect and no pile to cap). **Bot bay** (`spawner`):
   keeps `tiers[0].bots` (3) robots alive, rolling them out **one at a time** — the first 1 s after
   completion, then 4 s apart; a lost bot takes 12 s to replace (`respawnT`/`respawnTotal`).
@@ -2970,7 +2977,7 @@ carried gold shows as a nugget up front), and show a health bar. Their SFX are p
 anything inside `ROBOT_REACH` (15 px) — flat, with nothing scaling it. `robotStrike(b, e, pt)` is the single blow: a building goes through
 `hurtStruct` (the same path a player's E swing takes, so the wreck, the rubble payout and the
 `WRECKED A` line are one code path), and any **body** through `hurtUnit` with `cause: 'worker'` —
-all credited to `players[b.owner]`, so a worker kill pays the bounty and levels its owner like any
+all credited to `players[b.owner]`, so a worker kill pays its owner the kill gold like any
 other. `cause` doubles as the feed's **verb** (`KILL_VERB`), so a
 worker kill reads `YOU CUT DOWN <NAME>` instead of `SHOT`. Targets come from
 `robotFoeUnit(b, range)` (nearest enemy player or worker; players are noticed through `seenAt`, so a
@@ -3007,8 +3014,8 @@ The `soldiers` banner (js/sim/robots.js). Every `STRUCTS.barracks.waveT` seconds
 side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
 that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
 bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
-cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth` — down the
-roost's spur to the road), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
+cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth`, where the
+road leaves its [base](world.md#the-bases)), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
 read live each frame, since
 it may have flown. The road's middle is swapped for a way round [the cistern](world.md#the-cistern)
 (`cisternWayRound`): the road just short of its own gate, the bank of one of the fords outside the
@@ -3023,7 +3030,7 @@ waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs
    `SOLDIER_EAGLE_DMG` (8, against a hand's 20) a swing through `hurtEagle` — ahead of any
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
-   wall across the spur, a rival bay): `hurtStruct` through the same `robotStrike`;
+   wall across the road, a rival bay): `hurtStruct` through the same `robotStrike`;
 4. the **march**: first **the zipline** (`soldierBoard`): a cable within `SOLDIER_ZIP_REACH`
    (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
    soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
@@ -3042,8 +3049,9 @@ is the stalemate a player breaks by walking out. It takes every hit, state and s
 other body (`bot: true` is what `isAnimalUnit` reads to send a blow down the robot path rather
 than the animal one — a soldier carries a `kind` too), the roosting bird's **gust** rears at it
 and buffets it like a player (`updateEagle`/`eagleGust`), a turret marks it, and it dies through
-`robotDies` carrying a `SOLDIER_BOUNTY` (4 gold, through `awardGold`, so the kill levels too) for
-whoever scraps it — no feed line, three a wave. The cap on a barracks' live soldiers is
+`robotDies` carrying a `SOLDIER_BOUNTY` (4 gold, through `awardGold`) for whoever scraps it and
+`SOLDIER_XP` (20) shared by every rival scout standing near, whoever scrapped it
+([Hero levels](multiplayer.md#hero-levels)) — no feed line, three a wave. The cap on a barracks' live soldiers is
 `STRUCTS.barracks.tiers[0].cap`. Bots read them as attackers at their bird and as targets in
 sight, and a pusher walks with its own column ([multiplayer.md](multiplayer.md#bots)).
 
@@ -3060,17 +3068,17 @@ first job is its **stall**, and after that **home production**: it fells the **b
 raises the **bot bays** there.
 
 **The stall** (`OBJECTS.stall`, world.js) is the shop players walk to. The moment the merchant is
-off the bird it looks for a 3×2 site (`merchStallSite`) about `MERCH_STALL_OUT` (4.6) tiles from
-the roost at `MERCH_STALL_ANG` (0.9 rad) either side of the spur's axis: beside the track's head,
-where everybody lands and respawns, never on the track itself (`SPUR_HW` and a tile more), dry
-land holding nothing the axe cannot take. It clears and hammers it exactly as a bay (the shared
+off the bird it looks for a 3×2 site (`merchStallSite`) about `MERCH_STALL_OUT` (6) tiles from
+the roost at `MERCH_STALL_ANG` (1.0 rad) either side of the road's axis (`e.laneDir`): just past the
+paved crater, beside the road's head, where everybody lands and respawns, never on the road itself
+(`laneDist`), on snow holding nothing the axe cannot take. It clears and hammers it exactly as a bay (the shared
 `raise` inside `updateMerchant`), and `pitchStall` sets it: the anchor is the front-left tile (the
 row the y-sort reads, like the hut's), parts east and north, and the ground under its shade is
 repainted. It carries its `team` and nothing else: no `tool`, no hp and no place in `structures`,
 so nothing swings at it, shoots it or sieges it. It goes up once, about twenty seconds after the
 landing, and until then the merchant's own body is the only counter. A pine or snag it fells is a **log** in its own stock (`b.wood`, no gold, like
-the crater and the spur). The back woods are every pine inside `MERCH_BACK_R` (13 tiles) of the
-roost whose bearing off the spur's axis (`e.laneDir`, 0 toward the road) is at least
+the crater). The back woods are every pine inside `MERCH_BACK_R` (13 tiles) of the
+roost whose bearing off the road's axis (`e.laneDir`, 0 up the road) is at least
 `MERCH_BACK_ARC` (90°): the half facing away from the road. `merchBackPine` picks the one nearest
 the roost first (the merchant's own distance breaks near ties) that still has an open side to
 stand on, so the clearing grows out from home as one front. Each falls to a **stump** at
@@ -3082,7 +3090,7 @@ The first is due `MERCH_BAY_T` (30 s) after the landing and is free; each after 
 `MERCH_BAY_WOOD` (40) logs, up to `MERCH_BAYS` (3), which lands them at about 1:00, 2:00 and
 3:45 of match time. They fan round the back of the roost `MERCH_BAY_BACK` (8) tiles out, on the
 slots `merchBaySlots` lists in order: the first corner (`merchBayDir`: of the two back corners,
-±135° off the spur's axis, the one pointing nearer the world's edge, mirrored for both sides),
+±135° off the road's axis, the one pointing nearer the world's edge, mirrored for both sides),
 straight back, then the other corner. `merchNextBay` takes the first slot with no bay standing on
 it, and `merchBaySite` the nearest 3×2 placement to that slot's point whose footprint is dry land
 holding nothing the axe cannot take. `merchBayBlocker` hands it every pine, snag and rock on the
@@ -3093,9 +3101,9 @@ with the merchant wholly off the footprint so the bay never goes up round it, se
 (`createStruct`, nobody pays gold). A wrecked bay drops out of `b.bays` and holds the next raise
 `MERCH_BAY_REBUILD` (45 s); the first bay of an empty yard is always free again, so a side is
 never out of waves. The waves find the road themselves ([Soldiers](#soldiers-the-waves)): every
-soldier's route starts at its own spur's junction.
+soldier's route starts at its own base's junction.
 
-With nothing due and the back woods felled, it keeps to its post at the head of the spur, a step or
+With nothing due and the back woods felled, it keeps to its post on the road just up from the bird, a step or
 two either way. **Wherever it is, it keeps shop** too: its own body is a
 [counter](#the-merchants-counter) as well as its stall, open to either team, and it stands still
 and faces a customer served at its body for as long as the sale takes.
@@ -3221,10 +3229,10 @@ level and xp all stay on the body, and `reset(false)` brings the same player bac
 spills, nothing is looted, and the snow around a corpse is as clean as it was. (An item riding
 the cursor mid-drag goes back in the bag, so it is still there when the body comes back instead
 of vanishing with the hand holding it.) **What a kill is worth
-is a flat bounty from nowhere**: `KILL_BOUNTY` (12, beside `die`; a scrapped soldier's
-`SOLDIER_BOUNTY` is 4, so a player is three of them) to the credited killer through `awardGold`,
-so a kill still levels the killer and taking the fight is still worth it — while an uncredited
-death (ice, wolves, or the killer already dead) pays nobody. `die` also credits the kill (and
+is gold from nowhere**, paid by `payTakedown` to the killer and the assists (see
+[Takedowns](#takedowns-assists-bounties-and-shutdowns) below). The XP is separate and never needs
+the credit: `KILL_XP` (40) + `KILL_XP_LV` (15) × the downed scout's level, shared by every rival
+standing near, the killer too wherever it stood ([Hero levels](multiplayer.md#hero-levels)). `die` also credits the kill (and
 heals the killer if their kit carries `killHeal`, off a card) and writes the log line — see
 [Kills and the event log](multiplayer.md#kills-and-the-event-log) — then asks
 `teamEagleDown(p.team)`: with the eagle still roosting, `p.respawnT` starts counting down
@@ -3275,6 +3283,34 @@ match another screen shares (`netShared`, js/net/net.js: a host's menu never sto
 its P does nothing); `update()` (time, darkness, camera, fx) always keeps running. In `title` only
 the ambient half runs (`updateTitle`: animals and fish), and not even that once a room is shared
 — see [Main menu](rendering.md#main-menu-title).
+
+### Takedowns: assists, bounties and shutdowns
+
+League's kill economy, in the `takedowns` banner at the end of js/sim/player.js. Every rival
+player's blow on a player (`damagePlayer`) and every stun, root or net it puts on one
+(`ccCredit`, js/sim/actions.js) stamps `p.foeHits[src.id] = state.elapsed` through `noteFoe`;
+`recentFoes` reads back the rivals inside `ASSIST_T` (10 s), latest first, and `die` clears the
+record. On a death, `die` reads the victim's **worth** (`killWorth`) and **bounty** (`bountyOf`)
+before it clears the streak, and `payTakedown` pays:
+
+- the **killer**: the worth plus the bounty, through `awardGold`. A death with no rival `src`
+  (the ice, the creek, the orca, wolves, a bear, a wave) goes to the latest rival on the record,
+  who takes the kill, the streak and the gold; losing the bird (`cause` `eagle`) is nobody's.
+  Its log line stays the world's (`DEATH_CAUSE`), in the killer's colours.
+- every other recent rival: an **assist** (`p.assists`) and an even share of `ASSIST_SHARE`
+  (half) of the worth, at least 1 each.
+- gold goes only to the living, as a kill always has; a dead killer still takes the credit.
+
+**Worth** is `killBounty()`: `KILL_SOLDIERS` (3) scrapped soldiers' `SOLDIER_BOUNTY`
+(js/sim/robots.js, read at the kill, so retuning a last hit moves the kill with it; 12 gold at a
+4-gold soldier), shrunk by `FEED_STEP` (20%) per death past `FEED_FROM` (2) the victim has died
+without a kill or assist (`p.feed`, reset by either), to a floor of `FEED_FLOOR` (a third): so feeding
+never funds the other side. **Bounty** grows from a streak of `BOUNTY_FROM` (2) by `BOUNTY_STEP`
+(1 soldier) a kill to `BOUNTY_MAX` (5 soldiers); the killer cashes it as a **SHUTDOWN** (the log says SHUT DOWN,
+and a 2x gold word rises off the body for 1.4 s), so ending a streak pays without erasing the
+lead it built. The bounty is worn over the name for every screen to see (`drawBountyTag`,
+js/draw/overhead.js: a 5 px gold coin and the number over the name tag). Bots run the same
+`die`, so they assist, wear bounties and shut down like anyone.
 
 ## The M map does not pause
 
@@ -3753,15 +3789,15 @@ victory, the lobby) can never be undone by a release arriving after it. The
 | `intro` — FROZEN NORTH RUN INTRO | boot, and `leaveLobby()` back to the menu | yes |
 | `lobby` — FROZEN NORTH RUN CLASS SELECTION | `beginLobby()`; the hero pop-up keeps it | yes |
 | `eagle` — FLYING ON EAGLE | `beginDrop()` | yes |
-| `jump` — JUMPING OFF EAGLE | `dropJump()` for the local player | no → `foxglove` |
+| `jump` — JUMPING OFF EAGLE | `landAboard()` at the crash with the local player aboard (a client: `netClientMode`) | no → `foxglove` |
 | `foxglove` — FOXGLOVE DROP | the end of `jump`, via `TRACKS.next` | no → silence |
 | `village` — FOREST VILLAGE LOOP | `openShop()`, as a **hold**; `closeShop()` releases it | yes |
 | `wiki` — WHISPERING WOODS | `beginWiki()`, as an ordinary **play**; `leaveWiki()` puts `intro` back | yes |
 | `victory` — DROP THE ICE | `endMatch('won')` | yes |
 | `defeat` — SLEEPY GAME SAVE | `endMatch('lost')` | yes |
 
-The jump is a **hard cut**, not a crossfade (`{ out: 0.1, in: 0.05 }`): the ride's song is
-interrupted by the leap. From there the layer runs itself — `jump` reaches its end, its `ended`
+The landing is a **hard cut**, not a crossfade (`{ out: 0.1, in: 0.05 }`): the ride's song is
+interrupted by the impact. From there the layer runs itself — `jump` reaches its end, its `ended`
 handler follows `TRACKS.next` into `foxglove`, and when *that* ends nothing follows it, so the
 match plays out in silence until an end screen. `endMatch` is gated on `'won'`/`'lost'`, each with
 its own song (`victory` / `defeat`); a `'respawning'` overlay is not the end of anything and must

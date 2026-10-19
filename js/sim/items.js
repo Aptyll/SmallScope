@@ -141,7 +141,7 @@ function buyItem(p, id) {
   return true;
 }
 // ...and one sale, at ITEM_SELL of the item's whole price. A trade, not a
-// payout: no XP (tradeGold).
+// payout: never counted as earned (tradeGold).
 function sellItem(p, slot) {
   const id = p.items[slot];
   if (!id || !merchNear(p)) { shopDeny(p); return false; }
@@ -149,7 +149,7 @@ function sellItem(p, slot) {
   p.items[slot] = null;
   itemsChanged(p);
   tradeGold(p, v);
-  shopFx(p, '+' + v, RES_COLORS.gold);
+  shopFx(p, String(v), RES_COLORS.gold);
   sfxFor(p, 'coin');
   return true;
 }

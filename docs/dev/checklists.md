@@ -513,8 +513,8 @@ its paths if it grows woods (`mapGrown`), and the ore/berry top-up puts it back 
 strength. Nothing else in the game knows a shape by name. Three rules bound one:
 
 - **The border forest and the two roost corners stay.** `borderDepth` is what the road's gates
-  (`roadSpan`), both nests (`roadNest`, `roadNestDeep`) and the crash rule are measured off, and
-  a shape that thins them breaks the opening of every match.
+  (`roadSpan`) are measured off and what walls in the fixed [bases](world.md#the-bases), and a
+  shape that thins them breaks the opening of every match.
 - **OPEN FIELD must not move.** Grow the interior on `vnoise`/`hash2` alone, put any `rng()` a
   shape needs at the very **end** of `genWorld` behind `mapGrown(MAP_TYPE)`, and prove it: hash
   `ground`, `objects`, `animals` and `fish` against the same seeds on `main`
@@ -570,8 +570,9 @@ already current, so it is safe to call from a state change that repeats.
 | File | The numbers |
 | --- | --- |
 | js/sim/core.js | the `YIELD` table (every gold payout, the one table still in core.js); `useCard`'s random draw |
-| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and `KILL_BOUNTY`; the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP` — sized against the harness, see [multiplayer.md](multiplayer.md#bots)); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
+| js/sim/player.js | `RESPAWN_WAIT` (the wait for the bird, beside `die()`) and the takedown gold (`KILL_SOLDIERS`, `ASSIST_*`, `BOUNTY_*`, `FEED_*`, the `takedowns` banner); the `CARDS` table (every card's effect, by rarity); the hero-level table (`LEVEL_XP` — sized against the road's XP, see [multiplayer.md](multiplayer.md#hero-levels)) and what a downed scout is worth (`KILL_XP`/`KILL_XP_LV`); each hero's stats and growth (`CLASSES[c].base`/`.grow`, read through js/sim/stats.js); `BOW_CHARGE` and the momentum constants (`ICE_MAX`, `SLIDE_MIN`/`SLIDE_EXIT`, `TRAIL_MIN`) above `CLASSES`; the player count (`MAX_PLAYERS`) |
 | js/sim/world.js | the chests (`CHEST_*` above `placeChests()`: count, spacing, payout, and `CHEST_ODDS`, a chest's card rarity roll); `TREE_HP`; `TREE_RARE_CHANCE` in `treeRare()`; the road (`ROAD_HW`/`ROAD_RAG`/`ROAD_ICE_KEEP`/`ROAD_ICE_TAPER`/`ROAD_STEP`/`ROAD_HW_WOOD`/`ROAD_NEST_IN`/`ROAD_NEST_OFF`/`ROAD_LOG_IN`/`SPUR_HW`), which reshapes the map |
+| js/sim/base.js | the bases (`BASE_U`/`BASE_R`/`BASE_RAG`/`PERCH_U`/`BASE_KEEP`), which reshape both roost corners |
 | js/sim/structures.js | `STRUCTS` costs/HP/build times (plus turret range/dmg/rate/traverse/aim/`acc`, generator pay/period, bay bot count/HP and its `w`/`h` footprint; the bay's roll-out cadence is inline in `updateStructures()`'s spawner branch); the turret's own throw (`TUR_*`, `ROCK_SPD`/`ROCK_FALL`/`ROCK_MISS`/`ROCK_SPLASH`, under the `turret gunnery` banner); the waves (`STRUCTS.barracks`'s `wave`/`waveT`/`grow`/`cap`/`botHp`/`hp`, `BARRACKS_ROLL`) |
 | js/sim/robots.js | `SOLDIER_*` (speed, aggro, siege reach, the bird damage, the bounty); `MERCH_BAYS`/`MERCH_BAY_*` (how many bays, the logs each costs, when the first is due, how far behind the roost, the rebuild wait); `MERCH_BACK_R`/`MERCH_BACK_ARC` (how far and how wide the back woods reach) |
 | js/sim/actions.js | `WORK_REACH` and the roll/prone blocks |

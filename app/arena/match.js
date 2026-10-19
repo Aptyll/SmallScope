@@ -37,7 +37,7 @@ function playMatch(opts) {
   // Either way seat 0 is the page's `player`, which the brain never ranks
   // into a push or a guard (aiRank) - the human's seat, sat by a bot.
   g.run(`
-    PROFILE.markDropped();                 // no scripted first flight: every rider may leap
+    PROFILE.markDropped();                 // no drop brief: seat 0 hops off like every other bot
     sampleHumanInput = function () {};     // nobody's keys: seat 0's input is its bot's
     settings.aiLevel = ${o.level | 0};
     player.control = 'ai';
@@ -105,7 +105,7 @@ function playMatch(opts) {
   const act = L.players.map(() => ({ fight: 0, siege: 0, work: 0, move: 0, idle: 0, dead: 0 }));
   const goals = L.players.map(() => ({}));
   const dist = L.players.map(() => 0);
-  const prev = L.players.map((p) => ({ x: p.x, y: p.y, dmgOut: p.dmgOut, dmgIn: p.dmgIn, siege: p.dmgBird + p.dmgStruct, xp: p.xp, robot: 0 }));
+  const prev = L.players.map((p) => ({ x: p.x, y: p.y, dmgOut: p.dmgOut, dmgIn: p.dmgIn, siege: p.dmgBird + p.dmgStruct, earned: p.earned, robot: 0 }));
   const nerveStep = [10, 10]; // the next 10% step down each bird's nerve is logged at
   const W = L.WORLD, TILE = L.TILE, CELL = 8, CW = Math.ceil(W / CELL);
   const cellOpen = new Uint8Array(CW * CW), cellSeen = new Uint8Array(CW * CW);
@@ -145,7 +145,7 @@ function playMatch(opts) {
       else if (p.dead) a = 'dead';
       else if (p.dmgOut > q.dmgOut || p.dmgIn > q.dmgIn) a = 'fight';
       else if (siege > q.siege) a = 'siege';
-      else if (p.xp - q.xp - (robotGold[i] - q.robot) > passive) a = 'work';
+      else if (p.earned - q.earned - (robotGold[i] - q.robot) > passive) a = 'work';
       else if (moved > TILE || p.aboard || G.inAir(p)) a = 'move';
       else a = 'idle';
       if (a) act[i][a] += o.sampleEvery;
@@ -157,9 +157,9 @@ function playMatch(opts) {
         const cx = Math.floor(p.x / TILE / CELL), cy = Math.floor(p.y / TILE / CELL);
         if (cx >= 0 && cy >= 0 && cx < CW && cy < CW) cellSeen[cy * CW + cx] = 1;
       }
-      q.x = p.x; q.y = p.y; q.dmgOut = p.dmgOut; q.dmgIn = p.dmgIn; q.siege = siege; q.xp = p.xp; q.robot = robotGold[i];
+      q.x = p.x; q.y = p.y; q.dmgOut = p.dmgOut; q.dmgIn = p.dmgIn; q.siege = siege; q.earned = p.earned; q.robot = robotGold[i];
       return [Math.round(p.x), Math.round(p.y), Math.round(p.hp), Math.round(p.maxHp), p.dead ? 1 : 0, p.level,
-        Math.round(p.xp), Math.round(p.dmgOut), Math.round(p.dmgIn), Math.round(siege), p.kills, p.deaths, a, goal];
+        Math.round(p.earned), Math.round(p.dmgOut), Math.round(p.dmgIn), Math.round(siege), p.kills, p.deaths, a, goal];
     });
     for (const e of L.state.drop.eagles) {
       if (e.state !== 'down') continue;
@@ -196,7 +196,7 @@ function playMatch(opts) {
 
   const players = L.players.map((p, i) => ({
     id: p.id, kills: p.kills, deaths: p.deaths, dmg: Math.round(p.dmgOut), siege: Math.round(p.dmgBird + p.dmgStruct),
-    gold: Math.round(p.xp), level: p.level, dist: Math.round(dist[i]), acts: act[i], goals: goals[i],
+    gold: Math.round(p.earned), xp: p.xp, level: p.level, dist: Math.round(dist[i]), acts: act[i], goals: goals[i],
   }));
   // a bot file's health at the whistle (js/ai/bot-api.js): how often it threw
   // or answered nothing usable, so a ladder can flag a broken entry

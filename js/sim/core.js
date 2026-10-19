@@ -33,7 +33,9 @@ const FISH_SPAWN_T = 11;   // seconds between new fish while the shoal is health
 // One currency, many sources. Every source pays gold with a different yield profile
 // (burst on completion, or per kill); this table is the whole economy, with one
 // source outside it: the clock, which pays every player on the ground a coin every
-// TRICKLE_T s (the passive income banner, js/sim/sim.js). The per-swing rows are 0 -
+// TRICKLE_T s (the passive income banner, js/sim/sim.js). A beast's `xp` is the
+// one thing here that is not gold: what its death is worth to the hunter's side
+// standing near it (animalDies, js/sim/wildlife.js). The works pay no XP. The per-swing rows are 0 -
 // a swing is work, the fell is the pay - because a per-swing coin on a one-second
 // pine was the firehose that had every bot at the level cap by two minutes.
 const YIELD = {
@@ -42,10 +44,10 @@ const YIELD = {
   deadTreeHit: 0, deadTreeFall: 1,      // 3 hp snag  -> 1 gold, the rookery's cover; leaves a stump
   // (a rock pays by its kind, with its ore: ROCK_KINDS, js/sim/mining.js)
   rabbit: { coins: 2, each: 5 },        // 10 gold, but it bolts
-  deer:   { coins: 3, each: 6 },        // 18 gold, the big mobile target
-  wolf:   { coins: 3, each: 8 },        // 24 gold, a den's four: the resource camp, and it bites back once woken
-  alpha:  { coins: 6, each: 15 },       // the black bear's pay, the brown bear's match (the two are one side's each and pay the same)
-  dire:   { coins: 6, each: 15 },       // 90 gold to the killer, a midline camp's one - and EPIC_TEAM_GOLD to every teammate besides
+  deer:   { coins: 3, each: 6, xp: 40 },  // 18 gold, the big mobile target
+  wolf:   { coins: 3, each: 8, xp: 15 },  // 24 gold, a den's four: the resource camp, and it bites back once woken
+  alpha:  { coins: 6, each: 15, xp: 150 }, // the black bear's pay, the brown bear's match (the two are one side's each and pay the same)
+  dire:   { coins: 6, each: 15, xp: 150 }, // 90 gold to the killer, a midline camp's one - and EPIC_TEAM_GOLD to every teammate besides
   bird:   { coins: 2, each: 4 },        // 8 gold, and the hardest shot in the game (dormant: nothing spawns a bird now)
 };
 
@@ -208,7 +210,7 @@ const state = {
   intro: 0,            // seconds left of the title -> drop / landing -> play transition (0 = none)
   introLen: 1,         // that transition's full length (the camera ease divides by it)
   introFrom: null,     // camera position the transition started from
-  drop: null,          // the eagle while it is in the air: see makeEagleRoute() / beginDrop()
+  drop: null,          // the eagle while it is in the air: see makeEagles() / beginDrop()
   // the DROP BRIEF: a local player that never jumped rides the landing, and the
   // crash pans the camera to both roosts and states the objective before
   // handing the controls (and the E hop off the bird) back -
@@ -378,9 +380,11 @@ function clockTxt(sec) {
   return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-function addFloater(x, y, txt, color) {
-  evPush('float', [x, y, txt, color]); // the sim's cosmetics are recorded for screens that do not run it (js/net/events.js)
-  floaters.push({ x, y, txt, color: color || '#ffffff', t: 0 });
+// `o` is optional: { scale, rise, life } for a word bigger, faster or longer
+// than a number's (the SHUTDOWN over a body, payTakedown js/sim/player.js)
+function addFloater(x, y, txt, color, o) {
+  evPush('float', [x, y, txt, color, o]); // the sim's cosmetics are recorded for screens that do not run it (js/net/events.js)
+  floaters.push(Object.assign({ x, y, txt, color: color || '#ffffff', t: 0 }, o));
 }
 
 // Combat damage is ONE running total per body, worn beside its health bar
