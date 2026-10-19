@@ -510,9 +510,9 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 
 | Looking for | Start at | Banner |
 | --- | --- | --- |
-| what a bot decides to do this frame | `updateAI` (the wrapper: the ride's let-go, and `aiRecall` after the ladder: the walk home when low, the wait in the roost ring, `AI_RECALL_*`/`AI_RING_FULL`), `aiThink` (the ladder; rung 0, the skill point, the item build (walking to its own counter, `AI_SHOP_DETOUR`) and the gear, is `aiSpend` above it), `aiNearestEnemy`, `aiLineClear`, `aiOpenSides` | `ai` |
-| IMPOSSIBLE's `relentless` played (never gives ground, everyone pushes as a pack from the zipline's end, charges past anything not at arm's length); the ability roll | `AI_PACK`/`AI_PACK_R` and `ai.packGo` (the pack, in the objective rung), `charge` (beside `siege`, in `aiThink`), `AI_ABIL_T` | `ai` (the levels themselves: js/ai/ai-skill.js) |
-| how a bot covers ground: the zipline ride folded into every walk - is the cable worth it, the mount point, the hold along it and the let-go at the exit, the ride no rung wanted | `ZIP_AI_GAIN`/`ZIP_AI_OFF`, `aiWalkT`, `aiZipWorth`, `steerTo`/`walkTo` (inside `aiThink`; the mount is `zipMount`, js/sim/zipline.js), `ai.zipUsed` (`updateAI`) | `ai` › `the ride` |
+| what a bot decides to do this frame | `updateAI` (the wrapper: the ride's let-go, and `aiRecall` after the ladder: the walk home when low, the wait in the roost ring, `AI_RECALL_*`/`AI_RING_FULL`; the ladder itself, `aiThink`, is js/ai/ai-ladder.js), `aiSpend` (rung 0: the skill point, the item build (walking to its own counter, `AI_SHOP_DETOUR`) and the gear), `aiNearestEnemy`, `aiLineClear`, `aiOpenSides` | `ai` |
+| IMPOSSIBLE's `relentless` played (never gives ground, everyone pushes as a pack from the zipline's end, charges past anything not at arm's length); the ability roll | `AI_PACK`/`AI_PACK_R` and `ai.packGo` (the pack, in the objective rung), `charge` (beside `siege`, in `aiFoe`, js/ai/ai-ladder.js), `AI_ABIL_T` | `ai` (the levels themselves: js/ai/ai-skill.js) |
+| how a bot covers ground: the zipline ride folded into every walk - is the cable worth it, the mount point, the hold along it and the let-go at the exit, the ride no rung wanted | `ZIP_AI_GAIN`/`ZIP_AI_OFF`, `aiWalkT`, `aiZipWorth`, `steerTo`/`walkTo` (built by `aiRead`, js/ai/ai-ladder.js; the mount is `zipMount`, js/sim/zipline.js), `ai.zipUsed` (`updateAI`) | `ai` › `the ride` |
 | the objective: who pushes and who guards, the walk into a roost through its lane, the defenders' turrets, the archer's station, the siege that ignores respawning defenders | `aiRank`, `aiPushers`, `aiWantsPush`, `aiOnGuard`, `aiFortSite`/`AI_FORT_N`, `AI_PATROL_*` (a guard's turrets and scouting walk), `aiWallSite`/`aiWallPlan`/`AI_WALL_BOX` (its walls), `aiRingPlan`/`AI_RING_*` (how open the roost is: the defence line), `aiKeepsWay`/`aiLaneDist` (no bot building cuts a way: `ai` › `bot walls`), `AI_GUARD_HOT` (js/ai/ai-team.js), `aiRivalEagle`/`aiOwnEagle`, `aiToRoost`, `aiLaneGate`, `aiInLane`, `aiEagleTile`, `AI_HOLD`, `AI_GATE`, `AI_ROOST_BUDGET`, `AI_ESCALATE`, `AI_SIEGE_R` (the `siege` read in `updateAI`) | `ai` › `difficulty` (the bird's numbers: `EAGLE_HP`/`EAGLE_ARROW_DMG`/`EAGLE_WORK_DMG`, js/sim/eagle.js) |
 | what every bot knows about both birds: nerve, last hit, who is at each (a rival wave counted at half strength), the `threat` read the defend and push rungs ask, how many a threat calls home | `aiSituation`, `aiDefendersWanted`, `AI_ROOST_R`/`AI_DEFEND_T`/`AI_JOIN_HP`/`AI_ALARM_HP` | `ai` › `difficulty` › `the two birds` |
 | the waves as a bot sees them: a rival soldier in sight is a target, its own column's head is what a pusher walks with | `aiNearestEnemy` (its `robots` loop), `aiWaveHead`, `AI_WAVE_R`/`AI_WAVE_D` (the `head` read in rung 5c of `updateAI`) | `ai` |
@@ -520,6 +520,15 @@ order; the legacy `audio.js` row rides along because its dials get asked after c
 | where a bot with nothing to do wanders next (rung 11) | `aiRoamPick` | `ai` (the `the road, and the roam` sub-banner) |
 | a bot the orca is after: off its ice by the nearest way, a beat late | rung 0b of `aiThink` (`orcaShore`, js/sim/orca.js) | `ai` |
 | an ally at your side: the escorts, the anchors that let it join your fight and your push | `aiEscorts`, `AI_ESCORT`/`AI_ESCORT_R`, `AI_ANCHOR_R`/`AI_ANCHOR_D` | `ai` › `difficulty` |
+
+## js/ai/ai-ladder.js
+
+| Looking for | Start at | Banner |
+| --- | --- | --- |
+| the bot ladder, top to bottom: each rung a function that says whether it took the think, in the order `aiThink` asks them | `aiThink` |  `the ladder` |
+| the think's shared read every rung gets (`k`: the profile, the plan and the role, the walks `walkTo`/`steerTo`/`aimAt`, the clocks, the two birds, what it minds) and the flag or order it serves | `aiRead`, `aiOrders` | `the ladder` |
+| the rival it fights and when it turns on them (focus fire, the held foe, a grudge, the siege, the charge); food; the burrow | `aiFoe`, `aiEat` (js/ai/ai.js), `aiBurrow` | `the ladder` |
+| the rungs: a rival in sight, a camp it woke, an order's ring, its bird, the walls and turrets at home, the guard's post, the push, the escort, a call for help, the bear party / stalker / scout, the road's wave, the hunt, loot, income, harvest, the roam | `aiFight`, `aiCampFight`, `aiFlagRung`, `aiDefendRung`, `aiHomeRung`, `aiGuardRung`, `aiPushRung`, `aiEscortRung`, `aiHelpRung`, `aiRoamJobs`, `aiRoadRung`, `aiHuntRung`, `aiLootRung`, `aiBuyRung`, `aiHarvestRung`, `aiRoam` | `the ladder` |
 
 ## js/ai/ai-team.js
 

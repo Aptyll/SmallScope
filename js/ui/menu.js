@@ -29,7 +29,7 @@ const MENU_TXT_SCALE = 2, MENU_TXT_PITCH = 22, MENU_BOTTOM = 30;
 // PLAY and the rooms screen's HOST stand, MENU_PITCH the rooms' step under it.
 const MENU_BW = 132, MENU_BH = 24, MENU_PITCH = 30;
 const MENU_Y0 = 88;
-const PATCH_TXT = 'PATCH 0.497';
+const PATCH_TXT = 'PATCH 0.498';
 // the logo: docs/media/logos/mainMenuSoftfall.png, keyed out of its sky and
 // baked into js/baked/logodata.js by app/bake-logo.js (a data URL taints nothing).
 // A data URL decodes before the first frame in practice, and the draw checks
@@ -45,6 +45,7 @@ const LOGO_Y = 12;
 // 0.001 - 0.390 in order). An optional third field names a picture in
 // docs/media/notes/ (baked by app/bake-notes-art.js) shown under the note.
 const PATCH_NOTES = [
+  ['0.498', 'UNDER THE HOOD: THE BOTS\' BRAIN IS NOW SPLIT INTO NAMED STEPS, AND BOTS PLAY EXACTLY THE SAME.'],
   ['0.497', 'QUICKPLAY AND RANKED NOW FIND YOU REAL OPPONENTS: FIND MATCH LOOKS FOR ANOTHER PARTY FOR A FEW SECONDS UNDER A GOLD CLOCK AND PUTS IT ON THE OTHER SIDE, WITH BOTS ONLY IF NOBODY IS THERE, AND THE PARTY LEADER CAN NOW SWITCH MODES BY CLICKING THE MODE NAME.'],
   ['0.496', 'THE FOG OF WAR HOLDS ONLINE: EACH PLAYER IS SENT ONLY WHAT THEIR SIDE SEES, AND A RIVAL ARROW, ITS FIRE OR A DAMAGE NUMBER IN THE FOG NO LONGER SHOWS.'],
   ['0.495', 'TOOLS AND BITS ARE GONE FROM THE ROCKS, TREES AND CHESTS: YOUR WEAPON IS YOUR CLASS\'S, A CHEST HANDS YOU A FREE ITEM PART, YOUR SIX ITEM SLOTS SIT BESIDE THE WEAPON TOP-LEFT, THE WIKI HAS AN ITEMS PAGE, AND BOTS GO HOME TO SHOP WHEN THEY CAN AFFORD THEIR NEXT ITEM.'],
