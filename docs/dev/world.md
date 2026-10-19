@@ -544,7 +544,8 @@ along the lane, whichever way the creek bends there.
 `laneWaypoints(team, lane)` is the march down a side lane: the centreline every `ROAD_STEP`
 tiles from the side's own mouth to the rival's (`laneAlong`, `laneAt`), then the rival hollow's
 centre ([Soldiers](gameplay.md#soldiers-the-waves)). `laneZipTiles(team, lane)` is a side's cable
-down it ([the zipline](#the-zipline)).
+down it ([the zipline](#the-zipline)), and `laneHold(team, lane)` where a bot laner waits on any
+lane, mid included, with no column of its own there ([bots](multiplayer.md#bots)).
 
 ## The creek
 

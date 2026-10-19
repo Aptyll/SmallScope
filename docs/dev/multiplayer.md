@@ -762,8 +762,11 @@ Three small rules, and the teamwork is what they add up to:
   `AI_JUNGLE_N` (2) JUNGLERs walk the side's own wolf dens on their clocks (`aiDenSpot`: a den
   with its pack up is walked to and hunted by rung 6; a cleared one is waited on just outside
   `CAMP_HOLD`, set off `AI_DEN_EARLY` before it is due, and worked away from until then), and
-  `AI_LANE_N` (3) LANERs stand `AI_FARM_BACK` behind their own soldier nearest a clash
-  (`aiLaneSpot`) and pick the lowest-health rival soldier in sight. Any bot on a rival soldier its
+  `AI_LANE_N` (3) LANERs, one per lane (`aiLaneDeal` hands them out mid, top, bot in
+  `AI_LANE_ORDER` and a laner keeps its lane while it stays one: `T.lanes`), stand
+  `AI_FARM_BACK` behind their own soldier on that lane nearest a clash, or wait at the lane's
+  hold point (`laneHold`, `LANE_HOLD` (0.6) of the way from their mouth to its middle) while
+  they have no column there (`aiLaneSpot`), and pick the lowest-health rival soldier in sight. Any bot on a rival soldier its
   own wave is wearing down **holds its draw for the last hit** (`aiFarmFire` on rung 3's trigger):
   it waits at `AI_FARM_STAND` and lets go once the soldier, less the swings its wave lands while
   the blow travels, is within its hardest recent blow (`ai.farmHit`, learned in `hurtRobot`). The
