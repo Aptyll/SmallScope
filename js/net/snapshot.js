@@ -43,7 +43,7 @@ const SNAP_SKIP = new Set(['input', 'ai', 'nav', '_fx', '_fy', '_tx', '_ty', '_t
   'wade', 'wadeX', 'wadeY', 'wadePuffT', 'wadeAt', 'wadeV', 'wadeDX', 'wadeDY', 'wadeMv', // the wade: each machine eases its own (js/sim/depth.js, js/draw/depth.js)
   'faceT', 'trickleT', 'footT', 'footSide', 'puffT', 'dodgeDustT', 'slideDustT', 'eatFxT', 'burnTick', 'fishCd', 'catchT', 'dryT', 'swingCd',
   'idleT', 'wary', 'thinkT', 'moveT', 'turnT', 'emT', 'spook', 'biteCd', 'alertT', 'dashT', 'dashX', 'dashY', 'fleeT', 'fleeGoal', 'goal',
-  'avoidT', 'madT', 'madX', 'madY', 'baySite', 'bayDir', 'zipLast']);
+  'avoidT', 'madT', 'madX', 'madY', 'baySite', 'zipLast']);
 // the match's own state keys: the clock, the result, the birds. Everything
 // else on `state` is one screen's UI (overlays, the menu, the death view)
 const SNAP_STATE = ['time', 'elapsed', 'day', 'tick', 'darkness', 'wind', 'windDir', 'windT', 'fishT', 'creekGone', 'over', 'end', 'eagleCine', 'story', 'votes', 'voteCd', 'surrendered'];

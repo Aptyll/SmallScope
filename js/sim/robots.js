@@ -343,19 +343,19 @@ const MERCH_HOP_T = 0.55;    // s of the hop off the bird
 const MERCH_STALL_OUT = 6;   // tiles from the roost the stall's centre sits: just past the paved crater, its front onto the base's clearing
 const MERCH_STALL_ANG = 1.0; // rad either side of the road's axis it looks for a site: beside the road's head, never on it
 const MERCH_THINK = 0.35;    // s between job picks
-// the bot bays (STRUCTS.barracks): MERCH_BAY_T after the landing the merchant
-// clears a site MERCH_BAY_BACK tiles out from the roost - the footprint to
-// the ground and a MERCH_BAY_RING ring round it to stumps, so the door opens
-// onto walkable ground and there is room to fight at it - and raises the
-// first bay there, on the bay's corner (merchBayDir). Each bay after it is
-// paid for in logs off the back woods, on the next free slot of
-// merchBaySlots, up to MERCH_BAYS. The first of an empty yard is always
-// free, so a side whose every bay was wrecked is never out of waves;
-// a wreck stalls the next raise MERCH_BAY_REBUILD.
-const MERCH_BAYS = 3;         // bays the merchant keeps standing
-const MERCH_BAY_WOOD = 40;    // logs (pines and snags felled) a bay past the first costs: about two minutes of the back woods
+// the bot bays (STRUCTS.barracks): one per LANE, just inside that lane's
+// mouth of the hollow (baseBaySpot, js/sim/base.js), whose waves walk that
+// lane. MERCH_BAY_T after the landing the merchant clears the mid road's
+// site - the footprint to the ground and a MERCH_BAY_RING ring round it to
+// stumps, so the door opens onto walkable ground and there is room to fight
+// at it - and raises its bay, then the top lane's and the bot lane's
+// (MERCH_BAY_ORDER), each lane's FIRST bay free. A lane's bay rebuilt after
+// a wreck costs MERCH_BAY_WOOD logs off the back woods, except in an empty
+// yard, so a side whose every bay was wrecked is never out of waves; a wreck
+// stalls the next raise MERCH_BAY_REBUILD.
+const MERCH_BAYS = 3;         // bays the merchant keeps standing: one per lane
+const MERCH_BAY_WOOD = 40;    // logs (pines and snags felled) a rebuilt bay costs: about two minutes of the back woods
 const MERCH_BAY_T = 30;       // s after the landing the first bay is due
-const MERCH_BAY_BACK = 8;     // tiles from the roost, on a slot's bearing, a bay's centre sits
 const MERCH_BAY_RING = 1;     // tiles of woods cleared round the footprint
 const MERCH_BAY_SWING = 0.34; // s per axe swing on the clearing - the lane's pace, not the back woods', so the first bay is up before the second minute
 const MERCH_BAY_REBUILD = 45; // s after a wreck before the next bay is raised
@@ -383,12 +383,12 @@ function spawnMerchant(e) {
     x: (at.tx + 0.5) * TILE, y: (at.ty + 0.5) * TILE, // no hp: nothing can hurt it (unitAlive)
     roost: e, tgt: null, workT: 0, thinkT: 0, avoids: [], avoid: null, avoidT: 0, nav: null,
     bays: [], bayT: MERCH_BAY_T, baySite: null, wood: 0, // the bot bays standing, the clock to the next, where it goes; the logs in stock
+    bayGift: [true, true, true], // per lane: its first bay is still the eagle's gift
     stall: null, stallT: 0, stallSite: null, // the shop it pitches first (OBJECTS.stall), the clock to asking again for a site, where
     hopT: MERCH_HOP_T, dir: 'down', moving: false, animT: 0, mvx: 0, mvy: 0, moveT: 0, idleT: 1,
     atkAim: null, atkCd: 0, mad: null, madT: 0, carry: 0, flash: 0, kbx: 0, kby: 0, dead: false,
   };
   clearUnitStatus(b);
-  b.bayDir = merchBayDir(e);
   e.merchant = b;
   robots.push(b);
   burst(b.x, b.y - 4, '#f4f7ff', 10, 50, 0.5, true);
@@ -457,45 +457,25 @@ function pitchStall(b, s) {
   for (let y = s.ty - 1; y <= s.ty + 4; y++) for (let x = s.tx - 1; x <= s.tx + 7; x += 2) if (inWorld(x, y)) repaintGround(x, y);
   return o;
 }
-// the first bay's bearing: one of the two BACK corners (+-135 deg off the
-// road's axis), the one pointing nearer the world's edge - deeper into the
-// roost corner's guaranteed woods, away from the field - so both sides'
-// yards sit the same way round, mirrored
-function merchBayDir(e) {
-  let best = null, bd = Infinity;
-  for (const ang of [3 * Math.PI / 4, -3 * Math.PI / 4]) {
-    const d = merchBearing(e, ang);
-    const tx = e.x / TILE + d.x * 8, ty = e.y / TILE + d.y * 8;
-    const edge = Math.min(tx, ty, WORLD - tx, WORLD - ty);
-    if (edge < bd) { bd = edge; best = d; }
-  }
-  return best;
-}
-// the bays' slots, in the order they go up: the first corner, straight
-// back, the other corner - a fan round the back of the roost, all of it in
-// the back woods and none of it toward the road
-function merchBaySlots(b) {
-  const a = (b.bayDir || (b.bayDir = merchBayDir(b.roost))).ang; // bayDir never crosses the wire (SNAP_SKIP): read afresh when a snapshot left it behind
-  return [a, Math.PI, -a].map((ang) => merchBearing(b.roost, ang));
-}
-// where the next bay goes: the first slot with no bay standing on it that
-// has a site, or null
+// the lanes in the order their first bays go up: the mid road's, then the
+// top's, then the bot's (baseBaySpot, js/sim/base.js)
+const MERCH_BAY_ORDER = [1, 0, 2];
+// where the next bay goes: the first lane in MERCH_BAY_ORDER with no bay
+// standing that has a site, or null (the site carries its lane)
 function merchNextBay(b) {
-  const e = b.roost;
-  for (const d of merchBaySlots(b)) {
-    const cx = e.x / TILE + d.x * MERCH_BAY_BACK, cy = e.y / TILE + d.y * MERCH_BAY_BACK;
-    if (b.bays.some((o) => Math.hypot(o.tx + 1.5 - cx, o.ty + 1 - cy) < 4.5)) continue;
-    const s = merchBaySite(e, d);
+  for (const lane of MERCH_BAY_ORDER) {
+    if (b.bays.some((o) => o.lane === lane)) continue;
+    const s = merchBaySite(b.team, lane);
     if (s) return s;
   }
   return null;
 }
-// a bay's 3x2 anchor about MERCH_BAY_BACK tiles out from the roost on the
-// bearing d - the nearest placement to that point whose footprint is dry
-// land holding nothing the axe cannot take (a pine, a snag, a rock, a
-// stump: never the bird's own tiles or a building, another bay included)
-function merchBaySite(e, d) {
-  const cx = (e.x + d.x * MERCH_BAY_BACK * TILE) / TILE - 1.5, cy = (e.y + d.y * MERCH_BAY_BACK * TILE) / TILE - 1;
+// a bay's 3x2 anchor at lane `lane`'s spot inside its mouth - the nearest
+// placement to it whose footprint is dry land off the road holding nothing
+// the axe cannot take (a pine, a snag, a rock, a stump: never the bird's own
+// tiles or a building, another bay included)
+function merchBaySite(team, lane) {
+  const p = baseBaySpot(team, lane), cx = p.tx - 1, cy = p.ty - 0.5;
   const fits = (tx, ty) => footprint('barracks', tx, ty).every(([x, y]) => {
     if (!inWorld(x, y) || ground[idx(x, y)] !== 0) return false;
     const o = objAt(x, y);
@@ -505,7 +485,7 @@ function merchBaySite(e, d) {
   for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
     const tx = Math.round(cx) + dx, ty = Math.round(cy) + dy;
     const dd = Math.hypot(tx - cx, ty - cy);
-    if (dd < bd && fits(tx, ty)) { bd = dd; best = { tx, ty }; }
+    if (dd < bd && fits(tx, ty)) { bd = dd; best = { tx, ty, lane }; }
   }
   return best;
 }
@@ -642,22 +622,27 @@ function updateMerchant(b, dt) {
       return finish();
     }
   }
-  // ---- the bot bays: the first due MERCH_BAY_T after the landing, each
-  // after it once MERCH_BAY_WOOD logs are in stock, ahead of the felling
-  // whenever one is due - the waves are the match's clock. A wreck stalls
+  // ---- the bot bays: the first due MERCH_BAY_T after the landing, one
+  // per lane in MERCH_BAY_ORDER, ahead of the felling whenever one is due -
+  // the waves are the match's clock. A lane's first bay is free; a rebuild
+  // waits for MERCH_BAY_WOOD logs unless the yard is empty. A wreck stalls
   // the next one MERCH_BAY_REBUILD.
   const standing = b.bays.filter((o) => structOf(objAt(o.tx, o.ty)) === o);
   if (standing.length < b.bays.length) { b.bays = standing; b.bayT = Math.max(b.bayT, MERCH_BAY_REBUILD); }
   if (b.bays.length < MERCH_BAYS) b.bayT -= dt;
-  if (b.bays.length < MERCH_BAYS && b.bayT <= 0 && (!b.bays.length || b.wood >= MERCH_BAY_WOOD)) {
+  if (b.bays.length < MERCH_BAYS && b.bayT <= 0) {
     if (!b.baySite) b.baySite = merchNextBay(b);
     const s = b.baySite;
+    const free = s && (b.bayGift[s.lane] || !b.bays.length); // a lane's first, or an empty yard's
     if (!s) b.bayT = 8; // nowhere to stand it right now: ask again
-    else {
+    else if (free || b.wood >= MERCH_BAY_WOOD) {
       raise(s, () => {
         b.baySite = null;
-        if (b.bays.length) b.wood -= MERCH_BAY_WOOD; // the first of an empty yard is the eagle's gift
-        b.bays.push(createStruct(s.tx, s.ty, 'barracks', 0, owner, true)); // the eagle's own: nobody pays gold
+        if (!free) b.wood -= MERCH_BAY_WOOD;
+        b.bayGift[s.lane] = false;
+        const o = createStruct(s.tx, s.ty, 'barracks', 0, owner, true); // the eagle's own: nobody pays gold
+        o.lane = s.lane; // whose road its waves walk (makeSoldier)
+        b.bays.push(o);
       }, (t) => { if (t === 6) b.baySite = null; b.bayT = t; });
       return finish();
     }
@@ -732,13 +717,15 @@ function updateMerchant(b, dt) {
 // meeting on the road grind each other down until somebody breaks the tie.
 // It carries a bounty paid to the rival who lands its last hit (robotDies,
 // soldierBounty in js/sim/farm.js), and it takes every hit, state and gust
-// like any other body. Its route is the
-// road's waypoints from its own base's junction to the rival's
+// like any other body. It marches its BAY'S LANE (b.lane). A mid soldier's
+// route is the road's waypoints from its own base's junction to the rival's
 // (roadWaypoints), round the cistern at the middle by a ford outside one of
 // its culverts (cisternWayRound, js/sim/cistern.js), then up the rival's road
-// to the roost: a waypoint it cannot reach is skipped, not
-// waited on, so a wave never stands still on a blocked tile. On the march it
-// rides any ZIPLINE that carries it toward the rival bird (soldierBoard):
+// to the roost; a top or bot soldier's is its own mouth, down its lane to the
+// rival mouth and into the rival hollow (laneWaypoints, js/sim/lanes.js). A
+// waypoint it cannot reach is skipped, not waited on, so a wave never stands
+// still on a blocked tile. On the march it rides any ZIPLINE of its lane that
+// carries it toward the rival bird (soldierBoard):
 // its own side's out to the front, the rival's in to their roost - hands on
 // the handle, so a soldier on the cable swings at nothing, and a rival who
 // meets it on the line crashes with it (zipCrash, js/sim/zipline.js).
@@ -759,7 +746,15 @@ function makeSoldier(o) {
   // hero's grown blow never makes every hit on one a last hit
   b.hp = b.maxHp = b.maxHp + SOLDIER_HP_GROW * Math.floor(state.elapsed / STRUCTS.barracks.tiers[0].grow);
   b.owner = -1; // nobody's: no flag, no cargo, no payout but the bounty
-  // the march: own junction first (up the road out of the base), the road, the
+  b.lane = o.lane === undefined ? 1 : o.lane; // the bay's lane (updateMerchant): 0 top, 1 mid, 2 bot
+  b.wayI = 0;
+  b.rode = false; // boarded a zipline since the route was last read (soldierRejoin)
+  if (b.lane !== 1) { // a side lane: out of its mouth and down it (laneWaypoints, js/sim/lanes.js)
+    const g = baseGate(b.team, b.lane);
+    b.way = [{ x: (g.tx + 0.5) * TILE, y: (g.ty + 0.5) * TILE }].concat(laneWaypoints(b.team, b.lane));
+    return b;
+  }
+  // the mid road: own junction first (up the road out of the base), the road, the
   // rival junction; the rival roost itself is read live (it may have flown)
   const own = state.drop && state.drop.eagles[b.team], rival = state.drop && state.drop.eagles[1 - b.team];
   b.way = [];
@@ -769,8 +764,6 @@ function makeSoldier(o) {
   // ...round the cistern by a culvert's ford, the column forking: every
   // other soldier out of the door takes the other one (o.queue counts down)
   cisternWayRound(b.way, b.team, o.queue % 2);
-  b.wayI = 0;
-  b.rode = false; // boarded a zipline since the route was last read (soldierRejoin)
   return b;
 }
 
@@ -779,7 +772,7 @@ function soldierGoal(b) {
   const rival = state.drop && state.drop.eagles[1 - b.team];
   return rival || (b.way.length ? b.way[b.way.length - 1] : null);
 }
-// the ride: a cable within SOLDIER_ZIP_REACH of the soldier whose end nearer
+// the ride: a cable of its own lane within SOLDIER_ZIP_REACH of the soldier whose end nearer
 // the rival bird is SOLDIER_ZIP_GAIN nearer it than the soldier stands. Under
 // it (inside ZIP_GRAB) it clips on, riding toward that end; short of it, it
 // walks to the mount (zipMount, js/sim/zipline.js - the point a player's walk and a
@@ -789,7 +782,7 @@ function soldierBoard(b, walkToward) {
   if (!g) return false;
   const here = Math.hypot(g.x - b.x, g.y - b.y);
   for (const z of zips) {
-    if (!z) continue;
+    if (!z || z.lane !== b.lane) continue; // its own lane's cables: a column never rides off to another lane
     const n = zipNearest(z, b.x, b.y);
     if (n.dist > SOLDIER_ZIP_REACH) continue;
     const p0 = z.pts[0], p1 = z.pts[z.pts.length - 1];

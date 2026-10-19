@@ -70,7 +70,7 @@ dodge         edge-triggered, cleared by the sim when it reads it
 jump          edge-triggered: the hop off the roosted bird (hopOff,
               js/sim/eagle.js; read at the top of updatePlay's player loop,
               before the air skips the body) - and
-              on the ground the zipline's: clip on under either side's cable,
+              on the ground the zipline's: clip on under any side's cable,
               let go while riding, or - out of reach with the aim on a
               cable as drawn - the walk there that clips on (zipToggle,
               js/sim/world.js; E sets it there)
@@ -1036,7 +1036,7 @@ Every walk goes through `steerTo(x, y, reach, budget)`, which is `navTo` on the 
 and returns **-1 when there is no route** (or the bot has been pinned for a while). **It rides
 the zipline** ([the ride](gameplay.md#the-zipline)) the way a hand does, through the same hop
 intent, and nothing in the ladder knows: `steerTo` asks `aiZipWorth` first — would walking to
-either side's cable (the better of the two), riding to the point nearest the goal and walking the rest beat the feet by
+any cable (the best of them: a side has one down each lane), riding to the point nearest the goal and walking the rest beat the feet by
 `ZIP_AI_GAIN` (4 s)? — and if so walks to the mount (`zipMount`, js/sim/zipline.js — the nearest point of
 the cable whose ground a body can stand on, shared with a player's walk to the cable), presses `input.jump` under it, holds the stick along
 the cable toward the exit while it rides (the goal re-read every think, so a rider called home

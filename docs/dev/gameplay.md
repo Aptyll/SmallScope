@@ -101,8 +101,8 @@ back on the next frame. A draw and a shield still turn it every step.
 
 ### The zipline
 
-The one movement that is neither walked nor slid: any body standing under **either** side's
-cable ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
+The one movement that is neither walked nor slid: any body standing under **any** side's
+cable (each side has one down each lane) ([the zipline](world.md#the-zipline), `zipNear`) presses E and **clips on** —
 `keyPress`/`pointerPress`/`ckRightPress` set `input.jump`, the edge-triggered hop intent the
 eagle already reads, and `updatePlay` consumes it for every player alike as `zipToggle(p)`
 (js/sim/zipline.js): riding, it lets go; under a cable, `zipStart`. The ride is its own branch of
@@ -117,7 +117,7 @@ across a stop — set in `updatePlayer` whenever it is held) dotted with the cab
 −0.3 rides toward the base, anything else rides **toward the front** — so a body that walked home
 and stood still for the press goes home, and a walk in across the cable from the lane takes the
 default. At either end the cable has one way to go and the clip-on takes it, whatever the walk
-said. State on the body: `p.zip` (the line's team, −1 for none), `p.zipD` (px along),
+said. State on the body: `p.zip` (the line's index in `zips`, −1 for none), `p.zipD` (px along),
 `p.zipDir`, `p.lastMx/lastMy` — declared in `reset()` beside the grapple's, so a respawn never
 comes back clipped on; `die` lets go too.
 
@@ -861,7 +861,7 @@ consumes `p.input.ability` as a buy whenever `abLvCanBuy(p, i)` holds and as a c
 (js/sim/sim.js, beside the other edge intents), so key 2 with a point in hand levels ability 2 and the
 next press casts it; a maxed key casts straight through an unspent point. That reaches every
 controller and the well click alike, since all of them set the one field. Hover lights the plate
-and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiThink`, js/ai/ai.js), lowest ability
+and the tooltip carries the numbers (`LOCKED` and `UNLOCK 1 SKILL PT` on a dark key). Bots spend each free point in rung 0 of the ladder (`aiSpend`, js/ai/ai.js, first thing `aiThink` asks), lowest ability
 level first — which spends their first four unlocking all four keys before any gets a cut. The cd
 column in the tables below is the level-1 base.
 
@@ -2772,13 +2772,13 @@ Mechanics (the wheel in [js/ui/wheel.js](../../js/ui/wheel.js), the buildings in
   completion, then 4 s apart; a lost bot takes 12 s to replace (`respawnT`/`respawnTotal`).
   `makeRobot` spawns at `structMouth()` (the ring around the footprint if that is blocked) with an
   exhaust puff. **Barracks** (`barracks`): the wave bay, **never on the wheel** — not in
-  `STRUCT_ORDER`; each [merchant](#the-merchant) raises up to three in the back woods behind its roost, and
+  `STRUCT_ORDER`; each [merchant](#the-merchant) raises one just inside each of its base's three lane mouths, and
   `fixed: true` refuses the manage wheel's upgrade and demolish, so nobody pulls it down for the
   refund. It wears the bay's 3×2 grid (`art: 'spawner'`, read by `structSprite`) under its own
   overlay (`drawBarracksOverlay`: the shutter, the next soldier sliding down the door, the wave
   clock on the flank in the side's paint, the beacon amber while a column is leaving). Every
   `waveT` (30 s) it queues a **wave** — `wave` (3) soldiers, one more per `grow` (180 s) it has
-  stood, never more than `cap` (24) of its **side's** soldiers alive at once, every bay's queue and column counted — and the queue leaves the door
+  stood, never more than `cap` (8) of its side's soldiers on its **lane** at once, every bay's queue and column on that lane counted (`barracksLaneLoad`) — and the queue leaves the door
   one every `BARRACKS_ROLL` (0.5 s), so a wave reads as a column. Its `cost` (40) is only what a
   wrecker is paid half of: breaking one stalls the waves until the merchant rebuilds it
   ([Soldiers](#soldiers-the-waves)). `drawBayOverlay()` draws everything live on top of the baked sprite: the next bot
@@ -2905,12 +2905,14 @@ hauler — see [Team flags](#team-flags) for why the anger is gated on the flag.
 The `soldiers` banner (js/sim/robots.js). Every `STRUCTS.barracks.waveT` seconds each merchant's
 [barracks](#base-building) rolls out a column of **soldiers** — the worker's chassis under its
 side's pennant (`drawRobot` stamps `drawFlagPennant` on a `kind: 'soldier'` body, the one thing
-that says this bot is not here to chop) — that marches [the road](world.md#the-road) to the rival
-bird. `makeSoldier(o)` is `makeRobot` with `kind: 'soldier'`, `owner: -1` (no flag reads it, no
-cargo, no payout but the bounty) and a **route**: its own eagle's junction (`e.mouth`, where the
-road leaves its [base](world.md#the-bases)), `roadWaypoints(team)`, the rival's junction; the rival roost itself is
-read live each frame, since
-it may have flown. The road's middle is swapped for a way round [the cistern](world.md#the-cistern)
+that says this bot is not here to chop) — that marches **its bay's lane** (`b.lane`, from the
+bay's `o.lane`: 0 top, 1 mid, 2 bot) to the rival bird. `makeSoldier(o)` is `makeRobot` with
+`kind: 'soldier'`, `owner: -1` (no flag reads it, no cargo, no payout but the bounty) and a
+**route**. A top or bot soldier's is its own mouth of the [base](world.md#the-bases) (`baseGate`),
+then `laneWaypoints(team, lane)`: [the side lane](world.md#the-side-lanes) every `ROAD_STEP` tiles to
+the rival mouth, then the rival hollow's centre. A mid soldier's is its own eagle's junction
+(`e.mouth`, where the road leaves its base), `roadWaypoints(team)`, the rival's junction. The
+rival roost itself is read live each frame, since it may have flown. The mid road's middle is swapped for a way round [the cistern](world.md#the-cistern)
 (`cisternWayRound`): the road just short of its own gate, the bank of one of the fords outside the
 culverts, the far bank, the road just past the rival gate. Every other soldier out of the door
 (`o.queue`'s parity) takes the other ford, so a column forks round the ring and the two sides'
@@ -2924,7 +2926,7 @@ waves meet on the stones, never on the orca's ice. `updateSoldier` is four rungs
    building, since whatever a side builds round its bird stands within a step of it;
 3. a rival **building** inside `SOLDIER_SIEGE` (40 px — what is in its way: a turret, a
    wall across the road, a rival bay): `hurtStruct` through the same `robotStrike`;
-4. the **march**: first **the zipline** (`soldierBoard`): a cable within `SOLDIER_ZIP_REACH`
+4. the **march**: first **the zipline** (`soldierBoard`): a cable of its own lane within `SOLDIER_ZIP_REACH`
    (96 px) whose end nearer the rival bird is `SOLDIER_ZIP_GAIN` (96 px) nearer it than the
    soldier stands — walked to at its mount (`zipMount`), clipped onto inside `ZIP_GRAB`, ridden
    toward that end: its own side's cable out to the front, the rival's in to their roost. On
@@ -2976,8 +2978,8 @@ with a `MERCH` nameplate and a bar in its side's paint over it, `drawMerchant`; 
 down the moment it roosts (`spawnMerchant`, called
 from `eagleCrash`, the `merchant` banner in js/sim/robots.js) and works **home** for its side, never
 toward the fight. It raises no walls and no guns (both stay on the build list for players). Its
-first job is its **stall**, and after that **home production**: it fells the **back woods** and
-raises the **bot bays** there.
+first job is its **stall**, and after that **home production**: it raises the **bot bays** at its
+base's three lane mouths and fells the **back woods** for logs to rebuild them.
 
 **The stall** (`OBJECTS.stall`, world.js) is the shop players walk to. The moment the merchant is
 off the bird it looks for a 3×2 site (`merchStallSite`) about `MERCH_STALL_OUT` (6) tiles from
@@ -2997,23 +2999,21 @@ stand on, so the clearing grows out from home as one front. Each falls to a **st
 `MERCH_SWING_T` a swing, and a timed `b.avoids` list keeps trunks no route reached out of the
 pick (without it the pick flips forever between two walled-in trees).
 
-The **bays** (the barracks, [base building](#base-building)) jump that queue whenever one is due.
-The first is due `MERCH_BAY_T` (30 s) after the landing and is free; each after it costs
-`MERCH_BAY_WOOD` (40) logs, up to `MERCH_BAYS` (3), which lands them at about 1:00, 2:00 and
-3:45 of match time. They fan round the back of the roost `MERCH_BAY_BACK` (8) tiles out, on the
-slots `merchBaySlots` lists in order: the first corner (`merchBayDir`: of the two back corners,
-±135° off the road's axis, the one pointing nearer the world's edge, mirrored for both sides),
-straight back, then the other corner. `merchNextBay` takes the first slot with no bay standing on
-it, and `merchBaySite` the nearest 3×2 placement to that slot's point whose footprint is dry land
-holding nothing the axe cannot take. `merchBayBlocker` hands it every pine, snag and rock on the
+The **bays** (the barracks, [base building](#base-building)) jump that queue whenever one is due:
+**one per lane**, each just inside that lane's mouth of the hollow (`baseBaySpot`,
+js/sim/base.js), whose waves walk that lane. The first is due `MERCH_BAY_T` (30 s) after the
+landing; `merchNextBay` takes the lanes in `MERCH_BAY_ORDER` (mid, top, bot) and the first with no
+bay standing, and `merchBaySite` the nearest 3×2 placement to its spot whose footprint is dry land
+off the road holding nothing the axe cannot take. Each lane's **first** bay is free
+(`b.bayGift`), so all three go up one after another, about 1:00 to 1:40 of match time on seed 42.
+`merchBayBlocker` hands it every pine, snag and rock on the
 footprint and a `MERCH_BAY_RING` (1) ring round it, and the stumps on the footprint alone, felled
 at `MERCH_BAY_SWING` (0.34 s) through `merchFell` (the axe always leaves a stump everywhere but
 the footprint itself). Then `MERCH_BAY_HAMMER` (2.6 s) of hammering from the tile below the door,
 with the merchant wholly off the footprint so the bay never goes up round it, sets the site
-(`createStruct`, nobody pays gold). A wrecked bay drops out of `b.bays` and holds the next raise
-`MERCH_BAY_REBUILD` (45 s); the first bay of an empty yard is always free again, so a side is
-never out of waves. The waves find the road themselves ([Soldiers](#soldiers-the-waves)): every
-soldier's route starts at its own base's junction.
+(`createStruct`, nobody pays gold) and stamps its `lane`. A wrecked bay drops out of `b.bays` and
+holds the next raise `MERCH_BAY_REBUILD` (45 s); a rebuild costs `MERCH_BAY_WOOD` (40) logs, except
+in an empty yard, so a side is never out of waves.
 
 With nothing due and the back woods felled, it keeps to its post on the road just up from the bird, a step or
 two either way. **Wherever it is, it keeps shop** too: its own body is a

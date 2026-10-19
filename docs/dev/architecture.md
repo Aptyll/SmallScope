@@ -82,7 +82,8 @@ order, so the script tags still interleave them:
 | [js/sim/abilities.js](../../js/sim/abilities.js) | ~1310 | shared scope, no `window.*` export | the class abilities on keys 1-4: the `CLASS_AB` table, casting, the pierce/net/grapple/snow-cover/shield-and-slam/rush/crater/execute sim, the telegraph and landing shapes every side sees, and their draw passes |
 | [js/sim/fog.js](../../js/sim/fog.js) | ~130 | shared scope, no `window.*` export | the fog of war's rule: each side's eyes, sight lines stopped by stone, the woods as brush, and `inSight` (what a side sees, which its bots ask) |
 | [js/ai/ai-skill.js](../../js/ai/ai-skill.js) | ~250 | shared scope, no `window.*` export | how well a bot plays: the difficulty levels and the skill layer, the hands between the ladder's decision and the input it writes |
-| [js/ai/ai.js](../../js/ai/ai.js) | ~990 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills |
+| [js/ai/ai.js](../../js/ai/ai.js) | ~770 | shared scope, no `window.*` export | the bot brain — a priority ladder writing the same input struct a human fills: its reads, its walks and `updateAI` |
+| [js/ai/ai-ladder.js](../../js/ai/ai-ladder.js) | ~910 | shared scope, no `window.*` export | the ladder itself: `aiThink` and its rungs, in the order they are asked |
 | [js/ai/ai-farm.js](../../js/ai/ai-farm.js) | ~130 | shared scope, no `window.*` export | the farm roles: where a laner stands and how it holds its blow for the last hit, where a jungler walks and waits on a den |
 | [js/ai/bot-api.js](../../js/ai/bot-api.js) | ~340 | `window.BOTS` | the bot API: a seat driven by a bot file behind a JSON boundary (observation in, input struct out), its transports and its library; js/baked/bot-lib.js is the examples baked from bots/ ([docs/bots/](../bots/README.md)) |
 | [js/sim/sim.js](../../js/sim/sim.js) | ~1540 | shared scope, no `window.*` export | `update`/`updatePlay`/`updatePlayer` (and its named steps), the camera (`camX`/`camY`), fx aging, the snow |
@@ -141,7 +142,8 @@ order, so the script tags still interleave them:
 | [js/sim/save.js](../../js/sim/save.js) | ~350 | shared scope, no `window.*` export | the replay proof: the valley's baseline, the match as one object graph (`saveCapture`/`saveApply`), `saveHash`, and the record put back on a fresh page (`saveDevLoad`) |
 | [js/ui/botview.js](../../js/ui/botview.js) | ~470 | shared scope, no `window.*` export | the bot dev view: every bot's thought read one way, the recorder, the F4 map overlay and table, the link to the out-of-game page [botlab.html](../../botlab.html) ([botview.md](botview.md)) |
 | [js/sim/eagle.js](../../js/sim/eagle.js) | ~1180 | shared scope, no `window.*` export | the eagle drop: each bird's flight in over its own corner, the ride, the hop off, the crash on the perch, the drop brief, the bird each side guards |
-| [js/sim/base.js](../../js/sim/base.js) | ~60 | shared scope, no `window.*` export | the bases: each side's fixed hollow, perch and mouth in its roost corner, the road's two ends, `placeBase` |
+| [js/sim/base.js](../../js/sim/base.js) | ~80 | shared scope, no `window.*` export | the bases: each side's fixed hollow, perch and three lane mouths in its roost corner, where each lane's bay stands, the road's two ends, `placeBase` |
+| [js/sim/lanes.js](../../js/sim/lanes.js) | ~140 | shared scope, no `window.*` export | the top and bot lanes: their fixed centrelines, the registry `roadDist` mins over, `layLanes` and its creek fords, a wave's march down one, a side's cable down one |
 | [js/app/boot.js](../../js/app/boot.js) | ~700 | `DBG` + shared scope | the last file to load: the boot order, `window.DBG`, the rAF loop and the fixed 1/60 s step it feeds the sim |
 
 Line counts are approximate on purpose; they are here for a sense of scale, not to be maintained.

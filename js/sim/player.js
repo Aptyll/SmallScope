@@ -633,7 +633,7 @@ class Player {
     this.tun = null; this.tunCd = 0; this.digT = 0; this.tunE = false;
     this.hopT = 0;                                 // the net shot's recoil hop, on the body
     this.grapT = 0; this.grapX = 0; this.grapY = 0; // the grapple: reel time left, and the anchor it hauls toward
-    this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its team, or none), px along it, and which way
+    this.zip = -1; this.zipD = 0; this.zipDir = 1;  // the zipline (js/sim/zipline.js): the line ridden (its index in zips, or -1), px along it, and which way
     this.lastMx = 0; this.lastMy = 0;                // the stick's last held direction, unit (updatePlayer): what the clip-on reads when the body stands still for the press
     this.zipWalk = false; this.zipWalkL = 0;         // walking itself to a cable to clip on, and which (zipWalkStep, js/sim/zipline.js)
     this.zipLast = 0;                                // px along the cable a step ago (zipCrash, js/sim/zipline.js)
